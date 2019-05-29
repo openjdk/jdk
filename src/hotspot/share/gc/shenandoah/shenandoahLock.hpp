@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2018, Red Hat, Inc. All rights reserved.
+ * Copyright (c) 2017, 2019, Red Hat, Inc. All rights reserved.
  *
  * This code is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License version 2 only, as
@@ -21,13 +21,13 @@
  *
  */
 
-#ifndef SHARE_GC_SHENANDOAH_SHENANDOAHHEAPLOCK_HPP
-#define SHARE_GC_SHENANDOAH_SHENANDOAHHEAPLOCK_HPP
+#ifndef SHARE_GC_SHENANDOAH_SHENANDOAHLOCK_HPP
+#define SHARE_GC_SHENANDOAH_SHENANDOAHLOCK_HPP
 
 #include "memory/allocation.hpp"
 #include "runtime/thread.hpp"
 
-class ShenandoahHeapLock  {
+class ShenandoahLock  {
 private:
   enum LockState { unlocked = 0, locked = 1 };
 
@@ -38,7 +38,7 @@ private:
   DEFINE_PAD_MINUS_SIZE(2, DEFAULT_CACHE_LINE_SIZE, 0);
 
 public:
-  ShenandoahHeapLock() : _state(unlocked), _owner(NULL) {};
+  ShenandoahLock() : _state(unlocked), _owner(NULL) {};
 
   void lock() {
     Thread::SpinAcquire(&_state, "Shenandoah Heap Lock");
@@ -76,18 +76,21 @@ public:
 #endif
 };
 
-class ShenandoahHeapLocker : public StackObj {
+class ShenandoahLocker : public StackObj {
 private:
-  ShenandoahHeapLock* _lock;
+  ShenandoahLock* const _lock;
 public:
-  ShenandoahHeapLocker(ShenandoahHeapLock* lock) {
-    _lock = lock;
-    _lock->lock();
+  ShenandoahLocker(ShenandoahLock* lock) : _lock(lock) {
+    if (_lock != NULL) {
+      _lock->lock();
+    }
   }
 
-  ~ShenandoahHeapLocker() {
-    _lock->unlock();
+  ~ShenandoahLocker() {
+    if (_lock != NULL) {
+      _lock->unlock();
+    }
   }
 };
 
-#endif // SHARE_GC_SHENANDOAH_SHENANDOAHHEAPLOCK_HPP
+#endif // SHARE_GC_SHENANDOAH_SHENANDOAHLOCK_HPP
