@@ -38,6 +38,16 @@
   #undef Log
 #endif
 
+// R macro is defined by src/hotspot/cpu/arm/register_arm.hpp, F$n are defined
+// in ppc/register_ppc.hpp, these macros conflict with typenames used in
+// internal googlemock templates. As the macros are not expected to be used by
+// any of tests directly, and this header file is supposed to be the last
+// include, we just undefine it; if/when it changes, we will need to re-define
+// the macros after the following includes.
+#undef R
+#undef F1
+#undef F2
+
 #include "gmock/gmock.h"
 #include "gtest/gtest.h"
 
