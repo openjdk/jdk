@@ -965,14 +965,12 @@ public:
 };
 
 void ShenandoahVerifier::verify_roots_no_forwarded() {
-  guarantee(ShenandoahSafepoint::is_at_shenandoah_safepoint(), "only when nothing else happens");
   ShenandoahRootVerifier verifier;
   ShenandoahVerifyNoForwared cl;
   verifier.oops_do(&cl);
 }
 
 void ShenandoahVerifier::verify_roots_no_forwarded_except(ShenandoahRootVerifier::RootTypes types) {
-  guarantee(ShenandoahSafepoint::is_at_shenandoah_safepoint(), "only when nothing else happens");
   ShenandoahRootVerifier verifier;
   verifier.excludes(types);
   ShenandoahVerifyNoForwared cl;

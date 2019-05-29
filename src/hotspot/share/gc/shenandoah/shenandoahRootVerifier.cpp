@@ -28,10 +28,12 @@
 #include "classfile/classLoaderDataGraph.hpp"
 #include "classfile/systemDictionary.hpp"
 #include "code/codeCache.hpp"
+#include "gc/shenandoah/shenandoahAsserts.hpp"
 #include "gc/shenandoah/shenandoahHeap.hpp"
 #include "gc/shenandoah/shenandoahPhaseTimings.hpp"
 #include "gc/shenandoah/shenandoahRootVerifier.hpp"
 #include "gc/shenandoah/shenandoahStringDedup.hpp"
+#include "gc/shenandoah/shenandoahUtils.hpp"
 #include "gc/shared/weakProcessor.inline.hpp"
 #include "memory/universe.hpp"
 #include "runtime/thread.hpp"
@@ -55,15 +57,19 @@ bool ShenandoahRootVerifier::verify(RootTypes type) const {
 void ShenandoahRootVerifier::oops_do(OopClosure* oops) {
   CodeBlobToOopClosure blobs(oops, !CodeBlobToOopClosure::FixRelocations);
   if (verify(CodeRoots)) {
+    shenandoah_assert_locked_or_safepoint(CodeCache_lock);
     CodeCache::blobs_do(&blobs);
   }
 
   if (verify(CLDGRoots)) {
+    shenandoah_assert_locked_or_safepoint(ClassLoaderDataGraph_lock);
     CLDToOopClosure clds(oops, ClassLoaderData::_claim_none);
     ClassLoaderDataGraph::cld_do(&clds);
   }
 
   if (verify(SerialRoots)) {
+    shenandoah_assert_safepoint();
+
     Universe::oops_do(oops);
     Management::oops_do(oops);
     JvmtiExport::oops_do(oops);
@@ -73,15 +79,18 @@ void ShenandoahRootVerifier::oops_do(OopClosure* oops) {
   }
 
   if (verify(WeakRoots)) {
+    shenandoah_assert_safepoint();
     AlwaysTrueClosure always_true;
     WeakProcessor::weak_oops_do(&always_true, oops);
   }
 
   if (ShenandoahStringDedup::is_enabled() && verify(StringDedupRoots)) {
+    shenandoah_assert_safepoint();
     ShenandoahStringDedup::oops_do_slow(oops);
   }
 
   if (verify(ThreadRoots)) {
+    shenandoah_assert_safepoint();
     // Do thread roots the last. This allows verification code to find
     // any broken objects from those special roots first, not the accidental
     // dangling reference from the thread root.
@@ -90,6 +99,8 @@ void ShenandoahRootVerifier::oops_do(OopClosure* oops) {
 }
 
 void ShenandoahRootVerifier::roots_do(OopClosure* oops) {
+  shenandoah_assert_safepoint();
+
   CodeBlobToOopClosure blobs(oops, !CodeBlobToOopClosure::FixRelocations);
   CodeCache::blobs_do(&blobs);
 
@@ -117,6 +128,8 @@ void ShenandoahRootVerifier::roots_do(OopClosure* oops) {
 }
 
 void ShenandoahRootVerifier::strong_roots_do(OopClosure* oops) {
+  shenandoah_assert_safepoint();
+
   CodeBlobToOopClosure blobs(oops, !CodeBlobToOopClosure::FixRelocations);
 
   CLDToOopClosure clds(oops, ClassLoaderData::_claim_none);

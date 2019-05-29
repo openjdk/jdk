@@ -362,3 +362,16 @@ void ShenandoahAsserts::assert_rp_isalive_installed(const char *file, int line) 
                      file, line);
   }
 }
+
+void ShenandoahAsserts::assert_locked_or_shenandoah_safepoint(const Monitor* lock, const char* file, int line) {
+  if (ShenandoahSafepoint::is_at_shenandoah_safepoint()) {
+    return;
+  }
+
+  if (lock->owned_by_self()) {
+    return;
+  }
+
+  ShenandoahMessageBuffer msg("Must ba at a Shenandoah safepoint or held %s lock", lock->name());
+  report_vm_error(file, line, msg.buffer());
+}

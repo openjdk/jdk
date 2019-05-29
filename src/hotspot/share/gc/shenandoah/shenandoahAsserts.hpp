@@ -25,6 +25,7 @@
 #define SHARE_GC_SHENANDOAH_SHENANDOAHASSERTS_HPP
 
 #include "memory/iterator.hpp"
+#include "runtime/mutex.hpp"
 #include "utilities/formatBuffer.hpp"
 
 typedef FormatBuffer<8192> ShenandoahMessageBuffer;
@@ -64,6 +65,8 @@ public:
 
   static void assert_rp_isalive_not_installed(const char *file, int line);
   static void assert_rp_isalive_installed(const char *file, int line);
+
+  static void assert_locked_or_shenandoah_safepoint(const Monitor* lock, const char*file, int line);
 
 #ifdef ASSERT
 #define shenandoah_assert_in_heap(interior_loc, obj) \
@@ -124,6 +127,12 @@ public:
                     ShenandoahAsserts::assert_rp_isalive_installed(__FILE__, __LINE__);
 #define shenandoah_assert_rp_isalive_not_installed() \
                     ShenandoahAsserts::assert_rp_isalive_not_installed(__FILE__, __LINE__);
+
+#define shenandoah_assert_safepoint() \
+                    assert(ShenandoahSafepoint::is_at_shenandoah_safepoint(), "Should be at Shenandoah Safepoints");
+
+#define shenandoah_assert_locked_or_safepoint(lock) \
+                    ShenandoahAsserts::assert_locked_or_shenandoah_safepoint(lock, __FILE__, __LINE__);
 #else
 #define shenandoah_assert_in_heap(interior_loc, obj)
 #define shenandoah_assert_in_correct_region(interior_loc, obj)
@@ -158,6 +167,10 @@ public:
 
 #define shenandoah_assert_rp_isalive_installed()
 #define shenandoah_assert_rp_isalive_not_installed()
+
+#define shenandoah_assert_safepoint()
+#define shenandoah_assert_locked_or_safepoint(lock)
+
 #endif
 
 #define shenandoah_not_implemented \
