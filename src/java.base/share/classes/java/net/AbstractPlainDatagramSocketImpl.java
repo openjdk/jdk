@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,9 +28,11 @@ import java.io.FileDescriptor;
 import java.io.IOException;
 import java.util.Collections;
 import java.util.HashSet;
+import java.util.Objects;
 import java.util.Set;
 
 import sun.net.ResourceManager;
+import sun.net.ext.ExtendedSocketOptions;
 import sun.security.action.GetPropertyAction;
 
 /**
@@ -85,26 +87,6 @@ abstract class AbstractPlainDatagramSocketImpl extends DatagramSocketImpl
             checkedReusePort = true;
         }
         return isReusePortAvailable;
-    }
-
-    /**
-     * Returns a set of SocketOptions supported by this impl and by this impl's
-     * socket (Socket or ServerSocket)
-     *
-     * @return a Set of SocketOptions
-     */
-    @Override
-    protected Set<SocketOption<?>> supportedOptions() {
-        Set<SocketOption<?>> options;
-        if (isReusePortAvailable()) {
-            options = new HashSet<>();
-            options.addAll(super.supportedOptions());
-            options.add(StandardSocketOptions.SO_REUSEPORT);
-            options = Collections.unmodifiableSet(options);
-        } else {
-            options = super.supportedOptions();
-        }
-        return options;
     }
 
     /**
@@ -398,6 +380,125 @@ abstract class AbstractPlainDatagramSocketImpl extends DatagramSocketImpl
         }
 
         return result;
+    }
+
+    static final ExtendedSocketOptions extendedOptions =
+            ExtendedSocketOptions.getInstance();
+
+    private static final Set<SocketOption<?>> datagramSocketOptions = datagramSocketOptions();
+    private static final Set<SocketOption<?>> multicastSocketOptions = multicastSocketOptions();
+
+    private static Set<SocketOption<?>> datagramSocketOptions() {
+        HashSet<SocketOption<?>> options = new HashSet<>();
+        options.add(StandardSocketOptions.SO_SNDBUF);
+        options.add(StandardSocketOptions.SO_RCVBUF);
+        options.add(StandardSocketOptions.SO_REUSEADDR);
+        options.add(StandardSocketOptions.IP_TOS);
+        if (isReusePortAvailable())
+            options.add(StandardSocketOptions.SO_REUSEPORT);
+        options.addAll(ExtendedSocketOptions.datagramSocketOptions());
+        return Collections.unmodifiableSet(options);
+    }
+
+    private static Set<SocketOption<?>> multicastSocketOptions() {
+        HashSet<SocketOption<?>> options = new HashSet<>();
+        options.add(StandardSocketOptions.SO_SNDBUF);
+        options.add(StandardSocketOptions.SO_RCVBUF);
+        options.add(StandardSocketOptions.SO_REUSEADDR);
+        options.add(StandardSocketOptions.IP_TOS);
+        options.add(StandardSocketOptions.IP_MULTICAST_IF);
+        options.add(StandardSocketOptions.IP_MULTICAST_TTL);
+        options.add(StandardSocketOptions.IP_MULTICAST_LOOP);
+        if (isReusePortAvailable())
+            options.add(StandardSocketOptions.SO_REUSEPORT);
+        options.addAll(ExtendedSocketOptions.datagramSocketOptions());
+        return Collections.unmodifiableSet(options);
+    }
+
+    @Override
+    protected Set<SocketOption<?>> supportedOptions() {
+        if (getDatagramSocket() instanceof MulticastSocket)
+            return multicastSocketOptions;
+        else
+            return datagramSocketOptions;
+    }
+
+    @Override
+    protected <T> void setOption(SocketOption<T> name, T value) throws IOException {
+        Objects.requireNonNull(name);
+        if (!supportedOptions().contains(name))
+            throw new UnsupportedOperationException("'" + name + "' not supported");
+
+        if (!name.type().isInstance(value))
+            throw new IllegalArgumentException("Invalid value '" + value + "'");
+
+        if (isClosed())
+            throw new SocketException("Socket closed");
+
+        if (name == StandardSocketOptions.SO_SNDBUF) {
+            if (((Integer)value).intValue() < 0)
+                throw new IllegalArgumentException("Invalid send buffer size:" + value);
+            setOption(SocketOptions.SO_SNDBUF, value);
+        } else if (name == StandardSocketOptions.SO_RCVBUF) {
+            if (((Integer)value).intValue() < 0)
+                throw new IllegalArgumentException("Invalid recv buffer size:" + value);
+            setOption(SocketOptions.SO_RCVBUF, value);
+        } else if (name == StandardSocketOptions.SO_REUSEADDR) {
+            setOption(SocketOptions.SO_REUSEADDR, value);
+        } else if (name == StandardSocketOptions.SO_REUSEPORT) {
+            setOption(SocketOptions.SO_REUSEPORT, value);
+        } else if (name == StandardSocketOptions.IP_TOS) {
+            int i = ((Integer)value).intValue();
+            if (i < 0 || i > 255)
+                throw new IllegalArgumentException("Invalid IP_TOS value: " + value);
+            setOption(SocketOptions.IP_TOS, value);
+        } else if (name == StandardSocketOptions.IP_MULTICAST_IF ) {
+            setOption(SocketOptions.IP_MULTICAST_IF2, value);
+        } else if (name == StandardSocketOptions.IP_MULTICAST_TTL) {
+            int i = ((Integer)value).intValue();
+            if (i < 0 || i > 255)
+                throw new IllegalArgumentException("Invalid TTL/hop value: " + value);
+            setTimeToLive((Integer)value);
+        } else if (name == StandardSocketOptions.IP_MULTICAST_LOOP) {
+            setOption(SocketOptions.IP_MULTICAST_LOOP, value);
+        } else if (extendedOptions.isOptionSupported(name)) {
+            extendedOptions.setOption(fd, name, value);
+        } else {
+            throw new AssertionError("unknown option :" + name);
+        }
+    }
+
+    @Override
+    @SuppressWarnings("unchecked")
+    protected <T> T getOption(SocketOption<T> name) throws IOException {
+        Objects.requireNonNull(name);
+        if (!supportedOptions().contains(name))
+            throw new UnsupportedOperationException("'" + name + "' not supported");
+
+        if (isClosed())
+            throw new SocketException("Socket closed");
+
+        if (name == StandardSocketOptions.SO_SNDBUF) {
+            return (T) getOption(SocketOptions.SO_SNDBUF);
+        } else if (name == StandardSocketOptions.SO_RCVBUF) {
+            return (T) getOption(SocketOptions.SO_RCVBUF);
+        } else if (name == StandardSocketOptions.SO_REUSEADDR) {
+            return (T) getOption(SocketOptions.SO_REUSEADDR);
+        } else if (name == StandardSocketOptions.SO_REUSEPORT) {
+            return (T) getOption(SocketOptions.SO_REUSEPORT);
+        } else if (name == StandardSocketOptions.IP_TOS) {
+            return (T) getOption(SocketOptions.IP_TOS);
+        } else if (name == StandardSocketOptions.IP_MULTICAST_IF) {
+            return (T) getOption(SocketOptions.IP_MULTICAST_IF2);
+        } else if (name == StandardSocketOptions.IP_MULTICAST_TTL) {
+            return (T) ((Integer) getTimeToLive());
+        } else if (name == StandardSocketOptions.IP_MULTICAST_LOOP) {
+            return (T) getOption(SocketOptions.IP_MULTICAST_LOOP);
+        } else if (extendedOptions.isOptionSupported(name)) {
+            return (T) extendedOptions.getOption(fd, name);
+        } else {
+            throw new AssertionError("unknown option: " + name);
+        }
     }
 
     protected abstract void datagramSocketCreate() throws SocketException;

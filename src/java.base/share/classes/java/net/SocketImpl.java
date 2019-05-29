@@ -29,8 +29,8 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.io.FileDescriptor;
+import java.util.Objects;
 import java.util.Set;
-
 import sun.net.PlatformSocketImpl;
 
 /**
@@ -75,21 +75,9 @@ public abstract class SocketImpl implements SocketOptions {
     protected int localport;
 
     /**
-     * Whether this is a server or not.
-     */
-    final boolean isServer;
-
-
-    SocketImpl(boolean isServer) {
-        this.isServer = isServer;
-    }
-
-    /**
      * Initialize a new instance of this class
      */
-    public SocketImpl() {
-        this.isServer = false;
-    }
+    public SocketImpl() { }
 
     /**
      * Creates either a stream or a datagram socket.
@@ -376,79 +364,54 @@ public abstract class SocketImpl implements SocketOptions {
     /**
      * Called to set a socket option.
      *
+     * @implSpec
+     * The default implementation of this method first checks that the given
+     * socket option {code name} is not null, then throws {@code
+     * UnsupportedOperationException}. Subclasses should override this method
+     * with an appropriate implementation.
+     *
      * @param <T> The type of the socket option value
      * @param name The socket option
-     *
      * @param value The value of the socket option. A value of {@code null}
      *              may be valid for some options.
      *
      * @throws UnsupportedOperationException if the SocketImpl does not
      *         support the option
-     *
-     * @throws IOException if an I/O error occurs, or if the socket is closed.
+     * @throws IllegalArgumentException if the value is not valid for
+     *         the option
+     * @throws IOException if an I/O error occurs, or if the socket is closed
+     * @throws NullPointerException if name is {@code null}
      *
      * @since 9
      */
     protected <T> void setOption(SocketOption<T> name, T value) throws IOException {
-        if (name == StandardSocketOptions.SO_KEEPALIVE && !isServer) {
-            setOption(SocketOptions.SO_KEEPALIVE, value);
-        } else if (name == StandardSocketOptions.SO_SNDBUF && !isServer) {
-            setOption(SocketOptions.SO_SNDBUF, value);
-        } else if (name == StandardSocketOptions.SO_RCVBUF) {
-            setOption(SocketOptions.SO_RCVBUF, value);
-        } else if (name == StandardSocketOptions.SO_REUSEADDR) {
-            setOption(SocketOptions.SO_REUSEADDR, value);
-        } else if (name == StandardSocketOptions.SO_REUSEPORT &&
-            supportedOptions().contains(name)) {
-            setOption(SocketOptions.SO_REUSEPORT, value);
-        } else if (name == StandardSocketOptions.SO_LINGER && !isServer) {
-            setOption(SocketOptions.SO_LINGER, value);
-        } else if (name == StandardSocketOptions.IP_TOS) {
-            setOption(SocketOptions.IP_TOS, value);
-        } else if (name == StandardSocketOptions.TCP_NODELAY && !isServer) {
-            setOption(SocketOptions.TCP_NODELAY, value);
-        } else {
-            throw new UnsupportedOperationException("unsupported option");
-        }
+        Objects.requireNonNull(name);
+        throw new UnsupportedOperationException("'" + name + "' not supported");
     }
 
     /**
      * Called to get a socket option.
      *
+     * @implSpec
+     * The default implementation of this method first checks that the given
+     * socket option {code name} is not null, then throws {@code
+     * UnsupportedOperationException}. Subclasses should override this method
+     * with an appropriate implementation.
+     *
      * @param <T> The type of the socket option value
      * @param name The socket option
-     *
      * @return the value of the named option
      *
      * @throws UnsupportedOperationException if the SocketImpl does not
-     *         support the option.
-     *
-     * @throws IOException if an I/O error occurs, or if the socket is closed.
+     *         support the option
+     * @throws IOException if an I/O error occurs, or if the socket is closed
+     * @throws NullPointerException if name is {@code null}
      *
      * @since 9
      */
-    @SuppressWarnings("unchecked")
     protected <T> T getOption(SocketOption<T> name) throws IOException {
-        if (name == StandardSocketOptions.SO_KEEPALIVE && !isServer) {
-            return (T)getOption(SocketOptions.SO_KEEPALIVE);
-        } else if (name == StandardSocketOptions.SO_SNDBUF && !isServer) {
-            return (T)getOption(SocketOptions.SO_SNDBUF);
-        } else if (name == StandardSocketOptions.SO_RCVBUF) {
-            return (T)getOption(SocketOptions.SO_RCVBUF);
-        } else if (name == StandardSocketOptions.SO_REUSEADDR) {
-            return (T)getOption(SocketOptions.SO_REUSEADDR);
-        } else if (name == StandardSocketOptions.SO_REUSEPORT &&
-            supportedOptions().contains(name)) {
-            return (T)getOption(SocketOptions.SO_REUSEPORT);
-        } else if (name == StandardSocketOptions.SO_LINGER && !isServer) {
-            return (T)getOption(SocketOptions.SO_LINGER);
-        } else if (name == StandardSocketOptions.IP_TOS) {
-            return (T)getOption(SocketOptions.IP_TOS);
-        } else if (name == StandardSocketOptions.TCP_NODELAY && !isServer) {
-            return (T)getOption(SocketOptions.TCP_NODELAY);
-        } else {
-            throw new UnsupportedOperationException("unsupported option");
-        }
+        Objects.requireNonNull(name);
+        throw new UnsupportedOperationException("'" + name + "' not supported");
     }
 
     /**
@@ -464,37 +427,19 @@ public abstract class SocketImpl implements SocketOptions {
         } catch (IOException ignore) { }
     }
 
-    private static final Set<SocketOption<?>> socketOptions;
-
-    private static final Set<SocketOption<?>> serverSocketOptions;
-
-    static {
-        socketOptions = Set.of(StandardSocketOptions.SO_KEEPALIVE,
-                               StandardSocketOptions.SO_SNDBUF,
-                               StandardSocketOptions.SO_RCVBUF,
-                               StandardSocketOptions.SO_REUSEADDR,
-                               StandardSocketOptions.SO_LINGER,
-                               StandardSocketOptions.IP_TOS,
-                               StandardSocketOptions.TCP_NODELAY);
-
-        serverSocketOptions = Set.of(StandardSocketOptions.SO_RCVBUF,
-                                     StandardSocketOptions.SO_REUSEADDR,
-                                     StandardSocketOptions.IP_TOS);
-    }
-
     /**
      * Returns a set of SocketOptions supported by this impl
      * and by this impl's socket (Socket or ServerSocket)
+     *
+     * @implSpec
+     * The default implementation of this method returns an empty set.
+     * Subclasses should override this method with an appropriate implementation.
      *
      * @return a Set of SocketOptions
      *
      * @since 9
      */
     protected Set<SocketOption<?>> supportedOptions() {
-        if (!isServer) {
-            return socketOptions;
-        } else {
-            return serverSocketOptions;
-        }
+        return Set.of();
     }
 }

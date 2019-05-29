@@ -222,6 +222,8 @@ class DatagramChannelImpl
         Objects.requireNonNull(name);
         if (!supportedOptions().contains(name))
             throw new UnsupportedOperationException("'" + name + "' not supported");
+        if (!name.type().isInstance(value))
+            throw new IllegalArgumentException("Invalid value '" + value + "'");
 
         synchronized (stateLock) {
             ensureOpen();
@@ -236,8 +238,6 @@ class DatagramChannelImpl
             }
 
             if (name == StandardSocketOptions.IP_MULTICAST_IF) {
-                if (value == null)
-                    throw new IllegalArgumentException("Cannot set IP_MULTICAST_IF to 'null'");
                 NetworkInterface interf = (NetworkInterface)value;
                 if (family == StandardProtocolFamily.INET6) {
                     int index = interf.getIndex();

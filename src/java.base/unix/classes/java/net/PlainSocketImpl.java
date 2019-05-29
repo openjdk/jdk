@@ -25,7 +25,6 @@
 package java.net;
 
 import java.io.IOException;
-import java.io.FileDescriptor;
 import java.util.Set;
 import java.util.HashSet;
 import sun.net.ext.ExtendedSocketOptions;
@@ -47,50 +46,6 @@ class PlainSocketImpl extends AbstractPlainSocketImpl
      */
     PlainSocketImpl(boolean isServer) {
         super(isServer);
-    }
-
-    static final ExtendedSocketOptions extendedOptions =
-            ExtendedSocketOptions.getInstance();
-
-    protected <T> void setOption(SocketOption<T> name, T value) throws IOException {
-        if (isClosedOrPending()) {
-            throw new SocketException("Socket closed");
-        }
-        if (supportedOptions().contains(name)) {
-            if (extendedOptions.isOptionSupported(name)) {
-                extendedOptions.setOption(fd, name, value);
-            } else {
-                super.setOption(name, value);
-            }
-        } else {
-            throw new UnsupportedOperationException("unsupported option");
-        }
-    }
-
-    @SuppressWarnings("unchecked")
-    protected <T> T getOption(SocketOption<T> name) throws IOException {
-        if (isClosedOrPending()) {
-            throw new SocketException("Socket closed");
-        }
-        if (supportedOptions().contains(name)) {
-            if (extendedOptions.isOptionSupported(name)) {
-                return (T) extendedOptions.getOption(fd, name);
-            } else {
-                return super.getOption(name);
-            }
-        } else {
-            throw new UnsupportedOperationException("unsupported option");
-        }
-    }
-
-    protected Set<SocketOption<?>> supportedOptions() {
-        HashSet<SocketOption<?>> options = new HashSet<>(super.supportedOptions());
-        if (isServer) {
-            options.addAll(ExtendedSocketOptions.serverSocketOptions());
-        } else {
-            options.addAll(ExtendedSocketOptions.clientSocketOptions());
-        }
-        return options;
     }
 
     protected void socketSetOption(int opt, boolean b, Object val) throws SocketException {

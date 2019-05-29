@@ -1025,6 +1025,9 @@ class ServerSocket implements java.io.Closeable {
     public <T> ServerSocket setOption(SocketOption<T> name, T value)
         throws IOException
     {
+        Objects.requireNonNull(name);
+        if (isClosed())
+            throw new SocketException("Socket is closed");
         getImpl().setOption(name, value);
         return this;
     }
@@ -1053,6 +1056,9 @@ class ServerSocket implements java.io.Closeable {
      * @since 9
      */
     public <T> T getOption(SocketOption<T> name) throws IOException {
+        Objects.requireNonNull(name);
+        if (isClosed())
+            throw new SocketException("Socket is closed");
         return getImpl().getOption(name);
     }
 
