@@ -26,6 +26,7 @@
 #include "code/nmethod.hpp"
 #include "gc/shenandoah/shenandoahHeap.inline.hpp"
 #include "gc/shenandoah/shenandoahCodeRoots.hpp"
+#include "gc/shenandoah/shenandoahUtils.hpp"
 #include "memory/resourceArea.hpp"
 #include "memory/universe.hpp"
 
@@ -121,18 +122,21 @@ public:
 };
 
 GrowableArray<ShenandoahNMethod*>* ShenandoahCodeRoots::_recorded_nms;
+ShenandoahLock                     ShenandoahCodeRoots::_recorded_nms_lock;
 
 void ShenandoahCodeRoots::initialize() {
   _recorded_nms = new (ResourceObj::C_HEAP, mtGC) GrowableArray<ShenandoahNMethod*>(100, true, mtGC);
 }
 
 void ShenandoahCodeRoots::add_nmethod(nmethod* nm) {
-  assert(CodeCache_lock->owned_by_self(), "Must own CodeCache_lock");
   switch (ShenandoahCodeRootsStyle) {
     case 0:
     case 1:
       break;
     case 2: {
+      assert_locked_or_safepoint(CodeCache_lock);
+      ShenandoahLocker locker(CodeCache_lock->owned_by_self() ? NULL : &_recorded_nms_lock);
+
       ShenandoahNMethodOopDetector detector;
       nm->oops_do(&detector);
 
@@ -156,13 +160,15 @@ void ShenandoahCodeRoots::add_nmethod(nmethod* nm) {
 };
 
 void ShenandoahCodeRoots::remove_nmethod(nmethod* nm) {
-  assert(CodeCache_lock->owned_by_self(), "Must own CodeCache_lock");
   switch (ShenandoahCodeRootsStyle) {
     case 0:
     case 1: {
       break;
     }
     case 2: {
+      assert_locked_or_safepoint(CodeCache_lock);
+      ShenandoahLocker locker(CodeCache_lock->owned_by_self() ? NULL : &_recorded_nms_lock);
+
       ShenandoahNMethodOopDetector detector;
       nm->oops_do(&detector, /* allow_zombie = */ true);
 

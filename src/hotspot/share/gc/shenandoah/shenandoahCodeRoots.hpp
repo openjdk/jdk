@@ -26,6 +26,7 @@
 
 #include "code/codeCache.hpp"
 #include "gc/shenandoah/shenandoahSharedVariables.hpp"
+#include "gc/shenandoah/shenandoahLock.hpp"
 #include "memory/allocation.hpp"
 #include "memory/iterator.hpp"
 
@@ -132,6 +133,7 @@ public:
 
 private:
   static GrowableArray<ShenandoahNMethod*>* _recorded_nms;
+  static ShenandoahLock                     _recorded_nms_lock;
 };
 
 #endif // SHARE_GC_SHENANDOAH_SHENANDOAHCODEROOTS_HPP
