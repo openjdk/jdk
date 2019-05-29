@@ -28,67 +28,10 @@
 #include "utilities/globalDefinitions.hpp"
 
 class ShenandoahForwarding {
-  /*
-   * Notes:
-   *
-   *  a. It is important to have byte_offset and word_offset return constant
-   *     expressions, because that will allow to constant-fold forwarding ptr
-   *     accesses. This is not a problem in JIT compilers that would generate
-   *     the code once, but it is problematic in GC hotpath code.
-   *
-   *  b. With filler object mechanics, we may need to allocate more space for
-   *     the forwarding ptr to meet alignment requirements for objects. This
-   *     means *_offset and *_size calls are NOT interchangeable. The accesses
-   *     to forwarding ptrs should always be via *_offset. Storage size
-   *     calculations should always be via *_size.
-   */
-
 public:
-  /* Offset from the object start, in HeapWords. */
-  static inline int word_offset() {
-    return -1; // exactly one HeapWord
-  }
-
-  /* Offset from the object start, in bytes. */
-  static inline int byte_offset() {
-    return -HeapWordSize; // exactly one HeapWord
-  }
-
-  /* Allocated size, in HeapWords. */
-  static inline uint word_size() {
-    return (uint) MinObjAlignment;
-  }
-
-  /* Allocated size, in bytes */
-  static inline uint byte_size() {
-    return (uint) MinObjAlignmentInBytes;
-  }
-
-  /* Assert basic stuff once at startup. */
-  static void initial_checks() {
-    guarantee (MinObjAlignment > 0, "sanity, word_size is correct");
-    guarantee (MinObjAlignmentInBytes > 0, "sanity, byte_size is correct");
-  }
-
-  /* Initializes forwarding pointer (to self).
-   */
-  static inline void initialize(oop obj);
-
   /* Gets forwardee from the given object.
    */
   static inline oop get_forwardee(oop obj);
-
-  /* Tries to atomically update forwardee in $holder object to $update.
-   * Assumes $holder points at itself.
-   * Asserts $holder is in from-space.
-   * Asserts $update is in to-space.
-   */
-  static inline oop try_update_forwardee(oop obj, oop update);
-
-  /* Sets raw value for forwardee slot.
-   * THIS IS DANGEROUS: USERS HAVE TO INITIALIZE/SET FORWARDEE BACK AFTER THEY ARE DONE.
-   */
-  static inline void set_forwardee_raw(oop obj, HeapWord* update);
 
   /* Returns the raw value from forwardee slot.
    */
@@ -99,8 +42,21 @@ public:
    */
   static inline HeapWord* get_forwardee_raw_unchecked(oop obj);
 
-private:
-  static inline HeapWord** forward_ptr_addr(oop obj);
+  /**
+   * Returns true if the object is forwarded, false otherwise.
+   */
+  static inline bool is_forwarded(oop obj);
+
+  /* Tries to atomically update forwardee in $holder object to $update.
+   * Assumes $holder points at itself.
+   * Asserts $holder is in from-space.
+   * Asserts $update is in to-space.
+   *
+   * Returns the new object 'update' upon success, or
+   * the new forwardee that a competing thread installed.
+   */
+  static inline oop try_update_forwardee(oop obj, oop update);
+
 };
 
 #endif // SHARE_GC_SHENANDOAH_SHENANDOAHFORWARDING_HPP

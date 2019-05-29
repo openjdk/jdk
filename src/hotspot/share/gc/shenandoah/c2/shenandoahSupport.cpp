@@ -1455,7 +1455,7 @@ void ShenandoahBarrierC2Support::pin_and_expand(PhaseIdealLoop* phase) {
     assert(val->bottom_type()->make_oopptr(), "need oop");
     assert(val->bottom_type()->make_oopptr()->const_oop() == NULL, "expect non-constant");
 
-    enum { _heap_stable = 1, _not_cset, _not_equal, _evac_path, _null_path, PATH_LIMIT };
+    enum { _heap_stable = 1, _not_cset, _fwded, _evac_path, _null_path, PATH_LIMIT };
     Node* region = new RegionNode(PATH_LIMIT);
     Node* val_phi = new PhiNode(region, uncasted_val->bottom_type()->is_oopptr());
     Node* raw_mem_phi = PhiNode::make(region, raw_mem, Type::MEMORY, TypeRawPtr::BOTTOM);
@@ -1505,36 +1505,48 @@ void ShenandoahBarrierC2Support::pin_and_expand(PhaseIdealLoop* phase) {
       IfNode* iff = unc_ctrl->in(0)->as_If();
       phase->igvn().replace_input_of(iff, 1, phase->igvn().intcon(1));
     }
-    Node* addr = new AddPNode(new_val, uncasted_val, phase->igvn().MakeConX(ShenandoahForwarding::byte_offset()));
+    Node* addr = new AddPNode(new_val, uncasted_val, phase->igvn().MakeConX(oopDesc::mark_offset_in_bytes()));
     phase->register_new_node(addr, ctrl);
-    assert(val->bottom_type()->isa_oopptr(), "what else?");
-    const TypePtr* obj_type =  val->bottom_type()->is_oopptr();
-    const TypePtr* adr_type = TypeRawPtr::BOTTOM;
-    Node* fwd = new LoadPNode(ctrl, raw_mem, addr, adr_type, obj_type, MemNode::unordered);
-    phase->register_new_node(fwd, ctrl);
+    assert(new_val->bottom_type()->isa_oopptr(), "what else?");
+    Node* markword = new LoadXNode(ctrl, raw_mem, addr, TypeRawPtr::BOTTOM, TypeX_X, MemNode::unordered);
+    phase->register_new_node(markword, ctrl);
+
+    // Test if object is forwarded. This is the case if lowest two bits are set.
+    Node* masked = new AndXNode(markword, phase->igvn().MakeConX(markOopDesc::lock_mask_in_place));
+    phase->register_new_node(masked, ctrl);
+    Node* cmp = new CmpXNode(masked, phase->igvn().MakeConX(markOopDesc::marked_value));
+    phase->register_new_node(cmp, ctrl);
 
     // Only branch to LRB stub if object is not forwarded; otherwise reply with fwd ptr
-    Node* cmp = new CmpPNode(fwd, new_val);
-    phase->register_new_node(cmp, ctrl);
-    Node* bol = new BoolNode(cmp, BoolTest::eq);
+    Node* bol = new BoolNode(cmp, BoolTest::eq); // Equals 3 means it's forwarded
     phase->register_new_node(bol, ctrl);
 
-    IfNode* iff = new IfNode(ctrl, bol, PROB_UNLIKELY(0.999), COUNT_UNKNOWN);
-    if (reg2_ctrl == NULL) reg2_ctrl = iff;
+    IfNode* iff = new IfNode(ctrl, bol, PROB_LIKELY(0.999), COUNT_UNKNOWN);
     phase->register_control(iff, loop, ctrl);
-    Node* if_not_eq = new IfFalseNode(iff);
-    phase->register_control(if_not_eq, loop, iff);
-    Node* if_eq = new IfTrueNode(iff);
-    phase->register_control(if_eq, loop, iff);
+    Node* if_fwd = new IfTrueNode(iff);
+    phase->register_control(if_fwd, loop, iff);
+    Node* if_not_fwd = new IfFalseNode(iff);
+    phase->register_control(if_not_fwd, loop, iff);
+
+    // Decode forward pointer: since we already have the lowest bits, we can just subtract them
+    // from the mark word without the need for large immediate mask.
+    Node* masked2 = new SubXNode(markword, masked);
+    phase->register_new_node(masked2, if_fwd);
+    Node* fwdraw = new CastX2PNode(masked2);
+    fwdraw->init_req(0, if_fwd);
+    phase->register_new_node(fwdraw, if_fwd);
+    Node* fwd = new CheckCastPPNode(NULL, fwdraw, val->bottom_type());
+    phase->register_new_node(fwd, if_fwd);
 
     // Wire up not-equal-path in slots 3.
-    region->init_req(_not_equal, if_not_eq);
-    val_phi->init_req(_not_equal, fwd);
-    raw_mem_phi->init_req(_not_equal, raw_mem);
+    region->init_req(_fwded, if_fwd);
+    val_phi->init_req(_fwded, fwd);
+    raw_mem_phi->init_req(_fwded, raw_mem);
 
     // Call lrb-stub and wire up that path in slots 4
     Node* result_mem = NULL;
-    ctrl = if_eq;
+    ctrl = if_not_fwd;
+    fwd = new_val;
     call_lrb_stub(ctrl, fwd, result_mem, raw_mem, phase);
     region->init_req(_evac_path, ctrl);
     val_phi->init_req(_evac_path, fwd);

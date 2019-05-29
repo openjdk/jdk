@@ -138,7 +138,7 @@ private:
           // skip
           break;
         case ShenandoahVerifier::_verify_liveness_complete:
-          Atomic::add(obj->size() + ShenandoahForwarding::word_size(), &_ld[obj_reg->region_number()]);
+          Atomic::add((uint) obj->size(), &_ld[obj_reg->region_number()]);
           // fallthrough for fast failure for un-live regions:
         case ShenandoahVerifier::_verify_liveness_conservative:
           check(ShenandoahAsserts::_safe_oop, obj, obj_reg->has_live(),
@@ -533,7 +533,7 @@ public:
 
   virtual void work_humongous(ShenandoahHeapRegion *r, ShenandoahVerifierStack& stack, ShenandoahVerifyOopClosure& cl) {
     size_t processed = 0;
-    HeapWord* obj = r->bottom() + ShenandoahForwarding::word_size();
+    HeapWord* obj = r->bottom();
     if (_heap->complete_marking_context()->is_marked((oop)obj)) {
       verify_and_follow(obj, stack, cl, &processed);
     }
@@ -547,12 +547,12 @@ public:
 
     // Bitmaps, before TAMS
     if (tams > r->bottom()) {
-      HeapWord* start = r->bottom() + ShenandoahForwarding::word_size();
+      HeapWord* start = r->bottom();
       HeapWord* addr = mark_bit_map->get_next_marked_addr(start, tams);
 
       while (addr < tams) {
         verify_and_follow(addr, stack, cl, &processed);
-        addr += ShenandoahForwarding::word_size();
+        addr += 1;
         if (addr < tams) {
           addr = mark_bit_map->get_next_marked_addr(addr, tams);
         }
@@ -562,11 +562,11 @@ public:
     // Size-based, after TAMS
     {
       HeapWord* limit = r->top();
-      HeapWord* addr = tams + ShenandoahForwarding::word_size();
+      HeapWord* addr = tams;
 
       while (addr < limit) {
         verify_and_follow(addr, stack, cl, &processed);
-        addr += oop(addr)->size() + ShenandoahForwarding::word_size();
+        addr += oop(addr)->size();
       }
     }
 

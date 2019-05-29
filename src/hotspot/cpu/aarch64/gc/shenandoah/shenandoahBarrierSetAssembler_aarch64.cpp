@@ -211,18 +211,46 @@ void ShenandoahBarrierSetAssembler::satb_write_barrier_pre(MacroAssembler* masm,
   __ bind(done);
 }
 
-void ShenandoahBarrierSetAssembler::resolve_forward_pointer(MacroAssembler* masm, Register dst) {
+void ShenandoahBarrierSetAssembler::resolve_forward_pointer(MacroAssembler* masm, Register dst, Register tmp) {
   assert(ShenandoahLoadRefBarrier || ShenandoahCASBarrier, "Should be enabled");
   Label is_null;
   __ cbz(dst, is_null);
-  resolve_forward_pointer_not_null(masm, dst);
+  resolve_forward_pointer_not_null(masm, dst, tmp);
   __ bind(is_null);
 }
 
-// IMPORTANT: This must preserve all registers, even rscratch1 and rscratch2.
-void ShenandoahBarrierSetAssembler::resolve_forward_pointer_not_null(MacroAssembler* masm, Register dst) {
+// IMPORTANT: This must preserve all registers, even rscratch1 and rscratch2, except those explicitely
+// passed in.
+void ShenandoahBarrierSetAssembler::resolve_forward_pointer_not_null(MacroAssembler* masm, Register dst, Register tmp) {
   assert(ShenandoahLoadRefBarrier || ShenandoahCASBarrier, "Should be enabled");
-  __ ldr(dst, Address(dst, ShenandoahForwarding::byte_offset()));
+  // The below loads the mark word, checks if the lowest two bits are
+  // set, and if so, clear the lowest two bits and copy the result
+  // to dst. Otherwise it leaves dst alone.
+  // Implementing this is surprisingly awkward. I do it here by:
+  // - Inverting the mark word
+  // - Test lowest two bits == 0
+  // - If so, set the lowest two bits
+  // - Invert the result back, and copy to dst
+
+  bool borrow_reg = (tmp == noreg);
+  if (borrow_reg) {
+    // No free registers available. Make one useful.
+    tmp = rscratch1;
+    __ push(RegSet::of(tmp), sp);
+  }
+
+  Label done;
+  __ ldr(tmp, Address(dst, oopDesc::mark_offset_in_bytes()));
+  __ eon(tmp, tmp, zr);
+  __ ands(zr, tmp, markOopDesc::lock_mask_in_place);
+  __ br(Assembler::NE, done);
+  __ orr(tmp, tmp, markOopDesc::marked_value);
+  __ eon(dst, tmp, zr);
+  __ bind(done);
+
+  if (borrow_reg) {
+    __ pop(RegSet::of(tmp), sp);
+  }
 }
 
 void ShenandoahBarrierSetAssembler::load_reference_barrier_not_null(MacroAssembler* masm, Register dst, Register tmp) {
@@ -341,40 +369,6 @@ void ShenandoahBarrierSetAssembler::store_at(MacroAssembler* masm, DecoratorSet 
     BarrierSetAssembler::store_at(masm, decorators, type, Address(r3, 0), val, noreg, noreg);
   }
 
-}
-
-void ShenandoahBarrierSetAssembler::tlab_allocate(MacroAssembler* masm, Register obj,
-                                                  Register var_size_in_bytes,
-                                                  int con_size_in_bytes,
-                                                  Register t1,
-                                                  Register t2,
-                                                  Label& slow_case) {
-
-  assert_different_registers(obj, t2);
-  assert_different_registers(obj, var_size_in_bytes);
-  Register end = t2;
-
-  __ ldr(obj, Address(rthread, JavaThread::tlab_top_offset()));
-  if (var_size_in_bytes == noreg) {
-    __ lea(end, Address(obj, (int) (con_size_in_bytes + ShenandoahForwarding::byte_size())));
-  } else {
-    __ add(var_size_in_bytes, var_size_in_bytes, ShenandoahForwarding::byte_size());
-    __ lea(end, Address(obj, var_size_in_bytes));
-  }
-  __ ldr(rscratch1, Address(rthread, JavaThread::tlab_end_offset()));
-  __ cmp(end, rscratch1);
-  __ br(Assembler::HI, slow_case);
-
-  // update the tlab top pointer
-  __ str(end, Address(rthread, JavaThread::tlab_top_offset()));
-
-  __ add(obj, obj, ShenandoahForwarding::byte_size());
-  __ str(obj, Address(obj, ShenandoahForwarding::byte_offset()));
-
-  // recover var_size_in_bytes if necessary
-  if (var_size_in_bytes == end) {
-    __ sub(var_size_in_bytes, var_size_in_bytes, obj);
-  }
 }
 
 void ShenandoahBarrierSetAssembler::cmpxchg_oop(MacroAssembler* masm, Register addr, Register expected, Register new_val,
@@ -570,7 +564,7 @@ address ShenandoahBarrierSetAssembler::generate_shenandoah_lrb(StubCodeGenerator
   __ bind(work);
 
   __ mov(rscratch2, r0);
-  resolve_forward_pointer_not_null(cgen->assembler(), r0);
+  resolve_forward_pointer_not_null(cgen->assembler(), r0, rscratch1);
   __ cmp(rscratch2, r0);
   __ br(Assembler::NE, done);
 
