@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 8058202 8212081
+ * @bug 8058202 8212081 8224012
  * @summary Test java.lang.Object methods on AnnotatedType objects.
  */
 
@@ -72,6 +72,8 @@ public class TestObjectMethods {
         testGetAnnotations(AnnotatedTypeHost.class, true);
 
         testWildcards();
+
+        testFbounds();
 
         if (errors > 0) {
             throw new RuntimeException(errors + " errors");
@@ -311,6 +313,23 @@ public class TestObjectMethods {
                  getAnnotatedActualTypeArguments()[0] );
         } catch (Exception e) {
             throw new RuntimeException(e);
+        }
+    }
+
+    static void testFbounds() {
+        // Make sure equals and hashCode work fine for a type
+        // involving an F-bound, in particular Comparable<E> in
+        // java.lang.Enum:
+        //
+        // class Enum<E extends Enum<E>>
+        // implements Constable, Comparable<E>, Serializable
+
+        AnnotatedType[] types = Enum.class.getAnnotatedInterfaces();
+
+        for (int i = 0; i < types.length; i ++) {
+            for (int j = 0; j < types.length; j ++) {
+                checkTypesForEquality(types[i], types[j], i == j);
+            }
         }
     }
 
