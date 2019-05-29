@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,7 +28,6 @@
 package javax.xml.crypto.dsig.keyinfo;
 
 import java.security.KeyException;
-import java.security.KeyStore;
 import java.security.PublicKey;
 import java.security.interfaces.DSAPublicKey;
 import java.security.interfaces.RSAPublicKey;
@@ -47,6 +46,8 @@ import javax.xml.crypto.XMLStructure;
  *      &lt;choice&gt;
  *        &lt;element ref="ds:DSAKeyValue"/&gt;
  *        &lt;element ref="ds:RSAKeyValue"/&gt;
+ *        &lt;!-- &lt;element ref="dsig11:ECKeyValue"/&gt; --&gt;
+ *        &lt;!-- ECC keys (XMLDsig 1.1) will use the any element --&gt;
  *        &lt;any namespace="##other" processContents="lax"/&gt;
  *      &lt;/choice&gt;
  *    &lt;/complexType&gt;
@@ -75,8 +76,30 @@ import javax.xml.crypto.XMLStructure;
  *        &lt;element name="Exponent" type="ds:CryptoBinary"/&gt;
  *      &lt;/sequence&gt;
  *    &lt;/complexType&gt;
+ *
+ *    &lt;complexType name="ECKeyValueType"&gt;
+ *      &lt;sequence&gt;
+ *        &lt;choice&gt;
+ *          &lt;element name="ECParameters" type="dsig11:ECParametersType" /&gt;
+ *          &lt;element name="NamedCurve" type="dsig11:NamedCurveType" /&gt;
+ *        &lt;/choice&gt;
+ *        &lt;element name="PublicKey" type="dsig11:ECPointType" /&gt;
+ *      &lt;/sequence&gt;
+ *      &lt;attribute name="Id" type="ID" use="optional" /&gt;
+ *    &lt;/complexType&gt;
+ *
+ *    &lt;complexType name="NamedCurveType"&gt;
+ *      &lt;attribute name="URI" type="anyURI" use="required" /&gt;
+ *    &lt;/complexType&gt;
+ *
+ *    &lt;simpleType name="ECPointType"&gt;
+ *      &lt;restriction base="ds:CryptoBinary" /&gt;
+ *    &lt;/simpleType&gt;
  * </pre>
- * A <code>KeyValue</code> instance may be created by invoking the
+ * See section 4.5.2.3.1 of the W3C Recommendation for the definition
+ * of ECParametersType.
+ *
+ * <p>A <code>KeyValue</code> instance may be created by invoking the
  * {@link KeyInfoFactory#newKeyValue newKeyValue} method of the
  * {@link KeyInfoFactory} class, and passing it a {@link
  * java.security.PublicKey} representing the value of the public key. Here is
@@ -122,6 +145,16 @@ public interface KeyValue extends XMLStructure {
      */
     final static String RSA_TYPE =
         "http://www.w3.org/2000/09/xmldsig#RSAKeyValue";
+
+    /**
+     * URI identifying the EC KeyValue KeyInfo type:
+     * http://www.w3.org/2009/xmldsig11#ECKeyValue. This can be specified as
+     * the value of the <code>type</code> parameter of the
+     * {@link RetrievalMethod} class to describe a remote
+     * <code>ECKeyValue</code> structure.
+     */
+    final static String EC_TYPE =
+        "http://www.w3.org/2009/xmldsig11#ECKeyValue";
 
     /**
      * Returns the public key of this <code>KeyValue</code>.
