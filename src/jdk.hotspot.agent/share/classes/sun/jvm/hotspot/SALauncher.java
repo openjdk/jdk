@@ -45,30 +45,38 @@ public class SALauncher {
         return false;
     }
 
-    private static boolean commonHelp() {
+    private static boolean commonHelp(String mode) {
         // --pid <pid>
         // --exe <exe>
         // --core <core>
-        System.out.println("    --exe\t<executable image name>");
-        System.out.println("    --core\t<path to coredump>");
-        System.out.println("    --pid\t<pid of process to attach>");
+        System.out.println("    --pid <pid>      \tTo attach to and operate on the given live process.");
+        System.out.println("    --core <corefile>\tTo operate on the given core file.");
+        System.out.println("    --exe <executable for corefile>");
+        System.out.println();
+        System.out.println("    The --core and --exe options must be set together to give the core");
+        System.out.println("    file, and associated executable, to operate on. Otherwise the --pid");
+        System.out.println("    option can be set to operate on a live process.");
+        System.out.println("    The arguments for --exe and --core can use absolute or relative paths.");
+        System.out.println();
+        System.out.println("    Examples: jhsdb " + mode + " --pid 1234");
+        System.out.println("          or  jhsdb " + mode + " --core ./core.1234 --exe ./myexe");
         return false;
     }
 
     private static boolean debugdHelp() {
         // [options] <pid> [server-id]
         // [options] <executable> <core> [server-id]
-        System.out.println("    --serverid\t<unique id for this debug server>");
-        return commonHelp();
+        System.out.println("    --serverid <id>  \tA unique identifier for this debug server.");
+        return commonHelp("debugd");
     }
 
     private static boolean jinfoHelp() {
         // --flags -> -flags
         // --sysprops -> -sysprops
-        System.out.println("    --flags\tto print VM flags");
-        System.out.println("    --sysprops\tto print Java System properties");
-        System.out.println("    <no option>\tto print both of the above");
-        return commonHelp();
+        System.out.println("    --flags          \tTo print VM flags.");
+        System.out.println("    --sysprops       \tTo print Java System properties.");
+        System.out.println("    <no option>      \tTo print both of the above.");
+        return commonHelp("jinfo");
     }
 
     private static boolean jmapHelp() {
@@ -78,27 +86,27 @@ public class SALauncher {
         // --clstats -> -clstats
         // --finalizerinfo -> -finalizerinfo
 
-        System.out.println("    <no option>\tto print same info as Solaris pmap");
-        System.out.println("    --heap\tto print java heap summary");
-        System.out.println("    --binaryheap\tto dump java heap in hprof binary format");
-        System.out.println("    --dumpfile\tname of the dump file");
-        System.out.println("    --histo\tto print histogram of java object heap");
-        System.out.println("    --clstats\tto print class loader statistics");
-        System.out.println("    --finalizerinfo\tto print information on objects awaiting finalization");
-        return commonHelp();
+        System.out.println("    <no option>      \tTo print same info as Solaris pmap.");
+        System.out.println("    --heap           \tTo print java heap summary.");
+        System.out.println("    --binaryheap     \tTo dump java heap in hprof binary format.");
+        System.out.println("    --dumpfile <name>\tThe name of the dump file.");
+        System.out.println("    --histo          \tTo print histogram of java object heap.");
+        System.out.println("    --clstats        \tTo print class loader statistics.");
+        System.out.println("    --finalizerinfo  \tTo print information on objects awaiting finalization.");
+        return commonHelp("jmap");
     }
 
     private static boolean jstackHelp() {
         // --locks -> -l
         // --mixed -> -m
-        System.out.println("    --locks\tto print java.util.concurrent locks");
-        System.out.println("    --mixed\tto print both java and native frames (mixed mode)");
-        return commonHelp();
+        System.out.println("    --locks          \tTo print java.util.concurrent locks.");
+        System.out.println("    --mixed          \tTo print both Java and native frames (mixed mode).");
+        return commonHelp("jstack");
     }
 
     private static boolean jsnapHelp() {
-        System.out.println("    --all\tto print all performance counters");
-        return commonHelp();
+        System.out.println("    --all            \tTo print all performance counters.");
+        return commonHelp("jsnap");
     }
 
     private static boolean toolHelp(String toolName) {
@@ -117,8 +125,11 @@ public class SALauncher {
         if (toolName.equals("debugd")) {
             return debugdHelp();
         }
-        if (toolName.equals("hsdb") || toolName.equals("clhsdb")) {
-            return commonHelp();
+        if (toolName.equals("hsdb")) {
+            return commonHelp("hsdb");
+        }
+        if (toolName.equals("clhsdb")) {
+            return commonHelp("clhsdb");
         }
         return launcherHelp();
     }
