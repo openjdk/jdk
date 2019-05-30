@@ -38,6 +38,7 @@
  *        jdk.test.lib.process.*
  *        AcceptCauseFileDescriptorLeak
  * @run main/othervm AcceptCauseFileDescriptorLeak root
+ * @run main/othervm -Djdk.net.usePlainSocketImpl AcceptCauseFileDescriptorLeak root
  */
 
 import java.io.IOException;

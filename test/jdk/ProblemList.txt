@@ -600,6 +600,9 @@ java/net/DatagramSocket/SendDatagramToBadAddress.java           7143960 macosx-a
 
 java/net/ServerSocket/AcceptInheritHandle.java                  8211854 aix-ppc64
 
+java/net/Inet6Address/B6206527.java                             8216417 macosx-all
+java/net/ipv6tests/B6521014.java                                8216417 macosx-all
+
 ############################################################################
 
 # jdk_nio
@@ -862,6 +865,7 @@ javax/rmi/ssl/SSLSocketParametersTest.sh                        8162906 generic-
 jdk/jfr/event/io/TestInstrumentation.java                       8202142    generic-all
 jdk/jfr/api/recording/event/TestPeriod.java                     8215890    generic-all
 
+jdk/jfr/event/io/EvilInstrument.java                            8221331    generic-all
 
 ############################################################################
 

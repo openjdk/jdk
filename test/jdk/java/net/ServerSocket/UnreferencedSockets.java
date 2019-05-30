@@ -27,6 +27,7 @@
  * @modules java.management java.base/java.io:+open java.base/java.net:+open
  * @run main/othervm UnreferencedSockets
  * @run main/othervm -Djava.net.preferIPv4Stack=true UnreferencedSockets
+ * @run main/othervm -Djdk.net.usePlainSocketImpl UnreferencedSockets
  * @summary Check that unreferenced sockets are closed
  */
 
