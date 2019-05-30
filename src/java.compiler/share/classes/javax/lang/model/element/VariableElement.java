@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,6 +26,8 @@
 package javax.lang.model.element;
 
 import javax.lang.model.util.Elements;
+import javax.lang.model.type.TypeMirror;
+import javax.lang.model.type.TypeKind;
 
 /**
  * Represents a field, {@code enum} constant, method or constructor
@@ -38,6 +40,19 @@ import javax.lang.model.util.Elements;
  * @since 1.6
  */
 public interface VariableElement extends Element {
+    /**
+     * Returns the type of this variable.
+     *
+     * Note that the types of variables range over {@linkplain
+     * TypeKind many kinds} of types, including primitive types,
+     * declared types, and array types, among others.
+     *
+     * @return the type of this variable
+     *
+     * @see TypeKind
+     */
+    @Override
+    TypeMirror asType();
 
     /**
      * Returns the value of this variable if this is a {@code final}

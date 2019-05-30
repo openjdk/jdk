@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -59,6 +59,28 @@ import javax.lang.model.util.*;
  * @since 1.6
  */
 public interface TypeElement extends Element, Parameterizable, QualifiedNameable {
+    /**
+     * Returns the type defined by this type element, returning the
+     * <i>prototypical</i> type for an element representing a generic type.
+     *
+     * <p>A generic element defines a family of types, not just one.
+     * If this is a generic element, a prototypical type is
+     * returned which has the element's invocation on the
+     * type variables corresponding to its own formal type parameters.
+     * For example,
+     * for the generic class element {@code C<N extends Number>},
+     * the parameterized type {@code C<N>} is returned.
+     * The {@link Types} utility interface has more general methods
+     * for obtaining the full range of types defined by an element.
+     *
+     * @return the type defined by this type element
+     *
+     * @see Types#asMemberOf(DeclaredType, Element)
+     * @see Types#getDeclaredType(TypeElement, TypeMirror...)
+     */
+    @Override
+    TypeMirror asType();
+
     /**
      * Returns the fields, methods, constructors, and member types
      * that are directly declared in this class or interface.
