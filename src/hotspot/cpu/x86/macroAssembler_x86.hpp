@@ -317,6 +317,8 @@ class MacroAssembler: public Assembler {
   void load_mirror(Register mirror, Register method, Register tmp = rscratch2);
   void load_method_holder_cld(Register rresult, Register rmethod);
 
+  void load_method_holder(Register holder, Register method);
+
   // oop manipulations
   void load_klass(Register dst, Register src);
   void store_klass(Register dst, Register src);
@@ -580,6 +582,11 @@ class MacroAssembler: public Assembler {
                            Register super_klass,
                            Register temp_reg,
                            Label& L_success);
+
+  void clinit_barrier(Register klass,
+                      Register thread,
+                      Label* L_fast_path = NULL,
+                      Label* L_slow_path = NULL);
 
   // method handles (JSR 292)
   Address argument_address(RegisterOrConstant arg_slot, int extra_slot_offset = 0);

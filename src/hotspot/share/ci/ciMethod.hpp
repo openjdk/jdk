@@ -245,6 +245,8 @@ class ciMethod : public ciMetadata {
 
   ResourceBitMap live_local_oops_at_bci(int bci);
 
+  bool needs_clinit_barrier() const;
+
 #ifdef COMPILER1
   const BitMap& bci_block_start();
 #endif

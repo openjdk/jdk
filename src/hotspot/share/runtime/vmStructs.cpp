@@ -2388,6 +2388,7 @@ typedef PaddedEnd<ObjectMonitor>              PaddedObjectMonitor;
   declare_constant(Deoptimization::Reason_profile_predicate)              \
   declare_constant(Deoptimization::Reason_unloaded)                       \
   declare_constant(Deoptimization::Reason_uninitialized)                  \
+  declare_constant(Deoptimization::Reason_initialized)                    \
   declare_constant(Deoptimization::Reason_unreached)                      \
   declare_constant(Deoptimization::Reason_unhandled)                      \
   declare_constant(Deoptimization::Reason_constraint)                     \

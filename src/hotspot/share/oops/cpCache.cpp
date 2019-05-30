@@ -261,11 +261,22 @@ void ConstantPoolCacheEntry::set_direct_or_vtable_call(Bytecodes::Code invoke_co
         method->name() != vmSymbols::object_initializer_name()) {
       do_resolve = false;
     }
-    // Don't mark invokestatic to method as resolved if the holder class has not yet completed
-    // initialization. An invokestatic must only proceed if the class is initialized, but if
-    // we resolve it before then that class initialization check is skipped.
-    if (invoke_code == Bytecodes::_invokestatic && !method->method_holder()->is_initialized()) {
-      do_resolve = false;
+    if (invoke_code == Bytecodes::_invokestatic) {
+      assert(method->method_holder()->is_initialized() ||
+             method->method_holder()->is_reentrant_initialization(Thread::current()),
+             "invalid class initialization state for invoke_static");
+
+      if (!VM_Version::supports_fast_class_init_checks() && method->needs_clinit_barrier()) {
+        // Don't mark invokestatic to method as resolved if the holder class has not yet completed
+        // initialization. An invokestatic must only proceed if the class is initialized, but if
+        // we resolve it before then that class initialization check is skipped.
+        //
+        // When fast class initialization checks are supported (VM_Version::supports_fast_class_init_checks() == true),
+        // template interpreter supports fast class initialization check for
+        // invokestatic which doesn't require call site re-resolution to
+        // enforce class initialization barrier.
+        do_resolve = false;
+      }
     }
     if (do_resolve) {
       set_bytecode_1(invoke_code);

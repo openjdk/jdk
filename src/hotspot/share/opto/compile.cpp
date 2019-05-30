@@ -654,6 +654,7 @@ Compile::Compile( ciEnv* ci_env, C2Compiler* compiler, ciMethod* target, int osr
                   _trace_opto_output(directive->TraceOptoOutputOption),
 #endif
                   _has_method_handle_invokes(false),
+                  _clinit_barrier_on_entry(false),
                   _comp_arena(mtCompiler),
                   _barrier_set_state(BarrierSet::barrier_set()->barrier_set_c2()->create_barrier_state(comp_arena())),
                   _env(ci_env),
@@ -988,6 +989,7 @@ Compile::Compile( ciEnv* ci_env,
     _trace_opto_output(directive->TraceOptoOutputOption),
 #endif
     _has_method_handle_invokes(false),
+    _clinit_barrier_on_entry(false),
     _comp_arena(mtCompiler),
     _env(ci_env),
     _directive(directive),
@@ -1170,6 +1172,9 @@ void Compile::Init(int aliaslevel) {
     }
   }
 #endif
+  if (VM_Version::supports_fast_class_init_checks() && has_method() && !is_osr_compilation() && method()->needs_clinit_barrier()) {
+    set_clinit_barrier_on_entry(true);
+  }
   if (debug_info()->recording_non_safepoints()) {
     set_node_note_array(new(comp_arena()) GrowableArray<Node_Notes*>
                         (comp_arena(), 8, 0, NULL));

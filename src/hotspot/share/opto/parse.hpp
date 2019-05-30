@@ -482,6 +482,8 @@ class Parse : public GraphKit {
   // Helper function to compute array addressing
   Node* array_addressing(BasicType type, int vals, const Type* *result2=NULL);
 
+  void clinit_deopt();
+
   void rtm_deopt();
 
   // Pass current map to exits

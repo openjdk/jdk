@@ -2176,6 +2176,7 @@ const char* Deoptimization::_trap_reason_name[] = {
   "profile_predicate",
   "unloaded",
   "uninitialized",
+  "initialized",
   "unreached",
   "unhandled",
   "constraint",

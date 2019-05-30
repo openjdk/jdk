@@ -936,6 +936,11 @@ public:
   // the intrinsic for java.lang.Thread.onSpinWait()
   static bool supports_on_spin_wait() { return supports_sse2(); }
 
+  // x86_64 supports fast class initialization checks for static methods.
+  static bool supports_fast_class_init_checks() {
+    return LP64_ONLY(true) NOT_LP64(false); // not implemented on x86_32
+  }
+
   // support functions for virtualization detection
  private:
   static void check_virt_cpuid(uint32_t idx, uint32_t *regs);

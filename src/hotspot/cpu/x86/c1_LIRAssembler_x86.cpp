@@ -359,6 +359,23 @@ int LIR_Assembler::check_icache() {
   return offset;
 }
 
+void LIR_Assembler::clinit_barrier(ciMethod* method) {
+  assert(VM_Version::supports_fast_class_init_checks(), "sanity");
+  assert(method->holder()->is_being_initialized() || method->holder()->is_initialized(),
+         "initialization should have been started");
+
+  Label L_skip_barrier;
+  Register klass = rscratch1;
+  Register thread = LP64_ONLY( r15_thread ) NOT_LP64( noreg );
+  assert(thread != noreg, "x86_32 not implemented");
+
+  __ mov_metadata(klass, method->holder()->constant_encoding());
+  __ clinit_barrier(klass, thread, &L_skip_barrier /*L_fast_path*/);
+
+  __ jump(RuntimeAddress(SharedRuntime::get_handle_wrong_method_stub()));
+
+  __ bind(L_skip_barrier);
+}
 
 void LIR_Assembler::jobject2reg_with_patching(Register reg, CodeEmitInfo* info) {
   jobject o = NULL;

@@ -699,6 +699,8 @@ public:
   bool has_aot_code() const                      { return aot_code() != NULL; }
 #endif
 
+  bool needs_clinit_barrier() const;
+
   // sizing
   static int header_size()                       {
     return align_up((int)sizeof(Method), wordSize) / wordSize;

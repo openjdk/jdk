@@ -933,6 +933,13 @@ bool ciMethod::is_ignored_by_security_stack_walk() const {
   return get_Method()->is_ignored_by_security_stack_walk();
 }
 
+// ------------------------------------------------------------------
+// ciMethod::needs_clinit_barrier
+//
+bool ciMethod::needs_clinit_barrier() const {
+  check_is_loaded();
+  return is_static() && !holder()->is_initialized();
+}
 
 // ------------------------------------------------------------------
 // invokedynamic support

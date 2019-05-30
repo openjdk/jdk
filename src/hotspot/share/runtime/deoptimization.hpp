@@ -72,6 +72,7 @@ class Deoptimization : AllStatic {
     // recorded per method
     Reason_unloaded,              // unloaded class or constant pool entry
     Reason_uninitialized,         // bad class state (uninitialized)
+    Reason_initialized,           // class has been fully initialized
     Reason_unreached,             // code is not reached, compiler
     Reason_unhandled,             // arbitrary compiler limitation
     Reason_constraint,            // arbitrary runtime constraint violated

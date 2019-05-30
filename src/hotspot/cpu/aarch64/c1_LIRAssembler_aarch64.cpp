@@ -316,6 +316,9 @@ int LIR_Assembler::check_icache() {
   return start_offset;
 }
 
+void LIR_Assembler::clinit_barrier(ciMethod* method) {
+  ShouldNotReachHere(); // not implemented
+}
 
 void LIR_Assembler::jobject2reg(jobject o, Register reg) {
   if (o == NULL) {

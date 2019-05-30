@@ -2719,12 +2719,13 @@ void TemplateTable::volatile_barrier(Assembler::Membar_mask_bits order_constrain
 }
 
 void TemplateTable::resolve_cache_and_index(int byte_no,
-                                            Register Rcache,
+                                            Register cache,
                                             Register index,
                                             size_t index_size) {
   const Register temp = rbx;
-  assert_different_registers(Rcache, index, temp);
+  assert_different_registers(cache, index, temp);
 
+  Label L_clinit_barrier_slow;
   Label resolved;
 
   Bytecodes::Code code = bytecode();
@@ -2735,17 +2736,32 @@ void TemplateTable::resolve_cache_and_index(int byte_no,
   }
 
   assert(byte_no == f1_byte || byte_no == f2_byte, "byte_no out of range");
-  __ get_cache_and_index_and_bytecode_at_bcp(Rcache, index, temp, byte_no, 1, index_size);
+  __ get_cache_and_index_and_bytecode_at_bcp(cache, index, temp, byte_no, 1, index_size);
   __ cmpl(temp, code);  // have we resolved this bytecode?
   __ jcc(Assembler::equal, resolved);
 
   // resolve first time through
+  // Class initialization barrier slow path lands here as well.
+  __ bind(L_clinit_barrier_slow);
   address entry = CAST_FROM_FN_PTR(address, InterpreterRuntime::resolve_from_cache);
   __ movl(temp, code);
   __ call_VM(noreg, entry, temp);
   // Update registers with resolved info
-  __ get_cache_and_index_at_bcp(Rcache, index, 1, index_size);
+  __ get_cache_and_index_at_bcp(cache, index, 1, index_size);
+
   __ bind(resolved);
+
+  // Class initialization barrier for static methods
+  if (VM_Version::supports_fast_class_init_checks() && bytecode() == Bytecodes::_invokestatic) {
+    const Register method = temp;
+    const Register klass  = temp;
+    const Register thread = LP64_ONLY(r15_thread) NOT_LP64(noreg);
+    assert(thread != noreg, "x86_32 not supported");
+
+    __ load_resolved_method_at_index(byte_no, method, cache, index);
+    __ load_method_holder(klass, method);
+    __ clinit_barrier(klass, thread, NULL /*L_fast_path*/, &L_clinit_barrier_slow);
+  }
 }
 
 // The cache and index registers must be set before call
@@ -2794,11 +2810,6 @@ void TemplateTable::load_invoke_cp_cache_entry(int byte_no,
   assert_different_registers(itable_index, cache, index);
   // determine constant pool cache field offsets
   assert(is_invokevirtual == (byte_no == f2_byte), "is_invokevirtual flag redundant");
-  const int method_offset = in_bytes(
-    ConstantPoolCache::base_offset() +
-      ((byte_no == f2_byte)
-       ? ConstantPoolCacheEntry::f2_offset()
-       : ConstantPoolCacheEntry::f1_offset()));
   const int flags_offset = in_bytes(ConstantPoolCache::base_offset() +
                                     ConstantPoolCacheEntry::flags_offset());
   // access constant pool cache fields
@@ -2807,7 +2818,7 @@ void TemplateTable::load_invoke_cp_cache_entry(int byte_no,
 
   size_t index_size = (is_invokedynamic ? sizeof(u4) : sizeof(u2));
   resolve_cache_and_index(byte_no, cache, index, index_size);
-    __ movptr(method, Address(cache, index, Address::times_ptr, method_offset));
+  __ load_resolved_method_at_index(byte_no, method, cache, index);
 
   if (itable_index != noreg) {
     // pick up itable or appendix index from f2 also:
@@ -3862,9 +3873,7 @@ void TemplateTable::invokeinterface(int byte_no) {
   __ profile_virtual_call(rdx, rbcp, rlocals);
 
   // Get declaring interface class from method, and itable index
-  __ movptr(rax, Address(rbx, Method::const_offset()));
-  __ movptr(rax, Address(rax, ConstMethod::constants_offset()));
-  __ movptr(rax, Address(rax, ConstantPool::pool_holder_offset_in_bytes()));
+  __ load_method_holder(rax, rbx);
   __ movl(rbx, Address(rbx, Method::itable_index_offset()));
   __ subl(rbx, Method::itable_index_max);
   __ negl(rbx);
@@ -4003,7 +4012,7 @@ void TemplateTable::_new() {
   __ jcc(Assembler::notEqual, slow_case_no_pop);
 
   // get InstanceKlass
-  __ load_resolved_klass_at_index(rcx, rdx, rcx);
+  __ load_resolved_klass_at_index(rcx, rcx, rdx);
   __ push(rcx);  // save the contexts of klass for initializing the header
 
   // make sure klass is initialized & doesn't have finalizer
@@ -4197,7 +4206,7 @@ void TemplateTable::checkcast() {
   // Get superklass in rax and subklass in rbx
   __ bind(quicked);
   __ mov(rdx, rax); // Save object in rdx; rax needed for subtype check
-  __ load_resolved_klass_at_index(rcx, rbx, rax);
+  __ load_resolved_klass_at_index(rax, rcx, rbx);
 
   __ bind(resolved);
   __ load_klass(rbx, rdx);
@@ -4263,7 +4272,7 @@ void TemplateTable::instanceof() {
   // Get superklass in rax and subklass in rdx
   __ bind(quicked);
   __ load_klass(rdx, rax);
-  __ load_resolved_klass_at_index(rcx, rbx, rax);
+  __ load_resolved_klass_at_index(rax, rcx, rbx);
 
   __ bind(resolved);
 
