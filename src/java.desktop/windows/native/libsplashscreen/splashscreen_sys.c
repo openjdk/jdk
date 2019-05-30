@@ -437,7 +437,7 @@ SplashUnlock(Splash * splash)
     LeaveCriticalSection(&splash->lock);
 }
 
-void
+int
 SplashInitPlatform(Splash * splash)
 {
     HDC hdc;
@@ -486,6 +486,7 @@ SplashInitPlatform(Splash * splash)
         }
     }
     ReleaseDC(NULL, hdc);
+    return 1;
 }
 
 void

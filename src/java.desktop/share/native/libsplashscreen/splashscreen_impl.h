@@ -36,7 +36,7 @@ SplashLoadMemory(void *pdata, int size); /* requires preloading the file */
 JNIEXPORT int
 SplashLoadFile(const char *filename);  // FIXME: range checking for SplashLoadMemory
 
-JNIEXPORT void
+JNIEXPORT int
 SplashInit(void);
 
 JNIEXPORT void
@@ -125,7 +125,7 @@ typedef struct Splash
 /* To be implemented in the platform-specific native code. */
 
 
-void SplashInitPlatform(Splash * splash);
+int  SplashInitPlatform(Splash * splash);
 void SplashCreateThread(Splash * splash);
 void SplashCleanupPlatform(Splash * splash);
 void SplashDonePlatform(Splash * splash);

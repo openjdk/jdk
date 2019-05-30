@@ -57,7 +57,7 @@ SplashSetFileJarName(const char* fileName, const char* jarName) {
     splash->jarName = SplashConvertStringAlloc(jarName, &splash->jarNameLen);
 }
 
-JNIEXPORT void
+JNIEXPORT int
 SplashInit()
 {
     Splash *splash = SplashGetInstance();
@@ -67,7 +67,7 @@ SplashInit()
     splash->scaleFactor = 1;
     initFormat(&splash->imageFormat, QUAD_RED_MASK, QUAD_GREEN_MASK,
         QUAD_BLUE_MASK, QUAD_ALPHA_MASK);
-    SplashInitPlatform(splash);
+    return SplashInitPlatform(splash);
 }
 
 JNIEXPORT void
@@ -263,6 +263,7 @@ SplashLoadStream(SplashStream * stream)
 
     Splash *splash = SplashGetInstance();
     if (splash->isVisible < 0) {
+        stream->close(stream);
         return 0;
     }
 

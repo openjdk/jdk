@@ -33,7 +33,7 @@ extern void* SplashProcAddress(const char* name); /* in java_md.c */
  */
 typedef int (*SplashLoadMemory_t)(void* pdata, int size);
 typedef int (*SplashLoadFile_t)(const char* filename);
-typedef void (*SplashInit_t)(void);
+typedef int (*SplashInit_t)(void);
 typedef void (*SplashClose_t)(void);
 typedef void (*SplashSetFileJarName_t)(const char* fileName,
                                        const char* jarName);
@@ -71,8 +71,8 @@ int     DoSplashLoadFile(const char* filename) {
     INVOKE(SplashLoadFile, 0)(filename);
 }
 
-void    DoSplashInit(void) {
-    INVOKEV(SplashInit)();
+int     DoSplashInit(void) {
+    INVOKE(SplashInit, 0)();
 }
 
 void    DoSplashClose(void) {

@@ -405,7 +405,7 @@ HandleIOError(Display * display) {
     return 0;
 }
 
-void
+int
 SplashInitPlatform(Splash * splash) {
     int shapeVersionMajor, shapeVersionMinor;
 
@@ -424,7 +424,7 @@ SplashInitPlatform(Splash * splash) {
     splash->display = XOpenDisplay(NULL);
     if (!splash->display) {
         splash->isVisible = -1;
-        return;
+        return 0;
     }
 
     shapeSupported = XShapeQueryExtension(splash->display, &shapeEventBase,
@@ -474,7 +474,7 @@ SplashInitPlatform(Splash * splash) {
                 splash->screen = NULL;
                 splash->visual = NULL;
                 fprintf(stderr, "Warning: unable to initialize the splashscreen. Not enough available color cells.\n");
-                return;
+                return 0;
             }
             splash->cmap = AllocColors(splash->display, splash->screen,
                     numColors, colorIndex);
@@ -506,6 +506,7 @@ SplashInitPlatform(Splash * splash) {
     default:
         ; /* FIXME: should probably be fixed, but javaws splash screen doesn't support other visuals either */
     }
+    return 1;
 }
 
 

@@ -824,6 +824,7 @@ ifeq ($(ENABLE_HEADLESS_ONLY), false)
         $(LIBM) -lpthread -liconv -losxapp \
         -framework ApplicationServices \
         -framework Foundation \
+        -framework Security \
         -framework Cocoa \
         -framework JavaNativeFoundation
   else ifeq ($(call isTargetOs, windows), true)
