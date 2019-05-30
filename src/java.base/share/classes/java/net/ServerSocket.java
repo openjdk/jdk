@@ -817,7 +817,8 @@ class ServerSocket implements java.io.Closeable {
      * Returns the implementation address and implementation port of
      * this socket as a {@code String}.
      * <p>
-     * If there is a security manager set, its {@code checkConnect} method is
+     * If there is a security manager set, and this socket is
+     * {@linkplain #isBound bound}, its {@code checkConnect} method is
      * called with the local address and {@code -1} as its arguments to see
      * if the operation is allowed. If the operation is not allowed,
      * an {@code InetAddress} representing the
@@ -831,7 +832,7 @@ class ServerSocket implements java.io.Closeable {
             return "ServerSocket[unbound]";
         InetAddress in;
         if (System.getSecurityManager() != null)
-            in = InetAddress.getLoopbackAddress();
+            in = getInetAddress();
         else
             in = impl.getInetAddress();
         return "ServerSocket[addr=" + in +
