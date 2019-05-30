@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @key headful
+ * @key headful printer
  * @bug 4973278 8015586
  * @run main PrintToDir
  * @summary Must throw exception when printing to an invalid filename - a dir.
