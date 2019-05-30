@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -141,9 +141,18 @@ public abstract class TransformService implements Transform {
      * may be different than the order of providers returned by
      * {@link Security#getProviders() Security.getProviders()}.
      *
-     * @param algorithm the URI of the algorithm
+     * @param algorithm the URI of the algorithm. See the
+     *    {@code TransformService} section in the
+     *    <a href=
+     *    "{@docRoot}/../specs/security/standard-names.html#xml-signature-transform-transformservice-algorithms">
+     *    Java Security Standard Algorithm Names Specification</a> for a list of
+     *    standard transform algorithms.
      * @param mechanismType the type of the XML processing mechanism and
-     *   representation
+     *    representation. See the {@code TransformService} section in the
+     *    <a href=
+     *    "{@docRoot}/../specs/security/standard-names.html#xml-signature-xmlsignaturefactorykeyinfofactorytransformservice-mechanisms">
+     *    Java Security Standard Algorithm Names Specification</a> for a list of
+     *    standard mechanism types.
      * @return a new <code>TransformService</code>
      * @throws NullPointerException if <code>algorithm</code> or
      *   <code>mechanismType</code> is  <code>null</code>
@@ -193,9 +202,18 @@ public abstract class TransformService implements Transform {
      * <code>Provider</code> object does not have to be registered in the
      * provider list.
      *
-     * @param algorithm the URI of the algorithm
+     * @param algorithm the URI of the algorithm. See the
+     *    {@code TransformService} section in the
+     *    <a href=
+     *    "{@docRoot}/../specs/security/standard-names.html#xml-signature-transform-transformservice-algorithms">
+     *    Java Security Standard Algorithm Names Specification</a> for a list of
+     *    standard transform algorithms.
      * @param mechanismType the type of the XML processing mechanism and
-     *   representation
+     *    representation. See the {@code TransformService} section in the
+     *    <a href=
+     *    "{@docRoot}/../specs/security/standard-names.html#xml-signature-xmlsignaturefactorykeyinfofactorytransformservice-mechanisms">
+     *    Java Security Standard Algorithm Names Specification</a> for a list of
+     *    standard mechanism types.
      * @param provider the <code>Provider</code> object
      * @return a new <code>TransformService</code>
      * @throws NullPointerException if <code>provider</code>,
@@ -246,9 +264,18 @@ public abstract class TransformService implements Transform {
      * <p>Note that the list of registered providers may be retrieved via
      * the {@link Security#getProviders() Security.getProviders()} method.
      *
-     * @param algorithm the URI of the algorithm
+     * @param algorithm the URI of the algorithm. See the
+     *    {@code TransformService} section in the
+     *    <a href=
+     *    "{@docRoot}/../specs/security/standard-names.html#xml-signature-transform-transformservice-algorithms">
+     *    Java Security Standard Algorithm Names Specification</a> for a list of
+     *    standard transform algorithms.
      * @param mechanismType the type of the XML processing mechanism and
-     *   representation
+     *    representation. See the {@code TransformService} section in the
+     *    <a href=
+     *    "{@docRoot}/../specs/security/standard-names.html#xml-signature-xmlsignaturefactorykeyinfofactorytransformservice-mechanisms">
+     *    Java Security Standard Algorithm Names Specification</a> for a list of
+     *    standard mechanism types.
      * @param provider the string name of the provider
      * @return a new <code>TransformService</code>
      * @throws NoSuchProviderException if the specified provider is not
