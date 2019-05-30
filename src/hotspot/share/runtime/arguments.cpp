@@ -1722,9 +1722,33 @@ julong Arguments::limit_by_allocatable_memory(julong limit) {
 static const size_t DefaultHeapBaseMinAddress = HeapBaseMinAddress;
 
 void Arguments::set_heap_size() {
-  julong phys_mem =
-    FLAG_IS_DEFAULT(MaxRAM) ? MIN2(os::physical_memory(), (julong)MaxRAM)
-                            : (julong)MaxRAM;
+  julong phys_mem;
+
+  // If the user specified one of these options, they
+  // want specific memory sizing so do not limit memory
+  // based on compressed oops addressability.
+  // Also, memory limits will be calculated based on
+  // available os physical memory, not our MaxRAM limit,
+  // unless MaxRAM is also specified.
+  bool override_coop_limit = (!FLAG_IS_DEFAULT(MaxRAMPercentage) ||
+                           !FLAG_IS_DEFAULT(MaxRAMFraction) ||
+                           !FLAG_IS_DEFAULT(MinRAMPercentage) ||
+                           !FLAG_IS_DEFAULT(MinRAMFraction) ||
+                           !FLAG_IS_DEFAULT(InitialRAMPercentage) ||
+                           !FLAG_IS_DEFAULT(InitialRAMFraction) ||
+                           !FLAG_IS_DEFAULT(MaxRAM));
+  if (override_coop_limit) {
+    if (FLAG_IS_DEFAULT(MaxRAM)) {
+      phys_mem = os::physical_memory();
+      FLAG_SET_ERGO(MaxRAM, (uint64_t)phys_mem);
+    } else {
+      phys_mem = (julong)MaxRAM;
+    }
+  } else {
+    phys_mem = FLAG_IS_DEFAULT(MaxRAM) ? MIN2(os::physical_memory(), (julong)MaxRAM)
+                                       : (julong)MaxRAM;
+  }
+
 
   // Convert deprecated flags
   if (FLAG_IS_DEFAULT(MaxRAMPercentage) &&
@@ -1780,7 +1804,19 @@ void Arguments::set_heap_size() {
         // but it should be not less than default MaxHeapSize.
         max_coop_heap -= HeapBaseMinAddress;
       }
-      reasonable_max = MIN2(reasonable_max, max_coop_heap);
+
+      // If user specified flags prioritizing os physical
+      // memory limits, then disable compressed oops if
+      // limits exceed max_coop_heap and UseCompressedOops
+      // was not specified.
+      if (reasonable_max > max_coop_heap) {
+        if (FLAG_IS_ERGO(UseCompressedOops) && override_coop_limit) {
+          FLAG_SET_ERGO(UseCompressedOops, false);
+          FLAG_SET_ERGO(UseCompressedClassPointers, false);
+        } else {
+          reasonable_max = MIN2(reasonable_max, max_coop_heap);
+        }
+      }
     }
     reasonable_max = limit_by_allocatable_memory(reasonable_max);
 
