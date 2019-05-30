@@ -135,8 +135,7 @@ OopMap* RegisterSaver::save_live_registers(MacroAssembler* masm, int additional_
   int frame_size_in_words = frame_size_in_bytes / wordSize;
   *total_frame_words = frame_size_in_words;
 
-  // Save registers, fpu state, and flags.
-
+  // Save Integer and Float registers.
   __ enter();
   __ push_CPU_state(save_vectors);
 
@@ -2880,7 +2879,7 @@ SafepointBlob* SharedRuntime::generate_handler_blob(address call_ptr, int poll_t
   bool cause_return = (poll_type == POLL_AT_RETURN);
   bool save_vectors = (poll_type == POLL_AT_VECTOR_LOOP);
 
-  // Save registers, fpu state, and flags
+  // Save Integer and Float registers.
   map = RegisterSaver::save_live_registers(masm, 0, &frame_size_in_words, save_vectors);
 
   // The following is basically a call_VM.  However, we need the precise
