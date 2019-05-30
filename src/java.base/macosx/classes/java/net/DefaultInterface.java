@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -37,6 +37,8 @@ package java.net;
  * that returns null.
  */
 
+import java.security.AccessController;
+import java.security.PrivilegedAction;
 import java.util.Enumeration;
 import java.io.IOException;
 
@@ -82,7 +84,8 @@ class DefaultInterface {
                     continue;
 
                 boolean ip4 = false, ip6 = false;
-                Enumeration<InetAddress> addrs = ni.getInetAddresses();
+                PrivilegedAction<Enumeration<InetAddress>> pa = ni::getInetAddresses;
+                Enumeration<InetAddress> addrs = AccessController.doPrivileged(pa);
                 while (addrs.hasMoreElements()) {
                     InetAddress addr = addrs.nextElement();
                     if (!addr.isAnyLocalAddress()) {
