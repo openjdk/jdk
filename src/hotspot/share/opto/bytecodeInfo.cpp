@@ -202,15 +202,15 @@ bool InlineTree::should_not_inline(ciMethod *callee_method,
   const char* fail_msg = NULL;
 
   // First check all inlining restrictions which are required for correctness
-  if ( callee_method->is_abstract()) {
+  if (callee_method->is_abstract()) {
     fail_msg = "abstract method"; // // note: we allow ik->is_abstract()
   } else if (!callee_method->holder()->is_initialized() &&
              // access allowed in the context of static initializer
-             !C->is_compiling_clinit_for(callee_method->holder())) {
+             C->needs_clinit_barrier(callee_method->holder(), caller_method)) {
     fail_msg = "method holder not initialized";
-  } else if ( callee_method->is_native()) {
+  } else if (callee_method->is_native()) {
     fail_msg = "native method";
-  } else if ( callee_method->dont_inline()) {
+  } else if (callee_method->dont_inline()) {
     fail_msg = "don't inline by annotation";
   }
 
@@ -478,14 +478,18 @@ bool InlineTree::try_to_inline(ciMethod* callee_method, ciMethod* caller_method,
 
 //------------------------------pass_initial_checks----------------------------
 bool InlineTree::pass_initial_checks(ciMethod* caller_method, int caller_bci, ciMethod* callee_method) {
-  ciInstanceKlass *callee_holder = callee_method ? callee_method->holder() : NULL;
   // Check if a callee_method was suggested
-  if( callee_method == NULL )            return false;
+  if (callee_method == NULL) {
+    return false;
+  }
+  ciInstanceKlass *callee_holder = callee_method->holder();
   // Check if klass of callee_method is loaded
-  if( !callee_holder->is_loaded() )      return false;
-  if( !callee_holder->is_initialized() &&
+  if (!callee_holder->is_loaded()) {
+    return false;
+  }
+  if (!callee_holder->is_initialized() &&
       // access allowed in the context of static initializer
-      !C->is_compiling_clinit_for(callee_holder)) {
+      C->needs_clinit_barrier(callee_holder, caller_method)) {
     return false;
   }
   if( !UseInterpreter ) /* running Xcomp */ {

@@ -2118,18 +2118,7 @@ void Parse::clinit_deopt() {
   set_parse_bci(0);
 
   Node* holder = makecon(TypeKlassPtr::make(method()->holder()));
-  int init_state_off = in_bytes(InstanceKlass::init_state_offset());
-  Node* adr = basic_plus_adr(top(), holder, init_state_off);
-  Node* init_state = make_load(control(), adr, TypeInt::BYTE, T_BYTE, MemNode::unordered);
-
-  Node* fully_initialized_state = makecon(TypeInt::make(InstanceKlass::fully_initialized));
-
-  Node* chk = gvn().transform(new CmpINode(init_state, fully_initialized_state));
-  Node* tst = gvn().transform(new BoolNode(chk, BoolTest::ne));
-
-  { BuildCutout unless(this, tst, PROB_MAX);
-    uncommon_trap(Deoptimization::Reason_initialized, Deoptimization::Action_reinterpret);
-  }
+  guard_klass_being_initialized(holder);
 }
 
 // Add check to deoptimize if RTM state is not ProfileRTM
