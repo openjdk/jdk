@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -77,6 +77,8 @@ InlineTree::InlineTree(Compile* c,
  *  Return true when EA is ON and a java constructor is called or
  *  a super constructor is called from an inlined java constructor.
  *  Also return true for boxing methods.
+ *  Also return true for methods returning Iterator (including Iterable::iterator())
+ *  that is essential for forall-loops performance.
  */
 static bool is_init_with_ea(ciMethod* callee_method,
                             ciMethod* caller_method, Compile* C) {
@@ -92,6 +94,11 @@ static bool is_init_with_ea(ciMethod* callee_method,
     return true; // super constructor is called from inlined constructor
   }
   if (C->eliminate_boxing() && callee_method->is_boxing_method()) {
+    return true;
+  }
+  ciType *retType = callee_method->signature()->return_type();
+  ciKlass *iter = C->env()->Iterator_klass();
+  if(retType->is_loaded() && iter->is_loaded() && retType->is_subtype_of(iter)) {
     return true;
   }
   return false;

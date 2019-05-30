@@ -214,6 +214,9 @@ class OopStorage;
   do_klass(Integer_klass,                               java_lang_Integer                                     ) \
   do_klass(Long_klass,                                  java_lang_Long                                        ) \
                                                                                                                 \
+  /* force inline of iterators */                                                                               \
+  do_klass(Iterator_klass,                              java_util_Iterator                                    ) \
+                                                                                                                \
   /*end*/
 
 
