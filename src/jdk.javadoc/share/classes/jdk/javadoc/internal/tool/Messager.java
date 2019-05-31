@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -124,9 +124,11 @@ public class Messager extends Log implements Reporter {
             case MANDATORY_WARNING:
                 printWarning(e, msg);
                 return;
-            default:
-                printWarning(e, msg);
+            case NOTE:
+                printNotice(e, msg);
                 return;
+            default:
+                throw new IllegalArgumentException(String.format("unexpected option %s", kind));
         }
     }
 
@@ -201,6 +203,9 @@ public class Messager extends Log implements Reporter {
         }
         JavacTrees trees = JavacTrees.instance(context);
         TreePath path = trees.getPath(e);
+        if (path == null) {
+            return programName;
+        }
         DocSourcePositions sourcePositions = trees.getSourcePositions();
         JCTree tree = trees.getTree(e);
         CompilationUnitTree cu = path.getCompilationUnit();
