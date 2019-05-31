@@ -4910,6 +4910,9 @@ char* os::pd_map_memory(int fd, const char* file_name, size_t file_offset,
       return NULL;
     }
 
+    // Record virtual memory allocation
+    MemTracker::record_virtual_memory_reserve_and_commit((address)addr, bytes, CALLER_PC);
+
     DWORD bytes_read;
     OVERLAPPED overlapped;
     overlapped.Offset = (DWORD)file_offset;
