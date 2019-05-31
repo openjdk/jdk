@@ -111,6 +111,19 @@ void ShenandoahRootScanner<ITR>::roots_do(uint worker_id, OopClosure* oops, CLDC
 }
 
 template <typename ITR>
+void ShenandoahRootScanner<ITR>::roots_do_unchecked(OopClosure* oops) {
+  CLDToOopClosure clds(oops, ClassLoaderData::_claim_strong);
+  MarkingCodeBlobClosure code(oops, !CodeBlobToOopClosure::FixRelocations);
+  ShenandoahParallelOopsDoThreadClosure tc_cl(oops, &code, NULL);
+  ResourceMark rm;
+
+  _serial_roots.oops_do(oops, 0);
+  _cld_roots.clds_do(&clds, &clds, 0);
+  _thread_roots.threads_do(&tc_cl, 0);
+  _code_roots.code_blobs_do(&code, 0);
+}
+
+template <typename ITR>
 void ShenandoahRootScanner<ITR>::strong_roots_do(uint worker_id, OopClosure* oops, CLDClosure* clds, CodeBlobClosure* code, ThreadClosure* tc) {
   assert(ShenandoahHeap::heap()->unload_classes(), "Should be used during class unloading");
   ShenandoahParallelOopsDoThreadClosure tc_cl(oops, code, tc);

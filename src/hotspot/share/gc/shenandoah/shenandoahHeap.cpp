@@ -1279,7 +1279,7 @@ void ShenandoahHeap::object_iterate(ObjectClosure* cl) {
   // First, we process all GC roots. This populates the work stack with initial objects.
   ShenandoahAllRootScanner rp(1, ShenandoahPhaseTimings::_num_phases);
   ObjectIterateScanRootClosure oops(&_aux_bit_map, &oop_stack);
-  rp.roots_do(0, &oops);
+  rp.roots_do_unchecked(&oops);
 
   // Work through the oop stack to traverse heap.
   while (! oop_stack.is_empty()) {
