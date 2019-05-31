@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,9 +23,9 @@
 
 /*
  * @test
- * @ignore This test has huge memory requirements
  * @bug 8021204
  * @summary Test constructor BigInteger(String val, int radix) on very long string
+ * @ignore This test has huge memory requirements
  * @run main/othervm -Xshare:off -Xmx8g StringConstructorOverflow
  * @author Dmitry Nadezhin
  */
