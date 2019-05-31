@@ -2,7 +2,7 @@
 <html>
 <head>
 <!--
-Copyright (c) 1999, 2006, Oracle and/or its affiliates. All rights reserved.
+Copyright (c) 1999, 2019, Oracle and/or its affiliates. All rights reserved.
 DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 
 This code is free software; you can redistribute it and/or modify it
@@ -40,7 +40,7 @@ implementation.  Thus a variety of services--new, emerging, and
 already deployed ones--can be accessed in a common way.
 
 
-<h3>Context</h3>
+<h2>Context</h2>
 <p>
 This package defines the notion of a <em>context</em>, represented
 by the <code>Context</code> interface.
@@ -63,7 +63,7 @@ printer.print(report);
 </pre>
 </blockquote>
 
-<h3>Names</h3>
+<h2>Names</h2>
 <p>
 Every naming method in the <code>Context</code>
 interface has two
@@ -82,7 +82,7 @@ The overloads that accept string names are likely to be more useful
 for simple applications, such as those that simply read in a name
 and look up the corresponding object.
 
-<h3>Bindings</h3>
+<h2>Bindings</h2>
 
 The <code>Binding</code> class represents a name-to-object binding.
 It is a tuple containing the name of the bound object,
@@ -95,7 +95,7 @@ The <code>NameClassPair</code> is useful when you only want
 information about the object's class and do not want to
 pay the extra cost of getting the object.
 
-<h3>References</h3>
+<h2>References</h2>
 Objects are stored in naming and directory services in different ways.
 If an object store supports storing Java objects, 
 it might support storing an object in its serialized form.
@@ -112,7 +112,7 @@ JNDI clients have the illusion that what
 is stored in the directory are Java objects. 
 
 
-<h3>The Initial Context</h3>
+<h2>The Initial Context</h2>
 
 In JNDI, all naming and directory operations are performed relative
 to a context. There are no absolute roots.
@@ -122,7 +122,7 @@ which provides a starting point for naming and directory operations.
 Once you have an initial context, you can use it to
 look up other contexts and objects.
 
-<h3>Exceptions</h3>
+<h2>Exceptions</h2>
 
 JNDI defines a class hierarchy for exceptions that can be thrown in
 the course of performing naming and directory operations.  The root of
