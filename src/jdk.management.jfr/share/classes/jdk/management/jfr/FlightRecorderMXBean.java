@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -57,7 +57,7 @@ import jdk.jfr.Recording;
  * See the package {@code jdk.jfr} documentation for descriptions of the settings
  * syntax and the {@link ConfigurationInfo} class documentation for configuration information.
  *
- * <h3>Recording options</h3>
+ * <h2>Recording options</h2>
  * <p>
  * The following table shows the options names to use with {@link #setRecordingOptions(long, Map)}
  * and {@link #getRecordingOptions(long)}.

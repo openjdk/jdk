@@ -67,7 +67,7 @@ import sun.management.spi.PlatformMBeanProvider.PlatformComponent;
  * the management interface of a component of the Java virtual
  * machine.
  *
- * <h3><a id="MXBean">Platform MXBeans</a></h3>
+ * <h2><a id="MXBean">Platform MXBeans</a></h2>
  * <p>
  * A platform MXBean is a <i>managed bean</i> that
  * conforms to the <a href="../../../javax/management/package-summary.html">JMX</a>
@@ -93,7 +93,7 @@ import sun.management.spi.PlatformMBeanProvider.PlatformComponent;
  *
  * <p>
  * An application can access a platform MXBean in the following ways:
- * <h4>1. Direct access to an MXBean interface</h4>
+ * <h3>1. Direct access to an MXBean interface</h3>
  * <blockquote>
  * <ul>
  *     <li>Get an MXBean instance by calling the
@@ -113,7 +113,7 @@ import sun.management.spi.PlatformMBeanProvider.PlatformComponent;
  *         an MXBean of another running virtual machine.
  *         </li>
  * </ul>
- * <h4>2. Indirect access to an MXBean interface via MBeanServer</h4>
+ * <h3>2. Indirect access to an MXBean interface via MBeanServer</h3>
  * <ul>
  *     <li>Go through the platform {@code MBeanServer} to access MXBeans
  *         locally or a specific {@code MBeanServerConnection} to access

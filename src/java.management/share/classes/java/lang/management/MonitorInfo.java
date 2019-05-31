@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,7 +32,7 @@ import sun.management.MonitorInfoCompositeData;
  * Information about an object monitor lock.  An object monitor is locked
  * when entering a synchronization block or method on that object.
  *
- * <h3>MXBean Mapping</h3>
+ * <h2>MXBean Mapping</h2>
  * {@code MonitorInfo} is mapped to a {@link CompositeData CompositeData}
  * with attributes as specified in
  * the {@link #from from} method.

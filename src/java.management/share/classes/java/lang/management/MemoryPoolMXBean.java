@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -49,7 +49,7 @@ package java.lang.management;
  * It can be obtained by calling the
  * {@link PlatformManagedObject#getObjectName} method.
  *
- * <h3>Memory Type</h3>
+ * <h2>Memory Type</h2>
  * <p>The Java virtual machine has a heap for object allocation and also
  * maintains non-heap memory for the method area and the Java virtual
  * machine execution.  The Java virtual machine can have one or more
@@ -60,7 +60,7 @@ package java.lang.management;
  *   <li>{@link MemoryType#NON_HEAP non-heap}</li>
  * </ul>
  *
- * <h3>Memory Usage Monitoring</h3>
+ * <h2>Memory Usage Monitoring</h2>
  *
  * A memory pool has the following attributes:
  * <ul>
