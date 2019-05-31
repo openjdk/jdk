@@ -130,7 +130,7 @@ BOOL AwtPrintControl::FindPrinter(jstring printerName, LPBYTE pPrinterEnum,
     DWORD cbBuf = *pcbBuf, dummyWord = 0;
 
     JavaStringBuffer printerNameBuf(env, printerName);
-    LPTSTR lpcPrinterName = (LPTSTR)printerNameBuf;
+    LPCTSTR lpcPrinterName = (LPCTSTR)printerNameBuf;
     DASSERT(lpcPrinterName != NULL);
 
     // For NT, first do a quick check of all remote and local printers.

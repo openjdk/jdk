@@ -337,7 +337,7 @@ class JavaStringBuffer
 protected:
     LPWSTR m_pStr;
     jsize  m_dwSize;
-    LPWSTR getNonEmptyString() {
+    LPCWSTR getNonEmptyString() {
         return (NULL==m_pStr)
                 ? L""
                 : m_pStr;
@@ -378,9 +378,9 @@ public:
         m_pStr = (LPWSTR)SAFE_SIZE_ARRAY_REALLOC(safe_Realloc, m_pStr, m_dwSize+1, sizeof(WCHAR) );
     }
     //we are in UNICODE now, so LPWSTR:=:LPTSTR
-    operator LPWSTR() { return getNonEmptyString(); }
+    operator LPCWSTR() { return getNonEmptyString(); }
     operator LPARAM() { return (LPARAM)getNonEmptyString(); }
-    void *GetData() { return (void *)getNonEmptyString(); }
+    const void *GetData() { return (const void *)getNonEmptyString(); }
     jsize  GetSize() { return m_dwSize; }
 };
 

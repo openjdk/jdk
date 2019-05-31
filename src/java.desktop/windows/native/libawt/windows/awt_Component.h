@@ -449,7 +449,7 @@ public:
     static void JavaKeyToWindowsKey(UINT javaKey, UINT *windowsKey, UINT *modifiers, UINT originalWindowsKey);
     static void UpdateDynPrimaryKeymap(UINT wkey, UINT jkeyLegacy, jint keyLocation, UINT modifiers);
 
-    INLINE static void AwtComponent::JavaKeyToWindowsKey(UINT javaKey,
+    INLINE static void JavaKeyToWindowsKey(UINT javaKey,
                                        UINT *windowsKey, UINT *modifiers)
     {
         JavaKeyToWindowsKey(javaKey, windowsKey, modifiers, IGNORE_KEY);
