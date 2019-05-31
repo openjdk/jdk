@@ -490,6 +490,8 @@ extern struct _CompositeTypes {
 #define PtrCoord(p, x, xinc, y, yinc)   PtrAddBytes(p, \
                                                     ((ptrdiff_t)(y))*(yinc) + \
                                                     ((ptrdiff_t)(x))*(xinc))
+#define PtrPixelsRow(p, y, scanStride)    PtrAddBytes(p, \
+    ((intptr_t) (y)) * (scanStride))
 
 /*
  * The function to call with an array of NativePrimitive structures

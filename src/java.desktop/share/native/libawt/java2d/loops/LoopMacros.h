@@ -137,7 +137,7 @@
         do { \
             juint w = WIDTH; \
             jint tmpsxloc = SXLOC; \
-            SRCPTR = PtrAddBytes(SRCBASE, ((SYLOC >> SHIFT) * srcScan)); \
+            SRCPTR = PtrPixelsRow(SRCBASE, (SYLOC >> SHIFT), srcScan); \
             Init ## DSTTYPE ## StoreVarsX(DSTPREFIX, DSTINFO); \
             do { \
                 jint XVAR = (tmpsxloc >> SHIFT); \
@@ -2067,7 +2067,7 @@ void NAME_TRANSFORMHELPER_NN(SRC)(SurfaceDataRasInfo *pSrcInfo, \
  \
     Init ## SRC ## LoadVars(SrcRead, pSrcInfo); \
     while (pRGB < pEnd) { \
-        SRC ## DataType *pRow = PtrAddBytes(pBase, WholeOfLong(ylong) * scan); \
+        SRC ## DataType *pRow = PtrPixelsRow(pBase, WholeOfLong(ylong), scan); \
         Copy ## SRC ## ToIntArgbPre(pRGB, 0, \
                                     SrcRead, pRow, WholeOfLong(xlong)); \
         pRGB++; \
@@ -2115,7 +2115,7 @@ void NAME_TRANSFORMHELPER_BL(SRC)(SurfaceDataRasInfo *pSrcInfo, \
         ydelta &= scan; \
  \
         xwhole += cx; \
-        pRow = PtrAddBytes(pSrcInfo->rasBase, (ywhole + cy) * scan); \
+        pRow = PtrPixelsRow(pSrcInfo->rasBase, ywhole + cy, scan); \
         Copy ## SRC ## ToIntArgbPre(pRGB, 0, SrcRead, pRow, xwhole); \
         Copy ## SRC ## ToIntArgbPre(pRGB, 1, SrcRead, pRow, xwhole+xdelta); \
         pRow = PtrAddBytes(pRow, ydelta); \
@@ -2173,7 +2173,7 @@ void NAME_TRANSFORMHELPER_BC(SRC)(SurfaceDataRasInfo *pSrcInfo, \
         ydelta1 += (isneg & -scan); \
  \
         xwhole += cx; \
-        pRow = PtrAddBytes(pSrcInfo->rasBase, (ywhole + cy) * scan); \
+        pRow = PtrPixelsRow(pSrcInfo->rasBase, ywhole + cy, scan); \
         pRow = PtrAddBytes(pRow, ydelta0); \
         Copy ## SRC ## ToIntArgbPre(pRGB,  0, SrcRead, pRow, xwhole+xdelta0); \
         Copy ## SRC ## ToIntArgbPre(pRGB,  1, SrcRead, pRow, xwhole        ); \

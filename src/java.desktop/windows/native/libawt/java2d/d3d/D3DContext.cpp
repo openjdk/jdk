@@ -1092,7 +1092,9 @@ D3DContext::UploadTileToTexture(D3DResource *pTextureRes, void *pixels,
 {
 #ifndef PtrAddBytes
 #define PtrAddBytes(p, b)               ((void *) (((intptr_t) (p)) + (b)))
-#define PtrCoord(p, x, xinc, y, yinc)   PtrAddBytes(p, (y)*(yinc) + (x)*(xinc))
+#define PtrCoord(p, x, xinc, y, yinc)   PtrAddBytes(p, \
+                                                    ((ptrdiff_t)(y))*(yinc) + \
+                                                    ((ptrdiff_t)(x))*(xinc))
 #endif // PtrAddBytes
 
     HRESULT res = S_OK;

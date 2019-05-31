@@ -710,8 +710,8 @@ void flip(void *pDst, juint w, juint h, jint scanStride, jboolean convert) {
     juint step = 0;
     // vertical flip and convert argbpre to argb if necessary
     for (; i < h / 2; ++i) {
-        juint *r1 = PtrAddBytes(pDst, (i * scanStride));
-        juint *r2 = PtrAddBytes(pDst, (h - i - 1) * scanStride);
+        juint *r1 = PtrPixelsRow(pDst, i, scanStride);
+        juint *r2 = PtrPixelsRow(pDst, h - i - 1, scanStride);
         if (tempRow) {
             // fast path
             memcpy(tempRow, r1, clippedStride);
@@ -733,7 +733,7 @@ void flip(void *pDst, juint w, juint h, jint scanStride, jboolean convert) {
     }
     // convert the middle line if necessary
     if (convert && h % 2) {
-        juint *r1 = PtrAddBytes(pDst, (i * scanStride));
+        juint *r1 = PtrPixelsRow(pDst, i, scanStride);
         for (step = 0; step < w; ++step) {
             LoadIntArgbPreTo1IntArgb(r1, 0, step, r1[step]);
         }
@@ -806,7 +806,7 @@ OGLBlitLoops_SurfaceToSwBlit(JNIEnv *env, OGLContext *oglc,
             height = srcInfo.bounds.y2 - srcInfo.bounds.y1;
 
             pDst = PtrAddBytes(pDst, dstx * dstInfo.pixelStride);
-            pDst = PtrAddBytes(pDst, dsty * dstInfo.scanStride);
+            pDst = PtrPixelsRow(pDst, dsty, dstInfo.scanStride);
 
             j2d_glPixelStorei(GL_PACK_ROW_LENGTH,
                               dstInfo.scanStride / dstInfo.pixelStride);
