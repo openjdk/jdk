@@ -756,6 +756,10 @@ size_t DynamicArchiveBuilder::estimate_trampoline_size() {
     Array<Method*>* methods = ik->methods();
     total += each_method_bytes * methods->length();
   }
+  if (total == 0) {
+    // We have nothing to archive, but let's avoid having an empty region.
+    total = SharedRuntime::trampoline_size();
+  }
   return total;
 }
 
@@ -773,6 +777,11 @@ void DynamicArchiveBuilder::make_trampolines() {
       *adapter_trampoline = NULL;
       m->set_adapter_trampoline(to_target(adapter_trampoline));
     }
+  }
+
+  if (MetaspaceShared::misc_code_dump_space()->used() == 0) {
+    // We have nothing to archive, but let's avoid having an empty region.
+    MetaspaceShared::misc_code_space_alloc(SharedRuntime::trampoline_size());
   }
 }
 

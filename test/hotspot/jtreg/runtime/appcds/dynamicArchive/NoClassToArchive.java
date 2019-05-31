@@ -61,19 +61,21 @@ public class NoClassToArchive extends DynamicArchiveTestBase {
         doTestCustomBase(baseArchiveName, topArchiveName);
     }
 
+    private static void checkWarning(OutputAnalyzer output) throws Exception {
+        if (output.getStdout().contains("jrt:/") || output.getStdout().contains("unsafe anonymous")) {
+            System.out.println("test skipped: this platform uses non-archived classes when running -version");
+        } else {
+            output.shouldContain(warningMessage);
+        }
+    }
+
     private static void doTest(String baseArchiveName, String topArchiveName) throws Exception {
         dump2(baseArchiveName, topArchiveName,
              "-Xlog:cds",
              "-Xlog:cds+dynamic=debug",
              "-Xlog:class+load=trace",
              "-version")
-            .assertNormalExit(output -> {
-                    if (output.getStdout().contains("jrt:/")) {
-                        System.out.println("test skipped: this platform uses non-archived classes when running -version");
-                    } else {
-                        output.shouldContain(warningMessage);
-                    }
-                });
+            .assertNormalExit(output -> checkWarning(output));
 
         dump2(baseArchiveName, topArchiveName,
              "-Xlog:cds",
@@ -103,9 +105,11 @@ public class NoClassToArchive extends DynamicArchiveTestBase {
 
         // create a dynamic archive with the custom base archive
         // no class should be included in the dynamic archive
-        dump2(baseArchiveName, topArchiveName, "-version")
-            .assertNormalExit(out -> {
-                    out.shouldMatch(warningMessage);
-                });
+        dump2(baseArchiveName, topArchiveName,
+              "-Xlog:cds",
+              "-Xlog:cds+dynamic=debug",
+              "-Xlog:class+load=trace",
+              "-version")
+            .assertNormalExit(out -> checkWarning(out));
     }
 }

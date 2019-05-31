@@ -623,13 +623,11 @@ size_t SymbolTable::estimate_size_for_archive() {
 }
 
 void SymbolTable::write_to_archive(bool is_static_archive) {
-  _shared_table.reset();
-  _dynamic_shared_table.reset();
-
   CompactHashtableWriter writer(int(_items_count),
                                 &MetaspaceShared::stats()->symbol);
   copy_shared_symbol_table(&writer);
   if (is_static_archive) {
+    _shared_table.reset();
     writer.dump(&_shared_table, "symbol");
 
     // Verify table is correct
@@ -639,6 +637,7 @@ void SymbolTable::write_to_archive(bool is_static_archive) {
     unsigned int hash = hash_symbol(name, len, _alt_hash);
     assert(sym == _shared_table.lookup(name, hash, len), "sanity");
   } else {
+    _dynamic_shared_table.reset();
     writer.dump(&_dynamic_shared_table, "symbol");
   }
 }
