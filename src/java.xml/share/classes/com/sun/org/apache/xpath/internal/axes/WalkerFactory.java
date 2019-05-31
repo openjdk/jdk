@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2019, Oracle and/or its affiliates. All rights reserved.
  */
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
@@ -41,7 +41,7 @@ import com.sun.org.apache.xpath.internal.res.XPATHErrorResources;
  * which are built from the opcode map output, and an analysis engine
  * for the location path expressions in order to provide optimization hints.
  *
- * @LastModified: Oct 2017
+ * @LastModified: May 2019
  */
 public class WalkerFactory
 {
@@ -1008,10 +1008,10 @@ public class WalkerFactory
       case OpCodes.OP_EXTFUNCTION :
       case OpCodes.OP_FUNCTION :
       case OpCodes.OP_GROUP :
-        expr = compiler.compile(opPos);
+        expr = compiler.compileExpression(opPos);
         break;
       default :
-        expr = compiler.compile(opPos + 2);
+        expr = compiler.compileExpression(opPos + 2);
       }
 
       axis = Axis.FILTEREDLIST;

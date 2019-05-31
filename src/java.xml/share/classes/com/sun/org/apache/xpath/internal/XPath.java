@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2019, Oracle and/or its affiliates. All rights reserved.
  */
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
@@ -40,7 +40,7 @@ import javax.xml.transform.TransformerException;
  * The XPath class wraps an expression object and provides general services
  * for execution of that expression.
  * @xsl.usage advanced
- * @LastModified: Oct 2017
+ * @LastModified: May 2019
  */
 public class XPath implements Serializable, ExpressionOwner
 {
@@ -179,10 +179,12 @@ public class XPath implements Serializable, ExpressionOwner
     else if (MATCH == type)
       parser.initMatchPattern(compiler, exprString, prefixResolver);
     else
-      throw new RuntimeException(XSLMessages.createXPATHMessage(XPATHErrorResources.ER_CANNOT_DEAL_XPATH_TYPE, new Object[]{Integer.toString(type)})); //"Can not deal with XPath type: " + type);
+      throw new RuntimeException(XSLMessages.createXPATHMessage(
+              XPATHErrorResources.ER_CANNOT_DEAL_XPATH_TYPE,
+              new Object[]{Integer.toString(type)}));
 
     // System.out.println("----------------");
-    Expression expr = compiler.compile(0);
+    Expression expr = compiler.compileExpression(0);
 
     // System.out.println("expr: "+expr);
     this.setExpression(expr);
@@ -234,7 +236,7 @@ public class XPath implements Serializable, ExpressionOwner
             //"Can not deal with XPath type: " + type);
 
     // System.out.println("----------------");
-    Expression expr = compiler.compile(0);
+    Expression expr = compiler.compileExpression(0);
 
     // System.out.println("expr: "+expr);
     this.setExpression(expr);

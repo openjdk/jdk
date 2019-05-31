@@ -152,6 +152,8 @@ public class XPATHErrorResources extends ListResourceBundle
          "ER_PREDICATE_ILLEGAL_SYNTAX";
   public static final String ER_PREDICATE_TOO_MANY_OPEN =
          "ER_PREDICATE_TOO_MANY_OPEN";
+  public static final String ER_COMPILATION_TOO_MANY_OPERATION =
+         "ER_COMPILATION_TOO_MANY_OPERATION";
   public static final String ER_ILLEGAL_AXIS_NAME = "ER_ILLEGAL_AXIS_NAME";
   public static final String ER_UNKNOWN_NODETYPE = "ER_UNKNOWN_NODETYPE";
   public static final String ER_PATTERN_LITERAL_NEEDS_BE_QUOTED =
@@ -467,7 +469,10 @@ public static final String ER_IGNORABLE_WHITESPACE_NOT_HANDLED =
       "'..[predicate]' or '.[predicate]' is illegal syntax.  Use 'self::node()[predicate]' instead."},
 
   { ER_PREDICATE_TOO_MANY_OPEN,
-      "Stack overflow while parsing {0} at {1}. Too many open predicates {2}."},
+      "Stack overflow while parsing {0} at {1}. Too many open predicates({2})."},
+
+  { ER_COMPILATION_TOO_MANY_OPERATION,
+      "Stack overflow while compiling the expression. Too many operations({0})."},
 
   { ER_ILLEGAL_AXIS_NAME,
      "illegal axis name: {0}"},

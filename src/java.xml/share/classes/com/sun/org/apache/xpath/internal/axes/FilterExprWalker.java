@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2019, Oracle and/or its affiliates. All rights reserved.
  */
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
@@ -37,7 +37,7 @@ import java.util.List;
  * Walker for the OP_VARIABLE, or OP_EXTFUNCTION, or OP_FUNCTION, or OP_GROUP,
  * op codes.
  * @see <a href="http://www.w3.org/TR/xpath#NT-FilterExpr">XPath FilterExpr descriptions</a>
- * @LastModified: Oct 2017
+ * @LastModified: May 2019
  */
 public class FilterExprWalker extends AxesWalker
 {
@@ -77,7 +77,7 @@ public class FilterExprWalker extends AxesWalker
         m_mustHardReset = true;
     case OpCodes.OP_GROUP :
     case OpCodes.OP_VARIABLE :
-      m_expr = compiler.compile(opPos);
+      m_expr = compiler.compileExpression(opPos);
       m_expr.exprSetParent(this);
       //if((OpCodes.OP_FUNCTION == stepType) && (m_expr instanceof com.sun.org.apache.xalan.internal.templates.FuncKey))
       if(m_expr instanceof com.sun.org.apache.xpath.internal.operations.Variable)
@@ -87,7 +87,7 @@ public class FilterExprWalker extends AxesWalker
       }
       break;
     default :
-      m_expr = compiler.compile(opPos + 2);
+      m_expr = compiler.compileExpression(opPos + 2);
       m_expr.exprSetParent(this);
     }
 //    if(m_expr instanceof WalkingIterator)
