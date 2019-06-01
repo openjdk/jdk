@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 8080357 8167643 8187359 8199762
+ * @bug 8080357 8167643 8187359 8199762 8080353
  * @summary Tests for EvaluationState.methods
  * @build KullaTesting TestingInputStream ExpectedDiagnostic
  * @run testng MethodsTest
@@ -234,6 +234,11 @@ public class MethodsTest extends KullaTesting {
 
         assertDeclareFail("synchronized String f() {return null;}",
                 new ExpectedDiagnostic("jdk.eval.error.illegal.modifiers", 0, 12, 0, -1, -1, Diagnostic.Kind.ERROR));
+        assertNumberOfActiveMethods(0);
+        assertActiveKeys();
+
+        assertDeclareFail("default void f() { }",
+                new ExpectedDiagnostic("jdk.eval.error.illegal.modifiers", 0, 7, 0, -1, -1, Diagnostic.Kind.ERROR));
         assertNumberOfActiveMethods(0);
         assertActiveKeys();
 

@@ -98,6 +98,7 @@ import static jdk.jshell.Snippet.SubKind.STATIC_IMPORT_ON_DEMAND_SUBKIND;
 class Eval {
 
     private static final Pattern IMPORT_PATTERN = Pattern.compile("import\\p{javaWhitespace}+(?<static>static\\p{javaWhitespace}+)?(?<fullname>[\\p{L}\\p{N}_\\$\\.]+\\.(?<name>[\\p{L}\\p{N}_\\$]+|\\*))");
+    private static final Pattern DEFAULT_PREFIX = Pattern.compile("\\p{javaWhitespace}*(default)\\p{javaWhitespace}+");
 
     // for uses that should not change state -- non-evaluations
     private boolean preserveState = false;
@@ -201,7 +202,13 @@ class Eval {
             }
             Tree unitTree = units.get(0);
             if (pt.getDiagnostics().hasOtherThanNotStatementErrors()) {
-                return compileFailResult(pt, userSource, kindOfTree(unitTree));
+                Matcher matcher = DEFAULT_PREFIX.matcher(compileSource);
+                DiagList dlist = matcher.lookingAt()
+                        ? new DiagList(new ModifierDiagnostic(true,
+                            state.messageFormat("jshell.diag.modifier.single.fatal", "'default'"),
+                            matcher.start(1), matcher.end(1)))
+                        : pt.getDiagnostics();
+                return compileFailResult(dlist, userSource, kindOfTree(unitTree));
             }
 
             // Erase illegal/ignored modifiers
@@ -1154,34 +1161,21 @@ class Eval {
         };
     }
 
-    private DiagList modifierDiagnostics(ModifiersTree modtree,
-            final TreeDissector dis, boolean isAbstractProhibited) {
-
-        class ModifierDiagnostic extends Diag {
+    private class ModifierDiagnostic extends Diag {
 
             final boolean fatal;
             final String message;
-            long start;
-            long end;
+            final long start;
+            final long end;
 
-            ModifierDiagnostic(List<Modifier> list, boolean fatal) {
+            ModifierDiagnostic(boolean fatal,
+                    final String message,
+                    long start,
+                    long end) {
                 this.fatal = fatal;
-                StringBuilder sb = new StringBuilder();
-                for (Modifier mod : list) {
-                    sb.append("'");
-                    sb.append(mod.toString());
-                    sb.append("' ");
-                }
-                String key = (list.size() > 1)
-                        ? fatal
-                            ? "jshell.diag.modifier.plural.fatal"
-                            : "jshell.diag.modifier.plural.ignore"
-                        : fatal
-                            ? "jshell.diag.modifier.single.fatal"
-                            : "jshell.diag.modifier.single.ignore";
-                this.message = state.messageFormat(key, sb.toString());
-                start = dis.getStartPosition(modtree);
-                end = dis.getEndPosition(modtree);
+                this.message = message;
+                this.start = start;
+                this.end = end;
             }
 
             @Override
@@ -1215,7 +1209,10 @@ class Eval {
             public String getMessage(Locale locale) {
                 return message;
             }
-        }
+    }
+
+    private DiagList modifierDiagnostics(ModifiersTree modtree,
+                                         final TreeDissector dis, boolean isAbstractProhibited) {
 
         List<Modifier> list = new ArrayList<>();
         boolean fatal = false;
@@ -1243,9 +1240,26 @@ class Eval {
                     break;
             }
         }
-        return list.isEmpty()
-                ? new DiagList()
-                : new DiagList(new ModifierDiagnostic(list, fatal));
+        if (list.isEmpty()) {
+            return new DiagList();
+        } else {
+            StringBuilder sb = new StringBuilder();
+            for (Modifier mod : list) {
+                sb.append("'");
+                sb.append(mod.toString());
+                sb.append("' ");
+            }
+            String key = (list.size() > 1)
+                    ? fatal
+                    ? "jshell.diag.modifier.plural.fatal"
+                    : "jshell.diag.modifier.plural.ignore"
+                    : fatal
+                    ? "jshell.diag.modifier.single.fatal"
+                    : "jshell.diag.modifier.single.ignore";
+            String message = state.messageFormat(key, sb.toString().trim());
+            return new DiagList(new ModifierDiagnostic(fatal, message,
+                    dis.getStartPosition(modtree), dis.getEndPosition(modtree)));
+        }
     }
 
     String computeDeclareName(TypeSymbol ts) {
