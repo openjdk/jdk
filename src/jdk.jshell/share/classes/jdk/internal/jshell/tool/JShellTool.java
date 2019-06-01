@@ -3499,6 +3499,10 @@ public class JShellTool implements MessageHandler {
 
         int pstart = (int) diag.getStartPosition();
         int pend = (int) diag.getEndPosition();
+        if (pstart < 0 || pend < 0) {
+            pstart = 0;
+            pend = source.length();
+        }
         Matcher m = LINEBREAK.matcher(source);
         int pstartl = 0;
         int pendl = -2;
@@ -3510,7 +3514,7 @@ public class JShellTool implements MessageHandler {
                 pstartl = m.end();
             }
         }
-        if (pendl < pstart) {
+        if (pendl < pstartl) {
             pendl = source.length();
         }
         toDisplay.add(source.substring(pstartl, pendl));
