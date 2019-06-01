@@ -67,27 +67,28 @@ public class GenerateEmojiData {
                     },
                     ArrayList<Range>::addAll);
 
+
             // make the code point conditions
-            String extPictCodePoints = extPictRanges.stream()
-                .map(r -> {
-                    if (r.start == r.last) {
-                        return (" ".repeat(12) + "cp == 0x" + toHexString(r.start));
-                    } else  if (r.start == r.last - 1) {
-                        return " ".repeat(12) + "cp == 0x" + toHexString(r.start) + " ||\n" +
-                               " ".repeat(12) + "cp == 0x" + toHexString(r.last);
-                    } else {
-                        return " ".repeat(11) + "(cp >= 0x" + toHexString(r.start) +
-                               " && cp <= 0x" + toHexString(r.last) + ")";
-                    }
-                })
-                .collect(Collectors.joining(" ||\n")) + ";\n";
+            // only very few codepoints below 0x2000 are "emojis", so separate them
+            // out to generate a fast-path check that can be efficiently inlined
+            String lowExtPictCodePoints = extPictRanges.stream()
+                    .takeWhile(r -> r.last < 0x2000)
+                    .map(r -> rangeToString(r))
+                    .collect(Collectors.joining(" ||\n", "", ";\n"));
+
+            String highExtPictCodePoints = extPictRanges.stream()
+                    .dropWhile(r -> r.last < 0x2000)
+                    .map(r -> rangeToString(r))
+                    .collect(Collectors.joining(" ||\n", "", ";\n"));
 
             // Generate EmojiData.java file
             Files.write(Paths.get(args[2]),
                 Files.lines(Paths.get(args[0]))
                     .flatMap(l -> {
-                        if (l.equals("%%%EXTPICT%%%")) {
-                            return Stream.of(extPictCodePoints);
+                        if (l.equals("%%%EXTPICT_LOW%%%")) {
+                            return Stream.of(lowExtPictCodePoints);
+                        } else if (l.equals("%%%EXTPICT_HIGH%%%")) {
+                            return Stream.of(highExtPictCodePoints);
                         } else {
                             return Stream.of(l);
                         }
@@ -96,6 +97,18 @@ public class GenerateEmojiData {
                 StandardOpenOption.CREATE, StandardOpenOption.TRUNCATE_EXISTING);
         } catch (IOException e) {
             e.printStackTrace();
+        }
+    }
+
+    static String rangeToString(Range r) {
+        if (r.start == r.last) {
+            return (" ".repeat(16) + "cp == 0x" + toHexString(r.start));
+        } else  if (r.start == r.last - 1) {
+            return " ".repeat(16) + "cp == 0x" + toHexString(r.start) + " ||\n" +
+                    " ".repeat(16) + "cp == 0x" + toHexString(r.last);
+        } else {
+            return " ".repeat(15) + "(cp >= 0x" + toHexString(r.start) +
+                    " && cp <= 0x" + toHexString(r.last) + ")";
         }
     }
 

@@ -3973,7 +3973,16 @@ loop:   for(int x=0, offset=0; x<nCodePoints; x++, offset+=len) {
             if (i < matcher.to) {
                 int ch0 = Character.codePointAt(seq, i);
                 int n = Character.charCount(ch0);
-                int j = Grapheme.nextBoundary(seq, i, matcher.to);
+                int j = i + n;
+                // Fast check if it's necessary to call Normalizer;
+                // testing Grapheme.isBoundary is enough for this case
+                while (j < matcher.to) {
+                    int ch1 = Character.codePointAt(seq, j);
+                    if (Grapheme.isBoundary(ch0, ch1))
+                        break;
+                    ch0 = ch1;
+                    j += Character.charCount(ch1);
+                }
                 if (i + n == j) {    // single, assume nfc cp
                     if (predicate.is(ch0))
                         return next.match(matcher, j, seq);

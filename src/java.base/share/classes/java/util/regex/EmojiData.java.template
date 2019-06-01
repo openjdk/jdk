@@ -40,7 +40,16 @@ final class EmojiData {
      * @return true if {@code cp} is an extended pictographic
      */
     static boolean isExtendedPictographic(int cp) {
+        if (cp < 0x2000) {
+            return
+%%%EXTPICT_LOW%%%
+        } else {
+            return isHigh(cp);
+        }
+    }
+
+    private static boolean isHigh(int cp) {
         return
-%%%EXTPICT%%%
+%%%EXTPICT_HIGH%%%
     }
 }

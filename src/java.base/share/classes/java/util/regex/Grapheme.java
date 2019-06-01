@@ -30,6 +30,19 @@ import java.util.Objects;
 final class Grapheme {
 
     /**
+     * Determines if there is an extended  grapheme cluster boundary between two
+     * continuing characters {@code cp1} and {@code cp2}.
+     * <p>
+     * See Unicode Standard Annex #29 Unicode Text Segmentation for the specification
+     * for the extended grapheme cluster boundary rules
+     * <p>
+     * Note: this method does not take care of stateful breaking.
+     */
+    static boolean isBoundary(int cp1, int cp2) {
+        return rules[getType(cp1)][getType(cp2)];
+    }
+
+    /**
      * Look for the next extended grapheme cluster boundary in a CharSequence. It assumes
      * the start of the char sequence is a boundary.
      * <p>
@@ -50,12 +63,12 @@ final class Grapheme {
         int ret = Character.charCount(ch0);
         int ch1;
         // indicates whether gb11 or gb12 is underway
-        boolean gb11 = EmojiData.isExtendedPictographic(ch0);
-        int riCount = getType(ch0) == RI ? 1 : 0;
+        int t0 = getGraphemeType(ch0);
+        int riCount = t0 == RI ? 1 : 0;
+        boolean gb11 = t0 == EXTENDED_PICTOGRAPHIC;
         while (ret < limit) {
             ch1 = Character.codePointAt(src, ret);
-            int t0 = getType(ch0);
-            int t1 = getType(ch1);
+            int t1 = getGraphemeType(ch1);
 
             if (gb11 && t0 == ZWJ && t1 == EXTENDED_PICTOGRAPHIC) {
                 gb11 = false;
@@ -65,13 +78,14 @@ final class Grapheme {
                 if (ret > off) {
                     break;
                 } else {
-                    gb11 = EmojiData.isExtendedPictographic(ch1);
+                    gb11 = t1 == EXTENDED_PICTOGRAPHIC;
                     riCount = 0;
                 }
             }
 
-            riCount += getType(ch1) == RI ? 1 : 0;
-            ch0 = ch1;
+            riCount += (t1 == RI) ? 1 : 0;
+            t0 = t1;
+
             ret += Character.charCount(ch1);
         }
         return ret;
@@ -163,6 +177,20 @@ final class Grapheme {
                cp == 0xAA7B || cp == 0xAA7D;
     }
 
+    private static int getGraphemeType(int cp) {
+        if (cp < 0x007F) { // ASCII
+            if (cp < 32) { // Control characters
+                if (cp == 0x000D)
+                    return CR;
+                if (cp == 0x000A)
+                    return LF;
+                return CONTROL;
+            }
+            return OTHER;
+        }
+        return getType(cp);
+    }
+
     @SuppressWarnings("fallthrough")
     private static int getType(int cp) {
         if (EmojiData.isExtendedPictographic(cp)) {
@@ -171,12 +199,6 @@ final class Grapheme {
 
         int type = Character.getType(cp);
         switch(type) {
-        case Character.CONTROL:
-            if (cp == 0x000D)
-                return CR;
-            if (cp == 0x000A)
-                return LF;
-            return CONTROL;
         case Character.UNASSIGNED:
             // NOTE: #tr29 lists "Unassigned and Default_Ignorable_Code_Point" as Control
             // but GraphemeBreakTest.txt lists u+0378/reserved-0378 as "Other"
@@ -184,6 +206,7 @@ final class Grapheme {
             if (cp == 0x0378)
                 return OTHER;
 
+        case Character.CONTROL:
         case Character.LINE_SEPARATOR:
         case Character.PARAGRAPH_SEPARATOR:
         case Character.SURROGATE:
