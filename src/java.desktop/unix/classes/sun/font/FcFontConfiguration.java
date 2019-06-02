@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -37,6 +37,7 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Locale;
 import java.util.Properties;
 import java.util.Scanner;
 import sun.awt.FcFontManager;
@@ -264,7 +265,7 @@ public class FcFontConfiguration extends FontConfiguration {
                 int index;
                 for (index = 0; index < fcFonts.length; index++) {
                     fileNames[index] = fcFonts[index].fontFile;
-                    faceNames[index] = fcFonts[index].familyName;
+                    faceNames[index] = fcFonts[index].fullName;
                 }
 
                 if (installedFallbackFontFiles != null) {
@@ -357,9 +358,11 @@ public class FcFontConfiguration extends FontConfiguration {
             String version = System.getProperty("java.version");
             String fs = File.separator;
             String dir = userDir+fs+".java"+fs+"fonts"+fs+version;
-            String lang = SunToolkit.getStartupLocale().getLanguage();
+            Locale locale = SunToolkit.getStartupLocale();
+            String lang = locale.getLanguage();
+            String country = locale.getCountry();
             String name = "fcinfo-"+fileVersion+"-"+hostname+"-"+
-                osName+"-"+osVersion+"-"+lang+".properties";
+                osName+"-"+osVersion+"-"+lang+"-"+country+".properties";
             fcInfoFileName = dir+fs+name;
         }
         return new File(fcInfoFileName);
@@ -385,10 +388,12 @@ public class FcFontConfiguration extends FontConfiguration {
             props.setProperty(styleKey+".length",
                               Integer.toString(fci.allFonts.length));
             for (int j=0; j<fci.allFonts.length; j++) {
-                props.setProperty(styleKey+"."+j+".family",
-                                  fci.allFonts[j].familyName);
                 props.setProperty(styleKey+"."+j+".file",
                                   fci.allFonts[j].fontFile);
+                if (fci.allFonts[j].fullName != null) {
+                    props.setProperty(styleKey+"."+j+".fullName",
+                                      fci.allFonts[j].fullName);
+                }
             }
         }
         try {
@@ -503,9 +508,9 @@ public class FcFontConfiguration extends FontConfiguration {
                     fci[index].allFonts = new FontConfigFont[nfonts];
                     for (int f=0; f<nfonts; f++) {
                         fci[index].allFonts[f] = new FontConfigFont();
-                        String fkey = key+"."+f+".family";
-                        String family = (String)props.get(fkey);
-                        fci[index].allFonts[f].familyName = family;
+                        String fkey = key+"."+f+".fullName";
+                        String fullName = (String)props.get(fkey);
+                        fci[index].allFonts[f].fullName = fullName;
                         fkey = key+"."+f+".file";
                         String file = (String)props.get(fkey);
                         if (file == null) {
