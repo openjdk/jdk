@@ -357,7 +357,7 @@ typedef struct {
 } DS_Info;
 
 
-LPSTR TranslateDSError(HRESULT hr) {
+LPCSTR TranslateDSError(HRESULT hr) {
     switch(hr) {
         case DSERR_ALLOCATED:
             return "DSERR_ALLOCATED";
