@@ -1782,6 +1782,8 @@ void Arguments::set_heap_size() {
       // Limit the heap size to ErgoHeapSizeLimit
       reasonable_max = MIN2(reasonable_max, (julong)ErgoHeapSizeLimit);
     }
+
+#ifdef _LP64
     if (UseCompressedOops) {
       // Limit the heap size to the maximum possible when using compressed oops
       julong max_coop_heap = (julong)max_heap_for_compressed_oops();
@@ -1818,6 +1820,8 @@ void Arguments::set_heap_size() {
         }
       }
     }
+#endif // _LP64
+
     reasonable_max = limit_by_allocatable_memory(reasonable_max);
 
     if (!FLAG_IS_DEFAULT(InitialHeapSize)) {
