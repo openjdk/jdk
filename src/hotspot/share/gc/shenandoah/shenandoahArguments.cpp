@@ -36,7 +36,7 @@ void ShenandoahArguments::initialize() {
   vm_exit_during_initialization("Shenandoah GC is not supported on this platform.");
 #endif
 
-#ifdef IA32
+#if 0 // leave this block as stepping stone for future platforms
   log_warning(gc)("Shenandoah GC is not fully supported on this platform:");
   log_warning(gc)("  concurrent modes are not supported, only STW cycles are enabled;");
   log_warning(gc)("  arch-specific barrier code is not implemented, disabling barriers;");
