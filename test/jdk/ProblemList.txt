@@ -735,7 +735,7 @@ javax/swing/JFileChooser/DeserializedJFileChooser/DeserializedJFileChooserTest.j
 javax/swing/JFileChooser/6396844/TwentyThousandTest.java 8198003 generic-all
 javax/swing/JFrame/8175301/ScaledFrameBackgroundTest.java 8193942 generic-all
 javax/swing/JList/6462008/bug6462008.java 7156347 generic-all
-javax/swing/JPopupMenu/6580930/bug6580930.java 8196096 windows-all,macosx-all
+javax/swing/JPopupMenu/6580930/bug6580930.java 7124313 macosx-all
 javax/swing/JPopupMenu/6800513/bug6800513.java 7184956 macosx-all
 javax/swing/JPopupMenu/6675802/bug6675802.java 8196097 windows-all
 javax/swing/JTabbedPane/8007563/Test8007563.java 8051591 generic-all
