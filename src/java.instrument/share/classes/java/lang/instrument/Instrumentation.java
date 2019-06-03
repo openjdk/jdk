@@ -65,7 +65,7 @@ import java.util.jar.JarFile;
  * <p>
  * Once an agent acquires an <code>Instrumentation</code> instance,
  * the agent may call methods on the instance at any time.
- * <p>
+ *
  * @apiNote This interface is not intended to be implemented outside of
  * the java.instrument module.
  *
