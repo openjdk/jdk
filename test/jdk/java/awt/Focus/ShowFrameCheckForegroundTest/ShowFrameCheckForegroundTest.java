@@ -66,7 +66,7 @@ public class ShowFrameCheckForegroundTest {
     public void start() {
         showButton.addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent e) {
-                testToplevel.setVisible(true);
+                Util.showWindowWait(testToplevel);
             }
         });
         nofocusFrame.add(showButton);
@@ -98,10 +98,12 @@ public class ShowFrameCheckForegroundTest {
 
         switch (stage) {
             case 1:
-                toplevel.setVisible(true);
+                Util.showWindowWait(toplevel);
                 break;
             case 2:
                 testToplevel = toplevel;
+                Util.showWindowWait(nofocusFrame);
+                Util.waitForIdle(robot);
                 Util.clickOnComp(showButton, robot);
                 break;
         }
