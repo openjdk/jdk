@@ -43,7 +43,9 @@ import org.graalvm.compiler.nodes.ValueNode;
 import org.graalvm.compiler.nodes.spi.NodeValueMap;
 import org.graalvm.compiler.nodes.util.GraphUtil;
 import org.graalvm.compiler.nodes.virtual.EscapeObjectState;
+import org.graalvm.compiler.nodes.virtual.VirtualBoxingNode;
 import org.graalvm.compiler.nodes.virtual.VirtualObjectNode;
+import org.graalvm.compiler.serviceprovider.GraalServices;
 import org.graalvm.compiler.virtual.nodes.MaterializedObjectState;
 import org.graalvm.compiler.virtual.nodes.VirtualObjectState;
 
@@ -154,6 +156,10 @@ public class DebugInfoBuilder {
                 }
                 assert checkValues(vobjValue.getType(), values, slotKinds);
                 vobjValue.setValues(values, slotKinds);
+
+                if (vobjNode instanceof VirtualBoxingNode) {
+                    GraalServices.markVirtualObjectAsAutoBox(vobjValue);
+                }
             }
 
             virtualObjectsArray = new VirtualObject[virtualObjects.size()];
