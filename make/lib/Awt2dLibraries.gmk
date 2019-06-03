@@ -39,7 +39,7 @@ LIBAWT_DEFAULT_HEADER_DIRS := \
 
 # We must not include java.desktop/unix/native/libmlib_image, which is only
 # for usage by solaris-sparc in libmlib_image_v.
-BUILD_LIBMLIB_EXCLUDE_SRC_PATTERNS := unix
+BUILD_LIBMLIB_EXCLUDE_SRC_PATTERNS := /unix/
 
 BUILD_LIBMLIB_CFLAGS := -D__USE_J2D_NAMES -D__MEDIALIB_OLD_NAMES -DMLIB_NO_LIBSUNMATH
 
@@ -698,7 +698,7 @@ else # not windows
 
   ifeq ($(call isTargetOs, macosx), true)
     # libjawt on macosx do not use the unix code
-    LIBJAWT_EXCLUDE_SRC_PATTERNS := unix
+    LIBJAWT_EXCLUDE_SRC_PATTERNS := /unix/
   endif
 
   ifeq ($(call isTargetOs, macosx), true)
@@ -788,7 +788,7 @@ ifeq ($(ENABLE_HEADLESS_ONLY), false)
 
   ifeq ($(call isTargetOs, macosx), true)
     # libsplashscreen on macosx do not use the unix code
-    LIBSPLASHSCREEN_EXCLUDE_SRC_PATTERNS := unix
+    LIBSPLASHSCREEN_EXCLUDE_SRC_PATTERNS := /unix/
   endif
 
   LIBSPLASHSCREEN_CFLAGS += -DSPLASHSCREEN -DPNG_NO_MMX_CODE -DPNG_ARM_NEON_OPT=0
