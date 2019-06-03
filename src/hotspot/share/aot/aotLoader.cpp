@@ -24,6 +24,7 @@
 #include "precompiled.hpp"
 #include "aot/aotCodeHeap.hpp"
 #include "aot/aotLoader.inline.hpp"
+#include "classfile/javaClasses.hpp"
 #include "jvm.h"
 #include "memory/allocation.inline.hpp"
 #include "memory/resourceArea.hpp"
