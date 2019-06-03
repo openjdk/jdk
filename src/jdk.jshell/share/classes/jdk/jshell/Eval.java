@@ -974,7 +974,7 @@ class Eval {
                 ins.stream().forEach(u -> u.setDiagnostics(at));
 
                 // corral any Snippets that need it
-                if (ins.stream().anyMatch(u -> u.corralIfNeeded(ins))) {
+                if (ins.stream().filter(u -> u.corralIfNeeded(ins)).count() > 0) {
                     // if any were corralled, re-analyze everything
                     state.taskFactory.analyze(outerWrapSet(ins), cat -> {
                         ins.stream().forEach(u -> u.setCorralledDiagnostics(cat));

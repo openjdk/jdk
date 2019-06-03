@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 8081431 8080069 8167128
+ * @bug 8081431 8080069 8167128 8199623
  * @summary Test of JShell#drop().
  * @build KullaTesting TestingInputStream
  * @run testng DropTest
@@ -31,6 +31,7 @@
 
 import jdk.jshell.DeclarationSnippet;
 import jdk.jshell.Snippet;
+import jdk.jshell.MethodSnippet;
 import jdk.jshell.VarSnippet;
 import org.testng.annotations.Test;
 
@@ -224,5 +225,18 @@ public class DropTest extends KullaTesting {
         assertEval(as1,
                 ste(MAIN_SNIPPET, VALID, VALID, true, null),
                 ste(ax, VALID, OVERWRITTEN, false, MAIN_SNIPPET));
+    }
+
+    // 8199623
+    public void testTwoForkedDrop() {
+        MethodSnippet p = methodKey(assertEval("void p() throws Exception { ((String) null).toString(); }"));
+        MethodSnippet n = methodKey(assertEval("void n() throws Exception { try { p(); } catch (Exception ex) { throw new RuntimeException(\"bar\", ex); }}"));
+        MethodSnippet m = methodKey(assertEval("void m() { try { n(); } catch (Exception ex) { throw new RuntimeException(\"foo\", ex); }}"));
+        MethodSnippet c = methodKey(assertEval("void c() throws Throwable { p(); }"));
+        assertDrop(p,
+                ste(p, VALID, DROPPED, true, null),
+                ste(n, VALID, RECOVERABLE_DEFINED, false, p),
+                ste(c, VALID, RECOVERABLE_DEFINED, false, p));
+        assertActiveKeys();
     }
 }
