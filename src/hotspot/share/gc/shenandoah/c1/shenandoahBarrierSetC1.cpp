@@ -30,10 +30,6 @@
 #include "gc/shenandoah/shenandoahThreadLocalData.hpp"
 #include "gc/shenandoah/c1/shenandoahBarrierSetC1.hpp"
 
-#ifndef PATCHED_ADDR
-#define PATCHED_ADDR  (max_jint)
-#endif
-
 #ifdef ASSERT
 #define __ gen->lir(__FILE__, __LINE__)->
 #else
