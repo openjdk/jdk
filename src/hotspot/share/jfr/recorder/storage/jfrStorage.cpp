@@ -312,7 +312,11 @@ static JfrAgeNode* get_free_age_node(JfrStorageAgeMspace* age_mspace, Thread* th
 
 static bool insert_full_age_node(JfrAgeNode* age_node, JfrStorageAgeMspace* age_mspace, Thread* thread) {
   assert(JfrBuffer_lock->owned_by_self(), "invariant");
+  assert(age_node != NULL, "invariant");
+  assert(age_node->acquired_by_self(), "invariant");
   assert(age_node->retired_buffer()->retired(), "invariant");
+  age_node->release(); // drop identity claim on age node when inserting to full list
+  assert(age_node->identity() == NULL, "invariant");
   age_mspace->insert_full_head(age_node);
   return true;
 }
@@ -329,8 +333,8 @@ static bool full_buffer_registration(BufferPtr buffer, JfrStorageAgeMspace* age_
       return false;
     }
   }
-  assert(age_node->acquired_by_self(), "invariant");
   assert(age_node != NULL, "invariant");
+  assert(age_node->acquired_by_self(), "invariant");
   age_node->set_retired_buffer(buffer);
   control.increment_full();
   return insert_full_age_node(age_node, age_mspace, thread);
@@ -339,9 +343,9 @@ static bool full_buffer_registration(BufferPtr buffer, JfrStorageAgeMspace* age_
 void JfrStorage::register_full(BufferPtr buffer, Thread* thread) {
   assert(buffer != NULL, "invariant");
   assert(buffer->retired(), "invariant");
+  assert(buffer->acquired_by(thread), "invariant");
   if (!full_buffer_registration(buffer, _age_mspace, control(), thread)) {
     handle_registration_failure(buffer);
-    buffer->release();
   }
   if (control().should_post_buffer_full_message()) {
     _post_box.post(MSG_FULLBUFFER);
@@ -376,8 +380,8 @@ void JfrStorage::release(BufferPtr buffer, Thread* thread) {
     }
   }
   assert(buffer->empty(), "invariant");
+  assert(buffer->identity() != NULL, "invariant");
   control().increment_dead();
-  buffer->release();
   buffer->set_retired();
 }
 
@@ -412,6 +416,7 @@ void JfrStorage::discard_oldest(Thread* thread) {
       if (oldest_age_node == NULL) {
         break;
       }
+      assert(oldest_age_node->identity() == NULL, "invariant");
       BufferPtr const buffer = oldest_age_node->retired_buffer();
       assert(buffer->retired(), "invariant");
       discarded_size += buffer->unflushed_size();
@@ -423,7 +428,7 @@ void JfrStorage::discard_oldest(Thread* thread) {
       } else {
         mspace_release_full(oldest_age_node, _age_mspace);
         buffer->reinitialize();
-        buffer->release(); // pusb
+        buffer->release(); // publish
         break;
       }
     }
@@ -637,12 +642,12 @@ static void process_age_list(Processor& processor, JfrStorageAgeMspace* age_mspa
   JfrAgeNode* last = NULL;
   while (node != NULL) {
     last = node;
+    assert(node->identity() == NULL, "invariant");
     BufferPtr const buffer = node->retired_buffer();
     assert(buffer != NULL, "invariant");
     assert(buffer->retired(), "invariant");
     processor.process(buffer);
     // at this point, buffer is already live or destroyed
-    node->clear_identity();
     JfrAgeNode* const next = (JfrAgeNode*)node->next();
     if (node->transient()) {
       // detach
@@ -738,13 +743,14 @@ public:
   Scavenger(JfrStorageControl& control, Mspace* mspace) : _control(control), _mspace(mspace), _count(0), _amount(0) {}
   bool process(Type* t) {
     if (t->retired()) {
+      assert(t->identity() != NULL, "invariant");
+      assert(t->empty(), "invariant");
       assert(!t->transient(), "invariant");
       assert(!t->lease(), "invariant");
-      assert(t->empty(), "invariant");
-      assert(t->identity() == NULL, "invariant");
       ++_count;
       _amount += t->total_size();
       t->clear_retired();
+      t->release();
       _control.decrement_dead();
       mspace_release_full_critical(t, _mspace);
     }

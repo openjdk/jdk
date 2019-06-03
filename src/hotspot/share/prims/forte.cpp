@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -70,7 +70,7 @@ enum {
 // Native interfaces for use by Forte tools.
 
 
-#if !defined(IA64) && !defined(PPC64)
+#if !defined(IA64)
 
 class vframeStreamForte : public vframeStreamCommon {
  public:
@@ -639,16 +639,16 @@ void    collector_func_load(char* name,
 #endif // !_WINDOWS
 
 } // end extern "C"
-#endif // !IA64 && !PPC64
+#endif // !IA64
 
 void Forte::register_stub(const char* name, address start, address end) {
-#if !defined(_WINDOWS) && !defined(IA64) && !defined(PPC64)
+#if !defined(_WINDOWS) && !defined(IA64)
   assert(pointer_delta(end, start, sizeof(jbyte)) < INT_MAX,
          "Code size exceeds maximum range");
 
   collector_func_load((char*)name, NULL, NULL, start,
     pointer_delta(end, start, sizeof(jbyte)), 0, NULL);
-#endif // !_WINDOWS && !IA64 && !PPC64
+#endif // !_WINDOWS && !IA64
 }
 
 #else // INCLUDE_JVMTI

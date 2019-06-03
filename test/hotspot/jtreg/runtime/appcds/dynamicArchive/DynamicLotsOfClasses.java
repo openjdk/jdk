@@ -1,0 +1,93 @@
+/*
+ * Copyright (c) 2019, Oracle and/or its affiliates. All rights reserved.
+ * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
+ *
+ * This code is free software; you can redistribute it and/or modify it
+ * under the terms of the GNU General Public License version 2 only, as
+ * published by the Free Software Foundation.
+ *
+ * This code is distributed in the hope that it will be useful, but WITHOUT
+ * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+ * FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+ * version 2 for more details (a copy is included in the LICENSE file that
+ * accompanied this code).
+ *
+ * You should have received a copy of the GNU General Public License version
+ * 2 along with this work; if not, write to the Free Software Foundation,
+ * Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
+ *
+ * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
+ * or visit www.oracle.com if you need additional information or have any
+ * questions.
+ *
+ */
+
+import java.io.File;
+import java.nio.charset.Charset;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.util.List;
+import java.util.ArrayList;
+
+/*
+ * @test
+ * @summary Try to archive lots of classes by searching for classes from the jrt:/ file system. With JDK 12
+ *          this will produce an archive with over 30,000 classes.
+ * @requires vm.cds
+ * @library /test/lib /test/hotspot/jtreg/runtime/appcds /test/hotspot/jtreg/runtime/appcds/dynamicArchive/test-classes
+ * @build LoadClasses
+ * @build sun.hotspot.WhiteBox
+ * @modules jdk.jartool/sun.tools.jar
+ * @run driver ClassFileInstaller -jar loadclasses.jar LoadClasses
+ * @run driver ClassFileInstaller -jar whitebox.jar sun.hotspot.WhiteBox
+ * @run driver/timeout=500 DynamicLotsOfClasses
+ */
+
+public class DynamicLotsOfClasses extends DynamicArchiveTestBase {
+
+    public static void main(String[] args) throws Throwable {
+        runTest(DynamicLotsOfClasses::testDefaultBase);
+    }
+
+    static void testDefaultBase() throws Exception {
+        String topArchiveName = getNewArchiveName("top");
+        try {
+            doTest(topArchiveName);
+         } catch (Throwable th) {
+             System.out.println(th.toString());
+             Exception ex = new Exception(th);
+             throw ex;
+         }
+    }
+
+    private static void doTest(String topArchiveName) throws Throwable {
+        ArrayList<String> list = new ArrayList<>();
+        TestCommon.findAllClasses(list);
+
+        String classList = System.getProperty("user.dir") + File.separator +
+                           "LotsOfClasses.list";
+        List<String> lines = list;
+        Path file = Paths.get(classList);
+        Files.write(file, lines, Charset.forName("UTF-8"));
+
+        String appJar = ClassFileInstaller.getJarPath("loadclasses.jar");
+        String mainClass = "LoadClasses";
+
+        String whiteBoxJar = ClassFileInstaller.getJarPath("whitebox.jar");
+        String bootClassPath = "-Xbootclasspath/a:" + whiteBoxJar;
+        dump(topArchiveName,
+             "--add-modules",
+             "ALL-SYSTEM",
+             "-Xlog:hashtables",
+             "-Xmx500m",
+             "-Xlog:cds,cds+dynamic",
+             bootClassPath,
+             "-XX:+UnlockDiagnosticVMOptions", "-XX:+WhiteBoxAPI",
+             "-cp", appJar, mainClass, classList)
+             .assertNormalExit(output -> {
+                 output.shouldContain("Buffer-space to target-space delta")
+                        .shouldContain("Written dynamic archive 0x");
+             });
+    }
+}

@@ -56,6 +56,7 @@ import jdk.vm.ci.hotspot.HotSpotInstalledCode;
 import jdk.vm.ci.hotspot.HotSpotJVMCIRuntime;
 import jdk.vm.ci.hotspot.HotSpotNmethod;
 import jdk.vm.ci.hotspot.HotSpotResolvedJavaMethod;
+import jdk.vm.ci.meta.ResolvedJavaMethod;
 import jdk.vm.ci.runtime.JVMCICompiler;
 
 public class CompilationTask {
@@ -169,7 +170,13 @@ public class CompilationTask {
             }
             stats.finish(method, installedCode);
             if (result != null) {
-                return HotSpotCompilationRequestResult.success(result.getBytecodeSize() - method.getCodeSize());
+                // For compilation of substitutions the method in the compilation request might be
+                // different than the actual method parsed. The root of the compilation will always
+                // be the first method in the methods list, so use that instead.
+                ResolvedJavaMethod rootMethod = result.getMethods()[0];
+                int inlinedBytecodes = result.getBytecodeSize() - rootMethod.getCodeSize();
+                assert inlinedBytecodes >= 0 : rootMethod + " " + method;
+                return HotSpotCompilationRequestResult.success(inlinedBytecodes);
             }
             return null;
         }

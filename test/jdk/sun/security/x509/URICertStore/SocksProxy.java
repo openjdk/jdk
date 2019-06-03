@@ -22,6 +22,7 @@
  */
 
 import java.io.IOException;
+import java.net.InetAddress;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.util.Objects;
@@ -30,7 +31,7 @@ import java.util.function.Consumer;
 import javax.net.ServerSocketFactory;
 
 /*
- * A simple socks4 proxy for traveling socket.
+ * A simple socks proxy for traveling socket.
  */
 class SocksProxy implements Runnable, AutoCloseable {
 
@@ -49,10 +50,11 @@ class SocksProxy implements Runnable, AutoCloseable {
         ServerSocket server
                 = ServerSocketFactory.getDefault().createServerSocket(0);
 
-        System.setProperty("socksProxyHost", "127.0.0.1");
+        System.setProperty("socksProxyHost",
+                InetAddress.getLoopbackAddress().getHostAddress());
         System.setProperty("socksProxyPort",
                 String.valueOf(server.getLocalPort()));
-        System.setProperty("socksProxyVersion", "4");
+        System.setProperty("socksProxyVersion", "5");
 
         SocksProxy proxy = new SocksProxy(server, socketConsumer);
         Thread proxyThread = new Thread(proxy, "Proxy");

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2006, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2006, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,6 +25,7 @@
  * @test
  * @bug 6427251 6382788
  * @modules jdk.httpserver
+ * @library /test/lib
  * @run main RetryPost
  * @run main/othervm -Dsun.net.http.retryPost=false RetryPost noRetry
  * @summary HttpURLConnection automatically retries non-idempotent method POST
@@ -36,12 +37,14 @@ import com.sun.net.httpserver.HttpHandler;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.net.HttpURLConnection;
+import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.Proxy;
 import java.net.SocketException;
 import java.net.URL;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ExecutorService;
+import jdk.test.lib.net.URIBuilder;
 
 public class RetryPost
 {
@@ -70,7 +73,12 @@ public class RetryPost
     void doClient() {
         try {
             InetSocketAddress address = httpServer.getAddress();
-            URL url = new URL("http://localhost:" + address.getPort() + "/test/");
+            URL url = URIBuilder.newBuilder()
+                      .scheme("http")
+                      .host(address.getAddress())
+                      .port(address.getPort())
+                      .path("/test/")
+                      .toURLUnchecked();
             HttpURLConnection uc = (HttpURLConnection)url.openConnection(Proxy.NO_PROXY);
             uc.setDoOutput(true);
             uc.setRequestMethod("POST");
@@ -99,7 +107,8 @@ public class RetryPost
      * Http Server
      */
     public void startHttpServer(boolean shouldRetry) throws IOException {
-        httpServer = com.sun.net.httpserver.HttpServer.create(new InetSocketAddress(0), 0);
+        InetAddress loopback = InetAddress.getLoopbackAddress();
+        httpServer = com.sun.net.httpserver.HttpServer.create(new InetSocketAddress(loopback, 0), 0);
         httpHandler = new MyHandler(shouldRetry);
 
         HttpContext ctx = httpServer.createContext("/test/", httpHandler);

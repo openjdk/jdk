@@ -38,7 +38,6 @@ private:
 public:
   ZMetronome(uint64_t hz);
 
-  uint64_t nticks() const;
   bool wait_for_tick();
   void stop();
 };

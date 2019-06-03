@@ -974,6 +974,27 @@ AdapterHandlerEntry* SharedRuntime::generate_i2c2i_adapters(MacroAssembler *masm
   BarrierSetAssembler* bs = BarrierSet::barrier_set()->barrier_set_assembler();
   bs->c2i_entry_barrier(masm);
 
+  // Class initialization barrier for static methods
+  if (VM_Version::supports_fast_class_init_checks()) {
+    Label L_skip_barrier;
+    Register method = rbx;
+
+    { // Bypass the barrier for non-static methods
+      Register flags  = rscratch1;
+      __ movl(flags, Address(method, Method::access_flags_offset()));
+      __ testl(flags, JVM_ACC_STATIC);
+      __ jcc(Assembler::zero, L_skip_barrier); // non-static
+    }
+
+    Register klass = rscratch1;
+    __ load_method_holder(klass, method);
+    __ clinit_barrier(klass, r15_thread, &L_skip_barrier /*L_fast_path*/);
+
+    __ jump(RuntimeAddress(SharedRuntime::get_handle_wrong_method_stub())); // slow path
+
+    __ bind(L_skip_barrier);
+  }
+
   gen_c2i_adapter(masm, total_args_passed, comp_args_on_stack, sig_bt, regs, skip_fixup);
 
   __ flush();
@@ -2139,6 +2160,17 @@ nmethod* SharedRuntime::generate_native_wrapper(MacroAssembler* masm,
   __ bind(hit);
 
   int vep_offset = ((intptr_t)__ pc()) - start;
+
+  if (VM_Version::supports_fast_class_init_checks() && method->needs_clinit_barrier()) {
+    Label L_skip_barrier;
+    Register klass = r10;
+    __ mov_metadata(klass, method->method_holder()); // InstanceKlass*
+    __ clinit_barrier(klass, r15_thread, &L_skip_barrier /*L_fast_path*/);
+
+    __ jump(RuntimeAddress(SharedRuntime::get_handle_wrong_method_stub())); // slow path
+
+    __ bind(L_skip_barrier);
+  }
 
 #ifdef COMPILER1
   // For Object.hashCode, System.identityHashCode try to pull hashCode from object header if available.

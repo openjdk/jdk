@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -61,6 +61,21 @@ public class FormatData_es_PE extends ParallelListResourceBundle {
                     "hh:mm:ss a z", // long time pattern
                     "hh:mm:ss a", // medium time pattern
                     "hh:mm a", // short time pattern
+                }
+            },
+            { "NumberElements",
+                new String[] {
+                    ".", // decimal separator
+                    ",", // group (thousands) separator
+                    ";", // list separator
+                    "%", // percent sign
+                    "0", // native 0 digit
+                    "#", // pattern digit
+                    "-", // minus sign
+                    "E", // exponential
+                    "\u2030", // per mille
+                    "\u221e", // infinity
+                    "\ufffd" // NaN
                 }
             },
             { "DatePatterns",

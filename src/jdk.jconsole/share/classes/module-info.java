@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,10 +28,11 @@
  * for monitoring and managing a running application.
  *
  * <dl style="font-family:'DejaVu Sans', Arial, Helvetica, sans serif">
- * <dt class="simpleTagLabel">Tool Guides:
- * <dd>{@extLink jconsole_tool_reference jconsole},
- *     {@extLink using_jconsole Using JConsole}
+ * <dt class="simpleTagLabel">See Also:
+ * <dd>{@extLink using_jconsole Using JConsole}
  * </dl>
+ *
+ * @toolGuide jconsole
  *
  * @uses com.sun.tools.jconsole.JConsolePlugin
  *

@@ -1314,6 +1314,12 @@ bool SharedRuntime::resolve_sub_helper_internal(methodHandle callee_method, cons
           }
         }
       } else {
+        if (VM_Version::supports_fast_class_init_checks() &&
+            invoke_code == Bytecodes::_invokestatic &&
+            callee_method->needs_clinit_barrier() &&
+            callee != NULL && (callee->is_compiled_by_jvmci() || callee->is_aot())) {
+          return true; // skip patching for JVMCI or AOT code
+        }
         CompiledStaticCall* ssc = caller_nm->compiledStaticCall_before(caller_frame.pc());
         if (ssc->is_clean()) ssc->set(static_call_info);
       }
@@ -1376,12 +1382,20 @@ methodHandle SharedRuntime::resolve_sub_helper(JavaThread *thread,
   }
 #endif
 
-  // Do not patch call site for static call when the class is not
-  // fully initialized.
-  if (invoke_code == Bytecodes::_invokestatic &&
-      !callee_method->method_holder()->is_initialized()) {
-    assert(callee_method->method_holder()->is_linked(), "must be");
-    return callee_method;
+  if (invoke_code == Bytecodes::_invokestatic) {
+    assert(callee_method->method_holder()->is_initialized() ||
+           callee_method->method_holder()->is_reentrant_initialization(thread),
+           "invalid class initialization state for invoke_static");
+    if (!VM_Version::supports_fast_class_init_checks() && callee_method->needs_clinit_barrier()) {
+      // In order to keep class initialization check, do not patch call
+      // site for static call when the class is not fully initialized.
+      // Proper check is enforced by call site re-resolution on every invocation.
+      //
+      // When fast class initialization checks are supported (VM_Version::supports_fast_class_init_checks() == true),
+      // explicit class initialization check is put in nmethod entry (VEP).
+      assert(callee_method->method_holder()->is_linked(), "must be");
+      return callee_method;
+    }
   }
 
   // JSR 292 key invariant:

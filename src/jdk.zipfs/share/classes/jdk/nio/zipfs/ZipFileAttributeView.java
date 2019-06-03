@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2009, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,7 +27,6 @@ package jdk.nio.zipfs;
 
 import java.io.IOException;
 import java.nio.file.attribute.BasicFileAttributeView;
-import java.nio.file.attribute.FileAttributeView;
 import java.nio.file.attribute.FileTime;
 import java.util.LinkedHashMap;
 import java.util.Map;
@@ -36,7 +35,7 @@ import java.util.Map;
  * @author Xueming Shen, Rajendra Gutupalli, Jaya Hangal
  */
 class ZipFileAttributeView implements BasicFileAttributeView {
-    private static enum AttrID {
+    private enum AttrID {
         size,
         creationTime,
         lastAccessTime,
@@ -49,35 +48,14 @@ class ZipFileAttributeView implements BasicFileAttributeView {
         compressedSize,
         crc,
         method
-    };
+    }
 
     private final ZipPath path;
     private final boolean isZipView;
 
-    private ZipFileAttributeView(ZipPath path, boolean isZipView) {
+    ZipFileAttributeView(ZipPath path, boolean isZipView) {
         this.path = path;
         this.isZipView = isZipView;
-    }
-
-    @SuppressWarnings("unchecked") // Cast to V
-    static <V extends FileAttributeView> V get(ZipPath path, Class<V> type) {
-        if (type == null)
-            throw new NullPointerException();
-        if (type == BasicFileAttributeView.class)
-            return (V)new ZipFileAttributeView(path, false);
-        if (type == ZipFileAttributeView.class)
-            return (V)new ZipFileAttributeView(path, true);
-        return null;
-    }
-
-    static ZipFileAttributeView get(ZipPath path, String type) {
-        if (type == null)
-            throw new NullPointerException();
-        if (type.equals("basic"))
-            return new ZipFileAttributeView(path, false);
-        if (type.equals("zip"))
-            return new ZipFileAttributeView(path, true);
-        return null;
     }
 
     @Override
@@ -85,8 +63,9 @@ class ZipFileAttributeView implements BasicFileAttributeView {
         return isZipView ? "zip" : "basic";
     }
 
+    @Override
     public ZipFileAttributes readAttributes() throws IOException {
-        return path.getAttributes();
+        return path.readAttributes();
     }
 
     @Override
@@ -108,10 +87,10 @@ class ZipFileAttributeView implements BasicFileAttributeView {
                 setTimes(null, (FileTime)value, null);
             if (AttrID.valueOf(attribute) == AttrID.creationTime)
                 setTimes(null, null, (FileTime)value);
-            return;
-        } catch (IllegalArgumentException x) {}
-        throw new UnsupportedOperationException("'" + attribute +
-            "' is unknown or read-only attribute");
+        } catch (IllegalArgumentException x) {
+            throw new UnsupportedOperationException("'" + attribute +
+                "' is unknown or read-only attribute");
+        }
     }
 
     Map<String, Object> readAttributes(String attributes)
@@ -136,7 +115,7 @@ class ZipFileAttributeView implements BasicFileAttributeView {
         return map;
     }
 
-    Object attribute(AttrID id, ZipFileAttributes zfas) {
+    private Object attribute(AttrID id, ZipFileAttributes zfas) {
         switch (id) {
         case size:
             return zfas.size();
@@ -167,6 +146,8 @@ class ZipFileAttributeView implements BasicFileAttributeView {
         case method:
             if (isZipView)
                 return zfas.method();
+            break;
+        default:
             break;
         }
         return null;

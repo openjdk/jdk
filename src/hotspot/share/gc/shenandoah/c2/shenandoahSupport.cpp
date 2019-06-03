@@ -1093,7 +1093,7 @@ void ShenandoahBarrierC2Support::call_lrb_stub(Node*& ctrl, Node*& val, Node*& r
   mm->set_memory_at(Compile::AliasIdxRaw, raw_mem);
   phase->register_new_node(mm, ctrl);
 
-  Node* call = new CallLeafNode(ShenandoahBarrierSetC2::shenandoah_write_barrier_Type(), CAST_FROM_FN_PTR(address, ShenandoahRuntime::load_reference_barrier_JRT), "shenandoah_write_barrier", TypeRawPtr::BOTTOM);
+  Node* call = new CallLeafNode(ShenandoahBarrierSetC2::shenandoah_load_reference_barrier_Type(), CAST_FROM_FN_PTR(address, ShenandoahRuntime::load_reference_barrier_JRT), "shenandoah_load_reference_barrier", TypeRawPtr::BOTTOM);
   call->init_req(TypeFunc::Control, ctrl);
   call->init_req(TypeFunc::I_O, phase->C->top());
   call->init_req(TypeFunc::Memory, mm);
@@ -1190,12 +1190,6 @@ static Node* create_phis_on_call_return(Node* ctrl, Node* c, Node* n, Node* n_cl
 
 void ShenandoahBarrierC2Support::pin_and_expand(PhaseIdealLoop* phase) {
   ShenandoahBarrierSetC2State* state = ShenandoahBarrierSetC2::bsc2()->state();
-
-  // Collect raw memory state at CFG points in the entire graph and
-  // record it in memory_nodes. Optimize the raw memory graph in the
-  // process. Optimizing the memory graph also makes the memory graph
-  // simpler.
-  GrowableArray<MemoryGraphFixer*> memory_graph_fixers;
 
   Unique_Node_List uses;
   for (int i = 0; i < state->enqueue_barriers_count(); i++) {
@@ -1412,6 +1406,22 @@ void ShenandoahBarrierC2Support::pin_and_expand(PhaseIdealLoop* phase) {
     }
   }
 
+  for (int i = 0; i < state->load_reference_barriers_count(); i++) {
+    ShenandoahLoadReferenceBarrierNode* lrb = state->load_reference_barrier(i);
+    if (lrb->get_barrier_strength() == ShenandoahLoadReferenceBarrierNode::NONE) {
+      continue;
+    }
+    Node* ctrl = phase->get_ctrl(lrb);
+    IdealLoopTree* loop = phase->get_loop(ctrl);
+    if (loop->_head->is_OuterStripMinedLoop()) {
+      // Expanding a barrier here will break loop strip mining
+      // verification. Transform the loop so the loop nest doesn't
+      // appear as strip mined.
+      OuterStripMinedLoopNode* outer = loop->_head->as_OuterStripMinedLoop();
+      hide_strip_mined_loop(outer, outer->unique_ctrl_out()->as_CountedLoop(), phase);
+    }
+  }
+
   // Expand load-reference-barriers
   MemoryGraphFixer fixer(Compile::AliasIdxRaw, true, phase);
   Unique_Node_List uses_to_ignore;
@@ -1431,7 +1441,6 @@ void ShenandoahBarrierC2Support::pin_and_expand(PhaseIdealLoop* phase) {
     Node* raw_mem = fixer.find_mem(ctrl, lrb);
     Node* init_raw_mem = raw_mem;
     Node* raw_mem_for_ctrl = fixer.find_mem(ctrl, NULL);
-    // int alias = phase->C->get_alias_index(lrb->adr_type());
 
     IdealLoopTree *loop = phase->get_loop(ctrl);
     CallStaticJavaNode* unc = lrb->pin_and_expand_null_check(phase->igvn());
@@ -1455,7 +1464,7 @@ void ShenandoahBarrierC2Support::pin_and_expand(PhaseIdealLoop* phase) {
     assert(val->bottom_type()->make_oopptr(), "need oop");
     assert(val->bottom_type()->make_oopptr()->const_oop() == NULL, "expect non-constant");
 
-    enum { _heap_stable = 1, _not_cset, _not_equal, _evac_path, _null_path, PATH_LIMIT };
+    enum { _heap_stable = 1, _not_cset, _fwded, _evac_path, _null_path, PATH_LIMIT };
     Node* region = new RegionNode(PATH_LIMIT);
     Node* val_phi = new PhiNode(region, uncasted_val->bottom_type()->is_oopptr());
     Node* raw_mem_phi = PhiNode::make(region, raw_mem, Type::MEMORY, TypeRawPtr::BOTTOM);
@@ -1505,36 +1514,48 @@ void ShenandoahBarrierC2Support::pin_and_expand(PhaseIdealLoop* phase) {
       IfNode* iff = unc_ctrl->in(0)->as_If();
       phase->igvn().replace_input_of(iff, 1, phase->igvn().intcon(1));
     }
-    Node* addr = new AddPNode(new_val, uncasted_val, phase->igvn().MakeConX(ShenandoahForwarding::byte_offset()));
+    Node* addr = new AddPNode(new_val, uncasted_val, phase->igvn().MakeConX(oopDesc::mark_offset_in_bytes()));
     phase->register_new_node(addr, ctrl);
-    assert(val->bottom_type()->isa_oopptr(), "what else?");
-    const TypePtr* obj_type =  val->bottom_type()->is_oopptr();
-    const TypePtr* adr_type = TypeRawPtr::BOTTOM;
-    Node* fwd = new LoadPNode(ctrl, raw_mem, addr, adr_type, obj_type, MemNode::unordered);
-    phase->register_new_node(fwd, ctrl);
+    assert(new_val->bottom_type()->isa_oopptr(), "what else?");
+    Node* markword = new LoadXNode(ctrl, raw_mem, addr, TypeRawPtr::BOTTOM, TypeX_X, MemNode::unordered);
+    phase->register_new_node(markword, ctrl);
+
+    // Test if object is forwarded. This is the case if lowest two bits are set.
+    Node* masked = new AndXNode(markword, phase->igvn().MakeConX(markOopDesc::lock_mask_in_place));
+    phase->register_new_node(masked, ctrl);
+    Node* cmp = new CmpXNode(masked, phase->igvn().MakeConX(markOopDesc::marked_value));
+    phase->register_new_node(cmp, ctrl);
 
     // Only branch to LRB stub if object is not forwarded; otherwise reply with fwd ptr
-    Node* cmp = new CmpPNode(fwd, new_val);
-    phase->register_new_node(cmp, ctrl);
-    Node* bol = new BoolNode(cmp, BoolTest::eq);
+    Node* bol = new BoolNode(cmp, BoolTest::eq); // Equals 3 means it's forwarded
     phase->register_new_node(bol, ctrl);
 
-    IfNode* iff = new IfNode(ctrl, bol, PROB_UNLIKELY(0.999), COUNT_UNKNOWN);
-    if (reg2_ctrl == NULL) reg2_ctrl = iff;
+    IfNode* iff = new IfNode(ctrl, bol, PROB_LIKELY(0.999), COUNT_UNKNOWN);
     phase->register_control(iff, loop, ctrl);
-    Node* if_not_eq = new IfFalseNode(iff);
-    phase->register_control(if_not_eq, loop, iff);
-    Node* if_eq = new IfTrueNode(iff);
-    phase->register_control(if_eq, loop, iff);
+    Node* if_fwd = new IfTrueNode(iff);
+    phase->register_control(if_fwd, loop, iff);
+    Node* if_not_fwd = new IfFalseNode(iff);
+    phase->register_control(if_not_fwd, loop, iff);
+
+    // Decode forward pointer: since we already have the lowest bits, we can just subtract them
+    // from the mark word without the need for large immediate mask.
+    Node* masked2 = new SubXNode(markword, masked);
+    phase->register_new_node(masked2, if_fwd);
+    Node* fwdraw = new CastX2PNode(masked2);
+    fwdraw->init_req(0, if_fwd);
+    phase->register_new_node(fwdraw, if_fwd);
+    Node* fwd = new CheckCastPPNode(NULL, fwdraw, val->bottom_type());
+    phase->register_new_node(fwd, if_fwd);
 
     // Wire up not-equal-path in slots 3.
-    region->init_req(_not_equal, if_not_eq);
-    val_phi->init_req(_not_equal, fwd);
-    raw_mem_phi->init_req(_not_equal, raw_mem);
+    region->init_req(_fwded, if_fwd);
+    val_phi->init_req(_fwded, fwd);
+    raw_mem_phi->init_req(_fwded, raw_mem);
 
-    // Call wb-stub and wire up that path in slots 4
+    // Call lrb-stub and wire up that path in slots 4
     Node* result_mem = NULL;
-    ctrl = if_eq;
+    ctrl = if_not_fwd;
+    fwd = new_val;
     call_lrb_stub(ctrl, fwd, result_mem, raw_mem, phase);
     region->init_req(_evac_path, ctrl);
     val_phi->init_req(_evac_path, fwd);
@@ -1979,7 +2000,7 @@ void ShenandoahBarrierC2Support::verify_raw_mem(RootNode* root) {
   nodes.push(root);
   for (uint next = 0; next < nodes.size(); next++) {
     Node *n  = nodes.at(next);
-    if (ShenandoahBarrierSetC2::is_shenandoah_wb_call(n)) {
+    if (ShenandoahBarrierSetC2::is_shenandoah_lrb_call(n)) {
       controls.push(n);
       if (trace) { tty->print("XXXXXX verifying"); n->dump(); }
       for (uint next2 = 0; next2 < controls.size(); next2++) {
@@ -2595,7 +2616,11 @@ void MemoryGraphFixer::fix_mem(Node* ctrl, Node* new_ctrl, Node* mem, Node* mem_
                 IdealLoopTree* l = loop;
                 create_phi = false;
                 while (l != _phase->ltree_root()) {
-                  if (_phase->is_dominator(l->_head, u) && _phase->is_dominator(_phase->idom(u), l->_head)) {
+                  Node* head = l->_head;
+                  if (head->in(0) == NULL) {
+                    head = _phase->get_ctrl(head);
+                  }
+                  if (_phase->is_dominator(head, u) && _phase->is_dominator(_phase->idom(u), head)) {
                     create_phi = true;
                     do_check = false;
                     break;
@@ -2952,10 +2977,11 @@ void MemoryGraphFixer::fix_memory_uses(Node* mem, Node* replacement, Node* rep_p
                u->Opcode() == Op_Rethrow ||
                u->Opcode() == Op_Return ||
                u->Opcode() == Op_SafePoint ||
+               u->Opcode() == Op_StoreIConditional ||
                u->Opcode() == Op_StoreLConditional ||
                (u->is_CallStaticJava() && u->as_CallStaticJava()->uncommon_trap_request() != 0) ||
                (u->is_CallStaticJava() && u->as_CallStaticJava()->_entry_point == OptoRuntime::rethrow_stub()) ||
-               u->Opcode() == Op_CallLeaf, "");
+               u->Opcode() == Op_CallLeaf, "%s", u->Name());
         if (ShenandoahBarrierC2Support::is_dominator(rep_ctrl, _phase->ctrl_or_self(u), replacement, u, _phase)) {
           if (mm == NULL) {
             mm = allocate_merge_mem(mem, rep_proj, rep_ctrl);
@@ -3175,6 +3201,7 @@ ShenandoahLoadReferenceBarrierNode::Strength ShenandoahLoadReferenceBarrierNode:
       case Op_StoreL:
       case Op_StoreLConditional:
       case Op_StoreI:
+      case Op_StoreIConditional:
       case Op_StoreVector:
       case Op_StrInflatedCopy:
       case Op_StrCompressedCopy:

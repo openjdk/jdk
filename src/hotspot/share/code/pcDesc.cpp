@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -40,19 +40,24 @@ address PcDesc::real_pc(const CompiledMethod* code) const {
   return code->code_begin() + pc_offset();
 }
 
-void PcDesc::print(CompiledMethod* code) {
+void PcDesc::print_on(outputStream* st, CompiledMethod* code) {
 #ifndef PRODUCT
   ResourceMark rm;
-  tty->print_cr("PcDesc(pc=" PTR_FORMAT " offset=%x bits=%x):", p2i(real_pc(code)), pc_offset(), _flags);
+  st->print("PcDesc(pc=" PTR_FORMAT " offset=%x bits=%x):", p2i(real_pc(code)), pc_offset(), _flags);
 
   if (scope_decode_offset() == DebugInformationRecorder::serialized_null) {
+    st->cr();
     return;
   }
+
+  int tab = 8;
+  int pos = st->position() + 2; // current column plus two spaces
+  pos = ((pos+tab-1)/tab)*tab;
 
   for (ScopeDesc* sd = code->scope_desc_at(real_pc(code));
        sd != NULL;
        sd = sd->sender()) {
-    sd->print_on(tty);
+    sd->print_on(st);
   }
 #endif
 }

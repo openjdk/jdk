@@ -63,21 +63,7 @@ public class TestThreadFailure {
 
         {
             ProcessBuilder pb = ProcessTools.createJavaProcessBuilder(
-                    "-Xmx16m",
-                    "-XX:+UnlockExperimentalVMOptions",
-                    "-XX:+UseShenandoahGC",
-                    TestThreadFailure.class.getName(),
-                    "test");
-
-            OutputAnalyzer analyzer = new OutputAnalyzer(pb.start());
-            analyzer.shouldHaveExitValue(0);
-            analyzer.shouldContain("java.lang.OutOfMemoryError");
-            analyzer.shouldContain("All good");
-        }
-
-        {
-            ProcessBuilder pb = ProcessTools.createJavaProcessBuilder(
-                    "-Xmx128m",
+                    "-Xmx64m",
                     "-XX:+UnlockExperimentalVMOptions",
                     "-XX:+UseShenandoahGC",
                     TestThreadFailure.class.getName(),

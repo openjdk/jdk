@@ -32,7 +32,6 @@
  */
 
 
-import jdk.test.lib.Asserts;
 import jdk.test.lib.cds.CDSOptions;
 import jdk.test.lib.process.OutputAnalyzer;
 import jdk.test.lib.process.ProcessTools;

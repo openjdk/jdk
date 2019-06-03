@@ -28,6 +28,13 @@
  *
  * @run main/othervm/native -Xint compiler.floatingpoint.TestFloatJNIArgs
  * @run main/othervm/native -XX:+TieredCompilation -Xcomp compiler.floatingpoint.TestFloatJNIArgs
+ */
+
+/* @test
+ * @bug 8139258 8165673
+ * @summary Regression test for passing float args to a jni function.
+ *
+ * @requires !vm.graal.enabled
  * @run main/othervm/native -XX:-TieredCompilation -Xcomp compiler.floatingpoint.TestFloatJNIArgs
  */
 

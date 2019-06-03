@@ -79,4 +79,3 @@ public class ClassListFormatBase {
         return TestCommon.list(args);
     }
 }
-

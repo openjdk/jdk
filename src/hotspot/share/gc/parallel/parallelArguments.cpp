@@ -113,11 +113,11 @@ void ParallelArguments::initialize_heap_flags_and_sizes_one_pass() {
   // default gc, which adds 2 to the ratio value. We need to
   // make sure the values are valid before using them.
   if (MinSurvivorRatio < 3) {
-    FLAG_SET_ERGO(uintx, MinSurvivorRatio, 3);
+    FLAG_SET_ERGO(MinSurvivorRatio, 3);
   }
 
   if (InitialSurvivorRatio < 3) {
-    FLAG_SET_ERGO(uintx, InitialSurvivorRatio, 3);
+    FLAG_SET_ERGO(InitialSurvivorRatio, 3);
   }
 }
 

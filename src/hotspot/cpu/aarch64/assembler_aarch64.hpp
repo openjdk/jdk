@@ -629,6 +629,14 @@ public:
 
   enum { instruction_size = 4 };
 
+  //---<  calculate length of instruction  >---
+  // We just use the values set above.
+  // instruction must start at passed address
+  static unsigned int instr_len(unsigned char *instr) { return instruction_size; }
+
+  //---<  longest instructions  >---
+  static unsigned int instr_maxlen() { return instruction_size; }
+
   Address adjust(Register base, int offset, bool preIncrement) {
     if (preIncrement)
       return Address(Pre(base, offset));
@@ -1482,6 +1490,25 @@ public:
   INSN(orrw, 0, 0b01, 0);
   INSN(eorw, 0, 0b10, 0);
   INSN(andsw, 0, 0b11, 0);
+
+#undef INSN
+
+#define INSN(NAME, size, op, N)                                         \
+  void NAME(Register Rd, Register Rn, Register Rm,                      \
+            enum shift_kind kind = LSL, unsigned shift = 0) {           \
+    starti;                                                             \
+    f(N, 21);                                                           \
+    zrf(Rm, 16), zrf(Rn, 5), zrf(Rd, 0);                                \
+    op_shifted_reg(0b01010, kind, shift, size, op);                     \
+  }                                                                     \
+                                                                        \
+  /* These instructions have no immediate form. Provide an overload so  \
+     that if anyone does try to use an immediate operand -- this has    \
+     happened! -- we'll get a compile-time error. */                    \
+  void NAME(Register Rd, Register Rn, unsigned imm,                     \
+            enum shift_kind kind = LSL, unsigned shift = 0) {           \
+    assert(false, " can't be used with immediate operand");             \
+  }
 
   INSN(bic, 1, 0b00, 1);
   INSN(orn, 1, 0b01, 1);

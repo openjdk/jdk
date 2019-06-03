@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2006, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2006, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -238,14 +238,14 @@ public class FtpCommandHandler extends Thread {
             return;
         }
         try {
-            if (pasv == null)
-                pasv = new ServerSocket(0);
-            int port = pasv.getLocalPort();
             InetAddress rAddress = cmd.getLocalAddress();
             if (rAddress instanceof Inet6Address) {
                 out.println("500 PASV illegal over IPv6 addresses, use EPSV.");
                 return;
             }
+            if (pasv == null)
+                pasv = new ServerSocket(0, 0, rAddress);
+            int port = pasv.getLocalPort();
             byte[] a = rAddress.getAddress();
             out.println("227 Entering Passive Mode " + a[0] + "," + a[1] + "," + a[2] + "," + a[3] + "," +
                         (port >> 8) + "," + (port & 0xff) );
@@ -266,7 +266,7 @@ public class FtpCommandHandler extends Thread {
         }
         try {
             if (pasv == null)
-                pasv = new ServerSocket(0);
+                pasv = new ServerSocket(0, 0, parent.getInetAddress());
             int port = pasv.getLocalPort();
             out.println("229 Entering Extended Passive Mode (|||" + port + "|)");
         } catch (IOException e) {

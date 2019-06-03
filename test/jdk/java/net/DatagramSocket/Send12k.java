@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,6 +26,8 @@
  * @bug 4094894
  * @summary On W95/W98 it's not possible to send a datagram >12k
  *          via the loopback address.
+ * @run main Send12k
+ * @run main/othervm -Djava.net.preferIPv6Addresses=true Send12k
  */
 
 import java.net.*;
@@ -43,21 +45,24 @@ public class Send12k {
          } else {
              SEND_SIZE = 16 * 1024;
          }
+        InetAddress localHost = InetAddress.getLocalHost();
         DatagramSocket s1 = new DatagramSocket();
-        DatagramSocket s2 = new DatagramSocket();
+        DatagramSocket s2 = new DatagramSocket(0, localHost);
 
         byte b1[] = new byte[ SEND_SIZE ];
         DatagramPacket p1 = new DatagramPacket(b1, 0, b1.length,
-                                               InetAddress.getLocalHost(),
+                                               localHost,
                                                s2.getLocalPort());
         boolean sendOkay = true;
         try {
+            System.out.println("Sending to: [" + localHost + "]:" + s2.getLocalPort());
             s1.send(p1);
         } catch (IOException e) {
             /*
              * Prior to merlin a send of > 12k to loopback address
              * would fail silently.
              */
+            System.out.println("Sending failed: " + e);
             sendOkay = false;
         }
 

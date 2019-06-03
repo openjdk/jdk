@@ -28,6 +28,7 @@
  */
 
 import java.io.InputStream;
+import java.io.IOError;
 import java.io.IOException;
 import java.io.DataInputStream;
 import java.nio.file.DirectoryStream;
@@ -271,15 +272,58 @@ public class Basic {
         Path top = fs.getPath("/");
         try (Stream<Path> stream = Files.walk(top)) {
             stream.forEach(path -> {
-                URI u = path.toUri();
+                String pathStr = path.toAbsolutePath().toString();
+                URI u = null;
+                try {
+                    u = path.toUri();
+                } catch (IOError e) {
+                    assertFalse(pathStr.startsWith("/modules"));
+                    return;
+                }
+
                 assertTrue(u.getScheme().equalsIgnoreCase("jrt"));
                 assertFalse(u.isOpaque());
                 assertTrue(u.getAuthority() == null);
-                assertEquals(u.getPath(), path.toAbsolutePath().toString());
+
+                pathStr = pathStr.substring("/modules".length());
+                if (pathStr.isEmpty()) {
+                    pathStr = "/";
+                }
+                assertEquals(u.getPath(), pathStr);
                 Path p = Paths.get(u);
                 assertEquals(p, path);
             });
         }
+    }
+
+    // @bug 8216553: JrtFIleSystemProvider getPath(URI) omits /modules element from file path
+    @Test
+    public void testPathToURIConversion() throws Exception {
+        var uri = URI.create("jrt:/java.base/module-info.class");
+        var path = Path.of(uri);
+        assertTrue(Files.exists(path));
+
+        uri = URI.create("jrt:/java.base/../java.base/module-info.class");
+        boolean seenIAE = false;
+        try {
+            Path.of(uri);
+        } catch (IllegalArgumentException iaExp) {
+            seenIAE = true;
+        }
+        assertTrue(seenIAE);
+
+        // check round-trip
+        var jrtfs = FileSystems.getFileSystem(URI.create("jrt:/"));
+        assertTrue(Files.exists(jrtfs.getPath(path.toString())));
+
+        path = jrtfs.getPath("/modules/../modules/java.base/");
+        boolean seenIOError = false;
+        try {
+            path.toUri();
+        } catch (IOError ioError) {
+            seenIOError = true;
+        }
+        assertTrue(seenIOError);
     }
 
     @Test

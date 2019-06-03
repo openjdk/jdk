@@ -124,7 +124,7 @@
     size_t     _nlockedflush = 0;                             \
     size_t     _nflush_bytes = 0;                             \
     size_t         _capacity = _capa;                         \
-    bufferedStream   _sstobj = bufferedStream(_capa);         \
+    bufferedStream   _sstobj(_capa);                          \
     bufferedStream*  _sstbuf = &_sstobj;                      \
     outputStream*    _outbuf = _outst;                        \
     bufferedStream*   _anyst = &_sstobj; /* any stream. Use this to just print - no buffer flush.  */

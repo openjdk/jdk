@@ -66,7 +66,7 @@ public class ErrorHandler {
 
         String[] patterns = {
             "(SIGILL|SIGSEGV|EXCEPTION_ACCESS_VIOLATION).* at pc=",
-            "(SIGBUS|SIGSEGV|SIGILL|EXCEPTION_ACCESS_VIOLATION).* at pc="
+            // -XX:ErrorHandlerTest=13 is too unreliable. It sometimes fails to crash in the expected way.
             // -XX:ErrorHandlerTest=14 is tested by SafeFetchInErrorHandlingTest.java
             // -XX:ErrorHandlerTest=15 is tested by SecondaryErrorTest.java
             // -XX:ErrorHandlerTest=16 is tested by ThreadsListHandleInErrorHandlingTest.java

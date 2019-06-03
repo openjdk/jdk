@@ -1430,12 +1430,17 @@ ParseArguments(int *pargc, char ***pargv,
         } else if (JLI_StrCmp(arg, "-noclassgc") == 0) {
             AddOption("-Xnoclassgc", NULL);
         } else if (JLI_StrCmp(arg, "-Xfuture") == 0) {
+            JLI_ReportErrorMessage(ARG_DEPRECATED, "-Xfuture");
             AddOption("-Xverify:all", NULL);
         } else if (JLI_StrCmp(arg, "-verify") == 0) {
             AddOption("-Xverify:all", NULL);
         } else if (JLI_StrCmp(arg, "-verifyremote") == 0) {
             AddOption("-Xverify:remote", NULL);
         } else if (JLI_StrCmp(arg, "-noverify") == 0) {
+            /*
+             * Note that no 'deprecated' message is needed here because the VM
+             * issues 'deprecated' messages for -noverify and -Xverify:none.
+             */
             AddOption("-Xverify:none", NULL);
         } else if (JLI_StrCCmp(arg, "-ss") == 0 ||
                    JLI_StrCCmp(arg, "-oss") == 0 ||

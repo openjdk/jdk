@@ -94,6 +94,7 @@
 #include "runtime/sharedRuntime.hpp"
 #include "runtime/stubRoutines.hpp"
 #include "runtime/thread.inline.hpp"
+#include "runtime/threadSMR.hpp"
 #include "runtime/vframeArray.hpp"
 #include "runtime/vmStructs.hpp"
 #include "utilities/globalDefinitions.hpp"
@@ -740,10 +741,13 @@ typedef PaddedEnd<ObjectMonitor>              PaddedObjectMonitor;
   /* Threads (NOTE: incomplete) */                                                                                                   \
   /******************************/                                                                                                   \
                                                                                                                                      \
-     static_field(Threads,                     _thread_list,                                  JavaThread*)                           \
-     static_field(Threads,                     _number_of_threads,                            int)                                   \
-     static_field(Threads,                     _number_of_non_daemon_threads,                 int)                                   \
-     static_field(Threads,                     _return_code,                                  int)                                   \
+  static_field(Threads,                     _number_of_threads,                               int)                                   \
+  static_field(Threads,                     _number_of_non_daemon_threads,                    int)                                   \
+  static_field(Threads,                     _return_code,                                     int)                                   \
+                                                                                                                                     \
+  static_ptr_volatile_field(ThreadsSMRSupport, _java_thread_list,                             ThreadsList*)                          \
+  nonstatic_field(ThreadsList,                 _length,                                       const uint)                            \
+  nonstatic_field(ThreadsList,                 _threads,                                      JavaThread *const *const)              \
                                                                                                                                      \
   nonstatic_field(ThreadShadow,                _pending_exception,                            oop)                                   \
   nonstatic_field(ThreadShadow,                _exception_file,                               const char*)                           \
@@ -757,7 +761,6 @@ typedef PaddedEnd<ObjectMonitor>              PaddedObjectMonitor;
   nonstatic_field(Thread,                      _current_waiting_monitor,                      ObjectMonitor*)                        \
   nonstatic_field(NamedThread,                 _name,                                         char*)                                 \
   nonstatic_field(NamedThread,                 _processed_thread,                             JavaThread*)                           \
-  nonstatic_field(JavaThread,                  _next,                                         JavaThread*)                           \
   nonstatic_field(JavaThread,                  _threadObj,                                    oop)                                   \
   nonstatic_field(JavaThread,                  _anchor,                                       JavaFrameAnchor)                       \
   nonstatic_field(JavaThread,                  _vm_result,                                    oop)                                   \
@@ -1371,6 +1374,9 @@ typedef PaddedEnd<ObjectMonitor>              PaddedObjectMonitor;
   declare_toplevel_type(OSThread)                                         \
   declare_toplevel_type(JavaFrameAnchor)                                  \
                                                                           \
+  declare_toplevel_type(ThreadsSMRSupport)                                \
+  declare_toplevel_type(ThreadsList)                                      \
+                                                                          \
   /***************/                                                       \
   /* Interpreter */                                                       \
   /***************/                                                       \
@@ -1964,6 +1970,7 @@ typedef PaddedEnd<ObjectMonitor>              PaddedObjectMonitor;
   declare_toplevel_type(intptr_t*)                                        \
    declare_unsigned_integer_type(InvocationCounter) /* FIXME: wrong type (not integer) */ \
   declare_toplevel_type(JavaThread*)                                      \
+  declare_toplevel_type(JavaThread *const *const)                         \
   declare_toplevel_type(java_lang_Class)                                  \
   declare_integer_type(JavaThread::AsyncRequests)                         \
   declare_integer_type(JavaThread::TerminatedTypes)                       \
@@ -2381,6 +2388,7 @@ typedef PaddedEnd<ObjectMonitor>              PaddedObjectMonitor;
   declare_constant(Deoptimization::Reason_profile_predicate)              \
   declare_constant(Deoptimization::Reason_unloaded)                       \
   declare_constant(Deoptimization::Reason_uninitialized)                  \
+  declare_constant(Deoptimization::Reason_initialized)                    \
   declare_constant(Deoptimization::Reason_unreached)                      \
   declare_constant(Deoptimization::Reason_unhandled)                      \
   declare_constant(Deoptimization::Reason_constraint)                     \

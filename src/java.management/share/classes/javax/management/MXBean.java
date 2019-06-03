@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -79,7 +79,7 @@ import javax.management.openmbean.TabularType;
     public interface MisleadingMXBean {}
     </pre>
 
-    <h3 id="MXBean-spec">MXBean specification</h3>
+    <h2 id="MXBean-spec">MXBean specification</h2>
 
     <p>The MXBean concept provides a simple way to code an MBean
       that only references a predefined set of types, the ones defined
@@ -94,7 +94,7 @@ import javax.management.openmbean.TabularType;
       represented as a Standard MBean, and as an MXBean:</p>
 
     <div style="display:inline-block; margin: 0 3em">
-        <h4>Standard MBean</h4>
+        <h3>Standard MBean</h3>
         <pre>
 public interface MemoryPool<b>MBean</b> {
     String getName();
@@ -104,7 +104,7 @@ public interface MemoryPool<b>MBean</b> {
           </pre>
     </div>
     <div style="display:inline-block; margin: 0 3em">
-        <h4>MXBean</h4>
+        <h3>MXBean</h3>
         <pre>
 public interface MemoryPool<b>MXBean</b> {
     String getName();
@@ -133,7 +133,7 @@ public interface MemoryPool<b>MXBean</b> {
     <p>So, we might define <code>MemoryUsage</code> like this:</p>
 
     <div style="display:inline-block; margin: 0 3em">
-        <h4>Standard MBean</h4>
+        <h3>Standard MBean</h3>
         <pre>
 public class MemoryUsage <b>implements Serializable</b> {
     // standard JavaBean conventions with getters
@@ -148,7 +148,7 @@ public class MemoryUsage <b>implements Serializable</b> {
         </pre>
     </div>
     <div style="display:inline-block; margin: 0 3em">
-        <h4>MXBean</h4>
+        <h3>MXBean</h3>
         <pre>
 public class MemoryUsage {
     // standard JavaBean conventions with getters
@@ -194,7 +194,7 @@ public class MemoryUsage {
       models might look like:</p>
 
     <div style="display:inline-block; margin: 0 3em">
-        <h4>Standard MBean</h4>
+        <h3>Standard MBean</h3>
         <pre>
 String name = (String)
     mbeanServer.{@link MBeanServer#getAttribute
@@ -205,7 +205,7 @@ String name = (String)
         </pre>
     </div>
     <div style="display:inline-block; margin: 0 3em">
-        <h4>MXBean</h4>
+        <h3>MXBean</h3>
         <pre>
 String name = (String)
     mbeanServer.{@link MBeanServer#getAttribute
@@ -231,7 +231,7 @@ String name = (String)
       of whether you are using Standard MBeans or MXBeans:</p>
 
     <div style="display:inline-block; margin: 0 3em">
-        <h4>Standard MBean</h4>
+        <h3>Standard MBean</h3>
         <pre>
 MemoryPool<b>MBean</b> proxy =
     JMX.<b>{@link JMX#newMBeanProxy(MBeanServerConnection, ObjectName,
@@ -245,7 +245,7 @@ long used = usage.getUsed();
           </pre>
     </div>
     <div style="display:inline-block; margin: 0 3em">
-        <h4>MXBean</h4>
+        <h3>MXBean</h3>
         <pre>
 MemoryPool<b>MXBean</b> proxy =
     JMX.<b>{@link JMX#newMXBeanProxy(MBeanServerConnection, ObjectName,
@@ -263,7 +263,7 @@ long used = usage.getUsed();
       Standard MBeans and MXBeans.</p>
 
     <div style="display:inline-block; margin: 0 3em">
-        <h4>Standard MBean</h4>
+        <h3>Standard MBean</h3>
         <pre>
 public class MemoryPool
         implements MemoryPool<b>MBean</b> {
@@ -274,7 +274,7 @@ public class MemoryPool
         </pre>
     </div>
     <div style="display:inline-block; margin: 0 3em">
-        <h4>MXBean</h4>
+        <h3>MXBean</h3>
         <pre>
 public class MemoryPool
         implements MemoryPool<b>MXBean</b> {
@@ -289,7 +289,7 @@ public class MemoryPool
       in both cases:</p>
 
     <div style="display:inline-block; margin: 0 3em">
-        <h4>Standard MBean</h4>
+        <h3>Standard MBean</h3>
         <pre>
 {
     MemoryPool<b>MBean</b> pool = new MemoryPool();
@@ -299,7 +299,7 @@ public class MemoryPool
         </pre>
     </div>
     <div style="display:inline-block; margin: 0 3em">
-        <h4>MXBean</h4>
+        <h3>MXBean</h3>
         <pre>
 {
     MemoryPool<b>MXBean</b> pool = new MemoryPool();

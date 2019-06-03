@@ -296,6 +296,10 @@ bool ArrayCopyNode::prepare_array_copy(PhaseGVN *phase, bool can_reshape,
 
     src_offset = Compile::conv_I2X_index(phase, src_offset, ary_src->size());
     dest_offset = Compile::conv_I2X_index(phase, dest_offset, ary_dest->size());
+    if (src_offset->is_top() || dest_offset->is_top()) {
+      // Offset is out of bounds (the ArrayCopyNode will be removed)
+      return false;
+    }
 
     Node* src_scale = phase->transform(new LShiftXNode(src_offset, phase->intcon(shift)));
     Node* dest_scale = phase->transform(new LShiftXNode(dest_offset, phase->intcon(shift)));

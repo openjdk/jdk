@@ -34,7 +34,9 @@ AC_DEFUN([HELP_MSG_MISSING_DEPENDENCY],
   # $1 is the help tag: cups, alsa etc
   MISSING_DEPENDENCY=$1
 
-  if test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.cygwin"; then
+  if test "x$MISSING_DEPENDENCY" = "xopenjdk"; then
+    HELP_MSG="OpenJDK distributions are available at http://jdk.java.net/."
+  elif test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.cygwin"; then
     cygwin_help $MISSING_DEPENDENCY
   elif test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.msys"; then
     msys_help $MISSING_DEPENDENCY
@@ -91,8 +93,6 @@ apt_help() {
       PKGHANDLER_COMMAND="sudo apt-get install gcc-multilib g++-multilib" ;;
     devkit)
       PKGHANDLER_COMMAND="sudo apt-get install build-essential" ;;
-    openjdk)
-      PKGHANDLER_COMMAND="sudo apt-get install openjdk-8-jdk" ;;
     alsa)
       PKGHANDLER_COMMAND="sudo apt-get install libasound2-dev" ;;
     cups)
@@ -135,8 +135,6 @@ yum_help() {
   case $1 in
     devkit)
       PKGHANDLER_COMMAND="sudo yum groupinstall \"Development Tools\"" ;;
-    openjdk)
-      PKGHANDLER_COMMAND="sudo yum install java-1.8.0-openjdk-devel" ;;
     alsa)
       PKGHANDLER_COMMAND="sudo yum install alsa-lib-devel" ;;
     cups)
@@ -154,8 +152,6 @@ yum_help() {
 
 brew_help() {
   case $1 in
-    openjdk)
-      PKGHANDLER_COMMAND="brew cask install java" ;;
     freetype)
       PKGHANDLER_COMMAND="brew install freetype" ;;
     ccache)

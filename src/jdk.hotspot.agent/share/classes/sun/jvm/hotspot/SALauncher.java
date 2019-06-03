@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -36,8 +36,8 @@ public class SALauncher {
 
     private static boolean launcherHelp() {
         System.out.println("    clhsdb       \tcommand line debugger");
-        System.out.println("    debugd       \tdebug server");
         System.out.println("    hsdb         \tui debugger");
+        System.out.println("    debugd --help\tto get more information");
         System.out.println("    jstack --help\tto get more information");
         System.out.println("    jmap   --help\tto get more information");
         System.out.println("    jinfo  --help\tto get more information");
@@ -45,38 +45,38 @@ public class SALauncher {
         return false;
     }
 
-    private static boolean commonHelp() {
+    private static boolean commonHelp(String mode) {
         // --pid <pid>
         // --exe <exe>
         // --core <core>
-        System.out.println("    --exe\texecutable image name");
-        System.out.println("    --core\tpath to coredump");
-        System.out.println("    --pid\tpid of process to attach");
+        System.out.println("    --pid <pid>      \tTo attach to and operate on the given live process.");
+        System.out.println("    --core <corefile>\tTo operate on the given core file.");
+        System.out.println("    --exe <executable for corefile>");
+        System.out.println();
+        System.out.println("    The --core and --exe options must be set together to give the core");
+        System.out.println("    file, and associated executable, to operate on. Otherwise the --pid");
+        System.out.println("    option can be set to operate on a live process.");
+        System.out.println("    The arguments for --exe and --core can use absolute or relative paths.");
+        System.out.println();
+        System.out.println("    Examples: jhsdb " + mode + " --pid 1234");
+        System.out.println("          or  jhsdb " + mode + " --core ./core.1234 --exe ./myexe");
         return false;
     }
 
     private static boolean debugdHelp() {
         // [options] <pid> [server-id]
         // [options] <executable> <core> [server-id]
-        java.io.PrintStream out = System.out;
-        out.print(" [option] <pid> [server-id]");
-        out.println("\t\t(to connect to a live java process)");
-        out.print("   or  [option] <executable> <core> [server-id]");
-        out.println("\t\t(to connect to a core file produced by <executable>)");
-        out.print("\t\tserver-id is an optional unique id for this debug server, needed ");
-        out.println("\t\tif multiple debug servers are run on the same machine");
-        out.println("where option includes:");
-        out.println("   -h | -help\tto print this help message");
-        return false;
+        System.out.println("    --serverid <id>  \tA unique identifier for this debug server.");
+        return commonHelp("debugd");
     }
 
     private static boolean jinfoHelp() {
         // --flags -> -flags
         // --sysprops -> -sysprops
-        System.out.println("    --flags\tto print VM flags");
-        System.out.println("    --sysprops\tto print Java System properties");
-        System.out.println("    <no option>\tto print both of the above");
-        return commonHelp();
+        System.out.println("    --flags          \tTo print VM flags.");
+        System.out.println("    --sysprops       \tTo print Java System properties.");
+        System.out.println("    <no option>      \tTo print both of the above.");
+        return commonHelp("jinfo");
     }
 
     private static boolean jmapHelp() {
@@ -86,27 +86,27 @@ public class SALauncher {
         // --clstats -> -clstats
         // --finalizerinfo -> -finalizerinfo
 
-        System.out.println("    <no option>\tto print same info as Solaris pmap");
-        System.out.println("    --heap\tto print java heap summary");
-        System.out.println("    --binaryheap\tto dump java heap in hprof binary format");
-        System.out.println("    --dumpfile\tname of the dump file");
-        System.out.println("    --histo\tto print histogram of java object heap");
-        System.out.println("    --clstats\tto print class loader statistics");
-        System.out.println("    --finalizerinfo\tto print information on objects awaiting finalization");
-        return commonHelp();
+        System.out.println("    <no option>      \tTo print same info as Solaris pmap.");
+        System.out.println("    --heap           \tTo print java heap summary.");
+        System.out.println("    --binaryheap     \tTo dump java heap in hprof binary format.");
+        System.out.println("    --dumpfile <name>\tThe name of the dump file.");
+        System.out.println("    --histo          \tTo print histogram of java object heap.");
+        System.out.println("    --clstats        \tTo print class loader statistics.");
+        System.out.println("    --finalizerinfo  \tTo print information on objects awaiting finalization.");
+        return commonHelp("jmap");
     }
 
     private static boolean jstackHelp() {
         // --locks -> -l
         // --mixed -> -m
-        System.out.println("    --locks\tto print java.util.concurrent locks");
-        System.out.println("    --mixed\tto print both java and native frames (mixed mode)");
-        return commonHelp();
+        System.out.println("    --locks          \tTo print java.util.concurrent locks.");
+        System.out.println("    --mixed          \tTo print both Java and native frames (mixed mode).");
+        return commonHelp("jstack");
     }
 
     private static boolean jsnapHelp() {
-        System.out.println("    --all\tto print all performance counters");
-        return commonHelp();
+        System.out.println("    --all            \tTo print all performance counters.");
+        return commonHelp("jsnap");
     }
 
     private static boolean toolHelp(String toolName) {
@@ -125,8 +125,11 @@ public class SALauncher {
         if (toolName.equals("debugd")) {
             return debugdHelp();
         }
-        if (toolName.equals("hsdb") || toolName.equals("clhsdb")) {
-            return commonHelp();
+        if (toolName.equals("hsdb")) {
+            return commonHelp("hsdb");
+        }
+        if (toolName.equals("clhsdb")) {
+            return commonHelp("clhsdb");
         }
         return launcherHelp();
     }
@@ -398,18 +401,48 @@ public class SALauncher {
     }
 
     private static void runDEBUGD(String[] oldArgs) {
-        if ((oldArgs.length < 1) || (oldArgs.length > 3)) {
-            debugdHelp();
-        }
-
         // By default SA agent classes prefer Windows process debugger
         // to windbg debugger. SA expects special properties to be set
         // to choose other debuggers. We will set those here before
         // attaching to SA agent.
         System.setProperty("sun.jvm.hotspot.debugger.useWindbgDebugger", "true");
 
+        SAGetopt sg = new SAGetopt(oldArgs);
+        String[] longOpts = {"exe=", "core=", "pid=", "serverid="};
+
+        ArrayList<String> newArgs = new ArrayList<>();
+        String exe = null;
+        String pid = null;
+        String core = null;
+        String s = null;
+        String serverid = null;
+
+        while((s = sg.next(null, longOpts)) != null) {
+          if (s.equals("exe")) {
+              exe = sg.getOptarg();
+              continue;
+          }
+          if (s.equals("core")) {
+              core = sg.getOptarg();
+              continue;
+          }
+          if (s.equals("pid")) {
+              pid = sg.getOptarg();
+              continue;
+          }
+          if (s.equals("serverid")) {
+              serverid = sg.getOptarg();
+              continue;
+          }
+        }
+
+        buildAttachArgs(newArgs, pid, exe, core, false);
+        if (serverid != null) {
+            newArgs.add(serverid);
+        }
+
         // delegate to the actual SA debug server.
-        sun.jvm.hotspot.DebugServer.main(oldArgs);
+        sun.jvm.hotspot.DebugServer.main(newArgs.toArray(new String[newArgs.size()]));
     }
 
     public static void main(String[] args) {

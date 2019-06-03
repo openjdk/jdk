@@ -67,7 +67,7 @@ protected:
 
 protected:
   static bool fail(const char* msg, const char* name = NULL);
-  bool check(jint type, const char* path);
+  bool check(jint type, const char* path, bool is_static);
 
 public:
   enum {
@@ -162,7 +162,7 @@ private:
   }
 
 public:
-  bool check();
+  bool check(bool is_static);
 };
 
 #endif // SHARE_CLASSFILE_SHAREDPATHSMISCINFO_HPP

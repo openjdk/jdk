@@ -804,6 +804,8 @@ void VM_Version::determine_features() {
   address code_end = a->pc();
   a->flush();
 
+  cbuf.insts()->set_end(code_end);
+
   // Print the detection code.
   bool printVerbose = Verbose || PrintAssembly || PrintStubCode;
   if (printVerbose) {
@@ -812,8 +814,8 @@ void VM_Version::determine_features() {
     tty->print_cr("Stub length is %ld bytes, codebuffer reserves %d bytes, %ld bytes spare.",
                   code_end-code, cbuf_size, cbuf_size-(code_end-code));
 
-    // Use existing decode function. This enables the [Code] format which is needed to DecodeErrorFile.
-    Disassembler::decode((u_char*)code, (u_char*)code_end, tty);
+    // Use existing decode function. This enables the [MachCode] format which is needed to DecodeErrorFile.
+    Disassembler::decode(&cbuf, code, code_end, tty);
   }
 
   // Prepare for detection code execution and clear work buffer.

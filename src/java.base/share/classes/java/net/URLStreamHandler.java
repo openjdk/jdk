@@ -76,8 +76,14 @@ public abstract class URLStreamHandler {
      * support proxying will ignore the proxy parameter and make a
      * normal connection.
      *
-     * Calling this method preempts the system's default
+     * <p> Calling this method preempts the system's default
      * {@link java.net.ProxySelector ProxySelector} settings.
+     *
+     * @implSpec
+     * The default implementation of this method first checks that the given
+     * {code URL} and {code Proxy} are not null, then throws {@code
+     * UnsupportedOperationException}. Subclasses should override this method
+     * with an appropriate implementation.
      *
      * @param      u   the URL that this connects to.
      * @param      p   the proxy through which the connection will be made.
@@ -93,6 +99,8 @@ public abstract class URLStreamHandler {
      * @since      1.5
      */
     protected URLConnection openConnection(URL u, Proxy p) throws IOException {
+        if (u == null || p == null)
+            throw new IllegalArgumentException("null " + (u == null ? "url" : "proxy"));
         throw new UnsupportedOperationException("Method not implemented.");
     }
 

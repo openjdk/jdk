@@ -45,6 +45,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.ConcurrentSkipListSet;
 import java.util.concurrent.atomic.AtomicLong;
+import java.util.Arrays;
 
 import jdk.internal.access.JavaNetInetAddressAccess;
 import jdk.internal.access.SharedSecrets;
@@ -989,29 +990,28 @@ class InetAddress implements java.io.Serializable {
             String hostEntry;
             String host = null;
 
-            String addrString = addrToString(addr);
             try (Scanner hostsFileScanner = new Scanner(new File(hostsFile), "UTF-8")) {
                 while (hostsFileScanner.hasNextLine()) {
                     hostEntry = hostsFileScanner.nextLine();
                     if (!hostEntry.startsWith("#")) {
                         hostEntry = removeComments(hostEntry);
-                        if (hostEntry.contains(addrString)) {
-                            host = extractHost(hostEntry, addrString);
-                            if (host != null) {
-                                break;
-                            }
+                        String[] mapping = hostEntry.split("\\s+");
+                        if (mapping.length >= 2 &&
+                            Arrays.equals(addr, createAddressByteArray(mapping[0]))) {
+                            host = mapping[1];
+                            break;
                         }
                     }
                 }
             } catch (FileNotFoundException e) {
                 throw new UnknownHostException("Unable to resolve address "
-                        + addrString + " as hosts file " + hostsFile
+                        + Arrays.toString(addr) + " as hosts file " + hostsFile
                         + " not found ");
             }
 
             if ((host == null) || (host.isEmpty()) || (host.equals(" "))) {
                 throw new UnknownHostException("Requested address "
-                        + addrString
+                        + Arrays.toString(addr)
                         + " resolves to an invalid entry in hosts file "
                         + hostsFile);
             }
@@ -1106,22 +1106,6 @@ class InetAddress implements java.io.Serializable {
                 }
             }
             return hostAddr;
-        }
-
-        /**
-         * IP Address to host mapping
-         * use first host alias in list
-         */
-        private String extractHost(String hostEntry, String addrString) {
-            String[] mapping = hostEntry.split("\\s+");
-            String host = null;
-
-            if (mapping.length >= 2) {
-                if (mapping[0].equalsIgnoreCase(addrString)) {
-                    host = mapping[1];
-                }
-            }
-            return host;
         }
     }
 

@@ -92,7 +92,8 @@ class PcDesc {
   // Returns the real pc
   address real_pc(const CompiledMethod* code) const;
 
-  void print(CompiledMethod* code);
+  void print(CompiledMethod* code) { print_on(tty, code); }
+  void print_on(outputStream* st, CompiledMethod* code);
   bool verify(CompiledMethod* code);
 };
 

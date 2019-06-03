@@ -614,8 +614,6 @@ FormatData/es_PE/DatePatterns/1=d' de 'MMMM' de 'yyyy
 FormatData/es_PE/DatePatterns/2=dd/MM/yyyy
 FormatData/es_PE/DatePatterns/3=dd/MM/yy
 FormatData/es_PE/DateTimePatterns/0={1} {0}
-FormatData/es_PE/NumberElements/0=,
-FormatData/es_PE/NumberElements/1=.
 FormatData/es_PE/NumberElements/2=;
 FormatData/es_PR/NumberPatterns/0=#,##0.###;-#,##0.###
 # FormatData/es_PR/NumberPatterns/1=$#,##0.00;($#,##0.00) # Changed; see bug 4122840
@@ -8323,3 +8321,8 @@ CurrencyNames//mru=Mauritanian Ouguiya
 
 # bug #8208746
 CurrencyNames//ves=Venezuelan Bol\u00edvar Soberano
+
+# bug# 8206879
+# For Peru decimal separator is changed to dot(.) and grouping separator is changed to comma(,)
+FormatData/es_PE/NumberElements/0=.
+FormatData/es_PE/NumberElements/1=,

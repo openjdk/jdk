@@ -32,6 +32,7 @@
 // Mutexes used in the VM.
 
 extern Mutex*   Patching_lock;                   // a lock used to guard code patching of compiled code
+extern Mutex*   CompiledMethod_lock;             // a lock used to guard a compiled method
 extern Monitor* SystemDictionary_lock;           // a lock on the system dictionary
 extern Mutex*   ProtectionDomainSet_lock;        // a lock on the pd_set list in the system dictionary
 extern Mutex*   SharedDictionary_lock;           // a lock on the CDS shared dictionary
@@ -66,7 +67,6 @@ extern Monitor* CodeCache_lock;                  // a lock on the CodeCache, ran
 extern Mutex*   MethodData_lock;                 // a lock on installation of method data
 extern Mutex*   TouchedMethodLog_lock;           // a lock on allocation of LogExecutedMethods info
 extern Mutex*   RetData_lock;                    // a lock on installation of RetData inside method data
-extern Mutex*   DerivedPointerTableGC_lock;      // a lock to protect the derived pointer table
 extern Monitor* CGCPhaseManager_lock;            // a lock to protect a concurrent GC's phase management
 extern Monitor* VMOperationQueue_lock;           // a lock on queue of vm_operations waiting to execute
 extern Monitor* VMOperationRequest_lock;         // a lock on Threads waiting for a vm_operation to terminate
@@ -133,9 +133,12 @@ extern Mutex*   DCmdFactory_lock;                // serialize access to DCmdFact
 #if INCLUDE_NMT
 extern Mutex*   NMTQuery_lock;                   // serialize NMT Dcmd queries
 #endif
-#if INCLUDE_CDS && INCLUDE_JVMTI
+#if INCLUDE_CDS
+#if INCLUDE_JVMTI
 extern Mutex*   CDSClassFileStream_lock;         // FileMapInfo::open_stream_for_jvmti
 #endif
+extern Mutex*   DumpTimeTable_lock;              // SystemDictionaryShared::find_or_allocate_info_for
+#endif // INCLUDE_CDS
 #if INCLUDE_JFR
 extern Mutex*   JfrStacktrace_lock;              // used to guard access to the JFR stacktrace table
 extern Monitor* JfrMsg_lock;                     // protects JFR messaging

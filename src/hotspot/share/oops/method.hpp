@@ -463,13 +463,29 @@ class Method : public Metadata {
   address verified_code_entry();
   bool check_code() const;      // Not inline to avoid circular ref
   CompiledMethod* volatile code() const;
-  void clear_code(bool acquire_lock = true);    // Clear out any compiled code
+
+  // Locks CompiledMethod_lock if not held.
+  void unlink_code(CompiledMethod *compare);
+  // Locks CompiledMethod_lock if not held.
+  void unlink_code();
+
+private:
+  // Either called with CompiledMethod_lock held or from constructor.
+  void clear_code();
+
+public:
   static void set_code(const methodHandle& mh, CompiledMethod* code);
   void set_adapter_entry(AdapterHandlerEntry* adapter) {
     constMethod()->set_adapter_entry(adapter);
   }
+  void set_adapter_trampoline(AdapterHandlerEntry** trampoline) {
+    constMethod()->set_adapter_trampoline(trampoline);
+  }
   void update_adapter_trampoline(AdapterHandlerEntry* adapter) {
     constMethod()->update_adapter_trampoline(adapter);
+  }
+  void set_from_compiled_entry(address entry) {
+    _from_compiled_entry =  entry;
   }
 
   address get_i2c_entry();
@@ -511,7 +527,8 @@ class Method : public Metadata {
   address interpreter_entry() const              { return _i2i_entry; }
   // Only used when first initialize so we can set _i2i_entry and _from_interpreted_entry
   void set_interpreter_entry(address entry) {
-    assert(!is_shared(), "shared method's interpreter entry should not be changed at run time");
+    assert(!is_shared(),
+           "shared method's interpreter entry should not be changed at run time");
     if (_i2i_entry != entry) {
       _i2i_entry = entry;
     }
@@ -681,6 +698,8 @@ class Method : public Metadata {
 #ifdef TIERED
   bool has_aot_code() const                      { return aot_code() != NULL; }
 #endif
+
+  bool needs_clinit_barrier() const;
 
   // sizing
   static int header_size()                       {

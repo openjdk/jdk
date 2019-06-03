@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,7 +26,9 @@
 /*
  * @test
  * @bug 4397357 6565620 6959267 7070436 7198195 8041791 8032446 8072600
+ *      8221431
  * @summary Confirm special case mappings are handled correctly.
+ * @library /lib/testlibrary/java/lang
  */
 
 import java.io.BufferedReader;
@@ -137,8 +139,7 @@ public class SpecialCasingTest {
                 } else {
                     specificLocale = false;
                 }
-                in = Files.newBufferedReader(Paths.get(System.getProperty("test.src.path"), "..", "/Character/SpecialCasing.txt")
-                     .toRealPath());
+                in = Files.newBufferedReader(UCDFiles.SPECIAL_CASING.toRealPath());
                 String line;
                 while ((line = in.readLine()) != null) {
                     if (line.length() == 0 || line.charAt(0) == '#') {

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,6 +25,7 @@ package jdk.test.lib.process;
 
 import java.io.ByteArrayOutputStream;
 import java.io.InputStream;
+import java.time.Instant;
 import java.util.concurrent.CancellationException;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
@@ -91,8 +92,15 @@ public interface OutputBuffer {
     private final StreamTask errTask;
     private final Process p;
 
+    private final void logProgress(String state) {
+        System.out.println("[" + Instant.now().toString() + "] " + state
+                           + " for process " + p.pid());
+        System.out.flush();
+    }
+
     private LazyOutputBuffer(Process p) {
       this.p = p;
+      logProgress("Gathering output");
       outTask = new StreamTask(p.getInputStream());
       errTask = new StreamTask(p.getErrorStream());
     }
@@ -110,7 +118,18 @@ public interface OutputBuffer {
     @Override
     public int getExitValue() {
       try {
-        return p.waitFor();
+          logProgress("Waiting for completion");
+          boolean aborted = true;
+          try {
+              int result = p.waitFor();
+              logProgress("Waiting for completion finished");
+              aborted = false;
+              return result;
+          } finally {
+              if (aborted) {
+                  logProgress("Waiting for completion FAILED");
+              }
+          }
       } catch (InterruptedException e) {
         Thread.currentThread().interrupt();
         throw new OutputBufferException(e);

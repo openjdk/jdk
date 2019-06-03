@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 2000, 2019, Oracle and/or its affiliates. All rights reserved.
- * Copyright (c) 2012, 2018 SAP SE. All rights reserved.
+ * Copyright (c) 2012, 2019 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -90,7 +90,7 @@ define_pd_global(uintx,    CodeCacheExpansionSize,       64*K);
 
 // Ergonomics related flags
 define_pd_global(uint64_t, MaxRAM,                       128ULL*G);
-define_pd_global(uintx,    CodeCacheMinBlockLength,      4);
+define_pd_global(uintx,    CodeCacheMinBlockLength,      6);
 define_pd_global(uintx,    CodeCacheMinimumUseSpace,     400*K);
 
 define_pd_global(bool,     TrapBasedRangeChecks,          true);

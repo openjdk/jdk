@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2016, 2018, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2016, 2019, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -64,11 +64,16 @@ $(eval $(call SetupNativeCompilation, BUILD_GTEST_LIBJVM, \
     EXCLUDES := $(JVM_EXCLUDES), \
     EXCLUDE_FILES := gtestLauncher.cpp, \
     EXCLUDE_PATTERNS := $(JVM_EXCLUDE_PATTERNS), \
-    EXTRA_FILES := $(GTEST_FRAMEWORK_SRC)/src/gtest-all.cc, \
+    EXTRA_FILES := \
+        $(GTEST_FRAMEWORK_SRC)/googletest/src/gtest-all.cc \
+        $(GTEST_FRAMEWORK_SRC)/googlemock/src/gmock-all.cc, \
     EXTRA_OBJECT_FILES := $(filter-out %/operator_new$(OBJ_SUFFIX), \
         $(BUILD_LIBJVM_ALL_OBJS)), \
-    CFLAGS := $(JVM_CFLAGS) -I$(GTEST_FRAMEWORK_SRC) \
-        -I$(GTEST_FRAMEWORK_SRC)/include \
+    CFLAGS := $(JVM_CFLAGS) \
+        -I$(GTEST_FRAMEWORK_SRC)/googletest \
+        -I$(GTEST_FRAMEWORK_SRC)/googletest/include \
+        -I$(GTEST_FRAMEWORK_SRC)/googlemock \
+        -I$(GTEST_FRAMEWORK_SRC)/googlemock/include \
         $(addprefix -I,$(GTEST_TEST_SRC)), \
     CFLAGS_windows := -EHsc, \
     CFLAGS_solaris := -DGTEST_HAS_EXCEPTIONS=0 -library=stlport4, \
@@ -80,8 +85,6 @@ $(eval $(call SetupNativeCompilation, BUILD_GTEST_LIBJVM, \
         self-assign-overloaded, \
     DISABLED_WARNINGS_solstudio := $(DISABLED_WARNINGS_solstudio) \
         identexpected, \
-    DISABLED_WARNINGS_microsoft := $(DISABLED_WARNINGS_microsoft) \
-        4996, \
     LDFLAGS := $(JVM_LDFLAGS), \
     LDFLAGS_solaris := -library=stlport4 $(call SET_SHARED_LIBRARY_ORIGIN), \
     LIBS := $(JVM_LIBS), \
@@ -92,7 +95,7 @@ $(eval $(call SetupNativeCompilation, BUILD_GTEST_LIBJVM, \
     ZIP_EXTERNAL_DEBUG_SYMBOLS := false, \
     STRIP_SYMBOLS := false, \
     PRECOMPILED_HEADER := $(JVM_PRECOMPILED_HEADER), \
-    PRECOMPILED_HEADER_EXCLUDE := gtest-all.cc gtestMain.cpp, \
+    PRECOMPILED_HEADER_EXCLUDE := gtest-all.cc gmock-all.cc gtestMain.cpp, \
     DEFINE_THIS_FILE := false, \
 ))
 
@@ -107,8 +110,11 @@ $(eval $(call SetupNativeCompilation, BUILD_GTEST_LAUNCHER, \
     OUTPUT_DIR := $(JVM_OUTPUTDIR)/gtest, \
     EXTRA_FILES := $(GTEST_LAUNCHER_SRC), \
     OBJECT_DIR := $(JVM_OUTPUTDIR)/gtest/launcher-objs, \
-    CFLAGS := $(JVM_CFLAGS) -I$(GTEST_FRAMEWORK_SRC) \
-        -I$(GTEST_FRAMEWORK_SRC)/include, \
+    CFLAGS := $(JVM_CFLAGS) \
+        -I$(GTEST_FRAMEWORK_SRC)/googletest \
+        -I$(GTEST_FRAMEWORK_SRC)/googletest/include \
+        -I$(GTEST_FRAMEWORK_SRC)/googlemock \
+        -I$(GTEST_FRAMEWORK_SRC)/googlemock/include, \
     LDFLAGS := $(LDFLAGS_JDKEXE), \
     LDFLAGS_unix := -L$(JVM_OUTPUTDIR)/gtest $(call SET_SHARED_LIBRARY_ORIGIN), \
     LDFLAGS_solaris := -library=stlport4, \

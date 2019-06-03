@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1994, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1994, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -211,11 +211,10 @@ canonicalize(char *original, char *resolved, int len)
         char *p, *end, *r = NULL;
         char path[PATH_MAX + 1];
 
-        strncpy(path, original, sizeof(path));
-        if (path[PATH_MAX] != '\0') {
-            errno = ENAMETOOLONG;
-            return -1;
-        }
+        // strlen(original) <= PATH_MAX, see above
+        strncpy(path, original, PATH_MAX);
+        // append null for == case
+        path[PATH_MAX] = '\0';
         end = path + strlen(path);
 
         for (p = end; p > path;) {

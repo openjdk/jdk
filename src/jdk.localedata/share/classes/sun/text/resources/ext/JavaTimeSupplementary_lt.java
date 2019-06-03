@@ -223,6 +223,7 @@ public class JavaTimeSupplementary_lt extends OpenListResourceBundle {
                     "Tai\u0161o",
                     "\u0160ova",
                     "Heisei",
+                    "Reiwa",
                 }
             },
             { "java.time.japanese.short.Eras",
@@ -232,6 +233,7 @@ public class JavaTimeSupplementary_lt extends OpenListResourceBundle {
                     "Tai\u0161o",
                     "\u0160ova",
                     "Heisei",
+                    "Reiwa",
                 }
             },
             { "java.time.long.Eras",

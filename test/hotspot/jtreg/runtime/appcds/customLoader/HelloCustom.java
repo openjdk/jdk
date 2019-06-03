@@ -27,10 +27,12 @@
  * @summary Hello World test for AppCDS custom loader support
  * @requires vm.cds
  * @requires vm.cds.custom.loaders
- * @library /test/lib /test/hotspot/jtreg/runtime/appcds
- * @compile test-classes/Hello.java test-classes/CustomLoadee.java
- * @build sun.hotspot.WhiteBox
- * @run driver ClassFileInstaller -jar hello.jar Hello
+ * @library /test/lib /test/hotspot/jtreg/runtime/appcds /runtime/testlibrary
+ * @modules java.base/jdk.internal.misc
+ *          java.management
+ * @compile test-classes/HelloUnload.java test-classes/CustomLoadee.java
+ * @build sun.hotspot.WhiteBox ClassUnloadCommon
+ * @run driver ClassFileInstaller -jar hello.jar HelloUnload ClassUnloadCommon ClassUnloadCommon$1 ClassUnloadCommon$TestFailure
  * @run driver ClassFileInstaller -jar hello_custom.jar CustomLoadee
  * @run driver ClassFileInstaller -jar WhiteBox.jar sun.hotspot.WhiteBox
  * @run driver HelloCustom
@@ -52,7 +54,7 @@ public class HelloCustom {
 
         // Dump the archive
         String classlist[] = new String[] {
-            "Hello",
+            "HelloUnload",
             "java/lang/Object id: 1",
             "CustomLoadee id: 2 super: 1 source: " + customJarPath
         };
@@ -68,8 +70,7 @@ public class HelloCustom {
                                      use_whitebox_jar,
                                      "-XX:+UnlockDiagnosticVMOptions",
                                      "-XX:+WhiteBoxAPI",
-                                     "Hello", customJarPath));
+                                     "HelloUnload", customJarPath, "true", "true"));
         TestCommon.checkExec(output);
     }
 }
-

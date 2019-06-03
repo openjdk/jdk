@@ -335,6 +335,14 @@ class Assembler : public AbstractAssembler {
     Lookaside  = 1 << 4
   };
 
+  //---<  calculate length of instruction  >---
+  // With SPARC being a RISC architecture, this always is BytesPerInstWord
+  // instruction must start at passed address
+  static unsigned int instr_len(unsigned char *instr) { return BytesPerInstWord; }
+
+  //---<  longest instructions  >---
+  static unsigned int instr_maxlen() { return BytesPerInstWord; }
+
   static bool is_in_wdisp_range(address a, address b, int nbits) {
     intptr_t d = intptr_t(b) - intptr_t(a);
     return is_simm(d, nbits + 2);

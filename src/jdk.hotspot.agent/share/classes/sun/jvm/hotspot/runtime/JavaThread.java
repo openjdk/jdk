@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -41,7 +41,6 @@ import sun.jvm.hotspot.utilities.*;
 public class JavaThread extends Thread {
   private static final boolean DEBUG = System.getProperty("sun.jvm.hotspot.runtime.JavaThread.DEBUG") != null;
 
-  private static AddressField  nextField;
   private static sun.jvm.hotspot.types.OopField threadObjField;
   private static AddressField  anchorField;
   private static AddressField  lastJavaSPField;
@@ -84,7 +83,6 @@ public class JavaThread extends Thread {
     Type type = db.lookupType("JavaThread");
     Type anchorType = db.lookupType("JavaFrameAnchor");
 
-    nextField         = type.getAddressField("_next");
     threadObjField    = type.getOopField("_threadObj");
     anchorField       = type.getAddressField("_anchor");
     lastJavaSPField   = anchorType.getAddressField("_last_Java_sp");
@@ -118,15 +116,6 @@ public class JavaThread extends Thread {
 
   void setThreadPDAccess(JavaThreadPDAccess access) {
     this.access = access;
-  }
-
-  public JavaThread next() {
-    Address threadAddr = nextField.getValue(addr);
-    if (threadAddr == null) {
-      return null;
-    }
-
-    return VM.getVM().getThreads().createJavaThreadWrapper(threadAddr);
   }
 
   /** NOTE: for convenience, this differs in definition from the underlying VM.

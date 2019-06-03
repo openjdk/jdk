@@ -50,7 +50,7 @@ public class UnsafeLoadSnippets implements Snippets {
     public static Object lowerUnsafeLoad(Object object, long offset) {
         Object fixedObject = FixedValueAnchorNode.getObject(object);
         if (object instanceof java.lang.ref.Reference && referentOffset(INJECTED_METAACCESS) == offset) {
-            return Word.objectToTrackedPointer(fixedObject).readObject((int) offset, BarrierType.PRECISE);
+            return Word.objectToTrackedPointer(fixedObject).readObject((int) offset, BarrierType.WEAK_FIELD);
         } else {
             return Word.objectToTrackedPointer(fixedObject).readObject((int) offset, BarrierType.NONE);
         }

@@ -27,6 +27,7 @@
 #include "classfile/compactHashtable.hpp"
 #include "classfile/javaClasses.hpp"
 #include "logging/logMessage.hpp"
+#include "memory/dynamicArchive.hpp"
 #include "memory/heapShared.inline.hpp"
 #include "memory/metadataFactory.hpp"
 #include "memory/metaspaceShared.hpp"
@@ -39,12 +40,14 @@
 //
 // The compact hash table writer implementations
 //
-CompactHashtableWriter::CompactHashtableWriter(int num_buckets,
+CompactHashtableWriter::CompactHashtableWriter(int num_entries,
                                                CompactHashtableStats* stats) {
-  assert(DumpSharedSpaces, "dump-time only");
-  assert(num_buckets > 0, "no buckets");
-  _num_buckets = num_buckets;
-  _num_entries = 0;
+  assert(DumpSharedSpaces || DynamicDumpSharedSpaces, "dump-time only");
+  assert(num_entries >= 0, "sanity");
+  _num_buckets = calculate_num_buckets(num_entries);
+  assert(_num_buckets > 0, "no buckets");
+
+  _num_entries_written = 0;
   _buckets = NEW_C_HEAP_ARRAY(GrowableArray<Entry>*, _num_buckets, mtSymbol);
   for (int i=0; i<_num_buckets; i++) {
     _buckets[i] = new (ResourceObj::C_HEAP, mtSymbol) GrowableArray<Entry>(0, true, mtSymbol);
@@ -67,11 +70,24 @@ CompactHashtableWriter::~CompactHashtableWriter() {
   FREE_C_HEAP_ARRAY(GrowableArray<Entry>*, _buckets);
 }
 
+size_t CompactHashtableWriter::estimate_size(int num_entries) {
+  int num_buckets = calculate_num_buckets(num_entries);
+  size_t bucket_bytes = MetaspaceShared::ro_array_bytesize<u4>(num_buckets + 1);
+
+  // In worst case, we have no VALUE_ONLY_BUCKET_TYPE, so each entry takes 2 slots
+  int entries_space = 2 * num_entries;
+  size_t entry_bytes = MetaspaceShared::ro_array_bytesize<u4>(entries_space);
+
+  return bucket_bytes
+       + entry_bytes
+       + SimpleCompactHashtable::calculate_header_size();
+}
+
 // Add a symbol entry to the temporary hash table
 void CompactHashtableWriter::add(unsigned int hash, u4 value) {
   int index = hash % _num_buckets;
   _buckets[index]->append_if_missing(Entry(hash, value));
-  _num_entries++;
+  _num_entries_written++;
 }
 
 void CompactHashtableWriter::allocate_table() {
@@ -81,7 +97,7 @@ void CompactHashtableWriter::allocate_table() {
     int bucket_size = bucket->length();
     if (bucket_size == 1) {
       entries_space++;
-    } else {
+    } else if (bucket_size > 1) {
       entries_space += 2 * bucket_size;
     }
   }
@@ -96,7 +112,7 @@ void CompactHashtableWriter::allocate_table() {
 
   _stats->bucket_count    = _num_buckets;
   _stats->bucket_bytes    = _compact_buckets->size() * BytesPerWord;
-  _stats->hashentry_count = _num_entries;
+  _stats->hashentry_count = _num_entries_written;
   _stats->hashentry_bytes = _compact_entries->size() * BytesPerWord;
 }
 
@@ -144,19 +160,19 @@ void CompactHashtableWriter::dump(SimpleCompactHashtable *cht, const char* table
   dump_table(&summary);
 
   int table_bytes = _stats->bucket_bytes + _stats->hashentry_bytes;
-  address base_address = address(MetaspaceShared::shared_rs()->base());
-  cht->init(base_address,  _num_entries, _num_buckets,
+  address base_address = address(SharedBaseAddress);
+  cht->init(base_address,  _num_entries_written, _num_buckets,
             _compact_buckets->data(), _compact_entries->data());
 
   LogMessage(cds, hashtables) msg;
   if (msg.is_info()) {
     double avg_cost = 0.0;
-    if (_num_entries > 0) {
-      avg_cost = double(table_bytes)/double(_num_entries);
+    if (_num_entries_written > 0) {
+      avg_cost = double(table_bytes)/double(_num_entries_written);
     }
     msg.info("Shared %s table stats -------- base: " PTR_FORMAT,
                          table_name, (intptr_t)base_address);
-    msg.info("Number of entries       : %9d", _num_entries);
+    msg.info("Number of entries       : %9d", _num_entries_written);
     msg.info("Total bytes used        : %9d", table_bytes);
     msg.info("Average bytes per entry : %9.3f", avg_cost);
     msg.info("Average bucket size     : %9.3f", summary.avg());
@@ -174,7 +190,28 @@ void CompactHashtableWriter::dump(SimpleCompactHashtable *cht, const char* table
 // The CompactHashtable implementation
 //
 
+void SimpleCompactHashtable::init(address base_address, u4 entry_count, u4 bucket_count, u4* buckets, u4* entries) {
+  _bucket_count = bucket_count;
+  _entry_count = entry_count;
+  _base_address = base_address;
+  if (DynamicDumpSharedSpaces) {
+    _buckets = DynamicArchive::buffer_to_target(buckets);
+    _entries = DynamicArchive::buffer_to_target(entries);
+  } else {
+    _buckets = buckets;
+    _entries = entries;
+  }
+}
+
+size_t SimpleCompactHashtable::calculate_header_size() {
+  // We have 5 fields. Each takes up sizeof(intptr_t). See WriteClosure::do_u4
+  size_t bytes = sizeof(intptr_t) * 5;
+  return bytes;
+}
+
 void SimpleCompactHashtable::serialize_header(SerializeClosure* soc) {
+  // NOTE: if you change this function, you MUST change the number 5 in
+  // calculate_header_size() accordingly.
   soc->do_ptr((void**)&_base_address);
   soc->do_u4(&_entry_count);
   soc->do_u4(&_bucket_count);

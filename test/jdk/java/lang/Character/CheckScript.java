@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2010, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,8 +23,9 @@
 
 /**
  * @test
- * @bug 6945564 6959267 7033561 7070436 7198195 8032446 8072600
+ * @bug 6945564 6959267 7033561 7070436 7198195 8032446 8072600 8221431
  * @summary  Check that the j.l.Character.UnicodeScript
+ * @library /lib/testlibrary/java/lang
  */
 
 import java.io.*;
@@ -38,8 +39,8 @@ public class CheckScript {
         File fScripts;
         File fAliases;
         if (args.length == 0) {
-            fScripts = new File(System.getProperty("test.src", "."), "Scripts.txt");
-            fAliases = new File(System.getProperty("test.src", "."), "PropertyValueAliases.txt");
+            fScripts = UCDFiles.SCRIPTS.toFile();
+            fAliases = UCDFiles.PROPERTY_VALUE_ALIASES.toFile();
         } else if (args.length == 2) {
             fScripts = new File(args[0]);
             fAliases = new File(args[1]);

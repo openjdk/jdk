@@ -28,8 +28,7 @@
 #include "memory/allocation.hpp"
 #include "memory/padded.hpp"
 #include "oops/symbol.hpp"
-#include "utilities/concurrentHashTable.hpp"
-#include "utilities/hashtable.hpp"
+#include "utilities/tableStatistics.hpp"
 
 class JavaThread;
 
@@ -90,58 +89,43 @@ class CompactHashtableWriter;
 class SerializeClosure;
 
 class SymbolTableConfig;
-typedef ConcurrentHashTable<Symbol*,
-                              SymbolTableConfig, mtSymbol> SymbolTableHash;
-
 class SymbolTableCreateEntry;
 
-class SymbolTable : public CHeapObj<mtSymbol> {
+class constantPoolHandle;
+class SymbolClosure;
+
+class SymbolTable : public AllStatic {
   friend class VMStructs;
   friend class Symbol;
   friend class ClassFileParser;
   friend class SymbolTableConfig;
   friend class SymbolTableCreateEntry;
 
-private:
-  static void delete_symbol(Symbol* sym);
-  void grow(JavaThread* jt);
-  void clean_dead_entries(JavaThread* jt);
+ private:
+  static volatile bool _has_work;
 
-  // The symbol table
-  static SymbolTable* _the_table;
-  static volatile bool _lookup_shared_first;
-  static volatile bool _alt_hash;
-
-  // For statistics
-  volatile size_t _symbols_removed;
-  volatile size_t _symbols_counted;
-
-  SymbolTableHash* _local_table;
-  size_t _current_size;
-  volatile bool _has_work;
   // Set if one bucket is out of balance due to hash algorithm deficiency
-  volatile bool _needs_rehashing;
+  static volatile bool _needs_rehashing;
 
-  volatile size_t _items_count;
-  volatile bool   _has_items_to_clean;
+  static void delete_symbol(Symbol* sym);
+  static void grow(JavaThread* jt);
+  static void clean_dead_entries(JavaThread* jt);
 
-  double get_load_factor() const;
+  static double get_load_factor();
 
-  void check_concurrent_work();
+  static void check_concurrent_work();
 
   static void item_added();
   static void item_removed();
 
   // For cleaning
-  void reset_has_items_to_clean();
-  void mark_has_items_to_clean();
-  bool has_items_to_clean() const;
+  static void reset_has_items_to_clean();
+  static void mark_has_items_to_clean();
+  static bool has_items_to_clean();
 
-  SymbolTable();
-
-  Symbol* allocate_symbol(const char* name, int len, bool c_heap); // Assumes no characters larger than 0x7F
-  Symbol* do_lookup(const char* name, int len, uintx hash);
-  Symbol* do_add_if_needed(const char* name, int len, uintx hash, bool heap);
+  static Symbol* allocate_symbol(const char* name, int len, bool c_heap); // Assumes no characters larger than 0x7F
+  static Symbol* do_lookup(const char* name, int len, uintx hash);
+  static Symbol* do_add_if_needed(const char* name, int len, uintx hash, bool heap);
 
   // lookup only, won't add. Also calculate hash. Used by the ClassfileParser.
   static Symbol* lookup_only(const char* name, int len, unsigned int& hash);
@@ -153,28 +137,23 @@ private:
                           const char** name, int* lengths,
                           int* cp_indices, unsigned int* hashValues);
 
-  static Symbol* lookup_shared(const char* name, int len, unsigned int hash);
-  Symbol* lookup_dynamic(const char* name, int len, unsigned int hash);
-  Symbol* lookup_common(const char* name, int len, unsigned int hash);
+  static Symbol* lookup_shared(const char* name, int len, unsigned int hash) NOT_CDS_RETURN_(NULL);
+  static Symbol* lookup_dynamic(const char* name, int len, unsigned int hash);
+  static Symbol* lookup_common(const char* name, int len, unsigned int hash);
 
   // Arena for permanent symbols (null class loader) that are never unloaded
   static Arena*  _arena;
   static Arena* arena() { return _arena; }  // called for statistics
 
-  static void initialize_symbols(int arena_alloc_size = 0);
+  static void print_table_statistics(outputStream* st, const char* table_name);
 
-  void concurrent_work(JavaThread* jt);
-  void print_table_statistics(outputStream* st, const char* table_name);
-
-  void try_rehash_table();
-  bool do_rehash();
-  inline void update_needs_rehash(bool rehash);
+  static void try_rehash_table();
+  static bool do_rehash();
 
 public:
   // The symbol table
-  static SymbolTable* the_table() { return _the_table; }
-  size_t table_size();
-  TableStatistics get_table_statistics();
+  static size_t table_size();
+  static TableStatistics get_table_statistics();
 
   enum {
     symbol_alloc_batch_size = 8,
@@ -182,14 +161,10 @@ public:
     symbol_alloc_arena_size = 360*K // TODO (revisit)
   };
 
-  static void create_table() {
-    assert(_the_table == NULL, "One symbol table allowed.");
-    _the_table = new SymbolTable();
-    initialize_symbols(symbol_alloc_arena_size);
-  }
+  static void create_table();
 
   static void do_concurrent_work(JavaThread* jt);
-  static bool has_work() { return the_table()->_has_work; }
+  static bool has_work() { return _has_work; }
   static void trigger_cleanup();
 
   // Probing
@@ -220,8 +195,12 @@ public:
 
   // Rehash the string table if it gets out of balance
   static void rehash_table();
-  static bool needs_rehashing()
-    { return SymbolTable::the_table()->_needs_rehashing; }
+  static bool needs_rehashing() { return _needs_rehashing; }
+  static inline void update_needs_rehash(bool rehash) {
+    if (rehash) {
+      _needs_rehashing = true;
+    }
+  }
 
   // Heap dumper and CDS
   static void symbols_do(SymbolClosure *cl);
@@ -230,8 +209,10 @@ public:
 private:
   static void copy_shared_symbol_table(CompactHashtableWriter* ch_table);
 public:
-  static void write_to_archive() NOT_CDS_RETURN;
-  static void serialize_shared_table_header(SerializeClosure* soc) NOT_CDS_RETURN;
+  static size_t estimate_size_for_archive() NOT_CDS_RETURN_(0);
+  static void write_to_archive(bool is_static_archive = true) NOT_CDS_RETURN;
+  static void serialize_shared_table_header(SerializeClosure* soc,
+                                            bool is_static_archive = true) NOT_CDS_RETURN;
   static void metaspace_pointers_do(MetaspaceClosure* it);
 
   // Jcmd

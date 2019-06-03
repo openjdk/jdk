@@ -68,8 +68,7 @@ public class ClhsdbPrintStatics {
                     "SystemDictionary::Object_klass_knum"));
             expStrMap.put("printstatics Threads", List.of(
                     "Static fields of Threads",
-                    "_number_of_threads", "_number_of_non_daemon_threads",
-                    "JavaThread\\* Threads"));
+                    "_number_of_threads", "_number_of_non_daemon_threads"));
             expStrMap.put("printstatics Universe", List.of(
                     "Static fields of Universe",
                     "uintptr_t Universe::_verify_oop_mask",

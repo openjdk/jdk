@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -393,28 +393,21 @@ public final class AnnotatedTypeFactory {
             return (TypeVariable)getType();
         }
 
-        // For toString, the declaration of a type variable should
-        // including information about its bounds, etc. However, the
+        // The declaration of a type variable should
+        // include information about its bounds, etc. However, the
         // use of a type variable should not. For that reason, it is
-        // acceptable for the toString implementation of
+        // acceptable for the toString and hashCode implementations of
         // AnnotatedTypeVariableImpl to use the inherited
-        // implementation from AnnotatedTypeBaseImpl.
+        // implementations from AnnotatedTypeBaseImpl.
 
         @Override
         public boolean equals(Object o) {
             if (o instanceof AnnotatedTypeVariable) {
                 AnnotatedTypeVariable that = (AnnotatedTypeVariable) o;
-                return equalsTypeAndAnnotations(that) &&
-                    Arrays.equals(getAnnotatedBounds(), that.getAnnotatedBounds());
+                return equalsTypeAndAnnotations(that);
             } else {
                 return false;
             }
-        }
-
-        @Override
-        public int hashCode() {
-            return baseHashCode() ^
-                Objects.hash((Object[])getAnnotatedBounds());
         }
     }
 

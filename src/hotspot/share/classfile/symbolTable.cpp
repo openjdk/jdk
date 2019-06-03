@@ -28,6 +28,7 @@
 #include "classfile/javaClasses.hpp"
 #include "classfile/symbolTable.hpp"
 #include "memory/allocation.inline.hpp"
+#include "memory/dynamicArchive.hpp"
 #include "memory/metaspaceClosure.hpp"
 #include "memory/metaspaceShared.hpp"
 #include "memory/resourceArea.hpp"
@@ -69,10 +70,32 @@ static OffsetCompactHashtable<
   symbol_equals_compact_hashtable_entry
 > _shared_table;
 
+static OffsetCompactHashtable<
+  const char*, Symbol*,
+  symbol_equals_compact_hashtable_entry
+> _dynamic_shared_table;
+
 // --------------------------------------------------------------------------
-SymbolTable* SymbolTable::_the_table = NULL;
-volatile bool SymbolTable::_alt_hash = false;
-volatile bool SymbolTable::_lookup_shared_first = false;
+
+typedef ConcurrentHashTable<Symbol*,
+                            SymbolTableConfig, mtSymbol> SymbolTableHash;
+static SymbolTableHash* _local_table = NULL;
+
+volatile bool SymbolTable::_has_work = 0;
+volatile bool SymbolTable::_needs_rehashing = false;
+
+// For statistics
+static size_t _symbols_removed = 0;
+static size_t _symbols_counted = 0;
+static size_t _current_size = 0;
+
+static volatile size_t _items_count = 0;
+static volatile bool   _has_items_to_clean = false;
+
+
+static volatile bool _alt_hash = false;
+static volatile bool _lookup_shared_first = false;
+
 // Static arena for symbols that are not deallocated
 Arena* SymbolTable::_arena = NULL;
 
@@ -92,9 +115,11 @@ static uintx hash_symbol(const char* s, int len, bool useAlt) {
   java_lang_String::hash_code((const jbyte*)s, len);
 }
 
+#if INCLUDE_CDS
 static uintx hash_shared_symbol(const char* s, int len) {
   return java_lang_String::hash_code((const jbyte*)s, len);
 }
+#endif
 
 class SymbolTableConfig : public SymbolTableHash::BaseConfig {
 private:
@@ -104,7 +129,7 @@ public:
     if (*is_dead) {
       return 0;
     } else {
-      return hash_symbol((const char*)value->bytes(), value->utf8_length(), SymbolTable::_alt_hash);
+      return hash_symbol((const char*)value->bytes(), value->utf8_length(), _alt_hash);
     }
   }
   // We use default allocation/deallocation but counted
@@ -136,16 +161,19 @@ static size_t ceil_log2(size_t value) {
   return ret;
 }
 
-SymbolTable::SymbolTable() :
-  _symbols_removed(0), _symbols_counted(0), _local_table(NULL),
-  _current_size(0), _has_work(0), _needs_rehashing(false),
-  _items_count(0), _has_items_to_clean(false) {
-
+void SymbolTable::create_table ()  {
   size_t start_size_log_2 = ceil_log2(SymbolTableSize);
   _current_size = ((size_t)1) << start_size_log_2;
   log_trace(symboltable)("Start size: " SIZE_FORMAT " (" SIZE_FORMAT ")",
                          _current_size, start_size_log_2);
   _local_table = new SymbolTableHash(start_size_log_2, END_SIZE, REHASH_LEN);
+
+  // Initialize the arena for global symbols, size passed in depends on CDS.
+  if (symbol_alloc_arena_size == 0) {
+    _arena = new (mtSymbol) Arena(mtSymbol);
+  } else {
+    _arena = new (mtSymbol) Arena(mtSymbol, symbol_alloc_arena_size);
+  }
 }
 
 void SymbolTable::delete_symbol(Symbol* sym) {
@@ -162,26 +190,20 @@ void SymbolTable::delete_symbol(Symbol* sym) {
   }
 }
 
-void SymbolTable::update_needs_rehash(bool rehash) {
-  if (rehash) {
-    _needs_rehashing = true;
-  }
-}
-
 void SymbolTable::reset_has_items_to_clean() { Atomic::store(false, &_has_items_to_clean); }
 void SymbolTable::mark_has_items_to_clean()  { Atomic::store(true, &_has_items_to_clean); }
-bool SymbolTable::has_items_to_clean() const { return Atomic::load(&_has_items_to_clean); }
+bool SymbolTable::has_items_to_clean()       { return Atomic::load(&_has_items_to_clean); }
 
 void SymbolTable::item_added() {
-  Atomic::inc(&(SymbolTable::the_table()->_items_count));
+  Atomic::inc(&_items_count);
 }
 
 void SymbolTable::item_removed() {
-  Atomic::inc(&(SymbolTable::the_table()->_symbols_removed));
-  Atomic::dec(&(SymbolTable::the_table()->_items_count));
+  Atomic::inc(&(_symbols_removed));
+  Atomic::dec(&_items_count);
 }
 
-double SymbolTable::get_load_factor() const {
+double SymbolTable::get_load_factor() {
   return (double)_items_count/_current_size;
 }
 
@@ -191,7 +213,7 @@ size_t SymbolTable::table_size() {
 
 void SymbolTable::trigger_cleanup() {
   MutexLocker ml(Service_lock, Mutex::_no_safepoint_check_flag);
-  SymbolTable::the_table()->_has_work = true;
+  _has_work = true;
   Service_lock->notify_all();
 }
 
@@ -199,7 +221,7 @@ Symbol* SymbolTable::allocate_symbol(const char* name, int len, bool c_heap) {
   assert (len <= Symbol::max_length(), "should be checked by caller");
 
   Symbol* sym;
-  if (DumpSharedSpaces) {
+  if (DumpSharedSpaces || DynamicDumpSharedSpaces) {
     c_heap = false;
   }
   if (c_heap) {
@@ -212,15 +234,6 @@ Symbol* SymbolTable::allocate_symbol(const char* name, int len, bool c_heap) {
     sym = new (len, arena()) Symbol((const u1*)name, len, PERM_REFCOUNT);
   }
   return sym;
-}
-
-void SymbolTable::initialize_symbols(int arena_alloc_size) {
-  // Initialize the arena for global symbols, size passed in depends on CDS.
-  if (arena_alloc_size == 0) {
-    _arena = new (mtSymbol) Arena(mtSymbol);
-  } else {
-    _arena = new (mtSymbol) Arena(mtSymbol, arena_alloc_size);
-  }
 }
 
 class SymbolsDo : StackObj {
@@ -249,10 +262,11 @@ void SymbolTable::symbols_do(SymbolClosure *cl) {
   // all symbols from shared table
   SharedSymbolIterator iter(cl);
   _shared_table.iterate(&iter);
+  _dynamic_shared_table.iterate(&iter);
 
   // all symbols from the dynamic table
   SymbolsDo sd(cl);
-  if (!SymbolTable::the_table()->_local_table->try_scan(Thread::current(), sd)) {
+  if (!_local_table->try_scan(Thread::current(), sd)) {
     log_info(stringtable)("symbols_do unavailable at this moment");
   }
 }
@@ -270,31 +284,36 @@ public:
 };
 
 void SymbolTable::metaspace_pointers_do(MetaspaceClosure* it) {
-  assert(DumpSharedSpaces, "called only during dump time");
+  assert(DumpSharedSpaces || DynamicDumpSharedSpaces, "called only during dump time");
   MetaspacePointersDo mpd(it);
-  SymbolTable::the_table()->_local_table->do_safepoint_scan(mpd);
+  _local_table->do_safepoint_scan(mpd);
 }
 
 Symbol* SymbolTable::lookup_dynamic(const char* name,
                                     int len, unsigned int hash) {
-  Symbol* sym = SymbolTable::the_table()->do_lookup(name, len, hash);
+  Symbol* sym = do_lookup(name, len, hash);
   assert((sym == NULL) || sym->refcount() != 0, "refcount must not be zero");
   return sym;
 }
 
+#if INCLUDE_CDS
 Symbol* SymbolTable::lookup_shared(const char* name,
                                    int len, unsigned int hash) {
+  Symbol* sym = NULL;
   if (!_shared_table.empty()) {
-    if (SymbolTable::_alt_hash) {
+    if (_alt_hash) {
       // hash_code parameter may use alternate hashing algorithm but the shared table
       // always uses the same original hash code.
       hash = hash_shared_symbol(name, len);
     }
-    return _shared_table.lookup(name, hash, len);
-  } else {
-    return NULL;
+    sym = _shared_table.lookup(name, hash, len);
+    if (sym == NULL && DynamicArchive::is_mapped()) {
+      sym = _dynamic_shared_table.lookup(name, hash, len);
+    }
   }
+  return sym;
 }
+#endif
 
 Symbol* SymbolTable::lookup_common(const char* name,
                             int len, unsigned int hash) {
@@ -318,10 +337,10 @@ Symbol* SymbolTable::lookup_common(const char* name,
 }
 
 Symbol* SymbolTable::new_symbol(const char* name, int len) {
-  unsigned int hash = hash_symbol(name, len, SymbolTable::_alt_hash);
-  Symbol* sym = SymbolTable::the_table()->lookup_common(name, len, hash);
+  unsigned int hash = hash_symbol(name, len, _alt_hash);
+  Symbol* sym = lookup_common(name, len, hash);
   if (sym == NULL) {
-    sym = SymbolTable::the_table()->do_add_if_needed(name, len, hash, true);
+    sym = do_add_if_needed(name, len, hash, true);
   }
   assert(sym->refcount() != 0, "lookup should have incremented the count");
   assert(sym->equals(name, len), "symbol must be properly initialized");
@@ -333,10 +352,10 @@ Symbol* SymbolTable::new_symbol(const Symbol* sym, int begin, int end) {
   assert(sym->refcount() != 0, "require a valid symbol");
   const char* name = (const char*)sym->base() + begin;
   int len = end - begin;
-  unsigned int hash = hash_symbol(name, len, SymbolTable::_alt_hash);
-  Symbol* found = SymbolTable::the_table()->lookup_common(name, len, hash);
+  unsigned int hash = hash_symbol(name, len, _alt_hash);
+  Symbol* found = lookup_common(name, len, hash);
   if (found == NULL) {
-    found = SymbolTable::the_table()->do_add_if_needed(name, len, hash, true);
+    found = do_add_if_needed(name, len, hash, true);
   }
   return found;
 }
@@ -400,8 +419,8 @@ Symbol* SymbolTable::do_lookup(const char* name, int len, uintx hash) {
 }
 
 Symbol* SymbolTable::lookup_only(const char* name, int len, unsigned int& hash) {
-  hash = hash_symbol(name, len, SymbolTable::_alt_hash);
-  return SymbolTable::the_table()->lookup_common(name, len, hash);
+  hash = hash_symbol(name, len, _alt_hash);
+  return lookup_common(name, len, hash);
 }
 
 // Suggestion: Push unicode-based lookup all the way into the hashing
@@ -446,8 +465,8 @@ void SymbolTable::new_symbols(ClassLoaderData* loader_data, const constantPoolHa
     const char *name = names[i];
     int len = lengths[i];
     unsigned int hash = hashValues[i];
-    assert(SymbolTable::the_table()->lookup_shared(name, len, hash) == NULL, "must have checked already");
-    Symbol* sym = SymbolTable::the_table()->do_add_if_needed(name, len, hash, c_heap);
+    assert(lookup_shared(name, len, hash) == NULL, "must have checked already");
+    Symbol* sym = do_add_if_needed(name, len, hash, c_heap);
     assert(sym->refcount() != 0, "lookup should have incremented the count");
     cp->symbol_at_put(cp_indices[i], sym);
   }
@@ -462,12 +481,15 @@ Symbol* SymbolTable::do_add_if_needed(const char* name, int len, uintx hash, boo
   Thread* THREAD = Thread::current();
 
   do {
-    if (_local_table->get(THREAD, lookup, stg, &rehash_warning)) {
-      sym = stg.get_res_sym();
+    // Callers have looked up the symbol once, insert the symbol.
+    sym = allocate_symbol(name, len, heap);
+    if (_local_table->insert(THREAD, lookup, sym, &rehash_warning, &clean_hint)) {
       break;
     }
-    sym = SymbolTable::the_table()->allocate_symbol(name, len, heap);
-    if (_local_table->insert(THREAD, lookup, sym, &rehash_warning, &clean_hint)) {
+    // In case another thread did a concurrent add, return value already in the table.
+    // This could fail if the symbol got deleted concurrently, so loop back until success.
+    if (_local_table->get(THREAD, lookup, stg, &rehash_warning)) {
+      sym = stg.get_res_sym();
       break;
     }
   } while(true);
@@ -488,7 +510,7 @@ Symbol* SymbolTable::new_permanent_symbol(const char* name) {
   int len = (int)strlen(name);
   Symbol* sym = SymbolTable::lookup_only(name, len, hash);
   if (sym == NULL) {
-    sym = SymbolTable::the_table()->do_add_if_needed(name, len, hash, false);
+    sym = do_add_if_needed(name, len, hash, false);
   }
   if (!sym->is_permanent()) {
     sym->make_permanent();
@@ -534,7 +556,7 @@ public:
 void SymbolTable::verify() {
   Thread* thr = Thread::current();
   VerifySymbols vs;
-  if (!SymbolTable::the_table()->_local_table->try_scan(thr, vs)) {
+  if (!_local_table->try_scan(thr, vs)) {
     log_info(stringtable)("verify unavailable at this moment");
   }
 }
@@ -560,13 +582,13 @@ public:
 
 void SymbolTable::dump(outputStream* st, bool verbose) {
   if (!verbose) {
-    SymbolTable::the_table()->print_table_statistics(st, "SymbolTable");
+    print_table_statistics(st, "SymbolTable");
   } else {
     Thread* thr = Thread::current();
     ResourceMark rm(thr);
     st->print_cr("VERSION: 1.1");
     DumpSymbol ds(thr, st);
-    if (!SymbolTable::the_table()->_local_table->try_scan(thr, ds)) {
+    if (!_local_table->try_scan(thr, ds)) {
       log_info(symboltable)("dump unavailable at this moment");
     }
   }
@@ -583,6 +605,9 @@ struct CopyToArchive : StackObj {
     unsigned int fixed_hash = hash_shared_symbol((const char*)sym->bytes(), sym->utf8_length());
     assert(fixed_hash == hash_symbol((const char*)sym->bytes(), sym->utf8_length(), false),
            "must not rehash during dumping");
+    if (DynamicDumpSharedSpaces) {
+      sym = DynamicArchive::original_to_target(sym);
+    }
     _writer->add(fixed_hash, MetaspaceShared::object_delta_u4(sym));
     return true;
   }
@@ -590,33 +615,45 @@ struct CopyToArchive : StackObj {
 
 void SymbolTable::copy_shared_symbol_table(CompactHashtableWriter* writer) {
   CopyToArchive copy(writer);
-  SymbolTable::the_table()->_local_table->do_safepoint_scan(copy);
+  _local_table->do_safepoint_scan(copy);
 }
 
-void SymbolTable::write_to_archive() {
-  _shared_table.reset();
+size_t SymbolTable::estimate_size_for_archive() {
+  return CompactHashtableWriter::estimate_size(int(_items_count));
+}
 
-  int num_buckets = CompactHashtableWriter::default_num_buckets(
-      SymbolTable::the_table()->_items_count);
-  CompactHashtableWriter writer(num_buckets,
+void SymbolTable::write_to_archive(bool is_static_archive) {
+  CompactHashtableWriter writer(int(_items_count),
                                 &MetaspaceShared::stats()->symbol);
   copy_shared_symbol_table(&writer);
-  writer.dump(&_shared_table, "symbol");
+  if (is_static_archive) {
+    _shared_table.reset();
+    writer.dump(&_shared_table, "symbol");
 
-  // Verify table is correct
-  Symbol* sym = vmSymbols::java_lang_Object();
-  const char* name = (const char*)sym->bytes();
-  int len = sym->utf8_length();
-  unsigned int hash = hash_symbol(name, len, SymbolTable::_alt_hash);
-  assert(sym == _shared_table.lookup(name, hash, len), "sanity");
+    // Verify table is correct
+    Symbol* sym = vmSymbols::java_lang_Object();
+    const char* name = (const char*)sym->bytes();
+    int len = sym->utf8_length();
+    unsigned int hash = hash_symbol(name, len, _alt_hash);
+    assert(sym == _shared_table.lookup(name, hash, len), "sanity");
+  } else {
+    _dynamic_shared_table.reset();
+    writer.dump(&_dynamic_shared_table, "symbol");
+  }
 }
 
-void SymbolTable::serialize_shared_table_header(SerializeClosure* soc) {
-  _shared_table.serialize_header(soc);
-
+void SymbolTable::serialize_shared_table_header(SerializeClosure* soc,
+                                                bool is_static_archive) {
+  OffsetCompactHashtable<const char*, Symbol*, symbol_equals_compact_hashtable_entry> * table;
+  if (is_static_archive) {
+    table = &_shared_table;
+  } else {
+    table = &_dynamic_shared_table;
+  }
+  table->serialize_header(soc);
   if (soc->writing()) {
     // Sanity. Make sure we don't use the shared table at dump time
-    _shared_table.reset();
+    table->reset();
   }
 }
 #endif //INCLUDE_CDS
@@ -684,7 +721,7 @@ void SymbolTable::clean_dead_entries(JavaThread* jt) {
       }
       bdt.cont(jt);
     }
-    SymbolTable::the_table()->reset_has_items_to_clean();
+    reset_has_items_to_clean();
     bdt.done(jt);
   }
 
@@ -708,7 +745,7 @@ void SymbolTable::check_concurrent_work() {
   }
 }
 
-void SymbolTable::concurrent_work(JavaThread* jt) {
+void SymbolTable::do_concurrent_work(JavaThread* jt) {
   double load_factor = get_load_factor();
   log_debug(symboltable, perf)("Concurrent work, live factor: %g", load_factor);
   // We prefer growing, since that also removes dead items
@@ -718,10 +755,6 @@ void SymbolTable::concurrent_work(JavaThread* jt) {
     clean_dead_entries(jt);
   }
   _has_work = false;
-}
-
-void SymbolTable::do_concurrent_work(JavaThread* jt) {
-  SymbolTable::the_table()->concurrent_work(jt);
 }
 
 // Rehash
@@ -747,7 +780,7 @@ bool SymbolTable::do_rehash() {
   return true;
 }
 
-void SymbolTable::try_rehash_table() {
+void SymbolTable::rehash_table() {
   static bool rehashed = false;
   log_debug(symboltable)("Table imbalanced, rehashing called.");
 
@@ -777,10 +810,6 @@ void SymbolTable::try_rehash_table() {
   }
 
   _needs_rehashing = false;
-}
-
-void SymbolTable::rehash_table() {
-  SymbolTable::the_table()->try_rehash_table();
 }
 
 //---------------------------------------------------------------------------
@@ -830,18 +859,17 @@ public:
 };
 
 void SymbolTable::print_histogram() {
-  SymbolTable* st = SymbolTable::the_table();
   HistogramIterator hi;
-  st->_local_table->do_scan(Thread::current(), hi);
+  _local_table->do_scan(Thread::current(), hi);
   tty->print_cr("Symbol Table Histogram:");
   tty->print_cr("  Total number of symbols  " SIZE_FORMAT_W(7), hi.total_count);
   tty->print_cr("  Total size in memory     " SIZE_FORMAT_W(7) "K",
           (hi.total_size * wordSize) / 1024);
-  tty->print_cr("  Total counted            " SIZE_FORMAT_W(7), st->_symbols_counted);
-  tty->print_cr("  Total removed            " SIZE_FORMAT_W(7), st->_symbols_removed);
-  if (SymbolTable::the_table()->_symbols_counted > 0) {
+  tty->print_cr("  Total counted            " SIZE_FORMAT_W(7), _symbols_counted);
+  tty->print_cr("  Total removed            " SIZE_FORMAT_W(7), _symbols_removed);
+  if (_symbols_counted > 0) {
     tty->print_cr("  Percent removed          %3.2f",
-          ((float)st->_symbols_removed / st->_symbols_counted) * 100);
+          ((float)_symbols_removed / _symbols_counted) * 100);
   }
   tty->print_cr("  Reference counts         " SIZE_FORMAT_W(7), Symbol::_total_count);
   tty->print_cr("  Symbol arena used        " SIZE_FORMAT_W(7) "K", arena()->used() / 1024);

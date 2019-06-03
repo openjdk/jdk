@@ -49,12 +49,19 @@
  * where it does sliding compaction, without interfering with other threads.
  */
 
+class PreservedMarksSet;
+
 class ShenandoahMarkCompact : public CHeapObj<mtGC> {
+  friend class ShenandoahPrepareForCompactionObjectClosure;
 private:
   GCTimer* _gc_timer;
 
+  PreservedMarksSet* _preserved_marks;
+
 public:
+  ShenandoahMarkCompact();
   void initialize(GCTimer* gc_timer);
+
   void do_it(GCCause::Cause gc_cause);
 
 private:
@@ -65,7 +72,6 @@ private:
 
   void calculate_target_humongous_objects();
   void compact_humongous_objects();
-
 };
 
 #endif // SHARE_GC_SHENANDOAH_SHENANDOAHMARKCOMPACT_HPP

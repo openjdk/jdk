@@ -34,7 +34,10 @@ typedef enum {
   XenHVM,
   KVM,
   VMWare,
-  HyperV
+  HyperV,
+  PowerVM, // on AIX or Linux ppc64(le)
+  PowerFullPartitionMode, // on Linux ppc64(le)
+  PowerKVM
 } VirtualizationType;
 
 // VM_Version provides information about the VM.
@@ -167,6 +170,9 @@ class Abstract_VM_Version: AllStatic {
 
   // Does this CPU support spin wait instruction?
   static bool supports_on_spin_wait() { return false; }
+
+  // Does platform support fast class initialization checks for static methods?
+  static bool supports_fast_class_init_checks() { return false; }
 
   static bool print_matching_lines_from_file(const char* filename, outputStream* st, const char* keywords_to_match[]);
 };

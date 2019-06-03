@@ -4072,7 +4072,7 @@ void os::init(void) {
   init_page_sizes((size_t) win32::vm_page_size());
 
   // This may be overridden later when argument processing is done.
-  FLAG_SET_ERGO(bool, UseLargePagesIndividualAllocation, false);
+  FLAG_SET_ERGO(UseLargePagesIndividualAllocation, false);
 
   // Initialize main_process and main_thread
   main_process = GetCurrentProcess();  // Remember main_process is a pseudo handle
@@ -4909,6 +4909,9 @@ char* os::pd_map_memory(int fd, const char* file_name, size_t file_offset,
       CloseHandle(hFile);
       return NULL;
     }
+
+    // Record virtual memory allocation
+    MemTracker::record_virtual_memory_reserve_and_commit((address)addr, bytes, CALLER_PC);
 
     DWORD bytes_read;
     OVERLAPPED overlapped;

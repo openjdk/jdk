@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,16 +28,12 @@
  * such as the <em>{@index jcmd jcmd tool}</em>, <em>{@index jps jps tool}</em>,
  * <em>{@index jstat jstat tool}</em> tools.
  *
- * <dl style="font-family:'DejaVu Sans', Arial, Helvetica, sans serif">
- * <dt class="simpleTagLabel">Tool Guides:
- * <dd>
- * {@extLink jcmd_tool_reference jcmd},
- * {@extLink jinfo_tool_reference jinfo},
- * {@extLink jmap_tool_reference jmap},
- * {@extLink jps_tool_reference jps},
- * {@extLink jstack_tool_reference jstack},
- * {@extLink jstat_tool_reference jstat}
- * </dl>
+ * @toolGuide jcmd
+ * @toolGuide jinfo
+ * @toolGuide jmap
+ * @toolGuide jps
+ * @toolGuide jstack
+ * @toolGuide jstat
  *
  * @moduleGraph
  * @since 9

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -59,12 +59,12 @@ public class ClassLoaderReferenceImpl extends ObjectReferenceImpl
 
     public List<ReferenceType> definedClasses() {
         ArrayList<ReferenceType> definedClasses = new ArrayList<>();
-        for (ReferenceType type :  vm.allClasses()) {
+        vm.forEachClass(type -> {
             if (type.isPrepared() &&
-                equals(type.classLoader())) {
+                    equals(type.classLoader())) {
                 definedClasses.add(type);
             }
-        }
+        });
         return definedClasses;
     }
 

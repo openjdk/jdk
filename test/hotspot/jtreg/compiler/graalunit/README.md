@@ -21,14 +21,23 @@ Graal unit tests depends on following external jar files:
  https://lafo.ssw.uni-linz.ac.at/pub/graal-external-deps/hamcrest-core-1.3.jar
 
  java-allocation-instrumenter.jar:
- https://lafo.ssw.uni-linz.ac.at/pub/java-allocation-instrumenter/java-allocation-instrumenter-8f0db117e64e.jar
+ https://lafo.ssw.uni-linz.ac.at/pub/java-allocation-instrumenter/java-allocation-instrumenter.jar
 
 Before running the tests you need to download these jars from above locations in build/<platform>/images/test/hotspot/jtreg/graal/
-directory. Then you can pass it to jtreg as java option by using "-vmoptions:-Dgraalunit.libs="  or as environment variable
-by using "-e:TEST_IMAGE_GRAAL_DIR=..."
+directory. You can use 'downloadLibs.sh' script which will try to download all these libs using wget.
+
+
+Then you can run Graal unit test(s) using 'make run-test':
+
+> make run-test TEST="compiler/graalunit/ApiTest.java" TEST_VM_OPTS="-server -XX:+UnlockExperimentalVMOptions -XX:+EnableJVMCI"
+
+
+If you want to use jtreg directly you need to say jtreg where to find external jars.
+You can do it by passing additional option "-vmoptions:-Dgraalunit.libs=" or setting environment variable by using "-e:TEST_IMAGE_GRAAL_DIR=..."
 
 Example:
-> jtreg -vt -jdk:<TESTED_JDK> -vmoptions:"-Dgraalunit.libs=build/<platform>/images/test/hotspot/jtreg/graal"
+> jtreg -vt -jdk:<TESTED_JDK> -vmoptions:"-server -XX:+UnlockExperimentalVMOptions -XX:+EnableJVMCI"
+        -vmoptions:"-Dgraalunit.libs=build/<platform>/images/test/hotspot/jtreg/graal"
         compiler/graalunit/UtilTest.java
 
 To run Graal unit tests in Graal as JIT mode pass additional -vmoptions to jtreg:

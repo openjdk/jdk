@@ -211,7 +211,7 @@ public:
   const ImmutableOopMap* oop_map_for_return_address(address return_address);
   virtual void preserve_callee_argument_oops(frame fr, const RegisterMap* reg_map, OopClosure* f) = 0;
 
-  // Frame support
+  // Frame support. Sizes are in word units.
   int  frame_size() const                        { return _frame_size; }
   void set_frame_size(int size)                  { _frame_size = size; }
 
@@ -230,6 +230,10 @@ public:
   void dump_for_addr(address addr, outputStream* st, bool verbose) const;
   void print_code();
 
+  bool has_block_comment(address block_begin) const {
+    intptr_t offset = (intptr_t)(block_begin - code_begin());
+    return _strings.has_block_comment(offset);
+  }
   // Print the comment associated with offset on stream, if there is one
   virtual void print_block_comment(outputStream* stream, address block_begin) const {
     intptr_t offset = (intptr_t)(block_begin - code_begin());

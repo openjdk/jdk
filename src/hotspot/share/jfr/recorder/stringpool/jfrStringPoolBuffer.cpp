@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,11 +29,9 @@ JfrStringPoolBuffer::JfrStringPoolBuffer() : JfrBuffer(), _string_count_pos(0), 
 
 void JfrStringPoolBuffer::reinitialize() {
   assert(acquired_by_self() || retired(), "invariant");
-  concurrent_top();
-  set_pos((start()));
   set_string_pos(0);
   set_string_top(0);
-  set_concurrent_top(start());
+  JfrBuffer::reinitialize();
 }
 
 uint64_t JfrStringPoolBuffer::string_pos() const {
@@ -57,7 +55,7 @@ void JfrStringPoolBuffer::set_string_pos(uint64_t value) {
 }
 
 void JfrStringPoolBuffer::increment(uint64_t value) {
-  assert(acquired_by_self() || retired(), "invariant");
+  assert(acquired_by_self(), "invariant");
   ++_string_count_pos;
 }
 

@@ -45,7 +45,8 @@ JRT_BLOCK_ENTRY(void, CompilerRuntime::resolve_string_by_symbol(JavaThread *thre
       // First 2 bytes of name contains length (number of bytes).
       int len = Bytes::get_Java_u2((address)name);
       name += 2;
-      str = StringTable::intern(name, CHECK);
+      TempNewSymbol sym = SymbolTable::new_symbol(name, len);
+      str = StringTable::intern(sym, CHECK);
       assert(java_lang_String::is_instance(str), "must be string");
       *(oop*)string_result = str; // Store result
     }

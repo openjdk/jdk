@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -74,11 +74,12 @@ public class MismatchedPatchModule {
 
         // Case 2: --patch-module specified for run time but not for dump time
         System.out.println("Case 2: --patch-module specified for run time but not for dump time");
+        String appJar = JarBuilder.build("PatchMain-app", "PatchMain");
         output =
-            TestCommon.dump(null,
+            TestCommon.dump(appJar,
                 TestCommon.list("javax/naming/spi/NamingManager"),
                 "PatchMain", "javax.naming.spi.NamingManager");
-        TestCommon.checkDump(output, "Loading classes to share");
+        TestCommon.checkDump(output);
 
         // javax.naming.spi.NamingManager is patched at runtime
         TestCommon.run(

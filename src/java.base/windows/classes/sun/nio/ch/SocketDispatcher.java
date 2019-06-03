@@ -28,12 +28,18 @@ package sun.nio.ch;
 import java.io.FileDescriptor;
 import java.io.IOException;
 
+import jdk.internal.access.JavaIOFileDescriptorAccess;
+import jdk.internal.access.SharedSecrets;
+
 /**
  * Allows different platforms to call different native methods
  * for read and write operations.
  */
 
 class SocketDispatcher extends NativeDispatcher {
+    private static final JavaIOFileDescriptorAccess fdAccess =
+            SharedSecrets.getJavaIOFileDescriptorAccess();
+
     SocketDispatcher() { }
 
     int read(FileDescriptor fd, long address, int len) throws IOException {
@@ -53,30 +59,35 @@ class SocketDispatcher extends NativeDispatcher {
     }
 
     void preClose(FileDescriptor fd) throws IOException {
-        preClose0(fd);
+        throw new UnsupportedOperationException();
     }
 
     void close(FileDescriptor fd) throws IOException {
-        close0(fd);
+        invalidateAndClose(fd);
+    }
+
+    static void invalidateAndClose(FileDescriptor fd) throws IOException {
+        assert fd.valid();
+        int fdVal = fdAccess.get(fd);
+        fdAccess.set(fd, -1);
+        close0(fdVal);
     }
 
     // -- Native methods --
 
-    static native int read0(FileDescriptor fd, long address, int len)
+    private static native int read0(FileDescriptor fd, long address, int len)
         throws IOException;
 
-    static native long readv0(FileDescriptor fd, long address, int len)
+    private static native long readv0(FileDescriptor fd, long address, int len)
         throws IOException;
 
-    static native int write0(FileDescriptor fd, long address, int len)
+    private static native int write0(FileDescriptor fd, long address, int len)
         throws IOException;
 
-    static native long writev0(FileDescriptor fd, long address, int len)
+    private static native long writev0(FileDescriptor fd, long address, int len)
         throws IOException;
 
-    static native void preClose0(FileDescriptor fd) throws IOException;
-
-    static native void close0(FileDescriptor fd) throws IOException;
+    private static native void close0(int fdVal) throws IOException;
 
     static {
         IOUtil.load();

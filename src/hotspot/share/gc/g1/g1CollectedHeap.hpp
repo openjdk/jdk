@@ -149,7 +149,7 @@ class G1CollectedHeap : public CollectedHeap {
   friend class HeapRegionClaimer;
 
   // Testing classes.
-  friend class G1CheckCSetFastTableClosure;
+  friend class G1CheckRegionAttrTableClosure;
 
 private:
   G1YoungRemSetSamplingThread* _young_gen_sampling_thread;
@@ -1111,7 +1111,7 @@ public:
 
  public:
 
-  inline G1HeapRegionAttr region_attr(const oop obj);
+  inline G1HeapRegionAttr region_attr(const void* obj);
 
   // Return "TRUE" iff the given object address is in the reserved
   // region of g1.

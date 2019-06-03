@@ -1613,7 +1613,6 @@ void JavaThread::initialize() {
   set_deopt_compiled_method(NULL);
   clear_must_deopt_id();
   set_monitor_chunks(NULL);
-  set_next(NULL);
   _on_thread_list = false;
   set_thread_state(_thread_new);
   _terminated = _not_terminated;
@@ -2833,17 +2832,16 @@ void JavaThread::make_zombies() {
 #endif // PRODUCT
 
 
-void JavaThread::deoptimized_wrt_marked_nmethods() {
+void JavaThread::deoptimize_marked_methods(bool in_handshake) {
   if (!has_last_Java_frame()) return;
   // BiasedLocking needs an updated RegisterMap for the revoke monitors pass
   StackFrameStream fst(this, UseBiasedLocking);
   for (; !fst.is_done(); fst.next()) {
     if (fst.current()->should_be_deoptimized()) {
-      Deoptimization::deoptimize(this, *fst.current(), fst.register_map());
+      Deoptimization::deoptimize(this, *fst.current(), fst.register_map(), in_handshake);
     }
   }
 }
-
 
 // If the caller is a NamedThread, then remember, in the current scope,
 // the given JavaThread in its _processed_thread field.
@@ -3457,7 +3455,6 @@ void CodeCacheSweeperThread::nmethods_do(CodeBlobClosure* cf) {
 // would like. We are actively migrating Threads_lock uses to other
 // mechanisms in order to reduce Threads_lock contention.
 
-JavaThread* Threads::_thread_list = NULL;
 int         Threads::_number_of_threads = 0;
 int         Threads::_number_of_non_daemon_threads = 0;
 int         Threads::_return_code = 0;
@@ -3764,7 +3761,6 @@ jint Threads::create_vm(JavaVMInitArgs* args, bool* canTryAgain) {
   }
 
   // Initialize Threads state
-  _thread_list = NULL;
   _number_of_threads = 0;
   _number_of_non_daemon_threads = 0;
 
@@ -3964,10 +3960,8 @@ jint Threads::create_vm(JavaVMInitArgs* args, bool* canTryAgain) {
   SystemDictionary::compute_java_loaders(CHECK_JNI_ERR);
 
 #if INCLUDE_CDS
-  if (DumpSharedSpaces) {
-    // capture the module path info from the ModuleEntryTable
-    ClassLoader::initialize_module_path(THREAD);
-  }
+  // capture the module path info from the ModuleEntryTable
+  ClassLoader::initialize_module_path(THREAD);
 #endif
 
 #if INCLUDE_JVMCI
@@ -4169,7 +4163,7 @@ void Threads::create_vm_init_agents() {
   for (agent = Arguments::agents(); agent != NULL; agent = agent->next()) {
     // CDS dumping does not support native JVMTI agent.
     // CDS dumping supports Java agent if the AllowArchivingWithJavaAgent diagnostic option is specified.
-    if (DumpSharedSpaces) {
+    if (DumpSharedSpaces || DynamicDumpSharedSpaces) {
       if(!agent->is_instrument_lib()) {
         vm_exit_during_cds_dumping("CDS dumping does not support native JVMTI agent, name", agent->name());
       } else if (!AllowArchivingWithJavaAgent) {
@@ -4425,9 +4419,6 @@ void Threads::add(JavaThread* p, bool force_daemon) {
 
   BarrierSet::barrier_set()->on_thread_attach(p);
 
-  p->set_next(_thread_list);
-  _thread_list = p;
-
   // Once a JavaThread is added to the Threads list, smr_delete() has
   // to be used to delete it. Otherwise we can just delete it directly.
   p->set_on_thread_list();
@@ -4464,20 +4455,6 @@ void Threads::remove(JavaThread* p, bool is_daemon) {
 
     // Maintain fast thread list
     ThreadsSMRSupport::remove_thread(p);
-
-    JavaThread* current = _thread_list;
-    JavaThread* prev    = NULL;
-
-    while (current != p) {
-      prev    = current;
-      current = current->next();
-    }
-
-    if (prev) {
-      prev->set_next(current->next());
-    } else {
-      _thread_list = p->next();
-    }
 
     _number_of_threads--;
     if (!is_daemon) {
@@ -4599,13 +4576,6 @@ void Threads::metadata_handles_do(void f(Metadata*)) {
   ThreadHandlesClosure handles_closure(f);
   threads_do(&handles_closure);
 }
-
-void Threads::deoptimized_wrt_marked_nmethods() {
-  ALL_JAVA_THREADS(p) {
-    p->deoptimized_wrt_marked_nmethods();
-  }
-}
-
 
 // Get count Java threads that are waiting to enter the specified monitor.
 GrowableArray<JavaThread*>* Threads::get_pending_threads(ThreadsList * t_list,

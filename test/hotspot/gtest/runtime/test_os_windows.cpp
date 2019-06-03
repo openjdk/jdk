@@ -59,8 +59,8 @@ TEST_VM(os_windows, reserve_memory_special) {
   // set globals to make sure we hit the correct code path
   FLAG_GUARD(UseLargePagesIndividualAllocation);
   FLAG_GUARD(UseNUMAInterleaving);
-  FLAG_SET_CMDLINE(bool, UseLargePagesIndividualAllocation, false);
-  FLAG_SET_CMDLINE(bool, UseNUMAInterleaving, false);
+  FLAG_SET_CMDLINE(UseLargePagesIndividualAllocation, false);
+  FLAG_SET_CMDLINE(UseNUMAInterleaving, false);
 
   const size_t large_allocation_size = os::large_page_size() * 4;
   char* result = os::reserve_memory_special(large_allocation_size, os::large_page_size(), NULL, false);

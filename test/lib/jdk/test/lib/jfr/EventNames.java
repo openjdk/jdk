@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -101,6 +101,8 @@ public class EventNames {
     public final static String G1HeapSummary = PREFIX + "G1HeapSummary";
     public final static String G1HeapRegionInformation = PREFIX + "G1HeapRegionInformation";
     public final static String G1HeapRegionTypeChange = PREFIX + "G1HeapRegionTypeChange";
+    public final static String ShenandoahHeapRegionInformation = PREFIX + "ShenandoahHeapRegionInformation";
+    public final static String ShenandoahHeapRegionStateChange = PREFIX + "ShenandoahHeapRegionStateChange";
     public final static String TenuringDistribution = PREFIX + "TenuringDistribution";
     public final static String GarbageCollection = PREFIX + "GarbageCollection";
     public final static String ParallelOldGarbageCollection = PREFIX + "ParallelOldGarbageCollection";
@@ -154,6 +156,7 @@ public class EventNames {
 
     // OS
     public final static String OSInformation = PREFIX + "OSInformation";
+    public final static String VirtualizationInformation = PREFIX + "VirtualizationInformation";
     public final static String CPUInformation = PREFIX + "CPUInformation";
     public final static String CPULoad = PREFIX + "CPULoad";
     public final static String ThreadCPULoad = PREFIX + "ThreadCPULoad";

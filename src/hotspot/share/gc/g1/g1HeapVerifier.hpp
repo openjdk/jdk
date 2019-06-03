@@ -107,7 +107,7 @@ public:
   void check_bitmaps(const char* caller) PRODUCT_RETURN;
 
   // Do sanity check on the contents of the in-cset fast test table.
-  bool check_cset_fast_test() PRODUCT_RETURN_( return true; );
+  bool check_region_attr_table() PRODUCT_RETURN_( return true; );
 
   void verify_card_table_cleanup() PRODUCT_RETURN;
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -127,10 +127,15 @@ dbgsysSend(int fd, char *buf, size_t nBytes, int flags) {
 }
 
 int
-dbgsysGetAddrInfo(char *hostname, char *service,
-                  struct addrinfo *hints,
+dbgsysGetAddrInfo(const char *hostname, const char *service,
+                  const struct addrinfo *hints,
                   struct addrinfo **results) {
     return getaddrinfo(hostname, service, hints, results);
+}
+
+void
+dbgsysFreeAddrInfo(struct addrinfo *info) {
+    freeaddrinfo(info);
 }
 
 unsigned short
@@ -161,11 +166,6 @@ int dbgsysSocketClose(int fd) {
 int
 dbgsysBind(int fd, struct sockaddr *name, socklen_t namelen) {
     return bind(fd, name, namelen);
-}
-
-uint32_t
-dbgsysInetAddr(const char* cp) {
-    return (uint32_t)inet_addr(cp);
 }
 
 uint32_t

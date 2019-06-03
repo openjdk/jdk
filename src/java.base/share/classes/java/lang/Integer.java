@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1994, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1994, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1120,7 +1120,7 @@ public final class Integer extends Number
     /**
      * Returns the value of this {@code Integer} as a {@code byte}
      * after a narrowing primitive conversion.
-     * @jls 5.1.3 Narrowing Primitive Conversions
+     * @jls 5.1.3 Narrowing Primitive Conversion
      */
     public byte byteValue() {
         return (byte)value;
@@ -1129,7 +1129,7 @@ public final class Integer extends Number
     /**
      * Returns the value of this {@code Integer} as a {@code short}
      * after a narrowing primitive conversion.
-     * @jls 5.1.3 Narrowing Primitive Conversions
+     * @jls 5.1.3 Narrowing Primitive Conversion
      */
     public short shortValue() {
         return (short)value;
@@ -1147,7 +1147,7 @@ public final class Integer extends Number
     /**
      * Returns the value of this {@code Integer} as a {@code long}
      * after a widening primitive conversion.
-     * @jls 5.1.2 Widening Primitive Conversions
+     * @jls 5.1.2 Widening Primitive Conversion
      * @see Integer#toUnsignedLong(int)
      */
     public long longValue() {
@@ -1157,7 +1157,7 @@ public final class Integer extends Number
     /**
      * Returns the value of this {@code Integer} as a {@code float}
      * after a widening primitive conversion.
-     * @jls 5.1.2 Widening Primitive Conversions
+     * @jls 5.1.2 Widening Primitive Conversion
      */
     public float floatValue() {
         return (float)value;
@@ -1166,7 +1166,7 @@ public final class Integer extends Number
     /**
      * Returns the value of this {@code Integer} as a {@code double}
      * after a widening primitive conversion.
-     * @jls 5.1.2 Widening Primitive Conversions
+     * @jls 5.1.2 Widening Primitive Conversion
      */
     public double doubleValue() {
         return (double)value;

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -607,23 +607,20 @@ public abstract class ReferenceTypeImpl extends TypeImpl implements ReferenceTyp
     }
 
     public List<ReferenceType> nestedTypes() {
-        List<ReferenceType> all = vm.allClasses();
         List<ReferenceType> nested = new ArrayList<ReferenceType>();
         String outername = name();
         int outerlen = outername.length();
-        Iterator<ReferenceType> iter = all.iterator();
-        while (iter.hasNext()) {
-            ReferenceType refType = iter.next();
+        vm.forEachClass(refType -> {
             String name = refType.name();
             int len = name.length();
             /* The separator is historically '$' but could also be '#' */
             if ( len > outerlen && name.startsWith(outername) ) {
                 char c = name.charAt(outerlen);
-                if ( c =='$' || c== '#' ) {
+                if ( c == '$' || c == '#' ) {
                     nested.add(refType);
                 }
             }
-        }
+        });
         return nested;
     }
 

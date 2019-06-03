@@ -42,6 +42,10 @@ DEBUG_ONLY(class ResourceMark;)
 // This allows for redirection via -XX:+DisplayVMOutputToStdout and
 // -XX:+DisplayVMOutputToStderr
 class outputStream : public ResourceObj {
+ private:
+   outputStream(const outputStream&);
+   outputStream& operator=(const outputStream&);
+
  protected:
    int _indentation; // current indentation
    int _width;       // width of the page
@@ -186,19 +190,25 @@ class ttyUnlocker: StackObj {
   }
 };
 
-// for writing to strings; buffer will expand automatically
+// for writing to strings; buffer will expand automatically.
+// Buffer will always be zero-terminated.
 class stringStream : public outputStream {
  protected:
   char*  buffer;
   size_t buffer_pos;
   size_t buffer_length;
   bool   buffer_fixed;
-  DEBUG_ONLY(ResourceMark* rm;)
  public:
+  // Create a stringStream using an internal buffer of initially initial_bufsize size;
+  // will be enlarged on demand. There is no maximum cap.
   stringStream(size_t initial_bufsize = 256);
+  // Creates a stringStream using a caller-provided buffer. Will truncate silently if
+  // it overflows.
   stringStream(char* fixed_buffer, size_t fixed_buffer_size);
   ~stringStream();
   virtual void write(const char* c, size_t len);
+  // Return number of characters written into buffer, excluding terminating zero and
+  // subject to truncation in static buffer mode.
   size_t      size() { return buffer_pos; }
   const char* base() { return buffer; }
   void  reset() { buffer_pos = 0; _precount = 0; _position = 0; }
@@ -257,6 +267,7 @@ class bufferedStream : public outputStream {
   size_t buffer_max;
   size_t buffer_length;
   bool   buffer_fixed;
+  bool   truncated;
  public:
   bufferedStream(size_t initial_bufsize = 256, size_t bufmax = 1024*1024*10);
   bufferedStream(char* fixed_buffer, size_t fixed_buffer_size, size_t bufmax = 1024*1024*10);

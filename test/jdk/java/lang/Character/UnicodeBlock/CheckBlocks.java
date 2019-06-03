@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,7 +26,10 @@
 /*
  * @test
  * @bug 4830803 4886934 6565620 6959267 7070436 7198195 8032446 8072600 8202771
- * @summary  Check that the UnicodeBlock forName() method works as expected and block ranges are correct for all Unicode characters.
+ *      8221431
+ * @summary  Check that the UnicodeBlock forName() method works as expected
+ *      and block ranges are correct for all Unicode characters.
+ * @library /lib/testlibrary/java/lang
  * @run main CheckBlocks
  * @author John O'Conner
  */
@@ -276,8 +279,7 @@ public class CheckBlocks {
     public static HashSet<Block> blocks = new HashSet<>();
 
     private static void generateBlockList() throws Exception {
-        File blockData = new File(System.getProperty("test.src", "."),
-                "Blocks.txt");
+        File blockData = UCDFiles.BLOCKS.toFile();
         try (BufferedReader f = new BufferedReader(new FileReader(blockData))) {
             String line;
             while ((line = f.readLine()) != null) {

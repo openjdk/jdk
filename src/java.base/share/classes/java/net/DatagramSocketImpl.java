@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,6 +27,7 @@ package java.net;
 
 import java.io.FileDescriptor;
 import java.io.IOException;
+import java.util.Objects;
 import java.util.Set;
 
 /**
@@ -265,123 +266,69 @@ public abstract class DatagramSocketImpl implements SocketOptions {
     /**
      * Called to set a socket option.
      *
+     * @implSpec
+     * The default implementation of this method first checks that the given
+     * socket option {code name} is not null, then throws {@code
+     * UnsupportedOperationException}. Subclasses should override this method
+     * with an appropriate implementation.
+     *
      * @param <T> The type of the socket option value
      * @param name The socket option
-     *
      * @param value The value of the socket option. A value of {@code null}
      *              may be valid for some options.
      *
      * @throws UnsupportedOperationException if the DatagramSocketImpl does not
      *         support the option
-     *
+     * @throws IllegalArgumentException if the value is not valid for
+     *         the option
+     * @throws IOException if an I/O error occurs, or if the socket is closed
      * @throws NullPointerException if name is {@code null}
-     * @throws IOException if an I/O problem occurs while attempting to set the option
+     *
      * @since 9
      */
     protected <T> void setOption(SocketOption<T> name, T value) throws IOException {
-        if (name == StandardSocketOptions.SO_SNDBUF) {
-            setOption(SocketOptions.SO_SNDBUF, value);
-        } else if (name == StandardSocketOptions.SO_RCVBUF) {
-            setOption(SocketOptions.SO_RCVBUF, value);
-        } else if (name == StandardSocketOptions.SO_REUSEADDR) {
-            setOption(SocketOptions.SO_REUSEADDR, value);
-        } else if (name == StandardSocketOptions.SO_REUSEPORT &&
-            supportedOptions().contains(name)) {
-            setOption(SocketOptions.SO_REUSEPORT, value);
-        } else if (name == StandardSocketOptions.IP_TOS) {
-            setOption(SocketOptions.IP_TOS, value);
-        } else if (name == StandardSocketOptions.IP_MULTICAST_IF &&
-            (getDatagramSocket() instanceof MulticastSocket)) {
-            setOption(SocketOptions.IP_MULTICAST_IF2, value);
-        } else if (name == StandardSocketOptions.IP_MULTICAST_TTL &&
-            (getDatagramSocket() instanceof MulticastSocket)) {
-            if (! (value instanceof Integer)) {
-                throw new IllegalArgumentException("not an integer");
-            }
-            setTimeToLive((Integer)value);
-        } else if (name == StandardSocketOptions.IP_MULTICAST_LOOP &&
-            (getDatagramSocket() instanceof MulticastSocket)) {
-            setOption(SocketOptions.IP_MULTICAST_LOOP, value);
-        } else {
-            throw new UnsupportedOperationException("unsupported option");
-        }
+        Objects.requireNonNull(name);
+        throw new UnsupportedOperationException("'" + name + "' not supported");
     }
 
     /**
      * Called to get a socket option.
      *
-     * @return the socket option
+     * @implSpec
+     * The default implementation of this method first checks that the given
+     * socket option {code name} is not null, then throws {@code
+     * UnsupportedOperationException}. Subclasses should override this method
+     * with an appropriate implementation.
+     *
      * @param <T> The type of the socket option value
      * @param name The socket option
+     * @return the socket option
      *
      * @throws UnsupportedOperationException if the DatagramSocketImpl does not
      *         support the option
-     *
+     * @throws IOException if an I/O error occurs, or if the socket is closed
      * @throws NullPointerException if name is {@code null}
-     * @throws IOException if an I/O problem occurs while attempting to set the option
      *
      * @since 9
      */
-    @SuppressWarnings("unchecked")
     protected <T> T getOption(SocketOption<T> name) throws IOException {
-        if (name == StandardSocketOptions.SO_SNDBUF) {
-            return (T) getOption(SocketOptions.SO_SNDBUF);
-        } else if (name == StandardSocketOptions.SO_RCVBUF) {
-            return (T) getOption(SocketOptions.SO_RCVBUF);
-        } else if (name == StandardSocketOptions.SO_REUSEADDR) {
-            return (T) getOption(SocketOptions.SO_REUSEADDR);
-        } else if (name == StandardSocketOptions.SO_REUSEPORT &&
-            supportedOptions().contains(name)) {
-            return (T) getOption(SocketOptions.SO_REUSEPORT);
-        } else if (name == StandardSocketOptions.IP_TOS) {
-            return (T) getOption(SocketOptions.IP_TOS);
-        } else if (name == StandardSocketOptions.IP_MULTICAST_IF &&
-            (getDatagramSocket() instanceof MulticastSocket)) {
-            return (T) getOption(SocketOptions.IP_MULTICAST_IF2);
-        } else if (name == StandardSocketOptions.IP_MULTICAST_TTL &&
-            (getDatagramSocket() instanceof MulticastSocket)) {
-            Integer ttl = getTimeToLive();
-            return (T)ttl;
-        } else if (name == StandardSocketOptions.IP_MULTICAST_LOOP &&
-            (getDatagramSocket() instanceof MulticastSocket)) {
-            return (T) getOption(SocketOptions.IP_MULTICAST_LOOP);
-        } else {
-            throw new UnsupportedOperationException("unsupported option");
-        }
-    }
-
-    private static final Set<SocketOption<?>> dgSocketOptions;
-
-    private static final Set<SocketOption<?>> mcSocketOptions;
-
-    static {
-        dgSocketOptions = Set.of(StandardSocketOptions.SO_SNDBUF,
-                                 StandardSocketOptions.SO_RCVBUF,
-                                 StandardSocketOptions.SO_REUSEADDR,
-                                 StandardSocketOptions.IP_TOS);
-
-        mcSocketOptions = Set.of(StandardSocketOptions.SO_SNDBUF,
-                                 StandardSocketOptions.SO_RCVBUF,
-                                 StandardSocketOptions.SO_REUSEADDR,
-                                 StandardSocketOptions.IP_TOS,
-                                 StandardSocketOptions.IP_MULTICAST_IF,
-                                 StandardSocketOptions.IP_MULTICAST_TTL,
-                                 StandardSocketOptions.IP_MULTICAST_LOOP);
+        Objects.requireNonNull(name);
+        throw new UnsupportedOperationException("'" + name + "' not supported");
     }
 
     /**
      * Returns a set of SocketOptions supported by this impl
      * and by this impl's socket (DatagramSocket or MulticastSocket)
      *
+     * @implSpec
+     * The default implementation of this method returns an empty set.
+     * Subclasses should override this method with an appropriate implementation.
+     *
      * @return a Set of SocketOptions
      *
      * @since 9
      */
     protected Set<SocketOption<?>> supportedOptions() {
-        if (getDatagramSocket() instanceof MulticastSocket) {
-            return mcSocketOptions;
-        } else {
-            return dgSocketOptions;
-        }
+        return Set.of();
     }
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -103,6 +103,14 @@ public class MethodTypeDescTest extends SymbolicDescTest {
             testMethodTypeDesc(newDesc, mt.changeReturnType((Class<?>)rc.resolveConstantDesc(LOOKUP)));
         }
 
+        // try with null parameter
+        try {
+            MethodTypeDesc newDesc = mtDesc.changeReturnType(null);
+            fail("should fail with NPE");
+        } catch (NullPointerException ex) {
+            // good
+        }
+
         // changeParamType
         for (int i=0; i<paramTypes.length; i++) {
             for (String p : paramDescs) {
@@ -163,6 +171,34 @@ public class MethodTypeDescTest extends SymbolicDescTest {
         } catch (IndexOutOfBoundsException ex) {
             // good
         }
+
+        try {
+            ClassDesc[] newParamTypes = new ClassDesc[1];
+            newParamTypes[0] = CD_void;
+            MethodTypeDesc newDesc = MethodTypeDesc.of(returnType, CD_int);
+            newDesc = newDesc.insertParameterTypes(0, newParamTypes);
+            fail("shouldn't allow parameters with class descriptor CD_void");
+        } catch (IllegalArgumentException ex) {
+            // good
+        }
+
+        try {
+            MethodTypeDesc newDesc = MethodTypeDesc.of(returnType, CD_int);
+            newDesc = newDesc.insertParameterTypes(0, null);
+            fail("should fail with NPE");
+        } catch (NullPointerException ex) {
+            // good
+        }
+
+        try {
+            ClassDesc[] newParamTypes = new ClassDesc[1];
+            newParamTypes[0] = null;
+            MethodTypeDesc newDesc = MethodTypeDesc.of(returnType, CD_int);
+            newDesc = newDesc.insertParameterTypes(0, newParamTypes);
+            fail("should fail with NPE");
+        } catch (NullPointerException ex) {
+            // good
+        }
     }
 
     private void badDropParametersTypes(ClassDesc returnType, String... paramDescTypes) {
@@ -201,7 +237,7 @@ public class MethodTypeDescTest extends SymbolicDescTest {
         try {
             MethodTypeDesc newDesc = mtDesc.dropParameterTypes(1, 0);
             fail("start index > end index should have failed");
-        } catch (IllegalArgumentException ex) {
+        } catch (IndexOutOfBoundsException ex) {
             // good
         }
     }
@@ -233,6 +269,14 @@ public class MethodTypeDescTest extends SymbolicDescTest {
             }
         }
 
+        // try with null argument
+        try {
+            MethodTypeDesc r = MethodTypeDesc.ofDescriptor(null);
+            fail("should fail with NPE");
+        } catch (NullPointerException ex) {
+            // good
+        }
+
         // try with void arguments, this will stress another code path in particular
         // ConstantMethodTypeDesc::init
         try {
@@ -240,6 +284,24 @@ public class MethodTypeDescTest extends SymbolicDescTest {
             fail("can't reach here");
         }
         catch (IllegalArgumentException e) {
+            // good
+        }
+
+        try {
+            MethodTypeDesc r = MethodTypeDesc.of(CD_int, null);
+            fail("ClassDesc array should not be null");
+        }
+        catch (NullPointerException e) {
+            // good
+        }
+
+        try {
+            ClassDesc[] paramDescs = new ClassDesc[1];
+            paramDescs[0] = null;
+            MethodTypeDesc r = MethodTypeDesc.of(CD_int, paramDescs);
+            fail("ClassDesc should not be null");
+        }
+        catch (NullPointerException e) {
             // good
         }
     }

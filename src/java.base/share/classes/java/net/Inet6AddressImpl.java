@@ -32,9 +32,13 @@ import static java.net.InetAddress.PREFER_SYSTEM_VALUE;
  * Package private implementation of InetAddressImpl for dual
  * IPv4/IPv6 stack.
  * <p>
- * If InetAddress.preferIPv6Address is true then anyLocalAddress(),
- * loopbackAddress(), and localHost() will return IPv6 addresses,
- * otherwise IPv4 addresses.
+ * If InetAddress.preferIPv6Address is true then anyLocalAddress()
+ * and localHost() will return IPv6 addresses, otherwise IPv4 addresses.
+ *
+ * loopbackAddress() will return the first valid loopback address in
+ * [IPv6 loopback, IPv4 loopback] if InetAddress.preferIPv6Address is true,
+ * else [IPv4 loopback, IPv6 loopback].
+ * If neither are valid it will fallback to the first address tried.
  *
  * @since 1.4
  */
@@ -103,15 +107,31 @@ class Inet6AddressImpl implements InetAddressImpl {
 
     public synchronized InetAddress loopbackAddress() {
         if (loopbackAddress == null) {
-             if (InetAddress.preferIPv6Address == PREFER_IPV6_VALUE ||
-                 InetAddress.preferIPv6Address == PREFER_SYSTEM_VALUE) {
-                 byte[] loopback =
-                        {0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
-                         0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x01};
-                 loopbackAddress = new Inet6Address("localhost", loopback);
-             } else {
-                loopbackAddress = (new Inet4AddressImpl()).loopbackAddress();
-             }
+            boolean preferIPv6Address =
+                InetAddress.preferIPv6Address == PREFER_IPV6_VALUE ||
+                InetAddress.preferIPv6Address == PREFER_SYSTEM_VALUE;
+            InetAddress loopback4 = (new Inet4AddressImpl()).loopbackAddress();
+            InetAddress loopback6 = new Inet6Address("localhost",
+                new byte[] {0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+                            0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x01});
+            // Order the candidate addresses by preference.
+            InetAddress[] addresses = preferIPv6Address
+                ? new InetAddress[] {loopback6, loopback4}
+                : new InetAddress[] {loopback4, loopback6};
+            // In case of failure, default to the preferred address.
+            loopbackAddress = addresses[0];
+            // Pick the first candidate address that actually exists.
+            for (InetAddress address : addresses) {
+                try {
+                    if (NetworkInterface.getByInetAddress(address) == null) {
+                        continue;
+                    }
+                } catch (SocketException e) {
+                    continue;
+                }
+                loopbackAddress = address;
+                break;
+            }
         }
         return loopbackAddress;
     }

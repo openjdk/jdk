@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -433,22 +433,59 @@ class CharacterData01 extends CharacterData {
             case 0X1EC92: retval = 7000; break;    // INDIC SIYAQ NUMBER SEVEN THOUSAND
             case 0X1EC93: retval = 8000; break;    // INDIC SIYAQ NUMBER EIGHT THOUSAND
             case 0X1EC94: retval = 9000; break;    // INDIC SIYAQ NUMBER NINE THOUSAND
-            case 0X1EC95: retval = 10000; break;    // INDIC SIYAQ NUMBER TEN THOUSAND
-            case 0X1EC96: retval = 20000; break;    // INDIC SIYAQ NUMBER TWENTY THOUSAND
-            case 0X1EC97: retval = 30000; break;    // INDIC SIYAQ NUMBER THIRTY THOUSAND
-            case 0X1EC98: retval = 40000; break;    // INDIC SIYAQ NUMBER FORTY THOUSAND
-            case 0X1EC99: retval = 50000; break;    // INDIC SIYAQ NUMBER FIFTY THOUSAND
-            case 0X1EC9A: retval = 60000; break;    // INDIC SIYAQ NUMBER SIXTY THOUSAND
-            case 0X1EC9B: retval = 70000; break;    // INDIC SIYAQ NUMBER SEVENTY THOUSAND
-            case 0X1EC9C: retval = 80000; break;    // INDIC SIYAQ NUMBER EIGHTY THOUSAND
-            case 0X1EC9D: retval = 90000; break;    // INDIC SIYAQ NUMBER NINETY THOUSAND
-            case 0X1EC9E: retval = 100000; break;    // INDIC SIYAQ NUMBER LAKH
-            case 0X1EC9F: retval = 200000; break;    // INDIC SIYAQ NUMBER LAKHAN
-            case 0X1ECA0: retval = 100000; break;    // INDIC SIYAQ LAKH MARK
-            case 0X1ECA1: retval = 10000000; break;  // INDIC SIYAQ NUMBER KAROR
-            case 0X1ECA2: retval = 20000000; break;  // INDIC SIYAQ NUMBER KARORAN
-            case 0X1ECB3: retval = 10000; break;    // INDIC SIYAQ NUMBER ALTERNATE TEN THOUSAND
-            case 0X1ECB4: retval = 100000; break;   // INDIC SIYAQ NUMBER ALTERNATE LAKH MARK
+            case 0X1EC95: retval = 10000; break;   // INDIC SIYAQ NUMBER TEN THOUSAND
+            case 0X1EC96: retval = 20000; break;   // INDIC SIYAQ NUMBER TWENTY THOUSAND
+            case 0X1EC97: retval = 30000; break;   // INDIC SIYAQ NUMBER THIRTY THOUSAND
+            case 0X1EC98: retval = 40000; break;   // INDIC SIYAQ NUMBER FORTY THOUSAND
+            case 0X1EC99: retval = 50000; break;   // INDIC SIYAQ NUMBER FIFTY THOUSAND
+            case 0X1EC9A: retval = 60000; break;   // INDIC SIYAQ NUMBER SIXTY THOUSAND
+            case 0X1EC9B: retval = 70000; break;   // INDIC SIYAQ NUMBER SEVENTY THOUSAND
+            case 0X1EC9C: retval = 80000; break;   // INDIC SIYAQ NUMBER EIGHTY THOUSAND
+            case 0X1EC9D: retval = 90000; break;   // INDIC SIYAQ NUMBER NINETY THOUSAND
+            case 0X1EC9E: retval = 100000; break;  // INDIC SIYAQ NUMBER LAKH
+            case 0X1EC9F: retval = 200000; break;  // INDIC SIYAQ NUMBER LAKHAN
+            case 0X1ECA0: retval = 100000; break;  // INDIC SIYAQ LAKH MARK
+            case 0X1ECA1: retval = 10000000; break;// INDIC SIYAQ NUMBER KAROR
+            case 0X1ECA2: retval = 20000000; break;// INDIC SIYAQ NUMBER KARORAN
+            case 0X1ECB3: retval = 10000; break;   // INDIC SIYAQ NUMBER ALTERNATE TEN THOUSAND
+            case 0X1ECB4: retval = 100000; break;  // INDIC SIYAQ NUMBER ALTERNATE LAKH MARK
+            case 0X1ED0D: retval = 40; break;      // OTTOMAN SIYAQ NUMBER FORTY
+            case 0X1ED0E: retval = 50; break;      // OTTOMAN SIYAQ NUMBER FIFTY
+            case 0X1ED0F: retval = 60; break;      // OTTOMAN SIYAQ NUMBER SIXTY
+            case 0X1ED10: retval = 70; break;      // OTTOMAN SIYAQ NUMBER SEVENTY
+            case 0X1ED11: retval = 80; break;      // OTTOMAN SIYAQ NUMBER EIGHTY
+            case 0X1ED12: retval = 90; break;      // OTTOMAN SIYAQ NUMBER NINETY
+            case 0X1ED13: retval = 100; break;     // OTTOMAN SIYAQ NUMBER ONE HUNDRED
+            case 0X1ED14: retval = 200; break;     // OTTOMAN SIYAQ NUMBER TWO HUNDRED
+            case 0X1ED15: retval = 300; break;     // OTTOMAN SIYAQ NUMBER THREE HUNDRED
+            case 0X1ED16: retval = 400; break;     // OTTOMAN SIYAQ NUMBER FOUR HUNDRED
+            case 0X1ED17: retval = 500; break;     // OTTOMAN SIYAQ NUMBER FIVE HUNDRED
+            case 0X1ED18: retval = 600; break;     // OTTOMAN SIYAQ NUMBER SIX HUNDRED
+            case 0X1ED19: retval = 700; break;     // OTTOMAN SIYAQ NUMBER SEVEN HUNDRED
+            case 0X1ED1A: retval = 800; break;     // OTTOMAN SIYAQ NUMBER EIGHT HUNDRED
+            case 0X1ED1B: retval = 900; break;     // OTTOMAN SIYAQ NUMBER NINE HUNDRED
+            case 0X1ED1C: retval = 1000; break;    // OTTOMAN SIYAQ NUMBER ONE THOUSAND
+            case 0X1ED1D: retval = 2000; break;    // OTTOMAN SIYAQ NUMBER TWO THOUSAND
+            case 0X1ED1E: retval = 3000; break;    // OTTOMAN SIYAQ NUMBER THREE THOUSAND
+            case 0X1ED1F: retval = 4000; break;    // OTTOMAN SIYAQ NUMBER FOUR THOUSAND
+            case 0X1ED20: retval = 5000; break;    // OTTOMAN SIYAQ NUMBER FIVE THOUSAND
+            case 0X1ED21: retval = 6000; break;    // OTTOMAN SIYAQ NUMBER SIX THOUSAND
+            case 0X1ED22: retval = 7000; break;    // OTTOMAN SIYAQ NUMBER SEVEN THOUSAND
+            case 0X1ED23: retval = 8000; break;    // OTTOMAN SIYAQ NUMBER EIGHT THOUSAND
+            case 0X1ED24: retval = 9000; break;    // OTTOMAN SIYAQ NUMBER NINE THOUSAND
+            case 0X1ED25: retval = 10000; break;   // OTTOMAN SIYAQ NUMBER TEN THOUSAND
+            case 0X1ED26: retval = 20000; break;   // OTTOMAN SIYAQ NUMBER TWENTY THOUSAND
+            case 0X1ED27: retval = 30000; break;   // OTTOMAN SIYAQ NUMBER THIRTY THOUSAND
+            case 0X1ED28: retval = 40000; break;   // OTTOMAN SIYAQ NUMBER FORTY THOUSAND
+            case 0X1ED29: retval = 50000; break;   // OTTOMAN SIYAQ NUMBER FIFTY THOUSAND
+            case 0X1ED2A: retval = 60000; break;   // OTTOMAN SIYAQ NUMBER SIXTY THOUSAND
+            case 0X1ED2B: retval = 70000; break;   // OTTOMAN SIYAQ NUMBER SEVENTY THOUSAND
+            case 0X1ED2C: retval = 80000; break;   // OTTOMAN SIYAQ NUMBER EIGHTY THOUSAND
+            case 0X1ED2D: retval = 90000; break;   // OTTOMAN SIYAQ NUMBER NINETY THOUSAND
+            case 0X1ED38: retval = 400; break;     // OTTOMAN SIYAQ ALTERNATE NUMBER FOUR HUNDRED
+            case 0X1ED39: retval = 600; break;     // OTTOMAN SIYAQ ALTERNATE NUMBER SIX HUNDRED
+            case 0X1ED3A: retval = 2000; break;    // OTTOMAN SIYAQ ALTERNATE NUMBER TWO THOUSAND
+            case 0X1ED3B: retval = 10000; break;   // OTTOMAN SIYAQ ALTERNATE NUMBER TEN THOUSAND
             default: retval = -2; break;
             }
             

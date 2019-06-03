@@ -31,7 +31,8 @@
 #define __ masm->masm()->
 
 void LIR_OpShenandoahCompareAndSwap::emit_code(LIR_Assembler* masm) {
-  Register addr = _addr->as_register_lo();
+  NOT_LP64(assert(_addr->is_single_cpu(), "must be single");)
+  Register addr = _addr->is_single_cpu() ? _addr->as_register() : _addr->as_register_lo();
   Register newval = _new_value->as_register();
   Register cmpval = _cmp_value->as_register();
   Register tmp1 = _tmp1->as_register();

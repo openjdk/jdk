@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -74,23 +74,17 @@ public class SHAOptionsBase extends CommandLineOptionTest {
      *         instructions required by the option are not supported.
      */
     public static String getWarningForUnsupportedCPU(String optionName) {
-        if (Platform.isAArch64() || Platform.isS390x() || Platform.isSparc()
-            || Platform.isX64() || Platform.isX86() || Platform.isPPC()) {
-            switch (optionName) {
-            case SHAOptionsBase.USE_SHA_OPTION:
-                return SHAOptionsBase.SHA_INSTRUCTIONS_ARE_NOT_AVAILABLE;
-            case SHAOptionsBase.USE_SHA1_INTRINSICS_OPTION:
-                return SHAOptionsBase.SHA1_INTRINSICS_ARE_NOT_AVAILABLE;
-            case SHAOptionsBase.USE_SHA256_INTRINSICS_OPTION:
-                return SHAOptionsBase.SHA256_INTRINSICS_ARE_NOT_AVAILABLE;
-            case SHAOptionsBase.USE_SHA512_INTRINSICS_OPTION:
-                return SHAOptionsBase.SHA512_INTRINSICS_ARE_NOT_AVAILABLE;
-            default:
-                throw new Error("Unexpected option " + optionName);
-            }
-        } else {
-            throw new Error("Support for CPUs different from AARCH64, S390x,"
-                            + " SPARC, X86, and PPC is not implemented");
+        switch (optionName) {
+        case SHAOptionsBase.USE_SHA_OPTION:
+            return SHAOptionsBase.SHA_INSTRUCTIONS_ARE_NOT_AVAILABLE;
+        case SHAOptionsBase.USE_SHA1_INTRINSICS_OPTION:
+            return SHAOptionsBase.SHA1_INTRINSICS_ARE_NOT_AVAILABLE;
+        case SHAOptionsBase.USE_SHA256_INTRINSICS_OPTION:
+            return SHAOptionsBase.SHA256_INTRINSICS_ARE_NOT_AVAILABLE;
+        case SHAOptionsBase.USE_SHA512_INTRINSICS_OPTION:
+            return SHAOptionsBase.SHA512_INTRINSICS_ARE_NOT_AVAILABLE;
+        default:
+            throw new Error("Unexpected option " + optionName);
         }
     }
 

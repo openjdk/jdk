@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,15 +22,7 @@
  *
  */
 
-import java.net.URI;
-import java.nio.file.DirectoryStream;
-import java.nio.file.Files;
-import java.nio.file.FileSystem;
-import java.nio.file.FileSystems;
-import java.nio.file.Path;
 import java.util.ArrayList;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 
 import jdk.test.lib.cds.CDSTestUtils;
 import jdk.test.lib.cds.CDSOptions;
@@ -41,16 +33,15 @@ import jdk.test.lib.process.OutputAnalyzer;
  * @summary Try to archive lots of classes by searching for classes from the jrt:/ file system. With JDK 12
  *          this will produce an archive with over 30,000 classes.
  * @requires vm.cds
- * @library /test/lib
+ * @library /test/lib /test/hotspot/jtreg/runtime/appcds
  * @run driver/timeout=500 LotsOfClasses
  */
 
 public class LotsOfClasses {
-    static Pattern pattern;
 
     public static void main(String[] args) throws Throwable {
         ArrayList<String> list = new ArrayList<>();
-        findAllClasses(list);
+        TestCommon.findAllClasses(list);
 
         CDSOptions opts = new CDSOptions();
         opts.setClassList(list);
@@ -63,29 +54,5 @@ public class LotsOfClasses {
 
         OutputAnalyzer out = CDSTestUtils.createArchive(opts);
         CDSTestUtils.checkDump(out);
-    }
-
-    static void findAllClasses(ArrayList<String> list) throws Throwable {
-        // Find all the classes in the jrt file system
-        pattern = Pattern.compile("/modules/[a-z.]*[a-z]+/([^-]*)[.]class");
-        FileSystem fs = FileSystems.getFileSystem(URI.create("jrt:/"));
-        Path base = fs.getPath("/modules/");
-        find(base, list);
-    }
-
-    static void find(Path p, ArrayList<String> list) throws Throwable {
-        try (DirectoryStream<Path> stream = Files.newDirectoryStream(p)) {
-                for (Path entry: stream) {
-                    Matcher matcher = pattern.matcher(entry.toString());
-                    if (matcher.find()) {
-                        String className = matcher.group(1);
-                        list.add(className);
-                        //System.out.println(className);
-                    }
-                    try {
-                        find(entry, list);
-                    } catch (Throwable t) {}
-                }
-            }
     }
 }

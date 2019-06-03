@@ -316,6 +316,9 @@ int LIR_Assembler::check_icache() {
   return start_offset;
 }
 
+void LIR_Assembler::clinit_barrier(ciMethod* method) {
+  ShouldNotReachHere(); // not implemented
+}
 
 void LIR_Assembler::jobject2reg(jobject o, Register reg) {
   if (o == NULL) {
@@ -2268,7 +2271,7 @@ void LIR_Assembler::emit_arraycopy(LIR_OpArrayCopy* op) {
     __ ldr(src,              Address(sp, 4*BytesPerWord));
 
     // r0 is -1^K where K == partial copied count
-    __ eonw(rscratch1, r0, 0);
+    __ eonw(rscratch1, r0, zr);
     // adjust length down and src/end pos up by partial copied count
     __ subw(length, length, rscratch1);
     __ addw(src_pos, src_pos, rscratch1);

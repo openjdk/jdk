@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -70,8 +70,8 @@ public class TestHttpsServer {
      *  incoming request
      */
 
-    public TestHttpsServer (HttpCallback cb) throws IOException {
-        this (cb, 1, 10, 0);
+    public TestHttpsServer(HttpCallback cb) throws IOException {
+        this(cb, 1, 10, 0);
     }
 
     /**
@@ -86,9 +86,9 @@ public class TestHttpsServer {
      *     handle per thread
      */
 
-    public TestHttpsServer (HttpCallback cb, int threads, int cperthread)
+    public TestHttpsServer(HttpCallback cb, int threads, int cperthread)
         throws IOException {
-        this (cb, threads, cperthread, 0);
+        this(cb, threads, cperthread, 0);
     }
 
     /**
@@ -106,12 +106,34 @@ public class TestHttpsServer {
      * @param port the port number to bind the server to. <code>Zero</code>
      *  means choose any free port.
      */
-
-    public TestHttpsServer (HttpCallback cb, int threads, int cperthread, int port)
+    public TestHttpsServer(HttpCallback cb, int threads, int cperthread, int port)
         throws IOException {
-        schan = ServerSocketChannel.open ();
-        InetSocketAddress addr = new InetSocketAddress (port);
-        schan.socket().bind (addr);
+        this(cb, threads, cperthread, null, port);
+    }
+
+    /**
+     * Create a <code>TestHttpsServer<code> instance with the specified number
+     * of threads and maximum number of connections per thread and running on
+     * the specified port. The specified number of threads are created to
+     * handle incoming requests, and each thread is allowed
+     * to handle a number of simultaneous TCP connections.
+     * @param cb the callback object which is invoked to handle
+     *  each incoming request
+     * @param threads the number of threads to create to handle
+     *  requests in parallel
+     * @param cperthread the number of simultaneous TCP connections
+     *  to handle per thread
+     * @param address the InetAddress to bind to. {@code Null} means the
+     *  wildcard address.
+     * @param port the port number to bind the server to. {@code Zero}
+     *  means choose any free port.
+     */
+
+    public TestHttpsServer(HttpCallback cb, int threads, int cperthread, InetAddress address, int port)
+        throws IOException {
+        schan = ServerSocketChannel.open();
+        InetSocketAddress addr = new InetSocketAddress(address, port);
+        schan.socket().bind(addr);
         this.threads = threads;
         this.cb = cb;
         this.cperthread = cperthread;
@@ -135,9 +157,9 @@ public class TestHttpsServer {
 
             sslCtx.init(kmf.getKeyManagers(), tmf.getTrustManagers(), null);
 
-            servers = new Server [threads];
+            servers = new Server[threads];
             for (int i=0; i<threads; i++) {
-                servers[i] = new Server (cb, schan, cperthread);
+                servers[i] = new Server(cb, schan, cperthread);
                 servers[i].start();
             }
         } catch (Exception ex) {
@@ -150,7 +172,7 @@ public class TestHttpsServer {
      *  all channels in that thread waiting to be closed are forceably closed.
      */
 
-    public void terminate () {
+    public void terminate() {
         for (int i=0; i<threads; i++) {
             servers[i].terminate ();
         }
@@ -163,6 +185,14 @@ public class TestHttpsServer {
 
     public int getLocalPort () {
         return schan.socket().getLocalPort ();
+    }
+
+    public String getAuthority() {
+        InetAddress address = schan.socket().getInetAddress();
+        String hostaddr = address.getHostAddress();
+        if (address.isAnyLocalAddress()) hostaddr = "localhost";
+        if (hostaddr.indexOf(':') > -1) hostaddr = "[" + hostaddr + "]";
+        return hostaddr + ":" + getLocalPort();
     }
 
     static class Server extends Thread {
@@ -178,65 +208,65 @@ public class TestHttpsServer {
         ClosedChannelList clist;
         boolean shutdown;
 
-        Server (HttpCallback cb, ServerSocketChannel schan, int maxconn) {
+        Server(HttpCallback cb, ServerSocketChannel schan, int maxconn) {
             this.schan = schan;
             this.maxconn = maxconn;
             this.cb = cb;
             nconn = 0;
-            consumeBuffer = ByteBuffer.allocate (512);
-            clist = new ClosedChannelList ();
+            consumeBuffer = ByteBuffer.allocate(512);
+            clist = new ClosedChannelList();
             try {
-                selector = Selector.open ();
-                schan.configureBlocking (false);
-                listenerKey = schan.register (selector, SelectionKey.OP_ACCEPT);
+                selector = Selector.open();
+                schan.configureBlocking(false);
+                listenerKey = schan.register(selector, SelectionKey.OP_ACCEPT);
             } catch (IOException e) {
-                System.err.println ("Server could not start: " + e);
+                System.err.println("Server could not start: " + e);
             }
         }
 
         /* Stop the thread as soon as possible */
-        public synchronized void terminate () {
+        public synchronized void terminate() {
             shutdown = true;
         }
 
-        public void run ()  {
+        public void run()  {
             try {
                 while (true) {
-                    selector.select (1000);
+                    selector.select(1000);
                     Set selected = selector.selectedKeys();
                     Iterator iter = selected.iterator();
                     while (iter.hasNext()) {
                         key = (SelectionKey)iter.next();
                         if (key.equals (listenerKey)) {
-                            SocketChannel sock = schan.accept ();
+                            SocketChannel sock = schan.accept();
                             if (sock == null) {
                                 /* false notification */
                                 iter.remove();
                                 continue;
                             }
-                            sock.configureBlocking (true);
+                            sock.configureBlocking(true);
                             SSLEngine sslEng = sslCtx.createSSLEngine();
                             sslEng.setUseClientMode(false);
                             new ServerWorker(cb, sock, sslEng).start();
                             nconn ++;
                             if (nconn == maxconn) {
                                 /* deregister */
-                                listenerKey.cancel ();
+                                listenerKey.cancel();
                                 listenerKey = null;
                             }
                         } else {
                             if (key.isReadable()) {
                                 boolean closed = false;
-                                SocketChannel chan = (SocketChannel) key.channel();
+                                SocketChannel chan = (SocketChannel)key.channel();
                                 if (key.attachment() != null) {
-                                    closed = consume (chan);
+                                    closed = consume(chan);
                                 }
 
                                 if (closed) {
-                                    chan.close ();
-                                    key.cancel ();
+                                    chan.close();
+                                    key.cancel();
                                     if (nconn == maxconn) {
-                                        listenerKey = schan.register (selector, SelectionKey.OP_ACCEPT);
+                                        listenerKey = schan.register(selector, SelectionKey.OP_ACCEPT);
                                     }
                                     nconn --;
                                 }
@@ -248,24 +278,24 @@ public class TestHttpsServer {
 
                     synchronized (this) {
                         if (shutdown) {
-                            clist.terminate ();
+                            clist.terminate();
                             return;
                         }
                     }
                 }
             } catch (IOException e) {
-                System.out.println ("Server exception: " + e);
+                System.out.println("Server exception: " + e);
                 // TODO finish
             }
         }
 
         /* read all the data off the channel without looking at it
-             * return true if connection closed
-             */
-        boolean consume (SocketChannel chan) {
+         * return true if connection closed
+         */
+        boolean consume(SocketChannel chan) {
             try {
-                consumeBuffer.clear ();
-                int c = chan.read (consumeBuffer);
+                consumeBuffer.clear();
+                int c = chan.read(consumeBuffer);
                 if (c == -1)
                     return true;
             } catch (IOException e) {
@@ -298,7 +328,7 @@ public class TestHttpsServer {
          */
         private int appBBSize;
 
-        ServerWorker (HttpCallback cb, SocketChannel schan, SSLEngine sslEng) {
+        ServerWorker(HttpCallback cb, SocketChannel schan, SSLEngine sslEng) {
             this.sslEng = sslEng;
             this.schan = schan;
             this.cb = cb;
@@ -431,21 +461,21 @@ needIO:
 
         /* return true if the connection is closed, false otherwise */
 
-        private boolean read (SocketChannel chan, SSLEngine sslEng) {
+        private boolean read(SocketChannel chan, SSLEngine sslEng) {
             HttpTransaction msg;
             boolean res;
             try {
-                InputStream is = new BufferedInputStream (new NioInputStream (chan, sslEng, inNetBB, inAppBB));
-                String requestline = readLine (is);
-                MessageHeader mhead = new MessageHeader (is);
-                String clen = mhead.findValue ("Content-Length");
-                String trferenc = mhead.findValue ("Transfer-Encoding");
+                InputStream is = new BufferedInputStream(new NioInputStream(chan, sslEng, inNetBB, inAppBB));
+                String requestline = readLine(is);
+                MessageHeader mhead = new MessageHeader(is);
+                String clen = mhead.findValue("Content-Length");
+                String trferenc = mhead.findValue("Transfer-Encoding");
                 String data = null;
-                if (trferenc != null && trferenc.equals ("chunked"))
-                    data = new String (readChunkedData (is));
+                if (trferenc != null && trferenc.equals("chunked"))
+                    data = new String(readChunkedData(is));
                 else if (clen != null)
-                    data = new String (readNormalData (is, Integer.parseInt (clen)));
-                String[] req = requestline.split (" ");
+                    data = new String(readNormalData(is, Integer.parseInt(clen)));
+                String[] req = requestline.split(" ");
                 if (req.length < 2) {
                     /* invalid request line */
                     return false;
@@ -453,13 +483,13 @@ needIO:
                 String cmd = req[0];
                 URI uri = null;
                 try {
-                    uri = new URI (req[1]);
-                    msg = new HttpTransaction (this, cmd, uri, mhead, data, null, chan);
-                    cb.request (msg);
+                    uri = new URI(req[1]);
+                    msg = new HttpTransaction(this, cmd, uri, mhead, data, null, chan);
+                    cb.request(msg);
                 } catch (URISyntaxException e) {
                     System.err.println ("Invalid URI: " + e);
-                    msg = new HttpTransaction (this, cmd, null, null, null, null, chan);
-                    msg.sendResponse (501, "Whatever");
+                    msg = new HttpTransaction(this, cmd, null, null, null, null, chan);
+                    msg.sendResponse(501, "Whatever");
                 }
                 res = false;
             } catch (IOException e) {
@@ -468,8 +498,8 @@ needIO:
             return res;
         }
 
-        byte[] readNormalData (InputStream is, int len) throws IOException {
-            byte [] buf  = new byte [len];
+        byte[] readNormalData(InputStream is, int len) throws IOException {
+            byte[] buf  = new byte[len];
             int c, off=0, remain=len;
             while (remain > 0 && ((c=is.read (buf, off, remain))>0)) {
                 remain -= c;
@@ -489,31 +519,31 @@ needIO:
             }
         }
 
-        byte[] readChunkedData (InputStream is) throws IOException {
-            LinkedList l = new LinkedList ();
+        byte[] readChunkedData(InputStream is) throws IOException {
+            LinkedList l = new LinkedList();
             int total = 0;
             for (int len=readChunkLen(is); len!=0; len=readChunkLen(is)) {
-                l.add (readNormalData(is, len));
+                l.add(readNormalData(is, len));
                 total += len;
                 readCRLF(is); // CRLF at end of chunk
             }
             readCRLF(is); // CRLF at end of Chunked Stream.
-            byte[] buf = new byte [total];
+            byte[] buf = new byte[total];
             Iterator i = l.iterator();
             int x = 0;
             while (i.hasNext()) {
                 byte[] b = (byte[])i.next();
-                System.arraycopy (b, 0, buf, x, b.length);
+                System.arraycopy(b, 0, buf, x, b.length);
                 x += b.length;
             }
             return buf;
         }
 
-        private int readChunkLen (InputStream is) throws IOException {
+        private int readChunkLen(InputStream is) throws IOException {
             int c, len=0;
             boolean done=false, readCR=false;
             while (!done) {
-                c = is.read ();
+                c = is.read();
                 if (c == '\n' && readCR) {
                     done = true;
                 } else {
@@ -535,13 +565,13 @@ needIO:
             return len;
         }
 
-        private String readLine (InputStream is) throws IOException {
+        private String readLine(InputStream is) throws IOException {
             boolean done=false, readCR=false;
-            byte[] b = new byte [512];
+            byte[] b = new byte[512];
             int c, l = 0;
 
             while (!done) {
-                c = is.read ();
+                c = is.read();
                 if (c == '\n' && readCR) {
                     done = true;
                 } else {
@@ -552,7 +582,7 @@ needIO:
                     }
                 }
             }
-            return new String (b);
+            return new String(b);
         }
 
         /** close the channel associated with the current key by:
@@ -561,13 +591,13 @@ needIO:
          * 3. After a period, close the socket
          */
 
-        synchronized void orderlyCloseChannel (SocketChannel ch) throws IOException {
+        synchronized void orderlyCloseChannel(SocketChannel ch) throws IOException {
             ch.socket().shutdownOutput();
         }
 
-        synchronized void abortiveCloseChannel (SocketChannel ch) throws IOException {
-            Socket s = ch.socket ();
-            s.setSoLinger (true, 0);
+        synchronized void abortiveCloseChannel(SocketChannel ch) throws IOException {
+            Socket s = ch.socket();
+            s.setSoLinger(true, 0);
             ch.close();
         }
     }
@@ -592,27 +622,27 @@ needIO:
         boolean reset;
         int readlimit;
 
-        public NioInputStream (SocketChannel chan, SSLEngine sslEng, ByteBuffer inNetBB, ByteBuffer inAppBB) throws IOException {
+        public NioInputStream(SocketChannel chan, SSLEngine sslEng, ByteBuffer inNetBB, ByteBuffer inAppBB) throws IOException {
             this.sslEng = sslEng;
             this.channel = chan;
             selector = Selector.open();
             this.inNetBB = inNetBB;
             this.inAppBB = inAppBB;
-            key = chan.register (selector, SelectionKey.OP_READ);
+            key = chan.register(selector, SelectionKey.OP_READ);
             available = 0;
             one = new byte[1];
             closed = marked = reset = false;
         }
 
-        public synchronized int read (byte[] b) throws IOException {
-            return read (b, 0, b.length);
+        public synchronized int read(byte[] b) throws IOException {
+            return read(b, 0, b.length);
         }
 
-        public synchronized int read () throws IOException {
-            return read (one, 0, 1);
+        public synchronized int read() throws IOException {
+            return read(one, 0, 1);
         }
 
-        public synchronized int read (byte[] b, int off, int srclen) throws IOException {
+        public synchronized int read(byte[] b, int off, int srclen) throws IOException {
 
             int canreturn, willreturn;
 
@@ -620,8 +650,8 @@ needIO:
                 return -1;
 
             if (reset) { /* satisfy from markBuf */
-                canreturn = markBuf.remaining ();
-                willreturn = canreturn>srclen ? srclen : canreturn;
+                canreturn = markBuf.remaining();
+                willreturn = canreturn > srclen ? srclen : canreturn;
                 markBuf.get(b, off, willreturn);
                 if (canreturn == willreturn) {
                     reset = false;
@@ -629,16 +659,16 @@ needIO:
             } else { /* satisfy from channel */
                 canreturn = available();
                 if (canreturn == 0) {
-                    block ();
+                    block();
                     canreturn = available();
                 }
-                willreturn = canreturn>srclen ? srclen : canreturn;
+                willreturn = canreturn > srclen ? srclen : canreturn;
                 inAppBB.get(b, off, willreturn);
                 available -= willreturn;
 
                 if (marked) { /* copy into markBuf */
                     try {
-                        markBuf.put (b, off, willreturn);
+                        markBuf.put(b, off, willreturn);
                     } catch (BufferOverflowException e) {
                         marked = false;
                     }
@@ -647,9 +677,9 @@ needIO:
             return willreturn;
         }
 
-        public synchronized int available () throws IOException {
+        public synchronized int available() throws IOException {
             if (closed)
-                throw new IOException ("Stream is closed");
+                throw new IOException("Stream is closed");
 
             if (reset)
                 return markBuf.remaining();
@@ -657,8 +687,8 @@ needIO:
             if (available > 0)
                 return available;
 
-            inAppBB.clear ();
-            int bytes = channel.read (inNetBB);
+            inAppBB.clear();
+            int bytes = channel.read(inNetBB);
 
             int needed = sslEng.getSession().getApplicationBufferSize();
             if (needed > inAppBB.remaining()) {
@@ -672,45 +702,45 @@ needIO:
             if (available > 0)
                 inAppBB.flip();
             else if (available == -1)
-                throw new IOException ("Stream is closed");
+                throw new IOException("Stream is closed");
             return available;
         }
 
         /**
          * block() only called when available==0 and buf is empty
          */
-        private synchronized void block () throws IOException {
+        private synchronized void block() throws IOException {
             //assert available == 0;
-            int n = selector.select ();
+            int n = selector.select();
             //assert n == 1;
             selector.selectedKeys().clear();
-            available ();
+            available();
         }
 
-        public void close () throws IOException {
+        public void close() throws IOException {
             if (closed)
                 return;
-            channel.close ();
+            channel.close();
             closed = true;
         }
 
-        public synchronized void mark (int readlimit) {
+        public synchronized void mark(int readlimit) {
             if (closed)
                 return;
             this.readlimit = readlimit;
-            markBuf = ByteBuffer.allocate (readlimit);
+            markBuf = ByteBuffer.allocate(readlimit);
             marked = true;
             reset = false;
         }
 
-        public synchronized void reset () throws IOException {
+        public synchronized void reset() throws IOException {
             if (closed )
                 return;
             if (!marked)
-                throw new IOException ("Stream not marked");
+                throw new IOException("Stream not marked");
             marked = false;
             reset = true;
-            markBuf.flip ();
+            markBuf.flip();
         }
     }
 
@@ -724,33 +754,33 @@ needIO:
         boolean closed;
         byte[] one;
 
-        public NioOutputStream (SocketChannel channel, SSLEngine sslEng, ByteBuffer outNetBB, ByteBuffer outAppBB) throws IOException {
+        public NioOutputStream(SocketChannel channel, SSLEngine sslEng, ByteBuffer outNetBB, ByteBuffer outAppBB) throws IOException {
             this.sslEng = sslEng;
             this.channel = channel;
             this.outNetBB = outNetBB;
             this.outAppBB = outAppBB;
-            selector = Selector.open ();
-            key = channel.register (selector, SelectionKey.OP_WRITE);
+            selector = Selector.open();
+            key = channel.register(selector, SelectionKey.OP_WRITE);
             closed = false;
-            one = new byte [1];
+            one = new byte[1];
         }
 
-        public synchronized void write (int b) throws IOException {
+        public synchronized void write(int b) throws IOException {
             one[0] = (byte)b;
-            write (one, 0, 1);
+            write(one, 0, 1);
         }
 
-        public synchronized void write (byte[] b) throws IOException {
-            write (b, 0, b.length);
+        public synchronized void write(byte[] b) throws IOException {
+            write(b, 0, b.length);
         }
 
-        public synchronized void write (byte[] b, int off, int len) throws IOException {
+        public synchronized void write(byte[] b, int off, int len) throws IOException {
             if (closed)
-                throw new IOException ("stream is closed");
+                throw new IOException("stream is closed");
 
-            outAppBB = ByteBuffer.allocate (len);
-            outAppBB.put (b, off, len);
-            outAppBB.flip ();
+            outAppBB = ByteBuffer.allocate(len);
+            outAppBB.put(b, off, len);
+            outAppBB.flip();
             int n;
             outNetBB.clear();
             int needed = sslEng.getSession().getPacketBufferSize();
@@ -764,15 +794,15 @@ needIO:
                 newLen -= n;
                 if (newLen == 0)
                     return;
-                selector.select ();
-                selector.selectedKeys().clear ();
+                selector.select();
+                selector.selectedKeys().clear();
             }
         }
 
-        public void close () throws IOException {
+        public void close() throws IOException {
             if (closed)
                 return;
-            channel.close ();
+            channel.close();
             closed = true;
         }
     }
@@ -802,18 +832,18 @@ needIO:
      */
     private static class IValue {
         int v;
-        IValue (int i) {
+        IValue(int i) {
             v =i;
         }
     }
 
 
-    private static BValue getCond (String condition) {
+    private static BValue getCond(String condition) {
         synchronized (conditions) {
-            BValue cond = (BValue) conditions.get (condition);
+            BValue cond = (BValue) conditions.get(condition);
             if (cond == null) {
                 cond = new BValue();
-                conditions.put (condition, cond);
+                conditions.put(condition, cond);
             }
             return cond;
         }
@@ -827,8 +857,8 @@ needIO:
      * first.
      */
 
-    public static void setCondition (String condition) {
-        BValue cond = getCond (condition);
+    public static void setCondition(String condition) {
+        BValue cond = getCond(condition);
         synchronized (cond) {
             if (cond.v) {
                 return;
@@ -846,8 +876,8 @@ needIO:
      * immediately without blocking.
      */
 
-    public static void waitForCondition (String condition) {
-        BValue cond = getCond (condition);
+    public static void waitForCondition(String condition) {
+        BValue cond = getCond(condition);
         synchronized (cond) {
             if (!cond.v) {
                 try {
@@ -872,7 +902,7 @@ needIO:
      * will be a hang.
      */
 
-    public static void rendezvous (String condition, int N) {
+    public static void rendezvous(String condition, int N) {
         BValue cond;
         IValue iv;
         String name = "RV_"+condition;
@@ -880,30 +910,30 @@ needIO:
         /* get the condition */
 
         synchronized (conditions) {
-            cond = (BValue)conditions.get (name);
+            cond = (BValue)conditions.get(name);
             if (cond == null) {
                 /* we are first caller */
                 if (N < 2) {
-                    throw new RuntimeException ("rendezvous must be called with N >= 2");
+                    throw new RuntimeException("rendezvous must be called with N >= 2");
                 }
-                cond = new BValue ();
-                conditions.put (name, cond);
-                iv = new IValue (N-1);
-                rv.put (name, iv);
+                cond = new BValue();
+                conditions.put(name, cond);
+                iv = new IValue(N-1);
+                rv.put(name, iv);
             } else {
                 /* already initialised, just decrement the counter */
-                iv = (IValue) rv.get (name);
-                iv.v --;
+                iv = (IValue) rv.get(name);
+                iv.v--;
             }
         }
 
         if (iv.v > 0) {
-            waitForCondition (name);
+            waitForCondition(name);
         } else {
-            setCondition (name);
+            setCondition(name);
             synchronized (conditions) {
-                clearCondition (name);
-                rv.remove (name);
+                clearCondition(name);
+                rv.remove(name);
             }
         }
     }
@@ -919,13 +949,13 @@ needIO:
     public static void clearCondition(String condition) {
         BValue cond;
         synchronized (conditions) {
-            cond = (BValue) conditions.get (condition);
+            cond = (BValue) conditions.get(condition);
             if (cond == null) {
                 return;
             }
             synchronized (cond) {
                 if (cond.v) {
-                    conditions.remove (condition);
+                    conditions.remove(condition);
                 }
             }
         }

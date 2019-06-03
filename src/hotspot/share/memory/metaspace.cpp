@@ -1152,7 +1152,7 @@ void Metaspace::initialize_class_space(ReservedSpace rs) {
 void Metaspace::ergo_initialize() {
   if (DumpSharedSpaces) {
     // Using large pages when dumping the shared archive is currently not implemented.
-    FLAG_SET_ERGO(bool, UseLargePagesInMetaspace, false);
+    FLAG_SET_ERGO(UseLargePagesInMetaspace, false);
   }
 
   size_t page_size = os::vm_page_size();
@@ -1194,12 +1194,12 @@ void Metaspace::ergo_initialize() {
       if (min_metaspace_sz >= MaxMetaspaceSize) {
         vm_exit_during_initialization("MaxMetaspaceSize is too small.");
       } else {
-        FLAG_SET_ERGO(size_t, CompressedClassSpaceSize,
+        FLAG_SET_ERGO(CompressedClassSpaceSize,
                       MaxMetaspaceSize - min_metaspace_sz);
       }
     }
   } else if (min_metaspace_sz >= MaxMetaspaceSize) {
-    FLAG_SET_ERGO(size_t, InitialBootClassLoaderMetaspaceSize,
+    FLAG_SET_ERGO(InitialBootClassLoaderMetaspaceSize,
                   min_metaspace_sz);
   }
 
@@ -1218,6 +1218,10 @@ void Metaspace::global_initialize() {
     // (!DumpSharedSpaces && !UseSharedSpaces) case to set up class
     // metaspace.
     MetaspaceShared::initialize_runtime_shared_and_meta_spaces();
+  }
+
+  if (DynamicDumpSharedSpaces && !UseSharedSpaces) {
+    vm_exit_during_initialization("DynamicDumpSharedSpaces not supported when base CDS archive is not loaded", NULL);
   }
 
   if (!DumpSharedSpaces && !UseSharedSpaces)

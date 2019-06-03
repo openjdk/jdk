@@ -487,7 +487,8 @@ void InterpreterMacroAssembler::get_cache_entry_pointer_at_bcp(Register cache,
                                                                Register tmp,
                                                                int bcp_offset,
                                                                size_t index_size) {
-  assert(cache != tmp, "must use different register");
+  assert_different_registers(cache, tmp);
+
   get_cache_index_at_bcp(tmp, bcp_offset, index_size);
   assert(sizeof(ConstantPoolCacheEntry) == 4 * wordSize, "adjust code below");
   // convert from field index to ConstantPoolCacheEntry index
@@ -501,8 +502,9 @@ void InterpreterMacroAssembler::get_cache_entry_pointer_at_bcp(Register cache,
 }
 
 // Load object from cpool->resolved_references(index)
-void InterpreterMacroAssembler::load_resolved_reference_at_index(
-                                           Register result, Register index, Register tmp) {
+void InterpreterMacroAssembler::load_resolved_reference_at_index(Register result,
+                                                                 Register index,
+                                                                 Register tmp) {
   assert_different_registers(result, index);
 
   get_constant_pool(result);
@@ -516,12 +518,30 @@ void InterpreterMacroAssembler::load_resolved_reference_at_index(
 }
 
 // load cpool->resolved_klass_at(index)
-void InterpreterMacroAssembler::load_resolved_klass_at_index(Register cpool,
-                                           Register index, Register klass) {
+void InterpreterMacroAssembler::load_resolved_klass_at_index(Register klass,
+                                                             Register cpool,
+                                                             Register index) {
+  assert_different_registers(cpool, index);
+
   movw(index, Address(cpool, index, Address::times_ptr, sizeof(ConstantPool)));
   Register resolved_klasses = cpool;
   movptr(resolved_klasses, Address(cpool, ConstantPool::resolved_klasses_offset_in_bytes()));
   movptr(klass, Address(resolved_klasses, index, Address::times_ptr, Array<Klass*>::base_offset_in_bytes()));
+}
+
+void InterpreterMacroAssembler::load_resolved_method_at_index(int byte_no,
+                                                              Register method,
+                                                              Register cache,
+                                                              Register index) {
+  assert_different_registers(cache, index);
+
+  const int method_offset = in_bytes(
+    ConstantPoolCache::base_offset() +
+      ((byte_no == TemplateTable::f2_byte)
+       ? ConstantPoolCacheEntry::f2_offset()
+       : ConstantPoolCacheEntry::f1_offset()));
+
+  movptr(method, Address(cache, index, Address::times_ptr, method_offset)); // get f1 Method*
 }
 
 // Generate a subtype check: branch to ok_is_subtype if sub_klass is a

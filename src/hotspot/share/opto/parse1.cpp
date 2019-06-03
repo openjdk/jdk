@@ -584,6 +584,11 @@ Parse::Parse(JVMState* caller, ciMethod* parse_method, float expected_uses)
   }
 
   if (depth() == 1 && !failing()) {
+    if (C->clinit_barrier_on_entry()) {
+      // Add check to deoptimize the nmethod once the holder class is fully initialized
+      clinit_deopt();
+    }
+
     // Add check to deoptimize the nmethod if RTM state was changed
     rtm_deopt();
   }
@@ -1192,7 +1197,7 @@ SafePointNode* Parse::create_entry_map() {
 // The main thing to do is lock the receiver of a synchronized method.
 void Parse::do_method_entry() {
   set_parse_bci(InvocationEntryBci); // Pseudo-BCP
-  set_sp(0);                      // Java Stack Pointer
+  set_sp(0);                         // Java Stack Pointer
 
   NOT_PRODUCT( count_compiled_calls(true/*at_method_entry*/, false/*is_inline*/); )
 
@@ -2102,11 +2107,25 @@ void Parse::call_register_finalizer() {
   set_control( _gvn.transform(result_rgn) );
 }
 
+// Add check to deoptimize once holder klass is fully initialized.
+void Parse::clinit_deopt() {
+  assert(C->has_method(), "only for normal compilations");
+  assert(depth() == 1, "only for main compiled method");
+  assert(is_normal_parse(), "no barrier needed on osr entry");
+  assert(method()->holder()->is_being_initialized() || method()->holder()->is_initialized(),
+         "initialization should have been started");
+
+  set_parse_bci(0);
+
+  Node* holder = makecon(TypeKlassPtr::make(method()->holder()));
+  guard_klass_being_initialized(holder);
+}
+
 // Add check to deoptimize if RTM state is not ProfileRTM
 void Parse::rtm_deopt() {
 #if INCLUDE_RTM_OPT
   if (C->profile_rtm()) {
-    assert(C->method() != NULL, "only for normal compilations");
+    assert(C->has_method(), "only for normal compilations");
     assert(!C->method()->method_data()->is_empty(), "MDO is needed to record RTM state");
     assert(depth() == 1, "generate check only for main compiled method");
 

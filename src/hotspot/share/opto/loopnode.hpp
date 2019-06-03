@@ -1384,7 +1384,8 @@ private:
     uint required = _nodes_required;
     require_nodes_final();
     uint delta = C->live_nodes() - live_at_begin;
-    assert(delta <= 2 * required, "Bad node estimate (actual: %d, request: %d)",
+    // Assert is disabled, see JDK-8223911 and related issues.
+    assert(true || delta <= 2 * required, "Bad node estimate (actual: %d, request: %d)",
            delta, required);
   }
 

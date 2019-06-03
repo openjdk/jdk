@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -35,6 +35,7 @@
 
 #define NUM_CDS_REGIONS 9
 #define CDS_ARCHIVE_MAGIC 0xf00baba2
+#define CDS_DYNAMIC_ARCHIVE_MAGIC 0xf00baba8
 #define CURRENT_CDS_ARCHIVE_VERSION 5
 #define INVALID_CDS_ARCHIVE_VERSION -1
 

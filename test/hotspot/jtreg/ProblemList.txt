@@ -41,7 +41,6 @@
 # :hotspot_compiler
 
 compiler/ciReplay/TestSAServer.java 8029528 generic-all
-compiler/ciReplay/TestServerVM.java 8223885 generic-all
 compiler/codecache/stress/OverloadCompileQueueTest.java 8166554 generic-all
 compiler/codegen/Test6896617.java 8193479 generic-all
 compiler/compilercontrol/jcmd/ClearDirectivesFileStackTest.java 8140405 generic-all
@@ -53,6 +52,7 @@ compiler/types/correctness/CorrectnessTest.java 8066173 generic-all
 compiler/types/correctness/OffTest.java 8066173 generic-all
 
 compiler/c2/Test6852078.java 8194310 generic-all
+compiler/c2/Test8004741.java 8214904 generic-all
 
 compiler/cpuflags/TestAESIntrinsicsOnSupportedConfig.java 8190680 generic-all
 
@@ -80,7 +80,6 @@ gc/metaspace/CompressedClassSpaceSizeInJmapHeap.java 8193639 solaris-all
 # :hotspot_runtime
 
 runtime/SharedArchiveFile/SASymbolTableTest.java 8193639 solaris-all
-containers/docker/TestCPUSets.java 8220672 generic-all
 runtime/jni/terminatedThread/TestTerminatedThread.java 8219652 aix-ppc64
 
 #############################################################################
@@ -115,7 +114,6 @@ serviceability/sa/ClhsdbWhere.java 8193639,8211767 solaris-all,linux-ppc64le,lin
 serviceability/sa/DeadlockDetectionTest.java 8193639,8211767 solaris-all,linux-ppc64le,linux-ppc64
 serviceability/sa/JhsdbThreadInfoTest.java 8193639,8211767 solaris-all,linux-ppc64le,linux-ppc64
 serviceability/sa/jmap-hprof/JMapHProfLargeHeapTest.java 8193639 solaris-all
-serviceability/sa/sadebugd/SADebugDTest.java 8163805 generic-all
 serviceability/sa/TestClassDump.java 8193639 solaris-all
 serviceability/sa/TestClhsdbJstackLock.java 8193639,8211767 solaris-all,linux-ppc64le,linux-ppc64
 serviceability/sa/TestCpoolForInvokeDynamic.java 8193639,8211767 solaris-all,linux-ppc64le,linux-ppc64
@@ -135,6 +133,7 @@ serviceability/sa/TestType.java 8193639 solaris-all
 serviceability/sa/TestUniverse.java#id0 8193639,8211767 solaris-all,linux-ppc64le,linux-ppc64
 
 serviceability/jvmti/HeapMonitor/MyPackage/HeapMonitorStatIntervalTest.java 8214032 generic-all
+serviceability/jvmti/HeapMonitor/MyPackage/HeapMonitorStatArrayCorrectnessTest.java 8224150 generic-all
 
 #############################################################################
 

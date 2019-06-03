@@ -31,9 +31,6 @@
 #include "oops/oop.hpp"
 #include "runtime/atomic.hpp"
 #include "utilities/align.hpp"
-#if INCLUDE_JVMCI
-#include "jvmci/jvmci_globals.hpp"
-#endif
 
 class BytecodeStream;
 class KlassSizeStats;
@@ -2015,7 +2012,7 @@ public:
 
   // Whole-method sticky bits and flags
   enum {
-    _trap_hist_limit    = 24 JVMCI_ONLY(+5),   // decoupled from Deoptimization::Reason_LIMIT
+    _trap_hist_limit    = 25 JVMCI_ONLY(+5),   // decoupled from Deoptimization::Reason_LIMIT
     _trap_hist_mask     = max_jubyte,
     _extra_data_count   = 4     // extra DataLayout headers, for trap history
   }; // Public flag values

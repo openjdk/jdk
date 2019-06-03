@@ -34,17 +34,25 @@ public interface HeapAccess {
      */
     enum BarrierType {
         /**
-         * Primitive stores which do not necessitate barriers.
+         * Primitive access which do not necessitate barriers.
          */
         NONE,
         /**
-         * Array object stores which necessitate precise barriers.
+         * Array object access.
          */
-        PRECISE,
+        ARRAY,
         /**
-         * Field object stores which necessitate imprecise barriers.
+         * Field object access.
          */
-        IMPRECISE
+        FIELD,
+        /**
+         * Unknown (aka field or array) object access.
+         */
+        UNKNOWN,
+        /**
+         * Weak field access (e.g. Hotspot's Reference.referent field).
+         */
+        WEAK_FIELD
     }
 
     /**

@@ -418,8 +418,7 @@ void HeapShared::write_subgraph_info_table() {
 
   _run_time_subgraph_info_table.reset();
 
-  int num_buckets = CompactHashtableWriter::default_num_buckets(d_table->_count);
-  CompactHashtableWriter writer(num_buckets, &stats);
+  CompactHashtableWriter writer(d_table->_count, &stats);
   CopyKlassSubGraphInfoToArchive copy(&writer);
   d_table->iterate(&copy);
 

@@ -378,7 +378,6 @@ $(eval $(call SetupJdkLibrary, BUILD_LIBLCMS, \
     OPTIMIZATION := HIGHEST, \
     CFLAGS := $(CFLAGS_JDKLIB) \
         $(LCMS_CFLAGS), \
-    CFLAGS_solaris := -xc99=no_lib, \
     CFLAGS_windows := -DCMS_IS_WINDOWS_, \
     EXTRA_HEADER_DIRS := \
         common/awt/debug \

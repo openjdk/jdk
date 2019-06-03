@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1994, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1994, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -48,11 +48,16 @@ package java.lang;
  *
  * @author      Lee Boynton
  * @author      Arthur van Hoff
- * @jls 5.1.2 Widening Primitive Conversions
- * @jls 5.1.3 Narrowing Primitive Conversions
+ * @jls 5.1.2 Widening Primitive Conversion
+ * @jls 5.1.3 Narrowing Primitive Conversion
  * @since   1.0
  */
 public abstract class Number implements java.io.Serializable {
+    /**
+     * Constructor for subclasses to call.
+     */
+    public Number() {super();}
+
     /**
      * Returns the value of the specified number as an {@code int}.
      *

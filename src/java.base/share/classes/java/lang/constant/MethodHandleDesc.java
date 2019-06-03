@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -70,6 +70,8 @@ public interface MethodHandleDesc
      *                         for a field or constructor
      * @return the {@linkplain MethodHandleDesc}
      * @throws NullPointerException if any of the non-ignored arguments are null
+     * @throws IllegalArgumentException if the descriptor string is not a valid
+     * method or field descriptor
      * @jvms 4.4.8 The CONSTANT_MethodHandle_info Structure
      * @jvms 4.2.2 Unqualified Names
      * @jvms 4.3.2 Field Descriptors
@@ -177,7 +179,7 @@ public interface MethodHandleDesc
      * @param paramTypes {@link ClassDesc}s describing the parameter types of
      *                   the constructor
      * @return the {@linkplain MethodHandleDesc}
-     * @throws NullPointerException if any of the arguments are null
+     * @throws NullPointerException if any argument or its contents is {@code null}
      */
     static DirectMethodHandleDesc ofConstructor(ClassDesc owner,
                                                 ClassDesc... paramTypes) {
@@ -191,6 +193,7 @@ public interface MethodHandleDesc
      *
      * @param type a {@link MethodHandleDesc} describing the new method type
      * @return a {@linkplain MethodHandleDesc} for the adapted method handle
+     * @throws NullPointerException if the argument is {@code null}
      */
     default MethodHandleDesc asType(MethodTypeDesc type) {
         return (invocationType().equals(type)) ? this : new AsTypeMethodHandleDesc(this, type);

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -34,14 +34,14 @@ import static java.lang.Thread.State.*;
 /**
  * Thread information. {@code ThreadInfo} contains the information
  * about a thread including:
- * <h3>General thread information</h3>
+ * <h2>General thread information</h2>
  * <ul>
  *   <li>Thread ID.</li>
  *   <li>Name of the thread.</li>
  *   <li>Whether a thread is a daemon thread</li>
  * </ul>
  *
- * <h3>Execution information</h3>
+ * <h2>Execution information</h2>
  * <ul>
  *   <li>Thread state.</li>
  *   <li>The object upon which the thread is blocked due to:
@@ -62,7 +62,7 @@ import static java.lang.Thread.State.*;
  *   <li>Thread priority</li>
  * </ul>
  *
- * <h4><a id="SyncStats">Synchronization Statistics</a></h4>
+ * <h3><a id="SyncStats">Synchronization Statistics</a></h3>
  * <ul>
  *   <li>The number of times that the thread has blocked for
  *       synchronization or waited for notification.</li>
@@ -80,7 +80,7 @@ import static java.lang.Thread.State.*;
  * <p>This thread information class is designed for use in monitoring of
  * the system, not for synchronization control.
  *
- * <h4>MXBean Mapping</h4>
+ * <h3>MXBean Mapping</h3>
  * {@code ThreadInfo} is mapped to a {@link CompositeData CompositeData}
  * with attributes as specified in
  * the {@link #from from} method.

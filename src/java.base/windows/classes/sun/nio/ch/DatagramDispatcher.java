@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,19 +25,16 @@
 
 package sun.nio.ch;
 
-import java.io.*;
-import java.net.*;
+import java.io.FileDescriptor;
+import java.io.IOException;
 
 /**
  * Allows different platforms to call different native methods
  * for read and write operations.
  */
 
-class DatagramDispatcher extends NativeDispatcher
-{
-    static {
-        IOUtil.load();
-    }
+class DatagramDispatcher extends NativeDispatcher {
+    DatagramDispatcher() { }
 
     int read(FileDescriptor fd, long address, int len) throws IOException {
         return read0(fd, address, len);
@@ -56,18 +53,24 @@ class DatagramDispatcher extends NativeDispatcher
     }
 
     void close(FileDescriptor fd) throws IOException {
-        SocketDispatcher.close0(fd);
+        SocketDispatcher.invalidateAndClose(fd);
     }
 
-    static native int read0(FileDescriptor fd, long address, int len)
+    // -- Native methods --
+
+    private static native int read0(FileDescriptor fd, long address, int len)
         throws IOException;
 
-    static native long readv0(FileDescriptor fd, long address, int len)
+    private static native long readv0(FileDescriptor fd, long address, int len)
         throws IOException;
 
-    static native int write0(FileDescriptor fd, long address, int len)
+    private static native int write0(FileDescriptor fd, long address, int len)
         throws IOException;
 
-    static native long writev0(FileDescriptor fd, long address, int len)
+    private static native long writev0(FileDescriptor fd, long address, int len)
         throws IOException;
+
+    static {
+        IOUtil.load();
+    }
 }

@@ -31,6 +31,7 @@
  */
 
 import java.io.IOException;
+import java.io.UncheckedIOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -40,11 +41,43 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
+import java.util.spi.ToolProvider;
 
 import static jdk.test.lib.Asserts.assertEquals;
 import static jdk.test.lib.Asserts.assertTrue;
 
 public class JImageExtractTest extends JImageCliTest {
+    private static final ToolProvider JLINK_TOOL = ToolProvider.findFirst("jlink")
+        .orElseThrow(() ->
+            new RuntimeException("jlink tool not found")
+        );
+
+
+    private String smallBootImagePath;
+
+    public JImageExtractTest() {
+        try {
+            Path tmp = Files.createTempDirectory(Paths.get("."), getClass().getName());
+            tmp = tmp.toAbsolutePath();
+            tmp.toFile().deleteOnExit();
+            Path smalljre = tmp.resolve("smalljdk");
+            if (JLINK_TOOL.run(System.out, System.err,
+                    "--add-modules", "java.base",
+                    "--add-modules", "jdk.zipfs",
+                    "--output", smalljre.toString()) != 0) {
+                throw new RuntimeException("failed to create small boot image");
+            }
+            this.smallBootImagePath = smalljre.resolve("lib").resolve("modules").toString();
+        } catch (IOException ioExp) {
+            throw new UncheckedIOException(ioExp);
+        }
+    }
+
+    @Override
+    public String getImagePath() {
+        return smallBootImagePath;
+    }
+
     public void testExtract() throws IOException {
         Set<Path> notJImageModules = Files.walk(Paths.get("."),1).collect(Collectors.toSet());
         jimage("extract", getImagePath())

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,6 +26,9 @@
  * @bug 8004863
  * @modules jdk.httpserver
  * @summary Checks for proper close code in KeepAliveStream
+ * @library /test/lib
+ * @run main InfiniteLoop
+ * @run main/othervm -Djava.net.preferIPv6Addresses=true InfiniteLoop
  */
 
 import com.sun.net.httpserver.HttpExchange;
@@ -35,25 +38,35 @@ import java.io.InputStream;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.net.HttpURLConnection;
+import java.net.InetAddress;
 import java.net.InetSocketAddress;
+import java.net.Proxy;
 import java.net.URL;
 import java.util.concurrent.Phaser;
+
+import jdk.test.lib.net.URIBuilder;
 
 // Racey test, will not always fail, but if it does then we have a problem.
 
 public class InfiniteLoop {
 
     public static void main(String[] args) throws Exception {
-        HttpServer server = HttpServer.create(new InetSocketAddress(0), 0);
+        InetAddress loopback = InetAddress.getLoopbackAddress();
+        HttpServer server = HttpServer.create(new InetSocketAddress(loopback, 0), 0);
         server.createContext("/test/InfiniteLoop", new RespHandler());
         server.start();
         try {
             InetSocketAddress address = server.getAddress();
-            URL url = new URL("http://localhost:" + address.getPort()
-                              + "/test/InfiniteLoop");
+            URL url = URIBuilder.newBuilder()
+                      .scheme("http")
+                      .host(server.getAddress().getAddress())
+                      .port(server.getAddress().getPort())
+                      .path("/test/InfiniteLoop")
+                      .toURL();
             final Phaser phaser = new Phaser(2);
             for (int i=0; i<10; i++) {
-                HttpURLConnection uc = (HttpURLConnection)url.openConnection();
+                HttpURLConnection uc = (HttpURLConnection)
+                    url.openConnection(Proxy.NO_PROXY);
                 final InputStream is = uc.getInputStream();
                 final Thread thread = new Thread() {
                     public void run() {

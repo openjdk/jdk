@@ -4603,6 +4603,29 @@ void MacroAssembler::check_klass_subtype_slow_path(Register sub_klass,
 }
 
 
+void MacroAssembler::clinit_barrier(Register klass, Register thread, Label* L_fast_path, Label* L_slow_path) {
+  assert(L_fast_path != NULL || L_slow_path != NULL, "at least one is required");
+
+  Label L_fallthrough;
+  if (L_fast_path == NULL) {
+    L_fast_path = &L_fallthrough;
+  }
+
+  // Fast path check: class is fully initialized
+  cmpb(Address(klass, InstanceKlass::init_state_offset()), InstanceKlass::fully_initialized);
+  jcc(Assembler::equal, *L_fast_path);
+
+  // Fast path check: current thread is initializer thread
+  cmpptr(thread, Address(klass, InstanceKlass::init_thread_offset()));
+  if (L_slow_path != NULL) {
+    jcc(Assembler::notEqual, *L_slow_path);
+  } else {
+    jcc(Assembler::equal, *L_fast_path);
+  }
+
+  bind(L_fallthrough);
+}
+
 void MacroAssembler::cmov32(Condition cc, Register dst, Address src) {
   if (VM_Version::supports_cmov()) {
     cmovl(cc, dst, src);
@@ -5195,18 +5218,20 @@ void MacroAssembler::resolve_weak_handle(Register rresult, Register rtmp) {
 void MacroAssembler::load_mirror(Register mirror, Register method, Register tmp) {
   // get mirror
   const int mirror_offset = in_bytes(Klass::java_mirror_offset());
-  movptr(mirror, Address(method, Method::const_offset()));
-  movptr(mirror, Address(mirror, ConstMethod::constants_offset()));
-  movptr(mirror, Address(mirror, ConstantPool::pool_holder_offset_in_bytes()));
+  load_method_holder(mirror, method);
   movptr(mirror, Address(mirror, mirror_offset));
   resolve_oop_handle(mirror, tmp);
 }
 
 void MacroAssembler::load_method_holder_cld(Register rresult, Register rmethod) {
-  movptr(rresult, Address(rmethod, Method::const_offset()));
-  movptr(rresult, Address(rresult, ConstMethod::constants_offset()));
-  movptr(rresult, Address(rresult, ConstantPool::pool_holder_offset_in_bytes()));
+  load_method_holder(rresult, rmethod);
   movptr(rresult, Address(rresult, InstanceKlass::class_loader_data_offset()));
+}
+
+void MacroAssembler::load_method_holder(Register holder, Register method) {
+  movptr(holder, Address(method, Method::const_offset()));                      // ConstMethod*
+  movptr(holder, Address(holder, ConstMethod::constants_offset()));             // ConstantPool*
+  movptr(holder, Address(holder, ConstantPool::pool_holder_offset_in_bytes())); // InstanceKlass*
 }
 
 void MacroAssembler::load_klass(Register dst, Register src) {

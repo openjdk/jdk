@@ -36,10 +36,10 @@
  *      {@link java.nio.file.FileSystems#newFileSystem
  *      FileSystems.newFileSystem(URI.create("jrt:/"))}.
  *      </dd>
- * <dt class="simpleTagLabel" style="font-family:'DejaVu Sans', Arial, Helvetica, sans serif">Tool Guides:</dt>
- * <dd style="font-family:'DejaVu Sans', Arial, Helvetica, sans serif"> {@extLink java_tool_reference java launcher},
- *      {@extLink keytool_tool_reference keytool}</dd>
  * </dl>
+ *
+ * @toolGuide java java launcher
+ * @toolGuide keytool
  *
  * @provides java.nio.file.spi.FileSystemProvider
  *

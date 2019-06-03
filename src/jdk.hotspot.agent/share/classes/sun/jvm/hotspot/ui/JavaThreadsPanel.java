@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2004, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -459,12 +459,13 @@ public class JavaThreadsPanel extends SAPanel implements ActionListener {
     }
 
     private void cache() {
-        Threads threads = VM.getVM().getThreads();
-        for (JavaThread t = threads.first(); t != null; t = t.next()) {
-            if (t.isJavaThread()) {
-                cachedThreads.add(new CachedThread(t));
-            }
+      Threads threads = VM.getVM().getThreads();
+      for (int i = 0; i < threads.getNumberOfThreads(); i++) {
+        JavaThread t = threads.getJavaThreadAt(i);
+        if (t.isJavaThread()) {
+            cachedThreads.add(new CachedThread(t));
         }
+      }
     }
 
     private void decache() {

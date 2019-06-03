@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -63,20 +63,15 @@ import javax.lang.model.util.*;
 public interface Element extends javax.lang.model.AnnotatedConstruct {
     /**
      * Returns the type defined by this element.
-     *
-     * <p> A generic element defines a family of types, not just one.
-     * If this is a generic element, a <i>prototypical</i> type is
-     * returned.  This is the element's invocation on the
-     * type variables corresponding to its own formal type parameters.
-     * For example,
-     * for the generic class element {@code C<N extends Number>},
-     * the parameterized type {@code C<N>} is returned.
-     * The {@link Types} utility interface has more general methods
-     * for obtaining the full range of types defined by an element.
+     * @return the type defined by this element
      *
      * @see Types
-     *
-     * @return the type defined by this element
+     * @see ExecutableElement#asType
+     * @see ModuleElement#asType
+     * @see PackageElement#asType
+     * @see TypeElement#asType
+     * @see TypeParameterElement#asType
+     * @see VariableElement#asType
      */
     TypeMirror asType();
 
@@ -196,7 +191,7 @@ public interface Element extends javax.lang.model.AnnotatedConstruct {
      * @see ModuleElement#getEnclosedElements
      * @see Elements#getAllMembers
      * @jls 8.8.9 Default Constructor
-     * @jls 8.9 Enums
+     * @jls 8.9 Enum Types
      * @revised 9
      * @spec JPMS
      */

@@ -26,6 +26,7 @@
 package javax.lang.model.element;
 
 import java.util.List;
+import javax.lang.model.type.TypeMirror;
 
 /**
  * Represents a module program element.  Provides access to
@@ -37,6 +38,16 @@ import java.util.List;
  * @spec JPMS
  */
 public interface ModuleElement extends Element, QualifiedNameable {
+    /**
+     * Returns a {@linkplain javax.lang.model.type.NoType pseudo-type}
+     * for this module.
+     * @return a pseudo-type for this module
+     *
+     * @see javax.lang.model.type.NoType
+     * @see javax.lang.model.type.TypeKind#MODULE
+     */
+    @Override
+    TypeMirror asType();
 
     /**
      * Returns the fully qualified name of this module.  For an

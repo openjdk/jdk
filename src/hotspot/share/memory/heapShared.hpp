@@ -286,16 +286,6 @@ private:
                                idx <= MetaspaceShared::last_open_archive_heap_region));
     NOT_CDS_JAVA_HEAP_RETURN_(false);
   }
-  static bool is_closed_archive_heap_region(int idx) {
-    CDS_JAVA_HEAP_ONLY(return (idx >= MetaspaceShared::first_closed_archive_heap_region &&
-                               idx <= MetaspaceShared::last_closed_archive_heap_region));
-    NOT_CDS_JAVA_HEAP_RETURN_(false);
-  }
-  static bool is_open_archive_heap_region(int idx) {
-    CDS_JAVA_HEAP_ONLY(return (idx >= MetaspaceShared::first_open_archive_heap_region &&
-                               idx <= MetaspaceShared::last_open_archive_heap_region));
-    NOT_CDS_JAVA_HEAP_RETURN_(false);
-  }
 
   static void set_closed_archive_heap_region_mapped() {
     CDS_JAVA_HEAP_ONLY(_closed_archive_heap_region_mapped = true);

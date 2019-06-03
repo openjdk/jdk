@@ -64,6 +64,13 @@ public class UnsupportedOptionsTest {
             socketOptions.add((SocketOption<?>)field.get(null));
             field = c.getField("TCP_QUICKACK");
             socketOptions.add((SocketOption<?>)field.get(null));
+            field = c.getField("TCP_KEEPIDLE");
+            socketOptions.add((SocketOption<?>)field.get(null));
+            field = c.getField("TCP_KEEPINTERVAL");
+            socketOptions.add((SocketOption<?>)field.get(null));
+            field = c.getField("TCP_KEEPCOUNT");
+            socketOptions.add((SocketOption<?>)field.get(null));
+
         } catch (ClassNotFoundException e) {
             // ignore, jdk.net module not present
         } catch (ReflectiveOperationException e) {

@@ -23,24 +23,36 @@
 
 /**
  * @test
- * @run main UdpSocket
+ * @run testng/othervm -Dsun.net.maxDatagramSockets=32 UdpSocket
  * @summary Basic test for a Socket to a UDP socket
  */
 
 import java.io.IOException;
+import java.lang.ref.WeakReference;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.Socket;
 import java.net.SocketAddress;
 import java.nio.ByteBuffer;
 import java.nio.channels.DatagramChannel;
+import java.security.Permission;
 import java.util.Arrays;
+import java.util.ArrayList;
+import java.util.ArrayDeque;
+import java.util.Deque;
 
+import org.testng.annotations.Test;
+import static org.testng.Assert.*;
+
+@Test
 public class UdpSocket {
 
-    static final String MESSAGE = "hello";
+    /**
+     * Test using the Socket API to send/receive datagrams
+     */
+    public void testSendReceive() throws IOException {
+        final String MESSAGE = "hello";
 
-    public static void main(String[] args) throws IOException {
         try (DatagramChannel dc = DatagramChannel.open()) {
             var loopback = InetAddress.getLoopbackAddress();
             dc.bind(new InetSocketAddress(loopback, 0));
@@ -56,8 +68,7 @@ public class UdpSocket {
                 var buf = ByteBuffer.allocate(100);
                 SocketAddress remote = dc.receive(buf);
                 buf.flip();
-                if (buf.remaining() != MESSAGE.length())
-                    throw new RuntimeException("Unexpected size");
+                assertTrue(buf.remaining() == MESSAGE.length(), "Unexpected size");
 
                 // echo the datagram
                 dc.send(buf, remote);
@@ -65,11 +76,71 @@ public class UdpSocket {
                 // receive datagram with the socket input stream
                 byte[] array2 = new byte[100];
                 int n = s.getInputStream().read(array2);
-                if (n != MESSAGE.length())
-                    throw new RuntimeException("Unexpected size");
-                if (!Arrays.equals(array1, 0, n, array2, 0, n))
-                    throw new RuntimeException("Unexpected contents");
+                assertTrue(n == MESSAGE.length(), "Unexpected size");
+                assertEquals(Arrays.copyOf(array1, n), Arrays.copyOf(array2, n),
+                            "Unexpected contents");
             }
+        }
+    }
+
+    /**
+     * Test that the number of UDP sockets is limited when running with a
+     * security manager.
+     */
+    public void testMaxSockets() throws Exception {
+        int limit = Integer.getInteger("sun.net.maxDatagramSockets");
+
+        // security manager grants all permissions
+        var securityManager = new SecurityManager() {
+            @Override public void checkPermission(Permission perm) { }
+        };
+
+        System.setSecurityManager(securityManager);
+        Deque<Socket> sockets = new ArrayDeque<>();
+        try {
+            // create the maximum number of sockets
+            for (int i=0; i<limit; i++) {
+                sockets.offer(newUdpSocket());
+            }
+
+            // try to create another socket - should fail
+            try {
+                Socket s = newUdpSocket();
+                s.close();
+                assertTrue(false);
+            } catch (IOException expected) { }
+
+            // close one socket
+            sockets.pop().close();
+
+            // try to create another socket - should succeed
+            Socket s = newUdpSocket();
+
+            // unreference the socket and wait for it to be closed by the cleaner
+            var ref = new WeakReference<>(s);
+            s = null;
+            while (ref.get() != null) {
+                System.gc();
+                Thread.sleep(100);
+            }
+
+            // try to create another socket - should succeed
+            s = newUdpSocket();
+            s.close();
+        } finally {
+            closeAll(sockets);
+            System.setSecurityManager(null);
+        }
+    }
+
+    private Socket newUdpSocket() throws IOException {
+        return new Socket(InetAddress.getLoopbackAddress(), 8000, false);
+    }
+
+    private void closeAll(Deque<Socket> sockets) throws IOException {
+        Socket s;
+        while ((s = sockets.poll()) != null) {
+            s.close();
         }
     }
 }

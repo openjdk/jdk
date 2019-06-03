@@ -39,6 +39,7 @@
 // Consider using GCC's __read_mostly.
 
 Mutex*   Patching_lock                = NULL;
+Mutex*   CompiledMethod_lock          = NULL;
 Monitor* SystemDictionary_lock        = NULL;
 Mutex*   ProtectionDomainSet_lock     = NULL;
 Mutex*   SharedDictionary_lock        = NULL;
@@ -89,7 +90,6 @@ Mutex*   MarkStackFreeList_lock       = NULL;
 Mutex*   MarkStackChunkList_lock      = NULL;
 Mutex*   MonitoringSupport_lock       = NULL;
 Mutex*   ParGCRareEvent_lock          = NULL;
-Mutex*   DerivedPointerTableGC_lock   = NULL;
 Monitor* CGCPhaseManager_lock         = NULL;
 Mutex*   Compile_lock                 = NULL;
 Monitor* MethodCompileQueue_lock      = NULL;
@@ -154,9 +154,12 @@ Mutex*   DCmdFactory_lock             = NULL;
 #if INCLUDE_NMT
 Mutex*   NMTQuery_lock                = NULL;
 #endif
-#if INCLUDE_CDS && INCLUDE_JVMTI
+#if INCLUDE_CDS
+#if INCLUDE_JVMTI
 Mutex*   CDSClassFileStream_lock      = NULL;
 #endif
+Mutex*   DumpTimeTable_lock           = NULL;
+#endif // INCLUDE_CDS
 
 #if INCLUDE_JVMCI
 Monitor* JVMCI_lock                   = NULL;
@@ -250,7 +253,6 @@ void mutex_init() {
     def(StringDedupTable_lock      , PaddedMutex  , leaf,        true,  Monitor::_safepoint_check_never);
   }
   def(ParGCRareEvent_lock          , PaddedMutex  , leaf     ,   true,  Monitor::_safepoint_check_always);
-  def(DerivedPointerTableGC_lock   , PaddedMutex  , leaf,        true,  Monitor::_safepoint_check_never);
   def(CGCPhaseManager_lock         , PaddedMonitor, leaf,        false, Monitor::_safepoint_check_always);
   def(CodeCache_lock               , PaddedMutex  , special,     true,  Monitor::_safepoint_check_never);
   def(RawMonitor_lock              , PaddedMutex  , special,     true,  Monitor::_safepoint_check_never);
@@ -260,6 +262,8 @@ void mutex_init() {
   def(ClassLoaderDataGraph_lock    , PaddedMutex  , nonleaf,     true,  Monitor::_safepoint_check_always);
 
   def(Patching_lock                , PaddedMutex  , special,     true,  Monitor::_safepoint_check_never);      // used for safepointing and code patching.
+  def(OsrList_lock                 , PaddedMutex  , special-1,   true,  Monitor::_safepoint_check_never);
+  def(CompiledMethod_lock          , PaddedMutex  , special-1,   true,  Monitor::_safepoint_check_never);
   def(Service_lock                 , PaddedMonitor, special,     true,  Monitor::_safepoint_check_never);      // used for service thread operations
   def(JmethodIdCreation_lock       , PaddedMutex  , leaf,        true,  Monitor::_safepoint_check_always); // used for creating jmethodIDs.
 
@@ -275,7 +279,6 @@ void mutex_init() {
   def(SymbolArena_lock             , PaddedMutex  , leaf+2,      true,  Monitor::_safepoint_check_never);
   def(ProfilePrint_lock            , PaddedMutex  , leaf,        false, Monitor::_safepoint_check_always); // serial profile printing
   def(ExceptionCache_lock          , PaddedMutex  , leaf,        false, Monitor::_safepoint_check_always); // serial profile printing
-  def(OsrList_lock                 , PaddedMutex  , leaf,        true,  Monitor::_safepoint_check_never);
   def(Debug1_lock                  , PaddedMutex  , leaf,        true,  Monitor::_safepoint_check_never);
 #ifndef PRODUCT
   def(FullGCALot_lock              , PaddedMutex  , leaf,        false, Monitor::_safepoint_check_always); // a lock to make FullGCALot MT safe
@@ -353,7 +356,8 @@ void mutex_init() {
 #if INCLUDE_NMT
   def(NMTQuery_lock                , PaddedMutex  , max_nonleaf, false, Monitor::_safepoint_check_always);
 #endif
-#if INCLUDE_CDS && INCLUDE_JVMTI
+#if INCLUDE_CDS
+#if INCLUDE_JVMTI
   def(CDSClassFileStream_lock      , PaddedMutex  , max_nonleaf, false, Monitor::_safepoint_check_always);
 #endif
 
@@ -362,6 +366,8 @@ void mutex_init() {
   def(JVMCIGlobalAlloc_lock        , PaddedMutex  , nonleaf,     true,  Monitor::_safepoint_check_never);
   def(JVMCIGlobalActive_lock       , PaddedMutex  , nonleaf-1,   true,  Monitor::_safepoint_check_never);
 #endif
+  def(DumpTimeTable_lock           , PaddedMutex  , leaf,        true,  Monitor::_safepoint_check_never);
+#endif // INCLUDE_CDS
 }
 
 GCMutexLocker::GCMutexLocker(Monitor * mutex) {

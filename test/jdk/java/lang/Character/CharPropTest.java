@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,17 +23,16 @@
 
 /*
  * @test
- * @bug 8202771
+ * @bug 8202771 8221431
  * @summary Check j.l.Character.isDigit/isLetter/isLetterOrDigit/isSpaceChar
  * /isWhitespace/isTitleCase/isISOControl/isIdentifierIgnorable
  * /isJavaIdentifierStart/isJavaIdentifierPart/isUnicodeIdentifierStart
  * /isUnicodeIdentifierPart
+ * @library /lib/testlibrary/java/lang
  * @run main CharPropTest
  */
 
 import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.util.stream.Stream;
 
 public class CharPropTest {
@@ -42,9 +41,7 @@ public class CharPropTest {
     private static boolean isRange = false;
 
     public static void main(String[] args) throws Exception {
-        Path path = Paths.get(System.getProperty("test.src", "."),
-                "UnicodeData.txt");
-        try (Stream<String> lines = Files.lines(path)) {
+        try (Stream<String> lines = Files.lines(UCDFiles.UNICODE_DATA)) {
             lines.map(String::trim)
                  .filter(line -> line.length() != 0 && line.charAt(0) != '#')
                  .forEach(line -> handleOneLine(line));

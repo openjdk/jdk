@@ -48,7 +48,7 @@ G1YoungGenSizer::G1YoungGenSizer() : _sizer_kind(SizerDefaults),
                             "A new max generation size of " SIZE_FORMAT "k will be used.",
                             NewSize/K, MaxNewSize/K, NewSize/K);
     }
-    FLAG_SET_ERGO(size_t, MaxNewSize, NewSize);
+    FLAG_SET_ERGO(MaxNewSize, NewSize);
   }
 
   if (FLAG_IS_CMDLINE(NewSize)) {
@@ -121,7 +121,7 @@ void G1YoungGenSizer::adjust_max_new_size(uint number_of_heap_regions) {
 
   size_t max_young_size = result * HeapRegion::GrainBytes;
   if (max_young_size != MaxNewSize) {
-    FLAG_SET_ERGO(size_t, MaxNewSize, max_young_size);
+    FLAG_SET_ERGO(MaxNewSize, max_young_size);
   }
 }
 

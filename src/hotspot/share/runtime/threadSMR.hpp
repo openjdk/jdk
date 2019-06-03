@@ -86,6 +86,7 @@ class ThreadClosure;
 // SMR Support for the Threads class.
 //
 class ThreadsSMRSupport : AllStatic {
+  friend class VMStructs;
   friend class SafeThreadsListPtr;  // for _nested_thread_list_max, delete_notify(), release_stable_list_wake_up() access
 
   // The coordination between ThreadsSMRSupport::release_stable_list() and
@@ -158,6 +159,7 @@ class ThreadsSMRSupport : AllStatic {
 // A fast list of JavaThreads.
 //
 class ThreadsList : public CHeapObj<mtThread> {
+  friend class VMStructs;
   friend class SafeThreadsListPtr;  // for {dec,inc}_nested_handle_cnt() access
   friend class ThreadsSMRSupport;  // for _nested_handle_cnt, {add,remove}_thread(), {,set_}next_list() access
 

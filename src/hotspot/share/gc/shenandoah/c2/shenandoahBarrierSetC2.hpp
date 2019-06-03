@@ -93,7 +93,7 @@ public:
   static ShenandoahBarrierSetC2* bsc2();
 
   static bool is_shenandoah_wb_pre_call(Node* call);
-  static bool is_shenandoah_wb_call(Node* call);
+  static bool is_shenandoah_lrb_call(Node* call);
   static bool is_shenandoah_marking_if(PhaseTransform *phase, Node* n);
   static bool is_shenandoah_state_load(Node* n);
   static bool has_only_shenandoah_wb_pre_uses(Node* n);
@@ -102,16 +102,11 @@ public:
 
   static const TypeFunc* write_ref_field_pre_entry_Type();
   static const TypeFunc* shenandoah_clone_barrier_Type();
-  static const TypeFunc* shenandoah_write_barrier_Type();
+  static const TypeFunc* shenandoah_load_reference_barrier_Type();
   virtual bool has_load_barriers() const { return true; }
 
   // This is the entry-point for the backend to perform accesses through the Access API.
   virtual void clone(GraphKit* kit, Node* src, Node* dst, Node* size, bool is_array) const;
-
-  virtual Node* obj_allocate(PhaseMacroExpand* macro, Node* ctrl, Node* mem, Node* toobig_false, Node* size_in_bytes,
-                             Node*& i_o, Node*& needgc_ctrl,
-                             Node*& fast_oop_ctrl, Node*& fast_oop_rawmem,
-                             intx prefetch_lines) const;
 
   // These are general helper methods used by C2
   virtual bool array_copy_requires_gc_barriers(bool tightly_coupled_alloc, BasicType type, bool is_clone, ArrayCopyPhase phase) const;

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -399,7 +399,7 @@ final class Parsed implements TemporalAccessor {
                 updateCheckConflict(AMPM_OF_DAY, HOUR_OF_DAY, Math.addExact(Math.multiplyExact(ap, 12), hap));
             } else {  // STRICT or SMART
                 AMPM_OF_DAY.checkValidValue(ap);
-                HOUR_OF_AMPM.checkValidValue(ap);
+                HOUR_OF_AMPM.checkValidValue(hap);
                 updateCheckConflict(AMPM_OF_DAY, HOUR_OF_DAY, ap * 12 + hap);
             }
         }

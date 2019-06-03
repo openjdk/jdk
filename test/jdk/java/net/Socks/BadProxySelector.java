@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,6 +27,7 @@
  * @run main/othervm BadProxySelector
  */
 
+import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.Proxy;
 import java.net.ProxySelector;
@@ -41,13 +42,13 @@ import java.io.*;
 public class BadProxySelector {
     public static void main(String[] args) throws Exception {
         ProxySelector.setDefault(new HTTPProxySelector());
-        try (ServerSocket ss = new ServerSocket(0);
+        try (ServerSocket ss = new ServerSocket(0, 0, InetAddress.getLocalHost());
              Socket s1 = new Socket(ss.getInetAddress(), ss.getLocalPort());
              Socket s2 = ss.accept()) {
         }
 
        ProxySelector.setDefault(new NullHTTPProxySelector());
-        try (ServerSocket ss = new ServerSocket(0);
+        try (ServerSocket ss = new ServerSocket(0, 0, InetAddress.getLocalHost());
              Socket s1 = new Socket(ss.getInetAddress(), ss.getLocalPort());
              Socket s2 = ss.accept()) {
         }
@@ -60,6 +61,7 @@ public class BadProxySelector {
 
         @Override
         public List<Proxy> select(URI uri) {
+            System.out.println(this.getClass().getSimpleName() + " called for " + uri);
             List<Proxy> proxies = new ArrayList<>();
             proxies.add(new Proxy(Proxy.Type.HTTP,
                                   new InetSocketAddress("localhost", 0)));
@@ -75,6 +77,7 @@ public class BadProxySelector {
 
         @Override
         public List<Proxy> select(URI uri) {
+            System.out.println(this.getClass().getSimpleName() + " called for " + uri);
             List<Proxy> proxies = new ArrayList<>();
             proxies.add(null);
             proxies.add(new Proxy(Proxy.Type.HTTP,

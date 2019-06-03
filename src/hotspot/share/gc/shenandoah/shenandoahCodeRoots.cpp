@@ -26,6 +26,7 @@
 #include "code/nmethod.hpp"
 #include "gc/shenandoah/shenandoahHeap.inline.hpp"
 #include "gc/shenandoah/shenandoahCodeRoots.hpp"
+#include "gc/shenandoah/shenandoahUtils.hpp"
 #include "memory/resourceArea.hpp"
 #include "memory/universe.hpp"
 
@@ -120,11 +121,10 @@ public:
   }
 };
 
-ShenandoahCodeRoots::PaddedLock ShenandoahCodeRoots::_recorded_nms_lock;
 GrowableArray<ShenandoahNMethod*>* ShenandoahCodeRoots::_recorded_nms;
+ShenandoahLock                     ShenandoahCodeRoots::_recorded_nms_lock;
 
 void ShenandoahCodeRoots::initialize() {
-  _recorded_nms_lock._lock = 0;
   _recorded_nms = new (ResourceObj::C_HEAP, mtGC) GrowableArray<ShenandoahNMethod*>(100, true, mtGC);
 }
 
@@ -134,15 +134,15 @@ void ShenandoahCodeRoots::add_nmethod(nmethod* nm) {
     case 1:
       break;
     case 2: {
+      assert_locked_or_safepoint(CodeCache_lock);
+      ShenandoahLocker locker(CodeCache_lock->owned_by_self() ? NULL : &_recorded_nms_lock);
+
       ShenandoahNMethodOopDetector detector;
       nm->oops_do(&detector);
 
       if (detector.has_oops()) {
         ShenandoahNMethod* nmr = new ShenandoahNMethod(nm, detector.oops());
         nmr->assert_alive_and_correct();
-
-        ShenandoahCodeRootsLock lock(true);
-
         int idx = _recorded_nms->find(nm, ShenandoahNMethod::find_with_nmethod);
         if (idx != -1) {
           ShenandoahNMethod* old = _recorded_nms->at(idx);
@@ -166,12 +166,13 @@ void ShenandoahCodeRoots::remove_nmethod(nmethod* nm) {
       break;
     }
     case 2: {
+      assert_locked_or_safepoint(CodeCache_lock);
+      ShenandoahLocker locker(CodeCache_lock->owned_by_self() ? NULL : &_recorded_nms_lock);
+
       ShenandoahNMethodOopDetector detector;
       nm->oops_do(&detector, /* allow_zombie = */ true);
 
       if (detector.has_oops()) {
-        ShenandoahCodeRootsLock lock(true);
-
         int idx = _recorded_nms->find(nm, ShenandoahNMethod::find_with_nmethod);
         assert(idx != -1, "nmethod " PTR_FORMAT " should be registered", p2i(nm));
         ShenandoahNMethod* old = _recorded_nms->at(idx);
@@ -199,7 +200,7 @@ ShenandoahCodeRootsIterator::ShenandoahCodeRootsIterator() :
       break;
     }
     case 2: {
-      ShenandoahCodeRoots::acquire_lock(false);
+      CodeCache_lock->lock();
       break;
     }
     default:
@@ -215,7 +216,7 @@ ShenandoahCodeRootsIterator::~ShenandoahCodeRootsIterator() {
       break;
     }
     case 2: {
-      ShenandoahCodeRoots::release_lock(false);
+      CodeCache_lock->unlock();
       break;
     }
     default:
@@ -243,14 +244,6 @@ void ShenandoahCodeRootsIterator::dispatch_parallel_blobs_do(CodeBlobClosure *f)
     default:
       ShouldNotReachHere();
   }
-}
-
-ShenandoahAllCodeRootsIterator ShenandoahCodeRoots::iterator() {
-  return ShenandoahAllCodeRootsIterator();
-}
-
-ShenandoahCsetCodeRootsIterator ShenandoahCodeRoots::cset_iterator() {
-  return ShenandoahCsetCodeRootsIterator();
 }
 
 void ShenandoahAllCodeRootsIterator::possibly_parallel_blobs_do(CodeBlobClosure *f) {

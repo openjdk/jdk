@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,8 +24,11 @@
  * @test
  * @bug 7095980 8007315
  * @modules jdk.httpserver
+ * @library /test/lib
  * @summary Ensure HttpURLConnection (and supporting APIs) don't expose
  *          HttpOnly cookies
+ * @run main HttpOnly
+ * @run main/othervm -Djava.net.preferIPv6Addresses=true HttpOnly
  */
 
 import java.io.IOException;
@@ -34,6 +37,7 @@ import java.net.CookieManager;
 import java.net.CookiePolicy;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
+import java.net.Proxy;
 import java.net.URI;
 import java.net.HttpURLConnection;
 import java.util.ArrayList;
@@ -45,6 +49,8 @@ import com.sun.net.httpserver.Headers;
 import com.sun.net.httpserver.HttpExchange;
 import com.sun.net.httpserver.HttpHandler;
 import com.sun.net.httpserver.HttpServer;
+
+import jdk.test.lib.net.URIBuilder;
 
 /*
  * 1) start the HTTP server
@@ -67,8 +73,12 @@ public class HttpOnly {
         CookieHandler previousHandler = CookieHandler.getDefault();
         try {
             InetSocketAddress address = server.getAddress();
-            URI uri = new URI("http://" + InetAddress.getLocalHost().getHostAddress()
-                              + ":" + address.getPort() + URI_PATH);
+            URI uri = URIBuilder.newBuilder()
+                                .scheme("http")
+                                .host(address.getAddress())
+                                .port(address.getPort())
+                                .path(URI_PATH)
+                                .build();
             populateCookieStore(uri);
             doClient(uri);
         } finally {
@@ -92,7 +102,7 @@ public class HttpOnly {
     }
 
     void doClient(URI uri) throws Exception {
-        HttpURLConnection uc = (HttpURLConnection) uri.toURL().openConnection();
+        HttpURLConnection uc = (HttpURLConnection) uri.toURL().openConnection(Proxy.NO_PROXY);
         int resp = uc.getResponseCode();
         check(resp == 200,
               "Unexpected response code. Expected 200, got " + resp);
@@ -157,7 +167,7 @@ public class HttpOnly {
         }
 
         // Now add some user set cookies into the mix.
-        uc = (HttpURLConnection) uri.toURL().openConnection();
+        uc = (HttpURLConnection) uri.toURL().openConnection(Proxy.NO_PROXY);
         uc.addRequestProperty("Cookie", "CUSTOMER_ID=CHEGAR;");
         resp = uc.getResponseCode();
         check(resp == 200,
@@ -214,7 +224,8 @@ public class HttpOnly {
 
     // HTTP Server
     HttpServer startHttpServer() throws IOException {
-        HttpServer httpServer = HttpServer.create(new InetSocketAddress(0), 0);
+        InetAddress localhost = InetAddress.getLocalHost();
+        HttpServer httpServer = HttpServer.create(new InetSocketAddress(localhost, 0), 0);
         httpServer.createContext(URI_PATH, new SimpleHandler());
         httpServer.start();
         return httpServer;
@@ -272,4 +283,3 @@ public class HttpOnly {
         System.out.printf("%nPassed = %d, failed = %d%n%n", passed, failed);
         if (failed > 0) throw new AssertionError("Some tests failed");}
 }
-

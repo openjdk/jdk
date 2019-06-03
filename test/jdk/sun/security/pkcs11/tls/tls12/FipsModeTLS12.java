@@ -379,15 +379,20 @@ public final class FipsModeTLS12 extends SecmodTest {
 
         private static SSLEngine[][] getSSLEnginesToTest() throws Exception {
             SSLEngine[][] enginesToTest = new SSLEngine[2][2];
+            // TLS_RSA_WITH_AES_128_GCM_SHA256 ciphersuite is available but
+            // must not be chosen for the TLS connection if not supported.
+            // See JDK-8222937.
             String[][] preferredSuites = new String[][]{ new String[] {
+                    "TLS_RSA_WITH_AES_128_GCM_SHA256",
                     "TLS_RSA_WITH_AES_128_CBC_SHA256"
             },  new String[] {
+                    "TLS_RSA_WITH_AES_128_GCM_SHA256",
                     "TLS_DHE_RSA_WITH_AES_128_CBC_SHA256"
             }};
             for (int i = 0; i < enginesToTest.length; i++) {
                 enginesToTest[i][0] = createSSLEngine(true);
                 enginesToTest[i][1] = createSSLEngine(false);
-                enginesToTest[i][0].setEnabledCipherSuites(preferredSuites[i]);
+                // All CipherSuites enabled for the client.
                 enginesToTest[i][1].setEnabledCipherSuites(preferredSuites[i]);
             }
             return enginesToTest;
@@ -459,13 +464,10 @@ public final class FipsModeTLS12 extends SecmodTest {
         Security.addProvider(sunPKCS11NSSProvider);
         for (Provider p : installedProviders){
             String providerName = p.getName();
-            if (providerName.equals("SunJSSE") ||
-                    providerName.equals("SUN") ||
-                    providerName.equals("SunJCE")) {
+            if (providerName.equals("SunJSSE") || providerName.equals("SUN")) {
                 Security.addProvider(p);
-                if (providerName.equals("SunJCE")) {
-                    sunJCEProvider = p;
-                }
+            } else if (providerName.equals("SunJCE")) {
+                sunJCEProvider = p;
             }
         }
 

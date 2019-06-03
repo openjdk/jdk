@@ -14551,9 +14551,10 @@ instruct cmpFastUnlock(rFlagsReg cr, iRegP object, iRegP box, iRegPNoSp tmp, iRe
 // TODO
 // provide a near and far version of this code
 
-instruct safePoint(iRegP poll)
+instruct safePoint(rFlagsReg cr, iRegP poll)
 %{
   match(SafePoint poll);
+  effect(KILL cr);
 
   format %{
     "ldrw zr, [$poll]\t# Safepoint: poll for GC"

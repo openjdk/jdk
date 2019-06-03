@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -72,10 +72,22 @@ public class CommandLineFlagCombo {
                 continue;
 
             OutputAnalyzer dumpOutput = TestCommon.dump(appJar, classList, testEntry);
-            TestCommon.checkDump(dumpOutput, "Loading classes to share");
+            if (!TestCommon.isDynamicArchive()) {
+                TestCommon.checkDump(dumpOutput, "Loading classes to share");
+            } else {
+                if (testEntry.contains("ObjectAlignmentInBytes")) {
+                   dumpOutput.shouldHaveExitValue(1)
+                             .shouldMatch("The shared archive file's ObjectAlignmentInBytes of .* does not equal the current ObjectAlignmentInBytes of");
+                } else {
+                   TestCommon.checkDump(dumpOutput, "Loading classes to share");
+                }
+            }
 
-            OutputAnalyzer execOutput = TestCommon.exec(appJar, testEntry, "Hello");
-            TestCommon.checkExec(execOutput, "Hello World");
+            if ((TestCommon.isDynamicArchive() && !testEntry.contains("ObjectAlignmentInBytes")) ||
+                !TestCommon.isDynamicArchive()) {
+                OutputAnalyzer execOutput = TestCommon.exec(appJar, testEntry, "Hello");
+                TestCommon.checkExec(execOutput, "Hello World");
+            }
         }
 
         for (int i=0; i<2; i++) {

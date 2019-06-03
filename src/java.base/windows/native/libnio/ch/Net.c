@@ -620,7 +620,6 @@ Java_sun_nio_ch_Net_poll(JNIEnv* env, jclass this, jobject fdo, jint events, jlo
     int rv;
     int revents = 0;
     struct timeval t;
-    int lastError = 0;
     fd_set rd, wr, ex;
     jint fd = fdval(env, fdo);
 
@@ -643,7 +642,7 @@ Java_sun_nio_ch_Net_poll(JNIEnv* env, jclass this, jobject fdo, jint events, jlo
 
     /* save last winsock error */
     if (rv == SOCKET_ERROR) {
-        handleSocketError(env, lastError);
+        handleSocketError(env, WSAGetLastError());
         return IOS_THROWN;
     } else if (rv >= 0) {
         rv = 0;

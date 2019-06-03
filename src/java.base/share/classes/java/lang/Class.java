@@ -999,7 +999,7 @@ public final class Class<T> implements java.io.Serializable,
      *
      * @since 9
      * @spec JPMS
-     * @jls 6.7  Fully Qualified Names
+     * @jls 6.7 Fully Qualified Names
      */
     public String getPackageName() {
         String pn = this.packageName;
@@ -3910,7 +3910,8 @@ public final class Class<T> implements java.io.Serializable,
      *         SecurityManager#checkPackageAccess s.checkPackageAccess()}
      *         denies access to the package of the returned class
      * @since 11
-     * @jvms 4.7.28 and 4.7.29 NestHost and NestMembers attributes
+     * @jvms 4.7.28 The {@code NestHost} Attribute
+     * @jvms 4.7.29 The {@code NestMembers} Attribute
      * @jvms 5.4.4 Access Control
      */
     @CallerSensitive

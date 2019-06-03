@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -45,7 +45,7 @@ import javax.lang.model.element.Modifier;
  * @jls 8.5.1 Static Member Type Declarations
  * @jls 8.8.3 Constructor Modifiers
  * @jls 9.1.1 Interface Modifiers
- * @jls 9.7   Annotations
+ * @jls 9.7 Annotations
  *
  * @author Peter von der Ah&eacute;
  * @author Jonathan Gibbons

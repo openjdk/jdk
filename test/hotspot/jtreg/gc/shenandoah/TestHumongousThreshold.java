@@ -59,6 +59,19 @@
  *                   TestHumongousThreshold
  *
  * @run main/othervm -XX:+UnlockDiagnosticVMOptions -XX:+UnlockExperimentalVMOptions -XX:+UseShenandoahGC -Xmx1g
+ *                   -XX:ShenandoahHumongousThreshold=90 -XX:ShenandoahGCHeuristics=aggressive
+ *                   TestHumongousThreshold
+ * @run main/othervm -XX:+UnlockDiagnosticVMOptions -XX:+UnlockExperimentalVMOptions -XX:+UseShenandoahGC -Xmx1g
+ *                   -XX:-UseTLAB -XX:ShenandoahHumongousThreshold=90 -XX:ShenandoahGCHeuristics=aggressive
+ *                   TestHumongousThreshold
+ */
+
+/*
+ * @test TestHumongousThreshold
+ * @key gc
+ * @requires vm.gc.Shenandoah & !vm.graal.enabled & (vm.bits == "64")
+ *
+ * @run main/othervm -XX:+UnlockDiagnosticVMOptions -XX:+UnlockExperimentalVMOptions -XX:+UseShenandoahGC -Xmx1g
  *                   -XX:ObjectAlignmentInBytes=16 -XX:+ShenandoahVerify
  *                   TestHumongousThreshold
  * @run main/othervm -XX:+UnlockDiagnosticVMOptions -XX:+UnlockExperimentalVMOptions -XX:+UseShenandoahGC -Xmx1g
@@ -88,13 +101,6 @@
  *                   TestHumongousThreshold
  * @run main/othervm -XX:+UnlockDiagnosticVMOptions -XX:+UnlockExperimentalVMOptions -XX:+UseShenandoahGC -Xmx1g
  *                   -XX:-UseTLAB -XX:ObjectAlignmentInBytes=16 -XX:+ShenandoahVerify -XX:ShenandoahHumongousThreshold=100
- *                   TestHumongousThreshold
- *
- * @run main/othervm -XX:+UnlockDiagnosticVMOptions -XX:+UnlockExperimentalVMOptions -XX:+UseShenandoahGC -Xmx1g
- *                   -XX:ShenandoahHumongousThreshold=90 -XX:ShenandoahGCHeuristics=aggressive
- *                   TestHumongousThreshold
- * @run main/othervm -XX:+UnlockDiagnosticVMOptions -XX:+UnlockExperimentalVMOptions -XX:+UseShenandoahGC -Xmx1g
- *                   -XX:-UseTLAB -XX:ShenandoahHumongousThreshold=90 -XX:ShenandoahGCHeuristics=aggressive
  *                   TestHumongousThreshold
  */
 

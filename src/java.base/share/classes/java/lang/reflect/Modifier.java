@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -394,7 +394,7 @@ public class Modifier {
 
     /**
      * The Java source modifiers that can be applied to a field.
-     * @jls 8.3.1  Field Modifiers
+     * @jls 8.3.1 Field Modifiers
      */
     private static final int FIELD_MODIFIERS =
         Modifier.PUBLIC         | Modifier.PROTECTED    | Modifier.PRIVATE |

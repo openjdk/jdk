@@ -29,6 +29,7 @@
  * @modules jdk.compiler
  *          jdk.jartool/sun.tools.jar
  *          jdk.jlink
+ * @compile ../../test-classes/Hello.java
  * @run driver AddModules
  * @summary sanity test the --add-modules option
  */
@@ -63,6 +64,7 @@ public class AddModules {
     private static Path subJar = null;
     private static Path mainJar1 = null;
     private static Path mainJar2 = null;
+    private static String appJar;
 
     public static void buildTestModule() throws Exception {
 
@@ -96,18 +98,19 @@ public class AddModules {
     }
 
     public static void main(String... args) throws Exception {
+        appJar = JarBuilder.getOrCreateHelloJar();
         // compile the modules and create the modular jar files
         buildTestModule();
         String appClasses[] = {MAIN_CLASS1, MAIN_CLASS2, APP_CLASS};
         // create an archive with the classes in the modules built in the
         // previous step
         OutputAnalyzer output = TestCommon.createArchive(
-                                        null, appClasses,
+                                        appJar, appClasses,
                                         "--module-path", moduleDir.toString(),
                                         "--add-modules",
                                         MAIN_MODULE1 + "," + MAIN_MODULE2);
         TestCommon.checkDump(output);
-        String prefix[] = {"-Djava.class.path=", "-Xlog:class+load=trace"};
+        String prefix[] = {"-Djava.class.path=" + appJar, "-Xlog:class+load=trace"};
 
         // run the com.greetings module with the archive with the --module-path
         // the same as the one during dump time.

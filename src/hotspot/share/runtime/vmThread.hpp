@@ -71,7 +71,7 @@ class VMOperationQueue : public CHeapObj<mtInternal> {
   VMOperationQueue();
 
   // Highlevel operations. Encapsulates policy
-  bool add(VM_Operation *op);
+  void add(VM_Operation *op);
   VM_Operation* remove_next();                        // Returns next or null
   VM_Operation* remove_next_at_safepoint_priority()   { return queue_remove_front(SafepointPriority); }
   VM_Operation* drain_at_safepoint_priority() { return queue_drain(SafepointPriority); }

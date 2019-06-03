@@ -78,7 +78,7 @@ public class TestSystemPropertyTaglet extends JavadocTester {
         checkOrder("pkg/A.html",
                 "<h1 title=\"Class A\" class=\"title\">Class A</h1>",
                 "test with <code><a id=\"user.name\" class=\"searchTagResult\">user.name</a></code>",
-                "<h2>Method Detail</h2>",
+                "<h2>Method Details</h2>",
                 "test with <code><a id=\"java.version\" class=\"searchTagResult\">java.version</a></code>");
 
         checkOrder("index-all.html",

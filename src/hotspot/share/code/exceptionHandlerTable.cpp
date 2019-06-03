@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -185,10 +185,24 @@ uint ImplicitExceptionTable::at( uint exec_off ) const {
 }
 
 void ImplicitExceptionTable::print(address base) const {
-  tty->print("{");
-  for( uint i=0; i<len(); i++ )
-    tty->print("< " INTPTR_FORMAT ", " INTPTR_FORMAT " > ", p2i(base + *adr(i)), p2i(base + *(adr(i)+1)));
-  tty->print_cr("}");
+  const uint n = len();
+  if (n > 0) {
+    const uint items_per_line = 3;
+    uint i;
+    tty->print_cr("ImplicitExceptionTable (size = %d entries, %d bytes):", n, size_in_bytes());
+    tty->print("{");
+    for (i = 0; i < n; i++) {
+      if (i%items_per_line == 0) {
+        tty->cr();
+        tty->fill_to(3);
+      }
+      tty->print("< " INTPTR_FORMAT ", " INTPTR_FORMAT " > ", p2i(base + *adr(i)), p2i(base + *(adr(i)+1)));
+    }
+    tty->bol();
+    tty->print_cr("}");
+  } else {
+    tty->print_cr("ImplicitExceptionTable is empty");
+  }
 }
 
 ImplicitExceptionTable::ImplicitExceptionTable(const nmethod* nm) {

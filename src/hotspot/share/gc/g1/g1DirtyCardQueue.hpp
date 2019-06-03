@@ -47,6 +47,9 @@ public:
 
 // A ptrQueue whose elements are "oops", pointers to object heads.
 class G1DirtyCardQueue: public PtrQueue {
+protected:
+  virtual void handle_completed_buffer();
+
 public:
   G1DirtyCardQueue(G1DirtyCardQueueSet* qset);
 
@@ -56,6 +59,8 @@ public:
 
   // Process queue entries and release resources.
   void flush() { flush_impl(); }
+
+  inline G1DirtyCardQueueSet* dirty_card_qset() const;
 
   // Compiler support.
   static ByteSize byte_offset_of_index() {
@@ -102,6 +107,12 @@ class G1DirtyCardQueueSet: public PtrQueueSet {
 
   bool mut_process_buffer(BufferNode* node);
 
+  // If the queue contains more buffers than configured here, the
+  // mutator must start doing some of the concurrent refinement work,
+  size_t _max_completed_buffers;
+  size_t _completed_buffers_padding;
+  static const size_t MaxCompletedBuffersUnlimited = ~size_t(0);
+
   G1FreeIdSet* _free_ids;
 
   // The number of completed buffers processed by mutator and rs thread,
@@ -126,6 +137,11 @@ public:
 
   static void handle_zero_index_for_thread(Thread* t);
 
+  // Either process the entire buffer and return true, or enqueue the
+  // buffer and return false.  If the buffer is completely processed,
+  // it can be reused in place.
+  bool process_or_enqueue_completed_buffer(BufferNode* node);
+
   // Apply G1RefineCardConcurrentlyClosure to completed buffers until there are stop_at
   // completed buffers remaining.
   bool refine_completed_buffer_concurrently(uint worker_i, size_t stop_at);
@@ -147,6 +163,20 @@ public:
   // If any threads have partial logs, add them to the global list of logs.
   void concatenate_logs();
 
+  void set_max_completed_buffers(size_t m) {
+    _max_completed_buffers = m;
+  }
+  size_t max_completed_buffers() const {
+    return _max_completed_buffers;
+  }
+
+  void set_completed_buffers_padding(size_t padding) {
+    _completed_buffers_padding = padding;
+  }
+  size_t completed_buffers_padding() const {
+    return _completed_buffers_padding;
+  }
+
   jint processed_buffers_mut() {
     return _processed_buffers_mut;
   }
@@ -155,5 +185,9 @@ public:
   }
 
 };
+
+inline G1DirtyCardQueueSet* G1DirtyCardQueue::dirty_card_qset() const {
+  return static_cast<G1DirtyCardQueueSet*>(qset());
+}
 
 #endif // SHARE_GC_G1_G1DIRTYCARDQUEUE_HPP

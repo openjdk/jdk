@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,9 +27,7 @@
  * @summary AppCDS handling of prohibited package.
  * @requires vm.cds
  * @library /test/lib
- * @modules java.base/jdk.internal.misc
- *          java.management
- *          jdk.jartool/sun.tools.jar
+ * @modules jdk.jartool/sun.tools.jar
  * @compile test-classes/ProhibitedHelper.java test-classes/Prohibited.jasm
  * @run driver ProhibitedPackage
  */
@@ -46,7 +44,8 @@ public class ProhibitedPackage {
         String appJar = TestCommon.getTestJar("prohibited_pkg.jar");
 
         // Test support for customer loaders
-        if (Platform.areCustomLoadersSupportedForCDS()) {
+        if (Platform.areCustomLoadersSupportedForCDS() &&
+            !TestCommon.isDynamicArchive()) {
             String classlist[] = new String[] {
                 "java/lang/Object id: 1",
                 "java/lang/Prohibited id: 2 super: 1 source: " + appJar

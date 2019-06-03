@@ -371,7 +371,9 @@ void ConstantPool::remove_unshareable_info() {
   // If archiving heap objects is not allowed, clear the resolved references.
   // Otherwise, it is cleared after the resolved references array is cached
   // (see archive_resolved_references()).
-  if (!HeapShared::is_heap_object_archiving_allowed()) {
+  // If DynamicDumpSharedSpaces is enabled, clear the resolved references also
+  // as java objects are not archived in the top layer.
+  if (!HeapShared::is_heap_object_archiving_allowed() || DynamicDumpSharedSpaces) {
     set_resolved_references(NULL);
   }
 
@@ -382,7 +384,16 @@ void ConstantPool::remove_unshareable_info() {
   _flags |= (_on_stack | _is_shared);
   int num_klasses = 0;
   for (int index = 1; index < length(); index++) { // Index 0 is unused
-    assert(!tag_at(index).is_unresolved_klass_in_error(), "This must not happen during dump time");
+    if (!DynamicDumpSharedSpaces) {
+      assert(!tag_at(index).is_unresolved_klass_in_error(), "This must not happen during static dump time");
+    } else {
+      if (tag_at(index).is_unresolved_klass_in_error() ||
+          tag_at(index).is_method_handle_in_error()    ||
+          tag_at(index).is_method_type_in_error()      ||
+          tag_at(index).is_dynamic_constant_in_error()) {
+        tag_at_put(index, JVM_CONSTANT_UnresolvedClass);
+      }
+    }
     if (tag_at(index).is_klass()) {
       // This class was resolved as a side effect of executing Java code
       // during dump time. We need to restore it back to an UnresolvedClass,

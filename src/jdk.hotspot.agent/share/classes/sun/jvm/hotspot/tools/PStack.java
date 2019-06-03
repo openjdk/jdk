@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -201,7 +201,8 @@ public class PStack extends Tool {
       jframeCache = new HashMap();
       proxyToThread = new HashMap();
       Threads threads = VM.getVM().getThreads();
-      for (JavaThread cur = threads.first(); cur != null; cur = cur.next()) {
+      for (int i = 0; i < threads.getNumberOfThreads(); i++) {
+         JavaThread cur = threads.getJavaThreadAt(i);
          List tmp = new ArrayList(10);
          try {
             for (JavaVFrame vf = cur.getLastJavaVFrameDbg(); vf != null; vf = vf.javaSender()) {

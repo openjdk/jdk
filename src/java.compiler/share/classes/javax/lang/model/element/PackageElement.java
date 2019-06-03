@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,6 +26,7 @@
 package javax.lang.model.element;
 
 import java.util.List;
+import javax.lang.model.type.TypeMirror;
 
 /**
  * Represents a package program element.  Provides access to information
@@ -38,6 +39,16 @@ import java.util.List;
  * @since 1.6
  */
 public interface PackageElement extends Element, QualifiedNameable {
+    /**
+     * Returns a {@linkplain javax.lang.model.type.NoType pseudo-type}
+     * for this package.
+     * @return a pseudo-type for this package
+     *
+     * @see javax.lang.model.type.NoType
+     * @see javax.lang.model.type.TypeKind#PACKAGE
+     */
+    @Override
+    TypeMirror asType();
 
     /**
      * Returns the fully qualified name of this package.

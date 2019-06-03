@@ -26,9 +26,8 @@
 /**
  * Provides the implementation of the Zip file system provider.
  * The Zip file system provider treats the contents of a Zip or JAR file as a file system.
- * <p>
  *
- * <h3>Accessing a Zip File System</h3>
+ * <h2>Accessing a Zip File System</h2>
  *
  * The {@linkplain java.nio.file.FileSystems FileSystems} {@code newFileSystem}
  * static factory methods can be used to:
@@ -41,11 +40,10 @@
  *
  * The URI {@link java.net.URI#getScheme scheme} that identifies the ZIP file system is {@code jar}.
  *
- * <h3>Zip File System Properties</h3>
+ * <h2>Zip File System Properties</h2>
  *
  * The following properties may be specified when creating a Zip
  * file system:
- * <p>
  * <table class="striped">
  * <caption style="display:none">
  *     Configurable properties that may be specified when creating
@@ -82,7 +80,7 @@
  * </tbody>
  * </table>
  *
- * <h3>Examples:</h3>
+ * <h2>Examples:</h2>
  *
  * Construct a new Zip file system that is identified by a URI.  If the Zip file does not exist,
  * it will be created:

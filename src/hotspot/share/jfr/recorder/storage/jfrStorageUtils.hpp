@@ -92,7 +92,6 @@ class ConcurrentWriteOpExcludeRetired : private ConcurrentWriteOp<Operation> {
   size_t processed() const { return ConcurrentWriteOp<Operation>::processed(); }
 };
 
-
 template <typename Operation>
 class MutexedWriteOp {
  private:
@@ -102,6 +101,15 @@ class MutexedWriteOp {
   MutexedWriteOp(Operation& operation) : _operation(operation) {}
   bool process(Type* t);
   size_t processed() const { return _operation.processed(); }
+};
+
+template <typename Operation>
+class ExclusiveOp : private MutexedWriteOp<Operation> {
+ public:
+  typedef typename Operation::Type Type;
+  ExclusiveOp(Operation& operation) : MutexedWriteOp<Operation>(operation) {}
+  bool process(Type* t);
+  size_t processed() const { return MutexedWriteOp<Operation>::processed(); }
 };
 
 enum jfr_operation_mode {

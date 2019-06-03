@@ -1,6 +1,6 @@
 //
-// Copyright (c) 2017, Oracle and/or its affiliates. All rights reserved.
-// Copyright (c) 2017, SAP SE. All rights reserved.
+// Copyright (c) 2017, 2019, Oracle and/or its affiliates. All rights reserved.
+// Copyright (c) 2017, 2019 SAP SE. All rights reserved.
 // DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 //
 // This code is free software; you can redistribute it and/or modify it
@@ -1388,7 +1388,6 @@ void MachUEPNode::emit(CodeBuffer &cbuf, PhaseRegAlloc *ra_) const {
     __ z_br(R1_ic_miss_stub_addr);
     __ bind(valid);
   }
-
 }
 
 uint MachUEPNode::size(PhaseRegAlloc *ra_) const {
@@ -4318,7 +4317,7 @@ instruct loadConI(iRegI dst, immI src) %{
   match(Set dst src);
   ins_cost(DEFAULT_COST);
   size(6);
-  format %{ "LGFI     $dst,$src\t # (int)" %}
+  format %{ "LGFI    $dst,$src\t # (int)" %}
   ins_encode %{ __ z_lgfi($dst$$Register, $src$$constant); %}  // Sign-extend to 64 bit, it's at no cost.
   ins_pipe(pipe_class_dummy);
 %}
@@ -4327,7 +4326,7 @@ instruct loadConI16(iRegI dst, immI16 src) %{
   match(Set dst src);
   ins_cost(DEFAULT_COST_LOW);
   size(4);
-  format %{ "LGHI     $dst,$src\t # (int)" %}
+  format %{ "LGHI    $dst,$src\t # (int)" %}
   ins_encode %{ __ z_lghi($dst$$Register, $src$$constant); %}  // Sign-extend to 64 bit, it's at no cost.
   ins_pipe(pipe_class_dummy);
 %}
@@ -4723,7 +4722,7 @@ instruct loadN(iRegN dst, memory mem) %{
   match(Set dst (LoadN mem));
   ins_cost(MEMORY_REF_COST);
   size(Z_DISP3_SIZE);
-  format %{ "LoadN  $dst,$mem\t# (cOop)" %}
+  format %{ "LoadN   $dst,$mem\t # (cOop)" %}
   opcode(LLGF_ZOPC, LLGF_ZOPC);
   ins_encode(z_form_rt_mem_opt(dst, mem));
   ins_pipe(pipe_class_dummy);
@@ -4734,7 +4733,7 @@ instruct loadNKlass(iRegN dst, memory mem) %{
   match(Set dst (LoadNKlass mem));
   ins_cost(MEMORY_REF_COST);
   size(Z_DISP3_SIZE);
-  format %{ "LoadNKlass $dst,$mem\t# (klass cOop)" %}
+  format %{ "LoadNKlass $dst,$mem\t # (klass cOop)" %}
   opcode(LLGF_ZOPC, LLGF_ZOPC);
   ins_encode(z_form_rt_mem_opt(dst, mem));
   ins_pipe(pipe_class_dummy);
@@ -4787,7 +4786,7 @@ instruct decodeLoadN(iRegP dst, memory mem) %{
   predicate(false && (CompressedOops::base()==NULL)&&(CompressedOops::shift()==0));
   ins_cost(MEMORY_REF_COST);
   size(Z_DISP3_SIZE);
-  format %{ "DecodeLoadN  $dst,$mem\t# (cOop Load+Decode)" %}
+  format %{ "DecodeLoadN  $dst,$mem\t # (cOop Load+Decode)" %}
   opcode(LLGF_ZOPC, LLGF_ZOPC);
   ins_encode(z_form_rt_mem_opt(dst, mem));
   ins_pipe(pipe_class_dummy);
@@ -4798,7 +4797,7 @@ instruct decodeLoadNKlass(iRegP dst, memory mem) %{
   predicate(false && (CompressedKlassPointers::base()==NULL)&&(CompressedKlassPointers::shift()==0));
   ins_cost(MEMORY_REF_COST);
   size(Z_DISP3_SIZE);
-  format %{ "DecodeLoadNKlass  $dst,$mem\t# (load/decode NKlass)" %}
+  format %{ "DecodeLoadNKlass  $dst,$mem\t # (load/decode NKlass)" %}
   opcode(LLGF_ZOPC, LLGF_ZOPC);
   ins_encode(z_form_rt_mem_opt(dst, mem));
   ins_pipe(pipe_class_dummy);
@@ -4826,7 +4825,7 @@ instruct decodeN(iRegP dst, iRegN src, flagsReg cr) %{
   predicate(CompressedOops::base() == NULL || !ExpandLoadingBaseDecode);
   ins_cost(MEMORY_REF_COST+3 * DEFAULT_COST + BRANCH_COST);
   // TODO: s390 port size(VARIABLE_SIZE);
-  format %{ "decodeN  $dst,$src\t# (decode cOop)" %}
+  format %{ "decodeN  $dst,$src\t # (decode cOop)" %}
   ins_encode %{  __ oop_decoder($dst$$Register, $src$$Register, true); %}
   ins_pipe(pipe_class_dummy);
 %}
@@ -4850,7 +4849,7 @@ instruct decodeN_NN(iRegP dst, iRegN src, flagsReg cr) %{
             (CompressedOops::base()== NULL || !ExpandLoadingBaseDecode_NN));
   ins_cost(MEMORY_REF_COST+2 * DEFAULT_COST);
   // TODO: s390 port size(VARIABLE_SIZE);
-  format %{ "decodeN  $dst,$src\t# (decode cOop NN)" %}
+  format %{ "decodeN  $dst,$src\t # (decode cOop NN)" %}
   ins_encode %{ __ oop_decoder($dst$$Register, $src$$Register, false); %}
   ins_pipe(pipe_class_dummy);
 %}
@@ -4873,7 +4872,7 @@ instruct decodeN_NN(iRegP dst, iRegN src, flagsReg cr) %{
     effect(KILL cr);
     predicate(false);
     // TODO: s390 port size(VARIABLE_SIZE);
-    format %{ "decodeN  $dst = ($src == 0) ? NULL : ($src << 3) + $base + pow2_offset\t# (decode cOop)" %}
+    format %{ "decodeN  $dst = ($src == 0) ? NULL : ($src << 3) + $base + pow2_offset\t # (decode cOop)" %}
     ins_encode %{
       __ oop_decoder($dst$$Register, $src$$Register, true, $base$$Register,
                      (jlong)MacroAssembler::get_oop_base_pow2_offset((uint64_t)(intptr_t)CompressedOops::base()));
@@ -4887,7 +4886,7 @@ instruct decodeN_NN(iRegP dst, iRegN src, flagsReg cr) %{
     effect(KILL cr);
     predicate(false);
     // TODO: s390 port size(VARIABLE_SIZE);
-    format %{ "decodeN  $dst = ($src << 3) + $base + pow2_offset\t# (decode cOop)" %}
+    format %{ "decodeN  $dst = ($src << 3) + $base + pow2_offset\t # (decode cOop)" %}
     ins_encode %{
       __ oop_decoder($dst$$Register, $src$$Register, false, $base$$Register,
                      (jlong)MacroAssembler::get_oop_base_pow2_offset((uint64_t)(intptr_t)CompressedOops::base()));
@@ -4937,7 +4936,7 @@ instruct encodeP(iRegN dst, iRegP src, flagsReg cr) %{
              !ExpandLoadingBaseEncode));
   ins_cost(MEMORY_REF_COST+3 * DEFAULT_COST);
   // TODO: s390 port size(VARIABLE_SIZE);
-  format %{ "encodeP  $dst,$src\t# (encode cOop)" %}
+  format %{ "encodeP  $dst,$src\t # (encode cOop)" %}
   ins_encode %{ __ oop_encoder($dst$$Register, $src$$Register, true, Z_R1_scratch, -1, all_outs_are_Stores(this)); %}
   ins_pipe(pipe_class_dummy);
 %}
@@ -4960,7 +4959,7 @@ instruct encodeP_NN(iRegN dst, iRegP src, flagsReg cr) %{
              !ExpandLoadingBaseEncode_NN));
   ins_cost(MEMORY_REF_COST+3 * DEFAULT_COST);
   // TODO: s390 port size(VARIABLE_SIZE);
-  format %{ "encodeP  $dst,$src\t# (encode cOop)" %}
+  format %{ "encodeP  $dst,$src\t # (encode cOop)" %}
   ins_encode %{ __ oop_encoder($dst$$Register, $src$$Register, false, Z_R1_scratch, -1, all_outs_are_Stores(this)); %}
   ins_pipe(pipe_class_dummy);
 %}
@@ -4972,7 +4971,7 @@ instruct encodeP_NN(iRegN dst, iRegP src, flagsReg cr) %{
     predicate(false);
     ins_cost(MEMORY_REF_COST+2 * DEFAULT_COST);
     // TODO: s390 port size(VARIABLE_SIZE);
-    format %{ "encodeP  $dst = ($src>>3) +$base + pow2_offset\t# (encode cOop)" %}
+    format %{ "encodeP  $dst = ($src>>3) +$base + pow2_offset\t # (encode cOop)" %}
     ins_encode %{
       jlong offset = -(jlong)MacroAssembler::get_oop_base_pow2_offset
         (((uint64_t)(intptr_t)CompressedOops::base()) >> CompressedOops::shift());
@@ -4988,7 +4987,7 @@ instruct encodeP_NN(iRegN dst, iRegP src, flagsReg cr) %{
     predicate(false);
     ins_cost(MEMORY_REF_COST+2 * DEFAULT_COST);
     // TODO: s390 port size(VARIABLE_SIZE);
-    format %{ "encodeP  $dst = ($src>>3) +$base + $pow2_offset\t# (encode cOop)" %}
+    format %{ "encodeP  $dst = ($src>>3) +$base + $pow2_offset\t # (encode cOop)" %}
     ins_encode %{ __ oop_encoder($dst$$Register, $src$$Register, false, $base$$Register, $pow2_offset$$constant); %}
     ins_pipe(pipe_class_dummy);
   %}
@@ -5041,7 +5040,7 @@ instruct storeN(memory mem, iRegN_P2N src) %{
   match(Set mem (StoreN mem src));
   ins_cost(MEMORY_REF_COST);
   size(Z_DISP_SIZE);
-  format %{ "ST      $src,$mem\t# (cOop)" %}
+  format %{ "ST      $src,$mem\t # (cOop)" %}
   opcode(STY_ZOPC, ST_ZOPC);
   ins_encode(z_form_rt_mem_opt(src, mem));
   ins_pipe(pipe_class_dummy);
@@ -5052,7 +5051,7 @@ instruct storeNKlass(memory mem, iRegN src) %{
   match(Set mem (StoreNKlass mem src));
   ins_cost(MEMORY_REF_COST);
   size(Z_DISP_SIZE);
-  format %{ "ST      $src,$mem\t# (cKlass)" %}
+  format %{ "ST      $src,$mem\t # (cKlass)" %}
   opcode(STY_ZOPC, ST_ZOPC);
   ins_encode(z_form_rt_mem_opt(src, mem));
   ins_pipe(pipe_class_dummy);
@@ -5064,7 +5063,7 @@ instruct compN_iRegN(iRegN_P2N src1, iRegN_P2N src2, flagsReg cr) %{
   match(Set cr (CmpN src1 src2));
   ins_cost(DEFAULT_COST);
   size(2);
-  format %{ "CLR     $src1,$src2\t# (cOop)" %}
+  format %{ "CLR     $src1,$src2\t # (cOop)" %}
   opcode(CLR_ZOPC);
   ins_encode(z_rrform(src1, src2));
   ins_pipe(pipe_class_dummy);
@@ -5074,7 +5073,7 @@ instruct compN_iRegN_immN(iRegN_P2N src1, immN src2, flagsReg cr) %{
   match(Set cr (CmpN src1 src2));
   ins_cost(DEFAULT_COST);
   size(6);
-  format %{ "CLFI    $src1,$src2\t# (cOop) compare immediate narrow" %}
+  format %{ "CLFI    $src1,$src2\t # (cOop) compare immediate narrow" %}
   ins_encode %{
     AddressLiteral cOop = __ constant_oop_address((jobject)$src2$$constant);
     __ relocate(cOop.rspec(), 1);
@@ -5087,7 +5086,7 @@ instruct compNKlass_iRegN_immN(iRegN src1, immNKlass src2, flagsReg cr) %{
   match(Set cr (CmpN src1 src2));
   ins_cost(DEFAULT_COST);
   size(6);
-  format %{ "CLFI    $src1,$src2\t# (NKlass) compare immediate narrow" %}
+  format %{ "CLFI    $src1,$src2\t # (NKlass) compare immediate narrow" %}
   ins_encode %{
     AddressLiteral NKlass = __ constant_metadata_address((Metadata*)$src2$$constant);
     __ relocate(NKlass.rspec(), 1);
@@ -5100,7 +5099,7 @@ instruct compN_iRegN_immN0(iRegN_P2N src1, immN0 src2, flagsReg cr) %{
   match(Set cr (CmpN src1 src2));
   ins_cost(DEFAULT_COST);
   size(2);
-  format %{ "LTR     $src1,$src2\t# (cOop) LTR because comparing against zero" %}
+  format %{ "LTR     $src1,$src2\t # (cOop) LTR because comparing against zero" %}
   opcode(LTR_ZOPC);
   ins_encode(z_rrform(src1, src1));
   ins_pipe(pipe_class_dummy);
@@ -6795,7 +6794,7 @@ instruct sllI_reg_reg(iRegI dst, iRegI src, iRegI nbits, flagsReg cr) %{
   effect(KILL cr); // R1 is killed, too.
   ins_cost(3 * DEFAULT_COST);
   size(14);
-  format %{ "SLL     $dst,$src,[$nbits] & 31\t# use RISC-like SLLG also for int" %}
+  format %{ "SLL     $dst,$src,[$nbits] & 31\t # use RISC-like SLLG also for int" %}
   ins_encode %{
     __ z_lgr(Z_R1_scratch, $nbits$$Register);
     __ z_nill(Z_R1_scratch, BitsPerJavaInteger-1);
@@ -6809,7 +6808,7 @@ instruct sllI_reg_reg(iRegI dst, iRegI src, iRegI nbits, flagsReg cr) %{
 instruct sllI_reg_imm(iRegI dst, iRegI src, immI nbits) %{
   match(Set dst (LShiftI src nbits));
   size(6);
-  format %{ "SLL     $dst,$src,$nbits\t# use RISC-like SLLG also for int" %}
+  format %{ "SLL     $dst,$src,$nbits\t # use RISC-like SLLG also for int" %}
   ins_encode %{
     int Nbit = $nbits$$constant;
     assert((Nbit & (BitsPerJavaInteger - 1)) == Nbit, "Check shift mask in ideal graph");
@@ -7125,7 +7124,7 @@ instruct overflowSubL_reg_imm(flagsReg cr, iRegL op1, immL op2) %{
 instruct overflowNegI_rReg(flagsReg cr, immI_0 zero, iRegI op2) %{
   match(Set cr (OverflowSubI zero op2));
   effect(DEF cr, USE op2);
-  format %{ "NEG    $op2\t# overflow check int" %}
+  format %{ "NEG    $op2\t # overflow check int" %}
   ins_encode %{
     __ clear_reg(Z_R0_scratch, false, false);
     __ z_sr(Z_R0_scratch, $op2$$Register);
@@ -7136,7 +7135,7 @@ instruct overflowNegI_rReg(flagsReg cr, immI_0 zero, iRegI op2) %{
 instruct overflowNegL_rReg(flagsReg cr, immL_0 zero, iRegL op2) %{
   match(Set cr (OverflowSubL zero op2));
   effect(DEF cr, USE op2);
-  format %{ "NEGG    $op2\t# overflow check long" %}
+  format %{ "NEGG    $op2\t # overflow check long" %}
   ins_encode %{
     __ clear_reg(Z_R0_scratch, true, false);
     __ z_sgr(Z_R0_scratch, $op2$$Register);
@@ -9191,7 +9190,7 @@ instruct branchCon(cmpOp cmp, flagsReg cr, label lbl) %{
   effect(USE lbl);
   ins_cost(BRANCH_COST);
   size(4);
-  format %{ "branch_con_short,$cmp   $cr, $lbl" %}
+  format %{ "branch_con_short,$cmp   $lbl" %}
   ins_encode(z_enc_branch_con_short(cmp, lbl));
   ins_pipe(pipe_class_dummy);
   // If set to 1 this indicates that the current instruction is a
@@ -9213,7 +9212,7 @@ instruct branchConFar(cmpOp cmp, flagsReg cr, label lbl) %{
   // Make more expensive to prefer compare_and_branch over separate instructions.
   ins_cost(2 * BRANCH_COST);
   size(6);
-  format %{ "branch_con_far,$cmp   $cr, $lbl" %}
+  format %{ "branch_con_far,$cmp   $lbl" %}
   ins_encode(z_enc_branch_con_far(cmp, lbl));
   ins_pipe(pipe_class_dummy);
   // This is not a short variant of a branch, but the long variant..
@@ -9782,7 +9781,7 @@ instruct TailCalljmpInd(iRegP jump_target, inline_cache_regP method_oop) %{
   match(TailCall jump_target method_oop);
   ins_cost(CALL_COST);
   size(2);
-  format %{ "Jmp     $jump_target\t# $method_oop holds method oop" %}
+  format %{ "Jmp     $jump_target\t # $method_oop holds method oop" %}
   ins_encode %{ __ z_br($jump_target$$Register); %}
   ins_pipe(pipe_class_dummy);
 %}
@@ -10790,7 +10789,7 @@ instruct bytes_reverse_int(iRegI dst, iRegI src) %{
   predicate(UseByteReverseInstruction);  // See Matcher::match_rule_supported
   ins_cost(DEFAULT_COST);
   size(4);
-  format %{ "LRVR    $dst,$src\t# byte reverse int" %}
+  format %{ "LRVR    $dst,$src\t # byte reverse int" %}
   opcode(LRVR_ZOPC);
   ins_encode(z_rreform(dst, src));
   ins_pipe(pipe_class_dummy);
@@ -10801,7 +10800,7 @@ instruct bytes_reverse_long(iRegL dst, iRegL src) %{
   predicate(UseByteReverseInstruction);  // See Matcher::match_rule_supported
   ins_cost(DEFAULT_COST);
   // TODO: s390 port size(FIXED_SIZE);
-  format %{ "LRVGR   $dst,$src\t# byte reverse long" %}
+  format %{ "LRVGR   $dst,$src\t # byte reverse long" %}
   opcode(LRVGR_ZOPC);
   ins_encode(z_rreform(dst, src));
   ins_pipe(pipe_class_dummy);
@@ -10821,8 +10820,8 @@ instruct countLeadingZerosI(revenRegI dst, iRegI src, roddRegI tmp, flagsReg cr)
   effect(KILL tmp, KILL cr);
   ins_cost(3 * DEFAULT_COST);
   size(14);
-  format %{ "SLLG    $dst,$src,32\t# no need to always count 32 zeroes first\n\t"
-            "IILH    $dst,0x8000 \t# insert \"stop bit\" to force result 32 for zero src.\n\t"
+  format %{ "SLLG    $dst,$src,32\t # no need to always count 32 zeroes first\n\t"
+            "IILH    $dst,0x8000 \t # insert \"stop bit\" to force result 32 for zero src.\n\t"
             "FLOGR   $dst,$dst"
          %}
   ins_encode %{
@@ -10859,7 +10858,7 @@ instruct countLeadingZerosL(revenRegI dst, iRegL src, roddRegI tmp, flagsReg cr)
   effect(KILL tmp, KILL cr);
   ins_cost(DEFAULT_COST);
   size(4);
-  format %{ "FLOGR   $dst,$src \t# count leading zeros (long)\n\t" %}
+  format %{ "FLOGR   $dst,$src \t # count leading zeros (long)\n\t" %}
   ins_encode %{ __ z_flogr($dst$$Register, $src$$Register); %}
   ins_pipe(pipe_class_dummy);
 %}
@@ -10884,14 +10883,14 @@ instruct countTrailingZerosI(revenRegI dst, iRegI src, roddRegI tmp, flagsReg cr
   effect(TEMP_DEF dst, TEMP tmp, KILL cr);
   ins_cost(8 * DEFAULT_COST);
   // TODO: s390 port size(FIXED_SIZE);  // Emitted code depends on PreferLAoverADD being on/off.
-  format %{ "LLGFR   $dst,$src  \t# clear upper 32 bits (we are dealing with int)\n\t"
-            "LCGFR   $tmp,$src  \t# load 2's complement (32->64 bit)\n\t"
-            "AGHI    $dst,-1    \t# tmp1 = src-1\n\t"
-            "AGHI    $tmp,-1    \t# tmp2 = -src-1 = ~src\n\t"
-            "NGR     $dst,$tmp  \t# tmp3 = tmp1&tmp2\n\t"
-            "FLOGR   $dst,$dst  \t# count trailing zeros (int)\n\t"
-            "AHI     $dst,-64   \t# tmp4 = 64-(trailing zeroes)-64\n\t"
-            "LCR     $dst,$dst  \t# res = -tmp4"
+  format %{ "LLGFR   $dst,$src  \t # clear upper 32 bits (we are dealing with int)\n\t"
+            "LCGFR   $tmp,$src  \t # load 2's complement (32->64 bit)\n\t"
+            "AGHI    $dst,-1    \t # tmp1 = src-1\n\t"
+            "AGHI    $tmp,-1    \t # tmp2 = -src-1 = ~src\n\t"
+            "NGR     $dst,$tmp  \t # tmp3 = tmp1&tmp2\n\t"
+            "FLOGR   $dst,$dst  \t # count trailing zeros (int)\n\t"
+            "AHI     $dst,-64   \t # tmp4 = 64-(trailing zeroes)-64\n\t"
+            "LCR     $dst,$dst  \t # res = -tmp4"
          %}
   ins_encode %{
     Register Rdst = $dst$$Register;
@@ -10937,12 +10936,12 @@ instruct countTrailingZerosL(revenRegI dst, iRegL src, roddRegL tmp, flagsReg cr
   effect(TEMP_DEF dst, KILL tmp, KILL cr);
   ins_cost(8 * DEFAULT_COST);
   // TODO: s390 port size(FIXED_SIZE);  // Emitted code depends on PreferLAoverADD being on/off.
-  format %{ "LCGR    $dst,$src  \t# preserve src\n\t"
-            "NGR     $dst,$src  \t#"
-            "AGHI    $dst,-1    \t# tmp1 = src-1\n\t"
-            "FLOGR   $dst,$dst  \t# count trailing zeros (long), kill $tmp\n\t"
-            "AHI     $dst,-64   \t# tmp4 = 64-(trailing zeroes)-64\n\t"
-            "LCR     $dst,$dst  \t#"
+  format %{ "LCGR    $dst,$src  \t # preserve src\n\t"
+            "NGR     $dst,$src  \t #\n\t"
+            "AGHI    $dst,-1    \t # tmp1 = src-1\n\t"
+            "FLOGR   $dst,$dst  \t # count trailing zeros (long), kill $tmp\n\t"
+            "AHI     $dst,-64   \t # tmp4 = 64-(trailing zeroes)-64\n\t"
+            "LCR     $dst,$dst  \t #"
          %}
   ins_encode %{
     Register Rdst = $dst$$Register;
@@ -10969,7 +10968,7 @@ instruct popCountI(iRegI dst, iRegI src, iRegI tmp, flagsReg cr) %{
   predicate(UsePopCountInstruction && VM_Version::has_PopCount());
   ins_cost(DEFAULT_COST);
   size(24);
-  format %{ "POPCNT  $dst,$src\t# pop count int" %}
+  format %{ "POPCNT  $dst,$src\t # pop count int" %}
   ins_encode %{
     Register Rdst = $dst$$Register;
     Register Rsrc = $src$$Register;
@@ -10996,7 +10995,7 @@ instruct popCountL(iRegI dst, iRegL src, iRegL tmp, flagsReg cr) %{
   predicate(UsePopCountInstruction && VM_Version::has_PopCount());
   ins_cost(DEFAULT_COST);
   // TODO: s390 port size(FIXED_SIZE);
-  format %{ "POPCNT  $dst,$src\t# pop count long" %}
+  format %{ "POPCNT  $dst,$src\t # pop count long" %}
   ins_encode %{
     Register Rdst = $dst$$Register;
     Register Rsrc = $src$$Register;

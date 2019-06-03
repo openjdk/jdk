@@ -1,6 +1,6 @@
 /*
- * Copyright (c) 1997, 2018, Oracle and/or its affiliates. All rights reserved.
- * Copyright (c) 2012, 2018, SAP SE. All rights reserved.
+ * Copyright (c) 1997, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2019 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -67,17 +67,17 @@ void VM_Version::initialize() {
   // If PowerArchitecturePPC64 hasn't been specified explicitly determine from features.
   if (FLAG_IS_DEFAULT(PowerArchitecturePPC64)) {
     if (VM_Version::has_darn()) {
-      FLAG_SET_ERGO(uintx, PowerArchitecturePPC64, 9);
+      FLAG_SET_ERGO(PowerArchitecturePPC64, 9);
     } else if (VM_Version::has_lqarx()) {
-      FLAG_SET_ERGO(uintx, PowerArchitecturePPC64, 8);
+      FLAG_SET_ERGO(PowerArchitecturePPC64, 8);
     } else if (VM_Version::has_popcntw()) {
-      FLAG_SET_ERGO(uintx, PowerArchitecturePPC64, 7);
+      FLAG_SET_ERGO(PowerArchitecturePPC64, 7);
     } else if (VM_Version::has_cmpb()) {
-      FLAG_SET_ERGO(uintx, PowerArchitecturePPC64, 6);
+      FLAG_SET_ERGO(PowerArchitecturePPC64, 6);
     } else if (VM_Version::has_popcntb()) {
-      FLAG_SET_ERGO(uintx, PowerArchitecturePPC64, 5);
+      FLAG_SET_ERGO(PowerArchitecturePPC64, 5);
     } else {
-      FLAG_SET_ERGO(uintx, PowerArchitecturePPC64, 0);
+      FLAG_SET_ERGO(PowerArchitecturePPC64, 0);
     }
   }
 
@@ -103,15 +103,15 @@ void VM_Version::initialize() {
     MSG(TrapBasedICMissChecks);
     MSG(TrapBasedNotEntrantChecks);
     MSG(TrapBasedNullChecks);
-    FLAG_SET_ERGO(bool, TrapBasedNotEntrantChecks, false);
-    FLAG_SET_ERGO(bool, TrapBasedNullChecks,       false);
-    FLAG_SET_ERGO(bool, TrapBasedICMissChecks,     false);
+    FLAG_SET_ERGO(TrapBasedNotEntrantChecks, false);
+    FLAG_SET_ERGO(TrapBasedNullChecks,       false);
+    FLAG_SET_ERGO(TrapBasedICMissChecks,     false);
   }
 
 #ifdef COMPILER2
   if (!UseSIGTRAP) {
     MSG(TrapBasedRangeChecks);
-    FLAG_SET_ERGO(bool, TrapBasedRangeChecks, false);
+    FLAG_SET_ERGO(TrapBasedRangeChecks, false);
   }
 
   // On Power6 test for section size.
@@ -123,7 +123,7 @@ void VM_Version::initialize() {
 
   if (PowerArchitecturePPC64 >= 8) {
     if (FLAG_IS_DEFAULT(SuperwordUseVSX)) {
-      FLAG_SET_ERGO(bool, SuperwordUseVSX, true);
+      FLAG_SET_ERGO(SuperwordUseVSX, true);
     }
   } else {
     if (SuperwordUseVSX) {
@@ -135,10 +135,10 @@ void VM_Version::initialize() {
 
   if (PowerArchitecturePPC64 >= 9) {
     if (FLAG_IS_DEFAULT(UseCountTrailingZerosInstructionsPPC64)) {
-      FLAG_SET_ERGO(bool, UseCountTrailingZerosInstructionsPPC64, true);
+      FLAG_SET_ERGO(UseCountTrailingZerosInstructionsPPC64, true);
     }
     if (FLAG_IS_DEFAULT(UseCharacterCompareIntrinsics)) {
-      FLAG_SET_ERGO(bool, UseCharacterCompareIntrinsics, true);
+      FLAG_SET_ERGO(UseCharacterCompareIntrinsics, true);
     }
   } else {
     if (UseCountTrailingZerosInstructionsPPC64) {
@@ -382,6 +382,50 @@ void VM_Version::initialize() {
   if (FLAG_IS_DEFAULT(UseUnalignedAccesses)) {
     FLAG_SET_DEFAULT(UseUnalignedAccesses, true);
   }
+
+  check_virtualizations();
+}
+
+void VM_Version::check_virtualizations() {
+#if defined(_AIX)
+  int rc = 0;
+  perfstat_partition_total_t pinfo;
+  rc = perfstat_partition_total(NULL, &pinfo, sizeof(perfstat_partition_total_t), 1);
+  if (rc == 1) {
+    Abstract_VM_Version::_detected_virtualization = PowerVM;
+  }
+#else
+  const char* info_file = "/proc/ppc64/lparcfg";
+  // system_type=...qemu indicates PowerKVM
+  // e.g. system_type=IBM pSeries (emulated by qemu)
+  char line[500];
+  FILE* fp = fopen(info_file, "r");
+  if (fp == NULL) {
+    return;
+  }
+  const char* system_type="system_type=";  // in case this line contains qemu, it is KVM
+  const char* num_lpars="NumLpars="; // in case of non-KVM : if this line is found it is PowerVM
+  bool num_lpars_found = false;
+
+  while (fgets(line, sizeof(line), fp) != NULL) {
+    if (strncmp(line, system_type, strlen(system_type)) == 0) {
+      if (strstr(line, "qemu") != 0) {
+        Abstract_VM_Version::_detected_virtualization = PowerKVM;
+        fclose(fp);
+        return;
+      }
+    }
+    if (strncmp(line, num_lpars, strlen(num_lpars)) == 0) {
+      num_lpars_found = true;
+    }
+  }
+  if (num_lpars_found) {
+    Abstract_VM_Version::_detected_virtualization = PowerVM;
+  } else {
+    Abstract_VM_Version::_detected_virtualization = PowerFullPartitionMode;
+  }
+  fclose(fp);
+#endif
 }
 
 void VM_Version::print_platform_virtualization_info(outputStream* st) {
@@ -664,6 +708,8 @@ void VM_Version::determine_section_size() {
   uint32_t *code_end = (uint32_t *)a->pc();
   a->flush();
 
+  cb.insts()->set_end((u_char*)code_end);
+
   double loop1_seconds,loop2_seconds, rel_diff;
   uint64_t start1, stop1;
 
@@ -681,10 +727,11 @@ void VM_Version::determine_section_size() {
 
   rel_diff = (loop2_seconds - loop1_seconds) / loop1_seconds *100;
 
-  if (PrintAssembly) {
+  if (PrintAssembly || PrintStubCode) {
     ttyLocker ttyl;
     tty->print_cr("Decoding section size detection stub at " INTPTR_FORMAT " before execution:", p2i(code));
-    Disassembler::decode((u_char*)code, (u_char*)code_end, tty);
+    // Use existing decode function. This enables the [MachCode] format which is needed to DecodeErrorFile.
+    Disassembler::decode(&cb, (u_char*)code, (u_char*)code_end, tty);
     tty->print_cr("Time loop1 :%f", loop1_seconds);
     tty->print_cr("Time loop2 :%f", loop2_seconds);
     tty->print_cr("(time2 - time1) / time1 = %f %%", rel_diff);

@@ -1,6 +1,6 @@
 /*
  * @test /nodynamiccopyright/
- * @bug 8206986
+ * @bug 8206986 8222169 8224031
  * @summary Check expression switch works.
  * @compile/fail/ref=ExpressionSwitch-old.out -source 9 -Xlint:-options -XDrawDiagnostics ExpressionSwitch.java
  * @compile --enable-preview -source ${jdk.version} ExpressionSwitch.java
@@ -27,11 +27,13 @@ public class ExpressionSwitch {
         assertEquals(convert1("B"), 0);
         assertEquals(convert1("C"), 1);
         assertEquals(convert1(""), -1);
+        assertEquals(convert1(null), -2);
         assertEquals(convert2("A"), 0);
         assertEquals(convert2("B"), 0);
         assertEquals(convert2("C"), 1);
         assertEquals(convert2(""), -1);
         localClass(T.A);
+        assertEquals(castSwitchExpressions(T.A), "A");
     }
 
     private String print(T t) {
@@ -85,11 +87,13 @@ public class ExpressionSwitch {
     }
 
     private int convert1(String s) {
-        return switch (s) {
-            case "A", "B" -> 0;
-            case "C" -> { break 1; }
-            default -> -1;
-        };
+        return s == null
+                ? -2
+                : switch (s) {
+                      case "A", "B" -> 0;
+                      case "C" -> { break 1; }
+                      default -> -1;
+                  };
     }
 
     private int convert2(String s) {
@@ -116,6 +120,13 @@ public class ExpressionSwitch {
         if (!Objects.equals(result, good)) {
             throw new AssertionError("Unexpected result: " + result);
         }
+    }
+
+    private String castSwitchExpressions(T t) {
+        return (String) switch (t) {
+            case A -> "A";
+            default -> 1;
+        };
     }
 
     private void check(T t, String expected) {

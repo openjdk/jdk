@@ -71,14 +71,6 @@ class PtrQueue {
     return _capacity_in_bytes;
   }
 
-  void set_capacity(size_t entries) {
-    size_t byte_capacity = index_to_byte_index(entries);
-    assert(_capacity_in_bytes == 0 || _capacity_in_bytes == byte_capacity,
-           "changing capacity " SIZE_FORMAT " -> " SIZE_FORMAT,
-           _capacity_in_bytes, byte_capacity);
-    _capacity_in_bytes = byte_capacity;
-  }
-
   static size_t byte_index_to_index(size_t ind) {
     assert(is_aligned(ind, _element_size), "precondition");
     return ind / _element_size;
@@ -106,10 +98,19 @@ protected:
     return byte_index_to_index(capacity_in_bytes());
   }
 
-  PtrQueueSet* qset() { return _qset; }
+  PtrQueueSet* qset() const { return _qset; }
 
   // Process queue entries and release resources.
   void flush_impl();
+
+  // Process (some of) the buffer and leave it in place for further use,
+  // or enqueue the buffer and allocate a new one.
+  virtual void handle_completed_buffer() = 0;
+
+  void allocate_buffer();
+
+  // Enqueue the current buffer in the qset and allocate a new buffer.
+  void enqueue_completed_buffer();
 
   // Initialize this queue to contain a null buffer, and be part of the
   // given PtrQueueSet.
@@ -137,14 +138,6 @@ public:
     else enqueue_known_active(ptr);
   }
 
-  // This method is called when we're doing the zero index handling
-  // and gives a chance to the queues to do any pre-enqueueing
-  // processing they might want to do on the buffer. It should return
-  // true if the buffer should be enqueued, or false if enough
-  // entries were cleared from it so that it can be re-used. It should
-  // not return false if the buffer is still full (otherwise we can
-  // get into an infinite loop).
-  virtual bool should_enqueue_buffer() { return true; }
   void handle_zero_index();
 
   void enqueue_known_active(void* ptr);
@@ -306,7 +299,7 @@ class PtrQueueSet {
   Monitor* _cbl_mon;  // Protects the fields below.
   BufferNode* _completed_buffers_head;
   BufferNode* _completed_buffers_tail;
-  size_t _n_completed_buffers;
+  volatile size_t _n_completed_buffers;
 
   size_t _process_completed_buffers_threshold;
   volatile bool _process_completed_buffers;
@@ -314,23 +307,10 @@ class PtrQueueSet {
   // If true, notify_all on _cbl_mon when the threshold is reached.
   bool _notify_when_complete;
 
-  // Maximum number of elements allowed on completed queue: after that,
-  // enqueuer does the work itself.
-  size_t _max_completed_buffers;
-  size_t _completed_buffers_padding;
-
   void assert_completed_buffers_list_len_correct_locked() NOT_DEBUG_RETURN;
 
 protected:
   bool _all_active;
-
-  // A mutator thread does the the work of processing a buffer.
-  // Returns "true" iff the work is complete (and the buffer may be
-  // deallocated).
-  virtual bool mut_process_buffer(BufferNode* node) {
-    ShouldNotReachHere();
-    return false;
-  }
 
   // Create an empty ptr queue set.
   PtrQueueSet(bool notify_when_complete = false);
@@ -365,9 +345,6 @@ public:
   // return a completed buffer from the list.  Otherwise, return NULL.
   BufferNode* get_completed_buffer(size_t stop_at = 0);
 
-  // To be invoked by the mutator.
-  bool process_or_enqueue_completed_buffer(BufferNode* node);
-
   bool process_completed_buffers() { return _process_completed_buffers; }
   void set_process_completed_buffers(bool x) { _process_completed_buffers = x; }
 
@@ -391,21 +368,6 @@ public:
   size_t completed_buffers_num() const { return _n_completed_buffers; }
 
   void merge_bufferlists(PtrQueueSet* src);
-
-  void set_max_completed_buffers(size_t m) {
-    _max_completed_buffers = m;
-  }
-  size_t max_completed_buffers() const {
-    return _max_completed_buffers;
-  }
-  static const size_t MaxCompletedBuffersUnlimited = ~size_t(0);
-
-  void set_completed_buffers_padding(size_t padding) {
-    _completed_buffers_padding = padding;
-  }
-  size_t completed_buffers_padding() const {
-    return _completed_buffers_padding;
-  }
 
   // Notify the consumer if the number of buffers crossed the threshold
   void notify_if_necessary();

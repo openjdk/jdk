@@ -1859,6 +1859,18 @@ void GraphKit::set_predefined_output_for_runtime_call(Node* call,
   }
 }
 
+// Keep track of MergeMems feeding into other MergeMems
+static void add_mergemem_users_to_worklist(Unique_Node_List& wl, Node* mem) {
+  if (!mem->is_MergeMem()) {
+    return;
+  }
+  for (SimpleDUIterator i(mem); i.has_next(); i.next()) {
+    Node* use = i.get();
+    if (use->is_MergeMem()) {
+      wl.push(use);
+    }
+  }
+}
 
 // Replace the call with the current state of the kit.
 void GraphKit::replace_call(CallNode* call, Node* result, bool do_replaced_nodes) {
@@ -1877,6 +1889,7 @@ void GraphKit::replace_call(CallNode* call, Node* result, bool do_replaced_nodes
   CallProjections callprojs;
   call->extract_projections(&callprojs, true);
 
+  Unique_Node_List wl;
   Node* init_mem = call->in(TypeFunc::Memory);
   Node* final_mem = final_state->in(TypeFunc::Memory);
   Node* final_ctl = final_state->in(TypeFunc::Control);
@@ -1892,6 +1905,7 @@ void GraphKit::replace_call(CallNode* call, Node* result, bool do_replaced_nodes
       final_mem = _gvn.transform(final_mem);
     }
     C->gvn_replace_by(callprojs.fallthrough_memproj,   final_mem);
+    add_mergemem_users_to_worklist(wl, final_mem);
   }
   if (callprojs.fallthrough_ioproj != NULL) {
     C->gvn_replace_by(callprojs.fallthrough_ioproj,    final_io);
@@ -1931,7 +1945,9 @@ void GraphKit::replace_call(CallNode* call, Node* result, bool do_replaced_nodes
       ex_ctl = ekit.control();
     }
     if (callprojs.catchall_memproj != NULL) {
-      C->gvn_replace_by(callprojs.catchall_memproj,   ekit.reset_memory());
+      Node* ex_mem = ekit.reset_memory();
+      C->gvn_replace_by(callprojs.catchall_memproj,   ex_mem);
+      add_mergemem_users_to_worklist(wl, ex_mem);
     }
     if (callprojs.catchall_ioproj != NULL) {
       C->gvn_replace_by(callprojs.catchall_ioproj,    ekit.i_o());
@@ -1949,17 +1965,8 @@ void GraphKit::replace_call(CallNode* call, Node* result, bool do_replaced_nodes
 
   // Clean up any MergeMems that feed other MergeMems since the
   // optimizer doesn't like that.
-  if (final_mem->is_MergeMem()) {
-    Node_List wl;
-    for (SimpleDUIterator i(final_mem); i.has_next(); i.next()) {
-      Node* m = i.get();
-      if (m->is_MergeMem() && !wl.contains(m)) {
-        wl.push(m);
-      }
-    }
-    while (wl.size()  > 0) {
-      _gvn.transform(wl.pop());
-    }
+  while (wl.size() > 0) {
+    _gvn.transform(wl.pop());
   }
 
   if (callprojs.fallthrough_catchproj != NULL && !final_ctl->is_top() && do_replaced_nodes) {
@@ -2845,6 +2852,60 @@ bool GraphKit::seems_never_null(Node* obj, ciProfileData* data, bool& speculatin
   }
   speculating = false;
   return false;
+}
+
+void GraphKit::guard_klass_being_initialized(Node* klass) {
+  int init_state_off = in_bytes(InstanceKlass::init_state_offset());
+  Node* adr = basic_plus_adr(top(), klass, init_state_off);
+  Node* init_state = LoadNode::make(_gvn, NULL, immutable_memory(), adr,
+                                    adr->bottom_type()->is_ptr(), TypeInt::BYTE,
+                                    T_BYTE, MemNode::unordered);
+  init_state = _gvn.transform(init_state);
+
+  Node* being_initialized_state = makecon(TypeInt::make(InstanceKlass::being_initialized));
+
+  Node* chk = _gvn.transform(new CmpINode(being_initialized_state, init_state));
+  Node* tst = _gvn.transform(new BoolNode(chk, BoolTest::eq));
+
+  { BuildCutout unless(this, tst, PROB_MAX);
+    uncommon_trap(Deoptimization::Reason_initialized, Deoptimization::Action_reinterpret);
+  }
+}
+
+void GraphKit::guard_init_thread(Node* klass) {
+  int init_thread_off = in_bytes(InstanceKlass::init_thread_offset());
+  Node* adr = basic_plus_adr(top(), klass, init_thread_off);
+
+  Node* init_thread = LoadNode::make(_gvn, NULL, immutable_memory(), adr,
+                                     adr->bottom_type()->is_ptr(), TypePtr::NOTNULL,
+                                     T_ADDRESS, MemNode::unordered);
+  init_thread = _gvn.transform(init_thread);
+
+  Node* cur_thread = _gvn.transform(new ThreadLocalNode());
+
+  Node* chk = _gvn.transform(new CmpPNode(cur_thread, init_thread));
+  Node* tst = _gvn.transform(new BoolNode(chk, BoolTest::eq));
+
+  { BuildCutout unless(this, tst, PROB_MAX);
+    uncommon_trap(Deoptimization::Reason_uninitialized, Deoptimization::Action_none);
+  }
+}
+
+void GraphKit::clinit_barrier(ciInstanceKlass* ik, ciMethod* context) {
+  if (ik->is_being_initialized()) {
+    if (C->needs_clinit_barrier(ik, context)) {
+      Node* klass = makecon(TypeKlassPtr::make(ik));
+      guard_klass_being_initialized(klass);
+      guard_init_thread(klass);
+      insert_mem_bar(Op_MemBarCPUOrder);
+    }
+  } else if (ik->is_initialized()) {
+    return; // no barrier needed
+  } else {
+    uncommon_trap(Deoptimization::Reason_uninitialized,
+                  Deoptimization::Action_reinterpret,
+                  NULL);
+  }
 }
 
 //------------------------maybe_cast_profiled_receiver-------------------------

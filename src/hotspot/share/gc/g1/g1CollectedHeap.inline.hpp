@@ -29,6 +29,7 @@
 #include "gc/g1/g1CollectedHeap.hpp"
 #include "gc/g1/g1CollectorState.hpp"
 #include "gc/g1/g1Policy.hpp"
+#include "gc/g1/g1RemSet.hpp"
 #include "gc/g1/heapRegionManager.inline.hpp"
 #include "gc/g1/heapRegionRemSet.hpp"
 #include "gc/g1/heapRegionSet.inline.hpp"
@@ -162,8 +163,8 @@ bool G1CollectedHeap::is_in_cset_or_humongous(const oop obj) {
   return _region_attr.is_in_cset_or_humongous((HeapWord*)obj);
 }
 
-G1HeapRegionAttr G1CollectedHeap::region_attr(const oop obj) {
-  return _region_attr.at((HeapWord*)obj);
+G1HeapRegionAttr G1CollectedHeap::region_attr(const void* addr) {
+  return _region_attr.at((HeapWord*)addr);
 }
 
 void G1CollectedHeap::register_humongous_region_with_region_attr(uint index) {
@@ -176,6 +177,7 @@ void G1CollectedHeap::register_region_with_region_attr(HeapRegion* r) {
 
 void G1CollectedHeap::register_old_region_with_region_attr(HeapRegion* r) {
   _region_attr.set_in_old(r->hrm_index(), r->rem_set()->is_tracked());
+  _rem_set->prepare_for_scan_rem_set(r->hrm_index());
 }
 
 void G1CollectedHeap::register_optional_region_with_region_attr(HeapRegion* r) {
@@ -296,7 +298,7 @@ inline bool G1CollectedHeap::is_humongous_reclaim_candidate(uint region) {
 inline void G1CollectedHeap::set_humongous_is_live(oop obj) {
   uint region = addr_to_region((HeapWord*)obj);
   // Clear the flag in the humongous_reclaim_candidates table.  Also
-  // reset the entry in the _in_cset_fast_test table so that subsequent references
+  // reset the entry in the region attribute table so that subsequent references
   // to the same humongous object do not go into the slow path again.
   // This is racy, as multiple threads may at the same time enter here, but this
   // is benign.

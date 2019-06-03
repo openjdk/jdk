@@ -235,51 +235,46 @@ inline oop ShenandoahHeap::evacuate_object(oop p, Thread* thread) {
 
   assert(ShenandoahThreadLocalData::is_evac_allowed(thread), "must be enclosed in oom-evac scope");
 
-  size_t size_no_fwdptr = (size_t) p->size();
-  size_t size_with_fwdptr = size_no_fwdptr + ShenandoahForwarding::word_size();
+  size_t size = p->size();
 
   assert(!heap_region_containing(p)->is_humongous(), "never evacuate humongous objects");
 
   bool alloc_from_gclab = true;
-  HeapWord* filler = NULL;
+  HeapWord* copy = NULL;
 
 #ifdef ASSERT
   if (ShenandoahOOMDuringEvacALot &&
       (os::random() & 1) == 0) { // Simulate OOM every ~2nd slow-path call
-        filler = NULL;
+        copy = NULL;
   } else {
 #endif
     if (UseTLAB) {
-      filler = allocate_from_gclab(thread, size_with_fwdptr);
+      copy = allocate_from_gclab(thread, size);
     }
-    if (filler == NULL) {
-      ShenandoahAllocRequest req = ShenandoahAllocRequest::for_shared_gc(size_with_fwdptr);
-      filler = allocate_memory(req);
+    if (copy == NULL) {
+      ShenandoahAllocRequest req = ShenandoahAllocRequest::for_shared_gc(size);
+      copy = allocate_memory(req);
       alloc_from_gclab = false;
     }
 #ifdef ASSERT
   }
 #endif
 
-  if (filler == NULL) {
-    control_thread()->handle_alloc_failure_evac(size_with_fwdptr);
+  if (copy == NULL) {
+    control_thread()->handle_alloc_failure_evac(size);
 
     _oom_evac_handler.handle_out_of_memory_during_evacuation();
 
     return ShenandoahBarrierSet::resolve_forwarded(p);
   }
 
-  // Copy the object and initialize its forwarding ptr:
-  HeapWord* copy = filler + ShenandoahForwarding::word_size();
-  oop copy_val = oop(copy);
-
-  Copy::aligned_disjoint_words((HeapWord*) p, copy, size_no_fwdptr);
-  ShenandoahForwarding::initialize(oop(copy));
+  // Copy the object:
+  Copy::aligned_disjoint_words((HeapWord*) p, copy, size);
 
   // Try to install the new forwarding pointer.
+  oop copy_val = oop(copy);
   oop result = ShenandoahForwarding::try_update_forwardee(p, copy_val);
-
-  if (oopDesc::equals_raw(result, p)) {
+  if (oopDesc::equals_raw(result, copy_val)) {
     // Successfully evacuated. Our copy is now the public one!
     shenandoah_assert_correct(NULL, copy_val);
     return copy_val;
@@ -296,11 +291,11 @@ inline oop ShenandoahHeap::evacuate_object(oop p, Thread* thread) {
     // have to explicitly overwrite the copy with the filler object. With that overwrite,
     // we have to keep the fwdptr initialized and pointing to our (stale) copy.
     if (alloc_from_gclab) {
-      ShenandoahThreadLocalData::gclab(thread)->undo_allocation(filler, size_with_fwdptr);
+      ShenandoahThreadLocalData::gclab(thread)->undo_allocation(copy, size);
     } else {
-      fill_with_object(copy, size_no_fwdptr);
+      fill_with_object(copy, size);
+      shenandoah_assert_correct(NULL, copy_val);
     }
-    shenandoah_assert_correct(NULL, copy_val);
     shenandoah_assert_correct(NULL, result);
     return result;
   }
@@ -371,7 +366,6 @@ inline void ShenandoahHeap::marked_object_iterate(ShenandoahHeapRegion* region, 
 
 template<class T>
 inline void ShenandoahHeap::marked_object_iterate(ShenandoahHeapRegion* region, T* cl, HeapWord* limit) {
-  assert(ShenandoahForwarding::word_offset() < 0, "skip_delta calculation below assumes the forwarding ptr is before obj");
   assert(! region->is_humongous_continuation(), "no humongous continuation regions here");
 
   ShenandoahMarkingContext* const ctx = complete_marking_context();
@@ -380,10 +374,9 @@ inline void ShenandoahHeap::marked_object_iterate(ShenandoahHeapRegion* region, 
   MarkBitMap* mark_bit_map = ctx->mark_bit_map();
   HeapWord* tams = ctx->top_at_mark_start(region);
 
-  size_t skip_bitmap_delta = ShenandoahForwarding::word_size() + 1;
-  size_t skip_objsize_delta = ShenandoahForwarding::word_size() /* + actual obj.size() below */;
-  HeapWord* start = region->bottom() + ShenandoahForwarding::word_size();
-  HeapWord* end = MIN2(tams + ShenandoahForwarding::word_size(), region->end());
+  size_t skip_bitmap_delta = 1;
+  HeapWord* start = region->bottom();
+  HeapWord* end = MIN2(tams, region->end());
 
   // Step 1. Scan below the TAMS based on bitmap data.
   HeapWord* limit_bitmap = MIN2(limit, tams);
@@ -413,7 +406,7 @@ inline void ShenandoahHeap::marked_object_iterate(ShenandoahHeapRegion* region, 
     do {
       avail = 0;
       for (int c = 0; (c < dist) && (cb < limit_bitmap); c++) {
-        Prefetch::read(cb, ShenandoahForwarding::byte_offset());
+        Prefetch::read(cb, oopDesc::mark_offset_in_bytes());
         slots[avail++] = cb;
         cb += skip_bitmap_delta;
         if (cb < limit_bitmap) {
@@ -448,16 +441,16 @@ inline void ShenandoahHeap::marked_object_iterate(ShenandoahHeapRegion* region, 
   // Step 2. Accurate size-based traversal, happens past the TAMS.
   // This restarts the scan at TAMS, which makes sure we traverse all objects,
   // regardless of what happened at Step 1.
-  HeapWord* cs = tams + ShenandoahForwarding::word_size();
+  HeapWord* cs = tams;
   while (cs < limit) {
-    assert (cs > tams,  "only objects past TAMS here: "   PTR_FORMAT " (" PTR_FORMAT ")", p2i(cs), p2i(tams));
+    assert (cs >= tams, "only objects past TAMS here: "   PTR_FORMAT " (" PTR_FORMAT ")", p2i(cs), p2i(tams));
     assert (cs < limit, "only objects below limit here: " PTR_FORMAT " (" PTR_FORMAT ")", p2i(cs), p2i(limit));
     oop obj = oop(cs);
     assert(oopDesc::is_oop(obj), "sanity");
     assert(ctx->is_marked(obj), "object expected to be marked");
     int size = obj->size();
     cl->do_object(obj);
-    cs += size + skip_objsize_delta;
+    cs += size;
   }
 }
 

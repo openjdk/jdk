@@ -4348,7 +4348,8 @@ instruct loadConD(regD dst, immD src, iRegP tmp) %{
 // Prefetch instructions.
 // Must be safe to execute with invalid address (cannot fault).
 
-instruct prefetchAlloc( memoryP mem ) %{
+instruct prefetchAlloc_mp( memoryP mem ) %{
+  predicate(VM_Version::has_multiprocessing_extensions());
   match( PrefetchAllocation mem );
   ins_cost(MEMORY_REF_COST);
   size(4);
@@ -4359,6 +4360,20 @@ instruct prefetchAlloc( memoryP mem ) %{
   %}
   ins_pipe(iload_mem);
 %}
+
+instruct prefetchAlloc_sp( memoryP mem ) %{
+  predicate(!VM_Version::has_multiprocessing_extensions());
+  match( PrefetchAllocation mem );
+  ins_cost(MEMORY_REF_COST);
+  size(4);
+
+  format %{ "PLD $mem\t! Prefetch allocation" %}
+  ins_encode %{
+    __ pld($mem$$Address);
+  %}
+  ins_pipe(iload_mem);
+%}
+
 
 //----------Store Instructions-------------------------------------------------
 // Store Byte

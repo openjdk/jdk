@@ -109,6 +109,7 @@ class RunTimeSharedClassInfo;
 class RunTimeSharedDictionary;
 
 class SystemDictionaryShared: public SystemDictionary {
+  friend class ExcludeDumpTimeSharedClasses;
 public:
   enum {
     FROM_FIELD_IS_PROTECTED = 1 << 0,
@@ -211,15 +212,20 @@ private:
                                  const ClassFileStream* cfs,
                                  TRAPS);
   static DumpTimeSharedClassInfo* find_or_allocate_info_for(InstanceKlass* k);
-  static void write_dictionary(RunTimeSharedDictionary* dictionary, bool is_builtin);
+  static void write_dictionary(RunTimeSharedDictionary* dictionary,
+                               bool is_builtin,
+                               bool is_static_archive = true);
   static bool is_jfr_event_class(InstanceKlass *k);
   static void warn_excluded(InstanceKlass* k, const char* reason);
+  static bool should_be_excluded(InstanceKlass* k);
 
-  DEBUG_ONLY(static bool _checked_excluded_classes;)
+  DEBUG_ONLY(static bool _no_class_loading_should_happen;)
 public:
   static InstanceKlass* find_builtin_class(Symbol* class_name);
 
   static const RunTimeSharedClassInfo* find_record(RunTimeSharedDictionary* dict, Symbol* name);
+
+  static bool has_platform_or_app_classes();
 
   // Called by PLATFORM/APP loader only
   static InstanceKlass* find_or_load_shared_class(Symbol* class_name,
@@ -288,18 +294,34 @@ public:
   static bool is_builtin(InstanceKlass* k) {
     return (k->shared_classpath_index() != UNREGISTERED_INDEX);
   }
-  static bool should_be_excluded(InstanceKlass* k);
   static void check_excluded_classes();
   static void validate_before_archiving(InstanceKlass* k);
   static bool is_excluded_class(InstanceKlass* k);
   static void dumptime_classes_do(class MetaspaceClosure* it);
-  static void write_to_archive();
-  static void serialize_dictionary_headers(class SerializeClosure* soc);
-  static void print();
+  static size_t estimate_size_for_archive();
+  static void write_to_archive(bool is_static_archive = true);
+  static void serialize_dictionary_headers(class SerializeClosure* soc,
+                                           bool is_static_archive = true);
+  static void print() { return print_on(tty); }
   static void print_on(outputStream* st) NOT_CDS_RETURN;
   static void print_table_statistics(outputStream* st) NOT_CDS_RETURN;
+  static bool empty_dumptime_table() NOT_CDS_RETURN_(true);
 
-  DEBUG_ONLY(static bool checked_excluded_classes() {return _checked_excluded_classes;})
+  DEBUG_ONLY(static bool no_class_loading_should_happen() {return _no_class_loading_should_happen;})
+
+#ifdef ASSERT
+  class NoClassLoadingMark: public StackObj {
+  public:
+    NoClassLoadingMark() {
+      assert(!_no_class_loading_should_happen, "must not be nested");
+      _no_class_loading_should_happen = true;
+    }
+    ~NoClassLoadingMark() {
+      _no_class_loading_should_happen = false;
+    }
+  };
+#endif
+
 };
 
 #endif // SHARE_CLASSFILE_SYSTEMDICTIONARYSHARED_HPP

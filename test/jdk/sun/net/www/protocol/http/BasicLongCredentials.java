@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2010, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,6 +26,9 @@
  * @bug 6947917
  * @modules jdk.httpserver
  * @summary  Error in basic authentication when user name and password are long
+ * @library /test/lib
+ * @run main BasicLongCredentials
+ * @run main/othervm -Djava.net.preferIPv6Addresses=true BasicLongCredentials
  */
 
 import com.sun.net.httpserver.BasicAuthenticator;
@@ -37,10 +40,14 @@ import com.sun.net.httpserver.HttpServer;
 import java.io.InputStream;
 import java.io.IOException;
 import java.net.Authenticator;
+import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.PasswordAuthentication;
+import java.net.Proxy;
 import java.net.HttpURLConnection;
 import java.net.URL;
+
+import jdk.test.lib.net.URIBuilder;
 
 public class BasicLongCredentials {
 
@@ -51,7 +58,8 @@ public class BasicLongCredentials {
     static final String REALM = "foobar@test.realm";
 
     public static void main (String[] args) throws Exception {
-        HttpServer server = HttpServer.create(new InetSocketAddress(0), 0);
+        InetAddress loopback = InetAddress.getLoopbackAddress();
+        HttpServer server = HttpServer.create(new InetSocketAddress(loopback, 0), 0);
         try {
             Handler handler = new Handler();
             HttpContext ctx = server.createContext("/test", handler);
@@ -66,8 +74,13 @@ public class BasicLongCredentials {
 
             Authenticator.setDefault(new MyAuthenticator());
 
-            URL url = new URL("http://localhost:"+server.getAddress().getPort()+"/test/");
-            HttpURLConnection urlc = (HttpURLConnection)url.openConnection();
+            URL url = URIBuilder.newBuilder()
+                      .scheme("http")
+                      .host(server.getAddress().getAddress())
+                      .port(server.getAddress().getPort())
+                      .path("/test/")
+                      .toURL();
+            HttpURLConnection urlc = (HttpURLConnection)url.openConnection(Proxy.NO_PROXY);
             InputStream is = urlc.getInputStream();
             int c = 0;
             while (is.read()!= -1) { c ++; }

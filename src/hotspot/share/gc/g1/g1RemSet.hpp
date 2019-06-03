@@ -98,10 +98,12 @@ public:
   // into the collection set or update the remembered set.
   void update_rem_set(G1ParScanThreadState* pss, uint worker_i);
 
-  // Prepare for and cleanup after scanning the remembered sets.  Must be called
+  // Prepare for and cleanup after scanning the remembered sets. Must be called
   // once before and after in sequential code.
   void prepare_for_scan_rem_set();
   void cleanup_after_scan_rem_set();
+  // Prepares the given region for remembered set scanning.
+  void prepare_for_scan_rem_set(uint region_idx);
 
   G1RemSetScanState* scan_state() const { return _scan_state; }
 
@@ -126,61 +128,6 @@ public:
   // Rebuilds the remembered set by scanning from bottom to TARS for all regions
   // using the given work gang.
   void rebuild_rem_set(G1ConcurrentMark* cm, WorkGang* workers, uint worker_id_offset);
-};
-
-class G1ScanRSForRegionClosure : public HeapRegionClosure {
-  G1CollectedHeap* _g1h;
-  G1CardTable *_ct;
-
-  G1ParScanThreadState* _pss;
-  G1ScanCardClosure* _scan_objs_on_card_cl;
-
-  G1RemSetScanState* _scan_state;
-
-  G1GCPhaseTimes::GCParPhases _phase;
-
-  uint   _worker_i;
-
-  size_t _opt_refs_scanned;
-  size_t _opt_refs_memory_used;
-
-  size_t _cards_scanned;
-  size_t _cards_claimed;
-  size_t _cards_skipped;
-
-  Tickspan _rem_set_root_scan_time;
-  Tickspan _rem_set_trim_partially_time;
-
-  Tickspan _strong_code_root_scan_time;
-  Tickspan _strong_code_trim_partially_time;
-
-  void claim_card(size_t card_index, const uint region_idx_for_card);
-  void scan_card(MemRegion mr, uint region_idx_for_card);
-
-  void scan_opt_rem_set_roots(HeapRegion* r);
-  void scan_rem_set_roots(HeapRegion* r);
-  void scan_strong_code_roots(HeapRegion* r);
-public:
-  G1ScanRSForRegionClosure(G1RemSetScanState* scan_state,
-                           G1ScanCardClosure* scan_obj_on_card,
-                           G1ParScanThreadState* pss,
-                           G1GCPhaseTimes::GCParPhases phase,
-                           uint worker_i);
-
-  bool do_heap_region(HeapRegion* r);
-
-  Tickspan rem_set_root_scan_time() const { return _rem_set_root_scan_time; }
-  Tickspan rem_set_trim_partially_time() const { return _rem_set_trim_partially_time; }
-
-  Tickspan strong_code_root_scan_time() const { return _strong_code_root_scan_time;  }
-  Tickspan strong_code_root_trim_partially_time() const { return _strong_code_trim_partially_time; }
-
-  size_t cards_scanned() const { return _cards_scanned; }
-  size_t cards_claimed() const { return _cards_claimed; }
-  size_t cards_skipped() const { return _cards_skipped; }
-
-  size_t opt_refs_scanned() const { return _opt_refs_scanned; }
-  size_t opt_refs_memory_used() const { return _opt_refs_memory_used; }
 };
 
 #endif // SHARE_GC_G1_G1REMSET_HPP

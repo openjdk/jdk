@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 8143037 8142447 8144095 8140265 8144906 8146138 8147887 8147886 8148316 8148317 8143955 8157953 8080347 8154714 8166649 8167643 8170162 8172102 8165405 8174796 8174797 8175304 8167554 8180508 8166232 8196133 8199912 8211694
+ * @bug 8143037 8142447 8144095 8140265 8144906 8146138 8147887 8147886 8148316 8148317 8143955 8157953 8080347 8154714 8166649 8167643 8170162 8172102 8165405 8174796 8174797 8175304 8167554 8180508 8166232 8196133 8199912 8211694 8223688
  * @summary Tests for Basic tests for REPL tool
  * @modules jdk.compiler/com.sun.tools.javac.api
  *          jdk.compiler/com.sun.tools.javac.main
@@ -60,6 +60,7 @@ import org.testng.annotations.Test;
 
 import static org.testng.Assert.assertEquals;
 import static org.testng.Assert.assertTrue;
+import static org.testng.Assert.assertFalse;
 import static org.testng.Assert.fail;
 
 @Test
@@ -866,5 +867,16 @@ public class ToolBasicTest extends ReplToolTesting {
                 a -> assertCommand(a, "a", "a ==> null")
         );
      }
+
+    public void testWarningUnchecked() { //8223688
+        test(false, new String[]{"--no-startup"},
+                a -> assertCommand(a, "abstract class A<T> { A(T t){} }", "|  created class A"),
+                a -> assertCommandCheckOutput(a, "new A(\"\") {}", s -> {
+                            assertStartsWith("|  Warning:");
+                            assertTrue(s.contains("unchecked call"));
+                            assertFalse(s.contains("Exception"));
+                        })
+        );
+    }
 
 }

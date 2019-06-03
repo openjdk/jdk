@@ -1655,6 +1655,7 @@ public class JavacParser implements Parser {
                         case DOUBLELITERAL: case CHARLITERAL: case STRINGLITERAL:
                         case TRUE: case FALSE: case NULL:
                         case NEW: case IDENTIFIER: case ASSERT: case ENUM: case UNDERSCORE:
+                        case SWITCH:
                         case BYTE: case SHORT: case CHAR: case INT:
                         case LONG: case FLOAT: case DOUBLE: case BOOLEAN: case VOID:
                             return ParensResult.CAST;

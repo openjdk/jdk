@@ -41,46 +41,6 @@ class PlainDatagramSocketImpl extends AbstractPlainDatagramSocketImpl
         init();
     }
 
-    static final ExtendedSocketOptions extendedOptions =
-            ExtendedSocketOptions.getInstance();
-
-    protected <T> void setOption(SocketOption<T> name, T value) throws IOException {
-        if (isClosed()) {
-            throw new SocketException("Socket closed");
-        }
-        if (supportedOptions().contains(name)) {
-            if (extendedOptions.isOptionSupported(name)) {
-                extendedOptions.setOption(fd, name, value);
-            } else {
-                super.setOption(name, value);
-            }
-        } else {
-            throw new UnsupportedOperationException("unsupported option");
-        }
-    }
-
-    @SuppressWarnings("unchecked")
-    protected <T> T getOption(SocketOption<T> name) throws IOException {
-        if (isClosed()) {
-            throw new SocketException("Socket closed");
-        }
-        if (supportedOptions().contains(name)) {
-            if (extendedOptions.isOptionSupported(name)) {
-                return (T) extendedOptions.getOption(fd, name);
-            } else {
-                return super.getOption(name);
-            }
-        } else {
-            throw new UnsupportedOperationException("unsupported option");
-        }
-    }
-
-    protected Set<SocketOption<?>> supportedOptions() {
-        HashSet<SocketOption<?>> options = new HashSet<>(super.supportedOptions());
-        options.addAll(ExtendedSocketOptions.datagramSocketOptions());
-        return options;
-    }
-
     protected void socketSetOption(int opt, Object val) throws SocketException {
         if (opt == SocketOptions.SO_REUSEPORT &&
             !supportedOptions().contains(StandardSocketOptions.SO_REUSEPORT)) {

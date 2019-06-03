@@ -630,6 +630,17 @@ class Assembler : public AbstractAssembler  {
     _true = 7
   };
 
+  //---<  calculate length of instruction  >---
+  // As instruction size can't be found out easily on x86/x64,
+  // we just use '4' for len and maxlen.
+  // instruction must start at passed address
+  static unsigned int instr_len(unsigned char *instr) { return 4; }
+
+  //---<  longest instructions  >---
+  // Max instruction length is not specified in architecture documentation.
+  // We could use a "safe enough" estimate (15), but just default to
+  // instruction length guess from above.
+  static unsigned int instr_maxlen() { return 4; }
 
   // NOTE: The general philopsophy of the declarations here is that 64bit versions
   // of instructions are freely declared without the need for wrapping them an ifdef.

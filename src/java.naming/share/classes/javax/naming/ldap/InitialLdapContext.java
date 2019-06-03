@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -38,7 +38,7 @@ import java.util.Hashtable;
   * {@code javax.naming.InitialDirContext} for details on synchronization,
   * and the policy for how an initial context is created.
   *
-  * <h1>Request Controls</h1>
+  * <h2>Request Controls</h2>
   * When you create an initial context ({@code InitialLdapContext}),
   * you can specify a list of request controls.
   * These controls will be used as the request controls for any

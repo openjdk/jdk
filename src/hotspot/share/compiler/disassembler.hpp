@@ -25,7 +25,11 @@
 #ifndef SHARE_COMPILER_DISASSEMBLER_HPP
 #define SHARE_COMPILER_DISASSEMBLER_HPP
 
+#include "utilities/globalDefinitions.hpp"
+
+#include "asm/assembler.hpp"
 #include "asm/codeBuffer.hpp"
+#include "compiler/abstractDisassembler.hpp"
 #include "runtime/globals.hpp"
 #include "utilities/macros.hpp"
 
@@ -34,7 +38,8 @@ class decode_env;
 // The disassembler prints out assembly code annotated
 // with Java specific information.
 
-class Disassembler {
+// Disassembler inherits from AbstractDisassembler
+class Disassembler : public AbstractDisassembler {
   friend class decode_env;
  private:
   // this is the type of the dll entry point:
@@ -57,26 +62,58 @@ class Disassembler {
   static void*    _library;
   // bailout
   static bool     _tried_to_load_library;
+  static bool     _library_usable;
   // points to the decode function.
   static decode_func_virtual _decode_instructions_virtual;
   static decode_func _decode_instructions;
-  // tries to load library and return whether it succedded.
-  static bool load_library();
+
+  // tries to load library and return whether it succeeded.
+  // Allow (diagnostic) output redirection.
+  // No output at all if stream is NULL. Can be overridden
+  // with -Verbose flag, in which case output goes to tty.
+  static bool load_library(outputStream* st = NULL);
+
+  // Check if the two addresses are on the same page.
+  static bool is_same_page(address a1, address a2) {
+    return (((uintptr_t)a1 ^ (uintptr_t)a2) & (~0x0fffUL)) == 0L;
+  }
 
   // Machine dependent stuff
 #include CPU_HEADER(disassembler)
 
  public:
-  static bool can_decode() {
-    ttyLocker tl;
-    return (_decode_instructions_virtual != NULL) ||
-           (_decode_instructions != NULL) ||
-           load_library();
+  // We can always decode code blobs.
+  // Either we have a disassembler library available (successfully loaded)
+  // or we will resort to the abstract disassembler. This method informs
+  // about which decoding format is used.
+  // We can also enforce using the abstract disassembler.
+  static bool is_abstract() {
+    if (!_tried_to_load_library /* && !UseAbstractDisassembler */) {
+      load_library();
+    }
+    return ! _library_usable /* || UseAbstractDisassembler */;  // Not available until DecodeErrorFile is supported.
   }
-  static void decode(CodeBlob *cb,               outputStream* st = NULL);
-  static void decode(nmethod* nm,                outputStream* st = NULL);
-  static void decode(address begin, address end, outputStream* st = NULL,
-                     CodeStrings c = CodeStrings(), ptrdiff_t offset = 0);
+
+  // Check out if we are doing a live disassembly or a post-mortem
+  // disassembly where the binary data was loaded from a hs_err file.
+  static bool is_decode_error_file() {
+// Activate once post-mortem disassembly (from hs-err file) is available.
+#if 0
+    return DecodeErrorFile && (strlen(DecodeErrorFile) != 0);
+#else
+    return false;
+#endif
+  }
+
+  // Directly disassemble code buffer.
+  static void decode(CodeBuffer* cb, address start, address end, outputStream* st = NULL);
+  // Directly disassemble code blob.
+  static void decode(CodeBlob *cb,               outputStream* st = NULL, CodeStrings c = CodeStrings());
+  // Directly disassemble nmethod.
+  static void decode(nmethod* nm,                outputStream* st = NULL, CodeStrings c = CodeStrings());
+  // Disassemble an arbitrary memory range.
+  static void decode(address start, address end, outputStream* st = NULL, CodeStrings c = CodeStrings() /* , ptrdiff_t offset */);
+
   static void _hook(const char* file, int line, class MacroAssembler* masm);
 
   // This functions makes it easy to generate comments in the generated

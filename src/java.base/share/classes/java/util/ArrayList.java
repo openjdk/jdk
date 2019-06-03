@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,6 +29,7 @@ import java.util.function.Consumer;
 import java.util.function.Predicate;
 import java.util.function.UnaryOperator;
 import jdk.internal.access.SharedSecrets;
+import jdk.internal.util.ArraysSupport;
 
 /**
  * Resizable-array implementation of the {@code List} interface.  Implements
@@ -219,14 +220,6 @@ public class ArrayList<E> extends AbstractList<E>
     }
 
     /**
-     * The maximum size of array to allocate (unless necessary).
-     * Some VMs reserve some header words in an array.
-     * Attempts to allocate larger arrays may result in
-     * OutOfMemoryError: Requested array size exceeds VM limit
-     */
-    private static final int MAX_ARRAY_SIZE = Integer.MAX_VALUE - 8;
-
-    /**
      * Increases the capacity to ensure that it can hold at least the
      * number of elements specified by the minimum capacity argument.
      *
@@ -234,45 +227,19 @@ public class ArrayList<E> extends AbstractList<E>
      * @throws OutOfMemoryError if minCapacity is less than zero
      */
     private Object[] grow(int minCapacity) {
-        return elementData = Arrays.copyOf(elementData,
-                                           newCapacity(minCapacity));
+        int oldCapacity = elementData.length;
+        if (oldCapacity > 0 || elementData != DEFAULTCAPACITY_EMPTY_ELEMENTDATA) {
+            int newCapacity = ArraysSupport.newLength(oldCapacity,
+                    minCapacity - oldCapacity, /* minimum growth */
+                    oldCapacity >> 1           /* preferred growth */);
+            return elementData = Arrays.copyOf(elementData, newCapacity);
+        } else {
+            return elementData = new Object[Math.max(DEFAULT_CAPACITY, minCapacity)];
+        }
     }
 
     private Object[] grow() {
         return grow(size + 1);
-    }
-
-    /**
-     * Returns a capacity at least as large as the given minimum capacity.
-     * Returns the current capacity increased by 50% if that suffices.
-     * Will not return a capacity greater than MAX_ARRAY_SIZE unless
-     * the given minimum capacity is greater than MAX_ARRAY_SIZE.
-     *
-     * @param minCapacity the desired minimum capacity
-     * @throws OutOfMemoryError if minCapacity is less than zero
-     */
-    private int newCapacity(int minCapacity) {
-        // overflow-conscious code
-        int oldCapacity = elementData.length;
-        int newCapacity = oldCapacity + (oldCapacity >> 1);
-        if (newCapacity - minCapacity <= 0) {
-            if (elementData == DEFAULTCAPACITY_EMPTY_ELEMENTDATA)
-                return Math.max(DEFAULT_CAPACITY, minCapacity);
-            if (minCapacity < 0) // overflow
-                throw new OutOfMemoryError();
-            return minCapacity;
-        }
-        return (newCapacity - MAX_ARRAY_SIZE <= 0)
-            ? newCapacity
-            : hugeCapacity(minCapacity);
-    }
-
-    private static int hugeCapacity(int minCapacity) {
-        if (minCapacity < 0) // overflow
-            throw new OutOfMemoryError();
-        return (minCapacity > MAX_ARRAY_SIZE)
-            ? Integer.MAX_VALUE
-            : MAX_ARRAY_SIZE;
     }
 
     /**
@@ -1729,6 +1696,7 @@ public class ArrayList<E> extends AbstractList<E>
     @Override
     public void replaceAll(UnaryOperator<E> operator) {
         replaceAllRange(operator, 0, size);
+        // TODO(8203662): remove increment of modCount from ...
         modCount++;
     }
 

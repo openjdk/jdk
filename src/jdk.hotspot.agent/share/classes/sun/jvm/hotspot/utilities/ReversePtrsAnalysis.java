@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -92,9 +92,9 @@ public class ReversePtrsAnalysis {
     heap = vm.getObjectHeap();
 
     // Do each thread's roots
-    for (JavaThread thread = VM.getVM().getThreads().first();
-         thread != null;
-         thread = thread.next()) {
+    Threads threads = VM.getVM().getThreads();
+    for (int i = 0; i < threads.getNumberOfThreads(); i++) {
+      JavaThread thread = threads.getJavaThreadAt(i);
       ByteArrayOutputStream bos = new ByteArrayOutputStream();
       thread.printThreadIDOn(new PrintStream(bos));
       String threadDesc =

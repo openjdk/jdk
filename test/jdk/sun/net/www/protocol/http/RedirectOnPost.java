@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -165,7 +165,8 @@ public class RedirectOnPost {
     private static HttpServer getHttpServer(ExecutorService execs)
         throws Exception
     {
-        InetSocketAddress inetAddress = new InetSocketAddress(0);
+        InetSocketAddress inetAddress = new InetSocketAddress(
+                InetAddress.getLoopbackAddress(), 0);
         HttpServer testServer = HttpServer.create(inetAddress, 15);
         int port = testServer.getAddress().getPort();
         testServer.setExecutor(execs);
@@ -180,7 +181,8 @@ public class RedirectOnPost {
     )
         throws Exception
     {
-        InetSocketAddress inetAddress = new InetSocketAddress(0);
+        InetSocketAddress inetAddress = new InetSocketAddress(
+                InetAddress.getLoopbackAddress(), 0);
         HttpsServer testServer = HttpsServer.create(inetAddress, 15);
         int port = testServer.getAddress().getPort();
         testServer.setExecutor(execs);

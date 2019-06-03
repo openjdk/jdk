@@ -29,7 +29,7 @@
 #include "gc/shared/collectedHeap.hpp"
 #include "gc/shenandoah/shenandoahAsserts.hpp"
 #include "gc/shenandoah/shenandoahAllocRequest.hpp"
-#include "gc/shenandoah/shenandoahHeapLock.hpp"
+#include "gc/shenandoah/shenandoahLock.hpp"
 #include "gc/shenandoah/shenandoahEvacOOMHandler.hpp"
 #include "gc/shenandoah/shenandoahSharedVariables.hpp"
 #include "services/memoryManager.hpp"
@@ -40,6 +40,7 @@ class ShenandoahAllocTracker;
 class ShenandoahCollectorPolicy;
 class ShenandoahControlThread;
 class ShenandoahGCSession;
+class ShenandoahGCStateResetter;
 class ShenandoahHeuristics;
 class ShenandoahMarkingContext;
 class ShenandoahPhaseTimings;
@@ -102,6 +103,8 @@ public:
 };
 #endif
 
+typedef ShenandoahLock    ShenandoahHeapLock;
+typedef ShenandoahLocker  ShenandoahHeapLocker;
 
 // Shenandoah GC is low-pause concurrent GC that uses Brooks forwarding pointers
 // to encode forwarding data. See BrooksPointer for details on forwarding data encoding.
@@ -111,6 +114,7 @@ class ShenandoahHeap : public CollectedHeap {
   friend class ShenandoahAsserts;
   friend class VMStructs;
   friend class ShenandoahGCSession;
+  friend class ShenandoahGCStateResetter;
 
 // ---------- Locks that guard important data structures in Heap
 //
@@ -518,9 +522,6 @@ public:
 
   bool is_in(const void* p) const;
 
-  size_t obj_size(oop obj) const;
-  virtual ptrdiff_t cell_header_size() const;
-
   void collect(GCCause::Cause cause);
   void do_full_collection(bool clear_all_soft_refs);
 
@@ -574,10 +575,6 @@ public:
                                                size_t size,
                                                Metaspace::MetadataType mdtype);
 
-  oop obj_allocate(Klass* klass, int size, TRAPS);
-  oop array_allocate(Klass* klass, int size, int length, bool do_zero, TRAPS);
-  oop class_allocate(Klass* klass, int size, TRAPS);
-
   void notify_mutator_alloc_words(size_t words, bool waste);
 
   // Shenandoah supports TLAB allocation
@@ -588,10 +585,6 @@ public:
   size_t unsafe_max_tlab_alloc(Thread *thread) const;
   size_t max_tlab_size() const;
   size_t tlab_used(Thread* ignored) const;
-
-  HeapWord* tlab_post_allocation_setup(HeapWord* obj);
-  void fill_with_dummy_object(HeapWord* start, HeapWord* end, bool zap);
-  size_t min_dummy_object_size() const;
 
   void resize_tlabs();
 

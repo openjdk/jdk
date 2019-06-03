@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2004, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2004, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,6 +25,7 @@
  * @test
  * @bug 5026745 6631048
  * @modules jdk.httpserver
+ * @library /test/lib
  * @run main/othervm/timeout=500 Test
  * @summary Cannot flush output stream when writing to an HttpUrlConnection
  */
@@ -32,6 +33,8 @@
 import java.io.*;
 import java.net.*;
 import com.sun.net.httpserver.*;
+
+import jdk.test.lib.net.URIBuilder;
 
 public class Test implements HttpHandler {
 
@@ -272,9 +275,8 @@ public class Test implements HttpHandler {
 
     /* basic chunked test (runs twice) */
 
-    static void test1 (String u) throws Exception {
-        URL url = new URL (u);
-        System.out.println ("client opening connection to: " + u);
+    static void test1(URL url) throws Exception {
+        System.out.println("client opening connection to: " + url);
         HttpURLConnection urlc = (HttpURLConnection)url.openConnection ();
         urlc.setChunkedStreamingMode (20);
         urlc.setDoOutput(true);
@@ -289,9 +291,8 @@ public class Test implements HttpHandler {
 
     /* basic fixed length test */
 
-    static void test3 (String u) throws Exception {
-        URL url = new URL (u);
-        System.out.println ("client opening connection to: " + u);
+    static void test3(URL url) throws Exception {
+        System.out.println("client opening connection to: " + url);
         HttpURLConnection urlc = (HttpURLConnection)url.openConnection ();
         urlc.setFixedLengthStreamingMode (str2.length());
         urlc.setDoOutput(true);
@@ -306,9 +307,8 @@ public class Test implements HttpHandler {
 
     /* write too few bytes */
 
-    static void test4 (String u) throws Exception {
-        URL url = new URL (u);
-        System.out.println ("client opening connection to: " + u);
+    static void test4(URL url) throws Exception {
+        System.out.println("client opening connection to: " + url);
         HttpURLConnection urlc = (HttpURLConnection)url.openConnection ();
         urlc.setFixedLengthStreamingMode (str2.length()+1);
         urlc.setDoOutput(true);
@@ -323,9 +323,8 @@ public class Test implements HttpHandler {
 
     /* write too many bytes */
 
-    static void test5 (String u) throws Exception {
-        URL url = new URL (u);
-        System.out.println ("client opening connection to: " + u);
+    static void test5(URL url) throws Exception {
+        System.out.println("client opening connection to: " + url);
         HttpURLConnection urlc = (HttpURLConnection)url.openConnection ();
         urlc.setFixedLengthStreamingMode (str2.length()-1);
         urlc.setDoOutput(true);
@@ -339,9 +338,8 @@ public class Test implements HttpHandler {
 
     /* check for HttpRetryException on redirection */
 
-    static void test6 (String u) throws Exception {
-        URL url = new URL (u);
-        System.out.println ("client opening connection to: " + u);
+    static void test6(URL url) throws Exception {
+        System.out.println("client opening connection to: " + url);
         HttpURLConnection urlc = (HttpURLConnection)url.openConnection ();
         urlc.setChunkedStreamingMode (20);
         urlc.setDoOutput(true);
@@ -364,9 +362,8 @@ public class Test implements HttpHandler {
 
     /* next two tests send zero length posts */
 
-    static void test7 (String u) throws Exception {
-        URL url = new URL (u);
-        System.out.println ("client opening connection to: " + u);
+    static void test7(URL url) throws Exception {
+        System.out.println("client opening connection to: " + url);
         HttpURLConnection urlc = (HttpURLConnection)url.openConnection ();
         urlc.setChunkedStreamingMode (20);
         urlc.setDoOutput(true);
@@ -379,9 +376,8 @@ public class Test implements HttpHandler {
         }
     }
 
-    static void test8 (String u) throws Exception {
-        URL url = new URL (u);
-        System.out.println ("client opening connection to: " + u);
+    static void test8(URL url) throws Exception {
+        System.out.println("client opening connection to: " + url);
         HttpURLConnection urlc = (HttpURLConnection)url.openConnection ();
         urlc.setFixedLengthStreamingMode (0);
         urlc.setDoOutput(true);
@@ -396,9 +392,8 @@ public class Test implements HttpHandler {
 
     /* calling setChunkedStreamingMode with -1 should entail using
        the default chunk size */
-   static void test9 (String u) throws Exception {
-        URL url = new URL (u);
-        System.out.println ("client opening connection to: " + u);
+    static void test9(URL url) throws Exception {
+        System.out.println("client opening connection to: " + url);
         HttpURLConnection urlc = (HttpURLConnection)url.openConnection ();
         urlc.setChunkedStreamingMode (-1);
         urlc.setDoOutput(true);
@@ -411,9 +406,8 @@ public class Test implements HttpHandler {
         is.close();
     }
 
-   static void test10 (String u) throws Exception {
-        URL url = new URL (u);
-        System.out.println ("client opening connection to: " + u);
+    static void test10(URL url) throws Exception {
+        System.out.println("client opening connection to: " + url);
         HttpURLConnection urlc = (HttpURLConnection)url.openConnection ();
         urlc.setChunkedStreamingMode (4 * 1024);
         urlc.setDoOutput(true);
@@ -435,9 +429,8 @@ public class Test implements HttpHandler {
         }
     }
 
-    static void test11 (String u) throws Exception {
-        URL url = new URL (u);
-        System.out.println ("client opening connection to: " + u);
+    static void test11(URL url) throws Exception {
+        System.out.println("client opening connection to: " + url);
         HttpURLConnection urlc = (HttpURLConnection)url.openConnection ();
         urlc.setChunkedStreamingMode (36 * 1024);
         urlc.setDoOutput(true);
@@ -462,9 +455,8 @@ public class Test implements HttpHandler {
         }
     }
 
-    static void test12 (String u) throws Exception {
-        URL url = new URL (u);
-        System.out.println ("client opening connection to: " + u);
+    static void test12(URL url) throws Exception {
+        System.out.println("client opening connection to: " + url);
         HttpURLConnection urlc = (HttpURLConnection)url.openConnection ();
         urlc.setChunkedStreamingMode (36 * 1024);
         urlc.setDoOutput(true);
@@ -485,29 +477,39 @@ public class Test implements HttpHandler {
     }
 
 
-    static com.sun.net.httpserver.HttpServer httpserver;
+    static HttpServer httpserver;
+
+    private static URL buildTestURL(int port, String path)
+            throws MalformedURLException, URISyntaxException {
+        return URIBuilder.newBuilder()
+                .scheme("http")
+                .loopback()
+                .port(port)
+                .path(path)
+                .toURL();
+    }
 
     public static void main (String[] args) throws Exception {
         try {
-            httpserver = com.sun.net.httpserver.HttpServer.create(new InetSocketAddress(0), 0);
-            HttpContext ctx = httpserver.createContext("/test/", new Test() );
+            httpserver = HttpServer.create(new InetSocketAddress(InetAddress.getLoopbackAddress(), 0), 0);
+            httpserver.createContext("/test/", new Test());
             httpserver.start();
 
             int port = httpserver.getAddress().getPort();
 
             System.out.println ("Server started: listening on port: " + port);
-            test1("http://localhost:"+ port + "/test/test1");
-            test1("http://localhost:"+ port + "/test/test2");
-            test3("http://localhost:"+ port + "/test/test3");
-            test4("http://localhost:"+ port + "/test/test4");
-            test5("http://localhost:"+ port + "/test/test5");
-            test6("http://localhost:"+ port + "/test/test6");
-            test7("http://localhost:"+ port + "/test/test7");
-            test8("http://localhost:"+ port + "/test/test8");
-            test9("http://localhost:"+ port + "/test/test9");
-            test10("http://localhost:"+ port + "/test/test10");
-            test11("http://localhost:"+ port + "/test/test11");
-            test12("http://localhost:"+ port + "/test/test12");
+            test1(buildTestURL(port, "/test/test1"));
+            test1(buildTestURL(port, "/test/test2"));
+            test3(buildTestURL(port, "/test/test3"));
+            test4(buildTestURL(port, "/test/test4"));
+            test5(buildTestURL(port, "/test/test5"));
+            test6(buildTestURL(port, "/test/test6"));
+            test7(buildTestURL(port, "/test/test7"));
+            test8(buildTestURL(port, "/test/test8"));
+            test9(buildTestURL(port, "/test/test9"));
+            test10(buildTestURL(port, "/test/test10"));
+            test11(buildTestURL(port, "/test/test11"));
+            test12(buildTestURL(port, "/test/test12"));
         } finally {
             if (httpserver != null)
                 httpserver.stop(0);

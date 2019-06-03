@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1994, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1994, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -602,7 +602,7 @@ public final class Float extends Number
      *
      * @return  the {@code float} value represented by this object
      *          converted to type {@code byte}
-     * @jls 5.1.3 Narrowing Primitive Conversions
+     * @jls 5.1.3 Narrowing Primitive Conversion
      */
     public byte byteValue() {
         return (byte)value;
@@ -614,7 +614,7 @@ public final class Float extends Number
      *
      * @return  the {@code float} value represented by this object
      *          converted to type {@code short}
-     * @jls 5.1.3 Narrowing Primitive Conversions
+     * @jls 5.1.3 Narrowing Primitive Conversion
      * @since 1.1
      */
     public short shortValue() {
@@ -627,7 +627,7 @@ public final class Float extends Number
      *
      * @return  the {@code float} value represented by this object
      *          converted to type {@code int}
-     * @jls 5.1.3 Narrowing Primitive Conversions
+     * @jls 5.1.3 Narrowing Primitive Conversion
      */
     public int intValue() {
         return (int)value;
@@ -639,7 +639,7 @@ public final class Float extends Number
      *
      * @return  the {@code float} value represented by this object
      *          converted to type {@code long}
-     * @jls 5.1.3 Narrowing Primitive Conversions
+     * @jls 5.1.3 Narrowing Primitive Conversion
      */
     public long longValue() {
         return (long)value;
@@ -661,7 +661,7 @@ public final class Float extends Number
      *
      * @return the {@code float} value represented by this
      *         object converted to type {@code double}
-     * @jls 5.1.2 Widening Primitive Conversions
+     * @jls 5.1.2 Widening Primitive Conversion
      */
     public double doubleValue() {
         return (double)value;

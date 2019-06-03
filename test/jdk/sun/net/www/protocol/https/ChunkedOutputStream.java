@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2004, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2004, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,6 +27,7 @@
  * @modules java.base/sun.net.www
  * @build TestHttpsServer HttpCallback
  * @run main/othervm ChunkedOutputStream
+ * @run main/othervm -Djava.net.preferIPv6Addresses=true ChunkedOutputStream
  *
  *     SunJSSE does not support dynamic system properties, no way to re-use
  *     system properties in samevm/agentvm mode.
@@ -54,7 +55,7 @@ public class ChunkedOutputStream implements HttpCallback {
     static final String str2 = "Helloworld1234567890abcdefghijklmnopqrstuvwxyz"+
                                 "1234567890";
 
-    public void request (HttpTransaction req) {
+    public void request(HttpTransaction req) {
         try {
             // this is needed (count++ doesn't work), 'cause we
             // are doing concurrent tests
@@ -80,19 +81,19 @@ public class ChunkedOutputStream implements HttpCallback {
             case 1: /* test2 -- closes conn */
                 String reqbody = req.getRequestEntityBody();
                 if (!reqbody.equals(str1)) {
-                    req.sendResponse (500, "Internal server error");
+                    req.sendResponse(500, "Internal server error");
                     req.orderlyClose();
                 }
-                String chunk = req.getRequestHeader ("Transfer-encoding");
-                if (!"chunked".equals (chunk)) {
-                    req.sendResponse (501, "Internal server error");
+                String chunk = req.getRequestHeader("Transfer-encoding");
+                if (!"chunked".equals(chunk)) {
+                    req.sendResponse(501, "Internal server error");
                     req.orderlyClose();
                 }
-                req.setResponseEntityBody (reqbody);
+                req.setResponseEntityBody(reqbody);
                 if (count == 1) {
-                    req.setResponseHeader ("Connection", "close");
+                    req.setResponseHeader("Connection", "close");
                 }
-                req.sendResponse (200, "OK");
+                req.sendResponse(200, "OK");
                 if (count == 1) {
                     req.orderlyClose();
                 }
@@ -100,35 +101,35 @@ public class ChunkedOutputStream implements HttpCallback {
             case 2: /* test 3 */
                 reqbody = req.getRequestEntityBody();
                 if (!reqbody.equals(str2)) {
-                    req.sendResponse (500, "Internal server error");
+                    req.sendResponse(500, "Internal server error");
                     req.orderlyClose();
                 }
                 int clen = Integer.parseInt (
-                        req.getRequestHeader ("Content-length"));
+                        req.getRequestHeader("Content-length"));
                 if (clen != str2.length()) {
-                    req.sendResponse (501, "Internal server error");
+                    req.sendResponse(501, "Internal server error");
                     req.orderlyClose();
                 }
                 req.setResponseEntityBody (reqbody);
-                req.setResponseHeader ("Connection", "close");
-                req.sendResponse (200, "OK");
+                req.setResponseHeader("Connection", "close");
+                req.sendResponse(200, "OK");
                 req.orderlyClose();
                 break;
             case 3: /* test 6 */
-                req.setResponseHeader ("Location", "https://foo.bar/");
-                req.setResponseHeader ("Connection", "close");
-                req.sendResponse (307, "Temporary Redirect");
+                req.setResponseHeader("Location", "https://foo.bar/");
+                req.setResponseHeader("Connection", "close");
+                req.sendResponse(307, "Temporary Redirect");
                 req.orderlyClose();
                 break;
             case 4: /* test 7 */
             case 5: /* test 8 */
                 reqbody = req.getRequestEntityBody();
-                if (reqbody != null && !"".equals (reqbody)) {
-                    req.sendResponse (501, "Internal server error");
+                if (reqbody != null && !"".equals(reqbody)) {
+                    req.sendResponse(501, "Internal server error");
                     req.orderlyClose();
                 }
-                req.setResponseHeader ("Connection", "close");
-                req.sendResponse (200, "OK");
+                req.setResponseHeader("Connection", "close");
+                req.sendResponse(200, "OK");
                 req.orderlyClose();
                 break;
             }
@@ -137,148 +138,148 @@ public class ChunkedOutputStream implements HttpCallback {
         }
     }
 
-    static void readAndCompare (InputStream is, String cmp) throws IOException {
+    static void readAndCompare(InputStream is, String cmp) throws IOException {
         int c;
-        byte buf[] = new byte [1024];
+        byte buf[] = new byte[1024];
         int off = 0;
         int len = 1024;
         while ((c=is.read(buf, off, len)) != -1) {
             off += c;
             len -= c;
         }
-        String s1 = new String (buf, 0, off, "ISO8859_1");
+        String s1 = new String(buf, 0, off, "ISO8859_1");
         if (!cmp.equals(s1)) {
-            throw new IOException ("strings not same");
+            throw new IOException("strings not same");
         }
     }
 
     /* basic chunked test (runs twice) */
 
-    static void test1 (String u) throws Exception {
-        URL url = new URL (u);
-        System.out.println ("client opening connection to: " + u);
-        HttpURLConnection urlc = (HttpURLConnection)url.openConnection ();
-        urlc.setChunkedStreamingMode (20);
+    static void test1(String u) throws Exception {
+        URL url = new URL(u);
+        System.out.println("client opening connection to: " + u);
+        HttpURLConnection urlc = (HttpURLConnection)url.openConnection(Proxy.NO_PROXY);
+        urlc.setChunkedStreamingMode(20);
         urlc.setDoOutput(true);
-        urlc.setRequestMethod ("POST");
-        OutputStream os = urlc.getOutputStream ();
-        os.write (str1.getBytes());
+        urlc.setRequestMethod("POST");
+        OutputStream os = urlc.getOutputStream();
+        os.write(str1.getBytes());
         os.close();
         InputStream is = urlc.getInputStream();
-        readAndCompare (is, str1);
+        readAndCompare(is, str1);
         is.close();
     }
 
     /* basic fixed length test */
 
-    static void test3 (String u) throws Exception {
-        URL url = new URL (u);
-        System.out.println ("client opening connection to: " + u);
-        HttpURLConnection urlc = (HttpURLConnection)url.openConnection ();
-        urlc.setFixedLengthStreamingMode (str2.length());
+    static void test3(String u) throws Exception {
+        URL url = new URL(u);
+        System.out.println("client opening connection to: " + u);
+        HttpURLConnection urlc = (HttpURLConnection)url.openConnection(Proxy.NO_PROXY);
+        urlc.setFixedLengthStreamingMode(str2.length());
         urlc.setDoOutput(true);
-        urlc.setRequestMethod ("POST");
-        OutputStream os = urlc.getOutputStream ();
+        urlc.setRequestMethod("POST");
+        OutputStream os = urlc.getOutputStream();
         os.write (str2.getBytes());
         os.close();
         InputStream is = urlc.getInputStream();
-        readAndCompare (is, str2);
+        readAndCompare(is, str2);
         is.close();
     }
 
     /* write too few bytes */
 
-    static void test4 (String u) throws Exception {
-        URL url = new URL (u);
-        System.out.println ("client opening connection to: " + u);
-        HttpURLConnection urlc = (HttpURLConnection)url.openConnection ();
-        urlc.setFixedLengthStreamingMode (str2.length()+1);
+    static void test4(String u) throws Exception {
+        URL url = new URL(u);
+        System.out.println("client opening connection to: " + u);
+        HttpURLConnection urlc = (HttpURLConnection)url.openConnection(Proxy.NO_PROXY);
+        urlc.setFixedLengthStreamingMode(str2.length()+1);
         urlc.setDoOutput(true);
-        urlc.setRequestMethod ("POST");
-        OutputStream os = urlc.getOutputStream ();
-        os.write (str2.getBytes());
+        urlc.setRequestMethod("POST");
+        OutputStream os = urlc.getOutputStream();
+        os.write(str2.getBytes());
         try {
             os.close();
-            throw new Exception ("should have thrown IOException");
+            throw new Exception("should have thrown IOException");
         } catch (IOException e) {}
     }
 
     /* write too many bytes */
 
-    static void test5 (String u) throws Exception {
-        URL url = new URL (u);
-        System.out.println ("client opening connection to: " + u);
-        HttpURLConnection urlc = (HttpURLConnection)url.openConnection ();
-        urlc.setFixedLengthStreamingMode (str2.length()-1);
+    static void test5(String u) throws Exception {
+        URL url = new URL(u);
+        System.out.println("client opening connection to: " + u);
+        HttpURLConnection urlc = (HttpURLConnection)url.openConnection(Proxy.NO_PROXY);
+        urlc.setFixedLengthStreamingMode(str2.length()-1);
         urlc.setDoOutput(true);
-        urlc.setRequestMethod ("POST");
-        OutputStream os = urlc.getOutputStream ();
+        urlc.setRequestMethod("POST");
+        OutputStream os = urlc.getOutputStream();
         try {
-            os.write (str2.getBytes());
-            throw new Exception ("should have thrown IOException");
+            os.write(str2.getBytes());
+            throw new Exception("should have thrown IOException");
         } catch (IOException e) {}
     }
 
     /* check for HttpRetryException on redirection */
 
-    static void test6 (String u) throws Exception {
-        URL url = new URL (u);
-        System.out.println ("client opening connection to: " + u);
-        HttpURLConnection urlc = (HttpURLConnection)url.openConnection ();
-        urlc.setChunkedStreamingMode (20);
+    static void test6(String u) throws Exception {
+        URL url = new URL(u);
+        System.out.println("client opening connection to: " + u);
+        HttpURLConnection urlc = (HttpURLConnection)url.openConnection(Proxy.NO_PROXY);
+        urlc.setChunkedStreamingMode(20);
         urlc.setDoOutput(true);
-        urlc.setRequestMethod ("POST");
-        OutputStream os = urlc.getOutputStream ();
-        os.write (str1.getBytes());
+        urlc.setRequestMethod("POST");
+        OutputStream os = urlc.getOutputStream();
+        os.write(str1.getBytes());
         os.close();
         try {
             InputStream is = urlc.getInputStream();
-            throw new Exception ("should have gotten HttpRetryException");
+            throw new Exception("should have gotten HttpRetryException");
         } catch (HttpRetryException e) {
             if (e.responseCode() != 307) {
-                throw new Exception ("Wrong response code " + e.responseCode());
+                throw new Exception("Wrong response code " + e.responseCode());
             }
-            if (!e.getLocation().equals ("https://foo.bar/")) {
-                throw new Exception ("Wrong location " + e.getLocation());
+            if (!e.getLocation().equals("https://foo.bar/")) {
+                throw new Exception("Wrong location " + e.getLocation());
             }
         }
     }
 
     /* next two tests send zero length posts */
 
-    static void test7 (String u) throws Exception {
-        URL url = new URL (u);
-        System.out.println ("client opening connection to: " + u);
-        HttpURLConnection urlc = (HttpURLConnection)url.openConnection ();
-        urlc.setChunkedStreamingMode (20);
+    static void test7(String u) throws Exception {
+        URL url = new URL(u);
+        System.out.println("client opening connection to: " + u);
+        HttpURLConnection urlc = (HttpURLConnection)url.openConnection(Proxy.NO_PROXY);
+        urlc.setChunkedStreamingMode(20);
         urlc.setDoOutput(true);
-        urlc.setRequestMethod ("POST");
-        OutputStream os = urlc.getOutputStream ();
+        urlc.setRequestMethod("POST");
+        OutputStream os = urlc.getOutputStream();
         os.close();
         int ret = urlc.getResponseCode();
         if (ret != 200) {
-            throw new Exception ("Expected 200: got " + ret);
+            throw new Exception("Expected 200: got " + ret);
         }
     }
 
-    static void test8 (String u) throws Exception {
-        URL url = new URL (u);
-        System.out.println ("client opening connection to: " + u);
-        HttpURLConnection urlc = (HttpURLConnection)url.openConnection ();
-        urlc.setFixedLengthStreamingMode (0);
+    static void test8(String u) throws Exception {
+        URL url = new URL(u);
+        System.out.println("client opening connection to: " + u);
+        HttpURLConnection urlc = (HttpURLConnection)url.openConnection(Proxy.NO_PROXY);
+        urlc.setFixedLengthStreamingMode(0);
         urlc.setDoOutput(true);
-        urlc.setRequestMethod ("POST");
-        OutputStream os = urlc.getOutputStream ();
+        urlc.setRequestMethod("POST");
+        OutputStream os = urlc.getOutputStream();
         os.close();
         int ret = urlc.getResponseCode();
         if (ret != 200) {
-            throw new Exception ("Expected 200: got " + ret);
+            throw new Exception("Expected 200: got " + ret);
         }
     }
 
     static TestHttpsServer server;
 
-    public static void main (String[] args) throws Exception {
+    public static void main(String[] args) throws Exception {
         // setup properties to do ssl
         String keyFilename =
             System.getProperty("test.src", "./") + "/" + pathToStores +
@@ -286,6 +287,8 @@ public class ChunkedOutputStream implements HttpCallback {
         String trustFilename =
             System.getProperty("test.src", "./") + "/" + pathToStores +
                 "/" + trustStoreFile;
+
+        InetAddress loopback = InetAddress.getLoopbackAddress();
 
         HostnameVerifier reservedHV =
             HttpsURLConnection.getDefaultHostnameVerifier();
@@ -298,17 +301,17 @@ public class ChunkedOutputStream implements HttpCallback {
 
             try {
                 server = new TestHttpsServer(
-                        new ChunkedOutputStream(), 1, 10, 0);
-                System.out.println ("Server started: listening on port: " + server.getLocalPort());
+                        new ChunkedOutputStream(), 1, 10, loopback, 0);
+                System.out.println("Server started: listening on: " + server.getAuthority());
                 // the test server doesn't support keep-alive yet
-                // test1("http://localhost:"+server.getLocalPort()+"/d0");
-                test1("https://localhost:"+server.getLocalPort()+"/d01");
-                test3("https://localhost:"+server.getLocalPort()+"/d3");
-                test4("https://localhost:"+server.getLocalPort()+"/d4");
-                test5("https://localhost:"+server.getLocalPort()+"/d5");
-                test6("https://localhost:"+server.getLocalPort()+"/d6");
-                test7("https://localhost:"+server.getLocalPort()+"/d7");
-                test8("https://localhost:"+server.getLocalPort()+"/d8");
+                // test1("http://" + server.getAuthority() + "/d0");
+                test1("https://" + server.getAuthority() + "/d01");
+                test3("https://" + server.getAuthority() + "/d3");
+                test4("https://" + server.getAuthority() + "/d4");
+                test5("https://" + server.getAuthority() + "/d5");
+                test6("https://" + server.getAuthority() + "/d6");
+                test7("https://" + server.getAuthority() + "/d7");
+                test8("https://" + server.getAuthority() + "/d8");
             } catch (Exception e) {
                 if (server != null) {
                     server.terminate();
@@ -327,8 +330,8 @@ public class ChunkedOutputStream implements HttpCallback {
         }
     }
 
-    public static void except (String s) {
+    public static void except(String s) {
         server.terminate();
-        throw new RuntimeException (s);
+        throw new RuntimeException(s);
     }
 }

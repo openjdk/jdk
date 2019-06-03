@@ -30,9 +30,10 @@
 #include "runtime/thread.hpp"
 
 class ShenandoahSATBMarkQueue: public SATBMarkQueue {
+protected:
+  virtual void handle_completed_buffer();
 public:
   ShenandoahSATBMarkQueue(SATBMarkQueueSet* qset) : SATBMarkQueue(qset) {}
-  virtual bool should_enqueue_buffer();
 };
 
 class ShenandoahSATBMarkQueueSet : public SATBMarkQueueSet {

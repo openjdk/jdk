@@ -57,7 +57,7 @@ static bool _enabled = false;
 
 static bool enable() {
   assert(!_enabled, "invariant");
-  FLAG_SET_MGMT(bool, FlightRecorder, true);
+  FLAG_SET_MGMT(FlightRecorder, true);
   _enabled = FlightRecorder;
   assert(_enabled, "invariant");
   return _enabled;
@@ -168,7 +168,7 @@ static void log_jdk_jfr_module_resolution_error(TRAPS) {
 
 static bool is_cds_dump_requested() {
   // we will not be able to launch recordings if a cds dump is being requested
-  if (DumpSharedSpaces && (JfrOptionSet::startup_recording_options() != NULL)) {
+  if ((DumpSharedSpaces || DynamicDumpSharedSpaces) && (JfrOptionSet::startup_recording_options() != NULL)) {
     warning("JFR will be disabled during CDS dumping");
     teardown_startup_support();
     return true;

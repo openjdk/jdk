@@ -67,8 +67,13 @@ class JfrOSInterface::JfrOSInterfaceImpl : public JfrCHeapObj {
  private:
   CPUInformationInterface* _cpu_info_interface;
   CPUPerformanceInterface* _cpu_perf_interface;
-  SystemProcessInterface*  _system_process_interface;
+  SystemProcessInterface* _system_process_interface;
   NetworkPerformanceInterface* _network_performance_interface;
+
+  CPUInformationInterface* cpu_info_interface();
+  CPUPerformanceInterface* cpu_perf_interface();
+  SystemProcessInterface* system_process_interface();
+  NetworkPerformanceInterface* network_performance_interface();
 
   JfrOSInterfaceImpl();
   bool initialize();
@@ -90,28 +95,57 @@ class JfrOSInterface::JfrOSInterfaceImpl : public JfrCHeapObj {
    // system processes information
   int system_processes(SystemProcess** system_processes, int* no_of_sys_processes);
 
-  int network_utilization(NetworkInterface** network_interfaces) const;
+  int network_utilization(NetworkInterface** network_interfaces);
 };
 
 JfrOSInterface::JfrOSInterfaceImpl::JfrOSInterfaceImpl() : _cpu_info_interface(NULL),
                                                            _cpu_perf_interface(NULL),
-                                                           _system_process_interface(NULL) {}
+                                                           _system_process_interface(NULL),
+                                                           _network_performance_interface(NULL) {}
+
+template <typename T>
+static T* create_interface() {
+  ResourceMark rm;
+  T* iface = new T();
+  if (iface != NULL) {
+    if (!iface->initialize()) {
+      delete iface;
+      iface = NULL;
+    }
+  }
+  return iface;
+}
+
+CPUInformationInterface* JfrOSInterface::JfrOSInterfaceImpl::cpu_info_interface() {
+  if (_cpu_info_interface == NULL) {
+    _cpu_info_interface = create_interface<CPUInformationInterface>();
+  }
+  return _cpu_info_interface;
+}
+
+CPUPerformanceInterface* JfrOSInterface::JfrOSInterfaceImpl::cpu_perf_interface() {
+  if (_cpu_perf_interface == NULL) {
+    _cpu_perf_interface = create_interface<CPUPerformanceInterface>();
+  }
+  return _cpu_perf_interface;
+}
+
+SystemProcessInterface* JfrOSInterface::JfrOSInterfaceImpl::system_process_interface() {
+  if (_system_process_interface == NULL) {
+    _system_process_interface = create_interface<SystemProcessInterface>();
+  }
+  return _system_process_interface;
+}
+
+NetworkPerformanceInterface* JfrOSInterface::JfrOSInterfaceImpl::network_performance_interface() {
+  if (_network_performance_interface == NULL) {
+    _network_performance_interface = create_interface<NetworkPerformanceInterface>();
+  }
+  return _network_performance_interface;
+}
 
 bool JfrOSInterface::JfrOSInterfaceImpl::initialize() {
-  _cpu_info_interface = new CPUInformationInterface();
-  if (!(_cpu_info_interface != NULL && _cpu_info_interface->initialize())) {
-    return false;
-  }
-  _cpu_perf_interface = new CPUPerformanceInterface();
-  if (!(_cpu_perf_interface != NULL && _cpu_perf_interface->initialize())) {
-    return false;
-  }
-  _system_process_interface = new SystemProcessInterface();
-  if (!(_system_process_interface != NULL && _system_process_interface->initialize())) {
-    return false;
-  }
-  _network_performance_interface = new NetworkPerformanceInterface();
-  return _network_performance_interface != NULL && _network_performance_interface->initialize();
+  return true;
 }
 
 JfrOSInterface::JfrOSInterfaceImpl::~JfrOSInterfaceImpl(void) {
@@ -133,36 +167,43 @@ JfrOSInterface::JfrOSInterfaceImpl::~JfrOSInterfaceImpl(void) {
   }
 }
 
+int JfrOSInterface::JfrOSInterfaceImpl::cpu_information(CPUInformation& cpu_info) {
+  CPUInformationInterface* const iface = cpu_info_interface();
+  return iface == NULL ? OS_ERR : iface->cpu_information(cpu_info);
+}
+
 int JfrOSInterface::JfrOSInterfaceImpl::cpu_load(int which_logical_cpu, double* cpu_load) {
-  return _cpu_perf_interface->cpu_load(which_logical_cpu, cpu_load);
+  CPUPerformanceInterface* const iface = cpu_perf_interface();
+  return iface == NULL ? OS_ERR : iface->cpu_load(which_logical_cpu, cpu_load);
 }
 
 int JfrOSInterface::JfrOSInterfaceImpl::context_switch_rate(double* rate) {
-  return _cpu_perf_interface->context_switch_rate(rate);
+  CPUPerformanceInterface* const iface = cpu_perf_interface();
+  return iface == NULL ? OS_ERR : iface->context_switch_rate(rate);
 }
 
 int JfrOSInterface::JfrOSInterfaceImpl::cpu_load_total_process(double* cpu_load) {
-  return _cpu_perf_interface->cpu_load_total_process(cpu_load);
+  CPUPerformanceInterface* const iface = cpu_perf_interface();
+  return iface == NULL ? OS_ERR : iface->cpu_load_total_process(cpu_load);
 }
 
 int JfrOSInterface::JfrOSInterfaceImpl::cpu_loads_process(double* pjvmUserLoad,
                                                           double* pjvmKernelLoad,
                                                           double* psystemTotal) {
-  return _cpu_perf_interface->cpu_loads_process(pjvmUserLoad, pjvmKernelLoad, psystemTotal);
-}
-
-int JfrOSInterface::JfrOSInterfaceImpl::cpu_information(CPUInformation& cpu_info) {
-  return _cpu_info_interface->cpu_information(cpu_info);
+  CPUPerformanceInterface* const iface = cpu_perf_interface();
+  return iface == NULL ? OS_ERR : iface->cpu_loads_process(pjvmUserLoad, pjvmKernelLoad, psystemTotal);
 }
 
 int JfrOSInterface::JfrOSInterfaceImpl::system_processes(SystemProcess** system_processes, int* no_of_sys_processes) {
   assert(system_processes != NULL, "system_processes pointer is NULL!");
   assert(no_of_sys_processes != NULL, "no_of_sys_processes pointer is NULL!");
-  return _system_process_interface->system_processes(system_processes, no_of_sys_processes);
+  SystemProcessInterface* const iface = system_process_interface();
+  return iface == NULL ? OS_ERR : iface->system_processes(system_processes, no_of_sys_processes);
 }
 
-int JfrOSInterface::JfrOSInterfaceImpl::network_utilization(NetworkInterface** network_interfaces) const {
-  return _network_performance_interface->network_utilization(network_interfaces);
+int JfrOSInterface::JfrOSInterfaceImpl::network_utilization(NetworkInterface** network_interfaces) {
+  NetworkPerformanceInterface* const iface = network_performance_interface();
+  return iface == NULL ? OS_ERR : iface->network_utilization(network_interfaces);
 }
 
 // assigned char* is RESOURCE_HEAP_ALLOCATED
@@ -213,6 +254,27 @@ int JfrOSInterface::cpu_loads_process(double* jvm_user_load, double* jvm_kernel_
 
 int JfrOSInterface::os_version(char** os_version) {
   return instance()._impl->os_version(os_version);
+}
+
+const char* JfrOSInterface::virtualization_name() {
+  VirtualizationType vrt = VM_Version::get_detected_virtualization();
+  if (vrt == XenHVM) {
+    return "Xen hardware-assisted virtualization";
+  } else if (vrt == KVM) {
+    return "KVM virtualization";
+  } else if (vrt == VMWare) {
+    return "VMWare virtualization";
+  } else if (vrt == HyperV) {
+    return "HyperV virtualization";
+  } else if (vrt == PowerVM) {
+    return "PowerVM virtualization";
+  } else if (vrt == PowerKVM) {
+    return "Power KVM virtualization";
+  } else if (vrt == PowerFullPartitionMode) {
+    return "Power full partition";
+  }
+
+  return "No virtualization detected";
 }
 
 int JfrOSInterface::generate_initial_environment_variable_events() {

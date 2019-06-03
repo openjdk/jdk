@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -35,6 +35,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.jar.JarEntry;
 import java.util.jar.JarFile;
+import java.util.spi.ToolProvider;
 import java.util.stream.Stream;
 import java.util.zip.ZipFile;
 
@@ -46,6 +47,16 @@ public class MRTestBase {
 
     protected final String src = System.getProperty("test.src", ".");
     protected final String usr = System.getProperty("user.dir", ".");
+
+    private static final ToolProvider JAR_TOOL = ToolProvider.findFirst("jar")
+            .orElseThrow(()
+                    -> new RuntimeException("jar tool not found")
+            );
+
+    private static final ToolProvider JAVAC_TOOL = ToolProvider.findFirst("javac")
+            .orElseThrow(()
+                    -> new RuntimeException("javac tool not found")
+            );
 
     protected void compile(String test) throws Throwable {
         Path classes = Paths.get(usr, "classes", "base");
@@ -91,10 +102,8 @@ public class MRTestBase {
     }
 
     void javac(Path dest, Path... sourceFiles) throws Throwable {
-        String javac = JDKToolFinder.getJDKTool("javac");
 
         List<String> commands = new ArrayList<>();
-        commands.add(javac);
         String opts = System.getProperty("test.compiler.opts");
         if (!opts.isEmpty()) {
             commands.addAll(Arrays.asList(opts.split(" +")));
@@ -106,8 +115,14 @@ public class MRTestBase {
                 .map(Object::toString)
                 .forEach(x -> commands.add(x));
 
-        ProcessTools.executeCommand(new ProcessBuilder(commands))
-                .shouldHaveExitValue(SUCCESS);
+        StringWriter sw = new StringWriter();
+        try (PrintWriter pw = new PrintWriter(sw)) {
+            int rc = JAVAC_TOOL.run(pw, pw, commands.toArray(new String[0]));
+            if(rc != 0) {
+                throw new RuntimeException(sw.toString());
+            }
+        }
+
     }
 
     OutputAnalyzer jarWithStdin(File stdinSource,
@@ -126,5 +141,24 @@ public class MRTestBase {
 
     OutputAnalyzer jar(String... args) throws Throwable {
         return jarWithStdin(null, args);
+    }
+
+    OutputAnalyzer jarTool(String... args) {
+        List<String> commands = new ArrayList<>();
+        commands.addAll(Utils.getForwardVmOptions());
+        Stream.of(args).forEach(x -> commands.add(x));
+        return run(JAR_TOOL, args);
+    }
+
+    OutputAnalyzer run(ToolProvider tp, String[] commands) {
+        int rc = 0;
+        StringWriter sw = new StringWriter();
+        StringWriter esw = new StringWriter();
+
+        try (PrintWriter pw = new PrintWriter(sw);
+             PrintWriter epw = new PrintWriter(esw)) {
+            rc = tp.run(pw, epw, commands);
+        }
+        return new OutputAnalyzer(sw.toString(), esw.toString(), rc);
     }
 }

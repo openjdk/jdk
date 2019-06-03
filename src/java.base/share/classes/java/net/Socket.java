@@ -33,6 +33,7 @@ import java.lang.invoke.VarHandle;
 import java.nio.channels.SocketChannel;
 import java.security.AccessController;
 import java.security.PrivilegedAction;
+import java.util.Objects;
 import java.util.Set;
 import java.util.Collections;
 
@@ -1786,6 +1787,9 @@ class Socket implements java.io.Closeable {
      * @since 9
      */
     public <T> Socket setOption(SocketOption<T> name, T value) throws IOException {
+        Objects.requireNonNull(name);
+        if (isClosed())
+            throw new SocketException("Socket is closed");
         getImpl().setOption(name, value);
         return this;
     }
@@ -1815,6 +1819,9 @@ class Socket implements java.io.Closeable {
      */
     @SuppressWarnings("unchecked")
     public <T> T getOption(SocketOption<T> name) throws IOException {
+        Objects.requireNonNull(name);
+        if (isClosed())
+            throw new SocketException("Socket is closed");
         return getImpl().getOption(name);
     }
 

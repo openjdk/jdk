@@ -254,10 +254,9 @@ class MetaspaceObj {
   // into a single contiguous memory block, so we can use these
   // two pointers to quickly determine if something is in the
   // shared metaspace.
-  //
   // When CDS is not enabled, both pointers are set to NULL.
-  static void* _shared_metaspace_base; // (inclusive) low address
-  static void* _shared_metaspace_top;  // (exclusive) high address
+  static void* _shared_metaspace_base;  // (inclusive) low address
+  static void* _shared_metaspace_top;   // (exclusive) high address
 
  public:
 
@@ -269,7 +268,8 @@ class MetaspaceObj {
   static bool is_shared(const MetaspaceObj* p) {
     // If no shared metaspace regions are mapped, _shared_metaspace_{base,top} will
     // both be NULL and all values of p will be rejected quickly.
-    return (((void*)p) < _shared_metaspace_top && ((void*)p) >= _shared_metaspace_base);
+    return (((void*)p) < _shared_metaspace_top &&
+            ((void*)p) >= _shared_metaspace_base);
   }
   bool is_shared() const { return MetaspaceObj::is_shared(this); }
 
@@ -279,6 +279,12 @@ class MetaspaceObj {
     _shared_metaspace_base = base;
     _shared_metaspace_top = top;
   }
+
+  static void expand_shared_metaspace_range(void* top) {
+    assert(top >= _shared_metaspace_top, "must be");
+    _shared_metaspace_top = top;
+  }
+
   static void* shared_metaspace_base() { return _shared_metaspace_base; }
   static void* shared_metaspace_top()  { return _shared_metaspace_top;  }
 

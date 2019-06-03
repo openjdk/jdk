@@ -80,7 +80,7 @@ void* VtableStub::operator new(size_t size, int code_size) throw() {
 
 
 void VtableStub::print_on(outputStream* st) const {
-  st->print("vtable stub (index = %d, receiver_location = " INTX_FORMAT ", code = [" INTPTR_FORMAT ", " INTPTR_FORMAT "[)",
+  st->print("vtable stub (index = %d, receiver_location = " INTX_FORMAT ", code = [" INTPTR_FORMAT ", " INTPTR_FORMAT "])",
              index(), p2i(receiver_location()), p2i(code_begin()), p2i(code_end()));
 }
 

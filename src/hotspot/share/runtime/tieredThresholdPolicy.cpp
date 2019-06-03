@@ -238,7 +238,7 @@ void TieredThresholdPolicy::initialize() {
       // Lower the compiler count such that all buffers fit into the code cache
       count = MAX2(max_count, c1_only ? 1 : 2);
     }
-    FLAG_SET_ERGO(intx, CICompilerCount, count);
+    FLAG_SET_ERGO(CICompilerCount, count);
   }
 #else
   // On 32-bit systems, the number of compiler threads is limited to 3.
@@ -250,7 +250,7 @@ void TieredThresholdPolicy::initialize() {
   /// available to the VM and thus cause the VM to crash.
   if (FLAG_IS_DEFAULT(CICompilerCount)) {
     count = 3;
-    FLAG_SET_ERGO(intx, CICompilerCount, count);
+    FLAG_SET_ERGO(CICompilerCount, count);
   }
 #endif
 

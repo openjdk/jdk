@@ -869,7 +869,7 @@ else
   JVM_DOCS_TARGETS ?= hotspot-$(JVM_VARIANT_MAIN)-gensrc
 
   # The gensrc steps for hotspot and jdk.jdi create html spec files.
-  docs-jdk-specs: $(JVM_DOCS_TARGETS) jdk.jdi-gensrc \
+  docs-jdk-specs: buildtools-jdk $(JVM_DOCS_TARGETS) jdk.jdi-gensrc \
       docs-jdk-index
 
   docs-zip: docs-jdk

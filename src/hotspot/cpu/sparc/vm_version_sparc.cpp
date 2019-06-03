@@ -139,12 +139,12 @@ void VM_Version::initialize() {
     if (FLAG_IS_DEFAULT(AllocatePrefetchLines)) {
       const int ap_lns = AllocatePrefetchLines;
       const int ap_inc = cache_line_size < 64 ? ap_lns : (ap_lns + 1) / 2;
-      FLAG_SET_ERGO(intx, AllocatePrefetchLines, ap_lns + ap_inc);
+      FLAG_SET_ERGO(AllocatePrefetchLines, ap_lns + ap_inc);
     }
     if (FLAG_IS_DEFAULT(AllocateInstancePrefetchLines)) {
       const int ip_lns = AllocateInstancePrefetchLines;
       const int ip_inc = cache_line_size < 64 ? ip_lns : (ip_lns + 1) / 2;
-      FLAG_SET_ERGO(intx, AllocateInstancePrefetchLines, ip_lns + ip_inc);
+      FLAG_SET_ERGO(AllocateInstancePrefetchLines, ip_lns + ip_inc);
     }
   }
 #endif /* COMPILER2 */

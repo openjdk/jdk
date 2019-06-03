@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,7 @@
 
 /**
  * @test
- * @bug 8155026 8178011
+ * @bug 8155026 8178011 8220702
  * @summary Test automatic modules
  * @library /tools/lib
  * @modules
@@ -816,6 +816,90 @@ public class AutomaticModules extends ModuleTestBase {
         if (!expected.equals(log)) {
             throw new Exception("expected output not found: " + log);
         }
+    }
+
+    @Test
+    public void testAutomaticModulePatchingAndAllModulePath(Path base) throws Exception {
+        Path modulePath = base.resolve("module-path");
+
+        Files.createDirectories(modulePath);
+
+        Path libaSrc = base.resolve("libaSrc");
+        tb.writeJavaFiles(libaSrc,
+                          "module liba { exports api1; }",
+                          "package api1; public class Api1 {}");
+        Path libaClasses = modulePath.resolve("liba");
+        tb.createDirectories(libaClasses);
+
+        new JavacTask(tb)
+            .outdir(libaClasses)
+            .files(findJavaFiles(libaSrc))
+            .run()
+            .writeAll();
+
+        Path libbSrc = base.resolve("libbSrc");
+        tb.writeJavaFiles(libbSrc,
+                          "module libb { exports api2; }",
+                          "package api2; public class Api2 {}");
+        Path libbClasses = modulePath.resolve("libb");
+        tb.createDirectories(libbClasses);
+
+        new JavacTask(tb)
+            .outdir(libbClasses)
+            .files(findJavaFiles(libbSrc))
+            .run()
+            .writeAll();
+
+        Path automaticSrc = base.resolve("automaticSrc");
+        tb.writeJavaFiles(automaticSrc, "package aut; public class Aut1 { api1.Api1 a1; }");
+        Path automaticClasses = base.resolve("automaticClasses");
+        tb.createDirectories(automaticClasses);
+
+        new JavacTask(tb)
+            .outdir(automaticClasses)
+            .options("--add-modules", "liba",
+                     "--module-path", modulePath.toString())
+            .files(findJavaFiles(automaticSrc))
+            .run()
+            .writeAll()
+            .getOutput(Task.OutputKind.DIRECT);
+
+        Path automaticJar = modulePath.resolve("automatic-1.0.jar");
+
+        try (ZipOutputStream out = new ZipOutputStream(Files.newOutputStream(automaticJar))) {
+            out.putNextEntry(new ZipEntry("aut/Aut1.class"));
+            Files.copy(automaticClasses.resolve("aut").resolve("Aut1.class"), out);
+        }
+
+        Path src = base.resolve("src");
+
+        tb.writeJavaFiles(src,
+                          "package aut; public class Aut2 { api2.Api2 a2; aut.Aut1 aut1;}");
+
+        Path classes = base.resolve("classes");
+
+        Files.createDirectories(classes);
+
+        new JavacTask(tb)
+                .options("--module-path", modulePath.toString(),
+                         "--patch-module", "automatic=" + src.toString(),
+                         "--add-modules", "ALL-MODULE-PATH")
+                .outdir(classes)
+                .files(findJavaFiles(src))
+                .run(Task.Expect.SUCCESS)
+                .writeAll()
+                .getOutputLines(Task.OutputKind.DIRECT);
+
+        new JavacTask(tb)
+                .options("--module-path", modulePath.toString(),
+                         "--patch-module", "automatic=" + src.toString(),
+                         "--module-source-path", "dummy",
+                         "--add-modules", "ALL-MODULE-PATH")
+                .outdir(classes)
+                .files(findJavaFiles(src))
+                .run(Task.Expect.SUCCESS)
+                .writeAll()
+                .getOutputLines(Task.OutputKind.DIRECT);
     }
 
 }

@@ -26,14 +26,15 @@
 package jdk.internal.net.http;
 
 import java.io.IOException;
-import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.Executor;
-import java.util.function.Function;
 import java.net.http.HttpClient;
 import java.net.http.HttpResponse;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.Executor;
+
 import jdk.internal.net.http.common.Logger;
 import jdk.internal.net.http.common.MinimalFuture;
 import jdk.internal.net.http.common.Utils;
+
 import static java.net.http.HttpClient.Version.HTTP_1_1;
 
 /**
@@ -92,8 +93,10 @@ abstract class ExchangeImpl<T> {
             CompletableFuture<Http2Connection> c2f = c2.getConnectionFor(request, exchange);
             if (debug.on())
                 debug.log("get: Trying to get HTTP/2 connection");
-            return c2f.handle((h2c, t) -> createExchangeImpl(h2c, t, exchange, connection))
-                    .thenCompose(Function.identity());
+            // local variable required here; see JDK-8223553
+            CompletableFuture<CompletableFuture<? extends ExchangeImpl<U>>> fxi =
+                c2f.handle((h2c, t) -> createExchangeImpl(h2c, t, exchange, connection));
+            return fxi.thenCompose(x->x);
         }
     }
 

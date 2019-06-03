@@ -2309,6 +2309,8 @@ public class Gen extends JCTree.Visitor {
     }
 
     public void visitLetExpr(LetExpr tree) {
+        code.resolvePending();
+
         int limit = code.nextreg;
         int prevLetExprStart = code.setLetExprStackPos(code.state.stacksize);
         try {

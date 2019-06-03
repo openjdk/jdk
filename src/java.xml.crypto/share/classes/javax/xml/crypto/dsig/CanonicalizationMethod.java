@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -88,6 +88,24 @@ public interface CanonicalizationMethod extends Transform {
      */
     final static String EXCLUSIVE_WITH_COMMENTS =
         "http://www.w3.org/2001/10/xml-exc-c14n#WithComments";
+
+    /**
+     * The <a href="https://www.w3.org/TR/xml-c14n11/">Canonical XML 1.1
+     * (without comments)</a> canonicalization method algorithm URI.
+     *
+     * @since 13
+     */
+    final static String INCLUSIVE_11 = "http://www.w3.org/2006/12/xml-c14n11";
+
+    /**
+     * The <a href="https://www.w3.org/TR/xml-c14n11/#WithComments">
+     * Canonical XML 1.1 with comments</a> canonicalization method algorithm
+     * URI.
+     *
+     * @since 13
+     */
+    final static String INCLUSIVE_11_WITH_COMMENTS =
+        "http://www.w3.org/2006/12/xml-c14n11#WithComments";
 
     /**
      * Returns the algorithm-specific input parameters associated with this

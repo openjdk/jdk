@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2006, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2006, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -59,11 +59,12 @@ public class B6369510
     void doClient() {
         try {
             InetSocketAddress address = httpServer.getAddress();
-            String urlString = "http://" + InetAddress.getLocalHost().getHostName() + ":" + address.getPort() + "/test/";
+            String urlString = "http://" + InetAddress.getLocalHost().getHostName()
+                               + ":" + address.getPort() + "/test/";
             System.out.println("URL == " + urlString);
 
             // GET Request
-            URL url = new URL("http://" + InetAddress.getLocalHost().getHostName() + ":" + address.getPort() + "/test/");
+            URL url = new URL(urlString);
             HttpURLConnection uc = (HttpURLConnection)url.openConnection(Proxy.NO_PROXY);
             int resp = uc.getResponseCode();
             if (resp != 200)
@@ -95,7 +96,8 @@ public class B6369510
      * Http Server
      */
     public void startHttpServer() throws IOException {
-        httpServer = com.sun.net.httpserver.HttpServer.create(new InetSocketAddress(0), 0);
+        InetAddress localhost = InetAddress.getLocalHost();
+        httpServer = HttpServer.create(new InetSocketAddress(localhost, 0), 0);
 
         // create HttpServer context
         HttpContext ctx = httpServer.createContext("/test/", new MyHandler());

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -36,11 +36,8 @@
  * or the {@linkplain java.util.ServiceLoader service loader} with the name
  * {@code "jar"}.
  *
- * <dl style="font-family:'DejaVu Sans', Arial, Helvetica, sans serif">
- * <dt class="simpleTagLabel">Tool Guides:
- * <dd>{@extLink jar_tool_reference jar},
- *     {@extLink jarsigner_tool_reference jarsigner}
- * </dl>
+ * @toolGuide jar
+ * @toolGuide jarsigner
  *
  * @moduleGraph
  * @since 9

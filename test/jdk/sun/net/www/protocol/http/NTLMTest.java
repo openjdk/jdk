@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,6 +25,7 @@
  * @test
  * @bug 6520665 6357133
  * @modules java.base/sun.net.www
+ * @library /test/lib
  * @run main/othervm NTLMTest
  * @summary 6520665 & 6357133: NTLM authentication issues.
  */
@@ -32,35 +33,41 @@
 import java.net.*;
 import java.io.*;
 import sun.net.www.MessageHeader;
+import jdk.test.lib.net.URIBuilder;
 
 public class NTLMTest
 {
-    public static void main(String[] args) {
+    public static void main(String[] args) throws Exception {
         Authenticator.setDefault(new NullAuthenticator());
 
         try {
+            InetAddress loopback = InetAddress.getLoopbackAddress();
+
             // Test with direct connection.
-            ServerSocket serverSS = new ServerSocket(0);
-            startServer(serverSS, false);
-            runClient(Proxy.NO_PROXY, serverSS.getLocalPort());
-
+            try (NTLMServer server = startServer(new ServerSocket(0, 0, loopback), false)) {
+                runClient(Proxy.NO_PROXY, server.getLocalPort());
+            }
             // Test with proxy.
-            serverSS = new ServerSocket(0);
-            startServer(serverSS, true /*proxy*/);
-            SocketAddress proxyAddr = new InetSocketAddress("localhost", serverSS.getLocalPort());
-            runClient(new Proxy(java.net.Proxy.Type.HTTP, proxyAddr), 8888);
-
+            try (NTLMServer server =
+                    startServer(new ServerSocket(0, 0, loopback), true /*proxy*/)) {
+                SocketAddress proxyAddr = new InetSocketAddress(loopback, server.getLocalPort());
+                runClient(new Proxy(java.net.Proxy.Type.HTTP, proxyAddr), 8888);
+            }
         } catch (IOException e) {
-            e.printStackTrace();
+            throw e;
         }
     }
 
     static void runClient(Proxy proxy, int serverPort) {
         try {
-            String urlStr = "http://localhost:" + serverPort + "/";
-            URL url = new URL(urlStr);
+            URL url = URIBuilder.newBuilder()
+                      .scheme("http")
+                      .loopback()
+                      .port(serverPort)
+                      .path("/")
+                      .toURLUnchecked();
             HttpURLConnection uc = (HttpURLConnection) url.openConnection(proxy);
-            uc.getInputStream();
+            uc.getInputStream().readAllBytes();
 
         } catch (ProtocolException e) {
             /* java.net.ProtocolException: Server redirected too many  times (20) */
@@ -70,6 +77,7 @@ public class NTLMTest
              * returned HTTP response code: 401 for URL: ..."
              */
             //ioe.printStackTrace();
+            System.out.println("Got expected " + ioe);
         } catch (NullPointerException npe) {
             throw new RuntimeException("Failed: NPE thrown ", npe);
         }
@@ -93,34 +101,56 @@ public class NTLMTest
                 "Content-Length: 0\r\n" +
                 "Proxy-Authenticate: NTLM TlRMTVNTUAACAAAAAAAAACgAAAABggAAU3J2Tm9uY2UAAAAAAAAAAA==\r\n\r\n"};
 
-    static void startServer(ServerSocket serverSS, boolean proxy) {
-        final ServerSocket ss = serverSS;
-        final boolean isProxy = proxy;
+    static class NTLMServer extends Thread implements AutoCloseable {
+        final ServerSocket ss;
+        final boolean isProxy;
+        volatile boolean closed;
 
-        Thread thread = new Thread(new Runnable() {
-            public void run() {
-                boolean doing2ndStageNTLM = false;
-                while (true) {
-                    try {
-                        Socket s = ss.accept();
-                        if (!doing2ndStageNTLM) {
-                            handleConnection(s, isProxy ? proxyResp : serverResp, 0, 1);
-                            doing2ndStageNTLM = true;
-                        } else {
-                            handleConnection(s, isProxy ? proxyResp : serverResp, 1, 2);
-                            doing2ndStageNTLM = false;
-                        }
-                        connectionCount++;
-                        //System.out.println("connectionCount = " + connectionCount);
+        NTLMServer(ServerSocket serverSS, boolean proxy) {
+            super();
+            setDaemon(true);
+            ss = serverSS;
+            isProxy = proxy;
+        }
 
-                    } catch (IOException ioe) {
-                        ioe.printStackTrace();
+       public int getLocalPort() { return ss.getLocalPort(); }
+
+        @Override
+        public void run() {
+            boolean doing2ndStageNTLM = false;
+            while (!closed) {
+                try {
+                    Socket s = ss.accept();
+                    if (!doing2ndStageNTLM) {
+                        handleConnection(s, isProxy ? proxyResp : serverResp, 0, 1);
+                        doing2ndStageNTLM = true;
+                    } else {
+                        handleConnection(s, isProxy ? proxyResp : serverResp, 1, 2);
+                        doing2ndStageNTLM = false;
                     }
+                    connectionCount++;
+                    //System.out.println("connectionCount = " + connectionCount);
+                } catch (IOException ioe) {
+                    if (!closed) ioe.printStackTrace();
                 }
-            } });
-            thread.setDaemon(true);
-            thread.start();
+            }
+        }
 
+        @Override
+        public void close() {
+           if (closed) return;
+           synchronized(this) {
+               if (closed) return;
+               closed = true;
+           }
+           try { ss.close(); } catch (IOException x) { };
+        }
+    }
+
+    public static NTLMServer startServer(ServerSocket serverSS, boolean proxy) {
+        NTLMServer server = new NTLMServer(serverSS, proxy);
+        server.start();
+        return server;
     }
 
     static int connectionCount = 0;

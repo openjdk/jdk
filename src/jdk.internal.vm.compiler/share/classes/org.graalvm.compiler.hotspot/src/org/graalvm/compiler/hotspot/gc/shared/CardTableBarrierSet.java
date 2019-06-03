@@ -26,6 +26,7 @@
 package org.graalvm.compiler.hotspot.gc.shared;
 
 import org.graalvm.compiler.debug.GraalError;
+import org.graalvm.compiler.hotspot.GraalHotSpotVMConfig;
 import org.graalvm.compiler.nodes.StructuredGraph;
 import org.graalvm.compiler.nodes.ValueNode;
 import org.graalvm.compiler.nodes.extended.ArrayRangeWrite;
@@ -40,9 +41,13 @@ import org.graalvm.compiler.nodes.type.StampTool;
 
 public class CardTableBarrierSet extends BarrierSet {
 
+    public CardTableBarrierSet(GraalHotSpotVMConfig vmConfig) {
+        super(vmConfig);
+    }
+
     @Override
     public void addReadNodeBarriers(ReadNode node, StructuredGraph graph) {
-        assert node.getBarrierType() == HeapAccess.BarrierType.NONE : "Non precise read barrier has been attached to read node.";
+        // Nothing to do here.
     }
 
     @Override
@@ -52,10 +57,14 @@ public class CardTableBarrierSet extends BarrierSet {
             case NONE:
                 // nothing to do
                 break;
-            case IMPRECISE:
-            case PRECISE:
-                boolean precise = barrierType == HeapAccess.BarrierType.PRECISE;
-                addSerialPostWriteBarrier(node, node.getAddress(), node.value(), precise, graph);
+            case FIELD:
+            case ARRAY:
+            case UNKNOWN:
+                boolean precise = barrierType != HeapAccess.BarrierType.FIELD;
+                boolean init = node.getLocationIdentity().isInit();
+                if (!init || !getVMConfig().useDeferredInitBarriers) {
+                    addSerialPostWriteBarrier(node, node.getAddress(), node.value(), precise, graph);
+                }
                 break;
             default:
                 throw new GraalError("unexpected barrier type: " + barrierType);
@@ -69,9 +78,10 @@ public class CardTableBarrierSet extends BarrierSet {
             case NONE:
                 // nothing to do
                 break;
-            case IMPRECISE:
-            case PRECISE:
-                boolean precise = barrierType == HeapAccess.BarrierType.PRECISE;
+            case FIELD:
+            case ARRAY:
+            case UNKNOWN:
+                boolean precise = barrierType != HeapAccess.BarrierType.FIELD;
                 addSerialPostWriteBarrier(node, node.getAddress(), node.getNewValue(), precise, graph);
                 break;
             default:
@@ -86,9 +96,10 @@ public class CardTableBarrierSet extends BarrierSet {
             case NONE:
                 // nothing to do
                 break;
-            case IMPRECISE:
-            case PRECISE:
-                boolean precise = barrierType == HeapAccess.BarrierType.PRECISE;
+            case FIELD:
+            case ARRAY:
+            case UNKNOWN:
+                boolean precise = barrierType != HeapAccess.BarrierType.FIELD;
                 addSerialPostWriteBarrier(node, node.getAddress(), node.getNewValue(), precise, graph);
                 break;
             default:

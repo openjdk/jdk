@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -119,10 +119,7 @@ public final class ICUBinary {
                     } else if (capacity < 0x4000) {
                         capacity *= 2;  // Grow faster until we reach 16kB.
                     }
-                    // TODO Java 6 replace new byte[] and arraycopy(): bytes = Arrays.copyOf(bytes, capacity);
-                    byte[] newBytes = new byte[capacity];
-                    System.arraycopy(bytes, 0, newBytes, 0, length);
-                    bytes = newBytes;
+                    bytes = Arrays.copyOf(bytes, capacity);
                     bytes[length++] = (byte) nextByte;
                 }
            }
@@ -262,6 +259,36 @@ public final class ICUBinary {
         if (skipLength > 0) {
             bytes.position(bytes.position() + skipLength);
         }
+    }
+
+    public static byte[] getBytes(ByteBuffer bytes, int length, int additionalSkipLength) {
+        byte[] dest = new byte[length];
+        bytes.get(dest);
+        if (additionalSkipLength > 0) {
+            skipBytes(bytes, additionalSkipLength);
+        }
+        return dest;
+    }
+
+    public static String getString(ByteBuffer bytes, int length, int additionalSkipLength) {
+        CharSequence cs = bytes.asCharBuffer();
+        String s = cs.subSequence(0, length).toString();
+        skipBytes(bytes, length * 2 + additionalSkipLength);
+        return s;
+    }
+
+    public static char[] getChars(ByteBuffer bytes, int length, int additionalSkipLength) {
+        char[] dest = new char[length];
+        bytes.asCharBuffer().get(dest);
+        skipBytes(bytes, length * 2 + additionalSkipLength);
+        return dest;
+    }
+
+    public static int[] getInts(ByteBuffer bytes, int length, int additionalSkipLength) {
+        int[] dest = new int[length];
+        bytes.asIntBuffer().get(dest);
+        skipBytes(bytes, length * 4 + additionalSkipLength);
+        return dest;
     }
 
     /**

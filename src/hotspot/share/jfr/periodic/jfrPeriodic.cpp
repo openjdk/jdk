@@ -65,7 +65,9 @@
 #include "services/threadService.hpp"
 #include "utilities/exceptions.hpp"
 #include "utilities/globalDefinitions.hpp"
-
+#if INCLUDE_SHENANDOAHGC
+#include "gc/shenandoah/shenandoahJfrSupport.hpp"
+#endif
 /**
  *  JfrPeriodic class
  *  Implementation of declarations in
@@ -92,6 +94,12 @@ TRACE_REQUEST_FUNC(OSInformation) {
   JfrOSInterface::os_version(&os_name);
   EventOSInformation event;
   event.set_osVersion(os_name);
+  event.commit();
+}
+
+TRACE_REQUEST_FUNC(VirtualizationInformation) {
+  EventVirtualizationInformation event;
+  event.set_name(JfrOSInterface::virtualization_name());
   event.commit();
 }
 
@@ -525,12 +533,12 @@ static void emit_table_statistics(TableStatistics statistics) {
 }
 
 TRACE_REQUEST_FUNC(SymbolTableStatistics) {
-  TableStatistics statistics = SymbolTable::the_table()->get_table_statistics();
+  TableStatistics statistics = SymbolTable::get_table_statistics();
   emit_table_statistics<EventSymbolTableStatistics>(statistics);
 }
 
 TRACE_REQUEST_FUNC(StringTableStatistics) {
-  TableStatistics statistics = StringTable::the_table()->get_table_statistics();
+  TableStatistics statistics = StringTable::get_table_statistics();
   emit_table_statistics<EventStringTableStatistics>(statistics);
 }
 
@@ -620,3 +628,14 @@ TRACE_REQUEST_FUNC(CodeSweeperConfiguration) {
   event.set_flushingEnabled(UseCodeCacheFlushing);
   event.commit();
 }
+
+
+TRACE_REQUEST_FUNC(ShenandoahHeapRegionInformation) {
+#if INCLUDE_SHENANDOAHGC
+  if (UseShenandoahGC) {
+    VM_ShenandoahSendHeapRegionInfoEvents op;
+    VMThread::execute(&op);
+  }
+#endif
+}
+

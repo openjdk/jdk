@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2004, 2006, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2004, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -146,7 +146,9 @@ public class DeadlockDetector {
 
     private static void createThreadTable() {
         threadTable = new HashMap();
-        for (JavaThread cur = threads.first(); cur != null; cur = cur.next()) {
+        Threads threads = VM.getVM().getThreads();
+        for (int i = 0; i < threads.getNumberOfThreads(); i++) {
+            JavaThread cur = threads.getJavaThreadAt(i);
             // initialize dfn for each thread to -1
             threadTable.put(cur, new Integer(-1));
         }

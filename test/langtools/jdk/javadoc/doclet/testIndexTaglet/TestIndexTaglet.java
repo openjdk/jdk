@@ -75,7 +75,7 @@ public class TestIndexTaglet extends JavadocTester {
         checkExit(Exit.OK);
 
         checkOrder("pkg/A.html",
-                "<h2>Method Detail</h2>\n",
+                "<h2>Method Details</h2>\n",
                 "<div class=\"block\">test description with <a id=\"search_phrase_a\" "
                  +    "class=\"searchTagResult\">search_phrase_a</a></div>");
 

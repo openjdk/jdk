@@ -86,7 +86,8 @@ typedef CodeBuffer::csize_t csize_t;  // file-local definition
 // External buffer, in a predefined CodeBlob.
 // Important: The code_start must be taken exactly, and not realigned.
 CodeBuffer::CodeBuffer(CodeBlob* blob) {
-  initialize_misc("static buffer");
+  // Provide code buffer with meaningful name
+  initialize_misc(blob->name());
   initialize(blob->content_begin(), blob->content_size());
   verify_section_allocation();
 }
@@ -1035,7 +1036,9 @@ void CodeSection::decode() {
 }
 
 void CodeBuffer::block_comment(intptr_t offset, const char * comment) {
-  _code_strings.add_comment(offset, comment);
+  if (_collect_comments) {
+    _code_strings.add_comment(offset, comment);
+  }
 }
 
 const char* CodeBuffer::code_string(const char* str) {
@@ -1148,15 +1151,23 @@ void CodeStrings::copy(CodeStrings& other) {
 
 const char* CodeStrings::_prefix = " ;; ";  // default: can be changed via set_prefix
 
+// Check if any block comments are pending for the given offset.
+bool CodeStrings::has_block_comment(intptr_t offset) const {
+  if (_strings == NULL) return false;
+  CodeString* c = find(offset);
+  return c != NULL;
+}
+
 void CodeStrings::print_block_comment(outputStream* stream, intptr_t offset) const {
-    check_valid();
-    if (_strings != NULL) {
+  check_valid();
+  if (_strings != NULL) {
     CodeString* c = find(offset);
     while (c && c->offset() == offset) {
       stream->bol();
       stream->print("%s", _prefix);
       // Don't interpret as format strings since it could contain %
-      stream->print_raw_cr(c->string());
+      stream->print_raw(c->string());
+      stream->bol(); // advance to next line only if string didn't contain a cr() at the end.
       c = c->next_comment();
     }
   }
@@ -1186,7 +1197,7 @@ const char* CodeStrings::add_string(const char * string) {
 
 void CodeBuffer::decode() {
   ttyLocker ttyl;
-  Disassembler::decode(decode_begin(), insts_end());
+  Disassembler::decode(decode_begin(), insts_end(), tty);
   _decode_begin = insts_end();
 }
 
@@ -1215,6 +1226,12 @@ void CodeBuffer::print() {
     CodeSection* cs = code_section(n);
     cs->print(code_section_name(n));
   }
+}
+
+// Directly disassemble code buffer.
+void CodeBuffer::decode(address start, address end) {
+  ttyLocker ttyl;
+  Disassembler::decode(this, start, end, tty);
 }
 
 #endif // PRODUCT

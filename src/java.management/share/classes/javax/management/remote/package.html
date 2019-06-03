@@ -2,7 +2,7 @@
 <head>
     <title>JMX&trade; Remote API.</title>
 <!--
-Copyright (c) 2002, 2017, Oracle and/or its affiliates. All rights reserved.
+Copyright (c) 2002, 2019, Oracle and/or its affiliates. All rights reserved.
 DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 
 This code is free software; you can redistribute it and/or modify it
@@ -71,7 +71,7 @@ questions.
 	Reference Implementation</a></em>.</p>
 
 
-      <h3>Connector addresses</h3>
+      <h2>Connector addresses</h2>
 
       <p>Typically, a connector server has an address, represented by the
 	class {@link javax.management.remote.JMXServiceURL
@@ -92,7 +92,7 @@ questions.
 	as detailed in the documentation for the package
 	<code>{@link javax.management.remote.rmi}</code>.</p>
 
-      <h3>Creating a connector server</h3>
+      <h2>Creating a connector server</h2>
 
       <p>A connector server is created by constructing an instance of
 	a subclass of {@link
@@ -108,7 +108,7 @@ questions.
 	supplying the MBean server as a parameter when creating the
 	connector server.</p>
 
-      <h3>Creating a connector client</h3>
+      <h2>Creating a connector client</h2>
 
       <p>A connector client is usually created by supplying the
 	<code>JMXServiceURL</code> of the connector server to connect to 
@@ -123,7 +123,7 @@ questions.
 	javax.management.remote.rmi.RMIConnector
 	RMIConnector}.</p>
 
-      <h3>Additional client or server parameters</h3>
+      <h2>Additional client or server parameters</h2>
 
       <p>When creating a connector client or server, it is possible to
 	supply an object of type {@link java.util.Map Map} that defines
@@ -133,7 +133,7 @@ questions.
 	begin with the string "<code>jmx.remote.</code>".  The document
 	<em>JMX Remote API</em> lists these standard keys.</p>
 
-      <h3>Connection identifiers</h3>
+      <h2>Connection identifiers</h2>
 
       <p>Every connection opened by a connector server has a string
 	identifier, called its <b>connection id</b>.  This identifier

@@ -72,7 +72,7 @@ public class TestOverrideMethods  extends JavadocTester {
                 "-javafx",
                 "--disable-javafx-strict-checks",
                 "--override-methods=summary",
-                "pkg5");
+                "pkg5", "pkg6");
 
         checkExit(Exit.OK);
 
@@ -256,5 +256,32 @@ public class TestOverrideMethods  extends JavadocTester {
                 "Returns an array containing the constants of this enum type, in\n" +
                         "the order they are declared."
         );
+
+        // Check methods with covariant return types
+        // Only m2 should be shown in summary; m1 and m3 should listed as declared in Base
+        checkOutput("pkg6/Sub.html", true,
+                "<table aria-labelledby=\"t0\">\n"
+                + "<thead>\n"
+                + "<tr>\n"
+                + "<th class=\"colFirst\" scope=\"col\">Modifier and Type</th>\n"
+                + "<th class=\"colSecond\" scope=\"col\">Method</th>\n"
+                + "<th class=\"colLast\" scope=\"col\">Description</th>\n"
+                + "</tr>\n"
+                + "</thead>\n"
+                + "<tbody>\n"
+                + "<tr class=\"altColor\" id=\"i0\">\n"
+                + "<td class=\"colFirst\"><code>java.lang.String</code></td>\n"
+                + "<th class=\"colSecond\" scope=\"row\"><code><span class=\"memberNameLink\"><a href=\"#m2()\">m2</a></span>()</code></th>\n"
+                + "<td class=\"colLast\">\n"
+                + "<div class=\"block\">This is Base::m2.</div>\n"
+                + "</td>\n"
+                + "</tr>\n"
+                + "</tbody>\n"
+                + "</table>\n",
+                "<div class=\"inheritedList\">\n"
+                + "<h3>Methods declared in class&nbsp;pkg6.<a href=\"Base.html\" title=\"class in pkg6\">Base</a></h3>\n"
+                + "<a id=\"methods.inherited.from.class.pkg6.Base\">\n"
+                + "<!--   -->\n"
+                + "</a><code><a href=\"Base.html#m1()\">m1</a>, <a href=\"Base.html#m3()\">m3</a></code></div>\n");
     }
 }

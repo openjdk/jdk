@@ -445,6 +445,15 @@
       <setting name="enabled" control="gc-enabled-all">false</setting>
     </event>
 
+    <event name="jdk.ShenandoahHeapRegionInformation">
+      <setting name="enabled" control="gc-enabled-all">false</setting>
+      <setting name="period">everyChunk</setting>
+    </event>
+
+    <event name="jdk.ShenandoahHeapRegionStateChange">
+      <setting name="enabled" control="gc-enabled-all">false</setting>
+    </event>
+
     <event name="jdk.OldObjectSample">
       <setting name="enabled" control="memory-leak-detection-enabled">true</setting>
       <setting name="stackTrace" control="memory-leak-detection-stack-trace">false</setting>
@@ -511,6 +520,11 @@
     <event name="jdk.OSInformation">
       <setting name="enabled">true</setting>
       <setting name="period">beginChunk</setting>
+    </event>
+
+    <event name="jdk.VirtualizationInformation">
+     <setting name="enabled">true</setting>
+     <setting name="period">beginChunk</setting>
     </event>
 
     <event name="jdk.CPUInformation">

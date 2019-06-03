@@ -416,6 +416,7 @@ class Compile : public Phase {
   bool                  _has_method_handle_invokes; // True if this method has MethodHandle invokes.
   RTMState              _rtm_state;             // State of Restricted Transactional Memory usage
   int                   _loop_opts_cnt;         // loop opts round
+  bool                  _clinit_barrier_on_entry; // True if clinit barrier is needed on nmethod entry
 
   // Compilation environment.
   Arena                 _comp_arena;            // Arena with lifetime equivalent to Compile
@@ -714,6 +715,8 @@ class Compile : public Phase {
   bool          profile_rtm() const              { return _rtm_state == ProfileRTM; }
   uint              max_node_limit() const       { return (uint)_max_node_limit; }
   void          set_max_node_limit(uint n)       { _max_node_limit = n; }
+  bool              clinit_barrier_on_entry()       { return _clinit_barrier_on_entry; }
+  void          set_clinit_barrier_on_entry(bool z) { _clinit_barrier_on_entry = z; }
 
   // check the CompilerOracle for special behaviours for this compile
   bool          method_has_option(const char * option) {
@@ -1348,7 +1351,13 @@ class Compile : public Phase {
   static void print_statistics() PRODUCT_RETURN;
 
   // Dump formatted assembly
-  void dump_asm(int *pcs = NULL, uint pc_limit = 0) PRODUCT_RETURN;
+#if defined(SUPPORT_OPTO_ASSEMBLY)
+  void dump_asm_on(outputStream* ost, int* pcs, uint pc_limit);
+  void dump_asm(int* pcs = NULL, uint pc_limit = 0) { dump_asm_on(tty, pcs, pc_limit); }
+#else
+  void dump_asm_on(outputStream* ost, int* pcs, uint pc_limit) { return; }
+  void dump_asm(int* pcs = NULL, uint pc_limit = 0) { return; }
+#endif
   void dump_pc(int *pcs, int pc_limit, Node *n);
 
   // Verify ADLC assumptions during startup
@@ -1375,7 +1384,9 @@ class Compile : public Phase {
   CloneMap&     clone_map();
   void          set_clone_map(Dict* d);
 
-  bool is_compiling_clinit_for(ciKlass* k);
+  bool needs_clinit_barrier(ciField* ik,         ciMethod* accessing_method);
+  bool needs_clinit_barrier(ciMethod* ik,        ciMethod* accessing_method);
+  bool needs_clinit_barrier(ciInstanceKlass* ik, ciMethod* accessing_method);
 };
 
 #endif // SHARE_OPTO_COMPILE_HPP

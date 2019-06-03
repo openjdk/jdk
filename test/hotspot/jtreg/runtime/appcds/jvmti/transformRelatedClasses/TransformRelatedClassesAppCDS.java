@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -150,6 +150,12 @@ public class TransformRelatedClassesAppCDS extends TransformRelatedClasses {
     private void runWithCustomLoader(ArrayList<TestEntry> testTable) throws Exception {
         if (!Platform.areCustomLoadersSupportedForCDS()) {
             log("custom loader not supported for this platform" +
+                " - skipping test case for custom loader");
+            return;
+        }
+
+        if (TestCommon.isDynamicArchive()) {
+            log("custom loader class list not applicable to dynamic archive" +
                 " - skipping test case for custom loader");
             return;
         }

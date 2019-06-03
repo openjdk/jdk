@@ -190,10 +190,11 @@ public final class JrtFileSystemProvider extends FileSystemProvider {
             throw new IllegalArgumentException("Fragment component present");
         }
         String path = uri.getPath();
-        if (path == null || path.charAt(0) != '/') {
+        if (path == null || path.charAt(0) != '/' || path.contains("..")) {
             throw new IllegalArgumentException("Invalid path component");
         }
-        return getTheFileSystem().getPath(path);
+
+        return getTheFileSystem().getPath("/modules" + path);
     }
 
     private FileSystem getTheFileSystem() {

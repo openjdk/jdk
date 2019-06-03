@@ -536,7 +536,8 @@ public class CommandProcessor {
                 // Not an address
                 boolean all = name.equals("-a");
                 Threads threads = VM.getVM().getThreads();
-                for (JavaThread thread = threads.first(); thread != null; thread = thread.next()) {
+                for (int i = 0; i < threads.getNumberOfThreads(); i++) {
+                    JavaThread thread = threads.getJavaThreadAt(i);
                     ByteArrayOutputStream bos = new ByteArrayOutputStream();
                     thread.printThreadIDOn(new PrintStream(bos));
                     if (all || bos.toString().equals(name)) {
@@ -898,7 +899,8 @@ public class CommandProcessor {
                     String name = t.nextToken();
                     boolean all = name.equals("-a");
                     Threads threads = VM.getVM().getThreads();
-                    for (JavaThread thread = threads.first(); thread != null; thread = thread.next()) {
+                    for (int i = 0; i < threads.getNumberOfThreads(); i++) {
+                        JavaThread thread = threads.getJavaThreadAt(i);
                         ByteArrayOutputStream bos = new ByteArrayOutputStream();
                         thread.printThreadIDOn(new PrintStream(bos));
                         if (all || bos.toString().equals(name)) {
@@ -927,7 +929,8 @@ public class CommandProcessor {
                     String name = t.nextToken();
                     boolean all = name.equals("-a");
                     Threads threads = VM.getVM().getThreads();
-                    for (JavaThread thread = threads.first(); thread != null; thread = thread.next()) {
+                    for (int i = 0; i < threads.getNumberOfThreads(); i++) {
+                        JavaThread thread = threads.getJavaThreadAt(i);
                         ByteArrayOutputStream bos = new ByteArrayOutputStream();
                         thread.printThreadIDOn(new PrintStream(bos));
                         if (all || bos.toString().equals(name)) {
@@ -954,7 +957,8 @@ public class CommandProcessor {
                     String name = t.nextToken();
                     boolean all = name.equals("-a");
                     Threads threads = VM.getVM().getThreads();
-                    for (JavaThread thread = threads.first(); thread != null; thread = thread.next()) {
+                    for (int i = 0; i < threads.getNumberOfThreads(); i++) {
+                        JavaThread thread = threads.getJavaThreadAt(i);
                         ByteArrayOutputStream bos = new ByteArrayOutputStream();
                         thread.printThreadIDOn(new PrintStream(bos));
                         if (all || bos.toString().equals(name)) {
@@ -1437,7 +1441,8 @@ public class CommandProcessor {
                 final long stride = VM.getVM().getAddressSize();
                 if (type.equals("threads")) {
                     Threads threads = VM.getVM().getThreads();
-                    for (JavaThread thread = threads.first(); thread != null; thread = thread.next()) {
+                    for (int i = 0; i < threads.getNumberOfThreads(); i++) {
+                        JavaThread thread = threads.getJavaThreadAt(i);
                         Address base = thread.getStackBase();
                         Address end = thread.getLastJavaSP();
                         if (end == null) continue;
@@ -1561,7 +1566,8 @@ public class CommandProcessor {
                     String name = t.nextToken();
                     Threads threads = VM.getVM().getThreads();
                     boolean all = name.equals("-a");
-                    for (JavaThread thread = threads.first(); thread != null; thread = thread.next()) {
+                    for (int i = 0; i < threads.getNumberOfThreads(); i++) {
+                        JavaThread thread = threads.getJavaThreadAt(i);
                         ByteArrayOutputStream bos = new ByteArrayOutputStream();
                         thread.printThreadIDOn(new PrintStream(bos));
                         if (all || bos.toString().equals(name)) {
@@ -1590,7 +1596,8 @@ public class CommandProcessor {
                     String name = t.nextToken();
                     Threads threads = VM.getVM().getThreads();
                     boolean all = name.equals("-a");
-                    for (JavaThread thread = threads.first(); thread != null; thread = thread.next()) {
+                    for (int i = 0; i < threads.getNumberOfThreads(); i++) {
+                        JavaThread thread = threads.getJavaThreadAt(i);
                         ByteArrayOutputStream bos = new ByteArrayOutputStream();
                         thread.printThreadIDOn(new PrintStream(bos));
                         if (all || bos.toString().equals(name)) {
@@ -1613,7 +1620,8 @@ public class CommandProcessor {
                     usage();
                 } else {
                     Threads threads = VM.getVM().getThreads();
-                    for (JavaThread thread = threads.first(); thread != null; thread = thread.next()) {
+                    for (int i = 0; i < threads.getNumberOfThreads(); i++) {
+                        JavaThread thread = threads.getJavaThreadAt(i);
                         thread.printThreadIDOn(out);
                         out.println(" " + thread.getThreadName());
                         thread.printInfoOn(out);
@@ -1631,7 +1639,8 @@ public class CommandProcessor {
                     ArrayList nmethods = new ArrayList();
                     Threads threads = VM.getVM().getThreads();
                     HTMLGenerator gen = new HTMLGenerator(false);
-                    for (JavaThread thread = threads.first(); thread != null; thread = thread.next()) {
+                    for (int i = 0; i < threads.getNumberOfThreads(); i++) {
+                        JavaThread thread = threads.getJavaThreadAt(i);
                         try {
                             for (JavaVFrame vf = thread.getLastJavaVFrameDbg(); vf != null; vf = vf.javaSender()) {
                                 if (vf instanceof CompiledVFrame) {

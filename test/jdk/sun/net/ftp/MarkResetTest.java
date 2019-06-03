@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,6 +24,7 @@
 /*
  * @test
  * @bug 4673103
+ * @library /test/lib
  * @run main/othervm/timeout=140 MarkResetTest
  * @summary URLConnection.getContent() hangs over FTP for DOC, PPT, XLS files
  */
@@ -36,13 +37,18 @@ import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.OutputStream;
 import java.io.PrintWriter;
+import java.io.UncheckedIOException;
 import java.net.InetAddress;
+import java.net.InetSocketAddress;
+import java.net.Proxy;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.net.URL;
 import java.net.URLConnection;
 import java.nio.file.Files;
 import java.nio.file.Paths;
+
+import jdk.test.lib.net.URIBuilder;
 
 public class MarkResetTest {
     private static final String FILE_NAME = "EncDec.doc";
@@ -51,9 +57,8 @@ public class MarkResetTest {
      * A class that simulates, on a separate, an FTP server.
      */
     private class FtpServer extends Thread {
-        private ServerSocket    server;
-        private int port;
-        private boolean done = false;
+        private final ServerSocket server;
+        private volatile boolean done = false;
         private boolean pasvEnabled = true;
         private boolean portEnabled = true;
         private boolean extendedEnabled = true;
@@ -173,7 +178,7 @@ public class MarkResetTest {
              */
 
             public void run() {
-                boolean done = false;
+                done = false;
                 String str;
                 int res;
                 boolean logged = false;
@@ -244,8 +249,10 @@ public class MarkResetTest {
                                 continue;
                             }
                             try {
-                                if (pasv == null)
-                                    pasv = new ServerSocket(0);
+                                if (pasv == null) {
+                                    pasv = new ServerSocket();
+                                    pasv.bind(new InetSocketAddress(server.getInetAddress(), 0));
+                                }
                                 int port = pasv.getLocalPort();
                                 out.println("229 Entering Extended" +
                                         " Passive Mode (|||" + port + "|)");
@@ -262,8 +269,10 @@ public class MarkResetTest {
                                 continue;
                             }
                             try {
-                                if (pasv == null)
-                                    pasv = new ServerSocket(0);
+                                if (pasv == null) {
+                                    pasv = new ServerSocket();
+                                    pasv.bind(new InetSocketAddress("127.0.0.1", 0));
+                                }
                                 int port = pasv.getLocalPort();
 
                                 // Parenthesis are optional, so let's be
@@ -364,17 +373,28 @@ public class MarkResetTest {
         }
 
         public FtpServer(int port) {
-            this.port = port;
+            this(InetAddress.getLoopbackAddress(), port);
+        }
+
+        public FtpServer(InetAddress address, int port) {
+            try {
+                if (address == null) {
+                    server = new ServerSocket(port);
+                } else {
+                    server = new ServerSocket();
+                    server.bind(new InetSocketAddress(address, port));
+                }
+            } catch (IOException e) {
+                throw new UncheckedIOException(e);
+            }
         }
 
         public FtpServer() {
-            this(21);
+            this(null, 21);
         }
 
         public int getPort() {
-            if (server != null)
-                return server.getLocalPort();
-            return 0;
+            return server.getLocalPort();
         }
 
         /**
@@ -392,7 +412,8 @@ public class MarkResetTest {
          */
         public void run() {
             try {
-                server = new ServerSocket(port);
+                System.out.println("FTP server waiting for connections at: "
+                        + server.getLocalSocketAddress());
                 Socket client;
                 client = server.accept();
                 (new FtpServerHandler(client)).start();
@@ -419,10 +440,14 @@ public class MarkResetTest {
                 port = server.getPort();
             }
 
+            URL url = URIBuilder.newBuilder()
+                    .scheme("ftp")
+                    .loopback()
+                    .port(port)
+                    .path("/" + FILE_NAME)
+                    .toURL();
 
-            URL url = new URL("ftp://localhost:" + port + "/" + FILE_NAME);
-
-            URLConnection con = url.openConnection();
+            URLConnection con = url.openConnection(Proxy.NO_PROXY);
             System.out.println("getContent: " + con.getContent());
             System.out.println("getContent-length: " + con.getContentLength());
 

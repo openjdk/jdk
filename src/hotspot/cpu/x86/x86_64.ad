@@ -874,6 +874,22 @@ void MachPrologNode::emit(CodeBuffer &cbuf, PhaseRegAlloc *ra_) const {
   int framesize = C->frame_size_in_bytes();
   int bangsize = C->bang_size_in_bytes();
 
+  if (C->clinit_barrier_on_entry()) {
+    assert(VM_Version::supports_fast_class_init_checks(), "sanity");
+    assert(C->method()->holder()->is_being_initialized() || C->method()->holder()->is_initialized(),
+           "initialization should have been started");
+
+    Label L_skip_barrier;
+    Register klass = rscratch1;
+
+    __ mov_metadata(klass, C->method()->holder()->constant_encoding());
+    __ clinit_barrier(klass, r15_thread, &L_skip_barrier /*L_fast_path*/);
+
+    __ jump(RuntimeAddress(SharedRuntime::get_handle_wrong_method_stub())); // slow path
+
+    __ bind(L_skip_barrier);
+  }
+
   __ verified_entry(framesize, C->need_stack_bang(bangsize)?bangsize:0, false, C->stub_function() != NULL);
 
   C->set_frame_complete(cbuf.insts_size());
@@ -918,19 +934,19 @@ void MachEpilogNode::format(PhaseRegAlloc* ra_, outputStream* st) const
     st->print("\t");
   }
 
-  st->print_cr("popq   rbp");
+  st->print_cr("popq    rbp");
   if (do_polling() && C->is_method_compilation()) {
     st->print("\t");
     if (SafepointMechanism::uses_thread_local_poll()) {
-      st->print_cr("movq   rscratch1, poll_offset[r15_thread] #polling_page_address\n\t"
-                   "testl  rax, [rscratch1]\t"
+      st->print_cr("movq    rscratch1, poll_offset[r15_thread] #polling_page_address\n\t"
+                   "testl   rax, [rscratch1]\t"
                    "# Safepoint: poll for GC");
     } else if (Assembler::is_polling_page_far()) {
-      st->print_cr("movq   rscratch1, #polling_page_address\n\t"
-                   "testl  rax, [rscratch1]\t"
+      st->print_cr("movq    rscratch1, #polling_page_address\n\t"
+                   "testl   rax, [rscratch1]\t"
                    "# Safepoint: poll for GC");
     } else {
-      st->print_cr("testl  rax, [rip + #offset_to_poll_page]\t"
+      st->print_cr("testl   rax, [rip + #offset_to_poll_page]\t"
                    "# Safepoint: poll for GC");
     }
   }
@@ -10303,10 +10319,10 @@ instruct cadd_cmpLTMask(rRegI p, rRegI q, rRegI y, rFlagsReg cr)
   match(Set p (AddI (AndI (CmpLTMask p q) y) (SubI p q)));
   effect(KILL cr);
   ins_cost(300);
-  format %{ "subl   $p,$q\t# cadd_cmpLTMask\n\t"
-            "jge    done\n\t"
-            "addl   $p,$y\n"
-            "done:  " %}
+  format %{ "subl    $p,$q\t# cadd_cmpLTMask\n\t"
+            "jge     done\n\t"
+            "addl    $p,$y\n"
+            "done:   " %}
   ins_encode %{
     Register Rp = $p$$Register;
     Register Rq = $q$$Register;
@@ -10328,10 +10344,10 @@ instruct and_cmpLTMask(rRegI p, rRegI q, rRegI y, rFlagsReg cr)
 
   ins_cost(300);
 
-  format %{ "cmpl     $p, $q\t# and_cmpLTMask\n\t"
-            "jlt      done\n\t"
-            "xorl     $y, $y\n"
-            "done:  " %}
+  format %{ "cmpl    $p, $q\t# and_cmpLTMask\n\t"
+            "jlt     done\n\t"
+            "xorl    $y, $y\n"
+            "done:   " %}
   ins_encode %{
     Register Rp = $p$$Register;
     Register Rq = $q$$Register;
@@ -11888,7 +11904,7 @@ instruct testU_reg(rFlagsRegU cr, rRegI src, immI0 zero)
 %{
   match(Set cr (CmpU src zero));
 
-  format %{ "testl  $src, $src\t# unsigned" %}
+  format %{ "testl   $src, $src\t# unsigned" %}
   opcode(0x85);
   ins_encode(REX_reg_reg(src, src), OpcP, reg_reg(src, src));
   ins_pipe(ialu_cr_reg_imm);
@@ -12431,7 +12447,7 @@ instruct jmpConU(cmpOpU cop, rFlagsRegU cmp, label labl) %{
   effect(USE labl);
 
   ins_cost(300);
-  format %{ "j$cop,u  $labl" %}
+  format %{ "j$cop,u   $labl" %}
   size(6);
   ins_encode %{
     Label* L = $labl$$label;
@@ -12445,7 +12461,7 @@ instruct jmpConUCF(cmpOpUCF cop, rFlagsRegUCF cmp, label labl) %{
   effect(USE labl);
 
   ins_cost(200);
-  format %{ "j$cop,u  $labl" %}
+  format %{ "j$cop,u   $labl" %}
   size(6);
   ins_encode %{
     Label* L = $labl$$label;
@@ -12461,10 +12477,10 @@ instruct jmpConUCF2(cmpOpUCF2 cop, rFlagsRegUCF cmp, label labl) %{
   ins_cost(200);
   format %{ $$template
     if ($cop$$cmpcode == Assembler::notEqual) {
-      $$emit$$"jp,u   $labl\n\t"
+      $$emit$$"jp,u    $labl\n\t"
       $$emit$$"j$cop,u   $labl"
     } else {
-      $$emit$$"jp,u   done\n\t"
+      $$emit$$"jp,u    done\n\t"
       $$emit$$"j$cop,u   $labl\n\t"
       $$emit$$"done:"
     }
@@ -12666,10 +12682,10 @@ instruct jmpConUCF2_short(cmpOpUCF2 cop, rFlagsRegUCF cmp, label labl) %{
   ins_cost(300);
   format %{ $$template
     if ($cop$$cmpcode == Assembler::notEqual) {
-      $$emit$$"jp,u,s   $labl\n\t"
-      $$emit$$"j$cop,u,s   $labl"
+      $$emit$$"jp,u,s  $labl\n\t"
+      $$emit$$"j$cop,u,s  $labl"
     } else {
-      $$emit$$"jp,u,s   done\n\t"
+      $$emit$$"jp,u,s  done\n\t"
       $$emit$$"j$cop,u,s  $labl\n\t"
       $$emit$$"done:"
     }
@@ -12745,7 +12761,7 @@ instruct safePoint_poll(rFlagsReg cr)
   match(SafePoint);
   effect(KILL cr);
 
-  format %{ "testl  rax, [rip + #offset_to_poll_page]\t"
+  format %{ "testl   rax, [rip + #offset_to_poll_page]\t"
             "# Safepoint: poll for GC" %}
   ins_cost(125);
   ins_encode %{
@@ -12761,7 +12777,7 @@ instruct safePoint_poll_far(rFlagsReg cr, rRegP poll)
   match(SafePoint poll);
   effect(KILL cr, USE poll);
 
-  format %{ "testl  rax, [$poll]\t"
+  format %{ "testl   rax, [$poll]\t"
             "# Safepoint: poll for GC" %}
   ins_cost(125);
   ins_encode %{
@@ -12777,7 +12793,7 @@ instruct safePoint_poll_tls(rFlagsReg cr, rRegP poll)
   match(SafePoint poll);
   effect(KILL cr, USE poll);
 
-  format %{ "testl  rax, [$poll]\t"
+  format %{ "testl   rax, [$poll]\t"
             "# Safepoint: poll for GC" %}
   ins_cost(125);
   size(4); /* setting an explicit size will cause debug builds to assert if size is incorrect */

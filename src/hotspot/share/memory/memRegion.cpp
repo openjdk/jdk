@@ -118,4 +118,3 @@ void  MemRegion::operator delete(void* p) {
 void  MemRegion::operator delete [](void* p) {
   FreeHeap(p);
 }
-

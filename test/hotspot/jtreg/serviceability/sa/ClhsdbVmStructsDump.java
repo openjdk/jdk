@@ -57,7 +57,6 @@ public class ClhsdbVmStructsDump {
                 "field Klass _name Symbol*",
                 "type ClassLoaderData* null",
                 "type DictionaryEntry KlassHashtableEntry",
-                "field JavaThread _next JavaThread*",
                 "field JavaThread _osthread OSThread*",
                 "type TenuredGeneration CardGeneration",
                 "field JVMState _bci",

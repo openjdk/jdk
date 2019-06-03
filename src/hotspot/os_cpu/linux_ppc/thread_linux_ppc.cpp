@@ -1,6 +1,6 @@
 /*
- * Copyright (c) 1997, 2018, Oracle and/or its affiliates. All rights reserved.
- * Copyright (c) 2012, 2014 SAP SE. All rights reserved.
+ * Copyright (c) 1997, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2019 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -92,9 +92,8 @@ bool JavaThread::pd_get_top_frame_for_profiling(frame* fr_addr, void* ucontext, 
   return false;
 }
 
-// Forte Analyzer AsyncGetCallTrace profiling support is not implemented on Linux/PPC.
+// Forte Analyzer AsyncGetCallTrace profiling support.
 bool JavaThread::pd_get_top_frame_for_signal_handler(frame* fr_addr, void* ucontext, bool isInJava) {
-  assert(this->is_Java_thread(), "must be JavaThread");
   return pd_get_top_frame_for_profiling(fr_addr, ucontext, isInJava);
 }
 

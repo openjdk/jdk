@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -41,6 +41,8 @@ import org.xml.sax.SAXNotSupportedException;
  * @since 1.4
  */
 public abstract class SAXParserFactory {
+    private static final String DEFAULT_IMPL =
+            "com.sun.org.apache.xerces.internal.jaxp.SAXParserFactoryImpl";
 
     /**
      * Should Parsers be validating?
@@ -57,6 +59,76 @@ public abstract class SAXParserFactory {
      */
     protected SAXParserFactory () {
 
+    }
+
+    /**
+     * Creates a new NamespaceAware instance of the {@code SAXParserFactory}
+     * builtin system-default implementation. Parsers produced by the factory
+     * instance provides support for XML namespaces by default.
+     *
+     * @implSpec
+     * In addition to creating a factory instance using the same process as
+     * {@link #newDefaultInstance()}, this method must set NamespaceAware to true.
+     *
+     * @return a new instance of the {@code SAXParserFactory} builtin
+     *         system-default implementation.
+     *
+     * @since 13
+     */
+    public static SAXParserFactory newDefaultNSInstance() {
+        return makeNSAware(new SAXParserFactoryImpl());
+    }
+
+    /**
+     * Creates a new NamespaceAware instance of a {@code SAXParserFactory}.
+     * Parsers produced by the factory instance provides support for XML
+     * namespaces by default.
+     *
+     * @implSpec
+     * In addition to creating a factory instance using the same process as
+     * {@link #newInstance()}, this method must set NamespaceAware to true.
+     *
+     * @return a new instance of the {@code SAXParserFactory}
+     *
+     * @throws FactoryConfigurationError in case of {@linkplain
+     *         java.util.ServiceConfigurationError service configuration error}
+     *         or if the implementation is not available or cannot be instantiated.
+     *
+     * @since 13
+     */
+    public static SAXParserFactory newNSInstance() {
+        return makeNSAware(FactoryFinder.find(SAXParserFactory.class, DEFAULT_IMPL));
+    }
+
+    /**
+     * Creates a new NamespaceAware instance of a {@code SAXParserFactory} from
+     * the class name. Parsers produced by the factory instance provides
+     * support for XML namespaces by default.
+     *
+     * @implSpec
+     * In addition to creating a factory instance using the same process as
+     * {@link #newInstance(java.lang.String, java.lang.ClassLoader)}, this method
+     * must set NamespaceAware to true.
+     *
+     * @param factoryClassName a fully qualified factory class name that provides
+     *                         implementation of
+     *                         {@code javax.xml.parsers.SAXParserFactory}.
+     *
+     * @param classLoader the {@code ClassLoader} used to load the factory class.
+     *                    If it is {@code null}, the current {@code Thread}'s
+     *                    context classLoader is used to load the factory class.
+     *
+     * @return a new instance of the {@code SAXParserFactory}
+     *
+     * @throws FactoryConfigurationError if {@code factoryClassName} is {@code null}, or
+     *                                   the factory class cannot be loaded, instantiated.
+     *
+     * @since 13
+     */
+    public static SAXParserFactory newNSInstance(String factoryClassName,
+            ClassLoader classLoader) {
+            return makeNSAware(FactoryFinder.newInstance(
+                    SAXParserFactory.class, factoryClassName, classLoader, false));
     }
 
     /**
@@ -148,7 +220,7 @@ public abstract class SAXParserFactory {
                 /* The default property name according to the JAXP spec */
                 SAXParserFactory.class,
                 /* The fallback implementation class name */
-                "com.sun.org.apache.xerces.internal.jaxp.SAXParserFactoryImpl");
+                DEFAULT_IMPL);
     }
 
     /**
@@ -190,6 +262,11 @@ public abstract class SAXParserFactory {
             //do not fallback if given classloader can't find the class, throw exception
             return FactoryFinder.newInstance(SAXParserFactory.class,
                     factoryClassName, classLoader, false);
+    }
+
+    private static SAXParserFactory makeNSAware(SAXParserFactory spf) {
+        spf.setNamespaceAware(true);
+        return spf;
     }
 
     /**

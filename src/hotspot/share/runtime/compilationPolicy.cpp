@@ -232,7 +232,7 @@ void NonTieredCompPolicy::initialize() {
       // Lower the compiler count such that all buffers fit into the code cache
       _compiler_count = MAX2(max_count, 1);
     }
-    FLAG_SET_ERGO(intx, CICompilerCount, _compiler_count);
+    FLAG_SET_ERGO(CICompilerCount, _compiler_count);
   } else {
     _compiler_count = CICompilerCount;
   }

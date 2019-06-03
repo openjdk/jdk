@@ -301,7 +301,14 @@ public:
 
   // Bottom_type call; value comes from operand0
   virtual const class Type *bottom_type() const { return _opnds[0]->type(); }
-  virtual uint ideal_reg() const { const Type *t = _opnds[0]->type(); return t == TypeInt::CC ? Op_RegFlags : t->ideal_reg(); }
+  virtual uint ideal_reg() const {
+    const Type *t = _opnds[0]->type();
+    if (t == TypeInt::CC) {
+      return Op_RegFlags;
+    } else {
+      return t->ideal_reg();
+    }
+  }
 
   // If this is a memory op, return the base pointer and fixed offset.
   // If there are no such, return NULL.  If there are multiple addresses

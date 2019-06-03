@@ -332,7 +332,8 @@ public class ExceptionsTest extends KullaTesting {
                         assertEquals(actualElement.getMethodName(), expectedElement.getMethodName(), message + " : method names");
                     }
                     assertEquals(actualElement.getFileName(), expectedElement.getFileName(), message + " : file names");
-                    assertEquals(actualElement.getLineNumber(), expectedElement.getLineNumber(), message + " : line numbers");
+                    assertEquals(actualElement.getLineNumber(), expectedElement.getLineNumber(), message + " : line numbers"
+                        + " -- actual: " + actual + ", expected: " + expected);
                 }
             }
         }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1994, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1994, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,6 +26,7 @@
 package java.io;
 
 import jdk.internal.misc.Unsafe;
+import jdk.internal.util.ArraysSupport;
 
 /**
  * A <code>BufferedInputStream</code> adds
@@ -52,14 +53,6 @@ public
 class BufferedInputStream extends FilterInputStream {
 
     private static int DEFAULT_BUFFER_SIZE = 8192;
-
-    /**
-     * The maximum size of array to allocate.
-     * Some VMs reserve some header words in an array.
-     * Attempts to allocate larger arrays may result in
-     * OutOfMemoryError: Requested array size exceeds VM limit
-     */
-    private static int MAX_BUFFER_SIZE = Integer.MAX_VALUE - 8;
 
     /**
      * As this class is used early during bootstrap, it's motivated to use
@@ -220,7 +213,7 @@ class BufferedInputStream extends FilterInputStream {
         byte[] buffer = getBufIfOpen();
         if (markpos < 0)
             pos = 0;            /* no mark: throw away the buffer */
-        else if (pos >= buffer.length)  /* no room left in buffer */
+        else if (pos >= buffer.length) { /* no room left in buffer */
             if (markpos > 0) {  /* can throw away early part of the buffer */
                 int sz = pos - markpos;
                 System.arraycopy(buffer, markpos, buffer, 0, sz);
@@ -229,11 +222,10 @@ class BufferedInputStream extends FilterInputStream {
             } else if (buffer.length >= marklimit) {
                 markpos = -1;   /* buffer got too big, invalidate mark */
                 pos = 0;        /* drop buffer contents */
-            } else if (buffer.length >= MAX_BUFFER_SIZE) {
-                throw new OutOfMemoryError("Required array size too large");
             } else {            /* grow buffer */
-                int nsz = (pos <= MAX_BUFFER_SIZE - pos) ?
-                        pos * 2 : MAX_BUFFER_SIZE;
+                int nsz = ArraysSupport.newLength(pos,
+                        1,  /* minimum growth */
+                        pos /* preferred growth */);
                 if (nsz > marklimit)
                     nsz = marklimit;
                 byte[] nbuf = new byte[nsz];
@@ -248,6 +240,7 @@ class BufferedInputStream extends FilterInputStream {
                 }
                 buffer = nbuf;
             }
+        }
         count = pos;
         int n = getInIfOpen().read(buffer, pos, buffer.length - pos);
         if (n > 0)

@@ -110,8 +110,12 @@ public class FtpServer extends Thread implements AutoCloseable {
         return listener.getLocalPort();
     }
 
+    public InetAddress getInetAddress() {
+        return listener.getInetAddress();
+    }
+
     public String getAuthority() {
-        InetAddress address = listener.getInetAddress();
+        InetAddress address = getInetAddress();
         String hostaddr = address.isAnyLocalAddress()
             ? "localhost" : address.getHostAddress();
         if (hostaddr.indexOf(':') > -1) {

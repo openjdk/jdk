@@ -27,6 +27,7 @@ import java.io.File;
 import java.util.Objects;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.nio.file.Files;
+import java.nio.file.Path;
 import java.nio.file.Paths;
 import nsk.share.test.Stresser;
 import vm.share.options.Option;
@@ -75,7 +76,7 @@ import vm.share.UnsafeAccess;
  */
 public abstract class StressClassLoadingTest extends MlvmTest {
     private static final String RESCUE_FILE_NAME = "_AnonkTestee01.class";
-    private static final String HUNG_CLASS_FILE_NAME = "hang%02d.class";
+    private static final String HUNG_CLASS_FILE_NAME = "hang.class";
 
     @Option(name = "iterations", default_value = "100000",
             description = "How many times generate a class and parse it")
@@ -135,8 +136,6 @@ public abstract class StressClassLoadingTest extends MlvmTest {
     public boolean run() throws Exception {
         setupOptions(this);
 
-        int hangNum = 0;
-
         Stresser stresser = createStresser();
         stresser.start(iterations);
 
@@ -176,39 +175,39 @@ public abstract class StressClassLoadingTest extends MlvmTest {
                 }
             };
 
-            parserThread.setDaemon(true);
             parserThread.start();
             parserThread.join(parseTimeout);
 
             if (parserThread.isAlive()) {
-                Env.complain("Killing parser thread");
+                Env.traceImportant("parser thread may be hung!");
                 StackTraceElement[] stack = parserThread.getStackTrace();
+                Env.traceImportant("parser thread stack len: " + stack.length);
                 Env.traceImportant(parserThread + " stack trace:");
                 for (int i = 0; i < stack.length; ++i) {
                     Env.traceImportant(parserThread + "\tat " + stack[i]);
                 }
 
+                Path savedClassPath = Paths.get(fileNamePrefix + HUNG_CLASS_FILE_NAME);
+
                 if (saveClassFile) {
-                    Files.move(rescueFile.toPath(), Paths.get(fileNamePrefix
-                            + String.format(HUNG_CLASS_FILE_NAME, hangNum)));
+                    Files.move(rescueFile.toPath(), savedClassPath);
+                    Env.traceImportant("There was a possible hangup during parsing."
+                        + " The class file, which produced the possible hangup, was saved as "
+                        + fileNamePrefix + HUNG_CLASS_FILE_NAME
+                        + "... in the test directory. You may want to analyse it "
+                        + "if this test times out.");
                 }
-                ++hangNum;
+
+                parserThread.join(); // Wait until either thread finishes or test times out.
+                if (saveClassFile) {
+                    savedClassPath.toFile().delete();
+                }
             } else if (saveClassFile) {
                 rescueFile.delete();
             }
         }
 
         stresser.finish();
-
-        if (hangNum > 0) {
-            Env.complain("There were " + hangNum + " hangups during parsing."
-                    + " The class files, which produced hangup were saved as "
-                    + fileNamePrefix + String.format(HUNG_CLASS_FILE_NAME, 0)
-                    + "... in the test directory. You may want to analyse them."
-                    + " Failing this test because of hangups.");
-            return false;
-        }
-
         return true;
     }
 

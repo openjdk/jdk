@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -59,7 +59,7 @@ import java.util.Optional;
  * method handles, but not necessarily those produced by method handle
  * combinators.)
  * @jvms 4.4 The Constant Pool
- * @jvms 4.4.10 The CONSTANT_InvokeDynamic_info Structure
+ * @jvms 4.4.10 The {@code CONSTANT_Dynamic_info} and {@code CONSTANT_InvokeDynamic_info} Structures
  *
  * @since 12
  */

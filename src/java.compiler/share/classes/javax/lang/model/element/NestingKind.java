@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -111,7 +111,7 @@ public enum NestingKind {
      * More specifically, an <i>inner</i> type element is any nested type element that
      * is not {@linkplain Modifier#STATIC static}.
      * @return whether or not the constant is nested
-     * @jls 14.3 Inner Classes and Enclosing Instances
+     * @jls 14.3 Local Class Declarations
      */
     public boolean isNested() {
         return this != TOP_LEVEL;

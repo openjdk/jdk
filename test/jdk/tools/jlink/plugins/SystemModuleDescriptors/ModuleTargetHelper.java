@@ -49,7 +49,7 @@ public class ModuleTargetHelper {
     }
 
     public static ModuleTarget getJavaBaseTarget() throws IOException {
-        Path p = Paths.get(URI.create("jrt:/modules/java.base/module-info.class"));
+        Path p = Paths.get(URI.create("jrt:/java.base/module-info.class"));
         try (InputStream in = Files.newInputStream(p)) {
             return read(in);
         }

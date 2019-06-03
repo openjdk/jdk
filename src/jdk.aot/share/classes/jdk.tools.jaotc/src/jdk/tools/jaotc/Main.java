@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -55,6 +55,7 @@ import org.graalvm.compiler.hotspot.HotSpotHostBackend;
 import org.graalvm.compiler.hotspot.meta.HotSpotInvokeDynamicPlugin;
 import org.graalvm.compiler.java.GraphBuilderPhase;
 import org.graalvm.compiler.nodes.graphbuilderconf.GraphBuilderConfiguration;
+import org.graalvm.compiler.nodes.graphbuilderconf.GraphBuilderContext;
 import org.graalvm.compiler.options.OptionValues;
 import org.graalvm.compiler.phases.BasePhase;
 import org.graalvm.compiler.phases.PhaseSuite;
@@ -194,7 +195,16 @@ public final class Main {
             AOTDynamicTypeStore dynoStore = new AOTDynamicTypeStore();
             AOTCompiledClass.setDynamicTypeStore(dynoStore);
 
-            AOTBackend aotBackend = new AOTBackend(this, graalOptions, backend, new HotSpotInvokeDynamicPlugin(dynoStore));
+            // AOTBackend aotBackend = new AOTBackend(this, graalOptions, backend, new HotSpotInvokeDynamicPlugin(dynoStore));
+            // Temporary workaround until JDK-8223533 is fixed.
+            // Disable invokedynamic support.
+            var indyPlugin = new HotSpotInvokeDynamicPlugin(dynoStore) {
+                @Override
+                public boolean supportsDynamicInvoke(GraphBuilderContext builder, int index, int opcode) {
+                    return false;
+                }
+            };
+            AOTBackend aotBackend = new AOTBackend(this, graalOptions, backend, indyPlugin);
             SnippetReflectionProvider snippetReflection = aotBackend.getProviders().getSnippetReflection();
             AOTCompiler compiler = new AOTCompiler(this, graalOptions, aotBackend, options.threads);
             classes = compiler.compileClasses(classes);

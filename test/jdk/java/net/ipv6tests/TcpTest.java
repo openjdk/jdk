@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,6 +32,7 @@
  * @build jdk.test.lib.NetworkConfiguration
  *        jdk.test.lib.Platform
  * @run main TcpTest -d
+ * @run main/othervm -Djdk.net.usePlainSocketImpl TcpTest -d
  */
 
 import java.net.*;
@@ -60,6 +61,10 @@ public class TcpTest extends Tests {
 
     public static void main (String[] args) throws Exception {
         checkDebug(args);
+        if (ia4addr == null) {
+            System.out.println ("No IPV4 addresses: exiting test");
+            return;
+        }
         if (ia6addr == null) {
             System.out.println ("No IPV6 addresses: exiting test");
             return;

@@ -749,10 +749,11 @@ bool VM_GetOrSetLocal::doit_prologue() {
     }
   }
 
+  if (!check_slot_type_no_lvt(_jvf)) {
+    return false;
+  }
   if (method_oop->has_localvariable_table()) {
     return check_slot_type_lvt(_jvf);
-  } else {
-    return check_slot_type_no_lvt(_jvf);
   }
   return true;
 }

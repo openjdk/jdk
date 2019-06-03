@@ -47,6 +47,124 @@ public:
   CompactHashtableStats string;
 };
 
+#if INCLUDE_CDS
+class DumpRegion {
+private:
+  const char* _name;
+  char* _base;
+  char* _top;
+  char* _end;
+  bool _is_packed;
+
+public:
+  DumpRegion(const char* name) : _name(name), _base(NULL), _top(NULL), _end(NULL), _is_packed(false) {}
+
+  char* expand_top_to(char* newtop);
+  char* allocate(size_t num_bytes, size_t alignment=BytesPerWord);
+
+  void append_intptr_t(intptr_t n) {
+    assert(is_aligned(_top, sizeof(intptr_t)), "bad alignment");
+    intptr_t *p = (intptr_t*)_top;
+    char* newtop = _top + sizeof(intptr_t);
+    expand_top_to(newtop);
+    *p = n;
+  }
+
+  char* base()      const { return _base;        }
+  char* top()       const { return _top;         }
+  char* end()       const { return _end;         }
+  size_t reserved() const { return _end - _base; }
+  size_t used()     const { return _top - _base; }
+  bool is_packed()  const { return _is_packed;   }
+  bool is_allocatable() const {
+    return !is_packed() && _base != NULL;
+  }
+
+  void print(size_t total_bytes) const;
+  void print_out_of_space_msg(const char* failing_region, size_t needed_bytes);
+
+  void init(const ReservedSpace* rs, char* base) {
+    if (base == NULL) {
+      base = rs->base();
+    }
+    assert(rs->contains(base), "must be");
+    _base = _top = base;
+    _end = rs->end();
+  }
+  void init(char* b, char* t, char* e) {
+    _base = b;
+    _top = t;
+    _end = e;
+  }
+
+  void pack(DumpRegion* next = NULL);
+
+  bool contains(char* p) {
+    return base() <= p && p < top();
+  }
+};
+
+// Closure for serializing initialization data out to a data area to be
+// written to the shared file.
+
+class WriteClosure : public SerializeClosure {
+private:
+  DumpRegion* _dump_region;
+
+public:
+  WriteClosure(DumpRegion* r) {
+    _dump_region = r;
+  }
+
+  void do_ptr(void** p) {
+    _dump_region->append_intptr_t((intptr_t)*p);
+  }
+
+  void do_u4(u4* p) {
+    void* ptr = (void*)(uintx(*p));
+    do_ptr(&ptr);
+  }
+
+  void do_tag(int tag) {
+    _dump_region->append_intptr_t((intptr_t)tag);
+  }
+
+  void do_oop(oop* o);
+
+  void do_region(u_char* start, size_t size);
+
+  bool reading() const { return false; }
+};
+
+// Closure for serializing initialization data in from a data area
+// (ptr_array) read from the shared file.
+
+class ReadClosure : public SerializeClosure {
+private:
+  intptr_t** _ptr_array;
+
+  inline intptr_t nextPtr() {
+    return *(*_ptr_array)++;
+  }
+
+public:
+  ReadClosure(intptr_t** ptr_array) { _ptr_array = ptr_array; }
+
+  void do_ptr(void** p);
+
+  void do_u4(u4* p);
+
+  void do_tag(int tag);
+
+  void do_oop(oop *p);
+
+  void do_region(u_char* start, size_t size);
+
+  bool reading() const { return true; }
+};
+
+#endif
+
 // Class Data Sharing Support
 class MetaspaceShared : AllStatic {
 
@@ -61,6 +179,7 @@ class MetaspaceShared : AllStatic {
   static address _cds_i2i_entry_code_buffers;
   static size_t  _cds_i2i_entry_code_buffers_size;
   static size_t  _core_spaces_size;
+  static void* _shared_metaspace_static_top;
  public:
   enum {
     // core archive spaces
@@ -102,16 +221,12 @@ class MetaspaceShared : AllStatic {
   }
   static void initialize_dumptime_shared_and_meta_spaces() NOT_CDS_RETURN;
   static void initialize_runtime_shared_and_meta_spaces() NOT_CDS_RETURN;
+  static char* initialize_dynamic_runtime_shared_spaces(
+                     char* static_start, char* static_end) NOT_CDS_RETURN_(NULL);
   static void post_initialize(TRAPS) NOT_CDS_RETURN;
 
-  // Delta of this object from the bottom of the archive.
-  static uintx object_delta_uintx(void* obj) {
-    assert(DumpSharedSpaces, "supported only for dumping");
-    assert(shared_rs()->contains(obj), "must be");
-    address base_address = address(shared_rs()->base());
-    uintx deltax = address(obj) - base_address;
-    return deltax;
-  }
+  // Delta of this object from SharedBaseAddress
+  static uintx object_delta_uintx(void* obj);
 
   static u4 object_delta_u4(void* obj) {
     // offset is guaranteed to be less than MAX_SHARED_DELTA in DumpRegion::expand_top_to()
@@ -134,15 +249,25 @@ class MetaspaceShared : AllStatic {
     return (p < MetaspaceObj::shared_metaspace_top() && p >= MetaspaceObj::shared_metaspace_base());
   }
 
+  static address shared_metaspace_top() {
+    return (address)MetaspaceObj::shared_metaspace_top();
+  }
+
+  static void set_shared_metaspace_range(void* base, void* top) NOT_CDS_RETURN;
+
   // Return true if given address is in the shared region corresponding to the idx
   static bool is_in_shared_region(const void* p, int idx) NOT_CDS_RETURN_(false);
 
   static bool is_in_trampoline_frame(address addr) NOT_CDS_RETURN_(false);
 
+  static bool is_shared_dynamic(void* p) NOT_CDS_RETURN_(false);
+
   static void allocate_cpp_vtable_clones();
   static intptr_t* clone_cpp_vtables(intptr_t* p);
   static void zero_cpp_vtable_clones_for_writing();
   static void patch_cpp_vtable_pointers();
+  static void serialize_cloned_cpp_vtptrs(SerializeClosure* sc);
+
   static bool is_valid_shared_method(const Method* m) NOT_CDS_RETURN_(false);
   static void serialize(SerializeClosure* sc) NOT_CDS_RETURN;
 
@@ -165,6 +290,20 @@ class MetaspaceShared : AllStatic {
   static bool try_link_class(InstanceKlass* ik, TRAPS);
   static void link_and_cleanup_shared_classes(TRAPS);
 
+#if INCLUDE_CDS
+  static ReservedSpace* reserve_shared_rs(size_t size, size_t alignment,
+                                          bool large, char* requested_address);
+  static void init_shared_dump_space(DumpRegion* first_space, address first_space_bottom = NULL);
+  static DumpRegion* misc_code_dump_space();
+  static DumpRegion* read_write_dump_space();
+  static DumpRegion* read_only_dump_space();
+  static DumpRegion* optional_data_dump_space();
+  static void pack_dump_space(DumpRegion* current, DumpRegion* next,
+                              ReservedSpace* rs);
+
+  static void rewrite_nofast_bytecodes_and_calculate_fingerprints(InstanceKlass* ik);
+#endif
+
   // Allocate a block of memory from the "mc", "ro", or "rw" regions.
   static char* misc_code_space_alloc(size_t num_bytes);
   static char* read_only_space_alloc(size_t num_bytes);
@@ -181,6 +320,12 @@ class MetaspaceShared : AllStatic {
 #endif
   }
 
+  template <typename T>
+  static size_t ro_array_bytesize(int length) {
+    size_t byte_size = Array<T>::byte_sizeof(length, sizeof(T));
+    return align_up(byte_size, BytesPerWord);
+  }
+
   static address cds_i2i_entry_code_buffers(size_t total_size);
 
   static address cds_i2i_entry_code_buffers() {
@@ -192,6 +337,8 @@ class MetaspaceShared : AllStatic {
   static void relocate_klass_ptr(oop o);
 
   static Klass* get_relocated_klass(Klass *k);
+
+  static intptr_t* fix_cpp_vtable_for_dynamic_archive(MetaspaceObj::Type msotype, address obj);
 
 private:
   static void read_extra_data(const char* filename, TRAPS) NOT_CDS_RETURN;

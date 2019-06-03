@@ -34,25 +34,27 @@ import java.net.*;
 import java.util.*;
 import java.util.stream.Collectors;
 import jdk.test.lib.NetworkConfiguration;
+import jdk.test.lib.net.IPSupport;
 
 public class CheckJNI {
-    static Socket s;
-    static ServerSocket server;
-    static DatagramSocket dg1, dg2;
-
     public static void main (String[] args) throws Exception {
         /* try to invoke as much java.net native code as possible */
 
-        System.out.println ("Testing IPv4 Socket/ServerSocket");
-        server = new ServerSocket (0);
-        s = new Socket ("127.0.0.1", server.getLocalPort());
-        s.close();
-        server.close();
+        InetAddress loopback = InetAddress.getLoopbackAddress();
+        System.out.println("Testing loopback Socket/ServerSocket");
+        testSocket(loopback);
 
-        System.out.println ("Testing IPv4 DatagramSocket");
-        dg1 = new DatagramSocket (0, InetAddress.getByName ("127.0.0.1"));
-        dg2 = new DatagramSocket (0, InetAddress.getByName ("127.0.0.1"));
-        testDatagrams (dg1, dg2);
+        System.out.println("Testing loopback DatagramSocket");
+        testDatagram(loopback);
+
+        if (IPSupport.hasIPv4()) {
+            InetAddress loopback4 = InetAddress.getByName("127.0.0.1");
+            System.out.println("Testing IPv4 Socket/ServerSocket");
+            testSocket(loopback4);
+
+            System.out.println("Testing IPv4 DatagramSocket");
+            testDatagram(loopback4);
+        }
 
         /* Find link local IPv6 addrs to test */
         List<Inet6Address> addrs = NetworkConfiguration.probe()
@@ -60,33 +62,38 @@ public class CheckJNI {
                 .filter(Inet6Address::isLinkLocalAddress)
                 .collect(Collectors.toList());
 
-        server = new ServerSocket(0);
         for (Inet6Address ia6 : addrs) {
             System.out.println("Address:" + ia6);
             System.out.println("Testing IPv6 Socket");
-            s = new Socket(ia6, server.getLocalPort());
-            s.close();
+            testSocket(ia6);
 
             System.out.println("Testing IPv6 DatagramSocket");
-            dg1 = new DatagramSocket(0, ia6);
-            dg2 = new DatagramSocket(0, ia6);
-            testDatagrams(dg1, dg2);
+            testDatagram(ia6);
         }
-        server.close();
-        System.out.println ("OK");
+        System.out.println("OK");
     }
 
-    static void testDatagrams (DatagramSocket s1, DatagramSocket s2) throws Exception {
+    static void testSocket(InetAddress ia) throws Exception {
+        ServerSocket server = new ServerSocket(0);
+        Socket s = new Socket(ia, server.getLocalPort());
+        s.close();
+        server.close();
+    }
+
+    static void testDatagram(InetAddress ia) throws Exception {
+        DatagramSocket s1 = new DatagramSocket(0, ia);
+        DatagramSocket s2 = new DatagramSocket(0, ia);
+
         DatagramPacket p1 = new DatagramPacket (
                 "hello world".getBytes(),
                 0, "hello world".length(), s2.getLocalAddress(),
                 s2.getLocalPort()
         );
 
-        DatagramPacket p2 = new DatagramPacket (new byte[128], 128);
-        s1.send (p1);
-        s2.receive (p2);
-        s1.close ();
-        s2.close ();
+        DatagramPacket p2 = new DatagramPacket(new byte[128], 128);
+        s1.send(p1);
+        s2.receive(p2);
+        s1.close();
+        s2.close();
     }
 }

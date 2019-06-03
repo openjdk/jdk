@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,6 +26,8 @@
  * @library /test/lib
  * @bug 4701299
  * @summary Keep-Alive-Timer thread management in KeepAliveCache causes memory leak
+ * @run main KeepAliveTimerThread
+ * @run main/othervm -Djava.net.preferIPv6Addresses=true KeepAliveTimerThread
  */
 
 import java.net.*;
@@ -103,8 +105,10 @@ public class KeepAliveTimerThread {
 
 
     public static void main(String args[]) throws Exception {
-        ServerSocket ss = new ServerSocket(0);
-        Server s = new Server (ss);
+        InetAddress loopback = InetAddress.getLoopbackAddress();
+        ServerSocket ss = new ServerSocket();
+        ss.bind(new InetSocketAddress(loopback, 0));
+        Server s = new Server(ss);
         s.start();
 
         URL url = URIBuilder.newBuilder()

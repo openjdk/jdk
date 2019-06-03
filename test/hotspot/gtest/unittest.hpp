@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,7 +28,33 @@
 #include <stdio.h>
 
 #define GTEST_DONT_DEFINE_TEST 1
+
+// googlemock has ::testing::internal::Log function, so we need to temporary
+// undefine 'Log' from logging/log.hpp and define it back after gmock header
+// file is included. As SS compiler doesn't have push_/pop_macro pragmas and
+// log.hpp might have been already included, we have to copy-paste macro definition.
+#ifdef Log
+  #define UNDEFINED_Log
+  #undef Log
+#endif
+
+// R macro is defined by src/hotspot/cpu/arm/register_arm.hpp, F$n are defined
+// in ppc/register_ppc.hpp, these macros conflict with typenames used in
+// internal googlemock templates. As the macros are not expected to be used by
+// any of tests directly, and this header file is supposed to be the last
+// include, we just undefine it; if/when it changes, we will need to re-define
+// the macros after the following includes.
+#undef R
+#undef F1
+#undef F2
+
+#include "gmock/gmock.h"
 #include "gtest/gtest.h"
+
+#ifdef UNDEFINED_Log
+  #define Log(...)  LogImpl<LOG_TAGS(__VA_ARGS__)> // copied from logging/log.hpp
+  #undef UNDEFINED_Log
+#endif
 
 // gtest/gtest.h includes assert.h which will define the assert macro, but hotspot has its
 // own standards incompatible assert macro that takes two parameters.

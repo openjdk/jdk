@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2009, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -61,7 +61,7 @@ public final class NormalizerImpl {
             return 0<=c && c<HANGUL_COUNT && c%JAMO_T_COUNT==0;
         }
 
-                /**
+        /**
          * Decomposes c, which must be a Hangul syllable, into buffer
          * and returns the length of the decomposition (2 or 3).
          */
@@ -145,8 +145,7 @@ public final class NormalizerImpl {
                 insert(c, cc);
             }
         }
-        // s must be in NFD, otherwise change the implementation.
-        public void append(CharSequence s, int start, int limit,
+        public void append(CharSequence s, int start, int limit, boolean isNFD,
                            int leadCC, int trailCC) {
             if(start==limit) {
                 return;
@@ -167,8 +166,11 @@ public final class NormalizerImpl {
                     c=Character.codePointAt(s, start);
                     start+=Character.charCount(c);
                     if(start<limit) {
-                        // s must be in NFD, otherwise we need to use getCC().
-                        leadCC=getCCFromYesOrMaybe(impl.getNorm16(c));
+                        if (isNFD) {
+                            leadCC = getCCFromYesOrMaybe(impl.getNorm16(c));
+                        } else {
+                            leadCC = impl.getCC(impl.getNorm16(c));
+                        }
                     } else {
                         leadCC=trailCC;
                     }
@@ -311,6 +313,12 @@ public final class NormalizerImpl {
     // TODO: Propose widening UTF16 methods that take String to take CharSequence.
     public static final class UTF16Plus {
         /**
+         * Is this code point a lead surrogate (U+d800..U+dbff)?
+         * @param c code unit or code point
+         * @return true or false
+         */
+        public static boolean isLeadSurrogate(int c) { return (c & 0xfffffc00) == 0xd800; }
+        /**
          * Assuming c is a surrogate code point (UTF16.isSurrogate(c)),
          * is it a lead surrogate?
          * @param c code unit or code point
@@ -350,7 +358,7 @@ public final class NormalizerImpl {
 
     private static final class IsAcceptable implements ICUBinary.Authenticate {
         public boolean isDataVersionAcceptable(byte version[]) {
-            return version[0]==3;
+            return version[0]==4;
         }
     }
     private static final IsAcceptable IS_ACCEPTABLE = new IsAcceptable();
@@ -387,8 +395,9 @@ public final class NormalizerImpl {
             // Read the normTrie.
             int offset=inIndexes[IX_NORM_TRIE_OFFSET];
             int nextOffset=inIndexes[IX_EXTRA_DATA_OFFSET];
-            normTrie=Trie2_16.createFromSerialized(bytes);
-            int trieLength=normTrie.getSerializedLength();
+            int triePosition = bytes.position();
+            normTrie = CodePointTrie.Fast16.fromBinary(bytes);
+            int trieLength = bytes.position() - triePosition;
             if(trieLength>(nextOffset-offset)) {
                 throw new InternalError("Normalizer2 data: not enough bytes for normTrie");
             }
@@ -398,13 +407,8 @@ public final class NormalizerImpl {
             offset=nextOffset;
             nextOffset=inIndexes[IX_SMALL_FCD_OFFSET];
             int numChars=(nextOffset-offset)/2;
-            char[] chars;
             if(numChars!=0) {
-                chars=new char[numChars];
-                for(int i=0; i<numChars; ++i) {
-                    chars[i]=bytes.getChar();
-                }
-                maybeYesCompositions=new String(chars);
+                maybeYesCompositions=ICUBinary.getString(bytes, numChars, 0);
                 extraData=maybeYesCompositions.substring((MIN_NORMAL_MAYBE_YES-minMaybeYes)>>OFFSET_SHIFT);
             }
 
@@ -422,8 +426,12 @@ public final class NormalizerImpl {
         return load(ICUBinary.getRequiredData(name));
     }
 
-
-    public int getNorm16(int c) { return normTrie.get(c); }
+    // The trie stores values for lead surrogate code *units*.
+    // Surrogate code *points* are inert.
+    public int getNorm16(int c) {
+        return UTF16Plus.isLeadSurrogate(c) ? INERT : normTrie.get(c);
+    }
+    public int getRawNorm16(int c) { return normTrie.get(c); }
     public boolean isAlgorithmicNoNo(int norm16) { return limitNoNo<=norm16 && norm16<minMaybeYes; }
     public boolean isCompNo(int norm16) { return minNoNo<=norm16 && norm16<minMaybeYes; }
     public boolean isDecompYes(int norm16) { return norm16<minYesNo || minMaybeYes<=norm16; }
@@ -486,7 +494,7 @@ public final class NormalizerImpl {
                 }
                 // Maps to an isCompYesAndZeroCC.
                 c=mapAlgorithmic(c, norm16);
-                norm16=getNorm16(c);
+                norm16=getRawNorm16(c);
             }
         }
         if(norm16<=minYesNo || isHangulLVT(norm16)) {
@@ -519,7 +527,7 @@ public final class NormalizerImpl {
             // Maps to an isCompYesAndZeroCC.
             decomp=c=mapAlgorithmic(c, norm16);
             // The mapping might decompose further.
-            norm16 = getNorm16(c);
+            norm16 = getRawNorm16(c);
         }
         if (norm16 < minYesNo) {
             if(decomp<0) {
@@ -641,27 +649,23 @@ public final class NormalizerImpl {
             // count code units below the minimum or with irrelevant data for the quick check
             for(prevSrc=src; src!=limit;) {
                 if( (c=s.charAt(src))<minNoCP ||
-                    isMostDecompYesAndZeroCC(norm16=normTrie.getFromU16SingleLead((char)c))
+                    isMostDecompYesAndZeroCC(norm16=normTrie.bmpGet(c))
                 ) {
                     ++src;
-                } else if(!UTF16.isSurrogate((char)c)) {
+                } else if(!UTF16Plus.isLeadSurrogate(c)) {
                     break;
                 } else {
                     char c2;
-                    if(UTF16Plus.isSurrogateLead(c)) {
-                        if((src+1)!=limit && Character.isLowSurrogate(c2=s.charAt(src+1))) {
-                            c=Character.toCodePoint((char)c, c2);
+                    if ((src + 1) != limit && Character.isLowSurrogate(c2 = s.charAt(src + 1))) {
+                        c = Character.toCodePoint((char)c, c2);
+                        norm16 = normTrie.suppGet(c);
+                        if (isMostDecompYesAndZeroCC(norm16)) {
+                            src += 2;
+                        } else {
+                            break;
                         }
-                    } else /* trail surrogate */ {
-                        if(prevSrc<src && Character.isHighSurrogate(c2=s.charAt(src-1))) {
-                            --src;
-                            c=Character.toCodePoint(c2, (char)c);
-                        }
-                    }
-                    if(isMostDecompYesAndZeroCC(norm16=getNorm16(c))) {
-                        src+=Character.charCount(c);
                     } else {
-                        break;
+                        ++src;  // unpaired lead surrogate: inert
                     }
                 }
             }
@@ -721,7 +725,7 @@ public final class NormalizerImpl {
             c=Character.codePointAt(s, src);
             cc=getCC(getNorm16(c));
         };
-        buffer.append(s, 0, src, firstCC, prevCC);
+        buffer.append(s, 0, src, false, firstCC, prevCC);
         buffer.append(s, src, limit);
     }
 
@@ -749,28 +753,22 @@ public final class NormalizerImpl {
                     return true;
                 }
                 if( (c=s.charAt(src))<minNoMaybeCP ||
-                    isCompYesAndZeroCC(norm16=normTrie.getFromU16SingleLead((char)c))
+                    isCompYesAndZeroCC(norm16=normTrie.bmpGet(c))
                 ) {
                     ++src;
                 } else {
                     prevSrc = src++;
-                    if(!UTF16.isSurrogate((char)c)) {
+                    if (!UTF16Plus.isLeadSurrogate(c)) {
                         break;
                     } else {
                         char c2;
-                        if(UTF16Plus.isSurrogateLead(c)) {
-                            if(src!=limit && Character.isLowSurrogate(c2=s.charAt(src))) {
-                                ++src;
-                                c=Character.toCodePoint((char)c, c2);
+                        if (src != limit && Character.isLowSurrogate(c2 = s.charAt(src))) {
+                            ++src;
+                            c = Character.toCodePoint((char)c, c2);
+                            norm16 = normTrie.suppGet(c);
+                            if (!isCompYesAndZeroCC(norm16)) {
+                                break;
                             }
-                        } else /* trail surrogate */ {
-                            if(prevBoundary<prevSrc && Character.isHighSurrogate(c2=s.charAt(prevSrc-1))) {
-                                --prevSrc;
-                                c=Character.toCodePoint(c2, (char)c);
-                            }
-                        }
-                        if(!isCompYesAndZeroCC(norm16=getNorm16(c))) {
-                            break;
                         }
                     }
                 }
@@ -991,28 +989,22 @@ public final class NormalizerImpl {
                     return (src<<1)|qcResult;  // "yes" or "maybe"
                 }
                 if( (c=s.charAt(src))<minNoMaybeCP ||
-                    isCompYesAndZeroCC(norm16=normTrie.getFromU16SingleLead((char)c))
+                    isCompYesAndZeroCC(norm16=normTrie.bmpGet(c))
                 ) {
                     ++src;
                 } else {
                     prevSrc = src++;
-                    if(!UTF16.isSurrogate((char)c)) {
+                    if (!UTF16Plus.isLeadSurrogate(c)) {
                         break;
                     } else {
                         char c2;
-                        if(UTF16Plus.isSurrogateLead(c)) {
-                            if(src!=limit && Character.isLowSurrogate(c2=s.charAt(src))) {
-                                ++src;
-                                c=Character.toCodePoint((char)c, c2);
+                        if (src != limit && Character.isLowSurrogate(c2 = s.charAt(src))) {
+                            ++src;
+                            c = Character.toCodePoint((char)c, c2);
+                            norm16 = normTrie.suppGet(c);
+                            if (!isCompYesAndZeroCC(norm16)) {
+                                break;
                             }
-                        } else /* trail surrogate */ {
-                            if(prevBoundary<prevSrc && Character.isHighSurrogate(c2=s.charAt(prevSrc-1))) {
-                                --prevSrc;
-                                c=Character.toCodePoint(c2, (char)c);
-                            }
-                        }
-                        if(!isCompYesAndZeroCC(norm16=getNorm16(c))) {
-                            break;
                         }
                     }
                 }
@@ -1134,17 +1126,10 @@ public final class NormalizerImpl {
                     prevFCD16=0;
                     ++src;
                 } else {
-                    if(UTF16.isSurrogate((char)c)) {
+                    if (UTF16Plus.isLeadSurrogate(c)) {
                         char c2;
-                        if(UTF16Plus.isSurrogateLead(c)) {
-                            if((src+1)!=limit && Character.isLowSurrogate(c2=s.charAt(src+1))) {
-                                c=Character.toCodePoint((char)c, c2);
-                            }
-                        } else /* trail surrogate */ {
-                            if(prevSrc<src && Character.isHighSurrogate(c2=s.charAt(src-1))) {
-                                --src;
-                                c=Character.toCodePoint(c2, (char)c);
-                            }
+                        if ((src + 1) != limit && Character.isLowSurrogate(c2 = s.charAt(src + 1))) {
+                            c = Character.toCodePoint((char)c, c2);
                         }
                     }
                     if((fcd16=getFCD16FromNormData(c))<=0xff) {
@@ -1430,7 +1415,7 @@ public final class NormalizerImpl {
             }
             // Maps to an isCompYesAndZeroCC.
             c=mapAlgorithmic(c, norm16);
-            norm16=getNorm16(c);
+            norm16=getRawNorm16(c);
         }
         if (norm16 < minYesNo) {
             // c does not decompose
@@ -1451,7 +1436,7 @@ public final class NormalizerImpl {
                 leadCC=0;
             }
             ++mapping;  // skip over the firstUnit
-            buffer.append(extraData, mapping, mapping+length, leadCC, trailCC);
+            buffer.append(extraData, mapping, mapping+length, true, leadCC, trailCC);
         }
     }
 
@@ -1643,7 +1628,7 @@ public final class NormalizerImpl {
                     // Is the composite a starter that combines forward?
                     if((compositeAndFwd&1)!=0) {
                         compositionsList=
-                            getCompositionsListForComposite(getNorm16(composite));
+                            getCompositionsListForComposite(getRawNorm16(composite));
                     } else {
                         compositionsList=-1;
                     }
@@ -2196,9 +2181,8 @@ public final class NormalizerImpl {
     private int centerNoNoDelta;
     private int minMaybeYes;
 
-    private Trie2_16 normTrie;
+    private CodePointTrie.Fast16 normTrie;
     private String maybeYesCompositions;
     private String extraData;  // mappings and/or compositions for yesYes, yesNo & noNo characters
     private byte[] smallFCD;  // [0x100] one bit per 32 BMP code points, set if any FCD!=0
-
-   }
+}

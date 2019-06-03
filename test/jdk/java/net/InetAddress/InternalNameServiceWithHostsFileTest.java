@@ -56,19 +56,28 @@ public class InternalNameServiceWithHostsFileTest {
         byte[] expectedIpv6LocalhostAddress = { 0, 0, 0, 0, 0, 0, 0,
                 0, 0, 0, 0, 0, 0, 0, 0, 1 };
 
-        try {
-            // 10.2.3.4  testHost.testDomain
-            testHostsMapping(expectedIpv4Address, "testHost.testDomain");
-            // ::1     ip6-localhost ip6-loopback
-            testHostsMapping(expectedIpv6LocalhostAddress, "ip6-localhost");
-            // fe00::0 ip6-localnet
-            testHostsMapping(expectedIpv6LocalAddress, "ip6-localnet");
-            // fe80::1 link-local-host
-            testHostsMapping(expectedIpv6Address, "link-local-host");
+        // 10.2.3.4  testHost.testDomain
+        testHostsMapping(expectedIpv4Address, "testHost.testDomain");
+        // ::1     ip6-localhost ip6-loopback
+        testHostsMapping(expectedIpv6LocalhostAddress, "ip6-localhost");
+        // fe00::0 ip6-localnet
+        testHostsMapping(expectedIpv6LocalAddress, "ip6-localnet");
+        // fe80::1 link-local-host
+        testHostsMapping(expectedIpv6Address, "link-local-host");
 
-        } catch (UnknownHostException uhEx) {
-            System.out.println("UHE unexpected caught == " + uhEx.getMessage());
-        }
+        testReverseLookup("10.2.3.4", "testHost.testDomain");
+
+        testReverseLookup("::1", "ip6-localhost");
+        testReverseLookup("0:0:0:0:0:0:0:1", "ip6-localhost");
+        testReverseLookup("0000:0000:0000:0000:0000:0000:0000:0001", "ip6-localhost");
+
+        testReverseLookup("fe00::0", "ip6-localnet");
+        testReverseLookup("fe00:0:0:0:0:0:0:0", "ip6-localnet");
+        testReverseLookup("fe00:0000:0000:0000:0000:0000:0000:0000", "ip6-localnet");
+
+        testReverseLookup("fe80::1", "link-local-host");
+        testReverseLookup("fe80:000:0:00:0:000:00:1", "link-local-host");
+        testReverseLookup("fe80:0000:0000:0000:0000:0000:0000:0001", "link-local-host");
     }
 
     private static void testHostsMapping(byte[] expectedIpAddress, String hostName)
@@ -93,5 +102,16 @@ public class InternalNameServiceWithHostsFileTest {
                 + Arrays.toString(rawIpAddress)
                 + " equal to expected address == "
                 + Arrays.toString(expectedIpAddress));
+    }
+
+    private static void testReverseLookup(String numericHost, String expectedName)
+            throws UnknownHostException {
+        String lookupResult = InetAddress.getByName(numericHost).getHostName();
+        if (!expectedName.equals(lookupResult)) {
+            throw new RuntimeException(
+                String.format(
+                    "reverse lookup of \"%s\" is \"%s\", should be \"%s\"\n",
+                    numericHost, lookupResult, expectedName));
+        }
     }
 }

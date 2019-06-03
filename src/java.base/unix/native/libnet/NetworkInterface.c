@@ -807,17 +807,19 @@ static netif *enumInterfaces(JNIEnv *env) {
     int sock;
 
     sock = openSocket(env, AF_INET);
-    if (sock < 0) {
+    if (sock < 0 && (*env)->ExceptionOccurred(env)) {
         return NULL;
     }
 
     // enumerate IPv4 addresses
-    ifs = enumIPv4Interfaces(env, sock, NULL);
-    close(sock);
+    if (sock >= 0) {
+        ifs = enumIPv4Interfaces(env, sock, ifs);
+        close(sock);
 
-    // return partial list if an exception occurs in the middle of process ???
-    if (ifs == NULL && (*env)->ExceptionOccurred(env)) {
-        return NULL;
+        if ((*env)->ExceptionOccurred(env)) {
+            freeif(ifs);
+            return NULL;
+        }
     }
 
     // If IPv6 is available then enumerate IPv6 addresses.
@@ -1076,9 +1078,9 @@ static int openSocket(JNIEnv *env, int proto) {
     int sock;
 
     if ((sock = socket(proto, SOCK_DGRAM, 0)) < 0) {
-        // If EPROTONOSUPPORT is returned it means we don't have
-        // support for this proto so don't throw an exception.
-        if (errno != EPROTONOSUPPORT) {
+        // If we lack support for this address family or protocol,
+        // don't throw an exception.
+        if (errno != EPROTONOSUPPORT && errno != EAFNOSUPPORT) {
             JNU_ThrowByNameWithMessageAndLastError
                 (env, JNU_JAVANETPKG "SocketException", "Socket creation failed");
         }
@@ -1099,7 +1101,7 @@ static int openSocketWithFallback(JNIEnv *env, const char *ifname) {
     int sock;
 
     if ((sock = socket(AF_INET, SOCK_DGRAM, 0)) < 0) {
-        if (errno == EPROTONOSUPPORT) {
+        if (errno == EPROTONOSUPPORT || errno == EAFNOSUPPORT) {
             if ((sock = socket(AF_INET6, SOCK_DGRAM, 0)) < 0) {
                 JNU_ThrowByNameWithMessageAndLastError
                     (env, JNU_JAVANETPKG "SocketException", "IPV6 Socket creation failed");
@@ -1336,7 +1338,7 @@ static int openSocketWithFallback(JNIEnv *env, const char *ifname) {
     int sock;
 
     if ((sock = socket(AF_INET, SOCK_DGRAM, 0)) < 0) {
-        if (errno == EPROTONOSUPPORT) {
+        if (errno == EPROTONOSUPPORT || errno == EAFNOSUPPORT) {
             if ((sock = socket(AF_INET6, SOCK_DGRAM, 0)) < 0) {
                 JNU_ThrowByNameWithMessageAndLastError
                     (env, JNU_JAVANETPKG "SocketException", "IPV6 Socket creation failed");
@@ -1614,7 +1616,7 @@ static int openSocketWithFallback(JNIEnv *env, const char *ifname) {
     struct lifreq if2;
 
     if ((sock = socket(AF_INET, SOCK_DGRAM, 0)) < 0) {
-        if (errno == EPROTONOSUPPORT) {
+        if (errno == EPROTONOSUPPORT || errno == EAFNOSUPPORT) {
             if ((sock = socket(AF_INET6, SOCK_DGRAM, 0)) < 0) {
                 JNU_ThrowByNameWithMessageAndLastError
                     (env, JNU_JAVANETPKG "SocketException", "IPV6 Socket creation failed");
@@ -1965,7 +1967,7 @@ static int openSocketWithFallback(JNIEnv *env, const char *ifname) {
     int sock;
 
     if ((sock = socket(AF_INET, SOCK_DGRAM, 0)) < 0) {
-        if (errno == EPROTONOSUPPORT) {
+        if (errno == EPROTONOSUPPORT || errno == EAFNOSUPPORT) {
             if ((sock = socket(AF_INET6, SOCK_DGRAM, 0)) < 0) {
                 JNU_ThrowByNameWithMessageAndLastError
                     (env, JNU_JAVANETPKG "SocketException", "IPV6 Socket creation failed");

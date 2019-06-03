@@ -222,7 +222,7 @@ import sun.security.util.SecurityConstants;
  * or a fully qualified name as defined by
  * <cite>The Java&trade; Language Specification</cite>.
  *
- * @jls 6.7  Fully Qualified Names
+ * @jls 6.7 Fully Qualified Names
  * @jls 13.1 The Form of a Binary
  * @see      #resolveClass(Class)
  * @since 1.0
@@ -2194,7 +2194,7 @@ public abstract class ClassLoader {
      * @revised 9
      * @spec JPMS
      *
-     * @jvms 5.3 Run-time package
+     * @jvms 5.3 Creation and Loading
      * @see <a href="{@docRoot}/../specs/jar/jar.html#package-sealing">
      *      The JAR File Specification: Package Sealing</a>
      */
@@ -2228,7 +2228,7 @@ public abstract class ClassLoader {
      * @throws  NullPointerException
      *          if {@code name} is {@code null}.
      *
-     * @jvms 5.3 Run-time package
+     * @jvms 5.3 Creation and Loading
      *
      * @since  9
      * @spec JPMS
@@ -2255,7 +2255,7 @@ public abstract class ClassLoader {
      *         this class loader; or an zero length array if no package has been
      *         defined by this class loader.
      *
-     * @jvms 5.3 Run-time package
+     * @jvms 5.3 Creation and Loading
      *
      * @since  9
      * @spec JPMS

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -58,23 +58,26 @@ public class AppendClasspath {
     // FAIL: 2) runtime with classpath different from the one used in dump time
     // (runtime has an extra jar file prepended to the class path)
     TestCommon.run(
+        "-Xlog:cds",
         "-cp", appJar2 + File.pathSeparator + appJar,
         "HelloMore")
-      .assertAbnormalExit(errorMessage1, errorMessage2);
+        .assertAbnormalExit(errorMessage1, errorMessage2);
 
     // FAIL: 3) runtime with classpath part of the one used in dump time
     TestCommon.testDump(appJar + File.pathSeparator + appJar2,
                                       TestCommon.list("Hello"));
     TestCommon.run(
+        "-Xlog:cds",
         "-cp", appJar2,
         "Hello")
-      .assertAbnormalExit(errorMessage1, errorMessage2);
+        .assertAbnormalExit(errorMessage1, errorMessage2);
 
     // FAIL: 4) runtime with same set of jar files in the classpath but
     // with different order
     TestCommon.run(
+        "-Xlog:cds",
         "-cp", appJar2 + File.pathSeparator + appJar,
         "HelloMore")
-      .assertAbnormalExit(errorMessage1, errorMessage2);
+        .assertAbnormalExit(errorMessage1, errorMessage2);
   }
 }

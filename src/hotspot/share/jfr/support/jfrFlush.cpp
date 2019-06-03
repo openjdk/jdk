@@ -62,7 +62,6 @@ bool jfr_has_stacktrace_enabled(JfrEventId id) {
 }
 
 void jfr_conditional_flush(JfrEventId id, size_t size, Thread* t) {
-  assert(jfr_is_event_enabled(id), "invariant");
   if (t->jfr_thread_local()->has_native_buffer()) {
     JfrStorage::Buffer* const buffer = t->jfr_thread_local()->native_buffer();
     if (LessThanSize<JfrStorage::Buffer>::evaluate(buffer, size)) {

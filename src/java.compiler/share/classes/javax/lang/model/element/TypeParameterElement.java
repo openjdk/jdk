@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -41,6 +41,15 @@ import javax.lang.model.type.TypeVariable;
  * @since 1.6
  */
 public interface TypeParameterElement extends Element {
+    /**
+     * Returns the {@linkplain TypeVariable type variable} corresponding to this type parameter element.
+     *
+     * @see TypeVariable
+     *
+     * @return the type variable corresponding to this type parameter element
+     */
+    @Override
+    TypeMirror asType();
 
     /**
      * Returns the generic class, interface, method, or constructor that is

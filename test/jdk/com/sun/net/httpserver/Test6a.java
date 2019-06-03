@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,6 +27,7 @@
  * @library /test/lib
  * @build jdk.test.lib.net.SimpleSSLContext
  * @run main/othervm Test6a
+ * @run main/othervm -Djava.net.preferIPv6Addresses=true Test6a
  * @summary Light weight HTTP server
  */
 
@@ -38,6 +39,8 @@ import java.net.*;
 import javax.net.ssl.*;
 import jdk.test.lib.net.SimpleSSLContext;
 
+import jdk.test.lib.net.URIBuilder;
+
 /**
  * Test https POST large file via chunked encoding (unusually small chunks)
  */
@@ -46,7 +49,8 @@ public class Test6a extends Test {
 
     public static void main (String[] args) throws Exception {
         Handler handler = new Handler();
-        InetSocketAddress addr = new InetSocketAddress (0);
+        InetAddress loopback = InetAddress.getLoopbackAddress();
+        InetSocketAddress addr = new InetSocketAddress (loopback, 0);
         HttpsServer server = HttpsServer.create (addr, 0);
         HttpContext ctx = server.createContext ("/test", handler);
         ExecutorService executor = Executors.newCachedThreadPool();
@@ -55,9 +59,16 @@ public class Test6a extends Test {
         server.setHttpsConfigurator(new HttpsConfigurator (ssl));
         server.start ();
 
-        URL url = new URL ("https://localhost:"+server.getAddress().getPort()+"/test/foo.html");
-        System.out.print ("Test6a: " );
-        HttpsURLConnection urlc = (HttpsURLConnection)url.openConnection ();
+        URL url = URIBuilder.newBuilder()
+                  .scheme("https")
+                  .host(server.getAddress().getAddress())
+                  .port(server.getAddress().getPort())
+                  .path("/test/foo.html")
+                  .toURL();
+
+        System.out.println("Test6a: URL=" + url);
+        System.out.print("Test6a: ");
+        HttpsURLConnection urlc = (HttpsURLConnection)url.openConnection(Proxy.NO_PROXY);
         urlc.setDoOutput (true);
         urlc.setRequestMethod ("POST");
         urlc.setChunkedStreamingMode (32); // small chunks

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -77,8 +77,8 @@ public class MallocStressTest {
         String pid = Long.toString(ProcessTools.getProcessId());
         ProcessBuilder pb = new ProcessBuilder();
 
-        AllocThread[]   alloc_threads = new AllocThread[256];
-        ReleaseThread[] release_threads = new ReleaseThread[64];
+        AllocThread[]   alloc_threads = new AllocThread[40];
+        ReleaseThread[] release_threads = new ReleaseThread[10];
 
         int index;
         // Create many allocation threads
@@ -91,11 +91,6 @@ public class MallocStressTest {
             release_threads[index] = new ReleaseThread();
         }
 
-        if (is_64_bit_system()) {
-            sleep_wait(2*60*1000);
-        } else {
-            sleep_wait(60*1000);
-        }
         // pause the stress test
         phase = TestPhase.pause;
         while (pause_count.intValue() <  alloc_threads.length + release_threads.length) {
@@ -172,7 +167,8 @@ public class MallocStressTest {
         // AllocThread only runs "Alloc" phase
         public void run() {
             Random random = new Random();
-            while (MallocStressTest.phase == TestPhase.alloc) {
+            // MallocStressTest.phase == TestPhase.alloc
+            for (int loops = 0; loops < 100; loops++) {
                 int r = random.nextInt(Integer.MAX_VALUE);
                 // Only malloc small amount to avoid OOM
                 int size = r % 32;

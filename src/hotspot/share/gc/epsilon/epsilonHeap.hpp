@@ -29,7 +29,6 @@
 #include "gc/shared/space.hpp"
 #include "gc/epsilon/epsilonMonitoringSupport.hpp"
 #include "gc/epsilon/epsilonBarrierSet.hpp"
-#include "gc/epsilon/epsilon_globals.hpp"
 #include "services/memoryManager.hpp"
 
 class EpsilonHeap : public CollectedHeap {

@@ -295,7 +295,7 @@ bool ShenandoahBarrierSetC2::is_shenandoah_wb_pre_call(Node* call) {
          call->as_CallLeaf()->entry_point() == CAST_FROM_FN_PTR(address, ShenandoahRuntime::write_ref_field_pre_entry);
 }
 
-bool ShenandoahBarrierSetC2::is_shenandoah_wb_call(Node* call) {
+bool ShenandoahBarrierSetC2::is_shenandoah_lrb_call(Node* call) {
   return call->is_CallLeaf() &&
          call->as_CallLeaf()->entry_point() == CAST_FROM_FN_PTR(address, ShenandoahRuntime::load_reference_barrier_JRT);
 }
@@ -472,7 +472,7 @@ const TypeFunc* ShenandoahBarrierSetC2::shenandoah_clone_barrier_Type() {
   return TypeFunc::make(domain, range);
 }
 
-const TypeFunc* ShenandoahBarrierSetC2::shenandoah_write_barrier_Type() {
+const TypeFunc* ShenandoahBarrierSetC2::shenandoah_load_reference_barrier_Type() {
   const Type **fields = TypeTuple::fields(1);
   fields[TypeFunc::Parms+0] = TypeInstPtr::NOTNULL; // original field value
   const TypeTuple *domain = TypeTuple::make(TypeFunc::Parms+1, fields);
@@ -708,30 +708,6 @@ Node* ShenandoahBarrierSetC2::atomic_xchg_at_resolved(C2AtomicParseAccess& acces
 void ShenandoahBarrierSetC2::clone(GraphKit* kit, Node* src, Node* dst, Node* size, bool is_array) const {
   assert(!src->is_AddP(), "unexpected input");
   BarrierSetC2::clone(kit, src, dst, size, is_array);
-}
-
-Node* ShenandoahBarrierSetC2::obj_allocate(PhaseMacroExpand* macro, Node* ctrl, Node* mem, Node* toobig_false, Node* size_in_bytes,
-                                           Node*& i_o, Node*& needgc_ctrl,
-                                           Node*& fast_oop_ctrl, Node*& fast_oop_rawmem,
-                                           intx prefetch_lines) const {
-  PhaseIterGVN& igvn = macro->igvn();
-
-  // Allocate several words more for the Shenandoah brooks pointer.
-  size_in_bytes = new AddXNode(size_in_bytes, igvn.MakeConX(ShenandoahForwarding::byte_size()));
-  macro->transform_later(size_in_bytes);
-
-  Node* fast_oop = BarrierSetC2::obj_allocate(macro, ctrl, mem, toobig_false, size_in_bytes,
-                                              i_o, needgc_ctrl, fast_oop_ctrl, fast_oop_rawmem,
-                                              prefetch_lines);
-
-  // Bump up object for Shenandoah brooks pointer.
-  fast_oop = new AddPNode(macro->top(), fast_oop, igvn.MakeConX(ShenandoahForwarding::byte_size()));
-  macro->transform_later(fast_oop);
-
-  // Initialize Shenandoah brooks pointer to point to the object itself.
-  fast_oop_rawmem = macro->make_store(fast_oop_ctrl, fast_oop_rawmem, fast_oop, ShenandoahForwarding::byte_offset(), fast_oop, T_OBJECT);
-
-  return fast_oop;
 }
 
 // Support for GC barriers emitted during parsing

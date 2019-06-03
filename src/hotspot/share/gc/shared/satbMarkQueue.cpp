@@ -56,7 +56,7 @@ void SATBMarkQueue::flush() {
 // retains a small enough collection in the buffer, we can continue to
 // use the buffer as-is, instead of enqueueing and replacing it.
 
-bool SATBMarkQueue::should_enqueue_buffer() {
+void SATBMarkQueue::handle_completed_buffer() {
   // This method should only be called if there is a non-NULL buffer
   // that is full.
   assert(index() == 0, "pre-condition");
@@ -64,15 +64,18 @@ bool SATBMarkQueue::should_enqueue_buffer() {
 
   filter();
 
-  SATBMarkQueueSet* satb_qset = static_cast<SATBMarkQueueSet*>(qset());
-  size_t threshold = satb_qset->buffer_enqueue_threshold();
+  size_t threshold = satb_qset()->buffer_enqueue_threshold();
   // Ensure we'll enqueue completely full buffers.
   assert(threshold > 0, "enqueue threshold = 0");
   // Ensure we won't enqueue empty buffers.
   assert(threshold <= capacity(),
          "enqueue threshold " SIZE_FORMAT " exceeds capacity " SIZE_FORMAT,
          threshold, capacity());
-  return index() < threshold;
+
+  if (index() < threshold) {
+    // Buffer is sufficiently full; enqueue and allocate a new one.
+    enqueue_completed_buffer();
+  } // Else continue to accumulate in buffer.
 }
 
 void SATBMarkQueue::apply_closure_and_empty(SATBBufferClosure* cl) {

@@ -328,6 +328,11 @@ issues.
  Solaris            Oracle Solaris Studio 12.6 (with compiler version 5.15)
  Windows            Microsoft Visual Studio 2017 update 15.9.6
 
+All compilers are expected to be able to compile to the C99 language standard,
+as some C99 features are used in the source code. Microsoft Visual Studio
+doesn't fully support C99 so in practice shared code is limited to using C99
+features that it does support.
+
 ### gcc
 
 The minimum accepted version of gcc is 4.8. Older versions will generate a warning
@@ -722,9 +727,12 @@ can in turn be overriden at runtime by setting the `java.library.path` property.
 
 Certain third-party libraries used by the JDK (libjpeg, giflib, libpng, lcms
 and zlib) are included in the JDK repository. The default behavior of the
-JDK build is to use this version of these libraries, but they might be
-replaced by an external version. To do so, specify `system` as the `<source>`
-option in these arguments. (The default is `bundled`).
+JDK build is to use the included ("bundled") versions of libjpeg, giflib,
+libpng and lcms.
+For zlib, the system lib (if present) is used except on Windows and AIX.
+However the bundled libraries may be replaced by an external version.
+To do so, specify `system` as the `<source>` option in these arguments.
+(The default is `bundled`).
 
   * `--with-libjpeg=<source>` - Use the specified source for libjpeg
   * `--with-giflib=<source>` - Use the specified source for giflib

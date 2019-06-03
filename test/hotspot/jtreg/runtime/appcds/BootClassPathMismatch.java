@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -55,7 +55,11 @@ public class BootClassPathMismatch {
         test.testBootClassPathMismatch();
         test.testBootClassPathMismatchWithAppClass();
         test.testBootClassPathMismatchWithBadPath();
-        test.testBootClassPathMatchWithAppend();
+        if (!TestCommon.isDynamicArchive()) {
+            // this test is not applicable to dynamic archive since
+            // there is no class to be archived in the top archive
+            test.testBootClassPathMatchWithAppend();
+        }
         test.testBootClassPathMatch();
     }
 
@@ -77,11 +81,13 @@ public class BootClassPathMismatch {
 
         TestCommon.dump(appJar, appClasses, "-Xbootclasspath/a:" + appJar);
         TestCommon.run(
+                "-Xlog:cds",
                 "-cp", appJar, "-Xbootclasspath/a:" + otherJar, "Hello")
             .assertAbnormalExit(mismatchMessage);
 
         TestCommon.dump(appJar, appClasses, "-Xbootclasspath/a:" + otherJar);
         TestCommon.run(
+                "-Xlog:cds",
                 "-cp", appJar, "-Xbootclasspath/a:" + appJar, "Hello")
             .assertAbnormalExit(mismatchMessage);
     }
@@ -100,6 +106,7 @@ public class BootClassPathMismatch {
 
         TestCommon.dump(appJar, appClasses, "-Xbootclasspath/a:" + appJar);
         TestCommon.run(
+                "-Xlog:cds",
                 "-cp", appJar, "-Xbootclasspath/a:" + otherJar, "Hello")
             .assertAbnormalExit(mismatchMessage);
     }
@@ -148,6 +155,7 @@ public class BootClassPathMismatch {
         String appClasses[] = {"Hello"};
         TestCommon.dump(appJar, appClasses);
         TestCommon.run(
+                "-Xlog:cds",
                 "-cp", appJar, "-Xbootclasspath/a:" + appJar, "Hello")
             .assertAbnormalExit(mismatchMessage);
     }

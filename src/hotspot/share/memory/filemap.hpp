@@ -93,7 +93,32 @@ struct ArchiveHeapOopmapInfo {
   size_t  _oopmap_size_in_bits;
 };
 
+class SharedPathTable {
+  Array<u8>* _table;
+  int _size;
+public:
+  void dumptime_init(ClassLoaderData* loader_data, Thread* THREAD);
+  void metaspace_pointers_do(MetaspaceClosure* it);
+
+  int size() {
+    return _size;
+  }
+  SharedClassPathEntry* path_at(int index) {
+    if (index < 0) {
+      return NULL;
+    }
+    assert(index < _size, "sanity");
+    char* p = (char*)_table->data();
+    p += sizeof(SharedClassPathEntry) * index;
+    return (SharedClassPathEntry*)p;
+  }
+  Array<u8>* table() {return _table;}
+  void set_table(Array<u8>* table) {_table = table;}
+
+};
+
 struct FileMapHeader : public CDSFileMapHeaderBase {
+  size_t _header_size;
   size_t _alignment;                // how shared archive should be aligned
   int    _obj_alignment;            // value of ObjectAlignmentInBytes
   address _narrow_oop_base;         // compressed oop encoding base
@@ -110,11 +135,15 @@ struct FileMapHeader : public CDSFileMapHeaderBase {
   size_t  _core_spaces_size;        // number of bytes allocated by the core spaces
                                     // (mc, md, ro, rw and od).
   MemRegion _heap_reserved;         // reserved region for the entire heap at dump time.
+  bool _base_archive_is_default;    // indicates if the base archive is the system default one
 
   // The following fields are all sanity checks for whether this archive
   // will function correctly with this JVM and the bootclasspath it's
   // invoked with.
   char  _jvm_ident[JVM_IDENT_MAX];      // identifier for jvm
+
+  // size of the base archive name including NULL terminator
+  int _base_archive_name_size;
 
   // The _paths_misc_info is a variable-size structure that records "miscellaneous"
   // information during dumping. It is generated and validated by the
@@ -140,12 +169,11 @@ struct FileMapHeader : public CDSFileMapHeaderBase {
   // FIXME -- if JAR files in the tail of the list were specified but not used during dumping,
   // they should be removed from this table, to save space and to avoid spurious
   // loading failures during runtime.
-  int _shared_path_table_size;
-  size_t _shared_path_entry_size;
-  Array<u8>* _shared_path_table;
+  SharedPathTable _shared_path_table;
 
   jshort _app_class_paths_start_index;  // Index of first app classpath entry
   jshort _app_module_paths_start_index; // Index of first module path entry
+  jshort _num_module_paths;             // number of module path entries
   jshort _max_used_path_index;          // max path index referenced during CDS dump
   bool   _verify_local;                 // BytecodeVerificationLocal setting
   bool   _verify_remote;                // BytecodeVerificationRemote setting
@@ -161,13 +189,14 @@ struct FileMapHeader : public CDSFileMapHeaderBase {
   jshort app_module_paths_start_index() { return _app_module_paths_start_index; }
 
   bool validate();
-  void populate(FileMapInfo* info, size_t alignment);
   int compute_crc();
 
   CDSFileMapRegion* space_at(int i) {
     assert(i >= 0 && i < NUM_CDS_REGIONS, "invalid region");
     return &_space[i];
   }
+public:
+  void populate(FileMapInfo* info, size_t alignment);
 };
 
 class FileMapInfo : public CHeapObj<mtInternal> {
@@ -176,14 +205,14 @@ private:
   friend class VMStructs;
   friend struct FileMapHeader;
 
+  bool    _is_static;
   bool    _file_open;
   int     _fd;
   size_t  _file_offset;
 
 private:
-  static Array<u8>*            _shared_path_table;
-  static int                   _shared_path_table_size;
-  static size_t                _shared_path_entry_size;
+  // TODO: Probably change the following to be non-static
+  static SharedPathTable       _shared_path_table;
   static bool                  _validating_shared_path_table;
 
   // FileMapHeader describes the shared space data in the file to be
@@ -202,24 +231,31 @@ public:
 
   const char* _full_path;
   char* _paths_misc_info;
+  char* _base_archive_name;
 
   static FileMapInfo* _current_info;
+  static FileMapInfo* _dynamic_archive_info;
   static bool _heap_pointers_need_patching;
-
-  bool  init_from_file(int fd);
-  void  align_file_position();
-  bool  validate_header_impl();
+  static bool _memory_mapping_failed;
+  static bool get_base_archive_name_from_header(const char* archive_name,
+                                                int* size, char** base_archive_name);
+  static bool check_archive(const char* archive_name, bool is_static);
+  static bool  same_files(const char* file1, const char* file2);
+  void restore_shared_path_table();
+  bool  init_from_file(int fd, bool is_static);
   static void metaspace_pointers_do(MetaspaceClosure* it);
 
 public:
-  FileMapInfo();
+  FileMapInfo(bool is_static);
   ~FileMapInfo();
 
   int    compute_header_crc()         { return _header->compute_crc(); }
   void   set_header_crc(int crc)      { _header->_crc = crc; }
+  int    space_crc(int i)             { return space_at(i)->_crc; }
   void   populate_header(size_t alignment);
-  bool   validate_header();
+  bool   validate_header(bool is_static);
   void   invalidate();
+  int    crc()                        { return _header->_crc; }
   int    version()                    { return _header->_version; }
   size_t alignment()                  { return _header->_alignment; }
   CompressedOops::Mode narrow_oop_mode() { return _header->_narrow_oop_mode; }
@@ -233,6 +269,9 @@ public:
   void set_misc_data_patching_start(char* p)  { _header->_misc_data_patching_start = p; }
   char* read_only_tables_start()              { return _header->_read_only_tables_start; }
   void set_read_only_tables_start(char* p)    { _header->_read_only_tables_start = p; }
+
+  bool  is_file_position_aligned() const;
+  void  align_file_position();
 
   address cds_i2i_entry_code_buffers() {
     return _header->_cds_i2i_entry_code_buffers;
@@ -254,12 +293,21 @@ public:
     NOT_CDS(return NULL;)
   }
 
+  static void set_current_info(FileMapInfo* info) {
+    CDS_ONLY(_current_info = info;)
+  }
+
+  static FileMapInfo* dynamic_info() {
+    CDS_ONLY(return _dynamic_archive_info;)
+    NOT_CDS(return NULL;)
+  }
+
   static void assert_mark(bool check);
 
   // File manipulation.
-  bool  initialize() NOT_CDS_RETURN_(false);
-  bool  open_for_read();
-  void  open_for_write();
+  bool  initialize(bool is_static) NOT_CDS_RETURN_(false);
+  bool  open_for_read(const char* path = NULL);
+  void  open_for_write(const char* path = NULL);
   void  write_header();
   void  write_region(int region, char* base, size_t size,
                      bool read_only, bool allow_exec);
@@ -269,6 +317,8 @@ public:
                                     bool print_log);
   void  write_bytes(const void* buffer, size_t count);
   void  write_bytes_aligned(const void* buffer, size_t count);
+  size_t  read_bytes(void* buffer, size_t count);
+  char* map_regions(int regions[], char* saved_base[], size_t len);
   char* map_region(int i, char** top_ret);
   void  map_heap_regions_impl() NOT_CDS_JAVA_HEAP_RETURN;
   void  map_heap_regions() NOT_CDS_JAVA_HEAP_RETURN;
@@ -278,6 +328,7 @@ public:
                                               int first_region_idx) NOT_CDS_JAVA_HEAP_RETURN;
   bool  has_heap_regions()  NOT_CDS_JAVA_HEAP_RETURN_(false);
   MemRegion get_heap_regions_range_with_current_oop_encoding_mode() NOT_CDS_JAVA_HEAP_RETURN_(MemRegion());
+  void  unmap_regions(int regions[], char* saved_base[], size_t len);
   void  unmap_region(int i);
   bool  verify_region_checksum(int i);
   void  close();
@@ -291,7 +342,10 @@ public:
   // Errors.
   static void fail_stop(const char *msg, ...) ATTRIBUTE_PRINTF(1, 2);
   static void fail_continue(const char *msg, ...) ATTRIBUTE_PRINTF(1, 2);
-
+  static bool memory_mapping_failed() {
+    CDS_ONLY(return _memory_mapping_failed;)
+    NOT_CDS(return false;)
+  }
   bool is_in_shared_region(const void* p, int idx) NOT_CDS_RETURN_(false);
 
   // Stop CDS sharing and unmap CDS regions.
@@ -307,13 +361,7 @@ public:
 #endif
 
   static SharedClassPathEntry* shared_path(int index) {
-    if (index < 0) {
-      return NULL;
-    }
-    assert(index < _shared_path_table_size, "sanity");
-    char* p = (char*)_shared_path_table->data();
-    p += _shared_path_entry_size * index;
-    return (SharedClassPathEntry*)p;
+    return _shared_path_table.path_at(index);
   }
 
   static const char* shared_path_name(int index) {
@@ -322,7 +370,7 @@ public:
   }
 
   static int get_number_of_shared_paths() {
-    return _shared_path_table_size;
+    return _shared_path_table.size();
   }
 
   char* region_addr(int idx);
@@ -330,7 +378,7 @@ public:
  private:
   bool  map_heap_data(MemRegion **heap_mem, int first, int max, int* num,
                       bool is_open = false) NOT_CDS_JAVA_HEAP_RETURN_(false);
-  bool  verify_mapped_heap_regions(int first, int num) NOT_CDS_JAVA_HEAP_RETURN_(false);
+  bool  region_crc_check(char* buf, size_t size, int expected_crc) NOT_CDS_RETURN_(false);
   void  dealloc_archive_heap_regions(MemRegion* regions, int num, bool is_open) NOT_CDS_JAVA_HEAP_RETURN;
 
   CDSFileMapRegion* space_at(int i) {
