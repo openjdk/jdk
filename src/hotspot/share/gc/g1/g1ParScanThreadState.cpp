@@ -75,7 +75,6 @@ G1ParScanThreadState::G1ParScanThreadState(G1CollectedHeap* g1h,
 
   _plab_allocator = new G1PLABAllocator(_g1h->allocator());
 
-  _dest[G1HeapRegionAttr::NotInCSet] = G1HeapRegionAttr::NotInCSet;
   // The dest for Young is used when the objects are aged enough to
   // need to be moved to the next space.
   _dest[G1HeapRegionAttr::Young] = G1HeapRegionAttr::Old;

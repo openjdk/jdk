@@ -54,14 +54,14 @@ public:
   // The selected encoding allows us to use a single check (> NotInCSet) for the
   // former.
   //
-  // The other values are used for objects requiring various special cases,
-  // for example eager reclamation of humongous objects or optional regions.
-  static const region_type_t Optional     =  -2;    // The region is optional and NOT in the current collection set.
-  static const region_type_t Humongous    =  -1;    // The region is a humongous candidate not in the current collection set.
-  static const region_type_t NotInCSet    =   0;    // The region is not in the collection set.
-  static const region_type_t Young        =   1;    // The region is in the collection set and a young region.
-  static const region_type_t Old          =   2;    // The region is in the collection set and an old region.
-  static const region_type_t Num          =   3;
+  // The other values are used for objects in regions requiring various special handling,
+  // eager reclamation of humongous objects or optional regions.
+  static const region_type_t Optional     =  -3;    // The region is optional not in the current collection set.
+  static const region_type_t Humongous    =  -2;    // The region is a humongous candidate not in the current collection set.
+  static const region_type_t NotInCSet    =  -1;    // The region is not in the collection set.
+  static const region_type_t Young        =   0;    // The region is in the collection set and a young region.
+  static const region_type_t Old          =   1;    // The region is in the collection set and an old region.
+  static const region_type_t Num          =   2;
 
   G1HeapRegionAttr(region_type_t type = NotInCSet, bool needs_remset_update = false) :
     _needs_remset_update(needs_remset_update), _type(type) {
@@ -92,7 +92,7 @@ public:
   void set_has_remset(bool value)      { _needs_remset_update = value ? 1 : 0; }
 
   bool is_in_cset_or_humongous() const { return is_in_cset() || is_humongous(); }
-  bool is_in_cset() const              { return type() > NotInCSet; }
+  bool is_in_cset() const              { return type() >= Young; }
 
   bool is_humongous() const            { return type() == Humongous; }
   bool is_young() const                { return type() == Young; }
