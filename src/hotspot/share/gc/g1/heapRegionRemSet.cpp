@@ -614,12 +614,12 @@ void HeapRegionRemSet::clear_fcc() {
 }
 
 void HeapRegionRemSet::setup_remset_size() {
-  // Setup sparse and fine-grain tables sizes.
-  // table_size = base * (log(region_size / 1M) + 1)
   const int LOG_M = 20;
-  int region_size_log_mb = MAX2(HeapRegion::LogOfHRGrainBytes - LOG_M, 0);
+  guarantee(HeapRegion::LogOfHRGrainBytes >= LOG_M, "Code assumes the region size >= 1M, but is " SIZE_FORMAT "B", HeapRegion::GrainBytes);
+
+  int region_size_log_mb = HeapRegion::LogOfHRGrainBytes - LOG_M;
   if (FLAG_IS_DEFAULT(G1RSetSparseRegionEntries)) {
-    G1RSetSparseRegionEntries = G1RSetSparseRegionEntriesBase * (region_size_log_mb + 1);
+    G1RSetSparseRegionEntries = G1RSetSparseRegionEntriesBase * ((size_t)1 << (region_size_log_mb + 1));
   }
   if (FLAG_IS_DEFAULT(G1RSetRegionEntries)) {
     G1RSetRegionEntries = G1RSetRegionEntriesBase * (region_size_log_mb + 1);
