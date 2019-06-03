@@ -122,7 +122,8 @@ DirToDotDot = \
 # $2 - Directory to compute the relative path from
 RelativePath = \
     $(eval $1_prefix := $(call FindCommonPathPrefix, $1, $2)) \
-    $(eval $1_dotdots := $(call DirToDotDot, $(patsubst $($(strip $1)_prefix)/%, %, $2))) \
+    $(eval $1_dotdots := $(call DirToDotDot, $(patsubst $($(strip $1)_prefix)%, %, $2))) \
+    $(eval $1_dotdots := $(if $($(strip $1)_dotdots),$($(strip $1)_dotdots),.)) \
     $(eval $1_suffix := $(patsubst $($(strip $1)_prefix)/%, %, $1)) \
     $($(strip $1)_dotdots)/$($(strip $1)_suffix)
 

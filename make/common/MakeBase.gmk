@@ -472,6 +472,22 @@ else
 endif
 
 ################################################################################
+# FixPathList
+#
+# On Windows, converts a cygwin/unix style path list (colon-separated) into
+# the native format (mixed mode, semicolon-separated). On other platforms,
+# return the path list unchanged.
+################################################################################
+ifeq ($(call isTargetOs, windows), true)
+  FixPathList = \
+      $(subst @,$(SPACE),$(subst $(SPACE),;,$(foreach entry,$(subst :,$(SPACE),\
+      $(subst $(SPACE),@,$(strip $1))),$(call FixPath, $(entry)))))
+else
+  FixPathList = \
+      $1
+endif
+
+################################################################################
 # DependOnVariable
 #
 # This macro takes a variable name and puts the value in a file only if the
