@@ -2118,7 +2118,7 @@ public abstract class VarHandle implements Constable {
     }
 
     /**
-     * A <a href="package-summary.html#nominal">nominal descriptor</a> for a
+     * A <a href="{@docRoot}/java.base/java/lang/constant/package-summary.html#nominal">nominal descriptor</a> for a
      * {@link VarHandle} constant.
      *
      * @since 12
