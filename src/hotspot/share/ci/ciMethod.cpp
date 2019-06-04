@@ -1111,7 +1111,7 @@ void ciMethod::set_not_compilable(const char* reason) {
   } else {
     _is_c2_compilable = false;
   }
-  get_Method()->set_not_compilable(env->comp_level(), true, reason);
+  get_Method()->set_not_compilable(reason, env->comp_level());
 }
 
 // ------------------------------------------------------------------

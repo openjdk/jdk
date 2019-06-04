@@ -22,8 +22,12 @@
  */
 package jdk.vm.ci.hotspot;
 
+import java.lang.reflect.InvocationTargetException;
+import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.Formatter;
+import java.util.List;
 import java.util.Objects;
 
 /**
@@ -32,12 +36,8 @@ import java.util.Objects;
 @SuppressWarnings("serial")
 final class TranslatedException extends Exception {
 
-    private TranslatedException(String message) {
-        super(message);
-    }
-
-    private TranslatedException(String message, Throwable cause) {
-        super(message, cause);
+    private TranslatedException(String message, Throwable translationFailure) {
+        super("[" + translationFailure + "]" + Objects.toString(message, ""));
     }
 
     /**
@@ -49,27 +49,68 @@ final class TranslatedException extends Exception {
         return this;
     }
 
-    private static Throwable create(String className, String message) {
+    /**
+     * Prints a stack trace for {@code throwable} and returns {@code true}. Used to print stack
+     * traces only when assertions are enabled.
+     */
+    private static boolean printStackTrace(Throwable throwable) {
+        throwable.printStackTrace();
+        return true;
+    }
+
+    private static Throwable initCause(Throwable throwable, Throwable cause) {
+        if (cause != null) {
+            try {
+                throwable.initCause(cause);
+            } catch (IllegalStateException e) {
+                // Cause could not be set or overwritten.
+                assert printStackTrace(e);
+            }
+        }
+        return throwable;
+    }
+
+    private static Throwable create(String className, String message, Throwable cause) {
         // Try create with reflection first.
         try {
             Class<?> cls = Class.forName(className);
+            if (cause != null) {
+                // Handle known exception types whose cause must be set in the constructor
+                if (cls == InvocationTargetException.class) {
+                    return new InvocationTargetException(cause, message);
+                }
+                if (cls == ExceptionInInitializerError.class) {
+                    return new ExceptionInInitializerError(cause);
+                }
+            }
             if (message == null) {
-                return (Throwable) cls.getConstructor().newInstance();
+                return initCause((Throwable) cls.getConstructor().newInstance(), cause);
             }
             cls.getDeclaredConstructor(String.class);
-            return (Throwable) cls.getConstructor(String.class).newInstance(message);
-        } catch (Throwable ignore) {
+            return initCause((Throwable) cls.getConstructor(String.class).newInstance(message), cause);
+        } catch (Throwable translationFailure) {
+            if (className.equals(TranslatedException.class.getName())) {
+                // Chop the class name when boxing another TranslatedException
+                return initCause(new TranslatedException(message, translationFailure), cause);
+            }
+            return initCause(new TranslatedException(null, translationFailure), cause);
         }
+    }
 
-        if (className.equals(TranslatedException.class.getName())) {
-            // Chop the class name when boxing another TranslatedException
-            return new TranslatedException(message);
-        }
+    /**
+     * Encodes an exception message to distinguish a null message from an empty message.
+     *
+     * @return {@code value} with a space prepended iff {@code value != null}
+     */
+    private static String encodeMessage(String value) {
+        return value != null ? ' ' + value : value;
+    }
 
-        if (message == null) {
-            return new TranslatedException(className);
+    private static String decodeMessage(String value) {
+        if (value.length() == 0) {
+            return null;
         }
-        return new TranslatedException(className + ": " + message);
+        return value.substring(1);
     }
 
     private static String encodedString(String value) {
@@ -78,21 +119,28 @@ final class TranslatedException extends Exception {
 
     /**
      * Encodes {@code throwable} including its stack and causes as a string. The encoding format of
-     * a single exception with its cause is:
+     * a single exception is:
      *
      * <pre>
      * <exception class name> '|' <exception message> '|' <stack size> '|' [<class> '|' <method> '|' <file> '|' <line> '|' ]*
      * </pre>
      *
-     * Each cause is appended after the exception is it the cause of.
+     * Each exception is encoded before the exception it causes.
      */
     @VMEntryPoint
     static String encodeThrowable(Throwable throwable) throws Throwable {
         try {
             Formatter enc = new Formatter();
-            Throwable current = throwable;
-            do {
-                enc.format("%s|%s|", current.getClass().getName(), encodedString(current.getMessage()));
+            List<Throwable> throwables = new ArrayList<>();
+            for (Throwable current = throwable; current != null; current = current.getCause()) {
+                throwables.add(current);
+            }
+
+            // Encode from inner most cause outwards
+            Collections.reverse(throwables);
+
+            for (Throwable current : throwables) {
+                enc.format("%s|%s|", current.getClass().getName(), encodedString(encodeMessage(current.getMessage())));
                 StackTraceElement[] stackTrace = current.getStackTrace();
                 if (stackTrace == null) {
                     stackTrace = new StackTraceElement[0];
@@ -105,13 +153,14 @@ final class TranslatedException extends Exception {
                                         encodedString(frame.getFileName()), frame.getLineNumber());
                     }
                 }
-                current = current.getCause();
-            } while (current != null);
+            }
             return enc.toString();
         } catch (Throwable e) {
+            assert printStackTrace(e);
             try {
                 return e.getClass().getName() + "|" + encodedString(e.getMessage()) + "|0|";
             } catch (Throwable e2) {
+                assert printStackTrace(e2);
                 return "java.lang.Throwable|too many errors during encoding|0|";
             }
         }
@@ -146,12 +195,12 @@ final class TranslatedException extends Exception {
         try {
             int i = 0;
             String[] parts = encodedThrowable.split("\\|");
-            Throwable parent = null;
-            Throwable result = null;
+            Throwable cause = null;
+            Throwable throwable = null;
             while (i != parts.length) {
                 String exceptionClassName = parts[i++];
-                String exceptionMessage = parts[i++];
-                Throwable throwable = create(exceptionClassName, exceptionMessage);
+                String exceptionMessage = decodeMessage(parts[i++]);
+                throwable = create(exceptionClassName, exceptionMessage, cause);
                 int stackTraceDepth = Integer.parseInt(parts[i++]);
 
                 StackTraceElement[] suffix = getStackTraceSuffix();
@@ -168,16 +217,12 @@ final class TranslatedException extends Exception {
                 }
                 System.arraycopy(suffix, 0, stackTrace, stackTraceDepth, suffix.length);
                 throwable.setStackTrace(stackTrace);
-                if (parent != null) {
-                    parent.initCause(throwable);
-                } else {
-                    result = throwable;
-                }
-                parent = throwable;
+                cause = throwable;
             }
-            return result;
-        } catch (Throwable t) {
-            return new TranslatedException("Error decoding exception: " + encodedThrowable, t);
+            return throwable;
+        } catch (Throwable translationFailure) {
+            assert printStackTrace(translationFailure);
+            return new TranslatedException("Error decoding exception: " + encodedThrowable, translationFailure);
         }
     }
 }

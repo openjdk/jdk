@@ -29,9 +29,12 @@
 
 java/lang/Class/getDeclaredField/ClassDeclaredFieldsTest.java           8185139   generic-all
 java/lang/Class/getDeclaredField/FieldSetAccessibleTest.java            8185139   generic-all
+java/lang/invoke/InvokeDynamicPrintArgs.java                            8185139   generic-all
+java/lang/invoke/MethodHandleConstants.java                             8185139   generic-all
 java/lang/ProcessBuilder/Basic.java#id0                                 8185139   generic-all
 java/lang/ProcessBuilder/Basic.java#id1                                 8185139   generic-all
 java/lang/ProcessBuilder/SecurityManagerClinit.java                     8185139   generic-all
+java/lang/ProcessHandle/PermissionTest.java                             8185139   generic-all
 java/lang/reflect/Proxy/nonPublicProxy/NonPublicProxyClass.java         8185139   generic-all
 java/lang/StackWalker/CallerSensitiveMethod/Main.java                   8185139   generic-all
 java/lang/StackWalker/GetCallerClassTest.java                           8185139   generic-all
@@ -48,12 +51,14 @@ java/lang/System/LoggerFinder/internal/LoggerBridgeTest/LoggerBridgeTest.java   
 java/lang/System/LoggerFinder/internal/LoggerFinderLoaderTest/LoggerFinderLoaderTest.java           8185139   generic-all
 java/lang/System/LoggerFinder/internal/PlatformLoggerBridgeTest/PlatformLoggerBridgeTest.java       8185139   generic-all
 java/lang/System/LoggerFinder/jdk/DefaultLoggerBridgeTest/DefaultLoggerBridgeTest.java              8185139   generic-all
+java/lang/System/LoggerFinder/jdk/DefaultPlatformLoggerTest/DefaultPlatformLoggerTest.java          8185139   generic-all
 java/lang/System/LoggerFinder/LoggerFinderAPI/LoggerFinderAPI.java      8185139   generic-all
 java/util/concurrent/atomic/AtomicUpdaters.java                         8185139   generic-all
 java/util/concurrent/Executors/PrivilegedCallables.java                 8185139   generic-all
 java/util/logging/FileHandlerPath.java                                  8185139   generic-all
 java/util/logging/FileHandlerPatternExceptions.java                     8185139   generic-all
 java/util/logging/Logger/setResourceBundle/TestSetResourceBundle.java   8185139   generic-all
+java/util/logging/LogManagerAppContextDeadlock.java                     8185139   generic-all
 java/util/logging/LogManager/Configuration/updateConfiguration/HandlersOnComplexResetUpdate.java    8185139   generic-all
 java/util/logging/LogManager/Configuration/updateConfiguration/HandlersOnComplexUpdate.java         8185139   generic-all
 java/util/logging/LogManager/Configuration/updateConfiguration/SimpleUpdateConfigurationTest.java   8185139   generic-all
@@ -68,6 +73,7 @@ java/util/logging/FileHandlerLongLimit.java                             8185139 
 java/util/concurrent/tck/JSR166TestCase.java                            8187486   generic-all
 
 java/lang/ref/OOMEInReferenceHandler.java                               8196611   generic-all
+java/lang/ref/SoftReference/Pin.java                                    8196611   generic-all
 java/lang/Runtime/exec/LotsOfOutput.java                                8196611   generic-all
 java/util/concurrent/ScheduledThreadPoolExecutor/BasicCancelTest.java   8196611   generic-all
 vm/gc/InfiniteList.java                                                 8196611   generic-all
@@ -104,3 +110,6 @@ jdk/jfr/event/compiler/TestCompilerPhase.java            8193210   generic-all
 
 # Next tests should be re-enabled once libgraal is introduced
 java/lang/ref/ReachabilityFenceTest.java                 8207267   generic-all
+
+# Next test failed to create new adapter because CodeCache is full with Graal compiled methods.
+java/lang/invoke/LFCaching/LFSingleThreadCachingTest.java 8207267   generic-all

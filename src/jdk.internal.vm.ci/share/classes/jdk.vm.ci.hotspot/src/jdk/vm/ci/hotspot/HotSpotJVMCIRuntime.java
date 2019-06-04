@@ -800,6 +800,26 @@ assert factories != null : "sanity";
     }
 
     /**
+     * @return the current number of per thread counters. May be set through
+     *         {@code -XX:JVMCICompilerSize=} command line option or the
+     *         {@link #setCountersSize(int)} call.
+     */
+    public int getCountersSize() {
+        return compilerToVm.getCountersSize();
+    }
+
+    /**
+     * Attempt to enlarge the number of per thread counters available. Requires a safepoint so
+     * resizing should be rare to avoid performance effects.
+     *
+     * @param newSize
+     * @return false if the resizing failed
+     */
+    public boolean setCountersSize(int newSize) {
+        return compilerToVm.setCountersSize(newSize);
+    }
+
+    /**
      * The offset from the origin of an array to the first element.
      *
      * @return the offset in bytes

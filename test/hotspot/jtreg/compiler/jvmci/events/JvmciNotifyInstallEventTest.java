@@ -47,7 +47,7 @@
  *      compiler.jvmci.common.JVMCIHelpers$EmptyCompilationRequestResult
  *      compiler.jvmci.common.JVMCIHelpers$EmptyVMEventListener
  * @run main/othervm -XX:+UnlockExperimentalVMOptions
- *     -Xbootclasspath/a:. -Xmixed
+ *     -Djvmci.Compiler=graal -Xbootclasspath/a:. -Xmixed
  *     -XX:+UseJVMCICompiler -XX:-BootstrapJVMCI
  *     compiler.jvmci.events.JvmciNotifyInstallEventTest
  * @run main/othervm -XX:+UnlockExperimentalVMOptions

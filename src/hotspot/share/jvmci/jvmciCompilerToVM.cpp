@@ -1113,7 +1113,15 @@ C2V_VMENTRY_NULL(jlongArray, collectCounters, (JNIEnv* env, jobject))
   return (jlongArray) JVMCIENV->get_jobject(array);
 C2V_END
 
-C2V_VMENTRY_0(int, allocateCompileId, (JNIEnv* env, jobject, jobject jvmci_method, int entry_bci))
+C2V_VMENTRY_0(jint, getCountersSize, (JNIEnv* env, jobject))
+  return (jint) JVMCICounterSize;
+C2V_END
+
+C2V_VMENTRY_0(jboolean, setCountersSize, (JNIEnv* env, jobject, jint new_size))
+  return JavaThread::resize_all_jvmci_counters(new_size);
+C2V_END
+
+C2V_VMENTRY_0(jint, allocateCompileId, (JNIEnv* env, jobject, jobject jvmci_method, int entry_bci))
   HandleMark hm;
   if (jvmci_method == NULL) {
     JVMCI_THROW_0(NullPointerException);
@@ -1615,7 +1623,7 @@ C2V_VMENTRY(void, flushDebugOutput, (JNIEnv* env, jobject))
   tty->flush();
 C2V_END
 
-C2V_VMENTRY_0(int, methodDataProfileDataSize, (JNIEnv* env, jobject, jlong metaspace_method_data, jint position))
+C2V_VMENTRY_0(jint, methodDataProfileDataSize, (JNIEnv* env, jobject, jlong metaspace_method_data, jint position))
   MethodData* mdo = JVMCIENV->asMethodData(metaspace_method_data);
   ProfileData* profile_data = mdo->data_at(position);
   if (mdo->is_valid(profile_data)) {
@@ -1721,7 +1729,7 @@ C2V_VMENTRY(void, ensureInitialized, (JNIEnv* env, jobject, jobject jvmci_type))
   }
 C2V_END
 
-C2V_VMENTRY_0(int, interpreterFrameSize, (JNIEnv* env, jobject, jobject bytecode_frame_handle))
+C2V_VMENTRY_0(jint, interpreterFrameSize, (JNIEnv* env, jobject, jobject bytecode_frame_handle))
   if (bytecode_frame_handle == NULL) {
     JVMCI_THROW_0(NullPointerException);
   }
@@ -1769,7 +1777,7 @@ C2V_VMENTRY(void, compileToBytecode, (JNIEnv* env, jobject, jobject lambda_form_
   }
 C2V_END
 
-C2V_VMENTRY_0(int, getIdentityHashCode, (JNIEnv* env, jobject, jobject object))
+C2V_VMENTRY_0(jint, getIdentityHashCode, (JNIEnv* env, jobject, jobject object))
   Handle obj = JVMCIENV->asConstant(JVMCIENV->wrap(object), JVMCI_CHECK_0);
   return obj->identity_hash();
 C2V_END
@@ -2551,7 +2559,7 @@ C2V_VMENTRY(void, releaseFailedSpeculations, (JNIEnv* env, jobject, jlong failed
   FailedSpeculation::free_failed_speculations((FailedSpeculation**)(address) failed_speculations_address);
 }
 
-C2V_VMENTRY_0(bool, addFailedSpeculation, (JNIEnv* env, jobject, jlong failed_speculations_address, jbyteArray speculation_obj))
+C2V_VMENTRY_0(jboolean, addFailedSpeculation, (JNIEnv* env, jobject, jlong failed_speculations_address, jbyteArray speculation_obj))
   JVMCIPrimitiveArray speculation_handle = JVMCIENV->wrap(speculation_obj);
   int speculation_len = JVMCIENV->get_length(speculation_handle);
   char* speculation = NEW_RESOURCE_ARRAY(char, speculation_len);
@@ -2644,6 +2652,8 @@ JNINativeMethod CompilerToVM::methods[] = {
   {CC "invalidateHotSpotNmethod",                     CC "(" HS_NMETHOD ")V",                                                               FN_PTR(invalidateHotSpotNmethod)},
   {CC "readUncompressedOop",                          CC "(J)" OBJECTCONSTANT,                                                              FN_PTR(readUncompressedOop)},
   {CC "collectCounters",                              CC "()[J",                                                                            FN_PTR(collectCounters)},
+  {CC "getCountersSize",                              CC "()I",                                                                             FN_PTR(getCountersSize)},
+  {CC "setCountersSize",                              CC "(I)Z",                                                                            FN_PTR(setCountersSize)},
   {CC "allocateCompileId",                            CC "(" HS_RESOLVED_METHOD "I)I",                                                      FN_PTR(allocateCompileId)},
   {CC "isMature",                                     CC "(" METASPACE_METHOD_DATA ")Z",                                                    FN_PTR(isMature)},
   {CC "hasCompiledCodeForOSR",                        CC "(" HS_RESOLVED_METHOD "II)Z",                                                     FN_PTR(hasCompiledCodeForOSR)},
