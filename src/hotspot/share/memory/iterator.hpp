@@ -322,6 +322,9 @@ public:
   // Read/write the 32-bit unsigned integer pointed to by p.
   virtual void do_u4(u4* p) = 0;
 
+  // Read/write the bool pointed to by p.
+  virtual void do_bool(bool* p) = 0;
+
   // Read/write the region specified.
   virtual void do_region(u_char* start, size_t size) = 0;
 

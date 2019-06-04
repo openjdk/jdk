@@ -1935,6 +1935,11 @@ void ReadClosure::do_u4(u4* p) {
   *p = (u4)(uintx(obj));
 }
 
+void ReadClosure::do_bool(bool* p) {
+  intptr_t obj = nextPtr();
+  *p = (bool)(uintx(obj));
+}
+
 void ReadClosure::do_tag(int tag) {
   int old_tag;
   old_tag = (int)(intptr_t)nextPtr();
