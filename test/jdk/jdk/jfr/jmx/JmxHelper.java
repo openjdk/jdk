@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -48,6 +48,7 @@ import jdk.management.jfr.FlightRecorderMXBean;
 import jdk.management.jfr.RecordingInfo;
 import jdk.management.jfr.SettingDescriptorInfo;
 import jdk.test.lib.Asserts;
+import jdk.test.lib.Utils;
 import jdk.test.lib.jfr.CommonHelper;
 import jdk.test.lib.jfr.Events;
 
@@ -127,7 +128,7 @@ public class JmxHelper {
     }
 
     static File dump(long streamId, FlightRecorderMXBean bean) throws IOException {
-        File f = File.createTempFile("stream_" + streamId + "_", ".jfr", new File("."));
+        File f = Utils.createTempFile("stream_" + streamId + "_", ".jfr").toFile();
         try (FileOutputStream fos = new FileOutputStream(f); BufferedOutputStream bos = new BufferedOutputStream(fos)) {
             while (true) {
                 byte[] data = bean.readStream(streamId);

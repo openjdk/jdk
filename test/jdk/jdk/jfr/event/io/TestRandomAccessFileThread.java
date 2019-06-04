@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -37,6 +37,7 @@ import java.util.List;
 import jdk.jfr.Recording;
 import jdk.jfr.consumer.RecordedEvent;
 import jdk.test.lib.Asserts;
+import jdk.test.lib.Utils;
 import jdk.test.lib.jfr.Events;
 import jdk.test.lib.thread.TestThread;
 import jdk.test.lib.thread.XRun;
@@ -62,8 +63,7 @@ public class TestRandomAccessFileThread {
     private static volatile int writeCount = 0; // Number of writes executed.
 
     public static void main(String[] args) throws Throwable {
-        File tmp = File.createTempFile("TestRandomAccessFileThread", ".tmp", new File("."));
-        tmp.deleteOnExit();
+        File tmp = Utils.createTempFile("TestRandomAccessFileThread", ".tmp").toFile();
 
         Recording recording = new Recording();
         recording.enable(IOEvent.EVENT_FILE_READ).withThreshold(Duration.ofMillis(0));

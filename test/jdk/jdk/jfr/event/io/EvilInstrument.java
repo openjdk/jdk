@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -38,6 +38,7 @@ import java.net.ServerSocket;
 import java.net.Socket;
 import java.security.ProtectionDomain;
 import java.util.concurrent.CountDownLatch;
+import jdk.test.lib.Utils;
 
 
 /**
@@ -87,7 +88,7 @@ public class EvilInstrument {
     }
 
     public static File createScratchFile() throws IOException {
-        return File.createTempFile("EvilTransformer", null, new File(".")).getAbsoluteFile();
+        return Utils.createTempFile("EvilTransformer", null).toFile();
     }
 
     class EvilTransformer implements ClassFileTransformer {
