@@ -24,6 +24,7 @@
 
 #include "precompiled.hpp"
 #include "jvm.h"
+#include "aot/aotLoader.hpp"
 #include "classfile/classLoader.hpp"
 #include "classfile/javaClasses.hpp"
 #include "classfile/moduleEntry.hpp"
@@ -3650,6 +3651,9 @@ void Threads::initialize_java_lang_classes(JavaThread* main_thread, TRAPS) {
   initialize_class(vmSymbols::java_lang_StackOverflowError(), CHECK);
   initialize_class(vmSymbols::java_lang_IllegalMonitorStateException(), CHECK);
   initialize_class(vmSymbols::java_lang_IllegalArgumentException(), CHECK);
+
+  // Eager box cache initialization only if AOT is on and any library is loaded.
+  AOTLoader::initialize_box_caches(CHECK);
 }
 
 void Threads::initialize_jsr292_core_classes(TRAPS) {
@@ -3911,6 +3915,7 @@ jint Threads::create_vm(JavaVMInitArgs* args, bool* canTryAgain) {
   if (CleanChunkPoolAsync) {
     Chunk::start_chunk_pool_cleaner_task();
   }
+
 
   // initialize compiler(s)
 #if defined(COMPILER1) || COMPILER2_OR_JVMCI

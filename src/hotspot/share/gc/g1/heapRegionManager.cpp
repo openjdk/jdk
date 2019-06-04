@@ -70,7 +70,7 @@ HeapRegionManager::HeapRegionManager() :
 
 HeapRegionManager* HeapRegionManager::create_manager(G1CollectedHeap* heap) {
   if (G1Arguments::is_heterogeneous_heap()) {
-    return new HeterogeneousHeapRegionManager((uint)(G1Arguments::heap_reserved_size_bytes() / HeapRegion::GrainBytes) /*heap size as num of regions*/);
+    return new HeterogeneousHeapRegionManager((uint)(G1Arguments::heap_max_size_bytes() / HeapRegion::GrainBytes) /*heap size as num of regions*/);
   }
   return new HeapRegionManager();
 }

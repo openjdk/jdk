@@ -46,6 +46,7 @@ public:
   // Heterogeneous heap support
   static bool is_heterogeneous_heap();
   static size_t heap_reserved_size_bytes();
+  static size_t heap_max_size_bytes();
 };
 
 #endif // SHARE_GC_PARALLEL_PARALLELARGUMENTS_HPP

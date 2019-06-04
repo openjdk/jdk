@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2006, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2006, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -79,7 +79,7 @@ bool IdealLoopTree::policy_unswitching( PhaseIdealLoop *phase ) const {
   }
 
   // Too speculative if running low on nodes.
-  return phase->may_require_nodes(est_loop_clone_sz(3, _body.size()));
+  return phase->may_require_nodes(est_loop_clone_sz(2));
 }
 
 //------------------------------find_unswitching_candidate-----------------------------
@@ -116,7 +116,7 @@ IfNode* PhaseIdealLoop::find_unswitching_candidate(const IdealLoopTree *loop) co
 // Clone loop with an invariant test (that does not exit) and
 // insert a clone of the test that selects which version to
 // execute.
-void PhaseIdealLoop::do_unswitching (IdealLoopTree *loop, Node_List &old_new) {
+void PhaseIdealLoop::do_unswitching(IdealLoopTree *loop, Node_List &old_new) {
 
   // Find first invariant test that doesn't exit the loop
   LoopNode *head = loop->_head->as_Loop();

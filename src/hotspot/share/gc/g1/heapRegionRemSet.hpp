@@ -179,6 +179,7 @@ private:
 public:
   HeapRegionRemSet(G1BlockOffsetTable* bot, HeapRegion* hr);
 
+  // Setup sparse and fine-grain tables sizes.
   static void setup_remset_size();
 
   bool cardset_is_empty() const {

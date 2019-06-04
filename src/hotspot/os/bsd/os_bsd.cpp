@@ -3263,6 +3263,70 @@ int os::active_processor_count() {
   return _processor_count;
 }
 
+#ifdef __APPLE__
+uint os::processor_id() {
+  static volatile int* volatile apic_to_cpu_mapping = NULL;
+  static volatile int next_cpu_id = 0;
+
+  volatile int* mapping = OrderAccess::load_acquire(&apic_to_cpu_mapping);
+  if (mapping == NULL) {
+    // Calculate possible number space for APIC ids. This space is not necessarily
+    // in the range [0, number_of_cpus).
+    uint total_bits = 0;
+    for (uint i = 0;; ++i) {
+      uint eax = 0xb; // Query topology leaf
+      uint ebx;
+      uint ecx = i;
+      uint edx;
+
+      __asm__ ("cpuid\n\t" : "+a" (eax), "+b" (ebx), "+c" (ecx), "+d" (edx) : );
+
+      uint level_type = (ecx >> 8) & 0xFF;
+      if (level_type == 0) {
+        // Invalid level; end of topology
+        break;
+      }
+      uint level_apic_id_shift = eax & ((1u << 5) - 1);
+      total_bits += level_apic_id_shift;
+    }
+
+    uint max_apic_ids = 1u << total_bits;
+    mapping = NEW_C_HEAP_ARRAY(int, max_apic_ids, mtInternal);
+
+    for (uint i = 0; i < max_apic_ids; ++i) {
+      mapping[i] = -1;
+    }
+
+    if (!Atomic::replace_if_null(mapping, &apic_to_cpu_mapping)) {
+      FREE_C_HEAP_ARRAY(int, mapping);
+      mapping = OrderAccess::load_acquire(&apic_to_cpu_mapping);
+    }
+  }
+
+  uint eax = 0xb;
+  uint ebx;
+  uint ecx = 0;
+  uint edx;
+
+  asm ("cpuid\n\t" : "+a" (eax), "+b" (ebx), "+c" (ecx), "+d" (edx) : );
+
+  // Map from APIC id to a unique logical processor ID in the expected
+  // [0, num_processors) range.
+
+  uint apic_id = edx;
+  int cpu_id = Atomic::load(&mapping[apic_id]);
+
+  while (cpu_id < 0) {
+    if (Atomic::cmpxchg(-2, &mapping[apic_id], -1)) {
+      Atomic::store(Atomic::add(1, &next_cpu_id) - 1, &mapping[apic_id]);
+    }
+    cpu_id = Atomic::load(&mapping[apic_id]);
+  }
+
+  return (uint)cpu_id;
+}
+#endif
+
 void os::set_native_thread_name(const char *name) {
 #if defined(__APPLE__) && MAC_OS_X_VERSION_MIN_REQUIRED > MAC_OS_X_VERSION_10_5
   // This is only supported in Snow Leopard and beyond

@@ -38,7 +38,7 @@
 // create ASPSOldGen and ASPSYoungGen the same way as in base class
 
 AdjoiningGenerationsForHeteroHeap::AdjoiningGenerationsForHeteroHeap(ReservedSpace old_young_rs) :
-  _total_size_limit(ParallelArguments::heap_reserved_size_bytes()) {
+  _total_size_limit(ParallelArguments::heap_max_size_bytes()) {
   size_t init_old_byte_size = OldSize;
   size_t min_old_byte_size = MinOldSize;
   size_t max_old_byte_size = MaxOldSize;
@@ -85,9 +85,9 @@ AdjoiningGenerationsForHeteroHeap::AdjoiningGenerationsForHeteroHeap(ReservedSpa
 
 size_t AdjoiningGenerationsForHeteroHeap::required_reserved_memory() {
   // This is the size that young gen can grow to, when AdaptiveGCBoundary is true.
-  size_t max_yg_size = ParallelArguments::heap_reserved_size_bytes() - MinOldSize;
+  size_t max_yg_size = ParallelArguments::heap_max_size_bytes() - MinOldSize;
   // This is the size that old gen can grow to, when AdaptiveGCBoundary is true.
-  size_t max_old_size = ParallelArguments::heap_reserved_size_bytes() - MinNewSize;
+  size_t max_old_size = ParallelArguments::heap_max_size_bytes() - MinNewSize;
 
   return max_yg_size + max_old_size;
 }
