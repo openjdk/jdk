@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -73,13 +73,15 @@ public final class GarbageUtils {
             }
         };
 
-        // Force loading of OOM_TYPE and calling of enum contrusctors when loading GarbageUtils class.
+        // Force loading of OOM_TYPE and calling of enum constructors when loading GarbageUtils class.
         public static final Object[] thisIsGarbageArray_theOnlyPurposeForCreatingItAndDeclaringItPublicIsToInitializeIntancesOfOOMEnumberation = new Object[] { OOM_TYPE.ANY, OOM_TYPE.HEAP, OOM_TYPE.METASPACE };
 
         // Force early loading of classes that might otherwise unexpectedly fail
         // class loading during testing due to high memory pressure.
         public static final StringWriter preloadStringWriter = new StringWriter(1);
         public static final PrintWriter preloadPrintWriter = new PrintWriter(preloadStringWriter);
+        public static final Throwable preloadThrowable = new Throwable("preload");
+        public static final StackTraceElement[] preloadStackTraceElement = preloadThrowable.getStackTrace();
 
         private GarbageUtils() {
         }
