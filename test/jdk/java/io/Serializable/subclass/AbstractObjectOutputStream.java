@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2004, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -44,7 +44,7 @@ import java.io.ObjectOutputStream;
  *
  * Since serialization must override java access rules in order to
  * access private, protected and package accessible Serializable fields,
- * only trusted classes are allowed to subclass AbstractObjectInputStream.
+ * only trusted classes are allowed to subclass AbstractObjectOutputStream.
  * Subclasses of AbstractObjectOututStream must have SerializablePermission
  * "enableAbstractSubclass" or this constructor will throw a
  * SecurityException.Implementations of this class should protect themselves
