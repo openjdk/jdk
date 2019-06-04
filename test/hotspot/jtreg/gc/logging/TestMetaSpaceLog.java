@@ -33,8 +33,6 @@ import java.util.regex.Matcher;
 import jdk.test.lib.Asserts;
 import jdk.test.lib.process.OutputAnalyzer;
 import jdk.test.lib.process.ProcessTools;
-import jtreg.SkippedException;
-import sun.hotspot.gc.GC;
 import sun.hotspot.WhiteBox;
 
 /*
@@ -45,10 +43,13 @@ import sun.hotspot.WhiteBox;
  * @library /test/lib
  * @modules java.base/jdk.internal.misc
  *          java.management
+ * @requires vm.gc != "Epsilon"
+ * @requires vm.gc != "Z"
+ * @requires vm.gc != "Shenandoah"
  *
  * @compile TestMetaSpaceLog.java
  * @run driver ClassFileInstaller sun.hotspot.WhiteBox
- * @run main/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI gc.logging.TestMetaSpaceLog
+ * @run driver gc.logging.TestMetaSpaceLog
  */
 
 public class TestMetaSpaceLog {
@@ -60,27 +61,7 @@ public class TestMetaSpaceLog {
   }
 
   public static void main(String[] args) throws Exception {
-    boolean noneGCSupported = true;
-
-    if (GC.Parallel.isSupported()) {
-      noneGCSupported = false;
-      testMetaSpaceUpdate("UseParallelGC");
-    }
-    if (GC.G1.isSupported()) {
-      noneGCSupported = false;
-      testMetaSpaceUpdate("UseG1GC");
-    }
-    if (GC.ConcMarkSweep.isSupported()) {
-      noneGCSupported = false;
-      testMetaSpaceUpdate("UseConcMarkSweepGC");
-    }
-    if (GC.Serial.isSupported()) {
-      noneGCSupported = false;
-      testMetaSpaceUpdate("UseSerialGC");
-    }
-    if (noneGCSupported) {
-      throw new SkippedException("Skipping test because none of Parallel/G1/ConcMarkSweep/Serial is supported.");
-    }
+    testMetaSpaceUpdate();
   }
 
   private static void verifyContainsMetaSpaceUpdate(OutputAnalyzer output) {
@@ -99,14 +80,13 @@ public class TestMetaSpaceLog {
     return before > after;
   }
 
-  private static void testMetaSpaceUpdate(String gcFlag) throws Exception {
+  private static void testMetaSpaceUpdate() throws Exception {
     // Propagate test.src for the jar file.
     String testSrc= "-Dtest.src=" + System.getProperty("test.src", ".");
 
-    System.err.println("Testing with GC Flag: " + gcFlag);
     ProcessBuilder pb =
       ProcessTools.createJavaProcessBuilder(
-          "-XX:+" + gcFlag,
+          true,
           "-Xlog:gc*",
           "-Xbootclasspath/a:.",
           "-XX:+UnlockDiagnosticVMOptions",
