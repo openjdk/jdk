@@ -57,9 +57,11 @@ public class TestOverriddenDeprecatedMethods extends JavadocTester {
 
         checkOrder("pkg1/SubClass.html",
                 "Method Detail",
-                "@Deprecated\npublic&nbsp;void&nbsp;func1()",
+                "<span class=\"annotations\">@Deprecated\n</span><span class=\"modifiers\">public</span>&nbsp;"
+                + "<span class=\"returnType\">void</span>&nbsp;<span class=\"memberName\">func1</span>()",
                 "<div class=\"deprecationBlock\"><span class=\"deprecatedLabel\">Deprecated.</span></div>",
-                "@Deprecated\npublic&nbsp;void&nbsp;func2()",
+                "<span class=\"annotations\">@Deprecated\n</span><span class=\"modifiers\">public</span>&nbsp;"
+                + "<span class=\"returnType\">void</span>&nbsp;<span class=\"memberName\">func2</span>()",
                 "<div class=\"deprecationBlock\"><span class=\"deprecatedLabel\">Deprecated.</span></div>",
                 "<div class=\"block\">deprecated with comments</div>");
     }

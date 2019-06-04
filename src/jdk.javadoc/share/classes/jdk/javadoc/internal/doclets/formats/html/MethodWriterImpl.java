@@ -36,7 +36,6 @@ import javax.lang.model.type.TypeMirror;
 import jdk.javadoc.internal.doclets.formats.html.markup.ContentBuilder;
 import jdk.javadoc.internal.doclets.formats.html.markup.Entity;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlStyle;
-import jdk.javadoc.internal.doclets.formats.html.markup.HtmlTag;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlTree;
 import jdk.javadoc.internal.doclets.formats.html.markup.StringContent;
 import jdk.javadoc.internal.doclets.formats.html.markup.Table;
@@ -140,23 +139,12 @@ public class MethodWriterImpl extends AbstractExecutableMemberWriter
      */
     @Override
     public Content getSignature(ExecutableElement method) {
-        HtmlTree pre = new HtmlTree(HtmlTag.PRE);
-        pre.setStyle(HtmlStyle.methodSignature);
-        writer.addAnnotationInfo(method, pre);
-        int annotationLength = pre.charCount();
-        addModifiers(method, pre);
-        addTypeParameters(method, pre);
-        addReturnType(method, pre);
-        if (configuration.linksource) {
-            Content methodName = new StringContent(name(method));
-            writer.addSrcLink(method, methodName, pre);
-        } else {
-            addName(name(method), pre);
-        }
-        int indent = pre.charCount() - annotationLength;
-        addParameters(method, pre, indent);
-        addExceptions(method, pre, indent);
-        return pre;
+        return new MemberSignature(method)
+                .addTypeParameters(getTypeParameters(method))
+                .addReturnType(getReturnType(method))
+                .addParameters(getParameters(method, true))
+                .addExceptions(getExceptions(method))
+                .toContent();
     }
 
     /**
@@ -399,19 +387,17 @@ public class MethodWriterImpl extends AbstractExecutableMemberWriter
     }
 
     /**
-     * Add the return type.
+     * Get the return type for the given method.
      *
      * @param method the method being documented.
-     * @param htmltree the content tree to which the return type will be added
+     * @return content containing the return type
      */
-    protected void addReturnType(ExecutableElement method, Content htmltree) {
+    protected Content getReturnType(ExecutableElement method) {
         TypeMirror type = utils.getReturnType(method);
         if (type != null) {
-            Content linkContent = writer.getLink(
-                    new LinkInfoImpl(configuration, LinkInfoImpl.Kind.RETURN_TYPE, type));
-            htmltree.add(linkContent);
-            htmltree.add(Entity.NO_BREAK_SPACE);
+            return writer.getLink(new LinkInfoImpl(configuration, LinkInfoImpl.Kind.RETURN_TYPE, type));
         }
+        return new ContentBuilder();
     }
 
     @Override

@@ -90,7 +90,8 @@ public class TestSummaryTag extends JavadocTester {
              + "<a id=\"m3()\">\n"
              + "<!--   -->\n"
              + "</a>\n"
-             + "<pre class=\"methodSignature\">public&nbsp;void&nbsp;m3()</pre>\n"
+             + "<div class=\"memberSignature\"><span class=\"modifiers\">public</span>&nbsp;"
+             + "<span class=\"returnType\">void</span>&nbsp;<span class=\"memberName\">m3</span>()</div>\n"
              + "<div class=\"block\">First sentence  some text maybe second sentence.</div>\n"
              + "</section>\n"
         );

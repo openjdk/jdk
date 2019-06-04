@@ -112,6 +112,11 @@ public class RawHtml extends Content {
                             state = State.ENTITY;
                             count++;
                             break;
+                        case '\r':
+                        case '\n':
+                            // Windows uses "\r\n" as line separator while UNIX uses "\n".
+                            // Ignore line separators to get consistent results across platforms.
+                            break;
                         default:
                             count++;
                     }

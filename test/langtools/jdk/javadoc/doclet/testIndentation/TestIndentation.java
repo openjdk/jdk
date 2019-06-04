@@ -48,11 +48,12 @@ public class TestIndentation extends JavadocTester {
         checkExit(Exit.OK);
 
         checkOutput("p/Indent.html", true,
-                "<pre class=\"methodSignature\">public&nbsp;&lt;T&gt;&nbsp;void&nbsp;m&#8203;(T&nbsp;t1,",
-                "\n"
-                + "                  T&nbsp;t2)",
-                "\n"
-                + "           throws java.lang.Exception");
+                "<div class=\"memberSignature\"><span class=\"modifiers\">public</span>&nbsp;"
+                + "<span class=\"typeParameters\">&lt;T&gt;</span>&nbsp;"
+                + "<span class=\"returnType\">void</span>&nbsp;<span class=\"memberName\">m</span>"
+                + "&#8203;(<span class=\"arguments\">T&nbsp;t1,\n"
+                + "T&nbsp;t2)</span>\n"
+                + "           throws <span class=\"exceptions\">java.lang.Exception</span></div>");
 
         // Test indentation of annotations and annotated method arguments
         checkOutput("p/IndentAnnot.html", false,

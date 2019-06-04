@@ -57,7 +57,8 @@ public class TestLambdaFeature extends JavadocTester {
 
         checkOutput("pkg/A.html", true,
                 "<td class=\"colFirst\"><code>default void</code></td>",
-                "<pre class=\"methodSignature\">default&nbsp;void&nbsp;defaultMethod()</pre>",
+                "<div class=\"memberSignature\"><span class=\"modifiers\">default</span>&nbsp;"
+                + "<span class=\"returnType\">void</span>&nbsp;<span class=\"memberName\">defaultMethod</span>()</div>\n",
                 "<div role=\"tablist\" aria-orientation=\"horizontal\"><button role=\"tab\""
                 + " aria-selected=\"true\" aria-controls=\"memberSummary_tabpanel\" tabindex=\"0\""
                 + " onkeydown=\"switchTab(event)\" id=\"t0\" class=\"activeTableTab\">All Methods"

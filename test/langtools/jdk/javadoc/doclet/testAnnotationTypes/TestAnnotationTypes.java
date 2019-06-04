@@ -65,8 +65,9 @@ public class TestAnnotationTypes extends JavadocTester {
                 + "<a id=\"DEFAULT_NAME\">\n"
                 + "<!--   -->\n"
                 + "</a>\n"
-                + "<pre>static final&nbsp;java."
-                + "lang.String&nbsp;DEFAULT_NAME</pre>");
+                + "<div class=\"memberSignature\"><span class=\"modifiers\">static final</span>&nbsp;"
+                + "<span class=\"returnType\">java.lang.String</span>&nbsp;"
+                + "<span class=\"memberName\">DEFAULT_NAME</span></div>\n");
 
         checkOutput("pkg/AnnotationType.html", true,
                 "<li>Summary:&nbsp;</li>\n"
@@ -90,7 +91,8 @@ public class TestAnnotationTypes extends JavadocTester {
                     "<a id=\"value()\">",
                     "<!--   -->",
                     "</a>",
-                    "<pre>int&nbsp;value</pre>");
+                    "<div class=\"memberSignature\"><span class=\"returnType\">int</span>"
+                    + "&nbsp;<span class=\"memberName\">value</span></div>");
 
         checkOutput("pkg/AnnotationType.html", false,
                 "<HR>\n\n"

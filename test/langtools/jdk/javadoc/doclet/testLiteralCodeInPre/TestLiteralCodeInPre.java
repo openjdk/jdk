@@ -49,19 +49,19 @@ public class TestLiteralCodeInPre extends JavadocTester {
         checkExit(Exit.OK);
 
         checkOutput("pkg/Test.html", true,
-                "no_pre()</pre>\n"
+                "no_pre</span>()</div>\n"
                 + "<div class=\"block\">abc<code>def</code>ghi</div>",
-                "no_pre_extra_whitespace()</pre>\n"
+                "no_pre_extra_whitespace</span>()</div>\n"
                 + "<div class=\"block\">abc<code> def  </code>ghi</div>",
-                "in_pre()</pre>\n"
+                "in_pre</span>()</div>\n"
                 + "<div class=\"block\"><pre> abc<code> def  </code>ghi</pre></div>",
-                "pre_after_text()</pre>\n"
+                "pre_after_text</span>()</div>\n"
                 + "<div class=\"block\">xyz <pre> abc<code> def  </code>ghi</pre></div>",
-                "after_pre()</pre>\n"
+                "after_pre</span>()</div>\n"
                 + "<div class=\"block\">xyz <pre> pqr </pre> abc<code> def  </code>ghi</div>",
-                "back_in_pre()</pre>\n"
+                "back_in_pre</span>()</div>\n"
                 + "<div class=\"block\">xyz <pre> pqr </pre> mno <pre> abc<code> def  </code>ghi</pre></div>",
-                "typical_usage_code()</pre>\n"
+                "typical_usage_code</span>()</div>\n"
                 + "<div class=\"block\">Lorem ipsum dolor sit amet, consectetur adipiscing elit.\n"
                 + " Example:  <pre><code>\n"
                 + "   line 0 @Override\n"
@@ -70,7 +70,7 @@ public class TestLiteralCodeInPre extends JavadocTester {
                 + "   line 3 }\n"
                 + " </code></pre>\n"
                 + " and so it goes.</div>",
-                "typical_usage_literal()</pre>\n"
+                "typical_usage_literal</span>()</div>\n"
                 + "<div class=\"block\">Lorem ipsum dolor sit amet, consectetur adipiscing elit.\n"
                 + " Example:  <pre>\n"
                 + "   line 0 @Override\n"
@@ -79,7 +79,7 @@ public class TestLiteralCodeInPre extends JavadocTester {
                 + "   line 3 }\n"
                 + " </pre>\n"
                 + " and so it goes.</div>",
-                "recommended_usage_literal()</pre>\n"
+                "recommended_usage_literal</span>()</div>\n"
                 + "<div class=\"block\">Lorem ipsum dolor sit amet, consectetur adipiscing elit.\n"
                 + " Example:  <pre>\n"
                 + "   line 0 @Override\n"
@@ -91,7 +91,8 @@ public class TestLiteralCodeInPre extends JavadocTester {
                 + " <PRE>\n"
                 + " <b>id           </b>\n"
                 + " </PRE></div>",
-                "<pre class=\"methodSignature\">public&nbsp;void&nbsp;htmlAttrInPre1()</pre>\n"
+                "<div class=\"memberSignature\"><span class=\"modifiers\">public</span>&nbsp;"
+                + "<span class=\"returnType\">void</span>&nbsp;<span class=\"memberName\">htmlAttrInPre1</span>()</div>\n"
                 + "<div class=\"block\">More html tag outliers.\n"
                 + " <pre>\n"
                 + " @Override\n"

@@ -165,9 +165,9 @@ public class TestStylesheet extends JavadocTester {
                 + "th.colFirst a:link, th.colFirst a:visited,\n"
                 + "th.colSecond a:link, th.colSecond a:visited,\n"
                 + "th.colConstructorName a:link, th.colConstructorName a:visited,\n"
-                + "th.colDeprecatedItemName a:link, th.colDeprecatedItemName a:visited, \n"
-                + ".constantValuesContainer td a:link, .constantValuesContainer td a:visited, \n"
-                + ".allClassesContainer td a:link, .allClassesContainer td a:visited, \n"
+                + "th.colDeprecatedItemName a:link, th.colDeprecatedItemName a:visited,\n"
+                + ".constantValuesContainer td a:link, .constantValuesContainer td a:visited,\n"
+                + ".allClassesContainer td a:link, .allClassesContainer td a:visited,\n"
                 + ".allPackagesContainer td a:link, .allPackagesContainer td a:visited {\n"
                 + "    font-weight:bold;\n"
                 + "}",

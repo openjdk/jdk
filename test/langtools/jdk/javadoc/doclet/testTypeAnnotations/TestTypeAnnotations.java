@@ -115,249 +115,274 @@ public class TestTypeAnnotations extends JavadocTester {
 
         // Test for type annotations on fields (Fields.java).
         checkOutput("typeannos/DefaultScope.html", true,
-                "<pre><a href=\"Parameterized.html\" title=\"class in "
-                + "typeannos\">Parameterized</a>&lt;<a href=\"FldA.html\" "
-                + "title=\"annotation in typeannos\">@FldA</a> java.lang.String,&#8203;<a "
-                + "href=\"FldB.html\" title=\"annotation in typeannos\">"
-                + "@FldB</a> java.lang.String&gt; bothTypeArgs</pre>",
+                "<div class=\"memberSignature\"><span class=\"returnType\"><a href=\"Parameterized.html\" "
+                + "title=\"class in typeannos\">Parameterized</a>&lt;<a href=\"FldA.html\" "
+                + "title=\"annotation in typeannos\">@FldA</a> java.lang.String,&#8203;"
+                + "<a href=\"FldB.html\" title=\"annotation in typeannos\">@FldB</a> java.lang.String&gt;"
+                + "</span>&nbsp;<span class=\"memberName\">bothTypeArgs</span></div>",
 
-                "<pre><a href=\"FldA.html\" title=\"annotation in "
-                + "typeannos\">@FldA</a> java.lang.String <a href=\""
-                + "FldB.html\" title=\"annotation in typeannos\">@FldB</a> [] "
-                + "array1Deep</pre>",
+                "<div class=\"memberSignature\"><span class=\"returnType\"><a href=\"FldA.html\" "
+                + "title=\"annotation in typeannos\">@FldA</a> java.lang.String <a href=\"FldB.html\" "
+                + "title=\"annotation in typeannos\">@FldB</a> []</span>&nbsp;"
+                + "<span class=\"memberName\">array1Deep</span></div>",
 
-                "<pre>java.lang.String <a href=\"FldB.html\" "
-                + "title=\"annotation in typeannos\">@FldB</a> [][] array2SecondOld</pre>",
+                "<div class=\"memberSignature\"><span class=\"returnType\">java.lang.String "
+                + "<a href=\"FldB.html\" title=\"annotation in typeannos\">@FldB</a> [][]</span>&nbsp;"
+                + "<span class=\"memberName\">array2SecondOld</span></div>",
 
                 // When JDK-8068737, we should change the order
-                "<pre><a href=\"FldD.html\" title=\"annotation in typeannos\">"
-                + "@FldD</a> java.lang.String "
-                + "<a href=\"FldC.html\" title=\"annotation in typeannos\">@FldC</a> "
-                + "<a href=\"FldB.html\" title=\"annotation in typeannos\">@FldB</a> [] "
-                + "<a href=\"FldC.html\" title=\"annotation in typeannos\">@FldC</a> "
-                + "<a href=\"FldA.html\" title=\"annotation in typeannos\">@FldA</a> [] "
-                + "array2Deep</pre>");
+                "<div class=\"memberSignature\"><span class=\"returnType\"><a href=\"FldD.html\" "
+                + "title=\"annotation in typeannos\">@FldD</a> java.lang.String <a href=\"FldC.html\" "
+                + "title=\"annotation in typeannos\">@FldC</a> <a href=\"FldB.html\" "
+                + "title=\"annotation in typeannos\">@FldB</a> [] <a href=\"FldC.html\" "
+                + "title=\"annotation in typeannos\">@FldC</a> <a href=\"FldA.html\" "
+                + "title=\"annotation in typeannos\">@FldA</a> []</span>&nbsp;"
+                + "<span class=\"memberName\">array2Deep</span></div>");
 
         checkOutput("typeannos/ModifiedScoped.html", true,
-                "<pre>public final&nbsp;<a href=\"Parameterized.html\" "
-                + "title=\"class in typeannos\">Parameterized</a>&lt;<a href=\""
-                + "FldA.html\" title=\"annotation in typeannos\">@FldA</a> "
-                + "<a href=\"Parameterized.html\" title=\"class in "
-                + "typeannos\">Parameterized</a>&lt;<a href=\"FldA.html\" "
-                + "title=\"annotation in typeannos\">@FldA</a> java.lang.String,&#8203;<a "
-                + "href=\"FldB.html\" title=\"annotation in typeannos\">"
-                + "@FldB</a> java.lang.String&gt;,&#8203;<a href=\"FldB.html\" "
-                + "title=\"annotation in typeannos\">@FldB</a> java.lang.String&gt; "
-                + "nestedParameterized</pre>",
+                "<div class=\"memberSignature\"><span class=\"modifiers\">public final</span>"
+                + "&nbsp;<span class=\"returnType\"><a href=\"Parameterized.html\" "
+                + "title=\"class in typeannos\">Parameterized</a>&lt;<a href=\"FldA.html\" "
+                + "title=\"annotation in typeannos\">@FldA</a> <a href=\"Parameterized.html\" "
+                + "title=\"class in typeannos\">Parameterized</a>&lt;<a href=\"FldA.html\" "
+                + "title=\"annotation in typeannos\">@FldA</a> java.lang.String,&#8203;"
+                + "<a href=\"FldB.html\" title=\"annotation in typeannos\">@FldB</a> "
+                + "java.lang.String&gt;,&#8203;<a href=\"FldB.html\" "
+                + "title=\"annotation in typeannos\">@FldB</a> java.lang.String&gt;"
+                + "</span>&nbsp;<span class=\"memberName\">nestedParameterized</span></div>",
 
-                "<pre>public final&nbsp;<a href=\"FldA.html\" "
-                + "title=\"annotation in typeannos\">@FldA</a> java.lang.String[][] "
-                + "array2</pre>");
+                "<div class=\"memberSignature\"><span class=\"modifiers\">public final</span>&nbsp;"
+                + "<span class=\"returnType\"><a href=\"FldA.html\" title=\"annotation in typeannos\">"
+                + "@FldA</a> java.lang.String[][]</span>&nbsp;"
+                + "<span class=\"memberName\">array2</span></div>");
 
         // Test for type annotations on method return types (MethodReturnType.java).
         checkOutput("typeannos/MtdDefaultScope.html", true,
-                "<pre class=\"methodSignature\">public&nbsp;&lt;T&gt;&nbsp;<a href=\"MRtnA.html\" "
-                + "title=\"annotation in typeannos\">@MRtnA</a> java.lang.String"
-                + "&nbsp;method()</pre>",
+                "<div class=\"memberSignature\"><span class=\"modifiers\">public</span>"
+                + "&nbsp;<span class=\"typeParameters\">&lt;T&gt;</span>&nbsp;<span "
+                + "class=\"returnType\"><a href=\"MRtnA.html\" title=\"annotation in typeannos\">"
+                + "@MRtnA</a> java.lang.String</span>&nbsp;"
+                + "<span class=\"memberName\">method</span>()</div>",
 
                 // When JDK-8068737 is fixed, we should change the order
-                "<pre class=\"methodSignature\"><a href=\"MRtnA.html\" title=\"annotation in typeannos\">"
-                + "@MRtnA</a> java.lang.String "
-                + "<a href=\"MRtnB.html\" title=\"annotation in typeannos\">@MRtnB</a> [] "
-                + "<a href=\"MRtnA.html\" title=\"annotation in typeannos\">@MRtnA</a> []"
-                + "&nbsp;array2Deep()</pre>",
+                "<div class=\"memberSignature\"><span class=\"returnType\"><a href=\"MRtnA.html\" "
+                + "title=\"annotation in typeannos\">@MRtnA</a> java.lang.String <a href=\"MRtnB.html\" "
+                + "title=\"annotation in typeannos\">@MRtnB</a> [] <a href=\"MRtnA.html\" "
+                + "title=\"annotation in typeannos\">@MRtnA</a> []</span>&nbsp;<span class=\"memberName\">"
+                + "array2Deep</span>()</div>",
 
-                "<pre class=\"methodSignature\"><a href=\"MRtnA.html\" title=\"annotation in "
-                + "typeannos\">@MRtnA</a> java.lang.String[][]&nbsp;array2()</pre>");
+                "<div class=\"memberSignature\"><span class=\"returnType\"><a href=\"MRtnA.html\" "
+                + "title=\"annotation in typeannos\">@MRtnA</a> java.lang.String[][]</span>&nbsp;"
+                + "<span class=\"memberName\">array2</span>()</div>");
 
         checkOutput("typeannos/MtdModifiedScoped.html", true,
-                "<pre class=\"methodSignature\">public final&nbsp;<a href=\"MtdParameterized.html\" "
-                + "title=\"class in typeannos\">MtdParameterized</a>&lt;<a href=\""
-                + "MRtnA.html\" title=\"annotation in typeannos\">@MRtnA</a> "
-                + "<a href=\"MtdParameterized.html\" title=\"class in "
-                + "typeannos\">MtdParameterized</a>&lt;<a href=\"MRtnA."
-                + "html\" title=\"annotation in typeannos\">@MRtnA</a> java.lang."
-                + "String,&#8203;<a href=\"MRtnB.html\" title=\"annotation in "
-                + "typeannos\">@MRtnB</a> java.lang.String&gt;,&#8203;<a href=\""
-                + "MRtnB.html\" title=\"annotation in typeannos\">@MRtnB</a> java."
-                + "lang.String&gt;&nbsp;nestedMtdParameterized()</pre>");
+                "<div class=\"memberSignature\"><span class=\"modifiers\">public final</span>&nbsp;"
+                + "<span class=\"returnType\"><a href=\"MtdParameterized.html\" "
+                + "title=\"class in typeannos\">MtdParameterized</a>&lt;<a href=\"MRtnA.html\" "
+                + "title=\"annotation in typeannos\">@MRtnA</a> <a href=\"MtdParameterized.html\" "
+                + "title=\"class in typeannos\">MtdParameterized</a>&lt;<a href=\"MRtnA.html\" "
+                + "title=\"annotation in typeannos\">@MRtnA</a> java.lang.String,&#8203;"
+                + "<a href=\"MRtnB.html\" title=\"annotation in typeannos\">@MRtnB</a> "
+                + "java.lang.String&gt;,&#8203;<a href=\"MRtnB.html\" title=\"annotation in typeannos\">"
+                + "@MRtnB</a> java.lang.String&gt;</span>&nbsp;<span class=\"memberName\">"
+                + "nestedMtdParameterized</span>()</div>");
 
         // Test for type annotations on method type parameters (MethodTypeParameters.java).
         checkOutput("typeannos/UnscopedUnmodified.html", true,
-                "<pre class=\"methodSignature\">&lt;K extends <a href=\"MTyParamA.html\" title=\""
-                + "annotation in typeannos\">@MTyParamA</a> java.lang.String&gt;"
-                + "&nbsp;void&nbsp;methodExtends()</pre>",
+                "<div class=\"memberSignature\"><span class=\"typeParameters\">&lt;K extends "
+                + "<a href=\"MTyParamA.html\" title=\"annotation in typeannos\">@MTyParamA</a> "
+                + "java.lang.String&gt;</span>&nbsp;<span class=\"returnType\">void</span>&nbsp;"
+                + "<span class=\"memberName\">methodExtends</span>()</div>",
 
-                "<pre class=\"methodSignature\">&lt;K extends <a href=\"MTyParamA.html\" title=\""
-                + "annotation in typeannos\">@MTyParamA</a> <a href=\""
-                + "MtdTyParameterized.html\" title=\"class in typeannos\">"
-                + "MtdTyParameterized</a>&lt;<a href=\"MTyParamB.html\" "
-                + "title=\"annotation in typeannos\">@MTyParamB</a> java.lang.String"
-                + "&gt;&gt;&nbsp;void&nbsp;nestedExtends()</pre>");
+                "<div class=\"memberSignature\"><span class=\"typeParametersLong\">&lt;K extends "
+                + "<a href=\"MTyParamA.html\" title=\"annotation in typeannos\">@MTyParamA</a> "
+                + "<a href=\"MtdTyParameterized.html\" title=\"class in typeannos\">MtdTyParameterized</a>"
+                + "&lt;<a href=\"MTyParamB.html\" title=\"annotation in typeannos\">@MTyParamB</a> "
+                + "java.lang.String&gt;&gt;</span>\n<span class=\"returnType\">void</span>"
+                + "&nbsp;<span class=\"memberName\">nestedExtends</span>()</div>");
 
         checkOutput("typeannos/PublicModifiedMethods.html", true,
-                "<pre class=\"methodSignature\">public final&nbsp;&lt;K extends <a href=\""
-                + "MTyParamA.html\" title=\"annotation in typeannos\">@MTyParamA</a> "
-                + "java.lang.String&gt;&nbsp;void&nbsp;methodExtends()</pre>",
+                "<div class=\"memberSignature\"><span class=\"modifiers\">public final</span>&nbsp;"
+                + "<span class=\"typeParameters\">&lt;K extends <a href=\"MTyParamA.html\" "
+                + "title=\"annotation in typeannos\">@MTyParamA</a> java.lang.String&gt;</span>\n"
+                + "<span class=\"returnType\">void</span>&nbsp;"
+                + "<span class=\"memberName\">methodExtends</span>()</div>",
 
-                "<pre class=\"methodSignature\">public final&nbsp;&lt;K extends <a href=\""
-                + "MTyParamA.html\" title=\"annotation in typeannos\">@MTyParamA</a> "
-                + "java.lang.String,&#8203;V extends <a href=\"MTyParamA.html\" "
-                + "title=\"annotation in typeannos\">@MTyParamA</a> <a href=\""
-                + "MtdTyParameterized.html\" title=\"class in typeannos\">"
-                + "MtdTyParameterized</a>&lt;<a href=\"MTyParamB.html\" "
-                + "title=\"annotation in typeannos\">@MTyParamB</a> java.lang.String"
-                + "&gt;&gt;&nbsp;void&nbsp;dual()</pre>");
+                "<div class=\"memberSignature\"><span class=\"modifiers\">public final</span>"
+                + "&nbsp;<span class=\"typeParametersLong\">&lt;K extends <a href=\"MTyParamA.html\" "
+                + "title=\"annotation in typeannos\">@MTyParamA</a> java.lang.String,&#8203;\n"
+                + "V extends <a href=\"MTyParamA.html\" title=\"annotation in typeannos\">"
+                + "@MTyParamA</a> <a href=\"MtdTyParameterized.html\" title=\"class in typeannos\">"
+                + "MtdTyParameterized</a>&lt;<a href=\"MTyParamB.html\" title=\"annotation in typeannos\">"
+                + "@MTyParamB</a> java.lang.String&gt;&gt;</span>\n<span class=\"returnType\">void</span>"
+                + "&nbsp;<span class=\"memberName\">dual</span>()</div>");
 
         // Test for type annotations on parameters (Parameters.java).
         checkOutput("typeannos/Parameters.html", true,
-                "<pre class=\"methodSignature\">void&nbsp;unannotated&#8203;(<a href=\""
-                + "ParaParameterized.html\" title=\"class in typeannos\">"
-                + "ParaParameterized</a>&lt;java.lang.String,&#8203;java.lang.String&gt;"
-                + "&nbsp;a)</pre>",
+                "<div class=\"memberSignature\"><span class=\"returnType\">void</span>&nbsp;"
+                + "<span class=\"memberName\">unannotated</span>&#8203;(<span class=\"arguments\">"
+                + "<a href=\"ParaParameterized.html\" title=\"class in typeannos\">ParaParameterized</a>"
+                + "&lt;java.lang.String,&#8203;java.lang.String&gt;&nbsp;a)</span></div>",
 
-                "<pre class=\"methodSignature\">void&nbsp;nestedParaParameterized&#8203;(<a href=\""
-                + "ParaParameterized.html\" title=\"class in typeannos\">"
-                + "ParaParameterized</a>&lt;<a href=\"ParamA.html\" "
-                + "title=\"annotation in typeannos\">@ParamA</a> <a href=\""
-                + "ParaParameterized.html\" title=\"class in typeannos\">"
-                + "ParaParameterized</a>&lt;<a href=\"ParamA.html\" "
+                "<div class=\"memberSignature\"><span class=\"returnType\">void</span>&nbsp;"
+                + "<span class=\"memberName\">nestedParaParameterized</span>&#8203;"
+                + "(<span class=\"arguments\"><a href=\"ParaParameterized.html\" "
+                + "title=\"class in typeannos\">ParaParameterized</a>&lt;<a href=\"ParamA.html\" "
+                + "title=\"annotation in typeannos\">@ParamA</a> <a href=\"ParaParameterized.html\" "
+                + "title=\"class in typeannos\">ParaParameterized</a>&lt;<a href=\"ParamA.html\" "
                 + "title=\"annotation in typeannos\">@ParamA</a> java.lang.String,&#8203;"
-                + "<a href=\"ParamB.html\" title=\"annotation in "
-                + "typeannos\">@ParamB</a> java.lang.String&gt;,&#8203;<a href=\""
-                + "ParamB.html\" title=\"annotation in typeannos\">@ParamB"
-                + "</a> java.lang.String&gt;&nbsp;a)</pre>",
+                + "<a href=\"ParamB.html\" title=\"annotation in typeannos\">@ParamB</a> "
+                + "java.lang.String&gt;,&#8203;<a href=\"ParamB.html\" title=\"annotation in typeannos\">"
+                + "@ParamB</a> java.lang.String&gt;&nbsp;a)</span></div>",
 
                 // When JDK-8068737 is fixed, we should change the order
-                "<pre class=\"methodSignature\">void&nbsp;array2Deep&#8203;(<a href=\"ParamA.html\" "
-                + "title=\"annotation in typeannos\">@ParamA</a> java.lang.String "
-                + "<a href=\"ParamB.html\" title=\"annotation in typeannos\">"
-                + "@ParamB</a> [] "
-                + "<a href=\"ParamA.html\" title=\"annotation in typeannos\">"
-                + "@ParamA</a> []"
-                + "&nbsp;a)</pre>");
+                "<div class=\"memberSignature\"><span class=\"returnType\">void</span>&nbsp;"
+                + "<span class=\"memberName\">array2Deep</span>&#8203;(<span class=\"arguments\">"
+                + "<a href=\"ParamA.html\" title=\"annotation in typeannos\">@ParamA</a> "
+                + "java.lang.String <a href=\"ParamB.html\" title=\"annotation in typeannos\">"
+                + "@ParamB</a> [] <a href=\"ParamA.html\" title=\"annotation in typeannos\">"
+                + "@ParamA</a> []&nbsp;a)</span></div>");
 
         // Test for type annotations on throws (Throws.java).
         checkOutput("typeannos/ThrDefaultUnmodified.html", true,
-                "<pre class=\"methodSignature\">void&nbsp;oneException()\n"
-                + "           throws <a href=\"ThrA.html\" title=\""
-                + "annotation in typeannos\">@ThrA</a> java.lang.Exception</pre>",
+                "<div class=\"memberSignature\"><span class=\"returnType\">void</span>&nbsp;"
+                + "<span class=\"memberName\">oneException</span>()\n"
+                + "           throws <span class=\"exceptions\"><a href=\"ThrA.html\" "
+                + "title=\"annotation in typeannos\">@ThrA</a> java.lang.Exception</span></div>",
 
-                "<pre class=\"methodSignature\">void&nbsp;twoExceptions()\n"
-                + "            throws <a href=\"ThrA.html\" title=\""
-                + "annotation in typeannos\">@ThrA</a> java.lang.RuntimeException,\n"
-                + "                   <a href=\"ThrA.html\" title=\""
-                + "annotation in typeannos\">@ThrA</a> java.lang.Exception</pre>");
+                "<div class=\"memberSignature\"><span class=\"returnType\">void</span>&nbsp;"
+                + "<span class=\"memberName\">twoExceptions</span>()\n"
+                + "            throws <span class=\"exceptions\"><a href=\"ThrA.html\" "
+                + "title=\"annotation in typeannos\">@ThrA</a> java.lang.RuntimeException,\n"
+                + "<a href=\"ThrA.html\" title=\"annotation in typeannos\">@ThrA</a> "
+                + "java.lang.Exception</span></div>");
 
         checkOutput("typeannos/ThrPublicModified.html", true,
-                "<pre class=\"methodSignature\">public final&nbsp;void&nbsp;oneException&#8203;"
-                + "(java.lang.String&nbsp;a)\n                        throws <a href=\"ThrA.html\" "
-                + "title=\"annotation in typeannos\">@ThrA</a> java.lang.Exception</pre>",
+                "<div class=\"memberSignature\"><span class=\"modifiers\">public final</span>&nbsp;"
+                + "<span class=\"returnType\">void</span>&nbsp;<span class=\"memberName\">"
+                + "oneException</span>&#8203;(<span class=\"arguments\">java.lang.String&nbsp;a)</span>\n"
+                + "                        throws <span class=\"exceptions\"><a href=\"ThrA.html\" "
+                + "title=\"annotation in typeannos\">@ThrA</a> java.lang.Exception</span></div>",
 
-                "<pre class=\"methodSignature\">public final&nbsp;void&nbsp;twoExceptions&#8203;"
-                + "(java.lang.String&nbsp;a)\n                         throws <a href=\"ThrA.html\" "
+                "<div class=\"memberSignature\"><span class=\"modifiers\">public final</span>&nbsp;"
+                + "<span class=\"returnType\">void</span>&nbsp;<span class=\"memberName\">"
+                + "twoExceptions</span>&#8203;(<span class=\"arguments\">java.lang.String&nbsp;a)</span>\n"
+                + "                         throws <span class=\"exceptions\"><a href=\"ThrA.html\" "
                 + "title=\"annotation in typeannos\">@ThrA</a> java.lang.RuntimeException,\n"
-                + "                                <a href=\"ThrA.html\" "
-                + "title=\"annotation in typeannos\">@ThrA</a> java.lang.Exception</pre>");
+                + "<a href=\"ThrA.html\" title=\"annotation in typeannos\">@ThrA</a> "
+                + "java.lang.Exception</span></div>");
 
         checkOutput("typeannos/ThrWithValue.html", true,
-                "<pre class=\"methodSignature\">void&nbsp;oneException()\n"
-                + "           throws <a href=\"ThrB.html\" title=\""
-                + "annotation in typeannos\">@ThrB</a>("
-                + "\"m\") java.lang.Exception</pre>",
+                "<div class=\"memberSignature\"><span class=\"returnType\">void</span>&nbsp;"
+                + "<span class=\"memberName\">oneException</span>()\n"
+                + "           throws <span class=\"exceptions\"><a href=\"ThrB.html\" "
+                + "title=\"annotation in typeannos\">@ThrB</a>(\"m\") java.lang.Exception</span></div>",
 
-                "<pre class=\"methodSignature\">void&nbsp;twoExceptions()\n"
-                + "            throws <a href=\"ThrB.html\" title=\""
-                + "annotation in typeannos\">@ThrB</a>("
-                + "\"m\") java.lang.RuntimeException,\n"
-                + "                   <a href=\"ThrA.html\" title=\""
-                + "annotation in typeannos\">@ThrA</a> java.lang.Exception</pre>");
+                "<div class=\"memberSignature\"><span class=\"returnType\">void</span>&nbsp;"
+                + "<span class=\"memberName\">twoExceptions</span>()\n"
+                + "            throws <span class=\"exceptions\"><a href=\"ThrB.html\" "
+                + "title=\"annotation in typeannos\">@ThrB</a>(\"m\") java.lang.RuntimeException,\n"
+                + "<a href=\"ThrA.html\" title=\"annotation in typeannos\">@ThrA</a> "
+                + "java.lang.Exception</span></div>");
 
         // Test for type annotations on type parameters (TypeParameters.java).
         checkOutput("typeannos/TestMethods.html", true,
-                "<pre class=\"methodSignature\">&lt;K,&#8203;<a href=\"TyParaA.html\" title="
-                + "\"annotation in typeannos\">@TyParaA</a> V extends <a href=\"TyParaA.html\" "
-                + "title=\"annotation in typeannos\">@TyParaA</a> "
-                + "java.lang.String&gt;&nbsp;void&nbsp;secondAnnotated()</pre>"
+                "<div class=\"memberSignature\"><span class=\"typeParameters\">&lt;K,&#8203;\n"
+                + "<a href=\"TyParaA.html\" title=\"annotation in typeannos\">@TyParaA</a> V extends "
+                + "<a href=\"TyParaA.html\" title=\"annotation in typeannos\">@TyParaA</a> "
+                + "java.lang.String&gt;</span>\n<span class=\"returnType\">void</span>&nbsp;"
+                + "<span class=\"memberName\">secondAnnotated</span>()</div>"
         );
 
         // Test for type annotations on wildcard type (Wildcards.java).
         checkOutput("typeannos/BoundTest.html", true,
-                "<pre class=\"methodSignature\">void&nbsp;wcExtends&#8203;(<a href=\"MyList.html\" "
-                + "title=\"class in typeannos\">MyList</a>&lt;? extends <a href=\""
-                + "WldA.html\" title=\"annotation in typeannos\">@WldA"
-                + "</a> java.lang.String&gt;&nbsp;l)</pre>",
+                "<div class=\"memberSignature\"><span class=\"returnType\">void</span>&nbsp;"
+                + "<span class=\"memberName\">wcExtends</span>&#8203;(<span class=\"arguments\">"
+                + "<a href=\"MyList.html\" title=\"class in typeannos\">MyList</a>&lt;? extends "
+                + "<a href=\"WldA.html\" title=\"annotation in typeannos\">@WldA</a> "
+                + "java.lang.String&gt;&nbsp;l)</span></div>",
 
-                "<pre class=\"methodSignature\"><a href=\"MyList.html\" title=\"class in "
-                + "typeannos\">MyList</a>&lt;? super <a href=\"WldA.html\" "
-                + "title=\"annotation in typeannos\">@WldA</a> java.lang.String&gt;"
-                + "&nbsp;returnWcSuper()</pre>");
+                "<div class=\"memberSignature\"><span class=\"returnType\"><a href=\"MyList.html\" "
+                + "title=\"class in typeannos\">MyList</a>&lt;? super <a href=\"WldA.html\" "
+                + "title=\"annotation in typeannos\">@WldA</a> java.lang.String&gt;</span>&nbsp;"
+                + "<span class=\"memberName\">returnWcSuper</span>()</div>");
 
         checkOutput("typeannos/BoundWithValue.html", true,
-                "<pre class=\"methodSignature\">void&nbsp;wcSuper&#8203;(<a href=\"MyList.html\""
-                + " title=\"class in typeannos\">MyList</a>&lt;? super <a href=\""
-                + "WldB.html\" title=\"annotation in typeannos\">@WldB</a>("
-                + "\"m\") java.lang."
-                + "String&gt;&nbsp;l)</pre>",
+                "<div class=\"memberSignature\"><span class=\"returnType\">void</span>&nbsp;"
+                + "<span class=\"memberName\">wcSuper</span>&#8203;(<span class=\"arguments\">"
+                + "<a href=\"MyList.html\" title=\"class in typeannos\">MyList</a>&lt;? super "
+                + "<a href=\"WldB.html\" title=\"annotation in typeannos\">@WldB</a>(\"m\") "
+                + "java.lang.String&gt;&nbsp;l)</span></div>",
 
-                "<pre class=\"methodSignature\"><a href=\"MyList.html\" title=\"class in "
-                + "typeannos\">MyList</a>&lt;? extends <a href=\"WldB."
-                + "html\" title=\"annotation in typeannos\">@WldB</a>("
-                + "\"m\") java.lang.String"
-                + "&gt;&nbsp;returnWcExtends()</pre>");
+                "<div class=\"memberSignature\"><span class=\"returnType\"><a href=\"MyList.html\" "
+                + "title=\"class in typeannos\">MyList</a>&lt;? extends <a href=\"WldB.html\" "
+                + "title=\"annotation in typeannos\">@WldB</a>(\"m\") java.lang.String&gt;</span>"
+                + "&nbsp;<span class=\"memberName\">returnWcExtends</span>()</div>");
 
         // Test for receiver annotations (Receivers.java).
         checkOutput("typeannos/DefaultUnmodified.html", true,
-                "<pre class=\"methodSignature\">void&nbsp;withException&#8203;(<a href=\"RcvrA.html\" "
-                + "title=\"annotation in typeannos\">@RcvrA</a>&nbsp;"
-                + "DefaultUnmodified&nbsp;this)\n"
-                + "            throws java."
-                + "lang.Exception</pre>",
+                "<div class=\"memberSignature\"><span class=\"returnType\">void</span>&nbsp;"
+                + "<span class=\"memberName\">withException</span>&#8203;(<span class=\"arguments\">"
+                + "<a href=\"RcvrA.html\" title=\"annotation in typeannos\">@RcvrA</a>"
+                + "&nbsp;DefaultUnmodified&nbsp;this)</span>\n"
+                + "            throws <span class=\"exceptions\">java.lang.Exception</span></div>",
 
-                "<pre class=\"methodSignature\">java.lang.String&nbsp;nonVoid&#8203;(<a href=\"RcvrA."
-                + "html\" title=\"annotation in typeannos\">@RcvrA</a> <a href=\""
-                + "RcvrB.html\" title=\"annotation in typeannos\">@RcvrB"
-                + "</a>(\"m\")"
-                + "&nbsp;DefaultUnmodified&nbsp;this)</pre>",
+                "<div class=\"memberSignature\"><span class=\"returnType\">java.lang.String</span>&nbsp;"
+                + "<span class=\"memberName\">nonVoid</span>&#8203;(<span class=\"arguments\">"
+                + "<a href=\"RcvrA.html\" title=\"annotation in typeannos\">@RcvrA</a> "
+                + "<a href=\"RcvrB.html\" title=\"annotation in typeannos\">@RcvrB</a>(\"m\")"
+                + "&nbsp;DefaultUnmodified&nbsp;this)</span></div>",
 
-                "<pre class=\"methodSignature\">&lt;T extends java.lang.Runnable&gt;&nbsp;void&nbsp;accept&#8203;("
-                + "<a href=\"RcvrA.html\" title=\"annotation in "
-                + "typeannos\">@RcvrA</a>&nbsp;DefaultUnmodified&nbsp;this,\n"
-                + "                                           T&nbsp;r)\n"
-                + "                                    throws java.lang.Exception</pre>");
+                "<div class=\"memberSignature\"><span class=\"typeParameters\">&lt;T extends "
+                + "java.lang.Runnable&gt;</span>&nbsp;<span class=\"returnType\">void</span>&nbsp;"
+                + "<span class=\"memberName\">accept</span>&#8203;(<span class=\"arguments\">"
+                + "<a href=\"RcvrA.html\" title=\"annotation in typeannos\">@RcvrA</a>&nbsp;"
+                + "DefaultUnmodified&nbsp;this,\nT&nbsp;r)</span>\n"
+                + "                                    throws <span class=\"exceptions\">"
+                + "java.lang.Exception</span></div>");
 
         checkOutput("typeannos/PublicModified.html", true,
-                "<pre class=\"methodSignature\">public final&nbsp;java.lang.String&nbsp;nonVoid&#8203;"
-                + "(<a href=\"RcvrA.html\" title=\"annotation in typeannos\">"
-                + "@RcvrA</a>&nbsp;PublicModified&nbsp;this)</pre>",
+                "<div class=\"memberSignature\"><span class=\"modifiers\">public final</span>&nbsp;"
+                + "<span class=\"returnType\">java.lang.String</span>&nbsp;<span class=\"memberName\">"
+                + "nonVoid</span>&#8203;(<span class=\"arguments\"><a href=\"RcvrA.html\" "
+                + "title=\"annotation in typeannos\">@RcvrA</a>&nbsp;PublicModified&nbsp;this)"
+                + "</span></div>",
 
-                "<pre class=\"methodSignature\">public final&nbsp;&lt;T extends java.lang.Runnable&gt;&nbsp;"
-                + "void&nbsp;accept&#8203;(<a href=\"RcvrA.html\" title=\""
-                + "annotation in typeannos\">@RcvrA</a>&nbsp;PublicModified&nbsp;this,\n"
-                + "                                                        T&nbsp;r)\n"
-                + "                                                 throws java.lang.Exception</pre>");
+                "<div class=\"memberSignature\"><span class=\"modifiers\">public final</span>&nbsp;"
+                + "<span class=\"typeParameters\">&lt;T extends java.lang.Runnable&gt;</span>&nbsp;"
+                + "<span class=\"returnType\">void</span>&nbsp;<span class=\"memberName\">accept"
+                + "</span>&#8203;(<span class=\"arguments\"><a href=\"RcvrA.html\" "
+                + "title=\"annotation in typeannos\">@RcvrA</a>&nbsp;PublicModified&nbsp;this,\n"
+                + "T&nbsp;r)</span>\n                                                 throws "
+                + "<span class=\"exceptions\">java.lang.Exception</span></div>");
 
         checkOutput("typeannos/WithValue.html", true,
-                "<pre class=\"methodSignature\">&lt;T extends java.lang.Runnable&gt;&nbsp;void&nbsp;accept&#8203;("
-                + "<a href=\"RcvrB.html\" title=\"annotation in "
-                + "typeannos\">@RcvrB</a>("
-                + "\"m\")&nbsp;WithValue&nbsp;this,\n"
-                + "                                           T&nbsp;r)\n"
-                + "                                    throws java.lang.Exception</pre>");
+                "<div class=\"memberSignature\"><span class=\"typeParameters\">&lt;T extends "
+                + "java.lang.Runnable&gt;</span>&nbsp;<span class=\"returnType\">void</span>&nbsp;"
+                + "<span class=\"memberName\">accept</span>&#8203;(<span class=\"arguments\">"
+                + "<a href=\"RcvrB.html\" title=\"annotation in typeannos\">@RcvrB</a>(\"m\")"
+                + "&nbsp;WithValue&nbsp;this,\nT&nbsp;r)</span>\n"
+                + "                                    throws <span class=\"exceptions\">"
+                + "java.lang.Exception</span></div>");
 
         checkOutput("typeannos/WithFinal.html", true,
-                "<pre class=\"methodSignature\">java.lang.String&nbsp;nonVoid&#8203;(<a href=\"RcvrB.html\" "
-                + "title=\"annotation in typeannos\">@RcvrB</a>(\"m\") "
-                + "<a href=\"WithFinal.html\" title=\"class in typeannos\">"
-                + "WithFinal</a>&nbsp;afield)</pre>");
+                "<div class=\"memberSignature\"><span class=\"returnType\">java.lang.String</span>"
+                + "&nbsp;<span class=\"memberName\">nonVoid</span>&#8203;(<span class=\"arguments\">"
+                + "<a href=\"RcvrB.html\" title=\"annotation in typeannos\">@RcvrB</a>(\"m\") "
+                + "<a href=\"WithFinal.html\" title=\"class in typeannos\">WithFinal</a>"
+                + "&nbsp;afield)</span></div>");
 
         checkOutput("typeannos/WithBody.html", true,
-                "<pre class=\"methodSignature\">void&nbsp;field&#8203;(<a href=\"RcvrA.html\" title=\""
-                + "annotation in typeannos\">@RcvrA</a>&nbsp;WithBody&nbsp;this)</pre>");
+                "<div class=\"memberSignature\"><span class=\"returnType\">void</span>&nbsp;"
+                + "<span class=\"memberName\">field</span>&#8203;(<span class=\"arguments\">"
+                + "<a href=\"RcvrA.html\" title=\"annotation in typeannos\">@RcvrA</a>"
+                + "&nbsp;WithBody&nbsp;this)</span></div>");
 
         checkOutput("typeannos/Generic2.html", true,
-                "<pre class=\"methodSignature\">void&nbsp;test2&#8203;(<a href=\"RcvrA.html\" title=\""
-                + "annotation in typeannos\">@RcvrA</a>&nbsp;Generic2&lt;X&gt;&nbsp;this)</pre>");
+                "<div class=\"memberSignature\"><span class=\"returnType\">void</span>&nbsp;"
+                + "<span class=\"memberName\">test2</span>&#8203;(<span class=\"arguments\">"
+                + "<a href=\"RcvrA.html\" title=\"annotation in typeannos\">@RcvrA</a>"
+                + "&nbsp;Generic2&lt;X&gt;&nbsp;this)</span></div>");
 
 
         // Test for repeated type annotations (RepeatedAnnotations.java).
@@ -393,84 +418,82 @@ public class TestTypeAnnotations extends JavadocTester {
 //                + "extends java.lang.Object</pre>");
 
         checkOutput("typeannos/RepeatingOnConstructor.html", true,
-                "<pre><a href=\"RepConstructorA.html\" title=\"annotation "
-                + "in typeannos\">@RepConstructorA</a> <a href=\"RepConstructorA.html"
-                + "\" title=\"annotation in typeannos\">@RepConstructorA</a>\n<a href="
-                + "\"RepConstructorB.html\" title=\"annotation in typeannos"
-                + "\">@RepConstructorB</a> <a href=\"RepConstructorB.html"
-                + "\" title=\"annotation in typeannos\">@RepConstructorB</a>\n"
-                + "RepeatingOnConstructor()</pre>",
+                "<div class=\"memberSignature\"><span class=\"annotations\">"
+                + "<a href=\"RepConstructorA.html\" title=\"annotation in typeannos\">"
+                + "@RepConstructorA</a> <a href=\"RepConstructorA.html\" "
+                + "title=\"annotation in typeannos\">@RepConstructorA</a>\n"
+                + "<a href=\"RepConstructorB.html\" title=\"annotation in typeannos\">"
+                + "@RepConstructorB</a> <a href=\"RepConstructorB.html\" "
+                + "title=\"annotation in typeannos\">@RepConstructorB</a>\n"
+                + "</span><span class=\"memberName\">RepeatingOnConstructor</span>()</div>",
 
-                "<pre><a href=\"RepConstructorA.html\" title=\"annotation in typeannos"
-                + "\">@RepConstructorA</a> <a href=\"RepConstructorA.html"
-                + "\" title=\"annotation in typeannos\">@RepConstructorA</a>\n<a href="
-                + "\"RepConstructorB.html\" title=\"annotation in typeannos"
-                + "\">@RepConstructorB</a> <a href=\"RepConstructorB.html"
-                + "\" title=\"annotation in typeannos\">@RepConstructorB</a>\n"
-                + "RepeatingOnConstructor&#8203;(int&nbsp;i,\n                       int&nbsp;j)</pre>",
+                "<div class=\"memberSignature\"><span class=\"annotations\">"
+                + "<a href=\"RepConstructorA.html\" title=\"annotation in typeannos\">"
+                + "@RepConstructorA</a> <a href=\"RepConstructorA.html\" "
+                + "title=\"annotation in typeannos\">@RepConstructorA</a>\n"
+                + "<a href=\"RepConstructorB.html\" title=\"annotation in typeannos\">"
+                + "@RepConstructorB</a> <a href=\"RepConstructorB.html\" "
+                + "title=\"annotation in typeannos\">@RepConstructorB</a>\n"
+                + "</span><span class=\"memberName\">RepeatingOnConstructor</span>"
+                + "&#8203;(<span class=\"arguments\">int&nbsp;i,\n"
+                + "int&nbsp;j)</span></div>",
 
-                "<pre><a href=\"RepAllContextsA.html\" title=\"annotation in typeannos"
-                + "\">@RepAllContextsA</a> <a href=\"RepAllContextsA.html"
-                + "\" title=\"annotation in typeannos\">@RepAllContextsA</a>\n"
-                + "<a href=\"RepAllContextsB.html\" title=\"annotation in typeannos"
-                + "\">@RepAllContextsB</a> <a href=\"RepAllContextsB.html"
-                + "\" title=\"annotation in typeannos\">@RepAllContextsB</a>\n"
-                + "RepeatingOnConstructor&#8203;(int&nbsp;i,\n                       int&nbsp;j,\n"
-                + "                       int&nbsp;k)</pre>",
+                "<div class=\"memberSignature\"><span class=\"annotations\">"
+                + "<a href=\"RepAllContextsA.html\" title=\"annotation in typeannos\">"
+                + "@RepAllContextsA</a> <a href=\"RepAllContextsA.html\" "
+                + "title=\"annotation in typeannos\">@RepAllContextsA</a>\n"
+                + "<a href=\"RepAllContextsB.html\" title=\"annotation in typeannos\">"
+                + "@RepAllContextsB</a> <a href=\"RepAllContextsB.html\" "
+                + "title=\"annotation in typeannos\">@RepAllContextsB</a>\n"
+                + "</span><span class=\"memberName\">RepeatingOnConstructor</span>"
+                + "&#8203;(<span class=\"arguments\">int&nbsp;i,\n"
+                + "int&nbsp;j,\nint&nbsp;k)</span></div>",
 
-                "<pre>RepeatingOnConstructor&#8203;(<a href=\"RepParameterA.html"
-                + "\" title=\"annotation in typeannos\">@RepParameterA</a> <a href="
-                + "\"RepParameterA.html\" title=\"annotation in typeannos"
-                + "\">@RepParameterA</a> <a href=\"RepParameterB.html"
-                + "\" title=\"annotation in typeannos\">@RepParameterB</a> "
-                + "<a href=\"RepParameterB.html\" title=\"annotation in typeannos"
-                + "\">@RepParameterB</a>\n                       java.lang.String&nbsp;parameter,\n"
-                + "                       <a href=\"RepParameterA.html\" "
-                + "title=\"annotation in typeannos\">@RepParameterA</a> <a href="
-                + "\"RepParameterA.html\" title=\"annotation in typeannos\">"
-                + "@RepParameterA</a> <a href=\"RepParameterB.html\" "
-                + "title=\"annotation in typeannos\">@RepParameterB</a> <a href="
-                + "\"RepParameterB.html\" title=\"annotation in typeannos\">"
-                + "@RepParameterB</a>\n                       java.lang.String "
-                + "<a href=\"RepTypeUseA.html\" title=\"annotation in typeannos\">"
-                + "@RepTypeUseA</a> <a href=\"RepTypeUseA.html\" "
-                + "title=\"annotation in typeannos\">@RepTypeUseA</a> <a href="
-                + "\"RepTypeUseB.html\" title=\"annotation in typeannos\">@RepTypeUseB</a> "
-                + "<a href=\"RepTypeUseB.html\" title=\"annotation in typeannos\">"
-                + "@RepTypeUseB</a> ...&nbsp;vararg)</pre>"
+                "<div class=\"memberSignature\"><span class=\"memberName\">RepeatingOnConstructor</span>"
+                + "&#8203;(<span class=\"arguments\"><a href=\"RepParameterA.html\" "
+                + "title=\"annotation in typeannos\">@RepParameterA</a> "
+                + "<a href=\"RepParameterA.html\" title=\"annotation in typeannos\">@RepParameterA</a> "
+                + "<a href=\"RepParameterB.html\" title=\"annotation in typeannos\">@RepParameterB</a> "
+                + "<a href=\"RepParameterB.html\" title=\"annotation in typeannos\">@RepParameterB</a>\n"
+                + "java.lang.String&nbsp;parameter,\n<a href=\"RepParameterA.html\" "
+                + "title=\"annotation in typeannos\">@RepParameterA</a> "
+                + "<a href=\"RepParameterA.html\" title=\"annotation in typeannos\">@RepParameterA</a> "
+                + "<a href=\"RepParameterB.html\" title=\"annotation in typeannos\">@RepParameterB</a> "
+                + "<a href=\"RepParameterB.html\" title=\"annotation in typeannos\">@RepParameterB</a>\n"
+                + "java.lang.String <a href=\"RepTypeUseA.html\" title=\"annotation in typeannos\">"
+                + "@RepTypeUseA</a> <a href=\"RepTypeUseA.html\" title=\"annotation in typeannos\">"
+                + "@RepTypeUseA</a> <a href=\"RepTypeUseB.html\" title=\"annotation in typeannos\">"
+                + "@RepTypeUseB</a> <a href=\"RepTypeUseB.html\" title=\"annotation in typeannos\">"
+                + "@RepTypeUseB</a> ...&nbsp;vararg)</span></div>"
         );
 
         checkOutput("typeannos/RepeatingOnConstructor.Inner.html", true,
                 "<code><span class=\"memberNameLink\"><a href=\"#%3Cinit%3E(java.lang.String,"
                 + "java.lang.String...)\">Inner</a></span>&#8203;(java.lang.String&nbsp;parameter,\n"
-                + "     java.lang.String <a href=\"RepTypeUseA.html\" title=\"annotation in typeannos\">"
+                + "java.lang.String <a href=\"RepTypeUseA.html\" title=\"annotation in typeannos\">"
                 + "@RepTypeUseA</a> <a href=\"RepTypeUseA.html\" title=\"annotation in typeannos\">"
                 + "@RepTypeUseA</a> <a href=\"RepTypeUseB.html\" title=\"annotation in typeannos\">"
                 + "@RepTypeUseB</a> <a href=\"RepTypeUseB.html\" title=\"annotation in typeannos\">"
                 + "@RepTypeUseB</a> ...&nbsp;vararg)</code>",
-                "Inner&#8203;(<a href=\"RepTypeUseA.html\" title=\"annotation in typeannos\">"
-                + "@RepTypeUseA</a> <a href=\"RepTypeUseA.html\" title="
-                + "\"annotation in typeannos\">@RepTypeUseA</a> <a href=\"RepTypeUseB.html"
-                + "\" title=\"annotation in typeannos\">@RepTypeUseB</a> <a href="
-                + "\"RepTypeUseB.html\" title=\"annotation in typeannos\">"
-                + "@RepTypeUseB</a>&nbsp;RepeatingOnConstructor&nbsp;this,\n      <a href="
-                + "\"RepParameterA.html\" title=\"annotation in typeannos\">"
-                + "@RepParameterA</a> <a href=\"RepParameterA.html\" title="
-                + "\"annotation in typeannos\">@RepParameterA</a> <a href=\"RepParameterB.html"
-                + "\" title=\"annotation in typeannos\">@RepParameterB</a> <a href="
-                + "\"RepParameterB.html\" title=\"annotation in typeannos\">"
-                + "@RepParameterB</a>\n      java.lang.String&nbsp;parameter,\n"
-                + "      <a href=\"RepParameterA.html\" title=\"annotation in typeannos\">"
-                + "@RepParameterA</a> <a href=\"RepParameterA.html\" title="
-                + "\"annotation in typeannos\">@RepParameterA</a> <a href=\"RepParameterB.html"
-                + "\" title=\"annotation in typeannos\">@RepParameterB</a> <a href="
-                + "\"RepParameterB.html\" title=\"annotation in typeannos\">"
-                + "@RepParameterB</a>\n      java.lang.String <a href=\"RepTypeUseA.html"
-                + "\" title=\"annotation in typeannos\">@RepTypeUseA</a> <a href="
-                + "\"RepTypeUseA.html\" title=\"annotation in typeannos\">"
-                + "@RepTypeUseA</a> <a href=\"RepTypeUseB.html\" title="
-                + "\"annotation in typeannos\">@RepTypeUseB</a> <a href=\"RepTypeUseB.html"
-                + "\" title=\"annotation in typeannos\">@RepTypeUseB</a> ...&nbsp;vararg)");
+                "Inner</span>&#8203;(<span class=\"arguments\"><a href=\"RepTypeUseA.html\" "
+                + "title=\"annotation in typeannos\">@RepTypeUseA</a> <a href=\"RepTypeUseA.html\" "
+                + "title=\"annotation in typeannos\">@RepTypeUseA</a> <a href=\"RepTypeUseB.html\" "
+                + "title=\"annotation in typeannos\">@RepTypeUseB</a> <a href=\"RepTypeUseB.html\" "
+                + "title=\"annotation in typeannos\">@RepTypeUseB</a>&nbsp;RepeatingOnConstructor&nbsp;this,\n"
+                + "<a href=\"RepParameterA.html\" title=\"annotation in typeannos\">@RepParameterA</a> "
+                + "<a href=\"RepParameterA.html\" title=\"annotation in typeannos\">@RepParameterA</a> "
+                + "<a href=\"RepParameterB.html\" title=\"annotation in typeannos\">@RepParameterB</a> "
+                + "<a href=\"RepParameterB.html\" title=\"annotation in typeannos\">@RepParameterB</a>\n"
+                + "java.lang.String&nbsp;parameter,\n<a href=\"RepParameterA.html\" "
+                + "title=\"annotation in typeannos\">@RepParameterA</a> "
+                + "<a href=\"RepParameterA.html\" title=\"annotation in typeannos\">@RepParameterA</a> "
+                + "<a href=\"RepParameterB.html\" title=\"annotation in typeannos\">@RepParameterB</a> "
+                + "<a href=\"RepParameterB.html\" title=\"annotation in typeannos\">@RepParameterB</a>\n"
+                + "java.lang.String <a href=\"RepTypeUseA.html\" title=\"annotation in typeannos\">"
+                + "@RepTypeUseA</a> <a href=\"RepTypeUseA.html\" title=\"annotation in typeannos\">"
+                + "@RepTypeUseA</a> <a href=\"RepTypeUseB.html\" title=\"annotation in typeannos\">"
+                + "@RepTypeUseB</a> <a href=\"RepTypeUseB.html\" title=\"annotation in typeannos\">"
+                + "@RepTypeUseB</a> ...&nbsp;vararg)</span>");
 
         checkOutput("typeannos/RepeatingOnField.html", true,
                 "<code>(package private) java.lang.Integer</code></td>\n<th class=\"colSecond\" scope=\"row\">"
@@ -519,57 +542,55 @@ public class TestTypeAnnotations extends JavadocTester {
                 + "\"memberNameLink\"><a href=\"#sa"
                 + "\">sa</a></span></code>",
 
-                "<pre><a href=\"RepFieldA.html\" title=\"annotation in typeannos\">"
-                + "@RepFieldA</a> <a href=\"RepFieldA.html\" title="
-                + "\"annotation in typeannos\">@RepFieldA</a>\n<a href=\"RepFieldB.html"
-                + "\" title=\"annotation in typeannos\">@RepFieldB</a> <a href="
-                + "\"RepFieldB.html\" title=\"annotation in typeannos\">"
-                + "@RepFieldB</a>\njava.lang.Integer i1</pre>",
+                "<div class=\"memberSignature\"><span class=\"annotations\">"
+                + "<a href=\"RepFieldA.html\" title=\"annotation in typeannos\">@RepFieldA</a> "
+                + "<a href=\"RepFieldA.html\" title=\"annotation in typeannos\">@RepFieldA</a>\n"
+                + "<a href=\"RepFieldB.html\" title=\"annotation in typeannos\">@RepFieldB</a> "
+                + "<a href=\"RepFieldB.html\" title=\"annotation in typeannos\">@RepFieldB</a>\n"
+                + "</span><span class=\"returnType\">java.lang.Integer</span>&nbsp;"
+                + "<span class=\"memberName\">i1</span></div>",
 
-                "<pre><a href=\"RepTypeUseA.html\" title=\"annotation in typeannos"
-                + "\">@RepTypeUseA</a> <a href=\"RepTypeUseA.html"
-                + "\" title=\"annotation in typeannos\">@RepTypeUseA</a> "
-                + "<a href=\"RepTypeUseB.html\" title=\"annotation in typeannos\">"
-                + "@RepTypeUseB</a> <a href=\"RepTypeUseB.html\" title="
-                + "\"annotation in typeannos\">@RepTypeUseB</a> java.lang.Integer i2</pre>",
+                "<div class=\"memberSignature\"><span class=\"returnType\">"
+                + "<a href=\"RepTypeUseA.html\" title=\"annotation in typeannos\">@RepTypeUseA</a> "
+                + "<a href=\"RepTypeUseA.html\" title=\"annotation in typeannos\">@RepTypeUseA</a> "
+                + "<a href=\"RepTypeUseB.html\" title=\"annotation in typeannos\">@RepTypeUseB</a> "
+                + "<a href=\"RepTypeUseB.html\" title=\"annotation in typeannos\">@RepTypeUseB</a> "
+                + "java.lang.Integer</span>&nbsp;<span class=\"memberName\">i2</span></div>",
 
-                "<pre><a href=\"RepFieldA.html\" title=\"annotation in typeannos\">"
-                + "@RepFieldA</a> <a href=\"RepFieldA.html\" title="
-                + "\"annotation in typeannos\">@RepFieldA</a>\n<a href=\"RepFieldB.html"
-                + "\" title=\"annotation in typeannos\">@RepFieldB</a> <a href="
-                + "\"RepFieldB.html\" title=\"annotation in typeannos\">"
-                + "@RepFieldB</a>\n<a href=\"RepTypeUseA.html\" title="
-                + "\"annotation in typeannos\">@RepTypeUseA</a> <a href=\"RepTypeUseA.html"
-                + "\" title=\"annotation in typeannos\">@RepTypeUseA</a> <a href="
-                + "\"RepTypeUseB.html\" title=\"annotation in typeannos\">"
-                + "@RepTypeUseB</a> <a href=\"RepTypeUseB.html\" title="
-                + "\"annotation in typeannos\">@RepTypeUseB</a> java.lang.Integer i3</pre>",
+                "<div class=\"memberSignature\"><span class=\"annotations\">"
+                + "<a href=\"RepFieldA.html\" title=\"annotation in typeannos\">@RepFieldA</a> "
+                + "<a href=\"RepFieldA.html\" title=\"annotation in typeannos\">@RepFieldA</a>\n"
+                + "<a href=\"RepFieldB.html\" title=\"annotation in typeannos\">@RepFieldB</a> "
+                + "<a href=\"RepFieldB.html\" title=\"annotation in typeannos\">@RepFieldB</a>\n"
+                + "</span><span class=\"returnType\"><a href=\"RepTypeUseA.html\" "
+                + "title=\"annotation in typeannos\">@RepTypeUseA</a> "
+                + "<a href=\"RepTypeUseA.html\" title=\"annotation in typeannos\">@RepTypeUseA</a> "
+                + "<a href=\"RepTypeUseB.html\" title=\"annotation in typeannos\">@RepTypeUseB</a> "
+                + "<a href=\"RepTypeUseB.html\" title=\"annotation in typeannos\">@RepTypeUseB</a> "
+                + "java.lang.Integer</span>&nbsp;<span class=\"memberName\">i3</span></div>",
 
-                "<pre><a href=\"RepAllContextsA.html\" title=\"annotation in typeannos\">"
-                + "@RepAllContextsA</a> <a href=\"RepAllContextsA.html"
-                + "\" title=\"annotation in typeannos\">@RepAllContextsA</a>\n<a href="
-                + "\"RepAllContextsB.html\" title=\"annotation in typeannos\">"
-                + "@RepAllContextsB</a> <a href=\"RepAllContextsB.html"
-                + "\" title=\"annotation in typeannos\">@RepAllContextsB</a>\n"
-                + "<a href=\"RepAllContextsA.html\" title=\"annotation in typeannos\">"
-                + "@RepAllContextsA</a> <a href=\"RepAllContextsA.html\" "
-                + "title=\"annotation in typeannos\">@RepAllContextsA</a> <a href="
-                + "\"RepAllContextsB.html\" title=\"annotation in typeannos\">"
-                + "@RepAllContextsB</a> <a href=\"RepAllContextsB.html"
-                + "\" title=\"annotation in typeannos\">@RepAllContextsB</a> java.lang.Integer i4</pre>",
+                "<div class=\"memberSignature\"><span class=\"annotations\">"
+                + "<a href=\"RepAllContextsA.html\" title=\"annotation in typeannos\">@RepAllContextsA</a> "
+                + "<a href=\"RepAllContextsA.html\" title=\"annotation in typeannos\">@RepAllContextsA</a>\n"
+                + "<a href=\"RepAllContextsB.html\" title=\"annotation in typeannos\">@RepAllContextsB</a> "
+                + "<a href=\"RepAllContextsB.html\" title=\"annotation in typeannos\">@RepAllContextsB</a>\n"
+                + "</span><span class=\"returnType\"><a href=\"RepAllContextsA.html\" "
+                + "title=\"annotation in typeannos\">@RepAllContextsA</a> "
+                + "<a href=\"RepAllContextsA.html\" title=\"annotation in typeannos\">@RepAllContextsA</a> "
+                + "<a href=\"RepAllContextsB.html\" title=\"annotation in typeannos\">@RepAllContextsB</a> "
+                + "<a href=\"RepAllContextsB.html\" title=\"annotation in typeannos\">@RepAllContextsB</a> "
+                + "java.lang.Integer</span>&nbsp;<span class=\"memberName\">i4</span></div>",
 
-                "<pre>java.lang.String <a href=\"RepTypeUseA.html\" title="
-                + "\"annotation in typeannos\">@RepTypeUseA</a> <a href=\"RepTypeUseA.html"
-                + "\" title=\"annotation in typeannos\">@RepTypeUseA</a> <a href="
-                + "\"RepTypeUseB.html\" title=\"annotation in typeannos\">"
-                + "@RepTypeUseB</a> <a href=\"RepTypeUseB.html\" title="
-                + "\"annotation in typeannos\">@RepTypeUseB</a> [] <a href="
-                + "\"RepTypeUseA.html\" title=\"annotation in typeannos\">"
-                + "@RepTypeUseA</a> <a href=\"RepTypeUseA.html\" title="
-                + "\"annotation in typeannos\">@RepTypeUseA</a> <a href=\"RepTypeUseB.html\" "
-                + "title=\"annotation in typeannos\">@RepTypeUseB</a> <a href="
-                + "\"RepTypeUseB.html\" title=\"annotation in typeannos\">"
-                + "@RepTypeUseB</a> [] sa</pre>");
+                "<div class=\"memberSignature\"><span class=\"returnType\">java.lang.String "
+                + "<a href=\"RepTypeUseA.html\" title=\"annotation in typeannos\">@RepTypeUseA</a> "
+                + "<a href=\"RepTypeUseA.html\" title=\"annotation in typeannos\">@RepTypeUseA</a> "
+                + "<a href=\"RepTypeUseB.html\" title=\"annotation in typeannos\">@RepTypeUseB</a> "
+                + "<a href=\"RepTypeUseB.html\" title=\"annotation in typeannos\">@RepTypeUseB</a> [] "
+                + "<a href=\"RepTypeUseA.html\" title=\"annotation in typeannos\">@RepTypeUseA</a> "
+                + "<a href=\"RepTypeUseA.html\" title=\"annotation in typeannos\">@RepTypeUseA</a> "
+                + "<a href=\"RepTypeUseB.html\" title=\"annotation in typeannos\">@RepTypeUseB</a> "
+                + "<a href=\"RepTypeUseB.html\" title=\"annotation in typeannos\">@RepTypeUseB</a> []"
+                + "</span>&nbsp;<span class=\"memberName\">sa</span></div>");
 
         checkOutput("typeannos/RepeatingOnMethod.html", true,
                 "<code>(package private) java.lang.String</code></td>\n<th class=\"colSecond\" scope=\"row\">"
@@ -608,7 +629,7 @@ public class TestTypeAnnotations extends JavadocTester {
 
                 "<code><span class=\"memberNameLink\"><a href=\""
                 + "#test5(java.lang.String,java.lang.String...)\">test5</a></span>"
-                + "&#8203;(java.lang.String&nbsp;parameter,\n     java.lang.String <a href="
+                + "&#8203;(java.lang.String&nbsp;parameter,\njava.lang.String <a href="
                 + "\"RepTypeUseA.html\" title=\"annotation in typeannos\">"
                 + "@RepTypeUseA</a> <a href=\"RepTypeUseA.html\" title="
                 + "\"annotation in typeannos\">@RepTypeUseA</a> <a href=\"RepTypeUseB.html"
@@ -616,69 +637,63 @@ public class TestTypeAnnotations extends JavadocTester {
                 + "\"RepTypeUseB.html\" title=\"annotation in typeannos\">"
                 + "@RepTypeUseB</a> ...&nbsp;vararg)</code>",
 
-                "<a href=\"RepMethodA.html\" title=\"annotation in typeannos\">"
-                + "@RepMethodA</a> <a href=\"RepMethodA.html\" title="
-                + "\"annotation in typeannos\">@RepMethodA</a>\n<a href=\"RepMethodB.html\""
-                + " title=\"annotation in typeannos\">@RepMethodB</a> <a href="
-                + "\"RepMethodB.html\" title=\"annotation in typeannos\">"
-                + "@RepMethodB</a>\njava.lang.String&nbsp;test1()",
+                "<a href=\"RepMethodA.html\" title=\"annotation in typeannos\">@RepMethodA</a> "
+                + "<a href=\"RepMethodA.html\" title=\"annotation in typeannos\">@RepMethodA</a>\n"
+                + "<a href=\"RepMethodB.html\" title=\"annotation in typeannos\">@RepMethodB</a> "
+                + "<a href=\"RepMethodB.html\" title=\"annotation in typeannos\">@RepMethodB</a>\n"
+                + "</span><span class=\"returnType\">java.lang.String</span>&nbsp;"
+                + "<span class=\"memberName\">test1</span>()",
 
                 "<a href=\"RepTypeUseA.html\" title=\"annotation in typeannos\">"
                 + "@RepTypeUseA</a> <a href=\"RepTypeUseA.html\" title="
                 + "\"annotation in typeannos\">@RepTypeUseA</a> <a href=\"RepTypeUseB.html\" "
                 + "title=\"annotation in typeannos\">@RepTypeUseB</a> <a href=\"RepTypeUseB.html\" "
-                + "title=\"annotation in typeannos\">@RepTypeUseB</a> java.lang.String&nbsp;test2()",
+                + "title=\"annotation in typeannos\">@RepTypeUseB</a> java.lang.String</span>"
+                + "&nbsp;<span class=\"memberName\">test2</span>()",
 
-                "<a href=\"RepMethodA.html\" title=\"annotation in typeannos\">"
-                + "@RepMethodA</a> <a href=\"RepMethodA.html\" title="
-                + "\"annotation in typeannos\">@RepMethodA</a>\n<a href=\"RepMethodB.html\" "
-                + "title=\"annotation in typeannos\">@RepMethodB</a> <a href="
-                + "\"RepMethodB.html\" title=\"annotation in typeannos\">"
-                + "@RepMethodB</a>\n<a href=\"RepTypeUseA.html\" title="
-                + "\"annotation in typeannos\">@RepTypeUseA</a> <a href=\"RepTypeUseA.html\" "
-                + "title=\"annotation in typeannos\">@RepTypeUseA</a> <a href="
-                + "\"RepTypeUseB.html\" title=\"annotation in typeannos\">"
-                + "@RepTypeUseB</a> <a href=\"RepTypeUseB.html\" title="
-                + "\"annotation in typeannos\">@RepTypeUseB</a> java.lang.String&nbsp;test3()",
+                "<a href=\"RepMethodA.html\" title=\"annotation in typeannos\">@RepMethodA</a> "
+                + "<a href=\"RepMethodA.html\" title=\"annotation in typeannos\">@RepMethodA</a>\n"
+                + "<a href=\"RepMethodB.html\" title=\"annotation in typeannos\">@RepMethodB</a> "
+                + "<a href=\"RepMethodB.html\" title=\"annotation in typeannos\">@RepMethodB</a>\n"
+                + "</span><span class=\"returnType\"><a href=\"RepTypeUseA.html\" "
+                + "title=\"annotation in typeannos\">@RepTypeUseA</a> <a href=\"RepTypeUseA.html\" "
+                + "title=\"annotation in typeannos\">@RepTypeUseA</a> <a href=\"RepTypeUseB.html\" "
+                + "title=\"annotation in typeannos\">@RepTypeUseB</a> <a href=\"RepTypeUseB.html\" "
+                + "title=\"annotation in typeannos\">@RepTypeUseB</a> java.lang.String</span>&nbsp;"
+                + "<span class=\"memberName\">test3</span>()",
 
-                "<a href=\"RepAllContextsA.html\" title=\"annotation in typeannos\">"
-                + "@RepAllContextsA</a> <a href=\"RepAllContextsA.html\" "
-                + "title=\"annotation in typeannos\">@RepAllContextsA</a>\n<a href="
-                + "\"RepAllContextsB.html\" title=\"annotation in typeannos\">"
-                + "@RepAllContextsB</a> <a href=\"RepAllContextsB.html\" "
-                + "title=\"annotation in typeannos\">@RepAllContextsB</a>\n<a href="
-                + "\"RepAllContextsA.html\" title=\"annotation in typeannos\">"
-                + "@RepAllContextsA</a> <a href=\"RepAllContextsA.html\" "
-                + "title=\"annotation in typeannos\">@RepAllContextsA</a> <a href="
-                + "\"RepAllContextsB.html\" title=\"annotation in typeannos\">"
-                + "@RepAllContextsB</a> <a href=\"RepAllContextsB.html\" "
-                + "title=\"annotation in typeannos\">@RepAllContextsB</a> java.lang.String&nbsp;test4()",
+                "<a href=\"RepAllContextsA.html\" title=\"annotation in typeannos\">@RepAllContextsA</a> "
+                + "<a href=\"RepAllContextsA.html\" title=\"annotation in typeannos\">@RepAllContextsA</a>\n"
+                + "<a href=\"RepAllContextsB.html\" title=\"annotation in typeannos\">@RepAllContextsB</a> "
+                + "<a href=\"RepAllContextsB.html\" title=\"annotation in typeannos\">@RepAllContextsB</a>\n"
+                + "</span><span class=\"returnType\"><a href=\"RepAllContextsA.html\" "
+                + "title=\"annotation in typeannos\">@RepAllContextsA</a> <a href=\"RepAllContextsA.html\" "
+                + "title=\"annotation in typeannos\">@RepAllContextsA</a> <a href=\"RepAllContextsB.html\" "
+                + "title=\"annotation in typeannos\">@RepAllContextsB</a> <a href=\"RepAllContextsB.html\" "
+                + "title=\"annotation in typeannos\">@RepAllContextsB</a> java.lang.String</span>&nbsp;"
+                + "<span class=\"memberName\">test4</span>()",
 
-                "java.lang.String&nbsp;test5&#8203;(<a href=\"RepTypeUseA.html\" "
-                + "title=\"annotation in typeannos\">@RepTypeUseA</a> <a href="
-                + "\"RepTypeUseA.html\" title=\"annotation in typeannos\">"
-                + "@RepTypeUseA</a> <a href=\"RepTypeUseB.html\" title="
-                + "\"annotation in typeannos\">@RepTypeUseB</a> <a href=\"RepTypeUseB.html\" "
-                + "title=\"annotation in typeannos\">@RepTypeUseB</a>&nbsp;RepeatingOnMethod&nbsp;"
-                + "this,\n                       <a href=\"RepParameterA.html\" "
-                + "title=\"annotation in typeannos\">@RepParameterA</a> <a href="
-                + "\"RepParameterA.html\" title=\"annotation in typeannos\">"
-                + "@RepParameterA</a> <a href=\"RepParameterB.html\" "
-                + "title=\"annotation in typeannos\">@RepParameterB</a> <a href="
-                + "\"RepParameterB.html\" title=\"annotation in typeannos\">"
-                + "@RepParameterB</a>\n                       java.lang.String&nbsp;parameter,\n"
-                + "                       <a href=\"RepParameterA.html\" title="
-                + "\"annotation in typeannos\">@RepParameterA</a> <a href=\"RepParameterA.html\""
-                + " title=\"annotation in typeannos\">@RepParameterA</a> <a href="
-                + "\"RepParameterB.html\" title=\"annotation in typeannos\">"
-                + "@RepParameterB</a> <a href=\"RepParameterB.html\" title="
-                + "\"annotation in typeannos\">@RepParameterB</a>\n                       "
-                + "java.lang.String <a href=\"RepTypeUseA.html\" title="
-                + "\"annotation in typeannos\">@RepTypeUseA</a> <a href=\"RepTypeUseA.html\" "
-                + "title=\"annotation in typeannos\">@RepTypeUseA</a> <a href="
-                + "\"RepTypeUseB.html\" title=\"annotation in typeannos\">"
-                + "@RepTypeUseB</a> <a href=\"RepTypeUseB.html\" title="
-                + "\"annotation in typeannos\">@RepTypeUseB</a> ...&nbsp;vararg)");
+                "java.lang.String</span>&nbsp;<span class=\"memberName\">test5</span>&#8203;("
+                + "<span class=\"arguments\"><a href=\"RepTypeUseA.html\" "
+                + "title=\"annotation in typeannos\">@RepTypeUseA</a> "
+                + "<a href=\"RepTypeUseA.html\" title=\"annotation in typeannos\">@RepTypeUseA</a> "
+                + "<a href=\"RepTypeUseB.html\" title=\"annotation in typeannos\">@RepTypeUseB</a> "
+                + "<a href=\"RepTypeUseB.html\" title=\"annotation in typeannos\">@RepTypeUseB</a>"
+                + "&nbsp;RepeatingOnMethod&nbsp;this,\n"
+                + "<a href=\"RepParameterA.html\" title=\"annotation in typeannos\">@RepParameterA</a> "
+                + "<a href=\"RepParameterA.html\" title=\"annotation in typeannos\">@RepParameterA</a> "
+                + "<a href=\"RepParameterB.html\" title=\"annotation in typeannos\">@RepParameterB</a> "
+                + "<a href=\"RepParameterB.html\" title=\"annotation in typeannos\">@RepParameterB</a>\n"
+                + "java.lang.String&nbsp;parameter,\n"
+                + "<a href=\"RepParameterA.html\" title=\"annotation in typeannos\">@RepParameterA</a> "
+                + "<a href=\"RepParameterA.html\" title=\"annotation in typeannos\">@RepParameterA</a> "
+                + "<a href=\"RepParameterB.html\" title=\"annotation in typeannos\">@RepParameterB</a> "
+                + "<a href=\"RepParameterB.html\" title=\"annotation in typeannos\">@RepParameterB</a>\n"
+                + "java.lang.String <a href=\"RepTypeUseA.html\" title=\"annotation in typeannos\">"
+                + "@RepTypeUseA</a> <a href=\"RepTypeUseA.html\" title=\"annotation in typeannos\">"
+                + "@RepTypeUseA</a> <a href=\"RepTypeUseB.html\" title=\"annotation in typeannos\">"
+                + "@RepTypeUseB</a> <a href=\"RepTypeUseB.html\" title=\"annotation in typeannos\">"
+                + "@RepTypeUseB</a> ...&nbsp;vararg)");
 
         checkOutput("typeannos/RepeatingOnTypeParametersBoundsTypeArgumentsOnMethod.html", true,
                 "<code>(package private) &lt;T&gt;&nbsp;java.lang.String</code></td>\n"
@@ -699,7 +714,9 @@ public class TestTypeAnnotations extends JavadocTester {
                 + "<span class=\"memberNameLink\"><a href=\"#"
                 + "test()\">test</a></span>()</code>",
 
-                "java.lang.String&nbsp;test&#8203;(<a href=\"RepTypeUseA.html\" "
+                "<span class=\"returnType\">java.lang.String</span>&nbsp;"
+                + "<span class=\"memberName\">test</span>"
+                + "&#8203;(<span class=\"arguments\"><a href=\"RepTypeUseA.html\" "
                 + "title=\"annotation in typeannos\">@RepTypeUseA</a> <a href="
                 + "\"RepTypeUseA.html\" title=\"annotation in typeannos\">"
                 + "@RepTypeUseA</a> <a href=\"RepTypeUseB.html\" title="
@@ -713,11 +730,11 @@ public class TestTypeAnnotations extends JavadocTester {
                 + "title=\"annotation in typeannos\">@RepTypeUseB</a> T&gt;&nbsp;this)");
 
         checkOutput("typeannos/RepeatingOnVoidMethodDeclaration.html", true,
-                "<a href=\"RepMethodA.html\" title=\"annotation in typeannos\">"
-                + "@RepMethodA</a> <a href=\"RepMethodA.html\" title="
-                + "\"annotation in typeannos\">@RepMethodA</a>\n<a href=\"RepMethodB.html"
-                + "\" title=\"annotation in typeannos\">@RepMethodB</a> <a href="
-                + "\"RepMethodB.html\" title=\"annotation in typeannos\">"
-                + "@RepMethodB</a>\nvoid&nbsp;test()");
+                "<a href=\"RepMethodA.html\" title=\"annotation in typeannos\">@RepMethodA</a> "
+                + "<a href=\"RepMethodA.html\" title=\"annotation in typeannos\">@RepMethodA</a>\n"
+                + "<a href=\"RepMethodB.html\" title=\"annotation in typeannos\">@RepMethodB</a> "
+                + "<a href=\"RepMethodB.html\" title=\"annotation in typeannos\">@RepMethodB</a>\n"
+                + "</span><span class=\"returnType\">void</span>&nbsp;"
+                + "<span class=\"memberName\">test</span>()");
     }
 }
