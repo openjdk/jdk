@@ -1497,6 +1497,94 @@ class jdk_internal_misc_UnsafeConstants : AllStatic {
   static void serialize_offsets(SerializeClosure* f) { }
 };
 
+class java_lang_Integer : AllStatic {
+public:
+  static jint value(oop obj);
+};
+
+class java_lang_Long : AllStatic {
+public:
+  static jlong value(oop obj);
+};
+
+class java_lang_Character : AllStatic {
+public:
+  static jchar value(oop obj);
+};
+
+class java_lang_Short : AllStatic {
+public:
+  static jshort value(oop obj);
+};
+
+class java_lang_Byte : AllStatic {
+public:
+  static jbyte value(oop obj);
+};
+
+class java_lang_Boolean : AllStatic {
+ private:
+  static int _static_TRUE_offset;
+  static int _static_FALSE_offset;
+ public:
+  static Symbol* symbol();
+  static void compute_offsets(InstanceKlass* k);
+  static oop  get_TRUE(InstanceKlass *k);
+  static oop  get_FALSE(InstanceKlass *k);
+  static void serialize_offsets(SerializeClosure* f) NOT_CDS_RETURN;
+  static jboolean value(oop obj);
+};
+
+class java_lang_Integer_IntegerCache : AllStatic {
+ private:
+  static int _static_cache_offset;
+ public:
+  static Symbol* symbol();
+  static void compute_offsets(InstanceKlass* k);
+  static objArrayOop  cache(InstanceKlass *k);
+  static void serialize_offsets(SerializeClosure* f) NOT_CDS_RETURN;
+};
+
+class java_lang_Long_LongCache : AllStatic {
+ private:
+  static int _static_cache_offset;
+ public:
+  static Symbol* symbol();
+  static void compute_offsets(InstanceKlass* k);
+  static objArrayOop  cache(InstanceKlass *k);
+  static void serialize_offsets(SerializeClosure* f) NOT_CDS_RETURN;
+};
+
+class java_lang_Character_CharacterCache : AllStatic {
+ private:
+  static int _static_cache_offset;
+ public:
+  static Symbol* symbol();
+  static void compute_offsets(InstanceKlass* k);
+  static objArrayOop  cache(InstanceKlass *k);
+  static void serialize_offsets(SerializeClosure* f) NOT_CDS_RETURN;
+};
+
+class java_lang_Short_ShortCache : AllStatic {
+ private:
+  static int _static_cache_offset;
+ public:
+  static Symbol* symbol();
+  static void compute_offsets(InstanceKlass* k);
+  static objArrayOop  cache(InstanceKlass *k);
+  static void serialize_offsets(SerializeClosure* f) NOT_CDS_RETURN;
+};
+
+class java_lang_Byte_ByteCache : AllStatic {
+ private:
+  static int _static_cache_offset;
+ public:
+  static Symbol* symbol();
+  static void compute_offsets(InstanceKlass* k);
+  static objArrayOop  cache(InstanceKlass *k);
+  static void serialize_offsets(SerializeClosure* f) NOT_CDS_RETURN;
+};
+
 // Use to declare fields that need to be injected into Java classes
 // for the JVM to use.  The name_index and signature_index are
 // declared in vmSymbols.  The may_be_java flag is used to declare

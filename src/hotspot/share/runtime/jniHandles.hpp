@@ -148,8 +148,6 @@ class JNIHandleBlock : public CHeapObj<mtInternal> {
   // Having two types of blocks complicates the code and the space overhead in negligible.
   JNIHandleBlock* _last;                        // Last block in use
   JNIHandleBlock* _pop_frame_link;              // Block to restore on PopLocalFrame call
-  oop*            _free_list;                   // Handle free list
-  int             _allocate_before_rebuild;     // Number of blocks to allocate before rebuilding free list
 
   // Check JNI, "planned capacity" for current frame (or push/ensure)
   size_t          _planned_capacity;
@@ -164,9 +162,6 @@ class JNIHandleBlock : public CHeapObj<mtInternal> {
 
   // Fill block with bad_handle values
   void zap() NOT_DEBUG_RETURN;
-
-  // Free list computation
-  void rebuild_free_list();
 
   // No more handles in the both the current and following blocks
   void clear() { _top = 0; }

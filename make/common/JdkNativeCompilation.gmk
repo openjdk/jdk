@@ -122,7 +122,9 @@ define SetupJdkLibraryBody
   endif
 
   ifneq ($$($1_EXCLUDE_SRC_PATTERNS), )
-    $1_EXCLUDE_SRC := $$(call containing, $$($1_EXCLUDE_SRC_PATTERNS), $$($1_SRC))
+    $1_SRC_WITHOUT_WORKSPACE_ROOT := $$(patsubst $$(WORKSPACE_ROOT)/%, %, $$($1_SRC))
+    $1_EXCLUDE_SRC := $$(addprefix %, $$(call containing, $$($1_EXCLUDE_SRC_PATTERNS), \
+        $$($1_SRC_WITHOUT_WORKSPACE_ROOT)))
     $1_SRC := $$(filter-out $$($1_EXCLUDE_SRC), $$($1_SRC))
   endif
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -3029,16 +3029,16 @@ bool PhaseIdealLoop::partial_peel( IdealLoopTree *loop, Node_List &old_new ) {
 
   assert(!loop->_head->is_CountedLoop(), "Non-counted loop only");
   if (!loop->_head->is_Loop()) {
-    return false;  }
-
-  LoopNode *head  = loop->_head->as_Loop();
+    return false;
+  }
+  LoopNode *head = loop->_head->as_Loop();
 
   if (head->is_partial_peel_loop() || head->partial_peel_has_failed()) {
     return false;
   }
 
   // Check for complex exit control
-  for(uint ii = 0; ii < loop->_body.size(); ii++ ) {
+  for (uint ii = 0; ii < loop->_body.size(); ii++) {
     Node *n = loop->_body.at(ii);
     int opc = n->Opcode();
     if (n->is_Call()        ||
@@ -3065,12 +3065,12 @@ bool PhaseIdealLoop::partial_peel( IdealLoopTree *loop, Node_List &old_new ) {
   IfNode *peel_if_cmpu = NULL;
 
   Node *iff = loop->tail();
-  while( iff != head ) {
-    if( iff->is_If() ) {
+  while (iff != head) {
+    if (iff->is_If()) {
       Node *ctrl = get_ctrl(iff->in(1));
       if (ctrl->is_top()) return false; // Dead test on live IF.
       // If loop-varying exit-test, check for induction variable
-      if( loop->is_member(get_loop(ctrl)) &&
+      if (loop->is_member(get_loop(ctrl)) &&
           loop->is_loop_exit(iff) &&
           is_possible_iv_test(iff)) {
         Node* cmp = iff->in(1)->in(1);
@@ -3084,6 +3084,7 @@ bool PhaseIdealLoop::partial_peel( IdealLoopTree *loop, Node_List &old_new ) {
     }
     iff = idom(iff);
   }
+
   // Prefer signed compare over unsigned compare.
   IfNode* new_peel_if = NULL;
   if (peel_if == NULL) {
@@ -3131,7 +3132,7 @@ bool PhaseIdealLoop::partial_peel( IdealLoopTree *loop, Node_List &old_new ) {
   Node_List worklist(area);
   Node_List sink_list(area);
 
-  if (!may_require_nodes(est_loop_clone_sz(2, loop->_body.size()))) {
+  if (!may_require_nodes(loop->est_loop_clone_sz(2))) {
     return false;
   }
 

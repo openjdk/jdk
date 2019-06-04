@@ -61,6 +61,14 @@ $(eval $(call SetupProcessMarkdown, testing, \
 ))
 TARGETS += $(testing)
 
+$(eval $(call SetupProcessMarkdown, ide, \
+  FILES := $(DOCS_DIR)/ide.md, \
+  DEST := $(DOCS_DIR), \
+  CSS := $(GLOBAL_SPECS_DEFAULT_CSS_FILE), \
+  OPTIONS := --toc, \
+))
+TARGETS += $(ide)
+
 ################################################################################
 
 $(eval $(call IncludeCustomExtension, UpdateBuildDocs.gmk))

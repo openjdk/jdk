@@ -361,6 +361,18 @@ $(call AssertEquals, \
     RelativePath, \
 )
 
+$(call AssertEquals, \
+    $(call RelativePath, /foo/bar/baz/banan/kung, /foo/bar/baz), \
+    ./banan/kung, \
+    RelativePath, \
+)
+
+$(call AssertEquals, \
+    $(call RelativePath, /foo/bar/baz/banan/kung, /foo/bar/baz/), \
+    ./banan/kung, \
+    RelativePath, \
+)
+
 ################################################################################
 # Test ParseKeywordVariable
 

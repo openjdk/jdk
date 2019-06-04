@@ -2027,6 +2027,7 @@ void* os::signal(int signal_number, void* handler) {
   struct sigaction sigAct, oldSigAct;
   sigfillset(&(sigAct.sa_mask));
   sigAct.sa_flags = SA_RESTART & ~SA_RESETHAND;
+  sigAct.sa_flags |= SA_SIGINFO;
   sigAct.sa_handler = CAST_TO_FN_PTR(sa_handler_t, handler);
 
   if (sigaction(signal_number, &sigAct, &oldSigAct)) {

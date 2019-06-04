@@ -518,7 +518,7 @@ WB_ENTRY(jlong, WB_DramReservedEnd(JNIEnv* env, jobject o))
       uint end_region = HeterogeneousHeapRegionManager::manager()->end_index_of_dram();
       return (jlong)(g1h->base() + (end_region + 1) * HeapRegion::GrainBytes - 1);
     } else {
-      return (jlong)g1h->base() + G1Arguments::heap_reserved_size_bytes();
+      return (jlong)g1h->base() + G1Arguments::heap_max_size_bytes();
     }
   }
 #endif // INCLUDE_G1GC

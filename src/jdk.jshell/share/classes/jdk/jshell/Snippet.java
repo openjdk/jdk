@@ -73,9 +73,10 @@ public abstract class Snippet {
          * ({@link jdk.jshell.Snippet.SubKind#SINGLE_STATIC_IMPORT_SUBKIND}) --
          * use {@link jdk.jshell.Snippet#subKind()} to distinguish.
          *
-         * @jls 7.5 Import Declarations
          * <P>
          * An import declaration is {@linkplain Kind#isPersistent() persistent}.
+         *
+         * @jls 7.5 Import Declarations
          */
         IMPORT(true),
 
@@ -91,9 +92,10 @@ public abstract class Snippet {
          * annotation interfaces -- see {@link jdk.jshell.Snippet.SubKind} to
          * differentiate.
          *
-         * @jls 7.6 Top Level Type Declarations
          * <P>
          * A type declaration is {@linkplain Kind#isPersistent() persistent}.
+         *
+         * @jls 7.6 Top Level Type Declarations
          */
         TYPE_DECL(true),
 
@@ -101,9 +103,10 @@ public abstract class Snippet {
          * A method declaration.
          * The snippet is an instance of {@link jdk.jshell.MethodSnippet}.
          *
-         * @jls 8.4 Method Declarations
          * <P>
          * A method declaration is {@linkplain Kind#isPersistent() persistent}.
+         *
+         * @jls 8.4 Method Declarations
          */
         METHOD(true),
 
@@ -116,9 +119,10 @@ public abstract class Snippet {
          * variable representing an expression -- see
          * {@link jdk.jshell.Snippet.SubKind}to differentiate.
          *
-         * @jls 8.3 Field Declarations
          * <P>
          * A variable declaration is {@linkplain Kind#isPersistent() persistent}.
+         *
+         * @jls 8.3 Field Declarations
          */
         VAR(true),
 

@@ -256,3 +256,7 @@ size_t G1Arguments::reasonable_max_memory_for_young() {
 size_t G1Arguments::heap_reserved_size_bytes() {
   return (is_heterogeneous_heap() ? 2 : 1) * MaxHeapSize;
 }
+
+size_t G1Arguments::heap_max_size_bytes() {
+  return MaxHeapSize;
+}

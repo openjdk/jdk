@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2010, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -43,6 +43,7 @@ public final class VirtualObject implements JavaValue {
     private JavaValue[] values;
     private JavaKind[] slotKinds;
     private final int id;
+    private boolean isAutoBox;
 
     /**
      * Creates a new {@link VirtualObject} for the given type, with the given fields. If
@@ -58,12 +59,33 @@ public final class VirtualObject implements JavaValue {
      * @return a new {@link VirtualObject} instance.
      */
     public static VirtualObject get(ResolvedJavaType type, int id) {
-        return new VirtualObject(type, id);
+        return new VirtualObject(type, id, false);
     }
 
-    private VirtualObject(ResolvedJavaType type, int id) {
+    /**
+     * Creates a new {@link VirtualObject} for the given type, with the given fields. If
+     * {@code type} is an instance class then {@code values} provides the values for the fields
+     * returned by {@link ResolvedJavaType#getInstanceFields(boolean) getInstanceFields(true)}. If
+     * {@code type} is an array then the length of the values array determines the reallocated array
+     * length.
+     *
+     * @param type the type of the object whose allocation was removed during compilation. This can
+     *            be either an instance of an array type.
+     * @param id a unique id that identifies the object within the debug information for one
+     *            position in the compiled code.
+     * @param isAutoBox a flag that tells the runtime that the object may be a boxed primitive and
+     *            that it possibly needs to be obtained for the box cache instead of creating
+     *            a new instance.
+     * @return a new {@link VirtualObject} instance.
+     */
+    public static VirtualObject get(ResolvedJavaType type, int id, boolean isAutoBox) {
+        return new VirtualObject(type, id, isAutoBox);
+    }
+
+    private VirtualObject(ResolvedJavaType type, int id, boolean isAutoBox) {
         this.type = type;
         this.id = id;
+        this.isAutoBox = isAutoBox;
     }
 
     private static StringBuilder appendValue(StringBuilder buf, JavaValue value, Set<VirtualObject> visited) {
@@ -141,6 +163,23 @@ public final class VirtualObject implements JavaValue {
      */
     public int getId() {
         return id;
+    }
+
+    /**
+     * Returns true if the object is a box. For boxes the deoptimization would check if the value of
+     * the box is in the cache range and try to return a cached object.
+     */
+    public boolean isAutoBox() {
+      return isAutoBox;
+    }
+
+    /**
+     * Sets the value of the box flag.
+     * @param isAutoBox a flag that tells the runtime that the object may be a boxed primitive and that
+     *            it possibly needs to be obtained for the box cache instead of creating a new instance.
+     */
+    public void setIsAutoBox(boolean isAutoBox) {
+      this.isAutoBox = isAutoBox;
     }
 
     /**
