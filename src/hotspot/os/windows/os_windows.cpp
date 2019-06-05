@@ -1367,12 +1367,18 @@ static int _print_module(const char* fname, address base_address,
 void * os::dll_load(const char *name, char *ebuf, int ebuflen) {
   void * result = LoadLibrary(name);
   if (result != NULL) {
+    Events::log(NULL, "Loaded shared library %s", name);
     // Recalculate pdb search path if a DLL was loaded successfully.
     SymbolEngine::recalc_search_path();
     return result;
   }
-
   DWORD errcode = GetLastError();
+  // Read system error message into ebuf
+  // It may or may not be overwritten below (in the for loop and just above)
+  lasterror(ebuf, (size_t) ebuflen);
+  ebuf[ebuflen - 1] = '\0';
+  Events::log(NULL, "Loading shared library %s failed, error code %lu", name, errcode);
+
   if (errcode == ERROR_MOD_NOT_FOUND) {
     strncpy(ebuf, "Can't find dependent libraries", ebuflen - 1);
     ebuf[ebuflen - 1] = '\0';
@@ -1384,11 +1390,6 @@ void * os::dll_load(const char *name, char *ebuf, int ebuflen) {
   // for an architecture other than Hotspot is running in
   // - then print to buffer "DLL was built for a different architecture"
   // else call os::lasterror to obtain system error message
-
-  // Read system error message into ebuf
-  // It may or may not be overwritten below (in the for loop and just above)
-  lasterror(ebuf, (size_t) ebuflen);
-  ebuf[ebuflen - 1] = '\0';
   int fd = ::open(name, O_RDONLY | O_BINARY, 0);
   if (fd < 0) {
     return NULL;
