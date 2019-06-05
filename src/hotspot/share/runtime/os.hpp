@@ -518,6 +518,10 @@ class os: AllStatic {
   static void abort(bool dump_core = true);
 
   // Die immediately, no exit hook, no abort hook, no cleanup.
+  // Dump a core file, if possible, for debugging. os::abort() is the
+  // preferred means to abort the VM on error. os::die() should only
+  // be called if something has gone badly wrong. CreateCoredumpOnCrash
+  // is intentionally not honored by this function.
   static void die();
 
   // File i/o operations
