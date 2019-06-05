@@ -28,7 +28,7 @@ $(eval $(call IncludeCustomExtension, gendata/GendataBlacklistedCerts.gmk))
 GENDATA_BLACKLISTED_CERTS_SRC += $(TOPDIR)/make/data/blacklistedcertsconverter/blacklisted.certs.pem
 GENDATA_BLACKLISTED_CERTS := $(SUPPORT_OUTPUTDIR)/modules_libs/$(MODULE)/security/blacklisted.certs
 
-$(GENDATA_BLACKLISTED_CERTS): $(BUILD_TOOLS) $(GENDATA_BLACKLISTED_CERTS_SRC)
+$(GENDATA_BLACKLISTED_CERTS): $(BUILD_TOOLS_JDK) $(GENDATA_BLACKLISTED_CERTS_SRC)
 	$(call LogInfo, Generating blacklisted certs)
 	$(call MakeDir, $(@D))
 	($(CAT) $(GENDATA_BLACKLISTED_CERTS_SRC) | $(TOOL_BLACKLISTED_CERTS) > $@) || exit 1

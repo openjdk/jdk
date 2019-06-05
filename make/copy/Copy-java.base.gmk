@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2014, 2018, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2014, 2019, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -162,17 +162,17 @@ TARGETS += $(DEF_POLICY_DST)
 
 ################################################################################
 
-ifeq ($(CACERTS_FILE), )
-  CACERTS_FILE := $(TOPDIR)/src/java.base/share/lib/security/cacerts
-endif
-
+# CACERTS_FILE is optionally set in configure to override the default cacerts
+# which is otherwise generated in Gendata-java.base.gmk
 CACERTS_DST := $(LIB_DST_DIR)/security/cacerts
 
 $(CACERTS_DST): $(CACERTS_FILE)
 	$(call LogInfo, Copying $(patsubst $(OUTPUTDIR)/%, %, $@))
 	$(call install-file)
 
-TARGETS += $(CACERTS_DST)
+ifneq ($(CACERTS_FILE), )
+  TARGETS += $(CACERTS_DST)
+endif
 
 ################################################################################
 

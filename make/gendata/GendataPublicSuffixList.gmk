@@ -28,7 +28,7 @@ include $(SPEC)
 GENDATA_PUBLICSUFFIXLIST_SRC += $(TOPDIR)/make/data/publicsuffixlist/public_suffix_list.dat
 GENDATA_PUBLICSUFFIXLIST := $(SUPPORT_OUTPUTDIR)/modules_libs/$(MODULE)/security/public_suffix_list.dat
 
-$(GENDATA_PUBLICSUFFIXLIST): $(GENDATA_PUBLICSUFFIXLIST_SRC) $(BUILD_TOOLS)
+$(GENDATA_PUBLICSUFFIXLIST): $(GENDATA_PUBLICSUFFIXLIST_SRC) $(BUILD_TOOLS_JDK)
 	$(call LogInfo, Generating public suffix list)
 	$(call MakeDir, $(@D))
 	$(RM) $@
