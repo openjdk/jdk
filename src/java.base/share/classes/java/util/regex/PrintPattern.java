@@ -195,7 +195,13 @@ class PrintPattern {
                     pstr = gcp.predicate.toString();
                 else
                     pstr = "Single \"" + pstr + "\"";
-                str = name + " " + pstr + ((gcp.cmin == 0) ? "*" : "+");
+                str = name + " " + pstr;
+                if (gcp.cmin == 0)
+                    str += "*";
+                else if (gcp.cmin == 1)
+                    str += "+";
+                else
+                    str += "{" + gcp.cmin + ",}";
                 print(node, str, depth);
             } else if (node instanceof Pattern.BackRef) {
                 str = "GroupBackRef " + ((Pattern.BackRef)node).groupIndex / 2;

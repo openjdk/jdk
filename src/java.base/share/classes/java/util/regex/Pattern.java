@@ -3279,11 +3279,12 @@ loop:   for(int x=0, offset=0; x<nCodePoints; x++, offset+=len) {
                         cmin = Math.addExact(Math.multiplyExact(cmin, 10),
                                              ch - '0');
                     } while (ASCII.isDigit(ch = read()));
-                    cmax = cmin;
                     if (ch == ',') {
                         ch = read();
-                        cmax = MAX_REPS;
-                        if (ch != '}') {
+                        if (ch == '}') {
+                            unread();
+                            return curly(prev, cmin);
+                        } else {
                             cmax = 0;
                             while (ASCII.isDigit(ch)) {
                                 cmax = Math.addExact(Math.multiplyExact(cmax, 10),
@@ -3291,6 +3292,8 @@ loop:   for(int x=0, offset=0; x<nCodePoints; x++, offset+=len) {
                                 ch = read();
                             }
                         }
+                    } else {
+                        cmax = cmin;
                     }
                 } catch (ArithmeticException ae) {
                     throw error("Illegal repetition range");
@@ -3299,18 +3302,16 @@ loop:   for(int x=0, offset=0; x<nCodePoints; x++, offset+=len) {
                     throw error("Unclosed counted closure");
                 if (cmax < cmin)
                     throw error("Illegal repetition range");
-                Curly curly;
                 ch = peek();
                 if (ch == '?') {
                     next();
-                    curly = new Curly(prev, cmin, cmax, Qtype.LAZY);
+                    return new Curly(prev, cmin, cmax, Qtype.LAZY);
                 } else if (ch == '+') {
                     next();
-                    curly = new Curly(prev, cmin, cmax, Qtype.POSSESSIVE);
+                    return new Curly(prev, cmin, cmax, Qtype.POSSESSIVE);
                 } else {
-                    curly = new Curly(prev, cmin, cmax, Qtype.GREEDY);
+                    return new Curly(prev, cmin, cmax, Qtype.GREEDY);
                 }
-                return curly;
             } else {
                 throw error("Illegal repetition");
             }
@@ -4266,8 +4267,8 @@ loop:   for(int x=0, offset=0; x<nCodePoints; x++, offset+=len) {
     }
 
     /**
-     * Handles the greedy style repetition with the minimum either be
-     * 0 or 1 and the maximum be MAX_REPS, for * and + quantifier.
+     * Handles the greedy style repetition with the specified minimum
+     * and the maximum equal to MAX_REPS, for *, + and {N,} quantifiers.
      */
     static class CharPropertyGreedy extends Node {
         final CharPredicate predicate;
@@ -4277,7 +4278,7 @@ loop:   for(int x=0, offset=0; x<nCodePoints; x++, offset+=len) {
             this.predicate = cp.predicate;
             this.cmin = cmin;
         }
-        boolean match(Matcher matcher, int i,  CharSequence seq) {
+        boolean match(Matcher matcher, int i, CharSequence seq) {
             int n = 0;
             int to = matcher.to;
             // greedy, all the way down
@@ -4320,7 +4321,7 @@ loop:   for(int x=0, offset=0; x<nCodePoints; x++, offset+=len) {
             super(bcp, cmin);
         }
 
-        boolean match(Matcher matcher, int i,  CharSequence seq) {
+        boolean match(Matcher matcher, int i, CharSequence seq) {
             int n = 0;
             int to = matcher.to;
             while (i < to && predicate.is(seq.charAt(i))) {
@@ -5152,41 +5153,6 @@ loop:   for(int x=0, offset=0; x<nCodePoints; x++, offset+=len) {
         boolean study(TreeInfo info) {
             atom.study(info);
             info.maxValid = false;
-            info.deterministic = false;
-            return next.study(info);
-        }
-    }
-
-    static final class Conditional extends Node {
-        Node cond, yes, not;
-        Conditional(Node cond, Node yes, Node not) {
-            this.cond = cond;
-            this.yes = yes;
-            this.not = not;
-        }
-        boolean match(Matcher matcher, int i, CharSequence seq) {
-            if (cond.match(matcher, i, seq)) {
-                return yes.match(matcher, i, seq);
-            } else {
-                return not.match(matcher, i, seq);
-            }
-        }
-        boolean study(TreeInfo info) {
-            int minL = info.minLength;
-            int maxL = info.maxLength;
-            boolean maxV = info.maxValid;
-            info.reset();
-            yes.study(info);
-
-            int minL2 = info.minLength;
-            int maxL2 = info.maxLength;
-            boolean maxV2 = info.maxValid;
-            info.reset();
-            not.study(info);
-
-            info.minLength = minL + Math.min(minL2, info.minLength);
-            info.maxLength = maxL + Math.max(maxL2, info.maxLength);
-            info.maxValid = (maxV & maxV2 & info.maxValid);
             info.deterministic = false;
             return next.study(info);
         }
