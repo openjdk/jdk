@@ -49,6 +49,7 @@ public:
   static bool is_finalizable(uintptr_t value);
   static bool is_finalizable_good(uintptr_t value);
   static bool is_remapped(uintptr_t value);
+  static bool is_in(uintptr_t value);
 
   static uintptr_t address(uintptr_t value);
   static uintptr_t offset(uintptr_t value);
