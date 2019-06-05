@@ -396,8 +396,10 @@ JNIHandleBlock* JNIHandleBlock::allocate_block(Thread* thread)  {
   block->_next = NULL;
   block->_pop_frame_link = NULL;
   block->_planned_capacity = block_size_in_oops;
-  // _last initialized in allocate_handle
+  // _last, _free_list & _allocate_before_rebuild initialized in allocate_handle
   debug_only(block->_last = NULL);
+  debug_only(block->_free_list = NULL);
+  debug_only(block->_allocate_before_rebuild = -1);
   return block;
 }
 
@@ -458,7 +460,12 @@ void JNIHandleBlock::oops_do(OopClosure* f) {
         "only blocks first in chain should have pop frame link set");
       for (int index = 0; index < current->_top; index++) {
         oop* root = &(current->_handles)[index];
-        f->do_oop(root);
+        oop value = *root;
+        // traverse heap pointers only, not deleted handles or free list
+        // pointers
+        if (value != NULL && Universe::heap()->is_in_reserved(value)) {
+          f->do_oop(root);
+        }
       }
       // the next handle block is valid only if current block is full
       if (current->_top < block_size_in_oops) {
@@ -479,6 +486,8 @@ jobject JNIHandleBlock::allocate_handle(oop obj) {
     for (JNIHandleBlock* current = _next; current != NULL;
          current = current->_next) {
       assert(current->_last == NULL, "only first block should have _last set");
+      assert(current->_free_list == NULL,
+             "only first block should have _free_list set");
       if (current->_top == 0) {
         // All blocks after the first clear trailing block are already cleared.
 #ifdef ASSERT
@@ -492,6 +501,8 @@ jobject JNIHandleBlock::allocate_handle(oop obj) {
       current->zap();
     }
     // Clear initial block
+    _free_list = NULL;
+    _allocate_before_rebuild = 0;
     _last = this;
     zap();
   }
@@ -503,6 +514,13 @@ jobject JNIHandleBlock::allocate_handle(oop obj) {
     return (jobject) handle;
   }
 
+  // Try free list
+  if (_free_list != NULL) {
+    oop* handle = _free_list;
+    _free_list = (oop*) *_free_list;
+    NativeAccess<IS_DEST_UNINITIALIZED>::oop_store(handle, obj);
+    return (jobject) handle;
+  }
   // Check if unused block follow last
   if (_last->_next != NULL) {
     // update last and retry
@@ -510,14 +528,49 @@ jobject JNIHandleBlock::allocate_handle(oop obj) {
     return allocate_handle(obj);
   }
 
-  // Append new block
-  Thread* thread = Thread::current();
-  Handle obj_handle(thread, obj);
-  // This can block, so we need to preserve obj across call.
-  _last->_next = JNIHandleBlock::allocate_block(thread);
-  _last = _last->_next;
-  obj = obj_handle();
+  // No space available, we have to rebuild free list or expand
+  if (_allocate_before_rebuild == 0) {
+      rebuild_free_list();        // updates _allocate_before_rebuild counter
+  } else {
+    // Append new block
+    Thread* thread = Thread::current();
+    Handle obj_handle(thread, obj);
+    // This can block, so we need to preserve obj across call.
+    _last->_next = JNIHandleBlock::allocate_block(thread);
+    _last = _last->_next;
+    _allocate_before_rebuild--;
+    obj = obj_handle();
+  }
   return allocate_handle(obj);  // retry
+}
+
+void JNIHandleBlock::rebuild_free_list() {
+  assert(_allocate_before_rebuild == 0 && _free_list == NULL, "just checking");
+  int free = 0;
+  int blocks = 0;
+  for (JNIHandleBlock* current = this; current != NULL; current = current->_next) {
+    for (int index = 0; index < current->_top; index++) {
+      oop* handle = &(current->_handles)[index];
+      if (*handle == NULL) {
+        // this handle was cleared out by a delete call, reuse it
+        *handle = (oop) _free_list;
+        _free_list = handle;
+        free++;
+      }
+    }
+    // we should not rebuild free list if there are unused handles at the end
+    assert(current->_top == block_size_in_oops, "just checking");
+    blocks++;
+  }
+  // Heuristic: if more than half of the handles are free we rebuild next time
+  // as well, otherwise we append a corresponding number of new blocks before
+  // attempting a free list rebuild again.
+  int total = blocks * block_size_in_oops;
+  int extra = total - 2*free;
+  if (extra > 0) {
+    // Not as many free handles as we would like - compute number of new blocks to append
+    _allocate_before_rebuild = (extra + block_size_in_oops - 1) / block_size_in_oops;
+  }
 }
 
 
