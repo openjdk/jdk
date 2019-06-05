@@ -331,8 +331,14 @@ public:
 void ShenandoahConcurrentMark::update_thread_roots(ShenandoahPhaseTimings::Phase root_phase) {
   WorkGang* workers = _heap->workers();
   bool is_par = workers->active_workers() > 1;
+#if COMPILER2_OR_JVMCI
+  DerivedPointerTable::clear();
+#endif
   ShenandoahUpdateThreadRootsTask task(is_par, root_phase);
   workers->run_task(&task);
+#if COMPILER2_OR_JVMCI
+  DerivedPointerTable::update_pointers();
+#endif
 }
 
 void ShenandoahConcurrentMark::initialize(uint workers) {
