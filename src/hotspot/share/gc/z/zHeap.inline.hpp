@@ -135,7 +135,11 @@ inline void ZHeap::check_out_of_memory() {
 }
 
 inline bool ZHeap::is_oop(oop object) const {
-  return ZAddress::is_good(ZOop::to_address(object));
+  // Verify that we have a good address. Note that ZAddress::is_good()
+  // would not be a strong enough verification, since it only verifies
+  // that the metadata bits are good.
+  const uintptr_t addr = ZOop::to_address(object);
+  return ZAddress::good(addr) == addr;
 }
 
 #endif // SHARE_GC_Z_ZHEAP_INLINE_HPP
