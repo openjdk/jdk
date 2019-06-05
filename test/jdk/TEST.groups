@@ -137,6 +137,7 @@ jdk_collections_core = \
     java/util/AbstractList \
     java/util/AbstractMap \
     java/util/AbstractSequentialList \
+    java/util/ArrayDeque \
     java/util/ArrayList \
     java/util/Arrays \
     java/util/BitSet \
