@@ -51,7 +51,8 @@ import java.io.IOException;
  *                   renewable(8),
  *                   initial(9),
  *                   pre-authent(10),
- *                   hw-authent(11)
+ *                   hw-authent(11),
+ *                   enc-pa-rep(15)
  *                  }
  */
 public class TicketFlags extends KerberosFlags {
@@ -177,6 +178,9 @@ public class TicketFlags extends KerberosFlags {
                     break;
                 case 11:
                     sb.append("HW-AUTHENT;");
+                    break;
+                case 15:
+                    sb.append("ENC-PA-REP;");
                     break;
                 }
             }

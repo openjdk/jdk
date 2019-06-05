@@ -46,7 +46,8 @@ public class EncTGSRepPart extends EncKDCRepPart {
             KerberosTime new_endtime,
             KerberosTime new_renewTill,
             PrincipalName new_sname,
-            HostAddresses new_caddr) {
+            HostAddresses new_caddr,
+            PAData[] new_pAData) {
         super(
                 new_key,
                 new_lastReq,
@@ -59,6 +60,7 @@ public class EncTGSRepPart extends EncKDCRepPart {
                 new_renewTill,
                 new_sname,
                 new_caddr,
+                new_pAData,
                 Krb5.KRB_ENC_TGS_REP_PART);
     }
 

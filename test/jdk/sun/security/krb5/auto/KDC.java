@@ -165,6 +165,14 @@ public class KDC {
     private TreeMap<String,byte[]> s2kparamses = new TreeMap<>
             (String.CASE_INSENSITIVE_ORDER);
 
+    // Alias for referrals.
+    private TreeMap<String,KDC> aliasReferrals = new TreeMap<>
+            (String.CASE_INSENSITIVE_ORDER);
+
+    // Alias for local resolution.
+    private TreeMap<String,PrincipalName> alias2Principals = new TreeMap<>
+            (String.CASE_INSENSITIVE_ORDER);
+
     // Realm name
     private String realm;
     // KDC
@@ -553,6 +561,29 @@ public class KDC {
         return port;
     }
 
+    /**
+     * Register an alias name to be referred to a different KDC for
+     * resolution, according to RFC 6806.
+     * @param alias Alias name (i.e. user@REALM.COM).
+     * @param referredKDC KDC to which the alias is referred for resolution.
+     */
+    public void registerAlias(String alias, KDC referredKDC) {
+        aliasReferrals.remove(alias);
+        aliasReferrals.put(alias, referredKDC);
+    }
+
+    /**
+     * Register an alias to be resolved to a Principal Name locally,
+     * according to RFC 6806.
+     * @param alias Alias name (i.e. user@REALM.COM).
+     * @param user Principal Name to which the alias is resolved.
+     */
+    public void registerAlias(String alias, String user)
+            throws RealmException {
+        alias2Principals.remove(alias);
+        alias2Principals.put(alias, new PrincipalName(user));
+    }
+
     // Private helper methods
 
     /**
@@ -778,6 +809,17 @@ public class KDC {
             PrincipalName cname = null;
             boolean allowForwardable = true;
 
+            if (body.kdcOptions.get(KDCOptions.CANONICALIZE)) {
+                KDC referral = aliasReferrals.get(body.sname.getNameString());
+                if (referral != null) {
+                    service = new PrincipalName(
+                            PrincipalName.TGS_DEFAULT_SRV_NAME +
+                            PrincipalName.NAME_COMPONENT_SEPARATOR_STR +
+                            referral.getRealm(), PrincipalName.KRB_NT_SRV_INST,
+                            this.getRealm());
+                }
+            }
+
             if (pas == null || pas.length == 0) {
                 throw new KrbException(Krb5.KDC_ERR_PADATA_TYPE_NOSUPP);
             } else {
@@ -964,7 +1006,8 @@ public class KDC {
                     from,
                     till, renewTill,
                     service,
-                    body.addresses
+                    body.addresses,
+                    null
                     );
             EncryptedData edata = new EncryptedData(ckey, enc_part.asn1Encode(),
                     KeyUsage.KU_ENC_TGS_REP_PART_SESSKEY);
@@ -1008,6 +1051,7 @@ public class KDC {
      */
     protected byte[] processAsReq(byte[] in) throws Exception {
         ASReq asReq = new ASReq(in);
+        byte[] asReqbytes = asReq.asn1Encode();
         int[] eTypes = null;
         List<PAData> outPAs = new ArrayList<>();
 
@@ -1029,6 +1073,24 @@ public class KDC {
                 throw new KrbException(Krb5.KDC_ERR_ETYPE_NOSUPP);
             }
             int eType = eTypes[0];
+
+            if (body.kdcOptions.get(KDCOptions.CANONICALIZE) &&
+                    body.cname.getNameType() == PrincipalName.KRB_NT_ENTERPRISE) {
+                PrincipalName principal = alias2Principals.get(
+                        body.cname.getNameString());
+                if (principal != null) {
+                    body.cname = principal;
+                } else {
+                    KDC referral = aliasReferrals.get(body.cname.getNameString());
+                    if (referral != null) {
+                        body.cname = new PrincipalName(
+                                PrincipalName.TGS_DEFAULT_SRV_NAME,
+                                PrincipalName.KRB_NT_SRV_INST,
+                                referral.getRealm());
+                        throw new KrbException(Krb5.KRB_ERR_WRONG_REALM);
+                    }
+                }
+            }
 
             EncryptionKey ckey = keyForUser(body.cname, eType, false);
             EncryptionKey skey = keyForUser(service, eType, true);
@@ -1211,17 +1273,18 @@ public class KDC {
             }
 
             PAData[] inPAs = KDCReqDotPAData(asReq);
+            List<PAData> enc_outPAs = new ArrayList<>();
             if (inPAs == null || inPAs.length == 0) {
                 Object preauth = options.get(Option.PREAUTH_REQUIRED);
                 if (preauth == null || preauth.equals(Boolean.TRUE)) {
                     throw new KrbException(Krb5.KDC_ERR_PREAUTH_REQUIRED);
                 }
             } else {
+                EncryptionKey pakey = null;
                 try {
                     EncryptedData data = newEncryptedData(
                             new DerValue(inPAs[0].getValue()));
-                    EncryptionKey pakey
-                            = keyForUser(body.cname, data.getEType(), false);
+                    pakey = keyForUser(body.cname, data.getEType(), false);
                     data.decrypt(pakey, KeyUsage.KU_PA_ENC_TS);
                 } catch (Exception e) {
                     KrbException ke = new KrbException(Krb5.KDC_ERR_PREAUTH_FAILED);
@@ -1229,6 +1292,17 @@ public class KDC {
                     throw ke;
                 }
                 bFlags[Krb5.TKT_OPTS_PRE_AUTHENT] = true;
+                for (PAData pa : inPAs) {
+                    if (pa.getType() == Krb5.PA_REQ_ENC_PA_REP) {
+                        Checksum ckSum = new Checksum(
+                                Checksum.CKSUMTYPE_HMAC_SHA1_96_AES128,
+                                asReqbytes, ckey, KeyUsage.KU_AS_REQ);
+                        enc_outPAs.add(new PAData(Krb5.PA_REQ_ENC_PA_REP,
+                                ckSum.asn1Encode()));
+                        bFlags[Krb5.TKT_OPTS_ENC_PA_REP] = true;
+                        break;
+                    }
+                }
             }
 
             TicketFlags tFlags = new TicketFlags(bFlags);
@@ -1259,7 +1333,8 @@ public class KDC {
                     from,
                     till, rtime,
                     service,
-                    body.addresses
+                    body.addresses,
+                    enc_outPAs.toArray(new PAData[enc_outPAs.size()])
                     );
             EncryptedData edata = new EncryptedData(ckey, enc_part.asn1Encode(),
                     KeyUsage.KU_ENC_AS_REP_PART);
@@ -1307,8 +1382,10 @@ public class KDC {
             if (kerr == null) {
                 if (ke.returnCode() == Krb5.KDC_ERR_PREAUTH_REQUIRED ||
                         ke.returnCode() == Krb5.KDC_ERR_PREAUTH_FAILED) {
+                    outPAs.add(new PAData(Krb5.PA_ENC_TIMESTAMP, new byte[0]));
+                }
+                if (outPAs.size() > 0) {
                     DerOutputStream bytes = new DerOutputStream();
-                    bytes.write(new PAData(Krb5.PA_ENC_TIMESTAMP, new byte[0]).asn1Encode());
                     for (PAData p: outPAs) {
                         bytes.write(p.asn1Encode());
                     }

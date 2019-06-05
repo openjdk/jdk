@@ -31,7 +31,6 @@
 package sun.security.krb5.internal;
 
 import sun.security.krb5.*;
-import sun.security.krb5.EncryptionKey;
 import sun.security.util.*;
 import java.util.Vector;
 import java.io.IOException;
@@ -41,19 +40,20 @@ import java.math.BigInteger;
  * Implements the ASN.1 EncKDCRepPart type.
  *
  * <pre>{@code
- * EncKDCRepPart        ::= SEQUENCE {
- *      key             [0] EncryptionKey,
- *      last-req        [1] LastReq,
- *      nonce           [2] UInt32,
- *      key-expiration  [3] KerberosTime OPTIONAL,
- *      flags           [4] TicketFlags,
- *      authtime        [5] KerberosTime,
- *      starttime       [6] KerberosTime OPTIONAL,
- *      endtime         [7] KerberosTime,
- *      renew-till      [8] KerberosTime OPTIONAL,
- *      srealm          [9] Realm,
- *      sname           [10] PrincipalName,
- *      caddr           [11] HostAddresses OPTIONAL
+ * EncKDCRepPart          ::= SEQUENCE {
+ *      key               [0] EncryptionKey,
+ *      last-req          [1] LastReq,
+ *      nonce             [2] UInt32,
+ *      key-expiration    [3] KerberosTime OPTIONAL,
+ *      flags             [4] TicketFlags,
+ *      authtime          [5] KerberosTime,
+ *      starttime         [6] KerberosTime OPTIONAL,
+ *      endtime           [7] KerberosTime,
+ *      renew-till        [8] KerberosTime OPTIONAL,
+ *      srealm            [9] Realm,
+ *      sname             [10] PrincipalName,
+ *      caddr             [11] HostAddresses OPTIONAL,
+ *      encrypted-pa-data [12] SEQUENCE OF PA-DATA OPTIONAL
  * }
  * }</pre>
  *
@@ -76,6 +76,7 @@ public class EncKDCRepPart {
     public KerberosTime renewTill; //optional
     public PrincipalName sname;
     public HostAddresses caddr; //optional
+    public PAData[] pAData; //optional
     public int msgType; //not included in sequence
 
     public EncKDCRepPart(
@@ -90,6 +91,7 @@ public class EncKDCRepPart {
             KerberosTime new_renewTill,
             PrincipalName new_sname,
             HostAddresses new_caddr,
+            PAData[] new_pAData,
             int new_msgType) {
         key = new_key;
         lastReq = new_lastReq;
@@ -102,6 +104,7 @@ public class EncKDCRepPart {
         renewTill = new_renewTill;
         sname = new_sname;
         caddr = new_caddr;
+        pAData = new_pAData;
         msgType = new_msgType;
     }
 
@@ -160,6 +163,9 @@ public class EncKDCRepPart {
         if (der.getData().available() > 0) {
             caddr = HostAddresses.parse(der.getData(), (byte) 0x0B, true);
         }
+        if (der.getData().available() > 0) {
+            pAData = PAData.parseSequence(der.getData(), (byte) 0x0C, true);
+        }
         // We observe extra data from MSAD
         /*if (der.getData().available() > 0) {
             throw new Asn1Exception(Krb5.ASN1_BAD_ID);
@@ -175,47 +181,58 @@ public class EncKDCRepPart {
      */
     public byte[] asn1Encode(int rep_type) throws Asn1Exception,
             IOException {
+        DerOutputStream bytes;
         DerOutputStream temp = new DerOutputStream();
-        DerOutputStream bytes = new DerOutputStream();
-        bytes.write(DerValue.createTag(DerValue.TAG_CONTEXT,
+        DerOutputStream out = new DerOutputStream();
+        out.write(DerValue.createTag(DerValue.TAG_CONTEXT,
                 true, (byte) 0x00), key.asn1Encode());
-        bytes.write(DerValue.createTag(DerValue.TAG_CONTEXT,
+        out.write(DerValue.createTag(DerValue.TAG_CONTEXT,
                 true, (byte) 0x01), lastReq.asn1Encode());
         temp.putInteger(BigInteger.valueOf(nonce));
-        bytes.write(DerValue.createTag(DerValue.TAG_CONTEXT,
+        out.write(DerValue.createTag(DerValue.TAG_CONTEXT,
                 true, (byte) 0x02), temp);
 
         if (keyExpiration != null) {
-            bytes.write(DerValue.createTag(DerValue.TAG_CONTEXT,
+            out.write(DerValue.createTag(DerValue.TAG_CONTEXT,
                     true, (byte) 0x03), keyExpiration.asn1Encode());
         }
-        bytes.write(DerValue.createTag(DerValue.TAG_CONTEXT,
+        out.write(DerValue.createTag(DerValue.TAG_CONTEXT,
                 true, (byte) 0x04), flags.asn1Encode());
-        bytes.write(DerValue.createTag(DerValue.TAG_CONTEXT,
+        out.write(DerValue.createTag(DerValue.TAG_CONTEXT,
                 true, (byte) 0x05), authtime.asn1Encode());
         if (starttime != null) {
-            bytes.write(DerValue.createTag(DerValue.TAG_CONTEXT,
+            out.write(DerValue.createTag(DerValue.TAG_CONTEXT,
                     true, (byte) 0x06), starttime.asn1Encode());
         }
-        bytes.write(DerValue.createTag(DerValue.TAG_CONTEXT,
+        out.write(DerValue.createTag(DerValue.TAG_CONTEXT,
                 true, (byte) 0x07), endtime.asn1Encode());
         if (renewTill != null) {
-            bytes.write(DerValue.createTag(DerValue.TAG_CONTEXT,
+            out.write(DerValue.createTag(DerValue.TAG_CONTEXT,
                     true, (byte) 0x08), renewTill.asn1Encode());
         }
-        bytes.write(DerValue.createTag(DerValue.TAG_CONTEXT,
+        out.write(DerValue.createTag(DerValue.TAG_CONTEXT,
                 true, (byte) 0x09), sname.getRealm().asn1Encode());
-        bytes.write(DerValue.createTag(DerValue.TAG_CONTEXT,
+        out.write(DerValue.createTag(DerValue.TAG_CONTEXT,
                 true, (byte) 0x0A), sname.asn1Encode());
         if (caddr != null) {
-            bytes.write(DerValue.createTag(DerValue.TAG_CONTEXT,
+            out.write(DerValue.createTag(DerValue.TAG_CONTEXT,
                     true, (byte) 0x0B), caddr.asn1Encode());
+        }
+        if (pAData != null && pAData.length > 0) {
+            temp = new DerOutputStream();
+            for (int i = 0; i < pAData.length; i++) {
+                temp.write(pAData[i].asn1Encode());
+            }
+            bytes = new DerOutputStream();
+            bytes.write(DerValue.tag_SequenceOf, temp);
+            out.write(DerValue.createTag(DerValue.TAG_CONTEXT,
+                    true, (byte) 0x0C), bytes);
         }
         //should use the rep_type to build the encoding
         //but other implementations do not; it is ignored and
         //the cached msgType is used instead
         temp = new DerOutputStream();
-        temp.write(DerValue.tag_Sequence, bytes);
+        temp.write(DerValue.tag_Sequence, out);
         bytes = new DerOutputStream();
         bytes.write(DerValue.createTag(DerValue.TAG_APPLICATION,
                 true, (byte) msgType), temp);

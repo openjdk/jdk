@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -72,6 +72,7 @@ public class Krb5 {
     public static final int TKT_OPTS_PRE_AUTHENT  = 10;
     public static final int TKT_OPTS_HW_AUTHENT   = 11;
     public static final int TKT_OPTS_DELEGATE     = 13;
+    public static final int TKT_OPTS_ENC_PA_REP   = 15;
     public static final int TKT_OPTS_MAX          = 31;
 
     // KDC Options
@@ -164,6 +165,9 @@ public class Krb5 {
 
     // S4U2user info
     public static final int PA_FOR_USER      = 129;
+
+    // FAST (RFC 6806)
+    public static final int PA_REQ_ENC_PA_REP = 149;
 
     //-------------------------------+-------------
     //authorization data type        |ad-type value
@@ -267,6 +271,7 @@ public class Krb5 {
     public static final int KRB_ERR_RESPONSE_TOO_BIG     = 52;   //Response too big for UDP, retry with TCP
     public static final int KRB_ERR_GENERIC              = 60;   //Generic error (description in e-text)
     public static final int KRB_ERR_FIELD_TOOLONG        = 61;   //Field is too long for this implementation
+    public static final int KRB_ERR_WRONG_REALM          = 68;   //Wrong realm
     public static final int KRB_CRYPTO_NOT_SUPPORT      = 100;    //Client does not support this crypto type
     public static final int KRB_AP_ERR_NOREALM          = 62;
     public static final int KRB_AP_ERR_GEN_CRED         = 63;

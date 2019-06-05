@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -36,6 +36,7 @@ import sun.security.krb5.internal.crypto.*;
 import java.io.IOException;
 import java.net.UnknownHostException;
 import java.time.Instant;
+import java.util.Arrays;
 
 /**
  * This class encapsulates a Kerberos TGS-REQ that is sent from the
@@ -57,59 +58,23 @@ public class KrbTgsReq {
     private byte[] ibuf;
 
     // Used in CredentialsUtil
-    public KrbTgsReq(Credentials asCreds,
-                     PrincipalName sname)
+    public KrbTgsReq(KDCOptions options, Credentials asCreds,
+            PrincipalName cname, PrincipalName sname,
+            Ticket[] additionalTickets, PAData[] extraPAs)
         throws KrbException, IOException {
-        this(new KDCOptions(),
-            asCreds,
-            sname,
-            null, // KerberosTime from
-            null, // KerberosTime till
-            null, // KerberosTime rtime
-            null, // eTypes, // null, // int[] eTypes
-            null, // HostAddresses addresses
-            null, // AuthorizationData authorizationData
-            null, // Ticket[] additionalTickets
-            null); // EncryptionKey subSessionKey
-    }
-
-    // S4U2proxy
-    public KrbTgsReq(Credentials asCreds,
-                     Ticket second,
-                     PrincipalName sname)
-            throws KrbException, IOException {
-        this(KDCOptions.with(KDCOptions.CNAME_IN_ADDL_TKT,
-                KDCOptions.FORWARDABLE),
-            asCreds,
-            sname,
-            null,
-            null,
-            null,
-            null,
-            null,
-            null,
-            new Ticket[] {second}, // the service ticket
-            null);
-    }
-
-    // S4U2user
-    public KrbTgsReq(Credentials asCreds,
-                     PrincipalName sname,
-                     PAData extraPA)
-        throws KrbException, IOException {
-        this(KDCOptions.with(KDCOptions.FORWARDABLE),
-            asCreds,
-            asCreds.getClient(),
-            sname,
-            null,
-            null,
-            null,
-            null,
-            null,
-            null,
-            null,
-            null,
-            extraPA); // the PA-FOR-USER
+        this(options,
+             asCreds,
+             cname,
+             sname,
+             null, // KerberosTime from
+             null, // KerberosTime till
+             null, // KerberosTime rtime
+             null, // int[] eTypes
+             null, // HostAddresses addresses
+             null, // AuthorizationData authorizationData
+             additionalTickets,
+             null, // EncryptionKey subKey
+             extraPAs);
     }
 
     // Called by Credentials, KrbCred
@@ -143,7 +108,7 @@ public class KrbTgsReq {
             AuthorizationData authorizationData,
             Ticket[] additionalTickets,
             EncryptionKey subKey,
-            PAData extraPA) throws KrbException, IOException {
+            PAData[] extraPAs) throws KrbException, IOException {
 
         princName = cname;
         servName = sname;
@@ -216,7 +181,7 @@ public class KrbTgsReq {
                 authorizationData,
                 additionalTickets,
                 subKey,
-                extraPA);
+                extraPAs);
         obuf = tgsReqMessg.asn1Encode();
 
         // XXX We need to revisit this to see if can't move it
@@ -282,7 +247,7 @@ public class KrbTgsReq {
                          AuthorizationData authorizationData,
                          Ticket[] additionalTickets,
                          EncryptionKey subKey,
-                         PAData extraPA)
+                         PAData[] extraPAs)
         throws IOException, KrbException, UnknownHostException {
         KerberosTime req_till = null;
         if (till == null) {
@@ -382,11 +347,14 @@ public class KrbTgsReq {
                                          null).getMessage();
 
         PAData tgsPAData = new PAData(Krb5.PA_TGS_REQ, tgs_ap_req);
-        return new TGSReq(
-                extraPA != null ?
-                    new PAData[] {extraPA, tgsPAData } :
-                    new PAData[] {tgsPAData},
-                reqBody);
+        PAData[] pa;
+        if (extraPAs != null) {
+            pa = Arrays.copyOf(extraPAs, extraPAs.length + 1);
+            pa[extraPAs.length] = tgsPAData;
+        } else {
+            pa = new PAData[] {tgsPAData};
+        }
+        return new TGSReq(pa, reqBody);
     }
 
     TGSReq getMessage() {

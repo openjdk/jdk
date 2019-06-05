@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -90,6 +90,7 @@ public class KRBError implements java.io.Serializable {
     private KerberosTime sTime;
     private Integer suSec;
     private int errorCode;
+    private Realm crealm; //optional
     private PrincipalName cname; //optional
     private PrincipalName sname;
     private String eText; //optional
@@ -138,6 +139,7 @@ public class KRBError implements java.io.Serializable {
         sTime = new_sTime;
         suSec = new_suSec;
         errorCode = new_errorCode;
+        crealm = new_cname.getRealm();
         cname = new_cname;
         sname = new_sname;
         eText = new_eText;
@@ -166,6 +168,7 @@ public class KRBError implements java.io.Serializable {
         sTime = new_sTime;
         suSec = new_suSec;
         errorCode = new_errorCode;
+        crealm = new_cname.getRealm();
         cname = new_cname;
         sname = new_sname;
         eText = new_eText;
@@ -262,6 +265,10 @@ public class KRBError implements java.io.Serializable {
         pa = paList.toArray(new PAData[paList.size()]);
     }
 
+    public final Realm getClientRealm() {
+        return crealm;
+    }
+
     public final KerberosTime getServerTime() {
         return sTime;
     }
@@ -349,7 +356,7 @@ public class KRBError implements java.io.Serializable {
             errorCode = subDer.getData().getBigInteger().intValue();
         }
         else  throw new Asn1Exception(Krb5.ASN1_BAD_ID);
-        Realm crealm = Realm.parse(der.getData(), (byte)0x07, true);
+        crealm = Realm.parse(der.getData(), (byte)0x07, true);
         cname = PrincipalName.parse(der.getData(), (byte)0x08, true, crealm);
         Realm realm = Realm.parse(der.getData(), (byte)0x09, false);
         sname = PrincipalName.parse(der.getData(), (byte)0x0A, false, realm);
@@ -393,6 +400,9 @@ public class KRBError implements java.io.Serializable {
             System.out.println("\t suSec is " + suSec);
             System.out.println("\t error code is " + errorCode);
             System.out.println("\t error Message is " + Krb5.getErrorMessage(errorCode));
+            if (crealm != null) {
+                System.out.println("\t crealm is " + crealm.toString());
+            }
             if (cname != null) {
                 System.out.println("\t cname is " + cname.toString());
             }
@@ -442,8 +452,10 @@ public class KRBError implements java.io.Serializable {
         temp.putInteger(BigInteger.valueOf(errorCode));
         bytes.write(DerValue.createTag(DerValue.TAG_CONTEXT, true, (byte)0x06), temp);
 
+        if (crealm != null) {
+            bytes.write(DerValue.createTag(DerValue.TAG_CONTEXT, true, (byte)0x07), crealm.asn1Encode());
+        }
         if (cname != null) {
-            bytes.write(DerValue.createTag(DerValue.TAG_CONTEXT, true, (byte)0x07), cname.getRealm().asn1Encode());
             bytes.write(DerValue.createTag(DerValue.TAG_CONTEXT, true, (byte)0x08), cname.asn1Encode());
         }
 
@@ -488,6 +500,7 @@ public class KRBError implements java.io.Serializable {
                 isEqual(sTime, other.sTime) &&
                 isEqual(suSec, other.suSec) &&
                 errorCode == other.errorCode &&
+                isEqual(crealm, other.crealm) &&
                 isEqual(cname, other.cname) &&
                 isEqual(sname, other.sname) &&
                 isEqual(eText, other.eText) &&
@@ -508,6 +521,7 @@ public class KRBError implements java.io.Serializable {
         if (sTime != null) result = 37 * result + sTime.hashCode();
         if (suSec != null) result = 37 * result + suSec.hashCode();
         result = 37 * result + errorCode;
+        if (crealm != null) result = 37 * result + crealm.hashCode();
         if (cname != null) result = 37 * result + cname.hashCode();
         if (sname != null) result = 37 * result + sname.hashCode();
         if (eText != null) result = 37 * result + eText.hashCode();

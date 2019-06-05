@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2004, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2004, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -56,6 +56,7 @@ public class KeyUsage {
     public static final int KU_KRB_SAFE_CKSUM = 15;             // KrbSafe
     public static final int KU_PA_FOR_USER_ENC_CKSUM = 17;      // S4U2user
     public static final int KU_AD_KDC_ISSUED_CKSUM = 19;
+    public static final int KU_AS_REQ = 56;
 
     public static final boolean isValid(int usage) {
         return usage >= 0;

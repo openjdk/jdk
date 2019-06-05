@@ -47,7 +47,8 @@ public class EncASRepPart extends EncKDCRepPart {
             KerberosTime new_endtime,
             KerberosTime new_renewTill,
             PrincipalName new_sname,
-            HostAddresses new_caddr) {
+            HostAddresses new_caddr,
+            PAData[] new_pAData) {
         super(
                 new_key,
                 new_lastReq,
@@ -60,6 +61,7 @@ public class EncASRepPart extends EncKDCRepPart {
                 new_renewTill,
                 new_sname,
                 new_caddr,
+                new_pAData,
                 Krb5.KRB_ENC_AS_REP_PART
                 );
         //may need to use Krb5.KRB_ENC_TGS_REP_PART to mimic
