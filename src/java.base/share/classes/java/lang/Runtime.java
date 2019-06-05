@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1995, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1995, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -639,15 +639,20 @@ public class Runtime {
     public native long maxMemory();
 
     /**
-     * Runs the garbage collector.
-     * Calling this method suggests that the Java virtual machine expend
-     * effort toward recycling unused objects in order to make the memory
-     * they currently occupy available for quick reuse. When control
-     * returns from the method call, the virtual machine has made
-     * its best effort to recycle all discarded objects.
+     * Runs the garbage collector in the Java Virtual Machine.
+     * <p>
+     * Calling this method suggests that the Java Virtual Machine
+     * expend effort toward recycling unused objects in order to
+     * make the memory they currently occupy available for reuse
+     * by the Java Virtual Machine.
+     * When control returns from the method call, the Java Virtual Machine
+     * has made a best effort to reclaim space from all unused objects.
+     * There is no guarantee that this effort will recycle any particular
+     * number of unused objects, reclaim any particular amount of space, or
+     * complete at any particular time, if at all, before the method returns or ever.
      * <p>
      * The name {@code gc} stands for "garbage
-     * collector". The virtual machine performs this recycling
+     * collector". The Java Virtual Machine performs this recycling
      * process automatically as needed, in a separate thread, even if the
      * {@code gc} method is not invoked explicitly.
      * <p>
