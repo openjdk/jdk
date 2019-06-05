@@ -1329,7 +1329,15 @@ static void DestroyXIMCallback(XIM im, XPointer client_data, XPointer call_data)
     /* free the old pX11IMData and set it to null. this also avoids crashing
      * the jvm if the XIM server reappears */
     while (x11InputMethodGRefListHead != NULL) {
-        getX11InputMethodData(env, x11InputMethodGRefListHead->inputMethodGRef);
+        if (getX11InputMethodData(env,
+                x11InputMethodGRefListHead->inputMethodGRef) == NULL) {
+            /* Clear possible exceptions
+             */
+            if ((*env)->ExceptionOccurred(env)) {
+                (*env)->ExceptionDescribe(env);
+                (*env)->ExceptionClear(env);
+            }
+        }
     }
     AWT_UNLOCK();
 }
