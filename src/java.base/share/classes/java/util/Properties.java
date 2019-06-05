@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1995, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1995, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -641,11 +641,16 @@ class Properties extends Hashtable<Object,Object> {
         while (off < end) {
             aChar = in[off++];
             if (aChar == '\\') {
+                // No need to bounds check since LineReader::readLine excludes
+                // unescaped \s at the end of the line
                 aChar = in[off++];
                 if(aChar == 'u') {
                     // Read the xxxx
-                    int value=0;
-                    for (int i=0; i<4; i++) {
+                    if (off > end - 4)
+                        throw new IllegalArgumentException(
+                                     "Malformed \\uxxxx encoding.");
+                    int value = 0;
+                    for (int i = 0; i < 4; i++) {
                         aChar = in[off++];
                         switch (aChar) {
                           case '0': case '1': case '2': case '3': case '4':
