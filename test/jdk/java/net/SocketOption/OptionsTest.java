@@ -23,10 +23,11 @@
 
 /*
  * @test
- * @bug 8036979 8072384 8044773
+ * @bug 8036979 8072384 8044773 8225214
  * @library /test/lib
  * @requires !vm.graal.enabled
  * @run main/othervm -Xcheck:jni OptionsTest
+ * @run main/othervm -Djdk.net.usePlainSocketImpl OptionsTest
  * @run main/othervm -Xcheck:jni -Djava.net.preferIPv4Stack=true OptionsTest
  * @run main/othervm --limit-modules=java.base OptionsTest
  */
@@ -52,7 +53,7 @@ public class OptionsTest {
     }
 
     // The tests set the option using the new API, read back the set value
-    // which could be diferent, and then use the legacy get API to check
+    // which could be different, and then use the legacy get API to check
     // these values are the same
 
     static Test<?>[] socketTests = new Test<?>[] {
@@ -61,6 +62,8 @@ public class OptionsTest {
         Test.create(StandardSocketOptions.SO_RCVBUF, Integer.valueOf(8 * 100)),
         Test.create(StandardSocketOptions.SO_REUSEADDR, Boolean.FALSE),
         Test.create(StandardSocketOptions.SO_REUSEPORT, Boolean.FALSE),
+        Test.create(StandardSocketOptions.SO_LINGER, Integer.valueOf(-1)),
+        Test.create(StandardSocketOptions.SO_LINGER, Integer.valueOf(0)),
         Test.create(StandardSocketOptions.SO_LINGER, Integer.valueOf(80)),
         Test.create(StandardSocketOptions.IP_TOS, Integer.valueOf(0)),  // lower-bound
         Test.create(StandardSocketOptions.IP_TOS, Integer.valueOf(100)),
@@ -151,6 +154,23 @@ public class OptionsTest {
         testEqual(option, value1, value2);
     }
 
+    // Tests default and negative values of SO_LINGER. All negative values should
+    // retrieve as -1.
+    static void testSoLingerValues() throws Exception {
+        try (Socket s = new Socket()) {
+            // retrieve without set
+            int defaultValue = s.getOption(StandardSocketOptions.SO_LINGER);
+            testEqual(StandardSocketOptions.SO_LINGER, -1, defaultValue);
+
+            for (int v : List.of(-1, -2, -100, -65534, -65535, -65536, -100000)) {
+                System.out.println("Testing SO_LINGER with:" + v);
+                s.setOption(StandardSocketOptions.SO_LINGER, v);
+                int value = s.getOption(StandardSocketOptions.SO_LINGER);
+                testEqual(StandardSocketOptions.SO_LINGER, -1, value);
+            }
+        }
+    }
+
     @SuppressWarnings("try")
     static void doSocketTests() throws Exception {
         // unconnected socket
@@ -177,6 +197,8 @@ public class OptionsTest {
                 }
             }
         }
+
+        testSoLingerValues();
     }
 
     static void doServerSocketTests() throws Exception {
@@ -234,7 +256,7 @@ public class OptionsTest {
             } else if (option.equals(StandardSocketOptions.TCP_NODELAY)) {
                 return Boolean.valueOf(socket.getTcpNoDelay());
             } else {
-                throw new RuntimeException("unexecpted socket option");
+                throw new RuntimeException("unexpected socket option");
             }
         } else if  (type.equals(ServerSocket.class)) {
             ServerSocket socket = (ServerSocket)s;
@@ -250,7 +272,7 @@ public class OptionsTest {
             } else if (option.equals(StandardSocketOptions.IP_TOS)) {
                 return getServerSocketTrafficClass(socket);
             } else {
-                throw new RuntimeException("unexecpted socket option");
+                throw new RuntimeException("unexpected socket option");
             }
         } else if  (type.equals(DatagramSocket.class)) {
             DatagramSocket socket = (DatagramSocket)s;
@@ -268,7 +290,7 @@ public class OptionsTest {
             } else if (option.equals(StandardSocketOptions.IP_TOS)) {
                 return Integer.valueOf(socket.getTrafficClass());
             } else {
-                throw new RuntimeException("unexecpted socket option");
+                throw new RuntimeException("unexpected socket option");
             }
 
         } else if  (type.equals(MulticastSocket.class)) {
@@ -293,10 +315,10 @@ public class OptionsTest {
             } else if (option.equals(StandardSocketOptions.IP_MULTICAST_LOOP)) {
                 return Boolean.valueOf(socket.getLoopbackMode());
             } else {
-                throw new RuntimeException("unexecpted socket option");
+                throw new RuntimeException("unexpected socket option");
             }
         }
-        throw new RuntimeException("unexecpted socket type");
+        throw new RuntimeException("unexpected socket type");
     }
 
     public static void main(String args[]) throws Exception {

@@ -446,7 +446,10 @@ abstract class AbstractPlainSocketImpl extends SocketImpl implements PlatformSoc
         } else if (name == StandardSocketOptions.SO_REUSEPORT) {
             setOption(SocketOptions.SO_REUSEPORT, value);
         } else if (name == StandardSocketOptions.SO_LINGER ) {
-            setOption(SocketOptions.SO_LINGER, value);
+            if (((Integer)value).intValue() < 0)
+                setOption(SocketOptions.SO_LINGER, false);
+            else
+                setOption(SocketOptions.SO_LINGER, value);
         } else if (name == StandardSocketOptions.IP_TOS) {
             int i = ((Integer)value).intValue();
             if (i < 0 || i > 255)
@@ -482,7 +485,12 @@ abstract class AbstractPlainSocketImpl extends SocketImpl implements PlatformSoc
         } else if (name == StandardSocketOptions.SO_REUSEPORT) {
             return (T)getOption(SocketOptions.SO_REUSEPORT);
         } else if (name == StandardSocketOptions.SO_LINGER) {
-            return (T)getOption(SocketOptions.SO_LINGER);
+            Object value = getOption(SocketOptions.SO_LINGER);
+            if (value instanceof Boolean) {
+                assert ((Boolean)value).booleanValue() == false;
+                value = -1;
+            }
+            return (T)value;
         } else if (name == StandardSocketOptions.IP_TOS) {
             return (T)getOption(SocketOptions.IP_TOS);
         } else if (name == StandardSocketOptions.TCP_NODELAY) {
