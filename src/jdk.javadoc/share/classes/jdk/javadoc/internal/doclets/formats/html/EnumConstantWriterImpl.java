@@ -160,9 +160,8 @@ public class EnumConstantWriterImpl extends AbstractMemberWriter
      * {@inheritDoc}
      */
     @Override
-    public Content getEnumConstants(Content enumConstantsTree,
-            boolean isLastContent) {
-        return getMemberTree(enumConstantsTree, isLastContent);
+    public Content getEnumConstants(Content enumConstantsTree) {
+        return getMemberTree(enumConstantsTree);
     }
 
     /**

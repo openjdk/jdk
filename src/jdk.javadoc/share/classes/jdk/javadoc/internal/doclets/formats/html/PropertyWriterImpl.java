@@ -176,9 +176,8 @@ public class PropertyWriterImpl extends AbstractMemberWriter
      * {@inheritDoc}
      */
     @Override
-    public Content getPropertyDoc(Content propertyDocTree,
-            boolean isLastContent) {
-        return getMemberTree(propertyDocTree, isLastContent);
+    public Content getPropertyDoc(Content propertyDocTree) {
+        return getMemberTree(propertyDocTree);
     }
 
     /**

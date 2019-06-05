@@ -77,10 +77,7 @@ public class HtmlSerialMethodWriter extends MethodWriterImpl implements
      */
     public Content getMethodsContentHeader(boolean isLastContent) {
         HtmlTree li = new HtmlTree(HtmlTag.LI);
-        if (isLastContent)
-            li.setStyle(HtmlStyle.blockListLast);
-        else
-            li.setStyle(HtmlStyle.blockList);
+        li.setStyle(HtmlStyle.blockList);
         return li;
     }
 

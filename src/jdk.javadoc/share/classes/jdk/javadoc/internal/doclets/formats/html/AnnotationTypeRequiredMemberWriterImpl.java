@@ -170,9 +170,8 @@ public class AnnotationTypeRequiredMemberWriterImpl extends AbstractMemberWriter
     /**
      * {@inheritDoc}
      */
-    public Content getAnnotationDoc(Content annotationDocTree,
-            boolean isLastContent) {
-        return getMemberTree(annotationDocTree, isLastContent);
+    public Content getAnnotationDoc(Content annotationDocTree) {
+        return getMemberTree(annotationDocTree);
     }
 
     /**

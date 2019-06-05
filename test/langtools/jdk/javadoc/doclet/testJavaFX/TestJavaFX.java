@@ -252,7 +252,7 @@ public class TestJavaFX extends JavadocTester {
                 + "&nbsp;<span class=\"memberName\">gammaProperty</span></div>\n"
                 + "</section>\n"
                 + "</li>\n"
-                + "<li class=\"blockListLast\">\n"
+                + "<li class=\"blockList\">\n"
                 + "<section class=\"detail\">\n"
                 + "<h3>delta</h3>\n"
                 + "<a id=\"deltaProperty\">\n"

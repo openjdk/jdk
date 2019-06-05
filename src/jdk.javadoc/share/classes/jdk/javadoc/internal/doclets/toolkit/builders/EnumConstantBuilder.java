@@ -126,7 +126,7 @@ public class EnumConstantBuilder extends AbstractMemberBuilder {
             Content enumConstantsDetailsTreeHeader = writer.getEnumConstantsDetailsTreeHeader(typeElement,
                     memberDetailsTree);
             Content enumConstantsDetailsTree = writer.getMemberTreeHeader();
-            Element lastElement = enumConstants.get(enumConstants.size() - 1);
+
             for (Element enumConstant : enumConstants) {
                 currentElement = (VariableElement)enumConstant;
                 Content enumConstantsTree = writer.getEnumConstantsTreeHeader(currentElement,
@@ -137,8 +137,7 @@ public class EnumConstantBuilder extends AbstractMemberBuilder {
                 buildEnumConstantComments(enumConstantsTree);
                 buildTagInfo(enumConstantsTree);
 
-                enumConstantsDetailsTree.add(writer.getEnumConstants(
-                        enumConstantsTree, currentElement == lastElement));
+                enumConstantsDetailsTree.add(writer.getEnumConstants(enumConstantsTree));
             }
             memberDetailsTree.add(
                     writer.getEnumConstantsDetails(enumConstantsDetailsTreeHeader, enumConstantsDetailsTree));

@@ -128,7 +128,7 @@ public class PropertyBuilder extends AbstractMemberBuilder {
             Content propertyDetailsTreeHeader = writer.getPropertyDetailsTreeHeader(typeElement,
                     memberDetailsTree);
             Content propertyDetailsTree = writer.getMemberTreeHeader();
-            Element lastElement = properties.get(properties.size() - 1);
+
             for (Element property : properties) {
                 currentProperty = (ExecutableElement)property;
                 Content propertyDocTree = writer.getPropertyDocTreeHeader(currentProperty,
@@ -138,8 +138,7 @@ public class PropertyBuilder extends AbstractMemberBuilder {
                 buildPropertyComments(propertyDocTree);
                 buildTagInfo(propertyDocTree);
 
-                propertyDetailsTree.add(writer.getPropertyDoc(
-                        propertyDocTree, currentProperty == lastElement));
+                propertyDetailsTree.add(writer.getPropertyDoc(propertyDocTree));
             }
             memberDetailsTree.add(
                     writer.getPropertyDetails(propertyDetailsTreeHeader, propertyDetailsTree));

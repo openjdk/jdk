@@ -142,7 +142,6 @@ public class AnnotationTypeFieldBuilder extends AbstractMemberBuilder {
             Content annotationDetailsTreeHeader = writer.getAnnotationDetailsTreeHeader(typeElement);
             Content detailsTree = writer.getMemberTreeHeader();
 
-            Element lastElement = members.get(members.size() - 1);
             for (Element member : members) {
                 currentMember = member;
                 Content annotationDocTree = writer.getAnnotationDocTreeHeader(currentMember,
@@ -153,8 +152,7 @@ public class AnnotationTypeFieldBuilder extends AbstractMemberBuilder {
                 buildMemberComments(annotationDocTree);
                 buildTagInfo(annotationDocTree);
 
-                detailsTree.add(writer.getAnnotationDoc(
-                        annotationDocTree, currentMember == lastElement));
+                detailsTree.add(writer.getAnnotationDoc(annotationDocTree));
             }
             memberDetailsTree.add(writer.getAnnotationDetails(annotationDetailsTreeHeader, detailsTree));
         }

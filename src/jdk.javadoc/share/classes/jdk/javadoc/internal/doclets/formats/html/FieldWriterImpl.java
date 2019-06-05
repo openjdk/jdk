@@ -164,9 +164,8 @@ public class FieldWriterImpl extends AbstractMemberWriter
      * {@inheritDoc}
      */
     @Override
-    public Content getFieldDoc(Content fieldTree,
-            boolean isLastContent) {
-        return getMemberTree(fieldTree, isLastContent);
+    public Content getFieldDoc(Content fieldTree) {
+        return getMemberTree(fieldTree);
     }
 
     /**

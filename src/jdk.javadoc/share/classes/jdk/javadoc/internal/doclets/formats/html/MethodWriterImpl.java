@@ -208,9 +208,8 @@ public class MethodWriterImpl extends AbstractExecutableMemberWriter
      * {@inheritDoc}
      */
     @Override
-    public Content getMethodDoc(Content methodDocTree,
-            boolean isLastContent) {
-        return getMemberTree(methodDocTree, isLastContent);
+    public Content getMethodDoc(Content methodDocTree) {
+        return getMemberTree(methodDocTree);
     }
 
     /**

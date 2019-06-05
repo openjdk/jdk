@@ -85,7 +85,7 @@ public class TestAnnotationTypes extends JavadocTester {
                     "<!--   -->",
                     "</a>",
                     "<ul class=\"blockList\">",
-                    "<li class=\"blockListLast\">",
+                    "<li class=\"blockList\">",
                     "<section class=\"detail\">",
                     "<h3>value</h3>",
                     "<a id=\"value()\">",

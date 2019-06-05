@@ -25,8 +25,6 @@
 
 package jdk.javadoc.internal.doclets.toolkit;
 
-import java.io.*;
-
 import javax.lang.model.element.ExecutableElement;
 import javax.lang.model.element.TypeElement;
 
@@ -109,10 +107,9 @@ public interface PropertyWriter {
      * Get the property documentation.
      *
      * @param propertyDocTree the content tree representing property documentation
-     * @param isLastContent true if the content to be added is the last content
      * @return content tree for the property documentation
      */
-    public Content getPropertyDoc(Content propertyDocTree, boolean isLastContent);
+    public Content getPropertyDoc(Content propertyDocTree);
 
     /**
      * Gets the member header tree.

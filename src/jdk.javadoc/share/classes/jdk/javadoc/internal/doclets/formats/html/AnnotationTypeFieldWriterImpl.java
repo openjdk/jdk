@@ -31,10 +31,8 @@ import javax.lang.model.element.TypeElement;
 import javax.lang.model.type.TypeMirror;
 
 import jdk.javadoc.internal.doclets.formats.html.markup.ContentBuilder;
-import jdk.javadoc.internal.doclets.formats.html.markup.Entity;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlStyle;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlTree;
-import jdk.javadoc.internal.doclets.formats.html.markup.StringContent;
 import jdk.javadoc.internal.doclets.formats.html.markup.Table;
 import jdk.javadoc.internal.doclets.formats.html.markup.TableHeader;
 import jdk.javadoc.internal.doclets.toolkit.AnnotationTypeFieldWriter;
@@ -170,9 +168,8 @@ public class AnnotationTypeFieldWriterImpl extends AbstractMemberWriter
     /**
      * {@inheritDoc}
      */
-    public Content getAnnotationDoc(Content annotationDocTree,
-            boolean isLastContent) {
-        return getMemberTree(annotationDocTree, isLastContent);
+    public Content getAnnotationDoc(Content annotationDocTree) {
+        return getMemberTree(annotationDocTree);
     }
 
     /**

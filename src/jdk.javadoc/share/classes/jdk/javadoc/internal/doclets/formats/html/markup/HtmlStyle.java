@@ -46,7 +46,6 @@ public enum HtmlStyle {
     bar,
     block,
     blockList,
-    blockListLast,
     bottomNav,
     circle,
     classUseContainer,

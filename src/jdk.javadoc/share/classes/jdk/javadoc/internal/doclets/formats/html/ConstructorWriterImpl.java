@@ -194,9 +194,8 @@ public class ConstructorWriterImpl extends AbstractExecutableMemberWriter
      * {@inheritDoc}
      */
     @Override
-    public Content getConstructorDoc(Content constructorDocTree,
-            boolean isLastContent) {
-        return getMemberTree(constructorDocTree, isLastContent);
+    public Content getConstructorDoc(Content constructorDocTree) {
+        return getMemberTree(constructorDocTree);
     }
 
     /**

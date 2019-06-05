@@ -371,11 +371,11 @@ div.inheritance {
 div.inheritance div.inheritance {
     margin-left:2em;
 }
-ul.blockList, ul.blockListLast {
+ul.blockList {
     margin:10px 0 10px 0;
     padding:0;
 }
-ul.blockList li.blockList, ul.blockList li.blockListLast {
+ul.blockList li.blockList {
     list-style:none;
     margin-bottom:15px;
     line-height:1.4;

@@ -504,20 +504,6 @@ public abstract class AbstractMemberWriter implements MemberSummaryWriter {
     }
 
     /**
-     * Get the member tree to be documented.
-     *
-     * @param memberTree the content tree of member to be documented
-     * @param isLastContent true if the content to be added is the last content
-     * @return a content tree that will be added to the class documentation
-     */
-    public Content getMemberTree(Content memberTree, boolean isLastContent) {
-        if (isLastContent)
-            return HtmlTree.LI(HtmlStyle.blockListLast, memberTree);
-        else
-            return HtmlTree.LI(HtmlStyle.blockList, memberTree);
-    }
-
-    /**
      * A content builder for member signatures.
      */
     class MemberSignature {

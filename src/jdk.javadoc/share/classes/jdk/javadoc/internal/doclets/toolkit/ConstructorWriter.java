@@ -25,8 +25,6 @@
 
 package jdk.javadoc.internal.doclets.toolkit;
 
-import java.io.*;
-
 import javax.lang.model.element.ExecutableElement;
 import javax.lang.model.element.TypeElement;
 
@@ -109,10 +107,9 @@ public interface ConstructorWriter {
      * Get the constructor documentation.
      *
      * @param constructorDocTree the content tree representing constructor documentation
-     * @param isLastContent true if the content to be added is the last content
      * @return content tree for the constructor documentation
      */
-    public Content getConstructorDoc(Content constructorDocTree, boolean isLastContent);
+    public Content getConstructorDoc(Content constructorDocTree);
 
     /**
      * Let the writer know whether a non public constructor was found.
