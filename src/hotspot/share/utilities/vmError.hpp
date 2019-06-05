@@ -135,6 +135,7 @@ class VMError : public AllStatic {
   static jlong get_reporting_start_time();
   static void record_step_start_time();
   static jlong get_step_start_time();
+  static void clear_step_start_time();
 
 public:
 
