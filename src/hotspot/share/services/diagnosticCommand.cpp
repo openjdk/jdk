@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -48,6 +48,7 @@
 #include "services/management.hpp"
 #include "services/writeableFlags.hpp"
 #include "utilities/debug.hpp"
+#include "utilities/events.hpp"
 #include "utilities/formatBuffer.hpp"
 #include "utilities/macros.hpp"
 
@@ -95,6 +96,7 @@ void DCmdRegistrant::register_dcmds(){
   DCmdFactory::register_DCmdFactory(new DCmdFactoryImpl<SymboltableDCmd>(full_export, true, false));
   DCmdFactory::register_DCmdFactory(new DCmdFactoryImpl<StringtableDCmd>(full_export, true, false));
   DCmdFactory::register_DCmdFactory(new DCmdFactoryImpl<metaspace::MetaspaceDCmd>(full_export, true, false));
+  DCmdFactory::register_DCmdFactory(new DCmdFactoryImpl<EventLogDCmd>(full_export, true, false));
 #if INCLUDE_JVMTI // Both JVMTI and SERVICES have to be enabled to have this dcmd
   DCmdFactory::register_DCmdFactory(new DCmdFactoryImpl<JVMTIAgentLoadDCmd>(full_export, true, false));
 #endif // INCLUDE_JVMTI
@@ -964,6 +966,45 @@ int CodeHeapAnalyticsDCmd::num_arguments() {
   }
 }
 //---<  END  >--- CodeHeap State Analytics.
+
+EventLogDCmd::EventLogDCmd(outputStream* output, bool heap) :
+  DCmdWithParser(output, heap),
+  _log("log", "Name of log to be printed. If omitted, all logs are printed.", "STRING", false, NULL),
+  _max("max", "Maximum number of events to be printed (newest first). If omitted, all events are printed.", "STRING", false, NULL)
+{
+  _dcmdparser.add_dcmd_option(&_log);
+  _dcmdparser.add_dcmd_option(&_max);
+}
+
+void EventLogDCmd::execute(DCmdSource source, TRAPS) {
+  const char* max_value = _max.value();
+  long max = -1;
+  if (max_value != NULL) {
+    char* endptr = NULL;
+    max = ::strtol(max_value, &endptr, 10);
+    if (max == 0 && max_value == endptr) {
+      output()->print_cr("Invalid max option: \"%s\".", max_value);
+      return;
+    }
+  }
+  const char* log_name = _log.value();
+  if (log_name != NULL) {
+    Events::print_one(output(), log_name, max);
+  } else {
+    Events::print_all(output(), max);
+  }
+}
+
+int EventLogDCmd::num_arguments() {
+  ResourceMark rm;
+  EventLogDCmd* dcmd = new EventLogDCmd(NULL, false);
+  if (dcmd != NULL) {
+    DCmdMark mark(dcmd);
+    return dcmd->_dcmdparser.num_arguments();
+  } else {
+    return 0;
+  }
+}
 
 void CompilerDirectivesPrintDCmd::execute(DCmdSource source, TRAPS) {
   DirectivesStack::print(output());

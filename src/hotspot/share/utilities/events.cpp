@@ -51,14 +51,39 @@ EventLog::EventLog() {
 }
 
 // For each registered event logger, print out the current contents of
-// the buffer.  This is normally called when the JVM is crashing.
-void Events::print_all(outputStream* out) {
+// the buffer.
+void Events::print_all(outputStream* out, int max) {
   EventLog* log = _logs;
   while (log != NULL) {
-    log->print_log_on(out);
+    log->print_log_on(out, max);
     log = log->next();
   }
 }
+
+// Print a single event log specified by name.
+void Events::print_one(outputStream* out, const char* log_name, int max) {
+  EventLog* log = _logs;
+  int num_printed = 0;
+  while (log != NULL) {
+    if (log->matches_name_or_handle(log_name)) {
+      log->print_log_on(out, max);
+      num_printed ++;
+    }
+    log = log->next();
+  }
+  // Write a short error note if no name matched.
+  if (num_printed == 0) {
+    out->print_cr("The name \"%s\" did not match any known event log. "
+                  "Valid event log names are:", log_name);
+    EventLog* log = _logs;
+    while (log != NULL) {
+      log->print_names(out);
+      out->cr();
+      log = log->next();
+    }
+  }
+}
+
 
 void Events::print() {
   print_all(tty);
@@ -66,11 +91,11 @@ void Events::print() {
 
 void Events::init() {
   if (LogEvents) {
-    _messages = new StringEventLog("Events");
-    _exceptions = new ExceptionsEventLog("Internal exceptions");
-    _redefinitions = new StringEventLog("Classes redefined");
-    _class_unloading = new UnloadingEventLog("Classes unloaded");
-    _deopt_messages = new StringEventLog("Deoptimization events");
+    _messages = new StringEventLog("Events", "events");
+    _exceptions = new ExceptionsEventLog("Internal exceptions", "exc");
+    _redefinitions = new StringEventLog("Classes redefined", "redef");
+    _class_unloading = new UnloadingEventLog("Classes unloaded", "unload");
+    _deopt_messages = new StringEventLog("Deoptimization events", "deopt");
   }
 }
 

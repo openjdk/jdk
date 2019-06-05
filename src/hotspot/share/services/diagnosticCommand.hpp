@@ -888,4 +888,28 @@ public:
 };
 #endif // INCLUDE_JVMTI
 
+class EventLogDCmd : public DCmdWithParser {
+protected:
+  DCmdArgument<char*> _log;
+  DCmdArgument<char*> _max;
+public:
+  EventLogDCmd(outputStream* output, bool heap);
+  static const char* name() {
+    return "VM.events";
+  }
+  static const char* description() {
+    return "Print VM event logs";
+  }
+  static const char* impact() {
+    return "Low: Depends on event log size. ";
+  }
+  static const JavaPermission permission() {
+    JavaPermission p = {"java.lang.management.ManagementPermission",
+                        "monitor", NULL};
+    return p;
+  }
+  static int num_arguments();
+  virtual void execute(DCmdSource source, TRAPS);
+};
+
 #endif // SHARE_SERVICES_DIAGNOSTICCOMMAND_HPP

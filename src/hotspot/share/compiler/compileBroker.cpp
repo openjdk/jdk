@@ -187,7 +187,7 @@ CompileQueue* CompileBroker::_c1_compile_queue     = NULL;
 
 class CompilationLog : public StringEventLog {
  public:
-  CompilationLog() : StringEventLog("Compilation events") {
+  CompilationLog() : StringEventLog("Compilation events", "jit") {
   }
 
   void log_compile(JavaThread* thread, CompileTask* task) {
