@@ -154,6 +154,21 @@ public class UnicodeReader {
         return new String(sbuf, 0, sp);
     }
 
+    /** Add 'count' copies of the character 'ch' to the string buffer.
+     */
+    protected void repeat(char ch, int count) {
+        for ( ; 0 < count; count--) {
+            putChar(ch, false);
+        }
+    }
+
+    /** Reset the scan buffer pointer to 'pos'.
+     */
+    protected void reset(int pos) {
+        bp = pos - 1;
+        scanChar();
+    }
+
     /** Convert unicode escape; bp points to initial '\' character
      *  (Spec 3.3).
      */

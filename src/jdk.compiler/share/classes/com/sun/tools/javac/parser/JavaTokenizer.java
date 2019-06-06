@@ -25,15 +25,22 @@
 
 package com.sun.tools.javac.parser;
 
+import com.sun.tools.javac.code.Lint;
+import com.sun.tools.javac.code.Lint.LintCategory;
 import com.sun.tools.javac.code.Preview;
 import com.sun.tools.javac.code.Source;
 import com.sun.tools.javac.code.Source.Feature;
 import com.sun.tools.javac.parser.Tokens.Comment.CommentStyle;
 import com.sun.tools.javac.resources.CompilerProperties.Errors;
+import com.sun.tools.javac.resources.CompilerProperties.Warnings;
 import com.sun.tools.javac.util.*;
-import com.sun.tools.javac.util.JCDiagnostic.DiagnosticFlag;
+import com.sun.tools.javac.util.JCDiagnostic.*;
 
+import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
 import java.nio.CharBuffer;
+import java.util.HashSet;
+import java.util.Set;
 
 import static com.sun.tools.javac.parser.Tokens.*;
 import static com.sun.tools.javac.util.LayoutCharacters.*;
@@ -84,7 +91,20 @@ public class JavaTokenizer {
      */
     protected UnicodeReader reader;
 
+    /** Should the string stripped of indentation?
+     */
+    protected boolean shouldStripIndent;
+
+    /** Should the string's escapes be translated?
+     */
+    protected boolean shouldTranslateEscapes;
+
     protected ScannerFactory fac;
+
+    // The set of lint options currently in effect. It is initialized
+    // from the context, and then is set/reset as needed by Attr as it
+    // visits all the various parts of the trees during attribution.
+    protected Lint lint;
 
     private static final boolean hexFloatsWork = hexFloatsWork();
     private static boolean hexFloatsWork() {
@@ -121,6 +141,7 @@ public class JavaTokenizer {
         this.source = fac.source;
         this.preview = fac.preview;
         this.reader = reader;
+        this.lint = fac.lint;
     }
 
     protected void checkSourceLevel(int pos, Feature feature) {
@@ -148,6 +169,11 @@ public class JavaTokenizer {
         log.error(flags, pos, key);
         tk = TokenKind.ERROR;
         errPos = pos;
+    }
+
+    protected void lexWarning(LintCategory lc, int pos, JCDiagnostic.Warning key) {
+        DiagnosticPosition dp = new SimpleDiagnosticPosition(pos) ;
+        log.warning(lc, dp, key);
     }
 
     /** Read next character in character or string literal and copy into sbuf.
@@ -197,6 +223,309 @@ public class JavaTokenizer {
             }
         } else if (reader.bp != reader.buflen) {
             reader.putChar(true);
+        }
+    }
+
+    /** Read next character in character or string literal and copy into sbuf
+     *  without translating escapes. Used by text blocks to preflight verify
+     *  escapes sequences.
+     */
+    private void scanLitCharRaw(int pos) {
+        if (reader.ch == '\\') {
+            if (reader.peekChar() == '\\' && !reader.isUnicode()) {
+                reader.skipChar();
+                reader.putChar('\\', false);
+                reader.putChar('\\', true);
+            } else {
+                reader.putChar('\\', true);
+                switch (reader.ch) {
+                case '0': case '1': case '2': case '3':
+                case '4': case '5': case '6': case '7':
+                    char leadch = reader.ch;
+                    reader.putChar(true);
+                    if ('0' <= reader.ch && reader.ch <= '7') {
+                        reader.putChar(true);
+                        if (leadch <= '3' && '0' <= reader.ch && reader.ch <= '7') {
+                            reader.putChar(true);
+                        }
+                    }
+                    break;
+                // Effectively list of valid escape sequences.
+                case 'b':
+                case 't':
+                case 'n':
+                case 'f':
+                case 'r':
+                case '\'':
+                case '\"':
+                case '\\':
+                    reader.putChar(true); break;
+                default:
+                    lexError(reader.bp, Errors.IllegalEscChar);
+                }
+            }
+        } else if (reader.bp != reader.buflen) {
+            reader.putChar(true);
+        }
+    }
+
+    /** Interim access to String methods used to support text blocks.
+     *  Required to handle bootstrapping with pre-text block jdks.
+     *  Could be reworked in the 'next' jdk.
+     */
+    static class TextBlockSupport {
+        /** Reflection method to remove incidental indentation.
+         */
+        private static final Method stripIndent;
+
+        /** Reflection method to translate escape sequences.
+         */
+        private static final Method translateEscapes;
+
+        /** true if stripIndent and translateEscapes are available in the bootstrap jdk.
+         */
+        private static final boolean hasSupport;
+
+        /** Get a string method via refection or null if not available.
+         */
+        private static Method getStringMethodOrNull(String name) {
+            try {
+                return String.class.getMethod(name);
+            } catch (Exception ex) {
+                // Method not available, return null.
+            }
+            return null;
+        }
+
+        static {
+            // Get text block string methods.
+            stripIndent = getStringMethodOrNull("stripIndent");
+            translateEscapes = getStringMethodOrNull("translateEscapes");
+            // true if stripIndent and translateEscapes are available in the bootstrap jdk.
+            hasSupport = stripIndent != null && translateEscapes != null;
+        }
+
+        /** Return true if stripIndent and translateEscapes are available in the bootstrap jdk.
+         */
+        static boolean hasSupport() {
+            return hasSupport;
+        }
+
+        /** Return the leading whitespace count (indentation) of the line.
+         */
+        private static int indent(String line) {
+            return line.length() - line.stripLeading().length();
+        }
+
+        enum WhitespaceChecks {
+            INCONSISTENT,
+            TRAILING
+        };
+
+        /** Check that the use of white space in content is not problematic.
+         */
+        static Set<WhitespaceChecks> checkWhitespace(String string) {
+            // Start with empty result set.
+            Set<WhitespaceChecks> checks = new HashSet<>();
+            // No need to check empty strings.
+            if (string.isEmpty()) {
+                return checks;
+            }
+            // Maximum common indentation.
+            int outdent = 0;
+            // No need to check indentation if opting out (last line is empty.)
+            char lastChar = string.charAt(string.length() - 1);
+            boolean optOut = lastChar == '\n' || lastChar == '\r';
+            // Split string based at line terminators.
+            String[] lines = string.split("\\R");
+            int length = lines.length;
+            // Extract last line.
+            String lastLine = lines[length - 1];
+            if (!optOut) {
+                // Prime with the last line indentation (may be blank.)
+                outdent = indent(lastLine);
+                for (String line : lines) {
+                    // Blanks lines have no influence (last line accounted for.)
+                    if (!line.isBlank()) {
+                        outdent = Integer.min(outdent, indent(line));
+                        if (outdent == 0) {
+                            break;
+                        }
+                    }
+                }
+            }
+            // Last line is representative.
+            String start = lastLine.substring(0, outdent);
+            for (String line : lines) {
+                // Fail if a line does not have the same indentation.
+                if (!line.isBlank() && !line.startsWith(start)) {
+                    // Mix of different white space
+                    checks.add(WhitespaceChecks.INCONSISTENT);
+                }
+                // Line has content even after indent is removed.
+                if (outdent < line.length()) {
+                    // Is the last character a white space.
+                    lastChar = line.charAt(line.length() - 1);
+                    if (Character.isWhitespace(lastChar)) {
+                        // Has trailing white space.
+                        checks.add(WhitespaceChecks.TRAILING);
+                    }
+                }
+            }
+            return checks;
+        }
+
+        /** Invoke String::stripIndent through reflection.
+         */
+        static String stripIndent(String string) {
+            try {
+                string = (String)stripIndent.invoke(string);
+            } catch (InvocationTargetException | IllegalAccessException ex) {
+                throw new RuntimeException(ex);
+            }
+            return string;
+        }
+
+        /** Invoke String::translateEscapes through reflection.
+         */
+        static String translateEscapes(String string) {
+            try {
+                string = (String)translateEscapes.invoke(string);
+            } catch (InvocationTargetException | IllegalAccessException ex) {
+                throw new RuntimeException(ex);
+            }
+            return string;
+        }
+    }
+
+    /** Test for EOLN.
+     */
+    private boolean isEOLN() {
+        return reader.ch == LF || reader.ch == CR;
+    }
+
+    /** Test for CRLF.
+     */
+    private boolean isCRLF() {
+        return reader.ch == CR && reader.peekChar() == LF;
+    }
+
+    /** Count and skip repeated occurances of the specified character.
+     */
+    private int countChar(char ch, int max) {
+        int count = 0;
+        for ( ; count < max && reader.bp < reader.buflen && reader.ch == ch; count++) {
+            reader.scanChar();
+        }
+        return count;
+    }
+
+    /** Scan a string literal or text block.
+     */
+    private void scanString(int pos) {
+        // Clear flags.
+        shouldStripIndent = false;
+        shouldTranslateEscapes = false;
+        // Check if text block string methods are present.
+        boolean hasTextBlockSupport = TextBlockSupport.hasSupport();
+        // Track the end of first line for error recovery.
+        int firstEOLN = -1;
+        // Attempt to scan for up to 3 double quotes.
+        int openCount = countChar('\"', 3);
+        switch (openCount) {
+        case 1: // Starting a string literal.
+            break;
+        case 2: // Starting an empty string literal.
+            // Start again but only consume one quote.
+            reader.reset(pos);
+            openCount = countChar('\"', 1);
+            break;
+        case 3: // Starting a text block.
+            // Check if preview feature is enabled for text blocks.
+            checkSourceLevel(pos, Feature.TEXT_BLOCKS);
+            // Only proceed if text block string methods are present.
+            if (hasTextBlockSupport) {
+                // Indicate that the final string should have incidental indentation removed.
+                shouldStripIndent = true;
+                // Verify the open delimiter sequence.
+                boolean hasOpenEOLN = false;
+                while (reader.bp < reader.buflen && Character.isWhitespace(reader.ch)) {
+                    hasOpenEOLN = isEOLN();
+                    if (hasOpenEOLN) {
+                        break;
+                    }
+                    reader.scanChar();
+                }
+                // Error if the open delimiter sequence not is """<Whitespace>*<LineTerminator>.
+                if (!hasOpenEOLN) {
+                    lexError(reader.bp, Errors.IllegalTextBlockOpen);
+                    return;
+                }
+                // Skip line terminator.
+                int start = reader.bp;
+                if (isCRLF()) {
+                    reader.scanChar();
+                }
+                reader.scanChar();
+                processLineTerminator(start, reader.bp);
+            } else {
+                // No text block string methods are present, so reset and treat like string literal.
+                reader.reset(pos);
+                openCount = countChar('\"', 1);
+            }
+            break;
+        }
+        // While characters are available.
+        while (reader.bp < reader.buflen) {
+            // If possible close delimiter sequence.
+            if (reader.ch == '\"') {
+                // Check to see if enough double quotes are present.
+                int closeCount = countChar('\"', openCount);
+                if (openCount == closeCount) {
+                    // Good result.
+                    tk = Tokens.TokenKind.STRINGLITERAL;
+                    return;
+                }
+                // False alarm, add double quotes to string buffer.
+                reader.repeat('\"', closeCount);
+            } else if (isEOLN()) {
+                // Line terminator in string literal is an error.
+                // Fall out to unclosed string literal error.
+                if (openCount == 1) {
+                    break;
+                }
+                 // Add line terminator to string buffer.
+                int start = reader.bp;
+                if (isCRLF()) {
+                    reader.scanChar();
+                }
+                reader.putChar('\n', true);
+                processLineTerminator(start, reader.bp);
+                // Record first line terminator for error recovery.
+                if (firstEOLN == -1) {
+                    firstEOLN = reader.bp;
+                }
+            } else if (reader.ch == '\\') {
+                // Handle escape sequences.
+                if (hasTextBlockSupport) {
+                    // Indicate that the final string should have escapes translated.
+                    shouldTranslateEscapes = true;
+                    // Validate escape sequence and add to string buffer.
+                    scanLitCharRaw(pos);
+                } else {
+                    // Translate escape sequence and add result to string buffer.
+                    scanLitChar(pos);
+                }
+            } else {
+                // Add character to string buffer.
+                reader.putChar(true);
+            }
+        }
+        // String ended without close delimiter sequence.
+        lexError(pos, openCount == 1 ? Errors.UnclosedStrLit : Errors.UnclosedTextBlock);
+        if (firstEOLN  != -1) {
+            // Reset recovery position to point after open delimiter sequence.
+            reader.reset(firstEOLN);
         }
     }
 
@@ -624,7 +953,7 @@ public class JavaTokenizer {
                         lexError(pos, Errors.EmptyCharLit);
                         reader.scanChar();
                     } else {
-                        if (reader.ch == CR || reader.ch == LF)
+                        if (isEOLN())
                             lexError(pos, Errors.IllegalLineEndInCharLit);
                         scanLitChar(pos);
                         if (reader.ch == '\'') {
@@ -636,17 +965,9 @@ public class JavaTokenizer {
                     }
                     break loop;
                 case '\"':
-                    reader.scanChar();
-                    while (reader.ch != '\"' && reader.ch != CR && reader.ch != LF && reader.bp < reader.buflen)
-                        scanLitChar(pos);
-                    if (reader.ch == '\"') {
-                        tk = TokenKind.STRINGLITERAL;
-                        reader.scanChar();
-                    } else {
-                        lexError(pos, Errors.UnclosedStrLit);
-                    }
+                    scanString(pos);
                     break loop;
-               default:
+                default:
                     if (isSpecial(reader.ch)) {
                         scanOperator();
                     } else {
@@ -695,7 +1016,34 @@ public class JavaTokenizer {
             switch (tk.tag) {
                 case DEFAULT: return new Token(tk, pos, endPos, comments);
                 case NAMED: return new NamedToken(tk, pos, endPos, name, comments);
-                case STRING: return new StringToken(tk, pos, endPos, reader.chars(), comments);
+                case STRING: {
+                    // Get characters from string buffer.
+                    String string = reader.chars();
+                    // If a text block.
+                    if (shouldStripIndent) {
+                        // Verify that the incidental indentation is consistent.
+                        if (lint.isEnabled(LintCategory.TEXT_BLOCKS)) {
+                            Set<TextBlockSupport.WhitespaceChecks> checks =
+                                    TextBlockSupport.checkWhitespace(string);
+                            if (checks.contains(TextBlockSupport.WhitespaceChecks.INCONSISTENT)) {
+                                lexWarning(LintCategory.TEXT_BLOCKS, pos,
+                                        Warnings.InconsistentWhiteSpaceIndentation);
+                            }
+                            if (checks.contains(TextBlockSupport.WhitespaceChecks.TRAILING)) {
+                                lexWarning(LintCategory.TEXT_BLOCKS, pos,
+                                        Warnings.TrailingWhiteSpaceWillBeRemoved);
+                            }
+                        }
+                        // Remove incidental indentation.
+                        string = TextBlockSupport.stripIndent(string);
+                    }
+                    // Translate escape sequences if present.
+                    if (shouldTranslateEscapes) {
+                        string = TextBlockSupport.translateEscapes(string);
+                    }
+                    // Build string token.
+                    return new StringToken(tk, pos, endPos, string, comments);
+                }
                 case NUMERIC: return new NumericToken(tk, pos, endPos, reader.chars(), radix, comments);
                 default: throw new AssertionError();
             }

@@ -37,8 +37,8 @@ public class WhitespaceTest {
     }
 
     void run() throws Exception {
-        test("-v", "java.lang.String");
-        test("-XDtab:1", "-v", "java.lang.String");
+        test("-v", "java.lang.Object");
+        test("-XDtab:1", "-v", "java.lang.Object");
 
         String testClasses = System.getProperty("test.classes");
         for (int i = 10; i < 40; i++)
