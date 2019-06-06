@@ -31,12 +31,16 @@ import java.util.Collections;
 import java.util.List;
 
 import jdk.jfr.EventType;
+import jdk.jfr.Recording;
 import jdk.jfr.internal.JVMSupport;
 import jdk.jfr.internal.LogLevel;
 import jdk.jfr.internal.LogTag;
 import jdk.jfr.internal.Logger;
 import jdk.jfr.internal.MetadataRepository;
+import jdk.jfr.internal.PlatformRecording;
+import jdk.jfr.internal.PrivateAccess;
 import jdk.jfr.internal.Utils;
+import jdk.jfr.internal.WriteableUserPath;
 import jdk.jfr.internal.instrument.JDKEvents;
 
 /**
@@ -85,5 +89,13 @@ public final class ManagementSupport {
     // Reuse internal logging mechanism
     public static void logError(String message) {
         Logger.log(LogTag.JFR, LogLevel.ERROR, message);
+    }
+
+    // Get the textual representation when the destination was set, which
+    // requires access to jdk.jfr.internal.PlatformRecording
+    public static String getDestinationOriginalText(Recording recording) {
+        PlatformRecording pr = PrivateAccess.getInstance().getPlatformRecording(recording);
+        WriteableUserPath wup = pr.getDestination();
+        return wup == null ? null : wup.getOriginalText();
     }
 }

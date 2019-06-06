@@ -50,7 +50,8 @@ public final class WriteableUserPath {
     private final AccessControlContext controlContext;
     private final Path original;
     private final Path real;
-    private final String text;
+    private final String realPathText;
+    private final String originalText;
 
     // Not to ensure security, but to help
     // against programming errors
@@ -68,8 +69,9 @@ public final class WriteableUserPath {
         BufferedWriter fw = Files.newBufferedWriter(path);
         fw.close();
         this.original = path;
+        this.originalText = path.toString();
         this.real = path.toRealPath();
-        this.text = real.toString();
+        this.realPathText = real.toString();
     }
 
     /**
@@ -85,13 +87,23 @@ public final class WriteableUserPath {
     }
 
     /**
-     * Returns a string representation of the path.
+     * Returns a string representation of the real path.
      *
      * @return path as text
      */
-    public String getText() {
-        return text;
+    public String getRealPathText() {
+        return realPathText;
     }
+
+    /**
+     * Returns a string representation of the original path.
+     *
+     * @return path as text
+     */
+    public String getOriginalText() {
+        return originalText;
+    }
+
 
     /**
      * Returns a potentially malicious path where the user may have implemented

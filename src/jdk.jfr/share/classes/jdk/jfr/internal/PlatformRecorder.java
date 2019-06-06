@@ -315,7 +315,7 @@ public final class PlatformRecorder {
     private void dumpMemoryToDestination(PlatformRecording recording)  {
         WriteableUserPath dest = recording.getDestination();
         if (dest != null) {
-            MetadataRepository.getInstance().setOutput(dest.getText());
+            MetadataRepository.getInstance().setOutput(dest.getRealPathText());
             recording.clearDestination();
         }
     }
@@ -406,7 +406,7 @@ public final class PlatformRecorder {
                     event.id = r.getId();
                     event.name = r.getName();
                     WriteableUserPath p = r.getDestination();
-                    event.destination = p == null ? null : p.getText();
+                    event.destination = p == null ? null : p.getRealPathText();
                     Duration d = r.getDuration();
                     event.recordingDuration = d == null ? Long.MAX_VALUE : d.toMillis();
                     Duration age = r.getMaxAge();
