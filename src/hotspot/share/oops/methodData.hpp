@@ -558,8 +558,14 @@ public:
   }
 
   // Direct accessor
-  uint count() const {
-    return uint_at(count_off);
+  int count() const {
+    intptr_t raw_data = intptr_at(count_off);
+    if (raw_data > max_jint) {
+      raw_data = max_jint;
+    } else if (raw_data < min_jint) {
+      raw_data = min_jint;
+    }
+    return int(raw_data);
   }
 
   // Code generation support
@@ -570,8 +576,8 @@ public:
     return cell_offset(counter_cell_count);
   }
 
-  void set_count(uint count) {
-    set_uint_at(count_off, count);
+  void set_count(int count) {
+    set_int_at(count_off, count);
   }
 
   void print_data_on(outputStream* st, const char* extra = NULL) const;
