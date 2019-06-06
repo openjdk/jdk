@@ -46,11 +46,12 @@ public class JavapNotPrintingDefaultModifierTest extends TestRunner {
         void foo();
     }
 
-    private static final String expectedOutput =
-            "interface JavapNotPrintingDefaultModifierTest$SimpleInterface {\n" +
-            "  public default void defaultMethod();\n" +
-            "  public abstract void foo();\n" +
-            "}";
+    private static final List<String> expectedOutput = List.of(
+            "Compiled from \"JavapNotPrintingDefaultModifierTest.java\"",
+            "interface JavapNotPrintingDefaultModifierTest$SimpleInterface {",
+            "  public default void defaultMethod();",
+            "  public abstract void foo();",
+            "}");
 
     JavapNotPrintingDefaultModifierTest() throws Exception {
         super(System.err);
@@ -68,12 +69,13 @@ public class JavapNotPrintingDefaultModifierTest extends TestRunner {
     @Test
     public void testMain(Path base) throws Exception {
         Path testClassesPath = Paths.get(System.getProperty("test.classes"));
-        String output = new JavapTask(tb)
+        List<String> output = new JavapTask(tb)
                 .options("-p", testClassesPath.resolve(this.getClass().getSimpleName() + "$SimpleInterface.class").toString())
                 .run()
                 .writeAll()
-                .getOutput(Task.OutputKind.DIRECT);
-        if (!output.contains(expectedOutput)) {
+                .getOutputLines(Task.OutputKind.DIRECT);
+        System.out.println(output);
+        if (!output.equals(expectedOutput)) {
             throw new AssertionError(String.format("unexpected output:\n %s", output));
         }
     }
