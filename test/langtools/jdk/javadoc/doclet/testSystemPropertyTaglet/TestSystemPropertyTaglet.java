@@ -47,7 +47,7 @@ public class TestSystemPropertyTaglet extends JavadocTester {
 
     public static void main(String... args) throws Exception {
         TestSystemPropertyTaglet tester = new TestSystemPropertyTaglet();
-        tester.runTests(m -> new Object[]{Paths.get(m.getName())});
+        tester.runTests(m -> new Object[] { Paths.get(m.getName()) });
     }
 
     TestSystemPropertyTaglet() {
@@ -117,5 +117,28 @@ public class TestSystemPropertyTaglet extends JavadocTester {
 
         checkOutput(Output.OUT, true,
                 "warning: {@systemProperty} tag, which expands to <a>, within <a>");
+    }
+
+    @Test
+    public void testDuplicateReferences(Path base) throws Exception {
+        Path srcDir = base.resolve("src");
+        Path outDir = base.resolve("out");
+
+        new ClassBuilder(tb, "pkg.A")
+                .setModifiers("public", "class")
+                .setComments("This is a class. Here is {@systemProperty foo}.")
+                .addMembers(MethodBuilder.parse("public void m() {}")
+                        .setComments("This is a method. Here is {@systemProperty foo}."))
+                .write(srcDir);
+
+        javadoc("-d", outDir.toString(),
+                "-sourcepath", srcDir.toString(),
+                "pkg");
+
+        checkExit(Exit.OK);
+
+        checkOutput("pkg/A.html", true,
+                "This is a class. Here is <code><a id=\"foo\" class=\"searchTagResult\">foo</a></code>.",
+                "This is a method. Here is <code><a id=\"foo-1\" class=\"searchTagResult\">foo</a></code>.");
     }
 }
