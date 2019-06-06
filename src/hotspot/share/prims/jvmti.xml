@@ -2824,7 +2824,7 @@ err = (*jvmti)-&gt;Deallocate(jvmti, stack_info);
 	<p/>
 	Changes to global state are not addressed and thus remain changed.
 	<p/>
-	The specified thread must be suspended (which implies it cannot be the current thread).
+	The specified thread must be suspended or must be the current thread.
 	<p/>
 	Both the called method and calling method must be non-native Java programming
         language methods.
@@ -2849,7 +2849,7 @@ err = (*jvmti)-&gt;Deallocate(jvmti, stack_info);
           The implementation is unable to pop this frame.
 	</error>
 	<error id="JVMTI_ERROR_THREAD_NOT_SUSPENDED">
-	  Thread was not suspended.
+	  Thread was not suspended and was not the current thread.
 	</error>
 	<error id="JVMTI_ERROR_NO_MORE_FRAMES">
 	  There are less than two stack frames on the call stack.
@@ -2910,8 +2910,7 @@ err = (*jvmti)-&gt;Deallocate(jvmti, stack_info);
         Only frames corresponding to non-native Java programming language
         methods can receive notification.
         <p/>
-        The specified thread must either be the current thread
-        or the thread must be suspended.
+        The specified thread must be suspended or must be the current thread.
       </description>
       <origin>jvmdi</origin>
       <capabilities>
@@ -3023,7 +3022,7 @@ err = (*jvmti)-&gt;Deallocate(jvmti, stack_info);
           result type of the called method.
 	</error>
 	<error id="JVMTI_ERROR_THREAD_NOT_SUSPENDED">
-	  Thread was not the current thread and was not suspended.
+	  Thread was not suspended and was not the current thread.
 	</error>
 	<error id="JVMTI_ERROR_NO_MORE_FRAMES">
 	  There are no more frames on the call stack.
@@ -3071,7 +3070,7 @@ err = (*jvmti)-&gt;Deallocate(jvmti, stack_info);
   	  <code>boolean</code>.
 	</error>
 	<error id="JVMTI_ERROR_THREAD_NOT_SUSPENDED">
-	  Thread was not the current thread and was not suspended.
+	  Thread was not suspended and was not the current thread.
 	</error>
 	<error id="JVMTI_ERROR_NO_MORE_FRAMES">
 	  There are no frames on the call stack.
@@ -3114,7 +3113,7 @@ err = (*jvmti)-&gt;Deallocate(jvmti, stack_info);
 	  The result type of the called method is not <code>long</code>.
 	</error>
 	<error id="JVMTI_ERROR_THREAD_NOT_SUSPENDED">
-	  Thread was not the current thread and was not suspended.
+	  Thread was not suspended and was not the current thread.
 	</error>
 	<error id="JVMTI_ERROR_NO_MORE_FRAMES">
 	  There are no frames on the call stack.
@@ -3157,7 +3156,7 @@ err = (*jvmti)-&gt;Deallocate(jvmti, stack_info);
 	  The result type of the called method is not <code>float</code>.
 	</error>
 	<error id="JVMTI_ERROR_THREAD_NOT_SUSPENDED">
-	  Thread was not the current thread and was not suspended.
+	  Thread was not suspended and was not the current thread.
 	</error>
 	<error id="JVMTI_ERROR_NO_MORE_FRAMES">
 	  There are no frames on the call stack.
@@ -3198,7 +3197,7 @@ err = (*jvmti)-&gt;Deallocate(jvmti, stack_info);
 	  The result type of the called method is not <code>double</code>.
 	</error>
 	<error id="JVMTI_ERROR_THREAD_NOT_SUSPENDED">
-	  Thread was not the current thread and was not suspended.
+	  Thread was not suspended and was not the current thread.
 	</error>
 	<error id="JVMTI_ERROR_NO_MORE_FRAMES">
 	  There are no frames on the call stack.
@@ -3235,7 +3234,7 @@ err = (*jvmti)-&gt;Deallocate(jvmti, stack_info);
 	  The called method has a result type.
 	</error>
 	<error id="JVMTI_ERROR_THREAD_NOT_SUSPENDED">
-	  Thread was not the current thread and was not suspended.
+	  Thread was not suspended and was not the current thread.
 	</error>
 	<error id="JVMTI_ERROR_NO_MORE_FRAMES">
 	  There are no frames on the call stack.
@@ -14964,6 +14963,11 @@ typedef void (JNICALL *jvmtiEventVMInit)
       It now says:
        "RedefineClasses can be called on any modifiable class. See IsModifiableClass.
        (can_redefine_classes must also be set)"
+  </change>
+  <change date="5 June 2019" version="13.0.0">
+      Minor PopFrame spec update:
+        - The specified thread must be suspended or must be the current thread.
+          (It was not allowed to be the current thread before.)
   </change>
 </changehistory>
 
