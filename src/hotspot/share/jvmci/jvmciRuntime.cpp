@@ -1543,25 +1543,23 @@ JVMCI::CodeInstallResult JVMCIRuntime::register_method(JVMCIEnv* JVMCIENV,
                 old->make_not_entrant();
               }
             }
-            if (TraceNMethodInstalls) {
+
+            LogTarget(Info, nmethod, install) lt;
+            if (lt.is_enabled()) {
               ResourceMark rm;
               char *method_name = method->name_and_sig_as_C_string();
-              ttyLocker ttyl;
-              tty->print_cr("Installing method (%d) %s [entry point: %p]",
-                            comp_level,
-                            method_name, nm->entry_point());
+              lt.print("Installing method (%d) %s [entry point: %p]",
+                        comp_level, method_name, nm->entry_point());
             }
             // Allow the code to be executed
             method->set_code(method, nm);
           } else {
-            if (TraceNMethodInstalls ) {
+            LogTarget(Info, nmethod, install) lt;
+            if (lt.is_enabled()) {
               ResourceMark rm;
               char *method_name = method->name_and_sig_as_C_string();
-              ttyLocker ttyl;
-              tty->print_cr("Installing osr method (%d) %s @ %d",
-                            comp_level,
-                            method_name,
-                            entry_bci);
+              lt.print("Installing osr method (%d) %s @ %d",
+                        comp_level, method_name, entry_bci);
             }
             InstanceKlass::cast(method->method_holder())->add_osr_nmethod(nm);
           }

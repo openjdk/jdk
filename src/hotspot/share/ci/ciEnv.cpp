@@ -44,6 +44,7 @@
 #include "gc/shared/collectedHeap.inline.hpp"
 #include "interpreter/linkResolver.hpp"
 #include "jfr/jfrEvents.hpp"
+#include "logging/log.hpp"
 #include "memory/allocation.inline.hpp"
 #include "memory/oopFactory.hpp"
 #include "memory/resourceArea.hpp"
@@ -1076,25 +1077,23 @@ void ciEnv::register_method(ciMethod* target,
             old->make_not_used();
           }
         }
-        if (TraceNMethodInstalls) {
+
+        LogTarget(Info, nmethod, install) lt;
+        if (lt.is_enabled()) {
           ResourceMark rm;
           char *method_name = method->name_and_sig_as_C_string();
-          ttyLocker ttyl;
-          tty->print_cr("Installing method (%d) %s ",
-                        task()->comp_level(),
-                        method_name);
+          lt.print("Installing method (%d) %s ",
+                    task()->comp_level(), method_name);
         }
         // Allow the code to be executed
         method->set_code(method, nm);
       } else {
-        if (TraceNMethodInstalls) {
+        LogTarget(Info, nmethod, install) lt;
+        if (lt.is_enabled()) {
           ResourceMark rm;
           char *method_name = method->name_and_sig_as_C_string();
-          ttyLocker ttyl;
-          tty->print_cr("Installing osr method (%d) %s @ %d",
-                        task()->comp_level(),
-                        method_name,
-                        entry_bci);
+          lt.print("Installing osr method (%d) %s @ %d",
+                    task()->comp_level(), method_name, entry_bci);
         }
         method->method_holder()->add_osr_nmethod(nm);
       }
