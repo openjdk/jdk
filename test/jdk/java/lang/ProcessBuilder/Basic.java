@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,7 +27,7 @@
  *      5026830 5023243 5070673 4052517 4811767 6192449 6397034 6413313
  *      6464154 6523983 6206031 4960438 6631352 6631966 6850957 6850958
  *      4947220 7018606 7034570 4244896 5049299 8003488 8054494 8058464
- *      8067796
+ *      8067796 8224905
  * @key intermittent
  * @summary Basic tests for Process and Environment Variable code
  * @modules java.base/java.lang:open
@@ -2187,8 +2187,10 @@ public class Basic {
                             // Check that reader failed because stream was
                             // asynchronously closed.
                             // e.printStackTrace();
+                            String msg = e.getMessage();
                             if (EnglishUnix.is() &&
-                                ! (e.getMessage().matches(".*Bad file.*")))
+                                ! (msg.matches(".*Bad file.*") ||
+                                        msg.matches(".*Stream closed.*")))
                                 unexpected(e);
                         }
                         catch (Throwable t) { unexpected(t); }}};
