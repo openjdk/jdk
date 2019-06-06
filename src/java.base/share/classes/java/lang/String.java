@@ -3314,6 +3314,30 @@ public final class String
     }
 
     /**
+     * Formats using this string as the format string, and the supplied
+     * arguments.
+     *
+     * @implSpec This method is equivalent to {@code String.format(this, args)}.
+     *
+     * @param  args
+     *         Arguments referenced by the format specifiers in this string.
+     *
+     * @return  A formatted string
+     *
+     * @see  java.lang.String#format(String,Object...)
+     * @see  java.util.Formatter
+     *
+     * @since 13
+     *
+     * @deprecated  This method is associated with text blocks, a preview language feature.
+     *              Text blocks and/or this method may be changed or removed in a future release.
+     */
+    @Deprecated(forRemoval=true, since="13")
+    public String formatted(Object... args) {
+        return new Formatter().format(this, args).toString();
+    }
+
+    /**
      * Returns the string representation of the {@code Object} argument.
      *
      * @param   obj   an {@code Object}.
