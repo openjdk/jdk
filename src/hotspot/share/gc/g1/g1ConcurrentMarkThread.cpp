@@ -268,7 +268,6 @@ void G1ConcurrentMarkThread::run_service() {
 
       {
         G1ConcPhase p(G1ConcurrentPhase::CLEAR_CLAIMED_MARKS, this);
-        MutexLocker ml(ClassLoaderDataGraph_lock);
         ClassLoaderDataGraph::clear_claimed_marks();
       }
 

@@ -526,7 +526,7 @@ typedef PaddedEnd<ObjectMonitor>              PaddedObjectMonitor;
   nonstatic_field(ClassLoaderData,             _is_unsafe_anonymous,                          bool)                                  \
   volatile_nonstatic_field(ClassLoaderData,    _dictionary,                                   Dictionary*)                           \
                                                                                                                                      \
-     static_field(ClassLoaderDataGraph,        _head,                                         ClassLoaderData*)                      \
+  static_ptr_volatile_field(ClassLoaderDataGraph, _head,                                      ClassLoaderData*)                      \
                                                                                                                                      \
   /**********/                                                                                                                       \
   /* Arrays */                                                                                                                       \
