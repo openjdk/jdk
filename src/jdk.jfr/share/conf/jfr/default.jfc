@@ -140,12 +140,12 @@
 
     <event name="jdk.ExecutionSample">
       <setting name="enabled" control="method-sampling-enabled">true</setting>
-      <setting name="period" control="method-sampling-interval">20 ms</setting>
+      <setting name="period" control="method-sampling-java-interval">20 ms</setting>
     </event>
 
     <event name="jdk.NativeMethodSample">
       <setting name="enabled" control="method-sampling-enabled">true</setting>
-      <setting name="period" control="method-sampling-interval">20 ms</setting>
+      <setting name="period" control="method-sampling-native-interval">20 ms</setting>
     </event>
 
     <event name="jdk.SafepointBegin">
@@ -812,13 +812,42 @@
       </condition>
 
       <selection name="method-sampling-interval" default="normal" label="Method Sampling">
-        <option label="Off" name="off">999 d</option>
-        <option label="Normal" name="normal">20 ms</option>
-        <option label="Maximum" name="maximum">10 ms</option>
+        <option label="Off" name="off">off</option>
+        <option label="Normal" name="normal">normal</option>
+        <option label="High" name="high">high</option>
+        <option label="Ludicrous (High Overhead)" name="ludicrous">ludicrous</option>
       </selection>
+      
+      <condition name="method-sampling-java-interval" true="999 d">
+        <test name="method-sampling-interval" operator="equal" value="off"/>
+      </condition>
+
+      <condition name="method-sampling-java-interval" true="20 ms">
+        <test name="method-sampling-interval" operator="equal" value="normal"/>
+      </condition>
+
+      <condition name="method-sampling-java-interval" true="10 ms">
+        <test name="method-sampling-interval" operator="equal" value="high"/>
+      </condition>
+
+      <condition name="method-sampling-java-interval" true="1 ms">
+        <test name="method-sampling-interval" operator="equal" value="ludicrous"/>
+      </condition>
+      
+      <condition name="method-sampling-native-interval" true="999 d">
+        <test name="method-sampling-interval" operator="equal" value="off"/>
+      </condition>
+
+      <condition name="method-sampling-native-interval" true="20 ms">
+        <or>
+          <test name="method-sampling-interval" operator="equal" value="normal"/>
+          <test name="method-sampling-interval" operator="equal" value="high"/>
+          <test name="method-sampling-interval" operator="equal" value="ludicrous"/>
+        </or>
+      </condition>  
 
       <condition name="method-sampling-enabled" true="false" false="true">
-        <test name="method-sampling-interval" operator="equal" value="999 d"/>
+        <test name="method-sampling-interval" operator="equal" value="off"/>
       </condition>
 
       <selection name="thread-dump-interval" default="normal" label="Thread Dump">
