@@ -4602,13 +4602,14 @@ void MacroAssembler::check_klass_subtype_slow_path(Register sub_klass,
   bind(L_fallthrough);
 }
 
-
 void MacroAssembler::clinit_barrier(Register klass, Register thread, Label* L_fast_path, Label* L_slow_path) {
   assert(L_fast_path != NULL || L_slow_path != NULL, "at least one is required");
 
   Label L_fallthrough;
   if (L_fast_path == NULL) {
     L_fast_path = &L_fallthrough;
+  } else if (L_slow_path == NULL) {
+    L_slow_path = &L_fallthrough;
   }
 
   // Fast path check: class is fully initialized
@@ -4617,13 +4618,15 @@ void MacroAssembler::clinit_barrier(Register klass, Register thread, Label* L_fa
 
   // Fast path check: current thread is initializer thread
   cmpptr(thread, Address(klass, InstanceKlass::init_thread_offset()));
-  if (L_slow_path != NULL) {
-    jcc(Assembler::notEqual, *L_slow_path);
-  } else {
+  if (L_slow_path == &L_fallthrough) {
     jcc(Assembler::equal, *L_fast_path);
+    bind(*L_slow_path);
+  } else if (L_fast_path == &L_fallthrough) {
+    jcc(Assembler::notEqual, *L_slow_path);
+    bind(*L_fast_path);
+  } else {
+    Unimplemented();
   }
-
-  bind(L_fallthrough);
 }
 
 void MacroAssembler::cmov32(Condition cc, Register dst, Address src) {

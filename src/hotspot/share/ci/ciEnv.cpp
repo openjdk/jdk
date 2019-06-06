@@ -991,6 +991,11 @@ void ciEnv::register_method(ciMethod* target,
       record_failure("DTrace flags change invalidated dependencies");
     }
 
+    if (!failing() && target->needs_clinit_barrier() &&
+        target->holder()->is_in_error_state()) {
+      record_failure("method holder is in error state");
+    }
+
     if (!failing()) {
       if (log() != NULL) {
         // Log the dependencies which this compilation declares.

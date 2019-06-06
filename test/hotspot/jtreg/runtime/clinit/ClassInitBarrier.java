@@ -114,7 +114,7 @@ public class ClassInitBarrier {
             checkBlockingAction(Test::testPutStatic);          // putstatic
             checkBlockingAction(Test::testNewInstanceA);       // new
 
-            A recv = testNewInstanceB(NON_BLOCKING.get()); // trigger B initialization
+            A recv = testNewInstanceB(NON_BLOCKING.get());  // trigger B initialization
             checkNonBlockingAction(Test::testNewInstanceB); // new: NO BLOCKING: same thread: A being initialized, B fully initialized
 
             checkNonBlockingAction(recv, Test::testGetField);      // getfield
@@ -140,8 +140,8 @@ public class ClassInitBarrier {
 
         static void run() {
             execute(ExceptionInInitializerError.class, () -> triggerInitialization(A.class));
-
             ensureFinished();
+            runTests(); // after initialization is over
         }
     }
 
@@ -150,20 +150,28 @@ public class ClassInitBarrier {
     static void execute(Class<? extends Throwable> expectedExceptionClass, Runnable action) {
         try {
             action.run();
-            if (THROW)  throw new AssertionError("no exception thrown");
+            if (THROW) throw failure("no exception thrown");
         } catch (Throwable e) {
             if (THROW) {
                 if (e.getClass() == expectedExceptionClass) {
                     // expected
                 } else {
                     String msg = String.format("unexpected exception thrown: expected %s, caught %s",
-                            expectedExceptionClass.getName(), e.getClass().getName());
-                    throw new AssertionError(msg, e);
+                            expectedExceptionClass.getName(), e);
+                    throw failure(msg, e);
                 }
             } else {
-                throw new AssertionError("no exception expected", e);
+                throw failure("no exception expected", e);
             }
         }
+    }
+
+    private static AssertionError failure(String msg) {
+        return new AssertionError(phase + ": " + msg);
+    }
+
+    private static AssertionError failure(String msg, Throwable e) {
+        return new AssertionError(phase + ": " + msg, e);
     }
 
     static final List<Thread> BLOCKED_THREADS = Collections.synchronizedList(new ArrayList<>());
@@ -293,25 +301,51 @@ public class ClassInitBarrier {
 
     static final AtomicInteger NON_BLOCKING_COUNTER = new AtomicInteger(0);
     static final AtomicInteger NON_BLOCKING_ACTIONS = new AtomicInteger(0);
-    static final Factory<Runnable> NON_BLOCKING = () -> disposableAction(Phase.IN_PROGRESS, NON_BLOCKING_COUNTER, NON_BLOCKING_ACTIONS);
+    static final Factory<Runnable> NON_BLOCKING = () -> disposableAction(phase, NON_BLOCKING_COUNTER, NON_BLOCKING_ACTIONS);
 
     static final AtomicInteger BLOCKING_COUNTER = new AtomicInteger(0);
     static final AtomicInteger BLOCKING_ACTIONS = new AtomicInteger(0);
     static final Factory<Runnable> BLOCKING     = () -> disposableAction(Phase.FINISHED, BLOCKING_COUNTER, BLOCKING_ACTIONS);
 
     static void checkBlockingAction(TestCase0 r) {
-        r.run(NON_BLOCKING.get()); // same thread
-        checkBlocked(ON_BLOCK, ON_FAILURE, r); // different thread
+        switch (phase) {
+            case IN_PROGRESS: {
+                // Barrier during class initalization.
+                r.run(NON_BLOCKING.get());             // initializing thread
+                checkBlocked(ON_BLOCK, ON_FAILURE, r); // different thread
+                break;
+            }
+            case FINISHED: {
+                // No barrier after class initalization is over.
+                r.run(NON_BLOCKING.get()); // initializing thread
+                checkNotBlocked(r);        // different thread
+                break;
+            }
+            case INIT_FAILURE: {
+                // Exception is thrown after class initialization failed.
+                TestCase0 test = action -> execute(NoClassDefFoundError.class, () -> r.run(action));
+
+                test.run(NON_BLOCKING.get()); // initializing thread
+                checkNotBlocked(test);        // different thread
+                break;
+            }
+            default: throw new Error("wrong phase: " + phase);
+        }
     }
 
     static void checkNonBlockingAction(TestCase0 r) {
-        r.run(NON_BLOCKING.get());
-        checkNotBlocked(r); // different thread
+        r.run(NON_BLOCKING.get()); // initializing thread
+        checkNotBlocked(r);        // different thread
     }
 
     static <T> void checkNonBlockingAction(T recv, TestCase1<T> r) {
-        r.run(recv, NON_BLOCKING.get()); // same thread
+        r.run(recv, NON_BLOCKING.get());                  // initializing thread
         checkNotBlocked((action) -> r.run(recv, action)); // different thread
+    }
+
+    static void checkFailingAction(TestCase0 r) {
+        r.run(NON_BLOCKING.get()); // initializing thread
+        checkNotBlocked(r);        // different thread
     }
 
     static void triggerInitialization(Class<?> cls) {
@@ -356,7 +390,15 @@ public class ClassInitBarrier {
     }
 
     static void checkNotBlocked(TestCase0 r) {
-        Thread thr = new Thread(() -> r.run(NON_BLOCKING.get()));
+        final Thread thr = new Thread(() -> r.run(NON_BLOCKING.get()));
+        final Throwable[] ex = new Throwable[1];
+        thr.setUncaughtExceptionHandler((t, e) -> {
+            if (thr != t) {
+                ex[0] = new Error("wrong thread: " + thr + " vs " + t);
+            } else {
+                ex[0] = e;
+            }
+        });
 
         thr.start();
         try {
@@ -367,6 +409,10 @@ public class ClassInitBarrier {
             }
         } catch (InterruptedException e) {
             throw new Error(e);
+        }
+
+        if (ex[0] != null) {
+            throw new AssertionError("no exception expected", ex[0]);
         }
     }
 
