@@ -253,6 +253,7 @@ static gchar* (*fp_gtk_check_version)(guint required_major, guint
 static void (*fp_g_free)(gpointer mem);
 static void (*fp_g_object_unref)(gpointer object);
 static GdkWindow *(*fp_gdk_get_default_root_window) (void);
+static int (*fp_gdk_window_get_scale_factor) (GdkWindow *window);
 
 static int (*fp_gdk_pixbuf_get_bits_per_sample)(const GdkPixbuf *pixbuf);
 static guchar *(*fp_gdk_pixbuf_get_pixels)(const GdkPixbuf *pixbuf);
