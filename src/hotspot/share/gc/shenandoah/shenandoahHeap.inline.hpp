@@ -116,7 +116,7 @@ inline oop ShenandoahHeap::evac_update_with_forwarded(T* p) {
       if (oopDesc::equals_raw(forwarded_oop, heap_oop)) {
         forwarded_oop = evacuate_object(heap_oop, Thread::current());
       }
-      oop prev = atomic_compare_exchange_oop(forwarded_oop, p, heap_oop);
+      oop prev = cas_oop(forwarded_oop, p, heap_oop);
       if (oopDesc::equals_raw(prev, heap_oop)) {
         return forwarded_oop;
       } else {
@@ -129,11 +129,11 @@ inline oop ShenandoahHeap::evac_update_with_forwarded(T* p) {
   }
 }
 
-inline oop ShenandoahHeap::atomic_compare_exchange_oop(oop n, oop* addr, oop c) {
+inline oop ShenandoahHeap::cas_oop(oop n, oop* addr, oop c) {
   return (oop) Atomic::cmpxchg(n, addr, c);
 }
 
-inline oop ShenandoahHeap::atomic_compare_exchange_oop(oop n, narrowOop* addr, oop c) {
+inline oop ShenandoahHeap::cas_oop(oop n, narrowOop* addr, oop c) {
   narrowOop cmp = CompressedOops::encode(c);
   narrowOop val = CompressedOops::encode(n);
   return CompressedOops::decode((narrowOop) Atomic::cmpxchg(val, addr, cmp));
@@ -157,7 +157,7 @@ inline oop ShenandoahHeap::maybe_update_with_forwarded_not_null(T* p, oop heap_o
 
     // If this fails, another thread wrote to p before us, it will be logged in SATB and the
     // reference be updated later.
-    oop witness = atomic_compare_exchange_oop(forwarded_oop, p, heap_oop);
+    oop witness = cas_oop(forwarded_oop, p, heap_oop);
 
     if (!oopDesc::equals_raw(witness, heap_oop)) {
       // CAS failed, someone had beat us to it. Normally, we would return the failure witness,

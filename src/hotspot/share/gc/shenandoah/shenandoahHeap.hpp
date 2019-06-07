@@ -690,8 +690,8 @@ public:
   template <class T>
   inline oop update_with_forwarded_not_null(T* p, oop obj);
 
-  inline oop atomic_compare_exchange_oop(oop n, narrowOop* addr, oop c);
-  inline oop atomic_compare_exchange_oop(oop n, oop* addr, oop c);
+  static inline oop cas_oop(oop n, narrowOop* addr, oop c);
+  static inline oop cas_oop(oop n, oop* addr, oop c);
 
   void trash_humongous_region_at(ShenandoahHeapRegion *r);
 
