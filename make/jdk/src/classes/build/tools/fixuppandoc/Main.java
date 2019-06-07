@@ -558,7 +558,7 @@ public class Main {
                         out.write(style);
                         out.write(m.group("after"));
                     } else {
-                        out.write(" style=\"font-weight: normal; text-align:left\"; ");
+                        out.write(" style=\"font-weight: normal; text-align:left;\" ");
                         out.write(attrs);
                     }
                     out.write(" scope=\"row\"");
