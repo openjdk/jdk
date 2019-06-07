@@ -246,8 +246,6 @@ compiler/codegen/TestTrichotomyExpressions.java         8207267   generic-all
 
 runtime/exceptionMsgs/AbstractMethodError/AbstractMethodErrorTest.java        8222582 generic-all
 
-serviceability/dcmd/compiler/CodelistTest.java 8220449 generic-all
-
 # Graal unit tests
 org.graalvm.compiler.core.test.CheckGraalInvariants                              8205081
 org.graalvm.compiler.core.test.OptionsVerifierTest                               8205081

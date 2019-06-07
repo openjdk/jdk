@@ -101,8 +101,6 @@ com/sun/jdi/PopAndStepTest.java                                         8195635 
 com/sun/jdi/EarlyReturnTest.java                                        8195635   generic-all
 com/sun/jdi/EarlyReturnTest.java                                        8195635   generic-all
 
-com/sun/jdi/RedefineCrossEvent.java                                     8218396   generic-all
-
 # Next JFR tests fail with Graal. Assuming 8193210.
 jdk/jfr/event/compiler/TestCodeSweeper.java              8193210   generic-all
 jdk/jfr/event/compiler/TestCompilerInlining.java         8193210   generic-all
