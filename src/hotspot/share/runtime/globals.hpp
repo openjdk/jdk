@@ -2455,7 +2455,7 @@ const size_t minimumSymbolTableSize = 1024;
           "leverage profiling for table/lookup switch")                     \
                                                                             \
   JFR_ONLY(product(bool, FlightRecorder, false,                             \
-          "Enable Flight Recorder"))                                        \
+          "(Deprecated) Enable Flight Recorder"))                                        \
                                                                             \
   JFR_ONLY(product(ccstr, FlightRecorderOptions, NULL,                      \
           "Flight Recorder options"))                                       \
