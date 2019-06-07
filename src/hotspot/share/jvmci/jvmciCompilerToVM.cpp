@@ -921,6 +921,14 @@ C2V_VMENTRY_0(jint, getMetadata, (JNIEnv *env, jobject, jobject target, jobject 
   }
   HotSpotJVMCI::HotSpotMetaData::set_exceptionBytes(JVMCIENV, metadata_handle, exceptionArray);
 
+  ImplicitExceptionTable* implicit = code_metadata.get_implicit_exception_table();
+  int implicit_table_size = implicit->size_in_bytes();
+  JVMCIPrimitiveArray implicitExceptionArray = JVMCIENV->new_byteArray(implicit_table_size, JVMCI_CHECK_(JVMCI::cache_full));
+  if (implicit_table_size > 0) {
+    implicit->copy_bytes_to((address) HotSpotJVMCI::resolve(implicitExceptionArray)->byte_at_addr(0), implicit_table_size);
+  }
+  HotSpotJVMCI::HotSpotMetaData::set_implicitExceptionBytes(JVMCIENV, metadata_handle, implicitExceptionArray);
+
   return result;
 #else
   JVMCI_THROW_MSG_0(InternalError, "unimplemented");

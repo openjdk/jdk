@@ -176,7 +176,7 @@ void ImplicitExceptionTable::append( uint exec_off, uint cont_off ) {
   _len = l+1;
 };
 
-uint ImplicitExceptionTable::at( uint exec_off ) const {
+uint ImplicitExceptionTable::continuation_offset( uint exec_off ) const {
   uint l = len();
   for( uint i=0; i<l; i++ )
     if( *adr(i) == exec_off )
@@ -205,7 +205,7 @@ void ImplicitExceptionTable::print(address base) const {
   }
 }
 
-ImplicitExceptionTable::ImplicitExceptionTable(const nmethod* nm) {
+ImplicitExceptionTable::ImplicitExceptionTable(const CompiledMethod* nm) {
   if (nm->nul_chk_table_size() == 0) {
     _len = 0;
     _data = NULL;
@@ -221,9 +221,13 @@ ImplicitExceptionTable::ImplicitExceptionTable(const nmethod* nm) {
 }
 
 void ImplicitExceptionTable::copy_to( nmethod* nm ) {
-  assert(size_in_bytes() <= nm->nul_chk_table_size(), "size of space allocated in nmethod incorrect");
+  copy_bytes_to(nm->nul_chk_table_begin(), nm->nul_chk_table_size());
+}
+
+void ImplicitExceptionTable::copy_bytes_to(address addr, int size) {
+  assert(size_in_bytes() <= size, "size of space allocated in nmethod incorrect");
   if (len() != 0) {
-    implicit_null_entry* nmdata = (implicit_null_entry*)nm->nul_chk_table_begin();
+    implicit_null_entry* nmdata = (implicit_null_entry*)addr;
     // store the length in the first uint
     nmdata[0] = _len;
     nmdata++;
@@ -232,7 +236,7 @@ void ImplicitExceptionTable::copy_to( nmethod* nm ) {
   } else {
     // zero length table takes zero bytes
     assert(size_in_bytes() == 0, "bad size");
-    assert(nm->nul_chk_table_size() == 0, "bad size");
+    assert(size == 0, "bad size");
   }
 }
 

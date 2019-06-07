@@ -334,6 +334,7 @@
     primarray_field(HotSpotMetaData, scopesDescBytes, "[B")                                                   \
     primarray_field(HotSpotMetaData, relocBytes, "[B")                                                        \
     primarray_field(HotSpotMetaData, exceptionBytes, "[B")                                                    \
+    primarray_field(HotSpotMetaData, implicitExceptionBytes, "[B")                                            \
     primarray_field(HotSpotMetaData, oopMaps, "[B")                                                           \
     object_field(HotSpotMetaData, metadata, "[Ljava/lang/Object;")                                            \
   end_class                                                                                                   \

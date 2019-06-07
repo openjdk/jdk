@@ -1425,6 +1425,7 @@ JVMCI::CodeInstallResult JVMCIRuntime::register_method(JVMCIEnv* JVMCIENV,
                                 int frame_words,
                                 OopMapSet* oop_map_set,
                                 ExceptionHandlerTable* handler_table,
+                                ImplicitExceptionTable* implicit_exception_table,
                                 AbstractCompiler* compiler,
                                 DebugInformationRecorder* debug_info,
                                 Dependencies* dependencies,
@@ -1494,7 +1495,6 @@ JVMCI::CodeInstallResult JVMCIRuntime::register_method(JVMCIEnv* JVMCIENV,
       // as in C2, then it must be freed.
       //code_buffer->free_blob();
     } else {
-      ImplicitExceptionTable implicit_tbl;
       nm =  nmethod::new_nmethod(method,
                                  compile_id,
                                  entry_bci,
@@ -1502,7 +1502,7 @@ JVMCI::CodeInstallResult JVMCIRuntime::register_method(JVMCIEnv* JVMCIENV,
                                  orig_pc_offset,
                                  debug_info, dependencies, code_buffer,
                                  frame_words, oop_map_set,
-                                 handler_table, &implicit_tbl,
+                                 handler_table, implicit_exception_table,
                                  compiler, comp_level,
                                  speculations, speculations_len,
                                  nmethod_mirror_index, nmethod_mirror_name, failed_speculations);

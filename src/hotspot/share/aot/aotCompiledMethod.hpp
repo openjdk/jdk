@@ -51,6 +51,7 @@ private:
   int _scopes_begin;
   int _reloc_begin;
   int _exception_table_begin;
+  int _nul_chk_table_begin;
   int _oopmap_begin;
   address at_offset(size_t offset) const { return ((address) this) + offset; }
 public:
@@ -63,9 +64,9 @@ public:
   relocInfo* relocation_begin() const { return (relocInfo*) at_offset(_reloc_begin); }
   relocInfo* relocation_end() const { return (relocInfo*) at_offset(_exception_table_begin); }
   address handler_table_begin   () const { return at_offset(_exception_table_begin); }
-  address handler_table_end() const { return at_offset(_oopmap_begin); }
+  address handler_table_end() const { return at_offset(_nul_chk_table_begin); }
 
-  address nul_chk_table_begin() const { return at_offset(_oopmap_begin); }
+  address nul_chk_table_begin() const { return at_offset(_nul_chk_table_begin); }
   address nul_chk_table_end() const { return at_offset(_oopmap_begin); }
 
   ImmutableOopMapSet* oopmap_set() const { return (ImmutableOopMapSet*) at_offset(_oopmap_begin); }

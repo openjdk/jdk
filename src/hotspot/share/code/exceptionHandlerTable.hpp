@@ -146,19 +146,36 @@ class ImplicitExceptionTable {
   implicit_null_entry *_data;
   implicit_null_entry *adr( uint idx ) const { return &_data[2*idx]; }
   ReallocMark          _nesting;  // assertion check for reallocations
+
 public:
   ImplicitExceptionTable( ) :  _size(0), _len(0), _data(0) { }
   // (run-time) construction from nmethod
-  ImplicitExceptionTable( const nmethod *nm );
+  ImplicitExceptionTable( const CompiledMethod *nm );
 
   void set_size( uint size );
   void append( uint exec_off, uint cont_off );
-  uint at( uint exec_off ) const;
+
+#if INCLUDE_JVMCI
+  void add_deoptimize(uint exec_off) {
+    // Use the same offset as a marker value for deoptimization
+    append(exec_off, exec_off);
+  }
+#endif
+
+  // Returns the offset to continue execution at.  If the returned
+  // value equals exec_off then the dispatch is expected to be a
+  // deoptimization instead.
+  uint continuation_offset( uint exec_off ) const;
 
   uint len() const { return _len; }
+
+  uint get_exec_offset(uint i) { assert(i < _len, "oob"); return *adr(i); }
+  uint get_cont_offset(uint i) { assert(i < _len, "oob"); return *(adr(i) + 1); }
+
   int size_in_bytes() const { return len() == 0 ? 0 : ((2 * len() + 1) * sizeof(implicit_null_entry)); }
 
   void copy_to(nmethod* nm);
+  void copy_bytes_to(address addr, int size);
   void print(address base) const;
   void verify(nmethod *nm) const;
 };
