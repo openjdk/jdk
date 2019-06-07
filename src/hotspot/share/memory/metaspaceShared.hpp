@@ -304,7 +304,6 @@ class MetaspaceShared : AllStatic {
   static DumpRegion* misc_code_dump_space();
   static DumpRegion* read_write_dump_space();
   static DumpRegion* read_only_dump_space();
-  static DumpRegion* optional_data_dump_space();
   static void pack_dump_space(DumpRegion* current, DumpRegion* next,
                               ReservedSpace* rs);
 

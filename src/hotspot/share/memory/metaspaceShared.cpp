@@ -90,18 +90,17 @@ void* MetaspaceShared::_shared_metaspace_static_top = NULL;
 //     rw  - read-write metadata
 //     ro  - read-only metadata and read-only tables
 //     md  - misc data (the c++ vtables)
-//     od  - optional data (original class files)
 //
 //     ca0 - closed archive heap space #0
 //     ca1 - closed archive heap space #1 (may be empty)
 //     oa0 - open archive heap space #0
 //     oa1 - open archive heap space #1 (may be empty)
 //
-// The mc, rw, ro, md and od regions are linearly allocated, starting from
-// SharedBaseAddress, in the order of mc->rw->ro->md->od. The size of these 5 regions
+// The mc, rw, ro, and md regions are linearly allocated, starting from
+// SharedBaseAddress, in the order of mc->rw->ro->md. The size of these 4 regions
 // are page-aligned, and there's no gap between any consecutive regions.
 //
-// These 5 regions are populated in the following steps:
+// These 4 regions are populated in the following steps:
 // [1] All classes are loaded in MetaspaceShared::preload_classes(). All metadata are
 //     temporarily allocated outside of the shared regions. Only the method entry
 //     trampolines are written into the mc region.
@@ -110,10 +109,9 @@ void* MetaspaceShared::_shared_metaspace_static_top = NULL;
 // [4] SymbolTable, StringTable, SystemDictionary, and a few other read-only data
 //     are copied into the ro region as read-only tables.
 // [5] C++ vtables are copied into the md region.
-// [6] Original class files are copied into the od region.
 //
 // The s0/s1 and oa0/oa1 regions are populated inside HeapShared::archive_java_heap_objects.
-// Their layout is independent of the other 5 regions.
+// Their layout is independent of the other 4 regions.
 
 char* DumpRegion::expand_top_to(char* newtop) {
   assert(is_allocatable(), "must be initialized and not packed");
@@ -174,7 +172,7 @@ void DumpRegion::pack(DumpRegion* next) {
   }
 }
 
-DumpRegion _mc_region("mc"), _ro_region("ro"), _rw_region("rw"), _md_region("md"), _od_region("od");
+DumpRegion _mc_region("mc"), _ro_region("ro"), _rw_region("rw"), _md_region("md");
 size_t _total_closed_archive_region_size = 0, _total_open_archive_region_size = 0;
 
 void MetaspaceShared::init_shared_dump_space(DumpRegion* first_space, address first_space_bottom) {
@@ -196,10 +194,6 @@ DumpRegion* MetaspaceShared::read_write_dump_space() {
 
 DumpRegion* MetaspaceShared::read_only_dump_space() {
   return &_ro_region;
-}
-
-DumpRegion* MetaspaceShared::optional_data_dump_space() {
-  return &_od_region;
 }
 
 void MetaspaceShared::pack_dump_space(DumpRegion* current, DumpRegion* next,
@@ -290,10 +284,10 @@ void MetaspaceShared::initialize_dumptime_shared_and_meta_spaces() {
   //
   //                              +-- SharedBaseAddress (default = 0x800000000)
   //                              v
-  // +-..---------+---------+ ... +----+----+----+----+----+---------------+
-  // |    Heap    | Archive |     | MC | RW | RO | MD | OD | class space   |
-  // +-..---------+---------+ ... +----+----+----+----+----+---------------+
-  // |<--   MaxHeapSize  -->|     |<-- UnscaledClassSpaceMax = 4GB ------->|
+  // +-..---------+---------+ ... +----+----+----+----+---------------+
+  // |    Heap    | Archive |     | MC | RW | RO | MD | class space   |
+  // +-..---------+---------+ ... +----+----+----+----+---------------+
+  // |<--   MaxHeapSize  -->|     |<-- UnscaledClassSpaceMax = 4GB -->|
   //
   const uint64_t UnscaledClassSpaceMax = (uint64_t(max_juint) + 1);
   const size_t cds_total = align_down(UnscaledClassSpaceMax, reserve_alignment);
@@ -1074,7 +1068,7 @@ void DumpAllocStats::print_stats(int ro_all, int rw_all, int mc_all, int md_all)
 
   LogMessage(cds) msg;
 
-  msg.info("Detailed metadata info (excluding od/st regions; rw stats include md/mc regions):");
+  msg.info("Detailed metadata info (excluding st regions; rw stats include md/mc regions):");
   msg.info("%s", hdr);
   msg.info("%s", sep);
   for (int type = 0; type < int(_number_of_types); type ++) {

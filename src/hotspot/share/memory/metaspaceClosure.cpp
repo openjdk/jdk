@@ -45,7 +45,7 @@ void MetaspaceClosure::push_impl(MetaspaceClosure::Ref* ref) {
 }
 
 void MetaspaceClosure::do_push(MetaspaceClosure::Ref* ref) {
-  if (ref->not_null()) { // FIXME: make this configurable, so DynamicArchiveBuilder mark all pointers
+  if (ref->not_null()) {
     bool read_only;
     Writability w = ref->writability();
     switch (w) {
