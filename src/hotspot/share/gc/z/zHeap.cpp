@@ -79,7 +79,7 @@ ZHeap::ZHeap() :
   _heap = this;
 
   // Update statistics
-  ZStatHeap::set_at_initialize(heap_max_size(), heap_max_reserve_size());
+  ZStatHeap::set_at_initialize(heap_min_size(), heap_max_size(), heap_max_reserve_size());
 }
 
 size_t ZHeap::heap_min_size() const {
@@ -317,7 +317,7 @@ void ZHeap::mark_start() {
   _mark.start();
 
   // Update statistics
-  ZStatHeap::set_at_mark_start(capacity(), used());
+  ZStatHeap::set_at_mark_start(soft_max_capacity(), capacity(), used());
 }
 
 void ZHeap::mark(bool initial) {

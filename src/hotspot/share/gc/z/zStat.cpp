@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -40,6 +40,13 @@
 #include "utilities/compilerWarnings.hpp"
 #include "utilities/debug.hpp"
 #include "utilities/ticks.hpp"
+
+#define ZSIZE_FMT               SIZE_FORMAT "M(%.0lf%%)"
+#define ZSIZE_ARGS(size)        ((size) / M), (percent_of(size, ZStatHeap::max_capacity()))
+
+#define ZTABLE_ARGS_NA          "%9s", "-"
+#define ZTABLE_ARGS(size)       SIZE_FORMAT_W(8) "M (%.0lf%%)", \
+                                ((size) / M), (percent_of(size, ZStatHeap::max_capacity()))
 
 //
 // Stat sampler/counter data
@@ -621,9 +628,6 @@ void ZStatPhaseCycle::register_start(const Ticks& start) const {
                        GCCause::to_string(ZCollectedHeap::heap()->gc_cause()));
 }
 
-#define ZUSED_FMT                       SIZE_FORMAT "M(%.0lf%%)"
-#define ZUSED_ARGS(size, max_capacity)  ((size) / M), (percent_of(size, max_capacity))
-
 void ZStatPhaseCycle::register_end(const Ticks& start, const Ticks& end) const {
   timer()->register_gc_end(end);
 
@@ -644,10 +648,10 @@ void ZStatPhaseCycle::register_end(const Ticks& start, const Ticks& end) const {
   ZStatReferences::print();
   ZStatHeap::print();
 
-  log_info(gc)("Garbage Collection (%s) " ZUSED_FMT "->" ZUSED_FMT,
+  log_info(gc)("Garbage Collection (%s) " ZSIZE_FMT "->" ZSIZE_FMT,
                GCCause::to_string(ZCollectedHeap::heap()->gc_cause()),
-               ZUSED_ARGS(ZStatHeap::used_at_mark_start(), ZStatHeap::max_capacity()),
-               ZUSED_ARGS(ZStatHeap::used_at_relocate_end(), ZStatHeap::max_capacity()));
+               ZSIZE_ARGS(ZStatHeap::used_at_mark_start()),
+               ZSIZE_ARGS(ZStatHeap::used_at_relocate_end()));
 }
 
 Tickspan ZStatPhasePause::_max;
@@ -1212,10 +1216,6 @@ ZStatHeap::ZAtMarkEnd ZStatHeap::_at_mark_end;
 ZStatHeap::ZAtRelocateStart ZStatHeap::_at_relocate_start;
 ZStatHeap::ZAtRelocateEnd ZStatHeap::_at_relocate_end;
 
-#define ZSIZE_NA               "%9s", "-"
-#define ZSIZE_ARGS(size)       SIZE_FORMAT_W(8) "M (%.0lf%%)", \
-                               ((size) / M), (percent_of(size, _at_initialize.max_capacity))
-
 size_t ZStatHeap::available(size_t used) {
   return _at_initialize.max_capacity - used;
 }
@@ -1228,14 +1228,18 @@ size_t ZStatHeap::free(size_t used) {
   return available(used) - reserve(used);
 }
 
-void ZStatHeap::set_at_initialize(size_t max_capacity,
+void ZStatHeap::set_at_initialize(size_t min_capacity,
+                                  size_t max_capacity,
                                   size_t max_reserve) {
+  _at_initialize.min_capacity = min_capacity;
   _at_initialize.max_capacity = max_capacity;
   _at_initialize.max_reserve = max_reserve;
 }
 
-void ZStatHeap::set_at_mark_start(size_t capacity,
+void ZStatHeap::set_at_mark_start(size_t soft_max_capacity,
+                                  size_t capacity,
                                   size_t used) {
+  _at_mark_start.soft_max_capacity = soft_max_capacity;
   _at_mark_start.capacity = capacity;
   _at_mark_start.reserve = reserve(used);
   _at_mark_start.used = used;
@@ -1308,6 +1312,13 @@ size_t ZStatHeap::used_at_relocate_end() {
 }
 
 void ZStatHeap::print() {
+  log_info(gc, heap)("Min Capacity: "
+                     ZSIZE_FMT, ZSIZE_ARGS(_at_initialize.min_capacity));
+  log_info(gc, heap)("Max Capacity: "
+                     ZSIZE_FMT, ZSIZE_ARGS(_at_initialize.max_capacity));
+  log_info(gc, heap)("Soft Max Capacity: "
+                     ZSIZE_FMT, ZSIZE_ARGS(_at_mark_start.soft_max_capacity));
+
   ZStatTablePrinter table(10, 18);
   log_info(gc, heap)("%s", table()
                      .fill()
@@ -1320,74 +1331,74 @@ void ZStatHeap::print() {
                      .end());
   log_info(gc, heap)("%s", table()
                      .right("Capacity:")
-                     .left(ZSIZE_ARGS(_at_mark_start.capacity))
-                     .left(ZSIZE_ARGS(_at_mark_end.capacity))
-                     .left(ZSIZE_ARGS(_at_relocate_start.capacity))
-                     .left(ZSIZE_ARGS(_at_relocate_end.capacity))
-                     .left(ZSIZE_ARGS(_at_relocate_end.capacity_high))
-                     .left(ZSIZE_ARGS(_at_relocate_end.capacity_low))
+                     .left(ZTABLE_ARGS(_at_mark_start.capacity))
+                     .left(ZTABLE_ARGS(_at_mark_end.capacity))
+                     .left(ZTABLE_ARGS(_at_relocate_start.capacity))
+                     .left(ZTABLE_ARGS(_at_relocate_end.capacity))
+                     .left(ZTABLE_ARGS(_at_relocate_end.capacity_high))
+                     .left(ZTABLE_ARGS(_at_relocate_end.capacity_low))
                      .end());
   log_info(gc, heap)("%s", table()
                      .right("Reserve:")
-                     .left(ZSIZE_ARGS(_at_mark_start.reserve))
-                     .left(ZSIZE_ARGS(_at_mark_end.reserve))
-                     .left(ZSIZE_ARGS(_at_relocate_start.reserve))
-                     .left(ZSIZE_ARGS(_at_relocate_end.reserve))
-                     .left(ZSIZE_ARGS(_at_relocate_end.reserve_high))
-                     .left(ZSIZE_ARGS(_at_relocate_end.reserve_low))
+                     .left(ZTABLE_ARGS(_at_mark_start.reserve))
+                     .left(ZTABLE_ARGS(_at_mark_end.reserve))
+                     .left(ZTABLE_ARGS(_at_relocate_start.reserve))
+                     .left(ZTABLE_ARGS(_at_relocate_end.reserve))
+                     .left(ZTABLE_ARGS(_at_relocate_end.reserve_high))
+                     .left(ZTABLE_ARGS(_at_relocate_end.reserve_low))
                      .end());
   log_info(gc, heap)("%s", table()
                      .right("Free:")
-                     .left(ZSIZE_ARGS(_at_mark_start.free))
-                     .left(ZSIZE_ARGS(_at_mark_end.free))
-                     .left(ZSIZE_ARGS(_at_relocate_start.free))
-                     .left(ZSIZE_ARGS(_at_relocate_end.free))
-                     .left(ZSIZE_ARGS(_at_relocate_end.free_high))
-                     .left(ZSIZE_ARGS(_at_relocate_end.free_low))
+                     .left(ZTABLE_ARGS(_at_mark_start.free))
+                     .left(ZTABLE_ARGS(_at_mark_end.free))
+                     .left(ZTABLE_ARGS(_at_relocate_start.free))
+                     .left(ZTABLE_ARGS(_at_relocate_end.free))
+                     .left(ZTABLE_ARGS(_at_relocate_end.free_high))
+                     .left(ZTABLE_ARGS(_at_relocate_end.free_low))
                      .end());
   log_info(gc, heap)("%s", table()
                      .right("Used:")
-                     .left(ZSIZE_ARGS(_at_mark_start.used))
-                     .left(ZSIZE_ARGS(_at_mark_end.used))
-                     .left(ZSIZE_ARGS(_at_relocate_start.used))
-                     .left(ZSIZE_ARGS(_at_relocate_end.used))
-                     .left(ZSIZE_ARGS(_at_relocate_end.used_high))
-                     .left(ZSIZE_ARGS(_at_relocate_end.used_low))
+                     .left(ZTABLE_ARGS(_at_mark_start.used))
+                     .left(ZTABLE_ARGS(_at_mark_end.used))
+                     .left(ZTABLE_ARGS(_at_relocate_start.used))
+                     .left(ZTABLE_ARGS(_at_relocate_end.used))
+                     .left(ZTABLE_ARGS(_at_relocate_end.used_high))
+                     .left(ZTABLE_ARGS(_at_relocate_end.used_low))
                      .end());
   log_info(gc, heap)("%s", table()
                      .right("Live:")
-                     .left(ZSIZE_NA)
-                     .left(ZSIZE_ARGS(_at_mark_end.live))
-                     .left(ZSIZE_ARGS(_at_mark_end.live /* Same as at mark end */))
-                     .left(ZSIZE_ARGS(_at_mark_end.live /* Same as at mark end */))
-                     .left(ZSIZE_NA)
-                     .left(ZSIZE_NA)
+                     .left(ZTABLE_ARGS_NA)
+                     .left(ZTABLE_ARGS(_at_mark_end.live))
+                     .left(ZTABLE_ARGS(_at_mark_end.live /* Same as at mark end */))
+                     .left(ZTABLE_ARGS(_at_mark_end.live /* Same as at mark end */))
+                     .left(ZTABLE_ARGS_NA)
+                     .left(ZTABLE_ARGS_NA)
                      .end());
   log_info(gc, heap)("%s", table()
                      .right("Allocated:")
-                     .left(ZSIZE_NA)
-                     .left(ZSIZE_ARGS(_at_mark_end.allocated))
-                     .left(ZSIZE_ARGS(_at_relocate_start.allocated))
-                     .left(ZSIZE_ARGS(_at_relocate_end.allocated))
-                     .left(ZSIZE_NA)
-                     .left(ZSIZE_NA)
+                     .left(ZTABLE_ARGS_NA)
+                     .left(ZTABLE_ARGS(_at_mark_end.allocated))
+                     .left(ZTABLE_ARGS(_at_relocate_start.allocated))
+                     .left(ZTABLE_ARGS(_at_relocate_end.allocated))
+                     .left(ZTABLE_ARGS_NA)
+                     .left(ZTABLE_ARGS_NA)
                      .end());
   log_info(gc, heap)("%s", table()
                      .right("Garbage:")
-                     .left(ZSIZE_NA)
-                     .left(ZSIZE_ARGS(_at_mark_end.garbage))
-                     .left(ZSIZE_ARGS(_at_relocate_start.garbage))
-                     .left(ZSIZE_ARGS(_at_relocate_end.garbage))
-                     .left(ZSIZE_NA)
-                     .left(ZSIZE_NA)
+                     .left(ZTABLE_ARGS_NA)
+                     .left(ZTABLE_ARGS(_at_mark_end.garbage))
+                     .left(ZTABLE_ARGS(_at_relocate_start.garbage))
+                     .left(ZTABLE_ARGS(_at_relocate_end.garbage))
+                     .left(ZTABLE_ARGS_NA)
+                     .left(ZTABLE_ARGS_NA)
                      .end());
   log_info(gc, heap)("%s", table()
                      .right("Reclaimed:")
-                     .left(ZSIZE_NA)
-                     .left(ZSIZE_NA)
-                     .left(ZSIZE_ARGS(_at_relocate_start.reclaimed))
-                     .left(ZSIZE_ARGS(_at_relocate_end.reclaimed))
-                     .left(ZSIZE_NA)
-                     .left(ZSIZE_NA)
+                     .left(ZTABLE_ARGS_NA)
+                     .left(ZTABLE_ARGS_NA)
+                     .left(ZTABLE_ARGS(_at_relocate_start.reclaimed))
+                     .left(ZTABLE_ARGS(_at_relocate_end.reclaimed))
+                     .left(ZTABLE_ARGS_NA)
+                     .left(ZTABLE_ARGS_NA)
                      .end());
 }
