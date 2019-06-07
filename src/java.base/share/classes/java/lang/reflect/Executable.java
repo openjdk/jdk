@@ -673,6 +673,10 @@ public abstract class Executable extends AccessibleObject
      * @return an object representing the receiver type of the method or
      * constructor represented by this {@code Executable} or {@code null} if
      * this {@code Executable} can not have a receiver parameter
+     *
+     * @jls 8.4 Method Declarations
+     * @jls 8.4.1 Formal Parameters
+     * @jls 8.8 Constructor Declarations
      */
     public AnnotatedType getAnnotatedReceiverType() {
         if (Modifier.isStatic(this.getModifiers()))
