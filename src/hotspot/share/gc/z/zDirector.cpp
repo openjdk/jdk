@@ -196,8 +196,12 @@ bool ZDirector::rule_high_usage() const {
   const size_t used = ZHeap::heap()->used();
   const size_t free_with_reserve = max_capacity - used;
   const size_t free = free_with_reserve - MIN2(free_with_reserve, max_reserve);
+  const double free_percent = percent_of(free, max_capacity);
 
-  return percent_of(free, max_capacity) <= 5.0;
+  log_debug(gc, director)("Rule: High Usage, Free: " SIZE_FORMAT "MB(%.1lf%%)",
+                          free / M, free_percent);
+
+  return free_percent <= 5.0;
 }
 
 GCCause::Cause ZDirector::make_gc_decision() const {
