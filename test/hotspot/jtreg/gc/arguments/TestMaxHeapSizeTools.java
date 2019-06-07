@@ -55,6 +55,8 @@ class TestMaxHeapSizeTools {
     checkValidMinInitialHeapCombinations(gcflag);
     checkInvalidInitialMaxHeapCombinations(gcflag);
     checkValidInitialMaxHeapCombinations(gcflag);
+    checkInvalidMinMaxHeapCombinations(gcflag);
+    checkValidMinMaxHeapCombinations(gcflag);
   }
 
   public static void checkMinInitialErgonomics(String gcflag) throws Exception {
@@ -71,18 +73,33 @@ class TestMaxHeapSizeTools {
 
     // -Xms is not set
     checkErgonomics(new String[] { gcflag, "-Xmx" + maxHeapSize }, values, -1, -1);
+    checkErgonomics(new String[] { gcflag, "-Xmx" + maxHeapSize, "-XX:MinHeapSize=" + smallValue }, values, smallValue, -1);
+    checkErgonomics(new String[] { gcflag, "-Xmx" + maxHeapSize, "-XX:MinHeapSize=" + largeValue }, values, largeValue, -1);
+    checkErgonomics(new String[] { gcflag, "-Xmx" + maxHeapSize, "-XX:MinHeapSize=0" }, values, -1, -1);
     checkErgonomics(new String[] { gcflag, "-Xmx" + maxHeapSize, "-XX:InitialHeapSize=" + smallValue }, values, -1, smallValue);
     checkErgonomics(new String[] { gcflag, "-Xmx" + maxHeapSize, "-XX:InitialHeapSize=" + largeValue }, values, -1, largeValue);
     checkErgonomics(new String[] { gcflag, "-Xmx" + maxHeapSize, "-XX:InitialHeapSize=0" }, values, -1, -1);
+    // Some extra checks when both are set.
+    checkErgonomics(new String[] { gcflag, "-Xmx" + maxHeapSize, "-XX:MinHeapSize=" + smallValue, "-XX:InitialHeapSize=" + smallValue }, values, smallValue, smallValue);
+    checkErgonomics(new String[] { gcflag, "-Xmx" + maxHeapSize, "-XX:MinHeapSize=" + smallValue, "-XX:InitialHeapSize=" + largeValue }, values, smallValue, largeValue);
+    checkErgonomics(new String[] { gcflag, "-Xmx" + maxHeapSize, "-XX:MinHeapSize=" + largeValue, "-XX:InitialHeapSize=" + largeValue }, values, largeValue, largeValue);
 
     // -Xms is set to zero
     checkErgonomics(new String[] { gcflag, "-Xmx" + maxHeapSize, "-Xms0" }, values, -1, -1);
+    checkErgonomics(new String[] { gcflag, "-Xmx" + maxHeapSize, "-Xms0", "-XX:MinHeapSize=" + smallValue }, values, smallValue, -1);
+    checkErgonomics(new String[] { gcflag, "-Xmx" + maxHeapSize, "-Xms0", "-XX:MinHeapSize=" + largeValue }, values, largeValue, -1);
+    checkErgonomics(new String[] { gcflag, "-Xmx" + maxHeapSize, "-Xms0", "-XX:MinHeapSize=0" }, values, -1, -1);
     checkErgonomics(new String[] { gcflag, "-Xmx" + maxHeapSize, "-Xms0", "-XX:InitialHeapSize=" + smallValue }, values, -1, smallValue);
     checkErgonomics(new String[] { gcflag, "-Xmx" + maxHeapSize, "-Xms0", "-XX:InitialHeapSize=" + largeValue }, values, -1, largeValue);
     checkErgonomics(new String[] { gcflag, "-Xmx" + maxHeapSize, "-Xms0", "-XX:InitialHeapSize=0" }, values, -1, -1);
+    checkErgonomics(new String[] { gcflag, "-Xmx" + maxHeapSize, "-Xms0", "-XX:MinHeapSize=" + smallValue, "-XX:InitialHeapSize=" + smallValue }, values, smallValue, smallValue);
+    checkErgonomics(new String[] { gcflag, "-Xmx" + maxHeapSize, "-Xms0", "-XX:MinHeapSize=" + smallValue, "-XX:InitialHeapSize=" + largeValue }, values, smallValue, largeValue);
+    checkErgonomics(new String[] { gcflag, "-Xmx" + maxHeapSize, "-Xms0", "-XX:MinHeapSize=" + largeValue, "-XX:InitialHeapSize=" + largeValue }, values, largeValue, largeValue);
 
     // -Xms is set to small value
     checkErgonomics(new String[] { gcflag, "-Xmx" + maxHeapSize, "-Xms" + smallValue }, values, -1, -1);
+    checkErgonomics(new String[] { gcflag, "-Xmx" + maxHeapSize, "-Xms" + smallValue, "-XX:MinHeapSize=" + smallValue }, values, smallValue, smallValue);
+    checkErgonomics(new String[] { gcflag, "-Xmx" + maxHeapSize, "-Xms" + smallValue, "-XX:MinHeapSize=0" }, values, -1, smallValue);
     checkErgonomics(new String[] { gcflag, "-Xmx" + maxHeapSize, "-Xms" + smallValue, "-XX:InitialHeapSize=" + smallValue }, values, smallValue, smallValue);
     checkErgonomics(new String[] { gcflag, "-Xmx" + maxHeapSize, "-Xms" + smallValue, "-XX:InitialHeapSize=" + largeValue }, values, smallValue, largeValue);
     checkErgonomics(new String[] { gcflag, "-Xmx" + maxHeapSize, "-Xms" + smallValue, "-XX:InitialHeapSize=0" }, values, smallValue, -1);
@@ -90,6 +107,7 @@ class TestMaxHeapSizeTools {
     // -Xms is set to large value
     checkErgonomics(new String[] { gcflag, "-Xmx" + maxHeapSize, "-Xms" + largeValue }, values, largeValue, largeValue);
     checkErgonomics(new String[] { gcflag, "-Xmx" + maxHeapSize, "-Xms" + largeValue, "-XX:InitialHeapSize=0" }, values, largeValue, -1);
+    checkErgonomics(new String[] { gcflag, "-Xmx" + maxHeapSize, "-Xms" + largeValue, "-XX:MinHeapSize=0" }, values, -1, largeValue);
   }
 
   private static long align_up(long value, long alignment) {
@@ -116,6 +134,9 @@ class TestMaxHeapSizeTools {
   private static void checkInvalidMinInitialHeapCombinations(String gcflag) throws Exception {
     expectError(new String[] { gcflag, "-XX:InitialHeapSize=1023K", "-version" });
     expectError(new String[] { gcflag, "-Xms64M", "-XX:InitialHeapSize=32M", "-version" });
+    expectError(new String[] { gcflag, "-XX:MinHeapSize=1023K", "-version" });
+    expectError(new String[] { gcflag, "-Xms4M", "-XX:MinHeapSize=8M", "-version" });
+    expectError(new String[] { gcflag, "-XX:MinHeapSize=8M -XX:InitialHeapSize=4m" });
   }
 
   private static void checkValidMinInitialHeapCombinations(String gcflag) throws Exception {
@@ -123,8 +144,13 @@ class TestMaxHeapSizeTools {
     expectValid(new String[] { gcflag, "-XX:InitialHeapSize=8M", "-Xms4M", "-version" });
     expectValid(new String[] { gcflag, "-Xms4M", "-XX:InitialHeapSize=8M", "-version" });
     expectValid(new String[] { gcflag, "-XX:InitialHeapSize=8M", "-Xms8M", "-version" });
+    expectValid(new String[] { gcflag, "-XX:MinHeapSize=1024K", "-version" });
+    expectValid(new String[] { gcflag, "-XX:MinHeapSize=8M", "-Xms4M", "-version" });
+    expectValid(new String[] { gcflag, "-XX:MinHeapSize=8M", "-Xms8M", "-version" });
+    expectValid(new String[] { gcflag, "-Xms8M", "-XX:MinHeapSize=4M", "-version" });
     // the following is not an error as -Xms sets both minimal and initial heap size
     expectValid(new String[] { gcflag, "-XX:InitialHeapSize=4M", "-Xms8M", "-version" });
+    expectValid(new String[] { gcflag, "-XX:MinHeapSize=4M", "-Xms8M", "-version" });
   }
 
   private static void checkInvalidInitialMaxHeapCombinations(String gcflag) throws Exception {
@@ -133,12 +159,26 @@ class TestMaxHeapSizeTools {
     expectError(new String[] { gcflag, "-XX:InitialHeapSize=8M", "-XX:MaxHeapSize=4M", "-version" });
   }
 
+  private static void checkInvalidMinMaxHeapCombinations(String gcflag) throws Exception {
+    expectError(new String[] { gcflag, "-XX:MaxHeapSize=4M", "-XX:MinHeapSize=8M", "-version" });
+    expectError(new String[] { gcflag, "-XX:MinHeapSize=8M", "-XX:MaxHeapSize=4M", "-version" });
+  }
+
+
   private static void checkValidInitialMaxHeapCombinations(String gcflag) throws Exception {
     expectValid(new String[] { gcflag, "-XX:InitialHeapSize=4M", "-XX:MaxHeapSize=8M", "-version" });
     expectValid(new String[] { gcflag, "-XX:MaxHeapSize=8M", "-XX:InitialHeapSize=4M", "-version" });
     expectValid(new String[] { gcflag, "-XX:MaxHeapSize=4M", "-XX:InitialHeapSize=4M", "-version" });
     // a value of "0" for initial heap size means auto-detect
     expectValid(new String[] { gcflag, "-XX:MaxHeapSize=4M", "-XX:InitialHeapSize=0M", "-version" });
+  }
+
+  private static void checkValidMinMaxHeapCombinations(String gcflag) throws Exception {
+    expectValid(new String[] { gcflag, "-XX:MinHeapSize=4M", "-XX:MaxHeapSize=8M", "-version" });
+    expectValid(new String[] { gcflag, "-XX:MaxHeapSize=8M", "-XX:MinHeapSize=4M", "-version" });
+    expectValid(new String[] { gcflag, "-XX:MaxHeapSize=4M", "-XX:MinHeapSize=4M", "-version" });
+    // a value of "0" for min heap size means auto-detect
+    expectValid(new String[] { gcflag, "-XX:MaxHeapSize=4M", "-XX:MinHeapSize=0M", "-version" });
   }
 
   private static long valueAfter(String source, String match) {
@@ -294,4 +334,3 @@ class TestMaxHeapSizeTools {
     expect(flags, false, false, 0);
   }
 }
-

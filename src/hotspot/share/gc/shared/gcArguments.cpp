@@ -33,8 +33,6 @@
 #include "utilities/defaultStream.hpp"
 #include "utilities/macros.hpp"
 
-size_t MinHeapSize = 0;
-
 size_t HeapAlignment = 0;
 size_t SpaceAlignment = 0;
 
@@ -122,7 +120,7 @@ void GCArguments::assert_size_info() {
   assert(MaxHeapSize >= MinHeapSize, "Ergonomics decided on incompatible minimum and maximum heap sizes");
   assert(InitialHeapSize >= MinHeapSize, "Ergonomics decided on incompatible initial and minimum heap sizes");
   assert(MaxHeapSize >= InitialHeapSize, "Ergonomics decided on incompatible initial and maximum heap sizes");
-  assert(MaxHeapSize % HeapAlignment == 0, "MinHeapSize alignment");
+  assert(MinHeapSize % HeapAlignment == 0, "MinHeapSize alignment");
   assert(InitialHeapSize % HeapAlignment == 0, "InitialHeapSize alignment");
   assert(MaxHeapSize % HeapAlignment == 0, "MaxHeapSize alignment");
 }
@@ -149,7 +147,7 @@ void GCArguments::initialize_heap_flags_and_sizes() {
     if (FLAG_IS_CMDLINE(InitialHeapSize) && InitialHeapSize > MaxHeapSize) {
       vm_exit_during_initialization("Initial heap size set to a larger value than the maximum heap size");
     }
-    if (MinHeapSize != 0 && MaxHeapSize < MinHeapSize) {
+    if (FLAG_IS_CMDLINE(MinHeapSize) && MaxHeapSize < MinHeapSize) {
       vm_exit_during_initialization("Incompatible minimum and maximum heap sizes specified");
     }
   }
@@ -166,28 +164,28 @@ void GCArguments::initialize_heap_flags_and_sizes() {
   }
 
   // User inputs from -Xmx and -Xms must be aligned
-  MinHeapSize = align_up(MinHeapSize, HeapAlignment);
-  size_t aligned_initial_heap_size = align_up(InitialHeapSize, HeapAlignment);
-  size_t aligned_max_heap_size = align_up(MaxHeapSize, HeapAlignment);
-
   // Write back to flags if the values changed
-  if (aligned_initial_heap_size != InitialHeapSize) {
-    FLAG_SET_ERGO(InitialHeapSize, aligned_initial_heap_size);
+  if (!is_aligned(MinHeapSize, HeapAlignment)) {
+    FLAG_SET_ERGO(MinHeapSize, align_up(MinHeapSize, HeapAlignment));
   }
-  if (aligned_max_heap_size != MaxHeapSize) {
-    FLAG_SET_ERGO(MaxHeapSize, aligned_max_heap_size);
+  if (!is_aligned(InitialHeapSize, HeapAlignment)) {
+    FLAG_SET_ERGO(InitialHeapSize, align_up(InitialHeapSize, HeapAlignment));
+  }
+  if (!is_aligned(MaxHeapSize, HeapAlignment)) {
+    FLAG_SET_ERGO(MaxHeapSize, align_up(MaxHeapSize, HeapAlignment));
   }
 
-  if (FLAG_IS_CMDLINE(InitialHeapSize) && MinHeapSize != 0 &&
+  if (FLAG_IS_CMDLINE(InitialHeapSize) && FLAG_IS_CMDLINE(MinHeapSize) &&
       InitialHeapSize < MinHeapSize) {
     vm_exit_during_initialization("Incompatible minimum and initial heap sizes specified");
   }
+
   if (!FLAG_IS_DEFAULT(InitialHeapSize) && InitialHeapSize > MaxHeapSize) {
     FLAG_SET_ERGO(MaxHeapSize, InitialHeapSize);
   } else if (!FLAG_IS_DEFAULT(MaxHeapSize) && InitialHeapSize > MaxHeapSize) {
     FLAG_SET_ERGO(InitialHeapSize, MaxHeapSize);
     if (InitialHeapSize < MinHeapSize) {
-      MinHeapSize = InitialHeapSize;
+      FLAG_SET_ERGO(MinHeapSize, InitialHeapSize);
     }
   }
 

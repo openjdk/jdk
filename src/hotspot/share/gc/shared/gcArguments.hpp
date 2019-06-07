@@ -30,8 +30,6 @@
 
 class CollectedHeap;
 
-extern size_t MinHeapSize;
-
 extern size_t HeapAlignment;
 extern size_t SpaceAlignment;
 

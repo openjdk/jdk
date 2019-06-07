@@ -1630,8 +1630,8 @@ void Arguments::set_use_compressed_oops() {
 #ifdef _LP64
   // MaxHeapSize is not set up properly at this point, but
   // the only value that can override MaxHeapSize if we are
-  // to use UseCompressedOops is InitialHeapSize.
-  size_t max_heap_size = MAX2(MaxHeapSize, InitialHeapSize);
+  // to use UseCompressedOops are InitialHeapSize and MinHeapSize.
+  size_t max_heap_size = MAX3(MaxHeapSize, InitialHeapSize, MinHeapSize);
 
   if (max_heap_size <= max_heap_for_compressed_oops()) {
 #if !defined(COMPILER1) || defined(TIERED)
@@ -1832,6 +1832,8 @@ void Arguments::set_heap_size() {
       // after call to limit_by_allocatable_memory because that
       // method might reduce the allocation size.
       reasonable_max = MAX2(reasonable_max, (julong)InitialHeapSize);
+    } else if (!FLAG_IS_DEFAULT(MinHeapSize)) {
+      reasonable_max = MAX2(reasonable_max, (julong)MinHeapSize);
     }
 
     log_trace(gc, heap)("  Maximum heap size " SIZE_FORMAT, (size_t) reasonable_max);
@@ -1855,13 +1857,13 @@ void Arguments::set_heap_size() {
 
       reasonable_initial = limit_by_allocatable_memory(reasonable_initial);
 
-      log_trace(gc, heap)("  Initial heap size " SIZE_FORMAT, (size_t)reasonable_initial);
       FLAG_SET_ERGO(InitialHeapSize, (size_t)reasonable_initial);
+      log_trace(gc, heap)("  Initial heap size " SIZE_FORMAT, InitialHeapSize);
     }
-    // If the minimum heap size has not been set (via -Xms),
+    // If the minimum heap size has not been set (via -Xms or -XX:MinHeapSize),
     // synchronize with InitialHeapSize to avoid errors with the default value.
     if (MinHeapSize == 0) {
-      MinHeapSize = MIN2((size_t)reasonable_minimum, InitialHeapSize);
+      FLAG_SET_ERGO(MinHeapSize, MIN2((size_t)reasonable_minimum, InitialHeapSize));
       log_trace(gc, heap)("  Minimum heap size " SIZE_FORMAT, MinHeapSize);
     }
   }
@@ -1903,8 +1905,9 @@ jint Arguments::set_aggressive_heap_flags() {
     if (FLAG_SET_CMDLINE(InitialHeapSize, initHeapSize) != JVMFlag::SUCCESS) {
       return JNI_EINVAL;
     }
-    // Currently the minimum size and the initial heap sizes are the same.
-    MinHeapSize = initHeapSize;
+    if (FLAG_SET_CMDLINE(MinHeapSize, initHeapSize) != JVMFlag::SUCCESS) {
+      return JNI_EINVAL;
+    }
   }
   if (FLAG_IS_DEFAULT(NewSize)) {
     // Make the young generation 3/8ths of the total heap.
@@ -2595,19 +2598,19 @@ jint Arguments::parse_each_vm_init_arg(const JavaVMInitArgs* args, bool* patch_m
       }
     // -Xms
     } else if (match_option(option, "-Xms", &tail)) {
-      julong long_initial_heap_size = 0;
+      julong size = 0;
       // an initial heap size of 0 means automatically determine
-      ArgsRange errcode = parse_memory_size(tail, &long_initial_heap_size, 0);
+      ArgsRange errcode = parse_memory_size(tail, &size, 0);
       if (errcode != arg_in_range) {
         jio_fprintf(defaultStream::error_stream(),
                     "Invalid initial heap size: %s\n", option->optionString);
         describe_range_error(errcode);
         return JNI_EINVAL;
       }
-      MinHeapSize = (size_t)long_initial_heap_size;
-      // Currently the minimum size and the initial heap sizes are the same.
-      // Can be overridden with -XX:InitialHeapSize.
-      if (FLAG_SET_CMDLINE(InitialHeapSize, (size_t)long_initial_heap_size) != JVMFlag::SUCCESS) {
+      if (FLAG_SET_CMDLINE(MinHeapSize, (size_t)size) != JVMFlag::SUCCESS) {
+        return JNI_EINVAL;
+      }
+      if (FLAG_SET_CMDLINE(InitialHeapSize, (size_t)size) != JVMFlag::SUCCESS) {
         return JNI_EINVAL;
       }
     // -Xmx
