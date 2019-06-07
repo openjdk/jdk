@@ -32,6 +32,9 @@ include @SPEC@
 
 CC := @BUILD_CC@
 CXX := @BUILD_CXX@
+# Ideally this should be probed by configure but that is tricky to implement,
+# and this should work in most cases.
+CPP := @BUILD_CC@ -E
 LD := @BUILD_LD@
 LDCXX := @BUILD_LDCXX@
 AS := @BUILD_AS@
@@ -44,6 +47,7 @@ SYSROOT_LDFLAGS := @BUILD_SYSROOT_LDFLAGS@
 
 # These directories should not be moved to BUILDJDK_OUTPUTDIR
 HOTSPOT_OUTPUTDIR := $(patsubst $(OUTPUTDIR)%,$(BUILDJDK_OUTPUTDIR)%,$(HOTSPOT_OUTPUTDIR))
+BUILDTOOLS_OUTPUTDIR := $(patsubst $(OUTPUTDIR)%,$(BUILDJDK_OUTPUTDIR)%,$(BUILDTOOLS_OUTPUTDIR))
 SUPPORT_OUTPUTDIR := $(patsubst $(OUTPUTDIR)%,$(BUILDJDK_OUTPUTDIR)%,$(SUPPORT_OUTPUTDIR))
 JDK_OUTPUTDIR := $(patsubst $(OUTPUTDIR)%,$(BUILDJDK_OUTPUTDIR)%,$(JDK_OUTPUTDIR))
 IMAGES_OUTPUTDIR := $(patsubst $(OUTPUTDIR)%,$(BUILDJDK_OUTPUTDIR)%,$(IMAGES_OUTPUTDIR))
@@ -76,6 +80,8 @@ JVM_ASFLAGS := @OPENJDK_BUILD_JVM_ASFLAGS@
 JVM_LIBS := @OPENJDK_BUILD_JVM_LIBS@
 
 FDLIBM_CFLAGS := @OPENJDK_BUILD_FDLIBM_CFLAGS@
+
+INTERIM_LANGTOOLS_ARGS := $(subst $(OUTPUTDIR),$(BUILDJDK_OUTPUTDIR),$(INTERIM_LANGTOOLS_ARGS))
 
 # The compiler for the build platform is likely not warning compatible with the official
 # compiler.

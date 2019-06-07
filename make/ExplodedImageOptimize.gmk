@@ -37,7 +37,7 @@ include $(TOPDIR)/make/ModuleTools.gmk
 ALL_MODULEINFO_CLASSES := $(wildcard $(JDK_OUTPUTDIR)/modules/*/module-info.class)
 
 $(eval $(call SetupExecute, optimize_image, \
-    INFO := Optimizing the exploded image, \
+    WARN := Optimizing the exploded image, \
     DEPS := $(ALL_MODULEINFO_CLASSES) $(BUILD_JIGSAW_CLASSES), \
     OUTPUT_DIR := $(JDK_OUTPUTDIR), \
     COMMAND := $(TOOL_ADD_PACKAGES_ATTRIBUTE) $(JDK_OUTPUTDIR), \
