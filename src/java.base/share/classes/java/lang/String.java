@@ -3016,7 +3016,7 @@ public final class String
      * translated as if in a string literal.
      * <p>
      * Escape sequences are translated as follows;
-     * <table class="plain">
+     * <table class="striped">
      *   <caption style="display:none">Translation</caption>
      *   <thead>
      *   <tr>
@@ -3025,51 +3025,53 @@ public final class String
      *     <th scope="col">Translation</th>
      *   </tr>
      *   </thead>
+     *   <tbody>
      *   <tr>
-     *     <td>{@code \u005Cb}</td>
+     *     <th scope="row">{@code \u005Cb}</th>
      *     <td>backspace</td>
      *     <td>{@code U+0008}</td>
      *   </tr>
      *   <tr>
-     *     <td>{@code \u005Ct}</td>
+     *     <th scope="row">{@code \u005Ct}</th>
      *     <td>horizontal tab</td>
      *     <td>{@code U+0009}</td>
      *   </tr>
      *   <tr>
-     *     <td>{@code \u005Cn}</td>
+     *     <th scope="row">{@code \u005Cn}</th>
      *     <td>line feed</td>
      *     <td>{@code U+000A}</td>
      *   </tr>
      *   <tr>
-     *     <td>{@code \u005Cf}</td>
+     *     <th scope="row">{@code \u005Cf}</th>
      *     <td>form feed</td>
      *     <td>{@code U+000C}</td>
      *   </tr>
      *   <tr>
-     *     <td>{@code \u005Cr}</td>
+     *     <th scope="row">{@code \u005Cr}</th>
      *     <td>carriage return</td>
      *     <td>{@code U+000D}</td>
      *   </tr>
      *   <tr>
-     *     <td>{@code \u005C"}</td>
+     *     <th scope="row">{@code \u005C"}</th>
      *     <td>double quote</td>
      *     <td>{@code U+0022}</td>
      *   </tr>
      *   <tr>
-     *     <td>{@code \u005C'}</td>
+     *     <th scope="row">{@code \u005C'}</th>
      *     <td>single quote</td>
      *     <td>{@code U+0027}</td>
      *   </tr>
      *   <tr>
-     *     <td>{@code \u005C\u005C}</td>
+     *     <th scope="row">{@code \u005C\u005C}</th>
      *     <td>backslash</td>
      *     <td>{@code U+005C}</td>
      *   </tr>
      *   <tr>
-     *     <td>{@code \u005C0 - \u005C377}</td>
+     *     <th scope="row">{@code \u005C0 - \u005C377}</th>
      *     <td>octal escape</td>
      *     <td>code point equivalents</td>
      *   </tr>
+     *   </tbody>
      * </table>
      *
      * @implNote
