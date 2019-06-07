@@ -26,6 +26,7 @@
  * @bug 8224477
  * @summary Ensures that IOException is thrown after the socket is closed
  * @run testng AfterClose
+ * @run testng/othervm -Djdk.net.usePlainSocketImpl AfterClose
  */
 
 import java.io.IOException;
