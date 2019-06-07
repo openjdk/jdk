@@ -107,6 +107,8 @@ public class CompletionSuggestionTest extends KullaTesting {
         assertCompletionIncludesExcludes("new C() {}.|",
                 new HashSet<>(Arrays.asList("method()", "number")),
                 new HashSet<>(Arrays.asList("D", "E", "F", "H", "class")));
+        assertCompletion("\"\".leng|", "length()");
+        assertCompletion("\"\"\"\n\"\"\".leng|", "length()");
     }
 
     public void testStartOfExpression() {
