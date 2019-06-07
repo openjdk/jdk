@@ -453,6 +453,9 @@ C2V_VMENTRY_NULL(jobject, findUniqueConcreteMethod, (JNIEnv* env, jobject, jobje
   if (holder->is_interface()) {
     JVMCI_THROW_MSG_NULL(InternalError, err_msg("Interface %s should be handled in Java code", holder->external_name()));
   }
+  if (method->can_be_statically_bound()) {
+    JVMCI_THROW_MSG_NULL(InternalError, err_msg("Effectively static method %s.%s should be handled in Java code", method->method_holder()->external_name(), method->external_name()));
+  }
 
   methodHandle ucm;
   {
