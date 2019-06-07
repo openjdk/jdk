@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,7 +26,7 @@
  * @test
  * @summary Test dumping with limited metaspace with loading of JVMCI related classes.
  *          VM should not crash but CDS dump will abort upon failure in allocating metaspace.
- * @requires vm.cds & vm.graal.enabled
+ * @requires vm.cds & vm.graal.enabled & vm.compMode == "Xmixed"
  * @library /test/lib
  * @modules java.base/jdk.internal.misc
  *          java.management
@@ -90,6 +90,8 @@ public class GraalWithLimitedMetaspace {
             "-XX:DumpLoadedClassList=" + CLASSLIST_FILE,
             // trigger JVMCI runtime init so that JVMCI classes will be
             // included in the classlist
+            "-XX:+UnlockExperimentalVMOptions",
+            "-XX:+EnableJVMCI",
             "-XX:+EagerJVMCI",
             "-cp",
             TESTJAR,
