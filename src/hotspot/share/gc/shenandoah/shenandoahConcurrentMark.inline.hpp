@@ -253,9 +253,12 @@ inline void ShenandoahConcurrentMark::mark_through_ref(T *p, ShenandoahHeap* hea
       ShouldNotReachHere();
     }
 
-    // Note: Only when concurrently updating references can obj become NULL here.
-    // It happens when a mutator thread beats us by writing another value. In that
-    // case we don't need to do anything else.
+    // Note: Only when concurrently updating references can obj be different
+    // (that is, really different, not just different from-/to-space copies of the same)
+    // from the one we originally loaded. Mutator thread can beat us by writing something
+    // else into the location. In that case, we would mark through that updated value,
+    // on the off-chance it is not handled by other means (e.g. via SATB). However,
+    // if that write was NULL, we don't need to do anything else.
     if (UPDATE_REFS != CONCURRENT || !CompressedOops::is_null(obj)) {
       shenandoah_assert_not_forwarded(p, obj);
       shenandoah_assert_not_in_cset_except(p, obj, heap->cancelled_gc());
