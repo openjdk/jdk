@@ -39,7 +39,7 @@
  * @run main/othervm -Xbootclasspath/a:.
  *                   -XX:+UnlockDiagnosticVMOptions
  *                   -XX:+UnlockExperimentalVMOptions -XX:+EnableJVMCI
- *                   -Djvmci.Compiler=null
+ *                   -XX:-UseJVMCICompiler
  *                   compiler.jvmci.compilerToVM.GetConstantPoolTest
  */
 package compiler.jvmci.compilerToVM;

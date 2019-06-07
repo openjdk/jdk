@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2011, 2018, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2011, 2019, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -63,6 +63,20 @@ TARGETS += $(GENDATA_CURDATA)
 
 ################################################################################
 
+GENDATA_CACERTS_SRC := $(TOPDIR)/make/data/cacerts/
+GENDATA_CACERTS := $(SUPPORT_OUTPUTDIR)/modules_libs/java.base/security/cacerts
+
+$(GENDATA_CACERTS): $(BUILD_TOOLS_JDK) $(wildcard $(GENDATA_CACERTS_SRC)/*)
+	$(call LogInfo, Generating cacerts)
+	$(call MakeTargetDir)
+	$(TOOL_GENERATECACERTS) $(GENDATA_CACERTS_SRC) $@
+
+ifeq ($(CACERTS_FILE), )
+  TARGETS += $(GENDATA_CACERTS)
+endif
+
+################################################################################
+
 GENDATA_JAVA_SECURITY_SRC := $(TOPDIR)/src/java.base/share/conf/security/java.security
 GENDATA_JAVA_SECURITY := $(SUPPORT_OUTPUTDIR)/modules_conf/java.base/security/java.security
 
@@ -74,9 +88,9 @@ endif
 
 # RESTRICTED_PKGS_SRC is optionally set in custom extension for this makefile
 
-$(GENDATA_JAVA_SECURITY): $(BUILD_TOOLS) $(GENDATA_JAVA_SECURITY_SRC) $(RESTRICTED_PKGS_SRC)
+$(GENDATA_JAVA_SECURITY): $(BUILD_TOOLS_JDK) $(GENDATA_JAVA_SECURITY_SRC) $(RESTRICTED_PKGS_SRC)
 	$(call LogInfo, Generating java.security)
-	$(call MakeDir, $(@D))
+	$(call MakeTargetDir)
 	$(TOOL_MAKEJAVASECURITY) $(GENDATA_JAVA_SECURITY_SRC) $@ $(OPENJDK_TARGET_OS) \
 	    $(OPENJDK_TARGET_CPU_ARCH) $(CRYPTO.POLICY) $(RESTRICTED_PKGS_SRC)
 

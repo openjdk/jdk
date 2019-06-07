@@ -26,6 +26,7 @@
 
 #include "gc/z/zAddress.hpp"
 #include "gc/z/zGlobals.hpp"
+#include "utilities/globalDefinitions.hpp"
 #include "utilities/macros.hpp"
 
 inline bool ZAddress::is_null(uintptr_t value) {
@@ -79,6 +80,16 @@ inline bool ZAddress::is_finalizable_good(uintptr_t value) {
 
 inline bool ZAddress::is_remapped(uintptr_t value) {
   return value & ZAddressMetadataRemapped;
+}
+
+inline bool ZAddress::is_in(uintptr_t value) {
+  // Check that exactly one non-offset bit is set
+  if (!is_power_of_2(value & ~ZAddressOffsetMask)) {
+    return false;
+  }
+
+  // Check that one of the non-finalizable metadata is set
+  return value & (ZAddressMetadataMask & ~ZAddressMetadataFinalizable);
 }
 
 inline uintptr_t ZAddress::address(uintptr_t value) {

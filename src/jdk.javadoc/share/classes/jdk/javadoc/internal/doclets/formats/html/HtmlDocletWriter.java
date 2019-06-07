@@ -27,6 +27,7 @@ package jdk.javadoc.internal.doclets.formats.html;
 
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.ListIterator;
@@ -195,6 +196,14 @@ public class HtmlDocletWriter {
     protected String winTitle;
 
     protected Script mainBodyScript;
+
+    /**
+     * A table of the anchors used for at-index and related tags,
+     * so that they can be made unique by appending a suitable suffix.
+     * (Ideally, javadoc should be tracking all id's generated in a file
+     * to avoid generating duplicates.)
+     */
+    Map<String, Integer> indexAnchorTable = new HashMap<>();
 
     /**
      * Constructor to construct the HtmlStandardWriter object.
@@ -1715,20 +1724,7 @@ public class HtmlDocletWriter {
      *        added
      */
     public void addAnnotationInfo(PackageElement packageElement, Content htmltree) {
-        addAnnotationInfo(packageElement, packageElement.getAnnotationMirrors(), htmltree);
-    }
-
-    /**
-     * Add the annotation types of the executable receiver.
-     *
-     * @param method the executable to write the receiver annotations for.
-     * @param descList a list of annotation mirrors.
-     * @param htmltree the documentation tree to which the annotation info will be
-     *        added
-     */
-    public void addReceiverAnnotationInfo(ExecutableElement method, List<AnnotationMirror> descList,
-            Content htmltree) {
-        addAnnotationInfo(0, method, descList, false, htmltree);
+        addAnnotationInfo(packageElement.getAnnotationMirrors(), htmltree);
     }
 
     /*
@@ -1739,7 +1735,7 @@ public class HtmlDocletWriter {
             List<? extends AnnotationMirror> annotationMirrors, Content htmltree) {
         TypeMirror rcvrType = method.getReceiverType();
         List<? extends AnnotationMirror> annotationMirrors1 = rcvrType.getAnnotationMirrors();
-        addAnnotationInfo(0, method, annotationMirrors1, false, htmltree);
+        htmltree.add(getAnnotationInfo(annotationMirrors1, false));
     }
 
     /**
@@ -1749,97 +1745,65 @@ public class HtmlDocletWriter {
      * @param htmltree the content tree to which the annotation types will be added
      */
     public void addAnnotationInfo(Element element, Content htmltree) {
-        addAnnotationInfo(element, element.getAnnotationMirrors(), htmltree);
+        addAnnotationInfo(element.getAnnotationMirrors(), htmltree);
     }
 
     /**
      * Add the annotatation types for the given element and parameter.
      *
-     * @param indent the number of spaces to indent the parameters.
-     * @param element the element to write annotations for.
      * @param param the parameter to write annotations for.
      * @param tree the content tree to which the annotation types will be added
      */
-    public boolean addAnnotationInfo(int indent, Element element, VariableElement param,
-            Content tree) {
-        return addAnnotationInfo(indent, element, param.getAnnotationMirrors(), false, tree);
+    public boolean addAnnotationInfo(VariableElement param, Content tree) {
+        Content annotaionInfo = getAnnotationInfo(param.getAnnotationMirrors(), false);
+        if (annotaionInfo.isEmpty()) {
+            return false;
+        }
+        tree.add(annotaionInfo);
+        return true;
     }
 
     /**
      * Adds the annotatation types for the given Element.
      *
-     * @param element the element to write annotations for.
      * @param descList a list of annotation mirrors.
      * @param htmltree the documentation tree to which the annotation info will be
      *        added
      */
-    private void addAnnotationInfo(Element element, List<? extends AnnotationMirror> descList,
-            Content htmltree) {
-        addAnnotationInfo(0, element, descList, true, htmltree);
+    private void addAnnotationInfo(List<? extends AnnotationMirror> descList, Content htmltree) {
+        htmltree.add(getAnnotationInfo(descList, true));
     }
 
     /**
-     * Adds the annotation types for the given element.
+     * Return a content tree containing the annotation types for the given element.
      *
-     * @param indent the number of extra spaces to indent the annotations.
-     * @param element the element to write annotations for.
      * @param descList a list of annotation mirrors.
-     * @param htmltree the documentation tree to which the annotation info will be
-     *        added
+     * @return the documentation tree containing the annotation info.
      */
-    private boolean addAnnotationInfo(int indent, Element element,
-            List<? extends AnnotationMirror> descList, boolean lineBreak, Content htmltree) {
-        List<Content> annotations = getAnnotations(indent, descList, lineBreak);
+    Content getAnnotationInfo(List<? extends AnnotationMirror> descList, boolean lineBreak) {
+        List<Content> annotations = getAnnotations(descList, lineBreak);
         String sep = "";
-        if (annotations.isEmpty()) {
-            return false;
-        }
+        ContentBuilder builder = new ContentBuilder();
         for (Content annotation: annotations) {
-            htmltree.add(sep);
-            htmltree.add(annotation);
+            builder.add(sep);
+            builder.add(annotation);
             if (!lineBreak) {
                 sep = " ";
             }
         }
-        return true;
-    }
-
-   /**
-     * Return the string representations of the annotation types for
-     * the given doc.
-     *
-     * @param indent the number of extra spaces to indent the annotations.
-     * @param descList a list of annotation mirrors.
-     * @param linkBreak if true, add new line between each member value.
-     * @return a list of strings representing the annotations being
-     *         documented.
-     */
-    private List<Content> getAnnotations(int indent, List<? extends AnnotationMirror> descList, boolean linkBreak) {
-        return getAnnotations(indent, descList, linkBreak, true);
-    }
-
-    private List<Content> getAnnotations(int indent, AnnotationMirror amirror, boolean linkBreak) {
-        List<AnnotationMirror> descList = new ArrayList<>();
-        descList.add(amirror);
-        return getAnnotations(indent, descList, linkBreak, true);
+        return builder;
     }
 
     /**
      * Return the string representations of the annotation types for
      * the given doc.
      *
-     * A {@code null} {@code elementType} indicates that all the
-     * annotations should be returned without any filtering.
-     *
-     * @param indent the number of extra spaces to indent the annotations.
      * @param descList a list of annotation mirrors.
      * @param linkBreak if true, add new line between each member value.
-     * @param isJava5DeclarationLocation
      * @return a list of strings representing the annotations being
      *         documented.
      */
-    public List<Content> getAnnotations(int indent, List<? extends AnnotationMirror> descList,
-            boolean linkBreak, boolean isJava5DeclarationLocation) {
+    public List<Content> getAnnotations(List<? extends AnnotationMirror> descList, boolean linkBreak) {
         List<Content> results = new ArrayList<>();
         ContentBuilder annotation;
         for (AnnotationMirror aDesc : descList) {
@@ -1853,11 +1817,6 @@ public class HtmlDocletWriter {
                 (!isAnnotationDocumented && !isContainerDocumented)) {
                 continue;
             }
-            /* TODO: check logic here to correctly handle declaration
-             * and type annotations.
-            if  (utils.isDeclarationAnnotation(annotationElement, isJava5DeclarationLocation)) {
-                continue;
-            }*/
             annotation = new ContentBuilder();
             isAnnotationDocumented = false;
             LinkInfoImpl linkInfo = new LinkInfoImpl(configuration,
@@ -1900,9 +1859,7 @@ public class HtmlDocletWriter {
                         new SimpleAnnotationValueVisitor9<Void, List<AnnotationValue>>() {
                             @Override
                             public Void visitArray(List<? extends AnnotationValue> vals, List<AnnotationValue> annotationTypeValues) {
-                               for (AnnotationValue av : vals) {
-                                   annotationTypeValues.add(av);
-                               }
+                               annotationTypeValues.addAll(vals);
                                return null;
                             }
                         }.visit(a, annotationTypeValues);
@@ -1917,13 +1874,11 @@ public class HtmlDocletWriter {
                 // If the container has 1 or more value defined and if the
                 // repeatable type annotation is not documented, print the container.
                 else {
-                    addAnnotations(annotationElement, linkInfo, annotation, pairs,
-                                   indent, false);
+                    addAnnotations(annotationElement, linkInfo, annotation, pairs, false);
                 }
             }
             else {
-                addAnnotations(annotationElement, linkInfo, annotation, pairs,
-                               indent, linkBreak);
+                addAnnotations(annotationElement, linkInfo, annotation, pairs, linkBreak);
             }
             annotation.add(linkBreak ? DocletConstants.NL : "");
             results.add(annotation);
@@ -1938,13 +1893,12 @@ public class HtmlDocletWriter {
      * @param linkInfo the information about the link
      * @param annotation the annotation string to which the annotation will be added
      * @param map annotation type element to annotation value pairs
-     * @param indent the number of extra spaces to indent the annotations.
      * @param linkBreak if true, add new line between each member value
      */
     private void addAnnotations(TypeElement annotationDoc, LinkInfoImpl linkInfo,
                                 ContentBuilder annotation,
                                 Map<? extends ExecutableElement, ? extends AnnotationValue> map,
-                                int indent, boolean linkBreak) {
+                                boolean linkBreak) {
         linkInfo.label = new StringContent("@");
         linkInfo.label.add(annotationDoc.getSimpleName());
         annotation.add(getLink(linkInfo));
@@ -1961,7 +1915,7 @@ public class HtmlDocletWriter {
                     if (linkBreak) {
                         annotation.add(DocletConstants.NL);
                         int spaces = annotationDoc.getSimpleName().length() + 2;
-                        for (int k = 0; k < (spaces + indent); k++) {
+                        for (int k = 0; k < (spaces); k++) {
                             annotation.add(" ");
                         }
                     }
@@ -2074,7 +2028,7 @@ public class HtmlDocletWriter {
             }
             @Override
             public Content visitAnnotation(AnnotationMirror a, Void p) {
-                List<Content> list = getAnnotations(0, a, false);
+                List<Content> list = getAnnotations(List.of(a), false);
                 ContentBuilder buf = new ContentBuilder();
                 for (Content c : list) {
                     buf.add(c);

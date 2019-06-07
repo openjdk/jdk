@@ -258,35 +258,40 @@ public class CtwRunner {
 
     private String[] cmd(long classStart, long classStop) {
         String phase = phaseName(classStart);
-        return new String[] {
-                "-Xbatch",
-                "-XX:-UseCounterDecay",
-                "-XX:-ShowMessageBoxOnError",
-                "-XX:+UnlockDiagnosticVMOptions",
-                // redirect VM output to cerr so it won't collide w/ ctw output
-                "-XX:+DisplayVMOutputToStderr",
-                // define phase start
-                "-DCompileTheWorldStartAt=" + classStart,
-                "-DCompileTheWorldStopAt=" + classStop,
-                // CTW library uses WhiteBox API
-                "-XX:+WhiteBoxAPI", "-Xbootclasspath/a:.",
-                // export jdk.internal packages used by CTW library
-                "--add-exports", "java.base/jdk.internal.jimage=ALL-UNNAMED",
-                "--add-exports", "java.base/jdk.internal.misc=ALL-UNNAMED",
-                "--add-exports", "java.base/jdk.internal.reflect=ALL-UNNAMED",
-                "--add-exports", "java.base/jdk.internal.access=ALL-UNNAMED",
-                // enable diagnostic logging
-                "-XX:+LogCompilation",
-                // use phase specific log, hs_err and ciReplay files
-                String.format("-XX:LogFile=hotspot_%s_%%p.log", phase),
-                String.format("-XX:ErrorFile=hs_err_%s_%%p.log", phase),
-                String.format("-XX:ReplayDataFile=replay_%s_%%p.log", phase),
-                // MethodHandle MUST NOT be compiled
-                "-XX:CompileCommand=exclude,java/lang/invoke/MethodHandle.*",
-                // CTW entry point
-                CompileTheWorld.class.getName(),
-                target,
-        };
+        Path file = Paths.get(phase + ".cmd");
+        try {
+            Files.write(file, List.of(
+                    "-Xbatch",
+                    "-XX:-UseCounterDecay",
+                    "-XX:-ShowMessageBoxOnError",
+                    "-XX:+UnlockDiagnosticVMOptions",
+                    // redirect VM output to cerr so it won't collide w/ ctw output
+                    "-XX:+DisplayVMOutputToStderr",
+                    // define phase start
+                    "-DCompileTheWorldStartAt=" + classStart,
+                    "-DCompileTheWorldStopAt=" + classStop,
+                    // CTW library uses WhiteBox API
+                    "-XX:+WhiteBoxAPI", "-Xbootclasspath/a:.",
+                    // export jdk.internal packages used by CTW library
+                    "--add-exports", "java.base/jdk.internal.jimage=ALL-UNNAMED",
+                    "--add-exports", "java.base/jdk.internal.misc=ALL-UNNAMED",
+                    "--add-exports", "java.base/jdk.internal.reflect=ALL-UNNAMED",
+                    "--add-exports", "java.base/jdk.internal.access=ALL-UNNAMED",
+                    // enable diagnostic logging
+                    "-XX:+LogCompilation",
+                    // use phase specific log, hs_err and ciReplay files
+                    String.format("-XX:LogFile=hotspot_%s_%%p.log", phase),
+                    String.format("-XX:ErrorFile=hs_err_%s_%%p.log", phase),
+                    String.format("-XX:ReplayDataFile=replay_%s_%%p.log", phase),
+                    // MethodHandle MUST NOT be compiled
+                    "-XX:CompileCommand=exclude,java/lang/invoke/MethodHandle.*",
+                    // CTW entry point
+                    CompileTheWorld.class.getName(),
+                    target));
+        } catch (IOException e) {
+            throw new Error("can't create " + file, e);
+        }
+        return new String[]{ "@" + file.toAbsolutePath() };
     }
 
     private String phaseName(long classStart) {

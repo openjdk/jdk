@@ -45,12 +45,13 @@ public class PatternBench {
     public String fileTestString;
     public String flagsString;
 
-
     public Pattern graphemePattern;
     public Pattern jmodPattern;
     public Pattern jmodCanonicalPattern;
 
-    public Pattern pattern;
+    public String charPatternRegex;
+    public String[] charPatternStrings;
+    public Pattern charPattern;
 
     @Setup
     public void setup() {
@@ -61,6 +62,10 @@ public class PatternBench {
         String jmodRegex = "^.*(?:(?:_the\\.[^/]*)|(?:_[^/]*\\.marker)|(?:[^/]*\\.diz)|(?:[^/]*\\.debuginfo)|(?:[^/]*\\.dSYM/.*)|(?:[^/]*\\.dSYM)|(?:[^/]*\\.pdb)|(?:[^/]*\\.map))$";
         jmodCanonicalPattern = Pattern.compile(jmodRegex, Pattern.CANON_EQ);
         jmodPattern = Pattern.compile(jmodRegex);
+
+        charPatternRegex = "[ a-zA-Z]*foo[ a-zA-Z0-9]*bar[ a-z]*";
+        charPatternStrings = new String[] {"avaaafooddddddbariiii", "lorem ipsum dolor foo bar", "fpp brr lorem ipsum dolor foo bar %", "lorem ipsum dolor foo bar lorem ipsum dolor foo bar lorem ipsum dolor foo bar /"};
+        charPattern = Pattern.compile(charPatternRegex);
     }
 
     @Benchmark
@@ -82,5 +87,31 @@ public class PatternBench {
     @Measurement(iterations = 3)
     public boolean normalJmodMatch() {
         return jmodPattern.matcher(fileTestString).matches();
+    }
+
+    @Benchmark
+    @Warmup(iterations = 3)
+    @Measurement(iterations = 3)
+    public boolean charPatternMatch() {
+        return charPattern.matcher(charPatternStrings[0]).matches()
+                && charPattern.matcher(charPatternStrings[1]).matches()
+                && charPattern.matcher(charPatternStrings[2]).matches();
+    }
+
+    @Benchmark
+    @Warmup(iterations = 3)
+    @Measurement(iterations = 3)
+    public boolean charPatternMatchWithCompile() {
+        Pattern p = Pattern.compile(charPatternRegex);
+        return p.matcher(charPatternStrings[0]).matches()
+                && p.matcher(charPatternStrings[1]).matches()
+                && p.matcher(charPatternStrings[2]).matches();
+    }
+
+    @Benchmark
+    @Warmup(iterations = 3)
+    @Measurement(iterations = 3)
+    public Pattern charPatternCompile() {
+        return Pattern.compile(charPatternRegex);
     }
 }

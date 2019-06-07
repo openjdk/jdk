@@ -27,6 +27,7 @@ package com.sun.tools.javac.parser;
 
 import java.nio.CharBuffer;
 
+import com.sun.tools.javac.code.Lint;
 import com.sun.tools.javac.code.Preview;
 import com.sun.tools.javac.code.Source;
 import com.sun.tools.javac.util.Context;
@@ -59,6 +60,7 @@ public class ScannerFactory {
     final Source source;
     final Preview preview;
     final Tokens tokens;
+    final Lint lint;
 
     /** Create a new scanner factory. */
     protected ScannerFactory(Context context) {
@@ -68,6 +70,7 @@ public class ScannerFactory {
         this.source = Source.instance(context);
         this.preview = Preview.instance(context);
         this.tokens = Tokens.instance(context);
+        this.lint = Lint.instance(context);
     }
 
     public Scanner newScanner(CharSequence input, boolean keepDocComments) {

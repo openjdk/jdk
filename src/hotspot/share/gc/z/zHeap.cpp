@@ -79,7 +79,7 @@ ZHeap::ZHeap() :
   _heap = this;
 
   // Update statistics
-  ZStatHeap::set_at_initialize(heap_max_size(), heap_max_reserve_size());
+  ZStatHeap::set_at_initialize(heap_min_size(), heap_max_size(), heap_max_reserve_size());
 }
 
 size_t ZHeap::heap_min_size() const {
@@ -113,8 +113,8 @@ size_t ZHeap::max_capacity() const {
   return _page_allocator.max_capacity();
 }
 
-size_t ZHeap::current_max_capacity() const {
-  return _page_allocator.current_max_capacity();
+size_t ZHeap::soft_max_capacity() const {
+  return _page_allocator.soft_max_capacity();
 }
 
 size_t ZHeap::capacity() const {
@@ -177,13 +177,17 @@ size_t ZHeap::unsafe_max_tlab_alloc() const {
 }
 
 bool ZHeap::is_in(uintptr_t addr) const {
-  if (addr < ZAddressReservedStart || addr >= ZAddressReservedEnd) {
-    return false;
-  }
+  // An address is considered to be "in the heap" if it points into
+  // the allocated part of a pages, regardless of which heap view is
+  // used. Note that an address with the finalizable metadata bit set
+  // is not pointing into a heap view, and therefore not considered
+  // to be "in the heap".
 
-  const ZPage* const page = _page_table.get(addr);
-  if (page != NULL) {
-    return page->is_in(addr);
+  if (ZAddress::is_in(addr)) {
+    const ZPage* const page = _page_table.get(addr);
+    if (page != NULL) {
+      return page->is_in(addr);
+    }
   }
 
   return false;
@@ -313,7 +317,7 @@ void ZHeap::mark_start() {
   _mark.start();
 
   // Update statistics
-  ZStatHeap::set_at_mark_start(capacity(), used());
+  ZStatHeap::set_at_mark_start(soft_max_capacity(), capacity(), used());
 }
 
 void ZHeap::mark(bool initial) {

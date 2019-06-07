@@ -25,7 +25,6 @@
 
 package jdk.management.jfr;
 
-import java.nio.file.Path;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.LinkedHashMap;
@@ -37,6 +36,7 @@ import javax.management.openmbean.TabularData;
 
 import jdk.jfr.Recording;
 import jdk.jfr.RecordingState;
+import jdk.jfr.internal.management.ManagementSupport;
 
 /**
  * Management representation of a {@code Recording}.
@@ -80,8 +80,7 @@ public final class RecordingInfo {
         startTime = s == null ? 0L : s.toEpochMilli();
         Instant st = recording.getStopTime();
         stopTime = st == null ? 0L : st.toEpochMilli();
-        Path p = recording.getDestination();
-        destination = p == null ? null : p.toString();
+        destination = ManagementSupport.getDestinationOriginalText(recording);
         Duration duration = recording.getDuration();
         durationInSeconds = duration == null ? 0 : duration.getSeconds();
         settings = recording.getSettings();

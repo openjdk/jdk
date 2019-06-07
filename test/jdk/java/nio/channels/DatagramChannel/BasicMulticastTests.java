@@ -38,7 +38,6 @@ import java.util.*;
 import java.io.IOException;
 
 import jdk.test.lib.NetworkConfiguration;
-import jdk.test.lib.net.IPSupport;
 
 public class BasicMulticastTests {
 
@@ -120,7 +119,10 @@ public class BasicMulticastTests {
                                InetAddress loopback)
         throws IOException
     {
-        System.out.println("Exception Tests");
+        System.out.format("Exception Tests using %s, %s @ %s\n",
+            group.getHostAddress(),
+            notGroup.getHostAddress(),
+            nif.getName());
 
         DatagramChannel dc = DatagramChannel.open(family)
             .setOption(StandardSocketOptions.SO_REUSEADDR, true)
@@ -200,28 +202,36 @@ public class BasicMulticastTests {
      * and invoke tests.
      */
     public static void main(String[] args) throws IOException {
+        NetworkConfiguration.printSystemConfiguration(System.out);
+
         NetworkConfiguration config = NetworkConfiguration.probe();
 
         // test IPv4 if available
-        if (IPSupport.hasIPv4()) {
+        {
+            var multicastInterfaces = config.ip4MulticastInterfaces().iterator();
             InetAddress group = InetAddress.getByName("225.4.5.6");
             InetAddress notGroup = InetAddress.getByName("1.2.3.4");
             InetAddress loopback = InetAddress.getByName("127.0.0.1");
-            NetworkInterface nif = config.ip4MulticastInterfaces().iterator().next();
-            InetAddress anySource = config.ip4Addresses(nif).iterator().next();
-            membershipKeyTests(StandardProtocolFamily.INET, group, nif, anySource);
-            exceptionTests(StandardProtocolFamily.INET, group, notGroup, nif, loopback);
+            while (multicastInterfaces.hasNext()) {
+                NetworkInterface nif = multicastInterfaces.next();
+                InetAddress anySource = config.ip4Addresses(nif).iterator().next();
+                membershipKeyTests(StandardProtocolFamily.INET, group, nif, anySource);
+                exceptionTests(StandardProtocolFamily.INET, group, notGroup, nif, loopback);
+            }
         }
 
         // test IPv6 if available
-        if (IPSupport.hasIPv6()) {
+        {
+            var multicastInterfaces = config.ip6MulticastInterfaces().iterator();
             InetAddress group = InetAddress.getByName("ff02::a");
             InetAddress notGroup = InetAddress.getByName("fe80::1234");
             InetAddress loopback = InetAddress.getByName("::1");
-            NetworkInterface nif = config.ip6MulticastInterfaces().iterator().next();
-            InetAddress anySource = config.ip6Addresses(nif).iterator().next();
-            membershipKeyTests(StandardProtocolFamily.INET6, group, nif, anySource);
-            exceptionTests(StandardProtocolFamily.INET6, group, notGroup, nif, loopback);
+            while (multicastInterfaces.hasNext()) {
+                NetworkInterface nif = multicastInterfaces.next();
+                InetAddress anySource = config.ip6Addresses(nif).iterator().next();
+                membershipKeyTests(StandardProtocolFamily.INET6, group, nif, anySource);
+                exceptionTests(StandardProtocolFamily.INET6, group, notGroup, nif, loopback);
+            }
         }
     }
 }

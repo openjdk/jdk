@@ -361,8 +361,7 @@ int LIR_Assembler::check_icache() {
 
 void LIR_Assembler::clinit_barrier(ciMethod* method) {
   assert(VM_Version::supports_fast_class_init_checks(), "sanity");
-  assert(method->holder()->is_being_initialized() || method->holder()->is_initialized(),
-         "initialization should have been started");
+  assert(!method->holder()->is_not_initialized(), "initialization should have been started");
 
   Label L_skip_barrier;
   Register klass = rscratch1;

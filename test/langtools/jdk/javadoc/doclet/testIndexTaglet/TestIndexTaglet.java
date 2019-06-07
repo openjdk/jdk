@@ -47,7 +47,7 @@ public class TestIndexTaglet extends JavadocTester {
 
     public static void main(String... args) throws Exception {
         TestIndexTaglet tester = new TestIndexTaglet();
-        tester.runTests(m -> new Object[]{Paths.get(m.getName())});
+        tester.runTests(m -> new Object[] { Paths.get(m.getName()) });
     }
 
     TestIndexTaglet() {
@@ -103,5 +103,28 @@ public class TestIndexTaglet extends JavadocTester {
 
         checkOutput(Output.OUT, true,
                 "warning: {@index} tag, which expands to <a>, within <a>");
+    }
+
+    @Test
+    public void testDuplicateReferences(Path base) throws Exception {
+        Path srcDir = base.resolve("src");
+        Path outDir = base.resolve("out");
+
+        new ClassBuilder(tb, "pkg.A")
+                .setModifiers("public", "class")
+                .setComments("This is a class. Here is {@index foo first}.")
+                .addMembers(MethodBuilder.parse("public void m() {}")
+                        .setComments("This is a method. Here is {@index foo second}."))
+                .write(srcDir);
+
+        javadoc("-d", outDir.toString(),
+                "-sourcepath", srcDir.toString(),
+                "pkg");
+
+        checkExit(Exit.OK);
+
+        checkOutput("pkg/A.html", true,
+                "This is a class. Here is <a id=\"foo\" class=\"searchTagResult\">foo</a>.",
+                "This is a method. Here is <a id=\"foo-1\" class=\"searchTagResult\">foo</a>.");
     }
 }

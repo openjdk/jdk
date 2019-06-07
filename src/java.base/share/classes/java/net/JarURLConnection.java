@@ -254,7 +254,7 @@ public abstract class JarURLConnection extends URLConnection {
      * @see #getJarEntry
      */
     public JarEntry getJarEntry() throws IOException {
-        return getJarFile().getJarEntry(entryName);
+        return entryName == null ? null : getJarFile().getJarEntry(entryName);
     }
 
     /**

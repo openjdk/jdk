@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -218,7 +218,7 @@ public class Checksum {
      * @exception IOException if an I/O error occurs while reading encoded data.
      *
      */
-    private Checksum(DerValue encoding) throws Asn1Exception, IOException {
+    public Checksum(DerValue encoding) throws Asn1Exception, IOException {
         DerValue der;
         if (encoding.getTag() != DerValue.tag_Sequence) {
             throw new Asn1Exception(Krb5.ASN1_BAD_ID);

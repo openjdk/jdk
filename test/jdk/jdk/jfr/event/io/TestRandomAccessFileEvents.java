@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -35,6 +35,7 @@ import java.util.List;
 
 import jdk.jfr.Recording;
 import jdk.jfr.consumer.RecordedEvent;
+import jdk.test.lib.Utils;
 import jdk.test.lib.jfr.Events;
 
 /**
@@ -47,8 +48,7 @@ import jdk.test.lib.jfr.Events;
 public class TestRandomAccessFileEvents {
 
     public static void main(String[] args) throws Throwable {
-        File tmp = File.createTempFile("TestRandomAccessFileEvents", ".tmp", new File("."));
-        tmp.deleteOnExit();
+        File tmp = Utils.createTempFile("TestRandomAccessFileEvents", ".tmp").toFile();
         Recording recording = new Recording();
         List<IOEvent> expectedEvents = new ArrayList<>();
 

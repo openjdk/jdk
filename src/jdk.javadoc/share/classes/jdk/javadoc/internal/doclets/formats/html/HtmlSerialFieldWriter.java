@@ -87,10 +87,7 @@ public class HtmlSerialFieldWriter extends FieldWriterImpl
      */
     public Content getFieldsContentHeader(boolean isLastContent) {
         HtmlTree li = new HtmlTree(HtmlTag.LI);
-        if (isLastContent)
-            li.setStyle(HtmlStyle.blockListLast);
-        else
-            li.setStyle(HtmlStyle.blockList);
+        li.setStyle(HtmlStyle.blockList);
         return li;
     }
 

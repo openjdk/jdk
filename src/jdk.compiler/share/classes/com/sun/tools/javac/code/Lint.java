@@ -275,6 +275,11 @@ public class Lint
         STATIC("static"),
 
         /**
+         * Warn about issues relating to use of text blocks
+         */
+        TEXT_BLOCKS("text-blocks"),
+
+        /**
          * Warn about issues relating to use of try blocks (i.e. try-with-resources)
          */
         TRY("try"),

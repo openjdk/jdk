@@ -55,7 +55,7 @@ import javax.sql.*;
  * data.  It uses the <code>XmlWriter</code> object to write itself to a stream or
  * <code>java.io.Writer</code> object in XML format.
  *
- * <h3>1.0 Naming Convention for Implementations</h3>
+ * <h2>1.0 Naming Convention for Implementations</h2>
  * As a guide  to naming <code>SyncProvider</code>
  * implementations, the following should be noted:
  * <UL>

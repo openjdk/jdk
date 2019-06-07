@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -166,7 +166,10 @@ public class crstepreq001 {
         }
 
         enabledStepRequests.forEach(s -> erManager.deleteEventRequest(s));
-
+        // There is a chance that a single step event had been posted after
+        // the step request was created and before it was deleted. In this
+        // case the debuggee VM is in the suspended state.
+        vm.resume();
         return quitDebuggee(tot_res);
     }
 

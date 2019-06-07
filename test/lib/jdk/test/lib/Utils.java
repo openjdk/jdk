@@ -815,4 +815,24 @@ public final class Utils {
         Path dir = Paths.get(System.getProperty("user.dir", "."));
         return Files.createTempFile(dir, prefix, suffix);
     }
+
+    /**
+     * Creates an empty directory in "user.dir" or "."
+     * <p>
+     * This method is meant as a replacement for {@code Files#createTempDirectory(String, String, FileAttribute...)}
+     * that doesn't leave files behind in /tmp directory of the test machine
+     * <p>
+     * If the property "user.dir" is not set, "." will be used.
+     *
+     * @param prefix
+     * @param attrs
+     * @return the path to the newly created directory
+     * @throws IOException
+     *
+     * @see {@link Files#createTempDirectory(String, String, FileAttribute...)}
+     */
+    public static Path createTempDirectory(String prefix, FileAttribute<?>... attrs) throws IOException {
+        Path dir = Paths.get(System.getProperty("user.dir", "."));
+        return Files.createTempDirectory(dir, prefix);
+    }
 }

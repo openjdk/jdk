@@ -1,4 +1,4 @@
-/* 
+/*
  * Javadoc style sheet
  */
 
@@ -165,7 +165,7 @@ button {
     height:2.8em;
     padding-top:10px;
     overflow:hidden;
-    font-size:12px; 
+    font-size:12px;
 }
 .bottomNav {
     margin-top:10px;
@@ -371,11 +371,11 @@ div.inheritance {
 div.inheritance div.inheritance {
     margin-left:2em;
 }
-ul.blockList, ul.blockListLast {
+ul.blockList {
     margin:10px 0 10px 0;
     padding:0;
 }
-ul.blockList li.blockList, ul.blockList li.blockListLast {
+ul.blockList li.blockList {
     list-style:none;
     margin-bottom:15px;
     line-height:1.4;
@@ -533,9 +533,9 @@ td.colSecond a:link, td.colSecond a:visited,
 th.colFirst a:link, th.colFirst a:visited,
 th.colSecond a:link, th.colSecond a:visited,
 th.colConstructorName a:link, th.colConstructorName a:visited,
-th.colDeprecatedItemName a:link, th.colDeprecatedItemName a:visited, 
-.constantValuesContainer td a:link, .constantValuesContainer td a:visited, 
-.allClassesContainer td a:link, .allClassesContainer td a:visited, 
+th.colDeprecatedItemName a:link, th.colDeprecatedItemName a:visited,
+.constantValuesContainer td a:link, .constantValuesContainer td a:visited,
+.allClassesContainer td a:link, .allClassesContainer td a:visited,
 .allPackagesContainer td a:link, .allPackagesContainer td a:visited {
     font-weight:bold;
 }
@@ -570,6 +570,26 @@ td.colLast div {
 }
 td.colLast a {
     padding-bottom:3px;
+}
+div.memberSignature {
+    font-family:'DejaVu Sans Mono', monospace;
+    font-size:14px;
+    margin-top:6px;
+    margin-bottom:14px;
+    white-space: pre-wrap;
+}
+div.memberSignature span.annotations {
+    white-space: pre-wrap;
+}
+div.memberSignature span.typeParametersLong,
+div.memberSignature span.arguments,
+div.memberSignature span.exceptions {
+    display: inline-block;
+    vertical-align: top;
+    white-space: pre;
+}
+div.memberSignature span.typeParameters {
+    white-space: normal;
 }
 /*
  * Styles for formatting effect.
@@ -616,12 +636,12 @@ div.block div.block span.interfaceName {
  * Styles for IFRAME.
  */
 .mainContainer {
-    margin:0 auto; 
-    padding:0; 
-    height:100%; 
-    width:100%; 
-    position:fixed; 
-    top:0; 
+    margin:0 auto;
+    padding:0;
+    height:100%;
+    width:100%;
+    position:fixed;
+    top:0;
     left:0;
 }
 .leftContainer {

@@ -462,8 +462,8 @@ void JfrThreadSampler::run() {
       last_native_ms = last_java_ms;
     }
     _sample.signal();
-    jlong java_interval = _interval_java == 0 ? max_jlong : MAX2<jlong>(_interval_java, 10);
-    jlong native_interval = _interval_native == 0 ? max_jlong : MAX2<jlong>(_interval_native, 10);
+    jlong java_interval = _interval_java == 0 ? max_jlong : MAX2<jlong>(_interval_java, 1);
+    jlong native_interval = _interval_native == 0 ? max_jlong : MAX2<jlong>(_interval_native, 1);
 
     jlong now_ms = get_monotonic_ms();
 

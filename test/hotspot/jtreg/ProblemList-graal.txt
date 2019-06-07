@@ -52,6 +52,7 @@ compiler/whitebox/ClearMethodStateTest.java                     8181831   generi
 compiler/whitebox/EnqueueMethodForCompilationTest.java          8181831   generic-all
 compiler/whitebox/MakeMethodNotCompilableTest.java              8181831   generic-all
 
+compiler/uncommontrap/DeoptReallocFailure.java                  8196611   generic-all
 gc/arguments/TestNewSizeFlags.java                              8196611   generic-all
 gc/arguments/TestVerifyBeforeAndAfterGCFlags.java               8196611   generic-all
 gc/g1/mixedgc/TestOldGenCollectionUsage.java                    8196611   generic-all
@@ -59,16 +60,32 @@ gc/g1/TestConcurrentSystemGC.java                               8196611   generi
 gc/g1/TestPeriodicCollection.java                               8196611   generic-all
 gc/g1/TestFromCardCacheIndex.java                               8196611   generic-all
 gc/parallel/TestPrintGCDetailsVerbose.java                      8196611   generic-all
-vm/gc/InfiniteList.java                                         8196611 generic-all
-vmTestbase/gc/lock/malloc/malloclock03/TestDescription.java     8196611   macosx-all
+vm/gc/InfiniteList.java                                         8196611   generic-all
+
+vmTestbase/gc/lock/jni/jnilock001/TestDescription.java          8196611   generic-all
+vmTestbase/gc/lock/jniref/jnireflock04/TestDescription.java     8196611   generic-all
+vmTestbase/gc/lock/jvmti/alloc/jvmtialloclock02/TestDescription.java 8196611   generic-all
+vmTestbase/gc/lock/malloc/malloclock03/TestDescription.java     8196611   generic-all
 vmTestbase/gc/gctests/LargeObjects/large001/large001.java       8196611   generic-all
 vmTestbase/gc/gctests/ReferencesGC/ReferencesGC.java            8196611   generic-all
+vmTestbase/nsk/stress/except/except001.java                     8196611   generic-all
+vmTestbase/nsk/stress/except/except002.java                     8196611   generic-all
+vmTestbase/nsk/stress/except/except003.java                     8196611   generic-all
 vmTestbase/nsk/stress/except/except004.java                     8196611   generic-all
+vmTestbase/nsk/stress/except/except005.java                     8196611   generic-all
+vmTestbase/nsk/stress/except/except006.java                     8196611   generic-all
 vmTestbase/nsk/stress/except/except007.java                     8196611   generic-all
 vmTestbase/nsk/stress/except/except008.java                     8196611   generic-all
+vmTestbase/nsk/stress/except/except009.java                     8196611   generic-all
+vmTestbase/nsk/stress/except/except010.java                     8196611   generic-all
 vmTestbase/nsk/stress/except/except011.java                     8196611   generic-all
+vmTestbase/nsk/stress/except/except012.java                     8196611   generic-all
+vmTestbase/nsk/jdi/stress/serial/heapwalking001/TestDescription.java                               8196611   generic-all
+vmTestbase/nsk/jdi/VirtualMachine/instanceCounts/instancecounts002/TestDescription.java            8196611   generic-all
 vmTestbase/nsk/jdi/VirtualMachine/instanceCounts/instancecounts003/instancecounts003.java          8196611   generic-all
 vmTestbase/nsk/jdi/ObjectReference/referringObjects/referringObjects002/referringObjects002.java   8196611   generic-all
+vmTestbase/vm/gc/compact/Humongous_NonbranchyTree/TestDescription.java                             8196611   generic-all
+
 serviceability/jvmti/HeapMonitor/MyPackage/HeapMonitorMultiArrayTest.java 8196611   generic-all
 serviceability/tmtools/jstat/GcTest02.java                      8196611 generic-all
 serviceability/tmtools/jstat/GcCapacityTest.java                8196611 generic-all
@@ -228,8 +245,6 @@ compiler/jsr292/NonInlinedCall/InvokeTest.java          8207267   generic-all
 compiler/codegen/TestTrichotomyExpressions.java         8207267   generic-all
 
 runtime/exceptionMsgs/AbstractMethodError/AbstractMethodErrorTest.java        8222582 generic-all
-
-serviceability/dcmd/compiler/CodelistTest.java 8220449 generic-all
 
 # Graal unit tests
 org.graalvm.compiler.core.test.CheckGraalInvariants                              8205081

@@ -54,7 +54,7 @@ public class TestTypeParameters extends JavadocTester {
         checkExit(Exit.OK);
 
         checkOutput("pkg/C.html", true,
-                "<td class=\"colFirst\"><code>&lt;W extends java.lang.String,&#8203;V extends "
+                "<td class=\"colFirst\"><code>&lt;W extends java.lang.String,&#8203;\nV extends "
                 + "java.util.List&gt;<br>java.lang.Object</code></td>",
                 "<code>&lt;T&gt;&nbsp;java.lang.Object</code>");
 

@@ -475,6 +475,31 @@ networkaddress.cache.negative.ttl=10
 krb5.kdc.bad.policy = tryLast
 
 #
+# Kerberos cross-realm referrals (RFC 6806)
+#
+# OpenJDK's Kerberos client supports cross-realm referrals as defined in
+# RFC 6806. This allows to setup more dynamic environments in which clients
+# do not need to know in advance how to reach the realm of a target principal
+# (either a user or service).
+#
+# When a client issues an AS or a TGS request, the "canonicalize" option
+# is set to announce support of this feature. A KDC server may fulfill the
+# request or reply referring the client to a different one. If referred,
+# the client will issue a new request and the cycle repeats.
+#
+# In addition to referrals, the "canonicalize" option allows the KDC server
+# to change the client name in response to an AS request. For security reasons,
+# RFC 6806 (section 11) FAST scheme is enforced.
+#
+# Disable Kerberos cross-realm referrals. Value may be overwritten with a
+# System property (-Dsun.security.krb5.disableReferrals).
+sun.security.krb5.disableReferrals=false
+
+# Maximum number of AS or TGS referrals to avoid infinite loops. Value may
+# be overwritten with a System property (-Dsun.security.krb5.maxReferrals).
+sun.security.krb5.maxReferrals=5
+
+#
 # Algorithm restrictions for certification path (CertPath) processing
 #
 # In some environments, certain algorithms or key lengths may be undesirable

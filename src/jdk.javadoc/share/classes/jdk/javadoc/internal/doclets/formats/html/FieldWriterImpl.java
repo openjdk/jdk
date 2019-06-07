@@ -35,7 +35,6 @@ import javax.lang.model.element.VariableElement;
 import jdk.javadoc.internal.doclets.formats.html.markup.ContentBuilder;
 import jdk.javadoc.internal.doclets.formats.html.markup.Entity;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlStyle;
-import jdk.javadoc.internal.doclets.formats.html.markup.HtmlTag;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlTree;
 import jdk.javadoc.internal.doclets.formats.html.markup.StringContent;
 import jdk.javadoc.internal.doclets.formats.html.markup.Table;
@@ -121,20 +120,9 @@ public class FieldWriterImpl extends AbstractMemberWriter
      */
     @Override
     public Content getSignature(VariableElement field) {
-        Content pre = new HtmlTree(HtmlTag.PRE);
-        writer.addAnnotationInfo(field, pre);
-        addModifiers(field, pre);
-        Content fieldlink = writer.getLink(new LinkInfoImpl(
-                configuration, LinkInfoImpl.Kind.MEMBER, field.asType()));
-        pre.add(fieldlink);
-        pre.add(" ");
-        if (configuration.linksource) {
-            Content fieldName = new StringContent(name(field));
-            writer.addSrcLink(field, fieldName, pre);
-        } else {
-            addName(name(field), pre);
-        }
-        return pre;
+        return new MemberSignature(field)
+                .addType(field.asType())
+                .toContent();
     }
 
     /**
@@ -176,9 +164,8 @@ public class FieldWriterImpl extends AbstractMemberWriter
      * {@inheritDoc}
      */
     @Override
-    public Content getFieldDoc(Content fieldTree,
-            boolean isLastContent) {
-        return getMemberTree(fieldTree, isLastContent);
+    public Content getFieldDoc(Content fieldTree) {
+        return getMemberTree(fieldTree);
     }
 
     /**

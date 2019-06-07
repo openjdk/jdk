@@ -120,6 +120,10 @@ public:
     update_if_shared(InstanceKlass::fully_initialized);
     return _init_state == InstanceKlass::fully_initialized;
   }
+  bool                   is_not_initialized() {
+    update_if_shared(InstanceKlass::fully_initialized);
+    return _init_state < InstanceKlass::being_initialized;
+  }
   // Is this klass being initialized?
   bool                   is_being_initialized() {
     update_if_shared(InstanceKlass::being_initialized);
@@ -129,6 +133,11 @@ public:
   bool                   is_linked() {
     update_if_shared(InstanceKlass::linked);
     return _init_state >= InstanceKlass::linked;
+  }
+  // Is this klass in error state?
+  bool                   is_in_error_state() {
+    update_if_shared(InstanceKlass::initialization_error);
+    return _init_state == InstanceKlass::initialization_error;
   }
 
   // General klass information.

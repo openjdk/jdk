@@ -46,9 +46,15 @@ final class HotSpotJVMCICompilerConfig {
      */
     private static class DummyCompilerFactory implements JVMCICompilerFactory, JVMCICompiler {
 
+        private final String reason;
+
+        DummyCompilerFactory(String reason) {
+            this.reason = reason;
+        }
+
         @Override
         public HotSpotCompilationRequestResult compileMethod(CompilationRequest request) {
-            throw new JVMCIError("no JVMCI compiler selected");
+            throw new JVMCIError("no JVMCI compiler selected: " + reason);
         }
 
         @Override
@@ -79,8 +85,10 @@ final class HotSpotJVMCICompilerConfig {
             JVMCICompilerFactory factory = null;
             String compilerName = Option.Compiler.getString();
             if (compilerName != null) {
-                if (compilerName.isEmpty() || compilerName.equals("null")) {
-                    factory = new DummyCompilerFactory();
+                if (compilerName.isEmpty()) {
+                    factory = new DummyCompilerFactory(" empty \"\" is specified");
+                } else if (compilerName.equals("null")) {
+                    factory = new DummyCompilerFactory("\"null\" is specified");
                 } else {
                     for (JVMCICompilerFactory f : getJVMCICompilerFactories()) {
                         if (f.getCompilerName().equals(compilerName)) {
@@ -93,18 +101,20 @@ final class HotSpotJVMCICompilerConfig {
                 }
             } else {
                 // Auto select a single available compiler
+                String reason = "default compiler is not found";
                 for (JVMCICompilerFactory f : getJVMCICompilerFactories()) {
                     if (factory == null) {
                         openJVMCITo(f.getClass().getModule());
                         factory = f;
                     } else {
                         // Multiple factories seen - cancel auto selection
+                        reason = "multiple factories seen: \"" + factory.getCompilerName() + "\" and \"" + f.getCompilerName() + "\"";
                         factory = null;
                         break;
                     }
                 }
                 if (factory == null) {
-                    factory = new DummyCompilerFactory();
+                    factory = new DummyCompilerFactory(reason);
                 }
             }
             factory.onSelection();

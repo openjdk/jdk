@@ -632,7 +632,7 @@ JRT_LEAF(BasicType, Deoptimization::unpack_frames(JavaThread* thread, int exec_m
                   p2i(thread), p2i(array), exec_mode);
   }
 #endif
-  Events::log(thread, "DEOPT UNPACKING pc=" INTPTR_FORMAT " sp=" INTPTR_FORMAT " mode %d",
+  Events::log_deopt_message(thread, "DEOPT UNPACKING pc=" INTPTR_FORMAT " sp=" INTPTR_FORMAT " mode %d",
               p2i(stub_frame.pc()), p2i(stub_frame.sp()), exec_mode);
 
   UnrollBlock* info = array->unroll_block();
@@ -1316,7 +1316,7 @@ void Deoptimization::print_objects(GrowableArray<ScopeValue*>* objects, bool rea
 #endif // COMPILER2_OR_JVMCI
 
 vframeArray* Deoptimization::create_vframeArray(JavaThread* thread, frame fr, RegisterMap *reg_map, GrowableArray<compiledVFrame*>* chunk, bool realloc_failures) {
-  Events::log(thread, "DEOPT PACKING pc=" INTPTR_FORMAT " sp=" INTPTR_FORMAT, p2i(fr.pc()), p2i(fr.sp()));
+  Events::log_deopt_message(thread, "DEOPT PACKING pc=" INTPTR_FORMAT " sp=" INTPTR_FORMAT, p2i(fr.pc()), p2i(fr.sp()));
 
 #ifndef PRODUCT
   if (PrintDeoptimizationDetails) {
@@ -1676,7 +1676,7 @@ JRT_ENTRY(void, Deoptimization::uncommon_trap_inner(JavaThread* thread, jint tra
   nmethodLocker nl(fr.pc());
 
   // Log a message
-  Events::log(thread, "Uncommon trap: trap_request=" PTR32_FORMAT " fr.pc=" INTPTR_FORMAT " relative=" INTPTR_FORMAT,
+  Events::log_deopt_message(thread, "Uncommon trap: trap_request=" PTR32_FORMAT " fr.pc=" INTPTR_FORMAT " relative=" INTPTR_FORMAT,
               trap_request, p2i(fr.pc()), fr.pc() - fr.cb()->code_begin());
 
   {
@@ -2076,7 +2076,7 @@ JRT_ENTRY(void, Deoptimization::uncommon_trap_inner(JavaThread* thread, jint tra
         if (trap_method() == nm->method()) {
           make_not_compilable = true;
         } else {
-          trap_method->set_not_compilable(CompLevel_full_optimization, true, "overflow_recompile_count > PerBytecodeRecompilationCutoff");
+          trap_method->set_not_compilable("overflow_recompile_count > PerBytecodeRecompilationCutoff", CompLevel_full_optimization);
           // But give grace to the enclosing nm->method().
         }
       }
@@ -2090,7 +2090,7 @@ JRT_ENTRY(void, Deoptimization::uncommon_trap_inner(JavaThread* thread, jint tra
     // Give up compiling
     if (make_not_compilable && !nm->method()->is_not_compilable(CompLevel_full_optimization)) {
       assert(make_not_entrant, "consistent");
-      nm->method()->set_not_compilable(CompLevel_full_optimization);
+      nm->method()->set_not_compilable("give up compiling", CompLevel_full_optimization);
     }
 
   } // Free marked resources

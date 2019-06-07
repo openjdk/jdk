@@ -116,7 +116,7 @@ inline oop ShenandoahHeap::evac_update_with_forwarded(T* p) {
       if (oopDesc::equals_raw(forwarded_oop, heap_oop)) {
         forwarded_oop = evacuate_object(heap_oop, Thread::current());
       }
-      oop prev = atomic_compare_exchange_oop(forwarded_oop, p, heap_oop);
+      oop prev = cas_oop(forwarded_oop, p, heap_oop);
       if (oopDesc::equals_raw(prev, heap_oop)) {
         return forwarded_oop;
       } else {
@@ -129,11 +129,11 @@ inline oop ShenandoahHeap::evac_update_with_forwarded(T* p) {
   }
 }
 
-inline oop ShenandoahHeap::atomic_compare_exchange_oop(oop n, oop* addr, oop c) {
+inline oop ShenandoahHeap::cas_oop(oop n, oop* addr, oop c) {
   return (oop) Atomic::cmpxchg(n, addr, c);
 }
 
-inline oop ShenandoahHeap::atomic_compare_exchange_oop(oop n, narrowOop* addr, oop c) {
+inline oop ShenandoahHeap::cas_oop(oop n, narrowOop* addr, oop c) {
   narrowOop cmp = CompressedOops::encode(c);
   narrowOop val = CompressedOops::encode(n);
   return CompressedOops::decode((narrowOop) Atomic::cmpxchg(val, addr, cmp));
@@ -152,24 +152,29 @@ inline oop ShenandoahHeap::maybe_update_with_forwarded_not_null(T* p, oop heap_o
     }
 
     shenandoah_assert_forwarded_except(p, heap_oop, is_full_gc_in_progress() || is_degenerated_gc_in_progress());
+    shenandoah_assert_not_forwarded(p, forwarded_oop);
     shenandoah_assert_not_in_cset_except(p, forwarded_oop, cancelled_gc());
 
     // If this fails, another thread wrote to p before us, it will be logged in SATB and the
     // reference be updated later.
-    oop result = atomic_compare_exchange_oop(forwarded_oop, p, heap_oop);
+    oop witness = cas_oop(forwarded_oop, p, heap_oop);
 
-    if (oopDesc::equals_raw(result, heap_oop)) { // CAS successful.
-      return forwarded_oop;
+    if (!oopDesc::equals_raw(witness, heap_oop)) {
+      // CAS failed, someone had beat us to it. Normally, we would return the failure witness,
+      // because that would be the proper write of to-space object, enforced by strong barriers.
+      // However, there is a corner case with arraycopy. It can happen that a Java thread
+      // beats us with an arraycopy, which first copies the array, which potentially contains
+      // from-space refs, and only afterwards updates all from-space refs to to-space refs,
+      // which leaves a short window where the new array elements can be from-space.
+      // In this case, we can just resolve the result again. As we resolve, we need to consider
+      // the contended write might have been NULL.
+      oop result = ShenandoahBarrierSet::resolve_forwarded(witness);
+      shenandoah_assert_not_forwarded_except(p, result, (result == NULL));
+      shenandoah_assert_not_in_cset_except(p, result, (result == NULL) || cancelled_gc());
+      return result;
     } else {
-      // Note: we used to assert the following here. This doesn't work because sometimes, during
-      // marking/updating-refs, it can happen that a Java thread beats us with an arraycopy,
-      // which first copies the array, which potentially contains from-space refs, and only afterwards
-      // updates all from-space refs to to-space refs, which leaves a short window where the new array
-      // elements can be from-space.
-      // assert(CompressedOops::is_null(result) ||
-      //        oopDesc::equals_raw(result, ShenandoahBarrierSet::resolve_oop_static_not_null(result)),
-      //       "expect not forwarded");
-      return NULL;
+      // Success! We have updated with known to-space copy. We have already asserted it is sane.
+      return forwarded_oop;
     }
   } else {
     shenandoah_assert_not_forwarded(p, heap_oop);

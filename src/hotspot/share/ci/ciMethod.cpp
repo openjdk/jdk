@@ -462,6 +462,27 @@ const BitMap& ciMethod::bci_block_start() {
 
 
 // ------------------------------------------------------------------
+// ciMethod::check_overflow
+//
+// Check whether the profile counter is overflowed and adjust if true.
+// For invoke* it will turn negative values into max_jint,
+// and for checkcast/aastore/instanceof turn positive values into min_jint.
+int ciMethod::check_overflow(int c, Bytecodes::Code code) {
+  switch (code) {
+    case Bytecodes::_aastore:    // fall-through
+    case Bytecodes::_checkcast:  // fall-through
+    case Bytecodes::_instanceof: {
+      return (c > 0 ? min_jint : c); // always non-positive
+    }
+    default: {
+      assert(Bytecodes::is_invoke(code), "%s", Bytecodes::name(code));
+      return (c < 0 ? max_jint : c); // always non-negative
+    }
+  }
+}
+
+
+// ------------------------------------------------------------------
 // ciMethod::call_profile_at_bci
 //
 // Get the ciCallProfile for the invocation of this method.
@@ -473,7 +494,7 @@ ciCallProfile ciMethod::call_profile_at_bci(int bci) {
     ciProfileData* data = method_data()->bci_to_data(bci);
     if (data != NULL && data->is_CounterData()) {
       // Every profiled call site has a counter.
-      int count = data->as_CounterData()->count();
+      int count = check_overflow(data->as_CounterData()->count(), java_code_at_bci(bci));
 
       if (!data->is_ReceiverTypeData()) {
         result._receiver_count[0] = 0;  // that's a definite zero
@@ -502,9 +523,9 @@ ciCallProfile ciMethod::call_profile_at_bci(int bci) {
         for (uint i = 0; i < call->row_limit(); i++) {
           ciKlass* receiver = call->receiver(i);
           if (receiver == NULL)  continue;
-          int rcount = call->receiver_count(i) + epsilon;
+          int rcount = saturated_add(call->receiver_count(i), epsilon);
           if (rcount == 0) rcount = 1; // Should be valid value
-          receivers_count_total += rcount;
+          receivers_count_total = saturated_add(receivers_count_total, rcount);
           // Add the receiver to result data.
           result.add_receiver(receiver, rcount);
           // If we extend profiling to record methods,
@@ -534,7 +555,7 @@ ciCallProfile ciMethod::call_profile_at_bci(int bci) {
         // do nothing.  Otherwise, increase count to be the sum of all
         // receiver's counts.
         if (count >= 0) {
-          count += receivers_count_total;
+          count = saturated_add(count, receivers_count_total);
         }
       }
       result._count = count;
@@ -1111,7 +1132,7 @@ void ciMethod::set_not_compilable(const char* reason) {
   } else {
     _is_c2_compilable = false;
   }
-  get_Method()->set_not_compilable(env->comp_level(), true, reason);
+  get_Method()->set_not_compilable(reason, env->comp_level());
 }
 
 // ------------------------------------------------------------------

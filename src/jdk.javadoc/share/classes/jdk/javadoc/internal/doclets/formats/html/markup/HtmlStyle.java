@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2010, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -41,10 +41,11 @@ public enum HtmlStyle {
     allClassesContainer,
     allPackagesContainer,
     altColor,
+    annotations,
+    arguments,
     bar,
     block,
     blockList,
-    blockListLast,
     bottomNav,
     circle,
     classUseContainer,
@@ -70,6 +71,7 @@ public enum HtmlStyle {
     detail,
     docSummary,
     emphasizedPhrase,
+    exceptions,
     externalLink,
     fieldDetails,
     fieldSummary,
@@ -91,12 +93,15 @@ public enum HtmlStyle {
     legalCopy,
     mainContainer,
     memberDetails,
+    memberName,
     memberNameLabel,
     memberNameLink,
+    memberSignature,
     memberSummary,
     methodDetails,
     methodSignature,
     methodSummary,
+    modifiers,
     moduleDescription,
     moduleLabelInPackage,
     moduleLabelInType,
@@ -122,6 +127,7 @@ public enum HtmlStyle {
     providesSummary,
     requiresSummary,
     returnLabel,
+    returnType,
     rightContainer,
     rightIframe,
     rowColor,
@@ -147,6 +153,8 @@ public enum HtmlStyle {
     topNav,
     typeNameLabel,
     typeNameLink,
+    typeParameters,
+    typeParametersLong,
     typeSummary,
     useSummary,
     usesSummary

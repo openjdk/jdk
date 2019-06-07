@@ -66,30 +66,26 @@ ALL_MODULES := $(call FindAllModules)
 ################################################################################
 # Interim/build tools targets, compiling tools used during the build
 
-# When creating a BUILDJDK, the buildtools and interim targets have already
-# been built and should not be built again.
-ifneq ($(CREATING_BUILDJDK), true)
-  buildtools-langtools:
+buildtools-langtools:
 	+($(CD) $(TOPDIR)/make && $(MAKE) $(MAKE_ARGS) -f ToolsLangtools.gmk)
 
-  interim-langtools:
+interim-langtools:
 	+($(CD) $(TOPDIR)/make && $(MAKE) $(MAKE_ARGS) -f CompileInterimLangtools.gmk)
 
-  interim-rmic:
+interim-rmic:
 	+($(CD) $(TOPDIR)/make && $(MAKE) $(MAKE_ARGS) -f CompileInterimRmic.gmk)
 
-  interim-cldrconverter:
+interim-cldrconverter:
 	+($(CD) $(TOPDIR)/make && $(MAKE) $(MAKE_ARGS) -f CopyInterimCLDRConverter.gmk)
 
-  buildtools-jdk:
+buildtools-jdk:
 	+($(CD) $(TOPDIR)/make && $(MAKE) $(MAKE_ARGS) -f CompileToolsJdk.gmk)
 
-  buildtools-modules:
+buildtools-modules:
 	+($(CD) $(TOPDIR)/make && $(MAKE) $(MAKE_ARGS) -f CompileModuleTools.gmk)
 
-  buildtools-hotspot:
+buildtools-hotspot:
 	+($(CD) $(TOPDIR)/make && $(MAKE) $(MAKE_ARGS) -f CompileToolsHotspot.gmk)
-endif
 
 ALL_TARGETS += buildtools-langtools interim-langtools \
     interim-rmic interim-cldrconverter buildtools-jdk buildtools-modules \
@@ -106,43 +102,39 @@ ALL_TARGETS += generate-exported-symbols
 ################################################################################
 # Gensrc targets, generating source before java compilation can be done
 #
-# When creating a BUILDJDK, the java targets have already been built and copied
-# into the buildjdk so no need to generate sources.
-ifneq ($(CREATING_BUILDJDK), true)
-  $(eval $(call DeclareRecipesForPhase, GENSRC, \
-      TARGET_SUFFIX := gensrc-src, \
-      FILE_PREFIX := Gensrc, \
-      MAKE_SUBDIR := gensrc, \
-      CHECK_MODULES := $(ALL_MODULES), \
-  ))
+$(eval $(call DeclareRecipesForPhase, GENSRC, \
+    TARGET_SUFFIX := gensrc-src, \
+    FILE_PREFIX := Gensrc, \
+    MAKE_SUBDIR := gensrc, \
+    CHECK_MODULES := $(ALL_MODULES), \
+))
 
-  $(foreach m, $(GENSRC_MODULES), $(eval $m-gensrc: $m-gensrc-src))
+$(foreach m, $(GENSRC_MODULES), $(eval $m-gensrc: $m-gensrc-src))
 
-  LANGTOOLS_GENSRC_TARGETS := $(filter $(addsuffix -%, $(LANGTOOLS_MODULES)), $(GENSRC_TARGETS))
-  INTERIM_LANGTOOLS_GENSRC_TARGETS := $(filter $(addsuffix -%, \
-      $(INTERIM_LANGTOOLS_BASE_MODULES)), $(GENSRC_TARGETS))
-  HOTSPOT_GENSRC_TARGETS := $(filter $(addsuffix -%, $(HOTSPOT_MODULES)), $(GENSRC_TARGETS))
-  JDK_GENSRC_TARGETS := $(filter-out $(LANGTOOLS_GENSRC_TARGETS) \
-      $(HOTSPOT_GENSRC_TARGETS), $(GENSRC_TARGETS))
+LANGTOOLS_GENSRC_TARGETS := $(filter $(addsuffix -%, $(LANGTOOLS_MODULES)), $(GENSRC_TARGETS))
+INTERIM_LANGTOOLS_GENSRC_TARGETS := $(filter $(addsuffix -%, \
+    $(INTERIM_LANGTOOLS_BASE_MODULES)), $(GENSRC_TARGETS))
+HOTSPOT_GENSRC_TARGETS := $(filter $(addsuffix -%, $(HOTSPOT_MODULES)), $(GENSRC_TARGETS))
+JDK_GENSRC_TARGETS := $(filter-out $(LANGTOOLS_GENSRC_TARGETS) \
+    $(HOTSPOT_GENSRC_TARGETS), $(GENSRC_TARGETS))
 
-  GENSRC_MODULEINFO_MODULES := $(ALL_MODULES)
-  GENSRC_MODULEINFO_TARGETS := $(addsuffix -gensrc-moduleinfo, \
-      $(GENSRC_MODULEINFO_MODULES))
+GENSRC_MODULEINFO_MODULES := $(ALL_MODULES)
+GENSRC_MODULEINFO_TARGETS := $(addsuffix -gensrc-moduleinfo, \
+    $(GENSRC_MODULEINFO_MODULES))
 
-  GENSRC_MODULES := $(GENSRC_MODULEINFO_MODULES)
-  GENSRC_TARGETS += $(sort $(GENSRC_MODULEINFO_TARGETS) \
-      $(addsuffix -gensrc, $(GENSRC_MODULES)))
+GENSRC_MODULES := $(GENSRC_MODULEINFO_MODULES)
+GENSRC_TARGETS += $(sort $(GENSRC_MODULEINFO_TARGETS) \
+    $(addsuffix -gensrc, $(GENSRC_MODULES)))
 
-  define DeclareModuleInfoRecipe
-    $1-gensrc-moduleinfo:
+define DeclareModuleInfoRecipe
+  $1-gensrc-moduleinfo:
 	+($(CD) $(TOPDIR)/make && $(MAKE) $(MAKE_ARGS) \
 	    -f GensrcModuleInfo.gmk MODULE=$1)
 
-    $1-gensrc: $1-gensrc-moduleinfo
-  endef
+  $1-gensrc: $1-gensrc-moduleinfo
+endef
 
-  $(foreach m, $(GENSRC_MODULEINFO_MODULES), $(eval $(call DeclareModuleInfoRecipe,$m)))
-endif
+$(foreach m, $(GENSRC_MODULEINFO_MODULES), $(eval $(call DeclareModuleInfoRecipe,$m)))
 
 ALL_TARGETS += $(GENSRC_TARGETS)
 
@@ -358,7 +350,7 @@ bootcycle-images:
 	  $(call LogWarn, Boot cycle build step 2: Building a new JDK image using previously built image)
 	  $(call MakeDir, $(OUTPUTDIR)/bootcycle-build)
 	  +$(MAKE) $(MAKE_ARGS) -f $(TOPDIR)/make/Init.gmk PARALLEL_TARGETS=$(BOOTCYCLE_TARGET) \
-	      JOBS= SPEC=$(dir $(SPEC))bootcycle-spec.gmk main
+	      LOG_PREFIX="[bootcycle] " JOBS= SPEC=$(dir $(SPEC))bootcycle-spec.gmk main
         else
 	  $(call LogWarn, Boot cycle build disabled when cross compiling)
         endif
@@ -455,15 +447,18 @@ ifeq ($(CREATING_BUILDJDK), true)
       java.base-copy jdk.jdeps-launchers
 endif
 
-create-buildjdk-copy:
-	+($(CD) $(TOPDIR)/make && $(MAKE) $(MAKE_ARGS) -f CreateBuildJdkCopy.gmk)
+BUILDJDK_MODULES := $(sort $(foreach m, jdk.jlink $(INTERIM_IMAGE_MODULES), \
+    $(call FindTransitiveDepsForModule, $m) $m))
 
 create-buildjdk-interim-image:
 	+($(CD) $(TOPDIR)/make && $(MAKE) $(MAKE_ARGS) -f Main.gmk \
 	    $@-helper \
 	    SPEC=$(dir $(SPEC))buildjdk-spec.gmk \
 	    HOTSPOT_SPEC=$(dir $(SPEC))buildjdk-spec.gmk \
-	    CREATING_BUILDJDK=true)
+	    CREATING_BUILDJDK=true \
+	    LOG_PREFIX="[buildjdk] " \
+	    JAVA_MODULES="$(BUILDJDK_MODULES)" \
+	)
 
 ALL_TARGETS += create-buildjdk-copy create-buildjdk-interim-image
 
@@ -695,7 +690,7 @@ else
   # The demos are currently linking to libjvm and libjava, just like all other
   # jdk libs, even though they don't need to. To avoid warnings, make sure they
   # aren't built until after libjava and libjvm are available to link to.
-  demos-jdk: java.base-libs exploded-image-optimize
+  demos-jdk: java.base-libs exploded-image
   test-image-demos-jdk: demos-jdk
 
   # Declare dependency from <module>-java to <module>-gensrc
@@ -711,11 +706,7 @@ else
 
   # Declare dependencies from <module>-lib to <module>-java
   # Skip modules that do not have java source.
-  # When creating a BUILDJDK, the java compilation has already been done by the
-  # normal build and copied in.
-  ifneq ($(CREATING_BUILDJDK), true)
-    $(foreach m, $(filter $(JAVA_MODULES), $(LIBS_MODULES)), $(eval $m-libs: $m-java))
-  endif
+  $(foreach m, $(filter $(JAVA_MODULES), $(LIBS_MODULES)), $(eval $m-libs: $m-java))
 
   # Declare dependencies from all other <module>-lib to java.base-lib
   $(foreach t, $(filter-out java.base-libs, $(LIBS_TARGETS)), \
@@ -753,7 +744,7 @@ else
 
   # Declare dependencies between jmod targets.
   # java.base jmod needs jrt-fs.jar and access to the other jmods to be built.
-  # When creating a BUILDJDK, we don't need to add hashes to java.base, thus
+  # When creating the BUILDJDK, we don't need to add hashes to java.base, thus
   # we don't need to depend on all other jmods
   ifneq ($(CREATING_BUILDJDK), true)
     java.base-jmod: jrtfs-jar $(filter-out java.base-jmod, $(JMOD_TARGETS))
@@ -766,11 +757,7 @@ else
   java.base-jmod: $(JVM_MAIN_TARGETS)
 
   # Declare dependencies from <module>-jmod to all other module targets
-  # When creating a BUILDJDK, the java compilation has already been done by the
-  # normal build and copied in.
-  ifneq ($(CREATING_BUILDJDK), true)
-    $(foreach m, $(JAVA_MODULES), $(eval $m_JMOD_DEPS += $m-java))
-  endif
+  $(foreach m, $(JAVA_MODULES), $(eval $m_JMOD_DEPS += $m-java))
   $(foreach m, $(GENDATA_MODULES), $(eval $m_JMOD_DEPS += $m-gendata))
   $(foreach m, $(RMIC_MODULES), $(eval $m_JMOD_DEPS += $m-rmic))
   $(foreach m, $(LIBS_MODULES), $(eval $m_JMOD_DEPS += $m-libs))
@@ -804,30 +791,28 @@ else
   # a normal build we run it from the exploded image, but when cross compiling
   # it's run from the buildjdk, which is either created at build time or user
   # supplied.
-  #
-  # For the exploded image to be runnable, all java modules and
-  # jdk.jlink-launchers need to be built. We also need to copy jvm.cfg (done
-  # in java.base-copy) and tzdb.dat (done in java.base-gendata) to the
-  # appropriate location otherwise jimage, jlink and jmod won't start. This
-  # also applies when creating the buildjdk.
-  DEFAULT_JMOD_DEPS += java.base-libs java.base-copy java.base-gendata \
-      jdk.jlink-launchers
-  # When cross compiling and buildjdk is to be created, depend on creating the
-  # buildjdk instead of the default dependencies.
   ifeq ($(CREATE_BUILDJDK), true)
-    # Avoid calling create-buildjdk from within a create-buildjdk call.
     ifneq ($(CREATING_BUILDJDK), true)
+      # When cross compiling and buildjdk is to be created, simply depend on
+      # creating the buildjdk.
       $(JMOD_TARGETS): create-buildjdk
       buildtools-modules: create-buildjdk
     else
-      # While actually creating the buildjdk, the default deps applies.
-      $(JMOD_TARGETS) $(INTERIM_JMOD_TARGETS): $(DEFAULT_JMOD_DEPS)
+      # While actually creating the buildjdk, we need to list the bare
+      # minimum dependencies needed before running jmod, to avoid building
+      # more than necessary. This includes:
+      # * all java modules
+      # * jdk.jlink-launchers
+      # * copy jvm.cfg (done in java.base-copy)
+      # * tzdb.dat (done in java.base-gendata)
+      # Without all of these jimage, jlink and jmod won't start.
+      $(JMOD_TARGETS) $(INTERIM_JMOD_TARGETS): java.base-libs java.base-copy \
+          java.base-gendata jdk.jlink-launchers java
     endif
   else
-    # The normal non cross compilation case uses the default deps.
-    # To avoid races with the optimize target, that also needs to happen first.
-    $(JMOD_TARGETS) $(INTERIM_JMOD_TARGETS): $(DEFAULT_JMOD_DEPS) \
-        exploded-image-optimize
+    # The normal non cross compilation case uses needs to wait for the full
+    # exploded-image to avoid a race with the optimize target.
+    $(JMOD_TARGETS) $(INTERIM_JMOD_TARGETS): exploded-image
   endif
 
   # All modules include the main license files from java.base.
@@ -915,14 +900,9 @@ else
   $(foreach t, $(filter-out test-make%, $(ALL_TEST_TARGETS)), $(eval $t: jdk-image test-image))
   $(foreach t, $(ALL_EXPLODED_TEST_TARGETS), $(eval $t: exploded-image test-image))
 
-  create-buildjdk-copy: jdk.jlink-java java.base-gendata \
-      $(addsuffix -java, $(INTERIM_IMAGE_MODULES))
-
-  create-buildjdk-interim-image: create-buildjdk-copy
-
   interim-image: $(INTERIM_JMOD_TARGETS)
 
-  build-test-lib: exploded-image-optimize
+  build-test-lib: exploded-image
 
   build-test-failure-handler: interim-langtools
 
@@ -933,7 +913,7 @@ else
 
   build-test-jdk-jtreg-native: buildtools-jdk java.base-libs
 
-  build-test-hotspot-jtreg-graal: exploded-image-optimize
+  build-test-hotspot-jtreg-graal: exploded-image
 
   test-image-hotspot-jtreg-native: build-test-hotspot-jtreg-native
 
@@ -1025,7 +1005,7 @@ ifneq ($(COMPILE_TYPE), cross)
   exploded-image: exploded-image-optimize
 endif
 
-create-buildjdk: create-buildjdk-copy create-buildjdk-interim-image
+create-buildjdk: create-buildjdk-interim-image
 
 docs-jdk-api: docs-jdk-api-javadoc
 docs-javase-api: docs-javase-api-javadoc

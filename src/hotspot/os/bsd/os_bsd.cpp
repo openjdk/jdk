@@ -1073,9 +1073,16 @@ void os::abort(bool dump_core, void* siginfo, const void* context) {
 }
 
 // Die immediately, no exit hook, no abort hook, no cleanup.
+// Dump a core file, if possible, for debugging.
 void os::die() {
-  // _exit() on BsdThreads only kills current thread
-  ::abort();
+  if (TestUnresponsiveErrorHandler && !CreateCoredumpOnCrash) {
+    // For TimeoutInErrorHandlingTest.java, we just kill the VM
+    // and don't take the time to generate a core file.
+    os::signal_raise(SIGKILL);
+  } else {
+    // _exit() on BsdThreads only kills current thread
+    ::abort();
+  }
 }
 
 // Information of current thread in variety of formats
@@ -1258,13 +1265,21 @@ void * os::dll_load(const char *filename, char *ebuf, int ebuflen) {
 #else
   void * result= ::dlopen(filename, RTLD_LAZY);
   if (result != NULL) {
+    Events::log(NULL, "Loaded shared library %s", filename);
     // Successful loading
     return result;
   }
 
-  // Read system error message into ebuf
-  ::strncpy(ebuf, ::dlerror(), ebuflen-1);
-  ebuf[ebuflen-1]='\0';
+  const char* error_report = ::dlerror();
+  if (error_report == NULL) {
+    error_report = "dlerror returned no error description";
+  }
+  if (ebuf != NULL && ebuflen > 0) {
+    // Read system error message into ebuf
+    ::strncpy(ebuf, error_report, ebuflen-1);
+    ebuf[ebuflen-1]='\0';
+  }
+  Events::log(NULL, "Loading shared library %s failed, %s", filename, error_report);
 
   return NULL;
 #endif // STATIC_BUILD
@@ -1276,16 +1291,24 @@ void * os::dll_load(const char *filename, char *ebuf, int ebuflen) {
 #else
   void * result= ::dlopen(filename, RTLD_LAZY);
   if (result != NULL) {
+    Events::log(NULL, "Loaded shared library %s", filename);
     // Successful loading
     return result;
   }
 
   Elf32_Ehdr elf_head;
 
-  // Read system error message into ebuf
-  // It may or may not be overwritten below
-  ::strncpy(ebuf, ::dlerror(), ebuflen-1);
-  ebuf[ebuflen-1]='\0';
+  const char* const error_report = ::dlerror();
+  if (error_report == NULL) {
+    error_report = "dlerror returned no error description";
+  }
+  if (ebuf != NULL && ebuflen > 0) {
+    // Read system error message into ebuf
+    ::strncpy(ebuf, error_report, ebuflen-1);
+    ebuf[ebuflen-1]='\0';
+  }
+  Events::log(NULL, "Loading shared library %s failed, %s", filename, error_report);
+
   int diag_msg_max_length=ebuflen-strlen(ebuf);
   char* diag_msg_buf=ebuf+strlen(ebuf);
 

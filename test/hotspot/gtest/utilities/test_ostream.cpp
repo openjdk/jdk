@@ -49,37 +49,66 @@ static size_t print_lorem(outputStream* st, bool short_len) {
   return len;
 }
 
-static void do_test_stringStream_dynamic_realloc(bool short_len) {
-  stringStream ss(2); // small buffer to force lots of reallocations.
+static void test_stringStream_is_zero_terminated(const stringStream* ss) {
+  ASSERT_EQ(ss->base()[ss->size()], '\0');
+}
+
+
+static void do_test_stringStream(stringStream* ss, bool short_len, size_t expected_cap) {
+  test_stringStream_is_zero_terminated(ss);
   size_t written = 0;
   for (int i = 0; i < 1000; i ++) {
-    written += print_lorem(&ss, short_len);
-    ASSERT_EQ(ss.size(), written);
+    written += print_lorem(ss, short_len);
+    if (expected_cap > 0 && written >= expected_cap) {
+      ASSERT_EQ(ss->size(), expected_cap - 1);
+    } else {
+      ASSERT_EQ(ss->size(), written);
+    }
     // Internal buffer should always be zero-terminated.
-    ASSERT_EQ(ss.base()[ss.size()], '\0');
+    test_stringStream_is_zero_terminated(ss);
   }
+  // Reset should zero terminate too
+  ss->reset();
+  ASSERT_EQ(ss->size(), (size_t)0);
+  test_stringStream_is_zero_terminated(ss);
 }
 
 TEST_VM(ostream, stringStream_dynamic_realloc_1) {
-  do_test_stringStream_dynamic_realloc(false);
+  stringStream ss(2); // dynamic buffer with very small starting size
+  do_test_stringStream(&ss, false, 0);
 }
 
 TEST_VM(ostream, stringStream_dynamic_realloc_2) {
-  do_test_stringStream_dynamic_realloc(true);
+  stringStream ss(2); // dynamic buffer with very small starting size
+  do_test_stringStream(&ss, true, 0);
+}
+
+TEST_VM(ostream, stringStream_static) {
+  char buffer[128 + 1];
+  char* canary_at = buffer + sizeof(buffer) - 1;
+  *canary_at = 'X';
+  size_t stream_buf_size = sizeof(buffer) - 1;
+  stringStream ss(buffer, stream_buf_size);
+  do_test_stringStream(&ss, false, stream_buf_size);
+  ASSERT_EQ(*canary_at, 'X'); // canary
 }
 
 TEST_VM(ostream, bufferedStream_static) {
-  char buf[100];
-  bufferedStream bs(buf, sizeof(buf));
+  char buf[100 + 1];
+  char* canary_at = buf + sizeof(buf) - 1;
+  *canary_at = 'X';
+  size_t stream_buf_size = sizeof(buf) - 1;
+  bufferedStream bs(buf, stream_buf_size);
   size_t written = 0;
   for (int i = 0; i < 100; i ++) {
     written += print_lorem(&bs, true);
-    if (written < sizeof(buf)) {
+    if (written < stream_buf_size) {
       ASSERT_EQ(bs.size(), written);
     } else {
-      ASSERT_EQ(bs.size(), sizeof(buf) - 1);
+      ASSERT_EQ(bs.size(), stream_buf_size - 1);
     }
   }
+  ASSERT_EQ(*canary_at, 'X'); // canary
 }
 
 TEST_VM(ostream, bufferedStream_dynamic_small) {

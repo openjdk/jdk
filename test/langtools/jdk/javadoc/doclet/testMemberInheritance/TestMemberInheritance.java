@@ -96,7 +96,7 @@ public class TestMemberInheritance extends JavadocTester {
                 + "<th class=\"colSecond\" scope=\"row\"><code><span class=\"memberNameLink\">"
                 + "<a href=\"#between(java.time.LocalDate,java.time.LocalDate)\">"
                 + "between</a></span>&#8203;(java.time.LocalDate&nbsp;startDateInclusive,\n"
-                + "       java.time.LocalDate&nbsp;endDateExclusive)</code></th>");
+                + "java.time.LocalDate&nbsp;endDateExclusive)</code></th>");
 
         checkOutput("pkg1/Implementer.html", false,
                 "<h3>Methods inherited from interface&nbsp;pkg1.<a href=\"Interface.html\""

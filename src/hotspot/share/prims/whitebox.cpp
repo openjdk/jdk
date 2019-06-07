@@ -919,9 +919,9 @@ WB_ENTRY(void, WB_MakeMethodNotCompilable(JNIEnv* env, jobject o, jobject method
   CHECK_JNI_EXCEPTION(env);
   methodHandle mh(THREAD, Method::checked_resolve_jmethod_id(jmid));
   if (is_osr) {
-    mh->set_not_osr_compilable(comp_level, true /* report */, "WhiteBox");
+    mh->set_not_osr_compilable("WhiteBox", comp_level);
   } else {
-    mh->set_not_compilable(comp_level, true /* report */, "WhiteBox");
+    mh->set_not_compilable("WhiteBox", comp_level);
   }
 WB_END
 

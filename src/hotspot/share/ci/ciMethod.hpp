@@ -126,6 +126,9 @@ class ciMethod : public ciMetadata {
   void assert_virtual_call_type_ok(int bci);
   void assert_call_type_ok(int bci);
 
+  // Check and update the profile counter in case of overflow
+  static int check_overflow(int c, Bytecodes::Code code);
+
  public:
   void check_is_loaded() const                   { assert(is_loaded(), "not loaded"); }
 

@@ -113,6 +113,7 @@
   template(LinuxDllLoad)                          \
   template(RotateGCLog)                           \
   template(WhiteBoxOperation)                     \
+  template(JVMCIResizeCounters)                   \
   template(ClassLoaderStatsOperation)             \
   template(ClassLoaderHierarchyOperation)         \
   template(DumpHashtable)                         \

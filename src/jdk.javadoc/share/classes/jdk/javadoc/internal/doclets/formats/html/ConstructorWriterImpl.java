@@ -37,7 +37,6 @@ import jdk.javadoc.internal.doclets.formats.html.markup.Entity;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlStyle;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlTag;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlTree;
-import jdk.javadoc.internal.doclets.formats.html.markup.StringContent;
 import jdk.javadoc.internal.doclets.formats.html.markup.Table;
 import jdk.javadoc.internal.doclets.formats.html.markup.TableHeader;
 import jdk.javadoc.internal.doclets.toolkit.ConstructorWriter;
@@ -152,20 +151,10 @@ public class ConstructorWriterImpl extends AbstractExecutableMemberWriter
      */
     @Override
     public Content getSignature(ExecutableElement constructor) {
-        Content pre = new HtmlTree(HtmlTag.PRE);
-        writer.addAnnotationInfo(constructor, pre);
-        int annotationLength = pre.charCount();
-        addModifiers(constructor, pre);
-        if (configuration.linksource) {
-            Content constructorName = new StringContent(name(constructor));
-            writer.addSrcLink(constructor, constructorName, pre);
-        } else {
-            addName(name(constructor), pre);
-        }
-        int indent = pre.charCount() - annotationLength;
-        addParameters(constructor, pre, indent);
-        addExceptions(constructor, pre, indent);
-        return pre;
+        return new MemberSignature(constructor)
+                .addParameters(getParameters(constructor, true))
+                .addExceptions(getExceptions(constructor))
+                .toContent();
     }
 
     /**
@@ -205,9 +194,8 @@ public class ConstructorWriterImpl extends AbstractExecutableMemberWriter
      * {@inheritDoc}
      */
     @Override
-    public Content getConstructorDoc(Content constructorDocTree,
-            boolean isLastContent) {
-        return getMemberTree(constructorDocTree, isLastContent);
+    public Content getConstructorDoc(Content constructorDocTree) {
+        return getMemberTree(constructorDocTree);
     }
 
     /**

@@ -101,6 +101,7 @@ typedef struct _ChildStuff
     const char **envv;
     const char *pdir;
     int redirectErrorStream;
+    int sendAlivePing;
 } ChildStuff;
 
 /* following used in addition when mode is SPAWN */
@@ -113,6 +114,13 @@ typedef struct _SpawnInfo {
     int nparentPathv; /* number of elements in parentPathv array */
     int parentPathvBytes; /* total number of bytes in parentPathv array */
 } SpawnInfo;
+
+/* If ChildStuff.sendAlivePing is true, child shall signal aliveness to
+ * the parent the moment it gains consciousness, before any subsequent
+ * pre-exec errors could happen.
+ * This code must fit into an int and not be a valid errno value on any of
+ * our platforms. */
+#define CHILD_IS_ALIVE      65535
 
 /**
  * The cached and split version of the JDK's effective PATH.

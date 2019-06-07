@@ -272,7 +272,7 @@ public class TestVisibleMembers extends JavadocTester {
 
         checkOrder("p/C.html",
                 "METHOD DETAIL",
-                "public", "void", "method()",
+                "public", "void", "method",
                 "See Also:",
                 "sub()",
                 "sub1()");
@@ -307,7 +307,7 @@ public class TestVisibleMembers extends JavadocTester {
 
         checkOrder("p/C.html",
                 "METHOD DETAIL",
-                "public", "void", "method()", "See Also:", "sub()", "I.sub1()",
+                "public", "void", "method", "See Also:", "sub()", "I.sub1()",
                 "public", "void", "m", "Method in C. See", "I.length()"
                 );
 
@@ -411,10 +411,10 @@ public class TestVisibleMembers extends JavadocTester {
 
         checkOrder("p/C.html",
                 "METHOD DETAIL",
-                "public", "void", "m()", "Method m in p.B",
-                "public", "void", "n()", "Method n in p.A",
-                "public", "void", "o()", "Description copied from class:", ">A<", "Method o in p.A",
-                "public", "void", "p()", "Method p in p.B",
+                "public", "void", "m", "Method m in p.B",
+                "public", "void", "n", "Method n in p.A",
+                "public", "void", "o", "Description copied from class:", ">A<", "Method o in p.A",
+                "public", "void", "p", "Method p in p.B",
                 "END OF CLASS DATA");
 
         checkOutput("p/C.html", false,
@@ -471,10 +471,10 @@ public class TestVisibleMembers extends JavadocTester {
 
         checkOrder("p/C.html",
                 "METHOD DETAIL",
-                "public", "void", "m()", "Method m in p.B",
-                "public", "void", "n()", "Method n in p.A",
-                "public", "void", "o()", "Description copied from class:", ">A<", "Method o in p.A",
-                "public", "void", "p()", "Method p in p.B",
+                "public", "void", "m", "Method m in p.B",
+                "public", "void", "n", "Method n in p.A",
+                "public", "void", "o", "Description copied from class:", ">A<", "Method o in p.A",
+                "public", "void", "p", "Method p in p.B",
                 "END OF CLASS DATA");
 
         checkOutput("p/C.html", false,

@@ -25,7 +25,6 @@
 
 /**
  * Defines the API for JDK Flight Recorder.
- * <p>
  *
  * @moduleGraph
  * @since 9

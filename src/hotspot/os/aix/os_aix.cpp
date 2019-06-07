@@ -1206,8 +1206,15 @@ void os::abort(bool dump_core, void* siginfo, const void* context) {
 }
 
 // Die immediately, no exit hook, no abort hook, no cleanup.
+// Dump a core file, if possible, for debugging.
 void os::die() {
-  ::abort();
+  if (TestUnresponsiveErrorHandler && !CreateCoredumpOnCrash) {
+    // For TimeoutInErrorHandlingTest.java, we just kill the VM
+    // and don't take the time to generate a core file.
+    os::signal_raise(SIGKILL);
+  } else {
+    ::abort();
+  }
 }
 
 intx os::current_thread_id() {
@@ -1320,16 +1327,21 @@ void *os::dll_load(const char *filename, char *ebuf, int ebuflen) {
   // RTLD_LAZY is currently not implemented. The dl is loaded immediately with all its dependants.
   void * result= ::dlopen(filename, RTLD_LAZY);
   if (result != NULL) {
+    Events::log(NULL, "Loaded shared library %s", filename);
     // Reload dll cache. Don't do this in signal handling.
     LoadedLibraries::reload();
     return result;
   } else {
     // error analysis when dlopen fails
-    const char* const error_report = ::dlerror();
-    if (error_report && ebuf && ebuflen > 0) {
+    const char* error_report = ::dlerror();
+    if (error_report == NULL) {
+      error_report = "dlerror returned no error description";
+    }
+    if (ebuf != NULL && ebuflen > 0) {
       snprintf(ebuf, ebuflen - 1, "%s, LIBPATH=%s, LD_LIBRARY_PATH=%s : %s",
                filename, ::getenv("LIBPATH"), ::getenv("LD_LIBRARY_PATH"), error_report);
     }
+    Events::log(NULL, "Loading shared library %s failed, %s", filename, error_report);
   }
   return NULL;
 }

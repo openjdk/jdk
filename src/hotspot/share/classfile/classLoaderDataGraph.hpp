@@ -41,7 +41,7 @@ class ClassLoaderDataGraph : public AllStatic {
   friend class VMStructs;
  private:
   // All CLDs (except the null CLD) can be reached by walking _head->_next->...
-  static ClassLoaderData* _head;
+  static ClassLoaderData* volatile _head;
   static ClassLoaderData* _unloading;
   // CMS support.
   static ClassLoaderData* _saved_head;

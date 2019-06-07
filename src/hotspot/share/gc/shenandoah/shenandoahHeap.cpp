@@ -1067,7 +1067,7 @@ public:
 };
 
 void ShenandoahHeap::evacuate_and_update_roots() {
-#if defined(COMPILER2) || INCLUDE_JVMCI
+#if COMPILER2_OR_JVMCI
   DerivedPointerTable::clear();
 #endif
   assert(ShenandoahSafepoint::is_at_shenandoah_safepoint(), "Only iterate roots while world is stopped");
@@ -1078,7 +1078,7 @@ void ShenandoahHeap::evacuate_and_update_roots() {
     workers()->run_task(&roots_task);
   }
 
-#if defined(COMPILER2) || INCLUDE_JVMCI
+#if COMPILER2_OR_JVMCI
   DerivedPointerTable::update_pointers();
 #endif
 }

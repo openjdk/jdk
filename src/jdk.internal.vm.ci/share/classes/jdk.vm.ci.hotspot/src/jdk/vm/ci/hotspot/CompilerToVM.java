@@ -560,6 +560,18 @@ final class CompilerToVM {
     native long[] collectCounters();
 
     /**
+     * Get the current number of counters allocated for use by JVMCI. Should be the same value as
+     * the flag {@code JVMCICounterSize}.
+     */
+    native int getCountersSize();
+
+    /**
+     * Attempt to change the size of the counters allocated for JVMCI. This requires a safepoint to
+     * safely reallocate the storage but it's advisable to increase the size in reasonable chunks.
+     */
+    native boolean setCountersSize(int newSize);
+
+    /**
      * Determines if {@code metaspaceMethodData} is mature.
      */
     native boolean isMature(long metaspaceMethodData);

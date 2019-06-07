@@ -70,13 +70,15 @@ endif
 # preprocessor.
 define generate-preproc-src
 	$(call MakeDir, $(@D))
-	( $(NAWK) '/@@END_COPYRIGHT@@/{exit}1' $< && \
-	  $(CPP) $(CPP_FLAGS) $(SYSROOT_CFLAGS) $(CFLAGS_JDKLIB) $< \
-	      2> >($(GREP) -v '^$(<F)$$' >&2) \
-	      | $(NAWK) '/@@START_HERE@@/,0' \
-	      |  $(SED) -e 's/@@START_HERE@@/\/\/ AUTOMATICALLY GENERATED FILE - DO NOT EDIT/' \
-	      -e 's/PREFIX_//' -e 's/^#.*//' \
-	) > $@
+	$(call ExecuteWithLog, $(SUPPORT_OUTPUTDIR)/gensrc/java.base/_$(@F), \
+	    ( $(NAWK) '/@@END_COPYRIGHT@@/{exit}1' $< && \
+	      $(CPP) $(CPP_FLAGS) $(SYSROOT_CFLAGS) $(CFLAGS_JDKLIB) $< \
+	          2> >($(GREP) -v '^$(<F)$$' >&2) \
+	          | $(NAWK) '/@@START_HERE@@/,0' \
+	          |  $(SED) -e 's/@@START_HERE@@/\/\/ AUTOMATICALLY GENERATED FILE - DO NOT EDIT/' \
+	          -e 's/PREFIX_//' -e 's/^#.*//' \
+	    ) > $@ \
+	)
 endef
 
 GENSRC_SOR_FILE += $(SUPPORT_OUTPUTDIR)/gensrc/java.base/sun/nio/ch/SocketOptionRegistry.java

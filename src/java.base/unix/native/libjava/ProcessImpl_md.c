@@ -655,6 +655,18 @@ Java_java_lang_ProcessImpl_forkAndExec(JNIEnv *env,
     c->redirectErrorStream = redirectErrorStream;
     c->mode = mode;
 
+    /* In posix_spawn mode, require the child process to signal aliveness
+     * right after it comes up. This is because there are implementations of
+     * posix_spawn() which do not report failed exec()s back to the caller
+     * (e.g. glibc, see JDK-8223777). In those cases, the fork() will have
+     * worked and successfully started the child process, but the exec() will
+     * have failed. There is no way for us to distinguish this from a target
+     * binary just exiting right after start.
+     *
+     * Note that we could do this additional handshake in all modes but for
+     * prudence only do it when it is needed (in posix_spawn mode). */
+    c->sendAlivePing = (mode == MODE_POSIX_SPAWN) ? 1 : 0;
+
     resultPid = startChild(env, process, c, phelperpath);
     assert(resultPid != 0);
 
@@ -673,6 +685,30 @@ Java_java_lang_ProcessImpl_forkAndExec(JNIEnv *env,
         goto Catch;
     }
     close(fail[1]); fail[1] = -1; /* See: WhyCantJohnnyExec  (childproc.c)  */
+
+    /* If we expect the child to ping aliveness, wait for it. */
+    if (c->sendAlivePing) {
+        switch(readFully(fail[0], &errnum, sizeof(errnum))) {
+        case 0: /* First exec failed; */
+            waitpid(resultPid, NULL, 0);
+            throwIOException(env, 0, "Failed to exec spawn helper.");
+            goto Catch;
+        case sizeof(errnum):
+            assert(errnum == CHILD_IS_ALIVE);
+            if (errnum != CHILD_IS_ALIVE) {
+                /* Should never happen since the first thing the spawn
+                 * helper should do is to send an alive ping to the parent,
+                 * before doing any subsequent work. */
+                throwIOException(env, 0, "Bad code from spawn helper "
+                                         "(Failed to exec spawn helper.");
+                goto Catch;
+            }
+            break;
+        default:
+            throwIOException(env, errno, "Read failed");
+            goto Catch;
+        }
+    }
 
     switch (readFully(fail[0], &errnum, sizeof(errnum))) {
     case 0: break; /* Exec succeeded */

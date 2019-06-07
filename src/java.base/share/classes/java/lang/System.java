@@ -618,8 +618,9 @@ public final class System {
      * {@link #getProperty(String)} method is returned as a
      * {@code Properties} object. If there is no current set of
      * system properties, a set of system properties is first created and
-     * initialized. This set of system properties always includes values
-     * for the following keys:
+     * initialized. This set of system properties includes a value
+     * for each of the following keys unless the description of the associated
+     * value indicates that the value is optional.
      * <table class="striped" style="text-align:left">
      * <caption style="display:none">Shows property keys and associated values</caption>
      * <thead>
@@ -639,7 +640,7 @@ public final class System {
      * <tr><th scope="row">{@systemProperty java.vendor.url}</th>
      *     <td>Java vendor URL</td></tr>
      * <tr><th scope="row">{@systemProperty java.vendor.version}</th>
-     *     <td>Java vendor version</td></tr>
+     *     <td>Java vendor version <em>(optional)</em> </td></tr>
      * <tr><th scope="row">{@systemProperty java.home}</th>
      *     <td>Java installation directory</td></tr>
      * <tr><th scope="row">{@systemProperty java.vm.specification.version}</th>
@@ -1782,14 +1783,17 @@ public final class System {
     }
 
     /**
-     * Runs the garbage collector.
-     *
-     * Calling the {@code gc} method suggests that the Java Virtual
-     * Machine expend effort toward recycling unused objects in order to
-     * make the memory they currently occupy available for quick reuse.
-     * When control returns from the method call, the Java Virtual
-     * Machine has made a best effort to reclaim space from all discarded
-     * objects.
+     * Runs the garbage collector in the Java Virtual Machine.
+     * <p>
+     * Calling the {@code gc} method suggests that the Java Virtual Machine
+     * expend effort toward recycling unused objects in order to
+     * make the memory they currently occupy available for reuse
+     * by the Java Virtual Machine.
+     * When control returns from the method call, the Java Virtual Machine
+     * has made a best effort to reclaim space from all unused objects.
+     * There is no guarantee that this effort will recycle any particular
+     * number of unused objects, reclaim any particular amount of space, or
+     * complete at any particular time, if at all, before the method returns or ever.
      * <p>
      * The call {@code System.gc()} is effectively equivalent to the
      * call:

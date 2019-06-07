@@ -1085,6 +1085,28 @@ JAVA_INTEGER_OP(*, java_multiply, jlong, julong)
 
 #undef JAVA_INTEGER_OP
 
+//----------------------------------------------------------------------------------------------------
+// The goal of this code is to provide saturating operations for int/uint.
+// Checks overflow conditions and saturates the result to min_jint/max_jint.
+#define SATURATED_INTEGER_OP(OP, NAME, TYPE1, TYPE2) \
+inline int NAME (TYPE1 in1, TYPE2 in2) {             \
+  jlong res = static_cast<jlong>(in1);               \
+  res OP ## = static_cast<jlong>(in2);               \
+  if (res > max_jint) {                              \
+    res = max_jint;                                  \
+  } else if (res < min_jint) {                       \
+    res = min_jint;                                  \
+  }                                                  \
+  return static_cast<int>(res);                      \
+}
+
+SATURATED_INTEGER_OP(+, saturated_add, int, int)
+SATURATED_INTEGER_OP(+, saturated_add, int, uint)
+SATURATED_INTEGER_OP(+, saturated_add, uint, int)
+SATURATED_INTEGER_OP(+, saturated_add, uint, uint)
+
+#undef SATURATED_INTEGER_OP
+
 // Dereference vptr
 // All C++ compilers that we know of have the vtbl pointer in the first
 // word.  If there are exceptions, this function needs to be made compiler

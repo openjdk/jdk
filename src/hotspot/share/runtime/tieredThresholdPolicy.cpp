@@ -412,8 +412,14 @@ nmethod* TieredThresholdPolicy::event(const methodHandle& method, const methodHa
     // method == inlinee if the event originated in the main method
     method_back_branch_event(method, inlinee, bci, comp_level, nm, thread);
     // Check if event led to a higher level OSR compilation
-    nmethod* osr_nm = inlinee->lookup_osr_nmethod_for(bci, comp_level, false);
-    if (osr_nm != NULL && osr_nm->comp_level() > comp_level) {
+    CompLevel expected_comp_level = comp_level;
+    if (inlinee->is_not_osr_compilable(expected_comp_level)) {
+      // It's not possble to reach the expected level so fall back to simple.
+      expected_comp_level = CompLevel_simple;
+    }
+    nmethod* osr_nm = inlinee->lookup_osr_nmethod_for(bci, expected_comp_level, false);
+    assert(osr_nm == NULL || osr_nm->comp_level() >= expected_comp_level, "lookup_osr_nmethod_for is broken");
+    if (osr_nm != NULL) {
       // Perform OSR with new nmethod
       return osr_nm;
     }
@@ -449,9 +455,20 @@ void TieredThresholdPolicy::compile(const methodHandle& mh, int bci, CompLevel l
   // in the interpreter and then compile with C2 (the transition function will request that,
   // see common() ). If the method cannot be compiled with C2 but still can with C1, compile it with
   // pure C1.
-  if (!can_be_compiled(mh, level)) {
+  if ((bci == InvocationEntryBci && !can_be_compiled(mh, level))) {
     if (level == CompLevel_full_optimization && can_be_compiled(mh, CompLevel_simple)) {
-        compile(mh, bci, CompLevel_simple, thread);
+      compile(mh, bci, CompLevel_simple, thread);
+    }
+    return;
+  }
+  if ((bci != InvocationEntryBci && !can_be_osr_compiled(mh, level))) {
+    if (level == CompLevel_full_optimization && can_be_osr_compiled(mh, CompLevel_simple)) {
+      nmethod* osr_nm = mh->lookup_osr_nmethod_for(bci, CompLevel_simple, false);
+      if (osr_nm != NULL && osr_nm->comp_level() > CompLevel_simple) {
+        // Invalidate the existing OSR nmethod so that a compile at CompLevel_simple is permitted.
+        osr_nm->make_not_entrant();
+      }
+      compile(mh, bci, CompLevel_simple, thread);
     }
     return;
   }

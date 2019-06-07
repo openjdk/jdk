@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -467,11 +467,13 @@ public:
 class ZStatHeap : public AllStatic {
 private:
   static struct ZAtInitialize {
+    size_t min_capacity;
     size_t max_capacity;
     size_t max_reserve;
   } _at_initialize;
 
   static struct ZAtMarkStart {
+    size_t soft_max_capacity;
     size_t capacity;
     size_t reserve;
     size_t used;
@@ -521,9 +523,11 @@ private:
   static size_t free(size_t used);
 
 public:
-  static void set_at_initialize(size_t max_capacity,
+  static void set_at_initialize(size_t min_capacity,
+                                size_t max_capacity,
                                 size_t max_reserve);
-  static void set_at_mark_start(size_t capacity,
+  static void set_at_mark_start(size_t soft_max_capacity,
+                                size_t capacity,
                                 size_t used);
   static void set_at_mark_end(size_t capacity,
                               size_t allocated,

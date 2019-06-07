@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,7 +25,7 @@
  * @test
  * @summary tests the load and store methods of Properties class
  * @author Xueming Shen
- * @bug 4094886
+ * @bug 4094886 8224202
  * @modules jdk.charsets
  * @key randomness
  */
@@ -411,9 +411,23 @@ public class PropertiesTest {
     }
 
     private static void UnicodeEscape() throws Exception {
+        checkMalformedUnicodeEscape("b=\\u012\n");
+        checkMalformedUnicodeEscape("b=\\u01\n");
+        checkMalformedUnicodeEscape("b=\\u0\n");
+        checkMalformedUnicodeEscape("b=\\u\n");
+        checkMalformedUnicodeEscape("a=\\u0123\nb=\\u012\n");
+        checkMalformedUnicodeEscape("a=\\u0123\nb=\\u01\n");
+        checkMalformedUnicodeEscape("a=\\u0123\nb=\\u0\n");
+        checkMalformedUnicodeEscape("a=\\u0123\nb=\\u\n");
+        checkMalformedUnicodeEscape("b=\\u012xyz\n");
+        checkMalformedUnicodeEscape("b=x\\u012yz\n");
+        checkMalformedUnicodeEscape("b=xyz\\u012\n");
+    }
+
+    private static void checkMalformedUnicodeEscape(String propString) throws Exception {
         ByteArrayOutputStream baos = new ByteArrayOutputStream();
         OutputStreamWriter osw = new OutputStreamWriter(baos);
-        osw.write("a=b\nb=\\u0\n");
+        osw.write(propString);
         osw.close();
         Properties props = new Properties();
         boolean failed = true;

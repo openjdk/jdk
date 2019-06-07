@@ -222,6 +222,11 @@ public class PublicMethodsTest {
         StandardJavaFileManager standardJavaFileManager =
             javac.getStandardFileManager(errorsCollector, Locale.ROOT,
                                          Charset.forName("UTF-8"));
+        try {
+            standardJavaFileManager.setLocation(StandardLocation.CLASS_PATH, List.of());
+        } catch (IOException e) {
+            throw new UncheckedIOException(e);
+        }
         TestFileManager testFileManager = new TestFileManager(
             standardJavaFileManager, source);
 

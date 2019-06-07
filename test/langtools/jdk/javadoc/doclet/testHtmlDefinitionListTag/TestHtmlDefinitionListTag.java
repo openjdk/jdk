@@ -373,21 +373,22 @@ public class TestHtmlDefinitionListTag extends JavadocTester {
         // Test with -nocomment and -nodeprecated options. The ClassDocs whould
         // not display definition lists for any member details.
         checkOutput("pkg1/C1.html", expectFound,
-                "<pre class=\"methodSignature\">public&nbsp;void&nbsp;readObject()\n" +
-                "                throws java.io.IOException</pre>\n" +
+                "<div class=\"memberSignature\"><span class=\"modifiers\">public</span>&nbsp;" +
+                "<span class=\"returnType\">void</span>&nbsp;<span class=\"memberName\">readObject</span>()\n" +
+                "                throws <span class=\"exceptions\">java.io.IOException</span></div>\n" +
                 "</section>\n" +
                 "</li>");
 
         checkOutput("pkg1/C2.html", expectFound,
-                "<pre>public&nbsp;C2()</pre>\n" +
+                "<div class=\"memberSignature\"><span class=\"modifiers\">public</span>" +
+                "&nbsp;<span class=\"memberName\">C2</span>()</div>\n" +
                 "</section>\n" +
                 "</li>");
 
         checkOutput("pkg1/C1.ModalExclusionType.html", expectFound,
-                "<pre>public " +
-                "static final&nbsp;<a href=\"C1.ModalExclusionType.html\" " +
-                "title=\"enum in pkg1\">C1.ModalExclusionType</a> " +
-                "APPLICATION_EXCLUDE</pre>\n" +
+                "<div class=\"memberSignature\"><span class=\"modifiers\">public static final</span>&nbsp;" +
+                "<span class=\"returnType\"><a href=\"C1.ModalExclusionType.html\" title=\"enum in pkg1\">" +
+                "C1.ModalExclusionType</a></span>&nbsp;<span class=\"memberName\">APPLICATION_EXCLUDE</span></div>\n" +
                 "</section>\n" +
                 "</li>");
 

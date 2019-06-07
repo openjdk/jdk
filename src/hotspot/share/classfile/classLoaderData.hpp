@@ -30,6 +30,7 @@
 #include "memory/metaspace.hpp"
 #include "oops/oopHandle.hpp"
 #include "oops/weakHandle.hpp"
+#include "runtime/atomic.hpp"
 #include "runtime/mutex.hpp"
 #include "utilities/growableArray.hpp"
 #include "utilities/macros.hpp"
@@ -159,7 +160,7 @@ class ClassLoaderData : public CHeapObj<mtClass> {
   JFR_ONLY(DEFINE_TRACE_ID_FIELD;)
 
   void set_next(ClassLoaderData* next) { _next = next; }
-  ClassLoaderData* next() const        { return _next; }
+  ClassLoaderData* next() const        { return Atomic::load(&_next); }
 
   ClassLoaderData(Handle h_class_loader, bool is_unsafe_anonymous);
   ~ClassLoaderData();

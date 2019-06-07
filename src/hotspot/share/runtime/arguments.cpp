@@ -537,6 +537,7 @@ static SpecialFlag const special_jvm_flags[] = {
   { "AllowJNIEnvProxy",             JDK_Version::jdk(13), JDK_Version::jdk(14), JDK_Version::jdk(15) },
   { "ThreadLocalHandshakes",        JDK_Version::jdk(13), JDK_Version::jdk(14), JDK_Version::jdk(15) },
   { "AllowRedefinitionToAddDeleteMethods", JDK_Version::jdk(13), JDK_Version::undefined(), JDK_Version::undefined() },
+  { "FlightRecorder",               JDK_Version::jdk(13), JDK_Version::undefined(), JDK_Version::undefined() },
 
   // --- Deprecated alias flags (see also aliased_jvm_flags) - sorted by obsolete_in then expired_in:
   { "DefaultMaxRAMFraction",        JDK_Version::jdk(8),  JDK_Version::undefined(), JDK_Version::undefined() },
@@ -604,6 +605,7 @@ static AliasedLoggingFlag const aliased_logging_flags[] = {
   { "TraceSafepointCleanupTime", LogLevel::Info,  true,  LOG_TAGS(safepoint, cleanup) },
   { "TraceJVMTIObjectTagging",   LogLevel::Debug, true,  LOG_TAGS(jvmti, objecttagging) },
   { "TraceRedefineClasses",      LogLevel::Info,  false, LOG_TAGS(redefine, class) },
+  { "TraceNMethodInstalls",      LogLevel::Info,  true,  LOG_TAGS(nmethod, install) },
   { NULL,                        LogLevel::Off,   false, LOG_TAGS(_NO_TAG) }
 };
 

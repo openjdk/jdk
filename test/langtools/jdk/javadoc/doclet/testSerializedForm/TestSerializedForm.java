@@ -65,7 +65,7 @@ public class TestSerializedForm extends JavadocTester {
                 "protected&nbsp;java.lang.Object&nbsp;writeReplace()",
                 "protected&nbsp;java.lang.Object&nbsp;readObjectNoData()",
                 "<h3>Serialization Overview</h3>\n<ul class=\"blockList\">\n"
-                + "<li class=\"blockListLast\">\n<div class=\"block\">"
+                + "<li class=\"blockList\">\n<div class=\"block\">"
                 + "<span class=\"deprecatedLabel\">Deprecated.</span>&nbsp;</div>\n"
                 + "<dl>\n<dt><span class=\"seeLabel\">See Also:</span></dt>\n"
                 + "<dd><code>TestSerializedForm</code></dd>\n</dl>",
@@ -95,7 +95,7 @@ public class TestSerializedForm extends JavadocTester {
                 "<pre>Long[] longs</pre>\n" +
                 "<div class=\"block\">the longs</div>\n" +
                 "</li>\n" +
-                "<li class=\"blockListLast\">\n" +
+                "<li class=\"blockList\">\n" +
                 "<h4>name</h4>\n" +
                 "<pre>java.lang.String name</pre>\n" +
                 "<div class=\"block\">a test</div>");
@@ -139,7 +139,7 @@ public class TestSerializedForm extends JavadocTester {
                 "<pre>Long[] longs</pre>\n" +
                 "<div class=\"block\">the longs</div>\n" +
                 "</li>\n" +
-                "<li class=\"blockListLast\">\n" +
+                "<li class=\"blockList\">\n" +
                 "<h5>name</h5>\n" +
                 "<pre>java.lang.String name</pre>\n" +
                 "<div class=\"block\">a test</div>");

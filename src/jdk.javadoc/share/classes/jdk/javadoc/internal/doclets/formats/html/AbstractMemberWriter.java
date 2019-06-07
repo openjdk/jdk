@@ -46,12 +46,14 @@ import jdk.javadoc.internal.doclets.formats.html.markup.HtmlStyle;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlTag;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlTree;
 import jdk.javadoc.internal.doclets.formats.html.markup.Links;
+import jdk.javadoc.internal.doclets.formats.html.markup.StringContent;
 import jdk.javadoc.internal.doclets.formats.html.markup.Table;
 import jdk.javadoc.internal.doclets.formats.html.markup.TableHeader;
 import jdk.javadoc.internal.doclets.toolkit.Content;
 import jdk.javadoc.internal.doclets.toolkit.MemberSummaryWriter;
 import jdk.javadoc.internal.doclets.toolkit.Resources;
 import jdk.javadoc.internal.doclets.toolkit.taglets.DeprecatedTaglet;
+import jdk.javadoc.internal.doclets.toolkit.util.DocletConstants;
 import jdk.javadoc.internal.doclets.toolkit.util.Utils;
 
 import static javax.lang.model.element.Modifier.ABSTRACT;
@@ -218,55 +220,6 @@ public abstract class AbstractMemberWriter implements MemberSummaryWriter {
      * @return a content tree representing the link
      */
     protected abstract Content getDeprecatedLink(Element member);
-
-    /**
-     * Add the member name to the content tree.
-     *
-     * @param name the member name to be added to the content tree.
-     * @param htmltree the content tree to which the name will be added.
-     */
-    protected void addName(String name, Content htmltree) {
-        htmltree.add(name);
-    }
-
-    /**
-     * Add the modifier for the member. The modifiers are ordered as specified
-     * by <em>The Java Language Specification</em>.
-     *
-     * @param member the member for which the modifier will be added.
-     * @param htmltree the content tree to which the modifier information will be added.
-     */
-    protected void addModifiers(Element member, Content htmltree) {
-        Set<Modifier> set = new TreeSet<>(member.getModifiers());
-
-        // remove the ones we really don't need
-        set.remove(NATIVE);
-        set.remove(SYNCHRONIZED);
-        set.remove(STRICTFP);
-
-        // According to JLS, we should not be showing public modifier for
-        // interface methods.
-        if ((utils.isField(member) || utils.isMethod(member))
-            && ((writer instanceof ClassWriterImpl
-                 && utils.isInterface(((ClassWriterImpl) writer).getTypeElement())  ||
-                 writer instanceof AnnotationTypeWriterImpl) )) {
-            // Remove the implicit abstract and public modifiers
-            if (utils.isMethod(member) &&
-                (utils.isInterface(member.getEnclosingElement()) ||
-                 utils.isAnnotationType(member.getEnclosingElement()))) {
-                set.remove(ABSTRACT);
-                set.remove(PUBLIC);
-            }
-            if (!utils.isMethod(member)) {
-                set.remove(PUBLIC);
-            }
-        }
-        if (!set.isEmpty()) {
-            String mods = set.stream().map(Modifier::toString).collect(Collectors.joining(" "));
-            htmltree.add(mods);
-            htmltree.add(Entity.NO_BREAK_SPACE);
-        }
-    }
 
     protected CharSequence makeSpace(int len) {
         if (len <= 0) {
@@ -551,16 +504,235 @@ public abstract class AbstractMemberWriter implements MemberSummaryWriter {
     }
 
     /**
-     * Get the member tree to be documented.
-     *
-     * @param memberTree the content tree of member to be documented
-     * @param isLastContent true if the content to be added is the last content
-     * @return a content tree that will be added to the class documentation
+     * A content builder for member signatures.
      */
-    public Content getMemberTree(Content memberTree, boolean isLastContent) {
-        if (isLastContent)
-            return HtmlTree.LI(HtmlStyle.blockListLast, memberTree);
-        else
-            return HtmlTree.LI(HtmlStyle.blockList, memberTree);
+    class MemberSignature {
+
+        private Element element;
+        private Content typeParameters;
+        private Content returnType;
+        private Content parameters;
+        private Content exceptions;
+
+        // Threshold for length of type parameters before switching from inline to block representation.
+        private final static int TYPE_PARAMS_MAX_INLINE_LENGTH = 50;
+
+        // Threshold for combined length of modifiers, type params and return type before breaking
+        // it up with a line break before the return type.
+        private final static int RETURN_TYPE_MAX_LINE_LENGTH = 50;
+
+        /**
+         * Create a new member signature builder.
+         *
+         * @param element The element for which to create a signature.
+         */
+        MemberSignature(Element element) {
+            this.element = element;
+        }
+
+        /**
+         * Add the type parameters for an executable member.
+         *
+         * @param typeParameters the content tree containing the type parameters to add.
+         * @return this MemberSignature instance
+         */
+        MemberSignature addTypeParameters(Content typeParameters) {
+            this.typeParameters = typeParameters;
+            return this;
+        }
+
+        /**
+         * Add the return type for an executable member.
+         *
+         * @param returnType the content tree containing the return type to add.
+         * @return this MemberSignature instance
+         */
+        MemberSignature addReturnType(Content returnType) {
+            this.returnType = returnType;
+            return this;
+        }
+
+        /**
+         * Add the type information for a non-executable member.
+         *
+         * @param type the type of the member.
+         * @return this MemberSignature instance
+         */
+        MemberSignature addType(TypeMirror type) {
+            this.returnType = writer.getLink(new LinkInfoImpl(configuration, LinkInfoImpl.Kind.MEMBER, type));
+            return this;
+        }
+
+        /**
+         * Add the parameter information of an executable member.
+         *
+         * @param paramTree the content tree containing the parameter information.
+         * @return this MemberSignature instance
+         */
+        MemberSignature addParameters(Content paramTree) {
+            this.parameters = paramTree;
+            return this;
+        }
+
+        /**
+         * Add the exception information of an executable member.
+         *
+         * @param exceptionTree the content tree containing the exception information
+         * @return this MemberSignature instance
+         */
+        MemberSignature addExceptions(Content exceptionTree) {
+            this.exceptions = exceptionTree;
+            return this;
+        }
+
+        /**
+         * Return a HTML tree containing the member signature.
+         *
+         * @return a HTML tree containing the member signature
+         */
+        Content toContent() {
+            Content content = new ContentBuilder();
+            // Position of last line separator.
+            int lastLineSeparator = 0;
+
+            // Annotations
+            Content annotationInfo = writer.getAnnotationInfo(element.getAnnotationMirrors(), true);
+            if (!annotationInfo.isEmpty()) {
+                content.add(HtmlTree.SPAN(HtmlStyle.annotations, annotationInfo));
+                lastLineSeparator = content.charCount();
+            }
+
+            // Modifiers
+            appendModifiers(content);
+
+            // Type parameters
+            if (typeParameters != null && !typeParameters.isEmpty()) {
+                lastLineSeparator = appendTypeParameters(content, lastLineSeparator);
+            }
+
+            // Return type
+            if (returnType != null) {
+                content.add(HtmlTree.SPAN(HtmlStyle.returnType, returnType));
+                content.add(Entity.NO_BREAK_SPACE);
+            }
+
+            // Name
+            HtmlTree nameSpan = new HtmlTree(HtmlTag.SPAN);
+            nameSpan.setStyle(HtmlStyle.memberName);
+            if (configuration.linksource) {
+                Content name = new StringContent(name(element));
+                writer.addSrcLink(element, name, nameSpan);
+            } else {
+                nameSpan.add(name(element));
+            }
+            content.add(nameSpan);
+
+
+            // Parameters and exceptions
+            if (parameters != null) {
+                appendParametersAndExceptions(content, lastLineSeparator);
+            }
+
+            return HtmlTree.DIV(HtmlStyle.memberSignature, content);
+        }
+
+        /**
+         * Add the modifier for the member. The modifiers are ordered as specified
+         * by <em>The Java Language Specification</em>.
+         *
+         * @param htmltree the content tree to which the modifier information will be added.
+         */
+        private void appendModifiers(Content htmltree) {
+            Set<Modifier> set = new TreeSet<>(element.getModifiers());
+
+            // remove the ones we really don't need
+            set.remove(NATIVE);
+            set.remove(SYNCHRONIZED);
+            set.remove(STRICTFP);
+
+            // According to JLS, we should not be showing public modifier for
+            // interface methods.
+            if ((utils.isField(element) || utils.isMethod(element))
+                    && ((writer instanceof ClassWriterImpl
+                    && utils.isInterface(((ClassWriterImpl) writer).getTypeElement())  ||
+                    writer instanceof AnnotationTypeWriterImpl) )) {
+                // Remove the implicit abstract and public modifiers
+                if (utils.isMethod(element) &&
+                        (utils.isInterface(element.getEnclosingElement()) ||
+                                utils.isAnnotationType(element.getEnclosingElement()))) {
+                    set.remove(ABSTRACT);
+                    set.remove(PUBLIC);
+                }
+                if (!utils.isMethod(element)) {
+                    set.remove(PUBLIC);
+                }
+            }
+            if (!set.isEmpty()) {
+                String mods = set.stream().map(Modifier::toString).collect(Collectors.joining(" "));
+                htmltree.add(HtmlTree.SPAN(HtmlStyle.modifiers, new StringContent(mods)));
+                htmltree.add(Entity.NO_BREAK_SPACE);
+            }
+        }
+
+        /**
+         * Append the type parameter information to the HTML tree.
+         *
+         * @param htmltree the HTML tree
+         * @param lastLineSeparator index of last line separator in HTML tree
+         * @return the new index of the last line separator
+         */
+        private int appendTypeParameters(Content htmltree, int lastLineSeparator) {
+            // Apply different wrapping strategies for type parameters
+            // depending of combined length of type parameters and return type.
+            int typeParamLength = typeParameters.charCount();
+
+            if (typeParamLength >= TYPE_PARAMS_MAX_INLINE_LENGTH) {
+                htmltree.add(HtmlTree.SPAN(HtmlStyle.typeParametersLong, typeParameters));
+            } else {
+                htmltree.add(HtmlTree.SPAN(HtmlStyle.typeParameters, typeParameters));
+            }
+
+            int lineLength = htmltree.charCount() - lastLineSeparator;
+            int newLastLineSeparator = lastLineSeparator;
+
+            // sum below includes length of modifiers plus type params added above
+            if (lineLength + returnType.charCount()> RETURN_TYPE_MAX_LINE_LENGTH) {
+                htmltree.add(DocletConstants.NL);
+                newLastLineSeparator = htmltree.charCount();
+            } else {
+                htmltree.add(Entity.NO_BREAK_SPACE);
+            }
+
+            return newLastLineSeparator;
+        }
+
+        /**
+         * Append the parameters and exceptions information to the HTML tree.
+         *
+         * @param htmltree the HTML tree
+         * @param lastLineSeparator the index of the last line separator in HTML tree
+         */
+        private void appendParametersAndExceptions(Content htmltree, int lastLineSeparator) {
+            // Record current position for indentation of exceptions
+            int indentSize = htmltree.charCount() - lastLineSeparator;
+
+            if (parameters.isEmpty()) {
+                htmltree.add("()");
+            } else {
+                parameters.add(")");
+                htmltree.add(Entity.ZERO_WIDTH_SPACE);
+                htmltree.add("(");
+                htmltree.add(HtmlTree.SPAN(HtmlStyle.arguments, parameters));
+            }
+
+            // Exceptions
+            if (exceptions != null && !exceptions.isEmpty()) {
+                CharSequence indent = makeSpace(indentSize + 1 - 7);
+                htmltree.add(DocletConstants.NL);
+                htmltree.add(indent);
+                htmltree.add("throws ");
+                htmltree.add(HtmlTree.SPAN(HtmlStyle.exceptions, exceptions));
+            }
+        }
     }
 }

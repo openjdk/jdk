@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -52,7 +52,7 @@
  * produces tokens that the application must somehow transport to the
  * other end.
  *
- * <h3 id="useSubjectCredsOnly">Credential Acquisition</h3>
+ * <h2 id="useSubjectCredsOnly">Credential Acquisition</h2>
  * The GSS-API itself does not dictate how an underlying mechanism
  * obtains the credentials that are needed for authentication. It is
  * assumed that prior to calling the GSS-API, these credentials are
@@ -93,28 +93,9 @@
  * just the current Subject itself.
  *
  * <h2>Related Documentation</h2>
- * <p>
  * For an online tutorial on using Java GSS-API, please see
  * {@extLink security_guide_jgss_tutorial
  * Introduction to JAAS and Java GSS-API}.
- * </p>
- *
- * <!--
- * <h2>Package Specification</h2>
- *
- * ##### FILL IN ANY SPECS NEEDED BY JAVA COMPATIBILITY KIT #####
- * <ul>
- * <li><a href="">##### REFER TO ANY FRAMEMAKER SPECIFICATION HERE #####</a>
- * </ul>
- *
- * <h2>Related Documentation</h2>
- *
- * For overviews, tutorials, examples, guides, and tool documentation, please see:
- * <ul>
- * <li><a href="">##### REFER TO NON-SPEC DOCUMENTATION HERE #####</a>
- * </ul>
- *
- * -->
  *
  * @since 1.4
  * */

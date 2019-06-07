@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1995, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1995, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1182,9 +1182,13 @@ public class BitSet implements Cloneable, java.io.Serializable {
     public String toString() {
         checkInvariants();
 
+        final int MAX_INITIAL_CAPACITY = Integer.MAX_VALUE - 8;
         int numBits = (wordsInUse > 128) ?
             cardinality() : wordsInUse * BITS_PER_WORD;
-        StringBuilder b = new StringBuilder(6*numBits + 2);
+        // Avoid overflow in the case of a humongous numBits
+        int initialCapacity = (numBits <= (MAX_INITIAL_CAPACITY - 2) / 6) ?
+            6 * numBits + 2 : MAX_INITIAL_CAPACITY;
+        StringBuilder b = new StringBuilder(initialCapacity);
         b.append('{');
 
         int i = nextSetBit(0);

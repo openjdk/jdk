@@ -25,8 +25,6 @@
 
 package jdk.javadoc.internal.doclets.toolkit;
 
-import java.io.*;
-
 import javax.lang.model.element.TypeElement;
 import javax.lang.model.element.VariableElement;
 
@@ -108,10 +106,9 @@ public interface EnumConstantWriter {
      * Get the enum constants documentation.
      *
      * @param enumConstantsTree the content tree representing enum constants documentation
-     * @param isLastContent true if the content to be added is the last content
      * @return content tree for the enum constants documentation
      */
-    public Content getEnumConstants(Content enumConstantsTree, boolean isLastContent);
+    public Content getEnumConstants(Content enumConstantsTree);
 
     /**
      * Gets the member header tree.

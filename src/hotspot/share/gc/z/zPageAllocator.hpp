@@ -94,7 +94,7 @@ public:
 
   size_t min_capacity() const;
   size_t max_capacity() const;
-  size_t current_max_capacity() const;
+  size_t soft_max_capacity() const;
   size_t capacity() const;
   size_t max_reserve() const;
   size_t used_high() const;

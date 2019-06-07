@@ -198,6 +198,10 @@ class stringStream : public outputStream {
   size_t buffer_pos;
   size_t buffer_length;
   bool   buffer_fixed;
+
+  // zero terminate at buffer_pos.
+  void zero_terminate();
+
  public:
   // Create a stringStream using an internal buffer of initially initial_bufsize size;
   // will be enlarged on demand. There is no maximum cap.
@@ -209,10 +213,10 @@ class stringStream : public outputStream {
   virtual void write(const char* c, size_t len);
   // Return number of characters written into buffer, excluding terminating zero and
   // subject to truncation in static buffer mode.
-  size_t      size() { return buffer_pos; }
-  const char* base() { return buffer; }
-  void  reset() { buffer_pos = 0; _precount = 0; _position = 0; }
-  char* as_string();
+  size_t      size() const { return buffer_pos; }
+  const char* base() const { return buffer; }
+  void  reset();
+  char* as_string() const;
 };
 
 class fileStream : public outputStream {

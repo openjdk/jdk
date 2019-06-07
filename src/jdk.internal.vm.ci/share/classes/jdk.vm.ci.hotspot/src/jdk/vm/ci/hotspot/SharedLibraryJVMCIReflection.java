@@ -140,7 +140,8 @@ class SharedLibraryJVMCIReflection extends HotSpotJVMCIReflection {
 
     @Override
     Annotation[] getAnnotations(HotSpotResolvedObjectTypeImpl holder) {
-        return getClassAnnotations(holder.getName());
+        Annotation[] annotations = getClassAnnotations(holder.getName());
+        return annotations == null ? new Annotation[0] : annotations;
     }
 
     @Override
@@ -155,7 +156,11 @@ class SharedLibraryJVMCIReflection extends HotSpotJVMCIReflection {
 
     @Override
     Annotation[][] getParameterAnnotations(HotSpotResolvedJavaMethodImpl javaMethod) {
-        return getParameterAnnotations(javaMethod.getDeclaringClass().getName(), javaMethod.getName());
+        Annotation[][] annotations = getParameterAnnotations(javaMethod.getDeclaringClass().getName(), javaMethod.getName());
+        if (annotations == null) {
+            return new Annotation[javaMethod.signature.getParameterCount(false)][0];
+        }
+        return annotations;
     }
 
     @Override
@@ -170,7 +175,8 @@ class SharedLibraryJVMCIReflection extends HotSpotJVMCIReflection {
 
     @Override
     Annotation[] getMethodAnnotations(HotSpotResolvedJavaMethodImpl javaMethod) {
-        return getMethodAnnotationsInternal(javaMethod);
+        Annotation[] annotations = getMethodAnnotationsInternal(javaMethod);
+        return annotations == null ? new Annotation[0] : annotations;
     }
 
     @Override

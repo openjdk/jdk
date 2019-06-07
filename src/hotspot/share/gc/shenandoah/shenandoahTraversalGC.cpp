@@ -402,7 +402,7 @@ void ShenandoahTraversalGC::init_traversal_collection() {
     assert(_task_queues->is_empty(), "queues must be empty before traversal GC");
     TASKQUEUE_STATS_ONLY(_task_queues->reset_taskqueue_stats());
 
-#if defined(COMPILER2) || INCLUDE_JVMCI
+#if COMPILER2_OR_JVMCI
     DerivedPointerTable::clear();
 #endif
 
@@ -414,7 +414,7 @@ void ShenandoahTraversalGC::init_traversal_collection() {
       _heap->workers()->run_task(&traversal_task);
     }
 
-#if defined(COMPILER2) || INCLUDE_JVMCI
+#if COMPILER2_OR_JVMCI
     DerivedPointerTable::update_pointers();
 #endif
   }
@@ -571,7 +571,7 @@ void ShenandoahTraversalGC::final_traversal_collection() {
   _heap->make_parsable(true);
 
   if (!_heap->cancelled_gc()) {
-#if defined(COMPILER2) || INCLUDE_JVMCI
+#if COMPILER2_OR_JVMCI
     DerivedPointerTable::clear();
 #endif
     ShenandoahGCPhase phase_work(ShenandoahPhaseTimings::final_traversal_gc_work);
@@ -585,7 +585,7 @@ void ShenandoahTraversalGC::final_traversal_collection() {
     ShenandoahTaskTerminator terminator(nworkers, task_queues());
     ShenandoahFinalTraversalCollectionTask task(&rp, &terminator);
     _heap->workers()->run_task(&task);
-#if defined(COMPILER2) || INCLUDE_JVMCI
+#if COMPILER2_OR_JVMCI
     DerivedPointerTable::update_pointers();
 #endif
   }
@@ -706,13 +706,13 @@ public:
 };
 
 void ShenandoahTraversalGC::fixup_roots() {
-#if defined(COMPILER2) || INCLUDE_JVMCI
+#if COMPILER2_OR_JVMCI
   DerivedPointerTable::clear();
 #endif
   ShenandoahRootUpdater rp(_heap->workers()->active_workers(), ShenandoahPhaseTimings::final_traversal_update_roots, true /* update code cache */);
   ShenandoahTraversalFixRootsTask update_roots_task(&rp);
   _heap->workers()->run_task(&update_roots_task);
-#if defined(COMPILER2) || INCLUDE_JVMCI
+#if COMPILER2_OR_JVMCI
   DerivedPointerTable::update_pointers();
 #endif
 }

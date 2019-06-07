@@ -95,6 +95,10 @@ public interface ExecutableElement extends Element, Parameterizable {
      *
      * @return the receiver type of this executable
      * @since 1.8
+     *
+     * @jls 8.4 Method Declarations
+     * @jls 8.4.1 Formal Parameters
+     * @jls 8.8 Constructor Declarations
      */
     TypeMirror getReceiverType();
 

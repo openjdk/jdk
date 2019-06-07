@@ -84,7 +84,7 @@ BIFILES_TH := $(LD_DATA_PKG_DIR)/WordBreakIteratorData_th \
 
 $(BIFILES): $(BASE_DATA_PKG_DIR)/_the.bifiles
 $(BASE_DATA_PKG_DIR)/_the.bifiles: JAVA_FLAGS += $(BREAK_ITERATOR_BOOTCLASSPATH)
-$(BASE_DATA_PKG_DIR)/_the.bifiles: $(BUILD_TOOLS) $(UNICODEDATA) \
+$(BASE_DATA_PKG_DIR)/_the.bifiles: $(BUILD_TOOLS_JDK) $(UNICODEDATA) \
     $(BUILD_BREAKITERATOR_BASE) $(BUILD_BREAKITERATOR_LD)
 	$(call LogInfo, Generating BreakIteratorData)
 	$(call MakeDir, $(@D))
@@ -96,7 +96,7 @@ $(BASE_DATA_PKG_DIR)/_the.bifiles: $(BUILD_TOOLS) $(UNICODEDATA) \
 
 $(BIFILES_TH): $(LD_DATA_PKG_DIR)/_the.bifiles_th
 $(LD_DATA_PKG_DIR)/_the.bifiles_th: JAVA_FLAGS += $(BREAK_ITERATOR_BOOTCLASSPATH)
-$(LD_DATA_PKG_DIR)/_the.bifiles_th: $(BUILD_TOOLS) $(UNICODEDATA) \
+$(LD_DATA_PKG_DIR)/_the.bifiles_th: $(BUILD_TOOLS_JDK) $(UNICODEDATA) \
     $(BUILD_BREAKITERATOR_BASE) $(BUILD_BREAKITERATOR_LD)
 	$(call LogInfo, Generating BreakIteratorData_th)
 	$(RM) $(BIFILES_TH)

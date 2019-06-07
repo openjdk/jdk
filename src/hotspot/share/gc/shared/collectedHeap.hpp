@@ -73,7 +73,7 @@ class GCHeapLog : public EventLogBase<GCMessage> {
   void log_heap(CollectedHeap* heap, bool before);
 
  public:
-  GCHeapLog() : EventLogBase<GCMessage>("GC Heap History") {}
+  GCHeapLog() : EventLogBase<GCMessage>("GC Heap History", "gc") {}
 
   void log_heap_before(CollectedHeap* heap) {
     log_heap(heap, true);

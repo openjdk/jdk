@@ -312,6 +312,7 @@ stringStream::stringStream(size_t initial_size) : outputStream() {
   buffer        = NEW_C_HEAP_ARRAY(char, buffer_length, mtInternal);
   buffer_pos    = 0;
   buffer_fixed  = false;
+  zero_terminate();
 }
 
 // useful for output to fixed chunks of memory, such as performance counters
@@ -320,6 +321,7 @@ stringStream::stringStream(char* fixed_buffer, size_t fixed_buffer_size) : outpu
   buffer        = fixed_buffer;
   buffer_pos    = 0;
   buffer_fixed  = true;
+  zero_terminate();
 }
 
 void stringStream::write(const char* s, size_t len) {
@@ -343,9 +345,9 @@ void stringStream::write(const char* s, size_t len) {
   // invariant: buffer is always null-terminated
   guarantee(buffer_pos + write_len + 1 <= buffer_length, "stringStream oob");
   if (write_len > 0) {
-    buffer[buffer_pos + write_len] = 0;
     memcpy(buffer + buffer_pos, s, write_len);
     buffer_pos += write_len;
+    zero_terminate();
   }
 
   // Note that the following does not depend on write_len.
@@ -354,7 +356,18 @@ void stringStream::write(const char* s, size_t len) {
   update_position(s, len);
 }
 
-char* stringStream::as_string() {
+void stringStream::zero_terminate() {
+  assert(buffer != NULL &&
+         buffer_pos < buffer_length, "sanity");
+  buffer[buffer_pos] = '\0';
+}
+
+void stringStream::reset() {
+  buffer_pos = 0; _precount = 0; _position = 0;
+  zero_terminate();
+}
+
+char* stringStream::as_string() const {
   char* copy = NEW_RESOURCE_ARRAY(char, buffer_pos + 1);
   strncpy(copy, buffer, buffer_pos);
   copy[buffer_pos] = 0;  // terminating null

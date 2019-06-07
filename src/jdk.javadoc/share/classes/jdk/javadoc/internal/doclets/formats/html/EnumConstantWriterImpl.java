@@ -32,9 +32,7 @@ import javax.lang.model.element.VariableElement;
 
 import jdk.javadoc.internal.doclets.formats.html.markup.ContentBuilder;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlStyle;
-import jdk.javadoc.internal.doclets.formats.html.markup.HtmlTag;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlTree;
-import jdk.javadoc.internal.doclets.formats.html.markup.StringContent;
 import jdk.javadoc.internal.doclets.formats.html.markup.Table;
 import jdk.javadoc.internal.doclets.formats.html.markup.TableHeader;
 import jdk.javadoc.internal.doclets.toolkit.Content;
@@ -118,20 +116,9 @@ public class EnumConstantWriterImpl extends AbstractMemberWriter
      */
     @Override
     public Content getSignature(VariableElement enumConstant) {
-        Content pre = new HtmlTree(HtmlTag.PRE);
-        writer.addAnnotationInfo(enumConstant, pre);
-        addModifiers(enumConstant, pre);
-        Content enumConstantLink = writer.getLink(new LinkInfoImpl(
-                configuration, LinkInfoImpl.Kind.MEMBER, enumConstant.asType()));
-        pre.add(enumConstantLink);
-        pre.add(" ");
-        if (configuration.linksource) {
-            Content enumConstantName = new StringContent(name(enumConstant));
-            writer.addSrcLink(enumConstant, enumConstantName, pre);
-        } else {
-            addName(name(enumConstant), pre);
-        }
-        return pre;
+        return new MemberSignature(enumConstant)
+                .addType(enumConstant.asType())
+                .toContent();
     }
 
     /**
@@ -173,9 +160,8 @@ public class EnumConstantWriterImpl extends AbstractMemberWriter
      * {@inheritDoc}
      */
     @Override
-    public Content getEnumConstants(Content enumConstantsTree,
-            boolean isLastContent) {
-        return getMemberTree(enumConstantsTree, isLastContent);
+    public Content getEnumConstants(Content enumConstantsTree) {
+        return getMemberTree(enumConstantsTree);
     }
 
     /**

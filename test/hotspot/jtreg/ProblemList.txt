@@ -43,7 +43,6 @@
 compiler/ciReplay/TestSAServer.java 8029528 generic-all
 compiler/codecache/stress/OverloadCompileQueueTest.java 8166554 generic-all
 compiler/codegen/Test6896617.java 8193479 generic-all
-compiler/compilercontrol/jcmd/ClearDirectivesFileStackTest.java 8140405 generic-all
 compiler/jvmci/compilerToVM/GetFlagValueTest.java 8204459 generic-all
 compiler/jvmci/compilerToVM/GetResolvedJavaTypeTest.java 8158860 generic-all
 compiler/jvmci/compilerToVM/InvalidateInstalledCodeTest.java 8163894 generic-all
@@ -57,6 +56,9 @@ compiler/c2/Test8004741.java 8214904 generic-all
 compiler/cpuflags/TestAESIntrinsicsOnSupportedConfig.java 8190680 generic-all
 
 compiler/runtime/Test8168712.java 8211769,8211771 generic-ppc64,generic-ppc64le,linux-s390x
+
+compiler/codegen/TestCharVect2.java 8224234 generic-x64
+compiler/c2/cr6340864/TestLongVect.java 8224234 generic-x64
 
 applications/ctw/modules/java_desktop.java   8205016 windows-all
 applications/ctw/modules/java_desktop_2.java 8205016 windows-all

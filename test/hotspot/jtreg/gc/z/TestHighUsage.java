@@ -38,18 +38,21 @@ public class TestHighUsage {
     static class Test {
         private static final int K = 1024;
         private static final int M = K * K;
-        private static final long startAt = 16 * M;
-        private static final long spikeAt = 4 * M;
+        private static final long maxCapacity = Runtime.getRuntime().maxMemory();
+        private static final long slowAllocationThreshold = 16 * M;
+        private static final long highUsageThreshold = maxCapacity / 20; // 5%
         private static volatile LinkedList<byte[]> keepAlive;
         private static volatile Object dummy;
 
         public static void main(String[] args) throws Exception {
+            System.out.println("Max capacity: " + (maxCapacity / M) + "M");
+            System.out.println("High usage threshold: " + (highUsageThreshold / M) + "M");
             System.out.println("Allocating live-set");
 
             // Allocate live-set
             keepAlive = new LinkedList<>();
-            while (Runtime.getRuntime().freeMemory() > startAt) {
-                while (Runtime.getRuntime().freeMemory() > startAt) {
+            while (Runtime.getRuntime().freeMemory() > slowAllocationThreshold) {
+                while (Runtime.getRuntime().freeMemory() > slowAllocationThreshold) {
                     keepAlive.add(new byte[128 * K]);
                 }
 
@@ -60,21 +63,18 @@ public class TestHighUsage {
 
             System.out.println("Allocating garbage slowly");
 
-            // Allocate garbage slowly, such that the sampled allocation rate on
-            // average becomes zero MB/s for the last 1 second windows. If free
-            // memory goes below the spike limit we induce an allocation spike.
-            // The expected behavior is that the "High Usage" rule kicks in before
-            // the spike happens, avoiding an "Allocation Stall".
+            // Allocate garbage slowly, so that the sampled allocation rate on average
+            // becomes zero MB/s for the last 1 second windows. Once we reach the high
+            // usage threshold we idle to allow for a "High Usage" GC cycle to happen.
+            // We need to allocate slowly to avoid an "Allocation Rate" GC cycle.
             for (int i = 0; i < 300; i++) {
-                final long free = Runtime.getRuntime().freeMemory();
-                System.out.println("Free: " + (free / M) + "M");
-
-                if (free > spikeAt) {
-                    // Low allocation rate
+                if (Runtime.getRuntime().freeMemory() > highUsageThreshold) {
+                    // Allocate
                     dummy = new byte[128 * K];
+                    System.out.println("Free: " + (Runtime.getRuntime().freeMemory() / M) + "M (Allocating)");
                 } else {
-                    // High allocation rate
-                    dummy = new byte[8 * M];
+                    // Idle
+                    System.out.println("Free: " + (Runtime.getRuntime().freeMemory() / M) + "M (Idling)");
                 }
 
                 Thread.sleep(250);
@@ -93,7 +93,7 @@ public class TestHighUsage {
                                                   "-Xmx128M",
                                                   "-XX:ParallelGCThreads=1",
                                                   "-XX:ConcGCThreads=1",
-                                                  "-Xlog:gc",
+                                                  "-Xlog:gc,gc+start",
                                                   Test.class.getName() })
                     .shouldNotContain("Allocation Stall")
                     .shouldContain("High Usage")

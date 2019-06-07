@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,7 +29,7 @@
  *          jdk.internal.vm.ci/jdk.vm.ci.runtime
  *          jdk.attach
  *          java.base/jdk.internal.misc
- * @run junit/othervm -XX:+UnlockExperimentalVMOptions -XX:+EnableJVMCI -Djvmci.Compiler=null -Djdk.attach.allowAttachSelf jdk.vm.ci.runtime.test.RedefineClassTest
+ * @run junit/othervm -XX:+UnlockExperimentalVMOptions -XX:+EnableJVMCI -XX:-UseJVMCICompiler -Djdk.attach.allowAttachSelf jdk.vm.ci.runtime.test.RedefineClassTest
  */
 
 package jdk.vm.ci.runtime.test;

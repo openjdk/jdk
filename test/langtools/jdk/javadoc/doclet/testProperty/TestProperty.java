@@ -50,10 +50,10 @@ public class TestProperty extends JavadocTester {
         checkExit(Exit.OK);
 
         checkOutput("pkg/MyClass.html", true,
-                "<pre>public final&nbsp;<a href=\"ObjectProperty.html\" "
-                + "title=\"class in pkg\">ObjectProperty</a>"
-                + "&lt;<a href=\"MyObj.html\" "
-                + "title=\"class in pkg\">MyObj</a>&gt; goodProperty</pre>\n"
+                "<div class=\"memberSignature\"><span class=\"modifiers\">public final</span>&nbsp;"
+                + "<span class=\"returnType\"><a href=\"ObjectProperty.html\" title=\"class in pkg\">"
+                + "ObjectProperty</a>&lt;<a href=\"MyObj.html\" title=\"class in pkg\">MyObj</a>&gt;</span>"
+                + "&nbsp;<span class=\"memberName\">goodProperty</span></div>\n"
                 + "<div class=\"block\">This is an Object property where the "
                 + "Object is a single Object.</div>\n"
                 + "<dl>\n"
@@ -63,10 +63,10 @@ public class TestProperty extends JavadocTester {
                 + "<code>setGood(MyObj)</code></a></dd>\n"
                 + "</dl>",
 
-                "<pre>public final&nbsp;<a href=\"ObjectProperty.html\" "
-                + "title=\"class in pkg\">ObjectProperty</a>"
-                + "&lt;<a href=\"MyObj.html\" "
-                + "title=\"class in pkg\">MyObj</a>[]&gt; badProperty</pre>\n"
+                "<div class=\"memberSignature\"><span class=\"modifiers\">public final</span>&nbsp;"
+                + "<span class=\"returnType\"><a href=\"ObjectProperty.html\" title=\"class in pkg\">"
+                + "ObjectProperty</a>&lt;<a href=\"MyObj.html\" title=\"class in pkg\">MyObj</a>[]&gt;</span>"
+                + "&nbsp;<span class=\"memberName\">badProperty</span></div>\n"
                 + "<div class=\"block\">This is an Object property where the "
                 + "Object is an array.</div>\n"
                 + "<dl>\n"
@@ -94,11 +94,11 @@ public class TestProperty extends JavadocTester {
         );
 
         checkOutput("pkg/MyClassT.html", true,
-                "<pre>public final&nbsp;<a href=\"ObjectProperty.html\" "
-                + "title=\"class in pkg\">ObjectProperty</a>"
-                + "&lt;java.util.List&lt;<a href=\"MyClassT.html\" "
-                + "title=\"type parameter in MyClassT\">T</a>&gt;&gt; "
-                + "listProperty</pre>\n"
+                "<div class=\"memberSignature\"><span class=\"modifiers\">public final</span>&nbsp;"
+                + "<span class=\"returnType\"><a href=\"ObjectProperty.html\" title=\"class in pkg\">"
+                + "ObjectProperty</a>&lt;java.util.List&lt;<a href=\"MyClassT.html\" "
+                + "title=\"type parameter in MyClassT\">T</a>&gt;&gt;</span>&nbsp;"
+                + "<span class=\"memberName\">listProperty</span></div>\n"
                 + "<div class=\"block\">This is an Object property where the "
                 + "Object is a single <code>List&lt;T&gt;</code>.</div>\n"
                 + "<dl>\n"

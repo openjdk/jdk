@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,6 +30,7 @@ import java.text.DateFormat;
 import java.util.Collection;
 import java.util.Date;
 import java.util.List;
+import java.util.Set;
 
 import com.sun.tools.classfile.AccessFlags;
 import com.sun.tools.classfile.Attribute;
@@ -471,6 +472,9 @@ public class ClassWriter extends BasicWriter {
         setPendingNewline(false);
     }
 
+    private static final int DEFAULT_ALLOWED_MAJOR_VERSION = 52;
+    private static final int DEFAULT_ALLOWED_MINOR_VERSION = 0;
+
     protected void writeMethod(Method m) {
         if (!options.checkAccess(m.access_flags))
             return;
@@ -504,11 +508,24 @@ public class ClassWriter extends BasicWriter {
             }
         }
 
-        writeModifiers(flags.getMethodModifiers());
+        Set<String> modifiers = flags.getMethodModifiers();
+
+        String name = getName(m);
+        if (classFile.isInterface() &&
+                (!flags.is(AccessFlags.ACC_ABSTRACT)) && !name.equals("<clinit>")) {
+            if (classFile.major_version > DEFAULT_ALLOWED_MAJOR_VERSION ||
+                    (classFile.major_version == DEFAULT_ALLOWED_MAJOR_VERSION && classFile.minor_version >= DEFAULT_ALLOWED_MINOR_VERSION)) {
+                if (!flags.is(AccessFlags.ACC_STATIC | AccessFlags.ACC_PRIVATE)) {
+                    modifiers.add("default");
+                }
+            }
+        }
+
+        writeModifiers(modifiers);
         if (methodType != null) {
             print(new JavaTypePrinter(false).printTypeArgs(methodType.typeParamTypes));
         }
-        switch (getName(m)) {
+        switch (name) {
             case "<init>":
                 print(getJavaName(classFile));
                 print(getJavaParameterTypes(d, flags));
@@ -519,7 +536,7 @@ public class ClassWriter extends BasicWriter {
             default:
                 print(getJavaReturnType(d));
                 print(" ");
-                print(getName(m));
+                print(name);
                 print(getJavaParameterTypes(d, flags));
                 break;
         }

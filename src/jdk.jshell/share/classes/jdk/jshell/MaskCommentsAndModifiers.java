@@ -139,10 +139,36 @@ class MaskCommentsAndModifiers {
         }
     }
 
+    @SuppressWarnings("fallthrough")
     private void next() {
         switch (c) {
-            case '\'':
             case '"': {
+                int pos = next - 1;
+                maskModifiers = false;
+                if (str.startsWith("\"\"\"", next - 1)) {
+                    //text block/multi-line string literal:
+                    int searchPoint = next + 2;
+                    int end;
+                    while ((end = str.indexOf("\"\"\"", searchPoint)) != (-1)) {
+                        if (str.charAt(end - 1) != '\\')
+                            break;
+                        searchPoint = end + 1;
+                    }
+                    if (end == (-1)) {
+                        openToken = true;
+                        end = str.length();
+                    } else {
+                        end += 3;
+                    }
+                    write(c);
+                    while (next < end) {
+                        write(read());
+                    }
+                    break;
+                }
+            }
+            //intentional fall-through:
+            case '\'': {
                 maskModifiers = false;
                 write(c);
                 int match = c;
@@ -153,37 +179,6 @@ class MaskCommentsAndModifiers {
                     }
                 }
                 write(c); // write match // line-end
-                break;
-            }
-            case '`': { // RawString
-                maskModifiers = false;
-                int backtickCount = 0;
-                do {
-                    write(c);
-                    ++backtickCount;
-                    read();
-                } while (c == '`');
-                while (true) {
-                    if (c == '`') {
-                        int cnt = 0;
-                        do {
-                            write(c);
-                            ++cnt;
-                            read();
-                        } while (c == '`');
-                        if (cnt == backtickCount) {
-                            unread();
-                            break;
-                        }
-                    } else {
-                        write(c);
-                        if (c < 0) {
-                            openToken = true;
-                            break;
-                        }
-                        read();
-                    }
-                }
                 break;
             }
             case '/':

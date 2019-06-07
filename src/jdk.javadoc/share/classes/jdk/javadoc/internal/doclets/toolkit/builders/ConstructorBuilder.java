@@ -139,7 +139,6 @@ public class ConstructorBuilder extends AbstractMemberBuilder {
                     memberDetailsTree);
             Content constructorDetailsTree = writer.getMemberTreeHeader();
 
-            Element lastElement = constructors.get(constructors.size() - 1);
             for (Element contructor : constructors) {
                 currentConstructor = (ExecutableElement)contructor;
                 Content constructorDocTree = writer.getConstructorDocTreeHeader(currentConstructor, constructorDetailsTree);
@@ -149,8 +148,7 @@ public class ConstructorBuilder extends AbstractMemberBuilder {
                 buildConstructorComments(constructorDocTree);
                 buildTagInfo(constructorDocTree);
 
-                constructorDetailsTree.add(writer.getConstructorDoc(constructorDocTree,
-                        currentConstructor == lastElement));
+                constructorDetailsTree.add(writer.getConstructorDoc(constructorDocTree));
             }
             memberDetailsTree.add(
                     writer.getConstructorDetails(constructorDetailsTreeHeader, constructorDetailsTree));

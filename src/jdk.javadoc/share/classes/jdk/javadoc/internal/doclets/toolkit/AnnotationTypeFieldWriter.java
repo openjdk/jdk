@@ -25,8 +25,6 @@
 
 package jdk.javadoc.internal.doclets.toolkit;
 
-import java.io.*;
-
 import javax.lang.model.element.Element;
 import javax.lang.model.element.TypeElement;
 
@@ -87,10 +85,9 @@ public interface AnnotationTypeFieldWriter {
      * Get the annotation type documentation.
      *
      * @param annotationDocTree the content tree representing annotation type documentation
-     * @param isLastContent true if the content to be added is the last content
      * @return content tree for the annotation type documentation
      */
-    public Content getAnnotationDoc(Content annotationDocTree, boolean isLastContent);
+    public Content getAnnotationDoc(Content annotationDocTree);
 
     /**
      * Get the signature for the given member.

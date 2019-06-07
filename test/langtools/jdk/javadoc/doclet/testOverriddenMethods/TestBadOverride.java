@@ -57,7 +57,8 @@ public class TestBadOverride extends JavadocTester {
                 + "<a id=\"toString()\">\n"
                 + "<!--   -->\n"
                 + "</a>\n"
-                + "<pre class=\"methodSignature\">public&nbsp;void&nbsp;toString()</pre>\n"
+                + "<div class=\"memberSignature\"><span class=\"modifiers\">public</span>&nbsp;"
+                + "<span class=\"returnType\">void</span>&nbsp;<span class=\"memberName\">toString</span>()</div>\n"
                 + "<div class=\"block\">Why can't I do this ?</div>\n"
                 + "</section>");
     }

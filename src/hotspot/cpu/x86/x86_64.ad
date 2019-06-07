@@ -876,8 +876,7 @@ void MachPrologNode::emit(CodeBuffer &cbuf, PhaseRegAlloc *ra_) const {
 
   if (C->clinit_barrier_on_entry()) {
     assert(VM_Version::supports_fast_class_init_checks(), "sanity");
-    assert(C->method()->holder()->is_being_initialized() || C->method()->holder()->is_initialized(),
-           "initialization should have been started");
+    assert(!C->method()->holder()->is_not_initialized(), "initialization should have been started");
 
     Label L_skip_barrier;
     Register klass = rscratch1;

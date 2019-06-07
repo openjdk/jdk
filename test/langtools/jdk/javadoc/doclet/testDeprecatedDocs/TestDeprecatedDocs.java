@@ -82,14 +82,16 @@ public class TestDeprecatedDocs extends JavadocTester {
                 "<pre>@Deprecated\n"
                 + "public class <span class=\"typeNameLabel\">DeprecatedClassByAnnotation</span>\n"
                 + "extends java.lang.Object</pre>",
-                "<pre>@Deprecated(forRemoval=true)\n"
-                + "public&nbsp;int field</pre>\n"
+                "<div class=\"memberSignature\"><span class=\"annotations\">@Deprecated(forRemoval=true)\n"
+                + "</span><span class=\"modifiers\">public</span>&nbsp;<span class=\"returnType\">int</span>"
+                + "&nbsp;<span class=\"memberName\">field</span></div>\n"
                 + "<div class=\"deprecationBlock\"><span class=\"deprecatedLabel\">Deprecated, for removal: This API element is subject to removal in a future version.</span></div>",
-                "<pre>@Deprecated(forRemoval=true)\n"
-                + "public&nbsp;DeprecatedClassByAnnotation()</pre>\n"
+                "<div class=\"memberSignature\"><span class=\"annotations\">@Deprecated(forRemoval=true)\n"
+                + "</span><span class=\"modifiers\">public</span>&nbsp;<span class=\"memberName\">DeprecatedClassByAnnotation</span>()</div>\n"
                 + "<div class=\"deprecationBlock\"><span class=\"deprecatedLabel\">Deprecated, for removal: This API element is subject to removal in a future version.</span></div>",
-                "<pre class=\"methodSignature\">@Deprecated\n"
-                + "public&nbsp;void&nbsp;method()</pre>\n"
+                "<div class=\"memberSignature\"><span class=\"annotations\">@Deprecated\n"
+                + "</span><span class=\"modifiers\">public</span>&nbsp;<span class=\"returnType\">"
+                + "void</span>&nbsp;<span class=\"memberName\">method</span>()</div>\n"
                 + "<div class=\"deprecationBlock\"><span class=\"deprecatedLabel\">Deprecated.</span></div>");
 
         checkOutput("pkg/TestAnnotationType.html", true,
@@ -100,18 +102,19 @@ public class TestDeprecatedDocs extends JavadocTester {
                 + "<div class=\"deprecationBlock\"><span class=\"deprecatedLabel\">Deprecated, for removal: This API element is subject to removal in a future version.</span>\n"
                 + "<div class=\"deprecationComment\">annotation_test1 passes.</div>\n"
                 + "</div>",
-                "<pre>@Deprecated(forRemoval=true)\n"
-                + "static final&nbsp;int&nbsp;field</pre>\n"
+                "<div class=\"memberSignature\"><span class=\"annotations\">@Deprecated(forRemoval=true)\n" +
+                        "</span><span class=\"modifiers\">static final</span>&nbsp;<span class=\"returnType\">int</span>&nbsp;<span class=\"memberName\">field</span></div>\n"
                 + "<div class=\"deprecationBlock\"><span class=\"deprecatedLabel\">Deprecated, for removal: This "
                 + "API element is subject to removal in a future version.</span>\n"
                 + "<div class=\"deprecationComment\">annotation_test4 passes.</div>\n"
                 + "</div>",
-                "<pre>@Deprecated(forRemoval=true)\n"
-                + "int&nbsp;required</pre>\n"
+                "<div class=\"memberSignature\"><span class=\"annotations\">@Deprecated(forRemoval=true)\n"
+                + "</span><span class=\"returnType\">int</span>&nbsp;<span class=\"memberName\">required</span></div>\n"
                 + "<div class=\"deprecationBlock\"><span class=\"deprecatedLabel\">Deprecated, for removal: This API element is subject to removal in a future version.</span>\n"
                 + "<div class=\"deprecationComment\">annotation_test3 passes.</div>\n"
                 + "</div>",
-                "<pre>java.lang.String&nbsp;optional</pre>\n"
+                "<div class=\"memberSignature\"><span class=\"returnType\">java.lang.String</span>"
+                + "&nbsp;<span class=\"memberName\">optional</span></div>\n"
                 + "<div class=\"deprecationBlock\"><span class=\"deprecatedLabel\">Deprecated.</span>\n"
                 + "<div class=\"deprecationComment\">annotation_test2 passes.</div>\n"
                 + "</div>");
@@ -124,8 +127,8 @@ public class TestDeprecatedDocs extends JavadocTester {
                 + "<div class=\"deprecationBlock\"><span class=\"deprecatedLabel\">Deprecated, for removal: This API element is subject to removal in a future version.</span>\n"
                 + "<div class=\"deprecationComment\">class_test1 passes.</div>\n"
                 + "</div>",
-                "<pre>@Deprecated(forRemoval=true)\n"
-                + "public&nbsp;TestClass()</pre>\n"
+                "<div class=\"memberSignature\"><span class=\"annotations\">@Deprecated(forRemoval=true)\n"
+                + "</span><span class=\"modifiers\">public</span>&nbsp;<span class=\"memberName\">TestClass</span>()</div>\n"
                 + "<div class=\"deprecationBlock\"><span class=\"deprecatedLabel\">Deprecated, for removal: This API element is subject to removal in a future version.</span>\n"
                 + "<div class=\"deprecationComment\">class_test3 passes. This is the second sentence of deprecated description for a constructor.</div>\n"
                 + "</div>",
@@ -164,8 +167,9 @@ public class TestDeprecatedDocs extends JavadocTester {
                 + "<div class=\"deprecationBlock\"><span class=\"deprecatedLabel\">Deprecated, for removal: This API element is subject to removal in a future version.</span>\n"
                 + "<div class=\"deprecationComment\">enum_test1 passes.</div>\n"
                 + "</div>",
-                "<pre>@Deprecated(forRemoval=true)\n"
-                + "public static final&nbsp;<a href=\"TestEnum.html\" title=\"enum in pkg\">TestEnum</a> FOR_REMOVAL</pre>\n"
+                "<div class=\"memberSignature\"><span class=\"annotations\">@Deprecated(forRemoval=true)\n"
+                + "</span><span class=\"modifiers\">public static final</span>&nbsp;<span class=\"returnType\">"
+                + "<a href=\"TestEnum.html\" title=\"enum in pkg\">TestEnum</a></span>&nbsp;<span class=\"memberName\">FOR_REMOVAL</span></div>\n"
                 + "<div class=\"deprecationBlock\"><span class=\"deprecatedLabel\">Deprecated, for removal: This API element is subject to removal in a future version.</span>\n"
                 + "<div class=\"deprecationComment\">enum_test3 passes.</div>\n"
                 + "</div>");

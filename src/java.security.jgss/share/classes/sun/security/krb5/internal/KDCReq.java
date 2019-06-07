@@ -59,9 +59,9 @@ import java.math.BigInteger;
 public class KDCReq {
 
     public KDCReqBody reqBody;
+    public PAData[] pAData = null; //optional
     private int pvno;
     private int msgType;
-    private PAData[] pAData = null; //optional
 
     public KDCReq(PAData[] new_pAData, KDCReqBody new_reqBody,
             int req_type) throws IOException {
@@ -144,23 +144,7 @@ public class KDCReq {
         } else {
             throw new Asn1Exception(Krb5.ASN1_BAD_ID);
         }
-        if ((der.getData().peekByte() & 0x1F) == 0x03) {
-            subDer = der.getData().getDerValue();
-            DerValue subsubDer = subDer.getData().getDerValue();
-            if (subsubDer.getTag() != DerValue.tag_SequenceOf) {
-                throw new Asn1Exception(Krb5.ASN1_BAD_ID);
-            }
-            Vector<PAData> v = new Vector<>();
-            while (subsubDer.getData().available() > 0) {
-                v.addElement(new PAData(subsubDer.getData().getDerValue()));
-            }
-            if (v.size() > 0) {
-                pAData = new PAData[v.size()];
-                v.copyInto(pAData);
-            }
-        } else {
-            pAData = null;
-        }
+        pAData = PAData.parseSequence(der.getData(), (byte) 0x03, true);
         subDer = der.getData().getDerValue();
         if ((subDer.getTag() & 0x01F) == 0x04) {
             DerValue subsubDer = subDer.getData().getDerValue();

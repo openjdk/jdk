@@ -73,10 +73,11 @@ public class TestSerializedFormWithClassFile extends JavadocTester {
         checkExit(Exit.OK);
 
         checkOutput("serialized-form.html", true,
-                "<pre class=\"methodSignature\">public&nbsp;void&nbsp;readObject&#8203;"
-                + "(java.io.ObjectInputStream&nbsp;arg0)\n"
-                + "                throws java.lang.ClassNotFoundException,\n"
-                + "                       java.io.IOException</pre>\n");
+                "<div class=\"memberSignature\"><span class=\"modifiers\">public</span>&nbsp;"
+                + "<span class=\"returnType\">void</span>&nbsp;<span class=\"memberName\">readObject</span>"
+                + "&#8203;(<span class=\"arguments\">java.io.ObjectInputStream&nbsp;arg0)</span>\n"
+                + "                throws <span class=\"exceptions\">java.lang.ClassNotFoundException,\n"
+                + "java.io.IOException</span></div>\n");
     }
 
     void createTestClass(Path base, Path srcDir) throws Exception {

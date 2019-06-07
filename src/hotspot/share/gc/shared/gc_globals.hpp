@@ -721,6 +721,10 @@
           "Maximum heap size (in bytes)")                                   \
           constraint(MaxHeapSizeConstraintFunc,AfterErgo)                   \
                                                                             \
+  manageable(size_t, SoftMaxHeapSize, 0,                                    \
+          "Soft limit for maximum heap size (in bytes)")                    \
+          constraint(SoftMaxHeapSizeConstraintFunc,AfterMemoryInit)         \
+                                                                            \
   product(size_t, OldSize, ScaleForWordSize(4*M),                           \
           "Initial tenured generation size (in bytes)")                     \
           range(0, max_uintx)                                               \

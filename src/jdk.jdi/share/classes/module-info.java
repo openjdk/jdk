@@ -46,7 +46,7 @@
  * This module includes a simple command-line debugger,
  * <em>{@index jdb jdb tool}</em>.
  *
- * <h3>Global Exceptions</h3>
+ * <h2>Global Exceptions</h2>
  * <p>
  * This section documents exceptions which apply to the entire API and are thus
  * not documented on individual methods.

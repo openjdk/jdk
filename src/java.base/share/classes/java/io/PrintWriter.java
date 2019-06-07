@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -704,9 +704,8 @@ public class PrintWriter extends Writer {
 
     /**
      * Terminates the current line by writing the line separator string.  The
-     * line separator string is defined by the system property
-     * {@code line.separator}, and is not necessarily a single newline
-     * character ({@code '\n'}).
+     * line separator is {@link System#lineSeparator()} and is not necessarily
+     * a single newline character ({@code '\n'}).
      */
     public void println() {
         newLine();

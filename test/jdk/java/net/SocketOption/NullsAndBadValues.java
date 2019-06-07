@@ -26,6 +26,7 @@
  * @bug 8224477
  * @summary Basic test for NPE, UOE, and IAE for get/setOption
  * @run testng NullsAndBadValues
+ * @run testng/othervm -Djdk.net.usePlainSocketImpl NullsAndBadValues
  * @run testng/othervm -Dsun.net.useExclusiveBind=false NullsAndBadValues
  */
 

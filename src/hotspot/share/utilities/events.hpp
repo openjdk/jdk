@@ -29,6 +29,8 @@
 #include "runtime/mutexLocker.hpp"
 #include "runtime/thread.hpp"
 #include "utilities/formatBuffer.hpp"
+#include "utilities/globalDefinitions.hpp"
+#include "utilities/ostream.hpp"
 #include "utilities/vmError.hpp"
 
 // Events and EventMark provide interfaces to log events taking place in the vm.
@@ -59,7 +61,15 @@ class EventLog : public CHeapObj<mtInternal> {
   // crashes.
   EventLog();
 
-  virtual void print_log_on(outputStream* out) = 0;
+  // Print log to output stream.
+  virtual void print_log_on(outputStream* out, int max = -1) = 0;
+
+  // Returns true if s matches either the log name or the log handle.
+  virtual bool matches_name_or_handle(const char* s) const = 0;
+
+  // Print log names (for help output of VM.events).
+  virtual void print_names(outputStream* out) const = 0;
+
 };
 
 
@@ -78,16 +88,21 @@ template <class T> class EventLogBase : public EventLog {
 
  protected:
   Mutex           _mutex;
+  // Name is printed out as a header.
   const char*     _name;
+  // Handle is a short specifier used to select this particular event log
+  // for printing (see VM.events command).
+  const char*     _handle;
   int             _length;
   int             _index;
   int             _count;
   EventRecord<T>* _records;
 
  public:
-  EventLogBase<T>(const char* name, int length = LogEventsBufferEntries):
+  EventLogBase<T>(const char* name, const char* handle, int length = LogEventsBufferEntries):
     _mutex(Mutex::event, name, false, Monitor::_safepoint_check_never),
     _name(name),
+    _handle(handle),
     _length(length),
     _index(0),
     _count(0) {
@@ -116,10 +131,16 @@ template <class T> class EventLogBase : public EventLog {
   }
 
   // Print the contents of the log
-  void print_log_on(outputStream* out);
+  void print_log_on(outputStream* out, int max = -1);
+
+  // Returns true if s matches either the log name or the log handle.
+  bool matches_name_or_handle(const char* s) const;
+
+  // Print log names (for help output of VM.events).
+  void print_names(outputStream* out) const;
 
  private:
-  void print_log_impl(outputStream* out);
+  void print_log_impl(outputStream* out, int max = -1);
 
   // Print a single element.  A templated implementation might need to
   // be declared by subclasses.
@@ -145,7 +166,8 @@ typedef FormatStringLogMessage<512> ExtendedStringLogMessage;
 template <size_t bufsz>
 class FormatStringEventLog : public EventLogBase< FormatStringLogMessage<bufsz> > {
  public:
-  FormatStringEventLog(const char* name, int count = LogEventsBufferEntries) : EventLogBase< FormatStringLogMessage<bufsz> >(name, count) {}
+  FormatStringEventLog(const char* name, const char* short_name, int count = LogEventsBufferEntries)
+   : EventLogBase< FormatStringLogMessage<bufsz> >(name, short_name, count) {}
 
   void logv(Thread* thread, const char* format, va_list ap) ATTRIBUTE_PRINTF(3, 0) {
     if (!this->should_log()) return;
@@ -173,7 +195,8 @@ class InstanceKlass;
 // Event log for class unloading events to materialize the class name in place in the log stream.
 class UnloadingEventLog : public EventLogBase<StringLogMessage> {
  public:
-  UnloadingEventLog(const char* name, int count = LogEventsBufferEntries) : EventLogBase<StringLogMessage>(name, count) {}
+  UnloadingEventLog(const char* name, const char* short_name, int count = LogEventsBufferEntries)
+   : EventLogBase<StringLogMessage>(name, short_name, count) {}
 
   void log(Thread* thread, InstanceKlass* ik);
 };
@@ -181,7 +204,8 @@ class UnloadingEventLog : public EventLogBase<StringLogMessage> {
 // Event log for exceptions
 class ExceptionsEventLog : public ExtendedStringEventLog {
  public:
-  ExceptionsEventLog(const char* name, int count = LogEventsBufferEntries) : ExtendedStringEventLog(name, count) {}
+  ExceptionsEventLog(const char* name, const char* short_name, int count = LogEventsBufferEntries)
+   : ExtendedStringEventLog(name, short_name, count) {}
 
   void log(Thread* thread, Handle h_exception, const char* message, const char* file, int line);
 };
@@ -209,7 +233,13 @@ class Events : AllStatic {
   // Class unloading events
   static UnloadingEventLog* _class_unloading;
  public:
-  static void print_all(outputStream* out);
+
+  // Print all event logs; limit number of events per event log to be printed with max
+  // (max == -1 prints all events).
+  static void print_all(outputStream* out, int max = -1);
+
+  // Print a single event log specified by name or handle.
+  static void print_one(outputStream* out, const char* log_name, int max = -1);
 
   // Dump all events to the tty
   static void print();
@@ -279,21 +309,31 @@ inline void Events::log_deopt_message(Thread* thread, const char* format, ...) {
   }
 }
 
-
 template <class T>
-inline void EventLogBase<T>::print_log_on(outputStream* out) {
+inline void EventLogBase<T>::print_log_on(outputStream* out, int max) {
   if (Thread::current_or_null() == NULL) {
     // Not yet attached? Don't try to use locking
-    print_log_impl(out);
+    print_log_impl(out, max);
   } else {
     MutexLocker ml(&_mutex, Mutex::_no_safepoint_check_flag);
-    print_log_impl(out);
+    print_log_impl(out, max);
   }
+}
+
+template <class T>
+inline bool EventLogBase<T>::matches_name_or_handle(const char* s) const {
+  return ::strcasecmp(s, _name) == 0 ||
+         ::strcasecmp(s, _handle) == 0;
+}
+
+template <class T>
+inline void EventLogBase<T>::print_names(outputStream* out) const {
+  out->print("\"%s\" : %s", _handle, _name);
 }
 
 // Dump the ring buffer entries that current have entries.
 template <class T>
-inline void EventLogBase<T>::print_log_impl(outputStream* out) {
+inline void EventLogBase<T>::print_log_impl(outputStream* out, int max) {
   out->print_cr("%s (%d events):", _name, _count);
   if (_count == 0) {
     out->print_cr("No events");
@@ -301,18 +341,36 @@ inline void EventLogBase<T>::print_log_impl(outputStream* out) {
     return;
   }
 
+  int printed = 0;
   if (_count < _length) {
     for (int i = 0; i < _count; i++) {
+      if (max > 0 && printed == max) {
+        break;
+      }
       print(out, _records[i]);
+      printed ++;
     }
   } else {
     for (int i = _index; i < _length; i++) {
+      if (max > 0 && printed == max) {
+        break;
+      }
       print(out, _records[i]);
+      printed ++;
     }
     for (int i = 0; i < _index; i++) {
+      if (max > 0 && printed == max) {
+        break;
+      }
       print(out, _records[i]);
+      printed ++;
     }
   }
+
+  if (printed == max) {
+    out->print_cr("...(skipped)");
+  }
+
   out->cr();
 }
 
