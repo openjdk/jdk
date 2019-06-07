@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -81,7 +81,7 @@ bool ZDirector::rule_warmup() const {
   // Perform GC if heap usage passes 10/20/30% and no other GC has been
   // performed yet. This allows us to get some early samples of the GC
   // duration, which is needed by the other rules.
-  const size_t max_capacity = ZHeap::heap()->current_max_capacity();
+  const size_t max_capacity = ZHeap::heap()->soft_max_capacity();
   const size_t used = ZHeap::heap()->used();
   const double used_threshold_percent = (ZStatCycle::ncycles() + 1) * 0.1;
   const size_t used_threshold = max_capacity * used_threshold_percent;
@@ -107,10 +107,10 @@ bool ZDirector::rule_allocation_rate() const {
   // Calculate amount of free memory available to Java threads. Note that
   // the heap reserve is not available to Java threads and is therefore not
   // considered part of the free memory.
-  const size_t max_capacity = ZHeap::heap()->current_max_capacity();
+  const size_t max_capacity = ZHeap::heap()->soft_max_capacity();
   const size_t max_reserve = ZHeap::heap()->max_reserve();
   const size_t used = ZHeap::heap()->used();
-  const size_t free_with_reserve = max_capacity - used;
+  const size_t free_with_reserve = max_capacity - MIN2(max_capacity, used);
   const size_t free = free_with_reserve - MIN2(free_with_reserve, max_reserve);
 
   // Calculate time until OOM given the max allocation rate and the amount
@@ -155,7 +155,7 @@ bool ZDirector::rule_proactive() const {
   // passed since the previous GC. This helps avoid superfluous GCs when running
   // applications with very low allocation rate.
   const size_t used_after_last_gc = ZStatHeap::used_at_relocate_end();
-  const size_t used_increase_threshold = ZHeap::heap()->current_max_capacity() * 0.10; // 10%
+  const size_t used_increase_threshold = ZHeap::heap()->soft_max_capacity() * 0.10; // 10%
   const size_t used_threshold = used_after_last_gc + used_increase_threshold;
   const size_t used = ZHeap::heap()->used();
   const double time_since_last_gc = ZStatCycle::time_since_last();
@@ -191,7 +191,7 @@ bool ZDirector::rule_high_usage() const {
   // Calculate amount of free memory available to Java threads. Note that
   // the heap reserve is not available to Java threads and is therefore not
   // considered part of the free memory.
-  const size_t max_capacity = ZHeap::heap()->current_max_capacity();
+  const size_t max_capacity = ZHeap::heap()->soft_max_capacity();
   const size_t max_reserve = ZHeap::heap()->max_reserve();
   const size_t used = ZHeap::heap()->used();
   const size_t free_with_reserve = max_capacity - used;

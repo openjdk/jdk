@@ -34,6 +34,7 @@
 #include "gc/z/zSafeDelete.inline.hpp"
 #include "gc/z/zStat.hpp"
 #include "gc/z/zTracer.inline.hpp"
+#include "runtime/globals.hpp"
 #include "runtime/init.hpp"
 #include "runtime/java.hpp"
 #include "utilities/debug.hpp"
@@ -181,8 +182,9 @@ size_t ZPageAllocator::max_capacity() const {
   return _max_capacity;
 }
 
-size_t ZPageAllocator::current_max_capacity() const {
-  return _current_max_capacity;
+size_t ZPageAllocator::soft_max_capacity() const {
+  // Note that SoftMaxHeapSize is a manageable flag
+  return MIN2(SoftMaxHeapSize, _current_max_capacity);
 }
 
 size_t ZPageAllocator::capacity() const {

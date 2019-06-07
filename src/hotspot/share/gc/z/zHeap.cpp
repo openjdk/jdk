@@ -113,8 +113,8 @@ size_t ZHeap::max_capacity() const {
   return _page_allocator.max_capacity();
 }
 
-size_t ZHeap::current_max_capacity() const {
-  return _page_allocator.current_max_capacity();
+size_t ZHeap::soft_max_capacity() const {
+  return _page_allocator.soft_max_capacity();
 }
 
 size_t ZHeap::capacity() const {
