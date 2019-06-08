@@ -114,7 +114,7 @@ public class RedefineTest {
     static final WhiteBox WB = WhiteBox.getWhiteBox();
 
     @DontInline
-    static int invokeBasic() {
+    static int invokeExact() {
         try {
             return (int)mh.invokeExact();
         } catch (Throwable e) {
@@ -130,7 +130,7 @@ public class RedefineTest {
 
     public static void main(String[] args) throws Exception {
         for (int i = 0; i < 20_000; i++) {
-            int r = invokeBasic();
+            int r = invokeExact();
             if (r != 0) {
                 throw new Error(r + " != 0");
             }
@@ -142,7 +142,7 @@ public class RedefineTest {
         int exp = (instr != null) ? 1 : 0;
 
         for (int i = 0; i < 20_000; i++) {
-            if (invokeBasic() != exp) {
+            if (invokeExact() != exp) {
                 throw new Error();
             }
         }
@@ -150,7 +150,7 @@ public class RedefineTest {
         WB.clearInlineCaches();
 
         for (int i = 0; i < 20_000; i++) {
-            if (invokeBasic() != exp) {
+            if (invokeExact() != exp) {
                 throw new Error();
             }
         }
