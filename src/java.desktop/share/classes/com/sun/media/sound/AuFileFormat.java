@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -45,8 +45,8 @@ final class AuFileFormat extends StandardFileFormat {
     static final int AU_LINEAR_24    = 4;  /* 24-bit linear PCM */
     static final int AU_LINEAR_32    = 5;  /* 32-bit linear PCM */
     static final int AU_FLOAT        = 6;  /* 32-bit IEEE floating point */
+    static final int AU_DOUBLE       = 7;  /* 64-bit IEEE floating point */
 //  we don't support these ...
-//  static final int AU_DOUBLE       = 7;  /* 64-bit IEEE floating point */
 //  static final int AU_ADPCM_G721   = 23; /* 4-bit CCITT g.721 ADPCM */
 //  static final int AU_ADPCM_G722   = 24; /* CCITT g.722 ADPCM */
 //  static final int AU_ADPCM_G723_3 = 25; /* CCITT g.723 3-bit ADPCM */
@@ -93,6 +93,8 @@ final class AuFileFormat extends StandardFileFormat {
         } else if (AudioFormat.Encoding.PCM_FLOAT.equals(encoding)) {
             if (format.getSampleSizeInBits() == 32) {
                 auType = AU_FLOAT;
+            } else if (format.getSampleSizeInBits() == 64) {
+                auType = AU_DOUBLE;
             }
         }
     }
