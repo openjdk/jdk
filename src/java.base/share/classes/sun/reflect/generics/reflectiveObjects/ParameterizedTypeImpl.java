@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -55,8 +55,15 @@ public class ParameterizedTypeImpl implements ParameterizedType {
     private void validateConstructorArguments() {
         TypeVariable<?>[] formals = rawType.getTypeParameters();
         // check correct arity of actual type args
-        if (formals.length != actualTypeArguments.length){
-            throw new MalformedParameterizedTypeException();
+        if (formals.length != actualTypeArguments.length) {
+            throw new MalformedParameterizedTypeException(String.format("Mismatch of count of " +
+                                                                        "formal and actual type " +
+                                                                        "arguments in constructor " +
+                                                                        "of %s: %d formal argument(s) "+
+                                                                        "%d actual argument(s)",
+                                                                        rawType.getName(),
+                                                                        formals.length,
+                                                                        actualTypeArguments.length));
         }
         for (int i = 0; i < actualTypeArguments.length; i++) {
             // check actuals against formals' bounds
