@@ -184,7 +184,7 @@ void JfrJavaArguments::Parameters::copy(JavaCallArguments& args, TRAPS) const {
   }
 }
 
-JfrJavaArguments::JfrJavaArguments(JavaValue* result) : _result(result), _klass(NULL), _name(NULL), _signature(NULL), _array_length(0) {
+JfrJavaArguments::JfrJavaArguments(JavaValue* result) : _result(result), _klass(NULL), _name(NULL), _signature(NULL), _array_length(-1) {
   assert(result != NULL, "invariant");
 }
 
@@ -193,7 +193,7 @@ JfrJavaArguments::JfrJavaArguments(JavaValue* result, const char* klass_name, co
   _klass(NULL),
   _name(NULL),
   _signature(NULL),
-  _array_length(0) {
+  _array_length(-1) {
   assert(result != NULL, "invariant");
   if (klass_name != NULL) {
     set_klass(klass_name, CHECK);
@@ -210,7 +210,7 @@ JfrJavaArguments::JfrJavaArguments(JavaValue* result, const Klass* klass, const 
   _klass(NULL),
   _name(NULL),
   _signature(NULL),
-  _array_length(0) {
+  _array_length(-1) {
   assert(result != NULL, "invariant");
   if (klass != NULL) {
     set_klass(klass);

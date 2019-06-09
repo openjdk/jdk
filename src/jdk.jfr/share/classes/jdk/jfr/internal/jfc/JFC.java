@@ -127,7 +127,11 @@ public final class JFC {
 
     public static String nameFromPath(Path file) throws IOException {
         String f = nullSafeFileName(file);
-        return f.substring(0, f.length() - JFCParser.FILE_EXTENSION.length());
+        if (f.endsWith(JFCParser.FILE_EXTENSION)) {
+            return f.substring(0, f.length() - JFCParser.FILE_EXTENSION.length());
+        } else  {
+            return f;
+        }
     }
 
     // Invoked by DCmdStart

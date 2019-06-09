@@ -168,7 +168,7 @@ static void create_object(JfrJavaArguments* args, JavaValue* result, TRAPS) {
 
   const int array_length = args->array_length();
 
-  if (array_length > 0) {
+  if (array_length >= 0) {
     array_construction(args, result, klass, array_length, CHECK);
   } else {
     object_construction(args, result, klass, THREAD);
