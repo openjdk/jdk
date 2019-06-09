@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2000, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  * <p>
  * This code is free software; you can redistribute it and/or modify it
@@ -287,8 +287,7 @@
  * package:
  *
  * <ul>
- * <li><a href="http://www.oracle.com/technetwork/java/index-142838.html">
- * <i>JDBC&#8482;API Tutorial and Reference, Third Edition</i></a>
+ * <li>&ldquo;<i>JDBC&#8482;API Tutorial and Reference, Third Edition</i>&rdquo;
  * </ul>
  */
 package javax.sql;
