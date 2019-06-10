@@ -58,8 +58,8 @@ public enum SourceVersion {
      *   9: modules, small cleanups to 1.7 and 1.8 changes
      *  10: local-variable type inference (var)
      *  11: local-variable syntax for lambda parameters
-     *  12: no changes (switch expressions in preview)
-     *  13: TBD
+     *  12: no changes (switch expressions were in preview)
+     *  13: no changes (switch expressions and text blocks in preview)
      */
 
     /**
