@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,12 +23,11 @@
 
 /*
  * @test
- * @bug 8206986
- * @summary Ensure than parser can parse incomplete sources
+ * @bug 8223305
+ * @summary Verify Tree.toString() related to switch expressions
  * @modules jdk.compiler
  */
 
-import java.io.StringWriter;
 import java.net.URI;
 import java.util.Arrays;
 import java.util.List;
@@ -37,7 +36,7 @@ import javax.tools.*;
 
 import com.sun.source.util.JavacTask;
 
-public class ParseIncomplete {
+public class ExpressionSwitchToString {
 
     private static final String CODE =
             "public class C {" +
@@ -57,30 +56,56 @@ public class ParseIncomplete {
             "    }" +
             "}";
 
+    private static final String EXPECTED =
+            "\n" +
+            "public class C {\n" +
+            "    \n" +
+            "    void t1(Integer i) {\n" +
+            "        switch (i) {\n" +
+            "        case null:\n" +
+            "            i++;\n" +
+            "            break;\n" +
+            "        \n" +
+            "        case 0, 1:\n" +
+            "            i++;\n" +
+            "            break;\n" +
+            "        \n" +
+            "        default:\n" +
+            "            i++;\n" +
+            "            break;\n" +
+            "        \n" +
+            "        }\n" +
+            "    }\n" +
+            "    \n" +
+            "    int t2(Integer i) {\n" +
+            "        return switch (i) {\n" +
+            "        case null:\n" +
+            "            yield 0;\n" +
+            "        \n" +
+            "        case 0, 1:\n" +
+            "            yield 1;\n" +
+            "        \n" +
+            "        default:\n" +
+            "            yield 2;\n" +
+            "        \n" +
+            "        };\n" +
+            "    }\n" +
+            "}";
+
     public static void main(String[] args) throws Exception {
         final JavaCompiler tool = ToolProvider.getSystemJavaCompiler();
         assert tool != null;
         DiagnosticListener<JavaFileObject> noErrors = d -> {};
         String sourceVersion = Integer.toString(Runtime.version().feature());
 
-        for (int i = 0; i < CODE.length(); i++) {
-            String code = CODE.substring(0, i + 1);
-            StringWriter out = new StringWriter();
-            try {
-                JavacTask ct = (JavacTask) tool.getTask(out, null, noErrors,
-                    List.of("-XDdev", "--enable-preview", "-source", sourceVersion), null,
-                    Arrays.asList(new MyFileObject(code)));
-                ct.parse().iterator().next();
-            } catch (Throwable t) {
-                System.err.println("Unexpected exception for code: " + code);
-                System.err.println("output: " + out);
-                throw t;
-            }
-            if (!out.toString().isEmpty()) {
-                System.err.println("Unexpected compiler for code: " + code);
-                System.err.println(out);
-                throw new AssertionError();
-            }
+        JavacTask ct = (JavacTask) tool.getTask(null, null, noErrors,
+            List.of("-XDdev", "--enable-preview", "-source", sourceVersion), null,
+            Arrays.asList(new MyFileObject(CODE)));
+        String actualCode = ct.parse().iterator().next().toString();
+        actualCode = actualCode.replace(System.getProperty("line.separator"), "\n");
+        if (!EXPECTED.equals(actualCode)) {
+            throw new AssertionError("Unexpected toString outcome: " +
+                                     actualCode);
         }
     }
 

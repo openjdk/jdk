@@ -26,9 +26,9 @@ public class ExpressionSwitchNotExhaustive {
                         s = "42";
                         break;
                 }
-                break s;
+                yield s;
             default:
-                break "43";
+                yield "43";
         };
     }
     enum E {

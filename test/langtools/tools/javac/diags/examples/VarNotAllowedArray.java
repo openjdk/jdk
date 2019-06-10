@@ -21,7 +21,7 @@
  * questions.
  */
 
-// key: compiler.err.var.not.allowed.array
+// key: compiler.err.restricted.type.not.allowed.array
 
 class VarNotAllowedArray {
     void test(String[] s) {

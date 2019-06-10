@@ -38,7 +38,7 @@ public class SwitchExpressionIsNotAConstant {
             int dummy = 1 + switch (i) {
                 default -> {
                     i++;
-                    break 1;
+                    yield 1;
                 }
             };
             if (i != 1) {
@@ -51,7 +51,7 @@ public class SwitchExpressionIsNotAConstant {
                 case -1 -> 1;
                 default -> {
                     i++;
-                    break 1;
+                    yield 1;
                 }
             };
             if (i != 1) {
@@ -63,7 +63,7 @@ public class SwitchExpressionIsNotAConstant {
             int dummy = 1 + switch (i) {
                  default :
                     i++;
-                    break 1;
+                    yield 1;
             };
             if (i != 1) {
                 throw new IllegalStateException("Side effects missing.");
@@ -72,10 +72,10 @@ public class SwitchExpressionIsNotAConstant {
         {
             i = 0;
             int dummy = 1 + switch (i) {
-                case -1: break 1;
+                case -1: yield 1;
                 default:
                     i++;
-                    break 1;
+                    yield 1;
             };
             if (i != 1) {
                 throw new IllegalStateException("Side effects missing.");

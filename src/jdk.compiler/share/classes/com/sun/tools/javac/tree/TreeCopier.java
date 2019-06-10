@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2006, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2006, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -140,8 +140,15 @@ public class TreeCopier<P> implements TreeVisitor<JCTree,P> {
     @DefinedBy(Api.COMPILER_TREE)
     public JCTree visitBreak(BreakTree node, P p) {
         JCBreak t = (JCBreak) node;
+        return M.at(t.pos).Break(t.label);
+    }
+
+    @DefinedBy(Api.COMPILER_TREE)
+    @SuppressWarnings("removal")
+    public JCTree visitYield(YieldTree node, P p) {
+        JCYield t = (JCYield) node;
         JCExpression value = copy(t.value, p);
-        return M.at(t.pos).Break(value);
+        return M.at(t.pos).Yield(value);
     }
 
     @DefinedBy(Api.COMPILER_TREE)

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,10 +21,10 @@
  * questions.
  */
 
-// key: compiler.err.restricted.type.not.allowed.array
+// key: compiler.warn.illegal.ref.to.restricted.type
+// key: compiler.warn.restricted.type.not.allowed.preview
 
-import java.util.function.*;
-
-class BracketsNotAllowedImplicitLambda {
-    BiFunction<String[], String, String> f = (var s1[], var s2) -> s2;
+class IllegalRefToVarType {
+    yield list() { return null; }
+    public class yield {}
 }

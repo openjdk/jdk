@@ -15,8 +15,8 @@ public class DefiniteAssignment2 {
             int x;
 
             t = (b && switch(a) {
-                case 0: break (x = 1) == 1 || true;
-                default: break false;
+                case 0: yield (x = 1) == 1 || true;
+                default: yield false;
             }) || x == 1;
         }
 
@@ -24,8 +24,8 @@ public class DefiniteAssignment2 {
             int x;
 
             t = (switch(a) {
-                case 0: break (x = 1) == 1;
-                default: break false;
+                case 0: yield (x = 1) == 1;
+                default: yield false;
             }) || x == 1;
         }
 
@@ -33,9 +33,9 @@ public class DefiniteAssignment2 {
             int x;
 
             t = (switch(a) {
-                case 0: x = 1; break true;
-                case 1: break (x = 1) == 1;
-                default: break false;
+                case 0: x = 1; yield true;
+                case 1: yield (x = 1) == 1;
+                default: yield false;
             }) || x == 1;
         }
 
@@ -43,9 +43,9 @@ public class DefiniteAssignment2 {
             int x;
 
             t = (switch(a) {
-                case 0: break true;
-                case 1: break (x = 1) == 1;
-                default: break false;
+                case 0: yield true;
+                case 1: yield (x = 1) == 1;
+                default: yield false;
             }) && x == 1;
         }
 
@@ -53,9 +53,9 @@ public class DefiniteAssignment2 {
             int x;
 
             t = (switch(a) {
-                case 0: break false;
-                case 1: break isTrue() || (x = 1) == 1;
-                default: break false;
+                case 0: yield false;
+                case 1: yield isTrue() || (x = 1) == 1;
+                default: yield false;
             }) && x == 1;
         }
 
@@ -63,9 +63,9 @@ public class DefiniteAssignment2 {
             int x;
 
             t = (switch(a) {
-                case 0: break false;
-                case 1: break isTrue() ? true : (x = 1) == 1;
-                default: break false;
+                case 0: yield false;
+                case 1: yield isTrue() ? true : (x = 1) == 1;
+                default: yield false;
             }) && x == 1;
         }
 
@@ -73,9 +73,9 @@ public class DefiniteAssignment2 {
             final int x;
 
             t = (switch(a) {
-                case 0: break false;
-                case 1: break isTrue() ? true : (x = 1) == 1;
-                default: break false;
+                case 0: yield false;
+                case 1: yield isTrue() ? true : (x = 1) == 1;
+                default: yield false;
             }) && (x = 1) == 1;
         }
     }

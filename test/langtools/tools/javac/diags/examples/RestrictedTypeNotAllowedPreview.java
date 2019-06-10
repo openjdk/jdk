@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,15 +21,6 @@
  * questions.
  */
 
-// key: compiler.err.break.missing.value
-// key: compiler.note.preview.filename
-// key: compiler.note.preview.recompile
-// options: --enable-preview -source ${jdk.version}
+// key: compiler.warn.restricted.type.not.allowed.preview
 
-class BreakMissingValue {
-    int t(int i) {
-        return switch (i) {
-            default: break;
-        };
-    }
-}
+class yield { }

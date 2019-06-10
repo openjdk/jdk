@@ -50,8 +50,8 @@ public class ExpressionSwitchFallThrough1 {
         return switch (p) {
             case 0: result += "0";
             case 1: result += "1";
-                break result;
-            default: break "other";
+                yield result;
+            default: yield "other";
         };
     }
 
@@ -60,7 +60,7 @@ public class ExpressionSwitchFallThrough1 {
         switch (p) {
             case 0: result += "0";
             case 1: result += "1";
-                break ;
+                break;
             default: result = "other";
                 break;
         }

@@ -39,19 +39,19 @@ public class ExpressionSwitchEmbedding {
             int i = 6;
             int o = 0;
             while (switch (i) {
-                case 1: i = 0; break true;
-                case 2: i = 1; break true;
+                case 1: i = 0; yield true;
+                case 2: i = 1; yield true;
                 case 3, 4: i--;
                     if (i == 2 || i == 4) {
-                        break switch (i) {
+                        yield switch (i) {
                             case 2 -> true;
                             case 4 -> false;
                             default -> throw new IllegalStateException();
                         };
                     } else {
-                        break true;
+                        yield true;
                     }
-                default: i--; break switch (i) {
+                default: i--; yield switch (i) {
                     case -1 -> false;
                     case 3 -> true;
                     default -> true;
@@ -67,8 +67,8 @@ public class ExpressionSwitchEmbedding {
             int i = 6;
             int o = 0;
             while (switch (i) {
-                case 1: try { new ExpressionSwitchEmbedding().throwException(); } catch (Throwable t) { i = 0; break true; }
-                case 2: try { new ExpressionSwitchEmbedding().throwException(); } catch (Throwable t) { i = 1; break true; }
+                case 1: try { new ExpressionSwitchEmbedding().throwException(); } catch (Throwable t) { i = 0; yield true; }
+                case 2: try { new ExpressionSwitchEmbedding().throwException(); } catch (Throwable t) { i = 1; yield true; }
                 case 3, 4:
                     try {
                         new ExpressionSwitchEmbedding().throwException();
@@ -76,16 +76,16 @@ public class ExpressionSwitchEmbedding {
                         i--;
                         if (i == 2 || i == 4) {
                             try {
-                                break switch (i) {
+                                yield switch (i) {
                                     case 2 -> throw new ResultException(true);
                                     case 4 -> false;
                                     default -> throw new IllegalStateException();
                                 };
                             } catch (ResultException ex) {
-                                break ex.result;
+                                yield ex.result;
                             }
                         } else {
-                            break true;
+                            yield true;
                         }
                     }
                 default:
@@ -93,7 +93,7 @@ public class ExpressionSwitchEmbedding {
                         new ExpressionSwitchEmbedding().throwException();
                     } catch (Throwable t) {
                         i--;
-                        break switch (i) {
+                        yield switch (i) {
                             case -1 -> false;
                             case 3 -> true;
                             default -> true;
@@ -111,19 +111,19 @@ public class ExpressionSwitchEmbedding {
             int i = 6;
             int o = 0;
             if (switch (i) {
-                case 1: i = 0; break true;
-                case 2: i = 1; break true;
+                case 1: i = 0; yield true;
+                case 2: i = 1; yield true;
                 case 3, 4: i--;
                     if (i == 2 || i == 4) {
-                        break (switch (i) {
+                        yield (switch (i) {
                             case 2 -> 3;
                             case 4 -> 5;
                             default -> throw new IllegalStateException();
                         }) == i + 1;
                     } else {
-                        break true;
+                        yield true;
                     }
-                default: i--; break switch (i) {
+                default: i--; yield switch (i) {
                     case -1 -> false;
                     case 3 -> true;
                     default -> true;
@@ -139,8 +139,8 @@ public class ExpressionSwitchEmbedding {
             int i = 6;
             int o = 0;
             if (switch (i) {
-                case 1: try { new ExpressionSwitchEmbedding().throwException(); } catch (Throwable t) { i = 0; break true; }
-                case 2: try { new ExpressionSwitchEmbedding().throwException(); } catch (Throwable t) { i = 1; break true; }
+                case 1: try { new ExpressionSwitchEmbedding().throwException(); } catch (Throwable t) { i = 0; yield true; }
+                case 2: try { new ExpressionSwitchEmbedding().throwException(); } catch (Throwable t) { i = 1; yield true; }
                 case 3, 4:
                     try {
                         new ExpressionSwitchEmbedding().throwException();
@@ -148,16 +148,16 @@ public class ExpressionSwitchEmbedding {
                         i--;
                         if (i == 2 || i == 4) {
                             try {
-                                break switch (i) {
+                                yield switch (i) {
                                     case 2 -> throw new ResultException(true);
                                     case 4 -> false;
                                     default -> throw new IllegalStateException();
                                 };
                             } catch (ResultException ex) {
-                                break ex.result;
+                                yield ex.result;
                             }
                         } else {
-                            break true;
+                            yield true;
                         }
                     }
                 default:
@@ -165,7 +165,7 @@ public class ExpressionSwitchEmbedding {
                         new ExpressionSwitchEmbedding().throwException();
                     } catch (Throwable t) {
                         i--;
-                        break switch (i) {
+                        yield switch (i) {
                             case -1 -> false;
                             case 3 -> true;
                             default -> true;
@@ -182,19 +182,19 @@ public class ExpressionSwitchEmbedding {
         {
             int o = 0;
             for (int i = 6; (switch (i) {
-                case 1: i = 0; break true;
-                case 2: i = 1; break true;
+                case 1: i = 0; yield true;
+                case 2: i = 1; yield true;
                 case 3, 4: i--;
                     if (i == 2 || i == 4) {
-                        break switch (i) {
+                        yield switch (i) {
                             case 2 -> true;
                             case 4 -> false;
                             default -> throw new IllegalStateException();
                         };
                     } else {
-                        break true;
+                        yield true;
                     }
-                default: i--; break switch (i) {
+                default: i--; yield switch (i) {
                     case -1 -> false;
                     case 3 -> true;
                     default -> true;
@@ -209,8 +209,8 @@ public class ExpressionSwitchEmbedding {
         {
             int o = 0;
             for (int i = 6; (switch (i) {
-                case 1: try { new ExpressionSwitchEmbedding().throwException(); } catch (Throwable t) { i = 0; break true; }
-                case 2: try { new ExpressionSwitchEmbedding().throwException(); } catch (Throwable t) { i = 1; break true; }
+                case 1: try { new ExpressionSwitchEmbedding().throwException(); } catch (Throwable t) { i = 0; yield true; }
+                case 2: try { new ExpressionSwitchEmbedding().throwException(); } catch (Throwable t) { i = 1; yield true; }
                 case 3, 4:
                     try {
                         new ExpressionSwitchEmbedding().throwException();
@@ -218,16 +218,16 @@ public class ExpressionSwitchEmbedding {
                         i--;
                         if (i == 2 || i == 4) {
                             try {
-                                break switch (i) {
+                                yield switch (i) {
                                     case 2 -> throw new ResultException(true);
                                     case 4 -> false;
                                     default -> throw new IllegalStateException();
                                 };
                             } catch (ResultException ex) {
-                                break ex.result;
+                                yield ex.result;
                             }
                         } else {
-                            break true;
+                            yield true;
                         }
                     }
                 default:
@@ -235,7 +235,7 @@ public class ExpressionSwitchEmbedding {
                         new ExpressionSwitchEmbedding().throwException();
                     } catch (Throwable t) {
                         i--;
-                        break switch (i) {
+                        yield switch (i) {
                             case -1 -> false;
                             case 3 -> true;
                             default -> true;
@@ -255,19 +255,19 @@ public class ExpressionSwitchEmbedding {
             do {
                 o++;
             } while (switch (i) {
-                case 1: i = 0; break true;
-                case 2: i = 1; break true;
+                case 1: i = 0; yield true;
+                case 2: i = 1; yield true;
                 case 3, 4: i--;
                     if (i == 2 || i == 4) {
-                        break switch (i) {
+                        yield switch (i) {
                             case 2 -> true;
                             case 4 -> false;
                             default -> throw new IllegalStateException();
                         };
                     } else {
-                        break true;
+                        yield true;
                     }
-                default: i--; break switch (i) {
+                default: i--; yield switch (i) {
                     case -1 -> false;
                     case 3 -> true;
                     default -> true;
@@ -283,8 +283,8 @@ public class ExpressionSwitchEmbedding {
             do {
                 o++;
             } while (switch (i) {
-                case 1: try { new ExpressionSwitchEmbedding().throwException(); } catch (Throwable t) { i = 0; break true; }
-                case 2: try { new ExpressionSwitchEmbedding().throwException(); } catch (Throwable t) { i = 1; break true; }
+                case 1: try { new ExpressionSwitchEmbedding().throwException(); } catch (Throwable t) { i = 0; yield true; }
+                case 2: try { new ExpressionSwitchEmbedding().throwException(); } catch (Throwable t) { i = 1; yield true; }
                 case 3, 4:
                     try {
                         new ExpressionSwitchEmbedding().throwException();
@@ -292,16 +292,16 @@ public class ExpressionSwitchEmbedding {
                         i--;
                         if (i == 2 || i == 4) {
                             try {
-                                break switch (i) {
+                                yield switch (i) {
                                     case 2 -> throw new ResultException(true);
                                     case 4 -> false;
                                     default -> throw new IllegalStateException();
                                 };
                             } catch (ResultException ex) {
-                                break ex.result;
+                                yield ex.result;
                             }
                         } else {
-                            break true;
+                            yield true;
                         }
                     }
                 default:
@@ -309,7 +309,7 @@ public class ExpressionSwitchEmbedding {
                         new ExpressionSwitchEmbedding().throwException();
                     } catch (Throwable t) {
                         i--;
-                        break switch (i) {
+                        yield switch (i) {
                             case -1 -> false;
                             case 3 -> true;
                             default -> true;

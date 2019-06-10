@@ -9,9 +9,9 @@ public class SwitchExpressionScopesIsolated {
 
     private String scopesIsolated(int i) {
         return switch (i) {
-            case 0 -> { String res = ""; break res; }
-            case 1 -> { res = ""; break res; }
-            default -> { res = ""; break res; }
+            case 0 -> { String res = ""; yield res; }
+            case 1 -> { res = ""; yield res; }
+            default -> { res = ""; yield res; }
         };
     }
 

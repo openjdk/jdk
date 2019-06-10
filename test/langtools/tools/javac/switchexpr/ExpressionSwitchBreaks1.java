@@ -58,11 +58,11 @@ public class ExpressionSwitchBreaks1 {
             case 0:
                 return switch (j) {
                     case 0:
-                        if (true) break "0-0";
+                        if (true) yield "0-0";
                     case 1:
-                        break "0-1";
+                        yield "0-1";
                     default:
-                        break "0-X";
+                        yield "0-X";
                 };
             default: return "X";
         }
@@ -90,9 +90,9 @@ public class ExpressionSwitchBreaks1 {
                         r = "0-X";
                         break;
                 }
-                break r;
+                yield r;
             case 1:
-                break "1";
+                yield "1";
             case 2:
                 LOP: while (j-- > 0) {
                     if (k == 5) {
@@ -102,9 +102,9 @@ public class ExpressionSwitchBreaks1 {
                     break LOP;
                 }
                 Supplier<String> getter = () -> { return "2-X-5"; };
-                break getter.get();
+                yield getter.get();
             default:
-                break "X";
+                yield "X";
         };
     }
 

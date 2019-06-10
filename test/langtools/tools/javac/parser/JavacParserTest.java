@@ -1083,12 +1083,12 @@ public class JavacParserTest extends TestCase {
                       "        }" +
                       "        int j = switch (i) {" +
                       "            case 0 -> i + 1;" +
-                      "            case 1 -> { break i + 1; }" +
+                      "            case 1 -> { yield i + 1; }" +
                       "            default -> throw new RuntimeException();" +
                       "        };" +
                       "        int k = switch (i) {" +
-                      "            case 0: break i + 1;" +
-                      "            case 1: { break i + 1; }" +
+                      "            case 0: yield i + 1;" +
+                      "            case 1: { yield i + 1; }" +
                       "            default: throw new RuntimeException();" +
                       "        };" +
                       "    }" +
@@ -1120,7 +1120,7 @@ public class JavacParserTest extends TestCase {
         List<String> expectedSpans = List.of(
                 "i++;", "{ i++; }", "throw new RuntimeException();", "if (true) ;", "i++;",
                 "<null>", "<null>", "<null>", "<null>", "<null>",
-                "i + 1"/*TODO semicolon?*/, "{ break i + 1; }", "throw new RuntimeException();",
+                "i + 1"/*TODO semicolon?*/, "{ yield i + 1; }", "throw new RuntimeException();",
                 "<null>", "<null>", "<null>");
         assertEquals("the error spans are not correct; actual:" + spans, expectedSpans, spans);
         String toString = normalize(cut.toString());
@@ -1162,19 +1162,19 @@ public class JavacParserTest extends TestCase {
                 "        \n" +
                 "        }\n" +
                 "        int j = switch (i) {\n" +
-                "        case 0 -> break i + 1;\n" +
+                "        case 0 -> yield i + 1;\n" +
                 "        case 1 -> {\n" +
-                "            break i + 1;\n" +
+                "            yield i + 1;\n" +
                 "        }\n" +
                 "        default -> throw new RuntimeException();\n" +
                 "        };\n" +
                 "        int k = switch (i) {\n" +
                 "        case 0:\n" +
-                "            break i + 1;\n" +
+                "            yield i + 1;\n" +
                 "        \n" +
                 "        case 1:\n" +
                 "            {\n" +
-                "                break i + 1;\n" +
+                "                yield i + 1;\n" +
                 "            }\n" +
                 "        \n" +
                 "        default:\n" +

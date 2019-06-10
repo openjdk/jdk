@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,10 +21,14 @@
  * questions.
  */
 
-// key: compiler.err.restricted.type.not.allowed.array
+// key: compiler.err.no.switch.expression.qualify
+// options: --enable-preview --source 13
 
-import java.util.function.*;
-
-class BracketsNotAllowedImplicitLambda {
-    BiFunction<String[], String, String> f = (var s1[], var s2) -> s2;
+class BreakComplexValueNoSwitchExpressions {
+    void t() {
+        while (true) {
+            yield(1 + 1);
+        }
+    }
+    private void yield(int i) {}
 }

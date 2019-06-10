@@ -9,7 +9,7 @@ public class ExpressionSwitchFlow {
     private String test1(int i) {
         return switch (i) {
             case 0 -> {}
-            default -> { break "other"; }
+            default -> { yield "other"; }
         };
     }
     private String test2(int i) {
@@ -27,7 +27,7 @@ public class ExpressionSwitchFlow {
     }
     private String test4(int i) {
         return switch (i) {
-            case 0 -> { break "other"; }
+            case 0 -> { yield "other"; }
             default -> {}
         };
     }

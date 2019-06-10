@@ -27,7 +27,7 @@ public class ExpressionSwitchInfer {
 
         String str = switch (param) {
             case "" -> {
-                break 0;
+                yield 0;
             } default ->"default";
         };
 

@@ -12,7 +12,7 @@ public class ExpressionSwitchBreaks2 {
             case 0:
                 return switch (j) {
                     case 0:
-                        break "0-0";
+                        yield "0-0";
                     case 1:
                         break ; //error: missing value
                     case 2:
@@ -20,9 +20,9 @@ public class ExpressionSwitchBreaks2 {
                     case 3: {
                         int x = -1;
                         x: switch (i + j) {
-                            case 0: break x; //error: cannot disambiguate, wrong type as well
+                            case 0: break x;
                         }
-                        break "X";
+                        yield "X";
                     }
                     case 4: return "X"; //error: no returns from inside of the switch expression
                     case 5: continue;   //error: no continue out of the switch expression
@@ -31,17 +31,17 @@ public class ExpressionSwitchBreaks2 {
                     default: {
                         String x = "X";
                         x: switch (i + j) {
-                            case 0: break ""; //error: cannot break from switch expression that is not immediatelly enclosing
+                            case 0: yield ""; //error: cannot yield from switch expression that is not immediatelly enclosing
                         }
-                        break "X";
+                        yield "X";
                     }
                 };
             case 1:
-                break "1" + undef; //error: complex value and no switch expression
+                yield "1" + undef; //error: complex value and no switch expression
         }
         }
         j: print(switch (i) {
-            default: break j; //error: "j" is ambiguous (expression/label)
+            default: break j;
         }, 0);
         j2: print(switch (i) {
             default: break j2;

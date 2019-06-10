@@ -21,7 +21,7 @@
  * questions.
  */
 
-// key: compiler.err.illegal.ref.to.var.type
+// key: compiler.err.illegal.ref.to.restricted.type
 
 import java.util.List;
 

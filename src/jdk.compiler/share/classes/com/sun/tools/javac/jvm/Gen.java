@@ -1717,46 +1717,48 @@ public class Gen extends JCTree.Visitor {
 
     public void visitBreak(JCBreak tree) {
         Assert.check(code.isStatementStart());
+        final Env<GenContext> targetEnv = unwindBreak(tree.target);
+        targetEnv.info.addExit(code.branch(goto_));
+        endFinalizerGaps(env, targetEnv);
+    }
+
+    public void visitYield(JCYield tree) {
+        Assert.check(code.isStatementStart());
         final Env<GenContext> targetEnv;
-        if (tree.isValueBreak()) {
-            //restore stack as it was before the switch expression:
-            for (LocalItem li : stackBeforeSwitchExpression) {
-                li.load();
-            }
-            if (inCondSwitchExpression) {
-                CondItem value = genCond(tree.value, CRT_FLOW_TARGET);
-                Chain falseJumps = value.jumpFalse();
-                targetEnv = unwindBreak(tree);
-                code.resolve(value.trueJumps);
-                Chain trueJumps = code.branch(goto_);
-                if (switchExpressionTrueChain == null) {
-                    switchExpressionTrueChain = trueJumps;
-                } else {
-                    switchExpressionTrueChain =
-                            Code.mergeChains(switchExpressionTrueChain, trueJumps);
-                }
-                if (switchExpressionFalseChain == null) {
-                    switchExpressionFalseChain = falseJumps;
-                } else {
-                    switchExpressionFalseChain =
-                            Code.mergeChains(switchExpressionFalseChain, falseJumps);
-                }
+        //restore stack as it was before the switch expression:
+        for (LocalItem li : stackBeforeSwitchExpression) {
+            li.load();
+        }
+        if (inCondSwitchExpression) {
+            CondItem value = genCond(tree.value, CRT_FLOW_TARGET);
+            Chain falseJumps = value.jumpFalse();
+            targetEnv = unwindBreak(tree.target);
+            code.resolve(value.trueJumps);
+            Chain trueJumps = code.branch(goto_);
+            if (switchExpressionTrueChain == null) {
+                switchExpressionTrueChain = trueJumps;
             } else {
-                genExpr(tree.value, pt).load();
-                code.state.forceStackTop(tree.target.type);
-                targetEnv = unwindBreak(tree);
-                targetEnv.info.addExit(code.branch(goto_));
+                switchExpressionTrueChain =
+                        Code.mergeChains(switchExpressionTrueChain, trueJumps);
+            }
+            if (switchExpressionFalseChain == null) {
+                switchExpressionFalseChain = falseJumps;
+            } else {
+                switchExpressionFalseChain =
+                        Code.mergeChains(switchExpressionFalseChain, falseJumps);
             }
         } else {
-            targetEnv = unwindBreak(tree);
+            genExpr(tree.value, pt).load();
+            code.state.forceStackTop(tree.target.type);
+            targetEnv = unwindBreak(tree.target);
             targetEnv.info.addExit(code.branch(goto_));
         }
         endFinalizerGaps(env, targetEnv);
     }
     //where:
-        private Env<GenContext> unwindBreak(JCBreak tree) {
+        private Env<GenContext> unwindBreak(JCTree target) {
             int tmpPos = code.pendingStatPos;
-            Env<GenContext> targetEnv = unwind(tree.target, env);
+            Env<GenContext> targetEnv = unwind(target, env);
             code.pendingStatPos = tmpPos;
             return targetEnv;
         }

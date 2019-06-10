@@ -54,7 +54,7 @@ public class BreakTest {
             "    int t2(Integer i) {" +
             "        return switch (i) {" +
             "            case null: break LABEL;" +
-            "            default: break 2;" +
+            "            default: yield 2;" +
             "        }" +
             "    }" +
             "}";
@@ -79,7 +79,7 @@ public class BreakTest {
             }
         }.scan(ct.parse(), null);
 
-        List<String> expected = Arrays.asList("LABEL", null, "LABEL", null);
+        List<String> expected = Arrays.asList("LABEL", null, "LABEL");
 
         if (!expected.equals(labels)) {
             throw new AssertionError("Unexpected labels found: " + labels);

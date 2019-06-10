@@ -21,7 +21,7 @@
  * questions.
  */
 
-// key: compiler.err.var.not.allowed.here
+// key: compiler.err.restricted.type.not.allowed.here
 
 class VarNotAllowedField {
     var s = "";

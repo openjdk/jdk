@@ -34,47 +34,49 @@ public class ExpressionSwitchBugs {
         new ExpressionSwitchBugs().testNested();
         new ExpressionSwitchBugs().testAnonymousClasses();
         new ExpressionSwitchBugs().testFields();
+        check(3, new C(-1, 3).test(false));
+        check(3, new C(3, -1).test(true));
     }
 
     private void testNested() {
         int i = 0;
         check(42, id(switch (42) {
-            default: i++; break 42;
+            default: i++; yield 42;
         }));
         i = 0;
         check(43, id(switch (42) {
             case 42: while (i == 0) {
                 i++;
             }
-            break 42 + i;
-            default: i++; break 42;
+            yield 42 + i;
+            default: i++; yield 42;
         }));
         i = 0;
         check(42, id(switch (42) {
             case 42: if (i == 0) {
-                break 42;
+                yield 42;
             }
-            default: i++; break 43;
+            default: i++; yield 43;
         }));
         i = 0;
         check(42, id(switch (42) {
             case 42: if (i == 0) {
-                break 41 + switch (0) {
+                yield 41 + switch (0) {
                     case 0 -> 1;
                     default -> -1;
                 };
             }
-            default: i++; break 43;
+            default: i++; yield 43;
         }));
     }
 
     private void testAnonymousClasses() {
         for (int i : new int[] {1, 2}) {
             check(3, id((switch (i) {
-                case 1: break new I() {
+                case 1: yield new I() {
                     public int g() { return 3; }
                 };
-                default: break (I) () -> { return 3; };
+                default: yield (I) () -> { return 3; };
             }).g()));
             check(3, id((switch (i) {
                 case 1 -> new I() {
@@ -96,7 +98,7 @@ public class ExpressionSwitchBugs {
         case 2 -> {
             int temp = 0;
             temp += 3;
-            break temp;
+            yield temp;
         }
         default -> throw new IllegalStateException();
     });
@@ -107,7 +109,7 @@ public class ExpressionSwitchBugs {
         case 2 -> {
             int temp = 0;
             temp += 3;
-            break temp;
+            yield temp;
         }
         default -> throw new IllegalStateException();
     });
@@ -120,7 +122,7 @@ public class ExpressionSwitchBugs {
         return -1;
     }
 
-    private void check(int actual, int expected) {
+    private static void check(int actual, int expected) {
         if (actual != expected) {
             throw new AssertionError("Unexpected result: " + actual);
         }
@@ -128,5 +130,33 @@ public class ExpressionSwitchBugs {
 
     public interface I {
         public int g();
+    }
+
+    static class Super {
+        public final int i;
+
+        public Super(int i) {
+            this.i = i;
+        }
+
+    }
+    static class C extends Super {
+        public final int i;
+
+        public C(int superI, int i) {
+            super(superI);
+            this.i = i;
+        }
+
+        public int test(boolean fromSuper) {
+            return switch (fromSuper ? 0 : 1) {
+                case 0 -> {
+                    yield super.i;
+                }
+                default -> {
+                    yield this.i;
+                }
+            };
+        }
     }
 }

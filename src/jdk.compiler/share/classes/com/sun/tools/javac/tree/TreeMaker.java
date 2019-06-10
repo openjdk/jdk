@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -333,8 +333,14 @@ public class TreeMaker implements JCTree.Factory {
         return tree;
     }
 
-    public JCBreak Break(JCExpression label) {
+    public JCBreak Break(Name label) {
         JCBreak tree = new JCBreak(label, null);
+        tree.pos = pos;
+        return tree;
+    }
+
+    public JCYield Yield(JCExpression value) {
+        JCYield tree = new JCYield(value, null);
         tree.pos = pos;
         return tree;
     }
