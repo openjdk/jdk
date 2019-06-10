@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,6 +23,7 @@
 
 package nsk.jdi.BScenarios.multithrd;
 
+import jdk.test.lib.Utils;
 import nsk.share.*;
 import nsk.share.jpda.*;
 import nsk.share.jdi.*;
@@ -95,7 +96,7 @@ public class tc02x004 {
         ArgumentHandler argHandler = new ArgumentHandler(argv);
         log = new Log(out, argHandler);
 
-        waitTime = argHandler.getWaitTime() * 60000;
+        waitTime = Utils.adjustTimeout(argHandler.getWaitTime() * 60000);
 
         Binder binder = new Binder(argHandler, log);
         debugee = binder.bindToDebugee(debugeeName);
@@ -114,6 +115,7 @@ public class tc02x004 {
         }
         display("Test finished. exitStatus = " + exitStatus);
 
+        debugee.endDebugee();
         return exitStatus;
     }
 
