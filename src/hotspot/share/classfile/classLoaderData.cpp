@@ -266,6 +266,19 @@ bool ClassLoaderData::ChunkedHandleList::owner_of(oop* oop_handle) {
 }
 #endif // PRODUCT
 
+void ClassLoaderData::clear_claim(int claim) {
+  for (;;) {
+    int old_claim = Atomic::load(&_claim);
+    if ((old_claim & claim) == 0) {
+      return;
+    }
+    int new_claim = old_claim & ~claim;
+    if (Atomic::cmpxchg(new_claim, &_claim, old_claim) == old_claim) {
+      return;
+    }
+  }
+}
+
 bool ClassLoaderData::try_claim(int claim) {
   for (;;) {
     int old_claim = Atomic::load(&_claim);
