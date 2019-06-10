@@ -317,8 +317,9 @@ public abstract class FontMetrics implements java.io.Serializable {
      * of its characters.
      *
      * <p><b>Note:</b> This method cannot handle <a
-     * href="../lang/Character.html#supplementary"> supplementary
-     * characters</a>. To support all Unicode characters, including
+     * href="../../../java.base/java/lang/Character.html#supplementary">
+     * supplementary characters</a>.
+     * To support all Unicode characters, including
      * supplementary characters, use the {@link #charWidth(int)} method.
      *
      * @param ch the character to be measured
