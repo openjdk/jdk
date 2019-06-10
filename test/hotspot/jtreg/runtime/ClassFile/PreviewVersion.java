@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -73,7 +73,7 @@ public class PreviewVersion {
 
         // Subtract 1 from class's major version.  The class should fail to load
         // because its major_version does not match the JVM current version.
-        int prev_major_version = Runtime.version().feature() - 1;
+        int prev_major_version = (klassbuf[6] << 8 | klassbuf[7]) - 1;
         klassbuf[6] = (byte)((prev_major_version >> 8) & 0xff);
         klassbuf[7] = (byte)(prev_major_version & 0xff);
         try {
@@ -81,8 +81,8 @@ public class PreviewVersion {
             throw new RuntimeException("UnsupportedClassVersionError exception not thrown");
         } catch (java.lang.UnsupportedClassVersionError e) {
             if (!e.getMessage().contains("compiled with preview features that are unsupported")) {
-                throw new RuntimeException(
-                    "Wrong UnsupportedClassVersionError exception: " + e.getMessage());
+              throw new RuntimeException(
+                  "Wrong UnsupportedClassVersionError exception: " + e.getMessage());
             }
         }
 
@@ -97,10 +97,10 @@ public class PreviewVersion {
                 "Unexpected UnsupportedClassVersionError exception thrown: " + e.getMessage());
         }
 
-        // Check that a class with a recent older major version and a non-zero
-        // minor version fails to load.
+        // Check that a class with a recent older major version > JDK-11 and a minor version
+        // that is neither 0 nor 65535 fails to load.
         klassbuf[6] = 0;
-        klassbuf[7] = 53;
+        klassbuf[7] = 56;
         klassbuf[4] = 0;
         klassbuf[5] = 2;
         try {
