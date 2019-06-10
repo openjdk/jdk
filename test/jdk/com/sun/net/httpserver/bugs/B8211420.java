@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,7 +24,9 @@
 /**
  * @test
  * @bug 8211420
+ * @library /test/lib
  * @run main/othervm B8211420
+ * @run main/othervm -Djava.net.preferIPv6Addresses=true B8211420
  * @summary
  */
 
@@ -36,45 +38,53 @@ import java.util.logging.*;
 import java.io.*;
 import java.net.*;
 
+import jdk.test.lib.net.URIBuilder;
+
 public class B8211420 {
 
-    public static void main (String[] args) throws Exception {
-        Logger logger = Logger.getLogger ("com.sun.net.httpserver");
+    public static void main(String[] args) throws Exception {
+        Logger logger = Logger.getLogger("com.sun.net.httpserver");
         ConsoleHandler c = new ConsoleHandler();
-        c.setLevel (Level.WARNING);
-        logger.addHandler (c);
-        logger.setLevel (Level.WARNING);
+        c.setLevel(Level.WARNING);
+        logger.addHandler(c);
+        logger.setLevel(Level.WARNING);
         Handler handler = new Handler();
-        InetSocketAddress addr = new InetSocketAddress (0);
-        HttpServer server = HttpServer.create (addr, 0);
-        HttpContext ctx = server.createContext ("/test", handler);
+        InetAddress loopback = InetAddress.getLoopbackAddress();
+        InetSocketAddress addr = new InetSocketAddress(loopback, 0);
+        HttpServer server = HttpServer.create(addr, 0);
+        HttpContext ctx = server.createContext("/test", handler);
         ExecutorService executor = Executors.newCachedThreadPool();
-        server.setExecutor (executor);
-        server.start ();
+        server.setExecutor(executor);
+        server.start();
 
-        URL url = new URL ("http://localhost:"+server.getAddress().getPort()+"/test/foo.html");
-        HttpURLConnection urlc = (HttpURLConnection)url.openConnection ();
+        URL url = URIBuilder.newBuilder()
+                            .scheme("http")
+                            .host(server.getAddress().getAddress())
+                            .port(server.getAddress().getPort())
+                            .path("/test/foo.html")
+                            .toURL();
+        HttpURLConnection urlc = (HttpURLConnection)url.openConnection(Proxy.NO_PROXY);
         try {
             InputStream is = urlc.getInputStream();
             while (is.read()!= -1) ;
             is.close ();
             String prop = urlc.getHeaderField("Content-length");
-                System.out.println ("Content-length = " + prop + " should be null");
+                System.out.println("Content-length = " + prop + " should be null");
             if (prop != null)
                 throw new RuntimeException("Content-length was present");
 
-            urlc = (HttpURLConnection)url.openConnection();
+            urlc = (HttpURLConnection)url.openConnection(Proxy.NO_PROXY);
             is = urlc.getInputStream();
             while (is.read()!= -1) ;
-            is.close ();
+            is.close();
             if (urlc.getResponseCode() != 304) // expected for 2nd test
                 throw new RuntimeException("wrong response code");
             String clen = urlc.getHeaderField("Content-length");
-            System.out.println ("Content-length = " + clen + " should be 99");
-            System.out.println ("len = " + clen.length());
+            System.out.println("Content-length = " + clen + " should be 99");
+            System.out.println("len = " + clen.length());
             if (clen == null || !clen.equals("99"))
                 throw new RuntimeException("Content-length not present or has wrong value");
-            System.out.println ("OK");
+            System.out.println("OK");
         } finally {
             server.stop(2);
             executor.shutdown();
@@ -91,7 +101,7 @@ public class B8211420 {
             InputStream is = t.getRequestBody();
             Headers map = t.getRequestHeaders();
             Headers rmap = t.getResponseHeaders();
-            while (is.read () != -1) ;
+            while (is.read() != -1) ;
             is.close();
             if (invocation++ == 1) {
                 // send a 204 response with no body

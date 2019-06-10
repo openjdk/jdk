@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,6 +26,13 @@
  * @bug 4432213
  * @modules java.base/sun.net.www
  * @run main/othervm -Dhttp.auth.digest.validateServer=true DigestTest
+ * @run main/othervm -Djava.net.preferIPv6Addresses=true
+ *                   -Dhttp.auth.digest.validateServer=true DigestTest
+ * @run main/othervm -Dhttp.auth.digest.validateServer=true
+                     -Dtest.succeed=true DigestTest
+ * @run main/othervm -Djava.net.preferIPv6Addresses=true
+ *                   -Dhttp.auth.digest.validateServer=true
+                     -Dtest.succeed=true DigestTest
  * @summary  Need to support Digest Authentication for Proxies
  */
 
@@ -57,13 +64,15 @@ class DigestServer extends Thread {
         "Date: Mon, 15 Jan 2001 12:18:21 GMT\r\n" +
         "Server: Apache/1.3.14 (Unix)\r\n" +
         "Content-Type: text/html; charset=iso-8859-1\r\n" +
-        "Transfer-encoding: chunked\r\n\r\n"+
+        "Transfer-encoding: chunked\r\n";
+    String body =
         "B\r\nHelloWorld1\r\n"+
         "B\r\nHelloWorld2\r\n"+
         "B\r\nHelloWorld3\r\n"+
         "B\r\nHelloWorld4\r\n"+
         "B\r\nHelloWorld5\r\n"+
-        "0\r\n"+
+        "0\r\n\r\n";
+    String authInfo =
         "Authentication-Info: ";
 
     DigestServer (ServerSocket y) {
@@ -84,7 +93,7 @@ class DigestServer extends Thread {
                 s1 = s.accept ();
                 is = s1.getInputStream ();
                 os = s1.getOutputStream ();
-                is.read ();
+                //is.read ();
                 // need to get the cnonce out of the response
                 MessageHeader header = new MessageHeader (is);
                 String raw = header.findValue ("Authorization");
@@ -92,7 +101,7 @@ class DigestServer extends Thread {
                 String cnonce = parser.findValue ("cnonce");
                 String cnstring = parser.findValue ("nc");
 
-                String reply = reply2 + getAuthorization (uri, "GET", cnonce, cnstring) +"\r\n";
+                String reply = reply2 + authInfo + getAuthorization (uri, "GET", cnonce, cnstring) +"\r\n" + body;
                 os.write (reply.getBytes());
                 Thread.sleep (2000);
                 s1.close ();
@@ -193,6 +202,9 @@ class DigestServer extends Thread {
 
 public class DigestTest {
 
+    static final boolean SUCCEED =
+        Boolean.parseBoolean(System.getProperty("test.succeed", "false"));
+
     static class MyAuthenticator extends Authenticator {
         public MyAuthenticator () {
             super ();
@@ -200,7 +212,9 @@ public class DigestTest {
 
         public PasswordAuthentication getPasswordAuthentication ()
         {
-            return (new PasswordAuthentication ("user", "Wrongpassword".toCharArray()));
+            char[] passwd = SUCCEED ? DigestServer.passwd.clone()
+                                      : "Wrongpassword".toCharArray();
+            return new PasswordAuthentication("user", passwd);
         }
     }
 
@@ -210,34 +224,47 @@ public class DigestTest {
         DigestServer server;
         ServerSocket sock;
 
+        InetAddress loopback = InetAddress.getLoopbackAddress();
         try {
-            sock = new ServerSocket (0);
-            port = sock.getLocalPort ();
+            sock = new ServerSocket();
+            sock.bind(new InetSocketAddress(loopback, 0));
+            port = sock.getLocalPort();
         }
         catch (Exception e) {
             System.out.println ("Exception: " + e);
-            return;
+            throw e;
         }
 
         server = new DigestServer(sock);
         server.start ();
         boolean passed = false;
+        ProtocolException exception = null;
 
         try  {
             Authenticator.setDefault (new MyAuthenticator ());
-            String s = "http://localhost:" + port + DigestServer.uri;
+            String address = loopback.getHostAddress();
+            if (address.indexOf(':') > -1)  address = "[" + address + "]";
+            String s = "http://" + address + ":" + port + DigestServer.uri;
             URL url = new URL(s);
-            java.net.URLConnection conURL =  url.openConnection();
+            java.net.URLConnection conURL =  url.openConnection(Proxy.NO_PROXY);
 
             InputStream in = conURL.getInputStream();
             while (in.read () != -1) {}
             in.close ();
+            if (SUCCEED) passed = true;
         } catch(ProtocolException e) {
-            passed = true;
+            exception = e;
+            if (!SUCCEED) passed = true;
         }
 
         if (!passed) {
-            throw new RuntimeException ("Expected a ProtocolException from wrong password");
+            if (!SUCCEED) {
+                throw new RuntimeException("Expected a ProtocolException from wrong password");
+            } else {
+                assert exception != null;
+                throw new RuntimeException("Unexpected ProtocolException from correct password: "
+                                            + exception, exception);
+            }
         }
     }
 }

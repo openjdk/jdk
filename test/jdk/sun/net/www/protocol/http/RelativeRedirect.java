@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,6 +28,7 @@
  * @library ../../httptest/
  * @build HttpCallback TestHttpServer ClosedChannelList HttpTransaction
  * @run main RelativeRedirect
+ * @run main/othervm -Djava.net.preferIPv6Addresses=true RelativeRedirect
  * @summary URLConnection cannot handle redirects
  */
 
@@ -58,7 +59,7 @@ public class RelativeRedirect implements HttpCallback {
 
     void secondReply (HttpTransaction req) throws IOException {
         if (req.getRequestURI().toString().equals("/redirect/file.html") &&
-            req.getRequestHeader("Host").equals("localhost:"+server.getLocalPort())) {
+            req.getRequestHeader("Host").equals(authority(server.getLocalPort()))) {
             req.setResponseEntityBody ("Hello .");
             req.sendResponse (200, "Ok");
         } else {
@@ -86,15 +87,25 @@ public class RelativeRedirect implements HttpCallback {
         }
     }
 
+   static String authority(int port) {
+       InetAddress loopback = InetAddress.getLoopbackAddress();
+       String hostaddr = loopback.getHostAddress();
+       if (hostaddr.indexOf(':') > -1) {
+           hostaddr = "[" + hostaddr + "]";
+       }
+       return hostaddr + ":" + port;
+   }
+
     public static void main (String[] args) throws Exception {
+        InetAddress loopback = InetAddress.getLoopbackAddress();
         MyAuthenticator auth = new MyAuthenticator ();
         Authenticator.setDefault (auth);
         try {
-            server = new TestHttpServer (new RelativeRedirect(), 1, 10, 0);
+            server = new TestHttpServer (new RelativeRedirect(), 1, 10, loopback, 0);
             System.out.println ("Server: listening on port: " + server.getLocalPort());
-            URL url = new URL("http://localhost:"+server.getLocalPort());
+            URL url = new URL("http://" + authority(server.getLocalPort()));
             System.out.println ("client opening connection to: " + url);
-            HttpURLConnection urlc = (HttpURLConnection)url.openConnection ();
+            HttpURLConnection urlc = (HttpURLConnection)url.openConnection (Proxy.NO_PROXY);
             InputStream is = urlc.getInputStream ();
             is.close();
         } catch (Exception e) {

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2006, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2006, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,6 +25,8 @@
  * @test
  * @bug 6433018
  * @summary  HTTP server sometimes sends bad request for browsers javascript
+ * @run main B6433018
+ * @run main/othervm -Djava.net.preferIPv6Addresses=true B6433018
  */
 
 import com.sun.net.httpserver.*;
@@ -63,13 +65,14 @@ public class B6433018 {
     public static void main(String[] args) throws Exception {
         CountDownLatch finished = new CountDownLatch(2);
         Handler handler = new Handler(finished);
-        InetSocketAddress addr = new InetSocketAddress(0);
+        InetAddress loopback = InetAddress.getLoopbackAddress();
+        InetSocketAddress addr = new InetSocketAddress(loopback, 0);
         HttpServer server = HttpServer.create(addr, 0);
         HttpContext ctx = server.createContext("/test", handler);
 
         server.start();
         int port = server.getAddress().getPort();
-        try (Socket s = new Socket("localhost", port);
+        try (Socket s = new Socket(loopback, port);
              OutputStream os = s.getOutputStream()) {
             os.write(cmd.getBytes());
             finished.await(30, TimeUnit.SECONDS);

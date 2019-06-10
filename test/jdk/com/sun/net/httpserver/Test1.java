@@ -27,6 +27,7 @@
  * @library /test/lib
  * @build jdk.test.lib.net.SimpleSSLContext
  * @run main/othervm Test1
+ * @run main/othervm -Djava.net.preferIPv6Addresses=true Test1
  * @run main/othervm -Djdk.net.usePlainSocketImpl Test1
  * @run main/othervm -Dsun.net.httpserver.maxReqTime=10 Test1
  * @run main/othervm -Dsun.net.httpserver.nodelay=true Test1
@@ -40,6 +41,7 @@ import java.io.*;
 import java.net.*;
 import javax.net.ssl.*;
 import jdk.test.lib.net.SimpleSSLContext;
+import jdk.test.lib.net.URIBuilder;
 
 /* basic http/s connectivity test
  * Tests:
@@ -64,7 +66,8 @@ public class Test1 extends Test {
         try {
             String root = System.getProperty ("test.src")+ "/docs";
             System.out.print ("Test1: ");
-            InetSocketAddress addr = new InetSocketAddress (0);
+            InetAddress loopback = InetAddress.getLoopbackAddress();
+            InetSocketAddress addr = new InetSocketAddress (loopback, 0);
             s1 = HttpServer.create (addr, 0);
             if (s1 instanceof HttpsServer) {
                 throw new RuntimeException ("should not be httpsserver");
@@ -104,8 +107,13 @@ public class Test1 extends Test {
     }
 
     static void test (boolean fixedLen, String protocol, String root, int port, String f, int size) throws Exception {
-        URL url = new URL (protocol+"://localhost:"+port+"/test1/"+f);
-        HttpURLConnection urlc = (HttpURLConnection) url.openConnection();
+        URL url = URIBuilder.newBuilder()
+                 .scheme(protocol)
+                 .loopback()
+                 .port(port)
+                 .path("/test1/"+f)
+                 .toURL();
+        HttpURLConnection urlc = (HttpURLConnection) url.openConnection(Proxy.NO_PROXY);
         if (urlc instanceof HttpsURLConnection) {
             HttpsURLConnection urlcs = (HttpsURLConnection) urlc;
             urlcs.setHostnameVerifier (new HostnameVerifier () {

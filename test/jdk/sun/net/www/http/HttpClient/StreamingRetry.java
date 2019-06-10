@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2010, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,15 +25,23 @@
  * @test
  * @bug 6672144 8050983
  * @summary Do not retry failed request with a streaming body.
+ * @library /test/lib
+ * @run main StreamingRetry
+ * @run main/othervm -Djava.net.preferIPv6Addresses=true StreamingRetry
  */
 
 import java.net.HttpURLConnection;
+import java.net.InetAddress;
+import java.net.InetSocketAddress;
+import java.net.Proxy;
 import java.net.ServerSocket;
 import java.net.URL;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import static java.lang.System.out;
+
+import jdk.test.lib.net.URIBuilder;
 
 public class StreamingRetry implements Runnable {
     static final int ACCEPT_TIMEOUT = 20 * 1000; // 20 seconds
@@ -55,7 +63,8 @@ public class StreamingRetry implements Runnable {
     }
 
     void test(String method) throws Exception {
-        ss = new ServerSocket(0);
+        ss = new ServerSocket();
+        ss.bind(new InetSocketAddress(InetAddress.getLoopbackAddress(), 0));
         ss.setSoTimeout(ACCEPT_TIMEOUT);
         int port = ss.getLocalPort();
 
@@ -63,8 +72,13 @@ public class StreamingRetry implements Runnable {
         otherThread.start();
 
         try {
-            URL url = new URL("http://localhost:" + port + "/");
-            HttpURLConnection uc = (HttpURLConnection) url.openConnection();
+            URL url = URIBuilder.newBuilder()
+                      .scheme("http")
+                      .host(ss.getInetAddress())
+                      .port(port)
+                      .path("/")
+                      .toURL();
+            HttpURLConnection uc = (HttpURLConnection) url.openConnection(Proxy.NO_PROXY);
             uc.setDoOutput(true);
             if (method != null)
                 uc.setRequestMethod(method);
