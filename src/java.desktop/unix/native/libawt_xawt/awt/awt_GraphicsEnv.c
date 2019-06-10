@@ -119,9 +119,8 @@ typedef struct {
 } XineramaScreenInfo;
 
 typedef XineramaScreenInfo* XineramaQueryScreensFunc(Display*, int*);
-
+static XineramaQueryScreensFunc* XineramaQueryScreens = NULL;
 Bool usingXinerama = False;
-XRectangle fbrects[MAXFRAMEBUFFERS];
 
 JNIEXPORT void JNICALL
 Java_sun_awt_X11GraphicsConfig_initIDs (JNIEnv *env, jclass cls)
@@ -586,7 +585,6 @@ static void xineramaInit(void) {
     int32_t locNumScr = 0;
     XineramaScreenInfo *xinInfo;
     char* XineramaQueryScreensName = "XineramaQueryScreens";
-    XineramaQueryScreensFunc* XineramaQueryScreens = NULL;
 
     gotXinExt = XQueryExtension(awt_display, XinExtName, &major_opcode,
                                 &first_event, &first_error);
@@ -612,36 +610,27 @@ static void xineramaInit(void) {
         XineramaQueryScreens = (XineramaQueryScreensFunc*)
             dlsym(libHandle, XineramaQueryScreensName);
 
-        if (XineramaQueryScreens != NULL) {
+        if (XineramaQueryScreens == NULL) {
+            DTRACE_PRINTLN("couldn't load XineramaQueryScreens symbol");
+            dlclose(libHandle);
+        } else {
             DTRACE_PRINTLN("calling XineramaQueryScreens func");
             xinInfo = (*XineramaQueryScreens)(awt_display, &locNumScr);
-            if (xinInfo != NULL && locNumScr > XScreenCount(awt_display)) {
-                int32_t idx;
-                DTRACE_PRINTLN("Enabling Xinerama support");
-                usingXinerama = True;
-                /* set global number of screens */
-                DTRACE_PRINTLN1(" num screens = %i\n", locNumScr);
-                awt_numScreens = locNumScr;
-
-                /* stuff values into fbrects */
-                for (idx = 0; idx < awt_numScreens; idx++) {
-                    DASSERT(xinInfo[idx].screen_number == idx);
-
-                    fbrects[idx].width = xinInfo[idx].width;
-                    fbrects[idx].height = xinInfo[idx].height;
-                    fbrects[idx].x = xinInfo[idx].x_org;
-                    fbrects[idx].y = xinInfo[idx].y_org;
+            if (xinInfo != NULL) {
+                if (locNumScr > XScreenCount(awt_display)) {
+                    DTRACE_PRINTLN("Enabling Xinerama support");
+                    usingXinerama = True;
+                    /* set global number of screens */
+                    DTRACE_PRINTLN1(" num screens = %i\n", locNumScr);
+                    awt_numScreens = locNumScr;
+                } else {
+                    DTRACE_PRINTLN("XineramaQueryScreens <= XScreenCount");
                 }
+                XFree(xinInfo);
             } else {
-                DTRACE_PRINTLN((xinInfo == NULL) ?
-                               "calling XineramaQueryScreens didn't work" :
-                               "XineramaQueryScreens <= XScreenCount"
-                               );
+                DTRACE_PRINTLN("calling XineramaQueryScreens didn't work");
             }
-        } else {
-            DTRACE_PRINTLN("couldn't load XineramaQueryScreens symbol");
         }
-        dlclose(libHandle);
     } else {
         DTRACE_PRINTLN1("\ncouldn't open shared library: %s\n", dlerror());
     }
@@ -1303,6 +1292,8 @@ Java_sun_awt_X11GraphicsConfig_pGetBounds(JNIEnv *env, jobject this, jint screen
     jmethodID mid;
     jobject bounds = NULL;
     AwtGraphicsConfigDataPtr adata;
+    int32_t locNumScr = 0;
+    XineramaScreenInfo *xinInfo;
 
     adata = (AwtGraphicsConfigDataPtr)
         JNU_GetLongFieldAsPtr(env, this, x11GraphicsConfigIDs.aData);
@@ -1313,17 +1304,30 @@ Java_sun_awt_X11GraphicsConfig_pGetBounds(JNIEnv *env, jobject this, jint screen
     if (mid != NULL) {
         if (usingXinerama) {
             if (0 <= screen && screen < awt_numScreens) {
-                bounds = (*env)->NewObject(env, clazz, mid, fbrects[screen].x,
-                                                            fbrects[screen].y,
-                                                            fbrects[screen].width,
-                                                            fbrects[screen].height);
+                AWT_LOCK();
+                xinInfo = (*XineramaQueryScreens)(awt_display, &locNumScr);
+                AWT_UNLOCK();
+                if (xinInfo != NULL && locNumScr > 0) {
+                    if (screen >= locNumScr) {
+                        screen = 0; // fallback to the main screen
+                    }
+                    DASSERT(xinInfo[screen].screen_number == screen);
+                    bounds = (*env)->NewObject(env, clazz, mid,
+                                               xinInfo[screen].x_org,
+                                               xinInfo[screen].y_org,
+                                               xinInfo[screen].width,
+                                               xinInfo[screen].height);
+                    XFree(xinInfo);
+                }
             } else {
                 jclass exceptionClass = (*env)->FindClass(env, "java/lang/IllegalArgumentException");
                 if (exceptionClass != NULL) {
                     (*env)->ThrowNew(env, exceptionClass, "Illegal screen index");
                 }
             }
-        } else {
+        }
+        if (!bounds) {
+            // Xinerama cannot provide correct bounds, will try X11
             XWindowAttributes xwa;
             memset(&xwa, 0, sizeof(xwa));
 
