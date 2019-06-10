@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1995, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1995, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -118,8 +118,6 @@ struct FontData {
     XFontSet xfs;       /* for TextField & TextArea */
     XFontStruct *xfont; /* Latin1 font */
 };
-
-extern struct FontData *awtJNI_GetFontData(JNIEnv *env,jobject font, char **errmsg);
 
 extern AwtGraphicsConfigDataPtr getDefaultConfig(int screen);
 extern AwtScreenDataPtr getScreenData(int screen);
