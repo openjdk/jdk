@@ -267,7 +267,7 @@ void SymbolTable::symbols_do(SymbolClosure *cl) {
   // all symbols from the dynamic table
   SymbolsDo sd(cl);
   if (!_local_table->try_scan(Thread::current(), sd)) {
-    log_info(stringtable)("symbols_do unavailable at this moment");
+    log_info(symboltable)("symbols_do unavailable at this moment");
   }
 }
 
@@ -557,7 +557,7 @@ void SymbolTable::verify() {
   Thread* thr = Thread::current();
   VerifySymbols vs;
   if (!_local_table->try_scan(thr, vs)) {
-    log_info(stringtable)("verify unavailable at this moment");
+    log_info(symboltable)("verify unavailable at this moment");
   }
 }
 
@@ -763,8 +763,9 @@ bool SymbolTable::do_rehash() {
     return false;
   }
 
-  // We use max size
-  SymbolTableHash* new_table = new SymbolTableHash(END_SIZE, END_SIZE, REHASH_LEN);
+  // We use current size
+  size_t new_size = _local_table->get_size_log2(Thread::current());
+  SymbolTableHash* new_table = new SymbolTableHash(new_size, END_SIZE, REHASH_LEN);
   // Use alt hash from now on
   _alt_hash = true;
   if (!_local_table->try_move_nodes_to(Thread::current(), new_table)) {
