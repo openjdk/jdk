@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,23 +25,38 @@
 
 package sun.awt.shell;
 
-import java.awt.*;
+import java.awt.Image;
+import java.awt.Toolkit;
 import java.awt.image.BufferedImage;
-import java.awt.image.BaseMultiResolutionImage;
-
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.security.AccessController;
 import java.security.PrivilegedAction;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
-import java.util.concurrent.*;
+import java.util.concurrent.Callable;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.Future;
+import java.util.concurrent.LinkedBlockingQueue;
+import java.util.concurrent.RejectedExecutionException;
+import java.util.concurrent.ThreadFactory;
+import java.util.concurrent.ThreadPoolExecutor;
+import java.util.concurrent.TimeUnit;
 import java.util.stream.Stream;
 
-import static sun.awt.shell.Win32ShellFolder2.*;
 import sun.awt.OSInfo;
 import sun.awt.util.ThreadGroupUtils;
+import sun.util.logging.PlatformLogger;
+
+import static sun.awt.shell.Win32ShellFolder2.DESKTOP;
+import static sun.awt.shell.Win32ShellFolder2.DRIVES;
+import static sun.awt.shell.Win32ShellFolder2.Invoker;
+import static sun.awt.shell.Win32ShellFolder2.MultiResolutionIconImage;
+import static sun.awt.shell.Win32ShellFolder2.NETWORK;
+import static sun.awt.shell.Win32ShellFolder2.PERSONAL;
+import static sun.awt.shell.Win32ShellFolder2.RECENT;
 // NOTE: This class supersedes Win32ShellFolderManager, which was removed
 //       from distribution after version 1.4.2.
 
@@ -53,6 +68,9 @@ import sun.awt.util.ThreadGroupUtils;
  */
 
 final class Win32ShellFolderManager2 extends ShellFolderManager {
+
+    private static final PlatformLogger
+            log = PlatformLogger.getLogger("sun.awt.shell.Win32ShellFolderManager2");
 
     static {
         // Load library here
@@ -145,12 +163,13 @@ final class Win32ShellFolderManager2 extends ShellFolderManager {
         if (desktop == null) {
             try {
                 desktop = new Win32ShellFolder2(DESKTOP);
-            } catch (SecurityException e) {
-                // Ignore error
-            } catch (IOException e) {
-                // Ignore error
-            } catch (InterruptedException e) {
-                // Ignore error
+            } catch (final SecurityException ignored) {
+                // Ignore, the message may have sensitive information, not
+                // accessible other ways
+            } catch (IOException | InterruptedException e) {
+                if (log.isLoggable(PlatformLogger.Level.WARNING)) {
+                    log.warning("Cannot access 'Desktop'", e);
+                }
             }
         }
         return desktop;
@@ -160,12 +179,13 @@ final class Win32ShellFolderManager2 extends ShellFolderManager {
         if (drives == null) {
             try {
                 drives = new Win32ShellFolder2(DRIVES);
-            } catch (SecurityException e) {
-                // Ignore error
-            } catch (IOException e) {
-                // Ignore error
-            } catch (InterruptedException e) {
-                // Ignore error
+            } catch (final SecurityException ignored) {
+                // Ignore, the message may have sensitive information, not
+                // accessible other ways
+            } catch (IOException | InterruptedException e) {
+                if (log.isLoggable(PlatformLogger.Level.WARNING)) {
+                    log.warning("Cannot access 'Drives'", e);
+                }
             }
         }
         return drives;
@@ -178,12 +198,13 @@ final class Win32ShellFolderManager2 extends ShellFolderManager {
                 if (path != null) {
                     recent = createShellFolder(getDesktop(), new File(path));
                 }
-            } catch (SecurityException e) {
-                // Ignore error
-            } catch (InterruptedException e) {
-                // Ignore error
-            } catch (IOException e) {
-                // Ignore error
+            } catch (final SecurityException ignored) {
+                // Ignore, the message may have sensitive information, not
+                // accessible other ways
+            } catch (InterruptedException | IOException e) {
+                if (log.isLoggable(PlatformLogger.Level.WARNING)) {
+                    log.warning("Cannot access 'Recent'", e);
+                }
             }
         }
         return recent;
@@ -193,12 +214,13 @@ final class Win32ShellFolderManager2 extends ShellFolderManager {
         if (network == null) {
             try {
                 network = new Win32ShellFolder2(NETWORK);
-            } catch (SecurityException e) {
-                // Ignore error
-            } catch (IOException e) {
-                // Ignore error
-            } catch (InterruptedException e) {
-                // Ignore error
+            } catch (final SecurityException ignored) {
+                // Ignore, the message may have sensitive information, not
+                // accessible other ways
+            } catch (IOException | InterruptedException e) {
+                if (log.isLoggable(PlatformLogger.Level.WARNING)) {
+                    log.warning("Cannot access 'Network'", e);
+                }
             }
         }
         return network;
@@ -218,12 +240,13 @@ final class Win32ShellFolderManager2 extends ShellFolderManager {
                         personal.setIsPersonal();
                     }
                 }
-            } catch (SecurityException e) {
-                // Ignore error
-            } catch (InterruptedException e) {
-                // Ignore error
-            } catch (IOException e) {
-                // Ignore error
+            } catch (final SecurityException ignored) {
+                // Ignore, the message may have sensitive information, not
+                // accessible other ways
+            } catch (InterruptedException | IOException e) {
+                if (log.isLoggable(PlatformLogger.Level.WARNING)) {
+                    log.warning("Cannot access 'Personal'", e);
+                }
             }
         }
         return personal;
@@ -324,8 +347,14 @@ final class Win32ShellFolderManager2 extends ShellFolderManager {
                         folders.add(createShellFolder(new File((String)value)));
                     }
                 } catch (IOException e) {
+                    if (log.isLoggable(PlatformLogger.Level.WARNING)) {
+                        log.warning("Cannot read value = " + value, e);
+                    }
                     // Skip this value
                 } catch (InterruptedException e) {
+                    if (log.isLoggable(PlatformLogger.Level.WARNING)) {
+                        log.warning("Cannot read value = " + value, e);
+                    }
                     // Return empty result
                     return new File[0];
                 }
