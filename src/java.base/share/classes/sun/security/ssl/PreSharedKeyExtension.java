@@ -32,7 +32,6 @@ import java.util.List;
 import java.util.ArrayList;
 import java.util.Locale;
 import java.util.Arrays;
-import java.util.Objects;
 import java.util.Collection;
 import javax.crypto.Mac;
 import javax.crypto.SecretKey;
@@ -42,6 +41,9 @@ import sun.security.ssl.ClientHello.ClientHelloMessage;
 import sun.security.ssl.SSLExtension.ExtensionConsumer;
 import sun.security.ssl.SSLExtension.SSLExtensionSpec;
 import sun.security.ssl.SSLHandshake.HandshakeMessage;
+import sun.security.ssl.SessionTicketExtension.SessionTicketSpec;
+import sun.security.util.HexDumpEncoder;
+
 import static sun.security.ssl.SSLExtension.*;
 
 /**
@@ -88,7 +90,7 @@ final class PreSharedKeyExtension {
 
         @Override
         public String toString() {
-            return "{" + Utilities.toHexString(identity) + "," +
+            return "{" + Utilities.toHexString(identity) + ", " +
                 obfuscatedAge + "}";
         }
     }
@@ -208,8 +210,10 @@ final class PreSharedKeyExtension {
         public String toString() {
             MessageFormat messageFormat = new MessageFormat(
                 "\"PreSharedKey\": '{'\n" +
-                "  \"identities\"    : \"{0}\",\n" +
-                "  \"binders\"       : \"{1}\",\n" +
+                "  \"identities\": '{'\n" +
+                "{0}\n" +
+                "  '}'" +
+                "  \"binders\": \"{1}\",\n" +
                 "'}'",
                 Locale.ENGLISH);
 
@@ -222,9 +226,13 @@ final class PreSharedKeyExtension {
         }
 
         String identitiesString() {
+            HexDumpEncoder hexEncoder = new HexDumpEncoder();
+
             StringBuilder result = new StringBuilder();
             for (PskIdentity curId : identities) {
-                result.append(curId.toString() + "\n");
+                result.append("  {\n"+ Utilities.indent(
+                        hexEncoder.encode(curId.identity), "    ") +
+                        "\n  }\n");
             }
 
             return result.toString();
@@ -278,7 +286,7 @@ final class PreSharedKeyExtension {
             this.selectedIdentity = Record.getInt16(m);
         }
 
-        byte[] getEncoded() throws IOException {
+        byte[] getEncoded() {
             return new byte[] {
                 (byte)((selectedIdentity >> 8) & 0xFF),
                 (byte)(selectedIdentity & 0xFF)
@@ -368,8 +376,36 @@ final class PreSharedKeyExtension {
                 SSLSessionContextImpl sessionCache = (SSLSessionContextImpl)
                         shc.sslContext.engineGetServerSessionContext();
                 int idIndex = 0;
+                SSLSessionImpl s = null;
+
                 for (PskIdentity requestedId : pskSpec.identities) {
-                    SSLSessionImpl s = sessionCache.get(requestedId.identity);
+                    // If we are keeping state, see if the identity is in the cache
+                    if (requestedId.identity.length == SessionId.MAX_LENGTH) {
+                        s = sessionCache.get(requestedId.identity);
+                    }
+                    // See if the identity is a stateless ticket
+                    if (s == null &&
+                            requestedId.identity.length > SessionId.MAX_LENGTH &&
+                            sessionCache.statelessEnabled()) {
+                        ByteBuffer b =
+                                new SessionTicketSpec(requestedId.identity).
+                                        decrypt(shc);
+                        if (b != null) {
+                            try {
+                                s = new SSLSessionImpl(shc, b);
+                            } catch (IOException | RuntimeException e) {
+                                s = null;
+                            }
+                        }
+                        if (b == null || s == null) {
+                            if (SSLLogger.isOn &&
+                                    SSLLogger.isOn("ssl,handshake")) {
+                                SSLLogger.fine(
+                                        "Stateless session ticket invalid");
+                            }
+                        }
+                    }
+
                     if (s != null && canRejoin(clientHello, shc, s)) {
                         if (SSLLogger.isOn && SSLLogger.isOn("ssl,handshake")) {
                             SSLLogger.fine("Resuming session: ", s);
@@ -391,7 +427,6 @@ final class PreSharedKeyExtension {
                     shc.resumingSession = null;
                 }
             }
-
             // update the context
             shc.handshakeExtensions.put(
                 SSLExtension.CH_PRE_SHARED_KEY, pskSpec);
@@ -708,7 +743,8 @@ final class PreSharedKeyExtension {
                 int hashLength, List<PskIdentity> identities) {
             List<byte[]> binders = new ArrayList<>();
             byte[] binderProto = new byte[hashLength];
-            for (PskIdentity curId : identities) {
+            int i = identities.size();
+            while (i-- > 0) {
                 binders.add(binderProto);
             }
 

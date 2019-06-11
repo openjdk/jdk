@@ -309,8 +309,28 @@ enum SSLExtension implements SSLStringizer {
     // extensions defined in RFC 7924
     CACHED_INFO             (0x0019, "cached_info"),
 
-    // extensions defined in RFC 4507/5077
-    SESSION_TICKET          (0x0023, "session_ticket"),
+    // extensions defined in RFC 5077
+    CH_SESSION_TICKET       (0x0023, "session_ticket",
+            SSLHandshake.CLIENT_HELLO,
+            ProtocolVersion.PROTOCOLS_10_12,
+            SessionTicketExtension.chNetworkProducer,
+            SessionTicketExtension.chOnLoadConsumer,
+            null,
+            null,
+            null,
+            SessionTicketExtension.steStringizer),
+            //null),
+
+    SH_SESSION_TICKET       (0x0023, "session_ticket",
+            SSLHandshake.SERVER_HELLO,
+            ProtocolVersion.PROTOCOLS_10_12,
+            SessionTicketExtension.shNetworkProducer,
+            SessionTicketExtension.shOnLoadConsumer,
+            null,
+            null,
+            null,
+            SessionTicketExtension.steStringizer),
+            //null),
 
     // extensions defined in TLS 1.3
     CH_EARLY_DATA           (0x002A, "early_data"),

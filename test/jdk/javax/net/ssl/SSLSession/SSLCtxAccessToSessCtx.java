@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,7 +25,9 @@
  * @test
  * @bug 4473210
  * @summary SSLSessionContext should be accessible from SSLContext
- * @run main/othervm SSLCtxAccessToSessCtx
+ * @run main/othervm -Djdk.tls.server.enableSessionTicketExtension=false
+ *   SSLCtxAccessToSessCtx
+ *
  *
  *     SunJSSE does not support dynamic system properties, no way to re-use
  *     system properties in samevm/agentvm mode.

@@ -35,7 +35,6 @@ import java.util.Collections;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Locale;
-import java.util.Objects;
 import javax.net.ssl.SSLException;
 import javax.net.ssl.SSLHandshakeException;
 import javax.net.ssl.SSLPeerUnverifiedException;
@@ -969,11 +968,24 @@ final class ClientHello {
                 }
             }
 
-            // Is it an abbreviated handshake?
-            if (clientHello.sessionId.length() != 0) {
-                SSLSessionImpl previous = ((SSLSessionContextImpl)shc.sslContext
-                            .engineGetServerSessionContext())
-                            .get(clientHello.sessionId.getId());
+            // Consume a Session Ticket Extension if it exists
+            SSLExtension[] ext = new SSLExtension[]{
+                    SSLExtension.CH_SESSION_TICKET
+            };
+            clientHello.extensions.consumeOnLoad(shc, ext);
+
+            // Does the client want to resume a session?
+            if (clientHello.sessionId.length() != 0 || shc.statelessResumption) {
+                SSLSessionContextImpl cache = (SSLSessionContextImpl)shc.sslContext
+                        .engineGetServerSessionContext();
+
+                SSLSessionImpl previous;
+                // Use the stateless session ticket if provided
+                if (shc.statelessResumption) {
+                    previous = shc.resumingSession;
+                } else {
+                    previous = cache.get(clientHello.sessionId.getId());
+                }
 
                 boolean resumingSession =
                         (previous != null) && previous.isRejoinable();
@@ -1051,14 +1063,20 @@ final class ClientHello {
                 // the resuming options later.
                 shc.isResumption = resumingSession;
                 shc.resumingSession = resumingSession ? previous : null;
+
+                if (!resumingSession && SSLLogger.isOn &&
+                        SSLLogger.isOn("ssl,handshake")) {
+                    SSLLogger.fine("Session not resumed.");
+                }
             }
 
             // cache the client random number for further using
             shc.clientHelloRandom = clientHello.clientRandom;
 
             // Check and launch ClientHello extensions.
-            SSLExtension[] extTypes = shc.sslConfig.getEnabledExtensions(
-                    SSLHandshake.CLIENT_HELLO);
+            SSLExtension[] extTypes = shc.sslConfig.getExclusiveExtensions(
+                    SSLHandshake.CLIENT_HELLO,
+                    Arrays.asList(SSLExtension.CH_SESSION_TICKET));
             clientHello.extensions.consumeOnLoad(shc, extTypes);
 
             //
@@ -1276,11 +1294,25 @@ final class ClientHello {
                 }
             }
 
-            // Is it an abbreviated handshake?
+
+            // Does the client want to resume a session?
             if (clientHello.sessionId.length() != 0) {
-                SSLSessionImpl previous = ((SSLSessionContextImpl)shc.sslContext
-                            .engineGetServerSessionContext())
-                            .get(clientHello.sessionId.getId());
+                SSLSessionContextImpl cache = (SSLSessionContextImpl)shc.sslContext
+                        .engineGetServerSessionContext();
+
+                // Consume a Session Ticket Extension if it exists
+                SSLExtension[] ext = new SSLExtension[]{
+                        SSLExtension.CH_SESSION_TICKET
+                };
+                clientHello.extensions.consumeOnLoad(shc, ext);
+
+                SSLSessionImpl previous;
+                // Use stateless session ticket if provided.
+                if (shc.statelessResumption) {
+                    previous = shc.resumingSession;
+                } else {
+                    previous = cache.get(clientHello.sessionId.getId());
+                }
 
                 boolean resumingSession =
                         (previous != null) && previous.isRejoinable();
