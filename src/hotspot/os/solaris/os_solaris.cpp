@@ -2553,17 +2553,6 @@ char* os::pd_attempt_reserve_memory_at(size_t bytes, char* requested_addr, int f
 // available (and not reserved for something else).
 
 char* os::pd_attempt_reserve_memory_at(size_t bytes, char* requested_addr) {
-  const int max_tries = 10;
-  char* base[max_tries];
-  size_t size[max_tries];
-
-  // Solaris adds a gap between mmap'ed regions.  The size of the gap
-  // is dependent on the requested size and the MMU.  Our initial gap
-  // value here is just a guess and will be corrected later.
-  bool had_top_overlap = false;
-  bool have_adjusted_gap = false;
-  size_t gap = 0x400000;
-
   // Assert only that the size is a multiple of the page size, since
   // that's all that mmap requires, and since that's all we really know
   // about at this low abstraction level.  If we need higher alignment,
@@ -2572,105 +2561,18 @@ char* os::pd_attempt_reserve_memory_at(size_t bytes, char* requested_addr) {
   assert(bytes % os::vm_page_size() == 0, "reserving unexpected size block");
 
   // Since snv_84, Solaris attempts to honor the address hint - see 5003415.
-  // Give it a try, if the kernel honors the hint we can return immediately.
   char* addr = Solaris::anon_mmap(requested_addr, bytes, 0, false);
 
   volatile int err = errno;
   if (addr == requested_addr) {
     return addr;
-  } else if (addr != NULL) {
+  }
+
+  if (addr != NULL) {
     pd_unmap_memory(addr, bytes);
   }
 
-  if (log_is_enabled(Warning, os)) {
-    char buf[256];
-    buf[0] = '\0';
-    if (addr == NULL) {
-      jio_snprintf(buf, sizeof(buf), ": %s", os::strerror(err));
-    }
-    log_info(os)("attempt_reserve_memory_at: couldn't reserve " SIZE_FORMAT " bytes at "
-            PTR_FORMAT ": reserve_memory_helper returned " PTR_FORMAT
-            "%s", bytes, requested_addr, addr, buf);
-  }
-
-  // Address hint method didn't work.  Fall back to the old method.
-  // In theory, once SNV becomes our oldest supported platform, this
-  // code will no longer be needed.
-  //
-  // Repeatedly allocate blocks until the block is allocated at the
-  // right spot. Give up after max_tries.
-  int i;
-  for (i = 0; i < max_tries; ++i) {
-    base[i] = reserve_memory(bytes);
-
-    if (base[i] != NULL) {
-      // Is this the block we wanted?
-      if (base[i] == requested_addr) {
-        size[i] = bytes;
-        break;
-      }
-
-      // check that the gap value is right
-      if (had_top_overlap && !have_adjusted_gap) {
-        size_t actual_gap = base[i-1] - base[i] - bytes;
-        if (gap != actual_gap) {
-          // adjust the gap value and retry the last 2 allocations
-          assert(i > 0, "gap adjustment code problem");
-          have_adjusted_gap = true;  // adjust the gap only once, just in case
-          gap = actual_gap;
-          log_info(os)("attempt_reserve_memory_at: adjusted gap to 0x%lx", gap);
-          unmap_memory(base[i], bytes);
-          unmap_memory(base[i-1], size[i-1]);
-          i-=2;
-          continue;
-        }
-      }
-
-      // Does this overlap the block we wanted? Give back the overlapped
-      // parts and try again.
-      //
-      // There is still a bug in this code: if top_overlap == bytes,
-      // the overlap is offset from requested region by the value of gap.
-      // In this case giving back the overlapped part will not work,
-      // because we'll give back the entire block at base[i] and
-      // therefore the subsequent allocation will not generate a new gap.
-      // This could be fixed with a new algorithm that used larger
-      // or variable size chunks to find the requested region -
-      // but such a change would introduce additional complications.
-      // It's rare enough that the planets align for this bug,
-      // so we'll just wait for a fix for 6204603/5003415 which
-      // will provide a mmap flag to allow us to avoid this business.
-
-      size_t top_overlap = requested_addr + (bytes + gap) - base[i];
-      if (top_overlap >= 0 && top_overlap < bytes) {
-        had_top_overlap = true;
-        unmap_memory(base[i], top_overlap);
-        base[i] += top_overlap;
-        size[i] = bytes - top_overlap;
-      } else {
-        size_t bottom_overlap = base[i] + bytes - requested_addr;
-        if (bottom_overlap >= 0 && bottom_overlap < bytes) {
-          if (bottom_overlap == 0) {
-            log_info(os)("attempt_reserve_memory_at: possible alignment bug");
-          }
-          unmap_memory(requested_addr, bottom_overlap);
-          size[i] = bytes - bottom_overlap;
-        } else {
-          size[i] = bytes;
-        }
-      }
-    }
-  }
-
-  // Give back the unused reserved pieces.
-
-  for (int j = 0; j < i; ++j) {
-    if (base[j] != NULL) {
-      unmap_memory(base[j], size[j]);
-    }
-  }
-
-  return (i < max_tries) ? requested_addr : NULL;
+  return NULL;
 }
 
 bool os::pd_release_memory(char* addr, size_t bytes) {
