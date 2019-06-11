@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -73,7 +73,10 @@ public enum Target {
     JDK1_12("12", 56, 0),
 
     /** JDK 13. */
-    JDK1_13("13", 57, 0);
+    JDK1_13("13", 57, 0),
+
+    /** JDK 14. */
+    JDK1_14("14", 58, 0);
 
     private static final Context.Key<Target> targetKey = new Context.Key<>();
 

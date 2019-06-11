@@ -60,6 +60,7 @@ public enum SourceVersion {
      *  11: local-variable syntax for lambda parameters
      *  12: no changes (switch expressions were in preview)
      *  13: no changes (switch expressions and text blocks in preview)
+     *  14: TBD
      */
 
     /**
@@ -192,7 +193,15 @@ public enum SourceVersion {
      *
      * @since 13
      */
-     RELEASE_13;
+     RELEASE_13,
+
+    /**
+     * The version recognized by the Java Platform, Standard Edition
+     * 14.
+     *
+     * @since 14
+     */
+     RELEASE_14;
 
     // Note that when adding constants for newer releases, the
     // behavior of latest() and latestSupported() must be updated too.
@@ -203,7 +212,7 @@ public enum SourceVersion {
      * @return the latest source version that can be modeled
      */
     public static SourceVersion latest() {
-        return RELEASE_13;
+        return RELEASE_14;
     }
 
     private static final SourceVersion latestSupported = getLatestSupported();
@@ -218,7 +227,7 @@ public enum SourceVersion {
     private static SourceVersion getLatestSupported() {
         int intVersion = Runtime.version().feature();
         return (intVersion >= 11) ?
-            valueOf("RELEASE_" + Math.min(13, intVersion)):
+            valueOf("RELEASE_" + Math.min(14, intVersion)):
             RELEASE_10;
     }
 
