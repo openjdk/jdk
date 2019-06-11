@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -76,9 +76,8 @@ Java_java_util_zip_Deflater_init(JNIEnv *env, jclass cls, jint level,
     }
 }
 
-static void doSetDictionary(JNIEnv *env, jlong addr, jbyte *buf, jint len)
+static void checkSetDictionaryResult(JNIEnv *env, jlong addr, jint res)
 {
-    int res = deflateSetDictionary(jlong_to_ptr(addr), (Bytef *) buf, len);
     switch (res) {
     case Z_OK:
         break;
@@ -95,30 +94,33 @@ JNIEXPORT void JNICALL
 Java_java_util_zip_Deflater_setDictionary(JNIEnv *env, jclass cls, jlong addr,
                                           jbyteArray b, jint off, jint len)
 {
-    jbyte *buf = (*env)->GetPrimitiveArrayCritical(env, b, 0);
+    int res;
+    Bytef *buf = (*env)->GetPrimitiveArrayCritical(env, b, 0);
     if (buf == NULL) /* out of memory */
         return;
-    doSetDictionary(env, addr, buf + off, len);
+    res = deflateSetDictionary(jlong_to_ptr(addr), buf, len);
     (*env)->ReleasePrimitiveArrayCritical(env, b, buf, 0);
+    checkSetDictionaryResult(env, addr, res);
 }
 
 JNIEXPORT void JNICALL
 Java_java_util_zip_Deflater_setDictionaryBuffer(JNIEnv *env, jclass cls, jlong addr,
                                           jlong bufferAddr, jint len)
 {
-    jbyte *buf = jlong_to_ptr(bufferAddr);
-    doSetDictionary(env, addr, buf, len);
+    int res;
+    Bytef *buf = jlong_to_ptr(bufferAddr);
+    res = deflateSetDictionary(jlong_to_ptr(addr), buf, len);
+    checkSetDictionaryResult(env, addr, res);
 }
 
-static jlong doDeflate(JNIEnv *env, jobject this, jlong addr,
+static jint doDeflate(JNIEnv *env, jlong addr,
                        jbyte *input, jint inputLen,
                        jbyte *output, jint outputLen,
                        jint flush, jint params)
 {
     z_stream *strm = jlong_to_ptr(addr);
-    jint inputUsed = 0, outputUsed = 0;
-    int finished = 0;
     int setParams = params & 1;
+    int res;
 
     strm->next_in  = (Bytef *) input;
     strm->next_out = (Bytef *) output;
@@ -128,7 +130,24 @@ static jlong doDeflate(JNIEnv *env, jobject this, jlong addr,
     if (setParams) {
         int strategy = (params >> 1) & 3;
         int level = params >> 3;
-        int res = deflateParams(strm, level, strategy);
+        res = deflateParams(strm, level, strategy);
+    } else {
+        res = deflate(strm, flush);
+    }
+    return res;
+}
+
+static jlong checkDeflateStatus(JNIEnv *env, jlong addr,
+                        jint inputLen,
+                        jint outputLen,
+                        jint params, int res)
+{
+    z_stream *strm = jlong_to_ptr(addr);
+    jint inputUsed = 0, outputUsed = 0;
+    int finished = 0;
+    int setParams = params & 1;
+
+    if (setParams) {
         switch (res) {
         case Z_OK:
             setParams = 0;
@@ -142,7 +161,6 @@ static jlong doDeflate(JNIEnv *env, jobject this, jlong addr,
             return 0;
         }
     } else {
-        int res = deflate(strm, flush);
         switch (res) {
         case Z_STREAM_END:
             finished = 1;
@@ -169,6 +187,8 @@ Java_java_util_zip_Deflater_deflateBytesBytes(JNIEnv *env, jobject this, jlong a
     jbyte *input = (*env)->GetPrimitiveArrayCritical(env, inputArray, 0);
     jbyte *output;
     jlong retVal;
+    jint res;
+
     if (input == NULL) {
         if (inputLen != 0 && (*env)->ExceptionOccurred(env) == NULL)
             JNU_ThrowOutOfMemoryError(env, 0);
@@ -182,14 +202,13 @@ Java_java_util_zip_Deflater_deflateBytesBytes(JNIEnv *env, jobject this, jlong a
         return 0L;
     }
 
-    retVal = doDeflate(env, this, addr,
-            input + inputOff, inputLen,
-            output + outputOff, outputLen,
-            flush, params);
+     res = doDeflate(env, addr, input + inputOff, inputLen,output + outputOff,
+                     outputLen, flush, params);
 
     (*env)->ReleasePrimitiveArrayCritical(env, outputArray, output, 0);
     (*env)->ReleasePrimitiveArrayCritical(env, inputArray, input, 0);
 
+    retVal = checkDeflateStatus(env, addr, inputLen, outputLen, params, res);
     return retVal;
 }
 
@@ -203,6 +222,7 @@ Java_java_util_zip_Deflater_deflateBytesBuffer(JNIEnv *env, jobject this, jlong 
     jbyte *input = (*env)->GetPrimitiveArrayCritical(env, inputArray, 0);
     jbyte *output;
     jlong retVal;
+    jint res;
     if (input == NULL) {
         if (inputLen != 0 && (*env)->ExceptionOccurred(env) == NULL)
             JNU_ThrowOutOfMemoryError(env, 0);
@@ -210,13 +230,12 @@ Java_java_util_zip_Deflater_deflateBytesBuffer(JNIEnv *env, jobject this, jlong 
     }
     output = jlong_to_ptr(outputBuffer);
 
-    retVal = doDeflate(env, this, addr,
-            input + inputOff, inputLen,
-            output, outputLen,
-            flush, params);
+    res = doDeflate(env, addr, input + inputOff, inputLen, output, outputLen,
+                    flush, params);
 
     (*env)->ReleasePrimitiveArrayCritical(env, inputArray, input, 0);
 
+    retVal = checkDeflateStatus(env, addr, inputLen, outputLen, params, res);
     return retVal;
 }
 
@@ -229,19 +248,18 @@ Java_java_util_zip_Deflater_deflateBufferBytes(JNIEnv *env, jobject this, jlong 
     jbyte *input = jlong_to_ptr(inputBuffer);
     jbyte *output = (*env)->GetPrimitiveArrayCritical(env, outputArray, 0);
     jlong retVal;
+    jint res;
     if (output == NULL) {
         if (outputLen != 0 && (*env)->ExceptionOccurred(env) == NULL)
             JNU_ThrowOutOfMemoryError(env, 0);
         return 0L;
     }
 
-    retVal = doDeflate(env, this, addr,
-            input, inputLen,
-            output + outputOff, outputLen,
-            flush, params);
-
+    res = doDeflate(env, addr, input, inputLen, output + outputOff, outputLen,
+                    flush, params);
     (*env)->ReleasePrimitiveArrayCritical(env, outputArray, input, 0);
 
+    retVal = checkDeflateStatus(env, addr, inputLen, outputLen, params, res);
     return retVal;
 }
 
@@ -253,11 +271,12 @@ Java_java_util_zip_Deflater_deflateBufferBuffer(JNIEnv *env, jobject this, jlong
 {
     jbyte *input = jlong_to_ptr(inputBuffer);
     jbyte *output = jlong_to_ptr(outputBuffer);
+    jlong retVal;
+    jint res;
 
-    return doDeflate(env, this, addr,
-            input, inputLen,
-            output, outputLen,
-            flush, params);
+    res = doDeflate(env, addr, input, inputLen, output, outputLen, flush, params);
+    retVal = checkDeflateStatus(env, addr, inputLen, outputLen, params, res);
+    return retVal;
 }
 
 JNIEXPORT jint JNICALL
