@@ -1356,20 +1356,20 @@ void ZBarrierSetC2::clean_catch_blocks(PhaseIdealLoop* phase) const {
   while(nodeStack.length() > 0) {
     Node *n = nodeStack.pop();
 
+    for (uint i = 0; i < n->len(); i++) {
+      if (n->in(i)) {
+        if (!visited.test_set(n->in(i)->_idx)) {
+          nodeStack.push(n->in(i));
+        }
+      }
+    }
+
     bool is_old_node = (n->_idx < new_ids); // don't process nodes that were created during cleanup
     if (n->is_Load() && is_old_node) {
       LoadNode* load = n->isa_Load();
       // only care about loads that will have a barrier
       if (load_require_barrier(load)) {
         process_catch_cleanup_candidate(phase, load);
-      }
-    }
-
-    for (uint i = 0; i < n->len(); i++) {
-      if (n->in(i)) {
-        if (!visited.test_set(n->in(i)->_idx)) {
-          nodeStack.push(n->in(i));
-        }
       }
     }
   }
