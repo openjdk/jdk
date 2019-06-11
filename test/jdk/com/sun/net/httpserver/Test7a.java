@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,8 +25,9 @@
  * @test
  * @bug 6270015
  * @library /test/lib
- * @build jdk.test.lib.net.SimpleSSLContext
+ * @build jdk.test.lib.net.SimpleSSLContext jdk.test.lib.net.URIBuilder
  * @run main/othervm Test7a
+ * @run main/othervm -Djava.net.preferIPv6Addresses=true Test7a
  * @summary Light weight HTTP server
  */
 
@@ -37,6 +38,7 @@ import java.io.*;
 import java.net.*;
 import javax.net.ssl.*;
 import jdk.test.lib.net.SimpleSSLContext;
+import jdk.test.lib.net.URIBuilder;
 
 /**
  * Test POST large file via chunked encoding (large chunks)
@@ -51,7 +53,8 @@ public class Test7a extends Test {
         //h.setLevel (Level.ALL);
         //log.addHandler (h);
         Handler handler = new Handler();
-        InetSocketAddress addr = new InetSocketAddress (0);
+        InetAddress loopback = InetAddress.getLoopbackAddress();
+        InetSocketAddress addr = new InetSocketAddress(loopback, 0);
         HttpsServer server = HttpsServer.create (addr, 0);
         HttpContext ctx = server.createContext ("/test", handler);
         ExecutorService executor = Executors.newCachedThreadPool();
@@ -60,9 +63,15 @@ public class Test7a extends Test {
         server.setExecutor (executor);
         server.start ();
 
-        URL url = new URL ("https://localhost:"+server.getAddress().getPort()+"/test/foo.html");
+        URL url = URIBuilder.newBuilder()
+            .scheme("https")
+            .loopback()
+            .port(server.getAddress().getPort())
+            .path("/test/foo.html")
+            .toURL();
+
         System.out.print ("Test7a: " );
-        HttpsURLConnection urlc = (HttpsURLConnection)url.openConnection ();
+        HttpsURLConnection urlc = (HttpsURLConnection)url.openConnection(Proxy.NO_PROXY);
         urlc.setDoOutput (true);
         urlc.setRequestMethod ("POST");
         urlc.setChunkedStreamingMode (16 * 1024); // big chunks

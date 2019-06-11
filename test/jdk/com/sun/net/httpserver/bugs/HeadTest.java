@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2010, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,11 +24,16 @@
 /**
  * @test
  * @bug 6886723
+ * @library /test/lib
+ * @run main HeadTest
+ * @run main/othervm -Djava.net.preferIPv6Addresses=true HeadTest
  * @summary light weight http server doesn't return correct status code for HEAD requests
  */
 
+import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.HttpURLConnection;
+import java.net.Proxy;
 import java.net.URL;
 import java.io.IOException;
 import java.util.concurrent.ExecutorService;
@@ -37,6 +42,7 @@ import com.sun.net.httpserver.HttpContext;
 import com.sun.net.httpserver.HttpExchange;
 import com.sun.net.httpserver.HttpHandler;
 import com.sun.net.httpserver.HttpServer;
+import jdk.test.lib.net.URIBuilder;
 
 public class HeadTest {
 
@@ -45,7 +51,8 @@ public class HeadTest {
     }
 
     static void server() throws Exception {
-        InetSocketAddress inetAddress = new InetSocketAddress(0);
+        InetAddress loopback = InetAddress.getLoopbackAddress();
+        InetSocketAddress inetAddress = new InetSocketAddress(loopback, 0);
         HttpServer server = HttpServer.create(inetAddress, 5);
         try {
             server.setExecutor(Executors.newFixedThreadPool(5));
@@ -88,7 +95,13 @@ public class HeadTest {
                 }
             });
             server.start();
-            String urlStr = "http://localhost:" + server.getAddress().getPort() + "/";
+            String urlStr = URIBuilder.newBuilder()
+                .scheme("http")
+                .loopback()
+                .port(server.getAddress().getPort())
+                .path("/")
+                .build()
+                .toString();
             System.out.println("Server is at " + urlStr);
 
             // Run the chunked client
@@ -107,7 +120,7 @@ public class HeadTest {
     }
 
     static void runClient(String urlStr) throws Exception {
-        HttpURLConnection conn = (HttpURLConnection) new URL(urlStr).openConnection();
+        HttpURLConnection conn = (HttpURLConnection) new URL(urlStr).openConnection(Proxy.NO_PROXY);
         conn.setRequestMethod("HEAD");
         int status = conn.getResponseCode();
         if (status != 200) {

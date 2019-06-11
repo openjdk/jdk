@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2006, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2006, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,6 +25,8 @@
  * @test
  * @bug 6393710
  * @summary  Non authenticated call followed by authenticated call never returns
+ * @run main B6393710
+ * @run main/othervm -Djava.net.preferIPv6Addresses=true B6393710
  */
 
 import com.sun.net.httpserver.*;
@@ -65,7 +67,8 @@ public class B6393710 {
 
     public static void main (String[] args) throws Exception {
         Handler handler = new Handler();
-        InetSocketAddress addr = new InetSocketAddress (0);
+        InetAddress loopback = InetAddress.getLoopbackAddress();
+        InetSocketAddress addr = new InetSocketAddress (loopback, 0);
         HttpServer server = HttpServer.create (addr, 0);
         HttpContext ctx = server.createContext ("/test", handler);
         ctx.setAuthenticator (new BasicAuthenticator ("test") {
@@ -76,7 +79,7 @@ public class B6393710 {
 
         server.start ();
 
-        Socket s = new Socket ("localhost", server.getAddress().getPort());
+        Socket s = new Socket (loopback, server.getAddress().getPort());
         s.setSoTimeout (5000);
 
         OutputStream os = s.getOutputStream();

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,12 +25,16 @@
  * @test
  * @bug 6270015
  * @summary  Light weight HTTP server
+ * @library /test/lib
+ * @run main Test11
+ * @run main/othervm -Djava.net.preferIPv6Addresses=true Test11
  */
 
 import java.net.*;
 import java.util.concurrent.*;
 import java.io.*;
 import com.sun.net.httpserver.*;
+import jdk.test.lib.net.URIBuilder;
 
 public class Test11 {
     static class Handler implements HttpHandler {
@@ -51,7 +55,8 @@ public class Test11 {
 
     public static void main (String[] args) throws Exception {
         System.out.print ("Test 11: ");
-        HttpServer server = HttpServer.create(new InetSocketAddress(0), 0);
+        InetAddress loopback = InetAddress.getLoopbackAddress();
+        HttpServer server = HttpServer.create(new InetSocketAddress(loopback, 0), 0);
         ExecutorService s = Executors.newCachedThreadPool();
         try {
             HttpContext ctx = server.createContext (
@@ -59,9 +64,13 @@ public class Test11 {
             );
             s =  Executors.newCachedThreadPool();
             server.start ();
-            URL url = new URL ("http://localhost:" + server.getAddress().getPort()+
-                    "/Foo/bar/test.html");
-            HttpURLConnection urlc = (HttpURLConnection)url.openConnection();
+            URL url = URIBuilder.newBuilder()
+                      .scheme("http")
+                      .loopback()
+                      .port(server.getAddress().getPort())
+                      .path("/Foo/bar/test.html")
+                      .toURL();
+            HttpURLConnection urlc = (HttpURLConnection)url.openConnection(Proxy.NO_PROXY);
             int r = urlc.getResponseCode();
             if (r == 200) {
                 throw new RuntimeException ("wrong response received");

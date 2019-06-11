@@ -26,6 +26,8 @@
  * @bug 6422914
  * @library /test/lib
  * @summary change httpserver exception printouts
+ * @run main TestLogging
+ * @run main/othervm -Djava.net.preferIPv6Addresses=true TestLogging
  */
 
 import com.sun.net.httpserver.*;
@@ -49,7 +51,8 @@ public class TestLogging extends Test {
         try {
             System.out.print ("Test9: ");
             String root = System.getProperty ("test.src")+ "/docs";
-            InetSocketAddress addr = new InetSocketAddress (0);
+            InetAddress loopback = InetAddress.getLoopbackAddress();
+            InetSocketAddress addr = new InetSocketAddress(loopback, 0);
             Logger logger = Logger.getLogger ("com.sun.net.httpserver");
             logger.setLevel (Level.ALL);
             Handler h1 = new ConsoleHandler ();
@@ -70,9 +73,9 @@ public class TestLogging extends Test {
                 .loopback()
                 .port(p1)
                 .path("/test1/smallfile.txt")
-                .toURLUnchecked();
+                .toURL();
             System.out.println("URL: " + url);
-            HttpURLConnection urlc = (HttpURLConnection)url.openConnection();
+            HttpURLConnection urlc = (HttpURLConnection)url.openConnection(Proxy.NO_PROXY);
             InputStream is = urlc.getInputStream();
             while (is.read() != -1) ;
             is.close();
