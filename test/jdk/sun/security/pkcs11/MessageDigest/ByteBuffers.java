@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,23 +23,27 @@
 
 /*
  * @test
- * @bug 4856966
+ * @bug 4856966 8080462
  * @summary Test the MessageDigest.update(ByteBuffer) method
  * @author Andreas Sterbenz
  * @library /test/lib ..
  * @key randomness
  * @modules jdk.crypto.cryptoki
  * @run main/othervm ByteBuffers
- * @run main/othervm ByteBuffers sm
  */
 
 import java.nio.ByteBuffer;
-import java.security.MessageDigest;
-import java.security.Provider;
+import java.security.*;
 import java.util.Arrays;
 import java.util.Random;
 
 public class ByteBuffers extends PKCS11Test {
+
+    static final String[] ALGS = {
+        "SHA-224", "SHA-256", "SHA-384", "SHA-512", "SHA-512/224", "SHA-512/256"
+    };
+
+    private static Random random = new Random();
 
     public static void main(String[] args) throws Exception {
         main(new ByteBuffers(), args);
@@ -47,36 +51,46 @@ public class ByteBuffers extends PKCS11Test {
 
     @Override
     public void main(Provider p) throws Exception {
-        if (p.getService("MessageDigest", "MD5") == null) {
-            System.out.println("Provider does not support MD5, skipping");
-            return;
-        }
-
-        Random random = new Random();
         int n = 10 * 1024;
         byte[] t = new byte[n];
         random.nextBytes(t);
 
-        MessageDigest md = MessageDigest.getInstance("MD5", p);
-        byte[] d1 = md.digest(t);
+        for (String alg : ALGS) {
+            runTest(p, alg, t);
+        }
+    }
+
+    private void runTest(Provider p, String alg, byte[] data) throws Exception {
+        System.out.println("Test against " + p.getName() + " and " + alg);
+        MessageDigest md;
+        try {
+            md = MessageDigest.getInstance(alg, p);
+        } catch (NoSuchAlgorithmException e) {
+            System.out.println("Skip " + alg + " due to no support");
+            return;
+        }
+
+        byte[] d1 = md.digest(data);
+
+        int n = data.length;
 
         // test 1: ByteBuffer with an accessible backing array
         ByteBuffer b1 = ByteBuffer.allocate(n + 256);
         b1.position(random.nextInt(256));
         b1.limit(b1.position() + n);
         ByteBuffer b2 = b1.slice();
-        b2.put(t);
+        b2.put(data);
         b2.clear();
-        byte[] d2 = digest(md, b2, random);
+        byte[] d2 = digest(md, b2);
         if (Arrays.equals(d1, d2) == false) {
             throw new Exception("Test 1 failed");
         }
 
         // test 2: direct ByteBuffer
-        ByteBuffer b3 = ByteBuffer.allocateDirect(t.length);
-        b3.put(t);
+        ByteBuffer b3 = ByteBuffer.allocateDirect(n);
+        b3.put(data);
         b3.clear();
-        byte[] d3 = digest(md, b3, random);
+        byte[] d3 = digest(md, b3);
         if (Arrays.equals(d1, d2) == false) {
             throw new Exception("Test 2 failed");
         }
@@ -84,14 +98,15 @@ public class ByteBuffers extends PKCS11Test {
         // test 3: ByteBuffer without an accessible backing array
         b2.clear();
         ByteBuffer b4 = b2.asReadOnlyBuffer();
-        byte[] d4 = digest(md, b4, random);
+        byte[] d4 = digest(md, b4);
         if (Arrays.equals(d1, d2) == false) {
             throw new Exception("Test 3 failed");
         }
         System.out.println("All tests passed");
     }
 
-    private static byte[] digest(MessageDigest md, ByteBuffer b, Random random) throws Exception {
+    private static byte[] digest(MessageDigest md, ByteBuffer b)
+            throws Exception {
         int lim = b.limit();
         b.limit(random.nextInt(lim));
         md.update(b);

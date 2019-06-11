@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2019, Oracle and/or its affiliates. All rights reserved.
  */
 
 /* Copyright  (c) 2002 Graz University of Technology. All rights reserved.
@@ -277,16 +277,32 @@ void throwDisconnectedRuntimeException(JNIEnv *env)
  * @param attrPtr pointer to the to-be-freed CK_ATTRIBUTE array.
  * @param len the length of the array
  */
-void freeCKAttributeArray(CK_ATTRIBUTE_PTR attrPtr, int len)
-{
-    int i;
-
-    for (i=0; i<len; i++) {
-        if (attrPtr[i].pValue != NULL_PTR) {
-            free(attrPtr[i].pValue);
+void freeCKAttributeArray(CK_ATTRIBUTE_PTR attrPtr, int len) {
+    if (attrPtr != NULL) {
+        int i;
+        for (i=0; i<len; i++) {
+            if (attrPtr[i].pValue != NULL_PTR) {
+                free(attrPtr[i].pValue);
+            }
         }
+        free(attrPtr);
     }
-    free(attrPtr);
+}
+
+/* This function frees the specified CK_MECHANISM_PTR pointer and its
+ * pParameter. NOTE: mechanism-specific memory allocations have to be
+ * freed before this call as this method only frees the generic
+ * memory associated with CK_MECHANISM structure.
+ *
+ * @param mechPtr pointer to the to-be-freed CK_MECHANISM structure.
+ */
+
+void freeCKMechanismPtr(CK_MECHANISM_PTR mechPtr) {
+     if (mechPtr != NULL) {
+         TRACE1("DEBUG: free CK_MECHANISM %x", mechPtr);
+         free(mechPtr->pParameter);
+         free(mechPtr);
+     }
 }
 
 /*
@@ -964,165 +980,164 @@ CK_CHAR_PTR jCharObjectToCKCharPtr(JNIEnv *env, jobject jObject)
 
 /*
  * converts a Java object into a pointer to CK-type or a CK-structure with the length in Bytes.
- * The memory of *ckpObjectPtr to be freed after use! This function is only used by
- * jAttributeToCKAttribute by now.
+ * The memory of the returned pointer MUST BE FREED BY CALLER!
  *
  * @param env - used to call JNI funktions to get the Java classes and objects
  * @param jObject - the Java object to convert
- * @param ckpObjectPtr - the reference of the new pointer to the new CK-value or CK-structure
- * @param ckpLength - the reference of the length in bytes of the new CK-value or CK-structure
+ * @param ckpLength - pointer to the length (bytes) of the newly-allocated CK-value or CK-structure
+ * @return ckpObject - pointer to the newly-allocated CK-value or CK-structure
  */
-void jObjectToPrimitiveCKObjectPtrPtr(JNIEnv *env, jobject jObject, CK_VOID_PTR *ckpObjectPtr, CK_ULONG *ckpLength)
+CK_VOID_PTR jObjectToPrimitiveCKObjectPtr(JNIEnv *env, jobject jObject, CK_ULONG *ckpLength)
 {
     jclass jLongClass, jBooleanClass, jByteArrayClass, jCharArrayClass;
     jclass jByteClass, jDateClass, jCharacterClass, jIntegerClass;
     jclass jBooleanArrayClass, jIntArrayClass, jLongArrayClass;
     jclass jStringClass;
     jclass jObjectClass, jClassClass;
-    CK_VOID_PTR ckpVoid = *ckpObjectPtr;
+    CK_VOID_PTR ckpObject;
     jmethodID jMethod;
     jobject jClassObject;
     jstring jClassNameString;
     char *classNameString, *exceptionMsgPrefix, *exceptionMsg;
 
-    TRACE0("\nDEBUG: jObjectToPrimitiveCKObjectPtrPtr");
+    TRACE0("\nDEBUG: jObjectToPrimitiveCKObjectPtr");
     if (jObject == NULL) {
-        *ckpObjectPtr = NULL;
         *ckpLength = 0;
-        return;
+        return NULL;
     }
 
     jLongClass = (*env)->FindClass(env, "java/lang/Long");
-    if (jLongClass == NULL) { return; }
+    if (jLongClass == NULL) { return NULL; }
     if ((*env)->IsInstanceOf(env, jObject, jLongClass)) {
-        *ckpObjectPtr = jLongObjectToCKULongPtr(env, jObject);
+        ckpObject = jLongObjectToCKULongPtr(env, jObject);
         *ckpLength = sizeof(CK_ULONG);
-        TRACE1("<converted long value %X>", *((CK_ULONG *) *ckpObjectPtr));
-        return;
+        TRACE1("<converted long value %X>", *((CK_ULONG *) ckpObject));
+        return ckpObject;
     }
 
     jBooleanClass = (*env)->FindClass(env, "java/lang/Boolean");
-    if (jBooleanClass == NULL) { return; }
+    if (jBooleanClass == NULL) { return NULL; }
     if ((*env)->IsInstanceOf(env, jObject, jBooleanClass)) {
-        *ckpObjectPtr = jBooleanObjectToCKBBoolPtr(env, jObject);
+        ckpObject = jBooleanObjectToCKBBoolPtr(env, jObject);
         *ckpLength = sizeof(CK_BBOOL);
         TRACE0(" <converted boolean value ");
-        TRACE0((*((CK_BBOOL *) *ckpObjectPtr) == TRUE) ? "TRUE>" : "FALSE>");
-        return;
+        TRACE0((*((CK_BBOOL *) ckpObjectPtr) == TRUE) ? "TRUE>" : "FALSE>");
+        return ckpObject;
     }
 
     jByteArrayClass = (*env)->FindClass(env, "[B");
-    if (jByteArrayClass == NULL) { return; }
+    if (jByteArrayClass == NULL) { return NULL; }
     if ((*env)->IsInstanceOf(env, jObject, jByteArrayClass)) {
-        jByteArrayToCKByteArray(env, jObject, (CK_BYTE_PTR*)ckpObjectPtr, ckpLength);
-        return;
+        jByteArrayToCKByteArray(env, jObject, (CK_BYTE_PTR*) &ckpObject, ckpLength);
+        return ckpObject;
     }
 
     jCharArrayClass = (*env)->FindClass(env, "[C");
-    if (jCharArrayClass == NULL) { return; }
+    if (jCharArrayClass == NULL) { return NULL; }
     if ((*env)->IsInstanceOf(env, jObject, jCharArrayClass)) {
-        jCharArrayToCKUTF8CharArray(env, jObject, (CK_UTF8CHAR_PTR*)ckpObjectPtr, ckpLength);
-        return;
+        jCharArrayToCKUTF8CharArray(env, jObject, (CK_UTF8CHAR_PTR*) &ckpObject, ckpLength);
+        return ckpObject;
     }
 
     jByteClass = (*env)->FindClass(env, "java/lang/Byte");
-    if (jByteClass == NULL) { return; }
+    if (jByteClass == NULL) { return NULL; }
     if ((*env)->IsInstanceOf(env, jObject, jByteClass)) {
-        *ckpObjectPtr = jByteObjectToCKBytePtr(env, jObject);
+        ckpObject = jByteObjectToCKBytePtr(env, jObject);
         *ckpLength = sizeof(CK_BYTE);
-        TRACE1("<converted byte value %X>", *((CK_BYTE *) *ckpObjectPtr));
-        return;
+        TRACE1("<converted byte value %X>", *((CK_BYTE *) ckpObject));
+        return ckpObject;
     }
 
     jDateClass = (*env)->FindClass(env, CLASS_DATE);
-    if (jDateClass == NULL) { return; }
+    if (jDateClass == NULL) { return NULL; }
     if ((*env)->IsInstanceOf(env, jObject, jDateClass)) {
-        *ckpObjectPtr = jDateObjectPtrToCKDatePtr(env, jObject);
+        ckpObject = jDateObjectPtrToCKDatePtr(env, jObject);
         *ckpLength = sizeof(CK_DATE);
-        TRACE3("<converted date value %.4s-%.2s-%.2s>", (*((CK_DATE *) *ckpObjectPtr)).year, (*((CK_DATE *) *ckpObjectPtr)).month, (*((CK_DATE *) *ckpObjectPtr)).day);
-        return;
+        TRACE3("<converted date value %.4s-%.2s-%.2s>", ((CK_DATE *) ckpObject)->year,
+                ((CK_DATE *) ckpObject)->month, ((CK_DATE *) ckpObject)->day);
+        return ckpObject;
     }
 
     jCharacterClass = (*env)->FindClass(env, "java/lang/Character");
-    if (jCharacterClass == NULL) { return; }
+    if (jCharacterClass == NULL) { return NULL; }
     if ((*env)->IsInstanceOf(env, jObject, jCharacterClass)) {
-        *ckpObjectPtr = jCharObjectToCKCharPtr(env, jObject);
+        ckpObject = jCharObjectToCKCharPtr(env, jObject);
         *ckpLength = sizeof(CK_UTF8CHAR);
-        TRACE1("<converted char value %c>", *((CK_CHAR *) *ckpObjectPtr));
-        return;
+        TRACE1("<converted char value %c>", *((CK_CHAR *) ckpObject));
+        return ckpObject;
     }
 
     jIntegerClass = (*env)->FindClass(env, "java/lang/Integer");
-    if (jIntegerClass == NULL) { return; }
+    if (jIntegerClass == NULL) { return NULL; }
     if ((*env)->IsInstanceOf(env, jObject, jIntegerClass)) {
-        *ckpObjectPtr = jIntegerObjectToCKULongPtr(env, jObject);
+        ckpObject = jIntegerObjectToCKULongPtr(env, jObject);
         *ckpLength = sizeof(CK_ULONG);
-        TRACE1("<converted integer value %X>", *((CK_ULONG *) *ckpObjectPtr));
-        return;
+        TRACE1("<converted integer value %X>", *((CK_ULONG *) ckpObject));
+        return ckpObject;
     }
 
     jBooleanArrayClass = (*env)->FindClass(env, "[Z");
-    if (jBooleanArrayClass == NULL) { return; }
+    if (jBooleanArrayClass == NULL) { return NULL; }
     if ((*env)->IsInstanceOf(env, jObject, jBooleanArrayClass)) {
-        jBooleanArrayToCKBBoolArray(env, jObject, (CK_BBOOL**)ckpObjectPtr, ckpLength);
-        return;
+        jBooleanArrayToCKBBoolArray(env, jObject, (CK_BBOOL**) &ckpObject, ckpLength);
+        return ckpObject;
     }
 
     jIntArrayClass = (*env)->FindClass(env, "[I");
-    if (jIntArrayClass == NULL) { return; }
+    if (jIntArrayClass == NULL) { return NULL; }
     if ((*env)->IsInstanceOf(env, jObject, jIntArrayClass)) {
-        jLongArrayToCKULongArray(env, jObject, (CK_ULONG_PTR*)ckpObjectPtr, ckpLength);
-        return;
+        jLongArrayToCKULongArray(env, jObject, (CK_ULONG_PTR*) &ckpObject, ckpLength);
+        return ckpObject;
     }
 
     jLongArrayClass = (*env)->FindClass(env, "[J");
-    if (jLongArrayClass == NULL) { return; }
+    if (jLongArrayClass == NULL) { return NULL; }
     if ((*env)->IsInstanceOf(env, jObject, jLongArrayClass)) {
-        jLongArrayToCKULongArray(env, jObject, (CK_ULONG_PTR*)ckpObjectPtr, ckpLength);
-        return;
+        jLongArrayToCKULongArray(env, jObject, (CK_ULONG_PTR*) &ckpObject, ckpLength);
+        return ckpObject;
     }
 
     jStringClass = (*env)->FindClass(env, "java/lang/String");
-    if (jStringClass == NULL) { return; }
+    if (jStringClass == NULL) { return NULL; }
     if ((*env)->IsInstanceOf(env, jObject, jStringClass)) {
-        jStringToCKUTF8CharArray(env, jObject, (CK_UTF8CHAR_PTR*)ckpObjectPtr, ckpLength);
-        return;
+        jStringToCKUTF8CharArray(env, jObject, (CK_UTF8CHAR_PTR*) &ckpObject, ckpLength);
+        return ckpObject;
     }
 
     /* type of jObject unknown, throw PKCS11RuntimeException */
     jObjectClass = (*env)->FindClass(env, "java/lang/Object");
-    if (jObjectClass == NULL) { return; }
+    if (jObjectClass == NULL) { return NULL; }
     jMethod = (*env)->GetMethodID(env, jObjectClass, "getClass", "()Ljava/lang/Class;");
-    if (jMethod == NULL) { return; }
+    if (jMethod == NULL) { return NULL; }
     jClassObject = (*env)->CallObjectMethod(env, jObject, jMethod);
     assert(jClassObject != 0);
     jClassClass = (*env)->FindClass(env, "java/lang/Class");
-    if (jClassClass == NULL) { return; }
+    if (jClassClass == NULL) { return NULL; }
     jMethod = (*env)->GetMethodID(env, jClassClass, "getName", "()Ljava/lang/String;");
-    if (jMethod == NULL) { return; }
+    if (jMethod == NULL) { return NULL; }
     jClassNameString = (jstring)
         (*env)->CallObjectMethod(env, jClassObject, jMethod);
     assert(jClassNameString != 0);
     classNameString = (char*)
         (*env)->GetStringUTFChars(env, jClassNameString, NULL);
-    if (classNameString == NULL) { return; }
+    if (classNameString == NULL) { return NULL; }
     exceptionMsgPrefix = "Java object of this class cannot be converted to native PKCS#11 type: ";
     exceptionMsg = (char *)
         malloc((strlen(exceptionMsgPrefix) + strlen(classNameString) + 1));
     if (exceptionMsg == NULL) {
         (*env)->ReleaseStringUTFChars(env, jClassNameString, classNameString);
         throwOutOfMemoryError(env, 0);
-        return;
+        return NULL;
     }
     strcpy(exceptionMsg, exceptionMsgPrefix);
     strcat(exceptionMsg, classNameString);
     (*env)->ReleaseStringUTFChars(env, jClassNameString, classNameString);
     throwPKCS11RuntimeException(env, exceptionMsg);
     free(exceptionMsg);
-    *ckpObjectPtr = NULL;
     *ckpLength = 0;
 
     TRACE0("FINISHED\n");
+    return NULL;
 }
 
 #ifdef P11_MEMORYDEBUG

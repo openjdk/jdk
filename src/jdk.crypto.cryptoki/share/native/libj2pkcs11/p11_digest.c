@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2019, Oracle and/or its affiliates. All rights reserved.
  */
 
 /* Copyright  (c) 2002 Graz University of Technology. All rights reserved.
@@ -68,21 +68,19 @@ JNIEXPORT void JNICALL Java_sun_security_pkcs11_wrapper_PKCS11_C_1DigestInit
     (JNIEnv *env, jobject obj, jlong jSessionHandle, jobject jMechanism)
 {
     CK_SESSION_HANDLE ckSessionHandle;
-    CK_MECHANISM ckMechanism;
+    CK_MECHANISM_PTR ckpMechanism = NULL;
     CK_RV rv;
 
     CK_FUNCTION_LIST_PTR ckpFunctions = getFunctionList(env, obj);
     if (ckpFunctions == NULL) { return; }
 
     ckSessionHandle = jLongToCKULong(jSessionHandle);
-    jMechanismToCKMechanism(env, jMechanism, &ckMechanism);
+    ckpMechanism = jMechanismToCKMechanismPtr(env, jMechanism);
     if ((*env)->ExceptionCheck(env)) { return; }
 
-    rv = (*ckpFunctions->C_DigestInit)(ckSessionHandle, &ckMechanism);
+    rv = (*ckpFunctions->C_DigestInit)(ckSessionHandle, ckpMechanism);
 
-    if (ckMechanism.pParameter != NULL_PTR) {
-        free(ckMechanism.pParameter);
-    }
+    freeCKMechanismPtr(ckpMechanism);
 
     if (ckAssertReturnValueOK(env, rv) != CK_ASSERT_OK) { return; }
 }
@@ -101,53 +99,50 @@ JNIEXPORT void JNICALL Java_sun_security_pkcs11_wrapper_PKCS11_C_1DigestInit
  *                                      CK_ULONG_PTR pulDigestLen
  */
 JNIEXPORT jint JNICALL Java_sun_security_pkcs11_wrapper_PKCS11_C_1DigestSingle
-  (JNIEnv *env, jobject obj, jlong jSessionHandle, jobject jMechanism, jbyteArray jIn, jint jInOfs, jint jInLen, jbyteArray jDigest, jint jDigestOfs, jint jDigestLen)
+    (JNIEnv *env, jobject obj, jlong jSessionHandle, jobject jMechanism,
+     jbyteArray jIn, jint jInOfs, jint jInLen, jbyteArray jDigest,
+     jint jDigestOfs, jint jDigestLen)
 {
     CK_SESSION_HANDLE ckSessionHandle;
     CK_RV rv;
-    CK_BYTE_PTR bufP;
     CK_BYTE BUF[MAX_STACK_BUFFER_LEN];
+    CK_BYTE_PTR bufP = BUF;
     CK_BYTE DIGESTBUF[MAX_DIGEST_LEN];
-    CK_ULONG ckDigestLength = min(MAX_DIGEST_LEN, jDigestLen);
-    CK_MECHANISM ckMechanism;
+    CK_ULONG ckDigestLength = 0;
+    CK_MECHANISM_PTR ckpMechanism = NULL;
 
     CK_FUNCTION_LIST_PTR ckpFunctions = getFunctionList(env, obj);
     if (ckpFunctions == NULL) { return 0; }
 
     ckSessionHandle = jLongToCKULong(jSessionHandle);
-    jMechanismToCKMechanism(env, jMechanism, &ckMechanism);
+    ckpMechanism = jMechanismToCKMechanismPtr(env, jMechanism);
     if ((*env)->ExceptionCheck(env)) { return 0; }
 
-    rv = (*ckpFunctions->C_DigestInit)(ckSessionHandle, &ckMechanism);
+    rv = (*ckpFunctions->C_DigestInit)(ckSessionHandle, ckpMechanism);
+    if (ckAssertReturnValueOK(env, rv) != CK_ASSERT_OK) { goto cleanup; }
 
-    if (ckMechanism.pParameter != NULL_PTR) {
-        free(ckMechanism.pParameter);
-    }
-
-    if (ckAssertReturnValueOK(env, rv) != CK_ASSERT_OK) { return 0; }
-
-    if (jInLen <= MAX_STACK_BUFFER_LEN) {
-        bufP = BUF;
-    } else {
+    if (jInLen > MAX_STACK_BUFFER_LEN) {
         /* always use single part op, even for large data */
         bufP = (CK_BYTE_PTR) malloc((size_t)jInLen);
         if (bufP == NULL) {
             throwOutOfMemoryError(env, 0);
-            return 0;
+            goto cleanup;
         }
     }
 
     (*env)->GetByteArrayRegion(env, jIn, jInOfs, jInLen, (jbyte *)bufP);
     if ((*env)->ExceptionCheck(env)) {
-        if (bufP != BUF) { free(bufP); }
-        return 0;
+        goto cleanup;
     }
+
+    ckDigestLength = min(MAX_DIGEST_LEN, jDigestLen);
 
     rv = (*ckpFunctions->C_Digest)(ckSessionHandle, bufP, jInLen, DIGESTBUF, &ckDigestLength);
     if (ckAssertReturnValueOK(env, rv) == CK_ASSERT_OK) {
         (*env)->SetByteArrayRegion(env, jDigest, jDigestOfs, ckDigestLength, (jbyte *)DIGESTBUF);
     }
-
+cleanup:
+    freeCKMechanismPtr(ckpMechanism);
     if (bufP != BUF) { free(bufP); }
 
     return ckDigestLength;
@@ -165,7 +160,8 @@ JNIEXPORT jint JNICALL Java_sun_security_pkcs11_wrapper_PKCS11_C_1DigestSingle
  *                                      CK_ULONG ulDataLen
  */
 JNIEXPORT void JNICALL Java_sun_security_pkcs11_wrapper_PKCS11_C_1DigestUpdate
-  (JNIEnv *env, jobject obj, jlong jSessionHandle, jlong directIn, jbyteArray jIn, jint jInOfs, jint jInLen)
+    (JNIEnv *env, jobject obj, jlong jSessionHandle, jlong directIn, jbyteArray jIn,
+     jint jInOfs, jint jInLen)
 {
     CK_SESSION_HANDLE ckSessionHandle;
     CK_RV rv;
@@ -256,7 +252,8 @@ JNIEXPORT void JNICALL Java_sun_security_pkcs11_wrapper_PKCS11_C_1DigestKey
  *                                      CK_ULONG_PTR pulDigestLen
  */
 JNIEXPORT jint JNICALL Java_sun_security_pkcs11_wrapper_PKCS11_C_1DigestFinal
-  (JNIEnv *env, jobject obj, jlong jSessionHandle, jbyteArray jDigest, jint jDigestOfs, jint jDigestLen)
+    (JNIEnv *env, jobject obj, jlong jSessionHandle, jbyteArray jDigest,
+     jint jDigestOfs, jint jDigestLen)
 {
     CK_SESSION_HANDLE ckSessionHandle;
     CK_RV rv;

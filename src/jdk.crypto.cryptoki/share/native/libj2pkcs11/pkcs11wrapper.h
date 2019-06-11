@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2019, Oracle and/or its affiliates. All rights reserved.
  */
 
 /* Copyright  (c) 2002 Graz University of Technology. All rights reserved.
@@ -69,11 +69,12 @@
 
 #define CKA_NETSCAPE_BASE                       (0x80000000 + 0x4E534350)
 #define CKA_NETSCAPE_TRUST_BASE                 (CKA_NETSCAPE_BASE + 0x2000)
-
 #define CKA_NETSCAPE_TRUST_SERVER_AUTH          (CKA_NETSCAPE_TRUST_BASE + 8)
 #define CKA_NETSCAPE_TRUST_CLIENT_AUTH          (CKA_NETSCAPE_TRUST_BASE + 9)
 #define CKA_NETSCAPE_TRUST_CODE_SIGNING (CKA_NETSCAPE_TRUST_BASE + 10)
 #define CKA_NETSCAPE_TRUST_EMAIL_PROTECTION     (CKA_NETSCAPE_TRUST_BASE + 11)
+#define CKA_NETSCAPE_DB                         0xD5A0DB00
+#define CKM_NSS_TLS_PRF_GENERAL                 0x80000373
 
 /*
 
@@ -154,11 +155,11 @@
 #define P11_ENABLE_GETNATIVEKEYINFO
 #define P11_ENABLE_CREATENATIVEKEY
 
+
 /* include the platform dependent part of the header */
 #include "p11_md.h"
 
 #include "pkcs11.h"
-#include "pkcs-11v2-20a3.h"
 #include <jni.h>
 #include <jni_util.h>
 #include <stdarg.h>
@@ -206,8 +207,6 @@
 #define ckULongToJSize(x)       ((jsize) x)
 #define unsignedIntToCKULong(x) ((CK_ULONG) x)
 
-//#define P11_DEBUG
-
 #ifdef P11_DEBUG
 #define TRACE0(s) { printf(s); fflush(stdout); }
 #define TRACE1(s, p1) { printf(s, p1); fflush(stdout); }
@@ -227,6 +226,8 @@ extern jboolean debug;
 void printDebug(const char *format, ...);
 
 #define CK_ASSERT_OK 0L
+
+#define CLASS_P11PSSSIGNATURE "sun/security/pkcs11/P11PSSSignature"
 
 #define CLASS_INFO "sun/security/pkcs11/wrapper/CK_INFO"
 #define CLASS_VERSION "sun/security/pkcs11/wrapper/CK_VERSION"
@@ -249,15 +250,18 @@ void printDebug(const char *format, ...);
 
 
 /* mechanism parameter classes */
-
+#define CLASS_AES_CTR_PARAMS "sun/security/pkcs11/wrapper/CK_AES_CTR_PARAMS"
+#define CLASS_GCM_PARAMS "sun/security/pkcs11/wrapper/CK_GCM_PARAMS"
+#define CLASS_CCM_PARAMS "sun/security/pkcs11/wrapper/CK_CCM_PARAMS"
+#define CLASS_RSA_PKCS_PSS_PARAMS "sun/security/pkcs11/wrapper/CK_RSA_PKCS_PSS_PARAMS"
 #define CLASS_RSA_PKCS_OAEP_PARAMS "sun/security/pkcs11/wrapper/CK_RSA_PKCS_OAEP_PARAMS"
+
 #define CLASS_MAC_GENERAL_PARAMS "sun/security/pkcs11/wrapper/CK_MAC_GENERAL_PARAMS"
 #define CLASS_PBE_PARAMS "sun/security/pkcs11/wrapper/CK_PBE_PARAMS"
 #define PBE_INIT_VECTOR_SIZE 8
 #define CLASS_PKCS5_PBKD2_PARAMS "sun/security/pkcs11/wrapper/CK_PKCS5_PBKD2_PARAMS"
 #define CLASS_EXTRACT_PARAMS "sun/security/pkcs11/wrapper/CK_EXTRACT_PARAMS"
 
-#define CLASS_RSA_PKCS_PSS_PARAMS "sun/security/pkcs11/wrapper/CK_RSA_PKCS_PSS_PARAMS"
 #define CLASS_ECDH1_DERIVE_PARAMS "sun/security/pkcs11/wrapper/CK_ECDH1_DERIVE_PARAMS"
 #define CLASS_ECDH2_DERIVE_PARAMS "sun/security/pkcs11/wrapper/CK_ECDH2_DERIVE_PARAMS"
 #define CLASS_X9_42_DH1_DERIVE_PARAMS "sun/security/pkcs11/wrapper/CK_X9_42_DH1_DERIVE_PARAMS"
@@ -287,7 +291,7 @@ void printDebug(const char *format, ...);
 #define CLASS_TLS12_KEY_MAT_PARAMS "sun/security/pkcs11/wrapper/CK_TLS12_KEY_MAT_PARAMS"
 #define CLASS_TLS_PRF_PARAMS "sun/security/pkcs11/wrapper/CK_TLS_PRF_PARAMS"
 #define CLASS_TLS_MAC_PARAMS "sun/security/pkcs11/wrapper/CK_TLS_MAC_PARAMS"
-#define CLASS_AES_CTR_PARAMS "sun/security/pkcs11/wrapper/CK_AES_CTR_PARAMS"
+
 
 /* function to convert a PKCS#11 return value other than CK_OK into a Java Exception
  * or to throw a PKCS11RuntimeException
@@ -300,11 +304,12 @@ void throwIOException(JNIEnv *env, const char *message);
 void throwPKCS11RuntimeException(JNIEnv *env, const char *message);
 void throwDisconnectedRuntimeException(JNIEnv *env);
 
-/* function to free CK_ATTRIBUTE array
+/* functions to free CK structures and pointers
  */
 void freeCKAttributeArray(CK_ATTRIBUTE_PTR attrPtr, int len);
+void freeCKMechanismPtr(CK_MECHANISM_PTR mechPtr);
 
-/* funktions to convert Java arrays to a CK-type array and the array length */
+/* functions to convert Java arrays to a CK-type array and the array length */
 
 void jBooleanArrayToCKBBoolArray(JNIEnv *env, const jbooleanArray jArray, CK_BBOOL **ckpArray, CK_ULONG_PTR ckLength);
 void jByteArrayToCKByteArray(JNIEnv *env, const jbyteArray jArray, CK_BYTE_PTR *ckpArray, CK_ULONG_PTR ckLength);
@@ -316,7 +321,7 @@ void jAttributeArrayToCKAttributeArray(JNIEnv *env, jobjectArray jAArray, CK_ATT
 /*void jObjectArrayToCKVoidPtrArray(JNIEnv *env, const jobjectArray jArray, CK_VOID_PTR_PTR ckpArray, CK_ULONG_PTR ckpLength); */
 
 
-/* funktions to convert a CK-type array and the array length to a Java array */
+/* functions to convert a CK-type array and the array length to a Java array */
 
 jbyteArray ckByteArrayToJByteArray(JNIEnv *env, const CK_BYTE_PTR ckpArray, CK_ULONG ckLength);
 jlongArray ckULongArrayToJLongArray(JNIEnv *env, const CK_ULONG_PTR ckpArray, CK_ULONG ckLength);
@@ -324,7 +329,7 @@ jcharArray ckCharArrayToJCharArray(JNIEnv *env, const CK_CHAR_PTR ckpArray, CK_U
 jcharArray ckUTF8CharArrayToJCharArray(JNIEnv *env, const CK_UTF8CHAR_PTR ckpArray, CK_ULONG ckLength);
 
 
-/* funktions to convert a CK-type structure or a pointer to a CK-value to a Java object */
+/* functions to convert a CK-type structure or a pointer to a CK-value to a Java object */
 
 jobject ckBBoolPtrToJBooleanObject(JNIEnv *env, const CK_BBOOL* ckpValue);
 jobject ckULongPtrToJLongObject(JNIEnv *env, const CK_ULONG_PTR ckpValue);
@@ -334,12 +339,12 @@ jobject ckSessionInfoPtrToJSessionInfo(JNIEnv *env, const CK_SESSION_INFO_PTR ck
 jobject ckAttributePtrToJAttribute(JNIEnv *env, const CK_ATTRIBUTE_PTR ckpAttribute);
 
 
-/* funktion to convert the CK-value used by the CK_ATTRIBUTE structure to a Java object */
+/* function to convert the CK-value used by the CK_ATTRIBUTE structure to a Java object */
 
 jobject ckAttributeValueToJObject(JNIEnv *env, const CK_ATTRIBUTE_PTR ckpAttribute);
 
 
-/* funktions to convert a Java object to a CK-type structure or a pointer to a CK-value */
+/* functions to convert a Java object to a CK-type structure or a pointer to a CK-value */
 
 CK_BBOOL* jBooleanObjectToCKBBoolPtr(JNIEnv *env, jobject jObject);
 CK_BYTE_PTR jByteObjectToCKBytePtr(JNIEnv *env, jobject jObject);
@@ -349,44 +354,35 @@ CK_CHAR_PTR jCharObjectToCKCharPtr(JNIEnv *env, jobject jObject);
 CK_VERSION_PTR jVersionToCKVersionPtr(JNIEnv *env, jobject jVersion);
 CK_DATE * jDateObjectPtrToCKDatePtr(JNIEnv *env, jobject jDate);
 CK_ATTRIBUTE jAttributeToCKAttribute(JNIEnv *env, jobject jAttribute);
-/*CK_MECHANISM jMechanismToCKMechanism(JNIEnv *env, jobject jMechanism);*/
-void jMechanismToCKMechanism(JNIEnv *env, jobject jMechanism, CK_MECHANISM_PTR ckMechanismPtr);
+CK_MECHANISM_PTR jMechanismToCKMechanismPtr(JNIEnv *env, jobject jMechanism);
 
 
-/* funktions to convert Java objects used by the Mechanism and Attribute class to a CK-type structure */
-
-void jObjectToPrimitiveCKObjectPtrPtr(JNIEnv *env, jobject jObject, CK_VOID_PTR *ckpObjectPtr, CK_ULONG *pLength);
-void jMechanismParameterToCKMechanismParameter(JNIEnv *env, jobject jParam, CK_VOID_PTR *ckpParamPtr, CK_ULONG *ckpLength);
+/* functions to convert Java objects used by the Mechanism and Attribute class to a CK-type structure */
+CK_VOID_PTR jObjectToPrimitiveCKObjectPtr(JNIEnv *env, jobject jObject, CK_ULONG *ckpLength);
+CK_VOID_PTR jMechParamToCKMechParamPtr(JNIEnv *env, jobject jParam, CK_MECHANISM_TYPE, CK_ULONG
+*ckpLength);
 
 
 /* functions to convert a specific Java mechanism parameter object to a CK-mechanism parameter structure */
 
-CK_RSA_PKCS_OAEP_PARAMS jRsaPkcsOaepParamToCKRsaPkcsOaepParam(JNIEnv *env, jobject jParam);
-CK_KEA_DERIVE_PARAMS jKeaDeriveParamToCKKeaDeriveParam(JNIEnv *env, jobject jParam);
-CK_RC2_CBC_PARAMS jRc2CbcParamToCKRc2CbcParam(JNIEnv *env, jobject jParam);
-CK_RC2_MAC_GENERAL_PARAMS jRc2MacGeneralParamToCKRc2MacGeneralParam(JNIEnv *env, jobject jParam);
-CK_RC5_PARAMS jRc5ParamToCKRc5Param(JNIEnv *env, jobject jParam);
-CK_RC5_CBC_PARAMS jRc5CbcParamToCKRc5CbcParam(JNIEnv *env, jobject jParam);
-CK_RC5_MAC_GENERAL_PARAMS jRc5MacGeneralParamToCKRc5MacGeneralParam(JNIEnv *env, jobject jParam);
-CK_SKIPJACK_PRIVATE_WRAP_PARAMS jSkipjackPrivateWrapParamToCKSkipjackPrivateWrapParam(JNIEnv *env, jobject jParam);
-CK_SKIPJACK_RELAYX_PARAMS jSkipjackRelayxParamToCKSkipjackRelayxParam(JNIEnv *env, jobject jParam);
-CK_PBE_PARAMS jPbeParamToCKPbeParam(JNIEnv *env, jobject jParam);
+void jRsaPkcsOaepParamToCKRsaPkcsOaepParam(JNIEnv *env, jobject jParam, CK_RSA_PKCS_OAEP_PARAMS_PTR ckParamPtr);
+void jPbeParamToCKPbeParam(JNIEnv *env, jobject jParam, CK_PBE_PARAMS_PTR ckParamPtr);
 void copyBackPBEInitializationVector(JNIEnv *env, CK_MECHANISM *ckMechanism, jobject jMechanism);
-CK_PKCS5_PBKD2_PARAMS jPkcs5Pbkd2ParamToCKPkcs5Pbkd2Param(JNIEnv *env, jobject jParam);
-CK_KEY_WRAP_SET_OAEP_PARAMS jKeyWrapSetOaepParamToCKKeyWrapSetOaepParam(JNIEnv *env, jobject jParam);
+void jPkcs5Pbkd2ParamToCKPkcs5Pbkd2Param(JNIEnv *env, jobject jParam, CK_PKCS5_PBKD2_PARAMS_PTR ckParamPtr);
 void copyBackSetUnwrappedKey(JNIEnv *env, CK_MECHANISM *ckMechanism, jobject jMechanism);
-CK_SSL3_MASTER_KEY_DERIVE_PARAMS jSsl3MasterKeyDeriveParamToCKSsl3MasterKeyDeriveParam(JNIEnv *env, jobject jParam);
+void jSsl3MasterKeyDeriveParamToCKSsl3MasterKeyDeriveParam(JNIEnv *env, jobject jParam, CK_SSL3_MASTER_KEY_DERIVE_PARAMS_PTR ckParamPtr);
 void ssl3CopyBackClientVersion(JNIEnv *env, CK_MECHANISM *ckMechanism, jobject jMechanism);
 void tls12CopyBackClientVersion(JNIEnv *env, CK_MECHANISM *ckMechanism, jobject jMechanism);
-CK_SSL3_KEY_MAT_PARAMS jSsl3KeyMatParamToCKSsl3KeyMatParam(JNIEnv *env, jobject jParam);
+void jSsl3KeyMatParamToCKSsl3KeyMatParam(JNIEnv *env, jobject jParam, CK_SSL3_KEY_MAT_PARAMS_PTR ckParamPtr);
 void ssl3CopyBackKeyMatParams(JNIEnv *env, CK_MECHANISM *ckMechanism, jobject jMechanism);
 void tls12CopyBackKeyMatParams(JNIEnv *env, CK_MECHANISM *ckMechanism, jobject jMechanism);
 CK_KEY_DERIVATION_STRING_DATA jKeyDerivationStringDataToCKKeyDerivationStringData(JNIEnv *env, jobject jParam);
-CK_RSA_PKCS_PSS_PARAMS jRsaPkcsPssParamToCKRsaPkcsPssParam(JNIEnv *env, jobject jParam);
-CK_ECDH1_DERIVE_PARAMS jEcdh1DeriveParamToCKEcdh1DeriveParam(JNIEnv *env, jobject jParam);
-CK_ECDH2_DERIVE_PARAMS jEcdh2DeriveParamToCKEcdh2DeriveParam(JNIEnv *env, jobject jParam);
-CK_X9_42_DH1_DERIVE_PARAMS jX942Dh1DeriveParamToCKX942Dh1DeriveParam(JNIEnv *env, jobject jParam);
-CK_X9_42_DH2_DERIVE_PARAMS jX942Dh2DeriveParamToCKX942Dh2DeriveParam(JNIEnv *env, jobject jParam);
+void jRsaPkcsPssParamToCKRsaPkcsPssParam(JNIEnv *env, jobject jParam, CK_RSA_PKCS_PSS_PARAMS_PTR ckParamPtr);
+void jEcdh1DeriveParamToCKEcdh1DeriveParam(JNIEnv *env, jobject jParam, CK_ECDH1_DERIVE_PARAMS_PTR ckParamPtr);
+void jEcdh2DeriveParamToCKEcdh2DeriveParam(JNIEnv *env, jobject jParam,
+CK_ECDH2_DERIVE_PARAMS_PTR ckParamPtr);
+void jX942Dh1DeriveParamToCKX942Dh1DeriveParam(JNIEnv *env, jobject jParam, CK_X9_42_DH1_DERIVE_PARAMS_PTR ckParamPtr);
+void jX942Dh2DeriveParamToCKX942Dh2DeriveParam(JNIEnv *env, jobject jParam, CK_X9_42_DH2_DERIVE_PARAMS_PTR ckParamPtr);
 
 
 /* functions to convert the InitArgs object for calling the right Java mutex functions */
@@ -450,6 +446,7 @@ void destroyLockObject(JNIEnv *env, jobject jLockObject);
 extern jfieldID pNativeDataID;
 extern jfieldID mech_mechanismID;
 extern jfieldID mech_pParameterID;
+extern jfieldID mech_pHandleID;
 
 extern jclass jByteArrayClass;
 extern jclass jLongClass;
