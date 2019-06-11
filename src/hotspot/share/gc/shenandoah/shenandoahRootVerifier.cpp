@@ -69,13 +69,16 @@ void ShenandoahRootVerifier::oops_do(OopClosure* oops) {
 
   if (verify(SerialRoots)) {
     shenandoah_assert_safepoint();
-
     Universe::oops_do(oops);
     Management::oops_do(oops);
     JvmtiExport::oops_do(oops);
-    JNIHandles::oops_do(oops);
     ObjectSynchronizer::oops_do(oops);
     SystemDictionary::oops_do(oops);
+  }
+
+  if (verify(JNIHandleRoots)) {
+    shenandoah_assert_safepoint();
+    JNIHandles::oops_do(oops);
   }
 
   if (verify(WeakRoots)) {
