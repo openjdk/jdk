@@ -866,7 +866,6 @@ static bool fixup_uses_in_catch(PhaseIdealLoop *phase, Node *start_ctrl, Node *n
   // In some very rare cases a load that doesn't need a barrier will end up here
   // Treat it as a LoadP and the insertion of phis will be done correctly.
   if (node->is_Load()) {
-    assert(node->as_Load()->barrier_data() == 0, "Sanity");
     call_catch_cleanup_one(phase, node->as_Load(), phase->get_ctrl(node));
   } else {
     for (DUIterator_Fast jmax, i = node->fast_outs(jmax); i < jmax; i++) {
