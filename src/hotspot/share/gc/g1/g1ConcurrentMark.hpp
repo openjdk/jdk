@@ -222,18 +222,20 @@ private:
   template<typename Fn> void iterate(Fn fn) const PRODUCT_RETURN;
 };
 
-// Root Regions are regions that contain objects from nTAMS to top. These are roots
-// for marking, i.e. their referenced objects must be kept alive to maintain the
+// Root MemRegions are memory areas that contain objects which references are
+// roots wrt to the marking. They must be scanned before marking to maintain the
 // SATB invariant.
-// We could scan and mark them through during the initial-mark pause, but for
+// Typically they contain the areas from nTAMS to top of the regions.
+// We could scan and mark through these objects during the initial-mark pause, but for
 // pause time reasons we move this work to the concurrent phase.
 // We need to complete this procedure before the next GC because it might determine
 // that some of these "root objects" are dead, potentially dropping some required
 // references.
-// Root regions comprise of the complete contents of survivor regions, and any
-// objects copied into old gen during GC.
-class G1CMRootRegions {
-  HeapRegion** _root_regions;
+// Root MemRegions comprise of the contents of survivor regions at the end
+// of the GC, and any objects copied into the old gen during GC.
+class G1CMRootMemRegions {
+  // The set of root MemRegions.
+  MemRegion*   _root_regions;
   size_t const _max_regions;
 
   volatile size_t _num_root_regions; // Actual number of root regions.
@@ -246,13 +248,13 @@ class G1CMRootRegions {
   void notify_scan_done();
 
 public:
-  G1CMRootRegions(uint const max_regions);
-  ~G1CMRootRegions();
+  G1CMRootMemRegions(uint const max_regions);
+  ~G1CMRootMemRegions();
 
   // Reset the data structure to allow addition of new root regions.
   void reset();
 
-  void add(HeapRegion* hr);
+  void add(HeapWord* start, HeapWord* end);
 
   // Reset the claiming / scanning of the root regions.
   void prepare_for_scan();
@@ -264,9 +266,9 @@ public:
   // false otherwise.
   bool scan_in_progress() { return _scan_in_progress; }
 
-  // Claim the next root region to scan atomically, or return NULL if
+  // Claim the next root MemRegion to scan atomically, or return NULL if
   // all have been claimed.
-  HeapRegion* claim_next();
+  const MemRegion* claim_next();
 
   // The number of root regions to scan.
   uint num_root_regions() const;
@@ -310,7 +312,7 @@ class G1ConcurrentMark : public CHeapObj<mtGC> {
   MemRegion const         _heap;
 
   // Root region tracking and claiming
-  G1CMRootRegions         _root_regions;
+  G1CMRootMemRegions         _root_regions;
 
   // For grey objects
   G1CMMarkStack           _global_mark_stack; // Grey objects behind global finger
@@ -501,7 +503,7 @@ public:
   size_t partial_mark_stack_size_target() const { return _global_mark_stack.capacity() / 3; }
   bool mark_stack_empty() const                 { return _global_mark_stack.is_empty(); }
 
-  G1CMRootRegions* root_regions() { return &_root_regions; }
+  G1CMRootMemRegions* root_regions() { return &_root_regions; }
 
   void concurrent_cycle_start();
   // Abandon current marking iteration due to a Full GC.
@@ -554,8 +556,8 @@ public:
   // them.
   void scan_root_regions();
 
-  // Scan a single root region from nTAMS to top and mark everything reachable from it.
-  void scan_root_region(HeapRegion* hr, uint worker_id);
+  // Scan a single root MemRegion to mark everything reachable from it.
+  void scan_root_region(const MemRegion* region, uint worker_id);
 
   // Do concurrent phase of marking, to a tentative transitive closure.
   void mark_from_roots();

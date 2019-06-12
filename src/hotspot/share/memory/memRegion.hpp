@@ -32,13 +32,13 @@
 // A very simple data structure representing a contigous region
 // region of address space.
 
-// Note that MemRegions are passed by value, not by reference.
+// Note that MemRegions are typically passed by value, not by reference.
 // The intent is that they remain very small and contain no
 // objects. The copy constructor and destructor must be trivial,
 // to support optimization for pass-by-value.
-// These should never be allocated in heap but we do
-// create MemRegions (in CardTableBarrierSet) in heap so operator
-// new and operator new [] added for this special case.
+// These should almost never be allocated in heap but we do
+// create MemRegions (in CardTable and G1CMRootMemRegions) on the heap so operator
+// new and operator new [] were added for these special cases.
 
 class MemRegion {
   friend class VMStructs;
