@@ -89,8 +89,8 @@ public class PropertyWriterImpl extends AbstractMemberWriter
         Content propertyDetailsTree = new ContentBuilder();
         Content heading = HtmlTree.HEADING(Headings.TypeDeclaration.DETAILS_HEADING,
                 contents.propertyDetailsLabel);
-        propertyDetailsTree.add(heading);
         propertyDetailsTree.add(links.createAnchor(SectionName.PROPERTY_DETAIL));
+        propertyDetailsTree.add(heading);
         return propertyDetailsTree;
     }
 
@@ -102,9 +102,9 @@ public class PropertyWriterImpl extends AbstractMemberWriter
             Content propertyDetailsTree) {
         Content propertyDocTree = new ContentBuilder();
         Content heading = new HtmlTree(Headings.TypeDeclaration.MEMBER_HEADING);
-        heading.add(utils.getPropertyLabel(name(property)));
+        heading.add(links.createAnchor(name(property),
+                new StringContent(utils.getPropertyLabel(name(property)))));
         propertyDocTree.add(heading);
-        propertyDocTree.add(links.createAnchor(name(property)));
         return HtmlTree.SECTION(HtmlStyle.detail, propertyDocTree);
     }
 

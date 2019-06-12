@@ -70,9 +70,7 @@ public class TestTypeParameters extends JavadocTester {
 
         // Nested type parameters
         checkOutput("pkg/C.html", true,
-                "<a id=\"formatDetails(java.util.Collection,java.util.Collection)\">\n"
-                + "<!--   -->\n"
-                + "</a>");
+                "<a id=\"formatDetails(java.util.Collection,java.util.Collection)\">");
     }
 
     @Test

@@ -33,6 +33,7 @@ import javax.lang.model.element.VariableElement;
 import jdk.javadoc.internal.doclets.formats.html.markup.ContentBuilder;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlStyle;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlTree;
+import jdk.javadoc.internal.doclets.formats.html.markup.StringContent;
 import jdk.javadoc.internal.doclets.formats.html.markup.Table;
 import jdk.javadoc.internal.doclets.formats.html.markup.TableHeader;
 import jdk.javadoc.internal.doclets.toolkit.Content;
@@ -91,9 +92,9 @@ public class EnumConstantWriterImpl extends AbstractMemberWriter
         Content enumConstantsDetailsTree = new ContentBuilder();
         Content heading = HtmlTree.HEADING(Headings.TypeDeclaration.DETAILS_HEADING,
                 contents.enumConstantDetailLabel);
-        enumConstantsDetailsTree.add(heading);
         enumConstantsDetailsTree.add(links.createAnchor(
                 SectionName.ENUM_CONSTANT_DETAIL));
+        enumConstantsDetailsTree.add(heading);
         return enumConstantsDetailsTree;
     }
 
@@ -105,9 +106,8 @@ public class EnumConstantWriterImpl extends AbstractMemberWriter
             Content enumConstantsDetailsTree) {
         Content enumConstantsTree = new ContentBuilder();
         Content heading = new HtmlTree(Headings.TypeDeclaration.MEMBER_HEADING);
-        heading.add(name(enumConstant));
+        heading.add(links.createAnchor(name(enumConstant), new StringContent(name(enumConstant))));
         enumConstantsTree.add(heading);
-        enumConstantsTree.add(links.createAnchor(name(enumConstant)));
         return HtmlTree.SECTION(HtmlStyle.detail, enumConstantsTree);
     }
 

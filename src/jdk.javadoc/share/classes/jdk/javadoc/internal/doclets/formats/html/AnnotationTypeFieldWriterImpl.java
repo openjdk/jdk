@@ -33,6 +33,7 @@ import javax.lang.model.type.TypeMirror;
 import jdk.javadoc.internal.doclets.formats.html.markup.ContentBuilder;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlStyle;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlTree;
+import jdk.javadoc.internal.doclets.formats.html.markup.StringContent;
 import jdk.javadoc.internal.doclets.formats.html.markup.Table;
 import jdk.javadoc.internal.doclets.formats.html.markup.TableHeader;
 import jdk.javadoc.internal.doclets.toolkit.AnnotationTypeFieldWriter;
@@ -104,9 +105,9 @@ public class AnnotationTypeFieldWriterImpl extends AbstractMemberWriter
         if (!writer.printedAnnotationFieldHeading) {
             Content heading = HtmlTree.HEADING(Headings.TypeDeclaration.DETAILS_HEADING,
                     contents.fieldDetailsLabel);
-            memberDetailsTree.add(heading);
             memberDetailsTree.add(links.createAnchor(
                     SectionName.ANNOTATION_TYPE_FIELD_DETAIL));
+            memberDetailsTree.add(heading);
             writer.printedAnnotationFieldHeading = true;
         }
         return memberDetailsTree;
@@ -119,9 +120,8 @@ public class AnnotationTypeFieldWriterImpl extends AbstractMemberWriter
             Content annotationDetailsTree) {
         Content annotationDocTree = new ContentBuilder();
         Content heading = new HtmlTree(Headings.TypeDeclaration.MEMBER_HEADING);
-        heading.add(name(member));
+        heading.add(links.createAnchor(name(member), new StringContent(name(member))));
         annotationDocTree.add(heading);
-        annotationDocTree.add(links.createAnchor(name(member)));
         return HtmlTree.SECTION(HtmlStyle.detail, annotationDocTree);
     }
 
