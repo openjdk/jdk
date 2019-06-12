@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,11 +26,11 @@ package java.lang.invoke;
 import java.lang.invoke.MethodHandles.Lookup;
 import jdk.internal.vm.annotation.DontInline;
 import jdk.internal.vm.annotation.ForceInline;
+
 /**
  * Helper class to inject into java.lang.invoke that provides access to
  * package-private methods in this package.
  */
-
 public class MethodHandleHelper {
 
     private MethodHandleHelper() { }
@@ -78,30 +78,5 @@ public class MethodHandleHelper {
 
     public static LambdaForm getLambdaForm(MethodHandle mh) {
         return mh.form;
-    }
-
-    public static class NonInlinedReinvoker extends DelegatingMethodHandle {
-        private final MethodHandle target;
-
-        private NonInlinedReinvoker(MethodHandle target, LambdaForm lf) {
-            super(target.type(), lf);
-            this.target = target;
-        }
-        @Override
-        public MethodHandle getTarget() {
-            return target;
-        }
-
-        @Override
-        public MethodHandle asTypeUncached(MethodType newType) {
-            return asTypeCache = target.asType(newType);
-        }
-
-        public static MethodHandle make(MethodHandle target) {
-            LambdaForm lform = DelegatingMethodHandle.makeReinvokerForm(
-                    target, -1, DelegatingMethodHandle.class,
-                /*forceInline=*/false, DelegatingMethodHandle.NF_getTarget, null);
-            return new NonInlinedReinvoker(target, lform);
-        }
     }
 }

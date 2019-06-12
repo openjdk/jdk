@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -87,9 +87,8 @@ Java_java_util_zip_Inflater_init(JNIEnv *env, jclass cls, jboolean nowrap)
     }
 }
 
-static void doSetDictionary(JNIEnv *env, jlong addr, jbyte *buf, jint len)
+static void checkSetDictionaryResult(JNIEnv *env, jlong addr, int res)
 {
-    int res = inflateSetDictionary(jlong_to_ptr(addr), (Bytef *) buf, len);
     switch (res) {
     case Z_OK:
         break;
@@ -107,30 +106,31 @@ JNIEXPORT void JNICALL
 Java_java_util_zip_Inflater_setDictionary(JNIEnv *env, jclass cls, jlong addr,
                                           jbyteArray b, jint off, jint len)
 {
-    jbyte *buf = (*env)->GetPrimitiveArrayCritical(env, b, 0);
+    jint res;
+    Bytef *buf = (*env)->GetPrimitiveArrayCritical(env, b, 0);
     if (buf == NULL) /* out of memory */
         return;
-    doSetDictionary(env, addr, buf + off, len);
+    res = inflateSetDictionary(jlong_to_ptr(addr), buf + off, len);
     (*env)->ReleasePrimitiveArrayCritical(env, b, buf, 0);
+    checkSetDictionaryResult(env, addr, res);
 }
 
 JNIEXPORT void JNICALL
 Java_java_util_zip_Inflater_setDictionaryBuffer(JNIEnv *env, jclass cls, jlong addr,
                                           jlong bufferAddr, jint len)
 {
-    jbyte *buf = jlong_to_ptr(bufferAddr);
-    doSetDictionary(env, addr, buf, len);
+    jint res;
+    Bytef *buf = jlong_to_ptr(bufferAddr);
+    res = inflateSetDictionary(jlong_to_ptr(addr), buf, len);
+    checkSetDictionaryResult(env, addr, res);
 }
 
-static jlong doInflate(JNIEnv *env, jobject this, jlong addr,
+static jint doInflate(jlong addr,
                        jbyte *input, jint inputLen,
                        jbyte *output, jint outputLen)
 {
+    jint ret;
     z_stream *strm = jlong_to_ptr(addr);
-    jint inputUsed = 0, outputUsed = 0;
-    int finished = 0;
-    int needDict = 0;
-    int ret;
 
     strm->next_in  = (Bytef *) input;
     strm->next_out = (Bytef *) output;
@@ -138,6 +138,16 @@ static jlong doInflate(JNIEnv *env, jobject this, jlong addr,
     strm->avail_out = outputLen;
 
     ret = inflate(strm, Z_PARTIAL_FLUSH);
+    return ret;
+}
+
+static jlong checkInflateStatus(JNIEnv *env, jobject this, jlong addr,
+                        jint inputLen, jint outputLen, jint ret )
+{
+    z_stream *strm = jlong_to_ptr(addr);
+    jint inputUsed = 0, outputUsed = 0;
+    int finished = 0;
+    int needDict = 0;
 
     switch (ret) {
     case Z_STREAM_END:
@@ -180,6 +190,7 @@ Java_java_util_zip_Inflater_inflateBytesBytes(JNIEnv *env, jobject this, jlong a
 {
     jbyte *input = (*env)->GetPrimitiveArrayCritical(env, inputArray, 0);
     jbyte *output;
+    jint ret;
     jlong retVal;
 
     if (input == NULL) {
@@ -195,13 +206,13 @@ Java_java_util_zip_Inflater_inflateBytesBytes(JNIEnv *env, jobject this, jlong a
         return 0L;
     }
 
-    retVal = doInflate(env, this, addr,
-            input + inputOff, inputLen,
-            output + outputOff, outputLen);
+    ret = doInflate(addr, input + inputOff, inputLen, output + outputOff,
+                    outputLen);
 
     (*env)->ReleasePrimitiveArrayCritical(env, outputArray, output, 0);
     (*env)->ReleasePrimitiveArrayCritical(env, inputArray, input, 0);
 
+    retVal = checkInflateStatus(env, this, addr, inputLen, outputLen, ret );
     return retVal;
 }
 
@@ -212,6 +223,7 @@ Java_java_util_zip_Inflater_inflateBytesBuffer(JNIEnv *env, jobject this, jlong 
 {
     jbyte *input = (*env)->GetPrimitiveArrayCritical(env, inputArray, 0);
     jbyte *output;
+    jint ret;
     jlong retVal;
 
     if (input == NULL) {
@@ -221,11 +233,10 @@ Java_java_util_zip_Inflater_inflateBytesBuffer(JNIEnv *env, jobject this, jlong 
     }
     output = jlong_to_ptr(outputBuffer);
 
-    retVal = doInflate(env, this, addr,
-            input + inputOff, inputLen,
-            output, outputLen);
+    ret = doInflate(addr, input + inputOff, inputLen, output, outputLen);
 
     (*env)->ReleasePrimitiveArrayCritical(env, inputArray, input, 0);
+    retVal = checkInflateStatus(env, this, addr, inputLen, outputLen, ret );
 
     return retVal;
 }
@@ -237,6 +248,7 @@ Java_java_util_zip_Inflater_inflateBufferBytes(JNIEnv *env, jobject this, jlong 
 {
     jbyte *input = jlong_to_ptr(inputBuffer);
     jbyte *output = (*env)->GetPrimitiveArrayCritical(env, outputArray, 0);
+    jint ret;
     jlong retVal;
 
     if (output == NULL) {
@@ -245,11 +257,10 @@ Java_java_util_zip_Inflater_inflateBufferBytes(JNIEnv *env, jobject this, jlong 
         return 0L;
     }
 
-    retVal = doInflate(env, this, addr,
-            input, inputLen,
-            output + outputOff, outputLen);
+    ret = doInflate(addr, input, inputLen, output  + outputOff, outputLen);
 
     (*env)->ReleasePrimitiveArrayCritical(env, outputArray, output, 0);
+    retVal = checkInflateStatus(env, this, addr, inputLen, outputLen, ret );
 
     return retVal;
 }
@@ -261,10 +272,12 @@ Java_java_util_zip_Inflater_inflateBufferBuffer(JNIEnv *env, jobject this, jlong
 {
     jbyte *input = jlong_to_ptr(inputBuffer);
     jbyte *output = jlong_to_ptr(outputBuffer);
+    jint ret;
+    jlong retVal;
 
-    return doInflate(env, this, addr,
-            input, inputLen,
-            output, outputLen);
+    ret = doInflate(addr, input, inputLen, output, outputLen);
+    retVal = checkInflateStatus(env, this, addr, inputLen, outputLen, ret);
+    return retVal;
 }
 
 JNIEXPORT jint JNICALL

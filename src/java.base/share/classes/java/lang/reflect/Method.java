@@ -269,7 +269,7 @@ public final class Method extends Executable {
      *
      * <p>If the return type is a parameterized type,
      * the {@code Type} object returned must accurately reflect
-     * the actual type parameters used in the source code.
+     * the actual type arguments used in the source code.
      *
      * <p>If the return type is a type variable or a parameterized type, it
      * is created. Otherwise, it is resolved.

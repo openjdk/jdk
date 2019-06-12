@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,6 +28,7 @@
  * @summary Check for CRL results in IllegalArgumentException "white space not allowed"
  * @modules jdk.httpserver
  * @run main/othervm Test2
+ * @run main/othervm -Djava.net.preferIPv6Addresses=true Test2
  */
 
 import com.sun.net.httpserver.*;
@@ -69,11 +70,12 @@ public class Test2 {
 
     public static void main (String[] args) throws Exception {
         Handler handler = new Handler();
-        InetSocketAddress addr = new InetSocketAddress (0);
+        InetAddress loopback = InetAddress.getLoopbackAddress();
+        InetSocketAddress addr = new InetSocketAddress(loopback, 0);
         HttpServer server = HttpServer.create (addr, 0);
         port = server.getAddress().getPort();
         HttpContext ctx = server.createContext ("/test", handler);
-        System.out.println ("Server: " + server.getAddress().getPort());
+        System.out.println ("Server: " + server.getAddress());
         ResponseCache.setDefault(new Cache());
 
         ExecutorService executor = Executors.newCachedThreadPool();
@@ -95,7 +97,7 @@ public class Test2 {
             .toURLUnchecked();
         System.out.println("Redir URL: " + redir);
 
-        HttpURLConnection urlc = (HttpURLConnection)url.openConnection();
+        HttpURLConnection urlc = (HttpURLConnection)url.openConnection(Proxy.NO_PROXY);
         urlc.addRequestProperty("X-Foo", "bar");
         urlc.setInstanceFollowRedirects(true);
         System.out.println(urlc.getResponseCode());

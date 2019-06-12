@@ -70,7 +70,7 @@ public class ExpressionSwitchDA {
         int i;
         int j = 0;
         int k = switch (j) {
-            case 0  -> { i=42; break 42; }
+            case 0  -> { i=42; yield 42; }
             default -> i=42;
         };
         System.out.println(i);
@@ -80,7 +80,7 @@ public class ExpressionSwitchDA {
         int j = 0;
         int k = switch (j) {
             case 0  -> i=42;
-            default -> { i=42; break 42; }
+            default -> { i=42; yield 42; }
         };
         System.out.println(i);
     }
@@ -88,8 +88,8 @@ public class ExpressionSwitchDA {
         int i;
         int j = 0;
         int k = switch (j) {
-            case 0  -> { i=42; break 42; }
-            default -> { i=42; break 42; }
+            case 0  -> { i=42; yield 42; }
+            default -> { i=42; yield 42; }
         };
         System.out.println(i);
     }

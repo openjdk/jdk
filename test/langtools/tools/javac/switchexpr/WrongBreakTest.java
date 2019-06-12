@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,12 +21,26 @@
  * questions.
  */
 
-// key: compiler.err.break.complex.value.no.switch.expression
+/*
+ * @test
+ * @bug 8223305
+ * @summary Ensure javac is not crashing for wrong breaks.
+ * @compile/fail/ref=WrongBreakTest.out --enable-preview -source ${jdk.version} -XDrawDiagnostics -XDshould-stop.at=FLOW WrongBreakTest.java
+ */
 
-class BreakComplexValueNoSwitchExpressions {
-    void t() {
+public class WrongBreakTest {
+
+    void test(int i) {
+        int s = 0;
+        int j = switch (s) { default: break; };
+        test(switch (s) { default: yield; });
+        Runnable r = () -> {
+            yield 15;
+        };
         while (true) {
-            break 1 + 1;
+            yield 15;
         }
     }
+
+    void test(Object o) {}
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,6 +26,8 @@
  * @bug 6270015
  * @summary  Light weight HTTP server
  * @run main/othervm -Dsun.net.httpserver.idleInterval=4 Test5
+ * @run main/othervm -Djava.net.preferIPv6Addresses=true
+ *                   -Dsun.net.httpserver.idleInterval=4 Test5
  */
 
 import com.sun.net.httpserver.*;
@@ -47,7 +49,8 @@ public class Test5 extends Test {
     public static void main (String[] args) throws Exception {
         System.out.print ("Test5: ");
         Handler handler = new Handler();
-        InetSocketAddress addr = new InetSocketAddress (0);
+        InetAddress loopback = InetAddress.getLoopbackAddress();
+        InetSocketAddress addr = new InetSocketAddress(loopback, 0);
         HttpServer server = HttpServer.create (addr, 0);
         int port = server.getAddress().getPort();
         HttpContext c2 = server.createContext ("/test", handler);
@@ -132,7 +135,7 @@ public class Test5 extends Test {
         "GET /test/4.html HTTP/1.1\r\nContent-length: 10\r\n"+
         "\r\n"+body4;
 
-        Socket socket = new Socket ("localhost", port);
+        Socket socket = new Socket (InetAddress.getLoopbackAddress(), port);
         OutputStream os = socket.getOutputStream();
         os.write (s.getBytes());
         InputStream is = socket.getInputStream();

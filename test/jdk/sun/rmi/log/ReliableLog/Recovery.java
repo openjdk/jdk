@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2002, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -88,13 +88,7 @@ public class Recovery
 
                     Recovery handler = new Recovery();
                     ReliableLog log;
-                    if (size == 4 && deathpoint == 6) {
-                        Runtime.getRuntime().traceMethodCalls(true);
-                    }
                     log = new ReliableLog(dir, handler);
-                    if (size == 4 && deathpoint == 6) {
-                        Runtime.getRuntime().traceMethodCalls(false);
-                    }
 
                     // Generate a number of updates (size - 1) until failing
                     int i;

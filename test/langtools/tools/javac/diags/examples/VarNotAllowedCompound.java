@@ -21,7 +21,7 @@
  * questions.
  */
 
-// key: compiler.err.var.not.allowed.compound
+// key: compiler.err.restricted.type.not.allowed.compound
 
 class VarNotAllowedCompound {
     void test() {

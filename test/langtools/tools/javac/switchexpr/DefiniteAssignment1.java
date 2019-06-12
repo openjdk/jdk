@@ -37,8 +37,8 @@ public class DefiniteAssignment1 {
         int x;
 
         boolean t1 = (b && switch(a) {
-            case 0: break (x = 1) == 1 || true;
-            default: break false;
+            case 0: yield (x = 1) == 1 || true;
+            default: yield false;
         }) && x == 1; //x is definitelly assigned here
 
         if (!t1) {
@@ -50,8 +50,8 @@ public class DefiniteAssignment1 {
         int x;
 
         boolean t1 = (b && switch(a) {
-            case 0: break (x = 1) == 1 || isTrue();
-            default: break false;
+            case 0: yield (x = 1) == 1 || isTrue();
+            default: yield false;
         }) && x == 1; //x is definitelly assigned here
 
         if (!t1) {
@@ -63,8 +63,8 @@ public class DefiniteAssignment1 {
         int x;
 
         boolean t1a = (b && switch(a) {
-            case 0: break (x = 1) == 1;
-            default: break false;
+            case 0: yield (x = 1) == 1;
+            default: yield false;
         }) && x == 1; //x is definitelly assigned here
 
         if (!t1a) {
@@ -76,8 +76,8 @@ public class DefiniteAssignment1 {
         int x;
 
         boolean t1b = (switch(a) {
-            case 0: break (x = 1) == 1;
-            default: break false;
+            case 0: yield (x = 1) == 1;
+            default: yield false;
         }) && x == 1; //x is definitelly assigned here
 
         if (!t1b) {
@@ -89,8 +89,8 @@ public class DefiniteAssignment1 {
         int x;
 
         boolean t2 = !(b && switch(a) {
-            case 0: break (x = 1) == 1 || true;
-            default: break false;
+            case 0: yield (x = 1) == 1 || true;
+            default: yield false;
         }) || x == 1;
 
         if (!t2) {
@@ -102,8 +102,8 @@ public class DefiniteAssignment1 {
         int x;
 
         boolean t2 = !(b && switch(a) {
-            case 0: break (x = 1) == 1 || isTrue();
-            default: break false;
+            case 0: yield (x = 1) == 1 || isTrue();
+            default: yield false;
         }) || x == 1;
 
         if (!t2) {
@@ -115,8 +115,8 @@ public class DefiniteAssignment1 {
         int x;
 
         boolean t3 = !(switch(a) {
-            case 0: break (x = 1) == 1 || true;
-            default: break false;
+            case 0: yield (x = 1) == 1 || true;
+            default: yield false;
         }) || x == 2;
 
         if (t3) {
@@ -128,8 +128,8 @@ public class DefiniteAssignment1 {
         int x;
 
         boolean t3 = !(switch(a) {
-            case 0: break (x = 1) == 1 || isTrue();
-            default: break false;
+            case 0: yield (x = 1) == 1 || isTrue();
+            default: yield false;
         }) || x == 2;
 
         if (t3) {
@@ -141,7 +141,7 @@ public class DefiniteAssignment1 {
         int x;
 
         boolean t4 = (b && switch(a) {
-            case 0: break (x = 1) == 1 || true;
+            case 0: yield (x = 1) == 1 || true;
             default: throw new IllegalStateException();
         }) && x == 1; //x is definitelly assigned here
 
@@ -155,7 +155,7 @@ public class DefiniteAssignment1 {
         int x;
 
         boolean t4 = (b && switch(a) {
-            case 0: break (x = 1) == 1 || isTrue();
+            case 0: yield (x = 1) == 1 || isTrue();
             default: throw new IllegalStateException();
         }) && x == 1; //x is definitelly assigned here
 
@@ -170,8 +170,8 @@ public class DefiniteAssignment1 {
         String s = "a";
 
         boolean t5 = (switch(s) {
-            case "a": break (x = 1) == 1 || true;
-            default: break false;
+            case "a": yield (x = 1) == 1 || true;
+            default: yield false;
         }) && x == 1; //x is definitelly assigned here
 
         if (!t5) {
@@ -185,8 +185,8 @@ public class DefiniteAssignment1 {
         String s = "a";
 
         boolean t5 = (switch(s) {
-            case "a": break (x = 1) == 1 || isTrue();
-            default: break false;
+            case "a": yield (x = 1) == 1 || isTrue();
+            default: yield false;
         }) && x == 1; //x is definitelly assigned here
 
         if (!t5) {
@@ -199,8 +199,8 @@ public class DefiniteAssignment1 {
         E e = E.B;
 
         boolean t6 = (switch(e) {
-            case B: break (x = 1) == 1 || true;
-            default: break false;
+            case B: yield (x = 1) == 1 || true;
+            default: yield false;
         }) && x == 1; //x is definitelly assigned here
 
         if (!t6) {
@@ -213,8 +213,8 @@ public class DefiniteAssignment1 {
         E e = E.B;
 
         boolean t6 = (switch(e) {
-            case B: break (x = 1) == 1 || isTrue();
-            default: break false;
+            case B: yield (x = 1) == 1 || isTrue();
+            default: yield false;
         }) && x == 1; //x is definitelly assigned here
 
         if (!t6) {
@@ -251,9 +251,9 @@ public class DefiniteAssignment1 {
         E e = E.B;
 
         boolean t8 = (switch(e) {
-            case A: x = 1; break true;
-            case B: break (x = 1) == 1 || true;
-            default: break false;
+            case A: x = 1; yield true;
+            case B: yield (x = 1) == 1 || true;
+            default: yield false;
         }) && x == 1; //x is definitelly assigned here
 
         if (!t8) {
@@ -266,9 +266,9 @@ public class DefiniteAssignment1 {
         E e = E.B;
 
         boolean t8 = (switch(e) {
-            case A: x = 1; break isTrue();
-            case B: break (x = 1) == 1 || isTrue();
-            default: break false;
+            case A: x = 1; yield isTrue();
+            case B: yield (x = 1) == 1 || isTrue();
+            default: yield false;
         }) && x == 1; //x is definitelly assigned here
 
         if (!t8) {
@@ -281,9 +281,9 @@ public class DefiniteAssignment1 {
         E e = E.A;
 
         boolean t9 = (switch(e) {
-            case A: x = 1; break true;
-            case B: break (x = 1) == 1 || true;
-            default: break false;
+            case A: x = 1; yield true;
+            case B: yield (x = 1) == 1 || true;
+            default: yield false;
         }) && x == 1; //x is definitelly assigned here
 
         if (!t9) {
@@ -296,9 +296,9 @@ public class DefiniteAssignment1 {
         E e = E.A;
 
         boolean t9 = (switch(e) {
-            case A: x = 1; break isTrue();
-            case B: break (x = 1) == 1 || isTrue();
-            default: break false;
+            case A: x = 1; yield isTrue();
+            case B: yield (x = 1) == 1 || isTrue();
+            default: yield false;
         }) && x == 1; //x is definitelly assigned here
 
         if (!t9) {
@@ -311,9 +311,9 @@ public class DefiniteAssignment1 {
         E e = E.C;
 
         boolean tA = (switch(e) {
-            case A: x = 1; break true;
-            case B: break (x = 1) == 1 || true;
-            default: break false;
+            case A: x = 1; yield true;
+            case B: yield (x = 1) == 1 || true;
+            default: yield false;
         }) && x == 1; //x is definitelly assigned here
 
         if (tA) {
@@ -326,9 +326,9 @@ public class DefiniteAssignment1 {
         E e = E.C;
 
         boolean tA = (switch(e) {
-            case A: x = 1; break isTrue();
-            case B: break (x = 1) == 1 || isTrue();
-            default: break false;
+            case A: x = 1; yield isTrue();
+            case B: yield (x = 1) == 1 || isTrue();
+            default: yield false;
         }) && x == 1; //x is definitelly assigned here
 
         if (tA) {
@@ -341,9 +341,9 @@ public class DefiniteAssignment1 {
         E e = E.C;
 
         boolean tA = (switch(e) {
-            case A: x = 1; break true;
-            case B: break (x = 2) == 2 || true;
-            default: break false;
+            case A: x = 1; yield true;
+            case B: yield (x = 2) == 2 || true;
+            default: yield false;
         }) || (x = 3) == 3; //x is definitelly unassigned here
 
         if (x != 3) {
@@ -356,9 +356,9 @@ public class DefiniteAssignment1 {
         E e = E.A;
 
         boolean tA = (switch(e) {
-            case A: break isTrue() && (x = 1) == 1;
-            case B: break (x = 1) == 1 || isTrue();
-            default: break false;
+            case A: yield isTrue() && (x = 1) == 1;
+            case B: yield (x = 1) == 1 || isTrue();
+            default: yield false;
         }) && x == 1; //x is definitelly assigned here
 
         if (!tA) {
@@ -371,9 +371,9 @@ public class DefiniteAssignment1 {
         E e = E.A;
 
         boolean tA = (switch(e) {
-            case A: break isTrue() && e != E.C ? (x = 1) == 1 && e != E.B : false;
-            case B: break (x = 1) == 1 || true;
-            default: break false;
+            case A: yield isTrue() && e != E.C ? (x = 1) == 1 && e != E.B : false;
+            case B: yield (x = 1) == 1 || true;
+            default: yield false;
         }) && x == 1; //x is definitelly assigned here
 
         if (!tA) {
@@ -386,9 +386,9 @@ public class DefiniteAssignment1 {
         E e = E.A;
 
         boolean tA = (switch(e) {
-            case A: break isTrue() && e != E.C ? (x = 1) == 1 && e != E.B : false;
-            case B: break (x = 1) == 1 || isTrue();
-            default: break false;
+            case A: yield isTrue() && e != E.C ? (x = 1) == 1 && e != E.B : false;
+            case B: yield (x = 1) == 1 || isTrue();
+            default: yield false;
         }) && x == 1; //x is definitelly assigned here
 
         if (!tA) {
@@ -416,9 +416,9 @@ public class DefiniteAssignment1 {
         E e = E.A;
 
         boolean tA = (switch(e) {
-            case A -> { x = 1; break true; }
-            case B -> { x = 1; break true; }
-            case C -> { x = 1; break true; }
+            case A -> { x = 1; yield true; }
+            case B -> { x = 1; yield true; }
+            case C -> { x = 1; yield true; }
         }) && x == 1; //x is definitelly assigned here
 
         if (!tA) {

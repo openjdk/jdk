@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,20 +25,26 @@
  * @test
  * @bug 6756771 6755625
  * @summary  com.sun.net.httpserver.HttpServer should handle POSTs larger than 2Gig
+ * @library /test/lib
+ * @run main FixedLengthInputStream
+ * @run main/othervm -Djava.net.preferIPv6Addresses=true FixedLengthInputStream
  */
 
 import java.io.InputStream;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.io.PrintStream;
+import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.HttpURLConnection;
+import java.net.Proxy;
 import java.net.URL;
 import java.net.Socket;
 import java.util.logging.*;
 import com.sun.net.httpserver.HttpExchange;
 import com.sun.net.httpserver.HttpHandler;
 import com.sun.net.httpserver.HttpServer;
+import jdk.test.lib.net.URIBuilder;
 
 public class FixedLengthInputStream
 {
@@ -48,8 +54,13 @@ public class FixedLengthInputStream
         HttpServer httpServer = startHttpServer();
         int port = httpServer.getAddress().getPort();
         try {
-            URL url = new URL("http://localhost:" + port + "/flis/");
-            HttpURLConnection uc = (HttpURLConnection)url.openConnection();
+            URL url = URIBuilder.newBuilder()
+                .scheme("http")
+                .loopback()
+                .port(port)
+                .path("/flis/")
+                .toURLUnchecked();
+            HttpURLConnection uc = (HttpURLConnection)url.openConnection(Proxy.NO_PROXY);
             uc.setDoOutput(true);
             uc.setRequestMethod("POST");
             uc.setFixedLengthStreamingMode(POST_SIZE);
@@ -90,7 +101,8 @@ public class FixedLengthInputStream
             logger.setLevel(Level.FINEST);
             logger.addHandler(outHandler);
         }
-        HttpServer httpServer = HttpServer.create(new InetSocketAddress(0), 0);
+        InetAddress loopback = InetAddress.getLoopbackAddress();
+        HttpServer httpServer = HttpServer.create(new InetSocketAddress(loopback, 0), 0);
         httpServer.createContext("/flis/", new MyHandler(POST_SIZE));
         httpServer.start();
         return httpServer;

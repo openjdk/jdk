@@ -294,7 +294,7 @@ class CodeCache : AllStatic {
 
   // CodeHeap State Analytics.
   // interface methods for CodeHeap printing, called by CompileBroker
-  static void aggregate(outputStream *out, const char* granularity);
+  static void aggregate(outputStream *out, size_t granularity);
   static void discard(outputStream *out);
   static void print_usedSpace(outputStream *out);
   static void print_freeSpace(outputStream *out);

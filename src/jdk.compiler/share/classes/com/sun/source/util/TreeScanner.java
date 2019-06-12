@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -467,9 +467,8 @@ public class TreeScanner<R,P> implements TreeVisitor<R,P> {
      * @return the result of scanning
      */
     @Override
-    @SuppressWarnings("removal")
     public R visitBreak(BreakTree node, P p) {
-        return scan(node.getValue(), p);
+        return null;
     }
 
     /**
@@ -934,5 +933,24 @@ public class TreeScanner<R,P> implements TreeVisitor<R,P> {
     @Override
     public R visitErroneous(ErroneousTree node, P p) {
         return null;
+    }
+
+    /**
+     * {@inheritDoc} This implementation returns {@code null}.
+     *
+     * @param node  {@inheritDoc}
+     * @param p  {@inheritDoc}
+     * @return the result of scanning
+     *
+     * @deprecated
+     * This method is modeling switch expressions,
+     * which are part of a preview feature and may be removed
+     * if the preview feature is removed.
+     */
+    @Override
+    @Deprecated(forRemoval=true, since="13")
+    @SuppressWarnings("removal")
+    public R visitYield(YieldTree node, P p) {
+        return scan(node.getValue(), p);
     }
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -656,7 +656,21 @@ public interface Tree {
          * An implementation-reserved node. This is the not the node
          * you are looking for.
          */
-        OTHER(null);
+        OTHER(null),
+
+        /**
+         * Used for instances of {@link YieldTree}.
+         *
+         * @since 13
+         *
+         * @deprecated
+         * This enum constant is modeling yield statement,
+         * which are part of a preview feature and may be removed
+         * if the preview feature is removed.
+         */
+        @Deprecated(forRemoval=true, since="13")
+        @SuppressWarnings("removal")
+        YIELD(YieldTree.class);
 
 
         Kind(Class<? extends Tree> intf) {

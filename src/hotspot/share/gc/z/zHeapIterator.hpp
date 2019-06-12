@@ -32,8 +32,8 @@ class ObjectClosure;
 class ZHeapIteratorBitMap;
 
 class ZHeapIterator : public StackObj {
-  friend class ZHeapIteratorRootOopClosure;
-  friend class ZHeapIteratorOopClosure;
+  template<bool Concurrent, bool Weak> friend class ZHeapIteratorRootOopClosure;
+  template<bool VisitReferents> friend class ZHeapIteratorOopClosure;
 
 private:
   typedef ZGranuleMap<ZHeapIteratorBitMap*>         ZVisitMap;
@@ -42,16 +42,19 @@ private:
 
   ZVisitStack _visit_stack;
   ZVisitMap   _visit_map;
-  const bool  _visit_referents;
 
   ZHeapIteratorBitMap* object_map(oop obj);
   void push(oop obj);
 
+  template <typename RootsIterator, bool Concurrent, bool Weak> void push_roots();
+  template <bool VisitReferents> void push_fields(oop obj);
+  template <bool VisitReferents> void objects_do(ObjectClosure* cl);
+
 public:
-  ZHeapIterator(bool visit_referents);
+  ZHeapIterator();
   ~ZHeapIterator();
 
-  void objects_do(ObjectClosure* cl);
+  void objects_do(ObjectClosure* cl, bool visit_referents);
 };
 
 #endif // SHARE_GC_Z_ZHEAPITERATOR_HPP

@@ -1,0 +1,8 @@
+WrongBreakTest.java:36:41: compiler.err.illegal.start.of.expr
+WrongBreakTest.java:35:39: compiler.err.break.outside.switch.expression
+WrongBreakTest.java:36:9: compiler.err.ref.ambiguous: test, kindname.method, test(int), WrongBreakTest, kindname.method, test(java.lang.Object), WrongBreakTest
+WrongBreakTest.java:38:13: compiler.err.no.switch.expression
+WrongBreakTest.java:41:13: compiler.err.no.switch.expression
+- compiler.note.preview.filename: WrongBreakTest.java
+- compiler.note.preview.recompile
+5 errors

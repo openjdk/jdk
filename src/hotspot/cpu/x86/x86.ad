@@ -8358,7 +8358,7 @@ instruct vshift4B(vecS dst, vecS src, vecS shift, vecS tmp, rRegI scratch) %{
   match(Set dst (LShiftVB src shift));
   match(Set dst (RShiftVB src shift));
   match(Set dst (URShiftVB src shift));
-  effect(TEMP dst, TEMP tmp, TEMP scratch);
+  effect(TEMP dst, USE src, USE shift, TEMP tmp, TEMP scratch);
   format %{"vextendbw $tmp,$src\n\t"
            "vshiftw   $tmp,$shift\n\t"
            "movdqu    $dst,[0x00ff00ff0x00ff00ff]\n\t"
@@ -8381,7 +8381,7 @@ instruct vshift8B(vecD dst, vecD src, vecS shift, vecD tmp, rRegI scratch) %{
   match(Set dst (LShiftVB src shift));
   match(Set dst (RShiftVB src shift));
   match(Set dst (URShiftVB src shift));
-  effect(TEMP dst, TEMP tmp, TEMP scratch);
+  effect(TEMP dst, USE src, USE shift, TEMP tmp, TEMP scratch);
   format %{"vextendbw $tmp,$src\n\t"
            "vshiftw   $tmp,$shift\n\t"
            "movdqu    $dst,[0x00ff00ff0x00ff00ff]\n\t"
@@ -8404,7 +8404,7 @@ instruct vshift16B(vecX dst, vecX src, vecS shift, vecX tmp1, vecX tmp2, rRegI s
   match(Set dst (LShiftVB src shift));
   match(Set dst (RShiftVB src shift));
   match(Set dst (URShiftVB src shift));
-  effect(TEMP dst, TEMP tmp1, TEMP tmp2, TEMP scratch);
+  effect(TEMP dst, USE src, USE shift, TEMP tmp1, TEMP tmp2, TEMP scratch);
   format %{"vextendbw $tmp1,$src\n\t"
            "vshiftw   $tmp1,$shift\n\t"
            "pshufd    $tmp2,$src\n\t"
@@ -8435,7 +8435,7 @@ instruct vshift16B_avx(vecX dst, vecX src, vecS shift, vecX tmp, rRegI scratch) 
   match(Set dst (LShiftVB src shift));
   match(Set dst (RShiftVB src shift));
   match(Set dst (URShiftVB src shift));
-  effect(TEMP dst, TEMP tmp, TEMP scratch);
+  effect(TEMP dst, USE src, USE shift, TEMP tmp, TEMP scratch);
   format %{"vextendbw  $tmp,$src\n\t"
            "vshiftw    $tmp,$tmp,$shift\n\t"
            "vpand      $tmp,$tmp,[0x00ff00ff0x00ff00ff]\n\t"
@@ -8459,7 +8459,7 @@ instruct vshift32B_avx(vecY dst, vecY src, vecS shift, vecY tmp, rRegI scratch) 
   match(Set dst (LShiftVB src shift));
   match(Set dst (RShiftVB src shift));
   match(Set dst (URShiftVB src shift));
-  effect(TEMP dst, TEMP tmp, TEMP scratch);
+  effect(TEMP dst, USE src, USE shift, TEMP tmp, TEMP scratch);
   format %{"vextracti128_high  $tmp,$src\n\t"
            "vextendbw  $tmp,$tmp\n\t"
            "vextendbw  $dst,$src\n\t"
@@ -8491,7 +8491,7 @@ instruct vshift64B_avx(vecZ dst, vecZ src, vecS shift, vecZ tmp1, vecZ tmp2, rRe
   match(Set dst (LShiftVB src shift));
   match(Set dst (RShiftVB src shift));
   match(Set dst (URShiftVB src shift));
-  effect(TEMP dst, TEMP tmp1, TEMP tmp2, TEMP scratch);
+  effect(TEMP dst, USE src, USE shift, TEMP tmp1, TEMP tmp2, TEMP scratch);
   format %{"vextracti64x4  $tmp1,$src\n\t"
            "vextendbw      $tmp1,$tmp1\n\t"
            "vextendbw      $tmp2,$src\n\t"
@@ -8534,6 +8534,7 @@ instruct vshist2S(vecS dst, vecS src, vecS shift) %{
   match(Set dst (LShiftVS src shift));
   match(Set dst (RShiftVS src shift));
   match(Set dst (URShiftVS src shift));
+  effect(TEMP dst, USE src, USE shift);
   format %{ "vshiftw  $dst,$src,$shift\t! shift packed2S" %}
   ins_encode %{
     int opcode = this->as_Mach()->ideal_Opcode();
@@ -8554,6 +8555,7 @@ instruct vshift4S(vecD dst, vecD src, vecS shift) %{
   match(Set dst (LShiftVS src shift));
   match(Set dst (RShiftVS src shift));
   match(Set dst (URShiftVS src shift));
+  effect(TEMP dst, USE src, USE shift);
   format %{ "vshiftw  $dst,$src,$shift\t! shift packed4S" %}
   ins_encode %{
     int opcode = this->as_Mach()->ideal_Opcode();
@@ -8575,6 +8577,7 @@ instruct vshift8S(vecX dst, vecX src, vecS shift) %{
   match(Set dst (LShiftVS src shift));
   match(Set dst (RShiftVS src shift));
   match(Set dst (URShiftVS src shift));
+  effect(TEMP dst, USE src, USE shift);
   format %{ "vshiftw  $dst,$src,$shift\t! shift packed8S" %}
   ins_encode %{
     int opcode = this->as_Mach()->ideal_Opcode();
@@ -8595,6 +8598,7 @@ instruct vshift16S(vecY dst, vecY src, vecS shift) %{
   match(Set dst (LShiftVS src shift));
   match(Set dst (RShiftVS src shift));
   match(Set dst (URShiftVS src shift));
+  effect(DEF dst, USE src, USE shift);
   format %{ "vshiftw  $dst,$src,$shift\t! shift packed16S" %}
   ins_encode %{
     int vector_len = 1;
@@ -8609,6 +8613,7 @@ instruct vshift32S(vecZ dst, vecZ src, vecS shift) %{
   match(Set dst (LShiftVS src shift));
   match(Set dst (RShiftVS src shift));
   match(Set dst (URShiftVS src shift));
+  effect(DEF dst, USE src, USE shift);
   format %{ "vshiftw  $dst,$src,$shift\t! shift packed32S" %}
   ins_encode %{
     int vector_len = 2;
@@ -8624,6 +8629,7 @@ instruct vshift2I(vecD dst, vecD src, vecS shift) %{
   match(Set dst (LShiftVI src shift));
   match(Set dst (RShiftVI src shift));
   match(Set dst (URShiftVI src shift));
+  effect(TEMP dst, USE src, USE shift);
   format %{ "vshiftd  $dst,$src,$shift\t! shift packed2I" %}
   ins_encode %{
     int opcode = this->as_Mach()->ideal_Opcode();
@@ -8644,6 +8650,7 @@ instruct vshift4I(vecX dst, vecX src, vecS shift) %{
   match(Set dst (LShiftVI src shift));
   match(Set dst (RShiftVI src shift));
   match(Set dst (URShiftVI src shift));
+  effect(TEMP dst, USE src, USE shift);
   format %{ "vshiftd  $dst,$src,$shift\t! shift packed4I" %}
   ins_encode %{
     int opcode = this->as_Mach()->ideal_Opcode();
@@ -8664,6 +8671,7 @@ instruct vshift8I(vecY dst, vecY src, vecS shift) %{
   match(Set dst (LShiftVI src shift));
   match(Set dst (RShiftVI src shift));
   match(Set dst (URShiftVI src shift));
+  effect(DEF dst, USE src, USE shift);
   format %{ "vshiftd  $dst,$src,$shift\t! shift packed8I" %}
   ins_encode %{
     int vector_len = 1;
@@ -8678,6 +8686,7 @@ instruct vshift16I(vecZ dst, vecZ src, vecS shift) %{
   match(Set dst (LShiftVI src shift));
   match(Set dst (RShiftVI src shift));
   match(Set dst (URShiftVI src shift));
+  effect(DEF dst, USE src, USE shift);
   format %{ "vshiftd  $dst,$src,$shift\t! shift packed16I" %}
   ins_encode %{
     int vector_len = 2;
@@ -8692,6 +8701,7 @@ instruct vshift2L(vecX dst, vecX src, vecS shift) %{
   predicate(n->as_Vector()->length() == 2);
   match(Set dst (LShiftVL src shift));
   match(Set dst (URShiftVL src shift));
+  effect(TEMP dst, USE src, USE shift);
   format %{ "vshiftq  $dst,$src,$shift\t! shift packed2L" %}
   ins_encode %{
     int opcode = this->as_Mach()->ideal_Opcode();
@@ -8711,6 +8721,7 @@ instruct vshift4L(vecY dst, vecY src, vecS shift) %{
   predicate(UseAVX > 1 && n->as_Vector()->length() == 4);
   match(Set dst (LShiftVL src shift));
   match(Set dst (URShiftVL src shift));
+  effect(DEF dst, USE src, USE shift);
   format %{ "vshiftq  $dst,$src,$shift\t! left shift packed4L" %}
   ins_encode %{
     int vector_len = 1;
@@ -8725,6 +8736,7 @@ instruct vshift8L(vecZ dst, vecZ src, vecS shift) %{
   match(Set dst (LShiftVL src shift));
   match(Set dst (RShiftVL src shift));
   match(Set dst (URShiftVL src shift));
+  effect(DEF dst, USE src, USE shift);
   format %{ "vshiftq  $dst,$src,$shift\t! shift packed8L" %}
   ins_encode %{
     int vector_len = 2;

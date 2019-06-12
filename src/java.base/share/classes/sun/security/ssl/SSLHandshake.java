@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2006, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2006, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -115,15 +115,19 @@ enum SSLHandshake implements SSLConsumer, HandshakeProducer {
     NEW_SESSION_TICKET          ((byte)0x04, "new_session_ticket",
         (Map.Entry<SSLConsumer, ProtocolVersion[]>[])(new Map.Entry[] {
             new SimpleImmutableEntry<SSLConsumer, ProtocolVersion[]>(
-                NewSessionTicket.handshakeConsumer,
-                ProtocolVersion.PROTOCOLS_OF_13
-        )
+                 NewSessionTicket.handshake12Consumer,
+                 ProtocolVersion.PROTOCOLS_TO_12
+            ),
+            new SimpleImmutableEntry<SSLConsumer, ProtocolVersion[]>(
+                 NewSessionTicket.handshakeConsumer,
+                 ProtocolVersion.PROTOCOLS_OF_13
+            )
         }),
         (Map.Entry<HandshakeProducer, ProtocolVersion[]>[])(new Map.Entry[] {
             new SimpleImmutableEntry<HandshakeProducer, ProtocolVersion[]>(
-                NewSessionTicket.handshakeProducer,
-                ProtocolVersion.PROTOCOLS_OF_13
-        )
+                 NewSessionTicket.handshake12Producer,
+                 ProtocolVersion.PROTOCOLS_TO_12
+            )
         })),
     END_OF_EARLY_DATA           ((byte)0x05, "end_of_early_data"),
 

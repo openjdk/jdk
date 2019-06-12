@@ -102,6 +102,8 @@ abstract class HandshakeContext implements ConnectionContext {
     // Resumption
     boolean                                 isResumption;
     SSLSessionImpl                          resumingSession;
+    // Session is using stateless resumption
+    boolean                                 statelessResumption = false;
 
     final Queue<Map.Entry<Byte, ByteBuffer>> delegatedActions;
     volatile boolean                        taskDelegated = false;
@@ -551,7 +553,7 @@ abstract class HandshakeContext implements ConnectionContext {
 
     List<SNIServerName> getRequestedServerNames() {
         if (requestedServerNames == null) {
-            return Collections.<SNIServerName>emptyList();
+            return Collections.emptyList();
         }
         return requestedServerNames;
     }

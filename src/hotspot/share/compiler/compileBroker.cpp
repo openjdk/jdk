@@ -2640,7 +2640,7 @@ void CompileBroker::print_info(outputStream *out) {
 //       That's a tradeoff which keeps together important blocks of output.
 //       At the same time, continuous tty_lock hold time is kept in check,
 //       preventing concurrently printing threads from stalling a long time.
-void CompileBroker::print_heapinfo(outputStream* out, const char* function, const char* granularity) {
+void CompileBroker::print_heapinfo(outputStream* out, const char* function, size_t granularity) {
   TimeStamp ts_total;
   TimeStamp ts_global;
   TimeStamp ts;

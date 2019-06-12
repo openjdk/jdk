@@ -912,8 +912,6 @@ void ShenandoahBarrierSetC2::eliminate_useless_gc_barriers(Unique_Node_List &use
   }
 }
 
-void ShenandoahBarrierSetC2::add_users_to_worklist(Unique_Node_List* worklist) const {}
-
 void* ShenandoahBarrierSetC2::create_barrier_state(Arena* comp_arena) const {
   return new(comp_arena) ShenandoahBarrierSetC2State(comp_arena);
 }
@@ -928,7 +926,7 @@ bool ShenandoahBarrierSetC2::expand_macro_nodes(PhaseMacroExpand* macro) const {
 
 #ifdef ASSERT
 void ShenandoahBarrierSetC2::verify_gc_barriers(Compile* compile, CompilePhase phase) const {
-  if (ShenandoahVerifyOptoBarriers && phase == BarrierSetC2::BeforeExpand) {
+  if (ShenandoahVerifyOptoBarriers && phase == BarrierSetC2::BeforeMacroExpand) {
     ShenandoahBarrierC2Support::verify(Compile::current()->root());
   } else if (phase == BarrierSetC2::BeforeCodeGen) {
     // Verify G1 pre-barriers

@@ -160,6 +160,9 @@ public class Deduplication {
                 group((Consumer<Integer>) x -> Deduplication.this.f());
             }
         }
+
+        group((Function<Integer, Integer>) x -> switch (x) { default: yield x; },
+              (Function<Integer, Integer>) x -> switch (x) { default: yield x; });
     }
 
     void f() {}

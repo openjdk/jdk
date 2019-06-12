@@ -546,6 +546,9 @@ Node *Node::clone() const {
   if (n->is_SafePoint()) {
     n->as_SafePoint()->clone_replaced_nodes();
   }
+  if (n->is_Load()) {
+    n->as_Load()->copy_barrier_info(this);
+  }
   return n;                     // Return the clone
 }
 
@@ -563,7 +566,6 @@ void Node::setup_is_top() {
     assert(!is_top(), "must not be top");
   }
 }
-
 
 //------------------------------~Node------------------------------------------
 // Fancy destructor; eagerly attempt to reclaim Node numberings and storage
@@ -1454,12 +1456,15 @@ bool Node::rematerialize() const {
 //------------------------------needs_anti_dependence_check---------------------
 // Nodes which use memory without consuming it, hence need antidependences.
 bool Node::needs_anti_dependence_check() const {
-  if( req() < 2 || (_flags & Flag_needs_anti_dependence_check) == 0 )
+  if (req() < 2 || (_flags & Flag_needs_anti_dependence_check) == 0) {
     return false;
-  else
-    return in(1)->bottom_type()->has_memory();
+  }
+  BarrierSetC2* bs = BarrierSet::barrier_set()->barrier_set_c2();
+  if (!bs->needs_anti_dependence_check(this)) {
+    return false;
+  }
+  return in(1)->bottom_type()->has_memory();
 }
-
 
 // Get an integer constant from a ConNode (or CastIINode).
 // Return a default value if there is no apparent constant here.

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2019, Oracle and/or its affiliates. All rights reserved.
  */
 
 /* Copyright  (c) 2002 Graz University of Technology. All rights reserved.
@@ -95,6 +95,13 @@ public class Functions {
         new HashMap<Integer,String>();
 
     private static final Map<String,Integer> objectClassIds =
+        new HashMap<String,Integer>();
+
+    // MGFs (CKG_*)
+    private static final Map<Integer,String> mgfNames =
+        new HashMap<Integer,String>();
+
+    private static final Map<String,Integer> mgfIds =
         new HashMap<String,Integer>();
 
     /**
@@ -401,7 +408,11 @@ public class Functions {
             name = nameMap.get(Integer.valueOf((int)id));
         }
         if (name == null) {
-            name = "Unknown 0x" + toFullHexString(id);
+            if ((id & CKM_VENDOR_DEFINED) != 0) {
+                name = "(Vendor-Specific) 0x" + toFullHexString(id);
+            } else {
+                name = "(Unknown) 0x" + toFullHexString(id);
+            }
         }
         return name;
     }
@@ -448,6 +459,14 @@ public class Functions {
 
     public static long getHashMechId(String name) {
         return hashMechIds.get(name);
+    }
+
+    public static String getMGFName(long id) {
+        return getName(mgfNames, id);
+    }
+
+    public static long getMGFId(String name) {
+        return getId(mgfIds, name);
     }
 
     /**
@@ -595,8 +614,14 @@ public class Functions {
         addMapping(objectClassNames, objectClassIds, id, name);
     }
 
-    private static void addHashMech(long id, String name) {
-        hashMechIds.put(name, id);
+    private static void addHashMech(long id, String... names) {
+        for (String n : names) {
+            hashMechIds.put(n, id);
+        }
+    }
+
+    private static void addMGF(long id, String name) {
+        addMapping(mgfNames, mgfIds, id, name);
     }
 
     static {
@@ -618,16 +643,27 @@ public class Functions {
         addMech(CKM_DSA_KEY_PAIR_GEN,           "CKM_DSA_KEY_PAIR_GEN");
         addMech(CKM_DSA,                        "CKM_DSA");
         addMech(CKM_DSA_SHA1,                   "CKM_DSA_SHA1");
+        addMech(CKM_DSA_SHA224,                 "CKM_DSA_SHA224");
+        addMech(CKM_DSA_SHA256,                 "CKM_DSA_SHA256");
+        addMech(CKM_DSA_SHA384,                 "CKM_DSA_SHA384");
+        addMech(CKM_DSA_SHA512,                 "CKM_DSA_SHA512");
+
         addMech(CKM_DH_PKCS_KEY_PAIR_GEN,       "CKM_DH_PKCS_KEY_PAIR_GEN");
         addMech(CKM_DH_PKCS_DERIVE,             "CKM_DH_PKCS_DERIVE");
         addMech(CKM_X9_42_DH_KEY_PAIR_GEN,      "CKM_X9_42_DH_KEY_PAIR_GEN");
         addMech(CKM_X9_42_DH_DERIVE,            "CKM_X9_42_DH_DERIVE");
         addMech(CKM_X9_42_DH_HYBRID_DERIVE,     "CKM_X9_42_DH_HYBRID_DERIVE");
         addMech(CKM_X9_42_MQV_DERIVE,           "CKM_X9_42_MQV_DERIVE");
-        addMech(CKM_SHA224_RSA_PKCS,            "CKM_SHA224_RSA_PKCS");
+
         addMech(CKM_SHA256_RSA_PKCS,            "CKM_SHA256_RSA_PKCS");
         addMech(CKM_SHA384_RSA_PKCS,            "CKM_SHA384_RSA_PKCS");
         addMech(CKM_SHA512_RSA_PKCS,            "CKM_SHA512_RSA_PKCS");
+        addMech(CKM_SHA256_RSA_PKCS_PSS,        "CKM_SHA256_RSA_PKCS_PSS");
+        addMech(CKM_SHA384_RSA_PKCS_PSS,        "CKM_SHA384_RSA_PKCS_PSS");
+        addMech(CKM_SHA512_RSA_PKCS_PSS,        "CKM_SHA512_RSA_PKCS_PSS");
+        addMech(CKM_SHA224_RSA_PKCS,            "CKM_SHA224_RSA_PKCS");
+        addMech(CKM_SHA224_RSA_PKCS_PSS,        "CKM_SHA224_RSA_PKCS_PSS");
+
         addMech(CKM_RC2_KEY_GEN,                "CKM_RC2_KEY_GEN");
         addMech(CKM_RC2_ECB,                    "CKM_RC2_ECB");
         addMech(CKM_RC2_CBC,                    "CKM_RC2_CBC");
@@ -649,12 +685,21 @@ public class Functions {
         addMech(CKM_DES3_MAC,                   "CKM_DES3_MAC");
         addMech(CKM_DES3_MAC_GENERAL,           "CKM_DES3_MAC_GENERAL");
         addMech(CKM_DES3_CBC_PAD,               "CKM_DES3_CBC_PAD");
+        addMech(CKM_DES3_CMAC_GENERAL,          "CKM_DES3_CMAC_GENERAL");
+        addMech(CKM_DES3_CMAC,                  "CKM_DES3_CMAC");
+
         addMech(CKM_CDMF_KEY_GEN,               "CKM_CDMF_KEY_GEN");
         addMech(CKM_CDMF_ECB,                   "CKM_CDMF_ECB");
         addMech(CKM_CDMF_CBC,                   "CKM_CDMF_CBC");
         addMech(CKM_CDMF_MAC,                   "CKM_CDMF_MAC");
         addMech(CKM_CDMF_MAC_GENERAL,           "CKM_CDMF_MAC_GENERAL");
         addMech(CKM_CDMF_CBC_PAD,               "CKM_CDMF_CBC_PAD");
+
+        addMech(CKM_DES_OFB64,                  "CKM_DES_OFB64");
+        addMech(CKM_DES_OFB8,                   "CKM_DES_OFB8");
+        addMech(CKM_DES_CFB64,                  "CKM_DES_CFB64");
+        addMech(CKM_DES_CFB8,                   "CKM_DES_CFB8");
+
         addMech(CKM_MD2,                        "CKM_MD2");
         addMech(CKM_MD2_HMAC,                   "CKM_MD2_HMAC");
         addMech(CKM_MD2_HMAC_GENERAL,           "CKM_MD2_HMAC_GENERAL");
@@ -682,6 +727,26 @@ public class Functions {
         addMech(CKM_SHA512,                     "CKM_SHA512");
         addMech(CKM_SHA512_HMAC,                "CKM_SHA512_HMAC");
         addMech(CKM_SHA512_HMAC_GENERAL,        "CKM_SHA512_HMAC_GENERAL");
+        addMech(CKM_SHA512_224,                 "CKM_SHA512_224");
+        addMech(CKM_SHA512_224_HMAC,            "CKM_SHA512_224_HMAC");
+        addMech(CKM_SHA512_224_HMAC_GENERAL,    "CKM_SHA512_224_HMAC_GENERAL");
+        addMech(CKM_SHA512_224_KEY_DERIVATION,  "CKM_SHA512_224_KEY_DERIVATION");
+        addMech(CKM_SHA512_256,                 "CKM_SHA512_256");
+        addMech(CKM_SHA512_256_HMAC,            "CKM_SHA512_256_HMAC");
+        addMech(CKM_SHA512_256_HMAC_GENERAL,    "CKM_SHA512_256_HMAC_GENERAL");
+        addMech(CKM_SHA512_256_KEY_DERIVATION,  "CKM_SHA512_256_KEY_DERIVATION");
+        addMech(CKM_SHA512_T,                   "CKM_SHA512_T");
+        addMech(CKM_SHA512_T_HMAC,              "CKM_SHA512_T_HMAC");
+        addMech(CKM_SHA512_T_HMAC_GENERAL,      "CKM_SHA512_T_HMAC_GENERAL");
+        addMech(CKM_SHA512_T_KEY_DERIVATION,    "CKM_SHA512_T_KEY_DERIVATION");
+
+        addMech(CKM_SECURID_KEY_GEN,            "CKM_SECURID_KEY_GEN");
+        addMech(CKM_SECURID,                    "CKM_SECURID");
+        addMech(CKM_HOTP_KEY_GEN,               "CKM_HOTP_KEY_GEN");
+        addMech(CKM_HOTP,                       "CKM_HOTP");
+        addMech(CKM_ACTI,                       "CKM_ACTI");
+        addMech(CKM_ACTI_KEY_GEN,               "CKM_ACTI_KEY_GEN");
+
         addMech(CKM_CAST_KEY_GEN,               "CKM_CAST_KEY_GEN");
         addMech(CKM_CAST_ECB,                   "CKM_CAST_ECB");
         addMech(CKM_CAST_CBC,                   "CKM_CAST_CBC");
@@ -729,10 +794,7 @@ public class Functions {
         addMech(CKM_TLS_PRF,                    "CKM_TLS_PRF");
         addMech(CKM_SSL3_MD5_MAC,               "CKM_SSL3_MD5_MAC");
         addMech(CKM_SSL3_SHA1_MAC,              "CKM_SSL3_SHA1_MAC");
-        addMech(CKM_TLS12_MASTER_KEY_DERIVE,    "CKM_TLS12_MASTER_KEY_DERIVE");
-        addMech(CKM_TLS12_KEY_AND_MAC_DERIVE,   "CKM_TLS12_KEY_AND_MAC_DERIVE");
-        addMech(CKM_TLS12_MASTER_KEY_DERIVE_DH, "CKM_TLS12_MASTER_KEY_DERIVE_DH");
-        addMech(CKM_TLS_MAC,                    "CKM_TLS_MAC");
+
         addMech(CKM_MD5_KEY_DERIVATION,         "CKM_MD5_KEY_DERIVATION");
         addMech(CKM_MD2_KEY_DERIVATION,         "CKM_MD2_KEY_DERIVATION");
         addMech(CKM_SHA1_KEY_DERIVATION,        "CKM_SHA1_KEY_DERIVATION");
@@ -754,8 +816,62 @@ public class Functions {
         addMech(CKM_PBE_SHA1_RC2_40_CBC,        "CKM_PBE_SHA1_RC2_40_CBC");
         addMech(CKM_PKCS5_PBKD2,                "CKM_PKCS5_PBKD2");
         addMech(CKM_PBA_SHA1_WITH_SHA1_HMAC,    "CKM_PBA_SHA1_WITH_SHA1_HMAC");
+
+        addMech(CKM_WTLS_PRE_MASTER_KEY_GEN,    "CKM_WTLS_PRE_MASTER_KEY_GEN");
+        addMech(CKM_WTLS_MASTER_KEY_DERIVE,     "CKM_WTLS_MASTER_KEY_DERIVE");
+        addMech(CKM_WTLS_MASTER_KEY_DERIVE_DH_ECC,
+                                                "CKM_WTLS_MASTER_KEY_DERIVE_DH_ECC");
+        addMech(CKM_WTLS_PRF,                   "CKM_WTLS_PRF");
+        addMech(CKM_WTLS_SERVER_KEY_AND_MAC_DERIVE,
+                                                "CKM_WTLS_SERVER_KEY_AND_MAC_DERIVE");
+        addMech(CKM_WTLS_CLIENT_KEY_AND_MAC_DERIVE,
+                                                "CKM_WTLS_CLIENT_KEY_AND_MAC_DERIVE");
+        addMech(CKM_TLS10_MAC_SERVER,           "CKM_TLS10_MAC_SERVER");
+        addMech(CKM_TLS10_MAC_CLIENT,           "CKM_TLS10_MAC_CLIENT");
+        addMech(CKM_TLS12_MAC,                  "CKM_TLS12_MAC");
+        addMech(CKM_TLS12_KDF,                  "CKM_TLS12_KDF");
+        addMech(CKM_TLS12_MASTER_KEY_DERIVE,    "CKM_TLS12_MASTER_KEY_DERIVE");
+        addMech(CKM_TLS12_KEY_AND_MAC_DERIVE,   "CKM_TLS12_KEY_AND_MAC_DERIVE");
+        addMech(CKM_TLS12_MASTER_KEY_DERIVE_DH, "CKM_TLS12_MASTER_KEY_DERIVE_DH");
+        addMech(CKM_TLS12_KEY_SAFE_DERIVE,      "CKM_TLS12_KEY_SAFE_DERIVE");
+        addMech(CKM_TLS_MAC,                    "CKM_TLS_MAC");
+        addMech(CKM_TLS_KDF,                    "CKM_TLS_KDF");
+
         addMech(CKM_KEY_WRAP_LYNKS,             "CKM_KEY_WRAP_LYNKS");
         addMech(CKM_KEY_WRAP_SET_OAEP,          "CKM_KEY_WRAP_SET_OAEP");
+
+        addMech(CKM_CMS_SIG,                    "CKM_CMS_SIG");
+        addMech(CKM_KIP_DERIVE,                 "CKM_KIP_DERIVE");
+        addMech(CKM_KIP_WRAP,                   "CKM_KIP_WRAP");
+        addMech(CKM_KIP_MAC,                    "CKM_KIP_MAC");
+        addMech(CKM_CAMELLIA_KEY_GEN,           "CKM_CAMELLIA_KEY_GEN");
+        addMech(CKM_CAMELLIA_ECB,               "CKM_CAMELLIA_ECB");
+        addMech(CKM_CAMELLIA_CBC,               "CKM_CAMELLIA_CBC");
+        addMech(CKM_CAMELLIA_MAC,               "CKM_CAMELLIA_MAC");
+        addMech(CKM_CAMELLIA_MAC_GENERAL,       "CKM_CAMELLIA_MAC_GENERAL");
+        addMech(CKM_CAMELLIA_CBC_PAD,           "CKM_CAMELLIA_CBC_PAD");
+        addMech(CKM_CAMELLIA_ECB_ENCRYPT_DATA,  "CKM_CAMELLIA_ECB_ENCRYPT_DATA");
+        addMech(CKM_CAMELLIA_CBC_ENCRYPT_DATA,  "CKM_CAMELLIA_CBC_ENCRYPT_DATA");
+        addMech(CKM_CAMELLIA_CTR,               "CKM_CAMELLIA_CTR");
+
+        addMech(CKM_ARIA_KEY_GEN,               "CKM_ARIA_KEY_GEN");
+        addMech(CKM_ARIA_ECB,                   "CKM_ARIA_ECB");
+        addMech(CKM_ARIA_CBC,                   "CKM_ARIA_CBC");
+        addMech(CKM_ARIA_MAC,                   "CKM_ARIA_MAC");
+        addMech(CKM_ARIA_MAC_GENERAL,           "CKM_ARIA_MAC_GENERAL");
+        addMech(CKM_ARIA_CBC_PAD,               "CKM_ARIA_CBC_PAD");
+        addMech(CKM_ARIA_ECB_ENCRYPT_DATA,      "CKM_ARIA_ECB_ENCRYPT_DATA");
+        addMech(CKM_ARIA_CBC_ENCRYPT_DATA,      "CKM_ARIA_CBC_ENCRYPT_DATA");
+
+        addMech(CKM_SEED_KEY_GEN,               "CKM_SEED_KEY_GEN");
+        addMech(CKM_SEED_ECB,                   "CKM_SEED_ECB");
+        addMech(CKM_SEED_CBC,                   "CKM_SEED_CBC");
+        addMech(CKM_SEED_MAC,                   "CKM_SEED_MAC");
+        addMech(CKM_SEED_MAC_GENERAL,           "CKM_SEED_MAC_GENERAL");
+        addMech(CKM_SEED_CBC_PAD,               "CKM_SEED_CBC_PAD");
+        addMech(CKM_SEED_ECB_ENCRYPT_DATA,      "CKM_SEED_ECB_ENCRYPT_DATA");
+        addMech(CKM_SEED_CBC_ENCRYPT_DATA,      "CKM_SEED_CBC_ENCRYPT_DATA");
+
         addMech(CKM_SKIPJACK_KEY_GEN,           "CKM_SKIPJACK_KEY_GEN");
         addMech(CKM_SKIPJACK_ECB64,             "CKM_SKIPJACK_ECB64");
         addMech(CKM_SKIPJACK_CBC64,             "CKM_SKIPJACK_CBC64");
@@ -780,9 +896,17 @@ public class Functions {
         addMech(CKM_EC_KEY_PAIR_GEN,            "CKM_EC_KEY_PAIR_GEN");
         addMech(CKM_ECDSA,                      "CKM_ECDSA");
         addMech(CKM_ECDSA_SHA1,                 "CKM_ECDSA_SHA1");
+        addMech(CKM_ECDSA_SHA224,               "CKM_ECDSA_SHA224");
+        addMech(CKM_ECDSA_SHA256,               "CKM_ECDSA_SHA256");
+        addMech(CKM_ECDSA_SHA384,               "CKM_ECDSA_SHA384");
+        addMech(CKM_ECDSA_SHA512,               "CKM_ECDSA_SHA512");
+
         addMech(CKM_ECDH1_DERIVE,               "CKM_ECDH1_DERIVE");
         addMech(CKM_ECDH1_COFACTOR_DERIVE,      "CKM_ECDH1_COFACTOR_DERIVE");
         addMech(CKM_ECMQV_DERIVE,               "CKM_ECMQV_DERIVE");
+        addMech(CKM_ECDH_AES_KEY_WRAP,          "CKM_ECDH_AES_KEY_WRAP");
+        addMech(CKM_RSA_AES_KEY_WRAP,           "CKM_RSA_AES_KEY_WRAP");
+
         addMech(CKM_JUNIPER_KEY_GEN,            "CKM_JUNIPER_KEY_GEN");
         addMech(CKM_JUNIPER_ECB128,             "CKM_JUNIPER_ECB128");
         addMech(CKM_JUNIPER_CBC128,             "CKM_JUNIPER_CBC128");
@@ -796,11 +920,61 @@ public class Functions {
         addMech(CKM_AES_MAC,                    "CKM_AES_MAC");
         addMech(CKM_AES_MAC_GENERAL,            "CKM_AES_MAC_GENERAL");
         addMech(CKM_AES_CBC_PAD,                "CKM_AES_CBC_PAD");
+        addMech(CKM_AES_CTR,                    "CKM_AES_CTR");
+        addMech(CKM_AES_GCM,                    "CKM_AES_GCM");
+        addMech(CKM_AES_CCM,                    "CKM_AES_CCM");
+        addMech(CKM_AES_CTS,                    "CKM_AES_CTS");
+        addMech(CKM_AES_CMAC,                   "CKM_AES_CMAC");
+        addMech(CKM_AES_CMAC_GENERAL,           "CKM_AES_CMAC_GENERAL");
+        addMech(CKM_AES_XCBC_MAC,               "CKM_AES_XCBC_MAC");
+        addMech(CKM_AES_XCBC_MAC_96,            "CKM_AES_XCBC_MAC_96");
+        addMech(CKM_AES_GMAC,                   "CKM_AES_GMAC");
+
         addMech(CKM_BLOWFISH_KEY_GEN,           "CKM_BLOWFISH_KEY_GEN");
         addMech(CKM_BLOWFISH_CBC,               "CKM_BLOWFISH_CBC");
+        addMech(CKM_TWOFISH_KEY_GEN,            "CKM_TWOFISH_KEY_GEN");
+        addMech(CKM_TWOFISH_CBC,                "CKM_TWOFISH_CBC");
+        addMech(CKM_BLOWFISH_CBC_PAD,           "CKM_BLOWFISH_CBC_PAD");
+        addMech(CKM_TWOFISH_CBC_PAD,            "CKM_TWOFISH_CBC_PAD");
+
+        addMech(CKM_DES_ECB_ENCRYPT_DATA,       "CKM_DES_ECB_ENCRYPT_DATA");
+        addMech(CKM_DES_CBC_ENCRYPT_DATA,       "CKM_DES_CBC_ENCRYPT_DATA");
+        addMech(CKM_DES3_ECB_ENCRYPT_DATA,      "CKM_DES3_ECB_ENCRYPT_DATA");
+        addMech(CKM_DES3_CBC_ENCRYPT_DATA,      "CKM_DES3_CBC_ENCRYPT_DATA");
+        addMech(CKM_AES_ECB_ENCRYPT_DATA,       "CKM_AES_ECB_ENCRYPT_DATA");
+        addMech(CKM_AES_CBC_ENCRYPT_DATA,       "CKM_AES_CBC_ENCRYPT_DATA");
+
+        addMech(CKM_GOSTR3410_KEY_PAIR_GEN,     "CKM_GOSTR3410_KEY_PAIR_GEN");
+        addMech(CKM_GOSTR3410,                  "CKM_GOSTR3410");
+        addMech(CKM_GOSTR3410_WITH_GOSTR3411,   "CKM_GOSTR3410_WITH_GOSTR3411");
+        addMech(CKM_GOSTR3410_KEY_WRAP,         "CKM_GOSTR3410_KEY_WRAP");
+        addMech(CKM_GOSTR3410_DERIVE,           "CKM_GOSTR3410_DERIVE");
+        addMech(CKM_GOSTR3411,                  "CKM_GOSTR3411");
+        addMech(CKM_GOSTR3411_HMAC,             "CKM_GOSTR3411_HMAC");
+        addMech(CKM_GOST28147_KEY_GEN,          "CKM_GOST28147_KEY_GEN");
+        addMech(CKM_GOST28147_ECB,              "CKM_GOST28147_ECB");
+        addMech(CKM_GOST28147,                  "CKM_GOST28147");
+        addMech(CKM_GOST28147_MAC,              "CKM_GOST28147_MAC");
+        addMech(CKM_GOST28147_KEY_WRAP,         "CKM_GOST28147_KEY_WRAP");
+
         addMech(CKM_DSA_PARAMETER_GEN,          "CKM_DSA_PARAMETER_GEN");
         addMech(CKM_DH_PKCS_PARAMETER_GEN,      "CKM_DH_PKCS_PARAMETER_GEN");
         addMech(CKM_X9_42_DH_PARAMETER_GEN,     "CKM_X9_42_DH_PARAMETER_GEN");
+        addMech(CKM_DSA_PROBABLISTIC_PARAMETER_GEN,
+                                                "CKM_DSA_PROBABLISTIC_PARAMETER_GEN");
+        addMech(CKM_DSA_SHAWE_TAYLOR_PARAMETER_GEN,
+                                                "CKM_DSA_SHAWE_TAYLOR_PARAMETER_GEN");
+        addMech(CKM_AES_OFB,                    "CKM_AES_OFB");
+        addMech(CKM_AES_CFB64,                  "CKM_AES_CFB64");
+        addMech(CKM_AES_CFB8,                   "CKM_AES_CFB8");
+        addMech(CKM_AES_CFB128,                 "CKM_AES_CFB128");
+        addMech(CKM_AES_CFB1,                   "CKM_AES_CFB1");
+        addMech(CKM_AES_KEY_WRAP,               "CKM_AES_KEY_WRAP");
+        addMech(CKM_AES_KEY_WRAP_PAD,           "CKM_AES_KEY_WRAP_PAD");
+
+        addMech(CKM_RSA_PKCS_TPM_1_1,           "CKM_RSA_PKCS_TPM_1_1");
+        addMech(CKM_RSA_PKCS_OAEP_TPM_1_1,      "CKM_RSA_PKCS_OAEP_TPM_1_1");
+
         addMech(CKM_VENDOR_DEFINED,             "CKM_VENDOR_DEFINED");
 
         addMech(CKM_NSS_TLS_PRF_GENERAL,        "CKM_NSS_TLS_PRF_GENERAL");
@@ -808,11 +982,13 @@ public class Functions {
         addMech(PCKM_SECURERANDOM,              "SecureRandom");
         addMech(PCKM_KEYSTORE,                  "KeyStore");
 
-        addHashMech(CKM_SHA_1, "SHA-1");
-        addHashMech(CKM_SHA224, "SHA-224");
-        addHashMech(CKM_SHA256, "SHA-256");
-        addHashMech(CKM_SHA384, "SHA-384");
-        addHashMech(CKM_SHA512, "SHA-512");
+        addHashMech(CKM_SHA_1,                  "SHA-1", "SHA", "SHA1");
+        addHashMech(CKM_SHA224,                 "SHA-224", "SHA224");
+        addHashMech(CKM_SHA256,                 "SHA-256", "SHA256");
+        addHashMech(CKM_SHA384,                 "SHA-384", "SHA384");
+        addHashMech(CKM_SHA512,                 "SHA-512", "SHA512");
+        addHashMech(CKM_SHA512_224,             "SHA-512/224", "SHA512/224");
+        addHashMech(CKM_SHA512_256,             "SHA-512/256", "SHA512/256");
 
         addKeyType(CKK_RSA,                     "CKK_RSA");
         addKeyType(CKK_DSA,                     "CKK_DSA");
@@ -837,6 +1013,25 @@ public class Functions {
         addKeyType(CKK_CDMF,                    "CKK_CDMF");
         addKeyType(CKK_AES,                     "CKK_AES");
         addKeyType(CKK_BLOWFISH,                "CKK_BLOWFISH");
+        addKeyType(CKK_TWOFISH,                 "CKK_TWOFISH");
+        addKeyType(CKK_SECURID,                 "CKK_SECURID");
+        addKeyType(CKK_HOTP,                    "CKK_HOTP");
+        addKeyType(CKK_ACTI,                    "CKK_ACTI");
+        addKeyType(CKK_CAMELLIA,                "CKK_CAMELLIA");
+        addKeyType(CKK_ARIA,                    "CKK_ARIA");
+        addKeyType(CKK_MD5_HMAC,                "CKK_MD5_HMAC");
+        addKeyType(CKK_SHA_1_HMAC,              "CKK_SHA_1_HMAC");
+        addKeyType(CKK_RIPEMD128_HMAC,          "CKK_RIPEMD128_HMAC");
+        addKeyType(CKK_RIPEMD160_HMAC,          "CKK_RIPEMD160_HMAC");
+        addKeyType(CKK_SHA256_HMAC,             "CKK_SHA256_HMAC");
+        addKeyType(CKK_SHA384_HMAC,             "CKK_SHA384_HMAC");
+        addKeyType(CKK_SHA512_HMAC,             "CKK_SHA512_HMAC");
+        addKeyType(CKK_SHA224_HMAC,             "CKK_SHA224_HMAC");
+        addKeyType(CKK_SEED,                    "CKK_SEED");
+        addKeyType(CKK_GOSTR3410,               "CKK_GOSTR3410");
+        addKeyType(CKK_GOSTR3411,               "CKK_GOSTR3411");
+        addKeyType(CKK_GOST28147,               "CKK_GOST28147");
+
         addKeyType(CKK_VENDOR_DEFINED,          "CKK_VENDOR_DEFINED");
 
         addKeyType(PCKK_ANY,                    "*");
@@ -855,6 +1050,16 @@ public class Functions {
         addAttribute(CKA_OWNER,                 "CKA_OWNER");
         addAttribute(CKA_ATTR_TYPES,            "CKA_ATTR_TYPES");
         addAttribute(CKA_TRUSTED,               "CKA_TRUSTED");
+        addAttribute(CKA_CERTIFICATE_CATEGORY,  "CKA_CERTIFICATE_CATEGORY");
+        addAttribute(CKA_JAVA_MIDP_SECURITY_DOMAIN,
+                                                "CKA_JAVA_MIDP_SECURITY_DOMAIN");
+        addAttribute(CKA_URL,                   "CKA_URL");
+        addAttribute(CKA_HASH_OF_SUBJECT_PUBLIC_KEY,
+                                                "CKA_HASH_OF_SUBJECT_PUBLIC_KEY");
+        addAttribute(CKA_HASH_OF_ISSUER_PUBLIC_KEY,
+                                                "CKA_HASH_OF_ISSUER_PUBLIC_KEY");
+        addAttribute(CKA_NAME_HASH_ALGORITHM,   "CKA_NAME_HASH_ALGORITHM");
+        addAttribute(CKA_CHECK_VALUE,           "CKA_CHECK_VALUE");
         addAttribute(CKA_KEY_TYPE,              "CKA_KEY_TYPE");
         addAttribute(CKA_SUBJECT,               "CKA_SUBJECT");
         addAttribute(CKA_ID,                    "CKA_ID");
@@ -879,6 +1084,7 @@ public class Functions {
         addAttribute(CKA_EXPONENT_1,            "CKA_EXPONENT_1");
         addAttribute(CKA_EXPONENT_2,            "CKA_EXPONENT_2");
         addAttribute(CKA_COEFFICIENT,           "CKA_COEFFICIENT");
+        addAttribute(CKA_PUBLIC_KEY_INFO,       "CKA_PUBLIC_KEY_INFO");
         addAttribute(CKA_PRIME,                 "CKA_PRIME");
         addAttribute(CKA_SUBPRIME,              "CKA_SUBPRIME");
         addAttribute(CKA_BASE,                  "CKA_BASE");
@@ -886,19 +1092,69 @@ public class Functions {
         addAttribute(CKA_SUB_PRIME_BITS,        "CKA_SUB_PRIME_BITS");
         addAttribute(CKA_VALUE_BITS,            "CKA_VALUE_BITS");
         addAttribute(CKA_VALUE_LEN,             "CKA_VALUE_LEN");
+
         addAttribute(CKA_EXTRACTABLE,           "CKA_EXTRACTABLE");
         addAttribute(CKA_LOCAL,                 "CKA_LOCAL");
         addAttribute(CKA_NEVER_EXTRACTABLE,     "CKA_NEVER_EXTRACTABLE");
         addAttribute(CKA_ALWAYS_SENSITIVE,      "CKA_ALWAYS_SENSITIVE");
+
         addAttribute(CKA_KEY_GEN_MECHANISM,     "CKA_KEY_GEN_MECHANISM");
         addAttribute(CKA_MODIFIABLE,            "CKA_MODIFIABLE");
+        addAttribute(CKA_COPYABLE,              "CKA_COPYABLE");
+        addAttribute(CKA_DESTROYABLE,           "CKA_DESTROYABLE");
+
         addAttribute(CKA_EC_PARAMS,             "CKA_EC_PARAMS");
         addAttribute(CKA_EC_POINT,              "CKA_EC_POINT");
+
         addAttribute(CKA_SECONDARY_AUTH,        "CKA_SECONDARY_AUTH");
         addAttribute(CKA_AUTH_PIN_FLAGS,        "CKA_AUTH_PIN_FLAGS");
+        addAttribute(CKA_ALWAYS_AUTHENTICATE,   "CKA_ALWAYS_AUTHENTICATE");
+        addAttribute(CKA_WRAP_WITH_TRUSTED,     "CKA_WRAP_WITH_TRUSTED");
+        addAttribute(CKA_WRAP_TEMPLATE,         "CKA_WRAP_TEMPLATE");
+        addAttribute(CKA_UNWRAP_TEMPLATE,       "CKA_UNWRAP_TEMPLATE");
+        addAttribute(CKA_DERIVE_TEMPLATE,       "CKA_DERIVE_TEMPLATE");
+        addAttribute(CKA_OTP_FORMAT,            "CKA_OTP_FORMAT");
+        addAttribute(CKA_OTP_LENGTH,            "CKA_OTP_LENGTH");
+        addAttribute(CKA_OTP_TIME_INTERVAL,     "CKA_OTP_TIME_INTERVAL");
+        addAttribute(CKA_OTP_USER_FRIENDLY_MODE,"CKA_OTP_USER_FRIENDLY_MODE");
+        addAttribute(CKA_OTP_CHALLENGE_REQUIREMENT,
+                                                "CKA_OTP_CHALLENGE_REQUIREMENT");
+        addAttribute(CKA_OTP_TIME_REQUIREMENT,  "CKA_OTP_TIME_REQUIREMENT");
+        addAttribute(CKA_OTP_COUNTER_REQUIREMENT,
+                                                "CKA_OTP_COUNTER_REQUIREMENT");
+        addAttribute(CKA_OTP_PIN_REQUIREMENT,   "CKA_OTP_PIN_REQUIREMENT");
+        addAttribute(CKA_OTP_COUNTER,           "CKA_OTP_COUNTER");
+        addAttribute(CKA_OTP_TIME,              "CKA_OTP_TIME");
+        addAttribute(CKA_OTP_USER_IDENTIFIER,   "CKA_OTP_USER_IDENTIFIER");
+        addAttribute(CKA_OTP_SERVICE_IDENTIFIER,"CKA_OTP_SERVICE_IDENTIFIER");
+        addAttribute(CKA_OTP_SERVICE_LOGO,      "CKA_OTP_SERVICE_LOGO");
+        addAttribute(CKA_OTP_SERVICE_LOGO_TYPE, "CKA_OTP_SERVICE_LOGO_TYPE");
+        addAttribute(CKA_GOSTR3410_PARAMS,      "CKA_GOSTR3410_PARAMS");
+        addAttribute(CKA_GOSTR3411_PARAMS,      "CKA_GOSTR3411_PARAMS");
+        addAttribute(CKA_GOST28147_PARAMS,      "CKA_GOST28147_PARAMS");
+
         addAttribute(CKA_HW_FEATURE_TYPE,       "CKA_HW_FEATURE_TYPE");
         addAttribute(CKA_RESET_ON_INIT,         "CKA_RESET_ON_INIT");
         addAttribute(CKA_HAS_RESET,             "CKA_HAS_RESET");
+
+        addAttribute(CKA_PIXEL_X,               "CKA_PIXEL_X");
+        addAttribute(CKA_PIXEL_Y,               "CKA_PIXEL_Y");
+        addAttribute(CKA_RESOLUTION,            "CKA_RESOLUTION");
+        addAttribute(CKA_CHAR_ROWS,             "CKA_CHAR_ROWS");
+        addAttribute(CKA_CHAR_COLUMNS,          "CKA_CHAR_COLUMNS");
+        addAttribute(CKA_COLOR,                 "CKA_COLOR");
+        addAttribute(CKA_BITS_PER_PIXEL,        "CKA_BITS_PER_PIXEL");
+        addAttribute(CKA_CHAR_SETS,             "CKA_CHAR_SETS");
+        addAttribute(CKA_ENCODING_METHODS,      "CKA_ENCODING_METHODS");
+        addAttribute(CKA_MIME_TYPES,            "CKA_MIME_TYPES");
+        addAttribute(CKA_MECHANISM_TYPE,        "CKA_MECHANISM_TYPE");
+        addAttribute(CKA_REQUIRED_CMS_ATTRIBUTES,
+                                                "CKA_REQUIRED_CMS_ATTRIBUTES");
+        addAttribute(CKA_DEFAULT_CMS_ATTRIBUTES,"CKA_DEFAULT_CMS_ATTRIBUTES");
+        addAttribute(CKA_SUPPORTED_CMS_ATTRIBUTES,
+                                                "CKA_SUPPORTED_CMS_ATTRIBUTES");
+        addAttribute(CKA_ALLOWED_MECHANISMS,    "CKA_ALLOWED_MECHANISMS");
+
         addAttribute(CKA_VENDOR_DEFINED,        "CKA_VENDOR_DEFINED");
         addAttribute(CKA_NETSCAPE_DB,           "CKA_NETSCAPE_DB");
 
@@ -920,6 +1176,11 @@ public class Functions {
 
         addObjectClass(PCKO_ANY,                "*");
 
+        addMGF(CKG_MGF1_SHA1,                   "CKG_MGF1_SHA1");
+        addMGF(CKG_MGF1_SHA256,                 "CKG_MGF1_SHA256");
+        addMGF(CKG_MGF1_SHA384,                 "CKG_MGF1_SHA384");
+        addMGF(CKG_MGF1_SHA512,                 "CKG_MGF1_SHA512");
+        addMGF(CKG_MGF1_SHA224,                 "CKG_MGF1_SHA224");
     }
 
 }

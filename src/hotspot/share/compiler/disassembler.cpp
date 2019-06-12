@@ -147,7 +147,10 @@ class decode_env {
 
     if (AbstractDisassembler::show_comment()) {
       if ((_nm != NULL) && _nm->has_code_comment(pc0, pc)) {
-        _nm->print_code_comment_on(st, _post_decode_alignment, pc0, pc);
+        _nm->print_code_comment_on
+               (st,
+                _post_decode_alignment ? _post_decode_alignment : COMMENT_COLUMN,
+                pc0, pc);
         // this calls reloc_string_for which calls oop::print_value_on
       }
       print_hook_comments(pc0, _nm != NULL);

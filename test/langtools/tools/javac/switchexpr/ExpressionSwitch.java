@@ -39,15 +39,15 @@ public class ExpressionSwitch {
     private String print(T t) {
         return switch (t) {
             case A -> "A";
-            case B -> { break "B"; }
-            default -> { break "other"; }
+            case B -> { yield "B"; }
+            default -> { yield "other"; }
         };
     }
 
     private String exhaustive1(T t) {
         return switch (t) {
             case A -> "A";
-            case B -> { break "B"; }
+            case B -> { yield "B"; }
             case C -> "C";
             case D -> "D";
         };
@@ -64,25 +64,25 @@ public class ExpressionSwitch {
 
     private String scopesIsolated(T t) {
         return switch (t) {
-            case A -> { String res = "A"; break res;}
-            case B -> { String res = "B"; break res;}
-            default -> { String res = "default"; break res;}
+            case A -> { String res = "A"; yield res;}
+            case B -> { String res = "B"; yield res;}
+            default -> { String res = "default"; yield res;}
         };
     }
 
     private Supplier<String> lambdas1(T t) {
         return switch (t) {
             case A -> () -> "A";
-            case B -> { break () -> "B"; }
+            case B -> { yield () -> "B"; }
             default -> () -> "default";
         };
     }
 
     private Supplier<String> lambdas2(T t) {
         return switch (t) {
-            case A: break () -> "A";
-            case B: { break () -> "B"; }
-            default: break () -> "default";
+            case A: yield () -> "A";
+            case B: { yield () -> "B"; }
+            default: yield () -> "default";
         };
     }
 
@@ -91,16 +91,16 @@ public class ExpressionSwitch {
                 ? -2
                 : switch (s) {
                       case "A", "B" -> 0;
-                      case "C" -> { break 1; }
+                      case "C" -> { yield 1; }
                       default -> -1;
                   };
     }
 
     private int convert2(String s) {
         return switch (s) {
-            case "A", "B": break 0;
-            case "C": break 1;
-            default: break -1;
+            case "A", "B": yield 0;
+            case "C": yield 1;
+            default: yield -1;
         };
     }
 
@@ -112,7 +112,7 @@ public class ExpressionSwitch {
                     default: break STOP;
                 }
                 return switch (t) {
-                    default: break good;
+                    default: yield good;
                 };
             }
         }

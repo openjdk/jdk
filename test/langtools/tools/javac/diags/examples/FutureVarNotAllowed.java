@@ -21,7 +21,7 @@
  * questions.
  */
 
-// key: compiler.warn.var.not.allowed
+// key: compiler.warn.restricted.type.not.allowed
 // options: --release 9
 
 class var { }

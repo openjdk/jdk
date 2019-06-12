@@ -38,6 +38,7 @@ import javax.tools.*;
 
 import com.sun.source.tree.CompilationUnitTree;
 import com.sun.source.tree.SwitchExpressionTree;
+import com.sun.source.tree.YieldTree;
 import com.sun.source.tree.Tree;
 import com.sun.source.util.JavacTask;
 import com.sun.source.util.SimpleTreeVisitor;
@@ -53,12 +54,13 @@ public class SwitchExpressionSimpleVisitorTest {
         String code = "class Test {\n" +
                       "    int t(int i) {\n" +
                       "         return switch(i) {\n" +
-                      "              default: break -1;\n" +
+                      "              default: yield -1;\n" +
                       "         }\n" +
                       "    }\n" +
                       "}\n";
         int[] callCount = new int[1];
         int[] switchExprNodeCount = new int[1];
+        int[] yieldNodeCount = new int[1];
         new TreePathScanner<Void, Void>() {
             @Override
             public Void visitSwitchExpression(SwitchExpressionTree node, Void p) {
@@ -74,11 +76,27 @@ public class SwitchExpressionSimpleVisitorTest {
                 }, null);
                 return super.visitSwitchExpression(node, p);
             }
+            @Override
+            public Void visitYield(YieldTree node, Void p) {
+                node.accept(new SimpleTreeVisitor<Void, Void>() {
+                    @Override
+                    protected Void defaultAction(Tree defaultActionNode, Void p) {
+                        callCount[0]++;
+                        if (node == defaultActionNode) {
+                            yieldNodeCount[0]++;
+                        }
+                        return null;
+                    }
+                }, null);
+                return super.visitYield(node, p);
+            }
         }.scan(parse(code), null);
 
-        if (callCount[0] != 1 || switchExprNodeCount[0] != 1) {
+        if (callCount[0] != 2 || switchExprNodeCount[0] != 1 ||
+            yieldNodeCount[0] != 1) {
             throw new AssertionError("Unexpected counts; callCount=" + callCount[0] +
-                                     ", switchExprNodeCount=" + switchExprNodeCount[0]);
+                                     ", switchExprNodeCount=" + switchExprNodeCount[0] +
+                                     ", yieldNodeCount=" + yieldNodeCount[0]);
         }
     }
 

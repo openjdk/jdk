@@ -77,6 +77,8 @@ import static com.sun.tools.javac.code.TypeTag.WILDCARD;
 import com.sun.tools.javac.comp.Analyzer.AnalyzerMode;
 import static com.sun.tools.javac.tree.JCTree.Tag.*;
 import com.sun.tools.javac.util.JCDiagnostic.DiagnosticFlag;
+import com.sun.tools.javac.util.Log.DeferredDiagnosticHandler;
+import com.sun.tools.javac.util.Log.DiscardDiagnosticHandler;
 
 /** This is the main context-dependent analysis phase in GJC. It
  *  encompasses name resolution, type checking and constant folding as
@@ -358,7 +360,7 @@ public class Attr extends JCTree.Visitor {
                 Name name = (Name)node.getIdentifier();
                 if (site.kind == PCK) {
                     env.toplevel.packge = (PackageSymbol)site;
-                    return rs.findIdentInPackage(env, (TypeSymbol)site, name,
+                    return rs.findIdentInPackage(null, env, (TypeSymbol)site, name,
                             KindSelector.TYP_PCK);
                 } else {
                     env.enclClass.sym = (ClassSymbol)site;
@@ -368,7 +370,7 @@ public class Attr extends JCTree.Visitor {
 
             @Override @DefinedBy(Api.COMPILER_TREE)
             public Symbol visitIdentifier(IdentifierTree node, Env<AttrContext> env) {
-                return rs.findIdent(env, (Name)node.getName(), KindSelector.TYP_PCK);
+                return rs.findIdent(null, env, (Name)node.getName(), KindSelector.TYP_PCK);
             }
         }
 
@@ -1425,16 +1427,16 @@ public class Attr extends JCTree.Visitor {
         ListBuffer<Type> caseTypes = new ListBuffer<>();
 
         handleSwitch(tree, tree.selector, tree.cases, (c, caseEnv) -> {
-            caseEnv.info.breakResult = condInfo;
+            caseEnv.info.yieldResult = condInfo;
             attribStats(c.stats, caseEnv);
             new TreeScanner() {
                 @Override
-                public void visitBreak(JCBreak brk) {
+                public void visitYield(JCYield brk) {
                     if (brk.target == tree) {
                         caseTypePositions.append(brk.value != null ? brk.value.pos() : brk.pos());
                         caseTypes.append(brk.value != null ? brk.value.type : syms.errType);
                     }
-                    super.visitBreak(brk);
+                    super.visitYield(brk);
                 }
 
                 @Override public void visitClassDef(JCClassDecl tree) {}
@@ -1864,67 +1866,19 @@ public class Attr extends JCTree.Visitor {
     }
 
     public void visitBreak(JCBreak tree) {
-        if (env.info.breakResult != null) {
-            if (tree.value == null) {
-                tree.target = findJumpTarget(tree.pos(), tree.getTag(), null, env);
-                if (tree.target.hasTag(SWITCH_EXPRESSION)) {
-                    log.error(tree.pos(), Errors.BreakMissingValue);
-                }
-            } else {
-                if (env.info.breakResult.pt.hasTag(VOID)) {
-                    //can happen?
-                    env.info.breakResult.checkContext.report(tree.value.pos(),
-                              diags.fragment(Fragments.UnexpectedRetVal));
-                }
-                boolean attribute = true;
-                if (tree.value.hasTag(IDENT)) {
-                    //disambiguate break <LABEL> and break <ident-as-an-expression>:
-                    Name label = ((JCIdent) tree.value).name;
-                    Pair<JCTree, Error> jumpTarget = findJumpTargetNoError(tree.getTag(), label, env);
+        tree.target = findJumpTarget(tree.pos(), tree.getTag(), tree.label, env);
+        result = null;
+    }
 
-                    if (jumpTarget.fst != null) {
-                        JCTree speculative = deferredAttr.attribSpeculative(tree.value, env, unknownExprInfo);
-                        if (!speculative.type.hasTag(ERROR)) {
-                            log.error(tree.pos(), Errors.BreakAmbiguousTarget(label));
-                            if (jumpTarget.snd == null) {
-                                tree.target = jumpTarget.fst;
-                                attribute = false;
-                            } else {
-                                //nothing
-                            }
-                        } else {
-                            if (jumpTarget.snd != null) {
-                                log.error(tree.pos(), jumpTarget.snd);
-                            }
-                            tree.target = jumpTarget.fst;
-                            attribute = false;
-                        }
-                    }
-                }
-                if (attribute) {
-                    attribTree(tree.value, env, env.info.breakResult);
-                    JCTree immediateTarget = findJumpTarget(tree.pos(), tree.getTag(), null, env);
-                    if (immediateTarget.getTag() != SWITCH_EXPRESSION) {
-                        log.error(tree.pos(), Errors.BreakExprNotImmediate(immediateTarget.getTag()));
-                        Env<AttrContext> env1 = env;
-                        while (env1 != null && env1.tree.getTag() != SWITCH_EXPRESSION) {
-                            env1 = env1.next;
-                        }
-                        Assert.checkNonNull(env1);
-                        tree.target = env1.tree;
-                    } else {
-                        tree.target = immediateTarget;
-                    }
-                }
-            }
+    public void visitYield(JCYield tree) {
+        if (env.info.yieldResult != null) {
+            attribTree(tree.value, env, env.info.yieldResult);
+            tree.target = findJumpTarget(tree.pos(), tree.getTag(), names.empty, env);
         } else {
-            if (tree.value == null || tree.value.hasTag(IDENT)) {
-                Name label = tree.value != null ? ((JCIdent) tree.value).name : null;
-                tree.target = findJumpTarget(tree.pos(), tree.getTag(), label, env);
-            } else {
-                log.error(tree.pos(), Errors.BreakComplexValueNoSwitchExpression);
-                attribTree(tree.value, env, unknownExprInfo);
-            }
+            log.error(tree.pos(), tree.value.hasTag(PARENS)
+                    ? Errors.NoSwitchExpressionQualify
+                    : Errors.NoSwitchExpression);
+            attribTree(tree.value, env, unknownExprInfo);
         }
         result = null;
     }
@@ -1934,8 +1888,8 @@ public class Attr extends JCTree.Visitor {
         result = null;
     }
     //where
-        /** Return the target of a break or continue statement, if it exists,
-         *  report an error if not.
+        /** Return the target of a break, continue or yield statement,
+         *  if it exists, report an error if not.
          *  Note: The target of a labelled break or continue is the
          *  (non-labelled) statement tree referred to by the label,
          *  not the tree representing the labelled statement itself.
@@ -2009,12 +1963,10 @@ public class Attr extends JCTree.Visitor {
                         if (label == null && tag == BREAK) return Pair.of(env1.tree, null);
                         break;
                     case SWITCH_EXPRESSION:
-                        if (tag == BREAK) {
-                            if (label == null) {
-                                return Pair.of(env1.tree, null);
-                            } else {
-                                pendingError = Errors.BreakOutsideSwitchExpression;
-                            }
+                        if (tag == YIELD) {
+                            return Pair.of(env1.tree, null);
+                        } else if (tag == BREAK) {
+                            pendingError = Errors.BreakOutsideSwitchExpression;
                         } else {
                             pendingError = Errors.ContinueOutsideSwitchExpression;
                         }
@@ -2029,6 +1981,8 @@ public class Attr extends JCTree.Visitor {
             }
             if (label != null)
                 return Pair.of(null, Errors.UndefLabel(label));
+            else if (pendingError != null)
+                return Pair.of(null, pendingError);
             else if (tag == CONTINUE)
                 return Pair.of(null, Errors.ContOutsideLoop);
             else
@@ -2040,7 +1994,7 @@ public class Attr extends JCTree.Visitor {
         // nested within than the enclosing class.
         if (env.info.returnResult == null) {
             log.error(tree.pos(), Errors.RetOutsideMeth);
-        } else if (env.info.breakResult != null) {
+        } else if (env.info.yieldResult != null) {
             log.error(tree.pos(), Errors.ReturnOutsideSwitchExpression);
         } else {
             // Attribute return expression, if it exists, and check that
@@ -3136,7 +3090,7 @@ public class Attr extends JCTree.Visitor {
             } else {
                 lambdaEnv = env.dup(that, env.info.dup(env.info.scope.dup()));
             }
-            lambdaEnv.info.breakResult = null;
+            lambdaEnv.info.yieldResult = null;
             return lambdaEnv;
         }
 
@@ -3916,7 +3870,7 @@ public class Attr extends JCTree.Visitor {
             switch (site.getTag()) {
             case PACKAGE:
                 return rs.accessBase(
-                    rs.findIdentInPackage(env, site.tsym, name, resultInfo.pkind),
+                    rs.findIdentInPackage(pos, env, site.tsym, name, resultInfo.pkind),
                     pos, location, site, name, true);
             case ARRAY:
             case CLASS:
@@ -3931,7 +3885,7 @@ public class Attr extends JCTree.Visitor {
                     return syms.getClassField(site, types);
                 } else {
                     // We are seeing a plain identifier as selector.
-                    Symbol sym = rs.findIdentInType(env, site, name, resultInfo.pkind);
+                    Symbol sym = rs.findIdentInType(pos, env, site, name, resultInfo.pkind);
                         sym = rs.accessBase(sym, pos, location, site, name, true);
                     return sym;
                 }

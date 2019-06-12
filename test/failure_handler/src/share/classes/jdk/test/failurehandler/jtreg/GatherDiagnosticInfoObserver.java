@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,7 +26,7 @@ package jdk.test.failurehandler.jtreg;
 import com.sun.javatest.Harness;
 import com.sun.javatest.Parameters;
 import com.sun.javatest.TestResult;
-import com.sun.javatest.InterviewParameters;
+import com.sun.javatest.regtest.config.RegressionParameters;
 import jdk.test.failurehandler.*;
 
 import java.io.File;
@@ -46,8 +46,8 @@ public class GatherDiagnosticInfoObserver implements Harness.Observer {
     public static final String LOG_FILENAME = "environment.log";
     public static final String ENVIRONMENT_OUTPUT = "environment.html";
 
-    private String compileJdk;
-    private String testJdk;
+    private Path compileJdk;
+    private Path testJdk;
 
     /*
      * The harness calls this method after each test.
@@ -80,7 +80,7 @@ public class GatherDiagnosticInfoObserver implements Harness.Observer {
             log.printf("%s ---%n", name);
             GathererFactory gathererFactory = new GathererFactory(
                     OS.current().family, workDir, log,
-                    Paths.get(testJdk), Paths.get(compileJdk));
+                    testJdk, compileJdk);
             gatherEnvInfo(workDir, name, log,
                     gathererFactory.getEnvironmentInfoGatherer());
         } catch (Throwable e) {
@@ -117,12 +117,9 @@ public class GatherDiagnosticInfoObserver implements Harness.Observer {
      */
     @Override
     public void startingTestRun(Parameters params) {
-        // TODO find a better way to get JDKs
-        InterviewParameters rp = (InterviewParameters) params;
-        Map<String, String> map = new HashMap<>();
-        rp.save(map);
-        compileJdk = map.get("regtest.compilejdk");
-        testJdk = map.get("regtest.testjdk");
+        RegressionParameters rp = (RegressionParameters) params;
+        compileJdk = rp.getCompileJDK().getAbsoluteFile().toPath();
+        testJdk = rp.getTestJDK().getAbsoluteFile().toPath();
     }
 
     @Override

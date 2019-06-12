@@ -43,6 +43,7 @@ import com.sun.tools.javac.jvm.*;
 import com.sun.tools.javac.main.Option;
 import com.sun.tools.javac.resources.CompilerProperties.Errors;
 import com.sun.tools.javac.resources.CompilerProperties.Fragments;
+import com.sun.tools.javac.resources.CompilerProperties.Warnings;
 import com.sun.tools.javac.tree.*;
 import com.sun.tools.javac.tree.JCTree.*;
 import com.sun.tools.javac.tree.JCTree.JCMemberReference.ReferenceKind;
@@ -52,6 +53,7 @@ import com.sun.tools.javac.util.DefinedBy.Api;
 import com.sun.tools.javac.util.JCDiagnostic.DiagnosticFlag;
 import com.sun.tools.javac.util.JCDiagnostic.DiagnosticPosition;
 import com.sun.tools.javac.util.JCDiagnostic.DiagnosticType;
+import com.sun.tools.javac.util.JCDiagnostic.Warning;
 
 import java.util.Arrays;
 import java.util.Collection;
@@ -63,6 +65,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.function.BiFunction;
 import java.util.function.BiPredicate;
+import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Predicate;
 import java.util.stream.Stream;
@@ -105,6 +108,7 @@ public class Resolve {
     public final boolean checkVarargsAccessAfterResolution;
     private final boolean compactMethodDiags;
     private final boolean allowLocalVariableTypeInference;
+    private final boolean allowYieldStatement;
     final EnumSet<VerboseResolutionMode> verboseResolutionMode;
 
     WriteableScope polymorphicSignatureScope;
@@ -128,6 +132,7 @@ public class Resolve {
         moduleFinder = ModuleFinder.instance(context);
         types = Types.instance(context);
         diags = JCDiagnostic.Factory.instance(context);
+        Preview preview = Preview.instance(context);
         Source source = Source.instance(context);
         Options options = Options.instance(context);
         compactMethodDiags = options.isSet(Option.XDIAGS, "compact") ||
@@ -136,6 +141,8 @@ public class Resolve {
         Target target = Target.instance(context);
         allowFunctionalInterfaceMostSpecific = Feature.FUNCTIONAL_INTERFACE_MOST_SPECIFIC.allowedInSource(source);
         allowLocalVariableTypeInference = Feature.LOCAL_VARIABLE_TYPE_INFERENCE.allowedInSource(source);
+        allowYieldStatement = (!preview.isPreview(Feature.SWITCH_EXPRESSION) || preview.isEnabled()) &&
+                Feature.SWITCH_EXPRESSION.allowedInSource(source);
         checkVarargsAccessAfterResolution =
                 Feature.POST_APPLICABILITY_VARARGS_ACCESS_CHECK.allowedInSource(source);
         polymorphicSignatureScope = WriteableScope.create(syms.noSymbol);
@@ -2330,13 +2337,15 @@ public class Resolve {
     }
 
     /** Find an unqualified identifier which matches a specified kind set.
+     *  @param pos       position on which report warnings, if any;
+     *                   null warnings should not be reported
      *  @param env       The current environment.
      *  @param name      The identifier's name.
      *  @param kind      Indicates the possible symbol kinds
      *                   (a subset of VAL, TYP, PCK).
      */
-    Symbol findIdent(Env<AttrContext> env, Name name, KindSelector kind) {
-        return checkVarType(findIdentInternal(env, name, kind), name);
+    Symbol findIdent(DiagnosticPosition pos, Env<AttrContext> env, Name name, KindSelector kind) {
+        return checkRestrictedType(pos, findIdentInternal(env, name, kind), name);
     }
 
     Symbol findIdentInternal(Env<AttrContext> env, Name name, KindSelector kind) {
@@ -2362,14 +2371,17 @@ public class Resolve {
     }
 
     /** Find an identifier in a package which matches a specified kind set.
+     *  @param pos       position on which report warnings, if any;
+     *                   null warnings should not be reported
      *  @param env       The current environment.
      *  @param name      The identifier's name.
      *  @param kind      Indicates the possible symbol kinds
      *                   (a nonempty subset of TYP, PCK).
      */
-    Symbol findIdentInPackage(Env<AttrContext> env, TypeSymbol pck,
+    Symbol findIdentInPackage(DiagnosticPosition pos,
+                              Env<AttrContext> env, TypeSymbol pck,
                               Name name, KindSelector kind) {
-        return checkVarType(findIdentInPackageInternal(env, pck, name, kind), name);
+        return checkRestrictedType(pos, findIdentInPackageInternal(env, pck, name, kind), name);
     }
 
     Symbol findIdentInPackageInternal(Env<AttrContext> env, TypeSymbol pck,
@@ -2395,15 +2407,18 @@ public class Resolve {
     }
 
     /** Find an identifier among the members of a given type `site'.
+     *  @param pos       position on which report warnings, if any;
+     *                   null warnings should not be reported
      *  @param env       The current environment.
      *  @param site      The type containing the symbol to be found.
      *  @param name      The identifier's name.
      *  @param kind      Indicates the possible symbol kinds
      *                   (a subset of VAL, TYP).
      */
-    Symbol findIdentInType(Env<AttrContext> env, Type site,
+    Symbol findIdentInType(DiagnosticPosition pos,
+                           Env<AttrContext> env, Type site,
                            Name name, KindSelector kind) {
-        return checkVarType(findIdentInTypeInternal(env, site, name, kind), name);
+        return checkRestrictedType(pos, findIdentInTypeInternal(env, site, name, kind), name);
     }
 
     Symbol findIdentInTypeInternal(Env<AttrContext> env, Type site,
@@ -2424,10 +2439,17 @@ public class Resolve {
         return bestSoFar;
     }
 
-    private Symbol checkVarType(Symbol bestSoFar, Name name) {
-        if (allowLocalVariableTypeInference && name.equals(names.var) &&
-                (bestSoFar.kind == TYP || bestSoFar.kind == ABSENT_TYP)) {
-            bestSoFar = new BadVarTypeError();
+    private Symbol checkRestrictedType(DiagnosticPosition pos, Symbol bestSoFar, Name name) {
+        if (bestSoFar.kind == TYP || bestSoFar.kind == ABSENT_TYP) {
+            if (allowLocalVariableTypeInference && name.equals(names.var)) {
+                bestSoFar = new BadRestrictedTypeError(names.var);
+            } else if (name.equals(names.yield)) {
+                if (allowYieldStatement) {
+                    bestSoFar = new BadRestrictedTypeError(names.yield);
+                } else if (pos != null) {
+                    log.warning(pos, Warnings.IllegalRefToRestrictedType(names.yield));
+                }
+            }
         }
         return bestSoFar;
     }
@@ -2597,7 +2619,7 @@ public class Resolve {
     Symbol resolveIdent(DiagnosticPosition pos, Env<AttrContext> env,
                         Name name, KindSelector kind) {
         return accessBase(
-            findIdent(env, name, kind),
+            findIdent(pos, env, name, kind),
             pos, env.enclClass.sym.type, name, false);
     }
 
@@ -3833,14 +3855,16 @@ public class Resolve {
         }
     }
 
-    class BadVarTypeError extends ResolveError {
-        BadVarTypeError() {
-            super(Kind.BAD_VAR, "bad var use");
+    class BadRestrictedTypeError extends ResolveError {
+        private final Name typeName;
+        BadRestrictedTypeError(Name typeName) {
+            super(Kind.BAD_RESTRICTED_TYPE, "bad var use");
+            this.typeName = typeName;
         }
 
         @Override
         JCDiagnostic getDiagnostic(DiagnosticType dkind, DiagnosticPosition pos, Symbol location, Type site, Name name, List<Type> argtypes, List<Type> typeargtypes) {
-            return diags.create(dkind, log.currentSource(), pos, "illegal.ref.to.var.type");
+            return diags.create(dkind, log.currentSource(), pos, "illegal.ref.to.restricted.type", typeName);
         }
     }
 

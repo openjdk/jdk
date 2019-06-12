@@ -51,18 +51,29 @@ public:
   }
 };
 
+template <bool Concurrent, bool Weak>
 class ZHeapIteratorRootOopClosure : public ZRootsIteratorClosure {
 private:
   ZHeapIterator* const _iter;
+
+  oop load_oop(oop* p) {
+    if (Weak) {
+      return NativeAccess<AS_NO_KEEPALIVE | ON_PHANTOM_OOP_REF>::oop_load(p);
+    }
+
+    if (Concurrent) {
+      return NativeAccess<AS_NO_KEEPALIVE>::oop_load(p);
+    }
+
+    return RawAccess<>::oop_load(p);
+  }
 
 public:
   ZHeapIteratorRootOopClosure(ZHeapIterator* iter) :
       _iter(iter) {}
 
   virtual void do_oop(oop* p) {
-    // Load barrier needed here, even on non-concurrent strong roots,
-    // for the same reason we need fixup_partial_loads() in ZHeap::mark_end().
-    const oop obj = NativeAccess<AS_NO_KEEPALIVE>::oop_load(p);
+    const oop obj = load_oop(p);
     _iter->push(obj);
   }
 
@@ -71,28 +82,27 @@ public:
   }
 };
 
+template <bool VisitReferents>
 class ZHeapIteratorOopClosure : public BasicOopIterateClosure {
 private:
   ZHeapIterator* const _iter;
   const oop            _base;
-  const bool           _visit_referents;
 
-  oop load_oop(oop* p) const {
-    if (_visit_referents) {
-      return HeapAccess<ON_UNKNOWN_OOP_REF | AS_NO_KEEPALIVE>::oop_load_at(_base, _base->field_offset(p));
-    } else {
-      return HeapAccess<AS_NO_KEEPALIVE>::oop_load(p);
+  oop load_oop(oop* p) {
+    if (VisitReferents) {
+      return HeapAccess<AS_NO_KEEPALIVE | ON_UNKNOWN_OOP_REF>::oop_load_at(_base, _base->field_offset(p));
     }
+
+    return HeapAccess<AS_NO_KEEPALIVE>::oop_load(p);
   }
 
 public:
-  ZHeapIteratorOopClosure(ZHeapIterator* iter, oop base, bool visit_referents) :
+  ZHeapIteratorOopClosure(ZHeapIterator* iter, oop base) :
       _iter(iter),
-      _base(base),
-      _visit_referents(visit_referents) {}
+      _base(base) {}
 
   virtual ReferenceIterationMode reference_iteration_mode() {
-    return _visit_referents ? DO_FIELDS : DO_FIELDS_EXCEPT_REFERENT;
+    return VisitReferents ? DO_FIELDS : DO_FIELDS_EXCEPT_REFERENT;
   }
 
   virtual void do_oop(oop* p) {
@@ -111,10 +121,9 @@ public:
 #endif
 };
 
-ZHeapIterator::ZHeapIterator(bool visit_referents) :
+ZHeapIterator::ZHeapIterator() :
     _visit_stack(),
-    _visit_map(),
-    _visit_referents(visit_referents) {}
+    _visit_map() {}
 
 ZHeapIterator::~ZHeapIterator() {
   ZVisitMapIterator iter(&_visit_map);
@@ -162,49 +171,45 @@ void ZHeapIterator::push(oop obj) {
   _visit_stack.push(obj);
 }
 
+template <typename RootsIterator, bool Concurrent, bool Weak>
+void ZHeapIterator::push_roots() {
+  ZHeapIteratorRootOopClosure<Concurrent, Weak> cl(this);
+  RootsIterator roots;
+  roots.oops_do(&cl);
+}
+
+template <bool VisitReferents>
+void ZHeapIterator::push_fields(oop obj) {
+  ZHeapIteratorOopClosure<VisitReferents> cl(this, obj);
+  obj->oop_iterate(&cl);
+}
+
+template <bool VisitReferents>
 void ZHeapIterator::objects_do(ObjectClosure* cl) {
-  // Note that the heap iterator visits all reachable objects, including
-  // objects that might be unreachable from the application, such as a
-  // not yet cleared JNIWeakGloablRef. However, also note that visiting
-  // the JVMTI tag map is a requirement to make sure we visit all tagged
-  // objects, even those that might now have become phantom reachable.
-  // If we didn't do this the application would have expected to see
-  // ObjectFree events for phantom reachable objects in the tag map.
-
   ZStatTimerDisable disable;
-  ZHeapIteratorRootOopClosure root_cl(this);
 
-  // Push strong roots onto stack
-  {
-    ZRootsIterator roots;
-    roots.oops_do(&root_cl);
-  }
-
-  {
-    ZConcurrentRootsIterator roots;
-    roots.oops_do(&root_cl);
-  }
-
-  // Push weak roots onto stack
-  {
-    ZWeakRootsIterator roots;
-    roots.oops_do(&root_cl);
-  }
-
-  {
-    ZConcurrentWeakRootsIterator roots;
-    roots.oops_do(&root_cl);
-  }
+  // Push roots to visit
+  push_roots<ZRootsIterator,               false /* Concurrent */, false /* Weak */>();
+  push_roots<ZConcurrentRootsIterator,     true  /* Concurrent */, false /* Weak */>();
+  push_roots<ZWeakRootsIterator,           false /* Concurrent */, true  /* Weak */>();
+  push_roots<ZConcurrentWeakRootsIterator, true  /* Concurrent */, true  /* Weak */>();
 
   // Drain stack
   while (!_visit_stack.is_empty()) {
     const oop obj = _visit_stack.pop();
 
-    // Visit
+    // Visit object
     cl->do_object(obj);
 
-    // Push members to visit
-    ZHeapIteratorOopClosure push_cl(this, obj, _visit_referents);
-    obj->oop_iterate(&push_cl);
+    // Push fields to visit
+    push_fields<VisitReferents>(obj);
+  }
+}
+
+void ZHeapIterator::objects_do(ObjectClosure* cl, bool visit_referents) {
+  if (visit_referents) {
+    objects_do<true /* VisitReferents */>(cl);
+  } else {
+    objects_do<false /* VisitReferents */>(cl);
   }
 }

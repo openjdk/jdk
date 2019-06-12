@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2006, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2006, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,13 +24,17 @@
 /**
  * @test
  * @bug 6431193
+ * @library /test/lib
  * @summary  The new HTTP server exits immediately
+ * @run main B6431193
+ * @run main/othervm -Djava.net.preferIPv6Addresses=true B6431193
  */
 
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.net.*;
+import jdk.test.lib.net.URIBuilder;
 
 import com.sun.net.httpserver.*;
 
@@ -44,8 +48,8 @@ public class B6431193 {
     }
 
     /**
-         * @param args
-         */
+     * @param args
+     */
     public static void main(String[] args) {
         class MyHandler implements HttpHandler {
             public void handle(HttpExchange t) throws IOException {
@@ -64,7 +68,8 @@ public class B6431193 {
 
         HttpServer server;
         try {
-            server = HttpServer.create(new InetSocketAddress(0), 10);
+            InetAddress loopback = InetAddress.getLoopbackAddress();
+            server = HttpServer.create(new InetSocketAddress(loopback, 0), 10);
 
             server.createContext("/apps", new MyHandler());
             server.setExecutor(null);
@@ -72,8 +77,13 @@ public class B6431193 {
                 server.start();
             int port = server.getAddress().getPort();
             String s = "http://localhost:"+port+"/apps/foo";
-            URL url = new URL (s);
-            InputStream is = url.openStream();
+            URL url = URIBuilder.newBuilder()
+                      .scheme("http")
+                      .loopback()
+                      .port(port)
+                      .path("/apps/foo")
+                      .toURL();
+            InputStream is = url.openConnection(Proxy.NO_PROXY).getInputStream();
             read (is);
             server.stop (1);
             if (error) {
@@ -81,9 +91,8 @@ public class B6431193 {
             }
 
         }
-        catch (IOException e) {
-            // TODO Auto-generated catch block
-                e.printStackTrace();
+        catch (Exception e) {
+            throw new AssertionError("Unexpected exception: " + e, e);
         }
     }
 }

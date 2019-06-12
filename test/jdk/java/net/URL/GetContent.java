@@ -26,6 +26,8 @@
  * @bug 4145315
  * @library /test/lib
  * @summary Test a read from nonexistant URL
+ * @run main GetContent
+ * @run main/othervm -Djava.net.preferIPv6Addresses GetContent
  */
 
 import java.net.*;
@@ -37,8 +39,7 @@ public class GetContent implements Runnable {
      ServerSocket ss;
 
      public void run() {
-        try {
-            Socket s = ss.accept();
+        try (Socket s = ss.accept()) {
             s.setTcpNoDelay(true);
 
             PrintStream out = new PrintStream(
@@ -57,7 +58,6 @@ public class GetContent implements Runnable {
             // client get error and re-establish connection
             Thread.sleep(2000);
 
-            s.close();
         } catch (Exception e) {
             e.printStackTrace();
         } finally {
@@ -66,8 +66,10 @@ public class GetContent implements Runnable {
      }
 
      GetContent() throws Exception {
+         InetAddress loopback = InetAddress.getLoopbackAddress();
+         ss = new ServerSocket();
+         ss.bind(new InetSocketAddress(loopback, 0));
 
-         ss = new ServerSocket(0);
          Thread thr = new Thread(this);
          thr.start();
 
@@ -79,7 +81,8 @@ public class GetContent implements Runnable {
                  .port(ss.getLocalPort())
                  .path("/no-such-name")
                  .toURL();
-             Object obj = url.getContent();
+             Object obj = url.openConnection(Proxy.NO_PROXY)
+                          .getContent();
              InputStream in = (InputStream) obj;
              byte buff[] = new byte[200];
              int len = in.read(buff);

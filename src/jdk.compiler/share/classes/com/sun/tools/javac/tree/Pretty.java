@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -982,7 +982,18 @@ public class Pretty extends JCTree.Visitor {
     public void visitBreak(JCBreak tree) {
         try {
             print("break");
-            if (tree.value != null) print(" " + tree.value);
+            if (tree.label != null) print(" " + tree.label);
+            print(";");
+        } catch (IOException e) {
+            throw new UncheckedIOException(e);
+        }
+    }
+
+    public void visitYield(JCYield tree) {
+        try {
+            print("yield");
+            print(" ");
+            printExpr(tree.value);
             print(";");
         } catch (IOException e) {
             throw new UncheckedIOException(e);

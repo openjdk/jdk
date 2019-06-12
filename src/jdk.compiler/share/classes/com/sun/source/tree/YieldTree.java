@@ -1,10 +1,12 @@
 /*
- * Copyright (c) 2018, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License version 2 only, as
- * published by the Free Software Foundation.
+ * published by the Free Software Foundation.  Oracle designates this
+ * particular file as subject to the "Classpath" exception as provided
+ * by Oracle in the LICENSE file that accompanied this code.
  *
  * This code is distributed in the hope that it will be useful, but WITHOUT
  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
@@ -21,15 +23,31 @@
  * questions.
  */
 
-// key: compiler.err.break.missing.value
-// key: compiler.note.preview.filename
-// key: compiler.note.preview.recompile
-// options: --enable-preview -source ${jdk.version}
+package com.sun.source.tree;
 
-class BreakMissingValue {
-    int t(int i) {
-        return switch (i) {
-            default: break;
-        };
-    }
+/**
+ * A tree node for a {@code yield} statement.
+ *
+ * For example:
+ * <pre>
+ *   yield <em>expression</em> ;
+ * </pre>
+ *
+ * @jls section TODO
+ *
+ * @since 13
+ *
+ * @deprecated This class is modeling yield from switch expressions,
+ * which are part of a preview feature and may be removed if
+ * the preview feature is removed.
+ */
+@Deprecated(forRemoval=true, since="13")
+public interface YieldTree extends StatementTree {
+
+    /**
+     * Returns the expression for this {@code yield} statement.
+     *
+     * @return the expression
+     */
+    ExpressionTree getValue();
 }

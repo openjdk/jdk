@@ -24,7 +24,7 @@
 /**
  * @test
  * @bug 8136421
- * @requires vm.jvmci
+ * @requires vm.jvmci & vm.compMode == "Xmixed"
  * @library /test/lib /
  * @library ../common/patches
  * @modules java.base/jdk.internal.misc

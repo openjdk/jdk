@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -43,11 +43,11 @@ public class ExpressionSwitchInExpressionSwitch {
             default -> {
                 int k = switch (j) {
                     default -> {
-                        break 42;
+                        yield 42;
                     }
                 };
-                System.out.println("didn't break to the top level");
-                break 43;
+                System.out.println("didn't yield to the top level");
+                yield 43;
             }
         };
         if (i!=43) {

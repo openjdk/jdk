@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,16 +21,15 @@
  * questions.
  */
 
-// key: compiler.err.break.ambiguous.target
-// key: compiler.note.preview.filename
-// key: compiler.note.preview.recompile
-// options: --enable-preview -source ${jdk.version}
-
-class BreakAmbiguousTarget {
-    void m(int i, int j) {
-        j: print(switch (i) {
-            default: break j;
-        });
-    }
-    void print(int i) { }
-}
+/*
+ * @test
+ * @bug 8211018
+ * @summary ensure that server only resumes a session if certain properties
+ *    of the session are compatible with the new connection
+ * @run main/othervm -Djdk.tls.client.protocols=TLSv1.3 ResumeChecksServer BASIC
+ * @run main/othervm -Djdk.tls.client.protocols=TLSv1.3 ResumeChecksServer CLIENT_AUTH
+ * @run main/othervm ResumeChecksServer VERSION_2_TO_3
+ * @run main/othervm ResumeChecksServer VERSION_3_TO_2
+ * @run main/othervm -Djdk.tls.client.protocols=TLSv1.3 ResumeChecksServer CIPHER_SUITE
+ * @run main/othervm -Djdk.tls.client.protocols=TLSv1.3 ResumeChecksServer SIGNATURE_SCHEME
+ */

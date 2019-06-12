@@ -145,15 +145,12 @@ public class ProcessXSLT
    */
     public static void main(String argv[]) {
 
-        // Runtime.getRuntime().traceMethodCalls(false); // turns Java tracing off
         boolean doStackDumpOnError = false;
         boolean doDiag = false;
         boolean setQuietMode = false;
         String msg = null;
         boolean isSecureProcessing = false;
 
-        // Runtime.getRuntime().traceMethodCalls(false);
-        // Runtime.getRuntime().traceInstructions(false);
         /**
          * The default diagnostic writer...
          */

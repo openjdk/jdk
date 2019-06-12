@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2006, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2006, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,11 +26,14 @@
  * @library /test/lib
  * @bug 6401598
  * @summary  new HttpServer cannot serve binary stream data
+ * @run main B6401598
+ * @run main/othervm -Djava.net.preferIPv6Addresses=true B6401598
  */
 
 import java.io.*;
 import java.net.HttpURLConnection;
 import java.net.MalformedURLException;
+import java.net.Proxy;
 import java.net.URL;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
@@ -84,7 +87,8 @@ public class B6401598 {
 
         public static void main(String[] args) {
                 try {
-                        server = HttpServer.create(new InetSocketAddress(0), 400);
+                        InetAddress loopback = InetAddress.getLoopbackAddress();
+                        server = HttpServer.create(new InetSocketAddress(loopback, 0), 400);
                         server.createContext("/server/", new MyHandler());
                         exec = Executors.newFixedThreadPool(3);
                         server.setExecutor(exec);
@@ -123,11 +127,9 @@ public class B6401598 {
                                 dis.close();
                         }
                         System.out.println ("Stopping");
-                        server.stop (1);
-                        exec.shutdown();
-                } catch (IOException e) {
-                        // TODO Auto-generated catch block
-                        e.printStackTrace();
+                } catch (Exception e) {
+                    throw new AssertionError("Unexpected exception: " + e, e);
+                } finally {
                         server.stop (1);
                         exec.shutdown();
                 }
@@ -137,7 +139,8 @@ public class B6401598 {
 
         static HttpURLConnection getHttpURLConnection(URL url, int timeout) throws IOException {
 
-                HttpURLConnection httpURLConnection = (HttpURLConnection) url.openConnection();
+                HttpURLConnection httpURLConnection =
+                    (HttpURLConnection) url.openConnection(Proxy.NO_PROXY);
 
                 httpURLConnection.setConnectTimeout(40000);
                 httpURLConnection.setReadTimeout(timeout);

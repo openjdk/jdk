@@ -1,0 +1,29 @@
+WrongYieldTest.java:39:11: compiler.err.restricted.type.not.allowed: yield, 13
+WrongYieldTest.java:45:5: compiler.err.restricted.type.not.allowed.here: yield
+WrongYieldTest.java:136:9: compiler.err.invalid.yield
+WrongYieldTest.java:146:9: compiler.err.invalid.yield
+WrongYieldTest.java:151:9: compiler.err.invalid.yield
+WrongYieldTest.java:161:9: compiler.err.invalid.yield
+WrongYieldTest.java:166:22: compiler.err.invalid.yield
+WrongYieldTest.java:215:24: compiler.err.invalid.yield
+WrongYieldTest.java:34:24: compiler.err.illegal.ref.to.restricted.type: yield
+WrongYieldTest.java:95:9: compiler.err.no.switch.expression
+WrongYieldTest.java:95:15: compiler.err.cant.resolve.location: kindname.variable, y1, , , (compiler.misc.location: kindname.class, t.WrongYieldTest, null)
+WrongYieldTest.java:99:9: compiler.err.no.switch.expression
+WrongYieldTest.java:102:9: compiler.err.no.switch.expression
+WrongYieldTest.java:102:15: compiler.err.cant.resolve.location: kindname.variable, y2, , , (compiler.misc.location: kindname.class, t.WrongYieldTest, null)
+WrongYieldTest.java:102:24: compiler.err.illegal.ref.to.restricted.type: yield
+WrongYieldTest.java:116:32: compiler.err.illegal.ref.to.restricted.type: yield
+WrongYieldTest.java:120:25: compiler.err.illegal.ref.to.restricted.type: yield
+WrongYieldTest.java:123:30: compiler.err.illegal.ref.to.restricted.type: yield
+WrongYieldTest.java:126:23: compiler.err.illegal.ref.to.restricted.type: yield
+WrongYieldTest.java:126:39: compiler.err.illegal.ref.to.restricted.type: yield
+WrongYieldTest.java:141:9: compiler.err.no.switch.expression.qualify
+WrongYieldTest.java:156:9: compiler.err.no.switch.expression
+WrongYieldTest.java:156:17: compiler.err.cant.deref: int
+WrongYieldTest.java:201:9: compiler.err.no.switch.expression
+WrongYieldTest.java:202:9: compiler.err.no.switch.expression
+WrongYieldTest.java:216:24: compiler.err.illegal.ref.to.restricted.type: yield
+- compiler.note.preview.filename: WrongYieldTest.java
+- compiler.note.preview.recompile
+26 errors

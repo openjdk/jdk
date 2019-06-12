@@ -1080,7 +1080,7 @@ ReservedSpace FileMapInfo::reserve_shared_memory() {
 }
 
 // Memory map a region in the address space.
-static const char* shared_region_name[] = { "MiscData", "ReadWrite", "ReadOnly", "MiscCode", "OptionalData",
+static const char* shared_region_name[] = { "MiscData", "ReadWrite", "ReadOnly", "MiscCode",
                                             "String1", "String2", "OpenArchive1", "OpenArchive2" };
 
 char* FileMapInfo::map_regions(int regions[], char* saved_base[], size_t len) {
@@ -1094,7 +1094,7 @@ char* FileMapInfo::map_regions(int regions[], char* saved_base[], size_t len) {
       return NULL;
     }
     if (i > 0) {
-      // We require that mc->rw->ro->md->od to be laid out consecutively, with no
+      // We require that mc->rw->ro->md to be laid out consecutively, with no
       // gaps between them. That way, we can ensure that the OS won't be able to
       // allocate any new memory spaces inside _shared_metaspace_{base,top}, which
       // would mess up the simple comparision in MetaspaceShared::is_in_shared_metaspace().

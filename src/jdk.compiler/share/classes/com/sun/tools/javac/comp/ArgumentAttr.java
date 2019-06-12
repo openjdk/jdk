@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -43,7 +43,6 @@ import com.sun.tools.javac.comp.Infer.PartiallyInferredMethodType;
 import com.sun.tools.javac.comp.Resolve.MethodResolutionPhase;
 import com.sun.tools.javac.resources.CompilerProperties.Fragments;
 import com.sun.tools.javac.tree.JCTree;
-import com.sun.tools.javac.tree.JCTree.JCBreak;
 import com.sun.tools.javac.tree.JCTree.JCConditional;
 import com.sun.tools.javac.tree.JCTree.JCExpression;
 import com.sun.tools.javac.tree.JCTree.JCLambda;
@@ -77,6 +76,7 @@ import static com.sun.tools.javac.code.TypeTag.DEFERRED;
 import static com.sun.tools.javac.code.TypeTag.FORALL;
 import static com.sun.tools.javac.code.TypeTag.METHOD;
 import static com.sun.tools.javac.code.TypeTag.VOID;
+import com.sun.tools.javac.tree.JCTree.JCYield;
 
 /**
  * This class performs attribution of method/constructor arguments when target-typing is enabled
@@ -468,7 +468,7 @@ public class ArgumentAttr extends JCTree.Visitor {
      */
     class SwitchExpressionType extends ArgumentType<JCSwitchExpression> {
         /** List of break expressions (lazily populated). */
-        Optional<List<JCBreak>> breakExpressions = Optional.empty();
+        Optional<List<JCYield>> yieldExpressions = Optional.empty();
 
         SwitchExpressionType(JCExpression tree, Env<AttrContext> env, JCSwitchExpression speculativeCond) {
             this(tree, env, speculativeCond, new HashMap<>());
@@ -487,7 +487,7 @@ public class ArgumentAttr extends JCTree.Visitor {
                 return attr.types.createErrorType(resultInfo.pt);
             } else {
                 //poly
-                for (JCBreak brk : breakExpressions()) {
+                for (JCYield brk : yieldExpressions()) {
                     checkSpeculative(brk.value, brk.value.type, resultInfo);
                 }
                 return localInfo.pt;
@@ -495,19 +495,20 @@ public class ArgumentAttr extends JCTree.Visitor {
         }
 
         /** Compute return expressions (if needed). */
-        List<JCBreak> breakExpressions() {
-            return breakExpressions.orElseGet(() -> {
-                final List<JCBreak> res;
-                ListBuffer<JCBreak> buf = new ListBuffer<>();
+        List<JCYield> yieldExpressions() {
+            return yieldExpressions.orElseGet(() -> {
+                final List<JCYield> res;
+                ListBuffer<JCYield> buf = new ListBuffer<>();
                 new SwitchExpressionScanner() {
                     @Override
-                    public void visitBreak(JCBreak tree) {
+                    public void visitYield(JCYield tree) {
                         if (tree.target == speculativeTree)
                             buf.add(tree);
+                        super.visitYield(tree);
                     }
                 }.scan(speculativeTree.cases);
                 res = buf.toList();
-                breakExpressions = Optional.of(res);
+                yieldExpressions = Optional.of(res);
                 return res;
             });
         }

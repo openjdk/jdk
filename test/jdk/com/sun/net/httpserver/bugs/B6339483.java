@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,6 +25,9 @@
  * @test
  * @bug 6339483
  * @summary  NullPointerException when creating a HttpContext with no handler
+ * @library /test/lib
+ * @run main B6339483
+ * @run main/othervm -Djava.net.preferIPv6Addresses=true B6339483
  */
 
 import com.sun.net.httpserver.*;
@@ -36,19 +39,26 @@ import java.net.*;
 import java.security.*;
 import java.security.cert.*;
 import javax.net.ssl.*;
+import jdk.test.lib.net.URIBuilder;
 
 public class B6339483 {
 
     public static void main (String[] args) throws Exception {
-        InetSocketAddress addr = new InetSocketAddress (0);
+        InetAddress loopback = InetAddress.getLoopbackAddress();
+        InetSocketAddress addr = new InetSocketAddress (loopback, 0);
         HttpServer server = HttpServer.create (addr, 0);
         HttpContext ctx = server.createContext ("/test");
         ExecutorService executor = Executors.newCachedThreadPool();
         server.setExecutor (executor);
         server.start ();
 
-        URL url = new URL ("http://localhost:"+server.getAddress().getPort()+"/test/foo.html");
-        HttpURLConnection urlc = (HttpURLConnection)url.openConnection ();
+        URL url = URIBuilder.newBuilder()
+            .scheme("http")
+            .loopback()
+            .port(server.getAddress().getPort())
+            .path("/test/foo.html")
+            .toURL();
+        HttpURLConnection urlc = (HttpURLConnection)url.openConnection(Proxy.NO_PROXY);
         try {
             InputStream is = urlc.getInputStream();
             int c = 0;

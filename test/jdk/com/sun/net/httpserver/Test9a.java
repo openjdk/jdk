@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,8 +25,9 @@
  * @test
  * @bug 6270015
  * @library /test/lib
- * @build jdk.test.lib.net.SimpleSSLContext
+ * @build jdk.test.lib.net.SimpleSSLContext jdk.test.lib.net.URIBuilder
  * @run main/othervm Test9a
+ * @run main/othervm -Djava.net.preferIPv6Addresses=true Test9a
  * @summary Light weight HTTP server
  */
 
@@ -37,6 +38,7 @@ import java.io.*;
 import java.net.*;
 import javax.net.ssl.*;
 import jdk.test.lib.net.SimpleSSLContext;
+import jdk.test.lib.net.URIBuilder;
 
 /* Same as Test1 but requests run in parallel.
  */
@@ -53,7 +55,8 @@ public class Test9a extends Test {
         try {
             String root = System.getProperty ("test.src")+ "/docs";
             System.out.print ("Test9a: ");
-            InetSocketAddress addr = new InetSocketAddress (0);
+            InetAddress loopback = InetAddress.getLoopbackAddress();
+            InetSocketAddress addr = new InetSocketAddress(loopback, 0);
             server = HttpsServer.create (addr, 0);
             HttpHandler h = new FileServerHandler (root);
             HttpContext c1 = server.createContext ("/test1", h);
@@ -131,8 +134,14 @@ public class Test9a extends Test {
 
         public void run () {
             try {
-                URL url = new URL (protocol+"://localhost:"+port+"/test1/"+f);
-                HttpURLConnection urlc = (HttpURLConnection) url.openConnection();
+                URL url = URIBuilder.newBuilder()
+                    .scheme(protocol)
+                    .loopback()
+                    .port(port)
+                    .path("/test1/" + f)
+                    .toURL();
+
+                HttpURLConnection urlc = (HttpURLConnection) url.openConnection(Proxy.NO_PROXY);
                 if (urlc instanceof HttpsURLConnection) {
                     HttpsURLConnection urlcs = (HttpsURLConnection) urlc;
                     urlcs.setHostnameVerifier (new HostnameVerifier () {
@@ -179,7 +188,7 @@ public class Test9a extends Test {
                 String orig = root + "/" + f;
                 compare (new File(orig), temp);
                 temp.delete();
-            } catch (IOException e) {
+            } catch (Exception e) {
                 e.printStackTrace();
                 error = true;
             }

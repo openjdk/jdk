@@ -83,8 +83,8 @@ class JumpProjNode;
 class LoadNode;
 class LoadBarrierNode;
 class LoadBarrierSlowRegNode;
-class LoadBarrierWeakSlowRegNode;
 class LoadStoreNode;
+class LoadStoreConditionalNode;
 class LockNode;
 class LoopNode;
 class MachBranchNode;
@@ -688,8 +688,7 @@ public:
     DEFINE_CLASS_ID(Mem,   Node, 4)
       DEFINE_CLASS_ID(Load,  Mem, 0)
         DEFINE_CLASS_ID(LoadVector,  Load, 0)
-          DEFINE_CLASS_ID(LoadBarrierSlowReg, Load, 1)
-          DEFINE_CLASS_ID(LoadBarrierWeakSlowReg, Load, 2)
+        DEFINE_CLASS_ID(LoadBarrierSlowReg, Load, 1)
       DEFINE_CLASS_ID(Store, Mem, 1)
         DEFINE_CLASS_ID(StoreVector, Store, 0)
       DEFINE_CLASS_ID(LoadStore, Mem, 2)
@@ -830,9 +829,9 @@ public:
   DEFINE_CLASS_QUERY(JumpProj)
   DEFINE_CLASS_QUERY(Load)
   DEFINE_CLASS_QUERY(LoadStore)
+  DEFINE_CLASS_QUERY(LoadStoreConditional)
   DEFINE_CLASS_QUERY(LoadBarrier)
   DEFINE_CLASS_QUERY(LoadBarrierSlowReg)
-  DEFINE_CLASS_QUERY(LoadBarrierWeakSlowReg)
   DEFINE_CLASS_QUERY(Lock)
   DEFINE_CLASS_QUERY(Loop)
   DEFINE_CLASS_QUERY(Mach)

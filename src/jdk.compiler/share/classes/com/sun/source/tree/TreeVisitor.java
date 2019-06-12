@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -555,4 +555,20 @@ public interface TreeVisitor<R,P> {
      * @return a result value
      */
     R visitOther(Tree node, P p);
+
+    /**
+     * Visits a YieldTree node.
+     * @param node the node being visited
+     * @param p a parameter value
+     * @return a result value
+     * @since 13
+     *
+     * @deprecated
+     * This method is modeling yield statement,
+     * which are part of a preview feature and may be removed
+     * if the preview feature is removed.
+     */
+    @Deprecated(forRemoval=true, since="13")
+    @SuppressWarnings("removal")
+    R visitYield(YieldTree node, P p);
 }

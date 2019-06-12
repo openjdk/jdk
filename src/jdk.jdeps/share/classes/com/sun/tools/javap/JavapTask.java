@@ -944,7 +944,8 @@ public class JavapTask implements DisassemblerTool.DisassemblerTask, Messages {
         String[] fmOptions = {
             "--module-path", "--system",
             "--class-path", "-classpath", "-cp",
-            "-bootclasspath"
+            "-bootclasspath",
+            "--multi-release"
         };
 
         for (String o: fmOptions) {

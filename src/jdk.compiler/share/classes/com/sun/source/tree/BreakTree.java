@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -35,8 +35,6 @@ import javax.lang.model.element.Name;
  *   break;
  *
  *   break <em>label</em> ;
- *
- *   break <em>expression</em> ;
  * </pre>
  *
  * @jls 14.15 The break Statement
@@ -52,17 +50,4 @@ public interface BreakTree extends StatementTree {
      */
     Name getLabel();
 
-    /**
-     * Returns the expression for this {@code break} statement.
-     *
-     * @return the expression
-     * @since 12
-     *
-     * @deprecated This method is modeling value breaks, which are part of
-     * a preview feature and may be removed if the preview feature
-     * is removed.
-     *
-     */
-    @Deprecated(forRemoval=true, since="12")
-    ExpressionTree getValue();
 }

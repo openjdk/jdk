@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,6 +24,9 @@
 /**
  * @test
  * @bug 6526158
+ * @library /test/lib
+ * @run main B6526158
+ * @run main/othervm -Djava.net.preferIPv6Addresses=true B6526158
  * @summary  HttpExchange.getRequestBody().close() throws Exception
  */
 
@@ -36,6 +39,7 @@ import java.net.*;
 import java.security.*;
 import java.security.cert.*;
 import javax.net.ssl.*;
+import jdk.test.lib.net.URIBuilder;
 
 public class B6526158 {
 
@@ -44,7 +48,8 @@ public class B6526158 {
 
     public static void main (String[] args) throws Exception {
         Handler handler = new Handler();
-        InetSocketAddress addr = new InetSocketAddress (0);
+        InetAddress loopback = InetAddress.getLoopbackAddress();
+        InetSocketAddress addr = new InetSocketAddress (loopback, 0);
         HttpServer server = HttpServer.create (addr, 0);
         HttpContext ctx = server.createContext ("/test", handler);
 
@@ -52,8 +57,13 @@ public class B6526158 {
         server.setExecutor (executor);
         server.start ();
 
-        URL url = new URL ("http://localhost:"+server.getAddress().getPort()+"/test/foo.html");
-        HttpURLConnection urlc = (HttpURLConnection)url.openConnection ();
+        URL url = URIBuilder.newBuilder()
+            .scheme("http")
+            .loopback()
+            .port(server.getAddress().getPort())
+            .path("/test/foo.html")
+            .toURL();
+        HttpURLConnection urlc = (HttpURLConnection)url.openConnection(Proxy.NO_PROXY);
         urlc.setDoOutput (true);
         try {
             OutputStream os = new BufferedOutputStream (urlc.getOutputStream());

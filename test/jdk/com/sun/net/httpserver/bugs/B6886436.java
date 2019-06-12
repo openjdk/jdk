@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2009, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,7 +24,10 @@
 /**
  * @test
  * @bug 6886436
- * @summary
+ * @summary HttpServer should not send a body with 204 response.
+ * @library /test/lib
+ * @run main B6886436
+ * @run main/othervm -Djava.net.preferIPv6Addresses=true B6886436
  */
 
 import com.sun.net.httpserver.*;
@@ -34,6 +37,7 @@ import java.util.concurrent.*;
 import java.util.logging.*;
 import java.io.*;
 import java.net.*;
+import jdk.test.lib.net.URIBuilder;
 
 public class B6886436 {
 
@@ -44,20 +48,26 @@ public class B6886436 {
         logger.addHandler (c);
         logger.setLevel (Level.WARNING);
         Handler handler = new Handler();
-        InetSocketAddress addr = new InetSocketAddress (0);
+        InetAddress loopback = InetAddress.getLoopbackAddress();
+        InetSocketAddress addr = new InetSocketAddress (loopback, 0);
         HttpServer server = HttpServer.create (addr, 0);
         HttpContext ctx = server.createContext ("/test", handler);
         ExecutorService executor = Executors.newCachedThreadPool();
         server.setExecutor (executor);
         server.start ();
 
-        URL url = new URL ("http://localhost:"+server.getAddress().getPort()+"/test/foo.html");
-        HttpURLConnection urlc = (HttpURLConnection)url.openConnection ();
+        URL url = URIBuilder.newBuilder()
+            .scheme("http")
+            .loopback()
+            .port(server.getAddress().getPort())
+            .path("/test/foo.html")
+            .toURL();
+        HttpURLConnection urlc = (HttpURLConnection)url.openConnection(Proxy.NO_PROXY);
         try {
             InputStream is = urlc.getInputStream();
             while (is.read()!= -1) ;
             is.close ();
-            urlc = (HttpURLConnection)url.openConnection ();
+            urlc = (HttpURLConnection)url.openConnection(Proxy.NO_PROXY);
             urlc.setReadTimeout (3000);
             is = urlc.getInputStream();
             while (is.read()!= -1);

@@ -84,6 +84,7 @@ public class DeduplicationTest {
         Listener diagnosticListener = new Listener();
         Path testSrc = Paths.get(System.getProperty("test.src"));
         Path file = testSrc.resolve("Deduplication.java");
+        String sourceVersion = Integer.toString(Runtime.version().feature());
         JavacTask task =
                 javacTool.getTask(
                         null,
@@ -93,7 +94,8 @@ public class DeduplicationTest {
                                 "-d",
                                 ".",
                                 "-XDdebug.dumpLambdaToMethodDeduplication",
-                                "-XDdebug.dumpLambdaToMethodStats"),
+                                "-XDdebug.dumpLambdaToMethodStats",
+                                "--enable-preview", "-source", sourceVersion),
                         null,
                         fileManager.getJavaFileObjects(file));
         Map<JCLambda, JCLambda> dedupedLambdas = new LinkedHashMap<>();
@@ -192,6 +194,9 @@ public class DeduplicationTest {
                             (JCLambda) d.getDiagnosticPosition().getTree(),
                             (MethodSymbol) d.getArgs()[0]);
                     break;
+                case "compiler.note.preview.filename":
+                case "compiler.note.preview.recompile":
+                    break; //ignore
                 default:
                     unexpected.add(diagnostic);
             }

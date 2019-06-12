@@ -28,7 +28,7 @@
 class SwitchExpressions {
     int m(int i) {
         return switch (i) {
-            default: break -1;
+            default: yield -1;
         };
     }
 }

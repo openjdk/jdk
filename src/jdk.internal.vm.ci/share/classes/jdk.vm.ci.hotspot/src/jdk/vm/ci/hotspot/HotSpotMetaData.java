@@ -31,6 +31,7 @@ public class HotSpotMetaData {
     private byte[] scopesDescBytes;
     private byte[] relocBytes;
     private byte[] exceptionBytes;
+    private byte[] implicitExceptionBytes;
     private byte[] oopMaps;
     private Object[] metadata;
 
@@ -60,6 +61,10 @@ public class HotSpotMetaData {
 
     public byte[] exceptionBytes() {
         return exceptionBytes;
+    }
+
+    public byte[] implicitExceptionBytes() {
+        return implicitExceptionBytes;
     }
 
     public byte[] oopMaps() {

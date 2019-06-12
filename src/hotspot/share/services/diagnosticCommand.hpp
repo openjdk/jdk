@@ -645,7 +645,7 @@ public:
 class CodeHeapAnalyticsDCmd : public DCmdWithParser {
 protected:
   DCmdArgument<char*> _function;
-  DCmdArgument<char*> _granularity;
+  DCmdArgument<jlong> _granularity;
 public:
   CodeHeapAnalyticsDCmd(outputStream* output, bool heap);
   static const char* name() {

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2019, Oracle and/or its affiliates. All rights reserved.
  */
 
 /* Copyright  (c) 2002 Graz University of Technology. All rights reserved.
@@ -96,6 +96,12 @@ public class PKCS11 {
         // portion has been loaded. actual loading happens in the
         // static initializer, hence this method is empty.
     }
+
+    /* *****************************************************************************
+     * Utility, Resource Clean up
+     ******************************************************************************/
+    // always return 0L
+    public static native long freeMechanism(long hMechanism);
 
     /**
      * The PKCS#11 module to connect to. This is the PKCS#11 driver of the token;
@@ -729,17 +735,25 @@ public class PKCS11 {
      *
      * @param hSession the session's handle
      *         (PKCS#11 param: CK_SESSION_HANDLE hSession)
-     * @param pData the data to get encrypted and the data's length
+     * @param directIn the address of the to-be-encrypted data
+     * @param in buffer containing the to-be-encrypted data
+     * @param inOfs buffer offset of the to-be-encrypted data
+     * @param inLen length of the to-be-encrypted data
      *         (PKCS#11 param: CK_BYTE_PTR pData, CK_ULONG ulDataLen)
-     * @return the encrypted data and the encrypted data's length
+     * @param directOut the address for the encrypted data
+     * @param out buffer for the encrypted data
+     * @param outOfs buffer offset for the encrypted data
+     * @param outLen buffer size for the encrypted data
+     * @return the length of encrypted data
      *         (PKCS#11 param: CK_BYTE_PTR pEncryptedData,
      *                         CK_ULONG_PTR pulEncryptedDataLen)
      * @exception PKCS11Exception If function returns other value than CKR_OK.
-     * @preconditions (pData <> null)
-     * @postconditions (result <> null)
+     * @preconditions
+     * @postconditions
      */
-    public native int C_Encrypt(long hSession, byte[] in, int inOfs, int inLen,
-            byte[] out, int outOfs, int outLen) throws PKCS11Exception;
+    public native int C_Encrypt(long hSession, long directIn, byte[] in,
+            int inOfs, int inLen, long directOut, byte[] out, int outOfs,
+            int outLen) throws PKCS11Exception;
 
 
     /**
@@ -749,13 +763,20 @@ public class PKCS11 {
      *
      * @param hSession the session's handle
      *         (PKCS#11 param: CK_SESSION_HANDLE hSession)
-     * @param pPart the data part to get encrypted and the data part's length
+     * @param directIn the address of the to-be-encrypted data
+     * @param in buffer containing the to-be-encrypted data
+     * @param inOfs buffer offset of the to-be-encrypted data
+     * @param inLen length of the to-be-encrypted data
      *         (PKCS#11 param: CK_BYTE_PTR pPart, CK_ULONG ulPartLen)
-     * @return the encrypted data part and the encrypted data part's length
+     * @param directOut the address for the encrypted data
+     * @param out buffer for the encrypted data
+     * @param outOfs buffer offset for the encrypted data
+     * @param outLen buffer size for the encrypted data
+     * @return the length of encrypted data for this update
      *         (PKCS#11 param: CK_BYTE_PTR pEncryptedPart,
                              CK_ULONG_PTR pulEncryptedPartLen)
      * @exception PKCS11Exception If function returns other value than CKR_OK.
-     * @preconditions (pPart <> null)
+     * @preconditions
      * @postconditions
      */
     public native int C_EncryptUpdate(long hSession, long directIn, byte[] in,
@@ -770,12 +791,16 @@ public class PKCS11 {
      *
      * @param hSession the session's handle
      *         (PKCS#11 param: CK_SESSION_HANDLE hSession)
-     * @return the last encrypted data part and the last data part's length
+     * @param directOut the address for the encrypted data
+     * @param out buffer for the encrypted data
+     * @param outOfs buffer offset for the encrypted data
+     * @param outLen buffer size for the encrypted data
+     * @return the length of the last part of the encrypted data
      *         (PKCS#11 param: CK_BYTE_PTR pLastEncryptedPart,
                              CK_ULONG_PTR pulLastEncryptedPartLen)
      * @exception PKCS11Exception If function returns other value than CKR_OK.
      * @preconditions
-     * @postconditions (result <> null)
+     * @postconditions
      */
     public native int C_EncryptFinal(long hSession, long directOut, byte[] out,
             int outOfs, int outLen) throws PKCS11Exception;
@@ -805,18 +830,25 @@ public class PKCS11 {
      *
      * @param hSession the session's handle
      *         (PKCS#11 param: CK_SESSION_HANDLE hSession)
-     * @param pEncryptedData the encrypted data to get decrypted and the
-     *         encrypted data's length
-     *         (PKCS#11 param: CK_BYTE_PTR pEncryptedData,
-     *                         CK_ULONG ulEncryptedDataLen)
-     * @return the decrypted data and the data's length
+     * @param directIn the address of the to-be-decrypted data
+     * @param in buffer containing the to-be-decrypted data
+     * @param inOfs buffer offset of the to-be-decrypted data
+     * @param inLen length of the to-be-decrypted data
+     *         (PKCS#11 param: CK_BYTE_PTR pDecryptedData,
+     *                         CK_ULONG ulDecryptedDataLen)
+     * @param directOut the address for the decrypted data
+     * @param out buffer for the decrypted data
+     * @param outOfs buffer offset for the decrypted data
+     * @param outLen buffer size for the decrypted data
+     * @return the length of decrypted data
      *         (PKCS#11 param: CK_BYTE_PTR pData, CK_ULONG_PTR pulDataLen)
      * @exception PKCS11Exception If function returns other value than CKR_OK.
-     * @preconditions (pEncryptedPart <> null)
-     * @postconditions (result <> null)
+     * @preconditions
+     * @postconditions
      */
-    public native int C_Decrypt(long hSession, byte[] in, int inOfs, int inLen,
-            byte[] out, int outOfs, int outLen) throws PKCS11Exception;
+    public native int C_Decrypt(long hSession, long directIn, byte[] in,
+            int inOfs, int inLen, long directOut, byte[] out, int outOfs,
+            int outLen) throws PKCS11Exception;
 
 
     /**
@@ -826,14 +858,20 @@ public class PKCS11 {
      *
      * @param hSession the session's handle
      *         (PKCS#11 param: CK_SESSION_HANDLE hSession)
-     * @param pEncryptedPart the encrypted data part to get decrypted and the
-     *         encrypted data part's length
-     *         (PKCS#11 param: CK_BYTE_PTR pEncryptedPart,
-     *                         CK_ULONG ulEncryptedPartLen)
-     * @return the decrypted data part and the data part's length
+     * @param directIn the address of the to-be-decrypted data
+     * @param in buffer containing the to-be-decrypted data
+     * @param inOfs buffer offset of the to-be-decrypted data
+     * @param inLen length of the to-be-decrypted data
+     *         (PKCS#11 param: CK_BYTE_PTR pDecryptedPart,
+     *                         CK_ULONG ulDecryptedPartLen)
+     * @param directOut the address for the decrypted data
+     * @param out buffer for the decrypted data
+     * @param outOfs buffer offset for the decrypted data
+     * @param outLen buffer size for the decrypted data
+     * @return the length of decrypted data for this update
      *         (PKCS#11 param: CK_BYTE_PTR pPart, CK_ULONG_PTR pulPartLen)
      * @exception PKCS11Exception If function returns other value than CKR_OK.
-     * @preconditions (pEncryptedPart <> null)
+     * @preconditions
      * @postconditions
      */
     public native int C_DecryptUpdate(long hSession, long directIn, byte[] in,
@@ -848,12 +886,16 @@ public class PKCS11 {
      *
      * @param hSession the session's handle
      *         (PKCS#11 param: CK_SESSION_HANDLE hSession)
-     * @return the last decrypted data part and the last data part's length
+     * @param directOut the address for the decrypted data
+     * @param out buffer for the decrypted data
+     * @param outOfs buffer offset for the decrypted data
+     * @param outLen buffer size for the decrypted data
+     * @return the length of this last part of decrypted data
      *         (PKCS#11 param: CK_BYTE_PTR pLastPart,
      *                         CK_ULONG_PTR pulLastPartLen)
      * @exception PKCS11Exception If function returns other value than CKR_OK.
      * @preconditions
-     * @postconditions (result <> null)
+     * @postconditions
      */
     public native int C_DecryptFinal(long hSession, long directOut, byte[] out,
             int outOfs, int outLen) throws PKCS11Exception;
@@ -1027,6 +1069,7 @@ public class PKCS11 {
      *
      * @param hSession the session's handle
      *         (PKCS#11 param: CK_SESSION_HANDLE hSession)
+     * @param expectedLen expected signature length, can be 0 if unknown
      * @return the signature and the signature's length
      *         (PKCS#11 param: CK_BYTE_PTR pSignature,
      *                         CK_ULONG_PTR pulSignatureLen)
@@ -1283,7 +1326,6 @@ public class PKCS11 {
      */
 //    public native byte[] C_DecryptVerifyUpdate(long hSession,
 //            byte[] pEncryptedPart) throws PKCS11Exception;
-
 
 
 /* *****************************************************************************
@@ -1692,10 +1734,11 @@ static class SynchronizedPKCS11 extends PKCS11 {
         super.C_EncryptInit(hSession, pMechanism, hKey);
     }
 
-    public synchronized int C_Encrypt(long hSession, byte[] in, int inOfs,
-            int inLen, byte[] out, int outOfs, int outLen)
+    public synchronized int C_Encrypt(long hSession, long directIn, byte[] in,
+            int inOfs, int inLen, long directOut, byte[] out, int outOfs, int outLen)
             throws PKCS11Exception {
-        return super.C_Encrypt(hSession, in, inOfs, inLen, out, outOfs, outLen);
+        return super.C_Encrypt(hSession, directIn, in, inOfs, inLen,
+                directOut, out, outOfs, outLen);
     }
 
     public synchronized int C_EncryptUpdate(long hSession, long directIn,
@@ -1715,10 +1758,11 @@ static class SynchronizedPKCS11 extends PKCS11 {
         super.C_DecryptInit(hSession, pMechanism, hKey);
     }
 
-    public synchronized int C_Decrypt(long hSession, byte[] in, int inOfs,
-            int inLen, byte[] out, int outOfs, int outLen)
-            throws PKCS11Exception {
-        return super.C_Decrypt(hSession, in, inOfs, inLen, out, outOfs, outLen);
+    public synchronized int C_Decrypt(long hSession, long directIn,
+            byte[] in, int inOfs, int inLen, long directOut, byte[] out,
+            int outOfs, int outLen) throws PKCS11Exception {
+        return super.C_Decrypt(hSession, directIn, in, inOfs, inLen,
+                directOut, out, outOfs, outLen);
     }
 
     public synchronized int C_DecryptUpdate(long hSession, long directIn,

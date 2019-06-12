@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2019 Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -35,7 +35,7 @@
  * @run main/othervm PacketLossRetransmission client 1 client_hello
  * @run main/othervm PacketLossRetransmission client 2 server_hello
  * @run main/othervm PacketLossRetransmission client 3 hello_verify_request
- * @run main/othervm PacketLossRetransmission client 4 new_session_ticket
+ * @run main/othervm -Djdk.tls.client.enableSessionTicketExtension=false PacketLossRetransmission client 4 new_session_ticket
  * @run main/othervm PacketLossRetransmission client 11 certificate
  * @run main/othervm PacketLossRetransmission client 12 server_key_exchange
  * @run main/othervm PacketLossRetransmission client 13 certificate_request
@@ -51,7 +51,7 @@
  * @run main/othervm PacketLossRetransmission server 1 client_hello
  * @run main/othervm PacketLossRetransmission server 2 server_hello
  * @run main/othervm PacketLossRetransmission server 3 hello_verify_request
- * @run main/othervm PacketLossRetransmission server 4 new_session_ticket
+ * @run main/othervm -Djdk.tls.client.enableSessionTicketExtension=false PacketLossRetransmission server 4 new_session_ticket
  * @run main/othervm PacketLossRetransmission server 11 certificate
  * @run main/othervm PacketLossRetransmission server 12 server_key_exchange
  * @run main/othervm PacketLossRetransmission server 13 certificate_request

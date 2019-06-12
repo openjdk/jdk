@@ -21,6 +21,6 @@
  * questions.
  */
 
-// key: compiler.err.var.not.allowed
+// key: compiler.err.restricted.type.not.allowed
 
 class var { }

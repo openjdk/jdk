@@ -946,13 +946,20 @@ void CodeCacheDCmd::execute(DCmdSource source, TRAPS) {
 CodeHeapAnalyticsDCmd::CodeHeapAnalyticsDCmd(outputStream* output, bool heap) :
                                              DCmdWithParser(output, heap),
   _function("function", "Function to be performed (aggregate, UsedSpace, FreeSpace, MethodCount, MethodSpace, MethodAge, MethodNames, discard", "STRING", false, "all"),
-  _granularity("granularity", "Detail level - smaller value -> more detail", "STRING", false, "4096") {
+  _granularity("granularity", "Detail level - smaller value -> more detail", "INT", false, "4096") {
   _dcmdparser.add_dcmd_argument(&_function);
   _dcmdparser.add_dcmd_argument(&_granularity);
 }
 
 void CodeHeapAnalyticsDCmd::execute(DCmdSource source, TRAPS) {
-  CompileBroker::print_heapinfo(output(), _function.value(), _granularity.value());
+  jlong granularity = _granularity.value();
+  if (granularity < 1) {
+    Exceptions::fthrow(THREAD_AND_LOCATION, vmSymbols::java_lang_IllegalArgumentException(),
+                       "Invalid granularity value " JLONG_FORMAT  ". Should be positive.\n", granularity);
+    return;
+  }
+
+  CompileBroker::print_heapinfo(output(), _function.value(), granularity);
 }
 
 int CodeHeapAnalyticsDCmd::num_arguments() {

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -43,7 +43,6 @@ import sun.hotspot.WhiteBox;
 
 import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodHandleHelper;
-import java.lang.invoke.MethodHandleHelper.NonInlinedReinvoker;
 import java.lang.invoke.MethodHandles;
 import java.lang.invoke.MethodType;
 
@@ -58,7 +57,6 @@ public class InvokeTest {
     static final MethodHandle defaultMH; // invokevirtual   T.f3
     static final MethodHandle specialMH; // invokespecial   T.f4 T
     static final MethodHandle privateMH; // invokespecial   I.f4 T
-    static final MethodHandle basicMH;
 
     static final MethodHandle intrinsicMH; // invokevirtual Object.hashCode
 
@@ -76,7 +74,6 @@ public class InvokeTest {
             defaultMH  = LOOKUP.findVirtual(T.class, "f3", mtype);
             specialMH  = LOOKUP.findSpecial(T.class, "f4", mtype, T.class);
             privateMH  = LOOKUP.findSpecial(I.class, "f4", mtype, I.class);
-            basicMH    = NonInlinedReinvoker.make(staticMH);
             intrinsicMH = LOOKUP.findVirtual(Object.class, "hashCode", MethodType.methodType(int.class));
         } catch (Exception e) {
             throw new Error(e);
@@ -194,16 +191,6 @@ public class InvokeTest {
         }
     }
 
-    @DontInline
-    static void invokeBasic() {
-        try {
-            Class<?> cls = (Class<?>)MethodHandleHelper.invokeBasicL(basicMH);
-            assertEquals(cls, T.class);
-        } catch (Throwable e) {
-            throw new Error(e);
-        }
-    }
-
     static void run(Runnable r) {
         for (int i = 0; i < 20_000; i++) {
             r.run();
@@ -290,17 +277,10 @@ public class InvokeTest {
         run(() -> linkToStatic());
     }
 
-    static void testBasic() {
-        System.out.println("invokeBasic");
-        // static call
-        run(() -> invokeBasic());
-    }
-
     public static void main(String[] args) {
         testVirtual();
         testInterface();
         testSpecial();
         testStatic();
-        testBasic();
     }
 }

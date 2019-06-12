@@ -85,6 +85,8 @@ public:
 
   ExceptionHandlerTable* get_exception_table() { return _exception_table; }
 
+  ImplicitExceptionTable* get_implicit_exception_table() { return _implicit_exception_table; }
+
   void set_pc_desc(PcDesc* desc, int count) {
     _pc_desc = desc;
     _nr_pc_desc = count;
@@ -105,6 +107,10 @@ public:
     _exception_table = table;
   }
 
+  void set_implicit_exception_table(ImplicitExceptionTable* table) {
+    _implicit_exception_table = table;
+  }
+
 private:
   CodeBlob* _cb;
   PcDesc* _pc_desc;
@@ -118,6 +124,7 @@ private:
   AOTOopRecorder* _oop_recorder;
 #endif
   ExceptionHandlerTable* _exception_table;
+  ImplicitExceptionTable* _implicit_exception_table;
 };
 
 /*
@@ -185,6 +192,7 @@ private:
   DebugInformationRecorder* _debug_recorder;
   Dependencies*             _dependencies;
   ExceptionHandlerTable     _exception_handler_table;
+  ImplicitExceptionTable    _implicit_exception_table;
 
   bool _immutable_pic_compilation;  // Installer is called for Immutable PIC compilation.
 

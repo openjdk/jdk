@@ -319,6 +319,10 @@ static JVMFlag::Error MaxSizeForHeapAlignment(const char* name, size_t value, bo
   return MaxSizeForAlignment(name, value, heap_alignment, verbose);
 }
 
+JVMFlag::Error MinHeapSizeConstraintFunc(size_t value, bool verbose) {
+  return MaxSizeForHeapAlignment("MinHeapSize", value, verbose);
+}
+
 JVMFlag::Error InitialHeapSizeConstraintFunc(size_t value, bool verbose) {
   return MaxSizeForHeapAlignment("InitialHeapSize", value, verbose);
 }

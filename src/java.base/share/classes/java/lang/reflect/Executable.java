@@ -234,6 +234,9 @@ public abstract class Executable extends AccessibleObject
      * parameter types, in declaration order, of the executable
      * represented by this object.  Returns an array of length
      * 0 if the underlying executable takes no parameters.
+     * Note that the constructors of some inner classes
+     * may have an implicitly declared parameter in addition to
+     * explicitly declared ones.
      *
      * @return the parameter types for the executable this object
      * represents
@@ -257,10 +260,13 @@ public abstract class Executable extends AccessibleObject
      * parameter types, in declaration order, of the executable represented by
      * this object. Returns an array of length 0 if the
      * underlying executable takes no parameters.
+     * Note that the constructors of some inner classes
+     * may have an implicitly declared parameter in addition to
+     * explicitly declared ones.
      *
      * <p>If a formal parameter type is a parameterized type,
      * the {@code Type} object returned for it must accurately reflect
-     * the actual type parameters used in the source code.
+     * the actual type arguments used in the source code.
      *
      * <p>If a formal parameter type is a type variable or a parameterized
      * type, it is created. Otherwise, it is resolved.
@@ -699,6 +705,9 @@ public abstract class Executable extends AccessibleObject
      *
      * Returns an array of length 0 if the method/constructor declares no
      * parameters.
+     * Note that the constructors of some inner classes
+     * may have an implicitly declared parameter in addition to
+     * explicitly declared ones.
      *
      * @return an array of objects representing the types of the
      * formal parameters of the method or constructor represented by this
