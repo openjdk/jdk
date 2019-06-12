@@ -245,9 +245,7 @@ void ObjectMonitor::enter(TRAPS) {
 
   void * cur = Atomic::cmpxchg(Self, &_owner, (void*)NULL);
   if (cur == NULL) {
-    // Either ASSERT _recursions == 0 or explicitly set _recursions = 0.
     assert(_recursions == 0, "invariant");
-    assert(_owner == Self, "invariant");
     return;
   }
 
@@ -405,9 +403,7 @@ int ObjectMonitor::TryLock(Thread * Self) {
   void * own = _owner;
   if (own != NULL) return 0;
   if (Atomic::replace_if_null(Self, &_owner)) {
-    // Either guarantee _recursions == 0 or set _recursions = 0.
     assert(_recursions == 0, "invariant");
-    assert(_owner == Self, "invariant");
     return 1;
   }
   // The lock had been free momentarily, but we lost the race to the lock.
@@ -415,6 +411,15 @@ int ObjectMonitor::TryLock(Thread * Self) {
   // We can either return -1 or retry.
   // Retry doesn't make as much sense because the lock was just acquired.
   return -1;
+}
+
+// Convert the fields used by is_busy() to a string that can be
+// used for diagnostic output.
+const char* ObjectMonitor::is_busy_to_string(stringStream* ss) {
+  ss->print("is_busy: contentions=%d, waiters=%d, owner=" INTPTR_FORMAT
+            ", cxq=" INTPTR_FORMAT ", EntryList=" INTPTR_FORMAT, _contentions,
+            _waiters, p2i(_owner), p2i(_cxq), p2i(_EntryList));
+  return ss->base();
 }
 
 #define MAX_RECHECK_INTERVAL 1000

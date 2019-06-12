@@ -95,12 +95,8 @@ inline jint ObjectMonitor::contentions() const {
   return _contentions;
 }
 
-// Do NOT set _contentions = 0. There is a race such that _contentions could
-// be set while inflating prior to setting _owner
-// Just use Atomic::inc/dec and assert 0 when monitor put on free list
 inline void ObjectMonitor::set_owner(void* owner) {
   _owner = owner;
-  _recursions = 0;
 }
 
 #endif // SHARE_RUNTIME_OBJECTMONITOR_INLINE_HPP
