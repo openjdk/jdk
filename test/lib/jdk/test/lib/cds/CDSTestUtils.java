@@ -357,7 +357,8 @@ public class CDSTestUtils {
             outStr.contains("Unable to map MiscCode shared space at required address") ||
             outStr.contains("Unable to map OptionalData shared space at required address") ||
             outStr.contains("Could not allocate metaspace at a compatible address") ||
-            outStr.contains("UseSharedSpaces: Unable to allocate region, range is not within java heap") ))
+            outStr.contains("UseSharedSpaces: Unable to allocate region, range is not within java heap") ||
+            outStr.contains("DynamicDumpSharedSpaces is unsupported when base CDS archive is not loaded") ))
         {
             return true;
         }
