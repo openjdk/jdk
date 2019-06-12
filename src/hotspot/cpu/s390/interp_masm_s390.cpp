@@ -414,6 +414,19 @@ void InterpreterMacroAssembler::get_cache_entry_pointer_at_bcp(Register cache,
   BLOCK_COMMENT("}");
 }
 
+void InterpreterMacroAssembler::load_resolved_method_at_index(int byte_no,
+                                                              Register cache,
+                                                              Register cpe_offset,
+                                                              Register method) {
+  const int method_offset = in_bytes(
+    ConstantPoolCache::base_offset() +
+      ((byte_no == TemplateTable::f2_byte)
+       ? ConstantPoolCacheEntry::f2_offset()
+       : ConstantPoolCacheEntry::f1_offset()));
+
+  z_lg(method, Address(cache, cpe_offset, method_offset)); // get f1 Method*
+}
+
 // Generate a subtype check: branch to ok_is_subtype if sub_klass is
 // a subtype of super_klass. Blows registers Rsuper_klass, Rsub_klass, tmp1, tmp2.
 void InterpreterMacroAssembler::gen_subtype_check(Register Rsub_klass,

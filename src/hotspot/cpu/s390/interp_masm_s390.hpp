@@ -120,6 +120,8 @@ class InterpreterMacroAssembler: public MacroAssembler {
   // load cpool->resolved_klass_at(index)
   void load_resolved_klass_at_offset(Register cpool, Register offset, Register iklass);
 
+  void load_resolved_method_at_index(int byte_no, Register cache, Register cpe_offset, Register method);
+
   // Pop topmost element from stack. It just disappears. Useful if
   // consumed previously by access via stackTop().
   void popx(int len);

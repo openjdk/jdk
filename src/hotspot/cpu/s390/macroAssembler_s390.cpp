@@ -3130,6 +3130,33 @@ void MacroAssembler::check_klass_subtype(Register sub_klass,
   BLOCK_COMMENT("} check_klass_subtype");
 }
 
+void MacroAssembler::clinit_barrier(Register klass, Register thread, Label* L_fast_path, Label* L_slow_path) {
+  assert(L_fast_path != NULL || L_slow_path != NULL, "at least one is required");
+
+  Label L_fallthrough;
+  if (L_fast_path == NULL) {
+    L_fast_path = &L_fallthrough;
+  } else if (L_slow_path == NULL) {
+    L_slow_path = &L_fallthrough;
+  }
+
+  // Fast path check: class is fully initialized
+  z_cli(Address(klass, InstanceKlass::init_state_offset()), InstanceKlass::fully_initialized);
+  z_bre(*L_fast_path);
+
+  // Fast path check: current thread is initializer thread
+  z_cg(thread, Address(klass, InstanceKlass::init_thread_offset()));
+  if (L_slow_path == &L_fallthrough) {
+    z_bre(*L_fast_path);
+  } else if (L_fast_path == &L_fallthrough) {
+    z_brne(*L_slow_path);
+  } else {
+    Unimplemented();
+  }
+
+  bind(L_fallthrough);
+}
+
 // Increment a counter at counter_address when the eq condition code is
 // set. Kills registers tmp1_reg and tmp2_reg and preserves the condition code.
 void MacroAssembler::increment_counter_eq(address counter_address, Register tmp1_reg, Register tmp2_reg) {
@@ -4344,6 +4371,12 @@ void MacroAssembler::load_mirror_from_const_method(Register mirror, Register con
   mem2reg_opt(mirror, Address(mirror, ConstantPool::pool_holder_offset_in_bytes()));
   mem2reg_opt(mirror, Address(mirror, Klass::java_mirror_offset()));
   resolve_oop_handle(mirror);
+}
+
+void MacroAssembler::load_method_holder(Register holder, Register method) {
+  mem2reg_opt(holder, Address(method, Method::const_offset()));
+  mem2reg_opt(holder, Address(holder, ConstMethod::constants_offset()));
+  mem2reg_opt(holder, Address(holder, ConstantPool::pool_holder_offset_in_bytes()));
 }
 
 //---------------------------------------------------------------
