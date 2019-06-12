@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,12 +25,26 @@
  * @test InterpreterMethodEntries
  * @bug 8169711
  * @summary Test interpreter method entries for intrinsics with CDS (class data sharing)
- *          and different settings of the intrinsic flag during dump/use of the archive.
+ *          and the intrinsic flag enabled during dump and disabled during use of the archive.
+ * @requires vm.cds
+ * @comment the test disables intrinsics, so it can't be run w/ AOT'ed java module
+ * @requires !vm.aot.enabled
+ * @library /test/lib
+ * @modules java.base/jdk.internal.misc
+ *          java.management
+ * @run driver TestInterpreterMethodEntries true false
+ */
+
+/**
+ * @test InterpreterMethodEntries
+ * @bug 8169711
+ * @summary Test interpreter method entries for intrinsics with CDS (class data sharing)
+ *          and the intrinsic flag disabled during dump and enabled during use of the archive.
  * @requires vm.cds
  * @library /test/lib
  * @modules java.base/jdk.internal.misc
  *          java.management
- * @run driver TestInterpreterMethodEntries
+ * @run driver TestInterpreterMethodEntries false true
  */
 
 import java.lang.Math;
@@ -43,10 +57,12 @@ import jdk.test.lib.process.OutputAnalyzer;
 public class TestInterpreterMethodEntries {
 
     public static void main(String[] args) throws Exception {
-        if (args.length == 0) {
+        if (args.length > 1) {
+          boolean dump = Boolean.parseBoolean(args[0]);
+          boolean use  = Boolean.parseBoolean(args[1]);
+
           // Dump and use shared archive with different flag combinations
-          dumpAndUseSharedArchive("+", "-");
-          dumpAndUseSharedArchive("-", "+");
+          dumpAndUseSharedArchive(dump ? "+" : "-", use ? "+" : "-");
         } else {
           // Call intrinsified java.lang.Math::fma()
           Math.fma(1.0, 2.0, 3.0);
