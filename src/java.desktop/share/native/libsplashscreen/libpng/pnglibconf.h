@@ -29,18 +29,16 @@
  * THIS FILE WAS MODIFIED BY ORACLE, INC.
  */
 
-/* libpng STANDARD API DEFINITION */
-
 /* pnglibconf.h - library build configuration */
 /* This file is available under and governed by the GNU General Public
  * License version 2 only, as published by the Free Software Foundation.
  * However, the following notice accompanied the original version of this
  * file and, per its terms, should not be removed:
  */
+/* libpng version 1.6.37 */
 
-/* libpng version 1.6.35, July 15, 2018 */
-
-/* Copyright (c) 1998-2018 Glenn Randers-Pehrson */
+/* Copyright (c) 2018-2019 Cosmin Truta */
+/* Copyright (c) 1998-2002,2004,2006-2018 Glenn Randers-Pehrson */
 
 /* This code is released under the libpng license. */
 /* For conditions of distribution and use, see the disclaimer */
@@ -80,6 +78,8 @@
 #define PNG_IO_STATE_SUPPORTED
 #define PNG_MNG_FEATURES_SUPPORTED
 #define PNG_POINTER_INDEXING_SUPPORTED
+/*#undef PNG_POWERPC_VSX_API_SUPPORTED*/
+/*#undef PNG_POWERPC_VSX_CHECK_SUPPORTED*/
 #define PNG_PROGRESSIVE_READ_SUPPORTED
 #define PNG_READ_16BIT_SUPPORTED
 #define PNG_READ_ALPHA_MODE_SUPPORTED
@@ -118,6 +118,7 @@
 #define PNG_READ_USER_TRANSFORM_SUPPORTED
 #define PNG_READ_bKGD_SUPPORTED
 #define PNG_READ_cHRM_SUPPORTED
+/*#undef PNG_READ_eXIf_SUPPORTED*/
 #define PNG_READ_gAMA_SUPPORTED
 #define PNG_READ_hIST_SUPPORTED
 /*#undef PNG_READ_iCCP_SUPPORTED*/
@@ -187,6 +188,7 @@
 /*#undef PNG_WRITE_WEIGHTED_FILTER_SUPPORTED*/
 /*#undef PNG_WRITE_bKGD_SUPPORTED*/
 /*#undef PNG_WRITE_cHRM_SUPPORTED*/
+/*#undef PNG_WRITE_eXIf_SUPPORTED*/
 /*#undef PNG_WRITE_gAMA_SUPPORTED*/
 /*#undef PNG_WRITE_hIST_SUPPORTED*/
 /*#undef PNG_WRITE_iCCP_SUPPORTED*/
@@ -204,6 +206,7 @@
 /*#undef PNG_WRITE_zTXt_SUPPORTED*/
 #define PNG_bKGD_SUPPORTED
 #define PNG_cHRM_SUPPORTED
+/*#undef PNG_eXIf_SUPPORTED*/
 #define PNG_gAMA_SUPPORTED
 #define PNG_hIST_SUPPORTED
 #define PNG_iCCP_SUPPORTED
@@ -241,7 +244,7 @@
 #define PNG_USER_HEIGHT_MAX 8000
 #define PNG_USER_WIDTH_MAX 8000
 #define PNG_ZBUF_SIZE 8192
-#define PNG_ZLIB_VERNUM 0
+#define PNG_ZLIB_VERNUM 0 /* unknown */
 #define PNG_Z_DEFAULT_COMPRESSION (-1)
 #define PNG_Z_DEFAULT_NOFILTER_STRATEGY 0
 #define PNG_Z_DEFAULT_STRATEGY 1
