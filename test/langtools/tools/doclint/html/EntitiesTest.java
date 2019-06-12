@@ -294,8 +294,19 @@ class EntitiesTest {
     * &lsaquo; &#8249;
     * &rsaquo; &#8250;
     * &euro; &#8364;
+    * &sol; &#47;
+    * &bigotimes; &#10754;
+    * &mho; &#2127;
+    * &horbar; &#8213;
+    * &cylcty; &#9005;
     */
     void symbolic_entities() { }
+
+    /**
+     * &#9003;
+     * &#32;
+     */
+    void other_numeric() {}
 
     /**
      * &bad;
@@ -303,14 +314,15 @@ class EntitiesTest {
     void bad_name() { }
 
     /**
+     * &#0;
+     * &#13;
      * &#31;
-     * &#2127;
+     * &#xd800;
+     * &#xdfff;
      */
     void out_of_range() { }
 
     /**
-     * &#8213;
-     * &#9003;
      * &#xffff;
      */
     void sparse_negative() { }
