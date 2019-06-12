@@ -1,6 +1,6 @@
 /*
- * Copyright (c) 2016, 2018, Oracle and/or its affiliates. All rights reserved.
- * Copyright (c) 2016, 2018, SAP SE. All rights reserved.
+ * Copyright (c) 2016, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2019, SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -4339,9 +4339,8 @@ void MacroAssembler::resolve_oop_handle(Register result) {
   z_lg(result, 0, result);
 }
 
-void MacroAssembler::load_mirror(Register mirror, Register method) {
-  mem2reg_opt(mirror, Address(method, Method::const_offset()));
-  mem2reg_opt(mirror, Address(mirror, ConstMethod::constants_offset()));
+void MacroAssembler::load_mirror_from_const_method(Register mirror, Register const_method) {
+  mem2reg_opt(mirror, Address(const_method, ConstMethod::constants_offset()));
   mem2reg_opt(mirror, Address(mirror, ConstantPool::pool_holder_offset_in_bytes()));
   mem2reg_opt(mirror, Address(mirror, Klass::java_mirror_offset()));
   resolve_oop_handle(mirror);

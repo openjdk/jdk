@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 2016, 2019, Oracle and/or its affiliates. All rights reserved.
- * Copyright (c) 2016, 2018, SAP SE. All rights reserved.
+ * Copyright (c) 2016, 2019, SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -823,7 +823,7 @@ class MacroAssembler: public Assembler {
                    Register Rbase = Z_R1, int pow2_offset = -1);
 
   void resolve_oop_handle(Register result);
-  void load_mirror(Register mirror, Register method);
+  void load_mirror_from_const_method(Register mirror, Register const_method);
 
   //--------------------------
   //---  Operations on arrays.
