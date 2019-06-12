@@ -166,6 +166,7 @@ public class Gen extends JCTree.Visitor {
     Chain switchExpressionTrueChain;
     Chain switchExpressionFalseChain;
     List<LocalItem> stackBeforeSwitchExpression;
+    LocalItem switchResult;
 
     /** Generate code to load an integer constant.
      *  @param n     The integer to be loaded.
@@ -1190,9 +1191,11 @@ public class Gen extends JCTree.Visitor {
 
     private void doHandleSwitchExpression(JCSwitchExpression tree) {
         List<LocalItem> prevStackBeforeSwitchExpression = stackBeforeSwitchExpression;
+        LocalItem prevSwitchResult = switchResult;
         int limit = code.nextreg;
         try {
             stackBeforeSwitchExpression = List.nil();
+            switchResult = null;
             if (hasTry(tree)) {
                 //if the switch expression contains try-catch, the catch handlers need to have
                 //an empty stack. So stash whole stack to local variables, and restore it before
@@ -1211,6 +1214,7 @@ public class Gen extends JCTree.Visitor {
                     stackBeforeSwitchExpression = stackBeforeSwitchExpression.prepend(item);
                     item.store();
                 }
+                switchResult = makeTemp(tree.type);
             }
             int prevLetExprStart = code.setLetExprStackPos(code.state.stacksize);
             try {
@@ -1220,6 +1224,7 @@ public class Gen extends JCTree.Visitor {
             }
         } finally {
             stackBeforeSwitchExpression = prevStackBeforeSwitchExpression;
+            switchResult = prevSwitchResult;
             code.endScopes(limit);
         }
     }
@@ -1725,16 +1730,22 @@ public class Gen extends JCTree.Visitor {
     public void visitYield(JCYield tree) {
         Assert.check(code.isStatementStart());
         final Env<GenContext> targetEnv;
-        //restore stack as it was before the switch expression:
-        for (LocalItem li : stackBeforeSwitchExpression) {
-            li.load();
-        }
         if (inCondSwitchExpression) {
             CondItem value = genCond(tree.value, CRT_FLOW_TARGET);
             Chain falseJumps = value.jumpFalse();
-            targetEnv = unwindBreak(tree.target);
+
             code.resolve(value.trueJumps);
+            Env<GenContext> localEnv = unwindBreak(tree.target);
+            reloadStackBeforeSwitchExpr();
             Chain trueJumps = code.branch(goto_);
+
+            endFinalizerGaps(env, localEnv);
+
+            code.resolve(falseJumps);
+            targetEnv = unwindBreak(tree.target);
+            reloadStackBeforeSwitchExpr();
+            falseJumps = code.branch(goto_);
+
             if (switchExpressionTrueChain == null) {
                 switchExpressionTrueChain = trueJumps;
             } else {
@@ -1749,18 +1760,36 @@ public class Gen extends JCTree.Visitor {
             }
         } else {
             genExpr(tree.value, pt).load();
-            code.state.forceStackTop(tree.target.type);
+            if (switchResult != null)
+                switchResult.store();
+
             targetEnv = unwindBreak(tree.target);
-            targetEnv.info.addExit(code.branch(goto_));
+
+            if (code.isAlive()) {
+                reloadStackBeforeSwitchExpr();
+                if (switchResult != null)
+                    switchResult.load();
+
+                code.state.forceStackTop(tree.target.type);
+                targetEnv.info.addExit(code.branch(goto_));
+                code.markDead();
+            }
         }
         endFinalizerGaps(env, targetEnv);
     }
     //where:
+        /** As side-effect, might mark code as dead disabling any further emission.
+         */
         private Env<GenContext> unwindBreak(JCTree target) {
             int tmpPos = code.pendingStatPos;
             Env<GenContext> targetEnv = unwind(target, env);
             code.pendingStatPos = tmpPos;
             return targetEnv;
+        }
+
+        private void reloadStackBeforeSwitchExpr() {
+            for (LocalItem li : stackBeforeSwitchExpression)
+                li.load();
         }
 
     public void visitContinue(JCContinue tree) {
