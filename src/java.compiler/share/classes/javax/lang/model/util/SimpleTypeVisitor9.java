@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -33,7 +33,7 @@ import static javax.lang.model.SourceVersion.*;
 /**
  * A simple visitor of types with default behavior appropriate for
  * source versions {@link SourceVersion#RELEASE_9 RELEASE_9} through
- * {@link SourceVersion#RELEASE_13 RELEASE_13}.
+ * {@link SourceVersion#RELEASE_14 RELEASE_14}.
  *
  * Visit methods corresponding to {@code RELEASE_9} and earlier
  * language constructs call {@link #defaultAction defaultAction},
@@ -73,7 +73,7 @@ import static javax.lang.model.SourceVersion.*;
  * @see SimpleTypeVisitor8
  * @since 9
  */
-@SupportedSourceVersion(RELEASE_13)
+@SupportedSourceVersion(RELEASE_14)
 public class SimpleTypeVisitor9<R, P> extends SimpleTypeVisitor8<R, P> {
     /**
      * Constructor for concrete subclasses; uses {@code null} for the

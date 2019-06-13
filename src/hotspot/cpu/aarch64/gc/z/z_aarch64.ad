@@ -1,0 +1,174 @@
+//
+// Copyright (c) 2019, Oracle and/or its affiliates. All rights reserved.
+// DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
+//
+// This code is free software; you can redistribute it and/or modify it
+// under the terms of the GNU General Public License version 2 only, as
+// published by the Free Software Foundation.
+//
+// This code is distributed in the hope that it will be useful, but WITHOUT
+// ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+// FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+// version 2 for more details (a copy is included in the LICENSE file that
+// accompanied this code).
+//
+// You should have received a copy of the GNU General Public License version
+// 2 along with this work; if not, write to the Free Software Foundation,
+// Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
+//
+// Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
+// or visit www.oracle.com if you need additional information or have any
+// questions.
+//
+
+source_hpp %{
+
+#include "gc/z/c2/zBarrierSetC2.hpp"
+
+%}
+
+source %{
+
+#include "gc/z/zBarrierSetAssembler.hpp"
+
+static void z_load_barrier_slow_reg(MacroAssembler& _masm, Register dst, 
+                                    Register base, int index, int scale, 
+                                    int disp, bool weak) {
+  const address stub = weak ? ZBarrierSet::assembler()->load_barrier_weak_slow_stub(dst)
+                            : ZBarrierSet::assembler()->load_barrier_slow_stub(dst);
+
+  if (index == -1) {
+    if (disp != 0) {
+      __ lea(dst, Address(base, disp));
+    } else {
+       __ mov(dst, base);
+    }
+  } else {
+    Register index_reg = as_Register(index);
+    if (disp == 0) {
+      __ lea(dst, Address(base, index_reg, Address::lsl(scale)));
+    } else {
+      __ lea(dst, Address(base, disp));
+      __ lea(dst, Address(dst, index_reg, Address::lsl(scale)));
+    }
+  }
+
+  __ far_call(RuntimeAddress(stub));
+}
+
+%}
+
+//
+// Execute ZGC load barrier (strong) slow path
+//
+instruct loadBarrierSlowReg(iRegP dst, memory mem, rFlagsReg cr,
+    vRegD_V0 v0, vRegD_V1 v1, vRegD_V2 v2, vRegD_V3 v3, vRegD_V4 v4,
+    vRegD_V5 v5, vRegD_V6 v6, vRegD_V7 v7, vRegD_V8 v8, vRegD_V9 v9,
+    vRegD_V10 v10, vRegD_V11 v11, vRegD_V12 v12, vRegD_V13 v13, vRegD_V14 v14,
+    vRegD_V15 v15, vRegD_V16 v16, vRegD_V17 v17, vRegD_V18 v18, vRegD_V19 v19,
+    vRegD_V20 v20, vRegD_V21 v21, vRegD_V22 v22, vRegD_V23 v23, vRegD_V24 v24,
+    vRegD_V25 v25, vRegD_V26 v26, vRegD_V27 v27, vRegD_V28 v28, vRegD_V29 v29,
+    vRegD_V30 v30, vRegD_V31 v31) %{
+  match(Set dst (LoadBarrierSlowReg mem));
+  predicate(!n->as_LoadBarrierSlowReg()->is_weak());
+
+  effect(DEF dst, KILL cr,
+     KILL v0, KILL v1, KILL v2, KILL v3, KILL v4, KILL v5, KILL v6, KILL v7,
+     KILL v8, KILL v9, KILL v10, KILL v11, KILL v12, KILL v13, KILL v14,
+     KILL v15, KILL v16, KILL v17, KILL v18, KILL v19, KILL v20, KILL v21,
+     KILL v22, KILL v23, KILL v24, KILL v25, KILL v26, KILL v27, KILL v28,
+     KILL v29, KILL v30, KILL v31);
+
+  format %{"LoadBarrierSlowReg $dst, $mem" %}
+  ins_encode %{
+    z_load_barrier_slow_reg(_masm, $dst$$Register, $mem$$base$$Register,
+                            $mem$$index, $mem$$scale, $mem$$disp, false);
+  %}
+  ins_pipe(pipe_slow);
+%}
+
+//
+// Execute ZGC load barrier (weak) slow path
+//
+instruct loadBarrierWeakSlowReg(iRegP dst, memory mem, rFlagsReg cr,
+    vRegD_V0 v0, vRegD_V1 v1, vRegD_V2 v2, vRegD_V3 v3, vRegD_V4 v4,
+    vRegD_V5 v5, vRegD_V6 v6, vRegD_V7 v7, vRegD_V8 v8, vRegD_V9 v9,
+    vRegD_V10 v10, vRegD_V11 v11, vRegD_V12 v12, vRegD_V13 v13, vRegD_V14 v14,
+    vRegD_V15 v15, vRegD_V16 v16, vRegD_V17 v17, vRegD_V18 v18, vRegD_V19 v19,
+    vRegD_V20 v20, vRegD_V21 v21, vRegD_V22 v22, vRegD_V23 v23, vRegD_V24 v24,
+    vRegD_V25 v25, vRegD_V26 v26, vRegD_V27 v27, vRegD_V28 v28, vRegD_V29 v29,
+    vRegD_V30 v30, vRegD_V31 v31) %{
+  match(Set dst (LoadBarrierSlowReg mem));
+  predicate(n->as_LoadBarrierSlowReg()->is_weak());
+
+  effect(DEF dst, KILL cr,
+     KILL v0, KILL v1, KILL v2, KILL v3, KILL v4, KILL v5, KILL v6, KILL v7,
+     KILL v8, KILL v9, KILL v10, KILL v11, KILL v12, KILL v13, KILL v14,
+     KILL v15, KILL v16, KILL v17, KILL v18, KILL v19, KILL v20, KILL v21,
+     KILL v22, KILL v23, KILL v24, KILL v25, KILL v26, KILL v27, KILL v28,
+     KILL v29, KILL v30, KILL v31);
+
+  format %{"LoadBarrierWeakSlowReg $dst, $mem" %}
+  ins_encode %{
+    z_load_barrier_slow_reg(_masm, $dst$$Register, $mem$$base$$Register,
+                            $mem$$index, $mem$$scale, $mem$$disp, true);
+  %}
+  ins_pipe(pipe_slow);
+%}
+
+
+// Specialized versions of compareAndExchangeP that adds a keepalive that is consumed
+// but doesn't affect output.
+
+instruct z_compareAndExchangeP(iRegPNoSp res, indirect mem,
+                               iRegP oldval, iRegP newval, iRegP keepalive,
+                               rFlagsReg cr) %{
+  match(Set res (ZCompareAndExchangeP (Binary mem keepalive) (Binary oldval newval)));
+  ins_cost(2 * VOLATILE_REF_COST);
+  effect(TEMP_DEF res, KILL cr);
+  format %{
+    "cmpxchg $res = $mem, $oldval, $newval\t# (ptr, weak) if $mem == $oldval then $mem <-- $newval"
+  %}
+  ins_encode %{
+    __ cmpxchg($mem$$Register, $oldval$$Register, $newval$$Register,
+               Assembler::xword, /*acquire*/ false, /*release*/ true,
+               /*weak*/ false, $res$$Register);
+  %}
+  ins_pipe(pipe_slow);
+%}
+
+instruct z_compareAndSwapP(iRegINoSp res,
+                           indirect mem,
+                           iRegP oldval, iRegP newval, iRegP keepalive,
+                            rFlagsReg cr) %{
+
+  match(Set res (ZCompareAndSwapP (Binary mem keepalive) (Binary oldval newval)));
+  match(Set res (ZWeakCompareAndSwapP (Binary mem keepalive) (Binary oldval newval)));
+
+  ins_cost(2 * VOLATILE_REF_COST);
+
+  effect(KILL cr);
+
+ format %{
+    "cmpxchg $mem, $oldval, $newval\t# (ptr) if $mem == $oldval then $mem <-- $newval"
+    "cset $res, EQ\t# $res <-- (EQ ? 1 : 0)"
+ %}
+
+ ins_encode(aarch64_enc_cmpxchg(mem, oldval, newval),
+            aarch64_enc_cset_eq(res));
+
+  ins_pipe(pipe_slow);
+%}
+
+
+instruct z_get_and_setP(indirect mem, iRegP newv, iRegPNoSp prev,
+                        iRegP keepalive) %{
+  match(Set prev (ZGetAndSetP mem (Binary newv keepalive)));
+
+  ins_cost(2 * VOLATILE_REF_COST);
+  format %{ "atomic_xchg  $prev, $newv, [$mem]" %}
+  ins_encode %{
+    __ atomic_xchg($prev$$Register, $newv$$Register, as_Register($mem$$base));
+  %}
+  ins_pipe(pipe_serial);
+%}

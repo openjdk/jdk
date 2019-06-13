@@ -22,7 +22,7 @@
  */
 
 // key: compiler.err.no.switch.expression
-// options: --enable-preview --source 13
+// options: --enable-preview --source ${jdk.version}
 
 class BreakComplexValueNoSwitchExpressions {
     void t() {

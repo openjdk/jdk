@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -69,9 +69,9 @@ public class Versions {
         Set.of("1.2", "1.3", "1.4", "1.5", "1.6");
 
     public static final Set<String> VALID_SOURCES =
-        Set.of("1.7", "1.8", "1.9", "1.10", "11", "12", "13");
+        Set.of("1.7", "1.8", "1.9", "1.10", "11", "12", "13", "14");
 
-    public static final String LATEST_MAJOR_VERSION = "57.0";
+    public static final String LATEST_MAJOR_VERSION = "58.0";
 
     static enum SourceTarget {
         SEVEN(true,   "51.0",  "7", Versions::checksrc17),
@@ -80,7 +80,8 @@ public class Versions {
         TEN(true,     "54.0", "10", Versions::checksrc110),
         ELEVEN(false, "55.0", "11", Versions::checksrc111),
         TWELVE(false, "56.0", "12", Versions::checksrc112),
-        THIRTEEN(false, "57.0", "13", Versions::checksrc113);
+        THIRTEEN(false, "57.0", "13", Versions::checksrc113),
+        FOURTEEN(false, "58.0", "14", Versions::checksrc114);
 
         private final boolean dotOne;
         private final String classFileVer;
@@ -296,6 +297,11 @@ public class Versions {
 
     protected void checksrc113(String... args) {
         printargs("checksrc113", args);
+        checksrc111(args);
+    }
+
+    protected void checksrc114(String... args) {
+        printargs("checksrc114", args);
         checksrc111(args);
     }
 
