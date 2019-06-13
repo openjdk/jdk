@@ -28,7 +28,7 @@
  * so doAbort() does nothing special and only returns after being called.
  * The transaction abortion happens right before the JNI method is called.
  */
-int JNICALL
+JNIEXPORT int JNICALL
 Java_compiler_testlibrary_rtm_XAbortProvoker_doAbort(JNIEnv *env, jobject o) {
   return 0;
 }
