@@ -26,6 +26,8 @@ package jdk.jfr.internal.dcmd;
 
 import java.io.IOException;
 import java.nio.file.InvalidPathException;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.time.Duration;
 import java.time.Instant;
 import java.time.LocalDate;
@@ -126,26 +128,37 @@ final class DCmdDump extends AbstractDCmd {
             recording = findRecording(name);
         }
         PlatformRecorder recorder = PrivateAccess.getInstance().getPlatformRecorder();
-        synchronized (recorder) {
-            dump(recorder, recording, name, filename, maxSize, pathToGcRoots, beginTime, endTime);
+
+        try {
+            synchronized (recorder) {
+                dump(recorder, recording, name, filename, maxSize, pathToGcRoots, beginTime, endTime);
+            }
+        } catch (IOException | InvalidPathException e) {
+            throw new DCmdException("Dump failed. Could not copy recording data. %s", e.getMessage());
         }
         return getResult();
     }
 
-    public void dump(PlatformRecorder recorder, Recording recording, String name, String filename, Long maxSize, Boolean pathToGcRoots, Instant beginTime, Instant endTime) throws DCmdException {
+    public void dump(PlatformRecorder recorder, Recording recording, String name, String filename, Long maxSize, Boolean pathToGcRoots, Instant beginTime, Instant endTime) throws DCmdException, IOException {
         try (PlatformRecording r = newSnapShot(recorder, recording, pathToGcRoots)) {
             r.filter(beginTime, endTime, maxSize);
             if (r.getChunks().isEmpty()) {
                 throw new DCmdException("Dump failed. No data found in the specified interval.");
             }
-            SafePath dumpFile = resolvePath(recording, filename);
-
-            // Needed for JVM
-            Utils.touch(dumpFile.toPath());
-            r.dumpStopped(new WriteableUserPath(dumpFile.toPath()));
-            reportOperationComplete("Dumped", name, dumpFile);
-        } catch (IOException | InvalidPathException e) {
-            throw new DCmdException("Dump failed. Could not copy recording data. %s", e.getMessage());
+            // If a filename exist, use it
+            // if a filename doesn't exist, use destination set earlier
+            // if destination doesn't exist, generate a filename
+            WriteableUserPath wup = null;
+            if (recording != null) {
+                PlatformRecording pRecording = PrivateAccess.getInstance().getPlatformRecording(recording);
+                wup = pRecording.getDestination();
+            }
+            if (filename != null || (filename == null && wup == null) ) {
+                SafePath safe = resolvePath(recording, filename);
+                wup = new WriteableUserPath(safe.toPath());
+            }
+            r.dumpStopped(wup);
+            reportOperationComplete("Dumped", name, new SafePath(wup.getRealPathText()));
         }
     }
 
