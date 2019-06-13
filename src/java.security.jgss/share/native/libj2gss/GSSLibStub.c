@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -982,7 +982,7 @@ Java_sun_security_jgss_wrapper_GSSLibStub_acceptContext(JNIEnv *env,
   OM_uint32 aFlags;
   OM_uint32 aTime;
   gss_cred_id_t delCred;
-  jobject jsrcName=GSS_C_NO_NAME;
+  jobject jsrcName = NULL;
   jobject jdelCred;
   jobject jMech;
   jboolean setTarget;
