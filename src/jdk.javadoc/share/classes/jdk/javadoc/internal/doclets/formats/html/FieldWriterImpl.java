@@ -96,9 +96,9 @@ public class FieldWriterImpl extends AbstractMemberWriter
         Content fieldDetailsTree = new ContentBuilder();
         Content heading = HtmlTree.HEADING(Headings.TypeDeclaration.DETAILS_HEADING,
                 contents.fieldDetailsLabel);
-        fieldDetailsTree.add(heading);
         fieldDetailsTree.add(links.createAnchor(
                 SectionName.FIELD_DETAIL));
+        fieldDetailsTree.add(heading);
         return fieldDetailsTree;
     }
 
@@ -109,9 +109,8 @@ public class FieldWriterImpl extends AbstractMemberWriter
     public Content getFieldDocTreeHeader(VariableElement field, Content fieldDetailsTree) {
         Content fieldTree = new ContentBuilder();
         Content heading = new HtmlTree(Headings.TypeDeclaration.MEMBER_HEADING);
-        heading.add(name(field));
+        heading.add(links.createAnchor(name(field), new StringContent(name(field))));
         fieldTree.add(heading);
-        fieldTree.add(links.createAnchor(name(field)));
         return HtmlTree.SECTION(HtmlStyle.detail, fieldTree);
     }
 

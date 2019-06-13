@@ -1111,13 +1111,6 @@ JVMCIObject JVMCIEnv::get_jvmci_type(const JVMCIKlassHandle& klass, JVMCI_TRAPS)
   if (klass.is_null()) {
     return type;
   }
-#ifdef INCLUDE_ALL_GCS
-    if (UseG1GC) {
-      // The klass might have come from a weak location so enqueue
-      // the Class to make sure it's noticed by G1
-      G1SATBCardTableModRefBS::enqueue(klass()->java_mirror());
-    }
-#endif  // Klass* don't require tracking as Metadata*
 
   jlong pointer = (jlong) klass();
   JavaThread* THREAD = JavaThread::current();

@@ -53,10 +53,7 @@ public class TestBadOverride extends JavadocTester {
 
         checkOutput("pkg4/Foo.html", true,
                 "<section class=\"detail\">\n"
-                + "<h3>toString</h3>\n"
-                + "<a id=\"toString()\">\n"
-                + "<!--   -->\n"
-                + "</a>\n"
+                + "<h3><a id=\"toString()\">toString</a></h3>\n"
                 + "<div class=\"memberSignature\"><span class=\"modifiers\">public</span>&nbsp;"
                 + "<span class=\"returnType\">void</span>&nbsp;<span class=\"memberName\">toString</span>()</div>\n"
                 + "<div class=\"block\">Why can't I do this ?</div>\n"

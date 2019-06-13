@@ -35,8 +35,8 @@ import static sun.security.ssl.CipherSuite.HashAlg.*;
 import static sun.security.ssl.CipherSuite.KeyExchange.*;
 import static sun.security.ssl.CipherSuite.MacAlg.*;
 import static sun.security.ssl.SSLCipher.*;
-import sun.security.ssl.SupportedGroupsExtension.NamedGroupType;
-import static sun.security.ssl.SupportedGroupsExtension.NamedGroupType.*;
+import sun.security.ssl.NamedGroup.NamedGroupType;
+import static sun.security.ssl.NamedGroup.NamedGroupType.*;
 
 /**
  * Enum for SSL/(D)TLS cipher suites.
@@ -184,7 +184,7 @@ enum CipherSuite {
             K_DHE_DSS, B_AES_128, M_SHA256, H_SHA256),
 
     //
-    // not forward screcy cipher suites.
+    // not forward secret cipher suites.
     //
 
     // AES_256(GCM)
@@ -1106,11 +1106,18 @@ enum CipherSuite {
         K_DH_ANON       ("DH_anon",        true,  true,   NAMED_GROUP_FFDHE),
         K_DH_ANON_EXPORT("DH_anon_EXPORT", true,  true,   NAMED_GROUP_NONE),
 
-        K_ECDH_ECDSA    ("ECDH_ECDSA",     true,  false,  NAMED_GROUP_ECDHE),
-        K_ECDH_RSA      ("ECDH_RSA",       true,  false,  NAMED_GROUP_ECDHE),
-        K_ECDHE_ECDSA   ("ECDHE_ECDSA",    true,  false,  NAMED_GROUP_ECDHE),
-        K_ECDHE_RSA     ("ECDHE_RSA",      true,  false,  NAMED_GROUP_ECDHE),
-        K_ECDH_ANON     ("ECDH_anon",      true,  true,   NAMED_GROUP_ECDHE),
+        // These KeyExchanges can use either ECDHE/XDH, so we'll use a
+        // varargs here.
+        K_ECDH_ECDSA    ("ECDH_ECDSA",     JsseJce.ALLOW_ECC,  false,
+                NAMED_GROUP_ECDHE, NAMED_GROUP_XDH),
+        K_ECDH_RSA      ("ECDH_RSA",       JsseJce.ALLOW_ECC,  false,
+            NAMED_GROUP_ECDHE, NAMED_GROUP_XDH),
+        K_ECDHE_ECDSA   ("ECDHE_ECDSA",    JsseJce.ALLOW_ECC,  false,
+            NAMED_GROUP_ECDHE, NAMED_GROUP_XDH),
+        K_ECDHE_RSA     ("ECDHE_RSA",      JsseJce.ALLOW_ECC,  false,
+            NAMED_GROUP_ECDHE, NAMED_GROUP_XDH),
+        K_ECDH_ANON     ("ECDH_anon",      JsseJce.ALLOW_ECC,  true,
+            NAMED_GROUP_ECDHE, NAMED_GROUP_XDH),
 
         // renegotiation protection request signaling cipher suite
         K_SCSV          ("SCSV",           true,  true,   NAMED_GROUP_NONE);
@@ -1118,19 +1125,16 @@ enum CipherSuite {
         // name of the key exchange algorithm, e.g. DHE_DSS
         final String name;
         final boolean allowed;
-        final NamedGroupType groupType;
+        final NamedGroupType[] groupTypes;
         private final boolean alwaysAvailable;
         private final boolean isAnonymous;
 
         KeyExchange(String name, boolean allowed,
-                boolean isAnonymous, NamedGroupType groupType) {
+                boolean isAnonymous, NamedGroupType... groupTypes) {
             this.name = name;
-            if (groupType == NAMED_GROUP_ECDHE) {
-                this.allowed = JsseJce.ALLOW_ECC;
-            } else {
-                this.allowed = allowed;
-            }
-            this.groupType = groupType;
+            this.groupTypes = groupTypes;
+            this.allowed = allowed;
+
             this.alwaysAvailable = allowed && (!name.startsWith("EC"));
             this.isAnonymous = isAnonymous;
         }
@@ -1140,7 +1144,8 @@ enum CipherSuite {
                 return true;
             }
 
-            if (groupType == NAMED_GROUP_ECDHE) {
+            if (NamedGroupType.arrayContains(
+                    groupTypes, NamedGroupType.NAMED_GROUP_ECDHE)) {
                 return (allowed && JsseJce.isEcAvailable());
             } else {
                 return allowed;

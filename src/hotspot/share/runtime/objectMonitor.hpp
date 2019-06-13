@@ -235,6 +235,7 @@ class ObjectMonitor {
     // TODO-FIXME: assert _owner == null implies _recursions = 0
     return _contentions|_waiters|intptr_t(_owner)|intptr_t(_cxq)|intptr_t(_EntryList);
   }
+  const char* is_busy_to_string(stringStream* ss);
 
   intptr_t  is_entered(Thread* current) const;
 
@@ -268,7 +269,9 @@ class ObjectMonitor {
     // _cxq == 0 _succ == NULL _owner == NULL _waiters == 0
     // _contentions == 0 EntryList  == NULL
     // _recursions == 0 _WaitSet == NULL
-    assert(((is_busy()|_recursions) == 0), "freeing inuse monitor");
+    DEBUG_ONLY(stringStream ss;)
+    assert((is_busy() | _recursions) == 0, "freeing in-use monitor: %s, "
+           "recursions=" INTPTR_FORMAT, is_busy_to_string(&ss), _recursions);
     _succ          = NULL;
     _EntryList     = NULL;
     _cxq           = NULL;

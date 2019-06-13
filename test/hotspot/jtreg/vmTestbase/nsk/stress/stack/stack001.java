@@ -52,7 +52,7 @@
  *     4302288 the second stack overflow causes Classic VM to exit on win32
  *
  * @requires vm.opt.DeoptimizeALot != true
- * @run main/othervm nsk.stress.stack.stack001
+ * @run main/othervm/timeout=900 nsk.stress.stack.stack001
  */
 
 package nsk.stress.stack;

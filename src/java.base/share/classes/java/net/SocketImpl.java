@@ -396,7 +396,7 @@ public abstract class SocketImpl implements SocketOptions {
      *
      * @implSpec
      * The default implementation of this method first checks that the given
-     * socket option {code name} is not null, then throws {@code
+     * socket option {@code name} is not null, then throws {@code
      * UnsupportedOperationException}. Subclasses should override this method
      * with an appropriate implementation.
      *
@@ -424,7 +424,7 @@ public abstract class SocketImpl implements SocketOptions {
      *
      * @implSpec
      * The default implementation of this method first checks that the given
-     * socket option {code name} is not null, then throws {@code
+     * socket option {@code name} is not null, then throws {@code
      * UnsupportedOperationException}. Subclasses should override this method
      * with an appropriate implementation.
      *

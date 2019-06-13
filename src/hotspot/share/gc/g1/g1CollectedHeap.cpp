@@ -4640,7 +4640,7 @@ void G1CollectedHeap::retire_gc_alloc_region(HeapRegion* alloc_region,
 
   bool const during_im = collector_state()->in_initial_mark_gc();
   if (during_im && allocated_bytes > 0) {
-    _cm->root_regions()->add(alloc_region);
+    _cm->root_regions()->add(alloc_region->next_top_at_mark_start(), alloc_region->top());
   }
   _hr_printer.retire(alloc_region);
 }

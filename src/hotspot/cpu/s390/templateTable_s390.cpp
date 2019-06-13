@@ -2404,14 +2404,14 @@ void TemplateTable::_return(TosState state) {
 // NOTE: Cpe_offset is already computed as byte offset, so we must not
 // shift it afterwards!
 void TemplateTable::resolve_cache_and_index(int byte_no,
-                                            Register Rcache,
+                                            Register cache,
                                             Register cpe_offset,
                                             size_t index_size) {
   BLOCK_COMMENT("resolve_cache_and_index {");
-  NearLabel      resolved;
+  NearLabel      resolved, clinit_barrier_slow;
   const Register bytecode_in_cpcache = Z_R1_scratch;
   const int      total_f1_offset = in_bytes(ConstantPoolCache::base_offset() + ConstantPoolCacheEntry::f1_offset());
-  assert_different_registers(Rcache, cpe_offset, bytecode_in_cpcache);
+  assert_different_registers(cache, cpe_offset, bytecode_in_cpcache);
 
   Bytecodes::Code code = bytecode();
   switch (code) {
@@ -2423,19 +2423,32 @@ void TemplateTable::resolve_cache_and_index(int byte_no,
 
   {
     assert(byte_no == f1_byte || byte_no == f2_byte, "byte_no out of range");
-    __ get_cache_and_index_and_bytecode_at_bcp(Rcache, cpe_offset, bytecode_in_cpcache, byte_no, 1, index_size);
+    __ get_cache_and_index_and_bytecode_at_bcp(cache, cpe_offset, bytecode_in_cpcache, byte_no, 1, index_size);
     // Have we resolved this bytecode?
     __ compare32_and_branch(bytecode_in_cpcache, (int)code, Assembler::bcondEqual, resolved);
   }
 
   // Resolve first time through.
+  // Class initialization barrier slow path lands here as well.
+  __ bind(clinit_barrier_slow);
   address entry = CAST_FROM_FN_PTR(address, InterpreterRuntime::resolve_from_cache);
   __ load_const_optimized(Z_ARG2, (int) code);
   __ call_VM(noreg, entry, Z_ARG2);
 
   // Update registers with resolved info.
-  __ get_cache_and_index_at_bcp(Rcache, cpe_offset, 1, index_size);
+  __ get_cache_and_index_at_bcp(cache, cpe_offset, 1, index_size);
   __ bind(resolved);
+
+  // Class initialization barrier for static methods
+  if (VM_Version::supports_fast_class_init_checks() && bytecode() == Bytecodes::_invokestatic) {
+    const Register method = Z_R1_scratch;
+    const Register klass  = Z_R1_scratch;
+
+    __ load_resolved_method_at_index(byte_no, cache, cpe_offset, method);
+    __ load_method_holder(klass, method);
+    __ clinit_barrier(klass, Z_thread, NULL /*L_fast_path*/, &clinit_barrier_slow);
+  }
+
   BLOCK_COMMENT("} resolve_cache_and_index");
 }
 
@@ -3664,9 +3677,7 @@ void TemplateTable::invokeinterface(int byte_no) {
   // Find entry point to call.
 
   // Get declaring interface class from method
-  __ z_lg(interface, Address(method, Method::const_offset()));
-  __ z_lg(interface, Address(interface, ConstMethod::constants_offset()));
-  __ z_lg(interface, Address(interface, ConstantPool::pool_holder_offset_in_bytes()));
+  __ load_method_holder(interface, method);
 
   // Get itable index from method
   Register index   = receiver,

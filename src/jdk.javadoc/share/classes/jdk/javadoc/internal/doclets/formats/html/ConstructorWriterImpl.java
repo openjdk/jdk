@@ -37,6 +37,7 @@ import jdk.javadoc.internal.doclets.formats.html.markup.Entity;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlStyle;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlTag;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlTree;
+import jdk.javadoc.internal.doclets.formats.html.markup.StringContent;
 import jdk.javadoc.internal.doclets.formats.html.markup.Table;
 import jdk.javadoc.internal.doclets.formats.html.markup.TableHeader;
 import jdk.javadoc.internal.doclets.toolkit.ConstructorWriter;
@@ -122,9 +123,9 @@ public class ConstructorWriterImpl extends AbstractExecutableMemberWriter
         Content constructorDetailsTree = new ContentBuilder();
         Content heading = HtmlTree.HEADING(Headings.TypeDeclaration.DETAILS_HEADING,
                 contents.constructorDetailsLabel);
-        constructorDetailsTree.add(heading);
         constructorDetailsTree.add(links.createAnchor(
                 SectionName.CONSTRUCTOR_DETAIL));
+        constructorDetailsTree.add(heading);
         return constructorDetailsTree;
     }
 
@@ -137,12 +138,11 @@ public class ConstructorWriterImpl extends AbstractExecutableMemberWriter
         String erasureAnchor;
         Content constructorDocTree = new ContentBuilder();
         Content heading = new HtmlTree(Headings.TypeDeclaration.MEMBER_HEADING);
-        heading.add(name(constructor));
-        constructorDocTree.add(heading);
         if ((erasureAnchor = getErasureAnchor(constructor)) != null) {
-            constructorDocTree.add(links.createAnchor((erasureAnchor)));
+            heading.add(links.createAnchor((erasureAnchor)));
         }
-        constructorDocTree.add(links.createAnchor(writer.getAnchor(constructor)));
+        heading.add(links.createAnchor(writer.getAnchor(constructor), new StringContent(name(constructor))));
+        constructorDocTree.add(heading);
         return HtmlTree.SECTION(HtmlStyle.detail, constructorDocTree);
     }
 

@@ -39,7 +39,6 @@ import javax.net.ssl.HandshakeCompletedListener;
 import javax.net.ssl.SSLEngineResult.HandshakeStatus;
 import javax.net.ssl.SSLException;
 import javax.net.ssl.SSLSocket;
-import sun.security.ssl.SupportedGroupsExtension.NamedGroup;
 
 /**
  * SSL/(D)TLS transportation context.

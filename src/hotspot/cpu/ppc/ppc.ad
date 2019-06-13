@@ -1,6 +1,6 @@
 //
-// Copyright (c) 2011, 2018, Oracle and/or its affiliates. All rights reserved.
-// Copyright (c) 2012, 2018 SAP SE. All rights reserved.
+// Copyright (c) 2011, 2019, Oracle and/or its affiliates. All rights reserved.
+// Copyright (c) 2012, 2019 SAP SE. All rights reserved.
 // DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 //
 // This code is free software; you can redistribute it and/or modify it
@@ -4645,6 +4645,16 @@ operand immF_0() %{
 operand immD() %{
   match(ConD);
   op_cost(40);
+  format %{ %}
+  interface(CONST_INTER);
+%}
+
+// Double Immediate: +0.0d.
+operand immD_0() %{
+  predicate(jlong_cast(n->getd()) == 0);
+  match(ConD);
+
+  op_cost(0);
   format %{ %}
   interface(CONST_INTER);
 %}
@@ -14027,7 +14037,7 @@ instruct repl4S_reg_Ex(iRegLdst dst, iRegIsrc src) %{
 instruct repl4S_immI0(iRegLdst dst, immI_0 zero) %{
   match(Set dst (ReplicateS zero));
   predicate(n->as_Vector()->length() == 4);
-  format %{ "LI      $dst, #0 \t// replicate4C" %}
+  format %{ "LI      $dst, #0 \t// replicate4S" %}
   size(4);
   ins_encode %{
     // TODO: PPC port $archOpcode(ppc64Opcode_addi);
@@ -14039,7 +14049,7 @@ instruct repl4S_immI0(iRegLdst dst, immI_0 zero) %{
 instruct repl4S_immIminus1(iRegLdst dst, immI_minus1 src) %{
   match(Set dst (ReplicateS src));
   predicate(n->as_Vector()->length() == 4);
-  format %{ "LI      $dst, -1 \t// replicate4C" %}
+  format %{ "LI      $dst, -1 \t// replicate4S" %}
   size(4);
   ins_encode %{
     // TODO: PPC port $archOpcode(ppc64Opcode_addi);
@@ -14080,7 +14090,7 @@ instruct repl8S_immIminus1(vecX dst, immI_minus1 src) %{
   match(Set dst (ReplicateS src));
   predicate(n->as_Vector()->length() == 8);
 
-  format %{ "XXLEQV      $dst, $src \t// replicate16B" %}
+  format %{ "XXLEQV      $dst, $src \t// replicate8S" %}
   size(4);
   ins_encode %{
     __ xxleqv($dst$$VectorSRegister, $dst$$VectorSRegister, $dst$$VectorSRegister);
@@ -14101,7 +14111,7 @@ instruct repl2I_reg_Ex(iRegLdst dst, iRegIsrc src) %{
 instruct repl2I_immI0(iRegLdst dst, immI_0 zero) %{
   match(Set dst (ReplicateI zero));
   predicate(n->as_Vector()->length() == 2);
-  format %{ "LI      $dst, #0 \t// replicate4C" %}
+  format %{ "LI      $dst, #0 \t// replicate2I" %}
   size(4);
   ins_encode %{
     // TODO: PPC port $archOpcode(ppc64Opcode_addi);
@@ -14113,7 +14123,7 @@ instruct repl2I_immI0(iRegLdst dst, immI_0 zero) %{
 instruct repl2I_immIminus1(iRegLdst dst, immI_minus1 src) %{
   match(Set dst (ReplicateI src));
   predicate(n->as_Vector()->length() == 2);
-  format %{ "LI      $dst, -1 \t// replicate4C" %}
+  format %{ "LI      $dst, -1 \t// replicate2I" %}
   size(4);
   ins_encode %{
     // TODO: PPC port $archOpcode(ppc64Opcode_addi);
@@ -14687,7 +14697,7 @@ instruct repl2D_reg_Ex(vecX dst, regD src) %{
   ins_pipe(pipe_class_default);
 %}
 
-instruct repl2D_immI0(vecX dst, immI_0 zero) %{
+instruct repl2D_immD0(vecX dst, immD_0 zero) %{
   match(Set dst (ReplicateD zero));
   predicate(n->as_Vector()->length() == 2);
 
@@ -14695,18 +14705,6 @@ instruct repl2D_immI0(vecX dst, immI_0 zero) %{
   size(4);
   ins_encode %{
     __ xxlxor($dst$$VectorSRegister, $dst$$VectorSRegister, $dst$$VectorSRegister);
-  %}
-  ins_pipe(pipe_class_default);
-%}
-
-instruct repl2D_immIminus1(vecX dst, immI_minus1 src) %{
-  match(Set dst (ReplicateD src));
-  predicate(n->as_Vector()->length() == 2);
-
-  format %{ "XXLEQV      $dst, $src \t// replicate16B" %}
-  size(4);
-  ins_encode %{
-    __ xxleqv($dst$$VectorSRegister, $dst$$VectorSRegister, $dst$$VectorSRegister);
   %}
   ins_pipe(pipe_class_default);
 %}
@@ -14772,7 +14770,7 @@ instruct repl2L_immIminus1(vecX dst, immI_minus1 src) %{
   match(Set dst (ReplicateL src));
   predicate(n->as_Vector()->length() == 2);
 
-  format %{ "XXLEQV      $dst, $src \t// replicate16B" %}
+  format %{ "XXLEQV      $dst, $src \t// replicate2L" %}
   size(4);
   ins_encode %{
     __ xxleqv($dst$$VectorSRegister, $dst$$VectorSRegister, $dst$$VectorSRegister);

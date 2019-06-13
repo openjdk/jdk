@@ -73,8 +73,6 @@ public class TestMemberSummary extends JavadocTester {
         checkOutput("pkg2/A.html", true,
                 "<a id=\"f(java.lang.Object[])\">\n"
                 + "<!--   -->\n"
-                + "</a><a id=\"f(T[])\">\n"
-                + "<!--   -->\n"
-                + "</a>");
+                + "</a><a id=\"f(T[])\">f</a>");
     }
 }

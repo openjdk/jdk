@@ -100,7 +100,7 @@ public class Links {
      * @return a content tree for the marker anchor
      */
     public Content createAnchor(String name, Content content) {
-        return HtmlTree.A_ID(name, (content == null ? EMPTY_COMMENT : content));
+        return HtmlTree.A_ID(getName(name), (content == null ? EMPTY_COMMENT : content));
     }
 
     private static final Content EMPTY_COMMENT = new Comment(" ");

@@ -51,7 +51,7 @@
  *
  * @ignore 8139875
  * @requires vm.opt.DeoptimizeALot != true
- * @run main/othervm nsk.stress.stack.stack016 -eager
+ * @run main/othervm/timeout=900 nsk.stress.stack.stack016 -eager
  */
 
 package nsk.stress.stack;

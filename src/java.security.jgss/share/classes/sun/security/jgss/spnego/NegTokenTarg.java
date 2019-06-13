@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,7 +26,6 @@
 package sun.security.jgss.spnego;
 
 import java.io.*;
-import java.util.*;
 import org.ietf.jgss.*;
 import sun.security.jgss.*;
 import sun.security.util.*;
@@ -113,18 +112,6 @@ public class NegTokenTarg extends SpNegoToken {
                 mic.putOctetString(mechListMIC);
                 targToken.write(DerValue.createTag(DerValue.TAG_CONTEXT,
                                         true, (byte) 0x03), mic);
-            } else if (GSSUtil.useMSInterop()) {
-                // required for MS-interoperability
-                if (responseToken != null) {
-                    if (DEBUG) {
-                        System.out.println("SpNegoToken NegTokenTarg: " +
-                                "sending additional token for MS Interop");
-                    }
-                    DerOutputStream rspToken = new DerOutputStream();
-                    rspToken.putOctetString(responseToken);
-                    targToken.write(DerValue.createTag(DerValue.TAG_CONTEXT,
-                                                true, (byte) 0x03), rspToken);
-                }
             }
 
             // insert in a SEQUENCE
