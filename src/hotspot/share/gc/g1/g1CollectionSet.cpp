@@ -519,6 +519,9 @@ bool G1CollectionSet::finalize_optional_for_evacuation(double remaining_pause_ti
   _num_optional_regions -= num_selected_regions;
 
   stop_incremental_building();
+
+  _g1h->verify_region_attr_remset_update();
+
   return num_selected_regions > 0;
 }
 
@@ -526,10 +529,15 @@ void G1CollectionSet::abandon_optional_collection_set(G1ParScanThreadStateSet* p
   for (uint i = 0; i < _num_optional_regions; i++) {
     HeapRegion* r = candidates()->at(candidates()->cur_idx() + i);
     pss->record_unused_optional_region(r);
+    // Clear collection set marker and make sure that the remembered set information
+    // is correct as we still need it later.
     _g1h->clear_region_attr(r);
+    _g1h->register_region_with_region_attr(r);
     r->clear_index_in_opt_cset();
   }
   free_optional_regions();
+
+  _g1h->verify_region_attr_remset_update();
 }
 
 #ifdef ASSERT
