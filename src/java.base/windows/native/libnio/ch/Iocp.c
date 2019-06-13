@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -142,6 +142,14 @@ Java_sun_nio_ch_Iocp_getErrorMessage(JNIEnv* env, jclass this, jint errorCode)
     if (len == 0) {
         return NULL;
     } else {
+        if (len > 3) {
+            // Drop final '.', CR, LF
+            if (message[len - 1] == L'\n') len--;
+            if (message[len - 1] == L'\r') len--;
+            if (message[len - 1] == L'.') len--;
+            message[len] = L'\0';
+        }
+
         return (*env)->NewString(env, (const jchar *)message, (jsize)wcslen(message));
     }
 }

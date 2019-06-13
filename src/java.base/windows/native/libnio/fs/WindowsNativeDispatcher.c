@@ -177,6 +177,14 @@ Java_sun_nio_fs_WindowsNativeDispatcher_FormatMessage(JNIEnv* env, jclass this, 
     if (len == 0) {
         return NULL;
     } else {
+        if (len > 3) {
+            // Drop final '.', CR, LF
+            if (message[len - 1] == L'\n') len--;
+            if (message[len - 1] == L'\r') len--;
+            if (message[len - 1] == L'.') len--;
+            message[len] = L'\0';
+        }
+
         return (*env)->NewString(env, (const jchar *)message, (jsize)wcslen(message));
     }
 }
