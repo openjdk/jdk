@@ -2421,7 +2421,9 @@ public class Check {
 
         List<MethodSymbol> potentiallyAmbiguousList = List.nil();
         boolean overridesAny = false;
-        for (Symbol m1 : types.membersClosure(site, false).getSymbolsByName(sym.name, cf)) {
+        ArrayList<Symbol> symbolsByName = new ArrayList<>();
+        types.membersClosure(site, false).getSymbolsByName(sym.name, cf).forEach(symbolsByName::add);
+        for (Symbol m1 : symbolsByName) {
             if (!sym.overrides(m1, site.tsym, types, false)) {
                 if (m1 == sym) {
                     continue;
@@ -2439,7 +2441,7 @@ public class Check {
             }
 
             //...check each method m2 that is a member of 'site'
-            for (Symbol m2 : types.membersClosure(site, false).getSymbolsByName(sym.name, cf)) {
+            for (Symbol m2 : symbolsByName) {
                 if (m2 == m1) continue;
                 //if (i) the signature of 'sym' is not a subsignature of m1 (seen as
                 //a member of 'site') and (ii) m1 has the same erasure as m2, issue an error
