@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -34,13 +34,13 @@
  * @compile -processor ElementRepAnnoTester -proc:only SingularInheritedBTest.java
  */
 
-@FooInherited(value = 1)
+@FooInherited(1)
 class P {}
 
 @ExpectedBase(
         value = FooInherited.class,
-        getAnnotation = "@FooInherited(value=2)",
-        getAnnotationsByType = {"@FooInherited(value=2)"},
+        getAnnotation = "@FooInherited(2)",
+        getAnnotationsByType = {"@FooInherited(2)"},
         getAllAnnotationMirrors = {
             "@FooInherited(2)",
             "ExpectedBase",
@@ -55,5 +55,5 @@ class P {}
         value = UnofficialInheritedContainer.class,
         getAnnotation = "null",
         getAnnotationsByType = {})
-@FooInherited(value = 2)
+@FooInherited(2)
 class SingularInheritedBTest extends P {}

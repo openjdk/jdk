@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -34,14 +34,14 @@
  * @compile -processor ElementRepAnnoTester -proc:only RepeatableOverrideATest.java
  */
 
-@BarInherited(value = 1)
-@BarInherited(value = 2)
+@BarInherited(1)
+@BarInherited(2)
 class B {}
 
 @ExpectedBase(
         value = BarInherited.class,
-        getAnnotation = "@BarInherited(value=3)",
-        getAnnotationsByType = {"@BarInherited(value=3)"},
+        getAnnotation = "@BarInherited(3)",
+        getAnnotationsByType = {"@BarInherited(3)"},
         getAllAnnotationMirrors = {
             "@BarInherited(3)",
             "@BarInheritedContainer({@BarInherited(1), @BarInherited(2)})",
@@ -56,8 +56,8 @@ class B {}
 @ExpectedContainer(
         value = BarInheritedContainer.class,
         getAnnotation = "@BarInheritedContainer("
-        + "value={@BarInherited(value=1), @BarInherited(value=2)})",
+        + "{@BarInherited(1), @BarInherited(2)})",
         getAnnotationsByType = {"@BarInheritedContainer("
-                + "value={@BarInherited(value=1), @BarInherited(value=2)})"})
-@BarInherited(value = 3)
+                + "{@BarInherited(1), @BarInherited(2)})"})
+@BarInherited(3)
 class RepeatableOverrideATest extends B {}

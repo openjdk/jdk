@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -35,14 +35,14 @@
  * MixSingularAndUnofficialContainerInheritedB2Test.java
  */
 
-@UnofficialInheritedContainer(value = {@FooInherited(value = 1), @FooInherited(value = 2)})
-@FooInherited(value = 3)
+@UnofficialInheritedContainer({@FooInherited(1), @FooInherited(2)})
+@FooInherited(3)
 class G {}
 
 @ExpectedBase(
         value = FooInherited.class,
-        getAnnotation = "@FooInherited(value=0)",
-        getAnnotationsByType = {"@FooInherited(value=0)"},
+        getAnnotation = "@FooInherited(0)",
+        getAnnotationsByType = {"@FooInherited(0)"},
         getAllAnnotationMirrors = {
             "@FooInherited(0)",
             "@UnofficialInheritedContainer({@FooInherited(1), @FooInherited(2)})",
@@ -57,8 +57,8 @@ class G {}
 @ExpectedContainer(
         value = UnofficialInheritedContainer.class,
         getAnnotation = "@UnofficialInheritedContainer("
-        + "value={@FooInherited(value=1), @FooInherited(value=2)})",
+        + "{@FooInherited(1), @FooInherited(2)})",
         getAnnotationsByType = {"@UnofficialInheritedContainer("
-                + "value={@FooInherited(value=1), @FooInherited(value=2)})"})
-@FooInherited(value = 0)
+                + "{@FooInherited(1), @FooInherited(2)})"})
+@FooInherited(0)
 class MixSingularAndUnofficialContainerInheritedB2Test extends G{}

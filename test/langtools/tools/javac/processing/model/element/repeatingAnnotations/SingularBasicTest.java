@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -36,8 +36,8 @@
 
 @ExpectedBase(
         value = Foo.class,
-        getAnnotation = "@Foo(value=0)",
-        getAnnotationsByType = {"@Foo(value=0)"},
+        getAnnotation = "@Foo(0)",
+        getAnnotationsByType = {"@Foo(0)"},
         getAllAnnotationMirrors = {
             "@Foo(0)",
             "ExpectedBase",
@@ -49,13 +49,13 @@
             "ExpectedContainer"
         })
 @ExpectedContainer
-@Foo(value = 0)
+@Foo(0)
 public class SingularBasicTest {
 
     @ExpectedBase(
             value = Foo.class,
-            getAnnotation = "@Foo(value=0)",
-            getAnnotationsByType = {"@Foo(value=0)"},
+            getAnnotation = "@Foo(0)",
+            getAnnotationsByType = {"@Foo(0)"},
             getAllAnnotationMirrors = {
                 "@Foo(0)",
                 "ExpectedBase",
@@ -67,13 +67,13 @@ public class SingularBasicTest {
                 "ExpectedContainer"
             })
     @ExpectedContainer
-    @Foo(value = 0)
+    @Foo(0)
     int testField = 0;
 
     @ExpectedBase(
             value = Foo.class,
-            getAnnotation = "@Foo(value=0)",
-            getAnnotationsByType = {"@Foo(value=0)"},
+            getAnnotation = "@Foo(0)",
+            getAnnotationsByType = {"@Foo(0)"},
             getAllAnnotationMirrors = {
                 "@Foo(0)",
                 "ExpectedBase",
@@ -85,7 +85,7 @@ public class SingularBasicTest {
                 "ExpectedContainer"
             })
     @ExpectedContainer
-    @Foo(value = 0)
+    @Foo(0)
     void testMethod() {
     }
 }

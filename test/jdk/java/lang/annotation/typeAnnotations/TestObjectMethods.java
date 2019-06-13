@@ -177,7 +177,7 @@ public class TestObjectMethods {
         }
     }
 
-    private static final Pattern annotationRegex = Pattern.compile("@TestObjectMethods\\$AnnotType\\(value=(\\p{Digit})+\\)");
+    private static final Pattern annotationRegex = Pattern.compile("@TestObjectMethods\\$AnnotType\\((\\p{Digit})+\\)");
 
     static void testGetAnnotations(Class<?> clazz, boolean annotationsExpectedOnMethods) {
         System.err.println("Testing getAnnotations on methods of class " + clazz.getName());

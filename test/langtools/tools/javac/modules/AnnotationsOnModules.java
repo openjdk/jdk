@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -609,11 +609,11 @@ public class AnnotationsOnModules extends ModuleTestBase {
             new TestCase("package test; public enum E {A, B;}",
                          "public E value();",
                          "test.E.A",
-                         "@test.A(test.E.A)"),
+                         "@test.A(A)"),
             new TestCase("package test; public enum E {A, B;}",
                          "public E[] value();",
                          "{test.E.A, test.E.B}",
-                         "@test.A({test.E.A, test.E.B})"),
+                         "@test.A({A, B})"),
             new TestCase("package test; public class Extra {}",
                          "public Class value();",
                          "test.Extra.class",
@@ -641,7 +641,7 @@ public class AnnotationsOnModules extends ModuleTestBase {
             new TestCase("package test; public enum E {A;}",
                         "int integer(); boolean flag(); double value(); String string(); E enumeration(); ",
                         "enumeration = test.E.A, integer = 42, flag = true, value = 3.5, string = \"Text\"",
-                        "@test.A(enumeration=test.E.A, integer=42, flag=true, value=3.5, string=\"Text\")"),
+                        "@test.A(enumeration=A, integer=42, flag=true, value=3.5, string=\"Text\")"),
         };
 
         Path extraSrc = base.resolve("extra-src");

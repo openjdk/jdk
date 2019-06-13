@@ -23,34 +23,100 @@
 
 /*
  * @test
- * @bug 8162817 8168921
+ * @bug 8164819
  * @summary Test of toString on normal annotations
+ * @library /tools/javac/lib
+ * @build   JavacTestingAbstractProcessor AnnotationToStringTest
+ * @compile -processor AnnotationToStringTest -proc:only AnnotationToStringTest.java
  */
 
-// See also the sibling compile-time test
-// test/langtools/tools/javac/processing/model/element/AnnotationToStringTest.java
+// See also the sibling core reflection test
+// test/jdk/java/lang/annotation/AnnotationToStringTest.java
 
 import java.lang.annotation.*;
 import java.lang.reflect.*;
 import java.util.*;
+import javax.annotation.processing.*;
+import javax.lang.model.AnnotatedConstruct;
+import javax.lang.model.element.*;
+import javax.lang.model.util.*;
 
 /**
  * The expected string values are stored in @ExpectedString
  * annotations. The essence of the test is comparing the toString()
  * result of annotations to the corresponding ExpectedString.value().
+ *
+ * Two flavors of comparison are made:
+ *
+ * 1) Against the AnnotationMirror value from getAnnotationMirrors()
+ *
+ * 2) Against the *Annotation* from getAnnotation(Class<A>)
+ *
+ * These have separate but related implementations.
  */
+public class AnnotationToStringTest extends JavacTestingAbstractProcessor {
+    public boolean process(Set<? extends TypeElement> annotations,
+                           RoundEnvironment roundEnv) {
+        if (!roundEnv.processingOver()) {
 
-public class AnnotationToStringTest {
-    public static void main(String... args) throws Exception {
-        int failures = 0;
+            int failures = 0;
 
-        failures += check(PrimHost.class.getAnnotation(ExpectedString.class).value(),
-                          PrimHost.class.getAnnotation(MostlyPrimitive.class).toString());
-        failures += classyTest();
-        failures += arrayAnnotationTest();
+            TypeElement primHostElt =
+                Objects.requireNonNull(elements.getTypeElement("AnnotationToStringTest.PrimHost"));
 
-        if (failures > 0)
-            throw new RuntimeException(failures + " failures");
+            List<? extends AnnotationMirror> annotMirrors = primHostElt.getAnnotationMirrors();
+
+            String expectedString = primHostElt.getAnnotation(MostlyPrimitive.class).toString();
+
+            failures += check(expectedString,
+                              primHostElt.getAnnotation(ExpectedString.class).value());
+
+            failures += check(expectedString,
+                              retrieveAnnotationMirrorAsString(primHostElt,
+                                                               "MostlyPrimitive"));
+            failures += classyTest();
+            failures += arrayAnnotationTest();
+
+            if (failures > 0)
+                throw new RuntimeException(failures + " failures");
+        }
+        return true;
+    }
+
+    /**
+     * Examine annotation mirrors, find the one that matches
+     * annotationName, and return its toString value.
+     */
+    private String retrieveAnnotationMirrorAsString(AnnotatedConstruct annotated,
+                                                    String annotationName) {
+        return retrieveAnnotationMirror(annotated, annotationName).toString();
+    }
+
+    private String retrieveAnnotationMirrorValue(AnnotatedConstruct annotated,
+                                                 String annotationName) {
+        AnnotationMirror annotationMirror =
+            retrieveAnnotationMirror(annotated, annotationName);
+        for (var entry : annotationMirror.getElementValues().entrySet()) {
+            if (entry.getKey().getSimpleName().contentEquals("value")) {
+                return entry.getValue().toString();
+            }
+        }
+        throw new RuntimeException("Annotation value() method not found: " +
+                                   annotationMirror.toString());
+    }
+
+    private AnnotationMirror retrieveAnnotationMirror(AnnotatedConstruct annotated,
+                                                      String annotationName) {
+        for (AnnotationMirror annotationMirror : annotated.getAnnotationMirrors()) {
+            System.out.println(annotationMirror.getAnnotationType());
+            if (annotationMirror
+                .getAnnotationType()
+                .toString()
+                .equals(annotationName) ) {
+                return annotationMirror;
+            }
+        }
+        throw new RuntimeException("Annotation " + annotationName + " not found.");
     }
 
     private static int check(String expected, String actual) {
@@ -101,13 +167,21 @@ public class AnnotationToStringTest {
     )
     static class PrimHost{}
 
-    private static int classyTest() {
+    private int classyTest() {
         int failures = 0;
-        for (Field f : AnnotationHost.class.getFields()) {
+
+        TypeElement annotationHostElt =
+            Objects.requireNonNull(elements.getTypeElement("AnnotationToStringTest.AnnotationHost"));
+
+        for (VariableElement f : ElementFilter.fieldsIn(annotationHostElt.getEnclosedElements())) {
+            String expected = f.getAnnotation(ExpectedString.class).value();
             Annotation a = f.getAnnotation(Classy.class);
+
             System.out.println(a);
-            failures += check(f.getAnnotation(ExpectedString.class).value(),
-                              a.toString());
+            failures += check(expected, a.toString());
+
+            failures += check(expected,
+                              retrieveAnnotationMirrorAsString(f, "Classy") );
         }
         return failures;
     }
@@ -148,13 +222,33 @@ public class AnnotationToStringTest {
      * Each field should have two annotations, the first being
      * @ExpectedString and the second the annotation under test.
      */
-    private static int arrayAnnotationTest() {
+    private int arrayAnnotationTest() {
         int failures = 0;
-        for (Field f : ArrayAnnotationHost.class.getFields()) {
-            Annotation[] annotations = f.getAnnotations();
-            System.out.println(annotations[1]);
-            failures += check(((ExpectedString)annotations[0]).value(),
-                              annotations[1].toString());
+
+        TypeElement arrayAnnotationHostElt =
+            Objects.requireNonNull(elements
+                                   .getTypeElement("AnnotationToStringTest.ArrayAnnotationHost"));
+
+        for (VariableElement f :
+                 ElementFilter.fieldsIn(arrayAnnotationHostElt.getEnclosedElements())) {
+            var annotations = f.getAnnotationMirrors();
+            // String expected = retrieveAnnotationMirrorValue(f, "ExpectedString");
+            String expected = f.getAnnotation(ExpectedString.class).value();
+
+            // Problem with
+            // Need a de-quote method...
+            // expected = expected.substring(1, expected.length() - 1);
+
+              failures +=
+                  check(expected,
+                        annotations.get(1).toString());
+
+            // Get the array-valued annotation as an annotation
+              failures +=
+                  check(expected,
+                        retrieveAnnotationMirrorAsString(f,
+                                                         annotations.get(1)
+                                                         .getAnnotationType().toString()));
         }
         return failures;
     }
@@ -174,6 +268,7 @@ public class AnnotationToStringTest {
        "@DoubleArray({1.0, 2.0, 0.0/0.0, 1.0/0.0, -1.0/0.0})")
         @DoubleArray({1.0, 2.0, Double.NaN, Double.POSITIVE_INFINITY, Double.NEGATIVE_INFINITY,})
         public double[]    f2;
+
 
         @ExpectedString(
        "@ByteArray({(byte)0x0a, (byte)0x0b, (byte)0x0c})")
