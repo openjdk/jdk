@@ -26,7 +26,6 @@
 package sun.security.ssl;
 
 import java.security.*;
-import java.security.interfaces.ECPrivateKey;
 import java.security.spec.AlgorithmParameterSpec;
 import java.security.spec.ECParameterSpec;
 import java.security.spec.MGF1ParameterSpec;
@@ -39,8 +38,7 @@ import java.util.EnumSet;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Set;
-import sun.security.ssl.SupportedGroupsExtension.NamedGroup;
-import sun.security.ssl.SupportedGroupsExtension.NamedGroupType;
+import sun.security.ssl.NamedGroup.NamedGroupType;
 import sun.security.ssl.X509Authentication.X509Possession;
 import sun.security.util.KeyUtil;
 import sun.security.util.SignatureUtil;
@@ -432,10 +430,10 @@ enum SignatureScheme {
         }
         for (SignatureScheme ss : schemes) {
             if (ss.isAvailable && (keySize >= ss.minimalKeySize) &&
-                ss.handshakeSupportedProtocols.contains(version) &&
-                keyAlgorithm.equalsIgnoreCase(ss.keyAlgorithm)) {
-                if (ss.namedGroup != null &&
-                    ss.namedGroup.type == NamedGroupType.NAMED_GROUP_ECDHE) {
+                    ss.handshakeSupportedProtocols.contains(version) &&
+                    keyAlgorithm.equalsIgnoreCase(ss.keyAlgorithm)) {
+                if ((ss.namedGroup != null) && (ss.namedGroup.type ==
+                        NamedGroupType.NAMED_GROUP_ECDHE)) {
                     ECParameterSpec params =
                             x509Possession.getECParameterSpec();
                     if (params != null &&

@@ -36,19 +36,12 @@ import java.security.NoSuchAlgorithmException;
 import java.security.PrivateKey;
 import java.security.PublicKey;
 import java.security.SecureRandom;
-import java.security.spec.AlgorithmParameterSpec;
 import java.security.spec.InvalidKeySpecException;
-import javax.crypto.KeyAgreement;
-import javax.crypto.SecretKey;
 import javax.crypto.interfaces.DHPublicKey;
 import javax.crypto.spec.DHParameterSpec;
 import javax.crypto.spec.DHPublicKeySpec;
-import javax.crypto.spec.SecretKeySpec;
-import javax.net.ssl.SSLHandshakeException;
 import sun.security.action.GetPropertyAction;
-import sun.security.ssl.CipherSuite.HashAlg;
-import sun.security.ssl.SupportedGroupsExtension.NamedGroup;
-import sun.security.ssl.SupportedGroupsExtension.NamedGroupType;
+import sun.security.ssl.NamedGroup.NamedGroupType;
 import sun.security.ssl.SupportedGroupsExtension.SupportedGroups;
 import sun.security.ssl.X509Authentication.X509Possession;
 import sun.security.util.KeyUtil;
@@ -61,13 +54,23 @@ final class DHKeyExchange {
     static final SSLKeyAgreementGenerator kaGenerator =
             new DHEKAGenerator();
 
-    static final class DHECredentials implements SSLCredentials {
+    static final class DHECredentials implements NamedGroupCredentials {
         final DHPublicKey popPublicKey;
         final NamedGroup namedGroup;
 
         DHECredentials(DHPublicKey popPublicKey, NamedGroup namedGroup) {
             this.popPublicKey = popPublicKey;
             this.namedGroup = namedGroup;
+        }
+
+        @Override
+        public PublicKey getPublicKey() {
+            return popPublicKey;
+        }
+
+        @Override
+        public NamedGroup getNamedGroup() {
+            return namedGroup;
         }
 
         static DHECredentials valueOf(NamedGroup ng,
@@ -98,7 +101,7 @@ final class DHKeyExchange {
         }
     }
 
-    static final class DHEPossession implements SSLPossession {
+    static final class DHEPossession implements NamedGroupPossession {
         final PrivateKey privateKey;
         final DHPublicKey publicKey;
         final NamedGroup namedGroup;
@@ -174,13 +177,13 @@ final class DHKeyExchange {
         // Generate and validate DHPublicKeySpec
         private KeyPair generateDHKeyPair(
                 KeyPairGenerator kpg) throws GeneralSecurityException {
-            boolean doExtraValiadtion =
+            boolean doExtraValidation =
                     (!KeyUtil.isOracleJCEProvider(kpg.getProvider().getName()));
             boolean isRecovering = false;
             for (int i = 0; i <= 2; i++) {      // Try to recover from failure.
                 KeyPair kp = kpg.generateKeyPair();
                 // validate the Diffie-Hellman public key
-                if (doExtraValiadtion) {
+                if (doExtraValidation) {
                     DHPublicKeySpec spec = getDHPublicKeySpec(kp.getPublic());
                     try {
                         KeyUtil.validate(spec);
@@ -230,6 +233,21 @@ final class DHKeyExchange {
             }
 
             return encoded;
+        }
+
+        @Override
+        public PublicKey getPublicKey() {
+            return publicKey;
+        }
+
+        @Override
+        public NamedGroup getNamedGroup() {
+            return namedGroup;
+        }
+
+        @Override
+        public PrivateKey getPrivateKey() {
+            return privateKey;
         }
     }
 
@@ -298,7 +316,7 @@ final class DHKeyExchange {
         // Used for ServerKeyExchange, TLS 1.2 and prior versions.
         @Override
         public SSLPossession createPossession(HandshakeContext context) {
-            NamedGroup preferableNamedGroup = null;
+            NamedGroup preferableNamedGroup;
             if (!useLegacyEphemeralDHKeys &&
                     (context.clientRequestedNamedGroups != null) &&
                     (!context.clientRequestedNamedGroups.isEmpty())) {
@@ -306,7 +324,8 @@ final class DHKeyExchange {
                         SupportedGroups.getPreferredGroup(
                                 context.negotiatedProtocol,
                                 context.algorithmConstraints,
-                                NamedGroupType.NAMED_GROUP_FFDHE,
+                                new NamedGroupType [] {
+                                    NamedGroupType.NAMED_GROUP_FFDHE },
                                 context.clientRequestedNamedGroups);
                 if (preferableNamedGroup != null) {
                     return new DHEPossession(preferableNamedGroup,
@@ -392,7 +411,7 @@ final class DHKeyExchange {
 
     private static final
             class DHEKAGenerator implements SSLKeyAgreementGenerator {
-        static private DHEKAGenerator instance = new DHEKAGenerator();
+        private static final DHEKAGenerator instance = new DHEKAGenerator();
 
         // Prevent instantiation of this class.
         private DHEKAGenerator() {
@@ -442,93 +461,8 @@ final class DHKeyExchange {
                     "No sufficient DHE key agreement parameters negotiated");
             }
 
-            return new DHEKAKeyDerivation(context,
+            return new KAKeyDerivation("DiffieHellman", context,
                     dhePossession.privateKey, dheCredentials.popPublicKey);
-        }
-
-        private static final
-                class DHEKAKeyDerivation implements SSLKeyDerivation {
-            private final HandshakeContext context;
-            private final PrivateKey localPrivateKey;
-            private final PublicKey peerPublicKey;
-
-            DHEKAKeyDerivation(HandshakeContext context,
-                    PrivateKey localPrivateKey,
-                    PublicKey peerPublicKey) {
-                this.context = context;
-                this.localPrivateKey = localPrivateKey;
-                this.peerPublicKey = peerPublicKey;
-            }
-
-            @Override
-            public SecretKey deriveKey(String algorithm,
-                    AlgorithmParameterSpec params) throws IOException {
-                if (!context.negotiatedProtocol.useTLS13PlusSpec()) {
-                    return t12DeriveKey(algorithm, params);
-                } else {
-                    return t13DeriveKey(algorithm, params);
-                }
-            }
-
-            private SecretKey t12DeriveKey(String algorithm,
-                    AlgorithmParameterSpec params) throws IOException {
-                try {
-                    KeyAgreement ka = KeyAgreement.getInstance("DiffieHellman");
-                    ka.init(localPrivateKey);
-                    ka.doPhase(peerPublicKey, true);
-                    SecretKey preMasterSecret =
-                            ka.generateSecret("TlsPremasterSecret");
-                    SSLMasterKeyDerivation mskd =
-                            SSLMasterKeyDerivation.valueOf(
-                                    context.negotiatedProtocol);
-                    if (mskd == null) {
-                        // unlikely
-                        throw new SSLHandshakeException(
-                            "No expected master key derivation for protocol: " +
-                            context.negotiatedProtocol.name);
-                    }
-                    SSLKeyDerivation kd = mskd.createKeyDerivation(
-                            context, preMasterSecret);
-                    return kd.deriveKey("MasterSecret", params);
-                } catch (GeneralSecurityException gse) {
-                    throw (SSLHandshakeException) new SSLHandshakeException(
-                        "Could not generate secret").initCause(gse);
-                }
-            }
-
-            private SecretKey t13DeriveKey(String algorithm,
-                    AlgorithmParameterSpec params) throws IOException {
-                try {
-                    KeyAgreement ka = KeyAgreement.getInstance("DiffieHellman");
-                    ka.init(localPrivateKey);
-                    ka.doPhase(peerPublicKey, true);
-                    SecretKey sharedSecret =
-                            ka.generateSecret("TlsPremasterSecret");
-
-                    HashAlg hashAlg = context.negotiatedCipherSuite.hashAlg;
-                    SSLKeyDerivation kd = context.handshakeKeyDerivation;
-                    HKDF hkdf = new HKDF(hashAlg.name);
-                    if (kd == null) {   // No PSK is in use.
-                        // If PSK is not in use Early Secret will still be
-                        // HKDF-Extract(0, 0).
-                        byte[] zeros = new byte[hashAlg.hashLength];
-                        SecretKeySpec ikm =
-                                new SecretKeySpec(zeros, "TlsPreSharedSecret");
-                        SecretKey earlySecret =
-                                hkdf.extract(zeros, ikm, "TlsEarlySecret");
-                        kd = new SSLSecretDerivation(context, earlySecret);
-                    }
-
-                    // derive salt secret
-                    SecretKey saltSecret = kd.deriveKey("TlsSaltSecret", null);
-
-                    // derive handshake secret
-                    return hkdf.extract(saltSecret, sharedSecret, algorithm);
-                } catch (GeneralSecurityException gse) {
-                    throw (SSLHandshakeException) new SSLHandshakeException(
-                        "Could not generate secret").initCause(gse);
-                }
-            }
         }
     }
 }

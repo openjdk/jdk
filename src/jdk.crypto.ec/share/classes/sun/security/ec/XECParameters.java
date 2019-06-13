@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -156,7 +156,7 @@ public class XECParameters {
             new XECParameters(bits, p, a24, basePoint, logCofactor, oid, name);
         bySize.put(bits, params);
         byOid.put(oid, params);
-        byName.put(name, params);
+        byName.put(name.toLowerCase(), params);
     }
 
     public static Optional<XECParameters> getByOid(ObjectIdentifier id) {
@@ -166,7 +166,7 @@ public class XECParameters {
         return Optional.ofNullable(SIZE_MAP.get(size));
     }
     public static Optional<XECParameters> getByName(String name) {
-        return Optional.ofNullable(NAME_MAP.get(name));
+        return Optional.ofNullable(NAME_MAP.get(name.toLowerCase()));
     }
 
     boolean oidEquals(XECParameters other) {
