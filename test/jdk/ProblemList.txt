@@ -604,9 +604,6 @@ java/net/DatagramSocket/SendDatagramToBadAddress.java           7143960 macosx-a
 
 java/net/ServerSocket/AcceptInheritHandle.java                  8211854 aix-ppc64
 
-java/net/Inet6Address/B6206527.java                             8216417 macosx-all
-java/net/ipv6tests/B6521014.java                                8216417 macosx-all
-
 ############################################################################
 
 # jdk_nio

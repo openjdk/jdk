@@ -124,7 +124,7 @@ class DualStackPlainDatagramSocketImpl extends AbstractPlainDatagramSocketImpl
         socketReceiveOrPeekData(nativefd, p, timeout, connected, false /*receive*/);
     }
 
-    protected void send(DatagramPacket p) throws IOException {
+    protected void send0(DatagramPacket p) throws IOException {
         int nativefd = checkAndReturnNativeFD();
 
         if (p == null)
