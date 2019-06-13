@@ -409,7 +409,7 @@ public class ElementStructureTest {
                 for (VariableElement param : e.getParameters()) {
                     visit(param, p);
                 }
-                out.write(String.valueOf(e.getReceiverType()));
+                out.write(String.valueOf(typeMirrorTranslate(e.getReceiverType())));
                 write(e.getReturnType());
                 out.write(e.getSimpleName().toString());
                 writeTypes(e.getThrownTypes());
@@ -423,6 +423,18 @@ public class ElementStructureTest {
                 ex.printStackTrace();
             }
             return null;
+        }
+
+        /**
+         * Original implementation of getReceiverType returned null
+         * for many cases where TypeKind.NONE was specified; translate
+         * back to null to compare against old hashes.
+         */
+        private TypeMirror typeMirrorTranslate(TypeMirror type) {
+            if (type.getKind() == javax.lang.model.type.TypeKind.NONE)
+                return null;
+            else
+                return type;
         }
 
         @Override
