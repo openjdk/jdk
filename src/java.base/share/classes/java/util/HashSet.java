@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -357,5 +357,15 @@ public class HashSet<E>
      */
     public Spliterator<E> spliterator() {
         return new HashMap.KeySpliterator<>(map, 0, -1, 0, 0);
+    }
+
+    @Override
+    public Object[] toArray() {
+        return map.keysToArray(new Object[map.size()]);
+    }
+
+    @Override
+    public <T> T[] toArray(T[] a) {
+        return map.keysToArray(map.prepareArray(a));
     }
 }

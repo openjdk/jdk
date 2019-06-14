@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -911,6 +911,74 @@ public class HashMap<K,V> extends AbstractMap<K,V>
         return ks;
     }
 
+    /**
+     * Prepares the array for {@link Collection#toArray(Object[])} implementation.
+     * If supplied array is smaller than this map size, a new array is allocated.
+     * If supplied array is bigger than this map size, a null is written at size index.
+     *
+     * @param a an original array passed to {@code toArray()} method
+     * @param <T> type of array elements
+     * @return an array ready to be filled and returned from {@code toArray()} method.
+     */
+    @SuppressWarnings("unchecked")
+    final <T> T[] prepareArray(T[] a) {
+        int size = this.size;
+        if (a.length < size) {
+            return (T[]) java.lang.reflect.Array
+                    .newInstance(a.getClass().getComponentType(), size);
+        }
+        if (a.length > size) {
+            a[size] = null;
+        }
+        return a;
+    }
+
+    /**
+     * Fills an array with this map keys and returns it. This method assumes
+     * that input array is big enough to fit all the keys. Use
+     * {@link #prepareArray(Object[])} to ensure this.
+     *
+     * @param a an array to fill
+     * @param <T> type of array elements
+     * @return supplied array
+     */
+    <T> T[] keysToArray(T[] a) {
+        Object[] r = a;
+        Node<K,V>[] tab;
+        int idx = 0;
+        if (size > 0 && (tab = table) != null) {
+            for (Node<K,V> e : tab) {
+                for (; e != null; e = e.next) {
+                    r[idx++] = e.key;
+                }
+            }
+        }
+        return a;
+    }
+
+    /**
+     * Fills an array with this map values and returns it. This method assumes
+     * that input array is big enough to fit all the values. Use
+     * {@link #prepareArray(Object[])} to ensure this.
+     *
+     * @param a an array to fill
+     * @param <T> type of array elements
+     * @return supplied array
+     */
+    <T> T[] valuesToArray(T[] a) {
+        Object[] r = a;
+        Node<K,V>[] tab;
+        int idx = 0;
+        if (size > 0 && (tab = table) != null) {
+            for (Node<K,V> e : tab) {
+                for (; e != null; e = e.next) {
+                    r[idx++] = e.value;
+                }
+            }
+        }
+        return a;
+    }
+
     final class KeySet extends AbstractSet<K> {
         public final int size()                 { return size; }
         public final void clear()               { HashMap.this.clear(); }
@@ -922,6 +990,15 @@ public class HashMap<K,V> extends AbstractMap<K,V>
         public final Spliterator<K> spliterator() {
             return new KeySpliterator<>(HashMap.this, 0, -1, 0, 0);
         }
+
+        public Object[] toArray() {
+            return keysToArray(new Object[size]);
+        }
+
+        public <T> T[] toArray(T[] a) {
+            return keysToArray(prepareArray(a));
+        }
+
         public final void forEach(Consumer<? super K> action) {
             Node<K,V>[] tab;
             if (action == null)
@@ -970,6 +1047,15 @@ public class HashMap<K,V> extends AbstractMap<K,V>
         public final Spliterator<V> spliterator() {
             return new ValueSpliterator<>(HashMap.this, 0, -1, 0, 0);
         }
+
+        public Object[] toArray() {
+            return valuesToArray(new Object[size]);
+        }
+
+        public <T> T[] toArray(T[] a) {
+            return valuesToArray(prepareArray(a));
+        }
+
         public final void forEach(Consumer<? super V> action) {
             Node<K,V>[] tab;
             if (action == null)
