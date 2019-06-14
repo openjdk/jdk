@@ -48,7 +48,6 @@ public class ShenandoahHeap extends CollectedHeap {
     static private CIntegerField logMinObjAlignmentInBytes;
 
     static private long regionPtrFieldSize;
-    static private long brookPtrSize;
     static {
         VM.registerVMInitializedObserver(new Observer() {
             public void update(Observable o, Object data) {
@@ -65,18 +64,12 @@ public class ShenandoahHeap extends CollectedHeap {
         regions = type.getAddressField("_regions");
         logMinObjAlignmentInBytes = type.getCIntegerField("_log_min_obj_alignment_in_bytes");
 
-        brookPtrSize = db.lookupIntConstant("HeapWordSize").longValue();
         Type regionPtrType = db.lookupType("ShenandoahHeapRegion*");
         regionPtrFieldSize = regionPtrType.getSize();
     }
 
     public ShenandoahHeap(Address addr) {
         super(addr);
-    }
-
-    @Override
-    public long oopOffset() {
-        return brookPtrSize;
     }
 
     @Override
