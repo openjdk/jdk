@@ -148,6 +148,7 @@ public:
   void roots_do(uint worker_id, OopClosure* oops, CLDClosure* clds, CodeBlobClosure* code, ThreadClosure* tc = NULL);
   // For heap object iteration
   void roots_do_unchecked(OopClosure* cl);
+  void strong_roots_do_unchecked(OopClosure* cl);
 };
 
 typedef ShenandoahRootScanner<ShenandoahAllCodeRootsIterator> ShenandoahAllRootScanner;
