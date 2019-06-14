@@ -1194,10 +1194,6 @@ bool ShenandoahBarrierSetC2::escape_has_out_with_unsafe_object(Node* n) const {
 
 }
 
-bool ShenandoahBarrierSetC2::escape_is_barrier_node(Node* n) const {
-  return n->Opcode() == Op_ShenandoahLoadReferenceBarrier;
-}
-
 bool ShenandoahBarrierSetC2::matcher_find_shared_post_visit(Matcher* matcher, Node* n, uint opcode) const {
   switch (opcode) {
     case Op_ShenandoahCompareAndExchangeP:
