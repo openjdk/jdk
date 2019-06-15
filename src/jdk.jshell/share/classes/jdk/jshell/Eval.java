@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -44,7 +44,6 @@ import com.sun.source.tree.ModifiersTree;
 import com.sun.source.tree.NewClassTree;
 import com.sun.source.tree.Tree;
 import com.sun.source.tree.VariableTree;
-import com.sun.source.util.TreeScanner;
 import com.sun.tools.javac.tree.JCTree;
 import com.sun.tools.javac.tree.Pretty;
 import java.io.IOException;
@@ -622,7 +621,6 @@ class Eval {
                         name = "$" + ++varNumber;
                     }
                 }
-                TreeDissector dis = TreeDissector.createByFirstClass(pt);
                 ExpressionInfo varEI =
                         ExpressionToTypeInfo.localVariableTypeForInitializer(compileSource, state, true);
                 String declareTypeName;
@@ -634,6 +632,7 @@ class Eval {
                     fullTypeName = varEI.fullTypeName;
                     displayTypeName = varEI.displayTypeName;
 
+                    TreeDissector dis = TreeDissector.createByFirstClass(pt);
                     Pair<Wrap, Wrap> anonymous2Member =
                             anonymous2Member(varEI, compileSource, new Range(0, compileSource.length()), dis, expr.getExpression());
                     guts = Wrap.tempVarWrap(anonymous2Member.second.wrapped(), declareTypeName, name, anonymous2Member.first);
@@ -680,8 +679,8 @@ class Eval {
         String name = klassTree.getSimpleName().toString();
         DiagList modDiag = modifierDiagnostics(klassTree.getModifiers(), dis, false);
         TypeDeclKey key = state.keyMap.keyForClass(name);
-        // Corralling mutates.  Must be last use of pt, unitTree, klassTree
-        Wrap corralled = new Corraller(key.index(), pt.getContext()).corralType(klassTree);
+        // Corralling
+        Wrap corralled = new Corraller(dis, key.index(), compileSource).corralType(klassTree);
 
         Wrap guts = Wrap.classMemberWrap(compileSource);
         Snippet snip = new TypeDeclSnippet(key, userSource, guts,
@@ -752,8 +751,8 @@ class Eval {
         Tree returnType = mt.getReturnType();
         DiagList modDiag = modifierDiagnostics(mt.getModifiers(), dis, true);
         MethodKey key = state.keyMap.keyForMethod(name, parameterTypes);
-        // Corralling mutates.  Must be last use of pt, unitTree, mt
-        Wrap corralled = new Corraller(key.index(), pt.getContext()).corralMethod(mt);
+        // Corralling
+        Wrap corralled = new Corraller(dis, key.index(), compileSource).corralMethod(mt);
 
         if (modDiag.hasErrors()) {
             return compileFailResult(modDiag, userSource, Kind.METHOD);

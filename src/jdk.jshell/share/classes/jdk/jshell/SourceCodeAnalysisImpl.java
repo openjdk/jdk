@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -301,7 +301,7 @@ class SourceCodeAnalysisImpl extends SourceCodeAnalysis {
             SourcePositions sp = at.trees().getSourcePositions();
             CompilationUnitTree topLevel = at.firstCuTree();
             List<Suggestion> result = new ArrayList<>();
-            TreePath tp = pathFor(topLevel, sp, code.snippetIndexToWrapIndex(cursor));
+            TreePath tp = pathFor(topLevel, sp, code, cursor);
             if (tp != null) {
                 Scope scope = at.trees().getScope(tp);
                 Predicate<Element> accessibility = createAccessibilityFilter(at, tp);
@@ -563,7 +563,10 @@ class SourceCodeAnalysisImpl extends SourceCodeAnalysis {
         }
     }
 
-    private TreePath pathFor(CompilationUnitTree topLevel, SourcePositions sp, int pos) {
+    private TreePath pathFor(CompilationUnitTree topLevel, SourcePositions sp, GeneralWrap wrap, int snippetEndPos) {
+        int wrapEndPos = snippetEndPos == 0
+                ? wrap.snippetIndexToWrapIndex(snippetEndPos)
+                : wrap.snippetIndexToWrapIndex(snippetEndPos - 1) + 1;
         TreePath[] deepest = new TreePath[1];
 
         new TreePathScanner<Void, Void>() {
@@ -576,7 +579,7 @@ class SourceCodeAnalysisImpl extends SourceCodeAnalysis {
                 long end = sp.getEndPosition(topLevel, tree);
                 long prevEnd = deepest[0] != null ? sp.getEndPosition(topLevel, deepest[0].getLeaf()) : -1;
 
-                if (start <= pos && pos <= end &&
+                if (start <= wrapEndPos && wrapEndPos <= end &&
                     (start != end || prevEnd != end || deepest[0] == null ||
                      deepest[0].getParentPath().getLeaf() != getCurrentPath().getLeaf())) {
                     deepest[0] = new TreePath(getCurrentPath(), tree);
@@ -1176,7 +1179,7 @@ class SourceCodeAnalysisImpl extends SourceCodeAnalysis {
         return proc.taskFactory.analyze(codeWrap, List.of(keepParameterNames), at -> {
             SourcePositions sp = at.trees().getSourcePositions();
             CompilationUnitTree topLevel = at.firstCuTree();
-            TreePath tp = pathFor(topLevel, sp, codeWrap.snippetIndexToWrapIndex(cursor));
+            TreePath tp = pathFor(topLevel, sp, codeWrap, cursor);
 
             if (tp == null)
                 return Collections.emptyList();
@@ -1526,7 +1529,7 @@ class SourceCodeAnalysisImpl extends SourceCodeAnalysis {
         return proc.taskFactory.analyze(codeWrap, at -> {
             SourcePositions sp = at.trees().getSourcePositions();
             CompilationUnitTree topLevel = at.firstCuTree();
-            TreePath tp = pathFor(topLevel, sp, codeWrap.snippetIndexToWrapIndex(codeFin.length()));
+            TreePath tp = pathFor(topLevel, sp, codeWrap, codeFin.length());
             if (tp.getLeaf().getKind() != Kind.IDENTIFIER) {
                 return new QualifiedNames(Collections.emptyList(), -1, true, false);
             }

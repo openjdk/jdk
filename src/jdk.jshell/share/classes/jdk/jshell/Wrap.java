@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -34,8 +34,6 @@ import static jdk.jshell.Util.DOIT_METHOD_NAME;
 /**
  * Wrapping of source into Java methods, fields, etc.  All but outer layer
  * wrapping with imports and class.
- *
- * @author Robert Field
  */
 abstract class Wrap implements GeneralWrap {
 
@@ -184,7 +182,7 @@ abstract class Wrap implements GeneralWrap {
 
     public static final class Range {
         final int begin;
-        final int end;
+        final int end; // exclusive
 
         Range(int begin, int end) {
             this.begin = begin;
@@ -216,7 +214,7 @@ abstract class Wrap implements GeneralWrap {
 
         @Override
         public String toString() {
-            return "Range[" + begin + "," + end + "]";
+            return "Range[" + begin + "," + end + ")";
         }
     }
 
@@ -280,8 +278,12 @@ abstract class Wrap implements GeneralWrap {
                     before += s.length();
                 } else if (o instanceof Wrap) {
                     Wrap w = (Wrap) o;
-                    if (sni >= w.firstSnippetIndex() && sni <= w.lastSnippetIndex()) {
-                        return w.snippetIndexToWrapIndex(sni) + before;
+                    if (sni >= w.firstSnippetIndex() && sni < w.lastSnippetIndex()) {
+                        int wwi = w.snippetIndexToWrapIndex(sni);
+                        debugWrap("\nCommoundWrap.snippetIndexToWrapIndex: SnippetIndex(%d) -> WrapIndex(%d + %d = %d)"
+                                        + "\n   === %s",
+                                sni, wwi, before, wwi + before, wrapped());
+                        return wwi + before;
                     }
                     before += w.wrapped().length();
                 }
@@ -300,8 +302,8 @@ abstract class Wrap implements GeneralWrap {
                     w = (Wrap) o;
                     int len = w.wrapped().length();
                     if ((wi - before) <= len) {
-                        //System.err.printf("Defer to wrap %s - wi: %d. before; %d   -- %s  >>> %s\n",
-                        //        w, wi, before, w.debugPos(wi - before), w.wrapped());
+                        debugWrap("CommoundWrap.wrapIndexToWrap: Defer to wrap %s - wi: %d. before; %d   >>> %s\n",
+                                w, wi, before, w.wrapped());
                         return w;
                     }
                     before += len;
@@ -321,9 +323,10 @@ abstract class Wrap implements GeneralWrap {
                     Wrap w = (Wrap) o;
                     int len = w.wrapped().length();
                     if ((wi - before) <= len) {
-                        //System.err.printf("Defer to wrap %s - wi: %d. before; %d   -- %s  >>> %s\n",
-                        //        w, wi, before, w.debugPos(wi - before), w.wrapped());
-                        return w.wrapIndexToSnippetIndex(wi - before);
+                        int si = w.wrapIndexToSnippetIndex(wi - before);
+                        debugWrap("\nCommoundWrap.wrapIndexToSnippetIndex: WrapIndex(%d) -> SnippetIndex(%d)\n",
+                                wi, si);
+                        return si;
                     }
                     before += len;
                 }
@@ -369,7 +372,7 @@ abstract class Wrap implements GeneralWrap {
                 } else if (o instanceof Wrap) {
                     w = (Wrap) o;
                     int lns = countLines(w.wrapped());
-                    if ((wline - before) < lns) {
+                    if ((wline - before) <= lns) {
                         return w;
                     }
                     before += lns;
@@ -388,7 +391,7 @@ abstract class Wrap implements GeneralWrap {
                 } else if (o instanceof Wrap) {
                     Wrap w = (Wrap) o;
                     int lns = countLines(w.wrapped());
-                    if ((wline - before) < lns) {
+                    if ((wline - before) <= lns) {
                         return w.wrapLineToSnippetLine(wline - before);
                     }
                     before += lns;
@@ -409,16 +412,21 @@ abstract class Wrap implements GeneralWrap {
 
         @Override
         public String toString() {
-            return "CompoundWrap(" + Arrays.stream(os).map(Object::toString).collect(joining(",")) + ")";
+            return "CompoundWrap(" + Arrays.stream(os)
+                    .map(o -> (o instanceof String)
+                            ? "\"" + o + "\""
+                            : o.toString())
+                    .collect(joining(","))
+                    + ")";
         }
     }
 
-    private static class RangeWrap extends Wrap {
+    static class RangeWrap extends Wrap {
 
         final Range range;
-        final String wrapped;
-        final int firstSnline;
-        final int lastSnline;
+        final String wrapped;   // The snippet portion of the source
+        final int firstSnline;  // Line count to start of snippet portion
+        final int lastSnline;   // Line count to end of snippet portion
 
         RangeWrap(String snippetSource, Range usedWithinSnippet) {
             this.range = usedWithinSnippet;
@@ -436,24 +444,39 @@ abstract class Wrap implements GeneralWrap {
         @Override
         public int snippetIndexToWrapIndex(int sni) {
             if (sni < range.begin) {
+                debugWrap("\nRangeWrap.snippetIndexToWrapIndex: ERR before SnippetIndex(%d) -> WrapIndex(%d + %d = %d)\n",
+                        sni, 0);
                 return 0;
             }
             if (sni > range.end) {
+                debugWrap("\nRangeWrap.snippetIndexToWrapIndex: ERR after SnippetIndex(%d) -> WrapIndex(%d + %d = %d)\n",
+                        sni, range.length());
                 return range.length();
             }
-            return sni - range.begin;
+            int wi = sni - range.begin;
+            debugWrap("\nRangeWrap.snippetIndexToWrapIndex: SnippetIndex(%d) -> WrapIndex(%d + %d = %d)"
+                            + "\n   === %s",
+                    sni, sni, range.begin, sni - range.begin, wrapped());
+            return wi;
         }
 
         @Override
         public int wrapIndexToSnippetIndex(int wi) {
             if (wi < 0) {
+                debugWrap("\nRangeWrap.wrapIndexToSnippetIndex: ERR before WrapIndex(%d) -> SnippetIndex(%d)\n",
+                        wi, 0);
                 return 0; // bad index
             }
             int max = range.length();
             if (wi > max) {
-                wi = max;
+                debugWrap("\nRangeWrap.wrapIndexToSnippetIndex: ERR after WrapIndex(%d) -> SnippetIndex(%d)\n",
+                        wi, max + range.begin);
+                return max + range.begin;
             }
-            return wi + range.begin;
+            int sni = wi + range.begin;
+            debugWrap("\nRangeWrap.wrapIndexToSnippetIndex: WrapIndex(%d) -> SnippetIndex(%d)\n",
+                    wi, sni);
+            return sni;
         }
 
         @Override
@@ -534,5 +557,10 @@ abstract class Wrap implements GeneralWrap {
         VarDeclareWrap(Wrap wtype, String brackets, Wrap wname) {
             super("    public static ", wtype, brackets + " ", wname, semi(wname));
         }
+    }
+
+    void debugWrap(String format, Object... args) {
+        //System.err.printf(format, args);
+        //state.debug(this, InternalDebugControl.DBG_WRAP, format, args);
     }
 }
