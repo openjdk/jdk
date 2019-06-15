@@ -1929,6 +1929,7 @@ public class Font implements java.io.Serializable
         // value is the default.
 
         if (fRequestedAttributes != null) {
+            try {
             values = getAttributeValues(); // init
             AttributeValues extras =
                 AttributeValues.fromSerializableHashtable(fRequestedAttributes);
@@ -1938,9 +1939,12 @@ public class Font implements java.io.Serializable
             values = getAttributeValues().merge(extras);
             this.nonIdentityTx = values.anyNonDefault(EXTRA_MASK);
             this.hasLayoutAttributes =  values.anyNonDefault(LAYOUT_MASK);
-
+            } catch (Throwable t) {
+                throw new IOException(t);
+            } finally {
             fRequestedAttributes = null; // don't need it any more
         }
+    }
     }
 
     /**
