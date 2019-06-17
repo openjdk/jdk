@@ -26,6 +26,8 @@
  * @bug 6870935
  * @modules java.base/sun.net.www
  * @run main/othervm -Dhttp.nonProxyHosts="" -Dhttp.auth.digest.validateProxy=true B6870935
+ * @run main/othervm -Djava.net.preferIPv6Addresses=true
+ *                   -Dhttp.nonProxyHosts="" -Dhttp.auth.digest.validateProxy=true B6870935
  */
 
 import java.io.*;
@@ -80,18 +82,21 @@ public class B6870935 {
 
         public void run () {
             try {
+                System.out.println("Server started");
                 Socket s1 = s.accept ();
                 is = s1.getInputStream ();
                 os = s1.getOutputStream ();
                 is.read ();
                 os.write (reply1.getBytes());
+                System.out.println("First response sent");
                 Thread.sleep (2000);
                 s1.close ();
+                System.out.println("First connection closed");
 
                 s1 = s.accept ();
                 is = s1.getInputStream ();
                 os = s1.getOutputStream ();
-                is.read ();
+                // is.read ();
                 // need to get the cnonce out of the response
                 MessageHeader header = new MessageHeader (is);
                 String raw = header.findValue ("Proxy-Authorization");
@@ -115,12 +120,16 @@ public class B6870935 {
                         cnstring, passwd, username
                 ) +"\r\n";
                 os.write (reply.getBytes());
+                System.out.println("Second response sent");
                 Thread.sleep (2000);
                 s1.close ();
+                System.out.println("Second connection closed");
             }
             catch (Exception e) {
                 System.out.println (e);
                 e.printStackTrace();
+            } finally {
+                System.out.println("Server finished");
             }
         }
 
@@ -225,8 +234,17 @@ public class B6870935 {
         DigestServer server;
         ServerSocket sock;
 
+        InetAddress address = InetAddress.getLoopbackAddress();
+        InetAddress resolved = InetAddress.getByName(address.getHostName());
+        System.out.println("Lookup: "
+                            + address + " -> \"" + address.getHostName() + "\" -> "
+                            + resolved);
+        String proxyHost = address.equals(resolved)
+            ? address.getHostName()
+            : address.getHostAddress();
         try {
-            sock = new ServerSocket (0);
+            sock = new ServerSocket();
+            sock.bind(new InetSocketAddress(address, 0));
             port = sock.getLocalPort ();
         }
         catch (Exception e) {
@@ -238,12 +256,12 @@ public class B6870935 {
         server.start ();
 
         try  {
-
             Authenticator.setDefault (new MyAuthenticator ());
-            SocketAddress addr = new InetSocketAddress (InetAddress.getLoopbackAddress(), port);
+            SocketAddress addr = InetSocketAddress.createUnresolved(proxyHost, port);
             Proxy proxy = new Proxy (Proxy.Type.HTTP, addr);
             String s = "http://www.ibm.com";
             URL url = new URL(s);
+            System.out.println("opening connection through proxy: " + addr);
             java.net.URLConnection conURL =  url.openConnection(proxy);
 
             InputStream in = conURL.getInputStream();
@@ -255,6 +273,9 @@ public class B6870935 {
         catch(IOException e) {
             e.printStackTrace();
             error = true;
+            sock.close();
+        } finally {
+            server.join();
         }
         if (error) {
             throw new RuntimeException ("Error in test");

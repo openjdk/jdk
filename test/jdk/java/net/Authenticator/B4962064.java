@@ -28,6 +28,7 @@
  * @library ../../../sun/net/www/httptest/
  * @build HttpCallback TestHttpServer ClosedChannelList HttpTransaction
  * @run main/othervm B4962064
+ * @run main/othervm -Djava.net.preferIPv6Addresses=true B4962064
  * @summary Extend Authenticator to provide access to request URI and server/proxy
  */
 
@@ -91,18 +92,24 @@ public class B4962064 implements HttpCallback {
 
     public static void main (String[] args) throws Exception {
         try {
-            server = new TestHttpServer (new B4962064(), 1, 10, 0);
+            InetAddress address = InetAddress.getLoopbackAddress();
+            InetAddress resolved = InetAddress.getByName(address.getHostName());
+            System.out.println("Lookup: " + address + " -> \""
+                               + address.getHostName() + "\" -> "
+                               + resolved);
+            server = new TestHttpServer (new B4962064(), 1, 10, address, 0);
             int port = server.getLocalPort();
-            System.setProperty ("http.proxyHost", "localhost");
+            String proxyHost = address.equals(resolved)
+                ? address.getHostName()
+                : address.getHostAddress();
+            System.setProperty ("http.proxyHost", proxyHost);
             System.setProperty ("http.proxyPort", Integer.toString (port));
             MyAuthenticator auth = new MyAuthenticator ();
             Authenticator.setDefault (auth);
             System.out.println ("Server started: listening on port: " + port);
-            //String s = new String ("http://localhost:"+port+"/d1/d2/d3/foo.html");
             String s = new String ("http://foo.com/d1/d2/d3/foo.html");
             urlsave = new URL (s);
             client (s);
-            //s = new String ("http://localhost:"+port+"/dr/d3/foo.html");
             s = new String ("http://bar.com/dr/d3/foo.html");
             urlsave = new URL (s);
             client (s);

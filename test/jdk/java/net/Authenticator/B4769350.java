@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,6 +27,8 @@
  * @modules jdk.httpserver
  * @run main/othervm B4769350 server
  * @run main/othervm B4769350 proxy
+ * @run main/othervm -Djava.net.preferIPv6Addresses=true B4769350 server
+ * @run main/othervm -Djava.net.preferIPv6Addresses=true B4769350 proxy
  * @summary proxy authentication username and password caching only works in serial case
  * Run in othervm since the test sets system properties that are read by the
  * networking stack and cached when the HTTP handler is invoked, and previous
@@ -99,7 +101,8 @@ public class B4769350 {
         }
 
         public void startServer() {
-            InetSocketAddress addr = new InetSocketAddress(0);
+            InetAddress loopback = InetAddress.getLoopbackAddress();
+            InetSocketAddress addr = new InetSocketAddress(loopback, 0);
 
             try {
                 server = HttpServer.create(addr, 0);
@@ -456,15 +459,26 @@ public class B4769350 {
             System.out.println ("Server: listening on port: "
                     + server.getPort());
             if (proxy) {
-                System.setProperty ("http.proxyHost", "localhost");
+                System.setProperty ("http.proxyHost",
+                        InetAddress.getLoopbackAddress().getHostAddress());
                 System.setProperty ("http.proxyPort",
                         Integer.toString(server.getPort()));
                 doProxyTests ("www.foo.com", server);
             } else {
-                doServerTests ("localhost:"+server.getPort(), server);
+                ProxySelector.setDefault(ProxySelector.of(null));
+                doServerTests (authority(server.getPort()), server);
             }
         }
 
+    }
+
+    static String authority(int port) {
+        InetAddress loopback = InetAddress.getLoopbackAddress();
+        String hoststr = loopback.getHostAddress();
+        if (hoststr.indexOf(':') > -1) {
+            hoststr = "[" + hoststr + "]";
+        }
+        return hoststr + ":" + port;
     }
 
     public static void except (String s, Server server) {
@@ -496,4 +510,3 @@ public class B4769350 {
         }
     }
 }
-

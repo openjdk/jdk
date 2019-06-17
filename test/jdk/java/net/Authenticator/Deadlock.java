@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2010, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,7 +25,10 @@
  * @test
  * @bug 6648001
  * @modules jdk.httpserver
+ * @library /test/lib
  * @run main/othervm/timeout=20 -ea:sun.net.www.protocol.http.AuthenticationInfo -Dhttp.auth.serializeRequests=true Deadlock
+ * @run main/othervm/timeout=20 -Djava.net.preferIPv6Addresses=true
+ *                              -ea:sun.net.www.protocol.http.AuthenticationInfo -Dhttp.auth.serializeRequests=true Deadlock
  * @summary  cancelling HTTP authentication causes deadlock
  */
 
@@ -34,8 +37,10 @@ import java.util.concurrent.ExecutorService;
 import java.io.InputStream;
 import java.io.IOException;
 import java.net.HttpURLConnection;
+import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.PasswordAuthentication;
+import java.net.Proxy;
 import java.net.URL;
 import com.sun.net.httpserver.BasicAuthenticator;
 import com.sun.net.httpserver.Headers;
@@ -44,12 +49,14 @@ import com.sun.net.httpserver.HttpExchange;
 import com.sun.net.httpserver.HttpHandler;
 import com.sun.net.httpserver.HttpPrincipal;
 import com.sun.net.httpserver.HttpServer;
+import jdk.test.lib.net.URIBuilder;
 
 public class Deadlock {
 
     public static void main (String[] args) throws Exception {
         Handler handler = new Handler();
-        InetSocketAddress addr = new InetSocketAddress (0);
+        InetAddress loopback = InetAddress.getLoopbackAddress();
+        InetSocketAddress addr = new InetSocketAddress (loopback, 0);
         HttpServer server = HttpServer.create(addr, 0);
         HttpContext ctx = server.createContext("/test", handler);
         BasicAuthenticator a = new BasicAuthenticator("foobar@test.realm") {
@@ -97,8 +104,13 @@ public class Deadlock {
             URL url;
             HttpURLConnection urlc;
             try {
-                url = new URL("http://localhost:"+server.getAddress().getPort()+"/test/foo.html");
-                urlc = (HttpURLConnection)url.openConnection ();
+                url = URIBuilder.newBuilder()
+                    .scheme("http")
+                    .loopback()
+                    .port(server.getAddress().getPort())
+                    .path("/test/foo.html")
+                    .toURLUnchecked();
+                urlc = (HttpURLConnection)url.openConnection (Proxy.NO_PROXY);
             } catch (IOException e) {
                 error = true;
                 return;
