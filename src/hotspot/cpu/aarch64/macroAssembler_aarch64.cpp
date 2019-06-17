@@ -2681,7 +2681,7 @@ Address MacroAssembler::spill_address(int size, int offset, Register tmp)
   if ((offset & (size-1)) && offset >= (1<<8)) {
     add(tmp, base, offset & ((1<<12)-1));
     base = tmp;
-    offset &= -1<<12;
+    offset &= -1u<<12;
   }
 
   if (offset >= (1<<12) * size) {

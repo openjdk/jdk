@@ -38,8 +38,6 @@ class InterpreterMacroAssembler: public MacroAssembler {
  protected:
 
  protected:
-  using MacroAssembler::call_VM_leaf_base;
-
   // Interpreter specific version of call_VM_base
   using MacroAssembler::call_VM_leaf_base;
 
