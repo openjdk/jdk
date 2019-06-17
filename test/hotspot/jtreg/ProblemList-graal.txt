@@ -43,8 +43,6 @@ compiler/jsr292/InvokerSignatureMismatch.java                   8223807   generi
 
 compiler/graalunit/JttThreadsTest.java                          8207757   generic-all
 
-compiler/jvmci/SecurityRestrictionsTest.java                    8181837   generic-all
-
 compiler/unsafe/UnsafeGetConstantField.java                     8181833   generic-all
 compiler/unsafe/UnsafeGetStableArrayElement.java                8181833   generic-all
 compiler/unsafe/UnsafeOffHeapBooleanTest.java                   8181833   generic-all
