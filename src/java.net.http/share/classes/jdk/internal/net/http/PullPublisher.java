@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -103,11 +103,19 @@ class PullPublisher<T> implements Flow.Publisher<T> {
                 }
 
                 while (demand.tryDecrement() && !cancelled) {
-                    if (!iter.hasNext()) {
-                        break;
-                    } else {
-                        subscriber.onNext(iter.next());
+                    T next;
+                    try {
+                        if (!iter.hasNext()) {
+                            break;
+                        }
+                        next = iter.next();
+                    } catch (Throwable t1) {
+                        completed = true;
+                        pullScheduler.stop();
+                        subscriber.onError(t1);
+                        return;
                     }
+                    subscriber.onNext(next);
                 }
                 if (!iter.hasNext() && !cancelled) {
                     completed = true;
@@ -123,7 +131,7 @@ class PullPublisher<T> implements Flow.Publisher<T> {
                 return;  // no-op
 
             if (n <= 0) {
-                error = new IllegalArgumentException("illegal non-positive request:" + n);
+                error = new IllegalArgumentException("non-positive subscription request: " + n);
             } else {
                 demand.increase(n);
             }

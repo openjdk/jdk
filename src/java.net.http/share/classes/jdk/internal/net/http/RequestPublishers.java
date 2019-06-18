@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -271,12 +271,13 @@ public final class RequestPublishers {
 
         @Override
         public void subscribe(Flow.Subscriber<? super ByteBuffer> subscriber) {
-            InputStream is;
+            InputStream is = null;
+            Throwable t = null;
             if (System.getSecurityManager() == null) {
                 try {
                     is = new FileInputStream(file);
                 } catch (IOException ioe) {
-                    throw new UncheckedIOException(ioe);
+                    t = ioe;
                 }
             } else {
                 try {
@@ -284,11 +285,16 @@ public final class RequestPublishers {
                             () -> new FileInputStream(file);
                     is = AccessController.doPrivileged(pa, null, filePermissions);
                 } catch (PrivilegedActionException pae) {
-                    throw new UncheckedIOException((IOException) pae.getCause());
+                    t = pae.getCause();
                 }
             }
-            PullPublisher<ByteBuffer> publisher =
-                    new PullPublisher<>(() -> new StreamIterator(is));
+            final InputStream fis = is;
+            PullPublisher<ByteBuffer> publisher;
+            if (t == null) {
+                publisher = new PullPublisher<>(() -> new StreamIterator(fis));
+            } else {
+                publisher = new PullPublisher<>(null, t);
+            }
             publisher.subscribe(subscriber);
         }
 
