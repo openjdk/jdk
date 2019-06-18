@@ -2178,6 +2178,11 @@ void ShenandoahHeap::op_final_updaterefs() {
     concurrent_mark()->update_thread_roots(ShenandoahPhaseTimings::final_update_refs_roots);
   }
 
+  // Has to be done before cset is clear
+  if (ShenandoahVerify) {
+    verifier()->verify_roots_in_to_space();
+  }
+
   ShenandoahGCPhase final_update_refs(ShenandoahPhaseTimings::final_update_refs_recycle);
 
   trash_cset_regions();
@@ -2185,7 +2190,6 @@ void ShenandoahHeap::op_final_updaterefs() {
   set_update_refs_in_progress(false);
 
   if (ShenandoahVerify) {
-    verifier()->verify_roots_no_forwarded();
     verifier()->verify_after_updaterefs();
   }
 
