@@ -28,7 +28,10 @@ package jdk.jshell;
 /**
  * Common interface for all wrappings of snippet source to Java source.
  *
- * @author Robert Field
+ * Snippet index is index into the source of the snippet.  Note: If the snippet is a sub-range of
+ * the source, the index is not the index in the snippet.
+ *
+ * Wrap index is index into the wrapped snippet.
  */
 interface GeneralWrap {
 
