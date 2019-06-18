@@ -4501,8 +4501,8 @@ JVMState* LibraryCallKit::arraycopy_restore_alloc_state(AllocateArrayNode* alloc
     ciMethod* trap_method = alloc->jvms()->method();
     int trap_bci = alloc->jvms()->bci();
 
-    if (!C->too_many_traps(trap_method, trap_bci, Deoptimization::Reason_intrinsic) &
-          !C->too_many_traps(trap_method, trap_bci, Deoptimization::Reason_null_check)) {
+    if (!C->too_many_traps(trap_method, trap_bci, Deoptimization::Reason_intrinsic) &&
+        !C->too_many_traps(trap_method, trap_bci, Deoptimization::Reason_null_check)) {
       // Make sure there's no store between the allocation and the
       // arraycopy otherwise visible side effects could be rexecuted
       // in case of deoptimization and cause incorrect execution.
