@@ -91,8 +91,8 @@ JNIEXPORT void JNICALL Java_sun_security_pkcs11_wrapper_PKCS11_C_1SignInit
             (ckpMechanism->pParameter == NULL)) {
         freeCKMechanismPtr(ckpMechanism);
     } else {
-        (*env)->SetLongField(env, jMechanism, mech_pHandleID, (jlong)ckpMechanism);
-        TRACE1("DEBUG C_SignInit: stored pMech = 0x%lX\n", (jlong)ckpMechanism);
+        (*env)->SetLongField(env, jMechanism, mech_pHandleID, ptr_to_jlong(ckpMechanism));
+        TRACE1("DEBUG C_SignInit: stored pMech = 0x%lX\n", ptr_to_jlong(ckpMechanism));
     }
     TRACE0("FINISHED\n");
 }
@@ -303,8 +303,8 @@ JNIEXPORT void JNICALL Java_sun_security_pkcs11_wrapper_PKCS11_C_1SignRecoverIni
             (ckpMechanism->pParameter == NULL)) {
         freeCKMechanismPtr(ckpMechanism);
     } else {
-        (*env)->SetLongField(env, jMechanism, mech_pHandleID, (jlong)ckpMechanism);
-        TRACE1("DEBUG C_SignRecoverInit, stored pMech = 0x%lX\n", (jlong)ckpMechanism);
+        (*env)->SetLongField(env, jMechanism, mech_pHandleID, ptr_to_jlong(ckpMechanism));
+        TRACE1("DEBUG C_SignRecoverInit, stored pMech = 0x%lX\n", ptr_to_jlong(ckpMechanism));
     }
     TRACE0("FINISHED\n");
 }
@@ -413,8 +413,8 @@ JNIEXPORT void JNICALL Java_sun_security_pkcs11_wrapper_PKCS11_C_1VerifyInit
             (ckpMechanism->pParameter == NULL)) {
         freeCKMechanismPtr(ckpMechanism);
     } else {
-        (*env)->SetLongField(env, jMechanism, mech_pHandleID, (jlong)ckpMechanism);
-        TRACE1("DEBUG C_VerifyInit: stored pMech = 0x%lX\n", (jlong)ckpMechanism);
+        (*env)->SetLongField(env, jMechanism, mech_pHandleID, ptr_to_jlong(ckpMechanism));
+        TRACE1("DEBUG C_VerifyInit: stored pMech = 0x%lX\n", ptr_to_jlong(ckpMechanism));
     }
     TRACE0("FINISHED\n");
 }
@@ -601,8 +601,8 @@ JNIEXPORT void JNICALL Java_sun_security_pkcs11_wrapper_PKCS11_C_1VerifyRecoverI
             (ckpMechanism->pParameter == NULL)) {
         freeCKMechanismPtr(ckpMechanism);
     } else {
-        (*env)->SetLongField(env, jMechanism, mech_pHandleID, (jlong)ckpMechanism);
-        TRACE1("DEBUG C_VerifyRecoverInit: stored pMech = 0x%lX\n", (jlong)ckpMechanism);
+        (*env)->SetLongField(env, jMechanism, mech_pHandleID, ptr_to_jlong(ckpMechanism));
+        TRACE1("DEBUG C_VerifyRecoverInit: stored pMech = 0x%lX\n", ptr_to_jlong(ckpMechanism));
     }
     TRACE0("FINISHED\n");
 }

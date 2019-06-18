@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2010, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 6942649
+ * @bug 6942649 8225748
  * @summary add hidden option to identify location and version of javac classes
  * @modules jdk.compiler
  */
@@ -60,7 +60,7 @@ public class T6942649 {
                 throw new Exception("location of class not found in output");
         }
 
-        if (!out.contains("MD5 checksum: "))
+        if (!out.contains("SHA-256 checksum: "))
             throw new Exception("checksum not found in output");
     }
 }

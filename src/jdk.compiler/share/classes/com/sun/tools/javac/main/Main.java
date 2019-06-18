@@ -477,7 +477,7 @@ public class Main {
         }
 
         try (InputStream in = getClass().getResourceAsStream('/' + className.replace('.', '/') + ".class")) {
-            final String algorithm = "MD5";
+            final String algorithm = "SHA-256";
             byte[] digest;
             MessageDigest md = MessageDigest.getInstance(algorithm);
             try (DigestInputStream din = new DigestInputStream(in, md)) {

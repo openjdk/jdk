@@ -2861,14 +2861,17 @@ void SystemDictionary::dump(outputStream *st, bool verbose) {
 }
 
 TableStatistics SystemDictionary::placeholders_statistics() {
+  MutexLocker ml(SystemDictionary_lock);
   return placeholders()->statistics_calculate();
 }
 
 TableStatistics SystemDictionary::loader_constraints_statistics() {
+  MutexLocker ml(SystemDictionary_lock);
   return constraints()->statistics_calculate();
 }
 
 TableStatistics SystemDictionary::protection_domain_cache_statistics() {
+  MutexLocker ml(SystemDictionary_lock);
   return pd_cache_table()->statistics_calculate();
 }
 
