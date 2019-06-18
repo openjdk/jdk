@@ -29,6 +29,7 @@
 #include "gc/g1/heapRegion.hpp"
 #include "gc/shared/memset_with_concurrent_readers.hpp"
 #include "gc/shared/space.hpp"
+#include "runtime/atomic.hpp"
 
 inline HeapWord* G1BlockOffsetTablePart::block_start(const void* addr) {
   if (addr >= _space->bottom() && addr < _space->end()) {
@@ -51,7 +52,11 @@ inline HeapWord* G1BlockOffsetTablePart::block_start_const(const void* addr) con
 
 u_char G1BlockOffsetTable::offset_array(size_t index) const {
   check_index(index, "index out of range");
-  return _offset_array[index];
+  return Atomic::load(&_offset_array[index]);
+}
+
+void G1BlockOffsetTable::set_offset_array_raw(size_t index, u_char offset) {
+  Atomic::store(offset, &_offset_array[index]);
 }
 
 void G1BlockOffsetTable::set_offset_array(size_t index, u_char offset) {
@@ -71,7 +76,8 @@ void G1BlockOffsetTable::set_offset_array(size_t left, size_t right, u_char offs
   check_index(right, "right index out of range");
   assert(left <= right, "indexes out of order");
   size_t num_cards = right - left + 1;
-  memset_with_concurrent_readers(&_offset_array[left], offset, num_cards);
+  memset_with_concurrent_readers
+    (const_cast<u_char*> (&_offset_array[left]), offset, num_cards);
 }
 
 // Variant of index_for that does not check the index for validity.

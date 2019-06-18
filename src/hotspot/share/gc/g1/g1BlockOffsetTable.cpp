@@ -391,8 +391,6 @@ G1BlockOffsetTablePart::print_on(outputStream* out) {
 #endif // !PRODUCT
 
 HeapWord* G1BlockOffsetTablePart::initialize_threshold_raw() {
-  assert(!G1CollectedHeap::heap()->is_in_reserved(_bot->_offset_array),
-         "just checking");
   _next_offset_index = _bot->index_for_raw(_space->bottom());
   _next_offset_index++;
   _next_offset_threshold =
@@ -401,8 +399,6 @@ HeapWord* G1BlockOffsetTablePart::initialize_threshold_raw() {
 }
 
 void G1BlockOffsetTablePart::zero_bottom_entry_raw() {
-  assert(!G1CollectedHeap::heap()->is_in_reserved(_bot->_offset_array),
-         "just checking");
   size_t bottom_index = _bot->index_for_raw(_space->bottom());
   assert(_bot->address_for_index_raw(bottom_index) == _space->bottom(),
          "Precondition of call");
@@ -410,8 +406,6 @@ void G1BlockOffsetTablePart::zero_bottom_entry_raw() {
 }
 
 HeapWord* G1BlockOffsetTablePart::initialize_threshold() {
-  assert(!G1CollectedHeap::heap()->is_in_reserved(_bot->_offset_array),
-         "just checking");
   _next_offset_index = _bot->index_for(_space->bottom());
   _next_offset_index++;
   _next_offset_threshold =
