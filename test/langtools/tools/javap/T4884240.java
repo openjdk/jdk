@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 4884240
+ * @bug 4884240 8225748
  * @summary additional option required for javap
  * @modules jdk.jdeps/com.sun.tools.javap
  */
@@ -47,7 +47,7 @@ public class T4884240 {
         if (lines.length < 3
             || !lines[0].trim().startsWith("Classfile")
             || !lines[1].trim().startsWith("Last modified")
-            || !lines[2].trim().startsWith("MD5")) {
+            || !lines[2].trim().startsWith("SHA-256")) {
             System.out.println(sw);
             throw new Exception("unexpected output");
         }
