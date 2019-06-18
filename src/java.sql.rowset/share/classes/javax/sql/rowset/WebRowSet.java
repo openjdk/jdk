@@ -44,7 +44,7 @@ import org.xml.sax.*;
  * URI:
  * <ul>
  * <li>
- * <a href="http://java.sun.com/xml/ns/jdbc/webrowset.xsd">http://java.sun.com/xml/ns/jdbc/webrowset.xsd</a>
+ * <a href="http://xmlns.jcp.org/xml/ns//jdbc/webrowset.xsd">http://xmlns.jcp.org/xml/ns//jdbc/webrowset.xsd</a>
  * </li>
  * </ul>
  * It describes the standard XML document format required when describing a
