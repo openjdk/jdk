@@ -49,8 +49,6 @@ public class CoverageExtras {
 
         check(Checker.Flag.TABLE_HAS_CAPTION, Checker.Flag.valueOf("TABLE_HAS_CAPTION"), Checker.Flag.values());
 
-        check(Entity.nbsp, Entity.valueOf("nbsp"), Entity.values());
-
         check(Messages.Group.ACCESSIBILITY, Messages.Group.valueOf("ACCESSIBILITY"), Messages.Group.values());
     }
 

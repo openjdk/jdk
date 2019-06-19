@@ -82,6 +82,8 @@ class InterpreterMacroAssembler: public MacroAssembler {
   // load cpool->resolved_klass_at(index)
   void load_resolved_klass_at_offset(Register Rcpool, Register Roffset, Register Rklass);
 
+  void load_resolved_method_at_index(int byte_no, Register cache, Register method);
+
   void load_receiver(Register Rparam_count, Register Rrecv_dst);
 
   // helpers for expression stack

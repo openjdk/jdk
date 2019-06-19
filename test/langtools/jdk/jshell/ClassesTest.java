@@ -344,7 +344,7 @@ public class ClassesTest extends KullaTesting {
                    "  public T get() {return null;}\n" +
                    "}",
                    added(VALID),
-                   ste(aClass, Status.RECOVERABLE_DEFINED, Status.VALID, true, null));
+                   ste(aClass, Status.RECOVERABLE_DEFINED, Status.VALID, false, null));
         assertEval("new A()");
     }
 

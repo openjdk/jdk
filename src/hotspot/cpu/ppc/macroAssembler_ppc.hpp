@@ -559,6 +559,11 @@ class MacroAssembler: public Assembler {
                            Register temp2_reg,
                            Label& L_success);
 
+  void clinit_barrier(Register klass,
+                      Register thread,
+                      Label* L_fast_path = NULL,
+                      Label* L_slow_path = NULL);
+
   // Method handle support (JSR 292).
   void check_method_handle_type(Register mtype_reg, Register mh_reg, Register temp_reg, Label& wrong_method_type);
 
@@ -722,6 +727,7 @@ class MacroAssembler: public Assembler {
 
   void resolve_oop_handle(Register result);
   void load_mirror_from_const_method(Register mirror, Register const_method);
+  void load_method_holder(Register holder, Register method);
 
   static int instr_size_for_decode_klass_not_null();
   void decode_klass_not_null(Register dst, Register src = noreg);

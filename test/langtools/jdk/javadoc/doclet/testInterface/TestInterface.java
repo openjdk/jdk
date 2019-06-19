@@ -124,10 +124,7 @@ public class TestInterface extends JavadocTester {
                 "<dt><span class=\"overrideSpecifyLabel\">Specified by:</span></dt>\n");
 
         checkOutput("pkg/ClassWithStaticMembers.html", true,
-                "<h3>f</h3>\n"
-                + "<a id=\"f\">\n"
-                + "<!--   -->\n"
-                + "</a>\n"
+                "<h3><a id=\"f\">f</a></h3>\n"
                 + "<div class=\"memberSignature\"><span class=\"modifiers\">public static</span>&nbsp;"
                 + "<span class=\"returnType\">int</span>&nbsp;<span class=\"memberName\">f</span></div>\n"
                 + "<div class=\"block\">A hider field</div>",
@@ -139,10 +136,7 @@ public class TestInterface extends JavadocTester {
                 + "<div class=\"block\">A hider method</div>\n"
                 + "</td>\n",
 
-                "<h3>staticMethod</h3>\n"
-                + "<a id=\"staticMethod()\">\n"
-                + "<!--   -->\n"
-                + "</a>\n"
+                "<h3><a id=\"staticMethod()\">staticMethod</a></h3>\n"
                 + "<div class=\"memberSignature\"><span class=\"modifiers\">public static</span>&nbsp;"
                 + "<span class=\"returnType\">void</span>&nbsp;<span class=\"memberName\">staticMethod</span>()</div>\n"
                 + "<div class=\"block\"><span class=\"descfrmTypeLabel\">"

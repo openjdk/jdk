@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,14 +25,17 @@
  * @test
  * @bug 4921848
  * @modules java.base/sun.net.www
- * @library ../../../sun/net/www/httptest/
+ * @library ../../../sun/net/www/httptest/ /test/lib
  * @build HttpCallback TestHttpServer ClosedChannelList HttpTransaction
  * @run main/othervm -Dhttp.auth.preference=basic B4921848
+ * @run main/othervm -Djava.net.preferIPv6Addresses=true
+ *                   -Dhttp.auth.preference=basic B4921848
  * @summary Allow user control over authentication schemes
  */
 
 import java.io.*;
 import java.net.*;
+import jdk.test.lib.net.URIBuilder;
 
 public class B4921848 implements HttpCallback {
 
@@ -88,10 +91,19 @@ public class B4921848 implements HttpCallback {
     public static void main (String[] args) throws Exception {
         MyAuthenticator auth = new MyAuthenticator ();
         Authenticator.setDefault (auth);
+        ProxySelector.setDefault(ProxySelector.of(null)); // no proxy
         try {
-            server = new TestHttpServer (new B4921848(), 1, 10, 0);
-            System.out.println ("Server started: listening on port: " + server.getLocalPort());
-            client ("http://localhost:"+server.getLocalPort()+"/d1/d2/d3/foo.html");
+            InetAddress loopback = InetAddress.getLoopbackAddress();
+            server = new TestHttpServer (new B4921848(), 1, 10, loopback, 0);
+            String serverURL = URIBuilder.newBuilder()
+                .scheme("http")
+                .loopback()
+                .port(server.getLocalPort())
+                .path("/")
+                .build()
+                .toString();
+            System.out.println("Server: listening at: " + serverURL);
+            client(serverURL + "d1/d2/d3/foo.html");
         } catch (Exception e) {
             if (server != null) {
                 server.terminate();

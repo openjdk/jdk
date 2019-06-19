@@ -471,8 +471,8 @@ void ZHeap::relocate() {
 void ZHeap::object_iterate(ObjectClosure* cl, bool visit_referents) {
   assert(SafepointSynchronize::is_at_safepoint(), "Should be at safepoint");
 
-  ZHeapIterator iter(visit_referents);
-  iter.objects_do(cl);
+  ZHeapIterator iter;
+  iter.objects_do(cl, visit_referents);
 }
 
 void ZHeap::serviceability_initialize() {

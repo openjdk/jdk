@@ -33,8 +33,11 @@ import java.util.concurrent.Executors;
 /*
  * @test
  * @bug 7169142
+ * @key intermittent
  * @modules jdk.httpserver
- * @summary CookieHandler does not work with localhost
+ * @summary CookieHandler does not work with localhost. This requires
+ *    binding to the wildcard address and might fail intermittently
+ *    due to port reuse issues.
  * @run main/othervm LocalHostCookie
  */
 public class LocalHostCookie {
@@ -126,4 +129,3 @@ public class LocalHostCookie {
         }
     }
 }
-

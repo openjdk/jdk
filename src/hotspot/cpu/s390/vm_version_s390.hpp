@@ -349,6 +349,9 @@ class VM_Version: public Abstract_VM_Version {
   // Override Abstract_VM_Version implementation
   static void print_platform_virtualization_info(outputStream*);
 
+  // s390 supports fast class initialization checks for static methods.
+  static bool supports_fast_class_init_checks() { return true; }
+
   // CPU feature query functions
   static const char* get_model_string()       { return _model_string; }
   static bool has_StoreFacilityListExtended() { return  (_features[0] & StoreFacilityListExtendedMask) == StoreFacilityListExtendedMask; }

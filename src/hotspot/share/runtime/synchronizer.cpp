@@ -242,7 +242,6 @@ bool ObjectSynchronizer::quick_enter(oop obj, Thread * Self,
 
     if (owner == NULL && Atomic::replace_if_null(Self, &(m->_owner))) {
       assert(m->_recursions == 0, "invariant");
-      assert(m->_owner == Self, "invariant");
       return true;
     }
   }
@@ -1030,6 +1029,7 @@ ObjectMonitor* ObjectSynchronizer::omAlloc(Thread * Self) {
   // scavenge costs.  As usual, we lean toward time in space-time
   // tradeoffs.
   const int MAXPRIVATE = 1024;
+  stringStream ss;
   for (;;) {
     ObjectMonitor * m;
 
@@ -1065,7 +1065,6 @@ ObjectMonitor* ObjectSynchronizer::omAlloc(Thread * Self) {
         ObjectMonitor * take = gFreeList;
         gFreeList = take->FreeNext;
         guarantee(take->object() == NULL, "invariant");
-        guarantee(!take->is_busy(), "invariant");
         take->Recycle();
         omRelease(Self, take, false);
       }
@@ -1167,7 +1166,10 @@ void ObjectSynchronizer::omRelease(Thread * Self, ObjectMonitor * m,
                                    bool fromPerThreadAlloc) {
   guarantee(m->header() == NULL, "invariant");
   guarantee(m->object() == NULL, "invariant");
-  guarantee(((m->is_busy()|m->_recursions) == 0), "freeing in-use monitor");
+  stringStream ss;
+  guarantee((m->is_busy() | m->_recursions) == 0, "freeing in-use monitor: "
+            "%s, recursions=" INTPTR_FORMAT, m->is_busy_to_string(&ss),
+            m->_recursions);
   // Remove from omInUseList
   if (fromPerThreadAlloc) {
     ObjectMonitor* cur_mid_in_use = NULL;
@@ -1220,16 +1222,14 @@ void ObjectSynchronizer::omFlush(Thread * Self) {
   int tally = 0;
   if (list != NULL) {
     ObjectMonitor * s;
-    // The thread is going away, the per-thread free monitors
-    // are freed via set_owner(NULL)
-    // Link them to tail, which will be linked into the global free list
-    // gFreeList below, under the gListLock
+    // The thread is going away. Set 'tail' to the last per-thread free
+    // monitor which will be linked to gFreeList below under the gListLock.
+    stringStream ss;
     for (s = list; s != NULL; s = s->FreeNext) {
       tally++;
       tail = s;
       guarantee(s->object() == NULL, "invariant");
-      guarantee(!s->is_busy(), "invariant");
-      s->set_owner(NULL);   // redundant but good hygiene
+      guarantee(!s->is_busy(), "must be !is_busy: %s", s->is_busy_to_string(&ss));
     }
     guarantee(tail != NULL, "invariant");
     assert(Self->omFreeCount == tally, "free-count off");
@@ -1379,7 +1379,6 @@ ObjectMonitor* ObjectSynchronizer::inflate(Thread * Self,
       // in which INFLATING appears in the mark.
       m->Recycle();
       m->_Responsible  = NULL;
-      m->_recursions   = 0;
       m->_SpinDuration = ObjectMonitor::Knob_SpinLimit;   // Consider: maintain by type/class
 
       markOop cmp = object->cas_set_mark(markOopDesc::INFLATING(), mark);
@@ -1472,9 +1471,7 @@ ObjectMonitor* ObjectSynchronizer::inflate(Thread * Self,
     // prepare m for installation - set monitor to initial state
     m->Recycle();
     m->set_header(mark);
-    m->set_owner(NULL);
     m->set_object(object);
-    m->_recursions   = 0;
     m->_Responsible  = NULL;
     m->_SpinDuration = ObjectMonitor::Knob_SpinLimit;       // consider: keep metastats by type/class
 
@@ -1925,14 +1922,15 @@ void ObjectSynchronizer::audit_and_print_stats(bool on_exit) {
 // Check a free monitor entry; log any errors.
 void ObjectSynchronizer::chk_free_entry(JavaThread * jt, ObjectMonitor * n,
                                         outputStream * out, int *error_cnt_p) {
+  stringStream ss;
   if (n->is_busy()) {
     if (jt != NULL) {
       out->print_cr("ERROR: jt=" INTPTR_FORMAT ", monitor=" INTPTR_FORMAT
-                    ": free per-thread monitor must not be busy.", p2i(jt),
-                    p2i(n));
+                    ": free per-thread monitor must not be busy: %s", p2i(jt),
+                    p2i(n), n->is_busy_to_string(&ss));
     } else {
       out->print_cr("ERROR: monitor=" INTPTR_FORMAT ": free global monitor "
-                    "must not be busy.", p2i(n));
+                    "must not be busy: %s", p2i(n), n->is_busy_to_string(&ss));
     }
     *error_cnt_p = *error_cnt_p + 1;
   }
@@ -2111,6 +2109,7 @@ void ObjectSynchronizer::log_in_use_monitor_details(outputStream * out,
     Thread::muxAcquire(&gListLock, "log_in_use_monitor_details");
   }
 
+  stringStream ss;
   if (gOmInUseCount > 0) {
     out->print_cr("In-use global monitor info:");
     out->print_cr("(B -> is_busy, H -> has hash code, L -> lock status)");
@@ -2121,9 +2120,14 @@ void ObjectSynchronizer::log_in_use_monitor_details(outputStream * out,
       const oop obj = (oop) n->object();
       const markOop mark = n->header();
       ResourceMark rm;
-      out->print_cr(INTPTR_FORMAT "  %d%d%d  " INTPTR_FORMAT "  %s", p2i(n),
-                    n->is_busy() != 0, mark->hash() != 0, n->owner() != NULL,
-                    p2i(obj), obj->klass()->external_name());
+      out->print(INTPTR_FORMAT "  %d%d%d  " INTPTR_FORMAT "  %s", p2i(n),
+                 n->is_busy() != 0, mark->hash() != 0, n->owner() != NULL,
+                 p2i(obj), obj->klass()->external_name());
+      if (n->is_busy() != 0) {
+        out->print(" (%s)", n->is_busy_to_string(&ss));
+        ss.reset();
+      }
+      out->cr();
     }
   }
 
@@ -2141,10 +2145,15 @@ void ObjectSynchronizer::log_in_use_monitor_details(outputStream * out,
       const oop obj = (oop) n->object();
       const markOop mark = n->header();
       ResourceMark rm;
-      out->print_cr(INTPTR_FORMAT "  " INTPTR_FORMAT "  %d%d%d  " INTPTR_FORMAT
-                    "  %s", p2i(jt), p2i(n), n->is_busy() != 0,
-                    mark->hash() != 0, n->owner() != NULL, p2i(obj),
-                    obj->klass()->external_name());
+      out->print(INTPTR_FORMAT "  " INTPTR_FORMAT "  %d%d%d  " INTPTR_FORMAT
+                 "  %s", p2i(jt), p2i(n), n->is_busy() != 0,
+                 mark->hash() != 0, n->owner() != NULL, p2i(obj),
+                 obj->klass()->external_name());
+      if (n->is_busy() != 0) {
+        out->print(" (%s)", n->is_busy_to_string(&ss));
+        ss.reset();
+      }
+      out->cr();
     }
   }
 

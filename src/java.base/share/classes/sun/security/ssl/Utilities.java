@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -61,8 +61,8 @@ final class Utilities {
 
         int size = serverNames.size();
         List<SNIServerName> sniList = (size != 0) ?
-                new ArrayList<SNIServerName>(serverNames) :
-                new ArrayList<SNIServerName>(1);
+                new ArrayList<>(serverNames) :
+                new ArrayList<>(1);
 
         boolean reset = false;
         for (int i = 0; i < size; i++) {
@@ -147,7 +147,7 @@ final class Utilities {
     static String indent(String source, String prefix) {
         StringBuilder builder = new StringBuilder();
         if (source == null) {
-             builder.append("\n" + prefix + "<blank message>");
+             builder.append("\n").append(prefix).append("<blank message>");
         } else {
             String[] lines = lineBreakPatern.split(source);
             boolean isFirst = true;
@@ -231,5 +231,22 @@ final class Utilities {
             b = newarray;
         }
         return b;
+    }
+
+    static void reverseBytes(byte[] arr) {
+        int i = 0;
+        int j = arr.length - 1;
+
+        while (i < j) {
+            swap(arr, i, j);
+            i++;
+            j--;
+        }
+    }
+
+    private static void swap(byte[] arr, int i, int j) {
+        byte tmp = arr[i];
+        arr[i] = arr[j];
+        arr[j] = tmp;
     }
 }

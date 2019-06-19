@@ -917,7 +917,7 @@ public final class Class<T> implements java.io.Serializable,
      *
      * <p>If the superclass is a parameterized type, the {@code Type}
      * object returned must accurately reflect the actual type
-     * parameters used in the source code. The parameterized type
+     * arguments used in the source code. The parameterized type
      * representing the superclass is created if it had not been
      * created before. See the declaration of {@link
      * java.lang.reflect.ParameterizedType ParameterizedType} for the
@@ -1097,7 +1097,7 @@ public final class Class<T> implements java.io.Serializable,
      *
      * <p>If a superinterface is a parameterized type, the
      * {@code Type} object returned for it must accurately reflect
-     * the actual type parameters used in the source code. The
+     * the actual type arguments used in the source code. The
      * parameterized type representing each superinterface is created
      * if it had not been created before. See the declaration of
      * {@link java.lang.reflect.ParameterizedType ParameterizedType}

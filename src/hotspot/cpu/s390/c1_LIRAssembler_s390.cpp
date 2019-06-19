@@ -82,7 +82,18 @@ int LIR_Assembler::check_icache() {
 }
 
 void LIR_Assembler::clinit_barrier(ciMethod* method) {
-  ShouldNotReachHere(); // not implemented
+  assert(!method->holder()->is_not_initialized(), "initialization should have been started");
+
+  Label L_skip_barrier;
+  Register klass = Z_R1_scratch;
+
+  metadata2reg(method->holder()->constant_encoding(), klass);
+  __ clinit_barrier(klass, Z_thread, &L_skip_barrier /*L_fast_path*/);
+
+  __ load_const_optimized(klass, SharedRuntime::get_handle_wrong_method_stub());
+  __ z_br(klass);
+
+  __ bind(L_skip_barrier);
 }
 
 void LIR_Assembler::osr_entry() {

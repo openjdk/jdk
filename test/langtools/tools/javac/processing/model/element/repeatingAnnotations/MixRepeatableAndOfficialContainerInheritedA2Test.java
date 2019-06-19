@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -35,16 +35,16 @@
  * MixRepeatableAndOfficialContainerInheritedA2Test.java
  */
 
-@BarInherited(value = 0)
+@BarInherited(0)
 class N {}
 
 @ExpectedBase(
         value = BarInherited.class,
-        getAnnotation = "@BarInherited(value=3)",
+        getAnnotation = "@BarInherited(3)",
         getAnnotationsByType = {
-            "@BarInherited(value=1)",
-            "@BarInherited(value=2)",
-            "@BarInherited(value=3)"
+            "@BarInherited(1)",
+            "@BarInherited(2)",
+            "@BarInherited(3)"
         },
         getAllAnnotationMirrors = {
             "@BarInherited(3)",
@@ -61,9 +61,9 @@ class N {}
 @ExpectedContainer(
         value = BarInheritedContainer.class,
         getAnnotation = "@BarInheritedContainer("
-        + "value={@BarInherited(value=1), @BarInherited(value=2)})",
+        + "{@BarInherited(1), @BarInherited(2)})",
         getAnnotationsByType = {"@BarInheritedContainer("
-                + "value={@BarInherited(value=1), @BarInherited(value=2)})"})
-@BarInheritedContainer(value = {@BarInherited(value = 1), @BarInherited(value = 2)})
-@BarInherited(value = 3)
+                + "{@BarInherited(1), @BarInherited(2)})"})
+@BarInheritedContainer({@BarInherited(1), @BarInherited(2)})
+@BarInherited(3)
 class MixRepeatableAndOfficialContainerInheritedA2Test extends N {}

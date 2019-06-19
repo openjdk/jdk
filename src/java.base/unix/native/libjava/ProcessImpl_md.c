@@ -354,6 +354,27 @@ throwIOException(JNIEnv *env, int errnum, const char *defaultDetail)
     free(errmsg);
 }
 
+/**
+ * Throws an IOException with a message composed from the result of waitpid status.
+ */
+static void throwExitCause(JNIEnv *env, int pid, int status) {
+    char ebuf[128];
+    if (WIFEXITED(status)) {
+        snprintf(ebuf, sizeof ebuf,
+            "Failed to exec spawn helper: pid: %d, exit value: %d",
+            pid, WEXITSTATUS(status));
+    } else if (WIFSIGNALED(status)) {
+        snprintf(ebuf, sizeof ebuf,
+            "Failed to exec spawn helper: pid: %d, signal: %d",
+            pid, WTERMSIG(status));
+    } else {
+        snprintf(ebuf, sizeof ebuf,
+            "Failed to exec spawn helper: pid: %d, status: 0x%08x",
+            pid, status);
+    }
+    throwIOException(env, 0, ebuf);
+}
+
 #ifdef DEBUG_PROCESS
 /* Debugging process code is difficult; where to write debug output? */
 static void
@@ -690,9 +711,12 @@ Java_java_lang_ProcessImpl_forkAndExec(JNIEnv *env,
     if (c->sendAlivePing) {
         switch(readFully(fail[0], &errnum, sizeof(errnum))) {
         case 0: /* First exec failed; */
-            waitpid(resultPid, NULL, 0);
-            throwIOException(env, 0, "Failed to exec spawn helper.");
-            goto Catch;
+            {
+                int tmpStatus = 0;
+                int p = waitpid(resultPid, &tmpStatus, 0);
+                throwExitCause(env, p, tmpStatus);
+                goto Catch;
+            }
         case sizeof(errnum):
             assert(errnum == CHILD_IS_ALIVE);
             if (errnum != CHILD_IS_ALIVE) {
@@ -700,7 +724,7 @@ Java_java_lang_ProcessImpl_forkAndExec(JNIEnv *env,
                  * helper should do is to send an alive ping to the parent,
                  * before doing any subsequent work. */
                 throwIOException(env, 0, "Bad code from spawn helper "
-                                         "(Failed to exec spawn helper.");
+                                         "(Failed to exec spawn helper)");
                 goto Catch;
             }
             break;

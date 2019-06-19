@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -536,6 +536,26 @@ public class LinkedHashMap<K,V>
         return ks;
     }
 
+    @Override
+    final <T> T[] keysToArray(T[] a) {
+        Object[] r = a;
+        int idx = 0;
+        for (LinkedHashMap.Entry<K,V> e = head; e != null; e = e.after) {
+            r[idx++] = e.key;
+        }
+        return a;
+    }
+
+    @Override
+    final <T> T[] valuesToArray(T[] a) {
+        Object[] r = a;
+        int idx = 0;
+        for (LinkedHashMap.Entry<K,V> e = head; e != null; e = e.after) {
+            r[idx++] = e.value;
+        }
+        return a;
+    }
+
     final class LinkedKeySet extends AbstractSet<K> {
         public final int size()                 { return size; }
         public final void clear()               { LinkedHashMap.this.clear(); }
@@ -551,6 +571,15 @@ public class LinkedHashMap<K,V>
                                             Spliterator.ORDERED |
                                             Spliterator.DISTINCT);
         }
+
+        public Object[] toArray() {
+            return keysToArray(new Object[size]);
+        }
+
+        public <T> T[] toArray(T[] a) {
+            return keysToArray(prepareArray(a));
+        }
+
         public final void forEach(Consumer<? super K> action) {
             if (action == null)
                 throw new NullPointerException();
@@ -600,6 +629,15 @@ public class LinkedHashMap<K,V>
             return Spliterators.spliterator(this, Spliterator.SIZED |
                                             Spliterator.ORDERED);
         }
+
+        public Object[] toArray() {
+            return valuesToArray(new Object[size]);
+        }
+
+        public <T> T[] toArray(T[] a) {
+            return valuesToArray(prepareArray(a));
+        }
+
         public final void forEach(Consumer<? super V> action) {
             if (action == null)
                 throw new NullPointerException();

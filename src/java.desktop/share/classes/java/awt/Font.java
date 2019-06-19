@@ -2144,9 +2144,10 @@ public class Font implements java.io.Serializable
      * Checks if this {@code Font} has a glyph for the specified
      * character.
      *
-     * <p> <b>Note:</b> This method cannot handle <a
-     * href="../../java/lang/Character.html#supplementary"> supplementary
-     * characters</a>. To support all Unicode characters, including
+     * <p> <b>Note:</b> This method cannot handle
+     * <a href="../../../java.base/java/lang/Character.html#supplementary">
+     * supplementary characters</a>.
+     * To support all Unicode characters, including
      * supplementary characters, use the {@link #canDisplay(int)}
      * method or {@code canDisplayUpTo} methods.
      *

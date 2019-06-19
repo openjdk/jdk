@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -101,12 +101,12 @@ public final class AuFileReader extends SunFileReader {
                 encoding = AudioFormat.Encoding.PCM_FLOAT;
                 sampleSizeInBits = 32;
                 break;
+            case AuFileFormat.AU_DOUBLE:
+                encoding = AudioFormat.Encoding.PCM_FLOAT;
+                sampleSizeInBits = 64;
+                break;
             // we don't support these ...
-            /*          case AuFileFormat.AU_DOUBLE:
-                        encoding = new AudioFormat.DOUBLE;
-                        sampleSizeInBits = 8;
-                        break;
-                        case AuFileFormat.AU_ADPCM_G721:
+            /*          case AuFileFormat.AU_ADPCM_G721:
                         encoding = new AudioFormat.G721_ADPCM;
                         sampleSizeInBits = 16;
                         break;

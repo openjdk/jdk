@@ -53,6 +53,9 @@ public class Tls13PacketSize extends SSLSocketTemplate {
 
     @Override
     protected void runServerApplication(SSLSocket socket) throws Exception {
+        // Set SO_LINGER in case of slow socket
+        socket.setSoLinger(true, 10);
+
         // here comes the test logic
         InputStream sslIS = socket.getInputStream();
         OutputStream sslOS = socket.getOutputStream();
@@ -81,6 +84,9 @@ public class Tls13PacketSize extends SSLSocketTemplate {
      * @see #isCustomizedClientConnection()
      */
     protected void runClientApplication(SSLSocket socket) throws Exception {
+        // Set SO_LINGER in case of slow socket
+        socket.setSoLinger(true, 10);
+
         socket.setEnabledProtocols(new String[] {"TLSv1.3"});
         InputStream sslIS = socket.getInputStream();
         OutputStream sslOS = socket.getOutputStream();

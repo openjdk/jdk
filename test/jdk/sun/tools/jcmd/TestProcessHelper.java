@@ -73,13 +73,21 @@ public class TestProcessHelper {
             .resolve(TEST_PROCESS_MAIN_CLASS_NAME + ".class");
 
     private static final String[] CP_OPTIONS = {"-cp", "-classpath", "--class-path"};
-    private static final String[][] VM_ARGS = {{}, {"-Dtest1=aaa"}, {"-Dtest1=aaa", "-Dtest2=bbb"}};
+    private static final String[][] VM_ARGS = {{}, {"-Dtest1=aaa"}, {"-Dtest1=aaa", "-Dtest2=bbb ccc"}};
     private static final String[][] ARGS = {{}, {"param1"}, {"param1", "param2"}};
     private static final String[] MP_OPTIONS = {"-p", "--module-path"};
-    private static final String[] MODULE_OPTIONS = {"-m", "--module"};
+    private static final String[] MODULE_OPTIONS = {"-m", "--module", "--module="};
     private static final String JAR_OPTION = "-jar";
     private static final String MODULE_NAME = "module1";
+    private static final String[][] EXTRA_MODULAR_OPTIONS = {null,
+            {"--add-opens", "java.base/java.net=ALL-UNNAMED"},
+            {"--add-exports", "java.base/java.net=ALL-UNNAMED"},
+            {"--add-reads", "java.base/java.net=ALL-UNNAMED"},
+            {"--add-modules", "java.management"},
+            {"--limit-modules", "java.management"},
+            {"--upgrade-module-path", "test"}};
 
+    private static final String[] PATCH_MODULE_OPTIONS = {"--patch-module", null};
 
     public static void main(String[] args) throws Exception {
         new TestProcessHelper().runTests();
@@ -97,18 +105,24 @@ public class TestProcessHelper {
         for (String cp : CP_OPTIONS) {
             for (String[] vma : VM_ARGS) {
                 for (String[] arg : ARGS) {
-                    List<String> cmd = new LinkedList<>();
-                    cmd.add(JAVA_PATH);
-                    cmd.add(cp);
-                    cmd.add(TEST_CLASSES.toAbsolutePath().toString());
-                    for (String v : vma) {
-                        cmd.add(v);
+                    for (String[] modularOptions : EXTRA_MODULAR_OPTIONS) {
+                        List<String> cmd = new LinkedList<>();
+                        cmd.add(JAVA_PATH);
+                        cmd.add(cp);
+                        cmd.add(TEST_CLASSES.toAbsolutePath().toString());
+                        for (String v : vma) {
+                            cmd.add(v);
+                        }
+                        if (modularOptions != null) {
+                            cmd.add(modularOptions[0]);
+                            cmd.add(modularOptions[1]);
+                        }
+                        cmd.add(TEST_PROCESS_MAIN_CLASS);
+                        for (String a : arg) {
+                            cmd.add(a);
+                        }
+                        testProcessHelper(cmd, TEST_PROCESS_MAIN_CLASS);
                     }
-                    cmd.add(TEST_PROCESS_MAIN_CLASS);
-                    for (String a : arg) {
-                        cmd.add(a);
-                    }
-                    testProcessHelper(cmd, TEST_PROCESS_MAIN_CLASS);
                 }
             }
         }
@@ -144,19 +158,29 @@ public class TestProcessHelper {
             for (String m : MODULE_OPTIONS) {
                 for (String[] vma : VM_ARGS) {
                     for (String[] arg : ARGS) {
-                        List<String> cmd = new LinkedList<>();
-                        cmd.add(JAVA_PATH);
-                        cmd.add(mp);
-                        cmd.add(TEST_MODULES.toAbsolutePath().toString());
-                        for (String v : vma) {
-                            cmd.add(v);
+                        for(String patchModuleOption : PATCH_MODULE_OPTIONS) {
+                            List<String> cmd = new LinkedList<>();
+                            cmd.add(JAVA_PATH);
+                            cmd.add(mp);
+                            cmd.add(TEST_MODULES.toAbsolutePath().toString());
+                            if (patchModuleOption != null) {
+                                cmd.add(patchModuleOption);
+                                cmd.add(MODULE_NAME + "=" + TEST_MODULES.toAbsolutePath().toString());
+                            }
+                            for (String v : vma) {
+                                cmd.add(v);
+                            }
+                            if (m.endsWith("=")) {
+                                cmd.add(m + MODULE_NAME + "/" + TEST_PROCESS_MAIN_CLASS);
+                            } else {
+                                cmd.add(m);
+                                cmd.add(MODULE_NAME + "/" + TEST_PROCESS_MAIN_CLASS);
+                            }
+                            for (String a : arg) {
+                                cmd.add(a);
+                            }
+                            testProcessHelper(cmd, MODULE_NAME + "/" + TEST_PROCESS_MAIN_CLASS);
                         }
-                        cmd.add(m);
-                        cmd.add(MODULE_NAME + "/" + TEST_PROCESS_MAIN_CLASS);
-                        for (String a : arg) {
-                            cmd.add(a);
-                        }
-                        testProcessHelper(cmd, MODULE_NAME + "/" + TEST_PROCESS_MAIN_CLASS);
                     }
                 }
             }

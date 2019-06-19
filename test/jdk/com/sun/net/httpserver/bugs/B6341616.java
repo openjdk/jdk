@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2006, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,6 +24,9 @@
 /**
  * @test
  * @bug 6341616
+ * @library /test/lib
+ * @run main B6341616
+ * @run main/othervm -Djava.net.preferIPv6Addresses=true B6341616
  * @summary  Server doesnt send response if there is a RuntimeException in validate of BasicAuthFilter
  */
 
@@ -36,12 +39,14 @@ import java.net.*;
 import java.security.*;
 import java.security.cert.*;
 import javax.net.ssl.*;
+import jdk.test.lib.net.URIBuilder;
 
 public class B6341616 {
 
     public static void main (String[] args) throws Exception {
         Handler handler = new Handler();
-        InetSocketAddress addr = new InetSocketAddress (0);
+        InetAddress loopback = InetAddress.getLoopbackAddress();
+        InetSocketAddress addr = new InetSocketAddress (loopback, 0);
         HttpServer server = HttpServer.create (addr, 0);
         HttpContext ctx = server.createContext ("/test", handler);
         BasicAuthenticator filter = new BasicAuthenticator ("foobar@test.realm") {
@@ -56,8 +61,13 @@ public class B6341616 {
         server.start ();
         java.net.Authenticator.setDefault (new MyAuthenticator());
 
-        URL url = new URL ("http://localhost:"+server.getAddress().getPort()+"/test/foo.html");
-        HttpURLConnection urlc = (HttpURLConnection)url.openConnection ();
+        URL url = URIBuilder.newBuilder()
+            .scheme("http")
+            .loopback()
+            .port(server.getAddress().getPort())
+            .path("/test/foo.html")
+            .toURL();
+        HttpURLConnection urlc = (HttpURLConnection)url.openConnection(Proxy.NO_PROXY);
         try {
             InputStream is = urlc.getInputStream();
             int c = 0;

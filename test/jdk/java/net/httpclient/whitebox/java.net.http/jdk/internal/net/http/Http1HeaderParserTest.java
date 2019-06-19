@@ -375,6 +375,17 @@ public class Http1HeaderParserTest {
              "HTTP/1.1 200OK\r\n\rT",
 
              "HTTP/1.1 200OK\rT",
+
+             "HTTP/1.0 FOO\r\n",
+
+             "HTTP/1.1 BAR\r\n",
+
+             "HTTP/1.1 +99\r\n",
+
+             "HTTP/1.1 -22\r\n",
+
+             "HTTP/1.1 -20 \r\n"
+
            };
         Arrays.stream(bad).forEach(responses::add);
 

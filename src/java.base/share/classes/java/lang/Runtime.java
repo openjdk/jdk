@@ -684,32 +684,6 @@ public class Runtime {
     }
 
     /**
-     * Not implemented, does nothing.
-     *
-     * @deprecated
-     * This method was intended to control instruction tracing.
-     * It has been superseded by JVM-specific tracing mechanisms.
-     * This method is subject to removal in a future version of Java SE.
-     *
-     * @param on ignored
-     */
-    @Deprecated(since="9", forRemoval=true)
-    public void traceInstructions(boolean on) { }
-
-    /**
-     * Not implemented, does nothing.
-     *
-     * @deprecated
-     * This method was intended to control method call tracing.
-     * It has been superseded by JVM-specific tracing mechanisms.
-     * This method is subject to removal in a future version of Java SE.
-     *
-     * @param on ignored
-     */
-    @Deprecated(since="9", forRemoval=true)
-    public void traceMethodCalls(boolean on) { }
-
-    /**
      * Loads the native library specified by the filename argument.  The filename
      * argument must be an absolute path name.
      * (for example

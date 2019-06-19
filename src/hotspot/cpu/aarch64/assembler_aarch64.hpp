@@ -276,7 +276,7 @@ public:
   unsigned get(int msb = 31, int lsb = 0) {
     int nbits = msb - lsb + 1;
     unsigned mask = ((1U << nbits) - 1) << lsb;
-    assert_cond(bits & mask == mask);
+    assert_cond((bits & mask) == mask);
     return (insn & mask) >> lsb;
   }
 
@@ -306,10 +306,12 @@ public:
 };
 class Post : public PrePost {
   Register _idx;
+  bool _is_postreg;
 public:
-  Post(Register reg, int o) : PrePost(reg, o) { _idx = NULL; }
-  Post(Register reg, Register idx) : PrePost(reg, 0) { _idx = idx; }
+  Post(Register reg, int o) : PrePost(reg, o) { _idx = NULL; _is_postreg = false; }
+  Post(Register reg, Register idx) : PrePost(reg, 0) { _idx = idx; _is_postreg = true; }
   Register idx_reg() { return _idx; }
+  bool is_postreg() {return _is_postreg; }
 };
 
 namespace ext
@@ -393,7 +395,7 @@ class Address {
     : _base(p.reg()), _offset(p.offset()), _mode(pre) { }
   Address(Post p)
     : _base(p.reg()),  _index(p.idx_reg()), _offset(p.offset()),
-      _mode(p.idx_reg() == NULL ? post : post_reg), _target(0) { }
+      _mode(p.is_postreg() ? post_reg : post), _target(0) { }
   Address(address target, RelocationHolder const& rspec)
     : _mode(literal),
       _rspec(rspec),
@@ -807,32 +809,34 @@ public:
 #undef INSN
 
   // Bitfield
-#define INSN(NAME, opcode)                                              \
+#define INSN(NAME, opcode, size)                                        \
   void NAME(Register Rd, Register Rn, unsigned immr, unsigned imms) {   \
     starti;                                                             \
+    guarantee(size == 1 || (immr < 32 && imms < 32), "incorrect immr/imms");\
     f(opcode, 31, 22), f(immr, 21, 16), f(imms, 15, 10);                \
     zrf(Rn, 5), rf(Rd, 0);                                              \
   }
 
-  INSN(sbfmw, 0b0001001100);
-  INSN(bfmw,  0b0011001100);
-  INSN(ubfmw, 0b0101001100);
-  INSN(sbfm,  0b1001001101);
-  INSN(bfm,   0b1011001101);
-  INSN(ubfm,  0b1101001101);
+  INSN(sbfmw, 0b0001001100, 0);
+  INSN(bfmw,  0b0011001100, 0);
+  INSN(ubfmw, 0b0101001100, 0);
+  INSN(sbfm,  0b1001001101, 1);
+  INSN(bfm,   0b1011001101, 1);
+  INSN(ubfm,  0b1101001101, 1);
 
 #undef INSN
 
   // Extract
-#define INSN(NAME, opcode)                                              \
+#define INSN(NAME, opcode, size)                                        \
   void NAME(Register Rd, Register Rn, Register Rm, unsigned imms) {     \
     starti;                                                             \
+    guarantee(size == 1 || imms < 32, "incorrect imms");                \
     f(opcode, 31, 21), f(imms, 15, 10);                                 \
-    rf(Rm, 16), rf(Rn, 5), rf(Rd, 0);                                   \
+    zrf(Rm, 16), zrf(Rn, 5), zrf(Rd, 0);                                \
   }
 
-  INSN(extrw, 0b00010011100);
-  INSN(extr,  0b10010011110);
+  INSN(extrw, 0b00010011100, 0);
+  INSN(extr,  0b10010011110, 1);
 
 #undef INSN
 
@@ -1126,7 +1130,7 @@ public:
     Register Rn, enum operand_size sz, int op, bool ordered) {
     starti;
     f(sz, 31, 30), f(0b001000, 29, 24), f(op, 23, 21);
-    rf(Rs, 16), f(ordered, 15), rf(Rt2, 10), srf(Rn, 5), zrf(Rt1, 0);
+    rf(Rs, 16), f(ordered, 15), zrf(Rt2, 10), srf(Rn, 5), zrf(Rt1, 0);
   }
 
   void load_exclusive(Register dst, Register addr,
@@ -1255,7 +1259,7 @@ public:
                   enum operand_size sz, int op1, int op2, bool a, bool r) {
     starti;
     f(sz, 31, 30), f(0b111000, 29, 24), f(a, 23), f(r, 22), f(1, 21);
-    rf(Rs, 16), f(op1, 15), f(op2, 14, 12), f(0, 11, 10), srf(Rn, 5), zrf(Rt, 0);
+    zrf(Rs, 16), f(op1, 15), f(op2, 14, 12), f(0, 11, 10), srf(Rn, 5), zrf(Rt, 0);
   }
 
 #define INSN(NAME, NAME_A, NAME_L, NAME_AL, op1, op2)                   \
@@ -1477,6 +1481,7 @@ public:
   void NAME(Register Rd, Register Rn, Register Rm,              \
             enum shift_kind kind = LSL, unsigned shift = 0) {   \
     starti;                                                     \
+    guarantee(size == 1 || shift < 32, "incorrect shift");      \
     f(N, 21);                                                   \
     zrf(Rm, 16), zrf(Rn, 5), zrf(Rd, 0);                        \
     op_shifted_reg(0b01010, kind, shift, size, op);             \
@@ -1539,6 +1544,7 @@ void mvnw(Register Rd, Register Rm,
     starti;                                             \
     f(0, 21);                                           \
     assert_cond(kind != ROR);                           \
+    guarantee(size == 1 || shift < 32, "incorrect shift");\
     zrf(Rd, 0), zrf(Rn, 5), zrf(Rm, 16);                \
     op_shifted_reg(0b01011, kind, shift, size, op);     \
   }
@@ -1567,7 +1573,7 @@ void mvnw(Register Rd, Register Rm,
   void add_sub_extended_reg(unsigned op, unsigned decode,
     Register Rd, Register Rn, Register Rm,
     unsigned opt, ext::operation option, unsigned imm) {
-    guarantee(imm <= 4, "shift amount must be < 4");
+    guarantee(imm <= 4, "shift amount must be <= 4");
     f(op, 31, 29), f(decode, 28, 24), f(opt, 23, 22), f(1, 21);
     f(option, 15, 13), f(imm, 12, 10);
   }
@@ -1652,7 +1658,7 @@ void mvnw(Register Rd, Register Rm,
     f(o2, 10);
     f(o3, 4);
     f(nzcv, 3, 0);
-    f(imm5, 20, 16), rf(Rn, 5);
+    f(imm5, 20, 16), zrf(Rn, 5);
   }
 
 #define INSN(NAME, op)                                                  \
@@ -2121,7 +2127,12 @@ public:
   }
   void ld_st(FloatRegister Vt, SIMD_Arrangement T, Register Xn,
              int imm, int op1, int op2, int regs) {
-    guarantee(T <= T1Q && imm == SIMD_Size_in_bytes[T] * regs, "bad offset");
+
+    bool replicate = op2 >> 2 == 3;
+    // post-index value (imm) is formed differently for replicate/non-replicate ld* instructions
+    int expectedImmediate = replicate ? regs * (1 << (T >> 1)) : SIMD_Size_in_bytes[T] * regs;
+    guarantee(T < T1Q , "incorrect arrangement");
+    guarantee(imm == expectedImmediate, "bad offset");
     starti;
     f(0,31), f((int)T & 1, 30);
     f(op1 | 0b100, 29, 21), f(0b11111, 20, 16), f(op2, 15, 12);
@@ -2228,42 +2239,47 @@ public:
 
 #undef INSN
 
-#define INSN(NAME, opc, opc2)                                                                 \
+#define INSN(NAME, opc, opc2, acceptT2D)                                                \
   void NAME(FloatRegister Vd, SIMD_Arrangement T, FloatRegister Vn, FloatRegister Vm) { \
+    guarantee(T != T1Q && T != T1D, "incorrect arrangement");                           \
+    if (!acceptT2D) guarantee(T != T2D, "incorrect arrangement");                       \
     starti;                                                                             \
     f(0, 31), f((int)T & 1, 30), f(opc, 29), f(0b01110, 28, 24);                        \
     f((int)T >> 1, 23, 22), f(1, 21), rf(Vm, 16), f(opc2, 15, 10);                      \
     rf(Vn, 5), rf(Vd, 0);                                                               \
   }
 
-  INSN(addv,   0, 0b100001);
-  INSN(subv,   1, 0b100001);
-  INSN(mulv,   0, 0b100111);
-  INSN(mlav,   0, 0b100101);
-  INSN(mlsv,   1, 0b100101);
-  INSN(sshl,   0, 0b010001);
-  INSN(ushl,   1, 0b010001);
-  INSN(umullv, 1, 0b110000);
-  INSN(umlalv, 1, 0b100000);
+  INSN(addv,   0, 0b100001, true);  // accepted arrangements: T8B, T16B, T4H, T8H, T2S, T4S, T2D
+  INSN(subv,   1, 0b100001, true);  // accepted arrangements: T8B, T16B, T4H, T8H, T2S, T4S, T2D
+  INSN(mulv,   0, 0b100111, false); // accepted arrangements: T8B, T16B, T4H, T8H, T2S, T4S
+  INSN(mlav,   0, 0b100101, false); // accepted arrangements: T8B, T16B, T4H, T8H, T2S, T4S
+  INSN(mlsv,   1, 0b100101, false); // accepted arrangements: T8B, T16B, T4H, T8H, T2S, T4S
+  INSN(sshl,   0, 0b010001, true);  // accepted arrangements: T8B, T16B, T4H, T8H, T2S, T4S, T2D
+  INSN(ushl,   1, 0b010001, true);  // accepted arrangements: T8B, T16B, T4H, T8H, T2S, T4S, T2D
+  INSN(umullv, 1, 0b110000, false); // accepted arrangements: T8B, T16B, T4H, T8H, T2S, T4S
+  INSN(umlalv, 1, 0b100000, false); // accepted arrangements: T8B, T16B, T4H, T8H, T2S, T4S
 
 #undef INSN
 
-#define INSN(NAME, opc, opc2) \
+#define INSN(NAME, opc, opc2, accepted) \
   void NAME(FloatRegister Vd, SIMD_Arrangement T, FloatRegister Vn) {                   \
+    guarantee(T != T1Q && T != T1D, "incorrect arrangement");                           \
+    if (accepted < 2) guarantee(T != T2S && T != T2D, "incorrect arrangement");         \
+    if (accepted == 0) guarantee(T == T8B || T == T16B, "incorrect arrangement");       \
     starti;                                                                             \
     f(0, 31), f((int)T & 1, 30), f(opc, 29), f(0b01110, 28, 24);                        \
     f((int)T >> 1, 23, 22), f(opc2, 21, 10);                                            \
     rf(Vn, 5), rf(Vd, 0);                                                               \
   }
 
-  INSN(absr,   0, 0b100000101110);
-  INSN(negr,   1, 0b100000101110);
-  INSN(notr,   1, 0b100000010110);
-  INSN(addv,   0, 0b110001101110);
-  INSN(cls,    0, 0b100000010010);
-  INSN(clz,    1, 0b100000010010);
-  INSN(cnt,    0, 0b100000010110);
-  INSN(uaddlv, 1, 0b110000001110);
+  INSN(absr,   0, 0b100000101110, 1); // accepted arrangements: T8B, T16B, T4H, T8H,      T4S
+  INSN(negr,   1, 0b100000101110, 2); // accepted arrangements: T8B, T16B, T4H, T8H, T2S, T4S, T2D
+  INSN(notr,   1, 0b100000010110, 0); // accepted arrangements: T8B, T16B
+  INSN(addv,   0, 0b110001101110, 1); // accepted arrangements: T8B, T16B, T4H, T8H,      T4S
+  INSN(cls,    0, 0b100000010010, 1); // accepted arrangements: T8B, T16B, T4H, T8H,      T4S
+  INSN(clz,    1, 0b100000010010, 1); // accepted arrangements: T8B, T16B, T4H, T8H,      T4S
+  INSN(cnt,    0, 0b100000010110, 0); // accepted arrangements: T8B, T16B
+  INSN(uaddlv, 1, 0b110000001110, 1); // accepted arrangements: T8B, T16B, T4H, T8H,      T4S
 
 #undef INSN
 
@@ -2287,7 +2303,7 @@ public:
     starti;                                                                            \
     assert(lsl == 0 ||                                                                 \
            ((T == T4H || T == T8H) && lsl == 8) ||                                     \
-           ((T == T2S || T == T4S) && ((lsl >> 3) < 4)), "invalid shift");             \
+           ((T == T2S || T == T4S) && ((lsl >> 3) < 4) && ((lsl & 7) == 0)), "invalid shift");\
     cmode |= lsl >> 2;                                                                 \
     if (T == T4H || T == T8H) cmode |= 0b1000;                                         \
     if (!(T == T4H || T == T8H || T == T2S || T == T4S)) {                             \
@@ -2448,7 +2464,8 @@ public:
 
 #undef INSN
 
-  void ushll(FloatRegister Vd, SIMD_Arrangement Ta, FloatRegister Vn, SIMD_Arrangement Tb, int shift) {
+private:
+  void _ushll(FloatRegister Vd, SIMD_Arrangement Ta, FloatRegister Vn, SIMD_Arrangement Tb, int shift) {
     starti;
     /* The encodings for the immh:immb fields (bits 22:16) are
      *   0001 xxx       8H, 8B/16b shift = xxx
@@ -2461,8 +2478,16 @@ public:
     f(0, 31), f(Tb & 1, 30), f(0b1011110, 29, 23), f((1 << ((Tb>>1)+3))|shift, 22, 16);
     f(0b101001, 15, 10), rf(Vn, 5), rf(Vd, 0);
   }
+
+public:
+  void ushll(FloatRegister Vd, SIMD_Arrangement Ta, FloatRegister Vn,  SIMD_Arrangement Tb, int shift) {
+    assert(Tb == T8B || Tb == T4H || Tb == T2S, "invalid arrangement");
+    _ushll(Vd, Ta, Vn, Tb, shift);
+  }
+
   void ushll2(FloatRegister Vd, SIMD_Arrangement Ta, FloatRegister Vn,  SIMD_Arrangement Tb, int shift) {
-    ushll(Vd, Ta, Vn, Tb, shift);
+    assert(Tb == T16B || Tb == T8H || Tb == T4S, "invalid arrangement");
+    _ushll(Vd, Ta, Vn, Tb, shift);
   }
 
   // Move from general purpose register
@@ -2470,19 +2495,21 @@ public:
   void mov(FloatRegister Vd, SIMD_Arrangement T, int index, Register Xn) {
     starti;
     f(0b01001110000, 31, 21), f(((1 << (T >> 1)) | (index << ((T >> 1) + 1))), 20, 16);
-    f(0b000111, 15, 10), rf(Xn, 5), rf(Vd, 0);
+    f(0b000111, 15, 10), zrf(Xn, 5), rf(Vd, 0);
   }
 
   // Move to general purpose register
   //   mov  Rd, Vn.T[index]
   void mov(Register Xd, FloatRegister Vn, SIMD_Arrangement T, int index) {
+    guarantee(T >= T2S && T < T1Q, "only D and S arrangements are supported");
     starti;
     f(0, 31), f((T >= T1D) ? 1:0, 30), f(0b001110000, 29, 21);
     f(((1 << (T >> 1)) | (index << ((T >> 1) + 1))), 20, 16);
     f(0b001111, 15, 10), rf(Vn, 5), rf(Xd, 0);
   }
 
-  void pmull(FloatRegister Vd, SIMD_Arrangement Ta, FloatRegister Vn, FloatRegister Vm, SIMD_Arrangement Tb) {
+private:
+  void _pmull(FloatRegister Vd, SIMD_Arrangement Ta, FloatRegister Vn, FloatRegister Vm, SIMD_Arrangement Tb) {
     starti;
     assert((Ta == T1Q && (Tb == T1D || Tb == T2D)) ||
            (Ta == T8H && (Tb == T8B || Tb == T16B)), "Invalid Size specifier");
@@ -2490,9 +2517,16 @@ public:
     f(0, 31), f(Tb & 1, 30), f(0b001110, 29, 24), f(size, 23, 22);
     f(1, 21), rf(Vm, 16), f(0b111000, 15, 10), rf(Vn, 5), rf(Vd, 0);
   }
+
+public:
+  void pmull(FloatRegister Vd, SIMD_Arrangement Ta, FloatRegister Vn, FloatRegister Vm, SIMD_Arrangement Tb) {
+    assert(Tb == T1D || Tb == T8B, "pmull assumes T1D or T8B as the second size specifier");
+    _pmull(Vd, Ta, Vn, Vm, Tb);
+  }
+
   void pmull2(FloatRegister Vd, SIMD_Arrangement Ta, FloatRegister Vn, FloatRegister Vm, SIMD_Arrangement Tb) {
     assert(Tb == T2D || Tb == T16B, "pmull2 assumes T2D or T16B as the second size specifier");
-    pmull(Vd, Ta, Vn, Vm, Tb);
+    _pmull(Vd, Ta, Vn, Vm, Tb);
   }
 
   void uqxtn(FloatRegister Vd, SIMD_Arrangement Tb, FloatRegister Vn, SIMD_Arrangement Ta) {
@@ -2509,7 +2543,7 @@ public:
     starti;
     assert(T != T1D, "reserved encoding");
     f(0,31), f((int)T & 1, 30), f(0b001110000, 29, 21);
-    f((1 << (T >> 1)), 20, 16), f(0b000011, 15, 10), rf(Xs, 5), rf(Vd, 0);
+    f((1 << (T >> 1)), 20, 16), f(0b000011, 15, 10), zrf(Xs, 5), rf(Vd, 0);
   }
 
   void dup(FloatRegister Vd, SIMD_Arrangement T, FloatRegister Vn, int index = 0)
@@ -2524,6 +2558,7 @@ public:
   // AdvSIMD ZIP/UZP/TRN
 #define INSN(NAME, opcode)                                              \
   void NAME(FloatRegister Vd, SIMD_Arrangement T, FloatRegister Vn, FloatRegister Vm) { \
+    guarantee(T != T1D && T != T1Q, "invalid arrangement");             \
     starti;                                                             \
     f(0, 31), f(0b001110, 29, 24), f(0, 21), f(0, 15);                  \
     f(opcode, 14, 12), f(0b10, 11, 10);                                 \
@@ -2609,7 +2644,7 @@ public:
   // RBIT only allows T8B and T16B but encodes them oddly.  Argh...
   void rbit(FloatRegister Vd, SIMD_Arrangement T, FloatRegister Vn) {
     assert((ASSERTION), MSG);
-    _rbit(Vd, SIMD_Arrangement(T & 1 | 0b010), Vn);
+    _rbit(Vd, SIMD_Arrangement((T & 1) | 0b010), Vn);
   }
 #undef ASSERTION
 

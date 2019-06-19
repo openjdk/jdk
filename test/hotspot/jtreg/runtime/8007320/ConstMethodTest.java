@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -122,8 +122,8 @@ public class ConstMethodTest {
                 equal(ann.length, 3);
                 Annotation foo = ann[0][0];
                 Annotation bar = ann[1][0];
-                equal(foo.toString(), "@Named(value=\"aName\")");
-                equal(bar.toString(), "@Named(value=\"bName\")");
+                equal(foo.toString(), "@Named(\"aName\")");
+                equal(bar.toString(), "@Named(\"bName\")");
                 check(foo.equals(foo));
                 check(bar.equals(bar));
                 check(! foo.equals(bar));

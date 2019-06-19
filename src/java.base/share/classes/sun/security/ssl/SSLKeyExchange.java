@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,10 +30,6 @@ import java.util.AbstractMap.SimpleImmutableEntry;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
-import sun.security.ssl.DHKeyExchange.DHEPossession;
-import sun.security.ssl.ECDHKeyExchange.ECDHEPossession;
-import sun.security.ssl.SupportedGroupsExtension.NamedGroup;
-import sun.security.ssl.SupportedGroupsExtension.NamedGroupType;
 import sun.security.ssl.SupportedGroupsExtension.SupportedGroups;
 import sun.security.ssl.X509Authentication.X509Possession;
 
@@ -243,8 +239,7 @@ final class SSLKeyExchange implements SSLKeyAgreementGenerator,
     static SSLKeyExchange valueOf(NamedGroup namedGroup) {
         SSLKeyAgreement ka = T13KeyAgreement.valueOf(namedGroup);
         if (ka != null) {
-            return new SSLKeyExchange(
-                null, T13KeyAgreement.valueOf(namedGroup));
+            return new SSLKeyExchange(null, ka);
         }
 
         return null;
@@ -337,7 +332,7 @@ final class SSLKeyExchange implements SSLKeyAgreementGenerator,
         ECDH            ("ecdh",        null,
                                         ECDHKeyExchange.ecdhKAGenerator),
         ECDHE           ("ecdhe",       ECDHKeyExchange.poGenerator,
-                                        ECDHKeyExchange.ecdheKAGenerator);
+                                        ECDHKeyExchange.ecdheXdhKAGenerator);
 
         final String name;
         final SSLPossessionGenerator possessionGenerator;
@@ -570,27 +565,13 @@ final class SSLKeyExchange implements SSLKeyAgreementGenerator,
 
         @Override
         public SSLPossession createPossession(HandshakeContext hc) {
-            if (namedGroup.type == NamedGroupType.NAMED_GROUP_ECDHE) {
-                return new ECDHEPossession(
-                        namedGroup, hc.sslContext.getSecureRandom());
-            } else if (namedGroup.type == NamedGroupType.NAMED_GROUP_FFDHE) {
-                return new DHEPossession(
-                        namedGroup, hc.sslContext.getSecureRandom());
-            }
-
-            return null;
+            return namedGroup.createPossession(hc.sslContext.getSecureRandom());
         }
 
         @Override
         public SSLKeyDerivation createKeyDerivation(
                 HandshakeContext hc) throws IOException {
-            if (namedGroup.type == NamedGroupType.NAMED_GROUP_ECDHE) {
-                return ECDHKeyExchange.ecdheKAGenerator.createKeyDerivation(hc);
-            } else if (namedGroup.type == NamedGroupType.NAMED_GROUP_FFDHE) {
-                return DHKeyExchange.kaGenerator.createKeyDerivation(hc);
-            }
-
-            return null;
+            return namedGroup.createKeyDerivation(hc);
         }
     }
 }

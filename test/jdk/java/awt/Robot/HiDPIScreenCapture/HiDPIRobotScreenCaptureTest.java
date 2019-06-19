@@ -38,7 +38,7 @@ import javax.swing.UIManager;
  * @bug 8073320
  * @summary  Windows HiDPI support
  * @author Alexander Scherbatiy
- * @requires (os.family == "windows")
+ * @requires (os.family == "linux" | os.family == "windows")
  * @run main/othervm -Dsun.java2d.win.uiScaleX=3 -Dsun.java2d.win.uiScaleY=2
  *                    HiDPIRobotScreenCaptureTest
  */
@@ -50,11 +50,13 @@ public class HiDPIRobotScreenCaptureTest {
 
     public static void main(String[] args) throws Exception {
 
-        try {
-            UIManager.setLookAndFeel(
-                    "com.sun.java.swing.plaf.windows.WindowsLookAndFeel");
-        } catch (Exception e) {
-            return;
+        if (System.getProperty("os.name").toLowerCase().contains("win")) {
+            try {
+                UIManager.setLookAndFeel(
+                        "com.sun.java.swing.plaf.windows.WindowsLookAndFeel");
+            } catch (Exception e) {
+                return;
+            }
         }
 
         Frame frame = new Frame();

@@ -66,7 +66,7 @@ public class ProcessHelper implements sun.tools.common.ProcessHelper {
         if (cmdLine.startsWith(CMD_PREFIX)) {
             cmdLine = cmdLine.substring(CMD_PREFIX.length());
         }
-        String[] parts = cmdLine.split(" ");
+        String[] parts = cmdLine.split("\0");
         String mainClass = null;
 
         if(parts.length == 0) {
@@ -87,7 +87,7 @@ public class ProcessHelper implements sun.tools.common.ProcessHelper {
         // options are used then just return the value (the path to the jar file or module
         // name with a main class). Otherwise, the main class name is the first part that
         // is not a Java option (doesn't start with '-' and is not a classpath or a module
-        // path).
+        // whitespace option).
 
         for (int i = 1; i < parts.length && mainClass == null; i++) {
             if (i < parts.length - 1) {
@@ -95,10 +95,15 @@ public class ProcessHelper implements sun.tools.common.ProcessHelper {
                     return parts[i + 1];
                 }
             }
-            // If this is a classpath or a module path option then skip the next part
-            // (the classpath or the module path itself)
+
+            if (parts[i].startsWith("--module=")) {
+                return parts[i].substring("--module=".length());
+            }
+
+            // If this is a classpath or a module whitespace option then skip the next part
+            // (the classpath or the option value itself)
             if (parts[i].equals("-cp") || parts[i].equals("-classpath") ||  parts[i].equals("--class-path") ||
-                    parts[i].equals("-p") || parts[i].equals("--module-path")) {
+                    isModuleWhiteSpaceOption(parts[i])) {
                 i++;
                 continue;
             }
@@ -106,6 +111,12 @@ public class ProcessHelper implements sun.tools.common.ProcessHelper {
             if (parts[i].startsWith("-")) {
                 continue;
             }
+
+            // If it is a source-file mode then return null
+            if (parts[i].endsWith(".java")) {
+                return null;
+            }
+
             mainClass = parts[i];
         }
         return mainClass;
@@ -115,11 +126,24 @@ public class ProcessHelper implements sun.tools.common.ProcessHelper {
     private static String getCommandLine(String pid) {
         try (Stream<String> lines =
                      Files.lines(Paths.get("/proc/" + pid + "/cmdline"))) {
-            return lines.map(x -> x.replaceAll("\0", " ")).findFirst().orElse(null);
+            return lines.findFirst().orElse(null);
         } catch (IOException | UncheckedIOException e) {
             return null;
         }
     }
+
+    private static boolean isModuleWhiteSpaceOption(String option) {
+        return option.equals("-p") ||
+                option.equals("--module-path") ||
+                option.equals("--upgrade-module-path") ||
+                option.equals("--add-modules") ||
+                option.equals("--limit-modules") ||
+                option.equals("--add-exports") ||
+                option.equals("--add-opens") ||
+                option.equals("--add-reads") ||
+                option.equals("--patch-module");
+    }
+
 }
 
 

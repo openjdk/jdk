@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -57,6 +57,7 @@ public class ClassFileVersionsTest {
                 { 55,   0,  Set.of() },                      // JDK 11
                 { 56,   0,  Set.of() },                      // JDK 12
                 { 57,   0,  Set.of() },                      // JDK 13
+                { 58,   0,  Set.of() },                      // JDK 14
         };
     }
 
@@ -84,7 +85,11 @@ public class ClassFileVersionsTest {
                 { 57,   0,  Set.of(TRANSITIVE) },
                 { 57,   0,  Set.of(STATIC, TRANSITIVE) },
 
-                { 58,   0,  Set.of()},                       // JDK 14
+                { 58,   0,  Set.of(STATIC) },                // JDK 14
+                { 58,   0,  Set.of(TRANSITIVE) },
+                { 58,   0,  Set.of(STATIC, TRANSITIVE) },
+
+                { 59,   0,  Set.of()},                       // JDK 15
         };
     }
 

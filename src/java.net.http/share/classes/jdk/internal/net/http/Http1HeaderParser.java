@@ -194,7 +194,15 @@ class Http1HeaderParser {
         if (statusLine.length() < 12) {
             throw protocolException("Invalid status line: \"%s\"", statusLine);
         }
-        responseCode = Integer.parseInt(statusLine.substring(9, 12));
+        try {
+            responseCode = Integer.parseInt(statusLine.substring(9, 12));
+        } catch (NumberFormatException nfe) {
+            throw protocolException("Invalid status line: \"%s\"", statusLine);
+        }
+        // response code expected to be a 3-digit integer (RFC-2616, section 6.1.1)
+        if (responseCode < 100) {
+            throw protocolException("Invalid status line: \"%s\"", statusLine);
+        }
 
         state = State.STATUS_LINE_END;
     }

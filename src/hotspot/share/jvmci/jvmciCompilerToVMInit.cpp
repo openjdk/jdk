@@ -308,7 +308,8 @@ jobjectArray readConfiguration0(JNIEnv *env, JVMCI_TRAPS) {
         BOXED_BOOLEAN(box, *(jbyte*) vmField.address);
         assert(box.is_non_null(), "must have a box");
       } else if (strcmp(vmField.typeString, "int") == 0 ||
-                 strcmp(vmField.typeString, "jint") == 0) {
+                 strcmp(vmField.typeString, "jint") == 0 ||
+                 strcmp(vmField.typeString, "uint32_t") == 0) {
         BOXED_LONG(box, *(jint*) vmField.address);
         assert(box.is_non_null(), "must have a box");
       } else if (strcmp(vmField.typeString, "uint64_t") == 0) {

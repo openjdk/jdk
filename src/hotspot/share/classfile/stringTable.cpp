@@ -58,8 +58,8 @@
 const double PREF_AVG_LIST_LEN = 2.0;
 // 2^24 is max size
 const size_t END_SIZE = 24;
-// If a chain gets to 32 something might be wrong
-const size_t REHASH_LEN = 32;
+// If a chain gets to 100 something might be wrong
+const size_t REHASH_LEN = 100;
 // If we have as many dead items as 50% of the number of bucket
 const double CLEAN_DEAD_HIGH_WATER_MARK = 0.5;
 
@@ -496,8 +496,9 @@ bool StringTable::do_rehash() {
     return false;
   }
 
-  // We use max size
-  StringTableHash* new_table = new StringTableHash(END_SIZE, END_SIZE, REHASH_LEN);
+  // We use current size, not max size.
+  size_t new_size = _local_table->get_size_log2(Thread::current());
+  StringTableHash* new_table = new StringTableHash(new_size, END_SIZE, REHASH_LEN);
   // Use alt hash from now on
   _alt_hash = true;
   if (!_local_table->try_move_nodes_to(Thread::current(), new_table)) {

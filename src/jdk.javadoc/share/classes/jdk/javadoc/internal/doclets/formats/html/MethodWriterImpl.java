@@ -109,8 +109,8 @@ public class MethodWriterImpl extends AbstractExecutableMemberWriter
         Content methodDetailsTree = new ContentBuilder();
         Content heading = HtmlTree.HEADING(Headings.TypeDeclaration.DETAILS_HEADING,
                 contents.methodDetailLabel);
-        methodDetailsTree.add(heading);
         methodDetailsTree.add(links.createAnchor(SectionName.METHOD_DETAIL));
+        methodDetailsTree.add(heading);
         return methodDetailsTree;
     }
 
@@ -122,12 +122,11 @@ public class MethodWriterImpl extends AbstractExecutableMemberWriter
         String erasureAnchor;
         Content methodDocTree = new ContentBuilder();
         Content heading = new HtmlTree(Headings.TypeDeclaration.MEMBER_HEADING);
-        heading.add(name(method));
-        methodDocTree.add(heading);
         if ((erasureAnchor = getErasureAnchor(method)) != null) {
-            methodDocTree.add(links.createAnchor((erasureAnchor)));
+            heading.add(links.createAnchor((erasureAnchor)));
         }
-        methodDocTree.add(links.createAnchor(writer.getAnchor(method)));
+        heading.add(links.createAnchor(writer.getAnchor(method), new StringContent(name(method))));
+        methodDocTree.add(heading);
         return HtmlTree.SECTION(HtmlStyle.detail, methodDocTree);
     }
 

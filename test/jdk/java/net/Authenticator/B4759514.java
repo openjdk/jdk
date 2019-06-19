@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,14 +25,16 @@
  * @test
  * @bug 4759514
  * @modules java.base/sun.net.www
- * @library ../../../sun/net/www/httptest/
+ * @library ../../../sun/net/www/httptest/ /test/lib
  * @build HttpCallback TestHttpServer ClosedChannelList HttpTransaction
- * @run main B4759514
+ * @run main/othervm B4759514
+ * @run main/othervm -Djava.net.preferIPv6Addresses=true B4759514
  * @summary Digest Authentication is erroniously quoting the nc value, contrary to RFC 2617
  */
 
 import java.io.*;
 import java.net.*;
+import jdk.test.lib.net.URIBuilder;
 
 public class B4759514 implements HttpCallback {
 
@@ -97,10 +99,19 @@ public class B4759514 implements HttpCallback {
     public static void main (String[] args) throws Exception {
         MyAuthenticator auth = new MyAuthenticator ();
         Authenticator.setDefault (auth);
+        ProxySelector.setDefault(ProxySelector.of(null)); // no proxy
         try {
-            server = new TestHttpServer (new B4759514(), 1, 10, 0);
-            System.out.println ("Server: listening on port: " + server.getLocalPort());
-            client ("http://localhost:"+server.getLocalPort()+"/d1/foo.html");
+            InetAddress loopback = InetAddress.getLoopbackAddress();
+            server = new TestHttpServer (new B4759514(), 1, 10, loopback, 0);
+            String serverURL = URIBuilder.newBuilder()
+                .scheme("http")
+                .loopback()
+                .port(server.getLocalPort())
+                .path("/")
+                .build()
+                .toString();
+            System.out.println("Server: listening at: " + serverURL);
+            client(serverURL + "d1/foo.html");
         } catch (Exception e) {
             if (server != null) {
                 server.terminate();

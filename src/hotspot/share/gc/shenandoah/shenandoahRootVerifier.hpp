@@ -36,7 +36,8 @@ public:
     CLDGRoots           = 1 << 3,
     WeakRoots           = 1 << 4,
     StringDedupRoots    = 1 << 5,
-    AllRoots            = (SerialRoots | ThreadRoots | CodeRoots | CLDGRoots | WeakRoots | StringDedupRoots)
+    JNIHandleRoots      = 1 << 6,
+    AllRoots            = (SerialRoots | ThreadRoots | CodeRoots | CLDGRoots | WeakRoots | StringDedupRoots | JNIHandleRoots)
   };
 
 private:

@@ -324,6 +324,8 @@ GtkApi* gtk3_load(JNIEnv *env, const char* lib_name)
         /* GDK */
         fp_gdk_get_default_root_window =
             dl_symbol("gdk_get_default_root_window");
+        fp_gdk_window_get_scale_factor =
+                    dl_symbol("gdk_window_get_scale_factor");
 
         /* Pixbuf */
         fp_gdk_pixbuf_new = dl_symbol("gdk_pixbuf_new");
@@ -2888,7 +2890,10 @@ static gboolean gtk3_get_drawable_data(JNIEnv *env, jintArray pixelArray,
     jint *ary;
 
     GdkWindow *root = (*fp_gdk_get_default_root_window)();
-    pixbuf = (*fp_gdk_pixbuf_get_from_drawable)(root, x, y, width, height);
+    int win_scale = (*fp_gdk_window_get_scale_factor)(root);
+    pixbuf = (*fp_gdk_pixbuf_get_from_drawable)(
+        root, x, y, (int)(width / (float)win_scale + 0.5), (int)(height / (float)win_scale + 0.5));
+
     if (pixbuf && scale != 1) {
         GdkPixbuf *scaledPixbuf;
         x /= scale;
@@ -2906,8 +2911,8 @@ static gboolean gtk3_get_drawable_data(JNIEnv *env, jintArray pixelArray,
     if (pixbuf) {
         int nchan = (*fp_gdk_pixbuf_get_n_channels)(pixbuf);
         int stride = (*fp_gdk_pixbuf_get_rowstride)(pixbuf);
-        if ((*fp_gdk_pixbuf_get_width)(pixbuf) == width
-                && (*fp_gdk_pixbuf_get_height)(pixbuf) == height
+        if ((*fp_gdk_pixbuf_get_width)(pixbuf) >= width
+                && (*fp_gdk_pixbuf_get_height)(pixbuf) >= height
                 && (*fp_gdk_pixbuf_get_bits_per_sample)(pixbuf) == 8
                 && (*fp_gdk_pixbuf_get_colorspace)(pixbuf) == GDK_COLORSPACE_RGB
                 && nchan >= 3

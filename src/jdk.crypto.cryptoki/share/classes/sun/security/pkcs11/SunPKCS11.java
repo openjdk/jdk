@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -516,7 +516,9 @@ public final class SunPKCS11 extends AuthProvider {
         String P11SecretKeyFactory = "sun.security.pkcs11.P11SecretKeyFactory";
         String P11Cipher           = "sun.security.pkcs11.P11Cipher";
         String P11RSACipher        = "sun.security.pkcs11.P11RSACipher";
+        String P11AEADCipher       = "sun.security.pkcs11.P11AEADCipher";
         String P11Signature        = "sun.security.pkcs11.P11Signature";
+        String P11PSSSignature     = "sun.security.pkcs11.P11PSSSignature";
 
         // XXX register all aliases
 
@@ -540,6 +542,12 @@ public final class SunPKCS11 extends AuthProvider {
         d(MD, "SHA-512",        P11Digest,
                 s("2.16.840.1.101.3.4.2.3", "OID.2.16.840.1.101.3.4.2.3"),
                 m(CKM_SHA512));
+        d(MD, "SHA-512/224",        P11Digest,
+                s("2.16.840.1.101.3.4.2.5", "OID.2.16.840.1.101.3.4.2.5"),
+                m(CKM_SHA512_224));
+        d(MD, "SHA-512/256",        P11Digest,
+                s("2.16.840.1.101.3.4.2.6", "OID.2.16.840.1.101.3.4.2.6"),
+                m(CKM_SHA512_256));
 
         d(MAC, "HmacMD5",       P11MAC,
                 m(CKM_MD5_HMAC));
@@ -558,13 +566,22 @@ public final class SunPKCS11 extends AuthProvider {
         d(MAC, "HmacSHA512",    P11MAC,
                 s("1.2.840.113549.2.11", "OID.1.2.840.113549.2.11"),
                 m(CKM_SHA512_HMAC));
+        d(MAC, "HmacSHA512/224",    P11MAC,
+                s("1.2.840.113549.2.12", "OID.1.2.840.113549.2.12"),
+                m(CKM_SHA512_224_HMAC));
+        d(MAC, "HmacSHA512/256",    P11MAC,
+                s("1.2.840.113549.2.13", "OID.1.2.840.113549.2.13"),
+                m(CKM_SHA512_256_HMAC));
+
         d(MAC, "SslMacMD5",     P11MAC,
                 m(CKM_SSL3_MD5_MAC));
         d(MAC, "SslMacSHA1",    P11MAC,
                 m(CKM_SSL3_SHA1_MAC));
 
         d(KPG, "RSA",           P11KeyPairGenerator,
+                s("1.2.840.113549.1.1", "OID.1.2.840.113549.1.1"),
                 m(CKM_RSA_PKCS_KEY_PAIR_GEN));
+
         d(KPG, "DSA",           P11KeyPairGenerator,
                 s("1.3.14.3.2.12", "1.2.840.10040.4.1", "OID.1.2.840.10040.4.1"),
                 m(CKM_DSA_KEY_PAIR_GEN));
@@ -587,6 +604,7 @@ public final class SunPKCS11 extends AuthProvider {
         // register (Secret)KeyFactories if there are any mechanisms
         // for a particular algorithm that we support
         d(KF, "RSA",            P11RSAKeyFactory,
+                s("1.2.840.113549.1.1", "OID.1.2.840.113549.1.1"),
                 m(CKM_RSA_PKCS_KEY_PAIR_GEN, CKM_RSA_PKCS, CKM_RSA_X_509));
         d(KF, "DSA",            P11DSAKeyFactory,
                 s("1.3.14.3.2.12", "1.2.840.10040.4.1", "OID.1.2.840.10040.4.1"),
@@ -600,9 +618,13 @@ public final class SunPKCS11 extends AuthProvider {
         // AlgorithmParameters for EC.
         // Only needed until we have an EC implementation in the SUN provider.
         d(AGP, "EC",            "sun.security.util.ECParameters",
-                                                s("1.2.840.10045.2.1"),
+                s("1.2.840.10045.2.1"),
                 m(CKM_EC_KEY_PAIR_GEN, CKM_ECDH1_DERIVE,
                     CKM_ECDSA, CKM_ECDSA_SHA1));
+
+
+        d(AGP, "GCM",            "sun.security.util.GCMParameters",
+                m(CKM_AES_GCM));
 
         d(KA, "DH",             P11KeyAgreement,        s("DiffieHellman"),
                 m(CKM_DH_PKCS_DERIVE));
@@ -669,12 +691,24 @@ public final class SunPKCS11 extends AuthProvider {
                 m(CKM_AES_ECB));
         d(CIP, "AES/CTR/NoPadding",             P11Cipher,
                 m(CKM_AES_CTR));
+
+        d(CIP, "AES/GCM/NoPadding",             P11AEADCipher,
+                m(CKM_AES_GCM));
+        d(CIP, "AES_128/GCM/NoPadding",          P11AEADCipher,
+                s("2.16.840.1.101.3.4.1.6", "OID.2.16.840.1.101.3.4.1.6"),
+                m(CKM_AES_GCM));
+        d(CIP, "AES_192/GCM/NoPadding",          P11AEADCipher,
+                s("2.16.840.1.101.3.4.1.26", "OID.2.16.840.1.101.3.4.1.26"),
+                m(CKM_AES_GCM));
+        d(CIP, "AES_256/GCM/NoPadding",          P11AEADCipher,
+                s("2.16.840.1.101.3.4.1.46", "OID.2.16.840.1.101.3.4.1.46"),
+                m(CKM_AES_GCM));
+
         d(CIP, "Blowfish/CBC/NoPadding",        P11Cipher,
                 m(CKM_BLOWFISH_CBC));
         d(CIP, "Blowfish/CBC/PKCS5Padding",     P11Cipher,
                 m(CKM_BLOWFISH_CBC));
 
-        // XXX RSA_X_509, RSA_OAEP not yet supported
         d(CIP, "RSA/ECB/PKCS1Padding",          P11RSACipher,   s("RSA"),
                 m(CKM_RSA_PKCS));
         d(CIP, "RSA/ECB/NoPadding",             P11RSACipher,
@@ -686,12 +720,25 @@ public final class SunPKCS11 extends AuthProvider {
                 s("SHA1withDSA", "1.3.14.3.2.13", "1.3.14.3.2.27",
                   "1.2.840.10040.4.3", "OID.1.2.840.10040.4.3"),
                 m(CKM_DSA_SHA1, CKM_DSA));
+        d(SIG, "SHA224withDSA", P11Signature,
+                s("2.16.840.1.101.3.4.3.1", "OID.2.16.840.1.101.3.4.3.1"),
+                m(CKM_DSA_SHA224));
+        d(SIG, "SHA256withDSA", P11Signature,
+                s("2.16.840.1.101.3.4.3.2", "OID.2.16.840.1.101.3.4.3.2"),
+                m(CKM_DSA_SHA256));
+        d(SIG, "SHA384withDSA", P11Signature,
+                s("2.16.840.1.101.3.4.3.3", "OID.2.16.840.1.101.3.4.3.3"),
+                m(CKM_DSA_SHA384));
+        d(SIG, "SHA512withDSA", P11Signature,
+                s("2.16.840.1.101.3.4.3.4", "OID.2.16.840.1.101.3.4.3.4"),
+                m(CKM_DSA_SHA512));
         d(SIG, "RawDSAinP1363Format",   P11Signature,
                 s("NONEwithDSAinP1363Format"),
                 m(CKM_DSA));
         d(SIG, "DSAinP1363Format",      P11Signature,
                 s("SHA1withDSAinP1363Format"),
                 m(CKM_DSA_SHA1, CKM_DSA));
+
         d(SIG, "NONEwithECDSA", P11Signature,
                 m(CKM_ECDSA));
         d(SIG, "SHA1withECDSA", P11Signature,
@@ -743,6 +790,19 @@ public final class SunPKCS11 extends AuthProvider {
         d(SIG, "SHA512withRSA", P11Signature,
                 s("1.2.840.113549.1.1.13", "OID.1.2.840.113549.1.1.13"),
                 m(CKM_SHA512_RSA_PKCS, CKM_RSA_PKCS, CKM_RSA_X_509));
+        d(SIG, "RSASSA-PSS", P11PSSSignature,
+                s("1.2.840.113549.1.1.10", "OID.1.2.840.113549.1.1.10"),
+                m(CKM_RSA_PKCS_PSS));
+        d(SIG, "SHA1withRSASSA-PSS", P11PSSSignature,
+                m(CKM_SHA1_RSA_PKCS_PSS));
+        d(SIG, "SHA224withRSASSA-PSS", P11PSSSignature,
+                m(CKM_SHA224_RSA_PKCS_PSS));
+        d(SIG, "SHA256withRSASSA-PSS", P11PSSSignature,
+                m(CKM_SHA256_RSA_PKCS_PSS));
+        d(SIG, "SHA384withRSASSA-PSS", P11PSSSignature,
+                m(CKM_SHA384_RSA_PKCS_PSS));
+        d(SIG, "SHA512withRSASSA-PSS", P11PSSSignature,
+                m(CKM_SHA512_RSA_PKCS_PSS));
 
         d(KG, "SunTlsRsaPremasterSecret",
                     "sun.security.pkcs11.P11TlsRsaPremasterSecretGenerator",
@@ -1008,11 +1068,17 @@ public final class SunPKCS11 extends AuthProvider {
             } else if (type == CIP) {
                 if (algorithm.startsWith("RSA")) {
                     return new P11RSACipher(token, algorithm, mechanism);
+                } else if (algorithm.endsWith("GCM/NoPadding")) {
+                    return new P11AEADCipher(token, algorithm, mechanism);
                 } else {
                     return new P11Cipher(token, algorithm, mechanism);
                 }
             } else if (type == SIG) {
-                return new P11Signature(token, algorithm, mechanism);
+                if (algorithm.indexOf("RSASSA-PSS") != -1) {
+                    return new P11PSSSignature(token, algorithm, mechanism);
+                } else {
+                    return new P11Signature(token, algorithm, mechanism);
+                }
             } else if (type == MAC) {
                 return new P11Mac(token, algorithm, mechanism);
             } else if (type == KPG) {
@@ -1051,7 +1117,14 @@ public final class SunPKCS11 extends AuthProvider {
             } else if (type == KS) {
                 return token.getKeyStore();
             } else if (type == AGP) {
-                return new sun.security.util.ECParameters();
+                if (algorithm == "EC") {
+                    return new sun.security.util.ECParameters();
+                } else if (algorithm == "GCM") {
+                    return new sun.security.util.GCMParameters();
+                } else {
+                    throw new NoSuchAlgorithmException("Unsupported algorithm: "
+                            + algorithm);
+                }
             } else {
                 throw new NoSuchAlgorithmException("Unknown type: " + type);
             }
@@ -1070,7 +1143,7 @@ public final class SunPKCS11 extends AuthProvider {
             String keyAlgorithm = key.getAlgorithm();
             // RSA signatures and cipher
             if (((type == CIP) && algorithm.startsWith("RSA"))
-                    || (type == SIG) && algorithm.endsWith("RSA")) {
+                    || (type == SIG) && (algorithm.indexOf("RSA") != -1)) {
                 if (keyAlgorithm.equals("RSA") == false) {
                     return false;
                 }

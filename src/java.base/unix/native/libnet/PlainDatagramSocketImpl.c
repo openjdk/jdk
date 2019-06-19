@@ -79,10 +79,6 @@ static jfieldID pdsi_connected;
 static jfieldID pdsi_connectedAddress;
 static jfieldID pdsi_connectedPort;
 
-extern void setDefaultScopeID(JNIEnv *env, struct sockaddr *him);
-extern int getDefaultScopeID(JNIEnv *env);
-
-
 /*
  * Returns a java.lang.Integer based on 'i'
  */
@@ -200,7 +196,6 @@ Java_java_net_PlainDatagramSocketImpl_bind0(JNIEnv *env, jobject this,
                                   JNI_TRUE) != 0) {
       return;
     }
-    setDefaultScopeID(env, &sa.sa);
 
     if (NET_Bind(fd, &sa, len) < 0)  {
         if (errno == EADDRINUSE || errno == EADDRNOTAVAIL ||
@@ -265,8 +260,6 @@ Java_java_net_PlainDatagramSocketImpl_connect0(JNIEnv *env, jobject this,
                                   JNI_TRUE) != 0) {
       return;
     }
-
-    setDefaultScopeID(env, &rmtaddr.sa);
 
     if (NET_Connect(fd, &rmtaddr.sa, len) == -1) {
         NET_ThrowByNameWithLastError(env, JNU_JAVANETPKG "ConnectException",
@@ -334,11 +327,11 @@ Java_java_net_PlainDatagramSocketImpl_disconnect0(JNIEnv *env, jobject this, jin
 
 /*
  * Class:     java_net_PlainDatagramSocketImpl
- * Method:    send
+ * Method:    send0
  * Signature: (Ljava/net/DatagramPacket;)V
  */
 JNIEXPORT void JNICALL
-Java_java_net_PlainDatagramSocketImpl_send(JNIEnv *env, jobject this,
+Java_java_net_PlainDatagramSocketImpl_send0(JNIEnv *env, jobject this,
                                            jobject packet) {
 
     char BUF[MAX_BUFFER_LEN];
@@ -393,7 +386,6 @@ Java_java_net_PlainDatagramSocketImpl_send(JNIEnv *env, jobject this,
         }
         rmtaddrP = &rmtaddr.sa;
     }
-    setDefaultScopeID(env, &rmtaddr.sa);
 
     if (packetBufferLen > MAX_BUFFER_LEN) {
         /* When JNI-ifying the JDK's IO routines, we turned
@@ -2145,26 +2137,6 @@ static void mcast_join_leave(JNIEnv *env, jobject this,
                 NET_ThrowCurrent(env, "getsockopt IPV6_MULTICAST_IF failed");
                 return;
             }
-
-#ifdef __linux__
-            /*
-             * On 2.4.8+ if we join a group with the interface set to 0
-             * then the kernel records the interface it decides. This causes
-             * subsequent leave groups to fail as there is no match. Thus we
-             * pick the interface if there is a matching route.
-             */
-            if (index == 0) {
-                int rt_index = getDefaultIPv6Interface(&(mname6.ipv6mr_multiaddr));
-                if (rt_index > 0) {
-                    index = rt_index;
-                }
-            }
-#endif
-#ifdef MACOSX
-            if (family == AF_INET6 && index == 0) {
-                index = getDefaultScopeID(env);
-            }
-#endif
             mname6.ipv6mr_interface = index;
         } else {
             jint idx = (*env)->GetIntField(env, niObj, ni_indexID);

@@ -593,6 +593,10 @@ public:
     _region_attr.clear();
   }
 
+  // Verify that the G1RegionAttr remset tracking corresponds to actual remset tracking
+  // for all regions.
+  void verify_region_attr_remset_update() PRODUCT_RETURN;
+
   bool is_user_requested_concurrent_full_gc(GCCause::Cause cause);
 
   // This is called at the start of either a concurrent cycle or a Full

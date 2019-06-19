@@ -50,6 +50,7 @@ import java.security.PrivilegedAction;
 import java.util.Enumeration;
 
 import sun.net.ext.ExtendedSocketOptions;
+import sun.net.util.IPAddressUtil;
 import sun.security.action.GetPropertyAction;
 
 public class Net {
@@ -462,6 +463,9 @@ public class Net {
     {
         boolean preferIPv6 = isIPv6Available() &&
             (family != StandardProtocolFamily.INET);
+        if (addr.isLinkLocalAddress()) {
+            addr = IPAddressUtil.toScopedAddress(addr);
+        }
         bind0(fd, preferIPv6, exclusiveBind, addr, port);
     }
 
@@ -481,6 +485,9 @@ public class Net {
     static int connect(ProtocolFamily family, FileDescriptor fd, InetAddress remote, int remotePort)
         throws IOException
     {
+        if (remote.isLinkLocalAddress()) {
+            remote = IPAddressUtil.toScopedAddress(remote);
+        }
         boolean preferIPv6 = isIPv6Available() &&
             (family != StandardProtocolFamily.INET);
         return connect0(preferIPv6, fd, remote, remotePort);

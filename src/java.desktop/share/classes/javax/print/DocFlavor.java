@@ -44,9 +44,9 @@ import java.io.Serializable;
  *   the IANA MIME-preferred name, or its canonical name if no preferred name is
  *   specified. Additionally a few historical names supported by earlier
  *   versions of the Java platform may be recognized. See
- *   <a href="../../java/lang/package-summary.html#charenc">character encodings
- *   </a> for more information on the character encodings supported on the Java
- *   platform.
+ *   <a href="../../../java.base/java/lang/package-summary.html#charenc">
+ *   character encodings</a> for more information on the character encodings
+ *   supported on the Java platform.
  *   <li><b>Representation class name.</b> This specifies the fully-qualified
  *   name of the class of the object from which the actual print data comes, as
  *   returned by the {@link Class#getName() Class.getName()} method. (Thus the

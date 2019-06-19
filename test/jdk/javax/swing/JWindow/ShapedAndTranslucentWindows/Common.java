@@ -367,13 +367,13 @@ public abstract class Common {
         // Drag
         Point location = window.getLocationOnScreen();
         robot.dragAndDrop(location.x + 30, location.y + 5, location.x + dl + random.nextInt(dl), location.y + random.nextInt(dl));
-        robot.waitForIdle(delay);
+        robot.waitForIdle(2*delay);
         checkTranslucentShape();
 
         // Resize
         location = window.getLocationOnScreen();
         robot.dragAndDrop(location.x + 4, location.y + 4, location.x + random.nextInt(2*dl)-dl, location.y + random.nextInt(2*dl)-dl);
-        robot.waitForIdle(delay);
+        robot.waitForIdle(2*delay);
         checkTranslucentShape();
 
         EventQueue.invokeAndWait(this::dispose);
@@ -385,13 +385,13 @@ public abstract class Common {
         // Drag
         Point location = window.getLocationOnScreen();
         robot.dragAndDrop(location.x + 30, location.y + 5, location.x + dl + random.nextInt(dl), location.y + random.nextInt(dl));
-        robot.waitForIdle(delay);
+        robot.waitForIdle(2*delay);
         checkDynamicShape();
 
         // Resize
         location = window.getLocationOnScreen();
         robot.dragAndDrop(location.x + 4, location.y + 4, location.x + random.nextInt(2*dl)-dl, location.y + random.nextInt(2*dl)-dl);
-        robot.waitForIdle(delay);
+        robot.waitForIdle(2*delay);
         checkDynamicShape();
 
         EventQueue.invokeAndWait(this::dispose);

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2019, Oracle and/or its affiliates. All rights reserved.
  */
 
 /* Copyright  (c) 2002 Graz University of Technology. All rights reserved.
@@ -181,7 +181,7 @@ CK_C_INITIALIZE_ARGS_PTR makeCKInitArgsAdapter(JNIEnv *env, jobject jInitArgs)
     jReserved = (*env)->GetObjectField(env, jInitArgs, fieldID);
 
     /* we try to convert the reserved parameter also */
-    jObjectToPrimitiveCKObjectPtrPtr(env, jReserved, &(ckpInitArgs->pReserved), &ckReservedLength);
+    ckpInitArgs->pReserved = jObjectToPrimitiveCKObjectPtr(env, jReserved, &ckReservedLength);
 
     return ckpInitArgs ;
 }

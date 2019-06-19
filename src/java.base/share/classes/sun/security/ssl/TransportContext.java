@@ -39,7 +39,6 @@ import javax.net.ssl.HandshakeCompletedListener;
 import javax.net.ssl.SSLEngineResult.HandshakeStatus;
 import javax.net.ssl.SSLException;
 import javax.net.ssl.SSLSocket;
-import sun.security.ssl.SupportedGroupsExtension.NamedGroup;
 
 /**
  * SSL/(D)TLS transportation context.
@@ -159,14 +158,19 @@ class TransportContext implements ConnectionContext {
                 if (handshakeContext == null) {
                     if (type == SSLHandshake.KEY_UPDATE.id ||
                             type == SSLHandshake.NEW_SESSION_TICKET.id) {
-                        if (isNegotiated &&
-                                protocolVersion.useTLS13PlusSpec()) {
-                            handshakeContext = new PostHandshakeContext(this);
-                        } else {
+                        if (!isNegotiated) {
+                            throw fatal(Alert.UNEXPECTED_MESSAGE,
+                                    "Unexpected unnegotiated post-handshake" +
+                                            " message: " +
+                                            SSLHandshake.nameOf(type));
+                        }
+                        if (type == SSLHandshake.KEY_UPDATE.id &&
+                                !protocolVersion.useTLS13PlusSpec()) {
                             throw fatal(Alert.UNEXPECTED_MESSAGE,
                                     "Unexpected post-handshake message: " +
                                     SSLHandshake.nameOf(type));
                         }
+                        handshakeContext = new PostHandshakeContext(this);
                     } else {
                         handshakeContext = sslConfig.isClientMode ?
                                 new ClientHandshakeContext(sslContext, this) :

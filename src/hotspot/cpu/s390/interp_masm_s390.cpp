@@ -1,6 +1,6 @@
 /*
- * Copyright (c) 2016, 2018, Oracle and/or its affiliates. All rights reserved.
- * Copyright (c) 2016, 2018 SAP SE. All rights reserved.
+ * Copyright (c) 2016, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2019 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -412,6 +412,19 @@ void InterpreterMacroAssembler::get_cache_entry_pointer_at_bcp(Register cache,
     get_cache_and_index_at_bcp(cache, tmp, bcp_offset, index_size);
     add2reg_with_index(cache, in_bytes(ConstantPoolCache::base_offset()), tmp, cache);
   BLOCK_COMMENT("}");
+}
+
+void InterpreterMacroAssembler::load_resolved_method_at_index(int byte_no,
+                                                              Register cache,
+                                                              Register cpe_offset,
+                                                              Register method) {
+  const int method_offset = in_bytes(
+    ConstantPoolCache::base_offset() +
+      ((byte_no == TemplateTable::f2_byte)
+       ? ConstantPoolCacheEntry::f2_offset()
+       : ConstantPoolCacheEntry::f1_offset()));
+
+  z_lg(method, Address(cache, cpe_offset, method_offset)); // get f1 Method*
 }
 
 // Generate a subtype check: branch to ok_is_subtype if sub_klass is
@@ -2175,7 +2188,7 @@ void InterpreterMacroAssembler::pop_interpreter_frame(Register return_pc, Regist
   Register R_f1_sender_sp = tmp1;
   Register R_f2_sp = tmp2;
 
-  // Tirst check the for the interpreter frame's magic.
+  // First check for the interpreter frame's magic.
   asm_assert_ijava_state_magic(R_f2_sp/*tmp*/);
   z_lg(R_f2_sp, _z_parent_ijava_frame_abi(callers_sp), Z_fp);
   z_lg(R_f1_sender_sp, _z_ijava_state_neg(sender_sp), Z_fp);

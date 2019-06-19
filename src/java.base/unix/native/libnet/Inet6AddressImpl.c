@@ -703,10 +703,6 @@ Java_java_net_Inet6AddressImpl_isReachable0(JNIEnv *env, jobject this,
     sa.sa6.sin6_family = AF_INET6;
     if (scope > 0) {
         sa.sa6.sin6_scope_id = scope;
-#if defined(__linux__)
-    } else {
-        sa.sa6.sin6_scope_id = getDefaultIPv6Interface(&sa.sa6.sin6_addr);
-#endif
     }
 
     // load network interface address to SOCKETADDRESS, if specified

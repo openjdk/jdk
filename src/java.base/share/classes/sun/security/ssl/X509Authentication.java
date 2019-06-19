@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,13 +30,15 @@ import java.security.PublicKey;
 import java.security.cert.X509Certificate;
 import java.security.interfaces.ECKey;
 import java.security.interfaces.ECPublicKey;
+import java.security.interfaces.XECKey;
+import java.security.spec.AlgorithmParameterSpec;
 import java.security.spec.ECParameterSpec;
+import java.security.spec.NamedParameterSpec;
 import java.util.AbstractMap.SimpleImmutableEntry;
 import java.util.Map;
 import javax.net.ssl.SSLEngine;
 import javax.net.ssl.SSLSocket;
 import javax.net.ssl.X509ExtendedKeyManager;
-import sun.security.ssl.SupportedGroupsExtension.NamedGroup;
 import sun.security.ssl.SupportedGroupsExtension.SupportedGroups;
 
 enum X509Authentication implements SSLAuthentication {
@@ -143,6 +145,35 @@ enum X509Authentication implements SSLAuthentication {
                 PublicKey publicKey = popCerts[0].getPublicKey();
                 if (publicKey instanceof ECKey) {
                     return ((ECKey)publicKey).getParams();
+                }
+            }
+
+            return null;
+        }
+
+        // Similar to above, but for XEC.
+        NamedParameterSpec getXECParameterSpec() {
+            if (popPrivateKey == null ||
+                    !"XEC".equals(popPrivateKey.getAlgorithm())) {
+                return null;
+            }
+
+            if (popPrivateKey instanceof XECKey) {
+                AlgorithmParameterSpec params =
+                        ((XECKey)popPrivateKey).getParams();
+                if (params instanceof NamedParameterSpec){
+                    return (NamedParameterSpec)params;
+                }
+            } else if (popCerts != null && popCerts.length != 0) {
+                // The private key not extractable, get the parameters from
+                // the X.509 certificate.
+                PublicKey publicKey = popCerts[0].getPublicKey();
+                if (publicKey instanceof XECKey) {
+                    AlgorithmParameterSpec params =
+                            ((XECKey)publicKey).getParams();
+                    if (params instanceof NamedParameterSpec){
+                        return (NamedParameterSpec)params;
+                    }
                 }
             }
 

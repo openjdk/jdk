@@ -33,6 +33,7 @@ import javax.lang.model.type.TypeMirror;
 import jdk.javadoc.internal.doclets.formats.html.markup.ContentBuilder;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlStyle;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlTree;
+import jdk.javadoc.internal.doclets.formats.html.markup.StringContent;
 import jdk.javadoc.internal.doclets.formats.html.markup.Table;
 import jdk.javadoc.internal.doclets.formats.html.markup.TableHeader;
 import jdk.javadoc.internal.doclets.toolkit.AnnotationTypeRequiredMemberWriter;
@@ -106,9 +107,9 @@ public class AnnotationTypeRequiredMemberWriterImpl extends AbstractMemberWriter
         if (!writer.printedAnnotationHeading) {
             Content heading = HtmlTree.HEADING(Headings.TypeDeclaration.DETAILS_HEADING,
                     contents.annotationTypeDetailsLabel);
-            memberDetailsTree.add(heading);
             memberDetailsTree.add(links.createAnchor(
                     SectionName.ANNOTATION_TYPE_ELEMENT_DETAIL));
+            memberDetailsTree.add(heading);
             writer.printedAnnotationHeading = true;
         }
         return memberDetailsTree;
@@ -122,10 +123,9 @@ public class AnnotationTypeRequiredMemberWriterImpl extends AbstractMemberWriter
         String simpleName = name(member);
         Content annotationDocTree = new ContentBuilder();
         Content heading = new HtmlTree(Headings.TypeDeclaration.MEMBER_HEADING);
-        heading.add(simpleName);
+        heading.add(links.createAnchor(
+                simpleName + utils.signature((ExecutableElement) member), new StringContent(simpleName)));
         annotationDocTree.add(heading);
-        annotationDocTree.add(links.createAnchor(
-                simpleName + utils.signature((ExecutableElement) member)));
         return HtmlTree.SECTION(HtmlStyle.detail, annotationDocTree);
     }
 

@@ -24,8 +24,12 @@
  */
 package sun.security.ssl;
 
+import sun.security.x509.X509CertImpl;
+
+import java.io.IOException;
 import java.math.BigInteger;
 import java.net.InetAddress;
+import java.nio.ByteBuffer;
 import java.security.Principal;
 import java.security.PrivateKey;
 import java.security.cert.CertificateEncodingException;
@@ -40,8 +44,11 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.locks.ReentrantLock;
 import javax.crypto.SecretKey;
+import javax.crypto.spec.SecretKeySpec;
 import javax.net.ssl.ExtendedSSLSession;
+import javax.net.ssl.SNIHostName;
 import javax.net.ssl.SNIServerName;
+import javax.net.ssl.SSLException;
 import javax.net.ssl.SSLPeerUnverifiedException;
 import javax.net.ssl.SSLPermission;
 import javax.net.ssl.SSLSessionBindingEvent;
@@ -251,6 +258,371 @@ final class SSLSessionImpl extends ExtendedSSLSession {
         }
     }
 
+    /**
+     * < 2 bytes > protocolVersion
+     * < 2 bytes > cipherSuite
+     * < 2 bytes > localSupportedSignAlgs entries
+     *   < 2 bytes per entries > localSupportedSignAlgs
+     * < 2 bytes > preSharedKey length
+     * < length in bytes > preSharedKey
+     * < 1 byte > pskIdentity length
+     * < length in bytes > pskIdentity
+     * < 1 byte > masterSecret length
+     *   < 1 byte > masterSecret algorithm length
+     *   < length in bytes > masterSecret algorithm
+     *   < 2 bytes > masterSecretKey length
+     *   < length in bytes> masterSecretKey
+     * < 1 byte > useExtendedMasterSecret
+     * < 1 byte > identificationProtocol length
+     * < length in bytes > identificationProtocol
+     * < 1 byte > serverNameIndication length
+     * < length in bytes > serverNameIndication
+     * < 1 byte > Number of requestedServerNames entries
+     *   < 1 byte > ServerName length
+     *   < length in bytes > ServerName
+     * < 4 bytes > creationTime
+     * < 1 byte > Length of peer host
+     *   < length in bytes > peer host
+     * < 2 bytes> peer port
+     * < 1 byte > Number of peerCerts entries
+     *   < 4 byte > peerCert length
+     *   < length in bytes > peerCert
+     * < 1 byte > localCerts type (Cert, PSK, Anonymous)
+     *   Certificate
+     *     < 1 byte > Number of Certificate entries
+     *       < 4 byte> Certificate length
+     *       < length in bytes> Certificate
+     *   PSK
+     *     < 1 byte > Number of PSK entries
+     *       < 1 bytes > PSK algorithm length
+     *       < length in bytes > PSK algorithm string
+     *       < 4 bytes > PSK key length
+     *       < length in bytes> PSK key
+     *       < 4 bytes > PSK identity length
+     *       < length in bytes> PSK identity
+     *   Anonymous
+     *     < 1 byte >
+    */
+
+    SSLSessionImpl(HandshakeContext hc, ByteBuffer buf) throws IOException {
+        int i = 0;
+        byte[] b;
+
+        this.localSupportedSignAlgs = new ArrayList<>();
+
+        boundValues = null;
+
+        this.protocolVersion = ProtocolVersion.valueOf(Short.toUnsignedInt(buf.getShort()));
+
+        if (protocolVersion.useTLS13PlusSpec()) {
+            this.sessionId = new SessionId(false, null);
+        } else {
+            // The CH session id may reset this if it's provided
+            this.sessionId = new SessionId(true,
+                    hc.sslContext.getSecureRandom());
+        }
+
+        this.cipherSuite = CipherSuite.valueOf(Short.toUnsignedInt(buf.getShort()));
+
+        // Local Supported signature algorithms
+        i = Short.toUnsignedInt(buf.getShort());
+        while (i-- > 0) {
+            this.localSupportedSignAlgs.add(SignatureScheme.valueOf(
+                    Short.toUnsignedInt(buf.getShort())));
+        }
+
+        // PSK
+        i = Short.toUnsignedInt(buf.getShort());
+        if (i > 0) {
+            b = new byte[i];
+            // Get algorithm string
+            buf.get(b, 0, i);
+            // Encoded length
+            i = Short.toUnsignedInt(buf.getShort());
+            // Encoded SecretKey
+            b = new byte[i];
+            buf.get(b);
+            this.preSharedKey = new SecretKeySpec(b, "TlsMasterSecret");
+        } else {
+            this.preSharedKey = null;
+        }
+
+        // PSK identity
+        i = buf.get();
+        if (i > 0) {
+            b = new byte[i];
+            buf.get(b);
+            this.pskIdentity = b;
+        } else {
+            this.pskIdentity = null;
+        }
+
+        // Master secret length of secret key algorithm  (one byte)
+        i = buf.get();
+        if (i > 0) {
+            b = new byte[i];
+            // Get algorithm string
+            buf.get(b, 0, i);
+            // Encoded length
+            i = Short.toUnsignedInt(buf.getShort());
+            // Encoded SecretKey
+            b = new byte[i];
+            buf.get(b);
+            this.masterSecret = new SecretKeySpec(b, "TlsMasterSecret");
+        } else {
+            this.masterSecret = null;
+        }
+        // Use extended master secret
+        this.useExtendedMasterSecret = (buf.get() != 0);
+
+        // Identification Protocol
+        i = buf.get();
+        if (i == 0) {
+            identificationProtocol = null;
+        } else {
+            b = new byte[i];
+            identificationProtocol =
+                    buf.get(b, 0, i).asCharBuffer().toString();
+        }
+
+        // SNI
+        i = buf.get();  // length
+        if (i == 0) {
+            serverNameIndication = null;
+        } else {
+            b = new byte[i];
+            buf.get(b, 0, b.length);
+            serverNameIndication = new SNIHostName(b);
+        }
+
+        // List of SNIServerName
+        int len = Short.toUnsignedInt(buf.getShort());
+        if (len == 0) {
+            this.requestedServerNames = Collections.<SNIServerName>emptyList();
+        } else {
+            requestedServerNames = new ArrayList<>();
+            while (len > 0) {
+                int l = buf.get();
+                b = new byte[l];
+                buf.get(b, 0, l);
+                requestedServerNames.add(new SNIHostName(new String(b)));
+                len--;
+            }
+        }
+
+        // Get creation time
+        this.creationTime = buf.getLong();
+
+        // Get Peer host & port
+        i = Byte.toUnsignedInt(buf.get());
+        if (i == 0) {
+            this.host = new String();
+        } else {
+            b = new byte[i];
+            this.host = buf.get(b).toString();
+        }
+        this.port = Short.toUnsignedInt(buf.getShort());
+
+        // Peer certs
+        i = buf.get();
+        if (i == 0) {
+            this.peerCerts = null;
+        } else {
+            this.peerCerts = new X509Certificate[i];
+            int j = 0;
+            while (i > j) {
+                b = new byte[buf.getInt()];
+                buf.get(b);
+                try {
+                    this.peerCerts[j] = new X509CertImpl(b);
+                } catch (Exception e) {
+                    throw new IOException(e);
+                }
+                j++;
+            }
+        }
+
+        // Get local certs of PSK
+        switch (buf.get()) {
+            case 0:
+                break;
+            case 1:
+                // number of certs
+                len = buf.get();
+                this.localCerts = new X509Certificate[len];
+                i = 0;
+                while (len > i) {
+                    b = new byte[buf.getInt()];
+                    buf.get(b);
+                    try {
+                        this.localCerts[i] = new X509CertImpl(b);
+                    } catch (Exception e) {
+                        throw new IOException(e);
+                    }
+                    i++;
+                }
+                break;
+            case 2:
+                // pre-shared key
+                // Length of pre-shared key algorithm  (one byte)
+                i = buf.get();
+                b = new byte[i];
+                String alg = buf.get(b, 0, i).asCharBuffer().toString();
+                // Get length of encoding
+                i = Short.toUnsignedInt(buf.getShort());
+                // Get encoding
+                b = new byte[i];
+                buf.get(b);
+                this.preSharedKey = new SecretKeySpec(b, alg);
+                // Get identity len
+                this.pskIdentity = new byte[buf.get()];
+                buf.get(pskIdentity);
+                break;
+            default:
+                throw new SSLException("Failed local certs of session.");
+        }
+
+        context = (SSLSessionContextImpl)
+                hc.sslContext.engineGetServerSessionContext();
+    }
+
+    /**
+     * Write out a SSLSessionImpl in a byte array for a stateless session ticket
+     */
+    byte[] write() throws Exception {
+        byte[] b;
+        HandshakeOutStream hos = new HandshakeOutStream(null);
+
+        hos.putInt16(protocolVersion.id);
+        hos.putInt16(cipherSuite.id);
+
+        // Local Supported signature algorithms
+        int l = localSupportedSignAlgs.size();
+        hos.putInt16(l);
+        SignatureScheme[] sig = new SignatureScheme[l];
+        localSupportedSignAlgs.toArray(sig);
+        for (SignatureScheme s : sig) {
+            hos.putInt16(s.id);
+        }
+
+        // PSK
+        if (preSharedKey == null ||
+                preSharedKey.getAlgorithm() == null) {
+            hos.putInt16(0);
+        } else {
+            hos.putInt16(preSharedKey.getAlgorithm().length());
+            if (preSharedKey.getAlgorithm().length() != 0) {
+                hos.write(preSharedKey.getAlgorithm().getBytes());
+            }
+            b = preSharedKey.getEncoded();
+            hos.putInt16(b.length);
+            hos.write(b, 0, b.length);
+        }
+
+        // PSK Identity
+        if (pskIdentity == null) {
+            hos.putInt8(0);
+        } else {
+            hos.putInt8(pskIdentity.length);
+            hos.write(pskIdentity, 0, pskIdentity.length);
+        }
+
+        // Master Secret
+        if (getMasterSecret() == null ||
+                getMasterSecret().getAlgorithm() == null) {
+            hos.putInt8(0);
+        } else {
+            hos.putInt8(getMasterSecret().getAlgorithm().length());
+            if (getMasterSecret().getAlgorithm().length() != 0) {
+                hos.write(getMasterSecret().getAlgorithm().getBytes());
+            }
+            b = getMasterSecret().getEncoded();
+            hos.putInt16(b.length);
+            hos.write(b, 0, b.length);
+        }
+
+        hos.putInt8(useExtendedMasterSecret ? 1 : 0);
+
+        // Identification Protocol
+        if (identificationProtocol == null) {
+            hos.putInt8(0);
+        } else {
+            hos.putInt8(identificationProtocol.length());
+            hos.write(identificationProtocol.getBytes(), 0,
+                    identificationProtocol.length());
+        }
+
+        // SNI
+        if (serverNameIndication == null) {
+            hos.putInt8(0);
+        } else {
+            b = serverNameIndication.getEncoded();
+            hos.putInt8(b.length);
+            hos.write(b, 0, b.length);
+        }
+
+        // List of SNIServerName
+        hos.putInt16(requestedServerNames.size());
+        if (requestedServerNames.size() > 0) {
+            for (SNIServerName host: requestedServerNames) {
+                b = host.getEncoded();
+                hos.putInt8(b.length);
+                hos.write(b, 0, b.length);
+            }
+        }
+
+        ByteBuffer buffer = ByteBuffer.allocate(Long.BYTES);
+        hos.writeBytes(buffer.putLong(creationTime).array());
+
+        // peer Host & Port
+        if (host == null || host.length() == 0) {
+            hos.putInt8(0);
+        } else {
+            hos.putInt8(host.length());
+            hos.writeBytes(host.getBytes());
+        }
+        hos.putInt16(port);
+
+        // Peer cert
+        if (peerCerts == null || peerCerts.length == 0) {
+            hos.putInt8(0);
+        } else {
+            hos.putInt8(peerCerts.length);
+            for (X509Certificate c : peerCerts) {
+                b = c.getEncoded();
+                hos.putInt32(b.length);
+                hos.writeBytes(b);
+            }
+        }
+
+        // Client identity
+        if (localCerts != null && localCerts.length > 0) {
+            // certificate based
+            hos.putInt8(1);
+            hos.putInt8(localCerts.length);
+            for (X509Certificate c : localCerts) {
+                b = c.getEncoded();
+                hos.putInt32(b.length);
+                hos.writeBytes(b);
+            }
+        } else if (preSharedKey != null) {
+            // pre-shared key
+            hos.putInt8(2);
+            hos.putInt8(preSharedKey.getAlgorithm().length());
+            hos.write(preSharedKey.getAlgorithm().getBytes());
+            b = preSharedKey.getEncoded();
+            hos.putInt32(b.length);
+            hos.writeBytes(b);
+            hos.putInt32(pskIdentity.length);
+            hos.writeBytes(pskIdentity);
+        } else {
+            // anonymous
+            hos.putInt8(0);
+        }
+
+        return hos.toByteArray();
+    }
+
     void setMasterSecret(SecretKey secret) {
         masterSecret = secret;
     }
@@ -333,6 +705,10 @@ final class SSLSessionImpl extends ExtendedSSLSession {
         }
     }
 
+    byte[] getPskIdentity() {
+        return pskIdentity;
+    }
+
     void setPeerCertificates(X509Certificate[] peer) {
         if (peerCerts == null) {
             peerCerts = peer;
@@ -400,8 +776,12 @@ final class SSLSessionImpl extends ExtendedSSLSession {
      * maximum lifetime in any case.
      */
     boolean isRejoinable() {
+        // TLS 1.3 can have no session id
+        if (protocolVersion.useTLS13PlusSpec()) {
+            return (!invalidated && isLocalAuthenticationValid());
+        }
         return sessionId != null && sessionId.length() != 0 &&
-            !invalidated && isLocalAuthenticationValid();
+                !invalidated && isLocalAuthenticationValid();
     }
 
     @Override

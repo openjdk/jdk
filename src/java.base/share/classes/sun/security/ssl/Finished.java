@@ -410,6 +410,10 @@ final class Finished {
                 chc.conContext.clientVerifyData = fm.verifyData;
             }
 
+            if (chc.statelessResumption) {
+                chc.handshakeConsumers.put(
+                        SSLHandshake.NEW_SESSION_TICKET.id, SSLHandshake.NEW_SESSION_TICKET);
+            }
             // update the consumers and producers
             if (!chc.isResumption) {
                 chc.conContext.consumers.put(ContentType.CHANGE_CIPHER_SPEC.id,
@@ -441,6 +445,10 @@ final class Finished {
 
         private byte[] onProduceFinished(ServerHandshakeContext shc,
                 HandshakeMessage message) throws IOException {
+            if (shc.statelessResumption) {
+                NewSessionTicket.handshake12Producer.produce(shc, message);
+            }
+
             // Refresh handshake hash
             shc.handshakeHash.update();
 
@@ -473,7 +481,8 @@ final class Finished {
                         SSLHandshake.FINISHED.id, SSLHandshake.FINISHED);
                 shc.conContext.inputRecord.expectingFinishFlight();
             } else {
-                if (shc.handshakeSession.isRejoinable()) {
+                if (shc.handshakeSession.isRejoinable() &&
+                        !shc.statelessResumption) {
                     ((SSLSessionContextImpl)shc.sslContext.
                         engineGetServerSessionContext()).put(
                             shc.handshakeSession);
@@ -591,7 +600,8 @@ final class Finished {
             }
 
             if (shc.isResumption) {
-                if (shc.handshakeSession.isRejoinable()) {
+                if (shc.handshakeSession.isRejoinable() &&
+                        !shc.statelessResumption) {
                     ((SSLSessionContextImpl)shc.sslContext.
                         engineGetServerSessionContext()).put(
                             shc.handshakeSession);
@@ -915,9 +925,9 @@ final class Finished {
 
             // save the session
             if (!chc.isResumption && chc.handshakeSession.isRejoinable()) {
-                SSLSessionContextImpl sessionContext = (SSLSessionContextImpl)
-                chc.sslContext.engineGetClientSessionContext();
-                sessionContext.put(chc.handshakeSession);
+                ((SSLSessionContextImpl)chc.sslContext.
+                        engineGetClientSessionContext()).
+                        put(chc.handshakeSession);
             }
 
             // derive salt secret
@@ -1028,10 +1038,11 @@ final class Finished {
                         shc.negotiatedProtocol);
             }
 
-            // save the session
-            if (!shc.isResumption && shc.handshakeSession.isRejoinable()) {
+            // Save the session if possible and not stateless
+            if (!shc.statelessResumption && !shc.isResumption &&
+                    shc.handshakeSession.isRejoinable()) {
                 SSLSessionContextImpl sessionContext = (SSLSessionContextImpl)
-                shc.sslContext.engineGetServerSessionContext();
+                        shc.sslContext.engineGetServerSessionContext();
                 sessionContext.put(shc.handshakeSession);
             }
 

@@ -38,12 +38,12 @@
 bool AbstractDisassembler::_show_data_hex      = true;
 bool AbstractDisassembler::_show_data_int      = false;
 bool AbstractDisassembler::_show_data_float    = false;
-bool AbstractDisassembler::_align_instr        = false;
+bool AbstractDisassembler::_align_instr        = true;
 bool AbstractDisassembler::_show_pc            = true;
 bool AbstractDisassembler::_show_offset        = false;
-bool AbstractDisassembler::_show_structs       = false;
-bool AbstractDisassembler::_show_comment       = false;
-bool AbstractDisassembler::_show_block_comment = false;
+bool AbstractDisassembler::_show_structs       = true;
+bool AbstractDisassembler::_show_comment       = true;
+bool AbstractDisassembler::_show_block_comment = true;
 
 // set "true" to see what's in memory bit by bit
 // might prove cumbersome on platforms where instr_len is hard to find out

@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2011, 2018, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2011, 2019, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -57,6 +57,17 @@ ifneq ($(BUILD_CRYPTO), false)
     ))
 
     TARGETS += $(BUILD_LIBW2K_LSA_AUTH)
+
+    $(eval $(call SetupJdkLibrary, BUILD_LIBSSPI_BRIDGE, \
+        NAME := sspi_bridge, \
+        OPTIMIZATION := LOW, \
+        CFLAGS := $(CFLAGS_JDKLIB) \
+            -I$(TOPDIR)/src/java.security.jgss/share/native/libj2gss, \
+        LDFLAGS := $(LDFLAGS_JDKLIB) \
+            $(call SET_SHARED_LIBRARY_ORIGIN) \
+    ))
+
+    TARGETS += $(BUILD_LIBSSPI_BRIDGE)
   endif
 
   ifeq ($(call isTargetOs, macosx), true)

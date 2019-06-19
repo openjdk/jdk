@@ -51,6 +51,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <assert.h>
+#include "jlong.h"
 
 #include "sun_security_pkcs11_wrapper_PKCS11.h"
 
@@ -67,6 +68,7 @@ jobject ckMechanismInfoPtrToJMechanismInfo(JNIEnv *env, const CK_MECHANISM_INFO_
 jfieldID pNativeDataID;
 jfieldID mech_mechanismID;
 jfieldID mech_pParameterID;
+jfieldID mech_pHandleID;
 
 jclass jByteArrayClass;
 jclass jLongClass;
@@ -83,6 +85,23 @@ JNIEXPORT jint JNICALL DEF_JNI_OnLoad(JavaVM *vm, void *reserved) {
 /* ************************************************************************** */
 /* The native implementation of the methods of the PKCS11Implementation class */
 /* ************************************************************************** */
+
+/*
+ * This method is used to do free the memory allocated for CK_MECHANISM structure.
+ *
+ * Class:     sun_security_pkcs11_wrapper_PKCS11
+ * Method:    freeMechanism
+ * Signature: (J)J
+ */
+JNIEXPORT jlong JNICALL
+Java_sun_security_pkcs11_wrapper_PKCS11_freeMechanism
+(JNIEnv *env, jclass thisClass, jlong ckpMechanism) {
+    if (ckpMechanism != 0L) {
+        freeCKMechanismPtr(jlong_to_ptr(ckpMechanism));
+        TRACE1("DEBUG PKCS11_freeMechanism: free pMech = %x\n", ckpMechanism);
+    }
+    return 0L;
+}
 
 /*
  * This method is used to do static initialization. This method is static and
@@ -115,11 +134,11 @@ jclass fetchClass(JNIEnv *env, const char *name) {
 void prefetchFields(JNIEnv *env, jclass thisClass) {
     jclass tmpClass;
 
-    /* PKCS11 */
+    /* PKCS11 - pNativeData */
     pNativeDataID = (*env)->GetFieldID(env, thisClass, "pNativeData", "J");
     if (pNativeDataID == NULL) { return; }
 
-    /* CK_MECHANISM */
+    /* CK_MECHANISM - mechanism, pParameter, pHandle */
     tmpClass = (*env)->FindClass(env, CLASS_MECHANISM);
     if (tmpClass == NULL) { return; }
     mech_mechanismID = (*env)->GetFieldID(env, tmpClass, "mechanism", "J");
@@ -127,6 +146,10 @@ void prefetchFields(JNIEnv *env, jclass thisClass) {
     mech_pParameterID = (*env)->GetFieldID(env, tmpClass, "pParameter",
                                            "Ljava/lang/Object;");
     if (mech_pParameterID == NULL) { return; }
+    mech_pHandleID = (*env)->GetFieldID(env, tmpClass, "pHandle", "J");
+    if (mech_pHandleID == NULL) { return; }
+
+    /* java classes for primitive types - byte[], long */
     jByteArrayClass = fetchClass(env, "[B");
     if (jByteArrayClass == NULL) { return; }
     jLongClass = fetchClass(env, "java/lang/Long");

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,11 +24,15 @@
 import java.io.*;
 import java.net.*;
 import java.util.*;
+import jdk.test.lib.net.URIBuilder;
 
 /**
  * @test
  * @bug 4513440
  * @summary BasicAuthentication is zeroing out the given password
+ * @library /test/lib
+ * @run main/othervm BasicTest3
+ * @run main/othervm -Djava.net.preferIPv6Addresses=true BasicTest3
  */
 
 public class BasicTest3 {
@@ -130,14 +134,21 @@ public class BasicTest3 {
     public static void main (String args[]) throws Exception {
         MyAuthenticator3 auth = new MyAuthenticator3 ();
         Authenticator.setDefault (auth);
-        ServerSocket ss = new ServerSocket (0);
+        InetAddress loopback = InetAddress.getLoopbackAddress();
+        ServerSocket ss = new ServerSocket();
+        ss.bind(new InetSocketAddress(loopback, 0));
         int port = ss.getLocalPort ();
         BasicServer3 server = new BasicServer3 (ss);
         synchronized (server) {
             server.start();
             System.out.println ("client 1");
-            URL url = new URL ("http://localhost:"+port+"/d1/d2/d3/foo.html");
-            URLConnection urlc = url.openConnection ();
+            URL url =  URIBuilder.newBuilder()
+                .scheme("http")
+                .loopback()
+                .port(port)
+                .path("/d1/d2/d3/foo.html")
+                .toURL();
+            URLConnection urlc = url.openConnection(Proxy.NO_PROXY);
             InputStream is = urlc.getInputStream ();
             read (is);
             is.close ();

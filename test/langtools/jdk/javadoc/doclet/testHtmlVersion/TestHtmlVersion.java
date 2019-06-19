@@ -323,21 +323,21 @@ public class TestHtmlVersion extends JavadocTester {
                 + "<!--   -->\n"
                 + "</a>\n"
                 + "<h2>Method Summary</h2>",
-                "<section class=\"fieldDetails\">\n"
-                + "<h2>Field Details</h2>\n"
+                "<section class=\"fieldDetails\">"
                 + "<a id=\"field.detail\">\n"
                 + "<!--   -->\n"
-                + "</a>",
-                "<section class=\"constructorDetails\">\n"
-                + "<h2>Constructor Details</h2>\n"
+                + "</a>\n"
+                + "<h2>Field Details</h2>\n",
+                "<section class=\"constructorDetails\">"
                 + "<a id=\"constructor.detail\">\n"
                 + "<!--   -->\n"
-                + "</a>",
-                "<section class=\"methodDetails\">\n"
-                + "<h2>Method Details</h2>\n"
+                + "</a>\n"
+                + "<h2>Constructor Details</h2>\n",
+                "<section class=\"methodDetails\">"
                 + "<a id=\"method.detail\">\n"
                 + "<!--   -->\n"
-                + "</a>",
+                + "</a>\n"
+                + "<h2>Method Details</h2>\n",
                 "<footer role=\"contentinfo\">\n"
                 + "<nav role=\"navigation\">\n"
                 + "<!-- ======= START OF BOTTOM NAVBAR ====== -->");
@@ -367,16 +367,16 @@ public class TestHtmlVersion extends JavadocTester {
                 + "<h2>Method Summary</h2>\n"
                 + "<div class=\"memberSummary\">\n",
                 "<table aria-labelledby=\"t0\">",
-                "<section class=\"constantDetails\">\n"
-                + "<h2>Enum Constant Details</h2>\n"
+                "<section class=\"constantDetails\">"
                 + "<a id=\"enum.constant.detail\">\n"
                 + "<!--   -->\n"
-                + "</a>\n",
-                "<section class=\"methodDetails\">\n"
-                + "<h2>Method Details</h2>\n"
+                + "</a>\n"
+                + "<h2>Enum Constant Details</h2>\n",
+                "<section class=\"methodDetails\">"
                 + "<a id=\"method.detail\">\n"
                 + "<!--   -->\n"
-                + "</a>\n",
+                + "</a>\n"
+                + "<h2>Method Details</h2>\n",
                 "<footer role=\"contentinfo\">\n"
                 + "<nav role=\"navigation\">\n"
                 + "<!-- ======= START OF BOTTOM NAVBAR ====== -->");
@@ -400,11 +400,11 @@ public class TestHtmlVersion extends JavadocTester {
                 + "<h2>Method Summary</h2>\n"
                 + "<div class=\"memberSummary\">\n",
                 "<table aria-labelledby=\"t0\">\n",
-                "<section class=\"methodDetails\">\n"
-                + "<h2>Method Details</h2>\n"
+                "<section class=\"methodDetails\">"
                 + "<a id=\"method.detail\">\n"
                 + "<!--   -->\n"
-                + "</a>\n",
+                + "</a>\n"
+                + "<h2>Method Details</h2>\n",
                 "<footer role=\"contentinfo\">\n"
                 + "<nav role=\"navigation\">\n"
                 + "<!-- ======= START OF BOTTOM NAVBAR ====== -->");
@@ -426,11 +426,11 @@ public class TestHtmlVersion extends JavadocTester {
                 + "<!--   -->\n"
                 + "</a>\n"
                 + "<h2>Constructor Summary</h2>",
-                "<section class=\"constructorDetails\">\n"
-                + "<h2>Constructor Details</h2>\n"
+                "<section class=\"constructorDetails\">"
                 + "<a id=\"constructor.detail\">\n"
                 + "<!--   -->\n"
-                + "</a>\n",
+                + "</a>\n"
+                + "<h2>Constructor Details</h2>\n",
                 "<footer role=\"contentinfo\">\n"
                 + "<nav role=\"navigation\">\n"
                 + "<!-- ======= START OF BOTTOM NAVBAR ====== -->");
@@ -452,11 +452,11 @@ public class TestHtmlVersion extends JavadocTester {
                 + "<!--   -->\n"
                 + "</a>\n"
                 + "<h2>Constructor Summary</h2>",
-                "<section class=\"constructorDetails\">\n"
-                + "<h2>Constructor Details</h2>\n"
+                "<section class=\"constructorDetails\">"
                 + "<a id=\"constructor.detail\">\n"
                 + "<!--   -->\n"
-                + "</a>\n",
+                + "</a>\n"
+                + "<h2>Constructor Details</h2>\n",
                 "<footer role=\"contentinfo\">\n"
                 + "<nav role=\"navigation\">\n"
                 + "<!-- ======= START OF BOTTOM NAVBAR ====== -->");
@@ -484,11 +484,11 @@ public class TestHtmlVersion extends JavadocTester {
                 + "</a>\n"
                 + "<h2>Optional Element Summary</h2>\n"
                 + "<div class=\"memberSummary\">\n<table>",
-                "<section class=\"memberDetails\">\n"
-                + "<h2>Element Details</h2>\n"
+                "<section class=\"memberDetails\">"
                 + "<a id=\"annotation.type.element.detail\">\n"
                 + "<!--   -->\n"
-                + "</a>\n",
+                + "</a>\n"
+                + "<h2>Element Details</h2>",
                 "<footer role=\"contentinfo\">\n"
                 + "<nav role=\"navigation\">\n"
                 + "<!-- ======= START OF BOTTOM NAVBAR ====== -->");

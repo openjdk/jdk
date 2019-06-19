@@ -27,31 +27,28 @@ package sun.security.ssl;
 
 import java.io.IOException;
 import java.nio.ByteBuffer;
-import java.security.AlgorithmConstraints;
-import java.security.CryptoPrimitive;
 import java.security.GeneralSecurityException;
-import java.security.KeyFactory;
 import java.security.PublicKey;
 import java.security.interfaces.ECPublicKey;
+import java.security.interfaces.XECPublicKey;
+import java.security.spec.AlgorithmParameterSpec;
 import java.security.spec.ECParameterSpec;
-import java.security.spec.ECPoint;
-import java.security.spec.ECPublicKeySpec;
+import java.security.spec.NamedParameterSpec;
 import java.text.MessageFormat;
-import java.util.EnumSet;
 import java.util.Locale;
 import javax.crypto.SecretKey;
-import javax.net.ssl.SSLHandshakeException;
-import sun.security.ssl.ECDHKeyExchange.ECDHECredentials;
-import sun.security.ssl.ECDHKeyExchange.ECDHEPossession;
 import sun.security.ssl.SSLHandshake.HandshakeMessage;
-import sun.security.ssl.SupportedGroupsExtension.NamedGroup;
 import sun.security.ssl.X509Authentication.X509Credentials;
 import sun.security.ssl.X509Authentication.X509Possession;
-import sun.security.util.ECUtil;
 import sun.security.util.HexDumpEncoder;
 
 /**
  * Pack of the "ClientKeyExchange" handshake message.
+ *
+ * This file is used by both the ECDH/ECDHE/XDH code since much of the
+ * code is the same between the EC named groups (i.e.
+ * x25519/x448/secp*r1), even though the APIs are very different (i.e.
+ * ECPublicKey/XECPublicKey, KeyExchange.getInstance("EC"/"XDH"), etc.).
  */
 final class ECDHClientKeyExchange {
     static final SSLConsumer ecdhHandshakeConsumer =
@@ -65,19 +62,17 @@ final class ECDHClientKeyExchange {
             new ECDHEClientKeyExchangeProducer();
 
     /**
-     * The ECDH/ECDHE ClientKeyExchange handshake message.
+     * The ECDH/ECDHE/XDH ClientKeyExchange handshake message.
      */
     private static final
             class ECDHClientKeyExchangeMessage extends HandshakeMessage {
         private final byte[] encodedPoint;
 
         ECDHClientKeyExchangeMessage(HandshakeContext handshakeContext,
-                ECPublicKey publicKey) {
+                byte[] encodedPublicKey) {
             super(handshakeContext);
 
-            ECPoint point = publicKey.getW();
-            ECParameterSpec params = publicKey.getParams();
-            encodedPoint = ECUtil.encodePoint(point, params.getCurve());
+            this.encodedPoint = encodedPublicKey;
         }
 
         ECDHClientKeyExchangeMessage(HandshakeContext handshakeContext,
@@ -87,34 +82,6 @@ final class ECDHClientKeyExchange {
                 this.encodedPoint = Record.getBytes8(m);
             } else {
                 this.encodedPoint = new byte[0];
-            }
-        }
-
-        // Check constraints of the specified EC public key.
-        static void checkConstraints(AlgorithmConstraints constraints,
-                ECPublicKey publicKey,
-                byte[] encodedPoint) throws SSLHandshakeException {
-
-            try {
-                ECParameterSpec params = publicKey.getParams();
-                ECPoint point =
-                        ECUtil.decodePoint(encodedPoint, params.getCurve());
-                ECPublicKeySpec spec = new ECPublicKeySpec(point, params);
-
-                KeyFactory kf = KeyFactory.getInstance("EC");
-                ECPublicKey peerPublicKey =
-                        (ECPublicKey)kf.generatePublic(spec);
-
-                // check constraints of ECPublicKey
-                if (!constraints.permits(
-                        EnumSet.of(CryptoPrimitive.KEY_AGREEMENT),
-                        peerPublicKey)) {
-                    throw new SSLHandshakeException(
-                        "ECPublicKey does not comply to algorithm constraints");
-                }
-            } catch (GeneralSecurityException | java.io.IOException e) {
-                throw (SSLHandshakeException) new SSLHandshakeException(
-                        "Could not generate ECPublicKey").initCause(e);
             }
         }
 
@@ -194,24 +161,41 @@ final class ECDHClientKeyExchange {
             }
 
             PublicKey publicKey = x509Credentials.popPublicKey;
-            if (!publicKey.getAlgorithm().equals("EC")) {
+
+            NamedGroup namedGroup = null;
+            String algorithm = publicKey.getAlgorithm();
+
+            // Determine which NamedGroup we'll be using, then use
+            // the creator functions.
+            if (algorithm.equals("EC")) {
+                ECParameterSpec params = ((ECPublicKey)publicKey).getParams();
+                namedGroup = NamedGroup.valueOf(params);
+            } else if (algorithm.equals("XDH")) {
+                AlgorithmParameterSpec params =
+                        ((XECPublicKey)publicKey).getParams();
+                if (params instanceof NamedParameterSpec) {
+                    String name = ((NamedParameterSpec)params).getName();
+                    namedGroup = NamedGroup.nameOf(name);
+                }
+            } else {
                 throw chc.conContext.fatal(Alert.ILLEGAL_PARAMETER,
-                    "Not EC server certificate for ECDH client key exchange");
+                    "Not EC/XDH server certificate for " +
+                            "ECDH client key exchange");
             }
 
-            ECParameterSpec params = ((ECPublicKey)publicKey).getParams();
-            NamedGroup namedGroup = NamedGroup.valueOf(params);
             if (namedGroup == null) {
                 throw chc.conContext.fatal(Alert.ILLEGAL_PARAMETER,
-                    "Unsupported EC server cert for ECDH client key exchange");
+                    "Unsupported EC/XDH server cert for " +
+                        "ECDH client key exchange");
             }
 
-            ECDHEPossession ecdhePossession = new ECDHEPossession(
-                    namedGroup, chc.sslContext.getSecureRandom());
-            chc.handshakePossessions.add(ecdhePossession);
+            SSLPossession sslPossession = namedGroup.createPossession(
+                    chc.sslContext.getSecureRandom());
+
+            chc.handshakePossessions.add(sslPossession);
             ECDHClientKeyExchangeMessage cke =
                     new ECDHClientKeyExchangeMessage(
-                            chc, ecdhePossession.publicKey);
+                            chc, sslPossession.encode());
             if (SSLLogger.isOn && SSLLogger.isOn("ssl,handshake")) {
                 SSLLogger.fine(
                     "Produced ECDH ClientKeyExchange handshake message", cke);
@@ -283,18 +267,35 @@ final class ECDHClientKeyExchange {
                     "No expected EC server cert for ECDH client key exchange");
             }
 
-            ECParameterSpec params = x509Possession.getECParameterSpec();
-            if (params == null) {
-                // unlikely, have been checked during cipher suite negotiation.
-                throw shc.conContext.fatal(Alert.ILLEGAL_PARAMETER,
-                    "Not EC server cert for ECDH client key exchange");
+            // Determine which NamedGroup we'll be using, then use
+            // the creator functions.
+            NamedGroup namedGroup = null;
+
+            // Iteratively determine the X509Possession type's ParameterSpec.
+            ECParameterSpec ecParams = x509Possession.getECParameterSpec();
+            NamedParameterSpec namedParams = null;
+            if (ecParams != null) {
+                namedGroup = NamedGroup.valueOf(ecParams);
             }
 
-            NamedGroup namedGroup = NamedGroup.valueOf(params);
-            if (namedGroup == null) {
+            // Wasn't EC, try XEC.
+            if (ecParams == null) {
+                namedParams = x509Possession.getXECParameterSpec();
+                namedGroup = NamedGroup.nameOf(namedParams.getName());
+            }
+
+            // Can't figure this out, bail.
+            if ((ecParams == null) && (namedParams == null)) {
                 // unlikely, have been checked during cipher suite negotiation.
                 throw shc.conContext.fatal(Alert.ILLEGAL_PARAMETER,
-                    "Unsupported EC server cert for ECDH client key exchange");
+                    "Not EC/XDH server cert for ECDH client key exchange");
+            }
+
+            // unlikely, have been checked during cipher suite negotiation.
+            if (namedGroup == null) {
+                throw shc.conContext.fatal(Alert.ILLEGAL_PARAMETER,
+                    "Unknown named group in server cert for " +
+                        "ECDH client key exchange");
             }
 
             SSLKeyExchange ke = SSLKeyExchange.valueOf(
@@ -306,7 +307,7 @@ final class ECDHClientKeyExchange {
                         "Not supported key exchange type");
             }
 
-            // parse the handshake message
+            // parse either handshake message containing either EC/XEC.
             ECDHClientKeyExchangeMessage cke =
                     new ECDHClientKeyExchangeMessage(shc, message);
             if (SSLLogger.isOn && SSLLogger.isOn("ssl,handshake")) {
@@ -316,27 +317,17 @@ final class ECDHClientKeyExchange {
 
             // create the credentials
             try {
-                ECPoint point =
-                    ECUtil.decodePoint(cke.encodedPoint, params.getCurve());
-                ECPublicKeySpec spec = new ECPublicKeySpec(point, params);
+                NamedGroup ng = namedGroup;  // "effectively final" the lambda
+                // AlgorithmConstraints are checked internally.
+                SSLCredentials sslCredentials = namedGroup.decodeCredentials(
+                        cke.encodedPoint, shc.algorithmConstraints,
+                        s -> shc.conContext.fatal(Alert.INSUFFICIENT_SECURITY,
+                        "ClientKeyExchange " + ng + ": " + s));
 
-                KeyFactory kf = KeyFactory.getInstance("EC");
-                ECPublicKey peerPublicKey =
-                        (ECPublicKey)kf.generatePublic(spec);
-
-                // check constraints of peer ECPublicKey
-                if (!shc.algorithmConstraints.permits(
-                        EnumSet.of(CryptoPrimitive.KEY_AGREEMENT),
-                        peerPublicKey)) {
-                    throw new SSLHandshakeException(
-                        "ECPublicKey does not comply to algorithm constraints");
-                }
-
-                shc.handshakeCredentials.add(new ECDHECredentials(
-                        peerPublicKey, namedGroup));
-            } catch (GeneralSecurityException | java.io.IOException e) {
-                throw (SSLHandshakeException)(new SSLHandshakeException(
-                        "Could not generate ECPublicKey").initCause(e));
+                shc.handshakeCredentials.add(sslCredentials);
+            } catch (GeneralSecurityException e) {
+                throw shc.conContext.fatal(Alert.UNEXPECTED_MESSAGE,
+                        "Cannot decode ECDH PublicKey: " + namedGroup);
             }
 
             // update the states
@@ -374,25 +365,37 @@ final class ECDHClientKeyExchange {
             // The producing happens in client side only.
             ClientHandshakeContext chc = (ClientHandshakeContext)context;
 
-            ECDHECredentials ecdheCredentials = null;
+            SSLCredentials sslCredentials = null;
+            NamedGroup ng = null;
+            PublicKey publicKey = null;
+
+            // Find a good EC/XEC credential to use, determine the
+            // NamedGroup to use for creating Possessions/Credentials/Keys.
             for (SSLCredentials cd : chc.handshakeCredentials) {
-                if (cd instanceof ECDHECredentials) {
-                    ecdheCredentials = (ECDHECredentials)cd;
+                if (cd instanceof NamedGroupCredentials) {
+                    NamedGroupCredentials creds = (NamedGroupCredentials)cd;
+                    ng = creds.getNamedGroup();
+                    publicKey = creds.getPublicKey();
+                    sslCredentials = cd;
                     break;
                 }
             }
 
-            if (ecdheCredentials == null) {
+            if (sslCredentials == null) {
                 throw chc.conContext.fatal(Alert.INTERNAL_ERROR,
                     "No ECDHE credentials negotiated for client key exchange");
             }
 
-            ECDHEPossession ecdhePossession = new ECDHEPossession(
-                    ecdheCredentials, chc.sslContext.getSecureRandom());
-            chc.handshakePossessions.add(ecdhePossession);
+            SSLPossession sslPossession = ng.createPossession(
+                    chc.sslContext.getSecureRandom());
+
+            chc.handshakePossessions.add(sslPossession);
+
+            // Write the EC/XEC message.
             ECDHClientKeyExchangeMessage cke =
                     new ECDHClientKeyExchangeMessage(
-                            chc, ecdhePossession.publicKey);
+                            chc, sslPossession.encode());
+
             if (SSLLogger.isOn && SSLLogger.isOn("ssl,handshake")) {
                 SSLLogger.fine(
                     "Produced ECDHE ClientKeyExchange handshake message", cke);
@@ -450,23 +453,29 @@ final class ECDHClientKeyExchange {
             // The consuming happens in server side only.
             ServerHandshakeContext shc = (ServerHandshakeContext)context;
 
-            ECDHEPossession ecdhePossession = null;
+            SSLPossession sslPossession = null;
+            NamedGroup namedGroup = null;
+
+           // Find a good EC/XEC credential to use, determine the
+           // NamedGroup to use for creating Possessions/Credentials/Keys.
             for (SSLPossession possession : shc.handshakePossessions) {
-                if (possession instanceof ECDHEPossession) {
-                    ecdhePossession = (ECDHEPossession)possession;
+                if (possession instanceof NamedGroupPossession) {
+                    NamedGroupPossession poss =
+                            (NamedGroupPossession)possession;
+                    namedGroup = poss.getNamedGroup();
+                    sslPossession = poss;
                     break;
                 }
             }
-            if (ecdhePossession == null) {
+
+            if (sslPossession == null) {
                 // unlikely
                 throw shc.conContext.fatal(Alert.INTERNAL_ERROR,
                     "No expected ECDHE possessions for client key exchange");
             }
 
-            ECParameterSpec params = ecdhePossession.publicKey.getParams();
-            NamedGroup namedGroup = NamedGroup.valueOf(params);
             if (namedGroup == null) {
-                // unlikely, have been checked during cipher suite negotiation.
+                // unlikely, have been checked during cipher suite negotiation
                 throw shc.conContext.fatal(Alert.ILLEGAL_PARAMETER,
                     "Unsupported EC server cert for ECDHE client key exchange");
             }
@@ -480,7 +489,7 @@ final class ECDHClientKeyExchange {
                         "Not supported key exchange type");
             }
 
-            // parse the handshake message
+            // parse the EC/XEC handshake message
             ECDHClientKeyExchangeMessage cke =
                     new ECDHClientKeyExchangeMessage(shc, message);
             if (SSLLogger.isOn && SSLLogger.isOn("ssl,handshake")) {
@@ -490,27 +499,17 @@ final class ECDHClientKeyExchange {
 
             // create the credentials
             try {
-                ECPoint point =
-                    ECUtil.decodePoint(cke.encodedPoint, params.getCurve());
-                ECPublicKeySpec spec = new ECPublicKeySpec(point, params);
+                NamedGroup ng = namedGroup; // "effectively final" the lambda
+                // AlgorithmConstraints are checked internally.
+                SSLCredentials sslCredentials = namedGroup.decodeCredentials(
+                        cke.encodedPoint, shc.algorithmConstraints,
+                        s -> shc.conContext.fatal(Alert.INSUFFICIENT_SECURITY,
+                        "ClientKeyExchange " + ng + ": " + s));
 
-                KeyFactory kf = KeyFactory.getInstance("EC");
-                ECPublicKey peerPublicKey =
-                        (ECPublicKey)kf.generatePublic(spec);
-
-                // check constraints of peer ECPublicKey
-                if (!shc.algorithmConstraints.permits(
-                        EnumSet.of(CryptoPrimitive.KEY_AGREEMENT),
-                        peerPublicKey)) {
-                    throw new SSLHandshakeException(
-                        "ECPublicKey does not comply to algorithm constraints");
-                }
-
-                shc.handshakeCredentials.add(new ECDHECredentials(
-                        peerPublicKey, namedGroup));
-            } catch (GeneralSecurityException | java.io.IOException e) {
-                throw (SSLHandshakeException)(new SSLHandshakeException(
-                        "Could not generate ECPublicKey").initCause(e));
+                shc.handshakeCredentials.add(sslCredentials);
+            } catch (GeneralSecurityException e) {
+                throw shc.conContext.fatal(Alert.UNEXPECTED_MESSAGE,
+                        "Cannot decode named group: " + namedGroup);
             }
 
             // update the states

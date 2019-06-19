@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -42,6 +42,8 @@ public class bug6580930 {
     private static JPopupMenu popup;
     private static Toolkit toolkit;
     private static volatile boolean skipTest = false;
+    private static Point loc;
+    private static int y;
 
     private static void createGui() {
         frame = new JFrame();
@@ -93,12 +95,15 @@ public class bug6580930 {
         if(skipTest) {
             return;
         }
-        Point loc = frame.getLocationOnScreen();
+
+        SwingUtilities.invokeAndWait(() -> loc = frame.getLocationOnScreen());
+        robot.waitForIdle();
 
         robot.mouseMove(loc.x, loc.y);
         showPopup();
         robot.waitForIdle();
-        if (isHeavyWeightMenuVisible()) {
+        if (!System.getProperty("os.name").startsWith("Mac")
+            && isHeavyWeightMenuVisible()) {
             throw new RuntimeException("HeavyWeightPopup is unexpectedly visible");
         }
 
@@ -106,12 +111,16 @@ public class bug6580930 {
         robot.keyRelease(KeyEvent.VK_ESCAPE);
 
         int x = loc.x;
-        int y = loc.y + (frame.getHeight() - popup.getPreferredSize().height) + 1;
+        SwingUtilities.invokeAndWait( () -> y = loc.y + (frame.getHeight() -
+                popup.getPreferredSize().height) + 1);
+        robot.waitForIdle();
         robot.mouseMove(x, y);
 
         showPopup();
+        SwingUtilities.invokeAndWait(() -> loc = popup.getLocationOnScreen());
+        robot.waitForIdle();
 
-        if (!popup.getLocationOnScreen().equals(new Point(x, y))) {
+        if (!loc.equals(new Point(x, y))) {
             throw new RuntimeException("Popup is unexpectedly shifted");
         }
 

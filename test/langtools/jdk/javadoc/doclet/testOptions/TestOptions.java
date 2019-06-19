@@ -193,17 +193,11 @@ public class TestOptions extends JavadocTester {
                 "<pre>@Documented\npublic @interface <a href="
                 + "\"../src-html/linksource/AnnotationTypeField.html#line.31\">"
                 + "AnnotationTypeField</a></pre>",
-                "<h3>DEFAULT_NAME</h3>\n"
-                + "<a id=\"DEFAULT_NAME\">\n"
-                + "<!--   -->\n"
-                + "</a>\n"
+                "<h3><a id=\"DEFAULT_NAME\">DEFAULT_NAME</a></h3>\n"
                 + "<div class=\"memberSignature\"><span class=\"modifiers\">static final</span>&nbsp;"
                 + "<span class=\"returnType\">java.lang.String</span>&nbsp;<span class=\"memberName\">"
                 + "<a href=\"../src-html/linksource/AnnotationTypeField.html#line.32\">DEFAULT_NAME</a></span></div>",
-                "<h3>name</h3>\n"
-                + "<a id=\"name()\">\n"
-                + "<!--   -->\n"
-                + "</a>\n"
+                "<h3><a id=\"name()\">name</a></h3>\n"
                 + "<div class=\"memberSignature\"><span class=\"returnType\">java.lang.String</span>&nbsp;"
                 + "<span class=\"memberName\"><a href=\"../src-html/linksource/AnnotationTypeField.html#line.34\">"
                 + "name</a></span></div>");

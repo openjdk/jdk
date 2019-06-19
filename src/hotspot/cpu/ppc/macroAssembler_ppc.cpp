@@ -2011,6 +2011,35 @@ void MacroAssembler::check_klass_subtype(Register sub_klass,
   bind(L_failure); // Fallthru if not successful.
 }
 
+void MacroAssembler::clinit_barrier(Register klass, Register thread, Label* L_fast_path, Label* L_slow_path) {
+  assert(L_fast_path != NULL || L_slow_path != NULL, "at least one is required");
+
+  Label L_fallthrough;
+  if (L_fast_path == NULL) {
+    L_fast_path = &L_fallthrough;
+  } else if (L_slow_path == NULL) {
+    L_slow_path = &L_fallthrough;
+  }
+
+  // Fast path check: class is fully initialized
+  lbz(R0, in_bytes(InstanceKlass::init_state_offset()), klass);
+  cmpwi(CCR0, R0, InstanceKlass::fully_initialized);
+  beq(CCR0, *L_fast_path);
+
+  // Fast path check: current thread is initializer thread
+  ld(R0, in_bytes(InstanceKlass::init_thread_offset()), klass);
+  cmpd(CCR0, thread, R0);
+  if (L_slow_path == &L_fallthrough) {
+    beq(CCR0, *L_fast_path);
+  } else if (L_fast_path == &L_fallthrough) {
+    bne(CCR0, *L_slow_path);
+  } else {
+    Unimplemented();
+  }
+
+  bind(L_fallthrough);
+}
+
 void MacroAssembler::check_method_handle_type(Register mtype_reg, Register mh_reg,
                                               Register temp_reg,
                                               Label& wrong_method_type) {
@@ -3192,6 +3221,12 @@ void MacroAssembler::load_mirror_from_const_method(Register mirror, Register con
   ld(mirror, ConstantPool::pool_holder_offset_in_bytes(), mirror);
   ld(mirror, in_bytes(Klass::java_mirror_offset()), mirror);
   resolve_oop_handle(mirror);
+}
+
+void MacroAssembler::load_method_holder(Register holder, Register method) {
+  ld(holder, in_bytes(Method::const_offset()), method);
+  ld(holder, in_bytes(ConstMethod::constants_offset()), holder);
+  ld(holder, ConstantPool::pool_holder_offset_in_bytes(), holder);
 }
 
 // Clear Array

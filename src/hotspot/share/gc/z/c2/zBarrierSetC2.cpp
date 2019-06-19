@@ -866,7 +866,6 @@ static bool fixup_uses_in_catch(PhaseIdealLoop *phase, Node *start_ctrl, Node *n
   // In some very rare cases a load that doesn't need a barrier will end up here
   // Treat it as a LoadP and the insertion of phis will be done correctly.
   if (node->is_Load()) {
-    assert(node->as_Load()->barrier_data() == 0, "Sanity");
     call_catch_cleanup_one(phase, node->as_Load(), phase->get_ctrl(node));
   } else {
     for (DUIterator_Fast jmax, i = node->fast_outs(jmax); i < jmax; i++) {
@@ -1356,20 +1355,20 @@ void ZBarrierSetC2::clean_catch_blocks(PhaseIdealLoop* phase) const {
   while(nodeStack.length() > 0) {
     Node *n = nodeStack.pop();
 
+    for (uint i = 0; i < n->len(); i++) {
+      if (n->in(i)) {
+        if (!visited.test_set(n->in(i)->_idx)) {
+          nodeStack.push(n->in(i));
+        }
+      }
+    }
+
     bool is_old_node = (n->_idx < new_ids); // don't process nodes that were created during cleanup
     if (n->is_Load() && is_old_node) {
       LoadNode* load = n->isa_Load();
       // only care about loads that will have a barrier
       if (load_require_barrier(load)) {
         process_catch_cleanup_candidate(phase, load);
-      }
-    }
-
-    for (uint i = 0; i < n->len(); i++) {
-      if (n->in(i)) {
-        if (!visited.test_set(n->in(i)->_idx)) {
-          nodeStack.push(n->in(i));
-        }
       }
     }
   }

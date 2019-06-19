@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -36,7 +36,7 @@ import javax.net.ssl.SSLProtocolException;
  * @author David Brownell
  */
 final class SessionId {
-    private static final int MAX_LENGTH = 32;
+    static final int MAX_LENGTH = 32;
     private final byte[] sessionId;          // max 32 bytes
 
     // Constructs a new session ID ... perhaps for a rejoinable session

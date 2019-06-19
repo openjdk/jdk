@@ -95,8 +95,8 @@
  * <code>SyncFactory</code> in the form of <code>SyncProvider</code>
  * implementations. In order to ensure well formed XML usage, a standard generic XML
  * Schema is defined and published at
- * <a href="http://java.sun.com/xml/ns/jdbc/webrowset.xsd">
- * <code>http://java.sun.com/xml/ns/jdbc/webrowset.xsd</code></a>.
+ * <a href="http://xmlns.jcp.org/xml/ns//jdbc/webrowset.xsd">
+ * <code>http://xmlns.jcp.org/xml/ns//jdbc/webrowset.xsd</code></a>.
  *
  * <li><a href="FilteredRowSet.html"><b><code>FilteredRowSet</code></b></a> - A
  * <code>FilteredRowSet</code> object provides filtering functionality in a programmatic
@@ -154,7 +154,8 @@
  * <code>RowSet</code> objects exist in a connected or disconnected environment.
  * The <code>BaseRowSet</code> abstract class provides any <code>RowSet</code> implementation
  * with its base functionality, including property manipulation and event notification
- * that is fully compliant with <a href="http://java.sun.com/products/javabeans">JavaBeans</a>
+ * that is fully compliant with
+ * <a href="https://www.oracle.com/technetwork/java/javase/documentation/spec-136004.html">JavaBeans</a>
  * component requirements. As an example, all implementations provided in the
  * reference implementations (contained in the <code>com.sun.rowset</code> package) use
  * the <code>BaseRowSet</code> class as a basis for their implementations.

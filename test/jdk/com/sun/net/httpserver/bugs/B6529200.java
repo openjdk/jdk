@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,6 +25,7 @@
  * @test
  * @bug 6529200
  * @run main/othervm B6529200
+ * @run main/othervm -Djava.net.preferIPv6Addresses=true B6529200
  * @summary  lightweight http server does not work with http1.0 clients
  */
 
@@ -42,7 +43,8 @@ public class B6529200 {
 
     public static void main (String[] args) throws Exception {
         Handler handler = new Handler();
-        InetSocketAddress addr = new InetSocketAddress (0);
+        InetAddress loopback = InetAddress.getLoopbackAddress();
+        InetSocketAddress addr = new InetSocketAddress (loopback, 0);
         HttpServer server = HttpServer.create (addr, 0);
         HttpContext ctx = server.createContext ("/test", handler);
 
@@ -52,7 +54,7 @@ public class B6529200 {
 
         /* test 1: keep-alive */
 
-        Socket sock = new Socket ("localhost", server.getAddress().getPort());
+        Socket sock = new Socket (loopback, server.getAddress().getPort());
         OutputStream os = sock.getOutputStream();
         System.out.println ("GET /test/foo HTTP/1.0\r\nConnection: keep-alive\r\n\r\n");
         os.write ("GET /test/foo HTTP/1.0\r\nConnection: keep-alive\r\n\r\n".getBytes());

@@ -137,7 +137,7 @@
  * <a href="AttributeSet.html">AttributeSet</a> interface.
  * <p>
  * The {@code AttributeSet} interface is similar to the
- * <a href="../../../java/util/Map.html">Map</a> interface: it provides a map of
+ * {@link java.util.Map Map} interface: it provides a map of
  * key to values, in which each key is unique and can contain no more than one
  * value. However, the {@code AttributeSet} interface is designed to
  * specifically support the needs of the Java Print Service API. An

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -189,10 +189,15 @@ public class SSLSocketTemplate {
     }
 
     /*
+     * Configure the client side socket.
+     */
+    protected void configureClientSocket(SSLSocket socket) {
+    }
+
+    /*
      * Configure the server side socket.
      */
     protected void configureServerSocket(SSLServerSocket socket) {
-
     }
 
     /*
@@ -317,6 +322,7 @@ public class SSLSocketTemplate {
 
         try (SSLSocket sslSocket = (SSLSocket)sslsf.createSocket()) {
             try {
+                configureClientSocket(sslSocket);
                 sslSocket.connect(
                         new InetSocketAddress("localhost", serverPort), 15000);
             } catch (IOException ioe) {

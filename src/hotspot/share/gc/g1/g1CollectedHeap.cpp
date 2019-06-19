@@ -2780,6 +2780,23 @@ void G1CollectedHeap::register_regions_with_region_attr() {
   cl.flush_rem_set_entries();
 }
 
+#ifndef PRODUCT
+void G1CollectedHeap::verify_region_attr_remset_update() {
+  class VerifyRegionAttrRemSet : public HeapRegionClosure {
+  public:
+    virtual bool do_heap_region(HeapRegion* r) {
+      G1CollectedHeap* g1h = G1CollectedHeap::heap();
+      bool const needs_remset_update = g1h->region_attr(r->bottom()).needs_remset_update();
+      assert(r->rem_set()->is_tracked() == needs_remset_update,
+             "Region %u remset tracking status (%s) different to region attribute (%s)",
+             r->hrm_index(), BOOL_TO_STR(r->rem_set()->is_tracked()), BOOL_TO_STR(needs_remset_update));
+      return false;
+    }
+  } cl;
+  heap_region_iterate(&cl);
+}
+#endif
+
 class VerifyRegionRemSetClosure : public HeapRegionClosure {
   public:
     bool do_heap_region(HeapRegion* hr) {
@@ -3059,6 +3076,7 @@ bool G1CollectedHeap::do_collection_pause_at_safepoint(double target_pause_time_
 
         // Actually do the work...
         evacuate_initial_collection_set(&per_thread_states);
+
         if (_collection_set.optional_region_length() != 0) {
           evacuate_optional_collection_set(&per_thread_states);
         }
@@ -4640,7 +4658,7 @@ void G1CollectedHeap::retire_gc_alloc_region(HeapRegion* alloc_region,
 
   bool const during_im = collector_state()->in_initial_mark_gc();
   if (during_im && allocated_bytes > 0) {
-    _cm->root_regions()->add(alloc_region);
+    _cm->root_regions()->add(alloc_region->next_top_at_mark_start(), alloc_region->top());
   }
   _hr_printer.retire(alloc_region);
 }

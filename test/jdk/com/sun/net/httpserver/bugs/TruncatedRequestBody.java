@@ -90,7 +90,8 @@ public class TruncatedRequestBody {
         logger.setLevel(Level.ALL);
         logger.addHandler(h);
 
-        InetSocketAddress addr = new InetSocketAddress(0);
+        InetAddress loopback = InetAddress.getLoopbackAddress();
+        InetSocketAddress addr = new InetSocketAddress(loopback, 0);
         HttpServer server = HttpServer.create(addr, 10);
         HttpContext ct = server.createContext("/", new Handler());
         ExecutorService ex = Executors.newCachedThreadPool();
@@ -101,7 +102,7 @@ public class TruncatedRequestBody {
 
         // Test 1: fixed length
 
-        Socket sock = new Socket(InetAddress.getLoopbackAddress(), port);
+        Socket sock = new Socket(loopback, port);
         String s1 = "POST /foo HTTP/1.1\r\nContent-length: 200000\r\n"
                 + "\r\nfoo bar99";
 
@@ -115,7 +116,7 @@ public class TruncatedRequestBody {
 
         String s2 = "POST /foo HTTP/1.1\r\nTransfer-encoding: chunked\r\n\r\n" +
                 "100\r\nFoo bar";
-        sock = new Socket(InetAddress.getLoopbackAddress(), port);
+        sock = new Socket(loopback, port);
         os = sock.getOutputStream();
         os.write(s2.getBytes(StandardCharsets.ISO_8859_1));
         Thread.sleep(500);

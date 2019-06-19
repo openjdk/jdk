@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2019, Oracle and/or its affiliates. All rights reserved.
  */
 
 /* Copyright  (c) 2002 Graz University of Technology. All rights reserved.
@@ -82,11 +82,15 @@ public class CK_MECHANISM {
      *   CK_ULONG ulParameterLen;
      * </PRE>
      */
-    public Object pParameter;
+    public Object pParameter = null;
 
-    public CK_MECHANISM() {
-        // empty
-    }
+    // pointer to native CK_MECHANISM structure
+    // For mechanisms which have only mechanism id, the native structure
+    // can be freed right after init and this field will not be used. However,
+    // for mechanisms which have both mechanism id and parameters, it can
+    // only be freed after operation is finished. Thus, the native pointer
+    // will be stored here and then be explicitly freed by caller.
+    private long pHandle = 0L;
 
     public CK_MECHANISM(long mechanism) {
         this.mechanism = mechanism;
@@ -95,7 +99,6 @@ public class CK_MECHANISM {
     // We don't have a (long,Object) constructor to force type checking.
     // This makes sure we don't accidentally pass a class that the native
     // code cannot handle.
-
     public CK_MECHANISM(long mechanism, byte[] pParameter) {
         init(mechanism, pParameter);
     }
@@ -144,6 +147,33 @@ public class CK_MECHANISM {
         init(mechanism, params);
     }
 
+    public CK_MECHANISM(long mechanism, CK_GCM_PARAMS params) {
+        init(mechanism, params);
+    }
+
+    public CK_MECHANISM(long mechanism, CK_CCM_PARAMS params) {
+        init(mechanism, params);
+    }
+
+    // For PSS. the parameter may be set multiple times, use the
+    // CK_MECHANISM(long) constructor and setParameter(CK_RSA_PKCS_PSS_PARAMS)
+    // methods instead of creating yet another constructor
+    public void setParameter(CK_RSA_PKCS_PSS_PARAMS params) {
+        assert(this.mechanism == CKM_RSA_PKCS_PSS);
+        assert(params != null);
+        if (this.pParameter != null && this.pParameter.equals(params)) {
+            return;
+        }
+        freeHandle();
+        this.pParameter = params;
+    }
+
+    public void freeHandle() {
+        if (this.pHandle != 0L) {
+            this.pHandle = PKCS11.freeMechanism(pHandle);
+        }
+    }
+
     private void init(long mechanism, Object pParameter) {
         this.mechanism = mechanism;
         this.pParameter = pParameter;
@@ -167,12 +197,17 @@ public class CK_MECHANISM {
         sb.append(pParameter.toString());
         sb.append(Constants.NEWLINE);
 
+        /*
         sb.append(Constants.INDENT);
         sb.append("ulParameterLen: ??");
-        //buffer.append(pParameter.length);
-        //buffer.append(Constants.NEWLINE);
-
+        sb.append(Constants.NEWLINE);
+        */
+        if (pHandle != 0L) {
+            sb.append(Constants.INDENT);
+            sb.append("pHandle: ");
+            sb.append(pHandle);
+            sb.append(Constants.NEWLINE);
+        }
         return sb.toString() ;
     }
-
 }

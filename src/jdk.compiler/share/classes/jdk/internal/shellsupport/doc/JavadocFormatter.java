@@ -513,6 +513,7 @@ public class JavadocFormatter {
         public Object visitEntity(EntityTree node, Object p) {
             String name = node.getName().toString();
             int code = -1;
+            String value = null;
             if (name.startsWith("#")) {
                 try {
                     int v = StringUtils.toLowerCase(name).startsWith("#x")
@@ -525,13 +526,12 @@ public class JavadocFormatter {
                     //ignore
                 }
             } else {
-                Entity entity = Entity.get(name);
-                if (entity != null) {
-                    code = entity.code;
-                }
+                value = Entity.getValue(name);
             }
             if (code != (-1)) {
                 result.appendCodePoint(code);
+            } else if (value != null) {
+                result.append(value);
             } else {
                 result.append(node.toString());
             }

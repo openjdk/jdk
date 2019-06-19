@@ -574,8 +574,7 @@ td.colLast a {
 div.memberSignature {
     font-family:'DejaVu Sans Mono', monospace;
     font-size:14px;
-    margin-top:6px;
-    margin-bottom:14px;
+    margin:14px 0;
     white-space: pre-wrap;
 }
 div.memberSignature span.annotations {

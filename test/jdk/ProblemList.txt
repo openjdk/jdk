@@ -604,9 +604,6 @@ java/net/DatagramSocket/SendDatagramToBadAddress.java           7143960 macosx-a
 
 java/net/ServerSocket/AcceptInheritHandle.java                  8211854 aix-ppc64
 
-java/net/Inet6Address/B6206527.java                             8216417 macosx-all
-java/net/ipv6tests/B6521014.java                                8216417 macosx-all
-
 ############################################################################
 
 # jdk_nio
@@ -659,7 +656,7 @@ com/sun/nio/sctp/SctpChannel/SocketOptionTests.java             8141694 linux-al
 sun/security/pkcs11/ec/TestKeyFactory.java                      8026976 generic-all
 sun/security/pkcs11/Secmod/AddTrustedCert.java                  8180837 generic-all
 sun/security/pkcs11/tls/TestKeyMaterial.java                    8180837 generic-all
-sun/security/pkcs11/tls/tls12/FipsModeTLS12.java                8224954 windows-all
+sun/security/pkcs11/tls/tls12/FipsModeTLS12.java                8224954,8225678 windows-all,linux-all
 sun/security/pkcs11/sslecc/ClientJSSEServerJSSE.java            8161536 generic-all
 
 sun/security/tools/keytool/ListKeychainStore.sh                 8156889 macosx-all
@@ -736,7 +733,7 @@ javax/swing/JFileChooser/DeserializedJFileChooser/DeserializedJFileChooserTest.j
 javax/swing/JFileChooser/6396844/TwentyThousandTest.java 8198003 generic-all
 javax/swing/JFrame/8175301/ScaledFrameBackgroundTest.java 8193942 generic-all
 javax/swing/JList/6462008/bug6462008.java 7156347 generic-all
-javax/swing/JPopupMenu/6580930/bug6580930.java 8196096 windows-all,macosx-all
+javax/swing/JPopupMenu/6580930/bug6580930.java 7124313 macosx-all
 javax/swing/JPopupMenu/6800513/bug6800513.java 7184956 macosx-all
 javax/swing/JPopupMenu/6675802/bug6675802.java 8196097 windows-all
 javax/swing/JTabbedPane/8007563/Test8007563.java 8051591 generic-all

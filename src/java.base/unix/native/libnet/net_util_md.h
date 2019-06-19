@@ -101,7 +101,6 @@ void NET_SetTrafficClass(SOCKETADDRESS *sa, int trafficClass);
 
 #ifdef __linux__
 int kernelIsV24();
-int getDefaultIPv6Interface(struct in6_addr *target_addr);
 #endif
 
 #ifdef __solaris__

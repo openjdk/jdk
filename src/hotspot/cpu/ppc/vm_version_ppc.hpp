@@ -95,6 +95,9 @@ public:
   // Override Abstract_VM_Version implementation
   static bool use_biased_locking();
 
+  // PPC64 supports fast class initialization checks for static methods.
+  static bool supports_fast_class_init_checks() { return true; }
+
   static bool is_determine_features_test_running() { return _is_determine_features_test_running; }
   // CPU instruction support
   static bool has_fsqrt()   { return (_features & fsqrt_m) != 0; }

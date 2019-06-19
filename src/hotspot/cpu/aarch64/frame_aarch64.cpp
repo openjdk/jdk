@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2019, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2014, Red Hat Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -768,11 +768,13 @@ extern "C" void npf() {
 
 extern "C" void pf(unsigned long sp, unsigned long fp, unsigned long pc,
                    unsigned long bcx, unsigned long thread) {
-  RegisterMap map((JavaThread*)thread, false);
   if (!reg_map) {
-    reg_map = (RegisterMap*)os::malloc(sizeof map, mtNone);
+    reg_map = NEW_C_HEAP_OBJ(RegisterMap, mtNone);
+    ::new (reg_map) RegisterMap((JavaThread*)thread, false);
+  } else {
+    *reg_map = RegisterMap((JavaThread*)thread, false);
   }
-  memcpy(reg_map, &map, sizeof map);
+
   {
     CodeBlob *cb = CodeCache::find_blob((address)pc);
     if (cb && cb->frame_size())

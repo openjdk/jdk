@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,9 +25,12 @@
  * @test
  * @bug 8068795
  * @summary HttpServer missing tailing space for some response codes
+ * @run main MissingTrailingSpace
+ * @run main/othervm -Djava.net.preferIPv6Addresses=true MissingTrailingSpace
  * @author lev.priima@oracle.com
  */
 
+import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.io.InputStreamReader;
 import java.io.IOException;
@@ -47,7 +50,8 @@ public class MissingTrailingSpace {
     private static final String someContext = "/context";
 
     public static void main(String[] args) throws Exception {
-        HttpServer server = HttpServer.create(new InetSocketAddress(0), 0);
+        InetAddress loopback = InetAddress.getLoopbackAddress();
+        HttpServer server = HttpServer.create(new InetSocketAddress(loopback, 0), 0);
         try {
             server.setExecutor(Executors.newFixedThreadPool(1));
             server.createContext(someContext, new HttpHandler() {
@@ -68,7 +72,7 @@ public class MissingTrailingSpace {
             System.out.println("Server started at port "
                                + server.getAddress().getPort());
 
-            runRawSocketHttpClient("localhost", server.getAddress().getPort());
+            runRawSocketHttpClient(loopback, server.getAddress().getPort());
         } finally {
             ((ExecutorService)server.getExecutor()).shutdown();
             server.stop(0);
@@ -76,7 +80,7 @@ public class MissingTrailingSpace {
         System.out.println("Server finished.");
     }
 
-    static void runRawSocketHttpClient(String hostname, int port)
+    static void runRawSocketHttpClient(InetAddress address, int port)
         throws Exception
     {
         Socket socket = null;
@@ -84,7 +88,7 @@ public class MissingTrailingSpace {
         BufferedReader reader = null;
         final String CRLF = "\r\n";
         try {
-            socket = new Socket(hostname, port);
+            socket = new Socket(address, port);
             writer = new PrintWriter(new OutputStreamWriter(
                 socket.getOutputStream()));
             System.out.println("Client connected by socket: " + socket);
@@ -93,7 +97,7 @@ public class MissingTrailingSpace {
             writer.print("User-Agent: Java/"
                 + System.getProperty("java.version")
                 + CRLF);
-            writer.print("Host: " + hostname + CRLF);
+            writer.print("Host: " + address.getHostName() + CRLF);
             writer.print("Accept: */*" + CRLF);
             writer.print("Connection: keep-alive" + CRLF);
             writer.print(CRLF); // Important, else the server will expect that
@@ -140,4 +144,3 @@ public class MissingTrailingSpace {
         System.out.println("Client finished." );
     }
 }
-

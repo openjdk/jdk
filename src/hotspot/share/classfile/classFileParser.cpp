@@ -125,6 +125,8 @@
 
 #define JAVA_13_VERSION                   57
 
+#define JAVA_14_VERSION                   58
+
 void ClassFileParser::set_class_bad_constant_seen(short bad_constant) {
   assert((bad_constant == JVM_CONSTANT_Module ||
           bad_constant == JVM_CONSTANT_Package) && _major_version >= JAVA_9_VERSION,
@@ -4754,60 +4756,62 @@ static bool has_illegal_visibility(jint flags) {
 
 // A legal major_version.minor_version must be one of the following:
 //
-//   Major_version = 45, any minor_version.
-//   Major_version >= 46 and major_version <= current_major_version and minor_version = 0.
-//   Major_version = current_major_version and minor_version = 65535 and --enable-preview is present.
+//  Major_version >= 45 and major_version < 56, any minor_version.
+//  Major_version >= 56 and major_version <= JVM_CLASSFILE_MAJOR_VERSION and minor_version = 0.
+//  Major_version = JVM_CLASSFILE_MAJOR_VERSION and minor_version = 65535 and --enable-preview is present.
 //
 static void verify_class_version(u2 major, u2 minor, Symbol* class_name, TRAPS){
+  ResourceMark rm(THREAD);
   const u2 max_version = JVM_CLASSFILE_MAJOR_VERSION;
-  if (major != JAVA_MIN_SUPPORTED_VERSION) { // All 45.* are ok including 45.65535
-    if (minor == JAVA_PREVIEW_MINOR_VERSION) {
-      if (major != max_version) {
-        ResourceMark rm(THREAD);
-        Exceptions::fthrow(
-          THREAD_AND_LOCATION,
-          vmSymbols::java_lang_UnsupportedClassVersionError(),
-          "%s (class file version %u.%u) was compiled with preview features that are unsupported. "
-          "This version of the Java Runtime only recognizes preview features for class file version %u.%u",
-          class_name->as_C_string(), major, minor, JVM_CLASSFILE_MAJOR_VERSION, JAVA_PREVIEW_MINOR_VERSION);
-        return;
-      }
+  if (major < JAVA_MIN_SUPPORTED_VERSION) {
+    Exceptions::fthrow(
+      THREAD_AND_LOCATION,
+      vmSymbols::java_lang_UnsupportedClassVersionError(),
+      "%s (class file version %u.%u) was compiled with an invalid major version",
+      class_name->as_C_string(), major, minor);
+    return;
+  }
 
-      if (!Arguments::enable_preview()) {
-        ResourceMark rm(THREAD);
-        Exceptions::fthrow(
-          THREAD_AND_LOCATION,
-          vmSymbols::java_lang_UnsupportedClassVersionError(),
-          "Preview features are not enabled for %s (class file version %u.%u). Try running with '--enable-preview'",
-          class_name->as_C_string(), major, minor);
-        return;
-      }
+  if (major > max_version) {
+    Exceptions::fthrow(
+      THREAD_AND_LOCATION,
+      vmSymbols::java_lang_UnsupportedClassVersionError(),
+      "%s has been compiled by a more recent version of the Java Runtime (class file version %u.%u), "
+      "this version of the Java Runtime only recognizes class file versions up to %u.0",
+      class_name->as_C_string(), major, minor, JVM_CLASSFILE_MAJOR_VERSION);
+    return;
+  }
 
-    } else { // minor != JAVA_PREVIEW_MINOR_VERSION
-      if (major > max_version) {
-        ResourceMark rm(THREAD);
-        Exceptions::fthrow(
-          THREAD_AND_LOCATION,
-          vmSymbols::java_lang_UnsupportedClassVersionError(),
-          "%s has been compiled by a more recent version of the Java Runtime (class file version %u.%u), "
-          "this version of the Java Runtime only recognizes class file versions up to %u.0",
-          class_name->as_C_string(), major, minor, JVM_CLASSFILE_MAJOR_VERSION);
-      } else if (major < JAVA_MIN_SUPPORTED_VERSION) {
-        ResourceMark rm(THREAD);
-        Exceptions::fthrow(
-          THREAD_AND_LOCATION,
-          vmSymbols::java_lang_UnsupportedClassVersionError(),
-          "%s (class file version %u.%u) was compiled with an invalid major version",
-          class_name->as_C_string(), major, minor);
-      } else if (minor != 0) {
-        ResourceMark rm(THREAD);
-        Exceptions::fthrow(
-          THREAD_AND_LOCATION,
-          vmSymbols::java_lang_UnsupportedClassVersionError(),
-          "%s (class file version %u.%u) was compiled with an invalid non-zero minor version",
-          class_name->as_C_string(), major, minor);
-      }
+  if (major < JAVA_12_VERSION || minor == 0) {
+    return;
+  }
+
+  if (minor == JAVA_PREVIEW_MINOR_VERSION) {
+    if (major != max_version) {
+      Exceptions::fthrow(
+        THREAD_AND_LOCATION,
+        vmSymbols::java_lang_UnsupportedClassVersionError(),
+        "%s (class file version %u.%u) was compiled with preview features that are unsupported. "
+        "This version of the Java Runtime only recognizes preview features for class file version %u.%u",
+        class_name->as_C_string(), major, minor, JVM_CLASSFILE_MAJOR_VERSION, JAVA_PREVIEW_MINOR_VERSION);
+      return;
     }
+
+    if (!Arguments::enable_preview()) {
+      Exceptions::fthrow(
+        THREAD_AND_LOCATION,
+        vmSymbols::java_lang_UnsupportedClassVersionError(),
+        "Preview features are not enabled for %s (class file version %u.%u). Try running with '--enable-preview'",
+        class_name->as_C_string(), major, minor);
+      return;
+    }
+
+  } else { // minor != JAVA_PREVIEW_MINOR_VERSION
+    Exceptions::fthrow(
+        THREAD_AND_LOCATION,
+        vmSymbols::java_lang_UnsupportedClassVersionError(),
+        "%s (class file version %u.%u) was compiled with an invalid non-zero minor version",
+        class_name->as_C_string(), major, minor);
   }
 }
 
@@ -5641,11 +5645,11 @@ void ClassFileParser::fill_instance_klass(InstanceKlass* ik, bool changed_by_loa
     }
 
     if (ik->minor_version() == JAVA_PREVIEW_MINOR_VERSION &&
-        ik->major_version() != JAVA_MIN_SUPPORTED_VERSION &&
+        ik->major_version() == JVM_CLASSFILE_MAJOR_VERSION &&
         log_is_enabled(Info, class, preview)) {
       ResourceMark rm;
       log_info(class, preview)("Loading class %s that depends on preview features (class file version %d.65535)",
-                               ik->external_name(), ik->major_version());
+                               ik->external_name(), JVM_CLASSFILE_MAJOR_VERSION);
     }
 
     if (log_is_enabled(Debug, class, resolve))  {

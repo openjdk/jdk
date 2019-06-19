@@ -176,11 +176,6 @@ public final
 class Inet6Address extends InetAddress {
     static final int INADDRSZ = 16;
 
-    /*
-     * cached scope_id - for link-local address use only.
-     */
-    private transient int cached_scope_id;  // 0
-
     private class Inet6AddressHolder {
 
         private Inet6AddressHolder() {
