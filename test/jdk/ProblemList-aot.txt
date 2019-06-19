@@ -30,3 +30,4 @@
 java/lang/invoke/VarHandles/VarHandleTestByteArrayAsShort.java  8222445 windows-x64
 java/lang/invoke/VarHandles/VarHandleTestByteArrayAsChar.java   8222445 windows-x64
 java/lang/invoke/VarHandles/VarHandleTestAccessBoolean.java     8222445 windows-x64
+java/lang/reflect/PublicMethods/PublicMethodsTest.java          8226309 generic-all
