@@ -313,25 +313,22 @@ const char* AbstractAssembler::code_string(const char* str) {
 bool MacroAssembler::uses_implicit_null_check(void* address) {
   // Exception handler checks the nmethod's implicit null checks table
   // only when this method returns false.
-  intptr_t int_address = reinterpret_cast<intptr_t>(address);
-  intptr_t cell_header_size = Universe::heap()->cell_header_size();
-  size_t region_size = os::vm_page_size() + cell_header_size;
+  uintptr_t addr = reinterpret_cast<uintptr_t>(address);
+  uintptr_t page_size = (uintptr_t)os::vm_page_size();
 #ifdef _LP64
   if (UseCompressedOops && CompressedOops::base() != NULL) {
     // A SEGV can legitimately happen in C2 code at address
     // (heap_base + offset) if  Matcher::narrow_oop_use_complex_address
     // is configured to allow narrow oops field loads to be implicitly
     // null checked
-    intptr_t start = ((intptr_t)CompressedOops::base()) - cell_header_size;
-    intptr_t end = start + region_size;
-    if (int_address >= start && int_address < end) {
+    uintptr_t start = (uintptr_t)CompressedOops::base();
+    uintptr_t end = start + page_size;
+    if (addr >= start && addr < end) {
       return true;
     }
   }
 #endif
-  intptr_t start = -cell_header_size;
-  intptr_t end = start + region_size;
-  return int_address >= start && int_address < end;
+  return addr < page_size;
 }
 
 bool MacroAssembler::needs_explicit_null_check(intptr_t offset) {
@@ -341,12 +338,8 @@ bool MacroAssembler::needs_explicit_null_check(intptr_t offset) {
   // with -1. Another example is GraphBuilder::access_field(...) which uses -1 as placeholder
   // for offsets to be patched in later. The -1 there means the offset is not yet known
   // and may lie outside of the zero-trapping page, and thus we need to ensure we're forcing
-  // an explicit null check for -1, even if it may otherwise be in the range
-  // [-cell_header_size, os::vm_page_size).
-  // TODO: Find and replace all relevant uses of -1 with a reasonably named constant.
-  if (offset == -1) return true;
+  // an explicit null check for -1.
 
-  // Check if offset is outside of [-cell_header_size, os::vm_page_size)
-  return offset < -Universe::heap()->cell_header_size() ||
-         offset >= os::vm_page_size();
+  // Check if offset is outside of [0, os::vm_page_size()]
+  return offset < 0 || offset >= os::vm_page_size();
 }
