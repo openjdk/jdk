@@ -130,7 +130,7 @@ abstract class CMap {
 
     static final char noSuchChar = (char)0xfffd;
     static final int SHORTMASK = 0x0000ffff;
-    static final int INTMASK   = 0xffffffff;
+    static final int INTMASK   = 0x7fffffff;
 
     static final char[][] converterMaps = new char[7][];
 
@@ -919,7 +919,11 @@ abstract class CMap {
 
              bbuffer.position(12);
              bbuffer.get(is32);
-             nGroups = bbuffer.getInt();
+             nGroups = bbuffer.getInt() & INTMASK;
+             // A map group record is three uint32's making for 12 bytes total
+             if (bbuffer.remaining() < (12 * (long)nGroups)) {
+                 throw new RuntimeException("Format 8 table exceeded");
+             }
              startCharCode = new int[nGroups];
              endCharCode   = new int[nGroups];
              startGlyphID  = new int[nGroups];
@@ -947,9 +951,13 @@ abstract class CMap {
 
          CMapFormat10(ByteBuffer bbuffer, int offset, char[] xlat) {
 
+             bbuffer.position(offset+12);
              firstCode = bbuffer.getInt() & INTMASK;
              entryCount = bbuffer.getInt() & INTMASK;
-             bbuffer.position(offset+20);
+             // each glyph is a uint16, so 2 bytes per value.
+             if (bbuffer.remaining() < (2 * (long)entryCount)) {
+                 throw new RuntimeException("Format 10 table exceeded");
+             }
              CharBuffer buffer = bbuffer.asCharBuffer();
              glyphIdArray = new char[entryCount];
              for (int i=0; i< entryCount; i++) {
@@ -989,11 +997,15 @@ abstract class CMap {
                 throw new RuntimeException("xlat array for cmap fmt=12");
             }
 
-            numGroups = buffer.getInt(offset+12);
+            buffer.position(offset+12);
+            numGroups = buffer.getInt() & INTMASK;
+            // A map group record is three uint32's making for 12 bytes total
+            if (buffer.remaining() < (12 * (long)numGroups)) {
+                throw new RuntimeException("Format 12 table exceeded");
+            }
             startCharCode = new long[numGroups];
             endCharCode = new long[numGroups];
             startGlyphID = new int[numGroups];
-            buffer.position(offset+16);
             buffer = buffer.slice();
             IntBuffer ibuffer = buffer.asIntBuffer();
             for (int i=0; i<numGroups; i++) {
@@ -1110,7 +1122,13 @@ abstract class CMap {
         char[][] glyphID;
 
         UVS(ByteBuffer buffer, int offset) {
-            numSelectors = buffer.getInt(offset+6);
+            buffer.position(offset+6);
+            numSelectors = buffer.getInt() & INTMASK;
+            // A variation selector record is one 3 byte int + two int32's
+            // making for 11 bytes per record.
+            if (buffer.remaining() < (11 * (long)numSelectors)) {
+                throw new RuntimeException("Variations exceed buffer");
+            }
             selector = new int[numSelectors];
             numUVSMapping = new int[numSelectors];
             unicodeValue = new int[numSelectors][];
@@ -1131,6 +1149,11 @@ abstract class CMap {
                 } else if (tableOffset > 0) {
                     buffer.position(offset+tableOffset);
                     numUVSMapping[i] = buffer.getInt() & INTMASK;
+                    // a UVS mapping record is one 3 byte int + uint16
+                    // making for 5 bytes per record.
+                    if (buffer.remaining() < (5 * (long)numUVSMapping[i])) {
+                        throw new RuntimeException("Variations exceed buffer");
+                    }
                     unicodeValue[i] = new int[numUVSMapping[i]];
                     glyphID[i] = new char[numUVSMapping[i]];
 
