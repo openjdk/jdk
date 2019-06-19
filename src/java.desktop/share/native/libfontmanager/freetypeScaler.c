@@ -783,6 +783,13 @@ static void CopyFTSubpixelVToSubpixel(const void* srcImage, int srcRowBytes,
 }
 
 
+/* JDK does not use glyph images for fonts with a
+ * pixel size > 100 (see THRESHOLD in OutlineTextRenderer.java)
+ * so if the glyph bitmap image dimension is > 1024 pixels,
+ * something is up.
+ */
+#define MAX_GLYPH_DIM 1024
+
 /*
  * Class:     sun_font_FreetypeFontScaler
  * Method:    getGlyphImageNative
@@ -856,6 +863,14 @@ Java_sun_font_FreetypeFontScaler_getGlyphImageNative(
     /* generate bitmap if it is not done yet
      e.g. if algorithmic styling is performed and style was added to outline */
     if (ftglyph->format == FT_GLYPH_FORMAT_OUTLINE) {
+        FT_BBox bbox;
+        FT_Outline_Get_CBox(&(ftglyph->outline), &bbox);
+        int w = (int)((bbox.xMax>>6)-(bbox.xMin>>6));
+        int h = (int)((bbox.yMax>>6)-(bbox.yMin>>6));
+        if (w > MAX_GLYPH_DIM || h > MAX_GLYPH_DIM) {
+            glyphInfo = getNullGlyphImage();
+            return ptr_to_jlong(glyphInfo);
+        }
         error = FT_Render_Glyph(ftglyph, FT_LOAD_TARGET_MODE(target));
         if (error != 0) {
             return ptr_to_jlong(getNullGlyphImage());
@@ -864,6 +879,11 @@ Java_sun_font_FreetypeFontScaler_getGlyphImageNative(
 
     width  = (UInt16) ftglyph->bitmap.width;
     height = (UInt16) ftglyph->bitmap.rows;
+    if (width > MAX_GLYPH_DIM || height > MAX_GLYPH_DIM) {
+        glyphInfo = getNullGlyphImage();
+        return ptr_to_jlong(glyphInfo);
+    }
+
 
     imageSize = width*height;
     glyphInfo = (GlyphInfo*) malloc(sizeof(GlyphInfo) + imageSize);
