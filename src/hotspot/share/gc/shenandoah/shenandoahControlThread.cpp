@@ -377,6 +377,9 @@ void ShenandoahControlThread::service_concurrent_normal_cycle(GCCause::Cause cau
   // Complete marking under STW, and start evacuation
   heap->vmop_entry_final_mark();
 
+  // Evacuate concurrent roots
+  heap->entry_roots();
+
   // Final mark might have reclaimed some immediate garbage, kick cleanup to reclaim
   // the space. This would be the last action if there is nothing to evacuate.
   heap->entry_cleanup();

@@ -306,6 +306,7 @@ class outputStream;
   f(conc_mark,                                       "Concurrent Marking")              \
   f(conc_termination,                                "  Termination")                   \
   f(conc_preclean,                                   "Concurrent Precleaning")          \
+  f(conc_roots,                                      "Concurrent Roots")                \
   f(conc_evac,                                       "Concurrent Evacuation")           \
   f(conc_update_refs,                                "Concurrent Update Refs")          \
   f(conc_cleanup,                                    "Concurrent Cleanup")              \

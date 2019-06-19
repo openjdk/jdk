@@ -38,6 +38,7 @@
 #include "gc/shenandoah/shenandoahCollectionSet.hpp"
 #include "gc/shenandoah/shenandoahCollectorPolicy.hpp"
 #include "gc/shenandoah/shenandoahConcurrentMark.inline.hpp"
+#include "gc/shenandoah/shenandoahConcurrentRoots.hpp"
 #include "gc/shenandoah/shenandoahControlThread.hpp"
 #include "gc/shenandoah/shenandoahFreeSet.hpp"
 #include "gc/shenandoah/shenandoahPhaseTimings.hpp"
@@ -1071,9 +1072,11 @@ void ShenandoahHeap::evacuate_and_update_roots() {
   DerivedPointerTable::clear();
 #endif
   assert(ShenandoahSafepoint::is_at_shenandoah_safepoint(), "Only iterate roots while world is stopped");
-
   {
-    ShenandoahRootEvacuator rp(workers()->active_workers(), ShenandoahPhaseTimings::init_evac);
+    // Include concurrent roots if current cycle can not process those roots concurrently
+    ShenandoahRootEvacuator rp(workers()->active_workers(),
+                               ShenandoahPhaseTimings::init_evac,
+                               !ShenandoahConcurrentRoots::should_do_concurrent_roots());
     ShenandoahEvacuateUpdateRootsTask roots_task(&rp);
     workers()->run_task(&roots_task);
   }
@@ -1517,7 +1520,11 @@ void ShenandoahHeap::op_final_mark() {
       }
 
       if (ShenandoahVerify) {
-        verifier()->verify_roots_no_forwarded();
+        if (ShenandoahConcurrentRoots::should_do_concurrent_roots()) {
+          verifier()->verify_roots_no_forwarded_except(ShenandoahRootVerifier::JNIHandleRoots);
+        } else {
+          verifier()->verify_roots_no_forwarded();
+        }
         verifier()->verify_during_evacuation();
       }
     } else {
@@ -1576,6 +1583,30 @@ void ShenandoahHeap::op_updaterefs() {
 
 void ShenandoahHeap::op_cleanup() {
   free_set()->recycle_trash();
+}
+
+class ShenandoahConcurrentRootsEvacUpdateTask : public AbstractGangTask {
+private:
+  ShenandoahJNIHandleRoots<true /*concurrent*/>         _jni_roots;
+
+public:
+  ShenandoahConcurrentRootsEvacUpdateTask() :
+    AbstractGangTask("Shenandoah Evacuate/Update Concurrent Roots Task") {
+  }
+
+  void work(uint worker_id) {
+    ShenandoahEvacOOMScope oom;
+    ShenandoahEvacuateUpdateRootsClosure cl;
+    _jni_roots.oops_do<ShenandoahEvacuateUpdateRootsClosure>(&cl);
+  }
+};
+
+void ShenandoahHeap::op_roots() {
+  if (is_evacuation_in_progress() &&
+      ShenandoahConcurrentRoots::should_do_concurrent_roots()) {
+    ShenandoahConcurrentRootsEvacUpdateTask task;
+    workers()->run_task(&task);
+  }
 }
 
 void ShenandoahHeap::op_reset() {
@@ -2559,6 +2590,22 @@ void ShenandoahHeap::entry_updaterefs() {
   try_inject_alloc_failure();
   op_updaterefs();
 }
+
+void ShenandoahHeap::entry_roots() {
+  ShenandoahGCPhase phase(ShenandoahPhaseTimings::conc_roots);
+
+  static const char* msg = "Concurrent roots processing";
+  GCTraceTime(Info, gc) time(msg, NULL, GCCause::_no_gc, true);
+  EventMark em("%s", msg);
+
+  ShenandoahWorkerScope scope(workers(),
+                              ShenandoahWorkerPolicy::calc_workers_for_conc_root_processing(),
+                              "concurrent root processing");
+
+  try_inject_alloc_failure();
+  op_roots();
+}
+
 void ShenandoahHeap::entry_cleanup() {
   ShenandoahGCPhase phase(ShenandoahPhaseTimings::conc_cleanup);
 

@@ -24,11 +24,30 @@
 #ifndef SHARE_GC_SHENANDOAH_SHENANDOAHROOTPROCESSOR_INLINE_HPP
 #define SHARE_GC_SHENANDOAH_SHENANDOAHROOTPROCESSOR_INLINE_HPP
 
+#include "classfile/classLoaderDataGraph.hpp"
+#include "gc/shared/oopStorageParState.inline.hpp"
 #include "gc/shenandoah/shenandoahHeuristics.hpp"
 #include "gc/shenandoah/shenandoahRootProcessor.hpp"
 #include "gc/shenandoah/shenandoahTimingTracker.hpp"
 #include "gc/shenandoah/shenandoahUtils.hpp"
 #include "memory/resourceArea.hpp"
+
+template <bool CONCURRENT>
+ShenandoahJNIHandleRoots<CONCURRENT>::ShenandoahJNIHandleRoots() :
+  _itr(JNIHandles::global_handles()) {
+}
+
+template <bool CONCURRENT>
+template <typename T>
+void ShenandoahJNIHandleRoots<CONCURRENT>::oops_do(T* cl, uint worker_id) {
+  if (CONCURRENT) {
+    _itr.oops_do(cl);
+  } else {
+    ShenandoahWorkerTimings* worker_times = ShenandoahHeap::heap()->phase_timings()->worker_times();
+    ShenandoahWorkerTimingsTracker timer(worker_times, ShenandoahPhaseTimings::JNIRoots, worker_id);
+    _itr.oops_do(cl);
+  }
+}
 
 template <typename IsAlive, typename KeepAlive>
 void ShenandoahWeakRoots::oops_do(IsAlive* is_alive, KeepAlive* keep_alive, uint worker_id) {
