@@ -186,7 +186,7 @@ java/awt/Mixing/AWT_Mixing/JTextAreaOverlapping.java 8158801 windows-all
 java/awt/Mixing/AWT_Mixing/JTextFieldInGlassPaneOverlapping.java 8158801 windows-all
 java/awt/Mixing/AWT_Mixing/JTextFieldOverlapping.java 8158801 windows-all
 java/awt/Mixing/AWT_Mixing/JToggleButtonInGlassPaneOverlapping.java 8158801 windows-all
-java/awt/Mixing/AWT_Mixing/JToggleButtonOverlapping.java 8158801 windows-all	
+java/awt/Mixing/AWT_Mixing/JToggleButtonOverlapping.java 8158801 windows-all
 java/awt/Mixing/NonOpaqueInternalFrame.java 7124549 macosx-all
 java/awt/Focus/ActualFocusedWindowTest/ActualFocusedWindowRetaining.java 6829264 generic-all
 java/awt/datatransfer/DragImage/MultiResolutionDragImageTest.java 8080982 generic-all
@@ -284,7 +284,6 @@ java/awt/print/PrinterJob/Margins.java 8196301 windows-all,macosx-all
 java/awt/PrintJob/PrinterException.java 8196301 windows-all,macosx-all
 java/awt/Choice/PopupPosTest/PopupPosTest.java  8197811 windows-all
 java/awt/Choice/ChoiceMouseWheelTest/ChoiceMouseWheelTest.java 7100044 macosx-all,linux-all
-java/awt/Choice/ChoiceKeyEventReaction/ChoiceKeyEventReaction.java 8214469 macosx-all
 java/awt/Component/CreateImage/CreateImage.java 8198334  windows-all
 java/awt/Component/GetScreenLocTest/GetScreenLocTest.java 4753654 generic-all
 java/awt/Component/SetEnabledPerformance/SetEnabledPerformance.java 8165863 macosx-all
