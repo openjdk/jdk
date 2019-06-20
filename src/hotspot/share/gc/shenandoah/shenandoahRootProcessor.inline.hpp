@@ -63,16 +63,28 @@ ShenandoahClassLoaderDataRoots<SINGLE_THREADED>::ShenandoahClassLoaderDataRoots(
 }
 
 template <bool SINGLE_THREADED>
-void ShenandoahClassLoaderDataRoots<SINGLE_THREADED>::clds_do(CLDClosure* strong_clds, CLDClosure* weak_clds, uint worker_id) {
+void ShenandoahClassLoaderDataRoots<SINGLE_THREADED>::always_strong_cld_do(CLDClosure* clds, uint worker_id) {
   if (SINGLE_THREADED) {
     assert(SafepointSynchronize::is_at_safepoint(), "Must be at a safepoint");
     assert(Thread::current()->is_VM_thread(), "Single threaded CLDG iteration can only be done by VM thread");
+    ClassLoaderDataGraph::always_strong_cld_do(clds);
+  } else {
+   ShenandoahWorkerTimings* worker_times = ShenandoahHeap::heap()->phase_timings()->worker_times();
+   ShenandoahWorkerTimingsTracker timer(worker_times, ShenandoahPhaseTimings::CLDGRoots, worker_id);
+   ClassLoaderDataGraph::always_strong_cld_do(clds);
+  }
+}
 
-    ClassLoaderDataGraph::roots_cld_do(strong_clds, weak_clds);
+template <bool SINGLE_THREADED>
+void ShenandoahClassLoaderDataRoots<SINGLE_THREADED>::cld_do(CLDClosure* clds, uint worker_id) {
+  if (SINGLE_THREADED) {
+    assert(SafepointSynchronize::is_at_safepoint(), "Must be at a safepoint");
+    assert(Thread::current()->is_VM_thread(), "Single threaded CLDG iteration can only be done by VM thread");
+    ClassLoaderDataGraph::cld_do(clds);
   } else {
     ShenandoahWorkerTimings* worker_times = ShenandoahHeap::heap()->phase_timings()->worker_times();
     ShenandoahWorkerTimingsTracker timer(worker_times, ShenandoahPhaseTimings::CLDGRoots, worker_id);
-    ClassLoaderDataGraph::roots_cld_do(strong_clds, weak_clds);
+    ClassLoaderDataGraph::cld_do(clds);
   }
 }
 
@@ -141,7 +153,13 @@ void ShenandoahRootScanner<ITR>::roots_do(uint worker_id, OopClosure* oops, CLDC
 
   _serial_roots.oops_do(oops, worker_id);
   _jni_roots.oops_do(oops, worker_id);
-  _cld_roots.clds_do(clds, clds, worker_id);
+
+  if (clds != NULL) {
+    _cld_roots.cld_do(clds, worker_id);
+  } else {
+    assert(ShenandoahHeap::heap()->is_concurrent_traversal_in_progress(), "Only possible with traversal GC");
+  }
+
   _thread_roots.threads_do(&tc_cl, worker_id);
 
   // With ShenandoahConcurrentScanCodeRoots, we avoid scanning the entire code cache here,
@@ -160,7 +178,7 @@ void ShenandoahRootScanner<ITR>::strong_roots_do(uint worker_id, OopClosure* oop
 
   _serial_roots.oops_do(oops, worker_id);
   _jni_roots.oops_do(oops, worker_id);
-  _cld_roots.clds_do(clds, NULL, worker_id);
+  _cld_roots.always_strong_cld_do(clds, worker_id);
   _thread_roots.threads_do(&tc_cl, worker_id);
 }
 
@@ -168,13 +186,12 @@ template <typename IsAlive, typename KeepAlive>
 void ShenandoahRootUpdater::roots_do(uint worker_id, IsAlive* is_alive, KeepAlive* keep_alive) {
   CodeBlobToOopClosure update_blobs(keep_alive, CodeBlobToOopClosure::FixRelocations);
   CLDToOopClosure clds(keep_alive, ClassLoaderData::_claim_strong);
-  CLDToOopClosure* weak_clds = ShenandoahHeap::heap()->unload_classes() ? NULL : &clds;
 
   _serial_roots.oops_do(keep_alive, worker_id);
   _jni_roots.oops_do(keep_alive, worker_id);
 
   _thread_roots.oops_do(keep_alive, NULL, worker_id);
-  _cld_roots.clds_do(&clds, weak_clds, worker_id);
+  _cld_roots.cld_do(&clds, worker_id);
 
   if(_update_code_cache) {
     _code_roots.code_blobs_do(&update_blobs, worker_id);

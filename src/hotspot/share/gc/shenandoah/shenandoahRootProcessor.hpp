@@ -119,7 +119,8 @@ class ShenandoahClassLoaderDataRoots {
 public:
   ShenandoahClassLoaderDataRoots();
 
-  void clds_do(CLDClosure* strong_clds, CLDClosure* weak_clds, uint worker_id);
+  void always_strong_cld_do(CLDClosure* clds, uint worker_id);
+  void cld_do(CLDClosure* clds, uint worker_id);
 };
 
 class ShenandoahRootProcessor : public StackObj {
