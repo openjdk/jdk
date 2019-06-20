@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -602,7 +602,7 @@ JDWP "Java(tm) Debug Wire Protocol"
     (Command Signature=1
         "Returns the JNI signature of a reference type. "
         "JNI signature formats are described in the "
-        "<a href=\"http://java.sun.com/products/jdk/1.2/docs/guide/jni/index.html\">Java Native Inteface Specification</a>"
+        "<a href=\"../jni/index.html\">Java Native Interface Specification</a>"
         "<p>
         "For primitive classes "
         "the returned signature is the signature of the corresponding primitive "

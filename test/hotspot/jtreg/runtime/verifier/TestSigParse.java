@@ -63,7 +63,7 @@ public class TestSigParse {
             throw new RuntimeException("Expected ClasFormatError exception not thrown");
         } catch (java.lang.ClassFormatError e) {
             String eMsg = e.getMessage();
-            if (!eMsg.contains("Class name contains illegal character")) {
+            if (!eMsg.contains("Class name is empty or contains illegal character")) {
                 throw new RuntimeException("Unexpected exception: " + eMsg);
             }
         }
