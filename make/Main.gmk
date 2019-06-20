@@ -427,6 +427,9 @@ docs-jdk-index:
 docs-zip:
 	+($(CD) $(TOPDIR)/make && $(MAKE) $(MAKE_ARGS) -f Docs.gmk docs-zip)
 
+docs-specs-zip:
+	+($(CD) $(TOPDIR)/make && $(MAKE) $(MAKE_ARGS) -f Docs.gmk docs-specs-zip)
+
 update-build-docs:
 	+($(CD) $(TOPDIR)/make && $(MAKE) $(MAKE_ARGS) -f UpdateBuildDocs.gmk)
 
@@ -436,7 +439,7 @@ update-x11wrappers:
 ALL_TARGETS += docs-jdk-api-javadoc docs-jdk-api-modulegraph \
     docs-javase-api-javadoc docs-javase-api-modulegraph \
     docs-reference-api-javadoc docs-reference-api-modulegraph docs-jdk-specs \
-    docs-jdk-index docs-zip update-build-docs update-x11wrappers
+    docs-jdk-index docs-zip docs-specs-zip update-build-docs update-x11wrappers
 
 ################################################################################
 # Cross compilation support
@@ -884,6 +887,8 @@ else
       docs-jdk-index
 
   docs-zip: docs-jdk
+
+  docs-specs-zip: docs-jdk-specs
 
   # Tests
   test: jdk-image test-image

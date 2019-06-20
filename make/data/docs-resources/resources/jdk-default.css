@@ -25,7 +25,7 @@
 
 body {
   margin: 2em 2em;
-  font-family: DejaVu Sans, Bitstream Vera Sans, Luxi Sans, Verdana, Arial, Helvetica;
+  font-family: DejaVu Sans, Bitstream Vera Sans, Luxi Sans, Verdana, Arial, Helvetica, sans-serif;
   font-size: 10pt;
   line-height: 1.4;
 }
@@ -68,10 +68,21 @@ h3 {
   margin: 1.5ex 0pt 1ex 0pt;
 }
 
-h4 {
+h4, h5 {
+  font-size: 100%;
   font-weight: bold;
   padding: 0pt;
   margin: 1.5ex 0pt 1ex 0pt;
+}
+
+.subtitle {
+    font-style: italic;
+    font-weight: bold;
+    margin-bottom: 1em;
+}
+
+h1.title + .subtitle {
+    margin-top: -1em;
 }
 
 a:link {
@@ -137,4 +148,17 @@ table.centered td {
 }
 .centered {
   text-align: center;
+}
+
+.draft-header {
+  text-align: center;
+  font-size: 80%;
+  padding: 6px;
+  margin: -2.5em -2.5em 2.5em -2.5em;
+  background-color: #CBDAE4;
+}
+
+.legal-footer {
+    font-style: italic;
+    font-size: 80%;
 }

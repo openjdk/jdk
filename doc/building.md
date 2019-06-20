@@ -871,6 +871,7 @@ Suggestions for Advanced Users](#hints-and-suggestions-for-advanced-users) and
   * `CONF_CHECK`
   * `COMPARE_BUILD`
   * `JDK_FILTER`
+  * `SPEC_FILTER`
 
 ## Running Tests
 
