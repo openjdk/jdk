@@ -74,7 +74,7 @@ public:
   void invalidate_nmethod_mirror(nmethod* nm);
 
   // Gets the mirror from nm's oops table.
-  oop get_nmethod_mirror(nmethod* nm);
+  oop get_nmethod_mirror(nmethod* nm, bool phantom_ref);
 
   // Sets the mirror in nm's oops table.
   void set_nmethod_mirror(nmethod* nm, oop mirror);

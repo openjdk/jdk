@@ -700,11 +700,15 @@ void JVMCINMethodData::add_failed_speculation(nmethod* nm, jlong speculation) {
   FailedSpeculation::add_failed_speculation(nm, _failed_speculations, data, length);
 }
 
-oop JVMCINMethodData::get_nmethod_mirror(nmethod* nm) {
+oop JVMCINMethodData::get_nmethod_mirror(nmethod* nm, bool phantom_ref) {
   if (_nmethod_mirror_index == -1) {
     return NULL;
   }
-  return nm->oop_at(_nmethod_mirror_index);
+  if (phantom_ref) {
+    return nm->oop_at_phantom(_nmethod_mirror_index);
+  } else {
+    return nm->oop_at(_nmethod_mirror_index);
+  }
 }
 
 void JVMCINMethodData::set_nmethod_mirror(nmethod* nm, oop new_mirror) {
@@ -728,7 +732,7 @@ void JVMCINMethodData::clear_nmethod_mirror(nmethod* nm) {
 }
 
 void JVMCINMethodData::invalidate_nmethod_mirror(nmethod* nm) {
-  oop nmethod_mirror = get_nmethod_mirror(nm);
+  oop nmethod_mirror = get_nmethod_mirror(nm, /* phantom_ref */ true);
   if (nmethod_mirror == NULL) {
     return;
   }
@@ -1530,7 +1534,7 @@ JVMCI::CodeInstallResult JVMCIRuntime::register_method(JVMCIEnv* JVMCIENV,
         JVMCINMethodData* data = nm->jvmci_nmethod_data();
         assert(data != NULL, "must be");
         if (install_default) {
-          assert(!nmethod_mirror.is_hotspot() || data->get_nmethod_mirror(nm) == NULL, "must be");
+          assert(!nmethod_mirror.is_hotspot() || data->get_nmethod_mirror(nm, /* phantom_ref */ false) == NULL, "must be");
           if (entry_bci == InvocationEntryBci) {
             if (TieredCompilation) {
               // If there is an old version we're done with it
@@ -1565,7 +1569,7 @@ JVMCI::CodeInstallResult JVMCIRuntime::register_method(JVMCIEnv* JVMCIENV,
             InstanceKlass::cast(method->method_holder())->add_osr_nmethod(nm);
           }
         } else {
-          assert(!nmethod_mirror.is_hotspot() || data->get_nmethod_mirror(nm) == HotSpotJVMCI::resolve(nmethod_mirror), "must be");
+          assert(!nmethod_mirror.is_hotspot() || data->get_nmethod_mirror(nm, /* phantom_ref */ false) == HotSpotJVMCI::resolve(nmethod_mirror), "must be");
         }
         nm->make_in_use();
       }

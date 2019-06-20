@@ -1473,6 +1473,13 @@ oop nmethod::oop_at(int index) const {
   return NativeAccess<AS_NO_KEEPALIVE>::oop_load(oop_addr_at(index));
 }
 
+oop nmethod::oop_at_phantom(int index) const {
+  if (index == 0) {
+    return NULL;
+  }
+  return NativeAccess<ON_PHANTOM_OOP_REF>::oop_load(oop_addr_at(index));
+}
+
 //
 // Notify all classes this nmethod is dependent on that it is no
 // longer dependent. This should only be called in two situations.
