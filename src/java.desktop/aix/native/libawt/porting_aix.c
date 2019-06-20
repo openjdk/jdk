@@ -30,7 +30,7 @@
 
 #include "porting_aix.h"
 
-static unsigned char dladdr_buffer[0x4000];
+static unsigned char dladdr_buffer[0x8000];
 
 static void fill_dll_info(void) {
   int rc = loadquery(L_GETINFO,dladdr_buffer, sizeof(dladdr_buffer));
