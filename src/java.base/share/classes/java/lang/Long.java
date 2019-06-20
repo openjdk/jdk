@@ -398,19 +398,17 @@ public final class Long extends Number
     }
 
     /**
-     * Format a long (treated as unsigned) into a character buffer. If
+     * Format a long (treated as unsigned) into a byte buffer (LATIN1 version). If
      * {@code len} exceeds the formatted ASCII representation of {@code val},
      * {@code buf} will be padded with leading zeroes.
      *
      * @param val the unsigned long to format
      * @param shift the log2 of the base to format in (4 for hex, 3 for octal, 1 for binary)
-     * @param buf the character buffer to write to
+     * @param buf the byte buffer to write to
      * @param offset the offset in the destination buffer to start at
      * @param len the number of characters to write
      */
-
-    /** byte[]/LATIN1 version    */
-    static void formatUnsignedLong0(long val, int shift, byte[] buf, int offset, int len) {
+    private static void formatUnsignedLong0(long val, int shift, byte[] buf, int offset, int len) {
         int charPos = offset + len;
         int radix = 1 << shift;
         int mask = radix - 1;
@@ -420,7 +418,17 @@ public final class Long extends Number
         } while (charPos > offset);
     }
 
-    /** byte[]/UTF16 version    */
+    /**
+     * Format a long (treated as unsigned) into a byte buffer (UTF16 version). If
+     * {@code len} exceeds the formatted ASCII representation of {@code val},
+     * {@code buf} will be padded with leading zeroes.
+     *
+     * @param val the unsigned long to format
+     * @param shift the log2 of the base to format in (4 for hex, 3 for octal, 1 for binary)
+     * @param buf the byte buffer to write to
+     * @param offset the offset in the destination buffer to start at
+     * @param len the number of characters to write
+     */
     private static void formatUnsignedLong0UTF16(long val, int shift, byte[] buf, int offset, int len) {
         int charPos = offset + len;
         int radix = 1 << shift;
@@ -739,7 +747,7 @@ public final class Long extends Number
      */
     public static long parseLong(CharSequence s, int beginIndex, int endIndex, int radix)
                 throws NumberFormatException {
-        s = Objects.requireNonNull(s);
+        Objects.requireNonNull(s);
 
         if (beginIndex < 0 || beginIndex > endIndex || endIndex > s.length()) {
             throw new IndexOutOfBoundsException();
@@ -985,7 +993,7 @@ public final class Long extends Number
      */
     public static long parseUnsignedLong(CharSequence s, int beginIndex, int endIndex, int radix)
                 throws NumberFormatException {
-        s = Objects.requireNonNull(s);
+        Objects.requireNonNull(s);
 
         if (beginIndex < 0 || beginIndex > endIndex || endIndex > s.length()) {
             throw new IndexOutOfBoundsException();
