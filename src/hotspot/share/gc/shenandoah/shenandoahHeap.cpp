@@ -1279,14 +1279,14 @@ void ShenandoahHeap::object_iterate(ObjectClosure* cl) {
 
   Stack<oop,mtGC> oop_stack;
 
-  // First, we process all GC roots. This populates the work stack with initial objects.
-  ShenandoahAllRootScanner rp(1, ShenandoahPhaseTimings::_num_phases);
+  // First, we process GC roots according to current GC cycle. This populates the work stack with initial objects.
+  ShenandoahHeapIterationRootScanner rp;
   ObjectIterateScanRootClosure oops(&_aux_bit_map, &oop_stack);
 
   if (unload_classes()) {
-    rp.strong_roots_do_unchecked(&oops);
+    rp.strong_roots_do(&oops);
   } else {
-    rp.roots_do_unchecked(&oops);
+    rp.roots_do(&oops);
   }
 
   // Work through the oop stack to traverse heap.
@@ -1587,7 +1587,7 @@ void ShenandoahHeap::op_cleanup() {
 
 class ShenandoahConcurrentRootsEvacUpdateTask : public AbstractGangTask {
 private:
-  ShenandoahJNIHandleRoots<true /*concurrent*/>         _jni_roots;
+  ShenandoahJNIHandleRoots<true /*concurrent*/> _jni_roots;
 
 public:
   ShenandoahConcurrentRootsEvacUpdateTask() :

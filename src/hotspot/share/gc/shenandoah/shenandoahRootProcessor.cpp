@@ -122,16 +122,6 @@ void ShenandoahStringDedupRoots::oops_do(BoolObjectClosure* is_alive, OopClosure
   }
 }
 
-ShenandoahClassLoaderDataRoots::ShenandoahClassLoaderDataRoots() {
-  ClassLoaderDataGraph::clear_claimed_marks();
-}
-
-void ShenandoahClassLoaderDataRoots::clds_do(CLDClosure* strong_clds, CLDClosure* weak_clds, uint worker_id) {
-  ShenandoahWorkerTimings* worker_times = ShenandoahHeap::heap()->phase_timings()->worker_times();
-  ShenandoahWorkerTimingsTracker timer(worker_times, ShenandoahPhaseTimings::CLDGRoots, worker_id);
-  ClassLoaderDataGraph::roots_cld_do(strong_clds, weak_clds);
-}
-
 ShenandoahRootProcessor::ShenandoahRootProcessor(ShenandoahPhaseTimings::Phase phase) :
   _heap(ShenandoahHeap::heap()),
   _phase(phase) {
@@ -198,3 +188,37 @@ void ShenandoahRootAdjuster::roots_do(uint worker_id, OopClosure* oops) {
   _weak_roots.oops_do<AlwaysTrueClosure, OopClosure>(&always_true, oops, worker_id);
   _dedup_roots.oops_do(&always_true, oops, worker_id);
 }
+
+ ShenandoahHeapIterationRootScanner::ShenandoahHeapIterationRootScanner() :
+   ShenandoahRootProcessor(ShenandoahPhaseTimings::_num_phases),
+   _thread_roots(false /*is par*/) {
+ }
+
+ void ShenandoahHeapIterationRootScanner::roots_do(OopClosure* oops) {
+   assert(Thread::current()->is_VM_thread(), "Only by VM thread");
+   // Must use _claim_none to avoid interfering with concurrent CLDG iteration
+   CLDToOopClosure clds(oops, ClassLoaderData::_claim_none);
+   MarkingCodeBlobClosure code(oops, !CodeBlobToOopClosure::FixRelocations);
+   ShenandoahParallelOopsDoThreadClosure tc_cl(oops, &code, NULL);
+   ResourceMark rm;
+
+   _serial_roots.oops_do(oops, 0);
+   _jni_roots.oops_do(oops, 0);
+   _cld_roots.clds_do(&clds, &clds, 0);
+   _thread_roots.threads_do(&tc_cl, 0);
+   _code_roots.code_blobs_do(&code, 0);
+ }
+
+ void ShenandoahHeapIterationRootScanner::strong_roots_do(OopClosure* oops) {
+   assert(Thread::current()->is_VM_thread(), "Only by VM thread");
+   // Must use _claim_none to avoid interfering with concurrent CLDG iteration
+   CLDToOopClosure clds(oops, ClassLoaderData::_claim_none);
+   MarkingCodeBlobClosure code(oops, !CodeBlobToOopClosure::FixRelocations);
+   ShenandoahParallelOopsDoThreadClosure tc_cl(oops, &code, NULL);
+   ResourceMark rm;
+
+   _serial_roots.oops_do(oops, 0);
+   _jni_roots.oops_do(oops, 0);
+   _cld_roots.clds_do(&clds, NULL, 0);
+   _thread_roots.threads_do(&tc_cl, 0);
+ }

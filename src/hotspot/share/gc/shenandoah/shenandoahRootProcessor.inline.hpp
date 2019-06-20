@@ -31,6 +31,7 @@
 #include "gc/shenandoah/shenandoahTimingTracker.hpp"
 #include "gc/shenandoah/shenandoahUtils.hpp"
 #include "memory/resourceArea.hpp"
+#include "runtime/safepoint.hpp"
 
 template <bool CONCURRENT>
 ShenandoahJNIHandleRoots<CONCURRENT>::ShenandoahJNIHandleRoots() :
@@ -52,6 +53,27 @@ void ShenandoahJNIHandleRoots<CONCURRENT>::oops_do(T* cl, uint worker_id) {
 template <typename IsAlive, typename KeepAlive>
 void ShenandoahWeakRoots::oops_do(IsAlive* is_alive, KeepAlive* keep_alive, uint worker_id) {
   _task.work<IsAlive, KeepAlive>(worker_id, is_alive, keep_alive);
+}
+
+template <bool SINGLE_THREADED>
+ShenandoahClassLoaderDataRoots<SINGLE_THREADED>::ShenandoahClassLoaderDataRoots() {
+  if (!SINGLE_THREADED) {
+    ClassLoaderDataGraph::clear_claimed_marks();
+  }
+}
+
+template <bool SINGLE_THREADED>
+void ShenandoahClassLoaderDataRoots<SINGLE_THREADED>::clds_do(CLDClosure* strong_clds, CLDClosure* weak_clds, uint worker_id) {
+  if (SINGLE_THREADED) {
+    assert(SafepointSynchronize::is_at_safepoint(), "Must be at a safepoint");
+    assert(Thread::current()->is_VM_thread(), "Single threaded CLDG iteration can only be done by VM thread");
+
+    ClassLoaderDataGraph::roots_cld_do(strong_clds, weak_clds);
+  } else {
+    ShenandoahWorkerTimings* worker_times = ShenandoahHeap::heap()->phase_timings()->worker_times();
+    ShenandoahWorkerTimingsTracker timer(worker_times, ShenandoahPhaseTimings::CLDGRoots, worker_id);
+    ClassLoaderDataGraph::roots_cld_do(strong_clds, weak_clds);
+  }
 }
 
 template <typename ITR>
@@ -128,33 +150,6 @@ void ShenandoahRootScanner<ITR>::roots_do(uint worker_id, OopClosure* oops, CLDC
   if (code != NULL && !ShenandoahConcurrentScanCodeRoots) {
     _code_roots.code_blobs_do(code, worker_id);
   }
-}
-
-template <typename ITR>
-void ShenandoahRootScanner<ITR>::roots_do_unchecked(OopClosure* oops) {
-  CLDToOopClosure clds(oops, ClassLoaderData::_claim_strong);
-  MarkingCodeBlobClosure code(oops, !CodeBlobToOopClosure::FixRelocations);
-  ShenandoahParallelOopsDoThreadClosure tc_cl(oops, &code, NULL);
-  ResourceMark rm;
-
-  _serial_roots.oops_do(oops, 0);
-  _jni_roots.oops_do(oops, 0);
-  _cld_roots.clds_do(&clds, &clds, 0);
-  _thread_roots.threads_do(&tc_cl, 0);
-  _code_roots.code_blobs_do(&code, 0);
-}
-
-template <typename ITR>
-void ShenandoahRootScanner<ITR>::strong_roots_do_unchecked(OopClosure* oops) {
-  CLDToOopClosure clds(oops, ClassLoaderData::_claim_strong);
-  MarkingCodeBlobClosure code(oops, !CodeBlobToOopClosure::FixRelocations);
-  ShenandoahParallelOopsDoThreadClosure tc_cl(oops, &code, NULL);
-  ResourceMark rm;
-
-  _serial_roots.oops_do(oops, 0);
-  _jni_roots.oops_do(oops, 0);
-  _cld_roots.clds_do(&clds, NULL, 0);
-  _thread_roots.threads_do(&tc_cl, 0);
 }
 
 template <typename ITR>
