@@ -233,7 +233,7 @@ public class VirtualMachineImpl extends HotSpotVirtualMachine {
      * InputStream for the socket connection to get target VM
      */
     private class SocketInputStream extends InputStream {
-        int s;
+        int s = -1;
 
         public SocketInputStream(int s) {
             this.s = s;
@@ -261,7 +261,12 @@ public class VirtualMachineImpl extends HotSpotVirtualMachine {
         }
 
         public void close() throws IOException {
-            VirtualMachineImpl.close(s);
+            synchronized (this) {
+                if (s != -1) {
+                    VirtualMachineImpl.close(s);
+                    s = -1;
+                }
+            }
         }
     }
 
