@@ -39,6 +39,7 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Set;
 import sun.security.ssl.NamedGroup.NamedGroupType;
+import sun.security.ssl.SupportedGroupsExtension.SupportedGroups;
 import sun.security.ssl.X509Authentication.X509Possession;
 import sun.security.util.KeyUtil;
 import sun.security.util.SignatureUtil;
@@ -439,6 +440,39 @@ enum SignatureScheme {
                     if (params != null &&
                             ss.namedGroup == NamedGroup.valueOf(params)) {
                         return ss;
+                    }
+
+                    if (SSLLogger.isOn &&
+                            SSLLogger.isOn("ssl,handshake,verbose")) {
+                        SSLLogger.finest(
+                            "Ignore the signature algorithm (" + ss +
+                            "), unsupported EC parameter spec: " + params);
+                    }
+                } else if ("EC".equals(ss.keyAlgorithm)) {
+                    // Must be a legacy signature algorithm, which does not
+                    // specify the associated named groups.  The connection
+                    // cannot be established if the peer cannot recognize
+                    // the named group used for the signature.  RFC 8446
+                    // does not define countermeasures for the corner cases.
+                    // In order to mitigate the impact, we choose to check
+                    // against the local supported named groups.  The risk
+                    // should be minimal as applications should not use
+                    // unsupported named groups for its certificates.
+                    ECParameterSpec params =
+                            x509Possession.getECParameterSpec();
+                    if (params != null) {
+                        NamedGroup keyGroup = NamedGroup.valueOf(params);
+                        if (keyGroup != null &&
+                                SupportedGroups.isSupported(keyGroup)) {
+                            return ss;
+                        }
+                    }
+
+                    if (SSLLogger.isOn &&
+                            SSLLogger.isOn("ssl,handshake,verbose")) {
+                        SSLLogger.finest(
+                            "Ignore the legacy signature algorithm (" + ss +
+                            "), unsupported EC parameter spec: " + params);
                     }
                 } else {
                     return ss;

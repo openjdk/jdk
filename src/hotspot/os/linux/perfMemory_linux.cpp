@@ -661,7 +661,7 @@ static int get_namespace_pid(int vmid) {
   if (fp) {
     int pid, nspid;
     int ret;
-    while (!feof(fp)) {
+    while (!feof(fp) && !ferror(fp)) {
       ret = fscanf(fp, "NSpid: %d %d", &pid, &nspid);
       if (ret == 1) {
         break;
