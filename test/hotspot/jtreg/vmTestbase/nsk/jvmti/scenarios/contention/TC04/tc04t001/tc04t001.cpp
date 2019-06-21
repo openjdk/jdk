@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2004, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2004, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -342,6 +342,11 @@ jint Agent_Initialize(JavaVM *jvm, char *options, void *reserved) {
         return JNI_ERR;
 
     return JNI_OK;
+}
+
+JNIEXPORT jint JNICALL
+Java_nsk_jvmti_scenarios_contention_TC04_tc04t001Thread_enterEventsCount(JNIEnv* jni, jclass klass) {
+    return enterEventsCount;
 }
 
 /* ========================================================================== */
