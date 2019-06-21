@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -884,6 +884,9 @@ public class DefaultLoggerTest {
     }
 
     public static class SimplePolicy extends Policy {
+
+        static final Policy DEFAULT_POLICY = Policy.getPolicy();
+
         static final RuntimePermission LOGGERFINDER_PERMISSION =
                 new RuntimePermission("loggerFinder");
         final Permissions permissions;
@@ -908,7 +911,7 @@ public class DefaultLoggerTest {
         public boolean implies(ProtectionDomain domain, Permission permission) {
             if (allowAll.get().get()) return allPermissions.implies(permission);
             if (allowControl.get().get()) return controlPermissions.implies(permission);
-            return permissions.implies(permission);
+            return permissions.implies(permission) || DEFAULT_POLICY.implies(domain, permission);
         }
 
         @Override

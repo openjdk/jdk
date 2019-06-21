@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,6 +28,7 @@ import java.lang.*;
 
 public class DynamicPolicy extends Policy{
 
+    static final Policy DEFAULT_POLICY = Policy.getPolicy(); // do this early before setPolicy is called
     static int refresher = 0;
 
 
@@ -48,7 +49,7 @@ public class DynamicPolicy extends Policy{
     }
 
     public boolean implies(ProtectionDomain pd, Permission p) {
-        return getPermissions(pd).implies(p);
+        return getPermissions(pd).implies(p) || DEFAULT_POLICY.implies(pd, p);
     }
 
     public PermissionCollection getPermissions(ProtectionDomain pd) {

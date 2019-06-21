@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -385,6 +385,8 @@ public class FieldSetAccessibleTest {
     // Policy for the test...
     public static class SimplePolicy extends Policy {
 
+        static final Policy DEFAULT_POLICY = Policy.getPolicy();
+
         final Permissions permissions;
         final Permissions allPermissions;
         final ThreadLocal<AtomicBoolean> allowAll;
@@ -420,6 +422,7 @@ public class FieldSetAccessibleTest {
                     return true;
                 }
             }
+            if (DEFAULT_POLICY.implies(domain, permission)) return true;
             return false;
         }
 
