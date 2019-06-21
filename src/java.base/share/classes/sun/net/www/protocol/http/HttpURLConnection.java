@@ -2171,6 +2171,10 @@ public class HttpURLConnection extends java.net.HttpURLConnection {
             } while (retryTunnel < maxRedirects);
 
             if (retryTunnel >= maxRedirects || (respCode != HTTP_OK)) {
+                if (respCode != HTTP_PROXY_AUTH) {
+                    // remove all but authenticate responses
+                    responses.reset();
+                }
                 throw new IOException("Unable to tunnel through proxy."+
                                       " Proxy returns \"" +
                                       statusLine + "\"");
