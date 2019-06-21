@@ -87,6 +87,29 @@ public class MetaUtil {
     }
 
     /**
+     * Classes for lambdas can have {@code /} characters that are not package separators. These are
+     * distinguished by being followed by a character that is not a
+     * {@link Character#isJavaIdentifierStart(char)} (e.g.,
+     * "jdk.vm.ci.runtime.test.TypeUniverse$$Lambda$1/869601985").
+     */
+    private static String replacePackageSeparatorsWithDot(String name) {
+        int length = name.length();
+        int i = 0;
+        StringBuilder buf = new StringBuilder(length);
+        while (i < length - 1) {
+            char ch = name.charAt(i);
+            if (ch == '/' && Character.isJavaIdentifierStart(name.charAt(i + 1))) {
+                buf.append('.');
+            } else {
+                buf.append(ch);
+            }
+            i++;
+        }
+        buf.append(name.charAt(length - 1));
+        return buf.toString();
+    }
+
+    /**
      * Converts a type name in internal form to an external form.
      *
      * @param name the internal name to convert
@@ -99,7 +122,7 @@ public class MetaUtil {
     public static String internalNameToJava(String name, boolean qualified, boolean classForNameCompatible) {
         switch (name.charAt(0)) {
             case 'L': {
-                String result = name.substring(1, name.length() - 1).replace('/', '.');
+                String result = replacePackageSeparatorsWithDot(name.substring(1, name.length() - 1));
                 if (!qualified) {
                     final int lastDot = result.lastIndexOf('.');
                     if (lastDot != -1) {
@@ -109,7 +132,7 @@ public class MetaUtil {
                 return result;
             }
             case '[':
-                return classForNameCompatible ? name.replace('/', '.') : internalNameToJava(name.substring(1), qualified, classForNameCompatible) + "[]";
+                return classForNameCompatible ? replacePackageSeparatorsWithDot(name) : internalNameToJava(name.substring(1), qualified, classForNameCompatible) + "[]";
             default:
                 if (name.length() != 1) {
                     throw new IllegalArgumentException("Illegal internal name: " + name);

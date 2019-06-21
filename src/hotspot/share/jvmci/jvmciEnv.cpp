@@ -1361,6 +1361,9 @@ Handle JVMCIEnv::asConstant(JVMCIObject constant, JVMCI_TRAPS) {
     return Handle(THREAD, obj);
   } else if (isa_IndirectHotSpotObjectConstantImpl(constant)) {
     jlong object_handle = get_IndirectHotSpotObjectConstantImpl_objectHandle(constant);
+    if (object_handle == 0L) {
+      JVMCI_THROW_MSG_(NullPointerException, "Foreign object reference has been cleared", Handle());
+    }
     oop result = resolve_handle(object_handle);
     if (result == NULL) {
       JVMCI_THROW_MSG_(InternalError, "Constant was unexpectedly NULL", Handle());

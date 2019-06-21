@@ -771,6 +771,12 @@ final class CompilerToVM {
     native HotSpotResolvedJavaType getComponentType(HotSpotResolvedObjectTypeImpl type);
 
     /**
+     * Get the array class for {@code type}. This can't be done symbolically since anonymous types
+     * can't be looked up by name.
+     */
+    native HotSpotResolvedObjectTypeImpl getArrayType(HotSpotResolvedJavaType type);
+
+    /**
      * Forces initialization of {@code type}.
      */
     native void ensureInitialized(HotSpotResolvedObjectTypeImpl type);
@@ -978,4 +984,9 @@ final class CompilerToVM {
      * @see HotSpotJVMCIRuntime#detachCurrentThread()
      */
     native void detachCurrentThread();
+
+    /**
+     * @see HotSpotJVMCIRuntime#exitHotSpot(int)
+     */
+    native void callSystemExit(int status);
 }

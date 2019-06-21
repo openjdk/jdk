@@ -22,10 +22,14 @@
  */
 package jdk.vm.ci.hotspot;
 
+import static jdk.vm.ci.hotspot.HotSpotJVMCIRuntime.runtime;
+
 import jdk.vm.ci.meta.JavaConstant;
 import jdk.vm.ci.meta.ResolvedJavaType;
 
 public abstract class HotSpotResolvedJavaType extends HotSpotJavaType implements ResolvedJavaType {
+
+    HotSpotResolvedObjectTypeImpl arrayOfType;
 
     HotSpotResolvedJavaType(String name) {
         super(name);
@@ -40,4 +44,12 @@ public abstract class HotSpotResolvedJavaType extends HotSpotJavaType implements
     }
 
     abstract JavaConstant getJavaMirror();
+
+    @Override
+    public HotSpotResolvedObjectType getArrayClass() {
+        if (arrayOfType == null) {
+            arrayOfType = runtime().compilerToVm.getArrayType(this);
+        }
+        return arrayOfType;
+    }
 }

@@ -87,4 +87,9 @@ public class HotSpotCompilationRequest extends CompilationRequest {
     public int getId() {
         return id;
     }
+
+    @Override
+    public String toString() {
+        return id + ":" + super.toString();
+    }
 }

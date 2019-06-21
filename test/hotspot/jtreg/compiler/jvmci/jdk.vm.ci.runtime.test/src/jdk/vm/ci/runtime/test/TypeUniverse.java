@@ -51,6 +51,7 @@ import java.util.Map;
 import java.util.Queue;
 import java.util.Set;
 import java.util.TreeMap;
+import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
 import static java.lang.reflect.Modifier.isFinal;
@@ -68,6 +69,7 @@ public class TypeUniverse {
     public static final ConstantReflectionProvider constantReflection = JVMCI.getRuntime().getHostJVMCIBackend().getConstantReflection();
     public static final Collection<Class<?>> classes = new HashSet<>();
     public static final Set<ResolvedJavaType> javaTypes;
+    public static final ResolvedJavaType predicateType;
     public static final Map<Class<?>, Class<?>> arrayClasses = new HashMap<>();
 
     private static List<ConstantValue> constants;
@@ -116,6 +118,9 @@ public class TypeUniverse {
         for (Class<?> c : initialClasses) {
             addClass(c);
         }
+        Predicate<String> predicate = s -> s.length() == 1;
+        addClass(predicate.getClass());
+        predicateType = metaAccess.lookupJavaType(predicate.getClass());
 
         javaTypes = Collections.unmodifiableSet(classes.stream().map(c -> metaAccess.lookupJavaType(c)).collect(Collectors.toSet()));
     }
