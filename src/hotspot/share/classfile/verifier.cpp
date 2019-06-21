@@ -165,22 +165,28 @@ bool Verifier::verify(InstanceKlass* klass, bool should_verify_class, TRAPS) {
                            PerfClassTraceTime::CLASS_VERIFY);
 
   // If the class should be verified, first see if we can use the split
-  // verifier.  If not, or if verification fails and FailOverToOldVerifier
-  // is set, then call the inference verifier.
+  // verifier.  If not, or if verification fails and can failover, then
+  // call the inference verifier.
   Symbol* exception_name = NULL;
   const size_t message_buffer_len = klass->name()->utf8_length() + 1024;
   char* message_buffer = NULL;
   char* exception_message = NULL;
-
-  bool can_failover = FailOverToOldVerifier &&
-     klass->major_version() < NOFAILOVER_MAJOR_VERSION;
 
   log_info(class, init)("Start class verification for: %s", klass->external_name());
   if (klass->major_version() >= STACKMAP_ATTRIBUTE_MAJOR_VERSION) {
     ClassVerifier split_verifier(klass, THREAD);
     split_verifier.verify_class(THREAD);
     exception_name = split_verifier.result();
-    if (can_failover && !HAS_PENDING_EXCEPTION &&
+
+    // If DumpSharedSpaces is set then don't fall back to the old verifier on
+    // verification failure. If a class fails verification with the split verifier,
+    // it might fail the CDS runtime verifier constraint check. In that case, we
+    // don't want to share the class. We only archive classes that pass the split
+    // verifier.
+    bool can_failover = !DumpSharedSpaces &&
+      klass->major_version() < NOFAILOVER_MAJOR_VERSION;
+
+    if (can_failover && !HAS_PENDING_EXCEPTION &&  // Split verifier doesn't set PENDING_EXCEPTION for failure
         (exception_name == vmSymbols::java_lang_VerifyError() ||
          exception_name == vmSymbols::java_lang_ClassFormatError())) {
       log_info(verification)("Fail over class verification to old verifier for: %s", klass->external_name());

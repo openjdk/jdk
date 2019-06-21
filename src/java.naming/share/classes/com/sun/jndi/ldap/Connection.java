@@ -411,6 +411,14 @@ public final class Connection implements Runnable {
     BerDecoder readReply(LdapRequest ldr) throws IOException, NamingException {
         BerDecoder rber;
 
+        // If socket closed, don't even try
+        synchronized (this) {
+            if (sock == null) {
+                throw new ServiceUnavailableException(host + ":" + port +
+                    "; socket closed");
+            }
+        }
+
         try {
             // if no timeout is set so we wait infinitely until
             // a response is received

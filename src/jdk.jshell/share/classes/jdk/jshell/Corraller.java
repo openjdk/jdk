@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,132 +25,226 @@
 
 package jdk.jshell;
 
-import java.io.IOException;
-import java.io.StringWriter;
 import com.sun.source.tree.ClassTree;
 import com.sun.source.tree.MethodTree;
 import com.sun.source.tree.Tree;
-import com.sun.tools.javac.code.Flags;
+import com.sun.source.tree.Tree.Kind;
 import com.sun.tools.javac.tree.JCTree;
 import com.sun.tools.javac.tree.JCTree.JCBlock;
 import com.sun.tools.javac.tree.JCTree.JCClassDecl;
-import com.sun.tools.javac.tree.JCTree.JCExpression;
 import com.sun.tools.javac.tree.JCTree.JCMethodDecl;
-import com.sun.tools.javac.tree.JCTree.JCNewClass;
-import com.sun.tools.javac.tree.JCTree.JCStatement;
 import com.sun.tools.javac.tree.JCTree.JCVariableDecl;
-import com.sun.tools.javac.tree.Pretty;
-import com.sun.tools.javac.tree.TreeMaker;
-import com.sun.tools.javac.util.Context;
+import com.sun.tools.javac.tree.JCTree.Visitor;
 import com.sun.tools.javac.util.List;
 import com.sun.tools.javac.util.ListBuffer;
-import com.sun.tools.javac.util.Names;
+import static com.sun.tools.javac.code.Flags.FINAL;
+import static com.sun.tools.javac.code.Flags.PUBLIC;
 import static com.sun.tools.javac.code.Flags.STATIC;
 import static com.sun.tools.javac.code.Flags.INTERFACE;
 import static com.sun.tools.javac.code.Flags.ENUM;
-import static com.sun.tools.javac.code.Flags.PUBLIC;
-import com.sun.tools.javac.util.Name;
-import jdk.jshell.spi.SPIResolutionException;
+import jdk.jshell.Wrap.CompoundWrap;
+import jdk.jshell.Wrap.Range;
+import jdk.jshell.Wrap.RangeWrap;
 
 /**
  * Produce a corralled version of the Wrap for a snippet.
- * Incoming tree is mutated.
- *
- * @author Robert Field
  */
-class Corraller extends Pretty {
+class Corraller extends Visitor {
 
-    private final StringWriter out;
-    private final int keyIndex;
-    private final TreeMaker make;
-    private final Names names;
-    private JCBlock resolutionExceptionBlock;
+    /** Visitor result field: a Wrap
+     */
+    protected Wrap result;
 
-    public Corraller(int keyIndex, Context context) {
-        this(new StringWriter(), keyIndex, context);
+    private final TreeDissector dis;
+    private final String resolutionExceptionBlock;
+    private final String source;
+
+    public Corraller(TreeDissector dis, int keyIndex, String source) {
+        this.dis = dis;
+        this.resolutionExceptionBlock = "\n      { throw new jdk.jshell.spi.SPIResolutionException(" + keyIndex + "); }";
+        this.source = source;
     }
 
-    private Corraller(StringWriter out, int keyIndex, Context context) {
-        super(out, false);
-        this.out = out;
-        this.keyIndex = keyIndex;
-        this.make = TreeMaker.instance(context);
-        this.names = Names.instance(context);
+    public Wrap corralType(ClassTree tree) {
+        return corralToWrap(tree);
     }
 
-    public Wrap corralType(ClassTree ct) {
-        ((JCClassDecl) ct).mods.flags |= Flags.STATIC | Flags.PUBLIC;
-        return corral(ct);
+    public Wrap corralMethod(MethodTree tree) {
+        return corralToWrap(tree);
     }
 
-    public Wrap corralMethod(MethodTree mt) {
-        ((JCMethodDecl) mt).mods.flags |= Flags.STATIC | Flags.PUBLIC;
-        return corral(mt);
-    }
-
-    private Wrap corral(Tree tree) {
+    private Wrap corralToWrap(Tree tree) {
         try {
-            printStat((JCTree) tree);
-        } catch (IOException e) {
-            throw new AssertionError(e);
+            JCTree jct = (JCTree) tree;
+            Wrap w = new CompoundWrap(
+                    "    public static\n    ",
+                    corral(jct));
+            debugWrap("corralToWrap SUCCESS source: %s -- wrap:\n %s\n", tree, w.wrapped());
+            return w;
+        } catch (Exception ex) {
+            debugWrap("corralToWrap FAIL: %s - %s\n", tree, ex);
+            //ex.printStackTrace(System.err);
+            return null;
         }
-        return Wrap.simpleWrap(out.toString());
     }
 
-    @Override
-    public void visitBlock(JCBlock tree) {
-        // Top-level executable blocks (usually method bodies) are corralled
-        super.visitBlock((tree.flags & STATIC) != 0
-                ? tree
-                : resolutionExceptionBlock());
+    // Corral a single node.
+//    @SuppressWarnings("unchecked")
+    private <T extends JCTree> Wrap corral(T tree) {
+        if (tree == null) {
+            return null;
+        } else {
+            tree.accept(this);
+            Wrap tmpResult = this.result;
+            this.result = null;
+            return tmpResult;
+        }
     }
 
-    @Override
-    public void visitVarDef(JCVariableDecl tree) {
-        // No field inits in corralled classes
-        tree.init = null;
-        super.visitVarDef(tree);
+    private String defaultConstructor(JCClassDecl tree) {
+        return "  public " + tree.name.toString() + "() " +
+                resolutionExceptionBlock;
     }
+
+    /* ***************************************************************************
+     * Visitor methods
+     ****************************************************************************/
 
     @Override
     public void visitClassDef(JCClassDecl tree) {
-        if ((tree.mods.flags & (INTERFACE | ENUM)) == 0 &&
-                !tree.getMembers().stream()
-                .anyMatch(t -> t.getKind() == Tree.Kind.METHOD &&
-                ((MethodTree) t).getName() == tree.name.table.names.init)) {
-            // Generate a default constructor, since
-            // this is a regular class and there are no constructors
-            ListBuffer<JCTree> ndefs = new ListBuffer<>();
-            ndefs.addAll(tree.defs);
-            ndefs.add(make.MethodDef(make.Modifiers(PUBLIC),
-                    tree.name.table.names.init,
-                    null, List.nil(), List.nil(), List.nil(),
-                    resolutionExceptionBlock(), null));
-            tree.defs = ndefs.toList();
-        }
-        super.visitClassDef(tree);
-    }
-
-    // Build a compiler tree for an exception throwing block, e.g.:
-    // {
-    //     throw new jdk.jshell.spi.SPIResolutionException(9);
-    // }
-    private JCBlock resolutionExceptionBlock() {
-        if (resolutionExceptionBlock == null) {
-            JCExpression expClass = null;
-            // Split the exception class name at dots
-            for (String id : SPIResolutionException.class.getName().split("\\.")) {
-                Name nm = names.fromString(id);
-                if (expClass == null) {
-                    expClass = make.Ident(nm);
-                } else {
-                    expClass = make.Select(expClass, nm);
+        boolean isEnum = (tree.mods.flags & ENUM) != 0;
+        boolean isInterface = (tree.mods.flags & INTERFACE ) != 0;
+        int classBegin = dis.getStartPosition(tree);
+        int classEnd = dis.getEndPosition(tree);
+        //debugWrap("visitClassDef: %d-%d = %s\n", classBegin, classEnd, source.substring(classBegin, classEnd));
+        ListBuffer<Object> wrappedDefs = new ListBuffer<>();
+        int bodyBegin = -1;
+        if (tree.defs != null && !tree.defs.isEmpty()) {
+            if (isEnum) {
+                // copy the enum constants verbatim
+                int enumBegin = dis.getStartPosition(tree.defs.head);
+                JCTree t = null; // null to shut-up compiler, always set because non-empty
+                List<? extends JCTree> l = tree.defs;
+                for (; l.nonEmpty(); l = l.tail) {
+                    t = l.head;
+                    if (t.getKind() == Kind.VARIABLE) {
+                        if ((((JCVariableDecl)t).mods.flags & (PUBLIC | STATIC | FINAL)) != (PUBLIC | STATIC | FINAL)) {
+                            // non-enum constant, process normally
+                            break;
+                        }
+                    } else {
+                        // non-variable, process normally
+                        break;
+                    }
+                }
+                int constEnd = l.nonEmpty()                  // end of constants
+                        ? dis.getStartPosition(l.head) - 1   // is one before next defs, if there is one
+                        : dis.getEndPosition(t);             // and otherwise end of the last constant
+                wrappedDefs.append(new RangeWrap(source, new Range(enumBegin, constEnd)));
+                // handle any other defs
+                for (; l.nonEmpty(); l = l.tail) {
+                    wrappedDefs.append("\n");
+                    t = l.head;
+                    wrappedDefs.append(corral(t));
+                }
+            } else {
+                // non-enum
+                boolean constructorSeen = false;
+                for (List<? extends JCTree> l = tree.defs; l.nonEmpty(); l = l.tail) {
+                    wrappedDefs.append("\n   ");
+                    JCTree t = l.head;
+                    switch (t.getKind()) {
+                        case METHOD:
+                            constructorSeen = constructorSeen || ((MethodTree)t).getName() == tree.name.table.names.init;
+                            break;
+                        case BLOCK:
+                            // throw exception in instance initializer too -- inline because String not Wrap
+                            wrappedDefs.append((((JCBlock)t).flags & STATIC) != 0
+                                    ? new RangeWrap(source, dis.treeToRange(t))
+                                    : resolutionExceptionBlock);
+                            continue; // already appended, skip append below
+                    }
+                    wrappedDefs.append(corral(t));
+                }
+                if (!constructorSeen && !isInterface && !isEnum) {
+                    // Generate a default constructor, since
+                    // this is a regular class and there are no constructors
+                    if (wrappedDefs.length() > 0) {
+                        wrappedDefs.append("\n ");
+                    }
+                    wrappedDefs.append(defaultConstructor(tree));
                 }
             }
-            JCNewClass exp = make.NewClass(null,
-                    null, expClass, List.of(make.Literal(keyIndex)), null);
-            resolutionExceptionBlock = make.Block(0L, List.of(make.Throw(exp)));
+            bodyBegin = dis.getStartPosition(tree.defs.head);
         }
-        return resolutionExceptionBlock;
+        Object defs = wrappedDefs.length() == 1
+            ? wrappedDefs.first()
+            : new CompoundWrap(wrappedDefs.toArray());
+        if (bodyBegin < 0) {
+            int brace = source.indexOf('{', classBegin);
+            if (brace < 0 || brace >= classEnd) {
+                throw new IllegalArgumentException("No brace found: " + source.substring(classBegin, classEnd));
+            }
+            bodyBegin = brace + 1;
+        }
+        // body includes openning brace
+        result = new CompoundWrap(
+                new RangeWrap(source, new Range(classBegin, bodyBegin)),
+                defs,
+                "\n}"
+        );
+    }
+
+    // Corral the body
+    @Override
+    public void visitMethodDef(JCMethodDecl tree) {
+        int methodBegin = dis.getStartPosition(tree);
+        int methodEnd = dis.getEndPosition(tree);
+        //debugWrap("+visitMethodDef: %d-%d = %s\n", methodBegin, methodEnd,
+        //        source.substring(methodBegin, methodEnd));
+        int bodyBegin = dis.getStartPosition(tree.getBody());
+        if (bodyBegin < 0) {
+            bodyBegin = source.indexOf('{', methodBegin);
+            if (bodyBegin > methodEnd) {
+                bodyBegin = -1;
+            }
+        }
+        if (bodyBegin > 0) {
+            //debugWrap("-visitMethodDef BEGIN: %d = '%s'\n", bodyBegin,
+            //        source.substring(methodBegin, bodyBegin));
+            Range noBodyRange = new Range(methodBegin, bodyBegin);
+            result = new CompoundWrap(
+                    new RangeWrap(source, noBodyRange),
+                    resolutionExceptionBlock);
+        } else {
+            Range range = new Range(methodBegin, methodEnd);
+            result = new RangeWrap(source, range);
+        }
+    }
+
+    // Remove initializer, if present
+    @Override
+    public void visitVarDef(JCVariableDecl tree) {
+        int begin = dis.getStartPosition(tree);
+        int end = dis.getEndPosition(tree);
+        if (tree.init == null) {
+            result = new RangeWrap(source, new Range(begin, end));
+        } else {
+            int sinit = dis.getStartPosition(tree.init);
+            int eq = source.lastIndexOf('=', sinit);
+            if (eq < begin) {
+                throw new IllegalArgumentException("Equals not found before init: " + source + " @" + sinit);
+            }
+            result = new CompoundWrap(new RangeWrap(source, new Range(begin, eq - 1)), ";");
+        }
+    }
+
+    @Override
+    public void visitTree(JCTree tree) {
+        throw new IllegalArgumentException("Unexpected tree: " + tree);
+    }
+
+    void debugWrap(String format, Object... args) {
+        //state.debug(this, InternalDebugControl.DBG_WRAP, format, args);
     }
 }

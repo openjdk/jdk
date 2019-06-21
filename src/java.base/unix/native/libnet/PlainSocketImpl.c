@@ -46,8 +46,6 @@ jfieldID psi_trafficClassID;
 jfieldID psi_fdLockID;
 jfieldID psi_closePendingID;
 
-extern void setDefaultScopeID(JNIEnv *env, struct sockaddr *him);
-
 /*
  * file descriptor used for dup2
  */
@@ -261,7 +259,6 @@ Java_java_net_PlainSocketImpl_socketConnect(JNIEnv *env, jobject this,
                                   JNI_TRUE) != 0) {
         return;
     }
-    setDefaultScopeID(env, &sa.sa);
 
     if (trafficClass != 0 && ipv6_available()) {
         NET_SetTrafficClass(&sa, trafficClass);
@@ -509,7 +506,6 @@ Java_java_net_PlainSocketImpl_socketBind(JNIEnv *env, jobject this,
                                   &len, JNI_TRUE) != 0) {
         return;
     }
-    setDefaultScopeID(env, &sa.sa);
 
     if (NET_Bind(fd, &sa, len) < 0) {
         if (errno == EADDRINUSE || errno == EADDRNOTAVAIL ||

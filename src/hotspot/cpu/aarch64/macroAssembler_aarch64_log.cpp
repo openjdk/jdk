@@ -286,7 +286,7 @@ void MacroAssembler::fast_log(FloatRegister vtmp0, FloatRegister vtmp1,
     frecpe(vtmp5, vtmp5, S);                   // vtmp5 ~= 1/vtmp5
     lsr(tmp2, rscratch1, 48);
     movz(tmp4, 0x77f0, 48);
-    fmovd(vtmp4, 1.0d);
+    fmovd(vtmp4, 1.0);
     movz(tmp1, INF_OR_NAN_PREFIX, 48);
     bfm(tmp4, rscratch1, 0, 51);               // tmp4 = 0x77F0 << 48 | mantissa(X)
     // vtmp1 = AS_DOUBLE_BITS(0x77F0 << 48 | mantissa(X)) == mx
@@ -358,7 +358,7 @@ void MacroAssembler::fast_log(FloatRegister vtmp0, FloatRegister vtmp1,
       br(GE, DONE);
       cmp(rscratch1, tmp2);
       br(NE, CHECKED_CORNER_CASES);
-      fmovd(v0, 0.0d);
+      fmovd(v0, 0.0);
   }
   bind(DONE);
     ret(lr);

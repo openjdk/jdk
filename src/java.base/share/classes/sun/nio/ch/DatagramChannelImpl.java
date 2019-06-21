@@ -57,6 +57,7 @@ import java.util.concurrent.locks.ReentrantLock;
 
 import sun.net.ResourceManager;
 import sun.net.ext.ExtendedSocketOptions;
+import sun.net.util.IPAddressUtil;
 
 /**
  * An implementation of DatagramChannels.
@@ -527,14 +528,16 @@ class DatagramChannelImpl
                 } else {
                     // not connected
                     SecurityManager sm = System.getSecurityManager();
+                    InetAddress ia = isa.getAddress();
                     if (sm != null) {
-                        InetAddress ia = isa.getAddress();
                         if (ia.isMulticastAddress()) {
                             sm.checkMulticast(ia);
                         } else {
                             sm.checkConnect(ia.getHostAddress(), isa.getPort());
                         }
                     }
+                    if (ia.isLinkLocalAddress())
+                        isa = IPAddressUtil.toScopedAddress(isa);
                     n = send(fd, src, isa);
                     if (blocking) {
                         while (IOStatus.okayToRetry(n) && isOpen()) {

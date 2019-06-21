@@ -46,7 +46,7 @@ import javax.sql.rowset.spi.*;
  * to read an XML data source or to write itself in XML format using the
  * <code>WebRowSet</code> XML schema definition available at
  * <pre>
- *     <a href="http://java.sun.com/xml/ns/jdbc/webrowset.xsd">http://java.sun.com/xml/ns/jdbc/webrowset.xsd</a>
+ *     <a href="http://xmlns.jcp.org/xml/ns//jdbc/webrowset.xsd">http://xmlns.jcp.org/xml/ns//jdbc/webrowset.xsd</a>
  * </pre>
  * The <code>RIXMLProvider</code> implementation has a synchronization level of
  * GRADE_NONE, which means that it does no checking at all for conflicts.  It

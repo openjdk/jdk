@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -34,7 +34,7 @@ import static javax.lang.model.SourceVersion.*;
 /**
  * A skeletal visitor of program elements with default behavior
  * appropriate for source versions {@link SourceVersion#RELEASE_9
- * RELEASE_9} through {@link SourceVersion#RELEASE_13 RELEASE_13}.
+ * RELEASE_9} through {@link SourceVersion#RELEASE_14 RELEASE_14}.
  *
  * <p> <b>WARNING:</b> The {@code ElementVisitor} interface
  * implemented by this class may have methods added to it in the
@@ -65,7 +65,7 @@ import static javax.lang.model.SourceVersion.*;
  * @since 9
  * @spec JPMS
  */
-@SupportedSourceVersion(RELEASE_13)
+@SupportedSourceVersion(RELEASE_14)
 public abstract class AbstractElementVisitor9<R, P> extends AbstractElementVisitor8<R, P> {
     /**
      * Constructor for concrete subclasses to call.

@@ -318,7 +318,6 @@ public final class PlatformRecording implements AutoCloseable {
         PlatformRecording clone = recorder.newTemporaryRecording();
         clone.setShouldWriteActiveRecordingEvent(false);
         clone.setName(getName());
-        clone.setDestination(this.destination);
         clone.setToDisk(true);
         // We purposely don't clone settings here, since
         // a union a == a

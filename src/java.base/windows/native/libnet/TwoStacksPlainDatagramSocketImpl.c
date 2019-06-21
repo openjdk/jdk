@@ -415,11 +415,11 @@ Java_java_net_TwoStacksPlainDatagramSocketImpl_disconnect0(JNIEnv *env, jobject 
 
 /*
  * Class:     java_net_TwoStacksPlainDatagramSocketImpl
- * Method:    send
+ * Method:    send0
  * Signature: (Ljava/net/DatagramPacket;)V
  */
 JNIEXPORT void JNICALL
-Java_java_net_TwoStacksPlainDatagramSocketImpl_send
+Java_java_net_TwoStacksPlainDatagramSocketImpl_send0
   (JNIEnv *env, jobject this, jobject packet)
 {
     char BUF[MAX_BUFFER_LEN];

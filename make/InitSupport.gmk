@@ -53,7 +53,7 @@ ifeq ($(HAS_SPEC),)
       COMPARE_BUILD JTREG GTEST MICRO TEST_OPTS TEST_VM_OPTS
 
   # All known make control variables
-  MAKE_CONTROL_VARIABLES := $(INIT_CONTROL_VARIABLES) TEST JDK_FILTER
+  MAKE_CONTROL_VARIABLES := $(INIT_CONTROL_VARIABLES) TEST JDK_FILTER SPEC_FILTER
 
   # Define a simple reverse function.
   # Should maybe move to MakeBase.gmk, but we can't include that file now.

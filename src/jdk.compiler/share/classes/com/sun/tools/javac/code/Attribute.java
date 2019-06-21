@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -247,7 +247,8 @@ public abstract class Attribute implements AnnotationValue {
                 buf.append('(');
                 boolean first = true;
                 for (Pair<MethodSymbol, Attribute> value : values) {
-                    if (!first) buf.append(", ");
+                    if (!first)
+                        buf.append(", ");
                     first = false;
 
                     Name name = value.fst.name;
@@ -368,7 +369,7 @@ public abstract class Attribute implements AnnotationValue {
         public void accept(Visitor v) { v.visitEnum(this); }
         @DefinedBy(Api.LANGUAGE_MODEL)
         public String toString() {
-            return value.enclClass() + "." + value;     // qualified name
+            return value.toString();
         }
         @DefinedBy(Api.LANGUAGE_MODEL)
         public VarSymbol getValue() {

@@ -752,37 +752,6 @@ NET_BindV6(struct ipv6bind *b, jboolean exclBind) {
     return 0;
 }
 
-/*
- * Determine the default interface for an IPv6 address.
- *
- * Returns :-
- *      0 if error
- *      > 0 interface index to use
- */
-jint getDefaultIPv6Interface(JNIEnv *env, struct sockaddr_in6 *target_addr)
-{
-    int ret;
-    DWORD b;
-    struct sockaddr_in6 route;
-    SOCKET fd = socket(AF_INET6, SOCK_STREAM, 0);
-    if (fd == INVALID_SOCKET) {
-        return 0;
-    }
-
-    ret = WSAIoctl(fd, SIO_ROUTING_INTERFACE_QUERY,
-                   (void *)target_addr, sizeof(struct sockaddr_in6),
-                   (void *)&route, sizeof(struct sockaddr_in6),
-                   &b, 0, 0);
-    if (ret == SOCKET_ERROR) {
-        // error
-        closesocket(fd);
-        return 0;
-    } else {
-        closesocket(fd);
-        return route.sin6_scope_id;
-    }
-}
-
 /**
  * Enables SIO_LOOPBACK_FAST_PATH
  */
@@ -820,7 +789,7 @@ NET_InetAddressToSockaddr(JNIEnv *env, jobject iaObj, int port,
     {
         jbyte caddr[16];
         jint address;
-        unsigned int scopeid = 0, cached_scope_id = 0;
+        unsigned int scopeid = 0;
 
         if (family == java_net_InetAddress_IPv4) {
             // convert to IPv4-mapped address
@@ -842,19 +811,11 @@ NET_InetAddressToSockaddr(JNIEnv *env, jobject iaObj, int port,
         } else {
             getInet6Address_ipaddress(env, iaObj, (char *)caddr);
             scopeid = getInet6Address_scopeid(env, iaObj);
-            cached_scope_id = (unsigned int)(*env)->GetIntField(env, iaObj, ia6_cachedscopeidID);
         }
         sa->sa6.sin6_port = (u_short)htons((u_short)port);
         memcpy((void *)&sa->sa6.sin6_addr, caddr, sizeof(struct in6_addr));
         sa->sa6.sin6_family = AF_INET6;
-        if ((family == java_net_InetAddress_IPv6) &&
-            IN6_IS_ADDR_LINKLOCAL(&sa->sa6.sin6_addr) &&
-            (!scopeid && !cached_scope_id))
-        {
-            cached_scope_id = getDefaultIPv6Interface(env, &sa->sa6);
-            (*env)->SetIntField(env, iaObj, ia6_cachedscopeidID, cached_scope_id);
-        }
-        sa->sa6.sin6_scope_id = scopeid == 0 ? cached_scope_id : scopeid;
+        sa->sa6.sin6_scope_id = scopeid;
         if (len != NULL) {
             *len = sizeof(struct sockaddr_in6);
         }

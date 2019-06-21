@@ -29,13 +29,13 @@
 
 /**
  * @test
- * @bug 6852744
+ * @bug 6852744 8133489
  * @summary PIT b61: PKI test suite fails because self signed certificates
  *          are being rejected
  * @modules java.base/sun.security.util
- * @run main/othervm KeyUsageMatters subca
- * @run main/othervm KeyUsageMatters subci
- * @run main/othervm KeyUsageMatters alice
+ * @run main/othervm -Djava.security.debug=certpath KeyUsageMatters subca
+ * @run main/othervm -Djava.security.debug=certpath KeyUsageMatters subci
+ * @run main/othervm -Djava.security.debug=certpath KeyUsageMatters alice
  * @author Xuelei Fan
  */
 

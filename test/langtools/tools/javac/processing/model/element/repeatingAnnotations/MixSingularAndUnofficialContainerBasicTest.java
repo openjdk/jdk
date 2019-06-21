@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -36,8 +36,8 @@
 
 @ExpectedBase(
         value = Foo.class,
-        getAnnotation = "@Foo(value=0)",
-        getAnnotationsByType = {"@Foo(value=0)"},
+        getAnnotation = "@Foo(0)",
+        getAnnotationsByType = {"@Foo(0)"},
         getAllAnnotationMirrors = {
             "@Foo(0)",
             "@UnofficialContainer({@Foo(1), @Foo(2)})",
@@ -53,17 +53,17 @@
 @ExpectedContainer(
         value = UnofficialContainer.class,
         getAnnotation = "@UnofficialContainer("
-        + "value={@Foo(value=1), @Foo(value=2)})",
+        + "{@Foo(1), @Foo(2)})",
         getAnnotationsByType = {"@UnofficialContainer("
-                + "value={@Foo(value=1), @Foo(value=2)})"})
-@Foo(value = 0)
-@UnofficialContainer(value = {@Foo(value = 1), @Foo(value = 2)})
+                + "{@Foo(1), @Foo(2)})"})
+@Foo(0)
+@UnofficialContainer({@Foo(1), @Foo(2)})
 class MixSingularAndUnofficialContainerBasicTest {
 
     @ExpectedBase(
             value = Foo.class,
-            getAnnotation = "@Foo(value=0)",
-            getAnnotationsByType = {"@Foo(value=0)"},
+            getAnnotation = "@Foo(0)",
+            getAnnotationsByType = {"@Foo(0)"},
             getAllAnnotationMirrors = {
                 "@Foo(0)",
                 "@UnofficialContainer({@Foo(1), @Foo(2)})",
@@ -79,17 +79,17 @@ class MixSingularAndUnofficialContainerBasicTest {
     @ExpectedContainer(
             value = UnofficialContainer.class,
             getAnnotation = "@UnofficialContainer("
-            + "value={@Foo(value=1), @Foo(value=2)})",
+            + "{@Foo(1), @Foo(2)})",
             getAnnotationsByType = {"@UnofficialContainer("
-                    + "value={@Foo(value=1), @Foo(value=2)})"})
-    @Foo(value = 0)
-    @UnofficialContainer(value = {@Foo(value = 1), @Foo(value = 2)})
+                    + "{@Foo(1), @Foo(2)})"})
+    @Foo(0)
+    @UnofficialContainer({@Foo(1), @Foo(2)})
     int testField = 0;
 
     @ExpectedBase(
             value = Foo.class,
-            getAnnotation = "@Foo(value=0)",
-            getAnnotationsByType = {"@Foo(value=0)"},
+            getAnnotation = "@Foo(0)",
+            getAnnotationsByType = {"@Foo(0)"},
             getAllAnnotationMirrors = {
                 "@Foo(0)",
                 "@UnofficialContainer({@Foo(1), @Foo(2)})",
@@ -105,10 +105,10 @@ class MixSingularAndUnofficialContainerBasicTest {
     @ExpectedContainer(
             value = UnofficialContainer.class,
             getAnnotation = "@UnofficialContainer("
-            + "value={@Foo(value=1), @Foo(value=2)})",
+            + "{@Foo(1), @Foo(2)})",
             getAnnotationsByType = {"@UnofficialContainer("
-                    + "value={@Foo(value=1), @Foo(value=2)})"})
-    @Foo(value = 0)
-    @UnofficialContainer(value = {@Foo(value = 1), @Foo(value = 2)})
+                    + "{@Foo(1), @Foo(2)})"})
+    @Foo(0)
+    @UnofficialContainer({@Foo(1), @Foo(2)})
     void testMethod() {}
 }

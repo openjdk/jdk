@@ -603,9 +603,6 @@ java/net/DatagramSocket/SendDatagramToBadAddress.java           7143960 macosx-a
 
 java/net/ServerSocket/AcceptInheritHandle.java                  8211854 aix-ppc64
 
-java/net/Inet6Address/B6206527.java                             8216417 macosx-all
-java/net/ipv6tests/B6521014.java                                8216417 macosx-all
-
 ############################################################################
 
 # jdk_nio
@@ -658,7 +655,7 @@ com/sun/nio/sctp/SctpChannel/SocketOptionTests.java             8141694 linux-al
 sun/security/pkcs11/ec/TestKeyFactory.java                      8026976 generic-all
 sun/security/pkcs11/Secmod/AddTrustedCert.java                  8180837 generic-all
 sun/security/pkcs11/tls/TestKeyMaterial.java                    8180837 generic-all
-sun/security/pkcs11/tls/tls12/FipsModeTLS12.java                8224954 windows-all
+sun/security/pkcs11/tls/tls12/FipsModeTLS12.java                8224954,8225678 windows-all,linux-all
 sun/security/pkcs11/sslecc/ClientJSSEServerJSSE.java            8161536 generic-all
 
 sun/security/tools/keytool/ListKeychainStore.sh                 8156889 macosx-all

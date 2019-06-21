@@ -159,7 +159,7 @@ bwd_copy_aligned:
         blo     bwd_copy_drain
 
 bwd_copy_again:
-        prfm    pldl1keep, [s, #-256]
+        prfum   pldl1keep, [s, #-256]
         stp     t0, t1, [d, #-16]
         ldp     t0, t1, [s, #-16]
         stp     t2, t3, [d, #-32]

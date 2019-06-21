@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,10 +21,15 @@
  * questions.
  */
 
+// Note: this test saves a cache.ser file in the scratch directory,
+//       which the cache implementation will load its configuration
+//       from. Therefore adding several @run lines does not work.
+
 /*
  * @test
  * @bug 4933582
- * @library ../../../sun/net/www/httptest
+ * @key intermittent
+ * @library ../../../sun/net/www/httptest /test/lib
  * @modules java.base/sun.net.www
  *          java.base/sun.net.www.protocol.http
  * @build HttpCallback HttpTransaction TestHttpServer B4933582
@@ -34,6 +39,7 @@ import java.io.*;
 import java.net.*;
 import java.util.*;
 import sun.net.www.protocol.http.*;
+import jdk.test.lib.net.URIBuilder;
 
 public class B4933582 implements HttpCallback {
 
@@ -133,12 +139,21 @@ public class B4933582 implements HttpCallback {
     public static void main (String[] args) throws Exception {
         MyAuthenticator auth = new MyAuthenticator ();
         Authenticator.setDefault (auth);
+        ProxySelector.setDefault(ProxySelector.of(null)); // no proxy
+        InetAddress loopback = InetAddress.getLoopbackAddress();
         CacheImpl cache;
         try {
-            server = new TestHttpServer (new B4933582(), 1, 10, 0);
+            server = new TestHttpServer(new B4933582(), 1, 10, loopback, 0);
             cache = new CacheImpl (server.getLocalPort());
             AuthCacheValue.setAuthCache (cache);
-            client ("http://localhost:"+server.getLocalPort()+"/d1/foo.html");
+            String serverURL = URIBuilder.newBuilder()
+                .scheme("http")
+                .loopback()
+                .port(server.getLocalPort())
+                .path("/")
+                .build()
+                .toString();
+            client(serverURL + "d1/foo.html");
         } finally {
             if (server != null) {
                 server.terminate();
@@ -157,7 +172,7 @@ public class B4933582 implements HttpCallback {
         while (true) {
             try {
                 server = new TestHttpServer(new B4933582(), 1, 10,
-                        cache.getPort());
+                                            loopback, cache.getPort());
                 break;
             } catch (BindException e) {
                 if (retries++ < 5) {
@@ -173,7 +188,14 @@ public class B4933582 implements HttpCallback {
 
         try {
             AuthCacheValue.setAuthCache(cache);
-            client("http://localhost:" + server.getLocalPort() + "/d1/foo.html");
+            String serverURL = URIBuilder.newBuilder()
+                .scheme("http")
+                .loopback()
+                .port(server.getLocalPort())
+                .path("/")
+                .build()
+                .toString();
+            client(serverURL + "d1/foo.html");
         } finally {
             if (server != null) {
                 server.terminate();

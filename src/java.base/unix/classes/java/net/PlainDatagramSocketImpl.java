@@ -57,7 +57,7 @@ class PlainDatagramSocketImpl extends AbstractPlainDatagramSocketImpl
     protected synchronized native void bind0(int lport, InetAddress laddr)
         throws SocketException;
 
-    protected native void send(DatagramPacket p) throws IOException;
+    protected native void send0(DatagramPacket p) throws IOException;
 
     protected synchronized native int peek(InetAddress i) throws IOException;
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,11 +24,15 @@
 import java.io.*;
 import java.net.*;
 import java.util.*;
+import jdk.test.lib.net.URIBuilder;
 
 /**
  * @test
  * @bug 4623722
  * @summary  performance hit for Basic Authentication
+ * @library /test/lib
+ * @run main/othervm BasicTest4
+ * @run main/othervm -Djava.net.preferIPv6Addresses=true BasicTest4
  */
 
 public class BasicTest4 {
@@ -59,12 +63,17 @@ public class BasicTest4 {
 
         static boolean checkFor (InputStream in, char[] seq) throws IOException {
             System.out.println ("checkfor");
+            StringBuilder message = new StringBuilder();
             try {
                 int i=0, count=0;
                 while (true) {
                     int c = in.read();
-                    if (c == -1)
+                    if (c == -1) {
+                        System.out.println(new String(seq) + " not found in \n<<"
+                                           + message + ">>");
                         return false;
+                    }
+                    message.append((char)c);
                     count++;
                     if (c == seq[i]) {
                         i++;
@@ -77,6 +86,7 @@ public class BasicTest4 {
                 }
             }
             catch (SocketTimeoutException e) {
+                System.out.println("checkFor: " + e);
                 return false;
             }
         }
@@ -194,23 +204,33 @@ public class BasicTest4 {
     public static void main (String args[]) throws Exception {
         MyAuthenticator auth = new MyAuthenticator ();
         Authenticator.setDefault (auth);
-        ServerSocket ss = new ServerSocket (0);
+        InetAddress loopback = InetAddress.getLoopbackAddress();
+        ServerSocket ss = new ServerSocket();
+        ss.bind(new InetSocketAddress(loopback, 0));
         int port = ss.getLocalPort ();
         BasicServer server = new BasicServer (ss);
         synchronized (server) {
             server.start();
             System.out.println ("client 1");
-            URL url = new URL ("http://localhost:"+port+"/d1/d3/foo.html");
-            URLConnection urlc = url.openConnection ();
+            String base = URIBuilder.newBuilder()
+                .scheme("http")
+                .loopback()
+                .port(port)
+                .path("/d1/")
+                .build()
+                .toString();
+            System.out.println("Base URL: " + base);
+            URL url = new URL (base + "d3/foo.html");
+            URLConnection urlc = url.openConnection(Proxy.NO_PROXY);
             InputStream is = urlc.getInputStream ();
             read (is);
             System.out.println ("client 2");
-            url = new URL ("http://localhost:"+port+"/d1/d2/bar.html");
-            urlc = url.openConnection ();
+            url = new URL (base + "d2/bar.html");
+            urlc = url.openConnection(Proxy.NO_PROXY);
             is = urlc.getInputStream ();
             System.out.println ("client 3");
-            url = new URL ("http://localhost:"+port+"/d1/d4/foobar.html");
-            urlc = url.openConnection ();
+            url = new URL (base + "d4/foobar.html");
+            urlc = url.openConnection(Proxy.NO_PROXY);
             is = urlc.getInputStream ();
             read (is);
             server.wait ();

@@ -347,59 +347,53 @@ public final class Integer extends Number
         int chars = Math.max(((mag + (shift - 1)) / shift), 1);
         if (COMPACT_STRINGS) {
             byte[] buf = new byte[chars];
-            formatUnsignedInt(val, shift, buf, 0, chars);
+            formatUnsignedInt(val, shift, buf, chars);
             return new String(buf, LATIN1);
         } else {
             byte[] buf = new byte[chars * 2];
-            formatUnsignedIntUTF16(val, shift, buf, 0, chars);
+            formatUnsignedIntUTF16(val, shift, buf, chars);
             return new String(buf, UTF16);
         }
     }
 
     /**
-     * Format an {@code int} (treated as unsigned) into a character buffer. If
+     * Format an {@code int} (treated as unsigned) into a byte buffer (LATIN1 version). If
      * {@code len} exceeds the formatted ASCII representation of {@code val},
      * {@code buf} will be padded with leading zeroes.
      *
      * @param val the unsigned int to format
      * @param shift the log2 of the base to format in (4 for hex, 3 for octal, 1 for binary)
-     * @param buf the character buffer to write to
-     * @param offset the offset in the destination buffer to start at
+     * @param buf the byte buffer to write to
      * @param len the number of characters to write
      */
-    static void formatUnsignedInt(int val, int shift, char[] buf, int offset, int len) {
-        // assert shift > 0 && shift <=5 : "Illegal shift value";
-        // assert offset >= 0 && offset < buf.length : "illegal offset";
-        // assert len > 0 && (offset + len) <= buf.length : "illegal length";
-        int charPos = offset + len;
-        int radix = 1 << shift;
-        int mask = radix - 1;
-        do {
-            buf[--charPos] = Integer.digits[val & mask];
-            val >>>= shift;
-        } while (charPos > offset);
-    }
-
-    /** byte[]/LATIN1 version    */
-    static void formatUnsignedInt(int val, int shift, byte[] buf, int offset, int len) {
-        int charPos = offset + len;
+    private static void formatUnsignedInt(int val, int shift, byte[] buf, int len) {
+        int charPos = len;
         int radix = 1 << shift;
         int mask = radix - 1;
         do {
             buf[--charPos] = (byte)Integer.digits[val & mask];
             val >>>= shift;
-        } while (charPos > offset);
+        } while (charPos > 0);
     }
 
-    /** byte[]/UTF16 version    */
-    private static void formatUnsignedIntUTF16(int val, int shift, byte[] buf, int offset, int len) {
-        int charPos = offset + len;
+    /**
+     * Format an {@code int} (treated as unsigned) into a byte buffer (UTF16 version). If
+     * {@code len} exceeds the formatted ASCII representation of {@code val},
+     * {@code buf} will be padded with leading zeroes.
+     *
+     * @param val the unsigned int to format
+     * @param shift the log2 of the base to format in (4 for hex, 3 for octal, 1 for binary)
+     * @param buf the byte buffer to write to
+     * @param len the number of characters to write
+     */
+    private static void formatUnsignedIntUTF16(int val, int shift, byte[] buf, int len) {
+        int charPos = len;
         int radix = 1 << shift;
         int mask = radix - 1;
         do {
             StringUTF16.putChar(buf, --charPos, Integer.digits[val & mask]);
             val >>>= shift;
-        } while (charPos > offset);
+        } while (charPos > 0);
     }
 
     static final byte[] DigitTens = {
@@ -698,7 +692,7 @@ public final class Integer extends Number
      */
     public static int parseInt(CharSequence s, int beginIndex, int endIndex, int radix)
                 throws NumberFormatException {
-        s = Objects.requireNonNull(s);
+        Objects.requireNonNull(s);
 
         if (beginIndex < 0 || beginIndex > endIndex || endIndex > s.length()) {
             throw new IndexOutOfBoundsException();
@@ -881,7 +875,7 @@ public final class Integer extends Number
      */
     public static int parseUnsignedInt(CharSequence s, int beginIndex, int endIndex, int radix)
                 throws NumberFormatException {
-        s = Objects.requireNonNull(s);
+        Objects.requireNonNull(s);
 
         if (beginIndex < 0 || beginIndex > endIndex || endIndex > s.length()) {
             throw new IndexOutOfBoundsException();

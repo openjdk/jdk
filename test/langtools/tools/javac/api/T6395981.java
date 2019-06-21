@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2006, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2006, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,7 +31,7 @@
  * @run main/fail T6395981
  * @run main/fail T6395981 RELEASE_3 RELEASE_5 RELEASE_6
  * @run main/fail T6395981 RELEASE_0 RELEASE_1 RELEASE_2 RELEASE_3 RELEASE_4 RELEASE_5 RELEASE_6
- * @run main T6395981 RELEASE_3 RELEASE_4 RELEASE_5 RELEASE_6 RELEASE_7 RELEASE_8 RELEASE_9 RELEASE_10 RELEASE_11 RELEASE_12  RELEASE_13
+ * @run main T6395981 RELEASE_3 RELEASE_4 RELEASE_5 RELEASE_6 RELEASE_7 RELEASE_8 RELEASE_9 RELEASE_10 RELEASE_11 RELEASE_12 RELEASE_13 RELEASE_14
  */
 
 import java.util.EnumSet;

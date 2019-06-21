@@ -839,7 +839,50 @@ static bool read_exec_segments(struct ps_prochandle* ph, ELF_EHDR* exec_ehdr) {
 #define LD_BASE_OFFSET        offsetof(struct r_debug,  r_ldbase)
 #define LINK_MAP_ADDR_OFFSET  offsetof(struct link_map, l_addr)
 #define LINK_MAP_NAME_OFFSET  offsetof(struct link_map, l_name)
+#define LINK_MAP_LD_OFFSET    offsetof(struct link_map, l_ld)
 #define LINK_MAP_NEXT_OFFSET  offsetof(struct link_map, l_next)
+
+// Calculate the load address of shared library
+// on prelink-enabled environment.
+//
+// In case of GDB, it would be calculated by offset of link_map.l_ld
+// and the address of .dynamic section.
+// See GDB implementation: lm_addr_check @ solib-svr4.c
+static uintptr_t calc_prelinked_load_address(struct ps_prochandle* ph, int lib_fd, ELF_EHDR* elf_ehdr, uintptr_t link_map_addr) {
+  ELF_PHDR *phbuf;
+  uintptr_t lib_ld;
+  uintptr_t lib_dyn_addr = 0L;
+  uintptr_t load_addr;
+  int i;
+
+  phbuf = read_program_header_table(lib_fd, elf_ehdr);
+  if (phbuf == NULL) {
+    print_debug("can't read program header of shared object\n");
+    return 0L;
+  }
+
+  // Get the address of .dynamic section from shared library.
+  for (i = 0; i < elf_ehdr->e_phnum; i++) {
+    if (phbuf[i].p_type == PT_DYNAMIC) {
+      lib_dyn_addr = phbuf[i].p_vaddr;
+      break;
+    }
+  }
+
+  free(phbuf);
+
+  if (ps_pdread(ph, (psaddr_t)link_map_addr + LINK_MAP_LD_OFFSET,
+               &lib_ld, sizeof(uintptr_t)) != PS_OK) {
+    print_debug("can't read address of dynamic section in shared object\n");
+    return 0L;
+  }
+
+  // Return the load address which is calculated by the address of .dynamic
+  // and link_map.l_ld .
+  load_addr = lib_ld - lib_dyn_addr;
+  print_debug("lib_ld = 0x%lx, lib_dyn_addr = 0x%lx -> lib_base_diff = 0x%lx\n", lib_ld, lib_dyn_addr, load_addr);
+  return load_addr;
+}
 
 // read shared library info from runtime linker's data structures.
 // This work is done by librtlb_db in Solaris
@@ -942,6 +985,14 @@ static bool read_shared_lib_info(struct ps_prochandle* ph) {
             // continue with other libraries...
          } else {
             if (read_elf_header(lib_fd, &elf_ehdr)) {
+               if (lib_base_diff == 0x0L) {
+                 lib_base_diff = calc_prelinked_load_address(ph, lib_fd, &elf_ehdr, link_map_addr);
+                 if (lib_base_diff == 0x0L) {
+                   close(lib_fd);
+                   return false;
+                 }
+               }
+
                lib_base = lib_base_diff + find_base_address(lib_fd, &elf_ehdr);
                print_debug("reading library %s @ 0x%lx [ 0x%lx ]\n",
                            lib_name, lib_base, lib_base_diff);

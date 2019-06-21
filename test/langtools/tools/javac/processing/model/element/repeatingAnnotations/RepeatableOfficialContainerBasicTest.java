@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -52,10 +52,10 @@
         value = BarContainer.class,
         getAnnotation = "null",
         getAnnotationsByType = {
-            "@BarContainer(value={@Bar(value=1)})",
-            "@BarContainer(value={@Bar(value=2)})"})
-@BarContainer(value = {@Bar(value = 1)})
-@BarContainer(value = {@Bar(value = 2)})
+            "@BarContainer({@Bar(1)})",
+            "@BarContainer({@Bar(2)})"})
+@BarContainer({@Bar(1)})
+@BarContainer({@Bar(2)})
 class RepeatableOfficialContainerBasicTest {
 
     @ExpectedBase(
@@ -76,10 +76,10 @@ class RepeatableOfficialContainerBasicTest {
             value = BarContainer.class,
             getAnnotation = "null",
             getAnnotationsByType = {
-                "@BarContainer(value={@Bar(value=1)})",
-                "@BarContainer(value={@Bar(value=2)})"})
-    @BarContainer(value = {@Bar(value = 1)})
-    @BarContainer(value = {@Bar(value = 2)})
+                "@BarContainer({@Bar(1)})",
+                "@BarContainer({@Bar(2)})"})
+    @BarContainer({@Bar(1)})
+    @BarContainer({@Bar(2)})
     int testField = 0;
 
     @ExpectedBase(
@@ -100,9 +100,9 @@ class RepeatableOfficialContainerBasicTest {
             value = BarContainer.class,
             getAnnotation = "null",
             getAnnotationsByType = {
-                "@BarContainer(value={@Bar(value=1)})",
-                "@BarContainer(value={@Bar(value=2)})"})
-    @BarContainer(value = {@Bar(value = 1)})
-    @BarContainer(value = {@Bar(value = 2)})
+                "@BarContainer({@Bar(1)})",
+                "@BarContainer({@Bar(2)})"})
+    @BarContainer({@Bar(1)})
+    @BarContainer({@Bar(2)})
     void testMethod() {}
 }

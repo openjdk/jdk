@@ -125,6 +125,8 @@
 
 #define JAVA_13_VERSION                   57
 
+#define JAVA_14_VERSION                   58
+
 void ClassFileParser::set_class_bad_constant_seen(short bad_constant) {
   assert((bad_constant == JVM_CONSTANT_Module ||
           bad_constant == JVM_CONSTANT_Package) && _major_version >= JAVA_9_VERSION,
@@ -4956,6 +4958,7 @@ void ClassFileParser::verify_legal_utf8(const unsigned char* buffer,
 bool ClassFileParser::verify_unqualified_name(const char* name,
                                               unsigned int length,
                                               int type) {
+  if (length == 0) return false;  // Must have at least one char.
   for (const char* p = name; p != name + length; p++) {
     switch(*p) {
       case '.':
@@ -5105,7 +5108,7 @@ const char* ClassFileParser::skip_over_field_signature(const char* signature,
           int newlen = c - (char*) signature;
           bool legal = verify_unqualified_name(signature, newlen, LegalClass);
           if (!legal) {
-            classfile_parse_error("Class name contains illegal character "
+            classfile_parse_error("Class name is empty or contains illegal character "
                                   "in descriptor in class file %s",
                                   CHECK_0);
             return NULL;

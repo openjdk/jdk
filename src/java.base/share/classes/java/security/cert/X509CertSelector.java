@@ -2115,8 +2115,11 @@ public class X509CertSelector implements CertSelector {
             if (certSubjectKeyID == null ||
                     !Arrays.equals(subjectKeyID, certSubjectKeyID)) {
                 if (debug != null) {
-                    debug.println("X509CertSelector.match: "
-                        + "subject key IDs don't match");
+                    debug.println("X509CertSelector.match: subject key IDs " +
+                        "don't match\nX509CertSelector.match: subjectKeyID: " +
+                        Arrays.toString(subjectKeyID) +
+                        "\nX509CertSelector.match: certSubjectKeyID: " +
+                        Arrays.toString(certSubjectKeyID));
                 }
                 return false;
             }

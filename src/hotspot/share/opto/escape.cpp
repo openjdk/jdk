@@ -2346,8 +2346,7 @@ Node* ConnectionGraph::get_addp_base(Node *addp) {
       assert(opcode == Op_ConP || opcode == Op_ThreadLocal ||
              opcode == Op_CastX2P || uncast_base->is_DecodeNarrowPtr() ||
              (uncast_base->is_Mem() && (uncast_base->bottom_type()->isa_rawptr() != NULL)) ||
-             (uncast_base->is_Proj() && uncast_base->in(0)->is_Allocate()) ||
-             BarrierSet::barrier_set()->barrier_set_c2()->escape_is_barrier_node(uncast_base), "sanity");
+             (uncast_base->is_Proj() && uncast_base->in(0)->is_Allocate()), "sanity");
     }
   }
   return base;
@@ -3085,7 +3084,6 @@ void ConnectionGraph::split_unique_types(GrowableArray<Node *>  &alloc_worklist,
                n->is_CheckCastPP() ||
                n->is_EncodeP() ||
                n->is_DecodeN() ||
-               BarrierSet::barrier_set()->barrier_set_c2()->escape_is_barrier_node(n) ||
                (n->is_ConstraintCast() && n->Opcode() == Op_CastPP)) {
       if (visited.test_set(n->_idx)) {
         assert(n->is_Phi(), "loops only through Phi's");
@@ -3156,7 +3154,6 @@ void ConnectionGraph::split_unique_types(GrowableArray<Node *>  &alloc_worklist,
                  use->is_CheckCastPP() ||
                  use->is_EncodeNarrowPtr() ||
                  use->is_DecodeNarrowPtr() ||
-                 BarrierSet::barrier_set()->barrier_set_c2()->escape_is_barrier_node(use) ||
                  (use->is_ConstraintCast() && use->Opcode() == Op_CastPP)) {
         alloc_worklist.append_if_missing(use);
 #ifdef ASSERT

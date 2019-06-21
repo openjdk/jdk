@@ -2416,7 +2416,7 @@ C2V_VMENTRY_0(jlong, translate, (JNIEnv* env, jobject, jobject obj_handle))
         if (peerEnv->is_hotspot()) {
           // Only the mirror in the HotSpot heap is accessible
           // through JVMCINMethodData
-          oop nmethod_mirror = data->get_nmethod_mirror(nm);
+          oop nmethod_mirror = data->get_nmethod_mirror(nm, /* phantom_ref */ true);
           if (nmethod_mirror != NULL) {
             result = HotSpotJVMCI::wrap(nmethod_mirror);
           }
@@ -2443,7 +2443,7 @@ C2V_VMENTRY_0(jlong, translate, (JNIEnv* env, jobject, jobject obj_handle))
           if (data == NULL) {
             JVMCI_THROW_MSG_0(IllegalArgumentException, "Cannot set HotSpotNmethod mirror for default nmethod");
           }
-          if (data->get_nmethod_mirror(nm) != NULL) {
+          if (data->get_nmethod_mirror(nm, /* phantom_ref */ false) != NULL) {
             JVMCI_THROW_MSG_0(IllegalArgumentException, "Cannot overwrite existing HotSpotNmethod mirror for nmethod");
           }
           oop nmethod_mirror = HotSpotJVMCI::resolve(result);

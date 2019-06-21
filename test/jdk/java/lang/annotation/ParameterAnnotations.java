@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -89,8 +89,8 @@ public class ParameterAnnotations {
                 equal(ann.length, 2);
                 Annotation foo = ann[0][0];
                 Annotation bar = ann[1][0];
-                equal(foo.toString(), "@Named(value=\"foo\")");
-                equal(bar.toString(), "@Named(value=\"bar\")");
+                equal(foo.toString(), "@Named(\"foo\")");
+                equal(bar.toString(), "@Named(\"bar\")");
                 check(foo.equals(foo));
                 check(! foo.equals(bar));
             }

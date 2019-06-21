@@ -1253,7 +1253,7 @@ public interface HttpResponse<T> {
         /**
          * Returns a {@code BodySubscriber} which buffers data before delivering
          * it to the given downstream subscriber. The subscriber guarantees to
-         * deliver {@code buffersize} bytes of data to each invocation of the
+         * deliver {@code bufferSize} bytes of data to each invocation of the
          * downstream's {@link BodySubscriber#onNext(Object) onNext} method,
          * except for the final invocation, just before
          * {@link BodySubscriber#onComplete() onComplete} is invoked. The final

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2019 Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,7 +24,9 @@
 /* @test
  * @summary Unit test for java.net.CookieHandler
  * @bug 4696506
+ * @library /test/lib
  * @run main/othervm CookieHandlerTest
+ * @run main/othervm -Djava.net.preferIPv6Addresses=true CookieHandlerTest
  * @author Yingxian Wang
  */
 
@@ -34,6 +36,7 @@
 import java.net.*;
 import java.util.*;
 import java.io.*;
+import jdk.test.lib.net.URIBuilder;
 
 public class CookieHandlerTest implements Runnable {
     static Map<String,String> cookies;
@@ -92,15 +95,19 @@ public class CookieHandlerTest implements Runnable {
     CookieHandlerTest() throws Exception {
 
         /* start the server */
-        ss = new ServerSocket(0);
+        InetAddress loopback = InetAddress.getLoopbackAddress();
+        ss = new ServerSocket();
+        ss.bind(new InetSocketAddress(loopback, 0));
         (new Thread(this)).start();
 
         /* establish http connection to server */
-        String uri = "http://localhost:" +
-                     Integer.toString(ss.getLocalPort());
-        URL url = new URL(uri);
+        URL url = URIBuilder.newBuilder()
+                    .scheme("http")
+                    .loopback()
+                    .port(ss.getLocalPort())
+                    .toURL();
 
-        HttpURLConnection http = (HttpURLConnection)url.openConnection();
+        HttpURLConnection http = (HttpURLConnection)url.openConnection(Proxy.NO_PROXY);
 
         int respCode = http.getResponseCode();
         http.disconnect();

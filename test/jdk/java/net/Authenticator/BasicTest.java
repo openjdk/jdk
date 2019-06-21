@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2002, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,11 +24,15 @@
 import java.io.*;
 import java.net.*;
 import java.util.*;
+import jdk.test.lib.net.URIBuilder;
 
 /**
  * @test
  * @bug 4474947
  * @summary  fix for bug #4244472 is incomplete - HTTP authorization still needs work
+ * @library /test/lib
+ * @run main/othervm BasicTest
+ * @run main/othervm -Djava.net.preferIPv6Addresses=true BasicTest
  */
 
 /*
@@ -151,19 +155,28 @@ public class BasicTest {
     public static void main (String args[]) throws Exception {
         MyAuthenticator auth = new MyAuthenticator ();
         Authenticator.setDefault (auth);
-        ServerSocket ss = new ServerSocket (0);
+        InetAddress loopback = InetAddress.getLoopbackAddress();
+        ServerSocket ss = new ServerSocket();
+        ss.bind(new InetSocketAddress(loopback, 0));
         int port = ss.getLocalPort ();
         BasicServer server = new BasicServer (ss);
         synchronized (server) {
             server.start();
             System.out.println ("client 1");
-            URL url = new URL ("http://localhost:"+port+"/d1/d2/d3/foo.html");
-            URLConnection urlc = url.openConnection ();
+            String base = URIBuilder.newBuilder()
+                .scheme("http")
+                .loopback()
+                .port(port)
+                .path("/")
+                .build()
+                .toString();
+            URL url = new URL(base + "d1/d2/d3/foo.html");
+            URLConnection urlc = url.openConnection(Proxy.NO_PROXY);
             InputStream is = urlc.getInputStream ();
             read (is);
             System.out.println ("client 2");
-            url = new URL ("http://localhost:"+port+"/d1/foo.html");
-            urlc = url.openConnection ();
+            url = new URL(base + "d1/foo.html");
+            urlc = url.openConnection(Proxy.NO_PROXY);
             is = urlc.getInputStream ();
             read (is);
             server.wait ();

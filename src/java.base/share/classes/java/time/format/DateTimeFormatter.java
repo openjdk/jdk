@@ -396,15 +396,16 @@ import sun.util.locale.provider.TimeZoneNameUtility;
  * 'Z' when the offset to be output would be zero, whereas pattern letter 'x'
  * (lower case) will output '+00', '+0000', or '+00:00'.
  * <p>
- * <b>Offset O</b>: This formats the localized offset based on the number of
- * pattern letters. One letter outputs the {@linkplain TextStyle#SHORT short}
- * form of the localized offset, which is localized offset text, such as 'GMT',
- * with hour without leading zero, optional 2-digit minute and second if
- * non-zero, and colon, for example 'GMT+8'. Four letters outputs the
- * {@linkplain TextStyle#FULL full} form, which is localized offset text,
- * such as 'GMT, with 2-digit hour and minute field, optional second field
- * if non-zero, and colon, for example 'GMT+08:00'. Any other count of letters
- * throws {@code IllegalArgumentException}.
+ * <b>Offset O</b>: With a non-zero offset, this formats the localized offset
+ * based on the number of pattern letters. One letter outputs the
+ * {@linkplain TextStyle#SHORT short} form of the localized offset, which is
+ * localized offset text, such as 'GMT', with hour without leading zero, optional
+ * 2-digit minute and second if non-zero, and colon, for example 'GMT+8'. Four
+ * letters outputs the {@linkplain TextStyle#FULL full} form, which is localized
+ * offset text, such as 'GMT, with 2-digit hour and minute field, optional second
+ * field if non-zero, and colon, for example 'GMT+08:00'. If the offset is zero,
+ * only localized text is output. Any other count of letters throws
+ * {@code IllegalArgumentException}.
  * <p>
  * <b>Offset Z</b>: This formats the offset based on the number of pattern
  * letters. One, two or three letters outputs the hour and minute, without a

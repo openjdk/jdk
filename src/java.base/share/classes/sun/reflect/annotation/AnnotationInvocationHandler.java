@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -145,14 +145,20 @@ class AnnotationInvocationHandler implements InvocationHandler, Serializable {
         result.append(type.getName());
         result.append('(');
         boolean firstMember = true;
-        for (Map.Entry<String, Object> e : memberValues.entrySet()) {
+        Set<Map.Entry<String, Object>> entries = memberValues.entrySet();
+        boolean loneValue = entries.size() == 1;
+        for (Map.Entry<String, Object> e : entries) {
             if (firstMember)
                 firstMember = false;
             else
                 result.append(", ");
 
-            result.append(e.getKey());
-            result.append('=');
+            String key = e.getKey();
+            if (!loneValue || !"value".equals(key)) {
+                result.append(key);
+                result.append('=');
+            }
+            loneValue = false;
             result.append(memberValueToString(e.getValue()));
         }
         result.append(')');
@@ -178,6 +184,8 @@ class AnnotationInvocationHandler implements InvocationHandler, Serializable {
                 return  toSourceString((float) value);
             else if (type == Long.class)
                 return  toSourceString((long) value);
+            else if (type == Byte.class)
+                return  toSourceString((byte) value);
             else
                 return value.toString();
         } else {
@@ -221,14 +229,14 @@ class AnnotationInvocationHandler implements InvocationHandler, Serializable {
      */
     private static String toSourceString(Class<?> clazz) {
         Class<?> finalComponent = clazz;
-        StringBuilder arrayBackets = new StringBuilder();
+        StringBuilder arrayBrackets = new StringBuilder();
 
         while(finalComponent.isArray()) {
             finalComponent = finalComponent.getComponentType();
-            arrayBackets.append("[]");
+            arrayBrackets.append("[]");
         }
 
-        return finalComponent.getName() + arrayBackets.toString() + ".class" ;
+        return finalComponent.getName() + arrayBrackets.toString() + ".class";
     }
 
     private static String toSourceString(float f) {
@@ -256,18 +264,44 @@ class AnnotationInvocationHandler implements InvocationHandler, Serializable {
     private static String toSourceString(char c) {
         StringBuilder sb = new StringBuilder(4);
         sb.append('\'');
-        if (c == '\'')
-            sb.append("\\'");
-        else
-            sb.append(c);
-        return sb.append('\'')
-                .toString();
+        sb.append(quote(c));
+        return sb.append('\'') .toString();
+    }
+
+    /**
+     * Escapes a character if it has an escape sequence or is
+     * non-printable ASCII.  Leaves non-ASCII characters alone.
+     */
+    private static String quote(char ch) {
+        switch (ch) {
+        case '\b':  return "\\b";
+        case '\f':  return "\\f";
+        case '\n':  return "\\n";
+        case '\r':  return "\\r";
+        case '\t':  return "\\t";
+        case '\'':  return "\\'";
+        case '\"':  return "\\\"";
+        case '\\':  return "\\\\";
+        default:
+            return (isPrintableAscii(ch))
+                ? String.valueOf(ch)
+                : String.format("\\u%04x", (int) ch);
+        }
+    }
+
+    /**
+     * Is a character printable ASCII?
+     */
+    private static boolean isPrintableAscii(char ch) {
+        return ch >= ' ' && ch <= '~';
+    }
+
+    private static String toSourceString(byte b) {
+        return String.format("(byte)0x%02x", b);
     }
 
     private static String toSourceString(long ell) {
-        String str = String.valueOf(ell);
-        return (ell < Integer.MIN_VALUE || ell > Integer.MAX_VALUE)
-                ? (str + 'L') : str;
+        return String.valueOf(ell) + "L";
     }
 
     /**
@@ -277,9 +311,9 @@ class AnnotationInvocationHandler implements InvocationHandler, Serializable {
     private static String toSourceString(String s) {
         StringBuilder sb = new StringBuilder();
         sb.append('"');
-        // Escape embedded quote characters, if present, but don't do
-        // anything more heroic.
-        sb.append(s.replace("\"", "\\\""));
+        for (int i = 0; i < s.length(); i++) {
+            sb.append(quote(s.charAt(i)));
+        }
         sb.append('"');
         return sb.toString();
     }
@@ -287,7 +321,7 @@ class AnnotationInvocationHandler implements InvocationHandler, Serializable {
     private static Stream<String> convert(byte[] values) {
         List<String> list = new ArrayList<>(values.length);
         for (byte b : values)
-            list.add(Byte.toString(b));
+            list.add(toSourceString(b));
         return list.stream();
     }
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,6 +26,9 @@
  * @bug 8015799
  * @modules jdk.httpserver
  * @summary HttpURLConnection.getHeaderFields() throws IllegalArgumentException
+ * @library /test/lib
+ * @run main EmptyCookieHeader
+ * @run main/othervm -Djava.net.preferIPv6Addresses=true EmptyCookieHeader
  */
 
 import com.sun.net.httpserver.*;
@@ -33,6 +36,7 @@ import java.io.IOException;
 import java.io.OutputStream;
 import java.net.*;
 import java.util.*;
+import jdk.test.lib.net.URIBuilder;
 
 public class EmptyCookieHeader {
 
@@ -43,11 +47,17 @@ public class EmptyCookieHeader {
     public void runTest() throws Exception {
         final CookieHandler oldHandler = CookieHandler.getDefault();
         CookieHandler.setDefault(new TestCookieHandler());
-        HttpServer s = HttpServer.create(new InetSocketAddress(0), 0);
+        InetAddress loopback = InetAddress.getLoopbackAddress();
+        HttpServer s = HttpServer.create(new InetSocketAddress(loopback, 0), 0);
         try {
             startServer(s);
-            URL url = new URL("http://localhost:" + s.getAddress().getPort() + "/");
-            HttpURLConnection c = (HttpURLConnection)url.openConnection();
+            URL url = URIBuilder.newBuilder()
+                    .scheme("http")
+                    .loopback()
+                    .port(s.getAddress().getPort())
+                    .path("/")
+                    .toURL();
+            HttpURLConnection c = (HttpURLConnection)url.openConnection(Proxy.NO_PROXY);
             c.getHeaderFields();
         } finally {
             CookieHandler.setDefault(oldHandler);

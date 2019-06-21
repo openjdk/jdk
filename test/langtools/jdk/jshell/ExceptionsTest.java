@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,7 +24,7 @@
 /*
  * @test
  * @summary Tests for exceptions
- * @bug 8198801
+ * @bug 8198801 8212167
  * @build KullaTesting TestingInputStream
  * @run testng ExceptionsTest
  */
@@ -207,6 +207,49 @@ public class ExceptionsTest extends KullaTesting {
                         newStackTraceElement("", "", cr2.snippet(), 1)));
     }
 
+    // test 8212167
+    public void throwLineFormat1() {
+        SnippetEvent se = assertEvalException(
+                "if (true) { \n" +
+                        "   int x = 10; \n" +
+                        "   int y = 10 / 0;}"
+        );
+        assertExceptionMatch(se,
+                new ExceptionInfo(ArithmeticException.class, "/ by zero",
+                        newStackTraceElement("", "", se.snippet(), 3)));
+    }
+
+    public void throwLineFormat3() {
+        Snippet sp = methodKey(assertEval(
+                "int p() \n" +
+                        "  { return 4/0; }"));
+        Snippet sm = methodKey(assertEval(
+                "int m(int x)\n" +
+                        "       \n" +
+                        "       {\n" +
+                        "          return p() + x; \n" +
+                        "       }"));
+        Snippet sn = methodKey(assertEval(
+                "int n(int x) {\n" +
+                        "         try {\n" +
+                        "           return m(x);\n" +
+                        "         }\n" +
+                        "         catch (Throwable ex) {\n" +
+                        "           throw new IllegalArgumentException( \"GOT:\", ex);\n" +
+                        "         }\n" +
+                        "       }"));
+        SnippetEvent se = assertEvalException("n(33);");
+        assertExceptionMatch(se,
+                new ExceptionInfo(IllegalArgumentException.class, null,
+                        new ExceptionInfo(ArithmeticException.class, "/ by zero",
+                                newStackTraceElement("", "p", sp, 2),
+                                newStackTraceElement("", "m", sm, 4),
+                                newStackTraceElement("", "n", sn, 3),
+                                newStackTraceElement("", "", se.snippet(), 1)),
+                        newStackTraceElement("", "n", sn, 6),
+                        newStackTraceElement("", "", se.snippet(), 1)));
+    }
+
     @Test(enabled = false) // TODO 8129427
     public void outOfMemory() {
         assertEval("import java.util.*;");
@@ -333,7 +376,8 @@ public class ExceptionsTest extends KullaTesting {
                     }
                     assertEquals(actualElement.getFileName(), expectedElement.getFileName(), message + " : file names");
                     assertEquals(actualElement.getLineNumber(), expectedElement.getLineNumber(), message + " : line numbers"
-                        + " -- actual: " + actual + ", expected: " + expected);
+                        + " -- actual: " + actualElement.getLineNumber() + ", expected: " + expectedElement.getLineNumber() +
+                            " -- in: " + actualElement.getClassName());
                 }
             }
         }

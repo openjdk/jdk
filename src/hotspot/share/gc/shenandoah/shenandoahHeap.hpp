@@ -391,6 +391,7 @@ public:
   void entry_reset();
   void entry_mark();
   void entry_preclean();
+  void entry_roots();
   void entry_cleanup();
   void entry_evac();
   void entry_updaterefs();
@@ -414,6 +415,7 @@ private:
   void op_reset();
   void op_mark();
   void op_preclean();
+  void op_roots();
   void op_cleanup();
   void op_conc_evac();
   void op_stw_evac();

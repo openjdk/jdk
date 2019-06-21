@@ -957,6 +957,146 @@ reg_class v3_reg(
     V3, V3_H
 );
 
+// Class for 128 bit register v4
+reg_class v4_reg(
+    V4, V4_H
+);
+
+// Class for 128 bit register v5
+reg_class v5_reg(
+    V5, V5_H
+);
+
+// Class for 128 bit register v6
+reg_class v6_reg(
+    V6, V6_H
+);
+
+// Class for 128 bit register v7
+reg_class v7_reg(
+    V7, V7_H
+);
+
+// Class for 128 bit register v8
+reg_class v8_reg(
+    V8, V8_H
+);
+
+// Class for 128 bit register v9
+reg_class v9_reg(
+    V9, V9_H
+);
+
+// Class for 128 bit register v10
+reg_class v10_reg(
+    V10, V10_H
+);
+
+// Class for 128 bit register v11
+reg_class v11_reg(
+    V11, V11_H
+);
+
+// Class for 128 bit register v12
+reg_class v12_reg(
+    V12, V12_H
+);
+
+// Class for 128 bit register v13
+reg_class v13_reg(
+    V13, V13_H
+);
+
+// Class for 128 bit register v14
+reg_class v14_reg(
+    V14, V14_H
+);
+
+// Class for 128 bit register v15
+reg_class v15_reg(
+    V15, V15_H
+);
+
+// Class for 128 bit register v16
+reg_class v16_reg(
+    V16, V16_H
+);
+
+// Class for 128 bit register v17
+reg_class v17_reg(
+    V17, V17_H
+);
+
+// Class for 128 bit register v18
+reg_class v18_reg(
+    V18, V18_H
+);
+
+// Class for 128 bit register v19
+reg_class v19_reg(
+    V19, V19_H
+);
+
+// Class for 128 bit register v20
+reg_class v20_reg(
+    V20, V20_H
+);
+
+// Class for 128 bit register v21
+reg_class v21_reg(
+    V21, V21_H
+);
+
+// Class for 128 bit register v22
+reg_class v22_reg(
+    V22, V22_H
+);
+
+// Class for 128 bit register v23
+reg_class v23_reg(
+    V23, V23_H
+);
+
+// Class for 128 bit register v24
+reg_class v24_reg(
+    V24, V24_H
+);
+
+// Class for 128 bit register v25
+reg_class v25_reg(
+    V25, V25_H
+);
+
+// Class for 128 bit register v26
+reg_class v26_reg(
+    V26, V26_H
+);
+
+// Class for 128 bit register v27
+reg_class v27_reg(
+    V27, V27_H
+);
+
+// Class for 128 bit register v28
+reg_class v28_reg(
+    V28, V28_H
+);
+
+// Class for 128 bit register v29
+reg_class v29_reg(
+    V29, V29_H
+);
+
+// Class for 128 bit register v30
+reg_class v30_reg(
+    V30, V30_H
+);
+
+// Class for 128 bit register v31
+reg_class v31_reg(
+    V31, V31_H
+);
+
 // Singleton class for condition codes
 reg_class int_flags(RFLAGS);
 
@@ -4768,6 +4908,258 @@ operand vRegD_V2()
 operand vRegD_V3()
 %{
   constraint(ALLOC_IN_RC(v3_reg));
+  match(RegD);
+  op_cost(0);
+  format %{ %}
+  interface(REG_INTER);
+%}
+
+operand vRegD_V4()
+%{
+  constraint(ALLOC_IN_RC(v4_reg));
+  match(RegD);
+  op_cost(0);
+  format %{ %}
+  interface(REG_INTER);
+%}
+
+operand vRegD_V5()
+%{
+  constraint(ALLOC_IN_RC(v5_reg));
+  match(RegD);
+  op_cost(0);
+  format %{ %}
+  interface(REG_INTER);
+%}
+
+operand vRegD_V6()
+%{
+  constraint(ALLOC_IN_RC(v6_reg));
+  match(RegD);
+  op_cost(0);
+  format %{ %}
+  interface(REG_INTER);
+%}
+
+operand vRegD_V7()
+%{
+  constraint(ALLOC_IN_RC(v7_reg));
+  match(RegD);
+  op_cost(0);
+  format %{ %}
+  interface(REG_INTER);
+%}
+
+operand vRegD_V8()
+%{
+  constraint(ALLOC_IN_RC(v8_reg));
+  match(RegD);
+  op_cost(0);
+  format %{ %}
+  interface(REG_INTER);
+%}
+
+operand vRegD_V9()
+%{
+  constraint(ALLOC_IN_RC(v9_reg));
+  match(RegD);
+  op_cost(0);
+  format %{ %}
+  interface(REG_INTER);
+%}
+
+operand vRegD_V10()
+%{
+  constraint(ALLOC_IN_RC(v10_reg));
+  match(RegD);
+  op_cost(0);
+  format %{ %}
+  interface(REG_INTER);
+%}
+
+operand vRegD_V11()
+%{
+  constraint(ALLOC_IN_RC(v11_reg));
+  match(RegD);
+  op_cost(0);
+  format %{ %}
+  interface(REG_INTER);
+%}
+
+operand vRegD_V12()
+%{
+  constraint(ALLOC_IN_RC(v12_reg));
+  match(RegD);
+  op_cost(0);
+  format %{ %}
+  interface(REG_INTER);
+%}
+
+operand vRegD_V13()
+%{
+  constraint(ALLOC_IN_RC(v13_reg));
+  match(RegD);
+  op_cost(0);
+  format %{ %}
+  interface(REG_INTER);
+%}
+
+operand vRegD_V14()
+%{
+  constraint(ALLOC_IN_RC(v14_reg));
+  match(RegD);
+  op_cost(0);
+  format %{ %}
+  interface(REG_INTER);
+%}
+
+operand vRegD_V15()
+%{
+  constraint(ALLOC_IN_RC(v15_reg));
+  match(RegD);
+  op_cost(0);
+  format %{ %}
+  interface(REG_INTER);
+%}
+
+operand vRegD_V16()
+%{
+  constraint(ALLOC_IN_RC(v16_reg));
+  match(RegD);
+  op_cost(0);
+  format %{ %}
+  interface(REG_INTER);
+%}
+
+operand vRegD_V17()
+%{
+  constraint(ALLOC_IN_RC(v17_reg));
+  match(RegD);
+  op_cost(0);
+  format %{ %}
+  interface(REG_INTER);
+%}
+
+operand vRegD_V18()
+%{
+  constraint(ALLOC_IN_RC(v18_reg));
+  match(RegD);
+  op_cost(0);
+  format %{ %}
+  interface(REG_INTER);
+%}
+
+operand vRegD_V19()
+%{
+  constraint(ALLOC_IN_RC(v19_reg));
+  match(RegD);
+  op_cost(0);
+  format %{ %}
+  interface(REG_INTER);
+%}
+
+operand vRegD_V20()
+%{
+  constraint(ALLOC_IN_RC(v20_reg));
+  match(RegD);
+  op_cost(0);
+  format %{ %}
+  interface(REG_INTER);
+%}
+
+operand vRegD_V21()
+%{
+  constraint(ALLOC_IN_RC(v21_reg));
+  match(RegD);
+  op_cost(0);
+  format %{ %}
+  interface(REG_INTER);
+%}
+
+operand vRegD_V22()
+%{
+  constraint(ALLOC_IN_RC(v22_reg));
+  match(RegD);
+  op_cost(0);
+  format %{ %}
+  interface(REG_INTER);
+%}
+
+operand vRegD_V23()
+%{
+  constraint(ALLOC_IN_RC(v23_reg));
+  match(RegD);
+  op_cost(0);
+  format %{ %}
+  interface(REG_INTER);
+%}
+
+operand vRegD_V24()
+%{
+  constraint(ALLOC_IN_RC(v24_reg));
+  match(RegD);
+  op_cost(0);
+  format %{ %}
+  interface(REG_INTER);
+%}
+
+operand vRegD_V25()
+%{
+  constraint(ALLOC_IN_RC(v25_reg));
+  match(RegD);
+  op_cost(0);
+  format %{ %}
+  interface(REG_INTER);
+%}
+
+operand vRegD_V26()
+%{
+  constraint(ALLOC_IN_RC(v26_reg));
+  match(RegD);
+  op_cost(0);
+  format %{ %}
+  interface(REG_INTER);
+%}
+
+operand vRegD_V27()
+%{
+  constraint(ALLOC_IN_RC(v27_reg));
+  match(RegD);
+  op_cost(0);
+  format %{ %}
+  interface(REG_INTER);
+%}
+
+operand vRegD_V28()
+%{
+  constraint(ALLOC_IN_RC(v28_reg));
+  match(RegD);
+  op_cost(0);
+  format %{ %}
+  interface(REG_INTER);
+%}
+
+operand vRegD_V29()
+%{
+  constraint(ALLOC_IN_RC(v29_reg));
+  match(RegD);
+  op_cost(0);
+  format %{ %}
+  interface(REG_INTER);
+%}
+
+operand vRegD_V30()
+%{
+  constraint(ALLOC_IN_RC(v30_reg));
+  match(RegD);
+  op_cost(0);
+  format %{ %}
+  interface(REG_INTER);
+%}
+
+operand vRegD_V31()
+%{
+  constraint(ALLOC_IN_RC(v31_reg));
   match(RegD);
   op_cost(0);
   format %{ %}
@@ -13863,7 +14255,7 @@ instruct compF_reg_zero(rFlagsReg cr, vRegF src1, immF0 src2)
   format %{ "fcmps $src1, 0.0" %}
 
   ins_encode %{
-    __ fcmps(as_FloatRegister($src1$$reg), 0.0D);
+    __ fcmps(as_FloatRegister($src1$$reg), 0.0);
   %}
 
   ins_pipe(pipe_class_compare);
@@ -13892,7 +14284,7 @@ instruct compD_reg_zero(rFlagsReg cr, vRegD src1, immD0 src2)
   format %{ "fcmpd $src1, 0.0" %}
 
   ins_encode %{
-    __ fcmpd(as_FloatRegister($src1$$reg), 0.0D);
+    __ fcmpd(as_FloatRegister($src1$$reg), 0.0);
   %}
 
   ins_pipe(pipe_class_compare);
@@ -13968,7 +14360,7 @@ instruct compF3_reg_immF0(iRegINoSp dst, vRegF src1, immF0 zero, rFlagsReg cr)
     Label done;
     FloatRegister s1 = as_FloatRegister($src1$$reg);
     Register d = as_Register($dst$$reg);
-    __ fcmps(s1, 0.0D);
+    __ fcmps(s1, 0.0);
     // installs 0 if EQ else -1
     __ csinvw(d, zr, zr, Assembler::EQ);
     // keeps -1 if less or unordered else installs 1
@@ -13995,7 +14387,7 @@ instruct compD3_reg_immD0(iRegINoSp dst, vRegD src1, immD0 zero, rFlagsReg cr)
     Label done;
     FloatRegister s1 = as_FloatRegister($src1$$reg);
     Register d = as_Register($dst$$reg);
-    __ fcmpd(s1, 0.0D);
+    __ fcmpd(s1, 0.0);
     // installs 0 if EQ else -1
     __ csinvw(d, zr, zr, Assembler::EQ);
     // keeps -1 if less or unordered else installs 1

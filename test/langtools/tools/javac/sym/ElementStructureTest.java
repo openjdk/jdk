@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -128,16 +128,16 @@ public class ElementStructureTest {
         (byte) 0xB7, (byte) 0x52, (byte) 0x0F, (byte) 0x68
     };
     static final byte[] hash7 = new byte[] {
-        (byte) 0x6B, (byte) 0xA2, (byte) 0xE9, (byte) 0x8E,
-        (byte) 0xE1, (byte) 0x8E, (byte) 0x60, (byte) 0xBE,
-        (byte) 0x54, (byte) 0xC4, (byte) 0x33, (byte) 0x3E,
-        (byte) 0x0C, (byte) 0x2D, (byte) 0x3A, (byte) 0x7C
+        (byte) 0x3C, (byte) 0x03, (byte) 0xEA, (byte) 0x4A,
+        (byte) 0x62, (byte) 0xD2, (byte) 0x18, (byte) 0xE5,
+        (byte) 0xA5, (byte) 0xC2, (byte) 0xB7, (byte) 0x85,
+        (byte) 0x90, (byte) 0xFA, (byte) 0x98, (byte) 0xCD
     };
     static final byte[] hash8 = new byte[] {
-        (byte) 0x44, (byte) 0x77, (byte) 0x6E, (byte) 0x52,
-        (byte) 0x2B, (byte) 0x16, (byte) 0xD3, (byte) 0x3C,
-        (byte) 0x78, (byte) 0x75, (byte) 0xF5, (byte) 0x0A,
-        (byte) 0x01, (byte) 0x24, (byte) 0xBD, (byte) 0x2A
+        (byte) 0x0B, (byte) 0xEB, (byte) 0x16, (byte) 0xF5,
+        (byte) 0x7F, (byte) 0xB0, (byte) 0x18, (byte) 0xF1,
+        (byte) 0x78, (byte) 0x11, (byte) 0xED, (byte) 0x30,
+        (byte) 0x19, (byte) 0x4D, (byte) 0xDE, (byte) 0x8A
     };
 
     final static Map<String, byte[]> version2Hash = new HashMap<>();
@@ -409,7 +409,7 @@ public class ElementStructureTest {
                 for (VariableElement param : e.getParameters()) {
                     visit(param, p);
                 }
-                out.write(String.valueOf(e.getReceiverType()));
+                out.write(String.valueOf(typeMirrorTranslate(e.getReceiverType())));
                 write(e.getReturnType());
                 out.write(e.getSimpleName().toString());
                 writeTypes(e.getThrownTypes());
@@ -423,6 +423,18 @@ public class ElementStructureTest {
                 ex.printStackTrace();
             }
             return null;
+        }
+
+        /**
+         * Original implementation of getReceiverType returned null
+         * for many cases where TypeKind.NONE was specified; translate
+         * back to null to compare against old hashes.
+         */
+        private TypeMirror typeMirrorTranslate(TypeMirror type) {
+            if (type.getKind() == javax.lang.model.type.TypeKind.NONE)
+                return null;
+            else
+                return type;
         }
 
         @Override

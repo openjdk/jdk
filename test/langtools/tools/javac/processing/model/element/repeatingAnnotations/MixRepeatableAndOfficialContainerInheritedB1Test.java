@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -40,8 +40,8 @@ class M {}
 
 @ExpectedBase(
         value = BarInherited.class,
-        getAnnotation = "@BarInherited(value=0)",
-        getAnnotationsByType = {"@BarInherited(value=0)"},
+        getAnnotation = "@BarInherited(0)",
+        getAnnotationsByType = {"@BarInherited(0)"},
         getAllAnnotationMirrors = {
             "@BarInherited(0)",
             "@BarInheritedContainer({@BarInherited(1), @BarInherited(2)})",
@@ -56,8 +56,8 @@ class M {}
 @ExpectedContainer(
         value = BarInheritedContainer.class,
         getAnnotation = "@BarInheritedContainer("
-        + "value={@BarInherited(value=1), @BarInherited(value=2)})",
+        + "{@BarInherited(1), @BarInherited(2)})",
         getAnnotationsByType = {"@BarInheritedContainer("
-                + "value={@BarInherited(value=1), @BarInherited(value=2)})"})
-@BarInherited(value = 0)
+                + "{@BarInherited(1), @BarInherited(2)})"})
+@BarInherited(0)
 class MixRepeatableAndOfficialContainerInheritedB1Test extends M {}

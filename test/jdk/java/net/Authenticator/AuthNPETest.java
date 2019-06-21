@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,11 +24,15 @@
 import java.io.*;
 import java.net.*;
 import java.util.*;
+import jdk.test.lib.net.URIBuilder;
 
 /**
  * @test
  * @bug 4662246
  * @summary  REGRESSION: plugin 14x client authentication dialog returns NullPointerException
+ * @library /test/lib
+ * @run main/othervm AuthNPETest
+ * @run main/othervm -Djava.net.preferIPv6Addresses=true AuthNPETest
  */
 
 public class AuthNPETest {
@@ -53,45 +57,45 @@ public class AuthNPETest {
             "Content-Type: text/html; charset=iso-8859-1\r\n" +
             "Content-Length: 10\r\n\r\n";
 
-        BasicServer (ServerSocket s) {
+        BasicServer(ServerSocket s) {
             server = s;
         }
 
-        void readAll (Socket s) throws IOException {
+        void readAll(Socket s) throws IOException {
             byte[] buf = new byte [128];
-            InputStream is = s.getInputStream ();
+            InputStream is = s.getInputStream();
             s.setSoTimeout(1000);
             try {
                 while (is.read(buf) > 0) ;
             } catch (SocketTimeoutException x) { }
         }
 
-        public void run () {
+        public void run() {
             try {
-                System.out.println ("Server 1: accept");
-                s = server.accept ();
-                System.out.println ("accepted");
+                System.out.println("Server 1: accept");
+                s = server.accept();
+                System.out.println("accepted");
                 os = s.getOutputStream();
-                os.write (reply1.getBytes());
-                readAll (s);
-                s.close ();
+                os.write(reply1.getBytes());
+                readAll(s);
+                s.close();
 
-                System.out.println ("Server 2: accept");
-                s = server.accept ();
-                System.out.println ("accepted");
+                System.out.println("Server 2: accept");
+                s = server.accept();
+                System.out.println("accepted");
                 os = s.getOutputStream();
-                os.write ((reply2+"HelloWorld").getBytes());
-                readAll (s);
-                s.close ();
+                os.write((reply2+"HelloWorld").getBytes());
+                readAll(s);
+                s.close();
 
             }
             catch (Exception e) {
                 System.out.println (e);
             }
-            finished ();
+            finished();
         }
 
-        public synchronized void finished () {
+        public synchronized void finished() {
             notifyAll();
         }
 
@@ -99,48 +103,54 @@ public class AuthNPETest {
 
     static class MyAuthenticator extends Authenticator {
 
-        MyAuthenticator () {
-            super ();
+        MyAuthenticator() {
+            super();
         }
 
         int count = 0;
 
-        public PasswordAuthentication getPasswordAuthentication ()
+        public PasswordAuthentication getPasswordAuthentication()
             {
-            count ++;
-            System.out.println ("Auth called");
-            return (new PasswordAuthentication ("user", "passwordNotCheckedAnyway".toCharArray()));
+            count++;
+            System.out.println("Auth called");
+            return (new PasswordAuthentication("user", "passwordNotCheckedAnyway".toCharArray()));
         }
 
-        public int getCount () {
-            return (count);
+        public int getCount() {
+            return count;
         }
     }
 
 
-    static void read (InputStream is) throws IOException {
+    static void read(InputStream is) throws IOException {
         int c;
-        System.out.println ("reading");
+        System.out.println("reading");
         while ((c=is.read()) != -1) {
-            System.out.write (c);
+            System.out.write(c);
         }
-        System.out.println ("");
-        System.out.println ("finished reading");
+        System.out.println("");
+        System.out.println("finished reading");
     }
 
-    public static void main (String args[]) throws Exception {
-        MyAuthenticator auth = new MyAuthenticator ();
-        Authenticator.setDefault (auth);
-        ServerSocket ss = new ServerSocket (0);
-        int port = ss.getLocalPort ();
-        BasicServer server = new BasicServer (ss);
+    public static void main(String args[]) throws Exception {
+        MyAuthenticator auth = new MyAuthenticator();
+        Authenticator.setDefault(auth);
+        InetAddress loopback = InetAddress.getLoopbackAddress();
+        ServerSocket ss = new ServerSocket();
+        ss.bind(new InetSocketAddress(loopback, 0));
+        int port = ss.getLocalPort();
+        BasicServer server = new BasicServer(ss);
         synchronized (server) {
             server.start();
             System.out.println ("client 1");
-            URL url = new URL ("http://localhost:"+port);
-            URLConnection urlc = url.openConnection ();
-            InputStream is = urlc.getInputStream ();
-            read (is);
+            URL url = URIBuilder.newBuilder()
+                .scheme("http")
+                .loopback()
+                .port(port)
+                .toURL();
+            URLConnection urlc = url.openConnection(Proxy.NO_PROXY);
+            InputStream is = urlc.getInputStream();
+            read(is);
             is.close();
         }
     }

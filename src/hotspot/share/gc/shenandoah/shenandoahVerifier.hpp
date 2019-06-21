@@ -189,6 +189,7 @@ public:
   void verify_generic(VerifyOption option);
 
   // Roots should only contain to-space oops
+  void verify_roots_in_to_space();
   void verify_roots_no_forwarded();
   void verify_roots_no_forwarded_except(ShenandoahRootVerifier::RootTypes types);
 };

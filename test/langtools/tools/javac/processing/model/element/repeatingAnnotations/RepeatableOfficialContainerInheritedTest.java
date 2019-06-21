@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -35,16 +35,16 @@
  * RepeatableOfficialContainerInheritedTest.java
  */
 
-@BarInheritedContainer(value = {@BarInherited(value = 1)})
-@BarInheritedContainer(value = {@BarInherited(value = 2)})
+@BarInheritedContainer({@BarInherited(1)})
+@BarInheritedContainer({@BarInherited(2)})
 class O {}
 
 @ExpectedBase(
         value = BarInheritedContainer.class,
         getAnnotation = "null",
         getAnnotationsByType = {
-            "@BarInheritedContainer(value={@BarInherited(value=1)})",
-            "@BarInheritedContainer(value={@BarInherited(value=2)})"
+            "@BarInheritedContainer({@BarInherited(1)})",
+            "@BarInheritedContainer({@BarInherited(2)})"
         },
         getAllAnnotationMirrors = {
             "@BarInheritedContainerContainer("
@@ -60,9 +60,9 @@ class O {}
 @ExpectedContainer(
         value = BarInheritedContainerContainer.class,
         getAnnotation = "@BarInheritedContainerContainer("
-        + "value={@BarInheritedContainer(value={@BarInherited(value=1)}),"
-        + " @BarInheritedContainer(value={@BarInherited(value=2)})})",
+        + "{@BarInheritedContainer({@BarInherited(1)}),"
+        + " @BarInheritedContainer({@BarInherited(2)})})",
         getAnnotationsByType = {"@BarInheritedContainerContainer("
-                + "value={@BarInheritedContainer(value={@BarInherited(value=1)}),"
-        + " @BarInheritedContainer(value={@BarInherited(value=2)})})"})
+                + "{@BarInheritedContainer({@BarInherited(1)}),"
+        + " @BarInheritedContainer({@BarInherited(2)})})"})
 class RepeatableOfficialContainerInheritedTest extends O {}

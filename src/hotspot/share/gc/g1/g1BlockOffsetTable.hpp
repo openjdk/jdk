@@ -52,7 +52,7 @@ private:
 
   // Array for keeping offsets for retrieving object start fast given an
   // address.
-  u_char* _offset_array;          // byte array keeping backwards offsets
+  volatile u_char* _offset_array;  // byte array keeping backwards offsets
 
   void check_offset(size_t offset, const char* msg) const {
     assert(offset <= BOTConstants::N_words,
@@ -64,10 +64,7 @@ private:
   // For performance these have to devolve to array accesses in product builds.
   inline u_char offset_array(size_t index) const;
 
-  void set_offset_array_raw(size_t index, u_char offset) {
-    _offset_array[index] = offset;
-  }
-
+  inline void set_offset_array_raw(size_t index, u_char offset);
   inline void set_offset_array(size_t index, u_char offset);
 
   inline void set_offset_array(size_t index, HeapWord* high, HeapWord* low);

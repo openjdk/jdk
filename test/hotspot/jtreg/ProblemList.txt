@@ -49,8 +49,8 @@ compiler/jvmci/compilerToVM/GetResolvedJavaTypeTest.java 8158860 generic-all
 compiler/jvmci/compilerToVM/InvalidateInstalledCodeTest.java 8163894 generic-all
 compiler/tiered/LevelTransitionTest.java 8067651 generic-all
 
-compiler/types/correctness/CorrectnessTest.java 8225620 solaris-sparcv9
-compiler/types/correctness/OffTest.java         8225620 solaris-sparcv9
+compiler/types/correctness/CorrectnessTest.java 8225670,8225620 generic-all,solaris-sparcv9
+compiler/types/correctness/OffTest.java         8225670,8225620 generic-all,solaris-sparcv9
 
 compiler/c2/Test6852078.java 8194310 generic-all
 compiler/c2/Test8004741.java 8214904 generic-all
@@ -80,7 +80,6 @@ gc/metaspace/CompressedClassSpaceSizeInJmapHeap.java 8193639 solaris-all
 
 # :hotspot_runtime
 
-runtime/SharedArchiveFile/SASymbolTableTest.java 8193639 solaris-all
 runtime/jni/terminatedThread/TestTerminatedThread.java 8219652 aix-ppc64
 
 #############################################################################
@@ -107,8 +106,6 @@ serviceability/sa/ClhsdbPstack.java 8193639,8211767 solaris-all,linux-ppc64le,li
 serviceability/sa/ClhsdbRegionDetailsScanOopsForG1.java 8193639 solaris-all
 serviceability/sa/ClhsdbScanOops.java 8193639,8211767 solaris-all,linux-ppc64le,linux-ppc64
 serviceability/sa/ClhsdbSource.java 8193639,8211767 solaris-all,linux-ppc64le,linux-ppc64
-serviceability/sa/ClhsdbSymbol.java 8193639 solaris-all
-serviceability/sa/ClhsdbSymbolTable.java 8193639 solaris-all
 serviceability/sa/ClhsdbThread.java 8193639,8211767 solaris-all,linux-ppc64le,linux-ppc64
 serviceability/sa/ClhsdbVmStructsDump.java 8193639 solaris-all
 serviceability/sa/ClhsdbWhere.java 8193639,8211767 solaris-all,linux-ppc64le,linux-ppc64

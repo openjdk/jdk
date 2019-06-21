@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -359,7 +359,8 @@ ping4(JNIEnv *env, HANDLE hIcmpFile, SOCKETADDRESS *sa,
     }
 
     if (dwRetVal == 0) { // if the call failed
-        TCHAR *buf;
+        TCHAR *buf = NULL;
+        DWORD n;
         DWORD err = WSAGetLastError();
         switch (err) {
             case ERROR_NO_NETWORK:
@@ -379,9 +380,17 @@ ping4(JNIEnv *env, HANDLE hIcmpFile, SOCKETADDRESS *sa,
             case IP_REQ_TIMED_OUT:
                 break;
             default:
-                FormatMessage(FORMAT_MESSAGE_ALLOCATE_BUFFER | FORMAT_MESSAGE_FROM_SYSTEM,
-                              NULL, err, MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT),
-                              (LPTSTR)&buf, 0, NULL);
+                n = FormatMessage(FORMAT_MESSAGE_ALLOCATE_BUFFER |
+                        FORMAT_MESSAGE_FROM_SYSTEM,
+                        NULL, err, MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT),
+                        (LPTSTR)&buf, 0, NULL);
+                if (n > 3) {
+                    // Drop final '.', CR, LF
+                    if (buf[n - 1] == TEXT('\n')) n--;
+                    if (buf[n - 1] == TEXT('\r')) n--;
+                    if (buf[n - 1] == TEXT('.')) n--;
+                    buf[n] = TEXT('\0');
+                }
                 NET_ThrowNew(env, err, buf);
                 LocalFree(buf);
                 break;

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -50,9 +50,9 @@
         })
 @ExpectedContainer(
         value = UnofficialContainer.class,
-        getAnnotation = "@UnofficialContainer(value={@Foo(value=1), @Foo(value=2)})",
-        getAnnotationsByType = {"@UnofficialContainer(value={@Foo(value=1), @Foo(value=2)})"})
-@UnofficialContainer(value = {@Foo(value = 1), @Foo(value = 2)})
+        getAnnotation = "@UnofficialContainer({@Foo(1), @Foo(2)})",
+        getAnnotationsByType = {"@UnofficialContainer({@Foo(1), @Foo(2)})"})
+@UnofficialContainer({@Foo(1), @Foo(2)})
 class UnofficialContainerBasicTest {
 
     @ExpectedBase(
@@ -71,9 +71,9 @@ class UnofficialContainerBasicTest {
             })
     @ExpectedContainer(
             value = UnofficialContainer.class,
-            getAnnotation = "@UnofficialContainer(value={@Foo(value=1), @Foo(value=2)})",
-            getAnnotationsByType = {"@UnofficialContainer(value={@Foo(value=1), @Foo(value=2)})"})
-    @UnofficialContainer(value = {@Foo(value = 1), @Foo(value = 2)})
+            getAnnotation = "@UnofficialContainer({@Foo(1), @Foo(2)})",
+            getAnnotationsByType = {"@UnofficialContainer({@Foo(1), @Foo(2)})"})
+    @UnofficialContainer({@Foo(1), @Foo(2)})
     int testField = 0;
 
     @ExpectedBase(
@@ -92,8 +92,8 @@ class UnofficialContainerBasicTest {
             })
     @ExpectedContainer(
             value = UnofficialContainer.class,
-            getAnnotation = "@UnofficialContainer(value={@Foo(value=1), @Foo(value=2)})",
-            getAnnotationsByType = {"@UnofficialContainer(value={@Foo(value=1), @Foo(value=2)})"})
-    @UnofficialContainer(value = {@Foo(value = 1), @Foo(value = 2)})
+            getAnnotation = "@UnofficialContainer({@Foo(1), @Foo(2)})",
+            getAnnotationsByType = {"@UnofficialContainer({@Foo(1), @Foo(2)})"})
+    @UnofficialContainer({@Foo(1), @Foo(2)})
     void testMethod() {}
 }

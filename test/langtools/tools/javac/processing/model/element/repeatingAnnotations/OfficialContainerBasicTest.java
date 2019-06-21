@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -38,8 +38,8 @@
         value = Bar.class,
         getAnnotation = "null",
         getAnnotationsByType = {
-            "@Bar(value=1)",
-            "@Bar(value=2)"
+            "@Bar(1)",
+            "@Bar(2)"
         },
         getAllAnnotationMirrors = {
             "@BarContainer({@Bar(1), @Bar(2)})",
@@ -53,17 +53,17 @@
         })
 @ExpectedContainer(
         value = BarContainer.class,
-        getAnnotation = "@BarContainer(value={@Bar(value=1), @Bar(value=2)})",
-        getAnnotationsByType = {"@BarContainer(value={@Bar(value=1), @Bar(value=2)})"})
-@BarContainer(value = {@Bar(value = 1), @Bar(value = 2)})
+        getAnnotation = "@BarContainer({@Bar(1), @Bar(2)})",
+        getAnnotationsByType = {"@BarContainer({@Bar(1), @Bar(2)})"})
+@BarContainer({@Bar(1), @Bar(2)})
 class OfficialContainerBasicTest {
 
     @ExpectedBase(
             value = Bar.class,
             getAnnotation = "null",
             getAnnotationsByType = {
-                "@Bar(value=1)",
-                "@Bar(value=2)"
+                "@Bar(1)",
+                "@Bar(2)"
             },
             getAllAnnotationMirrors = {
                 "@BarContainer({@Bar(1), @Bar(2)})",
@@ -77,17 +77,17 @@ class OfficialContainerBasicTest {
             })
     @ExpectedContainer(
             value = BarContainer.class,
-            getAnnotation = "@BarContainer(value={@Bar(value=1), @Bar(value=2)})",
-            getAnnotationsByType = {"@BarContainer(value={@Bar(value=1), @Bar(value=2)})"})
-    @BarContainer(value = {@Bar(value = 1), @Bar(value = 2)})
+            getAnnotation = "@BarContainer({@Bar(1), @Bar(2)})",
+            getAnnotationsByType = {"@BarContainer({@Bar(1), @Bar(2)})"})
+    @BarContainer({@Bar(1), @Bar(2)})
     int testField = 0;
 
     @ExpectedBase(
             value = Bar.class,
             getAnnotation = "null",
             getAnnotationsByType = {
-                "@Bar(value=1)",
-                "@Bar(value=2)"
+                "@Bar(1)",
+                "@Bar(2)"
             },
             getAllAnnotationMirrors = {
                 "@BarContainer({@Bar(1), @Bar(2)})",
@@ -101,8 +101,8 @@ class OfficialContainerBasicTest {
             })
     @ExpectedContainer(
             value = BarContainer.class,
-            getAnnotation = "@BarContainer(value={@Bar(value=1), @Bar(value=2)})",
-            getAnnotationsByType = {"@BarContainer(value={@Bar(value=1), @Bar(value=2)})"})
-    @BarContainer(value = {@Bar(value = 1), @Bar(value = 2)})
+            getAnnotation = "@BarContainer({@Bar(1), @Bar(2)})",
+            getAnnotationsByType = {"@BarContainer({@Bar(1), @Bar(2)})"})
+    @BarContainer({@Bar(1), @Bar(2)})
     void testMethod() {}
 }

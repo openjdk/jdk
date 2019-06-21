@@ -67,7 +67,6 @@ public class B6521014 {
         return NetworkConfiguration.probe()
                 .ip6Addresses()
                 .filter(Inet6Address::isLinkLocalAddress)
-                .map(B6521014::removeScope)
                 .findFirst();
     }
 
