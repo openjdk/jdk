@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2006, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2006, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -68,7 +68,7 @@ public class CurveDB {
             return spec;
         }
 
-        return nameMap.get(name);
+        return nameMap.get(name.toLowerCase(Locale.ENGLISH));
     }
 
     // Return EC parameters for the specified field size. If there are known
@@ -151,7 +151,8 @@ public class CurveDB {
 
         String[] commonNames = nameSplitPattern.split(name);
         for (String commonName : commonNames) {
-            if (nameMap.put(commonName.trim(), params) != null) {
+            if (nameMap.put(commonName.trim().toLowerCase(Locale.ENGLISH),
+                            params) != null) {
                 throw new RuntimeException("Duplication name: " + commonName);
             }
         }

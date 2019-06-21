@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2019 Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,7 @@
 
  /*
  * @test
- * @bug 4936763 8184359 8205476
+ * @bug 4936763 8184359 8205476 8226307
  * @summary KeyAgreement Test with all supported algorithms from JCE.
  *          Arguments order <KeyExchangeAlgorithm> <KeyGenAlgorithm> <Provider>
  *          It removes com/sun/crypto/provider/KeyAgreement/DHGenSecretKey.java
@@ -73,7 +73,7 @@ public class KeyAgreementTest {
                 // SEC2 prime curves
                 "secp112r1", "secp112r2", "secp128r1", "secp128r2", "secp160k1",
                 "secp160r1", "secp192k1", "secp192r1", "secp224k1", "secp224r1",
-                "secp256k1", "secp256r1", "secp384r1", "secp521r1",
+                "secp256k1", "secp256r1", "secp384r1", "secp521r1", "SECP521R1",
                 // ANSI X9.62 prime curves
                 "X9.62 prime192v2", "X9.62 prime192v3", "X9.62 prime239v1",
                 "X9.62 prime239v2", "X9.62 prime239v3",
@@ -87,7 +87,7 @@ public class KeyAgreementTest {
                 "X9.62 c2tnb239v1", "X9.62 c2tnb239v2", "X9.62 c2tnb239v3",
                 "X9.62 c2tnb359v1", "X9.62 c2tnb431r1"
         ),
-        XDH("X25519", "X448"),
+        XDH("X25519", "X448", "x25519"),
         // There is no curve for DiffieHellman
         DiffieHellman(new String[]{});
 
