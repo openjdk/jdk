@@ -46,7 +46,8 @@ TARGETS += make-base java-compilation copy-files idea compile-commands
 
 all: $(TARGETS)
 
+# Prints targets to TARGETS_FILE which must be set when calling this target.
 print-targets:
-	$(ECHO) "$(TARGETS)"
+	$(ECHO) "$(TARGETS)" >> $(TARGETS_FILE)
 
 .PHONY: default all $(TARGETS)
