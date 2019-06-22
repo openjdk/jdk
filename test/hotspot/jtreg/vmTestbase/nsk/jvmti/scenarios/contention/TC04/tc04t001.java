@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2004, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2004, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,6 +24,7 @@
 package nsk.jvmti.scenarios.contention.TC04;
 
 import java.io.PrintStream;
+import java.util.concurrent.*;
 
 import nsk.share.*;
 import nsk.share.jvmti.*;
@@ -31,6 +32,7 @@ import nsk.share.jvmti.*;
 public class tc04t001 extends DebugeeClass {
 
     final static int THREADS_LIMIT = 2;
+    final static CountDownLatch threadsDoneSignal = new CountDownLatch(THREADS_LIMIT);
 
     // run test from command line
     public static void main(String argv[]) {
@@ -68,8 +70,8 @@ public class tc04t001 extends DebugeeClass {
         }
 
         try {
-            for (int i = 0; i < THREADS_LIMIT; i++) {
-                threads[i].join(timeout/THREADS_LIMIT);
+            if (!threadsDoneSignal.await(timeout, TimeUnit.MILLISECONDS)) {
+                throw new RuntimeException("Threads timeout");
             }
         } catch (InterruptedException e) {
             throw new Failure(e);
@@ -122,6 +124,8 @@ class tc04t001Thread extends Thread {
 */
 
     private int id;
+    private static volatile int lastEnterEventsCount;
+    private static native   int enterEventsCount();
 
     public tc04t001Thread(int i) {
         super("Debuggee Thread " + i);
@@ -131,11 +135,13 @@ class tc04t001Thread extends Thread {
     public synchronized void run() {
         for (int i = 0; i < INCREMENT_LIMIT; i++) {
             flicker.waitFor(id);
+            lastEnterEventsCount = enterEventsCount();
             increment(id);
             try {
                 wait(1);
             } catch (InterruptedException e) {}
         }
+        tc04t001.threadsDoneSignal.countDown();
     }
 
     static synchronized void increment(int i) {
@@ -144,10 +150,24 @@ class tc04t001Thread extends Thread {
 */
         flicker.unlock(i);
         int temp = value;
-        for (int j = 0; j < DELAY; j++) ;
-        try {
-            sleep(500);
-        } catch (InterruptedException e) {}
+
+        // Wait in a loop for a MonitorContendedEnter event.
+        // Timeout is: 20ms * DELAY.
+        for (int j = 0; j < DELAY; j++) {
+            try {
+                sleep(20);
+            } catch (InterruptedException e) {}
+
+            if (enterEventsCount() > lastEnterEventsCount) {
+                break; // Got an expected MonitorContendedEnter event
+            }
+        }
+        System.out.println("Thread-" + i + ": increment event: " + enterEventsCount());
+
+        if (enterEventsCount() == lastEnterEventsCount) {
+            String msg = "Timeout in waiting for a MonitorContendedEnter event";
+            throw new RuntimeException(msg);
+        }
         value = temp + 1;
     }
 }

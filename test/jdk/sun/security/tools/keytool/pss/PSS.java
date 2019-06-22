@@ -23,9 +23,10 @@
 
 /*
  * @test
- * @bug 8215694 8222987
+ * @bug 8215694 8222987 8225257
  * @summary keytool cannot generate RSASSA-PSS certificates
  * @library /test/lib
+ * @build java.base/sun.security.rsa.RSAKeyPairGenerator
  * @modules java.base/sun.security.util
  *          java.base/sun.security.x509
  * @requires os.family != "solaris"
@@ -93,7 +94,9 @@ public class PSS {
 
     static OutputAnalyzer genkeypair(String alias, String options)
             throws Exception {
-        return kt("-genkeypair -alias " + alias
+        String patchArg = "-J--patch-module=java.base=" + System.getProperty("test.classes")
+                + File.separator + "patches" + File.separator + "java.base";
+        return kt(patchArg + " -genkeypair -alias " + alias
                 + " -dname CN=" + alias + " " + options);
     }
 
