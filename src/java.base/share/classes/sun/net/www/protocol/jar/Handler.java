@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -121,6 +121,13 @@ public class Handler extends java.net.URLStreamHandler {
         return h;
     }
 
+    public String checkNestedProtocol(String spec) {
+        if (spec.regionMatches(true, 0, "jar:", 0, 4)) {
+            return "Nested JAR URLs are not supported";
+        } else {
+            return null;
+        }
+    }
 
     @Override
     @SuppressWarnings("deprecation")
@@ -145,6 +152,12 @@ public class Handler extends java.net.URLStreamHandler {
                 ? spec.regionMatches(true, 0, "jar:", 0, 4)
                 : false;
         spec = spec.substring(start, limit);
+
+        String exceptionMessage = checkNestedProtocol(spec);
+        if (exceptionMessage != null) {
+            // NPE will be transformed into MalformedURLException by the caller
+            throw new NullPointerException(exceptionMessage);
+        }
 
         if (absoluteSpec) {
             file = parseAbsoluteSpec(spec);
