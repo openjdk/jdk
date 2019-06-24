@@ -93,12 +93,9 @@ public class Promiscuous {
     static void test(InetAddress group1, InetAddress group2)
         throws IOException
     {
-        InetSocketAddress ad1 = new InetSocketAddress(group1, 0);
-        try (MulticastSocket mc1 = new MulticastSocket(ad1);
-             MulticastSocket mc2 = new MulticastSocket(
-                 new InetSocketAddress(group2, mc1.getLocalPort()));
+        try (MulticastSocket mc1 = new MulticastSocket();
+             MulticastSocket mc2 = new MulticastSocket(mc1.getLocalPort());
              DatagramSocket ds = new DatagramSocket()) {
-
             final int port = mc1.getLocalPort();
             out.printf("Using port: %d\n", port);
 
