@@ -79,8 +79,7 @@ static CompactHashtable<
 
 // --------------------------------------------------------------------------
 
-typedef ConcurrentHashTable<WeakHandle<vm_string_table_data>,
-                            StringTableConfig, mtSymbol> StringTableHash;
+typedef ConcurrentHashTable<StringTableConfig, mtSymbol> StringTableHash;
 static StringTableHash* _local_table = NULL;
 
 volatile bool StringTable::_has_work = false;
@@ -101,11 +100,12 @@ uintx hash_string(const jchar* s, int len, bool useAlt) {
     java_lang_String::hash_code(s, len);
 }
 
-class StringTableConfig : public StringTableHash::BaseConfig {
+class StringTableConfig : public StackObj {
  private:
  public:
-  static uintx get_hash(WeakHandle<vm_string_table_data> const& value,
-                        bool* is_dead) {
+  typedef WeakHandle<vm_string_table_data> Value;
+
+  static uintx get_hash(Value const& value, bool* is_dead) {
     EXCEPTION_MARK;
     oop val_oop = value.peek();
     if (val_oop == NULL) {
@@ -124,15 +124,13 @@ class StringTableConfig : public StringTableHash::BaseConfig {
     return 0;
   }
   // We use default allocation/deallocation but counted
-  static void* allocate_node(size_t size,
-                             WeakHandle<vm_string_table_data> const& value) {
+  static void* allocate_node(size_t size, Value const& value) {
     StringTable::item_added();
-    return StringTableHash::BaseConfig::allocate_node(size, value);
+    return AllocateHeap(size, mtSymbol);
   }
-  static void free_node(void* memory,
-                        WeakHandle<vm_string_table_data> const& value) {
+  static void free_node(void* memory, Value const& value) {
     value.release();
-    StringTableHash::BaseConfig::free_node(memory, value);
+    FreeHeap(memory);
     StringTable::item_removed();
   }
 };

@@ -36,23 +36,21 @@
 // Amusingly as long as they do not assert they are mt-safe.
 #define SIZE_32 5
 
-struct Pointer;
-
-typedef ConcurrentHashTable<uintptr_t, Pointer, mtInternal> SimpleTestTable;
-typedef ConcurrentHashTable<uintptr_t, Pointer, mtInternal>::MultiGetHandle SimpleTestGetHandle;
-
-// Simplest working CRPT implementation for the hash-table.
-struct Pointer : public SimpleTestTable::BaseConfig {
-  static uintx get_hash(const uintptr_t& value, bool* dead_hash) {
+struct Pointer : public AllStatic {
+  typedef uintptr_t Value;
+  static uintx get_hash(const Value& value, bool* dead_hash) {
     return (uintx)value;
   }
-  static void* allocate_node(size_t size, const uintptr_t& value) {
+  static void* allocate_node(size_t size, const Value& value) {
     return ::malloc(size);
   }
-  static void free_node(void* memory, const uintptr_t& value) {
+  static void free_node(void* memory, const Value& value) {
     ::free(memory);
   }
 };
+
+typedef ConcurrentHashTable<Pointer, mtInternal> SimpleTestTable;
+typedef ConcurrentHashTable<Pointer, mtInternal>::MultiGetHandle SimpleTestGetHandle;
 
 struct SimpleTestLookup {
   uintptr_t _val;
@@ -414,17 +412,22 @@ TEST_VM(ConcurrentHashTable, task_grow) {
 
 //#############################################################################################
 
-class TestInterface;
-
-typedef ConcurrentHashTable<uintptr_t, TestInterface, mtInternal> TestTable;
-typedef ConcurrentHashTable<uintptr_t, TestInterface, mtInternal>::MultiGetHandle TestGetHandle;
-
-class TestInterface : public TestTable::BaseConfig {
+class TestInterface : public AllStatic {
 public:
-  static uintx get_hash(const uintptr_t& value, bool* dead_hash) {
+  typedef uintptr_t Value;
+  static uintx get_hash(const Value& value, bool* dead_hash) {
     return (uintx)(value + 18446744073709551557ul) * 18446744073709551557ul;
   }
+  static void* allocate_node(size_t size, const Value& value) {
+    return AllocateHeap(size, mtInternal);
+  }
+  static void free_node(void* memory, const Value& value) {
+    FreeHeap(memory);
+  }
 };
+
+typedef ConcurrentHashTable<TestInterface, mtInternal> TestTable;
+typedef ConcurrentHashTable<TestInterface, mtInternal>::MultiGetHandle TestGetHandle;
 
 struct TestLookup {
   uintptr_t _val;

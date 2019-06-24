@@ -38,8 +38,9 @@
 class Thread;
 class Mutex;
 
-template <typename VALUE, typename CONFIG, MEMFLAGS F>
+template <typename CONFIG, MEMFLAGS F>
 class ConcurrentHashTable : public CHeapObj<F> {
+  typedef typename CONFIG::Value VALUE;
  private:
   // This is the internal node structure.
   // Only constructed with placement new from memory allocated with MEMFLAGS of
@@ -252,10 +253,10 @@ class ConcurrentHashTable : public CHeapObj<F> {
   class ScopedCS: public StackObj {
    protected:
     Thread* _thread;
-    ConcurrentHashTable<VALUE, CONFIG, F>* _cht;
+    ConcurrentHashTable<CONFIG, F>* _cht;
     GlobalCounter::CSContext _cs_context;
    public:
-    ScopedCS(Thread* thread, ConcurrentHashTable<VALUE, CONFIG, F>* cht);
+    ScopedCS(Thread* thread, ConcurrentHashTable<CONFIG, F>* cht);
     ~ScopedCS();
   };
 
@@ -473,26 +474,12 @@ class ConcurrentHashTable : public CHeapObj<F> {
                      const char* table_name);
 
   // Moves all nodes from this table to to_cht
-  bool try_move_nodes_to(Thread* thread, ConcurrentHashTable<VALUE, CONFIG, F>* to_cht);
-
-  // This is a Curiously Recurring Template Pattern (CRPT) interface for the
-  // specialization.
-  struct BaseConfig {
-   public:
-    // Called when the hash table needs the hash for a VALUE.
-    static uintx get_hash(const VALUE& value, bool* dead) {
-      return CONFIG::get_hash(value, dead);
-    }
-    // Default node allocation.
-    static void* allocate_node(size_t size, const VALUE& value);
-    // Default node reclamation.
-    static void free_node(void* memory, const VALUE& value);
-  };
+  bool try_move_nodes_to(Thread* thread, ConcurrentHashTable<CONFIG, F>* to_cht);
 
   // Scoped multi getter.
   class MultiGetHandle : private ScopedCS {
    public:
-    MultiGetHandle(Thread* thread, ConcurrentHashTable<VALUE, CONFIG, F>* cht)
+    MultiGetHandle(Thread* thread, ConcurrentHashTable<CONFIG, F>* cht)
       : ScopedCS(thread, cht) {}
     // In the MultiGetHandle scope you can lookup items matching LOOKUP_FUNC.
     // The VALUEs are safe as long as you never save the VALUEs outside the

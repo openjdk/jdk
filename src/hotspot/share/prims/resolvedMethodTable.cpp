@@ -56,15 +56,15 @@ unsigned int method_hash(const Method* method) {
   return name_hash ^ signature_hash;
 }
 
-typedef ConcurrentHashTable<WeakHandle<vm_resolved_method_table_data>,
-                            ResolvedMethodTableConfig,
+typedef ConcurrentHashTable<ResolvedMethodTableConfig,
                             mtClass> ResolvedMethodTableHash;
 
-class ResolvedMethodTableConfig : public ResolvedMethodTableHash::BaseConfig {
+class ResolvedMethodTableConfig : public AllStatic {
  private:
  public:
-  static uintx get_hash(WeakHandle<vm_resolved_method_table_data> const& value,
-                        bool* is_dead) {
+  typedef WeakHandle<vm_resolved_method_table_data> Value;
+
+  static uintx get_hash(Value const& value, bool* is_dead) {
     oop val_oop = value.peek();
     if (val_oop == NULL) {
       *is_dead = true;
@@ -76,13 +76,13 @@ class ResolvedMethodTableConfig : public ResolvedMethodTableHash::BaseConfig {
   }
 
   // We use default allocation/deallocation but counted
-  static void* allocate_node(size_t size, WeakHandle<vm_resolved_method_table_data> const& value) {
+  static void* allocate_node(size_t size, Value const& value) {
     ResolvedMethodTable::item_added();
-    return ResolvedMethodTableHash::BaseConfig::allocate_node(size, value);
+    return AllocateHeap(size, mtClass);
   }
-  static void free_node(void* memory, WeakHandle<vm_resolved_method_table_data> const& value) {
+  static void free_node(void* memory, Value const& value) {
     value.release();
-    ResolvedMethodTableHash::BaseConfig::free_node(memory, value);
+    FreeHeap(memory);
     ResolvedMethodTable::item_removed();
   }
 };
