@@ -532,7 +532,7 @@ $(foreach m, $(ALL_MODULES), \
 # file. The number 0-2 below represent how many extra directory levels down
 # below the specs dir the specs html file is located. Each file name is
 # stored in a variable SPECS_BOTTOM_FILE_$n where $n is 0, 1 or 2.
-SPECS_BOTTOM = <hr/>$(COPYRIGHT_BOTTOM)
+SPECS_BOTTOM = <footer><hr/>$(COPYRIGHT_BOTTOM)</footer>
 # The legal dir is one ../ below the specs dir, so start with one ../.
 specs_bottom_rel_path := ../
 $(foreach n, 0 1 2, \
