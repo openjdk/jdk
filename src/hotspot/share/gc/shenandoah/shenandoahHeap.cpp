@@ -1523,7 +1523,8 @@ void ShenandoahHeap::op_final_mark() {
 
       if (ShenandoahVerify) {
         if (ShenandoahConcurrentRoots::should_do_concurrent_roots()) {
-          verifier()->verify_roots_no_forwarded_except(ShenandoahRootVerifier::JNIHandleRoots);
+          ShenandoahRootVerifier::RootTypes types = ShenandoahRootVerifier::combine(ShenandoahRootVerifier::JNIHandleRoots, ShenandoahRootVerifier::WeakRoots);
+          verifier()->verify_roots_no_forwarded_except(types);
         } else {
           verifier()->verify_roots_no_forwarded();
         }
@@ -1590,6 +1591,7 @@ void ShenandoahHeap::op_cleanup() {
 class ShenandoahConcurrentRootsEvacUpdateTask : public AbstractGangTask {
 private:
   ShenandoahJNIHandleRoots<true /*concurrent*/> _jni_roots;
+  ShenandoahWeakRoots<true /*concurrent*/>      _weak_roots;
 
 public:
   ShenandoahConcurrentRootsEvacUpdateTask() :
@@ -1599,7 +1601,9 @@ public:
   void work(uint worker_id) {
     ShenandoahEvacOOMScope oom;
     ShenandoahEvacuateUpdateRootsClosure cl;
+
     _jni_roots.oops_do<ShenandoahEvacuateUpdateRootsClosure>(&cl);
+    _weak_roots.oops_do<ShenandoahEvacuateUpdateRootsClosure>(&cl);
   }
 };
 

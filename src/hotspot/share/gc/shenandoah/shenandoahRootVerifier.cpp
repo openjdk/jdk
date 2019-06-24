@@ -54,6 +54,10 @@ bool ShenandoahRootVerifier::verify(RootTypes type) const {
   return (_types & type) != 0;
 }
 
+ShenandoahRootVerifier::RootTypes ShenandoahRootVerifier::combine(RootTypes t1, RootTypes t2) {
+  return static_cast<ShenandoahRootVerifier::RootTypes>(static_cast<uint>(t1) | static_cast<uint>(t2));
+}
+
 void ShenandoahRootVerifier::oops_do(OopClosure* oops) {
   CodeBlobToOopClosure blobs(oops, !CodeBlobToOopClosure::FixRelocations);
   if (verify(CodeRoots)) {

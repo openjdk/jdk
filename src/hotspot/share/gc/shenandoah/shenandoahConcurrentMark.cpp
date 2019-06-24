@@ -31,6 +31,7 @@
 #include "gc/shared/gcTimer.hpp"
 #include "gc/shared/referenceProcessor.hpp"
 #include "gc/shared/referenceProcessorPhaseTimes.hpp"
+#include "gc/shared/strongRootsScope.hpp"
 
 #include "gc/shenandoah/shenandoahBarrierSet.inline.hpp"
 #include "gc/shenandoah/shenandoahClosures.inline.hpp"
