@@ -1513,7 +1513,9 @@ void ShenandoahHeap::op_final_mark() {
       // From here on, we need to update references.
       set_has_forwarded_objects(true);
 
-      evacuate_and_update_roots();
+      if (!is_degenerated_gc_in_progress()) {
+        evacuate_and_update_roots();
+      }
 
       if (ShenandoahPacing) {
         pacer()->setup_for_evac();
