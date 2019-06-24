@@ -190,13 +190,14 @@ public:
   void code_blobs_do(CodeBlobClosure* blob_cl, uint worker_id);
 };
 
-template <bool SINGLE_THREADED>
+template <bool CONCURRENT, bool SINGLE_THREADED>
 class ShenandoahClassLoaderDataRoots {
 public:
   ShenandoahClassLoaderDataRoots();
+  ~ShenandoahClassLoaderDataRoots();
 
-  void always_strong_cld_do(CLDClosure* clds, uint worker_id);
-  void cld_do(CLDClosure* clds, uint worker_id);
+  void always_strong_cld_do(CLDClosure* clds, uint worker_id = 0);
+  void cld_do(CLDClosure* clds, uint worker_id = 0);
 };
 
 class ShenandoahRootProcessor : public StackObj {
@@ -217,7 +218,8 @@ private:
   ShenandoahThreadRoots                                     _thread_roots;
   ShenandoahCodeCacheRoots<ITR>                             _code_roots;
   ShenandoahJNIHandleRoots<false /*concurrent*/ >           _jni_roots;
-  ShenandoahClassLoaderDataRoots<false /*single threaded*/> _cld_roots;
+  ShenandoahClassLoaderDataRoots<false /*concurrent*/, false /*single threaded*/>
+                                                            _cld_roots;
 public:
   ShenandoahRootScanner(uint n_workers, ShenandoahPhaseTimings::Phase phase);
 
@@ -242,7 +244,8 @@ private:
   ShenandoahSerialRoots                                    _serial_roots;
   ShenandoahThreadRoots                                    _thread_roots;
   ShenandoahJNIHandleRoots<false /*concurrent*/>           _jni_roots;
-  ShenandoahClassLoaderDataRoots<true /*single threaded*/> _cld_roots;
+  ShenandoahClassLoaderDataRoots<false /*concurrent*/, true /*single threaded*/>
+                                                           _cld_roots;
   ShenandoahCodeCacheRoots<ShenandoahAllCodeRootsIterator> _code_roots;
 
 public:
@@ -257,7 +260,8 @@ class ShenandoahRootEvacuator : public ShenandoahRootProcessor {
 private:
   ShenandoahSerialRoots                                     _serial_roots;
   ShenandoahJNIHandleRoots<false /*concurrent*/>            _jni_roots;
-  ShenandoahClassLoaderDataRoots<false /*single threaded*/> _cld_roots;
+  ShenandoahClassLoaderDataRoots<false /*concurrent*/, false /*single threaded*/>
+                                                            _cld_roots;
   ShenandoahThreadRoots                                     _thread_roots;
   ShenandoahSerialWeakRoots                                 _serial_weak_roots;
   ShenandoahWeakRoots<false /*concurrent*/>                 _weak_roots;
@@ -276,7 +280,8 @@ class ShenandoahRootUpdater : public ShenandoahRootProcessor {
 private:
   ShenandoahSerialRoots                                     _serial_roots;
   ShenandoahJNIHandleRoots<false /*concurrent*/>            _jni_roots;
-  ShenandoahClassLoaderDataRoots<false /*single threaded*/> _cld_roots;
+  ShenandoahClassLoaderDataRoots<false /*concurrent*/, false /*single threaded*/>
+                                                            _cld_roots;
   ShenandoahThreadRoots                                     _thread_roots;
   ShenandoahSerialWeakRoots                                 _serial_weak_roots;
   ShenandoahWeakRoots<false /*concurrent*/>                 _weak_roots;
@@ -296,7 +301,8 @@ class ShenandoahRootAdjuster : public ShenandoahRootProcessor {
 private:
   ShenandoahSerialRoots                                     _serial_roots;
   ShenandoahJNIHandleRoots<false /*concurrent*/>            _jni_roots;
-  ShenandoahClassLoaderDataRoots<false /*single threaded*/> _cld_roots;
+  ShenandoahClassLoaderDataRoots<false /*concurrent*/, false /*single threaded*/>
+                                                            _cld_roots;
   ShenandoahThreadRoots                                     _thread_roots;
   ShenandoahSerialWeakRoots                                 _serial_weak_roots;
   ShenandoahWeakRoots<false /*concurrent*/>                 _weak_roots;

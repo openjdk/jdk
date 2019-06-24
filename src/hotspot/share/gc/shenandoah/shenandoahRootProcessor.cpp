@@ -162,18 +162,18 @@ ShenandoahRootEvacuator::ShenandoahRootEvacuator(uint n_workers, ShenandoahPhase
 
 void ShenandoahRootEvacuator::roots_do(uint worker_id, OopClosure* oops) {
   MarkingCodeBlobClosure blobsCl(oops, CodeBlobToOopClosure::FixRelocations);
-  CLDToOopClosure clds(oops, ClassLoaderData::_claim_strong);
   AlwaysTrueClosure always_true;
 
   _serial_roots.oops_do(oops, worker_id);
   _serial_weak_roots.weak_oops_do(oops, worker_id);
   if (_include_concurrent_roots) {
+    CLDToOopClosure clds(oops, ClassLoaderData::_claim_strong);
     _jni_roots.oops_do<OopClosure>(oops, worker_id);
+    _cld_roots.cld_do(&clds, worker_id);
     _weak_roots.oops_do<OopClosure>(oops, worker_id);
   }
 
   _thread_roots.oops_do(oops, NULL, worker_id);
-  _cld_roots.cld_do(&clds, worker_id);
   _code_roots.code_blobs_do(&blobsCl, worker_id);
 
   _dedup_roots.oops_do(&always_true, oops, worker_id);
