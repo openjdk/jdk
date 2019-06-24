@@ -469,8 +469,12 @@ JVM_handle_linux_signal(int sig,
         // underlying file has been truncated. Do not crash the VM in such a case.
         CodeBlob* cb = CodeCache::find_blob_unsafe(pc);
         CompiledMethod* nm = (cb != NULL) ? cb->as_compiled_method_or_null() : NULL;
-        if (nm != NULL && nm->has_unsafe_access()) {
+        bool is_unsafe_arraycopy = (thread->doing_unsafe_access() && UnsafeCopyMemory::contains_pc(pc));
+        if ((nm != NULL && nm->has_unsafe_access()) || is_unsafe_arraycopy) {
           address next_pc = pc + 4;
+          if (is_unsafe_arraycopy) {
+            next_pc = UnsafeCopyMemory::page_error_continue_pc(pc);
+          }
           next_pc = SharedRuntime::handle_unsafe_access(thread, next_pc);
           os::Linux::ucontext_set_pc(uc, next_pc);
           return true;
@@ -485,11 +489,15 @@ JVM_handle_linux_signal(int sig,
                         // flushing of icache is not necessary.
         stub = pc + 4;  // continue with next instruction.
       }
-      else if (thread->thread_state() == _thread_in_vm &&
+      else if ((thread->thread_state() == _thread_in_vm ||
+                thread->thread_state() == _thread_in_native) &&
                sig == SIGBUS && thread->doing_unsafe_access()) {
         address next_pc = pc + 4;
+        if (UnsafeCopyMemory::contains_pc(pc)) {
+          next_pc = UnsafeCopyMemory::page_error_continue_pc(pc);
+        }
         next_pc = SharedRuntime::handle_unsafe_access(thread, next_pc);
-        os::Linux::ucontext_set_pc(uc, pc + 4);
+        os::Linux::ucontext_set_pc(uc, next_pc);
         return true;
       }
     }

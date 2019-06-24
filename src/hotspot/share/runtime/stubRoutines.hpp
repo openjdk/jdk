@@ -74,6 +74,51 @@
 // 4. implement the corresponding generator function in the platform-dependent
 //    stubGenerator_<arch>.cpp file and call the function in generate_all() of that file
 
+class UnsafeCopyMemory : public CHeapObj<mtCode> {
+ private:
+  address _start_pc;
+  address _end_pc;
+  address _error_exit_pc;
+ public:
+  static address           _common_exit_stub_pc;
+  static UnsafeCopyMemory* _table;
+  static int               _table_length;
+  static int               _table_max_length;
+  UnsafeCopyMemory() : _start_pc(NULL), _end_pc(NULL), _error_exit_pc(NULL) {}
+  void    set_start_pc(address pc)      { _start_pc = pc; }
+  void    set_end_pc(address pc)        { _end_pc = pc; }
+  void    set_error_exit_pc(address pc) { _error_exit_pc = pc; }
+  address start_pc()      const { return _start_pc; }
+  address end_pc()        const { return _end_pc; }
+  address error_exit_pc() const { return _error_exit_pc; }
+
+  static void    set_common_exit_stub_pc(address pc) { _common_exit_stub_pc = pc; }
+  static address common_exit_stub_pc()               { return _common_exit_stub_pc; }
+
+  static UnsafeCopyMemory* add_to_table(address start_pc, address end_pc, address error_exit_pc) {
+    guarantee(_table_length < _table_max_length, "Incorrect UnsafeCopyMemory::_table_max_length");
+    UnsafeCopyMemory* entry = &_table[_table_length];
+    entry->set_start_pc(start_pc);
+    entry->set_end_pc(end_pc);
+    entry->set_error_exit_pc(error_exit_pc);
+
+    _table_length++;
+    return entry;
+  }
+
+  static bool    contains_pc(address pc);
+  static address page_error_continue_pc(address pc);
+  static void    create_table(int max_size);
+};
+
+class UnsafeCopyMemoryMark : public StackObj {
+ private:
+  UnsafeCopyMemory*  _ucm_entry;
+  StubCodeGenerator* _cgen;
+ public:
+  UnsafeCopyMemoryMark(StubCodeGenerator* cgen, bool add_entry, bool continue_at_scope_end, address error_exit_pc = NULL);
+  ~UnsafeCopyMemoryMark();
+};
 
 class StubRoutines: AllStatic {
 
@@ -310,11 +355,14 @@ class StubRoutines: AllStatic {
   static address arrayof_oop_disjoint_arraycopy(bool dest_uninitialized = false) {
     return dest_uninitialized ? _arrayof_oop_disjoint_arraycopy_uninit : _arrayof_oop_disjoint_arraycopy;
   }
-
   static address checkcast_arraycopy(bool dest_uninitialized = false) {
     return dest_uninitialized ? _checkcast_arraycopy_uninit : _checkcast_arraycopy;
   }
-  static address unsafe_arraycopy()    { return _unsafe_arraycopy; }
+  static address unsafe_arraycopy()     { return _unsafe_arraycopy; }
+
+  typedef void (*UnsafeArrayCopyStub)(const void* src, void* dst, size_t count);
+  static UnsafeArrayCopyStub UnsafeArrayCopy_stub()         { return CAST_TO_FN_PTR(UnsafeArrayCopyStub,  _unsafe_arraycopy); }
+
   static address generic_arraycopy()   { return _generic_arraycopy; }
 
   static address jbyte_fill()          { return _jbyte_fill; }

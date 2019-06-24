@@ -1076,6 +1076,17 @@ class StubGenerator: public StubCodeGenerator {
       __ delayed()->add(end_from, left_shift, end_from); // restore address
   }
 
+  address generate_unsafecopy_common_error_exit() {
+    address start_pc = __ pc();
+    if (UseBlockCopy) {
+      __ wrasi(G0, Assembler::ASI_PRIMARY_NOFAULT);
+      __ membar(Assembler::StoreLoad);
+    }
+    __ retl();
+    __ delayed()->mov(G0, O0); // return 0
+    return start_pc;
+  }
+
   //
   //  Generate stub for disjoint byte copy.  If "aligned" is true, the
   //  "from" and "to" addresses are assumed to be heapword aligned.
@@ -1107,61 +1118,66 @@ class StubGenerator: public StubCodeGenerator {
       BLOCK_COMMENT("Entry:");
     }
 
-    // for short arrays, just do single element copy
-    __ cmp(count, 23); // 16 + 7
-    __ brx(Assembler::less, false, Assembler::pn, L_copy_byte);
-    __ delayed()->mov(G0, offset);
+    {
+      // UnsafeCopyMemory page error: continue at UnsafeCopyMemory common_error_exit
+      UnsafeCopyMemoryMark ucmm(this, !aligned, false);
 
-    if (aligned) {
-      // 'aligned' == true when it is known statically during compilation
-      // of this arraycopy call site that both 'from' and 'to' addresses
-      // are HeapWordSize aligned (see LibraryCallKit::basictype2arraycopy()).
-      //
-      // Aligned arrays have 4 bytes alignment in 32-bits VM
-      // and 8 bytes - in 64-bits VM. So we do it only for 32-bits VM
-      //
-    } else {
-      // copy bytes to align 'to' on 8 byte boundary
-      __ andcc(to, 7, G1); // misaligned bytes
-      __ br(Assembler::zero, false, Assembler::pt, L_skip_alignment);
-      __ delayed()->neg(G1);
-      __ inc(G1, 8);       // bytes need to copy to next 8-bytes alignment
-      __ sub(count, G1, count);
-    __ BIND(L_align);
-      __ ldub(from, 0, O3);
-      __ deccc(G1);
-      __ inc(from);
-      __ stb(O3, to, 0);
-      __ br(Assembler::notZero, false, Assembler::pt, L_align);
-      __ delayed()->inc(to);
-    __ BIND(L_skip_alignment);
-    }
-    if (!aligned) {
-      // Copy with shift 16 bytes per iteration if arrays do not have
-      // the same alignment mod 8, otherwise fall through to the next
-      // code for aligned copy.
-      // The compare above (count >= 23) guarantes 'count' >= 16 bytes.
-      // Also jump over aligned copy after the copy with shift completed.
+      // for short arrays, just do single element copy
+      __ cmp(count, 23); // 16 + 7
+      __ brx(Assembler::less, false, Assembler::pn, L_copy_byte);
+      __ delayed()->mov(G0, offset);
 
-      copy_16_bytes_forward_with_shift(from, to, count, 0, L_copy_byte);
-    }
+      if (aligned) {
+        // 'aligned' == true when it is known statically during compilation
+        // of this arraycopy call site that both 'from' and 'to' addresses
+        // are HeapWordSize aligned (see LibraryCallKit::basictype2arraycopy()).
+        //
+        // Aligned arrays have 4 bytes alignment in 32-bits VM
+        // and 8 bytes - in 64-bits VM. So we do it only for 32-bits VM
+        //
+      } else {
+        // copy bytes to align 'to' on 8 byte boundary
+        __ andcc(to, 7, G1); // misaligned bytes
+        __ br(Assembler::zero, false, Assembler::pt, L_skip_alignment);
+        __ delayed()->neg(G1);
+        __ inc(G1, 8);       // bytes need to copy to next 8-bytes alignment
+        __ sub(count, G1, count);
+      __ BIND(L_align);
+        __ ldub(from, 0, O3);
+        __ deccc(G1);
+        __ inc(from);
+        __ stb(O3, to, 0);
+        __ br(Assembler::notZero, false, Assembler::pt, L_align);
+        __ delayed()->inc(to);
+      __ BIND(L_skip_alignment);
+      }
+      if (!aligned) {
+        // Copy with shift 16 bytes per iteration if arrays do not have
+        // the same alignment mod 8, otherwise fall through to the next
+        // code for aligned copy.
+        // The compare above (count >= 23) guarantes 'count' >= 16 bytes.
+        // Also jump over aligned copy after the copy with shift completed.
 
-    // Both array are 8 bytes aligned, copy 16 bytes at a time
+        copy_16_bytes_forward_with_shift(from, to, count, 0, L_copy_byte);
+      }
+
+      // Both array are 8 bytes aligned, copy 16 bytes at a time
       __ and3(count, 7, G4); // Save count
       __ srl(count, 3, count);
-     generate_disjoint_long_copy_core(aligned);
+      generate_disjoint_long_copy_core(aligned);
       __ mov(G4, count);     // Restore count
 
-    // copy tailing bytes
-    __ BIND(L_copy_byte);
-      __ cmp_and_br_short(count, 0, Assembler::equal, Assembler::pt, L_exit);
-      __ align(OptoLoopAlignment);
-    __ BIND(L_copy_byte_loop);
-      __ ldub(from, offset, O3);
-      __ deccc(count);
-      __ stb(O3, to, offset);
-      __ brx(Assembler::notZero, false, Assembler::pt, L_copy_byte_loop);
-      __ delayed()->inc(offset);
+      // copy tailing bytes
+      __ BIND(L_copy_byte);
+        __ cmp_and_br_short(count, 0, Assembler::equal, Assembler::pt, L_exit);
+        __ align(OptoLoopAlignment);
+      __ BIND(L_copy_byte_loop);
+        __ ldub(from, offset, O3);
+        __ deccc(count);
+        __ stb(O3, to, offset);
+        __ brx(Assembler::notZero, false, Assembler::pt, L_copy_byte_loop);
+        __ delayed()->inc(offset);
+    }
 
     __ BIND(L_exit);
       // O3, O4 are used as temp registers
@@ -1207,70 +1223,75 @@ class StubGenerator: public StubCodeGenerator {
 
     array_overlap_test(nooverlap_target, 0);
 
-    __ add(to, count, end_to);       // offset after last copied element
-
-    // for short arrays, just do single element copy
-    __ cmp(count, 23); // 16 + 7
-    __ brx(Assembler::less, false, Assembler::pn, L_copy_byte);
-    __ delayed()->add(from, count, end_from);
-
     {
-      // Align end of arrays since they could be not aligned even
-      // when arrays itself are aligned.
+      // UnsafeCopyMemory page error: continue at UnsafeCopyMemory common_error_exit
+      UnsafeCopyMemoryMark ucmm(this, !aligned, false);
 
-      // copy bytes to align 'end_to' on 8 byte boundary
-      __ andcc(end_to, 7, G1); // misaligned bytes
-      __ br(Assembler::zero, false, Assembler::pt, L_skip_alignment);
-      __ delayed()->nop();
-      __ sub(count, G1, count);
-    __ BIND(L_align);
-      __ dec(end_from);
-      __ dec(end_to);
-      __ ldub(end_from, 0, O3);
-      __ deccc(G1);
-      __ brx(Assembler::notZero, false, Assembler::pt, L_align);
-      __ delayed()->stb(O3, end_to, 0);
-    __ BIND(L_skip_alignment);
+      __ add(to, count, end_to);       // offset after last copied element
+
+      // for short arrays, just do single element copy
+      __ cmp(count, 23); // 16 + 7
+      __ brx(Assembler::less, false, Assembler::pn, L_copy_byte);
+      __ delayed()->add(from, count, end_from);
+
+      {
+        // Align end of arrays since they could be not aligned even
+        // when arrays itself are aligned.
+
+        // copy bytes to align 'end_to' on 8 byte boundary
+        __ andcc(end_to, 7, G1); // misaligned bytes
+        __ br(Assembler::zero, false, Assembler::pt, L_skip_alignment);
+        __ delayed()->nop();
+        __ sub(count, G1, count);
+      __ BIND(L_align);
+        __ dec(end_from);
+        __ dec(end_to);
+        __ ldub(end_from, 0, O3);
+        __ deccc(G1);
+        __ brx(Assembler::notZero, false, Assembler::pt, L_align);
+        __ delayed()->stb(O3, end_to, 0);
+      __ BIND(L_skip_alignment);
+      }
+      if (aligned) {
+        // Both arrays are aligned to 8-bytes in 64-bits VM.
+        // The 'count' is decremented in copy_16_bytes_backward_with_shift()
+        // in unaligned case.
+        __ dec(count, 16);
+      } else {
+        // Copy with shift 16 bytes per iteration if arrays do not have
+        // the same alignment mod 8, otherwise jump to the next
+        // code for aligned copy (and substracting 16 from 'count' before jump).
+        // The compare above (count >= 11) guarantes 'count' >= 16 bytes.
+        // Also jump over aligned copy after the copy with shift completed.
+
+       copy_16_bytes_backward_with_shift(end_from, end_to, count, 16,
+                                          L_aligned_copy, L_copy_byte);
+      }
+      // copy 4 elements (16 bytes) at a time
+        __ align(OptoLoopAlignment);
+      __ BIND(L_aligned_copy);
+        __ dec(end_from, 16);
+        __ ldx(end_from, 8, O3);
+        __ ldx(end_from, 0, O4);
+        __ dec(end_to, 16);
+        __ deccc(count, 16);
+        __ stx(O3, end_to, 8);
+        __ brx(Assembler::greaterEqual, false, Assembler::pt, L_aligned_copy);
+        __ delayed()->stx(O4, end_to, 0);
+        __ inc(count, 16);
+
+      // copy 1 element (2 bytes) at a time
+      __ BIND(L_copy_byte);
+        __ cmp_and_br_short(count, 0, Assembler::equal, Assembler::pt, L_exit);
+        __ align(OptoLoopAlignment);
+      __ BIND(L_copy_byte_loop);
+        __ dec(end_from);
+        __ dec(end_to);
+        __ ldub(end_from, 0, O4);
+        __ deccc(count);
+        __ brx(Assembler::greater, false, Assembler::pt, L_copy_byte_loop);
+        __ delayed()->stb(O4, end_to, 0);
     }
-    if (aligned) {
-      // Both arrays are aligned to 8-bytes in 64-bits VM.
-      // The 'count' is decremented in copy_16_bytes_backward_with_shift()
-      // in unaligned case.
-      __ dec(count, 16);
-    } else {
-      // Copy with shift 16 bytes per iteration if arrays do not have
-      // the same alignment mod 8, otherwise jump to the next
-      // code for aligned copy (and substracting 16 from 'count' before jump).
-      // The compare above (count >= 11) guarantes 'count' >= 16 bytes.
-      // Also jump over aligned copy after the copy with shift completed.
-
-      copy_16_bytes_backward_with_shift(end_from, end_to, count, 16,
-                                        L_aligned_copy, L_copy_byte);
-    }
-    // copy 4 elements (16 bytes) at a time
-      __ align(OptoLoopAlignment);
-    __ BIND(L_aligned_copy);
-      __ dec(end_from, 16);
-      __ ldx(end_from, 8, O3);
-      __ ldx(end_from, 0, O4);
-      __ dec(end_to, 16);
-      __ deccc(count, 16);
-      __ stx(O3, end_to, 8);
-      __ brx(Assembler::greaterEqual, false, Assembler::pt, L_aligned_copy);
-      __ delayed()->stx(O4, end_to, 0);
-      __ inc(count, 16);
-
-    // copy 1 element (2 bytes) at a time
-    __ BIND(L_copy_byte);
-      __ cmp_and_br_short(count, 0, Assembler::equal, Assembler::pt, L_exit);
-      __ align(OptoLoopAlignment);
-    __ BIND(L_copy_byte_loop);
-      __ dec(end_from);
-      __ dec(end_to);
-      __ ldub(end_from, 0, O4);
-      __ deccc(count);
-      __ brx(Assembler::greater, false, Assembler::pt, L_copy_byte_loop);
-      __ delayed()->stb(O4, end_to, 0);
 
     __ BIND(L_exit);
     // O3, O4 are used as temp registers
@@ -1311,68 +1332,72 @@ class StubGenerator: public StubCodeGenerator {
       BLOCK_COMMENT("Entry:");
     }
 
-    // for short arrays, just do single element copy
-    __ cmp(count, 11); // 8 + 3  (22 bytes)
-    __ brx(Assembler::less, false, Assembler::pn, L_copy_2_bytes);
-    __ delayed()->mov(G0, offset);
+    {
+      // UnsafeCopyMemory page error: continue at UnsafeCopyMemory common_error_exit
+      UnsafeCopyMemoryMark ucmm(this, !aligned, false);
+      // for short arrays, just do single element copy
+      __ cmp(count, 11); // 8 + 3  (22 bytes)
+      __ brx(Assembler::less, false, Assembler::pn, L_copy_2_bytes);
+      __ delayed()->mov(G0, offset);
 
-    if (aligned) {
-      // 'aligned' == true when it is known statically during compilation
-      // of this arraycopy call site that both 'from' and 'to' addresses
-      // are HeapWordSize aligned (see LibraryCallKit::basictype2arraycopy()).
-      //
-      // Aligned arrays have 4 bytes alignment in 32-bits VM
-      // and 8 bytes - in 64-bits VM.
-      //
-    } else {
-      // copy 1 element if necessary to align 'to' on an 4 bytes
-      __ andcc(to, 3, G0);
-      __ br(Assembler::zero, false, Assembler::pt, L_skip_alignment);
-      __ delayed()->lduh(from, 0, O3);
-      __ inc(from, 2);
-      __ inc(to, 2);
-      __ dec(count);
-      __ sth(O3, to, -2);
-    __ BIND(L_skip_alignment);
+      if (aligned) {
+        // 'aligned' == true when it is known statically during compilation
+        // of this arraycopy call site that both 'from' and 'to' addresses
+        // are HeapWordSize aligned (see LibraryCallKit::basictype2arraycopy()).
+        //
+        // Aligned arrays have 4 bytes alignment in 32-bits VM
+        // and 8 bytes - in 64-bits VM.
+        //
+      } else {
+        // copy 1 element if necessary to align 'to' on an 4 bytes
+        __ andcc(to, 3, G0);
+        __ br(Assembler::zero, false, Assembler::pt, L_skip_alignment);
+        __ delayed()->lduh(from, 0, O3);
+        __ inc(from, 2);
+        __ inc(to, 2);
+        __ dec(count);
+        __ sth(O3, to, -2);
+      __ BIND(L_skip_alignment);
 
-      // copy 2 elements to align 'to' on an 8 byte boundary
-      __ andcc(to, 7, G0);
-      __ br(Assembler::zero, false, Assembler::pn, L_skip_alignment2);
-      __ delayed()->lduh(from, 0, O3);
-      __ dec(count, 2);
-      __ lduh(from, 2, O4);
-      __ inc(from, 4);
-      __ inc(to, 4);
-      __ sth(O3, to, -4);
-      __ sth(O4, to, -2);
-    __ BIND(L_skip_alignment2);
+        // copy 2 elements to align 'to' on an 8 byte boundary
+        __ andcc(to, 7, G0);
+        __ br(Assembler::zero, false, Assembler::pn, L_skip_alignment2);
+        __ delayed()->lduh(from, 0, O3);
+        __ dec(count, 2);
+        __ lduh(from, 2, O4);
+        __ inc(from, 4);
+        __ inc(to, 4);
+        __ sth(O3, to, -4);
+        __ sth(O4, to, -2);
+      __ BIND(L_skip_alignment2);
+      }
+      if (!aligned) {
+        // Copy with shift 16 bytes per iteration if arrays do not have
+        // the same alignment mod 8, otherwise fall through to the next
+        // code for aligned copy.
+        // The compare above (count >= 11) guarantes 'count' >= 16 bytes.
+        // Also jump over aligned copy after the copy with shift completed.
+
+        copy_16_bytes_forward_with_shift(from, to, count, 1, L_copy_2_bytes);
+      }
+
+      // Both array are 8 bytes aligned, copy 16 bytes at a time
+        __ and3(count, 3, G4); // Save
+        __ srl(count, 2, count);
+       generate_disjoint_long_copy_core(aligned);
+        __ mov(G4, count); // restore
+
+      // copy 1 element at a time
+      __ BIND(L_copy_2_bytes);
+        __ cmp_and_br_short(count, 0, Assembler::equal, Assembler::pt, L_exit);
+        __ align(OptoLoopAlignment);
+      __ BIND(L_copy_2_bytes_loop);
+        __ lduh(from, offset, O3);
+        __ deccc(count);
+        __ sth(O3, to, offset);
+        __ brx(Assembler::notZero, false, Assembler::pt, L_copy_2_bytes_loop);
+        __ delayed()->inc(offset, 2);
     }
-    if (!aligned) {
-      // Copy with shift 16 bytes per iteration if arrays do not have
-      // the same alignment mod 8, otherwise fall through to the next
-      // code for aligned copy.
-      // The compare above (count >= 11) guarantes 'count' >= 16 bytes.
-      // Also jump over aligned copy after the copy with shift completed.
-
-      copy_16_bytes_forward_with_shift(from, to, count, 1, L_copy_2_bytes);
-    }
-
-    // Both array are 8 bytes aligned, copy 16 bytes at a time
-      __ and3(count, 3, G4); // Save
-      __ srl(count, 2, count);
-     generate_disjoint_long_copy_core(aligned);
-      __ mov(G4, count); // restore
-
-    // copy 1 element at a time
-    __ BIND(L_copy_2_bytes);
-      __ cmp_and_br_short(count, 0, Assembler::equal, Assembler::pt, L_exit);
-      __ align(OptoLoopAlignment);
-    __ BIND(L_copy_2_bytes_loop);
-      __ lduh(from, offset, O3);
-      __ deccc(count);
-      __ sth(O3, to, offset);
-      __ brx(Assembler::notZero, false, Assembler::pt, L_copy_2_bytes_loop);
-      __ delayed()->inc(offset, 2);
 
     __ BIND(L_exit);
       // O3, O4 are used as temp registers
@@ -1639,79 +1664,83 @@ class StubGenerator: public StubCodeGenerator {
 
     array_overlap_test(nooverlap_target, 1);
 
-    __ sllx(count, LogBytesPerShort, byte_count);
-    __ add(to, byte_count, end_to);  // offset after last copied element
-
-    // for short arrays, just do single element copy
-    __ cmp(count, 11); // 8 + 3  (22 bytes)
-    __ brx(Assembler::less, false, Assembler::pn, L_copy_2_bytes);
-    __ delayed()->add(from, byte_count, end_from);
-
     {
-      // Align end of arrays since they could be not aligned even
-      // when arrays itself are aligned.
+      // UnsafeCopyMemory page error: continue at UnsafeCopyMemory common_error_exit
+      UnsafeCopyMemoryMark ucmm(this, !aligned, false);
 
-      // copy 1 element if necessary to align 'end_to' on an 4 bytes
-      __ andcc(end_to, 3, G0);
-      __ br(Assembler::zero, false, Assembler::pt, L_skip_alignment);
-      __ delayed()->lduh(end_from, -2, O3);
-      __ dec(end_from, 2);
-      __ dec(end_to, 2);
-      __ dec(count);
-      __ sth(O3, end_to, 0);
-    __ BIND(L_skip_alignment);
+      __ sllx(count, LogBytesPerShort, byte_count);
+      __ add(to, byte_count, end_to);  // offset after last copied element
 
-      // copy 2 elements to align 'end_to' on an 8 byte boundary
-      __ andcc(end_to, 7, G0);
-      __ br(Assembler::zero, false, Assembler::pn, L_skip_alignment2);
-      __ delayed()->lduh(end_from, -2, O3);
-      __ dec(count, 2);
-      __ lduh(end_from, -4, O4);
-      __ dec(end_from, 4);
-      __ dec(end_to, 4);
-      __ sth(O3, end_to, 2);
-      __ sth(O4, end_to, 0);
-    __ BIND(L_skip_alignment2);
-    }
-    if (aligned) {
-      // Both arrays are aligned to 8-bytes in 64-bits VM.
-      // The 'count' is decremented in copy_16_bytes_backward_with_shift()
-      // in unaligned case.
-      __ dec(count, 8);
-    } else {
-      // Copy with shift 16 bytes per iteration if arrays do not have
-      // the same alignment mod 8, otherwise jump to the next
-      // code for aligned copy (and substracting 8 from 'count' before jump).
-      // The compare above (count >= 11) guarantes 'count' >= 16 bytes.
-      // Also jump over aligned copy after the copy with shift completed.
+      // for short arrays, just do single element copy
+      __ cmp(count, 11); // 8 + 3  (22 bytes)
+      __ brx(Assembler::less, false, Assembler::pn, L_copy_2_bytes);
+      __ delayed()->add(from, byte_count, end_from);
 
-      copy_16_bytes_backward_with_shift(end_from, end_to, count, 8,
+      {
+        // Align end of arrays since they could be not aligned even
+        // when arrays itself are aligned.
+
+        // copy 1 element if necessary to align 'end_to' on an 4 bytes
+        __ andcc(end_to, 3, G0);
+        __ br(Assembler::zero, false, Assembler::pt, L_skip_alignment);
+        __ delayed()->lduh(end_from, -2, O3);
+        __ dec(end_from, 2);
+        __ dec(end_to, 2);
+        __ dec(count);
+        __ sth(O3, end_to, 0);
+      __ BIND(L_skip_alignment);
+
+        // copy 2 elements to align 'end_to' on an 8 byte boundary
+        __ andcc(end_to, 7, G0);
+        __ br(Assembler::zero, false, Assembler::pn, L_skip_alignment2);
+        __ delayed()->lduh(end_from, -2, O3);
+        __ dec(count, 2);
+        __ lduh(end_from, -4, O4);
+        __ dec(end_from, 4);
+        __ dec(end_to, 4);
+        __ sth(O3, end_to, 2);
+        __ sth(O4, end_to, 0);
+      __ BIND(L_skip_alignment2);
+      }
+      if (aligned) {
+        // Both arrays are aligned to 8-bytes in 64-bits VM.
+        // The 'count' is decremented in copy_16_bytes_backward_with_shift()
+        // in unaligned case.
+        __ dec(count, 8);
+      } else {
+        // Copy with shift 16 bytes per iteration if arrays do not have
+        // the same alignment mod 8, otherwise jump to the next
+        // code for aligned copy (and substracting 8 from 'count' before jump).
+        // The compare above (count >= 11) guarantes 'count' >= 16 bytes.
+        // Also jump over aligned copy after the copy with shift completed.
+
+        copy_16_bytes_backward_with_shift(end_from, end_to, count, 8,
                                         L_aligned_copy, L_copy_2_bytes);
+      }
+      // copy 4 elements (16 bytes) at a time
+        __ align(OptoLoopAlignment);
+      __ BIND(L_aligned_copy);
+        __ dec(end_from, 16);
+        __ ldx(end_from, 8, O3);
+        __ ldx(end_from, 0, O4);
+        __ dec(end_to, 16);
+        __ deccc(count, 8);
+        __ stx(O3, end_to, 8);
+        __ brx(Assembler::greaterEqual, false, Assembler::pt, L_aligned_copy);
+        __ delayed()->stx(O4, end_to, 0);
+        __ inc(count, 8);
+
+      // copy 1 element (2 bytes) at a time
+      __ BIND(L_copy_2_bytes);
+        __ cmp_and_br_short(count, 0, Assembler::equal, Assembler::pt, L_exit);
+      __ BIND(L_copy_2_bytes_loop);
+        __ dec(end_from, 2);
+        __ dec(end_to, 2);
+        __ lduh(end_from, 0, O4);
+        __ deccc(count);
+        __ brx(Assembler::greater, false, Assembler::pt, L_copy_2_bytes_loop);
+        __ delayed()->sth(O4, end_to, 0);
     }
-    // copy 4 elements (16 bytes) at a time
-      __ align(OptoLoopAlignment);
-    __ BIND(L_aligned_copy);
-      __ dec(end_from, 16);
-      __ ldx(end_from, 8, O3);
-      __ ldx(end_from, 0, O4);
-      __ dec(end_to, 16);
-      __ deccc(count, 8);
-      __ stx(O3, end_to, 8);
-      __ brx(Assembler::greaterEqual, false, Assembler::pt, L_aligned_copy);
-      __ delayed()->stx(O4, end_to, 0);
-      __ inc(count, 8);
-
-    // copy 1 element (2 bytes) at a time
-    __ BIND(L_copy_2_bytes);
-      __ cmp_and_br_short(count, 0, Assembler::equal, Assembler::pt, L_exit);
-    __ BIND(L_copy_2_bytes_loop);
-      __ dec(end_from, 2);
-      __ dec(end_to, 2);
-      __ lduh(end_from, 0, O4);
-      __ deccc(count);
-      __ brx(Assembler::greater, false, Assembler::pt, L_copy_2_bytes_loop);
-      __ delayed()->sth(O4, end_to, 0);
-
     __ BIND(L_exit);
     // O3, O4 are used as temp registers
     inc_counter_np(SharedRuntime::_jshort_array_copy_ctr, O3, O4);
@@ -1870,9 +1899,11 @@ class StubGenerator: public StubCodeGenerator {
       // caller can pass a 64-bit byte count here (from Unsafe.copyMemory)
       BLOCK_COMMENT("Entry:");
     }
-
-    generate_disjoint_int_copy_core(aligned);
-
+    {
+      // UnsafeCopyMemory page error: continue at UnsafeCopyMemory common_error_exit
+      UnsafeCopyMemoryMark ucmm(this, !aligned, false);
+      generate_disjoint_int_copy_core(aligned);
+    }
     // O3, O4 are used as temp registers
     inc_counter_np(SharedRuntime::_jint_array_copy_ctr, O3, O4);
     __ retl();
@@ -2005,9 +2036,11 @@ class StubGenerator: public StubCodeGenerator {
     }
 
     array_overlap_test(nooverlap_target, 2);
-
-    generate_conjoint_int_copy_core(aligned);
-
+    {
+      // UnsafeCopyMemory page error: continue at UnsafeCopyMemory common_error_exit
+      UnsafeCopyMemoryMark ucmm(this, !aligned, false);
+      generate_conjoint_int_copy_core(aligned);
+    }
     // O3, O4 are used as temp registers
     inc_counter_np(SharedRuntime::_jint_array_copy_ctr, O3, O4);
     __ retl();
@@ -2156,8 +2189,11 @@ class StubGenerator: public StubCodeGenerator {
       BLOCK_COMMENT("Entry:");
     }
 
-    generate_disjoint_long_copy_core(aligned);
-
+    {
+      // UnsafeCopyMemory page error: continue at UnsafeCopyMemory common_error_exit
+      UnsafeCopyMemoryMark ucmm(this, true, false);
+      generate_disjoint_long_copy_core(aligned);
+    }
     // O3, O4 are used as temp registers
     inc_counter_np(SharedRuntime::_jlong_array_copy_ctr, O3, O4);
     __ retl();
@@ -2232,9 +2268,11 @@ class StubGenerator: public StubCodeGenerator {
     }
 
     array_overlap_test(nooverlap_target, 3);
-
-    generate_conjoint_long_copy_core(aligned);
-
+    {
+      // UnsafeCopyMemory page error: continue at UnsafeCopyMemory common_error_exit
+      UnsafeCopyMemoryMark ucmm(this, true, false);
+      generate_conjoint_long_copy_core(aligned);
+    }
     // O3, O4 are used as temp registers
     inc_counter_np(SharedRuntime::_jlong_array_copy_ctr, O3, O4);
     __ retl();
@@ -2928,6 +2966,9 @@ class StubGenerator: public StubCodeGenerator {
     address entry_oop_arraycopy;
     address entry_jlong_arraycopy;
     address entry_checkcast_arraycopy;
+
+    address ucm_common_error_exit       =  generate_unsafecopy_common_error_exit();
+    UnsafeCopyMemory::set_common_exit_stub_pc(ucm_common_error_exit);
 
     //*** jbyte
     // Always need aligned and unaligned versions
@@ -5821,6 +5862,10 @@ class StubGenerator: public StubCodeGenerator {
 
 }; // end class declaration
 
+#define UCM_TABLE_MAX_ENTRIES 8
 void StubGenerator_generate(CodeBuffer* code, bool all) {
+  if (UnsafeCopyMemory::_table == NULL) {
+    UnsafeCopyMemory::create_table(UCM_TABLE_MAX_ENTRIES);
+  }
   StubGenerator g(code, all);
 }

@@ -789,6 +789,8 @@ address Assembler::locate_operand(address inst, WhichOperand which) {
     case 0x59: // mulpd
     case 0x6E: // movd
     case 0x7E: // movd
+    case 0x6F: // movdq
+    case 0x7F: // movdq
     case 0xAE: // ldmxcsr, stmxcsr, fxrstor, fxsave, clflush
     case 0xFE: // paddd
       debug_only(has_disp32 = true);
@@ -4274,6 +4276,7 @@ void Assembler::pshuflw(XMMRegister dst, Address src, int mode) {
   emit_operand(dst, src);
   emit_int8(mode & 0xFF);
 }
+
 void Assembler::evshufi64x2(XMMRegister dst, XMMRegister nds, XMMRegister src, int imm8, int vector_len) {
   assert(VM_Version::supports_evex(), "requires EVEX support");
   assert(vector_len == Assembler::AVX_256bit || vector_len == Assembler::AVX_512bit, "");

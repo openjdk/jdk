@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -928,7 +928,7 @@ class StubGenerator: public StubCodeGenerator {
   // Scratches 'count', R3.
   // R4-R10 are preserved (saved/restored).
   //
-  int generate_forward_aligned_copy_loop(Register from, Register to, Register count, int bytes_per_count) {
+  int generate_forward_aligned_copy_loop(Register from, Register to, Register count, int bytes_per_count, bool unsafe_copy = false) {
     assert (from == R0 && to == R1 && count == R2, "adjust the implementation below");
 
     const int bytes_per_loop = 8*wordSize; // 8 registers are read and written on every loop iteration
@@ -954,107 +954,111 @@ class StubGenerator: public StubCodeGenerator {
 
     Label L_skip_pld;
 
-    // predecrease to exit when there is less than count_per_loop
-    __ sub_32(count, count, count_per_loop);
-
-    if (pld_offset != 0) {
-      pld_offset = (pld_offset < 0) ? -pld_offset : pld_offset;
-
-      prefetch(from, to, 0);
-
-      if (prefetch_before) {
-        // If prefetch is done ahead, final PLDs that overflow the
-        // copied area can be easily avoided. 'count' is predecreased
-        // by the prefetch distance to optimize the inner loop and the
-        // outer loop skips the PLD.
-        __ subs_32(count, count, (bytes_per_loop+pld_offset)/bytes_per_count);
-
-        // skip prefetch for small copies
-        __ b(L_skip_pld, lt);
-      }
-
-      int offset = ArmCopyCacheLineSize;
-      while (offset <= pld_offset) {
-        prefetch(from, to, offset);
-        offset += ArmCopyCacheLineSize;
-      };
-    }
-
     {
-      // 32-bit ARM note: we have tried implementing loop unrolling to skip one
-      // PLD with 64 bytes cache line but the gain was not significant.
+      // UnsafeCopyMemory page error: continue after ucm
+      UnsafeCopyMemoryMark ucmm(this, unsafe_copy, true);
+      // predecrease to exit when there is less than count_per_loop
+      __ sub_32(count, count, count_per_loop);
 
-      Label L_copy_loop;
-      __ align(OptoLoopAlignment);
-      __ BIND(L_copy_loop);
+      if (pld_offset != 0) {
+        pld_offset = (pld_offset < 0) ? -pld_offset : pld_offset;
 
-      if (prefetch_before) {
-        prefetch(from, to, bytes_per_loop + pld_offset);
-        __ BIND(L_skip_pld);
+        prefetch(from, to, 0);
+
+        if (prefetch_before) {
+          // If prefetch is done ahead, final PLDs that overflow the
+          // copied area can be easily avoided. 'count' is predecreased
+          // by the prefetch distance to optimize the inner loop and the
+          // outer loop skips the PLD.
+          __ subs_32(count, count, (bytes_per_loop+pld_offset)/bytes_per_count);
+
+          // skip prefetch for small copies
+          __ b(L_skip_pld, lt);
+        }
+
+        int offset = ArmCopyCacheLineSize;
+        while (offset <= pld_offset) {
+          prefetch(from, to, offset);
+          offset += ArmCopyCacheLineSize;
+        };
       }
 
-      if (split_read) {
-        // Split the register set in two sets so that there is less
-        // latency between LDM and STM (R3-R6 available while R7-R10
-        // still loading) and less register locking issue when iterating
-        // on the first LDM.
-        __ ldmia(from, RegisterSet(R3, R6), writeback);
-        __ ldmia(from, RegisterSet(R7, R10), writeback);
-      } else {
-        __ ldmia(from, RegisterSet(R3, R10), writeback);
+      {
+        // 32-bit ARM note: we have tried implementing loop unrolling to skip one
+        // PLD with 64 bytes cache line but the gain was not significant.
+
+        Label L_copy_loop;
+        __ align(OptoLoopAlignment);
+        __ BIND(L_copy_loop);
+
+        if (prefetch_before) {
+          prefetch(from, to, bytes_per_loop + pld_offset);
+          __ BIND(L_skip_pld);
+        }
+
+        if (split_read) {
+          // Split the register set in two sets so that there is less
+          // latency between LDM and STM (R3-R6 available while R7-R10
+          // still loading) and less register locking issue when iterating
+          // on the first LDM.
+          __ ldmia(from, RegisterSet(R3, R6), writeback);
+          __ ldmia(from, RegisterSet(R7, R10), writeback);
+        } else {
+          __ ldmia(from, RegisterSet(R3, R10), writeback);
+        }
+
+        __ subs_32(count, count, count_per_loop);
+
+        if (prefetch_after) {
+          prefetch(from, to, pld_offset, bytes_per_loop);
+        }
+
+        if (split_write) {
+          __ stmia(to, RegisterSet(R3, R6), writeback);
+          __ stmia(to, RegisterSet(R7, R10), writeback);
+        } else {
+          __ stmia(to, RegisterSet(R3, R10), writeback);
+        }
+
+        __ b(L_copy_loop, ge);
+
+        if (prefetch_before) {
+          // the inner loop may end earlier, allowing to skip PLD for the last iterations
+          __ cmn_32(count, (bytes_per_loop + pld_offset)/bytes_per_count);
+          __ b(L_skip_pld, ge);
+        }
+      }
+      BLOCK_COMMENT("Remaining bytes:");
+      // still 0..bytes_per_loop-1 aligned bytes to copy, count already decreased by (at least) bytes_per_loop bytes
+
+      // __ add(count, count, ...); // addition useless for the bit tests
+      assert (pld_offset % bytes_per_loop == 0, "decreasing count by pld_offset before loop must not change tested bits");
+
+      __ tst(count, 16 / bytes_per_count);
+      __ ldmia(from, RegisterSet(R3, R6), writeback, ne); // copy 16 bytes
+      __ stmia(to, RegisterSet(R3, R6), writeback, ne);
+
+      __ tst(count, 8 / bytes_per_count);
+      __ ldmia(from, RegisterSet(R3, R4), writeback, ne); // copy 8 bytes
+      __ stmia(to, RegisterSet(R3, R4), writeback, ne);
+
+      if (bytes_per_count <= 4) {
+        __ tst(count, 4 / bytes_per_count);
+        __ ldr(R3, Address(from, 4, post_indexed), ne); // copy 4 bytes
+        __ str(R3, Address(to, 4, post_indexed), ne);
       }
 
-      __ subs_32(count, count, count_per_loop);
-
-      if (prefetch_after) {
-        prefetch(from, to, pld_offset, bytes_per_loop);
+      if (bytes_per_count <= 2) {
+        __ tst(count, 2 / bytes_per_count);
+        __ ldrh(R3, Address(from, 2, post_indexed), ne); // copy 2 bytes
+        __ strh(R3, Address(to, 2, post_indexed), ne);
       }
 
-      if (split_write) {
-        __ stmia(to, RegisterSet(R3, R6), writeback);
-        __ stmia(to, RegisterSet(R7, R10), writeback);
-      } else {
-        __ stmia(to, RegisterSet(R3, R10), writeback);
+      if (bytes_per_count == 1) {
+        __ tst(count, 1);
+        __ ldrb(R3, Address(from, 1, post_indexed), ne);
+        __ strb(R3, Address(to, 1, post_indexed), ne);
       }
-
-      __ b(L_copy_loop, ge);
-
-      if (prefetch_before) {
-        // the inner loop may end earlier, allowing to skip PLD for the last iterations
-        __ cmn_32(count, (bytes_per_loop + pld_offset)/bytes_per_count);
-        __ b(L_skip_pld, ge);
-      }
-    }
-    BLOCK_COMMENT("Remaining bytes:");
-    // still 0..bytes_per_loop-1 aligned bytes to copy, count already decreased by (at least) bytes_per_loop bytes
-
-    // __ add(count, count, ...); // addition useless for the bit tests
-    assert (pld_offset % bytes_per_loop == 0, "decreasing count by pld_offset before loop must not change tested bits");
-
-    __ tst(count, 16 / bytes_per_count);
-    __ ldmia(from, RegisterSet(R3, R6), writeback, ne); // copy 16 bytes
-    __ stmia(to, RegisterSet(R3, R6), writeback, ne);
-
-    __ tst(count, 8 / bytes_per_count);
-    __ ldmia(from, RegisterSet(R3, R4), writeback, ne); // copy 8 bytes
-    __ stmia(to, RegisterSet(R3, R4), writeback, ne);
-
-    if (bytes_per_count <= 4) {
-      __ tst(count, 4 / bytes_per_count);
-      __ ldr(R3, Address(from, 4, post_indexed), ne); // copy 4 bytes
-      __ str(R3, Address(to, 4, post_indexed), ne);
-    }
-
-    if (bytes_per_count <= 2) {
-      __ tst(count, 2 / bytes_per_count);
-      __ ldrh(R3, Address(from, 2, post_indexed), ne); // copy 2 bytes
-      __ strh(R3, Address(to, 2, post_indexed), ne);
-    }
-
-    if (bytes_per_count == 1) {
-      __ tst(count, 1);
-      __ ldrb(R3, Address(from, 1, post_indexed), ne);
-      __ strb(R3, Address(to, 1, post_indexed), ne);
     }
 
     __ pop(RegisterSet(R4,R10));
@@ -1083,7 +1087,7 @@ class StubGenerator: public StubCodeGenerator {
   // Scratches 'count', R3.
   // ARM R4-R10 are preserved (saved/restored).
   //
-  int generate_backward_aligned_copy_loop(Register end_from, Register end_to, Register count, int bytes_per_count) {
+  int generate_backward_aligned_copy_loop(Register end_from, Register end_to, Register count, int bytes_per_count, bool unsafe_copy = false) {
     assert (end_from == R0 && end_to == R1 && count == R2, "adjust the implementation below");
 
     const int bytes_per_loop = 8*wordSize; // 8 registers are read and written on every loop iteration
@@ -1099,102 +1103,105 @@ class StubGenerator: public StubCodeGenerator {
 
     __ push(RegisterSet(R4,R10));
 
-    __ sub_32(count, count, count_per_loop);
-
-    const bool prefetch_before = pld_offset < 0;
-    const bool prefetch_after = pld_offset > 0;
-
-    Label L_skip_pld;
-
-    if (pld_offset != 0) {
-      pld_offset = (pld_offset < 0) ? -pld_offset : pld_offset;
-
-      prefetch(end_from, end_to, -wordSize);
-
-      if (prefetch_before) {
-        __ subs_32(count, count, (bytes_per_loop + pld_offset) / bytes_per_count);
-        __ b(L_skip_pld, lt);
-      }
-
-      int offset = ArmCopyCacheLineSize;
-      while (offset <= pld_offset) {
-        prefetch(end_from, end_to, -(wordSize + offset));
-        offset += ArmCopyCacheLineSize;
-      };
-    }
-
     {
-      // 32-bit ARM note: we have tried implementing loop unrolling to skip one
-      // PLD with 64 bytes cache line but the gain was not significant.
+      // UnsafeCopyMemory page error: continue after ucm
+      UnsafeCopyMemoryMark ucmm(this, unsafe_copy, true);
+      __ sub_32(count, count, count_per_loop);
 
-      Label L_copy_loop;
-      __ align(OptoLoopAlignment);
-      __ BIND(L_copy_loop);
+      const bool prefetch_before = pld_offset < 0;
+      const bool prefetch_after = pld_offset > 0;
 
-      if (prefetch_before) {
-        prefetch(end_from, end_to, -(wordSize + bytes_per_loop + pld_offset));
-        __ BIND(L_skip_pld);
+      Label L_skip_pld;
+
+      if (pld_offset != 0) {
+        pld_offset = (pld_offset < 0) ? -pld_offset : pld_offset;
+
+        prefetch(end_from, end_to, -wordSize);
+
+        if (prefetch_before) {
+          __ subs_32(count, count, (bytes_per_loop + pld_offset) / bytes_per_count);
+          __ b(L_skip_pld, lt);
+        }
+
+        int offset = ArmCopyCacheLineSize;
+        while (offset <= pld_offset) {
+          prefetch(end_from, end_to, -(wordSize + offset));
+          offset += ArmCopyCacheLineSize;
+        };
       }
 
-      if (split_read) {
-        __ ldmdb(end_from, RegisterSet(R7, R10), writeback);
-        __ ldmdb(end_from, RegisterSet(R3, R6), writeback);
-      } else {
-        __ ldmdb(end_from, RegisterSet(R3, R10), writeback);
+      {
+        // 32-bit ARM note: we have tried implementing loop unrolling to skip one
+        // PLD with 64 bytes cache line but the gain was not significant.
+
+        Label L_copy_loop;
+        __ align(OptoLoopAlignment);
+        __ BIND(L_copy_loop);
+
+        if (prefetch_before) {
+          prefetch(end_from, end_to, -(wordSize + bytes_per_loop + pld_offset));
+          __ BIND(L_skip_pld);
+        }
+
+        if (split_read) {
+          __ ldmdb(end_from, RegisterSet(R7, R10), writeback);
+          __ ldmdb(end_from, RegisterSet(R3, R6), writeback);
+        } else {
+          __ ldmdb(end_from, RegisterSet(R3, R10), writeback);
+        }
+
+        __ subs_32(count, count, count_per_loop);
+
+        if (prefetch_after) {
+          prefetch(end_from, end_to, -(wordSize + pld_offset), -bytes_per_loop);
+        }
+
+        if (split_write) {
+          __ stmdb(end_to, RegisterSet(R7, R10), writeback);
+          __ stmdb(end_to, RegisterSet(R3, R6), writeback);
+        } else {
+          __ stmdb(end_to, RegisterSet(R3, R10), writeback);
+        }
+
+        __ b(L_copy_loop, ge);
+
+        if (prefetch_before) {
+          __ cmn_32(count, (bytes_per_loop + pld_offset)/bytes_per_count);
+          __ b(L_skip_pld, ge);
+        }
+      }
+      BLOCK_COMMENT("Remaining bytes:");
+      // still 0..bytes_per_loop-1 aligned bytes to copy, count already decreased by (at least) bytes_per_loop bytes
+
+      // __ add(count, count, ...); // addition useless for the bit tests
+      assert (pld_offset % bytes_per_loop == 0, "decreasing count by pld_offset before loop must not change tested bits");
+
+      __ tst(count, 16 / bytes_per_count);
+      __ ldmdb(end_from, RegisterSet(R3, R6), writeback, ne); // copy 16 bytes
+      __ stmdb(end_to, RegisterSet(R3, R6), writeback, ne);
+
+      __ tst(count, 8 / bytes_per_count);
+      __ ldmdb(end_from, RegisterSet(R3, R4), writeback, ne); // copy 8 bytes
+      __ stmdb(end_to, RegisterSet(R3, R4), writeback, ne);
+
+      if (bytes_per_count <= 4) {
+        __ tst(count, 4 / bytes_per_count);
+        __ ldr(R3, Address(end_from, -4, pre_indexed), ne); // copy 4 bytes
+        __ str(R3, Address(end_to, -4, pre_indexed), ne);
       }
 
-      __ subs_32(count, count, count_per_loop);
-
-      if (prefetch_after) {
-        prefetch(end_from, end_to, -(wordSize + pld_offset), -bytes_per_loop);
+      if (bytes_per_count <= 2) {
+        __ tst(count, 2 / bytes_per_count);
+        __ ldrh(R3, Address(end_from, -2, pre_indexed), ne); // copy 2 bytes
+        __ strh(R3, Address(end_to, -2, pre_indexed), ne);
       }
 
-      if (split_write) {
-        __ stmdb(end_to, RegisterSet(R7, R10), writeback);
-        __ stmdb(end_to, RegisterSet(R3, R6), writeback);
-      } else {
-        __ stmdb(end_to, RegisterSet(R3, R10), writeback);
-      }
-
-      __ b(L_copy_loop, ge);
-
-      if (prefetch_before) {
-        __ cmn_32(count, (bytes_per_loop + pld_offset)/bytes_per_count);
-        __ b(L_skip_pld, ge);
+      if (bytes_per_count == 1) {
+        __ tst(count, 1);
+        __ ldrb(R3, Address(end_from, -1, pre_indexed), ne);
+        __ strb(R3, Address(end_to, -1, pre_indexed), ne);
       }
     }
-    BLOCK_COMMENT("Remaining bytes:");
-    // still 0..bytes_per_loop-1 aligned bytes to copy, count already decreased by (at least) bytes_per_loop bytes
-
-    // __ add(count, count, ...); // addition useless for the bit tests
-    assert (pld_offset % bytes_per_loop == 0, "decreasing count by pld_offset before loop must not change tested bits");
-
-    __ tst(count, 16 / bytes_per_count);
-    __ ldmdb(end_from, RegisterSet(R3, R6), writeback, ne); // copy 16 bytes
-    __ stmdb(end_to, RegisterSet(R3, R6), writeback, ne);
-
-    __ tst(count, 8 / bytes_per_count);
-    __ ldmdb(end_from, RegisterSet(R3, R4), writeback, ne); // copy 8 bytes
-    __ stmdb(end_to, RegisterSet(R3, R4), writeback, ne);
-
-    if (bytes_per_count <= 4) {
-      __ tst(count, 4 / bytes_per_count);
-      __ ldr(R3, Address(end_from, -4, pre_indexed), ne); // copy 4 bytes
-      __ str(R3, Address(end_to, -4, pre_indexed), ne);
-    }
-
-    if (bytes_per_count <= 2) {
-      __ tst(count, 2 / bytes_per_count);
-      __ ldrh(R3, Address(end_from, -2, pre_indexed), ne); // copy 2 bytes
-      __ strh(R3, Address(end_to, -2, pre_indexed), ne);
-    }
-
-    if (bytes_per_count == 1) {
-      __ tst(count, 1);
-      __ ldrb(R3, Address(end_from, -1, pre_indexed), ne);
-      __ strb(R3, Address(end_to, -1, pre_indexed), ne);
-    }
-
     __ pop(RegisterSet(R4,R10));
 
     return count_per_loop;
@@ -1749,17 +1756,21 @@ class StubGenerator: public StubCodeGenerator {
   //
   // Notes:
   //     shifts 'from' and 'to'
-  void copy_small_array(Register from, Register to, Register count, Register tmp, Register tmp2, int bytes_per_count, bool forward, Label & entry) {
+  void copy_small_array(Register from, Register to, Register count, Register tmp, Register tmp2, int bytes_per_count, bool forward, Label & entry, bool unsafe_copy = false) {
     assert_different_registers(from, to, count, tmp);
 
-    __ align(OptoLoopAlignment);
-    Label L_small_loop;
-    __ BIND(L_small_loop);
-    store_one(tmp, to, bytes_per_count, forward, al, tmp2);
-    __ BIND(entry); // entry point
-    __ subs(count, count, 1);
-    load_one(tmp, from, bytes_per_count, forward, ge, tmp2);
-    __ b(L_small_loop, ge);
+    {
+      // UnsafeCopyMemory page error: continue after ucm
+      UnsafeCopyMemoryMark ucmm(this, unsafe_copy, true);
+      __ align(OptoLoopAlignment);
+      Label L_small_loop;
+      __ BIND(L_small_loop);
+      store_one(tmp, to, bytes_per_count, forward, al, tmp2);
+      __ BIND(entry); // entry point
+      __ subs(count, count, 1);
+      load_one(tmp, from, bytes_per_count, forward, ge, tmp2);
+      __ b(L_small_loop, ge);
+    }
   }
 
   // Aligns 'to' by reading one word from 'from' and writting its part to 'to'.
@@ -1876,7 +1887,7 @@ class StubGenerator: public StubCodeGenerator {
   //
   // Scratches 'from', 'count', R3 and R12.
   // R4-R10 saved for use.
-  int align_dst_and_generate_shifted_copy_loop(Register from, Register to, Register count, int bytes_per_count, bool forward) {
+  int align_dst_and_generate_shifted_copy_loop(Register from, Register to, Register count, int bytes_per_count, bool forward, bool unsafe_copy = false) {
 
     const Register Rval = forward ? R12 : R3; // as generate_{forward,backward}_shifted_copy_loop expect
 
@@ -1886,60 +1897,64 @@ class StubGenerator: public StubCodeGenerator {
     // then the remainder of 'to' divided by wordSize is one of elements of {seq}.
 
     __ push(RegisterSet(R4,R10));
-    load_one(Rval, from, wordSize, forward);
 
-    switch (bytes_per_count) {
-      case 2:
-        min_copy = align_dst_and_generate_shifted_copy_loop(from, to, count, Rval, 2, bytes_per_count, forward);
-        break;
-      case 1:
-      {
-        Label L1, L2, L3;
-        int min_copy1, min_copy2, min_copy3;
+    {
+      // UnsafeCopyMemory page error: continue after ucm
+      UnsafeCopyMemoryMark ucmm(this, unsafe_copy, true);
+      load_one(Rval, from, wordSize, forward);
 
-        Label L_loop_finished;
+      switch (bytes_per_count) {
+        case 2:
+          min_copy = align_dst_and_generate_shifted_copy_loop(from, to, count, Rval, 2, bytes_per_count, forward);
+          break;
+        case 1:
+        {
+          Label L1, L2, L3;
+          int min_copy1, min_copy2, min_copy3;
 
-        if (forward) {
-            __ tbz(to, 0, L2);
-            __ tbz(to, 1, L1);
+          Label L_loop_finished;
 
-            __ BIND(L3);
-            min_copy3 = align_dst_and_generate_shifted_copy_loop(from, to, count, Rval, 3, bytes_per_count, forward);
-            __ b(L_loop_finished);
+          if (forward) {
+              __ tbz(to, 0, L2);
+              __ tbz(to, 1, L1);
 
-            __ BIND(L1);
-            min_copy1 = align_dst_and_generate_shifted_copy_loop(from, to, count, Rval, 1, bytes_per_count, forward);
-            __ b(L_loop_finished);
+              __ BIND(L3);
+              min_copy3 = align_dst_and_generate_shifted_copy_loop(from, to, count, Rval, 3, bytes_per_count, forward);
+              __ b(L_loop_finished);
 
-            __ BIND(L2);
-            min_copy2 = align_dst_and_generate_shifted_copy_loop(from, to, count, Rval, 2, bytes_per_count, forward);
-        } else {
-            __ tbz(to, 0, L2);
-            __ tbnz(to, 1, L3);
+              __ BIND(L1);
+              min_copy1 = align_dst_and_generate_shifted_copy_loop(from, to, count, Rval, 1, bytes_per_count, forward);
+              __ b(L_loop_finished);
 
-            __ BIND(L1);
-            min_copy1 = align_dst_and_generate_shifted_copy_loop(from, to, count, Rval, 1, bytes_per_count, forward);
-            __ b(L_loop_finished);
+              __ BIND(L2);
+              min_copy2 = align_dst_and_generate_shifted_copy_loop(from, to, count, Rval, 2, bytes_per_count, forward);
+          } else {
+              __ tbz(to, 0, L2);
+              __ tbnz(to, 1, L3);
 
-             __ BIND(L3);
-            min_copy3 = align_dst_and_generate_shifted_copy_loop(from, to, count, Rval, 3, bytes_per_count, forward);
-            __ b(L_loop_finished);
+              __ BIND(L1);
+              min_copy1 = align_dst_and_generate_shifted_copy_loop(from, to, count, Rval, 1, bytes_per_count, forward);
+              __ b(L_loop_finished);
 
-           __ BIND(L2);
-            min_copy2 = align_dst_and_generate_shifted_copy_loop(from, to, count, Rval, 2, bytes_per_count, forward);
+               __ BIND(L3);
+              min_copy3 = align_dst_and_generate_shifted_copy_loop(from, to, count, Rval, 3, bytes_per_count, forward);
+              __ b(L_loop_finished);
+
+             __ BIND(L2);
+              min_copy2 = align_dst_and_generate_shifted_copy_loop(from, to, count, Rval, 2, bytes_per_count, forward);
+          }
+
+          min_copy = MAX2(MAX2(min_copy1, min_copy2), min_copy3);
+
+          __ BIND(L_loop_finished);
+
+          break;
         }
-
-        min_copy = MAX2(MAX2(min_copy1, min_copy2), min_copy3);
-
-        __ BIND(L_loop_finished);
-
-        break;
+        default:
+          ShouldNotReachHere();
+          break;
       }
-      default:
-        ShouldNotReachHere();
-        break;
     }
-
     __ pop(RegisterSet(R4,R10));
 
     return min_copy;
@@ -1962,6 +1977,13 @@ class StubGenerator: public StubCodeGenerator {
     }
   }
 #endif // !PRODUCT
+
+  address generate_unsafecopy_common_error_exit() {
+    address start_pc = __ pc();
+      __ mov(R0, 0);
+      __ ret();
+    return start_pc;
+  }
 
   //
   //  Generate stub for primitive array copy.  If "aligned" is true, the
@@ -2033,8 +2055,13 @@ class StubGenerator: public StubCodeGenerator {
         from_is_aligned = true;
     }
 
-    int count_required_to_align = from_is_aligned ? 0 : align_src(from, to, count, tmp1, bytes_per_count, forward);
-    assert (small_copy_limit >= count_required_to_align, "alignment could exhaust count");
+    int count_required_to_align = 0;
+    {
+      // UnsafeCopyMemoryMark page error: continue at UnsafeCopyMemory common_error_exit
+      UnsafeCopyMemoryMark ucmm(this, !aligned, false);
+      count_required_to_align = from_is_aligned ? 0 : align_src(from, to, count, tmp1, bytes_per_count, forward);
+      assert (small_copy_limit >= count_required_to_align, "alignment could exhaust count");
+    }
 
     // now 'from' is aligned
 
@@ -2064,9 +2091,9 @@ class StubGenerator: public StubCodeGenerator {
 
     int min_copy;
     if (forward) {
-      min_copy = generate_forward_aligned_copy_loop (from, to, count, bytes_per_count);
+      min_copy = generate_forward_aligned_copy_loop(from, to, count, bytes_per_count, !aligned /*add UnsafeCopyMemory entry*/);
     } else {
-      min_copy = generate_backward_aligned_copy_loop(from, to, count, bytes_per_count);
+      min_copy = generate_backward_aligned_copy_loop(from, to, count, bytes_per_count, !aligned /*add UnsafeCopyMemory entry*/);
     }
     assert(small_copy_limit >= count_required_to_align + min_copy, "first loop might exhaust count");
 
@@ -2077,7 +2104,7 @@ class StubGenerator: public StubCodeGenerator {
     __ ret();
 
     {
-      copy_small_array(from, to, count, tmp1, tmp2, bytes_per_count, forward, L_small_array /* entry */);
+      copy_small_array(from, to, count, tmp1, tmp2, bytes_per_count, forward, L_small_array /* entry */, !aligned /*add UnsafeCopyMemory entry*/);
 
       if (status) {
         __ mov(R0, 0); // OK
@@ -2088,7 +2115,7 @@ class StubGenerator: public StubCodeGenerator {
 
     if (! to_is_aligned) {
       __ BIND(L_unaligned_dst);
-      int min_copy_shifted = align_dst_and_generate_shifted_copy_loop(from, to, count, bytes_per_count, forward);
+      int min_copy_shifted = align_dst_and_generate_shifted_copy_loop(from, to, count, bytes_per_count, forward, !aligned /*add UnsafeCopyMemory entry*/);
       assert (small_copy_limit >= count_required_to_align + min_copy_shifted, "first loop might exhaust count");
 
       if (status) {
@@ -2873,6 +2900,9 @@ class StubGenerator: public StubCodeGenerator {
     status = true; // generate a status compatible with C1 calls
 #endif
 
+    address ucm_common_error_exit       =  generate_unsafecopy_common_error_exit();
+    UnsafeCopyMemory::set_common_exit_stub_pc(ucm_common_error_exit);
+
     // these need always status in case they are called from generic_arraycopy
     StubRoutines::_jbyte_disjoint_arraycopy  = generate_primitive_copy(false, "jbyte_disjoint_arraycopy",  true, 1, true);
     StubRoutines::_jshort_disjoint_arraycopy = generate_primitive_copy(false, "jshort_disjoint_arraycopy", true, 2, true);
@@ -3055,6 +3085,10 @@ class StubGenerator: public StubCodeGenerator {
   }
 }; // end class declaration
 
+#define UCM_TABLE_MAX_ENTRIES 32
 void StubGenerator_generate(CodeBuffer* code, bool all) {
+  if (UnsafeCopyMemory::_table == NULL) {
+    UnsafeCopyMemory::create_table(UCM_TABLE_MAX_ENTRIES);
+  }
   StubGenerator g(code, all);
 }

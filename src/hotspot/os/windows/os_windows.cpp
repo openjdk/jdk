@@ -2581,10 +2581,18 @@ LONG WINAPI topLevelExceptionFilter(struct _EXCEPTION_POINTERS* exceptionInfo) {
         CodeBlob* cb = CodeCache::find_blob_unsafe(pc);
         nm = (cb != NULL) ? cb->as_compiled_method_or_null() : NULL;
       }
-      if ((thread->thread_state() == _thread_in_vm &&
+
+      bool is_unsafe_arraycopy = (thread->thread_state() == _thread_in_native || in_java) && UnsafeCopyMemory::contains_pc(pc);
+      if (((thread->thread_state() == _thread_in_vm ||
+           thread->thread_state() == _thread_in_native ||
+           is_unsafe_arraycopy) &&
           thread->doing_unsafe_access()) ||
           (nm != NULL && nm->has_unsafe_access())) {
-        return Handle_Exception(exceptionInfo, SharedRuntime::handle_unsafe_access(thread, (address)Assembler::locate_next_instruction(pc)));
+        address next_pc =  Assembler::locate_next_instruction(pc);
+        if (is_unsafe_arraycopy) {
+          next_pc = UnsafeCopyMemory::page_error_continue_pc(pc);
+        }
+        return Handle_Exception(exceptionInfo, SharedRuntime::handle_unsafe_access(thread, next_pc));
       }
     }
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2019, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2012, 2018 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -441,8 +441,12 @@ JVM_handle_aix_signal(int sig, siginfo_t* info, void* ucVoid, int abort_if_unrec
         // underlying file has been truncated. Do not crash the VM in such a case.
         CodeBlob* cb = CodeCache::find_blob_unsafe(pc);
         CompiledMethod* nm = cb->as_compiled_method_or_null();
-        if (nm != NULL && nm->has_unsafe_access()) {
+        bool is_unsafe_arraycopy = (thread->doing_unsafe_access() && UnsafeCopyMemory::contains_pc(pc));
+        if ((nm != NULL && nm->has_unsafe_access()) || is_unsafe_arraycopy) {
           address next_pc = pc + 4;
+          if (is_unsafe_arraycopy) {
+            next_pc = UnsafeCopyMemory::page_error_continue_pc(pc);
+          }
           next_pc = SharedRuntime::handle_unsafe_access(thread, next_pc);
           os::Aix::ucontext_set_pc(uc, next_pc);
           return 1;
@@ -461,9 +465,13 @@ JVM_handle_aix_signal(int sig, siginfo_t* info, void* ucVoid, int abort_if_unrec
         stub = pc + 4;  // continue with next instruction.
         goto run_stub;
       }
-      else if (thread->thread_state() == _thread_in_vm &&
+      else if ((thread->thread_state() == _thread_in_vm ||
+                thread->thread_state() == _thread_in_native) &&
                sig == SIGBUS && thread->doing_unsafe_access()) {
         address next_pc = pc + 4;
+        if (UnsafeCopyMemory::contains_pc(pc)) {
+          next_pc = UnsafeCopyMemory::page_error_continue_pc(pc);
+        }
         next_pc = SharedRuntime::handle_unsafe_access(thread, next_pc);
         os::Aix::ucontext_set_pc(uc, next_pc);
         return 1;

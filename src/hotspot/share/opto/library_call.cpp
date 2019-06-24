@@ -4240,6 +4240,14 @@ bool LibraryCallKit::inline_unsafe_copyMemory() {
   // Do not let writes of the copy source or destination float below the copy.
   insert_mem_bar(Op_MemBarCPUOrder);
 
+  Node* thread = _gvn.transform(new ThreadLocalNode());
+  Node* doing_unsafe_access_addr = basic_plus_adr(top(), thread, in_bytes(JavaThread::doing_unsafe_access_offset()));
+  BasicType doing_unsafe_access_bt = T_BYTE;
+  assert((sizeof(bool) * CHAR_BIT) == 8, "not implemented");
+
+  // update volatile field
+  store_to_memory(control(), doing_unsafe_access_addr, intcon(1), doing_unsafe_access_bt, Compile::AliasIdxRaw, MemNode::unordered);
+
   // Call it.  Note that the length argument is not scaled.
   make_runtime_call(RC_LEAF|RC_NO_FP,
                     OptoRuntime::fast_arraycopy_Type(),
@@ -4247,6 +4255,8 @@ bool LibraryCallKit::inline_unsafe_copyMemory() {
                     "unsafe_arraycopy",
                     TypeRawPtr::BOTTOM,
                     src, dst, size XTOP);
+
+  store_to_memory(control(), doing_unsafe_access_addr, intcon(0), doing_unsafe_access_bt, Compile::AliasIdxRaw, MemNode::unordered);
 
   // Do not let reads of the copy destination float above the copy.
   insert_mem_bar(Op_MemBarCPUOrder);
