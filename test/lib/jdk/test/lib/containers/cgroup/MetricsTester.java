@@ -560,7 +560,7 @@ public class MetricsTester {
         long memoryMaxUsage = metrics.getMemoryMaxUsage();
         long memoryUsage = metrics.getMemoryUsage();
 
-        long[] ll = new long[64*1024*1024]; // 64M
+        byte[] bb = new byte[64*1024*1024]; // 64M
 
         long newMemoryMaxUsage = metrics.getMemoryMaxUsage();
         long newMemoryUsage = metrics.getMemoryUsage();
