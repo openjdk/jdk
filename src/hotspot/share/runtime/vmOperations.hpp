@@ -49,6 +49,7 @@
   template(ClearICs)                              \
   template(ForceSafepoint)                        \
   template(ForceAsyncSafepoint)                   \
+  template(Deoptimize)                            \
   template(DeoptimizeFrame)                       \
   template(DeoptimizeAll)                         \
   template(ZombieAll)                             \
@@ -316,6 +317,14 @@ class VM_GTestExecuteAtSafepoint: public VM_Operation {
 
  protected:
   VM_GTestExecuteAtSafepoint() {}
+};
+
+class VM_Deoptimize: public VM_Operation {
+ public:
+  VM_Deoptimize() {}
+  VMOp_Type type() const                        { return VMOp_Deoptimize; }
+  void doit();
+  bool allow_nested_vm_operations() const        { return true; }
 };
 
 class VM_MarkActiveNMethods: public VM_Operation {

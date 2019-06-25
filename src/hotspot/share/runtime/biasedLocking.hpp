@@ -175,7 +175,6 @@ public:
 
   // This should be called by JavaThreads to revoke the bias of an object
   static Condition revoke_and_rebias(Handle obj, bool attempt_rebias, TRAPS);
-  static Condition revoke_own_locks_in_handshake(Handle obj, TRAPS);
 
   // These do not allow rebiasing; they are used by deoptimization to
   // ensure that monitors on the stack can be migrated

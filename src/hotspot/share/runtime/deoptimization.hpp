@@ -137,19 +137,12 @@ class Deoptimization : AllStatic {
     Unpack_LIMIT                = 4
   };
 
-  static void deoptimize_all_marked();
-
- private:
   // Checks all compiled methods. Invalid methods are deleted and
   // corresponding activations are deoptimized.
   static int deoptimize_dependents();
-  static void revoke_using_handshake(JavaThread* thread, frame fr, RegisterMap* map);
-  static void revoke_using_safepoint(JavaThread* thread, frame fr, RegisterMap* map);
-  static void deopt_thread(bool in_handshake, JavaThread* thread, frame fr, RegisterMap *map, DeoptReason reason);
 
- public:
   // Deoptimizes a frame lazily. nmethod gets patched deopt happens on return to the frame
-  static void deoptimize(JavaThread* thread, frame fr, RegisterMap *map, bool in_handshake = false);
+  static void deoptimize(JavaThread* thread, frame fr, RegisterMap *reg_map);
   static void deoptimize(JavaThread* thread, frame fr, RegisterMap *reg_map, DeoptReason reason);
 
 #if INCLUDE_JVMCI
@@ -163,9 +156,7 @@ class Deoptimization : AllStatic {
 
   // Helper function to revoke biases of all monitors in frame if UseBiasedLocking
   // is enabled
-  static void revoke_biases_of_monitors(JavaThread* thread, frame fr, RegisterMap* map) {
-    revoke_using_safepoint(thread, fr, map);
-  }
+  static void revoke_biases_of_monitors(JavaThread* thread, frame fr, RegisterMap* map);
 
 #if COMPILER2_OR_JVMCI
 JVMCI_ONLY(public:)

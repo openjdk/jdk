@@ -31,7 +31,6 @@
 #include "memory/universe.hpp"
 #include "oops/objArrayKlass.hpp"
 #include "oops/typeArrayOop.inline.hpp"
-#include "runtime/deoptimization.hpp"
 #include "runtime/jniHandles.inline.hpp"
 #include "runtime/javaCalls.hpp"
 #include "jvmci/jniAccessMark.inline.hpp"
@@ -1490,7 +1489,8 @@ void JVMCIEnv::invalidate_nmethod_mirror(JVMCIObject mirror, JVMCI_TRAPS) {
     // Invalidating the HotSpotNmethod means we want the nmethod
     // to be deoptimized.
     nm->mark_for_deoptimization();
-    Deoptimization::deoptimize_all_marked();
+    VM_Deoptimize op;
+    VMThread::execute(&op);
   }
 
   // A HotSpotNmethod instance can only reference a single nmethod
