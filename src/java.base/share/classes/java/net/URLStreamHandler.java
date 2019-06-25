@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1995, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1995, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -81,7 +81,7 @@ public abstract class URLStreamHandler {
      *
      * @implSpec
      * The default implementation of this method first checks that the given
-     * {code URL} and {code Proxy} are not null, then throws {@code
+     * {@code URL} and {@code Proxy} are not null, then throws {@code
      * UnsupportedOperationException}. Subclasses should override this method
      * with an appropriate implementation.
      *
