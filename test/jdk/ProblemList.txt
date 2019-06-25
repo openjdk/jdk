@@ -875,7 +875,3 @@ jdk/jfr/event/io/EvilInstrument.java                            8221331    gener
 
 ############################################################################
 
-# jdk/internal/docker
-
-jdk/internal/platform/docker/TestDockerMemoryMetrics.java       8224506    generic-all
-jdk/internal/platform/docker/TestSystemMetrics.java             8224502    generic-all

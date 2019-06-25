@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -63,7 +63,7 @@ public class TestDockerMemoryMetrics {
             testOomKillFlag("100m", false);
             testOomKillFlag("100m", true);
 
-            testMemoryFailCount("20m");
+            testMemoryFailCount("64m");
 
             testMemorySoftLimit("500m","200m");
 

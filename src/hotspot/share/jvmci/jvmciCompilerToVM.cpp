@@ -609,12 +609,6 @@ C2V_VMENTRY_NULL(jobject, lookupClass, (JNIEnv* env, jobject, jclass mirror))
   return JVMCIENV->get_jobject(result);
 }
 
-C2V_VMENTRY_NULL(jobject, resolveConstantInPool, (JNIEnv* env, jobject, jobject jvmci_constant_pool, jint index))
-  constantPoolHandle cp = JVMCIENV->asConstantPool(jvmci_constant_pool);
-  oop result = cp->resolve_constant_at(index, CHECK_NULL);
-  return JVMCIENV->get_jobject(JVMCIENV->get_object_constant(result));
-C2V_END
-
 C2V_VMENTRY_NULL(jobject, resolvePossiblyCachedConstantInPool, (JNIEnv* env, jobject, jobject jvmci_constant_pool, jint index))
   constantPoolHandle cp = JVMCIENV->asConstantPool(jvmci_constant_pool);
   oop result = cp->resolve_possibly_cached_constant_at(index, CHECK_NULL);
@@ -2673,7 +2667,6 @@ JNINativeMethod CompilerToVM::methods[] = {
   {CC "lookupAppendixInPool",                         CC "(" HS_CONSTANT_POOL "I)" OBJECTCONSTANT,                                          FN_PTR(lookupAppendixInPool)},
   {CC "lookupMethodInPool",                           CC "(" HS_CONSTANT_POOL "IB)" HS_RESOLVED_METHOD,                                     FN_PTR(lookupMethodInPool)},
   {CC "constantPoolRemapInstructionOperandFromCache", CC "(" HS_CONSTANT_POOL "I)I",                                                        FN_PTR(constantPoolRemapInstructionOperandFromCache)},
-  {CC "resolveConstantInPool",                        CC "(" HS_CONSTANT_POOL "I)" OBJECTCONSTANT,                                          FN_PTR(resolveConstantInPool)},
   {CC "resolvePossiblyCachedConstantInPool",          CC "(" HS_CONSTANT_POOL "I)" OBJECTCONSTANT,                                          FN_PTR(resolvePossiblyCachedConstantInPool)},
   {CC "resolveTypeInPool",                            CC "(" HS_CONSTANT_POOL "I)" HS_RESOLVED_KLASS,                                       FN_PTR(resolveTypeInPool)},
   {CC "resolveFieldInPool",                           CC "(" HS_CONSTANT_POOL "I" HS_RESOLVED_METHOD "B[I)" HS_RESOLVED_KLASS,              FN_PTR(resolveFieldInPool)},

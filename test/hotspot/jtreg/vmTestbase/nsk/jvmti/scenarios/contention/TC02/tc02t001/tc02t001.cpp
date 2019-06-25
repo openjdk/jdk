@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2004, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2004, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -38,7 +38,7 @@ static jlong timeout = 0;
 static jthread thread = NULL;
 static jobject object_M = NULL;
 /* line numbers of "synchronized (M)" clauses in java part of the test */
-static jint lines[] = { 127, 132, 137 };
+static jint lines[] = { 48, 53, 58 };
 static volatile int enterEventsCount = 0;
 static volatile int enteredEventsCount = 0;
 
@@ -368,6 +368,11 @@ jint Agent_Initialize(JavaVM *jvm, char *options, void *reserved) {
         return JNI_ERR;
 
     return JNI_OK;
+}
+
+JNIEXPORT jint JNICALL
+Java_nsk_jvmti_scenarios_contention_TC02_tc02t001_enterEventsCount(JNIEnv* jni, jclass klass) {
+    return enterEventsCount;
 }
 
 /* ========================================================================== */

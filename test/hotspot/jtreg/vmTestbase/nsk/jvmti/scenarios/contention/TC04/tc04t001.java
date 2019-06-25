@@ -86,23 +86,6 @@ public class tc04t001 extends DebugeeClass {
                 ", expected: " + THREADS_LIMIT*tc04t001Thread.INCREMENT_LIMIT);
             status = Consts.TEST_FAILED;
         }
-
-/* DEBUG -- to check if the threads taking turns in right order
-        boolean race = false;
-        for (int i = 1; i < 2*tc04t001Thread.INCREMENT_LIMIT; i++) {
-             if (tc04t001Thread.passOrder[i] == tc04t001Thread.passOrder[i-1]) {
-                race = true;
-                System.out.println("Race condition in the test:");
-                System.out.println("passOrder[" + (i-1) + "]:"
-                    + tc04t001Thread.passOrder[i-1]);
-                System.out.println("passOrder[" + (i) + "]:"
-                    + tc04t001Thread.passOrder[i]);
-             }
-        }
-        if (race)
-            System.out.println("There was a race condition in the test.");
-*/
-
         return status;
     }
 }
@@ -117,11 +100,6 @@ class tc04t001Thread extends Thread {
     static volatile int value = 0;
 
     static Flicker flicker = new Flicker();
-/* DEBUG -- to check if the threads taking turns in right order
-    static volatile int iter = 0;
-    static volatile int passOrder[] =
-        new int[INCREMENT_LIMIT*tc04t001.THREADS_LIMIT];
-*/
 
     private int id;
     private static volatile int lastEnterEventsCount;
@@ -135,7 +113,6 @@ class tc04t001Thread extends Thread {
     public synchronized void run() {
         for (int i = 0; i < INCREMENT_LIMIT; i++) {
             flicker.waitFor(id);
-            lastEnterEventsCount = enterEventsCount();
             increment(id);
             try {
                 wait(1);
@@ -145,11 +122,9 @@ class tc04t001Thread extends Thread {
     }
 
     static synchronized void increment(int i) {
-/* DEBUG -- to check if the threads taking turns in right order
-        passOrder[iter++] = i;
-*/
         flicker.unlock(i);
         int temp = value;
+        boolean done = false;
 
         // Wait in a loop for a MonitorContendedEnter event.
         // Timeout is: 20ms * DELAY.
@@ -158,17 +133,22 @@ class tc04t001Thread extends Thread {
                 sleep(20);
             } catch (InterruptedException e) {}
 
+            done = (tc04t001.threadsDoneSignal.getCount() == 1);
+            if (done) {
+                break; // This thread is the only remaining thread, no more contention
+            }
             if (enterEventsCount() > lastEnterEventsCount) {
+                System.out.println("Thread-" + i + ": increment event: " + enterEventsCount());
                 break; // Got an expected MonitorContendedEnter event
             }
         }
-        System.out.println("Thread-" + i + ": increment event: " + enterEventsCount());
 
-        if (enterEventsCount() == lastEnterEventsCount) {
+        if (!done && enterEventsCount() == lastEnterEventsCount) {
             String msg = "Timeout in waiting for a MonitorContendedEnter event";
             throw new RuntimeException(msg);
         }
         value = temp + 1;
+        lastEnterEventsCount = enterEventsCount();
     }
 }
 
