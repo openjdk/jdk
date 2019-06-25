@@ -480,7 +480,6 @@ java/awt/Modal/OnTop/OnTopModal3Test.java 8198666 macosx-all
 java/awt/Modal/OnTop/OnTopModal4Test.java 8198666 macosx-all
 java/awt/Modal/OnTop/OnTopModal5Test.java 8198666 macosx-all
 java/awt/Modal/OnTop/OnTopModal6Test.java 8198666 macosx-all
-java/awt/Modal/OnTop/OnTopModal6Test.java 8198666 macosx-all
 java/awt/Modal/OnTop/OnTopModeless1Test.java 8198666 macosx-all
 java/awt/Modal/OnTop/OnTopModeless2Test.java 8198666 macosx-all
 java/awt/Modal/OnTop/OnTopModeless3Test.java 8198666 macosx-all
@@ -507,7 +506,6 @@ java/awt/Focus/WindowUpdateFocusabilityTest/WindowUpdateFocusabilityTest.java 82
 java/awt/datatransfer/ConstructFlavoredObjectTest/ConstructFlavoredObjectTest.java 8202860 linux-all
 java/awt/dnd/DisposeFrameOnDragCrash/DisposeFrameOnDragTest.java 8202790 macosx-all,linux-all
 java/awt/FileDialog/FilenameFilterTest/FilenameFilterTest.java 8202882 linux-all
-java/awt/Frame/FramesGC/FramesGC.java 8079069 macosx-all
 java/awt/dnd/MissingDragExitEventTest/MissingDragExitEventTest.java 8030121 macosx-all,linux-all
 java/awt/Choice/ChoicePopupLocation/ChoicePopupLocation.java 8202931 macosx-all,linux-all
 java/awt/Focus/NonFocusableBlockedOwnerTest/NonFocusableBlockedOwnerTest.java 7124275 macosx-all
@@ -722,7 +720,7 @@ javax/swing/JFileChooser/8041694/bug8041694.java 8196302 windows-all
 javax/swing/AbstractButton/6711682/bug6711682.java 8060765 windows-all,macosx-all
 javax/swing/Action/8133039/bug8133039.java 8196089 windows-all,macosx-all
 javax/swing/JComboBox/6559152/bug6559152.java 8196090 windows-all,macosx-all
-javax/swing/JComboBox/8032878/bug8032878.java 8196092 windows-all,macosx-all
+javax/swing/JComboBox/8032878/bug8032878.java 8196092,8196439 windows-all,macosx-all,linux-all
 javax/swing/JComboBox/8057893/bug8057893.java 8169953 windows-all,macosx-all
 javax/swing/JComboBox/8072767/bug8072767.java 8196093 windows-all,macosx-all
 javax/swing/JComponent/4337267/bug4337267.java 8146451 windows-all
@@ -745,7 +743,6 @@ javax/swing/text/DefaultCaret/HidingSelection/HidingSelectionTest.java 8194048 w
 javax/swing/text/DefaultCaret/HidingSelection/MultiSelectionTest.java 8213562 linux-all
 javax/swing/text/JTextComponent/5074573/bug5074573.java 8196100 windows-all
 javax/swing/JFileChooser/6798062/bug6798062.java 8146446 windows-all
-javax/swing/JComboBox/8032878/bug8032878.java 8196439 linux-all
 javax/swing/JComboBox/8182031/ComboPopupTest.java 8196465 linux-all,macosx-all
 javax/swing/JFileChooser/6738668/bug6738668.java 8194946 generic-all
 javax/swing/JFileChooser/8021253/bug8021253.java 8169954 windows-all,linux-all,macosx-all
