@@ -822,8 +822,10 @@ WB_ENTRY(jint, WB_DeoptimizeFrames(JNIEnv* env, jobject o, jboolean make_not_ent
 WB_END
 
 WB_ENTRY(void, WB_DeoptimizeAll(JNIEnv* env, jobject o))
+  MutexLocker mu(Compile_lock);
   CodeCache::mark_all_nmethods_for_deoptimization();
-  Deoptimization::deoptimize_all_marked();
+  VM_Deoptimize op;
+  VMThread::execute(&op);
 WB_END
 
 WB_ENTRY(jint, WB_DeoptimizeMethod(JNIEnv* env, jobject o, jobject method, jboolean is_osr))
@@ -840,7 +842,8 @@ WB_ENTRY(jint, WB_DeoptimizeMethod(JNIEnv* env, jobject o, jobject method, jbool
   }
   result += CodeCache::mark_for_deoptimization(mh());
   if (result > 0) {
-    Deoptimization::deoptimize_all_marked();
+    VM_Deoptimize op;
+    VMThread::execute(&op);
   }
   return result;
 WB_END
