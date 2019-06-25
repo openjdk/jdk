@@ -25,8 +25,6 @@
 
 package netscape.javascript;
 
-import jdk.internal.netscape.javascript.spi.JSObjectProvider;
-import java.applet.Applet;
 import java.security.AccessController;
 import java.security.PrivilegedAction;
 import java.util.Iterator;
@@ -139,52 +137,4 @@ public abstract class JSObject {
      */
     public abstract void setSlot(int index, Object value) throws JSException;
 
-    /**
-     * Returns a JSObject for the window containing the given applet. This
-     * method only works when the Java code is running in a browser as an
-     * applet. The object returned may be used to access the HTML DOM directly.
-     *
-     * @param applet The applet.
-     * @return JSObject representing the window containing the given applet or
-     * {@code null} if we are not connected to a browser.
-     * @throws JSException when an error is reported from the browser or
-     * JavaScript engine or if applet is {@code null}
-     *
-     * @deprecated The Applet API is deprecated, no replacement. See the
-     * <a href="{@docRoot}/java.desktop/java/applet/package-summary.html">
-     * java.applet package documentation</a> for further information.
-     */
-
-    @Deprecated(since="9", forRemoval=true)
-    @SuppressWarnings("exports")
-    public static JSObject getWindow(Applet applet) throws JSException {
-        return ProviderLoader.callGetWindow(applet);
-    }
-
-    private static class ProviderLoader {
-        private static final JSObjectProvider provider;
-
-        static {
-            provider = AccessController.doPrivileged(
-                new PrivilegedAction<>() {
-                    @Override
-                    public JSObjectProvider run() {
-                        Iterator<JSObjectProvider> providers =
-                            ServiceLoader.loadInstalled(JSObjectProvider.class).iterator();
-                        if (providers.hasNext()) {
-                            return providers.next();
-                        }
-                        return null;
-                    }
-                }
-            );
-        }
-
-        private static JSObject callGetWindow(Applet applet) {
-            if (provider != null) {
-                return provider.getWindow(applet);
-            }
-            return null;
-        }
-    }
 }
