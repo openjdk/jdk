@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,6 +26,7 @@
 package com.sun.tools.javac.util;
 
 import java.util.HashSet;
+import java.util.Objects;
 import java.util.Set;
 import javax.tools.JavaFileObject;
 
@@ -147,7 +148,7 @@ public class MandatoryWarningHandler {
                 deferredDiagnosticArg = currentSource;
             } else if ((deferredDiagnosticKind == DeferredDiagnosticKind.IN_FILE
                         || deferredDiagnosticKind == DeferredDiagnosticKind.ADDITIONAL_IN_FILE)
-                       && !equal(deferredDiagnosticSource, currentSource)) {
+                       && !Objects.equals(deferredDiagnosticSource, currentSource)) {
                 // additional errors in more than one source file
                 deferredDiagnosticKind = DeferredDiagnosticKind.ADDITIONAL_IN_FILES;
                 deferredDiagnosticArg = null;
@@ -159,7 +160,7 @@ public class MandatoryWarningHandler {
                 deferredDiagnosticSource = currentSource;
                 deferredDiagnosticArg = currentSource;
             }  else if (deferredDiagnosticKind == DeferredDiagnosticKind.IN_FILE &&
-                        !equal(deferredDiagnosticSource, currentSource)) {
+                        !Objects.equals(deferredDiagnosticSource, currentSource)) {
                 // warnings in multiple source files
                 deferredDiagnosticKind = DeferredDiagnosticKind.IN_FILES;
                 deferredDiagnosticArg = null;
@@ -180,13 +181,6 @@ public class MandatoryWarningHandler {
             if (!verbose)
                 logMandatoryNote(deferredDiagnosticSource, prefix + ".recompile");
         }
-    }
-
-    /**
-     * Check two objects, each possibly null, are either both null or are equal.
-     */
-    private static boolean equal(Object o1, Object o2) {
-        return ((o1 == null || o2 == null) ? (o1 == o2) : o1.equals(o2));
     }
 
     /**
