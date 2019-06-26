@@ -48,6 +48,14 @@
 
 class ThreadSafepointState;
 
+class SafepointStateTracker {
+  uint64_t _safepoint_id;
+  bool     _at_safepoint;
+public:
+  SafepointStateTracker(uint64_t safepoint_id, bool at_safepoint);
+  bool safepoint_state_changed();
+};
+
 //
 // Implements roll-forward to safepoint (safepoint synchronization)
 //
@@ -77,6 +85,7 @@ class SafepointSynchronize : AllStatic {
   friend class SafepointMechanism;
   friend class ThreadSafepointState;
   friend class HandshakeState;
+  friend class SafepointStateTracker;
 
   // Threads might read this flag directly, without acquiring the Threads_lock:
   static volatile SynchronizeState _state;
@@ -90,6 +99,11 @@ class SafepointSynchronize : AllStatic {
   // The counter is incremented ONLY at the beginning and end of each
   // safepoint.
   static volatile uint64_t _safepoint_counter;
+
+  // A change in this counter or a change in the result of
+  // is_at_safepoint() are used by SafepointStateTracker::
+  // safepoint_state_changed() to determine its answer.
+  static uint64_t _safepoint_id;
 
   // JavaThreads that need to block for the safepoint will stop on the
   // _wait_barrier, where they can quickly be started again.
@@ -114,6 +128,7 @@ class SafepointSynchronize : AllStatic {
   static void disarm_safepoint();
   static void increment_jni_active_count();
   static void decrement_waiting_to_block();
+  static bool thread_not_running(ThreadSafepointState *cur_state);
 
   // Used in safepoint_safe to do a stable load of the thread state.
   static bool try_stable_load_state(JavaThreadState *state,
@@ -126,6 +141,8 @@ class SafepointSynchronize : AllStatic {
   // Called from VMThread during handshakes.
   // If true the VMThread may safely process the handshake operation for the JavaThread.
   static bool handshake_safe(JavaThread *thread);
+
+  static uint64_t safepoint_counter()             { return _safepoint_counter; }
 
 public:
 
@@ -141,8 +158,15 @@ public:
   // Query
   static bool is_at_safepoint()                   { return _state == _synchronized; }
   static bool is_synchronizing()                  { return _state == _synchronizing; }
-  static uint64_t safepoint_counter()             { return _safepoint_counter; }
-  static bool is_same_safepoint(uint64_t counter) { return (SafepointSynchronize::safepoint_counter() - counter) < 2; }
+
+  static uint64_t safepoint_id() {
+    return _safepoint_id;
+  }
+
+  static SafepointStateTracker safepoint_state_tracker() {
+    return SafepointStateTracker(safepoint_id(), is_at_safepoint());
+  }
+
   // Exception handling for page polling
   static void handle_polling_page_exception(JavaThread *thread);
 
