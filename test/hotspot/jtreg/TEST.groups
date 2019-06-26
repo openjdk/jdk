@@ -275,6 +275,7 @@ tier1_runtime = \
  -runtime/ErrorHandling/ErrorHandler.java \
  -runtime/ErrorHandling/TestHeapDumpOnOutOfMemoryError.java \
  -runtime/ErrorHandling/TimeoutInErrorHandlingTest.java \
+ -runtime/InvocationTests \
  -runtime/logging/MonitorMismatchTest.java \
  -runtime/memory/ReserveMemory.java \
  -runtime/memory/RunUnitTestsConcurrently.java \
@@ -384,6 +385,7 @@ hotspot_tier2_runtime = \
   serviceability/ \
  -runtime/CommandLine/OptionsValidation/TestOptionsWithRanges.java \
  -runtime/CompressedOops/UseCompressedOops.java \
+ -runtime/InvocationTests \
  -runtime/Thread/TestThreadDumpMonitorContention.java \
  -:tier1_runtime \
  -:tier1_serviceability \
