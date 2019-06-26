@@ -357,11 +357,11 @@ import jdk.internal.util.ArraysSupport;
  * <a href="#UNIX_LINES">d</a> <a href="#MULTILINE">m</a> <a href="#DOTALL">s</a>
  * <a href="#UNICODE_CASE">u</a> <a href="#COMMENTS">x</a> <a href="#UNICODE_CHARACTER_CLASS">U</a>
  * on - off</td></tr>
- * <tr><th style="vertical-align:top; font-weight:normal" id="non_capture_group_flags"><code>(?idmsux-idmsux:</code><i>X</i>{@code )}&nbsp;&nbsp;</th>
+ * <tr><th style="vertical-align:top; font-weight:normal" id="non_capture_group_flags"><code>(?idmsuxU-idmsuxU:</code><i>X</i>{@code )}&nbsp;&nbsp;</th>
  *     <td headers="matches special non_capture_group_flags"><i>X</i>, as a <a href="#cg">non-capturing group</a> with the
  *         given flags <a href="#CASE_INSENSITIVE">i</a> <a href="#UNIX_LINES">d</a>
  * <a href="#MULTILINE">m</a> <a href="#DOTALL">s</a> <a href="#UNICODE_CASE">u</a >
- * <a href="#COMMENTS">x</a> on - off</td></tr>
+ * <a href="#COMMENTS">x</a> <a href="#UNICODE_CHARACTER_CLASS">U</a> on - off</td></tr>
  * <tr><th style="vertical-align:top; font-weight:normal" id="pos_lookahead">{@code (?=}<i>X</i>{@code )}</th>
  *     <td headers="matches special pos_lookahead"><i>X</i>, via zero-width positive lookahead</td></tr>
  * <tr><th style="vertical-align:top; font-weight:normal" id="neg_lookahead">{@code (?!}<i>X</i>{@code )}</th>
