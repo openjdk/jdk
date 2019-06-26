@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -53,7 +53,22 @@ public class SysDictCrash {
             "-Xshare:dump",
             "-showversion", "-Xlog:cds,cds+hashtables"));
 
-        TestCommon.checkDump(TestCommon.executeAndLog(dumpPb, "dump"));
+        boolean continueTest = true;
+        OutputAnalyzer output = TestCommon.executeAndLog(dumpPb, "dump");
+        try {
+            TestCommon.checkDump(output);
+        } catch (java.lang.RuntimeException re) {
+            if (!output.getStdout().contains("UseCompressedOops and UseCompressedClassPointers have been disabled due to")) {
+                throw re;
+            } else {
+                System.out.println("Shared archive was not created due to UseCompressedOops and UseCompressedClassPointers have been disabled.");
+                continueTest = false;
+            }
+        }
+
+        if (!continueTest) {
+            return;
+        }
 
         ProcessBuilder runPb = ProcessTools.createJavaProcessBuilder(true,
           TestCommon.concat(vmOptionsPrefix,
