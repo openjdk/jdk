@@ -1677,7 +1677,6 @@ jint G1CollectedHeap::initialize() {
   _card_table = ct;
 
   G1BarrierSet::satb_mark_queue_set().initialize(this,
-                                                 SATB_Q_CBL_mon,
                                                  &bs->satb_mark_queue_buffer_allocator(),
                                                  G1SATBProcessCompletedThreshold,
                                                  G1SATBBufferEnqueueingThresholdPercent);

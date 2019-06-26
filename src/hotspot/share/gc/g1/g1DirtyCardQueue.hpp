@@ -76,6 +76,21 @@ public:
 };
 
 class G1DirtyCardQueueSet: public PtrQueueSet {
+  Monitor* _cbl_mon;  // Protects the fields below.
+  BufferNode* _completed_buffers_head;
+  BufferNode* _completed_buffers_tail;
+  volatile size_t _n_completed_buffers;
+
+  size_t _process_completed_buffers_threshold;
+  volatile bool _process_completed_buffers;
+
+  // If true, notify_all on _cbl_mon when the threshold is reached.
+  bool _notify_when_complete;
+
+  void assert_completed_buffers_list_len_correct_locked() NOT_DEBUG_RETURN;
+
+  void abandon_completed_buffers();
+
   // Apply the closure to the elements of "node" from it's index to
   // buffer_size.  If all closure applications return true, then
   // returns true.  Stops processing after the first closure
@@ -111,7 +126,7 @@ class G1DirtyCardQueueSet: public PtrQueueSet {
   // mutator must start doing some of the concurrent refinement work,
   size_t _max_completed_buffers;
   size_t _completed_buffers_padding;
-  static const size_t MaxCompletedBuffersUnlimited = ~size_t(0);
+  static const size_t MaxCompletedBuffersUnlimited = SIZE_MAX;
 
   G1FreeIdSet* _free_ids;
 
@@ -142,6 +157,34 @@ public:
   // it can be reused in place.
   bool process_or_enqueue_completed_buffer(BufferNode* node);
 
+  virtual void enqueue_completed_buffer(BufferNode* node);
+
+  // If the number of completed buffers is > stop_at, then remove and
+  // return a completed buffer from the list.  Otherwise, return NULL.
+  BufferNode* get_completed_buffer(size_t stop_at = 0);
+
+  // The number of buffers in the list.  Racy...
+  size_t completed_buffers_num() const { return _n_completed_buffers; }
+
+  bool process_completed_buffers() { return _process_completed_buffers; }
+  void set_process_completed_buffers(bool x) { _process_completed_buffers = x; }
+
+  // Get/Set the number of completed buffers that triggers log processing.
+  // Log processing should be done when the number of buffers exceeds the
+  // threshold.
+  void set_process_completed_buffers_threshold(size_t sz) {
+    _process_completed_buffers_threshold = sz;
+  }
+  size_t process_completed_buffers_threshold() const {
+    return _process_completed_buffers_threshold;
+  }
+  static const size_t ProcessCompletedBuffersThresholdNever = SIZE_MAX;
+
+  // Notify the consumer if the number of buffers crossed the threshold
+  void notify_if_necessary();
+
+  void merge_bufferlists(G1DirtyCardQueueSet* src);
+
   // Apply G1RefineCardConcurrentlyClosure to completed buffers until there are stop_at
   // completed buffers remaining.
   bool refine_completed_buffer_concurrently(uint worker_i, size_t stop_at);
@@ -150,13 +193,13 @@ public:
   // must never return false. Must only be called during GC.
   bool apply_closure_during_gc(G1CardTableEntryClosure* cl, uint worker_i);
 
-  void reset_for_par_iteration() { _cur_par_buffer_node = completed_buffers_head(); }
+  void reset_for_par_iteration() { _cur_par_buffer_node = _completed_buffers_head; }
   // Applies the current closure to all completed buffers, non-consumptively.
   // Can be used in parallel, all callers using the iteration state initialized
   // by reset_for_par_iteration.
   void par_apply_closure_to_all_completed_buffers(G1CardTableEntryClosure* cl);
 
-  // If a full collection is happening, reset partial logs, and ignore
+  // If a full collection is happening, reset partial logs, and release
   // completed ones: the full collection will make them all irrelevant.
   void abandon_logs();
 

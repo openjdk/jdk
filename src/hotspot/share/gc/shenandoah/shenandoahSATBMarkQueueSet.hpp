@@ -44,7 +44,6 @@ public:
   ShenandoahSATBMarkQueueSet();
 
   void initialize(ShenandoahHeap* const heap,
-                  Monitor* cbl_mon,
                   int process_completed_threshold,
                   uint buffer_enqueue_threshold_percentage);
 

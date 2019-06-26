@@ -348,7 +348,6 @@ jint ShenandoahHeap::initialize() {
   // The call below uses stuff (the SATB* things) that are in G1, but probably
   // belong into a shared location.
   ShenandoahBarrierSet::satb_mark_queue_set().initialize(this,
-                                                         SATB_Q_CBL_mon,
                                                          20 /* G1SATBProcessCompletedThreshold */,
                                                          60 /* G1SATBBufferEnqueueingThresholdPercent */);
 
