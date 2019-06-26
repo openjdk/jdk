@@ -25,7 +25,7 @@ package com.sun.org.apache.bcel.internal.generic;
  * I2S - Convert int to short
  * <PRE>Stack: ..., value -&gt; ..., result</PRE>
  *
- * @version $Id: I2S.java 1747278 2016-06-07 17:28:43Z britter $
+ * @version $Id$
  */
 public class I2S extends ConversionInstruction {
 

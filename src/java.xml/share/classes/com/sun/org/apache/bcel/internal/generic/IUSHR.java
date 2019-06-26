@@ -25,7 +25,7 @@ package com.sun.org.apache.bcel.internal.generic;
  * IUSHR - Logical shift right int
  * <PRE>Stack: ..., value1, value2 -&gt; ..., result</PRE>
  *
- * @version $Id: IUSHR.java 1747278 2016-06-07 17:28:43Z britter $
+ * @version $Id$
  */
 public class IUSHR extends ArithmeticInstruction {
 

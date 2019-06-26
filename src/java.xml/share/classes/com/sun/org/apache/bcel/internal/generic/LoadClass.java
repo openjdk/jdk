@@ -25,7 +25,7 @@ package com.sun.org.apache.bcel.internal.generic;
  * Denotes that an instruction may start the process of loading and resolving
  * the referenced class in the Virtual Machine.
  *
- * @version $Id: LoadClass.java 1749597 2016-06-21 20:28:51Z ggregory $
+ * @version $Id$
  */
 public interface LoadClass {
 

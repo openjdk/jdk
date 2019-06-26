@@ -25,7 +25,7 @@ package com.sun.org.apache.bcel.internal.generic;
  * DNEG - Negate double
  * <PRE>Stack: ..., value.word1, value.word2 -&gt; ..., result.word1, result.word2</PRE>
  *
- * @version $Id: DNEG.java 1747278 2016-06-07 17:28:43Z britter $
+ * @version $Id$
  */
 public class DNEG extends ArithmeticInstruction {
 

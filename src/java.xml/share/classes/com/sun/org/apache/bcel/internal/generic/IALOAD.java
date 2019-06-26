@@ -25,7 +25,7 @@ package com.sun.org.apache.bcel.internal.generic;
  * IALOAD - Load int from array
  * <PRE>Stack: ..., arrayref, index -&gt; ..., value</PRE>
  *
- * @version $Id: IALOAD.java 1747278 2016-06-07 17:28:43Z britter $
+ * @version $Id$
  */
 public class IALOAD extends ArrayInstruction implements StackProducer {
 

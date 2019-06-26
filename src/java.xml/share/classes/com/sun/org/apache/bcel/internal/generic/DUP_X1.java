@@ -25,7 +25,7 @@ package com.sun.org.apache.bcel.internal.generic;
  * DUP_X1 - Duplicate top operand stack word and put two down
  * <PRE>Stack: ..., word2, word1 -&gt; ..., word1, word2, word1</PRE>
  *
- * @version $Id: DUP_X1.java 1747278 2016-06-07 17:28:43Z britter $
+ * @version $Id$
  */
 public class DUP_X1 extends StackInstruction {
 

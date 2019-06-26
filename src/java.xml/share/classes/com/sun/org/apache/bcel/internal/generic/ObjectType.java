@@ -28,7 +28,7 @@ import com.sun.org.apache.bcel.internal.classfile.JavaClass;
 /**
  * Denotes reference such as java.lang.String.
  *
- * @version $Id: ObjectType.java 1749603 2016-06-21 20:50:19Z ggregory $
+ * @version $Id$
  */
 public class ObjectType extends ReferenceType {
 

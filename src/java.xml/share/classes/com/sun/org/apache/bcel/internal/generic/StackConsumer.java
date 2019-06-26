@@ -24,7 +24,7 @@ package com.sun.org.apache.bcel.internal.generic;
 /**
  * Denote an instruction that may consume a value from the stack.
  *
- * @version $Id: StackConsumer.java 1747278 2016-06-07 17:28:43Z britter $
+ * @version $Id$
  */
 public interface StackConsumer {
 

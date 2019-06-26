@@ -37,7 +37,7 @@ import com.sun.org.apache.bcel.internal.classfile.Utility;
 /**
  * Convert methods and fields into HTML file.
  *
- * @version $Id: MethodHTML.java 1749603 2016-06-21 20:50:19Z ggregory $
+ * @version $Id$
  *
  */
 final class MethodHTML {

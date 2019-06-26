@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2019, Oracle and/or its affiliates. All rights reserved.
  */
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
@@ -31,8 +31,9 @@ import com.sun.org.apache.bcel.internal.Const;
  * attribute and is used only there. It contains a range in which a
  * particular exception handler is active.
  *
- * @version $Id: CodeException.java 1749603 2016-06-21 20:50:19Z ggregory $
+ * @version $Id$
  * @see     Code
+ * @LastModified: Jun 2019
  */
 public final class CodeException implements Cloneable, Node {
 

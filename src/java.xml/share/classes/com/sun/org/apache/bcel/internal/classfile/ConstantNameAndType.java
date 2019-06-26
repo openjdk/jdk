@@ -32,7 +32,7 @@ import com.sun.org.apache.bcel.internal.Const;
  * and represents a reference to the name and signature
  * of a field or method.
  *
- * @version $Id: ConstantNameAndType.java 1747278 2016-06-07 17:28:43Z britter $
+ * @version $Id$
  * @see     Constant
  */
 public final class ConstantNameAndType extends Constant {

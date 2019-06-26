@@ -25,12 +25,13 @@ import com.sun.org.apache.bcel.internal.Const;
 /**
  * Denotes array type, such as int[][]
  *
- * @version $Id: ArrayType.java 1749603 2016-06-21 20:50:19Z ggregory $
+ * @version $Id$
  */
 public final class ArrayType extends ReferenceType {
 
     private int dimensions;
     private Type basic_type;
+
 
     /**
      * Convenience constructor for array type, e.g. int[]
@@ -41,6 +42,7 @@ public final class ArrayType extends ReferenceType {
         this(BasicType.getType(type), dimensions);
     }
 
+
     /**
      * Convenience constructor for reference array type, e.g. Object[]
      *
@@ -49,6 +51,7 @@ public final class ArrayType extends ReferenceType {
     public ArrayType(final String class_name, final int dimensions) {
         this(ObjectType.getInstance(class_name), dimensions);
     }
+
 
     /**
      * Constructor for array of given type
@@ -81,6 +84,7 @@ public final class ArrayType extends ReferenceType {
         super.setSignature(buf.toString());
     }
 
+
     /**
      * @return basic type of array, i.e., for int[][][] the basic type is int
      */
@@ -88,9 +92,9 @@ public final class ArrayType extends ReferenceType {
         return basic_type;
     }
 
+
     /**
-     * @return element type of array, i.e., for int[][][] the element type is
-     * int[][]
+     * @return element type of array, i.e., for int[][][] the element type is int[][]
      */
     public Type getElementType() {
         if (dimensions == 1) {
@@ -99,26 +103,26 @@ public final class ArrayType extends ReferenceType {
         return new ArrayType(basic_type, dimensions - 1);
     }
 
-    /**
-     * @return number of dimensions of array
+
+    /** @return number of dimensions of array
      */
     public int getDimensions() {
         return dimensions;
     }
 
-    /**
-     * @return a hash code value for the object.
+
+    /** @return a hash code value for the object.
      */
     @Override
     public int hashCode() {
         return basic_type.hashCode() ^ dimensions;
     }
 
-    /**
-     * @return true if both type objects refer to the same array type.
+
+    /** @return true if both type objects refer to the same array type.
      */
     @Override
-    public boolean equals(final Object _type) {
+    public boolean equals( final Object _type ) {
         if (_type instanceof ArrayType) {
             final ArrayType array = (ArrayType) _type;
             return (array.dimensions == dimensions) && array.basic_type.equals(basic_type);

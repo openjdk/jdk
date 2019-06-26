@@ -25,7 +25,7 @@ import com.sun.org.apache.bcel.internal.Const;
 /**
  * Denotes basic type such as int.
  *
- * @version $Id: BasicType.java 1747278 2016-06-07 17:28:43Z britter $
+ * @version $Id$
  */
 public final class BasicType extends Type {
 
@@ -42,8 +42,9 @@ public final class BasicType extends Type {
         }
     }
 
+
     // @since 6.0 no longer final
-    public static BasicType getType(final byte type) {
+    public static BasicType getType( final byte type ) {
         switch (type) {
             case Const.T_VOID:
                 return VOID;
@@ -68,19 +69,19 @@ public final class BasicType extends Type {
         }
     }
 
-    /**
-     * @return a hash code value for the object.
+
+    /** @return a hash code value for the object.
      */
     @Override
     public int hashCode() {
         return super.getType();
     }
 
-    /**
-     * @return true if both type objects refer to the same type
+
+    /** @return true if both type objects refer to the same type
      */
     @Override
-    public boolean equals(final Object _type) {
+    public boolean equals( final Object _type ) {
         return (_type instanceof BasicType) ? ((BasicType) _type).getType() == this.getType() : false;
     }
 }

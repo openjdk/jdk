@@ -35,7 +35,7 @@ import com.sun.org.apache.bcel.internal.Const;
  * attribute using the name <em>Exceptions</em> (which is inconsistent
  * with the other classes).
  *
- * @version $Id: ExceptionTable.java 1749603 2016-06-21 20:50:19Z ggregory $
+ * @version $Id$
  * @see     Code
  */
 public final class ExceptionTable extends Attribute {

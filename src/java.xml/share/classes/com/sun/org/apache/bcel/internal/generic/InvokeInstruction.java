@@ -1,6 +1,5 @@
 /*
- * reserved comment block
- * DO NOT REMOVE OR ALTER!
+ * Copyright (c) 2017, 2019, Oracle and/or its affiliates. All rights reserved.
  */
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
@@ -31,14 +30,15 @@ import com.sun.org.apache.bcel.internal.classfile.ConstantPool;
 /**
  * Super class for the INVOKExxx family of instructions.
  *
- * @version $Id: InvokeInstruction.java 1752106 2016-07-10 20:02:39Z britter $
+ * @version $Id$
+ * @LastModified: Jun 2019
  */
 public abstract class InvokeInstruction extends FieldOrMethod implements ExceptionThrower,
         StackConsumer, StackProducer {
 
     /**
-     * Empty constructor needed for the Class.newInstance() statement in
-     * Instruction.readInstruction(). Not to be used otherwise.
+     * Empty constructor needed for Instruction.readInstruction.
+     * Not to be used otherwise.
      */
     InvokeInstruction() {
     }

@@ -25,7 +25,7 @@ package com.sun.org.apache.bcel.internal.generic;
  * DCMPL - Compare doubles: value1 &lt; value2
  * <PRE>Stack: ..., value1.word1, value1.word2, value2.word1, value2.word2 -&gt; ..., result</PRE>
  *
- * @version $Id: DCMPL.java 1747278 2016-06-07 17:28:43Z britter $
+ * @version $Id$
  */
 public class DCMPL extends Instruction implements TypedInstruction, StackProducer, StackConsumer {
 

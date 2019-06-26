@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2019, Oracle and/or its affiliates. All rights reserved.
  */
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
@@ -27,10 +27,11 @@ import com.sun.org.apache.bcel.internal.classfile.ClassFormatException;
 import com.sun.org.apache.bcel.internal.classfile.Utility;
 
 /**
- * Abstract super class for all possible java types, namely basic types such as
- * int, object types like String and array types, e.g. int[]
+ * Abstract super class for all possible java types, namely basic types
+ * such as int, object types like String and array types, e.g. int[]
  *
- * @version $Id: Type.java 1749603 2016-06-21 20:50:19Z ggregory $
+ * @version $Id$
+ * @LastModified: Jun 2019
  */
 public abstract class Type {
 
@@ -59,10 +60,12 @@ public abstract class Type {
     public static final Type UNKNOWN = new Type(Const.T_UNKNOWN, "<unknown object>") {
     };
 
+
     protected Type(final byte t, final String s) {
         type = t;
         signature = s;
     }
+
 
     /**
      * @return hashcode of Type
@@ -72,17 +75,19 @@ public abstract class Type {
         return type ^ signature.hashCode();
     }
 
+
     /**
      * @return whether the Types are equal
      */
     @Override
     public boolean equals(final Object o) {
-        if (o instanceof Type) {
-            final Type t = (Type) o;
-            return (type == t.type) && signature.equals(t.signature);
-        }
-        return false;
+          if (o instanceof Type) {
+              final Type t = (Type)o;
+              return (type == t.type) && signature.equals(t.signature);
+          }
+          return false;
     }
+
 
     /**
      * @return signature for given type.
@@ -90,6 +95,7 @@ public abstract class Type {
     public String getSignature() {
         return signature;
     }
+
 
     /**
      * @return type as defined in Constants
@@ -99,11 +105,9 @@ public abstract class Type {
     }
 
     /**
-     * boolean, short and char variable are considered as int in the stack or
-     * local variable area. Returns {@link Type#INT} for
-     * {@link Type#BOOLEAN}, {@link Type#SHORT} or {@link Type#CHAR}, otherwise
+     * boolean, short and char variable are considered as int in the stack or local variable area.
+     * Returns {@link Type#INT} for {@link Type#BOOLEAN}, {@link Type#SHORT} or {@link Type#CHAR}, otherwise
      * returns the given type.
-     *
      * @since 6.0
      */
     public Type normalizeForStackOrLocal() {
@@ -114,8 +118,7 @@ public abstract class Type {
     }
 
     /**
-     * @return stack size of this type (2 for long and double, 0 for void, 1
-     * otherwise)
+     * @return stack size of this type (2 for long and double, 0 for void, 1 otherwise)
      */
     public int getSize() {
         switch (type) {
@@ -129,6 +132,7 @@ public abstract class Type {
         }
     }
 
+
     /**
      * @return Type string, e.g. `int[]'
      */
@@ -138,6 +142,7 @@ public abstract class Type {
                 .signatureToString(signature, false);
     }
 
+
     /**
      * Convert type to Java method signature, e.g. int[] f(java.lang.String x)
      * becomes (Ljava/lang/String;)[I
@@ -146,7 +151,7 @@ public abstract class Type {
      * @param arg_types what are the argument types
      * @return method signature for given type(s).
      */
-    public static String getMethodSignature(final Type return_type, final Type[] arg_types) {
+    public static String getMethodSignature( final Type return_type, final Type[] arg_types ) {
         final StringBuilder buf = new StringBuilder("(");
         if (arg_types != null) {
             for (final Type arg_type : arg_types) {
@@ -166,22 +171,24 @@ public abstract class Type {
         }
     };//int consumed_chars=0; // Remember position in string, see getArgumentTypes
 
-    private static int unwrap(final ThreadLocal<Integer> tl) {
+
+    private static int unwrap( final ThreadLocal<Integer> tl ) {
         return tl.get().intValue();
     }
 
-    private static void wrap(final ThreadLocal<Integer> tl, final int value) {
+
+    private static void wrap( final ThreadLocal<Integer> tl, final int value ) {
         tl.set(Integer.valueOf(value));
     }
 
+
     /**
      * Convert signature to a Type object.
-     *
      * @param signature signature string such as Ljava/lang/String;
      * @return type object
      */
     // @since 6.0 no longer final
-    public static Type getType(final String signature) throws StringIndexOutOfBoundsException {
+    public static Type getType( final String signature ) throws StringIndexOutOfBoundsException {
         final byte type = Utility.typeOfSignature(signature);
         if (type <= Const.T_VOID) {
             //corrected concurrent private static field acess
@@ -208,13 +215,14 @@ public abstract class Type {
         }
     }
 
+
     /**
      * Convert return value of a method (signature) to a Type object.
      *
      * @param signature signature string such as (Ljava/lang/String;)V
      * @return return type
      */
-    public static Type getReturnType(final String signature) {
+    public static Type getReturnType( final String signature ) {
         try {
             // Read return type after `)'
             final int index = signature.lastIndexOf(')') + 1;
@@ -224,13 +232,13 @@ public abstract class Type {
         }
     }
 
+
     /**
      * Convert arguments of a method (signature) to an array of Type objects.
-     *
      * @param signature signature string such as (Ljava/lang/String;)V
      * @return array of argument types
      */
-    public static Type[] getArgumentTypes(final String signature) {
+    public static Type[] getArgumentTypes( final String signature ) {
         final List<Type> vec = new ArrayList<>();
         int index;
         Type[] types;
@@ -252,13 +260,12 @@ public abstract class Type {
         return types;
     }
 
-    /**
-     * Convert runtime java.lang.Class to BCEL Type object.
-     *
+
+    /** Convert runtime java.lang.Class to BCEL Type object.
      * @param cl Java class
      * @return corresponding Type object
      */
-    public static Type getType(final java.lang.Class<?> cl) {
+    public static Type getType( final java.lang.Class<?> cl ) {
         if (cl == null) {
             throw new IllegalArgumentException("Class must not be null");
         }
@@ -296,13 +303,13 @@ public abstract class Type {
         }
     }
 
+
     /**
      * Convert runtime java.lang.Class[] to BCEL Type objects.
-     *
      * @param classes an array of runtime class objects
      * @return array of corresponding Type objects
      */
-    public static Type[] getTypes(final java.lang.Class<?>[] classes) {
+    public static Type[] getTypes( final java.lang.Class<?>[] classes ) {
         final Type[] ret = new Type[classes.length];
         for (int i = 0; i < ret.length; i++) {
             ret[i] = getType(classes[i]);
@@ -310,7 +317,8 @@ public abstract class Type {
         return ret;
     }
 
-    public static String getSignature(final java.lang.reflect.Method meth) {
+
+    public static String getSignature( final java.lang.reflect.Method meth ) {
         final StringBuilder sb = new StringBuilder("(");
         final Class<?>[] params = meth.getParameterTypes(); // avoid clone
         for (final Class<?> param : params) {
@@ -333,7 +341,7 @@ public abstract class Type {
         return consumed << 2 | size;
     }
 
-    static int getArgumentTypesSize(final String signature) {
+    static int getArgumentTypesSize( final String signature ) {
         int res = 0;
         int index;
         try { // Read all declarations between for `(' and `)'
@@ -352,7 +360,7 @@ public abstract class Type {
         return res;
     }
 
-    static int getTypeSize(final String signature) throws StringIndexOutOfBoundsException {
+    static int getTypeSize( final String signature ) throws StringIndexOutOfBoundsException {
         final byte type = Utility.typeOfSignature(signature);
         if (type <= Const.T_VOID) {
             return encode(BasicType.getType(type).getSize(), 1);
@@ -372,6 +380,7 @@ public abstract class Type {
             return encode(1, index + 1);
         }
     }
+
 
     static int getReturnTypeSize(final String signature) {
         final int index = signature.lastIndexOf(')') + 1;

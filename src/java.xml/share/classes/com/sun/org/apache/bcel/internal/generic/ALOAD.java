@@ -1,6 +1,5 @@
 /*
- * reserved comment block
- * DO NOT REMOVE OR ALTER!
+ * Copyright (c) 2017, 2019, Oracle and/or its affiliates. All rights reserved.
  */
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
@@ -27,17 +26,19 @@ import com.sun.org.apache.bcel.internal.Const;
  * ALOAD - Load reference from local variable
  * <PRE>Stack: ... -&gt; ..., objectref</PRE>
  *
- * @version $Id: ALOAD.java 1747278 2016-06-07 17:28:43Z britter $
+ * @version $Id$
+ * @LastModified: Jun 2019
  */
 public class ALOAD extends LoadInstruction {
 
     /**
-     * Empty constructor needed for the Class.newInstance() statement in
-     * Instruction.readInstruction(). Not to be used otherwise.
+     * Empty constructor needed for Instruction.readInstruction.
+     * Not to be used otherwise.
      */
     ALOAD() {
         super(Const.ALOAD, Const.ALOAD_0);
     }
+
 
     /** Load reference from local variable
      * @param n index of local variable
@@ -45,6 +46,7 @@ public class ALOAD extends LoadInstruction {
     public ALOAD(final int n) {
         super(Const.ALOAD, Const.ALOAD_0, n);
     }
+
 
     /**
      * Call corresponding visitor method(s). The order is:

@@ -25,13 +25,13 @@ package com.sun.org.apache.bcel.internal.generic;
  * DSTORE - Store double into local variable
  * <pre>Stack: ..., value.word1, value.word2 -&gt; ... </PRE>
  *
- * @version $Id: DSTORE.java 1747278 2016-06-07 17:28:43Z britter $
+ * @version $Id$
  */
 public class DSTORE extends StoreInstruction {
 
     /**
-     * Empty constructor needed for the Class.newInstance() statement in
-     * Instruction.readInstruction(). Not to be used otherwise.
+     * Empty constructor needed for Instruction.readInstruction.
+     * Not to be used otherwise.
      */
     DSTORE() {
         super(com.sun.org.apache.bcel.internal.Const.DSTORE, com.sun.org.apache.bcel.internal.Const.DSTORE_0);

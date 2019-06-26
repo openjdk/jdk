@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2019, Oracle and/or its affiliates. All rights reserved.
  */
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
@@ -26,8 +26,8 @@ import com.sun.org.apache.bcel.internal.ExceptionConst;
  * IDIV - Divide ints
  * <PRE>Stack: ..., value1, value2 -&gt; result</PRE>
  *
- * @version $Id: IDIV.java 1747278 2016-06-07 17:28:43Z britter $
- * @LastModified: Oct 2017
+ * @version $Id$
+ * @LastModified: Jun 2019
  */
 public class IDIV extends ArithmeticInstruction implements ExceptionThrower {
 

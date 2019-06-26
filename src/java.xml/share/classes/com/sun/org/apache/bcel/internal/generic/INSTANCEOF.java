@@ -27,14 +27,14 @@ import com.sun.org.apache.bcel.internal.ExceptionConst;
  * INSTANCEOF - Determine if object is of given type
  * <PRE>Stack: ..., objectref -&gt; ..., result</PRE>
  *
- * @version $Id: INSTANCEOF.java 1747278 2016-06-07 17:28:43Z britter $
+ * @version $Id$
  */
 public class INSTANCEOF extends CPInstruction implements LoadClass, ExceptionThrower,
         StackProducer, StackConsumer {
 
     /**
-     * Empty constructor needed for the Class.newInstance() statement in
-     * Instruction.readInstruction(). Not to be used otherwise.
+     * Empty constructor needed for Instruction.readInstruction.
+     * Not to be used otherwise.
      */
     INSTANCEOF() {
     }

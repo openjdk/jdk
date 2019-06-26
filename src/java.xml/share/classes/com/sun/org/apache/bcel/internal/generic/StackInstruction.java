@@ -24,13 +24,13 @@ package com.sun.org.apache.bcel.internal.generic;
 /**
  * Super class for stack operations like DUP and POP.
  *
- * @version $Id: StackInstruction.java 1747278 2016-06-07 17:28:43Z britter $
+ * @version $Id$
  */
 public abstract class StackInstruction extends Instruction {
 
     /**
-     * Empty constructor needed for the Class.newInstance() statement in
-     * Instruction.readInstruction(). Not to be used otherwise.
+     * Empty constructor needed for Instruction.readInstruction.
+     * Not to be used otherwise.
      */
     StackInstruction() {
     }

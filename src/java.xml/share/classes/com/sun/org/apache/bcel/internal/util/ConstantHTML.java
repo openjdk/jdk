@@ -40,7 +40,7 @@ import com.sun.org.apache.bcel.internal.classfile.Utility;
 /**
  * Convert constant pool into HTML file.
  *
- * @version $Id: ConstantHTML.java 1749603 2016-06-21 20:50:19Z ggregory $
+ * @version $Id$
  *
  */
 final class ConstantHTML {
@@ -54,8 +54,8 @@ final class ConstantHTML {
     private final Method[] methods;
 
 
-    ConstantHTML(final String dir, final String class_name, final String class_package,
-            final Method[] methods, final ConstantPool constant_pool) throws IOException {
+    ConstantHTML(final String dir, final String class_name, final String class_package, final Method[] methods,
+            final ConstantPool constant_pool) throws IOException {
         this.class_name = class_name;
         this.class_package = class_package;
         this.constant_pool = constant_pool;

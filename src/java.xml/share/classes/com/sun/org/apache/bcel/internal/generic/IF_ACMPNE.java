@@ -26,13 +26,13 @@ package com.sun.org.apache.bcel.internal.generic;
  *
  * <PRE>Stack: ..., value1, value2 -&gt; ...</PRE>
  *
- * @version $Id: IF_ACMPNE.java 1747278 2016-06-07 17:28:43Z britter $
+ * @version $Id$
  */
 public class IF_ACMPNE extends IfInstruction {
 
     /**
-     * Empty constructor needed for the Class.newInstance() statement in
-     * Instruction.readInstruction(). Not to be used otherwise.
+     * Empty constructor needed for Instruction.readInstruction.
+     * Not to be used otherwise.
      */
     IF_ACMPNE() {
     }

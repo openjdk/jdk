@@ -25,7 +25,7 @@ package com.sun.org.apache.bcel.internal.generic;
  * LRETURN -  Return long from method
  * <PRE>Stack: ..., value.word1, value.word2 -&gt; &lt;empty&gt;</PRE>
  *
- * @version $Id: LRETURN.java 1747278 2016-06-07 17:28:43Z britter $
+ * @version $Id$
  */
 public class LRETURN extends ReturnInstruction {
 

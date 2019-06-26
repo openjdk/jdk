@@ -25,7 +25,7 @@ package com.sun.org.apache.bcel.internal.generic;
  * Denotes an unparameterized instruction to pop a value on top from the stack,
  * such as ISTORE, POP, PUTSTATIC.
  *
- * @version $Id: PopInstruction.java 1747278 2016-06-07 17:28:43Z britter $
+ * @version $Id$
  * @see ISTORE
  * @see POP
  */

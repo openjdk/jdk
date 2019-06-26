@@ -25,7 +25,7 @@ package com.sun.org.apache.bcel.internal.generic;
  * FADD - Add floats
  * <PRE>Stack: ..., value1, value2 -&gt; result</PRE>
  *
- * @version $Id: FADD.java 1747278 2016-06-07 17:28:43Z britter $
+ * @version $Id$
  */
 public class FADD extends ArithmeticInstruction {
 

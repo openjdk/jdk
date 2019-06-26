@@ -27,14 +27,14 @@ import com.sun.org.apache.bcel.internal.ExceptionConst;
  * NEW - Create new object
  * <PRE>Stack: ... -&gt; ..., objectref</PRE>
  *
- * @version $Id: NEW.java 1747278 2016-06-07 17:28:43Z britter $
+ * @version $Id$
  */
 public class NEW extends CPInstruction implements LoadClass, AllocationInstruction,
         ExceptionThrower, StackProducer {
 
     /**
-     * Empty constructor needed for the Class.newInstance() statement in
-     * Instruction.readInstruction(). Not to be used otherwise.
+     * Empty constructor needed for Instruction.readInstruction.
+     * Not to be used otherwise.
      */
     NEW() {
     }

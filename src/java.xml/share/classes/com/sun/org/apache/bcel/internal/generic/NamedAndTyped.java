@@ -25,7 +25,7 @@ package com.sun.org.apache.bcel.internal.generic;
  * Denote entity that has both name and type. This is true for local variables,
  * methods and fields.
  *
- * @version $Id: NamedAndTyped.java 1747278 2016-06-07 17:28:43Z britter $
+ * @version $Id$
  */
 public interface NamedAndTyped {
 

@@ -25,7 +25,7 @@ package com.sun.org.apache.bcel.internal.generic;
  * I2D - Convert int to double
  * <PRE>Stack: ..., value -&gt; ..., result.word1, result.word2</PRE>
  *
- * @version $Id: I2D.java 1747278 2016-06-07 17:28:43Z britter $
+ * @version $Id$
  */
 public class I2D extends ConversionInstruction {
 

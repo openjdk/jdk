@@ -24,18 +24,20 @@ package com.sun.org.apache.bcel.internal.generic;
  *
  * <PRE>Stack: ... -&gt; ..., </PRE>
  *
- * @version $Id: ICONST.java 1747278 2016-06-07 17:28:43Z britter $
+ * @version $Id$
  */
 public class ICONST extends Instruction implements ConstantPushInstruction {
 
     private int value;
 
+
     /**
-     * Empty constructor needed for the Class.newInstance() statement in
-     * Instruction.readInstruction(). Not to be used otherwise.
+     * Empty constructor needed for Instruction.readInstruction.
+     * Not to be used otherwise.
      */
     ICONST() {
     }
+
 
     public ICONST(final int i) {
         super(com.sun.org.apache.bcel.internal.Const.ICONST_0, (short) 1);
@@ -47,29 +49,31 @@ public class ICONST extends Instruction implements ConstantPushInstruction {
         value = i;
     }
 
+
     @Override
     public Number getValue() {
         return Integer.valueOf(value);
     }
 
-    /**
-     * @return Type.INT
+
+    /** @return Type.INT
      */
     @Override
-    public Type getType(final ConstantPoolGen cp) {
+    public Type getType( final ConstantPoolGen cp ) {
         return Type.INT;
     }
 
+
     /**
-     * Call corresponding visitor method(s). The order is: Call visitor methods
-     * of implemented interfaces first, then call methods according to the class
-     * hierarchy in descending order, i.e., the most specific visitXXX() call
-     * comes last.
+     * Call corresponding visitor method(s). The order is:
+     * Call visitor methods of implemented interfaces first, then
+     * call methods according to the class hierarchy in descending order,
+     * i.e., the most specific visitXXX() call comes last.
      *
      * @param v Visitor object
      */
     @Override
-    public void accept(final Visitor v) {
+    public void accept( final Visitor v ) {
         v.visitPushInstruction(this);
         v.visitStackProducer(this);
         v.visitTypedInstruction(this);

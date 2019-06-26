@@ -26,14 +26,14 @@ import com.sun.org.apache.bcel.internal.Const;
 /**
  * Super class for the x2y family of instructions.
  *
- * @version $Id: ConversionInstruction.java 1747278 2016-06-07 17:28:43Z britter $
+ * @version $Id$
  */
 public abstract class ConversionInstruction extends Instruction implements TypedInstruction,
         StackProducer, StackConsumer {
 
     /**
-     * Empty constructor needed for the Class.newInstance() statement in
-     * Instruction.readInstruction(). Not to be used otherwise.
+     * Empty constructor needed for Instruction.readInstruction.
+     * Not to be used otherwise.
      */
     ConversionInstruction() {
     }

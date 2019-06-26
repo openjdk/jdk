@@ -29,13 +29,13 @@ import com.sun.org.apache.bcel.internal.util.ByteSequence;
 /**
  * GOTO_W - Branch always (to relative offset, not absolute address)
  *
- * @version $Id: GOTO_W.java 1747278 2016-06-07 17:28:43Z britter $
+ * @version $Id$
  */
 public class GOTO_W extends GotoInstruction {
 
     /**
-     * Empty constructor needed for the Class.newInstance() statement in
-     * Instruction.readInstruction(). Not to be used otherwise.
+     * Empty constructor needed for Instruction.readInstruction.
+     * Not to be used otherwise.
      */
     GOTO_W() {
     }

@@ -25,7 +25,7 @@ package com.sun.org.apache.bcel.internal.generic;
  * Thrown on internal errors. Extends RuntimeException so it hasn't to be declared
  * in the throws clause every time.
  *
- * @version $Id: ClassGenException.java 1747278 2016-06-07 17:28:43Z britter $
+ * @version $Id$
  */
 public class ClassGenException extends RuntimeException {
 

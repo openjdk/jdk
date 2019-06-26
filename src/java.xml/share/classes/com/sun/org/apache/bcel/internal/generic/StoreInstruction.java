@@ -25,13 +25,13 @@ package com.sun.org.apache.bcel.internal.generic;
  * Denotes an unparameterized instruction to store a value into a local variable,
  * e.g. ISTORE.
  *
- * @version $Id: StoreInstruction.java 1747278 2016-06-07 17:28:43Z britter $
+ * @version $Id$
  */
 public abstract class StoreInstruction extends LocalVariableInstruction implements PopInstruction {
 
     /**
-     * Empty constructor needed for the Class.newInstance() statement in
-     * Instruction.readInstruction(). Not to be used otherwise.
+     * Empty constructor needed for Instruction.readInstruction.
+     * Not to be used otherwise.
      * tag and length are defined in readInstruction and initFromFile, respectively.
      */
     StoreInstruction(final short canon_tag, final short c_tag) {

@@ -27,7 +27,7 @@ package com.sun.org.apache.bcel.internal.classfile;
  * method. These factory objects should implement this interface.
 
  * @see Attribute
- * @version $Id: AttributeReader.java 1748467 2016-06-14 21:05:14Z ggregory $
+ * @version $Id$
  *
  * @deprecated Use UnknownAttributeReader instead
  */

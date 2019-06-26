@@ -31,7 +31,7 @@ import com.sun.org.apache.bcel.internal.Const;
  * This class represents colection of local variables in a
  * method. This attribute is contained in the <em>Code</em> attribute.
  *
- * @version $Id: LocalVariableTable.java 1749603 2016-06-21 20:50:19Z ggregory $
+ * @version $Id$
  * @see     Code
  * @see LocalVariable
  */

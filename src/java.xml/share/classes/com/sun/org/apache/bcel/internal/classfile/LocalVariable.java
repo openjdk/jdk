@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2019, Oracle and/or its affiliates. All rights reserved.
  */
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
@@ -30,8 +30,9 @@ import com.sun.org.apache.bcel.internal.Const;
  * This class represents a local variable within a method. It contains its
  * scope, name, signature and index on the method's frame.
  *
- * @version $Id: LocalVariable.java 1749603 2016-06-21 20:50:19Z ggregory $
+ * @version $Id$
  * @see     LocalVariableTable
+ * @LastModified: Jun 2019
  */
 public final class LocalVariable implements Cloneable, Node {
 
@@ -43,6 +44,7 @@ public final class LocalVariable implements Cloneable, Node {
      * this method's frame.
      */
     private ConstantPool constant_pool;
+    private int orig_index; // never changes; used to match up with LocalVariableTypeTable entries
 
 
     /**
@@ -52,6 +54,7 @@ public final class LocalVariable implements Cloneable, Node {
     public LocalVariable(final LocalVariable c) {
         this(c.getStartPC(), c.getLength(), c.getNameIndex(), c.getSignatureIndex(), c.getIndex(),
                 c.getConstantPool());
+        this.orig_index = c.getOrigIndex();
     }
 
 
@@ -82,6 +85,28 @@ public final class LocalVariable implements Cloneable, Node {
         this.signature_index = signature_index;
         this.index = index;
         this.constant_pool = constant_pool;
+        this.orig_index = index;
+    }
+
+
+    /**
+     * @param start_pc Range in which the variable
+     * @param length ... is valid
+     * @param name_index Index in constant pool of variable name
+     * @param signature_index Index of variable's signature
+     * @param index Variable is `index'th local variable on the method's frame
+     * @param constant_pool Array of constants
+     * @param orig_index Variable is `index'th local variable on the method's frame prior to any changes
+     */
+    public LocalVariable(final int start_pc, final int length, final int name_index, final int signature_index, final int index,
+            final ConstantPool constant_pool, final int orig_index) {
+        this.start_pc = start_pc;
+        this.length = length;
+        this.name_index = name_index;
+        this.signature_index = signature_index;
+        this.index = index;
+        this.constant_pool = constant_pool;
+        this.orig_index = orig_index;
     }
 
 
@@ -170,6 +195,14 @@ public final class LocalVariable implements Cloneable, Node {
      */
     public final int getIndex() {
         return index;
+    }
+
+
+    /**
+     * @return index of register where variable was originally stored
+     */
+    public final int getOrigIndex() {
+        return orig_index;
     }
 
 

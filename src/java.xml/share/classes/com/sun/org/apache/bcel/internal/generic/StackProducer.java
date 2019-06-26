@@ -25,7 +25,7 @@ package com.sun.org.apache.bcel.internal.generic;
  * Denote an instruction that may produce a value on top of the stack
  * (this excludes DUP_X1, e.g.)
  *
- * @version $Id: StackProducer.java 1747278 2016-06-07 17:28:43Z britter $
+ * @version $Id$
  */
 public interface StackProducer {
 

@@ -30,7 +30,7 @@ import java.io.IOException;
  * the source that corresponds to a relative address in the byte code. This
  * is used for debugging purposes.
  *
- * @version $Id: LineNumber.java 1749603 2016-06-21 20:50:19Z ggregory $
+ * @version $Id$
  * @see     LineNumberTable
  */
 public final class LineNumber implements Cloneable, Node {

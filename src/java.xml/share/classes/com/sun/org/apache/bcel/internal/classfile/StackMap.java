@@ -36,7 +36,7 @@ import com.sun.org.apache.bcel.internal.Const;
  * within the Code attribute of a method. See CLDC specification
  * 5.3.1.2
  *
- * @version $Id: StackMap.java 1749603 2016-06-21 20:50:19Z ggregory $
+ * @version $Id$
  * @see     Code
  * @see     StackMapEntry
  * @see     StackMapType
@@ -78,7 +78,7 @@ public final class StackMap extends Attribute {
 
 
     /**
-     * Dump line number table attribute to file stream in binary format.
+     * Dump stack map table attribute to file stream in binary format.
      *
      * @param file Output file stream
      * @throws IOException

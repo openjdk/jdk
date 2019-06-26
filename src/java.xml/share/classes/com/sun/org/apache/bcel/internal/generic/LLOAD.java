@@ -25,13 +25,13 @@ package com.sun.org.apache.bcel.internal.generic;
  * LLOAD - Load long from local variable
  *<PRE>Stack ... -&gt; ..., result.word1, result.word2</PRE>
  *
- * @version $Id: LLOAD.java 1747278 2016-06-07 17:28:43Z britter $
+ * @version $Id$
  */
 public class LLOAD extends LoadInstruction {
 
     /**
-     * Empty constructor needed for the Class.newInstance() statement in
-     * Instruction.readInstruction(). Not to be used otherwise.
+     * Empty constructor needed for Instruction.readInstruction.
+     * Not to be used otherwise.
      */
     LLOAD() {
         super(com.sun.org.apache.bcel.internal.Const.LLOAD, com.sun.org.apache.bcel.internal.Const.LLOAD_0);

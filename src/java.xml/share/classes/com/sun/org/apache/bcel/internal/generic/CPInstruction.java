@@ -1,6 +1,5 @@
 /*
- * reserved comment block
- * DO NOT REMOVE OR ALTER!
+ * Copyright (c) 2017, 2019, Oracle and/or its affiliates. All rights reserved.
  */
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
@@ -29,26 +28,29 @@ import com.sun.org.apache.bcel.internal.classfile.ConstantPool;
 import com.sun.org.apache.bcel.internal.util.ByteSequence;
 
 /**
- * Abstract super class for instructions that use an index into the constant
- * pool such as LDC, INVOKEVIRTUAL, etc.
+ * Abstract super class for instructions that use an index into the
+ * constant pool such as LDC, INVOKEVIRTUAL, etc.
  *
  * @see ConstantPoolGen
  * @see LDC
  * @see INVOKEVIRTUAL
  *
- * @version $Id: CPInstruction.java 1749603 2016-06-21 20:50:19Z ggregory $
+ * @version $Id$
+ * @LastModified: Jun 2019
  */
 public abstract class CPInstruction extends Instruction implements TypedInstruction,
         IndexedInstruction {
 
     private int index; // index to constant pool
 
+
     /**
-     * Empty constructor needed for the Class.newInstance() statement in
-     * Instruction.readInstruction(). Not to be used otherwise.
+     * Empty constructor needed for Instruction.readInstruction.
+     * Not to be used otherwise.
      */
     CPInstruction() {
     }
+
 
     /**
      * @param index to constant pool
@@ -58,36 +60,38 @@ public abstract class CPInstruction extends Instruction implements TypedInstruct
         setIndex(index);
     }
 
+
     /**
      * Dump instruction as byte code to stream out.
-     *
      * @param out Output stream
      */
     @Override
-    public void dump(final DataOutputStream out) throws IOException {
+    public void dump( final DataOutputStream out ) throws IOException {
         out.writeByte(super.getOpcode());
         out.writeShort(index);
     }
 
+
     /**
      * Long output format:
      *
-     * &lt;name of opcode&gt; "["&lt;opcode number&gt;"]" "("&lt;length of
-     * instruction&gt;")" "&lt;"&lt; constant pool index&gt;"&gt;"
+     * &lt;name of opcode&gt; "["&lt;opcode number&gt;"]"
+     * "("&lt;length of instruction&gt;")" "&lt;"&lt; constant pool index&gt;"&gt;"
      *
      * @param verbose long/short format switch
      * @return mnemonic for instruction
      */
     @Override
-    public String toString(final boolean verbose) {
+    public String toString( final boolean verbose ) {
         return super.toString(verbose) + " " + index;
     }
+
 
     /**
      * @return mnemonic for instruction with symbolic references resolved
      */
     @Override
-    public String toString(final ConstantPool cp) {
+    public String toString( final ConstantPool cp ) {
         final Constant c = cp.getConstant(index);
         String str = cp.constantToString(c);
         if (c instanceof ConstantClass) {
@@ -96,17 +100,18 @@ public abstract class CPInstruction extends Instruction implements TypedInstruct
         return com.sun.org.apache.bcel.internal.Const.getOpcodeName(super.getOpcode()) + " " + str;
     }
 
+
     /**
      * Read needed data (i.e., index) from file.
-     *
      * @param bytes input stream
      * @param wide wide prefix?
      */
     @Override
-    protected void initFromFile(final ByteSequence bytes, final boolean wide) throws IOException {
+    protected void initFromFile( final ByteSequence bytes, final boolean wide ) throws IOException {
         setIndex(bytes.readUnsignedShort());
         super.setLength(3);
     }
+
 
     /**
      * @return index in constant pool referred by this instruction.
@@ -116,24 +121,24 @@ public abstract class CPInstruction extends Instruction implements TypedInstruct
         return index;
     }
 
+
     /**
      * Set the index to constant pool.
-     *
-     * @param index in constant pool.
+     * @param index in  constant pool.
      */
     @Override
-    public void setIndex(final int index) { // TODO could be package-protected?
+    public void setIndex( final int index ) { // TODO could be package-protected?
         if (index < 0) {
             throw new ClassGenException("Negative index value: " + index);
         }
         this.index = index;
     }
 
-    /**
-     * @return type related with this instruction.
+
+    /** @return type related with this instruction.
      */
     @Override
-    public Type getType(final ConstantPoolGen cpg) {
+    public Type getType( final ConstantPoolGen cpg ) {
         final ConstantPool cp = cpg.getConstantPool();
         String name = cp.getConstantString(index, com.sun.org.apache.bcel.internal.Const.CONSTANT_Class);
         if (!name.startsWith("[")) {

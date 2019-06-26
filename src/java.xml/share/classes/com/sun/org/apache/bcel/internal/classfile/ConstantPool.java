@@ -35,7 +35,7 @@ import com.sun.org.apache.bcel.internal.Const;
  * programatically should see <a href="../generic/ConstantPoolGen.html">
  * ConstantPoolGen</a>.
 
- * @version $Id: ConstantPool.java 1749603 2016-06-21 20:50:19Z ggregory $
+ * @version $Id$
  * @see     Constant
  * @see     com.sun.org.apache.bcel.internal.generic.ConstantPoolGen
  */
@@ -135,7 +135,7 @@ public class ConstantPool implements Cloneable, Node {
             case Const.CONSTANT_NameAndType:
                 str = constantToString(((ConstantNameAndType) c).getNameIndex(),
                         Const.CONSTANT_Utf8)
-                        + ":" + constantToString(((ConstantNameAndType) c).getSignatureIndex(),
+                        + " " + constantToString(((ConstantNameAndType) c).getSignatureIndex(),
                         Const.CONSTANT_Utf8);
                 break;
             case Const.CONSTANT_InterfaceMethodref:

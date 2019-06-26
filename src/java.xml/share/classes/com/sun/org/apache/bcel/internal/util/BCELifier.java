@@ -46,7 +46,7 @@ import com.sun.org.apache.bcel.internal.generic.Type;
  * are done with BCEL. It does not cover all features of BCEL,
  * but tries to mimic hand-written code as close as possible.
  *
- * @version $Id: BCELifier.java 1750228 2016-06-25 21:47:44Z ggregory $
+ * @version $Id$
  */
 public class BCELifier extends com.sun.org.apache.bcel.internal.classfile.EmptyVisitor {
 
@@ -284,7 +284,7 @@ public class BCELifier extends com.sun.org.apache.bcel.internal.classfile.EmptyV
 
     /** Default main method
      */
-    public static void _main( final String[] argv ) throws Exception {
+    public static void main( final String[] argv ) throws Exception {
         if (argv.length != 1) {
             System.out.println("Usage: BCELifier classname");
             System.out.println("\tThe class must exist on the classpath");
