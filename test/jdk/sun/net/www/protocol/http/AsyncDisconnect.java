@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2006, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2006, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,17 +24,20 @@
 /*
  * @test
  * @bug 6358532
+ * @library /test/lib
  * @modules jdk.httpserver
  * @run main/othervm AsyncDisconnect
+ * @run main/othervm -Djava.net.preferIPv6Addresses=true AsyncDisconnect
  * @summary HttpURLConnection.disconnect doesn't really do the job
  */
 
 import java.net.*;
-import java.util.*;
 import java.io.*;
 import com.sun.net.httpserver.*;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ExecutorService;
+
+import jdk.test.lib.net.URIBuilder;
 
 public class AsyncDisconnect implements Runnable
 {
@@ -43,27 +46,30 @@ public class AsyncDisconnect implements Runnable
     ExecutorService executorService;
     HttpURLConnection uc;
 
-    public static void main(String[] args) {
+    public static void main(String[] args) throws Exception {
         new AsyncDisconnect();
     }
 
-    public AsyncDisconnect() {
-        try {
-            startHttpServer();
-            doClient();
-        } catch (IOException ioe) {
-            System.err.println(ioe);
-        }
+    public AsyncDisconnect() throws Exception {
+        startHttpServer();
+        doClient();
     }
 
-    void doClient() {
+    void doClient() throws Exception {
+        Thread t = new Thread(this);
+
         try {
             InetSocketAddress address = httpServer.getAddress();
-            URL url = new URL("http://" + address.getHostName() + ":" + address.getPort() + "/test/");
-            uc = (HttpURLConnection)url.openConnection();
+            URL url = URIBuilder.newBuilder()
+                    .scheme("http")
+                    .host(address.getAddress())
+                    .port(address.getPort())
+                    .path("/test/")
+                    .toURL();
+            uc = (HttpURLConnection) url.openConnection(Proxy.NO_PROXY);
 
             // create a thread that will disconnect the connection
-            (new Thread(this)).start();
+            t.start();
 
             uc.getInputStream();
 
@@ -73,11 +79,11 @@ public class AsyncDisconnect implements Runnable
         } catch (SocketException se) {
             // this is what we expect to happen and is OK.
             //System.out.println(se);
-        } catch (IOException e) {
-            e.printStackTrace();
         } finally {
             httpServer.stop(1);
+            t.join();
             executorService.shutdown();
+
         }
     }
 
@@ -93,7 +99,9 @@ public class AsyncDisconnect implements Runnable
      * Http Server
      */
     public void startHttpServer() throws IOException {
-        httpServer = com.sun.net.httpserver.HttpServer.create(new InetSocketAddress(0), 0);
+        InetAddress loopback = InetAddress.getLoopbackAddress();
+        InetSocketAddress address = new InetSocketAddress(loopback, 0);
+        httpServer = com.sun.net.httpserver.HttpServer.create(address, 0);
         httpHandler = new MyHandler();
 
         HttpContext ctx = httpServer.createContext("/test/", httpHandler);

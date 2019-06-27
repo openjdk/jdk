@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2009, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,9 @@
 /**
  * @test
  * @bug 6890349
+ * @library /test/lib
  * @run main/othervm B6890349
+ * @run main/othervm -Djava.net.preferIPv6Addresses=true B6890349
  * @summary  Light weight HTTP server
  */
 
@@ -34,7 +36,11 @@ public class B6890349 extends Thread {
     public static final void main(String[] args) throws Exception {
 
         try {
-            ServerSocket server = new ServerSocket (0);
+            ServerSocket server = new ServerSocket();
+            InetAddress loopback = InetAddress.getLoopbackAddress();
+            InetSocketAddress address = new InetSocketAddress(loopback, 0);
+            server.bind(address);
+
             int port = server.getLocalPort();
             System.out.println ("listening on "  + port);
             B6890349 t = new B6890349 (server);
@@ -44,11 +50,11 @@ public class B6890349 extends Thread {
                 port,
                 "/foo\nbar");
             System.out.println("URL: " + u);
-            HttpURLConnection urlc = (HttpURLConnection)u.openConnection ();
+            HttpURLConnection urlc = (HttpURLConnection)u.openConnection(Proxy.NO_PROXY);
             InputStream is = urlc.getInputStream();
             throw new RuntimeException ("Test failed");
         } catch (IOException e) {
-            System.out.println ("OK");
+            System.out.println ("Caught expected exception: " + e);
         }
     }
 

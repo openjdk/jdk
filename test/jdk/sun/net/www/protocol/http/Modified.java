@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2001, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,12 +24,16 @@
 /*
  * @test
  * @bug 4092605
+ * @library /test/lib
+ * @run main/othervm Modified
+ * @run main/othervm -Djava.net.preferIPv6Addresses=true Modified
  * @summary Test HttpURLConnection setIfModifiedSince
  *
  */
 
 import java.net.*;
 import java.io.*;
+import jdk.test.lib.net.URIBuilder;
 
 public class Modified implements Runnable {
 
@@ -78,13 +82,22 @@ public class Modified implements Runnable {
 
     Modified() throws Exception {
 
-        ss = new ServerSocket(0);
+        InetAddress loopback = InetAddress.getLoopbackAddress();
+        InetSocketAddress address = new InetSocketAddress(loopback, 0);
+        ss = new ServerSocket();
+        ss.bind(address);
+        int port = ss.getLocalPort();
+
         Thread thr = new Thread(this);
         thr.start();
 
-        URL testURL = new URL("http://localhost:" + ss.getLocalPort() +
-                              "/index.html");
-        URLConnection URLConn = testURL.openConnection();
+        URL testURL = URIBuilder.newBuilder()
+                .scheme("http")
+                .host(loopback)
+                .port(port)
+                .path("/index.html")
+                .toURL();
+        URLConnection URLConn = testURL.openConnection(Proxy.NO_PROXY);
         HttpURLConnection httpConn;
 
         if (URLConn instanceof HttpURLConnection) {
