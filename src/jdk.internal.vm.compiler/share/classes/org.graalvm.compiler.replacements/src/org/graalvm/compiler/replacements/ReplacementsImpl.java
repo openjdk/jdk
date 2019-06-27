@@ -67,6 +67,7 @@ import org.graalvm.compiler.java.GraphBuilderPhase;
 import org.graalvm.compiler.java.GraphBuilderPhase.Instance;
 import org.graalvm.compiler.loop.phases.ConvertDeoptimizeToGuardPhase;
 import org.graalvm.compiler.nodes.CallTargetNode;
+import org.graalvm.compiler.nodes.Cancellable;
 import org.graalvm.compiler.nodes.Invoke;
 import org.graalvm.compiler.nodes.StateSplit;
 import org.graalvm.compiler.nodes.StructuredGraph;
@@ -86,7 +87,6 @@ import org.graalvm.compiler.options.OptionValues;
 import org.graalvm.compiler.phases.OptimisticOptimizations;
 import org.graalvm.compiler.phases.common.CanonicalizerPhase;
 import org.graalvm.compiler.phases.common.DeadCodeEliminationPhase;
-import org.graalvm.compiler.phases.tiers.PhaseContext;
 import org.graalvm.compiler.phases.util.Providers;
 import org.graalvm.compiler.word.Word;
 import org.graalvm.compiler.word.WordOperationPlugin;
@@ -263,7 +263,7 @@ public class ReplacementsImpl implements Replacements, InlineInvokePlugin {
 
     @Override
     public StructuredGraph getMethodSubstitution(MethodSubstitutionPlugin plugin, ResolvedJavaMethod original, IntrinsicContext.CompilationContext context,
-                    StructuredGraph.AllowAssumptions allowAssumptions, OptionValues options) {
+                    StructuredGraph.AllowAssumptions allowAssumptions, Cancellable cancellable, OptionValues options) {
         // Method substitutions are parsed by the BytecodeParser.
         return null;
     }
@@ -330,7 +330,7 @@ public class ReplacementsImpl implements Replacements, InlineInvokePlugin {
 
     @SuppressWarnings("try")
     @Override
-    public StructuredGraph getIntrinsicGraph(ResolvedJavaMethod method, CompilationIdentifier compilationId, DebugContext debug) {
+    public StructuredGraph getIntrinsicGraph(ResolvedJavaMethod method, CompilationIdentifier compilationId, DebugContext debug, Cancellable cancellable) {
         MethodSubstitutionPlugin msPlugin = getMethodSubstitution(method);
         if (msPlugin != null) {
             ResolvedJavaMethod substMethod = msPlugin.getSubstitute(providers.getMetaAccess());
@@ -560,7 +560,7 @@ public class ReplacementsImpl implements Replacements, InlineInvokePlugin {
 
                 createGraphBuilder(replacements.providers, config, OptimisticOptimizations.NONE, initialIntrinsicContext).apply(graph);
 
-                new CanonicalizerPhase().apply(graph, new PhaseContext(replacements.providers));
+                new CanonicalizerPhase().apply(graph, replacements.providers);
             } catch (Throwable e) {
                 throw debug.handle(e);
             }

@@ -31,7 +31,6 @@ import org.graalvm.compiler.loop.phases.LoopUnswitchingPhase;
 import org.graalvm.compiler.nodes.StructuredGraph;
 import org.graalvm.compiler.nodes.StructuredGraph.AllowAssumptions;
 import org.graalvm.compiler.phases.common.CanonicalizerPhase;
-import org.graalvm.compiler.phases.tiers.PhaseContext;
 import org.junit.Test;
 
 public class LoopUnswitchTest extends GraalCompilerTest {
@@ -134,8 +133,8 @@ public class LoopUnswitchTest extends GraalCompilerTest {
         graph.clearAllStateAfter();
         referenceGraph.clearAllStateAfter();
 
-        new CanonicalizerPhase().apply(graph, new PhaseContext(getProviders()));
-        new CanonicalizerPhase().apply(referenceGraph, new PhaseContext(getProviders()));
+        new CanonicalizerPhase().apply(graph, getProviders());
+        new CanonicalizerPhase().apply(referenceGraph, getProviders());
         try (DebugContext.Scope s = debug.scope("Test", new DebugDumpScope("Test:" + snippet))) {
             assertEquals(referenceGraph, graph);
         } catch (Throwable e) {

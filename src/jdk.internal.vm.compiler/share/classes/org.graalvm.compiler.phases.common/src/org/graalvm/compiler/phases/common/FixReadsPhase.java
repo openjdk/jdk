@@ -69,6 +69,7 @@ import org.graalvm.compiler.nodes.memory.FloatingAccessNode;
 import org.graalvm.compiler.nodes.memory.FloatingReadNode;
 import org.graalvm.compiler.nodes.memory.MemoryAccess;
 import org.graalvm.compiler.nodes.memory.MemoryPhiNode;
+import org.graalvm.compiler.nodes.spi.CoreProviders;
 import org.graalvm.compiler.nodes.util.GraphUtil;
 import org.graalvm.compiler.options.OptionValues;
 import org.graalvm.compiler.phases.BasePhase;
@@ -77,7 +78,6 @@ import org.graalvm.compiler.phases.graph.ScheduledNodeIterator;
 import org.graalvm.compiler.phases.schedule.SchedulePhase;
 import org.graalvm.compiler.phases.schedule.SchedulePhase.SchedulingStrategy;
 import org.graalvm.compiler.phases.tiers.LowTierContext;
-import org.graalvm.compiler.phases.tiers.PhaseContext;
 
 import jdk.vm.ci.meta.Assumptions;
 import jdk.vm.ci.meta.Constant;
@@ -638,7 +638,7 @@ public class FixReadsPhase extends BasePhase<LowTierContext> {
         }
     }
 
-    protected ControlFlowGraph.RecursiveVisitor<?> createVisitor(StructuredGraph graph, ScheduleResult schedule, PhaseContext context) {
+    protected ControlFlowGraph.RecursiveVisitor<?> createVisitor(StructuredGraph graph, ScheduleResult schedule, CoreProviders context) {
         return new RawConditionalEliminationVisitor(graph, schedule, context.getMetaAccess(), replaceInputsWithConstants);
     }
 

@@ -45,7 +45,6 @@ import org.graalvm.compiler.nodes.spi.NodeLIRBuilderTool;
 import org.graalvm.compiler.nodes.util.GraphUtil;
 import org.graalvm.compiler.word.Word;
 
-import jdk.vm.ci.hotspot.HotSpotConstantPoolObject;
 import jdk.vm.ci.hotspot.HotSpotMetaspaceConstant;
 import jdk.vm.ci.hotspot.HotSpotObjectConstant;
 import jdk.vm.ci.meta.Constant;
@@ -101,7 +100,7 @@ public class ResolveConstantStubCall extends DeoptimizingStubCall implements Can
         Value result;
         LIRFrameState fs = gen.state(this);
         assert fs != null : "The stateAfter is null";
-        if (constant instanceof HotSpotObjectConstant || constant instanceof HotSpotConstantPoolObject) {
+        if (constant instanceof HotSpotObjectConstant) {
             result = ((HotSpotLIRGenerator) gen.getLIRGeneratorTool()).emitObjectConstantRetrieval(constant, stringValue, fs);
         } else if (constant instanceof HotSpotMetaspaceConstant) {
             if (action == HotSpotConstantLoadAction.RESOLVE) {

@@ -30,6 +30,7 @@ import org.graalvm.compiler.bytecode.BytecodeProvider;
 import org.graalvm.compiler.core.common.CompilationIdentifier;
 import org.graalvm.compiler.debug.DebugContext;
 import org.graalvm.compiler.graph.NodeSourcePosition;
+import org.graalvm.compiler.nodes.Cancellable;
 import org.graalvm.compiler.nodes.StructuredGraph;
 import org.graalvm.compiler.nodes.graphbuilderconf.GraphBuilderConfiguration;
 import org.graalvm.compiler.nodes.graphbuilderconf.GraphBuilderPlugin;
@@ -86,11 +87,12 @@ public interface Replacements {
      * @param original the method being substituted
      * @param context the kind of inlining to be performed for the substitution
      * @param allowAssumptions
+     * @param cancellable
      * @param options
      * @return the method substitution graph, if any, that is derived from {@code method}
      */
     StructuredGraph getMethodSubstitution(MethodSubstitutionPlugin plugin, ResolvedJavaMethod original, IntrinsicContext.CompilationContext context,
-                    StructuredGraph.AllowAssumptions allowAssumptions, OptionValues options);
+                    StructuredGraph.AllowAssumptions allowAssumptions, Cancellable cancellable, OptionValues options);
 
     /**
      * Registers a plugin as a substitution.
@@ -115,9 +117,10 @@ public interface Replacements {
      * @param method
      * @param compilationId
      * @param debug
+     * @param cancellable
      * @return an intrinsic graph that can be compiled and installed for {@code method} or null
      */
-    StructuredGraph getIntrinsicGraph(ResolvedJavaMethod method, CompilationIdentifier compilationId, DebugContext debug);
+    StructuredGraph getIntrinsicGraph(ResolvedJavaMethod method, CompilationIdentifier compilationId, DebugContext debug, Cancellable cancellable);
 
     /**
      * Determines if there may be a

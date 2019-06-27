@@ -613,6 +613,7 @@ public abstract class Node implements Cloneable, Formattable, NodeInterface {
                 assert assertTrue(newSuccessor.predecessor == null, "unexpected non-null predecessor in new successor (%s): %s, this=%s", newSuccessor, newSuccessor.predecessor, this);
                 newSuccessor.predecessor = this;
             }
+            maybeNotifyInputChanged(this);
         }
     }
 

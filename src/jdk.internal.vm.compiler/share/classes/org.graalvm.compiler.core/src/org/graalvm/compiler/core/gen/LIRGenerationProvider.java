@@ -44,7 +44,10 @@ import jdk.vm.ci.meta.ResolvedJavaMethod;
 public interface LIRGenerationProvider {
     LIRGeneratorTool newLIRGenerator(LIRGenerationResult lirGenRes);
 
-    LIRGenerationResult newLIRGenerationResult(CompilationIdentifier compilationId, LIR lir, RegisterConfig registerConfig, StructuredGraph graph,
+    LIRGenerationResult newLIRGenerationResult(CompilationIdentifier compilationId,
+                    LIR lir,
+                    RegisterConfig registerConfig,
+                    StructuredGraph graph,
                     Object stub);
 
     NodeLIRBuilderTool newNodeLIRBuilder(StructuredGraph graph, LIRGeneratorTool lirGen);
@@ -52,7 +55,9 @@ public interface LIRGenerationProvider {
     /**
      * Creates the object used to fill in the details of a given compilation result.
      */
-    CompilationResultBuilder newCompilationResultBuilder(LIRGenerationResult lirGenResult, FrameMap frameMap, CompilationResult compilationResult,
+    CompilationResultBuilder newCompilationResultBuilder(LIRGenerationResult lirGenResult,
+                    FrameMap frameMap,
+                    CompilationResult compilationResult,
                     CompilationResultBuilderFactory factory);
 
     /**

@@ -33,6 +33,7 @@ import java.util.Objects;
 import java.util.function.BiConsumer;
 
 import org.graalvm.compiler.code.DataSection.Data;
+import org.graalvm.compiler.serviceprovider.BufferUtil;
 
 import jdk.vm.ci.code.site.DataSectionReference;
 import jdk.vm.ci.meta.SerializableConstant;
@@ -376,11 +377,11 @@ public final class DataSection implements Iterable<Data> {
         assert buffer.remaining() >= sectionSize;
         int start = buffer.position();
         for (Data d : dataItems) {
-            buffer.position(start + d.ref.getOffset());
+            BufferUtil.asBaseBuffer(buffer).position(start + d.ref.getOffset());
             onEmit.accept(d.ref, d.getSize());
             d.emit(buffer, patch);
         }
-        buffer.position(start + sectionSize);
+        BufferUtil.asBaseBuffer(buffer).position(start + sectionSize);
     }
 
     public Data findData(DataSectionReference ref) {

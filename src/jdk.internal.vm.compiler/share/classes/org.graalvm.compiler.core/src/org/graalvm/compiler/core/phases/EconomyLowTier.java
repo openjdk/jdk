@@ -47,6 +47,6 @@ public class EconomyLowTier extends PhaseSuite<LowTierContext> {
 
         appendPhase(new ExpandLogicPhase());
 
-        appendPhase(new SchedulePhase(SchedulePhase.SchedulingStrategy.FINAL_SCHEDULE));
+        appendPhase(new SchedulePhase(SchedulePhase.SchedulingStrategy.LATEST_OUT_OF_LOOPS));
     }
 }

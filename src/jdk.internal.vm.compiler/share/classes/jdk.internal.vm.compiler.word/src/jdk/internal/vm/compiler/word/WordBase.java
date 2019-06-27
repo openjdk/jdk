@@ -43,14 +43,14 @@ package jdk.internal.vm.compiler.word;
 /**
  * The root of the interface hierarchy for machine-word-sized values.
  *
- * @since 1.0
+ * @since 19.0
  */
 public interface WordBase {
 
     /**
      * Conversion to a Java primitive value.
      *
-     * @since 1.0
+     * @since 19.0
      */
     long rawValue();
 
@@ -59,7 +59,7 @@ public interface WordBase {
      * the other word based equality routines. In general you should never be statically calling
      * this method anyway.
      *
-     * @since 1.0
+     * @since 19.0
      */
     @Override
     @Deprecated

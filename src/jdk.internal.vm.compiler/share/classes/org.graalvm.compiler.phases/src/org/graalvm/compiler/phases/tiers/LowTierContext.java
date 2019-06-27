@@ -24,11 +24,12 @@
 
 package org.graalvm.compiler.phases.tiers;
 
+import org.graalvm.compiler.nodes.spi.CoreProvidersDelegate;
 import org.graalvm.compiler.phases.util.Providers;
 
 import jdk.vm.ci.code.TargetDescription;
 
-public class LowTierContext extends PhaseContext {
+public class LowTierContext extends CoreProvidersDelegate {
 
     private final TargetProvider target;
 

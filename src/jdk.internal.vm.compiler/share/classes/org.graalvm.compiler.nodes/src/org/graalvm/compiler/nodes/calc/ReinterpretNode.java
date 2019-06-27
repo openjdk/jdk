@@ -44,6 +44,7 @@ import org.graalvm.compiler.nodes.NodeView;
 import org.graalvm.compiler.nodes.ValueNode;
 import org.graalvm.compiler.nodes.spi.ArithmeticLIRLowerable;
 import org.graalvm.compiler.nodes.spi.NodeLIRBuilderTool;
+import org.graalvm.compiler.serviceprovider.BufferUtil;
 
 import jdk.vm.ci.code.CodeUtil;
 import jdk.vm.ci.meta.JavaKind;
@@ -83,7 +84,7 @@ public final class ReinterpretNode extends UnaryNode implements ArithmeticLIRLow
         ByteBuffer buffer = ByteBuffer.wrap(new byte[c.getSerializedSize()]).order(ByteOrder.nativeOrder());
         c.serialize(buffer);
 
-        buffer.rewind();
+        BufferUtil.asBaseBuffer(buffer).rewind();
         SerializableConstant ret = ((ArithmeticStamp) stamp).deserialize(buffer);
 
         assert !buffer.hasRemaining();

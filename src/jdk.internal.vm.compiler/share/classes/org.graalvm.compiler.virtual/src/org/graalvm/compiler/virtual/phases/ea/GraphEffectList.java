@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,6 +26,7 @@ package org.graalvm.compiler.virtual.phases.ea;
 
 import java.util.ArrayList;
 
+import org.graalvm.compiler.debug.DebugCloseable;
 import org.graalvm.compiler.debug.DebugContext;
 import org.graalvm.compiler.graph.Node;
 import org.graalvm.compiler.nodes.ControlSinkNode;
@@ -196,11 +197,14 @@ public final class GraphEffectList extends EffectList {
 
     public void replaceWithSink(FixedWithNextNode node, ControlSinkNode sink) {
         add("kill if branch", new Effect() {
+            @SuppressWarnings("try")
             @Override
             public void apply(StructuredGraph graph, ArrayList<Node> obsoleteNodes) {
-                graph.addWithoutUnique(sink);
-                node.replaceAtPredecessor(sink);
-                GraphUtil.killCFG(node);
+                try (DebugCloseable position = graph.withNodeSourcePosition(node)) {
+                    graph.addWithoutUnique(sink);
+                    node.replaceAtPredecessor(sink);
+                    GraphUtil.killCFG(node);
+                }
             }
 
             @Override
@@ -221,33 +225,36 @@ public final class GraphEffectList extends EffectList {
      * @param insertBefore
      *
      */
+    @SuppressWarnings("try")
     public void replaceAtUsages(ValueNode node, ValueNode replacement, FixedNode insertBefore) {
         assert node != null && replacement != null : node + " " + replacement;
         assert !node.hasUsages() || node.stamp(NodeView.DEFAULT).isCompatible(replacement.stamp(NodeView.DEFAULT)) : "Replacement node stamp not compatible " + node.stamp(NodeView.DEFAULT) + " vs " +
                         replacement.stamp(NodeView.DEFAULT);
         add("replace at usages", (graph, obsoleteNodes) -> {
-            assert node.isAlive();
-            ValueNode replacementNode = graph.addOrUniqueWithInputs(replacement);
-            assert replacementNode.isAlive();
-            assert insertBefore != null;
-            if (replacementNode instanceof FixedWithNextNode && ((FixedWithNextNode) replacementNode).next() == null) {
-                graph.addBeforeFixed(insertBefore, (FixedWithNextNode) replacementNode);
+            try (DebugCloseable position = graph.withNodeSourcePosition(node)) {
+                assert node.isAlive();
+                ValueNode replacementNode = graph.addOrUniqueWithInputs(replacement);
+                assert replacementNode.isAlive();
+                assert insertBefore != null;
+                if (replacementNode instanceof FixedWithNextNode && ((FixedWithNextNode) replacementNode).next() == null) {
+                    graph.addBeforeFixed(insertBefore, (FixedWithNextNode) replacementNode);
+                }
+                /*
+                 * Keep the (better) stamp information when replacing a node with another one if the
+                 * replacement has a less precise stamp than the original node. This can happen for
+                 * example in the context of read nodes and unguarded pi nodes where the pi will be
+                 * used to improve the stamp information of the read. Such a read might later be
+                 * replaced with a read with a less precise stamp.
+                 */
+                if (node.hasUsages() && !node.stamp(NodeView.DEFAULT).equals(replacementNode.stamp(NodeView.DEFAULT))) {
+                    replacementNode = graph.unique(new PiNode(replacementNode, node.stamp(NodeView.DEFAULT)));
+                }
+                node.replaceAtUsages(replacementNode);
+                if (node instanceof FixedWithNextNode) {
+                    GraphUtil.unlinkFixedNode((FixedWithNextNode) node);
+                }
+                obsoleteNodes.add(node);
             }
-            /*
-             * Keep the (better) stamp information when replacing a node with another one if the
-             * replacement has a less precise stamp than the original node. This can happen for
-             * example in the context of read nodes and unguarded pi nodes where the pi will be used
-             * to improve the stamp information of the read. Such a read might later be replaced
-             * with a read with a less precise stamp.
-             */
-            if (node.hasUsages() && !node.stamp(NodeView.DEFAULT).equals(replacementNode.stamp(NodeView.DEFAULT))) {
-                replacementNode = graph.unique(new PiNode(replacementNode, node.stamp(NodeView.DEFAULT)));
-            }
-            node.replaceAtUsages(replacementNode);
-            if (node instanceof FixedWithNextNode) {
-                GraphUtil.unlinkFixedNode((FixedWithNextNode) node);
-            }
-            obsoleteNodes.add(node);
         });
     }
 

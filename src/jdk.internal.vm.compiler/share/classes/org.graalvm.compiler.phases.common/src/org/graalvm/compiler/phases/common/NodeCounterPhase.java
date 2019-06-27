@@ -27,13 +27,13 @@ package org.graalvm.compiler.phases.common;
 import org.graalvm.compiler.debug.DebugContext;
 import org.graalvm.compiler.graph.Node;
 import org.graalvm.compiler.nodes.StructuredGraph;
+import org.graalvm.compiler.nodes.spi.CoreProviders;
 import org.graalvm.compiler.options.Option;
 import org.graalvm.compiler.options.OptionKey;
 import org.graalvm.compiler.options.OptionType;
 import org.graalvm.compiler.phases.BasePhase;
-import org.graalvm.compiler.phases.tiers.PhaseContext;
 
-public class NodeCounterPhase extends BasePhase<PhaseContext> {
+public class NodeCounterPhase extends BasePhase<CoreProviders> {
 
     private Stage stage;
 
@@ -55,7 +55,7 @@ public class NodeCounterPhase extends BasePhase<PhaseContext> {
     }
 
     @Override
-    protected void run(StructuredGraph graph, PhaseContext context) {
+    protected void run(StructuredGraph graph, CoreProviders context) {
 
         for (Node node : graph.getNodes()) {
             String nodeName = node.getNodeClass().getClazz().getSimpleName();

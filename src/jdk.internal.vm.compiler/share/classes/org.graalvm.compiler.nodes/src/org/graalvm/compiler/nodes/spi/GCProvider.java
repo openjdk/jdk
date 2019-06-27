@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,24 +22,11 @@
  */
 
 
+package org.graalvm.compiler.nodes.spi;
 
-package org.graalvm.compiler.hotspot.gc.g1;
+import org.graalvm.compiler.nodes.gc.BarrierSet;
 
-import static org.graalvm.compiler.nodeinfo.NodeCycles.CYCLES_64;
-import static org.graalvm.compiler.nodeinfo.NodeSize.SIZE_64;
-
-import org.graalvm.compiler.graph.NodeClass;
-import org.graalvm.compiler.hotspot.gc.shared.ArrayRangeWriteBarrier;
-import org.graalvm.compiler.nodeinfo.NodeInfo;
-import org.graalvm.compiler.nodes.ValueNode;
-import org.graalvm.compiler.nodes.memory.address.AddressNode;
-
-@NodeInfo(cycles = CYCLES_64, size = SIZE_64)
-public class G1ArrayRangePostWriteBarrier extends ArrayRangeWriteBarrier {
-    public static final NodeClass<G1ArrayRangePostWriteBarrier> TYPE = NodeClass.create(G1ArrayRangePostWriteBarrier.class);
-
-    public G1ArrayRangePostWriteBarrier(AddressNode address, ValueNode length, int elementStride) {
-        super(TYPE, address, length, elementStride);
-    }
-
+public interface GCProvider {
+    /** Returns the barrier set that is used to insert the needed read/write barriers. */
+    BarrierSet getBarrierSet();
 }

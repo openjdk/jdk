@@ -29,12 +29,12 @@ import org.graalvm.compiler.nodes.GuardNode;
 import org.graalvm.compiler.nodes.StructuredGraph;
 import org.graalvm.compiler.nodes.StructuredGraph.AllowAssumptions;
 import org.graalvm.compiler.nodes.java.InstanceOfNode;
+import org.graalvm.compiler.nodes.spi.CoreProviders;
 import org.graalvm.compiler.nodes.spi.LoweringTool;
 import org.graalvm.compiler.phases.common.CanonicalizerPhase;
 import org.graalvm.compiler.phases.common.ConditionalEliminationPhase;
 import org.graalvm.compiler.phases.common.FloatingReadPhase;
 import org.graalvm.compiler.phases.common.LoweringPhase;
-import org.graalvm.compiler.phases.tiers.PhaseContext;
 import org.junit.Assert;
 import org.junit.Test;
 
@@ -110,7 +110,7 @@ public class ConditionalEliminationTest2 extends ConditionalEliminationTestBase 
     public void testRedundantCompares() {
         StructuredGraph graph = parseEager("testRedundantComparesSnippet", AllowAssumptions.YES);
         CanonicalizerPhase canonicalizer = new CanonicalizerPhase();
-        PhaseContext context = new PhaseContext(getProviders());
+        CoreProviders context = getProviders();
 
         new LoweringPhase(canonicalizer, LoweringTool.StandardLoweringStage.HIGH_TIER).apply(graph, context);
         canonicalizer.apply(graph, context);
@@ -133,7 +133,7 @@ public class ConditionalEliminationTest2 extends ConditionalEliminationTestBase 
         StructuredGraph graph = parseEager("testInstanceOfCheckCastSnippet", AllowAssumptions.YES);
 
         CanonicalizerPhase canonicalizer = new CanonicalizerPhase();
-        PhaseContext context = new PhaseContext(getProviders());
+        CoreProviders context = getProviders();
 
         new LoweringPhase(canonicalizer, LoweringTool.StandardLoweringStage.HIGH_TIER).apply(graph, context);
         canonicalizer.apply(graph, context);
@@ -147,7 +147,7 @@ public class ConditionalEliminationTest2 extends ConditionalEliminationTestBase 
         StructuredGraph graph = parseEager(methodName, AllowAssumptions.YES);
 
         CanonicalizerPhase canonicalizer = new CanonicalizerPhase();
-        PhaseContext context = new PhaseContext(getProviders());
+        CoreProviders context = getProviders();
 
         canonicalizer.apply(graph, context);
         new ConditionalEliminationPhase(true).apply(graph, context);

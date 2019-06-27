@@ -42,6 +42,7 @@ import org.graalvm.compiler.lir.phases.LIRPhaseSuite;
 import org.graalvm.compiler.options.EnumOptionKey;
 import org.graalvm.compiler.options.Option;
 import org.graalvm.compiler.options.OptionKey;
+import org.graalvm.compiler.options.OptionStability;
 import org.graalvm.compiler.options.OptionType;
 import org.graalvm.compiler.options.OptionValues;
 import org.graalvm.compiler.phases.BasePhase;
@@ -53,9 +54,9 @@ import jdk.vm.ci.code.Architecture;
 import jdk.vm.ci.common.InitTimer;
 
 /**
- * A factory that creates the {@link CompilerConfiguration} the Graal compiler will use. Each
- * factory must have a unique {@link #name} and {@link #autoSelectionPriority}. The latter imposes a
- * total ordering between factories for the purpose of auto-selecting the factory to use.
+ * A factory that creates the {@link CompilerConfiguration} the compiler will use. Each factory must
+ * have a unique {@link #name} and {@link #autoSelectionPriority}. The latter imposes a total
+ * ordering between factories for the purpose of auto-selecting the factory to use.
  */
 public abstract class CompilerConfigurationFactory implements Comparable<CompilerConfigurationFactory> {
 
@@ -67,11 +68,11 @@ public abstract class CompilerConfigurationFactory implements Comparable<Compile
 
     static class Options {
         // @formatter:off
-        @Option(help = "Names the Graal compiler configuration to use. If omitted, the compiler configuration " +
+        @Option(help = "Names the compiler configuration to use. If omitted, the compiler configuration " +
                        "with the highest auto-selection priority is used. To see the set of available configurations, " +
-                       "supply the value 'help' to this option.", type = OptionType.Expert)
+                       "supply the value 'help' to this option.", type = OptionType.Expert, stability = OptionStability.STABLE)
         public static final OptionKey<String> CompilerConfiguration = new OptionKey<>(null);
-        @Option(help = "Writes to the VM log information about the Graal compiler configuration selected.", type = OptionType.User)
+        @Option(help = "Writes to the VM log information about the compiler configuration selected.", type = OptionType.User, stability = OptionStability.STABLE)
         public static final OptionKey<ShowConfigurationLevel> ShowConfiguration = new EnumOptionKey<>(ShowConfigurationLevel.none);
         // @formatter:on
     }
@@ -195,7 +196,7 @@ public abstract class CompilerConfigurationFactory implements Comparable<Compile
         try (InitTimer t = timer("CompilerConfigurationFactory.selectFactory")) {
             String value = name == null ? Options.CompilerConfiguration.getValue(options) : name;
             if ("help".equals(value)) {
-                System.out.println("The available Graal compiler configurations are:");
+                System.out.println("The available compiler configurations are:");
                 for (CompilerConfigurationFactory candidate : getAllCandidates()) {
                     System.out.println("    " + candidate.name);
                 }
@@ -208,7 +209,7 @@ public abstract class CompilerConfigurationFactory implements Comparable<Compile
                     }
                 }
                 if (factory == null) {
-                    throw new GraalError("Graal compiler configuration '%s' not found. Available configurations are: %s", value,
+                    throw new GraalError("Compiler configuration '%s' not found. Available configurations are: %s", value,
                                     getAllCandidates().stream().map(c -> c.name).collect(Collectors.joining(", ")));
                 }
             } else {
@@ -247,7 +248,7 @@ public abstract class CompilerConfigurationFactory implements Comparable<Compile
 
     private static void printConfigInfo(CompilerConfigurationFactory factory) {
         URL location = factory.getClass().getResource(factory.getClass().getSimpleName() + ".class");
-        TTY.printf("Using Graal compiler configuration '%s' provided by %s loaded from %s%n", factory.name, factory.getClass().getName(), location);
+        TTY.printf("Using compiler configuration '%s' provided by %s loaded from %s%n", factory.name, factory.getClass().getName(), location);
     }
 
     private static <C> List<String> phaseNames(PhaseSuite<C> suite) {

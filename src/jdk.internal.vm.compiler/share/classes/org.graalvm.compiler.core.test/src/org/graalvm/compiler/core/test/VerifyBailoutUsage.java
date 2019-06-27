@@ -29,14 +29,14 @@ import org.graalvm.compiler.core.common.RetryableBailoutException;
 import org.graalvm.compiler.debug.GraalError;
 import org.graalvm.compiler.nodes.StructuredGraph;
 import org.graalvm.compiler.nodes.java.MethodCallTargetNode;
+import org.graalvm.compiler.nodes.spi.CoreProviders;
 import org.graalvm.compiler.phases.VerifyPhase;
-import org.graalvm.compiler.phases.tiers.PhaseContext;
 
 import jdk.vm.ci.code.BailoutException;
 import jdk.vm.ci.meta.ResolvedJavaMethod;
 import jdk.vm.ci.meta.ResolvedJavaType;
 
-public class VerifyBailoutUsage extends VerifyPhase<PhaseContext> {
+public class VerifyBailoutUsage extends VerifyPhase<CoreProviders> {
 
     private static final String[] AllowedPackagePrefixes;
 
@@ -73,7 +73,7 @@ public class VerifyBailoutUsage extends VerifyPhase<PhaseContext> {
     }
 
     @Override
-    protected void verify(StructuredGraph graph, PhaseContext context) {
+    protected void verify(StructuredGraph graph, CoreProviders context) {
         final ResolvedJavaType bailoutType = context.getMetaAccess().lookupJavaType(BailoutException.class);
         ResolvedJavaMethod caller = graph.method();
         String holderQualified = caller.format("%H");

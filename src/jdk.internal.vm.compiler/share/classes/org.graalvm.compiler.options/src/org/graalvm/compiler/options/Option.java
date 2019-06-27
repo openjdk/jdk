@@ -64,4 +64,9 @@ public @interface Option {
      * Specifies the type of the option.
      */
     OptionType type() default OptionType.Debug;
+
+    /**
+     * Specifies the stability of the option.
+     */
+    OptionStability stability() default OptionStability.EXPERIMENTAL;
 }

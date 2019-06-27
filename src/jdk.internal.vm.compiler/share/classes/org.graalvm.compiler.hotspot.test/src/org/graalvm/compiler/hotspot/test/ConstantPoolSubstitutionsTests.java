@@ -35,6 +35,7 @@ import org.graalvm.compiler.graph.Node;
 import org.graalvm.compiler.nodes.Invoke;
 import org.graalvm.compiler.nodes.StructuredGraph;
 import org.graalvm.compiler.nodes.StructuredGraph.AllowAssumptions;
+import org.graalvm.compiler.serviceprovider.JavaVersionUtil;
 import org.graalvm.compiler.test.JLModule;
 import org.junit.BeforeClass;
 import org.junit.Test;
@@ -75,8 +76,8 @@ public class ConstantPoolSubstitutionsTests extends GraalCompilerTest {
     }
 
     private static Object getConstantPoolForObject() {
-        String miscPackage = Java8OrEarlier ? "sun.misc"
-                        : (Java11OrEarlier ? "jdk.internal.misc" : "jdk.internal.access");
+        String miscPackage = JavaVersionUtil.JAVA_SPEC <= 8 ? "sun.misc"
+                        : (JavaVersionUtil.JAVA_SPEC <= 11 ? "jdk.internal.misc" : "jdk.internal.access");
         try {
             Class<?> sharedSecretsClass = Class.forName(miscPackage + ".SharedSecrets");
             Class<?> javaLangAccessClass = Class.forName(miscPackage + ".JavaLangAccess");
@@ -111,11 +112,11 @@ public class ConstantPoolSubstitutionsTests extends GraalCompilerTest {
      * This test uses some API hidden by the JDK9 module system.
      */
     private static void addExports(Class<?> c) {
-        if (!Java8OrEarlier) {
+        if (JavaVersionUtil.JAVA_SPEC > 8) {
             Object javaBaseModule = JLModule.fromClass(String.class);
             Object cModule = JLModule.fromClass(c);
             uncheckedAddExports(javaBaseModule, "jdk.internal.reflect", cModule);
-            if (Java11OrEarlier) {
+            if (JavaVersionUtil.JAVA_SPEC <= 11) {
                 uncheckedAddExports(javaBaseModule, "jdk.internal.misc", cModule);
             } else {
                 uncheckedAddExports(javaBaseModule, "jdk.internal.access", cModule);
@@ -222,7 +223,7 @@ public class ConstantPoolSubstitutionsTests extends GraalCompilerTest {
             cw.visit(52, ACC_SUPER, PACKAGE_NAME_INTERNAL + "/ConstantPoolTest", null, "java/lang/Object", null);
             cw.visitInnerClass(PACKAGE_NAME_INTERNAL + "/ConstantPoolTest", PACKAGE_NAME_INTERNAL + "/ConstantPoolSubstitutionsTests", "ConstantPoolTest",
                             ACC_STATIC);
-            String constantPool = Java8OrEarlier ? "sun/reflect/ConstantPool" : "jdk/internal/reflect/ConstantPool";
+            String constantPool = JavaVersionUtil.JAVA_SPEC <= 8 ? "sun/reflect/ConstantPool" : "jdk/internal/reflect/ConstantPool";
 
             mv = cw.visitMethod(0, "<init>", "()V", null, null);
             mv.visitCode();

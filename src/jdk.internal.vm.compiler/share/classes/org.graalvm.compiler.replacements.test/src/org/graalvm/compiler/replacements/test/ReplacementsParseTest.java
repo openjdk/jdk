@@ -69,7 +69,7 @@ import org.graalvm.compiler.phases.common.FrameStateAssignmentPhase;
 import org.graalvm.compiler.phases.common.GuardLoweringPhase;
 import org.graalvm.compiler.phases.common.LoweringPhase;
 import org.graalvm.compiler.phases.tiers.HighTierContext;
-import org.graalvm.compiler.test.GraalTest;
+import org.graalvm.compiler.serviceprovider.JavaVersionUtil;
 import jdk.internal.vm.compiler.word.LocationIdentity;
 import org.junit.Assert;
 import org.junit.Assume;
@@ -375,7 +375,7 @@ public class ReplacementsParseTest extends ReplacementsTest {
 
     @Test
     public void testNextAfter() {
-        Assume.assumeFalse(GraalTest.Java8OrEarlier);
+        Assume.assumeFalse(JavaVersionUtil.JAVA_SPEC <= 8);
         double[] inArray = new double[1024];
         double[] outArray = new double[1024];
         for (int i = 0; i < inArray.length; i++) {

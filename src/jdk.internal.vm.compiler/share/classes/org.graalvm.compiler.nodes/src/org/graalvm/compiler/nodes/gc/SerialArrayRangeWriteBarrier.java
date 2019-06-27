@@ -22,41 +22,23 @@
  */
 
 
-package org.graalvm.compiler.hotspot.gc.shared;
+package org.graalvm.compiler.nodes.gc;
+
+import static org.graalvm.compiler.nodeinfo.NodeCycles.CYCLES_8;
+import static org.graalvm.compiler.nodeinfo.NodeSize.SIZE_8;
 
 import org.graalvm.compiler.graph.NodeClass;
-import org.graalvm.compiler.hotspot.nodes.WriteBarrier;
-import org.graalvm.compiler.nodeinfo.InputType;
 import org.graalvm.compiler.nodeinfo.NodeInfo;
 import org.graalvm.compiler.nodes.ValueNode;
 import org.graalvm.compiler.nodes.memory.address.AddressNode;
-import org.graalvm.compiler.nodes.spi.Lowerable;
 
-@NodeInfo
-public abstract class ArrayRangeWriteBarrier extends WriteBarrier implements Lowerable {
+@NodeInfo(cycles = CYCLES_8, size = SIZE_8)
+public final class SerialArrayRangeWriteBarrier extends ArrayRangeWriteBarrier {
+    public static final NodeClass<SerialArrayRangeWriteBarrier> TYPE = NodeClass.create(SerialArrayRangeWriteBarrier.class);
 
-    public static final NodeClass<ArrayRangeWriteBarrier> TYPE = NodeClass.create(ArrayRangeWriteBarrier.class);
-    @Input(InputType.Association) AddressNode address;
-    @Input ValueNode length;
-
-    private final int elementStride;
-
-    protected ArrayRangeWriteBarrier(NodeClass<? extends ArrayRangeWriteBarrier> c, AddressNode address, ValueNode length, int elementStride) {
-        super(c);
-        this.address = address;
-        this.length = length;
-        this.elementStride = elementStride;
+    public SerialArrayRangeWriteBarrier(AddressNode address, ValueNode length, int elementStride) {
+        super(TYPE, address, length, elementStride);
     }
 
-    public AddressNode getAddress() {
-        return address;
-    }
-
-    public ValueNode getLength() {
-        return length;
-    }
-
-    public int getElementStride() {
-        return elementStride;
-    }
 }
+

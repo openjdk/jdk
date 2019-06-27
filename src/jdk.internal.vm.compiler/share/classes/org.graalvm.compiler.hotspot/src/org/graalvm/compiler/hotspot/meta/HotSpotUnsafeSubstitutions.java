@@ -24,19 +24,18 @@
 
 package org.graalvm.compiler.hotspot.meta;
 
-import static org.graalvm.compiler.serviceprovider.JavaVersionUtil.Java8OrEarlier;
-
 import org.graalvm.compiler.api.replacements.ClassSubstitution;
 import org.graalvm.compiler.api.replacements.MethodSubstitution;
 import org.graalvm.compiler.hotspot.HotSpotBackend;
 import org.graalvm.compiler.nodes.ComputeObjectAddressNode;
+import org.graalvm.compiler.serviceprovider.JavaVersionUtil;
 import org.graalvm.compiler.word.Word;
 import jdk.internal.vm.compiler.word.WordFactory;
 
 @ClassSubstitution(className = {"jdk.internal.misc.Unsafe", "sun.misc.Unsafe"})
 public class HotSpotUnsafeSubstitutions {
 
-    public static final String copyMemoryName = Java8OrEarlier ? "copyMemory" : "copyMemory0";
+    public static final String copyMemoryName = JavaVersionUtil.JAVA_SPEC <= 8 ? "copyMemory" : "copyMemory0";
 
     @SuppressWarnings("unused")
     @MethodSubstitution(isStatic = false)

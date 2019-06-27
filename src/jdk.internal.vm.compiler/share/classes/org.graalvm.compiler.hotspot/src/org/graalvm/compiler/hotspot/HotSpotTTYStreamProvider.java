@@ -39,7 +39,6 @@ import org.graalvm.compiler.debug.TTYStreamProvider;
 import org.graalvm.compiler.options.Option;
 import org.graalvm.compiler.options.OptionKey;
 import org.graalvm.compiler.options.OptionType;
-import org.graalvm.compiler.options.OptionValues;
 import org.graalvm.compiler.serviceprovider.GraalServices;
 import org.graalvm.compiler.serviceprovider.ServiceProvider;
 
@@ -60,7 +59,7 @@ public class HotSpotTTYStreamProvider implements TTYStreamProvider {
 
     @Override
     public PrintStream getStream() {
-        return Options.LogFile.getStream(defaultOptions());
+        return Options.LogFile.getStream();
     }
 
     /**
@@ -96,20 +95,55 @@ public class HotSpotTTYStreamProvider implements TTYStreamProvider {
          * operation is performed on the stream. This is required to break a deadlock in early JVMCI
          * initialization.
          */
-        static class DelayedOutputStream extends OutputStream {
+        class DelayedOutputStream extends OutputStream {
             private volatile OutputStream lazy;
 
             private OutputStream lazy() {
                 if (lazy == null) {
                     synchronized (this) {
                         if (lazy == null) {
+                            String nameTemplate = LogStreamOptionKey.this.getValue(defaultOptions());
+                            if (nameTemplate != null) {
+                                String name = makeFilename(nameTemplate);
+                                try {
+                                    final boolean enableAutoflush = true;
+                                    FileOutputStream result = new FileOutputStream(name);
+                                    if (!Services.IS_IN_NATIVE_IMAGE) {
+                                        printVMConfig(enableAutoflush, result);
+                                    } else {
+                                        // There are no VM arguments for the libgraal library.
+                                    }
+                                    lazy = result;
+                                    return lazy;
+                                } catch (FileNotFoundException e) {
+                                    throw new RuntimeException("couldn't open file: " + name, e);
+                                }
+                            }
+
                             lazy = HotSpotJVMCIRuntime.runtime().getLogStream();
                             PrintStream ps = new PrintStream(lazy);
                             ps.printf("[Use -D%sLogFile=<path> to redirect Graal log output to a file.]%n", GRAAL_OPTION_PROPERTY_PREFIX);
+                            ps.flush();
                         }
                     }
                 }
                 return lazy;
+            }
+
+            @SuppressFBWarnings(value = "DLS_DEAD_LOCAL_STORE", justification = "false positive on dead store to `ps`")
+            private void printVMConfig(final boolean enableAutoflush, FileOutputStream result) {
+                /*
+                 * Add the JVM and Java arguments to the log file to help identity it.
+                 */
+                PrintStream ps = new PrintStream(result, enableAutoflush);
+                List<String> inputArguments = GraalServices.getInputArguments();
+                if (inputArguments != null) {
+                    ps.println("VM Arguments: " + String.join(" ", inputArguments));
+                }
+                String cmd = Services.getSavedProperties().get("sun.java.command");
+                if (cmd != null) {
+                    ps.println("sun.java.command=" + cmd);
+                }
             }
 
             @Override
@@ -137,32 +171,8 @@ public class HotSpotTTYStreamProvider implements TTYStreamProvider {
          * Gets the print stream configured by this option. If no file is configured, the print
          * stream will output to HotSpot's {@link HotSpotJVMCIRuntime#getLogStream() log} stream.
          */
-        @SuppressFBWarnings(value = "DLS_DEAD_LOCAL_STORE", justification = "false positive on dead store to `ps`")
-        public PrintStream getStream(OptionValues options) {
-            String nameTemplate = getValue(options);
-            if (nameTemplate != null) {
-                String name = makeFilename(nameTemplate);
-                try {
-                    final boolean enableAutoflush = true;
-                    PrintStream ps = new PrintStream(new FileOutputStream(name), enableAutoflush);
-                    /*
-                     * Add the JVM and Java arguments to the log file to help identity it.
-                     */
-                    List<String> inputArguments = GraalServices.getInputArguments();
-                    if (inputArguments != null) {
-                        ps.println("VM Arguments: " + String.join(" ", inputArguments));
-                    }
-                    String cmd = Services.getSavedProperties().get("sun.java.command");
-                    if (cmd != null) {
-                        ps.println("sun.java.command=" + cmd);
-                    }
-                    return ps;
-                } catch (FileNotFoundException e) {
-                    throw new RuntimeException("couldn't open file: " + name, e);
-                }
-            } else {
-                return new PrintStream(new DelayedOutputStream());
-            }
+        public PrintStream getStream() {
+            return new PrintStream(new DelayedOutputStream());
         }
     }
 

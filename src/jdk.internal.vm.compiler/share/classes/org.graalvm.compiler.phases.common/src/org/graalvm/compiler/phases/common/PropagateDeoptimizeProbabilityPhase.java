@@ -35,18 +35,18 @@ import org.graalvm.compiler.nodes.AbstractMergeNode;
 import org.graalvm.compiler.nodes.ControlSplitNode;
 import org.graalvm.compiler.nodes.FixedNode;
 import org.graalvm.compiler.nodes.StructuredGraph;
+import org.graalvm.compiler.nodes.spi.CoreProviders;
 import org.graalvm.compiler.phases.BasePhase;
-import org.graalvm.compiler.phases.tiers.PhaseContext;
 
 /**
  * This phase will make sure that the branch leading towards this deopt has 0.0 probability.
  *
  */
-public class PropagateDeoptimizeProbabilityPhase extends BasePhase<PhaseContext> {
+public class PropagateDeoptimizeProbabilityPhase extends BasePhase<CoreProviders> {
 
     @Override
     @SuppressWarnings("try")
-    protected void run(final StructuredGraph graph, PhaseContext context) {
+    protected void run(final StructuredGraph graph, CoreProviders context) {
         assert !graph.hasValueProxies() : "ConvertDeoptimizeToGuardPhase always creates proxies";
 
         if (graph.hasNode(AbstractDeoptimizeNode.TYPE)) {

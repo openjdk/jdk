@@ -112,12 +112,7 @@ public class AMD64StringLatin1Substitutions {
             // Note: fromIndex might be near -1>>>1.
             return -1;
         }
-        Pointer sourcePointer = byteOffsetPointer(value, fromIndex);
-        int result = AMD64ArrayIndexOf.indexOf1Byte(sourcePointer, length - fromIndex, (byte) ch);
-        if (result != -1) {
-            return result + fromIndex;
-        }
-        return result;
+        return AMD64ArrayIndexOf.indexOf1Byte(value, length, fromIndex, (byte) ch);
     }
 
     @MethodSubstitution
@@ -137,37 +132,25 @@ public class AMD64StringLatin1Substitutions {
             // The empty string contains nothing except the empty string.
             return -1;
         }
-        int totalOffset = fromIndex;
         if (targetCount == 1) {
-            Pointer sourcePointer = byteOffsetPointer(source, totalOffset);
-            int indexOfResult = AMD64ArrayIndexOf.indexOf1Byte(sourcePointer, sourceCount - fromIndex, target[0]);
-            if (indexOfResult >= 0) {
-                return indexOfResult + totalOffset;
-            }
-            return indexOfResult;
+            return AMD64ArrayIndexOf.indexOf1Byte(source, sourceCount, fromIndex, target[0]);
         } else if (targetCount == 2) {
-            Pointer sourcePointer = byteOffsetPointer(source, totalOffset);
-            int indexOfResult = AMD64ArrayIndexOf.indexOfTwoConsecutiveBytes(sourcePointer, sourceCount - fromIndex, target[0], target[1]);
-            if (indexOfResult >= 0) {
-                return indexOfResult + totalOffset;
-            }
-            return indexOfResult;
+            return AMD64ArrayIndexOf.indexOfTwoConsecutiveBytes(source, sourceCount, fromIndex, target[0], target[1]);
         } else {
-            int haystackLength = sourceCount - (fromIndex + (targetCount - 2));
-            while (haystackLength > 0) {
-                Pointer sourcePointer = byteOffsetPointer(source, totalOffset);
-                int indexOfResult = AMD64ArrayIndexOf.indexOfTwoConsecutiveBytes(sourcePointer, haystackLength, target[0], target[1]);
+            int haystackLength = sourceCount - (targetCount - 2);
+            int offset = fromIndex;
+            while (offset < haystackLength) {
+                int indexOfResult = AMD64ArrayIndexOf.indexOfTwoConsecutiveBytes(source, haystackLength, offset, target[0], target[1]);
                 if (indexOfResult < 0) {
                     return -1;
                 }
-                totalOffset += indexOfResult;
-                haystackLength -= (indexOfResult + 1);
-                Pointer cmpSourcePointer = byteOffsetPointer(source, totalOffset);
+                offset = indexOfResult;
+                Pointer cmpSourcePointer = byteOffsetPointer(source, offset);
                 Pointer targetPointer = pointer(target);
                 if (ArrayRegionEqualsNode.regionEquals(cmpSourcePointer, targetPointer, targetCount, JavaKind.Byte)) {
-                    return totalOffset;
+                    return offset;
                 }
-                totalOffset++;
+                offset++;
             }
             return -1;
         }

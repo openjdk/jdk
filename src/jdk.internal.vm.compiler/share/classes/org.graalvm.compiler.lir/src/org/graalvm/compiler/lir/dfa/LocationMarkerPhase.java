@@ -37,14 +37,15 @@ import org.graalvm.compiler.lir.framemap.ReferenceMapBuilder;
 import org.graalvm.compiler.lir.gen.LIRGenerationResult;
 import org.graalvm.compiler.lir.phases.AllocationPhase;
 
+import jdk.vm.ci.code.ReferenceMap;
 import jdk.vm.ci.code.Register;
 import jdk.vm.ci.code.RegisterAttributes;
 import jdk.vm.ci.code.TargetDescription;
 import jdk.vm.ci.meta.Value;
 
 /**
- * Mark all live references for a frame state. The frame state use this information to build the OOP
- * maps.
+ * Mark all live references for a frame state. The frame state uses this information to build the
+ * {@link ReferenceMap}s.
  */
 public final class LocationMarkerPhase extends AllocationPhase {
 
@@ -93,7 +94,6 @@ public final class LocationMarkerPhase extends AllocationPhase {
             }
 
             ReferenceMapBuilder refMap = frameMap.newReferenceMapBuilder();
-            frameMap.addLiveValues(refMap);
             values.addLiveValues(refMap);
 
             info.debugInfo().setReferenceMap(refMap.finish(info));

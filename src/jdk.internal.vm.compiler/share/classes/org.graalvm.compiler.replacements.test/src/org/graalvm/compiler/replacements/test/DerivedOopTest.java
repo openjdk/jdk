@@ -266,8 +266,8 @@ public class DerivedOopTest extends ReplacementsTest implements Snippets {
     }
 
     @Override
-    protected boolean checkHighTierGraph(StructuredGraph graph) {
+    protected void checkHighTierGraph(StructuredGraph graph) {
         assert graph.getNodes().filter(WordCastNode.class).count() > 0 : "DerivedOopTest.toLong should be intrinsified";
-        return super.checkHighTierGraph(graph);
+        super.checkHighTierGraph(graph);
     }
 }

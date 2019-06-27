@@ -91,7 +91,7 @@ public class StringCompareToTest extends StringSubstitutionTestBase {
         OptionValues options;
         boolean needCheckNode = true;
 
-        if (JavaVersionUtil.Java8OrEarlier) {
+        if (JavaVersionUtil.JAVA_SPEC <= 8) {
             needCheckNode = false;
         } else {
             List<String> vmArgs = GraalServices.getInputArguments();

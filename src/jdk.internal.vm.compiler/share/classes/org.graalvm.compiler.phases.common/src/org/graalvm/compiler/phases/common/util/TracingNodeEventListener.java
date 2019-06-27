@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,25 +22,21 @@
  */
 
 
-package org.graalvm.compiler.hotspot.gc.shared;
+package org.graalvm.compiler.phases.common.util;
 
-import static org.graalvm.compiler.nodeinfo.NodeCycles.CYCLES_8;
-import static org.graalvm.compiler.nodeinfo.NodeSize.SIZE_4;
+import org.graalvm.compiler.debug.TTY;
+import org.graalvm.compiler.graph.Graph.NodeEvent;
+import org.graalvm.compiler.graph.Graph.NodeEventListener;
+import org.graalvm.compiler.graph.Node;
 
-import org.graalvm.compiler.graph.NodeClass;
-import org.graalvm.compiler.nodeinfo.NodeInfo;
-import org.graalvm.compiler.nodes.memory.address.AddressNode;
+/**
+ * A simple {@link NodeEventListener} implementation that traces events to TTY for debugging
+ * purposes.
+ */
+public class TracingNodeEventListener extends NodeEventListener {
 
-@NodeInfo(cycles = CYCLES_8, size = SIZE_4)
-public class SerialWriteBarrier extends ObjectWriteBarrier {
-
-    public static final NodeClass<SerialWriteBarrier> TYPE = NodeClass.create(SerialWriteBarrier.class);
-
-    public SerialWriteBarrier(AddressNode address, boolean precise) {
-        this(TYPE, address, precise);
-    }
-
-    protected SerialWriteBarrier(NodeClass<? extends SerialWriteBarrier> c, AddressNode address, boolean precise) {
-        super(c, address, null, precise);
+    @Override
+    public void changed(NodeEvent e, Node node) {
+        TTY.println(e.toString() + ": " + node);
     }
 }

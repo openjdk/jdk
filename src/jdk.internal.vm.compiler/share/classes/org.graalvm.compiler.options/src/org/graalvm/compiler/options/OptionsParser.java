@@ -67,15 +67,12 @@ public class OptionsParser {
              */
             loader = ClassLoader.getSystemClassLoader();
         }
-        Iterable<OptionDescriptors> result = ServiceLoader.load(OptionDescriptors.class, loader);
-        if (IS_BUILDING_NATIVE_IMAGE) {
-            ArrayList<OptionDescriptors> optionDescriptors = new ArrayList<>();
-            for (OptionDescriptors descriptors : result) {
-                optionDescriptors.add(descriptors);
-            }
-            OptionsParser.cachedOptionDescriptors = optionDescriptors;
-        }
-        return result;
+        return ServiceLoader.load(OptionDescriptors.class, loader);
+    }
+
+    public static void setCachedOptionDescriptors(List<OptionDescriptors> cachedOptionDescriptors) {
+        assert IS_BUILDING_NATIVE_IMAGE : "Used to pre-initialize the option descriptors during native image generation";
+        OptionsParser.cachedOptionDescriptors = cachedOptionDescriptors;
     }
 
     /**

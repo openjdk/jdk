@@ -130,7 +130,7 @@ public class SubstitutionsTest extends ReplacementsTest {
     }
 
     @Override
-    protected boolean checkHighTierGraph(StructuredGraph graph) {
+    protected void checkHighTierGraph(StructuredGraph graph) {
         // Check that the graph contains the expected test nodes.
         NodeIterable<ReturnNode> retNodes = graph.getNodes().filter(ReturnNode.class);
         Assert.assertTrue("expected exactly one ReturnNode", retNodes.count() == 1);
@@ -151,8 +151,6 @@ public class SubstitutionsTest extends ReplacementsTest {
         value.safeDelete();
         guard.safeDelete();
         graph.removeFixed(memory);
-
-        return true;
     }
 
     @Test

@@ -22,33 +22,32 @@
  */
 
 
-package org.graalvm.compiler.hotspot.gc.g1;
-
-import static org.graalvm.compiler.nodeinfo.NodeCycles.CYCLES_64;
-import static org.graalvm.compiler.nodeinfo.NodeSize.SIZE_64;
+package org.graalvm.compiler.nodes.gc;
 
 import org.graalvm.compiler.graph.NodeClass;
-import org.graalvm.compiler.hotspot.gc.shared.ObjectWriteBarrier;
 import org.graalvm.compiler.nodeinfo.NodeInfo;
 import org.graalvm.compiler.nodes.ValueNode;
 import org.graalvm.compiler.nodes.memory.address.AddressNode;
 
-@NodeInfo(cycles = CYCLES_64, size = SIZE_64)
-public class G1PostWriteBarrier extends ObjectWriteBarrier {
+@NodeInfo
+public abstract class ObjectWriteBarrier extends WriteBarrier {
 
-    public static final NodeClass<G1PostWriteBarrier> TYPE = NodeClass.create(G1PostWriteBarrier.class);
-    protected final boolean alwaysNull;
+    public static final NodeClass<ObjectWriteBarrier> TYPE = NodeClass.create(ObjectWriteBarrier.class);
+    @OptionalInput protected ValueNode value;
+    protected final boolean precise;
 
-    public G1PostWriteBarrier(AddressNode address, ValueNode value, boolean precise, boolean alwaysNull) {
-        this(TYPE, address, value, precise, alwaysNull);
+    protected ObjectWriteBarrier(NodeClass<? extends ObjectWriteBarrier> c, AddressNode address, ValueNode value, boolean precise) {
+        super(c, address);
+        this.value = value;
+        this.precise = precise;
     }
 
-    private G1PostWriteBarrier(NodeClass<? extends G1PostWriteBarrier> c, AddressNode address, ValueNode value, boolean precise, boolean alwaysNull) {
-        super(c, address, value, precise);
-        this.alwaysNull = alwaysNull;
+    public ValueNode getValue() {
+        return value;
     }
 
-    public boolean alwaysNull() {
-        return alwaysNull;
+    public boolean usePrecise() {
+        return precise;
     }
 }
+

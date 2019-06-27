@@ -28,6 +28,8 @@ import java.lang.reflect.AccessibleObject;
 import java.lang.reflect.Method;
 import java.util.Set;
 
+import org.graalvm.compiler.serviceprovider.JavaVersionUtil;
+
 /**
  * Facade for the {@code java.lang.Module} class introduced in JDK9 that allows tests to be
  * developed against JDK8 but use module logic if deployed on JDK9.
@@ -35,7 +37,7 @@ import java.util.Set;
 public class JLModule {
 
     static {
-        if (GraalTest.Java8OrEarlier) {
+        if (JavaVersionUtil.JAVA_SPEC <= 8) {
             throw new AssertionError("Use of " + JLModule.class + " only allowed if " + GraalTest.class.getName() + ".JDK8OrEarlier is false");
         }
     }

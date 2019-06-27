@@ -38,7 +38,6 @@ import org.graalvm.compiler.nodes.FrameState;
 import org.graalvm.compiler.nodes.ValueNode;
 import org.graalvm.compiler.nodes.spi.LIRLowerable;
 import org.graalvm.compiler.nodes.spi.NodeLIRBuilderTool;
-import org.graalvm.compiler.replacements.Log;
 import org.graalvm.compiler.replacements.nodes.CStringConstant;
 
 import jdk.vm.ci.code.CodeUtil;
@@ -46,8 +45,8 @@ import jdk.vm.ci.meta.ResolvedJavaMethod;
 import jdk.vm.ci.meta.Value;
 
 /**
- * Causes the VM to exit with a description of the current Java location and an optional
- * {@linkplain Log#printf(String, long) formatted} error message specified.
+ * Causes the VM to exit with a description of the current Java location and an optional printf
+ * formatted error message specified.
  */
 @NodeInfo(cycles = CYCLES_UNKNOWN, size = SIZE_UNKNOWN)
 public final class VMErrorNode extends DeoptimizingStubCall implements LIRLowerable {

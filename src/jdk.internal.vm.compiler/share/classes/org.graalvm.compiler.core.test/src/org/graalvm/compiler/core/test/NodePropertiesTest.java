@@ -33,12 +33,12 @@ import org.graalvm.compiler.java.ComputeLoopFrequenciesClosure;
 import org.graalvm.compiler.nodes.LoopBeginNode;
 import org.graalvm.compiler.nodes.StructuredGraph;
 import org.graalvm.compiler.nodes.ValueNode;
+import org.graalvm.compiler.nodes.spi.CoreProviders;
 import org.graalvm.compiler.phases.BasePhase;
 import org.graalvm.compiler.phases.common.CanonicalizerPhase;
 import org.graalvm.compiler.phases.common.CanonicalizerPhase.CustomCanonicalizer;
 import org.graalvm.compiler.phases.contract.NodeCostUtil;
 import org.graalvm.compiler.phases.tiers.HighTierContext;
-import org.graalvm.compiler.phases.tiers.PhaseContext;
 import org.junit.Assert;
 import org.junit.Test;
 
@@ -318,12 +318,12 @@ public class NodePropertiesTest extends GraalCompilerTest {
         }
     }
 
-    private static class GraphCostPhase extends BasePhase<PhaseContext> {
+    private static class GraphCostPhase extends BasePhase<CoreProviders> {
         private double finalCycles;
         private double finalSize;
 
         @Override
-        protected void run(StructuredGraph graph, PhaseContext context) {
+        protected void run(StructuredGraph graph, CoreProviders context) {
             finalCycles = NodeCostUtil.computeGraphCycles(graph, true);
             finalSize = NodeCostUtil.computeGraphSize(graph);
         }

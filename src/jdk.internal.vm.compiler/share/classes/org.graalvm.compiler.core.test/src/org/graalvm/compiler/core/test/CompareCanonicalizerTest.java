@@ -24,8 +24,6 @@
 
 package org.graalvm.compiler.core.test;
 
-import org.junit.Test;
-
 import org.graalvm.compiler.nodes.ParameterNode;
 import org.graalvm.compiler.nodes.ReturnNode;
 import org.graalvm.compiler.nodes.StructuredGraph;
@@ -34,13 +32,13 @@ import org.graalvm.compiler.nodes.ValueNode;
 import org.graalvm.compiler.nodes.calc.ConditionalNode;
 import org.graalvm.compiler.nodes.calc.IntegerTestNode;
 import org.graalvm.compiler.phases.common.CanonicalizerPhase;
-import org.graalvm.compiler.phases.tiers.PhaseContext;
+import org.junit.Test;
 
 public class CompareCanonicalizerTest extends GraalCompilerTest {
 
     private StructuredGraph getCanonicalizedGraph(String name) {
         StructuredGraph graph = parseEager(name, AllowAssumptions.YES);
-        new CanonicalizerPhase().apply(graph, new PhaseContext(getProviders()));
+        new CanonicalizerPhase().apply(graph, getProviders());
         return graph;
     }
 
@@ -57,7 +55,7 @@ public class CompareCanonicalizerTest extends GraalCompilerTest {
             StructuredGraph graph = parseEager("canonicalCompare" + i, AllowAssumptions.NO);
             assertEquals(referenceGraph, graph);
         }
-        new CanonicalizerPhase().apply(referenceGraph, new PhaseContext(getProviders()));
+        new CanonicalizerPhase().apply(referenceGraph, getProviders());
         for (int i = 1; i < 4; i++) {
             StructuredGraph graph = getCanonicalizedGraph("canonicalCompare" + i);
             assertEquals(referenceGraph, graph);

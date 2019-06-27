@@ -54,6 +54,7 @@ import org.graalvm.compiler.bytecode.BytecodeProvider;
 import org.graalvm.compiler.nodes.graphbuilderconf.InvocationPlugins;
 import org.graalvm.compiler.nodes.graphbuilderconf.InvocationPlugins.Registration;
 import org.graalvm.compiler.replacements.test.ReplacementsTest;
+import org.graalvm.compiler.serviceprovider.JavaVersionUtil;
 import org.graalvm.compiler.test.SubprocessUtil.Subprocess;
 import org.junit.Assert;
 import org.junit.Test;
@@ -110,7 +111,7 @@ public class RedefineIntrinsicTest extends ReplacementsTest {
             return;
         }
         String recursionPropName = getClass().getName() + ".recursion";
-        if (Java8OrEarlier || Boolean.getBoolean(recursionPropName)) {
+        if (JavaVersionUtil.JAVA_SPEC <= 8 || Boolean.getBoolean(recursionPropName)) {
             testHelper();
         } else {
             List<String> vmArgs = withoutDebuggerArguments(getVMCommandLine());
@@ -206,7 +207,7 @@ public class RedefineIntrinsicTest extends ReplacementsTest {
         assumeTrue("VM name not in <pid>@<host> format: " + vmName, p != -1);
         String pid = vmName.substring(0, p);
         Class<?> c;
-        if (Java8OrEarlier) {
+        if (JavaVersionUtil.JAVA_SPEC <= 8) {
             ClassLoader cl = ToolProvider.getSystemToolClassLoader();
             c = Class.forName("com.sun.tools.attach.VirtualMachine", true, cl);
         } else {

@@ -24,20 +24,22 @@
 
 package org.graalvm.compiler.test;
 
+import org.graalvm.compiler.serviceprovider.JavaVersionUtil;
+
 /**
  * A class loader that exports all packages in the module defining the class loader to all classes
  * in the unnamed module associated with the loader.
  */
 public class ExportingClassLoader extends ClassLoader {
     public ExportingClassLoader() {
-        if (!GraalTest.Java8OrEarlier) {
+        if (JavaVersionUtil.JAVA_SPEC > 8) {
             JLModule.fromClass(getClass()).exportAllPackagesTo(JLModule.getUnnamedModuleFor(this));
         }
     }
 
     public ExportingClassLoader(ClassLoader parent) {
         super(parent);
-        if (!GraalTest.Java8OrEarlier) {
+        if (JavaVersionUtil.JAVA_SPEC > 8) {
             JLModule.fromClass(getClass()).exportAllPackagesTo(JLModule.getUnnamedModuleFor(this));
         }
     }

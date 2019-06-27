@@ -34,8 +34,8 @@ import org.graalvm.compiler.core.common.cfg.AbstractControlFlowGraph;
 import org.graalvm.compiler.core.common.cfg.BlockMap;
 import org.graalvm.compiler.debug.DebugContext;
 import org.graalvm.compiler.lir.StandardOp.BlockEndOp;
-import org.graalvm.compiler.lir.StandardOp.LabelOp;
 import org.graalvm.compiler.lir.StandardOp.LabelHoldingOp;
+import org.graalvm.compiler.lir.StandardOp.LabelOp;
 import org.graalvm.compiler.lir.gen.LIRGenerator;
 import org.graalvm.compiler.options.OptionValues;
 
@@ -72,7 +72,11 @@ public final class LIR extends LIRGenerator.VariableProvider {
     /**
      * Creates a new LIR instance for the specified compilation.
      */
-    public LIR(AbstractControlFlowGraph<?> cfg, AbstractBlockBase<?>[] linearScanOrder, AbstractBlockBase<?>[] codeEmittingOrder, OptionValues options, DebugContext debug) {
+    public LIR(AbstractControlFlowGraph<?> cfg,
+                    AbstractBlockBase<?>[] linearScanOrder,
+                    AbstractBlockBase<?>[] codeEmittingOrder,
+                    OptionValues options,
+                    DebugContext debug) {
         this.cfg = cfg;
         this.codeEmittingOrder = codeEmittingOrder;
         this.linearScanOrder = linearScanOrder;

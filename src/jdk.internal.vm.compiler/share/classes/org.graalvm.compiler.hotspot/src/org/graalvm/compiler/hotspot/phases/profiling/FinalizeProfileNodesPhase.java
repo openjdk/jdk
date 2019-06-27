@@ -46,16 +46,16 @@ import org.graalvm.compiler.nodes.calc.AddNode;
 import org.graalvm.compiler.nodes.calc.MulNode;
 import org.graalvm.compiler.nodes.cfg.Block;
 import org.graalvm.compiler.nodes.cfg.ControlFlowGraph;
+import org.graalvm.compiler.nodes.spi.CoreProviders;
 import org.graalvm.compiler.nodes.util.GraphUtil;
 import org.graalvm.compiler.options.Option;
 import org.graalvm.compiler.options.OptionKey;
 import org.graalvm.compiler.options.OptionType;
 import org.graalvm.compiler.phases.BasePhase;
-import org.graalvm.compiler.phases.tiers.PhaseContext;
 
 import jdk.vm.ci.meta.ResolvedJavaMethod;
 
-public class FinalizeProfileNodesPhase extends BasePhase<PhaseContext> {
+public class FinalizeProfileNodesPhase extends BasePhase<CoreProviders> {
     private int inlineeInvokeNotificationFreqLog;
 
     public static class Options {
@@ -156,7 +156,7 @@ public class FinalizeProfileNodesPhase extends BasePhase<PhaseContext> {
     }
 
     @Override
-    protected void run(StructuredGraph graph, PhaseContext context) {
+    protected void run(StructuredGraph graph, CoreProviders context) {
         if (simpleMethodHeuristic(graph)) {
             removeAllProfilingNodes(graph);
             return;

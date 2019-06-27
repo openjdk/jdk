@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -122,7 +122,6 @@ import org.graalvm.compiler.nodes.spi.LoweringTool;
 import org.graalvm.compiler.nodes.type.StampTool;
 import org.graalvm.compiler.options.OptionValues;
 import org.graalvm.compiler.phases.common.inlining.InliningUtil;
-import org.graalvm.compiler.replacements.Log;
 import org.graalvm.compiler.replacements.SnippetCounter;
 import org.graalvm.compiler.replacements.SnippetTemplate.AbstractTemplates;
 import org.graalvm.compiler.replacements.SnippetTemplate.Arguments;
@@ -753,7 +752,8 @@ public class MonitorSnippets implements Snippets {
     public static class Templates extends AbstractTemplates {
 
         private final SnippetInfo monitorenter = snippet(MonitorSnippets.class, "monitorenter");
-        private final SnippetInfo monitorexit = snippet(MonitorSnippets.class, "monitorexit");
+        private final SnippetInfo monitorexit = snippet(MonitorSnippets.class, "monitorexit", DISPLACED_MARK_WORD_LOCATION, OBJECT_MONITOR_OWNER_LOCATION, OBJECT_MONITOR_CXQ_LOCATION,
+                        OBJECT_MONITOR_ENTRY_LIST_LOCATION, OBJECT_MONITOR_RECURSION_LOCATION, OBJECT_MONITOR_SUCC_LOCATION);
         private final SnippetInfo monitorenterStub = snippet(MonitorSnippets.class, "monitorenterStub");
         private final SnippetInfo monitorexitStub = snippet(MonitorSnippets.class, "monitorexitStub");
         private final SnippetInfo initCounter = snippet(MonitorSnippets.class, "initCounter");

@@ -66,6 +66,7 @@ import org.graalvm.compiler.nodes.StructuredGraph.AllowAssumptions;
 import org.graalvm.compiler.nodes.graphbuilderconf.GraphBuilderConfiguration;
 import org.graalvm.compiler.nodes.graphbuilderconf.GraphBuilderConfiguration.Plugins;
 import org.graalvm.compiler.nodes.graphbuilderconf.InvocationPlugins;
+import org.graalvm.compiler.nodes.spi.CoreProviders;
 import org.graalvm.compiler.options.OptionValues;
 import org.graalvm.compiler.phases.OptimisticOptimizations;
 import org.graalvm.compiler.phases.PhaseSuite;
@@ -73,9 +74,9 @@ import org.graalvm.compiler.phases.VerifyPhase;
 import org.graalvm.compiler.phases.VerifyPhase.VerificationError;
 import org.graalvm.compiler.phases.contract.VerifyNodeCosts;
 import org.graalvm.compiler.phases.tiers.HighTierContext;
-import org.graalvm.compiler.phases.tiers.PhaseContext;
 import org.graalvm.compiler.phases.util.Providers;
 import org.graalvm.compiler.runtime.RuntimeProvider;
+import org.graalvm.compiler.serviceprovider.JavaVersionUtil;
 import jdk.internal.vm.compiler.word.LocationIdentity;
 import org.junit.Assert;
 import org.junit.Assume;
@@ -127,7 +128,7 @@ public class CheckGraalInvariants extends GraalCompilerTest {
 
         protected String getClassPath() {
             String bootclasspath;
-            if (Java8OrEarlier) {
+            if (JavaVersionUtil.JAVA_SPEC <= 8) {
                 bootclasspath = System.getProperty("sun.boot.class.path");
             } else {
                 bootclasspath = System.getProperty("jdk.module.path") + File.pathSeparatorChar + System.getProperty("jdk.module.upgrade.path");
@@ -139,7 +140,7 @@ public class CheckGraalInvariants extends GraalCompilerTest {
             if (className.equals("module-info") || className.startsWith("META-INF.versions.")) {
                 return false;
             }
-            if (!Java8OrEarlier) {
+            if (JavaVersionUtil.JAVA_SPEC > 8) {
                 // @formatter:off
                 /*
                  * Work around to prevent:
@@ -247,7 +248,7 @@ public class CheckGraalInvariants extends GraalCompilerTest {
 
         List<String> errors = Collections.synchronizedList(new ArrayList<>());
 
-        List<VerifyPhase<PhaseContext>> verifiers = new ArrayList<>();
+        List<VerifyPhase<CoreProviders>> verifiers = new ArrayList<>();
 
         // If you add a new type to test here, be sure to add appropriate
         // methods to the BadUsageWithEquals class below
@@ -270,6 +271,7 @@ public class CheckGraalInvariants extends GraalCompilerTest {
         verifiers.add(new VerifySystemPropertyUsage());
         verifiers.add(new VerifyInstanceOfUsage());
         verifiers.add(new VerifyGraphAddUsage());
+        verifiers.add(new VerifyBufferUsage());
         verifiers.add(new VerifyGetOptionsUsage());
         verifiers.add(new VerifyUnsafeAccess());
 
@@ -413,14 +415,14 @@ public class CheckGraalInvariants extends GraalCompilerTest {
      * @param metaAccess
      * @param verifiers
      */
-    private static void checkClass(Class<?> c, MetaAccessProvider metaAccess, List<VerifyPhase<PhaseContext>> verifiers) {
+    private static void checkClass(Class<?> c, MetaAccessProvider metaAccess, List<VerifyPhase<CoreProviders>> verifiers) {
         if (Node.class.isAssignableFrom(c)) {
             if (c.getAnnotation(NodeInfo.class) == null) {
                 throw new AssertionError(String.format("Node subclass %s requires %s annotation", c.getName(), NodeClass.class.getSimpleName()));
             }
             VerifyNodeCosts.verifyNodeClass(c);
         }
-        for (VerifyPhase<PhaseContext> verifier : verifiers) {
+        for (VerifyPhase<CoreProviders> verifier : verifiers) {
             verifier.verifyClass(c, metaAccess);
         }
     }
@@ -445,8 +447,8 @@ public class CheckGraalInvariants extends GraalCompilerTest {
     /**
      * Checks the invariants for a single graph.
      */
-    private static void checkGraph(List<VerifyPhase<PhaseContext>> verifiers, HighTierContext context, StructuredGraph graph) {
-        for (VerifyPhase<PhaseContext> verifier : verifiers) {
+    private static void checkGraph(List<VerifyPhase<CoreProviders>> verifiers, HighTierContext context, StructuredGraph graph) {
+        for (VerifyPhase<CoreProviders> verifier : verifiers) {
             if (!(verifier instanceof VerifyUsageWithEquals) || shouldVerifyEquals(graph.method())) {
                 verifier.apply(graph, context);
             } else {

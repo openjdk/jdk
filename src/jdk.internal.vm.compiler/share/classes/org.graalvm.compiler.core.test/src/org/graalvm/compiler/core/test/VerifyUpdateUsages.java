@@ -34,8 +34,8 @@ import org.graalvm.compiler.nodes.StructuredGraph;
 import org.graalvm.compiler.nodes.java.LoadFieldNode;
 import org.graalvm.compiler.nodes.java.MethodCallTargetNode;
 import org.graalvm.compiler.nodes.java.StoreFieldNode;
+import org.graalvm.compiler.nodes.spi.CoreProviders;
 import org.graalvm.compiler.phases.VerifyPhase;
-import org.graalvm.compiler.phases.tiers.PhaseContext;
 
 import jdk.vm.ci.meta.ResolvedJavaField;
 import jdk.vm.ci.meta.ResolvedJavaMethod;
@@ -45,7 +45,7 @@ import jdk.vm.ci.meta.ResolvedJavaType;
  * Try to ensure that methods which update {@link Input} or {@link OptionalInput} fields also
  * include a call to {@link Node#updateUsages} or {@link Node#updateUsagesInterface}.
  */
-public class VerifyUpdateUsages extends VerifyPhase<PhaseContext> {
+public class VerifyUpdateUsages extends VerifyPhase<CoreProviders> {
 
     @Override
     public boolean checkContract() {
@@ -56,7 +56,7 @@ public class VerifyUpdateUsages extends VerifyPhase<PhaseContext> {
     }
 
     @Override
-    protected void verify(StructuredGraph graph, PhaseContext context) {
+    protected void verify(StructuredGraph graph, CoreProviders context) {
         if (graph.method().isConstructor()) {
             return;
         }

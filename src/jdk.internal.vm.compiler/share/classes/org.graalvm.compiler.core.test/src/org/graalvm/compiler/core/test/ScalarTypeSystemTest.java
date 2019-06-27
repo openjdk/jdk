@@ -27,8 +27,8 @@ package org.graalvm.compiler.core.test;
 import org.graalvm.compiler.debug.DebugContext;
 import org.graalvm.compiler.nodes.StructuredGraph;
 import org.graalvm.compiler.nodes.StructuredGraph.AllowAssumptions;
+import org.graalvm.compiler.nodes.spi.CoreProviders;
 import org.graalvm.compiler.phases.common.CanonicalizerPhase;
-import org.graalvm.compiler.phases.tiers.PhaseContext;
 import org.junit.Test;
 
 /**
@@ -133,7 +133,7 @@ public class ScalarTypeSystemTest extends GraalCompilerTest {
         // No debug scope to reduce console noise for @Test(expected = ...) tests
         StructuredGraph graph = parseEager(snippet, AllowAssumptions.NO);
         graph.getDebug().dump(DebugContext.BASIC_LEVEL, graph, "Graph");
-        PhaseContext context = new PhaseContext(getProviders());
+        CoreProviders context = getProviders();
         new CanonicalizerPhase().apply(graph, context);
         StructuredGraph referenceGraph = parseEager(referenceSnippet, AllowAssumptions.NO);
         assertEquals(referenceGraph, graph);

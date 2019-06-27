@@ -32,6 +32,7 @@ import org.graalvm.compiler.graph.Node;
 import org.graalvm.compiler.nodes.StructuredGraph;
 import org.graalvm.compiler.nodes.StructuredGraph.ScheduleResult;
 import org.graalvm.compiler.nodes.cfg.ControlFlowGraph;
+import org.graalvm.compiler.nodes.spi.CoreProviders;
 import org.graalvm.compiler.nodes.virtual.VirtualObjectNode;
 import org.graalvm.compiler.options.Option;
 import org.graalvm.compiler.options.OptionKey;
@@ -39,9 +40,8 @@ import org.graalvm.compiler.options.OptionType;
 import org.graalvm.compiler.options.OptionValues;
 import org.graalvm.compiler.phases.BasePhase;
 import org.graalvm.compiler.phases.common.CanonicalizerPhase;
-import org.graalvm.compiler.phases.tiers.PhaseContext;
 
-public class PartialEscapePhase extends EffectsPhase<PhaseContext> {
+public class PartialEscapePhase extends EffectsPhase<CoreProviders> {
 
     static class Options {
         //@formatter:off
@@ -51,24 +51,24 @@ public class PartialEscapePhase extends EffectsPhase<PhaseContext> {
     }
 
     private final boolean readElimination;
-    private final BasePhase<PhaseContext> cleanupPhase;
+    private final BasePhase<CoreProviders> cleanupPhase;
 
     public PartialEscapePhase(boolean iterative, CanonicalizerPhase canonicalizer, OptionValues options) {
         this(iterative, Options.OptEarlyReadElimination.getValue(options), canonicalizer, null, options);
     }
 
-    public PartialEscapePhase(boolean iterative, CanonicalizerPhase canonicalizer, BasePhase<PhaseContext> cleanupPhase, OptionValues options) {
+    public PartialEscapePhase(boolean iterative, CanonicalizerPhase canonicalizer, BasePhase<CoreProviders> cleanupPhase, OptionValues options) {
         this(iterative, Options.OptEarlyReadElimination.getValue(options), canonicalizer, cleanupPhase, options);
     }
 
-    public PartialEscapePhase(boolean iterative, boolean readElimination, CanonicalizerPhase canonicalizer, BasePhase<PhaseContext> cleanupPhase, OptionValues options) {
+    public PartialEscapePhase(boolean iterative, boolean readElimination, CanonicalizerPhase canonicalizer, BasePhase<CoreProviders> cleanupPhase, OptionValues options) {
         super(iterative ? EscapeAnalysisIterations.getValue(options) : 1, canonicalizer);
         this.readElimination = readElimination;
         this.cleanupPhase = cleanupPhase;
     }
 
     @Override
-    protected void postIteration(StructuredGraph graph, PhaseContext context, EconomicSet<Node> changedNodes) {
+    protected void postIteration(StructuredGraph graph, CoreProviders context, EconomicSet<Node> changedNodes) {
         super.postIteration(graph, context, changedNodes);
         if (cleanupPhase != null) {
             cleanupPhase.apply(graph, context);
@@ -76,7 +76,7 @@ public class PartialEscapePhase extends EffectsPhase<PhaseContext> {
     }
 
     @Override
-    protected void run(StructuredGraph graph, PhaseContext context) {
+    protected void run(StructuredGraph graph, CoreProviders context) {
         if (VirtualUtil.matches(graph, EscapeAnalyzeOnly.getValue(graph.getOptions()))) {
             if (readElimination || graph.hasVirtualizableAllocation()) {
                 runAnalysis(graph, context);
@@ -85,7 +85,7 @@ public class PartialEscapePhase extends EffectsPhase<PhaseContext> {
     }
 
     @Override
-    protected Closure<?> createEffectsClosure(PhaseContext context, ScheduleResult schedule, ControlFlowGraph cfg) {
+    protected Closure<?> createEffectsClosure(CoreProviders context, ScheduleResult schedule, ControlFlowGraph cfg) {
         for (VirtualObjectNode virtual : cfg.graph.getNodes(VirtualObjectNode.TYPE)) {
             virtual.resetObjectId();
         }

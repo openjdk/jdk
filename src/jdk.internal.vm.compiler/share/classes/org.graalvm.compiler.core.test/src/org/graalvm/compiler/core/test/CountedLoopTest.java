@@ -483,14 +483,13 @@ public class CountedLoopTest extends GraalCompilerTest {
     }
 
     @Override
-    protected boolean checkHighTierGraph(StructuredGraph graph) {
+    protected void checkHighTierGraph(StructuredGraph graph) {
         LoopsData loops = new LoopsData(graph);
         loops.detectedCountedLoops();
         for (IVPropertyNode node : graph.getNodes().filter(IVPropertyNode.class)) {
             node.rewrite(loops);
         }
         assert graph.getNodes().filter(IVPropertyNode.class).isEmpty();
-        return true;
     }
 
     @Override

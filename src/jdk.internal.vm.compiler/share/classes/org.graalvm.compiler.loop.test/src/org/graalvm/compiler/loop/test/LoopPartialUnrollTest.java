@@ -62,14 +62,14 @@ import jdk.vm.ci.meta.ResolvedJavaMethod;
 public class LoopPartialUnrollTest extends GraalCompilerTest {
 
     @Override
-    protected boolean checkMidTierGraph(StructuredGraph graph) {
+    protected void checkMidTierGraph(StructuredGraph graph) {
         NodeIterable<LoopBeginNode> loops = graph.getNodes().filter(LoopBeginNode.class);
         for (LoopBeginNode loop : loops) {
             if (loop.isMainLoop()) {
-                return true;
+                return;
             }
         }
-        return false;
+        fail("expected a main loop");
     }
 
     public static long sumWithEqualityLimit(int[] text) {

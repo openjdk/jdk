@@ -24,13 +24,9 @@
 
 package org.graalvm.compiler.lir.framemap;
 
-import java.util.ArrayList;
-import java.util.BitSet;
-import java.util.List;
-
+import org.graalvm.compiler.core.common.LIRKind;
 import org.graalvm.compiler.core.common.NumUtil;
 import org.graalvm.compiler.core.common.PermanentBailoutException;
-import org.graalvm.compiler.core.common.LIRKind;
 
 import jdk.vm.ci.code.Architecture;
 import jdk.vm.ci.code.CallingConvention;
@@ -38,14 +34,13 @@ import jdk.vm.ci.code.CodeCacheProvider;
 import jdk.vm.ci.code.RegisterConfig;
 import jdk.vm.ci.code.StackSlot;
 import jdk.vm.ci.code.TargetDescription;
-import jdk.vm.ci.meta.Value;
 import jdk.vm.ci.meta.ValueKind;
 
 /**
  * This class is used to build the stack frame layout for a compiled method. A {@link StackSlot} is
  * used to index slots of the frame relative to the stack pointer. The frame size is only fixed
  * after register allocation when all spill slots have been allocated. Both the outgoing argument
- * area and the spill are can grow until then. Therefore, outgoing arguments are indexed from the
+ * area and the spill area can grow until then. Therefore, outgoing arguments are indexed from the
  * stack pointer, while spill slots are indexed from the beginning of the frame (and the total frame
  * size has to be added to get the actual offset from the stack pointer).
  */
@@ -91,11 +86,6 @@ public abstract class FrameMap {
     protected boolean hasOutgoingStackArguments;
 
     /**
-     * The list of stack slots allocated in this frame that are present in every reference map.
-     */
-    private final List<StackSlot> objectStackSlots;
-
-    /**
      * Records whether an offset to an incoming stack argument was ever returned by
      * {@link #offsetForStackSlot(StackSlot)}.
      */
@@ -110,7 +100,6 @@ public abstract class FrameMap {
         this.registerConfig = registerConfig == null ? codeCache.getRegisterConfig() : registerConfig;
         this.frameSize = -1;
         this.outgoingSize = codeCache.getMinimumOutgoingSize();
-        this.objectStackSlots = new ArrayList<>();
         this.referenceMapFactory = referenceMapFactory;
     }
 
@@ -120,12 +109,6 @@ public abstract class FrameMap {
 
     public TargetDescription getTarget() {
         return target;
-    }
-
-    public void addLiveValues(ReferenceMapBuilder refMap) {
-        for (Value value : objectStackSlots) {
-            refMap.addLiveValue(value);
-        }
     }
 
     protected int returnAddressSize() {
@@ -235,19 +218,6 @@ public abstract class FrameMap {
     }
 
     /**
-     * Reserves a new spill slot in the frame of the method being compiled. The returned slot is
-     * aligned on its natural alignment, i.e., an 8-byte spill slot is aligned at an 8-byte
-     * boundary.
-     *
-     * @param kind The kind of the spill slot to be reserved.
-     * @param additionalOffset
-     * @return A spill slot denoting the reserved memory area.
-     */
-    protected StackSlot allocateNewSpillSlot(ValueKind<?> kind, int additionalOffset) {
-        return StackSlot.get(kind, -spillSize + additionalOffset, true);
-    }
-
-    /**
      * Returns the spill slot size for the given {@link ValueKind}. The default value is the size in
      * bytes for the target architecture.
      *
@@ -270,7 +240,11 @@ public abstract class FrameMap {
         assert frameSize == -1 : "frame size must not yet be fixed";
         int size = spillSlotSize(kind);
         spillSize = NumUtil.roundUp(spillSize + size, size);
-        return allocateNewSpillSlot(kind, 0);
+        return newStackSlot(kind);
+    }
+
+    private StackSlot newStackSlot(ValueKind<?> kind) {
+        return StackSlot.get(kind, -spillSize, true);
     }
 
     /**
@@ -288,46 +262,15 @@ public abstract class FrameMap {
      * requested number of slots is 0, this method returns {@code null}.
      *
      * @param slots the number of slots to reserve
-     * @param objects specifies the indexes of the object pointer slots. The caller is responsible
-     *            for guaranteeing that each such object pointer slot is initialized before any
-     *            instruction that uses a reference map. Without this guarantee, the garbage
-     *            collector could see garbage object values.
      * @return the first reserved stack slot (i.e., at the lowest address)
      */
-    public StackSlot allocateStackSlots(int slots, BitSet objects) {
+    public StackSlot allocateStackSlots(int slots) {
         assert frameSize == -1 : "frame size must not yet be fixed";
         if (slots == 0) {
             return null;
         }
-        spillSize += spillSlotRangeSize(slots);
-
-        if (!objects.isEmpty()) {
-            assert objects.length() <= slots;
-            StackSlot result = null;
-            for (int slotIndex = 0; slotIndex < slots; slotIndex++) {
-                StackSlot objectSlot = null;
-                if (objects.get(slotIndex)) {
-                    objectSlot = allocateNewSpillSlot(LIRKind.reference(getTarget().arch.getWordKind()), slotIndex * getTarget().wordSize);
-                    addObjectStackSlot(objectSlot);
-                }
-                if (slotIndex == 0) {
-                    if (objectSlot != null) {
-                        result = objectSlot;
-                    } else {
-                        result = allocateNewSpillSlot(LIRKind.value(getTarget().arch.getWordKind()), 0);
-                    }
-                }
-            }
-            assert result != null;
-            return result;
-
-        } else {
-            return allocateNewSpillSlot(LIRKind.value(getTarget().arch.getWordKind()), 0);
-        }
-    }
-
-    protected void addObjectStackSlot(StackSlot objectSlot) {
-        objectStackSlots.add(objectSlot);
+        spillSize = NumUtil.roundUp(spillSize + spillSlotRangeSize(slots), getTarget().wordSize);
+        return newStackSlot(LIRKind.value(getTarget().arch.getWordKind()));
     }
 
     public ReferenceMapBuilder newReferenceMapBuilder() {

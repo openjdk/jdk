@@ -61,8 +61,8 @@
  * <a href="doc-files/diamond.bgv">diamond.bgv</a> file generated from the above diamond structure
  * graph.
  * <p>
- * The primary <b>IGV</b> focus is on graphs used by Graal compiler. As such they aren't plain
- * graphs, but contain various compiler oriented attributes:
+ * The primary <b>IGV</b> focus is on graphs used by the compiler. As such they aren't plain graphs,
+ * but contain various compiler oriented attributes:
  * <ul>
  * <li>{@linkplain org.graalvm.graphio.GraphBlocks code blocks} information</li>
  * <li>{@linkplain org.graalvm.graphio.GraphElements method and fields} information</li>
@@ -80,7 +80,7 @@
  * <a href="http://wiki.apidesign.org/wiki/Singletonizer">singletonizer</a> API pattern again - e.g.
  * no need to change your existing data structures, just implement the operations provided by the
  * interfaces you pass into the builder. By combining these interfaces together you can get as rich,
- * colorful, source linked graphs as Graal compiler produces to describe its optimizations.
+ * colorful, source linked graphs as the compiler produces to describe its optimizations.
  */
 
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,39 +22,36 @@
  */
 
 
-package org.graalvm.compiler.hotspot.gc.shared;
+package org.graalvm.compiler.nodes.gc;
 
+import org.graalvm.compiler.core.common.type.StampFactory;
 import org.graalvm.compiler.graph.NodeClass;
-import org.graalvm.compiler.hotspot.nodes.WriteBarrier;
 import org.graalvm.compiler.nodeinfo.InputType;
 import org.graalvm.compiler.nodeinfo.NodeInfo;
-import org.graalvm.compiler.nodes.ValueNode;
+import org.graalvm.compiler.nodes.FixedWithNextNode;
 import org.graalvm.compiler.nodes.memory.address.AddressNode;
+import org.graalvm.compiler.nodes.spi.Lowerable;
+import org.graalvm.compiler.nodes.spi.LoweringTool;
 
 @NodeInfo
-public abstract class ObjectWriteBarrier extends WriteBarrier {
+public abstract class WriteBarrier extends FixedWithNextNode implements Lowerable {
 
-    public static final NodeClass<ObjectWriteBarrier> TYPE = NodeClass.create(ObjectWriteBarrier.class);
-    @Input(InputType.Association) protected AddressNode address;
-    @OptionalInput protected ValueNode value;
-    protected final boolean precise;
+    public static final NodeClass<WriteBarrier> TYPE = NodeClass.create(WriteBarrier.class);
+    @Input(InputType.Association) AddressNode address;
 
-    protected ObjectWriteBarrier(NodeClass<? extends ObjectWriteBarrier> c, AddressNode address, ValueNode value, boolean precise) {
-        super(c);
+    protected WriteBarrier(NodeClass<? extends WriteBarrier> c, AddressNode address) {
+        super(c, StampFactory.forVoid());
         this.address = address;
-        this.value = value;
-        this.precise = precise;
     }
 
-    public ValueNode getValue() {
-        return value;
+    @Override
+    public void lower(LoweringTool tool) {
+        assert graph().getGuardsStage().areFrameStatesAtDeopts();
+        tool.getLowerer().lower(this, tool);
     }
 
     public AddressNode getAddress() {
         return address;
     }
-
-    public boolean usePrecise() {
-        return precise;
-    }
 }
+

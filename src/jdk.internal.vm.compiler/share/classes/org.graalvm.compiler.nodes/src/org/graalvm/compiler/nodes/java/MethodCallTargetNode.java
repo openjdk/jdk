@@ -274,4 +274,8 @@ public class MethodCallTargetNode extends CallTargetNode implements IterableNode
         }
         return null;
     }
+
+    public void setJavaTypeProfile(JavaTypeProfile profile) {
+        this.profile = profile;
+    }
 }

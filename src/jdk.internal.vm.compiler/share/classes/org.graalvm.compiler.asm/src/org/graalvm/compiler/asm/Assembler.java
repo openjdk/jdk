@@ -30,6 +30,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.function.Consumer;
 
+import org.graalvm.compiler.debug.GraalError;
+
 import jdk.vm.ci.code.Register;
 import jdk.vm.ci.code.StackSlot;
 import jdk.vm.ci.code.TargetDescription;
@@ -164,7 +166,7 @@ public abstract class Assembler {
         Label label = labelsWithPatches;
         while (label != null) {
             if (label.patchPositions != null) {
-                throw new InternalError("Label used by instructions at following offsets has not been bound: " + label.patchPositions);
+                throw new GraalError("Label used by instructions at following offsets has not been bound: %s", label.patchPositions);
             }
             Label next = label.nextWithPatches;
             label.nextWithPatches = null;

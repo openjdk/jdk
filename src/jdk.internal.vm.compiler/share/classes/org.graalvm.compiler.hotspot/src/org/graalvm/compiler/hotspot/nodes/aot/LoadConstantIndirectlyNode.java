@@ -43,7 +43,6 @@ import org.graalvm.compiler.nodes.spi.LIRLowerable;
 import org.graalvm.compiler.nodes.spi.NodeLIRBuilderTool;
 import org.graalvm.compiler.nodes.util.GraphUtil;
 
-import jdk.vm.ci.hotspot.HotSpotConstantPoolObject;
 import jdk.vm.ci.hotspot.HotSpotMetaspaceConstant;
 import jdk.vm.ci.hotspot.HotSpotObjectConstant;
 import jdk.vm.ci.meta.Constant;
@@ -84,7 +83,7 @@ public class LoadConstantIndirectlyNode extends FloatingNode implements Canonica
     public void generate(NodeLIRBuilderTool gen) {
         assert constant != null : "Expected the value to fold: " + value;
         Value result;
-        if (constant instanceof HotSpotObjectConstant || constant instanceof HotSpotConstantPoolObject) {
+        if (constant instanceof HotSpotObjectConstant) {
             result = ((HotSpotLIRGenerator) gen.getLIRGeneratorTool()).emitLoadObjectAddress(constant);
         } else if (constant instanceof HotSpotMetaspaceConstant) {
             result = ((HotSpotLIRGenerator) gen.getLIRGeneratorTool()).emitLoadMetaspaceAddress(constant, action);

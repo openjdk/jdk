@@ -24,11 +24,11 @@
 
 package org.graalvm.compiler.core.test.deopt;
 
-import org.junit.Assume;
-import org.junit.Test;
-
 import org.graalvm.compiler.core.test.GraalCompilerTest;
 import org.graalvm.compiler.core.test.ea.EATestBase.TestClassObject;
+import org.graalvm.compiler.serviceprovider.JavaVersionUtil;
+import org.junit.Assume;
+import org.junit.Test;
 
 /**
  * In the following tests, we try to deoptimize out of synchronized methods.
@@ -48,7 +48,7 @@ public class SynchronizedMethodDeoptimizationTest extends GraalCompilerTest {
     @Test
     public void test1() {
         // https://bugs.openjdk.java.net/browse/JDK-8182755
-        Assume.assumeTrue(Java8OrEarlier);
+        Assume.assumeTrue(JavaVersionUtil.JAVA_SPEC <= 8);
 
         test("testMethodSynchronized", "test");
         test("testMethodSynchronized", (Object) null);

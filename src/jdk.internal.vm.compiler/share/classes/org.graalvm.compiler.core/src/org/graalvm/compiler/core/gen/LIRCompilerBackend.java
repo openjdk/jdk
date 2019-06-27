@@ -124,7 +124,11 @@ public class LIRCompilerBackend {
     }
 
     @SuppressWarnings("try")
-    private static LIRGenerationResult emitLIR0(Backend backend, StructuredGraph graph, Object stub, RegisterConfig registerConfig, LIRSuites lirSuites,
+    private static LIRGenerationResult emitLIR0(Backend backend,
+                    StructuredGraph graph,
+                    Object stub,
+                    RegisterConfig registerConfig,
+                    LIRSuites lirSuites,
                     String[] allocationRestrictedTo) {
         DebugContext debug = graph.getDebug();
         try (DebugContext.Scope ds = debug.scope("EmitLIR"); DebugCloseable a = EmitLIR.start(debug)) {

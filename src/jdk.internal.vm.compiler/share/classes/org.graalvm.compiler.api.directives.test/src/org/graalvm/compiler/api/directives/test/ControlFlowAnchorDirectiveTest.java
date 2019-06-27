@@ -249,7 +249,7 @@ public class ControlFlowAnchorDirectiveTest extends GraalCompilerTest {
     }
 
     @Override
-    protected boolean checkLowTierGraph(StructuredGraph graph) {
+    protected void checkLowTierGraph(StructuredGraph graph) {
         List<ControlFlowAnchorNode> anchors = graph.getNodes().filter(ControlFlowAnchorNode.class).snapshot();
         for (int i = 0; i < anchors.size(); i++) {
             ControlFlowAnchorNode a = anchors.get(i);
@@ -265,6 +265,5 @@ public class ControlFlowAnchorDirectiveTest extends GraalCompilerTest {
             NodeIterable<? extends Node> nodes = graph.getNodes().filter(nodeCount.nodeClass());
             Assert.assertEquals(nodeCount.nodeClass().getSimpleName(), nodeCount.expectedCount(), nodes.count());
         }
-        return true;
     }
 }

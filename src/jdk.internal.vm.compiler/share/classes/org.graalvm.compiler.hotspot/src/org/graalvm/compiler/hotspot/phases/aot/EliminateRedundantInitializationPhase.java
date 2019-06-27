@@ -30,10 +30,6 @@ import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
 
-import jdk.vm.ci.hotspot.HotSpotMetaspaceConstant;
-import jdk.vm.ci.meta.Constant;
-import jdk.vm.ci.meta.ResolvedJavaType;
-
 import jdk.internal.vm.compiler.collections.EconomicSet;
 import org.graalvm.compiler.graph.Node;
 import org.graalvm.compiler.hotspot.nodes.aot.InitializeKlassNode;
@@ -43,12 +39,16 @@ import org.graalvm.compiler.nodes.FixedNode;
 import org.graalvm.compiler.nodes.FixedWithNextNode;
 import org.graalvm.compiler.nodes.Invoke;
 import org.graalvm.compiler.nodes.StructuredGraph;
+import org.graalvm.compiler.nodes.spi.CoreProviders;
 import org.graalvm.compiler.phases.BasePhase;
 import org.graalvm.compiler.phases.graph.MergeableState;
 import org.graalvm.compiler.phases.graph.PostOrderNodeIterator;
-import org.graalvm.compiler.phases.tiers.PhaseContext;
 
-public class EliminateRedundantInitializationPhase extends BasePhase<PhaseContext> {
+import jdk.vm.ci.hotspot.HotSpotMetaspaceConstant;
+import jdk.vm.ci.meta.Constant;
+import jdk.vm.ci.meta.ResolvedJavaType;
+
+public class EliminateRedundantInitializationPhase extends BasePhase<CoreProviders> {
     /**
      * Find each {@link Invoke} that has a corresponding {@link InitializeKlassNode}. These
      * {@link InitializeKlassNode} are redundant and are removed.
@@ -252,7 +252,7 @@ public class EliminateRedundantInitializationPhase extends BasePhase<PhaseContex
     }
 
     @Override
-    protected void run(StructuredGraph graph, PhaseContext context) {
+    protected void run(StructuredGraph graph, CoreProviders context) {
         removeInitsAtStaticCalls(graph);
         removeRedundantInits(graph);
     }

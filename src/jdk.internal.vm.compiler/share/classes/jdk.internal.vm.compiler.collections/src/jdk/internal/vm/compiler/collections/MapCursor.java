@@ -43,7 +43,7 @@ package jdk.internal.vm.compiler.collections;
 /**
  * Cursor to iterate over a mutable map.
  *
- * @since 1.0
+ * @since 19.0
  */
 public interface MapCursor<K, V> extends UnmodifiableMapCursor<K, V> {
     /**
@@ -51,7 +51,7 @@ public interface MapCursor<K, V> extends UnmodifiableMapCursor<K, V> {
      * {@link #remove()}, it is no longer valid to call {@link #getKey()} or {@link #getValue()} on
      * the current entry.
      *
-     * @since 1.0
+     * @since 19.0
      */
     void remove();
 }

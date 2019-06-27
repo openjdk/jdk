@@ -31,7 +31,6 @@ import static org.graalvm.compiler.core.GraalCompilerOptions.CompilationFailureA
 import static org.graalvm.compiler.core.test.ReflectionOptionDescriptors.extractEntries;
 import static org.graalvm.compiler.debug.MemUseTrackerKey.getCurrentThreadAllocatedBytes;
 import static org.graalvm.compiler.hotspot.test.CompileTheWorld.Options.DESCRIPTORS;
-import static org.graalvm.compiler.serviceprovider.JavaVersionUtil.Java8OrEarlier;
 import static sun.misc.Unsafe.ARRAY_BYTE_BASE_OFFSET;
 
 import java.io.ByteArrayOutputStream;
@@ -97,6 +96,7 @@ import org.graalvm.compiler.options.OptionsParser;
 import org.graalvm.compiler.serviceprovider.GraalUnsafeAccess;
 import org.graalvm.compiler.serviceprovider.JavaVersionUtil;
 import jdk.internal.vm.compiler.libgraal.LibGraal;
+import jdk.internal.vm.compiler.libgraal.LibGraalScope;
 import jdk.internal.vm.compiler.libgraal.OptionsEncoder;
 
 import jdk.vm.ci.hotspot.HotSpotCodeCacheProvider;
@@ -117,9 +117,8 @@ import sun.misc.Unsafe;
 public final class CompileTheWorld {
 
     /**
-     * Magic token to denote that JDK classes are to be compiled. If
-     * {@link JavaVersionUtil#Java8OrEarlier}, then the classes in {@code rt.jar} are compiled.
-     * Otherwise the classes in the Java runtime image are compiled.
+     * Magic token to denote that JDK classes are to be compiled. For JDK 8, the classes in
+     * {@code rt.jar} are compiled. Otherwise the classes in the Java runtime image are compiled.
      */
     public static final String SUN_BOOT_CLASS_PATH = "sun.boot.class.path";
 
@@ -398,7 +397,7 @@ public final class CompileTheWorld {
         try (LibGraalParams libgraal = LibGraal.isAvailable() ? new LibGraalParams(compilerOptions) : null) {
             if (SUN_BOOT_CLASS_PATH.equals(inputClassPath)) {
                 String bcpEntry = null;
-                if (Java8OrEarlier) {
+                if (JavaVersionUtil.JAVA_SPEC <= 8) {
                     final String[] entries = System.getProperty(SUN_BOOT_CLASS_PATH).split(File.pathSeparator);
                     for (int i = 0; i < entries.length && bcpEntry == null; i++) {
                         String entry = entries[i];
@@ -940,6 +939,7 @@ public final class CompileTheWorld {
     /**
      * Compiles a method and gathers some statistics.
      */
+    @SuppressWarnings("try")
     private void compileMethod(HotSpotResolvedJavaMethod method, int counter, LibGraalParams libgraal) {
         try {
             long start = System.currentTimeMillis();
@@ -950,32 +950,33 @@ public final class CompileTheWorld {
             HotSpotInstalledCode installedCode;
             if (libgraal != null) {
                 HotSpotJVMCIRuntime runtime = HotSpotJVMCIRuntime.runtime();
-                long methodHandle = LibGraal.translate(runtime, method);
-                long isolateThread = LibGraal.getIsolateThread();
+                try (LibGraalScope scope = new LibGraalScope(runtime)) {
+                    long methodHandle = LibGraal.translate(runtime, method);
+                    long isolateThread = LibGraalScope.getIsolateThread();
 
-                StackTraceBuffer stackTraceBuffer = libgraal.getStackTraceBuffer();
+                    StackTraceBuffer stackTraceBuffer = libgraal.getStackTraceBuffer();
 
-                long stackTraceBufferAddress = stackTraceBuffer.getAddress();
-                long installedCodeHandle = compileMethodInLibgraal(isolateThread,
-                                methodHandle,
-                                useProfilingInfo,
-                                installAsDefault,
-                                libgraal.options.getAddress(),
-                                libgraal.options.size,
-                                libgraal.options.hash,
-                                stackTraceBufferAddress,
-                                stackTraceBuffer.size);
+                    long stackTraceBufferAddress = stackTraceBuffer.getAddress();
+                    long installedCodeHandle = compileMethodInLibgraal(isolateThread,
+                                    methodHandle,
+                                    useProfilingInfo,
+                                    installAsDefault,
+                                    libgraal.options.getAddress(),
+                                    libgraal.options.size,
+                                    libgraal.options.hash,
+                                    stackTraceBufferAddress,
+                                    stackTraceBuffer.size);
 
-                installedCode = LibGraal.unhand(runtime, HotSpotInstalledCode.class, installedCodeHandle);
-                if (installedCode == null) {
-                    int length = UNSAFE.getInt(stackTraceBufferAddress);
-                    byte[] data = new byte[length];
-                    UNSAFE.copyMemory(null, stackTraceBufferAddress + Integer.BYTES, data, ARRAY_BYTE_BASE_OFFSET, length);
-                    String stackTrace = new String(data).trim();
-                    println("CompileTheWorld (%d) : Error compiling method: %s", counter, method.format("%H.%n(%p):%r"));
-                    println(stackTrace);
+                    installedCode = LibGraal.unhand(runtime, HotSpotInstalledCode.class, installedCodeHandle);
+                    if (installedCode == null) {
+                        int length = UNSAFE.getInt(stackTraceBufferAddress);
+                        byte[] data = new byte[length];
+                        UNSAFE.copyMemory(null, stackTraceBufferAddress + Integer.BYTES, data, ARRAY_BYTE_BASE_OFFSET, length);
+                        String stackTrace = new String(data).trim();
+                        println("CompileTheWorld (%d) : Error compiling method: %s", counter, method.format("%H.%n(%p):%r"));
+                        println(stackTrace);
+                    }
                 }
-
             } else {
                 int entryBCI = JVMCICompiler.INVOCATION_ENTRY_BCI;
                 HotSpotCompilationRequest request = new HotSpotCompilationRequest(method, entryBCI, 0L);

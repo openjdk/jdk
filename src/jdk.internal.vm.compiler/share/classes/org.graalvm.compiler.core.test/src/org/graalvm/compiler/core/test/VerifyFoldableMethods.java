@@ -32,8 +32,8 @@ import org.graalvm.compiler.api.replacements.Fold;
 import org.graalvm.compiler.nodes.StructuredGraph;
 import org.graalvm.compiler.nodes.graphbuilderconf.GeneratedInvocationPlugin;
 import org.graalvm.compiler.nodes.java.MethodCallTargetNode;
+import org.graalvm.compiler.nodes.spi.CoreProviders;
 import org.graalvm.compiler.phases.VerifyPhase;
-import org.graalvm.compiler.phases.tiers.PhaseContext;
 
 import jdk.vm.ci.meta.ResolvedJavaMethod;
 import jdk.vm.ci.meta.ResolvedJavaType;
@@ -41,7 +41,7 @@ import jdk.vm.ci.meta.ResolvedJavaType;
 /**
  * Verifies that all {@link Fold} annotated methods have at least one caller.
  */
-public class VerifyFoldableMethods extends VerifyPhase<PhaseContext> {
+public class VerifyFoldableMethods extends VerifyPhase<CoreProviders> {
 
     @Override
     public boolean checkContract() {
@@ -52,7 +52,7 @@ public class VerifyFoldableMethods extends VerifyPhase<PhaseContext> {
     ResolvedJavaType generatedInvocationPluginType;
 
     @Override
-    protected void verify(StructuredGraph graph, PhaseContext context) {
+    protected void verify(StructuredGraph graph, CoreProviders context) {
         ResolvedJavaMethod method = graph.method();
         if (method.getAnnotation(Fold.class) != null) {
             foldables.putIfAbsent(method, false);

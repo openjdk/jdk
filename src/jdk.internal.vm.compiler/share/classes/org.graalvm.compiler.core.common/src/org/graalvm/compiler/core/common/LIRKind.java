@@ -88,7 +88,7 @@ public final class LIRKind extends ValueKind<LIRKind> {
         this.referenceCompressionMask = referenceCompressionMask;
         this.derivedReferenceBase = derivedReferenceBase;
 
-        assert this.referenceCompressionMask == 0 || this.referenceMask == this.referenceCompressionMask : "mixing compressed and uncompressed references is untested";
+        assert this.referenceCompressionMask == 0 || this.referenceMask == this.referenceCompressionMask : "mixing compressed and uncompressed references is unsupported";
         assert derivedReferenceBase == null || !derivedReferenceBase.getValueKind(LIRKind.class).isDerivedReference() : "derived reference can't have another derived reference as base";
     }
 

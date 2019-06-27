@@ -25,8 +25,8 @@
 package org.graalvm.compiler.nodes.extended;
 
 import org.graalvm.compiler.graph.NodeInterface;
-import org.graalvm.compiler.nodes.FixedWithNextNode;
 import org.graalvm.compiler.nodes.ValueNode;
+import org.graalvm.compiler.nodes.memory.FixedAccessNode;
 import org.graalvm.compiler.nodes.memory.address.AddressNode;
 
 public interface ArrayRangeWrite extends NodeInterface {
@@ -52,5 +52,5 @@ public interface ArrayRangeWrite extends NodeInterface {
     int getElementStride();
 
     @Override
-    FixedWithNextNode asNode();
+    FixedAccessNode asNode();
 }

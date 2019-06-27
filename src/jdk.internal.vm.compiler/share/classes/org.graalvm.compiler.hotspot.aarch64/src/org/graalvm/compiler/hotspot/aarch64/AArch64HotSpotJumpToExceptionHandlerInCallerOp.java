@@ -71,7 +71,7 @@ public class AArch64HotSpotJumpToExceptionHandlerInCallerOp extends AArch64HotSp
     public void emitCode(CompilationResultBuilder crb, AArch64MacroAssembler masm) {
         leaveFrame(crb, masm, /* emitSafepoint */false, false);
 
-        if (JavaVersionUtil.JAVA_SPECIFICATION_VERSION < 8) {
+        if (JavaVersionUtil.JAVA_SPEC < 8) {
             // Restore sp from fp if the exception PC is a method handle call site.
             try (ScratchRegister sc = masm.getScratchRegister()) {
                 Register scratch = sc.getRegister();

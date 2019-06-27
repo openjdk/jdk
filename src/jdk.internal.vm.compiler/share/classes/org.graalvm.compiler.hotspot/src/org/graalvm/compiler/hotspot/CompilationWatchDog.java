@@ -28,6 +28,7 @@ import static org.graalvm.compiler.hotspot.HotSpotGraalCompiler.fmt;
 
 import java.util.Arrays;
 
+import org.graalvm.compiler.core.GraalServiceThread;
 import org.graalvm.compiler.debug.TTY;
 import org.graalvm.compiler.options.Option;
 import org.graalvm.compiler.options.OptionKey;
@@ -49,10 +50,10 @@ import jdk.vm.ci.services.Services;
  * dog reports a long running compilation. Every
  * {@link Options#CompilationWatchDogStackTraceInterval} seconds after that point in time where the
  * same compilation is still executing, the watch dog takes a stack trace of the compiler thread. If
- * more than {@value Options#NonFatalIdenticalCompilationSnapshots} contiguous identical stack
- * traces are seen, the watch dog reports a stuck compilation and exits the VM.
+ * more than {@link Options#NonFatalIdenticalCompilationSnapshots} contiguous identical stack traces
+ * are seen, the watch dog reports a stuck compilation and exits the VM.
  */
-class CompilationWatchDog extends Thread implements AutoCloseable {
+class CompilationWatchDog implements Runnable, AutoCloseable {
 
     public static class Options {
         // @formatter:off
@@ -112,9 +113,6 @@ class CompilationWatchDog extends Thread implements AutoCloseable {
 
     CompilationWatchDog(Thread compilerThread, long startDelayMilliseconds, long stackTraceIntervalMilliseconds, int nonFatalIdenticalCompilationSnapshots) {
         this.compilerThread = compilerThread;
-        this.setName("WatchDog" + getId() + "[" + compilerThread.getName() + "]");
-        this.setPriority(Thread.MAX_PRIORITY);
-        this.setDaemon(true);
         this.startDelayMilliseconds = startDelayMilliseconds;
         this.stackTraceIntervalMilliseconds = stackTraceIntervalMilliseconds;
         this.nonFatalIdenticalCompilationSnapshots = nonFatalIdenticalCompilationSnapshots;
@@ -185,7 +183,7 @@ class CompilationWatchDog extends Thread implements AutoCloseable {
 
     @Override
     public String toString() {
-        return getName();
+        return "WatchDog[" + compilerThread.getName() + "]";
     }
 
     @Override
@@ -305,12 +303,16 @@ class CompilationWatchDog extends Thread implements AutoCloseable {
             // Lazily get a watch dog thread for the current compiler thread
             CompilationWatchDog watchDog = WATCH_DOGS.get();
             if (watchDog == null) {
-                Thread currentThread = currentThread();
+                Thread currentThread = Thread.currentThread();
                 long stackTraceIntervalMilliseconds = ms(Options.CompilationWatchDogStackTraceInterval.getValue(options));
                 int nonFatalIdenticalCompilationSnapshots = Options.NonFatalIdenticalCompilationSnapshots.getValue(options);
                 watchDog = new CompilationWatchDog(currentThread, startDelayMilliseconds, stackTraceIntervalMilliseconds, nonFatalIdenticalCompilationSnapshots);
                 WATCH_DOGS.set(watchDog);
-                watchDog.start();
+                GraalServiceThread thread = new GraalServiceThread(watchDog);
+                thread.setName(thread.getId() + " " + watchDog.toString());
+                thread.setPriority(Thread.MAX_PRIORITY);
+                thread.setDaemon(true);
+                thread.start();
             }
             watchDog.startCompilation(method, id);
             return watchDog;

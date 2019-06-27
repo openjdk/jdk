@@ -31,8 +31,8 @@ import org.graalvm.compiler.loop.phases.LoopFullUnrollPhase;
 import org.graalvm.compiler.nodes.LoopBeginNode;
 import org.graalvm.compiler.nodes.StructuredGraph;
 import org.graalvm.compiler.nodes.StructuredGraph.AllowAssumptions;
+import org.graalvm.compiler.nodes.spi.CoreProviders;
 import org.graalvm.compiler.phases.common.CanonicalizerPhase;
-import org.graalvm.compiler.phases.tiers.PhaseContext;
 import org.junit.Test;
 
 public class LoopFullUnrollTest extends GraalCompilerTest {
@@ -88,7 +88,7 @@ public class LoopFullUnrollTest extends GraalCompilerTest {
         try (DebugContext.Scope s = debug.scope(getClass().getSimpleName(), new DebugDumpScope(snippet))) {
             final StructuredGraph graph = parseEager(snippet, AllowAssumptions.NO, debug);
 
-            PhaseContext context = new PhaseContext(getProviders());
+            CoreProviders context = getProviders();
             new LoopFullUnrollPhase(new CanonicalizerPhase(), new DefaultLoopPolicies()).apply(graph, context);
 
             assertTrue(graph.getNodes().filter(LoopBeginNode.class).count() == loopCount);

@@ -29,11 +29,11 @@ import org.graalvm.compiler.graph.Node;
 import org.graalvm.compiler.nodes.StructuredGraph;
 import org.graalvm.compiler.nodes.StructuredGraph.AllowAssumptions;
 import org.graalvm.compiler.nodes.calc.IntegerLessThanNode;
+import org.graalvm.compiler.nodes.spi.CoreProviders;
 import org.graalvm.compiler.nodes.spi.LoweringTool;
 import org.graalvm.compiler.phases.common.CanonicalizerPhase;
 import org.graalvm.compiler.phases.common.IterativeConditionalEliminationPhase;
 import org.graalvm.compiler.phases.common.LoweringPhase;
-import org.graalvm.compiler.phases.tiers.PhaseContext;
 import org.graalvm.compiler.virtual.phases.ea.EarlyReadEliminationPhase;
 import org.junit.Assert;
 import org.junit.Test;
@@ -48,7 +48,7 @@ public class ConditionalEliminationTest15 extends ConditionalEliminationTestBase
         StructuredGraph graph = parseEager(methodName, AllowAssumptions.YES);
 
         CanonicalizerPhase canonicalizer = new CanonicalizerPhase();
-        PhaseContext context = new PhaseContext(getProviders());
+        CoreProviders context = getProviders();
 
         new LoweringPhase(new CanonicalizerPhase(), LoweringTool.StandardLoweringStage.HIGH_TIER).apply(graph, context);
         canonicalizer.apply(graph, context);

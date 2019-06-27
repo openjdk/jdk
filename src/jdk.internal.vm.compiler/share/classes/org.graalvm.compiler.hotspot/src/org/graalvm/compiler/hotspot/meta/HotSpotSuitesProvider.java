@@ -39,8 +39,6 @@ import org.graalvm.compiler.hotspot.HotSpotInstructionProfiling;
 import org.graalvm.compiler.hotspot.lir.VerifyMaxRegisterSizePhase;
 import org.graalvm.compiler.hotspot.phases.AheadOfTimeVerificationPhase;
 import org.graalvm.compiler.hotspot.phases.LoadJavaMirrorWithKlassPhase;
-import org.graalvm.compiler.hotspot.phases.WriteBarrierAdditionPhase;
-import org.graalvm.compiler.hotspot.phases.WriteBarrierVerificationPhase;
 import org.graalvm.compiler.hotspot.phases.aot.AOTInliningPolicy;
 import org.graalvm.compiler.hotspot.phases.aot.EliminateRedundantInitializationPhase;
 import org.graalvm.compiler.hotspot.phases.aot.ReplaceConstantNodesPhase;
@@ -110,11 +108,6 @@ public class HotSpotSuitesProvider extends SuitesProviderBase {
                     iter.set(new InliningPhase(new AOTInliningPolicy(null), canonicalizer));
                 }
             }
-        }
-
-        ret.getMidTier().appendPhase(new WriteBarrierAdditionPhase(config));
-        if (VerifyPhases.getValue(options)) {
-            ret.getMidTier().appendPhase(new WriteBarrierVerificationPhase(config));
         }
 
         return ret;

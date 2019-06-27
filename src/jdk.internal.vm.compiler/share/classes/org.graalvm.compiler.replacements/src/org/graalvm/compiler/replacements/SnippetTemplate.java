@@ -119,6 +119,7 @@ import org.graalvm.compiler.nodes.memory.MemoryMapNode;
 import org.graalvm.compiler.nodes.memory.MemoryNode;
 import org.graalvm.compiler.nodes.memory.MemoryPhiNode;
 import org.graalvm.compiler.nodes.spi.ArrayLengthProvider;
+import org.graalvm.compiler.nodes.spi.CoreProviders;
 import org.graalvm.compiler.nodes.spi.LoweringTool;
 import org.graalvm.compiler.nodes.spi.MemoryProxy;
 import org.graalvm.compiler.nodes.util.GraphUtil;
@@ -133,7 +134,6 @@ import org.graalvm.compiler.phases.common.GuardLoweringPhase;
 import org.graalvm.compiler.phases.common.LoweringPhase;
 import org.graalvm.compiler.phases.common.RemoveValueProxyPhase;
 import org.graalvm.compiler.phases.common.inlining.InliningUtil;
-import org.graalvm.compiler.phases.tiers.PhaseContext;
 import org.graalvm.compiler.phases.util.Providers;
 import org.graalvm.compiler.replacements.nodes.ExplodeLoopNode;
 import org.graalvm.compiler.replacements.nodes.LoadSnippetVarargParameterNode;
@@ -633,6 +633,10 @@ public class SnippetTemplate {
             }
         }
 
+        public Providers getProviders() {
+            return providers;
+        }
+
         public static Method findMethod(Class<? extends Snippets> declaringClass, String methodName, Method except) {
             for (Method m : declaringClass.getDeclaredMethods()) {
                 if (m.getName().equals(methodName) && !m.equals(except)) {
@@ -698,7 +702,7 @@ public class SnippetTemplate {
          * Gets a template for a given key, creating it first if necessary.
          */
         @SuppressWarnings("try")
-        protected SnippetTemplate template(ValueNode replacee, final Arguments args) {
+        public SnippetTemplate template(ValueNode replacee, final Arguments args) {
             StructuredGraph graph = replacee.graph();
             DebugContext outer = graph.getDebug();
             SnippetTemplate template = Options.UseSnippetTemplateCache.getValue(options) && args.cacheable ? templates.get(args.cacheKey) : null;
@@ -769,8 +773,6 @@ public class SnippetTemplate {
 
         ResolvedJavaMethod method = snippetGraph.method();
         Signature signature = method.getSignature();
-
-        PhaseContext phaseContext = new PhaseContext(providers);
 
         // Copy snippet graph, replacing constant parameters with given arguments
         final StructuredGraph snippetCopy = new StructuredGraph.Builder(options, debug).name(snippetGraph.name).method(snippetGraph.method()).trackNodeSourcePosition(
@@ -880,7 +882,7 @@ public class SnippetTemplate {
                 }
             }
 
-            explodeLoops(snippetCopy, phaseContext);
+            explodeLoops(snippetCopy, providers);
 
             GuardsStage guardsStage = args.cacheKey.guardsStage;
             // Perform lowering on the snippet
@@ -889,7 +891,7 @@ public class SnippetTemplate {
             }
             snippetCopy.setGuardsStage(guardsStage);
             try (DebugContext.Scope s = debug.scope("LoweringSnippetTemplate", snippetCopy)) {
-                new LoweringPhase(new CanonicalizerPhase(), args.cacheKey.loweringStage).apply(snippetCopy, phaseContext);
+                new LoweringPhase(new CanonicalizerPhase(), args.cacheKey.loweringStage).apply(snippetCopy, providers);
             } catch (Throwable e) {
                 throw debug.handle(e);
             }
@@ -1045,7 +1047,7 @@ public class SnippetTemplate {
         return true;
     }
 
-    public static void explodeLoops(final StructuredGraph snippetCopy, PhaseContext phaseContext) {
+    public static void explodeLoops(final StructuredGraph snippetCopy, CoreProviders providers) {
         // Do any required loop explosion
         boolean exploded = false;
         do {
@@ -1057,8 +1059,8 @@ public class SnippetTemplate {
                 if (loopBegin != null) {
                     LoopEx loop = new LoopsData(snippetCopy).loop(loopBegin);
                     Mark mark = snippetCopy.getMark();
-                    LoopTransformations.fullUnroll(loop, phaseContext, new CanonicalizerPhase());
-                    new CanonicalizerPhase().applyIncremental(snippetCopy, phaseContext, mark, false);
+                    LoopTransformations.fullUnroll(loop, providers, new CanonicalizerPhase());
+                    new CanonicalizerPhase().applyIncremental(snippetCopy, providers, mark, false);
                     loop.deleteUnusedNodes();
                 }
                 GraphUtil.removeFixedWithUnusedInputs(explodeLoop);

@@ -678,7 +678,7 @@ public final class StructuredGraph extends Graph implements JavaMethodContext {
         if (node instanceof AbstractBeginNode) {
             ((AbstractBeginNode) node).prepareDelete();
         }
-        assert node.hasNoUsages() : node + " " + node.usages().count() + ", " + node.usages().first();
+        assert node.hasNoUsages() : node + " " + node.getUsageCount() + ", " + node.usages().first();
         GraphUtil.unlinkFixedNode(node);
         node.safeDelete();
     }

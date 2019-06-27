@@ -29,10 +29,10 @@ import static org.graalvm.compiler.core.common.GraalOptions.EscapeAnalyzeOnly;
 import org.graalvm.compiler.nodes.StructuredGraph;
 import org.graalvm.compiler.nodes.StructuredGraph.ScheduleResult;
 import org.graalvm.compiler.nodes.cfg.ControlFlowGraph;
+import org.graalvm.compiler.nodes.spi.CoreProviders;
 import org.graalvm.compiler.phases.common.CanonicalizerPhase;
-import org.graalvm.compiler.phases.tiers.PhaseContext;
 
-public class EarlyReadEliminationPhase extends EffectsPhase<PhaseContext> {
+public class EarlyReadEliminationPhase extends EffectsPhase<CoreProviders> {
 
     private final boolean considerGuards;
 
@@ -47,14 +47,14 @@ public class EarlyReadEliminationPhase extends EffectsPhase<PhaseContext> {
     }
 
     @Override
-    protected void run(StructuredGraph graph, PhaseContext context) {
+    protected void run(StructuredGraph graph, CoreProviders context) {
         if (VirtualUtil.matches(graph, EscapeAnalyzeOnly.getValue(graph.getOptions()))) {
             runAnalysis(graph, context);
         }
     }
 
     @Override
-    protected Closure<?> createEffectsClosure(PhaseContext context, ScheduleResult schedule, ControlFlowGraph cfg) {
+    protected Closure<?> createEffectsClosure(CoreProviders context, ScheduleResult schedule, ControlFlowGraph cfg) {
         assert schedule == null;
         return new ReadEliminationClosure(cfg, considerGuards);
     }

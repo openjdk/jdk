@@ -129,8 +129,7 @@ public class NestedLoop_EA extends JTTTest {
     }
 
     @Override
-    protected boolean checkHighTierGraph(StructuredGraph graph) {
+    protected void checkHighTierGraph(StructuredGraph graph) {
         assert graph.getNodes().filter(CommitAllocationNode.class).count() == 0 : "all allocations should be virtualized";
-        return true;
     }
 }

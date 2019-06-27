@@ -104,6 +104,8 @@ public class AMD64HotSpotForeignCallsProvider extends HotSpotHostForeignCallsPro
                         registerStubCall(AMD64ArrayIndexOf.STUB_INDEX_OF_TWO_CONSECUTIVE_BYTES, LEAF, REEXECUTABLE, NO_LOCATIONS)));
         link(new AMD64ArrayIndexOfStub(AMD64ArrayIndexOf.STUB_INDEX_OF_TWO_CONSECUTIVE_CHARS, options, providers,
                         registerStubCall(AMD64ArrayIndexOf.STUB_INDEX_OF_TWO_CONSECUTIVE_CHARS, LEAF, REEXECUTABLE, NO_LOCATIONS)));
+        link(new AMD64ArrayIndexOfStub(AMD64ArrayIndexOf.STUB_INDEX_OF_TWO_CONSECUTIVE_CHARS_COMPACT, options, providers,
+                        registerStubCall(AMD64ArrayIndexOf.STUB_INDEX_OF_TWO_CONSECUTIVE_CHARS_COMPACT, LEAF, REEXECUTABLE, NO_LOCATIONS)));
         link(new AMD64ArrayIndexOfStub(AMD64ArrayIndexOf.STUB_INDEX_OF_1_BYTE, options, providers,
                         registerStubCall(AMD64ArrayIndexOf.STUB_INDEX_OF_1_BYTE, LEAF, REEXECUTABLE, NO_LOCATIONS)));
         link(new AMD64ArrayIndexOfStub(AMD64ArrayIndexOf.STUB_INDEX_OF_2_BYTES, options, providers,
@@ -120,6 +122,14 @@ public class AMD64HotSpotForeignCallsProvider extends HotSpotHostForeignCallsPro
                         registerStubCall(AMD64ArrayIndexOf.STUB_INDEX_OF_3_CHARS, LEAF, REEXECUTABLE, NO_LOCATIONS)));
         link(new AMD64ArrayIndexOfStub(AMD64ArrayIndexOf.STUB_INDEX_OF_4_CHARS, options, providers,
                         registerStubCall(AMD64ArrayIndexOf.STUB_INDEX_OF_4_CHARS, LEAF, REEXECUTABLE, NO_LOCATIONS)));
+        link(new AMD64ArrayIndexOfStub(AMD64ArrayIndexOf.STUB_INDEX_OF_1_CHAR_COMPACT, options, providers,
+                        registerStubCall(AMD64ArrayIndexOf.STUB_INDEX_OF_1_CHAR_COMPACT, LEAF, REEXECUTABLE, NO_LOCATIONS)));
+        link(new AMD64ArrayIndexOfStub(AMD64ArrayIndexOf.STUB_INDEX_OF_2_CHARS_COMPACT, options, providers,
+                        registerStubCall(AMD64ArrayIndexOf.STUB_INDEX_OF_2_CHARS_COMPACT, LEAF, REEXECUTABLE, NO_LOCATIONS)));
+        link(new AMD64ArrayIndexOfStub(AMD64ArrayIndexOf.STUB_INDEX_OF_3_CHARS_COMPACT, options, providers,
+                        registerStubCall(AMD64ArrayIndexOf.STUB_INDEX_OF_3_CHARS_COMPACT, LEAF, REEXECUTABLE, NO_LOCATIONS)));
+        link(new AMD64ArrayIndexOfStub(AMD64ArrayIndexOf.STUB_INDEX_OF_4_CHARS_COMPACT, options, providers,
+                        registerStubCall(AMD64ArrayIndexOf.STUB_INDEX_OF_4_CHARS_COMPACT, LEAF, REEXECUTABLE, NO_LOCATIONS)));
 
         link(new AMD64ArrayEqualsStub(AMD64ArrayEqualsStub.STUB_BOOLEAN_ARRAY_EQUALS, options, providers,
                         registerStubCall(AMD64ArrayEqualsStub.STUB_BOOLEAN_ARRAY_EQUALS, LEAF, REEXECUTABLE, NO_LOCATIONS)));

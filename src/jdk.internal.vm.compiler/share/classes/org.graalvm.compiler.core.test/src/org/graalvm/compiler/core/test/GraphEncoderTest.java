@@ -34,8 +34,8 @@ import org.graalvm.compiler.nodes.EncodedGraph;
 import org.graalvm.compiler.nodes.GraphEncoder;
 import org.graalvm.compiler.nodes.StructuredGraph;
 import org.graalvm.compiler.nodes.StructuredGraph.AllowAssumptions;
+import org.graalvm.compiler.nodes.spi.CoreProviders;
 import org.graalvm.compiler.phases.common.CanonicalizerPhase;
-import org.graalvm.compiler.phases.tiers.PhaseContext;
 import org.junit.Test;
 
 import jdk.vm.ci.meta.ResolvedJavaMethod;
@@ -60,7 +60,7 @@ public class GraphEncoderTest extends GraalCompilerTest {
             if (javaMethod.hasBytecodes()) {
                 StructuredGraph originalGraph = parseEager(javaMethod, AllowAssumptions.YES);
                 if (canonicalize) {
-                    PhaseContext context = new PhaseContext(getProviders());
+                    CoreProviders context = getProviders();
                     new CanonicalizerPhase().apply(originalGraph, context);
                 }
                 originalGraphs.add(originalGraph);

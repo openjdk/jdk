@@ -25,6 +25,7 @@
 
 package jdk.tools.jaotc;
 
+import java.util.HashMap;
 import jdk.vm.ci.hotspot.HotSpotJVMCIRuntime;
 
 /**
@@ -56,17 +57,22 @@ enum MarkId {
     INLINE_CONTIGUOUS_ALLOCATION_SUPPORTED("CodeInstaller::INLINE_CONTIGUOUS_ALLOCATION_SUPPORTED");
 
     private final int value;
+    private static HashMap<Integer, MarkId> lookup = new HashMap<Integer, MarkId>();
 
+    static {
+        for (MarkId e : values()) {
+            lookup.put(e.value, e);
+        }
+    }
     MarkId(String name) {
         this.value = (int) (long) HotSpotJVMCIRuntime.runtime().getConfigStore().getConstants().get(name);
     }
 
     static MarkId getEnum(int value) {
-        for (MarkId e : values()) {
-            if (e.value == value) {
-                return e;
-            }
+        MarkId e = lookup.get(value);
+        if (e == null) {
+            throw new InternalError("Unknown enum value: " + value);
         }
-        throw new InternalError("Unknown enum value: " + value);
+        return e;
     }
 }

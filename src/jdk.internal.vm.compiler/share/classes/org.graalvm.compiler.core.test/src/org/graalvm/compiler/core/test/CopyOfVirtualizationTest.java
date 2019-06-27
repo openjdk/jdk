@@ -35,9 +35,9 @@ import org.graalvm.compiler.nodes.java.NewArrayNode;
 public class CopyOfVirtualizationTest extends GraalCompilerTest {
 
     @Override
-    protected boolean checkMidTierGraph(StructuredGraph graph) {
+    protected void checkMidTierGraph(StructuredGraph graph) {
         assertTrue(graph.getNodes().filter(node -> node instanceof NewArrayNode).count() == 0, "shouldn't require allocation in %s", graph);
-        return super.checkMidTierGraph(graph);
+        super.checkMidTierGraph(graph);
     }
 
     public byte byteCopyOfVirtualization(int index) {

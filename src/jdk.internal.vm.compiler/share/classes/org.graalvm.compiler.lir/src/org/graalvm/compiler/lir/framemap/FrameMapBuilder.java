@@ -24,9 +24,6 @@
 
 package org.graalvm.compiler.lir.framemap;
 
-import java.util.BitSet;
-import java.util.List;
-
 import org.graalvm.compiler.lir.VirtualStackSlot;
 import org.graalvm.compiler.lir.gen.LIRGenerationResult;
 
@@ -56,15 +53,9 @@ public abstract class FrameMapBuilder {
      * requested number of slots is 0, this method returns {@code null}.
      *
      * @param slots the number of slots to reserve
-     * @param objects specifies the indexes of the object pointer slots. The caller is responsible
-     *            for guaranteeing that each such object pointer slot is initialized before any
-     *            instruction that uses a reference map. Without this guarantee, the garbage
-     *            collector could see garbage object values.
-     * @param outObjectStackSlots if non-null, the object pointer slots allocated are added to this
-     *            list
      * @return the first reserved stack slot (i.e., at the lowest address)
      */
-    public abstract VirtualStackSlot allocateStackSlots(int slots, BitSet objects, List<VirtualStackSlot> outObjectStackSlots);
+    public abstract VirtualStackSlot allocateStackSlots(int slots);
 
     public abstract RegisterConfig getRegisterConfig();
 
