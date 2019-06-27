@@ -259,7 +259,6 @@ bool PSMarkSweep::invoke_no_policy(bool clear_all_softrefs) {
 
     BiasedLocking::restore_marks();
     heap->prune_scavengable_nmethods();
-    JvmtiExport::gc_epilogue();
 
 #if COMPILER2_OR_JVMCI
     DerivedPointerTable::update_pointers();

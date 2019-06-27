@@ -225,13 +225,6 @@ void GrowableCache::metadata_do(void f(Metadata*)) {
   }
 }
 
-void GrowableCache::gc_epilogue() {
-  int len = _elements->length();
-  for (int i=0; i<len; i++) {
-    _cache[i] = _elements->at(i)->getCacheValue();
-  }
-}
-
 //
 // class JvmtiBreakpoint
 //
@@ -389,10 +382,6 @@ void  JvmtiBreakpoints::metadata_do(void f(Metadata*)) {
   _bps.metadata_do(f);
 }
 
-void JvmtiBreakpoints::gc_epilogue() {
-  _bps.gc_epilogue();
-}
-
 void JvmtiBreakpoints::print() {
 #ifndef PRODUCT
   LogTarget(Trace, jvmti) log;
@@ -511,12 +500,6 @@ void JvmtiCurrentBreakpoints::oops_do(OopClosure* f) {
 void JvmtiCurrentBreakpoints::metadata_do(void f(Metadata*)) {
   if (_jvmti_breakpoints != NULL) {
     _jvmti_breakpoints->metadata_do(f);
-  }
-}
-
-void JvmtiCurrentBreakpoints::gc_epilogue() {
-  if (_jvmti_breakpoints != NULL) {
-    _jvmti_breakpoints->gc_epilogue();
   }
 }
 

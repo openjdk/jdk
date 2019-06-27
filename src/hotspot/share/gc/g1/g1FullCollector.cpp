@@ -183,7 +183,6 @@ void G1FullCollector::complete_collection() {
   update_derived_pointers();
 
   BiasedLocking::restore_marks();
-  JvmtiExport::gc_epilogue();
 
   _heap->prepare_heap_for_mutators();
 
