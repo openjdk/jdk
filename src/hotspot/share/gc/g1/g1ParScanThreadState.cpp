@@ -51,6 +51,7 @@ G1ParScanThreadState::G1ParScanThreadState(G1CollectedHeap* g1h,
     _tenuring_threshold(g1h->policy()->tenuring_threshold()),
     _scanner(g1h, this),
     _worker_id(worker_id),
+    _last_enqueued_card(SIZE_MAX),
     _stack_trim_upper_threshold(GCDrainStackTargetSize * 2 + 1),
     _stack_trim_lower_threshold(GCDrainStackTargetSize),
     _trim_ticks(),
@@ -371,7 +372,7 @@ void G1ParScanThreadStateSet::record_unused_optional_region(HeapRegion* hr) {
     }
 
     size_t used_memory = pss->oops_into_optional_region(hr)->used_memory();
-    _g1h->phase_times()->record_or_add_thread_work_item(G1GCPhaseTimes::OptScanRS, worker_index, used_memory, G1GCPhaseTimes::ScanRSUsedMemory);
+    _g1h->phase_times()->record_or_add_thread_work_item(G1GCPhaseTimes::OptScanHR, worker_index, used_memory, G1GCPhaseTimes::ScanHRUsedMemory);
   }
 }
 

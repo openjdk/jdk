@@ -30,28 +30,6 @@
 #include "runtime/atomic.hpp"
 #include "runtime/orderAccess.hpp"
 
-bool G1CardTable::mark_card_deferred(size_t card_index) {
-  CardValue val = _byte_map[card_index];
-  // It's already processed
-  if ((val & (clean_card_mask_val() | deferred_card_val())) == deferred_card_val()) {
-    return false;
-  }
-
-  // Cached bit can be installed either on a clean card or on a claimed card.
-  CardValue new_val = val;
-  if (val == clean_card_val()) {
-    new_val = deferred_card_val();
-  } else {
-    if (val & claimed_card_val()) {
-      new_val = val | deferred_card_val();
-    }
-  }
-  if (new_val != val) {
-    Atomic::cmpxchg(new_val, &_byte_map[card_index], val);
-  }
-  return true;
-}
-
 void G1CardTable::g1_mark_as_young(const MemRegion& mr) {
   CardValue *const first = byte_for(mr.start());
   CardValue *const last = byte_after(mr.last());

@@ -100,19 +100,29 @@ public class TestG1ParallelPhases {
             "CMRefRoots",
             "WaitForStrongCLD",
             "WeakCLDRoots",
-            "UpdateRS",
-            "ScanHCC",
-            "ScanRS",
+            "MergeHCC",
+            "MergeRS",
+            "MergeLB",
+            "ScanHR",
             "CodeRoots",
             "ObjCopy",
             "Termination",
             "StringDedupQueueFixup",
             "StringDedupTableFixup",
             "RedirtyCards",
-       //     "PreserveCMReferents",
             "NonYoungFreeCSet",
             "YoungFreeCSet"
         );
+
+        // Some GC phases may or may not occur depending on environment. Filter them out
+        // since we can not reliably guarantee that they occur (or not).
+        Set<String> optPhases = of(
+            "OptScanHR",
+            "OptMergeRS",
+            "OptCodeRoots",
+            "OptObjCopy"
+        );
+        usedPhases.removeAll(optPhases);
 
         assertTrue(usedPhases.equals(allPhases), "Compare events expected and received"
             + ", Not found phases: " + allPhases.stream().filter(p -> !usedPhases.contains(p)).collect(joining(", "))

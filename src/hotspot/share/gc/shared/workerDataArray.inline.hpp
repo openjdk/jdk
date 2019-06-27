@@ -101,7 +101,7 @@ size_t WorkerDataArray<T>::get_thread_work_item(uint worker_i, uint index) {
 template <typename T>
 void WorkerDataArray<T>::add(uint worker_i, T value) {
   assert(worker_i < _length, "Worker %d is greater than max: %d", worker_i, _length);
-  assert(_data[worker_i] != uninitialized(), "No data to add to for worker %d", worker_i);
+  assert(_data[worker_i] != uninitialized(), "No data to add to %s for worker %d", _title, worker_i);
   _data[worker_i] += value;
 }
 

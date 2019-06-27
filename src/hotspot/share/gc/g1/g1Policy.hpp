@@ -111,6 +111,8 @@ class G1Policy: public CHeapObj<mtGC> {
   bool should_update_surv_rate_group_predictors() {
     return collector_state()->in_young_only_phase() && !collector_state()->mark_or_rebuild_in_progress();
   }
+
+  double log_buffer_processing_time() const;
 public:
   const G1Predictions& predictor() const { return _predictor; }
   const G1Analytics* analytics()   const { return const_cast<const G1Analytics*>(_analytics); }
@@ -311,7 +313,7 @@ public:
 
   // Record the start and end of an evacuation pause.
   void record_collection_pause_start(double start_time_sec);
-  virtual void record_collection_pause_end(double pause_time_ms, size_t cards_scanned, size_t heap_used_bytes_before_gc);
+  virtual void record_collection_pause_end(double pause_time_ms, size_t heap_used_bytes_before_gc);
 
   // Record the start and end of a full collection.
   void record_full_collection_start();

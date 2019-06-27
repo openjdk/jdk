@@ -60,10 +60,12 @@ class G1GCPhaseTimes : public CHeapObj<mtGC> {
     CMRefRoots,
     WaitForStrongCLD,
     WeakCLDRoots,
-    UpdateRS,
-    ScanHCC,
-    ScanRS,
-    OptScanRS,
+    MergeRS,
+    OptMergeRS,
+    MergeLB,
+    MergeHCC,
+    ScanHR,
+    OptScanHR,
     CodeRoots,
     OptCodeRoots,
     ObjCopy,
@@ -84,18 +86,24 @@ class G1GCPhaseTimes : public CHeapObj<mtGC> {
   static const GCParPhases ExtRootScanSubPhasesFirst = ThreadRoots;
   static const GCParPhases ExtRootScanSubPhasesLast = WeakCLDRoots;
 
-  enum GCScanRSWorkItems {
-    ScanRSScannedCards,
-    ScanRSClaimedCards,
-    ScanRSSkippedCards,
-    ScanRSScannedOptRefs,
-    ScanRSUsedMemory
+  enum GCMergeRSWorkTimes {
+    MergeRSMergedSparse,
+    MergeRSMergedFine,
+    MergeRSMergedCoarse
   };
 
-  enum GCUpdateRSWorkItems {
-    UpdateRSProcessedBuffers,
-    UpdateRSScannedCards,
-    UpdateRSSkippedCards
+  enum GCScanHRWorkItems {
+    ScanHRScannedCards,
+    ScanHRScannedBlocks,
+    ScanHRClaimedChunks,
+    ScanHRScannedOptRefs,
+    ScanHRUsedMemory
+  };
+
+  enum GCMergeLBWorkItems {
+    MergeLBProcessedBuffers,
+    MergeLBDirtyCards,
+    MergeLBSkippedCards
   };
 
   enum GCObjCopyWorkItems {
@@ -109,19 +117,27 @@ class G1GCPhaseTimes : public CHeapObj<mtGC> {
 
   WorkerDataArray<double>* _gc_par_phases[GCParPhasesSentinel];
 
-  WorkerDataArray<size_t>* _update_rs_processed_buffers;
-  WorkerDataArray<size_t>* _update_rs_scanned_cards;
-  WorkerDataArray<size_t>* _update_rs_skipped_cards;
+  WorkerDataArray<size_t>* _merge_rs_merged_sparse;
+  WorkerDataArray<size_t>* _merge_rs_merged_fine;
+  WorkerDataArray<size_t>* _merge_rs_merged_coarse;
 
-  WorkerDataArray<size_t>* _scan_rs_scanned_cards;
-  WorkerDataArray<size_t>* _scan_rs_claimed_cards;
-  WorkerDataArray<size_t>* _scan_rs_skipped_cards;
+  WorkerDataArray<size_t>* _merge_lb_processed_buffers;
+  WorkerDataArray<size_t>* _merge_lb_dirty_cards;
+  WorkerDataArray<size_t>* _merge_lb_skipped_cards;
 
-  WorkerDataArray<size_t>* _opt_scan_rs_scanned_cards;
-  WorkerDataArray<size_t>* _opt_scan_rs_claimed_cards;
-  WorkerDataArray<size_t>* _opt_scan_rs_skipped_cards;
-  WorkerDataArray<size_t>* _opt_scan_rs_scanned_opt_refs;
-  WorkerDataArray<size_t>* _opt_scan_rs_used_memory;
+  WorkerDataArray<size_t>* _scan_hr_scanned_cards;
+  WorkerDataArray<size_t>* _scan_hr_scanned_blocks;
+  WorkerDataArray<size_t>* _scan_hr_claimed_chunks;
+
+  WorkerDataArray<size_t>* _opt_merge_rs_merged_sparse;
+  WorkerDataArray<size_t>* _opt_merge_rs_merged_fine;
+  WorkerDataArray<size_t>* _opt_merge_rs_merged_coarse;
+
+  WorkerDataArray<size_t>* _opt_scan_hr_scanned_cards;
+  WorkerDataArray<size_t>* _opt_scan_hr_scanned_blocks;
+  WorkerDataArray<size_t>* _opt_scan_hr_claimed_chunks;
+  WorkerDataArray<size_t>* _opt_scan_hr_scanned_opt_refs;
+  WorkerDataArray<size_t>* _opt_scan_hr_used_memory;
 
   WorkerDataArray<size_t>* _obj_copy_lab_waste;
   WorkerDataArray<size_t>* _obj_copy_lab_undo_waste;
@@ -145,6 +161,9 @@ class G1GCPhaseTimes : public CHeapObj<mtGC> {
 
   double _cur_string_deduplication_time_ms;
 
+  double _cur_merge_heap_roots_time_ms;
+  double _cur_optional_merge_heap_roots_time_ms;
+
   double _cur_prepare_tlab_time_ms;
   double _cur_resize_tlab_time_ms;
 
@@ -158,6 +177,8 @@ class G1GCPhaseTimes : public CHeapObj<mtGC> {
   double _root_region_scan_wait_time_ms;
 
   double _external_accounted_time_ms;
+
+  double _recorded_prepare_heap_roots_time_ms;
 
   double _recorded_clear_claimed_marks_time_ms;
 
@@ -208,7 +229,8 @@ class G1GCPhaseTimes : public CHeapObj<mtGC> {
   void trace_count(const char* name, size_t value) const;
 
   double print_pre_evacuate_collection_set() const;
-  double print_evacuate_collection_set() const;
+  double print_merge_heap_roots_time() const;
+  double print_evacuate_initial_collection_set() const;
   double print_evacuate_optional_collection_set() const;
   double print_post_evacuate_collection_set() const;
   void print_other(double accounted_ms) const;
@@ -276,6 +298,14 @@ class G1GCPhaseTimes : public CHeapObj<mtGC> {
 
   void record_strong_code_root_purge_time(double ms) {
     _cur_strong_code_root_purge_time_ms = ms;
+  }
+
+  void record_merge_heap_roots_time(double ms) {
+    _cur_merge_heap_roots_time_ms += ms;
+  }
+
+  void record_or_add_optional_merge_heap_roots_time(double ms) {
+    _cur_optional_merge_heap_roots_time_ms += ms;
   }
 
   void record_evac_fail_recalc_used_time(double ms) {
@@ -357,6 +387,10 @@ class G1GCPhaseTimes : public CHeapObj<mtGC> {
     _external_accounted_time_ms += time_ms;
   }
 
+  void record_prepare_heap_roots_time_ms(double recorded_prepare_heap_roots_time_ms) {
+    _recorded_prepare_heap_roots_time_ms = recorded_prepare_heap_roots_time_ms;
+  }
+
   void record_clear_claimed_marks_time_ms(double recorded_clear_claimed_marks_time_ms) {
     _recorded_clear_claimed_marks_time_ms = recorded_clear_claimed_marks_time_ms;
   }
@@ -397,6 +431,10 @@ class G1GCPhaseTimes : public CHeapObj<mtGC> {
     return _cur_fast_reclaim_humongous_time_ms;
   }
 
+  size_t fast_reclaim_humongous_candidates() const {
+    return _cur_fast_reclaim_humongous_candidates;
+  }
+
   ReferenceProcessorPhaseTimes* ref_phase_times() { return &_ref_phase_times; }
 
   WeakProcessorPhaseTimes* weak_phase_times() { return &_weak_phase_times; }
@@ -424,8 +462,10 @@ protected:
   G1GCPhaseTimes* _phase_times;
   uint _worker_id;
   EventGCPhaseParallel _event;
+  bool _must_record;
+
 public:
-  G1GCParPhaseTimesTracker(G1GCPhaseTimes* phase_times, G1GCPhaseTimes::GCParPhases phase, uint worker_id);
+  G1GCParPhaseTimesTracker(G1GCPhaseTimes* phase_times, G1GCPhaseTimes::GCParPhases phase, uint worker_id, bool must_record = true);
   virtual ~G1GCParPhaseTimesTracker();
 };
 

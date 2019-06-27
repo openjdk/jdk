@@ -46,6 +46,7 @@ class G1CMBitMap;
 class G1HotCardCache;
 class G1RemSetScanState;
 class G1ParScanThreadState;
+class G1ParScanThreadStateSet;
 class G1Policy;
 class G1ScanCardClosure;
 class HeapRegionClaimer;
@@ -84,38 +85,38 @@ public:
            G1HotCardCache* hot_card_cache);
   ~G1RemSet();
 
-  // Scan all remembered sets of the collection set for references into the collection
-  // set.
-  // Further applies heap_region_codeblobs on the oops of the unmarked nmethods on the strong code
-  // roots list for each region in the collection set.
-  void scan_rem_set(G1ParScanThreadState* pss,
-                    uint worker_i,
-                    G1GCPhaseTimes::GCParPhases scan_phase,
-                    G1GCPhaseTimes::GCParPhases objcopy_phase,
-                    G1GCPhaseTimes::GCParPhases coderoots_phase);
+  // Scan all cards in the non-collection set regions that potentially contain
+  // references into the current whole collection set.
+  void scan_heap_roots(G1ParScanThreadState* pss,
+                       uint worker_id,
+                       G1GCPhaseTimes::GCParPhases scan_phase,
+                       G1GCPhaseTimes::GCParPhases objcopy_phase);
 
-  // Flush remaining refinement buffers for cross-region references to either evacuate references
-  // into the collection set or update the remembered set.
-  void update_rem_set(G1ParScanThreadState* pss, uint worker_i);
+  // Merge cards from various sources (remembered sets, hot card cache, log buffers)
+  // and calculate the cards that need to be scanned later (via scan_heap_roots()).
+  // If remembered_set_only is set, only merge remembered set cards.
+  void merge_heap_roots(bool remembered_set_only, G1GCPhaseTimes::GCParPhases merge_phase);
 
-  // Prepare for and cleanup after scanning the remembered sets. Must be called
+  // Prepare for and cleanup after scanning the heap roots. Must be called
   // once before and after in sequential code.
-  void prepare_for_scan_rem_set();
-  void cleanup_after_scan_rem_set();
-  // Prepares the given region for remembered set scanning.
-  void prepare_for_scan_rem_set(uint region_idx);
+  void prepare_for_scan_heap_roots();
+  // Cleans the card table from temporary duplicate detection information.
+  void cleanup_after_scan_heap_roots();
+  // Prepares the given region for heap root scanning.
+  void prepare_for_scan_heap_roots(uint region_idx);
 
-  G1RemSetScanState* scan_state() const { return _scan_state; }
+  // Do work for regions in the current increment of the collection set, scanning
+  // non-card based (heap) roots.
+  void scan_collection_set_regions(G1ParScanThreadState* pss,
+                                   uint worker_id,
+                                   G1GCPhaseTimes::GCParPhases scan_phase,
+                                   G1GCPhaseTimes::GCParPhases coderoots_phase,
+                                   G1GCPhaseTimes::GCParPhases objcopy_phase);
 
   // Refine the card corresponding to "card_ptr". Safe to be called concurrently
   // to the mutator.
   void refine_card_concurrently(CardValue* card_ptr,
                                 uint worker_i);
-
-  // Refine the card corresponding to "card_ptr", applying the given closure to
-  // all references found. Must only be called during gc.
-  // Returns whether the card has been scanned.
-  bool refine_card_during_gc(CardValue* card_ptr, G1ScanCardClosure* update_rs_cl);
 
   // Print accumulated summary info from the start of the VM.
   void print_summary_info();

@@ -78,7 +78,6 @@ class G1Policy;
 class G1HotCardCache;
 class G1RemSet;
 class G1YoungRemSetSamplingThread;
-class HeapRegionRemSetIterator;
 class G1ConcurrentMark;
 class G1ConcurrentMarkThread;
 class G1ConcurrentRefine;
@@ -757,7 +756,7 @@ private:
   void evacuate_next_optional_regions(G1ParScanThreadStateSet* per_thread_states);
 
 public:
-  void pre_evacuate_collection_set(G1EvacuationInfo& evacuation_info);
+  void pre_evacuate_collection_set(G1EvacuationInfo& evacuation_info, G1ParScanThreadStateSet* pss);
   void post_evacuate_collection_set(G1EvacuationInfo& evacuation_info, G1ParScanThreadStateSet* pss);
 
   void expand_heap_after_young_collection();
@@ -1115,7 +1114,8 @@ public:
 
  public:
 
-  inline G1HeapRegionAttr region_attr(const void* obj);
+  inline G1HeapRegionAttr region_attr(const void* obj) const;
+  inline G1HeapRegionAttr region_attr(uint idx) const;
 
   // Return "TRUE" iff the given object address is in the reserved
   // region of g1.
@@ -1182,7 +1182,12 @@ public:
   // Starts the iteration so that the start regions of a given worker id over the
   // set active_workers are evenly spread across the set of collection set regions
   // to be iterated.
-  void collection_set_iterate_increment_from(HeapRegionClosure *blk, uint worker_id);
+  // The variant with the HeapRegionClaimer guarantees that the closure will be
+  // applied to a particular region exactly once.
+  void collection_set_iterate_increment_from(HeapRegionClosure *blk, uint worker_id) {
+    collection_set_iterate_increment_from(blk, NULL, worker_id);
+  }
+  void collection_set_iterate_increment_from(HeapRegionClosure *blk, HeapRegionClaimer* hr_claimer, uint worker_id);
 
   // Returns the HeapRegion that contains addr. addr must not be NULL.
   template <class T>

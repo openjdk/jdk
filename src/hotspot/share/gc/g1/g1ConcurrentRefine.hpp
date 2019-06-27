@@ -97,8 +97,8 @@ class G1ConcurrentRefine : public CHeapObj<mtGC> {
                      size_t min_yellow_zone_size);
 
   // Update green/yellow/red zone values based on how well goals are being met.
-  void update_zones(double update_rs_time,
-                    size_t update_rs_processed_buffers,
+  void update_zones(double log_buffer_scan_time,
+                    size_t processed_log_buffers,
                     double goal_ms);
 
   static uint worker_id_offset();
@@ -115,7 +115,7 @@ public:
   void stop();
 
   // Adjust refinement thresholds based on work done during the pause and the goal time.
-  void adjust(double update_rs_time, size_t update_rs_processed_buffers, double goal_ms);
+  void adjust(double log_buffer_scan_time, size_t processed_log_buffers, double goal_ms);
 
   size_t activation_threshold(uint worker_id) const;
   size_t deactivation_threshold(uint worker_id) const;

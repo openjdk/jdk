@@ -60,6 +60,10 @@ class G1ParScanThreadState : public CHeapObj<mtGC> {
 
   uint _worker_id;
 
+  // Remember the last enqueued card to avoid enqueuing the same card over and over;
+  // since we only ever scan a card once, this is sufficient.
+  size_t _last_enqueued_card;
+
   // Upper and lower threshold to start and end work queue draining.
   uint const _stack_trim_upper_threshold;
   uint const _stack_trim_lower_threshold;
@@ -128,8 +132,9 @@ public:
     }
     size_t card_index = ct()->index_for(p);
     // If the card hasn't been added to the buffer, do it.
-    if (ct()->mark_card_deferred(card_index)) {
+    if (_last_enqueued_card != card_index) {
       dirty_card_queue().enqueue(ct()->byte_for_index(card_index));
+      _last_enqueued_card = card_index;
     }
   }
 

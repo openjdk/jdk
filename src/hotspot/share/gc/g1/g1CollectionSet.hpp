@@ -36,6 +36,7 @@ class G1ParScanThreadStateSet;
 class G1Policy;
 class G1SurvivorRegions;
 class HeapRegion;
+class HeapRegionClaimer;
 class HeapRegionClosure;
 
 // The collection set.
@@ -279,7 +280,12 @@ public:
 
   // Iterate over the current collection set increment applying the given HeapRegionClosure
   // from a starting position determined by the given worker id.
-  void iterate_incremental_part_from(HeapRegionClosure* cl, uint worker_id, uint total_workers) const;
+  void iterate_incremental_part_from(HeapRegionClosure* cl, HeapRegionClaimer* hr_claimer, uint worker_id, uint total_workers) const;
+
+  // Returns the length of the current increment in number of regions.
+  size_t increment_length() const { return _collection_set_cur_length - _inc_part_start; }
+  // Returns the length of the whole current collection set in number of regions
+  size_t cur_length() const { return _collection_set_cur_length; }
 
   // Iterate over the entire collection set (all increments calculated so far), applying
   // the given HeapRegionClosure on all of them.
