@@ -29,7 +29,8 @@
 class RuleCompletesNormally {
     public String convert(int i) {
         return switch (i) {
-            default -> {}
+            case 0 -> {}
+            default -> "";
         };
     }
 }
