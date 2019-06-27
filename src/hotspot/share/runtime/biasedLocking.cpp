@@ -548,7 +548,7 @@ public:
       if (biased_locker != NULL) {
         _biased_locker_id = JFR_THREAD_ID(biased_locker);
       }
-      _safepoint_id = SafepointSynchronize::safepoint_counter();
+      _safepoint_id = SafepointSynchronize::safepoint_id();
       clean_up_cached_monitor_info();
       return;
     } else {
@@ -589,7 +589,7 @@ public:
 
   virtual void doit() {
     _status_code = bulk_revoke_or_rebias_at_safepoint((*_obj)(), _bulk_rebias, _attempt_rebias_of_object, _requesting_thread);
-    _safepoint_id = SafepointSynchronize::safepoint_counter();
+    _safepoint_id = SafepointSynchronize::safepoint_id();
     clean_up_cached_monitor_info();
   }
 

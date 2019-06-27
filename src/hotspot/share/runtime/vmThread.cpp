@@ -388,7 +388,7 @@ static void post_vm_operation_event(EventExecuteVMOperation* event, VM_Operation
   // For concurrent vm operations, the thread id is set to 0 indicating thread is unknown.
   // This is because the caller thread could have exited already.
   event->set_caller(is_concurrent ? 0 : JFR_THREAD_ID(op->calling_thread()));
-  event->set_safepointId(evaluate_at_safepoint ? SafepointSynchronize::safepoint_counter() : 0);
+  event->set_safepointId(evaluate_at_safepoint ? SafepointSynchronize::safepoint_id() : 0);
   event->commit();
 }
 
