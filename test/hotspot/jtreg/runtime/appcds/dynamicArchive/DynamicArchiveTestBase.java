@@ -108,7 +108,7 @@ class DynamicArchiveTestBase {
             cmdLine = TestCommon.concat(cmdLine, "-XX:SharedArchiveFile=" + baseArchiveName);
         }
         cmdLine = TestCommon.concat(cmdLine, cmdLineSuffix);
-        return execProcess("dump", cmdLine);
+        return execProcess("dump", null, cmdLine);
     }
 
     public static Result dump2_WB(String baseArchiveName, String topArchiveName, String ... cmdLineSuffix)
@@ -188,7 +188,23 @@ class DynamicArchiveTestBase {
             "-Xshare:on",
             "-XX:SharedArchiveFile=" + archiveFiles);
         cmdLine = TestCommon.concat(cmdLine, cmdLineSuffix);
-        return execProcess("exec", cmdLine);
+        return execProcess("exec", null, cmdLine);
+    }
+
+    public static Result runWithRelativePath(String baseArchiveName, String topArchiveName,
+                              String jarDir, String ... cmdLineSuffix)
+        throws Exception {
+        if (baseArchiveName == null && topArchiveName == null) {
+            throw new RuntimeException("Both baseArchiveName and topArchiveName cannot be null at the same time.");
+        }
+        String archiveFiles = (baseArchiveName == null) ? topArchiveName :
+            (topArchiveName == null) ? baseArchiveName :
+            baseArchiveName + File.pathSeparator + topArchiveName;
+        String[] cmdLine = TestCommon.concat(
+            "-Xshare:on",
+            "-XX:SharedArchiveFile=" + archiveFiles);
+        cmdLine = TestCommon.concat(cmdLine, cmdLineSuffix);
+        return execProcess("exec", jarDir, cmdLine);
     }
 
     public static Result run2_WB(String baseArchiveName, String topArchiveName, String ... cmdLineSuffix)
@@ -221,11 +237,14 @@ class DynamicArchiveTestBase {
    }
 
 
-    private static Result execProcess(String mode, String[] cmdLine) throws Exception {
+    private static Result execProcess(String mode, String jarDir, String[] cmdLine) throws Exception {
         if (!executedIn_run) {
             throw new Exception("Test error: dynamic archive tests must be executed via DynamicArchiveTestBase.run()");
         }
         ProcessBuilder pb = ProcessTools.createJavaProcessBuilder(true, cmdLine);
+        if (jarDir != null) {
+            pb.directory(new File(jarDir));
+        }
         OutputAnalyzer output = TestCommon.executeAndLog(pb, mode);
         CDSOptions opts = new CDSOptions();
         String xShareMode = getXshareMode(cmdLine);

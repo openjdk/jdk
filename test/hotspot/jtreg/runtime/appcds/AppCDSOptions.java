@@ -28,9 +28,15 @@ import jdk.test.lib.cds.CDSOptions;
 
 public class AppCDSOptions extends CDSOptions {
     public String appJar;
+    public String appJarDir;
 
     public AppCDSOptions setAppJar(String appJar) {
         this.appJar = appJar;
+        return this;
+    }
+
+    public AppCDSOptions setAppJarDir(String appJarDir) {
+        this.appJarDir = appJarDir;
         return this;
     }
 }

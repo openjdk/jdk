@@ -3571,7 +3571,7 @@ bool Arguments::init_shared_archive_paths() {
           "Cannot have more than 1 archive file specified in -XX:SharedArchiveFile during CDS dumping");
       }
       if (DynamicDumpSharedSpaces) {
-        if (FileMapInfo::same_files(SharedArchiveFile, ArchiveClassesAtExit)) {
+        if (os::same_files(SharedArchiveFile, ArchiveClassesAtExit)) {
           vm_exit_during_initialization(
             "Cannot have the same archive file specified for -XX:SharedArchiveFile and -XX:ArchiveClassesAtExit",
             SharedArchiveFile);

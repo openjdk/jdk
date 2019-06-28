@@ -34,6 +34,7 @@
  * @run driver BootClassPathMismatch
  */
 
+import jdk.test.lib.Platform;
 import jdk.test.lib.cds.CDSOptions;
 import jdk.test.lib.cds.CDSTestUtils;
 import jdk.test.lib.process.OutputAnalyzer;
@@ -41,7 +42,9 @@ import java.io.File;
 import java.nio.file.Files;
 import java.nio.file.FileAlreadyExistsException;
 import java.nio.file.StandardCopyOption;
+import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.nio.file.attribute.FileTime;
 
 
 public class BootClassPathMismatch {
@@ -126,6 +129,55 @@ public class BootClassPathMismatch {
                 "-cp", appJar, "-verbose:class",
                 "-Xbootclasspath/a:" + appJar, "Hello")
             .assertNormalExit("[class,load] Hello source: shared objects file");
+
+        // test relative path to appJar
+        String newJar = TestCommon.composeRelPath(appJar);
+        TestCommon.run(
+                "-cp", newJar, "-verbose:class",
+                "-Xbootclasspath/a:" + newJar, "Hello")
+            .assertNormalExit("[class,load] Hello source: shared objects file");
+
+        int idx = appJar.lastIndexOf(File.separator);
+        String jarName = appJar.substring(idx + 1);
+        String jarDir = appJar.substring(0, idx);
+        // relative path starting with "."
+        TestCommon.runWithRelativePath(
+            jarDir,
+            "-Xshare:on",
+            "-XX:SharedArchiveFile=" + TestCommon.getCurrentArchiveName(),
+            "-cp", "." + File.separator + jarName,
+            "-Xbootclasspath/a:" + "." + File.separator + jarName,
+            "-Xlog:class+load=trace,class+path=info",
+            "Hello")
+            .assertNormalExit(output -> {
+                output.shouldContain("Hello source: shared objects file")
+                      .shouldHaveExitValue(0);
+                });
+
+        // relative path starting with ".."
+        idx = jarDir.lastIndexOf(File.separator);
+        String jarSubDir = jarDir.substring(idx + 1);
+        TestCommon.runWithRelativePath(
+            jarDir,
+            "-Xshare:on",
+            "-XX:SharedArchiveFile=" + TestCommon.getCurrentArchiveName(),
+            "-cp", ".." + File.separator + jarSubDir + File.separator + jarName,
+            "-Xbootclasspath/a:" + ".." + File.separator + jarSubDir + File.separator + jarName,
+            "-Xlog:class+load=trace,class+path=info",
+            "Hello")
+            .assertNormalExit(output -> {
+                output.shouldContain("Hello source: shared objects file")
+                      .shouldHaveExitValue(0);
+                });
+
+        // test sym link to appJar
+        if (!Platform.isWindows()) {
+            File linkedJar = TestCommon.createSymLink(appJar);
+            TestCommon.run(
+                    "-cp", linkedJar.getPath(), "-verbose:class",
+                    "-Xbootclasspath/a:" + linkedJar.getPath(), "Hello")
+                .assertNormalExit("[class,load] Hello source: shared objects file");
+        }
     }
 
     /* Archive contains boot classes only, runtime add -Xbootclasspath/a path.
@@ -158,6 +210,12 @@ public class BootClassPathMismatch {
                 "-Xlog:cds",
                 "-cp", appJar, "-Xbootclasspath/a:" + appJar, "Hello")
             .assertAbnormalExit(mismatchMessage);
+
+        // test relative path to appJar
+        String newJar = TestCommon.composeRelPath(appJar);
+        TestCommon.run(
+                "-cp", newJar, "-Xbootclasspath/a:" + newJar, "Hello")
+            .assertAbnormalExit(mismatchMessage);
     }
 
     private static void copyHelloToNewDir() throws Exception {
@@ -168,13 +226,25 @@ public class BootClassPathMismatch {
         } catch (FileAlreadyExistsException e) { }
 
         // copy as hello.jar
+        Path dstPath = Paths.get(dstDir, "hello.jar");
         Files.copy(Paths.get(classDir, "hello.jar"),
-            Paths.get(dstDir, "hello.jar"),
+            dstPath,
             StandardCopyOption.REPLACE_EXISTING);
 
+        File helloJar = dstPath.toFile();
+        long modTime = helloJar.lastModified();
+
         // copy as hello.jar1
+        Path dstPath2 = Paths.get(dstDir, "hello.jar1");
         Files.copy(Paths.get(classDir, "hello.jar"),
-            Paths.get(dstDir, "hello.jar1"),
+            dstPath2,
             StandardCopyOption.REPLACE_EXISTING);
+
+        // On Windows, we rely on the file size, creation time, and
+        // modification time in order to differentiate between 2 files.
+        // Setting a different modification time on hello.jar1 so that this test
+        // runs more reliably on Windows.
+        modTime += 10000;
+        Files.setAttribute(dstPath2, "lastModifiedTime", FileTime.fromMillis(modTime));
     }
 }

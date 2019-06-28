@@ -1450,6 +1450,30 @@ char * os::native_path(char *path) {
   return path;
 }
 
+bool os::same_files(const char* file1, const char* file2) {
+  if (strcmp(file1, file2) == 0) {
+    return true;
+  }
+
+  bool is_same = false;
+  struct stat st1;
+  struct stat st2;
+
+  if (os::stat(file1, &st1) < 0) {
+    return false;
+  }
+
+  if (os::stat(file2, &st2) < 0) {
+    return false;
+  }
+
+  if (st1.st_dev == st2.st_dev && st1.st_ino == st2.st_ino) {
+    // same files
+    is_same = true;
+  }
+  return is_same;
+}
+
 // Check minimum allowable stack sizes for thread creation and to initialize
 // the java system classes, including StackOverflowError - depends on page
 // size.

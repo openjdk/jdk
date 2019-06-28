@@ -292,11 +292,13 @@ ClassFileStream* ClassPathDirEntry::open_stream(const char* name, TRAPS) {
   return NULL;
 }
 
-ClassPathZipEntry::ClassPathZipEntry(jzfile* zip, const char* zip_name, bool is_boot_append) : ClassPathEntry() {
+ClassPathZipEntry::ClassPathZipEntry(jzfile* zip, const char* zip_name,
+                                     bool is_boot_append, bool from_class_path_attr) : ClassPathEntry() {
   _zip = zip;
   char *copy = NEW_C_HEAP_ARRAY(char, strlen(zip_name)+1, mtClass);
   strcpy(copy, zip_name);
   _zip_name = copy;
+  _from_class_path_attr = from_class_path_attr;
 }
 
 ClassPathZipEntry::~ClassPathZipEntry() {
@@ -577,7 +579,7 @@ void ClassLoader::setup_app_search_path(const char *class_path) {
     strncpy(path, &class_path[start], end - start);
     path[end - start] = '\0';
 
-    update_class_path_entry_list(path, false, false);
+    update_class_path_entry_list(path, false, false, false);
 
     while (class_path[end] == os::path_separator()[0]) {
       end++;
@@ -612,7 +614,7 @@ void ClassLoader::update_module_path_entry_list(const char *path, TRAPS) {
   // File or directory found
   ClassPathEntry* new_entry = NULL;
   new_entry = create_class_path_entry(path, &st, true /* throw_exception */,
-                                      false /*is_boot_append */, CHECK);
+                                      false /*is_boot_append */, false /* from_class_path_attr */, CHECK);
   if (new_entry == NULL) {
     return;
   }
@@ -668,7 +670,7 @@ void ClassLoader::setup_patch_mod_entries() {
       struct stat st;
       if (os::stat(path, &st) == 0) {
         // File or directory found
-        ClassPathEntry* new_entry = create_class_path_entry(path, &st, false, false, CHECK);
+        ClassPathEntry* new_entry = create_class_path_entry(path, &st, false, false, false, CHECK);
         // If the path specification is valid, enter it into this module's list
         if (new_entry != NULL) {
           module_cpl->add_to_list(new_entry);
@@ -737,7 +739,7 @@ void ClassLoader::setup_boot_search_path(const char *class_path) {
       struct stat st;
       if (os::stat(path, &st) == 0) {
         // Directory found
-        ClassPathEntry* new_entry = create_class_path_entry(path, &st, false, false, CHECK);
+        ClassPathEntry* new_entry = create_class_path_entry(path, &st, false, false, false, CHECK);
 
         // Check for a jimage
         if (Arguments::has_jimage()) {
@@ -754,7 +756,7 @@ void ClassLoader::setup_boot_search_path(const char *class_path) {
     } else {
       // Every entry on the system boot class path after the initial base piece,
       // which is set by os::set_boot_path(), is considered an appended entry.
-      update_class_path_entry_list(path, false, true);
+      update_class_path_entry_list(path, false, true, false);
     }
 
     while (class_path[end] == os::path_separator()[0]) {
@@ -782,7 +784,7 @@ void ClassLoader::add_to_exploded_build_list(Symbol* module_sym, TRAPS) {
   struct stat st;
   if (os::stat(path, &st) == 0) {
     // Directory found
-    ClassPathEntry* new_entry = create_class_path_entry(path, &st, false, false, CHECK);
+    ClassPathEntry* new_entry = create_class_path_entry(path, &st, false, false, false, CHECK);
 
     // If the path specification is valid, enter it into this module's list.
     // There is no need to check for duplicate modules in the exploded entry list,
@@ -802,7 +804,9 @@ void ClassLoader::add_to_exploded_build_list(Symbol* module_sym, TRAPS) {
 
 ClassPathEntry* ClassLoader::create_class_path_entry(const char *path, const struct stat* st,
                                                      bool throw_exception,
-                                                     bool is_boot_append, TRAPS) {
+                                                     bool is_boot_append,
+                                                     bool from_class_path_attr,
+                                                     TRAPS) {
   JavaThread* thread = JavaThread::current();
   ClassPathEntry* new_entry = NULL;
   if ((st->st_mode & S_IFMT) == S_IFREG) {
@@ -832,7 +836,7 @@ ClassPathEntry* ClassLoader::create_class_path_entry(const char *path, const str
         zip = (*ZipOpen)(canonical_path, &error_msg);
       }
       if (zip != NULL && error_msg == NULL) {
-        new_entry = new ClassPathZipEntry(zip, path, is_boot_append);
+        new_entry = new ClassPathZipEntry(zip, path, is_boot_append, from_class_path_attr);
       } else {
         char *msg;
         if (error_msg == NULL) {
@@ -882,7 +886,7 @@ ClassPathZipEntry* ClassLoader::create_class_path_zip_entry(const char *path, bo
         }
         if (zip != NULL && error_msg == NULL) {
           // create using canonical path
-          return new ClassPathZipEntry(zip, canonical_path, is_boot_append);
+          return new ClassPathZipEntry(zip, canonical_path, is_boot_append, false);
         }
       }
     }
@@ -956,13 +960,14 @@ void ClassLoader::add_to_app_classpath_entries(const char* path,
 bool ClassLoader::update_class_path_entry_list(const char *path,
                                                bool check_for_duplicates,
                                                bool is_boot_append,
+                                               bool from_class_path_attr,
                                                bool throw_exception) {
   struct stat st;
   if (os::stat(path, &st) == 0) {
     // File or directory found
     ClassPathEntry* new_entry = NULL;
     Thread* THREAD = Thread::current();
-    new_entry = create_class_path_entry(path, &st, throw_exception, is_boot_append, CHECK_(false));
+    new_entry = create_class_path_entry(path, &st, throw_exception, is_boot_append, from_class_path_attr, CHECK_(false));
     if (new_entry == NULL) {
       return false;
     }

@@ -105,12 +105,13 @@ public class PrintSharedArchiveAndExit {
         "-XX:+PrintSharedArchiveAndExit")
       .ifNoMappingFailure(output -> check(output, 1, true, lastCheckMsg, "Run time APP classpath is shorter than the one at dump time: ."));
 
-    log("Use an invalid App CP -- all the JAR paths should be checked");
+    log("Use an invalid App CP -- all the JAR paths should be checked.\n" +
+        "Non-existing jar files will be ignored.");
     String invalidCP = "non-existing-dir" + File.pathSeparator + cp;
     TestCommon.run(
         "-cp", invalidCP,
         "-XX:+PrintSharedArchiveAndExit")
-      .ifNoMappingFailure(output -> check(output, 1, true, lastCheckMsg, "APP classpath mismatch, actual: -Djava.class.path=" + invalidCP));
+      .ifNoMappingFailure(output -> check(output, 0, true, lastCheckMsg));
 
     log("Changed modification time of hello.jar -- all the JAR paths should be checked");
     (new File(appJar)).setLastModified(System.currentTimeMillis() + 2000);

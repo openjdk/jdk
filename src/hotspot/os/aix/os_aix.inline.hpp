@@ -37,11 +37,6 @@
 #include <sys/ioctl.h>
 #include <netdb.h>
 
-// File names are case-insensitive on windows only.
-inline int os::file_name_strncmp(const char* s1, const char* s2, size_t num) {
-  return strncmp(s1, s2, num);
-}
-
 inline bool os::uses_stack_guard_pages() {
   return true;
 }
