@@ -26,7 +26,7 @@ import java.security.spec.*;
 
 /**
  * @test
- * @bug 8080462
+ * @bug 8080462 8226651
  * @summary Ensure that PSS key and params check are implemented properly
  *         regardless of call sequence
  * @library /test/lib ..
@@ -57,12 +57,19 @@ public class KeyAndParamCheckForPSS extends PKCS11Test {
         }
         // NOTE: key length >= (digest length + 2) in bytes
         // otherwise, even salt length = 0 would not work
-        runTest(p, 1024, "SHA-384");
-        runTest(p, 1040, "SHA-512");
+        runTest(p, 1024, "SHA-256", "SHA-256");
+        runTest(p, 1024, "SHA-256", "SHA-384");
+        runTest(p, 1024, "SHA-256", "SHA-512");
+        runTest(p, 1024, "SHA-384", "SHA-256");
+        runTest(p, 1024, "SHA-384", "SHA-384");
+        runTest(p, 1024, "SHA-384", "SHA-512");
+        runTest(p, 1040, "SHA-512", "SHA-256");
+        runTest(p, 1040, "SHA-512", "SHA-384");
+        runTest(p, 1040, "SHA-512", "SHA-512");
     }
 
-    private void runTest(Provider p, int keySize, String hashAlg)
-            throws Exception {
+    private void runTest(Provider p, int keySize, String hashAlg,
+            String mgfHashAlg) throws Exception {
         System.out.println("Testing [" + keySize + " " + hashAlg + "]");
 
         // create a key pair with the supplied size
@@ -72,9 +79,9 @@ public class KeyAndParamCheckForPSS extends PKCS11Test {
 
         int bigSaltLen = keySize/8 - 14;
         AlgorithmParameterSpec paramsBad = new PSSParameterSpec(hashAlg,
-            "MGF1", new MGF1ParameterSpec(hashAlg), bigSaltLen, 1);
+            "MGF1", new MGF1ParameterSpec(mgfHashAlg), bigSaltLen, 1);
         AlgorithmParameterSpec paramsGood = new PSSParameterSpec(hashAlg,
-            "MGF1", new MGF1ParameterSpec(hashAlg), 0, 1);
+            "MGF1", new MGF1ParameterSpec(mgfHashAlg), 0, 1);
 
         PrivateKey priv = kp.getPrivate();
         PublicKey pub = kp.getPublic();

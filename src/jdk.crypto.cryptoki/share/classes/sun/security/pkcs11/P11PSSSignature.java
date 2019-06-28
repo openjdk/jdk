@@ -395,33 +395,49 @@ final class P11PSSSignature extends SignatureSpi {
                 ("Unsupported digest algorithm in Signature parameters: " +
                  digestAlgorithm);
         }
+
         if (!(params.getMGFAlgorithm().equalsIgnoreCase("MGF1"))) {
             throw new InvalidAlgorithmParameterException("Only supports MGF1");
         }
+
+        // defaults to the digest algorithm unless overridden
+        String mgfDigestAlgo = digestAlgorithm;
+        AlgorithmParameterSpec mgfParams = params.getMGFParameters();
+        if (mgfParams != null) {
+            if (!(mgfParams instanceof MGF1ParameterSpec)) {
+                throw new InvalidAlgorithmParameterException
+                        ("Only MGF1ParameterSpec is supported");
+            }
+            mgfDigestAlgo = ((MGF1ParameterSpec)mgfParams).getDigestAlgorithm();
+        }
+
         if (params.getTrailerField() != PSSParameterSpec.TRAILER_FIELD_BC) {
             throw new InvalidAlgorithmParameterException
                 ("Only supports TrailerFieldBC(1)");
         }
+
         int saltLen = params.getSaltLength();
         if (this.p11Key != null) {
-            int maxSaltLen = ((this.p11Key.length() + 7) >> 3) - digestLen.intValue() - 2;
+            int maxSaltLen = ((this.p11Key.length() + 7) >> 3) -
+                    digestLen.intValue() - 2;
 
             if (DEBUG) {
                 System.out.println("Max saltLen = " + maxSaltLen);
                 System.out.println("Curr saltLen = " + saltLen);
             }
             if (maxSaltLen < 0 || saltLen > maxSaltLen) {
-                throw new InvalidAlgorithmParameterException("Invalid with current key size");
+                throw new InvalidAlgorithmParameterException
+                        ("Invalid with current key size");
             }
-        } else {
-            if (DEBUG) System.out.println("No key available for validating saltLen");
+        } else if (DEBUG) {
+            System.out.println("No key available for validating saltLen");
         }
 
         // validated, now try to store the parameter internally
         try {
             this.mechanism.setParameter(
                     new CK_RSA_PKCS_PSS_PARAMS(digestAlgorithm, "MGF1",
-                        digestAlgorithm, saltLen));
+                            mgfDigestAlgo, saltLen));
             this.sigParams = params;
         } catch (IllegalArgumentException iae) {
             throw new InvalidAlgorithmParameterException(iae);
