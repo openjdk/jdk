@@ -730,8 +730,11 @@ const Type *Type::hashcons(void) {
   // Since we just discovered a new Type, compute its dual right now.
   assert( !_dual, "" );         // No dual yet
   _dual = xdual();              // Compute the dual
-  if( cmp(this,_dual)==0 ) {    // Handle self-symmetric
-    _dual = this;
+  if (cmp(this, _dual) == 0) {  // Handle self-symmetric
+    if (_dual != this) {
+      delete _dual;
+      _dual = this;
+    }
     return this;
   }
   assert( !_dual->_dual, "" );  // No reverse dual yet
