@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -40,11 +40,6 @@ import java.nio.channels.SocketChannel;
  * @run main/timeout=1200 RacyDeregister
  */
 public class RacyDeregister {
-
-    // FIXME: NUM_OUTER_LOOP_ITERATIONS should be reverted to the hard-coded
-    // value 15 when JDK-8161083 is resolved as either a bug or a non-issue.
-    static final int NUM_OUTER_LOOP_ITERATIONS =
-        System.getProperty("os.name").startsWith("Windows") ? 150 : 15;
 
     // 90% of 1200 second timeout as milliseconds
     static final int TIMEOUT_THRESHOLD_MILLIS = 1200*900;
@@ -90,7 +85,7 @@ public class RacyDeregister {
 
             public void run() {
                 try {
-                    for (int k = 0; k < NUM_OUTER_LOOP_ITERATIONS; k++) {
+                    for (int k = 0; k < 15; k++) {
                         System.out.format("outer loop %3d at %7d ms%n", k,
                             System.currentTimeMillis() - t0);
                         System.out.flush();
