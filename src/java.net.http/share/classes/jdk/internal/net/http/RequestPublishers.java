@@ -59,7 +59,6 @@ public final class RequestPublishers {
     private RequestPublishers() { }
 
     public static class ByteArrayPublisher implements BodyPublisher {
-        private volatile Flow.Publisher<ByteBuffer> delegate;
         private final int length;
         private final byte[] content;
         private final int offset;
@@ -99,7 +98,7 @@ public final class RequestPublishers {
         @Override
         public void subscribe(Flow.Subscriber<? super ByteBuffer> subscriber) {
             List<ByteBuffer> copy = copy(content, offset, length);
-            this.delegate = new PullPublisher<>(copy);
+            var delegate = new PullPublisher<>(copy);
             delegate.subscribe(subscriber);
         }
 
@@ -111,7 +110,6 @@ public final class RequestPublishers {
 
     // This implementation has lots of room for improvement.
     public static class IterablePublisher implements BodyPublisher {
-        private volatile Flow.Publisher<ByteBuffer> delegate;
         private final Iterable<byte[]> content;
         private volatile long contentLength;
 
@@ -174,7 +172,7 @@ public final class RequestPublishers {
         @Override
         public void subscribe(Flow.Subscriber<? super ByteBuffer> subscriber) {
             Iterable<ByteBuffer> iterable = this::iterator;
-            this.delegate = new PullPublisher<>(iterable);
+            var delegate = new PullPublisher<>(iterable);
             delegate.subscribe(subscriber);
         }
 
