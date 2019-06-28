@@ -1307,6 +1307,35 @@ void MacroAssembler::check_klass_subtype_slow_path(Register sub_klass,
   bind(L_fallthrough);
 }
 
+void MacroAssembler::clinit_barrier(Register klass, Register scratch, Label* L_fast_path, Label* L_slow_path) {
+  assert(L_fast_path != NULL || L_slow_path != NULL, "at least one is required");
+  assert_different_registers(klass, rthread, scratch);
+
+  Label L_fallthrough, L_tmp;
+  if (L_fast_path == NULL) {
+    L_fast_path = &L_fallthrough;
+  } else if (L_slow_path == NULL) {
+    L_slow_path = &L_fallthrough;
+  }
+  // Fast path check: class is fully initialized
+  ldrb(scratch, Address(klass, InstanceKlass::init_state_offset()));
+  subs(zr, scratch, InstanceKlass::fully_initialized);
+  br(Assembler::EQ, *L_fast_path);
+
+  // Fast path check: current thread is initializer thread
+  ldr(scratch, Address(klass, InstanceKlass::init_thread_offset()));
+  cmp(rthread, scratch);
+
+  if (L_slow_path == &L_fallthrough) {
+    br(Assembler::EQ, *L_fast_path);
+    bind(*L_slow_path);
+  } else if (L_fast_path == &L_fallthrough) {
+    br(Assembler::NE, *L_slow_path);
+    bind(*L_fast_path);
+  } else {
+    Unimplemented();
+  }
+}
 
 void MacroAssembler::verify_oop(Register reg, const char* s) {
   if (!VerifyOops) return;
@@ -3681,6 +3710,12 @@ void MacroAssembler::cmpptr(Register src1, Address src2) {
 void MacroAssembler::cmpoop(Register obj1, Register obj2) {
   BarrierSetAssembler* bs = BarrierSet::barrier_set()->barrier_set_assembler();
   bs->obj_equals(this, obj1, obj2);
+}
+
+void MacroAssembler::load_method_holder(Register holder, Register method) {
+  ldr(holder, Address(method, Method::const_offset()));                      // ConstMethod*
+  ldr(holder, Address(holder, ConstMethod::constants_offset()));             // ConstantPool*
+  ldr(holder, Address(holder, ConstantPool::pool_holder_offset_in_bytes())); // InstanceKlass*
 }
 
 void MacroAssembler::load_klass(Register dst, Register src) {
