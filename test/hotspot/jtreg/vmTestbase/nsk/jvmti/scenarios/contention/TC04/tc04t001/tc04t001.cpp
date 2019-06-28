@@ -119,18 +119,9 @@ MonitorContendedEnter(jvmtiEnv *jvmti, JNIEnv* jni, jthread thr, jobject obj) {
 
     /* check if event is for tested object */
     if (jni->IsSameObject(object_M, obj)) {
-        jvmtiMonitorUsage usageInfo;
-
         if (lockSyncLock(jvmti)) {
             enterEventsCount++;
             unlockSyncLock(jvmti);
-        }
-
-        if (!NSK_JVMTI_VERIFY(jvmti->GetObjectMonitorUsage(obj, &usageInfo))) {
-            nsk_jvmti_setFailStatus();
-        } else if (usageInfo.owner != NULL) {
-            if (!NSK_JVMTI_VERIFY(jvmti->InterruptThread(usageInfo.owner)))
-                nsk_jvmti_setFailStatus();
         }
     }
 }
