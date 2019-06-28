@@ -579,6 +579,10 @@ final class HotSpotResolvedObjectTypeImpl extends HotSpotResolvedJavaType implem
             // The type isn't known to implement the method.
             return null;
         }
+        if (resolvedMethod.canBeStaticallyBound()) {
+            // No assumptions are required.
+            return new AssumptionResult<>(resolvedMethod);
+        }
 
         ResolvedJavaMethod result = resolvedMethod.uniqueConcreteMethod(this);
         if (result != null) {
