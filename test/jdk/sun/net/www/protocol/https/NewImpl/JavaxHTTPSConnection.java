@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,7 +25,9 @@
  * @test
  * @bug 4474255
  * @summary Can no longer obtain a com.sun.net.ssl.HttpsURLConnection
+ * @library /test/lib
  * @run main/othervm JavaxHTTPSConnection
+ * @run main/othervm -Djava.net.preferIPv6Addresses=true JavaxHTTPSConnection
  *
  *     SunJSSE does not support dynamic system properties, no way to re-use
  *     system properties in samevm/agentvm mode.
@@ -36,6 +38,7 @@ import java.io.*;
 import java.net.*;
 import java.security.cert.*;
 import javax.net.ssl.*;
+import jdk.test.lib.net.URIBuilder;
 
 /**
  * See if we can obtain a javax.net.ssl.HttpsURLConnection,
@@ -138,10 +141,13 @@ public class JavaxHTTPSConnection {
      */
     void doServerSide() throws Exception {
 
+        InetAddress loopback = InetAddress.getLoopbackAddress();
+        InetSocketAddress serverAddress = new InetSocketAddress(loopback, serverPort);
         SSLServerSocketFactory sslssf =
           (SSLServerSocketFactory) SSLServerSocketFactory.getDefault();
         SSLServerSocket sslServerSocket =
-            (SSLServerSocket) sslssf.createServerSocket(serverPort);
+            (SSLServerSocket) sslssf.createServerSocket();
+        sslServerSocket.bind(serverAddress);
         serverPort = sslServerSocket.getLocalPort();
 
         /*
@@ -204,9 +210,14 @@ public class JavaxHTTPSConnection {
             }
 
             HttpsURLConnection.setDefaultHostnameVerifier(new NameVerifier());
-            URL url = new URL("https://" + "localhost:" + serverPort +
-                                    "/etc/hosts");
-            URLConnection urlc = url.openConnection();
+            URL url = URIBuilder.newBuilder()
+                .scheme("https")
+                .loopback()
+                .port(serverPort)
+                .path("/etc/hosts")
+                .toURL();
+            System.out.println("Client opening: " + url);
+            URLConnection urlc = url.openConnection(Proxy.NO_PROXY);
 
             if (!(urlc instanceof javax.net.ssl.HttpsURLConnection)) {
                 throw new Exception("URLConnection ! instanceof " +

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -258,14 +258,27 @@ public class HTTPTest {
     public static URL url(HttpProtocolType protocol, InetSocketAddress address,
                           String path) throws MalformedURLException {
         return new URL(protocol(protocol),
-                       address.getHostString(),
+                       address.getAddress().getHostAddress(),
                        address.getPort(), path);
     }
 
     public static Proxy proxy(HTTPTestServer server, HttpAuthType authType) {
-        return (authType == HttpAuthType.PROXY)
-               ? new Proxy(Proxy.Type.HTTP, server.getAddress())
-               : null;
+        if (authType != HttpAuthType.PROXY) return null;
+
+        InetSocketAddress proxyAddress = server.getProxyAddress();
+        if (!proxyAddress.isUnresolved()) {
+            // Forces the proxy to use an unresolved address created
+            // from the actual IP address to avoid using the proxy
+            // address hostname which would result in resolving to
+            // a posibly different address. For instance we want to
+            // avoid cases such as:
+            //    ::1 => "localhost" => 127.0.0.1
+            proxyAddress = InetSocketAddress.
+                createUnresolved(proxyAddress.getAddress().getHostAddress(),
+                                 proxyAddress.getPort());
+        }
+
+        return new Proxy(Proxy.Type.HTTP, proxyAddress);
     }
 
     public static HttpURLConnection openConnection(URL url,

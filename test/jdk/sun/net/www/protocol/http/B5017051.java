@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,7 +25,9 @@
  * @test
  * @bug 5017051 6360774
  * @modules jdk.httpserver
+ * @library /test/lib
  * @run main/othervm B5017051
+ * @run main/othervm -Djava.net.preferIPv6Addresses=true B5017051
  * @summary Tests CR 5017051 & 6360774
  */
 
@@ -35,6 +37,7 @@ import java.io.*;
 import com.sun.net.httpserver.*;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ExecutorService;
+import jdk.test.lib.net.URIBuilder;
 
 /*
  * Part 1:
@@ -55,42 +58,47 @@ import java.util.concurrent.ExecutorService;
 
 public class B5017051
 {
-    com.sun.net.httpserver.HttpServer httpServer;
+    HttpServer httpServer;
     ExecutorService executorService;
 
-    public static void main(String[] args)
-    {
+    public static void main(String[] args) throws Exception {
         new B5017051();
     }
 
-    public B5017051()
-    {
-        try {
-            startHttpServer();
-            doClient();
-        } catch (IOException ioe) {
-            System.err.println(ioe);
-        }
+    public B5017051() throws Exception {
+        startHttpServer();
+        doClient();
     }
 
-    void doClient() {
+    void doClient() throws Exception {
         java.net.Authenticator.setDefault(new MyAuthenticator());
         CookieHandler.setDefault(new CookieManager(null, CookiePolicy.ACCEPT_ALL));
+        ProxySelector.setDefault(ProxySelector.of(null));
 
         try {
             InetSocketAddress address = httpServer.getAddress();
 
             // Part 1
-            URL url = new URL("http://" + address.getHostName() + ":" + address.getPort() + "/test/");
+            URL url = URIBuilder.newBuilder()
+                .scheme("http")
+                .host(address.getAddress())
+                .port(address.getPort())
+                .path("/test/")
+                .toURL();
             HttpURLConnection uc = (HttpURLConnection)url.openConnection();
             int resp = uc.getResponseCode();
             if (resp != 200)
-                throw new RuntimeException("Failed: Part 1, Response code is not 200");
+                throw new RuntimeException("Failed: Part 1, Response code is not 200: " + resp);
 
             System.out.println("Response code from Part 1 = 200 OK");
 
             // Part 2
-            URL url2 = new URL("http://" + address.getHostName() + ":" + address.getPort() + "/test2/");
+            URL url2 = URIBuilder.newBuilder()
+                .scheme("http")
+                .host(address.getAddress())
+                .port(address.getPort())
+                .path("/test2/")
+                .toURL();
 
             // can use the global CookieHandler used for the first test as the URL's are different
             CookieHandler ch = CookieHandler.getDefault();
@@ -106,15 +114,10 @@ public class B5017051
             uc = (HttpURLConnection)url2.openConnection();
             resp = uc.getResponseCode();
             if (resp != 200)
-                throw new RuntimeException("Failed: Part 2, Response code is not 200");
+                throw new RuntimeException("Failed: Part 2, Response code is not 200: " + resp);
 
             System.out.println("Response code from Part 2 = 200 OK");
 
-
-        } catch (IOException e) {
-            e.printStackTrace();
-        } catch (URISyntaxException ue) {
-            ue.printStackTrace();
         } finally {
             httpServer.stop(1);
             executorService.shutdown();
@@ -125,7 +128,8 @@ public class B5017051
      * Http Server
      */
     public void startHttpServer() throws IOException {
-        httpServer = com.sun.net.httpserver.HttpServer.create(new InetSocketAddress(0), 0);
+        InetAddress loopback = InetAddress.getLoopbackAddress();
+        httpServer = HttpServer.create(new InetSocketAddress(loopback, 0), 0);
 
         // create HttpServer context for Part 1.
         HttpContext ctx = httpServer.createContext("/test/", new MyHandler());
