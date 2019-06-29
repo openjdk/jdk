@@ -840,6 +840,15 @@ public:
     }
     return NULL;
   }
+  oop lookup_raw(intptr_t raw_value) {
+    // Have to cast to avoid little/big-endian problems.
+    if (sizeof(PrimitiveType) > sizeof(jint)) {
+      jlong value = (jlong)raw_value;
+      return lookup(value);
+    }
+    PrimitiveType value = (PrimitiveType)*((jint*)&raw_value);
+    return lookup(value);
+  }
 };
 
 typedef BoxCache<jint, java_lang_Integer_IntegerCache, java_lang_Integer> IntegerBoxCache;
@@ -878,6 +887,11 @@ public:
     }
     return _singleton;
   }
+  oop lookup_raw(intptr_t raw_value) {
+    // Have to cast to avoid little/big-endian problems.
+    jboolean value = (jboolean)*((jint*)&raw_value);
+    return lookup(value);
+  }
   oop lookup(jboolean value) {
     if (value != 0) {
       return JNIHandles::resolve_non_null(_true_cache);
@@ -892,18 +906,14 @@ oop Deoptimization::get_cached_box(AutoBoxObjectValue* bv, frame* fr, RegisterMa
    Klass* k = java_lang_Class::as_Klass(bv->klass()->as_ConstantOopReadValue()->value()());
    BasicType box_type = SystemDictionary::box_klass_type(k);
    if (box_type != T_OBJECT) {
-     StackValue* value = StackValue::create_stack_value(fr, reg_map, bv->field_at(0));
+     StackValue* value = StackValue::create_stack_value(fr, reg_map, bv->field_at(box_type == T_LONG ? 1 : 0));
      switch(box_type) {
-       case T_INT:     return IntegerBoxCache::singleton(THREAD)->lookup(value->get_int());
-       case T_LONG: {
-                       StackValue* low = StackValue::create_stack_value(fr, reg_map, bv->field_at(1));
-                       jlong res = (jlong)low->get_int();
-                       return LongBoxCache::singleton(THREAD)->lookup(res);
-                     }
-       case T_CHAR:    return CharacterBoxCache::singleton(THREAD)->lookup(value->get_int());
-       case T_SHORT:   return ShortBoxCache::singleton(THREAD)->lookup(value->get_int());
-       case T_BYTE:    return ByteBoxCache::singleton(THREAD)->lookup(value->get_int());
-       case T_BOOLEAN: return BooleanBoxCache::singleton(THREAD)->lookup(value->get_int());
+       case T_INT:     return IntegerBoxCache::singleton(THREAD)->lookup_raw(value->get_int());
+       case T_CHAR:    return CharacterBoxCache::singleton(THREAD)->lookup_raw(value->get_int());
+       case T_SHORT:   return ShortBoxCache::singleton(THREAD)->lookup_raw(value->get_int());
+       case T_BYTE:    return ByteBoxCache::singleton(THREAD)->lookup_raw(value->get_int());
+       case T_BOOLEAN: return BooleanBoxCache::singleton(THREAD)->lookup_raw(value->get_int());
+       case T_LONG:    return LongBoxCache::singleton(THREAD)->lookup_raw(value->get_int());
        default:;
      }
    }
