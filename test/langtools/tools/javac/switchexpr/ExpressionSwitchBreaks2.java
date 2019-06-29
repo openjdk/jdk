@@ -41,9 +41,11 @@ public class ExpressionSwitchBreaks2 {
         }
         }
         j: print(switch (i) {
+            case 0: yield 0;
             default: break j;
         }, 0);
         j2: print(switch (i) {
+            case 0: yield 0;
             default: break j2;
         }, 0);
         return null;

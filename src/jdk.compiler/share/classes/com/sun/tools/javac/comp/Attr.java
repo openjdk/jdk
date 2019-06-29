@@ -1447,6 +1447,9 @@ public class Attr extends JCTree.Visitor {
         if (tree.cases.isEmpty()) {
             log.error(tree.pos(),
                       Errors.SwitchExpressionEmpty);
+        } else if (caseTypes.isEmpty()) {
+            log.error(tree.pos(),
+                      Errors.SwitchExpressionNoResultExpressions);
         }
 
         Type owntype = (tree.polyKind == PolyKind.STANDALONE) ? condType(caseTypePositions.toList(), caseTypes.toList()) : pt();

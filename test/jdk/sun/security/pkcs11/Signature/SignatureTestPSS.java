@@ -27,7 +27,7 @@ import java.util.stream.IntStream;
 
 /**
  * @test
- * @bug 8080462
+ * @bug 8080462 8226651
  * @summary Generate a RSASSA-PSS signature and verify it using PKCS11 provider
  * @library /test/lib ..
  * @modules jdk.crypto.cryptoki
@@ -86,17 +86,19 @@ public class SignatureTestPSS extends PKCS11Test {
         test(DIGESTS, kpair.getPrivate(), kpair.getPublic(), data);
     }
 
-    private void test(String[] testAlgs, PrivateKey privKey,
+    private void test(String[] digestAlgs, PrivateKey privKey,
             PublicKey pubKey, byte[] data) throws RuntimeException {
         // For signature algorithm, create and verify a signature
-        for (String testAlg : testAlgs) {
-            try {
-                checkSignature(data, pubKey, privKey, testAlg);
-            } catch (NoSuchAlgorithmException | InvalidKeyException |
-                     SignatureException | NoSuchProviderException ex) {
-                throw new RuntimeException(ex);
-            } catch (InvalidAlgorithmParameterException ex2) {
-                System.out.println("Skip test due to " + ex2);
+        for (String hash : digestAlgs) {
+            for (String mgfHash : digestAlgs) {
+                try {
+                    checkSignature(data, pubKey, privKey, hash, mgfHash);
+                } catch (NoSuchAlgorithmException | InvalidKeyException |
+                         SignatureException | NoSuchProviderException ex) {
+                    throw new RuntimeException(ex);
+                } catch (InvalidAlgorithmParameterException ex2) {
+                    System.out.println("Skip test due to " + ex2);
+                }
             }
         };
     }
@@ -109,13 +111,14 @@ public class SignatureTestPSS extends PKCS11Test {
     }
 
     private void checkSignature(byte[] data, PublicKey pub,
-            PrivateKey priv, String mdAlg) throws NoSuchAlgorithmException,
-            InvalidKeyException, SignatureException, NoSuchProviderException,
+            PrivateKey priv, String hash, String mgfHash)
+            throws NoSuchAlgorithmException, InvalidKeyException,
+            SignatureException, NoSuchProviderException,
             InvalidAlgorithmParameterException {
-        System.out.println("Testing against " + mdAlg);
+        System.out.println("Testing against " + hash + " and MGF1_" + mgfHash);
         Signature sig = Signature.getInstance(SIGALG, prov);
         AlgorithmParameterSpec params = new PSSParameterSpec(
-            mdAlg, "MGF1", new MGF1ParameterSpec(mdAlg), 0, 1);
+            hash, "MGF1", new MGF1ParameterSpec(mgfHash), 0, 1);
         sig.setParameter(params);
         sig.initSign(priv);
         for (int i = 0; i < UPDATE_TIMES_HUNDRED; i++) {

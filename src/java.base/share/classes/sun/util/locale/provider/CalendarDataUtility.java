@@ -249,9 +249,15 @@ public class CalendarDataUtility {
             switch (requestID) {
             case FIRST_DAY_OF_WEEK:
                 value = calendarDataProvider.getFirstDayOfWeek(locale);
+                if (value == 0) {
+                    value = MONDAY; // default for the world ("001")
+                }
                 break;
             case MINIMAL_DAYS_IN_FIRST_WEEK:
                 value = calendarDataProvider.getMinimalDaysInFirstWeek(locale);
+                if (value == 0) {
+                    value = 1; // default for the world ("001")
+                }
                 break;
             default:
                 throw new InternalError("invalid requestID: " + requestID);

@@ -159,7 +159,9 @@ public class LocaleProvidersRun {
     private static void testRun(String prefList, String methodName,
             String param1, String param2, String param3) throws Throwable{
         JDKToolLauncher launcher = JDKToolLauncher.createUsingTestJDK("java");
-        launcher.addToolArg("-cp")
+        launcher.addToolArg("-ea")
+                .addToolArg("-esa")
+                .addToolArg("-cp")
                 .addToolArg(Utils.TEST_CLASS_PATH)
                 .addToolArg("-Djava.locale.providers=" + prefList)
                 .addToolArg("--add-exports=java.base/sun.util.locale.provider=ALL-UNNAMED")

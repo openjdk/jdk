@@ -29,6 +29,7 @@
 class SwitchExpressionCompletesNormally {
     public String convert(int i) {
         return switch (i) {
+            case 0: yield "";
             default:
         };
     }
