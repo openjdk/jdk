@@ -140,6 +140,8 @@ class Metaspace : public AllStatic {
 
   static const MetaspaceTracer* _tracer;
 
+  static bool _initialized;
+
  public:
   static metaspace::VirtualSpaceList* space_list()       { return _space_list; }
   static metaspace::VirtualSpaceList* class_space_list() { return _class_space_list; }
@@ -224,6 +226,8 @@ class Metaspace : public AllStatic {
   static bool is_class_space_allocation(MetadataType mdType) {
     return mdType == ClassType && using_class_space();
   }
+
+  static bool initialized() { return _initialized; }
 
 };
 

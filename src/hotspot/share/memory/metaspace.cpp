@@ -584,6 +584,11 @@ static void print_basic_switches(outputStream* out, size_t scale) {
 // unlike print_report() is guaranteed not to lock or to walk the CLDG.
 void MetaspaceUtils::print_basic_report(outputStream* out, size_t scale) {
 
+  if (!Metaspace::initialized()) {
+    out->print_cr("Metaspace not yet initialized.");
+    return;
+  }
+
   out->cr();
   out->print_cr("Usage:");
 
@@ -671,6 +676,11 @@ void MetaspaceUtils::print_basic_report(outputStream* out, size_t scale) {
 }
 
 void MetaspaceUtils::print_report(outputStream* out, size_t scale, int flags) {
+
+  if (!Metaspace::initialized()) {
+    out->print_cr("Metaspace not yet initialized.");
+    return;
+  }
 
   const bool print_loaders = (flags & rf_show_loaders) > 0;
   const bool print_classes = (flags & rf_show_classes) > 0;
@@ -958,6 +968,8 @@ VirtualSpaceList* Metaspace::_class_space_list = NULL;
 
 ChunkManager* Metaspace::_chunk_manager_metadata = NULL;
 ChunkManager* Metaspace::_chunk_manager_class = NULL;
+
+bool Metaspace::_initialized = false;
 
 #define VIRTUALSPACEMULTIPLIER 2
 
@@ -1285,6 +1297,9 @@ void Metaspace::global_initialize() {
   }
 
   _tracer = new MetaspaceTracer();
+
+  _initialized = true;
+
 }
 
 void Metaspace::post_initialize() {
