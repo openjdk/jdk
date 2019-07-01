@@ -380,12 +380,12 @@ public:
   char* skip_first_path_entry(const char* path) NOT_CDS_RETURN_(NULL);
   int   num_paths(const char* path) NOT_CDS_RETURN_(0);
   GrowableArray<char*>* create_path_array(const char* path) NOT_CDS_RETURN_(NULL);
-  bool  fail(const char* msg, const char* name) NOT_CDS_RETURN_(FALSE);
+  bool  fail(const char* msg, const char* name) NOT_CDS_RETURN_(false);
   bool  check_paths(int shared_path_start_idx,
                     int num_paths,
-                    GrowableArray<char*>* rp_array) NOT_CDS_RETURN_(FALSE);
-  bool  validate_boot_class_paths() NOT_CDS_RETURN_(FALSE);
-  bool  validate_app_class_paths(int shared_app_paths_len) NOT_CDS_RETURN_(FALSE);
+                    GrowableArray<char*>* rp_array) NOT_CDS_RETURN_(false);
+  bool  validate_boot_class_paths() NOT_CDS_RETURN_(false);
+  bool  validate_app_class_paths(int shared_app_paths_len) NOT_CDS_RETURN_(false);
   bool  map_heap_data(MemRegion **heap_mem, int first, int max, int* num,
                       bool is_open = false) NOT_CDS_JAVA_HEAP_RETURN_(false);
   bool  region_crc_check(char* buf, size_t size, int expected_crc) NOT_CDS_RETURN_(false);
