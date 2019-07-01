@@ -22,6 +22,7 @@ public class ExpressionSwitchFlow {
     private String test3(int i) {
         return switch (i) {
             case 0 -> {}
+            case 1 -> "";
             default -> throw new IllegalStateException();
         };
     }
@@ -40,17 +41,20 @@ public class ExpressionSwitchFlow {
     private String test6(int i) {
         return switch (i) {
             case 0 -> throw new IllegalStateException();
+            case 1 -> "";
             default -> {}
         };
     }
     private String test7(int i) {
         return switch (i) {
             case 0: throw new IllegalStateException();
+            case 1: yield "";
             default:
         };
     }
     private String test8(int i) {
         return switch (i) {
+            case 1: yield "";
             case 0: i++;
             default: {
             }
@@ -58,6 +62,7 @@ public class ExpressionSwitchFlow {
     }
     private String test9(int i) {
         return switch (i) {
+            case 1: yield "";
             case 0:
             default:
                 System.err.println();

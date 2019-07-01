@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,6 +28,7 @@
  * @library ../../httptest/
  * @build HttpCallback TestHttpServer HttpTransaction
  * @run main/othervm B6296310
+ * @run main/othervm -Djava.net.preferIPv6Addresses=true B6296310
  * @summary  REGRESSION: AppletClassLoader.getResourceAsStream() behaviour is wrong in some cases
  */
 
@@ -45,32 +46,26 @@ public class B6296310
    static SimpleHttpTransaction httpTrans;
    static TestHttpServer server;
 
-   public static void main(String[] args)
+   public static void main(String[] args) throws Exception
    {
       ResponseCache.setDefault(new MyCacheHandler());
       startHttpServer();
-
       makeHttpCall();
    }
 
-   public static void startHttpServer() {
-      try {
-         httpTrans = new SimpleHttpTransaction();
-         server = new TestHttpServer(httpTrans, 1, 10, 0);
-      } catch (IOException e) {
-         e.printStackTrace();
-      }
+   public static void startHttpServer() throws IOException {
+     httpTrans = new SimpleHttpTransaction();
+     InetAddress loopback = InetAddress.getLoopbackAddress();
+     server = new TestHttpServer(httpTrans, 1, 10, loopback, 0);
    }
 
-   public static void makeHttpCall() {
+   public static void makeHttpCall() throws IOException {
       try {
          System.out.println("http server listen on: " + server.getLocalPort());
-         URL url = new URL("http" , InetAddress.getLocalHost().getHostAddress(),
+         URL url = new URL("http" , InetAddress.getLoopbackAddress().getHostAddress(),
                             server.getLocalPort(), "/");
-         HttpURLConnection uc = (HttpURLConnection)url.openConnection();
+         HttpURLConnection uc = (HttpURLConnection)url.openConnection(Proxy.NO_PROXY);
          System.out.println(uc.getResponseCode());
-      } catch (IOException e) {
-         e.printStackTrace();
       } finally {
          server.terminate();
       }

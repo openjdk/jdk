@@ -1112,6 +1112,7 @@ class ConcurrentMarkSweepGeneration: public CardGeneration {
   double occupancy() const { return ((double)used())/((double)capacity()); }
   size_t contiguous_available() const;
   size_t unsafe_max_alloc_nogc() const;
+  size_t used_stable() const;
 
   // over-rides
   MemRegion used_region_at_save_marks() const;

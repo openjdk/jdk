@@ -34,9 +34,9 @@ import org.graalvm.compiler.nodes.NodeView;
 import org.graalvm.compiler.nodes.StructuredGraph;
 import org.graalvm.compiler.nodes.ValueNode;
 import org.graalvm.compiler.nodes.java.MethodCallTargetNode;
+import org.graalvm.compiler.nodes.spi.CoreProviders;
 import org.graalvm.compiler.nodes.spi.Virtualizable;
 import org.graalvm.compiler.phases.VerifyPhase;
-import org.graalvm.compiler.phases.tiers.PhaseContext;
 
 import jdk.vm.ci.meta.ResolvedJavaMethod;
 import jdk.vm.ci.meta.ResolvedJavaType;
@@ -46,14 +46,14 @@ import jdk.vm.ci.meta.ResolvedJavaType;
  * Implementors of {@link Virtualizable#virtualize(org.graalvm.compiler.nodes.spi.VirtualizerTool)}
  * must not apply effects on their {@link Graph graph} that cannot be easily undone.
  */
-public class VerifyVirtualizableUsage extends VerifyPhase<PhaseContext> {
+public class VerifyVirtualizableUsage extends VerifyPhase<CoreProviders> {
     @Override
     public boolean checkContract() {
         return false;
     }
 
     @Override
-    protected void verify(StructuredGraph graph, PhaseContext context) {
+    protected void verify(StructuredGraph graph, CoreProviders context) {
         final ResolvedJavaType graphType = context.getMetaAccess().lookupJavaType(Graph.class);
         final ResolvedJavaType virtualizableType = context.getMetaAccess().lookupJavaType(Virtualizable.class);
         final ResolvedJavaType constantNodeType = context.getMetaAccess().lookupJavaType(ConstantNode.class);

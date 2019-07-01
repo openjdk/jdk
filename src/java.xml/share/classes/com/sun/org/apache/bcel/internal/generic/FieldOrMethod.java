@@ -31,13 +31,13 @@ import com.sun.org.apache.bcel.internal.classfile.ConstantUtf8;
  * Super class for InvokeInstruction and FieldInstruction, since they have
  * some methods in common!
  *
- * @version $Id: FieldOrMethod.java 1749603 2016-06-21 20:50:19Z ggregory $
+ * @version $Id$
  */
 public abstract class FieldOrMethod extends CPInstruction implements LoadClass {
 
     /**
-     * Empty constructor needed for the Class.newInstance() statement in
-     * Instruction.readInstruction(). Not to be used otherwise.
+     * Empty constructor needed for Instruction.readInstruction.
+     * Not to be used otherwise.
      */
     FieldOrMethod() {
     }

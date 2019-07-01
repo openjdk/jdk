@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2019, Oracle and/or its affiliates. All rights reserved.
  */
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
@@ -25,7 +25,8 @@ import com.sun.org.apache.bcel.internal.Const;
  * Super class for all objects that have modifiers like private, final, ... I.e.
  * classes, fields, and methods.
  *
- * @version $Id: AccessFlags.java 1748636 2016-06-15 20:45:17Z dbrosius $
+ * @version $Id$
+ * @LastModified: Jun 2019
  */
 public abstract class AccessFlags {
 
@@ -35,7 +36,8 @@ public abstract class AccessFlags {
     }
 
     /**
-     * @param a inital access flags
+     * @param a
+     *            inital access flags
      */
     public AccessFlags(final int a) {
         access_flags = a;
@@ -58,7 +60,8 @@ public abstract class AccessFlags {
     /**
      * Set access flags aka "modifiers".
      *
-     * @param access_flags Access flags of the object.
+     * @param access_flags
+     *            Access flags of the object.
      */
     public final void setAccessFlags(final int access_flags) {
         this.access_flags = access_flags;
@@ -67,7 +70,8 @@ public abstract class AccessFlags {
     /**
      * Set access flags aka "modifiers".
      *
-     * @param access_flags Access flags of the object.
+     * @param access_flags
+     *            Access flags of the object.
      */
     public final void setModifiers(final int access_flags) {
         setAccessFlags(access_flags);

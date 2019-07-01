@@ -57,7 +57,7 @@ public class CK_RSA_PKCS_PSS_PARAMS {
             throw new ProviderException("Only MGF1 is supported");
         }
         // no dash in PKCS#11 mechanism names
-        this.mgf = Functions.getMGFId("CKG_MGF1_" + hashAlg.replaceFirst("-", ""));
+        this.mgf = Functions.getMGFId("CKG_MGF1_" + mgfHash.replaceFirst("-", ""));
         this.sLen = sLen;
     }
 

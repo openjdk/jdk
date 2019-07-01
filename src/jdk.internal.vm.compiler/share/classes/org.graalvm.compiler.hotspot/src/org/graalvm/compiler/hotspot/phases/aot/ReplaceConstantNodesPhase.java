@@ -61,12 +61,12 @@ import org.graalvm.compiler.nodes.StructuredGraph.ScheduleResult;
 import org.graalvm.compiler.nodes.ValueNode;
 import org.graalvm.compiler.nodes.calc.FloatingNode;
 import org.graalvm.compiler.nodes.cfg.Block;
+import org.graalvm.compiler.nodes.spi.CoreProviders;
 import org.graalvm.compiler.phases.BasePhase;
 import org.graalvm.compiler.phases.graph.ReentrantNodeIterator;
 import org.graalvm.compiler.phases.graph.ReentrantNodeIterator.NodeIteratorClosure;
 import org.graalvm.compiler.phases.schedule.SchedulePhase;
 import org.graalvm.compiler.phases.schedule.SchedulePhase.SchedulingStrategy;
-import org.graalvm.compiler.phases.tiers.PhaseContext;
 
 import jdk.vm.ci.code.BytecodeFrame;
 import jdk.vm.ci.hotspot.HotSpotMetaspaceConstant;
@@ -78,7 +78,7 @@ import jdk.vm.ci.meta.ConstantReflectionProvider;
 import jdk.vm.ci.meta.MetaAccessProvider;
 import jdk.vm.ci.meta.ResolvedJavaType;
 
-public class ReplaceConstantNodesPhase extends BasePhase<PhaseContext> {
+public class ReplaceConstantNodesPhase extends BasePhase<CoreProviders> {
 
     private final boolean verifyFingerprints;
 
@@ -448,7 +448,7 @@ public class ReplaceConstantNodesPhase extends BasePhase<PhaseContext> {
      * @param node
      * @param context
      */
-    private static void handleLoadMethodCounters(StructuredGraph graph, FrameStateMapperClosure stateMapper, LoadMethodCountersNode node, PhaseContext context) {
+    private static void handleLoadMethodCounters(StructuredGraph graph, FrameStateMapperClosure stateMapper, LoadMethodCountersNode node, CoreProviders context) {
         ResolvedJavaType type = node.getMethod().getDeclaringClass();
         Stamp hubStamp = context.getStampProvider().createHubStamp((ObjectStamp) StampFactory.objectNonNull());
         ConstantReflectionProvider constantReflection = context.getConstantReflection();
@@ -466,7 +466,7 @@ public class ReplaceConstantNodesPhase extends BasePhase<PhaseContext> {
      * @param stateMapper
      * @param context
      */
-    private static void replaceLoadMethodCounters(StructuredGraph graph, FrameStateMapperClosure stateMapper, PhaseContext context) {
+    private static void replaceLoadMethodCounters(StructuredGraph graph, FrameStateMapperClosure stateMapper, CoreProviders context) {
         new SchedulePhase(SchedulingStrategy.LATEST_OUT_OF_LOOPS, true).apply(graph, false);
 
         for (LoadMethodCountersNode node : getLoadMethodCountersNodes(graph)) {
@@ -496,7 +496,7 @@ public class ReplaceConstantNodesPhase extends BasePhase<PhaseContext> {
     }
 
     @Override
-    protected void run(StructuredGraph graph, PhaseContext context) {
+    protected void run(StructuredGraph graph, CoreProviders context) {
         FrameStateMapperClosure stateMapper = new FrameStateMapperClosure(graph);
         ReentrantNodeIterator.apply(stateMapper, graph.start(), null);
 

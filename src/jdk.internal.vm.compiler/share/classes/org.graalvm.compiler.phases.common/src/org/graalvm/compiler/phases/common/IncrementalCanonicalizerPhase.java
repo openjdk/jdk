@@ -26,16 +26,16 @@ package org.graalvm.compiler.phases.common;
 
 import org.graalvm.compiler.graph.Graph.NodeEventScope;
 import org.graalvm.compiler.nodes.StructuredGraph;
+import org.graalvm.compiler.nodes.spi.CoreProviders;
 import org.graalvm.compiler.phases.BasePhase;
 import org.graalvm.compiler.phases.PhaseSuite;
 import org.graalvm.compiler.phases.common.util.EconomicSetNodeEventListener;
-import org.graalvm.compiler.phases.tiers.PhaseContext;
 
 /**
  * A phase suite that applies {@linkplain CanonicalizerPhase canonicalization} to a graph after all
  * phases in the suite have been applied if any of the phases changed the graph.
  */
-public class IncrementalCanonicalizerPhase<C extends PhaseContext> extends PhaseSuite<C> {
+public class IncrementalCanonicalizerPhase<C extends CoreProviders> extends PhaseSuite<C> {
 
     private final CanonicalizerPhase canonicalizer;
 

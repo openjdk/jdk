@@ -46,9 +46,10 @@ import org.graalvm.compiler.nodes.graphbuilderconf.LoopExplosionPlugin;
 import org.graalvm.compiler.nodes.graphbuilderconf.MethodSubstitutionPlugin;
 import org.graalvm.compiler.nodes.graphbuilderconf.NodePlugin;
 import org.graalvm.compiler.nodes.graphbuilderconf.ParameterPlugin;
+import org.graalvm.compiler.nodes.spi.CoreProviders;
+import org.graalvm.compiler.phases.BasePhase;
 import org.graalvm.compiler.phases.OptimisticOptimizations;
 import org.graalvm.compiler.phases.common.CanonicalizerPhase;
-import org.graalvm.compiler.phases.tiers.PhaseContext;
 import org.graalvm.compiler.phases.util.Providers;
 
 import jdk.vm.ci.code.Architecture;
@@ -65,11 +66,13 @@ public class CachingPEGraphDecoder extends PEGraphDecoder {
     protected final OptimisticOptimizations optimisticOpts;
     private final AllowAssumptions allowAssumptions;
     private final EconomicMap<ResolvedJavaMethod, EncodedGraph> graphCache;
+    private final BasePhase<? super CoreProviders> postParsingPhase;
 
     public CachingPEGraphDecoder(Architecture architecture, StructuredGraph graph, Providers providers, GraphBuilderConfiguration graphBuilderConfig, OptimisticOptimizations optimisticOpts,
                     AllowAssumptions allowAssumptions, LoopExplosionPlugin loopExplosionPlugin, InvocationPlugins invocationPlugins, InlineInvokePlugin[] inlineInvokePlugins,
                     ParameterPlugin parameterPlugin,
-                    NodePlugin[] nodePlugins, ResolvedJavaMethod callInlinedMethod, SourceLanguagePositionProvider sourceLanguagePositionProvider) {
+                    NodePlugin[] nodePlugins, ResolvedJavaMethod callInlinedMethod, SourceLanguagePositionProvider sourceLanguagePositionProvider,
+                    BasePhase<? super CoreProviders> postParsingPhase) {
         super(architecture, graph, providers, loopExplosionPlugin,
                         invocationPlugins, inlineInvokePlugins, parameterPlugin, nodePlugins, callInlinedMethod, sourceLanguagePositionProvider);
 
@@ -77,6 +80,7 @@ public class CachingPEGraphDecoder extends PEGraphDecoder {
         this.graphBuilderConfig = graphBuilderConfig;
         this.optimisticOpts = optimisticOpts;
         this.allowAssumptions = allowAssumptions;
+        this.postParsingPhase = postParsingPhase;
         this.graphCache = EconomicMap.create();
     }
 
@@ -90,7 +94,7 @@ public class CachingPEGraphDecoder extends PEGraphDecoder {
         if (isSubstitution && (UseEncodedGraphs.getValue(options) || IS_IN_NATIVE_IMAGE)) {
             // These must go through Replacements to find the graph to use.
             graphToEncode = providers.getReplacements().getMethodSubstitution(plugin, method, INLINE_AFTER_PARSING, allowAssumptions,
-                            options);
+                            null, options);
         } else {
             graphToEncode = buildGraph(method, plugin, intrinsicBytecodeProvider, isSubstitution);
         }
@@ -101,8 +105,7 @@ public class CachingPEGraphDecoder extends PEGraphDecoder {
          * initial graph.
          */
         try (DebugContext.Scope scope = debug.scope("createGraph", graphToEncode)) {
-            PhaseContext context = new PhaseContext(providers);
-            new ConvertDeoptimizeToGuardPhase().apply(graphToEncode, context);
+            new ConvertDeoptimizeToGuardPhase().apply(graphToEncode, providers);
         } catch (Throwable t) {
             throw debug.handle(t);
         }
@@ -125,13 +128,14 @@ public class CachingPEGraphDecoder extends PEGraphDecoder {
         // @formatter:on
         try (DebugContext.Scope scope = debug.scope("createGraph", graphToEncode)) {
             IntrinsicContext initialIntrinsicContext = intrinsicBytecodeProvider != null
-                            ? new IntrinsicContext(method, plugin.getSubstitute(providers.getMetaAccess()), intrinsicBytecodeProvider, INLINE_AFTER_PARSING) : null;
+                            ? new IntrinsicContext(method, plugin.getSubstitute(providers.getMetaAccess()), intrinsicBytecodeProvider, INLINE_AFTER_PARSING)
+                            : null;
             GraphBuilderPhase.Instance graphBuilderPhaseInstance = createGraphBuilderPhaseInstance(initialIntrinsicContext);
             graphBuilderPhaseInstance.apply(graphToEncode);
-
-            PhaseContext context = new PhaseContext(providers);
-            new CanonicalizerPhase().apply(graphToEncode, context);
-
+            new CanonicalizerPhase().apply(graphToEncode, providers);
+            if (postParsingPhase != null) {
+                postParsingPhase.apply(graphToEncode, providers);
+            }
         } catch (Throwable ex) {
             throw debug.handle(ex);
         }

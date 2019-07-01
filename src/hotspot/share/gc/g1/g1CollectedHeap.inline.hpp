@@ -163,8 +163,12 @@ bool G1CollectedHeap::is_in_cset_or_humongous(const oop obj) {
   return _region_attr.is_in_cset_or_humongous((HeapWord*)obj);
 }
 
-G1HeapRegionAttr G1CollectedHeap::region_attr(const void* addr) {
+G1HeapRegionAttr G1CollectedHeap::region_attr(const void* addr) const {
   return _region_attr.at((HeapWord*)addr);
+}
+
+G1HeapRegionAttr G1CollectedHeap::region_attr(uint idx) const {
+  return _region_attr.get_by_index(idx);
 }
 
 void G1CollectedHeap::register_humongous_region_with_region_attr(uint index) {
@@ -177,7 +181,7 @@ void G1CollectedHeap::register_region_with_region_attr(HeapRegion* r) {
 
 void G1CollectedHeap::register_old_region_with_region_attr(HeapRegion* r) {
   _region_attr.set_in_old(r->hrm_index(), r->rem_set()->is_tracked());
-  _rem_set->prepare_for_scan_rem_set(r->hrm_index());
+  _rem_set->prepare_for_scan_heap_roots(r->hrm_index());
 }
 
 void G1CollectedHeap::register_optional_region_with_region_attr(HeapRegion* r) {

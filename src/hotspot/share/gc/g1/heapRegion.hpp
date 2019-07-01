@@ -60,7 +60,6 @@ class G1CollectedHeap;
 class G1CMBitMap;
 class G1IsAliveAndApplyClosure;
 class HeapRegionRemSet;
-class HeapRegionRemSetIterator;
 class HeapRegion;
 class HeapRegionSetBase;
 class nmethod;
@@ -315,6 +314,7 @@ class HeapRegion: public G1ContiguousSpace {
 
   static int    LogOfHRGrainBytes;
   static int    LogOfHRGrainWords;
+  static int    LogCardsPerRegion;
 
   static size_t GrainBytes;
   static size_t GrainWords;

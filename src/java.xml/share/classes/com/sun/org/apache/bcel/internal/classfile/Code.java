@@ -39,7 +39,7 @@ import com.sun.org.apache.bcel.internal.Const;
  * is used for debugging purposes and <em>LocalVariableTable</em> which
  * contains information about the local variables.
  *
- * @version $Id: Code.java 1749603 2016-06-21 20:50:19Z ggregory $
+ * @version $Id$
  * @see     Attribute
  * @see     CodeException
  * @see     LineNumberTable

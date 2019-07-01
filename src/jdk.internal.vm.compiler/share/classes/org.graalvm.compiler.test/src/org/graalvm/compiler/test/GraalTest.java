@@ -44,7 +44,6 @@ import org.graalvm.compiler.debug.DebugHandlersFactory;
 import org.graalvm.compiler.debug.GlobalMetrics;
 import org.graalvm.compiler.options.OptionValues;
 import org.graalvm.compiler.serviceprovider.GraalServices;
-import org.graalvm.compiler.serviceprovider.JavaVersionUtil;
 import org.junit.After;
 import org.junit.Assert;
 import org.junit.AssumptionViolatedException;
@@ -72,9 +71,6 @@ public class GraalTest {
             throw new RuntimeException("exception while trying to get Unsafe", e);
         }
     }
-
-    public static final boolean Java8OrEarlier = JavaVersionUtil.Java8OrEarlier;
-    public static final boolean Java11OrEarlier = JavaVersionUtil.Java11OrEarlier;
 
     protected Method getMethod(String methodName) {
         return getMethod(getClass(), methodName);

@@ -29,14 +29,14 @@ import com.sun.org.apache.bcel.internal.util.ByteSequence;
 /**
  * LOOKUPSWITCH - Switch with unordered set of values
  *
- * @version $Id: LOOKUPSWITCH.java 1747278 2016-06-07 17:28:43Z britter $
+ * @version $Id$
  * @see SWITCH
  */
 public class LOOKUPSWITCH extends Select {
 
     /**
-     * Empty constructor needed for the Class.newInstance() statement in
-     * Instruction.readInstruction(). Not to be used otherwise.
+     * Empty constructor needed for Instruction.readInstruction.
+     * Not to be used otherwise.
      */
     LOOKUPSWITCH() {
     }

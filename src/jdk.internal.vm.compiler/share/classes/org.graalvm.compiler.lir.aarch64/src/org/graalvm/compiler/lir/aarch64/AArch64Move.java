@@ -433,7 +433,10 @@ public class AArch64Move {
     }
 
     static void reg2stack(CompilationResultBuilder crb, AArch64MacroAssembler masm, AllocatableValue result, AllocatableValue input) {
-        AArch64Address dest = loadStackSlotAddress(crb, masm, asStackSlot(result), Value.ILLEGAL);
+        AArch64Address dest;
+        try (ScratchRegister scratch = masm.getScratchRegister()) {
+            dest = loadStackSlotAddress(crb, masm, asStackSlot(result), scratch.getRegister());
+        }
         Register src = asRegister(input);
         // use the slot kind to define the operand size
         AArch64Kind kind = (AArch64Kind) result.getPlatformKind();

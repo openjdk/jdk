@@ -23,9 +23,11 @@ package com.sun.org.apache.bcel.internal.classfile;
 import java.io.DataInput;
 import java.io.DataOutputStream;
 import java.io.IOException;
+
 import com.sun.org.apache.bcel.internal.Const;
 
 // The new table is used when generic types are about...
+
 //LocalVariableTable_attribute {
 //       u2 attribute_name_index;
 //       u4 attribute_length;
@@ -37,6 +39,7 @@ import com.sun.org.apache.bcel.internal.Const;
 //          u2 index;
 //       } local_variable_table[local_variable_table_length];
 //     }
+
 //LocalVariableTypeTable_attribute {
 //    u2 attribute_name_index;
 //    u4 attribute_length;
@@ -50,6 +53,7 @@ import com.sun.org.apache.bcel.internal.Const;
 //    } local_variable_type_table[local_variable_type_table_length];
 //  }
 // J5TODO: Needs some testing !
+
 /**
  * @since 6.0
  */
@@ -61,14 +65,12 @@ public class LocalVariableTypeTable extends Attribute {
         this(c.getNameIndex(), c.getLength(), c.getLocalVariableTypeTable(), c.getConstantPool());
     }
 
-    public LocalVariableTypeTable(final int name_index, final int length,
-            final LocalVariable[] local_variable_table, final ConstantPool constant_pool) {
+    public LocalVariableTypeTable(final int name_index, final int length, final LocalVariable[] local_variable_table, final ConstantPool constant_pool) {
         super(Const.ATTR_LOCAL_VARIABLE_TYPE_TABLE, name_index, length, constant_pool);
         this.local_variable_type_table = local_variable_table;
     }
 
-    LocalVariableTypeTable(final int nameIdx, final int len, final DataInput input,
-            final ConstantPool cpool) throws IOException {
+    LocalVariableTypeTable(final int nameIdx, final int len, final DataInput input, final ConstantPool cpool) throws IOException {
         this(nameIdx, len, (LocalVariable[]) null, cpool);
 
         final int local_variable_type_table_length = input.readUnsignedShort();

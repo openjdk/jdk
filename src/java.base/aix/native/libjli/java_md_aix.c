@@ -27,7 +27,7 @@
 
 #include "java_md_aix.h"
 
-static unsigned char dladdr_buffer[0x4000];
+static unsigned char dladdr_buffer[0x8000];
 
 static int fill_dll_info(void) {
     return loadquery(L_GETINFO, dladdr_buffer, sizeof(dladdr_buffer));

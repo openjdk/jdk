@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2004, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2004, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,6 +24,7 @@
 package nsk.jvmti.scenarios.contention.TC04;
 
 import java.io.PrintStream;
+import java.util.concurrent.*;
 
 import nsk.share.*;
 import nsk.share.jvmti.*;
@@ -31,6 +32,7 @@ import nsk.share.jvmti.*;
 public class tc04t001 extends DebugeeClass {
 
     final static int THREADS_LIMIT = 2;
+    final static CountDownLatch threadsDoneSignal = new CountDownLatch(THREADS_LIMIT);
 
     // run test from command line
     public static void main(String argv[]) {
@@ -68,8 +70,8 @@ public class tc04t001 extends DebugeeClass {
         }
 
         try {
-            for (int i = 0; i < THREADS_LIMIT; i++) {
-                threads[i].join(timeout/THREADS_LIMIT);
+            if (!threadsDoneSignal.await(timeout, TimeUnit.MILLISECONDS)) {
+                throw new RuntimeException("Threads timeout");
             }
         } catch (InterruptedException e) {
             throw new Failure(e);
@@ -84,23 +86,6 @@ public class tc04t001 extends DebugeeClass {
                 ", expected: " + THREADS_LIMIT*tc04t001Thread.INCREMENT_LIMIT);
             status = Consts.TEST_FAILED;
         }
-
-/* DEBUG -- to check if the threads taking turns in right order
-        boolean race = false;
-        for (int i = 1; i < 2*tc04t001Thread.INCREMENT_LIMIT; i++) {
-             if (tc04t001Thread.passOrder[i] == tc04t001Thread.passOrder[i-1]) {
-                race = true;
-                System.out.println("Race condition in the test:");
-                System.out.println("passOrder[" + (i-1) + "]:"
-                    + tc04t001Thread.passOrder[i-1]);
-                System.out.println("passOrder[" + (i) + "]:"
-                    + tc04t001Thread.passOrder[i]);
-             }
-        }
-        if (race)
-            System.out.println("There was a race condition in the test.");
-*/
-
         return status;
     }
 }
@@ -115,13 +100,10 @@ class tc04t001Thread extends Thread {
     static volatile int value = 0;
 
     static Flicker flicker = new Flicker();
-/* DEBUG -- to check if the threads taking turns in right order
-    static volatile int iter = 0;
-    static volatile int passOrder[] =
-        new int[INCREMENT_LIMIT*tc04t001.THREADS_LIMIT];
-*/
 
     private int id;
+    private static volatile int lastEnterEventsCount;
+    private static native   int enterEventsCount();
 
     public tc04t001Thread(int i) {
         super("Debuggee Thread " + i);
@@ -136,19 +118,37 @@ class tc04t001Thread extends Thread {
                 wait(1);
             } catch (InterruptedException e) {}
         }
+        tc04t001.threadsDoneSignal.countDown();
     }
 
     static synchronized void increment(int i) {
-/* DEBUG -- to check if the threads taking turns in right order
-        passOrder[iter++] = i;
-*/
         flicker.unlock(i);
         int temp = value;
-        for (int j = 0; j < DELAY; j++) ;
-        try {
-            sleep(500);
-        } catch (InterruptedException e) {}
+        boolean done = false;
+
+        // Wait in a loop for a MonitorContendedEnter event.
+        // Timeout is: 20ms * DELAY.
+        for (int j = 0; j < DELAY; j++) {
+            try {
+                sleep(20);
+            } catch (InterruptedException e) {}
+
+            done = (tc04t001.threadsDoneSignal.getCount() == 1);
+            if (done) {
+                break; // This thread is the only remaining thread, no more contention
+            }
+            if (enterEventsCount() > lastEnterEventsCount) {
+                System.out.println("Thread-" + i + ": increment event: " + enterEventsCount());
+                break; // Got an expected MonitorContendedEnter event
+            }
+        }
+
+        if (!done && enterEventsCount() == lastEnterEventsCount) {
+            String msg = "Timeout in waiting for a MonitorContendedEnter event";
+            throw new RuntimeException(msg);
+        }
         value = temp + 1;
+        lastEnterEventsCount = enterEventsCount();
     }
 }
 

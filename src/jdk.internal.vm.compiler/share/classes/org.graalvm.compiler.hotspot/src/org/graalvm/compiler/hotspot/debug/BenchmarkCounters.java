@@ -38,6 +38,7 @@ import java.util.TreeSet;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicLong;
 
+import org.graalvm.compiler.core.GraalServiceThread;
 import org.graalvm.compiler.core.common.SuppressFBWarnings;
 import org.graalvm.compiler.debug.CSVUtil;
 import org.graalvm.compiler.debug.GraalError;
@@ -445,7 +446,7 @@ public class BenchmarkCounters {
             enabled = true;
         }
         if (Options.TimedDynamicCounters.getValue(options) > 0) {
-            Thread thread = new Thread() {
+            Thread thread = new GraalServiceThread(new Runnable() {
                 long lastTime = System.nanoTime();
 
                 @Override
@@ -462,7 +463,7 @@ public class BenchmarkCounters {
                         }
                     }
                 }
-            };
+            });
             thread.setDaemon(true);
             thread.setPriority(Thread.MAX_PRIORITY);
             thread.start();

@@ -33,11 +33,11 @@ import org.graalvm.compiler.nodes.StructuredGraph.AllowAssumptions;
 import org.graalvm.compiler.nodes.calc.IsNullNode;
 import org.graalvm.compiler.nodes.memory.ReadNode;
 import org.graalvm.compiler.nodes.memory.address.OffsetAddressNode;
+import org.graalvm.compiler.nodes.spi.CoreProviders;
 import org.graalvm.compiler.nodes.spi.LoweringTool;
 import org.graalvm.compiler.nodes.type.StampTool;
 import org.graalvm.compiler.phases.common.CanonicalizerPhase;
 import org.graalvm.compiler.phases.common.LoweringPhase;
-import org.graalvm.compiler.phases.tiers.PhaseContext;
 import org.junit.Assert;
 import org.junit.Ignore;
 import org.junit.Test;
@@ -103,7 +103,7 @@ public class PushNodesThroughPiTest extends GraalCompilerTest {
 
     private StructuredGraph compileTestSnippet(final String snippet) {
         StructuredGraph graph = parseEager(snippet, AllowAssumptions.NO);
-        PhaseContext context = new PhaseContext(getProviders());
+        CoreProviders context = getProviders();
         CanonicalizerPhase canonicalizer = new CanonicalizerPhase();
         new LoweringPhase(canonicalizer, LoweringTool.StandardLoweringStage.HIGH_TIER).apply(graph, context);
         canonicalizer.apply(graph, context);

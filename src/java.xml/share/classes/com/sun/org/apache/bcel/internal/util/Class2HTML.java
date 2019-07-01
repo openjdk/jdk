@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2019, Oracle and/or its affiliates. All rights reserved.
  */
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
@@ -37,24 +37,24 @@ import com.sun.org.apache.bcel.internal.classfile.Utility;
 /**
  * Read class file(s) and convert them into HTML files.
  *
- * Given a JavaClass object "class" that is in package "package" five files will
- * be created in the specified directory.
+ * Given a JavaClass object "class" that is in package "package" five files
+ * will be created in the specified directory.
  *
  * <OL>
- * <LI> "package"."class".html as the main file which defines the frames for the
- * following subfiles.
- * <LI> "package"."class"_attributes.html contains all (known) attributes found
- * in the file
- * <LI> "package"."class"_cp.html contains the constant pool
- * <LI> "package"."class"_code.html contains the byte code
- * <LI> "package"."class"_methods.html contains references to all methods and
- * fields of the class
+ * <LI> "package"."class".html as the main file which defines the frames for
+ * the following subfiles.
+ * <LI>  "package"."class"_attributes.html contains all (known) attributes found in the file
+ * <LI>  "package"."class"_cp.html contains the constant pool
+ * <LI>  "package"."class"_code.html contains the byte code
+ * <LI>  "package"."class"_methods.html contains references to all methods and fields of the class
  * </OL>
  *
- * All subfiles reference each other appropriately, e.g. clicking on a method in
- * the Method's frame will jump to the appropriate method in the Code frame.
+ * All subfiles reference each other appropriately, e.g. clicking on a
+ * method in the Method's frame will jump to the appropriate method in
+ * the Code frame.
  *
- * @version $Id: Class2HTML.java 1749603 2016-06-21 20:50:19Z ggregory $
+ * @version $Id$
+ * @LastModified: Jun 2019
  */
 public class Class2HTML {
 
@@ -111,7 +111,8 @@ public class Class2HTML {
         attribute_html.close();
     }
 
-    public static void _main(final String[] argv) throws IOException {
+
+    public static void main( final String[] argv ) throws IOException {
         final String[] file_name = new String[argv.length];
         int files = 0;
         ClassParser parser = null;
@@ -129,7 +130,6 @@ public class Class2HTML {
                         dir = dir + sep;
                     }
                     final File store = new File(dir);
-
                     if (!store.isDirectory()) {
                         final boolean created = store.mkdirs(); // Create target directory if necessary
                         if (!created) {
@@ -176,7 +176,8 @@ public class Class2HTML {
                 + "</A>";
     }
 
-    static String referenceType(final String type) {
+
+    static String referenceType( final String type ) {
         String short_type = Utility.compactClassName(type);
         short_type = Utility.compactClassName(short_type, class_package + ".", true);
         final int index = type.indexOf('['); // Type is an array?
@@ -191,7 +192,8 @@ public class Class2HTML {
         return "<A HREF=\"" + base_type + ".html\" TARGET=_top>" + short_type + "</A>";
     }
 
-    static String toHTML(final String str) {
+
+    static String toHTML( final String str ) {
         final StringBuilder buf = new StringBuilder();
         for (int i = 0; i < str.length(); i++) {
             char ch;
@@ -215,7 +217,8 @@ public class Class2HTML {
         return buf.toString();
     }
 
-    private void writeMainHTML(final AttributeHTML attribute_html) throws IOException {
+
+    private void writeMainHTML( final AttributeHTML attribute_html ) throws IOException {
         try (PrintWriter file = new PrintWriter(new FileOutputStream(dir + class_name + ".html"))) {
             file.println("<HTML>\n" + "<HEAD><TITLE>Documentation for " + class_name + "</TITLE>" + "</HEAD>\n"
                     + "<FRAMESET BORDER=1 cols=\"30%,*\">\n" + "<FRAMESET BORDER=1 rows=\"80%,*\">\n"

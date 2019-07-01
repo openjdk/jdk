@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2019, Oracle and/or its affiliates. All rights reserved.
  */
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
@@ -29,7 +29,8 @@ import com.sun.org.apache.bcel.internal.Const;
 /**
  * Abstract super class for fields and methods.
  *
- * @version $Id: FieldOrMethod.java 1750029 2016-06-23 22:14:38Z sebb $
+ * @version $Id$
+ * @LastModified: Jun 2019
  */
 public abstract class FieldOrMethod extends AccessFlags implements Cloneable, Node {
     private int name_index; // Points to field name in constant pool
@@ -48,6 +49,7 @@ public abstract class FieldOrMethod extends AccessFlags implements Cloneable, No
     FieldOrMethod() {
     }
 
+
     /**
      * Initialize from another object. Note that both objects use the same
      * references (shallow copy). Use clone() for a physical copy.
@@ -57,25 +59,23 @@ public abstract class FieldOrMethod extends AccessFlags implements Cloneable, No
                 c.getAttributes(), c.getConstantPool());
     }
 
+
     /**
      * Construct object from file stream.
      *
      * @param file Input stream
      * @throws IOException
      * @throws ClassFormatException
-     * @deprecated (6.0) Use
-     * {@link #FieldOrMethod(java.io.DataInput, ConstantPool)} instead.
+     * @deprecated (6.0) Use {@link #FieldOrMethod(java.io.DataInput, ConstantPool)} instead.
      */
     @java.lang.Deprecated
-    protected FieldOrMethod(final DataInputStream file,
-            final ConstantPool constant_pool) throws IOException,
+    protected FieldOrMethod(final DataInputStream file, final ConstantPool constant_pool) throws IOException,
             ClassFormatException {
         this((DataInput) file, constant_pool);
     }
 
     /**
      * Construct object from file stream.
-     *
      * @param file Input stream
      * @throws IOException
      * @throws ClassFormatException
@@ -84,12 +84,14 @@ public abstract class FieldOrMethod extends AccessFlags implements Cloneable, No
             final ConstantPool constant_pool) throws IOException, ClassFormatException {
         this(file.readUnsignedShort(), file.readUnsignedShort(), file.readUnsignedShort(), null,
                 constant_pool);
-        attributes_count = file.readUnsignedShort();
+        final int attributes_count = file.readUnsignedShort();
         attributes = new Attribute[attributes_count];
         for (int i = 0; i < attributes_count; i++) {
             attributes[i] = Attribute.readAttribute(file, constant_pool);
         }
+        this.attributes_count = attributes_count; // init deprecated field
     }
+
 
     /**
      * @param access_flags Access rights of method
@@ -107,6 +109,7 @@ public abstract class FieldOrMethod extends AccessFlags implements Cloneable, No
         setAttributes(attributes);
     }
 
+
     /**
      * Dump object to file stream on binary format.
      *
@@ -118,11 +121,13 @@ public abstract class FieldOrMethod extends AccessFlags implements Cloneable, No
         file.writeShort(name_index);
         file.writeShort(signature_index);
         file.writeShort(attributes_count);
-
-        for(int i=0; i < attributes_count; i++) {
-            attributes[i].dump(file);
+        if (attributes != null) {
+            for (final Attribute attribute : attributes) {
+                attribute.dump(file);
+            }
         }
     }
+
 
     /**
      * @return Collection of object attributes.
@@ -131,13 +136,15 @@ public abstract class FieldOrMethod extends AccessFlags implements Cloneable, No
         return attributes;
     }
 
+
     /**
      * @param attributes Collection of object attributes.
      */
-    public final void setAttributes(final Attribute[] attributes) {
+    public final void setAttributes( final Attribute[] attributes ) {
         this.attributes = attributes;
-        this.attributes_count = attributes != null ? attributes.length : 0;
+        this.attributes_count = attributes != null ? attributes.length : 0; // init deprecated field
     }
+
 
     /**
      * @return Constant pool used by this object.
@@ -146,12 +153,14 @@ public abstract class FieldOrMethod extends AccessFlags implements Cloneable, No
         return constant_pool;
     }
 
+
     /**
      * @param constant_pool Constant pool to be used for this object.
      */
-    public final void setConstantPool(final ConstantPool constant_pool) {
+    public final void setConstantPool( final ConstantPool constant_pool ) {
         this.constant_pool = constant_pool;
     }
+
 
     /**
      * @return Index in constant pool of object's name.
@@ -160,12 +169,14 @@ public abstract class FieldOrMethod extends AccessFlags implements Cloneable, No
         return name_index;
     }
 
+
     /**
      * @param name_index Index in constant pool of object's name.
      */
-    public final void setNameIndex(final int name_index) {
+    public final void setNameIndex( final int name_index ) {
         this.name_index = name_index;
     }
+
 
     /**
      * @return Index in constant pool of field signature.
@@ -174,12 +185,14 @@ public abstract class FieldOrMethod extends AccessFlags implements Cloneable, No
         return signature_index;
     }
 
+
     /**
      * @param signature_index Index in constant pool of field signature.
      */
-    public final void setSignatureIndex(final int signature_index) {
+    public final void setSignatureIndex( final int signature_index ) {
         this.signature_index = signature_index;
     }
+
 
     /**
      * @return Name of object, i.e., method name or field name
@@ -190,6 +203,7 @@ public abstract class FieldOrMethod extends AccessFlags implements Cloneable, No
         return c.getBytes();
     }
 
+
     /**
      * @return String representation of object's type signature (java style)
      */
@@ -199,23 +213,24 @@ public abstract class FieldOrMethod extends AccessFlags implements Cloneable, No
         return c.getBytes();
     }
 
+
     /**
      * @return deep copy of this field
      */
-    protected FieldOrMethod copy_(final ConstantPool _constant_pool) {
+    protected FieldOrMethod copy_( final ConstantPool _constant_pool ) {
         FieldOrMethod c = null;
 
         try {
-            c = (FieldOrMethod) clone();
-        } catch (final CloneNotSupportedException e) {
+          c = (FieldOrMethod)clone();
+        } catch(final CloneNotSupportedException e) {
             // ignored, but will cause NPE ...
         }
 
-        c.constant_pool = constant_pool;
-        c.attributes = new Attribute[attributes_count];
-        c.attributes_count = attributes_count;
+        c.constant_pool    = constant_pool;
+        c.attributes       = new Attribute[attributes.length];
+        c.attributes_count = attributes_count; // init deprecated field
 
-        for (int i = 0; i < attributes_count; i++) {
+        for (int i = 0; i < attributes.length; i++) {
             c.attributes[i] = attributes[i].copy(constant_pool);
         }
 
@@ -244,11 +259,15 @@ public abstract class FieldOrMethod extends AccessFlags implements Cloneable, No
      *
      * @since 6.0
      */
-    public final String getGenericSignature() {
-        if (!searchedForSignatureAttribute) {
+    public final String getGenericSignature()
+    {
+        if (!searchedForSignatureAttribute)
+        {
             boolean found = false;
-            for (int i = 0; !found && i < attributes.length; i++) {
-                if (attributes[i] instanceof Signature) {
+            for (int i = 0; !found && i < attributes.length; i++)
+            {
+                if (attributes[i] instanceof Signature)
+                {
                     signatureAttributeString = ((Signature) attributes[i])
                             .getSignature();
                     found = true;

@@ -26,7 +26,7 @@ package com.sun.org.apache.bcel.internal.classfile;
  * that implements this interface can traverse the contents of a Java class just
  * by calling the `accept' method which all classes have.
  *
- * @version $Id: Visitor.java 1747278 2016-06-07 17:28:43Z britter $
+ * @version $Id$
  */
 public interface Visitor
 {
@@ -150,4 +150,21 @@ public interface Visitor
      * @since 6.0
      */
     void visitParameterAnnotationEntry(ParameterAnnotationEntry obj);
+
+    /**
+     * @since 6.1
+     */
+    void visitConstantPackage(ConstantPackage constantPackage);
+
+    /**
+     * @since 6.1
+     */
+    void visitConstantModule(ConstantModule constantModule);
+
+    /**
+     * @since 6.3
+     */
+    default void visitConstantDynamic(ConstantDynamic constantDynamic) {
+        // empty
+    }
 }

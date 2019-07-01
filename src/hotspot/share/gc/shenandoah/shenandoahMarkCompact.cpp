@@ -175,8 +175,6 @@ void ShenandoahMarkCompact::do_it(GCCause::Cause gc_cause) {
     _preserved_marks->restore(&exec);
     BiasedLocking::restore_marks();
     _preserved_marks->reclaim();
-
-    JvmtiExport::gc_epilogue();
   }
 
   // Resize metaspace

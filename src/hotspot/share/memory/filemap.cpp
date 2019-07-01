@@ -75,7 +75,7 @@ extern address JVM_FunctionAtEnd();
 // an archive file should stop the process.  Unrecoverable errors during
 // the reading of the archive file should stop the process.
 
-static void fail(const char *msg, va_list ap) {
+static void fail_exit(const char *msg, va_list ap) {
   // This occurs very early during initialization: tty is not initialized.
   jio_fprintf(defaultStream::error_stream(),
               "An error has occurred while processing the"
@@ -90,7 +90,7 @@ static void fail(const char *msg, va_list ap) {
 void FileMapInfo::fail_stop(const char *msg, ...) {
         va_list ap;
   va_start(ap, msg);
-  fail(msg, ap);        // Never returns.
+  fail_exit(msg, ap);   // Never returns.
   va_end(ap);           // for completeness.
 }
 
@@ -118,7 +118,7 @@ void FileMapInfo::fail_continue(const char *msg, ...) {
     tty->print_cr("]");
   } else {
     if (RequireSharedSpaces) {
-      fail(msg, ap);
+      fail_exit(msg, ap);
     } else {
       if (log_is_enabled(Info, cds)) {
         ResourceMark rm;
@@ -252,13 +252,15 @@ void FileMapHeader::populate(FileMapInfo* mapinfo, size_t alignment) {
   _base_archive_is_default = false;
 }
 
-void SharedClassPathEntry::init(const char* name, bool is_modules_image, TRAPS) {
+void SharedClassPathEntry::init(bool is_modules_image,
+                                ClassPathEntry* cpe, TRAPS) {
   assert(DumpSharedSpaces || DynamicDumpSharedSpaces, "dump time only");
   _timestamp = 0;
   _filesize  = 0;
+  _from_class_path_attr = false;
 
   struct stat st;
-  if (os::stat(name, &st) == 0) {
+  if (os::stat(cpe->name(), &st) == 0) {
     if ((st.st_mode & S_IFMT) == S_IFDIR) {
       _type = dir_entry;
     } else {
@@ -268,6 +270,7 @@ void SharedClassPathEntry::init(const char* name, bool is_modules_image, TRAPS) 
       } else {
         _type = jar_entry;
         _timestamp = st.st_mtime;
+        _from_class_path_attr = cpe->from_class_path_attr();
       }
       _filesize = st.st_size;
     }
@@ -277,12 +280,12 @@ void SharedClassPathEntry::init(const char* name, bool is_modules_image, TRAPS) 
     //
     // If we can't access a jar file in the boot path, then we can't
     // make assumptions about where classes get loaded from.
-    FileMapInfo::fail_stop("Unable to open file %s.", name);
+    FileMapInfo::fail_stop("Unable to open file %s.", cpe->name());
   }
 
-  size_t len = strlen(name) + 1;
+  size_t len = strlen(cpe->name()) + 1;
   _name = MetadataFactory::new_array<char>(ClassLoaderData::the_null_class_loader_data(), (int)len, THREAD);
-  strcpy(_name->data(), name);
+  strcpy(_name->data(), cpe->name());
 }
 
 bool SharedClassPathEntry::validate(bool is_class_path) {
@@ -381,7 +384,7 @@ void FileMapInfo::allocate_shared_path_table() {
     const char* type = (is_jrt ? "jrt" : (cpe->is_jar_file() ? "jar" : "dir"));
     log_info(class, path)("add main shared path (%s) %s", type, cpe->name());
     SharedClassPathEntry* ent = shared_path(i);
-    ent->init(cpe->name(), is_jrt, THREAD);
+    ent->init(is_jrt, cpe, THREAD);
     if (!is_jrt) {    // No need to do the modules image.
       EXCEPTION_MARK; // The following call should never throw, but would exit VM on error.
       update_shared_classpath(cpe, ent, THREAD);
@@ -397,7 +400,7 @@ void FileMapInfo::allocate_shared_path_table() {
   while (acpe != NULL) {
     log_info(class, path)("add app shared path %s", acpe->name());
     SharedClassPathEntry* ent = shared_path(i);
-    ent->init(acpe->name(), false, THREAD);
+    ent->init(false, acpe, THREAD);
     EXCEPTION_MARK;
     update_shared_classpath(acpe, ent, THREAD);
     acpe = acpe->next();
@@ -409,7 +412,7 @@ void FileMapInfo::allocate_shared_path_table() {
   while (mpe != NULL) {
     log_info(class, path)("add module path %s",mpe->name());
     SharedClassPathEntry* ent = shared_path(i);
-    ent->init(mpe->name(), false, THREAD);
+    ent->init(false, mpe, THREAD);
     EXCEPTION_MARK;
     update_shared_classpath(mpe, ent, THREAD);
     mpe = mpe->next();
@@ -520,6 +523,182 @@ void FileMapInfo::update_shared_classpath(ClassPathEntry *cpe, SharedClassPathEn
   }
 }
 
+char* FileMapInfo::skip_first_path_entry(const char* path) {
+  size_t path_sep_len = strlen(os::path_separator());
+  char* p = strstr((char*)path, os::path_separator());
+  if (p != NULL) {
+    debug_only( {
+      size_t image_name_len = strlen(MODULES_IMAGE_NAME);
+      assert(strncmp(p - image_name_len, MODULES_IMAGE_NAME, image_name_len) == 0,
+             "first entry must be the modules image");
+    } );
+    p += path_sep_len;
+  } else {
+    debug_only( {
+      assert(ClassLoader::string_ends_with(path, MODULES_IMAGE_NAME),
+             "first entry must be the modules image");
+    } );
+  }
+  return p;
+}
+
+int FileMapInfo::num_paths(const char* path) {
+  if (path == NULL) {
+    return 0;
+  }
+  int npaths = 1;
+  char* p = (char*)path;
+  while (p != NULL) {
+    char* prev = p;
+    p = strstr((char*)p, os::path_separator());
+    if (p != NULL) {
+      p++;
+      // don't count empty path
+      if ((p - prev) > 1) {
+       npaths++;
+      }
+    }
+  }
+  return npaths;
+}
+
+GrowableArray<char*>* FileMapInfo::create_path_array(const char* path) {
+  GrowableArray<char*>* path_array =  new(ResourceObj::RESOURCE_AREA, mtInternal)
+      GrowableArray<char*>(10);
+  char* begin_ptr = (char*)path;
+  char* end_ptr = strchr((char*)path, os::path_separator()[0]);
+  if (end_ptr == NULL) {
+    end_ptr = strchr((char*)path, '\0');
+  }
+  while (end_ptr != NULL) {
+    if ((end_ptr - begin_ptr) > 1) {
+      struct stat st;
+      char* temp_name = NEW_RESOURCE_ARRAY(char, (size_t)(end_ptr - begin_ptr + 1));
+      strncpy(temp_name, begin_ptr, end_ptr - begin_ptr);
+      temp_name[end_ptr - begin_ptr] = '\0';
+      if (os::stat(temp_name, &st) == 0) {
+        path_array->append(temp_name);
+      }
+    }
+    if (end_ptr < (path + strlen(path))) {
+      begin_ptr = ++end_ptr;
+      end_ptr = strchr(begin_ptr, os::path_separator()[0]);
+      if (end_ptr == NULL) {
+        end_ptr = strchr(begin_ptr, '\0');
+      }
+    } else {
+      break;
+    }
+  }
+  return path_array;
+}
+
+bool FileMapInfo::fail(const char* msg, const char* name) {
+  ClassLoader::trace_class_path(msg, name);
+  MetaspaceShared::set_archive_loading_failed();
+  return false;
+}
+
+bool FileMapInfo::check_paths(int shared_path_start_idx, int num_paths, GrowableArray<char*>* rp_array) {
+  int i = 0;
+  int j = shared_path_start_idx;
+  bool mismatch = false;
+  while (i < num_paths && !mismatch) {
+    while (shared_path(j)->from_class_path_attr()) {
+      // shared_path(j) was expanded from the JAR file attribute "Class-Path:"
+      // during dump time. It's not included in the -classpath VM argument.
+      j++;
+    }
+    if (!os::same_files(shared_path(j)->name(), rp_array->at(i))) {
+      mismatch = true;
+    }
+    i++;
+    j++;
+  }
+  return mismatch;
+}
+
+bool FileMapInfo::validate_boot_class_paths() {
+  //
+  // - Archive contains boot classes only - relaxed boot path check:
+  //   Extra path elements appended to the boot path at runtime are allowed.
+  //
+  // - Archive contains application or platform classes - strict boot path check:
+  //   Validate the entire runtime boot path, which must be compatible
+  //   with the dump time boot path. Appending boot path at runtime is not
+  //   allowed.
+  //
+
+  // The first entry in boot path is the modules_image (guaranteed by
+  // ClassLoader::setup_boot_search_path()). Skip the first entry. The
+  // path of the runtime modules_image may be different from the dump
+  // time path (e.g. the JDK image is copied to a different location
+  // after generating the shared archive), which is acceptable. For most
+  // common cases, the dump time boot path might contain modules_image only.
+  char* runtime_boot_path = Arguments::get_sysclasspath();
+  char* rp = skip_first_path_entry(runtime_boot_path);
+  assert(shared_path(0)->is_modules_image(), "first shared_path must be the modules image");
+  int dp_len = _header->_app_class_paths_start_index - 1; // ignore the first path to the module image
+  bool mismatch = false;
+
+  bool relaxed_check = !header()->has_platform_or_app_classes();
+  if (dp_len == 0 && rp == NULL) {
+    return true;   // ok, both runtime and dump time boot paths have modules_images only
+  } else if (dp_len == 0 && rp != NULL) {
+    if (relaxed_check) {
+      return true;   // ok, relaxed check, runtime has extra boot append path entries
+    } else {
+      mismatch = true;
+    }
+  } else if (dp_len > 0 && rp != NULL) {
+    int num;
+    ResourceMark rm;
+    GrowableArray<char*>* rp_array = create_path_array(rp);
+    int rp_len = rp_array->length();
+    if (rp_len >= dp_len) {
+      if (relaxed_check) {
+        // only check the leading entries in the runtime boot path, up to
+        // the length of the dump time boot path
+        num = dp_len;
+      } else {
+        // check the full runtime boot path, must match with dump time
+        num = rp_len;
+      }
+      mismatch = check_paths(1, num, rp_array);
+    }
+  }
+
+  if (mismatch) {
+    // The paths are different
+    return fail("[BOOT classpath mismatch, actual =", runtime_boot_path);
+  }
+  return true;
+}
+
+bool FileMapInfo::validate_app_class_paths(int shared_app_paths_len) {
+  const char *appcp = Arguments::get_appclasspath();
+  assert(appcp != NULL, "NULL app classpath");
+  int rp_len = num_paths(appcp);
+  bool mismatch = false;
+  if (rp_len < shared_app_paths_len) {
+    return fail("Run time APP classpath is shorter than the one at dump time: ", appcp);
+  }
+  if (shared_app_paths_len != 0 && rp_len != 0) {
+    // Prefix is OK: E.g., dump with -cp foo.jar, but run with -cp foo.jar:bar.jar.
+    ResourceMark rm;
+    GrowableArray<char*>* rp_array = create_path_array(appcp);
+    if (rp_array->length() == 0) {
+      // None of the jar file specified in the runtime -cp exists.
+      return fail("None of the jar file specified in the runtime -cp exists: -Djava.class.path=", appcp);
+    }
+    int j = _header->_app_class_paths_start_index;
+    mismatch = check_paths(j, shared_app_paths_len, rp_array);
+    if (mismatch) {
+      return fail("[APP classpath mismatch, actual: -Djava.class.path=", appcp);
+    }
+  }
+  return true;
+}
 
 bool FileMapInfo::validate_shared_path_table() {
   assert(UseSharedSpaces, "runtime only");
@@ -550,11 +729,16 @@ bool FileMapInfo::validate_shared_path_table() {
   }
 
   int module_paths_start_index = _header->_app_module_paths_start_index;
+  int shared_app_paths_len = 0;
 
   // validate the path entries up to the _max_used_path_index
   for (int i=0; i < _header->_max_used_path_index + 1; i++) {
     if (i < module_paths_start_index) {
       if (shared_path(i)->validate()) {
+        // Only count the app class paths not from the "Class-path" attribute of a jar manifest.
+        if (!shared_path(i)->from_class_path_attr() && i >= _header->_app_class_paths_start_index) {
+          shared_app_paths_len++;
+        }
         log_info(class, path)("ok");
       } else {
         if (_dynamic_archive_info != NULL && _dynamic_archive_info->_is_static) {
@@ -574,6 +758,16 @@ bool FileMapInfo::validate_shared_path_table() {
     }
   }
 
+  if (_header->_max_used_path_index == 0) {
+    // default archive only contains the module image in the bootclasspath
+    assert(shared_path(0)->is_modules_image(), "first shared_path must be the modules image");
+  } else {
+    if (!validate_boot_class_paths() || !validate_app_class_paths(shared_app_paths_len)) {
+      fail_continue("shared class paths mismatch (hint: enable -Xlog:class+path=info to diagnose the failure)");
+      return false;
+    }
+  }
+
   _validating_shared_path_table = false;
 
 #if INCLUDE_JVMTI
@@ -586,39 +780,6 @@ bool FileMapInfo::validate_shared_path_table() {
 #endif
 
   return true;
-}
-
-bool FileMapInfo::same_files(const char* file1, const char* file2) {
-  if (strcmp(file1, file2) == 0) {
-    return true;
-  }
-
-  bool is_same = false;
-  // if the two paths diff only in case
-  struct stat st1;
-  struct stat st2;
-  int ret1;
-  int ret2;
-  ret1 = os::stat(file1, &st1);
-  ret2 = os::stat(file2, &st2);
-  if (ret1 < 0 || ret2 < 0) {
-    // one of the files is invalid. So they are not the same.
-    is_same = false;
-  } else if (st1.st_dev != st2.st_dev || st1.st_ino != st2.st_ino) {
-    // different files
-    is_same = false;
-#ifndef _WINDOWS
-  } else if (st1.st_dev == st2.st_dev && st1.st_ino == st2.st_ino) {
-    // same files
-    is_same = true;
-#else
-  } else if ((st1.st_size == st2.st_size) && (st1.st_ctime == st2.st_ctime) &&
-             (st1.st_mtime == st2.st_mtime)) {
-    // same files
-    is_same = true;
-#endif
-  }
-  return is_same;
 }
 
 bool FileMapInfo::check_archive(const char* archive_name, bool is_static) {
@@ -1749,7 +1910,7 @@ ClassPathEntry* FileMapInfo::get_classpath_entry_for_jvmti(int i, TRAPS) {
         jio_snprintf(msg, strlen(path) + 127, "error in opening JAR file %s", path);
         THROW_MSG_(vmSymbols::java_io_IOException(), msg, NULL);
       } else {
-        ent = ClassLoader::create_class_path_entry(path, &st, /*throw_exception=*/true, false, CHECK_NULL);
+        ent = ClassLoader::create_class_path_entry(path, &st, /*throw_exception=*/true, false, false, CHECK_NULL);
       }
     }
 

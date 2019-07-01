@@ -23,7 +23,7 @@ package com.sun.org.apache.bcel.internal.generic;
 import com.sun.org.apache.bcel.internal.classfile.CodeException;
 
 /**
- * This class represents an exception handler, i.e., specifies the region where
+ * This class represents an exception handler, i.e., specifies the  region where
  * a handler is active and an instruction where the actual handling is done.
  * pool as parameters. Opposed to the JVM specification the end of the handled
  * region is set to be inclusive, i.e. all instructions between start and end
@@ -31,10 +31,10 @@ import com.sun.org.apache.bcel.internal.classfile.CodeException;
  * The end of the region is automatically mapped to be exclusive when calling
  * getCodeException(), i.e., there is no difference semantically.
  *
- * @version $Id: CodeExceptionGen.java 1749603 2016-06-21 20:50:19Z ggregory $
- * @see MethodGen
- * @see CodeException
- * @see InstructionHandle
+ * @version $Id$
+ * @see     MethodGen
+ * @see     CodeException
+ * @see     InstructionHandle
  */
 public final class CodeExceptionGen implements InstructionTargeter, Cloneable {
 
@@ -43,9 +43,10 @@ public final class CodeExceptionGen implements InstructionTargeter, Cloneable {
     private InstructionHandle handler_pc;
     private ObjectType catch_type;
 
+
     /**
-     * Add an exception handler, i.e., specify region where a handler is active
-     * and an instruction where the actual handling is done.
+     * Add an exception handler, i.e., specify region where a handler is active and an
+     * instruction where the actual handling is done.
      *
      * @param start_pc Start of handled region (inclusive)
      * @param end_pc End of handled region (inclusive)
@@ -60,16 +61,17 @@ public final class CodeExceptionGen implements InstructionTargeter, Cloneable {
         this.catch_type = catch_type;
     }
 
+
     /**
      * Get CodeException object.<BR>
      *
-     * This relies on that the instruction list has already been dumped to byte
-     * code or or that the `setPositions' methods has been called for the
-     * instruction list.
+     * This relies on that the instruction list has already been dumped
+     * to byte code or or that the `setPositions' methods has been
+     * called for the instruction list.
      *
      * @param cp constant pool
      */
-    public CodeException getCodeException(final ConstantPoolGen cp) {
+    public CodeException getCodeException( final ConstantPoolGen cp ) {
         return new CodeException(start_pc.getPosition(), end_pc.getPosition()
                 + end_pc.getInstruction().getLength(), handler_pc.getPosition(),
                 (catch_type == null) ? 0 : cp.addClass(catch_type));
@@ -79,7 +81,7 @@ public final class CodeExceptionGen implements InstructionTargeter, Cloneable {
     /* Set start of handler
      * @param start_pc Start of handled region (inclusive)
      */
-    public void setStartPC(final InstructionHandle start_pc) { // TODO could be package-protected?
+    public void setStartPC( final InstructionHandle start_pc ) { // TODO could be package-protected?
         BranchInstruction.notifyTarget(this.start_pc, start_pc, this);
         this.start_pc = start_pc;
     }
@@ -88,7 +90,7 @@ public final class CodeExceptionGen implements InstructionTargeter, Cloneable {
     /* Set end of handler
      * @param end_pc End of handled region (inclusive)
      */
-    public void setEndPC(final InstructionHandle end_pc) { // TODO could be package-protected?
+    public void setEndPC( final InstructionHandle end_pc ) { // TODO could be package-protected?
         BranchInstruction.notifyTarget(this.end_pc, end_pc, this);
         this.end_pc = end_pc;
     }
@@ -97,17 +99,18 @@ public final class CodeExceptionGen implements InstructionTargeter, Cloneable {
     /* Set handler code
      * @param handler_pc Start of handler
      */
-    public void setHandlerPC(final InstructionHandle handler_pc) { // TODO could be package-protected?
+    public void setHandlerPC( final InstructionHandle handler_pc ) { // TODO could be package-protected?
         BranchInstruction.notifyTarget(this.handler_pc, handler_pc, this);
         this.handler_pc = handler_pc;
     }
+
 
     /**
      * @param old_ih old target, either start or end
      * @param new_ih new target
      */
     @Override
-    public void updateTarget(final InstructionHandle old_ih, final InstructionHandle new_ih) {
+    public void updateTarget( final InstructionHandle old_ih, final InstructionHandle new_ih ) {
         boolean targeted = false;
         if (start_pc == old_ih) {
             targeted = true;
@@ -127,53 +130,54 @@ public final class CodeExceptionGen implements InstructionTargeter, Cloneable {
         }
     }
 
+
     /**
      * @return true, if ih is target of this handler
      */
     @Override
-    public boolean containsTarget(final InstructionHandle ih) {
+    public boolean containsTarget( final InstructionHandle ih ) {
         return (start_pc == ih) || (end_pc == ih) || (handler_pc == ih);
     }
 
-    /**
-     * Sets the type of the Exception to catch. Set 'null' for ANY.
-     */
-    public void setCatchType(final ObjectType catch_type) {
+
+    /** Sets the type of the Exception to catch. Set 'null' for ANY. */
+    public void setCatchType( final ObjectType catch_type ) {
         this.catch_type = catch_type;
     }
 
-    /**
-     * Gets the type of the Exception to catch, 'null' for ANY.
-     */
+
+    /** Gets the type of the Exception to catch, 'null' for ANY. */
     public ObjectType getCatchType() {
         return catch_type;
     }
 
-    /**
-     * @return start of handled region (inclusive)
+
+    /** @return start of handled region (inclusive)
      */
     public InstructionHandle getStartPC() {
         return start_pc;
     }
 
-    /**
-     * @return end of handled region (inclusive)
+
+    /** @return end of handled region (inclusive)
      */
     public InstructionHandle getEndPC() {
         return end_pc;
     }
 
-    /**
-     * @return start of handler
+
+    /** @return start of handler
      */
     public InstructionHandle getHandlerPC() {
         return handler_pc;
     }
 
+
     @Override
     public String toString() {
         return "CodeExceptionGen(" + start_pc + ", " + end_pc + ", " + handler_pc + ")";
     }
+
 
     @Override
     public Object clone() {

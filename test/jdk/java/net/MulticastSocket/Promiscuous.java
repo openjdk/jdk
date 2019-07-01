@@ -22,7 +22,7 @@
  *
 
 /* @test
- * @bug 8014499
+ * @bug 8014499 8219804
  * @library /test/lib
  * @summary Test for interference when two sockets are bound to the same
  *          port but joined to different multicast groups
@@ -44,11 +44,20 @@ public class Promiscuous {
         throws IOException
     {
         byte[] ba = new byte[100];
-        DatagramPacket p = new DatagramPacket(ba, ba.length);
+        DatagramPacket p;
         try {
-            mc.receive(p);
-            int recvId = Integer.parseInt(
-                    new String(p.getData(), 0, p.getLength(), "UTF-8"));
+            String data = null;
+            while (true) {
+                p = new DatagramPacket(ba, ba.length);
+                mc.receive(p);
+                data = new String(p.getData(), 0, p.getLength(), "UTF-8");
+                if (data.length() > UUID.length() && data.startsWith(UUID)) {
+                    data = data.substring(UUID.length());
+                    break;
+                }
+                logUnexpected(p);
+            }
+            int recvId = Integer.parseInt(data);
             if (datagramExpected) {
                 if (recvId != id)
                     throw new RuntimeException("Unexpected id, got " + recvId
@@ -67,6 +76,20 @@ public class Promiscuous {
         }
     }
 
+    static void logUnexpected(DatagramPacket p) {
+        byte[] ba = p.getData();
+        System.out.printf("Unexpected packet: length: %d. First three bytes: %d, %d, %d\n",
+                          p.getLength(), ba[0], ba[1], ba[2]);
+    }
+
+    static final String UUID; // process-id : currentTimeMillis
+
+    static {
+        String s1 = Long.toString(ProcessHandle.current().pid());
+        String s2 = Long.toString(System.currentTimeMillis());
+        UUID = "<" + s1 + s2 + ">";
+    }
+
     static void test(InetAddress group1, InetAddress group2)
         throws IOException
     {
@@ -79,7 +102,7 @@ public class Promiscuous {
             mc1.setSoTimeout(TIMEOUT);
             mc2.setSoTimeout(TIMEOUT);
             int nextId = id;
-            byte[] msg = Integer.toString(nextId).getBytes("UTF-8");
+            byte[] msg = (UUID + Integer.toString(nextId)).getBytes("UTF-8");
             DatagramPacket p = new DatagramPacket(msg, msg.length);
             p.setAddress(group1);
             p.setPort(port);
@@ -97,7 +120,7 @@ public class Promiscuous {
             receive(mc2, false, 0);
 
             nextId = ++id;
-            msg = Integer.toString(nextId).getBytes("UTF-8");
+            msg = (UUID + Integer.toString(nextId)).getBytes("UTF-8");
             p = new DatagramPacket(msg, msg.length);
             p.setAddress(group2);
             p.setPort(port);
@@ -116,7 +139,6 @@ public class Promiscuous {
 
     public static void main(String args[]) throws IOException {
         IPSupport.throwSkippedExceptionIfNonOperational();
-
         String os = System.getProperty("os.name");
 
         // Requires IP_MULTICAST_ALL on Linux (new since 2.6.31) so skip
@@ -133,8 +155,8 @@ public class Promiscuous {
         }
 
         // multicast groups used for the test
-        InetAddress ip4Group1 = InetAddress.getByName("224.7.8.9");
-        InetAddress ip4Group2 = InetAddress.getByName("225.4.5.6");
+        InetAddress ip4Group1 = InetAddress.getByName("224.0.0.120");
+        InetAddress ip4Group2 = InetAddress.getByName("224.0.0.121");
 
         test(ip4Group1, ip4Group2);
     }

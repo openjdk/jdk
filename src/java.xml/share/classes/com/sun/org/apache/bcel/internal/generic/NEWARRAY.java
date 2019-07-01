@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2019, Oracle and/or its affiliates. All rights reserved.
  */
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
@@ -20,18 +20,19 @@
 
 package com.sun.org.apache.bcel.internal.generic;
 
-import com.sun.org.apache.bcel.internal.ExceptionConst;
-import com.sun.org.apache.bcel.internal.util.ByteSequence;
 import java.io.DataOutputStream;
 import java.io.IOException;
+
+import com.sun.org.apache.bcel.internal.ExceptionConst;
+import com.sun.org.apache.bcel.internal.util.ByteSequence;
 
 /**
  * NEWARRAY -  Create new array of basic type (int, short, ...)
  * <PRE>Stack: ..., count -&gt; ..., arrayref</PRE>
  * type must be one of T_INT, T_SHORT, ...
  *
- * @version $Id: NEWARRAY.java 1747278 2016-06-07 17:28:43Z britter $
- * @LastModified: Oct 2017
+ * @version $Id$
+ * @LastModified: Jun 2019
  */
 public class NEWARRAY extends Instruction implements AllocationInstruction, ExceptionThrower,
         StackProducer {
@@ -40,8 +41,8 @@ public class NEWARRAY extends Instruction implements AllocationInstruction, Exce
 
 
     /**
-     * Empty constructor needed for the Class.newInstance() statement in
-     * Instruction.readInstruction(). Not to be used otherwise.
+     * Empty constructor needed for Instruction.readInstruction.
+     * Not to be used otherwise.
      */
     NEWARRAY() {
     }

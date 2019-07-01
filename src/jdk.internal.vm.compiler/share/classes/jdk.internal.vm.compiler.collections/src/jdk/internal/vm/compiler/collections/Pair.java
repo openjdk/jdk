@@ -45,7 +45,7 @@ import java.util.Objects;
 /**
  * Utility class representing a pair of values.
  *
- * @since 1.0
+ * @since 19.0
  */
 public final class Pair<L, R> {
 
@@ -57,7 +57,7 @@ public final class Pair<L, R> {
     /**
      * Returns an empty pair.
      *
-     * @since 1.0
+     * @since 19.0
      */
     @SuppressWarnings("unchecked")
     public static <L, R> Pair<L, R> empty() {
@@ -69,7 +69,7 @@ public final class Pair<L, R> {
      * {@code left} is null.
      *
      * @return the constructed pair or an empty pair if {@code left} is null.
-     * @since 1.0
+     * @since 19.0
      */
     public static <L, R> Pair<L, R> createLeft(L left) {
         if (left == null) {
@@ -84,7 +84,7 @@ public final class Pair<L, R> {
      * {@code right} is null.
      *
      * @return the constructed pair or an empty pair if {@code right} is null.
-     * @since 1.0
+     * @since 19.0
      */
     public static <L, R> Pair<L, R> createRight(R right) {
         if (right == null) {
@@ -99,7 +99,7 @@ public final class Pair<L, R> {
      * {@code right}, or returns an empty pair if both inputs are null.
      *
      * @return the constructed pair or an empty pair if both inputs are null.
-     * @since 1.0
+     * @since 19.0
      */
     public static <L, R> Pair<L, R> create(L left, R right) {
         if (right == null && left == null) {
@@ -117,7 +117,7 @@ public final class Pair<L, R> {
     /**
      * Returns the left value of this pair.
      *
-     * @since 1.0
+     * @since 19.0
      */
     public L getLeft() {
         return left;
@@ -126,7 +126,7 @@ public final class Pair<L, R> {
     /**
      * Returns the right value of this pair.
      *
-     * @since 1.0
+     * @since 19.0
      */
     public R getRight() {
         return right;
@@ -135,7 +135,7 @@ public final class Pair<L, R> {
     /**
      * {@inheritDoc}
      *
-     * @since 1.0
+     * @since 19.0
      */
     @Override
     public int hashCode() {
@@ -145,7 +145,7 @@ public final class Pair<L, R> {
     /**
      * {@inheritDoc}
      *
-     * @since 1.0
+     * @since 19.0
      */
     @SuppressWarnings("unchecked")
     @Override
@@ -165,7 +165,7 @@ public final class Pair<L, R> {
     /**
      * {@inheritDoc}
      *
-     * @since 1.0
+     * @since 19.0
      */
     @Override
     public String toString() {

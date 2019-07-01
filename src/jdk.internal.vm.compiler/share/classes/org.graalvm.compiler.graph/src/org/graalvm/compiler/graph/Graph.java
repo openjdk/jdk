@@ -642,30 +642,6 @@ public class Graph {
         }
 
         @Override
-        public void nodeAdded(Node node) {
-            head.event(NodeEvent.NODE_ADDED, node);
-            next.event(NodeEvent.NODE_ADDED, node);
-        }
-
-        @Override
-        public void inputChanged(Node node) {
-            head.event(NodeEvent.INPUT_CHANGED, node);
-            next.event(NodeEvent.INPUT_CHANGED, node);
-        }
-
-        @Override
-        public void usagesDroppedToZero(Node node) {
-            head.event(NodeEvent.ZERO_USAGES, node);
-            next.event(NodeEvent.ZERO_USAGES, node);
-        }
-
-        @Override
-        public void nodeRemoved(Node node) {
-            head.event(NodeEvent.NODE_REMOVED, node);
-            next.event(NodeEvent.NODE_REMOVED, node);
-        }
-
-        @Override
         public void changed(NodeEvent e, Node node) {
             head.event(e, node);
             next.event(e, node);
@@ -1151,7 +1127,7 @@ public class Graph {
         nodesDeletedSinceLastCompression++;
 
         if (nodeEventListener != null) {
-            nodeEventListener.event(NodeEvent.NODE_ADDED, node);
+            nodeEventListener.event(NodeEvent.NODE_REMOVED, node);
         }
 
         // nodes aren't removed from the type cache here - they will be removed during iteration

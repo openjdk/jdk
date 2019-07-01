@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2009, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -40,6 +40,7 @@ import org.graalvm.compiler.bytecode.Bytecodes;
 import org.graalvm.compiler.bytecode.Bytes;
 import org.graalvm.compiler.bytecode.ResolvedJavaMethodBytecode;
 import org.graalvm.compiler.core.common.calc.Condition;
+import org.graalvm.compiler.core.common.type.FloatStamp;
 import org.graalvm.compiler.core.common.type.IntegerStamp;
 import org.graalvm.compiler.core.common.type.Stamp;
 import org.graalvm.compiler.core.common.type.StampFactory;
@@ -56,6 +57,7 @@ import org.graalvm.compiler.graph.spi.Simplifiable;
 import org.graalvm.compiler.graph.spi.SimplifierTool;
 import org.graalvm.compiler.nodeinfo.InputType;
 import org.graalvm.compiler.nodeinfo.NodeInfo;
+import org.graalvm.compiler.nodes.calc.AddNode;
 import org.graalvm.compiler.nodes.calc.CompareNode;
 import org.graalvm.compiler.nodes.calc.ConditionalNode;
 import org.graalvm.compiler.nodes.calc.IntegerBelowNode;
@@ -295,7 +297,8 @@ public final class IfNode extends ControlSplitNode implements Simplifiable, LIRL
             return;
         }
 
-        if (falseSuccessor().hasNoUsages() && (!(falseSuccessor() instanceof LoopExitNode)) && falseSuccessor().next() instanceof IfNode) {
+        if (falseSuccessor().hasNoUsages() && (!(falseSuccessor() instanceof LoopExitNode)) && falseSuccessor().next() instanceof IfNode &&
+                        !(((IfNode) falseSuccessor().next()).falseSuccessor() instanceof LoopExitNode)) {
             AbstractBeginNode intermediateBegin = falseSuccessor();
             IfNode nextIf = (IfNode) intermediateBegin.next();
             double probabilityB = (1.0 - this.trueSuccessorProbability) * nextIf.trueSuccessorProbability;
@@ -465,7 +468,7 @@ public final class IfNode extends ControlSplitNode implements Simplifiable, LIRL
                 return false;
             }
             MergeNode merge = (MergeNode) trueEnd.merge();
-            if (merge.usages().count() != 1 || merge.phis().count() != 1) {
+            if (!merge.hasExactlyOneUsage() || merge.phis().count() != 1) {
                 return false;
             }
 
@@ -789,6 +792,7 @@ public final class IfNode extends ControlSplitNode implements Simplifiable, LIRL
             ValueNode trueValue = trueEnd.result();
             ValueNode falseValue = falseEnd.result();
             ValueNode value = null;
+            boolean needsProxy = false;
             if (trueValue != null) {
                 if (trueValue == falseValue) {
                     value = trueValue;
@@ -797,8 +801,20 @@ public final class IfNode extends ControlSplitNode implements Simplifiable, LIRL
                     if (value == null) {
                         return false;
                     }
+                    needsProxy = true;
                 }
             }
+
+            if (trueSuccessor() instanceof LoopExitNode) {
+                LoopBeginNode loopBegin = ((LoopExitNode) trueSuccessor()).loopBegin();
+                assert loopBegin == ((LoopExitNode) falseSuccessor()).loopBegin();
+                LoopExitNode loopExitNode = graph().add(new LoopExitNode(loopBegin));
+                graph().addBeforeFixed(this, loopExitNode);
+                if (graph().hasValueProxies() && needsProxy) {
+                    value = graph().addOrUnique(new ValueProxyNode(value, loopExitNode));
+                }
+            }
+
             ReturnNode newReturn = graph().add(new ReturnNode(value));
             replaceAtPredecessor(newReturn);
             GraphUtil.killCFG(this);
@@ -834,7 +850,7 @@ public final class IfNode extends ControlSplitNode implements Simplifiable, LIRL
                  * we can collapse all proxy nodes on one loop exit, the surviving one, which will
                  * be the true successor
                  */
-                if (falseSuccessor.anchored().isEmpty() && falseSuccessor.usages().isNotEmpty()) {
+                if (falseSuccessor.anchored().isEmpty() && falseSuccessor.hasUsages()) {
                     for (Node n : falseSuccessor.usages().snapshot()) {
                         assert n instanceof ProxyNode;
                         ((ProxyNode) n).setProxyPoint((LoopExitNode) trueSuccessor);
@@ -844,7 +860,7 @@ public final class IfNode extends ControlSplitNode implements Simplifiable, LIRL
                  * The true successor (surviving loop exit) can have usages, namely proxy nodes, the
                  * false successor however, must not have usages any more after the code above
                  */
-                assert trueSuccessor.anchored().isEmpty() && falseSuccessor.usages().isEmpty();
+                assert trueSuccessor.anchored().isEmpty() && falseSuccessor.hasNoUsages();
                 return this.graph().addOrUnique(new ValueProxyNode(replacement, (LoopExitNode) trueSuccessor));
             }
         }
@@ -947,16 +963,18 @@ public final class IfNode extends ControlSplitNode implements Simplifiable, LIRL
             if (constant.isJavaConstant() && conditional.trueValue().isJavaConstant() && conditional.falseValue().isJavaConstant() && condition() instanceof CompareNode &&
                             conditional.condition() instanceof CompareNode) {
 
-                Condition cond1 = ((CompareNode) condition()).condition().asCondition();
+                CompareNode condition1 = (CompareNode) condition();
+                Condition cond1 = condition1.condition().asCondition();
                 if (negateCondition) {
                     cond1 = cond1.negate();
                 }
                 // cond1 is EQ, NE, LT, or GE
-                Condition cond2 = ((CompareNode) conditional.condition()).condition().asCondition();
-                ValueNode x = ((CompareNode) condition()).getX();
-                ValueNode y = ((CompareNode) condition()).getY();
-                ValueNode x2 = ((CompareNode) conditional.condition()).getX();
-                ValueNode y2 = ((CompareNode) conditional.condition()).getY();
+                CompareNode condition2 = (CompareNode) conditional.condition();
+                Condition cond2 = condition2.condition().asCondition();
+                ValueNode x = condition1.getX();
+                ValueNode y = condition1.getY();
+                ValueNode x2 = condition2.getX();
+                ValueNode y2 = condition2.getY();
                 // `x cond1 y ? c1 : (x2 cond2 y2 ? c2 : c3)`
                 boolean sameVars = x == x2 && y == y2;
                 if (!sameVars && x == y2 && y == x2) {
@@ -964,62 +982,89 @@ public final class IfNode extends ControlSplitNode implements Simplifiable, LIRL
                     cond2 = cond2.mirror();
                 }
                 if (sameVars) {
+
                     JavaKind stackKind = conditional.trueValue().stamp(NodeView.from(tool)).getStackKind();
                     assert !stackKind.isNumericFloat();
 
-                    ValueNode v1 = constant;
-                    ValueNode v2 = conditional.trueValue();
-                    ValueNode v3 = conditional.falseValue();
+                    long c1 = constant.asJavaConstant().asLong();
+                    long c2 = conditional.trueValue().asJavaConstant().asLong();
+                    long c3 = conditional.falseValue().asJavaConstant().asLong();
 
-                    long c1 = v1.asJavaConstant().asLong();
-                    long c2 = v2.asJavaConstant().asLong();
-                    long c3 = v3.asJavaConstant().asLong();
-
-                    if (cond1 == Condition.LT && cond2 == Condition.EQ && c1 == -1 && c2 == 0 && c3 == 1) {
-                        // x < y ? -1 : (x == y ? 0 : 1) => x cmp y
-                        return graph().unique(new NormalizeCompareNode(x, y, stackKind, false));
-                    } else if (cond1 == Condition.LT && cond2 == Condition.EQ && c1 == 1 && c2 == 0 && c3 == -1) {
-                        // x < y ? 1 : (x == y ? 0 : -1) => y cmp x
-                        return graph().unique(new NormalizeCompareNode(y, x, stackKind, false));
-                    } else if (cond1 == Condition.EQ && cond2 == Condition.LT && c1 == 0 && c2 == -1 && c3 == 1) {
-                        // x == y ? 0 : (x < y ? -1 : 1) => x cmp y
-                        return graph().unique(new NormalizeCompareNode(x, y, stackKind, false));
-                    } else if (cond1 == Condition.EQ && cond2 == Condition.LT && c1 == 0 && c2 == 1 && c3 == -1) {
-                        // x == y ? 0 : (x < y ? 1 : -1) => y cmp x
-                        return graph().unique(new NormalizeCompareNode(y, x, stackKind, false));
-                    } else if (cond1 == Condition.EQ && cond2 == Condition.GT && c1 == 0 && c2 == -1 && c3 == 1) {
-                        // x == y ? 0 : (x > y ? -1 : 1) => y cmp x
-                        return graph().unique(new NormalizeCompareNode(y, x, stackKind, false));
-                    } else if (cond1 == Condition.EQ && cond2 == Condition.GT && c1 == 0 && c2 == 1 && c3 == -1) {
-                        // x == y ? 0 : (x > y ? 1 : -1) => x cmp y
-                        return graph().unique(new NormalizeCompareNode(x, y, stackKind, false));
-                    } else if (cond1 == Condition.LT && cond2 == Condition.GT && c1 == 1 && c2 == -1 && c3 == 0) {
-                        // x < y ? 1 : (x > y ? -1 : 0) => y cmp x
-                        return graph().unique(new NormalizeCompareNode(y, x, stackKind, false));
-                    } else if (cond1 == Condition.LT && cond2 == Condition.GT && c1 == -1 && c2 == 1 && c3 == 0) {
-                        // x < y ? -1 : (x > y ? 1 : 0) => x cmp y
-                        return graph().unique(new NormalizeCompareNode(x, y, stackKind, false));
+                    // canonicalize cond2
+                    cond2 = cond2.join(cond1.negate());
+                    if (cond2 == null) {
+                        // mixing signed and unsigned cases, or useless combination of conditions
+                        return null;
                     }
+                    // derive cond3 from cond1 and cond2
+                    Condition cond3 = cond1.negate().join(cond2.negate());
+                    if (cond3 == null) {
+                        // mixing signed and unsigned cases, or useless combination of conditions
+                        return null;
+                    }
+                    boolean unsigned = cond1.isUnsigned() || cond2.isUnsigned();
+
+                    long expected1 = expectedConstantForNormalize(cond1);
+                    long expected2 = expectedConstantForNormalize(cond2);
+                    long expected3 = expectedConstantForNormalize(cond3);
+
+                    if (c1 == expected1 && c2 == expected2 && c3 == expected3) {
+                        // normal order
+                    } else if (c1 == 0 - expected1 && c2 == 0 - expected2 && c3 == 0 - expected3) {
+                        // reverse order
+                        ValueNode tmp = x;
+                        x = y;
+                        y = tmp;
+                    } else {
+                        // cannot be expressed by NormalizeCompareNode
+                        return null;
+                    }
+                    if (unsigned) {
+                        // for unsigned comparisons, we need to add MIN_VALUE (see
+                        // Long.compareUnsigned)
+                        ValueNode minValue = graph().unique(ConstantNode.forIntegerStamp(x.stamp,
+                                        x.stamp.getStackKind().getMinValue()));
+                        x = graph().unique(new AddNode(x, minValue));
+                        y = graph().unique(new AddNode(y, minValue));
+                    }
+                    boolean unorderedLess = false;
+                    if (x.stamp instanceof FloatStamp && (((FloatStamp) x.stamp).canBeNaN() || ((FloatStamp) y.stamp).canBeNaN())) {
+                        // we may encounter NaNs, check the unordered value
+                        // (following the original condition's "unorderedIsTrue" path)
+                        long unorderedValue = condition1.unorderedIsTrue() ? c1 : condition2.unorderedIsTrue() ? c2 : c3;
+                        if (unorderedValue == 0) {
+                            // returning "0" for unordered is not possible
+                            return null;
+                        }
+                        unorderedLess = unorderedValue == -1;
+                    }
+                    return graph().unique(new NormalizeCompareNode(x, y, stackKind, unorderedLess));
                 }
             }
         }
         return null;
     }
 
+    private static long expectedConstantForNormalize(Condition condition) {
+        if (condition == Condition.EQ) {
+            return 0;
+        } else if (condition == Condition.LT || condition == Condition.BT) {
+            return -1;
+        } else {
+            assert condition == Condition.GT || condition == Condition.AT;
+            return 1;
+        }
+    }
+
     /**
      * Take an if that is immediately dominated by a merge with a single phi and split off any paths
-     * where the test would be statically decidable creating a new merge below the approriate side
+     * where the test would be statically decidable creating a new merge below the appropriate side
      * of the IfNode. Any undecidable tests will continue to use the original IfNode.
      *
      * @param tool
      */
     @SuppressWarnings("try")
     private boolean splitIfAtPhi(SimplifierTool tool) {
-        if (graph().getGuardsStage().areFrameStatesAtSideEffects()) {
-            // Disabled until we make sure we have no FrameState-less merges at this stage
-            return false;
-        }
-
         if (!(predecessor() instanceof MergeNode)) {
             return false;
         }
@@ -1028,15 +1073,14 @@ public final class IfNode extends ControlSplitNode implements Simplifiable, LIRL
             // Don't bother.
             return false;
         }
-        if (merge.usages().count() != 1 || merge.phis().count() != 1) {
+        if (merge.getUsageCount() != 1 || merge.phis().count() != 1) {
             return false;
         }
-        if (merge.stateAfter() != null) {
-            /* We'll get the chance to simplify this after frame state assignment. */
+        if (graph().getGuardsStage().areFrameStatesAtSideEffects() && merge.stateAfter() == null) {
             return false;
         }
         PhiNode phi = merge.phis().first();
-        if (phi.usages().count() != 1) {
+        if (phi.getUsageCount() != 1) {
             /*
              * For simplicity the below code assumes assumes the phi goes dead at the end so skip
              * this case.
@@ -1061,7 +1105,6 @@ public final class IfNode extends ControlSplitNode implements Simplifiable, LIRL
         /* Each successor of the if gets a new merge if needed. */
         MergeNode trueMerge = null;
         MergeNode falseMerge = null;
-        assert merge.stateAfter() == null;
 
         for (EndNode end : merge.forwardEnds().snapshot()) {
             Node value = phi.valueAt(end);
@@ -1070,12 +1113,12 @@ public final class IfNode extends ControlSplitNode implements Simplifiable, LIRL
                 merge.removeEnd(end);
                 if (((LogicConstantNode) result).getValue()) {
                     if (trueMerge == null) {
-                        trueMerge = insertMerge(trueSuccessor());
+                        trueMerge = insertMerge(trueSuccessor(), merge.stateAfter());
                     }
                     trueMerge.addForwardEnd(end);
                 } else {
                     if (falseMerge == null) {
-                        falseMerge = insertMerge(falseSuccessor());
+                        falseMerge = insertMerge(falseSuccessor(), merge.stateAfter());
                     }
                     falseMerge.addForwardEnd(end);
                 }
@@ -1096,13 +1139,13 @@ public final class IfNode extends ControlSplitNode implements Simplifiable, LIRL
                 ((FixedWithNextNode) end.predecessor()).setNext(newIfNode);
 
                 if (trueMerge == null) {
-                    trueMerge = insertMerge(trueSuccessor());
+                    trueMerge = insertMerge(trueSuccessor(), merge.stateAfter());
                 }
                 trueBegin.setNext(graph().add(new EndNode()));
                 trueMerge.addForwardEnd((EndNode) trueBegin.next());
 
                 if (falseMerge == null) {
-                    falseMerge = insertMerge(falseSuccessor());
+                    falseMerge = insertMerge(falseSuccessor(), merge.stateAfter());
                 }
                 falseBegin.setNext(graph().add(new EndNode()));
                 falseMerge.addForwardEnd((EndNode) falseBegin.next());
@@ -1129,7 +1172,7 @@ public final class IfNode extends ControlSplitNode implements Simplifiable, LIRL
      *         dead after the optimization.
      */
     private static boolean conditionUses(LogicNode condition, PhiNode phi) {
-        if (condition.usages().count() != 1) {
+        if (!condition.hasExactlyOneUsage()) {
             return false;
         }
         if (condition instanceof ShortCircuitOrNode) {
@@ -1222,7 +1265,7 @@ public final class IfNode extends ControlSplitNode implements Simplifiable, LIRL
     }
 
     @SuppressWarnings("try")
-    private MergeNode insertMerge(AbstractBeginNode begin) {
+    private MergeNode insertMerge(AbstractBeginNode begin, FrameState stateAfter) {
         MergeNode merge = graph().add(new MergeNode());
         if (!begin.anchored().isEmpty()) {
             Object before = null;
@@ -1245,6 +1288,7 @@ public final class IfNode extends ControlSplitNode implements Simplifiable, LIRL
         next.replaceAtPredecessor(merge);
         theBegin.setNext(graph().add(new EndNode()));
         merge.addForwardEnd((EndNode) theBegin.next());
+        merge.setStateAfter(stateAfter);
         merge.setNext(next);
         return merge;
     }

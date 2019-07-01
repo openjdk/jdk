@@ -195,10 +195,7 @@ public class PhaseSuite<C> extends BasePhase<C> {
                 return true;
             } else if (phase instanceof PhaseSuite) {
                 PhaseSuite<C> innerSuite = (PhaseSuite<C>) phase;
-                if (innerSuite.removePhase(phaseClass)) {
-                    if (innerSuite.phases.isEmpty()) {
-                        it.set(newPhase);
-                    }
+                if (innerSuite.replacePhase(phaseClass, newPhase)) {
                     return true;
                 }
             }

@@ -30,7 +30,7 @@ import com.sun.org.apache.bcel.internal.Const;
  * This class is derived from the abstract {@link Constant}
  * and represents a reference to a long object.
  *
- * @version $Id: ConstantLong.java 1747278 2016-06-07 17:28:43Z britter $
+ * @version $Id$
  * @see     Constant
  */
 public final class ConstantLong extends Constant implements ConstantObject {

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -66,6 +66,7 @@ import org.graalvm.compiler.java.BytecodeParser;
 import org.graalvm.compiler.java.GraphBuilderPhase;
 import org.graalvm.compiler.nodeinfo.Verbosity;
 import org.graalvm.compiler.nodes.CallTargetNode;
+import org.graalvm.compiler.nodes.Cancellable;
 import org.graalvm.compiler.nodes.ConstantNode;
 import org.graalvm.compiler.nodes.EncodedGraph;
 import org.graalvm.compiler.nodes.FrameState;
@@ -109,7 +110,6 @@ import jdk.vm.ci.meta.Constant;
 import jdk.vm.ci.meta.ConstantReflectionProvider;
 import jdk.vm.ci.meta.JavaConstant;
 import jdk.vm.ci.meta.JavaKind;
-import jdk.vm.ci.meta.JavaType;
 import jdk.vm.ci.meta.MemoryAccessProvider;
 import jdk.vm.ci.meta.MethodHandleAccessProvider;
 import jdk.vm.ci.meta.ResolvedJavaField;
@@ -283,24 +283,30 @@ public class SymbolicSnippetEncoder {
         }
 
         StructuredGraph getMethodSubstitutionGraph(MethodSubstitutionPlugin plugin, ResolvedJavaMethod original, ReplacementsImpl replacements, IntrinsicContext.CompilationContext context,
-                        StructuredGraph.AllowAssumptions allowAssumptions, OptionValues options) {
+                        StructuredGraph.AllowAssumptions allowAssumptions, Cancellable cancellable, OptionValues options) {
             Integer startOffset = snippetStartOffsets.get(plugin.toString() + context);
             if (startOffset == null) {
                 throw GraalError.shouldNotReachHere("plugin graph not found: " + plugin + " with " + context);
             }
 
             ResolvedJavaType accessingClass = replacements.getProviders().getMetaAccess().lookupJavaType(plugin.getDeclaringClass());
-            return decodeGraph(original, accessingClass, startOffset, replacements, context, allowAssumptions, options);
+            return decodeGraph(original, accessingClass, startOffset, replacements, context, allowAssumptions, cancellable, options);
         }
 
         @SuppressWarnings("try")
-        private StructuredGraph decodeGraph(ResolvedJavaMethod method, ResolvedJavaType accessingClass, int startOffset, ReplacementsImpl replacements,
-                        IntrinsicContext.CompilationContext context, StructuredGraph.AllowAssumptions allowAssumptions, OptionValues options) {
+        private StructuredGraph decodeGraph(ResolvedJavaMethod method,
+                        ResolvedJavaType accessingClass,
+                        int startOffset,
+                        ReplacementsImpl replacements,
+                        IntrinsicContext.CompilationContext context,
+                        StructuredGraph.AllowAssumptions allowAssumptions,
+                        Cancellable cancellable,
+                        OptionValues options) {
             Providers providers = replacements.getProviders();
             EncodedGraph encodedGraph = new SymbolicEncodedGraph(snippetEncoding, startOffset, snippetObjects, snippetNodeClasses,
                             methodKey(method), accessingClass, method.getDeclaringClass());
             try (DebugContext debug = replacements.openDebugContext("SVMSnippet_", method, options)) {
-                StructuredGraph result = new StructuredGraph.Builder(options, debug, allowAssumptions).method(method).setIsSubstitution(true).build();
+                StructuredGraph result = new StructuredGraph.Builder(options, debug, allowAssumptions).cancellable(cancellable).method(method).setIsSubstitution(true).build();
                 PEGraphDecoder graphDecoder = new SubstitutionGraphDecoder(providers, result, replacements, null, method, context, encodedGraph);
 
                 graphDecoder.decode(method, result.isSubstitution(), encodedGraph.trackNodeSourcePosition());
@@ -432,7 +438,7 @@ public class SymbolicSnippetEncoder {
                             originalProvider.getConstantReflection());
             HotSpotProviders newProviders = new HotSpotProviders(originalProvider.getMetaAccess(), originalProvider.getCodeCache(), constantReflection,
                             originalProvider.getConstantFieldProvider(), originalProvider.getForeignCalls(), originalProvider.getLowerer(), null, originalProvider.getSuites(),
-                            originalProvider.getRegisters(), snippetReflection, originalProvider.getWordTypes(), originalProvider.getGraphBuilderPlugins());
+                            originalProvider.getRegisters(), snippetReflection, originalProvider.getWordTypes(), originalProvider.getGraphBuilderPlugins(), originalProvider.getGC());
             HotSpotSnippetReplacementsImpl filteringReplacements = new HotSpotSnippetReplacementsImpl(newProviders, snippetReflection,
                             originalProvider.getReplacements().getDefaultReplacementBytecodeProvider(), originalProvider.getCodeCache().getTarget());
             filteringReplacements.setGraphBuilderPlugins(originalProvider.getReplacements().getGraphBuilderPlugins());
@@ -1048,7 +1054,7 @@ public class SymbolicSnippetEncoder {
         }
 
         @Override
-        protected boolean tryInvocationPlugin(CallTargetNode.InvokeKind invokeKind, ValueNode[] args, ResolvedJavaMethod targetMethod, JavaKind resultType, JavaType returnType) {
+        protected boolean tryInvocationPlugin(CallTargetNode.InvokeKind invokeKind, ValueNode[] args, ResolvedJavaMethod targetMethod, JavaKind resultType) {
             if (intrinsicContext != null && intrinsicContext.isCallToOriginal(targetMethod)) {
                 return false;
             }
@@ -1056,7 +1062,7 @@ public class SymbolicSnippetEncoder {
                 // Always defer Fold until decode time but NodeIntrinsics may fold if they are able.
                 return false;
             }
-            return super.tryInvocationPlugin(invokeKind, args, targetMethod, resultType, returnType);
+            return super.tryInvocationPlugin(invokeKind, args, targetMethod, resultType);
         }
     }
 }

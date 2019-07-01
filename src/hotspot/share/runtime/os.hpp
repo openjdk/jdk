@@ -171,10 +171,6 @@ class os: AllStatic {
     init_globals_ext();
   }
 
-  // File names are case-insensitive on windows only
-  // Override me as needed
-  static int    file_name_strncmp(const char* s1, const char* s2, size_t num);
-
   // unset environment variable
   static bool unsetenv(const char* name);
 
@@ -543,6 +539,8 @@ class os: AllStatic {
   static void funlockfile(FILE* fp);
 
   static int compare_file_modified_times(const char* file1, const char* file2);
+
+  static bool same_files(const char* file1, const char* file2);
 
   //File i/o operations
 

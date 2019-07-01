@@ -381,7 +381,7 @@ public class InliningUtil extends ValueMergeUtil {
             throw new IllegalStateException("Inlined graph is in invalid state: " + inlineGraph);
         }
         for (Node node : inlineGraph.getNodes()) {
-            if (node == entryPointNode || (node == entryPointNode.stateAfter() && node.usages().count() == 1) || node instanceof ParameterNode) {
+            if (node == entryPointNode || (node == entryPointNode.stateAfter() && node.hasExactlyOneUsage()) || node instanceof ParameterNode) {
                 // Do nothing.
             } else {
                 nodes.add(node);

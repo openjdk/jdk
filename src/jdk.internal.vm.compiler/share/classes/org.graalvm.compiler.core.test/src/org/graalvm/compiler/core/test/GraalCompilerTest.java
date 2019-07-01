@@ -124,6 +124,7 @@ import org.graalvm.compiler.phases.tiers.TargetProvider;
 import org.graalvm.compiler.phases.util.Providers;
 import org.graalvm.compiler.printer.GraalDebugHandlersFactory;
 import org.graalvm.compiler.runtime.RuntimeProvider;
+import org.graalvm.compiler.serviceprovider.JavaVersionUtil;
 import org.graalvm.compiler.test.AddExports;
 import org.graalvm.compiler.test.GraalTest;
 import org.graalvm.compiler.test.JLModule;
@@ -150,9 +151,9 @@ import jdk.vm.ci.meta.ResolvedJavaType;
 import jdk.vm.ci.meta.SpeculationLog;
 
 /**
- * Base class for Graal compiler unit tests.
+ * Base class for compiler unit tests.
  * <p>
- * White box tests for Graal compiler transformations use this pattern:
+ * White box tests for compiler transformations use this pattern:
  * <ol>
  * <li>Create a graph by {@linkplain #parseEager parsing} a method.</li>
  * <li>Manually modify the graph (e.g. replace a parameter node with a constant).</li>
@@ -194,7 +195,7 @@ public abstract class GraalCompilerTest extends GraalTest {
      * as of JDK 9.
      */
     protected final void exportPackage(Class<?> moduleMember, String packageName) {
-        if (!Java8OrEarlier) {
+        if (JavaVersionUtil.JAVA_SPEC > 8) {
             JLModule.exportPackageTo(moduleMember, packageName, getClass());
         }
     }
@@ -224,27 +225,27 @@ public abstract class GraalCompilerTest extends GraalTest {
      * Can be overridden by unit tests to verify properties of the graph.
      *
      * @param graph the graph at the end of HighTier
+     * @throws AssertionError if the verification fails
      */
-    protected boolean checkHighTierGraph(StructuredGraph graph) {
-        return true;
+    protected void checkHighTierGraph(StructuredGraph graph) {
     }
 
     /**
      * Can be overridden by unit tests to verify properties of the graph.
      *
      * @param graph the graph at the end of MidTier
+     * @throws AssertionError if the verification fails
      */
-    protected boolean checkMidTierGraph(StructuredGraph graph) {
-        return true;
+    protected void checkMidTierGraph(StructuredGraph graph) {
     }
 
     /**
      * Can be overridden by unit tests to verify properties of the graph.
      *
      * @param graph the graph at the end of LowTier
+     * @throws AssertionError if the verification fails
      */
-    protected boolean checkLowTierGraph(StructuredGraph graph) {
-        return true;
+    protected void checkLowTierGraph(StructuredGraph graph) {
     }
 
     protected static void breakpoint() {
@@ -288,7 +289,7 @@ public abstract class GraalCompilerTest extends GraalTest {
 
             @Override
             protected void run(StructuredGraph graph) {
-                assert checkHighTierGraph(graph) : "failed HighTier graph check";
+                checkHighTierGraph(graph);
             }
 
             @Override
@@ -305,7 +306,7 @@ public abstract class GraalCompilerTest extends GraalTest {
 
             @Override
             protected void run(StructuredGraph graph) {
-                assert checkMidTierGraph(graph) : "failed MidTier graph check";
+                checkMidTierGraph(graph);
             }
 
             @Override
@@ -322,7 +323,7 @@ public abstract class GraalCompilerTest extends GraalTest {
 
             @Override
             protected void run(StructuredGraph graph) {
-                assert checkLowTierGraph(graph) : "failed LowTier graph check";
+                checkLowTierGraph(graph);
             }
 
             @Override

@@ -788,6 +788,8 @@ public:
   // C 'boolean' to Java boolean: x == 0 ? 0 : 1
   void c2bool(Register x);
 
+  void load_method_holder(Register holder, Register method);
+
   // oop manipulations
   void load_klass(Register dst, Register src);
   void store_klass(Register dst, Register src);
@@ -925,6 +927,11 @@ public:
                            Register super_klass,
                            Register temp_reg,
                            Label& L_success);
+
+  void clinit_barrier(Register klass,
+                      Register thread,
+                      Label* L_fast_path = NULL,
+                      Label* L_slow_path = NULL);
 
   Address argument_address(RegisterOrConstant arg_slot, int extra_slot_offset = 0);
 

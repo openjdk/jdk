@@ -1761,6 +1761,17 @@ void MachPrologNode::emit(CodeBuffer &cbuf, PhaseRegAlloc *ra_) const {
   // branch if we need to invalidate the method later
   __ nop();
 
+  if (C->clinit_barrier_on_entry()) {
+    assert(!C->method()->holder()->is_not_initialized(), "initialization should have been started");
+
+    Label L_skip_barrier;
+
+    __ mov_metadata(rscratch2, C->method()->holder()->constant_encoding());
+    __ clinit_barrier(rscratch2, rscratch1, &L_skip_barrier);
+    __ far_jump(RuntimeAddress(SharedRuntime::get_handle_wrong_method_stub()));
+    __ bind(L_skip_barrier);
+  }
+  
   int bangsize = C->bang_size_in_bytes();
   if (C->need_stack_bang(bangsize) && UseStackBanging)
     __ generate_stack_overflow_check(bangsize);

@@ -161,7 +161,11 @@ public class TestResolvedJavaType extends TypeUniverse {
         for (Class<?> c : classes) {
             ResolvedJavaType type = metaAccess.lookupJavaType(c);
             ResolvedJavaType host = type.getHostClass();
-            assertNull(host);
+            if (!type.equals(predicateType)) {
+                assertNull(host);
+            } else {
+                assertNotNull(host);
+            }
         }
 
         class LocalClass {}

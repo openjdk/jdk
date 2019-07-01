@@ -72,7 +72,6 @@ final class HotSpotResolvedObjectTypeImpl extends HotSpotResolvedJavaType implem
     private volatile HotSpotResolvedJavaField[] instanceFields;
     private volatile HotSpotResolvedObjectTypeImpl[] interfaces;
     private HotSpotConstantPool constantPool;
-    private HotSpotResolvedObjectType arrayOfType;
     private final JavaConstant mirror;
     private HotSpotResolvedObjectTypeImpl superClass;
 
@@ -103,17 +102,24 @@ final class HotSpotResolvedObjectTypeImpl extends HotSpotResolvedJavaType implem
      * Creates the JVMCI mirror for a {@link Class} object.
      *
      * <b>NOTE</b>: Creating an instance of this class does not install the mirror for the
-     * {@link Class} type. {@link #fromMetaspace} instead.
+     * {@link Class} type.
      * </p>
      *
      * @param metadataPointer the Klass* to create the mirror for
      */
+    @SuppressWarnings("try")
     HotSpotResolvedObjectTypeImpl(long metadataPointer, String name) {
         super(name);
-        this.metadataPointer = metadataPointer;
-        this.mirror = runtime().compilerToVm.getJavaMirror(this);
         assert metadataPointer != 0;
-        assert getName().charAt(0) != '[' || isArray() : getName();
+        this.metadataPointer = metadataPointer;
+
+        // The mirror object must be in the global scope since
+        // this object will be cached in HotSpotJVMCIRuntime.resolvedJavaTypes
+        // and live across more than one compilation.
+        try (HotSpotObjectConstantScope global = HotSpotObjectConstantScope.enterGlobalScope()) {
+            this.mirror = runtime().compilerToVm.getJavaMirror(this);
+            assert getName().charAt(0) != '[' || isArray() : getName();
+        }
     }
 
     /**
@@ -144,18 +150,6 @@ final class HotSpotResolvedObjectTypeImpl extends HotSpotResolvedJavaType implem
     public int getAccessFlags() {
         HotSpotVMConfig config = config();
         return UNSAFE.getInt(getMetaspaceKlass() + config.klassAccessFlagsOffset);
-    }
-
-    @Override
-    public HotSpotResolvedObjectType getArrayClass() {
-        if (arrayOfType == null) {
-            try {
-                arrayOfType = (HotSpotResolvedObjectType) runtime().compilerToVm.lookupType("[" + getName(), this, true);
-            } catch (ClassNotFoundException e) {
-                throw new JVMCIError(e);
-            }
-        }
-        return arrayOfType;
     }
 
     @Override
@@ -578,6 +572,15 @@ final class HotSpotResolvedObjectTypeImpl extends HotSpotResolvedJavaType implem
         if (resolvedMethod == null) {
             // The type isn't known to implement the method.
             return null;
+        }
+        if (resolvedMethod.canBeStaticallyBound()) {
+            // No assumptions are required.
+            return new AssumptionResult<>(resolvedMethod);
+        }
+
+        if (resolvedMethod.canBeStaticallyBound()) {
+            // No assumptions are required.
+            return new AssumptionResult<>(resolvedMethod);
         }
 
         ResolvedJavaMethod result = resolvedMethod.uniqueConcreteMethod(this);

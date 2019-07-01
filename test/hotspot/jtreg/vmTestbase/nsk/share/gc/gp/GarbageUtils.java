@@ -57,10 +57,10 @@ public final class GarbageUtils {
             }
 
             /**
-                         * Returns true if the given error message matches
-                         * one of expected strings.
-                         */
-                        public boolean accept(String errorMessage) {
+             * Returns true if the given error message matches
+             * one of expected strings.
+             */
+            public boolean accept(String errorMessage) {
                 if (expectedStrings == null || expectedStrings.length == 0 || errorMessage == null) {
                     return true;
                 }
@@ -81,7 +81,6 @@ public final class GarbageUtils {
         public static final StringWriter preloadStringWriter = new StringWriter(1);
         public static final PrintWriter preloadPrintWriter = new PrintWriter(preloadStringWriter);
         public static final Throwable preloadThrowable = new Throwable("preload");
-        public static final StackTraceElement[] preloadStackTraceElement = preloadThrowable.getStackTrace();
 
         private GarbageUtils() {
         }
@@ -215,8 +214,6 @@ public final class GarbageUtils {
         public static int eatMemory(ExecutionController stresser, GarbageProducer gp, long initialFactor, long minMemoryChunk, long factor, OOM_TYPE type) {
                 int numberOfOOMEs = 0;
                 try {
-                        StringWriter sw = new StringWriter(10000);
-                        PrintWriter pw = new PrintWriter(sw);
                         byte[] someMemory = new byte[200000]; //200 Kb
                         try {
                                 Runtime runtime = Runtime.getRuntime();
@@ -243,13 +240,11 @@ public final class GarbageUtils {
                                         } catch (OutOfMemoryError e) {
                                             someMemory = null;
                                             if (type != OOM_TYPE.ANY) {
-                                                e.printStackTrace(pw);
-                                                pw.close();
-                                                if (type.accept(sw.toString())) {
+                                                if (type.accept(e.toString())) {
                                                     numberOfOOMEs++;
                                                 } else {
                                                     // Trying to catch situation when Java generates OOM different type that test trying to catch
-                                                    throw new TestBug("Test throw OOM of unexpected type." + sw.toString());
+                                                    throw new TestBug("Test throw OOM of unexpected type." + e.toString());
                                                 }
                                             } else {
                                                numberOfOOMEs++;
@@ -265,13 +260,11 @@ public final class GarbageUtils {
                         } catch (OutOfMemoryError e) {
                             someMemory = null;
                             if (type != OOM_TYPE.ANY) {
-                                e.printStackTrace(pw);
-                                pw.close();
-                                if (type.accept(sw.toString())) {
+                                if (type.accept(e.toString())) {
                                     numberOfOOMEs++;
                                 } else {
                                     // Trying to catch situation when Java generates OOM different type that test trying to catch
-                                    throw new TestBug("Test throw OOM of unexpected type." + sw.toString());
+                                    throw new TestBug("Test throw OOM of unexpected type." + e.toString());
                                 }
                             } else {
                                 numberOfOOMEs++;

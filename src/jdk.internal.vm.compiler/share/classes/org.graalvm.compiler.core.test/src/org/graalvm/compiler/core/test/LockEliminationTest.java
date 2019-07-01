@@ -36,7 +36,6 @@ import org.graalvm.compiler.phases.common.DeadCodeEliminationPhase;
 import org.graalvm.compiler.phases.common.LockEliminationPhase;
 import org.graalvm.compiler.phases.common.LoweringPhase;
 import org.graalvm.compiler.phases.tiers.HighTierContext;
-import org.graalvm.compiler.phases.tiers.PhaseContext;
 import org.graalvm.compiler.virtual.phases.ea.PartialEscapePhase;
 import org.junit.Test;
 
@@ -70,7 +69,7 @@ public class LockEliminationTest extends GraalCompilerTest {
         test("testSynchronizedSnippet", new A(), new A());
 
         StructuredGraph graph = getGraph("testSynchronizedSnippet", false);
-        new CanonicalizerPhase().apply(graph, new PhaseContext(getProviders()));
+        new CanonicalizerPhase().apply(graph, getProviders());
         new LockEliminationPhase().apply(graph);
         assertDeepEquals(1, graph.getNodes().filter(RawMonitorEnterNode.class).count());
         assertDeepEquals(1, graph.getNodes().filter(MonitorExitNode.class).count());
@@ -88,7 +87,7 @@ public class LockEliminationTest extends GraalCompilerTest {
         test("testSynchronizedMethodSnippet", new A());
 
         StructuredGraph graph = getGraph("testSynchronizedMethodSnippet", false);
-        new CanonicalizerPhase().apply(graph, new PhaseContext(getProviders()));
+        new CanonicalizerPhase().apply(graph, getProviders());
         new LockEliminationPhase().apply(graph);
         assertDeepEquals(1, graph.getNodes().filter(RawMonitorEnterNode.class).count());
         assertDeepEquals(1, graph.getNodes().filter(MonitorExitNode.class).count());
@@ -106,7 +105,7 @@ public class LockEliminationTest extends GraalCompilerTest {
     public void testUnrolledSync() {
         StructuredGraph graph = getGraph("testUnrolledSyncSnippet", false);
         CanonicalizerPhase canonicalizer = new CanonicalizerPhase();
-        canonicalizer.apply(graph, new PhaseContext(getProviders()));
+        canonicalizer.apply(graph, getProviders());
         HighTierContext context = getDefaultHighTierContext();
         new LoopFullUnrollPhase(canonicalizer, new DefaultLoopPolicies()).apply(graph, context);
         new LockEliminationPhase().apply(graph);

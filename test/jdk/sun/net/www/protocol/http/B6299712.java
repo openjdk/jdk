@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,6 +26,7 @@
  * @bug 6299712 7150552
  * @modules jdk.httpserver
  * @run main/othervm B6299712
+ * @run main/othervm -Djava.net.preferIPv6Addresses=true B6299712
  * @summary  NullPointerException in sun.net.www.protocol.http.HttpURLConnection.followRedirect
  */
 
@@ -54,13 +55,15 @@ public class B6299712 {
 
     public static void main(String[] args) throws Exception {
         ResponseCache.setDefault(new DeployCacheHandler());
+        ProxySelector.setDefault(ProxySelector.of(null)); // no proxy
         startHttpServer();
 
         makeHttpCall();
     }
 
     public static void startHttpServer() throws IOException {
-        server = HttpServer.create(new InetSocketAddress(0), 0);
+        InetAddress address = InetAddress.getLocalHost();
+        server = HttpServer.create(new InetSocketAddress(address, 0), 0);
         server.createContext("/", new DefaultHandler());
         server.createContext("/redirect", new RedirectHandler());
         server.start();

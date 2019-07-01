@@ -176,7 +176,6 @@ private:
                                                  state() == not_used; }
   virtual bool is_alive() const { return _is_alive(); }
   virtual bool is_in_use() const { return state() == in_use; }
-  virtual bool is_not_installed() const { return state() == not_installed; }
 
   virtual bool is_unloading() { return false; }
 

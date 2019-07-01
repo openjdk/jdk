@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -94,7 +94,7 @@ public final class SchedulePhase extends Phase {
         EARLIEST,
         LATEST,
         LATEST_OUT_OF_LOOPS,
-        FINAL_SCHEDULE;
+        LATEST_OUT_OF_LOOPS_IMPLICIT_NULL_CHECKS;
 
         public boolean isEarliest() {
             return this == EARLIEST || this == EARLIEST_WITH_GUARD_ORDER;
@@ -102,6 +102,14 @@ public final class SchedulePhase extends Phase {
 
         public boolean isLatest() {
             return !isEarliest();
+        }
+
+        public boolean scheduleOutOfLoops() {
+            return this == LATEST_OUT_OF_LOOPS || this == LATEST_OUT_OF_LOOPS_IMPLICIT_NULL_CHECKS;
+        }
+
+        public boolean considerImplicitNullChecks() {
+            return this == LATEST_OUT_OF_LOOPS_IMPLICIT_NULL_CHECKS;
         }
     }
 
@@ -228,8 +236,14 @@ public final class SchedulePhase extends Phase {
                     } else {
                         Block latestBlock = null;
 
+                        if (currentBlock.getFirstDominated() == null && !(currentNode instanceof VirtualState)) {
+                            // This block doesn't dominate any other blocks =>
+                            // node must be scheduled in earliest block.
+                            latestBlock = currentBlock;
+                        }
+
                         LocationIdentity constrainingLocation = null;
-                        if (currentNode instanceof FloatingReadNode) {
+                        if (latestBlock == null && currentNode instanceof FloatingReadNode) {
                             // We are scheduling a floating read node => check memory
                             // anti-dependencies.
                             FloatingReadNode floatingReadNode = (FloatingReadNode) currentNode;
@@ -544,7 +558,7 @@ public final class SchedulePhase extends Phase {
 
                 assert latestBlock != null : currentNode;
 
-                if (strategy == SchedulingStrategy.FINAL_SCHEDULE || strategy == SchedulingStrategy.LATEST_OUT_OF_LOOPS) {
+                if (strategy.scheduleOutOfLoops()) {
                     Block currentBlock = latestBlock;
                     while (currentBlock.getLoopDepth() > earliestBlock.getLoopDepth() && currentBlock != earliestBlock.getDominator()) {
                         Block previousCurrentBlock = currentBlock;
@@ -564,27 +578,25 @@ public final class SchedulePhase extends Phase {
                 }
             }
 
-            if (latestBlock != earliestBlock && currentNode instanceof FloatingReadNode) {
-
-                FloatingReadNode floatingReadNode = (FloatingReadNode) currentNode;
-                if (isImplicitNullOpportunity(floatingReadNode, earliestBlock) &&
-                                earliestBlock.getRelativeFrequency() < latestBlock.getRelativeFrequency() * IMPLICIT_NULL_CHECK_OPPORTUNITY_PROBABILITY_FACTOR) {
-                    latestBlock = earliestBlock;
-                }
+            if (latestBlock != earliestBlock && strategy.considerImplicitNullChecks() && isImplicitNullOpportunity(currentNode, earliestBlock) &&
+                            earliestBlock.getRelativeFrequency() < latestBlock.getRelativeFrequency() * IMPLICIT_NULL_CHECK_OPPORTUNITY_PROBABILITY_FACTOR) {
+                latestBlock = earliestBlock;
             }
 
             selectLatestBlock(currentNode, earliestBlock, latestBlock, currentNodeMap, watchListMap, constrainingLocation, latestBlockToNodesMap);
         }
 
-        private static boolean isImplicitNullOpportunity(FloatingReadNode floatingReadNode, Block block) {
-
-            Node pred = block.getBeginNode().predecessor();
-            if (pred instanceof IfNode) {
-                IfNode ifNode = (IfNode) pred;
-                if (ifNode.condition() instanceof IsNullNode) {
-                    IsNullNode isNullNode = (IsNullNode) ifNode.condition();
-                    if (getUnproxifiedUncompressed(floatingReadNode.getAddress().getBase()) == getUnproxifiedUncompressed(isNullNode.getValue())) {
-                        return true;
+        protected static boolean isImplicitNullOpportunity(Node currentNode, Block block) {
+            if (currentNode instanceof FloatingReadNode) {
+                FloatingReadNode floatingReadNode = (FloatingReadNode) currentNode;
+                Node pred = block.getBeginNode().predecessor();
+                if (pred instanceof IfNode) {
+                    IfNode ifNode = (IfNode) pred;
+                    if (ifNode.condition() instanceof IsNullNode && ifNode.getTrueSuccessorProbability() == 0.0) {
+                        IsNullNode isNullNode = (IsNullNode) ifNode.condition();
+                        if (getUnproxifiedUncompressed(floatingReadNode.getAddress().getBase()) == getUnproxifiedUncompressed(isNullNode.getValue())) {
+                            return true;
+                        }
                     }
                 }
             }

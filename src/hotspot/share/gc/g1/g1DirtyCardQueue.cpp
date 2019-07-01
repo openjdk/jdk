@@ -78,7 +78,14 @@ void G1DirtyCardQueue::handle_completed_buffer() {
 }
 
 G1DirtyCardQueueSet::G1DirtyCardQueueSet(bool notify_when_complete) :
-  PtrQueueSet(notify_when_complete),
+  PtrQueueSet(),
+  _cbl_mon(NULL),
+  _completed_buffers_head(NULL),
+  _completed_buffers_tail(NULL),
+  _n_completed_buffers(0),
+  _process_completed_buffers_threshold(ProcessCompletedBuffersThresholdNever),
+  _process_completed_buffers(false),
+  _notify_when_complete(notify_when_complete),
   _max_completed_buffers(MaxCompletedBuffersUnlimited),
   _completed_buffers_padding(0),
   _free_ids(NULL),
@@ -90,6 +97,7 @@ G1DirtyCardQueueSet::G1DirtyCardQueueSet(bool notify_when_complete) :
 }
 
 G1DirtyCardQueueSet::~G1DirtyCardQueueSet() {
+  abandon_completed_buffers();
   delete _free_ids;
 }
 
@@ -101,7 +109,9 @@ uint G1DirtyCardQueueSet::num_par_ids() {
 void G1DirtyCardQueueSet::initialize(Monitor* cbl_mon,
                                      BufferNode::Allocator* allocator,
                                      bool init_free_ids) {
-  PtrQueueSet::initialize(cbl_mon, allocator);
+  PtrQueueSet::initialize(allocator);
+  assert(_cbl_mon == NULL, "Init order issue?");
+  _cbl_mon = cbl_mon;
   if (init_free_ids) {
     _free_ids = new G1FreeIdSet(0, num_par_ids());
   }
@@ -109,6 +119,123 @@ void G1DirtyCardQueueSet::initialize(Monitor* cbl_mon,
 
 void G1DirtyCardQueueSet::handle_zero_index_for_thread(Thread* t) {
   G1ThreadLocalData::dirty_card_queue(t).handle_zero_index();
+}
+
+void G1DirtyCardQueueSet::enqueue_completed_buffer(BufferNode* cbn) {
+  MutexLocker x(_cbl_mon, Mutex::_no_safepoint_check_flag);
+  cbn->set_next(NULL);
+  if (_completed_buffers_tail == NULL) {
+    assert(_completed_buffers_head == NULL, "Well-formedness");
+    _completed_buffers_head = cbn;
+    _completed_buffers_tail = cbn;
+  } else {
+    _completed_buffers_tail->set_next(cbn);
+    _completed_buffers_tail = cbn;
+  }
+  _n_completed_buffers++;
+
+  if (!process_completed_buffers() &&
+      (_n_completed_buffers > process_completed_buffers_threshold())) {
+    set_process_completed_buffers(true);
+    if (_notify_when_complete) {
+      _cbl_mon->notify_all();
+    }
+  }
+  assert_completed_buffers_list_len_correct_locked();
+}
+
+BufferNode* G1DirtyCardQueueSet::get_completed_buffer(size_t stop_at) {
+  MutexLocker x(_cbl_mon, Mutex::_no_safepoint_check_flag);
+
+  if (_n_completed_buffers <= stop_at) {
+    return NULL;
+  }
+
+  assert(_n_completed_buffers > 0, "invariant");
+  assert(_completed_buffers_head != NULL, "invariant");
+  assert(_completed_buffers_tail != NULL, "invariant");
+
+  BufferNode* bn = _completed_buffers_head;
+  _n_completed_buffers--;
+  _completed_buffers_head = bn->next();
+  if (_completed_buffers_head == NULL) {
+    assert(_n_completed_buffers == 0, "invariant");
+    _completed_buffers_tail = NULL;
+    set_process_completed_buffers(false);
+  }
+  assert_completed_buffers_list_len_correct_locked();
+  bn->set_next(NULL);
+  return bn;
+}
+
+void G1DirtyCardQueueSet::abandon_completed_buffers() {
+  BufferNode* buffers_to_delete = NULL;
+  {
+    MutexLocker x(_cbl_mon, Mutex::_no_safepoint_check_flag);
+    buffers_to_delete = _completed_buffers_head;
+    _completed_buffers_head = NULL;
+    _completed_buffers_tail = NULL;
+    _n_completed_buffers = 0;
+    set_process_completed_buffers(false);
+  }
+  while (buffers_to_delete != NULL) {
+    BufferNode* bn = buffers_to_delete;
+    buffers_to_delete = bn->next();
+    bn->set_next(NULL);
+    deallocate_buffer(bn);
+  }
+}
+
+void G1DirtyCardQueueSet::notify_if_necessary() {
+  MutexLocker x(_cbl_mon, Mutex::_no_safepoint_check_flag);
+  if (_n_completed_buffers > process_completed_buffers_threshold()) {
+    set_process_completed_buffers(true);
+    if (_notify_when_complete)
+      _cbl_mon->notify();
+  }
+}
+
+#ifdef ASSERT
+void G1DirtyCardQueueSet::assert_completed_buffers_list_len_correct_locked() {
+  assert_lock_strong(_cbl_mon);
+  size_t n = 0;
+  for (BufferNode* bn = _completed_buffers_head; bn != NULL; bn = bn->next()) {
+    ++n;
+  }
+  assert(n == _n_completed_buffers,
+         "Completed buffer length is wrong: counted: " SIZE_FORMAT
+         ", expected: " SIZE_FORMAT, n, _n_completed_buffers);
+}
+#endif // ASSERT
+
+// Merge lists of buffers. Notify the processing threads.
+// The source queue is emptied as a result. The queues
+// must share the monitor.
+void G1DirtyCardQueueSet::merge_bufferlists(G1DirtyCardQueueSet *src) {
+  assert(_cbl_mon == src->_cbl_mon, "Should share the same lock");
+  MutexLocker x(_cbl_mon, Mutex::_no_safepoint_check_flag);
+  if (_completed_buffers_tail == NULL) {
+    assert(_completed_buffers_head == NULL, "Well-formedness");
+    _completed_buffers_head = src->_completed_buffers_head;
+    _completed_buffers_tail = src->_completed_buffers_tail;
+  } else {
+    assert(_completed_buffers_head != NULL, "Well formedness");
+    if (src->_completed_buffers_head != NULL) {
+      _completed_buffers_tail->set_next(src->_completed_buffers_head);
+      _completed_buffers_tail = src->_completed_buffers_tail;
+    }
+  }
+  _n_completed_buffers += src->_n_completed_buffers;
+
+  src->_n_completed_buffers = 0;
+  src->_completed_buffers_head = NULL;
+  src->_completed_buffers_tail = NULL;
+  src->set_process_completed_buffers(false);
+
+  assert(_completed_buffers_head == NULL && _completed_buffers_tail == NULL ||
+         _completed_buffers_head != NULL && _completed_buffers_tail != NULL,
+         "Sanity");
+  assert_completed_buffers_list_len_correct_locked();
 }
 
 bool G1DirtyCardQueueSet::apply_closure_to_buffer(G1CardTableEntryClosure* cl,

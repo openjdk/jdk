@@ -24,7 +24,7 @@ package com.sun.org.apache.bcel.internal.generic;
 /**
  * Supplies empty method bodies to be overridden by subclasses.
  *
- * @version $Id: EmptyVisitor.java 1747278 2016-06-07 17:28:43Z britter $
+ * @version $Id$
  */
 public abstract class EmptyVisitor implements Visitor {
 

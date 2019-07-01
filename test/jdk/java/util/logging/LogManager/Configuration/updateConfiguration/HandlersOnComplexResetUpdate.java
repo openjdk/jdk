@@ -522,6 +522,8 @@ public class HandlersOnComplexResetUpdate {
 
     public static class SimplePolicy extends Policy {
 
+        static final Policy DEFAULT_POLICY = Policy.getPolicy();
+
         final Permissions permissions;
         final Permissions allPermissions;
         final ThreadLocal<AtomicBoolean> allowAll; // actually: this should be in a thread locale
@@ -541,7 +543,7 @@ public class HandlersOnComplexResetUpdate {
         @Override
         public boolean implies(ProtectionDomain domain, Permission permission) {
             if (allowAll.get().get()) return allPermissions.implies(permission);
-            return permissions.implies(permission);
+            return permissions.implies(permission) || DEFAULT_POLICY.implies(domain, permission);
         }
 
         @Override

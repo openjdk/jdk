@@ -129,7 +129,6 @@ void GenMarkSweep::invoke_at_safepoint(ReferenceProcessor* rp, bool clear_all_so
   }
 
   gch->prune_scavengable_nmethods();
-  JvmtiExport::gc_epilogue();
 
   // refs processing: clean slate
   set_ref_processor(NULL);

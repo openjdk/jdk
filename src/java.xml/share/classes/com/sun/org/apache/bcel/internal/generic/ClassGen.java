@@ -1,6 +1,5 @@
 /*
- * reserved comment block
- * DO NOT REMOVE OR ALTER!
+ * Copyright (c) 2017, 2019, Oracle and/or its affiliates. All rights reserved.
  */
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
@@ -22,6 +21,7 @@ package com.sun.org.apache.bcel.internal.generic;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 
 import com.sun.org.apache.bcel.internal.Const;
 import com.sun.org.apache.bcel.internal.classfile.AccessFlags;
@@ -42,7 +42,8 @@ import com.sun.org.apache.bcel.internal.util.BCELComparator;
  * existing java class (file).
  *
  * @see JavaClass
- * @version $Id: ClassGen.java 1749603 2016-06-21 20:50:19Z ggregory $
+ * @version $Id$
+ * @LastModified: Jun 2019
  */
 public class ClassGen extends AccessFlags implements Cloneable {
 
@@ -66,21 +67,22 @@ public class ClassGen extends AccessFlags implements Cloneable {
     private static BCELComparator _cmp = new BCELComparator() {
 
         @Override
-        public boolean equals(final Object o1, final Object o2) {
+        public boolean equals( final Object o1, final Object o2 ) {
             final ClassGen THIS = (ClassGen) o1;
             final ClassGen THAT = (ClassGen) o2;
-            return THIS.getClassName().equals(THAT.getClassName());
+            return Objects.equals(THIS.getClassName(), THAT.getClassName());
         }
 
+
         @Override
-        public int hashCode(final Object o) {
+        public int hashCode( final Object o ) {
             final ClassGen THIS = (ClassGen) o;
             return THIS.getClassName().hashCode();
         }
     };
 
-    /**
-     * Convenience constructor to set up some important values initially.
+
+    /** Convenience constructor to set up some important values initially.
      *
      * @param class_name fully qualified class name
      * @param super_class_name fully qualified superclass name
@@ -110,8 +112,8 @@ public class ClassGen extends AccessFlags implements Cloneable {
         }
     }
 
-    /**
-     * Convenience constructor to set up some important values initially.
+
+    /** Convenience constructor to set up some important values initially.
      *
      * @param class_name fully qualified class name
      * @param super_class_name fully qualified superclass name
@@ -125,9 +127,9 @@ public class ClassGen extends AccessFlags implements Cloneable {
                 new ConstantPoolGen());
     }
 
+
     /**
      * Initialize with existing class.
-     *
      * @param clazz JavaClass object (e.g. read from file)
      */
     public ClassGen(final JavaClass clazz) {
@@ -168,27 +170,33 @@ public class ClassGen extends AccessFlags implements Cloneable {
     /**
      * Look for attributes representing annotations and unpack them.
      */
-    private AnnotationEntryGen[] unpackAnnotations(final Attribute[] attrs) {
+    private AnnotationEntryGen[] unpackAnnotations(final Attribute[] attrs)
+    {
         final List<AnnotationEntryGen> annotationGenObjs = new ArrayList<>();
         for (final Attribute attr : attrs) {
-            if (attr instanceof RuntimeVisibleAnnotations) {
+            if (attr instanceof RuntimeVisibleAnnotations)
+            {
                 final RuntimeVisibleAnnotations rva = (RuntimeVisibleAnnotations) attr;
                 final AnnotationEntry[] annos = rva.getAnnotationEntries();
                 for (final AnnotationEntry a : annos) {
                     annotationGenObjs.add(new AnnotationEntryGen(a,
                             getConstantPool(), false));
                 }
-            } else if (attr instanceof RuntimeInvisibleAnnotations) {
-                final RuntimeInvisibleAnnotations ria = (RuntimeInvisibleAnnotations) attr;
-                final AnnotationEntry[] annos = ria.getAnnotationEntries();
-                for (final AnnotationEntry a : annos) {
-                    annotationGenObjs.add(new AnnotationEntryGen(a,
-                            getConstantPool(), false));
-                }
             }
+            else
+                if (attr instanceof RuntimeInvisibleAnnotations)
+                {
+                    final RuntimeInvisibleAnnotations ria = (RuntimeInvisibleAnnotations) attr;
+                    final AnnotationEntry[] annos = ria.getAnnotationEntries();
+                    for (final AnnotationEntry a : annos) {
+                        annotationGenObjs.add(new AnnotationEntryGen(a,
+                                getConstantPool(), false));
+                    }
+                }
         }
         return annotationGenObjs.toArray(new AnnotationEntryGen[annotationGenObjs.size()]);
     }
+
 
     /**
      * @return the (finally) built up Java class object.
@@ -197,15 +205,15 @@ public class ClassGen extends AccessFlags implements Cloneable {
         final int[] interfaces = getInterfaces();
         final Field[] fields = getFields();
         final Method[] methods = getMethods();
-        Attribute[] attributes;
+        Attribute[] attributes = null;
         if (annotation_vec.isEmpty()) {
             attributes = getAttributes();
         } else {
             // TODO: Sometime later, trash any attributes called 'RuntimeVisibleAnnotations' or 'RuntimeInvisibleAnnotations'
-            final Attribute[] annAttributes = AnnotationEntryGen.getAnnotationAttributes(cp, getAnnotationEntries());
-            attributes = new Attribute[attribute_vec.size() + annAttributes.length];
+            final Attribute[] annAttributes  = AnnotationEntryGen.getAnnotationAttributes(cp, getAnnotationEntries());
+            attributes = new Attribute[attribute_vec.size()+annAttributes.length];
             attribute_vec.toArray(attributes);
-            System.arraycopy(annAttributes, 0, attributes, attribute_vec.size(), annAttributes.length);
+            System.arraycopy(annAttributes,0,attributes,attribute_vec.size(),annAttributes.length);
         }
         // Must be last since the above calls may still add something to it
         final ConstantPool _cp = this.cp.getFinalConstantPool();
@@ -213,23 +221,24 @@ public class ClassGen extends AccessFlags implements Cloneable {
                 super.getAccessFlags(), _cp, interfaces, fields, methods, attributes);
     }
 
+
     /**
      * Add an interface to this class, i.e., this class has to implement it.
-     *
      * @param name interface to implement (fully qualified class name)
      */
-    public final void addInterface(final String name) {
+    public void addInterface( final String name ) {
         interface_vec.add(name);
     }
 
+
     /**
      * Remove an interface from this class.
-     *
      * @param name interface to remove (fully qualified name)
      */
-    public void removeInterface(final String name) {
+    public void removeInterface( final String name ) {
         interface_vec.remove(name);
     }
+
 
     /**
      * @return major version number of class file
@@ -238,21 +247,19 @@ public class ClassGen extends AccessFlags implements Cloneable {
         return major;
     }
 
-    /**
-     * Set major version number of class file, default value is 45 (JDK 1.1)
-     *
+
+    /** Set major version number of class file, default value is 45 (JDK 1.1)
      * @param major major version number
      */
-    public void setMajor(final int major) { // TODO could be package-protected - only called by test code
+    public void setMajor( final int major ) { // TODO could be package-protected - only called by test code
         this.major = major;
     }
 
-    /**
-     * Set minor version number of class file, default value is 3 (JDK 1.1)
-     *
+
+    /** Set minor version number of class file, default value is 3 (JDK 1.1)
      * @param minor minor version number
      */
-    public void setMinor(final int minor) {  // TODO could be package-protected - only called by test code
+    public void setMinor( final int minor ) {  // TODO could be package-protected - only called by test code
         this.minor = minor;
     }
 
@@ -263,37 +270,36 @@ public class ClassGen extends AccessFlags implements Cloneable {
         return minor;
     }
 
+
     /**
      * Add an attribute to this class.
-     *
      * @param a attribute to add
      */
-    public final void addAttribute(final Attribute a) {
+    public void addAttribute( final Attribute a ) {
         attribute_vec.add(a);
     }
 
-    public final void addAnnotationEntry(final AnnotationEntryGen a) {
+    public void addAnnotationEntry(final AnnotationEntryGen a) {
         annotation_vec.add(a);
     }
 
+
     /**
      * Add a method to this class.
-     *
      * @param m method to add
      */
-    public final void addMethod(final Method m) {
+    public void addMethod( final Method m ) {
         method_vec.add(m);
     }
+
 
     /**
      * Convenience method.
      *
-     * Add an empty constructor to this class that does nothing but calling
-     * super().
-     *
+     * Add an empty constructor to this class that does nothing but calling super().
      * @param access_flags rights for constructor
      */
-    public void addEmptyConstructor(final int access_flags) {
+    public void addEmptyConstructor( final int access_flags ) {
         final InstructionList il = new InstructionList();
         il.append(InstructionConst.THIS); // Push `this'
         il.append(new INVOKESPECIAL(cp.addMethodref(super_class_name, "<init>", "()V")));
@@ -304,23 +310,24 @@ public class ClassGen extends AccessFlags implements Cloneable {
         addMethod(mg.getMethod());
     }
 
+
     /**
      * Add a field to this class.
-     *
      * @param f field to add
      */
-    public final void addField(final Field f) {
+    public void addField( final Field f ) {
         field_vec.add(f);
     }
 
-    public boolean containsField(final Field f) {
+
+    public boolean containsField( final Field f ) {
         return field_vec.contains(f);
     }
 
-    /**
-     * @return field object with given name, or null
+
+    /** @return field object with given name, or null
      */
-    public Field containsField(final String name) {
+    public Field containsField( final String name ) {
         for (final Field f : field_vec) {
             if (f.getName().equals(name)) {
                 return f;
@@ -329,10 +336,10 @@ public class ClassGen extends AccessFlags implements Cloneable {
         return null;
     }
 
-    /**
-     * @return method object with given name and signature, or null
+
+    /** @return method object with given name and signature, or null
      */
-    public Method containsMethod(final String name, final String signature) {
+    public Method containsMethod( final String name, final String signature ) {
         for (final Method m : method_vec) {
             if (m.getName().equals(name) && m.getSignature().equals(signature)) {
                 return m;
@@ -341,29 +348,29 @@ public class ClassGen extends AccessFlags implements Cloneable {
         return null;
     }
 
+
     /**
      * Remove an attribute from this class.
-     *
      * @param a attribute to remove
      */
-    public void removeAttribute(final Attribute a) {
+    public void removeAttribute( final Attribute a ) {
         attribute_vec.remove(a);
     }
 
+
     /**
      * Remove a method from this class.
-     *
      * @param m method to remove
      */
-    public void removeMethod(final Method m) {
+    public void removeMethod( final Method m ) {
         method_vec.remove(m);
     }
 
-    /**
-     * Replace given method with new one. If the old one does not exist add the
-     * new_ method to the class anyway.
+
+    /** Replace given method with new one. If the old one does not exist
+     * add the new_ method to the class anyway.
      */
-    public void replaceMethod(final Method old, final Method new_) {
+    public void replaceMethod( final Method old, final Method new_ ) {
         if (new_ == null) {
             throw new ClassGenException("Replacement method must not be null");
         }
@@ -375,11 +382,11 @@ public class ClassGen extends AccessFlags implements Cloneable {
         }
     }
 
-    /**
-     * Replace given field with new one. If the old one does not exist add the
-     * new_ field to the class anyway.
+
+    /** Replace given field with new one. If the old one does not exist
+     * add the new_ field to the class anyway.
      */
-    public void replaceField(final Field old, final Field new_) {
+    public void replaceField( final Field old, final Field new_ ) {
         if (new_ == null) {
             throw new ClassGenException("Replacement method must not be null");
         }
@@ -391,55 +398,65 @@ public class ClassGen extends AccessFlags implements Cloneable {
         }
     }
 
+
     /**
      * Remove a field to this class.
-     *
      * @param f field to remove
      */
-    public void removeField(final Field f) {
+    public void removeField( final Field f ) {
         field_vec.remove(f);
     }
+
 
     public String getClassName() {
         return class_name;
     }
 
+
     public String getSuperclassName() {
         return super_class_name;
     }
+
 
     public String getFileName() {
         return file_name;
     }
 
-    public void setClassName(final String name) {
+
+    public void setClassName( final String name ) {
         class_name = name.replace('/', '.');
         class_name_index = cp.addClass(name);
     }
 
-    public void setSuperclassName(final String name) {
+
+    public void setSuperclassName( final String name ) {
         super_class_name = name.replace('/', '.');
         superclass_name_index = cp.addClass(name);
     }
+
 
     public Method[] getMethods() {
         return method_vec.toArray(new Method[method_vec.size()]);
     }
 
-    public void setMethods(final Method[] methods) {
+
+    public void setMethods( final Method[] methods ) {
         method_vec.clear();
         for (final Method method : methods) {
             addMethod(method);
         }
     }
 
-    public void setMethodAt(final Method method, final int pos) {
+
+    public void setMethodAt( final Method method, final int pos ) {
         method_vec.set(pos, method);
     }
 
-    public Method getMethodAt(final int pos) {
+
+    public Method getMethodAt( final int pos ) {
         return method_vec.get(pos);
     }
+
 
     public String[] getInterfaceNames() {
         final int size = interface_vec.size();
@@ -447,6 +464,7 @@ public class ClassGen extends AccessFlags implements Cloneable {
         interface_vec.toArray(interfaces);
         return interfaces;
     }
+
 
     public int[] getInterfaces() {
         final int size = interface_vec.size();
@@ -457,9 +475,11 @@ public class ClassGen extends AccessFlags implements Cloneable {
         return interfaces;
     }
 
+
     public Field[] getFields() {
         return field_vec.toArray(new Field[field_vec.size()]);
     }
+
 
     public Attribute[] getAttributes() {
         return attribute_vec.toArray(new Attribute[attribute_vec.size()]);
@@ -470,29 +490,35 @@ public class ClassGen extends AccessFlags implements Cloneable {
         return annotation_vec.toArray(new AnnotationEntryGen[annotation_vec.size()]);
     }
 
+
     public ConstantPoolGen getConstantPool() {
         return cp;
     }
 
-    public void setConstantPool(final ConstantPoolGen constant_pool) {
+
+    public void setConstantPool( final ConstantPoolGen constant_pool ) {
         cp = constant_pool;
     }
 
-    public void setClassNameIndex(final int class_name_index) {
+
+    public void setClassNameIndex( final int class_name_index ) {
         this.class_name_index = class_name_index;
         class_name = cp.getConstantPool().getConstantString(class_name_index,
                 Const.CONSTANT_Class).replace('/', '.');
     }
 
-    public void setSuperclassNameIndex(final int superclass_name_index) {
+
+    public void setSuperclassNameIndex( final int superclass_name_index ) {
         this.superclass_name_index = superclass_name_index;
         super_class_name = cp.getConstantPool().getConstantString(superclass_name_index,
                 Const.CONSTANT_Class).replace('/', '.');
     }
 
+
     public int getSuperclassNameIndex() {
         return superclass_name_index;
     }
+
 
     public int getClassNameIndex() {
         return class_name_index;
@@ -500,29 +526,29 @@ public class ClassGen extends AccessFlags implements Cloneable {
 
     private List<ClassObserver> observers;
 
-    /**
-     * Add observer for this object.
+
+    /** Add observer for this object.
      */
-    public void addObserver(final ClassObserver o) {
+    public void addObserver( final ClassObserver o ) {
         if (observers == null) {
             observers = new ArrayList<>();
         }
         observers.add(o);
     }
 
-    /**
-     * Remove observer for this object.
+
+    /** Remove observer for this object.
      */
-    public void removeObserver(final ClassObserver o) {
+    public void removeObserver( final ClassObserver o ) {
         if (observers != null) {
             observers.remove(o);
         }
     }
 
-    /**
-     * Call notify() method on all observers. This method is not called
-     * automatically whenever the state has changed, but has to be called by the
-     * user after he has finished editing the object.
+
+    /** Call notify() method on all observers. This method is not called
+     * automatically whenever the state has changed, but has to be
+     * called by the user after he has finished editing the object.
      */
     public void update() {
         if (observers != null) {
@@ -531,6 +557,7 @@ public class ClassGen extends AccessFlags implements Cloneable {
             }
         }
     }
+
 
     @Override
     public Object clone() {
@@ -541,6 +568,7 @@ public class ClassGen extends AccessFlags implements Cloneable {
         }
     }
 
+
     /**
      * @return Comparison strategy object
      */
@@ -548,27 +576,31 @@ public class ClassGen extends AccessFlags implements Cloneable {
         return _cmp;
     }
 
+
     /**
      * @param comparator Comparison strategy object
      */
-    public static void setComparator(final BCELComparator comparator) {
+    public static void setComparator( final BCELComparator comparator ) {
         _cmp = comparator;
     }
 
+
     /**
-     * Return value as defined by given BCELComparator strategy. By default two
-     * ClassGen objects are said to be equal when their class names are equal.
+     * Return value as defined by given BCELComparator strategy.
+     * By default two ClassGen objects are said to be equal when
+     * their class names are equal.
      *
      * @see java.lang.Object#equals(java.lang.Object)
      */
     @Override
-    public boolean equals(final Object obj) {
+    public boolean equals( final Object obj ) {
         return _cmp.equals(this, obj);
     }
 
+
     /**
-     * Return value as defined by given BCELComparator strategy. By default
-     * return the hashcode of the class name.
+     * Return value as defined by given BCELComparator strategy.
+     * By default return the hashcode of the class name.
      *
      * @see java.lang.Object#hashCode()
      */

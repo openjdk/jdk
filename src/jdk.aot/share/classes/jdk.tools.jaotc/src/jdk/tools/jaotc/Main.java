@@ -195,7 +195,8 @@ public final class Main {
             AOTDynamicTypeStore dynoStore = new AOTDynamicTypeStore();
             AOTCompiledClass.setDynamicTypeStore(dynoStore);
 
-            // AOTBackend aotBackend = new AOTBackend(this, graalOptions, backend, new HotSpotInvokeDynamicPlugin(dynoStore));
+            // AOTBackend aotBackend = new AOTBackend(this, graalOptions, backend, new
+            // HotSpotInvokeDynamicPlugin(dynoStore));
             // Temporary workaround until JDK-8223533 is fixed.
             // Disable invokedynamic support.
             var indyPlugin = new HotSpotInvokeDynamicPlugin(dynoStore) {

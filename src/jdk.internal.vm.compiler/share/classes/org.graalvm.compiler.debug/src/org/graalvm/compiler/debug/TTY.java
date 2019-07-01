@@ -118,6 +118,7 @@ public class TTY {
 
     /**
      * The {@link PrintStream} to which all non-suppressed output from {@link TTY} is written.
+     * Substituted by {@code com.oracle.svm.graal.Target_org_graalvm_compiler_debug_TTY}.
      */
     public static final PrintStream out;
     static {

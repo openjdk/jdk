@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,7 +25,10 @@
  * @test
  * @bug 6660405
  * @modules jdk.httpserver
- * @summary HttpURLConnection returns the wrong InputStream
+ * @library /test/lib
+ * @run main/othervm B6660405
+ * @run main/othervm -Djava.net.preferIPv6Addresses=true B6660405
+ * @summary HttpURLConnection returns the wrong InputStream B6660405
  */
 
 import java.net.*;
@@ -34,6 +37,8 @@ import java.io.*;
 import com.sun.net.httpserver.*;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ExecutorService;
+import jdk.test.lib.net.URIBuilder;
+
 
 public class B6660405
 {
@@ -72,7 +77,8 @@ public class B6660405
         }
 
         @Override
-        public CacheResponse get(URI uri, String rqstMethod, Map<String, List<String>> rqstHeaders) throws IOException
+        public CacheResponse get(URI uri, String rqstMethod, Map<String, List<String>> rqstHeaders)
+                throws IOException
         {
             if (uri.getPath().equals("/redirect/index.html")) {
                 return new MyCacheResponse();
@@ -88,53 +94,61 @@ public class B6660405
 
     }
 
-    public static void main(String[] args)
+    public static void main(String[] args) throws Exception
     {
         new B6660405();
     }
 
-    public B6660405()
-    {
-        try {
-            startHttpServer();
-            doClient();
-        } catch (IOException ioe) {
-            System.err.println(ioe);
-        }
+    public B6660405() throws Exception {
+        startHttpServer();
+        doClient();
     }
 
-    void doClient() {
+    void doClient() throws Exception {
         ResponseCache.setDefault(new MyResponseCache());
-        try {
-            InetSocketAddress address = httpServer.getAddress();
+        InetSocketAddress address = httpServer.getAddress();
 
-            // GET Request
-            URL url = new URL("http://localhost:" + address.getPort() + "/test/index.html");
-            HttpURLConnection uc = (HttpURLConnection)url.openConnection();
-            int code = uc.getResponseCode();
-            System.err.println("response code = " + code);
-            int l = uc.getContentLength();
-            System.err.println("content-length = " + l);
-            InputStream in = uc.getInputStream();
-            int i = 0;
-            // Read till end of stream
-            do {
-                i = in.read();
-            } while (i != -1);
-            in.close();
-        } catch (IOException e) {
-            throw new RuntimeException("Got the wrong InputStream after checking headers");
-        } finally {
-            httpServer.stop(1);
-            executorService.shutdown();
+        // GET Request
+        URL url = URIBuilder.newBuilder()
+                .scheme("http")
+                .host(address.getAddress())
+                .port(address.getPort())
+                .path("/test/index.html")
+                .toURL();
+
+        HttpURLConnection uc = (HttpURLConnection)url.openConnection(Proxy.NO_PROXY);
+        int code = uc.getResponseCode();
+        System.err.println("response code = " + code);
+        int l = uc.getContentLength();
+        System.err.println("content-length = " + l);
+        if (l != 1024) {
+            throw new AssertionError("Bad content length: " + l);
         }
+
+        InputStream in = uc.getInputStream();
+        int i = 0;
+        // Read till end of stream
+        do {
+            l--;
+            i = in.read();
+        } while (i != -1);
+        in.close();
+        if (l != -1) {
+            throw new AssertionError("Only " + (1024 - (l + 1))
+                    + " bytes read from stream.");
+        }
+
+        httpServer.stop(1);
+        executorService.shutdown();
     }
 
     /**
      * Http Server
      */
     public void startHttpServer() throws IOException {
-        httpServer = com.sun.net.httpserver.HttpServer.create(new InetSocketAddress(0), 0);
+        InetAddress loopback = InetAddress.getLoopbackAddress();
+        InetSocketAddress address = new InetSocketAddress(loopback,0);
+        httpServer = com.sun.net.httpserver.HttpServer.create(address, 0);
 
         // create HttpServer context
         HttpContext ctx = httpServer.createContext("/test/", new MyHandler());

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2019, Oracle and/or its affiliates. All rights reserved.
  */
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
@@ -31,14 +31,14 @@ import com.sun.org.apache.bcel.internal.util.ByteSequence;
  *
  * <PRE>Stack: ... -&gt; ..., item</PRE>
  *
- * @version $Id: LDC.java 1749603 2016-06-21 20:50:19Z ggregory $
- * @LastModified: Nov 2017
+ * @version $Id$
+ * @LastModified: Jun 2019
  */
 public class LDC extends CPInstruction implements PushInstruction, ExceptionThrower {
 
     /**
-     * Empty constructor needed for the Class.newInstance() statement in
-     * Instruction.readInstruction(). Not to be used otherwise.
+     * Empty constructor needed for Instruction.readInstruction.
+     * Not to be used otherwise.
      */
     LDC() {
     }

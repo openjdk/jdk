@@ -36,6 +36,9 @@
  */
 
 import java.io.File;
+import java.nio.file.Files;
+import java.nio.file.Paths;
+import java.nio.file.StandardCopyOption;
 import jdk.test.lib.process.OutputAnalyzer;
 
 public class AppendClasspath {
@@ -53,9 +56,24 @@ public class AppendClasspath {
         "HelloMore")
       .assertNormalExit();
 
+    // PASS: 2) runtime has an non-existing jar in the -cp
+    String classDir = System.getProperty("test.classes");
+    String newFile = "non-exist.jar";
+    String nonExistPath = classDir + File.separator + newFile;
+    String classPath = appJar + File.pathSeparator + nonExistPath;
+    File nonExistJar = new File(classDir, newFile);
+    if (nonExistJar.exists()) {
+        nonExistJar.delete();
+    }
+    TestCommon.run(
+        "-cp", classPath,
+        "-Xlog:class+path=trace",
+        "Hello")
+      .assertNormalExit();
+
     final String errorMessage1 = "Unable to use shared archive";
     final String errorMessage2 = "shared class paths mismatch";
-    // FAIL: 2) runtime with classpath different from the one used in dump time
+    // FAIL: 1) runtime with classpath different from the one used in dump time
     // (runtime has an extra jar file prepended to the class path)
     TestCommon.run(
         "-Xlog:cds",
@@ -63,7 +81,7 @@ public class AppendClasspath {
         "HelloMore")
         .assertAbnormalExit(errorMessage1, errorMessage2);
 
-    // FAIL: 3) runtime with classpath part of the one used in dump time
+    // FAIL: 2) runtime with classpath part of the one used in dump time
     TestCommon.testDump(appJar + File.pathSeparator + appJar2,
                                       TestCommon.list("Hello"));
     TestCommon.run(
@@ -72,12 +90,26 @@ public class AppendClasspath {
         "Hello")
         .assertAbnormalExit(errorMessage1, errorMessage2);
 
-    // FAIL: 4) runtime with same set of jar files in the classpath but
+    // FAIL: 3) runtime with same set of jar files in the classpath but
     // with different order
     TestCommon.run(
         "-Xlog:cds",
         "-cp", appJar2 + File.pathSeparator + appJar,
         "HelloMore")
         .assertAbnormalExit(errorMessage1, errorMessage2);
-  }
+
+    // FAIL: 4) non-existing jar during dump time but jar exists during runtime
+    TestCommon.testDump(classPath, TestCommon.list("Hello"));
+
+    Files.copy(Paths.get(classDir, "hello.jar"),
+        Paths.get(classDir, newFile),
+        StandardCopyOption.REPLACE_EXISTING);
+
+    TestCommon.run(
+        "-cp", classPath,
+        "-Xlog:class+path=trace",
+        "Hello")
+        .assertAbnormalExit(errorMessage1, errorMessage2);
+
+    }
 }

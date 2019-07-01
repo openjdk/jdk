@@ -43,28 +43,28 @@ package jdk.internal.vm.compiler.collections;
 /**
  * Unmodifiable memory efficient set data structure.
  *
- * @since 1.0
+ * @since 19.0
  */
 public interface UnmodifiableEconomicSet<E> extends Iterable<E> {
 
     /**
      * Returns {@code true} if this set contains a mapping for the {@code element}.
      *
-     * @since 1.0
+     * @since 19.0
      */
     boolean contains(E element);
 
     /**
      * Returns the number of elements in this set.
      *
-     * @since 1.0
+     * @since 19.0
      */
     int size();
 
     /**
      * Returns {@code true} if this set contains no elements.
      *
-     * @since 1.0
+     * @since 19.0
      */
     boolean isEmpty();
 
@@ -76,7 +76,7 @@ public interface UnmodifiableEconomicSet<E> extends Iterable<E> {
      * @return an array containing all the elements in this set.
      * @throws UnsupportedOperationException if the length of {@code target} does not equal the size
      *             of this set.
-     * @since 1.0
+     * @since 19.0
      */
     default E[] toArray(E[] target) {
         if (target.length != size()) {

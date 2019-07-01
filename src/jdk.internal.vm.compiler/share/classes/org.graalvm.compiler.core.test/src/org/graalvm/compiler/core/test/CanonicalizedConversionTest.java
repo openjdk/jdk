@@ -41,7 +41,7 @@ import org.junit.Test;
 public class CanonicalizedConversionTest extends GraalCompilerTest {
 
     @Override
-    protected boolean checkLowTierGraph(StructuredGraph graph) {
+    protected void checkLowTierGraph(StructuredGraph graph) {
         int reinterpretCount = 0;
         int floatEqualsCount = 0;
         int addCount = 0;
@@ -59,7 +59,6 @@ public class CanonicalizedConversionTest extends GraalCompilerTest {
         Assert.assertEquals(1, reinterpretCount);
         Assert.assertEquals(1, floatEqualsCount);
         Assert.assertEquals(2, addCount);
-        return true;
     }
 
     @Test

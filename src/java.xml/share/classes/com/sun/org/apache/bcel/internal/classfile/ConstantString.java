@@ -31,7 +31,7 @@ import com.sun.org.apache.bcel.internal.Const;
  * This class is derived from the abstract {@link Constant}
  * and represents a reference to a String object.
  *
- * @version $Id: ConstantString.java 1749603 2016-06-21 20:50:19Z ggregory $
+ * @version $Id$
  * @see     Constant
  */
 public final class ConstantString extends Constant implements ConstantObject {

@@ -24,7 +24,7 @@ package com.sun.org.apache.bcel.internal.generic;
 /**
  * IMPDEP2 - Implementation dependent
  *
- * @version $Id: IMPDEP2.java 1747278 2016-06-07 17:28:43Z britter $
+ * @version $Id$
  */
 public class IMPDEP2 extends Instruction {
 

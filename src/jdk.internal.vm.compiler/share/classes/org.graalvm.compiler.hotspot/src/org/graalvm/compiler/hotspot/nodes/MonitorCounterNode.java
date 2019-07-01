@@ -26,8 +26,6 @@ package org.graalvm.compiler.hotspot.nodes;
 
 import static org.graalvm.compiler.nodeinfo.NodeSize.SIZE_1;
 
-import java.util.BitSet;
-
 import org.graalvm.compiler.core.common.type.StampFactory;
 import org.graalvm.compiler.graph.Node;
 import org.graalvm.compiler.graph.NodeClass;
@@ -56,7 +54,7 @@ public final class MonitorCounterNode extends FloatingNode implements LIRLowerab
     @Override
     public void generate(NodeLIRBuilderTool gen) {
         assert graph().getNodes().filter(MonitorCounterNode.class).count() == 1 : "monitor counters not canonicalized to single instance";
-        VirtualStackSlot counter = gen.getLIRGeneratorTool().getResult().getFrameMapBuilder().allocateStackSlots(1, new BitSet(0), null);
+        VirtualStackSlot counter = gen.getLIRGeneratorTool().getResult().getFrameMapBuilder().allocateStackSlots(1);
         Value result = gen.getLIRGeneratorTool().emitAddress(counter);
         gen.setResult(this, result);
     }

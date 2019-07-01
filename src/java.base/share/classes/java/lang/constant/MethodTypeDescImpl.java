@@ -131,8 +131,14 @@ final class MethodTypeDescImpl implements MethodTypeDesc {
     }
 
     @Override
-    public MethodType resolveConstantDesc(MethodHandles.Lookup lookup) {
-        return MethodType.fromMethodDescriptorString(descriptorString(), lookup.lookupClass().getClassLoader());
+    public MethodType resolveConstantDesc(MethodHandles.Lookup lookup) throws ReflectiveOperationException {
+        MethodType mtype = MethodType.fromMethodDescriptorString(descriptorString(), lookup.lookupClass().getClassLoader());
+        // let's check that the lookup has access to all the types in the method type
+        lookup.accessClass(mtype.returnType());
+        for (Class<?> paramType: mtype.parameterArray()) {
+            lookup.accessClass(paramType);
+        }
+        return mtype;
     }
 
     /**

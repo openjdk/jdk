@@ -33,11 +33,9 @@ ShenandoahSATBMarkQueueSet::ShenandoahSATBMarkQueueSet() :
 {}
 
 void ShenandoahSATBMarkQueueSet::initialize(ShenandoahHeap* const heap,
-                                            Monitor* cbl_mon,
                                             int process_completed_threshold,
                                             uint buffer_enqueue_threshold_percentage) {
-  SATBMarkQueueSet::initialize(cbl_mon,
-                               &_satb_mark_queue_buffer_allocator,
+  SATBMarkQueueSet::initialize(&_satb_mark_queue_buffer_allocator,
                                process_completed_threshold,
                                buffer_enqueue_threshold_percentage);
   _heap = heap;

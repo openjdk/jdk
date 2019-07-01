@@ -43,7 +43,7 @@ package jdk.internal.vm.compiler.word;
 /**
  * Represents a signed word-sized value.
  *
- * @since 1.0
+ * @since 19.0
  */
 public interface SignedWord extends ComparableWord {
 
@@ -53,7 +53,7 @@ public interface SignedWord extends ComparableWord {
      * @param val value to be added to this Signed.
      * @return {@code this + val}
      *
-     * @since 1.0
+     * @since 19.0
      */
     SignedWord add(SignedWord val);
 
@@ -63,7 +63,7 @@ public interface SignedWord extends ComparableWord {
      * @param val value to be subtracted from this Signed.
      * @return {@code this - val}
      *
-     * @since 1.0
+     * @since 19.0
      */
     SignedWord subtract(SignedWord val);
 
@@ -73,7 +73,7 @@ public interface SignedWord extends ComparableWord {
      * @param val value to be multiplied by this Signed.
      * @return {@code this * val}
      *
-     * @since 1.0
+     * @since 19.0
      */
     SignedWord multiply(SignedWord val);
 
@@ -83,7 +83,7 @@ public interface SignedWord extends ComparableWord {
      * @param val value by which this Signed is to be divided.
      * @return {@code this / val}
      *
-     * @since 1.0
+     * @since 19.0
      */
     SignedWord signedDivide(SignedWord val);
 
@@ -93,7 +93,7 @@ public interface SignedWord extends ComparableWord {
      * @param val value by which this Signed is to be divided, and the remainder computed.
      * @return {@code this % val}
      *
-     * @since 1.0
+     * @since 19.0
      */
     SignedWord signedRemainder(SignedWord val);
 
@@ -103,7 +103,7 @@ public interface SignedWord extends ComparableWord {
      * @param n shift distance, in bits.
      * @return {@code this << n}
      *
-     * @since 1.0
+     * @since 19.0
      */
     SignedWord shiftLeft(UnsignedWord n);
 
@@ -113,7 +113,7 @@ public interface SignedWord extends ComparableWord {
      * @param n shift distance, in bits.
      * @return {@code this >> n}
      *
-     * @since 1.0
+     * @since 19.0
      */
     SignedWord signedShiftRight(UnsignedWord n);
 
@@ -124,7 +124,7 @@ public interface SignedWord extends ComparableWord {
      * @param val value to be AND'ed with this Signed.
      * @return {@code this & val}
      *
-     * @since 1.0
+     * @since 19.0
      */
     SignedWord and(SignedWord val);
 
@@ -135,7 +135,7 @@ public interface SignedWord extends ComparableWord {
      * @param val value to be OR'ed with this Signed.
      * @return {@code this | val}
      *
-     * @since 1.0
+     * @since 19.0
      */
     SignedWord or(SignedWord val);
 
@@ -146,7 +146,7 @@ public interface SignedWord extends ComparableWord {
      * @param val value to be XOR'ed with this Signed.
      * @return {@code this ^ val}
      *
-     * @since 1.0
+     * @since 19.0
      */
     SignedWord xor(SignedWord val);
 
@@ -156,7 +156,7 @@ public interface SignedWord extends ComparableWord {
      *
      * @return {@code ~this}
      *
-     * @since 1.0
+     * @since 19.0
      */
     SignedWord not();
 
@@ -166,7 +166,7 @@ public interface SignedWord extends ComparableWord {
      * @param val value to which this Signed is to be compared.
      * @return {@code this == val}
      *
-     * @since 1.0
+     * @since 19.0
      */
     boolean equal(SignedWord val);
 
@@ -176,7 +176,7 @@ public interface SignedWord extends ComparableWord {
      * @param val value to which this Signed is to be compared.
      * @return {@code this != val}
      *
-     * @since 1.0
+     * @since 19.0
      */
     boolean notEqual(SignedWord val);
 
@@ -186,7 +186,7 @@ public interface SignedWord extends ComparableWord {
      * @param val value to which this Signed is to be compared.
      * @return {@code this < val}
      *
-     * @since 1.0
+     * @since 19.0
      */
     boolean lessThan(SignedWord val);
 
@@ -196,7 +196,7 @@ public interface SignedWord extends ComparableWord {
      * @param val value to which this Signed is to be compared.
      * @return {@code this <= val}
      *
-     * @since 1.0
+     * @since 19.0
      */
     boolean lessOrEqual(SignedWord val);
 
@@ -206,7 +206,7 @@ public interface SignedWord extends ComparableWord {
      * @param val value to which this Signed is to be compared.
      * @return {@code this > val}
      *
-     * @since 1.0
+     * @since 19.0
      */
     boolean greaterThan(SignedWord val);
 
@@ -216,7 +216,7 @@ public interface SignedWord extends ComparableWord {
      * @param val value to which this Signed is to be compared.
      * @return {@code this >= val}
      *
-     * @since 1.0
+     * @since 19.0
      */
     boolean greaterOrEqual(SignedWord val);
 
@@ -226,7 +226,7 @@ public interface SignedWord extends ComparableWord {
      * @param val value to be added to this Signed.
      * @return {@code this + val}
      *
-     * @since 1.0
+     * @since 19.0
      */
     SignedWord add(int val);
 
@@ -236,7 +236,7 @@ public interface SignedWord extends ComparableWord {
      * @param val value to be subtracted from this Signed.
      * @return {@code this - val}
      *
-     * @since 1.0
+     * @since 19.0
      */
     SignedWord subtract(int val);
 
@@ -246,7 +246,7 @@ public interface SignedWord extends ComparableWord {
      * @param val value to be multiplied by this Signed.
      * @return {@code this * val}
      *
-     * @since 1.0
+     * @since 19.0
      */
     SignedWord multiply(int val);
 
@@ -256,7 +256,7 @@ public interface SignedWord extends ComparableWord {
      * @param val value by which this Signed is to be divided.
      * @return {@code this / val}
      *
-     * @since 1.0
+     * @since 19.0
      */
     SignedWord signedDivide(int val);
 
@@ -266,7 +266,7 @@ public interface SignedWord extends ComparableWord {
      * @param val value by which this Signed is to be divided, and the remainder computed.
      * @return {@code this % val}
      *
-     * @since 1.0
+     * @since 19.0
      */
     SignedWord signedRemainder(int val);
 
@@ -276,7 +276,7 @@ public interface SignedWord extends ComparableWord {
      * @param n shift distance, in bits.
      * @return {@code this << n}
      *
-     * @since 1.0
+     * @since 19.0
      */
     SignedWord shiftLeft(int n);
 
@@ -286,7 +286,7 @@ public interface SignedWord extends ComparableWord {
      * @param n shift distance, in bits.
      * @return {@code this >> n}
      *
-     * @since 1.0
+     * @since 19.0
      */
     SignedWord signedShiftRight(int n);
 
@@ -297,7 +297,7 @@ public interface SignedWord extends ComparableWord {
      * @param val value to be AND'ed with this Signed.
      * @return {@code this & val}
      *
-     * @since 1.0
+     * @since 19.0
      */
     SignedWord and(int val);
 
@@ -308,7 +308,7 @@ public interface SignedWord extends ComparableWord {
      * @param val value to be OR'ed with this Signed.
      * @return {@code this | val}
      *
-     * @since 1.0
+     * @since 19.0
      */
     SignedWord or(int val);
 
@@ -319,7 +319,7 @@ public interface SignedWord extends ComparableWord {
      * @param val value to be XOR'ed with this Signed.
      * @return {@code this ^ val}
      *
-     * @since 1.0
+     * @since 19.0
      */
     SignedWord xor(int val);
 
@@ -329,7 +329,7 @@ public interface SignedWord extends ComparableWord {
      * @param val value to which this Signed is to be compared.
      * @return {@code this == val}
      *
-     * @since 1.0
+     * @since 19.0
      */
     boolean equal(int val);
 
@@ -339,7 +339,7 @@ public interface SignedWord extends ComparableWord {
      * @param val value to which this Signed is to be compared.
      * @return {@code this != val}
      *
-     * @since 1.0
+     * @since 19.0
      */
     boolean notEqual(int val);
 
@@ -349,7 +349,7 @@ public interface SignedWord extends ComparableWord {
      * @param val value to which this Signed is to be compared.
      * @return {@code this < val}
      *
-     * @since 1.0
+     * @since 19.0
      */
     boolean lessThan(int val);
 
@@ -359,7 +359,7 @@ public interface SignedWord extends ComparableWord {
      * @param val value to which this Signed is to be compared.
      * @return {@code this <= val}
      *
-     * @since 1.0
+     * @since 19.0
      */
     boolean lessOrEqual(int val);
 
@@ -369,7 +369,7 @@ public interface SignedWord extends ComparableWord {
      * @param val value to which this Signed is to be compared.
      * @return {@code this > val}
      *
-     * @since 1.0
+     * @since 19.0
      */
     boolean greaterThan(int val);
 
@@ -379,7 +379,7 @@ public interface SignedWord extends ComparableWord {
      * @param val value to which this Signed is to be compared.
      * @return {@code this >= val}
      *
-     * @since 1.0
+     * @since 19.0
      */
     boolean greaterOrEqual(int val);
 }

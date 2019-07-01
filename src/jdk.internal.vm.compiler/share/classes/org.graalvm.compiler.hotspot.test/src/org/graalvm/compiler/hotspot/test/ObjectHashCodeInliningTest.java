@@ -42,7 +42,7 @@ public class ObjectHashCodeInliningTest extends GraalCompilerTest {
     @Test
     public void testInstallCodeInvalidation() {
         for (int i = 0; i < 100000; i++) {
-            getHash(i % 1000 == 0 ? new Object() : "");
+            getHash(i % 10 == 0 ? new Object() : "");
         }
 
         ResolvedJavaMethod method = getResolvedJavaMethod("getHash");
@@ -74,8 +74,9 @@ public class ObjectHashCodeInliningTest extends GraalCompilerTest {
     }
 
     @Override
-    protected boolean checkHighTierGraph(StructuredGraph graph) {
-        return containsForeignCallToIdentityHashCode(graph) && containsReadStringHash(graph);
+    protected void checkHighTierGraph(StructuredGraph graph) {
+        assert containsForeignCallToIdentityHashCode(graph) : "expected a foreign call to identity_hashcode";
+        assert containsReadStringHash(graph) : "expected a read from String.hash";
     }
 
 }

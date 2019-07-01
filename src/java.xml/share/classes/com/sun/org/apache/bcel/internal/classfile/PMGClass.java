@@ -31,7 +31,7 @@ import com.sun.org.apache.bcel.internal.Const;
  * This class is derived from <em>Attribute</em> and represents a reference
  * to a PMG attribute.
  *
- * @version $Id: PMGClass.java 1749603 2016-06-21 20:50:19Z ggregory $
+ * @version $Id$
  * @see     Attribute
  */
 public final class PMGClass extends Attribute {

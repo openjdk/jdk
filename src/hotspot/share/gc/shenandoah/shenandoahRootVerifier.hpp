@@ -52,6 +52,8 @@ public:
   // Used to seed ShenandoahVerifier, do not honor root type filter
   void roots_do(OopClosure* cl);
   void strong_roots_do(OopClosure* cl);
+
+  static RootTypes combine(RootTypes t1, RootTypes t2);
 private:
   bool verify(RootTypes type) const;
 };

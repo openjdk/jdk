@@ -211,20 +211,13 @@ final class CompilerToVM {
     native HotSpotResolvedJavaType lookupClass(Class<?> javaClass);
 
     /**
-     * Resolves the entry at index {@code cpi} in {@code constantPool} to an object.
-     *
-     * The behavior of this method is undefined if {@code cpi} does not denote one of the following
-     * entry types: {@code JVM_CONSTANT_MethodHandle}, {@code JVM_CONSTANT_MethodHandleInError},
-     * {@code JVM_CONSTANT_MethodType} and {@code JVM_CONSTANT_MethodTypeInError}.
-     */
-    native HotSpotObjectConstantImpl resolveConstantInPool(HotSpotConstantPool constantPool, int cpi);
-
-    /**
      * Resolves the entry at index {@code cpi} in {@code constantPool} to an object, looking in the
      * constant pool cache first.
      *
-     * The behavior of this method is undefined if {@code cpi} does not denote a
-     * {@code JVM_CONSTANT_String} entry.
+     * The behavior of this method is undefined if {@code cpi} does not denote one of the following
+     * entry types: {@code JVM_CONSTANT_String}, {@code JVM_CONSTANT_MethodHandle},
+     * {@code JVM_CONSTANT_MethodHandleInError}, {@code JVM_CONSTANT_MethodType} and
+     * {@code JVM_CONSTANT_MethodTypeInError}.
      */
     native HotSpotObjectConstantImpl resolvePossiblyCachedConstantInPool(HotSpotConstantPool constantPool, int cpi);
 
@@ -771,6 +764,12 @@ final class CompilerToVM {
     native HotSpotResolvedJavaType getComponentType(HotSpotResolvedObjectTypeImpl type);
 
     /**
+     * Get the array class for {@code type}. This can't be done symbolically since anonymous types
+     * can't be looked up by name.
+     */
+    native HotSpotResolvedObjectTypeImpl getArrayType(HotSpotResolvedJavaType type);
+
+    /**
      * Forces initialization of {@code type}.
      */
     native void ensureInitialized(HotSpotResolvedObjectTypeImpl type);
@@ -978,4 +977,9 @@ final class CompilerToVM {
      * @see HotSpotJVMCIRuntime#detachCurrentThread()
      */
     native void detachCurrentThread();
+
+    /**
+     * @see HotSpotJVMCIRuntime#exitHotSpot(int)
+     */
+    native void callSystemExit(int status);
 }

@@ -30,13 +30,13 @@ import com.sun.org.apache.bcel.internal.util.ByteSequence;
  *
  * <PRE>Stack: ... -&gt; ..., item.word1, item.word2</PRE>
  *
- * @version $Id: LDC_W.java 1747278 2016-06-07 17:28:43Z britter $
+ * @version $Id$
  */
 public class LDC_W extends LDC {
 
     /**
-     * Empty constructor needed for the Class.newInstance() statement in
-     * Instruction.readInstruction(). Not to be used otherwise.
+     * Empty constructor needed for Instruction.readInstruction.
+     * Not to be used otherwise.
      */
     LDC_W() {
     }

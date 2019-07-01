@@ -24,13 +24,14 @@
 
 package org.graalvm.compiler.phases.tiers;
 
+import org.graalvm.compiler.nodes.spi.CoreProvidersDelegate;
 import org.graalvm.compiler.phases.OptimisticOptimizations;
 import org.graalvm.compiler.phases.util.Providers;
 
 import jdk.vm.ci.code.TargetDescription;
 import jdk.vm.ci.meta.ProfilingInfo;
 
-public class MidTierContext extends PhaseContext {
+public class MidTierContext extends CoreProvidersDelegate {
 
     private final TargetProvider target;
     private final OptimisticOptimizations optimisticOpts;

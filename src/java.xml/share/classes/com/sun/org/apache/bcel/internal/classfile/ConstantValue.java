@@ -32,7 +32,7 @@ import com.sun.org.apache.bcel.internal.Const;
  * value, i.e., a default value for initializing a class field.
  * This class is instantiated by the <em>Attribute.readAttribute()</em> method.
  *
- * @version $Id: ConstantValue.java 1749603 2016-06-21 20:50:19Z ggregory $
+ * @version $Id$
  * @see     Attribute
  */
 public final class ConstantValue extends Attribute {

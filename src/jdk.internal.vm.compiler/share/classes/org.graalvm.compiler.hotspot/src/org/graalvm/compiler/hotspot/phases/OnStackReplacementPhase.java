@@ -282,7 +282,7 @@ public class OnStackReplacementPhase extends Phase {
         NodeIterable<EntryMarkerNode> osrNodes = graph.getNodes(EntryMarkerNode.TYPE);
         EntryMarkerNode osr = osrNodes.first();
         if (osr == null) {
-            throw new PermanentBailoutException("No OnStackReplacementNode generated");
+            throw new GraalError("No OnStackReplacementNode generated");
         }
         if (osrNodes.count() > 1) {
             throw new GraalError("Multiple OnStackReplacementNodes generated");

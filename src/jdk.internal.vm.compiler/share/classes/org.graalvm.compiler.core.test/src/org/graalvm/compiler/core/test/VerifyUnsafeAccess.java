@@ -33,8 +33,8 @@ import org.graalvm.compiler.core.common.type.TypeReference;
 import org.graalvm.compiler.nodes.StructuredGraph;
 import org.graalvm.compiler.nodes.java.InstanceOfNode;
 import org.graalvm.compiler.nodes.java.MethodCallTargetNode;
+import org.graalvm.compiler.nodes.spi.CoreProviders;
 import org.graalvm.compiler.phases.VerifyPhase;
-import org.graalvm.compiler.phases.tiers.PhaseContext;
 import org.graalvm.compiler.serviceprovider.GraalUnsafeAccess;
 
 import jdk.vm.ci.meta.MetaAccessProvider;
@@ -46,10 +46,10 @@ import sun.misc.Unsafe;
  * Checks that the {@link Unsafe} singleton instance is only accessed via well known classes such as
  * {@link GraalUnsafeAccess}.
  */
-public class VerifyUnsafeAccess extends VerifyPhase<PhaseContext> {
+public class VerifyUnsafeAccess extends VerifyPhase<CoreProviders> {
 
     @Override
-    protected void verify(StructuredGraph graph, PhaseContext context) {
+    protected void verify(StructuredGraph graph, CoreProviders context) {
         MetaAccessProvider metaAccess = context.getMetaAccess();
         final ResolvedJavaType unsafeType = metaAccess.lookupJavaType(Unsafe.class);
 

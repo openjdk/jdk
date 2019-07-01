@@ -317,7 +317,15 @@ int LIR_Assembler::check_icache() {
 }
 
 void LIR_Assembler::clinit_barrier(ciMethod* method) {
-  ShouldNotReachHere(); // not implemented
+  assert(VM_Version::supports_fast_class_init_checks(), "sanity");
+  assert(!method->holder()->is_not_initialized(), "initialization should have been started");
+
+  Label L_skip_barrier;
+
+  __ mov_metadata(rscratch2, method->holder()->constant_encoding());
+  __ clinit_barrier(rscratch2, rscratch1, &L_skip_barrier /*L_fast_path*/);
+  __ far_jump(RuntimeAddress(SharedRuntime::get_handle_wrong_method_stub()));
+  __ bind(L_skip_barrier);
 }
 
 void LIR_Assembler::jobject2reg(jobject o, Register reg) {

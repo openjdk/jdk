@@ -296,35 +296,16 @@ public:
 class PtrQueueSet {
   BufferNode::Allocator* _allocator;
 
-  Monitor* _cbl_mon;  // Protects the fields below.
-  BufferNode* _completed_buffers_head;
-  BufferNode* _completed_buffers_tail;
-  volatile size_t _n_completed_buffers;
-
-  size_t _process_completed_buffers_threshold;
-  volatile bool _process_completed_buffers;
-
-  // If true, notify_all on _cbl_mon when the threshold is reached.
-  bool _notify_when_complete;
-
-  void assert_completed_buffers_list_len_correct_locked() NOT_DEBUG_RETURN;
-
 protected:
   bool _all_active;
 
   // Create an empty ptr queue set.
-  PtrQueueSet(bool notify_when_complete = false);
+  PtrQueueSet();
   ~PtrQueueSet();
 
   // Because of init-order concerns, we can't pass these as constructor
   // arguments.
-  void initialize(Monitor* cbl_mon, BufferNode::Allocator* allocator);
-
-  // For (unlocked!) iteration over the completed buffers.
-  BufferNode* completed_buffers_head() const { return _completed_buffers_head; }
-
-  // Deallocate all of the completed buffers.
-  void abandon_completed_buffers();
+  void initialize(BufferNode::Allocator* allocator);
 
 public:
 
@@ -339,38 +320,13 @@ public:
   // is ready to be processed by the collector.  It need not be full.
 
   // Adds node to the completed buffer list.
-  void enqueue_completed_buffer(BufferNode* node);
-
-  // If the number of completed buffers is > stop_at, then remove and
-  // return a completed buffer from the list.  Otherwise, return NULL.
-  BufferNode* get_completed_buffer(size_t stop_at = 0);
-
-  bool process_completed_buffers() { return _process_completed_buffers; }
-  void set_process_completed_buffers(bool x) { _process_completed_buffers = x; }
+  virtual void enqueue_completed_buffer(BufferNode* node) = 0;
 
   bool is_active() { return _all_active; }
 
   size_t buffer_size() const {
     return _allocator->buffer_size();
   }
-
-  // Get/Set the number of completed buffers that triggers log processing.
-  // Log processing should be done when the number of buffers exceeds the
-  // threshold.
-  void set_process_completed_buffers_threshold(size_t sz) {
-    _process_completed_buffers_threshold = sz;
-  }
-  size_t process_completed_buffers_threshold() const {
-    return _process_completed_buffers_threshold;
-  }
-  static const size_t ProcessCompletedBuffersThresholdNever = ~size_t(0);
-
-  size_t completed_buffers_num() const { return _n_completed_buffers; }
-
-  void merge_bufferlists(PtrQueueSet* src);
-
-  // Notify the consumer if the number of buffers crossed the threshold
-  void notify_if_necessary();
 };
 
 #endif // SHARE_GC_SHARED_PTRQUEUE_HPP

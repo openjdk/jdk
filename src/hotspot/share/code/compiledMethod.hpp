@@ -214,7 +214,6 @@ public:
   };
 
   virtual bool  is_in_use() const = 0;
-  virtual bool  is_not_installed() const = 0;
   virtual int   comp_level() const = 0;
   virtual int   compile_id() const = 0;
 

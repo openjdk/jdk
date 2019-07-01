@@ -33,7 +33,7 @@ import com.sun.org.apache.bcel.internal.Const;
  * should appear per classfile.  The intention of this class is that it is
  * instantiated from the <em>Attribute.readAttribute()</em> method.
  *
- * @version $Id: SourceFile.java 1749603 2016-06-21 20:50:19Z ggregory $
+ * @version $Id$
  * @see     Attribute
  */
 public final class SourceFile extends Attribute {

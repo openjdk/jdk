@@ -25,7 +25,7 @@ package com.sun.org.apache.bcel.internal.generic;
  * I2F - Convert int to float
  * <PRE>Stack: ..., value -&gt; ..., result</PRE>
  *
- * @version $Id: I2F.java 1747278 2016-06-07 17:28:43Z britter $
+ * @version $Id$
  */
 public class I2F extends ConversionInstruction {
 

@@ -62,10 +62,8 @@ FIND_TESTS_CACHE_FILE := $(MAKESUPPORT_OUTPUTDIR)/find-tests.gmk
 
 # If this file is deemed outdated, it will automatically get regenerated
 # by this rule before being included below.
-#
-# When calling TestMake.gmk, override the log level to avoid any kind of debug
-# output being captured into the generated makefile.
-$(FIND_TESTS_CACHE_FILE): $(JTREG_ROOT_FILES) $(JTREG_GROUP_FILES)
+$(FIND_TESTS_CACHE_FILE): $(JTREG_ROOT_FILES) $(JTREG_GROUP_FILES) \
+    $(TOPDIR)/test/make/TestMake.gmk
 	$(call MakeTargetDir)
 	( $(foreach root, $(JTREG_TESTROOTS), \
 	    $(PRINTF) "\n$(root)_JTREG_TEST_GROUPS := " ; \
@@ -73,10 +71,11 @@ $(FIND_TESTS_CACHE_FILE): $(JTREG_ROOT_FILES) $(JTREG_GROUP_FILES)
 	      $($(root)_JTREG_GROUP_FILES) \
 	      | $(SORT) -u | $(TR) '\n' ' ' ; \
 	  ) \
-	  $(PRINTF) "\nMAKE_TEST_TARGETS := " ; \
-	  $(MAKE) -s --no-print-directory $(MAKE_ARGS) LOG_LEVEL=warn \
-	      SPEC=$(SPEC) -f $(TOPDIR)/test/make/TestMake.gmk print-targets \
 	) > $@
+	$(PRINTF) "\nMAKE_TEST_TARGETS := " >> $@
+	$(MAKE) -s --no-print-directory $(MAKE_ARGS) \
+	    SPEC=$(SPEC) -f $(TOPDIR)/test/make/TestMake.gmk print-targets \
+	    TARGETS_FILE=$@
 
 -include $(FIND_TESTS_CACHE_FILE)
 

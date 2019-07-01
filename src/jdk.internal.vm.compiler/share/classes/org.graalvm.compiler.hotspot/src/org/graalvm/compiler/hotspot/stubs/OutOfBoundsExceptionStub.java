@@ -48,7 +48,7 @@ public class OutOfBoundsExceptionStub extends CreateExceptionStub {
     }
 
     // JDK-8201593: Print array length in ArrayIndexOutOfBoundsException.
-    private static final boolean PRINT_LENGTH_IN_EXCEPTION = JavaVersionUtil.JAVA_SPECIFICATION_VERSION >= 11;
+    private static final boolean PRINT_LENGTH_IN_EXCEPTION = JavaVersionUtil.JAVA_SPEC >= 11;
     private static final int MAX_INT_STRING_SIZE = Integer.toString(Integer.MIN_VALUE).length();
     private static final String STR_INDEX = "Index ";
     private static final String STR_OUTOFBOUNDSFORLENGTH = " out of bounds for length ";

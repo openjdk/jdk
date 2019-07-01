@@ -391,6 +391,10 @@ public class HTTPTestServer extends HTTPTest {
         return serverImpl.getAddress();
     }
 
+    public InetSocketAddress getProxyAddress() {
+        return serverImpl.getAddress();
+    }
+
     public void stop() {
         serverImpl.stop(0);
         if (redirect != null) {
@@ -1019,7 +1023,7 @@ public class HTTPTestServer extends HTTPTest {
         }
 
         @Override
-        public InetSocketAddress getAddress() {
+        public InetSocketAddress getProxyAddress() {
             return new InetSocketAddress(ss.getInetAddress(), ss.getLocalPort());
         }
 
@@ -1047,7 +1051,7 @@ public class HTTPTestServer extends HTTPTest {
             Socket clientConnection = null;
             try {
                 while (true) {
-                    System.out.println("Tunnel: Waiting for client");
+                    System.out.println("Tunnel: Waiting for client at: " + ss);
                     Socket previous = clientConnection;
                     try {
                         clientConnection = ss.accept();

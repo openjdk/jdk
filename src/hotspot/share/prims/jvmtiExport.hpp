@@ -388,7 +388,6 @@ class JvmtiExport : public AllStatic {
 
   static void oops_do(OopClosure* f) NOT_JVMTI_RETURN;
   static void weak_oops_do(BoolObjectClosure* b, OopClosure* f) NOT_JVMTI_RETURN;
-  static void gc_epilogue() NOT_JVMTI_RETURN;
 
   static void transition_pending_onload_raw_monitors() NOT_JVMTI_RETURN;
 

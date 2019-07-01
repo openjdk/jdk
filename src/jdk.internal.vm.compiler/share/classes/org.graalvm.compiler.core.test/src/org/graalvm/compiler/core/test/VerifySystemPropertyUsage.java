@@ -29,8 +29,8 @@ import java.util.regex.Pattern;
 
 import org.graalvm.compiler.nodes.StructuredGraph;
 import org.graalvm.compiler.nodes.java.MethodCallTargetNode;
+import org.graalvm.compiler.nodes.spi.CoreProviders;
 import org.graalvm.compiler.phases.VerifyPhase;
-import org.graalvm.compiler.phases.tiers.PhaseContext;
 
 import jdk.vm.ci.meta.MetaAccessProvider;
 import jdk.vm.ci.meta.ResolvedJavaMethod;
@@ -43,7 +43,7 @@ import jdk.vm.ci.services.Services;
  * can be modified by application code so {@link Services#getSavedProperties()} should be used
  * instead.
  */
-public class VerifySystemPropertyUsage extends VerifyPhase<PhaseContext> {
+public class VerifySystemPropertyUsage extends VerifyPhase<CoreProviders> {
 
     static final Class<?>[] BOXES = {Integer.class, Long.class, Boolean.class, Float.class, Double.class};
     static final int JVMCI_VERSION_MAJOR;
@@ -65,7 +65,7 @@ public class VerifySystemPropertyUsage extends VerifyPhase<PhaseContext> {
     }
 
     @Override
-    protected void verify(StructuredGraph graph, PhaseContext context) {
+    protected void verify(StructuredGraph graph, CoreProviders context) {
         MetaAccessProvider metaAccess = context.getMetaAccess();
         final ResolvedJavaType systemType = metaAccess.lookupJavaType(System.class);
         final ResolvedJavaType[] boxTypes = new ResolvedJavaType[BOXES.length];

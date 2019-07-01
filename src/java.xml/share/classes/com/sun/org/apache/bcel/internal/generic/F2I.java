@@ -25,7 +25,7 @@ package com.sun.org.apache.bcel.internal.generic;
  * F2I - Convert float to int
  * <PRE>Stack: ..., value -&gt; ..., result</PRE>
  *
- * @version $Id: F2I.java 1747278 2016-06-07 17:28:43Z britter $
+ * @version $Id$
  */
 public class F2I extends ConversionInstruction {
 

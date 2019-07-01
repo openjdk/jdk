@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -381,7 +381,8 @@ public class FloatingReadPhase extends Phase {
                 assert accessNode.getNullCheck() == false;
                 MemoryNode lastLocationAccess = state.getLastLocationAccess(locationIdentity);
                 try (DebugCloseable position = accessNode.withNodeSourcePosition()) {
-                    FloatingAccessNode floatingNode = accessNode.asFloatingNode(lastLocationAccess);
+                    FloatingAccessNode floatingNode = accessNode.asFloatingNode();
+                    assert floatingNode.getLastLocationAccess() == lastLocationAccess;
                     graph.replaceFixedWithFloating(accessNode, floatingNode);
                 }
             }

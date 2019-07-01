@@ -250,28 +250,15 @@ size_t BufferNode::Allocator::reduce_free_list(size_t remove_goal) {
   return removed;
 }
 
-PtrQueueSet::PtrQueueSet(bool notify_when_complete) :
+PtrQueueSet::PtrQueueSet() :
   _allocator(NULL),
-  _cbl_mon(NULL),
-  _completed_buffers_head(NULL),
-  _completed_buffers_tail(NULL),
-  _n_completed_buffers(0),
-  _process_completed_buffers_threshold(ProcessCompletedBuffersThresholdNever),
-  _process_completed_buffers(false),
-  _notify_when_complete(notify_when_complete),
   _all_active(false)
 {}
 
-PtrQueueSet::~PtrQueueSet() {
-  // There are presently only a couple (derived) instances ever
-  // created, and they are permanent, so no harm currently done by
-  // doing nothing here.
-}
+PtrQueueSet::~PtrQueueSet() {}
 
-void PtrQueueSet::initialize(Monitor* cbl_mon,
-                             BufferNode::Allocator* allocator) {
-  assert(cbl_mon != NULL && allocator != NULL, "Init order issue?");
-  _cbl_mon = cbl_mon;
+void PtrQueueSet::initialize(BufferNode::Allocator* allocator) {
+  assert(allocator != NULL, "Init order issue?");
   _allocator = allocator;
 }
 
@@ -284,121 +271,3 @@ void PtrQueueSet::deallocate_buffer(BufferNode* node) {
   _allocator->release(node);
 }
 
-void PtrQueueSet::enqueue_completed_buffer(BufferNode* cbn) {
-  MutexLocker x(_cbl_mon, Mutex::_no_safepoint_check_flag);
-  cbn->set_next(NULL);
-  if (_completed_buffers_tail == NULL) {
-    assert(_completed_buffers_head == NULL, "Well-formedness");
-    _completed_buffers_head = cbn;
-    _completed_buffers_tail = cbn;
-  } else {
-    _completed_buffers_tail->set_next(cbn);
-    _completed_buffers_tail = cbn;
-  }
-  _n_completed_buffers++;
-
-  if (!_process_completed_buffers &&
-      (_n_completed_buffers > _process_completed_buffers_threshold)) {
-    _process_completed_buffers = true;
-    if (_notify_when_complete) {
-      _cbl_mon->notify();
-    }
-  }
-  assert_completed_buffers_list_len_correct_locked();
-}
-
-BufferNode* PtrQueueSet::get_completed_buffer(size_t stop_at) {
-  MutexLocker x(_cbl_mon, Mutex::_no_safepoint_check_flag);
-
-  if (_n_completed_buffers <= stop_at) {
-    return NULL;
-  }
-
-  assert(_n_completed_buffers > 0, "invariant");
-  assert(_completed_buffers_head != NULL, "invariant");
-  assert(_completed_buffers_tail != NULL, "invariant");
-
-  BufferNode* bn = _completed_buffers_head;
-  _n_completed_buffers--;
-  _completed_buffers_head = bn->next();
-  if (_completed_buffers_head == NULL) {
-    assert(_n_completed_buffers == 0, "invariant");
-    _completed_buffers_tail = NULL;
-    _process_completed_buffers = false;
-  }
-  assert_completed_buffers_list_len_correct_locked();
-  bn->set_next(NULL);
-  return bn;
-}
-
-void PtrQueueSet::abandon_completed_buffers() {
-  BufferNode* buffers_to_delete = NULL;
-  {
-    MutexLocker x(_cbl_mon, Mutex::_no_safepoint_check_flag);
-    buffers_to_delete = _completed_buffers_head;
-    _completed_buffers_head = NULL;
-    _completed_buffers_tail = NULL;
-    _n_completed_buffers = 0;
-    _process_completed_buffers = false;
-  }
-  while (buffers_to_delete != NULL) {
-    BufferNode* bn = buffers_to_delete;
-    buffers_to_delete = bn->next();
-    bn->set_next(NULL);
-    deallocate_buffer(bn);
-  }
-}
-
-#ifdef ASSERT
-
-void PtrQueueSet::assert_completed_buffers_list_len_correct_locked() {
-  assert_lock_strong(_cbl_mon);
-  size_t n = 0;
-  for (BufferNode* bn = _completed_buffers_head; bn != NULL; bn = bn->next()) {
-    ++n;
-  }
-  assert(n == _n_completed_buffers,
-         "Completed buffer length is wrong: counted: " SIZE_FORMAT
-         ", expected: " SIZE_FORMAT, n, _n_completed_buffers);
-}
-
-#endif // ASSERT
-
-// Merge lists of buffers. Notify the processing threads.
-// The source queue is emptied as a result. The queues
-// must share the monitor.
-void PtrQueueSet::merge_bufferlists(PtrQueueSet *src) {
-  assert(_cbl_mon == src->_cbl_mon, "Should share the same lock");
-  MutexLocker x(_cbl_mon, Mutex::_no_safepoint_check_flag);
-  if (_completed_buffers_tail == NULL) {
-    assert(_completed_buffers_head == NULL, "Well-formedness");
-    _completed_buffers_head = src->_completed_buffers_head;
-    _completed_buffers_tail = src->_completed_buffers_tail;
-  } else {
-    assert(_completed_buffers_head != NULL, "Well formedness");
-    if (src->_completed_buffers_head != NULL) {
-      _completed_buffers_tail->set_next(src->_completed_buffers_head);
-      _completed_buffers_tail = src->_completed_buffers_tail;
-    }
-  }
-  _n_completed_buffers += src->_n_completed_buffers;
-
-  src->_n_completed_buffers = 0;
-  src->_completed_buffers_head = NULL;
-  src->_completed_buffers_tail = NULL;
-  src->_process_completed_buffers = false;
-
-  assert(_completed_buffers_head == NULL && _completed_buffers_tail == NULL ||
-         _completed_buffers_head != NULL && _completed_buffers_tail != NULL,
-         "Sanity");
-  assert_completed_buffers_list_len_correct_locked();
-}
-
-void PtrQueueSet::notify_if_necessary() {
-  MutexLocker x(_cbl_mon, Mutex::_no_safepoint_check_flag);
-  if (_n_completed_buffers > _process_completed_buffers_threshold) {
-    _process_completed_buffers = true;
-    if (_notify_when_complete)
-      _cbl_mon->notify();
-  }
-}

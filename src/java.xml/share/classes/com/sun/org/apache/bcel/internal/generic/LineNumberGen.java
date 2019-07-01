@@ -27,7 +27,7 @@ import com.sun.org.apache.bcel.internal.classfile.LineNumber;
  * This class represents a line number within a method, i.e., give an instruction
  * a line number corresponding to the source code line.
  *
- * @version $Id: LineNumberGen.java 1749603 2016-06-21 20:50:19Z ggregory $
+ * @version $Id$
  * @see     LineNumber
  * @see     MethodGen
  */

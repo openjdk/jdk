@@ -25,13 +25,13 @@ package com.sun.org.apache.bcel.internal.generic;
  * FLOAD - Load float from local variable
  * <PRE>Stack ... -&gt; ..., result</PRE>
  *
- * @version $Id: FLOAD.java 1747278 2016-06-07 17:28:43Z britter $
+ * @version $Id$
  */
 public class FLOAD extends LoadInstruction {
 
     /**
-     * Empty constructor needed for the Class.newInstance() statement in
-     * Instruction.readInstruction(). Not to be used otherwise.
+     * Empty constructor needed for Instruction.readInstruction.
+     * Not to be used otherwise.
      */
     FLOAD() {
         super(com.sun.org.apache.bcel.internal.Const.FLOAD, com.sun.org.apache.bcel.internal.Const.FLOAD_0);

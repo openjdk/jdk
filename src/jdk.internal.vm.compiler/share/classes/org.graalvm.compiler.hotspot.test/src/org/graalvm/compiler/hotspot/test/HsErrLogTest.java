@@ -39,6 +39,7 @@ import java.util.regex.Pattern;
 
 import org.graalvm.compiler.api.directives.GraalDirectives;
 import org.graalvm.compiler.core.test.GraalCompilerTest;
+import org.graalvm.compiler.serviceprovider.JavaVersionUtil;
 import org.graalvm.compiler.test.SubprocessUtil;
 import org.graalvm.compiler.test.SubprocessUtil.Subprocess;
 import org.junit.Assert;
@@ -54,7 +55,7 @@ public class HsErrLogTest extends GraalCompilerTest {
     @Test
     public void test1() throws IOException, InterruptedException {
         List<String> args = new ArrayList<>();
-        if (Java8OrEarlier) {
+        if (JavaVersionUtil.JAVA_SPEC <= 8) {
             args.add("-XX:-UseJVMCIClassLoader");
         }
         args.add("-XX:+UseJVMCICompiler");

@@ -1815,6 +1815,10 @@ void Arguments::set_heap_size() {
       // was not specified.
       if (reasonable_max > max_coop_heap) {
         if (FLAG_IS_ERGO(UseCompressedOops) && override_coop_limit) {
+          log_info(cds)("UseCompressedOops and UseCompressedClassPointers have been disabled due to"
+            " max heap " SIZE_FORMAT " > compressed oop heap " SIZE_FORMAT ". "
+            "Please check the setting of MaxRAMPercentage %5.2f."
+            ,(size_t)reasonable_max, (size_t)max_coop_heap, MaxRAMPercentage);
           FLAG_SET_ERGO(UseCompressedOops, false);
           FLAG_SET_ERGO(UseCompressedClassPointers, false);
         } else {
@@ -3567,7 +3571,7 @@ bool Arguments::init_shared_archive_paths() {
           "Cannot have more than 1 archive file specified in -XX:SharedArchiveFile during CDS dumping");
       }
       if (DynamicDumpSharedSpaces) {
-        if (FileMapInfo::same_files(SharedArchiveFile, ArchiveClassesAtExit)) {
+        if (os::same_files(SharedArchiveFile, ArchiveClassesAtExit)) {
           vm_exit_during_initialization(
             "Cannot have the same archive file specified for -XX:SharedArchiveFile and -XX:ArchiveClassesAtExit",
             SharedArchiveFile);

@@ -1142,25 +1142,28 @@ void CodeCache::flush_evol_dependents() {
 
   // At least one nmethod has been marked for deoptimization
 
-  Deoptimization::deoptimize_all_marked();
+  // All this already happens inside a VM_Operation, so we'll do all the work here.
+  // Stuff copied from VM_Deoptimize and modified slightly.
+
+  // We do not want any GCs to happen while we are in the middle of this VM operation
+  ResourceMark rm;
+  DeoptimizationMarker dm;
+
+  // Deoptimize all activations depending on marked nmethods
+  Deoptimization::deoptimize_dependents();
+
+  // Make the dependent methods not entrant
+  make_marked_nmethods_not_entrant();
 }
 #endif // INCLUDE_JVMTI
 
-// Mark methods for deopt (if safe or possible).
+// Deoptimize all methods
 void CodeCache::mark_all_nmethods_for_deoptimization() {
   MutexLocker mu(CodeCache_lock, Mutex::_no_safepoint_check_flag);
   CompiledMethodIterator iter(CompiledMethodIterator::only_alive_and_not_unloading);
   while(iter.next()) {
     CompiledMethod* nm = iter.method();
-    if (!nm->method()->is_method_handle_intrinsic() &&
-        !nm->is_not_installed() &&
-        nm->is_in_use() &&
-        !nm->is_native_method()) {
-      // Intrinsics and native methods are never deopted. A method that is
-      // not installed yet or is not in use is not safe to deopt; the
-      // is_in_use() check covers the not_entrant and not zombie cases.
-      // Note: A not_entrant method can become a zombie at anytime if it was
-      // made not_entrant before the previous safepoint/handshake.
+    if (!nm->method()->is_method_handle_intrinsic()) {
       nm->mark_for_deoptimization();
     }
   }
@@ -1188,12 +1191,7 @@ void CodeCache::make_marked_nmethods_not_entrant() {
   CompiledMethodIterator iter(CompiledMethodIterator::only_alive_and_not_unloading);
   while(iter.next()) {
     CompiledMethod* nm = iter.method();
-    if (nm->is_marked_for_deoptimization() && nm->is_in_use()) {
-      // only_alive_and_not_unloading() can return not_entrant nmethods.
-      // A not_entrant method can become a zombie at anytime if it was
-      // made not_entrant before the previous safepoint/handshake. The
-      // is_in_use() check covers the not_entrant and not zombie cases
-      // that have become true after the method was marked for deopt.
+    if (nm->is_marked_for_deoptimization() && !nm->is_not_entrant()) {
       nm->make_not_entrant();
     }
   }
@@ -1205,12 +1203,17 @@ void CodeCache::flush_dependents_on(InstanceKlass* dependee) {
 
   if (number_of_nmethods_with_dependencies() == 0) return;
 
+  // CodeCache can only be updated by a thread_in_VM and they will all be
+  // stopped during the safepoint so CodeCache will be safe to update without
+  // holding the CodeCache_lock.
+
   KlassDepChange changes(dependee);
 
   // Compute the dependent nmethods
   if (mark_for_deoptimization(changes) > 0) {
     // At least one nmethod has been marked for deoptimization
-    Deoptimization::deoptimize_all_marked();
+    VM_Deoptimize op;
+    VMThread::execute(&op);
   }
 }
 
@@ -1219,9 +1222,26 @@ void CodeCache::flush_dependents_on_method(const methodHandle& m_h) {
   // --- Compile_lock is not held. However we are at a safepoint.
   assert_locked_or_safepoint(Compile_lock);
 
+  // CodeCache can only be updated by a thread_in_VM and they will all be
+  // stopped dring the safepoint so CodeCache will be safe to update without
+  // holding the CodeCache_lock.
+
   // Compute the dependent nmethods
   if (mark_for_deoptimization(m_h()) > 0) {
-    Deoptimization::deoptimize_all_marked();
+    // At least one nmethod has been marked for deoptimization
+
+    // All this already happens inside a VM_Operation, so we'll do all the work here.
+    // Stuff copied from VM_Deoptimize and modified slightly.
+
+    // We do not want any GCs to happen while we are in the middle of this VM operation
+    ResourceMark rm;
+    DeoptimizationMarker dm;
+
+    // Deoptimize all activations depending on marked nmethods
+    Deoptimization::deoptimize_dependents();
+
+    // Make the dependent methods not entrant
+    make_marked_nmethods_not_entrant();
   }
 }
 

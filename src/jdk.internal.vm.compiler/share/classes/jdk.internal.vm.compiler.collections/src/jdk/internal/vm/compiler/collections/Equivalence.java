@@ -44,7 +44,7 @@ package jdk.internal.vm.compiler.collections;
  * Strategy for comparing two objects. Default predefined strategies are {@link #DEFAULT},
  * {@link #IDENTITY}, and {@link #IDENTITY_WITH_SYSTEM_HASHCODE}.
  *
- * @since 1.0
+ * @since 19.0
  */
 public abstract class Equivalence {
 
@@ -53,7 +53,7 @@ public abstract class Equivalence {
      * for obtaining hash values. Do not change the logic of this class as it may be inlined in
      * other places.
      *
-     * @since 1.0
+     * @since 19.0
      */
     public static final Equivalence DEFAULT = new Equivalence() {
 
@@ -72,7 +72,7 @@ public abstract class Equivalence {
      * Identity equivalence using {@code ==} to check equality and {@link #hashCode()} for obtaining
      * hash values. Do not change the logic of this class as it may be inlined in other places.
      *
-     * @since 1.0
+     * @since 19.0
      */
     public static final Equivalence IDENTITY = new Equivalence() {
 
@@ -92,7 +92,7 @@ public abstract class Equivalence {
      * {@link System#identityHashCode(Object)} for obtaining hash values. Do not change the logic of
      * this class as it may be inlined in other places.
      *
-     * @since 1.0
+     * @since 19.0
      */
     public static final Equivalence IDENTITY_WITH_SYSTEM_HASHCODE = new Equivalence() {
 
@@ -110,7 +110,7 @@ public abstract class Equivalence {
     /**
      * Subclass for creating custom equivalence definitions.
      *
-     * @since 1.0
+     * @since 19.0
      */
     protected Equivalence() {
     }
@@ -119,14 +119,14 @@ public abstract class Equivalence {
      * Returns {@code true} if the non-{@code null} arguments are equal to each other and
      * {@code false} otherwise.
      *
-     * @since 1.0
+     * @since 19.0
      */
     public abstract boolean equals(Object a, Object b);
 
     /**
      * Returns the hash code of a non-{@code null} argument {@code o}.
      *
-     * @since 1.0
+     * @since 19.0
      */
     public abstract int hashCode(Object o);
 }

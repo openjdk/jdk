@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2019, Oracle and/or its affiliates. All rights reserved.
  */
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
@@ -27,13 +27,14 @@ import com.sun.org.apache.bcel.internal.Const;
 
 /**
  * Abstract super class for Fieldref, Methodref, InterfaceMethodref and
- * InvokeDynamic constants.
+ *                          InvokeDynamic constants.
  *
- * @version $Id: ConstantCP.java 1747278 2016-06-07 17:28:43Z britter $
- * @see ConstantFieldref
- * @see ConstantMethodref
- * @see ConstantInterfaceMethodref
- * @see ConstantInvokeDynamic
+ * @version $Id$
+ * @see     ConstantFieldref
+ * @see     ConstantMethodref
+ * @see     ConstantInterfaceMethodref
+ * @see     ConstantInvokeDynamic
+ * @LastModified: Jun 2019
  */
 public abstract class ConstantCP extends Constant {
 
@@ -53,16 +54,18 @@ public abstract class ConstantCP extends Constant {
         this(c.getTag(), c.getClassIndex(), c.getNameAndTypeIndex());
     }
 
+
     /**
      * Initialize instance from file data.
      *
-     * @param tag Constant type tag
+     * @param tag  Constant type tag
      * @param file Input stream
      * @throws IOException
      */
     ConstantCP(final byte tag, final DataInput file) throws IOException {
         this(tag, file.readUnsignedShort(), file.readUnsignedShort());
     }
+
 
     /**
      * @param class_index Reference to the class containing the field
@@ -74,6 +77,7 @@ public abstract class ConstantCP extends Constant {
         this.name_and_type_index = name_and_type_index;
     }
 
+
     /**
      * Dump constant field reference to file stream in binary format.
      *
@@ -81,11 +85,12 @@ public abstract class ConstantCP extends Constant {
      * @throws IOException
      */
     @Override
-    public final void dump(final DataOutputStream file) throws IOException {
+    public final void dump( final DataOutputStream file ) throws IOException {
         file.writeByte(super.getTag());
         file.writeShort(class_index);
         file.writeShort(name_and_type_index);
     }
+
 
     /**
      * @return Reference (index) to class this constant refers to.
@@ -94,12 +99,14 @@ public abstract class ConstantCP extends Constant {
         return class_index;
     }
 
+
     /**
      * @param class_index points to Constant_class
      */
-    public final void setClassIndex(final int class_index) {
+    public final void setClassIndex( final int class_index ) {
         this.class_index = class_index;
     }
+
 
     /**
      * @return Reference (index) to signature of the field.
@@ -108,19 +115,22 @@ public abstract class ConstantCP extends Constant {
         return name_and_type_index;
     }
 
+
     /**
      * @param name_and_type_index points to Constant_NameAndType
      */
-    public final void setNameAndTypeIndex(final int name_and_type_index) {
+    public final void setNameAndTypeIndex( final int name_and_type_index ) {
         this.name_and_type_index = name_and_type_index;
     }
+
 
     /**
      * @return Class this field belongs to.
      */
-    public String getClass(final ConstantPool cp) {
+    public String getClass( final ConstantPool cp ) {
         return cp.constantToString(class_index, Const.CONSTANT_Class);
     }
+
 
     /**
      * @return String representation.

@@ -25,7 +25,7 @@ package com.sun.org.apache.bcel.internal.generic;
  * FALOAD - Load float from array
  * <PRE>Stack: ..., arrayref, index -&gt; ..., value</PRE>
  *
- * @version $Id: FALOAD.java 1747278 2016-06-07 17:28:43Z britter $
+ * @version $Id$
  */
 public class FALOAD extends ArrayInstruction implements StackProducer {
 

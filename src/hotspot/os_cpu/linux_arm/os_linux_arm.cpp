@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -384,7 +384,7 @@ extern "C" int JVM_handle_linux_signal(int sig, siginfo_t* info,
         // Do not crash the VM in such a case.
         CodeBlob* cb = CodeCache::find_blob_unsafe(pc);
         CompiledMethod* nm = (cb != NULL) ? cb->as_compiled_method_or_null() : NULL;
-        if (nm != NULL && nm->has_unsafe_access()) {
+        if ((nm != NULL && nm->has_unsafe_access()) || (thread->doing_unsafe_access() && UnsafeCopyMemory::contains_pc(pc))) {
           unsafe_access = true;
         }
       } else if (sig == SIGSEGV &&
@@ -398,7 +398,8 @@ extern "C" int JVM_handle_linux_signal(int sig, siginfo_t* info,
         // Zombie
         stub = SharedRuntime::get_handle_wrong_method_stub();
       }
-    } else if (thread->thread_state() == _thread_in_vm &&
+    } else if ((thread->thread_state() == _thread_in_vm ||
+                thread->thread_state() == _thread_in_native) &&
                sig == SIGBUS && thread->doing_unsafe_access()) {
         unsafe_access = true;
     }
@@ -418,6 +419,9 @@ extern "C" int JVM_handle_linux_signal(int sig, siginfo_t* info,
     // any other suitable exception reason,
     // so assume it is an unsafe access.
     address next_pc = pc + Assembler::InstructionSize;
+    if (UnsafeCopyMemory::contains_pc(pc)) {
+      next_pc = UnsafeCopyMemory::page_error_continue_pc(pc);
+    }
 #ifdef __thumb__
     if (uc->uc_mcontext.arm_cpsr & PSR_T_BIT) {
       next_pc = (address)((intptr_t)next_pc | 0x1);

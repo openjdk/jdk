@@ -103,15 +103,11 @@ protected:
 
   enum CardValues {
     clean_card                  = (CardValue)-1,
-    // The mask contains zeros in places for all other values.
-    clean_card_mask             = clean_card - 31,
 
     dirty_card                  =  0,
     precleaned_card             =  1,
-    claimed_card                =  2,
-    deferred_card               =  4,
-    last_card                   =  8,
-    CT_MR_BS_last_reserved      = 16
+    last_card                   =  2,
+    CT_MR_BS_last_reserved      =  4
   };
 
   // a word's worth (row) of clean card values
@@ -242,11 +238,8 @@ public:
   };
 
   static CardValue clean_card_val()          { return clean_card; }
-  static CardValue clean_card_mask_val()     { return clean_card_mask; }
   static CardValue dirty_card_val()          { return dirty_card; }
-  static CardValue claimed_card_val()        { return claimed_card; }
   static CardValue precleaned_card_val()     { return precleaned_card; }
-  static CardValue deferred_card_val()       { return deferred_card; }
   static intptr_t clean_card_row_val()   { return clean_card_row; }
 
   // Card marking array base (adjusted for heap low boundary)

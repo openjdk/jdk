@@ -31,7 +31,6 @@ import com.sun.org.apache.bcel.internal.Const;
  * This class is derived from the abstract {@link Constant}
  * and represents a reference to a (external) class.
  *
- * @version $Id: ConstantClass.java 1749603 2016-06-21 20:50:19Z ggregory $
  * @see     Constant
  */
 public final class ConstantClass extends Constant implements ConstantObject {
@@ -48,13 +47,13 @@ public final class ConstantClass extends Constant implements ConstantObject {
 
 
     /**
-     * Initialize instance from file data.
+     * Constructs an instance from file data.
      *
-     * @param file Input stream
-     * @throws IOException
+     * @param dataInput Input stream
+     * @throws IOException if an I/O error occurs reading from the given {@code dataInput}.
      */
-    ConstantClass(final DataInput file) throws IOException {
-        this(file.readUnsignedShort());
+    ConstantClass(final DataInput dataInput) throws IOException {
+        this(dataInput.readUnsignedShort());
     }
 
 
@@ -82,10 +81,10 @@ public final class ConstantClass extends Constant implements ConstantObject {
 
 
     /**
-     * Dump constant class to file stream in binary format.
+     * Dumps constant class to file stream in binary format.
      *
      * @param file Output file stream
-     * @throws IOException
+     * @throws IOException if an I/O error occurs writing to the DataOutputStream.
      */
     @Override
     public final void dump( final DataOutputStream file ) throws IOException {

@@ -28,7 +28,7 @@ import static org.junit.Assert.assertEquals;
 
 import jdk.internal.vm.compiler.collections.EconomicMap;
 import jdk.internal.vm.compiler.collections.Equivalence;
-import org.graalvm.compiler.test.GraalTest;
+import org.graalvm.compiler.serviceprovider.JavaVersionUtil;
 import org.graalvm.util.ObjectSizeEstimate;
 import org.junit.Assume;
 import org.junit.Test;
@@ -40,7 +40,7 @@ public class CollectionSizeTest {
      */
     @Test
     public void testSize() {
-        Assume.assumeTrue("Not working in JDK9 due to module visibility.", GraalTest.Java8OrEarlier);
+        Assume.assumeTrue("Not working in JDK9 due to module visibility.", JavaVersionUtil.JAVA_SPEC <= 8);
         EconomicMap<Object, Object> map = EconomicMap.create(Equivalence.IDENTITY);
         assertEquals(49, ObjectSizeEstimate.forObject(map).getTotalBytes());
 
@@ -59,7 +59,7 @@ public class CollectionSizeTest {
      */
     @Test
     public void testCompress() {
-        Assume.assumeTrue("Not working in JDK9 due to module visibility.", GraalTest.Java8OrEarlier);
+        Assume.assumeTrue("Not working in JDK9 due to module visibility.", JavaVersionUtil.JAVA_SPEC <= 8);
         EconomicMap<Object, Object> map = EconomicMap.create();
 
         // Measuring size of map with one entry.

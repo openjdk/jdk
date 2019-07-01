@@ -31,7 +31,7 @@ import com.sun.org.apache.bcel.internal.Const;
  * This class represents the type of a local variable or item on stack
  * used in the StackMap entries.
  *
- * @version $Id: StackMapType.java 1749603 2016-06-21 20:50:19Z ggregory $
+ * @version $Id$
  * @see     StackMapEntry
  * @see     StackMap
  * @see     Const

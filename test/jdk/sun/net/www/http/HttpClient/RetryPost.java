@@ -54,23 +54,19 @@ public class RetryPost
     MyHandler httpHandler;
     ExecutorService executorService;
 
-    public static void main(String[] args) {
+    public static void main(String[] args) throws Exception {
         if (args.length == 1 && args[0].equals("noRetry"))
             shouldRetry = false;
 
         new RetryPost();
     }
 
-    public RetryPost() {
-        try {
-            startHttpServer(shouldRetry);
-            doClient();
-        } catch (IOException ioe) {
-            System.err.println(ioe);
-        }
+    public RetryPost() throws Exception {
+        startHttpServer(shouldRetry);
+        doClient();
     }
 
-    void doClient() {
+    void doClient() throws Exception {
         try {
             InetSocketAddress address = httpServer.getAddress();
             URL url = URIBuilder.newBuilder()
@@ -95,8 +91,6 @@ public class RetryPost
             else if (!shouldRetry && httpHandler.getCallCount() != 1)
                 throw new RuntimeException("Failed: Handler should have only been called once" +
                                            "It was called "+ httpHandler.getCallCount() + " times");
-        } catch (IOException e) {
-            e.printStackTrace();
         } finally {
             httpServer.stop(1);
             executorService.shutdown();
@@ -119,8 +113,8 @@ public class RetryPost
     }
 
     class MyHandler implements HttpHandler {
-        int callCount = 0;
-        boolean shouldRetry;
+        volatile int callCount = 0;
+        final boolean shouldRetry;
 
         public MyHandler(boolean shouldRetry) {
             this.shouldRetry = shouldRetry;

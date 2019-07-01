@@ -25,7 +25,7 @@ package com.sun.org.apache.bcel.internal.generic;
  * LASTORE -  Store into long array
  * <PRE>Stack: ..., arrayref, index, value.word1, value.word2 -&gt; ...</PRE>
  *
- * @version $Id: LASTORE.java 1747278 2016-06-07 17:28:43Z britter $
+ * @version $Id$
  */
 public class LASTORE extends ArrayInstruction implements StackConsumer {
 

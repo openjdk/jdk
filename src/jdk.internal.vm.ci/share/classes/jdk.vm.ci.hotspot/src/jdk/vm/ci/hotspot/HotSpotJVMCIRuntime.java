@@ -223,6 +223,8 @@ public final class HotSpotJVMCIRuntime implements JVMCIRuntime {
         // so that -XX:+JVMCIPrintProperties shows the option.
         InitTimer(Boolean.class, false, "Specifies if initialization timing is enabled."),
         PrintConfig(Boolean.class, false, "Prints VM configuration available via JVMCI."),
+        AuditHandles(Boolean.class, false, "Record stack trace along with scoped foreign object reference wrappers " +
+                "to debug issue with a wrapper being used after its scope has closed."),
         TraceMethodDataFilter(String.class, null,
                 "Enables tracing of profiling info when read by JVMCI.",
                 "Empty value: trace all methods",
@@ -687,9 +689,11 @@ assert factories != null : "sanity";
         return Collections.unmodifiableMap(backends);
     }
 
+    @SuppressWarnings("try")
     @VMEntryPoint
     private HotSpotCompilationRequestResult compileMethod(HotSpotResolvedJavaMethod method, int entryBCI, long compileState, int id) {
-        CompilationRequestResult result = getCompiler().compileMethod(new HotSpotCompilationRequest(method, entryBCI, compileState, id));
+        HotSpotCompilationRequest request = new HotSpotCompilationRequest(method, entryBCI, compileState, id);
+        CompilationRequestResult result = getCompiler().compileMethod(request);
         assert result != null : "compileMethod must always return something";
         HotSpotCompilationRequestResult hsResult;
         if (result instanceof HotSpotCompilationRequestResult) {
@@ -704,7 +708,6 @@ assert factories != null : "sanity";
                 hsResult = HotSpotCompilationRequestResult.success(inlinedBytecodes);
             }
         }
-
         return hsResult;
     }
 
@@ -1031,5 +1034,15 @@ assert factories != null : "sanity";
      */
     public void excludeFromJVMCICompilation(Module...modules) {
         this.excludeFromJVMCICompilation = modules.clone();
+    }
+
+    /**
+     * Calls {@link System#exit(int)} in HotSpot's runtime.
+     */
+    public void exitHotSpot(int status) {
+        if (!IS_IN_NATIVE_IMAGE) {
+            System.exit(status);
+        }
+        compilerToVm.callSystemExit(status);
     }
 }

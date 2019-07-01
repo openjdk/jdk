@@ -275,6 +275,19 @@ bool RSHashTableIter::has_next(size_t& card_index) {
   return false;
 }
 
+bool RSHashTableBucketIter::has_next(SparsePRTEntry*& entry) {
+  while (_bl_ind == RSHashTable::NullEntry)  {
+    if (_tbl_ind == (int)_rsht->capacity() - 1) {
+      return false;
+    }
+    _tbl_ind++;
+    _bl_ind = _rsht->_buckets[_tbl_ind];
+  }
+  entry = _rsht->entry(_bl_ind);
+  _bl_ind = entry->next_index();
+  return true;
+}
+
 bool RSHashTable::contains_card(RegionIdx_t region_index, CardIdx_t card_index) const {
   SparsePRTEntry* e = get_entry(region_index);
   return (e != NULL && e->contains_card(card_index));

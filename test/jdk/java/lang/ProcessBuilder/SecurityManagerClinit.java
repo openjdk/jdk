@@ -1,5 +1,6 @@
 /*
  * Copyright 2010 Google Inc.  All Rights Reserved.
+ * Copyright (c) 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -35,17 +36,19 @@ import java.io.*;
 import java.security.*;
 
 public class SecurityManagerClinit {
-    private static class Policy extends java.security.Policy {
+    private static class SimplePolicy extends Policy {
+        static final Policy DEFAULT_POLICY = Policy.getPolicy();
+
         private Permissions perms;
 
-        public Policy(Permission... permissions) {
+        public SimplePolicy(Permission... permissions) {
             perms = new Permissions();
             for (Permission permission : permissions)
                 perms.add(permission);
         }
 
         public boolean implies(ProtectionDomain pd, Permission p) {
-            return perms.implies(p);
+            return perms.implies(p) || DEFAULT_POLICY.implies(pd, p);
         }
     }
 
@@ -54,8 +57,8 @@ public class SecurityManagerClinit {
             System.getProperty("java.home") +
             File.separator + "bin" + File.separator + "java";
 
-        final Policy policy =
-            new Policy
+        final SimplePolicy policy =
+            new SimplePolicy
             (new FilePermission("<<ALL FILES>>", "execute"),
              new RuntimePermission("setSecurityManager"));
         Policy.setPolicy(policy);

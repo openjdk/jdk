@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2019, Oracle and/or its affiliates. All rights reserved.
  */
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
@@ -30,8 +30,9 @@ import com.sun.org.apache.bcel.internal.Const;
  * This class is derived from the abstract {@link Constant}
  * and represents a reference to an int object.
  *
- * @version $Id: ConstantInteger.java 1747278 2016-06-07 17:28:43Z britter $
+ * @version $Id$
  * @see     Constant
+ * @LastModified: Jun 2019
  */
 public final class ConstantInteger extends Constant implements ConstantObject {
 

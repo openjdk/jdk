@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2019, Oracle and/or its affiliates. All rights reserved.
  */
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
@@ -39,8 +39,8 @@ import java.util.Map;
  *
  * @see com.sun.org.apache.bcel.internal.Repository
  *
- * @version $Id: SyntheticRepository.java 1748124 2016-06-13 08:02:16Z ggregory
- * $
+ * @version $Id$
+ * @LastModified: Jun 2019
  */
 public class SyntheticRepository implements Repository {
 
@@ -79,7 +79,7 @@ public class SyntheticRepository implements Repository {
         final SoftReference<JavaClass> ref = loadedClasses.get(className);
         if (ref == null) {
             return null;
-        }
+}
         return ref.get();
     }
 

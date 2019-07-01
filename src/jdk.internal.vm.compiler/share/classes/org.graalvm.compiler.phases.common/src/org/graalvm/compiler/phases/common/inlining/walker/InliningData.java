@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -145,7 +145,11 @@ public class InliningData {
         OptionValues options = rootGraph.getOptions();
         if (method == null) {
             return "the method is not resolved";
-        } else if (method.isNative() && (!Intrinsify.getValue(options) || !context.getReplacements().hasSubstitution(method, invokeBci))) {
+        } else if (method.isNative() && !(Intrinsify.getValue(options) &&
+                        context.getReplacements().getSubstitution(method, invokeBci, rootGraph.trackNodeSourcePosition(), null, options) != null)) {
+            // We have conditional intrinsic, e.g., String.intern, which may not have inlineable
+            // graph depending on the context. The getSubstitution test ensures the inlineable
+            // graph is present.
             return "it is a non-intrinsic native method";
         } else if (method.isAbstract()) {
             return "it is an abstract method";
@@ -155,8 +159,6 @@ public class InliningData {
             return "it is marked non-inlinable";
         } else if (countRecursiveInlining(method) > MaximumRecursiveInlining.getValue(options)) {
             return "it exceeds the maximum recursive inlining depth";
-        } else if (!method.hasBytecodes()) {
-            return "it has no bytecodes to inline";
         } else {
             if (new OptimisticOptimizations(rootGraph.getProfilingInfo(method), options).lessOptimisticThan(context.getOptimisticOptimizations())) {
                 return "the callee uses less optimistic optimizations than caller";

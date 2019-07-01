@@ -450,6 +450,13 @@ public class AMD64ArithmeticLIRGenerator extends ArithmeticLIRGenerator implemen
         }
     }
 
+    public Value emitBinaryMemory(VexRVMOp op, OperandSize size, AllocatableValue a, AMD64AddressValue location, LIRFrameState state) {
+        assert (size.isXmmType() && supportAVX());
+        Variable result = getLIRGen().newVariable(LIRKind.combine(a));
+        getLIRGen().append(new AMD64VectorBinary.AVXBinaryMemoryOp(op, getRegisterSize(result), result, a, location, state));
+        return result;
+    }
+
     public Value emitBinaryMemory(AMD64RMOp op, OperandSize size, AllocatableValue a, AMD64AddressValue location, LIRFrameState state) {
         Variable result = getLIRGen().newVariable(LIRKind.combine(a));
         getLIRGen().append(new AMD64Binary.MemoryTwoOp(op, size, result, a, location, state));
@@ -1339,7 +1346,7 @@ public class AMD64ArithmeticLIRGenerator extends ArithmeticLIRGenerator implemen
         return result;
     }
 
-    private boolean supportAVX() {
+    public boolean supportAVX() {
         TargetDescription target = getLIRGen().target();
         return ((AMD64) target.arch).getFeatures().contains(CPUFeature.AVX);
     }

@@ -1064,7 +1064,6 @@ void PSParallelCompact::post_compact()
   MetaspaceUtils::verify_metrics();
 
   heap->prune_scavengable_nmethods();
-  JvmtiExport::gc_epilogue();
 
 #if COMPILER2_OR_JVMCI
   DerivedPointerTable::update_pointers();

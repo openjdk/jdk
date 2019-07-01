@@ -42,7 +42,7 @@ import jdk.vm.ci.meta.ResolvedJavaField;
 public class ReferenceGetLoopTest extends GraalCompilerTest {
 
     @Override
-    protected boolean checkMidTierGraph(StructuredGraph graph) {
+    protected void checkMidTierGraph(StructuredGraph graph) {
         final LoopsData loops = new LoopsData(graph);
         boolean found = false;
         for (LoopEx loop : loops.loops()) {
@@ -62,7 +62,6 @@ public class ReferenceGetLoopTest extends GraalCompilerTest {
         if (!found) {
             assertTrue(false, "Reference.referent not found in loop: " + getCanonicalGraphString(graph, true, false));
         }
-        return true;
     }
 
     public volatile Object referent;

@@ -38,10 +38,11 @@
 // that might contain pointers into the owner region.
 
 class SparsePRTEntry: public CHeapObj<mtGC> {
-private:
+public:
   // The type of a card entry.
   typedef uint16_t card_elem_t;
 
+private:
   // We need to make sizeof(SparsePRTEntry) an even multiple of maximum member size,
   // in order to force correct alignment that could otherwise cause SIGBUS errors
   // when reading the member variables. This calculates the minimum number of card
@@ -96,6 +97,8 @@ public:
   // Copy the current entry's cards into the "_card" array of "e."
   inline void copy_cards(SparsePRTEntry* e) const;
 
+  card_elem_t* cards() { return _cards; }
+
   inline CardIdx_t card(int i) const {
     assert(i >= 0, "must be nonnegative");
     assert(i < cards_num(), "range checking");
@@ -106,7 +109,7 @@ public:
 class RSHashTable : public CHeapObj<mtGC> {
 
   friend class RSHashTableIter;
-
+  friend class RSHashTableBucketIter;
 
   // Inverse maximum hash table occupancy used.
   static float TableOccupancyFactor;
@@ -209,12 +212,29 @@ public:
   bool has_next(size_t& card_index);
 };
 
+// This is embedded in HRRS iterator.
+class RSHashTableBucketIter {
+  int _tbl_ind;         // [-1, 0.._rsht->_capacity)
+  int _bl_ind;          // [-1, 0.._rsht->_capacity)
+
+  RSHashTable* _rsht;
+
+public:
+  RSHashTableBucketIter(RSHashTable* rsht) :
+    _tbl_ind(0),
+    _bl_ind(rsht->_buckets[_tbl_ind]),
+    _rsht(rsht) { }
+
+  bool has_next(SparsePRTEntry*& entry);
+};
+
 // Concurrent access to a SparsePRT must be serialized by some external mutex.
 
 class SparsePRTIter;
 
 class SparsePRT {
   friend class SparsePRTIter;
+  friend class SparsePRTBucketIter;
 
   RSHashTable* _table;
 
@@ -259,6 +279,16 @@ public:
 
   bool has_next(size_t& card_index) {
     return RSHashTableIter::has_next(card_index);
+  }
+};
+
+class SparsePRTBucketIter: public RSHashTableBucketIter {
+public:
+  SparsePRTBucketIter(const SparsePRT* sprt) :
+    RSHashTableBucketIter(sprt->_table) {}
+
+  bool has_next(SparsePRTEntry*& entry) {
+    return RSHashTableBucketIter::has_next(entry);
   }
 };
 

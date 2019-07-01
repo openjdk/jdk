@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -268,17 +268,20 @@ final class PBES1Core {
 
         if (algo.equals("DES")) {
             // P || S (password concatenated with salt)
-            byte[] concat = new byte[Math.addExact(passwdBytes.length, salt.length)];
-            System.arraycopy(passwdBytes, 0, concat, 0, passwdBytes.length);
-            System.arraycopy(salt, 0, concat, passwdBytes.length, salt.length);
-
-            // digest P || S with c iterations
-            byte[] toBeHashed = concat;
-            for (int i = 0; i < iCount; i++) {
+            md.update(passwdBytes);
+            md.update(salt);
+            // digest P || S with iCount iterations
+            // first iteration
+            byte[] toBeHashed = md.digest(); // this resets the digest
+            // remaining (iCount - 1) iterations
+            for (int i = 1; i < iCount; ++i) {
                 md.update(toBeHashed);
-                toBeHashed = md.digest(); // this resets the digest
+                try {
+                    md.digest(toBeHashed, 0, toBeHashed.length);
+                } catch (DigestException e) {
+                    throw new ProviderException("Internal error", e);
+                }
             }
-            Arrays.fill(concat, (byte)0x00);
             result = toBeHashed;
         } else if (algo.equals("DESede")) {
             // if the 2 salt halves are the same, invert one of them
@@ -305,13 +308,19 @@ final class PBES1Core {
             result = new byte[DESedeKeySpec.DES_EDE_KEY_LEN +
                               DESConstants.DES_BLOCK_SIZE];
             for (i = 0; i < 2; i++) {
-                toBeHashed = new byte[salt.length/2];
-                System.arraycopy(salt, i*(salt.length/2), toBeHashed, 0,
-                                 toBeHashed.length);
-                for (int j=0; j < iCount; j++) {
+                // first iteration
+                md.update(salt, i * (salt.length / 2), salt.length / 2);
+                md.update(passwdBytes);
+                toBeHashed = md.digest();
+                // remaining (iCount - 1) iterations
+                for (int j = 1; j < iCount; ++j) {
                     md.update(toBeHashed);
                     md.update(passwdBytes);
-                    toBeHashed = md.digest();
+                    try {
+                        md.digest(toBeHashed, 0, toBeHashed.length);
+                    } catch (DigestException e) {
+                        throw new ProviderException("Internal error", e);
+                    }
                 }
                 System.arraycopy(toBeHashed, 0, result, i*16,
                                  toBeHashed.length);

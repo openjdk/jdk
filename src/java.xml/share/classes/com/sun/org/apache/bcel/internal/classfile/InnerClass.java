@@ -32,7 +32,7 @@ import com.sun.org.apache.bcel.internal.Const;
  * indices of the inner and outer classes, the name and the attributes
  * of the inner class.
  *
- * @version $Id: InnerClass.java 1749603 2016-06-21 20:50:19Z ggregory $
+ * @version $Id$
  * @see InnerClasses
  */
 public final class InnerClass implements Cloneable, Node {

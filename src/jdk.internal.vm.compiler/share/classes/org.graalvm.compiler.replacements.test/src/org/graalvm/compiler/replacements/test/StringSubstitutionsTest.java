@@ -27,6 +27,7 @@ package org.graalvm.compiler.replacements.test;
 import org.graalvm.compiler.nodes.StructuredGraph;
 import org.graalvm.compiler.replacements.StringSubstitutions;
 import org.graalvm.compiler.replacements.nodes.ArrayEqualsNode;
+import org.graalvm.compiler.serviceprovider.JavaVersionUtil;
 import org.junit.Test;
 
 import jdk.vm.ci.code.InstalledCode;
@@ -65,7 +66,7 @@ public class StringSubstitutionsTest extends MethodSubstitutionTest {
 
     @Test
     public void testEquals() {
-        if (!Java8OrEarlier) {
+        if (JavaVersionUtil.JAVA_SPEC > 8) {
             // StringSubstitutions are disabled in 1.9
             return;
         }

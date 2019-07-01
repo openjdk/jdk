@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2019, Oracle and/or its affiliates. All rights reserved.
  */
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
@@ -40,13 +40,13 @@ import com.sun.org.apache.bcel.internal.util.ByteSequence;
  * <a href="http://docs.oracle.com/javase/specs/jvms/se8/html/jvms-6.html#jvms-6.5.invokedynamic">
  * The invokedynamic instruction in The Java Virtual Machine Specification</a>
  * @since 6.0
- * @LastModified: Nov 2017
+ * @LastModified: Jun 2019
  */
 public class INVOKEDYNAMIC extends InvokeInstruction {
 
     /**
-     * Empty constructor needed for the Class.newInstance() statement in
-     * Instruction.readInstruction(). Not to be used otherwise.
+     * Empty constructor needed for Instruction.readInstruction.
+     * Not to be used otherwise.
      */
     INVOKEDYNAMIC() {
     }
@@ -136,5 +136,20 @@ public class INVOKEDYNAMIC extends InvokeInstruction {
         final ConstantPool cp = cpg.getConstantPool();
         final ConstantInvokeDynamic cid = (ConstantInvokeDynamic) cp.getConstant(super.getIndex(), Const.CONSTANT_InvokeDynamic);
         return ((ConstantNameAndType) cp.getConstant(cid.getNameAndTypeIndex())).getName(cp);
+    }
+
+
+    /**
+     * Since InvokeDynamic doesn't refer to a reference type, just return java.lang.Object,
+     * as that is the only type we can say for sure the reference will be.
+     *
+     * @param cpg
+     *            the ConstantPoolGen used to create the instruction
+     * @return an ObjectType for java.lang.Object
+     * @since 6.1
+     */
+    @Override
+    public ReferenceType getReferenceType(final ConstantPoolGen cpg) {
+        return new ObjectType(Object.class.getName());
     }
 }

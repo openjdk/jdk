@@ -4,9 +4,7 @@
  *
  * This code is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License version 2 only, as
- * published by the Free Software Foundation.  Oracle designates this
- * particular file as subject to the "Classpath" exception as provided
- * by Oracle in the LICENSE file that accompanied this code.
+ * published by the Free Software Foundation.
  *
  * This code is distributed in the hope that it will be useful, but WITHOUT
  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
@@ -22,6 +20,8 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
+
+
 package org.graalvm.compiler.hotspot.test;
 
 import org.graalvm.compiler.api.directives.GraalDirectives;
@@ -32,7 +32,7 @@ import org.junit.Assume;
 import org.junit.Test;
 
 public class BoxDeoptimizationTest extends GraalCompilerTest {
-    private static boolean isJDK13OrLater = JavaVersionUtil.JAVA_SPECIFICATION_VERSION >= 13;
+    private static boolean isJDK13OrLater = JavaVersionUtil.JAVA_SPEC >= 13;
 
     public static void testInteger() {
         Object[] values = {42, new Exception()};

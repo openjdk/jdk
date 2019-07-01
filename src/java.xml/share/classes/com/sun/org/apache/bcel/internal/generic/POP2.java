@@ -26,7 +26,7 @@ package com.sun.org.apache.bcel.internal.generic;
  *
  * <PRE>Stack: ..., word2, word1 -&gt; ...</PRE>
  *
- * @version $Id: POP2.java 1747278 2016-06-07 17:28:43Z britter $
+ * @version $Id$
  */
 public class POP2 extends StackInstruction implements PopInstruction {
 

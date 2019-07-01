@@ -41,9 +41,8 @@ import java.util.Properties;
  */
 public final class JVMCIVersionCheck {
 
-    // 0.57 introduces HotSpotJVMCIRuntime.excludeFromJVMCICompilation
-    private static final int JVMCI8_MIN_MAJOR_VERSION = 0;
-    private static final int JVMCI8_MIN_MINOR_VERSION = 57;
+    private static final int JVMCI8_MIN_MAJOR_VERSION = 19;
+    private static final int JVMCI8_MIN_MINOR_VERSION = 1;
 
     private static void failVersionCheck(Map<String, String> props, boolean exit, String reason, Object... args) {
         Formatter errorMessage = new Formatter().format(reason, args);
@@ -55,7 +54,7 @@ public final class JVMCIVersionCheck {
         errorMessage.format("Currently used VM configuration is: %s%n", vmName);
         if (props.get("java.specification.version").compareTo("1.9") < 0) {
             errorMessage.format("Download the latest JVMCI JDK 8 from " +
-                            "http://www.oracle.com/technetwork/oracle-labs/program-languages/downloads/index.html or " +
+                            "https://www.oracle.com/technetwork/graalvm/downloads/index.html or " +
                             "https://github.com/graalvm/openjdk8-jvmci-builder/releases");
         } else {
             errorMessage.format("Download JDK 11 or later.");
@@ -156,6 +155,14 @@ public final class JVMCIVersionCheck {
         return false;
     }
 
+    private static String getJVMCIVersionString(int major, int minor) {
+        if (major >= 19) {
+            return String.format("%d-b%02d", major, minor);
+        } else {
+            return String.format("%d.%d", major, minor);
+        }
+    }
+
     private void run(boolean exitOnFailure, int jvmci8MinMajorVersion, int jvmci8MinMinorVersion) {
         // Don't use regular expressions to minimize Graal startup time
         if (javaSpecVersion.compareTo("1.9") < 0) {
@@ -180,8 +187,8 @@ public final class JVMCIVersionCheck {
                     if (major > jvmci8MinMajorVersion || (major >= jvmci8MinMajorVersion && minor >= jvmci8MinMinorVersion)) {
                         return;
                     }
-                    failVersionCheck(props, exitOnFailure, "The VM does not support the minimum JVMCI API version required by Graal: %d.%d < %d.%d.%n",
-                                    major, minor, jvmci8MinMajorVersion, jvmci8MinMinorVersion);
+                    failVersionCheck(props, exitOnFailure, "The VM does not support the minimum JVMCI API version required by Graal: %s < %s.%n",
+                                    getJVMCIVersionString(major, minor), getJVMCIVersionString(jvmci8MinMajorVersion, jvmci8MinMinorVersion));
                     return;
                 }
             }

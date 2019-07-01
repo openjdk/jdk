@@ -45,4 +45,6 @@ public interface CoreProviders {
     StampProvider getStampProvider();
 
     ForeignCallsProvider getForeignCalls();
+
+    GCProvider getGC();
 }

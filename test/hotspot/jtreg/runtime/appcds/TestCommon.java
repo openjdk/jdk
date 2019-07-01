@@ -128,11 +128,24 @@ public class TestCommon extends CDSTestUtils {
         return createArchive(appJar, classList, suffix);
     }
 
+    public static OutputAnalyzer dump(String appJarDir, String appJar, String classList[],
+                                               String... suffix) throws Exception {
+        return createArchive(appJarDir, appJar, classList, suffix);
+    }
 
     // Create AppCDS archive using most common args - convenience method
     public static OutputAnalyzer createArchive(String appJar, String classList[],
                                                String... suffix) throws Exception {
         AppCDSOptions opts = (new AppCDSOptions()).setAppJar(appJar);
+        opts.setClassList(classList);
+        opts.addSuffix(suffix);
+        return createArchive(opts);
+    }
+
+    public static OutputAnalyzer createArchive(String appJarDir, String appJar, String classList[],
+                                               String... suffix) throws Exception {
+        AppCDSOptions opts = (new AppCDSOptions()).setAppJar(appJar);
+        opts.setAppJarDir(appJarDir);
         opts.setClassList(classList);
         opts.addSuffix(suffix);
         return createArchive(opts);
@@ -222,6 +235,9 @@ public class TestCommon extends CDSTestUtils {
 
         String[] cmdLine = cmd.toArray(new String[cmd.size()]);
         ProcessBuilder pb = ProcessTools.createJavaProcessBuilder(true, cmdLine);
+        if (opts.appJarDir != null) {
+            pb.directory(new File(opts.appJarDir));
+        }
         return executeAndLog(pb, "dump");
     }
 
@@ -360,6 +376,9 @@ public class TestCommon extends CDSTestUtils {
 
         String[] cmdLine = cmd.toArray(new String[cmd.size()]);
         ProcessBuilder pb = ProcessTools.createJavaProcessBuilder(true, cmdLine);
+        if (opts.appJarDir != null) {
+            pb.directory(new File(opts.appJarDir));
+        }
         return executeAndLog(pb, "exec");
     }
 
@@ -374,6 +393,13 @@ public class TestCommon extends CDSTestUtils {
     // See comments in the CDSTestUtils.Result class for how to use this method.
     public static Result run(String... suffix) throws Exception {
         AppCDSOptions opts = (new AppCDSOptions());
+        opts.addSuffix(suffix);
+        return new Result(opts, runWithArchive(opts));
+    }
+
+    public static Result runWithRelativePath(String jarDir, String... suffix) throws Exception {
+        AppCDSOptions opts = (new AppCDSOptions());
+        opts.setAppJarDir(jarDir);
         opts.addSuffix(suffix);
         return new Result(opts, runWithArchive(opts));
     }
@@ -443,6 +469,20 @@ public class TestCommon extends CDSTestUtils {
         return output;
     }
 
+    public static OutputAnalyzer testDump(String appJarDir, String appJar, String classList[],
+                                          String... suffix) throws Exception {
+        OutputAnalyzer output = dump(appJarDir, appJar, classList, suffix);
+        if (DYNAMIC_DUMP) {
+            if (isUnableToMap(output)) {
+                throw new SkippedException(UnableToMapMsg);
+            }
+            output.shouldContain("Written dynamic archive");
+        } else {
+            output.shouldContain("Loading classes to share");
+        }
+        output.shouldHaveExitValue(0);
+        return output;
+    }
 
     /**
      * Simple test -- dump and execute appJar with the given classList in classlist.
@@ -589,5 +629,33 @@ public class TestCommon extends CDSTestUtils {
                 } catch (Throwable t) {}
             }
         }
+    }
+
+    public static String composeRelPath(String appJar) {
+         int idx = appJar.lastIndexOf(File.separator);
+         String jarName = appJar.substring(idx + 1);
+         String jarDir = appJar.substring(0, idx);
+         String lastDir = jarDir.substring(jarDir.lastIndexOf(File.separator));
+         String relPath = jarDir + File.separator + ".." + File.separator + lastDir;
+         String newJar = relPath + File.separator + jarName;
+         return newJar;
+    }
+
+
+    public static File createSymLink(String appJar) throws Exception {
+         int idx = appJar.lastIndexOf(File.separator);
+         String jarName = appJar.substring(idx + 1);
+         String jarDir = appJar.substring(0, idx);
+         File origJar = new File(jarDir, jarName);
+         String linkedJarName = "linked_" + jarName;
+         File linkedJar = null;
+         if (!Platform.isWindows()) {
+             linkedJar = new File(jarDir, linkedJarName);
+             if (linkedJar.exists()) {
+                 linkedJar.delete();
+             }
+             Files.createSymbolicLink(linkedJar.toPath(), origJar.toPath());
+         }
+         return linkedJar;
     }
 }

@@ -31,8 +31,8 @@ import org.graalvm.compiler.graph.Node;
 import org.graalvm.compiler.graph.spi.CanonicalizerTool;
 import org.graalvm.compiler.nodes.StructuredGraph;
 import org.graalvm.compiler.nodes.java.MethodCallTargetNode;
+import org.graalvm.compiler.nodes.spi.CoreProviders;
 import org.graalvm.compiler.phases.VerifyPhase;
-import org.graalvm.compiler.phases.tiers.PhaseContext;
 
 import jdk.vm.ci.meta.MetaAccessProvider;
 import jdk.vm.ci.meta.ResolvedJavaMethod;
@@ -45,7 +45,7 @@ import jdk.vm.ci.meta.ResolvedJavaType;
  * general but since there are several canonical methods with varying signatures this covers more
  * cases.
  */
-public class VerifyGetOptionsUsage extends VerifyPhase<PhaseContext> {
+public class VerifyGetOptionsUsage extends VerifyPhase<CoreProviders> {
     static Method lookupMethod(Class<?> klass, String name) {
         for (Method m : klass.getDeclaredMethods()) {
             if (m.getName().equals(name)) {
@@ -56,7 +56,7 @@ public class VerifyGetOptionsUsage extends VerifyPhase<PhaseContext> {
     }
 
     @Override
-    protected void verify(StructuredGraph graph, PhaseContext context) {
+    protected void verify(StructuredGraph graph, CoreProviders context) {
         MetaAccessProvider metaAccess = context.getMetaAccess();
         ResolvedJavaType canonicalizerToolClass = metaAccess.lookupJavaType(CanonicalizerTool.class);
         boolean hasTool = false;

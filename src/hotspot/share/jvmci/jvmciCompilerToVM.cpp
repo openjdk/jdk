@@ -568,6 +568,33 @@ C2V_VMENTRY_NULL(jobject, lookupType, (JNIEnv* env, jobject, jstring jname, jcla
   return JVMCIENV->get_jobject(result);
 C2V_END
 
+C2V_VMENTRY_NULL(jobject, getArrayType, (JNIEnv* env, jobject, jobject jvmci_type))
+  if (jvmci_type == NULL) {
+    JVMCI_THROW_0(NullPointerException);
+  }
+
+  JVMCIObject jvmci_type_object = JVMCIENV->wrap(jvmci_type);
+  JVMCIKlassHandle array_klass(THREAD);
+  if (JVMCIENV->isa_HotSpotResolvedPrimitiveType(jvmci_type_object)) {
+    BasicType type = JVMCIENV->kindToBasicType(JVMCIENV->get_HotSpotResolvedPrimitiveType_kind(jvmci_type_object), JVMCI_CHECK_0);
+    if (type == T_VOID) {
+      return NULL;
+    }
+    array_klass = Universe::typeArrayKlassObj(type);
+    if (array_klass == NULL) {
+      JVMCI_THROW_MSG_NULL(InternalError, err_msg("No array klass for primitive type %s", type2name(type)));
+    }
+  } else {
+    Klass* klass = JVMCIENV->asKlass(jvmci_type);
+    if (klass == NULL) {
+      JVMCI_THROW_0(NullPointerException);
+    }
+    array_klass = klass->array_klass(CHECK_NULL);
+  }
+  JVMCIObject result = JVMCIENV->get_jvmci_type(array_klass, JVMCI_CHECK_NULL);
+  return JVMCIENV->get_jobject(result);
+C2V_END
+
 C2V_VMENTRY_NULL(jobject, lookupClass, (JNIEnv* env, jobject, jclass mirror))
   requireInHotSpot("lookupClass", JVMCI_CHECK_NULL);
   if (mirror == NULL) {
@@ -581,12 +608,6 @@ C2V_VMENTRY_NULL(jobject, lookupClass, (JNIEnv* env, jobject, jclass mirror))
   JVMCIObject result = JVMCIENV->get_jvmci_type(klass, JVMCI_CHECK_NULL);
   return JVMCIENV->get_jobject(result);
 }
-
-C2V_VMENTRY_NULL(jobject, resolveConstantInPool, (JNIEnv* env, jobject, jobject jvmci_constant_pool, jint index))
-  constantPoolHandle cp = JVMCIENV->asConstantPool(jvmci_constant_pool);
-  oop result = cp->resolve_constant_at(index, CHECK_NULL);
-  return JVMCIENV->get_jobject(JVMCIENV->get_object_constant(result));
-C2V_END
 
 C2V_VMENTRY_NULL(jobject, resolvePossiblyCachedConstantInPool, (JNIEnv* env, jobject, jobject jvmci_constant_pool, jint index))
   constantPoolHandle cp = JVMCIENV->asConstantPool(jvmci_constant_pool);
@@ -2578,6 +2599,18 @@ C2V_VMENTRY_0(jboolean, addFailedSpeculation, (JNIEnv* env, jobject, jlong faile
   return FailedSpeculation::add_failed_speculation(NULL, (FailedSpeculation**)(address) failed_speculations_address, (address) speculation, speculation_len);
 }
 
+C2V_VMENTRY(void, callSystemExit, (JNIEnv* env, jobject, jint status))
+  JavaValue result(T_VOID);
+  JavaCallArguments jargs(1);
+  jargs.push_int(status);
+  JavaCalls::call_static(&result,
+                       SystemDictionary::System_klass(),
+                       vmSymbols::exit_method_name(),
+                       vmSymbols::int_void_signature(),
+                       &jargs,
+                       CHECK);
+}
+
 #define CC (char*)  /*cast a literal from (const char*)*/
 #define FN_PTR(f) CAST_FROM_FN_PTR(void*, &(c2v_ ## f))
 
@@ -2624,6 +2657,7 @@ JNINativeMethod CompilerToVM::methods[] = {
   {CC "hasNeverInlineDirective",                      CC "(" HS_RESOLVED_METHOD ")Z",                                                       FN_PTR(hasNeverInlineDirective)},
   {CC "shouldInlineMethod",                           CC "(" HS_RESOLVED_METHOD ")Z",                                                       FN_PTR(shouldInlineMethod)},
   {CC "lookupType",                                   CC "(" STRING HS_RESOLVED_KLASS "Z)" HS_RESOLVED_TYPE,                                FN_PTR(lookupType)},
+  {CC "getArrayType",                                 CC "(" HS_RESOLVED_TYPE ")" HS_RESOLVED_KLASS,                                        FN_PTR(getArrayType)},
   {CC "lookupClass",                                  CC "(" CLASS ")" HS_RESOLVED_TYPE,                                                    FN_PTR(lookupClass)},
   {CC "lookupNameInPool",                             CC "(" HS_CONSTANT_POOL "I)" STRING,                                                  FN_PTR(lookupNameInPool)},
   {CC "lookupNameAndTypeRefIndexInPool",              CC "(" HS_CONSTANT_POOL "I)I",                                                        FN_PTR(lookupNameAndTypeRefIndexInPool)},
@@ -2633,7 +2667,6 @@ JNINativeMethod CompilerToVM::methods[] = {
   {CC "lookupAppendixInPool",                         CC "(" HS_CONSTANT_POOL "I)" OBJECTCONSTANT,                                          FN_PTR(lookupAppendixInPool)},
   {CC "lookupMethodInPool",                           CC "(" HS_CONSTANT_POOL "IB)" HS_RESOLVED_METHOD,                                     FN_PTR(lookupMethodInPool)},
   {CC "constantPoolRemapInstructionOperandFromCache", CC "(" HS_CONSTANT_POOL "I)I",                                                        FN_PTR(constantPoolRemapInstructionOperandFromCache)},
-  {CC "resolveConstantInPool",                        CC "(" HS_CONSTANT_POOL "I)" OBJECTCONSTANT,                                          FN_PTR(resolveConstantInPool)},
   {CC "resolvePossiblyCachedConstantInPool",          CC "(" HS_CONSTANT_POOL "I)" OBJECTCONSTANT,                                          FN_PTR(resolvePossiblyCachedConstantInPool)},
   {CC "resolveTypeInPool",                            CC "(" HS_CONSTANT_POOL "I)" HS_RESOLVED_KLASS,                                       FN_PTR(resolveTypeInPool)},
   {CC "resolveFieldInPool",                           CC "(" HS_CONSTANT_POOL "I" HS_RESOLVED_METHOD "B[I)" HS_RESOLVED_KLASS,              FN_PTR(resolveFieldInPool)},
@@ -2723,6 +2756,7 @@ JNINativeMethod CompilerToVM::methods[] = {
   {CC "getFailedSpeculationsAddress",                 CC "(" HS_RESOLVED_METHOD ")J",                                                       FN_PTR(getFailedSpeculationsAddress)},
   {CC "releaseFailedSpeculations",                    CC "(J)V",                                                                            FN_PTR(releaseFailedSpeculations)},
   {CC "addFailedSpeculation",                         CC "(J[B)Z",                                                                          FN_PTR(addFailedSpeculation)},
+  {CC "callSystemExit",                               CC "(I)V",                                                                            FN_PTR(callSystemExit)},
 };
 
 int CompilerToVM::methods_count() {

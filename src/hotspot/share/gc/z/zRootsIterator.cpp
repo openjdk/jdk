@@ -198,7 +198,6 @@ ZRootsIterator::~ZRootsIterator() {
   } else {
     ZNMethod::oops_do_end();
   }
-  JvmtiExport::gc_epilogue();
 
   COMPILER2_PRESENT(DerivedPointerTable::update_pointers());
   Threads::assert_all_threads_claimed();

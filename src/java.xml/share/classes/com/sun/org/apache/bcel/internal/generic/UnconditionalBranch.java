@@ -24,7 +24,7 @@ package com.sun.org.apache.bcel.internal.generic;
 /**
  * Denotes an instruction to perform an unconditional branch, i.e., GOTO, JSR.
  *
- * @version $Id: UnconditionalBranch.java 1747278 2016-06-07 17:28:43Z britter $
+ * @version $Id$
 
  * @see GOTO
  * @see JSR

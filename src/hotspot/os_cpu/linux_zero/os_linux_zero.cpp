@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2019, Oracle and/or its affiliates. All rights reserved.
  * Copyright 2007, 2008, 2009, 2010 Red Hat, Inc.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -207,7 +207,8 @@ JVM_handle_linux_signal(int sig,
     /*if (thread->thread_state() == _thread_in_Java) {
       ShouldNotCallThis();
     }
-    else*/ if (thread->thread_state() == _thread_in_vm &&
+    else*/ if ((thread->thread_state() == _thread_in_vm ||
+               thread->thread_state() == _thread_in_native) &&
                sig == SIGBUS && thread->doing_unsafe_access()) {
       ShouldNotCallThis();
     }

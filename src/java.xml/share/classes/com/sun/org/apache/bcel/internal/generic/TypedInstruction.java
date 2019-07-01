@@ -25,7 +25,7 @@ package com.sun.org.apache.bcel.internal.generic;
  * Get the type associated with an instruction, int for ILOAD, or the type
  * of the field of a PUTFIELD instruction, e.g..
  *
- * @version $Id: TypedInstruction.java 1747278 2016-06-07 17:28:43Z britter $
+ * @version $Id$
  */
 public interface TypedInstruction {
 

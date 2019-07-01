@@ -47,7 +47,7 @@ package jdk.internal.vm.compiler.word;
  * null checks, read- or write barriers. Even when the VM uses compressed pointers, then readObject
  * and writeObject methods access uncompressed pointers.
  *
- * @since 1.0
+ * @since 19.0
  */
 public interface Pointer extends UnsignedWord, PointerBase {
 
@@ -58,7 +58,7 @@ public interface Pointer extends UnsignedWord, PointerBase {
      *
      * @return this Pointer cast to Object.
      *
-     * @since 1.0
+     * @since 19.0
      */
     Object toObject();
 
@@ -69,7 +69,7 @@ public interface Pointer extends UnsignedWord, PointerBase {
      *
      * @return this Pointer cast to non-null Object.
      *
-     * @since 1.0
+     * @since 19.0
      */
     Object toObjectNonNull();
 
@@ -85,7 +85,7 @@ public interface Pointer extends UnsignedWord, PointerBase {
      * @param locationIdentity the identity of the read
      * @return the result of the memory access
      *
-     * @since 1.0
+     * @since 19.0
      */
     byte readByte(WordBase offset, LocationIdentity locationIdentity);
 
@@ -101,7 +101,7 @@ public interface Pointer extends UnsignedWord, PointerBase {
      * @param locationIdentity the identity of the read
      * @return the result of the memory access
      *
-     * @since 1.0
+     * @since 19.0
      */
     char readChar(WordBase offset, LocationIdentity locationIdentity);
 
@@ -117,7 +117,7 @@ public interface Pointer extends UnsignedWord, PointerBase {
      * @param locationIdentity the identity of the read
      * @return the result of the memory access
      *
-     * @since 1.0
+     * @since 19.0
      */
     short readShort(WordBase offset, LocationIdentity locationIdentity);
 
@@ -133,7 +133,7 @@ public interface Pointer extends UnsignedWord, PointerBase {
      * @param locationIdentity the identity of the read
      * @return the result of the memory access
      *
-     * @since 1.0
+     * @since 19.0
      */
     int readInt(WordBase offset, LocationIdentity locationIdentity);
 
@@ -149,7 +149,7 @@ public interface Pointer extends UnsignedWord, PointerBase {
      * @param locationIdentity the identity of the read
      * @return the result of the memory access
      *
-     * @since 1.0
+     * @since 19.0
      */
     long readLong(WordBase offset, LocationIdentity locationIdentity);
 
@@ -165,7 +165,7 @@ public interface Pointer extends UnsignedWord, PointerBase {
      * @param locationIdentity the identity of the read
      * @return the result of the memory access
      *
-     * @since 1.0
+     * @since 19.0
      */
     float readFloat(WordBase offset, LocationIdentity locationIdentity);
 
@@ -181,7 +181,7 @@ public interface Pointer extends UnsignedWord, PointerBase {
      * @param locationIdentity the identity of the read
      * @return the result of the memory access
      *
-     * @since 1.0
+     * @since 19.0
      */
     double readDouble(WordBase offset, LocationIdentity locationIdentity);
 
@@ -197,7 +197,7 @@ public interface Pointer extends UnsignedWord, PointerBase {
      * @param locationIdentity the identity of the read
      * @return the result of the memory access
      *
-     * @since 1.0
+     * @since 19.0
      */
     <T extends WordBase> T readWord(WordBase offset, LocationIdentity locationIdentity);
 
@@ -213,7 +213,7 @@ public interface Pointer extends UnsignedWord, PointerBase {
      * @param locationIdentity the identity of the read
      * @return the result of the memory access
      *
-     * @since 1.0
+     * @since 19.0
      */
     Object readObject(WordBase offset, LocationIdentity locationIdentity);
 
@@ -225,7 +225,7 @@ public interface Pointer extends UnsignedWord, PointerBase {
      * @param locationIdentity the identity of the read
      * @return the result of the memory access
      *
-     * @since 1.0
+     * @since 19.0
      */
     byte readByte(int offset, LocationIdentity locationIdentity);
 
@@ -237,7 +237,7 @@ public interface Pointer extends UnsignedWord, PointerBase {
      * @param locationIdentity the identity of the read
      * @return the result of the memory access
      *
-     * @since 1.0
+     * @since 19.0
      */
     char readChar(int offset, LocationIdentity locationIdentity);
 
@@ -249,7 +249,7 @@ public interface Pointer extends UnsignedWord, PointerBase {
      * @param locationIdentity the identity of the read
      * @return the result of the memory access
      *
-     * @since 1.0
+     * @since 19.0
      */
     short readShort(int offset, LocationIdentity locationIdentity);
 
@@ -261,7 +261,7 @@ public interface Pointer extends UnsignedWord, PointerBase {
      * @param locationIdentity the identity of the read
      * @return the result of the memory access
      *
-     * @since 1.0
+     * @since 19.0
      */
     int readInt(int offset, LocationIdentity locationIdentity);
 
@@ -273,7 +273,7 @@ public interface Pointer extends UnsignedWord, PointerBase {
      * @param locationIdentity the identity of the read
      * @return the result of the memory access
      *
-     * @since 1.0
+     * @since 19.0
      */
     long readLong(int offset, LocationIdentity locationIdentity);
 
@@ -285,7 +285,7 @@ public interface Pointer extends UnsignedWord, PointerBase {
      * @param locationIdentity the identity of the read
      * @return the result of the memory access
      *
-     * @since 1.0
+     * @since 19.0
      */
     float readFloat(int offset, LocationIdentity locationIdentity);
 
@@ -297,7 +297,7 @@ public interface Pointer extends UnsignedWord, PointerBase {
      * @param locationIdentity the identity of the read
      * @return the result of the memory access
      *
-     * @since 1.0
+     * @since 19.0
      */
     double readDouble(int offset, LocationIdentity locationIdentity);
 
@@ -309,7 +309,7 @@ public interface Pointer extends UnsignedWord, PointerBase {
      * @param locationIdentity the identity of the read
      * @return the result of the memory access
      *
-     * @since 1.0
+     * @since 19.0
      */
     <T extends WordBase> T readWord(int offset, LocationIdentity locationIdentity);
 
@@ -321,7 +321,7 @@ public interface Pointer extends UnsignedWord, PointerBase {
      * @param locationIdentity the identity of the read
      * @return the result of the memory access
      *
-     * @since 1.0
+     * @since 19.0
      */
     Object readObject(int offset, LocationIdentity locationIdentity);
 
@@ -337,7 +337,7 @@ public interface Pointer extends UnsignedWord, PointerBase {
      * @param locationIdentity the identity of the write
      * @param val the value to be written to memory
      *
-     * @since 1.0
+     * @since 19.0
      */
     void writeByte(WordBase offset, byte val, LocationIdentity locationIdentity);
 
@@ -353,7 +353,7 @@ public interface Pointer extends UnsignedWord, PointerBase {
      * @param locationIdentity the identity of the write
      * @param val the value to be written to memory
      *
-     * @since 1.0
+     * @since 19.0
      */
     void writeChar(WordBase offset, char val, LocationIdentity locationIdentity);
 
@@ -369,7 +369,7 @@ public interface Pointer extends UnsignedWord, PointerBase {
      * @param locationIdentity the identity of the write
      * @param val the value to be written to memory
      *
-     * @since 1.0
+     * @since 19.0
      */
     void writeShort(WordBase offset, short val, LocationIdentity locationIdentity);
 
@@ -385,7 +385,7 @@ public interface Pointer extends UnsignedWord, PointerBase {
      * @param locationIdentity the identity of the write
      * @param val the value to be written to memory
      *
-     * @since 1.0
+     * @since 19.0
      */
     void writeInt(WordBase offset, int val, LocationIdentity locationIdentity);
 
@@ -401,7 +401,7 @@ public interface Pointer extends UnsignedWord, PointerBase {
      * @param locationIdentity the identity of the write
      * @param val the value to be written to memory
      *
-     * @since 1.0
+     * @since 19.0
      */
     void writeLong(WordBase offset, long val, LocationIdentity locationIdentity);
 
@@ -417,7 +417,7 @@ public interface Pointer extends UnsignedWord, PointerBase {
      * @param locationIdentity the identity of the write
      * @param val the value to be written to memory
      *
-     * @since 1.0
+     * @since 19.0
      */
     void writeFloat(WordBase offset, float val, LocationIdentity locationIdentity);
 
@@ -433,7 +433,7 @@ public interface Pointer extends UnsignedWord, PointerBase {
      * @param locationIdentity the identity of the write
      * @param val the value to be written to memory
      *
-     * @since 1.0
+     * @since 19.0
      */
     void writeDouble(WordBase offset, double val, LocationIdentity locationIdentity);
 
@@ -449,7 +449,7 @@ public interface Pointer extends UnsignedWord, PointerBase {
      * @param locationIdentity the identity of the write
      * @param val the value to be written to memory
      *
-     * @since 1.0
+     * @since 19.0
      */
     void writeWord(WordBase offset, WordBase val, LocationIdentity locationIdentity);
 
@@ -465,7 +465,7 @@ public interface Pointer extends UnsignedWord, PointerBase {
      * @param locationIdentity the identity of the write
      * @param val the value to be written to memory
      *
-     * @since 1.0
+     * @since 19.0
      */
     void initializeLong(WordBase offset, long val, LocationIdentity locationIdentity);
 
@@ -481,7 +481,7 @@ public interface Pointer extends UnsignedWord, PointerBase {
      * @param locationIdentity the identity of the write
      * @param val the value to be written to memory
      *
-     * @since 1.0
+     * @since 19.0
      */
     void writeObject(WordBase offset, Object val, LocationIdentity locationIdentity);
 
@@ -493,7 +493,7 @@ public interface Pointer extends UnsignedWord, PointerBase {
      * @param locationIdentity the identity of the write
      * @param val the value to be written to memory
      *
-     * @since 1.0
+     * @since 19.0
      */
     void writeByte(int offset, byte val, LocationIdentity locationIdentity);
 
@@ -505,7 +505,7 @@ public interface Pointer extends UnsignedWord, PointerBase {
      * @param locationIdentity the identity of the write
      * @param val the value to be written to memory
      *
-     * @since 1.0
+     * @since 19.0
      */
     void writeChar(int offset, char val, LocationIdentity locationIdentity);
 
@@ -517,7 +517,7 @@ public interface Pointer extends UnsignedWord, PointerBase {
      * @param locationIdentity the identity of the write
      * @param val the value to be written to memory
      *
-     * @since 1.0
+     * @since 19.0
      */
     void writeShort(int offset, short val, LocationIdentity locationIdentity);
 
@@ -529,7 +529,7 @@ public interface Pointer extends UnsignedWord, PointerBase {
      * @param locationIdentity the identity of the write
      * @param val the value to be written to memory
      *
-     * @since 1.0
+     * @since 19.0
      */
     void writeInt(int offset, int val, LocationIdentity locationIdentity);
 
@@ -541,7 +541,7 @@ public interface Pointer extends UnsignedWord, PointerBase {
      * @param locationIdentity the identity of the write
      * @param val the value to be written to memory
      *
-     * @since 1.0
+     * @since 19.0
      */
     void writeLong(int offset, long val, LocationIdentity locationIdentity);
 
@@ -553,7 +553,7 @@ public interface Pointer extends UnsignedWord, PointerBase {
      * @param locationIdentity the identity of the write
      * @param val the value to be written to memory
      *
-     * @since 1.0
+     * @since 19.0
      */
     void writeFloat(int offset, float val, LocationIdentity locationIdentity);
 
@@ -565,7 +565,7 @@ public interface Pointer extends UnsignedWord, PointerBase {
      * @param locationIdentity the identity of the write
      * @param val the value to be written to memory
      *
-     * @since 1.0
+     * @since 19.0
      */
     void writeDouble(int offset, double val, LocationIdentity locationIdentity);
 
@@ -577,7 +577,7 @@ public interface Pointer extends UnsignedWord, PointerBase {
      * @param locationIdentity the identity of the write
      * @param val the value to be written to memory
      *
-     * @since 1.0
+     * @since 19.0
      */
     void writeWord(int offset, WordBase val, LocationIdentity locationIdentity);
 
@@ -589,7 +589,7 @@ public interface Pointer extends UnsignedWord, PointerBase {
      * @param locationIdentity the identity of the write
      * @param val the value to be written to memory
      *
-     * @since 1.0
+     * @since 19.0
      */
     void initializeLong(int offset, long val, LocationIdentity locationIdentity);
 
@@ -601,7 +601,7 @@ public interface Pointer extends UnsignedWord, PointerBase {
      * @param locationIdentity the identity of the write
      * @param val the value to be written to memory
      *
-     * @since 1.0
+     * @since 19.0
      */
     void writeObject(int offset, Object val, LocationIdentity locationIdentity);
 
@@ -616,7 +616,7 @@ public interface Pointer extends UnsignedWord, PointerBase {
      * @param offset the signed offset for the memory access
      * @return the result of the memory access
      *
-     * @since 1.0
+     * @since 19.0
      */
     byte readByte(WordBase offset);
 
@@ -631,7 +631,7 @@ public interface Pointer extends UnsignedWord, PointerBase {
      * @param offset the signed offset for the memory access
      * @return the result of the memory access
      *
-     * @since 1.0
+     * @since 19.0
      */
     char readChar(WordBase offset);
 
@@ -646,7 +646,7 @@ public interface Pointer extends UnsignedWord, PointerBase {
      * @param offset the signed offset for the memory access
      * @return the result of the memory access
      *
-     * @since 1.0
+     * @since 19.0
      */
     short readShort(WordBase offset);
 
@@ -661,7 +661,7 @@ public interface Pointer extends UnsignedWord, PointerBase {
      * @param offset the signed offset for the memory access
      * @return the result of the memory access
      *
-     * @since 1.0
+     * @since 19.0
      */
     int readInt(WordBase offset);
 
@@ -676,7 +676,7 @@ public interface Pointer extends UnsignedWord, PointerBase {
      * @param offset the signed offset for the memory access
      * @return the result of the memory access
      *
-     * @since 1.0
+     * @since 19.0
      */
     long readLong(WordBase offset);
 
@@ -691,7 +691,7 @@ public interface Pointer extends UnsignedWord, PointerBase {
      * @param offset the signed offset for the memory access
      * @return the result of the memory access
      *
-     * @since 1.0
+     * @since 19.0
      */
     float readFloat(WordBase offset);
 
@@ -706,7 +706,7 @@ public interface Pointer extends UnsignedWord, PointerBase {
      * @param offset the signed offset for the memory access
      * @return the result of the memory access
      *
-     * @since 1.0
+     * @since 19.0
      */
     double readDouble(WordBase offset);
 
@@ -721,7 +721,7 @@ public interface Pointer extends UnsignedWord, PointerBase {
      * @param offset the signed offset for the memory access
      * @return the result of the memory access
      *
-     * @since 1.0
+     * @since 19.0
      */
     <T extends WordBase> T readWord(WordBase offset);
 
@@ -736,7 +736,7 @@ public interface Pointer extends UnsignedWord, PointerBase {
      * @param offset the signed offset for the memory access
      * @return the result of the memory access
      *
-     * @since 1.0
+     * @since 19.0
      */
     Object readObject(WordBase offset);
 
@@ -747,7 +747,7 @@ public interface Pointer extends UnsignedWord, PointerBase {
      * @param offset the signed offset for the memory access
      * @return the result of the memory access
      *
-     * @since 1.0
+     * @since 19.0
      */
     byte readByte(int offset);
 
@@ -758,7 +758,7 @@ public interface Pointer extends UnsignedWord, PointerBase {
      * @param offset the signed offset for the memory access
      * @return the result of the memory access
      *
-     * @since 1.0
+     * @since 19.0
      */
     char readChar(int offset);
 
@@ -769,7 +769,7 @@ public interface Pointer extends UnsignedWord, PointerBase {
      * @param offset the signed offset for the memory access
      * @return the result of the memory access
      *
-     * @since 1.0
+     * @since 19.0
      */
     short readShort(int offset);
 
@@ -780,7 +780,7 @@ public interface Pointer extends UnsignedWord, PointerBase {
      * @param offset the signed offset for the memory access
      * @return the result of the memory access
      *
-     * @since 1.0
+     * @since 19.0
      */
     int readInt(int offset);
 
@@ -791,7 +791,7 @@ public interface Pointer extends UnsignedWord, PointerBase {
      * @param offset the signed offset for the memory access
      * @return the result of the memory access
      *
-     * @since 1.0
+     * @since 19.0
      */
     long readLong(int offset);
 
@@ -802,7 +802,7 @@ public interface Pointer extends UnsignedWord, PointerBase {
      * @param offset the signed offset for the memory access
      * @return the result of the memory access
      *
-     * @since 1.0
+     * @since 19.0
      */
     float readFloat(int offset);
 
@@ -813,7 +813,7 @@ public interface Pointer extends UnsignedWord, PointerBase {
      * @param offset the signed offset for the memory access
      * @return the result of the memory access
      *
-     * @since 1.0
+     * @since 19.0
      */
     double readDouble(int offset);
 
@@ -824,7 +824,7 @@ public interface Pointer extends UnsignedWord, PointerBase {
      * @param offset the signed offset for the memory access
      * @return the result of the memory access
      *
-     * @since 1.0
+     * @since 19.0
      */
     <T extends WordBase> T readWord(int offset);
 
@@ -835,7 +835,7 @@ public interface Pointer extends UnsignedWord, PointerBase {
      * @param offset the signed offset for the memory access
      * @return the result of the memory access
      *
-     * @since 1.0
+     * @since 19.0
      */
     Object readObject(int offset);
 
@@ -850,7 +850,7 @@ public interface Pointer extends UnsignedWord, PointerBase {
      * @param offset the signed offset for the memory access
      * @param val the value to be written to memory
      *
-     * @since 1.0
+     * @since 19.0
      */
     void writeByte(WordBase offset, byte val);
 
@@ -865,7 +865,7 @@ public interface Pointer extends UnsignedWord, PointerBase {
      * @param offset the signed offset for the memory access
      * @param val the value to be written to memory
      *
-     * @since 1.0
+     * @since 19.0
      */
     void writeChar(WordBase offset, char val);
 
@@ -880,7 +880,7 @@ public interface Pointer extends UnsignedWord, PointerBase {
      * @param offset the signed offset for the memory access
      * @param val the value to be written to memory
      *
-     * @since 1.0
+     * @since 19.0
      */
     void writeShort(WordBase offset, short val);
 
@@ -895,7 +895,7 @@ public interface Pointer extends UnsignedWord, PointerBase {
      * @param offset the signed offset for the memory access
      * @param val the value to be written to memory
      *
-     * @since 1.0
+     * @since 19.0
      */
     void writeInt(WordBase offset, int val);
 
@@ -910,7 +910,7 @@ public interface Pointer extends UnsignedWord, PointerBase {
      * @param offset the signed offset for the memory access
      * @param val the value to be written to memory
      *
-     * @since 1.0
+     * @since 19.0
      */
     void writeLong(WordBase offset, long val);
 
@@ -925,7 +925,7 @@ public interface Pointer extends UnsignedWord, PointerBase {
      * @param offset the signed offset for the memory access
      * @param val the value to be written to memory
      *
-     * @since 1.0
+     * @since 19.0
      */
     void writeFloat(WordBase offset, float val);
 
@@ -940,7 +940,7 @@ public interface Pointer extends UnsignedWord, PointerBase {
      * @param offset the signed offset for the memory access
      * @param val the value to be written to memory
      *
-     * @since 1.0
+     * @since 19.0
      */
     void writeDouble(WordBase offset, double val);
 
@@ -955,7 +955,7 @@ public interface Pointer extends UnsignedWord, PointerBase {
      * @param offset the signed offset for the memory access
      * @param val the value to be written to memory
      *
-     * @since 1.0
+     * @since 19.0
      */
     void writeWord(WordBase offset, WordBase val);
 
@@ -970,7 +970,7 @@ public interface Pointer extends UnsignedWord, PointerBase {
      * @param offset the signed offset for the memory access
      * @param val the value to be written to memory
      *
-     * @since 1.0
+     * @since 19.0
      */
     void writeObject(WordBase offset, Object val);
 
@@ -990,7 +990,7 @@ public interface Pointer extends UnsignedWord, PointerBase {
      * @return The value that was read for comparison, which is {@code expectedValue} if the
      *         exchange was performed.
      *
-     * @since 1.0
+     * @since 19.0
      */
     int compareAndSwapInt(WordBase offset, int expectedValue, int newValue, LocationIdentity locationIdentity);
 
@@ -1010,7 +1010,7 @@ public interface Pointer extends UnsignedWord, PointerBase {
      * @return The value that was read for comparison, which is {@code expectedValue} if the
      *         exchange was performed.
      *
-     * @since 1.0
+     * @since 19.0
      */
     long compareAndSwapLong(WordBase offset, long expectedValue, long newValue, LocationIdentity locationIdentity);
 
@@ -1030,7 +1030,7 @@ public interface Pointer extends UnsignedWord, PointerBase {
      * @return The value that was read for comparison, which is {@code expectedValue} if the
      *         exchange was performed.
      *
-     * @since 1.0
+     * @since 19.0
      */
     <T extends WordBase> T compareAndSwapWord(WordBase offset, T expectedValue, T newValue, LocationIdentity locationIdentity);
 
@@ -1050,7 +1050,7 @@ public interface Pointer extends UnsignedWord, PointerBase {
      * @return The value that was read for comparison, which is {@code expectedValue} if the
      *         exchange was performed.
      *
-     * @since 1.0
+     * @since 19.0
      */
     Object compareAndSwapObject(WordBase offset, Object expectedValue, Object newValue, LocationIdentity locationIdentity);
 
@@ -1070,7 +1070,7 @@ public interface Pointer extends UnsignedWord, PointerBase {
      * @return {@code true} if successful. False return indicates that the actual value was not
      *         equal to the expected value.
      *
-     * @since 1.0
+     * @since 19.0
      */
     boolean logicCompareAndSwapInt(WordBase offset, int expectedValue, int newValue, LocationIdentity locationIdentity);
 
@@ -1090,7 +1090,7 @@ public interface Pointer extends UnsignedWord, PointerBase {
      * @return {@code true} if successful. False return indicates that the actual value was not
      *         equal to the expected value.
      *
-     * @since 1.0
+     * @since 19.0
      */
     boolean logicCompareAndSwapLong(WordBase offset, long expectedValue, long newValue, LocationIdentity locationIdentity);
 
@@ -1110,7 +1110,7 @@ public interface Pointer extends UnsignedWord, PointerBase {
      * @return {@code true} if successful. False return indicates that the actual value was not
      *         equal to the expected value.
      *
-     * @since 1.0
+     * @since 19.0
      */
     boolean logicCompareAndSwapWord(WordBase offset, WordBase expectedValue, WordBase newValue, LocationIdentity locationIdentity);
 
@@ -1130,7 +1130,7 @@ public interface Pointer extends UnsignedWord, PointerBase {
      * @return {@code true} if successful. False return indicates that the actual value was not
      *         equal to the expected value.
      *
-     * @since 1.0
+     * @since 19.0
      */
     boolean logicCompareAndSwapObject(WordBase offset, Object expectedValue, Object newValue, LocationIdentity locationIdentity);
 
@@ -1141,7 +1141,7 @@ public interface Pointer extends UnsignedWord, PointerBase {
      * @param offset the signed offset for the memory access
      * @param val the value to be written to memory
      *
-     * @since 1.0
+     * @since 19.0
      */
     void writeByte(int offset, byte val);
 
@@ -1152,7 +1152,7 @@ public interface Pointer extends UnsignedWord, PointerBase {
      * @param offset the signed offset for the memory access
      * @param val the value to be written to memory
      *
-     * @since 1.0
+     * @since 19.0
      */
     void writeChar(int offset, char val);
 
@@ -1163,7 +1163,7 @@ public interface Pointer extends UnsignedWord, PointerBase {
      * @param offset the signed offset for the memory access
      * @param val the value to be written to memory
      *
-     * @since 1.0
+     * @since 19.0
      */
     void writeShort(int offset, short val);
 
@@ -1174,7 +1174,7 @@ public interface Pointer extends UnsignedWord, PointerBase {
      * @param offset the signed offset for the memory access
      * @param val the value to be written to memory
      *
-     * @since 1.0
+     * @since 19.0
      */
     void writeInt(int offset, int val);
 
@@ -1185,7 +1185,7 @@ public interface Pointer extends UnsignedWord, PointerBase {
      * @param offset the signed offset for the memory access
      * @param val the value to be written to memory
      *
-     * @since 1.0
+     * @since 19.0
      */
     void writeLong(int offset, long val);
 
@@ -1196,7 +1196,7 @@ public interface Pointer extends UnsignedWord, PointerBase {
      * @param offset the signed offset for the memory access
      * @param val the value to be written to memory
      *
-     * @since 1.0
+     * @since 19.0
      */
     void writeFloat(int offset, float val);
 
@@ -1207,7 +1207,7 @@ public interface Pointer extends UnsignedWord, PointerBase {
      * @param offset the signed offset for the memory access
      * @param val the value to be written to memory
      *
-     * @since 1.0
+     * @since 19.0
      */
     void writeDouble(int offset, double val);
 
@@ -1218,7 +1218,7 @@ public interface Pointer extends UnsignedWord, PointerBase {
      * @param offset the signed offset for the memory access
      * @param val the value to be written to memory
      *
-     * @since 1.0
+     * @since 19.0
      */
     void writeWord(int offset, WordBase val);
 
@@ -1229,7 +1229,7 @@ public interface Pointer extends UnsignedWord, PointerBase {
      * @param offset the signed offset for the memory access
      * @param val the value to be written to memory
      *
-     * @since 1.0
+     * @since 19.0
      */
     void writeObject(int offset, Object val);
 
@@ -1245,7 +1245,7 @@ public interface Pointer extends UnsignedWord, PointerBase {
      * @return The value that was read for comparison, which is {@code expectedValue} if the
      *         exchange was performed.
      *
-     * @since 1.0
+     * @since 19.0
      */
     int compareAndSwapInt(int offset, int expectedValue, int newValue, LocationIdentity locationIdentity);
 
@@ -1261,7 +1261,7 @@ public interface Pointer extends UnsignedWord, PointerBase {
      * @return The value that was read for comparison, which is {@code expectedValue} if the
      *         exchange was performed.
      *
-     * @since 1.0
+     * @since 19.0
      */
     long compareAndSwapLong(int offset, long expectedValue, long newValue, LocationIdentity locationIdentity);
 
@@ -1277,7 +1277,7 @@ public interface Pointer extends UnsignedWord, PointerBase {
      * @return The value that was read for comparison, which is {@code expectedValue} if the
      *         exchange was performed.
      *
-     * @since 1.0
+     * @since 19.0
      */
     <T extends WordBase> T compareAndSwapWord(int offset, T expectedValue, T newValue, LocationIdentity locationIdentity);
 
@@ -1293,7 +1293,7 @@ public interface Pointer extends UnsignedWord, PointerBase {
      * @return The value that was read for comparison, which is {@code expectedValue} if the
      *         exchange was performed.
      *
-     * @since 1.0
+     * @since 19.0
      */
     Object compareAndSwapObject(int offset, Object expectedValue, Object newValue, LocationIdentity locationIdentity);
 
@@ -1309,7 +1309,7 @@ public interface Pointer extends UnsignedWord, PointerBase {
      * @return {@code true} if successful. False return indicates that the actual value was not
      *         equal to the expected value.
      *
-     * @since 1.0
+     * @since 19.0
      */
     boolean logicCompareAndSwapInt(int offset, int expectedValue, int newValue, LocationIdentity locationIdentity);
 
@@ -1325,7 +1325,7 @@ public interface Pointer extends UnsignedWord, PointerBase {
      * @return {@code true} if successful. False return indicates that the actual value was not
      *         equal to the expected value.
      *
-     * @since 1.0
+     * @since 19.0
      */
     boolean logicCompareAndSwapLong(int offset, long expectedValue, long newValue, LocationIdentity locationIdentity);
 
@@ -1341,7 +1341,7 @@ public interface Pointer extends UnsignedWord, PointerBase {
      * @return {@code true} if successful. False return indicates that the actual value was not
      *         equal to the expected value.
      *
-     * @since 1.0
+     * @since 19.0
      */
     boolean logicCompareAndSwapWord(int offset, WordBase expectedValue, WordBase newValue, LocationIdentity locationIdentity);
 
@@ -1357,7 +1357,7 @@ public interface Pointer extends UnsignedWord, PointerBase {
      * @return {@code true} if successful. False return indicates that the actual value was not
      *         equal to the expected value.
      *
-     * @since 1.0
+     * @since 19.0
      */
     boolean logicCompareAndSwapObject(int offset, Object expectedValue, Object newValue, LocationIdentity locationIdentity);
 
@@ -1371,7 +1371,7 @@ public interface Pointer extends UnsignedWord, PointerBase {
      * @param val value to be added to this Pointer.
      * @return {@code this + val}
      *
-     * @since 1.0
+     * @since 19.0
      */
     @Override
     Pointer add(UnsignedWord val);
@@ -1382,7 +1382,7 @@ public interface Pointer extends UnsignedWord, PointerBase {
      * @param val value to be added to this Pointer.
      * @return {@code this + val}
      *
-     * @since 1.0
+     * @since 19.0
      */
     @Override
     Pointer add(int val);
@@ -1393,7 +1393,7 @@ public interface Pointer extends UnsignedWord, PointerBase {
      * @param val value to be subtracted from this Pointer.
      * @return {@code this - val}
      *
-     * @since 1.0
+     * @since 19.0
      */
     @Override
     Pointer subtract(UnsignedWord val);
@@ -1404,7 +1404,7 @@ public interface Pointer extends UnsignedWord, PointerBase {
      * @param val value to be subtracted from this Pointer.
      * @return {@code this - val}
      *
-     * @since 1.0
+     * @since 19.0
      */
     @Override
     Pointer subtract(int val);
@@ -1415,7 +1415,7 @@ public interface Pointer extends UnsignedWord, PointerBase {
      * @param val value to be AND'ed with this Pointer.
      * @return {@code this & val}
      *
-     * @since 1.0
+     * @since 19.0
      */
     @Override
     Pointer and(UnsignedWord val);
@@ -1426,7 +1426,7 @@ public interface Pointer extends UnsignedWord, PointerBase {
      * @param val value to be AND'ed with this Pointer.
      * @return {@code this & val}
      *
-     * @since 1.0
+     * @since 19.0
      */
     @Override
     Pointer and(int val);
@@ -1437,7 +1437,7 @@ public interface Pointer extends UnsignedWord, PointerBase {
      * @param val value to be OR'ed with this Pointer.
      * @return {@code this | val}
      *
-     * @since 1.0
+     * @since 19.0
      */
     @Override
     Pointer or(UnsignedWord val);
@@ -1448,7 +1448,7 @@ public interface Pointer extends UnsignedWord, PointerBase {
      * @param val value to be OR'ed with this Pointer.
      * @return {@code this | val}
      *
-     * @since 1.0
+     * @since 19.0
      */
     @Override
     Pointer or(int val);

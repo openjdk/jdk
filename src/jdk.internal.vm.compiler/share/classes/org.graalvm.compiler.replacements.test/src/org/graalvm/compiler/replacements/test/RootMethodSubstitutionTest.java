@@ -34,6 +34,7 @@ import org.graalvm.compiler.core.common.GraalOptions;
 import org.graalvm.compiler.core.target.Backend;
 import org.graalvm.compiler.core.test.GraalCompilerTest;
 import org.graalvm.compiler.debug.DebugContext;
+import org.graalvm.compiler.nodes.Cancellable;
 import org.graalvm.compiler.nodes.StructuredGraph;
 import org.graalvm.compiler.nodes.graphbuilderconf.InvocationPlugin;
 import org.graalvm.compiler.nodes.graphbuilderconf.InvocationPlugins;
@@ -51,7 +52,7 @@ import jdk.vm.ci.meta.ResolvedJavaType;
 
 /**
  * Exercise
- * {@link org.graalvm.compiler.nodes.spi.Replacements#getIntrinsicGraph(ResolvedJavaMethod, CompilationIdentifier, DebugContext)}
+ * {@link org.graalvm.compiler.nodes.spi.Replacements#getIntrinsicGraph(ResolvedJavaMethod, CompilationIdentifier, DebugContext, Cancellable)}
  * with regular method substitutions and encoded graphs.
  */
 @RunWith(Parameterized.class)
@@ -113,14 +114,14 @@ public class RootMethodSubstitutionTest extends GraalCompilerTest {
     private StructuredGraph getIntrinsicGraph(boolean useEncodedGraphs) {
         OptionValues options = new OptionValues(getDebugContext().getOptions(), GraalOptions.UseEncodedGraphs, useEncodedGraphs);
         DebugContext debugContext = DebugContext.create(options, getDebugContext().getDescription(), getDebugHandlersFactories());
-        return getReplacements().getIntrinsicGraph(method, CompilationIdentifier.INVALID_COMPILATION_ID, debugContext);
+        return getReplacements().getIntrinsicGraph(method, CompilationIdentifier.INVALID_COMPILATION_ID, debugContext, null);
     }
 
     StructuredGraph expectedGraph;
     StructuredGraph actualGraph;
 
     @Override
-    protected boolean checkHighTierGraph(StructuredGraph graph) {
+    protected void checkHighTierGraph(StructuredGraph graph) {
         // Capture the graphs after high tier
         if (expectedGraph == null) {
             expectedGraph = (StructuredGraph) graph.copy(graph.getDebug());
@@ -128,7 +129,7 @@ public class RootMethodSubstitutionTest extends GraalCompilerTest {
             assert actualGraph == null;
             actualGraph = (StructuredGraph) graph.copy(graph.getDebug());
         }
-        return super.checkHighTierGraph(graph);
+        super.checkHighTierGraph(graph);
     }
 
     @Test

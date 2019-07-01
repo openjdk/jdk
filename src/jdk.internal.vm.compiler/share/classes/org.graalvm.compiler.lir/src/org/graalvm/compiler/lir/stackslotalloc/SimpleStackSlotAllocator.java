@@ -113,6 +113,6 @@ public class SimpleStackSlotAllocator extends AllocationPhase {
     }
 
     protected StackSlot mapVirtualStackSlotRange(FrameMapBuilderTool builder, VirtualStackSlotRange virtualStackSlot) {
-        return builder.getFrameMap().allocateStackSlots(virtualStackSlot.getSlots(), virtualStackSlot.getObjects());
+        return builder.getFrameMap().allocateStackSlots(virtualStackSlot.getSlots());
     }
 }

@@ -28,12 +28,12 @@ package jdk.tools.jaotc;
 import static jdk.tools.jaotc.AOTCompiledClass.getType;
 import static jdk.tools.jaotc.AOTCompiledClass.metadataName;
 
-import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.List;
 
 import org.graalvm.compiler.code.CompilationResult;
 import org.graalvm.compiler.hotspot.HotSpotGraalRuntimeProvider;
+import org.graalvm.compiler.hotspot.HotSpotGraalServices;
 
 import jdk.tools.jaotc.binformat.BinaryContainer;
 import jdk.tools.jaotc.binformat.ByteContainer;
@@ -82,12 +82,6 @@ final class MetadataBuilder {
         HotSpotGraalRuntimeProvider runtime = dataBuilder.getBackend().getRuntime();
         ByteContainer methodMetadataContainer = binaryContainer.getMethodMetadataContainer();
 
-        Method implicitExceptionsMethod = null;
-        try {
-            implicitExceptionsMethod = HotSpotMetaData.class.getDeclaredMethod("implicitExceptionBytes");
-        } catch (NoSuchMethodException e) {
-        }
-
         // For each of the compiled java methods, create records holding information about them.
         for (CompiledMethodInfo methodInfo : compiledClass.getCompiledMethods()) {
             // Get the current offset in the methodmetadata container.
@@ -104,6 +98,7 @@ final class MetadataBuilder {
             byte[] scopeDesc = metaData.scopesDescBytes();
             byte[] relocationInfo = metaData.relocBytes();
             byte[] oopMapInfo = metaData.oopMaps();
+            byte[] implicitExceptionBytes = HotSpotGraalServices.getImplicitExceptionBytes(metaData);
 
             // create a global symbol at this position for this method
             NativeOrderOutputStream metadataStream = new NativeOrderOutputStream();
@@ -148,10 +143,9 @@ final class MetadataBuilder {
                 NativeOrderOutputStream.PatchableInt scopeOffset = metadataStream.patchableInt();
                 NativeOrderOutputStream.PatchableInt relocationOffset = metadataStream.patchableInt();
                 NativeOrderOutputStream.PatchableInt exceptionOffset = metadataStream.patchableInt();
-                NativeOrderOutputStream.PatchableInt implictTableOFfset = null;
-
-                if (implicitExceptionsMethod != null) {
-                    implictTableOFfset = metadataStream.patchableInt();
+                NativeOrderOutputStream.PatchableInt implictTableOffset = null;
+                if (implicitExceptionBytes != null) {
+                    implictTableOffset = metadataStream.patchableInt();
                 }
                 NativeOrderOutputStream.PatchableInt oopMapOffset = metadataStream.patchableInt();
                 metadataStream.align(8);
@@ -168,10 +162,9 @@ final class MetadataBuilder {
                 exceptionOffset.set(metadataStream.position());
                 metadataStream.put(metaData.exceptionBytes()).align(8);
 
-                if (implicitExceptionsMethod != null) {
-                    implictTableOFfset.set(metadataStream.position());
-                    byte[] data = (byte[]) implicitExceptionsMethod.invoke(metaData);
-                    metadataStream.put(data).align(8);
+                if (implicitExceptionBytes != null) {
+                    implictTableOffset.set(metadataStream.position());
+                    metadataStream.put(implicitExceptionBytes).align(8);
                 }
 
                 // oopmaps should be last

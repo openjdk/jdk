@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2019, Oracle and/or its affiliates. All rights reserved.
  */
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
@@ -24,25 +24,31 @@ import java.util.LinkedList;
 import com.sun.org.apache.bcel.internal.classfile.JavaClass;
 
 /**
- * Utility class implementing a (typesafe) queue of JavaClass objects.
+ * Utility class implementing a (typesafe) queue of JavaClass
+ * objects.
  *
- * @version $Id: ClassQueue.java 1747278 2016-06-07 17:28:43Z britter $
+ * @version $Id$
+ * @LastModified: Jun 2019
  */
 public class ClassQueue {
 
     private final LinkedList<JavaClass> vec = new LinkedList<>();
 
-    public void enqueue(final JavaClass clazz) {
+
+    public void enqueue( final JavaClass clazz ) {
         vec.addLast(clazz);
     }
+
 
     public JavaClass dequeue() {
         return vec.removeFirst();
     }
 
+
     public boolean empty() {
         return vec.isEmpty();
     }
+
 
     @Override
     public String toString() {

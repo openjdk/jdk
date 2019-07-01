@@ -114,7 +114,7 @@ class SharedLibraryJVMCIReflection extends HotSpotJVMCIReflection {
         }
         IndirectHotSpotObjectConstantImpl indirectX = (IndirectHotSpotObjectConstantImpl) x;
         IndirectHotSpotObjectConstantImpl indirectY = (IndirectHotSpotObjectConstantImpl) y;
-        return runtime().compilerToVm.equals(x, indirectX.objectHandle, y, indirectY.objectHandle);
+        return runtime().compilerToVm.equals(x, indirectX.getHandle(), y, indirectY.getHandle());
     }
 
     @Override
@@ -287,6 +287,10 @@ class SharedLibraryJVMCIReflection extends HotSpotJVMCIReflection {
         if (object instanceof DirectHotSpotObjectConstantImpl) {
             DirectHotSpotObjectConstantImpl direct = (DirectHotSpotObjectConstantImpl) object;
             return "CompilerObject<" + direct.object.getClass().getName() + ">";
+        }
+        IndirectHotSpotObjectConstantImpl indirect = (IndirectHotSpotObjectConstantImpl) object;
+        if (!indirect.isValid()) {
+            return "Instance<null>";
         }
         return "Instance<" + object.getType().toJavaName() + ">";
     }

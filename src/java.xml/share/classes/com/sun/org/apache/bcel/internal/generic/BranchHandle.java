@@ -23,13 +23,13 @@ package com.sun.org.apache.bcel.internal.generic;
 /**
  * BranchHandle is returned by specialized InstructionList.append() whenever a
  * BranchInstruction is appended. This is useful when the target of this
- * instruction is not known at time of creation and must be set later via
- * setTarget().
+ * instruction is not known at time of creation and must be set later
+ * via setTarget().
  *
  * @see InstructionHandle
  * @see Instruction
  * @see InstructionList
- * @version $Id: BranchHandle.java 1749603 2016-06-21 20:50:19Z ggregory $
+ * @version $Id$
  */
 public final class BranchHandle extends InstructionHandle {
 
@@ -37,33 +37,16 @@ public final class BranchHandle extends InstructionHandle {
     // See BCEL-273
     private BranchInstruction bi; // An alias in fact, but saves lots of casts
 
+
     private BranchHandle(final BranchInstruction i) {
         super(i);
         bi = i;
     }
 
-    /**
-     * Factory methods.
+    /** Factory method.
      */
-    private static BranchHandle bh_list = null; // List of reusable handles
-
-    static BranchHandle getBranchHandle(final BranchInstruction i) {
-        if (bh_list == null) {
-            return new BranchHandle(i);
-        }
-        final BranchHandle bh = bh_list;
-        bh_list = (BranchHandle) bh.getNext();
-        bh.setInstruction(i);
-        return bh;
-    }
-
-    /**
-     * Handle adds itself to the list of resuable handles.
-     */
-    @Override
-    protected void addHandle() {
-        super.setNext(bh_list);
-        bh_list = this;
+    static BranchHandle getBranchHandle( final BranchInstruction i ) {
+        return new BranchHandle(i);
     }
 
 
@@ -76,33 +59,38 @@ public final class BranchHandle extends InstructionHandle {
         return bi.getPosition();
     }
 
+
     @Override
-    void setPosition(final int pos) {
+    void setPosition( final int pos ) {
         // Original code: i_position = bi.position = pos;
         bi.setPosition(pos);
         super.setPosition(pos);
     }
 
+
     @Override
-    protected int updatePosition(final int offset, final int max_offset) {
+    protected int updatePosition( final int offset, final int max_offset ) {
         final int x = bi.updatePosition(offset, max_offset);
         super.setPosition(bi.getPosition());
         return x;
     }
 
+
     /**
      * Pass new target to instruction.
      */
-    public void setTarget(final InstructionHandle ih) {
+    public void setTarget( final InstructionHandle ih ) {
         bi.setTarget(ih);
     }
+
 
     /**
      * Update target of instruction.
      */
-    public void updateTarget(final InstructionHandle old_ih, final InstructionHandle new_ih) {
+    public void updateTarget( final InstructionHandle old_ih, final InstructionHandle new_ih ) {
         bi.updateTarget(old_ih, new_ih);
     }
+
 
     /**
      * @return target of instruction.
@@ -111,12 +99,12 @@ public final class BranchHandle extends InstructionHandle {
         return bi.getTarget();
     }
 
+
     /**
-     * Set new contents. Old instruction is disposed and may not be used
-     * anymore.
+     * Set new contents. Old instruction is disposed and may not be used anymore.
      */
     @Override // This is only done in order to apply the additional type check; could be merged with super impl.
-    public void setInstruction(final Instruction i) { // TODO could be package-protected?
+    public void setInstruction( final Instruction i ) { // TODO could be package-protected?
         super.setInstruction(i);
         if (!(i instanceof BranchInstruction)) {
             throw new ClassGenException("Assigning " + i

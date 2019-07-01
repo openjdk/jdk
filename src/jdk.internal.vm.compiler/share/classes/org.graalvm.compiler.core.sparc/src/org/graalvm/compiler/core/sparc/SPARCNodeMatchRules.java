@@ -151,7 +151,7 @@ public class SPARCNodeMatchRules extends NodeMatchRules {
     public ComplexMatchResult ifCompareLogicCas(IfNode root, CompareNode compare, ValueNode value, LogicCompareAndSwapNode cas) {
         JavaConstant constant = value.asJavaConstant();
         assert compare.condition() == CanonicalCondition.EQ;
-        if (constant != null && cas.usages().count() == 1) {
+        if (constant != null && cas.hasExactlyOneUsage()) {
             long constantValue = constant.asLong();
             boolean successIsTrue;
             if (constantValue == 0) {

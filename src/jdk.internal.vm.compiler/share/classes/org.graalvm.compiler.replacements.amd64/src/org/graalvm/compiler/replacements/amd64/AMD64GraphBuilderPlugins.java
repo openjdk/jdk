@@ -32,8 +32,6 @@ import static org.graalvm.compiler.replacements.nodes.UnaryMathIntrinsicNode.Una
 import static org.graalvm.compiler.replacements.nodes.UnaryMathIntrinsicNode.UnaryOperation.LOG10;
 import static org.graalvm.compiler.replacements.nodes.UnaryMathIntrinsicNode.UnaryOperation.SIN;
 import static org.graalvm.compiler.replacements.nodes.UnaryMathIntrinsicNode.UnaryOperation.TAN;
-import static org.graalvm.compiler.serviceprovider.JavaVersionUtil.Java11OrEarlier;
-import static org.graalvm.compiler.serviceprovider.JavaVersionUtil.Java8OrEarlier;
 
 import java.util.Arrays;
 
@@ -62,6 +60,7 @@ import org.graalvm.compiler.replacements.nodes.BitCountNode;
 import org.graalvm.compiler.replacements.nodes.FusedMultiplyAddNode;
 import org.graalvm.compiler.replacements.nodes.UnaryMathIntrinsicNode;
 import org.graalvm.compiler.replacements.nodes.UnaryMathIntrinsicNode.UnaryOperation;
+import org.graalvm.compiler.serviceprovider.JavaVersionUtil;
 
 import jdk.vm.ci.amd64.AMD64;
 import jdk.vm.ci.amd64.AMD64.CPUFeature;
@@ -95,7 +94,7 @@ public class AMD64GraphBuilderPlugins {
     }
 
     private static void registerThreadPlugins(InvocationPlugins plugins, AMD64 arch) {
-        if (!Java8OrEarlier) {
+        if (JavaVersionUtil.JAVA_SPEC > 8) {
             // Pause instruction introduced with SSE2
             if (arch.getFeatures().contains(AMD64.CPUFeature.SSE2)) {
                 Registration r = new Registration(plugins, Thread.class);
@@ -177,7 +176,7 @@ public class AMD64GraphBuilderPlugins {
             registerRound(r, "floor", RoundingMode.DOWN);
         }
 
-        if (useFMAIntrinsics && !Java8OrEarlier && arch.getFeatures().contains(CPUFeature.FMA)) {
+        if (useFMAIntrinsics && JavaVersionUtil.JAVA_SPEC > 8 && arch.getFeatures().contains(CPUFeature.FMA)) {
             registerFMA(r);
         }
     }
@@ -248,7 +247,7 @@ public class AMD64GraphBuilderPlugins {
     }
 
     private static void registerStringPlugins(InvocationPlugins plugins, BytecodeProvider replacementsBytecodeProvider) {
-        if (Java8OrEarlier) {
+        if (JavaVersionUtil.JAVA_SPEC <= 8) {
             Registration r;
             r = new Registration(plugins, String.class, replacementsBytecodeProvider);
             r.setAllowOverwrite(true);
@@ -284,9 +283,10 @@ public class AMD64GraphBuilderPlugins {
 
     private static void registerUnsafePlugins(InvocationPlugins plugins, BytecodeProvider replacementsBytecodeProvider, boolean explicitUnsafeNullChecks) {
         registerUnsafePlugins(new Registration(plugins, Unsafe.class), explicitUnsafeNullChecks, new JavaKind[]{JavaKind.Int, JavaKind.Long, JavaKind.Object}, true);
-        if (!Java8OrEarlier) {
+        if (JavaVersionUtil.JAVA_SPEC > 8) {
             registerUnsafePlugins(new Registration(plugins, "jdk.internal.misc.Unsafe", replacementsBytecodeProvider), explicitUnsafeNullChecks,
-                            new JavaKind[]{JavaKind.Boolean, JavaKind.Byte, JavaKind.Char, JavaKind.Short, JavaKind.Int, JavaKind.Long, JavaKind.Object}, Java11OrEarlier);
+                            new JavaKind[]{JavaKind.Boolean, JavaKind.Byte, JavaKind.Char, JavaKind.Short, JavaKind.Int, JavaKind.Long, JavaKind.Object},
+                            JavaVersionUtil.JAVA_SPEC <= 11);
         }
     }
 

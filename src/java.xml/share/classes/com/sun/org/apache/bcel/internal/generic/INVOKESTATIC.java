@@ -32,7 +32,7 @@ import com.sun.org.apache.bcel.internal.ExceptionConst;
  *
  * <PRE>Stack: ..., [arg1, [arg2 ...]] -&gt; ...</PRE>
  *
- * @version $Id: INVOKESTATIC.java 1747278 2016-06-07 17:28:43Z britter $
+ * @version $Id$
  * @see
  * <a href="http://docs.oracle.com/javase/specs/jvms/se8/html/jvms-6.html#jvms-6.5.invokestatic">
  * The invokestatic instruction in The Java Virtual Machine Specification</a>
@@ -40,8 +40,8 @@ import com.sun.org.apache.bcel.internal.ExceptionConst;
 public class INVOKESTATIC extends InvokeInstruction {
 
     /**
-     * Empty constructor needed for the Class.newInstance() statement in
-     * Instruction.readInstruction(). Not to be used otherwise.
+     * Empty constructor needed for Instruction.readInstruction.
+     * Not to be used otherwise.
      */
     INVOKESTATIC() {
     }

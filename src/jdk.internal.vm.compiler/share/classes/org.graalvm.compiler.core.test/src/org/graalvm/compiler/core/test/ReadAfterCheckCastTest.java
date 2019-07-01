@@ -30,11 +30,11 @@ import org.graalvm.compiler.nodes.ParameterNode;
 import org.graalvm.compiler.nodes.StructuredGraph;
 import org.graalvm.compiler.nodes.StructuredGraph.AllowAssumptions;
 import org.graalvm.compiler.nodes.memory.FloatingReadNode;
+import org.graalvm.compiler.nodes.spi.CoreProviders;
 import org.graalvm.compiler.nodes.spi.LoweringTool;
 import org.graalvm.compiler.phases.common.CanonicalizerPhase;
 import org.graalvm.compiler.phases.common.FloatingReadPhase;
 import org.graalvm.compiler.phases.common.LoweringPhase;
-import org.graalvm.compiler.phases.tiers.PhaseContext;
 import org.junit.Assert;
 import org.junit.Test;
 
@@ -89,7 +89,7 @@ public class ReadAfterCheckCastTest extends GraphScheduleTest {
             // check shape of graph, with lots of assumptions. will probably fail if graph
             // structure changes significantly
             StructuredGraph graph = parseEager(snippet, AllowAssumptions.YES);
-            PhaseContext context = new PhaseContext(getProviders());
+            CoreProviders context = getProviders();
             CanonicalizerPhase canonicalizer = new CanonicalizerPhase();
             new LoweringPhase(canonicalizer, LoweringTool.StandardLoweringStage.HIGH_TIER).apply(graph, context);
             new FloatingReadPhase().apply(graph);

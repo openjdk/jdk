@@ -1,7 +1,7 @@
 /*
- * Copyright (c) 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2019, Oracle and/or its affiliates. All rights reserved.
  */
-/*
+ /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
  * contributor license agreements.  See the NOTICE file distributed with
  * this work for additional information regarding copyright ownership.
@@ -44,12 +44,14 @@ import java.util.NoSuchElementException;
  * A list is finally dumped to a byte code array with <a
  * href="#getByteCode()">getByteCode</a>.
  *
- * @version $Id: InstructionList.java 1749603 2016-06-21 20:50:19Z ggregory $
+ * @version $Id$
  * @see Instruction
  * @see InstructionHandle
  * @see BranchHandle
+ * @LastModified: Jun 2019
  */
 public class InstructionList implements Iterable<InstructionHandle> {
+
     private InstructionHandle start = null;
     private InstructionHandle end = null;
     private int length = 0; // number of elements in list
@@ -191,12 +193,11 @@ public class InstructionList implements Iterable<InstructionHandle> {
         for (int i = 0; i < count; i++) {
             if (ihs[i] instanceof BranchHandle) {
                 final BranchInstruction bi = (BranchInstruction) ihs[i].getInstruction();
-                int target = bi.getPosition() + bi.getIndex(); /*
-                 * Byte code position: relative -> absolute.
+                int target = bi.getPosition() + bi.getIndex();
+                /*
+                                                                * Byte code position: relative -> absolute.
                  */
-
                 // Search for target position
-
                 InstructionHandle ih = findHandle(ihs, pos, count, target);
                 if (ih == null) {
                     throw new ClassGenException("Couldn't find target for branch: " + bi);
@@ -433,7 +434,6 @@ public class InstructionList implements Iterable<InstructionHandle> {
         } else {
             start = il.start; // Update start ...
         }
-
         length += il.length; // Update length
         il.clear();
         return ret;
@@ -468,7 +468,6 @@ public class InstructionList implements Iterable<InstructionHandle> {
             ih.setPrev(null);
             start = ih;
         }
-
         length++;
     }
 
@@ -843,26 +842,26 @@ public class InstructionList implements Iterable<InstructionHandle> {
                 if (i instanceof BranchInstruction) { // target instruction within list?
                     Instruction inst = ((BranchInstruction) i).getTarget().getInstruction();
                     if (!contains(inst)) {
-                        throw new ClassGenException("Branch target of " +
-                                Const.getOpcodeName(i.getOpcode()) + ":" +
-                                inst + " not in instruction list");
+                        throw new ClassGenException("Branch target of "
+                                + Const.getOpcodeName(i.getOpcode()) + ":"
+                                + inst + " not in instruction list");
                     }
                     if (i instanceof Select) {
                         final InstructionHandle[] targets = ((Select) i).getTargets();
                         for (final InstructionHandle target : targets) {
                             inst = target.getInstruction();
                             if (!contains(inst)) {
-                                throw new ClassGenException("Branch target of " +
-                                        Const.getOpcodeName(i.getOpcode()) + ":" +
-                                        inst + " not in instruction list");
+                                throw new ClassGenException("Branch target of "
+                                        + Const.getOpcodeName(i.getOpcode()) + ":"
+                                        + inst + " not in instruction list");
                             }
                         }
                     }
                     if (!(ih instanceof BranchHandle)) {
                         throw new ClassGenException(
-                                "Branch instruction " +
-                                        Const.getOpcodeName(i.getOpcode()) + ":" +
-                                        inst + " not contained in BranchHandle.");
+                                "Branch instruction "
+                                + Const.getOpcodeName(i.getOpcode()) + ":"
+                                + inst + " not contained in BranchHandle.");
                     }
                 }
             }
@@ -871,11 +870,9 @@ public class InstructionList implements Iterable<InstructionHandle> {
          * Pass 1: Set position numbers and sum up the maximum number of bytes an instruction may be shifted.
          */
         for (InstructionHandle ih = start; ih != null; ih = ih.getNext()) {
-
             final Instruction i = ih.getInstruction();
             ih.setPosition(index);
             pos[count++] = index;
-
             /*
              * Get an estimate about how many additional bytes may be added,
              * because BranchInstructions may have variable length depending on the target offset
@@ -908,7 +905,6 @@ public class InstructionList implements Iterable<InstructionHandle> {
         index = count = 0;
         for (InstructionHandle ih = start; ih != null; ih = ih.getNext()) {
             final Instruction i = ih.getInstruction();
-
             ih.setPosition(index);
             pos[count++] = index;
             index += i.getLength();
@@ -1040,7 +1036,8 @@ public class InstructionList implements Iterable<InstructionHandle> {
         final Map<InstructionHandle, InstructionHandle> map = new HashMap<>();
         final InstructionList il = new InstructionList();
         /*
-         * Pass 1: Make copies of all instructions, append them to the new list and associate old instruction references with the new ones, i.e., a 1:1 mapping.
+         * Pass 1: Make copies of all instructions, append them to the new list
+         * and associate old instruction references with the new ones, i.e., a 1:1 mapping.
          */
         for (InstructionHandle ih = start; ih != null; ih = ih.getNext()) {
             final Instruction i = ih.getInstruction();

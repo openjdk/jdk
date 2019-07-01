@@ -138,11 +138,10 @@ public class OpaqueDirectiveTest extends GraalCompilerTest {
     }
 
     @Override
-    protected boolean checkLowTierGraph(StructuredGraph graph) {
+    protected void checkLowTierGraph(StructuredGraph graph) {
         OpaqueSnippet snippet = graph.method().getAnnotation(OpaqueSnippet.class);
         for (ReturnNode returnNode : graph.getNodes(ReturnNode.TYPE)) {
             Assert.assertEquals(snippet.expectedReturnNode(), returnNode.result().getClass());
         }
-        return true;
     }
 }

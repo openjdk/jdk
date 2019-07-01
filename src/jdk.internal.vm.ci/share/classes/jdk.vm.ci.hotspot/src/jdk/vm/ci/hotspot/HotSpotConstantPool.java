@@ -545,7 +545,7 @@ public final class HotSpotConstantPool implements ConstantPool, MetaspaceHandleO
             case "MethodHandleInError":
             case "MethodType":
             case "MethodTypeInError":
-                return compilerToVM().resolveConstantInPool(this, cpi);
+                return compilerToVM().resolvePossiblyCachedConstantInPool(this, cpi);
             default:
                 throw new JVMCIError("Unknown constant pool tag %s", tag);
         }

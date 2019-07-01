@@ -24,13 +24,13 @@ package com.sun.org.apache.bcel.internal.generic;
 /**
  * Super class for the IFxxx family of instructions.
  *
- * @version $Id: IfInstruction.java 1747278 2016-06-07 17:28:43Z britter $
+ * @version $Id$
  */
 public abstract class IfInstruction extends BranchInstruction implements StackConsumer {
 
     /**
-     * Empty constructor needed for the Class.newInstance() statement in
-     * Instruction.readInstruction(). Not to be used otherwise.
+     * Empty constructor needed for Instruction.readInstruction.
+     * Not to be used otherwise.
      */
     IfInstruction() {
     }

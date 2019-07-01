@@ -37,15 +37,19 @@
 #include "oops/compressedOops.inline.hpp"
 #include "oops/oop.inline.hpp"
 
-class UpdateRSetDeferred : public BasicOopIterateClosure {
+class UpdateLogBuffersDeferred : public BasicOopIterateClosure {
 private:
   G1CollectedHeap* _g1h;
   G1DirtyCardQueue* _dcq;
   G1CardTable*    _ct;
 
+  // Remember the last enqueued card to avoid enqueuing the same card over and over;
+  // since we only ever handle a card once, this is sufficient.
+  size_t _last_enqueued_card;
+
 public:
-  UpdateRSetDeferred(G1DirtyCardQueue* dcq) :
-    _g1h(G1CollectedHeap::heap()), _dcq(dcq), _ct(_g1h->card_table()) {}
+  UpdateLogBuffersDeferred(G1DirtyCardQueue* dcq) :
+    _g1h(G1CollectedHeap::heap()), _dcq(dcq), _ct(_g1h->card_table()), _last_enqueued_card(SIZE_MAX) {}
 
   virtual void do_oop(narrowOop* p) { do_oop_work(p); }
   virtual void do_oop(      oop* p) { do_oop_work(p); }
@@ -62,8 +66,9 @@ public:
       return;
     }
     size_t card_index = _ct->index_for(p);
-    if (_ct->mark_card_deferred(card_index)) {
+    if (card_index != _last_enqueued_card) {
       _dcq->enqueue(_ct->byte_for_index(card_index));
+      _last_enqueued_card = card_index;
     }
   }
 };
@@ -73,21 +78,21 @@ class RemoveSelfForwardPtrObjClosure: public ObjectClosure {
   G1ConcurrentMark* _cm;
   HeapRegion* _hr;
   size_t _marked_bytes;
-  UpdateRSetDeferred* _update_rset_cl;
+  UpdateLogBuffersDeferred* _log_buffer_cl;
   bool _during_initial_mark;
   uint _worker_id;
   HeapWord* _last_forwarded_object_end;
 
 public:
   RemoveSelfForwardPtrObjClosure(HeapRegion* hr,
-                                 UpdateRSetDeferred* update_rset_cl,
+                                 UpdateLogBuffersDeferred* log_buffer_cl,
                                  bool during_initial_mark,
                                  uint worker_id) :
     _g1h(G1CollectedHeap::heap()),
     _cm(_g1h->concurrent_mark()),
     _hr(hr),
     _marked_bytes(0),
-    _update_rset_cl(update_rset_cl),
+    _log_buffer_cl(log_buffer_cl),
     _during_initial_mark(during_initial_mark),
     _worker_id(worker_id),
     _last_forwarded_object_end(hr->bottom()) { }
@@ -144,7 +149,7 @@ public:
       // The problem is that, if evacuation fails, we might have
       // remembered set entries missing given that we skipped cards on
       // the collection set. So, we'll recreate such entries now.
-      obj->oop_iterate(_update_rset_cl);
+      obj->oop_iterate(_log_buffer_cl);
 
       HeapWord* obj_end = obj_addr + obj_size;
       _last_forwarded_object_end = obj_end;
@@ -193,25 +198,22 @@ public:
 class RemoveSelfForwardPtrHRClosure: public HeapRegionClosure {
   G1CollectedHeap* _g1h;
   uint _worker_id;
-  HeapRegionClaimer* _hrclaimer;
 
   G1DirtyCardQueue _dcq;
-  UpdateRSetDeferred _update_rset_cl;
+  UpdateLogBuffersDeferred _log_buffer_cl;
 
 public:
-  RemoveSelfForwardPtrHRClosure(uint worker_id,
-                                HeapRegionClaimer* hrclaimer) :
+  RemoveSelfForwardPtrHRClosure(uint worker_id) :
     _g1h(G1CollectedHeap::heap()),
     _worker_id(worker_id),
-    _hrclaimer(hrclaimer),
     _dcq(&_g1h->dirty_card_queue_set()),
-    _update_rset_cl(&_dcq){
+    _log_buffer_cl(&_dcq) {
   }
 
   size_t remove_self_forward_ptr_by_walking_hr(HeapRegion* hr,
                                                bool during_initial_mark) {
     RemoveSelfForwardPtrObjClosure rspc(hr,
-                                        &_update_rset_cl,
+                                        &_log_buffer_cl,
                                         during_initial_mark,
                                         _worker_id);
     hr->object_iterate(&rspc);
@@ -225,26 +227,24 @@ public:
     assert(!hr->is_pinned(), "Unexpected pinned region at index %u", hr->hrm_index());
     assert(hr->in_collection_set(), "bad CS");
 
-    if (_hrclaimer->claim_region(hr->hrm_index())) {
-      if (hr->evacuation_failed()) {
-        hr->clear_index_in_opt_cset();
+    if (hr->evacuation_failed()) {
+      hr->clear_index_in_opt_cset();
 
-        bool during_initial_mark = _g1h->collector_state()->in_initial_mark_gc();
-        bool during_conc_mark = _g1h->collector_state()->mark_or_rebuild_in_progress();
+      bool during_initial_mark = _g1h->collector_state()->in_initial_mark_gc();
+      bool during_conc_mark = _g1h->collector_state()->mark_or_rebuild_in_progress();
 
-        hr->note_self_forwarding_removal_start(during_initial_mark,
+      hr->note_self_forwarding_removal_start(during_initial_mark,
                                                during_conc_mark);
-        _g1h->verifier()->check_bitmaps("Self-Forwarding Ptr Removal", hr);
+      _g1h->verifier()->check_bitmaps("Self-Forwarding Ptr Removal", hr);
 
-        hr->reset_bot();
+      hr->reset_bot();
 
-        size_t live_bytes = remove_self_forward_ptr_by_walking_hr(hr, during_initial_mark);
+      size_t live_bytes = remove_self_forward_ptr_by_walking_hr(hr, during_initial_mark);
 
-        hr->rem_set()->clean_strong_code_roots(hr);
-        hr->rem_set()->clear_locked(true);
+      hr->rem_set()->clean_strong_code_roots(hr);
+      hr->rem_set()->clear_locked(true);
 
-        hr->note_self_forwarding_removal_end(live_bytes);
-      }
+      hr->note_self_forwarding_removal_end(live_bytes);
     }
     return false;
   }
@@ -256,7 +256,7 @@ G1ParRemoveSelfForwardPtrsTask::G1ParRemoveSelfForwardPtrsTask() :
   _hrclaimer(_g1h->workers()->active_workers()) { }
 
 void G1ParRemoveSelfForwardPtrsTask::work(uint worker_id) {
-  RemoveSelfForwardPtrHRClosure rsfp_cl(worker_id, &_hrclaimer);
+  RemoveSelfForwardPtrHRClosure rsfp_cl(worker_id);
 
-  _g1h->collection_set_iterate_increment_from(&rsfp_cl, worker_id);
+  _g1h->collection_set_iterate_increment_from(&rsfp_cl, &_hrclaimer, worker_id);
 }

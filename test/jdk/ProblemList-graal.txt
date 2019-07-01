@@ -27,48 +27,8 @@
 #
 #############################################################################
 
-java/lang/Class/getDeclaredField/ClassDeclaredFieldsTest.java           8185139   generic-all
-java/lang/Class/getDeclaredField/FieldSetAccessibleTest.java            8185139   generic-all
-java/lang/invoke/InvokeDynamicPrintArgs.java                            8185139   generic-all
-java/lang/invoke/MethodHandleConstants.java                             8185139   generic-all
-java/lang/ProcessBuilder/Basic.java#id0                                 8185139   generic-all
-java/lang/ProcessBuilder/Basic.java#id1                                 8185139   generic-all
-java/lang/ProcessBuilder/SecurityManagerClinit.java                     8185139   generic-all
-java/lang/ProcessHandle/PermissionTest.java                             8185139   generic-all
-java/lang/reflect/Proxy/nonPublicProxy/NonPublicProxyClass.java         8185139   generic-all
-java/lang/StackWalker/CallerSensitiveMethod/Main.java                   8185139   generic-all
-java/lang/StackWalker/GetCallerClassTest.java                           8185139   generic-all
-java/lang/String/concat/WithSecurityManager.java                        8185139   generic-all
-java/lang/System/Logger/custom/CustomLoggerTest.java                    8185139   generic-all
-java/lang/System/Logger/default/DefaultLoggerTest.java                  8185139   generic-all
-java/lang/System/LoggerFinder/BaseLoggerFinderTest/BaseLoggerFinderTest.java                        8185139   generic-all
-java/lang/System/LoggerFinder/DefaultLoggerFinderTest/DefaultLoggerFinderTest.java                  8185139   generic-all
-java/lang/System/LoggerFinder/internal/BaseDefaultLoggerFinderTest/BaseDefaultLoggerFinderTest.java 8185139   generic-all
-java/lang/System/LoggerFinder/internal/BaseLoggerBridgeTest/BaseLoggerBridgeTest.java               8185139   generic-all
-java/lang/System/LoggerFinder/internal/BasePlatformLoggerTest/BasePlatformLoggerTest.java           8185139   generic-all
-java/lang/System/LoggerFinder/internal/BootstrapLogger/BootstrapLoggerTest.java                     8185139   generic-all
-java/lang/System/LoggerFinder/internal/LoggerBridgeTest/LoggerBridgeTest.java                       8185139   generic-all
-java/lang/System/LoggerFinder/internal/LoggerFinderLoaderTest/LoggerFinderLoaderTest.java           8185139   generic-all
-java/lang/System/LoggerFinder/internal/PlatformLoggerBridgeTest/PlatformLoggerBridgeTest.java       8185139   generic-all
-java/lang/System/LoggerFinder/jdk/DefaultLoggerBridgeTest/DefaultLoggerBridgeTest.java              8185139   generic-all
-java/lang/System/LoggerFinder/jdk/DefaultPlatformLoggerTest/DefaultPlatformLoggerTest.java          8185139   generic-all
-java/lang/System/LoggerFinder/LoggerFinderAPI/LoggerFinderAPI.java      8185139   generic-all
-java/util/concurrent/atomic/AtomicUpdaters.java                         8185139   generic-all
-java/util/concurrent/Executors/PrivilegedCallables.java                 8185139   generic-all
-java/util/logging/FileHandlerPath.java                                  8185139   generic-all
-java/util/logging/FileHandlerPatternExceptions.java                     8185139   generic-all
-java/util/logging/Logger/setResourceBundle/TestSetResourceBundle.java   8185139   generic-all
-java/util/logging/LogManagerAppContextDeadlock.java                     8185139   generic-all
-java/util/logging/LogManager/Configuration/updateConfiguration/HandlersOnComplexResetUpdate.java    8185139   generic-all
-java/util/logging/LogManager/Configuration/updateConfiguration/HandlersOnComplexUpdate.java         8185139   generic-all
-java/util/logging/LogManager/Configuration/updateConfiguration/SimpleUpdateConfigurationTest.java   8185139   generic-all
-java/util/logging/LogManager/Configuration/updateConfiguration/SimpleUpdateConfigWithInputStreamTest.java   8185139   generic-all
-java/util/logging/LogManager/RootLogger/setLevel/TestRootLoggerLevel.java   8185139   generic-all
-java/util/logging/RootLogger/RootLevelInConfigFile.java                 8185139   generic-all
-java/util/logging/TestAppletLoggerContext.java                          8185139   generic-all
-java/util/logging/TestConfigurationListeners.java                       8185139   generic-all
-java/util/logging/LogManager/Configuration/ParentLoggerWithHandlerGC.java 8185139 generic-all
-java/util/logging/FileHandlerLongLimit.java                             8185139   generic-all
+java/lang/String/concat/WithSecurityManager.java                        8207267   generic-all
+java/lang/System/LoggerFinder/LoggerFinderAPI/LoggerFinderAPI.java      8207267   generic-all
 
 java/util/concurrent/tck/JSR166TestCase.java                            8187486   generic-all
 

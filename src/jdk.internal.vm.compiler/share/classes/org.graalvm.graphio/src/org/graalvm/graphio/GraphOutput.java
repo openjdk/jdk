@@ -38,7 +38,7 @@ import java.util.Map;
  *
  * @param <G> the type of graph this instance handles
  * @param <M> the type of methods this instance handles
- * @since 1.0 a {@link WritableByteChannel} is implemented
+ * @since 19.0 a {@link WritableByteChannel} is implemented
  */
 public final class GraphOutput<G, M> implements Closeable, WritableByteChannel {
     private final GraphProtocol<G, ?, ?, ?, ?, M, ?, ?, ?, ?> printer;
@@ -112,7 +112,7 @@ public final class GraphOutput<G, M> implements Closeable, WritableByteChannel {
      * Checks if the {@link GraphOutput} is open.
      *
      * @return true if the {@link GraphOutput} is open.
-     * @since 1.0
+     * @since 19.0
      */
     @Override
     public boolean isOpen() {
@@ -125,7 +125,7 @@ public final class GraphOutput<G, M> implements Closeable, WritableByteChannel {
      * @param src the bytes to write
      * @return the number of bytes written, possibly zero
      * @throws IOException in case of IO error
-     * @since 1.0
+     * @since 19.0
      */
     @Override
     public int write(ByteBuffer src) throws IOException {
@@ -178,7 +178,7 @@ public final class GraphOutput<G, M> implements Closeable, WritableByteChannel {
          *
          * @param embedded if {@code true} the builder creates an embedded {@link GraphOutput}
          * @return this builder
-         * @since 1.0
+         * @since 19.0
          */
         public Builder<G, N, M> embedded(boolean embedded) {
             this.embeddedGraphOutput = embedded;

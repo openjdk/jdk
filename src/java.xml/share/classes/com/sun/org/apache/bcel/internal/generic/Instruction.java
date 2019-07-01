@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2019, Oracle and/or its affiliates. All rights reserved.
  */
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
@@ -29,7 +29,8 @@ import com.sun.org.apache.bcel.internal.util.ByteSequence;
 /**
  * Abstract super class for all Java byte codes.
  *
- * @version $Id: Instruction.java 1750029 2016-06-23 22:14:38Z sebb $
+ * @version $Id$
+ * @LastModified: Jun 2019
  */
 public abstract class Instruction implements Cloneable {
 
@@ -38,49 +39,53 @@ public abstract class Instruction implements Cloneable {
 
     private static InstructionComparator cmp = InstructionComparator.DEFAULT;
 
+
     /**
-     * Empty constructor needed for the Class.newInstance() statement in
-     * Instruction.readInstruction(). Not to be used otherwise.
+     * Empty constructor needed for Instruction.readInstruction.
+     * Not to be used otherwise.
      */
     Instruction() {
     }
+
 
     public Instruction(final short opcode, final short length) {
         this.length = length;
         this.opcode = opcode;
     }
 
+
     /**
      * Dump instruction as byte code to stream out.
-     *
      * @param out Output stream
      */
-    public void dump(final DataOutputStream out) throws IOException {
+    public void dump( final DataOutputStream out ) throws IOException {
         out.writeByte(opcode); // Common for all instructions
     }
 
-    /**
-     * @return name of instruction, i.e., opcode name
+
+    /** @return name of instruction, i.e., opcode name
      */
     public String getName() {
         return Const.getOpcodeName(opcode);
     }
 
+
     /**
      * Long output format:
      *
-     * &lt;name of opcode&gt; "["&lt;opcode number&gt;"]" "("&lt;length of
-     * instruction&gt;")"
+     * &lt;name of opcode&gt; "["&lt;opcode number&gt;"]"
+     * "("&lt;length of instruction&gt;")"
      *
      * @param verbose long/short format switch
      * @return mnemonic for instruction
      */
-    public String toString(final boolean verbose) {
+    public String toString( final boolean verbose ) {
         if (verbose) {
             return getName() + "[" + opcode + "](" + length + ")";
         }
         return getName();
     }
+
 
     /**
      * @return mnemonic for instruction in verbose format
@@ -90,17 +95,19 @@ public abstract class Instruction implements Cloneable {
         return toString(true);
     }
 
+
     /**
      * @return mnemonic for instruction with sumbolic references resolved
      */
-    public String toString(final ConstantPool cp) {
+    public String toString( final ConstantPool cp ) {
         return toString(false);
     }
 
+
     /**
-     * Use with caution, since `BranchInstruction's have a `target' reference
-     * which is not copied correctly (only basic types are). This also applies
-     * for `Select' instructions with their multiple branch targets.
+     * Use with caution, since `BranchInstruction's have a `target' reference which
+     * is not copied correctly (only basic types are). This also applies for
+     * `Select' instructions with their multiple branch targets.
      *
      * @see BranchInstruction
      * @return (shallow) copy of an instruction
@@ -120,16 +127,17 @@ public abstract class Instruction implements Cloneable {
         return i;
     }
 
+
     /**
      * Read needed data (e.g. index) from file.
      *
      * @param bytes byte sequence to read from
      * @param wide "wide" instruction flag
-     * @throws IOException may be thrown if the implementation needs to read
-     * data from the file
+     * @throws IOException may be thrown if the implementation needs to read data from the file
      */
-    protected void initFromFile(final ByteSequence bytes, final boolean wide) throws IOException {
+    protected void initFromFile( final ByteSequence bytes, final boolean wide ) throws IOException {
     }
+
 
     /**
      * Read an instruction from (byte code) input stream and return the
@@ -137,13 +145,12 @@ public abstract class Instruction implements Cloneable {
      * <p>
      * If the Instruction is defined in {@link InstructionConst}, then the
      * singleton instance is returned.
-     *
      * @param bytes input stream bytes
      * @return instruction object being read
      * @see InstructionConst#getInstruction(int)
      */
     // @since 6.0 no longer final
-    public static Instruction readInstruction(final ByteSequence bytes) throws IOException {
+    public static Instruction readInstruction( final ByteSequence bytes ) throws IOException {
         boolean wide = false;
         short opcode = (short) bytes.readUnsignedByte();
         Instruction obj = null;
@@ -463,26 +470,28 @@ public abstract class Instruction implements Cloneable {
     }
 
     /**
-     * This method also gives right results for instructions whose effect on the
-     * stack depends on the constant pool entry they reference.
-     *
-     * @return Number of words consumed from stack by this instruction, or
-     * Constants.UNPREDICTABLE, if this can not be computed statically
+     * This method also gives right results for instructions whose
+     * effect on the stack depends on the constant pool entry they
+     * reference.
+     *  @return Number of words consumed from stack by this instruction,
+     * or Constants.UNPREDICTABLE, if this can not be computed statically
      */
-    public int consumeStack(final ConstantPoolGen cpg) {
+    public int consumeStack( final ConstantPoolGen cpg ) {
         return Const.getConsumeStack(opcode);
     }
 
+
     /**
-     * This method also gives right results for instructions whose effect on the
-     * stack depends on the constant pool entry they reference.
-     *
-     * @return Number of words produced onto stack by this instruction, or
-     * Constants.UNPREDICTABLE, if this can not be computed statically
+     * This method also gives right results for instructions whose
+     * effect on the stack depends on the constant pool entry they
+     * reference.
+     * @return Number of words produced onto stack by this instruction,
+     * or Constants.UNPREDICTABLE, if this can not be computed statically
      */
-    public int produceStack(final ConstantPoolGen cpg) {
+    public int produceStack( final ConstantPoolGen cpg ) {
         return Const.getProduceStack(opcode);
     }
+
 
     /**
      * @return this instructions opcode
@@ -491,6 +500,7 @@ public abstract class Instruction implements Cloneable {
         return opcode;
     }
 
+
     /**
      * @return length (in bytes) of instruction
      */
@@ -498,75 +508,71 @@ public abstract class Instruction implements Cloneable {
         return length;
     }
 
+
     /**
      * Needed in readInstruction and subclasses in this package
      */
-    final void setOpcode(final short opcode) {
+    final void setOpcode( final short opcode ) {
         this.opcode = opcode;
     }
 
+
     /**
      * Needed in readInstruction and subclasses in this package
-     *
      * @since 6.0
      */
-    final void setLength(final int length) {
+    final void setLength( final int length ) {
         this.length = (short) length; // TODO check range?
     }
 
-    /**
-     * Some instructions may be reused, so don't do anything by default.
+
+    /** Some instructions may be reused, so don't do anything by default.
      */
     void dispose() {
     }
 
+
     /**
-     * Call corresponding visitor method(s). The order is: Call visitor methods
-     * of implemented interfaces first, then call methods according to the class
-     * hierarchy in descending order, i.e., the most specific visitXXX() call
-     * comes last.
+     * Call corresponding visitor method(s). The order is:
+     * Call visitor methods of implemented interfaces first, then
+     * call methods according to the class hierarchy in descending order,
+     * i.e., the most specific visitXXX() call comes last.
      *
      * @param v Visitor object
      */
-    public abstract void accept(Visitor v);
+    public abstract void accept( Visitor v );
 
-    /**
-     * Get Comparator object used in the equals() method to determine equality
-     * of instructions.
+
+    /** Get Comparator object used in the equals() method to determine
+     * equality of instructions.
      *
      * @return currently used comparator for equals()
-     * @deprecated (6.0) use the built in comparator, or wrap this class in
-     * another object that implements these methods
+     * @deprecated (6.0) use the built in comparator, or wrap this class in another object that implements these methods
      */
     @Deprecated
     public static InstructionComparator getComparator() {
         return cmp;
     }
 
-    /**
-     * Set comparator to be used for equals().
-     *
-     * @deprecated (6.0) use the built in comparator, or wrap this class in
-     * another object that implements these methods
+
+    /** Set comparator to be used for equals().
+      * @deprecated (6.0) use the built in comparator, or wrap this class in another object that implements these methods
      */
     @Deprecated
-    public static void setComparator(final InstructionComparator c) {
+    public static void setComparator( final InstructionComparator c ) {
         cmp = c;
     }
 
-    /**
-     * Check for equality, delegated to comparator
-     *
+
+    /** Check for equality, delegated to comparator
      * @return true if that is an Instruction and has the same opcode
      */
     @Override
-    public boolean equals(final Object that) {
+    public boolean equals( final Object that ) {
         return (that instanceof Instruction) ? cmp.equals(this, (Instruction) that) : false;
     }
 
-    /**
-     * calculate the hashCode of this object
-     *
+    /** calculate the hashCode of this object
      * @return the hashCode
      * @since 6.0
      */
@@ -577,7 +583,6 @@ public abstract class Instruction implements Cloneable {
 
     /**
      * Check if the value can fit in a byte (signed)
-     *
      * @param value the value to check
      * @return true if the value is in range
      * @since 6.0
@@ -588,7 +593,6 @@ public abstract class Instruction implements Cloneable {
 
     /**
      * Check if the value can fit in a short (signed)
-     *
      * @param value the value to check
      * @return true if the value is in range
      * @since 6.0

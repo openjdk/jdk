@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -141,9 +141,10 @@ public class TrustManagerFactory {
      *
      * @param algorithm the standard name of the requested trust management
      *          algorithm.  See the <a href=
-     *          "{@docRoot}/../specs/security/standard-names.html">
-     *          Java Security Standard Algorithm Names</a> document
-     *          for information about standard algorithm names.
+     *          "{@docRoot}/../specs/security/standard-names.html#trustmanagerfactory-algorithms">
+     *          TrustManagerFactory section</a> in the Java Security Standard
+     *          Algorithm Names Specification for information about standard
+     *          algorithm names.
      *
      * @return the new {@code TrustManagerFactory} object
      *
@@ -179,9 +180,10 @@ public class TrustManagerFactory {
      *
      * @param algorithm the standard name of the requested trust management
      *          algorithm.  See the <a href=
-     *          "{@docRoot}/../specs/security/standard-names.html">
-     *          Java Security Standard Algorithm Names</a> document
-     *          for information about standard algorithm names.
+     *          "{@docRoot}/../specs/security/standard-names.html#trustmanagerfactory-algorithms">
+     *          TrustManagerFactory section</a> in the Java Security Standard
+     *          Algorithm Names Specification for information about standard
+     *          algorithm names.
      *
      * @param provider the name of the provider.
      *
@@ -223,9 +225,10 @@ public class TrustManagerFactory {
      *
      * @param algorithm the standard name of the requested trust management
      *          algorithm.  See the <a href=
-     *          "{@docRoot}/../specs/security/standard-names.html">
-     *          Java Security Standard Algorithm Names</a> document
-     *          for information about standard algorithm names.
+     *          "{@docRoot}/../specs/security/standard-names.html#trustmanagerfactory-algorithms">
+     *          TrustManagerFactory section</a> in the Java Security Standard
+     *          Algorithm Names Specification for information about standard
+     *          algorithm names.
      *
      * @param provider an instance of the provider.
      *

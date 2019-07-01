@@ -220,7 +220,7 @@ public final class IntegerSwitchNode extends SwitchNode implements LIRLowerable,
             return false;
         }
         LoadIndexedNode loadIndexed = (LoadIndexedNode) value();
-        if (loadIndexed.usages().count() > 1) {
+        if (loadIndexed.hasMoreThanOneUsage()) {
             /*
              * The array load is necessary for other reasons too, so there is no benefit optimizing
              * the switch.

@@ -387,7 +387,7 @@ public class LoopEx {
                 if (loop.isOutsideLoop(op)) {
                     continue;
                 }
-                if (op.usages().count() == 1 && op.usages().first() == baseIvNode) {
+                if (op.hasExactlyOneUsage() && op.usages().first() == baseIvNode) {
                     /*
                      * This is just the base induction variable increment with no other uses so
                      * don't bother reporting it.

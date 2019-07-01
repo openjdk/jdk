@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2010, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -234,6 +234,8 @@ public class InvokeDynamicPrintArgs {
     }
 
     static class TestPolicy extends Policy {
+        static final Policy DEFAULT_POLICY = Policy.getPolicy();
+
         final PermissionCollection permissions = new Permissions();
         TestPolicy() {
             permissions.add(new java.io.FilePermission("<<ALL FILES>>", "read"));
@@ -247,7 +249,7 @@ public class InvokeDynamicPrintArgs {
         }
 
         public boolean implies(ProtectionDomain domain, Permission perm) {
-            return permissions.implies(perm);
+            return permissions.implies(perm) || DEFAULT_POLICY.implies(domain, perm);
         }
     }
 }

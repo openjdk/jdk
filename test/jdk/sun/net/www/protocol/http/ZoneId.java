@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -60,7 +60,7 @@ public class ZoneId {
         out.println("Found an appropriate IPv6 address: " + address);
 
         out.println("Starting http server...");
-        HttpServer server = HttpServer.create(new InetSocketAddress(0), 0);
+        HttpServer server = HttpServer.create(new InetSocketAddress(address, 0), 0);
         CompletableFuture<Headers> headers = new CompletableFuture<>();
         server.createContext("/", createCapturingHandler(headers));
         server.start();

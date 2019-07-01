@@ -27,7 +27,7 @@
  * @summary FtpURLConnection doesn't close FTP connection when FileNotFoundException is thrown
  * @library ../www/ftptest/
  * @build FtpServer FtpCommandHandler FtpAuthHandler FtpFileSystemHandler
- * @run main FtpURLConnectionLeak
+ * @run main/othervm FtpURLConnectionLeak
  */
 import java.io.FileNotFoundException;
 import java.io.InputStream;

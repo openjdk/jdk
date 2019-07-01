@@ -32,10 +32,10 @@ import org.graalvm.compiler.graph.Graph.NodeEventScope;
 import org.graalvm.compiler.graph.Node;
 import org.graalvm.compiler.nodes.LogicConstantNode;
 import org.graalvm.compiler.nodes.StructuredGraph;
+import org.graalvm.compiler.nodes.spi.CoreProviders;
 import org.graalvm.compiler.phases.BasePhase;
 import org.graalvm.compiler.phases.PhaseSuite;
 import org.graalvm.compiler.phases.common.util.EconomicSetNodeEventListener;
-import org.graalvm.compiler.phases.tiers.PhaseContext;
 
 /**
  * A utility phase for detecting when a phase would change the graph and reporting extra information
@@ -46,7 +46,7 @@ import org.graalvm.compiler.phases.tiers.PhaseContext;
  *
  * @param <C>
  */
-public class GraphChangeMonitoringPhase<C extends PhaseContext> extends PhaseSuite<C> {
+public class GraphChangeMonitoringPhase<C extends CoreProviders> extends PhaseSuite<C> {
 
     private final String message;
 

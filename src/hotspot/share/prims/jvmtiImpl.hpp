@@ -120,8 +120,6 @@ public:
   void oops_do(OopClosure* f);
   // walk metadata to preserve for RedefineClasses
   void metadata_do(void f(Metadata*));
-  // update the cache after a full gc
-  void gc_epilogue();
 };
 
 
@@ -154,7 +152,6 @@ public:
   void clear()                          { _cache.clear(); }
   void oops_do(OopClosure* f)           { _cache.oops_do(f); }
   void metadata_do(void f(Metadata*))   { _cache.metadata_do(f); }
-  void gc_epilogue()                    { _cache.gc_epilogue(); }
 };
 
 
@@ -257,7 +254,6 @@ public:
   int  set(JvmtiBreakpoint& bp);
   int  clear(JvmtiBreakpoint& bp);
   void clearall_in_class_at_safepoint(Klass* klass);
-  void gc_epilogue();
 };
 
 
@@ -299,7 +295,6 @@ public:
 
   static void oops_do(OopClosure* f);
   static void metadata_do(void f(Metadata*)) NOT_JVMTI_RETURN;
-  static void gc_epilogue();
 };
 
 ///////////////////////////////////////////////////////////////

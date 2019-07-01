@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2019, Oracle and/or its affiliates. All rights reserved.
  */
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
@@ -26,13 +26,14 @@ import java.io.IOException;
 import jdk.xml.internal.SecuritySupport;
 
 /**
- * This class represents a table of line numbers for debugging purposes. This
- * attribute is used by the <em>Code</em> attribute. It contains pairs of PCs
- * and line numbers.
+ * This class represents a table of line numbers for debugging
+ * purposes. This attribute is used by the <em>Code</em> attribute. It
+ * contains pairs of PCs and line numbers.
  *
- * @version $Id: LineNumberTable.java 1749603 2016-06-21 20:50:19Z ggregory $
- * @see Code
+ * @version $Id$
+ * @see     Code
  * @see LineNumber
+ * @LastModified: Jun 2019
  */
 public final class LineNumberTable extends Attribute {
 
@@ -63,7 +64,6 @@ public final class LineNumberTable extends Attribute {
 
     /**
      * Construct object from input stream.
-     *
      * @param name_index Index of name
      * @param length Content length in bytes
      * @param input Input stream
@@ -88,7 +88,7 @@ public final class LineNumberTable extends Attribute {
      * @param v Visitor object
      */
     @Override
-    public void accept(final Visitor v) {
+    public void accept( final Visitor v ) {
         v.visitLineNumberTable(this);
     }
 
@@ -99,7 +99,7 @@ public final class LineNumberTable extends Attribute {
      * @throws IOEXception if an I/O Exception occurs in writeShort
      */
     @Override
-    public final void dump(final DataOutputStream file) throws IOException {
+    public final void dump( final DataOutputStream file ) throws IOException {
         super.dump(file);
         file.writeShort(line_number_table.length);
         for (final LineNumber lineNumber : line_number_table) {
@@ -117,7 +117,7 @@ public final class LineNumberTable extends Attribute {
     /**
      * @param line_number_table the line number entries for this table
      */
-    public final void setLineNumberTable(final LineNumber[] line_number_table) {
+    public final void setLineNumberTable( final LineNumber[] line_number_table ) {
         this.line_number_table = line_number_table;
     }
 
@@ -150,7 +150,7 @@ public final class LineNumberTable extends Attribute {
      * @param pos byte code offset
      * @return corresponding line in source code
      */
-    public int getSourceLine(final int pos) {
+    public int getSourceLine( final int pos ) {
         int l = 0;
         int r = line_number_table.length - 1;
         if (r < 0) {
@@ -192,7 +192,7 @@ public final class LineNumberTable extends Attribute {
      * @return deep copy of this attribute
      */
     @Override
-    public Attribute copy(final ConstantPool _constant_pool) {
+    public Attribute copy( final ConstantPool _constant_pool ) {
         // TODO could use the lower level constructor and thereby allow
         // line_number_table to be made final
         final LineNumberTable c = (LineNumberTable) clone();

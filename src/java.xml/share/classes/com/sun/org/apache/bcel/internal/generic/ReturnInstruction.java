@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2019, Oracle and/or its affiliates. All rights reserved.
  */
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
@@ -26,15 +26,15 @@ import com.sun.org.apache.bcel.internal.ExceptionConst;
 /**
  * Super class for the xRETURN family of instructions.
  *
- * @version $Id: ReturnInstruction.java 1747278 2016-06-07 17:28:43Z britter $
- * @LastModified: Oct 2017
+ * @version $Id$
+ * @LastModified: Jun 2019
  */
 public abstract class ReturnInstruction extends Instruction implements ExceptionThrower,
         TypedInstruction, StackConsumer {
 
     /**
-     * Empty constructor needed for the Class.newInstance() statement in
-     * Instruction.readInstruction(). Not to be used otherwise.
+     * Empty constructor needed for Instruction.readInstruction.
+     * Not to be used otherwise.
      */
     ReturnInstruction() {
     }

@@ -26,6 +26,8 @@ package org.graalvm.compiler.asm;
 
 import java.util.ArrayList;
 
+import org.graalvm.compiler.debug.GraalError;
+
 /**
  * This class represents a label within assembly code.
  */
@@ -71,7 +73,9 @@ public final class Label {
      * {@link #addPatchAt(int, Assembler)}.
      */
     protected void bind(int pos, Assembler asm) {
-        assert pos >= 0;
+        if (pos < 0) {
+            throw new GraalError("Cannot bind label to negative position %d", pos);
+        }
         this.position = pos;
         if (patchPositions != null) {
             for (int i = 0; i < patchPositions.size(); ++i) {

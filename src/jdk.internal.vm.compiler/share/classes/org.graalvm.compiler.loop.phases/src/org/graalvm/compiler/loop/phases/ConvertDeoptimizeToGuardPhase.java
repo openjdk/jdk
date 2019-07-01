@@ -59,12 +59,12 @@ import org.graalvm.compiler.nodes.ValueNode;
 import org.graalvm.compiler.nodes.ValuePhiNode;
 import org.graalvm.compiler.nodes.calc.CompareNode;
 import org.graalvm.compiler.nodes.cfg.Block;
+import org.graalvm.compiler.nodes.spi.CoreProviders;
 import org.graalvm.compiler.nodes.spi.LoweringProvider;
 import org.graalvm.compiler.nodes.util.GraphUtil;
 import org.graalvm.compiler.phases.BasePhase;
 import org.graalvm.compiler.phases.common.DeadCodeEliminationPhase;
 import org.graalvm.compiler.phases.common.LazyValue;
-import org.graalvm.compiler.phases.tiers.PhaseContext;
 
 import jdk.vm.ci.meta.Constant;
 import jdk.vm.ci.meta.DeoptimizationAction;
@@ -81,10 +81,10 @@ import jdk.vm.ci.meta.DeoptimizationAction;
  * {@link DeoptimizeNode} as close to the {@link ControlSplitNode} as possible.
  *
  */
-public class ConvertDeoptimizeToGuardPhase extends BasePhase<PhaseContext> {
+public class ConvertDeoptimizeToGuardPhase extends BasePhase<CoreProviders> {
     @Override
     @SuppressWarnings("try")
-    protected void run(final StructuredGraph graph, PhaseContext context) {
+    protected void run(final StructuredGraph graph, CoreProviders context) {
         assert graph.hasValueProxies() : "ConvertDeoptimizeToGuardPhase always creates proxies";
         assert !graph.getGuardsStage().areFrameStatesAtDeopts() : graph.getGuardsStage();
         LazyValue<LoopsData> lazyLoops = new LazyValue<>(() -> new LoopsData(graph));
@@ -110,7 +110,7 @@ public class ConvertDeoptimizeToGuardPhase extends BasePhase<PhaseContext> {
         new DeadCodeEliminationPhase(Optional).apply(graph);
     }
 
-    private static void trySplitFixedGuard(FixedGuardNode fixedGuard, PhaseContext context, LazyValue<LoopsData> lazyLoops) {
+    private static void trySplitFixedGuard(FixedGuardNode fixedGuard, CoreProviders context, LazyValue<LoopsData> lazyLoops) {
         LogicNode condition = fixedGuard.condition();
         if (condition instanceof CompareNode) {
             CompareNode compare = (CompareNode) condition;
@@ -126,7 +126,7 @@ public class ConvertDeoptimizeToGuardPhase extends BasePhase<PhaseContext> {
         }
     }
 
-    private static void processFixedGuardAndPhis(FixedGuardNode fixedGuard, PhaseContext context, CompareNode compare, ValueNode x, ValuePhiNode xPhi, ValueNode y, ValuePhiNode yPhi,
+    private static void processFixedGuardAndPhis(FixedGuardNode fixedGuard, CoreProviders context, CompareNode compare, ValueNode x, ValuePhiNode xPhi, ValueNode y, ValuePhiNode yPhi,
                     LazyValue<LoopsData> lazyLoops) {
         AbstractBeginNode pred = AbstractBeginNode.prevBegin(fixedGuard);
         if (pred instanceof AbstractMergeNode) {
@@ -143,7 +143,7 @@ public class ConvertDeoptimizeToGuardPhase extends BasePhase<PhaseContext> {
     }
 
     @SuppressWarnings("try")
-    private static void processFixedGuardAndMerge(FixedGuardNode fixedGuard, PhaseContext context, CompareNode compare, ValueNode x, ValuePhiNode xPhi, ValueNode y, ValuePhiNode yPhi,
+    private static void processFixedGuardAndMerge(FixedGuardNode fixedGuard, CoreProviders context, CompareNode compare, ValueNode x, ValuePhiNode xPhi, ValueNode y, ValuePhiNode yPhi,
                     AbstractMergeNode merge, LazyValue<LoopsData> lazyLoops) {
         List<EndNode> mergePredecessors = merge.cfgPredecessors().snapshot();
         for (AbstractEndNode mergePredecessor : mergePredecessors) {

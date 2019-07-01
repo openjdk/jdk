@@ -46,8 +46,8 @@ import org.graalvm.compiler.nodes.ValueNode;
 import org.graalvm.compiler.nodes.java.MethodCallTargetNode;
 import org.graalvm.compiler.nodes.java.NewArrayNode;
 import org.graalvm.compiler.nodes.java.StoreIndexedNode;
+import org.graalvm.compiler.nodes.spi.CoreProviders;
 import org.graalvm.compiler.phases.VerifyPhase;
-import org.graalvm.compiler.phases.tiers.PhaseContext;
 
 import jdk.vm.ci.meta.Constant;
 import jdk.vm.ci.meta.MetaAccessProvider;
@@ -68,7 +68,7 @@ import jdk.vm.ci.meta.ResolvedJavaType;
  * {@link DebugContext#log(String)} , {@link DebugContext#dump(int, Object, String)},
  * {@link DebugContext#logAndIndent(String)} and {@link DebugContext#verify(Object, String)}.
  */
-public class VerifyDebugUsage extends VerifyPhase<PhaseContext> {
+public class VerifyDebugUsage extends VerifyPhase<CoreProviders> {
 
     @Override
     public boolean checkContract() {
@@ -78,7 +78,7 @@ public class VerifyDebugUsage extends VerifyPhase<PhaseContext> {
     MetaAccessProvider metaAccess;
 
     @Override
-    protected void verify(StructuredGraph graph, PhaseContext context) {
+    protected void verify(StructuredGraph graph, CoreProviders context) {
         metaAccess = context.getMetaAccess();
         ResolvedJavaType debugType = metaAccess.lookupJavaType(DebugContext.class);
         ResolvedJavaType nodeType = metaAccess.lookupJavaType(Node.class);

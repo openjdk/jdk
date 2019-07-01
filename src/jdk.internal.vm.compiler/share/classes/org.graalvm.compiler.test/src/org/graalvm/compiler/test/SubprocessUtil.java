@@ -249,7 +249,7 @@ public final class SubprocessUtil {
         return new Subprocess(command, process.waitFor(), output);
     }
 
-    private static final boolean isJava8OrEarlier = JavaVersionUtil.Java8OrEarlier;
+    private static final boolean isJava8OrEarlier = JavaVersionUtil.JAVA_SPEC <= 8;
 
     private static boolean hasArg(String optionName) {
         if (optionName.equals("-cp") || optionName.equals("-classpath")) {

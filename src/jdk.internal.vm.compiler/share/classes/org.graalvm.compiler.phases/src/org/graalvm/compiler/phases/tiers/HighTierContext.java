@@ -24,11 +24,12 @@
 
 package org.graalvm.compiler.phases.tiers;
 
+import org.graalvm.compiler.nodes.spi.CoreProvidersDelegate;
 import org.graalvm.compiler.phases.OptimisticOptimizations;
 import org.graalvm.compiler.phases.PhaseSuite;
 import org.graalvm.compiler.phases.util.Providers;
 
-public class HighTierContext extends PhaseContext {
+public class HighTierContext extends CoreProvidersDelegate {
 
     private final PhaseSuite<HighTierContext> graphBuilderSuite;
 

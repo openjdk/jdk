@@ -26,7 +26,7 @@ package com.sun.org.apache.bcel.internal.classfile;
  * with the DescendingVisitor class, e.g. By courtesy of David Spencer.
  *
  * @see DescendingVisitor
- * @version $Id: EmptyVisitor.java 1747278 2016-06-07 17:28:43Z britter $
+ * @version $Id$
  */
 public class EmptyVisitor implements Visitor
 {
@@ -299,5 +299,27 @@ public class EmptyVisitor implements Visitor
      */
     @Override
     public void visitParameterAnnotationEntry(final ParameterAnnotationEntry parameterAnnotationEntry) {
+    }
+
+    /**
+     * @since 6.1
+     */
+    @Override
+    public void visitConstantPackage(final ConstantPackage constantPackage) {
+    }
+
+    /**
+     * @since 6.1
+     */
+    @Override
+    public void visitConstantModule(final ConstantModule constantModule) {
+    }
+
+
+    /**
+     * @since 6.3
+     */
+    @Override
+    public void visitConstantDynamic(final ConstantDynamic obj) {
     }
 }

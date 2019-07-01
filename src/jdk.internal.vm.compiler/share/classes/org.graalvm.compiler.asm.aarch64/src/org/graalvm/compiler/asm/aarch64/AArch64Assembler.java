@@ -2963,17 +2963,17 @@ public abstract class AArch64Assembler extends Assembler {
 
     public void annotatePatchingImmediate(int pos, Instruction instruction, int operandSizeBits, int offsetBits, int shift) {
         if (codePatchingAnnotationConsumer != null) {
-            codePatchingAnnotationConsumer.accept(new OperandDataAnnotation(pos, instruction, operandSizeBits, offsetBits, shift));
+            codePatchingAnnotationConsumer.accept(new SingleInstructionAnnotation(pos, instruction, operandSizeBits, offsetBits, shift));
         }
     }
 
-    void annotatePatchingImmediateNativeAddress(int pos, int operandSizeBits, int numInstrs) {
+    void annotateImmediateMovSequence(int pos, int numInstrs) {
         if (codePatchingAnnotationConsumer != null) {
-            codePatchingAnnotationConsumer.accept(new MovSequenceAnnotation(pos, operandSizeBits, numInstrs));
+            codePatchingAnnotationConsumer.accept(new MovSequenceAnnotation(pos, numInstrs));
         }
     }
 
-    public static class OperandDataAnnotation extends CodeAnnotation {
+    public static class SingleInstructionAnnotation extends CodeAnnotation {
 
         /**
          * The size of the operand, in bytes.
@@ -2983,7 +2983,7 @@ public abstract class AArch64Assembler extends Assembler {
         public final Instruction instruction;
         public final int shift;
 
-        OperandDataAnnotation(int instructionPosition, Instruction instruction, int operandSizeBits, int offsetBits, int shift) {
+        SingleInstructionAnnotation(int instructionPosition, Instruction instruction, int operandSizeBits, int offsetBits, int shift) {
             super(instructionPosition);
             this.operandSizeBits = operandSizeBits;
             this.offsetBits = offsetBits;
@@ -2997,12 +2997,10 @@ public abstract class AArch64Assembler extends Assembler {
         /**
          * The size of the operand, in bytes.
          */
-        public final int operandSizeBits;
         public final int numInstrs;
 
-        MovSequenceAnnotation(int instructionPosition, int operandSizeBits, int numInstrs) {
+        MovSequenceAnnotation(int instructionPosition, int numInstrs) {
             super(instructionPosition);
-            this.operandSizeBits = operandSizeBits;
             this.numInstrs = numInstrs;
         }
     }

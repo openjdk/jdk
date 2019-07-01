@@ -43,7 +43,7 @@ import jdk.vm.ci.hotspot.HotSpotVMConfigStore;
 import jdk.vm.ci.meta.ResolvedJavaMethod;
 
 /**
- * A Graal compiler test that needs access to the {@link HotSpotGraalRuntimeProvider}.
+ * A compiler test that needs access to the {@link HotSpotGraalRuntimeProvider}.
  */
 public abstract class HotSpotGraalCompilerTest extends GraalCompilerTest {
 
@@ -73,7 +73,7 @@ public abstract class HotSpotGraalCompilerTest extends GraalCompilerTest {
         HotSpotProviders providers = rt.getHostBackend().getProviders();
         CompilationIdentifier compilationId = runtime().getHostBackend().getCompilationIdentifier(method);
         OptionValues options = getInitialOptions();
-        StructuredGraph graph = providers.getReplacements().getIntrinsicGraph(method, compilationId, getDebugContext(options));
+        StructuredGraph graph = providers.getReplacements().getIntrinsicGraph(method, compilationId, getDebugContext(options), null);
         if (graph != null) {
             return getCode(method, graph, true, true, graph.getOptions());
         }

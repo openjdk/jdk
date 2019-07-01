@@ -31,7 +31,7 @@
  * @see jdk.internal.vm.compiler.collections.EconomicMap
  * @see jdk.internal.vm.compiler.collections.EconomicSet
  *
- * @since 1.0
+ * @since 19.0
  */
 
 

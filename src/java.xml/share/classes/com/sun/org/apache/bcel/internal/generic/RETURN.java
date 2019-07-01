@@ -25,7 +25,7 @@ package com.sun.org.apache.bcel.internal.generic;
  * RETURN -  Return from void method
  * <PRE>Stack: ... -&gt; &lt;empty&gt;</PRE>
  *
- * @version $Id: RETURN.java 1747278 2016-06-07 17:28:43Z britter $
+ * @version $Id$
  */
 public class RETURN extends ReturnInstruction {
 

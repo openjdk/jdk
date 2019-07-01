@@ -25,7 +25,7 @@ package com.sun.org.apache.bcel.internal.generic;
  * F2D - Convert float to double
  * <PRE>Stack: ..., value -&gt; ..., result.word1, result.word2</PRE>
  *
- * @version $Id: F2D.java 1747278 2016-06-07 17:28:43Z britter $
+ * @version $Id$
  */
 public class F2D extends ConversionInstruction {
 

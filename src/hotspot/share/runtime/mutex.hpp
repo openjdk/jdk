@@ -62,7 +62,7 @@ class Monitor : public CHeapObj<mtSynchronizer> {
        event,
        access         = event          +   1,
        tty            = access         +   2,
-       special        = tty            +   2,
+       special        = tty            +   1,
        suspend_resume = special        +   1,
        vmweak         = suspend_resume +   2,
        leaf           = vmweak         +   2,

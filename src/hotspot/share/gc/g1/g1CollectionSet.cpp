@@ -217,10 +217,13 @@ void G1CollectionSet::iterate_optional(HeapRegionClosure* cl) const {
   }
 }
 
-void G1CollectionSet::iterate_incremental_part_from(HeapRegionClosure* cl, uint worker_id, uint total_workers) const {
+void G1CollectionSet::iterate_incremental_part_from(HeapRegionClosure* cl,
+                                                    HeapRegionClaimer* hr_claimer,
+                                                    uint worker_id,
+                                                    uint total_workers) const {
   assert_at_safepoint();
 
-  size_t len = _collection_set_cur_length - _inc_part_start;
+  size_t len = increment_length();
   if (len == 0) {
     return;
   }
@@ -229,9 +232,12 @@ void G1CollectionSet::iterate_incremental_part_from(HeapRegionClosure* cl, uint 
   size_t cur_pos = start_pos;
 
   do {
-    HeapRegion* r = _g1h->region_at(_collection_set_regions[cur_pos + _inc_part_start]);
-    bool result = cl->do_heap_region(r);
-    guarantee(!result, "Must not cancel iteration");
+    uint region_idx = _collection_set_regions[cur_pos + _inc_part_start];
+    if (hr_claimer == NULL || hr_claimer->claim_region(region_idx)) {
+      HeapRegion* r = _g1h->region_at(region_idx);
+      bool result = cl->do_heap_region(r);
+      guarantee(!result, "Must not cancel iteration");
+    }
 
     cur_pos++;
     if (cur_pos == len) {

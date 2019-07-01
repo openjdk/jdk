@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -52,7 +52,7 @@ public abstract class FloatableAccessNode extends FixedAccessNode {
         super(c, address, location, stamp, guard, barrierType, nullCheck, stateBefore);
     }
 
-    public abstract FloatingAccessNode asFloatingNode(MemoryNode lastLocationAccess);
+    public abstract FloatingAccessNode asFloatingNode();
 
     protected boolean forceFixed;
 

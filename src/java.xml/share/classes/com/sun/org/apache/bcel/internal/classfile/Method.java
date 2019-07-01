@@ -22,32 +22,34 @@ package com.sun.org.apache.bcel.internal.classfile;
 
 import java.io.DataInput;
 import java.io.IOException;
+import java.util.Objects;
 
 import com.sun.org.apache.bcel.internal.Const;
 import com.sun.org.apache.bcel.internal.generic.Type;
 import com.sun.org.apache.bcel.internal.util.BCELComparator;
 
 /**
- * This class represents the method info structure, i.e., the representation for
- * a method in the class. See JVM specification for details. A method has access
- * flags, a name, a signature and a number of attributes.
+ * This class represents the method info structure, i.e., the representation
+ * for a method in the class. See JVM specification for details.
+ * A method has access flags, a name, a signature and a number of attributes.
  *
- * @version $Id: Method.java 1749603 2016-06-21 20:50:19Z ggregory $
+ * @version $Id$
  */
 public final class Method extends FieldOrMethod {
 
     private static BCELComparator bcelComparator = new BCELComparator() {
 
         @Override
-        public boolean equals(final Object o1, final Object o2) {
+        public boolean equals( final Object o1, final Object o2 ) {
             final Method THIS = (Method) o1;
             final Method THAT = (Method) o2;
-            return THIS.getName().equals(THAT.getName())
-                    && THIS.getSignature().equals(THAT.getSignature());
+            return Objects.equals(THIS.getName(), THAT.getName())
+                    && Objects.equals(THIS.getSignature(), THAT.getSignature());
         }
 
+
         @Override
-        public int hashCode(final Object o) {
+        public int hashCode( final Object o ) {
             final Method THIS = (Method) o;
             return THIS.getSignature().hashCode() ^ THIS.getName().hashCode();
         }
@@ -63,6 +65,7 @@ public final class Method extends FieldOrMethod {
     public Method() {
     }
 
+
     /**
      * Initialize from another object. Note that both objects use the same
      * references (shallow copy). Use clone() for a physical copy.
@@ -71,9 +74,9 @@ public final class Method extends FieldOrMethod {
         super(c);
     }
 
+
     /**
      * Construct object from file stream.
-     *
      * @param file Input stream
      * @throws IOException
      * @throws ClassFormatException
@@ -82,6 +85,7 @@ public final class Method extends FieldOrMethod {
             ClassFormatException {
         super(file, constant_pool);
     }
+
 
     /**
      * @param access_flags Access rights of method
@@ -95,6 +99,7 @@ public final class Method extends FieldOrMethod {
         super(access_flags, name_index, signature_index, attributes, constant_pool);
     }
 
+
     /**
      * Called by objects that are traversing the nodes of the tree implicitely
      * defined by the contents of a Java class. I.e., the hierarchy of methods,
@@ -103,9 +108,10 @@ public final class Method extends FieldOrMethod {
      * @param v Visitor object
      */
     @Override
-    public void accept(final Visitor v) {
+    public void accept( final Visitor v ) {
         v.visitMethod(this);
     }
+
 
     /**
      * @return Code attribute of method, if any
@@ -118,6 +124,7 @@ public final class Method extends FieldOrMethod {
         }
         return null;
     }
+
 
     /**
      * @return ExceptionTable attribute of method, if any, i.e., list all
@@ -132,9 +139,9 @@ public final class Method extends FieldOrMethod {
         return null;
     }
 
-    /**
-     * @return LocalVariableTable of code attribute if any, i.e. the call is
-     * forwarded to the Code atribute.
+
+    /** @return LocalVariableTable of code attribute if any, i.e. the call is forwarded
+     * to the Code atribute.
      */
     public final LocalVariableTable getLocalVariableTable() {
         final Code code = getCode();
@@ -144,9 +151,9 @@ public final class Method extends FieldOrMethod {
         return code.getLocalVariableTable();
     }
 
-    /**
-     * @return LineNumberTable of code attribute if any, i.e. the call is
-     * forwarded to the Code atribute.
+
+    /** @return LineNumberTable of code attribute if any, i.e. the call is forwarded
+     * to the Code atribute.
      */
     public final LineNumberTable getLineNumberTable() {
         final Code code = getCode();
@@ -156,9 +163,10 @@ public final class Method extends FieldOrMethod {
         return code.getLineNumberTable();
     }
 
+
     /**
-     * Return string representation close to declaration format, e.g.
-     * 'public static void main(String[] args) throws IOException'
+     * Return string representation close to declaration format,
+     * `public static void main(String[] args) throws IOException', e.g.
      *
      * @return String representation of the method.
      */
@@ -188,12 +196,14 @@ public final class Method extends FieldOrMethod {
         return buf.toString();
     }
 
+
     /**
      * @return deep copy of this method
      */
-    public final Method copy(final ConstantPool _constant_pool) {
+    public final Method copy( final ConstantPool _constant_pool ) {
         return (Method) copy_(_constant_pool);
     }
+
 
     /**
      * @return return type of method
@@ -202,12 +212,14 @@ public final class Method extends FieldOrMethod {
         return Type.getReturnType(getSignature());
     }
 
+
     /**
      * @return array of method argument types
      */
     public Type[] getArgumentTypes() {
         return Type.getArgumentTypes(getSignature());
     }
+
 
     /**
      * @return Comparison strategy object
@@ -216,28 +228,31 @@ public final class Method extends FieldOrMethod {
         return bcelComparator;
     }
 
+
     /**
      * @param comparator Comparison strategy object
      */
-    public static void setComparator(final BCELComparator comparator) {
+    public static void setComparator( final BCELComparator comparator ) {
         bcelComparator = comparator;
     }
 
+
     /**
-     * Return value as defined by given BCELComparator strategy. By default two
-     * method objects are said to be equal when their names and signatures are
-     * equal.
+     * Return value as defined by given BCELComparator strategy.
+     * By default two method objects are said to be equal when
+     * their names and signatures are equal.
      *
      * @see java.lang.Object#equals(java.lang.Object)
      */
     @Override
-    public boolean equals(final Object obj) {
+    public boolean equals( final Object obj ) {
         return bcelComparator.equals(this, obj);
     }
 
+
     /**
-     * Return value as defined by given BCELComparator strategy. By default
-     * return the hashcode of the method's name XOR signature.
+     * Return value as defined by given BCELComparator strategy.
+     * By default return the hashcode of the method's name XOR signature.
      *
      * @see java.lang.Object#hashCode()
      */

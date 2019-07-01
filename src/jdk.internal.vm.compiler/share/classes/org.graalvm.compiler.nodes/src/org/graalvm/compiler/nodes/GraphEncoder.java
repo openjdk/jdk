@@ -512,8 +512,8 @@ class GraphComparison {
 
             if (expectedNode instanceof EndNode) {
                 /* Visit the merge node, which is the one and only usage of the EndNode. */
-                assert expectedNode.usages().count() == 1;
-                assert actualNode.usages().count() == 1;
+                assert expectedNode.hasExactlyOneUsage();
+                assert actualNode.hasExactlyOneUsage();
                 verifyNodesEqual(expectedNode.usages(), actualNode.usages(), nodeMapping, workList, false);
             }
 

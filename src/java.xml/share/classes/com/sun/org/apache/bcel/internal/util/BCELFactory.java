@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2019, Oracle and/or its affiliates. All rights reserved.
  */
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
@@ -64,8 +64,8 @@ import com.sun.org.apache.bcel.internal.generic.Type;
  * A helper class for BCELifier.
  *
  * @see BCELifier
- * @version $Id: BCELFactory.java 1749603 2016-06-21 20:50:19Z ggregory $
- * @LastModified: Oct 2017
+ * @version $Id$
+ * @LastModified: Jun 2019
  */
 class BCELFactory extends EmptyVisitor {
 

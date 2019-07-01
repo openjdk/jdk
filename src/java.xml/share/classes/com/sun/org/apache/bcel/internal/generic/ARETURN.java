@@ -25,7 +25,7 @@ package com.sun.org.apache.bcel.internal.generic;
  * ARETURN -  Return reference from method
  * <PRE>Stack: ..., objectref -&gt; &lt;empty&gt;</PRE>
  *
- * @version $Id: ARETURN.java 1747278 2016-06-07 17:28:43Z britter $
+ * @version $Id$
  */
 public class ARETURN extends ReturnInstruction {
 

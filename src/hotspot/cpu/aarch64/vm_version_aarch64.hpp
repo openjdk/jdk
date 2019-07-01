@@ -124,6 +124,7 @@ public:
   static int dcache_line_size() {
     return (1 << ((_psr_info.ctr_el0 >> 16) & 0x0f)) * 4;
   }
+  static bool supports_fast_class_init_checks() { return true; }
 };
 
 #endif // CPU_AARCH64_VM_VERSION_AARCH64_HPP

@@ -25,7 +25,7 @@ package com.sun.org.apache.bcel.internal.generic;
  * SWAP - Swa top operand stack word
  * <PRE>Stack: ..., word2, word1 -&gt; ..., word1, word2</PRE>
  *
- * @version $Id: SWAP.java 1747278 2016-06-07 17:28:43Z britter $
+ * @version $Id$
  */
 public class SWAP extends StackInstruction implements StackConsumer, StackProducer {
 

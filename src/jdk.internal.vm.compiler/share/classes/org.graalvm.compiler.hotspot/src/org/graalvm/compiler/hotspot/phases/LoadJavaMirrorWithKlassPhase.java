@@ -44,9 +44,9 @@ import org.graalvm.compiler.nodes.ValueNode;
 import org.graalvm.compiler.nodes.memory.FloatingReadNode;
 import org.graalvm.compiler.nodes.memory.address.AddressNode;
 import org.graalvm.compiler.nodes.memory.address.OffsetAddressNode;
+import org.graalvm.compiler.nodes.spi.CoreProviders;
 import org.graalvm.compiler.phases.BasePhase;
 import org.graalvm.compiler.phases.common.LoweringPhase;
-import org.graalvm.compiler.phases.tiers.PhaseContext;
 
 import jdk.vm.ci.hotspot.HotSpotObjectConstant;
 import jdk.vm.ci.hotspot.HotSpotResolvedJavaField;
@@ -68,7 +68,7 @@ import jdk.vm.ci.meta.ResolvedJavaType;
  *
  * @see AheadOfTimeVerificationPhase
  */
-public class LoadJavaMirrorWithKlassPhase extends BasePhase<PhaseContext> {
+public class LoadJavaMirrorWithKlassPhase extends BasePhase<CoreProviders> {
 
     private final CompressEncoding oopEncoding;
 
@@ -76,7 +76,7 @@ public class LoadJavaMirrorWithKlassPhase extends BasePhase<PhaseContext> {
         this.oopEncoding = config.useCompressedOops ? config.getOopEncoding() : null;
     }
 
-    private ValueNode getClassConstantReplacement(StructuredGraph graph, PhaseContext context, JavaConstant constant) {
+    private ValueNode getClassConstantReplacement(StructuredGraph graph, CoreProviders context, JavaConstant constant) {
         if (constant instanceof HotSpotObjectConstant) {
             ConstantReflectionProvider constantReflection = context.getConstantReflection();
             ResolvedJavaType type = constantReflection.asJavaType(constant);
@@ -131,7 +131,7 @@ public class LoadJavaMirrorWithKlassPhase extends BasePhase<PhaseContext> {
     }
 
     @Override
-    protected void run(StructuredGraph graph, PhaseContext context) {
+    protected void run(StructuredGraph graph, CoreProviders context) {
         for (ConstantNode node : getConstantNodes(graph)) {
             JavaConstant constant = node.asJavaConstant();
             ValueNode freadNode = getClassConstantReplacement(graph, context, constant);

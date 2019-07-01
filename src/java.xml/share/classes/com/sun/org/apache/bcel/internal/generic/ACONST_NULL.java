@@ -25,7 +25,7 @@ package com.sun.org.apache.bcel.internal.generic;
  * ACONST_NULL - Push null reference
  * <PRE>Stack: ... -&gt; ..., null</PRE>
  *
- * @version $Id: ACONST_NULL.java 1747278 2016-06-07 17:28:43Z britter $
+ * @version $Id$
  */
 public class ACONST_NULL extends Instruction implements PushInstruction, TypedInstruction {
 

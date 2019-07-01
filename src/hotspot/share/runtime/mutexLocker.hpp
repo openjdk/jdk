@@ -32,7 +32,6 @@
 // Mutexes used in the VM.
 
 extern Mutex*   Patching_lock;                   // a lock used to guard code patching of compiled code
-extern Mutex*   CompiledMethod_lock;             // a lock used to guard a compiled method
 extern Monitor* SystemDictionary_lock;           // a lock on the system dictionary
 extern Mutex*   ProtectionDomainSet_lock;        // a lock on the pd_set list in the system dictionary
 extern Mutex*   SharedDictionary_lock;           // a lock on the CDS shared dictionary
@@ -78,8 +77,6 @@ extern Monitor* CGC_lock;                        // used for coordination betwee
                                                  // fore- & background GC threads.
 extern Monitor* STS_lock;                        // used for joining/leaving SuspendibleThreadSet.
 extern Monitor* FullGCCount_lock;                // in support of "concurrent" full gc
-extern Monitor* SATB_Q_CBL_mon;                  // Protects SATB Q
-                                                 // completed buffer queue.
 extern Monitor* DirtyCardQ_CBL_mon;              // Protects dirty card Q
                                                  // completed buffer queue.
 extern Mutex*   Shared_DirtyCardQ_lock;          // Lock protecting dirty card

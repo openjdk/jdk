@@ -53,13 +53,14 @@ class SharedClassPathEntry {
   };
 protected:
   u1     _type;
+  bool   _from_class_path_attr;
   time_t _timestamp;          // jar timestamp,  0 if is directory, modules image or other
   long   _filesize;           // jar/jimage file size, -1 if is directory, -2 if other
   Array<char>* _name;
   Array<u1>*   _manifest;
 
 public:
-  void init(const char* name, bool is_modules_image, TRAPS);
+  void init(bool is_modules_image, ClassPathEntry* cpe, TRAPS);
   void metaspace_pointers_do(MetaspaceClosure* it);
   bool validate(bool is_class_path = true);
 
@@ -74,6 +75,7 @@ public:
   void set_is_signed()     {
     _type = signed_jar_entry;
   }
+  bool from_class_path_attr() { return _from_class_path_attr; }
   time_t timestamp() const { return _timestamp; }
   long   filesize()  const { return _filesize; }
   const char* name() const { return _name->data(); }
@@ -240,7 +242,6 @@ public:
   static bool get_base_archive_name_from_header(const char* archive_name,
                                                 int* size, char** base_archive_name);
   static bool check_archive(const char* archive_name, bool is_static);
-  static bool  same_files(const char* file1, const char* file2);
   void restore_shared_path_table();
   bool  init_from_file(int fd, bool is_static);
   static void metaspace_pointers_do(MetaspaceClosure* it);
@@ -376,6 +377,15 @@ public:
   char* region_addr(int idx);
 
  private:
+  char* skip_first_path_entry(const char* path) NOT_CDS_RETURN_(NULL);
+  int   num_paths(const char* path) NOT_CDS_RETURN_(0);
+  GrowableArray<char*>* create_path_array(const char* path) NOT_CDS_RETURN_(NULL);
+  bool  fail(const char* msg, const char* name) NOT_CDS_RETURN_(false);
+  bool  check_paths(int shared_path_start_idx,
+                    int num_paths,
+                    GrowableArray<char*>* rp_array) NOT_CDS_RETURN_(false);
+  bool  validate_boot_class_paths() NOT_CDS_RETURN_(false);
+  bool  validate_app_class_paths(int shared_app_paths_len) NOT_CDS_RETURN_(false);
   bool  map_heap_data(MemRegion **heap_mem, int first, int max, int* num,
                       bool is_open = false) NOT_CDS_JAVA_HEAP_RETURN_(false);
   bool  region_crc_check(char* buf, size_t size, int expected_crc) NOT_CDS_RETURN_(false);

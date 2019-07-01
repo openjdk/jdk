@@ -109,6 +109,7 @@ import org.graalvm.compiler.phases.util.Providers;
 import org.graalvm.compiler.replacements.classfile.ClassfileBytecode;
 import org.graalvm.compiler.replacements.classfile.ClassfileBytecodeProvider;
 import org.graalvm.compiler.runtime.RuntimeProvider;
+import org.graalvm.compiler.serviceprovider.JavaVersionUtil;
 
 import jdk.vm.ci.meta.ConstantPool;
 import jdk.vm.ci.meta.JavaField;
@@ -153,7 +154,7 @@ public class ClassfileBytecodeProviderTest extends GraalCompilerTest {
 
         Assume.assumeTrue(VerifyPhase.class.desiredAssertionStatus());
 
-        String propertyName = Java8OrEarlier ? "sun.boot.class.path" : "jdk.module.path";
+        String propertyName = JavaVersionUtil.JAVA_SPEC <= 8 ? "sun.boot.class.path" : "jdk.module.path";
         String bootclasspath = System.getProperty(propertyName);
         Assert.assertNotNull("Cannot find value of " + propertyName, bootclasspath);
 

@@ -26,6 +26,7 @@
 package org.graalvm.compiler.core.aarch64;
 
 import jdk.vm.ci.aarch64.AArch64Kind;
+import jdk.vm.ci.code.CodeUtil;
 import jdk.vm.ci.meta.AllocatableValue;
 import jdk.vm.ci.meta.JavaKind;
 import jdk.vm.ci.meta.Value;
@@ -42,6 +43,7 @@ import org.graalvm.compiler.lir.LIRFrameState;
 import org.graalvm.compiler.lir.LabelRef;
 import org.graalvm.compiler.lir.Variable;
 import org.graalvm.compiler.lir.aarch64.AArch64ArithmeticOp;
+import org.graalvm.compiler.lir.aarch64.AArch64BitFieldOp;
 import org.graalvm.compiler.lir.aarch64.AArch64ControlFlow;
 import org.graalvm.compiler.lir.gen.LIRGeneratorTool;
 import org.graalvm.compiler.nodes.ConstantNode;
@@ -65,7 +67,7 @@ import org.graalvm.compiler.nodes.memory.Access;
 
 public class AArch64NodeMatchRules extends NodeMatchRules {
     private static final EconomicMap<Class<? extends Node>, AArch64ArithmeticOp> nodeOpMap;
-
+    private static final EconomicMap<Class<? extends BinaryNode>, AArch64BitFieldOp.BitFieldOpCode> bitFieldOpMap;
     private static final EconomicMap<Class<? extends BinaryNode>, AArch64MacroAssembler.ShiftType> shiftTypeMap;
 
     static {
@@ -75,6 +77,10 @@ public class AArch64NodeMatchRules extends NodeMatchRules {
         nodeOpMap.put(AndNode.class, AArch64ArithmeticOp.AND);
         nodeOpMap.put(OrNode.class, AArch64ArithmeticOp.OR);
         nodeOpMap.put(XorNode.class, AArch64ArithmeticOp.XOR);
+
+        bitFieldOpMap = EconomicMap.create(Equivalence.IDENTITY, 2);
+        bitFieldOpMap.put(UnsignedRightShiftNode.class, AArch64BitFieldOp.BitFieldOpCode.UBFX);
+        bitFieldOpMap.put(LeftShiftNode.class, AArch64BitFieldOp.BitFieldOpCode.UBFIZ);
 
         shiftTypeMap = EconomicMap.create(Equivalence.IDENTITY, 3);
         shiftTypeMap.put(LeftShiftNode.class, AArch64MacroAssembler.ShiftType.LSL);
@@ -99,6 +105,19 @@ public class AArch64NodeMatchRules extends NodeMatchRules {
 
     private AllocatableValue moveSp(AllocatableValue value) {
         return getLIRGeneratorTool().moveSp(value);
+    }
+
+    private ComplexMatchResult emitBitField(AArch64BitFieldOp.BitFieldOpCode op, ValueNode value, int lsb, int width) {
+        assert op != null;
+        assert value.getStackKind().isNumericInteger();
+
+        return builder -> {
+            Value a = operand(value);
+            Variable result = gen.newVariable(LIRKind.combine(a));
+            AllocatableValue src = moveSp(gen.asAllocatable(a));
+            gen.append(new AArch64BitFieldOp(op, result, src, lsb, width));
+            return result;
+        };
     }
 
     private ComplexMatchResult emitBinaryShift(AArch64ArithmeticOp op, ValueNode value, BinaryNode shift,
@@ -131,6 +150,40 @@ public class AArch64NodeMatchRules extends NodeMatchRules {
                             trueProbability, nbits));
             return null;
         };
+    }
+
+    @MatchRule("(And (UnsignedRightShift=shift a Constant=b) Constant=c)")
+    @MatchRule("(LeftShift=shift (And a Constant=c) Constant=b)")
+    public ComplexMatchResult unsignedBitField(BinaryNode shift, ValueNode a, ConstantNode b, ConstantNode c) {
+        JavaKind srcKind = a.getStackKind();
+        assert srcKind.isNumericInteger();
+        AArch64BitFieldOp.BitFieldOpCode op = bitFieldOpMap.get(shift.getClass());
+        assert op != null;
+        int distance = b.asJavaConstant().asInt();
+        long mask = c.asJavaConstant().asLong();
+
+        // The Java(R) Language Specification CHAPTER 15.19 Shift Operators says:
+        // "If the promoted type of the left-hand operand is int(long), then only the five(six)
+        // lowest-order bits of the right-hand operand are used as the shift distance."
+        distance = distance & (srcKind == JavaKind.Int ? 0x1f : 0x3f);
+
+        // Constraint 1: Mask plus one should be a power-of-2 integer.
+        if (!CodeUtil.isPowerOf2(mask + 1)) {
+            return null;
+        }
+        int width = CodeUtil.log2(mask + 1);
+        int srcBits = srcKind.getBitCount();
+        // Constraint 2: Bit field width is less than 31(63) for int(long) as any bit field move
+        // operations can be done by a single shift instruction if the width is 31(63).
+        if (width >= srcBits - 1) {
+            return null;
+        }
+        // Constraint 3: Sum of bit field width and the shift distance is less or equal to 32(64)
+        // for int(long) as the specification of AArch64 bit field instructions.
+        if (width + distance > srcBits) {
+            return null;
+        }
+        return emitBitField(op, a, distance, width);
     }
 
     @MatchRule("(Add=binary a (LeftShift=shift b Constant))")

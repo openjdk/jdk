@@ -31,7 +31,7 @@ package com.sun.org.apache.bcel.internal.generic;
  * instructions must have the same target.
  *
  * @see Instruction
- * @version $Id: InstructionComparator.java 1749597 2016-06-21 20:28:51Z ggregory $
+ * @version $Id$
  */
 public interface InstructionComparator {
 

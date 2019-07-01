@@ -2581,10 +2581,18 @@ LONG WINAPI topLevelExceptionFilter(struct _EXCEPTION_POINTERS* exceptionInfo) {
         CodeBlob* cb = CodeCache::find_blob_unsafe(pc);
         nm = (cb != NULL) ? cb->as_compiled_method_or_null() : NULL;
       }
-      if ((thread->thread_state() == _thread_in_vm &&
+
+      bool is_unsafe_arraycopy = (thread->thread_state() == _thread_in_native || in_java) && UnsafeCopyMemory::contains_pc(pc);
+      if (((thread->thread_state() == _thread_in_vm ||
+           thread->thread_state() == _thread_in_native ||
+           is_unsafe_arraycopy) &&
           thread->doing_unsafe_access()) ||
           (nm != NULL && nm->has_unsafe_access())) {
-        return Handle_Exception(exceptionInfo, SharedRuntime::handle_unsafe_access(thread, (address)Assembler::locate_next_instruction(pc)));
+        address next_pc =  Assembler::locate_next_instruction(pc);
+        if (is_unsafe_arraycopy) {
+          next_pc = UnsafeCopyMemory::page_error_continue_pc(pc);
+        }
+        return Handle_Exception(exceptionInfo, SharedRuntime::handle_unsafe_access(thread, next_pc));
       }
     }
 
@@ -4357,6 +4365,88 @@ int os::stat(const char *path, struct stat *sbuf) {
   }
   os::free(pathbuf);
   return ret;
+}
+
+static HANDLE create_read_only_file_handle(const char* file) {
+  if (file == NULL) {
+    return INVALID_HANDLE_VALUE;
+  }
+
+  char* nativepath = (char*)os::strdup(file, mtInternal);
+  if (nativepath == NULL) {
+    errno = ENOMEM;
+    return INVALID_HANDLE_VALUE;
+  }
+  os::native_path(nativepath);
+
+  size_t len = strlen(nativepath);
+  HANDLE handle = INVALID_HANDLE_VALUE;
+
+  if (len < MAX_PATH) {
+    handle = ::CreateFile(nativepath, 0, FILE_SHARE_READ,
+                          NULL, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, NULL);
+  } else {
+    errno_t err = ERROR_SUCCESS;
+    wchar_t* wfile = create_unc_path(nativepath, err);
+    if (err != ERROR_SUCCESS) {
+      if (wfile != NULL) {
+        destroy_unc_path(wfile);
+      }
+      os::free(nativepath);
+      return INVALID_HANDLE_VALUE;
+    }
+    handle = ::CreateFileW(wfile, 0, FILE_SHARE_READ,
+                           NULL, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, NULL);
+    destroy_unc_path(wfile);
+  }
+
+  os::free(nativepath);
+  return handle;
+}
+
+bool os::same_files(const char* file1, const char* file2) {
+
+  if (file1 == NULL && file2 == NULL) {
+    return true;
+  }
+
+  if (file1 == NULL || file2 == NULL) {
+    return false;
+  }
+
+  if (strcmp(file1, file2) == 0) {
+    return true;
+  }
+
+  HANDLE handle1 = create_read_only_file_handle(file1);
+  HANDLE handle2 = create_read_only_file_handle(file2);
+  bool result = false;
+
+  // if we could open both paths...
+  if (handle1 != INVALID_HANDLE_VALUE && handle2 != INVALID_HANDLE_VALUE) {
+    BY_HANDLE_FILE_INFORMATION fileInfo1;
+    BY_HANDLE_FILE_INFORMATION fileInfo2;
+    if (::GetFileInformationByHandle(handle1, &fileInfo1) &&
+      ::GetFileInformationByHandle(handle2, &fileInfo2)) {
+      // the paths are the same if they refer to the same file (fileindex) on the same volume (volume serial number)
+      if (fileInfo1.dwVolumeSerialNumber == fileInfo2.dwVolumeSerialNumber &&
+        fileInfo1.nFileIndexHigh == fileInfo2.nFileIndexHigh &&
+        fileInfo1.nFileIndexLow == fileInfo2.nFileIndexLow) {
+        result = true;
+      }
+    }
+  }
+
+  //free the handles
+  if (handle1 != INVALID_HANDLE_VALUE) {
+    ::CloseHandle(handle1);
+  }
+
+  if (handle2 != INVALID_HANDLE_VALUE) {
+    ::CloseHandle(handle2);
+  }
+
+  return result;
 }
 
 

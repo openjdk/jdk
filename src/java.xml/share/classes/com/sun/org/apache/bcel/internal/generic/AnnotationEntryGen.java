@@ -1,6 +1,5 @@
 /*
- * reserved comment block
- * DO NOT REMOVE OR ALTER!
+ * Copyright (c) 2017, 2019, Oracle and/or its affiliates. All rights reserved.
  */
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
@@ -41,6 +40,7 @@ import com.sun.org.apache.bcel.internal.classfile.RuntimeVisibleParameterAnnotat
 
 /**
  * @since 6.0
+ * @LastModified: Jun 2019
  */
 public class AnnotationEntryGen {
     private int typeIndex;
@@ -263,8 +263,8 @@ public class AnnotationEntryGen {
 
             return newAttributes.toArray(new Attribute[newAttributes.size()]);
         } catch (final IOException e) {
-            System.err.println("IOException whilst processing annotations. " +
-                    e.getMessage());
+            System.err.println("IOException whilst processing annotations");
+            e.printStackTrace();
         }
         return null;
     }

@@ -25,13 +25,13 @@ package com.sun.org.apache.bcel.internal.generic;
  * FSTORE - Store float into local variable
  * <PRE>Stack: ..., value -&gt; ... </PRE>
  *
- * @version $Id: FSTORE.java 1747278 2016-06-07 17:28:43Z britter $
+ * @version $Id$
  */
 public class FSTORE extends StoreInstruction {
 
     /**
-     * Empty constructor needed for the Class.newInstance() statement in
-     * Instruction.readInstruction(). Not to be used otherwise.
+     * Empty constructor needed for Instruction.readInstruction.
+     * Not to be used otherwise.
      */
     FSTORE() {
         super(com.sun.org.apache.bcel.internal.Const.FSTORE, com.sun.org.apache.bcel.internal.Const.FSTORE_0);

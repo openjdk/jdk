@@ -35,6 +35,7 @@ import org.graalvm.compiler.phases.common.GuardLoweringPhase;
 import org.graalvm.compiler.phases.common.LoopSafepointInsertionPhase;
 import org.graalvm.compiler.phases.common.LoweringPhase;
 import org.graalvm.compiler.phases.common.RemoveValueProxyPhase;
+import org.graalvm.compiler.phases.common.WriteBarrierAdditionPhase;
 import org.graalvm.compiler.phases.tiers.MidTierContext;
 
 public class EconomyMidTier extends PhaseSuite<MidTierContext> {
@@ -53,5 +54,7 @@ public class EconomyMidTier extends PhaseSuite<MidTierContext> {
         appendPhase(new LoweringPhase(canonicalizer, LoweringTool.StandardLoweringStage.MID_TIER));
 
         appendPhase(new FrameStateAssignmentPhase());
+
+        appendPhase(new WriteBarrierAdditionPhase());
     }
 }

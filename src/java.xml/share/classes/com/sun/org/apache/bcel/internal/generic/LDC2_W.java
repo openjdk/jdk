@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2019, Oracle and/or its affiliates. All rights reserved.
  */
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
@@ -25,14 +25,14 @@ package com.sun.org.apache.bcel.internal.generic;
  *
  * <PRE>Stack: ... -&gt; ..., item.word1, item.word2</PRE>
  *
- * @version $Id: LDC2_W.java 1749603 2016-06-21 20:50:19Z ggregory $
- * @LastModified: Nov 2017
+ * @version $Id$
+ * @LastModified: Jun 2019
  */
 public class LDC2_W extends CPInstruction implements PushInstruction {
 
     /**
-     * Empty constructor needed for the Class.newInstance() statement in
-     * Instruction.readInstruction(). Not to be used otherwise.
+     * Empty constructor needed for Instruction.readInstruction.
+     * Not to be used otherwise.
      */
     LDC2_W() {
     }

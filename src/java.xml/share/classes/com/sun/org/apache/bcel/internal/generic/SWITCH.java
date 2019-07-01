@@ -26,7 +26,7 @@ package com.sun.org.apache.bcel.internal.generic;
  * TABLESWITCH instruction, depending on whether the match values (int[]) can be
  * sorted with no gaps between the numbers.
  *
- * @version $Id: SWITCH.java 1749603 2016-06-21 20:50:19Z ggregory $
+ * @version $Id$
  */
 public final class SWITCH implements CompoundInstruction {
 

@@ -139,7 +139,7 @@ public class BlackholeDirectiveTest extends GraalCompilerTest {
     }
 
     @Override
-    protected boolean checkLowTierGraph(StructuredGraph graph) {
+    protected void checkLowTierGraph(StructuredGraph graph) {
         BlackholeSnippet snippet = graph.method().getAnnotation(BlackholeSnippet.class);
         ParameterNode arg = graph.getParameter(0);
         if (snippet.expectParameterUsage()) {
@@ -148,6 +148,5 @@ public class BlackholeDirectiveTest extends GraalCompilerTest {
         } else {
             Assert.assertTrue("expected no usages of ParameterNode", arg == null || arg.hasNoUsages());
         }
-        return true;
     }
 }
