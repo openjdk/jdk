@@ -156,6 +156,7 @@ class Generation: public CHeapObj<mtGC> {
   virtual size_t capacity() const = 0;  // The maximum number of object bytes the
                                         // generation can currently hold.
   virtual size_t used() const = 0;      // The number of used bytes in the gen.
+  virtual size_t used_stable() const;   // The number of used bytes for memory monitoring tools.
   virtual size_t free() const = 0;      // The number of free bytes in the gen.
 
   // Support for java.lang.Runtime.maxMemory(); see CollectedHeap.

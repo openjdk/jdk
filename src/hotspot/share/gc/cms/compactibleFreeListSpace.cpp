@@ -372,6 +372,8 @@ CompactibleFreeListSpace::CompactibleFreeListSpace(BlockOffsetSharedArray* bs, M
     )
   }
   _dictionary->set_par_lock(&_parDictionaryAllocLock);
+
+  _used_stable = 0;
 }
 
 // Like CompactibleSpace forward() but always calls cross_threshold() to
@@ -575,6 +577,14 @@ bool CompactibleFreeListSpace::is_free_block(const HeapWord* p) const {
 
 size_t CompactibleFreeListSpace::used() const {
   return capacity() - free();
+}
+
+size_t CompactibleFreeListSpace::used_stable() const {
+  return _used_stable;
+}
+
+void CompactibleFreeListSpace::recalculate_used_stable() {
+  _used_stable = used();
 }
 
 size_t CompactibleFreeListSpace::free() const {
@@ -1373,6 +1383,9 @@ HeapWord* CompactibleFreeListSpace::allocate(size_t size) {
     // mangle a just allocated object with a distinct pattern.
     debug_only(fc->mangleAllocated(size));
   }
+
+  // After allocation, recalculate used space and update used_stable
+  recalculate_used_stable();
 
   return res;
 }

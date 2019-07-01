@@ -68,6 +68,12 @@ size_t Generation::initial_size() {
   return gch->old_gen_spec()->init_size();
 }
 
+// This is for CMS. It returns stable monotonic used space size.
+// Remove this when CMS is removed.
+size_t Generation::used_stable() const {
+  return used();
+}
+
 size_t Generation::max_capacity() const {
   return reserved().byte_size();
 }
