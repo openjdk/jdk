@@ -364,10 +364,6 @@
   diagnostic(bool, ShenandoahLoadRefBarrier, true,                          \
           "Turn on/off load-reference barriers in Shenandoah")              \
                                                                             \
-  diagnostic(bool, ShenandoahStoreCheck, false,                             \
-          "Emit additional code that checks objects are written to only"    \
-          " in to-space")                                                   \
-                                                                            \
   experimental(bool, ShenandoahConcurrentScanCodeRoots, true,               \
           "Scan code roots concurrently, instead of during a pause")        \
                                                                             \
