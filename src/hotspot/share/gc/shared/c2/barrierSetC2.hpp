@@ -267,6 +267,7 @@ public:
   virtual bool has_load_barriers() const { return false; }
   virtual bool is_gc_barrier_node(Node* node) const { return false; }
   virtual Node* step_over_gc_barrier(Node* c) const { return c; }
+  virtual Node* step_over_gc_barrier_ctrl(Node* c) const { return c; }
 
   // Support for macro expanded GC barriers
   virtual void register_potential_barrier_node(Node* node) const { }

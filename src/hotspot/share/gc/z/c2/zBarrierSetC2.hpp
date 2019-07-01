@@ -182,6 +182,7 @@ public:
   virtual bool has_load_barriers() const { return true; }
   virtual bool is_gc_barrier_node(Node* node) const;
   virtual Node* step_over_gc_barrier(Node* c) const;
+  virtual Node* step_over_gc_barrier_ctrl(Node* c) const;
 
   virtual void register_potential_barrier_node(Node* node) const;
   virtual void unregister_potential_barrier_node(Node* node) const;

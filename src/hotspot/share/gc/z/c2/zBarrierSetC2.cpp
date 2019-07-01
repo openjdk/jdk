@@ -522,7 +522,7 @@ void ZBarrierSetC2::expand_loadbarrier_node(PhaseMacroExpand* phase, LoadBarrier
   Node* in_val = barrier->in(LoadBarrierNode::Oop);
   Node* in_adr = barrier->in(LoadBarrierNode::Address);
 
-  Node* out_ctrl = barrier->proj_out_or_null(LoadBarrierNode::Control);
+  Node* out_ctrl = barrier->proj_out(LoadBarrierNode::Control);
   Node* out_res = barrier->proj_out(LoadBarrierNode::Oop);
 
   assert(barrier->in(LoadBarrierNode::Oop) != NULL, "oop to loadbarrier node cannot be null");
@@ -552,9 +552,8 @@ void ZBarrierSetC2::expand_loadbarrier_node(PhaseMacroExpand* phase, LoadBarrier
   result_phi->set_req(1, new_loadp);
   result_phi->set_req(2, barrier->in(LoadBarrierNode::Oop));
 
-  if (out_ctrl != NULL) {
-    igvn.replace_node(out_ctrl, result_region);
-  }
+
+  igvn.replace_node(out_ctrl, result_region);
   igvn.replace_node(out_res, result_phi);
 
   assert(barrier->outcnt() == 0,"LoadBarrier macro node has non-null outputs after expansion!");
@@ -635,6 +634,22 @@ Node* ZBarrierSetC2::step_over_gc_barrier(Node* c) const {
       assert(c == node, "projections from step 1 should only be seen before macro expansion");
       return phi->in(2);
     }
+  }
+
+  return c;
+}
+
+Node* ZBarrierSetC2::step_over_gc_barrier_ctrl(Node* c) const {
+  Node* node = c;
+
+  // 1. This step follows potential ctrl projections of a load barrier before expansion
+  if (node->is_Proj()) {
+    node = node->in(0);
+  }
+
+  // 2. This step checks for unexpanded load barriers
+  if (node->is_LoadBarrier()) {
+    return node->in(LoadBarrierNode::Control);
   }
 
   return c;
