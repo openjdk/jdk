@@ -52,23 +52,24 @@ static void enable_biased_locking(InstanceKlass* k) {
   k->set_prototype_header(markOopDesc::biased_locking_prototype());
 }
 
+static void enable_biased_locking() {
+  _biased_locking_enabled = true;
+  log_info(biasedlocking)("Biased locking enabled");
+}
+
 class VM_EnableBiasedLocking: public VM_Operation {
- private:
-  bool _is_cheap_allocated;
  public:
-  VM_EnableBiasedLocking(bool is_cheap_allocated) { _is_cheap_allocated = is_cheap_allocated; }
+  VM_EnableBiasedLocking() {}
   VMOp_Type type() const          { return VMOp_EnableBiasedLocking; }
-  Mode evaluation_mode() const    { return _is_cheap_allocated ? _async_safepoint : _safepoint; }
-  bool is_cheap_allocated() const { return _is_cheap_allocated; }
+  Mode evaluation_mode() const    { return _async_safepoint; }
+  bool is_cheap_allocated() const { return true; }
 
   void doit() {
     // Iterate the class loader data dictionaries enabling biased locking for all
     // currently loaded classes.
     ClassLoaderDataGraph::dictionary_classes_do(enable_biased_locking);
     // Indicate that future instances should enable it as well
-    _biased_locking_enabled = true;
-
-    log_info(biasedlocking)("Biased locking enabled");
+    enable_biased_locking();
   }
 
   bool allow_nested_vm_operations() const        { return false; }
@@ -83,7 +84,7 @@ class EnableBiasedLockingTask : public PeriodicTask {
   virtual void task() {
     // Use async VM operation to avoid blocking the Watcher thread.
     // VM Thread will free C heap storage.
-    VM_EnableBiasedLocking *op = new VM_EnableBiasedLocking(true);
+    VM_EnableBiasedLocking *op = new VM_EnableBiasedLocking();
     VMThread::execute(op);
 
     // Reclaim our storage and disenroll ourself
@@ -93,27 +94,29 @@ class EnableBiasedLockingTask : public PeriodicTask {
 
 
 void BiasedLocking::init() {
-  // If biased locking is enabled, schedule a task to fire a few
-  // seconds into the run which turns on biased locking for all
-  // currently loaded classes as well as future ones. This is a
-  // workaround for startup time regressions due to a large number of
-  // safepoints being taken during VM startup for bias revocation.
-  // Ideally we would have a lower cost for individual bias revocation
-  // and not need a mechanism like this.
+  // If biased locking is enabled and BiasedLockingStartupDelay is set,
+  // schedule a task to fire after the specified delay which turns on
+  // biased locking for all currently loaded classes as well as future
+  // ones. This could be a workaround for startup time regressions
+  // due to large number of safepoints being taken during VM startup for
+  // bias revocation.
   if (UseBiasedLocking) {
     if (BiasedLockingStartupDelay > 0) {
       EnableBiasedLockingTask* task = new EnableBiasedLockingTask(BiasedLockingStartupDelay);
       task->enroll();
     } else {
-      VM_EnableBiasedLocking op(false);
-      VMThread::execute(&op);
+      enable_biased_locking();
     }
   }
 }
 
 
 bool BiasedLocking::enabled() {
-  return _biased_locking_enabled;
+  assert(UseBiasedLocking, "precondition");
+  // We check "BiasedLockingStartupDelay == 0" here to cover the
+  // possibility of calls to BiasedLocking::enabled() before
+  // BiasedLocking::init().
+  return _biased_locking_enabled || BiasedLockingStartupDelay == 0;
 }
 
 // Returns MonitorInfos for all objects locked on this thread in youngest to oldest order

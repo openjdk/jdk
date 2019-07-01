@@ -2142,7 +2142,7 @@ void SystemDictionary::update_dictionary(unsigned int d_hash,
     // See whether biased locking is enabled and if so set it for this
     // klass.
     // Note that this must be done past the last potential blocking
-    // point / safepoint. We enable biased locking lazily using a
+    // point / safepoint. We might enable biased locking lazily using a
     // VM_Operation to iterate the SystemDictionary and installing the
     // biasable mark word into each InstanceKlass's prototype header.
     // To avoid race conditions where we accidentally miss enabling the
