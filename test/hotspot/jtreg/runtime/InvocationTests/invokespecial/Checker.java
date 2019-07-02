@@ -34,16 +34,12 @@ public class Checker extends shared.Checker {
     }
 
     public String check (Class callerClass) {
-        /*
-         * If objectref is null, the invokespecial instruction throws a NullPointerException.
-         */
+        // If objectref is null, the invokespecial instruction throws a NullPointerException.
         if (dynamicTargetClass == null) {
             return "java.lang.NullPointerException";
         }
 
-        /*
-         * TODO: find a citiation from spec for this case
-         */
+        // TODO: find a citation from spec for this case
         Method resolvedMethod;
         try {
             // May throw VerifyError
@@ -56,15 +52,13 @@ public class Checker extends shared.Checker {
             return "java.lang.NoSuchMethodError";
         }
 
-       /*
-        * If:
-        *   - the resolved method is protected (4.7)
-        *   - it is a member of a superclass of the current class
-        *   - the method is not declared in the same run-time package (5.3) as the current class
-        * then:
-        *   the class of objectref must be either the current class or a subclass of the
-        * current class.
-        */
+       // If:
+       //   - the resolved method is protected (4.7)
+       //   - it is a member of a superclass of the current class
+       //   - the method is not declared in the same run-time package (5.3) as the current class
+       // then:
+       //   the class of objectref must be either the current class or a subclass of the
+       // current class.
 
         if (Modifier.isProtected(resolvedMethod.getModifiers())) {
             Method methodInSuperclass = getMethodInHierarchy(resolvedMethod.getDeclaringClass().getSuperclass());
