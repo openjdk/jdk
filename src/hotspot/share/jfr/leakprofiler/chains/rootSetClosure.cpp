@@ -30,7 +30,6 @@
 #include "gc/shared/strongRootsScope.hpp"
 #include "jfr/leakprofiler/chains/edgeQueue.hpp"
 #include "jfr/leakprofiler/chains/rootSetClosure.hpp"
-#include "jfr/leakprofiler/utilities/saveRestore.hpp"
 #include "jfr/leakprofiler/utilities/unifiedOop.hpp"
 #include "memory/universe.hpp"
 #include "oops/access.inline.hpp"
@@ -92,10 +91,9 @@ class RootSetClosureMarkScope : public MarkScope {
 };
 
 void RootSetClosure::process_roots(OopClosure* closure) {
-  SaveRestoreCLDClaimBits save_restore_cld_claim_bits;
   RootSetClosureMarkScope mark_scope;
 
-  CLDToOopClosure cldt_closure(closure, ClassLoaderData::_claim_strong);
+  CLDToOopClosure cldt_closure(closure, ClassLoaderData::_claim_none);
   ClassLoaderDataGraph::always_strong_cld_do(&cldt_closure);
   CodeBlobToOopClosure blobs(closure, false);
   Threads::oops_do(closure, &blobs);
