@@ -1520,6 +1520,13 @@ void os::print_dll_info(outputStream * st) {
   }
 }
 
+static void change_endianness(Elf32_Half& val) {
+  unsigned char *ptr = (unsigned char *)&val;
+  unsigned char swp = ptr[0];
+  ptr[0] = ptr[1];
+  ptr[1] = swp;
+}
+
 // Loads .dll/.so and
 // in case of error it checks if .dll/.so was built for the
 // same architecture as Hotspot is running on
@@ -1570,6 +1577,14 @@ void * os::dll_load(const char *filename, char *ebuf, int ebuflen) {
     return NULL;
   }
 
+  if (elf_head.e_ident[EI_DATA] != LITTLE_ENDIAN_ONLY(ELFDATA2LSB) BIG_ENDIAN_ONLY(ELFDATA2MSB)) {
+    // handle invalid/out of range endianness values
+    if (elf_head.e_ident[EI_DATA] == 0 || elf_head.e_ident[EI_DATA] > 2) {
+      return NULL;
+    }
+    change_endianness(elf_head.e_machine);
+  }
+
   typedef struct {
     Elf32_Half    code;         // Actual value as defined in elf.h
     Elf32_Half    compat_class; // Compatibility of archs at VM's sense
@@ -1588,7 +1603,10 @@ void * os::dll_load(const char *filename, char *ebuf, int ebuflen) {
     {EM_SPARCV9,     EM_SPARCV9, ELFCLASS64, ELFDATA2MSB, (char*)"Sparc v9 64"},
     {EM_PPC,         EM_PPC,     ELFCLASS32, ELFDATA2MSB, (char*)"Power PC 32"},
     {EM_PPC64,       EM_PPC64,   ELFCLASS64, ELFDATA2MSB, (char*)"Power PC 64"},
-    {EM_ARM,         EM_ARM,     ELFCLASS32, ELFDATA2LSB, (char*)"ARM 32"}
+    {EM_ARM,         EM_ARM,     ELFCLASS32, ELFDATA2LSB, (char*)"ARM"},
+    // we only support 64 bit z architecture
+    {EM_S390,        EM_S390,    ELFCLASS64, ELFDATA2MSB, (char*)"IBM System/390"},
+    {EM_AARCH64,     EM_AARCH64, ELFCLASS64, ELFDATA2LSB, (char*)"AARCH64"}
   };
 
 #if  (defined IA32)
@@ -1612,7 +1630,7 @@ void * os::dll_load(const char *filename, char *ebuf, int ebuflen) {
        IA32, AMD64, IA64, __sparc, __powerpc__, ARM, ARM
 #endif
 
-  // Identify compatability class for VM's architecture and library's architecture
+  // Identify compatibility class for VM's architecture and library's architecture
   // Obtain string descriptions for architectures
 
   arch_t lib_arch={elf_head.e_machine,0,elf_head.e_ident[EI_CLASS], elf_head.e_ident[EI_DATA], NULL};
@@ -1636,27 +1654,35 @@ void * os::dll_load(const char *filename, char *ebuf, int ebuflen) {
     return NULL;
   }
 
+  if (lib_arch.compat_class != arch_array[running_arch_index].compat_class) {
+    if (lib_arch.name != NULL) {
+      ::snprintf(diag_msg_buf, diag_msg_max_length-1,
+                 " (Possible cause: can't load %s .so on a %s platform)",
+                 lib_arch.name, arch_array[running_arch_index].name);
+    } else {
+      ::snprintf(diag_msg_buf, diag_msg_max_length-1,
+                 " (Possible cause: can't load this .so (machine code=0x%x) on a %s platform)",
+                 lib_arch.code, arch_array[running_arch_index].name);
+    }
+    return NULL;
+  }
+
   if (lib_arch.endianess != arch_array[running_arch_index].endianess) {
     ::snprintf(diag_msg_buf, diag_msg_max_length-1," (Possible cause: endianness mismatch)");
     return NULL;
   }
 
-  if (lib_arch.elf_class != arch_array[running_arch_index].elf_class) {
-    ::snprintf(diag_msg_buf, diag_msg_max_length-1," (Possible cause: architecture word width mismatch)");
+  // ELF file class/capacity : 0 - invalid, 1 - 32bit, 2 - 64bit
+  if (lib_arch.elf_class > 2 || lib_arch.elf_class < 1) {
+    ::snprintf(diag_msg_buf, diag_msg_max_length-1, " (Possible cause: invalid ELF file class)");
     return NULL;
   }
 
-  if (lib_arch.compat_class != arch_array[running_arch_index].compat_class) {
-    if (lib_arch.name!=NULL) {
-      ::snprintf(diag_msg_buf, diag_msg_max_length-1,
-                 " (Possible cause: can't load %s-bit .so on a %s-bit platform)",
-                 lib_arch.name, arch_array[running_arch_index].name);
-    } else {
-      ::snprintf(diag_msg_buf, diag_msg_max_length-1,
-                 " (Possible cause: can't load this .so (machine code=0x%x) on a %s-bit platform)",
-                 lib_arch.code,
-                 arch_array[running_arch_index].name);
-    }
+  if (lib_arch.elf_class != arch_array[running_arch_index].elf_class) {
+    ::snprintf(diag_msg_buf, diag_msg_max_length-1,
+               " (Possible cause: architecture word width mismatch, can't load %d-bit .so on a %d-bit platform)",
+               (int) lib_arch.elf_class * 32, arch_array[running_arch_index].elf_class * 32);
+    return NULL;
   }
 
   return NULL;
