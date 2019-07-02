@@ -1475,18 +1475,12 @@ void JVMFlag::verify() {
 
 void JVMFlag::printFlags(outputStream* out, bool withComments, bool printRanges, bool skipDefaults) {
   // Print the flags sorted by name
-  // note: this method is called before the thread structure is in place
-  //       which means resource allocation cannot be used.
+  // Note: This method may be called before the thread structure is in place
+  //       which means resource allocation cannot be used. Also, it may be
+  //       called as part of error reporting, so handle native OOMs gracefully.
 
   // The last entry is the null entry.
   const size_t length = JVMFlag::numFlags - 1;
-
-  // Sort
-  JVMFlag** array = NEW_C_HEAP_ARRAY(JVMFlag*, length, mtArguments);
-  for (size_t i = 0; i < length; i++) {
-    array[i] = &flagTable[i];
-  }
-  qsort(array, length, sizeof(JVMFlag*), compare_flags);
 
   // Print
   if (!printRanges) {
@@ -1495,12 +1489,28 @@ void JVMFlag::printFlags(outputStream* out, bool withComments, bool printRanges,
     out->print_cr("[Global flags ranges]");
   }
 
-  for (size_t i = 0; i < length; i++) {
-    if (array[i]->is_unlocked() && !(skipDefaults && array[i]->is_default())) {
-      array[i]->print_on(out, withComments, printRanges);
+  // Sort
+  JVMFlag** array = NEW_C_HEAP_ARRAY_RETURN_NULL(JVMFlag*, length, mtArguments);
+  if (array != NULL) {
+    for (size_t i = 0; i < length; i++) {
+      array[i] = &flagTable[i];
+    }
+    qsort(array, length, sizeof(JVMFlag*), compare_flags);
+
+    for (size_t i = 0; i < length; i++) {
+      if (array[i]->is_unlocked() && !(skipDefaults && array[i]->is_default())) {
+        array[i]->print_on(out, withComments, printRanges);
+      }
+    }
+    FREE_C_HEAP_ARRAY(JVMFlag*, array);
+  } else {
+    // OOM? Print unsorted.
+    for (size_t i = 0; i < length; i++) {
+      if (flagTable[i].is_unlocked() && !(skipDefaults && flagTable[i].is_default())) {
+        flagTable[i].print_on(out, withComments, printRanges);
+      }
     }
   }
-  FREE_C_HEAP_ARRAY(JVMFlag*, array);
 }
 
 void JVMFlag::printError(bool verbose, const char* msg, ...) {
