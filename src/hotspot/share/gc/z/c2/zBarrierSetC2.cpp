@@ -128,14 +128,19 @@ void ZBarrierSetC2::enqueue_useful_gc_barrier(PhaseIterGVN* igvn, Node* node) co
   }
 }
 
-static bool load_require_barrier(LoadNode* load)      { return ((load->barrier_data() & RequireBarrier) != 0); }
-static bool load_has_weak_barrier(LoadNode* load)     { return ((load->barrier_data() & WeakBarrier) != 0); }
-static bool load_has_expanded_barrier(LoadNode* load) { return ((load->barrier_data() & ExpandedBarrier) != 0); }
+const uint NoBarrier       = 0;
+const uint RequireBarrier  = 1;
+const uint WeakBarrier     = 2;
+const uint ExpandedBarrier = 4;
+
+static bool load_require_barrier(LoadNode* load)      { return (load->barrier_data() & RequireBarrier)  == RequireBarrier; }
+static bool load_has_weak_barrier(LoadNode* load)     { return (load->barrier_data() & WeakBarrier)     == WeakBarrier; }
+static bool load_has_expanded_barrier(LoadNode* load) { return (load->barrier_data() & ExpandedBarrier) == ExpandedBarrier; }
 static void load_set_expanded_barrier(LoadNode* load) { return load->set_barrier_data(ExpandedBarrier); }
 
-static void load_set_barrier(LoadNode* load, bool weak)    {
+static void load_set_barrier(LoadNode* load, bool weak) {
   if (weak) {
-    load->set_barrier_data(WeakBarrier);
+    load->set_barrier_data(RequireBarrier | WeakBarrier);
   } else {
     load->set_barrier_data(RequireBarrier);
   }
