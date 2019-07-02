@@ -675,6 +675,7 @@ public:
       DEFINE_CLASS_ID(EncodeNarrowPtr, Type, 6)
         DEFINE_CLASS_ID(EncodeP, EncodeNarrowPtr, 0)
         DEFINE_CLASS_ID(EncodePKlass, EncodeNarrowPtr, 1)
+      DEFINE_CLASS_ID(LoadBarrierSlowReg, Type, 7)
 
     DEFINE_CLASS_ID(Proj,  Node, 3)
       DEFINE_CLASS_ID(CatchProj, Proj, 0)
@@ -688,7 +689,6 @@ public:
     DEFINE_CLASS_ID(Mem,   Node, 4)
       DEFINE_CLASS_ID(Load,  Mem, 0)
         DEFINE_CLASS_ID(LoadVector,  Load, 0)
-        DEFINE_CLASS_ID(LoadBarrierSlowReg, Load, 1)
       DEFINE_CLASS_ID(Store, Mem, 1)
         DEFINE_CLASS_ID(StoreVector, Store, 0)
       DEFINE_CLASS_ID(LoadStore, Mem, 2)

@@ -4294,7 +4294,6 @@ void PhaseIdealLoop::build_loop_late_post_work(Node *n, bool pinned) {
     case Op_LoadL:
     case Op_LoadS:
     case Op_LoadP:
-    case Op_LoadBarrierSlowReg:
     case Op_LoadN:
     case Op_LoadRange:
     case Op_LoadD_unaligned:
