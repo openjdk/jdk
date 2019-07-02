@@ -475,7 +475,9 @@ final class HotSpotResolvedJavaMethodImpl extends HotSpotMethod implements HotSp
                 methodData = new HotSpotMethodData(metaspaceMethodData, this);
                 String methodDataFilter = Option.TraceMethodDataFilter.getString();
                 if (methodDataFilter != null && this.format("%H.%n").contains(methodDataFilter)) {
-                    System.out.println(methodData.toString());
+                    String line = methodData.toString() + System.lineSeparator();
+                    byte[] lineBytes = line.getBytes();
+                    CompilerToVM.compilerToVM().writeDebugOutput(lineBytes, 0, lineBytes.length, true, true);
                 }
             }
         }

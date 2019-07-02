@@ -41,11 +41,11 @@
 #include "services/management.hpp"
 
 ShenandoahSerialRoot::ShenandoahSerialRoot(ShenandoahSerialRoot::OopsDo oops_do, ShenandoahPhaseTimings::GCParPhases phase) :
-  _claimed(false), _oops_do(oops_do), _phase(phase) {
+  _oops_do(oops_do), _phase(phase) {
 }
 
 void ShenandoahSerialRoot::oops_do(OopClosure* cl, uint worker_id) {
-  if (!_claimed && Atomic::cmpxchg(true, &_claimed, false) == false) {
+  if (_claimed.try_set()) {
     ShenandoahWorkerTimings* worker_times = ShenandoahHeap::heap()->phase_timings()->worker_times();
     ShenandoahWorkerTimingsTracker timer(worker_times, _phase, worker_id);
     _oops_do(cl);
