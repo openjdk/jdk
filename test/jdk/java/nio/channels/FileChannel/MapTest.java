@@ -24,7 +24,7 @@
 /* @test
  * @bug 4429043 8002180
  * @summary Test file mapping with FileChannel
- * @run main/othervm MapTest
+ * @run main/othervm/timeout=240 MapTest
  * @key randomness
  */
 
@@ -195,7 +195,7 @@ public class MapTest {
      * the data exercising various valid and invalid writeback ranges.
      */
     private static void testForce() throws Exception {
-        for (int x=0; x<100; x++) {
+        for (int x=0; x<50; x++) {
             try (RandomAccessFile raf = new RandomAccessFile(blah, "rw")) {
                 FileChannel fc = raf.getChannel();
                 final int BLOCK_SIZE = 64;
