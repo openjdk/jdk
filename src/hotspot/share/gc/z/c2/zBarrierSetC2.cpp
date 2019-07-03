@@ -545,8 +545,8 @@ void ZBarrierSetC2::expand_loadbarrier_node(PhaseMacroExpand* phase, LoadBarrier
   Node* then = igvn.transform(new IfTrueNode(iff));
   Node* elsen = igvn.transform(new IfFalseNode(iff));
 
-  Node* new_loadp = igvn.transform(new LoadBarrierSlowRegNode(then, in_mem, in_adr, in_val->adr_type(),
-                                                                    (const TypePtr*) in_val->bottom_type(), MemNode::unordered, barrier->is_weak()));
+  Node* new_loadp = igvn.transform(new LoadBarrierSlowRegNode(then, in_adr, in_val,
+                                                              (const TypePtr*) in_val->bottom_type(), barrier->is_weak()));
 
   // Create the final region/phi pair to converge cntl/data paths to downstream code
   Node* result_region = igvn.transform(new RegionNode(3));
@@ -672,7 +672,6 @@ bool ZBarrierSetC2::final_graph_reshaping(Compile* compile, Node* n, uint opcode
     case Op_ZCompareAndExchangeP:
     case Op_ZCompareAndSwapP:
     case Op_ZWeakCompareAndSwapP:
-    case Op_LoadBarrierSlowReg:
 #ifdef ASSERT
       if (VerifyOptoOopOffsets) {
         MemNode *mem = n->as_Mem();

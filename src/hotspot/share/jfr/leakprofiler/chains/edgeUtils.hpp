@@ -28,15 +28,17 @@
 #include "memory/allocation.hpp"
 
 class Edge;
-class RoutableEdge;
 class Symbol;
 
 class EdgeUtils : public AllStatic {
  public:
-  static bool is_leak_edge(const Edge& edge);
+  static const size_t leak_context = 100;
+  static const size_t root_context = 100;
+  static const size_t max_ref_chain_depth = leak_context + root_context;
 
+  static bool is_leak_edge(const Edge& edge);
   static const Edge* root(const Edge& edge);
-  static bool is_root(const Edge& edge);
+  static const Edge* ancestor(const Edge& edge, size_t distance);
 
   static bool is_array_element(const Edge& edge);
   static int array_index(const Edge& edge);
@@ -44,8 +46,6 @@ class EdgeUtils : public AllStatic {
 
   static const Symbol* field_name_symbol(const Edge& edge);
   static jshort field_modifiers(const Edge& edge);
-
-  static void collapse_chain(const RoutableEdge& edge);
 };
 
 #endif // SHARE_JFR_LEAKPROFILER_CHAINS_EDGEUTILS_HPP

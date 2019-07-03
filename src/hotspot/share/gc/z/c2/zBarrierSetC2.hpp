@@ -104,20 +104,23 @@ public:
   }
 };
 
-class LoadBarrierSlowRegNode : public LoadPNode {
+class LoadBarrierSlowRegNode : public TypeNode {
 private:
-    bool _is_weak;
+  bool _is_weak;
 public:
   LoadBarrierSlowRegNode(Node *c,
-                         Node *mem,
                          Node *adr,
-                         const TypePtr *at,
+                         Node *src,
                          const TypePtr* t,
-                         MemOrd mo,
-                         bool weak = false,
-                         ControlDependency control_dependency = DependsOnlyOnTest) :
-      LoadPNode(c, mem, adr, at, t, mo, control_dependency), _is_weak(weak) {
+                         bool weak) :
+      TypeNode(t, 3), _is_weak(weak) {
+    init_req(1, adr);
+    init_req(2, src);
     init_class_id(Class_LoadBarrierSlowReg);
+  }
+
+  virtual uint size_of() const {
+    return sizeof(*this);
   }
 
   virtual const char * name() {

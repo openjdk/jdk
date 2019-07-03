@@ -810,7 +810,7 @@ jint JNICALL heapReferenceCallback(
             }
             break;
 
-        case JVMTI_REFERENCE_ARRAY_ELEMENT:
+        case JVMTI_HEAP_REFERENCE_ARRAY_ELEMENT:
         case JVMTI_HEAP_REFERENCE_JNI_GLOBAL:
         case JVMTI_HEAP_REFERENCE_SYSTEM_CLASS:
         case JVMTI_HEAP_REFERENCE_MONITOR:

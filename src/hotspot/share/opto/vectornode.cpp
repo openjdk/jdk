@@ -297,7 +297,6 @@ void VectorNode::vector_operands(Node* n, uint* start, uint* end) {
   case Op_LoadI:   case Op_LoadL:
   case Op_LoadF:   case Op_LoadD:
   case Op_LoadP:   case Op_LoadN:
-  case Op_LoadBarrierSlowReg:
     *start = 0;
     *end   = 0; // no vector operands
     break;

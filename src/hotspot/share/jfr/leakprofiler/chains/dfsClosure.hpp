@@ -26,7 +26,6 @@
 #define SHARE_JFR_LEAKPROFILER_CHAINS_DFSCLOSURE_HPP
 
 #include "memory/iterator.hpp"
-#include "oops/oop.hpp"
 
 class BitSet;
 class Edge;
@@ -34,7 +33,7 @@ class EdgeStore;
 class EdgeQueue;
 
 // Class responsible for iterating the heap depth-first
-class DFSClosure: public BasicOopIterateClosure {
+class DFSClosure : public BasicOopIterateClosure {
  private:
   static EdgeStore* _edge_store;
   static BitSet*    _mark_bits;
@@ -57,6 +56,7 @@ class DFSClosure: public BasicOopIterateClosure {
  public:
   static void find_leaks_from_edge(EdgeStore* edge_store, BitSet* mark_bits, const Edge* start_edge);
   static void find_leaks_from_root_set(EdgeStore* edge_store, BitSet* mark_bits);
+  void do_root(const oop* ref);
 
   virtual void do_oop(oop* ref);
   virtual void do_oop(narrowOop* ref);

@@ -25,8 +25,8 @@
 #ifndef SHARE_JFR_LEAKPROFILER_CHECKPOINT_ROOTRESOLVER_HPP
 #define SHARE_JFR_LEAKPROFILER_CHECKPOINT_ROOTRESOLVER_HPP
 
-#include "memory/allocation.hpp"
 #include "jfr/leakprofiler/utilities/rootType.hpp"
+#include "memory/allocation.hpp"
 #include "oops/oopsHierarchy.hpp"
 
 struct RootCallbackInfo {

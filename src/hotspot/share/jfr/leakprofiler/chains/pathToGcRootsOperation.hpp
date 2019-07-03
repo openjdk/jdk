@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,18 +22,25 @@
  *
  */
 
-#ifndef SHARE_JFR_LEAKPROFILER_STOPOPERATION_HPP
-#define SHARE_JFR_LEAKPROFILER_STOPOPERATION_HPP
+#ifndef SHARE_JFR_LEAKPROFILER_CHAINS_PATHTOGCROOTSOPERATION_HPP
+#define SHARE_JFR_LEAKPROFILER_CHAINS_PATHTOGCROOTSOPERATION_HPP
 
-#include "jfr/leakprofiler/sampling/objectSampler.hpp"
 #include "jfr/leakprofiler/utilities/vmOperation.hpp"
 
-// Safepoint operation for stopping and destroying the leak profiler object sampler
-class StopOperation : public OldObjectVMOperation {
+class EdgeStore;
+class ObjectSampler;
+
+// Safepoint operation for finding paths to gc roots
+class PathToGcRootsOperation : public OldObjectVMOperation {
+ private:
+  ObjectSampler* _sampler;
+  EdgeStore* const _edge_store;
+  const int64_t _cutoff_ticks;
+  const bool _emit_all;
+
  public:
-  virtual void doit() {
-    ObjectSampler::destroy();
-  }
+  PathToGcRootsOperation(ObjectSampler* sampler, EdgeStore* edge_store, int64_t cutoff, bool emit_all);
+  virtual void doit();
 };
 
-#endif // SHARE_JFR_LEAKPROFILER_STOPOPERATION_HPP
+#endif // SHARE_JFR_LEAKPROFILER_CHAINS_PATHTOGCROOTSOPERATION_HPP

@@ -47,7 +47,7 @@ class BitSet : public CHeapObj<mtTracing> {
 
   BitMap::idx_t mark_obj(const HeapWord* addr) {
     const BitMap::idx_t bit = addr_to_bit(addr);
-    _bits.par_set_bit(bit);
+    _bits.set_bit(bit);
     return bit;
   }
 
