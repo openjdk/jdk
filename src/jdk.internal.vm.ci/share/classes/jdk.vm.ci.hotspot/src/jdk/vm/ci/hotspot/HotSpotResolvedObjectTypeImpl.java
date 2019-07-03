@@ -838,10 +838,8 @@ final class HotSpotResolvedObjectTypeImpl extends HotSpotResolvedJavaType implem
             // Primitive type resolution is context free.
             return true;
         }
-        if (elementType.getName().startsWith("Ljava/")) {
-            // Classes in a java.* package can only be defined by the
-            // boot class loader. This is enforced by ClassLoader.preDefineClass()
-            assert hasSameClassLoader(runtime().getJavaLangObject());
+        if (elementType.getName().startsWith("Ljava/") && hasSameClassLoader(runtime().getJavaLangObject())) {
+            // Classes in a java.* package defined by the boot class loader are always resolved.
             return true;
         }
         HotSpotResolvedObjectTypeImpl otherMirror = ((HotSpotResolvedObjectTypeImpl) accessingClass);
