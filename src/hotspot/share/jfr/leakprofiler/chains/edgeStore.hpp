@@ -25,64 +25,40 @@
 #ifndef SHARE_JFR_LEAKPROFILER_CHAINS_EDGESTORE_HPP
 #define SHARE_JFR_LEAKPROFILER_CHAINS_EDGESTORE_HPP
 
-#include "jfr/utilities/jfrHashtable.hpp"
 #include "jfr/leakprofiler/chains/edge.hpp"
+#include "jfr/utilities/jfrHashtable.hpp"
 #include "memory/allocation.hpp"
 
 typedef u8 traceid;
 
-class RoutableEdge : public Edge {
+class StoredEdge : public Edge {
  private:
-  mutable const RoutableEdge* _skip_edge;
-  mutable size_t _skip_length;
-  mutable bool _processed;
+  mutable traceid _gc_root_id;
+  size_t _skip_length;
 
  public:
-  RoutableEdge();
-  RoutableEdge(const Edge* parent, const oop* reference);
-  RoutableEdge(const Edge& edge);
-  RoutableEdge(const RoutableEdge& edge);
-  void operator=(const RoutableEdge& edge);
+  StoredEdge();
+  StoredEdge(const Edge* parent, const oop* reference);
+  StoredEdge(const Edge& edge);
+  StoredEdge(const StoredEdge& edge);
+  void operator=(const StoredEdge& edge);
 
-  const RoutableEdge* skip_edge() const { return _skip_edge; }
+  traceid gc_root_id() const { return _gc_root_id; }
+  void set_gc_root_id(traceid root_id) const { _gc_root_id = root_id; }
+
+  bool is_skip_edge() const { return _skip_length != 0; }
   size_t skip_length() const { return _skip_length; }
+  void set_skip_length(size_t length) { _skip_length = length; }
 
-  bool is_skip_edge() const { return _skip_edge != NULL; }
-  bool processed() const { return _processed; }
-  bool is_sentinel() const {
-    return _skip_edge == NULL && _skip_length == 1;
+  void set_parent(const Edge* edge) { this->_parent = edge; }
+
+  StoredEdge* parent() const {
+    return const_cast<StoredEdge*>(static_cast<const StoredEdge*>(Edge::parent()));
   }
-
-  void set_skip_edge(const RoutableEdge* edge) const {
-    assert(!is_skip_edge(), "invariant");
-    assert(edge != this, "invariant");
-    _skip_edge = edge;
-  }
-
-  void set_skip_length(size_t length) const {
-    _skip_length = length;
-  }
-
-  void set_processed() const {
-    assert(!_processed, "invariant");
-    _processed = true;
-  }
-
-  // true navigation according to physical tree representation
-  const RoutableEdge* physical_parent() const {
-    return static_cast<const RoutableEdge*>(parent());
-  }
-
-  // logical navigation taking skip levels into account
-  const RoutableEdge* logical_parent() const {
-    return is_skip_edge() ? skip_edge() : physical_parent();
-  }
-
-  size_t logical_distance_to_root() const;
 };
 
 class EdgeStore : public CHeapObj<mtTracing> {
-  typedef HashTableHost<RoutableEdge, traceid, Entry, EdgeStore> EdgeHashTable;
+  typedef HashTableHost<StoredEdge, traceid, Entry, EdgeStore> EdgeHashTable;
   typedef EdgeHashTable::HashEntry EdgeEntry;
   template <typename,
             typename,
@@ -90,6 +66,9 @@ class EdgeStore : public CHeapObj<mtTracing> {
             typename,
             size_t>
   friend class HashTableHost;
+  friend class EventEmitter;
+  friend class ObjectSampleWriter;
+  friend class ObjectSampleCheckpoint;
  private:
   static traceid _edge_id_counter;
   EdgeHashTable* _edges;
@@ -98,22 +77,31 @@ class EdgeStore : public CHeapObj<mtTracing> {
   void assign_id(EdgeEntry* entry);
   bool equals(const Edge& query, uintptr_t hash, const EdgeEntry* entry);
 
-  const Edge* get_edge(const Edge* edge) const;
-  const Edge* put(const Edge* edge);
+  StoredEdge* get(const oop* reference) const;
+  StoredEdge* put(const oop* reference);
+  traceid gc_root_id(const Edge* edge) const;
+
+  bool put_edges(StoredEdge** previous, const Edge** current, size_t length);
+  bool put_skip_edge(StoredEdge** previous, const Edge** current, size_t distance_to_root);
+  void put_chain_epilogue(StoredEdge* leak_context_edge, const Edge* root) const;
+
+  StoredEdge* associate_leak_context_with_candidate(const Edge* edge);
+  void store_gc_root_id_in_leak_context_edge(StoredEdge* leak_context_edge, const Edge* root) const;
+  StoredEdge* link_new_edge(StoredEdge** previous, const Edge** current);
+  void link_with_existing_chain(const StoredEdge* current_stored, StoredEdge** previous, size_t previous_length);
+
+  template <typename T>
+  void iterate(T& functor) const { _edges->iterate_value<T>(functor); }
+
+  DEBUG_ONLY(bool contains(const oop* reference) const;)
 
  public:
   EdgeStore();
   ~EdgeStore();
 
-  void add_chain(const Edge* chain, size_t length);
   bool is_empty() const;
-  size_t number_of_entries() const;
-
   traceid get_id(const Edge* edge) const;
-  traceid get_root_id(const Edge* edge) const;
-
-  template <typename T>
-  void iterate_edges(T& functor) const { _edges->iterate_value<T>(functor); }
+  void put_chain(const Edge* chain, size_t length);
 };
 
 #endif // SHARE_JFR_LEAKPROFILER_CHAINS_EDGESTORE_HPP

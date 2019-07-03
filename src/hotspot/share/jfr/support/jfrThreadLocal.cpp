@@ -150,9 +150,7 @@ JfrBuffer* JfrThreadLocal::install_java_buffer() const {
 
 JfrStackFrame* JfrThreadLocal::install_stackframes() const {
   assert(_stackframes == NULL, "invariant");
-  _stackdepth = (u4)JfrOptionSet::stackdepth();
-  guarantee(_stackdepth > 0, "Stackdepth must be > 0");
-  _stackframes = NEW_C_HEAP_ARRAY(JfrStackFrame, _stackdepth, mtTracing);
+  _stackframes = NEW_C_HEAP_ARRAY(JfrStackFrame, stackdepth(), mtTracing);
   return _stackframes;
 }
 
@@ -162,4 +160,8 @@ ByteSize JfrThreadLocal::trace_id_offset() {
 
 ByteSize JfrThreadLocal::java_event_writer_offset() {
   return in_ByteSize(offset_of(JfrThreadLocal, _java_event_writer));
+}
+
+u4 JfrThreadLocal::stackdepth() const {
+  return _stackdepth != 0 ? _stackdepth : (u4)JfrOptionSet::stackdepth();
 }
