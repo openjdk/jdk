@@ -197,6 +197,26 @@ public class Checksum {
             usage);
     }
 
+    // ===============  ATTENTION! Use with care  ==================
+    // According to https://tools.ietf.org/html/rfc3961#section-6.1,
+    // An unkeyed checksum should only be used "in limited circumstances
+    // where the lack of a key does not provide a window for an attack,
+    // preferably as part of an encrypted message".
+    public boolean verifyAnyChecksum(byte[] data, EncryptionKey key,
+            int usage)
+            throws KdcErrException, KrbCryptoException {
+        CksumType cksumEngine = CksumType.getInstance(cksumType);
+        if (!cksumEngine.isSafe()) {
+            return cksumEngine.verifyChecksum(data, checksum);
+        } else {
+            return cksumEngine.verifyKeyedChecksum(data,
+                    data.length,
+                    key.getBytes(),
+                    checksum,
+                    usage);
+        }
+    }
+
     /*
     public Checksum(byte[] data) throws KdcErrException, KrbCryptoException {
         this(Checksum.CKSUMTYPE_DEFAULT, data);

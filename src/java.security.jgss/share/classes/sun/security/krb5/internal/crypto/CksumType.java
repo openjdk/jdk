@@ -156,6 +156,11 @@ public abstract class CksumType {
     public abstract byte[] calculateKeyedChecksum(byte[] data, int size,
         byte[] key, int usage) throws KrbCryptoException;
 
+    public boolean verifyChecksum(byte[] data, byte[] checksum)
+            throws KrbCryptoException {
+        throw new UnsupportedOperationException("Not supported");
+    }
+
     public abstract boolean verifyKeyedChecksum(byte[] data, int size,
         byte[] key, byte[] checksum, int usage) throws KrbCryptoException;
 
