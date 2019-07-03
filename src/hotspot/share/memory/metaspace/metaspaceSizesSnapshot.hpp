@@ -1,5 +1,6 @@
 /*
- * Copyright (c) 2016, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, Twitter, Inc.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,33 +23,31 @@
  *
  */
 
-#ifndef SHARE_GC_G1_G1HEAPTRANSITION_HPP
-#define SHARE_GC_G1_G1HEAPTRANSITION_HPP
+#ifndef SHARE_MEMORY_METASPACE_METASPACESIZESSNAPSHOT_HPP
+#define SHARE_MEMORY_METASPACE_METASPACESIZESSNAPSHOT_HPP
 
-#include "gc/shared/plab.hpp"
-#include "memory/metaspace/metaspaceSizesSnapshot.hpp"
+namespace metaspace {
 
-class G1CollectedHeap;
-
-class G1HeapTransition {
-  struct Data {
-    size_t _eden_length;
-    size_t _survivor_length;
-    size_t _old_length;
-    size_t _archive_length;
-    size_t _humongous_length;
-    const metaspace::MetaspaceSizesSnapshot _meta_sizes;
-
-    Data(G1CollectedHeap* g1_heap);
-  };
-
-  G1CollectedHeap* _g1_heap;
-  Data _before;
-
+class MetaspaceSizesSnapshot {
 public:
-  G1HeapTransition(G1CollectedHeap* g1_heap);
+  MetaspaceSizesSnapshot();
 
-  void print();
+  size_t used() const { return _used; }
+  size_t committed() const { return _committed; }
+  size_t non_class_used() const { return _non_class_used; }
+  size_t non_class_committed() const { return _non_class_committed; }
+  size_t class_used() const { return _class_used; }
+  size_t class_committed() const { return _class_committed; }
+
+private:
+  const size_t _used;
+  const size_t _committed;
+  const size_t _non_class_used;
+  const size_t _non_class_committed;
+  const size_t _class_used;
+  const size_t _class_committed;
 };
 
-#endif // SHARE_GC_G1_G1HEAPTRANSITION_HPP
+} // namespace metaspace
+
+#endif // SHARE_MEMORY_METASPACE_METASPACESIZESSNAPSHOT_HPP

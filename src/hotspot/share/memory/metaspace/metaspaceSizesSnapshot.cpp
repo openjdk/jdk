@@ -1,5 +1,6 @@
 /*
- * Copyright (c) 2016, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, Twitter, Inc.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,33 +23,19 @@
  *
  */
 
-#ifndef SHARE_GC_G1_G1HEAPTRANSITION_HPP
-#define SHARE_GC_G1_G1HEAPTRANSITION_HPP
+#include "precompiled.hpp"
 
-#include "gc/shared/plab.hpp"
+#include "memory/metaspace.hpp"
 #include "memory/metaspace/metaspaceSizesSnapshot.hpp"
 
-class G1CollectedHeap;
+namespace metaspace {
 
-class G1HeapTransition {
-  struct Data {
-    size_t _eden_length;
-    size_t _survivor_length;
-    size_t _old_length;
-    size_t _archive_length;
-    size_t _humongous_length;
-    const metaspace::MetaspaceSizesSnapshot _meta_sizes;
+MetaspaceSizesSnapshot::MetaspaceSizesSnapshot()
+    : _used(MetaspaceUtils::used_bytes()),
+      _committed(MetaspaceUtils::committed_bytes()),
+      _non_class_used(MetaspaceUtils::used_bytes(Metaspace::NonClassType)),
+      _non_class_committed(MetaspaceUtils::committed_bytes(Metaspace::NonClassType)),
+      _class_used(MetaspaceUtils::used_bytes(Metaspace::ClassType)),
+      _class_committed(MetaspaceUtils::committed_bytes(Metaspace::ClassType)) { }
 
-    Data(G1CollectedHeap* g1_heap);
-  };
-
-  G1CollectedHeap* _g1_heap;
-  Data _before;
-
-public:
-  G1HeapTransition(G1CollectedHeap* g1_heap);
-
-  void print();
-};
-
-#endif // SHARE_GC_G1_G1HEAPTRANSITION_HPP
+} // namespace metaspace

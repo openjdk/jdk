@@ -28,6 +28,7 @@
 #include "memory/memRegion.hpp"
 #include "memory/metaspaceChunkFreeListSummary.hpp"
 #include "memory/virtualspace.hpp"
+#include "memory/metaspace/metaspaceSizesSnapshot.hpp"
 #include "utilities/exceptions.hpp"
 
 // Metaspace
@@ -410,8 +411,8 @@ public:
   static bool has_chunk_free_list(Metaspace::MetadataType mdtype);
   static MetaspaceChunkFreeListSummary chunk_free_list_summary(Metaspace::MetadataType mdtype);
 
-  // Print change in used metadata.
-  static void print_metaspace_change(size_t prev_metadata_used);
+  // Log change in used metadata.
+  static void print_metaspace_change(const metaspace::MetaspaceSizesSnapshot& pre_meta_values);
   static void print_on(outputStream * out);
 
   // Prints an ASCII representation of the given space.
