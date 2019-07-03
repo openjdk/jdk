@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -60,7 +60,7 @@ import org.xml.sax.SAXException;
 
 /*
  * @test
- * @bug 6439439 8087303 8174025
+ * @bug 6439439 8087303 8174025 8223291
  * @library /javax/xml/jaxp/libs /javax/xml/jaxp/unittest
  * @run testng/othervm -DrunSecMngr=true common.prettyprint.PrettyPrintTest
  * @run testng/othervm common.prettyprint.PrettyPrintTest
@@ -382,7 +382,6 @@ public class PrettyPrintTest {
     private Document toXmlDocument(String xmlString) throws Exception {
         InputSource xmlInputSource = new InputSource(new StringReader(xmlString));
         DocumentBuilderFactory dbf = DocumentBuilderFactory.newInstance();
-        dbf.setValidating(true);
         DocumentBuilder xmlDocumentBuilder = dbf.newDocumentBuilder();
         Document node = xmlDocumentBuilder.parse(xmlInputSource);
         return node;
