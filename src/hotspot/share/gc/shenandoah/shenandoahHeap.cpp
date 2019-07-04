@@ -50,23 +50,20 @@
 #include "gc/shenandoah/shenandoahMemoryPool.hpp"
 #include "gc/shenandoah/shenandoahMetrics.hpp"
 #include "gc/shenandoah/shenandoahMonitoringSupport.hpp"
+#include "gc/shenandoah/shenandoahNormalMode.hpp"
 #include "gc/shenandoah/shenandoahOopClosures.inline.hpp"
 #include "gc/shenandoah/shenandoahPacer.inline.hpp"
+#include "gc/shenandoah/shenandoahPassiveMode.hpp"
 #include "gc/shenandoah/shenandoahRootProcessor.inline.hpp"
 #include "gc/shenandoah/shenandoahStringDedup.hpp"
 #include "gc/shenandoah/shenandoahTaskqueue.hpp"
+#include "gc/shenandoah/shenandoahTraversalMode.hpp"
 #include "gc/shenandoah/shenandoahUtils.hpp"
 #include "gc/shenandoah/shenandoahVerifier.hpp"
 #include "gc/shenandoah/shenandoahCodeRoots.hpp"
 #include "gc/shenandoah/shenandoahVMOperations.hpp"
 #include "gc/shenandoah/shenandoahWorkGroup.hpp"
 #include "gc/shenandoah/shenandoahWorkerPolicy.hpp"
-#include "gc/shenandoah/heuristics/shenandoahAdaptiveHeuristics.hpp"
-#include "gc/shenandoah/heuristics/shenandoahAggressiveHeuristics.hpp"
-#include "gc/shenandoah/heuristics/shenandoahCompactHeuristics.hpp"
-#include "gc/shenandoah/heuristics/shenandoahPassiveHeuristics.hpp"
-#include "gc/shenandoah/heuristics/shenandoahStaticHeuristics.hpp"
-#include "gc/shenandoah/heuristics/shenandoahTraversalHeuristics.hpp"
 #if INCLUDE_JFR
 #include "gc/shenandoah/shenandoahJfrSupport.hpp"
 #endif
@@ -367,7 +364,7 @@ jint ShenandoahHeap::initialize() {
     _pacer = NULL;
   }
 
-  _traversal_gc = heuristics()->can_do_traversal_gc() ?
+  _traversal_gc = strcmp(ShenandoahGCMode, "traversal") == 0 ?
                   new ShenandoahTraversalGC(this, _num_regions) :
                   NULL;
 
@@ -387,39 +384,34 @@ jint ShenandoahHeap::initialize() {
 }
 
 void ShenandoahHeap::initialize_heuristics() {
-  if (ShenandoahGCHeuristics != NULL) {
-    if (strcmp(ShenandoahGCHeuristics, "aggressive") == 0) {
-      _heuristics = new ShenandoahAggressiveHeuristics();
-    } else if (strcmp(ShenandoahGCHeuristics, "static") == 0) {
-      _heuristics = new ShenandoahStaticHeuristics();
-    } else if (strcmp(ShenandoahGCHeuristics, "adaptive") == 0) {
-      _heuristics = new ShenandoahAdaptiveHeuristics();
-    } else if (strcmp(ShenandoahGCHeuristics, "passive") == 0) {
-      _heuristics = new ShenandoahPassiveHeuristics();
-    } else if (strcmp(ShenandoahGCHeuristics, "compact") == 0) {
-      _heuristics = new ShenandoahCompactHeuristics();
-    } else if (strcmp(ShenandoahGCHeuristics, "traversal") == 0) {
-      _heuristics = new ShenandoahTraversalHeuristics();
+  if (ShenandoahGCMode != NULL) {
+    if (strcmp(ShenandoahGCMode, "traversal") == 0) {
+      _gc_mode = new ShenandoahTraversalMode();
+    } else if (strcmp(ShenandoahGCMode, "normal") == 0) {
+      _gc_mode = new ShenandoahNormalMode();
+    } else if (strcmp(ShenandoahGCMode, "passive") == 0) {
+      _gc_mode = new ShenandoahPassiveMode();
     } else {
-      vm_exit_during_initialization("Unknown -XX:ShenandoahGCHeuristics option");
+      vm_exit_during_initialization("Unknown -XX:ShenandoahGCMode option");
     }
-
-    if (_heuristics->is_diagnostic() && !UnlockDiagnosticVMOptions) {
-      vm_exit_during_initialization(
-              err_msg("Heuristics \"%s\" is diagnostic, and must be enabled via -XX:+UnlockDiagnosticVMOptions.",
-                      _heuristics->name()));
-    }
-    if (_heuristics->is_experimental() && !UnlockExperimentalVMOptions) {
-      vm_exit_during_initialization(
-              err_msg("Heuristics \"%s\" is experimental, and must be enabled via -XX:+UnlockExperimentalVMOptions.",
-                      _heuristics->name()));
-    }
-    log_info(gc, init)("Shenandoah heuristics: %s",
-                       _heuristics->name());
   } else {
-      ShouldNotReachHere();
+    ShouldNotReachHere();
   }
+  _gc_mode->initialize_flags();
+  _heuristics = _gc_mode->initialize_heuristics();
 
+  if (_heuristics->is_diagnostic() && !UnlockDiagnosticVMOptions) {
+    vm_exit_during_initialization(
+            err_msg("Heuristics \"%s\" is diagnostic, and must be enabled via -XX:+UnlockDiagnosticVMOptions.",
+                    _heuristics->name()));
+  }
+  if (_heuristics->is_experimental() && !UnlockExperimentalVMOptions) {
+    vm_exit_during_initialization(
+            err_msg("Heuristics \"%s\" is experimental, and must be enabled via -XX:+UnlockExperimentalVMOptions.",
+                    _heuristics->name()));
+  }
+  log_info(gc, init)("Shenandoah heuristics: %s",
+                     _heuristics->name());
 }
 
 #ifdef _MSC_VER
@@ -1704,7 +1696,7 @@ void ShenandoahHeap::op_degenerated(ShenandoahDegenPoint point) {
       set_process_references(heuristics()->can_process_references());
       set_unload_classes(heuristics()->can_unload_classes());
 
-      if (heuristics()->can_do_traversal_gc()) {
+      if (is_traversal_mode()) {
         // Not possible to degenerate from here, upgrade to Full GC right away.
         cancel_gc(GCCause::_shenandoah_upgrade_to_full_gc);
         op_degenerated_fail();

@@ -31,13 +31,13 @@
  * @run main/othervm  -XX:+IgnoreUnrecognizedVMOptions -XX:+UnlockExperimentalVMOptions -XX:+UnlockDiagnosticVMOptions
  *                    -XX:+UseShenandoahGC -Xmx1g -Xms1g
  *                    -XX:+ShenandoahVerify -XX:+VerifyObjectEquals
- *                    -XX:ShenandoahGCHeuristics=passive -XX:+ShenandoahDegeneratedGC
+ *                    -XX:ShenandoahGCMode=passive -XX:+ShenandoahDegeneratedGC
  *                    TestVerifyJCStress
  *
  * @run main/othervm  -XX:+IgnoreUnrecognizedVMOptions -XX:+UnlockExperimentalVMOptions -XX:+UnlockDiagnosticVMOptions
  *                    -XX:+UseShenandoahGC -Xmx1g -Xms1g
  *                    -XX:+ShenandoahVerify -XX:+VerifyObjectEquals
- *                    -XX:ShenandoahGCHeuristics=passive -XX:-ShenandoahDegeneratedGC
+ *                    -XX:ShenandoahGCMode=passive -XX:-ShenandoahDegeneratedGC
  *                    TestVerifyJCStress
  *
  * @run main/othervm  -XX:+IgnoreUnrecognizedVMOptions -XX:+UnlockExperimentalVMOptions -XX:+UnlockDiagnosticVMOptions
@@ -55,7 +55,7 @@
  * @run main/othervm  -XX:+IgnoreUnrecognizedVMOptions -XX:+UnlockExperimentalVMOptions -XX:+UnlockDiagnosticVMOptions
  *                    -XX:+UseShenandoahGC -Xmx1g -Xms1g
  *                    -XX:+ShenandoahVerify -XX:+VerifyObjectEquals -XX:+ShenandoahVerifyOptoBarriers
- *                    -XX:ShenandoahGCHeuristics=traversal
+ *                    -XX:ShenandoahGCMode=traversal
  *                    TestVerifyJCStress
  */
 

@@ -56,17 +56,17 @@
  *                   TestStringDedupStress
  *
  * @run main/othervm -XX:+UnlockDiagnosticVMOptions -XX:+UnlockExperimentalVMOptions -XX:+UseShenandoahGC -XX:+UseStringDeduplication -Xmx1g -Xlog:gc+stats
- *                   -XX:ShenandoahGCHeuristics=passive -XX:+ShenandoahDegeneratedGC
+ *                   -XX:ShenandoahGCMode=passive -XX:+ShenandoahDegeneratedGC
  *                   -Xlog:gc
  *                   TestStringDedupStress
  *
  * @run main/othervm -XX:+UnlockDiagnosticVMOptions -XX:+UnlockExperimentalVMOptions -XX:+UseShenandoahGC -XX:+UseStringDeduplication -Xmx1g -Xlog:gc+stats
- *                   -XX:ShenandoahGCHeuristics=passive -XX:-ShenandoahDegeneratedGC
+ *                   -XX:ShenandoahGCMode=passive -XX:-ShenandoahDegeneratedGC
  *                   -Xlog:gc
  *                   TestStringDedupStress
  *
  * @run main/othervm -XX:+UnlockDiagnosticVMOptions -XX:+UnlockExperimentalVMOptions -XX:+UseShenandoahGC -XX:+UseStringDeduplication -Xmx1g -Xlog:gc+stats
- *                   -XX:ShenandoahGCHeuristics=traversal
+ *                   -XX:ShenandoahGCMode=traversal
  *                   -Xlog:gc
  *                   TestStringDedupStress
  *
@@ -96,7 +96,7 @@
  *                   TestStringDedupStress
  *
  * @run main/othervm -XX:+UnlockDiagnosticVMOptions -XX:+UnlockExperimentalVMOptions -XX:+UseShenandoahGC -XX:+UseStringDeduplication -Xmx1g -Xlog:gc+stats
- *                   -XX:ShenandoahGCHeuristics=traversal -XX:+ShenandoahOOMDuringEvacALot -DtargetStrings=2000000
+ *                   -XX:ShenandoahGCMode=traversal -XX:+ShenandoahOOMDuringEvacALot -DtargetStrings=2000000
  *                   -Xlog:gc
  *                   TestStringDedupStress
  */

@@ -34,18 +34,18 @@ import java.io.IOException;
  * @requires vm.flavor == "server" & !vm.emulatedClient & !vm.graal.enabled
  * @summary Stress the Shenandoah GC by trying to make old objects more likely to be garbage than young objects.
  *
- * @run main/othervm/timeout=200 -Xlog:gc*=info -Xmx1g -XX:+UnlockDiagnosticVMOptions -XX:+UnlockExperimentalVMOptions -XX:+UseShenandoahGC -XX:ShenandoahGCHeuristics=passive      -XX:+ShenandoahVerify -XX:+ShenandoahDegeneratedGC gc.stress.gcbasher.TestGCBasherWithShenandoah 120000
- * @run main/othervm/timeout=200 -Xlog:gc*=info -Xmx1g -XX:+UnlockDiagnosticVMOptions -XX:+UnlockExperimentalVMOptions -XX:+UseShenandoahGC -XX:ShenandoahGCHeuristics=passive      -XX:+ShenandoahVerify -XX:-ShenandoahDegeneratedGC gc.stress.gcbasher.TestGCBasherWithShenandoah 120000
+ * @run main/othervm/timeout=200 -Xlog:gc*=info -Xmx1g -XX:+UnlockDiagnosticVMOptions -XX:+UnlockExperimentalVMOptions -XX:+UseShenandoahGC -XX:ShenandoahGCMode=passive            -XX:+ShenandoahVerify -XX:+ShenandoahDegeneratedGC gc.stress.gcbasher.TestGCBasherWithShenandoah 120000
+ * @run main/othervm/timeout=200 -Xlog:gc*=info -Xmx1g -XX:+UnlockDiagnosticVMOptions -XX:+UnlockExperimentalVMOptions -XX:+UseShenandoahGC -XX:ShenandoahGCMode=passive            -XX:+ShenandoahVerify -XX:-ShenandoahDegeneratedGC gc.stress.gcbasher.TestGCBasherWithShenandoah 120000
  *
  * @run main/othervm/timeout=200 -Xlog:gc*=info -Xmx1g -XX:+UnlockDiagnosticVMOptions -XX:+UnlockExperimentalVMOptions -XX:+UseShenandoahGC -XX:ShenandoahGCHeuristics=aggressive                         -XX:+ShenandoahOOMDuringEvacALot gc.stress.gcbasher.TestGCBasherWithShenandoah 120000
  * @run main/othervm/timeout=200 -Xlog:gc*=info -Xmx1g -XX:+UnlockDiagnosticVMOptions -XX:+UnlockExperimentalVMOptions -XX:+UseShenandoahGC -XX:ShenandoahGCHeuristics=aggressive                         -XX:+ShenandoahAllocFailureALot  gc.stress.gcbasher.TestGCBasherWithShenandoah 120000
  * @run main/othervm/timeout=200 -Xlog:gc*=info -Xmx1g -XX:+UnlockDiagnosticVMOptions -XX:+UnlockExperimentalVMOptions -XX:+UseShenandoahGC -XX:ShenandoahGCHeuristics=aggressive                                                          gc.stress.gcbasher.TestGCBasherWithShenandoah 120000
  *
  * @run main/othervm/timeout=200 -Xlog:gc*=info -Xmx1g -XX:+UnlockDiagnosticVMOptions -XX:+UnlockExperimentalVMOptions -XX:+UseShenandoahGC -XX:ShenandoahGCHeuristics=adaptive     -XX:+ShenandoahVerify gc.stress.gcbasher.TestGCBasherWithShenandoah 120000
- * @run main/othervm/timeout=200 -Xlog:gc*=info -Xmx1g -XX:+UnlockDiagnosticVMOptions -XX:+UnlockExperimentalVMOptions -XX:+UseShenandoahGC -XX:ShenandoahGCHeuristics=traversal    -XX:+ShenandoahVerify gc.stress.gcbasher.TestGCBasherWithShenandoah 120000
+ * @run main/othervm/timeout=200 -Xlog:gc*=info -Xmx1g -XX:+UnlockDiagnosticVMOptions -XX:+UnlockExperimentalVMOptions -XX:+UseShenandoahGC -XX:ShenandoahGCMode=traversal          -XX:+ShenandoahVerify gc.stress.gcbasher.TestGCBasherWithShenandoah 120000
  *
  * @run main/othervm/timeout=200 -Xlog:gc*=info -Xmx1g -XX:+UnlockDiagnosticVMOptions -XX:+UnlockExperimentalVMOptions -XX:+UseShenandoahGC -XX:ShenandoahGCHeuristics=adaptive                           gc.stress.gcbasher.TestGCBasherWithShenandoah 120000
- * @run main/othervm/timeout=200 -Xlog:gc*=info -Xmx1g -XX:+UnlockDiagnosticVMOptions -XX:+UnlockExperimentalVMOptions -XX:+UseShenandoahGC -XX:ShenandoahGCHeuristics=traversal                          gc.stress.gcbasher.TestGCBasherWithShenandoah 120000
+ * @run main/othervm/timeout=200 -Xlog:gc*=info -Xmx1g -XX:+UnlockDiagnosticVMOptions -XX:+UnlockExperimentalVMOptions -XX:+UseShenandoahGC -XX:ShenandoahGCMode=traversal                                gc.stress.gcbasher.TestGCBasherWithShenandoah 120000
  * @run main/othervm/timeout=200 -Xlog:gc*=info -Xmx1g -XX:+UnlockDiagnosticVMOptions -XX:+UnlockExperimentalVMOptions -XX:+UseShenandoahGC -XX:ShenandoahGCHeuristics=compact                            gc.stress.gcbasher.TestGCBasherWithShenandoah 120000
  */
 public class TestGCBasherWithShenandoah {

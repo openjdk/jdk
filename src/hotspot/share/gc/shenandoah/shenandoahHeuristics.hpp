@@ -127,13 +127,9 @@ public:
 
   virtual void record_phase_time(ShenandoahPhaseTimings::Phase phase, double secs);
 
-  virtual bool should_start_normal_gc() const;
+  virtual bool should_start_gc() const;
 
   virtual bool should_start_update_refs();
-
-  virtual bool should_start_traversal_gc();
-
-  virtual bool can_do_traversal_gc();
 
   virtual bool should_degenerate_cycle();
 

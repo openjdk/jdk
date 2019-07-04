@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, Red Hat, Inc. All rights reserved.
+ * Copyright (c) 2019, Red Hat, Inc. All rights reserved.
  *
  * This code is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License version 2 only, as
@@ -21,30 +21,17 @@
  *
  */
 
-#ifndef SHARE_GC_SHENANDOAH_HEURISTICS_SHENANDOAHPASSIVEHEURISTICS_HPP
-#define SHARE_GC_SHENANDOAH_HEURISTICS_SHENANDOAHPASSIVEHEURISTICS_HPP
+#ifndef SHARE_GC_SHENANDOAH_SHENANDOAHMODE_HPP
+#define SHARE_GC_SHENANDOAH_SHENANDOAHMODE_HPP
 
-#include "gc/shenandoah/shenandoahHeuristics.hpp"
+#include "memory/allocation.hpp"
 
-class ShenandoahPassiveHeuristics : public ShenandoahHeuristics {
+class ShenandoahHeuristics;
+
+class ShenandoahMode : public CHeapObj<mtGC> {
 public:
-   virtual bool should_start_gc() const;
-
-  virtual bool should_process_references();
-
-  virtual bool should_unload_classes();
-
-  virtual bool should_degenerate_cycle();
-
-  virtual void choose_collection_set_from_regiondata(ShenandoahCollectionSet* set,
-                                                     RegionData* data, size_t data_size,
-                                                     size_t free);
-
-  virtual const char* name();
-
-  virtual bool is_diagnostic();
-
-  virtual bool is_experimental();
+  virtual void initialize_flags() const = 0;
+  virtual ShenandoahHeuristics* initialize_heuristics() const = 0;
 };
 
-#endif // SHARE_GC_SHENANDOAH_HEURISTICS_SHENANDOAHPASSIVEHEURISTICS_HPP
+#endif // SHARE_GC_SHENANDOAH_SHENANDOAHMODE_HPP

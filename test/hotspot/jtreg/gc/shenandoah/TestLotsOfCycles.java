@@ -26,15 +26,15 @@
  * @key gc
  * @requires vm.gc.Shenandoah & !vm.graal.enabled
  *
- * @run main/othervm/timeout=480 -XX:+UnlockDiagnosticVMOptions -XX:+UnlockExperimentalVMOptions -XX:+UseShenandoahGC -Xmx16m -XX:ShenandoahGCHeuristics=passive      -Dtarget=10000 -XX:+ShenandoahDegeneratedGC     TestLotsOfCycles
- * @run main/othervm/timeout=480 -XX:+UnlockDiagnosticVMOptions -XX:+UnlockExperimentalVMOptions -XX:+UseShenandoahGC -Xmx16m -XX:ShenandoahGCHeuristics=passive      -Dtarget=10000 -XX:-ShenandoahDegeneratedGC     TestLotsOfCycles
+ * @run main/othervm/timeout=480 -XX:+UnlockDiagnosticVMOptions -XX:+UnlockExperimentalVMOptions -XX:+UseShenandoahGC -Xmx16m -XX:ShenandoahGCMode=passive            -Dtarget=10000 -XX:+ShenandoahDegeneratedGC     TestLotsOfCycles
+ * @run main/othervm/timeout=480 -XX:+UnlockDiagnosticVMOptions -XX:+UnlockExperimentalVMOptions -XX:+UseShenandoahGC -Xmx16m -XX:ShenandoahGCMode=passive            -Dtarget=10000 -XX:-ShenandoahDegeneratedGC     TestLotsOfCycles
  *
  * @run main/othervm/timeout=480 -XX:+UnlockDiagnosticVMOptions -XX:+UnlockExperimentalVMOptions -XX:+UseShenandoahGC -Xmx16m -XX:ShenandoahGCHeuristics=aggressive   -Dtarget=1000  -XX:+ShenandoahOOMDuringEvacALot TestLotsOfCycles
  * @run main/othervm/timeout=480 -XX:+UnlockDiagnosticVMOptions -XX:+UnlockExperimentalVMOptions -XX:+UseShenandoahGC -Xmx16m -XX:ShenandoahGCHeuristics=aggressive   -Dtarget=1000  -XX:+ShenandoahAllocFailureALot  TestLotsOfCycles
  * @run main/othervm/timeout=480 -XX:+UnlockDiagnosticVMOptions -XX:+UnlockExperimentalVMOptions -XX:+UseShenandoahGC -Xmx16m -XX:ShenandoahGCHeuristics=aggressive   -Dtarget=1000                                   TestLotsOfCycles
  *
  * @run main/othervm/timeout=480 -XX:+UnlockDiagnosticVMOptions -XX:+UnlockExperimentalVMOptions -XX:+UseShenandoahGC -Xmx16m -XX:ShenandoahGCHeuristics=adaptive     -Dtarget=10000 TestLotsOfCycles
- * @run main/othervm/timeout=480 -XX:+UnlockDiagnosticVMOptions -XX:+UnlockExperimentalVMOptions -XX:+UseShenandoahGC -Xmx16m -XX:ShenandoahGCHeuristics=traversal    -Dtarget=10000 TestLotsOfCycles
+ * @run main/othervm/timeout=480 -XX:+UnlockDiagnosticVMOptions -XX:+UnlockExperimentalVMOptions -XX:+UseShenandoahGC -Xmx16m -XX:ShenandoahGCMode=traversal          -Dtarget=10000 TestLotsOfCycles
  *
  * @run main/othervm/timeout=480 -XX:+UnlockDiagnosticVMOptions -XX:+UnlockExperimentalVMOptions -XX:+UseShenandoahGC -Xmx16m -XX:ShenandoahGCHeuristics=static       -Dtarget=10000 TestLotsOfCycles
  * @run main/othervm/timeout=480 -XX:+UnlockDiagnosticVMOptions -XX:+UnlockExperimentalVMOptions -XX:+UseShenandoahGC -Xmx16m -XX:ShenandoahGCHeuristics=compact      -Dtarget=1000  TestLotsOfCycles

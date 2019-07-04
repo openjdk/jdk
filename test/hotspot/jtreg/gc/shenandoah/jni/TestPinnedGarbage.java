@@ -26,8 +26,8 @@
  * @key gc
  * @requires vm.gc.Shenandoah & !vm.graal.enabled
  *
- * @run main/othervm/native -XX:+UnlockDiagnosticVMOptions -XX:+UnlockExperimentalVMOptions -XX:+UseShenandoahGC -Xmx512m -XX:+ShenandoahVerify -XX:ShenandoahGCHeuristics=passive    -XX:+ShenandoahDegeneratedGC TestPinnedGarbage
- * @run main/othervm/native -XX:+UnlockDiagnosticVMOptions -XX:+UnlockExperimentalVMOptions -XX:+UseShenandoahGC -Xmx512m -XX:+ShenandoahVerify -XX:ShenandoahGCHeuristics=passive    -XX:-ShenandoahDegeneratedGC TestPinnedGarbage
+ * @run main/othervm/native -XX:+UnlockDiagnosticVMOptions -XX:+UnlockExperimentalVMOptions -XX:+UseShenandoahGC -Xmx512m -XX:+ShenandoahVerify -XX:ShenandoahGCMode=passive          -XX:+ShenandoahDegeneratedGC TestPinnedGarbage
+ * @run main/othervm/native -XX:+UnlockDiagnosticVMOptions -XX:+UnlockExperimentalVMOptions -XX:+UseShenandoahGC -Xmx512m -XX:+ShenandoahVerify -XX:ShenandoahGCMode=passive          -XX:-ShenandoahDegeneratedGC TestPinnedGarbage
  *
  * @run main/othervm/native -XX:+UnlockDiagnosticVMOptions -XX:+UnlockExperimentalVMOptions -XX:+UseShenandoahGC -Xmx512m                       -XX:ShenandoahGCHeuristics=aggressive TestPinnedGarbage
  *

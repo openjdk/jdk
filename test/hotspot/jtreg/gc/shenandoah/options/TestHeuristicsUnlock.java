@@ -44,14 +44,14 @@ public class TestHeuristicsUnlock {
     }
 
     public static void main(String[] args) throws Exception {
-        testWith("adaptive", Mode.PRODUCT);
-        testWith("static", Mode.PRODUCT);
-        testWith("compact", Mode.PRODUCT);
+        testWith("-XX:ShenandoahGCHeuristics=adaptive", Mode.PRODUCT);
+        testWith("-XX:ShenandoahGCHeuristics=static", Mode.PRODUCT);
+        testWith("-XX:ShenandoahGCHeuristics=compact", Mode.PRODUCT);
 
-        testWith("traversal", Mode.EXPERIMENTAL);
+        testWith("-XX:ShenandoahGCMode=traversal", Mode.EXPERIMENTAL);
 
-        testWith("aggressive", Mode.DIAGNOSTIC);
-        testWith("passive", Mode.DIAGNOSTIC);
+        testWith("-XX:ShenandoahGCHeuristics=aggressive", Mode.DIAGNOSTIC);
+        testWith("-XX:ShenandoahGCHeuristics=passive", Mode.DIAGNOSTIC);
     }
 
     private static void testWith(String h, Mode mode) throws Exception {
@@ -60,7 +60,7 @@ public class TestHeuristicsUnlock {
                     "-XX:-UnlockDiagnosticVMOptions",
                     "-XX:-UnlockExperimentalVMOptions",
                     "-XX:+UseShenandoahGC",
-                    "-XX:ShenandoahGCHeuristics=" + h,
+                    h,
                     "-version"
             );
             OutputAnalyzer output = new OutputAnalyzer(pb.start());
@@ -80,7 +80,7 @@ public class TestHeuristicsUnlock {
                     "-XX:+UnlockDiagnosticVMOptions",
                     "-XX:-UnlockExperimentalVMOptions",
                     "-XX:+UseShenandoahGC",
-                    "-XX:ShenandoahGCHeuristics=" + h,
+                    h,
                     "-version"
             );
             OutputAnalyzer output = new OutputAnalyzer(pb.start());
@@ -100,7 +100,7 @@ public class TestHeuristicsUnlock {
                     "-XX:-UnlockDiagnosticVMOptions",
                     "-XX:+UnlockExperimentalVMOptions",
                     "-XX:+UseShenandoahGC",
-                    "-XX:ShenandoahGCHeuristics=" + h,
+                    h,
                     "-version"
             );
             OutputAnalyzer output = new OutputAnalyzer(pb.start());
