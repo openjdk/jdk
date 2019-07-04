@@ -730,18 +730,12 @@ void OopStorage::release(const oop* const* ptrs, size_t size) {
   }
 }
 
-const char* dup_name(const char* name) {
-  char* dup = NEW_C_HEAP_ARRAY(char, strlen(name) + 1, mtGC);
-  strcpy(dup, name);
-  return dup;
-}
-
 const size_t initial_active_array_size = 8;
 
 OopStorage::OopStorage(const char* name,
                        Mutex* allocation_mutex,
                        Mutex* active_mutex) :
-  _name(dup_name(name)),
+  _name(os::strdup(name)),
   _active_array(ActiveArray::create(initial_active_array_size)),
   _allocation_list(),
   _deferred_updates(NULL),
@@ -784,7 +778,7 @@ OopStorage::~OopStorage() {
     Block::delete_block(*block);
   }
   ActiveArray::destroy(_active_array);
-  FREE_C_HEAP_ARRAY(char, _name);
+  os::free(const_cast<char*>(_name));
 }
 
 // Managing service thread notifications.
