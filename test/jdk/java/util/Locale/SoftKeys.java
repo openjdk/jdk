@@ -24,10 +24,10 @@
  * @test
  * @bug 8196869
  * @summary Make sure we deal with internal Key data being cleared properly
- * @run main/othervm -Xms16m -Xmx16m -esa SoftKeys
  * @ignore This test aims to provoke NPEs, but due to the need to constrain
  *         memory usage it fails intermittently with OOME on various systems
  *         with no way to ignore such failures.
+ * @run main/othervm -Xms16m -Xmx16m -esa SoftKeys
  */
 import java.util.*;
 
