@@ -203,6 +203,7 @@ protected:
 public:
 
   virtual void generate_c1_runtime_stubs(BufferBlob* buffer_blob);
+  virtual const char* rtcall_name_for_address(address entry);
 };
 
 #endif // SHARE_GC_SHENANDOAH_C1_SHENANDOAHBARRIERSETC1_HPP

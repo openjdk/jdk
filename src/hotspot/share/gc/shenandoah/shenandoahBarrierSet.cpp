@@ -358,3 +358,7 @@ void ShenandoahBarrierSet::on_thread_detach(Thread *thread) {
     }
   }
 }
+
+oop ShenandoahBarrierSet::oop_load_from_native_barrier(oop obj) {
+  return load_reference_barrier(obj);
+}

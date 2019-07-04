@@ -472,6 +472,19 @@ const TypeFunc* ShenandoahBarrierSetC2::shenandoah_clone_barrier_Type() {
   return TypeFunc::make(domain, range);
 }
 
+const TypeFunc* ShenandoahBarrierSetC2::oop_load_from_native_barrier_Type() {
+  const Type **fields = TypeTuple::fields(1);
+  fields[TypeFunc::Parms+0] = TypeInstPtr::NOTNULL; // original field value
+  const TypeTuple *domain = TypeTuple::make(TypeFunc::Parms+1, fields);
+
+  // create result type (range)
+  fields = TypeTuple::fields(1);
+  fields[TypeFunc::Parms+0] = TypeInstPtr::NOTNULL;
+  const TypeTuple *range = TypeTuple::make(TypeFunc::Parms+1, fields);
+
+  return TypeFunc::make(domain, range);
+}
+
 const TypeFunc* ShenandoahBarrierSetC2::shenandoah_load_reference_barrier_Type() {
   const Type **fields = TypeTuple::fields(1);
   fields[TypeFunc::Parms+0] = TypeInstPtr::NOTNULL; // original field value
@@ -541,6 +554,19 @@ Node* ShenandoahBarrierSetC2::load_at_resolved(C2Access& access, const Type* val
 
   Node* offset = adr->is_AddP() ? adr->in(AddPNode::Offset) : top;
   Node* load = BarrierSetC2::load_at_resolved(access, val_type);
+
+  if ((decorators & IN_NATIVE) != 0) {
+    assert(access.is_oop(), "IN_NATIVE access only for oop values");
+    assert(access.is_parse_access(), "IN_NATIVE access only during parsing");
+    GraphKit* kit = static_cast<C2ParseAccess &>(access).kit();
+    Node* call = kit->make_runtime_call(GraphKit::RC_LEAF,
+                                        oop_load_from_native_barrier_Type(),
+                                        CAST_FROM_FN_PTR(address, ShenandoahRuntime::oop_load_from_native_barrier),
+                                        "ShenandoahRuntime::oop_load_from_native_barrier",
+                                        NULL, load);
+    Node* proj = kit->gvn().transform(new ProjNode(call, TypeFunc::Parms+0));
+    return kit->gvn().transform(new CheckCastPPNode(kit->control(), proj, load->bottom_type()));
+  }
 
   if (access.is_oop()) {
     if (ShenandoahLoadRefBarrier) {
@@ -723,7 +749,8 @@ bool ShenandoahBarrierSetC2::is_gc_barrier_node(Node* node) const {
 
   return strcmp(call->_name, "shenandoah_clone_barrier") == 0 ||
          strcmp(call->_name, "shenandoah_cas_obj") == 0 ||
-         strcmp(call->_name, "shenandoah_wb_pre") == 0;
+         strcmp(call->_name, "shenandoah_wb_pre") == 0 ||
+         strcmp(call->_name, "ShenandoahRuntime::oop_load_from_native_barrier") == 0;
 }
 
 Node* ShenandoahBarrierSetC2::step_over_gc_barrier(Node* c) const {
@@ -1155,6 +1182,11 @@ bool ShenandoahBarrierSetC2::escape_add_to_con_graph(ConnectionGraph* conn_graph
     case Op_ShenandoahLoadReferenceBarrier:
       conn_graph->add_local_var_and_edge(n, PointsToNode::NoEscape, n->in(ShenandoahLoadReferenceBarrierNode::ValueIn), delayed_worklist);
       return true;
+    case Op_CallLeaf:
+      if (strcmp(n->as_CallLeaf()->_name, "ShenandoahRuntime::oop_load_from_native_barrier") == 0) {
+        conn_graph->map_ideal_node(n, conn_graph->phantom_obj);
+        return true;
+      }
     default:
       // Nothing
       break;

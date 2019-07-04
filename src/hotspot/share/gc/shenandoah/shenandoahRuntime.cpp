@@ -65,3 +65,7 @@ JRT_END
 JRT_LEAF(void, ShenandoahRuntime::shenandoah_clone_barrier(oopDesc* obj))
   ShenandoahBarrierSet::barrier_set()->write_region(MemRegion((HeapWord*) obj, obj->size()));
 JRT_END
+
+JRT_LEAF(oopDesc*, ShenandoahRuntime::oop_load_from_native_barrier(oopDesc* src))
+  return (oopDesc*) ShenandoahBarrierSet::barrier_set()->oop_load_from_native_barrier(oop(src));
+JRT_END

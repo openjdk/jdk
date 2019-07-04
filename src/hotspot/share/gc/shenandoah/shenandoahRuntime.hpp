@@ -39,6 +39,8 @@ public:
 
   static oopDesc* load_reference_barrier_JRT(oopDesc* src);
 
+  static oopDesc* oop_load_from_native_barrier(oopDesc* src);
+
   static void shenandoah_clone_barrier(oopDesc* obj);
 };
 

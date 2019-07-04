@@ -83,6 +83,8 @@ public:
   void write_ref_field_work(void* v, oop o, bool release = false);
   void write_region(MemRegion mr);
 
+  oop oop_load_from_native_barrier(oop obj);
+
   virtual void on_thread_create(Thread* thread);
   virtual void on_thread_destroy(Thread* thread);
   virtual void on_thread_attach(Thread* thread);
