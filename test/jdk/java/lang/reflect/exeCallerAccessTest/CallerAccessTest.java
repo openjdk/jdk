@@ -28,8 +28,11 @@
  * @summary Test uses custom launcher that starts VM using JNI that verifies
  *          reflection API with null caller class
  * @library /test/lib
+ * @requires os.family != "aix"
  * @run main/native CallerAccessTest
  */
+
+// Test disabled on AIX since we cannot invoke the JVM on the primordial thread.
 
 import java.io.File;
 import java.util.Map;
