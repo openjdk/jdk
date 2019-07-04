@@ -137,6 +137,8 @@ public:
 
   virtual LIR_Opr resolve(LIRGenerator* gen, DecoratorSet decorators, LIR_Opr obj);
 
+  virtual const char* rtcall_name_for_address(address entry) { return NULL; }
+
   virtual void generate_c1_runtime_stubs(BufferBlob* buffer_blob) {}
 };
 
