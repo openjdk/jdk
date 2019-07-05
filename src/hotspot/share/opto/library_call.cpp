@@ -6696,9 +6696,6 @@ bool LibraryCallKit::inline_fp_min_max(vmIntrinsics::ID id) {
     fatal_unexpected_iid(id);
     break;
   }
-  if (a->is_Con() || b->is_Con()) {
-    return false;
-  }
   switch (id) {
   case vmIntrinsics::_maxF:  n = new MaxFNode(a, b);  break;
   case vmIntrinsics::_minF:  n = new MinFNode(a, b);  break;
