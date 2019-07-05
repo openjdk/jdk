@@ -46,6 +46,7 @@
  * @run main/othervm -XX:+UnlockDiagnosticVMOptions -XX:+UnlockExperimentalVMOptions -XX:+UseShenandoahGC -Xmx1g -XX:+ShenandoahUncommit -XX:ShenandoahUncommitDelay=0 -XX:ShenandoahGCHeuristics=compact                 TestHeapUncommit
  * @run main/othervm -XX:+UnlockDiagnosticVMOptions -XX:+UnlockExperimentalVMOptions -XX:+UseShenandoahGC -Xmx1g -XX:+ShenandoahUncommit -XX:ShenandoahUncommitDelay=0 -XX:ShenandoahGCHeuristics=aggressive              TestHeapUncommit
  * @run main/othervm -XX:+UnlockDiagnosticVMOptions -XX:+UnlockExperimentalVMOptions -XX:+UseShenandoahGC -Xmx1g -XX:+ShenandoahUncommit -XX:ShenandoahUncommitDelay=0 -XX:ShenandoahGCMode=traversal                     TestHeapUncommit
+ * @run main/othervm -XX:+UnlockDiagnosticVMOptions -XX:+UnlockExperimentalVMOptions -XX:+UseShenandoahGC -Xmx1g -XX:+ShenandoahUncommit -XX:ShenandoahUncommitDelay=0 -XX:ShenandoahGCMode=traversal -XX:ShenandoahGCHeuristics=aggressive              TestHeapUncommit
  */
 
 /*

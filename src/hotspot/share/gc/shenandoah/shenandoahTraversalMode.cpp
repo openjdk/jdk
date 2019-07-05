@@ -23,6 +23,7 @@
 
 #include "precompiled.hpp"
 #include "gc/shenandoah/shenandoahTraversalMode.hpp"
+#include "gc/shenandoah/heuristics/shenandoahTraversalAggressiveHeuristics.hpp"
 #include "gc/shenandoah/heuristics/shenandoahTraversalHeuristics.hpp"
 #include "logging/log.hpp"
 #include "logging/logTag.hpp"
@@ -47,6 +48,8 @@ ShenandoahHeuristics* ShenandoahTraversalMode::initialize_heuristics() const {
   if (ShenandoahGCHeuristics != NULL) {
     if (strcmp(ShenandoahGCHeuristics, "adaptive") == 0) {
       return new ShenandoahTraversalHeuristics();
+    } else if (strcmp(ShenandoahGCHeuristics, "aggressive") == 0) {
+      return new ShenandoahTraversalAggressiveHeuristics();
     } else {
       vm_exit_during_initialization("Unknown -XX:ShenandoahGCHeuristics option");
     }
