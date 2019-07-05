@@ -72,6 +72,7 @@
   template(ZMarkStart)                            \
   template(ZMarkEnd)                              \
   template(ZRelocateStart)                        \
+  template(ZVerify)                               \
   template(HandshakeOneThread)                    \
   template(HandshakeAllThreads)                   \
   template(HandshakeFallback)                     \

@@ -161,7 +161,7 @@ public:
   void relocate();
 
   // Iteration
-  void object_iterate(ObjectClosure* cl, bool visit_referents);
+  void object_iterate(ObjectClosure* cl, bool visit_weaks);
 
   // Serviceability
   void serviceability_initialize();

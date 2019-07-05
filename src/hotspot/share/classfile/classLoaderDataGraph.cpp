@@ -64,6 +64,11 @@ void ClassLoaderDataGraph::clear_claimed_marks() {
   }
 }
 
+void ClassLoaderDataGraph::clear_claimed_marks(int claim) {
+ for (ClassLoaderData* cld = OrderAccess::load_acquire(&_head); cld != NULL; cld = cld->next()) {
+    cld->clear_claim(claim);
+  }
+}
 // Class iterator used by the compiler.  It gets some number of classes at
 // a safepoint to decay invocation counters on the methods.
 class ClassLoaderDataGraphKlassIteratorStatic {
@@ -471,7 +476,7 @@ GrowableArray<ClassLoaderData*>* ClassLoaderDataGraph::new_clds() {
   // The CLDs in [_head, _saved_head] were all added during last call to remember_new_clds(true);
   ClassLoaderData* curr = _head;
   while (curr != _saved_head) {
-    if (!curr->claimed()) {
+    if (!curr->claimed(ClassLoaderData::_claim_strong)) {
       array->push(curr);
       LogTarget(Debug, class, loader, data) lt;
       if (lt.is_enabled()) {

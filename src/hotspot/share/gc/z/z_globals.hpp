@@ -76,6 +76,12 @@
   diagnostic(bool, ZVerifyViews, false,                                     \
           "Verify heap view accesses")                                      \
                                                                             \
+  diagnostic(bool, ZVerifyRoots, trueInDebug,                               \
+          "Verify roots")                                                   \
+                                                                            \
+  diagnostic(bool, ZVerifyObjects, false,                                   \
+          "Verify objects")                                                 \
+                                                                            \
   diagnostic(bool, ZVerifyMarking, false,                                   \
           "Verify marking stacks")                                          \
                                                                             \
