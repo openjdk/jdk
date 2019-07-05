@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,6 +25,7 @@
 #include "net_util.h"
 #include "NetworkInterface.h"
 
+#include "java_net_InetAddress.h"
 #include "java_net_NetworkInterface.h"
 
 /*
@@ -347,7 +348,7 @@ int enumInterfaces(JNIEnv *env, netif **netifPP)
     /*
      * Free the interface table and return the interface list
      */
-    if (tableP) {
+    if (tableP != NULL) {
         free(tableP);
     }
     *netifPP = netifP;
@@ -355,24 +356,13 @@ int enumInterfaces(JNIEnv *env, netif **netifPP)
 }
 
 /*
- * Enumerate the IP addresses on an interface using the IP helper library
- * routine GetIfAddrTable and matching based on the index name. There are
- * more efficient routines but we use GetIfAddrTable because it's avaliable
- * on 98 and NT.
- *
- * Returns the count of addresses, or -1 if error. If no error occurs then
- * netaddrPP will return a list of netaddr structures with the IP addresses.
+ * Enumerate all addresses using the IP helper library
  */
-int enumAddresses_win(JNIEnv *env, netif *netifP, netaddr **netaddrPP)
+int lookupIPAddrTable(JNIEnv *env, MIB_IPADDRTABLE **tablePP)
 {
     MIB_IPADDRTABLE *tableP;
     ULONG size;
     DWORD ret;
-    DWORD i;
-    netaddr *netaddrP;
-    int count = 0;
-    unsigned long mask;
-
     /*
      * Use GetIpAddrTable to enumerate the IP Addresses
      */
@@ -396,7 +386,7 @@ int enumAddresses_win(JNIEnv *env, netif *netifP, netaddr **netaddrPP)
         ret = GetIpAddrTable(tableP, &size, FALSE);
     }
     if (ret != NO_ERROR) {
-        if (tableP) {
+        if (tableP != NULL) {
             free(tableP);
         }
         JNU_ThrowByName(env, "java/lang/Error",
@@ -405,16 +395,35 @@ int enumAddresses_win(JNIEnv *env, netif *netifP, netaddr **netaddrPP)
         // GetIpAddrTable in pure IPv6 environment
         return -2;
     }
+    *tablePP = tableP;
+    return 0;
+}
+
+/*
+ * Enumerate the IP addresses on an interface, given an IP address table
+ * and matching based on index.
+ *
+ * Returns the count of addresses, or -1 if error. If no error occurs then
+ * netaddrPP will return a list of netaddr structures with the IP addresses.
+ */
+int enumAddresses_win_ipaddrtable(JNIEnv *env, netif *netifP, netaddr **netaddrPP, MIB_IPADDRTABLE *tableP)
+{
+    DWORD i;
+    netaddr *netaddrP;
+    int count = 0;
+    unsigned long mask;
 
     /*
      * Iterate through the table to find the addresses with the
      * matching dwIndex. Ignore 0.0.0.0 addresses.
      */
+    if (tableP == NULL)
+        return 0;
     count = 0;
     netaddrP = NULL;
 
     i = 0;
-    while (i<tableP->dwNumEntries) {
+    while (i < tableP->dwNumEntries) {
         if (tableP->table[i].dwIndex == netifP->dwIndex &&
             tableP->table[i].dwAddr != 0) {
 
@@ -437,33 +446,33 @@ int enumAddresses_win(JNIEnv *env, netif *netifP, netaddr **netaddrPP)
             case MIB_IF_TYPE_FDDI:
             case MIB_IF_TYPE_LOOPBACK:
             case IF_TYPE_IEEE80211:
-              /**
-               * Contrary to what it seems to indicate, dwBCastAddr doesn't
-               * contain the broadcast address but 0 or 1 depending on whether
-               * the broadcast address should set the bits of the host part
-               * to 0 or 1.
-               * Yes, I know it's stupid, but what can I say, it's MSFTs API.
-               */
-              curr->brdcast.sa4.sin_family = AF_INET;
-              if (tableP->table[i].dwBCastAddr == 1)
-                curr->brdcast.sa4.sin_addr.s_addr = (tableP->table[i].dwAddr & tableP->table[i].dwMask) | (0xffffffff ^ tableP->table[i].dwMask);
-              else
-                curr->brdcast.sa4.sin_addr.s_addr = (tableP->table[i].dwAddr & tableP->table[i].dwMask);
-              mask = ntohl(tableP->table[i].dwMask);
-              curr->mask = 0;
-              while (mask) {
-                mask <<= 1;
-                curr->mask++;
-              }
-              break;
+                /**
+                 * Contrary to what it seems to indicate, dwBCastAddr doesn't
+                 * contain the broadcast address but 0 or 1 depending on whether
+                 * the broadcast address should set the bits of the host part
+                 * to 0 or 1.
+                 * Yes, I know it's stupid, but what can I say, it's MSFTs API.
+                 */
+                curr->brdcast.sa4.sin_family = AF_INET;
+                if (tableP->table[i].dwBCastAddr == 1)
+                    curr->brdcast.sa4.sin_addr.s_addr = (tableP->table[i].dwAddr & tableP->table[i].dwMask) | (0xffffffff ^ tableP->table[i].dwMask);
+                else
+                    curr->brdcast.sa4.sin_addr.s_addr = (tableP->table[i].dwAddr & tableP->table[i].dwMask);
+                mask = ntohl(tableP->table[i].dwMask);
+                curr->mask = 0;
+                while (mask) {
+                    mask <<= 1;
+                    curr->mask++;
+                }
+                break;
             case MIB_IF_TYPE_PPP:
             case MIB_IF_TYPE_SLIP:
             default:
-              /**
-               * these don't have broadcast/subnet
-               */
-              curr->mask = -1;
-                break;
+                /**
+                 * these don't have broadcast/subnet
+                 */
+                curr->mask = -1;
+                    break;
             }
 
             curr->next = netaddrP;
@@ -474,9 +483,29 @@ int enumAddresses_win(JNIEnv *env, netif *netifP, netaddr **netaddrPP)
     }
 
     *netaddrPP = netaddrP;
+    return count;
+}
+
+
+/*
+ * Enumerate the IP addresses on an interface, using an IP address table
+ * retrieved using GetIPAddrTable and matching based on index.
+ *
+ * Returns the count of addresses, or -1 if error. If no error occurs then
+ * netaddrPP will return a list of netaddr structures with the IP addresses.
+ */
+int enumAddresses_win(JNIEnv *env, netif *netifP, netaddr **netaddrPP) {
+    MIB_IPADDRTABLE *tableP;
+    int count;
+    int ret = lookupIPAddrTable(env, &tableP);
+    if (ret < 0) {
+      return NULL;
+    }
+    count = enumAddresses_win_ipaddrtable(env, netifP, netaddrPP, tableP);
     free(tableP);
     return count;
 }
+
 
 /*
  * Class:     java_net_NetworkInterface
@@ -758,6 +787,50 @@ JNIEXPORT jobject JNICALL Java_java_net_NetworkInterface_getByIndex0
     return netifObj;
 }
 
+
+/*
+ * Class:     java_net_NetworkInterface
+ * Method:    boundInetAddress0
+ * Signature: (Ljava/net/InetAddress;)Z
+ */
+JNIEXPORT jboolean JNICALL Java_java_net_NetworkInterface_boundInetAddress0
+    (JNIEnv *env, jclass cls, jobject iaObj)
+{
+    jobject netifObj = NULL;
+    DWORD i;
+
+    int family = getInetAddress_family(env, iaObj);
+    JNU_CHECK_EXCEPTION_RETURN(env, JNI_FALSE);
+
+    if (family == java_net_InetAddress_IPv6) {
+        if (!ipv6_available())
+            return JNI_FALSE;
+        return Java_java_net_NetworkInterface_getByInetAddress0_XP(env, cls, iaObj) != NULL;
+    } else if (family == java_net_InetAddress_IPv4) {
+        jint addr = getInetAddress_addr(env, iaObj);
+        JNU_CHECK_EXCEPTION_RETURN(env, JNI_FALSE);
+
+        jboolean found = JNI_FALSE;
+        MIB_IPADDRTABLE *tableP;
+        if (lookupIPAddrTable(env, &tableP) >= 0 && tableP != NULL) {
+            for (i = 0; i < tableP->dwNumEntries; i++) {
+                if (tableP->table[i].dwAddr != 0 &&
+                    (unsigned long)addr == ntohl(tableP->table[i].dwAddr)) {
+                    found = JNI_TRUE;
+                    break;
+                }
+            }
+        }
+        if (tableP != NULL) {
+          free(tableP);
+        }
+        return found;
+    } else {
+      // Unknown address family
+      return JNI_FALSE;
+    }
+}
+
 /*
  * Class:     java_net_NetworkInterface
  * Method:    getByInetAddress0
@@ -767,11 +840,11 @@ JNIEXPORT jobject JNICALL Java_java_net_NetworkInterface_getByInetAddress0
     (JNIEnv *env, jclass cls, jobject iaObj)
 {
     netif *ifList, *curr;
+    MIB_IPADDRTABLE *tableP;
     jobject netifObj = NULL;
     jint addr = getInetAddress_addr(env, iaObj);
     JNU_CHECK_EXCEPTION_RETURN(env, NULL);
 
-    // Retained for now to support IPv4 only stack, java.net.preferIPv4Stack
     if (ipv6_available()) {
         return Java_java_net_NetworkInterface_getByInetAddress0_XP (env, cls, iaObj);
     }
@@ -785,42 +858,50 @@ JNIEXPORT jobject JNICALL Java_java_net_NetworkInterface_getByInetAddress0
      * Enumerate the addresses on each interface until we find a
      * matching address.
      */
-    curr = ifList;
-    while (curr != NULL) {
-        int count;
-        netaddr *addrList;
-        netaddr *addrP;
+    tableP = NULL;
+    if (lookupIPAddrTable(env, &tableP) >= 0) {
+        curr = ifList;
+        while (curr != NULL) {
+            int count;
+            netaddr *addrList;
+            netaddr *addrP;
 
-        /* enumerate the addresses on this interface */
-        count = enumAddresses_win(env, curr, &addrList);
-        if (count < 0) {
-            free_netif(ifList);
-            return NULL;
-        }
+            /* enumerate the addresses on this interface */
+            count = enumAddresses_win_ipaddrtable(env, curr, &addrList, tableP);
+            if (count < 0) {
+                free_netif(ifList);
+                free(tableP);
+                return NULL;
+            }
 
-        /* iterate through each address */
-        addrP = addrList;
+            /* iterate through each address */
+            addrP = addrList;
 
-        while (addrP != NULL) {
-            if ((unsigned long)addr == ntohl(addrP->addr.sa4.sin_addr.s_addr)) {
+            while (addrP != NULL) {
+                if ((unsigned long)addr == ntohl(addrP->addr.sa4.sin_addr.s_addr)) {
+                    break;
+                }
+                addrP = addrP->next;
+            }
+
+            /*
+             * Address matched so create NetworkInterface for this interface
+             * and address list.
+             */
+            if (addrP != NULL) {
+                /* createNetworkInterface will free addrList */
+                netifObj = createNetworkInterface(env, curr, count, addrList);
                 break;
             }
-            addrP = addrP->next;
-        }
 
-        /*
-         * Address matched so create NetworkInterface for this interface
-         * and address list.
-         */
-        if (addrP != NULL) {
-            /* createNetworkInterface will free addrList */
-            netifObj = createNetworkInterface(env, curr, count, addrList);
-            break;
+            /* on next interface */
+            curr = curr->next;
         }
-
-        /* on next interface */
-        curr = curr->next;
     }
+
+    /* release the IP address table */
+    if (tableP != NULL)
+        free(tableP);
 
     /* release the interface list */
     free_netif(ifList);

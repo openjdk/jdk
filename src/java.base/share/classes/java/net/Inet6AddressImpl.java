@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,6 +25,8 @@
 package java.net;
 
 import java.io.IOException;
+
+import static java.net.InetAddress.IPv6;
 import static java.net.InetAddress.PREFER_IPV6_VALUE;
 import static java.net.InetAddress.PREFER_SYSTEM_VALUE;
 
@@ -70,7 +72,7 @@ class Inet6AddressImpl implements InetAddressImpl {
              * stack system).
              */
             java.util.Enumeration<InetAddress> it = netif.getInetAddresses();
-            InetAddress inetaddr = null;
+            InetAddress inetaddr;
             while (it.hasMoreElements()) {
                 inetaddr = it.nextElement();
                 if (inetaddr.getClass().isInstance(addr)) {
@@ -110,20 +112,23 @@ class Inet6AddressImpl implements InetAddressImpl {
             boolean preferIPv6Address =
                 InetAddress.preferIPv6Address == PREFER_IPV6_VALUE ||
                 InetAddress.preferIPv6Address == PREFER_SYSTEM_VALUE;
-            InetAddress loopback4 = (new Inet4AddressImpl()).loopbackAddress();
-            InetAddress loopback6 = new Inet6Address("localhost",
-                new byte[] {0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
-                            0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x01});
-            // Order the candidate addresses by preference.
-            InetAddress[] addresses = preferIPv6Address
-                ? new InetAddress[] {loopback6, loopback4}
-                : new InetAddress[] {loopback4, loopback6};
-            // In case of failure, default to the preferred address.
-            loopbackAddress = addresses[0];
-            // Pick the first candidate address that actually exists.
-            for (InetAddress address : addresses) {
+
+            for (int i = 0; i < 2; i++) {
+                InetAddress address;
+                // Order the candidate addresses by preference.
+                if (i == (preferIPv6Address ? 0 : 1)) {
+                    address = new Inet6Address("localhost",
+                            new byte[]{ 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+                                        0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x01});
+                } else {
+                    address = new Inet4Address("localhost", new byte[]{ 0x7f,0x00,0x00,0x01 });
+                }
+                if (i == 0) {
+                    // In case of failure, default to the preferred address.
+                    loopbackAddress = address;
+                }
                 try {
-                    if (NetworkInterface.getByInetAddress(address) == null) {
+                    if (!NetworkInterface.isBoundInetAddress(address)) {
                         continue;
                     }
                 } catch (SocketException e) {
