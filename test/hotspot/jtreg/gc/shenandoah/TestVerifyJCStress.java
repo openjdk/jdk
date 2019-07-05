@@ -28,35 +28,49 @@
  * @requires vm.gc.Shenandoah & !vm.graal.enabled
  * @modules java.base/jdk.internal.misc
  *          java.management
- * @run main/othervm  -XX:+IgnoreUnrecognizedVMOptions -XX:+UnlockExperimentalVMOptions -XX:+UnlockDiagnosticVMOptions
- *                    -XX:+UseShenandoahGC -Xmx1g -Xms1g
- *                    -XX:+ShenandoahVerify -XX:+VerifyObjectEquals
- *                    -XX:ShenandoahGCMode=passive -XX:+ShenandoahDegeneratedGC
- *                    TestVerifyJCStress
  *
- * @run main/othervm  -XX:+IgnoreUnrecognizedVMOptions -XX:+UnlockExperimentalVMOptions -XX:+UnlockDiagnosticVMOptions
- *                    -XX:+UseShenandoahGC -Xmx1g -Xms1g
- *                    -XX:+ShenandoahVerify -XX:+VerifyObjectEquals
- *                    -XX:ShenandoahGCMode=passive -XX:-ShenandoahDegeneratedGC
- *                    TestVerifyJCStress
+ * @run main/othervm -Xmx1g -Xms1g -XX:+IgnoreUnrecognizedVMOptions -XX:+UnlockExperimentalVMOptions -XX:+UnlockDiagnosticVMOptions
+ *      -XX:+UseShenandoahGC -XX:ShenandoahGCMode=passive
+ *      -XX:+ShenandoahDegeneratedGC -XX:+ShenandoahVerify -XX:+VerifyObjectEquals
+ *      TestVerifyJCStress
  *
- * @run main/othervm  -XX:+IgnoreUnrecognizedVMOptions -XX:+UnlockExperimentalVMOptions -XX:+UnlockDiagnosticVMOptions
- *                    -XX:+UseShenandoahGC -Xmx1g -Xms1g
- *                    -XX:+ShenandoahVerify -XX:+VerifyObjectEquals -XX:+ShenandoahVerifyOptoBarriers
- *                    -XX:ShenandoahGCHeuristics=adaptive
- *                    TestVerifyJCStress
+ * @run main/othervm -Xmx1g -Xms1g -XX:+IgnoreUnrecognizedVMOptions -XX:+UnlockExperimentalVMOptions -XX:+UnlockDiagnosticVMOptions
+ *      -XX:+UseShenandoahGC -XX:ShenandoahGCMode=passive
+ *      -XX:-ShenandoahDegeneratedGC -XX:+ShenandoahVerify -XX:+VerifyObjectEquals
+ *      TestVerifyJCStress
+ */
+
+/*
+ * @test TestVerifyJCStress
+ * @summary Tests that we pass at least one jcstress-like test with all verification turned on
+ * @key gc
+ * @requires vm.gc.Shenandoah & !vm.graal.enabled
+ * @modules java.base/jdk.internal.misc
+ *          java.management
  *
- * @run main/othervm  -XX:+IgnoreUnrecognizedVMOptions -XX:+UnlockExperimentalVMOptions -XX:+UnlockDiagnosticVMOptions
- *                    -XX:+UseShenandoahGC -Xmx1g -Xms1g
- *                    -XX:+ShenandoahVerify -XX:+VerifyObjectEquals -XX:+ShenandoahVerifyOptoBarriers
- *                    -XX:ShenandoahGCHeuristics=static
- *                    TestVerifyJCStress
+ * @run main/othervm -Xmx1g -Xms1g -XX:+IgnoreUnrecognizedVMOptions -XX:+UnlockExperimentalVMOptions -XX:+UnlockDiagnosticVMOptions
+ *      -XX:+UseShenandoahGC -XX:ShenandoahGCHeuristics=adaptive
+ *      -XX:+ShenandoahVerify -XX:+VerifyObjectEquals -XX:+ShenandoahVerifyOptoBarriers
+ *      TestVerifyJCStress
  *
- * @run main/othervm  -XX:+IgnoreUnrecognizedVMOptions -XX:+UnlockExperimentalVMOptions -XX:+UnlockDiagnosticVMOptions
- *                    -XX:+UseShenandoahGC -Xmx1g -Xms1g
- *                    -XX:+ShenandoahVerify -XX:+VerifyObjectEquals -XX:+ShenandoahVerifyOptoBarriers
- *                    -XX:ShenandoahGCMode=traversal
- *                    TestVerifyJCStress
+ * @run main/othervm -Xmx1g -Xms1g -XX:+IgnoreUnrecognizedVMOptions -XX:+UnlockExperimentalVMOptions -XX:+UnlockDiagnosticVMOptions
+ *      -XX:+UseShenandoahGC -XX:ShenandoahGCHeuristics=compact
+ *      -XX:+ShenandoahVerify -XX:+VerifyObjectEquals -XX:+ShenandoahVerifyOptoBarriers
+ *      TestVerifyJCStress
+ */
+
+/*
+ * @test TestVerifyJCStress
+ * @summary Tests that we pass at least one jcstress-like test with all verification turned on
+ * @key gc
+ * @requires vm.gc.Shenandoah & !vm.graal.enabled
+ * @modules java.base/jdk.internal.misc
+ *          java.management
+ *
+ * @run main/othervm -Xmx1g -Xms1g -XX:+IgnoreUnrecognizedVMOptions -XX:+UnlockExperimentalVMOptions -XX:+UnlockDiagnosticVMOptions
+ *      -XX:+UseShenandoahGC -XX:ShenandoahGCMode=traversal
+ *      -XX:+ShenandoahVerify -XX:+VerifyObjectEquals -XX:+ShenandoahVerifyOptoBarriers
+ *      TestVerifyJCStress
  */
 
 import java.util.*;
