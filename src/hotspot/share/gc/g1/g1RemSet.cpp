@@ -912,11 +912,20 @@ class G1ScanHRForRegionClosure : public HeapRegionClosure {
   Tickspan _rem_set_root_scan_time;
   Tickspan _rem_set_trim_partially_time;
 
-  void scan_memregion(uint region_idx_for_card, MemRegion mr) {
+  // The address to which this thread already scanned (walked the heap) up to during
+  // card scanning (exclusive).
+  HeapWord* _scanned_to;
+
+  HeapWord* scan_memregion(uint region_idx_for_card, MemRegion mr) {
     HeapRegion* const card_region = _g1h->region_at(region_idx_for_card);
     G1ScanCardClosure card_cl(_g1h, _pss);
-    card_region->oops_on_card_seq_iterate_careful<true>(mr, &card_cl);
+
+    HeapWord* const scanned_to = card_region->oops_on_memregion_seq_iterate_careful<true>(mr, &card_cl);
+    assert(scanned_to != NULL, "Should be able to scan range");
+    assert(scanned_to >= mr.end(), "Scanned to " PTR_FORMAT " less than range " PTR_FORMAT, p2i(scanned_to), p2i(mr.end()));
+
     _pss->trim_queue_partially();
+    return scanned_to;
   }
 
   void do_claimed_block(uint const region_idx_for_card, size_t const first_card, size_t const num_cards) {
@@ -931,8 +940,12 @@ class G1ScanHRForRegionClosure : public HeapRegionClosure {
       return;
     }
 
-    MemRegion mr(card_start, MIN2(card_start + ((size_t)num_cards << BOTConstants::LogN_words), top));
-    scan_memregion(region_idx_for_card, mr);
+    HeapWord* scan_end = MIN2(card_start + (num_cards << BOTConstants::LogN_words), top);
+    if (_scanned_to >= scan_end) {
+      return;
+    }
+    MemRegion mr(MAX2(card_start, _scanned_to), scan_end);
+    _scanned_to = scan_memregion(region_idx_for_card, mr);
 
     _cards_scanned += num_cards;
   }
@@ -950,6 +963,12 @@ class G1ScanHRForRegionClosure : public HeapRegionClosure {
     ResourceMark rm;
 
     G1CardTableChunkClaimer claim(_scan_state, region_idx);
+
+    // Set the current scan "finger" to NULL for every heap region to scan. Since
+    // the claim value is monotonically increasing, the check to not scan below this
+    // will filter out objects spanning chunks within the region too then, as opposed
+    // to resetting this value for every claim.
+    _scanned_to = NULL;
 
     while (claim.has_next()) {
       size_t const region_card_base_idx = ((size_t)region_idx << HeapRegion::LogCardsPerRegion) + claim.value();
@@ -994,7 +1013,8 @@ public:
     _blocks_scanned(0),
     _chunks_claimed(0),
     _rem_set_root_scan_time(),
-    _rem_set_trim_partially_time() {
+    _rem_set_trim_partially_time(),
+    _scanned_to(NULL) {
   }
 
   bool do_heap_region(HeapRegion* r) {
@@ -1292,7 +1312,7 @@ void G1RemSet::refine_card_concurrently(CardValue* card_ptr,
   assert(!dirty_region.is_empty(), "sanity");
 
   G1ConcurrentRefineOopClosure conc_refine_cl(_g1h, worker_i);
-  if (r->oops_on_card_seq_iterate_careful<false>(dirty_region, &conc_refine_cl)) {
+  if (r->oops_on_memregion_seq_iterate_careful<false>(dirty_region, &conc_refine_cl) != NULL) {
     _num_conc_refined_cards++; // Unsynchronized update, only used for logging.
     return;
   }

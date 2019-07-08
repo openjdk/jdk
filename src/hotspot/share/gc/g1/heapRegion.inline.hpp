@@ -257,9 +257,9 @@ inline bool HeapRegion::in_collection_set() const {
 }
 
 template <class Closure, bool is_gc_active>
-bool HeapRegion::do_oops_on_card_in_humongous(MemRegion mr,
-                                              Closure* cl,
-                                              G1CollectedHeap* g1h) {
+HeapWord* HeapRegion::do_oops_on_memregion_in_humongous(MemRegion mr,
+                                                        Closure* cl,
+                                                        G1CollectedHeap* g1h) {
   assert(is_humongous(), "precondition");
   HeapRegion* sr = humongous_start_region();
   oop obj = oop(sr->bottom());
@@ -271,41 +271,48 @@ bool HeapRegion::do_oops_on_card_in_humongous(MemRegion mr,
   // since the allocating thread could have performed a write to the
   // card that might be missed otherwise.
   if (!is_gc_active && (obj->klass_or_null_acquire() == NULL)) {
-    return false;
+    return NULL;
   }
 
   // We have a well-formed humongous object at the start of sr.
   // Only filler objects follow a humongous object in the containing
   // regions, and we can ignore those.  So only process the one
   // humongous object.
-  if (!g1h->is_obj_dead(obj, sr)) {
-    if (obj->is_objArray() || (sr->bottom() < mr.start())) {
-      // objArrays are always marked precisely, so limit processing
-      // with mr.  Non-objArrays might be precisely marked, and since
-      // it's humongous it's worthwhile avoiding full processing.
-      // However, the card could be stale and only cover filler
-      // objects.  That should be rare, so not worth checking for;
-      // instead let it fall out from the bounded iteration.
-      obj->oop_iterate(cl, mr);
-    } else {
-      // If obj is not an objArray and mr contains the start of the
-      // obj, then this could be an imprecise mark, and we need to
-      // process the entire object.
-      obj->oop_iterate(cl);
-    }
+  if (g1h->is_obj_dead(obj, sr)) {
+    // The object is dead. There can be no other object in this region, so return
+    // the end of that region.
+    return end();
   }
-  return true;
+  if (obj->is_objArray() || (sr->bottom() < mr.start())) {
+    // objArrays are always marked precisely, so limit processing
+    // with mr.  Non-objArrays might be precisely marked, and since
+    // it's humongous it's worthwhile avoiding full processing.
+    // However, the card could be stale and only cover filler
+    // objects.  That should be rare, so not worth checking for;
+    // instead let it fall out from the bounded iteration.
+    obj->oop_iterate(cl, mr);
+    return mr.end();
+  } else {
+    // If obj is not an objArray and mr contains the start of the
+    // obj, then this could be an imprecise mark, and we need to
+    // process the entire object.
+    int size = obj->oop_iterate_size(cl);
+    // We have scanned to the end of the object, but since there can be no objects
+    // after this humongous object in the region, we can return the end of the
+    // region if it is greater.
+    return MAX2((HeapWord*)obj + size, mr.end());
+  }
 }
 
 template <bool is_gc_active, class Closure>
-bool HeapRegion::oops_on_card_seq_iterate_careful(MemRegion mr,
-                                                  Closure* cl) {
+HeapWord* HeapRegion::oops_on_memregion_seq_iterate_careful(MemRegion mr,
+                                                       Closure* cl) {
   assert(MemRegion(bottom(), end()).contains(mr), "Card region not in heap region");
   G1CollectedHeap* g1h = G1CollectedHeap::heap();
 
   // Special handling for humongous regions.
   if (is_humongous()) {
-    return do_oops_on_card_in_humongous<Closure, is_gc_active>(mr, cl, g1h);
+    return do_oops_on_memregion_in_humongous<Closure, is_gc_active>(mr, cl, g1h);
   }
   assert(is_old() || is_archive(), "Wrongly trying to iterate over region %u type %s", _hrm_index, get_type_str());
 
@@ -334,7 +341,7 @@ bool HeapRegion::oops_on_card_seq_iterate_careful(MemRegion mr,
 #endif
 
   const G1CMBitMap* const bitmap = g1h->concurrent_mark()->prev_mark_bitmap();
-  do {
+  while (true) {
     oop obj = oop(cur);
     assert(oopDesc::is_oop(obj, true), "Not an oop at " PTR_FORMAT, p2i(cur));
     assert(obj->klass_or_null() != NULL,
@@ -342,6 +349,7 @@ bool HeapRegion::oops_on_card_seq_iterate_careful(MemRegion mr,
 
     size_t size;
     bool is_dead = is_obj_dead_with_size(obj, bitmap, &size);
+    bool is_precise = false;
 
     cur += size;
     if (!is_dead) {
@@ -355,11 +363,13 @@ bool HeapRegion::oops_on_card_seq_iterate_careful(MemRegion mr,
         obj->oop_iterate(cl);
       } else {
         obj->oop_iterate(cl, mr);
+        is_precise = true;
       }
     }
-  } while (cur < end);
-
-  return true;
+    if (cur >= end) {
+      return is_precise ? end : cur;
+    }
+  }
 }
 
 #endif // SHARE_GC_G1_HEAPREGION_INLINE_HPP
