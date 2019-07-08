@@ -38,8 +38,6 @@ compiler/compilercontrol/jcmd/AddLogTest.java                   8181753   generi
 compiler/compilercontrol/mixed/RandomValidCommandsTest.java     8181753   generic-all
 compiler/compilercontrol/mixed/RandomCommandsTest.java          8181753   generic-all
 
-compiler/graalunit/HotspotJdk9Test.java                         8223807   generic-all
-compiler/jsr292/InvokerSignatureMismatch.java                   8223807   generic-all
 
 compiler/graalunit/JttThreadsTest.java                          8207757   generic-all
 
