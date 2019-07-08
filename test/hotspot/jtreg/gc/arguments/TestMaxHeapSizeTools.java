@@ -135,7 +135,8 @@ class TestMaxHeapSizeTools {
     expectError(new String[] { gcflag, "-XX:InitialHeapSize=1023K", "-version" });
     expectError(new String[] { gcflag, "-Xms64M", "-XX:InitialHeapSize=32M", "-version" });
     expectError(new String[] { gcflag, "-XX:MinHeapSize=1023K", "-version" });
-    expectError(new String[] { gcflag, "-Xms4M", "-XX:MinHeapSize=8M", "-version" });
+    // Note: MinHeapSize values get aligned up by HeapAlignment which is 32M with 64k pages.
+    expectError(new String[] { gcflag, "-Xms4M", "-XX:MinHeapSize=64M", "-version" });
     expectError(new String[] { gcflag, "-XX:MinHeapSize=8M -XX:InitialHeapSize=4m" });
   }
 
