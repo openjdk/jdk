@@ -29,6 +29,7 @@ package gc.arguments;
  * @bug 8144527
  * @summary Tests argument processing for NewSizeThreadIncrease
  * @library /test/lib
+ * @library /
  * @requires vm.gc.Serial
  * @modules java.base/jdk.internal.misc
  *          java.management
@@ -67,13 +68,13 @@ public class TestNewSizeThreadIncrease {
   }
 
   static void runNewSizeThreadIncreaseTest(String expectedValue, boolean isNewsizeChanged) throws Exception {
-    ProcessBuilder pb = ProcessTools.createJavaProcessBuilder("-XX:+UseSerialGC",
-                                                              "-Xms96M",
-                                                              "-Xmx128M",
-                                                              "-XX:NewRatio=2",
-                                                              "-Xlog:gc+heap+ergo=debug",
-                                                              "-XX:NewSizeThreadIncrease="+expectedValue,
-                                                              GCTest.class.getName());
+    ProcessBuilder pb = GCArguments.createJavaProcessBuilder("-XX:+UseSerialGC",
+                                                             "-Xms96M",
+                                                             "-Xmx128M",
+                                                             "-XX:NewRatio=2",
+                                                             "-Xlog:gc+heap+ergo=debug",
+                                                             "-XX:NewSizeThreadIncrease="+expectedValue,
+                                                             GCTest.class.getName());
     OutputAnalyzer output = new OutputAnalyzer(pb.start());
 
     output.shouldHaveExitValue(0);

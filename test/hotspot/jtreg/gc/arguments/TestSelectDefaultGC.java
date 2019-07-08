@@ -29,6 +29,7 @@ package gc.arguments;
  * @bug 8068582
  * @key gc
  * @library /test/lib
+ * @library /
  * @requires vm.gc.Serial & vm.gc.G1
  * @modules java.base/jdk.internal.misc
  *          java.management
@@ -52,7 +53,7 @@ public class TestSelectDefaultGC {
         };
 
         // Start VM without specifying GC
-        ProcessBuilder pb = ProcessTools.createJavaProcessBuilder(args);
+        ProcessBuilder pb = GCArguments.createJavaProcessBuilder(args);
         OutputAnalyzer output = new OutputAnalyzer(pb.start());
         output.shouldHaveExitValue(0);
 

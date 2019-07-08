@@ -30,6 +30,7 @@ package gc.arguments;
  * @requires vm.gc.Parallel
  * @summary Check large pages and NUMA are working together via the output message.
  * @library /test/lib
+ * @library /
  * @modules java.base/jdk.internal.misc
  * @modules java.management/sun.management
  * @build TestSmallInitialHeapWithLargePageAndNUMA
@@ -67,7 +68,7 @@ public class TestSmallInitialHeapWithLargePageAndNUMA {
                        "-XX:+PrintFlagsFinal",
                        "-version"};
 
-    ProcessBuilder pb_enabled = ProcessTools.createJavaProcessBuilder(vmArgs);
+    ProcessBuilder pb_enabled = GCArguments.createJavaProcessBuilder(vmArgs);
     OutputAnalyzer analyzer = new OutputAnalyzer(pb_enabled.start());
 
     if (largePageOrNumaEnabled(analyzer)) {

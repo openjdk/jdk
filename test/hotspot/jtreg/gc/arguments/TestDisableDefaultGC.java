@@ -29,6 +29,7 @@ package gc.arguments;
  * @bug 8068579
  * @key gc
  * @library /test/lib
+ * @library /
  * @requires vm.gc=="null"
  * @modules java.base/jdk.internal.misc
  *          java.management
@@ -41,14 +42,14 @@ import jdk.test.lib.process.OutputAnalyzer;
 public class TestDisableDefaultGC {
     public static void main(String[] args) throws Exception {
         // Start VM, disabling all possible default GCs
-        ProcessBuilder pb = ProcessTools.createJavaProcessBuilder("-XX:-UseSerialGC",
-                                                                  "-XX:-UseParallelGC",
-                                                                  "-XX:-UseG1GC",
-                                                                  "-XX:-UseConcMarkSweepGC",
-                                                                  "-XX:+UnlockExperimentalVMOptions",
-                                                                  "-XX:-UseShenandoahGC",
-                                                                  "-XX:-UseZGC",
-                                                                  "-version");
+        ProcessBuilder pb = GCArguments.createJavaProcessBuilder("-XX:-UseSerialGC",
+                                                                 "-XX:-UseParallelGC",
+                                                                 "-XX:-UseG1GC",
+                                                                 "-XX:-UseConcMarkSweepGC",
+                                                                 "-XX:+UnlockExperimentalVMOptions",
+                                                                 "-XX:-UseShenandoahGC",
+                                                                 "-XX:-UseZGC",
+                                                                 "-version");
         OutputAnalyzer output = new OutputAnalyzer(pb.start());
         output.shouldMatch("Garbage collector not selected");
         output.shouldHaveExitValue(1);
