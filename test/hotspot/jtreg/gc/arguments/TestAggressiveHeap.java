@@ -30,6 +30,7 @@ package gc.arguments;
  * @requires vm.gc.Parallel
  * @summary Test argument processing for -XX:+AggressiveHeap.
  * @library /test/lib
+ * @library /
  * @modules java.base java.management
  * @run driver gc.arguments.TestAggressiveHeap
  */
@@ -66,7 +67,7 @@ public class TestAggressiveHeap {
         " *bool +UseParallelGC *= *true +\\{product\\} *\\{command line\\}";
 
     private static void testFlag() throws Exception {
-        ProcessBuilder pb = ProcessTools.createJavaProcessBuilder(
+        ProcessBuilder pb = GCArguments.createJavaProcessBuilder(
             option, heapSizeOption, "-XX:+PrintFlagsFinal", "-version");
 
         OutputAnalyzer output = new OutputAnalyzer(pb.start());

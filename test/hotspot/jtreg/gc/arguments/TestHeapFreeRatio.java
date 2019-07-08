@@ -29,6 +29,7 @@ package gc.arguments;
  * @bug 8025661
  * @summary Test parsing of -Xminf and -Xmaxf
  * @library /test/lib
+ * @library /
  * @modules java.base/jdk.internal.misc
  *          java.management
  * @run main/othervm gc.arguments.TestHeapFreeRatio
@@ -48,7 +49,7 @@ public class TestHeapFreeRatio {
   }
 
   private static void testMinMaxFreeRatio(String min, String max, Validation type) throws Exception {
-    ProcessBuilder pb = ProcessTools.createJavaProcessBuilder(
+    ProcessBuilder pb = GCArguments.createJavaProcessBuilder(
         "-Xminf" + min,
         "-Xmaxf" + max,
         "-version");

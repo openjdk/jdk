@@ -30,6 +30,7 @@ package gc.arguments;
  * @requires vm.gc.G1
  * @summary Tests argument processing for G1ConcRefinementThreads
  * @library /test/lib
+ * @library /
  * @modules java.base/jdk.internal.misc
  *          java.management
  * @run main gc.arguments.TestG1ConcRefinementThreads
@@ -70,7 +71,7 @@ public class TestG1ConcRefinementThreads {
     }
     Collections.addAll(vmOpts, "-XX:+UseG1GC", "-XX:+PrintFlagsFinal", "-version");
 
-    ProcessBuilder pb = ProcessTools.createJavaProcessBuilder(vmOpts.toArray(new String[vmOpts.size()]));
+    ProcessBuilder pb = GCArguments.createJavaProcessBuilder(vmOpts.toArray(new String[vmOpts.size()]));
     OutputAnalyzer output = new OutputAnalyzer(pb.start());
 
     output.shouldHaveExitValue(0);

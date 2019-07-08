@@ -28,6 +28,7 @@ package gc.arguments;
  * @key gc
  * @summary Test defaults processing for -XX:+ParallelRefProcEnabled.
  * @library /test/lib
+ * @library /
  * @build sun.hotspot.WhiteBox
  * @run driver ClassFileInstaller sun.hotspot.WhiteBox sun.hotspot.WhiteBox$WhiteBoxPermission
  * @run main/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI gc.arguments.TestParallelRefProc
@@ -80,7 +81,7 @@ public class TestParallelRefProc {
         result.addAll(Arrays.asList(args));
         result.add("-XX:+PrintFlagsFinal");
         result.add("-version");
-        ProcessBuilder pb = ProcessTools.createJavaProcessBuilder(result.toArray(new String[0]));
+        ProcessBuilder pb = GCArguments.createJavaProcessBuilder(result.toArray(new String[0]));
 
         OutputAnalyzer output = new OutputAnalyzer(pb.start());
 
