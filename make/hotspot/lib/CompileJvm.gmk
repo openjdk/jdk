@@ -47,6 +47,8 @@ JVM_LDFLAGS += \
     $(EXTRA_LDFLAGS) \
     #
 
+JVM_ASFLAGS += $(EXTRA_ASFLAGS)
+
 JVM_LIBS += \
     $(JVM_LIBS_FEATURES) \
     #
