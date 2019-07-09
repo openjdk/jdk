@@ -1106,7 +1106,7 @@ JRT_ENTRY(nmethod*,
           objects_to_revoke->append(Handle(THREAD, kptr->obj()));
         }
       }
-      BiasedLocking::revoke(objects_to_revoke);
+      BiasedLocking::revoke(objects_to_revoke, thread);
     }
   }
   return osr_nm;

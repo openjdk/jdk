@@ -1432,7 +1432,7 @@ void Deoptimization::revoke_biases_of_monitors(JavaThread* thread, frame fr, Reg
   if (SafepointSynchronize::is_at_safepoint()) {
     BiasedLocking::revoke_at_safepoint(objects_to_revoke);
   } else {
-    BiasedLocking::revoke(objects_to_revoke);
+    BiasedLocking::revoke(objects_to_revoke, thread);
   }
 }
 
