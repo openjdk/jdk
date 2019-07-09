@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -87,6 +87,10 @@ public class FormatData_zh extends ParallelListResourceBundle {
         final String[] rocEras = {
             "\u6c11\u56fd\u524d",
             "\u6c11\u56fd",
+        };
+        final String[] gregoryEras = {
+            "\u516c\u5143\u524d",
+            "\u516c\u5143",
         };
         return new Object[][] {
             { "MonthNames",
@@ -263,12 +267,8 @@ public class FormatData_zh extends ParallelListResourceBundle {
                     "\u4e0b\u5348" // pm marker
                 }
             },
-            { "Eras",
-                new String[] { // era strings
-                    "\u516c\u5143\u524d",
-                    "\u516c\u5143"
-                }
-            },
+            { "Eras", gregoryEras },
+            { "short.Eras", gregoryEras },
             { "buddhist.Eras",
                 new String[] {
                     "BC",
