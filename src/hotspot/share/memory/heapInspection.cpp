@@ -792,8 +792,5 @@ void HeapInspection::find_instances_at_safepoint(Klass* k, GrowableArray<oop>* r
 
   // Iterate over objects in the heap
   FindInstanceClosure fic(k, result);
-  // If this operation encounters a bad object when using CMS,
-  // consider using safe_object_iterate() which avoids metadata
-  // objects that may contain bad references.
-  Universe::heap()->object_iterate(&fic);
+  Universe::heap()->safe_object_iterate(&fic);
 }
