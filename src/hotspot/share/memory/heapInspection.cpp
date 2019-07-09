@@ -123,7 +123,7 @@ void KlassInfoEntry::print_on(outputStream* st) const {
 
 KlassInfoEntry* KlassInfoBucket::lookup(Klass* const k) {
   // Can happen if k is an archived class that we haven't loaded yet.
-  if (k->java_mirror() == NULL) {
+  if (k->java_mirror_no_keepalive() == NULL) {
     return NULL;
   }
 
@@ -719,7 +719,7 @@ size_t HeapInspection::populate_table(KlassInfoTable* cit, BoolObjectClosure *fi
   ResourceMark rm;
 
   RecordInstanceClosure ric(cit, filter);
-  Universe::heap()->object_iterate(&ric);
+  Universe::heap()->safe_object_iterate(&ric);
   return ric.missed_count();
 }
 
