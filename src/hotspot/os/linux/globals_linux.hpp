@@ -64,8 +64,12 @@
                                                                         \
   product(bool, PreferContainerQuotaForCPUCount, true,                  \
           "Calculate the container CPU availability based on the value" \
-          " of quotas (if set), when true. Otherwise, use the CPU"    \
+          " of quotas (if set), when true. Otherwise, use the CPU"      \
           " shares value, provided it is less than quota.")             \
+                                                                        \
+  product(bool, AdjustStackSizeForTLS, false,                           \
+          "Increase the thread stack size to include space for glibc "  \
+          "static thread-local storage (TLS) if true")                  \
                                                                         \
   diagnostic(bool, DumpPrivateMappingsInCore, true,                     \
           "If true, sets bit 2 of /proc/PID/coredump_filter, thus "     \
