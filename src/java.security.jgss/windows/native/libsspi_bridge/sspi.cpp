@@ -209,14 +209,14 @@ flag_gss_to_sspi(int fin)
 }
 
 static BOOLEAN
-is_same_oid(gss_OID o2, gss_OID o1)
+is_same_oid(gss_const_OID o2, gss_const_OID o1)
 {
     return o1 && o2 && o1->length == o2->length
             && !memcmp(o1->elements, o2->elements, o2->length);
 }
 
 static BOOLEAN
-has_oid(gss_OID_set set, gss_OID oid)
+has_oid(gss_const_OID_set set, gss_const_OID oid)
 {
     for (int i = 0; i < set->count; i++) {
         if (is_same_oid(&set->elements[i], oid)) {
@@ -227,7 +227,7 @@ has_oid(gss_OID_set set, gss_OID oid)
 }
 
 static void
-get_oid_desc(gss_OID mech)
+show_oid(gss_const_OID mech)
 {
     if (trace) {
         if (is_same_oid(mech, &KRB5_OID)) {
@@ -249,7 +249,7 @@ get_oid_desc(gss_OID mech)
 }
 
 static void
-get_oid_set_desc(gss_OID_set mechs)
+show_oid_set(gss_const_OID_set mechs)
 {
     if (trace) {
         if (mechs == NULL) {
@@ -258,7 +258,7 @@ get_oid_set_desc(gss_OID_set mechs)
         }
         PP("gss_OID_set.count is %d", (int)mechs->count);
         for (int i = 0; i < mechs->count; i++) {
-            get_oid_desc(&mechs->elements[i]);
+            show_oid(&mechs->elements[i]);
         }
     }
 }
@@ -332,8 +332,8 @@ gss_release_name(OM_uint32 *minor_status,
 
 __declspec(dllexport) OM_uint32
 gss_import_name(OM_uint32 *minor_status,
-                const gss_buffer_t input_name_buffer,
-                const gss_OID input_name_type,
+                gss_const_buffer_t input_name_buffer,
+                gss_const_OID input_name_type,
                 gss_name_t *output_name)
 {
     PP(">>>> Calling gss_import_name...");
@@ -344,6 +344,9 @@ gss_import_name(OM_uint32 *minor_status,
     LPSTR input = (LPSTR)input_name_buffer->value;
     if (input_name_type != NULL
             && is_same_oid(input_name_type, &EXPORT_NAME_OID)) {
+        if (len < 4 || input[0] != 4 || input[1] != 1 || input[2] != 0) {
+            return GSS_S_FAILURE;
+        }
         int mechLen = (int)input[3]; /* including 06 len */
         len -= mechLen + 8; /* 4 header bytes, and an int32 length after OID */
         if (len <= 0) {
@@ -429,15 +432,50 @@ gss_compare_name(OM_uint32 *minor_status,
     SEC_WCHAR* n1 = name1->name;
     SEC_WCHAR* n2 = name2->name;
     PP("Comparing %ls and %ls", n1, n2);
+
     int l1 = lstrlen(n1);
     int l2 = lstrlen(n2);
-    if (l1 < l2 && n2[l1] != L'@'
-            || l2 < l1 && n1[l2] != L'@') {
+    int r1 = l1; // position of @ or the end if none
+    int r2 = l2;
+    int i;
+
+    for (i = 0; i < l1; i++) {
+        if (n1[i] == L'\\') {
+            i++;
+            continue;
+        }
+        if (n1[i] == L'@') {
+            r1 = i;
+            break;
+        }
+    }
+
+    for (i = 0; i < l2; i++) {
+        if (n2[i] == L'\\') {
+            i++;
+            continue;
+        }
+        if (n2[i] == L'@') {
+            r2 = i;
+            break;
+        }
+    }
+
+    if (l1 < l2 && l1 != r2
+            || l2 < l1 && l2 != l1) {
         return GSS_S_COMPLETE; // different
     }
+
     if (l1 > l2) {
         l1 = l2; // choose the smaller one. longer=smaller @ ...
     }
+
+    // Two names are equal if they are the same or one has no realm and
+    // one has realm but they have the same name. If both have realm but
+    // different, they are treated different even if the names are the same.
+    // Note: the default name concept is not used here.
+    // Principal names on Windows are case-insensitive, both user name
+    // and service principal name.
     if (CompareStringEx(LOCALE_NAME_SYSTEM_DEFAULT, NORM_IGNORECASE,
             n1, l1, n2, l1, NULL, NULL, 0) == CSTR_EQUAL) {
         *name_equal = 1;
@@ -448,7 +486,7 @@ gss_compare_name(OM_uint32 *minor_status,
 __declspec(dllexport) OM_uint32
 gss_canonicalize_name(OM_uint32 *minor_status,
                       gss_const_name_t input_name,
-                      const gss_OID mech_type,
+                      gss_const_OID mech_type,
                       gss_name_t *output_name)
 {
     PP(">>>> Calling gss_canonicalize_name...");
@@ -456,6 +494,10 @@ gss_canonicalize_name(OM_uint32 *minor_status,
     CHECK_OID(mech_type)
     CHECK_OUTPUT(output_name)
 
+    if (!is_same_oid(mech_type, &KRB5_OID)) {
+        PP("Cannot canonicalize to non-krb5 OID");
+        return GSS_S_BAD_MECH;
+    }
     gss_name_t names2 = new gss_name_struct;
     if (names2 == NULL) {
         return GSS_S_FAILURE;
@@ -558,7 +600,7 @@ __declspec(dllexport) OM_uint32
 gss_acquire_cred(OM_uint32 *minor_status,
                  gss_const_name_t desired_name,
                  OM_uint32 time_req,
-                 const gss_OID_set desired_mechs,
+                 gss_const_OID_set desired_mechs,
                  gss_cred_usage_t cred_usage,
                  gss_cred_id_t *output_cred_handle,
                  gss_OID_set *actual_mechs,
@@ -572,7 +614,7 @@ gss_acquire_cred(OM_uint32 *minor_status,
     ts.QuadPart = 0;
     cred_usage = 0;
     PP("AcquireCredentialsHandle with %d %p", cred_usage, desired_mechs);
-    get_oid_set_desc(desired_mechs);
+    show_oid_set(desired_mechs);
 
     BOOLEAN reqKerberos, reqSPNEGO;
 
@@ -787,7 +829,7 @@ gss_inquire_cred(OM_uint32 *minor_status,
 
 __declspec(dllexport) OM_uint32
 gss_import_sec_context(OM_uint32 *minor_status,
-                       const gss_buffer_t interprocess_token,
+                       gss_const_buffer_t interprocess_token,
                        gss_ctx_id_t *context_handle)
 {
     // Not transferable, return FAILURE
@@ -801,11 +843,11 @@ gss_init_sec_context(OM_uint32 *minor_status,
                      gss_const_cred_id_t initiator_cred_handle,
                      gss_ctx_id_t *context_handle,
                      gss_const_name_t target_name,
-                     const gss_OID mech_type,
+                     gss_const_OID mech_type,
                      OM_uint32 req_flags,
                      OM_uint32 time_req,
-                     const gss_channel_bindings_t input_chan_bindings,
-                     const gss_buffer_t input_token,
+                     gss_const_channel_bindings_t input_chan_bindings,
+                     gss_const_buffer_t input_token,
                      gss_OID *actual_mech_type,
                      gss_buffer_t output_token,
                      OM_uint32 *ret_flags,
@@ -927,7 +969,6 @@ gss_init_sec_context(OM_uint32 *minor_status,
             &lifeTime);
 
     if (!SEC_SUCCESS(ss)) {
-        // TODO: seems NativeGSSContext has not failed here.
         PP("InitializeSecurityContext failed");
         goto err;
     }
@@ -983,8 +1024,8 @@ __declspec(dllexport) OM_uint32
 gss_accept_sec_context(OM_uint32 *minor_status,
                        gss_ctx_id_t *context_handle,
                        gss_const_cred_id_t acceptor_cred_handle,
-                       const gss_buffer_t input_token,
-                       const gss_channel_bindings_t input_chan_bindings,
+                       gss_const_buffer_t input_token,
+                       gss_const_channel_bindings_t input_chan_bindings,
                        gss_name_t *src_name,
                        gss_OID *mech_type,
                        gss_buffer_t output_token,
@@ -1168,13 +1209,13 @@ __declspec(dllexport) OM_uint32
 gss_get_mic(OM_uint32 *minor_status,
             gss_const_ctx_id_t context_handle,
             gss_qop_t qop_req,
-            const gss_buffer_t message_buffer,
+            gss_const_buffer_t message_buffer,
             gss_buffer_t msg_token)
 {
     PP(">>>> Calling gss_get_mic...");
-    CHECK_CONTEXT(context_handle);
-    CHECK_BUFFER(message_buffer);
-    CHECK_OUTPUT(msg_token);
+    CHECK_CONTEXT(context_handle)
+    CHECK_BUFFER(message_buffer)
+    CHECK_OUTPUT(msg_token)
 
     SECURITY_STATUS ss;
     SecBufferDesc buffDesc;
@@ -1208,14 +1249,14 @@ gss_get_mic(OM_uint32 *minor_status,
 __declspec(dllexport) OM_uint32
 gss_verify_mic(OM_uint32 *minor_status,
                gss_const_ctx_id_t context_handle,
-               const gss_buffer_t message_buffer,
-               const gss_buffer_t token_buffer,
+               gss_const_buffer_t message_buffer,
+               gss_const_buffer_t token_buffer,
                gss_qop_t *qop_state)
 {
     PP(">>>> Calling gss_verify_mic...");
-    CHECK_CONTEXT(context_handle);
-    CHECK_BUFFER(message_buffer);
-    CHECK_BUFFER(token_buffer);
+    CHECK_CONTEXT(context_handle)
+    CHECK_BUFFER(message_buffer)
+    CHECK_BUFFER(token_buffer)
 
     SECURITY_STATUS ss;
     SecBufferDesc buffDesc;
@@ -1253,14 +1294,14 @@ gss_wrap(OM_uint32 *minor_status,
          gss_const_ctx_id_t context_handle,
          int conf_req_flag,
          gss_qop_t qop_req,
-         const gss_buffer_t input_message_buffer,
+         gss_const_buffer_t input_message_buffer,
          int *conf_state,
          gss_buffer_t output_message_buffer)
 {
     PP(">>>> Calling gss_wrap...");
-    CHECK_CONTEXT(context_handle);
-    CHECK_BUFFER(input_message_buffer);
-    CHECK_OUTPUT(output_message_buffer);
+    CHECK_CONTEXT(context_handle)
+    CHECK_BUFFER(input_message_buffer)
+    CHECK_OUTPUT(output_message_buffer)
 
     SECURITY_STATUS ss;
     SecBufferDesc buffDesc;
@@ -1323,15 +1364,15 @@ gss_wrap(OM_uint32 *minor_status,
 __declspec(dllexport) OM_uint32
 gss_unwrap(OM_uint32 *minor_status,
            gss_const_ctx_id_t context_handle,
-           const gss_buffer_t input_message_buffer,
+           gss_const_buffer_t input_message_buffer,
            gss_buffer_t output_message_buffer,
            int *conf_state,
            gss_qop_t *qop_state)
 {
     PP(">>>> Calling gss_unwrap...");
-    CHECK_CONTEXT(context_handle);
-    CHECK_BUFFER(input_message_buffer);
-    CHECK_OUTPUT(output_message_buffer);
+    CHECK_CONTEXT(context_handle)
+    CHECK_BUFFER(input_message_buffer)
+    CHECK_OUTPUT(output_message_buffer)
 
     SECURITY_STATUS ss;
     SecBufferDesc buffDesc;
@@ -1417,11 +1458,11 @@ done:
 
 __declspec(dllexport) OM_uint32
 gss_inquire_names_for_mech(OM_uint32 *minor_status,
-                           const gss_OID mechanism,
+                           gss_const_OID mechanism,
                            gss_OID_set *name_types)
 {
     PP(">>>> Calling gss_inquire_names_for_mech...");
-    CHECK_OID(mechanism);
+    CHECK_OID(mechanism)
 
     if (gss_create_empty_oid_set(minor_status, name_types)) {
         return GSS_S_FAILURE;
@@ -1445,12 +1486,12 @@ err:
 
 __declspec(dllexport) OM_uint32
 gss_add_oid_set_member(OM_uint32 *minor_status,
-                       const gss_OID member_oid,
+                       gss_const_OID member_oid,
                        gss_OID_set *oid_set)
 {
     PP(">>>> Calling gss_add_oid_set_member...");
-    CHECK_OID(member_oid);
-    CHECK_OUTPUT(oid_set);
+    CHECK_OID(member_oid)
+    CHECK_OUTPUT(oid_set)
 
 
     int count = (int)(*oid_set)->count;
@@ -1490,7 +1531,7 @@ __declspec(dllexport) OM_uint32
 gss_display_status(OM_uint32 *minor_status,
                    OM_uint32 status_value,
                    int status_type,
-                   const gss_OID mech_type,
+                   gss_const_OID mech_type,
                    OM_uint32 *message_context,
                    gss_buffer_t status_string)
 {
@@ -1526,7 +1567,7 @@ gss_create_empty_oid_set(OM_uint32 *minor_status,
                          gss_OID_set *oid_set)
 {
     PP(">>>> Calling gss_create_empty_oid_set...");
-    CHECK_OUTPUT(oid_set);
+    CHECK_OUTPUT(oid_set)
 
     if (*oid_set = new gss_OID_set_desc) {
         memset(*oid_set, 0, sizeof(gss_OID_set_desc));
