@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -119,24 +119,40 @@ public class StAXStream2SAX implements XMLReader, Locator {
         try {
             // remembers the nest level of elements to know when we are done.
             int depth=0;
+            boolean startedAtDocument = false;
 
             // skip over START_DOCUMENT
             int event = staxStreamReader.getEventType();
             if (event == XMLStreamConstants.START_DOCUMENT) {
+                startedAtDocument = true;
                 event = staxStreamReader.next();
             }
 
-            // If not a START_ELEMENT (e.g., a DTD), skip to next tag
-            if (event != XMLStreamConstants.START_ELEMENT) {
-                event = staxStreamReader.nextTag();
-                // An error if a START_ELEMENT isn't found now
-                if (event != XMLStreamConstants.START_ELEMENT) {
-                    throw new IllegalStateException("The current event is " +
-                            "not START_ELEMENT\n but" + event);
-                }
-            }
-
             handleStartDocument();
+
+            // Handle the prolog: http://www.w3.org/TR/REC-xml/#NT-prolog
+            while (event != XMLStreamConstants.START_ELEMENT) {
+                switch (event) {
+                    case XMLStreamConstants.CHARACTERS :
+                        handleCharacters();
+                        break;
+                    case XMLStreamConstants.PROCESSING_INSTRUCTION :
+                        handlePI();
+                        break;
+                    case XMLStreamConstants.COMMENT :
+                        handleComment();
+                        break;
+                    case XMLStreamConstants.DTD :
+                        handleDTD();
+                        break;
+                    case XMLStreamConstants.SPACE :
+                        handleSpace();
+                        break;
+                    default :
+                        throw new InternalError("processing prolog event: " + event);
+                }
+                event=staxStreamReader.next();
+            }
 
             do {
                 // These are all of the events listed in the javadoc for
@@ -190,6 +206,29 @@ public class StAXStream2SAX implements XMLReader, Locator {
 
                 event=staxStreamReader.next();
             } while (depth!=0);
+
+            if (startedAtDocument) {
+                // Handle the Misc (http://www.w3.org/TR/REC-xml/#NT-Misc) that can follow the document element
+                while (event != XMLStreamConstants.END_DOCUMENT) {
+                    switch (event) {
+                        case XMLStreamConstants.CHARACTERS :
+                            handleCharacters();
+                            break;
+                        case XMLStreamConstants.PROCESSING_INSTRUCTION :
+                            handlePI();
+                            break;
+                        case XMLStreamConstants.COMMENT :
+                            handleComment();
+                            break;
+                        case XMLStreamConstants.SPACE :
+                            handleSpace();
+                            break;
+                        default :
+                            throw new InternalError("processing misc event after document element: " + event);
+                    }
+                    event=staxStreamReader.next();
+                }
+            }
 
             handleEndDocument();
         } catch (SAXException e) {
