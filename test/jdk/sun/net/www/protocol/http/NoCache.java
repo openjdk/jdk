@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,8 +25,10 @@
  * @test
  * @bug 7133367
  * @modules jdk.httpserver
+ * @library /test/lib
  * @summary ResponseCache.put should not be called when setUseCaches(false)
  */
+
 
 import java.net.*;
 import java.io.IOException;
@@ -35,6 +37,7 @@ import java.util.Map;
 import com.sun.net.httpserver.HttpExchange;
 import com.sun.net.httpserver.HttpHandler;
 import com.sun.net.httpserver.HttpServer;
+import jdk.test.lib.net.URIBuilder;
 
 public class NoCache
 {
@@ -43,9 +46,13 @@ public class NoCache
 
         HttpServer server = startHttpServer();
         try {
-            URL url = new URL("http://" + InetAddress.getLocalHost().getHostAddress()
-                          + ":" + server.getAddress().getPort() + "/NoCache/");
-            URLConnection uc = url.openConnection();
+            URL url = URIBuilder.newBuilder()
+                    .scheme("http")
+                    .host(server.getAddress().getAddress())
+                    .port(server.getAddress().getPort())
+                    .path("/NoCache/")
+                    .toURLUnchecked();
+            URLConnection uc = url.openConnection(Proxy.NO_PROXY);
             uc.setUseCaches(false);
             uc.getInputStream().close();
         } finally {
@@ -70,7 +77,7 @@ public class NoCache
 
     // HTTP Server
     static HttpServer startHttpServer() throws IOException {
-        HttpServer httpServer = HttpServer.create(new InetSocketAddress(0), 0);
+        HttpServer httpServer = HttpServer.create(new InetSocketAddress(InetAddress.getLocalHost(), 0), 0);
         httpServer.createContext("/NoCache/", new SimpleHandler());
         httpServer.start();
         return httpServer;

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -45,7 +45,8 @@ public class SocketTimeout  {
     ServerSocket srv = null;
     int          port = 0;
 
-    srv = new ServerSocket(0);
+    srv = new ServerSocket();
+    srv.bind(new InetSocketAddress(sin, 0));
     port = srv.getLocalPort();
     soc = new Socket(sin, port);
     soc1 = srv.accept();
