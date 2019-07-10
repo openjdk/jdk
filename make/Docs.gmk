@@ -626,7 +626,7 @@ ifeq ($(ENABLE_PANDOC), true)
             FILTER := $(PANDOC_HTML_MANPAGE_FILTER), \
             CSS := $(GLOBAL_SPECS_DEFAULT_CSS_FILE), \
             REPLACEMENTS := @@VERSION_SHORT@@ => $(VERSION_SHORT), \
-            OPTIONS := -V include-before='$(SPECS_TOP)' -V include-after='$(SPECS_BOTTOM_1)', \
+            OPTIONS := --toc -V include-before='$(SPECS_TOP)' -V include-after='$(SPECS_BOTTOM_1)', \
             POST_PROCESS := $(TOOL_FIXUPPANDOC), \
             EXTRA_DEPS := $(PANDOC_HTML_MANPAGE_FILTER) \
                 $(PANDOC_HTML_MANPAGE_FILTER_JAVASCRIPT), \
