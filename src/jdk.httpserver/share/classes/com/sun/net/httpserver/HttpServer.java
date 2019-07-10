@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -206,6 +206,10 @@ public abstract class HttpServer {
      * '/'. <p>
      * The class overview describes how incoming request URIs are <a href="#mapping_description">mapped</a>
      * to HttpContext instances.
+     * @apiNote The path should generally, but is not required to, end with '/'. If the path does not
+     * end with '/', eg such as with {@code "/foo"} then this would match requests with a path of
+     * {@code "/foobar"} or {@code "/foo/bar"}.
+     *
      * @param path the root URI path to associate the context with
      * @param handler the handler to invoke for incoming requests.
      * @throws IllegalArgumentException if path is invalid, or if a context
@@ -227,6 +231,10 @@ public abstract class HttpServer {
      * '/'. <p>
      * The class overview describes how incoming request URIs are <a href="#mapping_description">mapped</a>
      * to HttpContext instances.
+     * @apiNote The path should generally, but is not required to, end with '/'. If the path does not
+     * end with '/', eg such as with {@code "/foo"} then this would match requests with a path of
+     * {@code "/foobar"} or {@code "/foo/bar"}.
+     *
      * @param path the root URI path to associate the context with
      * @throws IllegalArgumentException if path is invalid, or if a context
      *          already exists for this path
