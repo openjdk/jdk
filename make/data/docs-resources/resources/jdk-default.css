@@ -74,6 +74,8 @@ h4 {
   margin: 1.5ex 0pt 1ex 0pt;
 }
 
+a { text-decoration: none }
+
 a:link {
   color: #4A6782;
 }
