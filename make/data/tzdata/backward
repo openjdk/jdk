@@ -100,6 +100,7 @@ Link	Pacific/Easter		Chile/EasterIsland
 Link	America/Havana		Cuba
 Link	Africa/Cairo		Egypt
 Link	Europe/Dublin		Eire
+Link	Etc/UTC			Etc/UCT
 Link	Europe/London		Europe/Belfast
 Link	Europe/Chisinau		Europe/Tiraspol
 Link	Europe/London		GB
@@ -134,7 +135,7 @@ Link	Asia/Taipei		ROC
 Link	Asia/Seoul		ROK
 Link	Asia/Singapore		Singapore
 Link	Europe/Istanbul		Turkey
-Link	Etc/UCT			UCT
+Link	Etc/UTC			UCT
 Link	America/Anchorage	US/Alaska
 Link	America/Adak		US/Aleutian
 Link	America/Phoenix		US/Arizona

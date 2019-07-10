@@ -1878,7 +1878,7 @@ Zone Europe/Luxembourg	0:24:36 -	LMT	1904 Jun
 			1:00	Belgium	CE%sT	1977
 			1:00	EU	CE%sT
 
-# Macedonia
+# North Macedonia
 # See Europe/Belgrade.
 
 # Malta
@@ -3382,7 +3382,7 @@ Zone	Europe/Belgrade	1:22:00	-	LMT	1884
 Link Europe/Belgrade Europe/Ljubljana	# Slovenia
 Link Europe/Belgrade Europe/Podgorica	# Montenegro
 Link Europe/Belgrade Europe/Sarajevo	# Bosnia and Herzegovina
-Link Europe/Belgrade Europe/Skopje	# Macedonia
+Link Europe/Belgrade Europe/Skopje	# North Macedonia
 Link Europe/Belgrade Europe/Zagreb	# Croatia
 
 # Slovakia
