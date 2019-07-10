@@ -31,7 +31,9 @@
 #include "interpreter/templateTable.hpp"
 #include "logging/log.hpp"
 #include "memory/resourceArea.hpp"
+#include "runtime/safepoint.hpp"
 #include "runtime/timerTrace.hpp"
+#include "utilities/copy.hpp"
 
 #ifndef CC_INTERP
 
@@ -275,11 +277,17 @@ int TemplateInterpreter::TosState_as_index(TosState state) {
 
 
 //------------------------------------------------------------------------------------------------------------------------
-// Safepoint suppport
+// Safepoint support
 
 static inline void copy_table(address* from, address* to, int size) {
-  // Copy non-overlapping tables. The copy has to occur word wise for MT safety.
-  while (size-- > 0) *to++ = *from++;
+  // Copy non-overlapping tables.
+  if (SafepointSynchronize::is_at_safepoint()) {
+    // Nothing is using the table at a safepoint so skip atomic word copy.
+    Copy::disjoint_words((HeapWord*)from, (HeapWord*)to, (size_t)size);
+  } else {
+    // Use atomic word copy when not at a safepoint for safety.
+    Copy::disjoint_words_atomic((HeapWord*)from, (HeapWord*)to, (size_t)size);
+  }
 }
 
 void TemplateInterpreter::notice_safepoints() {
