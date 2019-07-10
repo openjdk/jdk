@@ -1920,7 +1920,6 @@ void BreakpointInfo::set(Method* method) {
   Thread *thread = Thread::current();
   *method->bcp_from(_bci) = Bytecodes::_breakpoint;
   method->incr_number_of_breakpoints(thread);
-  SystemDictionary::notice_modification();
   {
     // Deoptimize all dependents on this method
     HandleMark hm(thread);

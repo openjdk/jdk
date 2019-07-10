@@ -36,9 +36,8 @@
 #include "jvmci/jniAccessMark.inline.hpp"
 #include "jvmci/jvmciRuntime.hpp"
 
-JVMCICompileState::JVMCICompileState(CompileTask* task, int system_dictionary_modification_counter):
+JVMCICompileState::JVMCICompileState(CompileTask* task):
   _task(task),
-  _system_dictionary_modification_counter(system_dictionary_modification_counter),
   _retryable(true),
   _failure_reason(NULL),
   _failure_reason_on_C_heap(false) {

@@ -476,7 +476,7 @@ class Dependencies: public ResourceObj {
 
   void copy_to(nmethod* nm);
 
-  DepType validate_dependencies(CompileTask* task, bool counter_changed, char** failure_detail = NULL);
+  DepType validate_dependencies(CompileTask* task, char** failure_detail = NULL);
 
   void log_all_dependencies();
 

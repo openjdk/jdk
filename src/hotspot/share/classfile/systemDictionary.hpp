@@ -362,13 +362,6 @@ public:
   static void print_on(outputStream* st);
   static void dump(outputStream* st, bool verbose);
 
-  // Monotonically increasing counter which grows as classes are
-  // loaded or modifications such as hot-swapping or setting/removing
-  // of breakpoints are performed
-  static inline int number_of_modifications()     { assert_locked_or_safepoint(Compile_lock); return _number_of_modifications; }
-  // Needed by evolution and breakpoint code
-  static inline void notice_modification()        { assert_locked_or_safepoint(Compile_lock); ++_number_of_modifications;      }
-
   // Verification
   static void verify();
 
@@ -554,11 +547,6 @@ public:
 
   // Hashtable holding placeholders for classes being loaded.
   static PlaceholderTable*       _placeholders;
-
-  // Monotonically increasing counter which grows with
-  // loading classes as well as hot-swapping and breakpoint setting
-  // and removal.
-  static int                     _number_of_modifications;
 
   // Lock object for system class loader
   static oop                     _system_loader_lock_obj;

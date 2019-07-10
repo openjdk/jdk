@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -50,14 +50,12 @@ public class ciEnv extends VMObject {
     factoryField = type.getAddressField("_factory");
     compilerDataField = type.getAddressField("_compiler_data");
     taskField = type.getAddressField("_task");
-    systemDictionaryModificationCounterField = new CIntField(type.getCIntegerField("_system_dictionary_modification_counter"), 0);
   }
 
   private static AddressField dependenciesField;
   private static AddressField factoryField;
   private static AddressField compilerDataField;
   private static AddressField taskField;
-  private static CIntField systemDictionaryModificationCounterField;
 
   public ciEnv(Address addr) {
     super(addr);
