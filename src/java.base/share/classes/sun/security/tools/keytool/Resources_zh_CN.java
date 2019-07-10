@@ -95,6 +95,8 @@ public class Resources_zh_CN extends java.util.ListResourceBundle {
                 "\u751F\u6210\u81EA\u7B7E\u540D\u8BC1\u4E66"}, //-selfcert
         {"Changes.the.store.password.of.a.keystore",
                 "\u66F4\u6539\u5BC6\u94A5\u5E93\u7684\u5B58\u50A8\u53E3\u4EE4"}, //-storepasswd
+        {"showinfo.command.help", "\u663E\u793A\u5B89\u5168\u76F8\u5173\u4FE1\u606F"},
+
         // keytool: help: options
         {"alias.name.of.the.entry.to.process",
                 "\u8981\u5904\u7406\u7684\u6761\u76EE\u7684\u522B\u540D"}, //-alias
@@ -140,6 +142,7 @@ public class Resources_zh_CN extends java.util.ListResourceBundle {
                 "\u4E0D\u63D0\u793A"}, //-noprompt
         {"password.through.protected.mechanism",
                 "\u901A\u8FC7\u53D7\u4FDD\u62A4\u7684\u673A\u5236\u7684\u53E3\u4EE4"}, //-protected
+        {"tls.option.help", "\u663E\u793A TLS \u914D\u7F6E\u4FE1\u606F"},
 
         // The following 2 values should span 2 lines, the first for the
         // option itself, the second for its -providerArg value.
@@ -250,7 +253,6 @@ public class Resources_zh_CN extends java.util.ListResourceBundle {
         {"Keystore.password.is.too.short.must.be.at.least.6.characters",
          "\u5BC6\u94A5\u5E93\u53E3\u4EE4\u592A\u77ED - \u81F3\u5C11\u5FC5\u987B\u4E3A 6 \u4E2A\u5B57\u7B26"},
         {"Unknown.Entry.Type", "\u672A\u77E5\u6761\u76EE\u7C7B\u578B"},
-        {"Too.many.failures.Alias.not.changed", "\u6545\u969C\u592A\u591A\u3002\u672A\u66F4\u6539\u522B\u540D"},
         {"Entry.for.alias.alias.successfully.imported.",
                  "\u5DF2\u6210\u529F\u5BFC\u5165\u522B\u540D {0} \u7684\u6761\u76EE\u3002"},
         {"Entry.for.alias.alias.not.imported.", "\u672A\u5BFC\u5165\u522B\u540D {0} \u7684\u6761\u76EE\u3002"},
@@ -311,10 +313,6 @@ public class Resources_zh_CN extends java.util.ListResourceBundle {
         {"Too.many.failures.Key.entry.not.cloned",
                 "\u6545\u969C\u592A\u591A\u3002\u672A\u514B\u9686\u5BC6\u94A5\u6761\u76EE"},
         {"key.password.for.alias.", "<{0}> \u7684\u5BC6\u94A5\u53E3\u4EE4"},
-        {"Keystore.entry.for.id.getName.already.exists",
-                "<{0}> \u7684\u5BC6\u94A5\u5E93\u6761\u76EE\u5DF2\u7ECF\u5B58\u5728"},
-        {"Creating.keystore.entry.for.id.getName.",
-                "\u6B63\u5728\u521B\u5EFA <{0}> \u7684\u5BC6\u94A5\u5E93\u6761\u76EE..."},
         {"No.entries.from.identity.database.added",
                 "\u672A\u4ECE\u8EAB\u4EFD\u6570\u636E\u5E93\u4E2D\u6DFB\u52A0\u4EFB\u4F55\u6761\u76EE"},
         {"Alias.name.alias", "\u522B\u540D: {0}"},
@@ -352,7 +350,6 @@ public class Resources_zh_CN extends java.util.ListResourceBundle {
         {"Do.you.still.want.to.add.it.to.your.own.keystore.no.",
                 "\u662F\u5426\u4ECD\u8981\u5C06\u5B83\u6DFB\u52A0\u5230\u81EA\u5DF1\u7684\u5BC6\u94A5\u5E93? [\u5426]:  "},
         {"Trust.this.certificate.no.", "\u662F\u5426\u4FE1\u4EFB\u6B64\u8BC1\u4E66? [\u5426]:  "},
-        {"YES", "YES"},
         {"New.prompt.", "\u65B0{0}: "},
         {"Passwords.must.differ", "\u53E3\u4EE4\u4E0D\u80FD\u76F8\u540C"},
         {"Re.enter.new.prompt.", "\u91CD\u65B0\u8F93\u5165\u65B0{0}: "},
@@ -392,7 +389,6 @@ public class Resources_zh_CN extends java.util.ListResourceBundle {
         {"Signer.d.", "\u7B7E\u540D\u8005 #%d:"},
         {"Timestamp.", "\u65F6\u95F4\u6233:"},
         {"Signature.", "\u7B7E\u540D:"},
-        {"CRLs.", "CRL:"},
         {"Certificate.owner.", "\u8BC1\u4E66\u6240\u6709\u8005: "},
         {"Not.a.signed.jar.file", "\u4E0D\u662F\u5DF2\u7B7E\u540D\u7684 jar \u6587\u4EF6"},
         {"No.certificate.from.the.SSL.server",
@@ -407,13 +403,10 @@ public class Resources_zh_CN extends java.util.ListResourceBundle {
                 "\u8BC1\u4E66\u56DE\u590D\u4E2D\u4E0D\u5305\u542B <{0}> \u7684\u516C\u5171\u5BC6\u94A5"},
         {"Incomplete.certificate.chain.in.reply",
                 "\u56DE\u590D\u4E2D\u7684\u8BC1\u4E66\u94FE\u4E0D\u5B8C\u6574"},
-        {"Certificate.chain.in.reply.does.not.verify.",
-                "\u56DE\u590D\u4E2D\u7684\u8BC1\u4E66\u94FE\u672A\u9A8C\u8BC1: "},
         {"Top.level.certificate.in.reply.",
                 "\u56DE\u590D\u4E2D\u7684\u9876\u7EA7\u8BC1\u4E66:\n"},
         {".is.not.trusted.", "... \u662F\u4E0D\u53EF\u4FE1\u7684\u3002"},
         {"Install.reply.anyway.no.", "\u662F\u5426\u4ECD\u8981\u5B89\u88C5\u56DE\u590D? [\u5426]:  "},
-        {"NO", "NO"},
         {"Public.keys.in.reply.and.keystore.don.t.match",
                 "\u56DE\u590D\u4E2D\u7684\u516C\u5171\u5BC6\u94A5\u4E0E\u5BC6\u94A5\u5E93\u4E0D\u5339\u914D"},
         {"Certificate.reply.and.certificate.in.keystore.are.identical",
@@ -474,6 +467,8 @@ public class Resources_zh_CN extends java.util.ListResourceBundle {
         {"backup.keystore.warning", "\u5DF2\u5C06\u539F\u59CB\u5BC6\u94A5\u5E93 \"%1$s\" \u5907\u4EFD\u4E3A \"%3$s\"..."},
         {"importing.keystore.status", "\u6B63\u5728\u5C06\u5BC6\u94A5\u5E93 %1$s \u5BFC\u5165\u5230 %2$s..."},
         {"keyalg.option.1.missing.warning", "\u65E0 -keyalg \u9009\u9879\u3002\u9ED8\u8BA4\u5BC6\u94A5\u7B97\u6CD5 (%s) \u662F\u4F20\u7EDF\u7B97\u6CD5\uFF0C\u4E0D\u518D\u63A8\u8350\u3002\u5728 JDK \u7684\u540E\u7EED\u53D1\u884C\u7248\u4E2D\uFF0C\u5C06\u5220\u9664\u9ED8\u8BA4\u503C\uFF0C\u60A8\u5FC5\u987B\u6307\u5B9A -keyalg \u9009\u9879\u3002"},
+
+        {"showinfo.no.option", "-showinfo \u7F3A\u5C11\u9009\u9879\u3002\u8BF7\u5C1D\u8BD5\u4F7F\u7528 \"keytool -showinfo -tls\"\u3002"},
     };
 
 
