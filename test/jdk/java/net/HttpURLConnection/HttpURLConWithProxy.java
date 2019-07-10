@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,10 +24,12 @@
  /*
  * @test
  * @bug 8161016
+ * @library /test/lib
  * @summary When proxy is set HttpURLConnection should not use DIRECT connection.
  * @run main/othervm HttpURLConWithProxy
  */
 import java.io.IOException;
+import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.Proxy;
 import java.net.ProxySelector;
@@ -38,10 +40,11 @@ import java.net.URL;
 import java.net.URLConnection;
 import java.util.ArrayList;
 import java.util.List;
+import jdk.test.lib.net.URIBuilder;
 
 public class HttpURLConWithProxy {
 
-    public static void main(String... arg) {
+    public static void main(String... arg) throws Exception {
         // Remove the default nonProxyHosts to use localhost for testing
         System.setProperty("http.nonProxyHosts", "");
 
@@ -51,11 +54,18 @@ public class HttpURLConWithProxy {
         ServerSocket ss;
         URL url;
         URLConnection con;
+        InetAddress loopback = InetAddress.getLoopbackAddress();
+        InetSocketAddress address = new InetSocketAddress(loopback, 0);
 
         // Test1: using Proxy set by System Property:
         try {
-            ss = new ServerSocket(0);
-            url = new URL("http://localhost:" + ss.getLocalPort());
+            ss = new ServerSocket();
+            ss.bind(address);
+            url = URIBuilder.newBuilder()
+                .scheme("http")
+                .loopback()
+                .port(ss.getLocalPort())
+                .toURL();
             con = url.openConnection();
             con.setConnectTimeout(10 * 1000);
             con.connect();
@@ -69,8 +79,13 @@ public class HttpURLConWithProxy {
         MyProxySelector myProxySel = new MyProxySelector();
         ProxySelector.setDefault(myProxySel);
         try {
-            ss = new ServerSocket(0);
-            url = new URL("http://localhost:" + ss.getLocalPort());
+            ss = new ServerSocket();
+            ss.bind(address);
+            url = URIBuilder.newBuilder()
+                .scheme("http")
+                .loopback()
+                .port(ss.getLocalPort())
+                .toURL();
             con = url.openConnection();
             con.setConnectTimeout(10 * 1000);
             con.connect();

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -71,7 +71,7 @@ public class B6521014 {
     }
 
     static void test1(Inet6Address sin) throws Exception {
-        try (ServerSocket ssock = new ServerSocket(0);
+        try (ServerSocket ssock = createBoundServer(sin);
              Socket sock = new Socket()) {
             int port = ssock.getLocalPort();
             sock.connect(new InetSocketAddress(sin, port), 100);
@@ -82,7 +82,7 @@ public class B6521014 {
     }
 
     static void test2(Inet6Address sin) throws Exception {
-        try (ServerSocket ssock = new ServerSocket(0);
+        try (ServerSocket ssock = createBoundServer(sin);
              Socket sock = new Socket()) {
             int port = ssock.getLocalPort();
             ssock.setSoTimeout(100);
@@ -92,6 +92,13 @@ public class B6521014 {
             // time out exception is okay
             System.out.println("timed out when connecting.");
         }
+    }
+
+    static ServerSocket createBoundServer(Inet6Address sin) throws IOException {
+        ServerSocket ss = new ServerSocket();
+        InetSocketAddress address = new InetSocketAddress(sin, 0);
+        ss.bind(address);
+        return ss;
     }
 
     public static void main(String[] args) throws Exception {
