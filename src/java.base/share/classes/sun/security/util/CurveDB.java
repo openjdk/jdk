@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2006, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2006, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -104,21 +104,10 @@ public class CurveDB {
             if (namedCurve.getCurve().getField().getFieldSize() != fieldSize) {
                 continue;
             }
-            if (namedCurve.getCurve().equals(params.getCurve()) == false) {
-                continue;
+            if (ECUtil.equals(namedCurve, params)) {
+                // everything matches our named curve, return it
+                return namedCurve;
             }
-            if (namedCurve.getGenerator().equals(params.getGenerator()) ==
-                    false) {
-                continue;
-            }
-            if (namedCurve.getOrder().equals(params.getOrder()) == false) {
-                continue;
-            }
-            if (namedCurve.getCofactor() != params.getCofactor()) {
-                continue;
-            }
-            // everything matches our named curve, return it
-            return namedCurve;
         }
         // no match found
         return null;
