@@ -38,8 +38,9 @@ class LogDecorations {
   const LogTagSet& _tagset;
   jlong _millis;
   static jlong _vm_start_time_millis;
-  static const char* _host_name;
+  static const char* volatile _host_name;
 
+  const char* host_name();
   jlong java_millis();
   void create_decorations(const LogDecorators& decorators);
 
