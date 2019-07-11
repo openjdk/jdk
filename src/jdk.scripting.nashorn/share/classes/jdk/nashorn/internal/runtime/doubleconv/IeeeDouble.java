@@ -115,7 +115,7 @@ class IeeeDouble {
     }
 
     static double previousDouble(final long d64) {
-        if (d64 == (kInfinity | kSignMask)) return -longToDouble(kInfinity);
+        if (d64 == (kInfinity | kSignMask)) return -Infinity();
         if (sign(d64) < 0) {
             return longToDouble(d64 + 1);
         } else {
