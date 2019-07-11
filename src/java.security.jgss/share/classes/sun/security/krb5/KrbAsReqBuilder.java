@@ -367,6 +367,8 @@ public final class KrbAsReqBuilder {
                     paList = kerr.getPA();  // Update current paList
                 } else {
                     if (referralsState.handleError(ke)) {
+                        pakey = null;
+                        preAuthFailedOnce = false;
                         continue;
                     }
                     throw ke;

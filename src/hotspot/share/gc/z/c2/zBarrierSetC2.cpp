@@ -128,14 +128,19 @@ void ZBarrierSetC2::enqueue_useful_gc_barrier(PhaseIterGVN* igvn, Node* node) co
   }
 }
 
-static bool load_require_barrier(LoadNode* load)      { return ((load->barrier_data() & RequireBarrier) != 0); }
-static bool load_has_weak_barrier(LoadNode* load)     { return ((load->barrier_data() & WeakBarrier) != 0); }
-static bool load_has_expanded_barrier(LoadNode* load) { return ((load->barrier_data() & ExpandedBarrier) != 0); }
+const uint NoBarrier       = 0;
+const uint RequireBarrier  = 1;
+const uint WeakBarrier     = 2;
+const uint ExpandedBarrier = 4;
+
+static bool load_require_barrier(LoadNode* load)      { return (load->barrier_data() & RequireBarrier)  == RequireBarrier; }
+static bool load_has_weak_barrier(LoadNode* load)     { return (load->barrier_data() & WeakBarrier)     == WeakBarrier; }
+static bool load_has_expanded_barrier(LoadNode* load) { return (load->barrier_data() & ExpandedBarrier) == ExpandedBarrier; }
 static void load_set_expanded_barrier(LoadNode* load) { return load->set_barrier_data(ExpandedBarrier); }
 
-static void load_set_barrier(LoadNode* load, bool weak)    {
+static void load_set_barrier(LoadNode* load, bool weak) {
   if (weak) {
-    load->set_barrier_data(WeakBarrier);
+    load->set_barrier_data(RequireBarrier | WeakBarrier);
   } else {
     load->set_barrier_data(RequireBarrier);
   }
@@ -1228,7 +1233,6 @@ static void insert_barrier_before_unsafe(PhaseIdealLoop* phase, LoadStoreNode* o
   Compile *C = phase->C;
   PhaseIterGVN &igvn = phase->igvn();
   LoadStoreNode* zclone = NULL;
-  bool is_weak = false;
 
   Node *in_ctrl = old_node->in(MemNode::Control);
   Node *in_mem  = old_node->in(MemNode::Memory);
@@ -1248,7 +1252,6 @@ static void insert_barrier_before_unsafe(PhaseIdealLoop* phase, LoadStoreNode* o
       if (can_simplify_cas(old_node)) {
         break;
       }
-      is_weak  = true;
       zclone = new ZWeakCompareAndSwapPNode(in_ctrl, in_mem, in_adr, in_val, old_node->in(LoadStoreConditionalNode::ExpectedIn),
               ((CompareAndSwapNode*)old_node)->order());
       adr_type = TypePtr::BOTTOM;
@@ -1279,7 +1282,7 @@ static void insert_barrier_before_unsafe(PhaseIdealLoop* phase, LoadStoreNode* o
     igvn.register_new_node_with_optimizer(load);
     igvn.replace_node(old_node, zclone);
 
-    Node *barrier = new LoadBarrierNode(C, NULL, in_mem, load, in_adr, is_weak);
+    Node *barrier = new LoadBarrierNode(C, NULL, in_mem, load, in_adr, false /* weak */);
     Node *barrier_val = new ProjNode(barrier, LoadBarrierNode::Oop);
     Node *barrier_ctrl = new ProjNode(barrier, LoadBarrierNode::Control);
 

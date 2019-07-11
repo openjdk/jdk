@@ -609,12 +609,82 @@ Zone	Asia/Urumqi	5:50:20	-	LMT	1928
 # obtained from
 # http://www.hko.gov.hk/gts/time/Summertime.htm
 
-# From Arthur David Olson (2009-10-28):
+# From Phake Nick (2018-10-27):
+# According to Singaporean newspaper
+# http://eresources.nlb.gov.sg/newspapers/Digitised/Article/singfreepresswk19041102-1.2.37
+# the day that Hong Kong start using GMT+8 should be Oct 30, 1904.
+#
+# From Paul Eggert (2018-11-17):
+# Hong Kong had a time ball near the Marine Police Station, Tsim Sha Tsui.
+# "The ball was raised manually each day and dropped at exactly 1pm
+# (except on Sundays and Government holidays)."
+# Dyson AD. From Time Ball to Atomic Clock. Hong Kong Government. 1983.
+# <https://www.hko.gov.hk/publica/gen_pub/timeball_atomic_clock.pdf>
+# "From 1904 October 30 the time-ball at Hong Kong has been dropped by order
+# of the Governor of the Colony at 17h 0m 0s G.M.T., which is 23m 18s.14 in
+# advance of 1h 0m 0s of Hong Kong mean time."
+# Hollis HP. Universal Time, Longitudes, and Geodesy. Mon Not R Astron Soc.
+# 1905-02-10;65(4):405-6. https://doi.org/10.1093/mnras/65.4.382
+#
+# From Joseph Myers (2018-11-18):
+# An astronomer before 1925 referring to GMT would have been using the old
+# astronomical convention where the day started at noon, not midnight.
+#
+# From Steve Allen (2018-11-17):
+# Meteorological Observations made at the Hongkong Observatory in the year 1904
+# page 4 <https://books.google.com/books?id=kgw5AQAAMAAJ&pg=RA4-PA4>
+# ... the log of drop times in Table II shows that on Sunday 1904-10-30 the
+# ball was dropped.  So that looks like a special case drop for the sake
+# of broadcasting the new local time.
+#
+# From Phake Nick (2018-11-18):
+# According to The Hong Kong Weekly Press, 1904-10-29, p.324, the
+# governor of Hong Kong at the time stated that "We are further desired to
+# make it known that the change will be effected by firing the gun and by the
+# dropping of the Ball at 23min. 18sec. before one."
+# From Paul Eggert (2018-11-18):
+# See <https://mmis.hkpl.gov.hk> for this; unfortunately Flash is required.
+
+# From Phake Nick (2018-10-26):
+# I went to check microfilm records stored at Hong Kong Public Library....
+# on September 30 1941, according to Ta Kung Pao (Hong Kong edition), it was
+# stated that fallback would occur on the next day (the 1st)'s "03:00 am (Hong
+# Kong Time 04:00 am)" and the clock will fall back for a half hour. (03:00
+# probably refer to the time commonly used in mainland China at the time given
+# the paper's background) ... the sunrise/sunset time given by South China
+# Morning Post for October 1st was indeed moved by half an hour compares to
+# before.  After that, in December, the battle to capture Hong Kong started and
+# the library doesn't seems to have any record stored about press during that
+# period of time.  Some media resumed publication soon after that within the
+# same month, but there were not much information about time there.  Later they
+# started including a radio program guide when they restored radio service,
+# explicitly mentioning it use Tokyo standard time, and later added a note
+# saying it's half an hour ahead of the old Hong Kong standard time, and it
+# also seems to indicate that Hong Kong was not using GMT+8 when it was
+# captured by Japan.
+#
+# Image of related sections on newspaper:
+# * 1941-09-30, Ta Kung Pao (Hong Kong), "Winter Time start tomorrow".
+#   https://i.imgur.com/6waY51Z.jpg (Chinese)
+# * 1941-09-29, South China Morning Post, Information on sunrise/sunset
+#   time and other things for September 30 and October 1.
+#   https://i.imgur.com/kCiUR78.jpg
+# * 1942-02-05. The Hong Kong News, Radio Program Guide.
+#   https://i.imgur.com/eVvDMzS.jpg
+# * 1941-06-14. Hong Kong Daily Press, Daylight Saving from 3am Tomorrow.
+#   https://i.imgur.com/05KkvtC.png
+# * 1941-09-30, Hong Kong Daily Press, Winter Time Warning.
+#   https://i.imgur.com/dge4kFJ.png
+# Also, the Liberation day of Hong Kong after WWII which British rule
+# over the territory resumed was August 30, 1945, which I think should
+# be the termination date for the use of JST in the territory....
+
+# From Paul Eggert (2018-11-17):
 # Here are the dates given at
-# http://www.hko.gov.hk/gts/time/Summertime.htm
-# as of 2009-10-28:
+# https://www.hko.gov.hk/gts/time/Summertime.htm
+# as of 2014-06-19:
 # Year        Period
-# 1941        1 Apr to 30 Sep
+# 1941        15 Jun to 30 Sep
 # 1942        Whole year
 # 1943        Whole year
 # 1944        Whole year
@@ -625,7 +695,7 @@ Zone	Asia/Urumqi	5:50:20	-	LMT	1928
 # 1949        3 Apr to 30 Oct
 # 1950        2 Apr to 29 Oct
 # 1951        1 Apr to 28 Oct
-# 1952        6 Apr to 25 Oct
+# 1952        6 Apr to 2 Nov
 # 1953        5 Apr to 1 Nov
 # 1954        21 Mar to 31 Oct
 # 1955        20 Mar to 6 Nov
@@ -654,25 +724,25 @@ Zone	Asia/Urumqi	5:50:20	-	LMT	1928
 # 1978        Nil
 # 1979        13 May to 21 Oct
 # 1980 to Now Nil
-# The page does not give start or end times of day.
-# The page does not give a start date for 1942.
-# The page does not givw an end date for 1945.
-# The Japanese occupation of Hong Kong began on 1941-12-25.
-# The Japanese surrender of Hong Kong was signed 1945-09-15.
-# For lack of anything better, use start of those days as the transition times.
+# The page does not give times of day for transitions,
+# or dates for the 1942 and 1945 transitions.
+# The Japanese occupation of Hong Kong began 1941-12-25.
+# The Japanese surrender of Hong Kong was signed 1945-09-16; see:
+# Heaver S. The days after the Pacific war ended: unsettling times
+# in Hong Kong. Post Magazine. 2016-06-13.
+# https://www.scmp.com/magazines/post-magazine/article/1852990/days-after-pacific-war-ended-unsettling-times-hong-kong
+# For lack of anything better, use start of those days as the
+# transition times.
 
 # Rule	NAME	FROM	TO	TYPE	IN	ON	AT	SAVE	LETTER/S
-Rule	HK	1941	only	-	Apr	1	3:30	1:00	S
-Rule	HK	1941	only	-	Sep	30	3:30	0	-
 Rule	HK	1946	only	-	Apr	20	3:30	1:00	S
 Rule	HK	1946	only	-	Dec	1	3:30	0	-
 Rule	HK	1947	only	-	Apr	13	3:30	1:00	S
 Rule	HK	1947	only	-	Dec	30	3:30	0	-
 Rule	HK	1948	only	-	May	2	3:30	1:00	S
 Rule	HK	1948	1951	-	Oct	lastSun	3:30	0	-
-Rule	HK	1952	only	-	Oct	25	3:30	0	-
+Rule	HK	1952	1953	-	Nov	Sun>=1	3:30	0	-
 Rule	HK	1949	1953	-	Apr	Sun>=1	3:30	1:00	S
-Rule	HK	1953	only	-	Nov	1	3:30	0	-
 Rule	HK	1954	1964	-	Mar	Sun>=18	3:30	1:00	S
 Rule	HK	1954	only	-	Oct	31	3:30	0	-
 Rule	HK	1955	1964	-	Nov	Sun>=1	3:30	0	-
@@ -682,9 +752,11 @@ Rule	HK	1973	only	-	Dec	30	3:30	1:00	S
 Rule	HK	1979	only	-	May	Sun>=8	3:30	1:00	S
 Rule	HK	1979	only	-	Oct	Sun>=16	3:30	0	-
 # Zone	NAME		GMTOFF	RULES	FORMAT	[UNTIL]
-Zone	Asia/Hong_Kong	7:36:42 -	LMT	1904 Oct 30
-			8:00	HK	HK%sT	1941 Dec 25
-			9:00	-	JST	1945 Sep 15
+Zone	Asia/Hong_Kong	7:36:42 -	LMT	1904 Oct 30  0:36:42
+			8:00	-	HKT	1941 Jun 15  3:30
+			8:00	1:00	HKST	1941 Oct  1  4:00
+			8:30	-	HKT	1941 Dec 25
+			9:00	-	JST	1945 Sep 16
 			8:00	HK	HK%sT
 
 ###############################################################################
@@ -1080,6 +1152,16 @@ Zone	Asia/Dili	8:22:20 -	LMT	1912 Jan  1
 
 # India
 
+# British astronomer Henry Park Hollis disliked India Standard Time's offset:
+# "A new time system has been proposed for India, Further India, and Burmah.
+# The scheme suggested is that the times of the meridians 5½ and 6½ hours
+# east of Greenwich should be adopted in these territories.  No reason is
+# given why hourly meridians five hours and six hours east should not be
+# chosen; a plan which would bring the time of India into harmony with
+# that of almost the whole of the civilised world."
+# Hollis HP. Universal Time, Longitudes, and Geodesy. Mon Not R Astron Soc.
+# 1905-02-10;65(4):405-6. https://doi.org/10.1093/mnras/65.4.382
+
 # From Ian P. Beacock, in "A brief history of (modern) time", The Atlantic
 # https://www.theatlantic.com/technology/archive/2015/12/the-creation-of-modern-time/421419/
 # (2015-12-22):
@@ -1250,12 +1332,65 @@ Zone Asia/Jayapura	9:22:48 -	LMT	1932 Nov
 # leap year calculation involved.  There has never been any serious
 # plan to change that law....
 #
-# From Paul Eggert (2006-03-22):
+# From Paul Eggert (2018-11-30):
 # Go with Shanks & Pottenger before Sept. 1991, and with Pournader thereafter.
-# I used Ed Reingold's cal-persia in GNU Emacs 21.2 to check Persian dates,
-# stopping after 2037 when 32-bit time_t's overflow.
-# That cal-persia used Birashk's approximation, which disagrees with the solar
-# calendar predictions for the year 2025, so I corrected those dates by hand.
+# I used the following code in GNU Emacs 26.1 to generate the "Rule Iran"
+# lines from 2008 through 2087.  Emacs 26.1 uses Ed Reingold's
+# cal-persia implementation of Birashk's approximation, which in the
+# 2008-2087 range disagrees with the the astronomical Persian calendar
+# for Persian years 1404 (Gregorian 2025) and 1437 (Gregorian 2058),
+# so the following code special-case those years.  See Table 15.1, page 264, of:
+# Edward M. Reingold and Nachum Dershowitz, Calendrical Calculations:
+# The Ultimate Edition, Cambridge University Press (2018).
+# https://www.cambridge.org/fr/academic/subjects/computer-science/computing-general-interest/calendrical-calculations-ultimate-edition-4th-edition
+# Page 258, footnote 2, of this book says there is some dispute over what will
+# happen in 2091 (and some other years after that), so this code
+# stops in 2087, as 2088 and 2089 agree with the "max" rule below.
+# (cl-loop
+#  initially (require 'cal-persia)
+#  with first-persian-year = 1387
+#  with last-persian-year = 1466
+#  ;; Exceptional years in the above range,
+#  ;; from Reingold & Dershowitz Table 15.1, page 264:
+#  with exceptional-persian-years = '(1404 1437)
+#  with range-start = nil
+#  for persian-year from first-persian-year to last-persian-year
+#  do
+#  (let*
+#      ((exceptional-year-offset
+#        (if (member persian-year exceptional-persian-years) 1 0))
+#       (beg-dst-absolute
+#        (+ (calendar-persian-to-absolute (list 1 1 persian-year))
+#           exceptional-year-offset))
+#       (end-dst-absolute
+#        (+ (calendar-persian-to-absolute (list 6 30 persian-year))
+#           exceptional-year-offset))
+#       (next-year-beg-dst-absolute
+#        (+ (calendar-persian-to-absolute (list 1 1 (1+ persian-year)))
+#           (if (member (1+ persian-year) exceptional-persian-years) 1 0)))
+#       (beg-dst (calendar-gregorian-from-absolute beg-dst-absolute))
+#       (end-dst (calendar-gregorian-from-absolute end-dst-absolute))
+#       (next-year-beg-dst (calendar-gregorian-from-absolute
+#                           next-year-beg-dst-absolute))
+#       (year (calendar-extract-year beg-dst))
+#       (range-end (if range-start year "only")))
+#    (setq range-start (or range-start year))
+#    (when (or (/= (calendar-extract-day beg-dst)
+#                  (calendar-extract-day next-year-beg-dst))
+#              (= persian-year last-persian-year))
+#      (insert
+#       (format
+#        "Rule\tIran\t%d\t%s\t-\t%s\t%2d\t24:00\t1:00\t-\n"
+#        range-start range-end
+#        (calendar-month-name (calendar-extract-month beg-dst) t)
+#        (calendar-extract-day beg-dst)))
+#      (insert
+#       (format
+#        "Rule\tIran\t%d\t%s\t-\t%s\t%2d\t24:00\t0\t-\n"
+#        range-start range-end
+#        (calendar-month-name (calendar-extract-month end-dst) t)
+#        (calendar-extract-day end-dst)))
+#      (setq range-start nil))))
 #
 # From Oscar van Vlijmen (2005-03-30), writing about future
 # discrepancies between cal-persia and the Iranian calendar:
@@ -1290,61 +1425,113 @@ Zone Asia/Jayapura	9:22:48 -	LMT	1932 Nov
 # thirtieth day of Shahrivar.
 #
 # Rule	NAME	FROM	TO	TYPE	IN	ON	AT	SAVE	LETTER/S
-Rule	Iran	1978	1980	-	Mar	21	0:00	1:00	-
-Rule	Iran	1978	only	-	Oct	21	0:00	0	-
-Rule	Iran	1979	only	-	Sep	19	0:00	0	-
-Rule	Iran	1980	only	-	Sep	23	0:00	0	-
-Rule	Iran	1991	only	-	May	 3	0:00	1:00	-
-Rule	Iran	1992	1995	-	Mar	22	0:00	1:00	-
-Rule	Iran	1991	1995	-	Sep	22	0:00	0	-
-Rule	Iran	1996	only	-	Mar	21	0:00	1:00	-
-Rule	Iran	1996	only	-	Sep	21	0:00	0	-
-Rule	Iran	1997	1999	-	Mar	22	0:00	1:00	-
-Rule	Iran	1997	1999	-	Sep	22	0:00	0	-
-Rule	Iran	2000	only	-	Mar	21	0:00	1:00	-
-Rule	Iran	2000	only	-	Sep	21	0:00	0	-
-Rule	Iran	2001	2003	-	Mar	22	0:00	1:00	-
-Rule	Iran	2001	2003	-	Sep	22	0:00	0	-
-Rule	Iran	2004	only	-	Mar	21	0:00	1:00	-
-Rule	Iran	2004	only	-	Sep	21	0:00	0	-
-Rule	Iran	2005	only	-	Mar	22	0:00	1:00	-
-Rule	Iran	2005	only	-	Sep	22	0:00	0	-
-Rule	Iran	2008	only	-	Mar	21	0:00	1:00	-
-Rule	Iran	2008	only	-	Sep	21	0:00	0	-
-Rule	Iran	2009	2011	-	Mar	22	0:00	1:00	-
-Rule	Iran	2009	2011	-	Sep	22	0:00	0	-
-Rule	Iran	2012	only	-	Mar	21	0:00	1:00	-
-Rule	Iran	2012	only	-	Sep	21	0:00	0	-
-Rule	Iran	2013	2015	-	Mar	22	0:00	1:00	-
-Rule	Iran	2013	2015	-	Sep	22	0:00	0	-
-Rule	Iran	2016	only	-	Mar	21	0:00	1:00	-
-Rule	Iran	2016	only	-	Sep	21	0:00	0	-
-Rule	Iran	2017	2019	-	Mar	22	0:00	1:00	-
-Rule	Iran	2017	2019	-	Sep	22	0:00	0	-
-Rule	Iran	2020	only	-	Mar	21	0:00	1:00	-
-Rule	Iran	2020	only	-	Sep	21	0:00	0	-
-Rule	Iran	2021	2023	-	Mar	22	0:00	1:00	-
-Rule	Iran	2021	2023	-	Sep	22	0:00	0	-
-Rule	Iran	2024	only	-	Mar	21	0:00	1:00	-
-Rule	Iran	2024	only	-	Sep	21	0:00	0	-
-Rule	Iran	2025	2027	-	Mar	22	0:00	1:00	-
-Rule	Iran	2025	2027	-	Sep	22	0:00	0	-
-Rule	Iran	2028	2029	-	Mar	21	0:00	1:00	-
-Rule	Iran	2028	2029	-	Sep	21	0:00	0	-
-Rule	Iran	2030	2031	-	Mar	22	0:00	1:00	-
-Rule	Iran	2030	2031	-	Sep	22	0:00	0	-
-Rule	Iran	2032	2033	-	Mar	21	0:00	1:00	-
-Rule	Iran	2032	2033	-	Sep	21	0:00	0	-
-Rule	Iran	2034	2035	-	Mar	22	0:00	1:00	-
-Rule	Iran	2034	2035	-	Sep	22	0:00	0	-
+Rule	Iran	1978	1980	-	Mar	20	24:00	1:00	-
+Rule	Iran	1978	only	-	Oct	20	24:00	0	-
+Rule	Iran	1979	only	-	Sep	18	24:00	0	-
+Rule	Iran	1980	only	-	Sep	22	24:00	0	-
+Rule	Iran	1991	only	-	May	 2	24:00	1:00	-
+Rule	Iran	1992	1995	-	Mar	21	24:00	1:00	-
+Rule	Iran	1991	1995	-	Sep	21	24:00	0	-
+Rule	Iran	1996	only	-	Mar	20	24:00	1:00	-
+Rule	Iran	1996	only	-	Sep	20	24:00	0	-
+Rule	Iran	1997	1999	-	Mar	21	24:00	1:00	-
+Rule	Iran	1997	1999	-	Sep	21	24:00	0	-
+Rule	Iran	2000	only	-	Mar	20	24:00	1:00	-
+Rule	Iran	2000	only	-	Sep	20	24:00	0	-
+Rule	Iran	2001	2003	-	Mar	21	24:00	1:00	-
+Rule	Iran	2001	2003	-	Sep	21	24:00	0	-
+Rule	Iran	2004	only	-	Mar	20	24:00	1:00	-
+Rule	Iran	2004	only	-	Sep	20	24:00	0	-
+Rule	Iran	2005	only	-	Mar	21	24:00	1:00	-
+Rule	Iran	2005	only	-	Sep	21	24:00	0	-
+Rule	Iran	2008	only	-	Mar	20	24:00	1:00	-
+Rule	Iran	2008	only	-	Sep	20	24:00	0	-
+Rule	Iran	2009	2011	-	Mar	21	24:00	1:00	-
+Rule	Iran	2009	2011	-	Sep	21	24:00	0	-
+Rule	Iran	2012	only	-	Mar	20	24:00	1:00	-
+Rule	Iran	2012	only	-	Sep	20	24:00	0	-
+Rule	Iran	2013	2015	-	Mar	21	24:00	1:00	-
+Rule	Iran	2013	2015	-	Sep	21	24:00	0	-
+Rule	Iran	2016	only	-	Mar	20	24:00	1:00	-
+Rule	Iran	2016	only	-	Sep	20	24:00	0	-
+Rule	Iran	2017	2019	-	Mar	21	24:00	1:00	-
+Rule	Iran	2017	2019	-	Sep	21	24:00	0	-
+Rule	Iran	2020	only	-	Mar	20	24:00	1:00	-
+Rule	Iran	2020	only	-	Sep	20	24:00	0	-
+Rule	Iran	2021	2023	-	Mar	21	24:00	1:00	-
+Rule	Iran	2021	2023	-	Sep	21	24:00	0	-
+Rule	Iran	2024	only	-	Mar	20	24:00	1:00	-
+Rule	Iran	2024	only	-	Sep	20	24:00	0	-
+Rule	Iran	2025	2027	-	Mar	21	24:00	1:00	-
+Rule	Iran	2025	2027	-	Sep	21	24:00	0	-
+Rule	Iran	2028	2029	-	Mar	20	24:00	1:00	-
+Rule	Iran	2028	2029	-	Sep	20	24:00	0	-
+Rule	Iran	2030	2031	-	Mar	21	24:00	1:00	-
+Rule	Iran	2030	2031	-	Sep	21	24:00	0	-
+Rule	Iran	2032	2033	-	Mar	20	24:00	1:00	-
+Rule	Iran	2032	2033	-	Sep	20	24:00	0	-
+Rule	Iran	2034	2035	-	Mar	21	24:00	1:00	-
+Rule	Iran	2034	2035	-	Sep	21	24:00	0	-
+Rule	Iran	2036	2037	-	Mar	20	24:00	1:00	-
+Rule	Iran	2036	2037	-	Sep	20	24:00	0	-
+Rule	Iran	2038	2039	-	Mar	21	24:00	1:00	-
+Rule	Iran	2038	2039	-	Sep	21	24:00	0	-
+Rule	Iran	2040	2041	-	Mar	20	24:00	1:00	-
+Rule	Iran	2040	2041	-	Sep	20	24:00	0	-
+Rule	Iran	2042	2043	-	Mar	21	24:00	1:00	-
+Rule	Iran	2042	2043	-	Sep	21	24:00	0	-
+Rule	Iran	2044	2045	-	Mar	20	24:00	1:00	-
+Rule	Iran	2044	2045	-	Sep	20	24:00	0	-
+Rule	Iran	2046	2047	-	Mar	21	24:00	1:00	-
+Rule	Iran	2046	2047	-	Sep	21	24:00	0	-
+Rule	Iran	2048	2049	-	Mar	20	24:00	1:00	-
+Rule	Iran	2048	2049	-	Sep	20	24:00	0	-
+Rule	Iran	2050	2051	-	Mar	21	24:00	1:00	-
+Rule	Iran	2050	2051	-	Sep	21	24:00	0	-
+Rule	Iran	2052	2053	-	Mar	20	24:00	1:00	-
+Rule	Iran	2052	2053	-	Sep	20	24:00	0	-
+Rule	Iran	2054	2055	-	Mar	21	24:00	1:00	-
+Rule	Iran	2054	2055	-	Sep	21	24:00	0	-
+Rule	Iran	2056	2057	-	Mar	20	24:00	1:00	-
+Rule	Iran	2056	2057	-	Sep	20	24:00	0	-
+Rule	Iran	2058	2059	-	Mar	21	24:00	1:00	-
+Rule	Iran	2058	2059	-	Sep	21	24:00	0	-
+Rule	Iran	2060	2062	-	Mar	20	24:00	1:00	-
+Rule	Iran	2060	2062	-	Sep	20	24:00	0	-
+Rule	Iran	2063	only	-	Mar	21	24:00	1:00	-
+Rule	Iran	2063	only	-	Sep	21	24:00	0	-
+Rule	Iran	2064	2066	-	Mar	20	24:00	1:00	-
+Rule	Iran	2064	2066	-	Sep	20	24:00	0	-
+Rule	Iran	2067	only	-	Mar	21	24:00	1:00	-
+Rule	Iran	2067	only	-	Sep	21	24:00	0	-
+Rule	Iran	2068	2070	-	Mar	20	24:00	1:00	-
+Rule	Iran	2068	2070	-	Sep	20	24:00	0	-
+Rule	Iran	2071	only	-	Mar	21	24:00	1:00	-
+Rule	Iran	2071	only	-	Sep	21	24:00	0	-
+Rule	Iran	2072	2074	-	Mar	20	24:00	1:00	-
+Rule	Iran	2072	2074	-	Sep	20	24:00	0	-
+Rule	Iran	2075	only	-	Mar	21	24:00	1:00	-
+Rule	Iran	2075	only	-	Sep	21	24:00	0	-
+Rule	Iran	2076	2078	-	Mar	20	24:00	1:00	-
+Rule	Iran	2076	2078	-	Sep	20	24:00	0	-
+Rule	Iran	2079	only	-	Mar	21	24:00	1:00	-
+Rule	Iran	2079	only	-	Sep	21	24:00	0	-
+Rule	Iran	2080	2082	-	Mar	20	24:00	1:00	-
+Rule	Iran	2080	2082	-	Sep	20	24:00	0	-
+Rule	Iran	2083	only	-	Mar	21	24:00	1:00	-
+Rule	Iran	2083	only	-	Sep	21	24:00	0	-
+Rule	Iran	2084	2086	-	Mar	20	24:00	1:00	-
+Rule	Iran	2084	2086	-	Sep	20	24:00	0	-
+Rule	Iran	2087	only	-	Mar	21	24:00	1:00	-
+Rule	Iran	2087	only	-	Sep	21	24:00	0	-
 #
-# The following rules are approximations starting in the year 2038.
-# These are the best post-2037 approximations available, given the
-# restrictions of a single rule using a Gregorian-based data format.
+# The following rules are approximations starting in the year 2088.
+# These are the best post-2088 approximations available, given the
+# restrictions of a single rule using ordinary Gregorian dates.
 # At some point this table will need to be extended, though quite
 # possibly Iran will change the rules first.
-Rule	Iran	2036	max	-	Mar	21	0:00	1:00	-
-Rule	Iran	2036	max	-	Sep	21	0:00	0	-
+Rule	Iran	2088	max	-	Mar	20	24:00	1:00	-
+Rule	Iran	2088	max	-	Sep	20	24:00	0	-
 
 # Zone	NAME		GMTOFF	RULES	FORMAT	[UNTIL]
 Zone	Asia/Tehran	3:25:44	-	LMT	1916
@@ -1456,6 +1643,24 @@ Rule	Zion	1974	only	-	Jul	 7	0:00	1:00	D
 Rule	Zion	1974	only	-	Oct	13	0:00	0	S
 Rule	Zion	1975	only	-	Apr	20	0:00	1:00	D
 Rule	Zion	1975	only	-	Aug	31	0:00	0	S
+
+# From Alois Treindl (2019-03-06):
+# http://www.moin.gov.il/Documents/שעון קיץ/clock-50-years-7-2014.pdf
+# From Isaac Starkman (2019-03-06):
+# Summer time was in that period in 1980 and 1984, see
+# https://www.ynet.co.il/articles/0,7340,L-3951073,00.html
+# You can of course read it in translation.
+# I checked the local newspapers for that years.
+# It started on midnight and end at 01.00 am.
+# From Paul Eggert (2019-03-06):
+# Also see this thread about the moin.gov.il URL:
+# https://mm.icann.org/pipermail/tz/2018-November/027194.html
+Rule	Zion	1980	only	-	Aug	 2	0:00	1:00	D
+Rule	Zion	1980	only	-	Sep	13	1:00	0	S
+Rule	Zion	1984	only	-	May	 5	0:00	1:00	D
+Rule	Zion	1984	only	-	Aug	25	1:00	0	S
+
+# From Shanks & Pottenger:
 Rule	Zion	1985	only	-	Apr	14	0:00	1:00	D
 Rule	Zion	1985	only	-	Sep	15	0:00	0	S
 Rule	Zion	1986	only	-	May	18	0:00	1:00	D
@@ -1714,7 +1919,9 @@ Rule	Japan	1950	1951	-	May	Sat>=1	24:00	1:00	D
 # Zone	NAME		GMTOFF	RULES	FORMAT	[UNTIL]
 Zone	Asia/Tokyo	9:18:59	-	LMT	1887 Dec 31 15:00u
 			9:00	Japan	J%sT
-# Since 1938, all Japanese possessions have been like Asia/Tokyo.
+# Since 1938, all Japanese possessions have been like Asia/Tokyo,
+# except that Truk (Chuuk), Ponape (Pohnpei), and Jaluit (Kosrae) did not
+# switch from +10 to +09 until 1941-04-01; see the 'australasia' file.
 
 # Jordan
 #
@@ -2004,8 +2211,10 @@ Zone	Asia/Amman	2:23:44 -	LMT	1931
 # and in Byalokoz) lists Ural river (plus 10 versts on its left bank) in
 # the third time belt (before 1930 this means +03).
 
-# From Paul Eggert (2016-12-06):
-# The tables below reflect Golosunov's remarks, with exceptions as noted.
+# From Alexander Konzurovski (2018-12-20):
+# Qyzyolrda Region (Asia/Qyzylorda) is changing its time zone from
+# UTC+6 to UTC+5 effective December 21st, 2018. The legal document is
+# located here: http://adilet.zan.kz/rus/docs/P1800000817 (russian language).
 
 # Zone	NAME		GMTOFF	RULES	FORMAT	[UNTIL]
 #
@@ -2019,8 +2228,6 @@ Zone	Asia/Almaty	5:07:48 -	LMT	1924 May  2 # or Alma-Ata
 			6:00 RussiaAsia	+06/+07	2004 Oct 31  2:00s
 			6:00	-	+06
 # Qyzylorda (aka Kyzylorda, Kizilorda, Kzyl-Orda, etc.) (KZ-KZY)
-# This currently includes Qostanay (aka Kostanay, Kustanay) (KZ-KUS);
-# see comments below.
 Zone	Asia/Qyzylorda	4:21:52 -	LMT	1924 May  2
 			4:00	-	+04	1930 Jun 21
 			5:00	-	+05	1981 Apr  1
@@ -2031,21 +2238,22 @@ Zone	Asia/Qyzylorda	4:21:52 -	LMT	1924 May  2
 			5:00 RussiaAsia	+05/+06	1992 Jan 19  2:00s
 			6:00 RussiaAsia	+06/+07	1992 Mar 29  2:00s
 			5:00 RussiaAsia	+05/+06	2004 Oct 31  2:00s
-			6:00	-	+06
-# The following zone is like Asia/Qyzylorda except for being one
-# hour earlier from 1991-09-29 to 1992-03-29.  The 1991/2 rules for
-# Qostanay are unclear partly because of the 1997 Turgai
-# reorganization, so this zone is commented out for now.
-#Zone	Asia/Qostanay	4:14:20 -	LMT	1924 May  2
-#			4:00	-	+04	1930 Jun 21
-#			5:00	-	+05	1981 Apr  1
-#			5:00	1:00	+06	1981 Oct  1
-#			6:00	-	+06	1982 Apr  1
-#			5:00 RussiaAsia	+05/+06	1991 Mar 31  2:00s
-#			4:00 RussiaAsia	+04/+05	1992 Jan 19  2:00s
-#			5:00 RussiaAsia	+05/+06	2004 Oct 31  2:00s
-#			6:00	-	+06
+			6:00	-	+06	2018 Dec 21  0:00
+			5:00	-	+05
 #
+# Qostanay (aka Kostanay, Kustanay) (KZ-KUS)
+# The 1991/2 rules are unclear partly because of the 1997 Turgai
+# reorganization.
+Zone	Asia/Qostanay	4:14:28 -	LMT	1924 May  2
+			4:00	-	+04	1930 Jun 21
+			5:00	-	+05	1981 Apr  1
+			5:00	1:00	+06	1981 Oct  1
+			6:00	-	+06	1982 Apr  1
+			5:00 RussiaAsia	+05/+06	1991 Mar 31  2:00s
+			4:00 RussiaAsia	+04/+05	1992 Jan 19  2:00s
+			5:00 RussiaAsia	+05/+06	2004 Oct 31  2:00s
+			6:00	-	+06
+
 # Aqtöbe (aka Aktobe, formerly Aktyubinsk) (KZ-AKT)
 Zone	Asia/Aqtobe	3:48:40	-	LMT	1924 May  2
 			4:00	-	+04	1930 Jun 21
@@ -2139,21 +2347,43 @@ Zone	Asia/Bishkek	4:58:24 -	LMT	1924 May  2
 # started at June 1 in that year.  For another example, the article in
 # 1988 said that DST started at 2:00 AM in that year.
 
+# From Phake Nick (2018-10-27):
+# 1. According to official announcement from Korean government, the DST end
+# date in South Korea should be
+# 1955-09-08 without specifying time
+# http://theme.archives.go.kr/next/common/viewEbook.do?singleData=N&archiveEventId=0027977557
+# 1956-09-29 without specifying time
+# http://theme.archives.go.kr/next/common/viewEbook.do?singleData=N&archiveEventId=0027978341
+# 1957-09-21 24 o'clock
+# http://theme.archives.go.kr/next/common/viewEbook.do?singleData=N&archiveEventId=0027979690#3
+# 1958-09-20 24 o'clock
+# http://theme.archives.go.kr/next/common/viewEbook.do?singleData=N&archiveEventId=0027981189
+# 1959-09-19 24 o'clock
+# http://theme.archives.go.kr/next/common/viewEbook.do?singleData=N&archiveEventId=0027982974#2
+# 1960-09-17 24 o'clock
+# http://theme.archives.go.kr/next/common/viewEbook.do?singleData=N&archiveEventId=0028044104
+# ...
+# 2.... https://namu.wiki/w/대한민국%20표준시 ... [says]
+# when Korea was using GMT+8:30 as standard time, the international
+# aviation/marine/meteorological industry in the country refused to
+# follow and continued to use GMT+9:00 for interoperability.
+
+
 # Rule	NAME	FROM	TO	TYPE	IN	ON	AT	SAVE	LETTER/S
-Rule	ROK	1948	only	-	Jun	 1	0:00	1:00	D
-Rule	ROK	1948	only	-	Sep	13	0:00	0	S
-Rule	ROK	1949	only	-	Apr	 3	0:00	1:00	D
-Rule	ROK	1949	1951	-	Sep	Sun>=8	0:00	0	S
-Rule	ROK	1950	only	-	Apr	 1	0:00	1:00	D
-Rule	ROK	1951	only	-	May	 6	0:00	1:00	D
-Rule	ROK	1955	only	-	May	 5	0:00	1:00	D
-Rule	ROK	1955	only	-	Sep	 9	0:00	0	S
-Rule	ROK	1956	only	-	May	20	0:00	1:00	D
-Rule	ROK	1956	only	-	Sep	30	0:00	0	S
-Rule	ROK	1957	1960	-	May	Sun>=1	0:00	1:00	D
-Rule	ROK	1957	1960	-	Sep	Sun>=18	0:00	0	S
-Rule	ROK	1987	1988	-	May	Sun>=8	2:00	1:00	D
-Rule	ROK	1987	1988	-	Oct	Sun>=8	3:00	0	S
+Rule	ROK	1948	only	-	Jun	 1	 0:00	1:00	D
+Rule	ROK	1948	only	-	Sep	12	24:00	0	S
+Rule	ROK	1949	only	-	Apr	 3	 0:00	1:00	D
+Rule	ROK	1949	1951	-	Sep	Sat>=7	24:00	0	S
+Rule	ROK	1950	only	-	Apr	 1	 0:00	1:00	D
+Rule	ROK	1951	only	-	May	 6	 0:00	1:00	D
+Rule	ROK	1955	only	-	May	 5	 0:00	1:00	D
+Rule	ROK	1955	only	-	Sep	 8	24:00	0	S
+Rule	ROK	1956	only	-	May	20	 0:00	1:00	D
+Rule	ROK	1956	only	-	Sep	29	24:00	0	S
+Rule	ROK	1957	1960	-	May	Sun>=1	 0:00	1:00	D
+Rule	ROK	1957	1960	-	Sep	Sat>=17	24:00	0	S
+Rule	ROK	1987	1988	-	May	Sun>=8	 2:00	1:00	D
+Rule	ROK	1987	1988	-	Oct	Sun>=8	 3:00	0	S
 
 # From Paul Eggert (2016-08-23):
 # The Korean Wikipedia entry gives the following sources for UT offsets:
@@ -2882,9 +3112,15 @@ Zone	Asia/Karachi	4:28:12 -	LMT	1907
 # the official website, though the decree did not specify the exact
 # time of the time shift.
 # http://www.palestinecabinet.gov.ps/Website/AR/NDecrees/ViewFile.ashx?ID=e7a42ab7-ee23-435a-b9c8-a4f7e81f3817
+
+# From Even Scharning (2019-03-23):
+# DST in Palestine will start on 30 March this year, not 23 March as the time
+# zone database predicted.
+# https://ramallah.news/post/123610
 #
-# From Paul Eggert (2018-03-16):
-# For 2016 on, predict spring transitions on March's fourth Saturday at 01:00.
+# From Tim Parenti (2019-03-23):
+# Combining this with the rules observed since 2016, adjust our spring
+# transition guess to Mar Sat>=24.
 
 # Rule	NAME	FROM	TO	TYPE	IN	ON	AT	SAVE	LETTER/S
 Rule EgyptAsia	1957	only	-	May	10	0:00	1:00	S
@@ -2915,7 +3151,7 @@ Rule Palestine	2012	only	-	Sep	21	1:00	0	-
 Rule Palestine	2013	only	-	Sep	Fri>=21	0:00	0	-
 Rule Palestine	2014	2015	-	Oct	Fri>=21	0:00	0	-
 Rule Palestine	2015	only	-	Mar	lastFri	24:00	1:00	S
-Rule Palestine	2016	max	-	Mar	Sat>=22	1:00	1:00	S
+Rule Palestine	2016	max	-	Mar	Sat>=24	1:00	1:00	S
 Rule Palestine	2016	max	-	Oct	lastSat	1:00	0	-
 
 # Zone	NAME		GMTOFF	RULES	FORMAT	[UNTIL]
@@ -2943,6 +3179,11 @@ Zone	Asia/Hebron	2:20:23	-	LMT	1900 Oct
 # no information
 
 # Philippines
+
+# From Paul Eggert (2018-11-18):
+# The Spanish initially used American (west-of-Greenwich) time.
+# It is unknown what time Manila kept when the British occupied it from
+# 1762-10-06 through 1764-04; for now assume it kept American time.
 # On 1844-08-16, Narciso Clavería, governor-general of the
 # Philippines, issued a proclamation announcing that 1844-12-30 was to
 # be immediately followed by 1845-01-01; see R.H. van Gent's
@@ -3028,8 +3269,8 @@ Link Asia/Qatar Asia/Bahrain
 # going to run on Higgins Time.' And so, until last year, it did."  See:
 # Antar E. Dinner at When? Saudi Aramco World, 1969 March/April. 2-3.
 # http://archive.aramcoworld.com/issue/196902/dinner.at.when.htm
-# newspapers.com says a similar story about Higgins was published in the Port
-# Angeles (WA) Evening News, 1965-03-10, page 5, but I lack access to the text.
+# Also see: Antar EN. Arabian flying is confusing.
+# Port Angeles (WA) Evening News. 1965-03-10. page 3.
 #
 # The TZ database cannot represent quasi-solar time; airline time is the best
 # we can do.  The 1946 foreign air news digest of the U.S. Civil Aeronautics
@@ -3401,6 +3642,18 @@ Zone Asia/Ho_Chi_Minh	7:06:40 -	LMT	1906 Jul  1
 			7:00	-	+07	1959 Dec 31 23:00
 			8:00	-	+08	1975 Jun 13
 			7:00	-	+07
+
+# From Paul Eggert (2019-02-19):
+#
+# The Ho Chi Minh entry suffices for most purposes as it agrees with all of
+# Vietnam since 1975-06-13.  Presumably clocks often changed in south Vietnam
+# in the early 1970s as locations changed hands during the war; however the
+# details are unknown and would likely be too voluminous for this database.
+#
+# For timestamps in north Vietnam back to 1970 (the tzdb cutoff),
+# use Asia/Bangkok; see the VN entries in the file zone1970.tab.
+# For timestamps before 1970, see Asia/Hanoi in the file 'backzone'.
+
 
 # Yemen
 # See Asia/Riyadh.

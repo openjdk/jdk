@@ -324,8 +324,6 @@ GtkApi* gtk3_load(JNIEnv *env, const char* lib_name)
         /* GDK */
         fp_gdk_get_default_root_window =
             dl_symbol("gdk_get_default_root_window");
-        fp_gdk_window_get_scale_factor =
-                    dl_symbol("gdk_window_get_scale_factor");
 
         /* Pixbuf */
         fp_gdk_pixbuf_new = dl_symbol("gdk_pixbuf_new");
@@ -400,6 +398,8 @@ GtkApi* gtk3_load(JNIEnv *env, const char* lib_name)
         } else {
             fp_gdk_window_create_similar_image_surface =
                        dl_symbol("gdk_window_create_similar_image_surface");
+            fp_gdk_window_get_scale_factor =
+                    dl_symbol("gdk_window_get_scale_factor");
         }
         gtk3_version_3_14 = !fp_gtk_check_version(3, 14, 0);
 
@@ -2890,9 +2890,13 @@ static gboolean gtk3_get_drawable_data(JNIEnv *env, jintArray pixelArray,
     jint *ary;
 
     GdkWindow *root = (*fp_gdk_get_default_root_window)();
-    int win_scale = (*fp_gdk_window_get_scale_factor)(root);
-    pixbuf = (*fp_gdk_pixbuf_get_from_drawable)(
-        root, x, y, (int)(width / (float)win_scale + 0.5), (int)(height / (float)win_scale + 0.5));
+    if (gtk3_version_3_10) {
+        int win_scale = (*fp_gdk_window_get_scale_factor)(root);
+        pixbuf = (*fp_gdk_pixbuf_get_from_drawable)(
+            root, x, y, (int) (width / (float) win_scale + 0.5), (int) (height / (float) win_scale + 0.5));
+    } else {
+        pixbuf = (*fp_gdk_pixbuf_get_from_drawable)(root, x, y, width, height);
+    }
 
     if (pixbuf && scale != 1) {
         GdkPixbuf *scaledPixbuf;

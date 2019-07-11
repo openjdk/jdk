@@ -72,6 +72,7 @@
   template(ZMarkStart)                            \
   template(ZMarkEnd)                              \
   template(ZRelocateStart)                        \
+  template(ZVerify)                               \
   template(HandshakeOneThread)                    \
   template(HandshakeAllThreads)                   \
   template(HandshakeFallback)                     \
@@ -128,6 +129,7 @@
   template(ScavengeMonitors)                      \
   template(PrintMetadata)                         \
   template(GTestExecuteAtSafepoint)               \
+  template(JFROldObject)                          \
 
 class VM_Operation: public CHeapObj<mtInternal> {
  public:

@@ -164,7 +164,13 @@ traceid JfrStackTraceRepository::add_trace(const JfrStackTrace& stacktrace) {
 }
 
 traceid JfrStackTraceRepository::add(const JfrStackTrace& stacktrace) {
-  return instance().add_trace(stacktrace);
+  traceid tid = instance().add_trace(stacktrace);
+  if (tid == 0) {
+    stacktrace.resolve_linenos();
+    tid = instance().add_trace(stacktrace);
+  }
+  assert(tid != 0, "invariant");
+  return tid;
 }
 
 traceid JfrStackTraceRepository::record(Thread* thread, int skip /* 0 */) {
@@ -187,54 +193,29 @@ traceid JfrStackTraceRepository::record(Thread* thread, int skip /* 0 */) {
   return instance().record_for((JavaThread*)thread, skip,frames, tl->stackdepth());
 }
 
-traceid JfrStackTraceRepository::record(Thread* thread, int skip, unsigned int* hash) {
-  assert(thread == Thread::current(), "invariant");
-  JfrThreadLocal* const tl = thread->jfr_thread_local();
-  assert(tl != NULL, "invariant");
-
-  if (tl->has_cached_stack_trace()) {
-    *hash = tl->cached_stack_trace_hash();
-    return tl->cached_stack_trace_id();
-  }
-  if (!thread->is_Java_thread() || thread->is_hidden_from_external_view()) {
-    return 0;
-  }
-  JfrStackFrame* frames = tl->stackframes();
-  if (frames == NULL) {
-    // pending oom
-    return 0;
-  }
-  assert(frames != NULL, "invariant");
-  assert(tl->stackframes() == frames, "invariant");
-  return instance().record_for((JavaThread*)thread, skip, frames, tl->stackdepth(), hash);
-}
-
 traceid JfrStackTraceRepository::record_for(JavaThread* thread, int skip, JfrStackFrame *frames, u4 max_frames) {
   JfrStackTrace stacktrace(frames, max_frames);
-  if (!stacktrace.record_safe(thread, skip)) {
-    return 0;
-  }
-  traceid tid = add(stacktrace);
-  if (tid == 0) {
-    stacktrace.resolve_linenos();
-    tid = add(stacktrace);
-  }
-  return tid;
+  return stacktrace.record_safe(thread, skip) ? add(stacktrace) : 0;
 }
 
-traceid JfrStackTraceRepository::record_for(JavaThread* thread, int skip, JfrStackFrame *frames, u4 max_frames, unsigned int* hash) {
-  assert(hash != NULL && *hash == 0, "invariant");
-  JfrStackTrace stacktrace(frames, max_frames);
-  if (!stacktrace.record_safe(thread, skip, true)) {
-    return 0;
+traceid JfrStackTraceRepository::add(const JfrStackTrace* stacktrace, JavaThread* thread) {
+  assert(stacktrace != NULL, "invariant");
+  assert(thread != NULL, "invariant");
+  assert(stacktrace->hash() != 0, "invariant");
+  return add(*stacktrace);
+}
+
+bool JfrStackTraceRepository::fill_stacktrace_for(JavaThread* thread, JfrStackTrace* stacktrace, int skip) {
+  assert(thread == Thread::current(), "invariant");
+  assert(stacktrace != NULL, "invariant");
+  JfrThreadLocal* const tl = thread->jfr_thread_local();
+  assert(tl != NULL, "invariant");
+  const unsigned int cached_stacktrace_hash = tl->cached_stack_trace_hash();
+  if (cached_stacktrace_hash != 0) {
+    stacktrace->set_hash(cached_stacktrace_hash);
+    return true;
   }
-  traceid tid = add(stacktrace);
-  if (tid == 0) {
-    stacktrace.resolve_linenos();
-    tid = add(stacktrace);
-  }
-  *hash = stacktrace._hash;
-  return tid;
+  return stacktrace->record_safe(thread, skip, true);
 }
 
 size_t JfrStackTraceRepository::write_impl(JfrChunkWriter& sw, bool clear) {
@@ -363,7 +344,7 @@ const JfrStackTraceRepository::StackTrace* JfrStackTraceRepository::resolve_entr
   return trace;
 }
 
-void JfrStackFrame::resolve_lineno() {
+void JfrStackFrame::resolve_lineno() const {
   assert(_method, "no method pointer");
   assert(_line == 0, "already have linenumber");
   _line = _method->line_number_from_bci(_bci);
@@ -375,7 +356,7 @@ void JfrStackTrace::set_frame(u4 frame_pos, JfrStackFrame& frame) {
   _frames[frame_pos] = frame;
 }
 
-void JfrStackTrace::resolve_linenos() {
+void JfrStackTrace::resolve_linenos() const {
   for(unsigned int i = 0; i < _nr_of_frames; i++) {
     _frames[i].resolve_lineno();
   }

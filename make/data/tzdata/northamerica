@@ -622,6 +622,26 @@ Zone America/Los_Angeles -7:52:58 -	LMT	1883 Nov 18 12:07:02
 # between AKST and AKDT from now on....
 # https://www.krbd.org/2015/10/30/annette-island-times-they-are-a-changing/
 
+# From Ryan Stanley (2018-11-06):
+# The Metlakatla community in Alaska has decided not to change its
+# clock back an hour starting on November 4th, 2018 (day before yesterday).
+# They will be gmtoff=-28800 year-round.
+# https://www.facebook.com/141055983004923/photos/pb.141055983004923.-2207520000.1541465673./569081370202380/
+
+# From Paul Eggert (2018-12-16):
+# In a 2018-12-11 special election, Metlakatla voted to go back to
+# Alaska time (including daylight saving time) starting next year.
+# https://www.krbd.org/2018/12/12/metlakatla-to-follow-alaska-standard-time-allow-liquor-sales/
+#
+# From Ryan Stanley (2019-01-11):
+# The community will be changing back on the 20th of this month...
+# From Tim Parenti (2019-01-11):
+# Per an announcement on the Metlakatla community's official Facebook page, the
+# "fall back" will be on Sunday 2019-01-20 at 02:00:
+# https://www.facebook.com/141055983004923/photos/607150969728753/
+# So they won't be waiting for Alaska to join them on 2019-03-10, but will
+# rather change their clocks twice in seven weeks.
+
 # Zone	NAME		GMTOFF	RULES	FORMAT	[UNTIL]
 Zone America/Juneau	 15:02:19 -	LMT	1867 Oct 19 15:33:32
 			 -8:57:41 -	LMT	1900 Aug 20 12:00
@@ -648,6 +668,8 @@ Zone America/Metlakatla	 15:13:42 -	LMT	1867 Oct 19 15:44:55
 			 -8:00	-	PST	1969
 			 -8:00	US	P%sT	1983 Oct 30  2:00
 			 -8:00	-	PST	2015 Nov  1  2:00
+			 -9:00	US	AK%sT	2018 Nov  4  2:00
+			 -8:00	-	PST	2019 Jan 20  2:00
 			 -9:00	US	AK%sT
 Zone America/Yakutat	 14:41:05 -	LMT	1867 Oct 19 15:12:18
 			 -9:18:55 -	LMT	1900 Aug 20 12:00
@@ -807,6 +829,22 @@ Zone America/Boise	-7:44:49 -	LMT	1883 Nov 18 12:15:11
 #
 # For a map of Indiana's time zone regions, see:
 # https://en.wikipedia.org/wiki/Time_in_Indiana
+#
+# From Paul Eggert (2018-11-30):
+# A brief but entertaining history of time in Indiana describes a 1949 debate
+# in the Indiana House where city legislators (who favored "fast time")
+# tussled with farm legislators (who didn't) over a bill to outlaw DST:
+#  "Lacking enough votes, the city faction tries to filibuster until time runs
+#   out on the session at midnight, but rural champion Rep. Herbert Copeland,
+#   R-Madison, leans over the gallery railing and forces the official clock
+#   back to 9 p.m., breaking it in the process.  The clock sticks on 9 as the
+#   debate rages on into the night.  The filibuster finally dies out and the
+#   bill passes, while outside the chamber, clocks read 3:30 a.m.  In the end,
+#   it doesn't matter which side won.  The law has no enforcement powers and
+#   is simply ignored by fast-time communities."
+# How Indiana went from 'God's time' to split zones and daylight-saving.
+# Indianapolis Star. 2018-11-27 14:58 -05.
+# https://www.indystar.com/story/news/politics/2018/11/27/indianapolis-indiana-time-zone-history-central-eastern-daylight-savings-time/2126300002/
 #
 # From Paul Eggert (2007-08-17):
 # Since 1970, most of Indiana has been like America/Indiana/Indianapolis,

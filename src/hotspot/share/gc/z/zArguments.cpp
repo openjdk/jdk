@@ -92,6 +92,11 @@ void ZArguments::initialize() {
   // same reason we need fixup_partial_loads
   FLAG_SET_DEFAULT(VerifyBeforeIteration, false);
 
+  if (VerifyBeforeGC || VerifyDuringGC || VerifyAfterGC) {
+    FLAG_SET_DEFAULT(ZVerifyRoots, true);
+    FLAG_SET_DEFAULT(ZVerifyObjects, true);
+  }
+
   // Verification of stacks not (yet) supported, for the same reason
   // we need fixup_partial_loads
   DEBUG_ONLY(FLAG_SET_DEFAULT(VerifyStack, false));

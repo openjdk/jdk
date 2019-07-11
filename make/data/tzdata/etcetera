@@ -42,7 +42,6 @@
 
 Zone	Etc/GMT		0	-	GMT
 Zone	Etc/UTC		0	-	UTC
-Zone	Etc/UCT		0	-	UCT
 
 # The following link uses older naming conventions,
 # but it belongs here, not in the file 'backward',

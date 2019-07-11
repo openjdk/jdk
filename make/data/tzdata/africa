@@ -387,6 +387,11 @@ Zone	Africa/Cairo	2:05:09 -	LMT	1900 Oct
 # See Africa/Lagos.
 
 # Eritrea
+# See Africa/Nairobi.
+
+# Eswatini (formerly Swaziland)
+# See Africa/Johannesburg.
+
 # Ethiopia
 # See Africa/Nairobi.
 #
@@ -870,8 +875,41 @@ Zone Indian/Mauritius	3:50:00 -	LMT	1907 # Port Louis
 # From Mohamed Essedik Najd (2018-10-26):
 # Today, a Moroccan government council approved the perpetual addition
 # of 60 minutes to the regular Moroccan timezone.
-# From Brian Inglis (2018-10-26):
-# http://www.maroc.ma/fr/actualites/le-conseil-de-gouvernement-adopte-un-projet-de-decret-relatif-lheure-legale-stipulant-le
+# From Matt Johnson (2018-10-28):
+# http://www.sgg.gov.ma/Portals/1/BO/2018/BO_6720-bis_Ar.pdf
+#
+# From Maamar Abdelkader (2018-11-01):
+# We usually move clocks back the previous week end and come back to the +1
+# the week end after....  The government does not announce yet the decision
+# about this temporary change.  But it s 99% sure that it will be the case,
+# as in previous years.  An unofficial survey was done these days, showing
+# that 64% of asked peopke are ok for moving from +1 to +0 during Ramadan.
+# https://leconomiste.com/article/1035870-enquete-l-economiste-sunergia-64-des-marocains-plebiscitent-le-gmt-pendant-ramadan
+#
+# From Paul Eggert (2018-11-01):
+# For now, guess that Morocco will fall back at 03:00 the last Sunday
+# before Ramadan, and spring forward at 02:00 the first Sunday after
+# Ramadan, as this has been the practice since 2012.  To implement this,
+# transition dates for 2019 through 2037 were determined by running the
+# following program under GNU Emacs 26.1.
+# (let ((islamic-year 1440))
+#   (require 'cal-islam)
+#   (while (< islamic-year 1460)
+#     (let ((a (calendar-islamic-to-absolute (list 9 1 islamic-year)))
+#           (b (calendar-islamic-to-absolute (list 10 1 islamic-year)))
+#           (sunday 0))
+#       (while (/= sunday (mod (setq a (1- a)) 7)))
+#       (while (/= sunday (mod b 7))
+#         (setq b (1+ b)))
+#       (setq a (calendar-gregorian-from-absolute a))
+#       (setq b (calendar-gregorian-from-absolute b))
+#       (insert
+#        (format
+#         (concat "Rule\tMorocco\t%d\tonly\t-\t%s\t%2d\t 3:00\t-1:00\t-\n"
+#                 "Rule\tMorocco\t%d\tonly\t-\t%s\t%2d\t 2:00\t0\t-\n")
+#         (car (cdr (cdr a))) (calendar-month-name (car a) t) (car (cdr a))
+#         (car (cdr (cdr b))) (calendar-month-name (car b) t) (car (cdr b)))))
+#     (setq islamic-year (+ 1 islamic-year))))
 
 # RULE	NAME	FROM	TO	TYPE	IN	ON	AT	SAVE	LETTER/S
 Rule	Morocco	1939	only	-	Sep	12	 0:00	1:00	-
@@ -903,7 +941,7 @@ Rule	Morocco	2012	only	-	Aug	20	 2:00	1:00	-
 Rule	Morocco	2012	only	-	Sep	30	 3:00	0	-
 Rule	Morocco	2013	only	-	Jul	 7	 3:00	0	-
 Rule	Morocco	2013	only	-	Aug	10	 2:00	1:00	-
-Rule	Morocco	2013	2018	-	Oct	lastSun	 3:00	0	-
+Rule	Morocco	2013	2017	-	Oct	lastSun	 3:00	0	-
 Rule	Morocco	2014	2018	-	Mar	lastSun	 2:00	1:00	-
 Rule	Morocco	2014	only	-	Jun	28	 3:00	0	-
 Rule	Morocco	2014	only	-	Aug	 2	 2:00	1:00	-
@@ -915,13 +953,53 @@ Rule	Morocco	2017	only	-	May	21	 3:00	0	-
 Rule	Morocco	2017	only	-	Jul	 2	 2:00	1:00	-
 Rule	Morocco	2018	only	-	May	13	 3:00	0	-
 Rule	Morocco	2018	only	-	Jun	17	 2:00	1:00	-
+Rule	Morocco	2019	only	-	May	 5	 3:00	0	-
+Rule	Morocco	2019	only	-	Jun	 9	 2:00	1:00	-
+Rule	Morocco	2020	only	-	Apr	19	 3:00	0	-
+Rule	Morocco	2020	only	-	May	24	 2:00	1:00	-
+Rule	Morocco	2021	only	-	Apr	11	 3:00	0	-
+Rule	Morocco	2021	only	-	May	16	 2:00	1:00	-
+Rule	Morocco	2022	only	-	Mar	27	 3:00	0	-
+Rule	Morocco	2022	only	-	May	 8	 2:00	1:00	-
+Rule	Morocco	2023	only	-	Mar	19	 3:00	0	-
+Rule	Morocco	2023	only	-	Apr	23	 2:00	1:00	-
+Rule	Morocco	2024	only	-	Mar	10	 3:00	0	-
+Rule	Morocco	2024	only	-	Apr	14	 2:00	1:00	-
+Rule	Morocco	2025	only	-	Feb	23	 3:00	0	-
+Rule	Morocco	2025	only	-	Apr	 6	 2:00	1:00	-
+Rule	Morocco	2026	only	-	Feb	15	 3:00	0	-
+Rule	Morocco	2026	only	-	Mar	22	 2:00	1:00	-
+Rule	Morocco	2027	only	-	Feb	 7	 3:00	0	-
+Rule	Morocco	2027	only	-	Mar	14	 2:00	1:00	-
+Rule	Morocco	2028	only	-	Jan	23	 3:00	0	-
+Rule	Morocco	2028	only	-	Feb	27	 2:00	1:00	-
+Rule	Morocco	2029	only	-	Jan	14	 3:00	0	-
+Rule	Morocco	2029	only	-	Feb	18	 2:00	1:00	-
+Rule	Morocco	2029	only	-	Dec	30	 3:00	0	-
+Rule	Morocco	2030	only	-	Feb	10	 2:00	1:00	-
+Rule	Morocco	2030	only	-	Dec	22	 3:00	0	-
+Rule	Morocco	2031	only	-	Jan	26	 2:00	1:00	-
+Rule	Morocco	2031	only	-	Dec	14	 3:00	0	-
+Rule	Morocco	2032	only	-	Jan	18	 2:00	1:00	-
+Rule	Morocco	2032	only	-	Nov	28	 3:00	0	-
+Rule	Morocco	2033	only	-	Jan	 9	 2:00	1:00	-
+Rule	Morocco	2033	only	-	Nov	20	 3:00	0	-
+Rule	Morocco	2033	only	-	Dec	25	 2:00	1:00	-
+Rule	Morocco	2034	only	-	Nov	 5	 3:00	0	-
+Rule	Morocco	2034	only	-	Dec	17	 2:00	1:00	-
+Rule	Morocco	2035	only	-	Oct	28	 3:00	0	-
+Rule	Morocco	2035	only	-	Dec	 2	 2:00	1:00	-
+Rule	Morocco	2036	only	-	Oct	19	 3:00	0	-
+Rule	Morocco	2036	only	-	Nov	23	 2:00	1:00	-
+Rule	Morocco	2037	only	-	Oct	 4	 3:00	0	-
+Rule	Morocco	2037	only	-	Nov	15	 2:00	1:00	-
 
 # Zone	NAME		GMTOFF	RULES	FORMAT	[UNTIL]
 Zone Africa/Casablanca	-0:30:20 -	LMT	1913 Oct 26
 			 0:00	Morocco	+00/+01	1984 Mar 16
 			 1:00	-	+01	1986
-			 0:00	Morocco	+00/+01	2018 Oct 27
-			 1:00	-	+01
+			 0:00	Morocco	+00/+01	2018 Oct 28  3:00
+			 0:00	Morocco	+00/+01
 
 # Western Sahara
 #
@@ -936,8 +1014,8 @@ Zone Africa/Casablanca	-0:30:20 -	LMT	1913 Oct 26
 
 Zone Africa/El_Aaiun	-0:52:48 -	LMT	1934 Jan # El Aaiún
 			-1:00	-	-01	1976 Apr 14
-			 0:00	Morocco	+00/+01	2018 Oct 27
-			 1:00	-	+01
+			 0:00	Morocco	+00/+01	2018 Oct 28  3:00
+			 0:00	Morocco	+00/+01
 
 # Mozambique
 #
@@ -1094,10 +1172,20 @@ Zone	Indian/Reunion	3:41:52 -	LMT	1911 Jun # Saint-Denis
 # the switch is from 01:00 to 02:00 ... [Decree No. 25/2017]
 # http://www.mnec.gov.st/index.php/publicacoes/documentos/file/90-decreto-lei-n-25-2017
 
+# From Vadim Nasardinov (2018-12-29):
+# São Tomé and Príncipe is about to do the following on Jan 1, 2019:
+# https://www.stp-press.st/2018/12/05/governo-jesus-ja-decidiu-repor-hora-legal-sao-tomense/
+#
+# From Michael Deckers (2018-12-30):
+# https://www.legis-palop.org/download.jsp?idFile=102818
+# ... [The legal time of the country, which coincides with universal
+# coordinated time, will be restituted at 2 o'clock on day 1 of January, 2019.]
+
 Zone	Africa/Sao_Tome	 0:26:56 -	LMT	1884
 			-0:36:45 -	LMT	1912 Jan  1 00:00u # Lisbon MT
 			 0:00	-	GMT	2018 Jan  1 01:00
-			 1:00	-	WAT
+			 1:00	-	WAT	2019 Jan  1 02:00
+			 0:00	-	GMT
 
 # Senegal
 # See Africa/Abidjan.
@@ -1128,7 +1216,7 @@ Zone Africa/Johannesburg 1:52:00 -	LMT	1892 Feb 8
 			1:30	-	SAST	1903 Mar
 			2:00	SA	SAST
 Link Africa/Johannesburg Africa/Maseru	   # Lesotho
-Link Africa/Johannesburg Africa/Mbabane    # Swaziland
+Link Africa/Johannesburg Africa/Mbabane    # Eswatini
 #
 # Marion and Prince Edward Is
 # scientific station since 1947
@@ -1169,9 +1257,6 @@ Zone	Africa/Khartoum	2:10:08 -	LMT	1931
 Zone	Africa/Juba	2:06:28 -	LMT	1931
 			2:00	Sudan	CA%sT	2000 Jan 15 12:00
 			3:00	-	EAT
-
-# Swaziland
-# See Africa/Johannesburg.
 
 # Tanzania
 # See Africa/Nairobi.

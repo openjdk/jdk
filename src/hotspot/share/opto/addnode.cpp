@@ -929,3 +929,91 @@ const Type *MinINode::add_ring( const Type *t0, const Type *t1 ) const {
   // Otherwise just MIN them bits.
   return TypeInt::make( MIN2(r0->_lo,r1->_lo), MIN2(r0->_hi,r1->_hi), MAX2(r0->_widen,r1->_widen) );
 }
+
+//------------------------------add_ring---------------------------------------
+const Type *MinFNode::add_ring( const Type *t0, const Type *t1 ) const {
+  const TypeF *r0 = t0->is_float_constant();
+  const TypeF *r1 = t1->is_float_constant();
+
+  if (r0->is_nan()) {
+    return r0;
+  }
+  if (r1->is_nan()) {
+    return r1;
+  }
+
+  float f0 = r0->getf();
+  float f1 = r1->getf();
+  if (f0 != 0.0f || f1 != 0.0f) {
+    return f0 < f1 ? r0 : r1;
+  }
+
+  // handle min of 0.0, -0.0 case.
+  return (jint_cast(f0) < jint_cast(f1)) ? r0 : r1;
+}
+
+//------------------------------add_ring---------------------------------------
+const Type *MinDNode::add_ring( const Type *t0, const Type *t1 ) const {
+  const TypeD *r0 = t0->is_double_constant();
+  const TypeD *r1 = t1->is_double_constant();
+
+  if (r0->is_nan()) {
+    return r0;
+  }
+  if (r1->is_nan()) {
+    return r1;
+  }
+
+  double d0 = r0->getd();
+  double d1 = r1->getd();
+  if (d0 != 0.0 || d1 != 0.0) {
+    return d0 < d1 ? r0 : r1;
+  }
+
+  // handle min of 0.0, -0.0 case.
+  return (jlong_cast(d0) < jlong_cast(d1)) ? r0 : r1;
+}
+
+//------------------------------add_ring---------------------------------------
+const Type *MaxFNode::add_ring( const Type *t0, const Type *t1 ) const {
+  const TypeF *r0 = t0->is_float_constant();
+  const TypeF *r1 = t1->is_float_constant();
+
+  if (r0->is_nan()) {
+    return r0;
+  }
+  if (r1->is_nan()) {
+    return r1;
+  }
+
+  float f0 = r0->getf();
+  float f1 = r1->getf();
+  if (f0 != 0.0f || f1 != 0.0f) {
+    return f0 > f1 ? r0 : r1;
+  }
+
+  // handle max of 0.0,-0.0 case.
+  return (jint_cast(f0) > jint_cast(f1)) ? r0 : r1;
+}
+
+//------------------------------add_ring---------------------------------------
+const Type *MaxDNode::add_ring( const Type *t0, const Type *t1 ) const {
+  const TypeD *r0 = t0->is_double_constant();
+  const TypeD *r1 = t1->is_double_constant();
+
+  if (r0->is_nan()) {
+    return r0;
+  }
+  if (r1->is_nan()) {
+    return r1;
+  }
+
+  double d0 = r0->getd();
+  double d1 = r1->getd();
+  if (d0 != 0.0 || d1 != 0.0) {
+    return d0 > d1 ? r0 : r1;
+  }
+
+  // handle max of 0.0, -0.0 case.
+  return (jlong_cast(d0) > jlong_cast(d1)) ? r0 : r1;
+}

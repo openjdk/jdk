@@ -35,6 +35,7 @@
 #include "code/scopeDesc.hpp"
 #include "gc/shared/collectedHeap.hpp"
 #include "gc/shared/gcLocker.hpp"
+#include "gc/shared/oopStorage.hpp"
 #include "gc/shared/strongRootsScope.hpp"
 #include "gc/shared/workgroup.hpp"
 #include "interpreter/interpreter.hpp"
@@ -641,6 +642,12 @@ public:
 
         post_safepoint_cleanup_task_event(event, safepoint_id, name);
       }
+    }
+
+    if (_subtasks.try_claim_task(SafepointSynchronize::SAFEPOINT_CLEANUP_REQUEST_OOPSTORAGE_CLEANUP)) {
+      // Don't bother reporting event or time for this very short operation.
+      // To have any utility we'd also want to report whether needed.
+      OopStorage::trigger_cleanup_if_needed();
     }
 
     _subtasks.all_tasks_completed(_num_workers);

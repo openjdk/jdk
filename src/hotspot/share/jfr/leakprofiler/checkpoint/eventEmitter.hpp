@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,50 +22,37 @@
  *
  */
 
-#ifndef SHARE_JFR_LEAKPROFILER_EMITEVENTOPERATION_HPP
-#define SHARE_JFR_LEAKPROFILER_EMITEVENTOPERATION_HPP
+#ifndef SHARE_JFR_LEAKPROFILER_CHECKPOINT_EVENTEMITTER_HPP
+#define SHARE_JFR_LEAKPROFILER_CHECKPOINT_EVENTEMITTER_HPP
 
-#include "runtime/vmOperations.hpp"
+#include "memory/allocation.hpp"
+#include "jfr/utilities/jfrTime.hpp"
 
-class BFSClosure;
+typedef u8 traceid;
+
 class EdgeStore;
-class EdgeQueue;
-class JfrThreadData;
+class JfrThreadLocal;
 class ObjectSample;
 class ObjectSampler;
+class Thread;
 
-class VMThread;
-
-// Safepoint operation for emitting object sample events
-class EmitEventOperation : public VM_Operation {
+class EventEmitter : public CHeapObj<mtTracing> {
+  friend class LeakProfiler;
+  friend class PathToGcRootsOperation;
  private:
-  jlong _cutoff_ticks;
-  bool _emit_all;
-  VMThread* _vm_thread;
-  JfrThreadLocal* _vm_thread_local;
-  ObjectSampler* _object_sampler;
+  const JfrTicks& _start_time;
+  const JfrTicks& _end_time;
+  Thread* _thread;
+  JfrThreadLocal* _jfr_thread_local;
+  traceid _thread_id;
+
+  EventEmitter(const JfrTicks& start_time, const JfrTicks& end_time);
+  ~EventEmitter();
 
   void write_event(const ObjectSample* sample, EdgeStore* edge_store);
-  int write_events(EdgeStore* edge_store);
+  size_t write_events(ObjectSampler* sampler, EdgeStore* store, bool emit_all);
 
- public:
-  EmitEventOperation(jlong cutoff_ticks, bool emit_all) :
-    _cutoff_ticks(cutoff_ticks),
-    _emit_all(emit_all),
-    _vm_thread(NULL),
-    _vm_thread_local(NULL),
-    _object_sampler(NULL) {
-  }
-
-  VMOp_Type type() const {
-    return VMOp_GC_HeapInspection;
-  }
-
-  Mode evaluation_mode() const {
-    return _safepoint;
-  }
-
-  virtual void doit();
+  static void emit(ObjectSampler* sampler, int64_t cutoff_ticks, bool emit_all);
 };
 
-#endif // SHARE_JFR_LEAKPROFILER_EMITEVENTOPERATION_HPP
+#endif // SHARE_JFR_LEAKPROFILER_CHECKPOINT_EVENTEMITTER_HPP

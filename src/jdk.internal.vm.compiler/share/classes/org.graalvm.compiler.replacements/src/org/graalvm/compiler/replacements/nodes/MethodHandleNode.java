@@ -206,7 +206,8 @@ public final class MethodHandleNode extends MacroStateSplitNode implements Simpl
                     StampPair returnStamp, ValueNode[] arguments) {
         ValueNode methodHandleNode = getReceiver(arguments);
         if (methodHandleNode.isConstant()) {
-            return getTargetInvokeNode(adder, intrinsicMethod, bci, returnStamp, arguments, methodHandleAccess.resolveInvokeBasicTarget(methodHandleNode.asJavaConstant(), true), original);
+            return getTargetInvokeNode(adder, intrinsicMethod, methodHandleAccess, bci, returnStamp, arguments, methodHandleAccess.resolveInvokeBasicTarget(methodHandleNode.asJavaConstant(), true),
+                            original);
         }
         return null;
     }
@@ -227,7 +228,7 @@ public final class MethodHandleNode extends MacroStateSplitNode implements Simpl
                     StampPair returnStamp, ValueNode[] arguments) {
         ValueNode memberNameNode = getMemberName(arguments);
         if (memberNameNode.isConstant()) {
-            return getTargetInvokeNode(adder, intrinsicMethod, bci, returnStamp, arguments, methodHandleAccess.resolveLinkToTarget(memberNameNode.asJavaConstant()), original);
+            return getTargetInvokeNode(adder, intrinsicMethod, methodHandleAccess, bci, returnStamp, arguments, methodHandleAccess.resolveLinkToTarget(memberNameNode.asJavaConstant()), original);
         }
         return null;
     }
@@ -241,9 +242,10 @@ public final class MethodHandleNode extends MacroStateSplitNode implements Simpl
      *
      * @return invoke node for the member name target
      */
-    private static InvokeNode getTargetInvokeNode(GraphAdder adder, IntrinsicMethod intrinsicMethod, int bci, StampPair returnStamp, ValueNode[] originalArguments, ResolvedJavaMethod target,
+    private static InvokeNode getTargetInvokeNode(GraphAdder adder, IntrinsicMethod intrinsicMethod, MethodHandleAccessProvider methodHandleAccess, int bci, StampPair returnStamp,
+                    ValueNode[] originalArguments, ResolvedJavaMethod target,
                     ResolvedJavaMethod original) {
-        if (target == null) {
+        if (target == null || !isConsistentInfo(methodHandleAccess, original, target)) {
             return null;
         }
 
@@ -389,5 +391,85 @@ public final class MethodHandleNode extends MacroStateSplitNode implements Simpl
         } else {
             return new InvokeNode(callTarget, bci);
         }
+    }
+
+    /**
+     * Checks basic type consistency of low level method handle intrinsics.
+     *
+     * @param original declared method
+     * @param target resolved method
+     * @return true if original is type consistent with target
+     */
+    private static boolean isConsistentInfo(MethodHandleAccessProvider methodHandleAccess, ResolvedJavaMethod original, ResolvedJavaMethod target) {
+        IntrinsicMethod originalIntrinsicMethod = methodHandleAccess.lookupMethodHandleIntrinsic(original);
+        assert originalIntrinsicMethod == IntrinsicMethod.INVOKE_BASIC ||
+                        originalIntrinsicMethod == IntrinsicMethod.LINK_TO_STATIC ||
+                        originalIntrinsicMethod == IntrinsicMethod.LINK_TO_SPECIAL ||
+                        originalIntrinsicMethod == IntrinsicMethod.LINK_TO_VIRTUAL ||
+                        originalIntrinsicMethod == IntrinsicMethod.LINK_TO_INTERFACE;
+        IntrinsicMethod targetIntrinsicMethod = methodHandleAccess.lookupMethodHandleIntrinsic(target);
+        Signature originalSignature = original.getSignature();
+        Signature targetSignature = target.getSignature();
+
+        boolean invokeThroughMHIntrinsic = originalIntrinsicMethod != null && targetIntrinsicMethod == null;
+        if (!invokeThroughMHIntrinsic) {
+            return (original.getName().equals(target.getName())) && (originalSignature.equals(targetSignature));
+        }
+
+        // Linkers have appendix argument which is not passed to callee.
+        int hasAppendix = (originalIntrinsicMethod == IntrinsicMethod.LINK_TO_STATIC ||
+                        originalIntrinsicMethod == IntrinsicMethod.LINK_TO_SPECIAL ||
+                        originalIntrinsicMethod == IntrinsicMethod.LINK_TO_VIRTUAL ||
+                        originalIntrinsicMethod == IntrinsicMethod.LINK_TO_INTERFACE) ? 1 : 0;
+        if (originalSignature.getParameterCount(original.hasReceiver()) != (targetSignature.getParameterCount(target.hasReceiver()) + hasAppendix)) {
+            return false; // parameter count mismatch
+        }
+        int senderBase = 0;
+        int receiverBase = 0;
+        switch (originalIntrinsicMethod) {
+            case LINK_TO_VIRTUAL:
+            case LINK_TO_INTERFACE:
+            case LINK_TO_SPECIAL: {
+                if (target.isStatic()) {
+                    return false;
+                }
+                if (originalSignature.getParameterKind(0).isPrimitive()) {
+                    return false; // receiver should be an oop
+                }
+                senderBase = 1; // skip receiver
+                break;
+            }
+            case LINK_TO_STATIC: {
+                if (target.hasReceiver()) {
+                    return false;
+                }
+                break;
+            }
+            case INVOKE_BASIC: {
+                if (target.isStatic()) {
+                    if (targetSignature.getParameterKind(0).isPrimitive()) {
+                        return false; // receiver should be an oop
+                    }
+                    receiverBase = 1; // skip receiver
+                }
+                break;
+            }
+            default:
+                break;
+        }
+        assert (targetSignature.getParameterCount(false) - receiverBase) == (originalSignature.getParameterCount(false) - senderBase - hasAppendix) : "argument count mismatch";
+        int argCount = targetSignature.getParameterCount(false) - receiverBase;
+        for (int i = 0; i < argCount; i++) {
+            if (originalSignature.getParameterKind(senderBase + i).getStackKind() != targetSignature.getParameterKind(receiverBase + i).getStackKind()) {
+                return false;
+            }
+        }
+        // Only check the return type if the symbolic info has non-void return type.
+        // I.e. the return value of the resolved method can be dropped.
+        if (originalSignature.getReturnKind() != JavaKind.Void &&
+                        originalSignature.getReturnKind().getStackKind() != targetSignature.getReturnKind().getStackKind()) {
+            return false;
+        }
+        return true; // no mismatch found
     }
 }

@@ -28,11 +28,14 @@
 #include "classfile/stringTable.hpp"
 #include "classfile/systemDictionary.hpp"
 #include "gc/shared/strongRootsScope.hpp"
+#include "jfr/leakprofiler/chains/bfsClosure.hpp"
+#include "jfr/leakprofiler/chains/dfsClosure.hpp"
 #include "jfr/leakprofiler/chains/edgeQueue.hpp"
 #include "jfr/leakprofiler/chains/rootSetClosure.hpp"
 #include "jfr/leakprofiler/utilities/unifiedOop.hpp"
 #include "memory/universe.hpp"
 #include "oops/access.inline.hpp"
+#include "oops/oop.inline.hpp"
 #include "prims/jvmtiExport.hpp"
 #include "runtime/jniHandles.inline.hpp"
 #include "runtime/synchronizer.hpp"
@@ -43,11 +46,11 @@
 #include "jvmci/jvmci.hpp"
 #endif
 
-RootSetClosure::RootSetClosure(EdgeQueue* edge_queue) :
-  _edge_queue(edge_queue) {
-}
+template <typename Delegate>
+RootSetClosure<Delegate>::RootSetClosure(Delegate* delegate) : _delegate(delegate) {}
 
-void RootSetClosure::do_oop(oop* ref) {
+template <typename Delegate>
+void RootSetClosure<Delegate>::do_oop(oop* ref) {
   assert(ref != NULL, "invariant");
   // We discard unaligned root references because
   // our reference tagging scheme will use
@@ -61,49 +64,40 @@ void RootSetClosure::do_oop(oop* ref) {
   }
 
   assert(is_aligned(ref, HeapWordSize), "invariant");
-  const oop pointee = *ref;
-  if (pointee != NULL) {
-    closure_impl(ref, pointee);
+  if (*ref != NULL) {
+    _delegate->do_root(ref);
   }
 }
 
-void RootSetClosure::do_oop(narrowOop* ref) {
+template <typename Delegate>
+void RootSetClosure<Delegate>::do_oop(narrowOop* ref) {
   assert(ref != NULL, "invariant");
   assert(is_aligned(ref, sizeof(narrowOop)), "invariant");
   const oop pointee = RawAccess<>::oop_load(ref);
   if (pointee != NULL) {
-    closure_impl(UnifiedOop::encode(ref), pointee);
+    _delegate->do_root(UnifiedOop::encode(ref));
   }
 }
 
-void RootSetClosure::closure_impl(const oop* reference, const oop pointee) {
-  if (!_edge_queue->is_full())  {
-    _edge_queue->add(NULL, reference);
-  }
-}
+class RootSetClosureMarkScope : public MarkScope {};
 
-void RootSetClosure::add_to_queue(EdgeQueue* edge_queue) {
-  RootSetClosure rs(edge_queue);
-  process_roots(&rs);
-}
-
-class RootSetClosureMarkScope : public MarkScope {
-};
-
-void RootSetClosure::process_roots(OopClosure* closure) {
+template <typename Delegate>
+void RootSetClosure<Delegate>::process() {
   RootSetClosureMarkScope mark_scope;
-
-  CLDToOopClosure cldt_closure(closure, ClassLoaderData::_claim_none);
+  CLDToOopClosure cldt_closure(this, ClassLoaderData::_claim_none);
   ClassLoaderDataGraph::always_strong_cld_do(&cldt_closure);
-  CodeBlobToOopClosure blobs(closure, false);
-  Threads::oops_do(closure, &blobs);
-  ObjectSynchronizer::oops_do(closure);
-  Universe::oops_do(closure);
-  JNIHandles::oops_do(closure);
-  JvmtiExport::oops_do(closure);
-  SystemDictionary::oops_do(closure);
-  Management::oops_do(closure);
-  StringTable::oops_do(closure);
-  AOTLoader::oops_do(closure);
-  JVMCI_ONLY(JVMCI::oops_do(closure);)
+  CodeBlobToOopClosure blobs(this, false);
+  Threads::oops_do(this, &blobs);
+  ObjectSynchronizer::oops_do(this);
+  Universe::oops_do(this);
+  JNIHandles::oops_do(this);
+  JvmtiExport::oops_do(this);
+  SystemDictionary::oops_do(this);
+  Management::oops_do(this);
+  StringTable::oops_do(this);
+  AOTLoader::oops_do(this);
+  JVMCI_ONLY(JVMCI::oops_do(this);)
 }
+
+template class RootSetClosure<BFSClosure>;
+template class RootSetClosure<DFSClosure>;

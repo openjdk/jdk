@@ -149,13 +149,6 @@ public:
   LoadBarrierNode* load_barrier_node(int idx) const;
 };
 
-enum BarrierInfo {
-    NoBarrier       = 0,
-    RequireBarrier  = 1,
-    WeakBarrier     = 3,  // Inclusive with RequireBarrier
-    ExpandedBarrier = 4
-};
-
 class ZBarrierSetC2 : public BarrierSetC2 {
 private:
   ZBarrierSetC2State* state() const;

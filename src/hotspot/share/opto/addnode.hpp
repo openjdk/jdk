@@ -255,7 +255,7 @@ class MaxFNode : public MaxNode {
 public:
   MaxFNode(Node *in1, Node *in2) : MaxNode(in1, in2) {}
   virtual int Opcode() const;
-  virtual const Type *add_ring(const Type*, const Type*) const { return Type::FLOAT; }
+  virtual const Type *add_ring(const Type*, const Type*) const;
   virtual const Type *add_id() const { return TypeF::NEG_INF; }
   virtual const Type *bottom_type() const { return Type::FLOAT; }
   virtual uint ideal_reg() const { return Op_RegF; }
@@ -267,7 +267,7 @@ class MinFNode : public MaxNode {
 public:
   MinFNode(Node *in1, Node *in2) : MaxNode(in1, in2) {}
   virtual int Opcode() const;
-  virtual const Type *add_ring(const Type*, const Type*) const { return Type::FLOAT; }
+  virtual const Type *add_ring(const Type*, const Type*) const;
   virtual const Type *add_id() const { return TypeF::POS_INF; }
   virtual const Type *bottom_type() const { return Type::FLOAT; }
   virtual uint ideal_reg() const { return Op_RegF; }
@@ -279,7 +279,7 @@ class MaxDNode : public MaxNode {
 public:
   MaxDNode(Node *in1, Node *in2) : MaxNode(in1, in2) {}
   virtual int Opcode() const;
-  virtual const Type *add_ring(const Type*, const Type*) const { return Type::DOUBLE; }
+  virtual const Type *add_ring(const Type*, const Type*) const;
   virtual const Type *add_id() const { return TypeD::NEG_INF; }
   virtual const Type *bottom_type() const { return Type::DOUBLE; }
   virtual uint ideal_reg() const { return Op_RegD; }
@@ -291,7 +291,7 @@ class MinDNode : public MaxNode {
 public:
   MinDNode(Node *in1, Node *in2) : MaxNode(in1, in2) {}
   virtual int Opcode() const;
-  virtual const Type *add_ring(const Type*, const Type*) const { return Type::DOUBLE; }
+  virtual const Type *add_ring(const Type*, const Type*) const;
   virtual const Type *add_id() const { return TypeD::POS_INF; }
   virtual const Type *bottom_type() const { return Type::DOUBLE; }
   virtual uint ideal_reg() const { return Op_RegD; }

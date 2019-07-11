@@ -26,18 +26,14 @@
 #define SHARE_JFR_LEAKPROFILER_CHAINS_ROOTSETCLOSURE_HPP
 
 #include "memory/iterator.hpp"
-#include "oops/oop.hpp"
 
-class EdgeQueue;
-
+template <typename Delegate>
 class RootSetClosure: public BasicOopIterateClosure {
  private:
-  RootSetClosure(EdgeQueue* edge_queue);
-  EdgeQueue* _edge_queue;
-  void closure_impl(const oop* reference, const oop pointee);
+  Delegate* const _delegate;
  public:
-  static void add_to_queue(EdgeQueue* edge_queue);
-  static void process_roots(OopClosure* closure);
+  RootSetClosure(Delegate* delegate);
+  void process();
 
   virtual void do_oop(oop* reference);
   virtual void do_oop(narrowOop* reference);

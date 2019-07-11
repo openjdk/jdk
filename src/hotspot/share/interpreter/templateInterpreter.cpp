@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,6 +29,7 @@
 #include "interpreter/templateInterpreter.hpp"
 #include "interpreter/templateInterpreterGenerator.hpp"
 #include "interpreter/templateTable.hpp"
+#include "logging/log.hpp"
 #include "memory/resourceArea.hpp"
 #include "runtime/timerTrace.hpp"
 
@@ -283,9 +284,13 @@ static inline void copy_table(address* from, address* to, int size) {
 
 void TemplateInterpreter::notice_safepoints() {
   if (!_notice_safepoints) {
+    log_debug(interpreter, safepoint)("switching active_table to safept_table.");
     // switch to safepoint dispatch table
     _notice_safepoints = true;
     copy_table((address*)&_safept_table, (address*)&_active_table, sizeof(_active_table) / sizeof(address));
+  } else {
+    log_debug(interpreter, safepoint)("active_table is already safept_table; "
+                                      "notice_safepoints() call is no-op.");
   }
 }
 
@@ -297,10 +302,17 @@ void TemplateInterpreter::notice_safepoints() {
 void TemplateInterpreter::ignore_safepoints() {
   if (_notice_safepoints) {
     if (!JvmtiExport::should_post_single_step()) {
+      log_debug(interpreter, safepoint)("switching active_table to normal_table.");
       // switch to normal dispatch table
       _notice_safepoints = false;
       copy_table((address*)&_normal_table, (address*)&_active_table, sizeof(_active_table) / sizeof(address));
+    } else {
+      log_debug(interpreter, safepoint)("single stepping is still active; "
+                                        "ignoring ignore_safepoints() call.");
     }
+  } else {
+    log_debug(interpreter, safepoint)("active_table is already normal_table; "
+                                      "ignore_safepoints() call is no-op.");
   }
 }
 

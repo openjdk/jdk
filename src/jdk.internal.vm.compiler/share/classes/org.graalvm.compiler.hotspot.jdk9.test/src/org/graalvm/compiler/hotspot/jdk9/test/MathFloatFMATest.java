@@ -30,7 +30,10 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 
+import org.graalvm.compiler.api.test.Graal;
 import org.graalvm.compiler.core.test.GraalCompilerTest;
+import org.graalvm.compiler.hotspot.HotSpotGraalRuntimeProvider;
+import org.graalvm.compiler.runtime.RuntimeProvider;
 import org.graalvm.compiler.test.AddExports;
 import org.junit.Before;
 import org.junit.Test;
@@ -48,6 +51,8 @@ public final class MathFloatFMATest extends GraalCompilerTest {
     @Before
     public void checkAMD64() {
         assumeTrue("skipping AMD64 specific test", getTarget().arch instanceof AMD64);
+        HotSpotGraalRuntimeProvider rt = (HotSpotGraalRuntimeProvider) Graal.getRequiredCapability(RuntimeProvider.class);
+        assumeTrue("skipping FMA specific tests", rt.getVMConfig().useFMAIntrinsics);
     }
 
     @Parameters(name = "{0}, {1}, {2}")

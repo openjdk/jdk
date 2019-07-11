@@ -263,24 +263,16 @@ void ZRootsIterator::oops_do(ZRootsIteratorClosure* cl, bool visit_jvmti_weak_ex
   }
 }
 
-ZConcurrentRootsIterator::ZConcurrentRootsIterator(bool marking) :
-    _marking(marking),
-    _sts_joiner(marking /* active */),
+ZConcurrentRootsIterator::ZConcurrentRootsIterator(int cld_claim) :
     _jni_handles_iter(JNIHandles::global_handles()),
+    _cld_claim(cld_claim),
     _jni_handles(this),
     _class_loader_data_graph(this) {
   ZStatTimer timer(ZSubPhaseConcurrentRootsSetup);
-  if (_marking) {
-    ClassLoaderDataGraph_lock->lock();
-    ClassLoaderDataGraph::clear_claimed_marks();
-  }
 }
 
 ZConcurrentRootsIterator::~ZConcurrentRootsIterator() {
   ZStatTimer timer(ZSubPhaseConcurrentRootsTeardown);
-  if (_marking) {
-    ClassLoaderDataGraph_lock->unlock();
-  }
 }
 
 void ZConcurrentRootsIterator::do_jni_handles(ZRootsIteratorClosure* cl) {
@@ -290,13 +282,8 @@ void ZConcurrentRootsIterator::do_jni_handles(ZRootsIteratorClosure* cl) {
 
 void ZConcurrentRootsIterator::do_class_loader_data_graph(ZRootsIteratorClosure* cl) {
   ZStatTimer timer(ZSubPhaseConcurrentRootsClassLoaderDataGraph);
-  if (_marking) {
-    CLDToOopClosure cld_cl(cl, ClassLoaderData::_claim_strong);
-    ClassLoaderDataGraph::always_strong_cld_do(&cld_cl);
-  } else {
-    CLDToOopClosure cld_cl(cl, ClassLoaderData::_claim_none);
-    ClassLoaderDataGraph::cld_do(&cld_cl);
-  }
+  CLDToOopClosure cld_cl(cl, _cld_claim);
+  ClassLoaderDataGraph::always_strong_cld_do(&cld_cl);
 }
 
 void ZConcurrentRootsIterator::oops_do(ZRootsIteratorClosure* cl) {
