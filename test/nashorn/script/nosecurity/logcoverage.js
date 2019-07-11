@@ -27,7 +27,7 @@
  *
  * @test
  * @fork
- * @option -Dnashorn.debug=true
+ * @option -Dnashorn.debug=true -ot=true
  */
 
 /*
@@ -98,8 +98,8 @@ function check(str, strs) {
     print("check ok!");
 }
 
-str = runScriptEngine(["--log=codegen,compiler=finest,methodhandles=finest,fields=finest"], __DIR__ + "../basic/NASHORN-19.js");
-str += runScriptEngine(["--log=codegen,compiler=finest,methodhandles=finest,fields=finest"], __DIR__ + "../basic/varargs.js");
+str = runScriptEngine(["--log=codegen,compiler=finest,methodhandles=finest,fields=finest", "-ot=true"], __DIR__ + "../basic/NASHORN-19.js");
+str += runScriptEngine(["--log=codegen,compiler=finest,methodhandles=finest,fields=finest", "-ot=true"], __DIR__ + "../basic/varargs.js");
 
 check(str, methodsCalled);
 check(str, ['return', 'get', 'set', '[fields]']);
