@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2019, Oracle and/or its affiliates. All rights reserved.
  */
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
@@ -75,7 +75,7 @@ import java.util.Stack;
 /**
  * @author Jacek Ambroziak
  * @author Santiago Pericas-Geertsen
- * @LastModified: Nov 2017
+ * @LastModified: July 2019
  */
 public class MethodGenerator extends MethodGen
     implements com.sun.org.apache.xalan.internal.xsltc.compiler.Constants {
@@ -207,7 +207,7 @@ public class MethodGenerator extends MethodGen
         _nextNode = new INVOKEINTERFACE(index, 1);
 
         _slotAllocator = new SlotAllocator();
-        _slotAllocator.initialize(getLocalVariableRegistry().getLocals(false));
+        _slotAllocator.initialize(getLocalVariableRegistry().getLocals());
         _allocatorInit = true;
     }
 
@@ -445,7 +445,7 @@ public class MethodGenerator extends MethodGen
                     }
                 }
             } else {
-                _nameToLVGMap.remove(lvg);
+                _nameToLVGMap.remove(lvg.getName());
             }
         }
 
@@ -480,55 +480,31 @@ public class MethodGenerator extends MethodGen
         }
 
         /**
-         * <p>Gets all {@link LocalVariableGen} objects for this method.</p>
-         * <p>When the <code>includeRemoved</code> argument has the value
-         * <code>false</code>, this method replaces uses of
-         * {@link MethodGen#getLocalVariables()} which has
+         * Gets all {@link LocalVariableGen} objects.
+         * This method replaces {@link MethodGen#getLocalVariables()} which has
          * a side-effect of setting the start and end range for any
-         * <code>LocalVariableGen</code> if either was <code>null</code>.  That
+         * {@code LocalVariableGen} if either was {@code null}.  That
          * side-effect causes problems for outlining of code in XSLTC.
-         * @param includeRemoved Specifies whether all local variables ever
-         * declared should be returned (<code>true</code>) or only those not
-         * removed (<code>false</code>)
-         * @return an array of <code>LocalVariableGen</code> containing all the
+         *
+         * @return an array of {@code LocalVariableGen} containing all the
          * local variables
          */
         @SuppressWarnings("unchecked")
-        protected LocalVariableGen[] getLocals(boolean includeRemoved) {
+        private LocalVariableGen[] getLocals() {
             LocalVariableGen[] locals = null;
             List<LocalVariableGen> allVarsEverDeclared = new ArrayList<>();
 
-            if (includeRemoved) {
-                int slotCount = allVarsEverDeclared.size();
-
-                for (int i = 0; i < slotCount; i++) {
-                    Object slotEntries = _variables.get(i);
-                    if (slotEntries != null) {
-                        if (slotEntries instanceof ArrayList) {
-                            List<LocalVariableGen> slotList =
-                                    (List<LocalVariableGen>)slotEntries;
-
-                            for (int j = 0; j < slotList.size(); j++) {
-                                allVarsEverDeclared.add(slotList.get(i));
-                            }
-                        } else {
-                            allVarsEverDeclared.add((LocalVariableGen)slotEntries);
+            for (Map.Entry<String, Object> nameVarsPair : _nameToLVGMap.entrySet()) {
+                Object vars = nameVarsPair.getValue();
+                if (vars != null) {
+                    if (vars instanceof ArrayList) {
+                        List<LocalVariableGen> varsList =
+                                (List<LocalVariableGen>) vars;
+                        for (int i = 0; i < varsList.size(); i++) {
+                            allVarsEverDeclared.add(varsList.get(i));
                         }
-                    }
-                }
-            } else {
-                for (Map.Entry<String, Object> nameVarsPair : _nameToLVGMap.entrySet()) {
-                    Object vars = nameVarsPair.getValue();
-                    if (vars != null) {
-                        if (vars instanceof ArrayList) {
-                            List<LocalVariableGen> varsList =
-                                    (List<LocalVariableGen>) vars;
-                            for (int i = 0; i < varsList.size(); i++) {
-                                allVarsEverDeclared.add(varsList.get(i));
-                            }
-                        } else {
-                            allVarsEverDeclared.add((LocalVariableGen)vars);
-                        }
+                    } else {
+                        allVarsEverDeclared.add((LocalVariableGen)vars);
                     }
                 }
             }
