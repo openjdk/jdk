@@ -109,7 +109,7 @@ the main class.
 .SH DESCRIPTION
 .PP
 The \f[CB]java\f[R] command starts a Java application.
-It does this by starting the Java Runtime Environment (JRE), loading the
+It does this by starting the Java Virtual Machine (JVM), loading the
 specified class, and calling that class\[aq]s \f[CB]main()\f[R] method.
 The method must be declared \f[CB]public\f[R] and \f[CB]static\f[R], it must
 not return any value, and it must accept a \f[CB]String\f[R] array as a
@@ -566,7 +566,7 @@ marks (for example \f[CB]\-Dfoo="foo\ bar"\f[R]).
 .RS
 .RE
 .TP
-.B \f[CB]\-disableassertions\f[R][\f[CB]:\f[R][\f[I]packagename\f[R]]...|\f[CB]:\f[R]\f[I]classname\f[R]] or \f[CB]\-da\\[\f[R]:\f[CB]\\[*packagename*\\]...|\f[R]:`\f[I]classname\f[R]]
+.B \f[CB]\-disableassertions\f[R][\f[CB]:\f[R][\f[I]packagename\f[R]]...|\f[CB]:\f[R]\f[I]classname\f[R]] or \f[CB]\-da\f[R][\f[CB]:\f[R][\f[I]packagename\f[R]]...|\f[CB]:\f[R]\f[I]classname\f[R]]
 Disables assertions.
 By default, assertions are disabled in all packages and classes.
 With no arguments, \f[CB]\-disableassertions\f[R] (\f[CB]\-da\f[R]) disables
@@ -606,7 +606,7 @@ Disables assertions in all system classes.
 .RS
 .RE
 .TP
-.B \f[CB]\-enableassertions\f[R][\f[CB]:\f[R][\f[I]packagename\f[R]]...|\f[CB]:\f[R]\f[I]classname\f[R]] or \f[CB]\-ea\\[\f[R]:\f[CB]\\[*packagename*\\]...|\f[R]:`\f[I]classname\f[R]]
+.B \f[CB]\-enableassertions\f[R][\f[CB]:\f[R][\f[I]packagename\f[R]]...|\f[CB]:\f[R]\f[I]classname\f[R]] or \f[CB]\-ea\f[R][\f[CB]:\f[R][\f[I]packagename\f[R]]...|\f[CB]:\f[R]\f[I]classname\f[R]]
 Enables assertions.
 By default, assertions are disabled in all packages and classes.
 With no arguments, \f[CB]\-enableassertions\f[R] (\f[CB]\-ea\f[R]) enables
@@ -659,6 +659,7 @@ Prints the help message to the output stream.
 .TP
 .B \f[CB]\-javaagent:\f[R]\f[I]jarpath\f[R][\f[CB]=\f[R]\f[I]options\f[R]]
 Loads the specified Java programming language agent.
+See \f[CB]java.lang.instrument\f[R].
 .RS
 .RE
 .TP
@@ -718,12 +719,12 @@ Displays information about the modules in use.
 .RE
 .TP
 .B \f[CB]\-\-version\f[R]
-Prints product version to the error stream and exits.
+Prints product version to the output stream and exits.
 .RS
 .RE
 .TP
 .B \f[CB]\-version\f[R]
-Prints product version to the output stream and exits.
+Prints product version to the error stream and exits.
 .RS
 .RE
 .TP
@@ -747,7 +748,7 @@ limitations by enabling the launcher to expand the contents of argument
 files after shell expansion, but before argument processing.
 Contents in the argument files are expanded because otherwise, they
 would be specified on the command line until the
-\f[CB]\-Xdisable\-\@files\f[R] option was encountered.
+\f[CB]\-\-disable\-\@files\f[R] option was encountered.
 .RS
 .PP
 The argument files can also contain the main class name and all options.
@@ -856,7 +857,7 @@ are compiled to native code.
 .TP
 .B \f[CB]\-Xmn\f[R] \f[I]size\f[R]
 Sets the initial and maximum size (in bytes) of the heap for the young
-generation (nursery).
+generation (nursery) in the generational collectors.
 Append the letter \f[CB]k\f[R] or \f[CB]K\f[R] to indicate kilobytes,
 \f[CB]m\f[R] or \f[CB]M\f[R] to indicate megabytes, or \f[CB]g\f[R] or
 \f[CB]G\f[R] to indicate gigabytes.
@@ -866,8 +867,10 @@ If the size for the young generation is too small, then a lot of minor
 garbage collections are performed.
 If the size is too large, then only full garbage collections are
 performed, which can take a long time to complete.
-It is recommended that you keep the size for the young generation
-greater than 25% and less than 50% of the overall heap size.
+It is recommended that you do not set the size for the young generation
+for the G1 collector, and keep the size for the young generation greater
+than 25% and less than 50% of the overall heap size for other
+collectors.
 The following examples show how to set the initial and maximum size of
 young generation to 256 MB using various units:
 .RS
@@ -887,7 +890,7 @@ size of the heap for the young generation, you can use
 .RE
 .TP
 .B \f[CB]\-Xms\f[R] \f[I]size\f[R]
-Sets the initial size (in bytes) of the heap.
+Sets the minimum and initial size (in bytes) of the heap.
 This value must be a multiple of 1024 and greater than 1 MB.
 Append the letter \f[CB]k\f[R] or \f[CB]K\f[R] to indicate kilobytes,
 \f[CB]m\f[R] or \f[CB]M\f[R] to indicate megabytes, \f[CB]g\f[R] or \f[CB]G\f[R]
@@ -904,16 +907,18 @@ MB using various units:
 \f[R]
 .fi
 .PP
-If you don\[aq]t set this option, then the initial size is set as the
-sum of the sizes allocated for the old generation and the young
-generation.
+Instead of the \f[CB]\-Xms\f[R] option to set both the minimum and initial
+size of the heap, you can use \f[CB]\-XX:MinHeapSize\f[R] to set the
+minimum size and \f[CB]\-XX:InitialHeapSize\f[R] to set the initial size.
+.PP
+If you don\[aq]t set this option, the initial size is set as the sum of
+the sizes allocated for the old generation and the young generation.
 The initial size of the heap for the young generation can be set using
 the \f[CB]\-Xmn\f[R] option or the \f[CB]\-XX:NewSize\f[R] option.
 .RE
 .TP
 .B \f[CB]\-Xmx\f[R] \f[I]size\f[R]
-Specifies the maximum size (in bytes) of the memory allocation pool in
-bytes.
+Specifies the maximum size (in bytes) of the heap.
 This value must be a multiple of 1024 and greater than 2 MB.
 Append the letter \f[CB]k\f[R] or \f[CB]K\f[R] to indicate kilobytes,
 \f[CB]m\f[R] or \f[CB]M\f[R] to indicate megabytes, or \f[CB]g\f[R] or
@@ -1205,13 +1210,6 @@ or directories.
 .RS
 .RE
 .TP
-.B \f[CB]\-\-disable\-\@files\f[R]
-Can be used anywhere on the command line, including in an argument file,
-to prevent further \f[CB]\@\f[R]\f[I]filename\f[R] expansion.
-This option stops expanding \f[CB]\@\f[R]\-argfiles after the option.
-.RS
-.RE
-.TP
 .B \f[CB]\-\-source\f[R] \f[I]version\f[R]
 Sets the version of the source in source\-file mode.
 .RS
@@ -1392,31 +1390,12 @@ By default this option is disabled.
 .RS
 .RE
 .TP
-.B \f[CB]\-XX:+FlightRecorder\f[R]
-Enables the use of Java Flight Recorder (JFR) during the runtime of the
-application.
-.RS
-.RS
-.PP
-\f[B]Note:\f[R] The \f[CB]\-XX:+FlightRecorder\f[R] option is no longer
-required to use JFR.
-This was a change made in JDK 8u40.
-.RE
-.RE
-.TP
-.B \f[CB]\-XX:FlightRecorderOptions=\f[R]\f[I]parameter\f[R]\f[CB]=\f[R]\f[I]value\f[R]
+.B \f[CB]\-XX:FlightRecorderOptions=\f[R]\f[I]parameter\f[R]\f[CB]=\f[R]\f[I]value\f[R] (or)\f[CB]\-XX:FlightRecorderOptions:\f[R]\f[I]parameter\f[R]\f[CB]=\f[R]\f[I]value\f[R]
 Sets the parameters that control the behavior of JFR.
 .RS
 .PP
 The following list contains the available JFR
 \f[I]parameter\f[R]\f[CB]=\f[R]\f[I]value\f[R] entries:
-.TP
-.B \f[CB]allow_threadbuffers_to_disk=\f[R]{\f[CB]true\f[R]|\f[CB]false\f[R]}
-Specifies whether thread buffers are written directly to disk if the
-buffer thread is blocked.
-By default, this parameter is disabled.
-.RS
-.RE
 .TP
 .B \f[CB]globalbuffersize=\f[R]\f[I]size\f[R]
 Specifies the total amount of primary memory used for data retention.
@@ -1492,7 +1471,8 @@ performance.
 .TP
 .B \f[CB]threadbuffersize=\f[R]\f[I]size\f[R]
 Specifies the per\-thread local buffer size (in bytes).
-By default, the local buffer size is set to 8 kilobytes.
+By default, the local buffer size is set to 8 kilobytes, with a minimum
+value of 4 kilobytes.
 Overriding this parameter could reduce performance and is not
 recommended.
 .RS
@@ -2978,19 +2958,17 @@ Enables Java heap optimization.
 This sets various parameters to be optimal for long\-running jobs with
 intensive memory allocation, based on the configuration of the computer
 (RAM and CPU).
-By default, the option is disabled and the heap isn't optimized.
+By default, the option is disabled and the heap sizes are configured
+less aggressively.
 .RS
 .RE
 .TP
 .B \f[CB]\-XX:+AlwaysPreTouch\f[R]
-Enables touching of every page on the Java heap during JVM
-initialization.
-This gets all pages into memory before entering the \f[CB]main()\f[R]
-method.
-The option can be used in testing to simulate a long\-running system
-with all virtual memory mapped to physical memory.
-By default, this option is disabled and all pages are committed as JVM
-heap space fills.
+Requests the VM to touch every page on the Java heap after requesting it
+from the operating system and before handing memory out to the
+application.
+By default, this option is disabled and all pages are committed as the
+application uses the heap space.
 .RS
 .RE
 .TP
@@ -3026,12 +3004,10 @@ initiating occupancy fraction.
 .RS
 .PP
 The following example shows how to set the factor to 20%:
-.IP
-.nf
-\f[CB]
->\ \ \ `\-XX:CMSInitiatingOccupancyFraction=20`
-\f[R]
-.fi
+.RS
+.PP
+\f[CB]\-XX:CMSInitiatingOccupancyFraction=20\f[R]
+.RE
 .RE
 .TP
 .B \f[CB]\-XX:CMSIncrementalDutySafetyFactor=\f[R]\f[I]percent\f[R]
@@ -3095,11 +3071,14 @@ deprecated \f[CB]\-XX:+UseConcMarkSweepGC\f[R] option and the
 .RS
 .RE
 .TP
-.B \f[CB]\-XX:+ExplicitGCInvokesConcurrentAndUnloadsClasses\f[R]
-Enables invoking of concurrent GC by using the \f[CB]System.gc()\f[R]
-request and unloading of classes during the concurrent GC cycle.
-This option is disabled by default and can be enabled only with the
-deprecated \f[CB]\-XX:+UseConcMarkSweepGC\f[R] option.
+.B \f[CB]\-XX:G1AdaptiveIHOPNumInitialSamples=\f[R]\f[I]number\f[R]
+When \f[CB]\-XX:UseAdaptiveIHOP\f[R] is enabled, this option sets the
+number of completed marking cycles used to gather samples until G1
+adaptively determines the optimum value of
+\f[CB]\-XX:InitiatingHeapOccupancyPercent\f[R].
+Before, G1 uses the value of
+\f[CB]\-XX:InitiatingHeapOccupancyPercent\f[R] directly for this purpose.
+The default value is 3.
 .RS
 .RE
 .TP
@@ -3107,10 +3086,8 @@ deprecated \f[CB]\-XX:+UseConcMarkSweepGC\f[R] option.
 Sets the size of the regions into which the Java heap is subdivided when
 using the garbage\-first (G1) collector.
 The value is a power of 2 and can range from 1 MB to 32 MB.
-The goal is to have around 2048 regions based on the minimum Java heap
-size.
 The default region size is determined ergonomically based on the heap
-size.
+size with a goal of approximately 2048 regions.
 .RS
 .PP
 The following example sets the size of the subdivisions to 16 MB:
@@ -3137,8 +3114,6 @@ The default value is 60 percent of your Java heap.
 .PP
 This is an experimental flag.
 This setting replaces the \f[CB]\-XX:DefaultMaxNewGenPercent\f[R] setting.
-.PP
-This setting isn\[aq]t available in Java HotSpot VM build 23 or earlier.
 .RE
 .TP
 .B \f[CB]\-XX:G1MixedGCCountTarget=\f[R]\f[I]number\f[R]
@@ -3148,8 +3123,6 @@ cycle to collect old regions with at most
 The default is 8 mixed garbage collections.
 The goal for mixed collections is to be within this target number.
 .RS
-.PP
-This setting isn\[aq]t available in Java HotSpot VM build 23 or earlier.
 .RE
 .TP
 .B \f[CB]\-XX:G1MixedGCLiveThresholdPercent=\f[R]\f[I]percent\f[R]
@@ -3161,8 +3134,6 @@ The default occupancy is 85 percent.
 This is an experimental flag.
 This setting replaces the
 \f[CB]\-XX:G1OldCSetRegionLiveThresholdPercent\f[R] setting.
-.PP
-This setting isn\[aq]t available in Java HotSpot VM build 23 or earlier.
 .RE
 .TP
 .B \f[CB]\-XX:G1NewSizePercent=\f[R]\f[I]percent\f[R]
@@ -3173,8 +3144,6 @@ The default value is 5 percent of your Java heap.
 .PP
 This is an experimental flag.
 This setting replaces the \f[CB]\-XX:DefaultMinNewGenPercent\f[R] setting.
-.PP
-This setting isn\[aq]t available in Java HotSpot VM build 23 or earlier.
 .RE
 .TP
 .B \f[CB]\-XX:G1OldCSetRegionThresholdPercent=\f[R]\f[I]percent\f[R]
@@ -3182,8 +3151,6 @@ Sets an upper limit on the number of old regions to be collected during
 a mixed garbage collection cycle.
 The default is 10 percent of the Java heap.
 .RS
-.PP
-This setting isn\[aq]t available in Java HotSpot VM build 23 or earlier.
 .RE
 .TP
 .B \f[CB]\-XX:G1ReservePercent=\f[R]\f[I]percent\f[R]
@@ -3202,10 +3169,20 @@ The following example sets the reserved heap to 20%:
 .RE
 .RE
 .TP
-.B \f[CB]\-XX:InitialHeapOccupancyPercent=\f[R]\f[I]percent\f[R]
-Sets the Java heap occupancy threshold that triggers a marking cycle.
-The default occupancy is 45 percent of the entire Java heap.
+.B \f[CB]\-XX:+G1UseAdaptiveIHOP\f[R]
+Controls adaptive calculation of the old generation occupancy to start
+background work preparing for an old generation collection.
+If enabled, G1 uses \f[CB]\-XX:InitiatingHeapOccupancyPercent\f[R] for the
+first few times as specified by the value of
+\f[CB]\-XX:G1AdaptiveIHOPNumInitialSamples\f[R], and after that adaptively
+calculates a new optimum value for the initiating occupancy
+automatically.
+Otherwise, the old generation collection process always starts at the
+old generation occupancy determined by
+\f[CB]\-XX:InitiatingHeapOccupancyPercent\f[R].
 .RS
+.PP
+The default is enabled.
 .RE
 .TP
 .B \f[CB]\-XX:InitialHeapSize=\f[R]\f[I]size\f[R]
@@ -3276,15 +3253,18 @@ to 4:
 .RE
 .TP
 .B \f[CB]\-XX:InitiatingHeapOccupancyPercent=\f[R]\f[I]percent\f[R]
-Sets the percentage of the heap occupancy (0 to 100) at which to start a
-concurrent GC cycle.
-It\[aq]s used by garbage collectors that trigger a concurrent GC cycle
-based on the occupancy of the entire heap, not just one of the
-generations (for example, the G1 garbage collector).
+Sets the percentage of the old generation occupancy (0 to 100) at which
+to start the first few concurrent marking cycles for the G1 garbage
+collector.
 .RS
 .PP
 By default, the initiating value is set to 45%.
-A value of 0 implies nonstop GC cycles.
+A value of 0 implies nonstop concurrent GC cycles from the beginning
+until G1 adaptively sets this value.
+.PP
+See also the \f[CB]\-XX:G1UseAdaptiveIHOP\f[R] and
+\f[CB]\-XX:G1AdaptiveIHOPNumInitialSamples\f[R] options.
+.PP
 The following example shows how to set the initiating heap occupancy to
 75%:
 .RS
@@ -3298,7 +3278,9 @@ Sets a target for the maximum GC pause time (in milliseconds).
 This is a soft goal, and the JVM will make its best effort to achieve
 it.
 The specified value doesn\[aq]t adapt to your heap size.
-By default, there\[aq]s no maximum pause time value.
+By default, for G1 the maximum pause time target is 200 milliseconds.
+The other generational collectors do not use a pause time goal by
+default.
 .RS
 .PP
 The following example shows how to set the maximum target pause time to
@@ -3331,13 +3313,6 @@ allocated memory to 80 MB using various units:
 \-XX:MaxHeapSize=80m
 \f[R]
 .fi
-.PP
-On Oracle Solaris 7 and Oracle Solaris 8 SPARC platforms, the upper
-limit for this value is approximately 4,000 MB minus overhead amounts.
-On Oracle Solaris 2.6 and x86 platforms, the upper limit is
-approximately 2,000 MB minus overhead amounts.
-On Linux platforms, the upper limit is approximately 2,000 MB minus
-overhead amounts.
 .PP
 The \f[CB]\-XX:MaxHeapSize\f[R] option is equivalent to \f[CB]\-Xmx\f[R].
 .RE
@@ -3450,6 +3425,32 @@ option to keep the Java heap small by reducing the dynamic footprint for
 embedded applications.
 .RE
 .TP
+.B \f[CB]\-XX:MinHeapSize=\f[R]\f[I]size\f[R]
+Sets the minimum size (in bytes) of the memory allocation pool.
+This value must be either 0, or a multiple of 1024 and greater than 1
+MB.
+Append the letter \f[CB]k\f[R] or \f[CB]K\f[R] to indicate kilobytes,
+\f[CB]m\f[R] or \f[CB]M\f[R] to indicate megabytes, or \f[CB]g\f[R] or
+\f[CB]G\f[R] to indicate gigabytes.
+The default value is selected at run time based on the system
+configuration.
+.RS
+.PP
+The following examples show how to set the mimimum size of allocated
+memory to 6 MB using various units:
+.IP
+.nf
+\f[CB]
+\-XX:MinHeapSize=6291456
+\-XX:MinHeapSize=6144k
+\-XX:MinHeapSize=6m
+\f[R]
+.fi
+.PP
+If you set this option to 0, then the minimum size is set to the same
+value as the initial size.
+.RE
+.TP
 .B \f[CB]\-XX:NewRatio=\f[R]\f[I]ratio\f[R]
 Sets the ratio between young and old generation sizes.
 By default, this option is set to 2.
@@ -3493,23 +3494,13 @@ The \f[CB]\-XX:NewSize\f[R] option is equivalent to \f[CB]\-Xmn\f[R].
 .RE
 .TP
 .B \f[CB]\-XX:ParallelGCThreads=\f[R]\f[I]threads\f[R]
-Sets the value of the stop\-the\-world (STW) worker threads.
-This option sets the value of \f[I]threads\f[R] to the number of logical
-processors.
-The value of \f[I]threads\f[R] is the same as the number of logical
-processors up to a value of 8.
+Sets the number of the stop\-the\-world (STW) worker threads.
+The default value depends on the number of CPUs available to the JVM and
+the garbage collector selected.
 .RS
 .PP
-If there are more than 8 logical processors, then this option sets the
-value of \f[I]threads\f[R] to approximately 5/8 of the logical
-processors.
-This works in most cases except for larger SPARC systems where the value
-of \f[I]threads\f[R] can be approximately 5/16 of the logical processors.
-.PP
-The default value depends on the number of CPUs available to the JVM.
-.PP
-For example, to set the number of threads for parallel GC to 2, specify
-the following option:
+For example, to set the number of threads for G1 GC to 2, specify the
+following option:
 .RS
 .PP
 \f[CB]\-XX:ParallelGCThreads=2\f[R]
@@ -3749,6 +3740,22 @@ This option is enabled by default.
 To disable the use of TLABs, specify the option \f[CB]\-XX:\-UseTLAB\f[R].
 .RS
 .RE
+.TP
+.B \f[CB]\-XX:+UseZGC\f[R]
+Enables the use of the Z garbage collector.
+This garbage collector is best for providing lowest latency with large
+Java heaps at some throughput cost.
+This is an experimental garbage collector, you need to specify
+\f[CB]\-XX:+UnlockExperimentalVMOptions\f[R] before \f[CB]\-XX:+UseZGC\f[R]
+on the command line.
+.RS
+.PP
+Example:
+.RS
+.PP
+\f[CB]\-XX:+UnlockExperimentalVMOptions\ \-XX:+UseZGC\f[R]
+.RE
+.RE
 .SH DEPRECATED JAVA OPTIONS
 .PP
 These \f[CB]java\f[R] options are deprecated and might be removed in a
@@ -3785,6 +3792,13 @@ fails.
 By default, this option is disabled and it\[aq]s ignored (that is,
 treated as disabled) for classes with a recent bytecode version.
 You can enable it only for classes with older versions of the bytecode.
+.RS
+.RE
+.TP
+.B \f[CB]\-XX:+FlightRecorder\f[R]
+Enables the use of Java Flight Recorder (JFR) during the runtime of the
+application.
+Since JDK 8u40 this option has not been required to use JFR.
 .RS
 .RE
 .TP
@@ -3926,8 +3940,8 @@ sign (\f[CB]\@\f[R]), it expands the contents of that file into an
 argument list just as they would be specified on the command line.
 .PP
 The \f[CB]java\f[R] launcher expands the argument file contents until it
-encounters the \f[CB]\-Xdisable\-\@files\f[R] option.
-You can use the \f[CB]\-Xdisable\-\@files\f[R] option anywhere on the
+encounters the \f[CB]\-\-disable\-\@files\f[R] option.
+You can use the \f[CB]\-\-disable\-\@files\f[R] option anywhere on the
 command line, including in an argument file, to stop \f[CB]\@\f[R]
 argument files expansion.
 .PP
@@ -5603,7 +5617,7 @@ Use the following commands and advanced options to achieve lower
 response times for your application:
 .RS
 .PP
-\f[CB]java\ \-XX:+UseG1GC\ \-Xms26g\ Xmx26g\ \-XX:MaxGCPauseMillis=500\f[R]
+\f[CB]java\ \-XX:+UseG1GC\ \-XX:MaxGCPauseMillis=100\f[R]
 .RE
 .SS Keeping the Java Heap Small and Reducing the Dynamic Footprint of
 Embedded Applications
