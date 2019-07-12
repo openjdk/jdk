@@ -138,7 +138,7 @@ ifeq ($(BUILD_CDS_ARCHIVE), true)
           -Xmx128M -Xms128M $(LOG_INFO), \
   ))
 
-  JDK_TARGETS += $(gen_cds_archive_jdk)
+  JRE_TARGETS += $(gen_cds_archive_jre)
 endif
 
 ################################################################################
