@@ -479,8 +479,7 @@ GtkApi* gtk3_load(JNIEnv *env, const char* lib_name)
         fp_gtk_fixed_new = dl_symbol("gtk_fixed_new");
         fp_gtk_handle_box_new = dl_symbol("gtk_handle_box_new");
         fp_gtk_image_new = dl_symbol("gtk_image_new");
-        fp_gtk_hpaned_new = dl_symbol("gtk_hpaned_new");
-        fp_gtk_vpaned_new = dl_symbol("gtk_vpaned_new");
+        fp_gtk_paned_new = dl_symbol("gtk_paned_new");
         fp_gtk_scale_new = dl_symbol("gtk_scale_new");
         fp_gtk_hscrollbar_new = dl_symbol("gtk_hscrollbar_new");
         fp_gtk_vscrollbar_new = dl_symbol("gtk_vscrollbar_new");
@@ -1083,7 +1082,7 @@ static GtkWidget *gtk3_get_widget(WidgetType widget_type)
         case SPLIT_PANE:
             if (init_result = (NULL == gtk3_widgets[_GTK_HPANED_TYPE]))
             {
-                gtk3_widgets[_GTK_HPANED_TYPE] = (*fp_gtk_hpaned_new)();
+                gtk3_widgets[_GTK_HPANED_TYPE] = (*fp_gtk_paned_new)(GTK_ORIENTATION_HORIZONTAL);
             }
             result = gtk3_widgets[_GTK_HPANED_TYPE];
             break;
@@ -1316,7 +1315,7 @@ static GtkWidget *gtk3_get_widget(WidgetType widget_type)
         case VSPLIT_PANE_DIVIDER:
             if (init_result = (NULL == gtk3_widgets[_GTK_VPANED_TYPE]))
             {
-                gtk3_widgets[_GTK_VPANED_TYPE] = (*fp_gtk_vpaned_new)();
+                gtk3_widgets[_GTK_VPANED_TYPE] = (*fp_gtk_paned_new)(GTK_ORIENTATION_VERTICAL);
             }
             result = gtk3_widgets[_GTK_VPANED_TYPE];
             break;
@@ -1436,6 +1435,10 @@ static GtkStyleContext* get_style(WidgetType widget_type, const gchar *detail)
             } else if (strcmp(detail, "option") == 0) {
                 path = createWidgetPath (NULL);
                 append_element(path, "radio");
+            } else if (strcmp(detail, "paned") == 0) {
+                path = createWidgetPath (fp_gtk_style_context_get_path (widget_context));
+                append_element(path, "paned");
+                append_element(path, "separator");
             } else {
                 path = createWidgetPath (fp_gtk_style_context_get_path (widget_context));
                 append_element(path, detail);
@@ -1834,22 +1837,30 @@ static void gtk3_paint_handle(WidgetType widget_type, GtkStateType state_type,
 {
     gtk3_widget = gtk3_get_widget(widget_type);
 
-    GtkStyleContext* context = fp_gtk_widget_get_style_context (gtk3_widget);
-
-    fp_gtk_style_context_save (context);
+    GtkStyleContext* context = get_style(widget_type, detail);
 
     GtkStateFlags flags = get_gtk_flags(state_type);
     fp_gtk_style_context_set_state(context, GTK_STATE_FLAG_PRELIGHT);
 
-    if (detail != 0) {
+    if (detail != 0 && !(strcmp(detail, "paned") == 0)) {
         transform_detail_string(detail, context);
         fp_gtk_style_context_add_class (context, "handlebox_bin");
     }
 
-    fp_gtk_render_handle(context, cr, x, y, width, height);
-    fp_gtk_render_background(context, cr, x, y, width, height);
+    if (!(strcmp(detail, "paned") == 0)) {
+        fp_gtk_render_handle(context, cr, x, y, width, height);
+        fp_gtk_render_background(context, cr, x, y, width, height);
+    } else {
+        if (orientation == GTK_ORIENTATION_VERTICAL) {
+            fp_gtk_render_handle(context, cr, x+width/2, y, 2, height);
+            fp_gtk_render_background(context, cr, x+width/2, y, 2, height);
+        } else {
+            fp_gtk_render_handle(context, cr, x, y+height/2, width, 2);
+            fp_gtk_render_background(context, cr, x, y+height/2, width, 2);
+        }
+    }
 
-    fp_gtk_style_context_restore (context);
+    disposeOrRestoreContext(context);
 }
 
 static void gtk3_paint_hline(WidgetType widget_type, GtkStateType state_type,
