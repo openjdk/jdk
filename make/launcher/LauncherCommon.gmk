@@ -235,7 +235,10 @@ ifeq ($(call isTargetOsType, unix), true)
           FORMAT := man, \
           FILTER := $(PANDOC_TROFF_MANPAGE_FILTER), \
           POST_PROCESS := $(MAN_POST_PROCESS), \
-          REPLACEMENTS := @@VERSION_SHORT@@ => $(VERSION_SHORT), \
+          REPLACEMENTS := \
+		@@COPYRIGHT_YEAR@@ => $(COPYRIGHT_YEAR) ; \
+		@@VERSION_SHORT@@ => $(VERSION_SHORT) ; \
+		@@VERSION_SPECIFICATION@@ => $(VERSION_SPECIFICATION), \
           EXTRA_DEPS := $(PANDOC_TROFF_MANPAGE_FILTER) \
               $(PANDOC_TROFF_MANPAGE_FILTER_JAVASCRIPT), \
       ))
