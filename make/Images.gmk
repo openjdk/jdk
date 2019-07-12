@@ -102,7 +102,7 @@ $(eval $(call SetupExecute, jlink_jre, \
     WARN := Creating legacy jre image, \
     DEPS := $(JMODS) $(BASE_RELEASE_FILE) \
         $(call DependOnVariable, JDK_MODULES_LIST), \
-    OUTPUT_DIR := $(JDK_IMAGE_DIR), \
+    OUTPUT_DIR := $(JRE_IMAGE_DIR), \
     SUPPORT_DIR := $(SUPPORT_OUTPUTDIR)/images/jre, \
     PRE_COMMAND := $(RM) -r $(JRE_IMAGE_DIR), \
     COMMAND := $(JLINK_TOOL) --add-modules $(JRE_MODULES_LIST) \
