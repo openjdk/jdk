@@ -90,6 +90,10 @@ public class TestCommon extends CDSTestUtils {
         return currentArchiveName;
     }
 
+    public static void setCurrentArchiveName(String archiveName) {
+        currentArchiveName = archiveName;
+    }
+
     public static String getNewArchiveName() {
         return getNewArchiveName(null);
     }

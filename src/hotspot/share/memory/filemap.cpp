@@ -155,6 +155,8 @@ template <int N> static void get_header_version(char (&header_version) [N]) {
   const char *vm_version = VM_Version::internal_vm_info_string();
   const int version_len = (int)strlen(vm_version);
 
+  memset(header_version, 0, JVM_IDENT_MAX);
+
   if (version_len < (JVM_IDENT_MAX-1)) {
     strcpy(header_version, vm_version);
 
@@ -170,6 +172,8 @@ template <int N> static void get_header_version(char (&header_version) [N]) {
     sprintf(&header_version[JVM_IDENT_MAX-9], "%08x", hash);
     header_version[JVM_IDENT_MAX-1] = 0;  // Null terminate.
   }
+
+  assert(header_version[JVM_IDENT_MAX-1] == 0, "must be");
 }
 
 FileMapInfo::FileMapInfo(bool is_static) {
@@ -730,10 +734,59 @@ bool FileMapInfo::init_from_file(int fd, bool is_static) {
     fail_continue("Unable to read the file header.");
     return false;
   }
+
+  if (!Arguments::has_jimage()) {
+    FileMapInfo::fail_continue("The shared archive file cannot be used with an exploded module build.");
+    return false;
+  }
+
+  unsigned int expected_magic = is_static ? CDS_ARCHIVE_MAGIC : CDS_DYNAMIC_ARCHIVE_MAGIC;
+  if (_header->_magic != expected_magic) {
+    log_info(cds)("_magic expected: 0x%08x", expected_magic);
+    log_info(cds)("         actual: 0x%08x", _header->_magic);
+    FileMapInfo::fail_continue("The shared archive file has a bad magic number.");
+    return false;
+  }
+
   if (_header->_version != CURRENT_CDS_ARCHIVE_VERSION) {
+    log_info(cds)("_version expected: %d", CURRENT_CDS_ARCHIVE_VERSION);
+    log_info(cds)("           actual: %d", _header->_version);
     fail_continue("The shared archive file has the wrong version.");
     return false;
   }
+
+  if (_header->_header_size != sz) {
+    log_info(cds)("_header_size expected: " SIZE_FORMAT, sz);
+    log_info(cds)("               actual: " SIZE_FORMAT, _header->_header_size);
+    FileMapInfo::fail_continue("The shared archive file has an incorrect header size.");
+    return false;
+  }
+
+  if (_header->_jvm_ident[JVM_IDENT_MAX-1] != 0) {
+    FileMapInfo::fail_continue("JVM version identifier is corrupted.");
+    return false;
+  }
+
+  char header_version[JVM_IDENT_MAX];
+  get_header_version(header_version);
+  if (strncmp(_header->_jvm_ident, header_version, JVM_IDENT_MAX-1) != 0) {
+    log_info(cds)("_jvm_ident expected: %s", header_version);
+    log_info(cds)("             actual: %s", _header->_jvm_ident);
+    FileMapInfo::fail_continue("The shared archive file was created by a different"
+                  " version or build of HotSpot");
+    return false;
+  }
+
+  if (VerifySharedSpaces) {
+    int expected_crc = _header->compute_crc();
+    if (expected_crc != _header->_crc) {
+      log_info(cds)("_crc expected: %d", expected_crc);
+      log_info(cds)("       actual: %d", _header->_crc);
+      FileMapInfo::fail_continue("Header checksum verification failed.");
+      return false;
+    }
+  }
+
   _file_offset = n;
 
   size_t info_size = _header->_paths_misc_info_size;
@@ -748,10 +801,6 @@ bool FileMapInfo::init_from_file(int fd, bool is_static) {
   _file_offset += n + _header->_base_archive_name_size; // accounts for the size of _base_archive_name
 
   if (is_static) {
-    if (_header->_magic != CDS_ARCHIVE_MAGIC) {
-      fail_continue("Incorrect static archive magic number");
-      return false;
-    }
     // just checking the last region is sufficient since the archive is written
     // in sequential order
     size_t len = lseek(fd, 0, SEEK_END);
@@ -1589,33 +1638,7 @@ int FileMapHeader::compute_crc() {
 
 // This function should only be called during run time with UseSharedSpaces enabled.
 bool FileMapHeader::validate() {
-  if (VerifySharedSpaces && compute_crc() != _crc) {
-    FileMapInfo::fail_continue("Header checksum verification failed.");
-    return false;
-  }
 
-  if (!Arguments::has_jimage()) {
-    FileMapInfo::fail_continue("The shared archive file cannot be used with an exploded module build.");
-    return false;
-  }
-
-  if (_version != CURRENT_CDS_ARCHIVE_VERSION) {
-    FileMapInfo::fail_continue("The shared archive file is the wrong version.");
-    return false;
-  }
-  if (_magic != CDS_ARCHIVE_MAGIC && _magic != CDS_DYNAMIC_ARCHIVE_MAGIC) {
-    FileMapInfo::fail_continue("The shared archive file has a bad magic number.");
-    return false;
-  }
-  char header_version[JVM_IDENT_MAX];
-  get_header_version(header_version);
-  if (strncmp(_jvm_ident, header_version, JVM_IDENT_MAX-1) != 0) {
-    log_info(class, path)("expected: %s", header_version);
-    log_info(class, path)("actual:   %s", _jvm_ident);
-    FileMapInfo::fail_continue("The shared archive file was created by a different"
-                  " version or build of HotSpot");
-    return false;
-  }
   if (_obj_alignment != ObjectAlignmentInBytes) {
     FileMapInfo::fail_continue("The shared archive file's ObjectAlignmentInBytes of %d"
                   " does not equal the current ObjectAlignmentInBytes of " INTX_FORMAT ".",
