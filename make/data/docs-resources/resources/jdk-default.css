@@ -85,6 +85,8 @@ h1.title + .subtitle {
     margin-top: -1em;
 }
 
+a { text-decoration: none }
+
 a:link {
   color: #4A6782;
 }

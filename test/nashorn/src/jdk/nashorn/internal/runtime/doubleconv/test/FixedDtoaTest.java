@@ -624,6 +624,11 @@ public class FixedDtoaTest {
         assertEquals("1000000000000000128", buffer.getRawDigits());
         assertEquals(19, buffer.getDecimalPoint());
         buffer.reset();
+
+        assertTrue(DoubleConversion.fixedDtoa(2.10861548515811875e+15, 17, buffer));
+        assertEquals("210861548515811875", buffer.getRawDigits());
+        assertEquals(16, buffer.getDecimalPoint());
+        buffer.reset();
     }
 
 

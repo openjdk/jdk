@@ -63,6 +63,11 @@ The command can generate the dependencies in DOT language (see the
 \f[CB]\-dotoutput\f[R] option).
 .SH POSSIBLE OPTIONS
 .TP
+.B \f[CB]\-?\f[R] or \f[CB]\-h\f[R] or \f[CB]\-\-help\f[R]
+Prints the help message.
+.RS
+.RE
+.TP
 .B \f[CB]\-dotoutput\f[R] \f[I]dir\f[R] or \f[CB]\-\-dot\-output\f[R] \f[I]dir\f[R]
 Specifies the destination directory for DOT file output.
 If this option is specified, then the \f[CB]jdeps\f[R]command generates
@@ -296,7 +301,7 @@ Shows the profile containing a package.
 .RS
 .RE
 .TP
-.B \f[CB]\-R\f[R] or \f[CB]\-recursive\f[R]
+.B \f[CB]\-R\f[R] or \f[CB]\-\-recursive\f[R]
 Recursively traverses all run\-time dependences.
 The \f[CB]\-R\f[R] option implies \f[CB]\-filter:none\f[R].
 If \f[CB]\-p\f[R], \f[CB]\-e\f[R], or \f[CB]\-f\f[R] options are specified,
@@ -309,7 +314,7 @@ Do not recursively traverse dependences.
 .RS
 .RE
 .TP
-.B \f[CB]\-I\f[R] or \f[CB]\-inverse\f[R]
+.B \f[CB]\-I\f[R] or \f[CB]\-\-inverse\f[R]
 Analyzes the dependences per other given options and then finds all
 artifacts that directly and indirectly depend on the matching nodes.
 This is equivalent to the inverse of the compile\-time view analysis and
