@@ -550,16 +550,20 @@ public class MetricsTester {
         long newUsage = metrics.getCpuUsage();
         long[] newPerCpu = metrics.getPerCpuUsage();
 
-        if (newSysVal <= startSysVal) {
+        // system/user CPU usage counters may be slowly increasing.
+        // allow for equal values for a pass
+        if (newSysVal < startSysVal) {
             fail(SubSystem.CPU, "getCpuSystemUsage", newSysVal, startSysVal);
         }
 
-        if (newUserVal <= startUserVal) {
+        // system/user CPU usage counters may be slowly increasing.
+        // allow for equal values for a pass
+        if (newUserVal < startUserVal) {
             fail(SubSystem.CPU, "getCpuUserUsage", newUserVal, startUserVal);
         }
 
         if (newUsage <= startUsage) {
-            fail(SubSystem.CPU, "getCpuUserUsage", newUsage, startUsage);
+            fail(SubSystem.CPU, "getCpuUsage", newUsage, startUsage);
         }
 
         boolean success = false;
