@@ -344,6 +344,7 @@ public class GraalHotSpotVMConfig extends GraalHotSpotVMConfigBase {
     public final int threadIsMethodHandleReturnOffset = getFieldOffset("JavaThread::_is_method_handle_return", Integer.class, "int");
     public final int threadObjectResultOffset = getFieldOffset("JavaThread::_vm_result", Integer.class, "oop");
     public final int jvmciCountersThreadOffset = getFieldOffset("JavaThread::_jvmci_counters", Integer.class, "jlong*");
+    public final int doingUnsafeAccessOffset = getFieldOffset("JavaThread::_doing_unsafe_access", Integer.class, "bool", Integer.MAX_VALUE);
     public final int javaThreadReservedStackActivationOffset = versioned.javaThreadReservedStackActivationOffset;
 
     public boolean requiresReservedStackCheck(List<ResolvedJavaMethod> methods) {
