@@ -43,5 +43,10 @@ export LD_LIBRARY_PATH
 
 # Test 1) Run with stack size adjusted for TLS
 ${TESTNATIVEPATH}/stack-tls -add_tls || exit $?
-# Test 2) Run with no stack size adjustment
-${TESTNATIVEPATH}/stack-tls || exit $?
+
+# Test 2) Run with no stack size adjustment and expect failure.
+#
+# Potential failures include StackOverflowError, thread creation failures,
+# crashes, and etc. The test case can be used to demonstrate the TLS issue
+# but is excluded from running in regular testing.
+#${TESTNATIVEPATH}/stack-tls || exit $?
