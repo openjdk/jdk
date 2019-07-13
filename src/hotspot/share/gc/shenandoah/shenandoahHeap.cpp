@@ -29,7 +29,6 @@
 #include "gc/shared/gcTimer.hpp"
 #include "gc/shared/gcTraceTime.inline.hpp"
 #include "gc/shared/memAllocator.hpp"
-#include "gc/shared/parallelCleaning.hpp"
 #include "gc/shared/plab.hpp"
 
 #include "gc/shenandoah/shenandoahAllocTracker.hpp"
@@ -53,6 +52,7 @@
 #include "gc/shenandoah/shenandoahNormalMode.hpp"
 #include "gc/shenandoah/shenandoahOopClosures.inline.hpp"
 #include "gc/shenandoah/shenandoahPacer.inline.hpp"
+#include "gc/shenandoah/shenandoahParallelCleaning.inline.hpp"
 #include "gc/shenandoah/shenandoahPassiveMode.hpp"
 #include "gc/shenandoah/shenandoahRootProcessor.inline.hpp"
 #include "gc/shenandoah/shenandoahStringDedup.hpp"
@@ -1950,16 +1950,8 @@ void ShenandoahHeap::stop() {
   }
 }
 
-void ShenandoahHeap::unload_classes_and_cleanup_tables(bool full_gc) {
-  assert(heuristics()->can_unload_classes(), "Class unloading should be enabled");
-
-  ShenandoahGCPhase root_phase(full_gc ?
-                               ShenandoahPhaseTimings::full_gc_purge :
-                               ShenandoahPhaseTimings::purge);
-
-  ShenandoahIsAliveSelector alive;
-  BoolObjectClosure* is_alive = alive.is_alive_closure();
-
+void ShenandoahHeap::stw_unload_classes(bool full_gc) {
+  if (!unload_classes()) return;
   bool purged_class;
 
   // Unload classes and purge SystemDictionary.
@@ -1974,17 +1966,61 @@ void ShenandoahHeap::unload_classes_and_cleanup_tables(bool full_gc) {
     ShenandoahGCPhase phase(full_gc ?
                             ShenandoahPhaseTimings::full_gc_purge_par :
                             ShenandoahPhaseTimings::purge_par);
-    uint active = _workers->active_workers();
-    ParallelCleaningTask unlink_task(is_alive, active, purged_class, true);
+    ShenandoahIsAliveSelector is_alive;
+    uint num_workers = _workers->active_workers();
+    ShenandoahClassUnloadingTask unlink_task(is_alive.is_alive_closure(), num_workers, purged_class);
     _workers->run_task(&unlink_task);
   }
 
   {
     ShenandoahGCPhase phase(full_gc ?
-                      ShenandoahPhaseTimings::full_gc_purge_cldg :
-                      ShenandoahPhaseTimings::purge_cldg);
+                            ShenandoahPhaseTimings::full_gc_purge_cldg :
+                            ShenandoahPhaseTimings::purge_cldg);
     ClassLoaderDataGraph::purge();
   }
+  // Resize and verify metaspace
+  MetaspaceGC::compute_new_size();
+  MetaspaceUtils::verify_metrics();
+}
+
+// Process leftover weak oops: update them, if needed or assert they do not
+// need updating otherwise.
+// Weak processor API requires us to visit the oops, even if we are not doing
+// anything to them.
+void ShenandoahHeap::stw_process_weak_roots(bool full_gc) {
+  ShenandoahGCPhase root_phase(full_gc ?
+                               ShenandoahPhaseTimings::full_gc_purge :
+                               ShenandoahPhaseTimings::purge);
+  uint num_workers = _workers->active_workers();
+  ShenandoahPhaseTimings::Phase timing_phase = full_gc ?
+                                               ShenandoahPhaseTimings::full_gc_purge_par :
+                                               ShenandoahPhaseTimings::purge_par;
+  // Cleanup weak roots
+  ShenandoahGCPhase phase(timing_phase);
+  if (has_forwarded_objects()) {
+    ShenandoahForwardedIsAliveClosure is_alive;
+    ShenandoahUpdateRefsClosure keep_alive;
+    ShenandoahParallelWeakRootsCleaningTask<ShenandoahForwardedIsAliveClosure, ShenandoahUpdateRefsClosure>
+      cleaning_task(&is_alive, &keep_alive, num_workers);
+    _workers->run_task(&cleaning_task);
+  } else {
+    ShenandoahIsAliveClosure is_alive;
+#ifdef ASSERT
+  ShenandoahAssertNotForwardedClosure verify_cl;
+  ShenandoahParallelWeakRootsCleaningTask<ShenandoahIsAliveClosure, ShenandoahAssertNotForwardedClosure>
+    cleaning_task(&is_alive, &verify_cl, num_workers);
+#else
+  ShenandoahParallelWeakRootsCleaningTask<ShenandoahIsAliveClosure, DoNothingClosure>
+    cleaning_task(&is_alive, &do_nothing_cl, num_workers);
+#endif
+    _workers->run_task(&cleaning_task);
+  }
+}
+
+void ShenandoahHeap::parallel_cleaning(bool full_gc) {
+  assert(SafepointSynchronize::is_at_safepoint(), "Must be at a safepoint");
+  stw_process_weak_roots(full_gc);
+  stw_unload_classes(full_gc);
 }
 
 void ShenandoahHeap::set_has_forwarded_objects(bool cond) {
