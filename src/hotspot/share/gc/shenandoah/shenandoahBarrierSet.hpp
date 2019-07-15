@@ -179,6 +179,10 @@ public:
     template <typename T>
     static oop oop_load_not_in_heap(T* addr);
 
+    // Used for catching bad stores
+    template <typename T>
+    static void oop_store_not_in_heap(T* addr, oop value);
+
     template <typename T>
     static oop oop_atomic_cmpxchg_not_in_heap(oop new_value, T* addr, oop compare_value);
 
