@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -74,7 +74,9 @@ public class UnNamedTest {
     private static void runCmd() throws Throwable {
         // access resource bundles that are exported private unconditionally.
         JDKToolLauncher launcher = JDKToolLauncher.createUsingTestJDK("java");
-        launcher.addToolArg("-cp")
+        launcher.addToolArg("-ea")
+                .addToolArg("-esa")
+                .addToolArg("-cp")
                 .addToolArg(Utils.TEST_CLASSES)
                 .addToolArg("--module-path")
                 .addToolArg(MODS_DIR.toString())
@@ -92,7 +94,9 @@ public class UnNamedTest {
 
         // --add-exports can't open resources
         launcher = JDKToolLauncher.createUsingTestJDK("java");
-        launcher.addToolArg("-cp")
+        launcher.addToolArg("-ea")
+                .addToolArg("-esa")
+                .addToolArg("-cp")
                 .addToolArg(Utils.TEST_CLASSES)
                 .addToolArg("--module-path")
                 .addToolArg(MODS_DIR.toString())

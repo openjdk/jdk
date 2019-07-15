@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -134,7 +134,9 @@ public class ModuleTestUtil {
     public static void runModule(String mp, String mn, List<String> localeList)
             throws Throwable {
         JDKToolLauncher launcher = JDKToolLauncher.createUsingTestJDK("java");
-        launcher.addToolArg("-p")
+        launcher.addToolArg("-ea")
+                .addToolArg("-esa")
+                .addToolArg("-p")
                 .addToolArg(mp)
                 .addToolArg("-m")
                 .addToolArg(mn);
@@ -160,7 +162,9 @@ public class ModuleTestUtil {
     public static void runModuleWithCp(String cp, String mp, String mn,
             List<String> localeList, boolean expected) throws Throwable {
         JDKToolLauncher launcher = JDKToolLauncher.createUsingTestJDK("java");
-        launcher.addToolArg("-cp")
+        launcher.addToolArg("-ea")
+                .addToolArg("-esa")
+                .addToolArg("-cp")
                 .addToolArg(cp)
                 .addToolArg("-p")
                 .addToolArg(mp)
