@@ -572,7 +572,7 @@ address ShenandoahBarrierSetAssembler::generate_shenandoah_lrb(StubCodeGenerator
 
   __ push_call_clobbered_registers();
 
-  __ mov(lr, CAST_FROM_FN_PTR(address, ShenandoahRuntime::load_reference_barrier_JRT));
+  __ mov(lr, CAST_FROM_FN_PTR(address, ShenandoahRuntime::load_reference_barrier));
   __ blrt(lr, 1, 0, MacroAssembler::ret_type_integral);
   __ mov(rscratch1, r0);
   __ pop_call_clobbered_registers();

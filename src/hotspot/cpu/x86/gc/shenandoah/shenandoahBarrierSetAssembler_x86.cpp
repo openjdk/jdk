@@ -943,7 +943,7 @@ address ShenandoahBarrierSetAssembler::generate_shenandoah_lrb(StubCodeGenerator
 
   save_vector_registers(cgen->assembler());
   __ movptr(rdi, rax);
-  __ call_VM_leaf(CAST_FROM_FN_PTR(address, ShenandoahRuntime::load_reference_barrier_JRT), rdi);
+  __ call_VM_leaf(CAST_FROM_FN_PTR(address, ShenandoahRuntime::load_reference_barrier), rdi);
   restore_vector_registers(cgen->assembler());
 
 #ifdef _LP64

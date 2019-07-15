@@ -194,7 +194,8 @@ void ShenandoahBarrierSetC1::load_at_resolved(LIRAccess& access, LIR_Opr result)
     args->append(result);
     BasicTypeList signature;
     signature.append(T_OBJECT);
-    LIR_Opr call_result = gen->call_runtime(&signature, args, CAST_FROM_FN_PTR(address, ShenandoahRuntime::oop_load_from_native_barrier),
+    LIR_Opr call_result = gen->call_runtime(&signature, args,
+                                            CAST_FROM_FN_PTR(address, ShenandoahRuntime::load_reference_barrier_native),
                                             objectType, NULL);
     __ move(call_result, result);
     return;
@@ -245,8 +246,8 @@ void ShenandoahBarrierSetC1::generate_c1_runtime_stubs(BufferBlob* buffer_blob) 
 }
 
 const char* ShenandoahBarrierSetC1::rtcall_name_for_address(address entry) {
-  if (entry == CAST_FROM_FN_PTR(address, ShenandoahRuntime::oop_load_from_native_barrier)) {
-    return "ShenandoahRuntime::oop_load_from_native_barrier";
+  if (entry == CAST_FROM_FN_PTR(address, ShenandoahRuntime::load_reference_barrier_native)) {
+    return "ShenandoahRuntime::load_reference_barrier_native";
   }
   return NULL;
 }

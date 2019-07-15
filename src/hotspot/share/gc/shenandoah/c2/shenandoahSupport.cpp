@@ -211,7 +211,7 @@ bool ShenandoahBarrierC2Support::verify_helper(Node* in, Node_Stack& phis, Vecto
       } else if (in->Opcode() == Op_ShenandoahLoadReferenceBarrier ||
                  (in->Opcode() == Op_Proj &&
                   in->in(0)->Opcode() == Op_CallLeaf &&
-                  strcmp(in->in(0)->as_Call()->_name, "ShenandoahRuntime::oop_load_from_native_barrier") == 0)) {
+                  strcmp(in->in(0)->as_Call()->_name, "ShenandoahRuntime::load_reference_barrier_native") == 0)) {
         if (t == ShenandoahOopStore) {
           uint i = 0;
           for (; i < phis.size(); i++) {
@@ -530,7 +530,7 @@ void ShenandoahBarrierC2Support::verify(RootNode* root) {
         if (!verify_helper(n->in(TypeFunc::Parms), phis, visited, ShenandoahStore, trace, barriers_used)) {
           report_verify_failure("Shenandoah verification: _fill should have barriers", n);
         }
-      } else if (!strcmp(call->_name, "shenandoah_wb_pre") || !strcmp(call->_name, "ShenandoahRuntime::oop_load_from_native_barrier")) {
+      } else if (!strcmp(call->_name, "shenandoah_wb_pre") || !strcmp(call->_name, "ShenandoahRuntime::load_reference_barrier_native")) {
         // skip
       } else {
         const int calls_len = sizeof(calls) / sizeof(calls[0]);
@@ -1096,7 +1096,9 @@ void ShenandoahBarrierC2Support::call_lrb_stub(Node*& ctrl, Node*& val, Node*& r
   mm->set_memory_at(Compile::AliasIdxRaw, raw_mem);
   phase->register_new_node(mm, ctrl);
 
-  Node* call = new CallLeafNode(ShenandoahBarrierSetC2::shenandoah_load_reference_barrier_Type(), CAST_FROM_FN_PTR(address, ShenandoahRuntime::load_reference_barrier_JRT), "shenandoah_load_reference_barrier", TypeRawPtr::BOTTOM);
+  Node* call = new CallLeafNode(ShenandoahBarrierSetC2::shenandoah_load_reference_barrier_Type(),
+                                CAST_FROM_FN_PTR(address, ShenandoahRuntime::load_reference_barrier),
+                                "shenandoah_load_reference_barrier", TypeRawPtr::BOTTOM);
   call->init_req(TypeFunc::Control, ctrl);
   call->init_req(TypeFunc::I_O, phase->C->top());
   call->init_req(TypeFunc::Memory, mm);
