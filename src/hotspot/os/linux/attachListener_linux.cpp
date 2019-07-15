@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -69,17 +69,7 @@ class LinuxAttachListener: AllStatic {
   // the file descriptor for the listening socket
   static int _listener;
 
-  static void set_path(char* path) {
-    if (path == NULL) {
-      _has_path = false;
-    } else {
-      strncpy(_path, path, UNIX_PATH_MAX);
-      _path[UNIX_PATH_MAX-1] = '\0';
-      _has_path = true;
-    }
-  }
-
-  static void set_listener(int s)               { _listener = s; }
+  static bool _atexit_registered;
 
   // reads a request from the given connected socket
   static LinuxAttachOperation* read_request(int s);
@@ -91,6 +81,19 @@ class LinuxAttachListener: AllStatic {
   enum {
     ATTACH_ERROR_BADVERSION     = 101           // error codes
   };
+
+  static void set_path(char* path) {
+    if (path == NULL) {
+      _path[0] = '\0';
+      _has_path = false;
+    } else {
+      strncpy(_path, path, UNIX_PATH_MAX);
+      _path[UNIX_PATH_MAX-1] = '\0';
+      _has_path = true;
+    }
+  }
+
+  static void set_listener(int s)               { _listener = s; }
 
   // initialize the listener, returns 0 if okay
   static int init();
@@ -125,6 +128,7 @@ class LinuxAttachOperation: public AttachOperation {
 char LinuxAttachListener::_path[UNIX_PATH_MAX];
 bool LinuxAttachListener::_has_path;
 int LinuxAttachListener::_listener = -1;
+bool LinuxAttachListener::_atexit_registered = false;
 
 // Supporting class to help split a buffer into individual components
 class ArgumentIterator : public StackObj {
@@ -159,16 +163,15 @@ class ArgumentIterator : public StackObj {
 // bound too.
 extern "C" {
   static void listener_cleanup() {
-    static int cleanup_done;
-    if (!cleanup_done) {
-      cleanup_done = 1;
-      int s = LinuxAttachListener::listener();
-      if (s != -1) {
-        ::close(s);
-      }
-      if (LinuxAttachListener::has_path()) {
-        ::unlink(LinuxAttachListener::path());
-      }
+    int s = LinuxAttachListener::listener();
+    if (s != -1) {
+      LinuxAttachListener::set_listener(-1);
+      ::shutdown(s, SHUT_RDWR);
+      ::close(s);
+    }
+    if (LinuxAttachListener::has_path()) {
+      ::unlink(LinuxAttachListener::path());
+      LinuxAttachListener::set_path(NULL);
     }
   }
 }
@@ -181,7 +184,10 @@ int LinuxAttachListener::init() {
   int listener;                      // listener socket (file descriptor)
 
   // register function to cleanup
-  ::atexit(listener_cleanup);
+  if (!_atexit_registered) {
+    _atexit_registered = true;
+    ::atexit(listener_cleanup);
+  }
 
   int n = snprintf(path, UNIX_PATH_MAX, "%s/.java_pid%d",
                    os::get_temp_directory(), os::current_process_id());
@@ -483,6 +489,26 @@ int AttachListener::pd_init() {
   thread->check_and_wait_while_suspended();
 
   return ret_code;
+}
+
+bool AttachListener::check_socket_file() {
+  int ret;
+  struct stat64 st;
+  ret = stat64(LinuxAttachListener::path(), &st);
+  if (ret == -1) { // need to restart attach listener.
+    log_debug(attach)("Socket file %s does not exist - Restart Attach Listener",
+                      LinuxAttachListener::path());
+
+    listener_cleanup();
+
+    // wait to terminate current attach listener instance...
+    while (AttachListener::transit_state(AL_INITIALIZING,
+                                         AL_NOT_INITIALIZED) != AL_NOT_INITIALIZED) {
+      os::naked_yield();
+    }
+    return is_init_trigger();
+  }
+  return false;
 }
 
 // Attach Listener is started lazily except in the case when

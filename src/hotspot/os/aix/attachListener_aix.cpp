@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2019, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2012, 2018 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -71,17 +71,7 @@ class AixAttachListener: AllStatic {
   // the file descriptor for the listening socket
   static int _listener;
 
-  static void set_path(char* path) {
-    if (path == NULL) {
-      _has_path = false;
-    } else {
-      strncpy(_path, path, UNIX_PATH_MAX);
-      _path[UNIX_PATH_MAX-1] = '\0';
-      _has_path = true;
-    }
-  }
-
-  static void set_listener(int s)               { _listener = s; }
+  static bool _atexit_registered;
 
   // reads a request from the given connected socket
   static AixAttachOperation* read_request(int s);
@@ -93,6 +83,19 @@ class AixAttachListener: AllStatic {
   enum {
     ATTACH_ERROR_BADVERSION     = 101           // error codes
   };
+
+  static void set_path(char* path) {
+    if (path == NULL) {
+      _path[0] = '\0';
+      _has_path = false;
+    } else {
+      strncpy(_path, path, UNIX_PATH_MAX);
+      _path[UNIX_PATH_MAX-1] = '\0';
+      _has_path = true;
+    }
+  }
+
+  static void set_listener(int s)               { _listener = s; }
 
   // initialize the listener, returns 0 if okay
   static int init();
@@ -130,6 +133,7 @@ class AixAttachOperation: public AttachOperation {
 char AixAttachListener::_path[UNIX_PATH_MAX];
 bool AixAttachListener::_has_path;
 int AixAttachListener::_listener = -1;
+bool AixAttachListener::_atexit_registered = false;
 // Shutdown marker to prevent accept blocking during clean-up
 bool AixAttachListener::_shutdown = false;
 
@@ -177,17 +181,15 @@ class ArgumentIterator : public StackObj {
 //    should be sufficient for cleanup.
 extern "C" {
   static void listener_cleanup() {
-    static int cleanup_done;
-    if (!cleanup_done) {
-      cleanup_done = 1;
-      AixAttachListener::set_shutdown(true);
-      int s = AixAttachListener::listener();
-      if (s != -1) {
-        ::shutdown(s, 2);
-      }
-      if (AixAttachListener::has_path()) {
-        ::unlink(AixAttachListener::path());
-      }
+    AixAttachListener::set_shutdown(true);
+    int s = AixAttachListener::listener();
+    if (s != -1) {
+      AixAttachListener::set_listener(-1);
+      ::shutdown(s, 2);
+    }
+    if (AixAttachListener::has_path()) {
+      ::unlink(AixAttachListener::path());
+      AixAttachListener::set_path(NULL);
     }
   }
 }
@@ -200,7 +202,10 @@ int AixAttachListener::init() {
   int listener;                      // listener socket (file descriptor)
 
   // register function to cleanup
-  ::atexit(listener_cleanup);
+  if (!_atexit_registered) {
+    _atexit_registered = true;
+    ::atexit(listener_cleanup);
+  }
 
   int n = snprintf(path, UNIX_PATH_MAX, "%s/.java_pid%d",
                    os::get_temp_directory(), os::current_process_id());
@@ -513,6 +518,26 @@ int AttachListener::pd_init() {
   thread->check_and_wait_while_suspended();
 
   return ret_code;
+}
+
+bool AttachListener::check_socket_file() {
+  int ret;
+  struct stat64 st;
+  ret = stat64(AixAttachListener::path(), &st);
+  if (ret == -1) { // need to restart attach listener.
+    log_debug(attach)("Socket file %s does not exist - Restart Attach Listener",
+                      AixAttachListener::path());
+
+    listener_cleanup();
+
+    // wait to terminate current attach listener instance...
+    while (AttachListener::transit_state(AL_INITIALIZING,
+                                         AL_NOT_INITIALIZED) != AL_NOT_INITIALIZED) {
+      os::naked_yield();
+    }
+    return is_init_trigger();
+  }
+  return false;
 }
 
 // Attach Listener is started lazily except in the case when
