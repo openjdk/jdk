@@ -276,7 +276,9 @@ public class URLTest {
     }
 
     static class CustomPolicy extends Policy {
+        static final Policy DEFAULT_POLICY = Policy.getPolicy();
         final PermissionCollection perms = new Permissions();
+
         CustomPolicy(Permission... permissions) {
             java.util.Arrays.stream(permissions).forEach(perms::add);
 
@@ -301,7 +303,7 @@ public class URLTest {
         }
 
         public boolean implies(ProtectionDomain domain, Permission perm) {
-            return perms.implies(perm);
+            return perms.implies(perm) || DEFAULT_POLICY.implies(domain, perm);
         }
     }
 }
