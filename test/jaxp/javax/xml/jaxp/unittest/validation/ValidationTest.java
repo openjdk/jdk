@@ -36,11 +36,12 @@ import org.testng.annotations.DataProvider;
 
 import org.testng.annotations.Listeners;
 import org.testng.annotations.Test;
+import org.xml.sax.SAXException;
 import org.xml.sax.SAXParseException;
 
 /*
  * @test
- * @bug 8220818
+ * @bug 8220818 8176447
  * @library /javax/xml/jaxp/libs /javax/xml/jaxp/unittest
  * @run testng/othervm validation.ValidationTest
  * @summary Runs validations with schemas and sources
@@ -71,6 +72,17 @@ public class ValidationTest {
         };
     }
 
+    /*
+     DataProvider: uniqueness
+     */
+    @DataProvider(name = "uniqueness")
+    Object[][] getUniqueData() {
+        return new Object[][]{
+            {"JDK8176447a.xsd", "JDK8176447a.xml"},
+            {"JDK8176447b.xsd", "JDK8176447b.xml"},
+        };
+    }
+
     @Test(dataProvider = "invalid", expectedExceptions = SAXParseException.class)
     public void testValidateRefType(String xsd, String xml) throws Exception {
         validate(xsd, xml);
@@ -78,6 +90,19 @@ public class ValidationTest {
 
     @Test(dataProvider = "valid")
     public void testValidateRefType1(String xsd, String xml) throws Exception {
+        validate(xsd, xml);
+    }
+
+    /**
+     * @bug 8176447
+     * Verifies that the uniqueness constraint is checked.
+     * @param xsd the XSD
+     * @param xml the XML
+     * @throws Exception expected when the uniqueness constraint is validated
+     * correctly.
+     */
+    @Test(dataProvider = "uniqueness", expectedExceptions = SAXException.class)
+    public void testUnique(String xsd, String xml) throws Exception {
         validate(xsd, xml);
     }
 
@@ -90,4 +115,5 @@ public class ValidationTest {
         validator.validate(new StreamSource(
                 new File(getClass().getResource(FILE_PATH + xml).getFile())));
     }
+
 }
