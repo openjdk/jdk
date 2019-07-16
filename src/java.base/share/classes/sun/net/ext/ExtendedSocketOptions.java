@@ -29,8 +29,8 @@ import java.io.FileDescriptor;
 import java.net.SocketException;
 import java.net.SocketOption;
 import java.util.Collections;
+import java.util.HashSet;
 import java.util.Set;
-import java.util.stream.Collectors;
 
 /**
  * Defines the infrastructure to support extended socket options, beyond those
@@ -45,6 +45,9 @@ public abstract class ExtendedSocketOptions {
     public static final short SOCK_DGRAM = 2;
 
     private final Set<SocketOption<?>> options;
+    private final Set<SocketOption<?>> datagramOptions;
+    private final Set<SocketOption<?>> clientStreamOptions;
+    private final Set<SocketOption<?>> serverStreamOptions;
 
     /** Tells whether or not the option is supported. */
     public final boolean isOptionSupported(SocketOption<?> option) {
@@ -78,11 +81,11 @@ public abstract class ExtendedSocketOptions {
         return getInstance().options0(SOCK_DGRAM, false);
     }
 
-    private boolean isDatagramOption(SocketOption<?> option) {
+    private static boolean isDatagramOption(SocketOption<?> option) {
         return !option.name().startsWith("TCP_");
     }
 
-    private boolean isStreamOption(SocketOption<?> option, boolean server) {
+    private static boolean isStreamOption(SocketOption<?> option, boolean server) {
         if (server && "SO_FLOW_SLA".equals(option.name())) {
             return false;
         } else {
@@ -91,23 +94,19 @@ public abstract class ExtendedSocketOptions {
     }
 
     private Set<SocketOption<?>> options0(short type, boolean server) {
-        Set<SocketOption<?>> extOptions;
         switch (type) {
             case SOCK_DGRAM:
-                extOptions = options.stream()
-                        .filter(option -> isDatagramOption(option))
-                        .collect(Collectors.toUnmodifiableSet());
-                break;
+                return datagramOptions;
             case SOCK_STREAM:
-                extOptions = options.stream()
-                        .filter(option -> isStreamOption(option, server))
-                        .collect(Collectors.toUnmodifiableSet());
-                break;
+                if (server) {
+                    return serverStreamOptions;
+                } else {
+                    return clientStreamOptions;
+                }
             default:
                 //this will never happen
                 throw new IllegalArgumentException("Invalid socket option type");
         }
-        return extOptions;
     }
 
     /** Sets the value of a socket option, for the given socket. */
@@ -120,6 +119,23 @@ public abstract class ExtendedSocketOptions {
 
     protected ExtendedSocketOptions(Set<SocketOption<?>> options) {
         this.options = options;
+        var datagramOptions = new HashSet<SocketOption<?>>();
+        var serverStreamOptions = new HashSet<SocketOption<?>>();
+        var clientStreamOptions = new HashSet<SocketOption<?>>();
+        for (var option : options) {
+            if (isDatagramOption(option)) {
+                datagramOptions.add(option);
+            }
+            if (isStreamOption(option, true)) {
+                serverStreamOptions.add(option);
+            }
+            if (isStreamOption(option, false)) {
+                clientStreamOptions.add(option);
+            }
+        }
+        this.datagramOptions = Set.copyOf(datagramOptions);
+        this.serverStreamOptions = Set.copyOf(serverStreamOptions);
+        this.clientStreamOptions = Set.copyOf(clientStreamOptions);
     }
 
     private static volatile ExtendedSocketOptions instance;
