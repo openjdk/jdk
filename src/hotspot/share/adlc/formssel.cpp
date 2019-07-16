@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1513,7 +1513,7 @@ Predicate *InstructForm::build_predicate() {
 
   MatchNode *mnode =
     strcmp(_matrule->_opType, "Set") ? _matrule : _matrule->_rChild;
-  mnode->count_instr_names(names);
+  if (mnode != NULL) mnode->count_instr_names(names);
 
   uint first = 1;
   // Start with the predicate supplied in the .ad file.
@@ -1726,26 +1726,25 @@ bool Opcode::print_opcode(FILE *fp, Opcode::opcode_type desired_opcode) {
   const char *description = NULL;
   const char *value       = NULL;
   // Check if user provided any opcode definitions
-  if( this != NULL ) {
-    // Update 'value' if user provided a definition in the instruction
-    switch (desired_opcode) {
-    case PRIMARY:
-      description = "primary()";
-      if( _primary   != NULL)  { value = _primary;     }
-      break;
-    case SECONDARY:
-      description = "secondary()";
-      if( _secondary != NULL ) { value = _secondary;   }
-      break;
-    case TERTIARY:
-      description = "tertiary()";
-      if( _tertiary  != NULL ) { value = _tertiary;    }
-      break;
-    default:
-      assert( false, "ShouldNotReachHere();");
-      break;
-    }
+  // Update 'value' if user provided a definition in the instruction
+  switch (desired_opcode) {
+  case PRIMARY:
+    description = "primary()";
+    if( _primary   != NULL)  { value = _primary;     }
+    break;
+  case SECONDARY:
+    description = "secondary()";
+    if( _secondary != NULL ) { value = _secondary;   }
+    break;
+  case TERTIARY:
+    description = "tertiary()";
+    if( _tertiary  != NULL ) { value = _tertiary;    }
+    break;
+  default:
+    assert( false, "ShouldNotReachHere();");
+    break;
   }
+
   if (value != NULL) {
     fprintf(fp, "(%s /*%s*/)", value, description);
   }
@@ -3413,7 +3412,6 @@ const char *MatchNode::reduce_left(FormDict &globals) const {
 // Count occurrences of operands names in the leaves of the instruction
 // match rule.
 void MatchNode::count_instr_names( Dict &names ) {
-  if( this == NULL ) return;
   if( _lChild ) _lChild->count_instr_names(names);
   if( _rChild ) _rChild->count_instr_names(names);
   if( !_lChild && !_rChild ) {

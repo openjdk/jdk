@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -2377,7 +2377,7 @@ private:
     _processing_noninput = false;
     // A replacement variable, originally '$'
     if ( Opcode::as_opcode_type(rep_var) != Opcode::NOT_AN_OPCODE ) {
-      if (!_inst._opcode->print_opcode(_fp, Opcode::as_opcode_type(rep_var) )) {
+      if ((_inst._opcode == NULL) || !_inst._opcode->print_opcode(_fp, Opcode::as_opcode_type(rep_var) )) {
         // Missing opcode
         _AD.syntax_err( _inst._linenum,
                         "Missing $%s opcode definition in %s, used by encoding %s\n",
@@ -2433,7 +2433,7 @@ private:
       else if( Opcode::as_opcode_type(inst_rep_var) != Opcode::NOT_AN_OPCODE ) {
         // else check if "primary", "secondary", "tertiary"
         assert( _constant_status == LITERAL_ACCESSED, "Must be processing a literal constant parameter");
-        if (!_inst._opcode->print_opcode(_fp, Opcode::as_opcode_type(inst_rep_var) )) {
+        if ((_inst._opcode == NULL) || !_inst._opcode->print_opcode(_fp, Opcode::as_opcode_type(inst_rep_var) )) {
           // Missing opcode
           _AD.syntax_err( _inst._linenum,
                           "Missing $%s opcode definition in %s\n",
