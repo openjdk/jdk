@@ -842,10 +842,7 @@ void Method::print_made_not_compilable(int comp_level, bool is_osr, bool report,
     if (comp_level == CompLevel_all) {
       tty->print("all levels ");
     } else {
-      tty->print("levels ");
-      for (int i = (int)CompLevel_none; i <= comp_level; i++) {
-        tty->print("%d ", i);
-      }
+      tty->print("level %d ", comp_level);
     }
     this->print_short_name(tty);
     int size = this->code_size();
