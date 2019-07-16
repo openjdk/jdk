@@ -1652,14 +1652,11 @@ PhaseMacroExpand::initialize_object(AllocateNode* alloc,
                                     Node* size_in_bytes) {
   InitializeNode* init = alloc->initialization();
   // Store the klass & mark bits
-  Node* mark_node = NULL;
-  // For now only enable fast locking for non-array types
-  if (UseBiasedLocking && (length == NULL)) {
-    mark_node = make_load(control, rawmem, klass_node, in_bytes(Klass::prototype_header_offset()), TypeRawPtr::BOTTOM, T_ADDRESS);
-  } else {
-    mark_node = makecon(TypeRawPtr::make((address)markWord::prototype().value()));
+  Node* mark_node = alloc->make_ideal_mark(&_igvn, object, control, rawmem);
+  if (!mark_node->is_Con()) {
+    transform_later(mark_node);
   }
-  rawmem = make_store(control, rawmem, object, oopDesc::mark_offset_in_bytes(), mark_node, T_ADDRESS);
+  rawmem = make_store(control, rawmem, object, oopDesc::mark_offset_in_bytes(), mark_node, TypeX_X->basic_type());
 
   rawmem = make_store(control, rawmem, object, oopDesc::klass_offset_in_bytes(), klass_node, T_METADATA);
   int header_size = alloc->minimum_header_size();  // conservatively small
@@ -2596,14 +2593,35 @@ bool PhaseMacroExpand::expand_macro_nodes() {
     if (_igvn.type(n) == Type::TOP || (n->in(0) != NULL && n->in(0)->is_top())) {
       // node is unreachable, so don't try to expand it
       C->remove_macro_node(n);
-    } else if (n->is_ArrayCopy()){
-      int macro_count = C->macro_count();
+      continue;
+    }
+    int macro_count = C->macro_count();
+    switch (n->class_id()) {
+    case Node::Class_Lock:
+      expand_lock_node(n->as_Lock());
+      assert(C->macro_count() < macro_count, "must have deleted a node from macro list");
+      break;
+    case Node::Class_Unlock:
+      expand_unlock_node(n->as_Unlock());
+      assert(C->macro_count() < macro_count, "must have deleted a node from macro list");
+      break;
+    case Node::Class_ArrayCopy:
       expand_arraycopy_node(n->as_ArrayCopy());
       assert(C->macro_count() < macro_count, "must have deleted a node from macro list");
+      break;
     }
     if (C->failing())  return true;
     macro_idx --;
   }
+
+  // All nodes except Allocate nodes are expanded now. There could be
+  // new optimization opportunities (such as folding newly created
+  // load from a just allocated object). Run IGVN.
+  _igvn.set_delay_transform(false);
+  _igvn.optimize();
+  if (C->failing())  return true;
+
+  _igvn.set_delay_transform(true);
 
   // expand "macro" nodes
   // nodes are removed from the macro list as they are processed
@@ -2622,12 +2640,6 @@ bool PhaseMacroExpand::expand_macro_nodes() {
       break;
     case Node::Class_AllocateArray:
       expand_allocate_array(n->as_AllocateArray());
-      break;
-    case Node::Class_Lock:
-      expand_lock_node(n->as_Lock());
-      break;
-    case Node::Class_Unlock:
-      expand_unlock_node(n->as_Unlock());
       break;
     default:
       assert(false, "unknown node type in macro list");

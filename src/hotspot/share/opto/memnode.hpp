@@ -183,6 +183,8 @@ private:
 
   uint _barrier; // Bit field with barrier information
 
+  AllocateNode* is_new_object_mark_load(PhaseGVN *phase) const;
+
 protected:
   virtual bool cmp(const Node &n) const;
   virtual uint size_of() const; // Size is bigger
