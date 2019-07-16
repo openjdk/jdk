@@ -34,6 +34,7 @@
 #include <netinet/in6_var.h>
 #include <sys/ndd_var.h>
 #include <sys/kinfo.h>
+#include <strings.h>
 #endif
 
 #if defined(__solaris__)

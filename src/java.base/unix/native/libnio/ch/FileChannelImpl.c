@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,6 +32,7 @@
 #if defined(__linux__) || defined(__solaris__)
 #include <sys/sendfile.h>
 #elif defined(_AIX)
+#include <string.h>
 #include <sys/socket.h>
 #elif defined(_ALLBSD_SOURCE)
 #include <sys/socket.h>
