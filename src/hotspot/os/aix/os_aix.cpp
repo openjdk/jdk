@@ -4075,7 +4075,7 @@ void os::Aix::initialize_os_info() {
     assert(minor > 0, "invalid OS release");
     _os_version = (major << 24) | (minor << 16);
     char ver_str[20] = {0};
-    char *name_str = "unknown OS";
+    const char* name_str = "unknown OS";
     if (strcmp(uts.sysname, "OS400") == 0) {
       // We run on AS/400 PASE. We do not support versions older than V5R4M0.
       _on_pase = 1;
@@ -4086,19 +4086,19 @@ void os::Aix::initialize_os_info() {
       name_str = "OS/400 (pase)";
       jio_snprintf(ver_str, sizeof(ver_str), "%u.%u", major, minor);
     } else if (strcmp(uts.sysname, "AIX") == 0) {
-      // We run on AIX. We do not support versions older than AIX 5.3.
+      // We run on AIX. We do not support versions older than AIX 7.1.
       _on_pase = 0;
       // Determine detailed AIX version: Version, Release, Modification, Fix Level.
       odmWrapper::determine_os_kernel_version(&_os_version);
-      if (os_version_short() < 0x0503) {
-        trcVerbose("AIX release older than AIX 5.3 not supported.");
+      if (os_version_short() < 0x0701) {
+        trcVerbose("AIX releases older than AIX 7.1 are not supported.");
         assert(false, "AIX release too old.");
       }
       name_str = "AIX";
       jio_snprintf(ver_str, sizeof(ver_str), "%u.%u.%u.%u",
                    major, minor, (_os_version >> 8) & 0xFF, _os_version & 0xFF);
     } else {
-      assert(false, name_str);
+      assert(false, "%s", name_str);
     }
     trcVerbose("We run on %s %s", name_str, ver_str);
   }
