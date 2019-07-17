@@ -28,7 +28,6 @@ package java.net;
 import java.util.Arrays;
 import java.util.Enumeration;
 import java.util.NoSuchElementException;
-import java.security.AccessController;
 import java.util.Spliterator;
 import java.util.Spliterators;
 import java.util.stream.Stream;
@@ -57,13 +56,7 @@ public final class NetworkInterface {
     private static final int defaultIndex; /* index of defaultInterface */
 
     static {
-        AccessController.doPrivileged(
-            new java.security.PrivilegedAction<>() {
-                public Void run() {
-                    System.loadLibrary("net");
-                    return null;
-                }
-            });
+        jdk.internal.loader.BootLoader.loadLibrary("net");
 
         init();
         defaultInterface = DefaultInterface.getDefault();

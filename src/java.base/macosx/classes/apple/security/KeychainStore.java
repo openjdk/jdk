@@ -105,13 +105,7 @@ public final class KeychainStore extends KeyStoreSpi {
     private static final Debug debug = Debug.getInstance("keystore");
 
     static {
-        AccessController.doPrivileged(
-            new PrivilegedAction<Void>() {
-                public Void run() {
-                    System.loadLibrary("osxsecurity");
-                    return null;
-                }
-            });
+        jdk.internal.loader.BootLoader.loadLibrary("osxsecurity");
         try {
             PKCS8ShroudedKeyBag_OID = new ObjectIdentifier(keyBag);
             pbeWithSHAAnd3KeyTripleDESCBC_OID = new ObjectIdentifier(pbeWithSHAAnd3KeyTripleDESCBC);

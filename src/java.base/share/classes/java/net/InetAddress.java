@@ -317,13 +317,7 @@ class InetAddress implements java.io.Serializable {
         } else {
             preferIPv6Address = PREFER_IPV4_VALUE;
         }
-        AccessController.doPrivileged(
-            new java.security.PrivilegedAction<>() {
-                public Void run() {
-                    System.loadLibrary("net");
-                    return null;
-                }
-            });
+        jdk.internal.loader.BootLoader.loadLibrary("net");
         SharedSecrets.setJavaNetInetAddressAccess(
                 new JavaNetInetAddressAccess() {
                     public String getOriginalHostName(InetAddress ia) {

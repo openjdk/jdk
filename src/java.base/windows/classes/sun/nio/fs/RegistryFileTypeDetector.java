@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,8 +27,6 @@ package sun.nio.fs;
 
 import java.nio.file.*;
 import java.io.IOException;
-import java.security.AccessController;
-import java.security.PrivilegedAction;
 
 /**
  * File type detector that does lookup of file extension using Windows Registry.
@@ -70,13 +68,8 @@ public class RegistryFileTypeDetector
     private static native String queryStringValue(long subKey, long name);
 
     static {
-        AccessController.doPrivileged(new PrivilegedAction<Void>() {
-            @Override
-            public Void run() {
-                // nio.dll has dependency on net.dll
-                System.loadLibrary("net");
-                System.loadLibrary("nio");
-                return null;
-        }});
+        // nio.dll has dependency on net.dll
+        jdk.internal.loader.BootLoader.loadLibrary("net");
+        jdk.internal.loader.BootLoader.loadLibrary("nio");
     }
 }

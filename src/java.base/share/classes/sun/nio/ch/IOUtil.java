@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -432,15 +432,8 @@ public class IOUtil {
     public static void load() { }
 
     static {
-        java.security.AccessController.doPrivileged(
-                new java.security.PrivilegedAction<Void>() {
-                    public Void run() {
-                        System.loadLibrary("net");
-                        System.loadLibrary("nio");
-                        return null;
-                    }
-                });
-
+        jdk.internal.loader.BootLoader.loadLibrary("net");
+        jdk.internal.loader.BootLoader.loadLibrary("nio");
         initIDs();
 
         IOV_MAX = iovMax();
