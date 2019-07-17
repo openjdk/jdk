@@ -1105,6 +1105,8 @@ public:
         !_fast_reclaim_handled &&
         !Atomic::cmpxchg(true, &_fast_reclaim_handled, false)) {
 
+      G1GCParPhaseTimesTracker x(p, G1GCPhaseTimes::MergeER, worker_id);
+
       G1FlushHumongousCandidateRemSets cl(_scan_state);
       g1h->heap_region_iterate(&cl);
 

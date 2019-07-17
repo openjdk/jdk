@@ -66,6 +66,8 @@ G1GCPhaseTimes::G1GCPhaseTimes(STWGCTimer* gc_timer, uint max_gc_threads) :
   _gc_par_phases[WaitForStrongCLD] = new WorkerDataArray<double>(max_gc_threads, "Wait For Strong CLD (ms):");
   _gc_par_phases[WeakCLDRoots] = new WorkerDataArray<double>(max_gc_threads, "Weak CLD Roots (ms):");
 
+  _gc_par_phases[MergeER] = new WorkerDataArray<double>(max_gc_threads, "Eager Reclaim (ms):");
+
   _gc_par_phases[MergeRS] = new WorkerDataArray<double>(max_gc_threads, "Remembered Sets (ms):");
   _merge_rs_merged_sparse = new WorkerDataArray<size_t>(max_gc_threads, "Merged Sparse:");
   _gc_par_phases[MergeRS]->link_thread_work_items(_merge_rs_merged_sparse, MergeRSMergedSparse);
@@ -250,9 +252,10 @@ void G1GCPhaseTimes::note_gc_end() {
       // Make sure all slots are uninitialized since this thread did not seem to have been started
       ASSERT_PHASE_UNINITIALIZED(GCWorkerEnd);
       ASSERT_PHASE_UNINITIALIZED(ExtRootScan);
-      ASSERT_PHASE_UNINITIALIZED(MergeHCC);
+      ASSERT_PHASE_UNINITIALIZED(MergeER);
       ASSERT_PHASE_UNINITIALIZED(MergeRS);
       ASSERT_PHASE_UNINITIALIZED(OptMergeRS);
+      ASSERT_PHASE_UNINITIALIZED(MergeHCC);
       ASSERT_PHASE_UNINITIALIZED(MergeLB);
       ASSERT_PHASE_UNINITIALIZED(ScanHR);
       ASSERT_PHASE_UNINITIALIZED(CodeRoots);
@@ -432,6 +435,7 @@ double G1GCPhaseTimes::print_evacuate_initial_collection_set() const {
   info_time("Merge Heap Roots", _cur_merge_heap_roots_time_ms);
 
   debug_time("Prepare Merge Heap Roots", _cur_prepare_merge_heap_roots_time_ms);
+  debug_phase(_gc_par_phases[MergeER]);
   debug_phase(_gc_par_phases[MergeRS]);
   if (G1HotCardCache::default_use_cache()) {
     debug_phase(_gc_par_phases[MergeHCC]);
@@ -563,6 +567,7 @@ const char* G1GCPhaseTimes::phase_name(GCParPhases phase) {
       "CMRefRoots",
       "WaitForStrongCLD",
       "WeakCLDRoots",
+      "MergeER",
       "MergeRS",
       "OptMergeRS",
       "MergeLB",

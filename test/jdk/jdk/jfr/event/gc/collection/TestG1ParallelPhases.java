@@ -100,6 +100,7 @@ public class TestG1ParallelPhases {
             "CMRefRoots",
             "WaitForStrongCLD",
             "WeakCLDRoots",
+            "MergeER",
             "MergeHCC",
             "MergeRS",
             "MergeLB",

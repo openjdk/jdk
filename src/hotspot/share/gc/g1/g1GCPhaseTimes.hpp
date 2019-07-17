@@ -60,6 +60,7 @@ class G1GCPhaseTimes : public CHeapObj<mtGC> {
     CMRefRoots,
     WaitForStrongCLD,
     WeakCLDRoots,
+    MergeER,
     MergeRS,
     OptMergeRS,
     MergeLB,
