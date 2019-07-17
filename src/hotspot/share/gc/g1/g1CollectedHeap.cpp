@@ -3683,7 +3683,7 @@ void G1CollectedHeap::evacuate_initial_collection_set(G1ParScanThreadStateSet* p
 
   {
     Ticks start = Ticks::now();
-    rem_set()->merge_heap_roots(false /* remset_only */, G1GCPhaseTimes::MergeRS);
+    rem_set()->merge_heap_roots(true /* initial_evacuation */);
     p->record_merge_heap_roots_time((Ticks::now() - start).seconds() * 1000.0);
   }
 
@@ -3759,7 +3759,7 @@ void G1CollectedHeap::evacuate_optional_collection_set(G1ParScanThreadStateSet* 
 
     {
       Ticks start = Ticks::now();
-      rem_set()->merge_heap_roots(true /* remset_only */, G1GCPhaseTimes::OptMergeRS);
+      rem_set()->merge_heap_roots(false /* initial_evacuation */);
       phase_times()->record_or_add_optional_merge_heap_roots_time((Ticks::now() - start).seconds() * 1000.0);
     }
 

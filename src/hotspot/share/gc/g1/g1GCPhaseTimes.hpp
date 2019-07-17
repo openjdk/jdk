@@ -164,6 +164,9 @@ class G1GCPhaseTimes : public CHeapObj<mtGC> {
   double _cur_merge_heap_roots_time_ms;
   double _cur_optional_merge_heap_roots_time_ms;
 
+  double _cur_prepare_merge_heap_roots_time_ms;
+  double _cur_optional_prepare_merge_heap_roots_time_ms;
+
   double _cur_prepare_tlab_time_ms;
   double _cur_resize_tlab_time_ms;
 
@@ -306,6 +309,14 @@ class G1GCPhaseTimes : public CHeapObj<mtGC> {
 
   void record_or_add_optional_merge_heap_roots_time(double ms) {
     _cur_optional_merge_heap_roots_time_ms += ms;
+  }
+
+  void record_prepare_merge_heap_roots_time(double ms) {
+    _cur_prepare_merge_heap_roots_time_ms += ms;
+  }
+
+  void record_or_add_optional_prepare_merge_heap_roots_time(double ms) {
+    _cur_optional_prepare_merge_heap_roots_time_ms += ms;
   }
 
   void record_evac_fail_recalc_used_time(double ms) {

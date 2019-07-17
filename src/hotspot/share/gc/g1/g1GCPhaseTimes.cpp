@@ -166,6 +166,8 @@ void G1GCPhaseTimes::reset() {
   _cur_strong_code_root_purge_time_ms = 0.0;
   _cur_merge_heap_roots_time_ms = 0.0;
   _cur_optional_merge_heap_roots_time_ms = 0.0;
+  _cur_prepare_merge_heap_roots_time_ms = 0.0;
+  _cur_optional_prepare_merge_heap_roots_time_ms = 0.0;
   _cur_evac_fail_recalc_used = 0.0;
   _cur_evac_fail_remove_self_forwards = 0.0;
   _cur_string_deduplication_time_ms = 0.0;
@@ -413,6 +415,8 @@ double G1GCPhaseTimes::print_evacuate_optional_collection_set() const {
   const double sum_ms = _cur_optional_evac_ms + _cur_optional_merge_heap_roots_time_ms;
   if (sum_ms > 0) {
     info_time("Merge Optional Heap Roots", _cur_optional_merge_heap_roots_time_ms);
+
+    debug_time("Prepare Optional Merge Heap Roots", _cur_optional_prepare_merge_heap_roots_time_ms);
     debug_phase(_gc_par_phases[OptMergeRS]);
 
     info_time("Evacuate Optional Collection Set", _cur_optional_evac_ms);
@@ -427,6 +431,7 @@ double G1GCPhaseTimes::print_evacuate_optional_collection_set() const {
 double G1GCPhaseTimes::print_evacuate_initial_collection_set() const {
   info_time("Merge Heap Roots", _cur_merge_heap_roots_time_ms);
 
+  debug_time("Prepare Merge Heap Roots", _cur_prepare_merge_heap_roots_time_ms);
   debug_phase(_gc_par_phases[MergeRS]);
   if (G1HotCardCache::default_use_cache()) {
     debug_phase(_gc_par_phases[MergeHCC]);

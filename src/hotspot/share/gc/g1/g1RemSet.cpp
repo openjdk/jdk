@@ -1078,28 +1078,29 @@ class G1MergeHeapRootsTask : public AbstractGangTask {
 
   HeapRegionClaimer _hr_claimer;
   G1RemSetScanState* _scan_state;
-  bool _remembered_set_only;
-
-  G1GCPhaseTimes::GCParPhases _merge_phase;
+  bool _initial_evacuation;
 
   volatile bool _fast_reclaim_handled;
 
 public:
-  G1MergeHeapRootsTask(G1RemSetScanState* scan_state, uint num_workers, bool remembered_set_only, G1GCPhaseTimes::GCParPhases merge_phase) :
+  G1MergeHeapRootsTask(G1RemSetScanState* scan_state, uint num_workers, bool initial_evacuation) :
     AbstractGangTask("G1 Merge Heap Roots"),
     _hr_claimer(num_workers),
     _scan_state(scan_state),
-    _remembered_set_only(remembered_set_only),
-    _merge_phase(merge_phase),
+    _initial_evacuation(initial_evacuation),
     _fast_reclaim_handled(false) { }
 
   virtual void work(uint worker_id) {
     G1CollectedHeap* g1h = G1CollectedHeap::heap();
     G1GCPhaseTimes* p = g1h->phase_times();
 
+    G1GCPhaseTimes::GCParPhases merge_remset_phase = _initial_evacuation ?
+                                                     G1GCPhaseTimes::MergeRS :
+                                                     G1GCPhaseTimes::OptMergeRS;
+
     // We schedule flushing the remembered sets of humongous fast reclaim candidates
     // onto the card table first to allow the remaining parallelized tasks hide it.
-    if (!_remembered_set_only &&
+    if (_initial_evacuation &&
         p->fast_reclaim_humongous_candidates() > 0 &&
         !_fast_reclaim_handled &&
         !Atomic::cmpxchg(true, &_fast_reclaim_handled, false)) {
@@ -1107,33 +1108,33 @@ public:
       G1FlushHumongousCandidateRemSets cl(_scan_state);
       g1h->heap_region_iterate(&cl);
 
-      p->record_or_add_thread_work_item(_merge_phase, worker_id, cl.merged_sparse(), G1GCPhaseTimes::MergeRSMergedSparse);
-      p->record_or_add_thread_work_item(_merge_phase, worker_id, cl.merged_fine(), G1GCPhaseTimes::MergeRSMergedFine);
-      p->record_or_add_thread_work_item(_merge_phase, worker_id, cl.merged_coarse(), G1GCPhaseTimes::MergeRSMergedCoarse);
+      p->record_or_add_thread_work_item(merge_remset_phase, worker_id, cl.merged_sparse(), G1GCPhaseTimes::MergeRSMergedSparse);
+      p->record_or_add_thread_work_item(merge_remset_phase, worker_id, cl.merged_fine(), G1GCPhaseTimes::MergeRSMergedFine);
+      p->record_or_add_thread_work_item(merge_remset_phase, worker_id, cl.merged_coarse(), G1GCPhaseTimes::MergeRSMergedCoarse);
     }
 
     // Merge remembered sets of current candidates.
     {
-      G1GCParPhaseTimesTracker x(p, _merge_phase, worker_id, !_remembered_set_only /* must_record */);
+      G1GCParPhaseTimesTracker x(p, merge_remset_phase, worker_id, _initial_evacuation /* must_record */);
       G1MergeCardSetClosure cl(_scan_state);
       g1h->collection_set_iterate_increment_from(&cl, &_hr_claimer, worker_id);
 
-      p->record_or_add_thread_work_item(_merge_phase, worker_id, cl.merged_sparse(), G1GCPhaseTimes::MergeRSMergedSparse);
-      p->record_or_add_thread_work_item(_merge_phase, worker_id, cl.merged_fine(), G1GCPhaseTimes::MergeRSMergedFine);
-      p->record_or_add_thread_work_item(_merge_phase, worker_id, cl.merged_coarse(), G1GCPhaseTimes::MergeRSMergedCoarse);
+      p->record_or_add_thread_work_item(merge_remset_phase, worker_id, cl.merged_sparse(), G1GCPhaseTimes::MergeRSMergedSparse);
+      p->record_or_add_thread_work_item(merge_remset_phase, worker_id, cl.merged_fine(), G1GCPhaseTimes::MergeRSMergedFine);
+      p->record_or_add_thread_work_item(merge_remset_phase, worker_id, cl.merged_coarse(), G1GCPhaseTimes::MergeRSMergedCoarse);
     }
 
     // Apply closure to log entries in the HCC.
-    if (!_remembered_set_only && G1HotCardCache::default_use_cache()) {
-      assert(_merge_phase == G1GCPhaseTimes::MergeRS, "Wrong merge phase");
+    if (_initial_evacuation && G1HotCardCache::default_use_cache()) {
+      assert(merge_remset_phase == G1GCPhaseTimes::MergeRS, "Wrong merge phase");
       G1GCParPhaseTimesTracker x(p, G1GCPhaseTimes::MergeHCC, worker_id);
       G1MergeLogBufferCardsClosure cl(g1h, _scan_state);
       g1h->iterate_hcc_closure(&cl, worker_id);
     }
 
     // Now apply the closure to all remaining log entries.
-    if (!_remembered_set_only) {
-      assert(_merge_phase == G1GCPhaseTimes::MergeRS, "Wrong merge phase");
+    if (_initial_evacuation) {
+      assert(merge_remset_phase == G1GCPhaseTimes::MergeRS, "Wrong merge phase");
       G1GCParPhaseTimesTracker x(p, G1GCPhaseTimes::MergeLB, worker_id);
 
       G1MergeLogBufferCardsClosure cl(g1h, _scan_state);
@@ -1162,19 +1163,30 @@ void G1RemSet::print_merge_heap_roots_stats() {
                        percent_of(num_visited_cards, total_old_region_cards));
 }
 
-void G1RemSet::merge_heap_roots(bool remembered_set_only, G1GCPhaseTimes::GCParPhases merge_phase) {
+void G1RemSet::merge_heap_roots(bool initial_evacuation) {
+  G1CollectedHeap* g1h = G1CollectedHeap::heap();
+
   {
+    Ticks start = Ticks::now();
+
     _scan_state->prepare_for_merge_heap_roots();
+
+    Tickspan total = Ticks::now() - start;
+    if (initial_evacuation) {
+      g1h->phase_times()->record_prepare_merge_heap_roots_time(total.seconds() * 1000.0);
+    } else {
+      g1h->phase_times()->record_or_add_optional_prepare_merge_heap_roots_time(total.seconds() * 1000.0);
+    }
   }
 
-  WorkGang* workers = G1CollectedHeap::heap()->workers();
-  size_t const increment_length = G1CollectedHeap::heap()->collection_set()->increment_length();
+  WorkGang* workers = g1h->workers();
+  size_t const increment_length = g1h->collection_set()->increment_length();
 
-  uint const num_workers = !remembered_set_only ? workers->active_workers() :
-                                                  MIN2(workers->active_workers(), (uint)increment_length);
+  uint const num_workers = initial_evacuation ? workers->active_workers() :
+                                                MIN2(workers->active_workers(), (uint)increment_length);
 
   {
-    G1MergeHeapRootsTask cl(_scan_state, num_workers, remembered_set_only, merge_phase);
+    G1MergeHeapRootsTask cl(_scan_state, num_workers, initial_evacuation);
     log_debug(gc, ergo)("Running %s using %u workers for " SIZE_FORMAT " regions",
                         cl.name(), num_workers, increment_length);
     workers->run_task(&cl, num_workers);
