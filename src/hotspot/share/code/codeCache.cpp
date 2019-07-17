@@ -771,9 +771,10 @@ void CodeCache::purge_exception_caches() {
 uint8_t CodeCache::_unloading_cycle = 1;
 
 void CodeCache::increment_unloading_cycle() {
-  if (_unloading_cycle == 1) {
-    _unloading_cycle = 2;
-  } else {
+  // 2-bit value (see IsUnloadingState in nmethod.cpp for details)
+  // 0 is reserved for new methods.
+  _unloading_cycle = (_unloading_cycle + 1) % 4;
+  if (_unloading_cycle == 0) {
     _unloading_cycle = 1;
   }
 }
