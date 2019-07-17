@@ -208,10 +208,7 @@ bool ShenandoahBarrierC2Support::verify_helper(Node* in, Node_Stack& phis, Vecto
         if (trace) {
           tty->print("Found raw LoadP (OSR argument?)");
         }
-      } else if (in->Opcode() == Op_ShenandoahLoadReferenceBarrier ||
-                 (in->Opcode() == Op_Proj &&
-                  in->in(0)->Opcode() == Op_CallLeaf &&
-                  strcmp(in->in(0)->as_Call()->_name, "ShenandoahRuntime::load_reference_barrier_native") == 0)) {
+      } else if (in->Opcode() == Op_ShenandoahLoadReferenceBarrier) {
         if (t == ShenandoahOopStore) {
           uint i = 0;
           for (; i < phis.size(); i++) {
@@ -530,7 +527,7 @@ void ShenandoahBarrierC2Support::verify(RootNode* root) {
         if (!verify_helper(n->in(TypeFunc::Parms), phis, visited, ShenandoahStore, trace, barriers_used)) {
           report_verify_failure("Shenandoah verification: _fill should have barriers", n);
         }
-      } else if (!strcmp(call->_name, "shenandoah_wb_pre") || !strcmp(call->_name, "ShenandoahRuntime::load_reference_barrier_native")) {
+      } else if (!strcmp(call->_name, "shenandoah_wb_pre")) {
         // skip
       } else {
         const int calls_len = sizeof(calls) / sizeof(calls[0]);
@@ -1085,7 +1082,7 @@ void ShenandoahBarrierC2Support::in_cset_fast_test(Node*& ctrl, Node*& not_cset_
   phase->register_control(ctrl, loop, in_cset_fast_test_iff);
 }
 
-void ShenandoahBarrierC2Support::call_lrb_stub(Node*& ctrl, Node*& val, Node*& result_mem, Node* raw_mem, PhaseIdealLoop* phase) {
+void ShenandoahBarrierC2Support::call_lrb_stub(Node*& ctrl, Node*& val, Node*& result_mem, Node* raw_mem, bool is_native, PhaseIdealLoop* phase) {
   IdealLoopTree*loop = phase->get_loop(ctrl);
   const TypePtr* obj_type = phase->igvn().type(val)->is_oopptr()->cast_to_nonconst();
 
@@ -1096,9 +1093,10 @@ void ShenandoahBarrierC2Support::call_lrb_stub(Node*& ctrl, Node*& val, Node*& r
   mm->set_memory_at(Compile::AliasIdxRaw, raw_mem);
   phase->register_new_node(mm, ctrl);
 
-  Node* call = new CallLeafNode(ShenandoahBarrierSetC2::shenandoah_load_reference_barrier_Type(),
-                                CAST_FROM_FN_PTR(address, ShenandoahRuntime::load_reference_barrier),
-                                "shenandoah_load_reference_barrier", TypeRawPtr::BOTTOM);
+  address calladdr = is_native ? CAST_FROM_FN_PTR(address, ShenandoahRuntime::load_reference_barrier_native)
+                               : CAST_FROM_FN_PTR(address, ShenandoahRuntime::load_reference_barrier);
+  const char* name = is_native ? "oop_load_from_native_barrier" : "load_reference_barrier";
+  Node* call = new CallLeafNode(ShenandoahBarrierSetC2::shenandoah_load_reference_barrier_Type(), calladdr, name, TypeRawPtr::BOTTOM);
   call->init_req(TypeFunc::Control, ctrl);
   call->init_req(TypeFunc::I_O, phase->C->top());
   call->init_req(TypeFunc::Memory, mm);
@@ -1561,7 +1559,7 @@ void ShenandoahBarrierC2Support::pin_and_expand(PhaseIdealLoop* phase) {
     Node* result_mem = NULL;
     ctrl = if_not_fwd;
     fwd = new_val;
-    call_lrb_stub(ctrl, fwd, result_mem, raw_mem, phase);
+    call_lrb_stub(ctrl, fwd, result_mem, raw_mem, lrb->is_native(), phase);
     region->init_req(_evac_path, ctrl);
     val_phi->init_req(_evac_path, fwd);
     raw_mem_phi->init_req(_evac_path, result_mem);
@@ -3004,9 +3002,26 @@ void MemoryGraphFixer::fix_memory_uses(Node* mem, Node* replacement, Node* rep_p
   }
 }
 
-ShenandoahLoadReferenceBarrierNode::ShenandoahLoadReferenceBarrierNode(Node* ctrl, Node* obj)
-: Node(ctrl, obj) {
+ShenandoahLoadReferenceBarrierNode::ShenandoahLoadReferenceBarrierNode(Node* ctrl, Node* obj, bool native)
+: Node(ctrl, obj), _native(native) {
   ShenandoahBarrierSetC2::bsc2()->state()->add_load_reference_barrier(this);
+}
+
+bool ShenandoahLoadReferenceBarrierNode::is_native() const {
+  return _native;
+}
+
+uint ShenandoahLoadReferenceBarrierNode::size_of() const {
+  return sizeof(*this);
+}
+
+uint ShenandoahLoadReferenceBarrierNode::hash() const {
+  return Node::hash() + _native ? 1 : 0;
+}
+
+bool ShenandoahLoadReferenceBarrierNode::cmp( const Node &n ) const {
+  return Node::cmp(n) && n.Opcode() == Op_ShenandoahLoadReferenceBarrier &&
+         _native == ((const ShenandoahLoadReferenceBarrierNode&)n)._native;
 }
 
 const Type* ShenandoahLoadReferenceBarrierNode::bottom_type() const {

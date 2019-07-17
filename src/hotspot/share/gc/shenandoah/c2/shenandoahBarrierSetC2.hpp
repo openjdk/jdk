@@ -103,7 +103,6 @@ public:
   static const TypeFunc* write_ref_field_pre_entry_Type();
   static const TypeFunc* shenandoah_clone_barrier_Type();
   static const TypeFunc* shenandoah_load_reference_barrier_Type();
-  static const TypeFunc* oop_load_from_native_barrier_Type();
   virtual bool has_load_barriers() const { return true; }
 
   // This is the entry-point for the backend to perform accesses through the Access API.
