@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -214,7 +214,7 @@ SplashInitPlatform(Splash * splash) {
 
     splash->maskRequired = 0;
 
-    
+
     //TODO: the following is too much of a hack but should work in 90% cases.
     //      besides we don't use device-dependent drawing, so probably
     //      that's very fine indeed
@@ -282,9 +282,11 @@ void
 SplashRedrawWindow(Splash * splash) {
     NSAutoreleasePool *pool = [[NSAutoreleasePool alloc] init];
 
-    SplashUpdateScreenData(splash);
-
     [JNFRunLoop performOnMainThreadWaiting:YES withBlock:^(){
+        // drop the reference to the old view and image
+        [splash->window setContentView: nil];
+        SplashUpdateScreenData(splash);
+
         // NSDeviceRGBColorSpace vs. NSCalibratedRGBColorSpace ?
         NSBitmapImageRep * rep = [[NSBitmapImageRep alloc]
             initWithBitmapDataPlanes: (unsigned char**)&splash->screenData
@@ -311,7 +313,7 @@ SplashRedrawWindow(Splash * splash) {
             size.height /= scaleFactor;
             [image setSize: size];
         }
-        
+
         NSImageView * view = [[NSImageView alloc] init];
 
         [view setImage: image];

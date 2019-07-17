@@ -516,12 +516,15 @@ public abstract class URLStreamHandler {
      *                                  different from this one
      * @since 1.3
      */
-       protected void setURL(URL u, String protocol, String host, int port,
+    protected void setURL(URL u, String protocol, String host, int port,
                              String authority, String userInfo, String path,
                              String query, String ref) {
         if (this != u.handler) {
             throw new SecurityException("handler for url different from " +
                                         "this handler");
+        } else if (host != null && u.isBuiltinStreamHandler(this)) {
+            String s = IPAddressUtil.checkHostString(host);
+            if (s != null) throw new IllegalArgumentException(s);
         }
         // ensure that no one can reset the protocol on a given URL.
         u.set(u.getProtocol(), host, port, authority, userInfo, path, query, ref);

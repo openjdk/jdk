@@ -92,8 +92,6 @@ class DerIndefLenConverter {
      * add the current position to the <code>eocList</code> vector.
      */
     private void parseTag() throws IOException {
-        if (dataPos == dataSize)
-            return;
         if (isEOC(data[dataPos]) && (data[dataPos + 1] == 0)) {
             int numOfEncapsulatedLenBytes = 0;
             Object elem = null;
@@ -332,6 +330,10 @@ class DerIndefLenConverter {
 
         // parse and set up the vectors of all the indefinite-lengths
         while (dataPos < dataSize) {
+            if (dataPos + 2 > dataSize) {
+                // There should be at least one tag and one length
+                return null;
+            }
             parseTag();
             len = parseLength();
             if (len < 0) {
