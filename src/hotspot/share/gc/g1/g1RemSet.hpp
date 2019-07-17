@@ -67,6 +67,7 @@ private:
   G1Policy*              _g1p;
   G1HotCardCache*        _hot_card_cache;
 
+  void print_merge_heap_roots_stats();
 public:
 
   typedef CardTable::CardValue CardValue;
