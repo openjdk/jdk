@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -724,12 +724,14 @@ final class CertStatusExtension {
             // Update the context.
             chc.handshakeExtensions.put(
                     SH_STATUS_REQUEST, CertStatusRequestSpec.DEFAULT);
-            chc.handshakeConsumers.put(SSLHandshake.CERTIFICATE_STATUS.id,
-                    SSLHandshake.CERTIFICATE_STATUS);
 
             // Since we've received a legitimate status_request in the
             // ServerHello, stapling is active if it's been enabled.
             chc.staplingActive = chc.sslContext.isStaplingEnabled(true);
+            if (chc.staplingActive) {
+                chc.handshakeConsumers.put(SSLHandshake.CERTIFICATE_STATUS.id,
+                    SSLHandshake.CERTIFICATE_STATUS);
+            }
 
             // No impact on session resumption.
         }
@@ -1079,12 +1081,16 @@ final class CertStatusExtension {
             // Update the context.
             chc.handshakeExtensions.put(
                     SH_STATUS_REQUEST_V2, CertStatusRequestV2Spec.DEFAULT);
-            chc.handshakeConsumers.put(SSLHandshake.CERTIFICATE_STATUS.id,
-                    SSLHandshake.CERTIFICATE_STATUS);
 
             // Since we've received a legitimate status_request in the
-            // ServerHello, stapling is active if it's been enabled.
+            // ServerHello, stapling is active if it's been enabled.  If it
+            // is active, make sure we add the CertificateStatus message
+            // consumer.
             chc.staplingActive = chc.sslContext.isStaplingEnabled(true);
+            if (chc.staplingActive) {
+                chc.handshakeConsumers.put(SSLHandshake.CERTIFICATE_STATUS.id,
+                    SSLHandshake.CERTIFICATE_STATUS);
+            }
 
             // No impact on session resumption.
         }

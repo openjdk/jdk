@@ -32,9 +32,11 @@ import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.NetworkInterface;
 import java.net.SocketException;
+import java.net.URL;
 import java.security.AccessController;
 import java.security.PrivilegedExceptionAction;
 import java.security.PrivilegedActionException;
+import java.util.Arrays;
 import java.util.List;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Collectors;
@@ -371,5 +373,182 @@ public class IPAddressUtil {
         } catch (PrivilegedActionException pae) {
             return null;
         }
+    }
+
+    // See java.net.URI for more details on how to generate these
+    // masks.
+    //
+    // square brackets
+    private static final long L_IPV6_DELIMS = 0x0L; // "[]"
+    private static final long H_IPV6_DELIMS = 0x28000000L; // "[]"
+    // RFC 3986 gen-delims
+    private static final long L_GEN_DELIMS = 0x8400800800000000L; // ":/?#[]@"
+    private static final long H_GEN_DELIMS = 0x28000001L; // ":/?#[]@"
+    // These gen-delims can appear in authority
+    private static final long L_AUTH_DELIMS = 0x400000000000000L; // "@[]:"
+    private static final long H_AUTH_DELIMS = 0x28000001L; // "@[]:"
+    // colon is allowed in userinfo
+    private static final long L_COLON = 0x400000000000000L; // ":"
+    private static final long H_COLON = 0x0L; // ":"
+    // slash should be encoded in authority
+    private static final long L_SLASH = 0x800000000000L; // "/"
+    private static final long H_SLASH = 0x0L; // "/"
+    // backslash should always be encoded
+    private static final long L_BACKSLASH = 0x0L; // "\"
+    private static final long H_BACKSLASH = 0x10000000L; // "\"
+    // ASCII chars 0-31 + 127 - various controls + CRLF + TAB
+    private static final long L_NON_PRINTABLE = 0xffffffffL;
+    private static final long H_NON_PRINTABLE = 0x8000000000000000L;
+    // All of the above
+    private static final long L_EXCLUDE = 0x84008008ffffffffL;
+    private static final long H_EXCLUDE = 0x8000000038000001L;
+
+    private static final char[] OTHERS = {
+            8263,8264,8265,8448,8449,8453,8454,10868,
+            65109,65110,65119,65131,65283,65295,65306,65311,65312
+    };
+
+    // Tell whether the given character is found by the given mask pair
+    public static boolean match(char c, long lowMask, long highMask) {
+        if (c < 64)
+            return ((1L << c) & lowMask) != 0;
+        if (c < 128)
+            return ((1L << (c - 64)) & highMask) != 0;
+        return false; // other non ASCII characters are not filtered
+    }
+
+    // returns -1 if the string doesn't contain any characters
+    // from the mask, the index of the first such character found
+    // otherwise.
+    public static int scan(String s, long lowMask, long highMask) {
+        int i = -1, len;
+        if (s == null || (len = s.length()) == 0) return -1;
+        boolean match = false;
+        while (++i < len && !(match = match(s.charAt(i), lowMask, highMask)));
+        if (match) return i;
+        return -1;
+    }
+
+    public static int scan(String s, long lowMask, long highMask, char[] others) {
+        int i = -1, len;
+        if (s == null || (len = s.length()) == 0) return -1;
+        boolean match = false;
+        char c, c0 = others[0];
+        while (++i < len && !(match = match((c=s.charAt(i)), lowMask, highMask))) {
+            if (c >= c0 && (Arrays.binarySearch(others, c) > -1)) {
+                match = true; break;
+            }
+        }
+        if (match) return i;
+
+        return -1;
+    }
+
+    private static String describeChar(char c) {
+        if (c < 32 || c == 127) {
+            if (c == '\n') return "LF";
+            if (c == '\r') return "CR";
+            return "control char (code=" + (int)c + ")";
+        }
+        if (c == '\\') return "'\\'";
+        return "'" + c + "'";
+    }
+
+    private static String checkUserInfo(String str) {
+        // colon is permitted in user info
+        int index = scan(str, L_EXCLUDE & ~L_COLON,
+                H_EXCLUDE & ~H_COLON);
+        if (index >= 0) {
+            return "Illegal character found in user-info: "
+                    + describeChar(str.charAt(index));
+        }
+        return null;
+    }
+
+    private static String checkHost(String str) {
+        int index;
+        if (str.startsWith("[") && str.endsWith("]")) {
+            str = str.substring(1, str.length() - 1);
+            if (isIPv6LiteralAddress(str)) {
+                index = str.indexOf('%');
+                if (index >= 0) {
+                    index = scan(str = str.substring(index),
+                            L_NON_PRINTABLE | L_IPV6_DELIMS,
+                            H_NON_PRINTABLE | H_IPV6_DELIMS);
+                    if (index >= 0) {
+                        return "Illegal character found in IPv6 scoped address: "
+                                + describeChar(str.charAt(index));
+                    }
+                }
+                return null;
+            }
+            return "Unrecognized IPv6 address format";
+        } else {
+            index = scan(str, L_EXCLUDE, H_EXCLUDE);
+            if (index >= 0) {
+                return "Illegal character found in host: "
+                        + describeChar(str.charAt(index));
+            }
+        }
+        return null;
+    }
+
+    private static String checkAuth(String str) {
+        int index = scan(str,
+                L_EXCLUDE & ~L_AUTH_DELIMS,
+                H_EXCLUDE & ~H_AUTH_DELIMS);
+        if (index >= 0) {
+            return "Illegal character found in authority: "
+                    + describeChar(str.charAt(index));
+        }
+        return null;
+    }
+
+    // check authority of hierarchical URL. Appropriate for
+    // HTTP-like protocol handlers
+    public static String checkAuthority(URL url) {
+        String s, u, h;
+        if (url == null) return null;
+        if ((s = checkUserInfo(u = url.getUserInfo())) != null) {
+            return s;
+        }
+        if ((s = checkHost(h = url.getHost())) != null) {
+            return s;
+        }
+        if (h == null && u == null) {
+            return checkAuth(url.getAuthority());
+        }
+        return null;
+    }
+
+    // minimal syntax checks - deeper check may be performed
+    // by the appropriate protocol handler
+    public static String checkExternalForm(URL url) {
+        String s;
+        if (url == null) return null;
+        int index = scan(s = url.getUserInfo(),
+                L_NON_PRINTABLE | L_SLASH,
+                H_NON_PRINTABLE | H_SLASH);
+        if (index >= 0) {
+            return "Illegal character found in authority: "
+                    + describeChar(s.charAt(index));
+        }
+        if ((s = checkHostString(url.getHost())) != null) {
+            return s;
+        }
+        return null;
+    }
+
+    public static String checkHostString(String host) {
+        if (host == null) return null;
+        int index = scan(host,
+                L_NON_PRINTABLE | L_SLASH,
+                H_NON_PRINTABLE | H_SLASH,
+                OTHERS);
+        if (index >= 0) {
+            return "Illegal character found in host: "
+                    + describeChar(host.charAt(index));
+        }
+        return null;
     }
 }

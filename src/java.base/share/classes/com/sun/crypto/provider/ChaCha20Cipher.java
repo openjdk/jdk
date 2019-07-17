@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1363,8 +1363,11 @@ abstract class ChaCha20Cipher extends CipherSpi {
             // Calculate and compare the tag.  Only do the decryption
             // if and only if the tag matches.
             authFinalizeData(ctPlusTag, 0, ctLen, tag, 0);
-            if (Arrays.compare(ctPlusTag, ctLen, ctPlusTagLen,
-                    tag, 0, tag.length) != 0) {
+            long tagCompare = ((long)asLongView.get(ctPlusTag, ctLen) ^
+                    (long)asLongView.get(tag, 0)) |
+                    ((long)asLongView.get(ctPlusTag, ctLen + Long.BYTES) ^
+                    (long)asLongView.get(tag, Long.BYTES));
+            if (tagCompare != 0) {
                 throw new AEADBadTagException("Tag mismatch");
             }
             chaCha20Transform(ctPlusTag, 0, ctLen, out, outOff);

@@ -33,10 +33,10 @@
 //
 // Also, this is a C header file. Do not use C++ here.
 
-#define NUM_CDS_REGIONS 9
+#define NUM_CDS_REGIONS 8 // this must be the same as MetaspaceShared::n_regions
 #define CDS_ARCHIVE_MAGIC 0xf00baba2
 #define CDS_DYNAMIC_ARCHIVE_MAGIC 0xf00baba8
-#define CURRENT_CDS_ARCHIVE_VERSION 5
+#define CURRENT_CDS_ARCHIVE_VERSION 6
 #define INVALID_CDS_ARCHIVE_VERSION -1
 
 struct CDSFileMapRegion {
