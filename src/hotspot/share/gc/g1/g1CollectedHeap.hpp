@@ -353,6 +353,7 @@ private:
     assert(Thread::current()->is_VM_thread(), "current thread is not VM thread"); \
   } while (0)
 
+#ifdef ASSERT
 #define assert_used_and_recalculate_used_equal(g1h)                           \
   do {                                                                        \
     size_t cur_used_bytes = g1h->used();                                      \
@@ -361,6 +362,9 @@ private:
            " same as recalculated used(" SIZE_FORMAT ").",                    \
            cur_used_bytes, recal_used_bytes);                                 \
   } while (0)
+#else
+#define assert_used_and_recalculate_used_equal(g1h) do {} while(0)
+#endif
 
   const char* young_gc_name() const;
 
