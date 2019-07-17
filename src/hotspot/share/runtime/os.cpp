@@ -370,12 +370,15 @@ static void signal_thread_entry(JavaThread* thread, TRAPS) {
             continue;
           } else if (cur_state == AL_NOT_INITIALIZED) {
             // Start to initialize.
-            if (!AttachListener::is_init_trigger()) {
+            if (AttachListener::is_init_trigger()) {
+              // Attach Listener has been initialized.
+              // Accept subsequent request.
+              continue;
+            } else {
               // Attach Listener could not be started.
               // So we need to transit the state to AL_NOT_INITIALIZED.
               AttachListener::set_state(AL_NOT_INITIALIZED);
             }
-            continue;
           } else if (AttachListener::check_socket_file()) {
             // Attach Listener has been started, but unix domain socket file
             // does not exist. So restart Attach Listener.
