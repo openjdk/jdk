@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1994, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1994, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -217,6 +217,7 @@ class PushbackInputStream extends FilterInputStream {
      * @param b the byte array to push back.
      * @param off the start offset of the data.
      * @param len the number of bytes to push back.
+     * @exception NullPointerException If <code>b</code> is <code>null</code>.
      * @exception IOException If there is not enough room in the pushback
      *            buffer for the specified number of bytes,
      *            or this input stream has been closed by
@@ -239,6 +240,7 @@ class PushbackInputStream extends FilterInputStream {
      * value <code>b[1]</code>, and so forth.
      *
      * @param b the byte array to push back
+     * @exception NullPointerException If <code>b</code> is <code>null</code>.
      * @exception IOException If there is not enough room in the pushback
      *            buffer for the specified number of bytes,
      *            or this input stream has been closed by
