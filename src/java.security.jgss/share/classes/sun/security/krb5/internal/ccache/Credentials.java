@@ -180,8 +180,9 @@ public class Credentials {
         // is most likely to be the one in Authenticator in PA-TGS-REQ encoded
         // in TGS-REQ, therefore only stored with a service ticket. Currently
         // in Java, we only reads TGTs.
-        return new sun.security.krb5.Credentials(ticket,
-                cname, sname, key, flags, authtime, starttime, endtime, renewTill, caddr);
+        return new sun.security.krb5.Credentials(ticket, cname, null, sname,
+                null, key, flags, authtime, starttime, endtime, renewTill,
+                caddr);
     }
 
     public KerberosTime getStartTime() {

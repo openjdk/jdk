@@ -284,8 +284,9 @@ public class CredentialsUtil {
                 // Try CANONICALIZE false.
             }
         }
-        return serviceCredsSingle(options, asCreds,
-                cname, sname, additionalTickets, extraPAs);
+        return serviceCredsSingle(options, asCreds, cname,
+                asCreds.getClientAlias(), sname, sname, additionalTickets,
+                extraPAs);
     }
 
     /*
@@ -300,26 +301,29 @@ public class CredentialsUtil {
         options = new KDCOptions(options.toBooleanArray());
         options.set(KDCOptions.CANONICALIZE, true);
         PrincipalName cSname = sname;
+        PrincipalName refSname = sname; // May change with referrals
         Credentials creds = null;
         boolean isReferral = false;
         List<String> referrals = new LinkedList<>();
+        PrincipalName clientAlias = asCreds.getClientAlias();
         while (referrals.size() <= Config.MAX_REFERRALS) {
             ReferralsCache.ReferralCacheEntry ref =
-                    ReferralsCache.get(sname, cSname.getRealmString());
+                    ReferralsCache.get(cname, sname, refSname.getRealmString());
             String toRealm = null;
             if (ref == null) {
-                creds = serviceCredsSingle(options, asCreds,
-                        cname, cSname, additionalTickets, extraPAs);
+                creds = serviceCredsSingle(options, asCreds, cname,
+                        clientAlias, refSname, cSname, additionalTickets,
+                        extraPAs);
                 PrincipalName server = creds.getServer();
-                if (!cSname.equals(server)) {
+                if (!refSname.equals(server)) {
                     String[] serverNameStrings = server.getNameStrings();
                     if (serverNameStrings.length == 2 &&
                         serverNameStrings[0].equals(
                                 PrincipalName.TGS_DEFAULT_SRV_NAME) &&
-                        !cSname.getRealmAsString().equals(serverNameStrings[1])) {
+                        !refSname.getRealmAsString().equals(serverNameStrings[1])) {
                         // Server Name (sname) has the following format:
                         //      krbtgt/TO-REALM.COM@FROM-REALM.COM
-                        ReferralsCache.put(sname, server.getRealmString(),
+                        ReferralsCache.put(cname, sname, server.getRealmString(),
                                 serverNameStrings[1], creds);
                         toRealm = serverNameStrings[1];
                         isReferral = true;
@@ -336,8 +340,8 @@ public class CredentialsUtil {
                     // Referrals loop detected
                     return null;
                 }
-                cSname = new PrincipalName(cSname.getNameString(),
-                        cSname.getNameType(), toRealm);
+                refSname = new PrincipalName(refSname.getNameString(),
+                        refSname.getNameType(), toRealm);
                 referrals.add(toRealm);
                 isReferral = false;
                 continue;
@@ -356,14 +360,15 @@ public class CredentialsUtil {
      */
     private static Credentials serviceCredsSingle(
             KDCOptions options, Credentials asCreds,
-            PrincipalName cname, PrincipalName sname,
+            PrincipalName cname, PrincipalName clientAlias,
+            PrincipalName refSname, PrincipalName sname,
             Ticket[] additionalTickets, PAData[] extraPAs)
             throws KrbException, IOException {
         Credentials theCreds = null;
         boolean[] okAsDelegate = new boolean[]{true};
         String[] serverAsCredsNames = asCreds.getServer().getNameStrings();
         String tgtRealm = serverAsCredsNames[1];
-        String serviceRealm = sname.getRealmString();
+        String serviceRealm = refSname.getRealmString();
         if (!serviceRealm.equals(tgtRealm)) {
             // This is a cross-realm service request
             if (DEBUG) {
@@ -390,8 +395,8 @@ public class CredentialsUtil {
             System.out.println(">>> Credentials serviceCredsSingle:" +
                     " same realm");
         }
-        KrbTgsReq req = new KrbTgsReq(options, asCreds,
-                cname, sname, additionalTickets, extraPAs);
+        KrbTgsReq req = new KrbTgsReq(options, asCreds, cname, clientAlias,
+                refSname, sname, additionalTickets, extraPAs);
         theCreds = req.sendAndGetCreds();
         if (theCreds != null) {
             if (DEBUG) {

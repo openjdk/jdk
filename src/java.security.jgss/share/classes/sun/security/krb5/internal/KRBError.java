@@ -139,7 +139,7 @@ public class KRBError implements java.io.Serializable {
         sTime = new_sTime;
         suSec = new_suSec;
         errorCode = new_errorCode;
-        crealm = new_cname.getRealm();
+        crealm = new_cname != null ? new_cname.getRealm() : null;
         cname = new_cname;
         sname = new_sname;
         eText = new_eText;
@@ -168,7 +168,7 @@ public class KRBError implements java.io.Serializable {
         sTime = new_sTime;
         suSec = new_suSec;
         errorCode = new_errorCode;
-        crealm = new_cname.getRealm();
+        crealm = new_cname != null ? new_cname.getRealm() : null;
         cname = new_cname;
         sname = new_sname;
         eText = new_eText;
