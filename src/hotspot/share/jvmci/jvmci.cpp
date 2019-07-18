@@ -93,6 +93,14 @@ jobject JVMCI::make_global(const Handle& obj) {
   return res;
 }
 
+void JVMCI::destroy_global(jobject handle) {
+  // Assert before nulling out, for better debugging.
+  assert(is_global_handle(handle), "precondition");
+  oop* oop_ptr = reinterpret_cast<oop*>(handle);
+  NativeAccess<>::oop_store(oop_ptr, (oop)NULL);
+  object_handles()->release(oop_ptr);
+}
+
 bool JVMCI::is_global_handle(jobject handle) {
   const oop* ptr = reinterpret_cast<oop*>(handle);
   return object_handles()->allocation_status(ptr) == OopStorage::ALLOCATED_ENTRY;
