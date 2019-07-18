@@ -61,7 +61,6 @@ class ScavengeRootsTask : public GCTask {
     management            = 7,
     jvmti                 = 8,
     code_cache            = 9
-    JVMCI_ONLY(COMMA jvmci = 10)
   };
  private:
   RootType _root_type;

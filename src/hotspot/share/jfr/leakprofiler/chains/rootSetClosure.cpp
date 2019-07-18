@@ -42,9 +42,6 @@
 #include "runtime/thread.hpp"
 #include "services/management.hpp"
 #include "utilities/align.hpp"
-#if INCLUDE_JVMCI
-#include "jvmci/jvmci.hpp"
-#endif
 
 template <typename Delegate>
 RootSetClosure<Delegate>::RootSetClosure(Delegate* delegate) : _delegate(delegate) {}
@@ -96,7 +93,6 @@ void RootSetClosure<Delegate>::process() {
   Management::oops_do(this);
   StringTable::oops_do(this);
   AOTLoader::oops_do(this);
-  JVMCI_ONLY(JVMCI::oops_do(this);)
 }
 
 template class RootSetClosure<BFSClosure>;

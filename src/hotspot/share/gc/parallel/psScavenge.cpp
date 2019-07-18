@@ -379,7 +379,6 @@ bool PSScavenge::invoke_no_policy() {
       q->enqueue(new ScavengeRootsTask(ScavengeRootsTask::class_loader_data));
       q->enqueue(new ScavengeRootsTask(ScavengeRootsTask::jvmti));
       q->enqueue(new ScavengeRootsTask(ScavengeRootsTask::code_cache));
-      JVMCI_ONLY(q->enqueue(new ScavengeRootsTask(ScavengeRootsTask::jvmci));)
 
       TaskTerminator terminator(active_workers,
                                 (TaskQueueSetSuper*) promotion_manager->stack_array_depth());

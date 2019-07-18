@@ -524,7 +524,6 @@ void PSMarkSweep::mark_sweep_phase1(bool clear_all_softrefs) {
     // Do not treat nmethods as strong roots for mark/sweep, since we can unload them.
     //ScavengableNMethods::scavengable_nmethods_do(CodeBlobToOopClosure(mark_and_push_closure()));
     AOT_ONLY(AOTLoader::oops_do(mark_and_push_closure());)
-    JVMCI_ONLY(JVMCI::oops_do(mark_and_push_closure());)
   }
 
   // Flush marking stack.
@@ -619,8 +618,6 @@ void PSMarkSweep::mark_sweep_phase3() {
   CodeBlobToOopClosure adjust_from_blobs(adjust_pointer_closure(), CodeBlobToOopClosure::FixRelocations);
   CodeCache::blobs_do(&adjust_from_blobs);
   AOT_ONLY(AOTLoader::oops_do(adjust_pointer_closure());)
-
-  JVMCI_ONLY(JVMCI::oops_do(adjust_pointer_closure());)
 
   ref_processor()->weak_oops_do(adjust_pointer_closure());
   PSScavenge::reference_processor()->weak_oops_do(adjust_pointer_closure());

@@ -94,6 +94,7 @@ void ServiceThread::service_thread_entry(JavaThread* jt, TRAPS) {
     JNIHandles::global_handles(),
     JNIHandles::weak_global_handles(),
     StringTable::weak_storage(),
+    SystemDictionary::vm_global_oop_storage(),
     SystemDictionary::vm_weak_oop_storage()
   };
   const size_t oopstorage_count = ARRAY_SIZE(oopstorages);

@@ -52,11 +52,16 @@ void ShenandoahSerialRoot::oops_do(OopClosure* cl, uint worker_id) {
   }
 }
 
+// Default the second argument for SD::oops_do.
+static void system_dictionary_oops_do(OopClosure* cl) {
+  SystemDictionary::oops_do(cl);
+}
+
 ShenandoahSerialRoots::ShenandoahSerialRoots() :
   _universe_root(&Universe::oops_do, ShenandoahPhaseTimings::UniverseRoots),
   _object_synchronizer_root(&ObjectSynchronizer::oops_do, ShenandoahPhaseTimings::ObjectSynchronizerRoots),
   _management_root(&Management::oops_do, ShenandoahPhaseTimings::ManagementRoots),
-  _system_dictionary_root(&SystemDictionary::oops_do, ShenandoahPhaseTimings::SystemDictionaryRoots),
+  _system_dictionary_root(&system_dictionary_oops_do, ShenandoahPhaseTimings::SystemDictionaryRoots),
   _jvmti_root(&JvmtiExport::oops_do, ShenandoahPhaseTimings::JVMTIRoots) {
 }
 

@@ -99,7 +99,6 @@ class MarkFromRootsTask : public GCTask {
     system_dictionary     = 7,
     class_loader_data     = 8,
     code_cache            = 9
-    JVMCI_ONLY(COMMA jvmci = 10)
   };
  private:
   RootType _root_type;

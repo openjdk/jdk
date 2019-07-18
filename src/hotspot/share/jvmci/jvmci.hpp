@@ -74,8 +74,6 @@ class JVMCI : public AllStatic {
 
   static void metadata_do(void f(Metadata*));
 
-  static void oops_do(OopClosure* f);
-
   static void shutdown();
 
   static bool shutdown_called();

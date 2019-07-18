@@ -861,11 +861,6 @@ void GenCollectedHeap::process_roots(StrongRootsScope* scope,
     AOTLoader::oops_do(strong_roots);
   }
 #endif
-#if INCLUDE_JVMCI
-  if (EnableJVMCI && _process_strong_tasks->try_claim_task(GCH_PS_jvmci_oops_do)) {
-    JVMCI::oops_do(strong_roots);
-  }
-#endif
   if (_process_strong_tasks->try_claim_task(GCH_PS_SystemDictionary_oops_do)) {
     SystemDictionary::oops_do(strong_roots);
   }

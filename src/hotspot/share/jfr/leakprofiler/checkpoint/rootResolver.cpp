@@ -41,9 +41,6 @@
 #include "runtime/vframe_hp.hpp"
 #include "services/management.hpp"
 #include "utilities/growableArray.hpp"
-#if INCLUDE_JVMCI
-#include "jvmci/jvmci.hpp"
-#endif
 
 class ReferenceLocateClosure : public OopClosure {
  protected:
@@ -106,7 +103,6 @@ class ReferenceToRootClosure : public StackObj {
   bool do_management_roots();
   bool do_string_table_roots();
   bool do_aot_loader_roots();
-  JVMCI_ONLY(bool do_jvmci_roots();)
 
   bool do_roots();
 
@@ -193,15 +189,6 @@ bool ReferenceToRootClosure::do_aot_loader_roots() {
   return rcl.complete();
 }
 
-#if INCLUDE_JVMCI
-bool ReferenceToRootClosure::do_jvmci_roots() {
-  assert(!complete(), "invariant");
-  ReferenceLocateClosure rcl(_callback, OldObjectRoot::_jvmci, OldObjectRoot::_type_undetermined, NULL);
-  JVMCI::oops_do(&rcl);
-  return rcl.complete();
-}
-#endif
-
 bool ReferenceToRootClosure::do_roots() {
   assert(!complete(), "invariant");
   assert(OldObjectRoot::_system_undetermined == _info._system, "invariant");
@@ -251,13 +238,6 @@ bool ReferenceToRootClosure::do_roots() {
    _complete = true;
     return true;
   }
-
-#if INCLUDE_JVMCI
-  if (do_jvmci_roots()) {
-   _complete = true;
-    return true;
-  }
-#endif
 
   return false;
 }

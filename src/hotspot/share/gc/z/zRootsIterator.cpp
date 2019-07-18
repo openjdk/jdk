@@ -69,6 +69,7 @@ static const ZStatSubPhase ZSubPhaseConcurrentRootsSetup("Concurrent Roots Setup
 static const ZStatSubPhase ZSubPhaseConcurrentRoots("Concurrent Roots");
 static const ZStatSubPhase ZSubPhaseConcurrentRootsTeardown("Concurrent Roots Teardown");
 static const ZStatSubPhase ZSubPhaseConcurrentRootsJNIHandles("Concurrent Roots JNIHandles");
+static const ZStatSubPhase ZSubPhaseConcurrentRootsVMHandles("Concurrent Roots VMHandles");
 static const ZStatSubPhase ZSubPhaseConcurrentRootsClassLoaderDataGraph("Concurrent Roots ClassLoaderDataGraph");
 
 static const ZStatSubPhase ZSubPhasePauseWeakRootsSetup("Pause Weak Roots Setup");
@@ -231,7 +232,8 @@ void ZRootsIterator::do_jvmti_weak_export(ZRootsIteratorClosure* cl) {
 
 void ZRootsIterator::do_system_dictionary(ZRootsIteratorClosure* cl) {
   ZStatTimer timer(ZSubPhasePauseRootsSystemDictionary);
-  SystemDictionary::oops_do(cl);
+  // Handles are processed via _vm_handles.
+  SystemDictionary::oops_do(cl, false /* include_handles */);
 }
 
 void ZRootsIterator::do_threads(ZRootsIteratorClosure* cl) {
@@ -264,8 +266,10 @@ void ZRootsIterator::oops_do(ZRootsIteratorClosure* cl, bool visit_jvmti_weak_ex
 
 ZConcurrentRootsIterator::ZConcurrentRootsIterator(int cld_claim) :
     _jni_handles_iter(JNIHandles::global_handles()),
+    _vm_handles_iter(SystemDictionary::vm_global_oop_storage()),
     _cld_claim(cld_claim),
     _jni_handles(this),
+    _vm_handles(this),
     _class_loader_data_graph(this) {
   ZStatTimer timer(ZSubPhaseConcurrentRootsSetup);
 }
@@ -279,6 +283,11 @@ void ZConcurrentRootsIterator::do_jni_handles(ZRootsIteratorClosure* cl) {
   _jni_handles_iter.oops_do(cl);
 }
 
+void ZConcurrentRootsIterator::do_vm_handles(ZRootsIteratorClosure* cl) {
+  ZStatTimer timer(ZSubPhaseConcurrentRootsVMHandles);
+  _vm_handles_iter.oops_do(cl);
+}
+
 void ZConcurrentRootsIterator::do_class_loader_data_graph(ZRootsIteratorClosure* cl) {
   ZStatTimer timer(ZSubPhaseConcurrentRootsClassLoaderDataGraph);
   CLDToOopClosure cld_cl(cl, _cld_claim);
@@ -288,6 +297,7 @@ void ZConcurrentRootsIterator::do_class_loader_data_graph(ZRootsIteratorClosure*
 void ZConcurrentRootsIterator::oops_do(ZRootsIteratorClosure* cl) {
   ZStatTimer timer(ZSubPhaseConcurrentRoots);
   _jni_handles.oops_do(cl);
+  _vm_handles.oops_do(cl),
   _class_loader_data_graph.oops_do(cl);
 }
 
