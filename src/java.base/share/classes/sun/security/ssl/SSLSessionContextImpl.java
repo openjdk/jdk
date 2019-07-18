@@ -70,7 +70,7 @@ final class SSLSessionContextImpl implements SSLSessionContext {
     private int timeout;                // timeout in seconds
 
     // Default setting for stateless session resumption support (RFC 5077)
-    private boolean statelessSession = false;
+    private boolean statelessSession = true;
 
     // package private
     SSLSessionContextImpl(boolean server) {
@@ -234,13 +234,15 @@ final class SSLSessionContextImpl implements SSLSessionContext {
             // Property for Session Cache state
             if (server) {
                 st = GetPropertyAction.privilegedGetProperty(
-                        "jdk.tls.server.enableSessionTicketExtension", "false");
+                        "jdk.tls.server.enableSessionTicketExtension", "true");
             } else {
                 st = GetPropertyAction.privilegedGetProperty(
-                        "jdk.tls.client.enableSessionTicketExtension", "false");
+                        "jdk.tls.client.enableSessionTicketExtension", "true");
             }
 
-            statelessSession = Boolean.parseBoolean(st);
+            if (st.compareToIgnoreCase("false") == 0) {
+                statelessSession = false;
+            }
 
             // Property for Session Ticket Timeout.  The value can be changed
             // by SSLSessionContext.setSessionTimeout(int)
