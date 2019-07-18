@@ -880,10 +880,8 @@ void ShenandoahBarrierSetAssembler::gen_load_reference_barrier_stub(LIR_Assemble
   }
 
   // Check for null.
-  if (stub->needs_null_check()) {
-    __ testptr(res, res);
-    __ jcc(Assembler::zero, done);
-  }
+  __ testptr(res, res);
+  __ jcc(Assembler::zero, done);
 
   load_reference_barrier_not_null(ce->masm(), res);
 

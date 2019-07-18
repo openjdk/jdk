@@ -90,12 +90,10 @@ class ShenandoahLoadReferenceBarrierStub: public CodeStub {
 private:
   LIR_Opr _obj;
   LIR_Opr _result;
-  CodeEmitInfo* _info;
-  bool _needs_null_check;
 
 public:
-  ShenandoahLoadReferenceBarrierStub(LIR_Opr obj, LIR_Opr result, CodeEmitInfo* info, bool needs_null_check) :
-    _obj(obj), _result(result), _info(info), _needs_null_check(needs_null_check)
+  ShenandoahLoadReferenceBarrierStub(LIR_Opr obj, LIR_Opr result) :
+    _obj(obj), _result(result)
   {
     assert(_obj->is_register(), "should be register");
     assert(_result->is_register(), "should be register");
@@ -103,8 +101,6 @@ public:
 
   LIR_Opr obj() const { return _obj; }
   LIR_Opr result() const { return _result; }
-  CodeEmitInfo* info() const { return _info; }
-  bool needs_null_check() const { return _needs_null_check; }
 
   virtual void emit_code(LIR_Assembler* e);
   virtual void visit(LIR_OpVisitState* visitor) {
@@ -181,10 +177,10 @@ private:
 
   void pre_barrier(LIRGenerator* gen, CodeEmitInfo* info, DecoratorSet decorators, LIR_Opr addr_opr, LIR_Opr pre_val);
 
-  LIR_Opr load_reference_barrier(LIRGenerator* gen, LIR_Opr obj, CodeEmitInfo* info, bool need_null_check);
+  LIR_Opr load_reference_barrier(LIRGenerator* gen, LIR_Opr obj);
   LIR_Opr storeval_barrier(LIRGenerator* gen, LIR_Opr obj, CodeEmitInfo* info, DecoratorSet decorators);
 
-  LIR_Opr load_reference_barrier_impl(LIRGenerator* gen, LIR_Opr obj, CodeEmitInfo* info, bool need_null_check);
+  LIR_Opr load_reference_barrier_impl(LIRGenerator* gen, LIR_Opr obj);
 
   LIR_Opr ensure_in_register(LIRGenerator* gen, LIR_Opr obj);
 
