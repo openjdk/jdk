@@ -22,23 +22,21 @@
  */
 
 import java.io.File;
+import java.io.PrintWriter;
 import java.net.InetAddress;
-import java.net.NetworkInterface;
 import java.net.UnknownHostException;
-import java.net.SocketException;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.stream.Collectors;
+import java.util.concurrent.CountDownLatch;
 
-import jdk.test.lib.thread.ProcessThread;
+import jdk.test.lib.process.OutputAnalyzer;
 import jdk.test.lib.process.ProcessTools;
 
 /**
  * @test
  * @bug     6425769
  * @summary Test JMX agent host address binding. Same ports but different
- *          interfaces to bind to (selecting plain or SSL sockets at random
- * @key intermittent
+ *          interfaces to bind to (selecting plain or SSL sockets at random)
  *
  * @library /test/lib
  * @modules java.management.rmi
@@ -52,14 +50,9 @@ public class JMXInterfaceBindingTest {
     public static final int STOP_PROCESS_EXIT_VAL = 10;
     public static final int JMX_PORT_RANGE_LOWER = 9100;
     public static final int JMX_PORT_RANGE_UPPER = 9200;
-    public static final int JMX_PORT = getRandomPortInRange(JMX_PORT_RANGE_LOWER,
-                                                            JMX_PORT_RANGE_UPPER);
     public static final int JMX_PORT_RANGE_LOWER_SSL = 9201; // 9200 might be RMI Port
     public static final int JMX_PORT_RANGE_UPPER_SSL = 9300;
-    public static final int JMX_PORT_SSL = getRandomPortInRange(JMX_PORT_RANGE_LOWER_SSL,
-                                                                JMX_PORT_RANGE_UPPER_SSL);
-    public static final int RMI_PORT = JMX_PORT + 1;
-    public static final int RMI_PORT_SSL = JMX_PORT_SSL + 1;
+    private static final int MAX_RETRY_ATTEMTS = 10;
     public static final String READY_MSG = "MainThread: Ready for connections";
     public static final String TEST_CLASS = JMXAgentInterfaceBinding.class.getSimpleName();
     public static final String KEYSTORE_LOC = System.getProperty("test.src", ".") +
@@ -82,98 +75,25 @@ public class JMXInterfaceBindingTest {
     }
 
     private void runTests(List<InetAddress> addrs, boolean useSSL) {
-        List<ProcessThread> jvms = new ArrayList<>(addrs.size());
-        int i = 1;
+        List<TestProcessThread> testThreads = new ArrayList<>(addrs.size());
+        CountDownLatch latch = new CountDownLatch(addrs.size());
         for (InetAddress addr : addrs) {
             String address = JMXAgentInterfaceBinding.wrapAddress(addr.getHostAddress());
-            System.out.println();
-            String msg = String.format("DEBUG: Launching java tester for triplet (HOSTNAME,JMX_PORT,RMI_PORT) == (%s,%d,%d)",
-                    address,
-                    useSSL ? JMX_PORT_SSL : JMX_PORT,
-                    useSSL ? RMI_PORT_SSL : RMI_PORT);
-            System.out.println(msg);
-            ProcessThread jvm = runJMXBindingTest(address, useSSL);
-            jvms.add(jvm);
-            jvm.start();
-            System.out.println("DEBUG: Started " + (i++) + " Process(es).");
+            TestProcessThread t = new TestProcessThread(address, useSSL, latch);
+            testThreads.add(t);
+            t.start();
         }
-        int failedProcesses = 0;
-        for (ProcessThread pt: jvms) {
-            try {
-                pt.sendMessage("Exit: " + STOP_PROCESS_EXIT_VAL);
-                pt.join();
-            } catch (Throwable e) {
-                System.err.println("Failed to stop process: " + pt.getName());
-                throw new RuntimeException("Test failed", e);
-            }
-            int exitValue = pt.getOutput().getExitValue();
-            // If there is a communication error (the case we care about)
-            // we get a exit code of 1
-            if (exitValue == COMMUNICATION_ERROR_EXIT_VAL) {
-                // Failure case since the java processes should still be
-                // running.
-                System.err.println("Test FAILURE on " + pt.getName());
-                failedProcesses++;
-            } else if (exitValue == STOP_PROCESS_EXIT_VAL) {
-                System.out.println("DEBUG: OK. Spawned java process terminated with expected exit code of " + STOP_PROCESS_EXIT_VAL);
-            } else {
-                System.err.println("Test FAILURE on " + pt.getName() + " reason: Unexpected exit code => " + exitValue);
-                failedProcesses++;
-            }
-        }
-        if (failedProcesses > 0) {
-            throw new RuntimeException("Test FAILED. " + failedProcesses + " out of " + addrs.size() + " process(es) failed to start the JMX agent.");
-        }
-    }
-
-    private ProcessThread runJMXBindingTest(String address, boolean useSSL) {
-        List<String> args = new ArrayList<>();
-        args.add("-classpath");
-        args.add(TEST_CLASSPATH);
-        args.add("-Dcom.sun.management.jmxremote.host=" + address);
-        args.add("-Dcom.sun.management.jmxremote.port=" + (useSSL ? JMX_PORT_SSL : JMX_PORT));
-        args.add("-Dcom.sun.management.jmxremote.rmi.port=" + (useSSL ? RMI_PORT_SSL : RMI_PORT));
-        args.add("-Dcom.sun.management.jmxremote.authenticate=false");
-        args.add("-Dcom.sun.management.jmxremote.ssl=" + Boolean.toString(useSSL));
-        // This is needed for testing on loopback
-        args.add("-Djava.rmi.server.hostname=" + address);
-        if (useSSL) {
-            args.add("-Dcom.sun.management.jmxremote.registry.ssl=true");
-            args.add("-Djavax.net.ssl.keyStore=" + KEYSTORE_LOC);
-            args.add("-Djavax.net.ssl.trustStore=" + TRUSTSTORE_LOC);
-            args.add("-Djavax.net.ssl.keyStorePassword=password");
-            args.add("-Djavax.net.ssl.trustStorePassword=trustword");
-        }
-        args.add(TEST_CLASS);
-        args.add(address);
-        args.add(Integer.toString(useSSL ? JMX_PORT_SSL : JMX_PORT));
-        args.add(Integer.toString(useSSL ? RMI_PORT_SSL : RMI_PORT));
-        args.add(Boolean.toString(useSSL));
         try {
-            ProcessBuilder builder = ProcessTools.createJavaProcessBuilder(args.toArray(new String[] {}));
-            System.out.println(ProcessTools.getCommandLine(builder));
-            ProcessThread jvm = new ProcessThread("JMX-Tester-" + address, JMXInterfaceBindingTest::isJMXAgentResponseAvailable, builder);
-            return jvm;
-        } catch (Exception e) {
+            latch.await();
+        } catch (InterruptedException e) {
+            System.err.println("Failed to wait for the test threads to complete");
             throw new RuntimeException("Test failed", e);
         }
 
-    }
-
-    private static boolean isJMXAgentResponseAvailable(String line) {
-        if (line.equals(READY_MSG)) {
-            System.out.println("DEBUG: Found expected READY_MSG.");
-            return true;
-        } else if (line.startsWith("Error:")) {
-            // Allow for a JVM process that exits with
-            // "Error: JMX connector server communication error: ..."
-            // to continue as well since we handle that case elsewhere.
-            // This has the effect that the test does not timeout and
-            // fails with an exception in the test.
-            System.err.println("PROBLEM: JMX agent of target JVM did not start as it should.");
-            return true;
-        } else {
-            return false;
+        long failedProcesses = testThreads.stream().filter(TestProcessThread::isTestFailed).count();
+        if (failedProcesses > 0) {
+            throw new RuntimeException("Test FAILED. " + failedProcesses + " out of " + addrs.size() +
+                    " process(es) failed to start the JMX agent.");
         }
     }
 
@@ -213,6 +133,130 @@ public class JMXInterfaceBindingTest {
             return addrs;
         } catch (UnknownHostException e) {
             throw new RuntimeException("Test failed", e);
+        }
+    }
+
+    private static class TestProcessThread extends Thread {
+        private final String name;
+        private final String address;
+        private final boolean useSSL;
+        private final CountDownLatch latch;
+        private volatile boolean testFailed = false;
+        private OutputAnalyzer output;
+
+        public TestProcessThread(String address, boolean useSSL, CountDownLatch latch) {
+            this.address = address;
+            this.useSSL = useSSL;
+            this.name = "JMX-Tester-" + address;
+            this.latch = latch;
+        }
+
+        @Override
+        public void run() {
+            int attempts = 0;
+            boolean needRetry = false;
+            do {
+                if (needRetry) {
+                    System.err.println("Retrying the test for " + name);
+                }
+                needRetry = runTest();
+            } while (needRetry && (attempts++ < MAX_RETRY_ATTEMTS));
+
+            if (testFailed) {
+                int exitValue = output.getExitValue();
+                if (needRetry) {
+                    System.err.println("Test FAILURE on " + name + " reason: run out of retries to to pick free ports");
+                } else if (exitValue == COMMUNICATION_ERROR_EXIT_VAL) {
+                    // Failure case since the java processes should still be
+                    // running.
+                    System.err.println("Test FAILURE on " + name);
+                } else if (exitValue == STOP_PROCESS_EXIT_VAL) {
+                    System.out.println("Test FAILURE on " + name + " reason: The expected line \"" + READY_MSG
+                            + "\" is not present in the process output");
+                } else {
+                    System.err.println("Test FAILURE on " + name + " reason: Unexpected exit code => " + exitValue);
+                }
+                output.reportDiagnosticSummary();
+            }
+            latch.countDown();
+        }
+
+        public boolean isTestFailed() {
+            return testFailed;
+        }
+
+        private int getJMXPort() {
+            return useSSL ?
+                    getRandomPortInRange(JMX_PORT_RANGE_LOWER_SSL, JMX_PORT_RANGE_UPPER_SSL) :
+                    getRandomPortInRange(JMX_PORT_RANGE_LOWER, JMX_PORT_RANGE_UPPER);
+        }
+
+        private Process createTestProcess() {
+            int jmxPort = getJMXPort();
+            int rmiPort = jmxPort + 1;
+            String msg = String.format("DEBUG: Launching java tester for triplet (HOSTNAME,JMX_PORT,RMI_PORT)" +
+                            " == (%s,%d,%d)", address, jmxPort, rmiPort);
+            System.out.println(msg);
+            List<String> args = new ArrayList<>();
+            args.add("-classpath");
+            args.add(TEST_CLASSPATH);
+            args.add("-Dcom.sun.management.jmxremote.host=" + address);
+            args.add("-Dcom.sun.management.jmxremote.port=" + jmxPort);
+            args.add("-Dcom.sun.management.jmxremote.rmi.port=" + rmiPort);
+            args.add("-Dcom.sun.management.jmxremote.authenticate=false");
+            args.add("-Dcom.sun.management.jmxremote.ssl=" + Boolean.toString(useSSL));
+            // This is needed for testing on loopback
+            args.add("-Djava.rmi.server.hostname=" + address);
+            if (useSSL) {
+                args.add("-Dcom.sun.management.jmxremote.registry.ssl=true");
+                args.add("-Djavax.net.ssl.keyStore=" + KEYSTORE_LOC);
+                args.add("-Djavax.net.ssl.trustStore=" + TRUSTSTORE_LOC);
+                args.add("-Djavax.net.ssl.keyStorePassword=password");
+                args.add("-Djavax.net.ssl.trustStorePassword=trustword");
+            }
+            args.add(TEST_CLASS);
+            args.add(address);
+            args.add(Integer.toString(jmxPort));
+            args.add(Integer.toString(rmiPort));
+            args.add(Boolean.toString(useSSL));
+
+            try {
+                ProcessBuilder builder = ProcessTools.createJavaProcessBuilder(args.toArray(new String[]{}));
+                System.out.println(ProcessTools.getCommandLine(builder));
+                Process process = builder.start();
+                output = new OutputAnalyzer(process);
+                return process;
+            } catch (Exception e) {
+                throw new RuntimeException("Test failed", e);
+            }
+        }
+
+        // Returns true if the test failed due to "Port already in use" error.
+        private boolean runTest() {
+            testFailed = true;
+            Process process = createTestProcess();
+            try {
+                sendMessageToProcess(process, "Exit: " + STOP_PROCESS_EXIT_VAL);
+                process.waitFor();
+            } catch (Throwable e) {
+                System.err.println("Failed to stop process: " + name);
+                throw new RuntimeException("Test failed", e);
+            }
+            if (output.getExitValue() == STOP_PROCESS_EXIT_VAL && output.getStdout().contains(READY_MSG)) {
+                testFailed = false;
+            } else if (output.getStderr().contains("Port already in use")) {
+                System.out.println("The test attempt for the test " + name +" failed due to the bind error");
+                // Need to retry
+                return true;
+            }
+            return false;
+        }
+
+        private static void sendMessageToProcess(Process process, String message) {
+            try (PrintWriter pw = new PrintWriter(process.getOutputStream())) {
+                pw.println(message);
+                pw.flush();
+            }
         }
     }
 }
