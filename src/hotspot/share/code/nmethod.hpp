@@ -212,6 +212,9 @@ class nmethod : public CompiledMethod {
   void* operator new(size_t size, int nmethod_size, int comp_level) throw();
 
   const char* reloc_string_for(u_char* begin, u_char* end);
+
+  bool try_transition(int new_state);
+
   // Returns true if this thread changed the state of the nmethod or
   // false if another thread performed the transition.
   bool make_not_entrant_or_zombie(int state);
@@ -339,7 +342,7 @@ class nmethod : public CompiledMethod {
   // flag accessing and manipulation
   bool  is_not_installed() const                  { return _state == not_installed; }
   bool  is_in_use() const                         { return _state <= in_use; }
-  bool  is_alive() const                          { return _state < zombie; }
+  bool  is_alive() const                          { return _state < unloaded; }
   bool  is_not_entrant() const                    { return _state == not_entrant; }
   bool  is_zombie() const                         { return _state == zombie; }
   bool  is_unloaded() const                       { return _state == unloaded; }

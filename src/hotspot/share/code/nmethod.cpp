@@ -1136,6 +1136,20 @@ void nmethod::inc_decompile_count() {
   mdo->inc_decompile_count();
 }
 
+bool nmethod::try_transition(int new_state_int) {
+  signed char new_state = new_state_int;
+  for (;;) {
+    signed char old_state = Atomic::load(&_state);
+    if (old_state >= new_state) {
+      // Ensure monotonicity of transitions.
+      return false;
+    }
+    if (Atomic::cmpxchg(new_state, &_state, old_state) == old_state) {
+      return true;
+    }
+  }
+}
+
 void nmethod::make_unloaded() {
   post_compiled_method_unload();
 
@@ -1159,7 +1173,9 @@ void nmethod::make_unloaded() {
   }
   // Unlink the osr method, so we do not look this up again
   if (is_osr_method()) {
-    // Invalidate the osr nmethod only once
+    // Invalidate the osr nmethod only once. Note that with concurrent
+    // code cache unloading, OSR nmethods are invalidated before they
+    // are made unloaded. Therefore, this becomes a no-op then.
     if (is_in_use()) {
       invalidate_osr_method();
     }
@@ -1213,12 +1229,14 @@ void nmethod::make_unloaded() {
   set_osr_link(NULL);
   NMethodSweeper::report_state_change(this);
 
-  // The release is only needed for compile-time ordering, as accesses
-  // into the nmethod after the store are not safe due to the sweeper
-  // being allowed to free it when the store is observed, during
-  // concurrent nmethod unloading. Therefore, there is no need for
-  // acquire on the loader side.
-  OrderAccess::release_store(&_state, (signed char)unloaded);
+  bool transition_success = try_transition(unloaded);
+
+  // It is an important invariant that there exists no race between
+  // the sweeper and GC thread competing for making the same nmethod
+  // zombie and unloaded respectively. This is ensured by
+  // can_convert_to_zombie() returning false for any is_unloading()
+  // nmethod, informing the sweeper not to step on any GC toes.
+  assert(transition_success, "Invalid nmethod transition to unloaded");
 
 #if INCLUDE_JVMCI
   // Clear the link between this nmethod and a HotSpotNmethod mirror
@@ -1283,7 +1301,7 @@ bool nmethod::make_not_entrant_or_zombie(int state) {
   assert(state == zombie || state == not_entrant, "must be zombie or not_entrant");
   assert(!is_zombie(), "should not already be a zombie");
 
-  if (_state == state) {
+  if (Atomic::load(&_state) >= state) {
     // Avoid taking the lock if already in required state.
     // This is safe from races because the state is an end-state,
     // which the nmethod cannot back out of once entered.
@@ -1318,7 +1336,7 @@ bool nmethod::make_not_entrant_or_zombie(int state) {
     // Enter critical section.  Does not block for safepoint.
     MutexLocker pl(Patching_lock, Mutex::_no_safepoint_check_flag);
 
-    if (_state == state) {
+    if (Atomic::load(&_state) >= state) {
       // another thread already performed this transition so nothing
       // to do, but return false to indicate this.
       return false;
@@ -1354,7 +1372,18 @@ bool nmethod::make_not_entrant_or_zombie(int state) {
     }
 
     // Change state
-    _state = state;
+    if (!try_transition(state)) {
+      // If the transition fails, it is due to another thread making the nmethod more
+      // dead. In particular, one thread might be making the nmethod unloaded concurrently.
+      // If so, having patched in the jump in the verified entry unnecessarily is fine.
+      // The nmethod is no longer possible to call by Java threads.
+      // Incrementing the decompile count is also fine as the caller of make_not_entrant()
+      // had a valid reason to deoptimize the nmethod.
+      // Marking the nmethod as seen on stack also has no effect, as the nmethod is now
+      // !is_alive(), and the seen on stack value is only used to convert not_entrant
+      // nmethods to zombie in can_convert_to_zombie().
+      return false;
+    }
 
     // Log the transition once
     log_state_change();
