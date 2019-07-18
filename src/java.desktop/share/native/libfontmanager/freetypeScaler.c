@@ -161,7 +161,7 @@ static unsigned long ReadTTFontFileFunc(FT_Stream stream,
      */
 
     if (numBytes == 0) {
-        if (offset >= scalerInfo->fileSize) {
+        if (offset > scalerInfo->fileSize) {
             return -1;
         } else {
             return 0;
