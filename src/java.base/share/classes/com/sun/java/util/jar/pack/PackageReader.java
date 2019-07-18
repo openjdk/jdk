@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -75,6 +75,8 @@ class PackageReader extends BandStructure {
      */
     static
     class LimitedBuffer extends BufferedInputStream {
+        static final InputStream NULL_STREAM = InputStream.nullInputStream();
+
         long served;     // total number of charburgers served
         int  servedPos;  // ...as of this value of super.pos
         long limit;      // current declared limit
@@ -123,7 +125,7 @@ class PackageReader extends BandStructure {
             throw new RuntimeException("no skipping");
         }
         LimitedBuffer(InputStream originalIn) {
-            super(null, 1<<14);
+            super(NULL_STREAM, 1<<14);
             servedPos = pos;
             super.in = new FilterInputStream(originalIn) {
                 public int read() throws IOException {
