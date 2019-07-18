@@ -360,6 +360,7 @@ static void signal_thread_entry(JavaThread* thread, TRAPS) {
 
     switch (sig) {
       case SIGBREAK: {
+#if INCLUDE_SERVICES
         // Check if the signal is a trigger to start the Attach Listener - in that
         // case don't print stack traces.
         if (!DisableAttachMechanism) {
@@ -385,6 +386,7 @@ static void signal_thread_entry(JavaThread* thread, TRAPS) {
             continue;
           }
         }
+#endif
         // Print stack traces
         // Any SIGBREAK operations added here should make sure to flush
         // the output stream (e.g. tty->flush()) after output.  See 4803766.
