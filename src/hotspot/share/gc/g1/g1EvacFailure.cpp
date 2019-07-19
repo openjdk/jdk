@@ -26,10 +26,10 @@
 #include "gc/g1/g1CollectedHeap.inline.hpp"
 #include "gc/g1/g1CollectorState.hpp"
 #include "gc/g1/g1ConcurrentMark.inline.hpp"
-#include "gc/g1/g1DirtyCardQueue.hpp"
 #include "gc/g1/g1EvacFailure.hpp"
 #include "gc/g1/g1HeapVerifier.hpp"
 #include "gc/g1/g1OopClosures.inline.hpp"
+#include "gc/g1/g1RedirtyCardsQueue.hpp"
 #include "gc/g1/heapRegion.hpp"
 #include "gc/g1/heapRegionRemSet.hpp"
 #include "gc/shared/preservedMarks.inline.hpp"
@@ -40,7 +40,7 @@
 class UpdateLogBuffersDeferred : public BasicOopIterateClosure {
 private:
   G1CollectedHeap* _g1h;
-  G1DirtyCardQueue* _dcq;
+  G1RedirtyCardsQueue* _rdcq;
   G1CardTable*    _ct;
 
   // Remember the last enqueued card to avoid enqueuing the same card over and over;
@@ -48,8 +48,8 @@ private:
   size_t _last_enqueued_card;
 
 public:
-  UpdateLogBuffersDeferred(G1DirtyCardQueue* dcq) :
-    _g1h(G1CollectedHeap::heap()), _dcq(dcq), _ct(_g1h->card_table()), _last_enqueued_card(SIZE_MAX) {}
+  UpdateLogBuffersDeferred(G1RedirtyCardsQueue* rdcq) :
+    _g1h(G1CollectedHeap::heap()), _rdcq(rdcq), _ct(_g1h->card_table()), _last_enqueued_card(SIZE_MAX) {}
 
   virtual void do_oop(narrowOop* p) { do_oop_work(p); }
   virtual void do_oop(      oop* p) { do_oop_work(p); }
@@ -67,7 +67,7 @@ public:
     }
     size_t card_index = _ct->index_for(p);
     if (card_index != _last_enqueued_card) {
-      _dcq->enqueue(_ct->byte_for_index(card_index));
+      _rdcq->enqueue(_ct->byte_for_index(card_index));
       _last_enqueued_card = card_index;
     }
   }
@@ -199,15 +199,15 @@ class RemoveSelfForwardPtrHRClosure: public HeapRegionClosure {
   G1CollectedHeap* _g1h;
   uint _worker_id;
 
-  G1DirtyCardQueue _dcq;
+  G1RedirtyCardsQueue _rdcq;
   UpdateLogBuffersDeferred _log_buffer_cl;
 
 public:
   RemoveSelfForwardPtrHRClosure(uint worker_id) :
     _g1h(G1CollectedHeap::heap()),
     _worker_id(worker_id),
-    _dcq(&_g1h->dirty_card_queue_set()),
-    _log_buffer_cl(&_dcq) {
+    _rdcq(&_g1h->redirty_cards_queue_set()),
+    _log_buffer_cl(&_rdcq) {
   }
 
   size_t remove_self_forward_ptr_by_walking_hr(HeapRegion* hr,

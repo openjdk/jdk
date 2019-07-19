@@ -27,7 +27,7 @@
 
 #include "gc/g1/g1CardTable.hpp"
 #include "gc/g1/g1CollectedHeap.hpp"
-#include "gc/g1/g1DirtyCardQueue.hpp"
+#include "gc/g1/g1RedirtyCardsQueue.hpp"
 #include "gc/g1/g1OopClosures.hpp"
 #include "gc/g1/g1Policy.hpp"
 #include "gc/g1/g1RemSet.hpp"
@@ -46,7 +46,7 @@ class outputStream;
 class G1ParScanThreadState : public CHeapObj<mtGC> {
   G1CollectedHeap* _g1h;
   RefToScanQueue* _refs;
-  G1DirtyCardQueue _dcq;
+  G1RedirtyCardsQueue _rdcq;
   G1CardTable* _ct;
   G1EvacuationRootClosures* _closures;
 
@@ -81,7 +81,7 @@ class G1ParScanThreadState : public CHeapObj<mtGC> {
 
 #define PADDING_ELEM_NUM (DEFAULT_CACHE_LINE_SIZE / sizeof(size_t))
 
-  G1DirtyCardQueue& dirty_card_queue()           { return _dcq; }
+  G1RedirtyCardsQueue& redirty_cards_queue()     { return _rdcq; }
   G1CardTable* ct()                              { return _ct; }
 
   G1HeapRegionAttr dest(G1HeapRegionAttr original) const {
@@ -133,7 +133,7 @@ public:
     size_t card_index = ct()->index_for(p);
     // If the card hasn't been added to the buffer, do it.
     if (_last_enqueued_card != card_index) {
-      dirty_card_queue().enqueue(ct()->byte_for_index(card_index));
+      redirty_cards_queue().enqueue(ct()->byte_for_index(card_index));
       _last_enqueued_card = card_index;
     }
   }
