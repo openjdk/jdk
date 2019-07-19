@@ -3016,7 +3016,7 @@ uint ShenandoahLoadReferenceBarrierNode::size_of() const {
 }
 
 uint ShenandoahLoadReferenceBarrierNode::hash() const {
-  return Node::hash() + _native ? 1 : 0;
+  return Node::hash() + (_native ? 1 : 0);
 }
 
 bool ShenandoahLoadReferenceBarrierNode::cmp( const Node &n ) const {
