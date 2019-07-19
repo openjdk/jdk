@@ -229,7 +229,7 @@ AC_DEFUN([FLAGS_SETUP_WARNINGS],
       ;;
 
     xlc)
-      DISABLE_WARNING_PREFIX="-qsuppress="
+      DISABLE_WARNING_PREFIX="-Wno-"
       CFLAGS_WARNINGS_ARE_ERRORS="-qhalt=w"
 
       # Possibly a better subset than "all" is "lan:trx:ret:zea:cmp:ret"
