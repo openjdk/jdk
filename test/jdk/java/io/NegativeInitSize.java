@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2019 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -49,10 +49,8 @@ public class NegativeInitSize {
                 ("PushbackReader failed to detect negative init size");
         }
 
-        byte[] ba = { 123 };
-        ByteArrayInputStream goodbis = new ByteArrayInputStream(ba);
         try {
-            PushbackInputStream pbis = new PushbackInputStream(goodbis, -1);
+            PushbackInputStream pbis = new PushbackInputStream(null, -1);
         } catch (IllegalArgumentException e) {
         } catch (Exception e) {
             throw new Exception
@@ -68,6 +66,8 @@ public class NegativeInitSize {
                 ("BufferedOutputStream failed to detect negative init size");
         }
 
+        byte[] ba = { 123 };
+        ByteArrayInputStream goodbis = new ByteArrayInputStream(ba);
         try {
             BufferedInputStream bis = new BufferedInputStream(goodbis, -1);
         } catch (IllegalArgumentException e) {

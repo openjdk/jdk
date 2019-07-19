@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1994, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1994, 1996, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -40,10 +40,7 @@ public class plain extends ContentHandler {
     public Object getContent(URLConnection uc) {
         try {
             InputStream is = uc.getInputStream();
-            if (is == null) {
-                is = InputStream.nullInputStream();
-            }
-            return new PlainTextInputStream(is);
+            return new PlainTextInputStream(uc.getInputStream());
         } catch (IOException e) {
             return "Error reading document:\n" + e.toString();
         }
