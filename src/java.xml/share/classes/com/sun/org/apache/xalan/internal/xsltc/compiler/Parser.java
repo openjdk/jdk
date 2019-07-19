@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2019, Oracle and/or its affiliates. All rights reserved.
  */
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
@@ -42,6 +42,7 @@ import java.util.Stack;
 import java.util.StringTokenizer;
 import javax.xml.XMLConstants;
 import javax.xml.catalog.CatalogFeatures;
+import jdk.xml.internal.ErrorHandlerProxy;
 import jdk.xml.internal.JdkXmlFeatures;
 import jdk.xml.internal.JdkXmlUtils;
 import jdk.xml.internal.SecuritySupport;
@@ -61,7 +62,7 @@ import org.xml.sax.helpers.AttributesImpl;
  * @author G. Todd Miller
  * @author Morten Jorgensen
  * @author Erwin Bolwidt <ejb@klomp.org>
- * @LastModified: Nov 2017
+ * @LastModified: July 2019
  */
 public class Parser implements Constants, ContentHandler {
 
@@ -98,9 +99,13 @@ public class Parser implements Constants, ContentHandler {
 
     private boolean _overrideDefaultParser;
 
-    public Parser(XSLTC xsltc, boolean useOverrideDefaultParser) {
+    // flag indicates whether there's an user's ErrorListener
+    private boolean _hasUserErrListener;
+
+    public Parser(XSLTC xsltc, boolean useOverrideDefaultParser, boolean hasUserErrListener) {
         _xsltc = xsltc;
         _overrideDefaultParser = useOverrideDefaultParser;
+        _hasUserErrListener = hasUserErrListener;
     }
 
     public void init() {
@@ -426,6 +431,11 @@ public class Parser implements Constants, ContentHandler {
         try {
             // Parse the input document and build the abstract syntax tree
             reader.setContentHandler(this);
+            if (_hasUserErrListener) {
+                // Set a ErrorHandler proxy to pass any parsing error on to be handled
+                // by the user's ErrorListener
+                reader.setErrorHandler(new ErrorHandlerProxy());
+            }
             reader.parse(input);
             // Find the start of the stylesheet within the tree
             return getStylesheet(_root);

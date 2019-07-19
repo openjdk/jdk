@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2019, Oracle and/or its affiliates. All rights reserved.
  */
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
@@ -58,7 +58,7 @@ import org.xml.sax.XMLReader;
  * @author G. Todd Miller
  * @author Morten Jorgensen
  * @author John Howard (johnh@schemasoft.com)
- * @LastModified: Oct 2017
+ * @LastModified: July 2019
  */
 public final class XSLTC {
 
@@ -175,10 +175,10 @@ public final class XSLTC {
     /**
      * XSLTC compiler constructor
      */
-    public XSLTC(JdkXmlFeatures featureManager) {
+    public XSLTC(JdkXmlFeatures featureManager, boolean hasListener) {
         _overrideDefaultParser = featureManager.getFeature(
                 JdkXmlFeatures.XmlFeature.JDK_OVERRIDE_PARSER);
-        _parser = new Parser(this, _overrideDefaultParser);
+        _parser = new Parser(this, _overrideDefaultParser, hasListener);
         _xmlFeatures = featureManager;
         _extensionClassLoader = null;
         _externalExtensionFunctions = new HashMap<>();
