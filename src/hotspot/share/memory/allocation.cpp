@@ -259,25 +259,6 @@ void AllocatedObj::print_value_on(outputStream* st) const {
   st->print("AllocatedObj(" INTPTR_FORMAT ")", p2i(this));
 }
 
-AllocStats::AllocStats() {
-  start_mallocs      = os::num_mallocs;
-  start_frees        = os::num_frees;
-  start_malloc_bytes = os::alloc_bytes;
-  start_mfree_bytes  = os::free_bytes;
-  start_res_bytes    = Arena::_bytes_allocated;
-}
-
-julong  AllocStats::num_mallocs() { return os::num_mallocs - start_mallocs; }
-julong  AllocStats::alloc_bytes() { return os::alloc_bytes - start_malloc_bytes; }
-julong  AllocStats::num_frees()   { return os::num_frees - start_frees; }
-julong  AllocStats::free_bytes()  { return os::free_bytes - start_mfree_bytes; }
-julong  AllocStats::resource_bytes() { return Arena::_bytes_allocated - start_res_bytes; }
-void    AllocStats::print() {
-  tty->print_cr(UINT64_FORMAT " mallocs (" UINT64_FORMAT "MB), "
-                UINT64_FORMAT " frees (" UINT64_FORMAT "MB), " UINT64_FORMAT "MB resrc",
-                num_mallocs(), alloc_bytes()/M, num_frees(), free_bytes()/M, resource_bytes()/M);
-}
-
 ReallocMark::ReallocMark() {
 #ifdef ASSERT
   Thread *thread = Thread::current();

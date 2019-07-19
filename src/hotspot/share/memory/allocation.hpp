@@ -507,23 +507,6 @@ protected:
 #define FREE_C_HEAP_OBJ(objname)\
   FreeHeap((char*)objname);
 
-// for statistics
-#ifndef PRODUCT
-class AllocStats : StackObj {
-  julong start_mallocs, start_frees;
-  julong start_malloc_bytes, start_mfree_bytes, start_res_bytes;
- public:
-  AllocStats();
-
-  julong num_mallocs();    // since creation of receiver
-  julong alloc_bytes();
-  julong num_frees();
-  julong free_bytes();
-  julong resource_bytes();
-  void   print();
-};
-#endif
-
 
 //------------------------------ReallocMark---------------------------------
 // Code which uses REALLOC_RESOURCE_ARRAY should check an associated
