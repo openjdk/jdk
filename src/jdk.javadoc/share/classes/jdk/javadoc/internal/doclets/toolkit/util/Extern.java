@@ -409,9 +409,10 @@ public class Extern {
                         }
                         checkLinkCompatibility(elemname, moduleName, path);
                         Item item = new Item(elemname, elempath, relative);
-                        packageItems.computeIfAbsent(moduleName == null ?
-                            DocletConstants.DEFAULT_ELEMENT_NAME : moduleName, k -> new TreeMap<>())
-                            .put(elemname, item);
+                        packageItems.computeIfAbsent(
+                                moduleName == null ? DocletConstants.DEFAULT_ELEMENT_NAME : moduleName,
+                                k -> new TreeMap<>())
+                            .putIfAbsent(elemname, item); // first-one-wins semantics
                     }
                 }
             }
