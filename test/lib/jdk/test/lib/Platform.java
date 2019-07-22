@@ -33,12 +33,6 @@ import java.security.PrivilegedActionException;
 import java.security.PrivilegedExceptionAction;
 
 public class Platform {
-    // Use this property to specify docker location on your system.
-    // E.g.: "/usr/local/bin/docker". We define this constant here so
-    // that it can be used in VMProps as well which checks docker support
-    // via this command
-    public static final String DOCKER_COMMAND =
-        System.getProperty("jdk.test.docker.command", "docker");
     public  static final String vmName      = privilegedGetProperty("java.vm.name");
     public  static final String vmInfo      = privilegedGetProperty("java.vm.info");
     private static final String osVersion   = privilegedGetProperty("os.version");
