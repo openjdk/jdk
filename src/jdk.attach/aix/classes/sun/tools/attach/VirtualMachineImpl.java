@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 2008, 2019, Oracle and/or its affiliates. All rights reserved.
- * Copyright (c) 2015, 2018, SAP SE. All rights reserved.
+ * Copyright (c) 2015, 2019, SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -254,8 +254,12 @@ public class VirtualMachineImpl extends HotSpotVirtualMachine {
             return VirtualMachineImpl.read(s, bs, off, len);
         }
 
-        public void close() throws IOException {
-            VirtualMachineImpl.close(s);
+        public synchronized void close() throws IOException {
+            if (s != -1) {
+                int toClose = s;
+                s = -1;
+                VirtualMachineImpl.close(toClose);
+            }
         }
     }
 

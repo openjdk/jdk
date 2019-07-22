@@ -69,7 +69,7 @@ import static org.testng.Assert.assertEquals;
 import static org.testng.Assert.assertTrue;
 
 /**
- * FastDtoa tests
+ * BignumDtoa tests
  */
 @SuppressWarnings("javadoc")
 public class BignumDtoaTest {
@@ -218,6 +218,11 @@ public class BignumDtoaTest {
         assertTrue(10 >= buffer.getLength());
         assertEquals("35844466", trimRepresentation(buffer.getRawDigits()));
         assertEquals(299, buffer.getDecimalPoint());
+        buffer.reset();
+
+        DoubleConversion.bignumDtoa(1e-23, DtoaMode.SHORTEST, 0, buffer);
+        assertEquals("1", buffer.getRawDigits());
+        assertEquals(-22, buffer.getDecimalPoint());
         buffer.reset();
 
         final long smallest_normal64 = 0x0010000000000000L;

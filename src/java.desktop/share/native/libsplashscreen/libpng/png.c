@@ -4622,8 +4622,7 @@ png_image_free(png_imagep image)
    if (image != NULL && image->opaque != NULL &&
       image->opaque->error_buf == NULL)
    {
-      /* Ignore errors here: */
-      (void)png_safe_execute(image, png_image_free_function, image);
+      png_image_free_function(image);
       image->opaque = NULL;
    }
 }

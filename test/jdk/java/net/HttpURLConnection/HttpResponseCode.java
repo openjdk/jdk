@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,10 +24,14 @@
 /**
  * @test
  * @bug 4473092
+ * @library /test/lib
  * @summary Method throws IOException when object should be returned
+ * @run main HttpResponseCode
+ * @run main/othervm -Djava.net.preferIPv6Addresses=true HttpResponseCode
  */
 import java.net.*;
 import java.io.*;
+import jdk.test.lib.net.URIBuilder;
 
 public class HttpResponseCode implements Runnable {
     ServerSocket ss;
@@ -61,14 +65,19 @@ public class HttpResponseCode implements Runnable {
 
     HttpResponseCode() throws Exception {
         /* start the server */
-        ss = new ServerSocket(0);
+        InetAddress loopback = InetAddress.getLoopbackAddress();
+        ss = new ServerSocket();
+        ss.bind(new InetSocketAddress(loopback, 0));
         (new Thread(this)).start();
 
         /* establish http connection to server */
-        String url = "http://localhost:" +
-            Integer.toString(ss.getLocalPort()) +
-            "/missing.nothtml";
-        URLConnection uc = new URL(url).openConnection();
+        URL url = URIBuilder.newBuilder()
+            .scheme("http")
+            .loopback()
+            .port(ss.getLocalPort())
+            .path("/missing.nothtml")
+            .toURL();
+        URLConnection uc = url.openConnection(Proxy.NO_PROXY);
         int respCode1 = ((HttpURLConnection)uc).getResponseCode();
         ((HttpURLConnection)uc).disconnect();
         int respCode2 = ((HttpURLConnection)uc).getResponseCode();

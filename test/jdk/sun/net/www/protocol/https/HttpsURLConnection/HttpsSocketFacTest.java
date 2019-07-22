@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2010, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,6 +26,7 @@
  * @bug 6614957
  * @summary HttpsURLConnection not using the set SSLSocketFactory for creating all its Sockets
  * @modules jdk.httpserver
+ * @library /test/lib
  * @run main/othervm HttpsSocketFacTest
  *
  *     SunJSSE does not support dynamic system properties, no way to re-use
@@ -38,11 +39,12 @@ import javax.net.ssl.HttpsURLConnection;
 import javax.net.ssl.SSLContext;
 import javax.net.ssl.SSLSession;
 import javax.net.ssl.SSLSocketFactory;
-import java.security.NoSuchAlgorithmException;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.Socket;
 import java.net.URL;
+import java.net.Proxy;
+import java.security.NoSuchAlgorithmException;
 import java.io.BufferedWriter;
 import java.io.InputStream;
 import java.io.IOException;
@@ -50,6 +52,7 @@ import java.io.OutputStreamWriter;
 import com.sun.net.httpserver.HttpExchange;
 import com.sun.net.httpserver.HttpHandler;
 import com.sun.net.httpserver.HttpsConfigurator;
+import jdk.test.lib.net.URIBuilder;
 
 /*
  * This class tests that the HTTPS protocol handler is using its socket factory for
@@ -103,10 +106,15 @@ public class HttpsSocketFacTest
 
     void doClient() throws IOException {
         InetSocketAddress address = httpsServer.getAddress();
-        URL url = new URL("https://localhost:" + address.getPort() + "/test6614957/");
+        URL url = URIBuilder.newBuilder()
+                .scheme("https")
+                .loopback()
+                .port(address.getPort())
+                .path("/test6614957/")
+                .toURLUnchecked();
         System.out.println("trying to connect to " + url + "...");
 
-        HttpsURLConnection uc = (HttpsURLConnection) url.openConnection();
+        HttpsURLConnection uc = (HttpsURLConnection) url.openConnection(Proxy.NO_PROXY);
         SimpleSSLSocketFactory sssf = new SimpleSSLSocketFactory();
         uc.setSSLSocketFactory(sssf);
         uc.setHostnameVerifier(new AllHostnameVerifier());
@@ -129,7 +137,8 @@ public class HttpsSocketFacTest
      * Https Server
      */
     public void startHttpsServer() throws IOException, NoSuchAlgorithmException  {
-        httpsServer = com.sun.net.httpserver.HttpsServer.create(new InetSocketAddress(0), 0);
+        httpsServer = com.sun.net.httpserver.HttpsServer
+                .create(new InetSocketAddress(InetAddress.getLoopbackAddress(), 0), 0);
         httpsServer.createContext("/test6614957/", new MyHandler());
         httpsServer.setHttpsConfigurator(new HttpsConfigurator(SSLContext.getDefault()));
         httpsServer.start();

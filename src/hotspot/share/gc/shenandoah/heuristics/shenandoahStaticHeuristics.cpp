@@ -49,7 +49,7 @@ ShenandoahStaticHeuristics::ShenandoahStaticHeuristics() : ShenandoahHeuristics(
 
 ShenandoahStaticHeuristics::~ShenandoahStaticHeuristics() {}
 
-bool ShenandoahStaticHeuristics::should_start_normal_gc() const {
+bool ShenandoahStaticHeuristics::should_start_gc() const {
   ShenandoahHeap* heap = ShenandoahHeap::heap();
 
   size_t capacity = heap->max_capacity();
@@ -61,7 +61,7 @@ bool ShenandoahStaticHeuristics::should_start_normal_gc() const {
                  available / M, threshold_available / M);
     return true;
   }
-  return ShenandoahHeuristics::should_start_normal_gc();
+  return ShenandoahHeuristics::should_start_gc();
 }
 
 void ShenandoahStaticHeuristics::choose_collection_set_from_regiondata(ShenandoahCollectionSet* cset,

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2010, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,7 +27,6 @@ package sun.net.sdp;
 
 import java.io.IOException;
 import java.io.FileDescriptor;
-import java.security.AccessController;
 
 import jdk.internal.access.SharedSecrets;
 import jdk.internal.access.JavaIOFileDescriptorAccess;
@@ -75,12 +74,6 @@ public final class SdpSupport {
     private static native void convert0(int fd) throws IOException;
 
     static {
-        AccessController.doPrivileged(
-            new java.security.PrivilegedAction<Void>() {
-                public Void run() {
-                    System.loadLibrary("net");
-                    return null;
-                }
-            });
+        jdk.internal.loader.BootLoader.loadLibrary("net");
     }
 }

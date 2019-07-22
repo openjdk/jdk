@@ -407,7 +407,7 @@ public class Check {
      *    enclClass is the flat name of the enclosing class,
      *    classname is the simple name of the local class
      */
-    Name localClassName(ClassSymbol c) {
+    public Name localClassName(ClassSymbol c) {
         Name enclFlatname = c.owner.enclClass().flatname;
         String enclFlatnameStr = enclFlatname.toString();
         Pair<Name, Name> key = new Pair<>(enclFlatname, c.name);
@@ -422,7 +422,7 @@ public class Check {
         }
     }
 
-    void clearLocalClassNameIndexes(ClassSymbol c) {
+    public void clearLocalClassNameIndexes(ClassSymbol c) {
         if (c.owner != null && c.owner.kind != NIL) {
             localClassNameIndexes.remove(new Pair<>(
                     c.owner.enclClass().flatname, c.name));

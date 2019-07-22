@@ -1774,10 +1774,9 @@ void nmethod::do_unloading(bool unloading_occurred) {
   }
 }
 
-void nmethod::oops_do(OopClosure* f, bool allow_zombie) {
+void nmethod::oops_do(OopClosure* f, bool allow_dead) {
   // make sure the oops ready to receive visitors
-  assert(allow_zombie || !is_zombie(), "should not call follow on zombie nmethod");
-  assert(!is_unloaded(), "should not call follow on unloaded nmethod");
+  assert(allow_dead || is_alive(), "should not call follow on dead nmethod");
 
   // Prevent extra code cache walk for platforms that don't have immediate oops.
   if (relocInfo::mustIterateImmediateOopsInCode()) {

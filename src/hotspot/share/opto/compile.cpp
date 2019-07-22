@@ -465,7 +465,6 @@ CompileWrapper::CompileWrapper(Compile* compile) : _compile(compile) {
   compile->set_type_dict(NULL);
   compile->set_clone_map(new Dict(cmpkey, hashkey, _compile->comp_arena()));
   compile->clone_map().set_clone_idx(0);
-  compile->set_type_hwm(NULL);
   compile->set_type_last_size(0);
   compile->set_last_tf(NULL, NULL);
   compile->set_indexSet_arena(NULL);

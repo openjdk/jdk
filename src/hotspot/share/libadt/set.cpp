@@ -43,7 +43,6 @@ const VectorSet *Set::asVectorSet() const { assert(0); return NULL; }
 // The caller must deallocate the string.
 char *Set::setstr() const
 {
-  if( this == NULL ) return os::strdup("{no set}");
   Set &set = clone();           // Virtually copy the basic set.
   set.Sort();                   // Sort elements for in-order retrieval
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -272,23 +272,13 @@ Win32AttachOperation* Win32AttachListener::dequeue() {
 
 // open the pipe to the client
 HANDLE Win32AttachOperation::open_pipe() {
-  HANDLE hPipe;
-
-  hPipe = ::CreateFile( pipe(),  // pipe name
+  HANDLE hPipe = ::CreateFile( pipe(),  // pipe name
                         GENERIC_WRITE,   // write only
                         0,              // no sharing
                         NULL,           // default security attributes
                         OPEN_EXISTING,  // opens existing pipe
                         0,              // default attributes
                         NULL);          // no template file
-
-  if (hPipe != INVALID_HANDLE_VALUE) {
-    // shouldn't happen as there is a pipe created per operation
-    if (::GetLastError() == ERROR_PIPE_BUSY) {
-      ::CloseHandle(hPipe);
-      return INVALID_HANDLE_VALUE;
-    }
-  }
   return hPipe;
 }
 
@@ -307,8 +297,7 @@ BOOL Win32AttachOperation::write_pipe(HANDLE hPipe, char* buf, int len) {
     }
     buf += nwrote;
     len -= nwrote;
-  }
-  while (len > 0);
+  } while (len > 0);
   return TRUE;
 }
 
@@ -326,6 +315,7 @@ void Win32AttachOperation::complete(jint result, bufferedStream* result_stream) 
   // java_suspend_self() via check_and_wait_while_suspended()
 
   HANDLE hPipe = open_pipe();
+  int lastError = (int)::GetLastError();
   if (hPipe != INVALID_HANDLE_VALUE) {
     BOOL fSuccess;
 
@@ -337,6 +327,7 @@ void Win32AttachOperation::complete(jint result, bufferedStream* result_stream) 
     if (fSuccess) {
       fSuccess = write_pipe(hPipe, (char*)result_stream->base(), (int)(result_stream->size()));
     }
+    lastError = (int)::GetLastError();
 
     // Need to flush buffers
     FlushFileBuffers(hPipe);
@@ -345,10 +336,10 @@ void Win32AttachOperation::complete(jint result, bufferedStream* result_stream) 
     if (fSuccess) {
       log_debug(attach)("wrote result of attach operation %s to pipe %s", name(), pipe());
     } else {
-      log_error(attach)("failure writing result of operation %s to pipe %s", name(), pipe());
+      log_error(attach)("failure (%d) writing result of operation %s to pipe %s", lastError, name(), pipe());
     }
   } else {
-    log_error(attach)("could not open pipe %s to send result of operation %s", pipe(), name());
+    log_error(attach)("could not open (%d) pipe %s to send result of operation %s", lastError, pipe(), name());
   }
 
   DWORD res = ::WaitForSingleObject(Win32AttachListener::mutex(), INFINITE);
@@ -390,6 +381,12 @@ void AttachListener::vm_start() {
 
 int AttachListener::pd_init() {
   return Win32AttachListener::init();
+}
+
+// This function is used for Un*x OSes only.
+// We need not to implement it for Windows.
+bool AttachListener::check_socket_file() {
+  return false;
 }
 
 bool AttachListener::init_at_startup() {

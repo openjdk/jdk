@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2006, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2006, 2019, Oracle and/or its affiliates. All rights reserved.
  */
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
@@ -51,7 +51,7 @@ import org.xml.sax.SAXException;
  * serializers (xml, html, text ...) that write output to a stream.
  *
  * @xsl.usage internal
- * @LastModified: Sept 2018
+ * @LastModified: July 2019
  */
 abstract public class ToStream extends SerializerBase {
 
@@ -1231,7 +1231,7 @@ abstract public class ToStream extends SerializerBase {
                 m_elemContext.m_startTagOpen = false;
             }
 
-            if (!m_cdataTagOpen && shouldIndent())
+            if (!m_cdataTagOpen && shouldIndentForText())
                 indent();
 
             boolean writeCDataBrackets =
@@ -1270,6 +1270,7 @@ abstract public class ToStream extends SerializerBase {
                     closeCDATA();
             }
 
+            m_isprevtext = true;
             // time to fire off CDATA event
             if (m_tracer != null)
                 super.fireCDATAEvent(ch, old_start, length);
@@ -1536,11 +1537,13 @@ abstract public class ToStream extends SerializerBase {
     }
 
     /**
-     * Used to flush the buffered characters when indentation is on, this method
-     * will be called when the next node is traversed.
+     * Flushes the buffered characters when indentation is on. This method
+     * is called before the next node is traversed.
      *
+     * @param isText indicates whether the node to be traversed is text
+     * @throws org.xml.sax.SAXException
      */
-    final protected void flushCharactersBuffer() throws SAXException {
+    final protected void flushCharactersBuffer(boolean isText) throws SAXException {
         try {
             if (shouldFormatOutput() && m_charactersBuffer.isAnyCharactersBuffered()) {
                 if (m_elemContext.m_isCdataSection) {
@@ -1553,7 +1556,9 @@ abstract public class ToStream extends SerializerBase {
                     return;
                 }
 
-                m_childNodeNum++;
+                if (!isText) {
+                    m_childNodeNum++;
+                }
                 boolean skipBeginningNewlines = false;
                 if (shouldIndentForText()) {
                     indent();
@@ -1846,7 +1851,7 @@ abstract public class ToStream extends SerializerBase {
 
         if (m_doIndent) {
             m_childNodeNum++;
-            flushCharactersBuffer();
+            flushCharactersBuffer(false);
         }
 
         if (m_needToCallStartDocument)
@@ -2117,7 +2122,7 @@ abstract public class ToStream extends SerializerBase {
             return;
 
         if (m_doIndent) {
-            flushCharactersBuffer();
+            flushCharactersBuffer(false);
         }
         // namespaces declared at the current depth are no longer valid
         // so get rid of them
@@ -2309,7 +2314,7 @@ abstract public class ToStream extends SerializerBase {
             return;
         if (m_doIndent) {
             m_childNodeNum++;
-            flushCharactersBuffer();
+            flushCharactersBuffer(false);
         }
         if (m_elemContext.m_startTagOpen)
         {
@@ -2491,8 +2496,7 @@ abstract public class ToStream extends SerializerBase {
     public void startCDATA() throws org.xml.sax.SAXException
     {
         if (m_doIndent) {
-            m_childNodeNum++;
-            flushCharactersBuffer();
+            flushCharactersBuffer(true);
         }
 
         m_cdataStartCalled = true;

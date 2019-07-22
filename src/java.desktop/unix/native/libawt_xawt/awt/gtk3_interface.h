@@ -163,6 +163,7 @@ typedef void GtkRange;
 typedef void GtkProgressBar;
 typedef void GtkProgress;
 typedef void GtkWidgetPath;
+typedef void GtkPaned;
 
 /* Some real structures */
 typedef struct
@@ -503,8 +504,7 @@ static GtkWidget* (*fp_gtk_combo_box_entry_new)();
 static GtkWidget* (*fp_gtk_entry_new)();
 static GtkWidget* (*fp_gtk_fixed_new)();
 static GtkWidget* (*fp_gtk_handle_box_new)();
-static GtkWidget* (*fp_gtk_hpaned_new)();
-static GtkWidget* (*fp_gtk_vpaned_new)();
+static GtkWidget* (*fp_gtk_paned_new)(GtkOrientation orientation);
 static GtkWidget* (*fp_gtk_scale_new)(GtkOrientation  orientation,
                                        GtkAdjustment* adjustment);
 static GtkWidget* (*fp_gtk_hscrollbar_new)(GtkAdjustment* adjustment);

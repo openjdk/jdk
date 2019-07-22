@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2019, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2013 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -26,9 +26,6 @@
 
 package sun.nio.fs;
 
-import java.security.AccessController;
-import java.security.PrivilegedAction;
-
 /**
  * AIX specific system calls.
  */
@@ -46,11 +43,7 @@ class AixNativeDispatcher extends UnixNativeDispatcher {
     private static native void init();
 
     static {
-        AccessController.doPrivileged(new PrivilegedAction<Void>() {
-            public Void run() {
-                System.loadLibrary("nio");
-                return null;
-        }});
+        jdk.internal.loader.BootLoader.loadLibrary("nio");
         init();
     }
 }

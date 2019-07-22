@@ -129,6 +129,23 @@ public class BootLoader {
     }
 
     /**
+     * Loads a library from the system path.
+     */
+    public static void loadLibrary(String library) {
+        if (System.getSecurityManager() == null) {
+            SharedSecrets.getJavaLangAccess().loadLibrary(BootLoader.class, library);
+        } else {
+            AccessController.doPrivileged(
+                new java.security.PrivilegedAction<>() {
+                    public Void run() {
+                        SharedSecrets.getJavaLangAccess().loadLibrary(BootLoader.class, library);
+                        return null;
+                    }
+                });
+        }
+    }
+
+    /**
      * Returns a URL to a resource in a module defined to the boot loader.
      */
     public static URL findResource(String mn, String name) throws IOException {

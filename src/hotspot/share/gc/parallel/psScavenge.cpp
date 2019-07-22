@@ -328,7 +328,7 @@ bool PSScavenge::invoke_no_policy() {
     reference_processor()->enable_discovery();
     reference_processor()->setup_policy(false);
 
-    PreGCValues pre_gc_values(heap);
+    const PreGCValues pre_gc_values(heap);
 
     // Reset our survivor overflow.
     set_survivor_overflow(false);
@@ -379,7 +379,6 @@ bool PSScavenge::invoke_no_policy() {
       q->enqueue(new ScavengeRootsTask(ScavengeRootsTask::class_loader_data));
       q->enqueue(new ScavengeRootsTask(ScavengeRootsTask::jvmti));
       q->enqueue(new ScavengeRootsTask(ScavengeRootsTask::code_cache));
-      JVMCI_ONLY(q->enqueue(new ScavengeRootsTask(ScavengeRootsTask::jvmci));)
 
       TaskTerminator terminator(active_workers,
                                 (TaskQueueSetSuper*) promotion_manager->stack_array_depth());
@@ -601,7 +600,7 @@ bool PSScavenge::invoke_no_policy() {
 
     young_gen->print_used_change(pre_gc_values.young_gen_used());
     old_gen->print_used_change(pre_gc_values.old_gen_used());
-    MetaspaceUtils::print_metaspace_change(pre_gc_values.metadata_used());
+    MetaspaceUtils::print_metaspace_change(pre_gc_values.metaspace_sizes());
 
     // Track memory usage and detect low memory
     MemoryService::track_memory_usage();

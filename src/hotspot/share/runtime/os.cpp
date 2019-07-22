@@ -360,11 +360,33 @@ static void signal_thread_entry(JavaThread* thread, TRAPS) {
 
     switch (sig) {
       case SIGBREAK: {
+#if INCLUDE_SERVICES
         // Check if the signal is a trigger to start the Attach Listener - in that
         // case don't print stack traces.
-        if (!DisableAttachMechanism && AttachListener::is_init_trigger()) {
-          continue;
+        if (!DisableAttachMechanism) {
+          // Attempt to transit state to AL_INITIALIZING.
+          AttachListenerState cur_state = AttachListener::transit_state(AL_INITIALIZING, AL_NOT_INITIALIZED);
+          if (cur_state == AL_INITIALIZING) {
+            // Attach Listener has been started to initialize. Ignore this signal.
+            continue;
+          } else if (cur_state == AL_NOT_INITIALIZED) {
+            // Start to initialize.
+            if (AttachListener::is_init_trigger()) {
+              // Attach Listener has been initialized.
+              // Accept subsequent request.
+              continue;
+            } else {
+              // Attach Listener could not be started.
+              // So we need to transit the state to AL_NOT_INITIALIZED.
+              AttachListener::set_state(AL_NOT_INITIALIZED);
+            }
+          } else if (AttachListener::check_socket_file()) {
+            // Attach Listener has been started, but unix domain socket file
+            // does not exist. So restart Attach Listener.
+            continue;
+          }
         }
+#endif
         // Print stack traces
         // Any SIGBREAK operations added here should make sure to flush
         // the output stream (e.g. tty->flush()) after output.  See 4803766.

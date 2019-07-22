@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,8 +26,6 @@
 package sun.nio.fs;
 
 import java.nio.file.*;
-import java.security.AccessController;
-import java.security.PrivilegedAction;
 import java.util.*;
 import java.io.IOException;
 import jdk.internal.misc.Unsafe;
@@ -817,11 +815,7 @@ class SolarisWatchService
         throws UnixException;
 
     static {
-        AccessController.doPrivileged(new PrivilegedAction<Void>() {
-            public Void run() {
-                System.loadLibrary("nio");
-                return null;
-        }});
+        jdk.internal.loader.BootLoader.loadLibrary("nio");
         init();
     }
 }

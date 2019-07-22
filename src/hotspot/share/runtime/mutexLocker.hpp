@@ -46,6 +46,8 @@ extern Mutex*   JNIWeakActive_lock;              // JNI weak storage active list
 extern Mutex*   StringTableWeakAlloc_lock;       // StringTable weak storage allocate list lock
 extern Mutex*   StringTableWeakActive_lock;      // STringTable weak storage active list lock
 extern Mutex*   JNIHandleBlockFreeList_lock;     // a lock on the JNI handle block free list
+extern Mutex*   VMGlobalAlloc_lock;              // VM Global Handles storage allocate list lock
+extern Mutex*   VMGlobalActive_lock;             // VM Global Handles storage active list lock
 extern Mutex*   VMWeakAlloc_lock;                // VM Weak Handles storage allocate list lock
 extern Mutex*   VMWeakActive_lock;               // VM Weak Handles storage active list lock
 extern Mutex*   ResolvedMethodTableWeakAlloc_lock;  // ResolvedMethodTable weak storage allocate list
@@ -157,8 +159,6 @@ extern Monitor* CodeHeapStateAnalytics_lock;     // lock print functions against
 
 #if INCLUDE_JVMCI
 extern Monitor* JVMCI_lock;                      // Monitor to control initialization of JVMCI
-extern Mutex*   JVMCIGlobalAlloc_lock;           // JVMCI global storage allocate list lock
-extern Mutex*   JVMCIGlobalActive_lock;          // JVMCI global storage active list lock
 #endif
 
 // A MutexLocker provides mutual exclusion with respect to a given mutex

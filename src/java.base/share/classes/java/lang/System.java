@@ -2274,6 +2274,11 @@ public final class System {
             public void setCause(Throwable t, Throwable cause) {
                 t.setCause(cause);
             }
+
+            public void loadLibrary(Class<?> caller, String library) {
+                assert library.indexOf(java.io.File.separatorChar) < 0;
+                ClassLoader.loadLibrary(caller, library, false);
+            }
         });
     }
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2019, Oracle and/or its affiliates. All rights reserved.
  */
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
@@ -40,6 +40,7 @@ import org.xml.sax.SAXException;
  * be viewed as internal or package private, this is not an API.
  *
  * @xsl.usage internal
+ * @LastModified: July 2019
  */
 public final class ToXMLStream extends ToStream
 {
@@ -200,7 +201,7 @@ public final class ToXMLStream extends ToStream
     public void endDocument() throws org.xml.sax.SAXException
     {
         if (m_doIndent) {
-            flushCharactersBuffer();
+            flushCharactersBuffer(false);
         }
         flushPending();
         if (m_doIndent && !m_isprevtext)
@@ -267,7 +268,7 @@ public final class ToXMLStream extends ToStream
 
         if (m_doIndent) {
             m_childNodeNum++;
-            flushCharactersBuffer();
+            flushCharactersBuffer(false);
         }
         flushPending();
 

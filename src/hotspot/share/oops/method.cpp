@@ -146,6 +146,12 @@ address Method::get_c2i_unverified_entry() {
   return adapter()->get_c2i_unverified_entry();
 }
 
+address Method::get_c2i_no_clinit_check_entry() {
+  assert(VM_Version::supports_fast_class_init_checks(), "");
+  assert(adapter() != NULL, "must have");
+  return adapter()->get_c2i_no_clinit_check_entry();
+}
+
 char* Method::name_and_sig_as_C_string() const {
   return name_and_sig_as_C_string(constants()->pool_holder(), name(), signature());
 }
@@ -842,10 +848,7 @@ void Method::print_made_not_compilable(int comp_level, bool is_osr, bool report,
     if (comp_level == CompLevel_all) {
       tty->print("all levels ");
     } else {
-      tty->print("levels ");
-      for (int i = (int)CompLevel_none; i <= comp_level; i++) {
-        tty->print("%d ", i);
-      }
+      tty->print("level %d ", comp_level);
     }
     this->print_short_name(tty);
     int size = this->code_size();
@@ -1048,7 +1051,7 @@ void Method::unlink_method() {
                                                               _c2i_entry ---------------------------------+->[c2i entry..]
  _i2i_entry  -------------+                                   _i2c_entry ---------------+-> [i2c entry..] |
  _from_interpreted_entry  |                                   _c2i_unverified_entry     |                 |
-         |                |                                                             |                 |
+         |                |                                   _c2i_no_clinit_check_entry|                 |
          |                |  (_cds_entry_table: CODE)                                   |                 |
          |                +->[0]: jmp _entry_table[0] --> (i2i_entry_for "zero_locals") |                 |
          |                |                               (allocated at run time)       |                 |
@@ -1920,7 +1923,6 @@ void BreakpointInfo::set(Method* method) {
   Thread *thread = Thread::current();
   *method->bcp_from(_bci) = Bytecodes::_breakpoint;
   method->incr_number_of_breakpoints(thread);
-  SystemDictionary::notice_modification();
   {
     // Deoptimize all dependents on this method
     HandleMark hm(thread);

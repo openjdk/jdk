@@ -473,7 +473,7 @@ public:
 
  public:
   void oops_do(OopClosure* f) { oops_do(f, false); }
-  void oops_do(OopClosure* f, bool allow_zombie);
+  void oops_do(OopClosure* f, bool allow_dead);
 
   bool test_set_oops_do_mark();
   static void oops_do_marking_prologue();

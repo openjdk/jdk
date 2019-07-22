@@ -23,9 +23,11 @@
  */
 
 #include "precompiled.hpp"
+#include "gc/g1/g1CardTableEntryClosure.hpp"
 #include "gc/g1/g1CollectedHeap.inline.hpp"
 #include "gc/g1/g1DirtyCardQueue.hpp"
 #include "gc/g1/g1FreeIdSet.hpp"
+#include "gc/g1/g1RedirtyCardsQueue.hpp"
 #include "gc/g1/g1RemSet.hpp"
 #include "gc/g1/g1ThreadLocalData.hpp"
 #include "gc/g1/heapRegionRemSet.hpp"
@@ -90,8 +92,7 @@ G1DirtyCardQueueSet::G1DirtyCardQueueSet(bool notify_when_complete) :
   _completed_buffers_padding(0),
   _free_ids(NULL),
   _processed_buffers_mut(0),
-  _processed_buffers_rs_thread(0),
-  _cur_par_buffer_node(NULL)
+  _processed_buffers_rs_thread(0)
 {
   _all_active = true;
 }
@@ -211,26 +212,22 @@ void G1DirtyCardQueueSet::assert_completed_buffers_list_len_correct_locked() {
 // Merge lists of buffers. Notify the processing threads.
 // The source queue is emptied as a result. The queues
 // must share the monitor.
-void G1DirtyCardQueueSet::merge_bufferlists(G1DirtyCardQueueSet *src) {
-  assert(_cbl_mon == src->_cbl_mon, "Should share the same lock");
+void G1DirtyCardQueueSet::merge_bufferlists(G1RedirtyCardsQueueSet* src) {
+  assert(allocator() == src->allocator(), "precondition");
+  const G1RedirtyCardsBufferList from = src->take_all_completed_buffers();
+  if (from._head == NULL) return;
+
   MutexLocker x(_cbl_mon, Mutex::_no_safepoint_check_flag);
   if (_completed_buffers_tail == NULL) {
     assert(_completed_buffers_head == NULL, "Well-formedness");
-    _completed_buffers_head = src->_completed_buffers_head;
-    _completed_buffers_tail = src->_completed_buffers_tail;
+    _completed_buffers_head = from._head;
+    _completed_buffers_tail = from._tail;
   } else {
     assert(_completed_buffers_head != NULL, "Well formedness");
-    if (src->_completed_buffers_head != NULL) {
-      _completed_buffers_tail->set_next(src->_completed_buffers_head);
-      _completed_buffers_tail = src->_completed_buffers_tail;
-    }
+    _completed_buffers_tail->set_next(from._head);
+    _completed_buffers_tail = from._tail;
   }
-  _n_completed_buffers += src->_n_completed_buffers;
-
-  src->_n_completed_buffers = 0;
-  src->_completed_buffers_head = NULL;
-  src->_completed_buffers_tail = NULL;
-  src->set_process_completed_buffers(false);
+  _n_completed_buffers += from._count;
 
   assert(_completed_buffers_head == NULL && _completed_buffers_tail == NULL ||
          _completed_buffers_head != NULL && _completed_buffers_tail != NULL,
@@ -240,7 +237,6 @@ void G1DirtyCardQueueSet::merge_bufferlists(G1DirtyCardQueueSet *src) {
 
 bool G1DirtyCardQueueSet::apply_closure_to_buffer(G1CardTableEntryClosure* cl,
                                                   BufferNode* node,
-                                                  bool consume,
                                                   uint worker_i) {
   if (cl == NULL) return true;
   bool result = true;
@@ -255,10 +251,8 @@ bool G1DirtyCardQueueSet::apply_closure_to_buffer(G1CardTableEntryClosure* cl,
       break;
     }
   }
-  if (consume) {
-    assert(i <= buffer_size(), "invariant");
-    node->set_index(i);
-  }
+  assert(i <= buffer_size(), "invariant");
+  node->set_index(i);
   return result;
 }
 
@@ -299,7 +293,7 @@ bool G1DirtyCardQueueSet::mut_process_buffer(BufferNode* node) {
 
   uint worker_i = _free_ids->claim_par_id(); // temporarily claim an id
   G1RefineCardConcurrentlyClosure cl;
-  bool result = apply_closure_to_buffer(&cl, node, true, worker_i);
+  bool result = apply_closure_to_buffer(&cl, node, worker_i);
   _free_ids->release_par_id(worker_i); // release the id
 
   if (result) {
@@ -328,7 +322,7 @@ bool G1DirtyCardQueueSet::apply_closure_to_completed_buffer(G1CardTableEntryClos
   if (nd == NULL) {
     return false;
   } else {
-    if (apply_closure_to_buffer(cl, nd, true, worker_i)) {
+    if (apply_closure_to_buffer(cl, nd, worker_i)) {
       assert_fully_consumed(nd, buffer_size());
       // Done with fully processed buffer.
       deallocate_buffer(nd);
@@ -339,21 +333,6 @@ bool G1DirtyCardQueueSet::apply_closure_to_completed_buffer(G1CardTableEntryClos
       enqueue_completed_buffer(nd);
     }
     return true;
-  }
-}
-
-void G1DirtyCardQueueSet::par_apply_closure_to_all_completed_buffers(G1CardTableEntryClosure* cl) {
-  BufferNode* nd = _cur_par_buffer_node;
-  while (nd != NULL) {
-    BufferNode* next = nd->next();
-    BufferNode* actual = Atomic::cmpxchg(next, &_cur_par_buffer_node, nd);
-    if (actual == nd) {
-      bool b = apply_closure_to_buffer(cl, nd, false);
-      guarantee(b, "Should not stop early.");
-      nd = next;
-    } else {
-      nd = actual;
-    }
   }
 }
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -283,7 +283,7 @@ public class SessionTimeOutTests {
             }
             System.out.print(sess + "      " + lifetime);
             if (((timeout == 0) || (lifetime < timeout)) &&
-                                  (isTimedout == "YES")) {
+                                  (isTimedout.equals("YES"))) {
                 isTimedout = "Invalidated before timeout";
             }
 

@@ -26,7 +26,6 @@
 #define SHARE_JFR_LEAKPROFILER_CHAINS_BFSCLOSURE_HPP
 
 #include "memory/iterator.hpp"
-#include "oops/oop.hpp"
 
 class BitSet;
 class Edge;
@@ -65,6 +64,7 @@ class BFSClosure : public BasicOopIterateClosure {
  public:
   BFSClosure(EdgeQueue* edge_queue, EdgeStore* edge_store, BitSet* mark_bits);
   void process();
+  void do_root(const oop* ref);
 
   virtual void do_oop(oop* ref);
   virtual void do_oop(narrowOop* ref);

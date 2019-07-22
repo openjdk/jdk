@@ -684,7 +684,9 @@ void G1Policy::record_collection_pause_end(double pause_time_ms, size_t heap_use
     if (remset_cards_scanned > 10) {
       double avg_time_remset_scan = ((average_time_ms(G1GCPhaseTimes::ScanHR) + average_time_ms(G1GCPhaseTimes::OptScanHR)) *
                                      remset_cards_scanned / total_cards_scanned) +
-                                    average_time_ms(G1GCPhaseTimes::MergeRS);
+                                     average_time_ms(G1GCPhaseTimes::MergeER) +
+                                     average_time_ms(G1GCPhaseTimes::MergeRS) +
+                                     average_time_ms(G1GCPhaseTimes::OptMergeRS);
 
       cost_per_remset_card_ms = avg_time_remset_scan / remset_cards_scanned;
       _analytics->report_cost_per_remset_card_ms(cost_per_remset_card_ms, this_pause_was_young_only);

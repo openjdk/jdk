@@ -58,10 +58,8 @@ public class SharedSecrets {
     private static JavaIOAccess javaIOAccess;
     private static JavaNetInetAddressAccess javaNetInetAddressAccess;
     private static JavaNetHttpCookieAccess javaNetHttpCookieAccess;
-    private static JavaNetSocketAccess javaNetSocketAccess;
     private static JavaNetUriAccess javaNetUriAccess;
     private static JavaNetURLAccess javaNetURLAccess;
-    private static JavaNetURLClassLoaderAccess javaNetURLClassLoaderAccess;
     private static JavaNioAccess javaNioAccess;
     private static JavaIOFileDescriptorAccess javaIOFileDescriptorAccess;
     private static JavaIOFilePermissionAccess javaIOFilePermissionAccess;
@@ -151,16 +149,6 @@ public class SharedSecrets {
         return javaNetURLAccess;
     }
 
-    public static void setJavaNetURLClassLoaderAccess(JavaNetURLClassLoaderAccess jnua) {
-        javaNetURLClassLoaderAccess = jnua;
-    }
-
-    public static JavaNetURLClassLoaderAccess getJavaNetURLClassLoaderAccess() {
-        if (javaNetURLClassLoaderAccess == null)
-            unsafe.ensureClassInitialized(java.net.URLClassLoader.class);
-        return javaNetURLClassLoaderAccess;
-    }
-
     public static void setJavaNetInetAddressAccess(JavaNetInetAddressAccess jna) {
         javaNetInetAddressAccess = jna;
     }
@@ -179,16 +167,6 @@ public class SharedSecrets {
         if (javaNetHttpCookieAccess == null)
             unsafe.ensureClassInitialized(java.net.HttpCookie.class);
         return javaNetHttpCookieAccess;
-    }
-
-    public static void setJavaNetSocketAccess(JavaNetSocketAccess jnsa) {
-        javaNetSocketAccess = jnsa;
-    }
-
-    public static JavaNetSocketAccess getJavaNetSocketAccess() {
-        if (javaNetSocketAccess == null)
-            unsafe.ensureClassInitialized(java.net.ServerSocket.class);
-        return javaNetSocketAccess;
     }
 
     public static void setJavaNioAccess(JavaNioAccess jna) {

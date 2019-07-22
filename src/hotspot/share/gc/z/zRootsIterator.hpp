@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -111,18 +111,20 @@ public:
 
 class ZConcurrentRootsIterator {
 private:
-  const bool                 _marking;
-  SuspendibleThreadSetJoiner _sts_joiner;
   ZOopStorageIterator        _jni_handles_iter;
+  ZOopStorageIterator        _vm_handles_iter;
+  int                        _cld_claim;
 
   void do_jni_handles(ZRootsIteratorClosure* cl);
+  void do_vm_handles(ZRootsIteratorClosure* cl);
   void do_class_loader_data_graph(ZRootsIteratorClosure* cl);
 
   ZParallelOopsDo<ZConcurrentRootsIterator, &ZConcurrentRootsIterator::do_jni_handles>             _jni_handles;
+  ZParallelOopsDo<ZConcurrentRootsIterator, &ZConcurrentRootsIterator::do_vm_handles>              _vm_handles;
   ZParallelOopsDo<ZConcurrentRootsIterator, &ZConcurrentRootsIterator::do_class_loader_data_graph> _class_loader_data_graph;
 
 public:
-  ZConcurrentRootsIterator(bool marking = false);
+  ZConcurrentRootsIterator(int cld_claim);
   ~ZConcurrentRootsIterator();
 
   void oops_do(ZRootsIteratorClosure* cl);

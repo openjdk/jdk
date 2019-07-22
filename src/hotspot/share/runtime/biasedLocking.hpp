@@ -76,17 +76,17 @@
 // Revocation of the lock's bias is fairly straightforward. We want to
 // restore the object's header and stack-based BasicObjectLocks and
 // BasicLocks to the state they would have been in had the object been
-// locked by HotSpot's usual fast locking scheme. To do this, we bring
-// the system to a safepoint and walk the stack of the thread toward
-// which the lock is biased. We find all of the lock records on the
-// stack corresponding to this object, in particular the first /
-// "highest" record. We fill in the highest lock record with the
-// object's displaced header (which is a well-known value given that
-// we don't maintain an identity hash nor age bits for the object
-// while it's in the biased state) and all other lock records with 0,
-// the value for recursive locks. When the safepoint is released, the
-// formerly-biased thread and all other threads revert back to
-// HotSpot's CAS-based locking.
+// locked by HotSpot's usual fast locking scheme. To do this, we execute
+// a handshake with the JavaThread that biased the lock. Inside the
+// handshake we walk the biaser stack searching for all of the lock
+// records corresponding to this object, in particular the first / "highest"
+// record. We fill in the highest lock record with the object's displaced
+// header (which is a well-known value given that we don't maintain an
+// identity hash nor age bits for the object while it's in the biased
+// state) and all other lock records with 0, the value for recursive locks.
+// Alternatively, we can revoke the bias of an object inside a safepoint
+// if we are already in one and we detect that we need to perform a
+// revocation.
 //
 // This scheme can not handle transfers of biases of single objects
 // from thread to thread efficiently, but it can handle bulk transfers
@@ -115,6 +115,7 @@ class BiasedLockingCounters {
   int _anonymously_biased_lock_entry_count;
   int _rebiased_lock_entry_count;
   int _revoked_lock_entry_count;
+  int _handshakes_count;
   int _fast_path_entry_count;
   int _slow_path_entry_count;
 
@@ -125,6 +126,7 @@ class BiasedLockingCounters {
     _anonymously_biased_lock_entry_count(0),
     _rebiased_lock_entry_count(0),
     _revoked_lock_entry_count(0),
+    _handshakes_count(0),
     _fast_path_entry_count(0),
     _slow_path_entry_count(0) {}
 
@@ -135,6 +137,7 @@ class BiasedLockingCounters {
   int* anonymously_biased_lock_entry_count_addr() { return &_anonymously_biased_lock_entry_count; }
   int* rebiased_lock_entry_count_addr()           { return &_rebiased_lock_entry_count; }
   int* revoked_lock_entry_count_addr()            { return &_revoked_lock_entry_count; }
+  int* handshakes_count_addr()                    { return &_handshakes_count; }
   int* fast_path_entry_count_addr()               { return &_fast_path_entry_count; }
   int* slow_path_entry_count_addr()               { return &_slow_path_entry_count; }
 
@@ -146,6 +149,9 @@ class BiasedLockingCounters {
 
 
 class BiasedLocking : AllStatic {
+friend class VM_BulkRevokeBias;
+friend class RevokeOneBias;
+
 private:
   static BiasedLockingCounters _counters;
 
@@ -155,15 +161,24 @@ public:
   static int* anonymously_biased_lock_entry_count_addr();
   static int* rebiased_lock_entry_count_addr();
   static int* revoked_lock_entry_count_addr();
+  static int* handshakes_count_addr();
   static int* fast_path_entry_count_addr();
   static int* slow_path_entry_count_addr();
 
   enum Condition {
     NOT_BIASED = 1,
     BIAS_REVOKED = 2,
-    BIAS_REVOKED_AND_REBIASED = 3
+    BIAS_REVOKED_AND_REBIASED = 3,
+    NOT_REVOKED = 4
   };
 
+private:
+  static Condition single_revoke_at_safepoint(oop obj, bool allow_rebias, bool is_bulk, JavaThread* requester, JavaThread** biaser);
+  static Condition bulk_revoke_or_rebias_at_safepoint(oop o, bool bulk_rebias, bool attempt_rebias, JavaThread* requester);
+  static Condition single_revoke_with_handshake(Handle obj, JavaThread *requester, JavaThread *biaser);
+  static void walk_stack_and_revoke(oop obj, JavaThread* biased_locker);
+
+public:
   // This initialization routine should only be called once and
   // schedules a PeriodicTask to turn on biased locking a few seconds
   // into the VM run to avoid startup time regressions
@@ -178,7 +193,7 @@ public:
 
   // These do not allow rebiasing; they are used by deoptimization to
   // ensure that monitors on the stack can be migrated
-  static void revoke(GrowableArray<Handle>* objs);
+  static void revoke(GrowableArray<Handle>* objs, JavaThread *biaser);
   static void revoke_at_safepoint(Handle obj);
   static void revoke_at_safepoint(GrowableArray<Handle>* objs);
 

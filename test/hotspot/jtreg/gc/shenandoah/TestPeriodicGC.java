@@ -64,12 +64,6 @@ public class TestPeriodicGC {
                 "adaptive",
                 "compact",
                 "static",
-                "traversal",
-        };
-
-        String[] disabled = new String[] {
-                "aggressive",
-                "passive",
         };
 
         for (String h : enabled) {
@@ -94,17 +88,44 @@ public class TestPeriodicGC {
             );
         }
 
-        for (String h : disabled) {
-            testWith("Short period with " + h,
-                    false,
-                    "-Xlog:gc",
-                    "-XX:+UnlockDiagnosticVMOptions",
-                    "-XX:+UnlockExperimentalVMOptions",
-                    "-XX:+UseShenandoahGC",
-                    "-XX:ShenandoahGCHeuristics=" + h,
-                    "-XX:ShenandoahGuaranteedGCInterval=1000"
-            );
-        }
+        testWith("Short period with traversal mode",
+                 true,
+                 "-Xlog:gc",
+                 "-XX:+UnlockDiagnosticVMOptions",
+                 "-XX:+UnlockExperimentalVMOptions",
+                 "-XX:+UseShenandoahGC",
+                 "-XX:ShenandoahGCMode=traversal",
+                 "-XX:ShenandoahGuaranteedGCInterval=1000"
+        );
+
+        testWith("Long period with traversal mode",
+                 false,
+                 "-Xlog:gc",
+                 "-XX:+UnlockDiagnosticVMOptions",
+                 "-XX:+UnlockExperimentalVMOptions",
+                 "-XX:+UseShenandoahGC",
+                 "-XX:ShenandoahGCMode=traversal",
+                 "-XX:ShenandoahGuaranteedGCInterval=100000" // deliberately too long
+        );
+
+        testWith("Short period with aggressive",
+                 false,
+                 "-Xlog:gc",
+                 "-XX:+UnlockDiagnosticVMOptions",
+                 "-XX:+UnlockExperimentalVMOptions",
+                 "-XX:+UseShenandoahGC",
+                 "-XX:ShenandoahGCHeuristics=aggressive",
+                 "-XX:ShenandoahGuaranteedGCInterval=1000"
+        );
+        testWith("Short period with passive",
+                 false,
+                 "-Xlog:gc",
+                 "-XX:+UnlockDiagnosticVMOptions",
+                 "-XX:+UnlockExperimentalVMOptions",
+                 "-XX:+UseShenandoahGC",
+                 "-XX:ShenandoahGCMode=passive",
+                 "-XX:ShenandoahGuaranteedGCInterval=1000"
+        );
     }
 
 }

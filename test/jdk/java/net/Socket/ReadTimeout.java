@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -47,7 +47,8 @@ public class ReadTimeout  {
     int          tout = 1000;
 
     sin = InetAddress.getLocalHost();
-    srv = new ServerSocket(port);
+    srv = new ServerSocket();
+    srv.bind(new InetSocketAddress(sin, 0));
     port = srv.getLocalPort();
     soc = new Socket(sin, port);
     soc1 = srv.accept();

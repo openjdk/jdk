@@ -41,22 +41,27 @@
 #include "services/management.hpp"
 
 ShenandoahSerialRoot::ShenandoahSerialRoot(ShenandoahSerialRoot::OopsDo oops_do, ShenandoahPhaseTimings::GCParPhases phase) :
-  _claimed(false), _oops_do(oops_do), _phase(phase) {
+  _oops_do(oops_do), _phase(phase) {
 }
 
 void ShenandoahSerialRoot::oops_do(OopClosure* cl, uint worker_id) {
-  if (!_claimed && Atomic::cmpxchg(true, &_claimed, false) == false) {
+  if (_claimed.try_set()) {
     ShenandoahWorkerTimings* worker_times = ShenandoahHeap::heap()->phase_timings()->worker_times();
     ShenandoahWorkerTimingsTracker timer(worker_times, _phase, worker_id);
     _oops_do(cl);
   }
 }
 
+// Default the second argument for SD::oops_do.
+static void system_dictionary_oops_do(OopClosure* cl) {
+  SystemDictionary::oops_do(cl);
+}
+
 ShenandoahSerialRoots::ShenandoahSerialRoots() :
   _universe_root(&Universe::oops_do, ShenandoahPhaseTimings::UniverseRoots),
   _object_synchronizer_root(&ObjectSynchronizer::oops_do, ShenandoahPhaseTimings::ObjectSynchronizerRoots),
   _management_root(&Management::oops_do, ShenandoahPhaseTimings::ManagementRoots),
-  _system_dictionary_root(&SystemDictionary::oops_do, ShenandoahPhaseTimings::SystemDictionaryRoots),
+  _system_dictionary_root(&system_dictionary_oops_do, ShenandoahPhaseTimings::SystemDictionaryRoots),
   _jvmti_root(&JvmtiExport::oops_do, ShenandoahPhaseTimings::JVMTIRoots) {
 }
 

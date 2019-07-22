@@ -308,6 +308,13 @@ inline size_t byte_size_in_exact_unit(size_t s) {
   return s;
 }
 
+// Memory size transition formatting.
+
+#define HEAP_CHANGE_FORMAT "%s: " SIZE_FORMAT "K(" SIZE_FORMAT "K)->" SIZE_FORMAT "K(" SIZE_FORMAT "K)"
+
+#define HEAP_CHANGE_FORMAT_ARGS(_name_, _prev_used_, _prev_capacity_, _used_, _capacity_) \
+  (_name_), (_prev_used_) / K, (_prev_capacity_) / K, (_used_) / K, (_capacity_) / K
+
 //----------------------------------------------------------------------------------------------------
 // VM type definitions
 

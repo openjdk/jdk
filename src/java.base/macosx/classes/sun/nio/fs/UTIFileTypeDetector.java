@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,8 +27,6 @@ package sun.nio.fs;
 
 import java.io.IOException;
 import java.nio.file.Path;
-import java.security.AccessController;
-import java.security.PrivilegedAction;
 
 /**
  * File type detector that uses a file extension to look up its MIME type
@@ -55,12 +53,6 @@ class UTIFileTypeDetector extends AbstractFileTypeDetector {
     }
 
     static {
-        AccessController.doPrivileged(new PrivilegedAction<>() {
-            @Override
-            public Void run() {
-                System.loadLibrary("nio");
-                return null;
-            }
-        });
+        jdk.internal.loader.BootLoader.loadLibrary("nio");
     }
 }

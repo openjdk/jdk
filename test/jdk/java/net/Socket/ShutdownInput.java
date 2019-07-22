@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -47,9 +47,9 @@ public class ShutdownInput {
     public static void main(String args[]) throws Exception {
         IPSupport.throwSkippedExceptionIfNonOperational();
 
-        InetAddress iaddr = InetAddress.getLocalHost();
+        InetAddress iaddr = InetAddress.getLoopbackAddress();
 
-        try ( ServerSocket ss = new ServerSocket(0);
+        try (ServerSocket ss = new ServerSocket(0, 0, iaddr);
               Socket s1 = new Socket(iaddr, ss.getLocalPort());
               Socket s2 = ss.accept() ) {
 
@@ -57,7 +57,8 @@ public class ShutdownInput {
         }
 
         // check the NIO socket adapter
-        try (ServerSocketChannel sc = ServerSocketChannel.open().bind(null);
+        InetSocketAddress socketAddress = new InetSocketAddress(iaddr, 0);
+        try (ServerSocketChannel sc = ServerSocketChannel.open().bind(socketAddress);
              SocketChannel s1 = SocketChannel.open(
                      new InetSocketAddress(iaddr, sc.socket().getLocalPort()));
              SocketChannel s2 = sc.accept() ) {

@@ -94,13 +94,7 @@ abstract class AbstractPlainSocketImpl extends SocketImpl implements PlatformSoc
      * Load net library into runtime.
      */
     static {
-        java.security.AccessController.doPrivileged(
-            new java.security.PrivilegedAction<>() {
-                public Void run() {
-                    System.loadLibrary("net");
-                    return null;
-                }
-            });
+        jdk.internal.loader.BootLoader.loadLibrary("net");
     }
 
     private static volatile boolean checkedReusePort;

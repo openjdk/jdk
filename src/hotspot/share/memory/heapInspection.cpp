@@ -123,7 +123,7 @@ void KlassInfoEntry::print_on(outputStream* st) const {
 
 KlassInfoEntry* KlassInfoBucket::lookup(Klass* const k) {
   // Can happen if k is an archived class that we haven't loaded yet.
-  if (k->java_mirror() == NULL) {
+  if (k->java_mirror_no_keepalive() == NULL) {
     return NULL;
   }
 
@@ -719,7 +719,7 @@ size_t HeapInspection::populate_table(KlassInfoTable* cit, BoolObjectClosure *fi
   ResourceMark rm;
 
   RecordInstanceClosure ric(cit, filter);
-  Universe::heap()->object_iterate(&ric);
+  Universe::heap()->safe_object_iterate(&ric);
   return ric.missed_count();
 }
 
@@ -792,8 +792,5 @@ void HeapInspection::find_instances_at_safepoint(Klass* k, GrowableArray<oop>* r
 
   // Iterate over objects in the heap
   FindInstanceClosure fic(k, result);
-  // If this operation encounters a bad object when using CMS,
-  // consider using safe_object_iterate() which avoids metadata
-  // objects that may contain bad references.
-  Universe::heap()->object_iterate(&fic);
+  Universe::heap()->safe_object_iterate(&fic);
 }

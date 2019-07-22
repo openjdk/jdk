@@ -29,6 +29,7 @@ package gc.arguments;
  * @requires vm.gc.G1
  * @summary Tests argument processing for double type flag, G1ConcMarkStepDurationMillis
  * @library /test/lib
+ * @library /
  * @modules java.base/jdk.internal.misc
  *          java.management
  * @run main gc.arguments.TestG1ConcMarkStepDurationMillis
@@ -79,7 +80,7 @@ public class TestG1ConcMarkStepDurationMillis {
 
     Collections.addAll(vmOpts, "-XX:+UseG1GC", "-XX:G1ConcMarkStepDurationMillis="+expectedValue, "-XX:+PrintFlagsFinal", "-version");
 
-    ProcessBuilder pb = ProcessTools.createJavaProcessBuilder(vmOpts.toArray(new String[vmOpts.size()]));
+    ProcessBuilder pb = GCArguments.createJavaProcessBuilder(vmOpts.toArray(new String[vmOpts.size()]));
     OutputAnalyzer output = new OutputAnalyzer(pb.start());
 
     output.shouldHaveExitValue(expectedResult == PASS ? 0 : 1);

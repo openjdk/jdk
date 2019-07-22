@@ -1055,7 +1055,7 @@ static size_t sharedmem_filesize(int fd, TRAPS) {
 
   if ((statbuf.st_size == 0) ||
      ((size_t)statbuf.st_size % os::vm_page_size() != 0)) {
-    THROW_MSG_0(vmSymbols::java_lang_Exception(),
+    THROW_MSG_0(vmSymbols::java_io_IOException(),
                 "Invalid PerfMemory size");
   }
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -93,7 +93,9 @@ public class SupplementalJapaneseEraTestRun {
     private static void testRun(String property, List<String> javaParam)
             throws Throwable{
         JDKToolLauncher launcher = JDKToolLauncher.createUsingTestJDK("java");
-        launcher.addToolArg("-cp")
+        launcher.addToolArg("-ea")
+                .addToolArg("-esa")
+                .addToolArg("-cp")
                 .addToolArg(Utils.TEST_CLASS_PATH)
                 .addToolArg("-Djdk.calendar.japanese.supplemental.era=" + property)
                 .addToolArg("SupplementalJapaneseEraTest");

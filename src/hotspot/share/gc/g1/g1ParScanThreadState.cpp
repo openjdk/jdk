@@ -43,7 +43,7 @@ G1ParScanThreadState::G1ParScanThreadState(G1CollectedHeap* g1h,
                                            size_t optional_cset_length)
   : _g1h(g1h),
     _refs(g1h->task_queue(worker_id)),
-    _dcq(&g1h->dirty_card_queue_set()),
+    _rdcq(&g1h->redirty_cards_queue_set()),
     _ct(g1h->card_table()),
     _closures(NULL),
     _plab_allocator(NULL),
@@ -88,7 +88,7 @@ G1ParScanThreadState::G1ParScanThreadState(G1CollectedHeap* g1h,
 
 // Pass locally gathered statistics to global state.
 void G1ParScanThreadState::flush(size_t* surviving_young_words) {
-  _dcq.flush();
+  _rdcq.flush();
   // Update allocation statistics.
   _plab_allocator->flush_and_retire_stats();
   _g1h->policy()->record_age_table(&_age_table);

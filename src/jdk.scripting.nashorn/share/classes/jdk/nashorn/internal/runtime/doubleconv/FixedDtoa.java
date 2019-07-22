@@ -286,7 +286,8 @@ class FixedDtoa {
                 fractionals -= (long) (digit) << point;
             }
             // If the first bit after the point is set we have to round up.
-            if (((fractionals >>> (point - 1)) & 1) == 1) {
+            assert (fractionals == 0 || point - 1 >= 0);
+            if ((fractionals != 0) && ((fractionals >>> (point - 1)) & 1) == 1) {
                 roundUp(buffer);
             }
         } else {  // We need 128 bits.

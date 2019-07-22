@@ -840,7 +840,6 @@ typedef PaddedEnd<ObjectMonitor>              PaddedObjectMonitor;
   /* CI */                                                                                                                           \
   /************/                                                                                                                     \
                                                                                                                                      \
-  nonstatic_field(ciEnv,                       _system_dictionary_modification_counter,       int)                                   \
   nonstatic_field(ciEnv,                       _compiler_data,                                void*)                                 \
   nonstatic_field(ciEnv,                       _failure_reason,                               const char*)                           \
   nonstatic_field(ciEnv,                       _factory,                                      ciObjectFactory*)                      \

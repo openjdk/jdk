@@ -638,6 +638,7 @@ bool klassVtable::needs_new_vtable_entry(const methodHandle& target_method,
   Method* super_method = NULL;
   InstanceKlass *holder = NULL;
   Method* recheck_method =  NULL;
+  bool found_pkg_prvt_method = false;
   while (k != NULL) {
     // lookup through the hierarchy for a method with matching name and sign.
     super_method = InstanceKlass::cast(k)->lookup_method(name, signature);
@@ -659,6 +660,16 @@ bool klassVtable::needs_new_vtable_entry(const methodHandle& target_method,
         return false;
       // else keep looking for transitive overrides
       }
+      // If we get here then one of the super classes has a package private method
+      // that will not get overridden because it is in a different package.  But,
+      // that package private method does "override" any matching methods in super
+      // interfaces, so there will be no miranda vtable entry created.  So, set flag
+      // to TRUE for use below, in case there are no methods in super classes that
+      // this target method overrides.
+      assert(super_method->is_package_private(), "super_method must be package private");
+      assert(!superk->is_same_class_package(classloader(), classname),
+             "Must be different packages");
+      found_pkg_prvt_method = true;
     }
 
     // Start with lookup result and continue to search up, for versions supporting transitive override
@@ -669,6 +680,15 @@ bool klassVtable::needs_new_vtable_entry(const methodHandle& target_method,
     }
   }
 
+  // If found_pkg_prvt_method is set, then the ONLY matching method in the
+  // superclasses is package private in another package. That matching method will
+  // prevent a miranda vtable entry from being created. Because the target method can not
+  // override the package private method in another package, then it needs to be the root
+  // for its own vtable entry.
+  if (found_pkg_prvt_method) {
+     return true;
+  }
+
   // if the target method is public or protected it may have a matching
   // miranda method in the super, whose entry it should re-use.
   // Actually, to handle cases that javac would not generate, we need
@@ -676,7 +696,7 @@ bool klassVtable::needs_new_vtable_entry(const methodHandle& target_method,
   const InstanceKlass *sk = InstanceKlass::cast(super);
   if (sk->has_miranda_methods()) {
     if (sk->lookup_method_in_all_interfaces(name, signature, Klass::find_defaults) != NULL) {
-      return false;  // found a matching miranda; we do not need a new entry
+      return false; // found a matching miranda; we do not need a new entry
     }
   }
   return true; // found no match; we need a new entry

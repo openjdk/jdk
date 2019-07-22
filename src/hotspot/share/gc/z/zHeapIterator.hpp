@@ -54,7 +54,7 @@ public:
   ZHeapIterator();
   ~ZHeapIterator();
 
-  void objects_do(ObjectClosure* cl, bool visit_referents);
+  void objects_do(ObjectClosure* cl, bool visit_weaks);
 };
 
 #endif // SHARE_GC_Z_ZHEAPITERATOR_HPP

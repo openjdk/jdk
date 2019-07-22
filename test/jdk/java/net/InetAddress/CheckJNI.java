@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -74,7 +74,7 @@ public class CheckJNI {
     }
 
     static void testSocket(InetAddress ia) throws Exception {
-        ServerSocket server = new ServerSocket(0);
+        ServerSocket server = new ServerSocket(0, 0, ia);
         Socket s = new Socket(ia, server.getLocalPort());
         s.close();
         server.close();

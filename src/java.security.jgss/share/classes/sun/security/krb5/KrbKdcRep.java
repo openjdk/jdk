@@ -158,8 +158,10 @@ abstract class KrbKdcRep {
                             Checksum repCksum = new Checksum(
                                     new DerInputStream(
                                             pa.getValue()).getDerValue());
+                            // The checksum is inside encKDCRepPart so we don't
+                            // care if it's keyed or not.
                             repPaReqEncPaRepValid =
-                                    repCksum.verifyKeyedChecksum(
+                                    repCksum.verifyAnyChecksum(
                                             req.asn1Encode(), replyKey,
                                             KeyUsage.KU_AS_REQ);
                         } catch (Exception e) {

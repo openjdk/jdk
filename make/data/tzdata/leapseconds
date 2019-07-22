@@ -42,9 +42,12 @@
 # See: Levine J. Coordinated Universal Time and the leap second.
 # URSI Radio Sci Bull. 2016;89(4):30-6. doi:10.23919/URSIRSB.2016.7909995
 # <https://ieeexplore.ieee.org/document/7909995>.
+
 # There were no leap seconds before 1972, because the official mechanism
 # accounting for the discrepancy between atomic time and the earth's rotation
-# did not exist.
+# did not exist.  The first ("1 Jan 1972") data line in leap-seconds.list
+# does not denote a leap second; it denotes the start of the current definition
+# of UTC.
 
 # The correction (+ or -) is made at the given time, so lines
 # will typically look like:
@@ -83,7 +86,7 @@ Leap	2016	Dec	31	23:59:60	+	S
 
 # POSIX timestamps for the data in this file:
 #updated 1467936000
-#expires 1561680000
+#expires 1577491200
 
-#	Updated through IERS Bulletin C56
-#	File expires on:  28 June 2019
+#	Updated through IERS Bulletin C57
+#	File expires on:  28 December 2019

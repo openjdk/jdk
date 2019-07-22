@@ -8322,7 +8322,15 @@ CurrencyNames//mru=Mauritanian Ouguiya
 # bug #8208746
 CurrencyNames//ves=Venezuelan Bol\u00edvar Soberano
 
-# bug# 8206879
+# bug #8206879
 # For Peru decimal separator is changed to dot(.) and grouping separator is changed to comma(,)
 FormatData/es_PE/NumberElements/0=.
 FormatData/es_PE/NumberElements/1=,
+
+# bug #8227127
+FormatData/ja/short.Eras/0=\u7d00\u5143\u524d
+FormatData/ja/short.Eras/1=\u897f\u66a6
+FormatData/zh/short.Eras/0=\u516c\u5143\u524d
+FormatData/zh/short.Eras/1=\u516c\u5143
+FormatData/zh_TW/short.Eras/0=\u897f\u5143\u524d
+FormatData/zh_TW/short.Eras/1=\u897f\u5143

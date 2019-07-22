@@ -27,22 +27,105 @@
  * @key gc
  * @requires vm.gc.Shenandoah & !vm.graal.enabled
  *
- * @run main/othervm -Xlog:gc -XX:+UnlockDiagnosticVMOptions -XX:+UnlockExperimentalVMOptions -XX:+UseShenandoahGC -Xmx1g -Xms1g -XX:ShenandoahTargetNumRegions=2048 -XX:ShenandoahGCHeuristics=passive    -XX:-ShenandoahDegeneratedGC     -XX:+ShenandoahVerify TestAllocHumongousFragment
- * @run main/othervm -Xlog:gc -XX:+UnlockDiagnosticVMOptions -XX:+UnlockExperimentalVMOptions -XX:+UseShenandoahGC -Xmx1g -Xms1g -XX:ShenandoahTargetNumRegions=2048 -XX:ShenandoahGCHeuristics=passive    -XX:+ShenandoahDegeneratedGC     -XX:+ShenandoahVerify TestAllocHumongousFragment
- * @run main/othervm -Xlog:gc -XX:+UnlockDiagnosticVMOptions -XX:+UnlockExperimentalVMOptions -XX:+UseShenandoahGC -Xmx1g -Xms1g -XX:ShenandoahTargetNumRegions=2048 -XX:ShenandoahGCHeuristics=passive    -XX:-ShenandoahDegeneratedGC                           TestAllocHumongousFragment
- * @run main/othervm -Xlog:gc -XX:+UnlockDiagnosticVMOptions -XX:+UnlockExperimentalVMOptions -XX:+UseShenandoahGC -Xmx1g -Xms1g -XX:ShenandoahTargetNumRegions=2048 -XX:ShenandoahGCHeuristics=passive    -XX:+ShenandoahDegeneratedGC                           TestAllocHumongousFragment
+ * @run main/othervm -Xmx1g -Xms1g -Xlog:gc -XX:+UnlockDiagnosticVMOptions -XX:+UnlockExperimentalVMOptions -XX:ShenandoahTargetNumRegions=2048
+ *      -XX:+UseShenandoahGC -XX:ShenandoahGCMode=passive
+ *      -XX:-ShenandoahDegeneratedGC -XX:+ShenandoahVerify
+ *      TestAllocHumongousFragment
  *
- * @run main/othervm -Xlog:gc -XX:+UnlockDiagnosticVMOptions -XX:+UnlockExperimentalVMOptions -XX:+UseShenandoahGC -Xmx1g -Xms1g -XX:ShenandoahTargetNumRegions=2048 -XX:ShenandoahGCHeuristics=aggressive -XX:+ShenandoahOOMDuringEvacALot -XX:+ShenandoahVerify TestAllocHumongousFragment
- * @run main/othervm -Xlog:gc -XX:+UnlockDiagnosticVMOptions -XX:+UnlockExperimentalVMOptions -XX:+UseShenandoahGC -Xmx1g -Xms1g -XX:ShenandoahTargetNumRegions=2048 -XX:ShenandoahGCHeuristics=aggressive -XX:+ShenandoahAllocFailureALot  -XX:+ShenandoahVerify TestAllocHumongousFragment
- * @run main/othervm -Xlog:gc -XX:+UnlockDiagnosticVMOptions -XX:+UnlockExperimentalVMOptions -XX:+UseShenandoahGC -Xmx1g -Xms1g -XX:ShenandoahTargetNumRegions=2048 -XX:ShenandoahGCHeuristics=aggressive -XX:+ShenandoahOOMDuringEvacALot                       TestAllocHumongousFragment
- * @run main/othervm -Xlog:gc -XX:+UnlockDiagnosticVMOptions -XX:+UnlockExperimentalVMOptions -XX:+UseShenandoahGC -Xmx1g -Xms1g -XX:ShenandoahTargetNumRegions=2048 -XX:ShenandoahGCHeuristics=aggressive -XX:+ShenandoahAllocFailureALot                        TestAllocHumongousFragment
+ * @run main/othervm -Xmx1g -Xms1g -Xlog:gc -XX:+UnlockDiagnosticVMOptions -XX:+UnlockExperimentalVMOptions -XX:ShenandoahTargetNumRegions=2048
+ *      -XX:+UseShenandoahGC -XX:ShenandoahGCMode=passive
+ *      -XX:+ShenandoahDegeneratedGC -XX:+ShenandoahVerify
+ *      TestAllocHumongousFragment
  *
- * @run main/othervm -Xlog:gc -XX:+UnlockDiagnosticVMOptions -XX:+UnlockExperimentalVMOptions -XX:+UseShenandoahGC -Xmx1g -Xms1g -XX:ShenandoahTargetNumRegions=2048 -XX:ShenandoahGCHeuristics=adaptive     -XX:+ShenandoahVerify TestAllocHumongousFragment
- * @run main/othervm -Xlog:gc -XX:+UnlockDiagnosticVMOptions -XX:+UnlockExperimentalVMOptions -XX:+UseShenandoahGC -Xmx1g -Xms1g -XX:ShenandoahTargetNumRegions=2048 -XX:ShenandoahGCHeuristics=traversal    -XX:+ShenandoahVerify TestAllocHumongousFragment
+ * @run main/othervm -Xmx1g -Xms1g -Xlog:gc -XX:+UnlockDiagnosticVMOptions -XX:+UnlockExperimentalVMOptions -XX:ShenandoahTargetNumRegions=2048
+ *      -XX:+UseShenandoahGC -XX:ShenandoahGCMode=passive
+ *      -XX:-ShenandoahDegeneratedGC
+ *      TestAllocHumongousFragment
  *
- * @run main/othervm -Xlog:gc -XX:+UnlockDiagnosticVMOptions -XX:+UnlockExperimentalVMOptions -XX:+UseShenandoahGC -Xmx1g -Xms1g -XX:ShenandoahTargetNumRegions=2048 -XX:ShenandoahGCHeuristics=adaptive     TestAllocHumongousFragment
- * @run main/othervm -Xlog:gc -XX:+UnlockDiagnosticVMOptions -XX:+UnlockExperimentalVMOptions -XX:+UseShenandoahGC -Xmx1g -Xms1g -XX:ShenandoahTargetNumRegions=2048 -XX:ShenandoahGCHeuristics=static       TestAllocHumongousFragment
- * @run main/othervm -Xlog:gc -XX:+UnlockDiagnosticVMOptions -XX:+UnlockExperimentalVMOptions -XX:+UseShenandoahGC -Xmx1g -Xms1g -XX:ShenandoahTargetNumRegions=2048 -XX:ShenandoahGCHeuristics=traversal    TestAllocHumongousFragment
+ * @run main/othervm -Xmx1g -Xms1g -Xlog:gc -XX:+UnlockDiagnosticVMOptions -XX:+UnlockExperimentalVMOptions -XX:ShenandoahTargetNumRegions=2048
+ *      -XX:+UseShenandoahGC -XX:ShenandoahGCMode=passive
+ *      -XX:+ShenandoahDegeneratedGC
+ *      TestAllocHumongousFragment
+ */
+
+/*
+ * @test TestAllocHumongousFragment
+ * @summary Make sure Shenandoah can recover from humongous allocation fragmentation
+ * @key gc
+ * @requires vm.gc.Shenandoah & !vm.graal.enabled
+ *
+ * @run main/othervm -Xmx1g -Xms1g -Xlog:gc -XX:+UnlockDiagnosticVMOptions -XX:+UnlockExperimentalVMOptions -XX:ShenandoahTargetNumRegions=2048
+ *      -XX:+UseShenandoahGC -XX:ShenandoahGCHeuristics=aggressive
+ *      -XX:+ShenandoahOOMDuringEvacALot -XX:+ShenandoahVerify
+ *      TestAllocHumongousFragment
+ *
+ * @run main/othervm -Xmx1g -Xms1g -Xlog:gc -XX:+UnlockDiagnosticVMOptions -XX:+UnlockExperimentalVMOptions -XX:ShenandoahTargetNumRegions=2048
+ *      -XX:+UseShenandoahGC -XX:ShenandoahGCHeuristics=aggressive
+ *      -XX:+ShenandoahAllocFailureALot -XX:+ShenandoahVerify
+ *      TestAllocHumongousFragment
+ *
+ * @run main/othervm -Xmx1g -Xms1g -Xlog:gc -XX:+UnlockDiagnosticVMOptions -XX:+UnlockExperimentalVMOptions -XX:ShenandoahTargetNumRegions=2048
+ *      -XX:+UseShenandoahGC -XX:ShenandoahGCHeuristics=aggressive
+ *      -XX:+ShenandoahOOMDuringEvacALot
+ *      TestAllocHumongousFragment
+ *
+ * @run main/othervm -Xmx1g -Xms1g -Xlog:gc -XX:+UnlockDiagnosticVMOptions -XX:+UnlockExperimentalVMOptions -XX:ShenandoahTargetNumRegions=2048
+ *      -XX:+UseShenandoahGC -XX:ShenandoahGCHeuristics=aggressive
+ *      -XX:+ShenandoahAllocFailureALot
+ *      TestAllocHumongousFragment
+ *
+ * @run main/othervm -Xmx1g -Xms1g -Xlog:gc -XX:+UnlockDiagnosticVMOptions -XX:+UnlockExperimentalVMOptions -XX:ShenandoahTargetNumRegions=2048
+ *      -XX:+UseShenandoahGC -XX:ShenandoahGCHeuristics=adaptive
+ *      -XX:+ShenandoahVerify
+ *      TestAllocHumongousFragment
+ *
+ * @run main/othervm -Xmx1g -Xms1g -Xlog:gc -XX:+UnlockDiagnosticVMOptions -XX:+UnlockExperimentalVMOptions -XX:ShenandoahTargetNumRegions=2048
+ *      -XX:+UseShenandoahGC -XX:ShenandoahGCHeuristics=adaptive
+ *      TestAllocHumongousFragment
+ *
+ * @run main/othervm -Xmx1g -Xms1g -Xlog:gc -XX:+UnlockDiagnosticVMOptions -XX:+UnlockExperimentalVMOptions -XX:ShenandoahTargetNumRegions=2048
+ *      -XX:+UseShenandoahGC -XX:ShenandoahGCHeuristics=static
+ *      TestAllocHumongousFragment
+ *
+ * @run main/othervm -Xmx1g -Xms1g -Xlog:gc -XX:+UnlockDiagnosticVMOptions -XX:+UnlockExperimentalVMOptions -XX:ShenandoahTargetNumRegions=2048
+ *      -XX:+UseShenandoahGC -XX:ShenandoahGCHeuristics=compact
+ *      TestAllocHumongousFragment
+ */
+
+/*
+ * @test TestAllocHumongousFragment
+ * @summary Make sure Shenandoah can recover from humongous allocation fragmentation
+ * @key gc
+ * @requires vm.gc.Shenandoah & !vm.graal.enabled
+ *
+ * @run main/othervm -Xlog:gc -XX:+UnlockDiagnosticVMOptions -XX:+UnlockExperimentalVMOptions -Xmx1g -Xms1g -XX:ShenandoahTargetNumRegions=2048
+ *      -XX:+UseShenandoahGC -XX:ShenandoahGCMode=traversal -XX:ShenandoahGCHeuristics=aggressive
+ *      -XX:+ShenandoahOOMDuringEvacALot -XX:+ShenandoahVerify
+ *      TestAllocHumongousFragment
+ *
+ * @run main/othervm -Xlog:gc -XX:+UnlockDiagnosticVMOptions -XX:+UnlockExperimentalVMOptions -Xmx1g -Xms1g -XX:ShenandoahTargetNumRegions=2048
+ *      -XX:+UseShenandoahGC -XX:ShenandoahGCMode=traversal -XX:ShenandoahGCHeuristics=aggressive
+ *      -XX:+ShenandoahAllocFailureALot -XX:+ShenandoahVerify
+ *      TestAllocHumongousFragment
+ *
+ * @run main/othervm -Xlog:gc -XX:+UnlockDiagnosticVMOptions -XX:+UnlockExperimentalVMOptions -Xmx1g -Xms1g -XX:ShenandoahTargetNumRegions=2048
+ *      -XX:+UseShenandoahGC -XX:ShenandoahGCMode=traversal -XX:ShenandoahGCHeuristics=aggressive
+ *      -XX:+ShenandoahOOMDuringEvacALot
+ *      TestAllocHumongousFragment
+ *
+ * @run main/othervm -Xlog:gc -XX:+UnlockDiagnosticVMOptions -XX:+UnlockExperimentalVMOptions -Xmx1g -Xms1g -XX:ShenandoahTargetNumRegions=2048
+ *      -XX:+UseShenandoahGC -XX:ShenandoahGCMode=traversal -XX:ShenandoahGCHeuristics=aggressive
+ *      -XX:+ShenandoahAllocFailureALot
+ *      TestAllocHumongousFragment
+ *
+ * @run main/othervm -Xlog:gc -XX:+UnlockDiagnosticVMOptions -XX:+UnlockExperimentalVMOptions -Xmx1g -Xms1g -XX:ShenandoahTargetNumRegions=2048
+ *      -XX:+UseShenandoahGC -XX:ShenandoahGCMode=traversal
+ *      -XX:+ShenandoahVerify
+ *      TestAllocHumongousFragment
+ *
+ * @run main/othervm -Xlog:gc -XX:+UnlockDiagnosticVMOptions -XX:+UnlockExperimentalVMOptions -Xmx1g -Xms1g -XX:ShenandoahTargetNumRegions=2048
+ *      -XX:+UseShenandoahGC -XX:ShenandoahGCMode=traversal
+ *      TestAllocHumongousFragment
  */
 
 import java.util.*;

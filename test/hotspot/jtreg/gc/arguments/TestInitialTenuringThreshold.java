@@ -30,6 +30,7 @@ package gc.arguments;
  * @requires vm.gc.Parallel
  * @summary Tests argument processing for initial tenuring threshold
  * @library /test/lib
+ * @library /
  * @modules java.base/jdk.internal.misc
  *          java.management
  * @run main/othervm gc.arguments.TestInitialTenuringThreshold
@@ -42,7 +43,7 @@ import jdk.test.lib.process.ProcessTools;
 public class TestInitialTenuringThreshold {
 
   public static void runWithThresholds(int initial, int max, boolean shouldfail) throws Exception {
-    ProcessBuilder pb = ProcessTools.createJavaProcessBuilder(
+    ProcessBuilder pb = GCArguments.createJavaProcessBuilder(
       "-XX:+UseParallelGC",
       "-XX:InitialTenuringThreshold=" + String.valueOf(initial),
       "-XX:MaxTenuringThreshold=" + String.valueOf(max),
@@ -59,7 +60,7 @@ public class TestInitialTenuringThreshold {
 
 
   public static void main(String args[]) throws Exception {
-    ProcessBuilder pb = ProcessTools.createJavaProcessBuilder(
+    ProcessBuilder pb = GCArguments.createJavaProcessBuilder(
       // some value below the default value of InitialTenuringThreshold of 7
       "-XX:MaxTenuringThreshold=1",
       "-version"

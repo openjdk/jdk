@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -52,11 +52,16 @@ class RootNode extends AbstractNamedNode {
         writer.println("</style>");
         writer.println("</head>");
         writer.println("<body>");
-        writer.println("<ul role=\"navigation\">");
+        writer.println("<div class=\"centered\" role=\"banner\">");
+        writer.println("<h1 id=\"Protocol Details\">Java Debug Wire Protocol Details</h1>");
+        writer.println("</div>");
+        writer.println("<nav>");
+        writer.println("<ul>");
         for (Node node : components) {
             node.documentIndex(writer);
         }
         writer.println("</ul>");
+        writer.println("</nav>");
         writer.println("<div role=\"main\">");
         for (Node node : components) {
             node.document(writer);

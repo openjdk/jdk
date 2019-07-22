@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -40,6 +40,7 @@ public class NoLoopbackPackets {
         return osname.contains("Windows");
     }
 
+    private static final String MESSAGE = "hello world (" + System.nanoTime() + ")";
     public static void main(String[] args) throws Exception {
         if (isWindows()) {
             System.out.println("The test only run on non-Windows OS. Bye.");
@@ -49,6 +50,7 @@ public class NoLoopbackPackets {
         MulticastSocket msock = null;
         List<SocketAddress> failedGroups = new ArrayList<SocketAddress>();
         Sender sender = null;
+        Thread senderThread = null;
         try {
             msock = new MulticastSocket();
             int port = msock.getLocalPort();
@@ -69,7 +71,8 @@ public class NoLoopbackPackets {
             }
 
             sender = new Sender(groups);
-            new Thread(sender).start();
+            senderThread = new Thread(sender);
+            senderThread.start();
 
             // Now try to receive multicast packets. we should not see any of them
             // since we disable loopback mode.
@@ -77,20 +80,41 @@ public class NoLoopbackPackets {
             msock.setSoTimeout(5000);       // 5 seconds
 
             byte[] buf = new byte[1024];
+            for (int i = 0; i < buf.length; i++) {
+                buf[i] = (byte) 'z';
+            }
             DatagramPacket packet = new DatagramPacket(buf, 0, buf.length);
+            byte[] expected = MESSAGE.getBytes();
+            assert expected.length <= buf.length;
             for (SocketAddress group : groups) {
+                System.out.println("joining group: " + group);
                 msock.joinGroup(group, null);
 
                 try {
-                    msock.receive(packet);
+                    do {
+                        for (int i = 0; i < buf.length; i++) {
+                            buf[i] = (byte) 'a';
+                        }
+                        msock.receive(packet);
+                        byte[] data = packet.getData();
+                        int len = packet.getLength();
 
-                    // it is an error if we receive something
-                    failedGroups.add(group);
+                        if (expected(data, len, expected)) {
+                            failedGroups.add(group);
+                            break;
+                        } else {
+                            System.err.println("WARNING: Unexpected packet received from "
+                                               + group + ": "
+                                               + len + " bytes");
+                            System.err.println("\t as text: " + new String(data, 0, len));
+                        }
+                    } while (true);
                 } catch (SocketTimeoutException e) {
                     // we expect this
+                    System.out.println("Received expected exception from " + group + ": " + e);
+                } finally {
+                    msock.leaveGroup(group, null);
                 }
-
-                msock.leaveGroup(group, null);
             }
         } finally {
             if (msock != null) try { msock.close(); } catch (Exception e) {}
@@ -98,13 +122,26 @@ public class NoLoopbackPackets {
                 sender.stop();
             }
         }
-
-        if (failedGroups.size() > 0) {
-            System.out.println("We should not receive anything from following groups, but we did:");
-            for (SocketAddress group : failedGroups)
-                System.out.println(group);
-            throw new RuntimeException("test failed.");
+        try {
+            if (failedGroups.size() > 0) {
+                System.out.println("We should not receive anything from following groups, but we did:");
+                for (SocketAddress group : failedGroups)
+                    System.out.println(group);
+                throw new RuntimeException("test failed.");
+            }
+        } finally {
+            if (senderThread != null) {
+                senderThread.join();
+            }
         }
+    }
+
+    static boolean expected(byte[] data, int len, byte[] expected) {
+        if (len != expected.length) return false;
+        for (int i = 0; i < len; i++) {
+            if (data[i] != expected[i]) return false;
+        }
+        return true;
     }
 
     static class Sender implements Runnable {
@@ -116,16 +153,15 @@ public class NoLoopbackPackets {
         }
 
         public void run() {
-            byte[] buf = "hello world".getBytes();
+            byte[] buf = MESSAGE.getBytes();
             List<DatagramPacket> packets = new ArrayList<DatagramPacket>();
 
-            try {
+            try (MulticastSocket msock = new MulticastSocket()) {
                 for (SocketAddress group : sendToGroups) {
                     DatagramPacket packet = new DatagramPacket(buf, buf.length, group);
                     packets.add(packet);
                 }
 
-                MulticastSocket msock = new MulticastSocket();
                 msock.setLoopbackMode(true);    // disable loopback mode
                 while (!stop) {
                     for (DatagramPacket packet : packets) {

@@ -466,9 +466,6 @@ const size_t minimumSymbolTableSize = 1024;
   develop(bool, UseMallocOnly, false,                                       \
           "Use only malloc/free for allocation (no resource area/arena)")   \
                                                                             \
-  develop(bool, PrintMallocStatistics, false,                               \
-          "Print malloc/free statistics")                                   \
-                                                                            \
   develop(bool, ZapResourceArea, trueInDebug,                               \
           "Zap freed resource/arena space with 0xABABABAB")                 \
                                                                             \

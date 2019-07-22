@@ -98,7 +98,6 @@ ResolutionErrorTable*  SystemDictionary::_resolution_errors   = NULL;
 SymbolPropertyTable*   SystemDictionary::_invoke_method_table = NULL;
 ProtectionDomainCacheTable*   SystemDictionary::_pd_cache_table = NULL;
 
-int         SystemDictionary::_number_of_modifications = 0;
 oop         SystemDictionary::_system_loader_lock_obj     =  NULL;
 
 InstanceKlass*      SystemDictionary::_well_known_klasses[SystemDictionary::WKID_LIMIT]
@@ -115,6 +114,7 @@ bool        SystemDictionary::_has_checkPackageAccess     =  false;
 
 const int defaultProtectionDomainCacheSize = 1009;
 
+OopStorage* SystemDictionary::_vm_global_oop_storage = NULL;
 OopStorage* SystemDictionary::_vm_weak_oop_storage = NULL;
 
 
@@ -1039,11 +1039,7 @@ InstanceKlass* SystemDictionary::parse_stream(Symbol* class_name,
       // Add to class hierarchy, initialize vtables, and do possible
       // deoptimizations.
       add_to_hierarchy(k, CHECK_NULL); // No exception, but can block
-
       // But, do not add to dictionary.
-
-      // compiled code dependencies need to be validated anyway
-      notice_modification();
     }
 
     // Rewrite and patch constant pool here.
@@ -1849,7 +1845,7 @@ bool SystemDictionary::do_unloading(GCTimer* gc_timer) {
   return unloading_occurred;
 }
 
-void SystemDictionary::oops_do(OopClosure* f) {
+void SystemDictionary::oops_do(OopClosure* f, bool include_handles) {
   f->do_oop(&_java_system_loader);
   f->do_oop(&_java_platform_loader);
   f->do_oop(&_system_loader_lock_obj);
@@ -1857,6 +1853,10 @@ void SystemDictionary::oops_do(OopClosure* f) {
 
   // Visit extra methods
   invoke_method_table()->oops_do(f);
+
+  if (include_handles) {
+    vm_global_oop_storage()->oops_do(f);
+  }
 }
 
 // CDS: scan and relocate all classes referenced by _well_known_klasses[].
@@ -1880,7 +1880,6 @@ void SystemDictionary::methods_do(void f(Method*)) {
 void SystemDictionary::initialize(TRAPS) {
   // Allocate arrays
   _placeholders        = new PlaceholderTable(_placeholder_table_size);
-  _number_of_modifications = 0;
   _loader_constraints  = new LoaderConstraintTable(_loader_constraint_size);
   _resolution_errors   = new ResolutionErrorTable(_resolution_error_size);
   _invoke_method_table = new SymbolPropertyTable(_invoke_method_size);
@@ -2164,8 +2163,6 @@ void SystemDictionary::update_dictionary(unsigned int d_hash,
     InstanceKlass* sd_check = find_class(d_hash, name, dictionary);
     if (sd_check == NULL) {
       dictionary->add_klass(d_hash, name, k);
-
-      notice_modification();
     }
   #ifdef ASSERT
     sd_check = find_class(d_hash, name, dictionary);
@@ -2901,10 +2898,20 @@ int SystemDictionaryDCmd::num_arguments() {
 }
 
 void SystemDictionary::initialize_oop_storage() {
+  _vm_global_oop_storage =
+    new OopStorage("VM Global Oop Handles",
+                   VMGlobalAlloc_lock,
+                   VMGlobalActive_lock);
+
   _vm_weak_oop_storage =
     new OopStorage("VM Weak Oop Handles",
                    VMWeakAlloc_lock,
                    VMWeakActive_lock);
+}
+
+OopStorage* SystemDictionary::vm_global_oop_storage() {
+  assert(_vm_global_oop_storage != NULL, "Uninitialized");
+  return _vm_global_oop_storage;
 }
 
 OopStorage* SystemDictionary::vm_weak_oop_storage() {

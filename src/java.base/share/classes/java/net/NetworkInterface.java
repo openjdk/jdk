@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,7 +28,6 @@ package java.net;
 import java.util.Arrays;
 import java.util.Enumeration;
 import java.util.NoSuchElementException;
-import java.security.AccessController;
 import java.util.Spliterator;
 import java.util.Spliterators;
 import java.util.stream.Stream;
@@ -57,13 +56,7 @@ public final class NetworkInterface {
     private static final int defaultIndex; /* index of defaultInterface */
 
     static {
-        AccessController.doPrivileged(
-            new java.security.PrivilegedAction<>() {
-                public Void run() {
-                    System.loadLibrary("net");
-                    return null;
-                }
-            });
+        jdk.internal.loader.BootLoader.loadLibrary("net");
 
         init();
         defaultInterface = DefaultInterface.getDefault();
@@ -321,17 +314,16 @@ public final class NetworkInterface {
         if (addr == null) {
             throw new NullPointerException();
         }
-        if (addr instanceof Inet4Address) {
-            Inet4Address inet4Address = (Inet4Address) addr;
-            if (inet4Address.holder.family != InetAddress.IPv4) {
+
+        if (addr.holder.family == InetAddress.IPv4) {
+            if (!(addr instanceof Inet4Address)) {
                 throw new IllegalArgumentException("invalid family type: "
-                        + inet4Address.holder.family);
+                        + addr.holder.family);
             }
-        } else if (addr instanceof Inet6Address) {
-            Inet6Address inet6Address = (Inet6Address) addr;
-            if (inet6Address.holder.family != InetAddress.IPv6) {
+        } else if (addr.holder.family == InetAddress.IPv6) {
+            if (!(addr instanceof Inet6Address)) {
                 throw new IllegalArgumentException("invalid family type: "
-                        + inet6Address.holder.family);
+                        + addr.holder.family);
             }
         } else {
             throw new IllegalArgumentException("invalid address type: " + addr);
@@ -394,6 +386,23 @@ public final class NetworkInterface {
         }
     }
 
+    /**
+     * Checks if the given address is bound to any of the interfaces on this
+     * machine.
+     *
+     * @param   addr
+     *          The {@code InetAddress} to search with.
+     * @return  true iff the addr parameter is currently bound to one of
+     *          the interfaces on this machine.
+     *
+     * @throws  SocketException
+     *          If an I/O error occurs.
+     */
+    /* package-private */ static boolean isBoundInetAddress(InetAddress addr)
+        throws SocketException {
+        return boundInetAddress0(addr);
+    }
+
     private static <T> Enumeration<T> enumerationFromArray(T[] a) {
         return new Enumeration<>() {
             int i = 0;
@@ -430,6 +439,9 @@ public final class NetworkInterface {
 
     private static native NetworkInterface getByIndex0(int index)
         throws SocketException;
+
+    private static native boolean boundInetAddress0(InetAddress addr)
+            throws SocketException;
 
     private static native NetworkInterface getByInetAddress0(InetAddress addr)
         throws SocketException;

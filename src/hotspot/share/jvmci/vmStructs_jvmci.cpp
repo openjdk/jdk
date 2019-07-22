@@ -173,6 +173,7 @@
   volatile_nonstatic_field(JavaThread,         _exception_oop,                                oop)                                   \
   volatile_nonstatic_field(JavaThread,         _exception_pc,                                 address)                               \
   volatile_nonstatic_field(JavaThread,         _is_method_handle_return,                      int)                                   \
+  volatile_nonstatic_field(JavaThread,         _doing_unsafe_access,                          bool)                                  \
   nonstatic_field(JavaThread,                  _osthread,                                     OSThread*)                             \
   nonstatic_field(JavaThread,                  _pending_deoptimization,                       int)                                   \
   nonstatic_field(JavaThread,                  _pending_failed_speculation,                   jlong)                                 \

@@ -232,9 +232,6 @@ void VM_RedefineClasses::doit() {
     ResolvedMethodTable::adjust_method_entries(&trace_name_printed);
   }
 
-  // Disable any dependent concurrent compilations
-  SystemDictionary::notice_modification();
-
   // Set flag indicating that some invariants are no longer true.
   // See jvmtiExport.hpp for detailed explanation.
   JvmtiExport::set_has_redefined_a_class();

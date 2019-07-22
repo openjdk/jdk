@@ -411,18 +411,8 @@ int Type::uhash( const Type *const t ) {
 }
 
 #define SMALLINT ((juint)3)  // a value too insignificant to consider widening
-
-static double pos_dinf() {
-  union { int64_t i; double d; } v;
-  v.i = CONST64(0x7ff0000000000000);
-  return v.d;
-}
-
-static float pos_finf() {
-  union { int32_t i; float f; } v;
-  v.i = 0x7f800000;
-  return v.f;
-}
+#define POSITIVE_INFINITE_F 0x7f800000 // hex representation for IEEE 754 single precision positive infinite
+#define POSITIVE_INFINITE_D 0x7ff0000000000000 // hex representation for IEEE 754 double precision positive infinite
 
 //--------------------------Initialize_shared----------------------------------
 void Type::Initialize_shared(Compile* current) {
@@ -453,13 +443,13 @@ void Type::Initialize_shared(Compile* current) {
 
   TypeF::ZERO = TypeF::make(0.0); // Float 0 (positive zero)
   TypeF::ONE  = TypeF::make(1.0); // Float 1
-  TypeF::POS_INF = TypeF::make(pos_finf());
-  TypeF::NEG_INF = TypeF::make(-pos_finf());
+  TypeF::POS_INF = TypeF::make(jfloat_cast(POSITIVE_INFINITE_F));
+  TypeF::NEG_INF = TypeF::make(-jfloat_cast(POSITIVE_INFINITE_F));
 
   TypeD::ZERO = TypeD::make(0.0); // Double 0 (positive zero)
   TypeD::ONE  = TypeD::make(1.0); // Double 1
-  TypeD::POS_INF = TypeD::make(pos_dinf());
-  TypeD::NEG_INF = TypeD::make(-pos_dinf());
+  TypeD::POS_INF = TypeD::make(jdouble_cast(POSITIVE_INFINITE_D));
+  TypeD::NEG_INF = TypeD::make(-jdouble_cast(POSITIVE_INFINITE_D));
 
   TypeInt::MINUS_1 = TypeInt::make(-1);  // -1
   TypeInt::ZERO    = TypeInt::make( 0);  //  0

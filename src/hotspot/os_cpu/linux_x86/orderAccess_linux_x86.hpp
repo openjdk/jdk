@@ -57,7 +57,13 @@ inline void OrderAccess::fence() {
 
 inline void OrderAccess::cross_modify_fence() {
   int idx = 0;
+#ifdef AMD64
   __asm__ volatile ("cpuid " : "+a" (idx) : : "ebx", "ecx", "edx", "memory");
+#else
+  // On some x86 systems EBX is a reserved register that cannot be
+  // clobbered, so we must protect it around the CPUID.
+  __asm__ volatile ("xchg %%esi, %%ebx; cpuid; xchg %%esi, %%ebx " : "+a" (idx) : : "esi", "ecx", "edx", "memory");
+#endif
 }
 
 template<>

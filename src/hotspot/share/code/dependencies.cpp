@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -627,32 +627,10 @@ void Dependencies::check_valid_dependency_type(DepType dept) {
   guarantee(FIRST_TYPE <= dept && dept < TYPE_LIMIT, "invalid dependency type: %d", (int) dept);
 }
 
-Dependencies::DepType Dependencies::validate_dependencies(CompileTask* task, bool counter_changed, char** failure_detail) {
-  // First, check non-klass dependencies as we might return early and
-  // not check klass dependencies if the system dictionary
-  // modification counter hasn't changed (see below).
-  for (Dependencies::DepStream deps(this); deps.next(); ) {
-    if (deps.is_klass_type())  continue;  // skip klass dependencies
-    Klass* witness = deps.check_dependency();
-    if (witness != NULL) {
-      return deps.type();
-    }
-  }
-
-  // Klass dependencies must be checked when the system dictionary
-  // changes.  If logging is enabled all violated dependences will be
-  // recorded in the log.  In debug mode check dependencies even if
-  // the system dictionary hasn't changed to verify that no invalid
-  // dependencies were inserted.  Any violated dependences in this
-  // case are dumped to the tty.
-  if (!counter_changed && !trueInDebug) {
-    return end_marker;
-  }
-
+Dependencies::DepType Dependencies::validate_dependencies(CompileTask* task, char** failure_detail) {
   int klass_violations = 0;
   DepType result = end_marker;
   for (Dependencies::DepStream deps(this); deps.next(); ) {
-    if (!deps.is_klass_type())  continue;  // skip non-klass dependencies
     Klass* witness = deps.check_dependency();
     if (witness != NULL) {
       if (klass_violations == 0) {
@@ -667,12 +645,7 @@ Dependencies::DepType Dependencies::validate_dependencies(CompileTask* task, boo
         }
       }
       klass_violations++;
-      if (!counter_changed) {
-        // Dependence failed but counter didn't change.  Log a message
-        // describing what failed and allow the assert at the end to
-        // trigger.
-        deps.print_dependency(witness);
-      } else if (xtty == NULL) {
+      if (xtty == NULL) {
         // If we're not logging then a single violation is sufficient,
         // otherwise we want to log all the dependences which were
         // violated.
@@ -681,15 +654,6 @@ Dependencies::DepType Dependencies::validate_dependencies(CompileTask* task, boo
     }
   }
 
-  if (klass_violations != 0) {
-#ifdef ASSERT
-    if (task != NULL && !counter_changed && !PrintCompilation) {
-      // Print out the compile task that failed
-      task->print_tty();
-    }
-#endif
-    assert(counter_changed, "failed dependencies, but counter didn't change");
-  }
   return result;
 }
 

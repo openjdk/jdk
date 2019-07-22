@@ -33,6 +33,7 @@ import jdk.test.lib.Platform;
  * @summary Tests that VM prints a warning when -XX:CompressedClassSpaceSize
  *          is used together with -XX:-UseCompressedClassPointers
  * @library /test/lib
+ * @library /
  * @modules java.base/jdk.internal.misc
  *          java.management
  * @run main gc.arguments.TestCompressedClassFlags
@@ -50,7 +51,7 @@ public class TestCompressedClassFlags {
     }
 
     private static OutputAnalyzer runJava(String ... args) throws Exception {
-        ProcessBuilder pb = ProcessTools.createJavaProcessBuilder(args);
+        ProcessBuilder pb = GCArguments.createJavaProcessBuilder(args);
         return new OutputAnalyzer(pb.start());
     }
 }

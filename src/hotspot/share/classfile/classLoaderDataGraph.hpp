@@ -68,6 +68,7 @@ class ClassLoaderDataGraph : public AllStatic {
   static void clean_module_and_package_info();
   static void purge();
   static void clear_claimed_marks();
+  static void clear_claimed_marks(int claim);
   // Iteration through CLDG inside a safepoint; GC support
   static void cld_do(CLDClosure* cl);
   static void cld_unloading_do(CLDClosure* cl);

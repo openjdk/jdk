@@ -65,7 +65,7 @@ void ShenandoahAggressiveHeuristics::choose_collection_set_from_regiondata(Shena
   }
 }
 
-bool ShenandoahAggressiveHeuristics::should_start_normal_gc() const {
+bool ShenandoahAggressiveHeuristics::should_start_gc() const {
   log_info(gc)("Trigger: Start next cycle immediately");
   return true;
 }

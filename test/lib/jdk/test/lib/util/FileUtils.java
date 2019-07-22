@@ -96,7 +96,7 @@ public final class FileUtils {
      */
     public static void deleteFileIfExistsWithRetry(Path path) throws IOException {
         try {
-            if (Files.exists(path)) {
+            if (!Files.notExists(path)) {
                 deleteFileWithRetry0(path);
             }
         } catch (InterruptedException x) {

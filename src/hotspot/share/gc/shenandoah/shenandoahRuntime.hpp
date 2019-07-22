@@ -37,7 +37,8 @@ public:
   static void write_ref_array_post_entry(HeapWord* dst, size_t length);
   static void write_ref_field_pre_entry(oopDesc* orig, JavaThread* thread);
 
-  static oopDesc* load_reference_barrier_JRT(oopDesc* src);
+  static oopDesc* load_reference_barrier(oopDesc *src);
+  static oopDesc* load_reference_barrier_native(oopDesc *src);
 
   static void shenandoah_clone_barrier(oopDesc* obj);
 };

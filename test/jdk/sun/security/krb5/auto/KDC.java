@@ -1274,7 +1274,17 @@ public class KDC {
 
             PAData[] inPAs = KDCReqDotPAData(asReq);
             List<PAData> enc_outPAs = new ArrayList<>();
-            if (inPAs == null || inPAs.length == 0) {
+
+            byte[] paEncTimestamp = null;
+            if (inPAs != null) {
+                for (PAData inPA : inPAs) {
+                    if (inPA.getType() == Krb5.PA_ENC_TIMESTAMP) {
+                        paEncTimestamp = inPA.getValue();
+                    }
+                }
+            }
+
+            if (paEncTimestamp == null) {
                 Object preauth = options.get(Option.PREAUTH_REQUIRED);
                 if (preauth == null || preauth.equals(Boolean.TRUE)) {
                     throw new KrbException(Krb5.KDC_ERR_PREAUTH_REQUIRED);
@@ -1283,7 +1293,7 @@ public class KDC {
                 EncryptionKey pakey = null;
                 try {
                     EncryptedData data = newEncryptedData(
-                            new DerValue(inPAs[0].getValue()));
+                            new DerValue(paEncTimestamp));
                     pakey = keyForUser(body.cname, data.getEType(), false);
                     data.decrypt(pakey, KeyUsage.KU_PA_ENC_TS);
                 } catch (Exception e) {

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -350,7 +350,7 @@ int __write_root_description_info__(JfrCheckpointWriter* writer, JfrArtifactSet*
   return 1;
 }
 
-static traceid get_root_description_info_id(const Edge& edge, traceid id) {
+static traceid get_gc_root_description_info_id(const Edge& edge, traceid id) {
   assert(edge.is_root(), "invariant");
   if (EdgeUtils::is_leak_edge(edge)) {
     return 0;
@@ -518,7 +518,7 @@ static void write_root_descriptors(JfrCheckpointWriter& writer) {
   }
 }
 
-static void add_old_object_sample_info(const Edge* current, traceid id) {
+static void add_old_object_sample_info(const StoredEdge* current, traceid id) {
   assert(current != NULL, "invariant");
   if (sample_infos == NULL) {
     sample_infos = new SampleInfo();
@@ -528,11 +528,11 @@ static void add_old_object_sample_info(const Edge* current, traceid id) {
   assert(oosi != NULL, "invariant");
   oosi->_id = id;
   oosi->_data._object = current->pointee();
-  oosi->_data._reference_id = current->is_root() ? (traceid)0 : id;
+  oosi->_data._reference_id = current->parent() == NULL ? (traceid)0 : id;
   sample_infos->store(oosi);
 }
 
-static void add_reference_info(const RoutableEdge* current, traceid id, traceid parent_id) {
+static void add_reference_info(const StoredEdge* current, traceid id, traceid parent_id) {
   assert(current != NULL, "invariant");
   if (ref_infos == NULL) {
     ref_infos = new RefInfo();
@@ -544,37 +544,43 @@ static void add_reference_info(const RoutableEdge* current, traceid id, traceid 
 
   ri->_id = id;
   ri->_data._array_info_id =  !current->is_skip_edge() ? get_array_info_id(*current, id) : 0;
-  ri->_data._field_info_id = ri->_data._array_info_id == 0 && !current->is_skip_edge() ?
-                               get_field_info_id(*current) : (traceid)0;
+  ri->_data._field_info_id = ri->_data._array_info_id == 0 && !current->is_skip_edge() ? get_field_info_id(*current) : (traceid)0;
   ri->_data._old_object_sample_id = parent_id;
   ri->_data._skip = current->skip_length();
   ref_infos->store(ri);
 }
 
-static traceid add_root_info(const Edge* root, traceid id) {
-  assert(root != NULL, "invariant");
-  assert(root->is_root(), "invariant");
-  return get_root_description_info_id(*root, id);
+static bool is_gc_root(const StoredEdge* current) {
+  assert(current != NULL, "invariant");
+  return current->parent() == NULL && current->gc_root_id() != 0;
 }
 
-void ObjectSampleWriter::write(const RoutableEdge* edge) {
+static traceid add_gc_root_info(const StoredEdge* root, traceid id) {
+  assert(root != NULL, "invariant");
+  assert(is_gc_root(root), "invariant");
+  return get_gc_root_description_info_id(*root, id);
+}
+
+void ObjectSampleWriter::write(const StoredEdge* edge) {
   assert(edge != NULL, "invariant");
   const traceid id = _store->get_id(edge);
   add_old_object_sample_info(edge, id);
-  const RoutableEdge* parent = edge->logical_parent();
+  const StoredEdge* const parent = edge->parent();
   if (parent != NULL) {
     add_reference_info(edge, id, _store->get_id(parent));
   } else {
-    assert(edge->is_root(), "invariant");
-    add_root_info(edge, id);
+    if (is_gc_root(edge)) {
+      assert(edge->gc_root_id() == id, "invariant");
+      add_gc_root_info(edge, id);
+    }
   }
 }
 
-ObjectSampleWriter::ObjectSampleWriter(JfrCheckpointWriter& writer, const EdgeStore* store) :
+ObjectSampleWriter::ObjectSampleWriter(JfrCheckpointWriter& writer, EdgeStore* store) :
   _writer(writer),
   _store(store) {
   assert(store != NULL, "invariant");
-  assert(store->number_of_entries() > 0, "invariant");
+  assert(!store->is_empty(), "invariant");
   sample_infos = NULL;
   ref_infos = NULL;
   array_infos = NULL;
@@ -590,26 +596,7 @@ ObjectSampleWriter::~ObjectSampleWriter() {
   write_root_descriptors(_writer);
 }
 
-void ObjectSampleWriter::write_chain(const RoutableEdge& edge) {
-  assert(EdgeUtils::is_leak_edge(edge), "invariant");
-  if (edge.processed()) {
-    return;
-  }
-  EdgeUtils::collapse_chain(edge);
-  const RoutableEdge* current = &edge;
-  while (current != NULL) {
-    if (current->processed()) {
-      return;
-    }
-    write(current);
-    current->set_processed();
-    current = current->logical_parent();
-  }
-}
-
-bool ObjectSampleWriter::operator()(const RoutableEdge& edge) {
-  if (EdgeUtils::is_leak_edge(edge)) {
-    write_chain(edge);
-  }
+bool ObjectSampleWriter::operator()(StoredEdge& e) {
+  write(&e);
   return true;
 }

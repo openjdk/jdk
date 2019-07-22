@@ -45,32 +45,31 @@ static void z_load_barrier_slow_reg(MacroAssembler& _masm, Register dst, Address
 
 // For XMM and YMM enabled processors
 instruct zLoadBarrierSlowRegXmmAndYmm(rRegP dst, memory src, rFlagsReg cr,
-                                      rxmm0 x0, rxmm1 x1, rxmm2 x2,rxmm3 x3,
+                                      rxmm0 x0, rxmm1 x1, rxmm2 x2, rxmm3 x3,
                                       rxmm4 x4, rxmm5 x5, rxmm6 x6, rxmm7 x7,
                                       rxmm8 x8, rxmm9 x9, rxmm10 x10, rxmm11 x11,
                                       rxmm12 x12, rxmm13 x13, rxmm14 x14, rxmm15 x15) %{
+  match(Set dst (LoadBarrierSlowReg src dst));
+  predicate(UseAVX <= 2 && !n->as_LoadBarrierSlowReg()->is_weak());
 
-  match(Set dst (LoadBarrierSlowReg src));
-  predicate((UseAVX <= 2) && !n->as_LoadBarrierSlowReg()->is_weak());
-
-  effect(DEF dst, KILL cr,
+  effect(KILL cr,
          KILL x0, KILL x1, KILL x2, KILL x3,
          KILL x4, KILL x5, KILL x6, KILL x7,
          KILL x8, KILL x9, KILL x10, KILL x11,
          KILL x12, KILL x13, KILL x14, KILL x15);
 
-  format %{ "zLoadBarrierSlowRegXmmAndYmm $dst, $src" %}
+  format %{ "lea $dst, $src\n\t"
+            "call #ZLoadBarrierSlowPath" %}
 
   ins_encode %{
     z_load_barrier_slow_reg(_masm, $dst$$Register, $src$$Address, false /* weak */);
   %}
-
   ins_pipe(pipe_slow);
 %}
 
 // For ZMM enabled processors
 instruct zLoadBarrierSlowRegZmm(rRegP dst, memory src, rFlagsReg cr,
-                                rxmm0 x0, rxmm1 x1, rxmm2 x2,rxmm3 x3,
+                                rxmm0 x0, rxmm1 x1, rxmm2 x2, rxmm3 x3,
                                 rxmm4 x4, rxmm5 x5, rxmm6 x6, rxmm7 x7,
                                 rxmm8 x8, rxmm9 x9, rxmm10 x10, rxmm11 x11,
                                 rxmm12 x12, rxmm13 x13, rxmm14 x14, rxmm15 x15,
@@ -79,10 +78,10 @@ instruct zLoadBarrierSlowRegZmm(rRegP dst, memory src, rFlagsReg cr,
                                 rxmm24 x24, rxmm25 x25, rxmm26 x26, rxmm27 x27,
                                 rxmm28 x28, rxmm29 x29, rxmm30 x30, rxmm31 x31) %{
 
-  match(Set dst (LoadBarrierSlowReg src));
-  predicate((UseAVX == 3) && !n->as_LoadBarrierSlowReg()->is_weak());
+  match(Set dst (LoadBarrierSlowReg src dst));
+  predicate(UseAVX == 3 && !n->as_LoadBarrierSlowReg()->is_weak());
 
-  effect(DEF dst, KILL cr,
+  effect(KILL cr,
          KILL x0, KILL x1, KILL x2, KILL x3,
          KILL x4, KILL x5, KILL x6, KILL x7,
          KILL x8, KILL x9, KILL x10, KILL x11,
@@ -92,43 +91,42 @@ instruct zLoadBarrierSlowRegZmm(rRegP dst, memory src, rFlagsReg cr,
          KILL x24, KILL x25, KILL x26, KILL x27,
          KILL x28, KILL x29, KILL x30, KILL x31);
 
-  format %{ "zLoadBarrierSlowRegZmm $dst, $src" %}
+  format %{ "lea $dst, $src\n\t"
+            "call #ZLoadBarrierSlowPath" %}
 
   ins_encode %{
     z_load_barrier_slow_reg(_masm, $dst$$Register, $src$$Address, false /* weak */);
   %}
-
   ins_pipe(pipe_slow);
 %}
 
 // For XMM and YMM enabled processors
 instruct zLoadBarrierWeakSlowRegXmmAndYmm(rRegP dst, memory src, rFlagsReg cr,
-                                          rxmm0 x0, rxmm1 x1, rxmm2 x2,rxmm3 x3,
+                                          rxmm0 x0, rxmm1 x1, rxmm2 x2, rxmm3 x3,
                                           rxmm4 x4, rxmm5 x5, rxmm6 x6, rxmm7 x7,
                                           rxmm8 x8, rxmm9 x9, rxmm10 x10, rxmm11 x11,
                                           rxmm12 x12, rxmm13 x13, rxmm14 x14, rxmm15 x15) %{
+  match(Set dst (LoadBarrierSlowReg src dst));
+  predicate(UseAVX <= 2 && n->as_LoadBarrierSlowReg()->is_weak());
 
-  match(Set dst (LoadBarrierSlowReg src));
-  predicate((UseAVX <= 2) && n->as_LoadBarrierSlowReg()->is_weak());
-
-  effect(DEF dst, KILL cr,
+  effect(KILL cr,
          KILL x0, KILL x1, KILL x2, KILL x3,
          KILL x4, KILL x5, KILL x6, KILL x7,
          KILL x8, KILL x9, KILL x10, KILL x11,
          KILL x12, KILL x13, KILL x14, KILL x15);
 
-  format %{ "zLoadBarrierWeakSlowRegXmmAndYmm $dst, $src" %}
+  format %{ "lea $dst, $src\n\t"
+            "call #ZLoadBarrierSlowPath" %}
 
   ins_encode %{
     z_load_barrier_slow_reg(_masm, $dst$$Register, $src$$Address, true /* weak */);
   %}
-
   ins_pipe(pipe_slow);
 %}
 
 // For ZMM enabled processors
 instruct zLoadBarrierWeakSlowRegZmm(rRegP dst, memory src, rFlagsReg cr,
-                                    rxmm0 x0, rxmm1 x1, rxmm2 x2,rxmm3 x3,
+                                    rxmm0 x0, rxmm1 x1, rxmm2 x2, rxmm3 x3,
                                     rxmm4 x4, rxmm5 x5, rxmm6 x6, rxmm7 x7,
                                     rxmm8 x8, rxmm9 x9, rxmm10 x10, rxmm11 x11,
                                     rxmm12 x12, rxmm13 x13, rxmm14 x14, rxmm15 x15,
@@ -137,10 +135,10 @@ instruct zLoadBarrierWeakSlowRegZmm(rRegP dst, memory src, rFlagsReg cr,
                                     rxmm24 x24, rxmm25 x25, rxmm26 x26, rxmm27 x27,
                                     rxmm28 x28, rxmm29 x29, rxmm30 x30, rxmm31 x31) %{
 
-  match(Set dst (LoadBarrierSlowReg src));
-  predicate((UseAVX == 3) && n->as_LoadBarrierSlowReg()->is_weak());
+  match(Set dst (LoadBarrierSlowReg src dst));
+  predicate(UseAVX == 3 && n->as_LoadBarrierSlowReg()->is_weak());
 
-  effect(DEF dst, KILL cr,
+  effect(KILL cr,
          KILL x0, KILL x1, KILL x2, KILL x3,
          KILL x4, KILL x5, KILL x6, KILL x7,
          KILL x8, KILL x9, KILL x10, KILL x11,
@@ -150,12 +148,12 @@ instruct zLoadBarrierWeakSlowRegZmm(rRegP dst, memory src, rFlagsReg cr,
          KILL x24, KILL x25, KILL x26, KILL x27,
          KILL x28, KILL x29, KILL x30, KILL x31);
 
-  format %{ "zLoadBarrierWeakSlowRegZmm $dst, $src" %}
+  format %{ "lea $dst, $src\n\t"
+            "call #ZLoadBarrierSlowPath" %}
 
   ins_encode %{
     z_load_barrier_slow_reg(_masm, $dst$$Register, $src$$Address, true /* weak */);
   %}
-
   ins_pipe(pipe_slow);
 %}
 

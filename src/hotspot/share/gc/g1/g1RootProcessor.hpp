@@ -64,7 +64,6 @@ class G1RootProcessor : public StackObj {
     G1RP_PS_jvmti_oops_do,
     G1RP_PS_CodeCache_oops_do,
     AOT_ONLY(G1RP_PS_aot_oops_do COMMA)
-    JVMCI_ONLY(G1RP_PS_JVMCI_oops_do COMMA)
     G1RP_PS_refProcessor_oops_do,
     // Leave this one last.
     G1RP_PS_NumElements

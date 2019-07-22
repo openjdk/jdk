@@ -610,4 +610,29 @@ public class Enter extends JCTree.Visitor {
     public void newRound() {
         typeEnvs.clear();
     }
+
+    public void unenter(JCCompilationUnit topLevel, JCTree tree) {
+        new UnenterScanner(topLevel.modle).scan(tree);
+    }
+        class UnenterScanner extends TreeScanner {
+            private final ModuleSymbol msym;
+
+            public UnenterScanner(ModuleSymbol msym) {
+                this.msym = msym;
+            }
+
+            @Override
+            public void visitClassDef(JCClassDecl tree) {
+                ClassSymbol csym = tree.sym;
+                //if something went wrong during method applicability check
+                //it is possible that nested expressions inside argument expression
+                //are left unchecked - in such cases there's nothing to clean up.
+                if (csym == null) return;
+                typeEnvs.remove(csym);
+                chk.removeCompiled(csym);
+                chk.clearLocalClassNameIndexes(csym);
+                syms.removeClass(msym, csym.flatname);
+                super.visitClassDef(tree);
+            }
+        }
 }

@@ -46,11 +46,12 @@ public:
 class HandshakeThreadsOperation: public HandshakeOperation {
   static Semaphore _done;
   ThreadClosure* _thread_cl;
-
+  bool _executed;
 public:
-  HandshakeThreadsOperation(ThreadClosure* cl) : _thread_cl(cl) {}
+  HandshakeThreadsOperation(ThreadClosure* cl) : _thread_cl(cl), _executed(false) {}
   void do_handshake(JavaThread* thread);
   bool thread_has_completed() { return _done.trywait(); }
+  bool executed() const { return _executed; }
 
 #ifdef ASSERT
   void check_state() {
@@ -109,24 +110,23 @@ void VM_Handshake::handle_timeout() {
 
 class VM_HandshakeOneThread: public VM_Handshake {
   JavaThread* _target;
-  bool _thread_alive;
  public:
   VM_HandshakeOneThread(HandshakeThreadsOperation* op, JavaThread* target) :
-    VM_Handshake(op), _target(target), _thread_alive(false) {}
+    VM_Handshake(op), _target(target) {}
 
   void doit() {
     DEBUG_ONLY(_op->check_state();)
-    TraceTime timer("Performing single-target operation (vmoperation doit)", TRACETIME_LOG(Info, handshake));
+    TraceTime timer("Finished executing single-target operation (VM_HandshakeOneThread::doit)", TRACETIME_LOG(Info, handshake));
 
     ThreadsListHandle tlh;
     if (tlh.includes(_target)) {
       set_handshake(_target);
-      _thread_alive = true;
     } else {
+      log_trace(handshake)("JavaThread " INTPTR_FORMAT " is not alive", p2i(_target));
       return;
     }
 
-    log_trace(handshake)("Thread signaled, begin processing by VMThtread");
+    log_trace(handshake)("JavaThread " INTPTR_FORMAT " signaled, begin attempt to process by VMThtread", p2i(_target));
     jlong start_time = os::elapsed_counter();
     do {
       if (handshake_has_timed_out(start_time)) {
@@ -146,7 +146,7 @@ class VM_HandshakeOneThread: public VM_Handshake {
 
   VMOp_Type type() const { return VMOp_HandshakeOneThread; }
 
-  bool thread_alive() const { return _thread_alive; }
+  bool executed() const { return _op->executed(); }
 };
 
 class VM_HandshakeAllThreads: public VM_Handshake {
@@ -155,7 +155,7 @@ class VM_HandshakeAllThreads: public VM_Handshake {
 
   void doit() {
     DEBUG_ONLY(_op->check_state();)
-    TraceTime timer("Performing operation (vmoperation doit)", TRACETIME_LOG(Info, handshake));
+    TraceTime timer("Finished executing multi-target operation (VM_HandshakeAllThreads::doit)", TRACETIME_LOG(Info, handshake));
 
     JavaThreadIteratorWithHandle jtiwh;
     int number_of_threads_issued = 0;
@@ -211,18 +211,19 @@ class VM_HandshakeFallbackOperation : public VM_Operation {
   ThreadClosure* _thread_cl;
   Thread* _target_thread;
   bool _all_threads;
-  bool _thread_alive;
+  bool _executed;
 public:
   VM_HandshakeFallbackOperation(ThreadClosure* cl) :
-      _thread_cl(cl), _target_thread(NULL), _all_threads(true), _thread_alive(true) {}
+      _thread_cl(cl), _target_thread(NULL), _all_threads(true), _executed(false) {}
   VM_HandshakeFallbackOperation(ThreadClosure* cl, Thread* target) :
-      _thread_cl(cl), _target_thread(target), _all_threads(false), _thread_alive(false) {}
+      _thread_cl(cl), _target_thread(target), _all_threads(false), _executed(false) {}
 
   void doit() {
+    log_trace(handshake)("VMThread executing VM_HandshakeFallbackOperation");
     for (JavaThreadIteratorWithHandle jtiwh; JavaThread *t = jtiwh.next(); ) {
       if (_all_threads || t == _target_thread) {
         if (t == _target_thread) {
-          _thread_alive = true;
+          _executed = true;
         }
         _thread_cl->do_thread(t);
       }
@@ -230,7 +231,7 @@ public:
   }
 
   VMOp_Type type() const { return VMOp_HandshakeFallback; }
-  bool thread_alive() const { return _thread_alive; }
+  bool executed() const { return _executed; }
 };
 
 void HandshakeThreadsOperation::do_handshake(JavaThread* thread) {
@@ -242,6 +243,7 @@ void HandshakeThreadsOperation::do_handshake(JavaThread* thread) {
   // Only actually execute the operation for non terminated threads.
   if (!thread->is_terminated()) {
     _thread_cl->do_thread(thread);
+    _executed = true;
   }
 
   // Use the semaphore to inform the VM thread that we have completed the operation
@@ -264,11 +266,11 @@ bool Handshake::execute(ThreadClosure* thread_cl, JavaThread* target) {
     HandshakeThreadsOperation cto(thread_cl);
     VM_HandshakeOneThread handshake(&cto, target);
     VMThread::execute(&handshake);
-    return handshake.thread_alive();
+    return handshake.executed();
   } else {
     VM_HandshakeFallbackOperation op(thread_cl, target);
     VMThread::execute(&op);
-    return op.thread_alive();
+    return op.executed();
   }
 }
 
@@ -369,6 +371,7 @@ void HandshakeState::process_by_vmthread(JavaThread* target) {
   // getting caught by the semaphore.
   if (vmthread_can_process_handshake(target)) {
     guarantee(!_semaphore.trywait(), "we should already own the semaphore");
+    log_trace(handshake)("Processing handshake by VMThtread");
     _operation->do_handshake(target);
     // Disarm after VM thread have executed the operation.
     clear_handshake(target);

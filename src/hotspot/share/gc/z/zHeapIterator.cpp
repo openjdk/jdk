@@ -22,6 +22,8 @@
  */
 
 #include "precompiled.hpp"
+#include "classfile/classLoaderData.hpp"
+#include "classfile/classLoaderDataGraph.hpp"
 #include "gc/z/zBarrier.inline.hpp"
 #include "gc/z/zGlobals.hpp"
 #include "gc/z/zGranuleMap.inline.hpp"
@@ -83,7 +85,7 @@ public:
 };
 
 template <bool VisitReferents>
-class ZHeapIteratorOopClosure : public BasicOopIterateClosure {
+class ZHeapIteratorOopClosure : public ClaimMetadataVisitingOopIterateClosure {
 private:
   ZHeapIterator* const _iter;
   const oop            _base;
@@ -98,6 +100,7 @@ private:
 
 public:
   ZHeapIteratorOopClosure(ZHeapIterator* iter, oop base) :
+      ClaimMetadataVisitingOopIterateClosure(ClassLoaderData::_claim_other),
       _iter(iter),
       _base(base) {}
 
@@ -130,6 +133,7 @@ ZHeapIterator::~ZHeapIterator() {
   for (ZHeapIteratorBitMap* map; iter.next(&map);) {
     delete map;
   }
+  ClassLoaderDataGraph::clear_claimed_marks(ClassLoaderData::_claim_other);
 }
 
 static size_t object_index_max() {
@@ -184,15 +188,23 @@ void ZHeapIterator::push_fields(oop obj) {
   obj->oop_iterate(&cl);
 }
 
-template <bool VisitReferents>
+class ZHeapIterateConcurrentRootsIterator : public ZConcurrentRootsIterator {
+public:
+  ZHeapIterateConcurrentRootsIterator() :
+      ZConcurrentRootsIterator(ClassLoaderData::_claim_other) {}
+};
+
+template <bool VisitWeaks>
 void ZHeapIterator::objects_do(ObjectClosure* cl) {
   ZStatTimerDisable disable;
 
   // Push roots to visit
-  push_roots<ZRootsIterator,               false /* Concurrent */, false /* Weak */>();
-  push_roots<ZConcurrentRootsIterator,     true  /* Concurrent */, false /* Weak */>();
-  push_roots<ZWeakRootsIterator,           false /* Concurrent */, true  /* Weak */>();
-  push_roots<ZConcurrentWeakRootsIterator, true  /* Concurrent */, true  /* Weak */>();
+  push_roots<ZRootsIterator,                      false /* Concurrent */, false /* Weak */>();
+  push_roots<ZHeapIterateConcurrentRootsIterator, true  /* Concurrent */, false /* Weak */>();
+  if (VisitWeaks) {
+    push_roots<ZWeakRootsIterator,           false /* Concurrent */, true  /* Weak */>();
+    push_roots<ZConcurrentWeakRootsIterator, true  /* Concurrent */, true  /* Weak */>();
+  }
 
   // Drain stack
   while (!_visit_stack.is_empty()) {
@@ -202,14 +214,14 @@ void ZHeapIterator::objects_do(ObjectClosure* cl) {
     cl->do_object(obj);
 
     // Push fields to visit
-    push_fields<VisitReferents>(obj);
+    push_fields<VisitWeaks>(obj);
   }
 }
 
-void ZHeapIterator::objects_do(ObjectClosure* cl, bool visit_referents) {
-  if (visit_referents) {
-    objects_do<true /* VisitReferents */>(cl);
+void ZHeapIterator::objects_do(ObjectClosure* cl, bool visit_weaks) {
+  if (visit_weaks) {
+    objects_do<true /* VisitWeaks */>(cl);
   } else {
-    objects_do<false /* VisitReferents */>(cl);
+    objects_do<false /* VisitWeaks */>(cl);
   }
 }

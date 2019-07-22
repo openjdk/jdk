@@ -24,21 +24,79 @@
 package transform;
 
 import java.io.StringReader;
+import java.io.StringWriter;
 import java.util.Properties;
+import javax.xml.parsers.DocumentBuilderFactory;
+import javax.xml.transform.OutputKeys;
 import javax.xml.transform.Templates;
+import javax.xml.transform.Transformer;
 import javax.xml.transform.TransformerFactory;
+import javax.xml.transform.stream.StreamResult;
 import javax.xml.transform.stream.StreamSource;
 import org.testng.Assert;
+import org.testng.annotations.DataProvider;
 import org.testng.annotations.Test;
+import org.w3c.dom.Document;
+import org.xml.sax.InputSource;
 
 /*
  * @test
- * @bug 8219705
+ * @bug 8219705 8223291
  * @library /javax/xml/jaxp/libs /javax/xml/jaxp/unittest
  * @run testng transform.OutputPropertiesTest
  * @summary Verifies the output properties are set correctly
  */
 public class OutputPropertiesTest {
+    /*
+       DataProvider: for testing indentation
+       Data: xml, expected result
+     */
+    @DataProvider(name = "Indentation")
+    public Object[][] getData() {
+        String mix = "\n" +
+                "        abc\n" +
+                "        mix\n" +
+                "        xyz\n" +
+                "    ";
+        return new Object[][]{
+            {"abc<![CDATA[data]]>xyz", "abcdataxyz"},
+            {"abc<![CDATA[ & ]]>xyz", "abc & xyz"},
+            {"<![CDATA[data]]>", "data"},
+            {"abc<mix>mix</mix>xyz", mix}
+        };
+    }
+
+
+    /**
+     * bug 8223291
+     * Verifies that no extra indentation is added for CDATA.
+     * @param xml the xml content to be tested
+     * @param expected the expected result
+     * @throws Exception
+     */
+    @Test(dataProvider = "Indentation")
+    public void testIndentation(String xml, String expected) throws Exception
+    {
+        StreamSource source = new StreamSource(new StringReader("<foo><bar>" + xml + "</bar></foo>"));
+        StreamResult result = new StreamResult(new StringWriter());
+
+        Transformer tform = TransformerFactory.newInstance().newTransformer();
+        tform.setOutputProperty(OutputKeys.INDENT, "yes");
+        tform.transform(source, result);
+
+        String xml1 = result.getWriter().toString();
+
+        Document document = DocumentBuilderFactory.newInstance()
+            .newDocumentBuilder()
+            .parse(new InputSource(new StringReader(xml1)));
+
+        String resultData = document.getElementsByTagName("bar")
+            .item(0)
+            .getTextContent();
+
+        Assert.assertEquals(resultData, expected);
+    }
+
     @Test
     public void testOutputProperties() throws Exception {
         String xslData = "<?xml version='1.0'?>"
@@ -70,4 +128,5 @@ public class OutputPropertiesTest {
                     prNames[i] + ": actual: " + value + ", expected: " + prValues[i]);
         }
     }
+
 }

@@ -30,6 +30,7 @@ package gc.arguments;
  * @bug 8054823
  * @key gc
  * @library /test/lib
+ * @library /
  * @modules java.base/jdk.internal.misc
  *          java.management
  * @run driver gc.arguments.TestArrayAllocatorMallocLimit
@@ -52,7 +53,7 @@ public class TestArrayAllocatorMallocLimit {
   private static final String printFlagsFinalPattern = " *size_t *" + flagName + " *:?= *(\\d+) *\\{experimental\\} *";
 
   public static void testDefaultValue()  throws Exception {
-    ProcessBuilder pb = ProcessTools.createJavaProcessBuilder(
+    ProcessBuilder pb = GCArguments.createJavaProcessBuilder(
       "-XX:+UnlockExperimentalVMOptions", "-XX:+PrintFlagsFinal", "-version");
 
     OutputAnalyzer output = new OutputAnalyzer(pb.start());
@@ -78,7 +79,7 @@ public class TestArrayAllocatorMallocLimit {
   public static void testSetValue() throws Exception {
     long flagValue = 2048;
 
-    ProcessBuilder pb = ProcessTools.createJavaProcessBuilder(
+    ProcessBuilder pb = GCArguments.createJavaProcessBuilder(
       "-XX:+UnlockExperimentalVMOptions", "-XX:" + flagName + "=" + flagValue, "-XX:+PrintFlagsFinal", "-version");
 
     OutputAnalyzer output = new OutputAnalyzer(pb.start());

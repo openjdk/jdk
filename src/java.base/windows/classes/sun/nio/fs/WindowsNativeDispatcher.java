@@ -25,8 +25,6 @@
 
 package sun.nio.fs;
 
-import java.security.AccessController;
-import java.security.PrivilegedAction;
 import jdk.internal.misc.Unsafe;
 
 import static sun.nio.fs.WindowsConstants.*;
@@ -1153,13 +1151,9 @@ class WindowsNativeDispatcher {
     private static native void initIDs();
 
     static {
-        AccessController.doPrivileged(new PrivilegedAction<Void>() {
-            public Void run() {
-                // nio.dll has dependency on net.dll
-                System.loadLibrary("net");
-                System.loadLibrary("nio");
-                return null;
-        }});
+        // nio.dll has dependency on net.dll
+        jdk.internal.loader.BootLoader.loadLibrary("net");
+        jdk.internal.loader.BootLoader.loadLibrary("nio");
         initIDs();
     }
 

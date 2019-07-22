@@ -734,6 +734,10 @@ void initialize_assert_poison() {
   }
 }
 
+void disarm_assert_poison() {
+  g_assert_poison = &g_dummy;
+}
+
 static void store_context(const void* context) {
   memcpy(&g_stored_assertion_context, context, sizeof(ucontext_t));
 #if defined(__linux) && defined(PPC64)
@@ -746,7 +750,14 @@ static void store_context(const void* context) {
 bool handle_assert_poison_fault(const void* ucVoid, const void* faulting_address) {
   if (faulting_address == g_assert_poison) {
     // Disarm poison page.
-    os::protect_memory((char*)g_assert_poison, os::vm_page_size(), os::MEM_PROT_RWX);
+    if (os::protect_memory((char*)g_assert_poison, os::vm_page_size(), os::MEM_PROT_RWX) == false) {
+#ifdef ASSERT
+      fprintf(stderr, "Assertion poison page cannot be unprotected - mprotect failed with %d (%s)",
+              errno, os::strerror(errno));
+      fflush(stderr);
+#endif
+      return false; // unprotecting memory may fail in OOM situations, as surprising as this sounds.
+    }
     // Store Context away.
     if (ucVoid) {
       const intx my_tid = os::current_thread_id();

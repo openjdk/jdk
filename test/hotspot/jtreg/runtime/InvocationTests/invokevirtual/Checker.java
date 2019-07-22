@@ -88,7 +88,7 @@ public class Checker extends shared.Checker {
             return null;
         }
 
-        // Dynamic target doesn't have desired method, so check it's superclass
+        // Dynamic target doesn't have desired method, so check its superclass
         if (dynamicTargetMethod == null) {
             return getOverriddenMethod(staticTarget, dynamicTarget.getSuperclass());
         } else {
@@ -109,11 +109,9 @@ public class Checker extends shared.Checker {
             String staticTargetPkg = getClassPackageName(staticTarget);
             String dynamicTargetPkg = getClassPackageName(dynamicTarget);
 
-            if ( isPublic || isProtected
-                 || ( !isPublic && !isProtected && !isPrivate
-                      && staticTargetPkg.equals(dynamicTargetPkg)
-                    ))
-            {
+            if (isPublic || isProtected
+                || (!isPublic && !isProtected && !isPrivate
+                    && staticTargetPkg.equals(dynamicTargetPkg))) {
                 return dynamicTargetMethod;
             }
         }

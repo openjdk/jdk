@@ -1709,8 +1709,9 @@ public class LambdaToMethod extends TreeTranslator {
                         }
                         break;
                     case VARDEF:
-                        if (((JCVariableDecl)block.tree).sym == sym &&
-                                sym.owner.kind == MTH) { //only locals are captured
+                        if ((((JCVariableDecl)block.tree).sym == sym &&
+                                sym.owner.kind == MTH) || //only locals are captured
+                            (block.locals != null && block.locals.contains(sym))) {
                             return currentDepth > depth ? null : block.tree;
                         }
                         break;

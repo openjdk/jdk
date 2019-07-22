@@ -35,7 +35,6 @@ G1HeapTransition::Data::Data(G1CollectedHeap* g1_heap) {
   _old_length = g1_heap->old_regions_count();
   _archive_length = g1_heap->archive_regions_count();
   _humongous_length = g1_heap->humongous_regions_count();
-  _metaspace_used_bytes = MetaspaceUtils::used_bytes();
 }
 
 G1HeapTransition::G1HeapTransition(G1CollectedHeap* g1_heap) : _g1_heap(g1_heap), _before(g1_heap) { }
@@ -131,5 +130,5 @@ void G1HeapTransition::print() {
   log_trace(gc, heap)(" Used: " SIZE_FORMAT "K, Waste: " SIZE_FORMAT "K",
       usage._humongous_used / K, ((after._humongous_length * HeapRegion::GrainBytes) - usage._humongous_used) / K);
 
-  MetaspaceUtils::print_metaspace_change(_before._metaspace_used_bytes);
+  MetaspaceUtils::print_metaspace_change(_before._meta_sizes);
 }

@@ -30,6 +30,7 @@ package gc.arguments;
  * @bug 8059614
  * @key gc
  * @library /test/lib
+ * @library /
  * @modules java.base/jdk.internal.misc
  *          java.management
  * @run driver gc.arguments.TestUseNUMAInterleaving
@@ -45,7 +46,7 @@ public class TestUseNUMAInterleaving {
             "-XX:+PrintFlagsFinal",
             "-version"
         };
-        ProcessBuilder pb = ProcessTools.createJavaProcessBuilder(true, vmargs);
+        ProcessBuilder pb = GCArguments.createJavaProcessBuilder(true, vmargs);
         OutputAnalyzer output = new OutputAnalyzer(pb.start());
 
         boolean isNUMAEnabled

@@ -72,6 +72,9 @@ abstract class ECDSASignature extends SignatureSpi {
     // public key, if initialized for verifying
     private ECPublicKey publicKey;
 
+    // signature parameters
+    private ECParameterSpec sigParams = null;
+
     // The format. true for the IEEE P1363 format. false (default) for ASN.1
     private final boolean p1363Format;
 
@@ -279,10 +282,14 @@ abstract class ECDSASignature extends SignatureSpi {
     @Override
     protected void engineInitVerify(PublicKey publicKey)
     throws InvalidKeyException {
-        this.publicKey = (ECPublicKey) ECKeyFactory.toECKey(publicKey);
+        ECPublicKey key = (ECPublicKey) ECKeyFactory.toECKey(publicKey);
+        if (!isCompatible(this.sigParams, key.getParams())) {
+            throw new InvalidKeyException("Key params does not match signature params");
+        }
 
         // Should check that the supplied key is appropriate for signature
         // algorithm (e.g. P-256 for SHA256withECDSA)
+        this.publicKey = key;
         this.privateKey = null;
         resetDigest();
     }
@@ -298,10 +305,14 @@ abstract class ECDSASignature extends SignatureSpi {
     @Override
     protected void engineInitSign(PrivateKey privateKey, SecureRandom random)
     throws InvalidKeyException {
-        this.privateKey = (ECPrivateKey) ECKeyFactory.toECKey(privateKey);
+        ECPrivateKey key = (ECPrivateKey) ECKeyFactory.toECKey(privateKey);
+        if (!isCompatible(this.sigParams, key.getParams())) {
+            throw new InvalidKeyException("Key params does not match signature params");
+        }
 
         // Should check that the supplied key is appropriate for signature
         // algorithm (e.g. P-256 for SHA256withECDSA)
+        this.privateKey = key;
         this.publicKey = null;
         this.random = random;
         resetDigest();
@@ -353,6 +364,16 @@ abstract class ECDSASignature extends SignatureSpi {
         messageDigest.update(byteBuffer);
         needsReset = true;
     }
+
+    private static boolean isCompatible(ECParameterSpec sigParams,
+            ECParameterSpec keyParams) {
+        if (sigParams == null) {
+            // no restriction on key param
+            return true;
+        }
+        return ECUtil.equals(sigParams, keyParams);
+    }
+
 
     private byte[] signDigestImpl(ECDSAOperations ops, int seedBits,
         byte[] digest, ECPrivateKeyImpl privImpl, SecureRandom random)
@@ -495,9 +516,16 @@ abstract class ECDSASignature extends SignatureSpi {
     @Override
     protected void engineSetParameter(AlgorithmParameterSpec params)
     throws InvalidAlgorithmParameterException {
-        if (params != null) {
+        if (params != null && !(params instanceof ECParameterSpec)) {
             throw new InvalidAlgorithmParameterException("No parameter accepted");
         }
+        ECKey key = (this.privateKey == null? this.publicKey : this.privateKey);
+        if ((key != null) && !isCompatible((ECParameterSpec)params, key.getParams())) {
+            throw new InvalidAlgorithmParameterException
+                ("Signature params does not match key params");
+        }
+
+        sigParams = (ECParameterSpec) params;
     }
 
     // get parameter, not supported. See JCA doc
@@ -510,7 +538,17 @@ abstract class ECDSASignature extends SignatureSpi {
 
     @Override
     protected AlgorithmParameters engineGetParameters() {
-        return null;
+        if (sigParams == null) {
+            return null;
+        }
+        try {
+            AlgorithmParameters ap = AlgorithmParameters.getInstance("EC");
+            ap.init(sigParams);
+            return ap;
+        } catch (Exception e) {
+            // should never happen
+            throw new ProviderException("Error retrieving EC parameters", e);
+        }
     }
 
     /**

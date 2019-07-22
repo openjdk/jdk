@@ -31,7 +31,6 @@
 #include "gc/g1/g1CollectionSet.hpp"
 #include "gc/g1/g1CollectorState.hpp"
 #include "gc/g1/g1ConcurrentMark.hpp"
-#include "gc/g1/g1DirtyCardQueue.hpp"
 #include "gc/g1/g1EdenRegions.hpp"
 #include "gc/g1/g1EvacFailure.hpp"
 #include "gc/g1/g1EvacStats.hpp"
@@ -42,6 +41,7 @@
 #include "gc/g1/g1HRPrinter.hpp"
 #include "gc/g1/g1HeapRegionAttr.hpp"
 #include "gc/g1/g1MonitoringSupport.hpp"
+#include "gc/g1/g1RedirtyCardsQueue.hpp"
 #include "gc/g1/g1SurvivorRegions.hpp"
 #include "gc/g1/g1YCTypes.hpp"
 #include "gc/g1/heapRegionManager.hpp"
@@ -73,6 +73,7 @@ class ObjectClosure;
 class SpaceClosure;
 class CompactibleSpaceClosure;
 class Space;
+class G1CardTableEntryClosure;
 class G1CollectionSet;
 class G1Policy;
 class G1HotCardCache;
@@ -353,6 +354,7 @@ private:
     assert(Thread::current()->is_VM_thread(), "current thread is not VM thread"); \
   } while (0)
 
+#ifdef ASSERT
 #define assert_used_and_recalculate_used_equal(g1h)                           \
   do {                                                                        \
     size_t cur_used_bytes = g1h->used();                                      \
@@ -361,6 +363,9 @@ private:
            " same as recalculated used(" SIZE_FORMAT ").",                    \
            cur_used_bytes, recal_used_bytes);                                 \
   } while (0)
+#else
+#define assert_used_and_recalculate_used_equal(g1h) do {} while(0)
+#endif
 
   const char* young_gc_name() const;
 
@@ -771,7 +776,7 @@ public:
 
   // A set of cards that cover the objects for which the Rsets should be updated
   // concurrently after the collection.
-  G1DirtyCardQueueSet _dirty_card_queue_set;
+  G1RedirtyCardsQueueSet _redirty_cards_queue_set;
 
   // After a collection pause, convert the regions in the collection set into free
   // regions.
@@ -931,7 +936,9 @@ public:
   uint num_task_queues() const;
 
   // A set of cards where updates happened during the GC
-  G1DirtyCardQueueSet& dirty_card_queue_set() { return _dirty_card_queue_set; }
+  G1RedirtyCardsQueueSet& redirty_cards_queue_set() {
+    return _redirty_cards_queue_set;
+  }
 
   // Create a G1CollectedHeap.
   // Must call the initialize method afterwards.

@@ -636,6 +636,7 @@ class AdapterHandlerEntry : public BasicHashtableEntry<mtCode> {
   address _i2c_entry;
   address _c2i_entry;
   address _c2i_unverified_entry;
+  address _c2i_no_clinit_check_entry;
 
 #ifdef ASSERT
   // Captures code and signature used to generate this adapter when
@@ -644,11 +645,12 @@ class AdapterHandlerEntry : public BasicHashtableEntry<mtCode> {
   int            _saved_code_length;
 #endif
 
-  void init(AdapterFingerPrint* fingerprint, address i2c_entry, address c2i_entry, address c2i_unverified_entry) {
+  void init(AdapterFingerPrint* fingerprint, address i2c_entry, address c2i_entry, address c2i_unverified_entry, address c2i_no_clinit_check_entry) {
     _fingerprint = fingerprint;
     _i2c_entry = i2c_entry;
     _c2i_entry = c2i_entry;
     _c2i_unverified_entry = c2i_unverified_entry;
+    _c2i_no_clinit_check_entry = c2i_no_clinit_check_entry;
 #ifdef ASSERT
     _saved_code = NULL;
     _saved_code_length = 0;
@@ -661,9 +663,11 @@ class AdapterHandlerEntry : public BasicHashtableEntry<mtCode> {
   AdapterHandlerEntry();
 
  public:
-  address get_i2c_entry()            const { return _i2c_entry; }
-  address get_c2i_entry()            const { return _c2i_entry; }
-  address get_c2i_unverified_entry() const { return _c2i_unverified_entry; }
+  address get_i2c_entry()                  const { return _i2c_entry; }
+  address get_c2i_entry()                  const { return _c2i_entry; }
+  address get_c2i_unverified_entry()       const { return _c2i_unverified_entry; }
+  address get_c2i_no_clinit_check_entry()  const { return _c2i_no_clinit_check_entry; }
+
   address base_address();
   void relocate(address new_base);
 
@@ -709,7 +713,10 @@ class AdapterHandlerLibrary: public AllStatic {
  public:
 
   static AdapterHandlerEntry* new_entry(AdapterFingerPrint* fingerprint,
-                                        address i2c_entry, address c2i_entry, address c2i_unverified_entry);
+                                        address i2c_entry,
+                                        address c2i_entry,
+                                        address c2i_unverified_entry,
+                                        address c2i_no_clinit_check_entry = NULL);
   static void create_native_wrapper(const methodHandle& method);
   static AdapterHandlerEntry* get_adapter(const methodHandle& method);
 

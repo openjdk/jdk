@@ -370,6 +370,10 @@ oop MemAllocator::allocate() const {
     HeapWord* mem = mem_allocate(allocation);
     if (mem != NULL) {
       obj = initialize(mem);
+    } else {
+      // The unhandled oop detector will poison local variable obj,
+      // so reset it to NULL if mem is NULL.
+      obj = NULL;
     }
   }
   return obj;

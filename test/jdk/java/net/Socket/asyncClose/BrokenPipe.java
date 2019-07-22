@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -57,7 +57,7 @@ public class BrokenPipe {
     public static void main(String[] args) throws Exception {
         IPSupport.throwSkippedExceptionIfNonOperational();
 
-        ServerSocket ss = new ServerSocket(0);
+        ServerSocket ss = new ServerSocket(0, 0, InetAddress.getLocalHost());
         Socket client = new Socket(InetAddress.getLocalHost(),
                                    ss.getLocalPort());
         Socket server = ss.accept();

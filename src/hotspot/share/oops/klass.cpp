@@ -767,7 +767,7 @@ void Klass::oop_print_value_on(oop obj, outputStream* st) {
 // Size Statistics
 void Klass::collect_statistics(KlassSizeStats *sz) const {
   sz->_klass_bytes = sz->count(this);
-  sz->_mirror_bytes = sz->count(java_mirror());
+  sz->_mirror_bytes = sz->count(java_mirror_no_keepalive());
   sz->_secondary_supers_bytes = sz->count_array(secondary_supers());
 
   sz->_ro_bytes += sz->_secondary_supers_bytes;

@@ -31,9 +31,6 @@ import java.util.Map;
 import java.util.List;
 import java.util.ArrayList;
 
-/**
- *
- */
 public abstract class AbstractGenerator {
     protected final boolean dumpClasses;
     protected final boolean executeTests;

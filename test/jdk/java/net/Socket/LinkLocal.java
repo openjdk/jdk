@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -55,7 +55,8 @@ public class LinkLocal {
          * Create ServerSocket on wildcard address and then
          * try to connect Socket to link-local address.
          */
-        ServerSocket ss = new ServerSocket(0);
+        ServerSocket ss = new ServerSocket();
+        ss.bind(new InetSocketAddress(ia, 0));
 
         Socket s = new Socket();
         try {
@@ -87,7 +88,7 @@ public class LinkLocal {
         }
 
         DatagramSocket ds1 = new DatagramSocket();
-        DatagramSocket ds2 = new DatagramSocket();
+        DatagramSocket ds2 = new DatagramSocket(0, ia);
 
         try {
             byte b[] = "Hello".getBytes();

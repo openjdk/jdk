@@ -2969,11 +2969,6 @@ void JavaThread::oops_do(OopClosure* f, CodeBlobClosure* cf) {
     }
   }
 
-  // callee_target is never live across a gc point so NULL it here should
-  // it still contain a methdOop.
-
-  set_callee_target(NULL);
-
   assert(vframe_array_head() == NULL, "deopt in progress at a safepoint!");
   // If we have deferred set_locals there might be oops waiting to be
   // written

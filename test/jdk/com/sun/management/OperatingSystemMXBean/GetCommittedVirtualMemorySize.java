@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -57,8 +57,7 @@ public class GetCommittedVirtualMemorySize {
 
     // Careful with these values.
     private static final long MIN_SIZE_FOR_PASS = 1;
-    // Max size for pass dynamically determined below
-    private static long       max_size_for_pass = Long.MAX_VALUE;
+    private static long       MAX_SIZE_FOR_PASS = Long.MAX_VALUE;
 
     private static boolean trace = false;
 
@@ -67,16 +66,6 @@ public class GetCommittedVirtualMemorySize {
             trace = true;
         }
 
-        // 4934082: On Linux, VM size *can* be larger than total swap
-        // size.  Linux might not reserve swap memory immediately when
-        // a page is mmaped.  This means that the reported committed
-        // memory size can grow beyond the swap limit.
-        long max_size = mbean.getTotalSwapSpaceSize() +
-                        mbean.getTotalPhysicalMemorySize();
-
-        if (max_size > 0) {
-            max_size_for_pass = max_size;
-        }
         long size = mbean.getCommittedVirtualMemorySize();
         if (size == -1) {
             System.out.println("getCommittedVirtualMemorySize() is not supported");
@@ -88,11 +77,11 @@ public class GetCommittedVirtualMemorySize {
                                size);
         }
 
-        if (size < MIN_SIZE_FOR_PASS || size > max_size_for_pass) {
+        if (size < MIN_SIZE_FOR_PASS || size > MAX_SIZE_FOR_PASS) {
             throw new RuntimeException("Committed virtual memory size " +
                                        "illegal value: " + size + " bytes " +
                                        "(MIN = " + MIN_SIZE_FOR_PASS + "; " +
-                                       "MAX = " + max_size_for_pass + ")");
+                                       "MAX = " + MAX_SIZE_FOR_PASS + ")");
         }
 
         System.out.println("Test passed.");

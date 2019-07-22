@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2019, Oracle and/or its affiliates. All rights reserved.
  */
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
@@ -84,7 +84,7 @@ import org.xml.sax.XMLReader;
  * @author G. Todd Miller
  * @author Morten Jorgensen
  * @author Santiago Pericas-Geertsen
- * @LastModified: July 2018
+ * @LastModified: July 2019
  */
 public class TransformerFactoryImpl
     extends SAXTransformerFactory implements SourceLoader, ErrorListener
@@ -106,6 +106,9 @@ public class TransformerFactoryImpl
      * the Templates or Transformer objects that we create.
      */
     private ErrorListener _errorListener = this;
+
+    // flag indicating whether there's an user's ErrorListener
+    private boolean _hasUserErrListener;
 
     /**
      * This URIResolver is passed to all created Templates and Transformers
@@ -297,6 +300,7 @@ public class TransformerFactoryImpl
                                         "TransformerFactory");
             throw new IllegalArgumentException(err.toString());
         }
+        _hasUserErrListener = true;
         _errorListener = listener;
     }
 
@@ -946,7 +950,7 @@ public class TransformerFactoryImpl
         }
 
         // Create and initialize a stylesheet compiler
-        final XSLTC xsltc = new XSLTC(_xmlFeatures);
+        final XSLTC xsltc = new XSLTC(_xmlFeatures, _hasUserErrListener);
         if (_debug) xsltc.setDebug(true);
         if (_enableInlining)
                 xsltc.setTemplateInlining(true);
@@ -1104,7 +1108,7 @@ public class TransformerFactoryImpl
         // through the factory instance
         buildCatalogFeatures();
         final TemplatesHandlerImpl handler =
-            new TemplatesHandlerImpl(_indentNumber, this);
+            new TemplatesHandlerImpl(_indentNumber, this, _hasUserErrListener);
         if (_uriResolver != null) {
             handler.setURIResolver(_uriResolver);
         }

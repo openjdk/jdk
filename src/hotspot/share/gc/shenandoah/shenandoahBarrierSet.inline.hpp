@@ -25,6 +25,7 @@
 #define SHARE_GC_SHENANDOAH_SHENANDOAHBARRIERSET_INLINE_HPP
 
 #include "gc/shared/barrierSet.hpp"
+#include "gc/shenandoah/shenandoahAsserts.hpp"
 #include "gc/shenandoah/shenandoahBarrierSet.hpp"
 #include "gc/shenandoah/shenandoahForwarding.inline.hpp"
 #include "gc/shenandoah/shenandoahHeap.inline.hpp"
@@ -65,7 +66,7 @@ template <DecoratorSet decorators, typename BarrierSetT>
 template <typename T>
 inline oop ShenandoahBarrierSet::AccessBarrier<decorators, BarrierSetT>::oop_load_not_in_heap(T* addr) {
   oop value = Raw::oop_load_not_in_heap(addr);
-  value = ShenandoahBarrierSet::barrier_set()->load_reference_barrier(value);
+  value = ShenandoahBarrierSet::barrier_set()->oop_load_from_native_barrier(value);
   keep_alive_if_weak(decorators, value);
   return value;
 }
@@ -84,6 +85,13 @@ inline void ShenandoahBarrierSet::AccessBarrier<decorators, BarrierSetT>::oop_st
 template <DecoratorSet decorators, typename BarrierSetT>
 inline void ShenandoahBarrierSet::AccessBarrier<decorators, BarrierSetT>::oop_store_in_heap_at(oop base, ptrdiff_t offset, oop value) {
   oop_store_in_heap(AccessInternal::oop_field_addr<decorators>(base, offset), value);
+}
+
+template <DecoratorSet decorators, typename BarrierSetT>
+template <typename T>
+inline void ShenandoahBarrierSet::AccessBarrier<decorators, BarrierSetT>::oop_store_not_in_heap(T* addr, oop value) {
+  shenandoah_assert_marked_if(NULL, value, !CompressedOops::is_null(value) && ShenandoahHeap::heap()->is_evacuation_in_progress());
+  Raw::oop_store(addr, value);
 }
 
 template <DecoratorSet decorators, typename BarrierSetT>

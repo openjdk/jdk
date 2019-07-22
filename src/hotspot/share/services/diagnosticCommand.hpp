@@ -880,7 +880,7 @@ public:
     return "High: Switches the VM into Java debug mode.";
   }
   static const JavaPermission permission() {
-    JavaPermission p = { "java.lang.management.ManagementPermission", "monitor", NULL };
+    JavaPermission p = { "java.lang.management.ManagementPermission", "control", NULL };
     return p;
   }
   static int num_arguments() { return 0; }

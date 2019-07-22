@@ -31,6 +31,7 @@
 #include "gc/g1/g1Allocator.inline.hpp"
 #include "gc/g1/g1Arguments.hpp"
 #include "gc/g1/g1BarrierSet.hpp"
+#include "gc/g1/g1CardTableEntryClosure.hpp"
 #include "gc/g1/g1CollectedHeap.inline.hpp"
 #include "gc/g1/g1CollectionSet.hpp"
 #include "gc/g1/g1CollectorState.hpp"
@@ -49,6 +50,7 @@
 #include "gc/g1/g1OopClosures.inline.hpp"
 #include "gc/g1/g1ParScanThreadState.inline.hpp"
 #include "gc/g1/g1Policy.hpp"
+#include "gc/g1/g1RedirtyCardsQueue.hpp"
 #include "gc/g1/g1RegionToSpaceMapper.hpp"
 #include "gc/g1/g1RemSet.hpp"
 #include "gc/g1/g1RootClosures.hpp"
@@ -1078,7 +1080,9 @@ void G1CollectedHeap::abort_refinement() {
 
   // Discard all remembered set updates.
   G1BarrierSet::dirty_card_queue_set().abandon_logs();
-  assert(dirty_card_queue_set().completed_buffers_num() == 0, "DCQS should be empty");
+  assert(G1BarrierSet::dirty_card_queue_set().completed_buffers_num() == 0,
+         "DCQS should be empty");
+  redirty_cards_queue_set().verify_empty();
 }
 
 void G1CollectedHeap::verify_after_full_collection() {
@@ -1517,7 +1521,7 @@ G1CollectedHeap::G1CollectedHeap() :
   _collection_set(this, _policy),
   _hot_card_cache(NULL),
   _rem_set(NULL),
-  _dirty_card_queue_set(false),
+  _redirty_cards_queue_set(),
   _cm(NULL),
   _cm_thread(NULL),
   _cr(NULL),
@@ -1687,8 +1691,8 @@ jint G1CollectedHeap::initialize() {
                                                   &bs->dirty_card_queue_buffer_allocator(),
                                                   true); // init_free_ids
 
-  dirty_card_queue_set().initialize(DirtyCardQ_CBL_mon,
-                                    &bs->dirty_card_queue_buffer_allocator());
+  // Use same buffer allocator as dirty card qset, to allow merging.
+  _redirty_cards_queue_set.initialize(&bs->dirty_card_queue_buffer_allocator());
 
   // Create the hot card cache.
   _hot_card_cache = new G1HotCardCache(this);
@@ -3213,18 +3217,43 @@ void G1CollectedHeap::string_dedup_cleaning(BoolObjectClosure* is_alive,
 
 class G1RedirtyLoggedCardsTask : public AbstractGangTask {
  private:
-  G1DirtyCardQueueSet* _queue;
+  G1RedirtyCardsQueueSet* _qset;
   G1CollectedHeap* _g1h;
+  BufferNode* volatile _nodes;
+
+  void apply(G1CardTableEntryClosure* cl, BufferNode* node, uint worker_id) {
+    void** buf = BufferNode::make_buffer_from_node(node);
+    size_t limit = _qset->buffer_size();
+    for (size_t i = node->index(); i < limit; ++i) {
+      CardTable::CardValue* card_ptr = static_cast<CardTable::CardValue*>(buf[i]);
+      bool result = cl->do_card_ptr(card_ptr, worker_id);
+      assert(result, "Closure should always return true");
+    }
+  }
+
+  void par_apply(G1CardTableEntryClosure* cl, uint worker_id) {
+    BufferNode* next = Atomic::load(&_nodes);
+    while (next != NULL) {
+      BufferNode* node = next;
+      next = Atomic::cmpxchg(node->next(), &_nodes, node);
+      if (next == node) {
+        apply(cl, node, worker_id);
+        next = node->next();
+      }
+    }
+  }
+
  public:
-  G1RedirtyLoggedCardsTask(G1DirtyCardQueueSet* queue, G1CollectedHeap* g1h) : AbstractGangTask("Redirty Cards"),
-    _queue(queue), _g1h(g1h) { }
+  G1RedirtyLoggedCardsTask(G1RedirtyCardsQueueSet* qset, G1CollectedHeap* g1h) :
+    AbstractGangTask("Redirty Cards"),
+    _qset(qset), _g1h(g1h), _nodes(qset->all_completed_buffers()) { }
 
   virtual void work(uint worker_id) {
     G1GCPhaseTimes* p = _g1h->phase_times();
     G1GCParPhaseTimesTracker x(p, G1GCPhaseTimes::RedirtyCards, worker_id);
 
     RedirtyLoggedCardTableEntryClosure cl(_g1h);
-    _queue->par_apply_closure_to_all_completed_buffers(&cl);
+    par_apply(&cl, worker_id);
 
     p->record_thread_work_item(G1GCPhaseTimes::RedirtyCards, worker_id, cl.num_dirtied());
   }
@@ -3233,13 +3262,12 @@ class G1RedirtyLoggedCardsTask : public AbstractGangTask {
 void G1CollectedHeap::redirty_logged_cards() {
   double redirty_logged_cards_start = os::elapsedTime();
 
-  G1RedirtyLoggedCardsTask redirty_task(&dirty_card_queue_set(), this);
-  dirty_card_queue_set().reset_for_par_iteration();
+  G1RedirtyLoggedCardsTask redirty_task(&redirty_cards_queue_set(), this);
   workers()->run_task(&redirty_task);
 
   G1DirtyCardQueueSet& dcq = G1BarrierSet::dirty_card_queue_set();
-  dcq.merge_bufferlists(&dirty_card_queue_set());
-  assert(dirty_card_queue_set().completed_buffers_num() == 0, "All should be consumed");
+  dcq.merge_bufferlists(&redirty_cards_queue_set());
+  redirty_cards_queue_set().verify_empty();
 
   phase_times()->record_redirty_logged_cards_time_ms((os::elapsedTime() - redirty_logged_cards_start) * 1000.0);
 }
@@ -3571,7 +3599,7 @@ void G1CollectedHeap::pre_evacuate_collection_set(G1EvacuationInfo& evacuation_i
   // Should G1EvacuationFailureALot be in effect for this GC?
   NOT_PRODUCT(set_evacuation_failure_alot_for_current_gc();)
 
-  assert(dirty_card_queue_set().completed_buffers_num() == 0, "Should be empty");
+  redirty_cards_queue_set().verify_empty();
 }
 
 class G1EvacuateRegionsBaseTask : public AbstractGangTask {
@@ -3683,7 +3711,7 @@ void G1CollectedHeap::evacuate_initial_collection_set(G1ParScanThreadStateSet* p
 
   {
     Ticks start = Ticks::now();
-    rem_set()->merge_heap_roots(false /* remset_only */, G1GCPhaseTimes::MergeRS);
+    rem_set()->merge_heap_roots(true /* initial_evacuation */);
     p->record_merge_heap_roots_time((Ticks::now() - start).seconds() * 1000.0);
   }
 
@@ -3759,7 +3787,7 @@ void G1CollectedHeap::evacuate_optional_collection_set(G1ParScanThreadStateSet* 
 
     {
       Ticks start = Ticks::now();
-      rem_set()->merge_heap_roots(true /* remset_only */, G1GCPhaseTimes::OptMergeRS);
+      rem_set()->merge_heap_roots(false /* initial_evacuation */);
       phase_times()->record_or_add_optional_merge_heap_roots_time((Ticks::now() - start).seconds() * 1000.0);
     }
 
