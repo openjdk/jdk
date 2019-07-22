@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2004, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2004, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -56,6 +56,7 @@ public class Main {
         if (c.get() == null) throw new AssertionError();
         System.gc();
         System.gc();
+        Reference.reachabilityFence(loader);
         loader = null;
 
         // Might require multiple calls to System.gc() for weak-references
