@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,49 +29,29 @@ import jdk.test.lib.JDKToolLauncher;
 
 /*
  * @test
- * @summary Unit test for jstack utility
+ * @bug 8222491
+ * @summary Tests if we handle the encoding of jcmd output correctly.
  * @library /test/lib
- * @run main BasicJStackTest
+ * @run main JcmdOutputEncodingTest
  */
-public class BasicJStackTest {
-
-    private static ProcessBuilder processBuilder = new ProcessBuilder();
-    private static String markerName = "markerName" + "\u00e4\u0bb5".repeat(10_000);
+public class JcmdOutputEncodingTest {
 
     public static void main(String[] args) throws Exception {
-        testJstackNoArgs();
-        testJstack_l();
+        testThreadDump();
     }
 
-    private static void testJstackNoArgs() throws Exception {
-        OutputAnalyzer output = jstack();
-        output.shouldHaveExitValue(0);
-        output.shouldContain(markerName);
-    }
-
-    private static void testJstack_l() throws Exception {
-        OutputAnalyzer output = jstack("-l");
-        output.shouldHaveExitValue(0);
-        output.shouldContain(markerName);
-    }
-
-    private static OutputAnalyzer jstack(String... toolArgs) throws Exception {
+    private static void testThreadDump() throws Exception {
+        String markerName = "markerName" + "\u00e4\u0bb5".repeat(10_000);
         Thread.currentThread().setName(markerName);
-        JDKToolLauncher launcher = JDKToolLauncher.createUsingTestJDK("jstack");
-        launcher.addVMArg("-XX:+UsePerfData");
-        if (toolArgs != null) {
-            for (String toolArg : toolArgs) {
-                launcher.addToolArg(toolArg);
-            }
-        }
+
+        JDKToolLauncher launcher = JDKToolLauncher.createUsingTestJDK("jcmd");
         launcher.addToolArg(Long.toString(ProcessTools.getProcessId()));
+        launcher.addToolArg("Thread.print");
 
+        ProcessBuilder processBuilder = new ProcessBuilder();
         processBuilder.command(launcher.getCommand());
-        System.out.println(Arrays.toString(processBuilder.command().toArray()).replace(",", ""));
         OutputAnalyzer output = ProcessTools.executeProcess(processBuilder);
-        System.out.println(output.getOutput());
-
-        return output;
+        output.shouldHaveExitValue(0);
+        output.shouldContain(markerName);
     }
-
 }
