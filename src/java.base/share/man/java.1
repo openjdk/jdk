@@ -1868,17 +1868,21 @@ By default, this option is enabled.
 .TP
 .B \f[CB]\-XX:\-UseCompressedOops\f[R]
 Disables the use of compressed pointers.
-By default, this option is enabled, and compressed pointers are used
-when Java heap sizes are less than 32 GB.
-When this option is enabled, object references are represented as
-32\-bit offsets instead of 64\-bit pointers, which typically increases
-performance when running the application with Java heap sizes of less
-than 32 GB.
-This option works only for 64\-bit JVMs.
+By default, this option is enabled, and compressed pointers are used.
+This will automatically limit the maximum ergonomically determined Java
+heap size to the maximum amount of memory that can be covered by
+compressed pointers.
+By default this range is 32 GB.
 .RS
 .PP
-It\[aq]s also possible to use compressed pointers when Java heap sizes
-are greater than 32 GB.
+With compressed oops enabled, object references are represented as
+32\-bit offsets instead of 64\-bit pointers, which typically increases
+performance when running the application with Java heap sizes smaller
+than the compressed oops pointer range.
+This option works only for 64\-bit JVMs.
+.PP
+It\[aq]s possible to use compressed pointers with Java heap sizes
+greater than 32 GB.
 See the \f[CB]\-XX:ObjectAlignmentInBytes\f[R] option.
 .RE
 .TP
@@ -3213,6 +3217,22 @@ The size of the heap for the young generation can be set using the
 \f[CB]\-XX:NewSize\f[R] option.
 .RE
 .TP
+.B \f[CB]\-XX:InitialRAMPercentage=\f[R]\f[I]percent\f[R]
+Sets the initial amount of memory that the JVM will use for the Java
+heap before applying ergonomics heuristics as a percentage of the
+maximum amount determined as described in the \f[CB]\-XX:MaxRAM\f[R]
+option.
+The default value is 1.5625 percent.
+.RS
+.PP
+The following example shows how to set the percentage of the initial
+amount of memory used for the Java heap:
+.RS
+.PP
+\f[CB]\-XX:InitialRAMPercentage=5\f[R]
+.RE
+.RE
+.TP
 .B \f[CB]\-XX:InitialSurvivorRatio=\f[R]\f[I]ratio\f[R]
 Sets the initial survivor space ratio used by the throughput garbage
 collector (which is enabled by the \f[CB]\-XX:+UseParallelGC\f[R] and/or
@@ -3369,6 +3389,72 @@ Sets the maximum size (in bytes) of the heap for the young generation
 (nursery).
 The default value is set ergonomically.
 .RS
+.RE
+.TP
+.B \f[CB]\-XX:MaxRAM=\f[R]\f[I]size\f[R]
+Sets the maximum amount of memory that the JVM may use for the Java heap
+before applying ergonomics heuristics.
+The default value is the maximum amount of available memory to the JVM
+process or 128 GB, whichever is lower.
+.RS
+.PP
+The maximum amount of available memory to the JVM process is the minimum
+of the machine\[aq]s physical memory and any constraints set by the
+environment (e.g.
+container).
+.PP
+Specifying this option disables automatic use of compressed oops if the
+combined result of this and other options influencing the maximum amount
+of memory is larger than the range of memory addressable by compressed
+oops.
+See \f[CB]\-XX:UseCompressedOops\f[R] for further information about
+compressed oops.
+.PP
+The following example shows how to set the maximum amount of available
+memory for sizing the Java heap to 2 GB:
+.RS
+.PP
+\f[CB]\-XX:MaxRAM=2G\f[R]
+.RE
+.RE
+.TP
+.B \f[CB]\-XX:MaxRAMPercentage=\f[R]\f[I]percent\f[R]
+Sets the maximum amount of memory that the JVM may use for the Java heap
+before applying ergonomics heuristics as a percentage of the maximum
+amount determined as described in the \f[CB]\-XX:MaxRAM\f[R] option.
+The default value is 25 percent.
+.RS
+.PP
+Specifying this option disables automatic use of compressed oops if the
+combined result of this and other options influencing the maximum amount
+of memory is larger than the range of memory addressable by compressed
+oops.
+See \f[CB]\-XX:UseCompressedOops\f[R] for further information about
+compressed oops.
+.PP
+The following example shows how to set the percentage of the maximum
+amount of memory used for the Java heap:
+.RS
+.PP
+\f[CB]\-XX:MaxRAMPercentage=75\f[R]
+.RE
+.RE
+.TP
+.B \f[CB]\-XX:MinRAMPercentage=\f[R]\f[I]percent\f[R]
+Sets the maximum amount of memory that the JVM may use for the Java heap
+before applying ergonomics heuristics as a percentage of the maximum
+amount determined as described in the \f[CB]\-XX:MaxRAM\f[R] option for
+small heaps.
+A small heap is a heap of approximately 125 MB.
+The default value is 50 percent.
+.RS
+.PP
+The following example shows how to set the percentage of the maximum
+amount of memory used for the Java heap for small heaps:
+.RS
+.PP
+\f[CB]\-XX:MinRAMPercentage=75\f[R]
+.RE
 .RE
 .TP
 .B \f[CB]\-XX:MaxTenuringThreshold=\f[R]\f[I]threshold\f[R]
@@ -3800,6 +3886,45 @@ Enables the use of Java Flight Recorder (JFR) during the runtime of the
 application.
 Since JDK 8u40 this option has not been required to use JFR.
 .RS
+.RE
+.TP
+.B \f[CB]\-XX:InitialRAMFraction=\f[R]\f[I]ratio\f[R]
+Sets the initial amount of memory that the JVM may use for the Java heap
+before applying ergonomics heuristics as a ratio of the maximum amount
+determined as described in the \f[CB]\-XX:MaxRAM\f[R] option.
+The default value is 64.
+.RS
+.PP
+Use the option \f[CB]\-XX:InitialRAMPercentage\f[R] instead.
+.RE
+.TP
+.B \f[CB]\-XX:MaxRAMFraction=\f[R]\f[I]ratio\f[R]
+Sets the maximum amount of memory that the JVM may use for the Java heap
+before applying ergonomics heuristics as a fraction of the maximum
+amount determined as described in the \f[CB]\-XX:MaxRAM\f[R] option.
+The default value is 4.
+.RS
+.PP
+Specifying this option disables automatic use of compressed oops if the
+combined result of this and other options influencing the maximum amount
+of memory is larger than the range of memory addressable by compressed
+oops.
+See \f[CB]\-XX:UseCompressedOops\f[R] for further information about
+compressed oops.
+.PP
+Use the option \f[CB]\-XX:MaxRAMPercentage\f[R] instead.
+.RE
+.TP
+.B \f[CB]\-XX:MinRAMFraction=\f[R]\f[I]ratio\f[R]
+Sets the maximum amount of memory that the JVM may use for the Java heap
+before applying ergonomics heuristics as a fraction of the maximum
+amount determined as described in the \f[CB]\-XX:MaxRAM\f[R] option for
+small heaps.
+A small heap is a heap of approximately 125 MB.
+The default value is 2.
+.RS
+.PP
+Use the option \f[CB]\-XX:MinRAMPercentage\f[R] instead.
 .RE
 .TP
 .B \f[CB]\-XX:+TraceClassLoading\f[R]
