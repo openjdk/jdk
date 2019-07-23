@@ -173,11 +173,8 @@ void MemAllocator::Allocation::check_for_valid_allocation_state() const {
   assert(!_thread->has_pending_exception(),
          "shouldn't be allocating with pending exception");
   if (StrictSafepointChecks) {
-    assert(_thread->allow_allocation(),
-           "Allocation done by thread for which allocation is blocked "
-           "by No_Allocation_Verifier!");
     // Allocation of an oop can always invoke a safepoint,
-    // hence, the true argument
+    // hence, the true argument.
     _thread->check_for_valid_safepoint_state(true);
   }
 }
