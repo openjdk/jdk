@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -671,26 +671,18 @@ public final class JarSigner {
             throw new AssertionError(asae);
         }
 
-        PrintStream ps = new PrintStream(os);
-        ZipOutputStream zos = new ZipOutputStream(ps);
+        ZipOutputStream zos = new ZipOutputStream(os);
 
         Manifest manifest = new Manifest();
-        Map<String, Attributes> mfEntries = manifest.getEntries();
-
-        // The Attributes of manifest before updating
-        Attributes oldAttr = null;
-
-        boolean mfModified = false;
-        boolean mfCreated = false;
         byte[] mfRawBytes = null;
 
         // Check if manifest exists
-        ZipEntry mfFile;
-        if ((mfFile = getManifestFile(zipFile)) != null) {
+        ZipEntry mfFile = getManifestFile(zipFile);
+        boolean mfCreated = mfFile == null;
+        if (!mfCreated) {
             // Manifest exists. Read its raw bytes.
             mfRawBytes = zipFile.getInputStream(mfFile).readAllBytes();
             manifest.read(new ByteArrayInputStream(mfRawBytes));
-            oldAttr = (Attributes) (manifest.getMainAttributes().clone());
         } else {
             // Create new manifest
             Attributes mattr = manifest.getMainAttributes();
@@ -701,7 +693,6 @@ public final class JarSigner {
             mattr.putValue("Created-By", jdkVersion + " (" + javaVendor
                     + ")");
             mfFile = new ZipEntry(JarFile.MANIFEST_NAME);
-            mfCreated = true;
         }
 
         /*
@@ -728,8 +719,12 @@ public final class JarSigner {
                 // out first
                 mfFiles.addElement(ze);
 
-                if (SignatureFileVerifier.isBlockOrSF(
-                        ze.getName().toUpperCase(Locale.ENGLISH))) {
+                String zeNameUp = ze.getName().toUpperCase(Locale.ENGLISH);
+                if (SignatureFileVerifier.isBlockOrSF(zeNameUp)
+                    // no need to preserve binary manifest portions
+                    // if the only existing signature will be replaced
+                        && !zeNameUp.startsWith(SignatureFile
+                            .getBaseSignatureFilesName(signerName))) {
                     wasSigned = true;
                 }
 
@@ -742,55 +737,69 @@ public final class JarSigner {
             if (manifest.getAttributes(ze.getName()) != null) {
                 // jar entry is contained in manifest, check and
                 // possibly update its digest attributes
-                if (updateDigests(ze, zipFile, digests,
-                        manifest)) {
-                    mfModified = true;
-                }
+                updateDigests(ze, zipFile, digests, manifest);
             } else if (!ze.isDirectory()) {
                 // Add entry to manifest
                 Attributes attrs = getDigestAttributes(ze, zipFile, digests);
-                mfEntries.put(ze.getName(), attrs);
-                mfModified = true;
+                manifest.getEntries().put(ze.getName(), attrs);
             }
         }
 
-        // Recalculate the manifest raw bytes if necessary
-        if (mfModified) {
-            ByteArrayOutputStream baos = new ByteArrayOutputStream();
+        /*
+         * Note:
+         *
+         * The Attributes object is based on HashMap and can handle
+         * continuation lines. Therefore, even if the contents are not changed
+         * (in a Map view), the bytes that it write() may be different from
+         * the original bytes that it read() from. Since the signature is
+         * based on raw bytes, we must retain the exact bytes.
+         */
+        boolean mfModified;
+        ByteArrayOutputStream baos = new ByteArrayOutputStream();
+        if (mfCreated || !wasSigned) {
+            mfModified = true;
             manifest.write(baos);
-            if (wasSigned) {
-                byte[] newBytes = baos.toByteArray();
-                if (mfRawBytes != null
-                        && oldAttr.equals(manifest.getMainAttributes())) {
+            mfRawBytes = baos.toByteArray();
+        } else {
 
-                    /*
-                     * Note:
-                     *
-                     * The Attributes object is based on HashMap and can handle
-                     * continuation columns. Therefore, even if the contents are
-                     * not changed (in a Map view), the bytes that it write()
-                     * may be different from the original bytes that it read()
-                     * from. Since the signature on the main attributes is based
-                     * on raw bytes, we must retain the exact bytes.
-                     */
+            // the manifest before updating
+            Manifest oldManifest = new Manifest(
+                    new ByteArrayInputStream(mfRawBytes));
+            mfModified = !oldManifest.equals(manifest);
+            if (!mfModified) {
+                // leave whole manifest (mfRawBytes) unmodified
+            } else {
+                // reproduce the manifest raw bytes for unmodified sections
+                manifest.write(baos);
+                byte[] mfNewRawBytes = baos.toByteArray();
+                baos.reset();
 
-                    int newPos = findHeaderEnd(newBytes);
-                    int oldPos = findHeaderEnd(mfRawBytes);
+                ManifestDigester oldMd = new ManifestDigester(mfRawBytes);
+                ManifestDigester newMd = new ManifestDigester(mfNewRawBytes);
 
-                    if (newPos == oldPos) {
-                        System.arraycopy(mfRawBytes, 0, newBytes, 0, oldPos);
+                // main attributes
+                if (manifest.getMainAttributes().equals(
+                        oldManifest.getMainAttributes())
+                        && (manifest.getEntries().isEmpty() ||
+                            oldMd.getMainAttsEntry().isProperlyDelimited())) {
+                    oldMd.getMainAttsEntry().reproduceRaw(baos);
+                } else {
+                    newMd.getMainAttsEntry().reproduceRaw(baos);
+                }
+
+                // individual sections
+                for (Map.Entry<String,Attributes> entry :
+                        manifest.getEntries().entrySet()) {
+                    String sectionName = entry.getKey();
+                    Attributes entryAtts = entry.getValue();
+                    if (entryAtts.equals(oldManifest.getAttributes(sectionName))
+                            && oldMd.get(sectionName).isProperlyDelimited()) {
+                        oldMd.get(sectionName).reproduceRaw(baos);
                     } else {
-                        // cat oldHead newTail > newBytes
-                        byte[] lastBytes = new byte[oldPos +
-                                newBytes.length - newPos];
-                        System.arraycopy(mfRawBytes, 0, lastBytes, 0, oldPos);
-                        System.arraycopy(newBytes, newPos, lastBytes, oldPos,
-                                newBytes.length - newPos);
-                        newBytes = lastBytes;
+                        newMd.get(sectionName).reproduceRaw(baos);
                     }
                 }
-                mfRawBytes = newBytes;
-            } else {
+
                 mfRawBytes = baos.toByteArray();
             }
         }
@@ -801,13 +810,12 @@ public final class JarSigner {
             mfFile = new ZipEntry(JarFile.MANIFEST_NAME);
         }
         if (handler != null) {
-            if (mfCreated) {
+            if (mfCreated || !mfModified) {
                 handler.accept("adding", mfFile.getName());
-            } else if (mfModified) {
+            } else {
                 handler.accept("updating", mfFile.getName());
             }
         }
-
         zos.putNextEntry(mfFile);
         zos.write(mfRawBytes);
 
@@ -826,9 +834,8 @@ public final class JarSigner {
         }
         signer.initSign(privateKey);
 
-        ByteArrayOutputStream baos = new ByteArrayOutputStream();
+        baos.reset();
         sf.write(baos);
-
         byte[] content = baos.toByteArray();
 
         signer.update(content);
@@ -889,6 +896,14 @@ public final class JarSigner {
             if (!ze.getName().equalsIgnoreCase(JarFile.MANIFEST_NAME)
                     && !ze.getName().equalsIgnoreCase(sfFilename)
                     && !ze.getName().equalsIgnoreCase(bkFilename)) {
+                if (ze.getName().startsWith(SignatureFile
+                        .getBaseSignatureFilesName(signerName))
+                        && SignatureFileVerifier.isBlockOrSF(ze.getName())) {
+                    if (handler != null) {
+                        handler.accept("updating", ze.getName());
+                    }
+                    continue;
+                }
                 if (handler != null) {
                     if (manifest.getAttributes(ze.getName()) != null) {
                         handler.accept("signing", ze.getName());
@@ -942,11 +957,9 @@ public final class JarSigner {
         }
     }
 
-    private boolean updateDigests(ZipEntry ze, ZipFile zf,
+    private void updateDigests(ZipEntry ze, ZipFile zf,
                                   MessageDigest[] digests,
                                   Manifest mf) throws IOException {
-        boolean update = false;
-
         Attributes attrs = mf.getAttributes(ze.getName());
         String[] base64Digests = getDigests(ze, zf, digests);
 
@@ -976,19 +989,9 @@ public final class JarSigner {
 
             if (name == null) {
                 name = digests[i].getAlgorithm() + "-Digest";
-                attrs.putValue(name, base64Digests[i]);
-                update = true;
-            } else {
-                // compare digests, and replace the one in the manifest
-                // if they are different
-                String mfDigest = attrs.getValue(name);
-                if (!mfDigest.equalsIgnoreCase(base64Digests[i])) {
-                    attrs.putValue(name, base64Digests[i]);
-                    update = true;
-                }
             }
+            attrs.putValue(name, base64Digests[i]);
         }
-        return update;
     }
 
     private Attributes getDigestAttributes(
@@ -1049,30 +1052,6 @@ public final class JarSigner {
                     .encodeToString(digests[i].digest());
         }
         return base64Digests;
-    }
-
-    @SuppressWarnings("fallthrough")
-    private int findHeaderEnd(byte[] bs) {
-        // Initial state true to deal with empty header
-        boolean newline = true;     // just met a newline
-        int len = bs.length;
-        for (int i = 0; i < len; i++) {
-            switch (bs[i]) {
-                case '\r':
-                    if (i < len - 1 && bs[i + 1] == '\n') i++;
-                    // fallthrough
-                case '\n':
-                    if (newline) return i + 1;    //+1 to get length
-                    newline = true;
-                    break;
-                default:
-                    newline = false;
-            }
-        }
-        // If header end is not found, it means the MANIFEST.MF has only
-        // the main attributes section and it does not end with 2 newlines.
-        // Returns the whole length so that it can be completely replaced.
-        return len;
     }
 
     /*
@@ -1145,14 +1124,12 @@ public final class JarSigner {
             }
 
             // create digest of the manifest main attributes
-            ManifestDigester.Entry mde =
-                    md.get(ManifestDigester.MF_MAIN_ATTRS, false);
+            ManifestDigester.Entry mde = md.getMainAttsEntry(false);
             if (mde != null) {
-                for (MessageDigest digest: digests) {
-                    mattr.putValue(digest.getAlgorithm() +
-                                    "-Digest-" + ManifestDigester.MF_MAIN_ATTRS,
-                            Base64.getEncoder().encodeToString(
-                                    mde.digest(digest)));
+                for (MessageDigest digest : digests) {
+                    mattr.putValue(digest.getAlgorithm() + "-Digest-" +
+                            ManifestDigester.MF_MAIN_ATTRS,
+                            Base64.getEncoder().encodeToString(mde.digest(digest)));
                 }
             } else {
                 throw new IllegalStateException
@@ -1181,15 +1158,19 @@ public final class JarSigner {
             sf.write(out);
         }
 
+        private static String getBaseSignatureFilesName(String baseName) {
+            return "META-INF/" + baseName + ".";
+        }
+
         // get .SF file name
         public String getMetaName() {
-            return "META-INF/" + baseName + ".SF";
+            return getBaseSignatureFilesName(baseName) + "SF";
         }
 
         // get .DSA (or .DSA, .EC) file name
         public String getBlockName(PrivateKey privateKey) {
             String keyAlgorithm = privateKey.getAlgorithm();
-            return "META-INF/" + baseName + "." + keyAlgorithm;
+            return getBaseSignatureFilesName(baseName) + keyAlgorithm;
         }
 
         // Generates the PKCS#7 content of block file

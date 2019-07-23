@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -76,7 +76,7 @@ public class KrbCred {
         options.set(KDCOptions.FORWARDABLE, true);
 
         KrbTgsReq tgsReq = new KrbTgsReq(options, tgt, tgService,
-                null, null, null, null,
+                null, null, null, null, null,
                 null,   // No easy way to get addresses right
                 null, null, null);
         credMessg = createMessage(tgsReq.sendAndGetCreds(), key);
@@ -152,7 +152,7 @@ public class KrbCred {
                                + " endtime=" + endtime
                                + "renewTill=" + renewTill);
         }
-        creds = new Credentials(ticket, pname, sname, credInfoKey,
+        creds = new Credentials(ticket, pname, null, sname, null, credInfoKey,
                                 flags, authtime, starttime, endtime, renewTill, caddr);
     }
 

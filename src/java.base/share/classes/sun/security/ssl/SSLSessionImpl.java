@@ -27,6 +27,7 @@ package sun.security.ssl;
 import sun.security.x509.X509CertImpl;
 
 import java.io.IOException;
+import java.lang.reflect.Array;
 import java.math.BigInteger;
 import java.net.InetAddress;
 import java.nio.ByteBuffer;
@@ -35,6 +36,7 @@ import java.security.PrivateKey;
 import java.security.cert.CertificateEncodingException;
 import java.security.cert.X509Certificate;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Queue;
 import java.util.Collection;
 import java.util.Collections;
@@ -104,7 +106,7 @@ final class SSLSessionImpl extends ExtendedSSLSession {
     private X509Certificate[]   localCerts;
     private PrivateKey          localPrivateKey;
     private final Collection<SignatureScheme>     localSupportedSignAlgs;
-    private String[]            peerSupportedSignAlgs;      // for certificate
+    private Collection<SignatureScheme> peerSupportedSignAlgs; //for certificate
     private boolean             useDefaultPeerSignAlgs = false;
     private List<byte[]>        statusResponses;
     private SecretKey           resumptionMasterSecret;
@@ -236,7 +238,8 @@ final class SSLSessionImpl extends ExtendedSSLSession {
                 baseSession.localSupportedSignAlgs == null ?
                 Collections.emptySet() : baseSession.localSupportedSignAlgs;
         this.peerSupportedSignAlgs =
-                baseSession.getPeerSupportedSignatureAlgorithms();
+                baseSession.peerSupportedSignAlgs == null ?
+                Collections.emptySet() : baseSession.peerSupportedSignAlgs;
         this.serverNameIndication = baseSession.serverNameIndication;
         this.requestedServerNames = baseSession.getRequestedServerNames();
         this.masterSecret = baseSession.getMasterSecret();
@@ -261,8 +264,10 @@ final class SSLSessionImpl extends ExtendedSSLSession {
     /**
      * < 2 bytes > protocolVersion
      * < 2 bytes > cipherSuite
-     * < 2 bytes > localSupportedSignAlgs entries
+     * < 1 byte > localSupportedSignAlgs entries
      *   < 2 bytes per entries > localSupportedSignAlgs
+     * < 1 bytes > peerSupportedSignAlgs entries
+     *   < 2 bytes per entries > peerSupportedSignAlgs
      * < 2 bytes > preSharedKey length
      * < length in bytes > preSharedKey
      * < 1 byte > pskIdentity length
@@ -281,6 +286,9 @@ final class SSLSessionImpl extends ExtendedSSLSession {
      *   < 1 byte > ServerName length
      *   < length in bytes > ServerName
      * < 4 bytes > creationTime
+     * < 2 byte > status response length
+     *   < 2 byte > status response entry length
+     *   < length in byte > status response entry
      * < 1 byte > Length of peer host
      *   < length in bytes > peer host
      * < 2 bytes> peer port
@@ -302,17 +310,17 @@ final class SSLSessionImpl extends ExtendedSSLSession {
      *       < length in bytes> PSK identity
      *   Anonymous
      *     < 1 byte >
+     * < 4 bytes > maximumPacketSize
+     * < 4 bytes > negotiatedMaxFragSize
     */
 
     SSLSessionImpl(HandshakeContext hc, ByteBuffer buf) throws IOException {
         int i = 0;
         byte[] b;
 
-        this.localSupportedSignAlgs = new ArrayList<>();
-
-        boundValues = null;
-
-        this.protocolVersion = ProtocolVersion.valueOf(Short.toUnsignedInt(buf.getShort()));
+        boundValues = new ConcurrentHashMap<>();
+        this.protocolVersion =
+                ProtocolVersion.valueOf(Short.toUnsignedInt(buf.getShort()));
 
         if (protocolVersion.useTLS13PlusSpec()) {
             this.sessionId = new SessionId(false, null);
@@ -322,14 +330,26 @@ final class SSLSessionImpl extends ExtendedSSLSession {
                     hc.sslContext.getSecureRandom());
         }
 
-        this.cipherSuite = CipherSuite.valueOf(Short.toUnsignedInt(buf.getShort()));
+        this.cipherSuite =
+                CipherSuite.valueOf(Short.toUnsignedInt(buf.getShort()));
 
         // Local Supported signature algorithms
-        i = Short.toUnsignedInt(buf.getShort());
+        ArrayList<SignatureScheme> list = new ArrayList<>();
+        i = Byte.toUnsignedInt(buf.get());
         while (i-- > 0) {
-            this.localSupportedSignAlgs.add(SignatureScheme.valueOf(
+            list.add(SignatureScheme.valueOf(
                     Short.toUnsignedInt(buf.getShort())));
         }
+        this.localSupportedSignAlgs = Collections.unmodifiableCollection(list);
+
+        // Peer Supported signature algorithms
+        i = Byte.toUnsignedInt(buf.get());
+        list.clear();
+        while (i-- > 0) {
+            list.add(SignatureScheme.valueOf(
+                    Short.toUnsignedInt(buf.getShort())));
+        }
+        this.peerSupportedSignAlgs = Collections.unmodifiableCollection(list);
 
         // PSK
         i = Short.toUnsignedInt(buf.getShort());
@@ -410,8 +430,26 @@ final class SSLSessionImpl extends ExtendedSSLSession {
             }
         }
 
+        maximumPacketSize = buf.getInt();
+        negotiatedMaxFragLen = buf.getInt();
+
         // Get creation time
         this.creationTime = buf.getLong();
+
+        // Get Buffer sizes
+
+        // Status Response
+        len = Short.toUnsignedInt(buf.getShort());
+        if (len == 0) {
+            statusResponses = Collections.emptyList();
+        } else {
+            statusResponses = new ArrayList<>();
+        }
+        while (len-- > 0) {
+            b = new byte[Short.toUnsignedInt(buf.getShort())];
+            buf.get(b);
+            statusResponses.add(b);
+        }
 
         // Get Peer host & port
         i = Byte.toUnsignedInt(buf.get());
@@ -484,6 +522,33 @@ final class SSLSessionImpl extends ExtendedSSLSession {
 
         context = (SSLSessionContextImpl)
                 hc.sslContext.engineGetServerSessionContext();
+        this.lastUsedTime = System.currentTimeMillis();
+    }
+
+    // Some situations we cannot provide a stateless ticket, but after it
+    // has been negotiated
+    boolean isStatelessable(HandshakeContext hc) {
+        if (!hc.statelessResumption) {
+            return false;
+        }
+
+        // If there is no getMasterSecret with TLS1.2 or under, do not resume.
+        if (!protocolVersion.useTLS13PlusSpec() &&
+                getMasterSecret().getEncoded() == null) {
+            if (SSLLogger.isOn && SSLLogger.isOn("ssl,handshake")) {
+                SSLLogger.finest("No MasterSecret, cannot make stateless" +
+                        " ticket");
+            }
+            return false;
+        }
+        if (boundValues != null && boundValues.size() > 0) {
+            if (SSLLogger.isOn && SSLLogger.isOn("ssl,handshake")) {
+                SSLLogger.finest("There are boundValues, cannot make" +
+                        " stateless ticket");
+            }
+            return false;
+        }
+        return true;
     }
 
     /**
@@ -497,11 +562,14 @@ final class SSLSessionImpl extends ExtendedSSLSession {
         hos.putInt16(cipherSuite.id);
 
         // Local Supported signature algorithms
-        int l = localSupportedSignAlgs.size();
-        hos.putInt16(l);
-        SignatureScheme[] sig = new SignatureScheme[l];
-        localSupportedSignAlgs.toArray(sig);
-        for (SignatureScheme s : sig) {
+        hos.putInt8(localSupportedSignAlgs.size());
+        for (SignatureScheme s : localSupportedSignAlgs) {
+            hos.putInt16(s.id);
+        }
+
+        // Peer Supported signature algorithms
+        hos.putInt8(peerSupportedSignAlgs.size());
+        for (SignatureScheme s : peerSupportedSignAlgs) {
             hos.putInt16(s.id);
         }
 
@@ -564,15 +632,29 @@ final class SSLSessionImpl extends ExtendedSSLSession {
         // List of SNIServerName
         hos.putInt16(requestedServerNames.size());
         if (requestedServerNames.size() > 0) {
-            for (SNIServerName host: requestedServerNames) {
+            for (SNIServerName host : requestedServerNames) {
                 b = host.getEncoded();
                 hos.putInt8(b.length);
                 hos.write(b, 0, b.length);
             }
         }
 
+        // Buffer sizes
+        hos.putInt32(maximumPacketSize);
+        hos.putInt32(negotiatedMaxFragLen);
+
+        // creation time
         ByteBuffer buffer = ByteBuffer.allocate(Long.BYTES);
         hos.writeBytes(buffer.putLong(creationTime).array());
+
+        // Status Responses
+        List<byte[]> list = getStatusResponses();
+        int l = list.size();
+        hos.putInt16(l);
+        for (byte[] e : list) {
+            hos.putInt16(e.length);
+            hos.write(e);
+        }
 
         // peer Host & Port
         if (host == null || host.length() == 0) {
@@ -649,8 +731,12 @@ final class SSLSessionImpl extends ExtendedSSLSession {
 
     BigInteger incrTicketNonceCounter() {
         BigInteger result = ticketNonceCounter;
-        ticketNonceCounter = ticketNonceCounter.add(BigInteger.valueOf(1));
+        ticketNonceCounter = ticketNonceCounter.add(BigInteger.ONE);
         return result;
+    }
+
+    boolean isPSKable() {
+        return (ticketNonceCounter.compareTo(BigInteger.ZERO) > 0);
     }
 
     /**
@@ -725,8 +811,7 @@ final class SSLSessionImpl extends ExtendedSSLSession {
 
     void setPeerSupportedSignatureAlgorithms(
             Collection<SignatureScheme> signatureSchemes) {
-        peerSupportedSignAlgs =
-            SignatureScheme.getAlgorithmNames(signatureSchemes);
+        peerSupportedSignAlgs = signatureSchemes;
     }
 
     // TLS 1.2 only
@@ -740,16 +825,20 @@ final class SSLSessionImpl extends ExtendedSSLSession {
     // certificates and server key exchange), it MUST send the
     // signature_algorithms extension, listing the algorithms it
     // is willing to accept.
+    private static final ArrayList<SignatureScheme> defaultPeerSupportedSignAlgs =
+            new ArrayList<>(Arrays.asList(SignatureScheme.RSA_PKCS1_SHA1,
+                    SignatureScheme.DSA_SHA1,
+                    SignatureScheme.ECDSA_SHA1));
+
     void setUseDefaultPeerSignAlgs() {
         useDefaultPeerSignAlgs = true;
-        peerSupportedSignAlgs = new String[] {
-            "SHA1withRSA", "SHA1withDSA", "SHA1withECDSA"};
+        peerSupportedSignAlgs = defaultPeerSupportedSignAlgs;
     }
 
     // Returns the connection session.
     SSLSessionImpl finish() {
         if (useDefaultPeerSignAlgs) {
-            this.peerSupportedSignAlgs = new String[0];
+            peerSupportedSignAlgs = Collections.emptySet();
         }
 
         return this;
@@ -1212,6 +1301,7 @@ final class SSLSessionImpl extends ExtendedSSLSession {
      * sessions can be shared across different protection domains.
      */
     private final ConcurrentHashMap<SecureKey, Object> boundValues;
+    boolean updateNST;
 
     /**
      * Assigns a session value.  Session change events are given if
@@ -1237,6 +1327,9 @@ final class SSLSessionImpl extends ExtendedSSLSession {
 
             e = new SSLSessionBindingEvent(this, key);
             ((SSLSessionBindingListener)value).valueBound(e);
+        }
+        if (protocolVersion.useTLS13PlusSpec()) {
+            updateNST = true;
         }
     }
 
@@ -1272,6 +1365,9 @@ final class SSLSessionImpl extends ExtendedSSLSession {
 
             e = new SSLSessionBindingEvent(this, key);
             ((SSLSessionBindingListener)value).valueUnbound(e);
+        }
+        if (protocolVersion.useTLS13PlusSpec()) {
+            updateNST = true;
         }
     }
 
@@ -1474,11 +1570,7 @@ final class SSLSessionImpl extends ExtendedSSLSession {
      */
     @Override
     public String[] getPeerSupportedSignatureAlgorithms() {
-        if (peerSupportedSignAlgs != null) {
-            return peerSupportedSignAlgs.clone();
-        }
-
-        return new String[0];
+        return SignatureScheme.getAlgorithmNames(peerSupportedSignAlgs);
     }
 
     /**

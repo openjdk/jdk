@@ -154,6 +154,9 @@ TEST FAILURE</code></pre>
 <p>Use additional problem lists file or files, in addition to the default ProblemList.txt located at the JTReg test roots.</p>
 <p>If multiple file names are specified, they should be separated by space (or, to help avoid quoting issues, the special value <code>%20</code>).</p>
 <p>The file names should be either absolute, or relative to the JTReg test root of the tests to be run.</p>
+<h4 id="run_problem_lists">RUN_PROBLEM_LISTS</h4>
+<p>Use the problem lists to select tests instead of excluding them.</p>
+<p>Set to <code>true</code> or <code>false</code>. If <code>true</code>, JTReg will use <code>-match:</code> option, otherwise <code>-exclude:</code> will be used. Default is <code>false</code>.</p>
 <h4 id="options">OPTIONS</h4>
 <p>Additional options to the JTReg test framework.</p>
 <p>Use <code>JTREG=&quot;OPTIONS=--help all&quot;</code> to see all available JTReg options.</p>

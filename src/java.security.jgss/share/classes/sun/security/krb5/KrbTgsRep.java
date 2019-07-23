@@ -86,9 +86,20 @@ public class KrbTgsRep extends KrbKdcRep {
 
         check(false, req, rep, tgsReq.tgsReqKey);
 
+        PrincipalName serverAlias = tgsReq.getServerAlias();
+        if (serverAlias != null) {
+            PrincipalName repSname = enc_part.sname;
+            if (serverAlias.equals(repSname) ||
+                    isReferralSname(repSname)) {
+                serverAlias = null;
+            }
+        }
+
         this.creds = new Credentials(rep.ticket,
                                 rep.cname,
+                                tgsReq.getClientAlias(),
                                 enc_part.sname,
+                                serverAlias,
                                 enc_part.key,
                                 enc_part.flags,
                                 enc_part.authtime,
@@ -110,5 +121,17 @@ public class KrbTgsRep extends KrbKdcRep {
 
     sun.security.krb5.internal.ccache.Credentials setCredentials() {
         return new sun.security.krb5.internal.ccache.Credentials(rep, secondTicket);
+    }
+
+    private static boolean isReferralSname(PrincipalName sname) {
+        if (sname != null) {
+            String[] snameStrings = sname.getNameStrings();
+            if (snameStrings.length == 2 &&
+                    snameStrings[0].equals(
+                            PrincipalName.TGS_DEFAULT_SRV_NAME)) {
+                return true;
+            }
+        }
+        return false;
     }
 }
