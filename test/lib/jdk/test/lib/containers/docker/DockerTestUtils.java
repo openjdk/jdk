@@ -189,7 +189,7 @@ public class DockerTestUtils {
     /**
      * Build the docker command to run java inside a container
      *
-     * @param DockerRunOptions optins for running docker
+     * @param DockerRunOptions options for running docker
      *
      * @return command
      * @throws Exception
@@ -222,7 +222,7 @@ public class DockerTestUtils {
     /**
      * Run Java inside the docker image with specified parameters and options.
      *
-     * @param DockerRunOptions optins for running docker
+     * @param DockerRunOptions options for running docker
      *
      * @return output of the run command
      * @throws Exception
@@ -235,7 +235,7 @@ public class DockerTestUtils {
      /**
      * Remove docker image
      *
-     * @param DockerRunOptions optins for running docker
+     * @param DockerRunOptions options for running docker
      * @throws Exception
      */
     public static void removeDockerImage(String imageNameAndTag) throws Exception {
