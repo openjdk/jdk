@@ -621,6 +621,22 @@ void ShenandoahBarrierSetAssembler::store_at(MacroAssembler* masm, DecoratorSet 
   }
 }
 
+void ShenandoahBarrierSetAssembler::try_resolve_jobject_in_native(MacroAssembler* masm, Register jni_env,
+                                                                  Register obj, Register tmp, Label& slowpath) {
+  Label done;
+  // Resolve jobject
+  BarrierSetAssembler::try_resolve_jobject_in_native(masm, jni_env, obj, tmp, slowpath);
+
+  // Check for null.
+  __ testptr(obj, obj);
+  __ jcc(Assembler::zero, done);
+
+  Address gc_state(jni_env, ShenandoahThreadLocalData::gc_state_offset() - JavaThread::jni_environment_offset());
+  __ testb(gc_state, ShenandoahHeap::EVACUATION);
+  __ jccb(Assembler::notZero, slowpath);
+  __ bind(done);
+}
+
 // Special Shenandoah CAS implementation that handles false negatives
 // due to concurrent evacuation.
 void ShenandoahBarrierSetAssembler::cmpxchg_oop(MacroAssembler* masm,

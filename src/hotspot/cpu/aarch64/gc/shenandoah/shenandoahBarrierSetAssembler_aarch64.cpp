@@ -415,6 +415,26 @@ void ShenandoahBarrierSetAssembler::store_at(MacroAssembler* masm, DecoratorSet 
 
 }
 
+void ShenandoahBarrierSetAssembler::try_resolve_jobject_in_native(MacroAssembler* masm, Register jni_env,
+                                                                  Register obj, Register tmp, Label& slowpath) {
+  Label done;
+  // Resolve jobject
+  BarrierSetAssembler::try_resolve_jobject_in_native(masm, jni_env, obj, tmp, slowpath);
+
+  // Check for null.
+  __ cbz(obj, done);
+
+  assert(obj != rscratch2, "need rscratch2");
+  Address gc_state(rthread, in_bytes(ShenandoahThreadLocalData::gc_state_offset()));
+  __ ldrb(rscratch2, gc_state);
+
+  // Check for heap in evacuation phase
+  __ tbnz(rscratch2, ShenandoahHeap::EVACUATION_BITPOS, slowpath);
+
+  __ bind(done);
+}
+
+
 void ShenandoahBarrierSetAssembler::cmpxchg_oop(MacroAssembler* masm, Register addr, Register expected, Register new_val,
                                                 bool acquire, bool release, bool weak, bool is_cae,
                                                 Register result) {
