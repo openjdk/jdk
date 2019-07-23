@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 2015, 2019, Oracle and/or its affiliates. All rights reserved.
- * Copyright (c) 2015, 2015 SAP SE. All rights reserved.
+ * Copyright (c) 2015, 2019 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -68,13 +68,15 @@ class odmWrapper : private dynamicOdm {
 
  public:
   // Make sure everything gets initialized and cleaned up properly.
-  explicit odmWrapper(char* odm_class_name, char* odm_path = NULL) : _odm_class((CLASS_SYMBOL)-1),
+  explicit odmWrapper(const char* odm_class_name, const char* odm_path = NULL) : _odm_class((CLASS_SYMBOL)-1),
                                                                      _data(NULL), _initialized(false) {
     if (!odm_loaded()) { return; }
     _initialized = ((*_odm_initialize)() != -1);
     if (_initialized) {
-      if (odm_path) { (*_odm_set_path)(odm_path); }
-      _odm_class = (*_odm_mount_class)(odm_class_name);
+      // should we free what odm_set_path returns, man page suggests it
+      // see https://www.ibm.com/support/knowledgecenter/en/ssw_aix_71/o_bostechref/odm_set_path.html
+      if (odm_path) { (*_odm_set_path)((char*)odm_path); }
+      _odm_class = (*_odm_mount_class)((char*)odm_class_name);
     }
   }
   ~odmWrapper() {
@@ -83,12 +85,12 @@ class odmWrapper : private dynamicOdm {
 
   CLASS_SYMBOL odm_class() { return _odm_class; }
   bool has_class() { return odm_class() != (CLASS_SYMBOL)-1; }
-  int class_offset(char *field, bool is_aix_5);
+  int class_offset(const char *field, bool is_aix_5);
   char* data() { return _data; }
 
-  char* retrieve_obj(char* name = NULL) {
+  char* retrieve_obj(const char* name = NULL) {
     clean_data();
-    char *cnp = (char*)(void*)(*_odm_get_obj)(odm_class(), name, NULL, (name == NULL) ? ODM_NEXT : ODM_FIRST);
+    char *cnp = (char*)(void*)(*_odm_get_obj)(odm_class(), (char*) name, NULL, (name == NULL) ? ODM_NEXT : ODM_FIRST);
     if (cnp != (char*)-1) { _data = cnp; }
     return data();
   }

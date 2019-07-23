@@ -43,11 +43,10 @@ static void fill_dll_info(void) {
 
 static int dladdr_dont_reload(void* addr, Dl_info* info) {
   const struct ld_info* p = (struct ld_info*) dladdr_buffer;
-  info->dli_fbase = 0; info->dli_fname = 0;
-  info->dli_sname = 0; info->dli_saddr = 0;
+  memset((void *)info, 0, sizeof(Dl_info));
   for (;;) {
     if (addr >= p->ldinfo_textorg &&
-        addr < (((char*)p->ldinfo_textorg) + p->ldinfo_textsize)) {
+        addr < p->ldinfo_textorg + p->ldinfo_textsize) {
       info->dli_fname = p->ldinfo_filename;
       info->dli_fbase = p->ldinfo_textorg;
       return 1; /* [sic] */

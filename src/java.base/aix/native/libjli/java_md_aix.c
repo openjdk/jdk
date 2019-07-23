@@ -39,8 +39,7 @@ static int dladdr_dont_reload(void *addr, Dl_info *info) {
     memset((void *)info, 0, sizeof(Dl_info));
     for (;;) {
         if (addr >= p->ldinfo_textorg &&
-            addr < (((char*)p->ldinfo_textorg) + p->ldinfo_textsize))
-        {
+            addr < p->ldinfo_textorg + p->ldinfo_textsize) {
             info->dli_fname = p->ldinfo_filename;
             return 1;
         }
