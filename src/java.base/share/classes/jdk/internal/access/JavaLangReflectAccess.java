@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,38 +23,15 @@
  * questions.
  */
 
-package jdk.internal.reflect;
+package jdk.internal.access;
 
 import java.lang.reflect.*;
+import jdk.internal.reflect.*;
 
 /** An interface which gives privileged packages Java-level access to
     internals of java.lang.reflect. */
 
-public interface LangReflectAccess {
-    /** Creates a new java.lang.reflect.Field. Access checks as per
-        java.lang.reflect.AccessibleObject are not overridden. */
-    public Field newField(Class<?> declaringClass,
-                          String name,
-                          Class<?> type,
-                          int modifiers,
-                          int slot,
-                          String signature,
-                          byte[] annotations);
-
-    /** Creates a new java.lang.reflect.Method. Access checks as per
-      java.lang.reflect.AccessibleObject are not overridden. */
-    public Method newMethod(Class<?> declaringClass,
-                            String name,
-                            Class<?>[] parameterTypes,
-                            Class<?> returnType,
-                            Class<?>[] checkedExceptions,
-                            int modifiers,
-                            int slot,
-                            String signature,
-                            byte[] annotations,
-                            byte[] parameterAnnotations,
-                            byte[] annotationDefault);
-
+public interface JavaLangReflectAccess {
     /** Creates a new java.lang.reflect.Constructor. Access checks as
       per java.lang.reflect.AccessibleObject are not overridden. */
     public <T> Constructor<T> newConstructor(Class<T> declaringClass,

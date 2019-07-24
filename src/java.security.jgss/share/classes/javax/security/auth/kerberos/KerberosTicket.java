@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -194,6 +194,10 @@ public class KerberosTicket implements Destroyable, Refreshable,
     private InetAddress[] clientAddresses;
 
     private transient boolean destroyed = false;
+
+    transient KerberosPrincipal clientAlias = null;
+
+    transient KerberosPrincipal serverAlias = null;
 
     /**
      * Constructs a {@code KerberosTicket} using credentials information that a
@@ -591,7 +595,11 @@ public class KerberosTicket implements Destroyable, Refreshable,
         try {
             krb5Creds = new sun.security.krb5.Credentials(asn1Encoding,
                                                     client.getName(),
+                                                    (clientAlias != null ?
+                                                            clientAlias.getName() : null),
                                                     server.getName(),
+                                                    (serverAlias != null ?
+                                                            serverAlias.getName() : null),
                                                     sessionKey.getEncoded(),
                                                     sessionKey.getKeyType(),
                                                     flags,

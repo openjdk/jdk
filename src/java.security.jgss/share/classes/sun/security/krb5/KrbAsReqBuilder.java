@@ -68,6 +68,7 @@ public final class KrbAsReqBuilder {
     // Common data for AS-REQ fields
     private KDCOptions options;
     private PrincipalName cname;
+    private PrincipalName refCname; // May be changed by referrals
     private PrincipalName sname;
     private KerberosTime from;
     private KerberosTime till;
@@ -100,6 +101,7 @@ public final class KrbAsReqBuilder {
     private void init(PrincipalName cname)
             throws KrbException {
         this.cname = cname;
+        this.refCname = cname;
         state = State.INIT;
     }
 
@@ -284,7 +286,7 @@ public final class KrbAsReqBuilder {
         }
         return new KrbAsReq(key,
             options,
-            cname,
+            refCname,
             sname,
             from,
             till,
@@ -334,7 +336,7 @@ public final class KrbAsReqBuilder {
         ReferralsState referralsState = new ReferralsState();
         while (true) {
             if (referralsState.refreshComm()) {
-                comm = new KdcComm(cname.getRealmAsString());
+                comm = new KdcComm(refCname.getRealmAsString());
             }
             try {
                 req = build(pakey, referralsState);
@@ -384,7 +386,7 @@ public final class KrbAsReqBuilder {
 
         ReferralsState() throws KrbException {
             if (Config.DISABLE_REFERRALS) {
-                if (cname.getNameType() == PrincipalName.KRB_NT_ENTERPRISE) {
+                if (refCname.getNameType() == PrincipalName.KRB_NT_ENTERPRISE) {
                     throw new KrbException("NT-ENTERPRISE principals only allowed" +
                             " when referrals are enabled.");
                 }
@@ -402,15 +404,15 @@ public final class KrbAsReqBuilder {
                     if (req.getMessage().reqBody.kdcOptions.get(KDCOptions.CANONICALIZE) &&
                             referredRealm != null && referredRealm.toString().length() > 0 &&
                             count < Config.MAX_REFERRALS) {
-                        cname = new PrincipalName(cname.getNameType(),
-                                cname.getNameStrings(), referredRealm);
+                        refCname = new PrincipalName(refCname.getNameType(),
+                                refCname.getNameStrings(), referredRealm);
                         refreshComm = true;
                         count++;
                         return true;
                     }
                 }
                 if (count < Config.MAX_REFERRALS &&
-                        cname.getNameType() != PrincipalName.KRB_NT_ENTERPRISE) {
+                        refCname.getNameType() != PrincipalName.KRB_NT_ENTERPRISE) {
                     // Server may raise an error if CANONICALIZE is true.
                     // Try CANONICALIZE false.
                     enabled = false;

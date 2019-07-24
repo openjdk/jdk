@@ -944,11 +944,10 @@ public class Main {
                     // Don't read from the newManifest InputStream, as we
                     // might need it below, and we can't re-read the same data
                     // twice.
-                    FileInputStream fis = new FileInputStream(mname);
-                    boolean ambiguous = isAmbiguousMainClass(new Manifest(fis));
-                    fis.close();
-                    if (ambiguous) {
-                        return false;
+                    try (FileInputStream fis = new FileInputStream(mname)) {
+                        if (isAmbiguousMainClass(new Manifest(fis))) {
+                            return false;
+                        }
                     }
                 }
                 // Update the manifest.

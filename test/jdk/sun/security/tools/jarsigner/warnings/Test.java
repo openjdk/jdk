@@ -61,11 +61,15 @@ public abstract class Test {
     static final int VALIDITY = 365;
 
     static final String WARNING = "Warning:";
-    static final String WARNING_OR_ERROR = "(Warning|Error):";
+    static final String ERROR = "[Ee]rror:";
+    static final String WARNING_OR_ERROR = "(" + WARNING + "|" + ERROR + ")";
 
     static final String CHAIN_NOT_VALIDATED_VERIFYING_WARNING
             = "This jar contains entries "
             + "whose certificate chain is invalid.";
+
+    static final String CERTIFICATE_SELF_SIGNED
+            = "The signer's certificate is self-signed.";
 
     static final String ALIAS_NOT_IN_STORE_VERIFYING_WARNING
             = "This jar contains signed entries "

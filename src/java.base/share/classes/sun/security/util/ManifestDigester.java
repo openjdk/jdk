@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,10 +25,12 @@
 
 package sun.security.util;
 
-import java.security.*;
+import java.security.MessageDigest;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.io.ByteArrayOutputStream;
+import java.io.OutputStream;
+import java.io.IOException;
 import java.util.List;
 
 import static java.nio.charset.StandardCharsets.UTF_8;
@@ -40,13 +42,27 @@ import static java.nio.charset.StandardCharsets.UTF_8;
  */
 public class ManifestDigester {
 
+    /**
+     * The part "{@code Manifest-Main-Attributes}" of the main attributes
+     * digest header name in a signature file as described in the jar
+     * specification:
+     * <blockquote>{@code x-Digest-Manifest-Main-Attributes}
+     * (where x is the standard name of a {@link MessageDigest} algorithm):
+     * The value of this attribute is the digest value of the main attributes
+     * of the manifest.</blockquote>
+     * @see <a href="{@docRoot}/../specs/jar/jar.html#signature-file">
+     * JAR File Specification, section Signature File</a>
+     * @see #getMainAttsEntry
+     */
     public static final String MF_MAIN_ATTRS = "Manifest-Main-Attributes";
 
     /** the raw bytes of the manifest */
-    private byte[] rawBytes;
+    private final byte[] rawBytes;
 
-    /** the entries grouped by names */
-    private HashMap<String, Entry> entries; // key is a UTF-8 string
+    private final Entry mainAttsEntry;
+
+    /** individual sections by their names */
+    private final HashMap<String, Entry> entries = new HashMap<>();
 
     /** state returned by findSection */
     static class Position {
@@ -72,29 +88,31 @@ public class ManifestDigester {
     private boolean findSection(int offset, Position pos)
     {
         int i = offset, len = rawBytes.length;
-        int last = offset;
+        int last = offset - 1;
         int next;
         boolean allBlank = true;
 
-        pos.endOfFirstLine = -1;
+        /* denotes that a position is not yet assigned.
+         * As a primitive type int it cannot be null
+         * and -1 would be confused with (i - 1) when i == 0 */
+        final int UNASSIGNED = Integer.MIN_VALUE;
+
+        pos.endOfFirstLine = UNASSIGNED;
 
         while (i < len) {
             byte b = rawBytes[i];
             switch(b) {
             case '\r':
-                if (pos.endOfFirstLine == -1)
+                if (pos.endOfFirstLine == UNASSIGNED)
                     pos.endOfFirstLine = i-1;
-                if ((i < len) &&  (rawBytes[i+1] == '\n'))
+                if (i < len - 1 && rawBytes[i + 1] == '\n')
                     i++;
                 /* fall through */
             case '\n':
-                if (pos.endOfFirstLine == -1)
+                if (pos.endOfFirstLine == UNASSIGNED)
                     pos.endOfFirstLine = i-1;
                 if (allBlank || (i == len-1)) {
-                    if (i == len-1)
-                        pos.endOfSection = i;
-                    else
-                        pos.endOfSection = last;
+                    pos.endOfSection = allBlank ? last : i;
                     pos.startOfNext = i+1;
                     return true;
                 }
@@ -116,16 +134,17 @@ public class ManifestDigester {
     public ManifestDigester(byte[] bytes)
     {
         rawBytes = bytes;
-        entries = new HashMap<>();
 
         Position pos = new Position();
 
-        if (!findSection(0, pos))
+        if (!findSection(0, pos)) {
+            mainAttsEntry = null;
             return; // XXX: exception?
+        }
 
         // create an entry for main attributes
-        entries.put(MF_MAIN_ATTRS, new Entry().addSection(
-                new Section(0, pos.endOfSection + 1, pos.startOfNext, rawBytes)));
+        mainAttsEntry = new Entry().addSection(new Section(
+                0, pos.endOfSection + 1, pos.startOfNext, rawBytes));
 
         int start = pos.startOfNext;
         while(findSection(start, pos)) {
@@ -133,14 +152,16 @@ public class ManifestDigester {
             int sectionLen = pos.endOfSection-start+1;
             int sectionLenWithBlank = pos.startOfNext-start;
 
-            if (len > 6) {
+            if (len >= 6) { // 6 == "Name: ".length()
                 if (isNameAttr(bytes, start)) {
                     ByteArrayOutputStream nameBuf = new ByteArrayOutputStream();
                     nameBuf.write(bytes, start+6, len-6);
 
                     int i = start + len;
                     if ((i-start) < sectionLen) {
-                        if (bytes[i] == '\r') {
+                        if (bytes[i] == '\r'
+                                && i + 1 - start < sectionLen
+                                && bytes[i + 1] == '\n') {
                             i += 2;
                         } else {
                             i += 1;
@@ -152,14 +173,16 @@ public class ManifestDigester {
                             // name is wrapped
                             int wrapStart = i;
                             while (((i-start) < sectionLen)
-                                    && (bytes[i++] != '\n'));
-                            if (bytes[i-1] != '\n')
-                                return; // XXX: exception?
-                            int wrapLen;
-                            if (bytes[i-2] == '\r')
-                                wrapLen = i-wrapStart-2;
-                            else
-                                wrapLen = i-wrapStart-1;
+                                    && (bytes[i] != '\r')
+                                    && (bytes[i] != '\n')) i++;
+                            int wrapLen = i - wrapStart;
+                            if (i - start < sectionLen) {
+                                i++;
+                                if (bytes[i - 1] == '\r'
+                                    && i - start < sectionLen
+                                    && bytes[i] == '\n')
+                                        i++;
+                            }
 
                             nameBuf.write(bytes, wrapStart, wrapLen);
                         } else {
@@ -167,7 +190,7 @@ public class ManifestDigester {
                         }
                     }
 
-                    entries.computeIfAbsent(new String(nameBuf.toByteArray(), UTF_8),
+                    entries.computeIfAbsent(nameBuf.toString(UTF_8),
                                             dummy -> new Entry())
                             .addSection(new Section(start, sectionLen,
                                     sectionLenWithBlank, rawBytes));
@@ -200,6 +223,26 @@ public class ManifestDigester {
         {
             sections.add(sec);
             return this;
+        }
+
+        /**
+         * Check if the sections (particularly the last one of usually only one)
+         * are properly delimited with a trailing blank line so that another
+         * section can be correctly appended and return {@code true} or return
+         * {@code false} to indicate that reproduction is not advised and should
+         * be carried out with a clean "normalized" newly-written manifest.
+         *
+         * @see #reproduceRaw
+         */
+        public boolean isProperlyDelimited() {
+            return sections.stream().allMatch(
+                    Section::isProperlySectionDelimited);
+        }
+
+        public void reproduceRaw(OutputStream out) throws IOException {
+            for (Section sec : sections) {
+                out.write(sec.rawBytes, sec.offset, sec.lengthWithBlankLine);
+            }
         }
 
         public byte[] digest(MessageDigest md)
@@ -242,6 +285,15 @@ public class ManifestDigester {
             this.rawBytes = rawBytes;
         }
 
+        /**
+         * Returns {@code true} if the raw section is terminated with a blank
+         * line so that another section can possibly be appended resulting in a
+         * valid manifest and {@code false} otherwise.
+         */
+        private boolean isProperlySectionDelimited() {
+            return lengthWithBlankLine > length;
+        }
+
         private static void doOldStyle(MessageDigest md,
                                 byte[] bytes,
                                 int offset,
@@ -268,10 +320,33 @@ public class ManifestDigester {
         }
     }
 
+    /**
+     * @see #MF_MAIN_ATTRS
+     */
+    public Entry getMainAttsEntry() {
+        return mainAttsEntry;
+    }
+
+    /**
+     * @see #MF_MAIN_ATTRS
+     */
+    public Entry getMainAttsEntry(boolean oldStyle) {
+        mainAttsEntry.oldStyle = oldStyle;
+        return mainAttsEntry;
+    }
+
+    public Entry get(String name) {
+        return entries.get(name);
+    }
+
     public Entry get(String name, boolean oldStyle) {
-        Entry e = entries.get(name);
-        if (e != null)
+        Entry e = get(name);
+        if (e == null && MF_MAIN_ATTRS.equals(name)) {
+            e = getMainAttsEntry();
+        }
+        if (e != null) {
             e.oldStyle = oldStyle;
+        }
         return e;
     }
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -85,7 +85,6 @@ import java.time.LocalTime;
 import java.time.ZoneId;
 import java.time.ZoneOffset;
 import java.time.chrono.ChronoLocalDate;
-import java.time.chrono.ChronoLocalDateTime;
 import java.time.chrono.Chronology;
 import java.time.chrono.Era;
 import java.time.chrono.IsoChronology;
@@ -122,7 +121,6 @@ import java.util.concurrent.ConcurrentMap;
 import sun.text.spi.JavaTimeDateTimePatternProvider;
 import sun.util.locale.provider.CalendarDataUtility;
 import sun.util.locale.provider.LocaleProviderAdapter;
-import sun.util.locale.provider.LocaleResources;
 import sun.util.locale.provider.TimeZoneNameUtility;
 
 /**
@@ -3871,7 +3869,11 @@ public final class DateTimeFormatterBuilder {
             if (offsetSecs == null) {
                 return false;
             }
-            String gmtText = "GMT";  // TODO: get localized version of 'GMT'
+            String key = "timezone.gmtZeroFormat";
+            String gmtText = DateTimeTextProvider.getLocalizedResource(key, context.getLocale());
+            if (gmtText == null) {
+                gmtText = "GMT";  // Default to "GMT"
+            }
             buf.append(gmtText);
             int totalSecs = Math.toIntExact(offsetSecs);
             if (totalSecs != 0) {
@@ -3917,7 +3919,11 @@ public final class DateTimeFormatterBuilder {
         public int parse(DateTimeParseContext context, CharSequence text, int position) {
             int pos = position;
             int end = text.length();
-            String gmtText = "GMT";  // TODO: get localized version of 'GMT'
+            String key = "timezone.gmtZeroFormat";
+            String gmtText = DateTimeTextProvider.getLocalizedResource(key, context.getLocale());
+            if (gmtText == null) {
+                gmtText = "GMT";  // Default to "GMT"
+            }
             if (!context.subSequenceEquals(text, pos, gmtText, 0, gmtText.length())) {
                     return ~position;
                 }

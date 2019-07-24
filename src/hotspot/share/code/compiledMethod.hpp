@@ -208,9 +208,9 @@ public:
          not_used      = 1,  // not entrant, but revivable
          not_entrant   = 2,  // marked for deoptimization but activations may still exist,
                              // will be transformed to zombie when all activations are gone
-         zombie        = 3,  // no activations exist, nmethod is ready for purge
-         unloaded      = 4   // there should be no activations, should not be called,
-                             // will be transformed to zombie immediately
+         unloaded      = 3,  // there should be no activations, should not be called, will be
+                             // transformed to zombie by the sweeper, when not "locked in vm".
+         zombie        = 4   // no activations exist, nmethod is ready for purge
   };
 
   virtual bool  is_in_use() const = 0;

@@ -1,6 +1,6 @@
 /*
- * Copyright (c) 2008, 2013, Oracle and/or its affiliates. All rights reserved.
- * Copyright (c) 2013 SAP SE. All rights reserved.
+ * Copyright (c) 2008, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2019 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,6 +25,7 @@
  */
 
 #include <stdlib.h>
+#include <string.h>
 #include <errno.h>
 #include <sys/types.h>
 #include <sys/mntctl.h>

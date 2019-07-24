@@ -23,9 +23,14 @@
 
 /*
  * @test
- * @bug 6543940 6868865
+ * @bug 6543940 6868865 8217375
  * @summary Exception thrown when signing a jarfile in java 1.5
  * @library /test/lib
+ */
+/*
+ * See also PreserveRawManifestEntryAndDigest.java for tests with arbitrarily
+ * formatted individual sections in addition the the main attributes tested
+ * here.
  */
 
 import jdk.test.lib.SecurityTools;
@@ -44,8 +49,11 @@ public class OldSig {
         JarUtils.updateJarFile(Path.of("B.jar"), Path.of("."),
                 Path.of("B.class"));
 
-        SecurityTools.jarsigner("-keystore " + src.resolve("JarSigning.keystore")
-                + " -storepass bbbbbb -digestalg SHA1 B.jar c");
-        SecurityTools.jarsigner("-verify B.jar");
+        String ksArgs = "-keystore " + src.resolve("JarSigning.keystore")
+                + " -storepass bbbbbb";
+        SecurityTools.jarsigner(ksArgs + " -digestalg SHA1 B.jar c");
+        SecurityTools.jarsigner("-verify B.jar").shouldHaveExitValue(0);
+        SecurityTools.jarsigner("-verify " + ksArgs + " -verbose B.jar c")
+                .stdoutShouldMatch("^smk .* B[.]class$").shouldHaveExitValue(0);
     }
 }

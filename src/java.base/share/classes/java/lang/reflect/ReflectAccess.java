@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,52 +29,10 @@ import jdk.internal.reflect.MethodAccessor;
 import jdk.internal.reflect.ConstructorAccessor;
 
 /** Package-private class implementing the
-    sun.reflect.LangReflectAccess interface, allowing the java.lang
+    jdk.internal.access.JavaLangReflectAccess interface, allowing the java.lang
     package to instantiate objects in this package. */
 
-class ReflectAccess implements jdk.internal.reflect.LangReflectAccess {
-    public Field newField(Class<?> declaringClass,
-                          String name,
-                          Class<?> type,
-                          int modifiers,
-                          int slot,
-                          String signature,
-                          byte[] annotations)
-    {
-        return new Field(declaringClass,
-                         name,
-                         type,
-                         modifiers,
-                         slot,
-                         signature,
-                         annotations);
-    }
-
-    public Method newMethod(Class<?> declaringClass,
-                            String name,
-                            Class<?>[] parameterTypes,
-                            Class<?> returnType,
-                            Class<?>[] checkedExceptions,
-                            int modifiers,
-                            int slot,
-                            String signature,
-                            byte[] annotations,
-                            byte[] parameterAnnotations,
-                            byte[] annotationDefault)
-    {
-        return new Method(declaringClass,
-                          name,
-                          parameterTypes,
-                          returnType,
-                          checkedExceptions,
-                          modifiers,
-                          slot,
-                          signature,
-                          annotations,
-                          parameterAnnotations,
-                          annotationDefault);
-    }
-
+class ReflectAccess implements jdk.internal.access.JavaLangReflectAccess {
     public <T> Constructor<T> newConstructor(Class<T> declaringClass,
                                              Class<?>[] parameterTypes,
                                              Class<?>[] checkedExceptions,

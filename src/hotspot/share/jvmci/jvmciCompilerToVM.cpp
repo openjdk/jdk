@@ -2208,8 +2208,7 @@ C2V_VMENTRY_NULL(jobject, getObject, (JNIEnv* env, jobject, jobject x, long disp
 C2V_VMENTRY(void, deleteGlobalHandle, (JNIEnv* env, jobject, jlong h))
   jobject handle = (jobject)(address)h;
   if (handle != NULL) {
-    assert(JVMCI::is_global_handle(handle), "Invalid delete of global JNI handle");
-    *((oop*)handle) = NULL; // Mark the handle as deleted, allocate will reuse it
+    JVMCI::destroy_global(handle);
   }
 }
 

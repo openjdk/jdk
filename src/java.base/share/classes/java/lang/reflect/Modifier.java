@@ -25,10 +25,7 @@
 
 package java.lang.reflect;
 
-import java.security.AccessController;
 import java.util.StringJoiner;
-import jdk.internal.reflect.LangReflectAccess;
-import jdk.internal.reflect.ReflectionFactory;
 
 /**
  * The Modifier class provides {@code static} methods and
@@ -46,16 +43,6 @@ import jdk.internal.reflect.ReflectionFactory;
  * @since 1.1
  */
 public class Modifier {
-
-    /*
-     * Bootstrapping protocol between java.lang and java.lang.reflect
-     *  packages
-     */
-    static {
-        ReflectionFactory factory = AccessController.doPrivileged(
-                new ReflectionFactory.GetReflectionFactoryAction());
-        factory.setLangReflectAccess(new java.lang.reflect.ReflectAccess());
-    }
 
     /**
      * Return {@code true} if the integer argument includes the

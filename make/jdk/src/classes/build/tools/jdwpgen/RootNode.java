@@ -53,7 +53,7 @@ class RootNode extends AbstractNamedNode {
         writer.println("</head>");
         writer.println("<body>");
         writer.println("<div class=\"centered\" role=\"banner\">");
-        writer.println("<h1 id=\"Protocol Details\">Java Debug Wire Protocol Details</h1>");
+        writer.println("<h1 id=\"Protocol_Details\">Java Debug Wire Protocol Details</h1>");
         writer.println("</div>");
         writer.println("<nav>");
         writer.println("<ul>");

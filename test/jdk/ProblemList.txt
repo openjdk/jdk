@@ -652,13 +652,13 @@ com/sun/nio/sctp/SctpChannel/SocketOptionTests.java             8141694 linux-al
 sun/security/pkcs11/ec/TestKeyFactory.java                      8026976 generic-all
 sun/security/pkcs11/Secmod/AddTrustedCert.java                  8180837 generic-all
 sun/security/pkcs11/tls/TestKeyMaterial.java                    8180837 generic-all
-sun/security/pkcs11/tls/tls12/FipsModeTLS12.java                8224954,8225678 windows-all,linux-all
 sun/security/pkcs11/sslecc/ClientJSSEServerJSSE.java            8161536 generic-all
 
 sun/security/tools/keytool/ListKeychainStore.sh                 8156889 macosx-all
 sun/security/tools/keytool/KeyToolTest.java                     8224644 solaris-all
 sun/security/tools/keytool/WeakAlg.java                         8224644 solaris-all
 
+sun/security/tools/jarsigner/compatibility/SignTwice.java       8228341 windows-all
 sun/security/tools/jarsigner/warnings/BadKeyUsageTest.java      8026393 generic-all
 
 javax/net/ssl/ServerName/SSLEngineExplorerMatchedSNI.java       8212096 generic-all
@@ -672,6 +672,28 @@ sun/security/provider/KeyStore/DKSTest.sh                       8180266 windows-
 sun/security/pkcs11/KeyStore/SecretKeysBasic.sh                 8209398 generic-all
 
 security/infra/java/security/cert/CertPathValidator/certification/ActalisCA.java  8224768 generic-all
+
+sun/security/smartcardio/TestChannel.java                       8039280 generic-all
+sun/security/smartcardio/TestConnect.java                       8039280 generic-all
+sun/security/smartcardio/TestConnectAgain.java                  8039280 generic-all
+sun/security/smartcardio/TestControl.java                       8039280 generic-all
+sun/security/smartcardio/TestDefault.java                       8039280 generic-all
+sun/security/smartcardio/TestDirect.java                        8039280 generic-all
+sun/security/smartcardio/TestExclusive.java                     8039280 generic-all
+sun/security/smartcardio/TestMultiplePresent.java               8039280 generic-all
+sun/security/smartcardio/TestPresent.java                       8039280 generic-all
+sun/security/smartcardio/TestTransmit.java                      8039280 generic-all
+com/sun/crypto/provider/Cipher/DES/PerformanceTest.java         8039280 generic-all
+com/sun/security/auth/callback/TextCallbackHandler/Default.java 8039280 generic-all
+com/sun/security/auth/callback/TextCallbackHandler/Password.java 8039280 generic-all
+com/sun/security/sasl/gsskerb/AuthOnly.java                     8039280 generic-all
+com/sun/security/sasl/gsskerb/ConfSecurityLayer.java            8039280 generic-all
+com/sun/security/sasl/gsskerb/NoSecurityLayer.java              8039280 generic-all
+javax/security/auth/kerberos/KerberosHashEqualsTest.java        8039280 generic-all
+javax/security/auth/kerberos/KerberosTixDateTest.java           8039280 generic-all
+sun/security/provider/PolicyFile/GrantAllPermToExtWhenNoPolicy.java 8039280 generic-all
+sun/security/provider/PolicyParser/ExtDirsChange.java           8039280 generic-all
+sun/security/provider/PolicyParser/PrincipalExpansionError.java 8039280 generic-all
 
 ############################################################################
 

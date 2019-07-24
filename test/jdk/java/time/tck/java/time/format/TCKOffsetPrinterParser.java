@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -69,6 +69,7 @@ import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeFormatterBuilder;
 import java.time.format.TextStyle;
+import java.util.Locale;
 
 import org.testng.annotations.BeforeMethod;
 import org.testng.annotations.DataProvider;
@@ -557,20 +558,20 @@ public class TCKOffsetPrinterParser {
         ZonedDateTime zdt = ldt.atZone(offset);
 
         DateTimeFormatter f = new DateTimeFormatterBuilder().appendLocalizedOffset(style)
-                                                            .toFormatter();
+                                                            .toFormatter(Locale.US);
         assertEquals(f.format(odt), expected);
         assertEquals(f.format(zdt), expected);
         assertEquals(f.parse(expected, ZoneOffset::from), offset);
 
         if (style == TextStyle.FULL) {
             f = new DateTimeFormatterBuilder().appendPattern("ZZZZ")
-                                              .toFormatter();
+                                              .toFormatter(Locale.US);
             assertEquals(f.format(odt), expected);
             assertEquals(f.format(zdt), expected);
             assertEquals(f.parse(expected, ZoneOffset::from), offset);
 
             f = new DateTimeFormatterBuilder().appendPattern("OOOO")
-                                              .toFormatter();
+                                              .toFormatter(Locale.US);
             assertEquals(f.format(odt), expected);
             assertEquals(f.format(zdt), expected);
             assertEquals(f.parse(expected, ZoneOffset::from), offset);
@@ -578,7 +579,7 @@ public class TCKOffsetPrinterParser {
 
         if (style == TextStyle.SHORT) {
             f = new DateTimeFormatterBuilder().appendPattern("O")
-                                              .toFormatter();
+                                              .toFormatter(Locale.US);
             assertEquals(f.format(odt), expected);
             assertEquals(f.format(zdt), expected);
             assertEquals(f.parse(expected, ZoneOffset::from), offset);

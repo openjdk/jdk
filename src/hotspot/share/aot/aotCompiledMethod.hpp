@@ -168,7 +168,7 @@ private:
   int state() const { return *_state_adr; }
 
   // Non-virtual for speed
-  bool _is_alive() const { return state() < zombie; }
+  bool _is_alive() const { return state() < unloaded; }
 
   virtual bool is_zombie() const { return state() == zombie; }
   virtual bool is_unloaded() const { return state() == unloaded; }

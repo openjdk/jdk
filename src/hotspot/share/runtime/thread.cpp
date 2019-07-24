@@ -250,7 +250,6 @@ Thread::Thread() {
 
   // plain initialization
   debug_only(_owned_locks = NULL;)
-  debug_only(_allow_allocation_count = 0;)
   NOT_PRODUCT(_allow_safepoint_count = 0;)
   NOT_PRODUCT(_skip_gcalot = false;)
   _jvmti_env_iteration_count = 0;

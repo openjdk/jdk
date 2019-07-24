@@ -1155,14 +1155,14 @@ final class ServerHello {
                             chc, chc.resumingSession.getMasterSecret());
                 }
 
-                chc.conContext.consumers.putIfAbsent(
-                        ContentType.CHANGE_CIPHER_SPEC.id,
-                        ChangeCipherSpec.t10Consumer);
                 if (chc.statelessResumption) {
                     chc.handshakeConsumers.putIfAbsent(
                             SSLHandshake.NEW_SESSION_TICKET.id,
                             SSLHandshake.NEW_SESSION_TICKET);
                 }
+                chc.conContext.consumers.putIfAbsent(
+                        ContentType.CHANGE_CIPHER_SPEC.id,
+                        ChangeCipherSpec.t10Consumer);
                 chc.handshakeConsumers.put(
                         SSLHandshake.FINISHED.id,
                         SSLHandshake.FINISHED);

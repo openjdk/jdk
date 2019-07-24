@@ -30,9 +30,18 @@
  */
 
 import java.io.File;
-import sun.security.krb5.Credentials;
-import sun.security.krb5.internal.CredentialsUtil;
-import sun.security.krb5.KrbAsReqBuilder;
+import java.security.Principal;
+import java.util.Arrays;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import javax.security.auth.kerberos.KerberosTicket;
+import javax.security.auth.Subject;
+
+import org.ietf.jgss.GSSName;
+
+import sun.security.jgss.GSSUtil;
 import sun.security.krb5.PrincipalName;
 
 public class ReferralsTest {
@@ -41,39 +50,32 @@ public class ReferralsTest {
     private static final String realmKDC1 = "RABBIT.HOLE";
     private static final String realmKDC2 = "DEV.RABBIT.HOLE";
     private static final char[] password = "123qwe@Z".toCharArray();
+
+    // Names
     private static final String clientName = "test";
-
-    private static final String clientAlias = clientName +
-            PrincipalName.NAME_REALM_SEPARATOR_STR + realmKDC1;
-
-    private static final String clientKDC1QueryName = clientAlias.replaceAll(
-            PrincipalName.NAME_REALM_SEPARATOR_STR, "\\\\" +
-            PrincipalName.NAME_REALM_SEPARATOR_STR) +
-            PrincipalName.NAME_REALM_SEPARATOR_STR + realmKDC1;
-    private static PrincipalName clientKDC1QueryPrincipal = null;
-    static {
-        try {
-            clientKDC1QueryPrincipal = new PrincipalName(
-                    clientKDC1QueryName, PrincipalName.KRB_NT_ENTERPRISE,
-                    null);
-        } catch (Throwable t) {}
-    }
-
-    private static final String clientKDC2Name = clientName +
-            PrincipalName.NAME_REALM_SEPARATOR_STR + realmKDC2;
-
     private static final String serviceName = "http" +
             PrincipalName.NAME_COMPONENT_SEPARATOR_STR +
             "server.dev.rabbit.hole";
 
-    private static Credentials tgt;
-    private static Credentials tgs;
+    // Alias
+    private static final String clientAlias = clientName +
+            PrincipalName.NAME_REALM_SEPARATOR_STR + realmKDC1;
+
+    // Names + realms
+    private static final String clientKDC1Name = clientAlias.replaceAll(
+            PrincipalName.NAME_REALM_SEPARATOR_STR, "\\\\" +
+            PrincipalName.NAME_REALM_SEPARATOR_STR) +
+            PrincipalName.NAME_REALM_SEPARATOR_STR + realmKDC1;
+    private static final String clientKDC2Name = clientName +
+            PrincipalName.NAME_REALM_SEPARATOR_STR + realmKDC2;
+    private static final String serviceKDC2Name = serviceName +
+            PrincipalName.NAME_REALM_SEPARATOR_STR + realmKDC2;
 
     public static void main(String[] args) throws Exception {
         try {
             initializeKDCs();
-            getTGT();
-            getTGS();
+            testSubjectCredentials();
+            testDelegated();
         } finally {
             cleanup();
         }
@@ -108,6 +110,11 @@ public class ReferralsTest {
         kdc1.registerAlias(serviceName, kdc2);
         kdc2.registerAlias(clientAlias, clientKDC2Name);
 
+        Map<String,List<String>> mapKDC2 = new HashMap<>();
+        mapKDC2.put(serviceName + "@" + realmKDC2, Arrays.asList(
+                new String[]{serviceName + "@" + realmKDC2}));
+        kdc2.setOption(KDC.Option.ALLOW_S4U2PROXY, mapKDC2);
+
         KDC.saveConfig(krbConfigName, kdc1, kdc2,
                     "forwardable=true");
         System.setProperty("java.security.krb5.conf", krbConfigName);
@@ -120,50 +127,123 @@ public class ReferralsTest {
         }
     }
 
-    private static void getTGT() throws Exception {
-        KrbAsReqBuilder builder = new KrbAsReqBuilder(clientKDC1QueryPrincipal,
-                password);
-        tgt = builder.action().getCreds();
-        builder.destroy();
+    /*
+     * The client subject (whose principal is
+     * test@RABBIT.HOLE@RABBIT.HOLE) will obtain a TGT after
+     * realm referral and name canonicalization (TGT cname
+     * will be test@DEV.RABBIT.HOLE). With this TGT, the client will request
+     * a TGS for service http/server.dev.rabbit.hole@RABBIT.HOLE. After
+     * realm referral, a http/server.dev.rabbit.hole@DEV.RABBIT.HOLE TGS
+     * will be obtained.
+     *
+     * Assert that we get the proper TGT and TGS tickets, and that they are
+     * associated to the client subject.
+     *
+     * Assert that if we request a TGS for the same service again (based on the
+     * original service name), we don't get a new one but the previous,
+     * already in the subject credentials.
+     */
+    private static void testSubjectCredentials() throws Exception {
+        Subject clientSubject = new Subject();
+        Context clientContext = Context.fromUserPass(clientSubject,
+                clientKDC1Name, password, false);
+
+        Set<Principal> clientPrincipals = clientSubject.getPrincipals();
+        if (clientPrincipals.size() != 1) {
+            throw new Exception("Only one client subject principal expected");
+        }
+        Principal clientPrincipal = clientPrincipals.iterator().next();
         if (DEBUG) {
-            System.out.println("TGT");
-            System.out.println("----------------------");
-            System.out.println(tgt);
-            System.out.println("----------------------");
+            System.out.println("Client subject principal: " +
+                    clientPrincipal.getName());
         }
-        if (tgt == null) {
-            throw new Exception("TGT is null");
+        if (!clientPrincipal.getName().equals(clientKDC1Name)) {
+            throw new Exception("Unexpected client subject principal.");
         }
-        if (!tgt.getClient().getName().equals(clientKDC2Name)) {
-            throw new Exception("Unexpected TGT client");
+
+        clientContext.startAsClient(serviceName, GSSUtil.GSS_KRB5_MECH_OID);
+        clientContext.take(new byte[0]);
+        Set<KerberosTicket> clientTickets =
+                clientSubject.getPrivateCredentials(KerberosTicket.class);
+        boolean tgtFound = false;
+        boolean tgsFound = false;
+        for (KerberosTicket clientTicket : clientTickets) {
+            String cname = clientTicket.getClient().getName();
+            String sname = clientTicket.getServer().getName();
+            if (cname.equals(clientKDC2Name)) {
+                if (sname.equals(PrincipalName.TGS_DEFAULT_SRV_NAME +
+                        PrincipalName.NAME_COMPONENT_SEPARATOR_STR +
+                        realmKDC2 + PrincipalName.NAME_REALM_SEPARATOR_STR +
+                        realmKDC2)) {
+                    tgtFound = true;
+                } else if (sname.equals(serviceKDC2Name)) {
+                    tgsFound = true;
+                }
+            }
+            if (DEBUG) {
+                System.out.println("Client subject KerberosTicket:");
+                System.out.println(clientTicket);
+            }
         }
-        String[] tgtServerNames = tgt.getServer().getNameStrings();
-        if (tgtServerNames.length != 2 || !tgtServerNames[0].equals(
-                PrincipalName.TGS_DEFAULT_SRV_NAME) ||
-                !tgtServerNames[1].equals(realmKDC2) ||
-                !tgt.getServer().getRealmString().equals(realmKDC2)) {
-            throw new Exception("Unexpected TGT server");
+        if (!tgtFound || !tgsFound) {
+            throw new Exception("client subject tickets (TGT/TGS) not found.");
+        }
+        int numOfTickets = clientTickets.size();
+        clientContext.startAsClient(serviceName, GSSUtil.GSS_KRB5_MECH_OID);
+        clientContext.take(new byte[0]);
+        clientContext.status();
+        int newNumOfTickets =
+                clientSubject.getPrivateCredentials(KerberosTicket.class).size();
+        if (DEBUG) {
+            System.out.println("client subject number of tickets: " +
+                    numOfTickets);
+            System.out.println("client subject new number of tickets: " +
+                    newNumOfTickets);
+        }
+        if (numOfTickets != newNumOfTickets) {
+            throw new Exception("Useless client subject TGS request because" +
+                    " TGS was not found in private credentials.");
         }
     }
 
-    private static void getTGS() throws Exception {
-        tgs = CredentialsUtil.acquireServiceCreds(serviceName +
-                PrincipalName.NAME_REALM_SEPARATOR_STR + realmKDC1, tgt);
+    /*
+     * The server (http/server.dev.rabbit.hole@DEV.RABBIT.HOLE)
+     * will authenticate on itself on behalf of the client
+     * (test@DEV.RABBIT.HOLE). Cross-realm referrals will occur
+     * when requesting different TGTs and TGSs (including the
+     * request for delegated credentials).
+     */
+    private static void testDelegated() throws Exception {
+        Context c = Context.fromUserPass(clientKDC2Name,
+                password, false);
+        c.startAsClient(serviceName, GSSUtil.GSS_KRB5_MECH_OID);
+        Context s = Context.fromUserPass(serviceKDC2Name,
+                password, true);
+        s.startAsServer(GSSUtil.GSS_KRB5_MECH_OID);
+        Context.handshake(c, s);
+        Context delegatedContext = s.delegated();
+        delegatedContext.startAsClient(serviceName, GSSUtil.GSS_KRB5_MECH_OID);
+        delegatedContext.x().requestMutualAuth(false);
+        Context s2 = Context.fromUserPass(serviceKDC2Name,
+                password, true);
+        s2.startAsServer(GSSUtil.GSS_KRB5_MECH_OID);
+
+        // Test authentication
+        Context.handshake(delegatedContext, s2);
+        if (!delegatedContext.x().isEstablished() || !s2.x().isEstablished()) {
+            throw new Exception("Delegated authentication failed");
+        }
+
+        // Test identities
+        GSSName contextInitiatorName = delegatedContext.x().getSrcName();
+        GSSName contextAcceptorName = delegatedContext.x().getTargName();
         if (DEBUG) {
-            System.out.println("TGS");
-            System.out.println("----------------------");
-            System.out.println(tgs);
-            System.out.println("----------------------");
+            System.out.println("Context initiator: " + contextInitiatorName);
+            System.out.println("Context acceptor: " + contextAcceptorName);
         }
-        if (tgs == null) {
-            throw new Exception("TGS is null");
-        }
-        if (!tgs.getClient().getName().equals(clientKDC2Name)) {
-            throw new Exception("Unexpected TGS client");
-        }
-        if (!tgs.getServer().getNameString().equals(serviceName) ||
-                !tgs.getServer().getRealmString().equals(realmKDC2)) {
-            throw new Exception("Unexpected TGS server");
+        if (!contextInitiatorName.toString().equals(clientKDC2Name) ||
+                !contextAcceptorName.toString().equals(serviceName)) {
+            throw new Exception("Unexpected initiator or acceptor names");
         }
     }
 }

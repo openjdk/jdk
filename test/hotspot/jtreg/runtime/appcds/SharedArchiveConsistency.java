@@ -163,7 +163,6 @@ public class SharedArchiveConsistency {
     public static void writeData(FileChannel fc, long offset, ByteBuffer bb) throws Exception {
         fc.position(offset);
         fc.write(bb);
-        fc.force(true);
     }
 
     public static FileChannel getFileChannel(File jsaFile) throws Exception {
@@ -247,7 +246,6 @@ public class SharedArchiveConsistency {
             bbuf.clear();
             bytes_written += 4096;
         }
-        fc.force(true);
         if (fc.isOpen()) {
             fc.close();
         }

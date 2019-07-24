@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -36,6 +36,7 @@ import jdk.test.lib.JDKToolLauncher;
 public class BasicJStackTest {
 
     private static ProcessBuilder processBuilder = new ProcessBuilder();
+    private static String markerName = "markerName" + "\u00e4\u0bb5".repeat(10_000);
 
     public static void main(String[] args) throws Exception {
         testJstackNoArgs();
@@ -45,14 +46,17 @@ public class BasicJStackTest {
     private static void testJstackNoArgs() throws Exception {
         OutputAnalyzer output = jstack();
         output.shouldHaveExitValue(0);
+        output.shouldContain(markerName);
     }
 
     private static void testJstack_l() throws Exception {
         OutputAnalyzer output = jstack("-l");
         output.shouldHaveExitValue(0);
+        output.shouldContain(markerName);
     }
 
     private static OutputAnalyzer jstack(String... toolArgs) throws Exception {
+        Thread.currentThread().setName(markerName);
         JDKToolLauncher launcher = JDKToolLauncher.createUsingTestJDK("jstack");
         launcher.addVMArg("-XX:+UsePerfData");
         if (toolArgs != null) {

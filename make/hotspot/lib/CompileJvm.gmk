@@ -97,8 +97,7 @@ DISABLED_WARNINGS_solstudio := labelnotused hidef w_novirtualdescr inlafteruse \
     unknownpragma doubunder w_enumnotused w_toomanyenumnotused \
     wvarhidenmem wunreachable wnoretvalue notemsource
 
-DISABLED_WARNINGS_xlc := 1540-0216 1540-0198 1540-1090 1540-1639 1540-1088 \
-    1500-010
+DISABLED_WARNINGS_xlc := tautological-compare shift-negative-value
 
 DISABLED_WARNINGS_microsoft :=
 
