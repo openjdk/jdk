@@ -23,15 +23,20 @@
 
 /*
  * @test
- * @bug 8138766 8227059
+ * @bug 8138766 8227059 8227595
  * @summary New default -sigalg for keytool
  * @library /test/lib
  * @build java.base/sun.security.rsa.RSAKeyPairGenerator
  *        java.base/sun.security.provider.DSAKeyPairGenerator
  *        jdk.crypto.ec/sun.security.ec.ECKeyPairGenerator
+ * @requires os.family != "solaris"
  * @run main DefaultSignatureAlgorithm
  * @modules jdk.crypto.ec
  */
+
+// This test is excluded from Solaris because the RSA key pair generator
+// is extremely slow there with a big keysize. Please note the fake
+// KeyPairGenerator will not be used because of provider preferences.
 
 import jdk.test.lib.Asserts;
 import jdk.test.lib.SecurityTools;
