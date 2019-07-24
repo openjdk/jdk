@@ -125,7 +125,7 @@ public class MethodHandles {
 
     /**
      * Returns a {@link Lookup lookup object} which is trusted minimally.
-     * The lookup has the {@code PUBLIC} and {@code UNCONDITIONAL} modes.
+     * The lookup has the {@code UNCONDITIONAL} mode.
      * It can only be used to create method handles to public members of
      * public classes in packages that are exported unconditionally.
      * <p>
@@ -134,14 +134,14 @@ public class MethodHandles {
      *
      * @apiNote The use of Object is conventional, and because the lookup modes are
      * limited, there is no special access provided to the internals of Object, its package
-     * or its module. Consequently, the lookup context of this lookup object will be the
-     * bootstrap class loader, which means it cannot find user classes.
+     * or its module.  This public lookup object or other lookup object with
+     * {@code UNCONDITIONAL} mode assumes readability. Consequently, the lookup class
+     * is not used to determine the lookup context.
      *
      * <p style="font-size:smaller;">
      * <em>Discussion:</em>
      * The lookup class can be changed to any other class {@code C} using an expression of the form
      * {@link Lookup#in publicLookup().in(C.class)}.
-     * but may change the lookup context by virtue of changing the class loader.
      * A public lookup object is always subject to
      * <a href="MethodHandles.Lookup.html#secmgr">security manager checks</a>.
      * Also, it cannot access
@@ -156,64 +156,106 @@ public class MethodHandles {
     }
 
     /**
-     * Returns a {@link Lookup lookup object} with full capabilities to emulate all
-     * supported bytecode behaviors, including <a href="MethodHandles.Lookup.html#privacc">
-     * private access</a>, on a target class.
-     * This method checks that a caller, specified as a {@code Lookup} object, is allowed to
-     * do <em>deep reflection</em> on the target class. If {@code m1} is the module containing
-     * the {@link Lookup#lookupClass() lookup class}, and {@code m2} is the module containing
-     * the target class, then this check ensures that
+     * Returns a {@link Lookup lookup} object on a target class to emulate all supported
+     * bytecode behaviors, including <a href="MethodHandles.Lookup.html#privacc"> private access</a>.
+     * The returned lookup object can provide access to classes in modules and packages,
+     * and members of those classes, outside the normal rules of Java access control,
+     * instead conforming to the more permissive rules for modular <em>deep reflection</em>.
+     * <p>
+     * A caller, specified as a {@code Lookup} object, in module {@code M1} is
+     * allowed to do deep reflection on module {@code M2} and package of the target class
+     * if and only if all of the following conditions are {@code true}:
      * <ul>
-     *     <li>{@code m1} {@link Module#canRead reads} {@code m2}.</li>
-     *     <li>{@code m2} {@link Module#isOpen(String,Module) opens} the package containing
-     *     the target class to at least {@code m1}.</li>
-     *     <li>The lookup has the {@link Lookup#MODULE MODULE} lookup mode.</li>
+     * <li>If there is a security manager, its {@code checkPermission} method is
+     * called to check {@code ReflectPermission("suppressAccessChecks")} and
+     * that must return normally.
+     * <li>The caller lookup object must have the {@link Lookup#MODULE MODULE} lookup mode.
+     * (This is because otherwise there would be no way to ensure the original lookup
+     * creator was a member of any particular module, and so any subsequent checks
+     * for readability and qualified exports would become ineffective.)
+     * <li>The caller lookup object must have {@link Lookup#PRIVATE PRIVATE} access.
+     * (This is because an application intending to share intra-module access
+     * using {@link Lookup#MODULE MODULE} alone will inadvertently also share
+     * deep reflection to its own module.)
+     * <li>The target class must be a proper class, not a primitive or array class.
+     * (Thus, {@code M2} is well-defined.)
+     * <li>If the caller module {@code M1} differs from
+     * the target module {@code M2} then both of the following must be true:
+     *   <ul>
+     *     <li>{@code M1} {@link Module#canRead reads} {@code M2}.</li>
+     *     <li>{@code M2} {@link Module#isOpen(String,Module) opens} the package
+     *         containing the target class to at least {@code M1}.</li>
+     *   </ul>
      * </ul>
      * <p>
-     * If there is a security manager, its {@code checkPermission} method is called to
-     * check {@code ReflectPermission("suppressAccessChecks")}.
-     * @apiNote The {@code MODULE} lookup mode serves to authenticate that the lookup object
-     * was created by code in the caller module (or derived from a lookup object originally
-     * created by the caller). A lookup object with the {@code MODULE} lookup mode can be
-     * shared with trusted parties without giving away {@code PRIVATE} and {@code PACKAGE}
-     * access to the caller.
+     * If any of the above checks is violated, this method fails with an
+     * exception.
+     * <p>
+     * Otherwise, if {@code M1} and {@code M2} are the same module, this method
+     * returns a {@code Lookup} on {@code targetClass} with full capabilities and
+     * {@code null} previous lookup class.
+     * <p>
+     * Otherwise, {@code M1} and {@code M2} are two different modules.  This method
+     * returns a {@code Lookup} on {@code targetClass} that records
+     * the lookup class of the caller as the new previous lookup class and
+     * drops {@code MODULE} access from the full capabilities mode.
+     *
      * @param targetClass the target class
-     * @param lookup the caller lookup object
+     * @param caller the caller lookup object
      * @return a lookup object for the target class, with private access
-     * @throws IllegalArgumentException if {@code targetClass} is a primitve type or array class
+     * @throws IllegalArgumentException if {@code targetClass} is a primitive type or array class
      * @throws NullPointerException if {@code targetClass} or {@code caller} is {@code null}
-     * @throws IllegalAccessException if the access check specified above fails
      * @throws SecurityException if denied by the security manager
+     * @throws IllegalAccessException if any of the other access checks specified above fails
      * @since 9
      * @spec JPMS
      * @see Lookup#dropLookupMode
+     * @see <a href="MethodHandles.Lookup.html#cross-module-lookup">Cross-module lookups</a>
      */
-    public static Lookup privateLookupIn(Class<?> targetClass, Lookup lookup) throws IllegalAccessException {
+    public static Lookup privateLookupIn(Class<?> targetClass, Lookup caller) throws IllegalAccessException {
         SecurityManager sm = System.getSecurityManager();
         if (sm != null) sm.checkPermission(ACCESS_PERMISSION);
         if (targetClass.isPrimitive())
             throw new IllegalArgumentException(targetClass + " is a primitive class");
         if (targetClass.isArray())
             throw new IllegalArgumentException(targetClass + " is an array class");
-        Module targetModule = targetClass.getModule();
-        Module callerModule = lookup.lookupClass().getModule();
-        if (!callerModule.canRead(targetModule))
-            throw new IllegalAccessException(callerModule + " does not read " + targetModule);
-        if (targetModule.isNamed()) {
-            String pn = targetClass.getPackageName();
-            assert !pn.isEmpty() : "unnamed package cannot be in named module";
-            if (!targetModule.isOpen(pn, callerModule))
-                throw new IllegalAccessException(targetModule + " does not open " + pn + " to " + callerModule);
+        // Ensure that we can reason accurately about private and module access.
+        if ((caller.lookupModes() & Lookup.PRIVATE) == 0)
+            throw new IllegalAccessException("caller does not have PRIVATE lookup mode");
+        if ((caller.lookupModes() & Lookup.MODULE) == 0)
+            throw new IllegalAccessException("caller does not have MODULE lookup mode");
+
+        // previous lookup class is never set if it has MODULE access
+        assert caller.previousLookupClass() == null;
+
+        Class<?> callerClass = caller.lookupClass();
+        Module callerModule = callerClass.getModule();  // M1
+        Module targetModule = targetClass.getModule();  // M2
+        Class<?> newPreviousClass = null;
+        int newModes = Lookup.FULL_POWER_MODES;
+
+        if (targetModule != callerModule) {
+            if (!callerModule.canRead(targetModule))
+                throw new IllegalAccessException(callerModule + " does not read " + targetModule);
+            if (targetModule.isNamed()) {
+                String pn = targetClass.getPackageName();
+                assert !pn.isEmpty() : "unnamed package cannot be in named module";
+                if (!targetModule.isOpen(pn, callerModule))
+                    throw new IllegalAccessException(targetModule + " does not open " + pn + " to " + callerModule);
+            }
+
+            // M2 != M1, set previous lookup class to M1 and drop MODULE access
+            newPreviousClass = callerClass;
+            newModes &= ~Lookup.MODULE;
         }
-        if ((lookup.lookupModes() & Lookup.MODULE) == 0)
-            throw new IllegalAccessException("lookup does not have MODULE lookup mode");
+
         if (!callerModule.isNamed() && targetModule.isNamed()) {
             IllegalAccessLogger logger = IllegalAccessLogger.illegalAccessLogger();
             if (logger != null) {
-                logger.logIfOpenedForIllegalAccess(lookup, targetClass);
+                logger.logIfOpenedForIllegalAccess(caller, targetClass);
             }
         }
-        return new Lookup(targetClass);
+        return Lookup.newLookup(targetClass, newPreviousClass, newModes);
     }
 
     /**
@@ -533,6 +575,514 @@ public class MethodHandles {
      * whose <a href="MethodHandles.Lookup.html#equiv">bytecode behaviors</a> and Java language access permissions
      * can be reliably determined and emulated by method handles.
      *
+     * <h2><a id="cross-module-lookup"></a>Cross-module lookups</h2>
+     * When a lookup class in one module {@code M1} accesses a class in another module
+     * {@code M2}, extra access checking is performed beyond the access mode bits.
+     * A {@code Lookup} with {@link #PUBLIC} mode and a lookup class in {@code M1}
+     * can access public types in {@code M2} when {@code M2} is readable to {@code M1}
+     * and when the type is in a package of {@code M2} that is exported to
+     * at least {@code M1}.
+     * <p>
+     * A {@code Lookup} on {@code C} can also <em>teleport</em> to a target class
+     * via {@link #in(Class) Lookup.in} and {@link MethodHandles#privateLookupIn(Class, Lookup)
+     * MethodHandles.privateLookupIn} methods.
+     * Teleporting across modules will always record the original lookup class as
+     * the <em>{@linkplain #previousLookupClass() previous lookup class}</em>
+     * and drops {@link Lookup#MODULE MODULE} access.
+     * If the target class is in the same module as the lookup class {@code C},
+     * then the target class becomes the new lookup class
+     * and there is no change to the previous lookup class.
+     * If the target class is in a different module from {@code M1} ({@code C}'s module),
+     * {@code C} becomes the new previous lookup class
+     * and the target class becomes the new lookup class.
+     * In that case, if there was already a previous lookup class in {@code M0},
+     * and it differs from {@code M1} and {@code M2}, then the resulting lookup
+     * drops all privileges.
+     * For example,
+     * <blockquote><pre>
+     * {@code
+     * Lookup lookup = MethodHandles.lookup();   // in class C
+     * Lookup lookup2 = lookup.in(D.class);
+     * MethodHandle mh = lookup2.findStatic(E.class, "m", MT);
+     * }</pre></blockquote>
+     * <p>
+     * The {@link #lookup()} factory method produces a {@code Lookup} object
+     * with {@code null} previous lookup class.
+     * {@link Lookup#in lookup.in(D.class)} transforms the {@code lookup} on class {@code C}
+     * to class {@code D} without elevation of privileges.
+     * If {@code C} and {@code D} are in the same module,
+     * {@code lookup2} records {@code D} as the new lookup class and keeps the
+     * same previous lookup class as the original {@code lookup}, or
+     * {@code null} if not present.
+     * <p>
+     * When a {@code Lookup} teleports from a class
+     * in one nest to another nest, {@code PRIVATE} access is dropped.
+     * When a {@code Lookup} teleports from a class in one package to
+     * another package, {@code PACKAGE} access is dropped.
+     * When a {@code Lookup} teleports from a class in one module to another module,
+     * {@code MODULE} access is dropped.
+     * Teleporting across modules drops the ability to access non-exported classes
+     * in both the module of the new lookup class and the module of the old lookup class
+     * and the resulting {@code Lookup} remains only {@code PUBLIC} access.
+     * A {@code Lookup} can teleport back and forth to a class in the module of
+     * the lookup class and the module of the previous class lookup.
+     * Teleporting across modules can only decrease access but cannot increase it.
+     * Teleporting to some third module drops all accesses.
+     * <p>
+     * In the above example, if {@code C} and {@code D} are in different modules,
+     * {@code lookup2} records {@code D} as its lookup class and
+     * {@code C} as its previous lookup class and {@code lookup2} has only
+     * {@code PUBLIC} access. {@code lookup2} can teleport to other class in
+     * {@code C}'s module and {@code D}'s module.
+     * If class {@code E} is in a third module, {@code lookup2.in(E.class)} creates
+     * a {@code Lookup} on {@code E} with no access and {@code lookup2}'s lookup
+     * class {@code D} is recorded as its previous lookup class.
+     * <p>
+     * Teleporting across modules restricts access to the public types that
+     * both the lookup class and the previous lookup class can equally access
+     * (see below).
+     * <p>
+     * {@link MethodHandles#privateLookupIn(Class, Lookup) MethodHandles.privateLookupIn(T.class, lookup)}
+     * can be used to teleport a {@code lookup} from class {@code C} to class {@code T}
+     * and create a new {@code Lookup} with <a href="#privcc">private access</a>
+     * if the lookup class is allowed to do <em>deep reflection</em> on {@code T}.
+     * The {@code lookup} must have {@link #MODULE} and {@link #PRIVATE} access
+     * to call {@code privateLookupIn}.
+     * A {@code lookup} on {@code C} in module {@code M1} is allowed to do deep reflection
+     * on all classes in {@code M1}.  If {@code T} is in {@code M1}, {@code privateLookupIn}
+     * produces a new {@code Lookup} on {@code T} with full capabilities.
+     * A {@code lookup} on {@code C} is also allowed
+     * to do deep reflection on {@code T} in another module {@code M2} if
+     * {@code M1} reads {@code M2} and {@code M2} {@link Module#isOpen(String,Module) opens}
+     * the package containing {@code T} to at least {@code M1}.
+     * {@code T} becomes the new lookup class and {@code C} becomes the new previous
+     * lookup class and {@code MODULE} access is dropped from the resulting {@code Lookup}.
+     * The resulting {@code Lookup} can be used to do member lookup or teleport
+     * to another lookup class by calling {@link #in Lookup::in}.  But
+     * it cannot be used to obtain another private {@code Lookup} by calling
+     * {@link MethodHandles#privateLookupIn(Class, Lookup) privateLookupIn}
+     * because it has no {@code MODULE} access.
+     *
+     * <h2><a id="module-access-check"></a>Cross-module access checks</h2>
+     *
+     * A {@code Lookup} with {@link #PUBLIC} or with {@link #UNCONDITIONAL} mode
+     * allows cross-module access. The access checking is performed with respect
+     * to both the lookup class and the previous lookup class if present.
+     * <p>
+     * A {@code Lookup} with {@link #UNCONDITIONAL} mode can access public type
+     * in all modules when the type is in a package that is {@linkplain Module#isExported(String)
+     * exported unconditionally}.
+     * <p>
+     * If a {@code Lookup} on {@code LC} in {@code M1} has no previous lookup class,
+     * the lookup with {@link #PUBLIC} mode can access all public types in modules
+     * that are readable to {@code M1} and the type is in a package that is exported
+     * at least to {@code M1}.
+     * <p>
+     * If a {@code Lookup} on {@code LC} in {@code M1} has a previous lookup class
+     * {@code PLC} on {@code M0}, the lookup with {@link #PUBLIC} mode can access
+     * the intersection of all public types that are accessible to {@code M1}
+     * with all public types that are accessible to {@code M0}. {@code M0}
+     * reads {@code M1} and hence the set of accessible types includes:
+     *
+     * <table class="striped">
+     * <caption style="display:none">
+     * Public types in the following packages are accessible to the
+     * lookup class and the previous lookup class.
+     * </caption>
+     * <thead>
+     * <tr>
+     * <th scope="col">Equally accessible types to {@code M0} and {@code M1}</th>
+     * </tr>
+     * </thead>
+     * <tbody>
+     * <tr>
+     * <th scope="row" style="text-align:left">unconditional-exported packages from {@code M1}</th>
+     * </tr>
+     * <tr>
+     * <th scope="row" style="text-align:left">unconditional-exported packages from {@code M0} if {@code M1} reads {@code M0}</th>
+     * </tr>
+     * <tr>
+     * <th scope="row" style="text-align:left">unconditional-exported packages from a third module {@code M2}
+     * if both {@code M0} and {@code M1} read {@code M2}</th>
+     * </tr>
+     * <tr>
+     * <th scope="row" style="text-align:left">qualified-exported packages from {@code M1} to {@code M0}</th>
+     * </tr>
+     * <tr>
+     * <th scope="row" style="text-align:left">qualified-exported packages from {@code M0} to {@code M1}
+     * if {@code M1} reads {@code M0}</th>
+     * </tr>
+     * <tr>
+     * <th scope="row" style="text-align:left">qualified-exported packages from a third module {@code M2} to
+     * both {@code M0} and {@code M1} if both {@code M0} and {@code M1} read {@code M2}</th>
+     * </tr>
+     * </tbody>
+     * </table>
+     *
+     * <h2><a id="access-modes"></a>Access modes</h2>
+     *
+     * The table below shows the access modes of a {@code Lookup} produced by
+     * any of the following factory or transformation methods:
+     * <ul>
+     * <li>{@link #lookup() MethodHandles.lookup()}</li>
+     * <li>{@link #publicLookup() MethodHandles.publicLookup()}</li>
+     * <li>{@link #privateLookupIn(Class, Lookup) MethodHandles.privateLookupIn}</li>
+     * <li>{@link Lookup#in}</li>
+     * <li>{@link Lookup#dropLookupMode(int)}</li>
+     * </ul>
+     *
+     * <table class="striped">
+     * <caption style="display:none">
+     * Access mode summary
+     * </caption>
+     * <thead>
+     * <tr>
+     * <th scope="col">Lookup object</th>
+     * <th style="text-align:center">protected</th>
+     * <th style="text-align:center">private</th>
+     * <th style="text-align:center">package</th>
+     * <th style="text-align:center">module</th>
+     * <th style="text-align:center">public</th>
+     * </tr>
+     * </thead>
+     * <tbody>
+     * <tr>
+     * <th scope="row" style="text-align:left">{@code CL = MethodHandles.lookup()} in {@code C}</th>
+     * <td style="text-align:center">PRO</td>
+     * <td style="text-align:center">PRI</td>
+     * <td style="text-align:center">PAC</td>
+     * <td style="text-align:center">MOD</td>
+     * <td style="text-align:center">1R</td>
+     * </tr>
+     * <tr>
+     * <th scope="row" style="text-align:left">{@code CL.in(C1)} same package</th>
+     * <td></td>
+     * <td></td>
+     * <td style="text-align:center">PAC</td>
+     * <td style="text-align:center">MOD</td>
+     * <td style="text-align:center">1R</td>
+     * </tr>
+     * <tr>
+     * <th scope="row" style="text-align:left">{@code CL.in(C1)} same module</th>
+     * <td></td>
+     * <td></td>
+     * <td></td>
+     * <td style="text-align:center">MOD</td>
+     * <td style="text-align:center">1R</td>
+     * </tr>
+     * <tr>
+     * <th scope="row" style="text-align:left">{@code CL.in(D)} different module</th>
+     * <td></td>
+     * <td></td>
+     * <td></td>
+     * <td></td>
+     * <td style="text-align:center">2R</td>
+     * </tr>
+     * <tr>
+     * <td>{@code CL.in(D).in(C)} hop back to module</td>
+     * <td></td>
+     * <td></td>
+     * <td></td>
+     * <td></td>
+     * <td style="text-align:center">2R</td>
+     * </tr>
+     * <tr>
+     * <td>{@code PRI1 = privateLookupIn(C1,CL)}</td>
+     * <td style="text-align:center">PRO</td>
+     * <td style="text-align:center">PRI</td>
+     * <td style="text-align:center">PAC</td>
+     * <td style="text-align:center">MOD</td>
+     * <td style="text-align:center">1R</td>
+     * </tr>
+     * <tr>
+     * <td>{@code PRI1a = privateLookupIn(C,PRI1)}</td>
+     * <td style="text-align:center">PRO</td>
+     * <td style="text-align:center">PRI</td>
+     * <td style="text-align:center">PAC</td>
+     * <td style="text-align:center">MOD</td>
+     * <td style="text-align:center">1R</td>
+     * </tr>
+     * <tr>
+     * <td>{@code PRI1.in(C1)} same package</td>
+     * <td></td>
+     * <td></td>
+     * <td style="text-align:center">PAC</td>
+     * <td style="text-align:center">MOD</td>
+     * <td style="text-align:center">1R</td>
+     * </tr>
+     * <tr>
+     * <td>{@code PRI1.in(C1)} different package</td>
+     * <td></td>
+     * <td></td>
+     * <td></td>
+     * <td style="text-align:center">MOD</td>
+     * <td style="text-align:center">1R</td>
+     * </tr>
+     * <tr>
+     * <td>{@code PRI1.in(D)} different module</td>
+     * <td></td>
+     * <td></td>
+     * <td></td>
+     * <td></td>
+     * <td style="text-align:center">2R</td>
+     * </tr>
+     * <tr>
+     * <td>{@code PRI1.dropLookupMode(PROTECTED)}</td>
+     * <td></td>
+     * <td style="text-align:center">PRI</td>
+     * <td style="text-align:center">PAC</td>
+     * <td style="text-align:center">MOD</td>
+     * <td style="text-align:center">1R</td>
+     * </tr>
+     * <tr>
+     * <td>{@code PRI1.dropLookupMode(PRIVATE)}</td>
+     * <td></td>
+     * <td></td>
+     * <td style="text-align:center">PAC</td>
+     * <td style="text-align:center">MOD</td>
+     * <td style="text-align:center">1R</td>
+     * </tr>
+     * <tr>
+     * <td>{@code PRI1.dropLookupMode(PACKAGE)}</td>
+     * <td></td>
+     * <td></td>
+     * <td></td>
+     * <td style="text-align:center">MOD</td>
+     * <td style="text-align:center">1R</td>
+     * </tr>
+     * <tr>
+     * <td>{@code PRI1.dropLookupMode(MODULE)}</td>
+     * <td></td>
+     * <td></td>
+     * <td></td>
+     * <td></td>
+     * <td style="text-align:center">1R</td>
+     * </tr>
+     * <tr>
+     * <td>{@code PRI1.dropLookupMode(PUBLIC)}</td>
+     * <td></td>
+     * <td></td>
+     * <td></td>
+     * <td></td>
+     * <td style="text-align:center">none</td>
+     * <tr>
+     * <td>{@code PRI2 = privateLookupIn(D,CL)}</td>
+     * <td style="text-align:center">PRO</td>
+     * <td style="text-align:center">PRI</td>
+     * <td style="text-align:center">PAC</td>
+     * <td></td>
+     * <td style="text-align:center">2R</td>
+     * </tr>
+     * <tr>
+     * <td>{@code privateLookupIn(D,PRI1)}</td>
+     * <td style="text-align:center">PRO</td>
+     * <td style="text-align:center">PRI</td>
+     * <td style="text-align:center">PAC</td>
+     * <td></td>
+     * <td style="text-align:center">2R</td>
+     * </tr>
+     * <tr>
+     * <td>{@code privateLookupIn(C,PRI2)} fails</td>
+     * <td></td>
+     * <td></td>
+     * <td></td>
+     * <td></td>
+     * <td style="text-align:center">IAE</td>
+     * </tr>
+     * <tr>
+     * <td>{@code PRI2.in(D2)} same package</td>
+     * <td></td>
+     * <td></td>
+     * <td style="text-align:center">PAC</td>
+     * <td></td>
+     * <td style="text-align:center">2R</td>
+     * </tr>
+     * <tr>
+     * <td>{@code PRI2.in(D2)} different package</td>
+     * <td></td>
+     * <td></td>
+     * <td></td>
+     * <td></td>
+     * <td style="text-align:center">2R</td>
+     * </tr>
+     * <tr>
+     * <td>{@code PRI2.in(C1)} hop back to module</td>
+     * <td></td>
+     * <td></td>
+     * <td></td>
+     * <td></td>
+     * <td style="text-align:center">2R</td>
+     * </tr>
+     * <tr>
+     * <td>{@code PRI2.in(E)} hop to third module</td>
+     * <td></td>
+     * <td></td>
+     * <td></td>
+     * <td></td>
+     * <td style="text-align:center">none</td>
+     * </tr>
+     * <tr>
+     * <td>{@code PRI2.dropLookupMode(PROTECTED)}</td>
+     * <td></td>
+     * <td style="text-align:center">PRI</td>
+     * <td style="text-align:center">PAC</td>
+     * <td></td>
+     * <td style="text-align:center">2R</td>
+     * </tr>
+     * <tr>
+     * <td>{@code PRI2.dropLookupMode(PRIVATE)}</td>
+     * <td></td>
+     * <td></td>
+     * <td style="text-align:center">PAC</td>
+     * <td></td>
+     * <td style="text-align:center">2R</td>
+     * </tr>
+     * <tr>
+     * <td>{@code PRI2.dropLookupMode(PACKAGE)}</td>
+     * <td></td>
+     * <td></td>
+     * <td></td>
+     * <td></td>
+     * <td style="text-align:center">2R</td>
+     * </tr>
+     * <tr>
+     * <td>{@code PRI2.dropLookupMode(MODULE)}</td>
+     * <td></td>
+     * <td></td>
+     * <td></td>
+     * <td></td>
+     * <td style="text-align:center">2R</td>
+     * </tr>
+     * <tr>
+     * <td>{@code PRI2.dropLookupMode(PUBLIC)}</td>
+     * <td></td>
+     * <td></td>
+     * <td></td>
+     * <td></td>
+     * <td style="text-align:center">none</td>
+     * </tr>
+     * <tr>
+     * <td>{@code CL.dropLookupMode(PROTECTED)}</td>
+     * <td></td>
+     * <td style="text-align:center">PRI</td>
+     * <td style="text-align:center">PAC</td>
+     * <td style="text-align:center">MOD</td>
+     * <td style="text-align:center">1R</td>
+     * </tr>
+     * <tr>
+     * <td>{@code CL.dropLookupMode(PRIVATE)}</td>
+     * <td></td>
+     * <td></td>
+     * <td style="text-align:center">PAC</td>
+     * <td style="text-align:center">MOD</td>
+     * <td style="text-align:center">1R</td>
+     * </tr>
+     * <tr>
+     * <td>{@code CL.dropLookupMode(PACKAGE)}</td>
+     * <td></td>
+     * <td></td>
+     * <td></td>
+     * <td style="text-align:center">MOD</td>
+     * <td style="text-align:center">1R</td>
+     * </tr>
+     * <tr>
+     * <td>{@code CL.dropLookupMode(MODULE)}</td>
+     * <td></td>
+     * <td></td>
+     * <td></td>
+     * <td></td>
+     * <td style="text-align:center">1R</td>
+     * </tr>
+     * <tr>
+     * <td>{@code CL.dropLookupMode(PUBLIC)}</td>
+     * <td></td>
+     * <td></td>
+     * <td></td>
+     * <td></td>
+     * <td style="text-align:center">none</td>
+     * </tr>
+     * <tr>
+     * <td>{@code PUB = publicLookup()}</td>
+     * <td></td>
+     * <td></td>
+     * <td></td>
+     * <td></td>
+     * <td style="text-align:center">U</td>
+     * </tr>
+     * <tr>
+     * <td>{@code PUB.in(D)} different module</td>
+     * <td></td>
+     * <td></td>
+     * <td></td>
+     * <td></td>
+     * <td style="text-align:center">U</td>
+     * </tr>
+     * <tr>
+     * <td>{@code PUB.in(D).in(E)} third module</td>
+     * <td></td>
+     * <td></td>
+     * <td></td>
+     * <td></td>
+     * <td style="text-align:center">U</td>
+     * </tr>
+     * <tr>
+     * <td>{@code PUB.dropLookupMode(UNCONDITIONAL)}</td>
+     * <td></td>
+     * <td></td>
+     * <td></td>
+     * <td></td>
+     * <td style="text-align:center">none</td>
+     * </tr>
+     * <tr>
+     * <td>{@code privateLookupIn(C1,PUB)} fails</td>
+     * <td></td>
+     * <td></td>
+     * <td></td>
+     * <td></td>
+     * <td style="text-align:center">IAE</td>
+     * </tr>
+     * <tr>
+     * <td>{@code ANY.in(X)}, for inaccessible <code>X</code></td>
+     * <td></td>
+     * <td></td>
+     * <td></td>
+     * <td></td>
+     * <td style="text-align:center">none</td>
+     * </tr>
+     * </tbody>
+     * </table>
+     *
+     * <p>
+     * Notes:
+     * <ul>
+     * <li>Class {@code C} and class {@code C1} are in module {@code M1},
+     *     but {@code D} and {@code D2} are in module {@code M2}, and {@code E}
+     *     is in module {@code M3}. {@code X} stands for class which is inaccessible
+     *     to the lookup. {@code ANY} stands for any of the example lookups.</li>
+     * <li>{@code PRO} indicates {@link #PROTECTED} bit set,
+     *     {@code PRI} indicates {@link #PRIVATE} bit set,
+     *     {@code PAC} indicates {@link #PACKAGE} bit set,
+     *     {@code MOD} indicates {@link #MODULE} bit set,
+     *     {@code 1R} and {@code 2R} indicate {@link #PUBLIC} bit set,
+     *     {@code U} indicates {@link #UNCONDITIONAL} bit set,
+     *     {@code IAE} indicates {@code IllegalAccessException} thrown.</li>
+     * <li>Public access comes in three kinds:
+     * <ul>
+     * <li>unconditional ({@code U}): the lookup assumes readability.
+     *     The lookup has {@code null} previous lookup class.
+     * <li>one-module-reads ({@code 1R}): the module access checking is
+     *     performed with respect to the lookup class.  The lookup has {@code null}
+     *     previous lookup class.
+     * <li>two-module-reads ({@code 2R}): the module access checking is
+     *     performed with respect to the lookup class and the previous lookup class.
+     *     The lookup has a non-null previous lookup class which is in a
+     *     different module from the current lookup class.
+     * </ul>
+     * <li>Any attempt to reach a third module loses all access.</li>
+     * <li>If a target class {@code X} is not accessible to {@code Lookup::in}
+     * all access modes are dropped.</li>
+     * </ul>
+     *
      * <h2><a id="secmgr"></a>Security manager interactions</h2>
      * Although bytecode instructions can only refer to classes in
      * a related class loader, this API can search for methods in any
@@ -645,6 +1195,9 @@ public class MethodHandles {
         /** The class on behalf of whom the lookup is being performed. */
         private final Class<?> lookupClass;
 
+        /** previous lookup class */
+        private final Class<?> prevLookupClass;
+
         /** The allowed sorts of members which may be looked up (PUBLIC, etc.). */
         private final int allowedModes;
 
@@ -656,6 +1209,10 @@ public class MethodHandles {
          *  which may contribute to the result of {@link #lookupModes lookupModes}.
          *  The value, {@code 0x01}, happens to be the same as the value of the
          *  {@code public} {@linkplain java.lang.reflect.Modifier#PUBLIC modifier bit}.
+         *  <p>
+         *  A {@code Lookup} with this lookup mode performs cross-module access check
+         *  with respect to the {@linkplain #lookupClass() lookup class} and
+         *  {@linkplain #previousLookupClass() previous lookup class} if present.
          */
         public static final int PUBLIC = Modifier.PUBLIC;
 
@@ -680,7 +1237,7 @@ public class MethodHandles {
          */
         public static final int PACKAGE = Modifier.STATIC;
 
-        /** A single-bit mask representing {@code module} access (default access),
+        /** A single-bit mask representing {@code module} access,
          *  which may contribute to the result of {@link #lookupModes lookupModes}.
          *  The value is {@code 0x10}, which does not correspond meaningfully to
          *  any particular {@linkplain java.lang.reflect.Modifier modifier bit}.
@@ -688,6 +1245,10 @@ public class MethodHandles {
          *  with this lookup mode can access all public types in the module of the
          *  lookup class and public types in packages exported by other modules
          *  to the module of the lookup class.
+         *  <p>
+         *  If this lookup mode is set, the {@linkplain #previousLookupClass()
+         *  previous lookup class} is always {@code null}.
+         *
          *  @since 9
          *  @spec JPMS
          */
@@ -699,10 +1260,14 @@ public class MethodHandles {
          *  any particular {@linkplain java.lang.reflect.Modifier modifier bit}.
          *  A {@code Lookup} with this lookup mode assumes {@linkplain
          *  java.lang.Module#canRead(java.lang.Module) readability}.
-         *  In conjunction with the {@code PUBLIC} modifier bit, a {@code Lookup}
-         *  with this lookup mode can access all public members of public types
-         *  of all modules where the type is in a package that is {@link
+         *  This lookup mode can access all public members of public types
+         *  of all modules when the type is in a package that is {@link
          *  java.lang.Module#isExported(String) exported unconditionally}.
+         *
+         *  <p>
+         *  If this lookup mode is set, the {@linkplain #previousLookupClass()
+         *  previous lookup class} is always {@code null}.
+         *
          *  @since 9
          *  @spec JPMS
          *  @see #publicLookup()
@@ -713,22 +1278,53 @@ public class MethodHandles {
         private static final int FULL_POWER_MODES = (ALL_MODES & ~UNCONDITIONAL);
         private static final int TRUSTED   = -1;
 
+        /*
+         * Adjust PUBLIC => PUBLIC|MODULE|UNCONDITIONAL
+         * Adjust 0 => PACKAGE
+         */
         private static int fixmods(int mods) {
             mods &= (ALL_MODES - PACKAGE - MODULE - UNCONDITIONAL);
-            return (mods != 0) ? mods : (PACKAGE | MODULE | UNCONDITIONAL);
+            if (Modifier.isPublic(mods))
+                mods |= UNCONDITIONAL;
+            return (mods != 0) ? mods : PACKAGE;
         }
 
         /** Tells which class is performing the lookup.  It is this class against
          *  which checks are performed for visibility and access permissions.
+         *  <p>
+         *  If this lookup object has a {@linkplain #previousLookupClass() previous lookup class},
+         *  access checks are performed against both the lookup class and the previous lookup class.
          *  <p>
          *  The class implies a maximum level of access permission,
          *  but the permissions may be additionally limited by the bitmask
          *  {@link #lookupModes lookupModes}, which controls whether non-public members
          *  can be accessed.
          *  @return the lookup class, on behalf of which this lookup object finds members
+         *  @see <a href="#cross-module-lookup">Cross-module lookups</a>
          */
         public Class<?> lookupClass() {
             return lookupClass;
+        }
+
+        /** Reports a lookup class in another module that this lookup object
+         * was previously teleported from, or {@code null}.
+         * <p>
+         * A {@code Lookup} object produced by the factory methods, such as the
+         * {@link #lookup() lookup()} and {@link #publicLookup() publicLookup()} method,
+         * has {@code null} previous lookup class.
+         * A {@code Lookup} object has a non-null previous lookup class
+         * when this lookup was teleported from an old lookup class
+         * in one module to a new lookup class in another module.
+         *
+         * @return the lookup class in another module that this lookup object was
+         *         previously teleported from, or {@code null}
+         * @since 14
+         * @see #in(Class)
+         * @see MethodHandles#privateLookupIn(Class, Lookup)
+         * @see <a href="#cross-module-lookup">Cross-module lookups</a>
+         */
+        public Class<?> previousLookupClass() {
+            return prevLookupClass;
         }
 
         // This is just for calling out to MethodHandleImpl.
@@ -774,48 +1370,69 @@ public class MethodHandles {
          * which in turn is called by a method not in this package.
          */
         Lookup(Class<?> lookupClass) {
-            this(lookupClass, FULL_POWER_MODES);
+            this(lookupClass, null, FULL_POWER_MODES);
             // make sure we haven't accidentally picked up a privileged class:
             checkUnprivilegedlookupClass(lookupClass);
         }
 
-        private Lookup(Class<?> lookupClass, int allowedModes) {
+        private Lookup(Class<?> lookupClass, Class<?> prevLookupClass, int allowedModes) {
+            assert prevLookupClass == null || ((allowedModes & MODULE) == 0
+                    && prevLookupClass.getModule() != lookupClass.getModule());
+
             this.lookupClass = lookupClass;
+            this.prevLookupClass = prevLookupClass;
             this.allowedModes = allowedModes;
+        }
+
+        private static Lookup newLookup(Class<?> lookupClass, Class<?> prevLookupClass, int allowedModes) {
+            // make sure we haven't accidentally picked up a privileged class:
+            checkUnprivilegedlookupClass(lookupClass);
+            return new Lookup(lookupClass, prevLookupClass, allowedModes);
         }
 
         /**
          * Creates a lookup on the specified new lookup class.
          * The resulting object will report the specified
          * class as its own {@link #lookupClass() lookupClass}.
+         *
          * <p>
          * However, the resulting {@code Lookup} object is guaranteed
          * to have no more access capabilities than the original.
          * In particular, access capabilities can be lost as follows:<ul>
-         * <li>If the old lookup class is in a {@link Module#isNamed() named} module, and
-         * the new lookup class is in a different module {@code M}, then no members, not
-         * even public members in {@code M}'s exported packages, will be accessible.
-         * The exception to this is when this lookup is {@link #publicLookup()
-         * publicLookup}, in which case {@code PUBLIC} access is not lost.
-         * <li>If the old lookup class is in an unnamed module, and the new lookup class
-         * is a different module then {@link #MODULE MODULE} access is lost.
-         * <li>If the new lookup class differs from the old one then {@code UNCONDITIONAL} is lost.
+         * <li>If the new lookup class is in a different module from the old one,
+         * i.e. {@link #MODULE MODULE} access is lost.
          * <li>If the new lookup class is in a different package
-         * than the old one, protected and default (package) members will not be accessible.
+         * than the old one, protected and default (package) members will not be accessible,
+         * i.e. {@link #PROTECTED PROTECTED} and {@link #PACKAGE PACKAGE} access are lost.
          * <li>If the new lookup class is not within the same package member
          * as the old one, private members will not be accessible, and protected members
-         * will not be accessible by virtue of inheritance.
+         * will not be accessible by virtue of inheritance,
+         * i.e. {@link #PRIVATE PRIVATE} access is lost.
          * (Protected members may continue to be accessible because of package sharing.)
-         * <li>If the new lookup class is not accessible to the old lookup class,
-         * then no members, not even public members, will be accessible.
-         * (In all other cases, public members will continue to be accessible.)
+         * <li>If the new lookup class is not
+         * {@linkplain #accessClass(Class) accessible} to this lookup,
+         * then no members, not even public members, will be accessible
+         * i.e. all access modes are lost.
+         * <li>If the new lookup class, the old lookup class and the previous lookup class
+         * are all in different modules i.e. teleporting to a third module,
+         * all access modes are lost.
          * </ul>
+         * <p>
+         * The new previous lookup class is chosen as follows:
+         * <ul>
+         * <li>If the new lookup object has {@link #UNCONDITIONAL UNCONDITIONAL} bit,
+         * the new previous lookup class is {@code null}.
+         * <li>If the new lookup class is in the same module as the old lookup class,
+         * the new previous lookup class is the old previous lookup class.
+         * <li>If the new lookup class is in a different module from the old lookup class,
+         * the new previous lookup class is the the old lookup class.
+         *</ul>
          * <p>
          * The resulting lookup's capabilities for loading classes
          * (used during {@link #findClass} invocations)
          * are determined by the lookup class' loader,
          * which may change due to this operation.
-         *
+         * <p>
          * @param requestedLookupClass the desired lookup class for the new lookup object
          * @return a lookup object which reports the desired lookup class, or the same object
          * if there is no change
@@ -823,22 +1440,32 @@ public class MethodHandles {
          *
          * @revised 9
          * @spec JPMS
+         * @see #accessClass(Class)
+         * @see <a href="#cross-module-lookup">Cross-module lookups</a>
          */
         public Lookup in(Class<?> requestedLookupClass) {
             Objects.requireNonNull(requestedLookupClass);
             if (allowedModes == TRUSTED)  // IMPL_LOOKUP can make any lookup at all
-                return new Lookup(requestedLookupClass, FULL_POWER_MODES);
+                return new Lookup(requestedLookupClass, null, FULL_POWER_MODES);
             if (requestedLookupClass == this.lookupClass)
                 return this;  // keep same capabilities
             int newModes = (allowedModes & FULL_POWER_MODES);
-            if (!VerifyAccess.isSameModule(this.lookupClass, requestedLookupClass)) {
-                // Need to drop all access when teleporting from a named module to another
-                // module. The exception is publicLookup where PUBLIC is not lost.
-                if (this.lookupClass.getModule().isNamed()
-                    && (this.allowedModes & UNCONDITIONAL) == 0)
+            Module fromModule = this.lookupClass.getModule();
+            Module targetModule = requestedLookupClass.getModule();
+            Class<?> plc = this.previousLookupClass();
+            if ((this.allowedModes & UNCONDITIONAL) != 0) {
+                assert plc == null;
+                newModes = UNCONDITIONAL;
+            } else if (fromModule != targetModule) {
+                if (plc != null && !VerifyAccess.isSameModule(plc, requestedLookupClass)) {
+                    // allow hopping back and forth between fromModule and plc's module
+                    // but not the third module
                     newModes = 0;
-                else
-                    newModes &= ~(MODULE|PACKAGE|PRIVATE|PROTECTED);
+                }
+                // drop MODULE access
+                newModes &= ~(MODULE|PACKAGE|PRIVATE|PROTECTED);
+                // teleport from this lookup class
+                plc = this.lookupClass;
             }
             if ((newModes & PACKAGE) != 0
                 && !VerifyAccess.isSamePackage(this.lookupClass, requestedLookupClass)) {
@@ -849,29 +1476,39 @@ public class MethodHandles {
                 && !VerifyAccess.isSamePackageMember(this.lookupClass, requestedLookupClass)) {
                 newModes &= ~(PRIVATE|PROTECTED);
             }
-            if ((newModes & PUBLIC) != 0
-                && !VerifyAccess.isClassAccessible(requestedLookupClass, this.lookupClass, allowedModes)) {
+            if ((newModes & (PUBLIC|UNCONDITIONAL)) != 0
+                && !VerifyAccess.isClassAccessible(requestedLookupClass, this.lookupClass, this.prevLookupClass, allowedModes)) {
                 // The requested class it not accessible from the lookup class.
                 // No permissions.
                 newModes = 0;
             }
-
-            checkUnprivilegedlookupClass(requestedLookupClass);
-            return new Lookup(requestedLookupClass, newModes);
+            return newLookup(requestedLookupClass, plc, newModes);
         }
-
 
         /**
          * Creates a lookup on the same lookup class which this lookup object
          * finds members, but with a lookup mode that has lost the given lookup mode.
          * The lookup mode to drop is one of {@link #PUBLIC PUBLIC}, {@link #MODULE
          * MODULE}, {@link #PACKAGE PACKAGE}, {@link #PROTECTED PROTECTED} or {@link #PRIVATE PRIVATE}.
-         * {@link #PROTECTED PROTECTED} and {@link #UNCONDITIONAL UNCONDITIONAL} are always
-         * dropped and so the resulting lookup mode will never have these access capabilities.
+         * {@link #PROTECTED PROTECTED} is always
+         * dropped and so the resulting lookup mode will never have this access capability.
          * When dropping {@code PACKAGE} then the resulting lookup will not have {@code PACKAGE}
          * or {@code PRIVATE} access. When dropping {@code MODULE} then the resulting lookup will
          * not have {@code MODULE}, {@code PACKAGE}, or {@code PRIVATE} access. If {@code PUBLIC}
+         * is dropped then the resulting lookup has no access. If {@code UNCONDITIONAL}
          * is dropped then the resulting lookup has no access.
+         *
+         * @apiNote
+         * A lookup with {@code PACKAGE} but not {@code PRIVATE} mode can safely
+         * delegate non-public access within the package of the lookup class without
+         * conferring private access.  A lookup with {@code MODULE} but not
+         * {@code PACKAGE} mode can safely delegate {@code PUBLIC} access within
+         * the module of the lookup class without conferring package access.
+         * A lookup with a {@linkplain #previousLookupClass() previous lookup class}
+         * (and {@code PUBLIC} but not {@code MODULE} mode) can safely delegate access
+         * to public classes accessible to both the module of the lookup class
+         * and the module of the previous lookup class.
+         *
          * @param modeToDrop the lookup mode to drop
          * @return a lookup object which lacks the indicated mode, or the same object if there is no change
          * @throws IllegalArgumentException if {@code modeToDrop} is not one of {@code PUBLIC},
@@ -881,9 +1518,9 @@ public class MethodHandles {
          */
         public Lookup dropLookupMode(int modeToDrop) {
             int oldModes = lookupModes();
-            int newModes = oldModes & ~(modeToDrop | PROTECTED | UNCONDITIONAL);
+            int newModes = oldModes & ~(modeToDrop | PROTECTED);
             switch (modeToDrop) {
-                case PUBLIC: newModes &= ~(ALL_MODES); break;
+                case PUBLIC: newModes &= ~(FULL_POWER_MODES); break;
                 case MODULE: newModes &= ~(PACKAGE | PRIVATE); break;
                 case PACKAGE: newModes &= ~(PRIVATE); break;
                 case PROTECTED:
@@ -892,7 +1529,7 @@ public class MethodHandles {
                 default: throw new IllegalArgumentException(modeToDrop + " is not a valid mode to drop");
             }
             if (newModes == oldModes) return this;  // return self if no change
-            return new Lookup(lookupClass(), newModes);
+            return newLookup(lookupClass(), previousLookupClass(), newModes);
         }
 
         /**
@@ -997,13 +1634,13 @@ public class MethodHandles {
         static { IMPL_NAMES.getClass(); }
 
         /** Package-private version of lookup which is trusted. */
-        static final Lookup IMPL_LOOKUP = new Lookup(Object.class, TRUSTED);
+        static final Lookup IMPL_LOOKUP = new Lookup(Object.class, null, TRUSTED);
 
         /** Version of lookup which is trusted minimally.
          *  It can only be used to create method handles to publicly accessible
          *  members in packages that are exported unconditionally.
          */
-        static final Lookup PUBLIC_LOOKUP = new Lookup(Object.class, (PUBLIC|UNCONDITIONAL));
+        static final Lookup PUBLIC_LOOKUP = new Lookup(Object.class, null, UNCONDITIONAL);
 
         private static void checkUnprivilegedlookupClass(Class<?> lookupClass) {
             String name = lookupClass.getName();
@@ -1013,6 +1650,8 @@ public class MethodHandles {
 
         /**
          * Displays the name of the class from which lookups are to be made.
+         * followed with "/" and the name of the {@linkplain #previousLookupClass()
+         * previous lookup class} if present.
          * (The name is the one reported by {@link java.lang.Class#getName() Class.getName}.)
          * If there are restrictions on the access permitted to this lookup,
          * this is indicated by adding a suffix to the class name, consisting
@@ -1020,14 +1659,14 @@ public class MethodHandles {
          * allowed access, and is chosen as follows:
          * <ul>
          * <li>If no access is allowed, the suffix is "/noaccess".
+         * <li>If only unconditional access is allowed, the suffix is "/publicLookup".
          * <li>If only public access to types in exported packages is allowed, the suffix is "/public".
-         * <li>If only public access and unconditional access are allowed, the suffix is "/publicLookup".
          * <li>If only public and module access are allowed, the suffix is "/module".
-         * <li>If only public, module and package access are allowed, the suffix is "/package".
-         * <li>If only public, module, package, and private access are allowed, the suffix is "/private".
+         * <li>If public and package access are allowed, the suffix is "/package".
+         * <li>If public, package, and private access are allowed, the suffix is "/private".
          * </ul>
-         * If none of the above cases apply, it is the case that full
-         * access (public, module, package, private, and protected) is allowed.
+         * If none of the above cases apply, it is the case that full access
+         * (public, module, package, private, and protected) is allowed.
          * In this case, no suffix is added.
          * This is true only of an object obtained originally from
          * {@link java.lang.invoke.MethodHandles#lookup MethodHandles.lookup}.
@@ -1047,20 +1686,25 @@ public class MethodHandles {
         @Override
         public String toString() {
             String cname = lookupClass.getName();
+            if (prevLookupClass != null)
+                cname += "/" + prevLookupClass.getName();
             switch (allowedModes) {
             case 0:  // no privileges
                 return cname + "/noaccess";
+            case UNCONDITIONAL:
+                return cname + "/publicLookup";
             case PUBLIC:
                 return cname + "/public";
-            case PUBLIC|UNCONDITIONAL:
-                return cname  + "/publicLookup";
             case PUBLIC|MODULE:
                 return cname + "/module";
+            case PUBLIC|PACKAGE:
             case PUBLIC|MODULE|PACKAGE:
                 return cname + "/package";
-            case FULL_POWER_MODES & ~PROTECTED:
-                return cname + "/private";
+            case FULL_POWER_MODES & (~PROTECTED):
+            case FULL_POWER_MODES & ~(PROTECTED|MODULE):
+                    return cname + "/private";
             case FULL_POWER_MODES:
+            case FULL_POWER_MODES & (~MODULE):
                 return cname;
             case TRUSTED:
                 return "/trusted";  // internal only; not exported
@@ -1301,24 +1945,75 @@ assertEquals("[x, y, z]", pb.command().toString());
         }
 
         /**
-         * Determines if a class can be accessed from the lookup context defined by this {@code Lookup} object. The
-         * static initializer of the class is not run.
+         * Determines if a class can be accessed from the lookup context defined by
+         * this {@code Lookup} object. The static initializer of the class is not run.
          * <p>
-         * The lookup context here is determined by the {@linkplain #lookupClass() lookup class} and the
-         * {@linkplain #lookupModes() lookup modes}.
+         * If the {@code targetClass} is in the same module as the lookup class,
+         * the lookup class is {@code LC} in module {@code M1} and
+         * the previous lookup class is in module {@code M0} or
+         * {@code null} if not present,
+         * {@code targetClass} is accessible if and only if one of the following is true:
+         * <ul>
+         * <li>If this lookup has {@link #PRIVATE} access, {@code targetClass} is
+         *     {@code LC} or other class in the same nest of {@code LC}.</li>
+         * <li>If this lookup has {@link #PACKAGE} access, {@code targetClass} is
+         *     in the same runtime package of {@code LC}.</li>
+         * <li>If this lookup has {@link #MODULE} access, {@code targetClass} is
+         *     a public type in {@code M1}.</li>
+         * <li>If this lookup has {@link #PUBLIC} access, {@code targetClass} is
+         *     a public type in a package exported by {@code M1} to at least  {@code M0}
+         *     if the previous lookup class is present; otherwise, {@code targetClass}
+         *     is a public type in a package exported by {@code M1} unconditionally.</li>
+         * </ul>
+         *
+         * <p>
+         * Otherwise, if this lookup has {@link #UNCONDITIONAL} access, this lookup
+         * can access public types in all modules when the type is in a package
+         * that is exported unconditionally.
+         * <p>
+         * Otherwise, the target class is in a different module from {@code lookupClass},
+         * and if this lookup does not have {@code PUBLIC} access, {@code lookupClass}
+         * is inaccessible.
+         * <p>
+         * Otherwise, if this lookup has no {@linkplain #previousLookupClass() previous lookup class},
+         * {@code M1} is the module containing {@code lookupClass} and
+         * {@code M2} is the module containing {@code targetClass},
+         * then {@code targetClass} is accessible if and only if
+         * <ul>
+         * <li>{@code M1} reads {@code M2}, and
+         * <li>{@code targetClass} is public and in a package exported by
+         *     {@code M2} at least to {@code M1}.
+         * </ul>
+         * <p>
+         * Otherwise, if this lookup has a {@linkplain #previousLookupClass() previous lookup class},
+         * {@code M1} and {@code M2} are as before, and {@code M0} is the module
+         * containing the previous lookup class, then {@code targetClass} is accessible
+         * if and only if one of the following is true:
+         * <ul>
+         * <li>{@code targetClass} is in {@code M0} and {@code M1}
+         *     {@linkplain Module#reads reads} {@code M0} and the type is
+         *     in a package that is exported to at least {@code M1}.
+         * <li>{@code targetClass} is in {@code M1} and {@code M0}
+         *     {@linkplain Module#reads reads} {@code M1} and the type is
+         *     in a package that is exported to at least {@code M0}.
+         * <li>{@code targetClass} is in a third module {@code M2} and both {@code M0}
+         *     and {@code M1} reads {@code M2} and the type is in a package
+         *     that is exported to at least both {@code M0} and {@code M2}.
+         * </ul>
+         * <p>
+         * Otherwise, {@code targetClass} is not accessible.
          *
          * @param targetClass the class to be access-checked
-         *
          * @return the class that has been access-checked
-         *
-         * @throws IllegalAccessException if the class is not accessible from the lookup class, using the allowed access
-         * modes.
+         * @throws IllegalAccessException if the class is not accessible from the lookup class
+         * and previous lookup class, if present, using the allowed access modes.
          * @exception SecurityException if a security manager is present and it
          *                              <a href="MethodHandles.Lookup.html#secmgr">refuses access</a>
          * @since 9
+         * @see <a href="#cross-module-lookup">Cross-module lookups</a>
          */
         public Class<?> accessClass(Class<?> targetClass) throws IllegalAccessException {
-            if (!VerifyAccess.isClassAccessible(targetClass, lookupClass, allowedModes)) {
+            if (!VerifyAccess.isClassAccessible(targetClass, lookupClass, prevLookupClass, allowedModes)) {
                 throw new MemberName(targetClass).makeAccessException("access violation", this);
             }
             checkSecurityManager(targetClass, null);
@@ -2083,7 +2778,7 @@ return mh1;
         boolean isClassAccessible(Class<?> refc) {
             Objects.requireNonNull(refc);
             Class<?> caller = lookupClassOrNull();
-            return caller == null || VerifyAccess.isClassAccessible(refc, caller, allowedModes);
+            return caller == null || VerifyAccess.isClassAccessible(refc, caller, prevLookupClass, allowedModes);
         }
 
         /** Check name for an illegal leading "&lt;" character. */
@@ -2220,7 +2915,7 @@ return mh1;
             int requestedModes = fixmods(mods);  // adjust 0 => PACKAGE
             if ((requestedModes & allowedModes) != 0) {
                 if (VerifyAccess.isMemberAccessible(refc, m.getDeclaringClass(),
-                                                    mods, lookupClass(), allowedModes))
+                                                    mods, lookupClass(), previousLookupClass(), allowedModes))
                     return;
             } else {
                 // Protected members can also be checked as if they were package-private.
@@ -2239,9 +2934,10 @@ return mh1;
                                (defc == refc ||
                                 Modifier.isPublic(refc.getModifiers())));
             if (!classOK && (allowedModes & PACKAGE) != 0) {
-                classOK = (VerifyAccess.isClassAccessible(defc, lookupClass(), FULL_POWER_MODES) &&
+                // ignore previous lookup class to check if default package access
+                classOK = (VerifyAccess.isClassAccessible(defc, lookupClass(), null, FULL_POWER_MODES) &&
                            (defc == refc ||
-                            VerifyAccess.isClassAccessible(refc, lookupClass(), FULL_POWER_MODES)));
+                            VerifyAccess.isClassAccessible(refc, lookupClass(), null, FULL_POWER_MODES)));
             }
             if (!classOK)
                 return "class is not public";

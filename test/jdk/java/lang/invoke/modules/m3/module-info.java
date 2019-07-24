@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,11 +21,12 @@
  * questions.
  */
 
-import java.lang.invoke.MethodHandles;
-import java.lang.invoke.MethodHandles.Lookup;
-
-public class Unnamed {
-    public static Lookup lookup() {
-        return MethodHandles.lookup();
-    }
+module m3 {
+    requires m4;
+    requires m5;
+    requires testng;
+    requires java.management;
+    exports c1;
+    opens c2 to m5;
+    exports jdk.test;
 }
