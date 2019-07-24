@@ -113,9 +113,7 @@ class Field extends AccessibleObject implements Member {
 
 
     /**
-     * Package-private constructor used by ReflectAccess to enable
-     * instantiation of these objects in Java code from the java.lang
-     * package via sun.reflect.LangReflectAccess.
+     * Package-private constructor
      */
     Field(Class<?> declaringClass,
           String name,

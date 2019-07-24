@@ -111,7 +111,7 @@ public final class Constructor<T> extends Executable {
     /**
      * Package-private constructor used by ReflectAccess to enable
      * instantiation of these objects in Java code from the java.lang
-     * package via sun.reflect.LangReflectAccess.
+     * package via jdk.internal.access.JavaLangReflectAccess.
      */
     Constructor(Class<T> declaringClass,
                 Class<?>[] parameterTypes,

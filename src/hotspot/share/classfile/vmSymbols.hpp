@@ -247,9 +247,6 @@
   template(clazz_name,                                "clazz")                                    \
   template(exceptionTypes_name,                       "exceptionTypes")                           \
   template(modifiers_name,                            "modifiers")                                \
-  template(newConstructor_name,                       "newConstructor")                           \
-  template(newField_name,                             "newField")                                 \
-  template(newMethod_name,                            "newMethod")                                \
   template(invokeBasic_name,                          "invokeBasic")                              \
   template(linkToVirtual_name,                        "linkToVirtual")                            \
   template(linkToStatic_name,                         "linkToStatic")                             \

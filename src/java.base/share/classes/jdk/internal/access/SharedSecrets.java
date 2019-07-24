@@ -50,28 +50,29 @@ import jdk.internal.misc.Unsafe;
 
 public class SharedSecrets {
     private static final Unsafe unsafe = Unsafe.getUnsafe();
-    private static JavaUtilJarAccess javaUtilJarAccess;
+    private static JavaAWTAccess javaAWTAccess;
+    private static JavaAWTFontAccess javaAWTFontAccess;
+    private static JavaBeansAccess javaBeansAccess;
     private static JavaLangAccess javaLangAccess;
-    private static JavaLangModuleAccess javaLangModuleAccess;
     private static JavaLangInvokeAccess javaLangInvokeAccess;
+    private static JavaLangModuleAccess javaLangModuleAccess;
     private static JavaLangRefAccess javaLangRefAccess;
+    private static JavaLangReflectAccess javaLangReflectAccess;
     private static JavaIOAccess javaIOAccess;
+    private static JavaIOFileDescriptorAccess javaIOFileDescriptorAccess;
+    private static JavaIOFilePermissionAccess javaIOFilePermissionAccess;
+    private static JavaIORandomAccessFileAccess javaIORandomAccessFileAccess;
+    private static JavaObjectInputStreamAccess javaObjectInputStreamAccess;
+    private static JavaObjectInputFilterAccess javaObjectInputFilterAccess;
     private static JavaNetInetAddressAccess javaNetInetAddressAccess;
     private static JavaNetHttpCookieAccess javaNetHttpCookieAccess;
     private static JavaNetUriAccess javaNetUriAccess;
     private static JavaNetURLAccess javaNetURLAccess;
     private static JavaNioAccess javaNioAccess;
-    private static JavaIOFileDescriptorAccess javaIOFileDescriptorAccess;
-    private static JavaIOFilePermissionAccess javaIOFilePermissionAccess;
-    private static JavaSecurityAccess javaSecurityAccess;
+    private static JavaUtilJarAccess javaUtilJarAccess;
     private static JavaUtilZipFileAccess javaUtilZipFileAccess;
     private static JavaUtilResourceBundleAccess javaUtilResourceBundleAccess;
-    private static JavaAWTAccess javaAWTAccess;
-    private static JavaAWTFontAccess javaAWTFontAccess;
-    private static JavaBeansAccess javaBeansAccess;
-    private static JavaObjectInputStreamAccess javaObjectInputStreamAccess;
-    private static JavaObjectInputFilterAccess javaObjectInputFilterAccess;
-    private static JavaIORandomAccessFileAccess javaIORandomAccessFileAccess;
+    private static JavaSecurityAccess javaSecurityAccess;
     private static JavaSecuritySignatureAccess javaSecuritySignatureAccess;
     private static JavaxCryptoSealedObjectAccess javaxCryptoSealedObjectAccess;
 
@@ -127,6 +128,14 @@ public class SharedSecrets {
 
     public static JavaLangRefAccess getJavaLangRefAccess() {
         return javaLangRefAccess;
+    }
+
+    public static void setJavaLangReflectAccess(JavaLangReflectAccess jlra) {
+        javaLangReflectAccess = jlra;
+    }
+
+    public static JavaLangReflectAccess getJavaLangReflectAccess() {
+        return javaLangReflectAccess;
     }
 
     public static void setJavaNetUriAccess(JavaNetUriAccess jnua) {

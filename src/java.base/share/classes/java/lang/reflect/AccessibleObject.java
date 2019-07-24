@@ -30,6 +30,7 @@ import java.lang.invoke.MethodHandle;
 import java.lang.ref.WeakReference;
 import java.security.AccessController;
 
+import jdk.internal.access.SharedSecrets;
 import jdk.internal.misc.VM;
 import jdk.internal.module.IllegalAccessLogger;
 import jdk.internal.reflect.CallerSensitive;
@@ -77,6 +78,10 @@ import sun.security.util.SecurityConstants;
  * @spec JPMS
  */
 public class AccessibleObject implements AnnotatedElement {
+    static {
+        // AccessibleObject is initialized early in initPhase1
+        SharedSecrets.setJavaLangReflectAccess(new ReflectAccess());
+    }
 
     static void checkPermission() {
         SecurityManager sm = System.getSecurityManager();
