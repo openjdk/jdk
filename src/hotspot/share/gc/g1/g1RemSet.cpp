@@ -94,24 +94,35 @@ class G1RemSetScanState : public CHeapObj<mtGC> {
   // to (>=) HeapRegion::CardsPerRegion (completely scanned).
   uint volatile* _card_table_scan_state;
 
-  // Random power of two number of cards we want to claim per thread. This corresponds
-  // to a 64k of memory work chunk area for every thread.
-  // We use the same claim size as Parallel GC. No particular measurements have been
-  // performed to determine an optimal number.
-  static const uint CardsPerChunk = 128;
+  // Return "optimal" number of chunks per region we want to use for claiming areas
+  // within a region to claim. Dependent on the region size as proxy for the heap
+  // size, we limit the total number of chunks to limit memory usage and maintenance
+  // effort of that table vs. granularity of distributing scanning work.
+  // Testing showed that 8 for 1M/2M region, 16 for 4M/8M regions, 32 for 16/32M regions
+  // seems to be such a good trade-off.
+  static uint get_chunks_per_region(uint log_region_size) {
+    // Limit the expected input values to current known possible values of the
+    // (log) region size. Adjust as necessary after testing if changing the permissible
+    // values for region size.
+    assert(log_region_size >= 20 && log_region_size <= 25,
+           "expected value in [20,25], but got %u", log_region_size);
+    return 1u << (log_region_size / 2 - 7);
+  }
 
-  uint _scan_chunks_per_region;
+  uint _scan_chunks_per_region;         // Number of chunks per region.
+  uint8_t _log_scan_chunks_per_region;  // Log of number of chunks per region.
   bool* _region_scan_chunks;
-  uint8_t _scan_chunks_shift;
+  size_t _num_total_scan_chunks;        // Total number of elements in _region_scan_chunks.
+  uint8_t _scan_chunks_shift;           // For conversion between card index and chunk index.
 public:
   uint scan_chunk_size() const { return (uint)1 << _scan_chunks_shift; }
 
   // Returns whether the chunk corresponding to the given region/card in region contain a
   // dirty card, i.e. actually needs scanning.
   bool chunk_needs_scan(uint const region_idx, uint const card_in_region) const {
-    size_t const idx = (size_t)region_idx * _scan_chunks_per_region + (card_in_region >> _scan_chunks_shift);
-    assert(idx < (_max_regions * _scan_chunks_per_region), "Index " SIZE_FORMAT " out of bounds " SIZE_FORMAT,
-           idx, _max_regions * _scan_chunks_per_region);
+    size_t const idx = ((size_t)region_idx << _log_scan_chunks_per_region) + (card_in_region >> _scan_chunks_shift);
+    assert(idx < _num_total_scan_chunks, "Index " SIZE_FORMAT " out of bounds " SIZE_FORMAT,
+           idx, _num_total_scan_chunks);
     return _region_scan_chunks[idx];
   }
 
@@ -286,8 +297,10 @@ public:
     _max_regions(0),
     _collection_set_iter_state(NULL),
     _card_table_scan_state(NULL),
-    _scan_chunks_per_region((uint)(HeapRegion::CardsPerRegion / CardsPerChunk)),
+    _scan_chunks_per_region(get_chunks_per_region(HeapRegion::LogOfHRGrainBytes)),
+    _log_scan_chunks_per_region(log2_uint(_scan_chunks_per_region)),
     _region_scan_chunks(NULL),
+    _num_total_scan_chunks(0),
     _scan_chunks_shift(0),
     _all_dirty_regions(NULL),
     _next_dirty_regions(NULL),
@@ -306,7 +319,8 @@ public:
     _max_regions = max_regions;
     _collection_set_iter_state = NEW_C_HEAP_ARRAY(G1RemsetIterState, max_regions, mtGC);
     _card_table_scan_state = NEW_C_HEAP_ARRAY(uint, max_regions, mtGC);
-    _region_scan_chunks = NEW_C_HEAP_ARRAY(bool, max_regions * _scan_chunks_per_region, mtGC);
+    _num_total_scan_chunks = max_regions * _scan_chunks_per_region;
+    _region_scan_chunks = NEW_C_HEAP_ARRAY(bool, _num_total_scan_chunks, mtGC);
 
     _scan_chunks_shift = (uint8_t)log2_intptr(HeapRegion::CardsPerRegion / _scan_chunks_per_region);
     _scan_top = NEW_C_HEAP_ARRAY(HeapWord*, max_regions, mtGC);
@@ -333,7 +347,7 @@ public:
       _card_table_scan_state[i] = 0;
     }
 
-    ::memset(_region_scan_chunks, false, _max_regions * _scan_chunks_per_region * sizeof(*_region_scan_chunks));
+    ::memset(_region_scan_chunks, false, _num_total_scan_chunks * sizeof(*_region_scan_chunks));
   }
 
   // Returns whether the given region contains cards we need to scan. The remembered
@@ -349,12 +363,12 @@ public:
 
   size_t num_visited_cards() const {
     size_t result = 0;
-    for (uint i = 0; i < _max_regions * _scan_chunks_per_region; i++) {
+    for (uint i = 0; i < _num_total_scan_chunks; i++) {
       if (_region_scan_chunks[i]) {
         result++;
       }
     }
-    return result * CardsPerChunk;
+    return result * (HeapRegion::CardsPerRegion / _scan_chunks_per_region);
   }
 
   size_t num_cards_in_dirty_regions() const {
@@ -369,9 +383,9 @@ public:
   }
 
   void set_chunk_dirty(size_t const card_idx) {
-    assert((card_idx >> _scan_chunks_shift) < (_max_regions * _scan_chunks_per_region),
+    assert((card_idx >> _scan_chunks_shift) < _num_total_scan_chunks,
            "Trying to access index " SIZE_FORMAT " out of bounds " SIZE_FORMAT,
-           card_idx >> _scan_chunks_shift, _max_regions * _scan_chunks_per_region);
+           card_idx >> _scan_chunks_shift, _num_total_scan_chunks);
     size_t const chunk_idx = card_idx >> _scan_chunks_shift;
     if (!_region_scan_chunks[chunk_idx]) {
       _region_scan_chunks[chunk_idx] = true;
