@@ -24,6 +24,7 @@
 /**
  * @test
  * @bug 8179559 8225239
+ * @modules java.base/java.net:open
  */
 
 import java.net.InetAddress;
