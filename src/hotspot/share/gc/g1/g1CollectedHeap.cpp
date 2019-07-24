@@ -48,6 +48,7 @@
 #include "gc/g1/g1HotCardCache.hpp"
 #include "gc/g1/g1MemoryPool.hpp"
 #include "gc/g1/g1OopClosures.inline.hpp"
+#include "gc/g1/g1ParallelCleaning.hpp"
 #include "gc/g1/g1ParScanThreadState.inline.hpp"
 #include "gc/g1/g1Policy.hpp"
 #include "gc/g1/g1RedirtyCardsQueue.hpp"
@@ -74,7 +75,6 @@
 #include "gc/shared/generationSpec.hpp"
 #include "gc/shared/isGCActiveMark.hpp"
 #include "gc/shared/oopStorageParState.hpp"
-#include "gc/shared/parallelCleaning.hpp"
 #include "gc/shared/preservedMarks.inline.hpp"
 #include "gc/shared/suspendibleThreadSet.hpp"
 #include "gc/shared/referenceProcessor.inline.hpp"
@@ -3165,7 +3165,7 @@ void G1ParEvacuateFollowersClosure::do_void() {
 void G1CollectedHeap::complete_cleaning(BoolObjectClosure* is_alive,
                                         bool class_unloading_occurred) {
   uint num_workers = workers()->active_workers();
-  ParallelCleaningTask unlink_task(is_alive, num_workers, class_unloading_occurred, false);
+  G1ParallelCleaningTask unlink_task(is_alive, num_workers, class_unloading_occurred, false);
   workers()->run_task(&unlink_task);
 }
 
