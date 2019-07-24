@@ -1446,7 +1446,19 @@ JRT_BLOCK_ENTRY(address, SharedRuntime::handle_wrong_method(JavaThread* thread))
     guarantee(callee != NULL && callee->is_method(), "bad handshake");
     thread->set_vm_result_2(callee);
     thread->set_callee_target(NULL);
-    return callee->get_c2i_entry();
+    if (caller_frame.is_entry_frame() && VM_Version::supports_fast_class_init_checks()) {
+      // Bypass class initialization checks in c2i when caller is in native.
+      // JNI calls to static methods don't have class initialization checks.
+      // Fast class initialization checks are present in c2i adapters and call into
+      // SharedRuntime::handle_wrong_method() on the slow path.
+      //
+      // JVM upcalls may land here as well, but there's a proper check present in
+      // LinkResolver::resolve_static_call (called from JavaCalls::call_static),
+      // so bypassing it in c2i adapter is benign.
+      return callee->get_c2i_no_clinit_check_entry();
+    } else {
+      return callee->get_c2i_entry();
+    }
   }
 
   // Must be compiled to compiled path which is safe to stackwalk
@@ -2450,9 +2462,9 @@ class AdapterHandlerTable : public BasicHashtable<mtCode> {
     : BasicHashtable<mtCode>(293, (DumpSharedSpaces ? sizeof(CDSAdapterHandlerEntry) : sizeof(AdapterHandlerEntry))) { }
 
   // Create a new entry suitable for insertion in the table
-  AdapterHandlerEntry* new_entry(AdapterFingerPrint* fingerprint, address i2c_entry, address c2i_entry, address c2i_unverified_entry) {
+  AdapterHandlerEntry* new_entry(AdapterFingerPrint* fingerprint, address i2c_entry, address c2i_entry, address c2i_unverified_entry, address c2i_no_clinit_check_entry) {
     AdapterHandlerEntry* entry = (AdapterHandlerEntry*)BasicHashtable<mtCode>::new_entry(fingerprint->compute_hash());
-    entry->init(fingerprint, i2c_entry, c2i_entry, c2i_unverified_entry);
+    entry->init(fingerprint, i2c_entry, c2i_entry, c2i_unverified_entry, c2i_no_clinit_check_entry);
     if (DumpSharedSpaces) {
       ((CDSAdapterHandlerEntry*)entry)->init();
     }
@@ -2601,8 +2613,9 @@ void AdapterHandlerLibrary::initialize() {
 AdapterHandlerEntry* AdapterHandlerLibrary::new_entry(AdapterFingerPrint* fingerprint,
                                                       address i2c_entry,
                                                       address c2i_entry,
-                                                      address c2i_unverified_entry) {
-  return _adapters->new_entry(fingerprint, i2c_entry, c2i_entry, c2i_unverified_entry);
+                                                      address c2i_unverified_entry,
+                                                      address c2i_no_clinit_check_entry) {
+  return _adapters->new_entry(fingerprint, i2c_entry, c2i_entry, c2i_unverified_entry, c2i_no_clinit_check_entry);
 }
 
 AdapterHandlerEntry* AdapterHandlerLibrary::get_adapter(const methodHandle& method) {
@@ -2778,6 +2791,7 @@ address AdapterHandlerEntry::base_address() {
   if (base == NULL)  base = _c2i_entry;
   assert(base <= _c2i_entry || _c2i_entry == NULL, "");
   assert(base <= _c2i_unverified_entry || _c2i_unverified_entry == NULL, "");
+  assert(base <= _c2i_no_clinit_check_entry || _c2i_no_clinit_check_entry == NULL, "");
   return base;
 }
 
@@ -2791,6 +2805,8 @@ void AdapterHandlerEntry::relocate(address new_base) {
     _c2i_entry += delta;
   if (_c2i_unverified_entry != NULL)
     _c2i_unverified_entry += delta;
+  if (_c2i_no_clinit_check_entry != NULL)
+    _c2i_no_clinit_check_entry += delta;
   assert(base_address() == new_base, "");
 }
 
@@ -3129,10 +3145,20 @@ void AdapterHandlerLibrary::print_handler_on(outputStream* st, const CodeBlob* b
 }
 
 void AdapterHandlerEntry::print_adapter_on(outputStream* st) const {
-  st->print_cr("AHE@" INTPTR_FORMAT ": %s i2c: " INTPTR_FORMAT " c2i: " INTPTR_FORMAT " c2iUV: " INTPTR_FORMAT,
-               p2i(this), fingerprint()->as_string(),
-               p2i(get_i2c_entry()), p2i(get_c2i_entry()), p2i(get_c2i_unverified_entry()));
-
+  st->print("AHE@" INTPTR_FORMAT ": %s", p2i(this), fingerprint()->as_string());
+  if (get_i2c_entry() != NULL) {
+    st->print(" i2c: " INTPTR_FORMAT, p2i(get_i2c_entry()));
+  }
+  if (get_c2i_entry() != NULL) {
+    st->print(" c2i: " INTPTR_FORMAT, p2i(get_c2i_entry()));
+  }
+  if (get_c2i_unverified_entry() != NULL) {
+    st->print(" c2iUV: " INTPTR_FORMAT, p2i(get_c2i_unverified_entry()));
+  }
+  if (get_c2i_no_clinit_check_entry() != NULL) {
+    st->print(" c2iNCI: " INTPTR_FORMAT, p2i(get_c2i_no_clinit_check_entry()));
+  }
+  st->cr();
 }
 
 #if INCLUDE_CDS
