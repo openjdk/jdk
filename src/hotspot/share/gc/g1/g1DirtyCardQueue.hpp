@@ -69,15 +69,15 @@ class G1DirtyCardQueueSet: public PtrQueueSet {
   Monitor* _cbl_mon;  // Protects the fields below.
   BufferNode* _completed_buffers_head;
   BufferNode* _completed_buffers_tail;
-  volatile size_t _n_completed_buffers;
+
+  // Number of actual entries in the list of completed buffers.
+  volatile size_t _num_entries_in_completed_buffers;
 
   size_t _process_completed_buffers_threshold;
   volatile bool _process_completed_buffers;
 
   // If true, notify_all on _cbl_mon when the threshold is reached.
   bool _notify_when_complete;
-
-  void assert_completed_buffers_list_len_correct_locked() NOT_DEBUG_RETURN;
 
   void abandon_completed_buffers();
 
@@ -150,8 +150,17 @@ public:
   // return a completed buffer from the list.  Otherwise, return NULL.
   BufferNode* get_completed_buffer(size_t stop_at = 0);
 
-  // The number of buffers in the list.  Racy...
-  size_t completed_buffers_num() const { return _n_completed_buffers; }
+  // The number of buffers in the list. Derived as an approximation from the number
+  // of entries in the buffers. Racy.
+  size_t num_completed_buffers() const {
+    return (num_entries_in_completed_buffers() + buffer_size() - 1) / buffer_size();
+  }
+  // The number of entries in completed buffers. Read without synchronization.
+  size_t num_entries_in_completed_buffers() const { return _num_entries_in_completed_buffers; }
+
+  // Verify that _num_entries_in_completed_buffers is equal to the sum of actual entries
+  // in the completed buffers.
+  void verify_num_entries_in_completed_buffers() const NOT_DEBUG_RETURN;
 
   bool process_completed_buffers() { return _process_completed_buffers; }
   void set_process_completed_buffers(bool x) { _process_completed_buffers = x; }
