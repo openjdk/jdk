@@ -565,8 +565,6 @@ class MacroAssembler: public Assembler {
                       Label* L_slow_path = NULL);
 
   // Method handle support (JSR 292).
-  void check_method_handle_type(Register mtype_reg, Register mh_reg, Register temp_reg, Label& wrong_method_type);
-
   RegisterOrConstant argument_offset(RegisterOrConstant arg_slot, Register temp_reg, int extra_slot_offset = 0);
 
   // Biased locking support
