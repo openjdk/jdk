@@ -153,7 +153,7 @@ public class MitigateExceedingMaxOopMapStackOffsetTest extends LIRTest {
     }
 
     @Test
-    public void runStackObjects() throws Throwable {
+    public void runStackObjects() {
         int max = ((HotSpotBackend) getBackend()).getRuntime().getVMConfig().maxOopMapStackOffset;
         Assume.assumeFalse("no limit on oop map size", max == Integer.MAX_VALUE);
         numPrimitiveSlots = (max / 8) * 2;

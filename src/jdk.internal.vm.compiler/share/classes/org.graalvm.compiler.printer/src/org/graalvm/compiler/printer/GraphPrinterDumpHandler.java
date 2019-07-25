@@ -136,36 +136,26 @@ public class GraphPrinterDumpHandler implements DebugDumpHandler {
             // Get all current JavaMethod instances in the context.
             List<String> inlineContext = getInlineContext(graph);
 
-            if (inlineContext != previousInlineContext) {
+            if (!inlineContext.equals(previousInlineContext)) {
                 Map<Object, Object> properties = new HashMap<>();
                 properties.put("graph", graph.toString());
                 addCompilationId(properties, graph);
-                if (inlineContext.equals(previousInlineContext)) {
-                    /*
-                     * two different graphs have the same inline context, so make sure they appear
-                     * in different folders by closing and reopening the top scope.
-                     */
-                    int inlineDepth = previousInlineContext.size() - 1;
-                    closeScope(debug, inlineDepth);
-                    openScope(debug, inlineContext.get(inlineDepth), inlineDepth, properties);
-                } else {
-                    // Check for method scopes that must be closed since the previous dump.
-                    for (int i = 0; i < previousInlineContext.size(); ++i) {
-                        if (i >= inlineContext.size() || !inlineContext.get(i).equals(previousInlineContext.get(i))) {
-                            for (int inlineDepth = previousInlineContext.size() - 1; inlineDepth >= i; --inlineDepth) {
-                                closeScope(debug, inlineDepth);
-                            }
-                            break;
+                // Check for method scopes that must be closed since the previous dump.
+                for (int i = 0; i < previousInlineContext.size(); ++i) {
+                    if (i >= inlineContext.size() || !inlineContext.get(i).equals(previousInlineContext.get(i))) {
+                        for (int inlineDepth = previousInlineContext.size() - 1; inlineDepth >= i; --inlineDepth) {
+                            closeScope(debug, inlineDepth);
                         }
+                        break;
                     }
-                    // Check for method scopes that must be opened since the previous dump.
-                    for (int i = 0; i < inlineContext.size(); ++i) {
-                        if (i >= previousInlineContext.size() || !inlineContext.get(i).equals(previousInlineContext.get(i))) {
-                            for (int inlineDepth = i; inlineDepth < inlineContext.size(); ++inlineDepth) {
-                                openScope(debug, inlineContext.get(inlineDepth), inlineDepth, inlineDepth == inlineContext.size() - 1 ? properties : null);
-                            }
-                            break;
+                }
+                // Check for method scopes that must be opened since the previous dump.
+                for (int i = 0; i < inlineContext.size(); ++i) {
+                    if (i >= previousInlineContext.size() || !inlineContext.get(i).equals(previousInlineContext.get(i))) {
+                        for (int inlineDepth = i; inlineDepth < inlineContext.size(); ++inlineDepth) {
+                            openScope(debug, inlineContext.get(inlineDepth), inlineDepth, inlineDepth == inlineContext.size() - 1 ? properties : null);
                         }
+                        break;
                     }
                 }
             }

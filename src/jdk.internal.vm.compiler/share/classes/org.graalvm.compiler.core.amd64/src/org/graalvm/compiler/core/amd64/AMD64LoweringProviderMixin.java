@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,29 +22,20 @@
  */
 
 
-package org.graalvm.compiler.phases.common;
 
-import org.graalvm.compiler.debug.DebugCloseable;
-import org.graalvm.compiler.nodes.StructuredGraph;
-import org.graalvm.compiler.nodes.gc.BarrierSet;
-import org.graalvm.compiler.nodes.memory.FixedAccessNode;
-import org.graalvm.compiler.phases.BasePhase;
-import org.graalvm.compiler.phases.tiers.MidTierContext;
+package org.graalvm.compiler.core.amd64;
 
-public class WriteBarrierAdditionPhase extends BasePhase<MidTierContext> {
-    @SuppressWarnings("try")
+import org.graalvm.compiler.nodes.spi.LoweringProvider;
+
+public interface AMD64LoweringProviderMixin extends LoweringProvider {
+
     @Override
-    protected void run(StructuredGraph graph, MidTierContext context) {
-        BarrierSet barrierSet = context.getGC().getBarrierSet();
-        for (FixedAccessNode n : graph.getNodes().filter(FixedAccessNode.class)) {
-            try (DebugCloseable scope = n.graph().withNodeSourcePosition(n)) {
-                barrierSet.addBarriers(n);
-            }
-        }
+    default Integer smallestCompareWidth() {
+        return 8;
     }
 
     @Override
-    public boolean checkContract() {
-        return false;
+    default boolean supportBulkZeroing() {
+        return true;
     }
 }

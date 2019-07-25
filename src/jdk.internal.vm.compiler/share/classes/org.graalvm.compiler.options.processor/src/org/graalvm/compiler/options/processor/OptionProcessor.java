@@ -224,6 +224,14 @@ public class OptionProcessor extends AbstractProcessor {
             }
         }
 
+        String optionStabilityName = getAnnotationValue(annotation, "stability", VariableElement.class).getSimpleName().toString();
+        if (optionStabilityName.equals("STABLE")) {
+            if (help.length() == 0) {
+                processingEnv.getMessager().printMessage(Kind.ERROR, "A stable option must have non-empty help text", element);
+                return;
+            }
+        }
+
         String optionTypeName = getAnnotationValue(annotation, "type", VariableElement.class).getSimpleName().toString();
         info.options.add(new OptionInfo(optionName, optionTypeName, help, extraHelp, optionType, declaringClass, field.getSimpleName().toString()));
     }

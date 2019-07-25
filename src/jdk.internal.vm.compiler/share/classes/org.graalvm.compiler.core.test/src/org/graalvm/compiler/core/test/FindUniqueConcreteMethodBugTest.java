@@ -29,7 +29,6 @@ import jdk.vm.ci.meta.ResolvedJavaMethod;
 import jdk.vm.ci.meta.ResolvedJavaType;
 
 import org.junit.Assert;
-import org.junit.Ignore;
 import org.junit.Test;
 
 public class FindUniqueConcreteMethodBugTest extends GraalCompilerTest {
@@ -44,7 +43,6 @@ public class FindUniqueConcreteMethodBugTest extends GraalCompilerTest {
      * {@link PersonImpl#getName()} and {@link Tenant#getName()}).
      */
     @Test
-    @Ignore("fix HotSpotResolvedObjectTypeImpl.findUniqueConcreteMethod")
     public void test() throws NoSuchMethodException {
         ResolvedJavaMethod ifaceMethod = getMetaAccess().lookupJavaMethod(Person.class.getDeclaredMethod("getName"));
 
@@ -64,9 +62,8 @@ public class FindUniqueConcreteMethodBugTest extends GraalCompilerTest {
         // this causes a VM crash as getLabelLength() directly invokes PersonImpl.getName().
         test("getLabelLength", tenant);
 
-        ResolvedJavaMethod expected = null;
         AssumptionResult<ResolvedJavaMethod> actual = getMetaAccess().lookupJavaType(AbstractPerson.class).findUniqueConcreteMethod(ifaceMethod);
-        Assert.assertEquals(expected, actual.getResult());
+        Assert.assertNull(String.valueOf(actual), actual);
 
     }
 

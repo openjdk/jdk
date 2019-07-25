@@ -97,8 +97,13 @@ public class CompilationTask {
         }
 
         @Override
+        protected void exitHostVM(int status) {
+            HotSpotGraalServices.exit(status);
+        }
+
+        @Override
         public String toString() {
-            return getMethod().format("%H.%n(%p)");
+            return getMethod().format("%H.%n(%p) @ " + getEntryBCI());
         }
 
         @Override

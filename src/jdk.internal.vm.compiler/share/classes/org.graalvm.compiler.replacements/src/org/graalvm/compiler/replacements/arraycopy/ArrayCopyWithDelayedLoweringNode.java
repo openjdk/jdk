@@ -60,4 +60,3 @@ public final class ArrayCopyWithDelayedLoweringNode extends BasicArrayCopyNode {
         this.bci = bci;
     }
 }
-

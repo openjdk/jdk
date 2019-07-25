@@ -53,4 +53,3 @@ public class SerialWriteBarrier extends ObjectWriteBarrier {
         return verifyOnly;
     }
 }
-

@@ -156,7 +156,7 @@ public class AMD64Move {
         @Override
         public void emitCode(CompilationResultBuilder crb, AMD64MacroAssembler masm) {
             if (isRegister(result)) {
-                const2reg(crb, masm, asRegister(result), input);
+                const2reg(crb, masm, asRegister(result), input, (AMD64Kind) result.getPlatformKind());
             } else {
                 assert isStackSlot(result);
                 const2stack(crb, masm, result, input);
@@ -557,7 +557,7 @@ public class AMD64Move {
             }
         } else if (isJavaConstant(input)) {
             if (isRegister(result)) {
-                const2reg(crb, masm, asRegister(result), asJavaConstant(input));
+                const2reg(crb, masm, asRegister(result), asJavaConstant(input), moveKind);
             } else if (isStackSlot(result)) {
                 const2stack(crb, masm, result, asJavaConstant(input));
             } else {
@@ -645,7 +645,7 @@ public class AMD64Move {
         }
     }
 
-    public static void const2reg(CompilationResultBuilder crb, AMD64MacroAssembler masm, Register result, JavaConstant input) {
+    public static void const2reg(CompilationResultBuilder crb, AMD64MacroAssembler masm, Register result, JavaConstant input, AMD64Kind moveKind) {
         /*
          * Note: we use the kind of the input operand (and not the kind of the result operand)
          * because they don't match in all cases. For example, an object constant can be loaded to a
@@ -691,20 +691,34 @@ public class AMD64Move {
                 }
                 break;
             case Object:
+                assert moveKind != null : "a nun-null moveKind is required for loading an object constant";
                 // Do not optimize with an XOR as this instruction may be between
                 // a CMP and a Jcc in which case the XOR will modify the condition
                 // flags and interfere with the Jcc.
                 if (input.isNull()) {
-                    if (crb.mustReplaceWithNullRegister(input)) {
-                        masm.movq(result, crb.nullRegister);
+                    if (moveKind == AMD64Kind.QWORD && crb.mustReplaceWithUncompressedNullRegister(input)) {
+                        masm.movq(result, crb.uncompressedNullRegister);
                     } else {
+                        // Upper bits will be zeroed so this also works for narrow oops
                         masm.movslq(result, 0);
                     }
-                } else if (crb.target.inlineObjects) {
-                    crb.recordInlineDataInCode(input);
-                    masm.movq(result, 0xDEADDEADDEADDEADL, true);
                 } else {
-                    masm.movq(result, (AMD64Address) crb.recordDataReferenceInCode(input, 0));
+                    if (crb.target.inlineObjects) {
+                        crb.recordInlineDataInCode(input);
+                        if (moveKind == AMD64Kind.DWORD) {
+                            // Support for narrow oops
+                            masm.movl(result, 0xDEADDEAD, true);
+                        } else {
+                            masm.movq(result, 0xDEADDEADDEADDEADL, true);
+                        }
+                    } else {
+                        if (moveKind == AMD64Kind.DWORD) {
+                            // Support for narrow oops
+                            masm.movl(result, (AMD64Address) crb.recordDataReferenceInCode(input, 0));
+                        } else {
+                            masm.movq(result, (AMD64Address) crb.recordDataReferenceInCode(input, 0));
+                        }
+                    }
                 }
                 break;
             default:
@@ -752,13 +766,13 @@ public class AMD64Move {
                 break;
             case Object:
                 if (input.isNull()) {
-                    if (crb.mustReplaceWithNullRegister(input)) {
-                        masm.movq(dest, crb.nullRegister);
+                    if (crb.mustReplaceWithUncompressedNullRegister(input)) {
+                        masm.movq(dest, crb.uncompressedNullRegister);
                         return;
                     }
                     imm = 0;
                 } else {
-                    throw GraalError.shouldNotReachHere("Non-null object constants must be in register");
+                    throw GraalError.shouldNotReachHere("Non-null object constants must be in a register");
                 }
                 break;
             default:
@@ -941,7 +955,7 @@ public class AMD64Move {
 
         @Override
         public void emitCode(CompilationResultBuilder crb, AMD64MacroAssembler masm) {
-            Register nullRegister = crb.nullRegister;
+            Register nullRegister = crb.uncompressedNullRegister;
             if (!nullRegister.equals(Register.None)) {
                 emitConversion(asRegister(result), asRegister(input), nullRegister, masm);
             }

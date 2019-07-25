@@ -28,6 +28,8 @@ import java.util.Formatter;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Properties;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 /**
  * Mechanism for checking that the current Java runtime environment supports the minimum JVMCI API
@@ -41,8 +43,107 @@ import java.util.Properties;
  */
 public final class JVMCIVersionCheck {
 
-    private static final int JVMCI8_MIN_MAJOR_VERSION = 19;
-    private static final int JVMCI8_MIN_MINOR_VERSION = 1;
+    private static final Version JVMCI8_MIN_VERSION = new Version3(19, 2, 1);
+
+    public interface Version {
+        boolean isLessThan(Version other);
+
+        static Version parse(String vmVersion) {
+            Matcher m = Pattern.compile(".*-jvmci-(\\d+)\\.(\\d+)-b(\\d+).*").matcher(vmVersion);
+            if (m.matches()) {
+                try {
+                    int major = Integer.parseInt(m.group(1));
+                    int minor = Integer.parseInt(m.group(2));
+                    int build = Integer.parseInt(m.group(3));
+                    return new Version3(major, minor, build);
+                } catch (NumberFormatException e) {
+                    // ignore
+                }
+            }
+            m = Pattern.compile(".*-jvmci-(\\d+)(?:\\.|-b)(\\d+).*").matcher(vmVersion);
+            if (m.matches()) {
+                try {
+                    int major = Integer.parseInt(m.group(1));
+                    int minor = Integer.parseInt(m.group(2));
+                    return new Version2(major, minor);
+                } catch (NumberFormatException e) {
+                    // ignore
+                }
+            }
+            return null;
+        }
+    }
+
+    public static class Version2 implements Version {
+        private final int major;
+        private final int minor;
+
+        public Version2(int major, int minor) {
+            this.major = major;
+            this.minor = minor;
+        }
+
+        @Override
+        public boolean isLessThan(Version other) {
+            if (other.getClass() == Version3.class) {
+                return true;
+            }
+            Version2 o = (Version2) other;
+            if (this.major < o.major) {
+                return true;
+            }
+            if (this.major == o.major && this.minor < o.minor) {
+                return true;
+            }
+            return false;
+        }
+
+        @Override
+        public String toString() {
+            if (major >= 19) {
+                return String.format("%d-b%02d", major, minor);
+            } else {
+                return String.format("%d.%d", major, minor);
+            }
+        }
+    }
+
+    public static class Version3 implements Version {
+        private final int major;
+        private final int minor;
+        private final int build;
+
+        public Version3(int major, int minor, int build) {
+            this.major = major;
+            this.minor = minor;
+            this.build = build;
+        }
+
+        @Override
+        public boolean isLessThan(Version other) {
+            if (other.getClass() == Version2.class) {
+                return false;
+            }
+            Version3 o = (Version3) other;
+            if (this.major < o.major) {
+                return true;
+            }
+            if (this.major == o.major) {
+                if (this.minor < o.minor) {
+                    return true;
+                }
+                if (this.minor == o.minor && this.build < o.build) {
+                    return true;
+                }
+            }
+            return false;
+        }
+
+        @Override
+        public String toString() {
+            return String.format("%d.%d-b%02d", major, minor, build);
+        }
+    }
 
     private static void failVersionCheck(Map<String, String> props, boolean exit, String reason, Object... args) {
         Formatter errorMessage = new Formatter().format(reason, args);
@@ -53,9 +154,7 @@ public final class JVMCIVersionCheck {
         errorMessage.format("Currently used Java home directory is %s.%n", javaHome);
         errorMessage.format("Currently used VM configuration is: %s%n", vmName);
         if (props.get("java.specification.version").compareTo("1.9") < 0) {
-            errorMessage.format("Download the latest JVMCI JDK 8 from " +
-                            "https://www.oracle.com/technetwork/graalvm/downloads/index.html or " +
-                            "https://github.com/graalvm/openjdk8-jvmci-builder/releases");
+            errorMessage.format("Download the latest JVMCI JDK 8 from https://github.com/graalvm/openjdk8-jvmci-builder/releases");
         } else {
             errorMessage.format("Download JDK 11 or later.");
         }
@@ -74,7 +173,6 @@ public final class JVMCIVersionCheck {
 
     private final String javaSpecVersion;
     private final String vmVersion;
-    private int cursor;
     private final Map<String, String> props;
 
     private JVMCIVersionCheck(Map<String, String> props, String javaSpecVersion, String vmVersion) {
@@ -85,112 +183,28 @@ public final class JVMCIVersionCheck {
 
     static void check(Map<String, String> props, boolean exitOnFailure) {
         JVMCIVersionCheck checker = new JVMCIVersionCheck(props, props.get("java.specification.version"), props.get("java.vm.version"));
-        checker.run(exitOnFailure, JVMCI8_MIN_MAJOR_VERSION, JVMCI8_MIN_MINOR_VERSION);
+        checker.run(exitOnFailure, JVMCI8_MIN_VERSION);
     }
 
     /**
      * Entry point for testing.
      */
     public static void check(Map<String, String> props,
-                    int jvmci8MinMajorVersion,
-                    int jvmci8MinMinorVersion,
+                    Version minVersion,
                     String javaSpecVersion,
-                    String javaVmVersion,
-                    boolean exitOnFailure) {
+                    String javaVmVersion, boolean exitOnFailure) {
         JVMCIVersionCheck checker = new JVMCIVersionCheck(props, javaSpecVersion, javaVmVersion);
-        checker.run(exitOnFailure, jvmci8MinMajorVersion, jvmci8MinMinorVersion);
+        checker.run(exitOnFailure, minVersion);
     }
 
-    /**
-     * Parses a positive decimal number at {@link #cursor}.
-     *
-     * @return -1 if there is no positive decimal number at {@link #cursor}
-     */
-    private int parseNumber() {
-        int result = -1;
-        while (cursor < vmVersion.length()) {
-            int digit = vmVersion.charAt(cursor) - '0';
-            if (digit >= 0 && digit <= 9) {
-                if (result == -1) {
-                    result = digit;
-                } else {
-                    long r = (long) result * (long) 10;
-                    if ((int) r != r) {
-                        // Overflow
-                        return -1;
-                    }
-                    result = (int) r + digit;
-                }
-                cursor++;
-            } else {
-                break;
-            }
-        }
-        return result;
-    }
-
-    /**
-     * Parse {@code "."} or {@code "-b"} at {@link #cursor}.
-     *
-     * @return {@code true} iff there was an expected separator at {@link #cursor}
-     */
-    private boolean parseSeparator() {
-        if (cursor < vmVersion.length()) {
-            char ch = vmVersion.charAt(cursor);
-            if (ch == '.') {
-                cursor++;
-                return true;
-            }
-            if (ch == '-') {
-                cursor++;
-                if (cursor < vmVersion.length()) {
-                    if (vmVersion.charAt(cursor) == 'b') {
-                        cursor++;
-                        return true;
-                    }
-                }
-                return false;
-            }
-        }
-        return false;
-    }
-
-    private static String getJVMCIVersionString(int major, int minor) {
-        if (major >= 19) {
-            return String.format("%d-b%02d", major, minor);
-        } else {
-            return String.format("%d.%d", major, minor);
-        }
-    }
-
-    private void run(boolean exitOnFailure, int jvmci8MinMajorVersion, int jvmci8MinMinorVersion) {
-        // Don't use regular expressions to minimize Graal startup time
+    private void run(boolean exitOnFailure, Version minVersion) {
         if (javaSpecVersion.compareTo("1.9") < 0) {
-            cursor = vmVersion.indexOf("-jvmci-");
-            if (cursor >= 0) {
-                cursor += "-jvmci-".length();
-                int major = parseNumber();
-                if (major == -1) {
-                    failVersionCheck(props, exitOnFailure, "The VM does not support the minimum JVMCI API version required by Graal.%n" +
-                                    "Cannot read JVMCI major version from java.vm.version property: %s.%n", vmVersion);
-                    return;
+            Version v = Version.parse(vmVersion);
+            if (v != null) {
+                if (v.isLessThan(minVersion)) {
+                    failVersionCheck(props, exitOnFailure, "The VM does not support the minimum JVMCI API version required by Graal: %s < %s.%n", v, minVersion);
                 }
-
-                if (parseSeparator()) {
-                    int minor = parseNumber();
-                    if (minor == -1) {
-                        failVersionCheck(props, exitOnFailure, "The VM does not support the minimum JVMCI API version required by Graal.%n" +
-                                        "Cannot read JVMCI minor version from java.vm.version property: %s.%n", vmVersion);
-                        return;
-                    }
-
-                    if (major > jvmci8MinMajorVersion || (major >= jvmci8MinMajorVersion && minor >= jvmci8MinMinorVersion)) {
-                        return;
-                    }
-                    failVersionCheck(props, exitOnFailure, "The VM does not support the minimum JVMCI API version required by Graal: %s < %s.%n",
-                                    getJVMCIVersionString(major, minor), getJVMCIVersionString(jvmci8MinMajorVersion, jvmci8MinMinorVersion));
-                    return;
-                }
+                return;
             }
             failVersionCheck(props, exitOnFailure, "The VM does not support the minimum JVMCI API version required by Graal.%n" +
                             "Cannot read JVMCI version from java.vm.version property: %s.%n", vmVersion);

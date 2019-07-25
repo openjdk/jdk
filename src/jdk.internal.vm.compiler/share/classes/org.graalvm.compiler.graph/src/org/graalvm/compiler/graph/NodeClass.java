@@ -126,7 +126,7 @@ public final class NodeClass<T> extends FieldIntrospection<T> {
             field.setAccessible(true);
             return (NodeClass<T>) field.get(null);
         } catch (IllegalArgumentException | IllegalAccessException | NoSuchFieldException | SecurityException e) {
-            throw new RuntimeException(e);
+            throw new RuntimeException("Could not load Graal NodeClass TYPE field for " + clazz, e);
         }
     }
 
