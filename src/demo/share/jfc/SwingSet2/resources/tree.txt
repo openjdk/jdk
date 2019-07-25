@@ -8,7 +8,7 @@
 # A = Artist    / Composer                                                     #
 # R = Record    / Style                                                        #
 # S = Song Name / Composition                                                  #
-# C = Catagory                                                                 #
+# C = Category                                                                 #
 #                                                                              #
 ################################################################################
 C Classical
@@ -195,49 +195,49 @@ C Rock
 A The Beatles
 R A Hard Day's Night
 S A Hard Day's Night
-S I Should Have Known Better 
-S If I Fell 
-S I'm Happy Just To Dance With You 
-S And I Love Her 
-S Tell Me Why 
-S Can't Buy Me Love 
-S Any Time At All 
-S I'll Cry Instead 
-S Things We Said Today 
-S When I Get Home 
-S You Can't Do That 
+S I Should Have Known Better
+S If I Fell
+S I'm Happy Just To Dance With You
+S And I Love Her
+S Tell Me Why
+S Can't Buy Me Love
+S Any Time At All
+S I'll Cry Instead
+S Things We Said Today
+S When I Get Home
+S You Can't Do That
 R Beatles For Sale
-S No Reply 
-S I'm a Loser 
-S Baby's In Black 
-S Rock And Roll Music 
-S I'll Follow the Sun 
-S Mr. Moonlight 
-S Kansas City/Hey Hey Hey Hey 
-S Eight Days a Week 
-S Words Of Love 
-S Honey Don't 
-S Every Little Thing 
-S I Don't Want To Spoil the Party 
-S What You're Doing 
-S Everybody's Trying To Be My Baby 
+S No Reply
+S I'm a Loser
+S Baby's In Black
+S Rock And Roll Music
+S I'll Follow the Sun
+S Mr. Moonlight
+S Kansas City/Hey Hey Hey Hey
+S Eight Days a Week
+S Words Of Love
+S Honey Don't
+S Every Little Thing
+S I Don't Want To Spoil the Party
+S What You're Doing
+S Everybody's Trying To Be My Baby
 R Help!
-S Help! 
-S The Night Before 
-S You've Got To Hide Your Love Away 
-S I Need You 
-S Another Girl 
-S You're Going To Lose That Girl 
-S Ticket To Ride 
-S Act Naturally 
-S It's Only Love 
-S You Like Me Too Much 
-S Tell Me What You See 
-S I've Just Seen a Face 
-S Yesterday 
-S Dizzy Miss Lizzie 
+S Help!
+S The Night Before
+S You've Got To Hide Your Love Away
+S I Need You
+S Another Girl
+S You're Going To Lose That Girl
+S Ticket To Ride
+S Act Naturally
+S It's Only Love
+S You Like Me Too Much
+S Tell Me What You See
+S I've Just Seen a Face
+S Yesterday
+S Dizzy Miss Lizzie
 R Rubber Soul
-S Drive My Car 
+S Drive My Car
 S Norwegian Wood
 S You Won't See Me
 S Nowhere Man
@@ -245,27 +245,27 @@ S Think For Yourself
 S The Word
 S Michelle
 S What Goes On?
-S Girl 
-S I'm Looking Through You 
-S In My Life 
-S Wait 
-S If I Needed Someone 
-S Run For Your Life 
+S Girl
+S I'm Looking Through You
+S In My Life
+S Wait
+S If I Needed Someone
+S Run For Your Life
 R Revolver
-S Taxman 
-S Rigby 
-S I'm Only Sleeping 
-S For You To 
-S Here There And Everywhere 
+S Taxman
+S Rigby
+S I'm Only Sleeping
+S For You To
+S Here There And Everywhere
 S Yellow Submarine
-S She Said She Said 
-S Good Day Sunshine 
-S And Your Bird Can Sing 
-S For No One 
-S Doctor Robert 
-S I Want To Tell You 
-S Got To Get You Into My Life 
-S Tomorrow Never Knows 
+S She Said She Said
+S Good Day Sunshine
+S And Your Bird Can Sing
+S For No One
+S Doctor Robert
+S I Want To Tell You
+S Got To Get You Into My Life
+S Tomorrow Never Knows
 R Sgt. Pepper's Lonely Hearts Club Band
 S Sgt. Pepper's Lonely Hearts Club Band
 S With a Little Help From My Friends
@@ -554,35 +554,35 @@ S Leaving Science
 S What A Life
 A Komeda
 R Plan 714 Till
-S Fuego De La Vida 
-S Herbamore 
-S Som I Fjol 
+S Fuego De La Vida
+S Herbamore
+S Som I Fjol
 S En Spricka I Taket
 R Genius Of
-S More Is More 
-S Fire 
-S Rocket Plane (Music On The Moon) 
-S Boogie Woogie/Rock 'N' Roll 
-S Disko 
-S Top Star 
-S Light O' My Life 
-S If 
-S Frolic 
-S In Orbit 
-S Arbogast 
+S More Is More
+S Fire
+S Rocket Plane (Music On The Moon)
+S Boogie Woogie/Rock 'N' Roll
+S Disko
+S Top Star
+S Light O' My Life
+S If
+S Frolic
+S In Orbit
+S Arbogast
 S New New No
 R What Makes It Go
-S Binario 
-S It's Alright, Baby 
-S Curious 
-S Cul de Sac 
-S Living Things 
-S Flabbergast 
-S Campfire 
-S Happyment 
-S Our Hospitality 
-S Focus 
-S A Simple Formality 
+S Binario
+S It's Alright, Baby
+S Curious
+S Cul de Sac
+S Living Things
+S Flabbergast
+S Campfire
+S Happyment
+S Our Hospitality
+S Focus
+S A Simple Formality
 A Steve Miller Band
 R Circle Of Love
 S Heart Like A Wheel

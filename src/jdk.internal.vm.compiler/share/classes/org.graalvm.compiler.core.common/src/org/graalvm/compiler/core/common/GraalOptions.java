@@ -289,4 +289,6 @@ public final class GraalOptions {
     @Option(help = "If applicable, use bulk zeroing instructions when the zeroing size in bytes exceeds this threshold.", type = OptionType.Expert)
     public static final OptionKey<Integer> MinimalBulkZeroingSize = new OptionKey<>(2048);
 
+    @Option(help = "Alignment in bytes for loop header blocks.", type = OptionType.Expert)
+    public static final OptionKey<Integer> LoopHeaderAlignment = new OptionKey<>(16);
 }

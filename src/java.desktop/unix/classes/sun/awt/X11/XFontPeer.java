@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2003, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,31 +22,14 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
+
 package sun.awt.X11;
 
 import sun.awt.PlatformFont;
-import java.awt.GraphicsEnvironment;
 
-public class XFontPeer extends PlatformFont {
+final class XFontPeer extends PlatformFont {
 
-    /*
-     * XLFD name for XFontSet.
-     */
-    private String xfsname;
-
-    static {
-        if (!GraphicsEnvironment.isHeadless()) {
-            initIDs();
-        }
-    }
-
-    /**
-     * Initialize JNI field and method IDs for fields that may be
-       accessed from C.
-     */
-    private static native void initIDs();
-
-    public XFontPeer(String name, int style){
+    XFontPeer(final String name, final int style) {
         super(name, style);
     }
 

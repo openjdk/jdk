@@ -79,16 +79,6 @@ struct MenuComponentIDs menuComponentIDs;
 extern Display* awt_init_Display(JNIEnv *env, jobject this);
 extern void freeNativeStringArray(char **array, jsize length);
 extern char** stringArrayToNative(JNIEnv *env, jobjectArray array, jsize * ret_length);
-
-struct XFontPeerIDs xFontPeerIDs;
-
-JNIEXPORT void JNICALL
-Java_sun_awt_X11_XFontPeer_initIDs
-  (JNIEnv *env, jclass cls)
-{
-    xFontPeerIDs.xfsname =
-      (*env)->GetFieldID(env, cls, "xfsname", "Ljava/lang/String;");
-}
 #endif /* !HEADLESS */
 
 /* This function gets called from the static initializer for FileDialog.java

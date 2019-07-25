@@ -1,12 +1,10 @@
 /*
- * Copyright (c) 1996, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License version 2 only, as
- * published by the Free Software Foundation.  Oracle designates this
- * particular file as subject to the "Classpath" exception as provided
- * by Oracle in the LICENSE file that accompanied this code.
+ * published by the Free Software Foundation.
  *
  * This code is distributed in the hope that it will be useful, but WITHOUT
  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
@@ -22,19 +20,22 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
-/*
- * header for Multi Font String
- */
-#ifndef _MULTI_FONT_H_
-#define _MULTI_FONT_H_
 
-#ifndef HEADLESS
-jboolean awtJNI_IsMultiFont(JNIEnv *env,jobject this);
-jboolean awtJNI_IsMultiFontMetrics(JNIEnv *env,jobject this);
-XFontSet awtJNI_MakeFontSet(JNIEnv *env,jobject font);
-struct FontData *awtJNI_GetFontData(JNIEnv *env,jobject font, char **errmsg);
-int32_t awtJNI_GetMFStringWidth(JNIEnv * env, jcharArray s, int32_t offset,
-                                int32_t length, jobject font);
-#endif /* !HEADLESS */
 
-#endif /* _MULTI_FONT_H_ */
+
+package org.graalvm.compiler.core.aarch64;
+
+import org.graalvm.compiler.nodes.spi.LoweringProvider;
+
+public interface AArch64LoweringProviderMixin extends LoweringProvider {
+
+    @Override
+    default Integer smallestCompareWidth() {
+        return 32;
+    }
+
+    @Override
+    default boolean supportBulkZeroing() {
+        return false;
+    }
+}

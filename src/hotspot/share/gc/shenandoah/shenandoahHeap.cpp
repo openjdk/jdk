@@ -1593,12 +1593,19 @@ public:
 
   void work(uint worker_id) {
     ShenandoahEvacOOMScope oom;
-    ShenandoahEvacuateUpdateRootsClosure cl;
-    CLDToOopClosure clds(&cl, ClassLoaderData::_claim_strong);
+    {
+      // jni_roots and weak_roots are OopStorage backed roots, concurrent iteration
+      // may race against OopStorage::release() calls.
+      ShenandoahEvacUpdateOopStorageRootsClosure cl;
+      _jni_roots.oops_do<ShenandoahEvacUpdateOopStorageRootsClosure>(&cl);
+      _weak_roots.oops_do<ShenandoahEvacUpdateOopStorageRootsClosure>(&cl);
+    }
 
-    _jni_roots.oops_do<ShenandoahEvacuateUpdateRootsClosure>(&cl);
-    _cld_roots.cld_do(&clds);
-    _weak_roots.oops_do<ShenandoahEvacuateUpdateRootsClosure>(&cl);
+    {
+      ShenandoahEvacuateUpdateRootsClosure cl;
+      CLDToOopClosure clds(&cl, ClassLoaderData::_claim_strong);
+      _cld_roots.cld_do(&clds);
+    }
   }
 };
 

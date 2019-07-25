@@ -25,6 +25,7 @@
 package org.graalvm.compiler.hotspot.sparc;
 
 import org.graalvm.compiler.core.common.spi.ForeignCallsProvider;
+import org.graalvm.compiler.core.sparc.SparcLoweringProviderMixin;
 import org.graalvm.compiler.graph.Node;
 import org.graalvm.compiler.hotspot.HotSpotGraalRuntimeProvider;
 import org.graalvm.compiler.hotspot.meta.DefaultHotSpotLoweringProvider;
@@ -36,7 +37,7 @@ import jdk.vm.ci.code.TargetDescription;
 import jdk.vm.ci.hotspot.HotSpotConstantReflectionProvider;
 import jdk.vm.ci.meta.MetaAccessProvider;
 
-public class SPARCHotSpotLoweringProvider extends DefaultHotSpotLoweringProvider {
+public class SPARCHotSpotLoweringProvider extends DefaultHotSpotLoweringProvider implements SparcLoweringProviderMixin {
 
     public SPARCHotSpotLoweringProvider(HotSpotGraalRuntimeProvider runtime, MetaAccessProvider metaAccess, ForeignCallsProvider foreignCalls, HotSpotRegistersProvider registers,
                     HotSpotConstantReflectionProvider constantReflection, TargetDescription target) {

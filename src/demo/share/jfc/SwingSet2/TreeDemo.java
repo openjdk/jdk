@@ -1,6 +1,6 @@
 /*
  *
- * Copyright (c) 2007, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2019, Oracle and/or its affiliates. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -74,7 +74,7 @@ public class TreeDemo extends DemoModule {
 
     public JScrollPane createTree() {
         DefaultMutableTreeNode top = new DefaultMutableTreeNode(getString("TreeDemo.music"));
-        DefaultMutableTreeNode catagory = null ;
+        DefaultMutableTreeNode category = null;
         DefaultMutableTreeNode artist = null;
         DefaultMutableTreeNode record = null;
 
@@ -94,12 +94,12 @@ public class TreeDemo extends DemoModule {
                 char linetype = line.charAt(0);
                 switch(linetype) {
                    case 'C':
-                     catagory = new DefaultMutableTreeNode(line.substring(2));
-                     top.add(catagory);
+                     category = new DefaultMutableTreeNode(line.substring(2));
+                     top.add(category);
                      break;
                    case 'A':
-                     if(catagory != null) {
-                         catagory.add(artist = new DefaultMutableTreeNode(line.substring(2)));
+                     if(category != null) {
+                         category.add(artist = new DefaultMutableTreeNode(line.substring(2)));
                      }
                      break;
                    case 'R':

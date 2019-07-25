@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,18 +30,18 @@
  * @run main ChoiceKeyEventReaction
  */
 
-import java.awt.Robot;
 import java.awt.Choice;
-import java.awt.Point;
-import java.awt.Toolkit;
-import java.awt.TextField;
 import java.awt.FlowLayout;
-import java.awt.event.InputEvent;
-import java.awt.event.KeyEvent;
-import java.awt.event.ItemEvent;
-import java.awt.event.KeyAdapter;
-import java.awt.event.ItemListener;
 import java.awt.Frame;
+import java.awt.Point;
+import java.awt.Robot;
+import java.awt.TextField;
+import java.awt.Toolkit;
+import java.awt.event.InputEvent;
+import java.awt.event.ItemEvent;
+import java.awt.event.ItemListener;
+import java.awt.event.KeyAdapter;
+import java.awt.event.KeyEvent;
 
 public class ChoiceKeyEventReaction
 {
@@ -60,6 +60,7 @@ public class ChoiceKeyEventReaction
         try {
             robot = new Robot();
             robot.setAutoDelay(100);
+            robot.waitForIdle();
 
             moveFocusToTextField();
             testKeyOnChoice(InputEvent.BUTTON1_MASK, KeyEvent.VK_UP);
@@ -99,6 +100,7 @@ public class ChoiceKeyEventReaction
         frame.add(choice1);
         frame.setLayout (new FlowLayout());
         frame.setSize (200,200);
+        frame.setLocationRelativeTo(null);
         frame.setVisible(true);
     }
 
@@ -108,33 +110,31 @@ public class ChoiceKeyEventReaction
 
         robot.mousePress(button);
         robot.mouseRelease(button);
+        robot.waitForIdle();
 
         robot.keyPress(key);
         robot.keyRelease(key);
+        robot.waitForIdle();
 
         System.out.println("keyTypedOnTextField = "+keyTypedOnTextField +": itemChanged = " + itemChanged);
         if (itemChanged) {
             throw new RuntimeException("Test failed. ItemChanged event occur on Choice.");
         }
 
-       // We may just write
-       // if (toolkit.equals("sun.awt.windows.WToolkit") == keyTypedOnTextField) {fail;}
-       // but  must report differently in these cases so put two separate if statements for simplicity.
-       if (toolkit.equals("sun.awt.windows.WToolkit") &&
-           !keyTypedOnTextField) {
-           throw new RuntimeException("Test failed. (Win32) KeyEvent wasn't addressed to TextField. ");
-       }
+        // We may just write
+        // if (toolkit.equals("sun.awt.windows.WToolkit") == keyTypedOnTextField) {fail;}
+        // but  must report differently in these cases so put two separate if statements for simplicity.
+        if (!toolkit.equals("sun.awt.X11.XToolkit") &&
+               !keyTypedOnTextField) {
+           throw new RuntimeException("Test failed. (Win32/MacOS) KeyEvent wasn't addressed to TextField. ");
+        }
 
-       if (!toolkit.equals("sun.awt.windows.WToolkit") &&
-          keyTypedOnTextField) {
-           throw new RuntimeException("Test failed. (XToolkit/MToolkit). KeyEvent was addressed to TextField.");
+        if (toolkit.equals("sun.awt.X11.XToolkit") &&
+                keyTypedOnTextField) {
+            throw new RuntimeException("Test failed. (XToolkit/MToolkit). KeyEvent was addressed to TextField.");
         }
 
         System.out.println("Test passed. Unfocusable Choice doesn't react on keys.");
-
-        //close opened choice
-        robot.keyPress(KeyEvent.VK_ESCAPE);
-        robot.keyRelease(KeyEvent.VK_ESCAPE);
     }
 
     public static void moveFocusToTextField() {

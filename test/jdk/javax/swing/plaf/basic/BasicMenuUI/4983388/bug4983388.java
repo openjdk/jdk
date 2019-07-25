@@ -78,10 +78,11 @@ public class bug4983388 {
         });
 
         Robot robot = new Robot();
+        robot.setAutoDelay(50);
         robot.waitForIdle();
         Util.hitMnemonics(robot, KeyEvent.VK_F);
         robot.waitForIdle();
-        robot.delay(1000);
+        robot.delay(200);
 
         if (!bMenuSelected) {
             throw new RuntimeException("shortcuts on menus do not work");

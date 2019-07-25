@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -143,7 +143,7 @@ public class ConstantStackMoveTest extends LIRTest {
     }
 
     @Test
-    public void runByte() throws Throwable {
+    public void runByte() {
         runTest("testByte");
     }
 
@@ -157,7 +157,7 @@ public class ConstantStackMoveTest extends LIRTest {
     }
 
     @Test
-    public void runShort() throws Throwable {
+    public void runShort() {
         runTest("testShort");
     }
 
@@ -171,7 +171,7 @@ public class ConstantStackMoveTest extends LIRTest {
     }
 
     @Test
-    public void runInt() throws Throwable {
+    public void runInt() {
         runTest("testInt");
     }
 
@@ -185,7 +185,7 @@ public class ConstantStackMoveTest extends LIRTest {
     }
 
     @Test
-    public void runLong() throws Throwable {
+    public void runLong() {
         runTest("testLong");
     }
 
@@ -199,7 +199,7 @@ public class ConstantStackMoveTest extends LIRTest {
     }
 
     @Test
-    public void runFloat() throws Throwable {
+    public void runFloat() {
         runTest("testFloat");
     }
 
@@ -213,7 +213,7 @@ public class ConstantStackMoveTest extends LIRTest {
     }
 
     @Test
-    public void runDouble() throws Throwable {
+    public void runDouble() {
         runTest("testDouble");
     }
 

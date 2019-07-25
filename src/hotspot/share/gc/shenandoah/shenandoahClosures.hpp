@@ -79,6 +79,16 @@ private:
   inline void do_oop_work(T* p);
 };
 
+class ShenandoahEvacUpdateOopStorageRootsClosure : public BasicOopIterateClosure {
+private:
+  ShenandoahHeap* _heap;
+  Thread* _thread;
+public:
+  inline ShenandoahEvacUpdateOopStorageRootsClosure();
+  inline void do_oop(oop* p);
+  inline void do_oop(narrowOop* p);
+};
+
 #ifdef ASSERT
 class ShenandoahAssertNotForwardedClosure : public OopClosure {
 private:

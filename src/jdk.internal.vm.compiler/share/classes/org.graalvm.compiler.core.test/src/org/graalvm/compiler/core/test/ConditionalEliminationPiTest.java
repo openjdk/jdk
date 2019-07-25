@@ -63,4 +63,3 @@ public class ConditionalEliminationPiTest extends ConditionalEliminationTestBase
         test("testSnippet1", 1);
     }
 }
-

@@ -1116,8 +1116,14 @@ public abstract class GraalCompilerTest extends GraalTest {
         return graph;
     }
 
+    @SuppressWarnings("try")
     protected void applyFrontEnd(StructuredGraph graph) {
-        GraalCompiler.emitFrontEnd(getProviders(), getBackend(), graph, getDefaultGraphBuilderSuite(), getOptimisticOptimizations(), graph.getProfilingInfo(), createSuites(graph.getOptions()));
+        DebugContext debug = graph.getDebug();
+        try (DebugContext.Scope s = debug.scope("FrontEnd", graph)) {
+            GraalCompiler.emitFrontEnd(getProviders(), getBackend(), graph, getDefaultGraphBuilderSuite(), getOptimisticOptimizations(), graph.getProfilingInfo(), createSuites(graph.getOptions()));
+        } catch (Throwable e) {
+            throw debug.handle(e);
+        }
     }
 
     protected StructuredGraph lastCompiledGraph;

@@ -185,7 +185,7 @@ java/awt/Mixing/AWT_Mixing/JTextAreaOverlapping.java 8158801 windows-all
 java/awt/Mixing/AWT_Mixing/JTextFieldInGlassPaneOverlapping.java 8158801 windows-all
 java/awt/Mixing/AWT_Mixing/JTextFieldOverlapping.java 8158801 windows-all
 java/awt/Mixing/AWT_Mixing/JToggleButtonInGlassPaneOverlapping.java 8158801 windows-all
-java/awt/Mixing/AWT_Mixing/JToggleButtonOverlapping.java 8158801 windows-all	
+java/awt/Mixing/AWT_Mixing/JToggleButtonOverlapping.java 8158801 windows-all
 java/awt/Mixing/NonOpaqueInternalFrame.java 7124549 macosx-all
 java/awt/Focus/ActualFocusedWindowTest/ActualFocusedWindowRetaining.java 6829264 generic-all
 java/awt/datatransfer/DragImage/MultiResolutionDragImageTest.java 8080982 generic-all
@@ -283,7 +283,6 @@ java/awt/print/PrinterJob/Margins.java 8196301 windows-all,macosx-all
 java/awt/PrintJob/PrinterException.java 8196301 windows-all,macosx-all
 java/awt/Choice/PopupPosTest/PopupPosTest.java  8197811 windows-all
 java/awt/Choice/ChoiceMouseWheelTest/ChoiceMouseWheelTest.java 7100044 macosx-all,linux-all
-java/awt/Choice/ChoiceKeyEventReaction/ChoiceKeyEventReaction.java 8214469 macosx-all
 java/awt/Component/CreateImage/CreateImage.java 8198334  windows-all
 java/awt/Component/GetScreenLocTest/GetScreenLocTest.java 4753654 generic-all
 java/awt/Component/SetEnabledPerformance/SetEnabledPerformance.java 8165863 macosx-all
@@ -480,7 +479,6 @@ java/awt/Modal/OnTop/OnTopModal3Test.java 8198666 macosx-all
 java/awt/Modal/OnTop/OnTopModal4Test.java 8198666 macosx-all
 java/awt/Modal/OnTop/OnTopModal5Test.java 8198666 macosx-all
 java/awt/Modal/OnTop/OnTopModal6Test.java 8198666 macosx-all
-java/awt/Modal/OnTop/OnTopModal6Test.java 8198666 macosx-all
 java/awt/Modal/OnTop/OnTopModeless1Test.java 8198666 macosx-all
 java/awt/Modal/OnTop/OnTopModeless2Test.java 8198666 macosx-all
 java/awt/Modal/OnTop/OnTopModeless3Test.java 8198666 macosx-all
@@ -507,7 +505,6 @@ java/awt/Focus/WindowUpdateFocusabilityTest/WindowUpdateFocusabilityTest.java 82
 java/awt/datatransfer/ConstructFlavoredObjectTest/ConstructFlavoredObjectTest.java 8202860 linux-all
 java/awt/dnd/DisposeFrameOnDragCrash/DisposeFrameOnDragTest.java 8202790 macosx-all,linux-all
 java/awt/FileDialog/FilenameFilterTest/FilenameFilterTest.java 8202882 linux-all
-java/awt/Frame/FramesGC/FramesGC.java 8079069 macosx-all
 java/awt/dnd/MissingDragExitEventTest/MissingDragExitEventTest.java 8030121 macosx-all,linux-all
 java/awt/Choice/ChoicePopupLocation/ChoicePopupLocation.java 8202931 macosx-all,linux-all
 java/awt/Focus/NonFocusableBlockedOwnerTest/NonFocusableBlockedOwnerTest.java 7124275 macosx-all
@@ -744,7 +741,7 @@ javax/swing/JFileChooser/8041694/bug8041694.java 8196302 windows-all
 javax/swing/AbstractButton/6711682/bug6711682.java 8060765 windows-all,macosx-all
 javax/swing/Action/8133039/bug8133039.java 8196089 windows-all,macosx-all
 javax/swing/JComboBox/6559152/bug6559152.java 8196090 windows-all,macosx-all
-javax/swing/JComboBox/8032878/bug8032878.java 8196092 windows-all,macosx-all
+javax/swing/JComboBox/8032878/bug8032878.java 8196092,8196439 windows-all,macosx-all,linux-all
 javax/swing/JComboBox/8057893/bug8057893.java 8169953 windows-all,macosx-all
 javax/swing/JComboBox/8072767/bug8072767.java 8196093 windows-all,macosx-all
 javax/swing/JComponent/4337267/bug4337267.java 8146451 windows-all
@@ -767,12 +764,11 @@ javax/swing/text/DefaultCaret/HidingSelection/HidingSelectionTest.java 8194048 w
 javax/swing/text/DefaultCaret/HidingSelection/MultiSelectionTest.java 8213562 linux-all
 javax/swing/text/JTextComponent/5074573/bug5074573.java 8196100 windows-all
 javax/swing/JFileChooser/6798062/bug6798062.java 8146446 windows-all
-javax/swing/JComboBox/8032878/bug8032878.java 8196439 linux-all
 javax/swing/JComboBox/8182031/ComboPopupTest.java 8196465 linux-all,macosx-all
 javax/swing/JFileChooser/6738668/bug6738668.java 8194946 generic-all
 javax/swing/JFileChooser/8021253/bug8021253.java 8169954 windows-all,linux-all,macosx-all
 javax/swing/JFileChooser/8062561/bug8062561.java 8196466 linux-all,macosx-all
-javax/swing/JInternalFrame/Test6325652.java 8196467 linux-all,macosx-all
+javax/swing/JInternalFrame/Test6325652.java 8224977 macosx-all
 javax/swing/JInternalFrame/8145896/TestJInternalFrameMaximize.java 8194944 macosx-all
 javax/swing/JLabel/6596966/bug6596966.java 8040914 macosx-all
 javax/swing/JPopupMenu/4870644/bug4870644.java 8194130 macosx-all,linux-all
@@ -791,7 +787,6 @@ javax/swing/text/html/StyleSheet/BackgroundImage/BackgroundImagePosition.java 81
 javax/swing/text/AbstractDocument/DocumentInsert/DocumentInsertAtWrongPositionTest.java 8198396 generic-all
 javax/swing/JFileChooser/6868611/bug6868611.java 7059834 windows-all
 javax/swing/SwingWorker/6493680/bug6493680.java 8198410 windows-all
-javax/swing/plaf/basic/BasicMenuUI/4983388/bug4983388.java 8042383 macosx-all
 javax/swing/PopupFactory/6276087/NonOpaquePopupMenuTest.java 8065099 macosx-all
 javax/swing/DataTransfer/8059739/bug8059739.java 8199074 generic-all
 javax/swing/JCheckBox/8032667/bug8032667_image_diff.java 8199063 macosx-all

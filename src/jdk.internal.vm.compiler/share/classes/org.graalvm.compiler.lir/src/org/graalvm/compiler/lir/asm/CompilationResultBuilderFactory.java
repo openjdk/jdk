@@ -52,8 +52,8 @@ public interface CompilationResultBuilderFactory {
 
         @Override
         public CompilationResultBuilder createBuilder(CodeCacheProvider codeCache, ForeignCallsProvider foreignCalls, FrameMap frameMap, Assembler asm, DataBuilder dataBuilder,
-                        FrameContext frameContext, OptionValues options, DebugContext debug, CompilationResult compilationResult, Register nullRegister) {
-            return new CompilationResultBuilder(codeCache, foreignCalls, frameMap, asm, dataBuilder, frameContext, options, debug, compilationResult, nullRegister);
+                        FrameContext frameContext, OptionValues options, DebugContext debug, CompilationResult compilationResult, Register uncompressedNullRegister) {
+            return new CompilationResultBuilder(codeCache, foreignCalls, frameMap, asm, dataBuilder, frameContext, options, debug, compilationResult, uncompressedNullRegister);
         }
     };
 }

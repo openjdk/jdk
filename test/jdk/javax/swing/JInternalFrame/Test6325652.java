@@ -63,6 +63,7 @@ public class Test6325652 {
 
     public static void stepFirst() throws AWTException {
         robot = new Robot(); // initialize shared static field first time
+        robot.setAutoDelay(50);
         click(KeyEvent.VK_CONTROL, KeyEvent.VK_F9); // iconify internal frame
     }
 

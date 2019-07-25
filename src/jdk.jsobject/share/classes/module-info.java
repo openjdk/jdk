@@ -30,9 +30,5 @@
  * @since 9
  */
 module jdk.jsobject {
-    requires java.desktop;
-
     exports netscape.javascript;
-
-    uses jdk.internal.netscape.javascript.spi.JSObjectProvider;
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -83,7 +83,7 @@ public class TreeDemo extends JPanel {
 
     private JTree createTree() {
         DefaultMutableTreeNode top = new DefaultMutableTreeNode(resourceManager.getString("TreeDemo.music"));
-        DefaultMutableTreeNode catagory = null;
+        DefaultMutableTreeNode category = null;
         DefaultMutableTreeNode artist = null;
         DefaultMutableTreeNode record = null;
 
@@ -103,12 +103,12 @@ public class TreeDemo extends JPanel {
                 char linetype = line.charAt(0);
                 switch (linetype) {
                     case 'C':
-                        catagory = new DefaultMutableTreeNode(line.substring(2));
-                        top.add(catagory);
+                        category = new DefaultMutableTreeNode(line.substring(2));
+                        top.add(category);
                         break;
                     case 'A':
-                        if (catagory != null) {
-                            catagory.add(artist = new DefaultMutableTreeNode(line.substring(2)));
+                        if (category != null) {
+                            category.add(artist = new DefaultMutableTreeNode(line.substring(2)));
                         }
                         break;
                     case 'R':

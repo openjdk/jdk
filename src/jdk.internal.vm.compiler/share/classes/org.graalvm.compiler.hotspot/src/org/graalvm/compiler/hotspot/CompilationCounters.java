@@ -26,6 +26,7 @@ package org.graalvm.compiler.hotspot;
 
 import static org.graalvm.compiler.hotspot.HotSpotGraalCompiler.fmt;
 import static org.graalvm.compiler.hotspot.HotSpotGraalCompiler.str;
+
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.Map;
@@ -35,9 +36,10 @@ import java.util.TreeSet;
 
 import org.graalvm.compiler.debug.TTY;
 import org.graalvm.compiler.options.Option;
+import org.graalvm.compiler.options.OptionKey;
 import org.graalvm.compiler.options.OptionType;
 import org.graalvm.compiler.options.OptionValues;
-import org.graalvm.compiler.options.OptionKey;
+
 import jdk.vm.ci.code.CompilationRequest;
 import jdk.vm.ci.meta.ResolvedJavaMethod;
 
@@ -85,7 +87,7 @@ class CompilationCounters {
                 }
             }
             TTY.flush();
-            System.exit(-1);
+            HotSpotGraalServices.exit(-1);
         }
     }
 

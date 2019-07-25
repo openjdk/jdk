@@ -29,6 +29,7 @@ import static jdk.vm.ci.aarch64.AArch64.sp;
 import static jdk.vm.ci.common.InitTimer.timer;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 
 import org.graalvm.compiler.bytecode.BytecodeProvider;
@@ -193,7 +194,7 @@ public class AArch64HotSpotBackendFactory extends HotSpotBackendFactory {
 
     protected HotSpotSuitesProvider createSuites(GraalHotSpotVMConfig config, HotSpotGraalRuntimeProvider runtime, CompilerConfiguration compilerConfiguration, Plugins plugins,
                     @SuppressWarnings("unused") Replacements replacements) {
-        AArch64SuitesCreator suitesCreator = new AArch64SuitesCreator(compilerConfiguration, plugins, SchedulePhase.class);
+        AArch64SuitesCreator suitesCreator = new AArch64SuitesCreator(compilerConfiguration, plugins, Arrays.asList(SchedulePhase.class));
         Phase addressLoweringPhase = new AddressLoweringByUsePhase(new AArch64AddressLoweringByUse(new AArch64LIRKindTool()));
         return new AddressLoweringHotSpotSuitesProvider(suitesCreator, config, runtime, addressLoweringPhase);
     }
