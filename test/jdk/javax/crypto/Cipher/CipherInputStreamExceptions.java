@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -55,7 +55,7 @@ public class CipherInputStreamExceptions {
 
     /* Full read stream, check that getMoreData() is throwing an exception
      * This test
-     *   1) Encrypt 100 bytes with AES/GCM/PKCS5Padding
+     *   1) Encrypt 100 bytes with AES/GCM/NoPadding
      *   2) Changes the last byte to invalidate the authetication tag.
      *   3) Fully reads CipherInputStream to decrypt the message and closes
      */
@@ -66,7 +66,7 @@ public class CipherInputStreamExceptions {
 
         System.out.println("Running gcm_AEADBadTag");
 
-        // Encrypt 100 bytes with AES/GCM/PKCS5Padding
+        // Encrypt 100 bytes with AES/GCM/NoPadding
         byte[] ct = encryptedText("GCM", 100);
         // Corrupt the encrypted message
         ct = corruptGCM(ct);
@@ -92,7 +92,7 @@ public class CipherInputStreamExceptions {
 
     /* Short read stream,
      * This test
-     *   1) Encrypt 100 bytes with AES/GCM/PKCS5Padding
+     *   1) Encrypt 100 bytes with AES/GCM/NoPadding
      *   2) Reads 100 bytes from stream to decrypt the message and closes
      *   3) Make sure no value is returned by read()
      *   4) Make sure no exception is thrown
@@ -106,7 +106,7 @@ public class CipherInputStreamExceptions {
 
         byte[] pt = new byte[600];
         pt[0] = 1;
-        // Encrypt provided 600 bytes with AES/GCM/PKCS5Padding
+        // Encrypt provided 600 bytes with AES/GCM/NoPadding
         byte[] ct = encryptedText("GCM", pt);
         // Create stream for decryption
         CipherInputStream in = getStream("GCM", ct);
@@ -134,7 +134,7 @@ public class CipherInputStreamExceptions {
      * Verify doFinal() exception is suppressed when input stream is not
      * read before it is closed.
      * This test:
-     *   1) Encrypt 100 bytes with AES/GCM/PKCS5Padding
+     *   1) Encrypt 100 bytes with AES/GCM/NoPadding
      *   2) Changes the last byte to invalidate the authetication tag.
      *   3) Opens a CipherInputStream and the closes it. Never reads from it.
      *
@@ -146,7 +146,7 @@ public class CipherInputStreamExceptions {
 
         System.out.println("Running supressUnreadCorrupt test");
 
-        // Encrypt 100 bytes with AES/GCM/PKCS5Padding
+        // Encrypt 100 bytes with AES/GCM/NoPadding
         byte[] ct = encryptedText("GCM", 100);
         // Corrupt the encrypted message
         ct = corruptGCM(ct);
@@ -166,7 +166,7 @@ public class CipherInputStreamExceptions {
      * Verify noexception thrown when 1 byte is read from a GCM stream
      * and then closed
      * This test:
-     *   1) Encrypt 100 bytes with AES/GCM/PKCS5Padding
+     *   1) Encrypt 100 bytes with AES/GCM/NoPadding
      *   2) Read one byte from the stream, expect no exception thrown.
      *   4) Close stream,expect no exception thrown.
      */
@@ -174,7 +174,7 @@ public class CipherInputStreamExceptions {
 
         System.out.println("Running gcm_oneReadByte test");
 
-        // Encrypt 100 bytes with AES/GCM/PKCS5Padding
+        // Encrypt 100 bytes with AES/GCM/NoPadding
         byte[] ct = encryptedText("GCM", 100);
         // Create stream for decryption
         CipherInputStream in = getStream("GCM", ct);
@@ -192,7 +192,7 @@ public class CipherInputStreamExceptions {
      * Verify exception thrown when 1 byte is read from a corrupted GCM stream
      * and then closed
      * This test:
-     *   1) Encrypt 100 bytes with AES/GCM/PKCS5Padding
+     *   1) Encrypt 100 bytes with AES/GCM/NoPadding
      *   2) Changes the last byte to invalidate the authetication tag.
      *   3) Read one byte from the stream, expect exception thrown.
      *   4) Close stream,expect no exception thrown.
@@ -201,7 +201,7 @@ public class CipherInputStreamExceptions {
 
         System.out.println("Running gcm_oneReadByteCorrupt test");
 
-        // Encrypt 100 bytes with AES/GCM/PKCS5Padding
+        // Encrypt 100 bytes with AES/GCM/NoPadding
         byte[] ct = encryptedText("GCM", 100);
         // Corrupt the encrypted message
         ct = corruptGCM(ct);
@@ -357,7 +357,7 @@ public class CipherInputStreamExceptions {
     static byte[] encryptedText(String mode, byte[] pt) throws Exception{
         Cipher c;
         if (mode.compareTo("GCM") == 0) {
-            c = Cipher.getInstance("AES/GCM/PKCS5Padding", "SunJCE");
+            c = Cipher.getInstance("AES/GCM/NoPadding", "SunJCE");
             c.init(Cipher.ENCRYPT_MODE, key, gcmspec);
         } else if (mode.compareTo("CBC") == 0) {
             c = Cipher.getInstance("AES/CBC/PKCS5Padding", "SunJCE");
@@ -380,7 +380,7 @@ public class CipherInputStreamExceptions {
         Cipher c;
 
         if (mode.compareTo("GCM") == 0) {
-            c = Cipher.getInstance("AES/GCM/PKCS5Padding", "SunJCE");
+            c = Cipher.getInstance("AES/GCM/NoPadding", "SunJCE");
             c.init(Cipher.DECRYPT_MODE, key, gcmspec);
         } else if (mode.compareTo("CBC") == 0) {
             c = Cipher.getInstance("AES/CBC/PKCS5Padding", "SunJCE");

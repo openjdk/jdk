@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -271,7 +271,9 @@ final class CipherCore {
             padding = null;
         } else if (paddingScheme.equalsIgnoreCase("ISO10126Padding")) {
             padding = new ISO10126Padding(blockSize);
-        } else if (!paddingScheme.equalsIgnoreCase("PKCS5Padding")) {
+        } else if (paddingScheme.equalsIgnoreCase("PKCS5Padding")) {
+            padding = new PKCS5Padding(blockSize);
+        } else {
             throw new NoSuchPaddingException("Padding: " + paddingScheme
                                              + " not implemented");
         }

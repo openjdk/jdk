@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -48,19 +48,24 @@ public class Padding {
 
     private static final String ALGORITHM = "AES";
     private static final String PROVIDER = "SunJCE";
-    private static final String[] MODES = { "ECb", "CbC", "PCBC", "OFB",
+    private static final String[] MODES_PKCS5PAD = {
+        "ECb", "CbC", "PCBC", "OFB",
         "OFB150", "cFB", "CFB7", "cFB8", "cFB16", "cFB24", "cFB32",
         "Cfb40", "cfB48", "cfB56", "cfB64", "cfB72", "cfB80", "cfB88",
         "cfB96", "cfb104", "cfB112", "cfB120", "OFB8", "OFB16", "OFB24",
         "OFB32", "OFB40", "OFB48", "OFB56", "OFB64", "OFB72", "OFB80",
-        "OFB88", "OFB96", "OFB104", "OFB112", "OFB120", "GCM" };
-    private static final String PADDING = "PKCS5Padding";
+        "OFB88", "OFB96", "OFB104", "OFB112", "OFB120" };
+    private static final String[] MODES_NOPAD = { "CTR", "CTS", "GCM" };
+
     private static final int KEY_LENGTH = 128;
 
     public static void main(String argv[]) throws Exception {
         Padding test = new Padding();
-        for (String mode : MODES) {
-            test.runTest(ALGORITHM, mode, PADDING);
+        for (String mode : MODES_PKCS5PAD) {
+            test.runTest(ALGORITHM, mode, "PKCS5Padding");
+        }
+        for (String mode : MODES_NOPAD) {
+            test.runTest(ALGORITHM, mode, "NoPadding");
         }
     }
 
@@ -92,7 +97,6 @@ public class Padding {
                 int offset = ci.update(plainText, 0, plainText.length,
                         cipherText, 0);
                 ci.doFinal(cipherText, offset);
-
                 if (!mo.equalsIgnoreCase("ECB")) {
                     iv = ci.getIV();
                     aps = new IvParameterSpec(iv);
