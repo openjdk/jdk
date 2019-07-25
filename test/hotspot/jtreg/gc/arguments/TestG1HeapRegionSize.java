@@ -32,6 +32,7 @@ package gc.arguments;
  * @modules java.base/jdk.internal.misc
  * @modules java.management/sun.management
  * @library /test/lib
+ * @library /
  * @run main gc.arguments.TestG1HeapRegionSize
  */
 
@@ -53,7 +54,7 @@ public class TestG1HeapRegionSize {
     flagList.add("-XX:+PrintFlagsFinal");
     flagList.add("-version");
 
-    ProcessBuilder pb = ProcessTools.createJavaProcessBuilder(flagList.toArray(new String[0]));
+    ProcessBuilder pb = GCArguments.createJavaProcessBuilder(flagList.toArray(new String[0]));
     OutputAnalyzer output = new OutputAnalyzer(pb.start());
     output.shouldHaveExitValue(exitValue);
 

@@ -29,32 +29,7 @@
 #include "logging/log.hpp"
 #include "logging/logTag.hpp"
 
-ShenandoahPassiveHeuristics::ShenandoahPassiveHeuristics() : ShenandoahHeuristics() {
-  // Do not allow concurrent cycles.
-  FLAG_SET_DEFAULT(ExplicitGCInvokesConcurrent, false);
-  FLAG_SET_DEFAULT(ShenandoahImplicitGCInvokesConcurrent, false);
-
-  // Passive runs with max speed, reacts on allocation failure.
-  FLAG_SET_DEFAULT(ShenandoahPacing, false);
-
-  // No need for evacuation reserve with Full GC, only for Degenerated GC.
-  if (!ShenandoahDegeneratedGC) {
-    SHENANDOAH_ERGO_OVERRIDE_DEFAULT(ShenandoahEvacReserve, 0);
-  }
-
-  // Disable known barriers by default.
-  SHENANDOAH_ERGO_DISABLE_FLAG(ShenandoahLoadRefBarrier);
-  SHENANDOAH_ERGO_DISABLE_FLAG(ShenandoahSATBBarrier);
-  SHENANDOAH_ERGO_DISABLE_FLAG(ShenandoahKeepAliveBarrier);
-  SHENANDOAH_ERGO_DISABLE_FLAG(ShenandoahStoreValEnqueueBarrier);
-  SHENANDOAH_ERGO_DISABLE_FLAG(ShenandoahCASBarrier);
-  SHENANDOAH_ERGO_DISABLE_FLAG(ShenandoahCloneBarrier);
-
-  // Final configuration checks
-  // No barriers are required to run.
-}
-
-bool ShenandoahPassiveHeuristics::should_start_normal_gc() const {
+bool ShenandoahPassiveHeuristics::should_start_gc() const {
   // Never do concurrent GCs.
   return false;
 }

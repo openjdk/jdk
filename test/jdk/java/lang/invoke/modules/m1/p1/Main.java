@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -45,7 +45,7 @@ public class Main {
     private Class<?> p2_Type2;        // m1, not exported
     private Class<?> q1_Type1;        // m2, exported
     private Class<?> q2_Type2;        // m2, not exported
-    private Class<?> x500NameClass;   // java.base, not exported
+    private Class<?> signalClass;     // java.base, not exported
     private Class<?> unnamedClass;    // class in unnamed module
 
     @BeforeTest
@@ -55,7 +55,7 @@ public class Main {
             p2_Type2 = Class.forName("p2.Type2");
             q1_Type1 = Class.forName("q1.Type1");
             q2_Type2 = Class.forName("q2.Type2");
-            x500NameClass = Class.forName("sun.security.x509.X500Name");
+            signalClass = Class.forName("jdk.internal.misc.Signal");
             unnamedClass = Class.forName("Unnamed");
         } catch (ClassNotFoundException e) {
             throw new AssertionError(e);
@@ -105,7 +105,7 @@ public class Main {
 
         // java.base
         findConstructor(lookup, Object.class, void.class); // [A2]
-        findConstructorExpectingIAE(lookup, x500NameClass, void.class, String.class); // [A3]
+        findConstructorExpectingIAE(lookup, signalClass, void.class, String.class); // [A3]
 
         // unnamed
         findConstructor(lookup, unnamedClass, void.class);  // [A3]
@@ -130,7 +130,7 @@ public class Main {
 
         // java.base
         findConstructor(lookup, Object.class, void.class);
-        findConstructorExpectingIAE(lookup, x500NameClass, void.class, String.class);
+        findConstructorExpectingIAE(lookup, signalClass, void.class, String.class);
 
         // unnamed
         findConstructor(lookup, unnamedClass, void.class);
@@ -139,51 +139,70 @@ public class Main {
     /**
      * Hop to lookup class in another named module
      *
-     * [A0] has no access
+     * [A0] has PUBLIC access if accessible; otherwise no access
+     * [A1] old lookup class becomes previous lookup class
      */
     public void testFromNamedToNamedModule() throws Exception {
+        // m2/q1_Type1 is accessible to m1 whereas m2/q_Type2 is not accessible
         Lookup lookup = MethodHandles.lookup().in(q1_Type1);
-        assertTrue(lookup.lookupModes() == 0); // [A0]
+        assertTrue(lookup.lookupModes() == PUBLIC); // [A0]
+        assertTrue(lookup.previousLookupClass() == Main.class); // [A1]
+
+        Lookup lookup2 = MethodHandles.lookup().in(q2_Type2);
+        assertTrue(lookup2.lookupModes() == 0);      // [A0]
+        assertTrue(lookup2.previousLookupClass() == Main.class); // [A1]
 
         // m1
         findConstructorExpectingIAE(lookup, p1_Type1, void.class);
         findConstructorExpectingIAE(lookup, p2_Type2, void.class);
 
+        findConstructorExpectingIAE(lookup2, p1_Type1, void.class);
+        findConstructorExpectingIAE(lookup2, p2_Type2, void.class);
+
         // m2
-        findConstructorExpectingIAE(lookup, q1_Type1, void.class);
+        findConstructor(lookup, q1_Type1, void.class);  // m2/q1 is exported
         findConstructorExpectingIAE(lookup, q2_Type2, void.class);
 
+        findConstructorExpectingIAE(lookup2, q1_Type1, void.class);
+        findConstructorExpectingIAE(lookup2, q2_Type2, void.class);
+
         // java.base
-        findConstructorExpectingIAE(lookup, Object.class, void.class);
-        findConstructorExpectingIAE(lookup, x500NameClass, void.class, String.class);
+        findConstructor(lookup, Object.class, void.class);
+        findConstructorExpectingIAE(lookup, signalClass, void.class, String.class);
+
+        findConstructorExpectingIAE(lookup2, Object.class, void.class);
+        findConstructorExpectingIAE(lookup2, signalClass, void.class, String.class);
 
         // unnamed
         findConstructorExpectingIAE(lookup, unnamedClass, void.class);
+
+        findConstructorExpectingIAE(lookup2, unnamedClass, void.class);
+
     }
 
     /**
      * Hop to lookup class in an unnamed module
      *
-     * [A0] has no access
+     * [A0] has PUBLIC access
      */
     public void testFromNamedToUnnamedModule() throws Exception {
         Lookup lookup = MethodHandles.lookup().in(unnamedClass);
-        assertTrue(lookup.lookupModes() == 0); // [A0]
+        assertTrue(lookup.lookupModes() == PUBLIC); // [A0]
 
         // m1
-        findConstructorExpectingIAE(lookup, p1_Type1, void.class);
+        findConstructor(lookup, p1_Type1, void.class);      // p1 is exported
         findConstructorExpectingIAE(lookup, p2_Type2, void.class);
 
         // m2
-        findConstructorExpectingIAE(lookup, q1_Type1, void.class);
+        findConstructor(lookup, q1_Type1, void.class);
         findConstructorExpectingIAE(lookup, q2_Type2, void.class);
 
         // java.base
-        findConstructorExpectingIAE(lookup, Object.class, void.class);
-        findConstructorExpectingIAE(lookup, x500NameClass, void.class, String.class);
+        findConstructor(lookup, Object.class, void.class);
+        findConstructorExpectingIAE(lookup, signalClass, void.class, String.class);
 
         // unnamed
-        findConstructorExpectingIAE(lookup, unnamedClass, void.class);
+        findConstructor(lookup, unnamedClass, void.class);
     }
 
     /**
@@ -206,7 +225,7 @@ public class Main {
 
         // java.base
         findConstructor(lookup, Object.class, void.class);
-        findConstructorExpectingIAE(lookup, x500NameClass, void.class, String.class);
+        findConstructorExpectingIAE(lookup, signalClass, void.class, String.class);
 
         // unnamed
         findConstructor(lookup, unnamedClass, void.class);
@@ -215,11 +234,11 @@ public class Main {
     /**
      * MethodHandles.publicLookup()
      *
-     * [A0] has PUBLIC|UNCONDITIONAL access
+     * [A0] has UNCONDITIONAL access
      */
     public void testPublicLookup() throws Exception {
         Lookup lookup = MethodHandles.publicLookup();
-        assertTrue(lookup.lookupModes() == (PUBLIC|UNCONDITIONAL)); // A0
+        assertTrue(lookup.lookupModes() == UNCONDITIONAL); // A0
 
         // m1
         findConstructor(lookup, p1_Type1, void.class);
@@ -231,7 +250,7 @@ public class Main {
 
         // java.base
         findConstructor(lookup, Object.class, void.class);
-        findConstructorExpectingIAE(lookup, x500NameClass, void.class, String.class);
+        findConstructorExpectingIAE(lookup, signalClass, void.class, String.class);
 
         // unnamed
         findConstructor(lookup, unnamedClass, void.class);
@@ -239,36 +258,12 @@ public class Main {
 
     /**
      * Hop from publicLookup to accessible type in java.base
+     *
+     * [A0] has UNCONDITIONAL access
      */
     public void testPublicLookupToBaseModule() throws Exception {
         Lookup lookup = MethodHandles.publicLookup().in(String.class);
-        assertTrue(lookup.lookupModes() == PUBLIC); // A0
-
-        // m1
-        findConstructorExpectingIAE(lookup, p1_Type1, void.class);
-        findConstructorExpectingIAE(lookup, p2_Type2, void.class);
-
-        // m2
-        findConstructorExpectingIAE(lookup, q1_Type1, void.class);
-        findConstructorExpectingIAE(lookup, q2_Type2, void.class);
-
-        // java.base
-        findConstructor(lookup, Object.class, void.class);
-        findConstructorExpectingIAE(lookup, x500NameClass, void.class, String.class);
-
-        // unnamed
-        findConstructorExpectingIAE(lookup, unnamedClass, void.class);
-    }
-
-
-    /**
-     * Hop from publicLookup to accessible type in named module.
-     *
-     * [A0] has PUBLIC access
-     */
-    public void testPublicLookupToAccessibleTypeInNamedModule() throws Exception {
-        Lookup lookup = MethodHandles.publicLookup().in(p1_Type1);
-        assertTrue(lookup.lookupModes() == PUBLIC); // A0
+        assertTrue(lookup.lookupModes() == UNCONDITIONAL); // A0
 
         // m1
         findConstructor(lookup, p1_Type1, void.class);
@@ -280,7 +275,33 @@ public class Main {
 
         // java.base
         findConstructor(lookup, Object.class, void.class);
-        findConstructorExpectingIAE(lookup, x500NameClass, void.class, String.class);
+        findConstructorExpectingIAE(lookup, signalClass, void.class, String.class);
+
+        // unnamed
+        findConstructor(lookup, unnamedClass, void.class);
+    }
+
+
+    /**
+     * Hop from publicLookup to accessible type in named module.
+     *
+     * [A0] has UNCONDITIONAL access
+     */
+    public void testPublicLookupToAccessibleTypeInNamedModule() throws Exception {
+        Lookup lookup = MethodHandles.publicLookup().in(p1_Type1);
+        assertTrue(lookup.lookupModes() == UNCONDITIONAL); // A0
+
+        // m1
+        findConstructor(lookup, p1_Type1, void.class);
+        findConstructorExpectingIAE(lookup, p2_Type2, void.class);
+
+        // m2
+        findConstructor(lookup, q1_Type1, void.class);
+        findConstructorExpectingIAE(lookup, q2_Type2, void.class);
+
+        // java.base
+        findConstructor(lookup, Object.class, void.class);
+        findConstructorExpectingIAE(lookup, signalClass, void.class, String.class);
 
         // unnamed
         findConstructor(lookup, unnamedClass, void.class);
@@ -305,7 +326,7 @@ public class Main {
 
         // java.base
         findConstructorExpectingIAE(lookup, Object.class, void.class);
-        findConstructorExpectingIAE(lookup, x500NameClass, void.class, String.class);
+        findConstructorExpectingIAE(lookup, signalClass, void.class, String.class);
 
         // unnamed
         findConstructorExpectingIAE(lookup, unnamedClass, void.class);
@@ -314,11 +335,11 @@ public class Main {
     /**
      * Teleport from publicLookup to public type in unnamed module
      *
-     * [A0] has PUBLIC access
+     * [A0] has UNCONDITIONAL access
      */
     public void testPublicLookupToUnnamedModule() throws Exception {
         Lookup lookup = MethodHandles.publicLookup().in(unnamedClass);
-        assertTrue(lookup.lookupModes() == PUBLIC); // A0
+        assertTrue(lookup.lookupModes() == UNCONDITIONAL); // A0
 
         // m1
         findConstructor(lookup, p1_Type1, void.class);
@@ -330,7 +351,7 @@ public class Main {
 
         // java.base
         findConstructor(lookup, Object.class, void.class);
-        findConstructorExpectingIAE(lookup, x500NameClass, void.class, String.class);
+        findConstructorExpectingIAE(lookup, signalClass, void.class, String.class);
 
         // unnamed
         findConstructor(lookup, unnamedClass, void.class);

@@ -800,6 +800,7 @@ AdapterHandlerEntry* SharedRuntime::generate_i2c2i_adapters(MacroAssembler *masm
 #endif
 
   // Class initialization barrier for static methods
+  address c2i_no_clinit_check_entry = NULL;
   if (VM_Version::supports_fast_class_init_checks()) {
     Label L_skip_barrier;
 
@@ -812,13 +813,15 @@ AdapterHandlerEntry* SharedRuntime::generate_i2c2i_adapters(MacroAssembler *masm
     __ load_method_holder(rscratch2, rmethod);
     __ clinit_barrier(rscratch2, rscratch1, &L_skip_barrier);
     __ far_jump(RuntimeAddress(SharedRuntime::get_handle_wrong_method_stub()));
+
     __ bind(L_skip_barrier);
+    c2i_no_clinit_check_entry = __ pc();
   }
 
   gen_c2i_adapter(masm, total_args_passed, comp_args_on_stack, sig_bt, regs, skip_fixup);
 
   __ flush();
-  return AdapterHandlerLibrary::new_entry(fingerprint, i2c_entry, c2i_entry, c2i_unverified_entry);
+  return AdapterHandlerLibrary::new_entry(fingerprint, i2c_entry, c2i_entry, c2i_unverified_entry, c2i_no_clinit_check_entry);
 }
 
 int SharedRuntime::c_calling_convention(const BasicType *sig_bt,

@@ -34,26 +34,7 @@
 #include "utilities/quickSort.hpp"
 
 ShenandoahTraversalHeuristics::ShenandoahTraversalHeuristics() : ShenandoahHeuristics(),
-  _last_cset_select(0)
- {
-  FLAG_SET_DEFAULT(ShenandoahSATBBarrier,            false);
-  FLAG_SET_DEFAULT(ShenandoahStoreValEnqueueBarrier, true);
-  FLAG_SET_DEFAULT(ShenandoahKeepAliveBarrier,       false);
-  FLAG_SET_DEFAULT(ShenandoahAllowMixedAllocs,       false);
-
-  SHENANDOAH_ERGO_ENABLE_FLAG(ExplicitGCInvokesConcurrent);
-  SHENANDOAH_ERGO_ENABLE_FLAG(ShenandoahImplicitGCInvokesConcurrent);
-
-  // Final configuration checks
-  SHENANDOAH_CHECK_FLAG_SET(ShenandoahLoadRefBarrier);
-  SHENANDOAH_CHECK_FLAG_SET(ShenandoahStoreValEnqueueBarrier);
-  SHENANDOAH_CHECK_FLAG_SET(ShenandoahCASBarrier);
-  SHENANDOAH_CHECK_FLAG_SET(ShenandoahCloneBarrier);
-}
-
-bool ShenandoahTraversalHeuristics::should_start_normal_gc() const {
-  return false;
-}
+  _last_cset_select(0) {}
 
 bool ShenandoahTraversalHeuristics::is_experimental() {
   return true;
@@ -61,10 +42,6 @@ bool ShenandoahTraversalHeuristics::is_experimental() {
 
 bool ShenandoahTraversalHeuristics::is_diagnostic() {
   return false;
-}
-
-bool ShenandoahTraversalHeuristics::can_do_traversal_gc() {
-  return true;
 }
 
 const char* ShenandoahTraversalHeuristics::name() {
@@ -202,7 +179,7 @@ void ShenandoahTraversalHeuristics::choose_collection_set(ShenandoahCollectionSe
   _last_cset_select = ShenandoahHeapRegion::seqnum_current_alloc();
 }
 
-bool ShenandoahTraversalHeuristics::should_start_traversal_gc() {
+bool ShenandoahTraversalHeuristics::should_start_gc() const {
   ShenandoahHeap* heap = ShenandoahHeap::heap();
   assert(!heap->has_forwarded_objects(), "no forwarded objects here");
 
@@ -251,7 +228,7 @@ bool ShenandoahTraversalHeuristics::should_start_traversal_gc() {
     log_info(gc, ergo)("Free headroom: " SIZE_FORMAT "M (free) - " SIZE_FORMAT "M (spike) - " SIZE_FORMAT "M (penalties) = " SIZE_FORMAT "M",
                        available / M, spike_headroom / M, penalties / M, allocation_headroom / M);
     return true;
-  } else if (ShenandoahHeuristics::should_start_normal_gc()) {
+  } else if (ShenandoahHeuristics::should_start_gc()) {
     return true;
   }
 

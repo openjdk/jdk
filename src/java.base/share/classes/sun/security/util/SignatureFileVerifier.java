@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -72,8 +72,7 @@ public class SignatureFileVerifier {
     private ArrayList<CodeSigner[]> signerCache;
 
     private static final String ATTR_DIGEST =
-        ("-DIGEST-" + ManifestDigester.MF_MAIN_ATTRS).toUpperCase
-        (Locale.ENGLISH);
+        "-DIGEST-" + ManifestDigester.MF_MAIN_ATTRS.toUpperCase(Locale.ENGLISH);
 
     /** the PKCS7 block for this .DSA/.RSA/.EC file */
     private PKCS7 block;
@@ -537,8 +536,7 @@ public class SignatureFileVerifier {
 
                 MessageDigest digest = getDigest(algorithm);
                 if (digest != null) {
-                    ManifestDigester.Entry mde =
-                        md.get(ManifestDigester.MF_MAIN_ATTRS, false);
+                    ManifestDigester.Entry mde = md.getMainAttsEntry(false);
                     byte[] computedHash = mde.digest(digest);
                     byte[] expectedHash =
                         Base64.getMimeDecoder().decode((String)se.getValue());

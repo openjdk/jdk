@@ -692,10 +692,6 @@ ConcurrentMarkSweepGeneration::unsafe_max_alloc_nogc() const {
   return _cmsSpace->max_alloc_in_words() * HeapWordSize;
 }
 
-size_t ConcurrentMarkSweepGeneration::used_stable() const {
-  return cmsSpace()->used_stable();
-}
-
 size_t ConcurrentMarkSweepGeneration::max_available() const {
   return free() + _virtual_space.uncommitted_size();
 }
@@ -1527,8 +1523,6 @@ void CMSCollector::compute_new_size() {
   FreelistLocker z(this);
   MetaspaceGC::compute_new_size();
   _cmsGen->compute_new_size_free_list();
-  // recalculate CMS used space after CMS collection
-  _cmsGen->cmsSpace()->recalculate_used_stable();
 }
 
 // A work method used by the foreground collector to do
@@ -2057,7 +2051,6 @@ void ConcurrentMarkSweepGeneration::gc_prologue(bool full) {
 
   _capacity_at_prologue = capacity();
   _used_at_prologue = used();
-  _cmsSpace->recalculate_used_stable();
 
   // We enable promotion tracking so that card-scanning can recognize
   // which objects have been promoted during this GC and skip them.
@@ -2130,7 +2123,6 @@ void CMSCollector::gc_epilogue(bool full) {
   _eden_chunk_index = 0;
 
   size_t cms_used   = _cmsGen->cmsSpace()->used();
-  _cmsGen->cmsSpace()->recalculate_used_stable();
 
   // update performance counters - this uses a special version of
   // update_counters() that allows the utilization to be passed as a
@@ -2824,8 +2816,6 @@ void CMSCollector::checkpointRootsInitial() {
     rp->enable_discovery();
     _collectorState = Marking;
   }
-
-  _cmsGen->cmsSpace()->recalculate_used_stable();
 }
 
 void CMSCollector::checkpointRootsInitialWork() {
@@ -4187,7 +4177,6 @@ void CMSCollector::checkpointRootsFinal() {
     MutexLocker y(bitMapLock(),
                   Mutex::_no_safepoint_check_flag);
     checkpointRootsFinalWork();
-    _cmsGen->cmsSpace()->recalculate_used_stable();
   }
   verify_work_stacks_empty();
   verify_overflow_empty();
@@ -5347,14 +5336,9 @@ void CMSCollector::sweep() {
     // further below.
     {
       CMSTokenSyncWithLocks ts(true, _cmsGen->freelistLock());
-
       // Update heap occupancy information which is used as
       // input to soft ref clearing policy at the next gc.
       Universe::update_heap_info_at_gc();
-
-      // recalculate CMS used space after CMS collection
-      _cmsGen->cmsSpace()->recalculate_used_stable();
-
       _collectorState = Resizing;
     }
   }
@@ -5443,7 +5427,6 @@ void ConcurrentMarkSweepGeneration::update_gc_stats(Generation* current_generati
     // Gather statistics on the young generation collection.
     collector()->stats().record_gc0_end(used());
   }
-  _cmsSpace->recalculate_used_stable();
 }
 
 void CMSCollector::sweepWork(ConcurrentMarkSweepGeneration* old_gen) {

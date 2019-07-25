@@ -91,14 +91,12 @@ class NoSafepointVerifier : public NoGCVerifier {
     _activated(activated) {
     _thread = Thread::current();
     if (_activated) {
-      _thread->_allow_allocation_count++;
       _thread->_allow_safepoint_count++;
     }
   }
 
   ~NoSafepointVerifier() {
     if (_activated) {
-      _thread->_allow_allocation_count--;
       _thread->_allow_safepoint_count--;
     }
   }
@@ -126,14 +124,12 @@ class PauseNoSafepointVerifier : public PauseNoGCVerifier {
 
     _nsv = nsv;
     if (_nsv->_activated) {
-      _nsv->_thread->_allow_allocation_count--;
       _nsv->_thread->_allow_safepoint_count--;
     }
   }
 
   ~PauseNoSafepointVerifier() {
     if (_nsv->_activated) {
-      _nsv->_thread->_allow_allocation_count++;
       _nsv->_thread->_allow_safepoint_count++;
     }
   }
@@ -141,34 +137,6 @@ class PauseNoSafepointVerifier : public PauseNoGCVerifier {
   PauseNoSafepointVerifier(NoSafepointVerifier * nsv)
     : PauseNoGCVerifier(nsv) {}
   ~PauseNoSafepointVerifier() {}
-#endif
-};
-
-// A NoAllocVerifier object can be placed in methods where one assumes that
-// no allocation will occur. The destructor will verify this property
-// unless the constructor is called with argument false (not activated).
-//
-// The check will only be done in debug mode and if activated.
-// Note: this only makes sense at safepoints (otherwise, other threads may
-// allocate concurrently.)
-
-class NoAllocVerifier : public StackObj {
- private:
-  bool  _activated;
-
- public:
-#ifdef ASSERT
-  NoAllocVerifier(bool activated = true) {
-    _activated = activated;
-    if (_activated) Thread::current()->_allow_allocation_count++;
-  }
-
-  ~NoAllocVerifier() {
-    if (_activated) Thread::current()->_allow_allocation_count--;
-  }
-#else
-  NoAllocVerifier(bool activated = true) {}
-  ~NoAllocVerifier() {}
 #endif
 };
 

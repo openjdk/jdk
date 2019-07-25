@@ -81,6 +81,10 @@ import java.util.regex.Pattern;
  *
  * Update the content string, to indicate it has been processed by this program.
  *
+ * <h2>{@code <nav id="TOC">}</h2>
+ *
+ * Set attribute {@code title="Table Of Contents"}
+ *
  */
 public class Main {
     /**
@@ -273,6 +277,11 @@ public class Main {
                     }
                     // <main> is not permitted within these elements
                     allowMain = false;
+                    if (name.equals("nav") && Objects.equals(attrs.get("id"), "TOC")) {
+                        out.write(buffer.toString()
+                                .replaceAll(">$", " title=\"Table Of Contents\">"));
+                        buffer.setLength(0);
+                    }
                     break;
 
                 case "body":

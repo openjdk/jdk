@@ -1,6 +1,7 @@
 ## International Components for Unicode (ICU4J) v64.2
 
 ### ICU4J License
+```
 
 COPYRIGHT AND PERMISSION NOTICE (ICU 58 and later)
 
@@ -387,3 +388,6 @@ Database section 7.
  #    by ICANN or the IETF Trust on the database or the code.  Any person
  #    making a contribution to the database or code waives all rights to
  #    future claims in that contribution or in the TZ Database.
+
+```
+

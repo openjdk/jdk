@@ -74,8 +74,6 @@ class JVMCI : public AllStatic {
 
   static void metadata_do(void f(Metadata*));
 
-  static void oops_do(OopClosure* f);
-
   static void shutdown();
 
   static bool shutdown_called();
@@ -92,6 +90,7 @@ class JVMCI : public AllStatic {
   static void initialize_compiler(TRAPS);
 
   static jobject make_global(const Handle& obj);
+  static void destroy_global(jobject handle);
   static bool is_global_handle(jobject handle);
 
   static jmetadata allocate_handle(const methodHandle& handle);

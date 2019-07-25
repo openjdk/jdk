@@ -106,11 +106,8 @@ protected:
   void* grow(size_t x, AllocFailType alloc_failmode = AllocFailStrategy::EXIT_OOM);
   size_t _size_in_bytes;        // Size of arena (used for native memory tracking)
 
-  NOT_PRODUCT(static julong _bytes_allocated;) // total #bytes allocated since start
-  friend class AllocStats;
   debug_only(void* malloc(size_t size);)
   debug_only(void* internal_malloc_4(size_t x);)
-  NOT_PRODUCT(void inc_bytes_allocated(size_t x);)
 
   void signal_out_of_memory(size_t request, const char* whence) const;
 
@@ -148,7 +145,6 @@ protected:
     debug_only(if (UseMallocOnly) return malloc(x);)
     if (!check_for_overflow(x, "Arena::Amalloc", alloc_failmode))
       return NULL;
-    NOT_PRODUCT(inc_bytes_allocated(x);)
     if (_hwm + x > _max) {
       return grow(x, alloc_failmode);
     } else {
@@ -163,7 +159,6 @@ protected:
     debug_only(if (UseMallocOnly) return malloc(x);)
     if (!check_for_overflow(x, "Arena::Amalloc_4", alloc_failmode))
       return NULL;
-    NOT_PRODUCT(inc_bytes_allocated(x);)
     if (_hwm + x > _max) {
       return grow(x, alloc_failmode);
     } else {
@@ -185,7 +180,6 @@ protected:
 #endif
     if (!check_for_overflow(x, "Arena::Amalloc_D", alloc_failmode))
       return NULL;
-    NOT_PRODUCT(inc_bytes_allocated(x);)
     if (_hwm + x > _max) {
       return grow(x, alloc_failmode); // grow() returns a result aligned >= 8 bytes.
     } else {

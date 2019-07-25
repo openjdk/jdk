@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -75,17 +75,7 @@ class SolarisAttachListener: AllStatic {
   // door descriptor returned by door_create
   static int _door_descriptor;
 
-  static void set_door_path(char* path) {
-    if (path == NULL) {
-      _has_door_path = false;
-    } else {
-      strncpy(_door_path, path, PATH_MAX);
-      _door_path[PATH_MAX] = '\0';      // ensure it's nul terminated
-      _has_door_path = true;
-    }
-  }
-
-  static void set_door_descriptor(int dd)               { _door_descriptor = dd; }
+  static bool _atexit_registered;
 
   // mutex to protect operation list
   static mutex_t _mutex;
@@ -120,6 +110,19 @@ class SolarisAttachListener: AllStatic {
     ATTACH_ERROR_INTERNAL       = 103,
     ATTACH_ERROR_DENIED         = 104
   };
+
+  static void set_door_path(char* path) {
+    if (path == NULL) {
+      _door_path[0] = '\0';
+      _has_door_path = false;
+    } else {
+      strncpy(_door_path, path, PATH_MAX);
+      _door_path[PATH_MAX] = '\0';      // ensure it's nul terminated
+      _has_door_path = true;
+    }
+  }
+
+  static void set_door_descriptor(int dd)               { _door_descriptor = dd; }
 
   // initialize the listener
   static int init();
@@ -169,6 +172,7 @@ class SolarisAttachOperation: public AttachOperation {
 char SolarisAttachListener::_door_path[PATH_MAX+1];
 volatile bool SolarisAttachListener::_has_door_path;
 int SolarisAttachListener::_door_descriptor = -1;
+bool SolarisAttachListener::_atexit_registered = false;
 mutex_t SolarisAttachListener::_mutex;
 sema_t SolarisAttachListener::_wakeup;
 SolarisAttachOperation* SolarisAttachListener::_head = NULL;
@@ -364,18 +368,16 @@ extern "C" {
 // atexit hook to detach the door and remove the file
 extern "C" {
   static void listener_cleanup() {
-    static int cleanup_done;
-    if (!cleanup_done) {
-      cleanup_done = 1;
-      int dd = SolarisAttachListener::door_descriptor();
-      if (dd >= 0) {
-        ::close(dd);
-      }
-      if (SolarisAttachListener::has_door_path()) {
-        char* path = SolarisAttachListener::door_path();
-        ::fdetach(path);
-        ::unlink(path);
-      }
+    int dd = SolarisAttachListener::door_descriptor();
+    if (dd >= 0) {
+      SolarisAttachListener::set_door_descriptor(-1);
+      ::close(dd);
+    }
+    if (SolarisAttachListener::has_door_path()) {
+      char* path = SolarisAttachListener::door_path();
+      ::fdetach(path);
+      ::unlink(path);
+      SolarisAttachListener::set_door_path(NULL);
     }
   }
 }
@@ -387,7 +389,10 @@ int SolarisAttachListener::create_door() {
   int fd, res;
 
   // register exit function
-  ::atexit(listener_cleanup);
+  if (!_atexit_registered) {
+    _atexit_registered = true;
+    ::atexit(listener_cleanup);
+  }
 
   // create the door descriptor
   int dd = ::door_create(enqueue_proc, NULL, 0);
@@ -641,6 +646,26 @@ bool AttachListener::init_at_startup() {
   } else {
     return false;
   }
+}
+
+bool AttachListener::check_socket_file() {
+  int ret;
+  struct stat64 st;
+  ret = stat64(SolarisAttachListener::door_path(), &st);
+  if (ret == -1) { // need to restart attach listener.
+    log_debug(attach)("Door file %s does not exist - Restart Attach Listener",
+                      SolarisAttachListener::door_path());
+
+    listener_cleanup();
+
+    // wait to terminate current attach listener instance...
+    while (AttachListener::transit_state(AL_INITIALIZING,
+                                         AL_NOT_INITIALIZED) != AL_NOT_INITIALIZED) {
+      os::naked_yield();
+    }
+    return is_init_trigger();
+  }
+  return false;
 }
 
 // If the file .attach_pid<pid> exists in the working directory

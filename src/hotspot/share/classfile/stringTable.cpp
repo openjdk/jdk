@@ -342,7 +342,7 @@ oop StringTable::intern(Handle string_or_null_h, const jchar* name, int len, TRA
   if (found_string != NULL) {
     return found_string;
   }
-  return do_intern(string_or_null_h, name, len, hash, CHECK_NULL);
+  return do_intern(string_or_null_h, name, len, hash, THREAD);
 }
 
 oop StringTable::do_intern(Handle string_or_null_h, const jchar* name,

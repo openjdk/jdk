@@ -113,9 +113,7 @@ public final class Method extends Executable {
     }
 
     /**
-     * Package-private constructor used by ReflectAccess to enable
-     * instantiation of these objects in Java code from the java.lang
-     * package via sun.reflect.LangReflectAccess.
+     * Package-private constructor
      */
     Method(Class<?> declaringClass,
            String name,

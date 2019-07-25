@@ -31,12 +31,10 @@ import static jdk.vm.ci.amd64.AMD64.rax;
 import static jdk.vm.ci.amd64.AMD64.rdi;
 import static jdk.vm.ci.amd64.AMD64.rdx;
 import static jdk.vm.ci.amd64.AMD64.rsi;
-
 import static jdk.vm.ci.amd64.AMD64.rsp;
 import static jdk.vm.ci.code.ValueUtil.asRegister;
 import static org.graalvm.compiler.lir.LIRInstruction.OperandFlag.REG;
 
-import jdk.vm.ci.amd64.AMD64;
 import org.graalvm.compiler.asm.Label;
 import org.graalvm.compiler.asm.amd64.AMD64Address;
 import org.graalvm.compiler.asm.amd64.AMD64Assembler;
@@ -47,6 +45,7 @@ import org.graalvm.compiler.lir.Opcode;
 import org.graalvm.compiler.lir.asm.CompilationResultBuilder;
 import org.graalvm.compiler.lir.gen.LIRGeneratorTool;
 
+import jdk.vm.ci.amd64.AMD64;
 import jdk.vm.ci.amd64.AMD64Kind;
 import jdk.vm.ci.code.Register;
 import jdk.vm.ci.meta.Value;
@@ -56,9 +55,13 @@ public final class AMD64StringUTF16CompressOp extends AMD64LIRInstruction {
     public static final LIRInstructionClass<AMD64StringUTF16CompressOp> TYPE = LIRInstructionClass.create(AMD64StringUTF16CompressOp.class);
 
     @Def({REG}) private Value rres;
-    @Alive({REG}) private Value rsrc;
-    @Alive({REG}) private Value rdst;
-    @Alive({REG}) private Value rlen;
+    @Use({REG}) private Value rsrc;
+    @Use({REG}) private Value rdst;
+    @Use({REG}) private Value rlen;
+
+    @Temp({REG}) private Value rsrcTemp;
+    @Temp({REG}) private Value rdstTemp;
+    @Temp({REG}) private Value rlenTemp;
 
     @Temp({REG}) private Value vtmp1;
     @Temp({REG}) private Value vtmp2;
@@ -75,9 +78,9 @@ public final class AMD64StringUTF16CompressOp extends AMD64LIRInstruction {
         assert asRegister(res).equals(rax);
 
         rres = res;
-        rsrc = src;
-        rdst = dst;
-        rlen = len;
+        rsrcTemp = rsrc = src;
+        rdstTemp = rdst = dst;
+        rlenTemp = rlen = len;
 
         LIRKind vkind = LIRKind.value(AMD64Kind.V512_BYTE);
 

@@ -247,9 +247,6 @@
   template(clazz_name,                                "clazz")                                    \
   template(exceptionTypes_name,                       "exceptionTypes")                           \
   template(modifiers_name,                            "modifiers")                                \
-  template(newConstructor_name,                       "newConstructor")                           \
-  template(newField_name,                             "newField")                                 \
-  template(newMethod_name,                            "newMethod")                                \
   template(invokeBasic_name,                          "invokeBasic")                              \
   template(linkToVirtual_name,                        "linkToVirtual")                            \
   template(linkToStatic_name,                         "linkToStatic")                             \
@@ -1088,6 +1085,7 @@
                                                                                                                         \
   /* support for Unsafe */                                                                                              \
   do_class(jdk_internal_misc_Unsafe,               "jdk/internal/misc/Unsafe")                                          \
+  do_class(sun_misc_Unsafe,                        "sun/misc/Unsafe")                                                   \
                                                                                                                         \
   do_intrinsic(_allocateInstance,         jdk_internal_misc_Unsafe,     allocateInstance_name, allocateInstance_signature, F_RN) \
    do_name(     allocateInstance_name,                                  "allocateInstance")                                      \

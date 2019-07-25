@@ -31,6 +31,7 @@ package gc.arguments;
  * processing.
  * @requires vm.gc.Serial
  * @library /test/lib
+ * @library /
  * @modules java.base/jdk.internal.misc
  *          java.management
  * @run main gc.arguments.TestMaxNewSize -XX:+UseSerialGC
@@ -45,6 +46,7 @@ package gc.arguments;
  * processing.
  * @requires vm.gc.Parallel
  * @library /test/lib
+ * @library /
  * @modules java.base/jdk.internal.misc
  *          java.management
  * @run main gc.arguments.TestMaxNewSize -XX:+UseParallelGC
@@ -59,6 +61,7 @@ package gc.arguments;
  * processing.
  * @requires vm.gc.G1
  * @library /test/lib
+ * @library /
  * @modules java.base/jdk.internal.misc
  *          java.management
  * @run main gc.arguments.TestMaxNewSize -XX:+UseG1GC
@@ -72,6 +75,7 @@ package gc.arguments;
  * @comment Graal does not support CMS
  * @requires vm.gc.ConcMarkSweep & !vm.graal.enabled
  * @library /test/lib
+ * @library /
  * @modules java.base/jdk.internal.misc
  *          java.management
  * @run main gc.arguments.TestMaxNewSize -XX:+UseConcMarkSweepGC
@@ -104,7 +108,7 @@ public class TestMaxNewSize {
     finalargs.addAll(Arrays.asList(flags));
     finalargs.add("-version");
 
-    ProcessBuilder pb = ProcessTools.createJavaProcessBuilder(finalargs.toArray(new String[0]));
+    ProcessBuilder pb = GCArguments.createJavaProcessBuilder(finalargs.toArray(new String[0]));
     OutputAnalyzer output = new OutputAnalyzer(pb.start());
     output.shouldContain("Initial young gen size set larger than the maximum young gen size");
   }
@@ -127,7 +131,7 @@ public class TestMaxNewSize {
     finalargs.add("-XX:+PrintFlagsFinal");
     finalargs.add("-version");
 
-    ProcessBuilder pb = ProcessTools.createJavaProcessBuilder(finalargs.toArray(new String[0]));
+    ProcessBuilder pb = GCArguments.createJavaProcessBuilder(finalargs.toArray(new String[0]));
     OutputAnalyzer output = new OutputAnalyzer(pb.start());
     output.shouldHaveExitValue(0);
     String stdout = output.getStdout();

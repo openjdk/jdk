@@ -99,6 +99,10 @@ public class JavaTokenizer {
      */
     protected boolean shouldTranslateEscapes;
 
+    /** Has the string broken escapes?
+     */
+    protected boolean hasBrokenEscapes;
+
     protected ScannerFactory fac;
 
     // The set of lint options currently in effect. It is initialized
@@ -261,6 +265,7 @@ public class JavaTokenizer {
                 case '\\':
                     reader.putChar(true); break;
                 default:
+                    hasBrokenEscapes = true;
                     lexError(reader.bp, Errors.IllegalEscChar);
                 }
             }
@@ -426,6 +431,7 @@ public class JavaTokenizer {
         // Clear flags.
         shouldStripIndent = false;
         shouldTranslateEscapes = false;
+        hasBrokenEscapes = false;
         // Check if text block string methods are present.
         boolean hasTextBlockSupport = TextBlockSupport.hasSupport();
         // Track the end of first line for error recovery.
@@ -1038,7 +1044,7 @@ public class JavaTokenizer {
                         string = TextBlockSupport.stripIndent(string);
                     }
                     // Translate escape sequences if present.
-                    if (shouldTranslateEscapes) {
+                    if (shouldTranslateEscapes && !hasBrokenEscapes) {
                         string = TextBlockSupport.translateEscapes(string);
                     }
                     // Build string token.

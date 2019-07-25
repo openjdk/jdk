@@ -315,56 +315,96 @@ void decode_env::print_hook_comments(address pc, bool newline) {
   }
 }
 
-decode_env::decode_env(CodeBuffer* code, outputStream* output) {
-  memset(this, 0, sizeof(*this));
-  _output = output ? output : tty;
-  _codeBlob    = NULL;
-  _codeBuffer  = code;
-  _helpPrinted = false;
+decode_env::decode_env(CodeBuffer* code, outputStream* output) :
+  _output(output ? output : tty),
+  _codeBuffer(code),
+  _codeBlob(NULL),
+  _nm(NULL),
+  _strings(),
+  _start(NULL),
+  _end(NULL),
+  _option_buf(),
+  _print_raw(0),
+  _cur_insn(NULL),
+  _bytes_per_line(0),
+  _pre_decode_alignment(0),
+  _post_decode_alignment(0),
+  _print_file_name(false),
+  _print_help(false),
+  _helpPrinted(false) {
 
+  memset(_option_buf, 0, sizeof(_option_buf));
   process_options(_output);
 }
 
-decode_env::decode_env(CodeBlob* code, outputStream* output, CodeStrings c) {
-   memset(this, 0, sizeof(*this)); // Beware, this zeroes bits of fields.
-   _output = output ? output : tty;
-  _codeBlob    = code;
-  _codeBuffer  = NULL;
-  _helpPrinted = false;
-  if (_codeBlob != NULL && _codeBlob->is_nmethod()) {
-    _nm = (nmethod*) code;
-  }
-  _strings.copy(c);
+decode_env::decode_env(CodeBlob* code, outputStream* output, CodeStrings c) :
+  _output(output ? output : tty),
+  _codeBuffer(NULL),
+  _codeBlob(code),
+  _nm(_codeBlob != NULL && _codeBlob->is_nmethod() ? (nmethod*) code : NULL),
+  _strings(),
+  _start(NULL),
+  _end(NULL),
+  _option_buf(),
+  _print_raw(0),
+  _cur_insn(NULL),
+  _bytes_per_line(0),
+  _pre_decode_alignment(0),
+  _post_decode_alignment(0),
+  _print_file_name(false),
+  _print_help(false),
+  _helpPrinted(false) {
 
+  memset(_option_buf, 0, sizeof(_option_buf));
+  _strings.copy(c);
   process_options(_output);
 }
 
-decode_env::decode_env(nmethod* code, outputStream* output, CodeStrings c) {
-  memset(this, 0, sizeof(*this)); // Beware, this zeroes bits of fields.
-  _output = output ? output : tty;
-  _codeBlob    = NULL;
-  _codeBuffer  = NULL;
-  _nm          = code;
-  _start       = _nm->code_begin();
-  _end         = _nm->code_end();
-  _helpPrinted = false;
-  _strings.copy(c);
+decode_env::decode_env(nmethod* code, outputStream* output, CodeStrings c) :
+  _output(output ? output : tty),
+  _codeBuffer(NULL),
+  _codeBlob(NULL),
+  _nm(code),
+  _strings(),
+  _start(_nm->code_begin()),
+  _end(_nm->code_end()),
+  _option_buf(),
+  _print_raw(0),
+  _cur_insn(NULL),
+  _bytes_per_line(0),
+  _pre_decode_alignment(0),
+  _post_decode_alignment(0),
+  _print_file_name(false),
+  _print_help(false),
+  _helpPrinted(false) {
 
+  memset(_option_buf, 0, sizeof(_option_buf));
+  _strings.copy(c);
   process_options(_output);
 }
 
 // Constructor for a 'decode_env' to decode a memory range [start, end)
 // of unknown origin, assuming it contains code.
-decode_env::decode_env(address start, address end, outputStream* output) {
-  assert(start < end, "Range must have a positive size, [" PTR_FORMAT ".." PTR_FORMAT ").", p2i(start), p2i(end));
-  memset(this, 0, sizeof(*this));
-  _output = output ? output : tty;
-  _codeBlob    = NULL;
-  _codeBuffer  = NULL;
-  _start       = start;
-  _end         = end;
-  _helpPrinted = false;
+decode_env::decode_env(address start, address end, outputStream* output) :
+  _output(output ? output : tty),
+  _codeBuffer(NULL),
+  _codeBlob(NULL),
+  _nm(NULL),
+  _strings(),
+  _start(start),
+  _end(end),
+  _option_buf(),
+  _print_raw(0),
+  _cur_insn(NULL),
+  _bytes_per_line(0),
+  _pre_decode_alignment(0),
+  _post_decode_alignment(0),
+  _print_file_name(false),
+  _print_help(false),
+  _helpPrinted(false) {
 
+  assert(start < end, "Range must have a positive size, [" PTR_FORMAT ".." PTR_FORMAT ").", p2i(start), p2i(end));
+  memset(_option_buf, 0, sizeof(_option_buf));
   process_options(_output);
 }
 

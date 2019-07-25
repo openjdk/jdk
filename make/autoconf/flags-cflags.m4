@@ -229,7 +229,7 @@ AC_DEFUN([FLAGS_SETUP_WARNINGS],
       ;;
 
     xlc)
-      DISABLE_WARNING_PREFIX="-qsuppress="
+      DISABLE_WARNING_PREFIX="-Wno-"
       CFLAGS_WARNINGS_ARE_ERRORS="-qhalt=w"
 
       # Possibly a better subset than "all" is "lan:trx:ret:zea:cmp:ret"
@@ -576,10 +576,10 @@ AC_DEFUN([FLAGS_SETUP_CFLAGS_HELPER],
 
   elif test "x$TOOLCHAIN_TYPE" = xxlc; then
     # Suggested additions: -qsrcmsg to get improved error reporting
-    TOOLCHAIN_CFLAGS_JDK="-qchars=signed -qfullpath -qsaveopt -qstackprotect"  # add on both CFLAGS
-    TOOLCHAIN_CFLAGS_JVM="-qtune=balanced \
-        -qalias=noansi -qstrict -qtls=default -qlanglvl=c99vla \
-        -qlanglvl=noredefmac -qnortti -qnoeh -qignerrno -qstackprotect"
+    # set -qtbtable=full for a better traceback table/better stacks in hs_err when xlc16 is used
+    TOOLCHAIN_CFLAGS_JDK="-qtbtable=full -qchars=signed -qfullpath -qsaveopt -qstackprotect"  # add on both CFLAGS
+    TOOLCHAIN_CFLAGS_JVM="-qtbtable=full -qtune=balanced \
+        -qalias=noansi -qstrict -qtls=default -qnortti -qnoeh -qignerrno -qstackprotect"
   elif test "x$TOOLCHAIN_TYPE" = xmicrosoft; then
     TOOLCHAIN_CFLAGS_JVM="-nologo -MD -MP"
     TOOLCHAIN_CFLAGS_JDK="-nologo -MD -Zc:wchar_t-"

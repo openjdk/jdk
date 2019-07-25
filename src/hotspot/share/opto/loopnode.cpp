@@ -2494,9 +2494,11 @@ uint IdealLoopTree::est_loop_clone_sz(uint factor) const {
       }
     }
   }
-  // Add data (x1.5) and control (x1.0) count to estimate iff both are > 0.
+  // Add data and control count (x2.0) to estimate iff both are > 0. This is
+  // a rather pessimistic estimate for the most part, in particular for some
+  // complex loops, but still not enough to capture all loops.
   if (ctrl_edge_out_cnt > 0 && data_edge_out_cnt > 0) {
-    estimate += ctrl_edge_out_cnt + data_edge_out_cnt + data_edge_out_cnt / 2;
+    estimate += 2 * (ctrl_edge_out_cnt + data_edge_out_cnt);
   }
 
   return estimate;
@@ -4292,7 +4294,6 @@ void PhaseIdealLoop::build_loop_late_post_work(Node *n, bool pinned) {
     case Op_LoadL:
     case Op_LoadS:
     case Op_LoadP:
-    case Op_LoadBarrierSlowReg:
     case Op_LoadN:
     case Op_LoadRange:
     case Op_LoadD_unaligned:

@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 8223305
+ * @bug 8223305 8226522
  * @summary Verify correct warnings w.r.t. yield
  * @compile/ref=WarnWrongYieldTest.out -source ${jdk.version} -XDrawDiagnostics -XDshould-stop.at=ATTR WarnWrongYieldTest.java
  */
@@ -158,5 +158,13 @@ public class WarnWrongYieldTest {
 
         //OK - yield is a variable:
         yield[0] = 5;
+    }
+
+    private void lambda() {
+        SAM s = (yield y) -> {};
+    }
+
+    interface SAM {
+        public void m(yield o);
     }
 }

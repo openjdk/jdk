@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -76,11 +76,12 @@ import jdk.internal.access.SharedSecrets;
  * @since 1.5
  * @see EnumMap
  */
-@SuppressWarnings("serial") // No serialVersionUID due to usage of
-                            // serial proxy pattern
 public abstract class EnumSet<E extends Enum<E>> extends AbstractSet<E>
     implements Cloneable, java.io.Serializable
 {
+    // declare EnumSet.class serialization compatibility with JDK 8
+    private static final long serialVersionUID = 1009687484059888093L;
+
     /**
      * The class of all the elements of this set.
      */

@@ -61,13 +61,17 @@ import sun.hotspot.WhiteBox;
 
 public class SharedArchiveConsistency {
     public static WhiteBox wb;
-    public static int offset_magic;    // FileMapHeader::_magic
-    public static int sp_offset_crc;   // CDSFileMapRegion::_crc
+    public static int offset_magic;     // CDSFileMapHeaderBase::_magic
+    public static int offset_version;   // CDSFileMapHeaderBase::_version
+    public static int offset_jvm_ident; // FileMapHeader::_jvm_ident
+    public static int sp_offset_crc;    // CDSFileMapRegion::_crc
+    public static int offset_paths_misc_info_size;
     public static int file_header_size = -1;// total size of header, variant, need calculation
     public static int CDSFileMapRegion_size; // size of CDSFileMapRegion
     public static int sp_offset;       // offset of CDSFileMapRegion
     public static int sp_used_offset;  // offset of CDSFileMapRegion::_used
     public static int size_t_size;     // size of size_t
+    public static int int_size;        // size of int
 
     public static File jsa;        // will be updated during test
     public static File orgJsaFile; // kept the original file not touched.
@@ -94,6 +98,8 @@ public class SharedArchiveConsistency {
     public static void getFileOffsetInfo() throws Exception {
         wb = WhiteBox.getWhiteBox();
         offset_magic = wb.getOffsetForName("FileMapHeader::_magic");
+        offset_version = wb.getOffsetForName("FileMapHeader::_version");
+        offset_jvm_ident = wb.getOffsetForName("FileMapHeader::_jvm_ident");
         sp_offset_crc = wb.getOffsetForName("CDSFileMapRegion::_crc");
         try {
             int nonExistOffset = wb.getOffsetForName("FileMapHeader::_non_exist_offset");
@@ -113,13 +119,13 @@ public class SharedArchiveConsistency {
             return file_header_size;
         }
         // this is not real header size, it is struct size
-        int int_size = wb.getOffsetForName("int_size");
+        int_size = wb.getOffsetForName("int_size");
         file_header_size = wb.getOffsetForName("file_header_size");
-        int offset_path_misc_info = wb.getOffsetForName("FileMapHeader::_paths_misc_info_size") -
+        offset_paths_misc_info_size = wb.getOffsetForName("FileMapHeader::_paths_misc_info_size") -
             offset_magic;
-        int path_misc_info_size   = (int)readInt(fc, offset_path_misc_info, int_size);
-        file_header_size += path_misc_info_size; //readInt(fc, offset_path_misc_info, size_t_size);
-        System.out.println("offset_path_misc_info = " + offset_path_misc_info);
+        int path_misc_info_size   = (int)readInt(fc, offset_paths_misc_info_size, int_size);
+        file_header_size += path_misc_info_size;
+        System.out.println("offset_paths_misc_info_size = " + offset_paths_misc_info_size);
         System.out.println("path_misc_info_size   = " + path_misc_info_size);
         System.out.println("file_header_size      = " + file_header_size);
         file_header_size = (int)align_up_page(file_header_size);
@@ -157,18 +163,17 @@ public class SharedArchiveConsistency {
     public static void writeData(FileChannel fc, long offset, ByteBuffer bb) throws Exception {
         fc.position(offset);
         fc.write(bb);
-        fc.force(true);
     }
 
-    public static FileChannel getFileChannel() throws Exception {
+    public static FileChannel getFileChannel(File jsaFile) throws Exception {
         List<StandardOpenOption> arry = new ArrayList<StandardOpenOption>();
         arry.add(READ);
         arry.add(WRITE);
-        return FileChannel.open(jsa.toPath(), new HashSet<StandardOpenOption>(arry));
+        return FileChannel.open(jsaFile.toPath(), new HashSet<StandardOpenOption>(arry));
     }
 
-    public static void modifyJsaContentRandomly() throws Exception {
-        FileChannel fc = getFileChannel();
+    public static void modifyJsaContentRandomly(File jsaFile) throws Exception {
+        FileChannel fc = getFileChannel(jsaFile);
         // corrupt random area in the data areas
         long[] used    = new long[num_regions];       // record used bytes
         long start0, start, end, off;
@@ -210,8 +215,8 @@ public class SharedArchiveConsistency {
         return used;
     }
 
-    public static boolean modifyJsaContent(int region) throws Exception {
-        FileChannel fc = getFileChannel();
+    public static boolean modifyJsaContent(int region, File jsaFile) throws Exception {
+        FileChannel fc = getFileChannel(jsaFile);
         byte[] buf = new byte[4096];
         ByteBuffer bbuf = ByteBuffer.wrap(buf);
 
@@ -241,19 +246,42 @@ public class SharedArchiveConsistency {
             bbuf.clear();
             bytes_written += 4096;
         }
-        fc.force(true);
         if (fc.isOpen()) {
             fc.close();
         }
         return true;
     }
 
-    public static void modifyJsaHeader() throws Exception {
-        FileChannel fc = getFileChannel();
+    public static void modifyJsaHeader(File jsaFile) throws Exception {
+        FileChannel fc = getFileChannel(jsaFile);
         // screw up header info
         byte[] buf = new byte[getFileHeaderSize(fc)];
         ByteBuffer bbuf = ByteBuffer.wrap(buf);
         writeData(fc, 0L, bbuf);
+        if (fc.isOpen()) {
+            fc.close();
+        }
+    }
+
+    public static void modifyJvmIdent() throws Exception {
+        FileChannel fc = getFileChannel(jsa);
+        int headerSize = getFileHeaderSize(fc);
+        System.out.println("    offset_jvm_ident " + offset_jvm_ident);
+        byte[] buf = new byte[256];
+        ByteBuffer bbuf = ByteBuffer.wrap(buf);
+        writeData(fc, (long)offset_jvm_ident, bbuf);
+        if (fc.isOpen()) {
+            fc.close();
+        }
+    }
+
+    public static void modifyHeaderIntField(long offset, int value) throws Exception {
+        FileChannel fc = getFileChannel(jsa);
+        int headerSize = getFileHeaderSize(fc);
+        System.out.println("    offset " + offset);
+        byte[] buf = ByteBuffer.allocate(4).putInt(value).array();
+        ByteBuffer bbuf = ByteBuffer.wrap(buf);
+        writeData(fc, offset, bbuf);
         if (fc.isOpen()) {
             fc.close();
         }
@@ -348,10 +376,10 @@ public class SharedArchiveConsistency {
         // test, should pass
         System.out.println("1. Normal, should pass but may fail\n");
 
-        String[] execArgs = {"-cp", jarFile, "Hello"};
+        String[] execArgs = {"-Xlog:cds", "-cp", jarFile, "Hello"};
         // tests that corrupt contents of the archive need to run with
         // VerifySharedSpaces enabled to detect inconsistencies
-        String[] verifyExecArgs = {"-XX:+VerifySharedSpaces", "-cp", jarFile, "Hello"};
+        String[] verifyExecArgs = {"-Xlog:cds", "-XX:+VerifySharedSpaces", "-cp", jarFile, "Hello"};
 
         OutputAnalyzer output = TestCommon.execCommon(execArgs);
 
@@ -373,10 +401,36 @@ public class SharedArchiveConsistency {
         orgJsaFile = new File(new File(currentDir), "appcds.jsa.bak");
         copyFile(jsa, orgJsaFile);
 
-
         // modify jsa header, test should fail
         System.out.println("\n2. Corrupt header, should fail\n");
-        modifyJsaHeader();
+        modifyJsaHeader(jsa);
+        output = TestCommon.execCommon(execArgs);
+        output.shouldContain("The shared archive file has a bad magic number");
+        output.shouldNotContain("Checksum verification failed");
+
+        copyFile(orgJsaFile, jsa);
+        // modify _jvm_ident and _paths_misc_info_size, test should fail
+        System.out.println("\n2a. Corrupt _jvm_ident and _paths_misc_info_size, should fail\n");
+        modifyJvmIdent();
+        modifyHeaderIntField(offset_paths_misc_info_size, Integer.MAX_VALUE);
+        output = TestCommon.execCommon(execArgs);
+        output.shouldContain("The shared archive file was created by a different version or build of HotSpot");
+        output.shouldNotContain("Checksum verification failed");
+
+        copyFile(orgJsaFile, jsa);
+        // modify _magic and _paths_misc_info_size, test should fail
+        System.out.println("\n2b. Corrupt _magic and _paths_misc_info_size, should fail\n");
+        modifyHeaderIntField(offset_magic, 0x00000000);
+        modifyHeaderIntField(offset_paths_misc_info_size, Integer.MAX_VALUE);
+        output = TestCommon.execCommon(execArgs);
+        output.shouldContain("The shared archive file has a bad magic number");
+        output.shouldNotContain("Checksum verification failed");
+
+        copyFile(orgJsaFile, jsa);
+        // modify _version and _paths_misc_info_size, test should fail
+        System.out.println("\n2c. Corrupt _version and _paths_misc_info_size, should fail\n");
+        modifyHeaderIntField(offset_version, 0x00000000);
+        modifyHeaderIntField(offset_paths_misc_info_size, Integer.MAX_VALUE);
         output = TestCommon.execCommon(execArgs);
         output.shouldContain("The shared archive file has the wrong version");
         output.shouldNotContain("Checksum verification failed");
@@ -387,8 +441,9 @@ public class SharedArchiveConsistency {
         for (int i=0; i<num_regions; i++) {
             newJsaFile = new File(TestCommon.getNewArchiveName(shared_region_name[i]));
             copyFile(orgJsaFile, newJsaFile);
-            if (modifyJsaContent(i)) {
-                testAndCheck(execArgs);
+            TestCommon.setCurrentArchiveName(newJsaFile.toString());
+            if (modifyJsaContent(i, newJsaFile)) {
+                testAndCheck(verifyExecArgs);
             }
         }
 
@@ -396,15 +451,17 @@ public class SharedArchiveConsistency {
         System.out.println("\n4. Corrupt Header and Content, should fail\n");
         newJsaFile = new File(TestCommon.getNewArchiveName("header-and-content"));
         copyFile(orgJsaFile, newJsaFile);
-        modifyJsaHeader();
-        modifyJsaContent(0);  // this will not be reached since failed on header change first
+        TestCommon.setCurrentArchiveName(newJsaFile.toString());
+        modifyJsaHeader(newJsaFile);
+        modifyJsaContent(0, newJsaFile);  // this will not be reached since failed on header change first
         output = TestCommon.execCommon(execArgs);
-        output.shouldContain("The shared archive file has the wrong version");
+        output.shouldContain("The shared archive file has a bad magic number");
         output.shouldNotContain("Checksum verification failed");
 
         // delete bytes in data section
         System.out.println("\n5. Delete bytes at beginning of data section, should fail\n");
         copyFile(orgJsaFile, jsa, true);
+        TestCommon.setCurrentArchiveName(jsa.toString());
         testAndCheck(verifyExecArgs);
 
         // insert bytes in data section forward
@@ -415,7 +472,8 @@ public class SharedArchiveConsistency {
         System.out.println("\n7. modify Content in random areas, should fail\n");
         newJsaFile = new File(TestCommon.getNewArchiveName("random-areas"));
         copyFile(orgJsaFile, newJsaFile);
-        modifyJsaContentRandomly();
+        TestCommon.setCurrentArchiveName(newJsaFile.toString());
+        modifyJsaContentRandomly(newJsaFile);
         testAndCheck(verifyExecArgs);
     }
 }

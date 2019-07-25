@@ -25,35 +25,18 @@
 #ifndef SHARE_JFR_LEAKPROFILER_STARTOPERATION_HPP
 #define SHARE_JFR_LEAKPROFILER_STARTOPERATION_HPP
 
-#include "jfr/recorder/jfrRecorder.hpp"
-#include "jfr/leakprofiler/leakProfiler.hpp"
 #include "jfr/leakprofiler/sampling/objectSampler.hpp"
-#include "jfr/recorder/service/jfrOptionSet.hpp"
-#include "logging/log.hpp"
-#include "runtime/vmOperations.hpp"
+#include "jfr/leakprofiler/utilities/vmOperation.hpp"
 
-// Safepoint operation for starting leak profiler object sampler
-class StartOperation : public VM_Operation {
+// Safepoint operation for creating and starting the leak profiler object sampler
+class StartOperation : public OldObjectVMOperation {
  private:
-  jlong _sample_count;
+  int _sample_count;
  public:
-  StartOperation(jlong sample_count) :
-    _sample_count(sample_count) {
-  }
-
-  Mode evaluation_mode() const {
-    return _safepoint;
-  }
-
-  VMOp_Type type() const {
-    return VMOp_GC_HeapInspection;
-  }
+  StartOperation(int sample_count) : _sample_count(sample_count) {}
 
   virtual void doit() {
-    assert(!LeakProfiler::is_running(), "invariant");
-    jint queue_size = JfrOptionSet::old_object_queue_size();
-    LeakProfiler::set_object_sampler(new ObjectSampler(queue_size));
-    log_trace(jfr, system)( "Object sampling started");
+    ObjectSampler::create(_sample_count);
   }
 };
 

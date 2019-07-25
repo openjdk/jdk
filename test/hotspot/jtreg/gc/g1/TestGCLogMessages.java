@@ -97,6 +97,8 @@ public class TestGCLogMessages {
 
         // Merge Heap Roots
         new LogMessageWithLevel("Merge Heap Roots", Level.INFO),
+        new LogMessageWithLevel("Prepare Merge Heap Roots", Level.DEBUG),
+        new LogMessageWithLevel("Eager Reclaim", Level.DEBUG),
         new LogMessageWithLevel("Remembered Sets", Level.DEBUG),
         new LogMessageWithLevel("Merged Sparse", Level.DEBUG),
         new LogMessageWithLevel("Merged Fine", Level.DEBUG),

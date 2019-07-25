@@ -65,7 +65,7 @@ public class TestSelectiveBarrierFlags {
             conf.add("-XX:+UnlockDiagnosticVMOptions");
             conf.add("-XX:+UnlockExperimentalVMOptions");
             conf.add("-XX:+UseShenandoahGC");
-            conf.add("-XX:ShenandoahGCHeuristics=passive");
+            conf.add("-XX:ShenandoahGCMode=passive");
 
             StringBuilder sb = new StringBuilder();
             for (String[] l : opts) {

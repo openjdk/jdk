@@ -23,9 +23,11 @@
  */
 
 #include "precompiled.hpp"
+#include "gc/g1/g1CardTableEntryClosure.hpp"
 #include "gc/g1/g1CollectedHeap.inline.hpp"
 #include "gc/g1/g1DirtyCardQueue.hpp"
 #include "gc/g1/g1FreeIdSet.hpp"
+#include "gc/g1/g1RedirtyCardsQueue.hpp"
 #include "gc/g1/g1RemSet.hpp"
 #include "gc/g1/g1ThreadLocalData.hpp"
 #include "gc/g1/heapRegionRemSet.hpp"
@@ -82,7 +84,7 @@ G1DirtyCardQueueSet::G1DirtyCardQueueSet(bool notify_when_complete) :
   _cbl_mon(NULL),
   _completed_buffers_head(NULL),
   _completed_buffers_tail(NULL),
-  _n_completed_buffers(0),
+  _num_entries_in_completed_buffers(0),
   _process_completed_buffers_threshold(ProcessCompletedBuffersThresholdNever),
   _process_completed_buffers(false),
   _notify_when_complete(notify_when_complete),
@@ -90,8 +92,7 @@ G1DirtyCardQueueSet::G1DirtyCardQueueSet(bool notify_when_complete) :
   _completed_buffers_padding(0),
   _free_ids(NULL),
   _processed_buffers_mut(0),
-  _processed_buffers_rs_thread(0),
-  _cur_par_buffer_node(NULL)
+  _processed_buffers_rs_thread(0)
 {
   _all_active = true;
 }
@@ -132,41 +133,55 @@ void G1DirtyCardQueueSet::enqueue_completed_buffer(BufferNode* cbn) {
     _completed_buffers_tail->set_next(cbn);
     _completed_buffers_tail = cbn;
   }
-  _n_completed_buffers++;
+  _num_entries_in_completed_buffers += buffer_size() - cbn->index();
 
   if (!process_completed_buffers() &&
-      (_n_completed_buffers > process_completed_buffers_threshold())) {
+      (num_completed_buffers() > process_completed_buffers_threshold())) {
     set_process_completed_buffers(true);
     if (_notify_when_complete) {
       _cbl_mon->notify_all();
     }
   }
-  assert_completed_buffers_list_len_correct_locked();
+  verify_num_entries_in_completed_buffers();
 }
 
 BufferNode* G1DirtyCardQueueSet::get_completed_buffer(size_t stop_at) {
   MutexLocker x(_cbl_mon, Mutex::_no_safepoint_check_flag);
 
-  if (_n_completed_buffers <= stop_at) {
+  if (num_completed_buffers() <= stop_at) {
     return NULL;
   }
 
-  assert(_n_completed_buffers > 0, "invariant");
+  assert(num_completed_buffers() > 0, "invariant");
   assert(_completed_buffers_head != NULL, "invariant");
   assert(_completed_buffers_tail != NULL, "invariant");
 
   BufferNode* bn = _completed_buffers_head;
-  _n_completed_buffers--;
+  _num_entries_in_completed_buffers -= buffer_size() - bn->index();
   _completed_buffers_head = bn->next();
   if (_completed_buffers_head == NULL) {
-    assert(_n_completed_buffers == 0, "invariant");
+    assert(num_completed_buffers() == 0, "invariant");
     _completed_buffers_tail = NULL;
     set_process_completed_buffers(false);
   }
-  assert_completed_buffers_list_len_correct_locked();
+  verify_num_entries_in_completed_buffers();
   bn->set_next(NULL);
   return bn;
 }
+
+#ifdef ASSERT
+void G1DirtyCardQueueSet::verify_num_entries_in_completed_buffers() const {
+  size_t actual = 0;
+  BufferNode* cur = _completed_buffers_head;
+  while (cur != NULL) {
+    actual += buffer_size() - cur->index();
+    cur = cur->next();
+  }
+  assert(actual == _num_entries_in_completed_buffers,
+         "Num entries in completed buffers should be " SIZE_FORMAT " but are " SIZE_FORMAT,
+         _num_entries_in_completed_buffers, actual);
+}
+#endif
 
 void G1DirtyCardQueueSet::abandon_completed_buffers() {
   BufferNode* buffers_to_delete = NULL;
@@ -175,7 +190,7 @@ void G1DirtyCardQueueSet::abandon_completed_buffers() {
     buffers_to_delete = _completed_buffers_head;
     _completed_buffers_head = NULL;
     _completed_buffers_tail = NULL;
-    _n_completed_buffers = 0;
+    _num_entries_in_completed_buffers = 0;
     set_process_completed_buffers(false);
   }
   while (buffers_to_delete != NULL) {
@@ -188,59 +203,41 @@ void G1DirtyCardQueueSet::abandon_completed_buffers() {
 
 void G1DirtyCardQueueSet::notify_if_necessary() {
   MutexLocker x(_cbl_mon, Mutex::_no_safepoint_check_flag);
-  if (_n_completed_buffers > process_completed_buffers_threshold()) {
+  if (num_completed_buffers() > process_completed_buffers_threshold()) {
     set_process_completed_buffers(true);
     if (_notify_when_complete)
       _cbl_mon->notify();
   }
 }
 
-#ifdef ASSERT
-void G1DirtyCardQueueSet::assert_completed_buffers_list_len_correct_locked() {
-  assert_lock_strong(_cbl_mon);
-  size_t n = 0;
-  for (BufferNode* bn = _completed_buffers_head; bn != NULL; bn = bn->next()) {
-    ++n;
-  }
-  assert(n == _n_completed_buffers,
-         "Completed buffer length is wrong: counted: " SIZE_FORMAT
-         ", expected: " SIZE_FORMAT, n, _n_completed_buffers);
-}
-#endif // ASSERT
-
 // Merge lists of buffers. Notify the processing threads.
 // The source queue is emptied as a result. The queues
 // must share the monitor.
-void G1DirtyCardQueueSet::merge_bufferlists(G1DirtyCardQueueSet *src) {
-  assert(_cbl_mon == src->_cbl_mon, "Should share the same lock");
+void G1DirtyCardQueueSet::merge_bufferlists(G1RedirtyCardsQueueSet* src) {
+  assert(allocator() == src->allocator(), "precondition");
+  const G1RedirtyCardsBufferList from = src->take_all_completed_buffers();
+  if (from._head == NULL) return;
+
   MutexLocker x(_cbl_mon, Mutex::_no_safepoint_check_flag);
   if (_completed_buffers_tail == NULL) {
     assert(_completed_buffers_head == NULL, "Well-formedness");
-    _completed_buffers_head = src->_completed_buffers_head;
-    _completed_buffers_tail = src->_completed_buffers_tail;
+    _completed_buffers_head = from._head;
+    _completed_buffers_tail = from._tail;
   } else {
     assert(_completed_buffers_head != NULL, "Well formedness");
-    if (src->_completed_buffers_head != NULL) {
-      _completed_buffers_tail->set_next(src->_completed_buffers_head);
-      _completed_buffers_tail = src->_completed_buffers_tail;
-    }
+    _completed_buffers_tail->set_next(from._head);
+    _completed_buffers_tail = from._tail;
   }
-  _n_completed_buffers += src->_n_completed_buffers;
-
-  src->_n_completed_buffers = 0;
-  src->_completed_buffers_head = NULL;
-  src->_completed_buffers_tail = NULL;
-  src->set_process_completed_buffers(false);
+  _num_entries_in_completed_buffers += from._entry_count;
 
   assert(_completed_buffers_head == NULL && _completed_buffers_tail == NULL ||
          _completed_buffers_head != NULL && _completed_buffers_tail != NULL,
          "Sanity");
-  assert_completed_buffers_list_len_correct_locked();
+  verify_num_entries_in_completed_buffers();
 }
 
 bool G1DirtyCardQueueSet::apply_closure_to_buffer(G1CardTableEntryClosure* cl,
                                                   BufferNode* node,
-                                                  bool consume,
                                                   uint worker_i) {
   if (cl == NULL) return true;
   bool result = true;
@@ -255,10 +252,8 @@ bool G1DirtyCardQueueSet::apply_closure_to_buffer(G1CardTableEntryClosure* cl,
       break;
     }
   }
-  if (consume) {
-    assert(i <= buffer_size(), "invariant");
-    node->set_index(i);
-  }
+  assert(i <= buffer_size(), "invariant");
+  node->set_index(i);
   return result;
 }
 
@@ -284,7 +279,7 @@ bool G1DirtyCardQueueSet::process_or_enqueue_completed_buffer(BufferNode* node) 
     // add of padding could overflow, which is treated as unlimited.
     size_t max_buffers = max_completed_buffers();
     size_t limit = max_buffers + completed_buffers_padding();
-    if ((completed_buffers_num() > limit) && (limit >= max_buffers)) {
+    if ((num_completed_buffers() > limit) && (limit >= max_buffers)) {
       if (mut_process_buffer(node)) {
         return true;
       }
@@ -299,7 +294,7 @@ bool G1DirtyCardQueueSet::mut_process_buffer(BufferNode* node) {
 
   uint worker_i = _free_ids->claim_par_id(); // temporarily claim an id
   G1RefineCardConcurrentlyClosure cl;
-  bool result = apply_closure_to_buffer(&cl, node, true, worker_i);
+  bool result = apply_closure_to_buffer(&cl, node, worker_i);
   _free_ids->release_par_id(worker_i); // release the id
 
   if (result) {
@@ -328,7 +323,7 @@ bool G1DirtyCardQueueSet::apply_closure_to_completed_buffer(G1CardTableEntryClos
   if (nd == NULL) {
     return false;
   } else {
-    if (apply_closure_to_buffer(cl, nd, true, worker_i)) {
+    if (apply_closure_to_buffer(cl, nd, worker_i)) {
       assert_fully_consumed(nd, buffer_size());
       // Done with fully processed buffer.
       deallocate_buffer(nd);
@@ -339,21 +334,6 @@ bool G1DirtyCardQueueSet::apply_closure_to_completed_buffer(G1CardTableEntryClos
       enqueue_completed_buffer(nd);
     }
     return true;
-  }
-}
-
-void G1DirtyCardQueueSet::par_apply_closure_to_all_completed_buffers(G1CardTableEntryClosure* cl) {
-  BufferNode* nd = _cur_par_buffer_node;
-  while (nd != NULL) {
-    BufferNode* next = nd->next();
-    BufferNode* actual = Atomic::cmpxchg(next, &_cur_par_buffer_node, nd);
-    if (actual == nd) {
-      bool b = apply_closure_to_buffer(cl, nd, false);
-      guarantee(b, "Should not stop early.");
-      nd = next;
-    } else {
-      nd = actual;
-    }
   }
 }
 

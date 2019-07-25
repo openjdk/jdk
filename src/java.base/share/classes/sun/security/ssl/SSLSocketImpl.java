@@ -1264,6 +1264,11 @@ public final class SSLSocketImpl
                     conContext.outputRecord.writeCipher.atKeyLimit()) {
                 tryKeyUpdate();
             }
+            // Check if NewSessionTicket PostHandshake message needs to be sent
+            if (conContext.conSession.updateNST) {
+                conContext.conSession.updateNST = false;
+                tryNewSessionTicket();
+            }
         }
 
         @Override
@@ -1496,6 +1501,25 @@ public final class SSLSocketImpl
                 SSLLogger.finest("trigger key update");
             }
             startHandshake();
+        }
+    }
+
+    // Try to generate a PostHandshake NewSessionTicket message.  This is
+    // TLS 1.3 only.
+    private void tryNewSessionTicket() throws IOException {
+        // Don't bother to kickstart if handshaking is in progress, or if the
+        // connection is not duplex-open.
+        if (!conContext.sslConfig.isClientMode &&
+                conContext.protocolVersion.useTLS13PlusSpec() &&
+                conContext.handshakeContext == null &&
+                !conContext.isOutboundClosed() &&
+                !conContext.isInboundClosed() &&
+                !conContext.isBroken) {
+            if (SSLLogger.isOn && SSLLogger.isOn("ssl")) {
+                SSLLogger.finest("trigger new session ticket");
+            }
+            NewSessionTicket.kickstartProducer.produce(
+                    new PostHandshakeContext(conContext));
         }
     }
 

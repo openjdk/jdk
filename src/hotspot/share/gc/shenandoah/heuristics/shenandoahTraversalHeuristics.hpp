@@ -38,19 +38,15 @@ protected:
 public:
   ShenandoahTraversalHeuristics();
 
-  virtual bool should_start_normal_gc() const;
-
   virtual bool is_experimental();
 
   virtual bool is_diagnostic();
-
-  virtual bool can_do_traversal_gc();
 
   virtual const char* name();
 
   virtual void choose_collection_set(ShenandoahCollectionSet* collection_set);
 
-  virtual bool should_start_traversal_gc();
+  virtual bool should_start_gc() const;
 };
 
 #endif // SHARE_GC_SHENANDOAH_HEURISTICS_SHENANDOAHTRAVERSALHEURISTICS_HPP

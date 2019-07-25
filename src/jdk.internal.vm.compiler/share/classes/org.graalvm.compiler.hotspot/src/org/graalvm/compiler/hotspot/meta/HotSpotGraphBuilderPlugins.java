@@ -175,7 +175,7 @@ public class HotSpotGraphBuilderPlugins {
                 registerGHASHPlugins(invocationPlugins, config, metaAccess, foreignCalls);
                 registerCounterModePlugins(invocationPlugins, config, replacementBytecodeProvider);
                 registerBase64Plugins(invocationPlugins, config, metaAccess, foreignCalls);
-                registerUnsafePlugins(invocationPlugins, replacementBytecodeProvider);
+                registerUnsafePlugins(invocationPlugins, config, replacementBytecodeProvider);
                 StandardGraphBuilderPlugins.registerInvocationPlugins(metaAccess, snippetReflection, invocationPlugins, replacementBytecodeProvider, true, false);
                 registerArrayPlugins(invocationPlugins, replacementBytecodeProvider);
                 registerStringPlugins(invocationPlugins, replacementBytecodeProvider);
@@ -276,15 +276,16 @@ public class HotSpotGraphBuilderPlugins {
         r.registerMethodSubstitution(ReflectionSubstitutions.class, "getClassAccessFlags", Class.class);
     }
 
-    private static void registerUnsafePlugins(InvocationPlugins plugins, BytecodeProvider replacementBytecodeProvider) {
+    private static void registerUnsafePlugins(InvocationPlugins plugins, GraalHotSpotVMConfig config, BytecodeProvider replacementBytecodeProvider) {
         Registration r;
         if (JavaVersionUtil.JAVA_SPEC <= 8) {
             r = new Registration(plugins, Unsafe.class, replacementBytecodeProvider);
         } else {
             r = new Registration(plugins, "jdk.internal.misc.Unsafe", replacementBytecodeProvider);
         }
-        r.registerMethodSubstitution(HotSpotUnsafeSubstitutions.class, HotSpotUnsafeSubstitutions.copyMemoryName, "copyMemory", Receiver.class, Object.class, long.class, Object.class, long.class,
-                        long.class);
+        String substituteMethodName = config.doingUnsafeAccessOffset != Integer.MAX_VALUE ? "copyMemoryGuarded" : "copyMemory";
+        r.registerMethodSubstitution(HotSpotUnsafeSubstitutions.class, HotSpotUnsafeSubstitutions.copyMemoryName, substituteMethodName, Receiver.class, Object.class, long.class, Object.class,
+                        long.class, long.class);
     }
 
     private static final LocationIdentity INSTANCE_KLASS_CONSTANTS = NamedLocationIdentity.immutable("InstanceKlass::_constants");

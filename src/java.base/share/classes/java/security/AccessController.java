@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -445,7 +445,8 @@ public final class AccessController {
             throw new NullPointerException("null permissions parameter");
         }
         Class<?> caller = Reflection.getCallerClass();
-        return AccessController.doPrivileged(action, createWrapper(null,
+        DomainCombiner dc = (context == null) ? null : context.getCombiner();
+        return AccessController.doPrivileged(action, createWrapper(dc,
             caller, parent, context, perms));
     }
 
@@ -860,7 +861,8 @@ public final class AccessController {
             throw new NullPointerException("null permissions parameter");
         }
         Class<?> caller = Reflection.getCallerClass();
-        return AccessController.doPrivileged(action, createWrapper(null, caller, parent, context, perms));
+        DomainCombiner dc = (context == null) ? null : context.getCombiner();
+        return AccessController.doPrivileged(action, createWrapper(dc, caller, parent, context, perms));
     }
 
 

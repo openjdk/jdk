@@ -67,6 +67,7 @@ private:
   G1Policy*              _g1p;
   G1HotCardCache*        _hot_card_cache;
 
+  void print_merge_heap_roots_stats();
 public:
 
   typedef CardTable::CardValue CardValue;
@@ -94,8 +95,8 @@ public:
 
   // Merge cards from various sources (remembered sets, hot card cache, log buffers)
   // and calculate the cards that need to be scanned later (via scan_heap_roots()).
-  // If remembered_set_only is set, only merge remembered set cards.
-  void merge_heap_roots(bool remembered_set_only, G1GCPhaseTimes::GCParPhases merge_phase);
+  // If initial_evacuation is set, this is called during the initial evacuation.
+  void merge_heap_roots(bool initial_evacuation);
 
   // Prepare for and cleanup after scanning the heap roots. Must be called
   // once before and after in sequential code.

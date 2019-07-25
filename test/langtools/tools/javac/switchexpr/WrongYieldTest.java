@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 8223305
+ * @bug 8223305 8226522
  * @summary Ensure proper errors are returned for yields.
  * @compile/fail/ref=WrongYieldTest.out --enable-preview -source ${jdk.version} -XDrawDiagnostics -XDshould-stop.at=ATTR WrongYieldTest.java
  */
@@ -221,5 +221,13 @@ public class WrongYieldTest {
 
         //OK - yield is a variable:
         yield[0] = 5;
+    }
+
+    private void lambda() {
+        SAM s = (yield y) -> {};
+    }
+
+    interface SAM {
+        public void m(Object o);
     }
 }

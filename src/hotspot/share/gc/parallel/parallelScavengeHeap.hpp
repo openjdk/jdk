@@ -38,6 +38,7 @@
 #include "gc/shared/strongRootsScope.hpp"
 #include "logging/log.hpp"
 #include "memory/metaspace.hpp"
+#include "memory/metaspace/metaspaceSizesSnapshot.hpp"
 #include "utilities/growableArray.hpp"
 #include "utilities/ostream.hpp"
 
@@ -257,19 +258,18 @@ public:
   PreGCValues(ParallelScavengeHeap* heap) :
       _heap_used(heap->used()),
       _young_gen_used(heap->young_gen()->used_in_bytes()),
-      _old_gen_used(heap->old_gen()->used_in_bytes()),
-      _metadata_used(MetaspaceUtils::used_bytes()) { };
+      _old_gen_used(heap->old_gen()->used_in_bytes()) { }
 
   size_t heap_used() const      { return _heap_used; }
   size_t young_gen_used() const { return _young_gen_used; }
   size_t old_gen_used() const   { return _old_gen_used; }
-  size_t metadata_used() const  { return _metadata_used; }
+  const metaspace::MetaspaceSizesSnapshot& metaspace_sizes() const { return _meta_sizes; }
 
 private:
   size_t _heap_used;
   size_t _young_gen_used;
   size_t _old_gen_used;
-  size_t _metadata_used;
+  const metaspace::MetaspaceSizesSnapshot _meta_sizes;
 };
 
 // Class that can be used to print information about the

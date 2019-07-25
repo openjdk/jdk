@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,13 +28,12 @@ package com.sun.tools.javac.api;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.text.BreakIterator;
-import java.util.Collections;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
+import java.util.Map.Entry;
 import java.util.Set;
 import java.util.WeakHashMap;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 
 import javax.annotation.processing.ProcessingEnvironment;
 import javax.lang.model.element.AnnotationMirror;
@@ -60,9 +59,8 @@ import javax.tools.StandardLocation;
 
 import com.sun.source.doctree.DocCommentTree;
 import com.sun.source.doctree.DocTree;
-import com.sun.source.doctree.EndElementTree;
-import com.sun.source.doctree.StartElementTree;
 import com.sun.source.tree.CatchTree;
+import com.sun.source.tree.ClassTree;
 import com.sun.source.tree.CompilationUnitTree;
 import com.sun.source.tree.Scope;
 import com.sun.source.tree.Tree;
@@ -71,13 +69,11 @@ import com.sun.source.util.DocTreePath;
 import com.sun.source.util.DocTreeScanner;
 import com.sun.source.util.DocTrees;
 import com.sun.source.util.JavacTask;
-import com.sun.source.util.SimpleDocTreeVisitor;
 import com.sun.source.util.TreePath;
 import com.sun.tools.javac.code.Flags;
 import com.sun.tools.javac.code.Scope.NamedImportScope;
 import com.sun.tools.javac.code.Scope.StarImportScope;
 import com.sun.tools.javac.code.Scope.WriteableScope;
-import com.sun.tools.javac.code.Symbol;
 import com.sun.tools.javac.code.Symbol.ClassSymbol;
 import com.sun.tools.javac.code.Symbol.MethodSymbol;
 import com.sun.tools.javac.code.Symbol.ModuleSymbol;
@@ -94,11 +90,13 @@ import com.sun.tools.javac.code.Types;
 import com.sun.tools.javac.code.Types.TypeRelation;
 import com.sun.tools.javac.comp.Attr;
 import com.sun.tools.javac.comp.AttrContext;
+import com.sun.tools.javac.comp.Check;
 import com.sun.tools.javac.comp.Enter;
 import com.sun.tools.javac.comp.Env;
 import com.sun.tools.javac.comp.MemberEnter;
 import com.sun.tools.javac.comp.Modules;
 import com.sun.tools.javac.comp.Resolve;
+import com.sun.tools.javac.code.Symbol;
 import com.sun.tools.javac.file.BaseFileManager;
 import com.sun.tools.javac.model.JavacElements;
 import com.sun.tools.javac.parser.DocCommentParser;
@@ -111,8 +109,10 @@ import com.sun.tools.javac.resources.CompilerProperties.Notes;
 import com.sun.tools.javac.resources.CompilerProperties.Warnings;
 import com.sun.tools.javac.tree.DCTree;
 import com.sun.tools.javac.tree.DCTree.DCBlockTag;
+import com.sun.tools.javac.tree.DCTree.DCComment;
 import com.sun.tools.javac.tree.DCTree.DCDocComment;
 import com.sun.tools.javac.tree.DCTree.DCEndPosTree;
+import com.sun.tools.javac.tree.DCTree.DCEntity;
 import com.sun.tools.javac.tree.DCTree.DCErroneous;
 import com.sun.tools.javac.tree.DCTree.DCIdentifier;
 import com.sun.tools.javac.tree.DCTree.DCParam;
@@ -133,6 +133,7 @@ import com.sun.tools.javac.tree.JCTree.JCVariableDecl;
 import com.sun.tools.javac.tree.TreeCopier;
 import com.sun.tools.javac.tree.TreeInfo;
 import com.sun.tools.javac.tree.TreeMaker;
+import com.sun.tools.javac.tree.TreeScanner;
 import com.sun.tools.javac.util.Abort;
 import com.sun.tools.javac.util.Assert;
 import com.sun.tools.javac.util.Context;
@@ -171,6 +172,7 @@ public class JavacTrees extends DocTrees {
     private Log log;
     private MemberEnter memberEnter;
     private Attr attr;
+    private Check chk;
     private TreeMaker treeMaker;
     private JavacElements elements;
     private JavacTaskImpl javacTaskImpl;
@@ -218,6 +220,7 @@ public class JavacTrees extends DocTrees {
     private void init(Context context) {
         modules = Modules.instance(context);
         attr = Attr.instance(context);
+        chk = Check.instance(context);
         enter = Enter.instance(context);
         elements = JavacElements.instance(context);
         log = Log.instance(context);
@@ -300,6 +303,14 @@ public class JavacTrees extends DocTrees {
                             DCBlockTag block = (DCBlockTag) tree;
 
                             return dcComment.comment.getSourcePos(block.pos + block.getTagName().length() + 1);
+                        }
+                        case ENTITY: {
+                            DCEntity endEl = (DCEntity) tree;
+                            return dcComment.comment.getSourcePos(endEl.pos + (endEl.name != names.error ? endEl.name.length() : 0) + 2);
+                        }
+                        case COMMENT: {
+                            DCComment endEl = (DCComment) tree;
+                            return dcComment.comment.getSourcePos(endEl.pos + endEl.body.length());
                         }
                         default:
                             DocTree last = getLastChild(tree);
@@ -915,13 +926,13 @@ public class JavacTrees extends DocTrees {
                         try {
                             Assert.check(method.body == tree);
                             method.body = copier.copy((JCBlock)tree, (JCTree) path.getLeaf());
-                            env = attribStatToTree(method.body, env, copier.leafCopy);
+                            env = attribStatToTree(method.body, env, copier.leafCopy, copier.copiedClasses);
                         } finally {
                             method.body = (JCBlock) tree;
                         }
                     } else {
                         JCBlock body = copier.copy((JCBlock)tree, (JCTree) path.getLeaf());
-                        env = attribStatToTree(body, env, copier.leafCopy);
+                        env = attribStatToTree(body, env, copier.leafCopy, copier.copiedClasses);
                     }
                     return env;
                 }
@@ -930,7 +941,7 @@ public class JavacTrees extends DocTrees {
                     if (field != null && field.getInitializer() == tree) {
                         env = memberEnter.getInitEnv(field, env);
                         JCExpression expr = copier.copy((JCExpression)tree, (JCTree) path.getLeaf());
-                        env = attribExprToTree(expr, env, copier.leafCopy);
+                        env = attribExprToTree(expr, env, copier.leafCopy, copier.copiedClasses);
                         return env;
                     }
             }
@@ -938,22 +949,135 @@ public class JavacTrees extends DocTrees {
         return (field != null) ? memberEnter.getInitEnv(field, env) : env;
     }
 
-    private Env<AttrContext> attribStatToTree(JCTree stat, Env<AttrContext>env, JCTree tree) {
+    private Env<AttrContext> attribStatToTree(JCTree stat, Env<AttrContext>env,
+                                              JCTree tree, Map<JCClassDecl, JCClassDecl> copiedClasses) {
         JavaFileObject prev = log.useSource(env.toplevel.sourcefile);
+        Log.DiagnosticHandler diagHandler = new Log.DiscardDiagnosticHandler(log);
         try {
-            return attr.attribStatToTree(stat, env, tree);
+            Env<AttrContext> result = attr.attribStatToTree(stat, env, tree);
+
+            enter.unenter(env.toplevel, stat);
+            fixLocalClassNames(copiedClasses, env);
+            return result;
         } finally {
+            log.popDiagnosticHandler(diagHandler);
             log.useSource(prev);
         }
     }
 
-    private Env<AttrContext> attribExprToTree(JCExpression expr, Env<AttrContext>env, JCTree tree) {
+    private Env<AttrContext> attribExprToTree(JCExpression expr, Env<AttrContext>env,
+                                              JCTree tree, Map<JCClassDecl, JCClassDecl> copiedClasses) {
         JavaFileObject prev = log.useSource(env.toplevel.sourcefile);
+        Log.DiagnosticHandler diagHandler = new Log.DiscardDiagnosticHandler(log);
         try {
-            return attr.attribExprToTree(expr, env, tree);
+            Env<AttrContext> result = attr.attribExprToTree(expr, env, tree);
+
+            enter.unenter(env.toplevel, expr);
+            fixLocalClassNames(copiedClasses, env);
+            return result;
         } finally {
+            log.popDiagnosticHandler(diagHandler);
             log.useSource(prev);
         }
+    }
+
+    /* Change the flatnames of the local and anonymous classes in the Scope to
+     * the names they would have if the whole file was attributed normally.
+     */
+    private void fixLocalClassNames(Map<JCClassDecl, JCClassDecl> copiedClasses,
+                                    Env<AttrContext> lastEnv) {
+        Map<JCClassDecl, Name> flatnameForClass = null;
+
+        for (Entry<JCClassDecl, JCClassDecl> e : copiedClasses.entrySet()) {
+            if (e.getKey().sym != null) {
+                Name origName;
+                if (e.getValue().sym != null) {
+                    //if the source tree was already attributed, use the flatname
+                    //from the source tree's Symbol:
+                    origName = e.getValue().sym.flatname;
+                } else {
+                    //otherwise, compute the flatnames (for source trees) as
+                    //if the full source code would be attributed:
+                    if (flatnameForClass == null) {
+                        flatnameForClass = prepareFlatnameForClass(lastEnv);
+                    }
+                    origName = flatnameForClass.get(e.getValue());
+                }
+                if (origName != null) {
+                    e.getKey().sym.flatname = origName;
+                }
+            }
+        }
+    }
+
+    /* This method computes and assigns flatnames to trees, as if they would be
+     * normally assigned during attribution of the full source code.
+     */
+    private Map<JCTree.JCClassDecl, Name> prepareFlatnameForClass(Env<AttrContext> env) {
+        Map<JCClassDecl, Name> flatNameForClass = new HashMap<>();
+        Symbol enclClass = env.enclClass.sym;
+
+        if (enclClass != null && (enclClass.flags_field & Flags.UNATTRIBUTED) != 0) {
+            ListBuffer<ClassSymbol> toClear = new ListBuffer<>();
+            new TreeScanner() {
+                Symbol owner;
+                boolean localContext;
+                @Override
+                public void visitClassDef(JCClassDecl tree) {
+                    //compute the name (and ClassSymbol) which would be used
+                    //for this class for full attribution
+                    Symbol prevOwner = owner;
+                    try {
+                        ClassSymbol c;
+                        if (tree.sym != null) {
+                            //already entered:
+                            c = tree.sym;
+                        } else {
+                            c = syms.defineClass(tree.name, owner);
+                            if (owner.kind != TYP) {
+                                //for local classes, assign the flatname
+                                c.flatname = chk.localClassName(c);
+                                chk.putCompiled(c);
+                                toClear.add(c);
+                            }
+                            flatNameForClass.put(tree, c.flatname);
+                        }
+                        owner = c;
+                        super.visitClassDef(tree);
+                    } finally {
+                        owner = prevOwner;
+                    }
+                }
+
+                @Override
+                public void visitBlock(JCBlock tree) {
+                    Symbol prevOwner = owner;
+                    try {
+                        owner = new MethodSymbol(0, names.empty, Type.noType, owner);
+                        super.visitBlock(tree);
+                    } finally {
+                        owner = prevOwner;
+                    }
+                }
+                @Override
+                public void visitVarDef(JCVariableDecl tree) {
+                    Symbol prevOwner = owner;
+                    try {
+                        owner = new MethodSymbol(0, names.empty, Type.noType, owner);
+                        super.visitVarDef(tree);
+                    } finally {
+                        owner = prevOwner;
+                    }
+                }
+            }.scan(env.enclClass);
+            //revert changes done by the visitor:
+            toClear.stream().forEach(c -> {
+                chk.clearLocalClassNameIndexes(c);
+                chk.removeCompiled(c);
+            });
+        }
+
+        return flatNameForClass;
     }
 
     static JavaFileObject asJavaFileObject(FileObject fileObject) {
@@ -1065,6 +1189,7 @@ public class JavacTrees extends DocTrees {
      **/
     protected static class Copier extends TreeCopier<JCTree> {
         JCTree leafCopy = null;
+        private Map<JCClassDecl, JCClassDecl> copiedClasses = new HashMap<>();
 
         protected Copier(TreeMaker M) {
             super(M);
@@ -1077,6 +1202,14 @@ public class JavacTrees extends DocTrees {
                 leafCopy = t2;
             return t2;
         }
+
+        @Override
+        public JCTree visitClass(ClassTree node, JCTree p) {
+            JCTree nue = super.visitClass(node, p);
+            copiedClasses.put((JCClassDecl) nue, (JCClassDecl) node);
+            return nue;
+        }
+
     }
 
     protected Copier createCopier(TreeMaker maker) {

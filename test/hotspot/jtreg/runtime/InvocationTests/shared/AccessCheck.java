@@ -26,8 +26,7 @@ package shared;
 
 import static jdk.internal.org.objectweb.asm.Opcodes.*;
 
-/**
- *
+/*
  * @author vi158347
  */
 public class AccessCheck {

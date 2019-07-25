@@ -118,7 +118,7 @@ class KrbAsRep extends KrbKdcRep {
                     "Cannot find key for type/kvno to decrypt AS REP - " +
                     EType.toString(encPartKeyType) + "/" + encPartKvno);
             }
-        decrypt(dkey, asReq);
+        decrypt(dkey, asReq, cname);
     }
 
     /**
@@ -136,7 +136,7 @@ class KrbAsRep extends KrbKdcRep {
                 password,
                 encPartKeyType,
                 PAData.getSaltAndParams(encPartKeyType, rep.pAData));
-        decrypt(dkey, asReq);
+        decrypt(dkey, asReq, cname);
     }
 
     /**
@@ -144,7 +144,8 @@ class KrbAsRep extends KrbKdcRep {
      * @param dkey the decryption key to use
      * @param asReq the original AS-REQ sent, used to validate AS-REP
      */
-    private void decrypt(EncryptionKey dkey, KrbAsReq asReq)
+    private void decrypt(EncryptionKey dkey, KrbAsReq asReq,
+            PrincipalName cname)
             throws KrbException, Asn1Exception, IOException {
         byte[] enc_as_rep_bytes = rep.encPart.decrypt(dkey,
             KeyUsage.KU_ENC_AS_REP_PART);
@@ -157,10 +158,16 @@ class KrbAsRep extends KrbKdcRep {
         ASReq req = asReq.getMessage();
         check(true, req, rep, dkey);
 
+        PrincipalName clientAlias = cname;
+        if (clientAlias.equals(rep.cname))
+            clientAlias = null;
+
         creds = new Credentials(
                                 rep.ticket,
                                 rep.cname,
+                                clientAlias,
                                 enc_part.sname,
+                                null, // No server alias expected in a TGT
                                 enc_part.key,
                                 enc_part.flags,
                                 enc_part.authtime,

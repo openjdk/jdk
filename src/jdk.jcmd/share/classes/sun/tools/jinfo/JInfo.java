@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2006, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2006, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,10 +30,10 @@ import java.io.InputStream;
 import java.util.Collection;
 
 import com.sun.tools.attach.VirtualMachine;
-import com.sun.tools.attach.VirtualMachineDescriptor;
 
 import sun.tools.attach.HotSpotVirtualMachine;
 import sun.tools.common.ProcessArgumentMatcher;
+import sun.tools.common.PrintStreamPrinter;
 
 /*
  * This class is the main class for the JInfo utility. It parses its arguments
@@ -203,17 +203,7 @@ final public class JInfo {
 
     // Read the stream from the target VM until EOF, then detach
     private static void drain(VirtualMachine vm, InputStream in) throws IOException {
-        // read to EOF and just print output
-        byte b[] = new byte[256];
-        int n;
-        do {
-            n = in.read(b);
-            if (n > 0) {
-                String s = new String(b, 0, n, "UTF-8");
-                System.out.print(s);
-            }
-        } while (n > 0);
-        in.close();
+        PrintStreamPrinter.drainUTF8(in, System.out);
         vm.detach();
     }
 

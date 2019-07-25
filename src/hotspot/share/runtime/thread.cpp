@@ -250,7 +250,6 @@ Thread::Thread() {
 
   // plain initialization
   debug_only(_owned_locks = NULL;)
-  debug_only(_allow_allocation_count = 0;)
   NOT_PRODUCT(_allow_safepoint_count = 0;)
   NOT_PRODUCT(_skip_gcalot = false;)
   _jvmti_env_iteration_count = 0;
@@ -2968,11 +2967,6 @@ void JavaThread::oops_do(OopClosure* f, CodeBlobClosure* cf) {
       fst.current()->oops_do(f, cf, fst.register_map());
     }
   }
-
-  // callee_target is never live across a gc point so NULL it here should
-  // it still contain a methdOop.
-
-  set_callee_target(NULL);
 
   assert(vframe_array_head() == NULL, "deopt in progress at a safepoint!");
   // If we have deferred set_locals there might be oops waiting to be

@@ -49,6 +49,7 @@ CDSOffsets* CDSOffsets::_all = NULL;
     ADD_NEXT(_all, "FileMapHeader::_magic", offset_of(FileMapHeader, _magic));              \
     ADD_NEXT(_all, "FileMapHeader::_crc", offset_of(FileMapHeader, _crc));                  \
     ADD_NEXT(_all, "FileMapHeader::_version", offset_of(FileMapHeader, _version));          \
+    ADD_NEXT(_all, "FileMapHeader::_jvm_ident", offset_of(FileMapHeader, _jvm_ident));      \
     ADD_NEXT(_all, "FileMapHeader::_space[0]", offset_of(FileMapHeader, _space));           \
     ADD_NEXT(_all, "CDSFileMapRegion::_crc", offset_of(CDSFileMapRegion, _crc));            \
     ADD_NEXT(_all, "CDSFileMapRegion::_used", offset_of(CDSFileMapRegion, _used));          \

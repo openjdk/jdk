@@ -116,7 +116,7 @@ class TestMaxHeapSizeTools {
   }
 
   private static void getNewOldSize(String gcflag, long[] values) throws Exception {
-    ProcessBuilder pb = ProcessTools.createJavaProcessBuilder(gcflag,
+    ProcessBuilder pb = GCArguments.createJavaProcessBuilder(gcflag,
       "-XX:+PrintFlagsFinal", "-version");
     OutputAnalyzer output = new OutputAnalyzer(pb.start());
     output.shouldHaveExitValue(0);
@@ -135,7 +135,8 @@ class TestMaxHeapSizeTools {
     expectError(new String[] { gcflag, "-XX:InitialHeapSize=1023K", "-version" });
     expectError(new String[] { gcflag, "-Xms64M", "-XX:InitialHeapSize=32M", "-version" });
     expectError(new String[] { gcflag, "-XX:MinHeapSize=1023K", "-version" });
-    expectError(new String[] { gcflag, "-Xms4M", "-XX:MinHeapSize=8M", "-version" });
+    // Note: MinHeapSize values get aligned up by HeapAlignment which is 32M with 64k pages.
+    expectError(new String[] { gcflag, "-Xms4M", "-XX:MinHeapSize=64M", "-version" });
     expectError(new String[] { gcflag, "-XX:MinHeapSize=8M -XX:InitialHeapSize=4m" });
   }
 
@@ -219,7 +220,7 @@ class TestMaxHeapSizeTools {
     finalargs.add(classname);
     finalargs.addAll(Arrays.asList(arguments));
 
-    ProcessBuilder pb = ProcessTools.createJavaProcessBuilder(finalargs.toArray(new String[0]));
+    ProcessBuilder pb = GCArguments.createJavaProcessBuilder(finalargs.toArray(new String[0]));
     OutputAnalyzer output = new OutputAnalyzer(pb.start());
     output.shouldHaveExitValue(0);
 
@@ -319,7 +320,7 @@ class TestMaxHeapSizeTools {
   }
 
   private static void expect(String[] flags, boolean hasWarning, boolean hasError, int errorcode) throws Exception {
-    ProcessBuilder pb = ProcessTools.createJavaProcessBuilder(flags);
+    ProcessBuilder pb = GCArguments.createJavaProcessBuilder(flags);
     OutputAnalyzer output = new OutputAnalyzer(pb.start());
     shouldContainOrNot(output, hasWarning, "Warning");
     shouldContainOrNot(output, hasError, "Error");

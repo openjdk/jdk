@@ -193,11 +193,7 @@ bool PSMarkSweep::invoke_no_policy(bool clear_all_softrefs) {
 
     BiasedLocking::preserve_marks();
 
-    // Capture metadata size before collection for sizing.
-    size_t metadata_prev_used = MetaspaceUtils::used_bytes();
-
-    size_t old_gen_prev_used = old_gen->used_in_bytes();
-    size_t young_gen_prev_used = young_gen->used_in_bytes();
+    const PreGCValues pre_gc_values(heap);
 
     allocate_stacks();
 
@@ -352,9 +348,9 @@ bool PSMarkSweep::invoke_no_policy(bool clear_all_softrefs) {
       accumulated_time()->stop();
     }
 
-    young_gen->print_used_change(young_gen_prev_used);
-    old_gen->print_used_change(old_gen_prev_used);
-    MetaspaceUtils::print_metaspace_change(metadata_prev_used);
+    young_gen->print_used_change(pre_gc_values.young_gen_used());
+    old_gen->print_used_change(pre_gc_values.old_gen_used());
+    MetaspaceUtils::print_metaspace_change(pre_gc_values.metaspace_sizes());
 
     // Track memory usage and detect low memory
     MemoryService::track_memory_usage();
@@ -528,7 +524,6 @@ void PSMarkSweep::mark_sweep_phase1(bool clear_all_softrefs) {
     // Do not treat nmethods as strong roots for mark/sweep, since we can unload them.
     //ScavengableNMethods::scavengable_nmethods_do(CodeBlobToOopClosure(mark_and_push_closure()));
     AOT_ONLY(AOTLoader::oops_do(mark_and_push_closure());)
-    JVMCI_ONLY(JVMCI::oops_do(mark_and_push_closure());)
   }
 
   // Flush marking stack.
@@ -623,8 +618,6 @@ void PSMarkSweep::mark_sweep_phase3() {
   CodeBlobToOopClosure adjust_from_blobs(adjust_pointer_closure(), CodeBlobToOopClosure::FixRelocations);
   CodeCache::blobs_do(&adjust_from_blobs);
   AOT_ONLY(AOTLoader::oops_do(adjust_pointer_closure());)
-
-  JVMCI_ONLY(JVMCI::oops_do(adjust_pointer_closure());)
 
   ref_processor()->weak_oops_do(adjust_pointer_closure());
   PSScavenge::reference_processor()->weak_oops_do(adjust_pointer_closure());

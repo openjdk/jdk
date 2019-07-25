@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -98,13 +98,7 @@ public class DefaultProxySelector extends ProxySelector {
                     return NetProperties.getBoolean(key);
                 }});
         if (b != null && b.booleanValue()) {
-            java.security.AccessController.doPrivileged(
-                new java.security.PrivilegedAction<Void>() {
-                    public Void run() {
-                        System.loadLibrary("net");
-                        return null;
-                    }
-                });
+            jdk.internal.loader.BootLoader.loadLibrary("net");
             hasSystemProxies = init();
         }
     }

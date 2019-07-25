@@ -1561,7 +1561,7 @@ static size_t sharedmem_filesize(const char* filename, TRAPS) {
       warning("unexpected file size: size = " SIZE_FORMAT "\n",
               statbuf.st_size);
     }
-    THROW_MSG_0(vmSymbols::java_lang_Exception(),
+    THROW_MSG_0(vmSymbols::java_io_IOException(),
                 "Invalid PerfMemory size");
   }
 

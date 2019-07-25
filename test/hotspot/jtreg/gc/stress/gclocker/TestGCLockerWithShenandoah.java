@@ -30,10 +30,25 @@ package gc.stress.gclocker;
  * @library /
  * @requires vm.gc.Shenandoah & !vm.graal.enabled
  * @summary Stress Shenandoah's JNI handling by calling GetPrimitiveArrayCritical while concurrently filling up old gen.
- * @run main/native/othervm/timeout=200 -Xlog:gc*=info -Xms1500m -Xmx1500m -XX:+UnlockExperimentalVMOptions -XX:+UnlockDiagnosticVMOptions -XX:+ShenandoahVerify -XX:+UseShenandoahGC gc.stress.gclocker.TestGCLockerWithShenandoah
- * @run main/native/othervm/timeout=200 -Xlog:gc*=info -Xms1500m -Xmx1500m -XX:+UnlockExperimentalVMOptions                                                      -XX:+UseShenandoahGC gc.stress.gclocker.TestGCLockerWithShenandoah
- * @run main/native/othervm/timeout=200 -Xlog:gc*=info -Xms1500m -Xmx1500m -XX:+UnlockExperimentalVMOptions -XX:+UnlockDiagnosticVMOptions                       -XX:+UseShenandoahGC -XX:+ShenandoahOOMDuringEvacALot -XX:ShenandoahGCHeuristics=aggressive gc.stress.gclocker.TestGCLockerWithShenandoah
- * @run main/native/othervm/timeout=200 -Xlog:gc*=info -Xms1500m -Xmx1500m -XX:+UnlockExperimentalVMOptions -XX:+UnlockDiagnosticVMOptions                       -XX:+UseShenandoahGC -XX:+ShenandoahAllocFailureALot  -XX:ShenandoahGCHeuristics=aggressive gc.stress.gclocker.TestGCLockerWithShenandoah
+ *
+ * @run main/native/othervm/timeout=200 -Xlog:gc*=info -Xms1500m -Xmx1500m -XX:+UnlockExperimentalVMOptions -XX:+UnlockDiagnosticVMOptions
+ *      -XX:+UseShenandoahGC
+ *      -XX:+ShenandoahVerify
+ *      gc.stress.gclocker.TestGCLockerWithShenandoah
+ *
+ * @run main/native/othervm/timeout=200 -Xlog:gc*=info -Xms1500m -Xmx1500m -XX:+UnlockExperimentalVMOptions -XX:+UnlockDiagnosticVMOptions
+ *      -XX:+UseShenandoahGC
+ *      gc.stress.gclocker.TestGCLockerWithShenandoah
+ *
+ * @run main/native/othervm/timeout=200 -Xlog:gc*=info -Xms1500m -Xmx1500m -XX:+UnlockExperimentalVMOptions -XX:+UnlockDiagnosticVMOptions
+ *      -XX:+UseShenandoahGC -XX:ShenandoahGCHeuristics=aggressive
+ *      -XX:+ShenandoahOOMDuringEvacALot
+ *      gc.stress.gclocker.TestGCLockerWithShenandoah
+ *
+ * @run main/native/othervm/timeout=200 -Xlog:gc*=info -Xms1500m -Xmx1500m -XX:+UnlockExperimentalVMOptions -XX:+UnlockDiagnosticVMOptions
+ *      -XX:+UseShenandoahGC -XX:ShenandoahGCHeuristics=aggressive
+ *      -XX:+ShenandoahAllocFailureALot
+ *      gc.stress.gclocker.TestGCLockerWithShenandoah
  */
 public class TestGCLockerWithShenandoah {
     public static void main(String[] args) {

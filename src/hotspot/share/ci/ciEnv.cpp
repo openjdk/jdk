@@ -98,7 +98,7 @@ static bool firstEnv = true;
 
 // ------------------------------------------------------------------
 // ciEnv::ciEnv
-ciEnv::ciEnv(CompileTask* task, int system_dictionary_modification_counter)
+ciEnv::ciEnv(CompileTask* task)
   : _ciEnv_arena(mtCompiler) {
   VM_ENTRY_MARK;
 
@@ -118,7 +118,6 @@ ciEnv::ciEnv(CompileTask* task, int system_dictionary_modification_counter)
   assert(!firstEnv, "not initialized properly");
 #endif /* !PRODUCT */
 
-  _system_dictionary_modification_counter = system_dictionary_modification_counter;
   _num_inlined_bytecodes = 0;
   assert(task == NULL || thread->task() == task, "sanity");
   if (task != NULL) {
@@ -183,7 +182,6 @@ ciEnv::ciEnv(Arena* arena) : _ciEnv_arena(mtCompiler) {
   firstEnv = false;
 #endif /* !PRODUCT */
 
-  _system_dictionary_modification_counter = 0;
   _num_inlined_bytecodes = 0;
   _task = NULL;
   _log = NULL;
@@ -919,17 +917,6 @@ bool ciEnv::is_in_vm() {
   return JavaThread::current()->thread_state() == _thread_in_vm;
 }
 
-bool ciEnv::system_dictionary_modification_counter_changed_locked() {
-  assert_locked_or_safepoint(Compile_lock);
-  return _system_dictionary_modification_counter != SystemDictionary::number_of_modifications();
-}
-
-bool ciEnv::system_dictionary_modification_counter_changed() {
-  VM_ENTRY_MARK;
-  MutexLocker ml(Compile_lock, THREAD); // lock with safepoint check
-  return system_dictionary_modification_counter_changed_locked();
-}
-
 // ------------------------------------------------------------------
 // ciEnv::validate_compile_task_dependencies
 //
@@ -938,8 +925,7 @@ bool ciEnv::system_dictionary_modification_counter_changed() {
 void ciEnv::validate_compile_task_dependencies(ciMethod* target) {
   if (failing())  return;  // no need for further checks
 
-  bool counter_changed = system_dictionary_modification_counter_changed_locked();
-  Dependencies::DepType result = dependencies()->validate_dependencies(_task, counter_changed);
+  Dependencies::DepType result = dependencies()->validate_dependencies(_task);
   if (result != Dependencies::end_marker) {
     if (result == Dependencies::call_site_target_value) {
       _inc_decompile_count_on_failure = false;

@@ -113,7 +113,7 @@ public class TestVolatiles {
             procArgs = new String[argcount];
             procArgs[argcount - 4] = "-XX:+UnlockExperimentalVMOptions";
             procArgs[argcount - 3] = "-XX:+UseShenandoahGC";
-            procArgs[argcount - 2] = "-XX:ShenandoahGCHeuristics=traversal";
+            procArgs[argcount - 2] = "-XX:ShenandoahGCMode=traversal";
             break;
         default:
             throw new RuntimeException("unexpected test type " + testType);

@@ -76,13 +76,10 @@ class Bignum {
     // grow. There are no checks if the stack-allocated space is sufficient.
     static final int kBigitCapacity = kMaxSignificantBits / kBigitSize;
 
-    private final int[] bigits_ = new int[kBigitCapacity];
-    // A vector backed by bigits_buffer_. This way accesses to the array are
-    // checked for out-of-bounds errors.
-    // Vector<int> bigits_;
     private int used_digits_;
     // The Bignum's value equals value(bigits_) * 2^(exponent_ * kBigitSize).
     private int exponent_;
+    private final int[] bigits_ = new int[kBigitCapacity];
 
     Bignum() {}
 
@@ -124,7 +121,9 @@ class Bignum {
     void assignUInt16(final char value) {
         assert (kBigitSize >= 16);
         zero();
-        if (value == 0) return;
+        if (value == 0) {
+            return;
+        }
 
         ensureCapacity(1);
         bigits_[0] = value;
@@ -136,7 +135,9 @@ class Bignum {
         final  int kUInt64Size = 64;
 
         zero();
-        if (value == 0) return;
+        if (value == 0) {
+            return;
+        }
 
         final int needed_bigits = kUInt64Size / kBigitSize + 1;
         ensureCapacity(needed_bigits);
@@ -521,26 +522,27 @@ class Bignum {
         mask >>>= 2;
         long this_value = base;
 
-        boolean delayed_multipliciation = false;
+        boolean delayed_multiplication = false;
         final long max_32bits = 0xFFFFFFFFL;
         while (mask != 0 && this_value <= max_32bits) {
             this_value = this_value * this_value;
             // Verify that there is enough space in this_value to perform the
             // multiplication.  The first bit_size bits must be 0.
             if ((power_exponent & mask) != 0) {
+                assert bit_size > 0;
                 final long base_bits_mask =
                         ~((1L << (64 - bit_size)) - 1);
                 final boolean high_bits_zero = (this_value & base_bits_mask) == 0;
                 if (high_bits_zero) {
                     this_value *= base;
                 } else {
-                    delayed_multipliciation = true;
+                    delayed_multiplication = true;
                 }
             }
             mask >>>= 1;
         }
         assignUInt64(this_value);
-        if (delayed_multipliciation) {
+        if (delayed_multiplication) {
             multiplyByUInt32(base);
         }
 
@@ -681,7 +683,7 @@ class Bignum {
     }
 
 
-    int bigitAt(final int index) {
+    int bigitOrZero(final int index) {
         if (index >= bigitLength()) return 0;
         if (index < exponent_) return 0;
         return bigits_[index - exponent_];
@@ -696,8 +698,8 @@ class Bignum {
         if (bigit_length_a < bigit_length_b) return -1;
         if (bigit_length_a > bigit_length_b) return +1;
         for (int i = bigit_length_a - 1; i >= Math.min(a.exponent_, b.exponent_); --i) {
-            final int bigit_a = a.bigitAt(i);
-            final int bigit_b = b.bigitAt(i);
+            final int bigit_a = a.bigitOrZero(i);
+            final int bigit_b = b.bigitOrZero(i);
             if (bigit_a < bigit_b) return -1;
             if (bigit_a > bigit_b) return +1;
             // Otherwise they are equal up to this digit. Try the next digit.
@@ -726,9 +728,9 @@ class Bignum {
         // Starting at min_exponent all digits are == 0. So no need to compare them.
         final int min_exponent = Math.min(Math.min(a.exponent_, b.exponent_), c.exponent_);
         for (int i = c.bigitLength() - 1; i >= min_exponent; --i) {
-            final int int_a = a.bigitAt(i);
-            final int int_b = b.bigitAt(i);
-            final int int_c = c.bigitAt(i);
+            final int int_a = a.bigitOrZero(i);
+            final int int_b = b.bigitOrZero(i);
+            final int int_c = c.bigitOrZero(i);
             final int sum = int_a + int_b;
             if (sum > int_c + borrow) {
                 return +1;

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -51,6 +51,8 @@ public class Bug8066652Run {
         JDKToolLauncher launcher = JDKToolLauncher.createUsingTestJDK("java");
         //Setting invalid TimeZone using VM option
         launcher.addToolArg("-Duser.timezone=Foo/Bar")
+                .addToolArg("-ea")
+                .addToolArg("-esa")
                 .addToolArg("-cp")
                 .addToolArg(cp)
                 .addToolArg("Bug8066652");

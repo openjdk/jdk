@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1995, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1995, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -68,6 +68,7 @@ import java.util.StringJoiner;
 import jdk.internal.access.JavaNetHttpCookieAccess;
 import jdk.internal.access.SharedSecrets;
 import sun.net.*;
+import sun.net.util.IPAddressUtil;
 import sun.net.www.*;
 import sun.net.www.http.HttpClient;
 import sun.net.www.http.PosterOutputStream;
@@ -868,8 +869,13 @@ public class HttpURLConnection extends java.net.HttpURLConnection {
                 throw new MalformedURLException("Illegal character in URL");
             }
         }
+        String s = IPAddressUtil.checkAuthority(u);
+        if (s != null) {
+            throw new MalformedURLException(s);
+        }
         return u;
     }
+
     protected HttpURLConnection(URL u, Proxy p, Handler handler)
             throws IOException {
         super(checkURL(u));

@@ -47,6 +47,8 @@ JVM_LDFLAGS += \
     $(EXTRA_LDFLAGS) \
     #
 
+JVM_ASFLAGS += $(EXTRA_ASFLAGS)
+
 JVM_LIBS += \
     $(JVM_LIBS_FEATURES) \
     #
@@ -95,8 +97,7 @@ DISABLED_WARNINGS_solstudio := labelnotused hidef w_novirtualdescr inlafteruse \
     unknownpragma doubunder w_enumnotused w_toomanyenumnotused \
     wvarhidenmem wunreachable wnoretvalue notemsource
 
-DISABLED_WARNINGS_xlc := 1540-0216 1540-0198 1540-1090 1540-1639 1540-1088 \
-    1500-010
+DISABLED_WARNINGS_xlc := tautological-compare shift-negative-value
 
 DISABLED_WARNINGS_microsoft :=
 
@@ -260,6 +261,15 @@ TARGETS += $(BUILD_LIBJVM)
 #
 # Search the output for the operator(s) of interest, to see where they are
 # referenced.
+#
+# When a reference to the global 'operator delete' is reported, it might be
+# due to a "deleting destructor".  In this case, objdump may show the
+# reference to be associated with but not actually in a destructor.  A
+# deleting destructor is automatically generated for a class whose destructor
+# is virtual.  A deleting destructor requires an accessible 'operator delete'
+# for the associated class.  If the class doesn't provide a more specific
+# declaration (either directly or by inheriting from a class that provides
+# one) then the global definition will be used, triggering this check.
 
 ifneq ($(GENERATE_COMPILE_COMMANDS_ONLY), true)
   ifneq ($(filter $(TOOLCHAIN_TYPE), gcc clang solstudio), )

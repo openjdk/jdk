@@ -1,6 +1,6 @@
 /*
- * Copyright (c) 2017, Oracle and/or its affiliates. All rights reserved.
- * Copyright (c) 2012, 2015 SAP SE. All rights reserved.
+ * Copyright (c) 2017, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2019 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -207,7 +207,7 @@ static bool reload_table() {
     }
   }
 
-  trcVerbose("loadquery buffer size is %llu.", buflen);
+  trcVerbose("loadquery buffer size is " SIZE_FORMAT ".", buflen);
 
   // Iterate over the loadquery result. For details see sys/ldr.h on AIX.
   ldi = (struct ld_info*) buffer;
@@ -264,7 +264,7 @@ static bool reload_table() {
       e->info.is_in_vm = true;
     }
 
-    trcVerbose("entry: %p %llu, %p %llu, %s %s %s, %d",
+    trcVerbose("entry: %p " SIZE_FORMAT ", %p " SIZE_FORMAT ", %s %s %s, %d",
       e->info.text, e->info.text_len,
       e->info.data, e->info.data_len,
       e->info.path, e->info.shortname,

@@ -290,7 +290,7 @@ class InetAddress implements java.io.Serializable {
     }
 
     /* Used to store the name service provider */
-    private static transient NameService nameService = null;
+    private static transient NameService nameService;
 
     /**
      * Used to store the best available hostname.
@@ -305,8 +305,7 @@ class InetAddress implements java.io.Serializable {
      * Load net library into runtime, and perform initializations.
      */
     static {
-        String str = java.security.AccessController.doPrivileged(
-                new GetPropertyAction("java.net.preferIPv6Addresses"));
+        String str = GetPropertyAction.privilegedGetProperty("java.net.preferIPv6Addresses");
         if (str == null) {
             preferIPv6Address = PREFER_IPV4_VALUE;
         } else if (str.equalsIgnoreCase("true")) {
@@ -318,13 +317,7 @@ class InetAddress implements java.io.Serializable {
         } else {
             preferIPv6Address = PREFER_IPV4_VALUE;
         }
-        AccessController.doPrivileged(
-            new java.security.PrivilegedAction<>() {
-                public Void run() {
-                    System.loadLibrary("net");
-                    return null;
-                }
-            });
+        jdk.internal.loader.BootLoader.loadLibrary("net");
         SharedSecrets.setJavaNetInetAddressAccess(
                 new JavaNetInetAddressAccess() {
                     public String getOriginalHostName(InetAddress ia) {

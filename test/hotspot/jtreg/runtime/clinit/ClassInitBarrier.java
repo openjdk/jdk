@@ -27,24 +27,24 @@
  *
  * @requires !vm.graal.enabled
  *
- * @run main/othervm/native -Xbatch -XX:CompileCommand=dontinline,*::test* -Xint                   -DTHROW=false ClassInitBarrier
- * @run main/othervm/native -Xbatch -XX:CompileCommand=dontinline,*::test* -Xint                   -DTHROW=true  ClassInitBarrier
+ * @run main/othervm/native -Xbatch -XX:CompileCommand=dontinline,*::test* -Xint                   -DTHROW=false -Xcheck:jni ClassInitBarrier
+ * @run main/othervm/native -Xbatch -XX:CompileCommand=dontinline,*::test* -Xint                   -DTHROW=true  -Xcheck:jni ClassInitBarrier
  *
- * @run main/othervm/native -Xbatch -XX:CompileCommand=dontinline,*::test* -XX:TieredStopAtLevel=1 -DTHROW=false ClassInitBarrier
- * @run main/othervm/native -Xbatch -XX:CompileCommand=dontinline,*::test* -XX:TieredStopAtLevel=1 -DTHROW=true  ClassInitBarrier
+ * @run main/othervm/native -Xbatch -XX:CompileCommand=dontinline,*::test* -XX:TieredStopAtLevel=1 -DTHROW=false -Xcheck:jni ClassInitBarrier
+ * @run main/othervm/native -Xbatch -XX:CompileCommand=dontinline,*::test* -XX:TieredStopAtLevel=1 -DTHROW=true  -Xcheck:jni ClassInitBarrier
  *
- * @run main/othervm/native -Xbatch -XX:CompileCommand=dontinline,*::test* -XX:-TieredCompilation  -DTHROW=false ClassInitBarrier
- * @run main/othervm/native -Xbatch -XX:CompileCommand=dontinline,*::test* -XX:-TieredCompilation  -DTHROW=true  ClassInitBarrier
+ * @run main/othervm/native -Xbatch -XX:CompileCommand=dontinline,*::test* -XX:-TieredCompilation  -DTHROW=false -Xcheck:jni ClassInitBarrier
+ * @run main/othervm/native -Xbatch -XX:CompileCommand=dontinline,*::test* -XX:-TieredCompilation  -DTHROW=true  -Xcheck:jni ClassInitBarrier
  *
- * @run main/othervm/native -Xbatch -XX:CompileCommand=dontinline,*::test* -XX:TieredStopAtLevel=1 -DTHROW=false -XX:CompileCommand=dontinline,*::static* ClassInitBarrier
- * @run main/othervm/native -Xbatch -XX:CompileCommand=dontinline,*::test* -XX:TieredStopAtLevel=1 -DTHROW=true  -XX:CompileCommand=dontinline,*::static* ClassInitBarrier
- * @run main/othervm/native -Xbatch -XX:CompileCommand=dontinline,*::test* -XX:-TieredCompilation  -DTHROW=false -XX:CompileCommand=dontinline,*::static* ClassInitBarrier
- * @run main/othervm/native -Xbatch -XX:CompileCommand=dontinline,*::test* -XX:-TieredCompilation  -DTHROW=true  -XX:CompileCommand=dontinline,*::static* ClassInitBarrier
+ * @run main/othervm/native -Xbatch -XX:CompileCommand=dontinline,*::test* -XX:TieredStopAtLevel=1 -DTHROW=false -XX:CompileCommand=dontinline,*::static* -Xcheck:jni ClassInitBarrier
+ * @run main/othervm/native -Xbatch -XX:CompileCommand=dontinline,*::test* -XX:TieredStopAtLevel=1 -DTHROW=true  -XX:CompileCommand=dontinline,*::static* -Xcheck:jni ClassInitBarrier
+ * @run main/othervm/native -Xbatch -XX:CompileCommand=dontinline,*::test* -XX:-TieredCompilation  -DTHROW=false -XX:CompileCommand=dontinline,*::static* -Xcheck:jni ClassInitBarrier
+ * @run main/othervm/native -Xbatch -XX:CompileCommand=dontinline,*::test* -XX:-TieredCompilation  -DTHROW=true  -XX:CompileCommand=dontinline,*::static* -Xcheck:jni ClassInitBarrier
  *
- * @run main/othervm/native -Xbatch -XX:CompileCommand=dontinline,*::test* -XX:TieredStopAtLevel=1 -DTHROW=false -XX:CompileCommand=exclude,*::static* ClassInitBarrier
- * @run main/othervm/native -Xbatch -XX:CompileCommand=dontinline,*::test* -XX:TieredStopAtLevel=1 -DTHROW=true  -XX:CompileCommand=exclude,*::static* ClassInitBarrier
- * @run main/othervm/native -Xbatch -XX:CompileCommand=dontinline,*::test* -XX:-TieredCompilation  -DTHROW=false -XX:CompileCommand=exclude,*::static* ClassInitBarrier
- * @run main/othervm/native -Xbatch -XX:CompileCommand=dontinline,*::test* -XX:-TieredCompilation  -DTHROW=true  -XX:CompileCommand=exclude,*::static* ClassInitBarrier
+ * @run main/othervm/native -Xbatch -XX:CompileCommand=dontinline,*::test* -XX:TieredStopAtLevel=1 -DTHROW=false -XX:CompileCommand=exclude,*::static* -Xcheck:jni ClassInitBarrier
+ * @run main/othervm/native -Xbatch -XX:CompileCommand=dontinline,*::test* -XX:TieredStopAtLevel=1 -DTHROW=true  -XX:CompileCommand=exclude,*::static* -Xcheck:jni ClassInitBarrier
+ * @run main/othervm/native -Xbatch -XX:CompileCommand=dontinline,*::test* -XX:-TieredCompilation  -DTHROW=false -XX:CompileCommand=exclude,*::static* -Xcheck:jni ClassInitBarrier
+ * @run main/othervm/native -Xbatch -XX:CompileCommand=dontinline,*::test* -XX:-TieredCompilation  -DTHROW=true  -XX:CompileCommand=exclude,*::static* -Xcheck:jni ClassInitBarrier
  */
 
 import jdk.test.lib.Asserts;
@@ -70,6 +70,10 @@ public class ClassInitBarrier {
     static class Test {
         static class A {
             static {
+                if (!init(B.class)) {
+                    throw new Error("init failed");
+                }
+
                 changePhase(Phase.IN_PROGRESS);
                 runTests();      // interpreted mode
                 warmup();        // trigger compilation
@@ -89,13 +93,15 @@ public class ClassInitBarrier {
 
             int f;
             void m() {}
+
+            static native boolean init(Class<B> cls);
         }
 
         static class B extends A {}
 
-        static void testInvokeStatic(Runnable action)        { A.staticM(action); }
-        static void testInvokeStaticSync(Runnable action)    { A.staticS(action); }
-        static void testInvokeStaticNative(Runnable action)  { A.staticN(action); }
+        static void testInvokeStatic(Runnable action)       { A.staticM(action); }
+        static void testInvokeStaticSync(Runnable action)   { A.staticS(action); }
+        static void testInvokeStaticNative(Runnable action) { A.staticN(action); }
 
         static int  testGetStatic(Runnable action)    { int v = A.staticF; action.run(); return v;   }
         static void testPutStatic(Runnable action)    { A.staticF = 1;     action.run(); }
@@ -106,13 +112,33 @@ public class ClassInitBarrier {
         static void testPutField(A recv, Runnable action)      { recv.f = 1;     action.run(); }
         static void testInvokeVirtual(A recv, Runnable action) { recv.m();       action.run(); }
 
+        static native void testInvokeStaticJNI(Runnable action);
+        static native void testInvokeStaticSyncJNI(Runnable action);
+        static native void testInvokeStaticNativeJNI(Runnable action);
+
+        static native int  testGetStaticJNI(Runnable action);
+        static native void testPutStaticJNI(Runnable action);
+        static native A    testNewInstanceAJNI(Runnable action);
+        static native B    testNewInstanceBJNI(Runnable action);
+
+        static native int  testGetFieldJNI(A recv, Runnable action);
+        static native void testPutFieldJNI(A recv, Runnable action);
+        static native void testInvokeVirtualJNI(A recv, Runnable action);
+
         static void runTests() {
             checkBlockingAction(Test::testInvokeStatic);       // invokestatic
-            checkBlockingAction(Test::testInvokeStaticNative); // invokestatic
             checkBlockingAction(Test::testInvokeStaticSync);   // invokestatic
+            checkBlockingAction(Test::testInvokeStaticNative); // invokestatic
             checkBlockingAction(Test::testGetStatic);          // getstatic
             checkBlockingAction(Test::testPutStatic);          // putstatic
             checkBlockingAction(Test::testNewInstanceA);       // new
+
+            checkNonBlockingAction(Test::testInvokeStaticJNI);       // invokestatic
+            checkNonBlockingAction(Test::testInvokeStaticSyncJNI);   // invokestatic
+            checkNonBlockingAction(Test::testInvokeStaticNativeJNI); // invokestatic
+            checkNonBlockingAction(Test::testGetStaticJNI);          // getstatic
+            checkNonBlockingAction(Test::testPutStaticJNI);          // putstatic
+            checkBlockingAction(Test::testNewInstanceAJNI);          // new
 
             A recv = testNewInstanceB(NON_BLOCKING.get());  // trigger B initialization
             checkNonBlockingAction(Test::testNewInstanceB); // new: NO BLOCKING: same thread: A being initialized, B fully initialized
@@ -120,6 +146,11 @@ public class ClassInitBarrier {
             checkNonBlockingAction(recv, Test::testGetField);      // getfield
             checkNonBlockingAction(recv, Test::testPutField);      // putfield
             checkNonBlockingAction(recv, Test::testInvokeVirtual); // invokevirtual
+
+            checkNonBlockingAction(Test::testNewInstanceBJNI);        // new: NO BLOCKING: same thread: A being initialized, B fully initialized
+            checkNonBlockingAction(recv, Test::testGetFieldJNI);      // getfield
+            checkNonBlockingAction(recv, Test::testPutFieldJNI);      // putfield
+            checkNonBlockingAction(recv, Test::testInvokeVirtualJNI); // invokevirtual
         }
 
         static void warmup() {

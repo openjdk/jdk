@@ -176,6 +176,10 @@ AC_DEFUN_ONCE([FLAGS_SETUP_USER_SUPPLIED_FLAGS],
     AC_MSG_WARN([Ignoring LDFLAGS($LDFLAGS) found in environment. Use --with-extra-ldflags])
   fi
 
+  if test "x$ASFLAGS" != "x"; then
+    AC_MSG_WARN([Ignoring ASFLAGS($ASFLAGS) found in environment. Use --with-extra-asflags])
+  fi
+
   AC_ARG_WITH(extra-cflags, [AS_HELP_STRING([--with-extra-cflags],
       [extra flags to be used when compiling jdk c-files])])
 
@@ -185,9 +189,13 @@ AC_DEFUN_ONCE([FLAGS_SETUP_USER_SUPPLIED_FLAGS],
   AC_ARG_WITH(extra-ldflags, [AS_HELP_STRING([--with-extra-ldflags],
       [extra flags to be used when linking jdk])])
 
+  AC_ARG_WITH(extra-asflags, [AS_HELP_STRING([--with-extra-asflags],
+      [extra flags to be passed to the assembler])])
+
   USER_CFLAGS="$with_extra_cflags"
   USER_CXXFLAGS="$with_extra_cxxflags"
   USER_LDFLAGS="$with_extra_ldflags"
+  USER_ASFLAGS="$with_extra_asflags"
 ])
 
 # Setup the sysroot flags and add them to global CFLAGS and LDFLAGS so
@@ -280,10 +288,12 @@ AC_DEFUN_ONCE([FLAGS_PRE_TOOLCHAIN],
   EXTRA_CFLAGS="$MACHINE_FLAG $USER_CFLAGS"
   EXTRA_CXXFLAGS="$MACHINE_FLAG $USER_CXXFLAGS"
   EXTRA_LDFLAGS="$MACHINE_FLAG $USER_LDFLAGS"
+  EXTRA_ASFLAGS="$USER_ASFLAGS"
 
   AC_SUBST(EXTRA_CFLAGS)
   AC_SUBST(EXTRA_CXXFLAGS)
   AC_SUBST(EXTRA_LDFLAGS)
+  AC_SUBST(EXTRA_ASFLAGS)
 
   # For autoconf testing to work, the global flags must also be stored in the
   # "unnamed" CFLAGS etc.

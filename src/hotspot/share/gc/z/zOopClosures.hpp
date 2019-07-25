@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -46,15 +46,12 @@ public:
 };
 
 template <bool finalizable>
-class ZMarkBarrierOopClosure : public MetadataVisitingOopIterateClosure {
+class ZMarkBarrierOopClosure : public ClaimMetadataVisitingOopIterateClosure {
 public:
   ZMarkBarrierOopClosure();
 
   virtual void do_oop(oop* p);
   virtual void do_oop(narrowOop* p);
-
-  virtual void do_klass(Klass* k);
-  virtual void do_cld(ClassLoaderData* cld);
 
 #ifdef ASSERT
   virtual bool should_verify_oops() {
@@ -78,28 +75,6 @@ class ZPhantomCleanOopClosure : public ZRootsIteratorClosure {
 public:
   virtual void do_oop(oop* p);
   virtual void do_oop(narrowOop* p);
-};
-
-class ZVerifyOopClosure : public ZRootsIteratorClosure, public BasicOopIterateClosure {
-public:
-  virtual void do_oop(oop* p);
-  virtual void do_oop(narrowOop* p);
-
-  virtual ReferenceIterationMode reference_iteration_mode() {
-    return DO_FIELDS;
-  }
-
-#ifdef ASSERT
-  // Verification handled by the closure itself
-  virtual bool should_verify_oops() {
-    return false;
-  }
-#endif
-};
-
-class ZVerifyObjectClosure : public ObjectClosure {
-public:
-  virtual void do_object(oop o);
 };
 
 #endif // SHARE_GC_Z_ZOOPCLOSURES_HPP

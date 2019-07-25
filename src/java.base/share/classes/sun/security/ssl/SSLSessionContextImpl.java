@@ -69,7 +69,7 @@ final class SSLSessionContextImpl implements SSLSessionContext {
     private int cacheLimit;             // the max cache size
     private int timeout;                // timeout in seconds
 
-    // Does this context support stateless session (RFC 5077)
+    // Default setting for stateless session resumption support (RFC 5077)
     private boolean statelessSession = true;
 
     // package private
@@ -239,6 +239,7 @@ final class SSLSessionContextImpl implements SSLSessionContext {
                 st = GetPropertyAction.privilegedGetProperty(
                         "jdk.tls.client.enableSessionTicketExtension", "true");
             }
+
             if (st.compareToIgnoreCase("false") == 0) {
                 statelessSession = false;
             }

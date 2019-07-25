@@ -62,6 +62,7 @@ inline oop ZBarrierSet::AccessBarrier<decorators, BarrierSetT>::load_barrier_on_
     } else if (HasDecorator<decorators, ON_WEAK_OOP_REF>::value) {
       return ZBarrier::weak_load_barrier_on_weak_oop_field_preloaded(addr, o);
     } else {
+      assert((HasDecorator<decorators, ON_PHANTOM_OOP_REF>::value), "Must be");
       return ZBarrier::weak_load_barrier_on_phantom_oop_field_preloaded(addr, o);
     }
   } else {
@@ -70,6 +71,7 @@ inline oop ZBarrierSet::AccessBarrier<decorators, BarrierSetT>::load_barrier_on_
     } else if (HasDecorator<decorators, ON_WEAK_OOP_REF>::value) {
       return ZBarrier::load_barrier_on_weak_oop_field_preloaded(addr, o);
     } else {
+      assert((HasDecorator<decorators, ON_PHANTOM_OOP_REF>::value), "Must be");
       return ZBarrier::load_barrier_on_phantom_oop_field_preloaded(addr, o);
     }
   }
@@ -89,6 +91,7 @@ inline oop ZBarrierSet::AccessBarrier<decorators, BarrierSetT>::load_barrier_on_
     } else if (decorators_known_strength & ON_WEAK_OOP_REF) {
       return ZBarrier::weak_load_barrier_on_weak_oop_field_preloaded(addr, o);
     } else {
+      assert(decorators_known_strength & ON_PHANTOM_OOP_REF, "Must be");
       return ZBarrier::weak_load_barrier_on_phantom_oop_field_preloaded(addr, o);
     }
   } else {
@@ -97,6 +100,7 @@ inline oop ZBarrierSet::AccessBarrier<decorators, BarrierSetT>::load_barrier_on_
     } else if (decorators_known_strength & ON_WEAK_OOP_REF) {
       return ZBarrier::load_barrier_on_weak_oop_field_preloaded(addr, o);
     } else {
+      assert(decorators_known_strength & ON_PHANTOM_OOP_REF, "Must be");
       return ZBarrier::load_barrier_on_phantom_oop_field_preloaded(addr, o);
     }
   }

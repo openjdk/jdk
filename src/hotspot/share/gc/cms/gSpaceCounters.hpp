@@ -59,7 +59,7 @@ class GSpaceCounters: public CHeapObj<mtGC> {
   }
 
   inline void update_used() {
-    _used->set_value(_gen->used_stable());
+    _used->set_value(_gen->used());
   }
 
   // special version of update_used() to allow the used value to be
@@ -103,7 +103,7 @@ class GenerationUsedHelper : public PerfLongSampleHelper {
     GenerationUsedHelper(Generation* g) : _gen(g) { }
 
     inline jlong take_sample() {
-      return _gen->used_stable();
+      return _gen->used();
     }
 };
 

@@ -225,7 +225,7 @@ template <typename ITR>
 void ShenandoahRootScanner<ITR>::roots_do(uint worker_id, OopClosure* oops, CLDClosure* clds, CodeBlobClosure* code, ThreadClosure *tc) {
   assert(!ShenandoahSafepoint::is_at_shenandoah_safepoint() ||
          !ShenandoahHeap::heap()->unload_classes() ||
-          ShenandoahHeap::heap()->heuristics()->can_do_traversal_gc(),
+          ShenandoahHeap::heap()->is_traversal_mode(),
           "Expect class unloading or traversal when Shenandoah cycle is running");
   ShenandoahParallelOopsDoThreadClosure tc_cl(oops, code, tc);
   ResourceMark rm;

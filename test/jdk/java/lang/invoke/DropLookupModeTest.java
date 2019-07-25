@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -106,37 +106,39 @@ public class DropLookupModeTest {
         assertTrue(lookup.lookupModes() == 0);
     }
 
+    @DataProvider(name = "unconditionals")
+    public Object[][] unconditionals() {
+        Lookup publicLookup = MethodHandles.publicLookup();
+        return new Object[][] {
+            { publicLookup, Object.class },
+            { publicLookup.in(String.class), String.class },
+            { publicLookup.in(DropLookupModeTest.class), DropLookupModeTest.class },
+        };
+    }
+
     /**
-     * Test dropLookupMode on the public Lookup.
+     * Test dropLookupMode on the lookup with public lookup
+     * and UNCONDITIONAL
      */
-    public void testPublicLookup() {
-        final Lookup publicLookup = MethodHandles.publicLookup();
-        final Class<?> lc = publicLookup.lookupClass();
-        assertTrue(publicLookup.lookupModes() == (PUBLIC|UNCONDITIONAL));
+    @Test(dataProvider = "unconditionals")
+    public void testUnconditionalLookup(Lookup unconditionalLookup, Class<?> expected) {
+        assertTrue(unconditionalLookup.lookupModes() == UNCONDITIONAL);
 
-        Lookup lookup = publicLookup.dropLookupMode(PRIVATE);
-        assertTrue(lookup.lookupClass() == lc);
-        assertTrue(lookup.lookupModes() == PUBLIC);
+        assertPublicLookup(unconditionalLookup.dropLookupMode(PRIVATE), expected);
+        assertPublicLookup(unconditionalLookup.dropLookupMode(PROTECTED), expected);
+        assertPublicLookup(unconditionalLookup.dropLookupMode(PACKAGE), expected);
+        assertPublicLookup(unconditionalLookup.dropLookupMode(MODULE), expected);
+        assertPublicLookup(unconditionalLookup.dropLookupMode(PUBLIC), expected);
 
-        lookup = publicLookup.dropLookupMode(PROTECTED);
-        assertTrue(lookup.lookupClass() == lc);
-        assertTrue(lookup.lookupModes() == PUBLIC);
-
-        lookup = publicLookup.dropLookupMode(PACKAGE);
-        assertTrue(lookup.lookupClass() == lc);
-        assertTrue(lookup.lookupModes() == PUBLIC);
-
-        lookup = publicLookup.dropLookupMode(MODULE);
-        assertTrue(lookup.lookupClass() == lc);
-        assertTrue(lookup.lookupModes() == PUBLIC);
-
-        lookup = publicLookup.dropLookupMode(PUBLIC);
-        assertTrue(lookup.lookupClass() == lc);
+        // drop all access
+        Lookup lookup = unconditionalLookup.dropLookupMode(UNCONDITIONAL);
+        assertTrue(lookup.lookupClass() == expected);
         assertTrue(lookup.lookupModes() == 0);
+    }
 
-        lookup = publicLookup.dropLookupMode(UNCONDITIONAL);
-        assertTrue(lookup.lookupClass() == lc);
-        assertTrue(lookup.lookupModes() == PUBLIC);
+    private void assertPublicLookup(Lookup lookup, Class<?> expected) {
+        assertTrue(lookup.lookupClass() == expected);
+        assertTrue(lookup.lookupModes() == UNCONDITIONAL);
     }
 
     @DataProvider(name = "badInput")

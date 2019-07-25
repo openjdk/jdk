@@ -46,6 +46,7 @@ import sun.hotspot.cpuinfo.CPUInfo;
 import sun.hotspot.gc.GC;
 import sun.hotspot.WhiteBox;
 import jdk.test.lib.Platform;
+import jdk.test.lib.Container;
 
 /**
  * The Class to be invoked by jtreg prior Test Suite execution to
@@ -455,7 +456,7 @@ public class VMProps implements Callable<Map<String, String>> {
     }
 
     private boolean checkDockerSupport() throws IOException, InterruptedException {
-        ProcessBuilder pb = new ProcessBuilder("docker", "ps");
+        ProcessBuilder pb = new ProcessBuilder(Container.ENGINE_COMMAND, "ps");
         Process p = pb.start();
         p.waitFor(10, TimeUnit.SECONDS);
 

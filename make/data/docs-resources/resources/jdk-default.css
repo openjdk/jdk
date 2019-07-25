@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -85,6 +85,8 @@ h1.title + .subtitle {
     margin-top: -1em;
 }
 
+a { text-decoration: none }
+
 a:link {
   color: #4A6782;
 }
@@ -161,4 +163,23 @@ table.centered td {
 .legal-footer {
     font-style: italic;
     font-size: 80%;
+}
+
+nav#TOC {
+  border: 1px solid gray;
+  border-radius: 10px;
+  padding: 5px 10px;
+  margin-bottom: 15px;
+}
+
+nav#TOC ul ul {
+    font-size:smaller;
+}
+
+nav#TOC ul ul li {
+    display: inline-block
+}
+
+nav#TOC ul ul li::before {
+    content: " \2022  "
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -55,82 +55,6 @@ public class Krb5Util {
      * Default constructor
      */
     private Krb5Util() {  // Cannot create one of these
-    }
-
-    /**
-     * Retrieve the service ticket for serverPrincipal from caller's Subject
-     * or from Subject obtained by logging in, or if not found, via the
-     * Ticket Granting Service using the TGT obtained from the Subject.
-     *
-     * Caller must have permission to:
-     *    - access and update Subject's private credentials
-     *    - create LoginContext
-     *    - read the auth.login.defaultCallbackHandler security property
-     *
-     * NOTE: This method is used by JSSE Kerberos Cipher Suites
-     */
-    public static KerberosTicket getTicketFromSubjectAndTgs(GSSCaller caller,
-        String clientPrincipal, String serverPrincipal, String tgsPrincipal,
-        AccessControlContext acc)
-        throws LoginException, KrbException, IOException {
-
-        // 1. Try to find service ticket in acc subject
-        Subject accSubj = Subject.getSubject(acc);
-        KerberosTicket ticket = SubjectComber.find(accSubj,
-            serverPrincipal, clientPrincipal, KerberosTicket.class);
-
-        if (ticket != null) {
-            return ticket;  // found it
-        }
-
-        Subject loginSubj = null;
-        if (!GSSUtil.useSubjectCredsOnly(caller)) {
-            // 2. Try to get ticket from login
-            try {
-                loginSubj = GSSUtil.login(caller, GSSUtil.GSS_KRB5_MECH_OID);
-                ticket = SubjectComber.find(loginSubj,
-                    serverPrincipal, clientPrincipal, KerberosTicket.class);
-                if (ticket != null) {
-                    return ticket; // found it
-                }
-            } catch (LoginException e) {
-                // No login entry to use
-                // ignore and continue
-            }
-        }
-
-        // Service ticket not found in subject or login
-        // Try to get TGT to acquire service ticket
-
-        // 3. Try to get TGT from acc subject
-        KerberosTicket tgt = SubjectComber.find(accSubj,
-            tgsPrincipal, clientPrincipal, KerberosTicket.class);
-
-        boolean fromAcc;
-        if (tgt == null && loginSubj != null) {
-            // 4. Try to get TGT from login subject
-            tgt = SubjectComber.find(loginSubj,
-                tgsPrincipal, clientPrincipal, KerberosTicket.class);
-            fromAcc = false;
-        } else {
-            fromAcc = true;
-        }
-
-        // 5. Try to get service ticket using TGT
-        if (tgt != null) {
-            Credentials tgtCreds = ticketToCreds(tgt);
-            Credentials serviceCreds = Credentials.acquireServiceCreds(
-                        serverPrincipal, tgtCreds);
-            if (serviceCreds != null) {
-                ticket = credsToTicket(serviceCreds);
-
-                // Store service ticket in acc's Subject
-                if (fromAcc && accSubj != null && !accSubj.isReadOnly()) {
-                    accSubj.getPrivateCredentials().add(ticket);
-                }
-            }
-        }
-        return ticket;
     }
 
     /**
@@ -208,7 +132,7 @@ public class Krb5Util {
 
     public static KerberosTicket credsToTicket(Credentials serviceCreds) {
         EncryptionKey sessionKey =  serviceCreds.getSessionKey();
-        return new KerberosTicket(
+        KerberosTicket kt = new KerberosTicket(
             serviceCreds.getEncoded(),
             new KerberosPrincipal(serviceCreds.getClient().getName()),
             new KerberosPrincipal(serviceCreds.getServer().getName(),
@@ -221,14 +145,35 @@ public class Krb5Util {
             serviceCreds.getEndTime(),
             serviceCreds.getRenewTill(),
             serviceCreds.getClientAddresses());
+        PrincipalName clientAlias = serviceCreds.getClientAlias();
+        PrincipalName serverAlias = serviceCreds.getServerAlias();
+        if (clientAlias != null) {
+            KerberosSecrets.getJavaxSecurityAuthKerberosAccess()
+                    .kerberosTicketSetClientAlias(kt, new KerberosPrincipal(
+                            clientAlias.getName(), clientAlias.getNameType()));
+        }
+        if (serverAlias != null) {
+            KerberosSecrets.getJavaxSecurityAuthKerberosAccess()
+                    .kerberosTicketSetServerAlias(kt, new KerberosPrincipal(
+                            serverAlias.getName(), serverAlias.getNameType()));
+        }
+        return kt;
     };
 
     public static Credentials ticketToCreds(KerberosTicket kerbTicket)
             throws KrbException, IOException {
+        KerberosPrincipal clientAlias = KerberosSecrets
+                .getJavaxSecurityAuthKerberosAccess()
+                .kerberosTicketGetClientAlias(kerbTicket);
+        KerberosPrincipal serverAlias = KerberosSecrets
+                .getJavaxSecurityAuthKerberosAccess()
+                .kerberosTicketGetServerAlias(kerbTicket);
         return new Credentials(
             kerbTicket.getEncoded(),
             kerbTicket.getClient().getName(),
+            (clientAlias != null ? clientAlias.getName() : null),
             kerbTicket.getServer().getName(),
+            (serverAlias != null ? serverAlias.getName() : null),
             kerbTicket.getSessionKey().getEncoded(),
             kerbTicket.getSessionKeyType(),
             kerbTicket.getFlags(),

@@ -228,7 +228,7 @@ bool ShenandoahHeuristics::should_start_update_refs() {
   return _update_refs_early;
 }
 
-bool ShenandoahHeuristics::should_start_normal_gc() const {
+bool ShenandoahHeuristics::should_start_gc() const {
   // Perform GC to cleanup metaspace
   if (has_metaspace_oom()) {
     // Some of vmTestbase/metaspace tests depend on following line to count GC cycles
@@ -243,14 +243,6 @@ bool ShenandoahHeuristics::should_start_normal_gc() const {
                   last_time_ms, ShenandoahGuaranteedGCInterval);
   }
   return periodic_gc;
-}
-
-bool ShenandoahHeuristics::should_start_traversal_gc() {
-  return false;
-}
-
-bool ShenandoahHeuristics::can_do_traversal_gc() {
-  return false;
 }
 
 bool ShenandoahHeuristics::should_degenerate_cycle() {

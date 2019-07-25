@@ -84,7 +84,7 @@ public class TestNewRatioFlag {
                 Integer.toString(ratio)
         );
 
-        ProcessBuilder procBuilder = ProcessTools.createJavaProcessBuilder(vmOptions.toArray(new String[vmOptions.size()]));
+        ProcessBuilder procBuilder = GCArguments.createJavaProcessBuilder(vmOptions.toArray(new String[vmOptions.size()]));
         OutputAnalyzer analyzer = new OutputAnalyzer(procBuilder.start());
         analyzer.shouldHaveExitValue(0);
         System.out.println(analyzer.getOutput());

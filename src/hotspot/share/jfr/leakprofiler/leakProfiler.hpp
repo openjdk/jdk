@@ -28,36 +28,16 @@
 #include "memory/allocation.hpp"
 
 class BoolObjectClosure;
-class ObjectSampler;
 class OopClosure;
 class JavaThread;
-class Thread;
 
 class LeakProfiler : public AllStatic {
-  friend class ClassUnloadTypeSet;
-  friend class EmitEventOperation;
-  friend class ObjectSampleCheckpoint;
-  friend class StartOperation;
-  friend class StopOperation;
-  friend class TypeSet;
-  friend class WriteObjectSampleStacktrace;
-
- private:
-  static ObjectSampler* _object_sampler;
-
-  static void set_object_sampler(ObjectSampler* object_sampler);
-  static ObjectSampler* object_sampler();
-
-  static void suspend();
-  static void resume();
-  static bool is_suspended();
-
  public:
-  static bool start(jint sample_count);
+  static bool start(int sample_count);
   static bool stop();
-  static void emit_events(jlong cutoff_ticks, bool emit_all);
   static bool is_running();
 
+  static void emit_events(int64_t cutoff_ticks, bool emit_all);
   static void sample(HeapWord* object, size_t size, JavaThread* thread);
 
   // Called by GC

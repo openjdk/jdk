@@ -25,9 +25,6 @@
 
 package sun.nio.fs;
 
-import java.security.AccessController;
-import java.security.PrivilegedAction;
-
 /**
  * Unix system and library calls.
  */
@@ -630,11 +627,7 @@ class UnixNativeDispatcher {
 
     private static native int init();
     static {
-        AccessController.doPrivileged(new PrivilegedAction<>() {
-            public Void run() {
-                System.loadLibrary("nio");
-                return null;
-        }});
+        jdk.internal.loader.BootLoader.loadLibrary("nio");
         capabilities = init();
     }
 }

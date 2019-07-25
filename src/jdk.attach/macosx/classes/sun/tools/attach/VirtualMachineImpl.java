@@ -256,8 +256,12 @@ public class VirtualMachineImpl extends HotSpotVirtualMachine {
             return VirtualMachineImpl.read(s, bs, off, len);
         }
 
-        public void close() throws IOException {
-            VirtualMachineImpl.close(s);
+        public synchronized void close() throws IOException {
+            if (s != -1) {
+                int toClose = s;
+                s = -1;
+                VirtualMachineImpl.close(toClose);
+            }
         }
     }
 

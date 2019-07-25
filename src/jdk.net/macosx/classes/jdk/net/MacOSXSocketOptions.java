@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -77,9 +77,13 @@ class MacOSXSocketOptions extends PlatformSocketOptions {
     private static native int getTcpKeepAliveIntvl0(int fd) throws SocketException;
     private static native boolean keepAliveOptionsSupported0();
     static {
-        AccessController.doPrivileged((PrivilegedAction<Void>) () -> {
+        if (System.getSecurityManager() == null) {
             System.loadLibrary("extnet");
-            return null;
-        });
+        } else {
+            AccessController.doPrivileged((PrivilegedAction<Void>) () -> {
+                System.loadLibrary("extnet");
+                return null;
+            });
+        }
     }
 }

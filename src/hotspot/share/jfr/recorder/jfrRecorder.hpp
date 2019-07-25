@@ -40,6 +40,7 @@ class JfrRecorder : public JfrCHeapObj {
  private:
   static bool create_checkpoint_manager();
   static bool create_chunk_repository();
+  static bool create_java_event_writer();
   static bool create_jvmti_agent();
   static bool create_os_interface();
   static bool create_post_box();

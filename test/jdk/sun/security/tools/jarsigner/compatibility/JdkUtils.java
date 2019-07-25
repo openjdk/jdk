@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,41 +21,59 @@
  * questions.
  */
 
+import java.security.KeyPairGenerator;
+import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.security.Signature;
+import static java.util.Arrays.asList;
 
 /*
  * This class is used for returning some specific JDK information.
  */
 public class JdkUtils {
 
+    private enum Alg {
+        KEY, SIG, DIGEST;
+    }
+
     static final String M_JAVA_RUNTIME_VERSION = "javaRuntimeVersion";
+    static final String M_IS_SUPPORTED_KEYALG = "isSupportedKeyalg";
     static final String M_IS_SUPPORTED_SIGALG = "isSupportedSigalg";
+    static final String M_IS_SUPPORTED_DIGESTALG = "isSupportedDigestalg";
 
     // Returns the JDK build version.
     static String javaRuntimeVersion() {
         return System.getProperty("java.runtime.version");
     }
 
-    // Checks if the specified signature algorithm is supported by the JDK.
-    static boolean isSupportedSigalg(String sigalg) {
-        boolean isSupported = false;
+    // Checks if the specified algorithm is supported by the JDK.
+    static boolean isSupportedAlg(Alg algType, String algName) {
         try {
-            isSupported = Signature.getInstance(sigalg) != null;
+            switch (algType) {
+            case KEY:
+                return KeyPairGenerator.getInstance(algName) != null;
+            case SIG:
+                return Signature.getInstance(algName) != null;
+            case DIGEST:
+                return MessageDigest.getInstance(algName) != null;
+            }
         } catch (NoSuchAlgorithmException e) { }
-
-        if (!isSupported) {
-            System.out.println(sigalg + " is not supported yet.");
-        }
-
-        return isSupported;
+        System.out.println(algName + " is not supported yet.");
+        return false;
     }
 
     public static void main(String[] args) {
         if (M_JAVA_RUNTIME_VERSION.equals(args[0])) {
             System.out.print(javaRuntimeVersion());
+        } else if (M_IS_SUPPORTED_KEYALG.equals(args[0])) {
+            System.out.print(isSupportedAlg(Alg.KEY, args[1]));
         } else if (M_IS_SUPPORTED_SIGALG.equals(args[0])) {
-            System.out.print(isSupportedSigalg(args[1]));
+            System.out.print(isSupportedAlg(Alg.SIG, args[1]));
+        } else if (M_IS_SUPPORTED_DIGESTALG.equals(args[0])) {
+            System.out.print(isSupportedAlg(Alg.DIGEST, args[1]));
+        } else {
+            throw new IllegalArgumentException("invalid: " + asList(args));
         }
     }
+
 }

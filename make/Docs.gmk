@@ -553,7 +553,7 @@ $(foreach n, 0 1 2, \
   $(eval specs_bottom_rel_path := $(specs_bottom_rel_path)../) \
 )
 
-SPECS_TOP := $(if $(filter true, $(IS_DRAFT)), <div class="draft-header">$(DRAFT_TEXT)</div>)
+SPECS_TOP := $(if $(filter true, $(IS_DRAFT)), <header class="draft-header">$(DRAFT_TEXT)</header>)
 
 # For all html files in $module/share/specs directories, copy and add the
 # copyright footer.
@@ -595,7 +595,9 @@ ifeq ($(ENABLE_PANDOC), true)
             DEST := $(DOCS_OUTPUTDIR)/specs/, \
             CSS := $(GLOBAL_SPECS_DEFAULT_CSS_FILE), \
             OPTIONS := -V include-before='$(SPECS_TOP)' -V include-after='$(SPECS_BOTTOM_$($m_$f_NOF_SUBDIRS))', \
-            REPLACEMENTS := @@VERSION_STRING@@ => $(VERSION_STRING), \
+            REPLACEMENTS := \
+		@@VERSION_SPECIFICATION@@ => $(VERSION_SPECIFICATION) ; \
+		@@VERSION_STRING@@ => $(VERSION_STRING), \
             POST_PROCESS := $(TOOL_FIXUPPANDOC), \
         )) \
         $(eval JDK_SPECS_TARGETS += $($($m_$f_NAME))) \
@@ -625,8 +627,11 @@ ifeq ($(ENABLE_PANDOC), true)
             DEST := $(DOCS_OUTPUTDIR)/specs/man, \
             FILTER := $(PANDOC_HTML_MANPAGE_FILTER), \
             CSS := $(GLOBAL_SPECS_DEFAULT_CSS_FILE), \
-            REPLACEMENTS := @@VERSION_SHORT@@ => $(VERSION_SHORT), \
-            OPTIONS := -V include-before='$(SPECS_TOP)' -V include-after='$(SPECS_BOTTOM_1)', \
+            REPLACEMENTS := \
+		@@COPYRIGHT_YEAR@@ => $(COPYRIGHT_YEAR) ; \
+		@@VERSION_SHORT@@ => $(VERSION_SHORT) ; \
+		@@VERSION_SPECIFICATION@@ => $(VERSION_SPECIFICATION), \
+            OPTIONS := --toc -V include-before='$(SPECS_TOP)' -V include-after='$(SPECS_BOTTOM_1)', \
             POST_PROCESS := $(TOOL_FIXUPPANDOC), \
             EXTRA_DEPS := $(PANDOC_HTML_MANPAGE_FILTER) \
                 $(PANDOC_HTML_MANPAGE_FILTER_JAVASCRIPT), \

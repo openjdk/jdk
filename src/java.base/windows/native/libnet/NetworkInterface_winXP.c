@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -33,7 +33,9 @@
  * and getByAddress.
  */
 
+extern int enumAddresses_win_ipaddrtable(JNIEnv *env, netif *netifP, netaddr **netaddrPP, MIB_IPADDRTABLE *tableP);
 extern int enumAddresses_win(JNIEnv *env, netif *netifP, netaddr **netaddrPP);
+extern int lookupIPAddrTable(JNIEnv *env, MIB_IPADDRTABLE **tablePP);
 int getAddrsFromAdapter(IP_ADAPTER_ADDRESSES *ptr, netaddr **netaddrPP);
 
 #ifdef DEBUG
@@ -239,6 +241,7 @@ static int ipinflen = 2048;
 int getAllInterfacesAndAddresses (JNIEnv *env, netif **netifPP)
 {
     DWORD ret;
+    MIB_IPADDRTABLE *tableP;
     IP_ADAPTER_ADDRESSES *ptr, *adapters=NULL;
     ULONG len=ipinflen, count=0;
     netif *nif=NULL, *dup_nif, *last=NULL, *loopif=NULL, *curr;
@@ -271,10 +274,15 @@ int getAllInterfacesAndAddresses (JNIEnv *env, netif **netifPP)
 
     // Retrieve IPv4 addresses with the IP Helper API
     curr = *netifPP;
+    ret = lookupIPAddrTable(env, &tableP);
+    if (ret < 0) {
+      return -1;
+    }
     while (curr != NULL) {
         netaddr *netaddrP;
-        ret = enumAddresses_win(env, curr, &netaddrP);
+        ret = enumAddresses_win_ipaddrtable(env, curr, &netaddrP, tableP);
         if (ret == -1) {
+            free(tableP);
             return -1;
         } else if (ret == -2) {
             if ((*env)->ExceptionCheck(env)) {
@@ -287,7 +295,7 @@ int getAllInterfacesAndAddresses (JNIEnv *env, netif **netifPP)
             curr = curr->next;
         }
     }
-
+    free(tableP);
     ret = getAdapters (env, &adapters);
     if (ret != ERROR_SUCCESS) {
         goto err;

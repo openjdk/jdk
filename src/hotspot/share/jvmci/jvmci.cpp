@@ -24,7 +24,7 @@
 #include "precompiled.hpp"
 #include "classfile/systemDictionary.hpp"
 #include "gc/shared/collectedHeap.hpp"
-#include "gc/shared/oopStorage.inline.hpp"
+#include "gc/shared/oopStorage.hpp"
 #include "jvmci/jvmci.hpp"
 #include "jvmci/jvmciJavaClasses.hpp"
 #include "jvmci/jvmciRuntime.hpp"
@@ -58,9 +58,7 @@ void JVMCI::initialize_compiler(TRAPS) {
 }
 
 void JVMCI::initialize_globals() {
-  _object_handles = new OopStorage("JVMCI Global Oop Handles",
-                                   JVMCIGlobalAlloc_lock,
-                                   JVMCIGlobalActive_lock);
+  _object_handles = SystemDictionary::vm_global_oop_storage();
   _metadata_handles = MetadataHandleBlock::allocate_block();
   if (UseJVMCINativeLibrary) {
     // There are two runtimes.
@@ -93,6 +91,14 @@ jobject JVMCI::make_global(const Handle& obj) {
   return res;
 }
 
+void JVMCI::destroy_global(jobject handle) {
+  // Assert before nulling out, for better debugging.
+  assert(is_global_handle(handle), "precondition");
+  oop* oop_ptr = reinterpret_cast<oop*>(handle);
+  NativeAccess<>::oop_store(oop_ptr, (oop)NULL);
+  object_handles()->release(oop_ptr);
+}
+
 bool JVMCI::is_global_handle(jobject handle) {
   const oop* ptr = reinterpret_cast<oop*>(handle);
   return object_handles()->allocation_status(ptr) == OopStorage::ALLOCATED_ENTRY;
@@ -113,12 +119,6 @@ jmetadata JVMCI::allocate_handle(const constantPoolHandle& handle) {
 void JVMCI::release_handle(jmetadata handle) {
   MutexLocker ml(JVMCI_lock);
   _metadata_handles->chain_free_list(handle);
-}
-
-void JVMCI::oops_do(OopClosure* f) {
-  if (_object_handles != NULL) {
-    _object_handles->oops_do(f);
-  }
 }
 
 void JVMCI::metadata_do(void f(Metadata*)) {

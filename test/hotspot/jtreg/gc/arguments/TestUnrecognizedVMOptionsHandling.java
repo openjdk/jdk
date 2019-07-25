@@ -29,6 +29,7 @@ package gc.arguments;
  * @bug 8017611
  * @summary Tests handling unrecognized VM options
  * @library /test/lib
+ * @library /
  * @modules java.base/jdk.internal.misc
  *          java.management
  * @run main/othervm gc.arguments.TestUnrecognizedVMOptionsHandling
@@ -41,7 +42,7 @@ public class TestUnrecognizedVMOptionsHandling {
 
   public static void main(String args[]) throws Exception {
     // The first two JAVA processes are expected to fail, but with a correct VM option suggestion
-    ProcessBuilder pb = ProcessTools.createJavaProcessBuilder(
+    ProcessBuilder pb = GCArguments.createJavaProcessBuilder(
       "-XX:+UseDynamicNumberOfGcThreads",
       "-version"
       );
@@ -51,7 +52,7 @@ public class TestUnrecognizedVMOptionsHandling {
       throw new RuntimeException("Not expected to get exit value 0");
     }
 
-    pb = ProcessTools.createJavaProcessBuilder(
+    pb = GCArguments.createJavaProcessBuilder(
       "-XX:MaxiumHeapSize=500m",
       "-version"
       );
@@ -62,7 +63,7 @@ public class TestUnrecognizedVMOptionsHandling {
     }
 
     // The last JAVA process should run successfully for the purpose of sanity check
-    pb = ProcessTools.createJavaProcessBuilder(
+    pb = GCArguments.createJavaProcessBuilder(
       "-XX:+UseDynamicNumberOfGCThreads",
       "-version"
       );

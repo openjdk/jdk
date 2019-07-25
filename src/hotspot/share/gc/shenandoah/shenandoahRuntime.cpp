@@ -55,7 +55,7 @@ JRT_LEAF(void, ShenandoahRuntime::write_ref_field_pre_entry(oopDesc* orig, JavaT
   ShenandoahThreadLocalData::satb_mark_queue(thread).enqueue_known_active(orig);
 JRT_END
 
-JRT_LEAF(oopDesc*, ShenandoahRuntime::load_reference_barrier_JRT(oopDesc* src))
+JRT_LEAF(oopDesc*, ShenandoahRuntime::load_reference_barrier(oopDesc * src))
   oop result = ShenandoahBarrierSet::barrier_set()->load_reference_barrier_mutator(src);
   return (oopDesc*) result;
 JRT_END
@@ -64,4 +64,8 @@ JRT_END
 // in cloned objects.
 JRT_LEAF(void, ShenandoahRuntime::shenandoah_clone_barrier(oopDesc* obj))
   ShenandoahBarrierSet::barrier_set()->write_region(MemRegion((HeapWord*) obj, obj->size()));
+JRT_END
+
+JRT_LEAF(oopDesc*, ShenandoahRuntime::load_reference_barrier_native(oopDesc * src))
+  return (oopDesc*) ShenandoahBarrierSet::barrier_set()->oop_load_from_native_barrier(oop(src));
 JRT_END

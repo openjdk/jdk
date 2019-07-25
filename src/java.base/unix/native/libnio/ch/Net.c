@@ -42,6 +42,7 @@
 #include "nio.h"
 
 #ifdef _AIX
+#include <stdlib.h>
 #include <sys/utsname.h>
 #endif
 

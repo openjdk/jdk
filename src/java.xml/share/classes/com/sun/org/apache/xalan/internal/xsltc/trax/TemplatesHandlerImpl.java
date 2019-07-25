@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2019, Oracle and/or its affiliates. All rights reserved.
  */
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
@@ -47,6 +47,7 @@ import org.xml.sax.SAXException;
  * Implementation of a JAXP1.1 TemplatesHandler
  * @author Morten Jorgensen
  * @author Santiago Pericas-Geertsen
+ * @LastModified: July 2019
  */
 public class TemplatesHandlerImpl
     implements ContentHandler, TemplatesHandler, SourceLoader
@@ -91,14 +92,14 @@ public class TemplatesHandlerImpl
     /**
      * Default constructor
      */
-    protected TemplatesHandlerImpl(int indentNumber,
-        TransformerFactoryImpl tfactory)
+    protected TemplatesHandlerImpl(int indentNumber, TransformerFactoryImpl tfactory,
+            boolean hasUserErrListener)
     {
         _indentNumber = indentNumber;
         _tfactory = tfactory;
 
         // Instantiate XSLTC and get reference to parser object
-        XSLTC xsltc = new XSLTC(tfactory.getJdkXmlFeatures());
+        XSLTC xsltc = new XSLTC(tfactory.getJdkXmlFeatures(), hasUserErrListener);
         if (tfactory.getFeature(XMLConstants.FEATURE_SECURE_PROCESSING))
             xsltc.setSecureProcessing(true);
 

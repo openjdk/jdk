@@ -64,7 +64,7 @@ public:
 bool ClosureIsUnloadingBehaviour::is_unloading(CompiledMethod* cm) const {
   if (cm->is_nmethod()) {
     IsCompiledMethodUnloadingOopClosure cl(_cl);
-    static_cast<nmethod*>(cm)->oops_do(&cl);
+    static_cast<nmethod*>(cm)->oops_do(&cl, true /* allow_dead */);
     return cl.is_unloading();
   } else {
     return false;

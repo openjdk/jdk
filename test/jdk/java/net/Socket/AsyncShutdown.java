@@ -29,6 +29,8 @@
  */
 
 import java.io.IOException;
+import java.net.InetAddress;
+import java.net.InetSocketAddress;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.net.SocketTimeoutException;
@@ -123,7 +125,7 @@ public class AsyncShutdown {
     {
         Socket s1 = null;
         Socket s2 = null;
-        try (ServerSocket ss = new ServerSocket(0)) {
+        try (ServerSocket ss = createBoundServer()) {
             s1 = new Socket();
             s1.connect(ss.getLocalSocketAddress());
             s2 = ss.accept();
@@ -132,6 +134,14 @@ public class AsyncShutdown {
             if (s1 != null) s1.close();
             if (s2 != null) s2.close();
         }
+    }
+
+    static ServerSocket createBoundServer() throws IOException {
+        ServerSocket ss = new ServerSocket();
+        InetAddress loopback = InetAddress.getLoopbackAddress();
+        InetSocketAddress address = new InetSocketAddress(loopback, 0);
+        ss.bind(address);
+        return ss;
     }
 
 }

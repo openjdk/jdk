@@ -25,13 +25,10 @@
 
 package sun.tools.jcmd;
 
-import java.io.InputStream;
-import java.io.InputStreamReader;
 import java.io.IOException;
+import java.io.InputStream;
 import java.io.UnsupportedEncodingException;
-import java.util.List;
 import java.util.Collection;
-import java.util.Collections;
 import java.util.Comparator;
 import java.net.URISyntaxException;
 
@@ -42,6 +39,7 @@ import com.sun.tools.attach.AttachNotSupportedException;
 
 import sun.tools.attach.HotSpotVirtualMachine;
 import sun.tools.common.ProcessArgumentMatcher;
+import sun.tools.common.PrintStreamPrinter;
 import sun.tools.jstat.JStatLogger;
 import sun.jvmstat.monitor.Monitor;
 import sun.jvmstat.monitor.MonitoredHost;
@@ -122,23 +120,11 @@ public class JCmd {
             if (line.trim().equals("stop")) {
                 break;
             }
-            try (InputStream in = hvm.executeJCmd(line);
-                 InputStreamReader isr = new InputStreamReader(in, "UTF-8")) {
-                // read to EOF and just print output
-                char c[] = new char[256];
-                int n;
-                boolean messagePrinted = false;
-                do {
-                    n = isr.read(c);
-                    if (n > 0) {
-                        String s = new String(c, 0, n);
-                        System.out.print(s);
-                        messagePrinted = true;
-                    }
-                } while (n > 0);
-                if (!messagePrinted) {
-                    System.out.println("Command executed successfully");
-                }
+
+            InputStream is = hvm.executeJCmd(line);
+
+            if (PrintStreamPrinter.drainUTF8(is, System.out) == 0) {
+                System.out.println("Command executed successfully");
             }
         }
         vm.detach();

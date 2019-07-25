@@ -478,7 +478,6 @@ class Compile : public Phase {
   Arena*                _type_arena;            // Alias for _Compile_types except in Initialize_shared()
   Dict*                 _type_dict;             // Intern table
   CloneMap              _clone_map;             // used for recording history of cloned nodes
-  void*                 _type_hwm;              // Last allocation (see Type::operator new/delete)
   size_t                _type_last_size;        // Last allocation size (see Type::operator new/delete)
   ciMethod*             _last_tf_m;             // Cache for
   const TypeFunc*       _last_tf;               //  TypeFunc::make
@@ -977,14 +976,12 @@ class Compile : public Phase {
   // Type management
   Arena*            type_arena()                { return _type_arena; }
   Dict*             type_dict()                 { return _type_dict; }
-  void*             type_hwm()                  { return _type_hwm; }
   size_t            type_last_size()            { return _type_last_size; }
   int               num_alias_types()           { return _num_alias_types; }
 
   void          init_type_arena()                       { _type_arena = &_Compile_types; }
   void          set_type_arena(Arena* a)                { _type_arena = a; }
   void          set_type_dict(Dict* d)                  { _type_dict = d; }
-  void          set_type_hwm(void* p)                   { _type_hwm = p; }
   void          set_type_last_size(size_t sz)           { _type_last_size = sz; }
 
   const TypeFunc* last_tf(ciMethod* m) {

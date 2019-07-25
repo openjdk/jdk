@@ -28,6 +28,7 @@
 #include "memory/memRegion.hpp"
 #include "memory/metaspaceChunkFreeListSummary.hpp"
 #include "memory/virtualspace.hpp"
+#include "memory/metaspace/metaspaceSizesSnapshot.hpp"
 #include "utilities/exceptions.hpp"
 
 // Metaspace
@@ -139,6 +140,8 @@ class Metaspace : public AllStatic {
 
   static const MetaspaceTracer* _tracer;
 
+  static bool _initialized;
+
  public:
   static metaspace::VirtualSpaceList* space_list()       { return _space_list; }
   static metaspace::VirtualSpaceList* class_space_list() { return _class_space_list; }
@@ -223,6 +226,8 @@ class Metaspace : public AllStatic {
   static bool is_class_space_allocation(MetadataType mdType) {
     return mdType == ClassType && using_class_space();
   }
+
+  static bool initialized() { return _initialized; }
 
 };
 
@@ -410,8 +415,8 @@ public:
   static bool has_chunk_free_list(Metaspace::MetadataType mdtype);
   static MetaspaceChunkFreeListSummary chunk_free_list_summary(Metaspace::MetadataType mdtype);
 
-  // Print change in used metadata.
-  static void print_metaspace_change(size_t prev_metadata_used);
+  // Log change in used metadata.
+  static void print_metaspace_change(const metaspace::MetaspaceSizesSnapshot& pre_meta_values);
   static void print_on(outputStream * out);
 
   // Prints an ASCII representation of the given space.

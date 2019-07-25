@@ -34,6 +34,7 @@ package gc.arguments;
  * @modules java.base/jdk.internal.misc
  * @modules java.management
  * @library /test/lib
+ * @library /
  * @run driver gc.arguments.TestVerifyBeforeAndAfterGCFlags
  */
 
@@ -76,7 +77,6 @@ public class TestVerifyBeforeAndAfterGCFlags {
         if (opts != null && (opts.length > 0)) {
             Collections.addAll(vmOpts, opts);
         }
-
         Collections.addAll(vmOpts, new String[] {
                                        "-Xlog:gc+verify=debug",
                                        "-Xmx5m",
@@ -89,8 +89,8 @@ public class TestVerifyBeforeAndAfterGCFlags {
                                                       : "-XX:-VerifyAfterGC"),
                                        GarbageProducer.class.getName() });
         ProcessBuilder procBuilder =
-            ProcessTools.createJavaProcessBuilder(vmOpts.toArray(
-                                                   new String[vmOpts.size()]));
+            GCArguments.createJavaProcessBuilder(vmOpts.toArray(
+                                                     new String[vmOpts.size()]));
         OutputAnalyzer analyzer = new OutputAnalyzer(procBuilder.start());
 
         analyzer.shouldHaveExitValue(0);

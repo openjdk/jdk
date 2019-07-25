@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,25 +23,31 @@
  */
 
 #include "precompiled.hpp"
-#include "jfr/leakprofiler/emitEventOperation.hpp"
 #include "jfr/leakprofiler/leakProfiler.hpp"
 #include "jfr/leakprofiler/startOperation.hpp"
 #include "jfr/leakprofiler/stopOperation.hpp"
+#include "jfr/leakprofiler/checkpoint/eventEmitter.hpp"
 #include "jfr/leakprofiler/sampling/objectSampler.hpp"
 #include "jfr/recorder/service/jfrOptionSet.hpp"
+#include "logging/log.hpp"
 #include "memory/iterator.hpp"
-#include "oops/oop.hpp"
-#include "runtime/atomic.hpp"
-#include "runtime/orderAccess.hpp"
 #include "runtime/thread.inline.hpp"
 #include "runtime/vmThread.hpp"
-#include "utilities/ostream.hpp"
 
-// Only to be updated during safepoint
-ObjectSampler* LeakProfiler::_object_sampler = NULL;
+bool LeakProfiler::is_running() {
+  return ObjectSampler::is_created();
+}
 
-static volatile jbyte suspended = 0;
-bool LeakProfiler::start(jint sample_count) {
+bool LeakProfiler::start(int sample_count) {
+  if (is_running()) {
+    return true;
+  }
+
+  // Allows user to disable leak profiler on command line by setting queue size to zero.
+  if (sample_count == 0) {
+    return false;
+  }
+
   if (UseZGC) {
     log_warning(jfr)("LeakProfiler is currently not supported in combination with ZGC");
     return false;
@@ -52,49 +58,56 @@ bool LeakProfiler::start(jint sample_count) {
     return false;
   }
 
-  if (_object_sampler != NULL) {
-    // already started
-    return true;
+  assert(!is_running(), "invariant");
+  assert(sample_count > 0, "invariant");
+
+  // schedule the safepoint operation for installing the object sampler
+  StartOperation op(sample_count);
+  VMThread::execute(&op);
+
+  if (!is_running()) {
+    log_trace(jfr, system)("Object sampling could not be started because the sampler could not be allocated");
+    return false;
   }
-  // Allows user to disable leak profiler on command line by setting queue size to zero.
-  if (sample_count > 0) {
-    StartOperation op(sample_count);
-    VMThread::execute(&op);
-    return _object_sampler != NULL;
-  }
-  return false;
+  assert(is_running(), "invariant");
+  log_trace(jfr, system)("Object sampling started");
+  return true;
 }
 
 bool LeakProfiler::stop() {
-  if (_object_sampler == NULL) {
-    // already stopped/not started
-    return true;
+  if (!is_running()) {
+    return false;
   }
+
+  // schedule the safepoint operation for uninstalling and destroying the object sampler
   StopOperation op;
   VMThread::execute(&op);
-  return _object_sampler == NULL;
+
+  assert(!is_running(), "invariant");
+  log_trace(jfr, system)("Object sampling stopped");
+  return true;
 }
 
-void LeakProfiler::emit_events(jlong cutoff_ticks, bool emit_all) {
+void LeakProfiler::emit_events(int64_t cutoff_ticks, bool emit_all) {
   if (!is_running()) {
     return;
   }
-  EmitEventOperation op(cutoff_ticks, emit_all);
-  VMThread::execute(&op);
+  // exclusive access to object sampler instance
+  ObjectSampler* const sampler = ObjectSampler::acquire();
+  assert(sampler != NULL, "invariant");
+  EventEmitter::emit(sampler, cutoff_ticks, emit_all);
+  ObjectSampler::release();
 }
 
 void LeakProfiler::oops_do(BoolObjectClosure* is_alive, OopClosure* f) {
   assert(SafepointSynchronize::is_at_safepoint(),
     "Leak Profiler::oops_do(...) may only be called during safepoint");
-
-  if (_object_sampler != NULL) {
-    _object_sampler->oops_do(is_alive, f);
+  if (is_running()) {
+    ObjectSampler::oops_do(is_alive, f);
   }
 }
 
-void LeakProfiler::sample(HeapWord* object,
-                          size_t size,
-                          JavaThread* thread) {
+void LeakProfiler::sample(HeapWord* object, size_t size, JavaThread* thread) {
   assert(is_running(), "invariant");
   assert(thread != NULL, "invariant");
   assert(thread->thread_state() == _thread_in_vm, "invariant");
@@ -104,39 +117,5 @@ void LeakProfiler::sample(HeapWord* object,
     return;
   }
 
-  _object_sampler->add(object, size, thread);
-}
-
-ObjectSampler* LeakProfiler::object_sampler() {
-  assert(is_suspended() || SafepointSynchronize::is_at_safepoint(),
-    "Leak Profiler::object_sampler() may only be called during safepoint");
-  return _object_sampler;
-}
-
-void LeakProfiler::set_object_sampler(ObjectSampler* object_sampler) {
-  assert(SafepointSynchronize::is_at_safepoint(),
-    "Leak Profiler::set_object_sampler() may only be called during safepoint");
-  _object_sampler = object_sampler;
-}
-
-bool LeakProfiler::is_running() {
-  return _object_sampler != NULL && !suspended;
-}
-
-bool LeakProfiler::is_suspended() {
-  return _object_sampler != NULL && suspended;
-}
-
-void LeakProfiler::resume() {
-  assert(is_suspended(), "invariant");
-  OrderAccess::storestore();
-  Atomic::store((jbyte)0, &suspended);
-  assert(is_running(), "invariant");
-}
-
-void LeakProfiler::suspend() {
-  assert(SafepointSynchronize::is_at_safepoint(), "invariant");
-  assert(_object_sampler != NULL, "invariant");
-  assert(!is_suspended(), "invariant");
-  suspended = (jbyte)1; // safepoint visible
+  ObjectSampler::sample(object, size, thread);
 }

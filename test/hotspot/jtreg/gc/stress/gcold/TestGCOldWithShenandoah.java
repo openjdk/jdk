@@ -31,22 +31,93 @@ package gc.stress.gcold;
  * @requires vm.gc.Shenandoah & !vm.graal.enabled
  * @summary Stress the GC by trying to make old objects more likely to be garbage than young objects.
  *
- * @run main/othervm/timeout=600 -Xmx384M -XX:+UnlockDiagnosticVMOptions -XX:+UnlockExperimentalVMOptions -XX:+UseShenandoahGC -XX:ShenandoahGCHeuristics=passive       -XX:+ShenandoahDegeneratedGC -XX:+ShenandoahVerify gc.stress.gcold.TestGCOld 50 1 20 10 10000
- * @run main/othervm/timeout=600 -Xmx384M -XX:+UnlockDiagnosticVMOptions -XX:+UnlockExperimentalVMOptions -XX:+UseShenandoahGC -XX:ShenandoahGCHeuristics=passive       -XX:-ShenandoahDegeneratedGC -XX:+ShenandoahVerify gc.stress.gcold.TestGCOld 50 1 20 10 10000
- * @run main/othervm/timeout=600 -Xmx384M -XX:+UnlockDiagnosticVMOptions -XX:+UnlockExperimentalVMOptions -XX:+UseShenandoahGC -XX:ShenandoahGCHeuristics=passive       -XX:+ShenandoahDegeneratedGC                       gc.stress.gcold.TestGCOld 50 1 20 10 10000
- * @run main/othervm/timeout=600 -Xmx384M -XX:+UnlockDiagnosticVMOptions -XX:+UnlockExperimentalVMOptions -XX:+UseShenandoahGC -XX:ShenandoahGCHeuristics=passive       -XX:-ShenandoahDegeneratedGC                       gc.stress.gcold.TestGCOld 50 1 20 10 10000
+ * @run main/othervm/timeout=600 -Xmx384M -XX:+UnlockDiagnosticVMOptions -XX:+UnlockExperimentalVMOptions
+ *      -XX:+UseShenandoahGC -XX:ShenandoahGCMode=passive
+ *      -XX:+ShenandoahDegeneratedGC -XX:+ShenandoahVerify
+ *      gc.stress.gcold.TestGCOld 50 1 20 10 10000
  *
- * @run main/othervm -Xmx384M -XX:+UnlockDiagnosticVMOptions -XX:+UnlockExperimentalVMOptions -XX:+UseShenandoahGC -XX:ShenandoahGCHeuristics=aggressive    -XX:+ShenandoahOOMDuringEvacALot gc.stress.gcold.TestGCOld 50 1 20 10 10000
- * @run main/othervm -Xmx384M -XX:+UnlockDiagnosticVMOptions -XX:+UnlockExperimentalVMOptions -XX:+UseShenandoahGC -XX:ShenandoahGCHeuristics=aggressive    -XX:+ShenandoahAllocFailureALot  gc.stress.gcold.TestGCOld 50 1 20 10 10000
- * @run main/othervm -Xmx384M -XX:+UnlockDiagnosticVMOptions -XX:+UnlockExperimentalVMOptions -XX:+UseShenandoahGC -XX:ShenandoahGCHeuristics=aggressive                                     gc.stress.gcold.TestGCOld 50 1 20 10 10000
+ * @run main/othervm/timeout=600 -Xmx384M -XX:+UnlockDiagnosticVMOptions -XX:+UnlockExperimentalVMOptions
+ *      -XX:+UseShenandoahGC -XX:ShenandoahGCMode=passive
+ *      -XX:-ShenandoahDegeneratedGC -XX:+ShenandoahVerify
+ *      gc.stress.gcold.TestGCOld 50 1 20 10 10000
  *
- * @run main/othervm/timeout=600 -Xmx384M -XX:+UnlockDiagnosticVMOptions -XX:+UnlockExperimentalVMOptions -XX:+UseShenandoahGC -XX:ShenandoahGCHeuristics=adaptive     -XX:+ShenandoahVerify gc.stress.gcold.TestGCOld 50 1 20 10 10000
- * @run main/othervm/timeout=600 -Xmx384M -XX:+UnlockDiagnosticVMOptions -XX:+UnlockExperimentalVMOptions -XX:+UseShenandoahGC -XX:ShenandoahGCHeuristics=traversal    -XX:+ShenandoahVerify gc.stress.gcold.TestGCOld 50 1 20 10 10000
+ * @run main/othervm/timeout=600 -Xmx384M -XX:+UnlockDiagnosticVMOptions -XX:+UnlockExperimentalVMOptions
+ *      -XX:+UseShenandoahGC -XX:ShenandoahGCMode=passive
+ *      -XX:+ShenandoahDegeneratedGC
+ *      gc.stress.gcold.TestGCOld 50 1 20 10 10000
  *
- * @run main/othervm -Xmx384M -XX:+UnlockDiagnosticVMOptions -XX:+UnlockExperimentalVMOptions -XX:+UseShenandoahGC -XX:ShenandoahGCHeuristics=adaptive      gc.stress.gcold.TestGCOld 50 1 20 10 10000
- * @run main/othervm -Xmx384M -XX:+UnlockDiagnosticVMOptions -XX:+UnlockExperimentalVMOptions -XX:+UseShenandoahGC -XX:ShenandoahGCHeuristics=static        gc.stress.gcold.TestGCOld 50 1 20 10 10000
- * @run main/othervm -Xmx384M -XX:+UnlockDiagnosticVMOptions -XX:+UnlockExperimentalVMOptions -XX:+UseShenandoahGC -XX:ShenandoahGCHeuristics=compact       gc.stress.gcold.TestGCOld 50 1 20 10 10000
- * @run main/othervm -Xmx384M -XX:+UnlockDiagnosticVMOptions -XX:+UnlockExperimentalVMOptions -XX:+UseShenandoahGC -XX:ShenandoahGCHeuristics=traversal     gc.stress.gcold.TestGCOld 50 1 20 10 10000
+ * @run main/othervm/timeout=600 -Xmx384M -XX:+UnlockDiagnosticVMOptions -XX:+UnlockExperimentalVMOptions
+ *      -XX:+UseShenandoahGC -XX:ShenandoahGCMode=passive
+ *      -XX:-ShenandoahDegeneratedGC
+ *      gc.stress.gcold.TestGCOld 50 1 20 10 10000
+ */
+
+/*
+ * @test TestGCOldWithShenandoah
+ * @key gc
+ * @key stress
+ * @library /
+ * @requires vm.gc.Shenandoah & !vm.graal.enabled
+ * @summary Stress the GC by trying to make old objects more likely to be garbage than young objects.
+ *
+ * @run main/othervm -Xmx384M -XX:+UnlockDiagnosticVMOptions -XX:+UnlockExperimentalVMOptions
+ *      -XX:+UseShenandoahGC -XX:ShenandoahGCHeuristics=aggressive
+ *      -XX:+ShenandoahOOMDuringEvacALot
+ *      gc.stress.gcold.TestGCOld 50 1 20 10 10000
+ *
+ * @run main/othervm -Xmx384M -XX:+UnlockDiagnosticVMOptions -XX:+UnlockExperimentalVMOptions
+ *      -XX:+UseShenandoahGC -XX:ShenandoahGCHeuristics=aggressive
+ *      -XX:+ShenandoahAllocFailureALot
+ *      gc.stress.gcold.TestGCOld 50 1 20 10 10000
+ *
+ * @run main/othervm -Xmx384M -XX:+UnlockDiagnosticVMOptions -XX:+UnlockExperimentalVMOptions
+ *      -XX:+UseShenandoahGC -XX:ShenandoahGCHeuristics=aggressive
+ *      gc.stress.gcold.TestGCOld 50 1 20 10 10000
+ *
+ * @run main/othervm/timeout=600 -Xmx384M -XX:+UnlockDiagnosticVMOptions -XX:+UnlockExperimentalVMOptions
+ *      -XX:+UseShenandoahGC -XX:ShenandoahGCHeuristics=adaptive
+ *      -XX:+ShenandoahVerify
+ *      gc.stress.gcold.TestGCOld 50 1 20 10 10000
+ *
+ * @run main/othervm -Xmx384M -XX:+UnlockDiagnosticVMOptions -XX:+UnlockExperimentalVMOptions
+ *      -XX:+UseShenandoahGC -XX:ShenandoahGCHeuristics=adaptive
+ *      gc.stress.gcold.TestGCOld 50 1 20 10 10000
+ *
+ * @run main/othervm -Xmx384M -XX:+UnlockDiagnosticVMOptions -XX:+UnlockExperimentalVMOptions
+ *      -XX:+UseShenandoahGC -XX:ShenandoahGCHeuristics=compact
+ *      gc.stress.gcold.TestGCOld 50 1 20 10 10000
+ */
+
+/*
+ * @test TestGCOldWithShenandoah
+ * @key gc
+ * @key stress
+ * @library /
+ * @requires vm.gc.Shenandoah & !vm.graal.enabled
+ * @summary Stress the GC by trying to make old objects more likely to be garbage than young objects.
+ *
+ * @run main/othervm -Xmx384M -XX:+UnlockDiagnosticVMOptions -XX:+UnlockExperimentalVMOptions
+ *      -XX:+UseShenandoahGC -XX:ShenandoahGCMode=traversal -XX:ShenandoahGCHeuristics=aggressive
+ *      -XX:+ShenandoahOOMDuringEvacALot
+ *      gc.stress.gcold.TestGCOld 50 1 20 10 10000
+ *
+ * @run main/othervm -Xmx384M -XX:+UnlockDiagnosticVMOptions -XX:+UnlockExperimentalVMOptions
+ *      -XX:+UseShenandoahGC -XX:ShenandoahGCMode=traversal -XX:ShenandoahGCHeuristics=aggressive
+ *      -XX:+ShenandoahAllocFailureALot
+ *      gc.stress.gcold.TestGCOld 50 1 20 10 10000
+ *
+ * @run main/othervm -Xmx384M -XX:+UnlockDiagnosticVMOptions -XX:+UnlockExperimentalVMOptions
+ *      -XX:+UseShenandoahGC -XX:ShenandoahGCMode=traversal -XX:ShenandoahGCHeuristics=aggressive
+ *      gc.stress.gcold.TestGCOld 50 1 20 10 10000
+ *
+ * @run main/othervm/timeout=600 -Xmx384M -XX:+UnlockDiagnosticVMOptions -XX:+UnlockExperimentalVMOptions
+ *      -XX:+UseShenandoahGC -XX:ShenandoahGCMode=traversal
+ *      -XX:+ShenandoahVerify
+ *      gc.stress.gcold.TestGCOld 50 1 20 10 10000
+ *
+ * @run main/othervm -Xmx384M -XX:+UnlockDiagnosticVMOptions -XX:+UnlockExperimentalVMOptions
+ *      -XX:+UseShenandoahGC -XX:ShenandoahGCMode=traversal
+ *      gc.stress.gcold.TestGCOld 50 1 20 10 10000
  */
 
 public class TestGCOldWithShenandoah {

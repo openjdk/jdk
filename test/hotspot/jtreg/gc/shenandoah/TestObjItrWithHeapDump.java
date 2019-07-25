@@ -55,25 +55,27 @@ public class TestObjItrWithHeapDump {
             System.exit(0);
         }
 
-        String[] heuristics = new String[] {
-                "adaptive",
-                "compact",
-                "static",
-                "aggressive",
-                "passive",
-                "traversal",
+        String[][][] modeHeuristics = new String[][][] {
+             {{"normal"},    {"adaptive", "compact", "static", "aggressive"}},
+             {{"traversal"}, {"adaptive", "aggressive"}},
+             {{"passive"},   {"passive"}}
         };
 
-        for (String h : heuristics) {
-            testWith("-XX:+UnlockDiagnosticVMOptions",
-                     "-XX:+UnlockExperimentalVMOptions",
-                     "-XX:+UseShenandoahGC",
-                     "-XX:-ShenandoahDegeneratedGC",
-                     "-XX:ShenandoahGCHeuristics=" + h,
-                     "-Xlog:gc+classhisto=trace",
-                     "-XX:-ExplicitGCInvokesConcurrent",
-                     "-Xmx512M"
-            );
+        for (String[][] mh : modeHeuristics) {
+            String mode = mh[0][0];
+            String[] heuristics = mh[1];
+            for (String h : heuristics) {
+                testWith("-XX:+UnlockDiagnosticVMOptions",
+                         "-XX:+UnlockExperimentalVMOptions",
+                         "-XX:+UseShenandoahGC",
+                         "-XX:-ShenandoahDegeneratedGC",
+                         "-XX:ShenandoahGCMode=" + mode,
+                         "-XX:ShenandoahGCHeuristics=" + h,
+                         "-Xlog:gc+classhisto=trace",
+                         "-XX:-ExplicitGCInvokesConcurrent",
+                         "-Xmx512M"
+                );
+            }
         }
     }
 }

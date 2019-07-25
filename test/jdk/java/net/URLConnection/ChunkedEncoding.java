@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,9 +22,10 @@
  */
 
 /**
- *
+ * @test
  * @bug 4333920
  * @bug 4394548
+ * @library /test/lib
  * @summary Check that chunked encoding response doesn't cause
  *          getInputStream to block until last chunk arrives.
  *          Also regression against NPE in ChunkedInputStream.
@@ -32,6 +33,7 @@
 import java.net.*;
 import java.io.*;
 import java.util.Random;
+import jdk.test.lib.net.URIBuilder;
 
 public class ChunkedEncoding implements Runnable {
 
@@ -115,6 +117,11 @@ public class ChunkedEncoding implements Runnable {
             out.print("\r\n");
             out.flush();
 
+            /*
+             * Sleep added to avoid connection reset
+             * on the client side
+             */
+            Thread.sleep(1000);
             s.close();
             ss.close();
         } catch (Exception e) {
@@ -125,15 +132,17 @@ public class ChunkedEncoding implements Runnable {
     ChunkedEncoding() throws Exception {
 
         /* start the server */
-        ss = new ServerSocket(0);
+        ss = new ServerSocket();
+        ss.bind(new InetSocketAddress(InetAddress.getLoopbackAddress(), 0));
         (new Thread(this)).start();
-
         /* establish http connection to server */
-        String uri = "http://localhost:" +
-                     Integer.toString(ss.getLocalPort()) +
-                     "/foo";
-        URL url = new URL(uri);
-        HttpURLConnection http = (HttpURLConnection)url.openConnection();
+        URL url = URIBuilder.newBuilder()
+                .scheme("http")
+                .loopback()
+                .port(ss.getLocalPort())
+                .path("/foo")
+                .toURL();
+        HttpURLConnection http = (HttpURLConnection) url.openConnection(Proxy.NO_PROXY);
 
         /*
          * Server should only send headers if TE:trailers

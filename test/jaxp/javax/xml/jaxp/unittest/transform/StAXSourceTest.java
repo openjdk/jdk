@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,6 +23,7 @@
 
 package transform;
 
+import java.io.ByteArrayInputStream;
 import static jaxp.library.JAXPTestUtilities.setSystemProperty;
 import java.io.StringReader;
 import java.io.StringWriter;
@@ -33,6 +34,8 @@ import javax.xml.stream.XMLOutputFactory;
 import javax.xml.stream.XMLStreamConstants;
 import javax.xml.stream.XMLStreamException;
 import javax.xml.stream.XMLStreamReader;
+import javax.xml.transform.Result;
+import javax.xml.transform.Source;
 import javax.xml.transform.Transformer;
 import javax.xml.transform.TransformerConfigurationException;
 import javax.xml.transform.TransformerException;
@@ -41,14 +44,16 @@ import javax.xml.transform.dom.DOMResult;
 import javax.xml.transform.stax.StAXResult;
 import javax.xml.transform.stax.StAXSource;
 import javax.xml.transform.stream.StreamResult;
+import javax.xml.transform.stream.StreamSource;
 
 import org.testng.Assert;
+import org.testng.annotations.DataProvider;
 import org.testng.annotations.Listeners;
 import org.testng.annotations.Test;
 
 /*
  * @test
- * @bug 8152530 8202426
+ * @bug 8152530 8202426 7148925
  * @library /javax/xml/jaxp/libs /javax/xml/jaxp/unittest
  * @modules java.xml
  * @modules java.xml/com.sun.org.apache.xerces.internal.impl
@@ -62,6 +67,100 @@ import org.testng.annotations.Test;
  */
 @Listeners({jaxp.library.JAXPTestPolicy.class})
 public class StAXSourceTest {
+    @DataProvider(name = "xml")
+    public Object[][] getData() throws Exception {
+        // from 6715417, all other data were from 7148925
+        String xmlDT = "<?xml version=\"1.0\" encoding=\"utf-8\"?> "
+                + "<!DOCTYPE bookstore [ "
+                + "<!ELEMENT bookstore (book)*> "
+                + "<!ELEMENT book (title,author,price)> "
+                + "<!ATTLIST book genre CDATA #REQUIRED> "
+                + "<!ELEMENT title (#PCDATA)> "
+                + "<!ELEMENT author (#PCDATA)> "
+                + "<!ELEMENT price (#PCDATA)> ]> "
+                + "<bookstore> "
+                + "<book genre=\"fantasy\" > "
+                + "<title>Oberon's Legacy</title> "
+                + "<author>Corets, Eva</author> "
+                + "<price>5.95</price> "
+                + "</book> "
+                + "</bookstore>";
+        return new Object[][]{
+            {"<root/>"},
+            {"<!DOCTYPE root [<!ENTITY et 'Come Home'>]><root et='&et;'/>"},
+            {"<?xml-stylesheet href='show.xsl' type='text/html'?><root/>"},
+            {"<?xml version='1.0'?><?xml-stylesheet href='show.xsl' type='text/html'?><root/>"},
+            {"<?xml version='1.0'?><?xml-stylesheet href='show.xsl' type='text/html'?>"
+                + "<!DOCTYPE root><root/>"},
+            {"<?xml version='1.0'?><!DOCTYPE root [<!ELEMENT greeting (#PCDATA)>]><root/>"},
+            {"<?xml version='1.0'?><?xml-stylesheet href='show.xsl' type='text/html'?>"
+                + "<!DOCTYPE root [<!ELEMENT greeting (#PCDATA)>]><root/>"},
+            {xmlDT},
+        };
+    }
+
+    /**
+     * @bug 7148925 6715417
+     *
+     * Verifies that the transformation is successful with a StreamSource.
+     *
+     * @param xml the xml
+     * @throws Exception if the test fails
+     */
+    @Test(dataProvider = "xml")
+    public void parseStreamSource(String xml) throws Exception {
+        Source source = new StreamSource(new StringReader(xml));
+        transform(source, xml);
+    }
+
+    /**
+     * @bug 7148925 6715417
+     *
+     * Verifies that the transformation is successful with a StAXSource created
+     * out of a StreamReader.
+     *
+     * Note that the patch fixes the Exception, but does not include any improvement
+     * over the current. The result may differ from that of StreamSource.
+     *
+     * @param xml the xml
+     * @throws Exception if the test fails
+     */
+    @Test(dataProvider = "xml")
+    public void parseSSSR(String xml) throws Exception {
+        XMLInputFactory xif = XMLInputFactory.newDefaultFactory();
+        XMLStreamReader sr = xif.createXMLStreamReader(new StringReader(xml));
+        StAXSource source = new StAXSource(sr);
+        transform(source, xml);
+    }
+
+    /**
+     * @bug 7148925 6715417
+     *
+     * Verifies that the transformation is successful with a StAXSource created
+     * out of an EventReader.
+     *
+     * Note that the patch fixes the Exception, but does not include any improvement
+     * over the current. The result may differ from that of StreamSource.
+     *
+     * @param xml the xml
+     * @throws Exception if the test fails
+     */
+    @Test(dataProvider = "xml")
+    public void parseSSER(String xml) throws Exception {
+        XMLInputFactory xif = XMLInputFactory.newDefaultFactory();
+        XMLEventReader er = xif.createXMLEventReader(new StringReader(xml));
+        StAXSource source = new StAXSource(er);
+        transform(source, xml);
+    }
+
+    private void transform(Source source, String sourceXml) throws Exception{
+        StringWriter sw = new StringWriter();
+        Result result = new StreamResult(sw);
+        TransformerFactory tf = TransformerFactory.newInstance();
+        tf.newTransformer().transform(source, result);
+        System.out.printf("%n%s:%nSource: %s%nResult: %s%n", source.getClass().getSimpleName(), sourceXml, sw);
+    }
+
     /**
      * @bug 8202426
      * Verifies that a null Attribute type is handled. NPE was thrown before the fix.

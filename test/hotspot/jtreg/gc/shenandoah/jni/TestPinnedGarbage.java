@@ -26,12 +26,30 @@
  * @key gc
  * @requires vm.gc.Shenandoah & !vm.graal.enabled
  *
- * @run main/othervm/native -XX:+UnlockDiagnosticVMOptions -XX:+UnlockExperimentalVMOptions -XX:+UseShenandoahGC -Xmx512m -XX:+ShenandoahVerify -XX:ShenandoahGCHeuristics=passive    -XX:+ShenandoahDegeneratedGC TestPinnedGarbage
- * @run main/othervm/native -XX:+UnlockDiagnosticVMOptions -XX:+UnlockExperimentalVMOptions -XX:+UseShenandoahGC -Xmx512m -XX:+ShenandoahVerify -XX:ShenandoahGCHeuristics=passive    -XX:-ShenandoahDegeneratedGC TestPinnedGarbage
+ * @run main/othervm/native -XX:+UnlockDiagnosticVMOptions -XX:+UnlockExperimentalVMOptions -Xmx512m
+ *      -XX:+UseShenandoahGC -XX:ShenandoahGCMode=passive
+ *      -XX:+ShenandoahVerify -XX:+ShenandoahDegeneratedGC
+ *      TestPinnedGarbage
  *
- * @run main/othervm/native -XX:+UnlockDiagnosticVMOptions -XX:+UnlockExperimentalVMOptions -XX:+UseShenandoahGC -Xmx512m                       -XX:ShenandoahGCHeuristics=aggressive TestPinnedGarbage
+ * @run main/othervm/native -XX:+UnlockDiagnosticVMOptions -XX:+UnlockExperimentalVMOptions -Xmx512m
+ *      -XX:+UseShenandoahGC -XX:ShenandoahGCMode=passive
+ *      -XX:+ShenandoahVerify -XX:-ShenandoahDegeneratedGC
+ *      TestPinnedGarbage
+ */
+
+/* @test TestPinnedGarbage
+ * @summary Test that garbage in the pinned region does not crash VM
+ * @key gc
+ * @requires vm.gc.Shenandoah & !vm.graal.enabled
  *
- * @run main/othervm/native -XX:+UnlockDiagnosticVMOptions -XX:+UnlockExperimentalVMOptions -XX:+UseShenandoahGC -Xmx512m -XX:+ShenandoahVerify                                       TestPinnedGarbage
+ * @run main/othervm/native -XX:+UnlockDiagnosticVMOptions -XX:+UnlockExperimentalVMOptions -Xmx512m
+ *      -XX:+UseShenandoahGC -XX:ShenandoahGCHeuristics=aggressive
+ *      TestPinnedGarbage
+ *
+ * @run main/othervm/native -XX:+UnlockDiagnosticVMOptions -XX:+UnlockExperimentalVMOptions -Xmx512m
+ *      -XX:+UseShenandoahGC
+ *      -XX:+ShenandoahVerify
+ *      TestPinnedGarbage
  */
 
 import java.util.Arrays;

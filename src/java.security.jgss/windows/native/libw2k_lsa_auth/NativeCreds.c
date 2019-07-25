@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -406,6 +406,8 @@ JNIEXPORT jobject JNICALL Java_sun_security_krb5_Credentials_acquireDefaultNativ
                     "(Lsun/security/krb5/internal/Ticket;"
                     "Lsun/security/krb5/PrincipalName;"
                     "Lsun/security/krb5/PrincipalName;"
+                    "Lsun/security/krb5/PrincipalName;"
+                    "Lsun/security/krb5/PrincipalName;"
                     "Lsun/security/krb5/EncryptionKey;"
                     "Lsun/security/krb5/internal/TicketFlags;"
                     "Lsun/security/krb5/internal/KerberosTime;"
@@ -667,7 +669,9 @@ JNIEXPORT jobject JNICALL Java_sun_security_krb5_Credentials_acquireDefaultNativ
                 krbcredsConstructor,
                 ticket,
                 clientPrincipal,
+                NULL,
                 targetPrincipal,
+                NULL,
                 encryptionKey,
                 ticketFlags,
                 authTime, // mdu

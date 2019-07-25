@@ -25,25 +25,15 @@
 #ifndef SHARE_GC_G1_G1DIRTYCARDQUEUE_HPP
 #define SHARE_GC_G1_G1DIRTYCARDQUEUE_HPP
 
-#include "gc/shared/cardTable.hpp"
 #include "gc/shared/ptrQueue.hpp"
 #include "memory/allocation.hpp"
 
+class G1CardTableEntryClosure;
 class G1DirtyCardQueueSet;
 class G1FreeIdSet;
+class G1RedirtyCardsQueueSet;
 class Thread;
 class Monitor;
-
-// A closure class for processing card table entries.  Note that we don't
-// require these closure objects to be stack-allocated.
-class G1CardTableEntryClosure: public CHeapObj<mtGC> {
-public:
-  typedef CardTable::CardValue CardValue;
-
-  // Process the card whose card table entry is "card_ptr".  If returns
-  // "false", terminate the iteration early.
-  virtual bool do_card_ptr(CardValue* card_ptr, uint worker_i) = 0;
-};
 
 // A ptrQueue whose elements are "oops", pointers to object heads.
 class G1DirtyCardQueue: public PtrQueue {
@@ -79,7 +69,9 @@ class G1DirtyCardQueueSet: public PtrQueueSet {
   Monitor* _cbl_mon;  // Protects the fields below.
   BufferNode* _completed_buffers_head;
   BufferNode* _completed_buffers_tail;
-  volatile size_t _n_completed_buffers;
+
+  // Number of actual entries in the list of completed buffers.
+  volatile size_t _num_entries_in_completed_buffers;
 
   size_t _process_completed_buffers_threshold;
   volatile bool _process_completed_buffers;
@@ -87,20 +79,18 @@ class G1DirtyCardQueueSet: public PtrQueueSet {
   // If true, notify_all on _cbl_mon when the threshold is reached.
   bool _notify_when_complete;
 
-  void assert_completed_buffers_list_len_correct_locked() NOT_DEBUG_RETURN;
-
   void abandon_completed_buffers();
 
   // Apply the closure to the elements of "node" from it's index to
   // buffer_size.  If all closure applications return true, then
   // returns true.  Stops processing after the first closure
   // application that returns false, and returns false from this
-  // function.  If "consume" is true, the node's index is updated to
-  // exclude the processed elements, e.g. up to the element for which
-  // the closure returned false.
+  // function.  The node's index is updated to exclude the processed
+  // elements, e.g. up to the element for which the closure returned
+  // false, or one past the last element if the closure always
+  // returned true.
   bool apply_closure_to_buffer(G1CardTableEntryClosure* cl,
                                BufferNode* node,
-                               bool consume,
                                uint worker_i = 0);
 
   // If there are more than stop_at completed buffers, pop one, apply
@@ -135,9 +125,6 @@ class G1DirtyCardQueueSet: public PtrQueueSet {
   jint _processed_buffers_mut;
   jint _processed_buffers_rs_thread;
 
-  // Current buffer node used for parallel iteration.
-  BufferNode* volatile _cur_par_buffer_node;
-
 public:
   G1DirtyCardQueueSet(bool notify_when_complete = true);
   ~G1DirtyCardQueueSet();
@@ -163,8 +150,17 @@ public:
   // return a completed buffer from the list.  Otherwise, return NULL.
   BufferNode* get_completed_buffer(size_t stop_at = 0);
 
-  // The number of buffers in the list.  Racy...
-  size_t completed_buffers_num() const { return _n_completed_buffers; }
+  // The number of buffers in the list. Derived as an approximation from the number
+  // of entries in the buffers. Racy.
+  size_t num_completed_buffers() const {
+    return (num_entries_in_completed_buffers() + buffer_size() - 1) / buffer_size();
+  }
+  // The number of entries in completed buffers. Read without synchronization.
+  size_t num_entries_in_completed_buffers() const { return _num_entries_in_completed_buffers; }
+
+  // Verify that _num_entries_in_completed_buffers is equal to the sum of actual entries
+  // in the completed buffers.
+  void verify_num_entries_in_completed_buffers() const NOT_DEBUG_RETURN;
 
   bool process_completed_buffers() { return _process_completed_buffers; }
   void set_process_completed_buffers(bool x) { _process_completed_buffers = x; }
@@ -183,7 +179,7 @@ public:
   // Notify the consumer if the number of buffers crossed the threshold
   void notify_if_necessary();
 
-  void merge_bufferlists(G1DirtyCardQueueSet* src);
+  void merge_bufferlists(G1RedirtyCardsQueueSet* src);
 
   // Apply G1RefineCardConcurrentlyClosure to completed buffers until there are stop_at
   // completed buffers remaining.
@@ -192,12 +188,6 @@ public:
   // Apply the given closure to all completed buffers. The given closure's do_card_ptr
   // must never return false. Must only be called during GC.
   bool apply_closure_during_gc(G1CardTableEntryClosure* cl, uint worker_i);
-
-  void reset_for_par_iteration() { _cur_par_buffer_node = _completed_buffers_head; }
-  // Applies the current closure to all completed buffers, non-consumptively.
-  // Can be used in parallel, all callers using the iteration state initialized
-  // by reset_for_par_iteration.
-  void par_apply_closure_to_all_completed_buffers(G1CardTableEntryClosure* cl);
 
   // If a full collection is happening, reset partial logs, and release
   // completed ones: the full collection will make them all irrelevant.

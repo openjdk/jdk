@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,13 +22,16 @@
  */
 
 /**
- *
+ * @test
  * @bug 4191815
+ * @library /test/lib
  * @summary Check that getResponseCode doesn't throw exception if http
  *          respone code is >= 400.
  */
 import java.net.*;
 import java.io.*;
+
+import jdk.test.lib.net.URIBuilder;
 
 public class GetResponseCode implements Runnable {
 
@@ -56,6 +59,11 @@ public class GetResponseCode implements Runnable {
             out.print("</HTML>");
             out.flush();
 
+            /*
+             * Sleep added to avoid connection reset
+             * on the client side
+             */
+            Thread.sleep(1000);
             s.close();
             ss.close();
         } catch (Exception e) {
@@ -66,16 +74,19 @@ public class GetResponseCode implements Runnable {
     GetResponseCode() throws Exception {
 
         /* start the server */
-        ss = new ServerSocket(0);
+        ss = new ServerSocket();
+        ss.bind(new InetSocketAddress(InetAddress.getLoopbackAddress(), 0));
         (new Thread(this)).start();
 
         /* establish http connection to server */
-        String uri = "http://localhost:" +
-                     Integer.toString(ss.getLocalPort()) +
-                     "/missing.nothtml";
-        URL url = new URL(uri);
+        URL url = URIBuilder.newBuilder()
+                .scheme("http")
+                .loopback()
+                .port(ss.getLocalPort())
+                .path("/missing.nohtml")
+                .toURL();
 
-        HttpURLConnection http = (HttpURLConnection)url.openConnection();
+        HttpURLConnection http = (HttpURLConnection) url.openConnection(Proxy.NO_PROXY);
 
         int respCode = http.getResponseCode();
 

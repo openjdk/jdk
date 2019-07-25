@@ -51,7 +51,6 @@ class ciEnv : StackObj {
 private:
   Arena*           _arena;       // Alias for _ciEnv_arena except in init_shared_objects()
   Arena            _ciEnv_arena;
-  int              _system_dictionary_modification_counter;
   ciObjectFactory* _factory;
   OopRecorder*     _oop_recorder;
   DebugInformationRecorder* _debug_info;
@@ -291,9 +290,6 @@ private:
   // Helper routine for determining the validity of a compilation with
   // respect to method dependencies (e.g. concurrent class loading).
   void validate_compile_task_dependencies(ciMethod* target);
-
-  // Call internally when Compile_lock is already held.
-  bool system_dictionary_modification_counter_changed_locked();
 public:
   enum {
     MethodCompilable,
@@ -301,7 +297,7 @@ public:
     MethodCompilable_never
   };
 
-  ciEnv(CompileTask* task, int system_dictionary_modification_counter);
+  ciEnv(CompileTask* task);
   // Used only during initialization of the ci
   ciEnv(Arena* arena);
   ~ciEnv();
@@ -455,9 +451,6 @@ public:
   // Output stream for logging compilation info.
   CompileLog* log() { return _log; }
   void set_log(CompileLog* log) { _log = log; }
-
-  // Check for changes to the system dictionary during compilation
-  bool system_dictionary_modification_counter_changed();
 
   void record_failure(const char* reason);      // Record failure and report later
   void report_failure(const char* reason);      // Report failure immediately

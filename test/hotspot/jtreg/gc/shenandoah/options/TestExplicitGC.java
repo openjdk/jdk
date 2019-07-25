@@ -129,7 +129,7 @@ public class TestExplicitGC {
                     "-XX:+UseShenandoahGC",
                     "-Xlog:gc",
                     "-XX:+ExplicitGCInvokesConcurrent",
-                    "-XX:ShenandoahGCHeuristics=traversal",
+                    "-XX:ShenandoahGCMode=traversal",
                     TestExplicitGC.class.getName(),
                     "test");
             OutputAnalyzer output = new OutputAnalyzer(pb.start());

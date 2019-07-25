@@ -271,13 +271,7 @@ class MemTracker : AllStatic {
     }
    }
 
-  static void final_report(outputStream* output) {
-    NMT_TrackingLevel level = tracking_level();
-    if (level >= NMT_summary) {
-      report(level == NMT_summary, output);
-    }
-  }
-
+  static void final_report(outputStream* output);
 
   // Stored baseline
   static inline MemBaseline& get_baseline() {

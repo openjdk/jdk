@@ -203,9 +203,6 @@ void print_bytecode_count() {
   }
 }
 
-AllocStats alloc_stats;
-
-
 
 // General statistics printing (profiling ...)
 void print_statistics() {
@@ -329,11 +326,6 @@ void print_statistics() {
   }
 
   print_bytecode_count();
-  if (PrintMallocStatistics) {
-    tty->print("allocation stats: ");
-    alloc_stats.print();
-    tty->cr();
-  }
 
   if (PrintSystemDictionaryAtExit) {
     ResourceMark rm;

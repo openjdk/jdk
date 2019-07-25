@@ -311,7 +311,7 @@ void ClassUnloadTypeSet::serialize(JfrCheckpointWriter& writer) {
   if (LeakProfiler::is_running()) {
     JfrCheckpointWriter leakp_writer(false, true, Thread::current());
     type_set.write(writer, &leakp_writer);
-    ObjectSampleCheckpoint::install(leakp_writer, true, true);
+    ObjectSampleCheckpoint::install(leakp_writer, true);
     return;
   }
   type_set.write(writer, NULL);
@@ -319,10 +319,10 @@ void ClassUnloadTypeSet::serialize(JfrCheckpointWriter& writer) {
 
 void TypeSet::serialize(JfrCheckpointWriter& writer) {
   TypeSetSerialization type_set(false);
-  if (LeakProfiler::is_suspended()) {
+  if (LeakProfiler::is_running()) {
     JfrCheckpointWriter leakp_writer(false, true, Thread::current());
     type_set.write(writer, &leakp_writer);
-    ObjectSampleCheckpoint::install(leakp_writer, false, true);
+    ObjectSampleCheckpoint::install(leakp_writer, false);
     return;
   }
   type_set.write(writer, NULL);

@@ -61,10 +61,11 @@ G1GCPhaseTimes::G1GCPhaseTimes(STWGCTimer* gc_timer, uint max_gc_threads) :
   _gc_par_phases[CLDGRoots] = new WorkerDataArray<double>(max_gc_threads, "CLDG Roots (ms):");
   _gc_par_phases[JVMTIRoots] = new WorkerDataArray<double>(max_gc_threads, "JVMTI Roots (ms):");
   AOT_ONLY(_gc_par_phases[AOTCodeRoots] = new WorkerDataArray<double>(max_gc_threads, "AOT Root Scan (ms):");)
-  JVMCI_ONLY(_gc_par_phases[JVMCIRoots] = new WorkerDataArray<double>(max_gc_threads, "JVMCI Root Scan (ms):");)
   _gc_par_phases[CMRefRoots] = new WorkerDataArray<double>(max_gc_threads, "CM RefProcessor Roots (ms):");
   _gc_par_phases[WaitForStrongCLD] = new WorkerDataArray<double>(max_gc_threads, "Wait For Strong CLD (ms):");
   _gc_par_phases[WeakCLDRoots] = new WorkerDataArray<double>(max_gc_threads, "Weak CLD Roots (ms):");
+
+  _gc_par_phases[MergeER] = new WorkerDataArray<double>(max_gc_threads, "Eager Reclaim (ms):");
 
   _gc_par_phases[MergeRS] = new WorkerDataArray<double>(max_gc_threads, "Remembered Sets (ms):");
   _merge_rs_merged_sparse = new WorkerDataArray<size_t>(max_gc_threads, "Merged Sparse:");
@@ -85,8 +86,14 @@ G1GCPhaseTimes::G1GCPhaseTimes(STWGCTimer* gc_timer, uint max_gc_threads) :
   _gc_par_phases[MergeLB] = new WorkerDataArray<double>(max_gc_threads, "Log Buffers (ms):");
   if (G1HotCardCache::default_use_cache()) {
     _gc_par_phases[MergeHCC] = new WorkerDataArray<double>(max_gc_threads, "Hot Card Cache (ms):");
+    _merge_hcc_dirty_cards = new WorkerDataArray<size_t>(max_gc_threads, "Dirty Cards:");
+    _gc_par_phases[MergeHCC]->link_thread_work_items(_merge_hcc_dirty_cards, MergeHCCDirtyCards);
+    _merge_hcc_skipped_cards = new WorkerDataArray<size_t>(max_gc_threads, "Skipped Cards:");
+    _gc_par_phases[MergeHCC]->link_thread_work_items(_merge_hcc_skipped_cards, MergeHCCSkippedCards);
   } else {
     _gc_par_phases[MergeHCC] = NULL;
+    _merge_hcc_dirty_cards = NULL;
+    _merge_hcc_skipped_cards = NULL;
   }
   _gc_par_phases[ScanHR] = new WorkerDataArray<double>(max_gc_threads, "Scan Heap Roots (ms):");
   _gc_par_phases[OptScanHR] = new WorkerDataArray<double>(max_gc_threads, "Optional Scan Heap Roots (ms):");
@@ -166,6 +173,8 @@ void G1GCPhaseTimes::reset() {
   _cur_strong_code_root_purge_time_ms = 0.0;
   _cur_merge_heap_roots_time_ms = 0.0;
   _cur_optional_merge_heap_roots_time_ms = 0.0;
+  _cur_prepare_merge_heap_roots_time_ms = 0.0;
+  _cur_optional_prepare_merge_heap_roots_time_ms = 0.0;
   _cur_evac_fail_recalc_used = 0.0;
   _cur_evac_fail_remove_self_forwards = 0.0;
   _cur_string_deduplication_time_ms = 0.0;
@@ -248,9 +257,10 @@ void G1GCPhaseTimes::note_gc_end() {
       // Make sure all slots are uninitialized since this thread did not seem to have been started
       ASSERT_PHASE_UNINITIALIZED(GCWorkerEnd);
       ASSERT_PHASE_UNINITIALIZED(ExtRootScan);
-      ASSERT_PHASE_UNINITIALIZED(MergeHCC);
+      ASSERT_PHASE_UNINITIALIZED(MergeER);
       ASSERT_PHASE_UNINITIALIZED(MergeRS);
       ASSERT_PHASE_UNINITIALIZED(OptMergeRS);
+      ASSERT_PHASE_UNINITIALIZED(MergeHCC);
       ASSERT_PHASE_UNINITIALIZED(MergeLB);
       ASSERT_PHASE_UNINITIALIZED(ScanHR);
       ASSERT_PHASE_UNINITIALIZED(CodeRoots);
@@ -413,6 +423,8 @@ double G1GCPhaseTimes::print_evacuate_optional_collection_set() const {
   const double sum_ms = _cur_optional_evac_ms + _cur_optional_merge_heap_roots_time_ms;
   if (sum_ms > 0) {
     info_time("Merge Optional Heap Roots", _cur_optional_merge_heap_roots_time_ms);
+
+    debug_time("Prepare Optional Merge Heap Roots", _cur_optional_prepare_merge_heap_roots_time_ms);
     debug_phase(_gc_par_phases[OptMergeRS]);
 
     info_time("Evacuate Optional Collection Set", _cur_optional_evac_ms);
@@ -427,6 +439,8 @@ double G1GCPhaseTimes::print_evacuate_optional_collection_set() const {
 double G1GCPhaseTimes::print_evacuate_initial_collection_set() const {
   info_time("Merge Heap Roots", _cur_merge_heap_roots_time_ms);
 
+  debug_time("Prepare Merge Heap Roots", _cur_prepare_merge_heap_roots_time_ms);
+  debug_phase(_gc_par_phases[MergeER]);
   debug_phase(_gc_par_phases[MergeRS]);
   if (G1HotCardCache::default_use_cache()) {
     debug_phase(_gc_par_phases[MergeHCC]);
@@ -554,10 +568,10 @@ const char* G1GCPhaseTimes::phase_name(GCParPhases phase) {
       "CLDGRoots",
       "JVMTIRoots",
       AOT_ONLY("AOTCodeRoots" COMMA)
-      JVMCI_ONLY("JVMCIRoots" COMMA)
       "CMRefRoots",
       "WaitForStrongCLD",
       "WeakCLDRoots",
+      "MergeER",
       "MergeRS",
       "OptMergeRS",
       "MergeLB",

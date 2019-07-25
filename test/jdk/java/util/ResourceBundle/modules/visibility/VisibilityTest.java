@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -329,6 +329,8 @@ public class VisibilityTest {
 
     private int runCmd(List<String> argsList) throws Throwable {
         JDKToolLauncher launcher = JDKToolLauncher.createUsingTestJDK("java");
+        launcher.addToolArg("-ea")
+                .addToolArg("-esa");
         argsList.forEach(launcher::addToolArg);
 
         return ProcessTools.executeCommand(launcher.getCommand()).getExitValue();

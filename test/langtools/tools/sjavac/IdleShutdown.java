@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -88,9 +88,13 @@ public class IdleShutdown {
 
         long error = Math.abs(expectedTimeout - timeoutTimestamp.get());
         log("Timeout error: " + error + " ms");
-        if (error > TIMEOUT_MS * .1)
-            throw new AssertionError("Error too big");
-
+        String timeoutFactorText = System.getProperty("test.timeout.factor", "1.0");
+        double timeoutFactor = Double.parseDouble(timeoutFactorText);
+        double allowedError = TIMEOUT_MS * 0.1 * timeoutFactor;
+        if (error > allowedError) {
+            throw new AssertionError("Timeout error too large, error is " + error +
+                                     " milliseconds, we allowed " + allowedError + " milliseconds");
+        }
         log("Shutting down");
         service.shutdown();
     }

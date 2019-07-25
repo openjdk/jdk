@@ -358,3 +358,16 @@ void ShenandoahBarrierSet::on_thread_detach(Thread *thread) {
     }
   }
 }
+
+oop ShenandoahBarrierSet::oop_load_from_native_barrier(oop obj) {
+  if (CompressedOops::is_null(obj)) {
+    return NULL;
+  }
+
+  if (_heap->is_evacuation_in_progress() &&
+      !_heap->complete_marking_context()->is_marked(obj)) {
+    return NULL;
+  }
+
+  return load_reference_barrier_not_null(obj);
+}

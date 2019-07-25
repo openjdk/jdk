@@ -36,7 +36,7 @@ class ShenandoahSerialRoot {
 public:
   typedef void (*OopsDo)(OopClosure*);
 private:
-  volatile bool                             _claimed;
+  ShenandoahSharedFlag                      _claimed;
   const OopsDo                              _oops_do;
   const ShenandoahPhaseTimings::GCParPhases _phase;
 

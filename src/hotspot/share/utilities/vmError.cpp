@@ -1327,6 +1327,12 @@ void VMError::report_and_die(int id, const char* message, const char* detail_fmt
   // File descriptor to the error log file.
   static int fd_log = -1;
 
+#ifdef CAN_SHOW_REGISTERS_ON_ASSERT
+  // Disarm assertion poison page, since from this point on we do not need this mechanism anymore and it may
+  // cause problems in error handling during native OOM, see JDK-8227275.
+  disarm_assert_poison();
+#endif
+
   // Use local fdStream objects only. Do not use global instances whose initialization
   // relies on dynamic initialization (see JDK-8214975). Do not rely on these instances
   // to carry over into recursions or invocations from other threads.
@@ -1521,6 +1527,11 @@ void VMError::report_and_die(int id, const char* message, const char* detail_fmt
     }
 
     log.set_fd(-1);
+  }
+
+  if (PrintNMTStatistics) {
+    fdStream fds(fd_out);
+    MemTracker::final_report(&fds);
   }
 
   static bool skip_replay = ReplayCompiles; // Do not overwrite file during replay

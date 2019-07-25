@@ -67,15 +67,13 @@ public class Checker extends shared.Checker {
                 int modifiers = method.getModifiers();
 
                 // Check whether obtained method is public and isn't abstract
-                if ( Modifier.isPublic(modifiers))
-                {
+                if ( Modifier.isPublic(modifiers)) {
                     if (Modifier.isAbstract(modifiers)) {
                         return "java.lang.AbstractMethodError";
                     } else {
-                        return String.format("%s.%s"
-                            , method.getDeclaringClass().getSimpleName()
-                            , methodName
-                            );
+                        return String.format("%s.%s",
+                            method.getDeclaringClass().getSimpleName(),
+                            methodName);
                     }
                 } else {
                     // IAE is thrown when located method isn't PUBLIC

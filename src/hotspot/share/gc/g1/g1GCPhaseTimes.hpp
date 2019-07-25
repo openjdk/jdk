@@ -56,10 +56,10 @@ class G1GCPhaseTimes : public CHeapObj<mtGC> {
     CLDGRoots,
     JVMTIRoots,
     AOT_ONLY(AOTCodeRoots COMMA)
-    JVMCI_ONLY(JVMCIRoots COMMA)
     CMRefRoots,
     WaitForStrongCLD,
     WeakCLDRoots,
+    MergeER,
     MergeRS,
     OptMergeRS,
     MergeLB,
@@ -100,6 +100,11 @@ class G1GCPhaseTimes : public CHeapObj<mtGC> {
     ScanHRUsedMemory
   };
 
+  enum GCMergeHCCWorkItems {
+    MergeHCCDirtyCards,
+    MergeHCCSkippedCards
+  };
+
   enum GCMergeLBWorkItems {
     MergeLBProcessedBuffers,
     MergeLBDirtyCards,
@@ -120,6 +125,9 @@ class G1GCPhaseTimes : public CHeapObj<mtGC> {
   WorkerDataArray<size_t>* _merge_rs_merged_sparse;
   WorkerDataArray<size_t>* _merge_rs_merged_fine;
   WorkerDataArray<size_t>* _merge_rs_merged_coarse;
+
+  WorkerDataArray<size_t>* _merge_hcc_dirty_cards;
+  WorkerDataArray<size_t>* _merge_hcc_skipped_cards;
 
   WorkerDataArray<size_t>* _merge_lb_processed_buffers;
   WorkerDataArray<size_t>* _merge_lb_dirty_cards;
@@ -163,6 +171,9 @@ class G1GCPhaseTimes : public CHeapObj<mtGC> {
 
   double _cur_merge_heap_roots_time_ms;
   double _cur_optional_merge_heap_roots_time_ms;
+
+  double _cur_prepare_merge_heap_roots_time_ms;
+  double _cur_optional_prepare_merge_heap_roots_time_ms;
 
   double _cur_prepare_tlab_time_ms;
   double _cur_resize_tlab_time_ms;
@@ -306,6 +317,14 @@ class G1GCPhaseTimes : public CHeapObj<mtGC> {
 
   void record_or_add_optional_merge_heap_roots_time(double ms) {
     _cur_optional_merge_heap_roots_time_ms += ms;
+  }
+
+  void record_prepare_merge_heap_roots_time(double ms) {
+    _cur_prepare_merge_heap_roots_time_ms += ms;
+  }
+
+  void record_or_add_optional_prepare_merge_heap_roots_time(double ms) {
+    _cur_optional_prepare_merge_heap_roots_time_ms += ms;
   }
 
   void record_evac_fail_recalc_used_time(double ms) {

@@ -34,6 +34,7 @@
 #include <netinet/in6_var.h>
 #include <sys/ndd_var.h>
 #include <sys/kinfo.h>
+#include <strings.h>
 #endif
 
 #if defined(__solaris__)
@@ -320,33 +321,9 @@ JNIEXPORT jobject JNICALL Java_java_net_NetworkInterface_getByIndex0
     return obj;
 }
 
-/*
- * Class:     java_net_NetworkInterface
- * Method:    getByInetAddress0
- * Signature: (Ljava/net/InetAddress;)Ljava/net/NetworkInterface;
- */
-JNIEXPORT jobject JNICALL Java_java_net_NetworkInterface_getByInetAddress0
-  (JNIEnv *env, jclass cls, jobject iaObj)
-{
-    netif *ifs, *curr;
-    jobject obj = NULL;
-    jboolean match = JNI_FALSE;
-    int family = getInetAddress_family(env, iaObj);
-    JNU_CHECK_EXCEPTION_RETURN(env, NULL);
-
-    if (family == java_net_InetAddress_IPv4) {
-        family = AF_INET;
-    } else if (family == java_net_InetAddress_IPv6) {
-        family = AF_INET6;
-    } else {
-        return NULL; // Invalid family
-    }
-    ifs = enumInterfaces(env);
-    if (ifs == NULL) {
-        return NULL;
-    }
-
-    curr = ifs;
+// Return the interface in ifs that iaObj is bound to, if any - otherwise NULL
+static netif* find_bound_interface(JNIEnv *env, netif* ifs, jobject iaObj, int family) {
+    netif* curr = ifs;
     while (curr != NULL) {
         netaddr *addrP = curr->addr;
 
@@ -359,11 +336,10 @@ JNIEXPORT jobject JNICALL Java_java_net_NetworkInterface_getByInetAddress0
                         ((struct sockaddr_in *)addrP->addr)->sin_addr.s_addr);
                     int address2 = getInetAddress_addr(env, iaObj);
                     if ((*env)->ExceptionCheck(env)) {
-                        goto cleanup;
+                        return NULL;
                     }
                     if (address1 == address2) {
-                        match = JNI_TRUE;
-                        break;
+                        return curr;
                     }
                 } else if (family == AF_INET6) {
                     jbyte *bytes = (jbyte *)&(
@@ -383,30 +359,117 @@ JNIEXPORT jobject JNICALL Java_java_net_NetworkInterface_getByInetAddress0
                         i++;
                     }
                     if (i >= 16) {
-                        match = JNI_TRUE;
-                        break;
+                        return curr;
                     }
                 }
             }
 
-            if (match) {
-                break;
-            }
             addrP = addrP->next;
-        }
-
-        if (match) {
-            break;
         }
         curr = curr->next;
     }
 
-    // if found create a NetworkInterface
-    if (match) {
-        obj = createNetworkInterface(env, curr);
+    return NULL;
+}
+
+/*
+ * Class:     java_net_NetworkInterface
+ * Method:    boundInetAddress0
+ * Signature: (Ljava/net/InetAddress;)boundInetAddress;
+ */
+JNIEXPORT jboolean JNICALL Java_java_net_NetworkInterface_boundInetAddress0
+    (JNIEnv *env, jclass cls, jobject iaObj)
+{
+    netif *ifs = NULL;
+    jboolean bound = JNI_FALSE;
+    int sock;
+
+    int family = getInetAddress_family(env, iaObj);
+    JNU_CHECK_EXCEPTION_RETURN(env, JNI_FALSE);
+
+    if (family == java_net_InetAddress_IPv4) {
+        family = AF_INET;
+    } else if (family == java_net_InetAddress_IPv6) {
+        family = AF_INET6;
+    } else {
+        return JNI_FALSE; // Invalid family
+    }
+
+    if (family == AF_INET) {
+        sock = openSocket(env, AF_INET);
+        if (sock < 0 && (*env)->ExceptionOccurred(env)) {
+            return JNI_FALSE;
+        }
+
+        // enumerate IPv4 addresses
+        if (sock >= 0) {
+            ifs = enumIPv4Interfaces(env, sock, ifs);
+            close(sock);
+
+            if ((*env)->ExceptionOccurred(env)) {
+                goto cleanup;
+            }
+        }
+        if (find_bound_interface(env, ifs, iaObj, family) != NULL)
+            bound = JNI_TRUE;
+    } else if (ipv6_available()) {
+        // If IPv6 is available then enumerate IPv6 addresses.
+        // User can disable ipv6 explicitly by -Djava.net.preferIPv4Stack=true,
+        // so we have to call ipv6_available()
+        sock = openSocket(env, AF_INET6);
+        if (sock < 0) {
+            return JNI_FALSE;
+        }
+
+        ifs = enumIPv6Interfaces(env, sock, ifs);
+        close(sock);
+
+        if ((*env)->ExceptionOccurred(env)) {
+            goto cleanup;
+        }
+
+        if (find_bound_interface(env, ifs, iaObj, family) != NULL)
+            bound = JNI_TRUE;
     }
 
 cleanup:
+    freeif(ifs);
+
+    return bound;
+}
+
+/*
+ * Class:     java_net_NetworkInterface
+ * Method:    getByInetAddress0
+ * Signature: (Ljava/net/InetAddress;)Ljava/net/NetworkInterface;
+ */
+JNIEXPORT jobject JNICALL Java_java_net_NetworkInterface_getByInetAddress0
+  (JNIEnv *env, jclass cls, jobject iaObj)
+{
+    netif *ifs, *curr;
+    jobject obj = NULL;
+    int family = getInetAddress_family(env, iaObj);
+    JNU_CHECK_EXCEPTION_RETURN(env, NULL);
+
+    if (family == java_net_InetAddress_IPv4) {
+        family = AF_INET;
+    } else if (family == java_net_InetAddress_IPv6) {
+        family = AF_INET6;
+    } else {
+        return NULL; // Invalid family
+    }
+    ifs = enumInterfaces(env);
+    if (ifs == NULL) {
+        return NULL;
+    }
+
+    curr = find_bound_interface(env, ifs, iaObj, family);
+
+    // if found create a NetworkInterface
+    if (curr != NULL) {
+        obj = createNetworkInterface(env, curr);
+    }
+
     // release the interface list
     freeif(ifs);
 

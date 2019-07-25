@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2010, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -90,8 +90,12 @@ public class DirPermissionDenied {
     }
 
     @AfterTest
-    public void tearDown() throws IOException {
+    public void tearDown() throws Throwable {
+        // add read permission to ensure the dir removable
+        ProcessTools.executeCommand("chmod", "733", TEST_DIR.toString())
+                    .outputTo(System.out)
+                    .errorTo(System.out)
+                    .shouldHaveExitValue(0);
         FileUtils.deleteFileIfExistsWithRetry(TEST_DIR);
     }
 }
-

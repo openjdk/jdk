@@ -64,7 +64,7 @@ public class TestMaxRAMFlags {
     args.add("-XX:+PrintFlagsFinal");
     args.add("-version");
 
-    ProcessBuilder pb = ProcessTools.createJavaProcessBuilder(args.toArray(new String[0]));
+    ProcessBuilder pb = GCArguments.createJavaProcessBuilder(args.toArray(new String[0]));
     OutputAnalyzer output = new OutputAnalyzer(pb.start());
     output.shouldHaveExitValue(0);
     String stdout = output.getStdout();
@@ -87,7 +87,7 @@ public class TestMaxRAMFlags {
     args.add("-XX:+PrintFlagsFinal");
     args.add("-version");
 
-    ProcessBuilder pb = ProcessTools.createJavaProcessBuilder(args.toArray(new String[0]));
+    ProcessBuilder pb = GCArguments.createJavaProcessBuilder(args.toArray(new String[0]));
     OutputAnalyzer output = new OutputAnalyzer(pb.start());
     output.shouldHaveExitValue(0);
     String stdout = output.getStdout();

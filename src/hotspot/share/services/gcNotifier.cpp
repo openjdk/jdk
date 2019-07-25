@@ -159,7 +159,7 @@ static Handle createGcInfo(GCMemoryManager *gcManager, GCStatInfo *gcStatInfo,TR
                           gcInfoklass,
                           vmSymbols::com_sun_management_GcInfo_constructor_signature(),
                           &constructor_args,
-                          CHECK_NH);
+                          THREAD);
 }
 
 void GCNotifier::sendNotification(TRAPS) {

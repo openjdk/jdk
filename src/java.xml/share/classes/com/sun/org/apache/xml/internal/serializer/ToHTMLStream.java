@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2019, Oracle and/or its affiliates. All rights reserved.
  */
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
@@ -40,7 +40,7 @@ import com.sun.org.apache.xml.internal.serializer.utils.Utils;
  * because it is used from another package.
  *
  * @xsl.usage internal
- * @LastModified: Sept 2018
+ * @LastModified: July 2019
  */
 public final class ToHTMLStream extends ToStream
 {
@@ -719,7 +719,7 @@ public final class ToHTMLStream extends ToStream
     public final void endDocument() throws org.xml.sax.SAXException
     {
         if (m_doIndent) {
-            flushCharactersBuffer();
+            flushCharactersBuffer(false);
         }
         flushPending();
         if (m_doIndent && !m_isprevtext)
@@ -782,7 +782,7 @@ public final class ToHTMLStream extends ToStream
         if (m_doIndent) {
             // will add extra one if having namespace but no matter
             m_childNodeNum++;
-            flushCharactersBuffer();
+            flushCharactersBuffer(false);
         }
         ElemContext elemContext = m_elemContext;
 
@@ -923,7 +923,7 @@ public final class ToHTMLStream extends ToStream
         throws org.xml.sax.SAXException
     {
         if (m_doIndent) {
-            flushCharactersBuffer();
+            flushCharactersBuffer(false);
         }
         // deal with any pending issues
         if (m_cdataTagOpen)
@@ -1645,7 +1645,7 @@ public final class ToHTMLStream extends ToStream
     {
         if (m_doIndent) {
             m_childNodeNum++;
-            flushCharactersBuffer();
+            flushCharactersBuffer(false);
         }
         // Process any pending starDocument and startElement first.
         flushPending();

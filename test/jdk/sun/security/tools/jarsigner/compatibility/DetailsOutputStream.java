@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -34,8 +34,9 @@ public class DetailsOutputStream extends FileOutputStream {
 
     private PhaseOutputStream phaseOutputStream = new PhaseOutputStream();
 
-    public DetailsOutputStream() throws FileNotFoundException {
-        super("details.out", true);
+    public DetailsOutputStream(String filename) throws FileNotFoundException {
+        super(filename != null && !filename.isEmpty() ? filename :
+            "details.out", true);
     }
 
     public void transferPhase() throws IOException {

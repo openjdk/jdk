@@ -43,6 +43,7 @@ class ShenandoahGCSession;
 class ShenandoahGCStateResetter;
 class ShenandoahHeuristics;
 class ShenandoahMarkingContext;
+class ShenandoahMode;
 class ShenandoahPhaseTimings;
 class ShenandoahHeap;
 class ShenandoahHeapRegion;
@@ -435,6 +436,7 @@ private:
 private:
   ShenandoahControlThread*   _control_thread;
   ShenandoahCollectorPolicy* _shenandoah_policy;
+  ShenandoahMode*            _gc_mode;
   ShenandoahHeuristics*      _heuristics;
   ShenandoahFreeSet*         _free_set;
   ShenandoahConcurrentMark*  _scm;
@@ -454,7 +456,8 @@ public:
   ShenandoahHeuristics*      heuristics()        const { return _heuristics;        }
   ShenandoahFreeSet*         free_set()          const { return _free_set;          }
   ShenandoahConcurrentMark*  concurrent_mark()         { return _scm;               }
-  ShenandoahTraversalGC*     traversal_gc()            { return _traversal_gc;      }
+  ShenandoahTraversalGC*     traversal_gc()      const { return _traversal_gc;      }
+  bool                       is_traversal_mode() const { return _traversal_gc != NULL; }
   ShenandoahPacer*           pacer()             const { return _pacer;             }
 
   ShenandoahPhaseTimings*    phase_timings()     const { return _phase_timings;     }
@@ -509,9 +512,12 @@ public:
   void set_unload_classes(bool uc);
   bool unload_classes() const;
 
-  // Delete entries for dead interned string and clean up unreferenced symbols
-  // in symbol table, possibly in parallel.
-  void unload_classes_and_cleanup_tables(bool full_gc);
+  // Perform STW class unloading and weak root cleaning
+  void parallel_cleaning(bool full_gc);
+
+private:
+  void stw_unload_classes(bool full_gc);
+  void stw_process_weak_roots(bool full_gc);
 
 // ---------- Generic interface hooks
 // Minor things that super-interface expects us to implement to play nice with

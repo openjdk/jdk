@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -521,7 +521,7 @@ import static java.lang.invoke.MethodHandleStatics.newInternalError;
     public boolean isAccessibleFrom(Class<?> lookupClass) {
         int mode = (ALL_ACCESS|MethodHandles.Lookup.PACKAGE|MethodHandles.Lookup.MODULE);
         return VerifyAccess.isMemberAccessible(this.getDeclaringClass(), this.getDeclaringClass(), flags,
-                                               lookupClass, mode);
+                                               lookupClass, null, mode);
     }
 
     /**
@@ -930,13 +930,21 @@ import static java.lang.invoke.MethodHandleStatics.newInternalError;
                 message += ", from public Lookup";
             } else {
                 Module m;
+                Class<?> plc;
                 if (from instanceof MethodHandles.Lookup) {
                     MethodHandles.Lookup lookup = (MethodHandles.Lookup)from;
+                    from = lookup.lookupClass();
                     m = lookup.lookupClass().getModule();
+                    plc = lookup.previousLookupClass();
                 } else {
-                    m = from.getClass().getModule();
+                    m = ((Class<?>)from).getModule();
+                    plc = null;
                 }
                 message += ", from " + from + " (" + m + ")";
+                if (plc != null) {
+                    message += ", previous lookup " +
+                        plc.getName() + " (" + plc.getModule() + ")";
+                }
             }
         }
         return new IllegalAccessException(message);

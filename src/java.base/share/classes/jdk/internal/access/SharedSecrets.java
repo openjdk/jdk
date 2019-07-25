@@ -50,30 +50,29 @@ import jdk.internal.misc.Unsafe;
 
 public class SharedSecrets {
     private static final Unsafe unsafe = Unsafe.getUnsafe();
-    private static JavaUtilJarAccess javaUtilJarAccess;
-    private static JavaLangAccess javaLangAccess;
-    private static JavaLangModuleAccess javaLangModuleAccess;
-    private static JavaLangInvokeAccess javaLangInvokeAccess;
-    private static JavaLangRefAccess javaLangRefAccess;
-    private static JavaIOAccess javaIOAccess;
-    private static JavaNetInetAddressAccess javaNetInetAddressAccess;
-    private static JavaNetHttpCookieAccess javaNetHttpCookieAccess;
-    private static JavaNetSocketAccess javaNetSocketAccess;
-    private static JavaNetUriAccess javaNetUriAccess;
-    private static JavaNetURLAccess javaNetURLAccess;
-    private static JavaNetURLClassLoaderAccess javaNetURLClassLoaderAccess;
-    private static JavaNioAccess javaNioAccess;
-    private static JavaIOFileDescriptorAccess javaIOFileDescriptorAccess;
-    private static JavaIOFilePermissionAccess javaIOFilePermissionAccess;
-    private static JavaSecurityAccess javaSecurityAccess;
-    private static JavaUtilZipFileAccess javaUtilZipFileAccess;
-    private static JavaUtilResourceBundleAccess javaUtilResourceBundleAccess;
     private static JavaAWTAccess javaAWTAccess;
     private static JavaAWTFontAccess javaAWTFontAccess;
     private static JavaBeansAccess javaBeansAccess;
+    private static JavaLangAccess javaLangAccess;
+    private static JavaLangInvokeAccess javaLangInvokeAccess;
+    private static JavaLangModuleAccess javaLangModuleAccess;
+    private static JavaLangRefAccess javaLangRefAccess;
+    private static JavaLangReflectAccess javaLangReflectAccess;
+    private static JavaIOAccess javaIOAccess;
+    private static JavaIOFileDescriptorAccess javaIOFileDescriptorAccess;
+    private static JavaIOFilePermissionAccess javaIOFilePermissionAccess;
+    private static JavaIORandomAccessFileAccess javaIORandomAccessFileAccess;
     private static JavaObjectInputStreamAccess javaObjectInputStreamAccess;
     private static JavaObjectInputFilterAccess javaObjectInputFilterAccess;
-    private static JavaIORandomAccessFileAccess javaIORandomAccessFileAccess;
+    private static JavaNetInetAddressAccess javaNetInetAddressAccess;
+    private static JavaNetHttpCookieAccess javaNetHttpCookieAccess;
+    private static JavaNetUriAccess javaNetUriAccess;
+    private static JavaNetURLAccess javaNetURLAccess;
+    private static JavaNioAccess javaNioAccess;
+    private static JavaUtilJarAccess javaUtilJarAccess;
+    private static JavaUtilZipFileAccess javaUtilZipFileAccess;
+    private static JavaUtilResourceBundleAccess javaUtilResourceBundleAccess;
+    private static JavaSecurityAccess javaSecurityAccess;
     private static JavaSecuritySignatureAccess javaSecuritySignatureAccess;
     private static JavaxCryptoSealedObjectAccess javaxCryptoSealedObjectAccess;
 
@@ -131,6 +130,14 @@ public class SharedSecrets {
         return javaLangRefAccess;
     }
 
+    public static void setJavaLangReflectAccess(JavaLangReflectAccess jlra) {
+        javaLangReflectAccess = jlra;
+    }
+
+    public static JavaLangReflectAccess getJavaLangReflectAccess() {
+        return javaLangReflectAccess;
+    }
+
     public static void setJavaNetUriAccess(JavaNetUriAccess jnua) {
         javaNetUriAccess = jnua;
     }
@@ -151,16 +158,6 @@ public class SharedSecrets {
         return javaNetURLAccess;
     }
 
-    public static void setJavaNetURLClassLoaderAccess(JavaNetURLClassLoaderAccess jnua) {
-        javaNetURLClassLoaderAccess = jnua;
-    }
-
-    public static JavaNetURLClassLoaderAccess getJavaNetURLClassLoaderAccess() {
-        if (javaNetURLClassLoaderAccess == null)
-            unsafe.ensureClassInitialized(java.net.URLClassLoader.class);
-        return javaNetURLClassLoaderAccess;
-    }
-
     public static void setJavaNetInetAddressAccess(JavaNetInetAddressAccess jna) {
         javaNetInetAddressAccess = jna;
     }
@@ -179,16 +176,6 @@ public class SharedSecrets {
         if (javaNetHttpCookieAccess == null)
             unsafe.ensureClassInitialized(java.net.HttpCookie.class);
         return javaNetHttpCookieAccess;
-    }
-
-    public static void setJavaNetSocketAccess(JavaNetSocketAccess jnsa) {
-        javaNetSocketAccess = jnsa;
-    }
-
-    public static JavaNetSocketAccess getJavaNetSocketAccess() {
-        if (javaNetSocketAccess == null)
-            unsafe.ensureClassInitialized(java.net.ServerSocket.class);
-        return javaNetSocketAccess;
     }
 
     public static void setJavaNioAccess(JavaNioAccess jna) {

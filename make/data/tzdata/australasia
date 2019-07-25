@@ -425,10 +425,44 @@ Zone	Pacific/Tahiti	 -9:58:16 -	LMT	1912 Oct # Papeete
 # it is uninhabited.
 
 # Guam
+
+# Rule	NAME	FROM	TO	TYPE	IN	ON	AT	SAVE	LETTER/S
+# http://guamlegislature.com/Public_Laws_5th/PL05-025.pdf
+# http://documents.guam.gov/wp-content/uploads/E.O.-59-7-Guam-Daylight-Savings-Time-May-6-1959.pdf
+Rule	Guam	1959	only	-	Jun	27	2:00	1:00	D
+# http://documents.guam.gov/wp-content/uploads/E.O.-61-5-Revocation-of-Daylight-Saving-Time-and-Restoratio.pdf
+Rule	Guam	1961	only	-	Jan	29	2:00	0	S
+# http://documents.guam.gov/wp-content/uploads/E.O.-67-13-Guam-Daylight-Savings-Time.pdf
+Rule	Guam	1967	only	-	Sep	 1	2:00	1:00	D
+# http://documents.guam.gov/wp-content/uploads/E.O.-69-2-Repeal-of-Guam-Daylight-Saving-Time.pdf
+Rule	Guam	1969	only	-	Jan	26	0:01	0	S
+# http://documents.guam.gov/wp-content/uploads/E.O.-69-10-Guam-Daylight-Saving-Time.pdf
+Rule	Guam	1969	only	-	Jun	22	2:00	1:00	D
+Rule	Guam	1969	only	-	Aug	31	2:00	0	S
+# http://documents.guam.gov/wp-content/uploads/E.O.-70-10-Guam-Daylight-Saving-Time.pdf
+# http://documents.guam.gov/wp-content/uploads/E.O.-70-30-End-of-Guam-Daylight-Saving-Time.pdf
+# http://documents.guam.gov/wp-content/uploads/E.O.-71-5-Guam-Daylight-Savings-Time.pdf
+Rule	Guam	1970	1971	-	Apr	lastSun	2:00	1:00	D
+Rule	Guam	1970	1971	-	Sep	Sun>=1	2:00	0	S
+# http://documents.guam.gov/wp-content/uploads/E.O.-73-28.-Guam-Day-light-Saving-Time.pdf
+Rule	Guam	1973	only	-	Dec	16	2:00	1:00	D
+# http://documents.guam.gov/wp-content/uploads/E.O.-74-7-Guam-Daylight-Savings-Time-Rescinded.pdf
+Rule	Guam	1974	only	-	Feb	24	2:00	0	S
+# http://documents.guam.gov/wp-content/uploads/E.O.-76-13-Daylight-Savings-Time.pdf
+Rule	Guam	1976	only	-	May	26	2:00	1:00	D
+# http://documents.guam.gov/wp-content/uploads/E.O.-76-25-Revocation-of-E.O.-76-13.pdf
+Rule	Guam	1976	only	-	Aug	22	2:01	0	S
+# http://documents.guam.gov/wp-content/uploads/E.O.-77-4-Daylight-Savings-Time.pdf
+Rule	Guam	1977	only	-	Apr	24	2:00	1:00	D
+# http://documents.guam.gov/wp-content/uploads/E.O.-77-18-Guam-Standard-Time.pdf
+Rule	Guam	1977	only	-	Aug	28	2:00	0	S
+
 # Zone	NAME		GMTOFF	RULES	FORMAT	[UNTIL]
 Zone	Pacific/Guam	-14:21:00 -	LMT	1844 Dec 31
 			 9:39:00 -	LMT	1901        # Agana
-			10:00	-	GST	2000 Dec 23 # Guam
+			10:00	-	GST	1941 Dec 10 # Guam
+			 9:00	-	+09	1944 Jul 31
+			10:00	Guam	G%sT	2000 Dec 23
 			10:00	-	ChST	# Chamorro Standard Time
 Link Pacific/Guam Pacific/Saipan # N Mariana Is
 
@@ -450,31 +484,56 @@ Zone Pacific/Kiritimati	-10:29:20 -	LMT	1901
 
 # Marshall Is
 # Zone	NAME		GMTOFF	RULES	FORMAT	[UNTIL]
-Zone Pacific/Majuro	11:24:48 -	LMT	1901
-			11:00	-	+11	1969 Oct
-			12:00	-	+12
-Zone Pacific/Kwajalein	11:09:20 -	LMT	1901
-			11:00	-	+11	1969 Oct
-			-12:00	-	-12	1993 Aug 20
-			12:00	-	+12
+Zone Pacific/Majuro	 11:24:48 -	LMT	1901
+			 11:00	-	+11	1914 Oct
+			  9:00	-	+09	1919 Feb  1
+			 11:00	-	+11	1937
+			 10:00	-	+10	1941 Apr  1
+			  9:00	-	+09	1944 Jan 30
+			 11:00	-	+11	1969 Oct
+			 12:00	-	+12
+Zone Pacific/Kwajalein	 11:09:20 -	LMT	1901
+			 11:00	-	+11	1937
+			 10:00	-	+10	1941 Apr  1
+			  9:00	-	+09	1944 Feb  6
+			 11:00	-	+11	1969 Oct
+			-12:00	-	-12	1993 Aug 20 24:00
+			 12:00	-	+12
 
 # Micronesia
 # Zone	NAME		GMTOFF	RULES	FORMAT	[UNTIL]
-Zone Pacific/Chuuk	10:07:08 -	LMT	1901
-			10:00	-	+10
-Zone Pacific/Pohnpei	10:32:52 -	LMT	1901 # Kolonia
-			11:00	-	+11
-Zone Pacific/Kosrae	10:51:56 -	LMT	1901
-			11:00	-	+11	1969 Oct
-			12:00	-	+12	1999
-			11:00	-	+11
+Zone Pacific/Chuuk	-13:52:52 -	LMT	1844 Dec 31
+			 10:07:08 -	LMT	1901
+			 10:00	-	+10	1914 Oct
+			  9:00	-	+09	1919 Feb  1
+			 10:00	-	+10	1941 Apr  1
+			  9:00	-	+09	1945 Aug
+			 10:00	-	+10
+Zone Pacific/Pohnpei	-13:27:08 -	LMT	1844 Dec 31	# Kolonia
+			 10:32:52 -	LMT	1901
+			 11:00	-	+11	1914 Oct
+			  9:00	-	+09	1919 Feb  1
+			 11:00	-	+11	1937
+			 10:00	-	+10	1941 Apr  1
+			  9:00	-	+09	1945 Aug
+			 11:00	-	+11
+Zone Pacific/Kosrae	-13:08:04 -	LMT	1844 Dec 31
+			 10:51:56 -	LMT	1901
+			 11:00	-	+11	1914 Oct
+			  9:00	-	+09	1919 Feb  1
+			 11:00	-	+11	1937
+			 10:00	-	+10	1941 Apr  1
+			  9:00	-	+09	1945 Aug
+			 11:00	-	+11	1969 Oct
+			 12:00	-	+12	1999
+			 11:00	-	+11
 
 # Nauru
 # Zone	NAME		GMTOFF	RULES	FORMAT	[UNTIL]
 Zone	Pacific/Nauru	11:07:40 -	LMT	1921 Jan 15 # Uaobe
-			11:30	-	+1130	1942 Mar 15
-			9:00	-	+09	1944 Aug 15
-			11:30	-	+1130	1979 May
+			11:30	-	+1130	1942 Aug 29
+			 9:00	-	+09	1945 Sep  8
+			11:30	-	+1130	1979 Feb 10  2:00
 			12:00	-	+12
 
 # New Caledonia
@@ -575,8 +634,9 @@ Zone	Pacific/Norfolk	11:11:52 -	LMT	1901 # Kingston
 
 # Palau (Belau)
 # Zone	NAME		GMTOFF	RULES	FORMAT	[UNTIL]
-Zone Pacific/Palau	8:57:56 -	LMT	1901 # Koror
-			9:00	-	+09
+Zone Pacific/Palau	-15:02:04 -	LMT	1844 Dec 31	# Koror
+			  8:57:56 -	LMT	1901
+			  9:00	-	+09
 
 # Papua New Guinea
 # Zone	NAME		GMTOFF	RULES	FORMAT	[UNTIL]
@@ -838,7 +898,7 @@ Zone	Pacific/Wallis	12:15:20 -	LMT	1901
 # tz@iana.org for general use in the future).  For more, please see
 # the file CONTRIBUTING in the tz distribution.
 
-# From Paul Eggert (2017-02-10):
+# From Paul Eggert (2018-11-18):
 #
 # Unless otherwise specified, the source for data through 1990 is:
 # Thomas G. Shanks and Rique Pottenger, The International Atlas (6th edition),
@@ -863,6 +923,7 @@ Zone	Pacific/Wallis	12:15:20 -	LMT	1901
 # A reliable and entertaining source about time zones is
 # Derek Howse, Greenwich time and longitude, Philip Wilson Publishers (1997).
 #
+# I invented the abbreviation marked "*".
 # The following abbreviations are from other sources.
 # Corrections are welcome!
 #		std	dst
@@ -870,7 +931,7 @@ Zone	Pacific/Wallis	12:15:20 -	LMT	1901
 #	  8:00	AWST	AWDT	Western Australia
 #	  9:30	ACST	ACDT	Central Australia
 #	 10:00	AEST	AEDT	Eastern Australia
-#	 10:00	GST		Guam through 2000
+#	 10:00	GST	GDT*	Guam through 2000
 #	 10:00	ChST		Chamorro
 #	 11:30	NZMT	NZST	New Zealand through 1945
 #	 12:00	NZST	NZDT	New Zealand 1946-present
@@ -1569,28 +1630,70 @@ Zone	Pacific/Wallis	12:15:20 -	LMT	1901
 
 # Kwajalein
 
-# In comp.risks 14.87 (26 August 1993), Peter Neumann writes:
-# I wonder what happened in Kwajalein, where there was NO Friday,
-# 1993-08-20.  Thursday night at midnight Kwajalein switched sides with
-# respect to the International Date Line, to rejoin its fellow islands,
-# going from 11:59 p.m. Thursday to 12:00 m. Saturday in a blink.
+# From an AP article (1993-08-22):
+# "The nearly 3,000 Americans living on this remote Pacific atoll have a good
+# excuse for not remembering Saturday night: there wasn't one.  Residents were
+# going to bed Friday night and waking up Sunday morning because at midnight
+# -- 8 A.M. Eastern daylight time on Saturday -- Kwajalein was jumping from
+# one side of the international date line to the other."
+# "In Marshall Islands, Friday is followed by Sunday", NY Times. 1993-08-22.
+# https://www.nytimes.com/1993/08/22/world/in-marshall-islands-friday-is-followed-by-sunday.html
+
+# From Phake Nick (2018-10-27):
+# <https://wiki.suikawiki.org/n/南洋群島の標準時> ... pointed out that
+# currently tzdata say Pacific/Kwajalein switched from GMT+11 to GMT-12 in
+# 1969 October without explanation, however an 1993 article from NYT say it
+# synchorized its day with US mainland about 40 years ago and thus the switch
+# should occur at around 1950s instead.
+#
+# From Paul Eggert (2018-11-18):
+# The NYT (actually, AP) article is vague and possibly wrong about this.
+# The article says the earlier switch was "40 years ago when the United States
+# Army established a missile test range here".  However, the Kwajalein Test
+# Center was established on 1960-10-01 and was run by the US Navy.  It was
+# transferred to the US Army on 1964-07-01.  See "Seize the High Ground"
+# <https://history.army.mil/html/books/070/70-88-1/cmhPub_70-88-1.pdf>.
+# Given that Shanks was right on the money about the 1993 change, I'm inclined
+# to take Shanks's word for the 1969 change unless we find better evidence.
 
 
 # N Mariana Is, Guam
 
+# From Phake Nick (2018-10-27):
+# Guam Island was briefly annexed by Japan during ... year 1941-1944 ...
+# however there are no detailed information about what time it use during that
+# period.  It would probably be reasonable to assume Guam use GMT+9 during
+# that period of time like the surrounding area.
+
+# From Paul Eggert (2018-11-18):
 # Howse writes (p 153) "The Spaniards, on the other hand, reached the
 # Philippines and the Ladrones from America," and implies that the Ladrones
 # (now called the Marianas) kept American date for quite some time.
 # For now, we assume the Ladrones switched at the same time as the Philippines;
 # see Asia/Manila.
-
+#
+# Use 1941-12-10 and 1944-07-31 for Guam WWII transitions, as the rough start
+# and end of Japanese control of Agana.  We don't know whether the Northern
+# Marianas followed Guam's DST rules from 1959 through 1977; for now, assume
+# they did as that avoids the need for a separate zone due to our 1970 cutoff.
+#
 # US Public Law 106-564 (2000-12-23) made UT +10 the official standard time,
 # under the name "Chamorro Standard Time".  There is no official abbreviation,
 # but Congressman Robert A. Underwood, author of the bill that became law,
 # wrote in a press release (2000-12-27) that he will seek the use of "ChST".
 
+# See also the commentary for Micronesia.
 
-# Micronesia
+
+# Marshall Is
+# See the commentary for Micronesia.
+
+
+# Micronesia (and nearby)
+
+# From Paul Eggert (2018-11-18):
+# Like the Ladrones (see Guam commentary), assume the Spanish East Indies
+# kept American time until the Philippines switched at the end of 1844.
 
 # Alan Eugene Davis writes (1996-03-16),
 # "I am certain, having lived there for the past decade, that 'Truk'
@@ -1605,6 +1708,95 @@ Zone	Pacific/Wallis	12:15:20 -	LMT	1901
 # http://www.fsmgov.org/info/clocks.html
 # that Truk and Yap are UT +10, and Ponape and Kosrae are +11.
 # We don't know when Kosrae switched from +12; assume January 1 for now.
+
+# From Phake Nick (2018-10-27):
+#
+# From a Japanese wiki site https://wiki.suikawiki.org/n/南洋群島の標準時
+# ...
+# For "Southern Islands" (modern region of Mariana + Palau + Federation of
+# Micronesia + Marshall Islands):
+#
+# A 1906 Japanese magazine shown the Caroline Islands and Mariana Islands
+# who was occupied by Germany at the time as GMT+10, together with the like
+# of German New Guinea.  However there is a marking saying it have not been
+# implemented (yet).  No further information after that were found.
+#
+# Japan invaded those islands in 1914, and records shows that they were
+# instructed to use JST at the time.
+#
+# 1915 January telecommunication record on the Jaluit Atoll shows they use
+# the meridian of 170E as standard time (GMT+11:20), which is similar to the
+# longitude of the atoll.
+# 1915 February record say the 170E standard time is to be used until
+# February 9 noon, and after February 9 noon they are to use JST.
+# However these are time used within the Japanese Military at the time and
+# probably does not reflect the time used by local resident at the time (that
+# is if they keep their own time back then)
+#
+# In January 1919 the occupying force issued a command that split the area
+# into three different timezone with meridian of 135E, 150E, 165E (JST+0, +1,
+# +2), and the command was to become effective from February 1 of the same
+# year.  Despite the target of the command is still only for the occupying
+# force itself, further publication have described the time as the standard
+# time for the occupied area and thus it can probably be seen as such.
+#  * Area that use meridian of 135E: Palau and Yap civil administration area
+#    (Southern Islands Western Standard Time)
+#  * Area that use meridian of 150E: Truk (Chuuk) and Saipan civil
+#    administration area (Southern Islands Central Standard Time)
+#  * Area that use meridian of 165E: Ponape (Pohnpei) and Jaluit civil
+#    administration area (Southern Islands Eastern Standard Time).
+#  * In the next few years Japanese occupation of those islands have been
+#    formalized via League of Nation Mandate (South Pacific Mandate) and formal
+#    governance structure have been established, these district [become
+#    subprefectures] and timezone classification have been inherited as standard
+#    time of the area.
+#  * Saipan subprefecture include Mariana islands (exclude Guam which was
+#    occupied by America at the time), Palau and Yap subprefecture rule the
+#    Western Caroline Islands with 137E longitude as border, Truk and Ponape
+#    subprefecture rule the Eastern Caroline Islands with 154E as border, Ponape
+#    subprefecture also rule part of Marshall Islands to the west of 164E
+#    starting from (1918?) and Jaluit subprefecture rule the rest of the
+#    Marshall Islands.
+#
+# And then in year 1937, an announcement was made to change the time in the
+# area into 2 timezones:
+#  * Area that use meridian of 135E: area administered by Palau, Yap and
+#    Saipan subprefecture (Southern Islands Western Standard Time)
+#  * Area that use meridian of 150E: area administered by Truk (Chuuk),
+#    Ponape (Pohnpei) and Jaluit subprefecture (Southern Islands Eastern
+#    Standard Time)
+#
+# Another announcement issued in 1941 say that on April 1 that year,
+# standard time of the Southern Islands would be changed to use the meridian
+# of 135E (GMT+9), and thus abolishing timezone different within the area.
+#
+# Then Pacific theater of WWII started and Japan slowly lose control on the
+# island.  The webpage I linked above contain no information during this
+# period of time....
+#
+# After the end of WWII, in 1946 February, a document written by the
+# (former?) Japanese military personnel describe there are 3 hours time
+# different between Caroline islands time/Wake island time and the Chungking
+# time, which would mean the time being used there at the time was GMT+10.
+#
+# After that, the area become Trust Territories of the Pacific Islands
+# under American administration from year 1947.  The site listed some
+# American/International books/maps/publications about time used in those
+# area during this period of time but they doesn't seems to be reliable
+# information so it would be the best if someone know where can more reliable
+# information can be found.
+#
+#
+# From Paul Eggert (2018-11-18):
+#
+# For the above, use vague dates like "1914" and "1945" for transitions that
+# plausibly exist but for which the details are not known.  The information
+# for Wake is too sketchy to act on.
+#
+# The 1906 GMT+10 info about German-controlled islands might not have been
+# done, so omit it from the data for now.
+#
+# The Jaluit info governs Kwajalein.
 
 
 # Midway
@@ -1623,6 +1815,29 @@ Zone	Pacific/Wallis	12:15:20 -	LMT	1901
 # started DST on June 3.  Possibly DST was observed other years
 # in Midway, but we have no record of it.
 
+# Nauru
+
+# From Phake Nick (2018-10-31):
+# Currently, the tz database say Nauru use LMT until 1921, and then
+# switched to GMT+11:30 for the next two decades.
+# However, a number of timezone map published in America/Japan back then
+# showed its timezone as GMT+11 per https://wiki.suikawiki.org/n/ナウルの標準時
+# And it would also be nice if the 1921 transition date could be sourced.
+# ...
+# The "Nauru Standard Time Act 1978 Time Change"
+# http://ronlaw.gov.nr/nauru_lpms/files/gazettes/4b23a17d2030150404db7a5fa5872f52.pdf#page=3
+# based on "Nauru Standard Time Act 1978 Time Change"
+# http://www.paclii.org/nr/legis/num_act/nsta1978207/ defined that "Nauru
+# Alternative Time" (GMT+12) should be in effect from 1979 Feb.
+#
+# From Paul Eggert (2018-11-19):
+# The 1921-01-15 introduction of standard time is in Shanks; it is also in
+# "Standard Time Throughout the World", US National Bureau of Standards (1935),
+# page 3, which does not give the UT offset.  In response to a comment by
+# Phake Nick I set the Nauru time of occupation by Japan to
+# 1942-08-29/1945-09-08 by using dates from:
+# https://en.wikipedia.org/wiki/Japanese_occupation_of_Nauru
+
 # Norfolk
 
 # From Alexander Krivenyshev (2015-09-23):
@@ -1637,6 +1852,9 @@ Zone	Pacific/Wallis	12:15:20 -	LMT	1901
 # Norfolk Island station, and found no record of Norfolk observing DST
 # other than in 1974/5.  See:
 # https://www.timeanddate.com/time/australia/norfolk-island.html
+
+# Palau
+# See commentary for Micronesia.
 
 # Pitcairn
 
@@ -1801,6 +2019,9 @@ Zone	Pacific/Wallis	12:15:20 -	LMT	1901
 
 # From Paul Eggert (2003-03-23):
 # We have no other report of DST in Wake Island, so omit this info for now.
+
+# See also the commentary for Micronesia.
+
 
 ###############################################################################
 

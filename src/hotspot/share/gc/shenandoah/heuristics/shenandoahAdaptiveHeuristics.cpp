@@ -35,18 +35,7 @@ ShenandoahAdaptiveHeuristics::ShenandoahAdaptiveHeuristics() :
   ShenandoahHeuristics(),
   _cycle_gap_history(new TruncatedSeq(5)),
   _conc_mark_duration_history(new TruncatedSeq(5)),
-  _conc_uprefs_duration_history(new TruncatedSeq(5)) {
-
-  SHENANDOAH_ERGO_ENABLE_FLAG(ExplicitGCInvokesConcurrent);
-  SHENANDOAH_ERGO_ENABLE_FLAG(ShenandoahImplicitGCInvokesConcurrent);
-
-  // Final configuration checks
-  SHENANDOAH_CHECK_FLAG_SET(ShenandoahLoadRefBarrier);
-  SHENANDOAH_CHECK_FLAG_SET(ShenandoahSATBBarrier);
-  SHENANDOAH_CHECK_FLAG_SET(ShenandoahKeepAliveBarrier);
-  SHENANDOAH_CHECK_FLAG_SET(ShenandoahCASBarrier);
-  SHENANDOAH_CHECK_FLAG_SET(ShenandoahCloneBarrier);
-}
+  _conc_uprefs_duration_history(new TruncatedSeq(5)) {}
 
 ShenandoahAdaptiveHeuristics::~ShenandoahAdaptiveHeuristics() {}
 
@@ -121,7 +110,7 @@ void ShenandoahAdaptiveHeuristics::record_phase_time(ShenandoahPhaseTimings::Pha
   } // Else ignore
 }
 
-bool ShenandoahAdaptiveHeuristics::should_start_normal_gc() const {
+bool ShenandoahAdaptiveHeuristics::should_start_gc() const {
   ShenandoahHeap* heap = ShenandoahHeap::heap();
   size_t capacity = heap->max_capacity();
   size_t available = heap->free_set()->available();
@@ -172,7 +161,7 @@ bool ShenandoahAdaptiveHeuristics::should_start_normal_gc() const {
     return true;
   }
 
-  return ShenandoahHeuristics::should_start_normal_gc();
+  return ShenandoahHeuristics::should_start_gc();
 }
 
 bool ShenandoahAdaptiveHeuristics::should_start_update_refs() {
