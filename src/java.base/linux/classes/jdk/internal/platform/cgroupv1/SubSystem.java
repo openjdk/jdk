@@ -132,7 +132,7 @@ public class SubSystem {
             retval = Long.parseLong(strval);
         } catch (NumberFormatException e) {
             // For some properties (e.g. memory.limit_in_bytes) we may overflow the range of signed long.
-            // In this case, return Long.max
+            // In this case, return Long.MAX_VALUE
             BigInteger b = new BigInteger(strval);
             if (b.compareTo(BigInteger.valueOf(Long.MAX_VALUE)) > 0) {
                 return Long.MAX_VALUE;
