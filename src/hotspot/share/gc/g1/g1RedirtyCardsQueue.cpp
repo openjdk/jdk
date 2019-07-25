@@ -31,15 +31,15 @@
 // G1RedirtyCardsBufferList
 
 G1RedirtyCardsBufferList::G1RedirtyCardsBufferList() :
-  _head(NULL), _tail(NULL), _count(0) {}
+  _head(NULL), _tail(NULL), _entry_count(0) {}
 
 G1RedirtyCardsBufferList::G1RedirtyCardsBufferList(BufferNode* head,
                                                    BufferNode* tail,
-                                                   size_t count) :
-  _head(head), _tail(tail), _count(count)
+                                                   size_t entry_count) :
+  _head(head), _tail(tail), _entry_count(entry_count)
 {
   assert((_head == NULL) == (_tail == NULL), "invariant");
-  assert((_head == NULL) == (_count == 0), "invariant");
+  assert((_head == NULL) == (_entry_count == 0), "invariant");
 }
 
 // G1RedirtyCardsQueueBase::LocalQSet
@@ -55,11 +55,11 @@ G1RedirtyCardsQueueBase::LocalQSet::LocalQSet(G1RedirtyCardsQueueSet* shared_qse
 G1RedirtyCardsQueueBase::LocalQSet::~LocalQSet() {
   assert(_buffers._head == NULL, "unflushed qset");
   assert(_buffers._tail == NULL, "invariant");
-  assert(_buffers._count == 0, "invariant");
+  assert(_buffers._entry_count == 0, "invariant");
 }
 
 void G1RedirtyCardsQueueBase::LocalQSet::enqueue_completed_buffer(BufferNode* node) {
-  ++_buffers._count;
+  _buffers._entry_count += buffer_size() - node->index();
   node->set_next(_buffers._head);
   _buffers._head = node;
   if (_buffers._tail == NULL) {
@@ -67,8 +67,7 @@ void G1RedirtyCardsQueueBase::LocalQSet::enqueue_completed_buffer(BufferNode* no
   }
 }
 
-G1RedirtyCardsBufferList
-G1RedirtyCardsQueueBase::LocalQSet::take_all_completed_buffers() {
+G1RedirtyCardsBufferList G1RedirtyCardsQueueBase::LocalQSet::take_all_completed_buffers() {
   G1RedirtyCardsBufferList result = _buffers;
   _buffers = G1RedirtyCardsBufferList();
   return result;
@@ -103,7 +102,7 @@ void G1RedirtyCardsQueue::flush() {
 G1RedirtyCardsQueueSet::G1RedirtyCardsQueueSet() :
   PtrQueueSet(),
   _list(),
-  _count(0),
+  _entry_count(0),
   _tail(NULL)
   DEBUG_ONLY(COMMA _collecting(true))
 {}
@@ -116,7 +115,7 @@ G1RedirtyCardsQueueSet::~G1RedirtyCardsQueueSet() {
 void G1RedirtyCardsQueueSet::verify_empty() const {
   assert(_list.empty(), "precondition");
   assert(_tail == NULL, "invariant");
-  assert(_count == 0, "invariant");
+  assert(_entry_count == 0, "invariant");
 }
 #endif // ASSERT
 
@@ -127,9 +126,9 @@ BufferNode* G1RedirtyCardsQueueSet::all_completed_buffers() const {
 
 G1RedirtyCardsBufferList G1RedirtyCardsQueueSet::take_all_completed_buffers() {
   DEBUG_ONLY(_collecting = false;)
-  G1RedirtyCardsBufferList result(_list.pop_all(), _tail, _count);
+  G1RedirtyCardsBufferList result(_list.pop_all(), _tail, _entry_count);
   _tail = NULL;
-  _count = 0;
+  _entry_count = 0;
   DEBUG_ONLY(_collecting = true;)
   return result;
 }
@@ -146,7 +145,7 @@ void G1RedirtyCardsQueueSet::update_tail(BufferNode* node) {
 
 void G1RedirtyCardsQueueSet::enqueue_completed_buffer(BufferNode* node) {
   assert(_collecting, "precondition");
-  Atomic::inc(&_count);
+  Atomic::add(buffer_size() - node->index(), &_entry_count);
   _list.push(*node);
   update_tail(node);
 }
@@ -156,7 +155,7 @@ void G1RedirtyCardsQueueSet::merge_bufferlist(LocalQSet* src) {
   const G1RedirtyCardsBufferList from = src->take_all_completed_buffers();
   if (from._head != NULL) {
     assert(from._tail != NULL, "invariant");
-    Atomic::add(from._count, &_count);
+    Atomic::add(from._entry_count, &_entry_count);
     _list.prepend(*from._head, *from._tail);
     update_tail(from._tail);
   }

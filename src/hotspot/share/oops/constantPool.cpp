@@ -760,6 +760,10 @@ Symbol* ConstantPool::exception_message(const constantPoolHandle& this_cp, int w
     // return the method type signature in the error message
     message = this_cp->method_type_signature_at(which);
     break;
+  case JVM_CONSTANT_Dynamic:
+    // return the name of the condy in the error message
+    message = this_cp->uncached_name_ref_at(which);
+    break;
   default:
     ShouldNotReachHere();
   }

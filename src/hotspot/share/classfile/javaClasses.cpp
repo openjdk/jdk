@@ -4547,9 +4547,6 @@ void JavaClasses::compute_offsets() {
   // BASIC_JAVA_CLASSES_DO_PART1 classes (java_lang_String and java_lang_Class)
   // earlier inside SystemDictionary::resolve_well_known_classes()
   BASIC_JAVA_CLASSES_DO_PART2(DO_COMPUTE_OFFSETS);
-
-  // generated interpreter code wants to know about the offsets we just computed:
-  AbstractAssembler::update_delayed_values();
 }
 
 #if INCLUDE_CDS

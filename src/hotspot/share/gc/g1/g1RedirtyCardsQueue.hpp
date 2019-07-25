@@ -36,10 +36,10 @@ class G1RedirtyCardsQueueSet;
 struct G1RedirtyCardsBufferList {
   BufferNode* _head;
   BufferNode* _tail;
-  size_t _count;
+  size_t _entry_count;
 
   G1RedirtyCardsBufferList();
-  G1RedirtyCardsBufferList(BufferNode* head, BufferNode* tail, size_t count);
+  G1RedirtyCardsBufferList(BufferNode* head, BufferNode* tail, size_t entry_count);
 };
 
 // Provide G1RedirtyCardsQueue with a thread-local qset.  It provides an
@@ -100,7 +100,7 @@ class G1RedirtyCardsQueueSet : public PtrQueueSet {
   DEFINE_PAD_MINUS_SIZE(1, DEFAULT_CACHE_LINE_SIZE, 0);
   BufferNode::Stack _list;
   DEFINE_PAD_MINUS_SIZE(2, DEFAULT_CACHE_LINE_SIZE, sizeof(size_t));
-  volatile size_t _count;
+  volatile size_t _entry_count;
   DEFINE_PAD_MINUS_SIZE(3, DEFAULT_CACHE_LINE_SIZE, sizeof(BufferNode*));
   BufferNode* _tail;
   DEBUG_ONLY(mutable bool _collecting;)

@@ -48,6 +48,7 @@
 #include "gc/g1/g1HotCardCache.hpp"
 #include "gc/g1/g1MemoryPool.hpp"
 #include "gc/g1/g1OopClosures.inline.hpp"
+#include "gc/g1/g1ParallelCleaning.hpp"
 #include "gc/g1/g1ParScanThreadState.inline.hpp"
 #include "gc/g1/g1Policy.hpp"
 #include "gc/g1/g1RedirtyCardsQueue.hpp"
@@ -74,7 +75,6 @@
 #include "gc/shared/generationSpec.hpp"
 #include "gc/shared/isGCActiveMark.hpp"
 #include "gc/shared/oopStorageParState.hpp"
-#include "gc/shared/parallelCleaning.hpp"
 #include "gc/shared/preservedMarks.inline.hpp"
 #include "gc/shared/suspendibleThreadSet.hpp"
 #include "gc/shared/referenceProcessor.inline.hpp"
@@ -1080,7 +1080,7 @@ void G1CollectedHeap::abort_refinement() {
 
   // Discard all remembered set updates.
   G1BarrierSet::dirty_card_queue_set().abandon_logs();
-  assert(G1BarrierSet::dirty_card_queue_set().completed_buffers_num() == 0,
+  assert(G1BarrierSet::dirty_card_queue_set().num_completed_buffers() == 0,
          "DCQS should be empty");
   redirty_cards_queue_set().verify_empty();
 }
@@ -1957,7 +1957,7 @@ void G1CollectedHeap::iterate_dirty_card_closure(G1CardTableEntryClosure* cl, ui
   while (dcqs.apply_closure_during_gc(cl, worker_i)) {
     n_completed_buffers++;
   }
-  assert(dcqs.completed_buffers_num() == 0, "Completed buffers exist!");
+  assert(dcqs.num_completed_buffers() == 0, "Completed buffers exist!");
   phase_times()->record_thread_work_item(G1GCPhaseTimes::MergeLB, worker_i, n_completed_buffers, G1GCPhaseTimes::MergeLBProcessedBuffers);
 }
 
@@ -2613,10 +2613,9 @@ size_t G1CollectedHeap::pending_card_num() {
   Threads::threads_do(&count_from_threads);
 
   G1DirtyCardQueueSet& dcqs = G1BarrierSet::dirty_card_queue_set();
-  size_t buffer_size = dcqs.buffer_size();
-  size_t buffer_num = dcqs.completed_buffers_num();
+  dcqs.verify_num_entries_in_completed_buffers();
 
-  return buffer_size * buffer_num + count_from_threads._cards;
+  return dcqs.num_entries_in_completed_buffers() + count_from_threads._cards;
 }
 
 bool G1CollectedHeap::is_potential_eager_reclaim_candidate(HeapRegion* r) const {
@@ -3166,7 +3165,7 @@ void G1ParEvacuateFollowersClosure::do_void() {
 void G1CollectedHeap::complete_cleaning(BoolObjectClosure* is_alive,
                                         bool class_unloading_occurred) {
   uint num_workers = workers()->active_workers();
-  ParallelCleaningTask unlink_task(is_alive, num_workers, class_unloading_occurred, false);
+  G1ParallelCleaningTask unlink_task(is_alive, num_workers, class_unloading_occurred, false);
   workers()->run_task(&unlink_task);
 }
 

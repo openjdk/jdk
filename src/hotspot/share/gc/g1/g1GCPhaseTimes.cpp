@@ -86,8 +86,14 @@ G1GCPhaseTimes::G1GCPhaseTimes(STWGCTimer* gc_timer, uint max_gc_threads) :
   _gc_par_phases[MergeLB] = new WorkerDataArray<double>(max_gc_threads, "Log Buffers (ms):");
   if (G1HotCardCache::default_use_cache()) {
     _gc_par_phases[MergeHCC] = new WorkerDataArray<double>(max_gc_threads, "Hot Card Cache (ms):");
+    _merge_hcc_dirty_cards = new WorkerDataArray<size_t>(max_gc_threads, "Dirty Cards:");
+    _gc_par_phases[MergeHCC]->link_thread_work_items(_merge_hcc_dirty_cards, MergeHCCDirtyCards);
+    _merge_hcc_skipped_cards = new WorkerDataArray<size_t>(max_gc_threads, "Skipped Cards:");
+    _gc_par_phases[MergeHCC]->link_thread_work_items(_merge_hcc_skipped_cards, MergeHCCSkippedCards);
   } else {
     _gc_par_phases[MergeHCC] = NULL;
+    _merge_hcc_dirty_cards = NULL;
+    _merge_hcc_skipped_cards = NULL;
   }
   _gc_par_phases[ScanHR] = new WorkerDataArray<double>(max_gc_threads, "Scan Heap Roots (ms):");
   _gc_par_phases[OptScanHR] = new WorkerDataArray<double>(max_gc_threads, "Optional Scan Heap Roots (ms):");

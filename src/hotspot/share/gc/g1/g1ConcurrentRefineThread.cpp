@@ -104,7 +104,7 @@ void G1ConcurrentRefineThread::run_service() {
     size_t buffers_processed = 0;
     log_debug(gc, refine)("Activated worker %d, on threshold: " SIZE_FORMAT ", current: " SIZE_FORMAT,
                           _worker_id, _cr->activation_threshold(_worker_id),
-                           G1BarrierSet::dirty_card_queue_set().completed_buffers_num());
+                           G1BarrierSet::dirty_card_queue_set().num_completed_buffers());
 
     {
       SuspendibleThreadSetJoiner sts_join;
@@ -126,7 +126,7 @@ void G1ConcurrentRefineThread::run_service() {
     log_debug(gc, refine)("Deactivated worker %d, off threshold: " SIZE_FORMAT
                           ", current: " SIZE_FORMAT ", processed: " SIZE_FORMAT,
                           _worker_id, _cr->deactivation_threshold(_worker_id),
-                          G1BarrierSet::dirty_card_queue_set().completed_buffers_num(),
+                          G1BarrierSet::dirty_card_queue_set().num_completed_buffers(),
                           buffers_processed);
 
     if (os::supports_vtime()) {
