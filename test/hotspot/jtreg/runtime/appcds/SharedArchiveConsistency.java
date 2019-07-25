@@ -418,8 +418,16 @@ public class SharedArchiveConsistency {
         output.shouldNotContain("Checksum verification failed");
 
         copyFile(orgJsaFile, jsa);
+        // modify _jvm_ident and run with -Xshare:auto
+        System.out.println("\n2b. Corrupt _jvm_ident run with -Xshare:auto\n");
+        modifyJvmIdent();
+        output = TestCommon.execAuto(execArgs);
+        output.shouldContain("The shared archive file was created by a different version or build of HotSpot");
+        output.shouldContain("Hello World");
+
+        copyFile(orgJsaFile, jsa);
         // modify _magic and _paths_misc_info_size, test should fail
-        System.out.println("\n2b. Corrupt _magic and _paths_misc_info_size, should fail\n");
+        System.out.println("\n2c. Corrupt _magic and _paths_misc_info_size, should fail\n");
         modifyHeaderIntField(offset_magic, 0x00000000);
         modifyHeaderIntField(offset_paths_misc_info_size, Integer.MAX_VALUE);
         output = TestCommon.execCommon(execArgs);
@@ -428,7 +436,7 @@ public class SharedArchiveConsistency {
 
         copyFile(orgJsaFile, jsa);
         // modify _version and _paths_misc_info_size, test should fail
-        System.out.println("\n2c. Corrupt _version and _paths_misc_info_size, should fail\n");
+        System.out.println("\n2d. Corrupt _version and _paths_misc_info_size, should fail\n");
         modifyHeaderIntField(offset_version, 0x00000000);
         modifyHeaderIntField(offset_paths_misc_info_size, Integer.MAX_VALUE);
         output = TestCommon.execCommon(execArgs);
