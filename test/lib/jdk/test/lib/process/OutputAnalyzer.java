@@ -27,6 +27,7 @@ import jdk.test.lib.Asserts;
 
 import java.io.IOException;
 import java.io.PrintStream;
+import java.nio.charset.Charset;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Arrays;
@@ -38,6 +39,18 @@ import java.util.regex.Pattern;
 public final class OutputAnalyzer {
 
     private final OutputBuffer buffer;
+    /**
+     * Create an OutputAnalyzer, a utility class for verifying output and exit
+     * value from a Process
+     *
+     * @param process Process to analyze
+     * @param cs The charset used to convert stdout/stderr from bytes to chars
+     *           or null for the default charset.
+     * @throws IOException If an I/O error occurs.
+     */
+    public OutputAnalyzer(Process process, Charset cs) throws IOException {
+        buffer = OutputBuffer.of(process, cs);
+    }
     /**
      * Create an OutputAnalyzer, a utility class for verifying output and exit
      * value from a Process

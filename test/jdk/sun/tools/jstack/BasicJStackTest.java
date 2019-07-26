@@ -22,6 +22,8 @@
  */
 
 import java.util.Arrays;
+import java.nio.charset.Charset;
+import java.nio.charset.StandardCharsets;
 
 import jdk.test.lib.process.OutputAnalyzer;
 import jdk.test.lib.process.ProcessTools;
@@ -36,29 +38,40 @@ import jdk.test.lib.JDKToolLauncher;
 public class BasicJStackTest {
 
     private static ProcessBuilder processBuilder = new ProcessBuilder();
-    private static String markerName = "markerName" + "\u00e4\u0bb5".repeat(10_000);
 
     public static void main(String[] args) throws Exception {
         testJstackNoArgs();
         testJstack_l();
+        testJstackUTF8Encoding();
     }
 
     private static void testJstackNoArgs() throws Exception {
-        OutputAnalyzer output = jstack();
+        String marker = "testJstackNoArgs";
+        OutputAnalyzer output = jstack(marker);
         output.shouldHaveExitValue(0);
-        output.shouldContain(markerName);
+        output.shouldContain(marker);
     }
 
     private static void testJstack_l() throws Exception {
-        OutputAnalyzer output = jstack("-l");
+        String marker = "testJstack_l";
+        OutputAnalyzer output = jstack(marker, "-l");
         output.shouldHaveExitValue(0);
-        output.shouldContain(markerName);
+        output.shouldContain(marker);
     }
 
-    private static OutputAnalyzer jstack(String... toolArgs) throws Exception {
-        Thread.currentThread().setName(markerName);
+    private static void testJstackUTF8Encoding() throws Exception {
+        String marker = "markerName" + "\u00e4\u0bb5".repeat(60);
+        OutputAnalyzer output = jstack(marker);
+        output.shouldHaveExitValue(0);
+        output.shouldContain(marker);
+    }
+
+    private static OutputAnalyzer jstack(String marker, String... toolArgs) throws Exception {
+        Charset cs = StandardCharsets.UTF_8;
+        Thread.currentThread().setName(marker);
         JDKToolLauncher launcher = JDKToolLauncher.createUsingTestJDK("jstack");
         launcher.addVMArg("-XX:+UsePerfData");
+        launcher.addVMArg("-Dfile.encoding=" + cs);
         if (toolArgs != null) {
             for (String toolArg : toolArgs) {
                 launcher.addToolArg(toolArg);
@@ -68,7 +81,7 @@ public class BasicJStackTest {
 
         processBuilder.command(launcher.getCommand());
         System.out.println(Arrays.toString(processBuilder.command().toArray()).replace(",", ""));
-        OutputAnalyzer output = ProcessTools.executeProcess(processBuilder);
+        OutputAnalyzer output = ProcessTools.executeProcess(processBuilder, null, cs);
         System.out.println(output.getOutput());
 
         return output;
