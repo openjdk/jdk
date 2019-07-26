@@ -114,8 +114,4 @@
   // listed in the oop section.
   static bool mustIterateImmediateOopsInCode() { return false; }
 
-  // Store the new target address into an oop_Relocation cell, if any.
-  // Return indication if update happened.
-  static bool update_oop_pool(address begin, address end, address newTarget, CodeBlob* cb);
-
 #endif // CPU_S390_RELOCINFO_S390_HPP

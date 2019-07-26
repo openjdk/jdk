@@ -475,12 +475,42 @@ address NativeMovConstReg::set_data_plain(intptr_t src, CodeBlob *cb) {
 // Divided up in set_data_plain() which patches the instruction in the
 // code stream and set_data() which additionally patches the oop pool
 // if necessary.
-void NativeMovConstReg::set_data(intptr_t src) {
+void NativeMovConstReg::set_data(intptr_t data, relocInfo::relocType expected_type) {
   // Also store the value into an oop_Relocation cell, if any.
   CodeBlob *cb = CodeCache::find_blob(instruction_address());
-  address next_address = set_data_plain(src, cb);
+  address next_address = set_data_plain(data, cb);
 
-  relocInfo::update_oop_pool(instruction_address(), next_address, (address)src, cb);
+  // 'RelocIterator' requires an nmethod
+  nmethod* nm = cb ? cb->as_nmethod_or_null() : NULL;
+  if (nm != NULL) {
+    RelocIterator iter(nm, instruction_address(), next_address);
+    oop* oop_addr = NULL;
+    Metadata** metadata_addr = NULL;
+    while (iter.next()) {
+      if (iter.type() == relocInfo::oop_type) {
+        oop_Relocation *r = iter.oop_reloc();
+        if (oop_addr == NULL) {
+          oop_addr = r->oop_addr();
+          *oop_addr = cast_to_oop(data);
+        } else {
+          assert(oop_addr == r->oop_addr(), "must be only one set-oop here");
+        }
+      }
+      if (iter.type() == relocInfo::metadata_type) {
+        metadata_Relocation *r = iter.metadata_reloc();
+        if (metadata_addr == NULL) {
+          metadata_addr = r->metadata_addr();
+          *metadata_addr = (Metadata*)data;
+        } else {
+          assert(metadata_addr == r->metadata_addr(), "must be only one set-metadata here");
+        }
+      }
+    }
+    assert(expected_type == relocInfo::none ||
+          (expected_type == relocInfo::metadata_type && metadata_addr != NULL) ||
+          (expected_type == relocInfo::oop_type && oop_addr != NULL),
+          "%s relocation not found", expected_type == relocInfo::oop_type ? "oop" : "metadata");
+  }
 }
 
 void NativeMovConstReg::set_narrow_oop(intptr_t data) {
@@ -510,7 +540,7 @@ void NativeMovConstReg::set_narrow_klass(intptr_t data) {
   ICache::invalidate_range(start, range);
 }
 
-void NativeMovConstReg::set_pcrel_addr(intptr_t newTarget, CompiledMethod *passed_nm /* = NULL */, bool copy_back_to_oop_pool) {
+void NativeMovConstReg::set_pcrel_addr(intptr_t newTarget, CompiledMethod *passed_nm /* = NULL */) {
   address next_address;
   address loc = addr_at(0);
 
@@ -533,20 +563,9 @@ void NativeMovConstReg::set_pcrel_addr(intptr_t newTarget, CompiledMethod *passe
     assert(false, "Not a NativeMovConstReg site for set_pcrel_addr");
     next_address = next_instruction_address(); // Failure should be handled in next_instruction_address().
   }
-
-  if (copy_back_to_oop_pool) {
-    if (relocInfo::update_oop_pool(instruction_address(), next_address, (address)newTarget, NULL)) {
-      ((NativeMovConstReg*)instruction_address())->dump(64, "NativeMovConstReg::set_pcrel_addr(): found oop reloc for pcrel_addr");
-#ifdef LUCY_DBG
-      VM_Version::z_SIGSEGV();
-#else
-      assert(false, "Ooooops: found oop reloc for pcrel_addr");
-#endif
-    }
-  }
 }
 
-void NativeMovConstReg::set_pcrel_data(intptr_t newData, CompiledMethod *passed_nm /* = NULL */, bool copy_back_to_oop_pool) {
+void NativeMovConstReg::set_pcrel_data(intptr_t newData, CompiledMethod *passed_nm /* = NULL */) {
   address  next_address;
   address  loc = addr_at(0);
 
@@ -572,17 +591,6 @@ void NativeMovConstReg::set_pcrel_data(intptr_t newData, CompiledMethod *passed_
   } else {
     assert(false, "Not a NativeMovConstReg site for set_pcrel_data");
     next_address = next_instruction_address(); // Failure should be handled in next_instruction_address().
-  }
-
-  if (copy_back_to_oop_pool) {
-    if (relocInfo::update_oop_pool(instruction_address(), next_address, (address)newData, NULL)) {
-      ((NativeMovConstReg*)instruction_address())->dump(64, "NativeMovConstReg::set_pcrel_data(): found oop reloc for pcrel_data");
-#ifdef LUCY_DBG
-      VM_Version::z_SIGSEGV();
-#else
-      assert(false, "Ooooops: found oop reloc for pcrel_data");
-#endif
-    }
   }
 }
 

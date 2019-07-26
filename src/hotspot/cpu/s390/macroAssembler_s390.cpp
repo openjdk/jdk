@@ -5891,7 +5891,7 @@ bool MacroAssembler::load_const_from_toc(Register dst, AddressLiteral& a, Regist
   if (tocOffset == -1) return false;
   address tocPos    = tocOffset + code()->consts()->start();
   assert((address)code()->consts()->start() != NULL, "Please add CP address");
-
+  relocate(a.rspec());
   load_long_pcrelative(dst, tocPos);
   return true;
 }
