@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -48,16 +48,23 @@ public class CheckDefaultArchiveFile {
         String vmName = System.getProperty("java.vm.name");
         String vmString = vmName + "(" + osArch + ")";
         String jsaString = wb.getDefaultArchivePath();
-        Path jsa = Paths.get(jsaString);
-        if (Platform.isDefaultCDSArchiveSupported()) {
-            if (Files.exists(jsa)) {
-                System.out.println("Passed. " + vmString +
-                                   ": has default classes.jsa file");
-            } else {
-                throw new RuntimeException(vmString + "has no " + jsaString);
+        System.out.println("classes.jsa location:" + jsaString);
+        if (jsaString == null) {
+            if (Platform.isDefaultCDSArchiveSupported()) {
+                throw new RuntimeException("default CDS archive supported, but classes.jsa path null");
             }
         } else {
-            throw new SkippedException("Default CDS archive is not supported");
+            Path jsa = Paths.get(jsaString);
+            if (Platform.isDefaultCDSArchiveSupported()) {
+                if (Files.exists(jsa)) {
+                    System.out.println("Passed. " + vmString +
+                                       ": has default classes.jsa file");
+                } else {
+                    throw new RuntimeException(vmString + "has no " + jsaString);
+                }
+            } else {
+                throw new SkippedException("Default CDS archive is not supported");
+            }
         }
     }
 }
