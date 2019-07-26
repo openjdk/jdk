@@ -1881,7 +1881,7 @@ Zone	Asia/Jerusalem	2:20:54 -	LMT	1880
 
 # Rule	NAME	FROM	TO	TYPE	IN	ON	AT	SAVE	LETTER/S
 Rule	Japan	1948	only	-	May	Sat>=1	24:00	1:00	D
-Rule	Japan	1948	1951	-	Sep	Sun>=9	 1:00	0	S
+Rule	Japan	1948	1951	-	Sep	Sat>=8	25:00	0	S
 Rule	Japan	1949	only	-	Apr	Sat>=1	24:00	1:00	D
 Rule	Japan	1950	1951	-	May	Sat>=1	24:00	1:00	D
 

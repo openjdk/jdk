@@ -941,7 +941,7 @@ Rule	Morocco	2012	only	-	Aug	20	 2:00	1:00	-
 Rule	Morocco	2012	only	-	Sep	30	 3:00	0	-
 Rule	Morocco	2013	only	-	Jul	 7	 3:00	0	-
 Rule	Morocco	2013	only	-	Aug	10	 2:00	1:00	-
-Rule	Morocco	2013	2017	-	Oct	lastSun	 3:00	0	-
+Rule	Morocco	2013	2018	-	Oct	lastSun	 3:00	0	-
 Rule	Morocco	2014	2018	-	Mar	lastSun	 2:00	1:00	-
 Rule	Morocco	2014	only	-	Jun	28	 3:00	0	-
 Rule	Morocco	2014	only	-	Aug	 2	 2:00	1:00	-
@@ -953,53 +953,53 @@ Rule	Morocco	2017	only	-	May	21	 3:00	0	-
 Rule	Morocco	2017	only	-	Jul	 2	 2:00	1:00	-
 Rule	Morocco	2018	only	-	May	13	 3:00	0	-
 Rule	Morocco	2018	only	-	Jun	17	 2:00	1:00	-
-Rule	Morocco	2019	only	-	May	 5	 3:00	0	-
-Rule	Morocco	2019	only	-	Jun	 9	 2:00	1:00	-
-Rule	Morocco	2020	only	-	Apr	19	 3:00	0	-
-Rule	Morocco	2020	only	-	May	24	 2:00	1:00	-
-Rule	Morocco	2021	only	-	Apr	11	 3:00	0	-
-Rule	Morocco	2021	only	-	May	16	 2:00	1:00	-
-Rule	Morocco	2022	only	-	Mar	27	 3:00	0	-
-Rule	Morocco	2022	only	-	May	 8	 2:00	1:00	-
-Rule	Morocco	2023	only	-	Mar	19	 3:00	0	-
-Rule	Morocco	2023	only	-	Apr	23	 2:00	1:00	-
-Rule	Morocco	2024	only	-	Mar	10	 3:00	0	-
-Rule	Morocco	2024	only	-	Apr	14	 2:00	1:00	-
-Rule	Morocco	2025	only	-	Feb	23	 3:00	0	-
-Rule	Morocco	2025	only	-	Apr	 6	 2:00	1:00	-
-Rule	Morocco	2026	only	-	Feb	15	 3:00	0	-
-Rule	Morocco	2026	only	-	Mar	22	 2:00	1:00	-
-Rule	Morocco	2027	only	-	Feb	 7	 3:00	0	-
-Rule	Morocco	2027	only	-	Mar	14	 2:00	1:00	-
-Rule	Morocco	2028	only	-	Jan	23	 3:00	0	-
-Rule	Morocco	2028	only	-	Feb	27	 2:00	1:00	-
-Rule	Morocco	2029	only	-	Jan	14	 3:00	0	-
-Rule	Morocco	2029	only	-	Feb	18	 2:00	1:00	-
-Rule	Morocco	2029	only	-	Dec	30	 3:00	0	-
-Rule	Morocco	2030	only	-	Feb	10	 2:00	1:00	-
-Rule	Morocco	2030	only	-	Dec	22	 3:00	0	-
-Rule	Morocco	2031	only	-	Jan	26	 2:00	1:00	-
-Rule	Morocco	2031	only	-	Dec	14	 3:00	0	-
-Rule	Morocco	2032	only	-	Jan	18	 2:00	1:00	-
-Rule	Morocco	2032	only	-	Nov	28	 3:00	0	-
-Rule	Morocco	2033	only	-	Jan	 9	 2:00	1:00	-
-Rule	Morocco	2033	only	-	Nov	20	 3:00	0	-
-Rule	Morocco	2033	only	-	Dec	25	 2:00	1:00	-
-Rule	Morocco	2034	only	-	Nov	 5	 3:00	0	-
-Rule	Morocco	2034	only	-	Dec	17	 2:00	1:00	-
-Rule	Morocco	2035	only	-	Oct	28	 3:00	0	-
-Rule	Morocco	2035	only	-	Dec	 2	 2:00	1:00	-
-Rule	Morocco	2036	only	-	Oct	19	 3:00	0	-
-Rule	Morocco	2036	only	-	Nov	23	 2:00	1:00	-
-Rule	Morocco	2037	only	-	Oct	 4	 3:00	0	-
-Rule	Morocco	2037	only	-	Nov	15	 2:00	1:00	-
+Rule	Morocco	2019	only	-	May	 5	 3:00	-1:00	-
+Rule	Morocco	2019	only	-	Jun	 9	 2:00	0	-
+Rule	Morocco	2020	only	-	Apr	19	 3:00	-1:00	-
+Rule	Morocco	2020	only	-	May	24	 2:00	0	-
+Rule	Morocco	2021	only	-	Apr	11	 3:00	-1:00	-
+Rule	Morocco	2021	only	-	May	16	 2:00	0	-
+Rule	Morocco	2022	only	-	Mar	27	 3:00	-1:00	-
+Rule	Morocco	2022	only	-	May	 8	 2:00	0	-
+Rule	Morocco	2023	only	-	Mar	19	 3:00	-1:00	-
+Rule	Morocco	2023	only	-	Apr	23	 2:00	0	-
+Rule	Morocco	2024	only	-	Mar	10	 3:00	-1:00	-
+Rule	Morocco	2024	only	-	Apr	14	 2:00	0	-
+Rule	Morocco	2025	only	-	Feb	23	 3:00	-1:00	-
+Rule	Morocco	2025	only	-	Apr	 6	 2:00	0	-
+Rule	Morocco	2026	only	-	Feb	15	 3:00	-1:00	-
+Rule	Morocco	2026	only	-	Mar	22	 2:00	0	-
+Rule	Morocco	2027	only	-	Feb	 7	 3:00	-1:00	-
+Rule	Morocco	2027	only	-	Mar	14	 2:00	0	-
+Rule	Morocco	2028	only	-	Jan	23	 3:00	-1:00	-
+Rule	Morocco	2028	only	-	Feb	27	 2:00	0	-
+Rule	Morocco	2029	only	-	Jan	14	 3:00	-1:00	-
+Rule	Morocco	2029	only	-	Feb	18	 2:00	0	-
+Rule	Morocco	2029	only	-	Dec	30	 3:00	-1:00	-
+Rule	Morocco	2030	only	-	Feb	10	 2:00	0	-
+Rule	Morocco	2030	only	-	Dec	22	 3:00	-1:00	-
+Rule	Morocco	2031	only	-	Jan	26	 2:00	0	-
+Rule	Morocco	2031	only	-	Dec	14	 3:00	-1:00	-
+Rule	Morocco	2032	only	-	Jan	18	 2:00	0	-
+Rule	Morocco	2032	only	-	Nov	28	 3:00	-1:00	-
+Rule	Morocco	2033	only	-	Jan	 9	 2:00	0	-
+Rule	Morocco	2033	only	-	Nov	20	 3:00	-1:00	-
+Rule	Morocco	2033	only	-	Dec	25	 2:00	0	-
+Rule	Morocco	2034	only	-	Nov	 5	 3:00	-1:00	-
+Rule	Morocco	2034	only	-	Dec	17	 2:00	0	-
+Rule	Morocco	2035	only	-	Oct	28	 3:00	-1:00	-
+Rule	Morocco	2035	only	-	Dec	 2	 2:00	0	-
+Rule	Morocco	2036	only	-	Oct	19	 3:00	-1:00	-
+Rule	Morocco	2036	only	-	Nov	23	 2:00	0	-
+Rule	Morocco	2037	only	-	Oct	 4	 3:00	-1:00	-
+Rule	Morocco	2037	only	-	Nov	15	 2:00	0	-
 
 # Zone	NAME		GMTOFF	RULES	FORMAT	[UNTIL]
 Zone Africa/Casablanca	-0:30:20 -	LMT	1913 Oct 26
 			 0:00	Morocco	+00/+01	1984 Mar 16
 			 1:00	-	+01	1986
 			 0:00	Morocco	+00/+01	2018 Oct 28  3:00
-			 0:00	Morocco	+00/+01
+			 1:00	Morocco	+01/+00
 
 # Western Sahara
 #
@@ -1015,7 +1015,7 @@ Zone Africa/Casablanca	-0:30:20 -	LMT	1913 Oct 26
 Zone Africa/El_Aaiun	-0:52:48 -	LMT	1934 Jan # El Aaiún
 			-1:00	-	-01	1976 Apr 14
 			 0:00	Morocco	+00/+01	2018 Oct 28  3:00
-			 0:00	Morocco	+00/+01
+			 1:00	Morocco	+01/+00
 
 # Mozambique
 #
@@ -1087,13 +1087,13 @@ Link Africa/Maputo Africa/Lusaka	# Zambia
 
 # RULE	NAME	FROM	TO	TYPE	IN	ON	AT	SAVE	LETTER/S
 # Vanguard section, for zic and other parsers that support negative DST.
-#Rule	Namibia	1994	only	-	Mar	21	0:00	-1:00	WAT
-#Rule	Namibia	1994	2017	-	Sep	Sun>=1	2:00	0	CAT
-#Rule	Namibia	1995	2017	-	Apr	Sun>=1	2:00	-1:00	WAT
+Rule	Namibia	1994	only	-	Mar	21	0:00	-1:00	WAT
+Rule	Namibia	1994	2017	-	Sep	Sun>=1	2:00	0	CAT
+Rule	Namibia	1995	2017	-	Apr	Sun>=1	2:00	-1:00	WAT
 # Rearguard section, for parsers that do not support negative DST.
-Rule	Namibia	1994	only	-	Mar	21	0:00	0	WAT
-Rule	Namibia	1994	2017	-	Sep	Sun>=1	2:00	1:00	CAT
-Rule	Namibia	1995	2017	-	Apr	Sun>=1	2:00	0	WAT
+#Rule	Namibia	1994	only	-	Mar	21	0:00	0	WAT
+#Rule	Namibia	1994	2017	-	Sep	Sun>=1	2:00	1:00	CAT
+#Rule	Namibia	1995	2017	-	Apr	Sun>=1	2:00	0	WAT
 # End of rearguard section.
 
 # Zone	NAME		GMTOFF	RULES	FORMAT	[UNTIL]
@@ -1103,14 +1103,14 @@ Zone	Africa/Windhoek	1:08:24 -	LMT	1892 Feb 8
 			2:00	1:00	SAST	1943 Mar 21  2:00
 			2:00	-	SAST	1990 Mar 21 # independence
 # Vanguard section, for zic and other parsers that support negative DST.
-#			2:00	Namibia	%s
+			2:00	Namibia	%s
 # Rearguard section, for parsers that do not support negative DST.
-			2:00	-	CAT	1994 Mar 21  0:00
+#			2:00	-	CAT	1994 Mar 21  0:00
 # From Paul Eggert (2017-04-07):
 # The official date of the 2017 rule change was 2017-10-24.  See:
 # http://www.lac.org.na/laws/annoSTAT/Namibian%20Time%20Act%209%20of%202017.pdf
-			1:00	Namibia	%s	2017 Oct 24
-			2:00	-	CAT
+#			1:00	Namibia	%s	2017 Oct 24
+#			2:00	-	CAT
 # End of rearguard section.
 
 # Niger
