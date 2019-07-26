@@ -25,19 +25,27 @@ package validation;
 
 
 import java.io.File;
-import java.net.URL;
-
+import java.io.FileInputStream;
 import javax.xml.XMLConstants;
+import javax.xml.parsers.SAXParserFactory;
+import javax.xml.stream.XMLInputFactory;
+import javax.xml.stream.XMLStreamReader;
+import javax.xml.stream.events.XMLEvent;
+import javax.xml.transform.Source;
+import javax.xml.transform.sax.SAXSource;
 import javax.xml.transform.stream.StreamSource;
 import javax.xml.validation.Schema;
 import javax.xml.validation.SchemaFactory;
 import javax.xml.validation.Validator;
 import org.testng.annotations.DataProvider;
-
 import org.testng.annotations.Listeners;
 import org.testng.annotations.Test;
+import org.xml.sax.Attributes;
+import org.xml.sax.InputSource;
 import org.xml.sax.SAXException;
 import org.xml.sax.SAXParseException;
+import org.xml.sax.XMLFilter;
+import org.xml.sax.helpers.XMLFilterImpl;
 
 /*
  * @test
@@ -106,6 +114,50 @@ public class ValidationTest {
         validate(xsd, xml);
     }
 
+    /**
+     * @bug 8068376
+     * Verifies that validation performs normally with externally provided string
+     * parameters.
+     * @throws Exception if the test fails
+     */
+    @Test
+    public void testJDK8068376() throws Exception {
+
+        String xsdFile = getClass().getResource(FILE_PATH + "JDK8068376.xsd").getFile();
+        String xmlFile = getClass().getResource(FILE_PATH + "JDK8068376.xml").getFile();
+        String targetNamespace = getTargetNamespace(xsdFile);
+
+        XMLFilter namespaceFilter = new XMLFilterImpl(SAXParserFactory.newDefaultNSInstance().newSAXParser().getXMLReader()) {
+        @Override
+        public void startElement(String uri, String localName, String qName, Attributes atts) throws SAXException {
+            uri = targetNamespace; // overwriting the uri with our own choice
+            super.startElement(uri, localName, qName, atts);
+        }
+        };
+
+        Source xmlSource = new SAXSource(namespaceFilter, new InputSource(xmlFile));
+        Source schemaSource = new StreamSource(xsdFile);
+        validate(schemaSource, xmlSource);
+
+    }
+
+    private static String getTargetNamespace(String xsdFile) throws Exception {
+        XMLStreamReader reader = XMLInputFactory.newInstance().createXMLStreamReader(new FileInputStream(xsdFile));
+        while (reader.hasNext()) {
+            int event = reader.next();
+
+            // Get the root element's "targetNamespace" attribute
+            if (event == XMLEvent.START_ELEMENT) {
+                // validation fails before patch
+                String value = reader.getAttributeValue(null, "targetNamespace"); // fails validation
+                // validation passes due to a reference comparison in the original code
+                // String value = "mynamespace";
+                return value;
+            }
+        }
+        return null;
+    }
+
     private void validate(String xsd, String xml) throws Exception {
         final SchemaFactory schemaFactory = SchemaFactory.newInstance(
                 XMLConstants.W3C_XML_SCHEMA_NS_URI);
@@ -114,6 +166,14 @@ public class ValidationTest {
         final Validator validator = schema.newValidator();
         validator.validate(new StreamSource(
                 new File(getClass().getResource(FILE_PATH + xml).getFile())));
+    }
+
+    private void validate(Source xsd, Source xml) throws Exception {
+        final SchemaFactory schemaFactory = SchemaFactory.newInstance(
+                XMLConstants.W3C_XML_SCHEMA_NS_URI);
+        final Schema schema = schemaFactory.newSchema(xsd);
+        final Validator validator = schema.newValidator();
+        validator.validate(xml);
     }
 
 }
