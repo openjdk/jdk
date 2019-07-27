@@ -208,7 +208,7 @@ const unsigned block_alignment = sizeof(oop) * section_size;
 OopStorage::Block::Block(const OopStorage* owner, void* memory) :
   _data(),
   _allocated_bitmask(0),
-  _owner(owner),
+  _owner_address(reinterpret_cast<intptr_t>(owner)),
   _memory(memory),
   _active_index(0),
   _allocation_list_entry(),
@@ -228,7 +228,7 @@ OopStorage::Block::~Block() {
   // Clear fields used by block_for_ptr and entry validation, which
   // might help catch bugs.  Volatile to prevent dead-store elimination.
   const_cast<uintx volatile&>(_allocated_bitmask) = 0;
-  const_cast<OopStorage* volatile&>(_owner) = NULL;
+  const_cast<intptr_t volatile&>(_owner_address) = 0;
 }
 
 size_t OopStorage::Block::allocation_size() {
@@ -356,9 +356,7 @@ OopStorage::Block::block_for_ptr(const OopStorage* owner, const oop* ptr) {
   intptr_t owner_addr = reinterpret_cast<intptr_t>(owner);
   for (unsigned i = 0; i < section_count; ++i, section += section_size) {
     Block* candidate = reinterpret_cast<Block*>(section);
-    intptr_t* candidate_owner_addr
-      = reinterpret_cast<intptr_t*>(&candidate->_owner);
-    if (SafeFetchN(candidate_owner_addr, 0) == owner_addr) {
+    if (SafeFetchN(&candidate->_owner_address, 0) == owner_addr) {
       return candidate;
     }
   }
@@ -609,7 +607,7 @@ void OopStorage::Block::release_entries(uintx releasing, OopStorage* owner) {
   if ((releasing == old_allocated) || is_full_bitmask(old_allocated)) {
     // Log transitions.  Both transitions are possible in a single update.
     if (log_is_enabled(Debug, oopstorage, blocks)) {
-      log_release_transitions(releasing, old_allocated, _owner, this);
+      log_release_transitions(releasing, old_allocated, owner, this);
     }
     // Attempt to claim responsibility for adding this block to the deferred
     // list, by setting the link to non-NULL by self-looping.  If this fails,
@@ -634,7 +632,7 @@ void OopStorage::Block::release_entries(uintx releasing, OopStorage* owner) {
         owner->record_needs_cleanup();
       }
       log_debug(oopstorage, blocks)("%s: deferred update " PTR_FORMAT,
-                                    _owner->name(), p2i(this));
+                                    owner->name(), p2i(this));
     }
   }
   // Release hold on empty block deletion.
