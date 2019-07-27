@@ -418,7 +418,7 @@ oop* OopStorage::allocate() {
   assert(!block->is_full(), "invariant");
   if (block->is_empty()) {
     // Transitioning from empty to not empty.
-    log_debug(oopstorage, blocks)("%s: block not empty " PTR_FORMAT, name(), p2i(block));
+    log_trace(oopstorage, blocks)("%s: block not empty " PTR_FORMAT, name(), p2i(block));
   }
   oop* result = block->allocate();
   assert(result != NULL, "allocation failed");
@@ -427,7 +427,7 @@ oop* OopStorage::allocate() {
   if (block->is_full()) {
     // Transitioning from not full to full.
     // Remove full blocks from consideration by future allocates.
-    log_debug(oopstorage, blocks)("%s: block full " PTR_FORMAT, name(), p2i(block));
+    log_trace(oopstorage, blocks)("%s: block full " PTR_FORMAT, name(), p2i(block));
     _allocation_list.unlink(*block);
   }
   log_trace(oopstorage, ref)("%s: allocated " PTR_FORMAT, name(), p2i(result));
@@ -481,7 +481,7 @@ OopStorage::Block* OopStorage::block_for_allocation() {
     } else if (!reduce_deferred_updates()) { // Once more before failure.
       // Attempt to add a block failed, no other thread added a block,
       // and no deferred updated added a block, then allocation failed.
-      log_debug(oopstorage, blocks)("%s: failed block allocation", name());
+      log_info(oopstorage, blocks)("%s: failed block allocation", name());
       return NULL;
     }
   }
@@ -573,13 +573,15 @@ static void log_release_transitions(uintx releasing,
                                     uintx old_allocated,
                                     const OopStorage* owner,
                                     const void* block) {
-  Log(oopstorage, blocks) log;
-  LogStream ls(log.debug());
-  if (is_full_bitmask(old_allocated)) {
-    ls.print_cr("%s: block not full " PTR_FORMAT, owner->name(), p2i(block));
-  }
-  if (releasing == old_allocated) {
-    ls.print_cr("%s: block empty " PTR_FORMAT, owner->name(), p2i(block));
+  LogTarget(Trace, oopstorage, blocks) lt;
+  if (lt.is_enabled()) {
+    LogStream ls(lt);
+    if (is_full_bitmask(old_allocated)) {
+      ls.print_cr("%s: block not full " PTR_FORMAT, owner->name(), p2i(block));
+    }
+    if (releasing == old_allocated) {
+      ls.print_cr("%s: block empty " PTR_FORMAT, owner->name(), p2i(block));
+    }
   }
 }
 
@@ -606,9 +608,7 @@ void OopStorage::Block::release_entries(uintx releasing, OopStorage* owner) {
   // updates and the associated locking here.
   if ((releasing == old_allocated) || is_full_bitmask(old_allocated)) {
     // Log transitions.  Both transitions are possible in a single update.
-    if (log_is_enabled(Debug, oopstorage, blocks)) {
-      log_release_transitions(releasing, old_allocated, owner, this);
-    }
+    log_release_transitions(releasing, old_allocated, owner, this);
     // Attempt to claim responsibility for adding this block to the deferred
     // list, by setting the link to non-NULL by self-looping.  If this fails,
     // then someone else has made such a claim and the deferred update has not
@@ -631,7 +631,7 @@ void OopStorage::Block::release_entries(uintx releasing, OopStorage* owner) {
       if (releasing == old_allocated) {
         owner->record_needs_cleanup();
       }
-      log_debug(oopstorage, blocks)("%s: deferred update " PTR_FORMAT,
+      log_trace(oopstorage, blocks)("%s: deferred update " PTR_FORMAT,
                                     owner->name(), p2i(this));
     }
   }
@@ -681,7 +681,7 @@ bool OopStorage::reduce_deferred_updates() {
     _allocation_list.push_back(*block);
   }
 
-  log_debug(oopstorage, blocks)("%s: processed deferred update " PTR_FORMAT,
+  log_trace(oopstorage, blocks)("%s: processed deferred update " PTR_FORMAT,
                                 name(), p2i(block));
   return true;              // Processed one pending update.
 }
