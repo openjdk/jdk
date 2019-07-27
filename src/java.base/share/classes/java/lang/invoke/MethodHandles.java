@@ -1329,7 +1329,14 @@ public class MethodHandles {
 
         // This is just for calling out to MethodHandleImpl.
         private Class<?> lookupClassOrNull() {
-            return (allowedModes == TRUSTED) ? null : lookupClass;
+            if (allowedModes == TRUSTED) {
+                return null;
+            }
+            if (allowedModes == UNCONDITIONAL) {
+                // use Object as the caller to pass to VM doing resolution
+                return Object.class;
+            }
+            return lookupClass;
         }
 
         /** Tells which access-protection classes of members this lookup object can produce.
