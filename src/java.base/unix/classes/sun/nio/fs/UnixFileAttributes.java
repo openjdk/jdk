@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -109,11 +109,15 @@ class UnixFileAttributes
         if (nsec == 0) {
             return FileTime.from(sec, TimeUnit.SECONDS);
         } else {
-            // truncate to microseconds to avoid overflow with timestamps
-            // way out into the future. We can re-visit this if FileTime
-            // is updated to define a from(secs,nsecs) method.
-            long micro = sec*1000000L + nsec/1000L;
-            return FileTime.from(micro, TimeUnit.MICROSECONDS);
+            try {
+                long nanos = Math.addExact(nsec,
+                    Math.multiplyExact(sec, 1_000_000_000L));
+                return FileTime.from(nanos, TimeUnit.NANOSECONDS);
+            } catch (ArithmeticException ignore) {
+                // truncate to microseconds if nanoseconds overflow
+                long micro = sec*1_000_000L + nsec/1_000L;
+                return FileTime.from(micro, TimeUnit.MICROSECONDS);
+            }
         }
     }
 
