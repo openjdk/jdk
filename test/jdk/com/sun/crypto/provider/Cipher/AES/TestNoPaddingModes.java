@@ -65,45 +65,4 @@ public class TestNoPaddingModes {
         }
         System.out.println("Test Passed");
     }
-
-    public static class MyCipImpl extends CipherSpi {
-        public MyCipImpl() {
-            super();
-            System.out.println("MyCipImpl is created");
-        }
-        protected void engineSetMode(String mode)
-            throws NoSuchAlgorithmException {};
-        protected void engineSetPadding(String padding)
-            throws NoSuchPaddingException {};
-        protected int engineGetBlockSize() { return 16; }
-        protected int engineGetOutputSize(int inputLen) { return 0; }
-        protected byte[] engineGetIV() { return null; }
-        protected AlgorithmParameters engineGetParameters() { return null; }
-        protected void engineInit(int opmode, Key key, SecureRandom random)
-            throws InvalidKeyException {};
-        protected void engineInit(int opmode, Key key,
-                                  AlgorithmParameterSpec params,
-                                  SecureRandom random)
-            throws InvalidKeyException, InvalidAlgorithmParameterException {};
-        protected void engineInit(int opmode, Key key,
-                                  AlgorithmParameters params,
-                                  SecureRandom random)
-            throws InvalidKeyException, InvalidAlgorithmParameterException {};
-        protected byte[] engineUpdate(byte[] input, int inputOffset,
-                                      int inputLen) { return null; }
-        protected int engineUpdate(byte[] input, int inputOffset,
-                                   int inputLen, byte[] output,
-                                   int outputOffset)
-            throws ShortBufferException { return 0; };
-        protected byte[] engineDoFinal(byte[] input, int inputOffset,
-                                       int inputLen)
-            throws IllegalBlockSizeException, BadPaddingException {
-            return null;
-        }
-        protected int engineDoFinal(byte[] input, int inputOffset,
-                                    int inputLen, byte[] output,
-                                    int outputOffset)
-            throws ShortBufferException, IllegalBlockSizeException,
-                   BadPaddingException  { return 0; }
-    }
 }
