@@ -136,7 +136,7 @@ int ArrayCopyNode::get_count(PhaseGVN *phase) const {
       // array must be too.
 
       assert((get_length_if_constant(phase) == -1) == !ary_src->size()->is_con() ||
-             phase->is_IterGVN(), "inconsistent");
+             phase->is_IterGVN() || StressReflectiveCode, "inconsistent");
 
       if (ary_src->size()->is_con()) {
         return ary_src->size()->get_con();
