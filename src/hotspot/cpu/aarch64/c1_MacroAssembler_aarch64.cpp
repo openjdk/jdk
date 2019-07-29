@@ -336,16 +336,10 @@ void C1_MacroAssembler::build_frame(int framesize, int bang_size_in_bytes) {
   // Note that we do this before doing an enter().
   generate_stack_overflow_check(bang_size_in_bytes);
   MacroAssembler::build_frame(framesize + 2 * wordSize);
-  if (NotifySimulator) {
-    notify(Assembler::method_entry);
-  }
 }
 
 void C1_MacroAssembler::remove_frame(int framesize) {
   MacroAssembler::remove_frame(framesize + 2 * wordSize);
-  if (NotifySimulator) {
-    notify(Assembler::method_reentry);
-  }
 }
 
 

@@ -30,13 +30,8 @@
 // definition. See stubRoutines.hpp for a description on how to
 // extend it.
 
-// n.b. if we are notifying entry/exit to the simulator then the call
-// stub does a notify at normal return placing
-// call_stub_return_address one instruction beyond the notify. the
-// latter address is sued by the stack unwind code when doign an
-// exception return.
 static bool    returns_to_call_stub(address return_pc)   {
-  return return_pc == _call_stub_return_address + (NotifySimulator ? -4 : 0);
+  return return_pc == _call_stub_return_address;
 }
 
 enum platform_dependent_constants {

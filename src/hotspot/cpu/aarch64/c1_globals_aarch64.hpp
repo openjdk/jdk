@@ -41,13 +41,7 @@ define_pd_global(bool, PreferInterpreterNativeStubs, false);
 define_pd_global(bool, ProfileTraps,                 false);
 define_pd_global(bool, UseOnStackReplacement,        true );
 define_pd_global(bool, TieredCompilation,            false);
-#ifdef BUILTIN_SIM
-// We compile very aggressively with the builtin simulator because
-// doing so greatly reduces run times and tests more code.
-define_pd_global(intx, CompileThreshold,             150 );
-#else
 define_pd_global(intx, CompileThreshold,             1500 );
-#endif
 
 define_pd_global(intx, OnStackReplacePercentage,     933  );
 define_pd_global(intx, FreqInlineSize,               325  );

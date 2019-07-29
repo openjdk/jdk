@@ -38,11 +38,6 @@ const unsigned long Assembler::asm_bp = 0x00007fffee09ac88;
 #include "memory/resourceArea.hpp"
 #include "runtime/interfaceSupport.inline.hpp"
 #include "runtime/sharedRuntime.hpp"
-
-// for the moment we reuse the logical/floating point immediate encode
-// and decode functiosn provided by the simulator. when we move to
-// real hardware we will need to pull taht code into here
-
 #include "immediate_aarch64.hpp"
 
 extern "C" void entry(CodeBuffer *cb);
@@ -1754,21 +1749,6 @@ int AbstractAssembler::code_fill_byte() {
 // n.b. this is implemented in subclass MacroAssembler
 void Assembler::bang_stack_with_offset(int offset) { Unimplemented(); }
 
-
-// these are the functions provided by the simulator which are used to
-// encode and decode logical immediates and floating point immediates
-//
-//   u_int64_t logical_immediate_for_encoding(u_int32_t encoding);
-//
-//   u_int32_t encoding_for_logical_immediate(u_int64_t immediate);
-//
-//   u_int64_t fp_immediate_for_encoding(u_int32_t imm8, int is_dp);
-//
-//   u_int32_t encoding_for_fp_immediate(float immediate);
-//
-// we currently import these from the simulator librray but the
-// definitions will need to be moved to here when we switch to real
-// hardware.
 
 // and now the routines called by the assembler which encapsulate the
 // above encode and decode functions

@@ -82,48 +82,6 @@ define_pd_global(bool, ThreadLocalHandshakes, true);
 define_pd_global(intx, InlineSmallCode,          1000);
 #endif
 
-#ifdef BUILTIN_SIM
-#define UseBuiltinSim           true
-#define ARCH_FLAGS(develop, \
-                   product, \
-                   diagnostic, \
-                   experimental, \
-                   notproduct, \
-                   range, \
-                   constraint, \
-                   writeable) \
-                                                                        \
-  product(bool, NotifySimulator, UseBuiltinSim,                         \
-         "tell the AArch64 sim where we are in method code")            \
-                                                                        \
-  product(bool, UseSimulatorCache, false,                               \
-         "tell sim to cache memory updates until exclusive op occurs")  \
-                                                                        \
-  product(bool, DisableBCCheck, true,                                   \
-          "tell sim not to invoke bccheck callback")                    \
-                                                                        \
-  product(bool, NearCpool, true,                                        \
-         "constant pool is close to instructions")                      \
-                                                                        \
-  product(bool, UseBarriersForVolatile, false,                          \
-          "Use memory barriers to implement volatile accesses")         \
-                                                                        \
-  product(bool, UseCRC32, false,                                        \
-          "Use CRC32 instructions for CRC32 computation")               \
-                                                                        \
-  product(bool, UseLSE, false,                                          \
-          "Use LSE instructions")                                       \
-
-// Don't attempt to use Neon on builtin sim until builtin sim supports it
-#define UseCRC32 false
-#define UseSIMDForMemoryOps    false
-#define AvoidUnalignedAcesses false
-
-#else
-#define UseBuiltinSim           false
-#define NotifySimulator         false
-#define UseSimulatorCache       false
-#define DisableBCCheck          true
 #define ARCH_FLAGS(develop, \
                    product, \
                    diagnostic, \
@@ -162,7 +120,5 @@ define_pd_global(intx, InlineSmallCode,          1000);
           "Use prfm hint with specified distance in compiled code."     \
           "Value -1 means off.")                                        \
           range(-1, 4096)
-#endif
-
 
 #endif // CPU_AARCH64_GLOBALS_AARCH64_HPP
