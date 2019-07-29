@@ -42,8 +42,8 @@ const DecoratorSet C2_UNALIGNED              = DECORATOR_LAST << 2;
 const DecoratorSet C2_WEAK_CMPXCHG           = DECORATOR_LAST << 3;
 // This denotes that a load has control dependency.
 const DecoratorSet C2_CONTROL_DEPENDENT_LOAD = DECORATOR_LAST << 4;
-// This denotes that a load that must be pinned.
-const DecoratorSet C2_PINNED_LOAD            = DECORATOR_LAST << 5;
+// This denotes that a load that must be pinned, but may float above safepoints.
+const DecoratorSet C2_UNKNOWN_CONTROL_LOAD   = DECORATOR_LAST << 5;
 // This denotes that the access is produced from the sun.misc.Unsafe intrinsics.
 const DecoratorSet C2_UNSAFE_ACCESS          = DECORATOR_LAST << 6;
 // This denotes that the access mutates state.

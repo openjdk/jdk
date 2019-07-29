@@ -984,7 +984,7 @@ Node* LoadNode::can_see_arraycopy_value(Node* st, PhaseGVN* phase) const {
     ld->set_req(0, ctl);
     ld->set_req(MemNode::Memory, mem);
     // load depends on the tests that validate the arraycopy
-    ld->_control_dependency = Pinned;
+    ld->_control_dependency = UnknownControl;
     return ld;
   }
   return NULL;
@@ -1577,7 +1577,8 @@ Node *LoadNode::Ideal(PhaseGVN *phase, bool can_reshape) {
   // pointer stores & cardmarks must stay on the same side of a SafePoint.
   if( ctrl != NULL && ctrl->Opcode() == Op_SafePoint &&
       phase->C->get_alias_index(phase->type(address)->is_ptr()) != Compile::AliasIdxRaw  &&
-      !addr_mark ) {
+      !addr_mark &&
+      (depends_only_on_test() || has_unknown_control_dependency())) {
     ctrl = ctrl->in(0);
     set_req(MemNode::Control,ctrl);
     progress = true;
