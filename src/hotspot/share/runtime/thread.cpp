@@ -2344,14 +2344,9 @@ void JavaThread::check_and_handle_async_exceptions(bool check_unsafe_error) {
 }
 
 void JavaThread::handle_special_runtime_exit_condition(bool check_asyncs) {
-  //
+
   // Check for pending external suspend.
-  // If JNIEnv proxies are allowed, don't self-suspend if the target
-  // thread is not the current thread. In older versions of jdbx, jdbx
-  // threads could call into the VM with another thread's JNIEnv so we
-  // can be here operating on behalf of a suspended thread (4432884).
-  bool do_self_suspend = is_external_suspend_with_lock();
-  if (do_self_suspend && (!AllowJNIEnvProxy || this == JavaThread::current())) {
+  if (is_external_suspend_with_lock()) {
     frame_anchor()->make_walkable(this);
     java_suspend_self_with_safepoint_check();
   }
@@ -2576,19 +2571,12 @@ void JavaThread::verify_not_published() {
 void JavaThread::check_safepoint_and_suspend_for_native_trans(JavaThread *thread) {
   assert(thread->thread_state() == _thread_in_native_trans, "wrong state");
 
-  JavaThread *curJT = JavaThread::current();
-  bool do_self_suspend = thread->is_external_suspend();
+  assert(!thread->has_last_Java_frame() || thread->frame_anchor()->walkable(), "Unwalkable stack in native->vm transition");
 
-  assert(!curJT->has_last_Java_frame() || curJT->frame_anchor()->walkable(), "Unwalkable stack in native->vm transition");
-
-  // If JNIEnv proxies are allowed, don't self-suspend if the target
-  // thread is not the current thread. In older versions of jdbx, jdbx
-  // threads could call into the VM with another thread's JNIEnv so we
-  // can be here operating on behalf of a suspended thread (4432884).
-  if (do_self_suspend && (!AllowJNIEnvProxy || curJT == thread)) {
+  if (thread->is_external_suspend()) {
     thread->java_suspend_self_with_safepoint_check();
   } else {
-    SafepointMechanism::block_if_requested(curJT);
+    SafepointMechanism::block_if_requested(thread);
   }
 
   JFR_ONLY(SUSPEND_THREAD_CONDITIONAL(thread);)

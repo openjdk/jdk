@@ -761,9 +761,6 @@ const size_t minimumSymbolTableSize = 1024;
           "Use signal-chaining to invoke signal handlers installed "        \
           "by the application (Solaris & Linux only)")                      \
                                                                             \
-  product(bool, AllowJNIEnvProxy, false,                                    \
-          "(Deprecated) Allow JNIEnv proxies for jdbx")                     \
-                                                                            \
   product(bool, RestoreMXCSROnJNICalls, false,                              \
           "Restore MXCSR when returning from JNI calls")                    \
                                                                             \
