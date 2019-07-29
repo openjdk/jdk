@@ -164,49 +164,6 @@ void Relocation::pd_set_call_destination(address x) {
 }
 
 
-// store the new target address into an oop_Relocation cell, if any
-// return indication if update happened.
-bool relocInfo::update_oop_pool(address begin, address end, address newTarget, CodeBlob* cb) {
-
-  //  Try to find the CodeBlob, if not given by caller
-  if (cb == NULL) cb = CodeCache::find_blob(begin);
-#ifdef ASSERT
-  else
-    assert(cb == CodeCache::find_blob(begin), "consistency");
-#endif
-
-  //  'RelocIterator' requires an nmethod
-  nmethod*  nm = cb ? cb->as_nmethod_or_null() : NULL;
-  if (nm != NULL) {
-    RelocIterator iter(nm, begin, end);
-    oop* oop_addr = NULL;
-    Metadata** metadata_addr = NULL;
-    while (iter.next()) {
-      if (iter.type() == relocInfo::oop_type) {
-        oop_Relocation *r = iter.oop_reloc();
-        if (oop_addr == NULL) {
-          oop_addr = r->oop_addr();
-          *oop_addr = (oop)newTarget;
-        } else {
-          assert(oop_addr == r->oop_addr(), "must be only one set-oop here");
-        }
-      }
-      if (iter.type() == relocInfo::metadata_type) {
-        metadata_Relocation *r = iter.metadata_reloc();
-        if (metadata_addr == NULL) {
-          metadata_addr = r->metadata_addr();
-          *metadata_addr = (Metadata*)newTarget;
-        } else {
-          assert(metadata_addr == r->metadata_addr(), "must be only one set-metadata here");
-        }
-      }
-    }
-    return oop_addr || metadata_addr;
-  }
-  return false;
-}
-
-
 address* Relocation::pd_address_in_code() {
  ShouldNotReachHere();
  return 0;

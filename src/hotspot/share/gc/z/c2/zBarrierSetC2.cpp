@@ -557,7 +557,6 @@ void ZBarrierSetC2::expand_loadbarrier_node(PhaseMacroExpand* phase, LoadBarrier
   result_phi->set_req(1, new_loadp);
   result_phi->set_req(2, barrier->in(LoadBarrierNode::Oop));
 
-
   igvn.replace_node(out_ctrl, result_region);
   igvn.replace_node(out_res, result_phi);
 
@@ -740,29 +739,61 @@ bool ZBarrierSetC2::matcher_find_shared_post_visit(Matcher* matcher, Node* n, ui
 
 #ifdef ASSERT
 
-static bool look_for_barrier(Node* n, bool post_parse, VectorSet& visited) {
-  if (visited.test_set(n->_idx)) {
-    return true;
-  }
+static void verify_slippery_safepoints_internal(Node* ctrl) {
+  // Given a CFG node, make sure it does not contain both safepoints and loads
+  // that have expanded barriers.
+  bool found_safepoint = false;
+  bool found_load = false;
 
-  for (DUIterator_Fast imax, i = n->fast_outs(imax); i < imax; i++) {
-    Node* u = n->fast_out(i);
-    if (u->is_LoadBarrier()) {
-    } else if ((u->is_Phi() || u->is_CMove()) && !post_parse) {
-      if (!look_for_barrier(u, post_parse, visited)) {
-        return false;
-      }
-    } else if (u->Opcode() == Op_EncodeP || u->Opcode() == Op_DecodeN) {
-      if (!look_for_barrier(u, post_parse, visited)) {
-        return false;
-      }
-    } else if (u->Opcode() != Op_SCMemProj) {
-      tty->print("bad use"); u->dump();
-      return false;
+  for (DUIterator_Fast imax, i = ctrl->fast_outs(imax); i < imax; i++) {
+    Node* node = ctrl->fast_out(i);
+    if (node->in(0) != ctrl) {
+      // Skip outgoing precedence edges from ctrl.
+      continue;
+    }
+    if (node->is_SafePoint()) {
+      found_safepoint = true;
+    }
+    if (node->is_Load() && load_require_barrier(node->as_Load()) &&
+        load_has_expanded_barrier(node->as_Load())) {
+      found_load = true;
     }
   }
+  assert(!found_safepoint || !found_load, "found load and safepoint in same block");
+}
 
-  return true;
+static void verify_slippery_safepoints(Compile* C) {
+  ResourceArea *area = Thread::current()->resource_area();
+  Unique_Node_List visited(area);
+  Unique_Node_List checked(area);
+
+  // Recursively walk the graph.
+  visited.push(C->root());
+  while (visited.size() > 0) {
+    Node* node = visited.pop();
+
+    Node* ctrl = node;
+    if (!node->is_CFG()) {
+      ctrl = node->in(0);
+    }
+
+    if (ctrl != NULL && !checked.member(ctrl)) {
+      // For each block found in the graph, verify that it does not
+      // contain both a safepoint and a load requiring barriers.
+      verify_slippery_safepoints_internal(ctrl);
+
+      checked.push(ctrl);
+    }
+
+    checked.push(node);
+
+    for (DUIterator_Fast imax, i = node->fast_outs(imax); i < imax; i++) {
+      Node* use = node->fast_out(i);
+      if (checked.member(use))  continue;
+      if (visited.member(use))  continue;
+      visited.push(use);
+    }
+  }
 }
 
 void ZBarrierSetC2::verify_gc_barriers(Compile* compile, CompilePhase phase) const {
@@ -778,6 +809,7 @@ void ZBarrierSetC2::verify_gc_barriers(Compile* compile, CompilePhase phase) con
     case BarrierSetC2::BeforeCodeGen:
       // Barriers has been fully expanded.
       assert(state()->load_barrier_count() == 0, "No more macro barriers");
+      verify_slippery_safepoints(compile);
       break;
     default:
       assert(0, "Phase without verification");
@@ -1594,7 +1626,7 @@ void ZBarrierSetC2::insert_one_loadbarrier_inner(PhaseIdealLoop* phase, LoadNode
   // For all successors of ctrl - move all visited to become successors of barrier_ctrl instead
   for (DUIterator_Fast imax, r = ctrl->fast_outs(imax); r < imax; r++) {
     Node* tmp = ctrl->fast_out(r);
-    if (visited2.test(tmp->_idx) && (tmp != load)) {
+    if (tmp->is_SafePoint() || (visited2.test(tmp->_idx) && (tmp != load))) {
       if (trace) tty->print_cr(" Move ctrl_succ %i to barrier_ctrl", tmp->_idx);
       igvn.replace_input_of(tmp, 0, barrier_ctrl);
       --r; --imax;
@@ -1621,6 +1653,9 @@ void ZBarrierSetC2::insert_one_loadbarrier_inner(PhaseIdealLoop* phase, LoadNode
   // Connect barrier to load and control
   barrier->set_req(LoadBarrierNode::Oop, load);
   barrier->set_req(LoadBarrierNode::Control, ctrl);
+
+  igvn.replace_input_of(load, MemNode::Control, ctrl);
+  load->pin();
 
   igvn.rehash_node_delayed(load);
   igvn.register_new_node_with_optimizer(barrier);

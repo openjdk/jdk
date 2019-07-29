@@ -154,14 +154,12 @@ public:
   // Some loads (from unsafe) should be pinned: they don't depend only
   // on the dominating test.  The field _control_dependency below records
   // whether that node depends only on the dominating test.
-  // Methods used to build LoadNodes pass an argument of type enum
-  // ControlDependency instead of a boolean because those methods
-  // typically have multiple boolean parameters with default values:
-  // passing the wrong boolean to one of these parameters by mistake
-  // goes easily unnoticed. Using an enum, the compiler can check that
-  // the type of a value and the type of the parameter match.
+  // Pinned and UnknownControl are similar, but differ in that Pinned
+  // loads are not allowed to float across safepoints, whereas UnknownControl
+  // loads are allowed to do that. Therefore, Pinned is stricter.
   enum ControlDependency {
     Pinned,
+    UnknownControl,
     DependsOnlyOnTest
   };
 
@@ -268,6 +266,9 @@ public:
   void copy_barrier_info(const Node* src) { _barrier = src->as_Load()->_barrier; }
   uint barrier_data() { return _barrier; }
   void set_barrier_data(uint barrier_data) { _barrier |= barrier_data; }
+
+  void pin() { _control_dependency = Pinned; }
+  bool has_unknown_control_dependency() const { return _control_dependency == UnknownControl; }
 
 #ifndef PRODUCT
   virtual void dump_spec(outputStream *st) const;
