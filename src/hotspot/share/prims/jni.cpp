@@ -3776,8 +3776,7 @@ void copy_jni_function_table(const struct JNINativeInterface_ *new_jni_NativeInt
 
 void quicken_jni_functions() {
   // Replace Get<Primitive>Field with fast versions
-  if (UseFastJNIAccessors && !JvmtiExport::can_post_field_access()
-      && !VerifyJNIFields && !CountJNICalls && !CheckJNICalls) {
+  if (UseFastJNIAccessors && !VerifyJNIFields && !CountJNICalls && !CheckJNICalls) {
     address func;
     func = JNI_FastGetField::generate_fast_get_boolean_field();
     if (func != (address)-1) {

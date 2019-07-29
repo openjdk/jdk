@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,7 +32,7 @@
 
 #define __ masm->
 
-#define BUFFER_SIZE  96
+#define BUFFER_SIZE 120
 
 address JNI_FastGetField::generate_fast_get_int_field0(BasicType type) {
   const char* name = NULL;
@@ -99,10 +99,10 @@ address JNI_FastGetField::generate_fast_get_int_field0(BasicType type) {
   CodeBuffer cbuf(blob);
   MacroAssembler* masm = new MacroAssembler(&cbuf);
   fast_entry = __ pc();
+  Label slow_case;
 
   // Safepoint check
   InlinedAddress safepoint_counter_addr(SafepointSynchronize::safepoint_counter_addr());
-  Label slow_case;
   __ ldr_literal(Rsafepoint_counter_addr, safepoint_counter_addr);
 
   __ push(RegisterSet(R0, R3));  // save incoming arguments for slow case
@@ -112,9 +112,21 @@ address JNI_FastGetField::generate_fast_get_int_field0(BasicType type) {
 
   __ bic(R1, R1, JNIHandles::weak_tag_mask);
 
-  // Address dependency restricts memory access ordering. It's cheaper than explicit LoadLoad barrier
-  __ andr(Rtmp1, Rsafept_cnt, (unsigned)1);
-  __ ldr(Robj, Address(R1, Rtmp1));
+  if (JvmtiExport::can_post_field_access()) {
+    // Using barrier to order wrt. JVMTI check and load of result.
+    __ membar(MacroAssembler::Membar_mask_bits(MacroAssembler::LoadLoad), Rtmp1);
+
+    // Check to see if a field access watch has been set before we
+    // take the fast path.
+    __ ldr_global_s32(Rtmp1, (address)JvmtiExport::get_field_access_count_addr());
+    __ cbnz(Rtmp1, slow_case);
+
+    __ ldr(Robj, Address(R1));
+  } else {
+    // Address dependency restricts memory access ordering. It's cheaper than explicit LoadLoad barrier
+    __ andr(Rtmp1, Rsafept_cnt, (unsigned)1);
+    __ ldr(Robj, Address(R1, Rtmp1));
+  }
 
   Address field_addr;
   if (type != T_BOOLEAN
@@ -170,20 +182,18 @@ address JNI_FastGetField::generate_fast_get_int_field0(BasicType type) {
       ShouldNotReachHere();
   }
 
-  // Address dependency restricts memory access ordering. It's cheaper than explicit LoadLoad barrier
+  __ ldr_literal(Rsafepoint_counter_addr, safepoint_counter_addr);
 #ifdef __ABI_HARD__
   if (type == T_FLOAT || type == T_DOUBLE) {
-    __ ldr_literal(Rsafepoint_counter_addr, safepoint_counter_addr);
     __ fmrrd(Rres, Rres_hi, D0);
-    __ eor(Rtmp2, Rres, Rres);
-    __ ldr_s32(Rsafept_cnt2, Address(Rsafepoint_counter_addr, Rtmp2));
-  } else
-#endif // __ABI_HARD__
-  {
-    __ ldr_literal(Rsafepoint_counter_addr, safepoint_counter_addr);
-    __ eor(Rtmp2, Rres, Rres);
-    __ ldr_s32(Rsafept_cnt2, Address(Rsafepoint_counter_addr, Rtmp2));
   }
+#endif // __ABI_HARD__
+
+  // Order JVMTI check and load of result wrt. succeeding check
+  // (LoadStore for volatile field).
+  __ membar(MacroAssembler::Membar_mask_bits(MacroAssembler::LoadLoad | MacroAssembler::LoadStore), Rtmp2);
+
+  __ ldr_s32(Rsafept_cnt2, Address(Rsafepoint_counter_addr));
   __ cmp(Rsafept_cnt2, Rsafept_cnt);
   // discards saved R0 R1 R2 R3
   __ add(SP, SP, 4 * wordSize, eq);
