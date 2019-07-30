@@ -1182,8 +1182,6 @@ public:
   //
 
   public:
-  // enum used for aarch64--x86 linkage to define return type of x86 function
-  enum ret_type { ret_type_void, ret_type_integral, ret_type_float, ret_type_double};
 
   void ldr_constant(Register dest, const Address &const_addr) {
     if (NearCpool) {

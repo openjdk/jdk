@@ -34,7 +34,6 @@
 class SignatureHandlerGenerator: public NativeSignatureIterator {
  private:
   MacroAssembler* _masm;
-  unsigned int _call_format;
   unsigned int _num_fp_args;
   unsigned int _num_int_args;
   int _stack_offset;
