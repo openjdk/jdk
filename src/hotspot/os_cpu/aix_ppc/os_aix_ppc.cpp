@@ -477,6 +477,15 @@ JVM_handle_aix_signal(int sig, siginfo_t* info, void* ucVoid, int abort_if_unrec
         return 1;
       }
     }
+
+    // jni_fast_Get<Primitive>Field can trap at certain pc's if a GC kicks in
+    // and the heap gets shrunk before the field access.
+    if ((sig == SIGSEGV) || (sig == SIGBUS)) {
+      address addr = JNI_FastGetField::find_slowcase_pc(pc);
+      if (addr != (address)-1) {
+        stub = addr;
+      }
+    }
   }
 
 run_stub:
