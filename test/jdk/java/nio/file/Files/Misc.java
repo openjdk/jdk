@@ -22,14 +22,11 @@
  */
 
 /* @test
- * @bug 4313887 6838333 8005566 8032220 8215467 8227080
+ * @bug 4313887 6838333 8005566 8032220 8215467
  * @summary Unit test for miscellenous methods in java.nio.file.Files
  * @library ..
  */
 
-import java.io.InputStream;
-import java.io.OutputStream;
-import java.nio.channels.ClosedChannelException;
 import java.nio.file.*;
 import static java.nio.file.Files.*;
 import static java.nio.file.LinkOption.*;
@@ -47,7 +44,6 @@ public class Misc {
             testIsSameFile(dir);
             testFileTypeMethods(dir);
             testAccessMethods(dir);
-            testSkip(dir);
         } finally {
              TestUtil.removeAll(dir);
         }
@@ -369,38 +365,6 @@ public class Misc {
                     assertTrue(isWritable(file));
                 } finally {
                     view.setReadOnly(save);
-                }
-            }
-        } finally {
-            delete(file);
-        }
-    }
-
-    /**
-     * Tests Files.newInputStream(Path).skip().
-     */
-    static void testSkip(Path tmpdir) throws IOException {
-        Path file = createFile(tmpdir.resolve("foo"));
-        try (OutputStream out = Files.newOutputStream(file)) {
-            byte[] blah = new byte[8192];
-            Arrays.fill(blah, (byte)42);
-            out.write(blah);
-            out.close();
-            try (InputStream in = Files.newInputStream(file)) {
-                assertTrue(in.skip(-1) == 0);
-                assertTrue(in.skip(0) == 0);
-                assertTrue(in.skip(blah.length/4) == blah.length/4);
-                assertTrue(in.skip(blah.length/2) == blah.length/2);
-                assertTrue(in.skip(Long.MAX_VALUE) == blah.length/4);
-                in.close();
-                try {
-                    long n = in.skip(1);
-                    throw new RuntimeException("skip() did not fail");
-                } catch (IOException ioe) {
-                    if (!(ioe.getCause() instanceof ClosedChannelException)) {
-                        throw new RuntimeException
-                            ("IOException not caused by ClosedChannelException");
-                    }
                 }
             }
         } finally {
