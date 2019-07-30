@@ -30,7 +30,6 @@ java.rmi.dgc
 java.rmi.registry
 java.rmi.server
 java.security
-java.security.acl
 java.security.cert
 java.security.interfaces
 java.security.spec
