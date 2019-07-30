@@ -45,10 +45,8 @@
 // and not set it too short before we decide to resize,
 // to match previous startup behavior
 const double PREF_AVG_LIST_LEN = 8.0;
-// 2^17 (131,072) is max size, which is about 6.5 times as large
-// as the previous table size (used to be 20,011),
-// which never resized
-const size_t END_SIZE = 17;
+// 2^24 is max size, like StringTable.
+const size_t END_SIZE = 24;
 // If a chain gets to 100 something might be wrong
 const size_t REHASH_LEN = 100;
 

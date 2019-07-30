@@ -2339,11 +2339,11 @@ const size_t minimumSymbolTableSize = 1024;
   product(uintx, StringTableSize, defaultStringTableSize,                   \
           "Number of buckets in the interned String table "                 \
           "(will be rounded to nearest higher power of 2)")                 \
-          range(minimumStringTableSize, 16777216ul)                         \
+          range(minimumStringTableSize, 16777216ul /* 2^24 */)              \
                                                                             \
   experimental(uintx, SymbolTableSize, defaultSymbolTableSize,              \
           "Number of buckets in the JVM internal Symbol table")             \
-          range(minimumSymbolTableSize, 111*defaultSymbolTableSize)         \
+          range(minimumSymbolTableSize, 16777216ul /* 2^24 */)              \
                                                                             \
   product(bool, UseStringDeduplication, false,                              \
           "Use string deduplication")                                       \
