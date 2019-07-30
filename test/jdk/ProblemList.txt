@@ -661,8 +661,6 @@ sun/security/tools/keytool/WeakAlg.java                         8224644 solaris-
 sun/security/tools/jarsigner/warnings/BadKeyUsageTest.java      8026393 generic-all
 sun/security/tools/jarsigner/PreserveRawManifestEntryAndDigest.java  8228431 solaris-all
 
-sun/security/tools/jarsigner/Warning.java                       8228745 generic-all
-
 javax/net/ssl/ServerName/SSLEngineExplorerMatchedSNI.java       8212096 generic-all
 javax/net/ssl/DTLS/PacketLossRetransmission.java                8169086 macosx-x64
 javax/net/ssl/DTLS/RespondToRetransmit.java                     8169086 macosx-x64

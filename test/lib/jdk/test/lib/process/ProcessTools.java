@@ -360,7 +360,7 @@ public final class ProcessTools {
      * @return The {@linkplain OutputAnalyzer} instance wrapping the process.
      */
     public static OutputAnalyzer executeProcess(ProcessBuilder pb, String input) throws Exception {
-        return executeProcess(pb, null, null);
+        return executeProcess(pb, input, null);
     }
 
     /**
