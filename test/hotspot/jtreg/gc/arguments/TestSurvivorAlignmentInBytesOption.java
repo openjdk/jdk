@@ -94,7 +94,8 @@ public class TestSurvivorAlignmentInBytesOption {
                 ExitCode.FAIL, false,
                 CommandLineOptionTest.prepareBooleanFlag(
                         unlockExperimentalVMOpts, true),
-                CommandLineOptionTest.prepareNumericFlag(optionName, 2));
+                CommandLineOptionTest.prepareNumericFlag(optionName, 8),
+                CommandLineOptionTest.prepareNumericFlag("ObjectAlignmentInBytes", 16));
 
         // Verify that if specified SurvivorAlignmentInBytes value is not
         // a power of 2 then the JVM startup will fail with appropriate error
