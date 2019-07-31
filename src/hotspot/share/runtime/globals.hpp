@@ -398,10 +398,6 @@ const size_t minimumSymbolTableSize = 1024;
           "Set when executing debug methods in debug.cpp "                  \
           "(to prevent triggering assertions)")                             \
                                                                             \
-  notproduct(bool, StrictSafepointChecks, trueInDebug,                      \
-          "Enable strict checks that safepoints cannot happen for threads " \
-          "that use NoSafepointVerifier")                                   \
-                                                                            \
   notproduct(bool, VerifyLastFrame, false,                                  \
           "Verify oops on last frame on entry to VM")                       \
                                                                             \

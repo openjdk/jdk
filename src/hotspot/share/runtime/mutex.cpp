@@ -53,7 +53,7 @@ void Monitor::lock(Thread * self) {
   }
 #endif // CHECK_UNHANDLED_OOPS
 
-  DEBUG_ONLY(check_prelock_state(self, StrictSafepointChecks));
+  DEBUG_ONLY(check_prelock_state(self, true));
   assert(_owner != self, "invariant");
 
   Monitor* in_flight_monitor = NULL;
