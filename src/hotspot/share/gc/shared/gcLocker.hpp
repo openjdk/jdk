@@ -25,6 +25,7 @@
 #ifndef SHARE_GC_SHARED_GCLOCKER_HPP
 #define SHARE_GC_SHARED_GCLOCKER_HPP
 
+#include "gc/shared/gcCause.hpp"
 #include "memory/allocation.hpp"
 #include "utilities/globalDefinitions.hpp"
 #include "utilities/macros.hpp"
@@ -45,6 +46,7 @@ class GCLocker: public AllStatic {
   static volatile bool _needs_gc;        // heap is filling, we need a GC
                                          // note: bool is typedef'd as jint
   static volatile bool _doing_gc;        // unlock_critical() is doing a GC
+  static uint _total_collections;        // value for _gc_locker collection
 
 #ifdef ASSERT
   // This lock count is updated for all operations and is used to
@@ -97,6 +99,12 @@ class GCLocker: public AllStatic {
 
   // Sets _needs_gc if is_active() is true. Returns is_active().
   static bool check_active_before_gc();
+
+  // Return true if the designated collection is a GCLocker request
+  // that should be discarded.  Returns true if cause == GCCause::_gc_locker
+  // and the given total collection value indicates a collection has been
+  // done since the GCLocker request was made.
+  static bool should_discard(GCCause::Cause cause, uint total_collections);
 
   // Stalls the caller (who should not be in a jni critical section)
   // until needs_gc() clears. Note however that needs_gc() may be
