@@ -371,14 +371,15 @@ class Thread: public ThreadShadow {
 
  private:
 
-  // debug support for checking if code does allow safepoints or not
-  // GC points in the VM can happen because of allocation, invoking a VM operation, or blocking on
+  // Debug support for checking if code allows safepoints or not.
+  // Safepoints in the VM can happen because of allocation, invoking a VM operation, or blocking on
   // mutex, or blocking on an object synchronizer (Java locking).
-  // If !allow_safepoint(), then an assertion failure will happen in any of the above cases
+  // If _no_safepoint_count is non-zero, then an assertion failure will happen in any of
+  // the above cases.
   //
   // The class NoSafepointVerifier is used to set this counter.
   //
-  NOT_PRODUCT(int _allow_safepoint_count;)      // If 0, thread allow a safepoint to happen
+  NOT_PRODUCT(int _no_safepoint_count;)         // If 0, thread allow a safepoint to happen
 
   // Used by SkipGCALot class.
   NOT_PRODUCT(bool _skip_gcalot;)               // Should we elide gc-a-lot?

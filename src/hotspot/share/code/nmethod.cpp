@@ -1313,7 +1313,7 @@ bool nmethod::make_not_entrant_or_zombie(int state) {
   nmethodLocker nml(this);
   methodHandle the_method(method());
   // This can be called while the system is already at a safepoint which is ok
-  NoSafepointVerifier nsv(true, !SafepointSynchronize::is_at_safepoint());
+  NoSafepointVerifier nsv;
 
   // during patching, depending on the nmethod state we must notify the GC that
   // code has been unloaded, unregistering it. We cannot do this right while

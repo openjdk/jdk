@@ -309,8 +309,7 @@ class ClassLoaderDataGraphIterator : public StackObj {
                             // unless verifying at a safepoint.
 
 public:
-  ClassLoaderDataGraphIterator() : _next(ClassLoaderDataGraph::_head),
-     _nsv(true, !SafepointSynchronize::is_at_safepoint()) {
+  ClassLoaderDataGraphIterator() : _next(ClassLoaderDataGraph::_head) {
     _thread = Thread::current();
     assert_locked_or_safepoint(ClassLoaderDataGraph_lock);
   }

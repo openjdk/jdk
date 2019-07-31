@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1412,7 +1412,7 @@ address OptoRuntime::handle_exception_C(JavaThread* thread) {
 // However, there needs to be a safepoint check in the middle!  So compiled
 // safepoints are completely watertight.
 //
-// Thus, it cannot be a leaf since it contains the NoGCVerifier.
+// Thus, it cannot be a leaf since it contains the NoSafepointVerifier.
 //
 // *THIS IS NOT RECOMMENDED PROGRAMMING STYLE*
 //

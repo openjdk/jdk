@@ -250,7 +250,7 @@ Thread::Thread() {
 
   // plain initialization
   debug_only(_owned_locks = NULL;)
-  NOT_PRODUCT(_allow_safepoint_count = 0;)
+  NOT_PRODUCT(_no_safepoint_count = 0;)
   NOT_PRODUCT(_skip_gcalot = false;)
   _jvmti_env_iteration_count = 0;
   set_allocated_bytes(0);
@@ -1020,7 +1020,7 @@ bool Thread::owns_locks_but_compiled_lock() const {
 // no locks which allow_vm_block's are held
 void Thread::check_for_valid_safepoint_state(bool potential_vm_operation) {
   // Check if current thread is allowed to block at a safepoint
-  if (!(_allow_safepoint_count == 0)) {
+  if (_no_safepoint_count > 0) {
     fatal("Possible safepoint reached by thread that does not allow it");
   }
   if (is_Java_thread() && ((JavaThread*)this)->thread_state() != _thread_in_vm) {
@@ -3543,7 +3543,7 @@ static inline void *prefetch_and_load_ptr(void **addr, intx prefetch_interval) {
 
 // All NonJavaThreads (i.e., every non-JavaThread in the system).
 void Threads::non_java_threads_do(ThreadClosure* tc) {
-  NoSafepointVerifier nsv(!SafepointSynchronize::is_at_safepoint(), false);
+  NoSafepointVerifier nsv;
   for (NonJavaThread::Iterator njti; !njti.end(); njti.step()) {
     tc->do_thread(njti.current());
   }
