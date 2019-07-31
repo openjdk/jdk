@@ -670,42 +670,6 @@ void ShenandoahBarrierC2Support::verify(RootNode* root) {
         }
       }
     }
-    for( uint i = 0; i < n->len(); ++i ) {
-      Node *m = n->in(i);
-      if (m == NULL) continue;
-
-      // In most cases, inputs should be known to be non null. If it's
-      // not the case, it could be a missing cast_not_null() in an
-      // intrinsic or support might be needed in AddPNode::Ideal() to
-      // avoid a NULL+offset input.
-      if (!(n->is_Phi() ||
-            (n->is_SafePoint() && (!n->is_CallRuntime() || !strcmp(n->as_Call()->_name, "shenandoah_wb_pre") || !strcmp(n->as_Call()->_name, "unsafe_arraycopy"))) ||
-            n->Opcode() == Op_CmpP ||
-            n->Opcode() == Op_CmpN ||
-            (n->Opcode() == Op_StoreP && i == StoreNode::ValueIn) ||
-            (n->Opcode() == Op_StoreN && i == StoreNode::ValueIn) ||
-            n->is_ConstraintCast() ||
-            n->Opcode() == Op_Return ||
-            n->Opcode() == Op_Conv2B ||
-            n->is_AddP() ||
-            n->Opcode() == Op_CMoveP ||
-            n->Opcode() == Op_CMoveN ||
-            n->Opcode() == Op_Rethrow ||
-            n->is_MemBar() ||
-            n->is_Mem() ||
-            n->Opcode() == Op_AryEq ||
-            n->Opcode() == Op_SCMemProj ||
-            n->Opcode() == Op_EncodeP ||
-            n->Opcode() == Op_DecodeN ||
-            n->Opcode() == Op_ShenandoahEnqueueBarrier ||
-            n->Opcode() == Op_ShenandoahLoadReferenceBarrier)) {
-        if (m->bottom_type()->make_oopptr() && m->bottom_type()->make_oopptr()->meet(TypePtr::NULL_PTR) == m->bottom_type()) {
-          report_verify_failure("Shenandoah verification: null input", n, m);
-        }
-      }
-
-      wq.push(m);
-    }
   }
 
   if (verify_no_useless_barrier) {
