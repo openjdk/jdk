@@ -2360,6 +2360,7 @@ const size_t minimumSymbolTableSize = 1024;
                                                                             \
   experimental(intx, SurvivorAlignmentInBytes, 0,                           \
            "Default survivor space alignment in bytes")                     \
+           range(8, 256)                                                    \
            constraint(SurvivorAlignmentInBytesConstraintFunc,AfterErgo)     \
                                                                             \
   product(ccstr, DumpLoadedClassList, NULL,                                 \
