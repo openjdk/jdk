@@ -40,6 +40,8 @@ static char host_information[300];
 static char extended_resource_info_at_startup[600];
 
 void VirtualizationSupport::initialize() {
+  if (!ExtensiveErrorReports) return;
+
   // open vmguestlib and bind SDK functions
   char ebuf[1024];
   dlHandle = os::dll_load("vmGuestLib", ebuf, sizeof ebuf);
