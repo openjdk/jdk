@@ -59,6 +59,16 @@ compiler/cpuflags/TestAESIntrinsicsOnSupportedConfig.java 8190680 generic-all
 
 compiler/runtime/Test8168712.java 8211769,8211771 generic-ppc64,generic-ppc64le,linux-s390x
 
+compiler/rtm/locking/TestRTMAbortRatio.java 8183263 generic-x64
+compiler/rtm/locking/TestRTMAbortThreshold.java 8183263 generic-x64
+compiler/rtm/locking/TestRTMAfterNonRTMDeopt.java 8183263 generic-x64
+compiler/rtm/locking/TestRTMDeoptOnHighAbortRatio.java 8183263 generic-x64
+compiler/rtm/locking/TestRTMDeoptOnLowAbortRatio.java 8183263 generic-x64
+compiler/rtm/locking/TestRTMLockingCalculationDelay.java 8183263 generic-x64
+compiler/rtm/locking/TestRTMLockingThreshold.java 8183263 generic-x64
+compiler/rtm/locking/TestUseRTMDeopt.java 8183263 generic-x64
+compiler/rtm/print/TestPrintPreciseRTMLockingStatistics.java 8183263 generic-x64
+
 #############################################################################
 
 # :hotspot_gc
