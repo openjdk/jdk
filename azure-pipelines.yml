@@ -1,0 +1,22 @@
+jobs:
+- job: build
+  pool:
+    vmImage: 'ubuntu-16.04'
+  container: mdernst/cf-ubuntu-jdk11-plus-buildjdk:latest
+  steps:
+  - checkout: none
+  - bash: env | sort
+    displayName: show environment
+  - bash: git -C jdk pull -q ${BUILD_REPOSITORY_URI} ${BUILD_SOURCEBRANCHNAME} || git clone --depth 1 -q ${BUILD_REPOSITORY_URI} --branch ${BUILD_SOURCEBRANCHNAME}
+    displayName: pull or clone
+  - bash: (export JT_HOME=/jtreg && cd jdk && bash configure --with-jtreg --disable-warnings-as-errors)
+    displayName: configure
+  - bash: make -C jdk images
+    displayName: make images
+  - bash: jdk/build/*/images/jdk/bin/java -version
+    displayName: version
+  # - bash: make -C jdk run-test-tier1
+  #   displayName: make run-test-tier1
+
+trigger:
+  batch: true
