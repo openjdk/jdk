@@ -61,7 +61,8 @@ hotspot_misc = \
  -:hotspot_gc \
  -:hotspot_runtime \
  -:hotspot_serviceability \
- -gc/nvdimm
+ -gc/nvdimm \
+ -:hotspot_containers
 
 hotspot_native_sanity = \
   native_sanity
