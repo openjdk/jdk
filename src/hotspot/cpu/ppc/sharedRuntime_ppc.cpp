@@ -2719,10 +2719,6 @@ static void push_skeleton_frame(MacroAssembler* masm, bool deopt,
   __ ld(frame_size_reg, 0, frame_sizes_reg);
   __ std(pc_reg, _abi(lr), R1_SP);
   __ push_frame(frame_size_reg, R0/*tmp*/);
-#ifdef ASSERT
-  __ load_const_optimized(pc_reg, 0x5afe);
-  __ std(pc_reg, _ijava_state_neg(ijava_reserved), R1_SP);
-#endif
   __ std(R1_SP, _ijava_state_neg(sender_sp), R1_SP);
   __ addi(number_of_frames_reg, number_of_frames_reg, -1);
   __ addi(frame_sizes_reg, frame_sizes_reg, wordSize);
@@ -2795,10 +2791,6 @@ static void push_skeleton_frames(MacroAssembler* masm, bool deopt,
   __ std(R12_scratch2, _abi(lr), R1_SP);
 
   // Initialize initial_caller_sp.
-#ifdef ASSERT
- __ load_const_optimized(pc_reg, 0x5afe);
- __ std(pc_reg, _ijava_state_neg(ijava_reserved), R1_SP);
-#endif
  __ std(frame_size_reg, _ijava_state_neg(sender_sp), R1_SP);
 
 #ifdef ASSERT
