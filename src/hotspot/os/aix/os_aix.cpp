@@ -1313,6 +1313,8 @@ bool os::dll_address_to_library_name(address addr, char* buf,
 // for the same architecture as Hotspot is running on.
 void *os::dll_load(const char *filename, char *ebuf, int ebuflen) {
 
+  log_info(os)("attempting shared library load of %s", filename);
+
   if (ebuf && ebuflen > 0) {
     ebuf[0] = '\0';
     ebuf[ebuflen - 1] = '\0';
@@ -1329,6 +1331,7 @@ void *os::dll_load(const char *filename, char *ebuf, int ebuflen) {
     Events::log(NULL, "Loaded shared library %s", filename);
     // Reload dll cache. Don't do this in signal handling.
     LoadedLibraries::reload();
+    log_info(os)("shared library load of %s was successful", filename);
     return result;
   } else {
     // error analysis when dlopen fails
@@ -1341,6 +1344,7 @@ void *os::dll_load(const char *filename, char *ebuf, int ebuflen) {
                filename, ::getenv("LIBPATH"), ::getenv("LD_LIBRARY_PATH"), error_report);
     }
     Events::log(NULL, "Loading shared library %s failed, %s", filename, error_report);
+    log_info(os)("shared library load of %s failed, %s", filename, error_report);
   }
   return NULL;
 }

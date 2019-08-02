@@ -1532,10 +1532,13 @@ static void change_endianness(Elf32_Half& val) {
 // same architecture as Hotspot is running on
 
 void * os::dll_load(const char *filename, char *ebuf, int ebuflen) {
+  log_info(os)("attempting shared library load of %s", filename);
+
   void * result= ::dlopen(filename, RTLD_LAZY);
   if (result != NULL) {
     // Successful loading
     Events::log(NULL, "Loaded shared library %s", filename);
+    log_info(os)("shared library load of %s was successful", filename);
     return result;
   }
 
@@ -1550,6 +1553,7 @@ void * os::dll_load(const char *filename, char *ebuf, int ebuflen) {
   }
 
   Events::log(NULL, "Loading shared library %s failed, %s", filename, error_report);
+  log_info(os)("shared library load of %s failed, %s", filename, error_report);
 
   int diag_msg_max_length=ebuflen-strlen(ebuf);
   char* diag_msg_buf=ebuf+strlen(ebuf);
