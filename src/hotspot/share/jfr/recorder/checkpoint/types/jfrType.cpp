@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -311,7 +311,7 @@ void ClassUnloadTypeSet::serialize(JfrCheckpointWriter& writer) {
   if (LeakProfiler::is_running()) {
     JfrCheckpointWriter leakp_writer(false, true, Thread::current());
     type_set.write(writer, &leakp_writer);
-    ObjectSampleCheckpoint::install(leakp_writer, true);
+    ObjectSampleCheckpoint::install(leakp_writer, true, true);
     return;
   }
   type_set.write(writer, NULL);
@@ -322,7 +322,7 @@ void TypeSet::serialize(JfrCheckpointWriter& writer) {
   if (LeakProfiler::is_running()) {
     JfrCheckpointWriter leakp_writer(false, true, Thread::current());
     type_set.write(writer, &leakp_writer);
-    ObjectSampleCheckpoint::install(leakp_writer, false);
+    ObjectSampleCheckpoint::install(leakp_writer, false, true);
     return;
   }
   type_set.write(writer, NULL);
