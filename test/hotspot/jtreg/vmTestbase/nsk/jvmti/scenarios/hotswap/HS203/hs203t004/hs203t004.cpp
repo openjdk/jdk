@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -151,7 +151,7 @@ jint  Agent_Initialize(JavaVM *vm, char *options, void *reserved) {
         jvmtiCapabilities caps;
         jvmtiEventCallbacks eventCallbacks;
         memset(&caps, 0, sizeof(caps));
-        if (nsk_jvmti_parseOptions(options) == NSK_FALSE) {
+        if (!nsk_jvmti_parseOptions(options)) {
             NSK_DISPLAY0("#error Agent ::  Failed to parse options.\n");
             return JNI_ERR;
         }

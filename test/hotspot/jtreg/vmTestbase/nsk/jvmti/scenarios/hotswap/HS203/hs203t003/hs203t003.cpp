@@ -134,7 +134,7 @@ jint  Agent_Initialize(JavaVM *vm, char *options, void *reserved) {
     } else {
         jvmtiCapabilities caps;
         jvmtiEventCallbacks eventCallbacks;
-        if (nsk_jvmti_parseOptions(options) == NSK_FALSE) {
+        if (!nsk_jvmti_parseOptions(options)) {
             nsk_printf("#error Agent :: Failed to parse options.\n");
             return JNI_ERR;
         }
