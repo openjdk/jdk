@@ -5,17 +5,43 @@ jobs:
   container: mdernst/cf-ubuntu-jdk11-plus-buildjdk:latest
   steps:
   - checkout: none
-  - bash: env | sort
+  - bash: |
+      whoami
+      pwd
+      ls -l
+      env | sort
     displayName: show environment
-  - bash: git -C jdk pull -q ${BUILD_REPOSITORY_URI} ${BUILD_SOURCEBRANCHNAME} || git clone --depth 1 -q ${BUILD_REPOSITORY_URI} --branch ${BUILD_SOURCEBRANCHNAME}
+  - bash: |
+      set -ex
+      if [ -d /tmp/plume-scripts ]; \
+        then git -C /tmp/plume-scripts pull > /dev/null 2>&1 ; \
+        else git -C /tmp clone --depth 1 -q https://github.com/plume-lib/plume-scripts.git ; \
+        fi
+      eval `/tmp/plume-scripts/ci-info typetools`
+      CI_REPOSITORY_URI=https://github.com/${CI_ORGANIZATION}/jdk.git
+      ls -al /jdk/.git
+      if [ -d /jdk ]; \
+        then git -C /jdk pull -q ${CI_REPOSITORY_URI} ${CI_BRANCH} ; \
+        else git clone --depth 1 -q ${CI_REPOSITORY_URI} --branch ${CI_BRANCH} /jdk ; \
+        fi
     displayName: pull or clone
-  - bash: (export JT_HOME=/jtreg && cd jdk && bash configure --with-jtreg --disable-warnings-as-errors)
+  # Is it necessary to re-run configure?
+  - bash: |
+      echo "/jdk/build/linux-x86_64-normal-server-release:"
+      ls -al /jdk/build/linux-x86_64-normal-server-release
+      echo "/jdk/build/linux-x86_64-normal-server-release/configure-support:"
+      ls -al /jdk/build/linux-x86_64-normal-server-release/configure-support
+      echo "config.status:"
+      ls -al /jdk/build/linux-x86_64-normal-server-release/configure-support/config.status
+      export JT_HOME=/jtreg
+      cd /jdk
+      bash ./configure --with-jtreg --disable-warnings-as-errors
     displayName: configure
-  - bash: make -C jdk images
+  - bash: make -C /jdk images
     displayName: make images
   - bash: jdk/build/*/images/jdk/bin/java -version
     displayName: version
-  # - bash: make -C jdk run-test-tier1
+  # - bash: make -C /jdk run-test-tier1
   #   displayName: make run-test-tier1
 
 trigger:
