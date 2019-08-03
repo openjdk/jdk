@@ -25,18 +25,6 @@ jobs:
         else git clone --depth 1 -q ${CI_REPOSITORY_URI} --branch ${CI_BRANCH} /jdk ; \
         fi
     displayName: pull or clone
-  # Is it necessary to re-run configure?
-  - bash: |
-      echo "/jdk/build/linux-x86_64-normal-server-release:"
-      ls -al /jdk/build/linux-x86_64-normal-server-release
-      echo "/jdk/build/linux-x86_64-normal-server-release/configure-support:"
-      ls -al /jdk/build/linux-x86_64-normal-server-release/configure-support
-      echo "config.status:"
-      ls -al /jdk/build/linux-x86_64-normal-server-release/configure-support/config.status
-      export JT_HOME=/jtreg
-      cd /jdk
-      bash ./configure --with-jtreg --disable-warnings-as-errors
-    displayName: configure
   - bash: make -C /jdk images
     displayName: make images
   - bash: jdk/build/*/images/jdk/bin/java -version
