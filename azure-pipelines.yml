@@ -27,7 +27,7 @@ jobs:
     displayName: pull or clone
   - bash: make -C /jdk images
     displayName: make images
-  - bash: jdk/build/*/images/jdk/bin/java -version
+  - bash: /jdk/build/*/images/jdk/bin/java -version
     displayName: version
   # - bash: make -C /jdk run-test-tier1
   #   displayName: make run-test-tier1
