@@ -417,7 +417,8 @@ void G1BarrierSetC2::post_barrier(GraphKit* kit,
   Node* tls = __ thread(); // ThreadLocalStorage
 
   Node* no_base = __ top();
-  float unlikely  = PROB_UNLIKELY(0.999);
+  float likely = PROB_LIKELY_MAG(3);
+  float unlikely = PROB_UNLIKELY_MAG(3);
   Node* young_card = __ ConI((jint)G1CardTable::g1_young_card_val());
   Node* dirty_card = __ ConI((jint)G1CardTable::dirty_card_val());
   Node* zeroX = __ ConX(0);
@@ -460,17 +461,17 @@ void G1BarrierSetC2::post_barrier(GraphKit* kit,
     Node* xor_res =  __ URShiftX ( __ XorX( cast,  __ CastPX(__ ctrl(), val)), __ ConI(HeapRegion::LogOfHRGrainBytes));
 
     // if (xor_res == 0) same region so skip
-    __ if_then(xor_res, BoolTest::ne, zeroX); {
+    __ if_then(xor_res, BoolTest::ne, zeroX, likely); {
 
       // No barrier if we are storing a NULL
-      __ if_then(val, BoolTest::ne, kit->null(), unlikely); {
+      __ if_then(val, BoolTest::ne, kit->null(), likely); {
 
         // Ok must mark the card if not already dirty
 
         // load the original value of the card
         Node* card_val = __ load(__ ctrl(), card_adr, TypeInt::INT, T_BYTE, Compile::AliasIdxRaw);
 
-        __ if_then(card_val, BoolTest::ne, young_card); {
+        __ if_then(card_val, BoolTest::ne, young_card, unlikely); {
           kit->sync_kit(ideal);
           kit->insert_store_load_for_barrier();
           __ sync_kit(kit);
