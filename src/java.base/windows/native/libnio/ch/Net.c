@@ -623,9 +623,6 @@ Java_sun_nio_ch_Net_poll(JNIEnv* env, jclass this, jobject fdo, jint events, jlo
     fd_set rd, wr, ex;
     jint fd = fdval(env, fdo);
 
-    t.tv_sec = (long)(timeout / 1000);
-    t.tv_usec = (timeout % 1000) * 1000;
-
     FD_ZERO(&rd);
     FD_ZERO(&wr);
     FD_ZERO(&ex);
@@ -638,7 +635,12 @@ Java_sun_nio_ch_Net_poll(JNIEnv* env, jclass this, jobject fdo, jint events, jlo
     }
     FD_SET(fd, &ex);
 
-    rv = select(fd+1, &rd, &wr, &ex, &t);
+    if (timeout >= 0) {
+        t.tv_sec = (long)(timeout / 1000);
+        t.tv_usec = (timeout % 1000) * 1000;
+    }
+
+    rv = select(fd+1, &rd, &wr, &ex, (timeout >= 0) ? &t : NULL);
 
     /* save last winsock error */
     if (rv == SOCKET_ERROR) {

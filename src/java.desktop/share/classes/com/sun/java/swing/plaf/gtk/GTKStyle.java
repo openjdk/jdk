@@ -205,6 +205,14 @@ class GTKStyle extends SynthStyle implements GTKConstants {
         return getGTKColor(null, state, type);
     }
 
+    Color getGTKColor(int widgetType, int state, int colorType) {
+        synchronized (sun.awt.UNIXToolkit.GTK_LOCK) {
+            int rgb = nativeGetColorForState(widgetType, state,
+                    colorType);
+            return new ColorUIResource(rgb);
+        }
+    }
+
     /**
      * Returns the color for the specified state.
      *

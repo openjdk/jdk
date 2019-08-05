@@ -35,7 +35,7 @@ class ObjectSampler;
 
 class ObjectSampleCheckpoint : AllStatic {
  public:
-  static void install(JfrCheckpointWriter& writer, bool class_unload);
+  static void install(JfrCheckpointWriter& writer, bool class_unload, bool type_set);
   static void write(ObjectSampler* sampler, EdgeStore* edge_store, bool emit_all, Thread* thread);
   static int mark(ObjectSampler* sampler, ObjectSampleMarker& marker, bool emit_all);
 };
