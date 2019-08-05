@@ -1308,8 +1308,7 @@ static void kill_dead_code( Node *dead, PhaseIterGVN *igvn ) {
   // Con's are a popular node to re-hit in the hash table again.
   if( dead->is_Con() ) return;
 
-  // Can't put ResourceMark here since igvn->_worklist uses the same arena
-  // for verify pass with +VerifyOpto and we add/remove elements in it here.
+  ResourceMark rm;
   Node_List  nstack(Thread::current()->resource_area());
 
   Node *top = igvn->C->top();

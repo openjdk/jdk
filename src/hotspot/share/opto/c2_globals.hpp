@@ -107,9 +107,6 @@
   notproduct(bool, PrintOptoInlining, false,                                \
           "Print compiler2 inlining decisions")                             \
                                                                             \
-  notproduct(bool, VerifyOpto, false,                                       \
-          "Apply more time consuming verification during compilation")      \
-                                                                            \
   notproduct(bool, VerifyIdealNodeCount, false,                             \
           "Verify that tracked dead ideal node count is accurate")          \
                                                                             \
