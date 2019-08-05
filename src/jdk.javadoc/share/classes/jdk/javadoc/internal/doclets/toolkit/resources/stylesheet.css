@@ -680,6 +680,32 @@ section.description {
 }
 
 /*
+ * Indicator icon for external links.
+ */
+main a[href*="://"]::after {
+    content:"";
+    display:inline-block;
+    background-image:url('data:image/svg+xml; utf8, \
+      <svg xmlns="http://www.w3.org/2000/svg" width="768" height="768">\
+        <path d="M584 664H104V184h216V80H0v688h688V448H584zM384 0l132 \
+        132-240 240 120 120 240-240 132 132V0z" fill="%234a6782"/>\
+      </svg>');
+    background-size:100% 100%;
+    width:7px;
+    height:7px;
+    margin-left:2px;
+    margin-bottom:4px;
+}
+main a[href*="://"]:hover::after,
+main a[href*="://"]:focus::after {
+    background-image:url('data:image/svg+xml; utf8, \
+      <svg xmlns="http://www.w3.org/2000/svg" width="768" height="768">\
+        <path d="M584 664H104V184h216V80H0v688h688V448H584zM384 0l132 \
+        132-240 240 120 120 240-240 132 132V0z" fill="%23bb7a2a"/>\
+      </svg>');
+}
+
+/*
  * Styles for user-provided tables.
  *
  * borderless:
