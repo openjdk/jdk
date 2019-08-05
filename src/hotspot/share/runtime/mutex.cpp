@@ -40,6 +40,10 @@ void Monitor::check_safepoint_state(Thread* thread, bool do_safepoint_check) {
   assert(!thread->is_Java_thread() || _safepoint_check_required != not_allowed,
          "This lock should %s have a safepoint check for Java threads: %s",
          _safepoint_check_required ? "always" : "never", name());
+
+  // If defined with safepoint_check_never, a NonJavaThread should never ask to safepoint check either.
+  assert(thread->is_Java_thread() || !do_safepoint_check || _safepoint_check_required != Monitor::_safepoint_check_never,
+         "NonJavaThread should not check for safepoint");
 }
 #endif // ASSERT
 

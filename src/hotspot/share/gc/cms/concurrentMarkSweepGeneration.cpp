@@ -6969,7 +6969,7 @@ void CMSPrecleanRefsYieldClosure::do_yield_work() {
   }
 
   ConcurrentMarkSweepThread::synchronize(true);
-  bml->lock();
+  bml->lock_without_safepoint_check();
 
   _collector->startTimer();
 }
