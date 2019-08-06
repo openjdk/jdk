@@ -1,6 +1,6 @@
 /*
  *
- * Copyright (c) 2007, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2019, Oracle and/or its affiliates. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -43,6 +43,7 @@ import java.awt.*;
 import java.awt.font.*;
 import java.awt.geom.*;
 import java.awt.image.*;
+import java.lang.reflect.InvocationTargetException;
 import java.awt.event.*;
 
 /**
@@ -309,10 +310,19 @@ class BezierAnimationPanel extends JPanel implements Runnable {
             g2d.fill(gp);
         }
             if (g2d == BufferG2D) {
-                repaint();
+                try {
+                    SwingUtilities.invokeAndWait(new Runnable() {
+
+                        @Override
+                        public void run() {
+                            repaint();
+                        }
+                    });
+                } catch (InvocationTargetException | InterruptedException e) {
+                    e.printStackTrace();
+                }
             }
             ++frame;
-            Thread.yield();
         }
         if (g2d != null) {
             g2d.dispose();

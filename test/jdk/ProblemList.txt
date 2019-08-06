@@ -820,7 +820,6 @@ javax/swing/JTree/8003400/Test8003400.java 8197560 macosx-all,linux-all
 javax/swing/RepaintManager/IconifyTest/IconifyTest.java 8221903 linux-all
 javax/swing/JRadioButton/FocusTraversal/FocusTraversal.java 8221902 linux-all
 
-sanity/client/SwingSet/src/ColorChooserDemoTest.java 8221312 generic-all
 sanity/client/SwingSet/src/ToolTipDemoTest.java 8225012 windows-all
 sanity/client/SwingSet/src/ScrollPaneDemoTest.java 8225013 linux-all
 

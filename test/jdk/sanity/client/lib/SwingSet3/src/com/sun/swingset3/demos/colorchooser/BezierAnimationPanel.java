@@ -28,6 +28,7 @@ import java.awt.event.HierarchyEvent;
 import java.awt.event.HierarchyListener;
 import java.awt.geom.GeneralPath;
 import java.awt.image.BufferedImage;
+import java.lang.reflect.InvocationTargetException;
 import java.util.Hashtable;
 import java.util.Map;
 import javax.swing.*;
@@ -233,9 +234,16 @@ public class BezierAnimationPanel extends JPanel implements Runnable {
                 g2d.fill(gp);
             }
 
-            repaint();
-
-            Thread.yield();
+            try {
+                SwingUtilities.invokeAndWait(new Runnable() {
+                    @Override
+                    public void run() {
+                        repaint();
+                    }
+                });
+            } catch (InvocationTargetException | InterruptedException e) {
+                e.printStackTrace();
+            }
         }
         if (g2d != null) {
             g2d.dispose();
@@ -252,4 +260,3 @@ public class BezierAnimationPanel extends JPanel implements Runnable {
         }
     }
 }
-
