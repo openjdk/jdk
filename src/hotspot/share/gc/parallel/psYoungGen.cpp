@@ -766,12 +766,6 @@ void PSYoungGen::print_on(outputStream* st) const {
   st->print("  to  "); to_space()->print_on(st);
 }
 
-// Note that a space is not printed before the [NAME:
-void PSYoungGen::print_used_change(size_t prev_used) const {
-  log_info(gc, heap)("%s: "  SIZE_FORMAT "K->" SIZE_FORMAT "K("  SIZE_FORMAT "K)",
-      name(), prev_used / K, used_in_bytes() / K, capacity_in_bytes() / K);
-}
-
 size_t PSYoungGen::available_for_expansion() {
   ShouldNotReachHere();
   return 0;

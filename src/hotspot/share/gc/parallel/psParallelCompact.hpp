@@ -42,7 +42,6 @@ class ParallelTaskTerminator;
 class PSParallelCompact;
 class GCTaskManager;
 class GCTaskQueue;
-class PreGCValues;
 class MoveAndUpdateClosure;
 class RefProcTaskExecutor;
 class ParallelOldTracer;

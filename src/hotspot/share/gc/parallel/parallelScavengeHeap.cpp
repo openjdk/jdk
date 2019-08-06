@@ -616,6 +616,55 @@ void ParallelScavengeHeap::print_tracing_info() const {
       UseParallelOldGC ? PSParallelCompact::accumulated_time()->seconds() : PSMarkSweepProxy::accumulated_time()->seconds());
 }
 
+PreGenGCValues ParallelScavengeHeap::get_pre_gc_values() const {
+  const PSYoungGen* const young = young_gen();
+  const MutableSpace* const eden = young->eden_space();
+  const MutableSpace* const from = young->from_space();
+  const MutableSpace* const to = young->to_space();
+  const PSOldGen* const old = old_gen();
+
+  return PreGenGCValues(young->used_in_bytes(),
+                        young->capacity_in_bytes(),
+                        eden->used_in_bytes(),
+                        eden->capacity_in_bytes(),
+                        from->used_in_bytes(),
+                        from->capacity_in_bytes(),
+                        old->used_in_bytes(),
+                        old->capacity_in_bytes());
+}
+
+void ParallelScavengeHeap::print_heap_change(const PreGenGCValues& pre_gc_values) const {
+  const PSYoungGen* const young = young_gen();
+  const MutableSpace* const eden = young->eden_space();
+  const MutableSpace* const from = young->from_space();
+  const PSOldGen* const old = old_gen();
+
+  log_info(gc, heap)(HEAP_CHANGE_FORMAT" "
+                     HEAP_CHANGE_FORMAT" "
+                     HEAP_CHANGE_FORMAT,
+                     HEAP_CHANGE_FORMAT_ARGS(young->name(),
+                                             pre_gc_values.young_gen_used(),
+                                             pre_gc_values.young_gen_capacity(),
+                                             young->used_in_bytes(),
+                                             young->capacity_in_bytes()),
+                     HEAP_CHANGE_FORMAT_ARGS("Eden",
+                                             pre_gc_values.eden_used(),
+                                             pre_gc_values.eden_capacity(),
+                                             eden->used_in_bytes(),
+                                             eden->capacity_in_bytes()),
+                     HEAP_CHANGE_FORMAT_ARGS("From",
+                                             pre_gc_values.from_used(),
+                                             pre_gc_values.from_capacity(),
+                                             from->used_in_bytes(),
+                                             from->capacity_in_bytes()));
+  log_info(gc, heap)(HEAP_CHANGE_FORMAT,
+                     HEAP_CHANGE_FORMAT_ARGS(old->name(),
+                                             pre_gc_values.old_gen_used(),
+                                             pre_gc_values.old_gen_capacity(),
+                                             old->used_in_bytes(),
+                                             old->capacity_in_bytes()));
+  MetaspaceUtils::print_metaspace_change(pre_gc_values.metaspace_sizes());
+}
 
 void ParallelScavengeHeap::verify(VerifyOption option /* ignored */) {
   // Why do we need the total_collections()-filter below?

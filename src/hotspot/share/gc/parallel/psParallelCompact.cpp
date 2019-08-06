@@ -1779,7 +1779,7 @@ bool PSParallelCompact::invoke_no_policy(bool maximum_heap_compaction) {
   // miscellaneous bookkeeping.
   pre_compact();
 
-  const PreGCValues pre_gc_values(heap);
+  const PreGenGCValues pre_gc_values = heap->get_pre_gc_values();
 
   // Get the compaction manager reserved for the VM thread.
   ParCompactionManager* const vmthread_cm =
@@ -1923,9 +1923,7 @@ bool PSParallelCompact::invoke_no_policy(bool maximum_heap_compaction) {
       accumulated_time()->stop();
     }
 
-    young_gen->print_used_change(pre_gc_values.young_gen_used());
-    old_gen->print_used_change(pre_gc_values.old_gen_used());
-    MetaspaceUtils::print_metaspace_change(pre_gc_values.metaspace_sizes());
+    heap->print_heap_change(pre_gc_values);
 
     // Track memory usage and detect low memory
     MemoryService::track_memory_usage();
