@@ -23,7 +23,7 @@
 
 /**
  * @test
- * @bug 8138725
+ * @bug 8138725 8226765
  * @summary test --allow-script-in-comments
  * @modules jdk.javadoc/jdk.javadoc.internal.tool
  */
@@ -63,6 +63,10 @@ public class TestScriptInComment {
         WS("< script >#ALERT</script>", false, "-Xdoclint:none"), // script tag with invalid white space
         SP("<script src=\"file\"> #ALERT </script>", true), // script tag with an attribute
         ON("<a onclick='#ALERT'>x</a>", true), // event handler attribute
+        OME("<img alt='1' onmouseenter='#ALERT'>", true), // onmouseenter event handler attribute
+        OML("<img alt='1' onmouseleave='#ALERT'>", true), // onmouseleave event handler attribute
+        OFI("<a href='#' onfocusin='#ALERT'>x</a>", true), // onfocusin event handler attribute
+        OBE("<a onbogusevent='#ALERT'>x</a>", true), // bogus/future event handler attribute
         URI("<a href='javascript:#ALERT'>x</a>", true); // javascript URI
 
         /**
