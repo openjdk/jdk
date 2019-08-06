@@ -41,11 +41,11 @@
 #include "utilities/debug.hpp"
 #include "utilities/ticks.hpp"
 
-#define ZSIZE_FMT               SIZE_FORMAT "M(%.0lf%%)"
+#define ZSIZE_FMT               SIZE_FORMAT "M(%.0f%%)"
 #define ZSIZE_ARGS(size)        ((size) / M), (percent_of(size, ZStatHeap::max_capacity()))
 
 #define ZTABLE_ARGS_NA          "%9s", "-"
-#define ZTABLE_ARGS(size)       SIZE_FORMAT_W(8) "M (%.0lf%%)", \
+#define ZTABLE_ARGS(size)       SIZE_FORMAT_W(8) "M (%.0f%%)", \
                                 ((size) / M), (percent_of(size, ZStatHeap::max_capacity()))
 
 //

@@ -337,7 +337,7 @@ bool ZPageAllocator::ensure_available(size_t size, bool no_reserve) {
       // Failed, or partly failed, to increase capacity. Adjust current
       // max capacity to avoid further attempts to increase capacity.
       log_error(gc)("Forced to lower max Java heap size from "
-                    SIZE_FORMAT "M(%.0lf%%) to " SIZE_FORMAT "M(%.0lf%%)",
+                    SIZE_FORMAT "M(%.0f%%) to " SIZE_FORMAT "M(%.0f%%)",
                     _current_max_capacity / M, percent_of(_current_max_capacity, _max_capacity),
                     _capacity / M, percent_of(_capacity, _max_capacity));
 
@@ -572,7 +572,7 @@ void ZPageAllocator::flush_cache_for_allocation(size_t requested) {
   const size_t cached_after = _cache.available();
   const size_t cached_before = cached_after + flushed;
 
-  log_info(gc, heap)("Page Cache: " SIZE_FORMAT "M(%.0lf%%)->" SIZE_FORMAT "M(%.0lf%%), "
+  log_info(gc, heap)("Page Cache: " SIZE_FORMAT "M(%.0f%%)->" SIZE_FORMAT "M(%.0f%%), "
                      "Flushed: " SIZE_FORMAT "M",
                      cached_before / M, percent_of(cached_before, max_capacity()),
                      cached_after / M, percent_of(cached_after, max_capacity()),
@@ -660,7 +660,7 @@ uint64_t ZPageAllocator::uncommit(uint64_t delay) {
   }
 
   if (uncommitted > 0) {
-    log_info(gc, heap)("Capacity: " SIZE_FORMAT "M(%.0lf%%)->" SIZE_FORMAT "M(%.0lf%%), "
+    log_info(gc, heap)("Capacity: " SIZE_FORMAT "M(%.0f%%)->" SIZE_FORMAT "M(%.0f%%), "
                        "Uncommitted: " SIZE_FORMAT "M",
                        capacity_before / M, percent_of(capacity_before, max_capacity()),
                        capacity_after / M, percent_of(capacity_after, max_capacity()),

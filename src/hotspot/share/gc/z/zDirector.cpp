@@ -66,7 +66,7 @@ bool ZDirector::rule_timer() const {
   const double time_since_last_gc = ZStatCycle::time_since_last();
   const double time_until_gc = ZCollectionInterval - time_since_last_gc;
 
-  log_debug(gc, director)("Rule: Timer, Interval: %us, TimeUntilGC: %.3lfs",
+  log_debug(gc, director)("Rule: Timer, Interval: %us, TimeUntilGC: %.3fs",
                           ZCollectionInterval, time_until_gc);
 
   return time_until_gc <= 0;
@@ -133,7 +133,7 @@ bool ZDirector::rule_allocation_rate() const {
   const double sample_interval = 1.0 / ZStatAllocRate::sample_hz;
   const double time_until_gc = time_until_oom - max_duration_of_gc - sample_interval;
 
-  log_debug(gc, director)("Rule: Allocation Rate, MaxAllocRate: %.3lfMB/s, Free: " SIZE_FORMAT "MB, MaxDurationOfGC: %.3lfs, TimeUntilGC: %.3lfs",
+  log_debug(gc, director)("Rule: Allocation Rate, MaxAllocRate: %.3fMB/s, Free: " SIZE_FORMAT "MB, MaxDurationOfGC: %.3fs, TimeUntilGC: %.3fs",
                           max_alloc_rate / M, free / M, max_duration_of_gc, time_until_gc);
 
   return time_until_gc <= 0;
@@ -162,7 +162,7 @@ bool ZDirector::rule_proactive() const {
   const double time_since_last_gc_threshold = 5 * 60; // 5 minutes
   if (used < used_threshold && time_since_last_gc < time_since_last_gc_threshold) {
     // Don't even consider doing a proactive GC
-    log_debug(gc, director)("Rule: Proactive, UsedUntilEnabled: " SIZE_FORMAT "MB, TimeUntilEnabled: %.3lfs",
+    log_debug(gc, director)("Rule: Proactive, UsedUntilEnabled: " SIZE_FORMAT "MB, TimeUntilEnabled: %.3fs",
                             (used_threshold - used) / M,
                             time_since_last_gc_threshold - time_since_last_gc);
     return false;
@@ -175,7 +175,7 @@ bool ZDirector::rule_proactive() const {
   const double acceptable_gc_interval = max_duration_of_gc * ((assumed_throughput_drop_during_gc / acceptable_throughput_drop) - 1.0);
   const double time_until_gc = acceptable_gc_interval - time_since_last_gc;
 
-  log_debug(gc, director)("Rule: Proactive, AcceptableGCInterval: %.3lfs, TimeSinceLastGC: %.3lfs, TimeUntilGC: %.3lfs",
+  log_debug(gc, director)("Rule: Proactive, AcceptableGCInterval: %.3fs, TimeSinceLastGC: %.3fs, TimeUntilGC: %.3fs",
                           acceptable_gc_interval, time_since_last_gc, time_until_gc);
 
   return time_until_gc <= 0;
@@ -198,7 +198,7 @@ bool ZDirector::rule_high_usage() const {
   const size_t free = free_with_reserve - MIN2(free_with_reserve, max_reserve);
   const double free_percent = percent_of(free, max_capacity);
 
-  log_debug(gc, director)("Rule: High Usage, Free: " SIZE_FORMAT "MB(%.1lf%%)",
+  log_debug(gc, director)("Rule: High Usage, Free: " SIZE_FORMAT "MB(%.1f%%)",
                           free / M, free_percent);
 
   return free_percent <= 5.0;
