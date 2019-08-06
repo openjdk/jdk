@@ -188,17 +188,4 @@ public:
   void oops_do(ZRootsIteratorClosure* cl);
 };
 
-class ZThreadRootsIterator {
-private:
-  void do_threads(ZRootsIteratorClosure* cl);
-
-  ZParallelOopsDo<ZThreadRootsIterator, &ZThreadRootsIterator::do_threads> _threads;
-
-public:
-  ZThreadRootsIterator();
-  ~ZThreadRootsIterator();
-
-  void oops_do(ZRootsIteratorClosure* cl);
-};
-
 #endif // SHARE_GC_Z_ZROOTSITERATOR_HPP

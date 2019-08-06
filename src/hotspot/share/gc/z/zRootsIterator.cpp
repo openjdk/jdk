@@ -410,26 +410,3 @@ void ZConcurrentWeakRootsIterator::oops_do(ZRootsIteratorClosure* cl) {
   _string_table.oops_do(cl);
   _resolved_method_table.oops_do(cl);
 }
-
-ZThreadRootsIterator::ZThreadRootsIterator() :
-    _threads(this) {
-  assert(SafepointSynchronize::is_at_safepoint(), "Should be at safepoint");
-  ZStatTimer timer(ZSubPhasePauseRootsSetup);
-  Threads::change_thread_claim_token();
-}
-
-ZThreadRootsIterator::~ZThreadRootsIterator() {
-  ZStatTimer timer(ZSubPhasePauseRootsTeardown);
-  Threads::assert_all_threads_claimed();
-}
-
-void ZThreadRootsIterator::do_threads(ZRootsIteratorClosure* cl) {
-  ZStatTimer timer(ZSubPhasePauseRootsThreads);
-  ResourceMark rm;
-  Threads::possibly_parallel_oops_do(true, cl, NULL);
-}
-
-void ZThreadRootsIterator::oops_do(ZRootsIteratorClosure* cl) {
-  ZStatTimer timer(ZSubPhasePauseRoots);
-  _threads.oops_do(cl);
-}
