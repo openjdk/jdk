@@ -44,6 +44,7 @@ static const ZStatCounter ZCounterUndoObjectAllocationFailed("Memory", "Undo Obj
 ZObjectAllocator::ZObjectAllocator(uint nworkers) :
     _nworkers(nworkers),
     _used(0),
+    _undone(0),
     _shared_medium_page(NULL),
     _shared_small_page(NULL),
     _worker_small_page(NULL) {}
@@ -56,6 +57,13 @@ ZPage* ZObjectAllocator::alloc_page(uint8_t type, size_t size, ZAllocationFlags 
   }
 
   return page;
+}
+
+void ZObjectAllocator::undo_alloc_page(ZPage* page) {
+  // Increment undone bytes
+  Atomic::add(page->size(), _undone.addr());
+
+  ZHeap::heap()->undo_alloc_page(page);
 }
 
 uintptr_t ZObjectAllocator::alloc_object_in_shared_page(ZPage** shared_page,
@@ -99,7 +107,7 @@ uintptr_t ZObjectAllocator::alloc_object_in_shared_page(ZPage** shared_page,
         addr = prev_addr;
 
         // Undo new page allocation
-        ZHeap::heap()->undo_alloc_page(new_page);
+        undo_alloc_page(new_page);
       }
     }
   }
@@ -208,7 +216,7 @@ bool ZObjectAllocator::undo_alloc_large_object(ZPage* page) {
   assert(page->type() == ZPageTypeLarge, "Invalid page type");
 
   // Undo page allocation
-  ZHeap::heap()->undo_alloc_page(page);
+  undo_alloc_page(page);
   return true;
 }
 
@@ -268,13 +276,19 @@ void ZObjectAllocator::undo_alloc_object_for_relocation(ZPage* page, uintptr_t a
 
 size_t ZObjectAllocator::used() const {
   size_t total_used = 0;
+  size_t total_undone = 0;
 
-  ZPerCPUConstIterator<size_t> iter(&_used);
-  for (const size_t* cpu_used; iter.next(&cpu_used);) {
+  ZPerCPUConstIterator<size_t> iter_used(&_used);
+  for (const size_t* cpu_used; iter_used.next(&cpu_used);) {
     total_used += *cpu_used;
   }
 
-  return total_used;
+  ZPerCPUConstIterator<size_t> iter_undone(&_undone);
+  for (const size_t* cpu_undone; iter_undone.next(&cpu_undone);) {
+    total_undone += *cpu_undone;
+  }
+
+  return total_used - total_undone;
 }
 
 size_t ZObjectAllocator::remaining() const {
@@ -291,8 +305,9 @@ size_t ZObjectAllocator::remaining() const {
 void ZObjectAllocator::retire_pages() {
   assert(SafepointSynchronize::is_at_safepoint(), "Should be at safepoint");
 
-  // Reset used
+  // Reset used and undone bytes
   _used.set_all(0);
+  _undone.set_all(0);
 
   // Reset allocation pages
   _shared_medium_page.set(NULL);
