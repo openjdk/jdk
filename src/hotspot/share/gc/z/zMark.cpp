@@ -634,17 +634,16 @@ public:
 class ZMarkConcurrentRootsTask : public ZTask {
 private:
   SuspendibleThreadSetJoiner          _sts_joiner;
-  ZConcurrentRootsIterator            _roots;
+  ZConcurrentRootsIteratorClaimStrong _roots;
   ZMarkConcurrentRootsIteratorClosure _cl;
 
 public:
   ZMarkConcurrentRootsTask(ZMark* mark) :
       ZTask("ZMarkConcurrentRootsTask"),
-      _sts_joiner(true /* active */),
-      _roots(ClassLoaderData::_claim_strong),
+      _sts_joiner(),
+      _roots(),
       _cl() {
     ClassLoaderDataGraph_lock->lock();
-    ClassLoaderDataGraph::clear_claimed_marks();
   }
 
   ~ZMarkConcurrentRootsTask() {

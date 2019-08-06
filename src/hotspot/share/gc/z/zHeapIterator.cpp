@@ -188,19 +188,13 @@ void ZHeapIterator::push_fields(oop obj) {
   obj->oop_iterate(&cl);
 }
 
-class ZHeapIterateConcurrentRootsIterator : public ZConcurrentRootsIterator {
-public:
-  ZHeapIterateConcurrentRootsIterator() :
-      ZConcurrentRootsIterator(ClassLoaderData::_claim_other) {}
-};
-
 template <bool VisitWeaks>
 void ZHeapIterator::objects_do(ObjectClosure* cl) {
   ZStatTimerDisable disable;
 
   // Push roots to visit
-  push_roots<ZRootsIterator,                      false /* Concurrent */, false /* Weak */>();
-  push_roots<ZHeapIterateConcurrentRootsIterator, true  /* Concurrent */, false /* Weak */>();
+  push_roots<ZRootsIterator,                     false /* Concurrent */, false /* Weak */>();
+  push_roots<ZConcurrentRootsIteratorClaimOther, true  /* Concurrent */, false /* Weak */>();
   if (VisitWeaks) {
     push_roots<ZWeakRootsIterator,           false /* Concurrent */, true  /* Weak */>();
     push_roots<ZConcurrentWeakRootsIterator, true  /* Concurrent */, true  /* Weak */>();

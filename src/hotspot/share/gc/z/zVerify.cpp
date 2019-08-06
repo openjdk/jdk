@@ -23,7 +23,6 @@
 
 #include "precompiled.hpp"
 #include "classfile/classLoaderData.hpp"
-#include "classfile/classLoaderDataGraph.hpp"
 #include "gc/z/zAddress.hpp"
 #include "gc/z/zHeap.inline.hpp"
 #include "gc/z/zOop.hpp"
@@ -31,41 +30,65 @@
 #include "gc/z/zRootsIterator.hpp"
 #include "gc/z/zStat.hpp"
 #include "gc/z/zVerify.hpp"
-#include "memory/allocation.hpp"
 #include "memory/iterator.inline.hpp"
-#include "oops/oop.inline.hpp"
+#include "oops/oop.hpp"
 
-#define BAD_OOP_REPORT(addr)                                                \
-    "Bad oop " PTR_FORMAT " found at " PTR_FORMAT ", expected " PTR_FORMAT, \
-    addr, p2i(p), ZAddress::good(addr)
+#define BAD_OOP_ARG(o, p)   "Bad oop " PTR_FORMAT " found at " PTR_FORMAT, p2i(o), p2i(p)
 
-class ZVerifyRootsClosure : public ZRootsIteratorClosure {
+static void verify_oop(oop* p) {
+  const oop o = RawAccess<>::oop_load(p);
+  if (o != NULL) {
+    const uintptr_t addr = ZOop::to_address(o);
+    guarantee(ZAddress::is_good(addr), BAD_OOP_ARG(o, p));
+    guarantee(oopDesc::is_oop(ZOop::from_address(addr)), BAD_OOP_ARG(o, p));
+  }
+}
+
+static void verify_possibly_weak_oop(oop* p) {
+  const oop o = RawAccess<>::oop_load(p);
+  if (o != NULL) {
+    const uintptr_t addr = ZOop::to_address(o);
+    guarantee(ZAddress::is_good(addr) || ZAddress::is_finalizable_good(addr), BAD_OOP_ARG(o, p));
+    guarantee(oopDesc::is_oop(ZOop::from_address(ZAddress::good(addr))), BAD_OOP_ARG(o, p));
+  }
+}
+
+class ZVerifyRootClosure : public ZRootsIteratorClosure {
 public:
   virtual void do_oop(oop* p) {
-    uintptr_t value = ZOop::to_address(*p);
-
-    if (value == 0) {
-      return;
-    }
-
-    guarantee(!ZAddress::is_finalizable(value), BAD_OOP_REPORT(value));
-    guarantee(ZAddress::is_good(value), BAD_OOP_REPORT(value));
-    guarantee(oopDesc::is_oop(ZOop::from_address(value)), BAD_OOP_REPORT(value));
+    verify_oop(p);
   }
-  virtual void do_oop(narrowOop*) { ShouldNotReachHere(); }
+
+  virtual void do_oop(narrowOop*) {
+    ShouldNotReachHere();
+  }
 };
 
-template <bool VisitReferents>
 class ZVerifyOopClosure : public ClaimMetadataVisitingOopIterateClosure, public ZRootsIteratorClosure  {
-public:
-  ZVerifyOopClosure() :
-      ClaimMetadataVisitingOopIterateClosure(ClassLoaderData::_claim_other) {}
+private:
+  const bool _verify_weaks;
 
-  virtual void do_oop(oop* p);
-  virtual void do_oop(narrowOop* p) { ShouldNotReachHere(); }
+public:
+  ZVerifyOopClosure(bool verify_weaks) :
+      ClaimMetadataVisitingOopIterateClosure(ClassLoaderData::_claim_other),
+      _verify_weaks(verify_weaks) {}
+
+  virtual void do_oop(oop* p) {
+    if (_verify_weaks) {
+      verify_possibly_weak_oop(p);
+    } else {
+      // We should never encounter finalizable oops through strong
+      // paths. This assumes we have only visited strong roots.
+      verify_oop(p);
+    }
+  }
+
+  virtual void do_oop(narrowOop* p) {
+    ShouldNotReachHere();
+  }
 
   virtual ReferenceIterationMode reference_iteration_mode() {
-    return VisitReferents ? DO_FIELDS : DO_FIELDS_EXCEPT_REFERENT;
+    return _verify_weaks ? DO_FIELDS : DO_FIELDS_EXCEPT_REFERENT;
   }
 
 #ifdef ASSERT
@@ -76,47 +99,37 @@ public:
 #endif
 };
 
-class ZVerifyObjectClosure : public ObjectClosure {
-private:
-  bool _visit_referents;
-
-public:
-  ZVerifyObjectClosure(bool visit_referents) : _visit_referents(visit_referents) {}
-  virtual void do_object(oop o);
-};
-
 template <typename RootsIterator>
-void ZVerify::roots_impl() {
+void ZVerify::roots() {
+  assert(SafepointSynchronize::is_at_safepoint(), "Must be at a safepoint");
+  assert(!ZResurrection::is_blocked(), "Invalid phase");
+
   if (ZVerifyRoots) {
-    ZVerifyRootsClosure cl;
+    ZVerifyRootClosure cl;
     RootsIterator iter;
     iter.oops_do(&cl);
   }
 }
 
 void ZVerify::roots_strong() {
-  roots_impl<ZRootsIterator>();
-}
-
-class ZVerifyConcurrentRootsIterator : public ZConcurrentRootsIterator {
-public:
-  ZVerifyConcurrentRootsIterator()
-      : ZConcurrentRootsIterator(ClassLoaderData::_claim_none) {}
-};
-
-void ZVerify::roots_concurrent() {
-  roots_impl<ZVerifyConcurrentRootsIterator>();
+  roots<ZRootsIterator>();
 }
 
 void ZVerify::roots_weak() {
-  assert(!ZResurrection::is_blocked(), "Invalid phase");
+  roots<ZWeakRootsIterator>();
+}
 
-  roots_impl<ZWeakRootsIterator>();
+void ZVerify::roots_concurrent_strong() {
+  roots<ZConcurrentRootsIteratorClaimNone>();
+}
+
+void ZVerify::roots_concurrent_weak() {
+  roots<ZConcurrentWeakRootsIterator>();
 }
 
 void ZVerify::roots(bool verify_weaks) {
   roots_strong();
-  roots_concurrent();
+  roots_concurrent_strong();
   if (verify_weaks) {
     roots_weak();
     roots_concurrent_weak();
@@ -124,21 +137,18 @@ void ZVerify::roots(bool verify_weaks) {
 }
 
 void ZVerify::objects(bool verify_weaks) {
+  assert(SafepointSynchronize::is_at_safepoint(), "Must be at a safepoint");
+  assert(ZGlobalPhase == ZPhaseMarkCompleted, "Invalid phase");
+  assert(!ZResurrection::is_blocked(), "Invalid phase");
+
   if (ZVerifyObjects) {
-    ZVerifyObjectClosure cl(verify_weaks);
-    ZHeap::heap()->object_iterate(&cl, verify_weaks);
+    ZVerifyOopClosure cl(verify_weaks);
+    ObjectToOopClosure object_cl(&cl);
+    ZHeap::heap()->object_iterate(&object_cl, verify_weaks);
   }
 }
 
-void ZVerify::roots_concurrent_weak() {
-  assert(!ZResurrection::is_blocked(), "Invalid phase");
-
-  roots_impl<ZConcurrentWeakRootsIterator>();
-}
-
 void ZVerify::roots_and_objects(bool verify_weaks) {
-  ZStatTimerDisable  _disable;
-
   roots(verify_weaks);
   objects(verify_weaks);
 }
@@ -150,44 +160,13 @@ void ZVerify::before_zoperation() {
 }
 
 void ZVerify::after_mark() {
-  // Only verify strong roots and references.
+  // Verify all strong roots and strong references
+  ZStatTimerDisable disable;
   roots_and_objects(false /* verify_weaks */);
 }
 
 void ZVerify::after_weak_processing() {
-  // Also verify weaks - all should have been processed at this point.
+  // Verify all roots and all references
+  ZStatTimerDisable disable;
   roots_and_objects(true /* verify_weaks */);
-}
-
-template <bool VisitReferents>
-void ZVerifyOopClosure<VisitReferents>::do_oop(oop* p) {
-  guarantee(SafepointSynchronize::is_at_safepoint(), "Must be at a safepoint");
-  guarantee(ZGlobalPhase == ZPhaseMarkCompleted, "Invalid phase");
-  guarantee(!ZResurrection::is_blocked(), "Invalid phase");
-
-  const oop o = RawAccess<>::oop_load(p);
-  if (o == NULL) {
-    return;
-  }
-
-  const uintptr_t addr = ZOop::to_address(o);
-  if (VisitReferents) {
-    guarantee(ZAddress::is_good(addr) || ZAddress::is_finalizable_good(addr), BAD_OOP_REPORT(addr));
-  } else {
-    // Should not encounter finalizable oops through strong-only paths. Assumes only strong roots are visited.
-    guarantee(ZAddress::is_good(addr), BAD_OOP_REPORT(addr));
-  }
-
-  const uintptr_t good_addr = ZAddress::good(addr);
-  guarantee(oopDesc::is_oop(ZOop::from_address(good_addr)), BAD_OOP_REPORT(addr));
-}
-
-void ZVerifyObjectClosure::do_object(oop o) {
-  if (_visit_referents) {
-    ZVerifyOopClosure<true /* VisitReferents */> cl;
-    o->oop_iterate((OopIterateClosure*)&cl);
-  } else {
-    ZVerifyOopClosure<false /* VisitReferents */> cl;
-    o->oop_iterate(&cl);
-  }
 }

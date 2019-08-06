@@ -111,9 +111,9 @@ public:
 
 class ZConcurrentRootsIterator {
 private:
-  ZOopStorageIterator        _jni_handles_iter;
-  ZOopStorageIterator        _vm_handles_iter;
-  int                        _cld_claim;
+  ZOopStorageIterator _jni_handles_iter;
+  ZOopStorageIterator _vm_handles_iter;
+  const int           _cld_claim;
 
   void do_jni_handles(ZRootsIteratorClosure* cl);
   void do_vm_handles(ZRootsIteratorClosure* cl);
@@ -130,13 +130,31 @@ public:
   void oops_do(ZRootsIteratorClosure* cl);
 };
 
+class ZConcurrentRootsIteratorClaimStrong : public ZConcurrentRootsIterator {
+public:
+  ZConcurrentRootsIteratorClaimStrong() :
+      ZConcurrentRootsIterator(ClassLoaderData::_claim_strong) {}
+};
+
+class ZConcurrentRootsIteratorClaimOther : public ZConcurrentRootsIterator {
+public:
+  ZConcurrentRootsIteratorClaimOther() :
+      ZConcurrentRootsIterator(ClassLoaderData::_claim_other) {}
+};
+
+class ZConcurrentRootsIteratorClaimNone : public ZConcurrentRootsIterator {
+public:
+  ZConcurrentRootsIteratorClaimNone() :
+      ZConcurrentRootsIterator(ClassLoaderData::_claim_none) {}
+};
+
 class ZWeakRootsIterator {
 private:
   void do_jvmti_weak_export(BoolObjectClosure* is_alive, ZRootsIteratorClosure* cl);
   void do_jfr_weak(BoolObjectClosure* is_alive, ZRootsIteratorClosure* cl);
 
-  ZSerialWeakOopsDo<ZWeakRootsIterator, &ZWeakRootsIterator::do_jvmti_weak_export>  _jvmti_weak_export;
-  ZSerialWeakOopsDo<ZWeakRootsIterator, &ZWeakRootsIterator::do_jfr_weak>           _jfr_weak;
+  ZSerialWeakOopsDo<ZWeakRootsIterator, &ZWeakRootsIterator::do_jvmti_weak_export> _jvmti_weak_export;
+  ZSerialWeakOopsDo<ZWeakRootsIterator, &ZWeakRootsIterator::do_jfr_weak>          _jfr_weak;
 
 public:
   ZWeakRootsIterator();

@@ -272,6 +272,7 @@ ZConcurrentRootsIterator::ZConcurrentRootsIterator(int cld_claim) :
     _vm_handles(this),
     _class_loader_data_graph(this) {
   ZStatTimer timer(ZSubPhaseConcurrentRootsSetup);
+  ClassLoaderDataGraph::clear_claimed_marks(cld_claim);
 }
 
 ZConcurrentRootsIterator::~ZConcurrentRootsIterator() {
