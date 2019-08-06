@@ -143,6 +143,12 @@ void ZVerify::roots_and_objects(bool verify_weaks) {
   objects(verify_weaks);
 }
 
+void ZVerify::before_zoperation() {
+  // Verify strong roots
+  ZStatTimerDisable disable;
+  roots_strong();
+}
+
 void ZVerify::after_mark() {
   // Only verify strong roots and references.
   roots_and_objects(false /* verify_weaks */);

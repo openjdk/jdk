@@ -32,6 +32,7 @@ private:
   static void roots_impl();
   static void roots(bool verify_weaks);
 
+  static void roots_strong();
   static void roots_weak();
   static void roots_concurrent();
   static void roots_concurrent_weak();
@@ -42,7 +43,7 @@ private:
 
 public:
   // Verify strong (non-concurrent) roots. Should always be good.
-  static void roots_strong();
+  static void before_zoperation();
 
   // Verify all strong roots and references after marking.
   static void after_mark();

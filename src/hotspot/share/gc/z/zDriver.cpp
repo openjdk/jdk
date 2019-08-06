@@ -87,8 +87,8 @@ public:
     GCIdMark gc_id_mark(_gc_id);
     IsGCActiveMark gc_active_mark;
 
-    // Verify roots
-    ZVerify::roots_strong();
+    // Verify before operation
+    ZVerify::before_zoperation();
 
     // Execute operation
     _success = do_operation();
