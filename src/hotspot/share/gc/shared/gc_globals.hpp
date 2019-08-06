@@ -811,12 +811,12 @@
                                                                             \
   product(uintx, MaxTenuringThreshold,    15,                               \
           "Maximum value for tenuring threshold")                           \
-          range(0, markOopDesc::max_age + 1)                                \
+          range(0, markWord::max_age + 1)                                   \
           constraint(MaxTenuringThresholdConstraintFunc,AfterErgo)          \
                                                                             \
   product(uintx, InitialTenuringThreshold,    7,                            \
           "Initial value for tenuring threshold")                           \
-          range(0, markOopDesc::max_age + 1)                                \
+          range(0, markWord::max_age + 1)                                   \
           constraint(InitialTenuringThresholdConstraintFunc,AfterErgo)      \
                                                                             \
   product(uintx, TargetSurvivorRatio,    50,                                \

@@ -878,7 +878,7 @@ void InterpreterMacroAssembler::lock_object(Register Rlock) {
     ldr(Rmark, Address(Robj, oopDesc::mark_offset_in_bytes()));
 
     // Test if object is already locked
-    tst(Rmark, markOopDesc::unlocked_value);
+    tst(Rmark, markWord::unlocked_value);
     b(already_locked, eq);
 
     // Save old object->mark() into BasicLock's displaced header

@@ -35,8 +35,8 @@
 // objects.  We don't want to call the synchronizer hash code to install
 // this value because it may safepoint.
 static intptr_t object_hash(Klass* k) {
-  intptr_t hc = k->java_mirror()->mark()->hash();
-  return hc != markOopDesc::no_hash ? hc : os::random();
+  intptr_t hc = k->java_mirror()->mark().hash();
+  return hc != markWord::no_hash ? hc : os::random();
 }
 
 // Seed value used for each alternative hash calculated.

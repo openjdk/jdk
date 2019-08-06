@@ -64,7 +64,7 @@ public class ObjectMonitor extends VMObject {
   }
 
   // FIXME
-  //  void      set_header(markOop hdr);
+  //  void      set_header(markWord hdr);
 
   // FIXME: must implement and delegate to platform-dependent implementation
   //  public boolean isBusy();

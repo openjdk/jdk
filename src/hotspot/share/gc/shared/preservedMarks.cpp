@@ -32,16 +32,16 @@
 
 void PreservedMarks::restore() {
   while (!_stack.is_empty()) {
-    const OopAndMarkOop elem = _stack.pop();
+    const OopAndMarkWord elem = _stack.pop();
     elem.set_mark();
   }
   assert_empty();
 }
 
 void PreservedMarks::adjust_during_full_gc() {
-  StackIterator<OopAndMarkOop, mtGC> iter(_stack);
+  StackIterator<OopAndMarkWord, mtGC> iter(_stack);
   while (!iter.is_empty()) {
-    OopAndMarkOop* elem = iter.next_addr();
+    OopAndMarkWord* elem = iter.next_addr();
 
     oop obj = elem->get_oop();
     if (obj->is_forwarded()) {

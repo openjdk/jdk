@@ -1115,7 +1115,7 @@ int MacroAssembler::biased_locking_enter(Register lock_reg,
   assert(swap_reg == rax, "swap_reg must be rax for cmpxchgq");
   assert(tmp_reg != noreg, "tmp_reg must be supplied");
   assert_different_registers(lock_reg, obj_reg, swap_reg, tmp_reg);
-  assert(markOopDesc::age_shift == markOopDesc::lock_bits + markOopDesc::biased_lock_bits, "biased locking makes assumptions about bit layout");
+  assert(markWord::age_shift == markWord::lock_bits + markWord::biased_lock_bits, "biased locking makes assumptions about bit layout");
   Address mark_addr      (obj_reg, oopDesc::mark_offset_in_bytes());
   NOT_LP64( Address saved_mark_addr(lock_reg, 0); )
 
@@ -1135,8 +1135,8 @@ int MacroAssembler::biased_locking_enter(Register lock_reg,
     movptr(swap_reg, mark_addr);
   }
   movptr(tmp_reg, swap_reg);
-  andptr(tmp_reg, markOopDesc::biased_lock_mask_in_place);
-  cmpptr(tmp_reg, markOopDesc::biased_lock_pattern);
+  andptr(tmp_reg, markWord::biased_lock_mask_in_place);
+  cmpptr(tmp_reg, markWord::biased_lock_pattern);
   jcc(Assembler::notEqual, cas_label);
   // The bias pattern is present in the object's header. Need to check
   // whether the bias owner and the epoch are both still current.
@@ -1162,7 +1162,7 @@ int MacroAssembler::biased_locking_enter(Register lock_reg,
   xorptr(swap_reg, tmp_reg);
   Register header_reg = swap_reg;
 #endif
-  andptr(header_reg, ~((int) markOopDesc::age_mask_in_place));
+  andptr(header_reg, ~((int) markWord::age_mask_in_place));
   if (counters != NULL) {
     cond_inc32(Assembler::zero,
                ExternalAddress((address) counters->biased_lock_entry_count_addr()));
@@ -1181,7 +1181,7 @@ int MacroAssembler::biased_locking_enter(Register lock_reg,
   // If the low three bits in the xor result aren't clear, that means
   // the prototype header is no longer biased and we have to revoke
   // the bias on this object.
-  testptr(header_reg, markOopDesc::biased_lock_mask_in_place);
+  testptr(header_reg, markWord::biased_lock_mask_in_place);
   jccb(Assembler::notZero, try_revoke_bias);
 
   // Biasing is still enabled for this data type. See whether the
@@ -1193,7 +1193,7 @@ int MacroAssembler::biased_locking_enter(Register lock_reg,
   // that the current epoch is invalid in order to do this because
   // otherwise the manipulations it performs on the mark word are
   // illegal.
-  testptr(header_reg, markOopDesc::epoch_mask_in_place);
+  testptr(header_reg, markWord::epoch_mask_in_place);
   jccb(Assembler::notZero, try_rebias);
 
   // The epoch of the current bias is still valid but we know nothing
@@ -1204,7 +1204,7 @@ int MacroAssembler::biased_locking_enter(Register lock_reg,
   // don't accidentally blow away another thread's valid bias.
   NOT_LP64( movptr(swap_reg, saved_mark_addr); )
   andptr(swap_reg,
-         markOopDesc::biased_lock_mask_in_place | markOopDesc::age_mask_in_place | markOopDesc::epoch_mask_in_place);
+         markWord::biased_lock_mask_in_place | markWord::age_mask_in_place | markWord::epoch_mask_in_place);
 #ifdef _LP64
   movptr(tmp_reg, swap_reg);
   orptr(tmp_reg, r15_thread);
@@ -1298,8 +1298,8 @@ void MacroAssembler::biased_locking_exit(Register obj_reg, Register temp_reg, La
   // lock, the object could not be rebiased toward another thread, so
   // the bias bit would be clear.
   movptr(temp_reg, Address(obj_reg, oopDesc::mark_offset_in_bytes()));
-  andptr(temp_reg, markOopDesc::biased_lock_mask_in_place);
-  cmpptr(temp_reg, markOopDesc::biased_lock_pattern);
+  andptr(temp_reg, markWord::biased_lock_mask_in_place);
+  cmpptr(temp_reg, markWord::biased_lock_pattern);
   jcc(Assembler::equal, done);
 }
 
@@ -1486,7 +1486,7 @@ void MacroAssembler::rtm_stack_locking(Register objReg, Register tmpReg, Registe
     bind(L_rtm_retry);
   }
   movptr(tmpReg, Address(objReg, oopDesc::mark_offset_in_bytes()));
-  testptr(tmpReg, markOopDesc::monitor_value);  // inflated vs stack-locked|neutral|biased
+  testptr(tmpReg, markWord::monitor_value);  // inflated vs stack-locked|neutral|biased
   jcc(Assembler::notZero, IsInflated);
 
   if (PrintPreciseRTMLockingStatistics || profile_rtm) {
@@ -1501,8 +1501,8 @@ void MacroAssembler::rtm_stack_locking(Register objReg, Register tmpReg, Registe
   }
   xbegin(L_on_abort);
   movptr(tmpReg, Address(objReg, oopDesc::mark_offset_in_bytes()));       // fetch markword
-  andptr(tmpReg, markOopDesc::biased_lock_mask_in_place); // look at 3 lock bits
-  cmpptr(tmpReg, markOopDesc::unlocked_value);            // bits = 001 unlocked
+  andptr(tmpReg, markWord::biased_lock_mask_in_place); // look at 3 lock bits
+  cmpptr(tmpReg, markWord::unlocked_value);            // bits = 001 unlocked
   jcc(Assembler::equal, DONE_LABEL);        // all done if unlocked
 
   Register abort_status_Reg = tmpReg; // status of abort is stored in RAX
@@ -1528,7 +1528,7 @@ void MacroAssembler::rtm_stack_locking(Register objReg, Register tmpReg, Registe
 // Use RTM for inflating locks
 // inputs: objReg (object to lock)
 //         boxReg (on-stack box address (displaced header location) - KILLED)
-//         tmpReg (ObjectMonitor address + markOopDesc::monitor_value)
+//         tmpReg (ObjectMonitor address + markWord::monitor_value)
 void MacroAssembler::rtm_inflated_locking(Register objReg, Register boxReg, Register tmpReg,
                                           Register scrReg, Register retry_on_busy_count_Reg,
                                           Register retry_on_abort_count_Reg,
@@ -1542,7 +1542,7 @@ void MacroAssembler::rtm_inflated_locking(Register objReg, Register boxReg, Regi
   int owner_offset = OM_OFFSET_NO_MONITOR_VALUE_TAG(owner);
 
   // Without cast to int32_t a movptr will destroy r10 which is typically obj
-  movptr(Address(boxReg, 0), (int32_t)intptr_t(markOopDesc::unused_mark()));
+  movptr(Address(boxReg, 0), (int32_t)intptr_t(markWord::unused_mark().value()));
   movptr(boxReg, tmpReg); // Save ObjectMonitor address
 
   if (RTMRetryCount > 0) {
@@ -1748,11 +1748,11 @@ void MacroAssembler::fast_lock(Register objReg, Register boxReg, Register tmpReg
 #endif // INCLUDE_RTM_OPT
 
   movptr(tmpReg, Address(objReg, oopDesc::mark_offset_in_bytes()));          // [FETCH]
-  testptr(tmpReg, markOopDesc::monitor_value); // inflated vs stack-locked|neutral|biased
+  testptr(tmpReg, markWord::monitor_value); // inflated vs stack-locked|neutral|biased
   jccb(Assembler::notZero, IsInflated);
 
   // Attempt stack-locking ...
-  orptr (tmpReg, markOopDesc::unlocked_value);
+  orptr (tmpReg, markWord::unlocked_value);
   movptr(Address(boxReg, 0), tmpReg);          // Anticipate successful CAS
   lock();
   cmpxchgptr(boxReg, Address(objReg, oopDesc::mark_offset_in_bytes()));      // Updates tmpReg
@@ -1776,7 +1776,7 @@ void MacroAssembler::fast_lock(Register objReg, Register boxReg, Register tmpReg
   jmp(DONE_LABEL);
 
   bind(IsInflated);
-  // The object is inflated. tmpReg contains pointer to ObjectMonitor* + markOopDesc::monitor_value
+  // The object is inflated. tmpReg contains pointer to ObjectMonitor* + markWord::monitor_value
 
 #if INCLUDE_RTM_OPT
   // Use the same RTM locking code in 32- and 64-bit VM.
@@ -1791,7 +1791,7 @@ void MacroAssembler::fast_lock(Register objReg, Register boxReg, Register tmpReg
 
   // boxReg refers to the on-stack BasicLock in the current frame.
   // We'd like to write:
-  //   set box->_displaced_header = markOopDesc::unused_mark().  Any non-0 value suffices.
+  //   set box->_displaced_header = markWord::unused_mark().  Any non-0 value suffices.
   // This is convenient but results a ST-before-CAS penalty.  The following CAS suffers
   // additional latency as we have another ST in the store buffer that must drain.
 
@@ -1836,9 +1836,9 @@ void MacroAssembler::fast_lock(Register objReg, Register boxReg, Register tmpReg
 
   lock();
   cmpxchgptr(r15_thread, Address(scrReg, OM_OFFSET_NO_MONITOR_VALUE_TAG(owner)));
-  // Unconditionally set box->_displaced_header = markOopDesc::unused_mark().
+  // Unconditionally set box->_displaced_header = markWord::unused_mark().
   // Without cast to int32_t movptr will destroy r10 which is typically obj.
-  movptr(Address(boxReg, 0), (int32_t)intptr_t(markOopDesc::unused_mark()));
+  movptr(Address(boxReg, 0), (int32_t)intptr_t(markWord::unused_mark().value()));
   // Intentional fall-through into DONE_LABEL ...
   // Propagate ICC.ZF from CAS above into DONE_LABEL.
 #endif // _LP64
@@ -1906,20 +1906,20 @@ void MacroAssembler::fast_unlock(Register objReg, Register boxReg, Register tmpR
   if (UseRTMForStackLocks && use_rtm) {
     assert(!UseBiasedLocking, "Biased locking is not supported with RTM locking");
     Label L_regular_unlock;
-    movptr(tmpReg, Address(objReg, oopDesc::mark_offset_in_bytes()));           // fetch markword
-    andptr(tmpReg, markOopDesc::biased_lock_mask_in_place); // look at 3 lock bits
-    cmpptr(tmpReg, markOopDesc::unlocked_value);            // bits = 001 unlocked
-    jccb(Assembler::notEqual, L_regular_unlock);  // if !HLE RegularLock
-    xend();                                       // otherwise end...
-    jmp(DONE_LABEL);                              // ... and we're done
+    movptr(tmpReg, Address(objReg, oopDesc::mark_offset_in_bytes())); // fetch markword
+    andptr(tmpReg, markWord::biased_lock_mask_in_place);              // look at 3 lock bits
+    cmpptr(tmpReg, markWord::unlocked_value);                         // bits = 001 unlocked
+    jccb(Assembler::notEqual, L_regular_unlock);                      // if !HLE RegularLock
+    xend();                                                           // otherwise end...
+    jmp(DONE_LABEL);                                                  // ... and we're done
     bind(L_regular_unlock);
   }
 #endif
 
-  cmpptr(Address(boxReg, 0), (int32_t)NULL_WORD); // Examine the displaced header
-  jcc   (Assembler::zero, DONE_LABEL);            // 0 indicates recursive stack-lock
-  movptr(tmpReg, Address(objReg, oopDesc::mark_offset_in_bytes()));             // Examine the object's markword
-  testptr(tmpReg, markOopDesc::monitor_value);    // Inflated?
+  cmpptr(Address(boxReg, 0), (int32_t)NULL_WORD);                   // Examine the displaced header
+  jcc   (Assembler::zero, DONE_LABEL);                              // 0 indicates recursive stack-lock
+  movptr(tmpReg, Address(objReg, oopDesc::mark_offset_in_bytes())); // Examine the object's markword
+  testptr(tmpReg, markWord::monitor_value);                         // Inflated?
   jccb  (Assembler::zero, Stacked);
 
   // It's inflated.

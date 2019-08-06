@@ -42,16 +42,18 @@ public:
   FakeOop() : _oop() { _oop.set_mark_raw(originalMark()); }
 
   oop get_oop() { return &_oop; }
-  markOop mark() { return _oop.mark_raw(); }
-  void set_mark(markOop m) { _oop.set_mark_raw(m); }
+  markWord mark() { return _oop.mark_raw(); }
+  void set_mark(markWord m) { _oop.set_mark_raw(m); }
   void forward_to(oop obj) {
-    markOop m = markOopDesc::encode_pointer_as_mark(obj);
+    markWord m = markWord::encode_pointer_as_mark(obj);
     _oop.set_mark_raw(m);
   }
 
-  static markOop originalMark() { return markOop(markOopDesc::lock_mask_in_place); }
-  static markOop changedMark()  { return markOop(0x4711); }
+  static markWord originalMark() { return markWord(markWord::lock_mask_in_place); }
+  static markWord changedMark()  { return markWord(0x4711); }
 };
+
+#define ASSERT_MARK_WORD_EQ(a, b) ASSERT_EQ((a).value(), (b).value())
 
 TEST_VM(PreservedMarks, iterate_and_restore) {
   // Need to disable biased locking to easily
@@ -65,16 +67,16 @@ TEST_VM(PreservedMarks, iterate_and_restore) {
   FakeOop o4;
 
   // Make sure initial marks are correct.
-  ASSERT_EQ(o1.mark(), FakeOop::originalMark());
-  ASSERT_EQ(o2.mark(), FakeOop::originalMark());
-  ASSERT_EQ(o3.mark(), FakeOop::originalMark());
-  ASSERT_EQ(o4.mark(), FakeOop::originalMark());
+  ASSERT_MARK_WORD_EQ(o1.mark(), FakeOop::originalMark());
+  ASSERT_MARK_WORD_EQ(o2.mark(), FakeOop::originalMark());
+  ASSERT_MARK_WORD_EQ(o3.mark(), FakeOop::originalMark());
+  ASSERT_MARK_WORD_EQ(o4.mark(), FakeOop::originalMark());
 
   // Change the marks and verify change.
   o1.set_mark(FakeOop::changedMark());
   o2.set_mark(FakeOop::changedMark());
-  ASSERT_EQ(o1.mark(), FakeOop::changedMark());
-  ASSERT_EQ(o2.mark(), FakeOop::changedMark());
+  ASSERT_MARK_WORD_EQ(o1.mark(), FakeOop::changedMark());
+  ASSERT_MARK_WORD_EQ(o2.mark(), FakeOop::changedMark());
 
   // Push o1 and o2 to have their marks preserved.
   pm.push(o1.get_oop(), o1.mark());
@@ -92,6 +94,6 @@ TEST_VM(PreservedMarks, iterate_and_restore) {
   // Restore all preserved and verify that the changed
   // mark is now present at o3 and o4.
   pm.restore();
-  ASSERT_EQ(o3.mark(), FakeOop::changedMark());
-  ASSERT_EQ(o4.mark(), FakeOop::changedMark());
+  ASSERT_MARK_WORD_EQ(o3.mark(), FakeOop::changedMark());
+  ASSERT_MARK_WORD_EQ(o4.mark(), FakeOop::changedMark());
 }

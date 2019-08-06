@@ -300,7 +300,7 @@ class Generation: public CHeapObj<mtGC> {
   // word of "obj" may have been overwritten with a forwarding pointer, and
   // also taking care to copy the klass pointer *last*.  Returns the new
   // object if successful, or else NULL.
-  virtual oop par_promote(int thread_num, oop obj, markOop m, size_t word_sz);
+  virtual oop par_promote(int thread_num, oop obj, markWord m, size_t word_sz);
 
   // Informs the current generation that all par_promote_alloc's in the
   // collection have been completed; any supporting data structures can be

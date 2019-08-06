@@ -2348,7 +2348,7 @@ const size_t minimumSymbolTableSize = 1024;
   product(uintx, StringDeduplicationAgeThreshold, 3,                        \
           "A string must reach this age (or be promoted to an old region) " \
           "to be considered for deduplication")                             \
-          range(1, markOopDesc::max_age)                                    \
+          range(1, markWord::max_age)                                       \
                                                                             \
   diagnostic(bool, StringDeduplicationResizeALot, false,                    \
           "Force table resize every time the table is scanned")             \

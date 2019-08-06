@@ -242,9 +242,9 @@ void ShenandoahBarrierSetAssembler::resolve_forward_pointer_not_null(MacroAssemb
   Label done;
   __ ldr(tmp, Address(dst, oopDesc::mark_offset_in_bytes()));
   __ eon(tmp, tmp, zr);
-  __ ands(zr, tmp, markOopDesc::lock_mask_in_place);
+  __ ands(zr, tmp, markWord::lock_mask_in_place);
   __ br(Assembler::NE, done);
-  __ orr(tmp, tmp, markOopDesc::marked_value);
+  __ orr(tmp, tmp, markWord::marked_value);
   __ eon(dst, tmp, zr);
   __ bind(done);
 
@@ -548,11 +548,11 @@ void ShenandoahBarrierSetAssembler::gen_load_reference_barrier_stub(LIR_Assemble
   Label slow_path;
   __ ldr(tmp1, Address(res, oopDesc::mark_offset_in_bytes()));
   __ eon(tmp1, tmp1, zr);
-  __ ands(zr, tmp1, markOopDesc::lock_mask_in_place);
+  __ ands(zr, tmp1, markWord::lock_mask_in_place);
   __ br(Assembler::NE, slow_path);
 
   // Decode forwarded object.
-  __ orr(tmp1, tmp1, markOopDesc::marked_value);
+  __ orr(tmp1, tmp1, markWord::marked_value);
   __ eon(res, tmp1, zr);
   __ b(*stub->continuation());
 
@@ -665,11 +665,11 @@ address ShenandoahBarrierSetAssembler::generate_shenandoah_lrb(StubCodeGenerator
   Label slow_path;
   __ ldr(rscratch1, Address(r0, oopDesc::mark_offset_in_bytes()));
   __ eon(rscratch1, rscratch1, zr);
-  __ ands(zr, rscratch1, markOopDesc::lock_mask_in_place);
+  __ ands(zr, rscratch1, markWord::lock_mask_in_place);
   __ br(Assembler::NE, slow_path);
 
   // Decode forwarded object.
-  __ orr(rscratch1, rscratch1, markOopDesc::marked_value);
+  __ orr(rscratch1, rscratch1, markWord::marked_value);
   __ eon(r0, rscratch1, zr);
   __ ret(lr);
 

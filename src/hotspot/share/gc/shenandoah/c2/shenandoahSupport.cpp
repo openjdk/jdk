@@ -1458,9 +1458,9 @@ void ShenandoahBarrierC2Support::pin_and_expand(PhaseIdealLoop* phase) {
     phase->register_new_node(markword, ctrl);
 
     // Test if object is forwarded. This is the case if lowest two bits are set.
-    Node* masked = new AndXNode(markword, phase->igvn().MakeConX(markOopDesc::lock_mask_in_place));
+    Node* masked = new AndXNode(markword, phase->igvn().MakeConX(markWord::lock_mask_in_place));
     phase->register_new_node(masked, ctrl);
-    Node* cmp = new CmpXNode(masked, phase->igvn().MakeConX(markOopDesc::marked_value));
+    Node* cmp = new CmpXNode(masked, phase->igvn().MakeConX(markWord::marked_value));
     phase->register_new_node(cmp, ctrl);
 
     // Only branch to LRB stub if object is not forwarded; otherwise reply with fwd ptr

@@ -178,7 +178,7 @@ class PSPromotionManager {
 
   // Promotion methods
   template<bool promote_immediately> oop copy_to_survivor_space(oop o);
-  oop oop_promotion_failed(oop obj, markOop obj_mark);
+  oop oop_promotion_failed(oop obj, markWord obj_mark);
 
   void reset();
   void register_preserved_marks(PreservedMarks* preserved_marks);

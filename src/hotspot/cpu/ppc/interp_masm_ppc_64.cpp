@@ -881,7 +881,7 @@ void InterpreterMacroAssembler::lock_object(Register monitor, Register object) {
   } else {
     // template code:
     //
-    // markOop displaced_header = obj->mark().set_unlocked();
+    // markWord displaced_header = obj->mark().set_unlocked();
     // monitor->lock()->set_displaced_header(displaced_header);
     // if (Atomic::cmpxchg(/*ex=*/monitor, /*addr*/obj->mark_addr(), /*cmp*/displaced_header) == displaced_header) {
     //   // We stored the monitor address into the object's mark word.
@@ -903,17 +903,17 @@ void InterpreterMacroAssembler::lock_object(Register monitor, Register object) {
 
     assert_different_registers(displaced_header, object_mark_addr, current_header, tmp);
 
-    // markOop displaced_header = obj->mark().set_unlocked();
+    // markWord displaced_header = obj->mark().set_unlocked();
 
-    // Load markOop from object into displaced_header.
+    // Load markWord from object into displaced_header.
     ld(displaced_header, oopDesc::mark_offset_in_bytes(), object);
 
     if (UseBiasedLocking) {
       biased_locking_enter(CCR0, object, displaced_header, tmp, current_header, done, &slow_case);
     }
 
-    // Set displaced_header to be (markOop of object | UNLOCK_VALUE).
-    ori(displaced_header, displaced_header, markOopDesc::unlocked_value);
+    // Set displaced_header to be (markWord of object | UNLOCK_VALUE).
+    ori(displaced_header, displaced_header, markWord::unlocked_value);
 
     // monitor->lock()->set_displaced_header(displaced_header);
 
@@ -949,12 +949,12 @@ void InterpreterMacroAssembler::lock_object(Register monitor, Register object) {
 
     // We did not see an unlocked object so try the fast recursive case.
 
-    // Check if owner is self by comparing the value in the markOop of object
+    // Check if owner is self by comparing the value in the markWord of object
     // (current_header) with the stack pointer.
     sub(current_header, current_header, R1_SP);
 
     assert(os::vm_page_size() > 0xfff, "page size too small - change the constant");
-    load_const_optimized(tmp, ~(os::vm_page_size()-1) | markOopDesc::lock_mask_in_place);
+    load_const_optimized(tmp, ~(os::vm_page_size()-1) | markWord::lock_mask_in_place);
 
     and_(R0/*==0?*/, current_header, tmp);
     // If condition is true we are done and hence we can store 0 in the displaced

@@ -1078,7 +1078,7 @@ oop ParNewGeneration::real_forwardee_slow(oop obj) {
 oop ParNewGeneration::copy_to_survivor_space(ParScanThreadState* par_scan_state,
                                              oop old,
                                              size_t sz,
-                                             markOop m) {
+                                             markWord m) {
   // In the sequential version, this assert also says that the object is
   // not forwarded.  That might not be the case here.  It is the case that
   // the caller observed it to be not forwarded at some time in the past.

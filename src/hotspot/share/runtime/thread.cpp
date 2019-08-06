@@ -173,7 +173,7 @@ THREAD_LOCAL_DECL Thread* Thread::_thr_current = NULL;
 // Support for forcing alignment of thread objects for biased locking
 void* Thread::allocate(size_t size, bool throw_excpt, MEMFLAGS flags) {
   if (UseBiasedLocking) {
-    const int alignment = markOopDesc::biased_lock_alignment;
+    const int alignment = markWord::biased_lock_alignment;
     size_t aligned_size = size + (alignment - sizeof(intptr_t));
     void* real_malloc_addr = throw_excpt? AllocateHeap(aligned_size, flags, CURRENT_PC)
                                           : AllocateHeap(aligned_size, flags, CURRENT_PC,
@@ -301,9 +301,9 @@ Thread::Thread() {
 #endif // CHECK_UNHANDLED_OOPS
 #ifdef ASSERT
   if (UseBiasedLocking) {
-    assert((((uintptr_t) this) & (markOopDesc::biased_lock_alignment - 1)) == 0, "forced alignment of thread object failed");
+    assert((((uintptr_t) this) & (markWord::biased_lock_alignment - 1)) == 0, "forced alignment of thread object failed");
     assert(this == _real_malloc_address ||
-           this == align_up(_real_malloc_address, (int)markOopDesc::biased_lock_alignment),
+           this == align_up(_real_malloc_address, (int)markWord::biased_lock_alignment),
            "bug in forced alignment of thread objects");
   }
 #endif // ASSERT

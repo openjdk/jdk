@@ -195,7 +195,7 @@ void* Klass::operator new(size_t size, ClassLoaderData* loader_data, size_t word
 // should be NULL before setting it.
 Klass::Klass(KlassID id) : _id(id),
                            _java_mirror(NULL),
-                           _prototype_header(markOopDesc::prototype()),
+                           _prototype_header(markWord::prototype()),
                            _shared_class_path_index(-1) {
   CDS_ONLY(_shared_class_flags = 0;)
   CDS_JAVA_HEAP_ONLY(_archived_mirror = 0;)
@@ -744,9 +744,9 @@ void Klass::oop_print_on(oop obj, outputStream* st) {
 
   if (WizardMode) {
      // print header
-     obj->mark()->print_on(st);
+     obj->mark().print_on(st);
      st->cr();
-     st->print(BULLET"prototype_header: " INTPTR_FORMAT, p2i(_prototype_header));
+     st->print(BULLET"prototype_header: " INTPTR_FORMAT, _prototype_header.value());
      st->cr();
   }
 

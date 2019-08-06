@@ -965,18 +965,18 @@ JvmtiEnvBase::get_object_monitor_usage(JavaThread* calling_thread, jobject objec
 
     address owner = NULL;
     {
-      markOop mark = hobj()->mark();
+      markWord mark = hobj()->mark();
 
-      if (!mark->has_monitor()) {
+      if (!mark.has_monitor()) {
         // this object has a lightweight monitor
 
-        if (mark->has_locker()) {
-          owner = (address)mark->locker(); // save the address of the Lock word
+        if (mark.has_locker()) {
+          owner = (address)mark.locker(); // save the address of the Lock word
         }
         // implied else: no owner
       } else {
         // this object has a heavyweight monitor
-        mon = mark->monitor();
+        mon = mark.monitor();
 
         // The owner field of a heavyweight monitor may be NULL for no
         // owner, a JavaThread * or it may still be the address of the

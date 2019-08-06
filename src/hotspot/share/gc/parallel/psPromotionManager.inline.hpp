@@ -157,16 +157,16 @@ inline oop PSPromotionManager::copy_to_survivor_space(oop o) {
   // NOTE! We must be very careful with any methods that access the mark
   // in o. There may be multiple threads racing on it, and it may be forwarded
   // at any time. Do not use oop methods for accessing the mark!
-  markOop test_mark = o->mark_raw();
+  markWord test_mark = o->mark_raw();
 
   // The same test as "o->is_forwarded()"
-  if (!test_mark->is_marked()) {
+  if (!test_mark.is_marked()) {
     bool new_obj_is_tenured = false;
     size_t new_obj_size = o->size();
 
     // Find the objects age, MT safe.
-    uint age = (test_mark->has_displaced_mark_helper() /* o->has_displaced_mark() */) ?
-      test_mark->displaced_mark_helper()->age() : test_mark->age();
+    uint age = (test_mark.has_displaced_mark_helper() /* o->has_displaced_mark() */) ?
+      test_mark.displaced_mark_helper().age() : test_mark.age();
 
     if (!promote_immediately) {
       // Try allocating obj in to-space (unless too old)
@@ -260,7 +260,7 @@ inline oop PSPromotionManager::copy_to_survivor_space(oop o) {
       assert(new_obj == o->forwardee(), "Sanity");
 
       // Increment age if obj still in new generation. Now that
-      // we're dealing with a markOop that cannot change, it is
+      // we're dealing with a markWord that cannot change, it is
       // okay to use the non mt safe oop methods.
       if (!new_obj_is_tenured) {
         new_obj->incr_age();

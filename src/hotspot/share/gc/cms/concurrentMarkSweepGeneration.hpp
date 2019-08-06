@@ -541,8 +541,8 @@ class CMSCollector: public CHeapObj<mtGC> {
   // The following array-pair keeps track of mark words
   // displaced for accommodating overflow list above.
   // This code will likely be revisited under RFE#4922830.
-  Stack<oop, mtGC>     _preserved_oop_stack;
-  Stack<markOop, mtGC> _preserved_mark_stack;
+  Stack<oop, mtGC>      _preserved_oop_stack;
+  Stack<markWord, mtGC> _preserved_mark_stack;
 
   // In support of multi-threaded concurrent phases
   YieldingFlexibleWorkGang* _conc_workers;
@@ -742,7 +742,7 @@ class CMSCollector: public CHeapObj<mtGC> {
 
   void preserve_mark_if_necessary(oop p);
   void par_preserve_mark_if_necessary(oop p);
-  void preserve_mark_work(oop p, markOop m);
+  void preserve_mark_work(oop p, markWord m);
   void restore_preserved_marks_if_any();
   NOT_PRODUCT(bool no_preserved_marks() const;)
   // In support of testing overflow code
@@ -1136,7 +1136,7 @@ class ConcurrentMarkSweepGeneration: public CardGeneration {
 
   // Overrides for parallel promotion.
   virtual oop par_promote(int thread_num,
-                          oop obj, markOop m, size_t word_sz);
+                          oop obj, markWord m, size_t word_sz);
   virtual void par_promote_alloc_done(int thread_num);
   virtual void par_oop_since_save_marks_iterate_done(int thread_num);
 

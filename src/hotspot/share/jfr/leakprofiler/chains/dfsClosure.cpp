@@ -121,7 +121,7 @@ void DFSClosure::closure_impl(const oop* reference, const oop pointee) {
   assert(_mark_bits->is_marked(pointee), "invariant");
 
   // is the pointee a sample object?
-  if (NULL == pointee->mark()) {
+  if (NULL == pointee->mark().to_pointer()) {
     add_chain();
   }
 

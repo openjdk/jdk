@@ -3112,10 +3112,10 @@ JRT_LEAF(intptr_t*, SharedRuntime::OSR_migration_begin( JavaThread *thread) )
     if (kptr2->obj() != NULL) {         // Avoid 'holes' in the monitor array
       BasicLock *lock = kptr2->lock();
       // Inflate so the displaced header becomes position-independent
-      if (lock->displaced_header()->is_unlocked())
+      if (lock->displaced_header().is_unlocked())
         ObjectSynchronizer::inflate_helper(kptr2->obj());
       // Now the displaced header is free to move
-      buf[i++] = (intptr_t)lock->displaced_header();
+      buf[i++] = (intptr_t)lock->displaced_header().value();
       buf[i++] = cast_from_oop<intptr_t>(kptr2->obj());
     }
   }

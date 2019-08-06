@@ -25,12 +25,11 @@
 #ifndef SHARE_OOPS_MARKOOP_HPP
 #define SHARE_OOPS_MARKOOP_HPP
 
-#include "oops/oop.hpp"
+#include "metaprogramming/integralConstant.hpp"
+#include "metaprogramming/primitiveConversions.hpp"
+#include "oops/oopsHierarchy.hpp"
 
-// The markOop describes the header of an object.
-//
-// Note that the mark is not a real oop but just a word.
-// It is placed in the oop hierarchy for historical reasons.
+// The markWord describes the header of an object.
 //
 // Bit-format of an object header (most significant first, big endian layout below):
 //
@@ -101,12 +100,35 @@ class BasicLock;
 class ObjectMonitor;
 class JavaThread;
 
-class markOopDesc: public oopDesc {
+class markWord {
  private:
-  // Conversion
-  uintptr_t value() const { return (uintptr_t) this; }
+  uintptr_t _value;
 
  public:
+  explicit markWord(uintptr_t value) : _value(value) {}
+
+  markWord() { /* uninitialized */}
+
+  // It is critical for performance that this class be trivially
+  // destructable, copyable, and assignable.
+
+  static markWord from_pointer(void* ptr) {
+    return markWord((uintptr_t)ptr);
+  }
+  void* to_pointer() const {
+    return (void*)_value;
+  }
+
+  bool operator==(const markWord& other) const {
+    return _value == other._value;
+  }
+  bool operator!=(const markWord& other) const {
+    return !operator==(other);
+  }
+
+  // Conversion
+  uintptr_t value() const { return _value; }
+
   // Constants
   enum { age_bits                 = 4,
          lock_bits                = 2,
@@ -164,6 +186,9 @@ class markOopDesc: public oopDesc {
 
   enum { max_bias_epoch           = epoch_mask };
 
+  // Creates a markWord with all bits set to zero.
+  static markWord zero() { return markWord(uintptr_t(0)); }
+
   // Biased Locking accessors.
   // These must be checked by all code which calls into the
   // ObjectSynchronizer and other code. The biasing is not understood
@@ -189,17 +214,17 @@ class markOopDesc: public oopDesc {
     assert(has_bias_pattern(), "should not call this otherwise");
     return (mask_bits(value(), epoch_mask_in_place) >> epoch_shift);
   }
-  markOop set_bias_epoch(int epoch) {
+  markWord set_bias_epoch(int epoch) {
     assert(has_bias_pattern(), "should not call this otherwise");
     assert((epoch & (~epoch_mask)) == 0, "epoch overflow");
-    return markOop(mask_bits(value(), ~epoch_mask_in_place) | (epoch << epoch_shift));
+    return markWord(mask_bits(value(), ~epoch_mask_in_place) | (epoch << epoch_shift));
   }
-  markOop incr_bias_epoch() {
+  markWord incr_bias_epoch() {
     return set_bias_epoch((1 + bias_epoch()) & epoch_mask);
   }
   // Prototype mark for initialization
-  static markOop biased_locking_prototype() {
-    return markOop( biased_lock_pattern );
+  static markWord biased_locking_prototype() {
+    return markWord( biased_lock_pattern );
   }
 
   // lock accessors (note that these assume lock_shift == 0)
@@ -214,7 +239,7 @@ class markOopDesc: public oopDesc {
   }
   bool is_neutral()  const { return (mask_bits(value(), biased_lock_mask_in_place) == unlocked_value); }
 
-  // Special temporary state of the markOop while being inflated.
+  // Special temporary state of the markWord while being inflated.
   // Code that looks at mark outside a lock need to take this into account.
   bool is_being_inflated() const { return (value() == 0); }
 
@@ -224,7 +249,7 @@ class markOopDesc: public oopDesc {
   // check for and avoid overwriting a 0 value installed by some
   // other thread.  (They should spin or block instead.  The 0 value
   // is transient and *should* be short-lived).
-  static markOop INFLATING() { return (markOop) 0; }    // inflate-in-progress
+  static markWord INFLATING() { return zero(); }    // inflate-in-progress
 
   // Should this header be preserved during GC?
   inline bool must_be_preserved(oop obj_containing_mark) const;
@@ -259,9 +284,9 @@ class markOopDesc: public oopDesc {
 
   // WARNING: The following routines are used EXCLUSIVELY by
   // synchronization functions. They are not really gc safe.
-  // They must get updated if markOop layout get changed.
-  markOop set_unlocked() const {
-    return markOop(value() | unlocked_value);
+  // They must get updated if markWord layout get changed.
+  markWord set_unlocked() const {
+    return markWord(value() | unlocked_value);
   }
   bool has_locker() const {
     return ((value() & lock_mask_in_place) == locked_value);
@@ -281,56 +306,56 @@ class markOopDesc: public oopDesc {
   bool has_displaced_mark_helper() const {
     return ((value() & unlocked_value) == 0);
   }
-  markOop displaced_mark_helper() const {
+  markWord displaced_mark_helper() const {
     assert(has_displaced_mark_helper(), "check");
     intptr_t ptr = (value() & ~monitor_value);
-    return *(markOop*)ptr;
+    return *(markWord*)ptr;
   }
-  void set_displaced_mark_helper(markOop m) const {
+  void set_displaced_mark_helper(markWord m) const {
     assert(has_displaced_mark_helper(), "check");
     intptr_t ptr = (value() & ~monitor_value);
-    *(markOop*)ptr = m;
+    ((markWord*)ptr)->_value = m._value;
   }
-  markOop copy_set_hash(intptr_t hash) const {
+  markWord copy_set_hash(intptr_t hash) const {
     intptr_t tmp = value() & (~hash_mask_in_place);
     tmp |= ((hash & hash_mask) << hash_shift);
-    return (markOop)tmp;
+    return markWord(tmp);
   }
   // it is only used to be stored into BasicLock as the
   // indicator that the lock is using heavyweight monitor
-  static markOop unused_mark() {
-    return (markOop) marked_value;
+  static markWord unused_mark() {
+    return markWord(marked_value);
   }
-  // the following two functions create the markOop to be
+  // the following two functions create the markWord to be
   // stored into object header, it encodes monitor info
-  static markOop encode(BasicLock* lock) {
-    return (markOop) lock;
+  static markWord encode(BasicLock* lock) {
+    return from_pointer(lock);
   }
-  static markOop encode(ObjectMonitor* monitor) {
+  static markWord encode(ObjectMonitor* monitor) {
     intptr_t tmp = (intptr_t) monitor;
-    return (markOop) (tmp | monitor_value);
+    return markWord(tmp | monitor_value);
   }
-  static markOop encode(JavaThread* thread, uint age, int bias_epoch) {
+  static markWord encode(JavaThread* thread, uint age, int bias_epoch) {
     intptr_t tmp = (intptr_t) thread;
     assert(UseBiasedLocking && ((tmp & (epoch_mask_in_place | age_mask_in_place | biased_lock_mask_in_place)) == 0), "misaligned JavaThread pointer");
     assert(age <= max_age, "age too large");
     assert(bias_epoch <= max_bias_epoch, "bias epoch too large");
-    return (markOop) (tmp | (bias_epoch << epoch_shift) | (age << age_shift) | biased_lock_pattern);
+    return markWord(tmp | (bias_epoch << epoch_shift) | (age << age_shift) | biased_lock_pattern);
   }
 
   // used to encode pointers during GC
-  markOop clear_lock_bits() { return markOop(value() & ~lock_mask_in_place); }
+  markWord clear_lock_bits() { return markWord(value() & ~lock_mask_in_place); }
 
   // age operations
-  markOop set_marked()   { return markOop((value() & ~lock_mask_in_place) | marked_value); }
-  markOop set_unmarked() { return markOop((value() & ~lock_mask_in_place) | unlocked_value); }
+  markWord set_marked()   { return markWord((value() & ~lock_mask_in_place) | marked_value); }
+  markWord set_unmarked() { return markWord((value() & ~lock_mask_in_place) | unlocked_value); }
 
-  uint    age()               const { return mask_bits(value() >> age_shift, age_mask); }
-  markOop set_age(uint v) const {
+  uint     age()           const { return mask_bits(value() >> age_shift, age_mask); }
+  markWord set_age(uint v) const {
     assert((v & ~age_mask) == 0, "shouldn't overflow age field");
-    return markOop((value() & ~age_mask_in_place) | (((uintptr_t)v & age_mask) << age_shift));
+    return markWord((value() & ~age_mask_in_place) | (((uintptr_t)v & age_mask) << age_shift));
   }
-  markOop incr_age()          const { return age() == max_age ? markOop(this) : set_age(age() + 1); }
+  markWord incr_age()      const { return age() == max_age ? markWord(_value) : set_age(age() + 1); }
 
   // hash operations
   intptr_t hash() const {
@@ -342,24 +367,24 @@ class markOopDesc: public oopDesc {
   }
 
   // Prototype mark for initialization
-  static markOop prototype() {
-    return markOop( no_hash_in_place | no_lock_in_place );
+  static markWord prototype() {
+    return markWord( no_hash_in_place | no_lock_in_place );
   }
 
   // Helper function for restoration of unmarked mark oops during GC
-  static inline markOop prototype_for_object(oop obj);
+  static inline markWord prototype_for_object(oop obj);
 
   // Debugging
   void print_on(outputStream* st) const;
 
   // Prepare address of oop for placement into mark
-  inline static markOop encode_pointer_as_mark(void* p) { return markOop(p)->set_marked(); }
+  inline static markWord encode_pointer_as_mark(void* p) { return from_pointer(p).set_marked(); }
 
   // Recover address of oop from encoded form used in mark
-  inline void* decode_pointer() { if (UseBiasedLocking && has_bias_pattern()) return NULL; return clear_lock_bits(); }
+  inline void* decode_pointer() { if (UseBiasedLocking && has_bias_pattern()) return NULL; return (void*)clear_lock_bits().value(); }
 
-  // These markOops indicate cms free chunk blocks and not objects.
-  // In 64 bit, the markOop is set to distinguish them from oops.
+  // These markWords indicate cms free chunk blocks and not objects.
+  // In 64 bit, the markWord is set to distinguish them from oops.
   // These are defined in 32 bit mode for vmStructs.
   const static uintptr_t cms_free_chunk_pattern  = 0x1;
 
@@ -374,9 +399,9 @@ class markOopDesc: public oopDesc {
                                      (address_word)size_mask << size_shift;
 
 #ifdef _LP64
-  static markOop cms_free_prototype() {
-    return markOop(((intptr_t)prototype() & ~cms_mask_in_place) |
-                   ((cms_free_chunk_pattern & cms_mask) << cms_shift));
+  static markWord cms_free_prototype() {
+    return markWord(((intptr_t)prototype().value() & ~cms_mask_in_place) |
+                    ((cms_free_chunk_pattern & cms_mask) << cms_shift));
   }
   uintptr_t cms_encoding() const {
     return mask_bits(value() >> cms_shift, cms_mask);
@@ -387,12 +412,22 @@ class markOopDesc: public oopDesc {
   }
 
   size_t get_size() const       { return (size_t)(value() >> size_shift); }
-  static markOop set_size_and_free(size_t size) {
+  static markWord set_size_and_free(size_t size) {
     assert((size & ~size_mask) == 0, "shouldn't overflow size field");
-    return markOop(((intptr_t)cms_free_prototype() & ~size_mask_in_place) |
-                   (((intptr_t)size & size_mask) << size_shift));
+    return markWord(((intptr_t)cms_free_prototype().value() & ~size_mask_in_place) |
+                    (((intptr_t)size & size_mask) << size_shift));
   }
 #endif // _LP64
+};
+
+// Support atomic operations.
+template<>
+struct PrimitiveConversions::Translate<markWord> : public TrueType {
+  typedef markWord Value;
+  typedef uintptr_t Decayed;
+
+  static Decayed decay(const Value& x) { return x.value(); }
+  static Value recover(Decayed x) { return Value(x); }
 };
 
 #endif // SHARE_OOPS_MARKOOP_HPP

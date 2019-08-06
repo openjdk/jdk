@@ -27,42 +27,42 @@
 #include "jfr/leakprofiler/utilities/saveRestore.hpp"
 #include "oops/oop.inline.hpp"
 
-MarkOopContext::MarkOopContext() : _obj(NULL), _mark_oop(NULL) {}
+MarkWordContext::MarkWordContext() : _obj(NULL), _mark_word(markWord::zero()) {}
 
-MarkOopContext::MarkOopContext(const oop obj) : _obj(obj), _mark_oop(obj->mark()) {
-  assert(_obj->mark() == _mark_oop, "invariant");
+MarkWordContext::MarkWordContext(const oop obj) : _obj(obj), _mark_word(obj->mark()) {
+  assert(_obj->mark() == _mark_word, "invariant");
   // now we will "poison" the mark word of the object
   // to the intermediate monitor INFLATING state.
   // This is an "impossible" state during a safepoint,
   // hence we will use it to quickly identify objects
   // during the reachability search from gc roots.
-  assert(NULL == markOopDesc::INFLATING(), "invariant");
-  _obj->set_mark(markOopDesc::INFLATING());
-  assert(NULL == obj->mark(), "invariant");
+  assert(markWord::zero() == markWord::INFLATING(), "invariant");
+  _obj->set_mark(markWord::INFLATING());
+  assert(markWord::zero() == obj->mark(), "invariant");
 }
 
-MarkOopContext::~MarkOopContext() {
+MarkWordContext::~MarkWordContext() {
   if (_obj != NULL) {
-    _obj->set_mark(_mark_oop);
-    assert(_obj->mark() == _mark_oop, "invariant");
+    _obj->set_mark(_mark_word);
+    assert(_obj->mark() == _mark_word, "invariant");
   }
 }
 
-MarkOopContext::MarkOopContext(const MarkOopContext& rhs) : _obj(NULL), _mark_oop(NULL) {
-  swap(const_cast<MarkOopContext&>(rhs));
+MarkWordContext::MarkWordContext(const MarkWordContext& rhs) : _obj(NULL), _mark_word(markWord::zero()) {
+  swap(const_cast<MarkWordContext&>(rhs));
 }
 
-void MarkOopContext::operator=(MarkOopContext rhs) {
+void MarkWordContext::operator=(MarkWordContext rhs) {
   swap(rhs);
 }
 
-void MarkOopContext::swap(MarkOopContext& rhs) {
+void MarkWordContext::swap(MarkWordContext& rhs) {
   oop temp_obj = rhs._obj;
-  markOop temp_mark_oop = rhs._mark_oop;
+  markWord temp_mark_word = rhs._mark_word;
   rhs._obj = _obj;
-  rhs._mark_oop = _mark_oop;
+  rhs._mark_word = _mark_word;
   _obj = temp_obj;
-  _mark_oop = temp_mark_oop;
+  _mark_word = temp_mark_word;
 }
 
 CLDClaimContext::CLDClaimContext() : _cld(NULL) {}

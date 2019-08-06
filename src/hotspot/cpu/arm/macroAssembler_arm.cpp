@@ -1345,7 +1345,7 @@ int MacroAssembler::biased_locking_enter(Register obj_reg, Register swap_reg, Re
   }
 #endif
 
-  assert(markOopDesc::age_shift == markOopDesc::lock_bits + markOopDesc::biased_lock_bits, "biased locking makes assumptions about bit layout");
+  assert(markWord::age_shift == markWord::lock_bits + markWord::biased_lock_bits, "biased locking makes assumptions about bit layout");
   Address mark_addr(obj_reg, oopDesc::mark_offset_in_bytes());
 
   // Biased locking
@@ -1367,8 +1367,8 @@ int MacroAssembler::biased_locking_enter(Register obj_reg, Register swap_reg, Re
   // On MP platform loads could return 'stale' values in some cases.
   // That is acceptable since either CAS or slow case path is taken in the worst case.
 
-  andr(tmp_reg, swap_reg, (uintx)markOopDesc::biased_lock_mask_in_place);
-  cmp(tmp_reg, markOopDesc::biased_lock_pattern);
+  andr(tmp_reg, swap_reg, (uintx)markWord::biased_lock_mask_in_place);
+  cmp(tmp_reg, markWord::biased_lock_pattern);
 
   b(cas_label, ne);
 
@@ -1379,7 +1379,7 @@ int MacroAssembler::biased_locking_enter(Register obj_reg, Register swap_reg, Re
   orr(tmp_reg, tmp_reg, Rthread);
   eor(tmp_reg, tmp_reg, swap_reg);
 
-  bics(tmp_reg, tmp_reg, ((int) markOopDesc::age_mask_in_place));
+  bics(tmp_reg, tmp_reg, ((int) markWord::age_mask_in_place));
 
 #ifndef PRODUCT
   if (counters != NULL) {
@@ -1401,7 +1401,7 @@ int MacroAssembler::biased_locking_enter(Register obj_reg, Register swap_reg, Re
   // If the low three bits in the xor result aren't clear, that means
   // the prototype header is no longer biased and we have to revoke
   // the bias on this object.
-  tst(tmp_reg, (uintx)markOopDesc::biased_lock_mask_in_place);
+  tst(tmp_reg, (uintx)markWord::biased_lock_mask_in_place);
   b(try_revoke_bias, ne);
 
   // Biasing is still enabled for this data type. See whether the
@@ -1413,7 +1413,7 @@ int MacroAssembler::biased_locking_enter(Register obj_reg, Register swap_reg, Re
   // that the current epoch is invalid in order to do this because
   // otherwise the manipulations it performs on the mark word are
   // illegal.
-  tst(tmp_reg, (uintx)markOopDesc::epoch_mask_in_place);
+  tst(tmp_reg, (uintx)markWord::epoch_mask_in_place);
   b(try_rebias, ne);
 
   // tmp_reg has the age, epoch and pattern bits cleared
@@ -1431,10 +1431,10 @@ int MacroAssembler::biased_locking_enter(Register obj_reg, Register swap_reg, Re
 
   // until the assembler can be made smarter, we need to make some assumptions about the values
   // so we can optimize this:
-  assert((markOopDesc::biased_lock_mask_in_place | markOopDesc::age_mask_in_place | markOopDesc::epoch_mask_in_place) == 0x1ff, "biased bitmasks changed");
+  assert((markWord::biased_lock_mask_in_place | markWord::age_mask_in_place | markWord::epoch_mask_in_place) == 0x1ff, "biased bitmasks changed");
 
   mov(swap_reg, AsmOperand(swap_reg, lsl, 23));
-  mov(swap_reg, AsmOperand(swap_reg, lsr, 23)); // markOop with thread bits cleared (for CAS)
+  mov(swap_reg, AsmOperand(swap_reg, lsr, 23)); // markWord with thread bits cleared (for CAS)
 
   orr(tmp_reg, swap_reg, Rthread); // new mark
 
@@ -1519,8 +1519,8 @@ void MacroAssembler::biased_locking_exit(Register obj_reg, Register tmp_reg, Lab
   // the bias bit would be clear.
   ldr(tmp_reg, Address(obj_reg, oopDesc::mark_offset_in_bytes()));
 
-  andr(tmp_reg, tmp_reg, (uintx)markOopDesc::biased_lock_mask_in_place);
-  cmp(tmp_reg, markOopDesc::biased_lock_pattern);
+  andr(tmp_reg, tmp_reg, (uintx)markWord::biased_lock_mask_in_place);
+  cmp(tmp_reg, markWord::biased_lock_pattern);
   b(done, eq);
 }
 
@@ -1993,7 +1993,7 @@ void MacroAssembler::fast_lock(Register Roop, Register Rbox, Register Rscratch, 
   // Invariant: Rmark loaded below does not contain biased lock pattern
 
   ldr(Rmark, Address(Roop, oopDesc::mark_offset_in_bytes()));
-  tst(Rmark, markOopDesc::unlocked_value);
+  tst(Rmark, markWord::unlocked_value);
   b(fast_lock, ne);
 
   // Check for recursive lock

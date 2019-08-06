@@ -102,7 +102,7 @@
 // was used in a prior version of this algorithm and did not scale
 // well). If too many bias revocations persist, biasing is completely
 // disabled for the data type by resetting the prototype header to the
-// unbiased markOop. The fast-path locking code checks to see whether
+// unbiased markWord. The fast-path locking code checks to see whether
 // the instance's bias pattern differs from the prototype header's and
 // causes the bias to be revoked without reaching a safepoint or,
 // again, a bulk heap sweep.

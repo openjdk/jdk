@@ -1771,7 +1771,7 @@ void MachPrologNode::emit(CodeBuffer &cbuf, PhaseRegAlloc *ra_) const {
     __ far_jump(RuntimeAddress(SharedRuntime::get_handle_wrong_method_stub()));
     __ bind(L_skip_barrier);
   }
-  
+
   int bangsize = C->bang_size_in_bytes();
   if (C->need_stack_bang(bangsize) && UseStackBanging)
     __ generate_stack_overflow_check(bangsize);
@@ -3508,7 +3508,7 @@ encode %{
 
     assert_different_registers(oop, box, tmp, disp_hdr);
 
-    // Load markOop from object into displaced_header.
+    // Load markWord from object into displaced_header.
     __ ldr(disp_hdr, Address(oop, oopDesc::mark_offset_in_bytes()));
 
     if (UseBiasedLocking && !UseOptoBiasInlining) {
@@ -3516,17 +3516,17 @@ encode %{
     }
 
     // Check for existing monitor
-    __ tbnz(disp_hdr, exact_log2(markOopDesc::monitor_value), object_has_monitor);
+    __ tbnz(disp_hdr, exact_log2(markWord::monitor_value), object_has_monitor);
 
-    // Set tmp to be (markOop of object | UNLOCK_VALUE).
-    __ orr(tmp, disp_hdr, markOopDesc::unlocked_value);
+    // Set tmp to be (markWord of object | UNLOCK_VALUE).
+    __ orr(tmp, disp_hdr, markWord::unlocked_value);
 
     // Initialize the box. (Must happen before we update the object mark!)
     __ str(tmp, Address(box, BasicLock::displaced_header_offset_in_bytes()));
 
-    // Compare object markOop with an unlocked value (tmp) and if
-    // equal exchange the stack address of our box with object markOop.
-    // On failure disp_hdr contains the possibly locked markOop.
+    // Compare object markWord with an unlocked value (tmp) and if
+    // equal exchange the stack address of our box with object markWord.
+    // On failure disp_hdr contains the possibly locked markWord.
     __ cmpxchg(oop, tmp, box, Assembler::xword, /*acquire*/ true,
                /*release*/ true, /*weak*/ false, disp_hdr);
     __ br(Assembler::EQ, cont);
@@ -3540,10 +3540,10 @@ encode %{
     // We did not see an unlocked object so try the fast recursive case.
 
     // Check if the owner is self by comparing the value in the
-    // markOop of object (disp_hdr) with the stack pointer.
+    // markWord of object (disp_hdr) with the stack pointer.
     __ mov(rscratch1, sp);
     __ sub(disp_hdr, disp_hdr, rscratch1);
-    __ mov(tmp, (address) (~(os::vm_page_size()-1) | (uintptr_t)markOopDesc::lock_mask_in_place));
+    __ mov(tmp, (address) (~(os::vm_page_size()-1) | (uintptr_t)markWord::lock_mask_in_place));
     // If condition is true we are cont and hence we can store 0 as the
     // displaced header in the box, which indicates that it is a recursive lock.
     __ ands(tmp/*==0?*/, disp_hdr, tmp);   // Sets flags for result
@@ -3558,15 +3558,15 @@ encode %{
     // otherwise m->owner may contain a thread or a stack address.
     //
     // Try to CAS m->owner from NULL to current thread.
-    __ add(tmp, disp_hdr, (ObjectMonitor::owner_offset_in_bytes()-markOopDesc::monitor_value));
+    __ add(tmp, disp_hdr, (ObjectMonitor::owner_offset_in_bytes()-markWord::monitor_value));
     __ cmpxchg(tmp, zr, rthread, Assembler::xword, /*acquire*/ true,
                /*release*/ true, /*weak*/ false, noreg); // Sets flags for result
 
     // Store a non-null value into the box to avoid looking like a re-entrant
     // lock. The fast-path monitor unlock code checks for
-    // markOopDesc::monitor_value so use markOopDesc::unused_mark which has the
+    // markWord::monitor_value so use markWord::unused_mark which has the
     // relevant bit set, and also matches ObjectSynchronizer::slow_enter.
-    __ mov(tmp, (address)markOopDesc::unused_mark());
+    __ mov(tmp, (address)markWord::unused_mark().value());
     __ str(tmp, Address(box, BasicLock::displaced_header_offset_in_bytes()));
 
     __ bind(cont);
@@ -3598,10 +3598,10 @@ encode %{
 
     // Handle existing monitor.
     __ ldr(tmp, Address(oop, oopDesc::mark_offset_in_bytes()));
-    __ tbnz(disp_hdr, exact_log2(markOopDesc::monitor_value), object_has_monitor);
+    __ tbnz(disp_hdr, exact_log2(markWord::monitor_value), object_has_monitor);
 
     // Check if it is still a light weight lock, this is is true if we
-    // see the stack address of the basicLock in the markOop of the
+    // see the stack address of the basicLock in the markWord of the
     // object.
 
     __ cmpxchg(oop, box, disp_hdr, Assembler::xword, /*acquire*/ false,
@@ -3612,7 +3612,7 @@ encode %{
 
     // Handle existing monitor.
     __ bind(object_has_monitor);
-    __ add(tmp, tmp, -markOopDesc::monitor_value); // monitor
+    __ add(tmp, tmp, -markWord::monitor_value); // monitor
     __ ldr(rscratch1, Address(tmp, ObjectMonitor::owner_offset_in_bytes()));
     __ ldr(disp_hdr, Address(tmp, ObjectMonitor::recursions_offset_in_bytes()));
     __ eor(rscratch1, rscratch1, rthread); // Will be 0 if we are the owner.

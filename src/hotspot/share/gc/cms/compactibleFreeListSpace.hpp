@@ -736,7 +736,7 @@ public:
 
 size_t PromotionInfo::refillSize() const {
   const size_t CMSSpoolBlockSize = 256;
-  const size_t sz = heap_word_size(sizeof(SpoolBlock) + sizeof(markOop)
+  const size_t sz = heap_word_size(sizeof(SpoolBlock) + sizeof(markWord)
                                    * CMSSpoolBlockSize);
   return CompactibleFreeListSpace::adjustObjectSize(sz);
 }

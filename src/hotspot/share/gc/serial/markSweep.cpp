@@ -49,7 +49,7 @@ Stack<oop, mtGC>              MarkSweep::_marking_stack;
 Stack<ObjArrayTask, mtGC>     MarkSweep::_objarray_stack;
 
 Stack<oop, mtGC>              MarkSweep::_preserved_oop_stack;
-Stack<markOop, mtGC>          MarkSweep::_preserved_mark_stack;
+Stack<markWord, mtGC>         MarkSweep::_preserved_mark_stack;
 size_t                  MarkSweep::_preserved_count = 0;
 size_t                  MarkSweep::_preserved_count_max = 0;
 PreservedMark*          MarkSweep::_preserved_marks = NULL;
@@ -132,7 +132,7 @@ template <class T> inline void MarkSweep::follow_root(T* p) {
   T heap_oop = RawAccess<>::oop_load(p);
   if (!CompressedOops::is_null(heap_oop)) {
     oop obj = CompressedOops::decode_not_null(heap_oop);
-    if (!obj->mark_raw()->is_marked()) {
+    if (!obj->mark_raw().is_marked()) {
       mark_object(obj);
       follow_object(obj);
     }
@@ -152,9 +152,9 @@ void PreservedMark::restore() {
 }
 
 // We preserve the mark which should be replaced at the end and the location
-// that it will go.  Note that the object that this markOop belongs to isn't
+// that it will go.  Note that the object that this markWord belongs to isn't
 // currently at that address but it will be after phase4
-void MarkSweep::preserve_mark(oop obj, markOop mark) {
+void MarkSweep::preserve_mark(oop obj, markWord mark) {
   // We try to store preserved marks in the to space of the new generation since
   // this is storage which should be available.  Most of the time this should be
   // sufficient space for the marks we need to preserve but if it isn't we fall
@@ -204,7 +204,7 @@ void MarkSweep::restore_marks() {
   // deal with the overflow
   while (!_preserved_oop_stack.is_empty()) {
     oop obj       = _preserved_oop_stack.pop();
-    markOop mark  = _preserved_mark_stack.pop();
+    markWord mark = _preserved_mark_stack.pop();
     obj->set_mark_raw(mark);
   }
 }

@@ -3615,7 +3615,7 @@ void TemplateTable::_new() {
     if (UseBiasedLocking) {
       __ ldr(rscratch1, Address(r4, Klass::prototype_header_offset()));
     } else {
-      __ mov(rscratch1, (intptr_t)markOopDesc::prototype());
+      __ mov(rscratch1, (intptr_t)markWord::prototype().value());
     }
     __ str(rscratch1, Address(r0, oopDesc::mark_offset_in_bytes()));
     __ store_klass_gap(r0, zr);  // zero klass gap for compressed oops

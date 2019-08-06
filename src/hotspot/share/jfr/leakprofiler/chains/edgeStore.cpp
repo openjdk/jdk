@@ -233,8 +233,8 @@ StoredEdge* EdgeStore::associate_leak_context_with_candidate(const Edge* edge) {
   StoredEdge* const leak_context_edge = put(edge->reference());
   oop sample_object = edge->pointee();
   assert(sample_object != NULL, "invariant");
-  assert(NULL == sample_object->mark(), "invariant");
-  sample_object->set_mark(markOop(leak_context_edge));
+  assert(NULL == sample_object->mark().to_pointer(), "invariant");
+  sample_object->set_mark(markWord::from_pointer(leak_context_edge));
   return leak_context_edge;
 }
 

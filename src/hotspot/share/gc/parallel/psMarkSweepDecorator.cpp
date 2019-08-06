@@ -75,7 +75,7 @@ PSMarkSweepDecorator* PSMarkSweepDecorator::destination_decorator() {
 // The object forwarding code is duplicated. Factor this out!!!!!
 //
 // This method "precompacts" objects inside its space to dest. It places forwarding
-// pointers into markOops for use by adjust_pointers. If "dest" should overflow, we
+// pointers into markWords for use by adjust_pointers. If "dest" should overflow, we
 // finish by compacting into our own space.
 
 void PSMarkSweepDecorator::precompact() {
@@ -113,8 +113,8 @@ void PSMarkSweepDecorator::precompact() {
   const intx interval = PrefetchScanIntervalInBytes;
 
   while (q < t) {
-    assert(oop(q)->mark_raw()->is_marked() || oop(q)->mark_raw()->is_unlocked() ||
-           oop(q)->mark_raw()->has_bias_pattern(),
+    assert(oop(q)->mark_raw().is_marked() || oop(q)->mark_raw().is_unlocked() ||
+           oop(q)->mark_raw().has_bias_pattern(),
            "these are the only valid states during a mark sweep");
     if (oop(q)->is_gc_marked()) {
       /* prefetch beyond q */
@@ -259,7 +259,7 @@ bool PSMarkSweepDecorator::insert_deadspace(size_t& allowed_deadspace_words,
   if (allowed_deadspace_words >= deadlength) {
     allowed_deadspace_words -= deadlength;
     CollectedHeap::fill_with_object(q, deadlength);
-    oop(q)->set_mark_raw(oop(q)->mark_raw()->set_marked());
+    oop(q)->set_mark_raw(oop(q)->mark_raw().set_marked());
     assert((int) deadlength == oop(q)->size(), "bad filler object size");
     // Recall that we required "q == compaction_top".
     return true;
@@ -350,7 +350,7 @@ void PSMarkSweepDecorator::compact(bool mangle_free_space ) {
       q = t;
     } else {
       // $$$ Funky
-      q = (HeapWord*) oop(_first_dead)->mark_raw()->decode_pointer();
+      q = (HeapWord*) oop(_first_dead)->mark_raw().decode_pointer();
     }
   }
 
@@ -361,7 +361,7 @@ void PSMarkSweepDecorator::compact(bool mangle_free_space ) {
     if (!oop(q)->is_gc_marked()) {
       // mark is pointer to next marked oop
       debug_only(prev_q = q);
-      q = (HeapWord*) oop(q)->mark_raw()->decode_pointer();
+      q = (HeapWord*) oop(q)->mark_raw().decode_pointer();
       assert(q > prev_q, "we should be moving forward through memory");
     } else {
       // prefetch beyond q

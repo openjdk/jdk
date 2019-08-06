@@ -431,7 +431,7 @@ bool PSScavenge::invoke_no_policy() {
   heap->print_heap_before_gc();
   heap->trace_heap_before_gc(&_gc_tracer);
 
-  assert(!NeverTenure || _tenuring_threshold == markOopDesc::max_age + 1, "Sanity");
+  assert(!NeverTenure || _tenuring_threshold == markWord::max_age + 1, "Sanity");
   assert(!AlwaysTenure || _tenuring_threshold == 0, "Sanity");
 
   // Fill in TLABs
@@ -823,8 +823,8 @@ void PSScavenge::initialize() {
   // Arguments must have been parsed
 
   if (AlwaysTenure || NeverTenure) {
-    assert(MaxTenuringThreshold == 0 || MaxTenuringThreshold == markOopDesc::max_age + 1,
-           "MaxTenuringThreshold should be 0 or markOopDesc::max_age + 1, but is %d", (int) MaxTenuringThreshold);
+    assert(MaxTenuringThreshold == 0 || MaxTenuringThreshold == markWord::max_age + 1,
+           "MaxTenuringThreshold should be 0 or markWord::max_age + 1, but is %d", (int) MaxTenuringThreshold);
     _tenuring_threshold = MaxTenuringThreshold;
   } else {
     // We want to smooth out our startup times for the AdaptiveSizePolicy

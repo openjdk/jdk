@@ -345,7 +345,7 @@ void PSPromotionManager::process_array_chunk(oop old) {
   }
 }
 
-oop PSPromotionManager::oop_promotion_failed(oop obj, markOop obj_mark) {
+oop PSPromotionManager::oop_promotion_failed(oop obj, markWord obj_mark) {
   assert(_old_gen_is_full || PromotionFailureALot, "Sanity");
 
   // Attempt to CAS in the header.

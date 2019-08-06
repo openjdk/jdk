@@ -3137,7 +3137,7 @@ void G1CollectedHeap::restore_after_evac_failure() {
   phase_times()->record_evac_fail_remove_self_forwards((os::elapsedTime() - remove_self_forwards_start) * 1000.0);
 }
 
-void G1CollectedHeap::preserve_mark_during_evac_failure(uint worker_id, oop obj, markOop m) {
+void G1CollectedHeap::preserve_mark_during_evac_failure(uint worker_id, oop obj, markWord m) {
   if (!_evacuation_failed) {
     _evacuation_failed = true;
   }

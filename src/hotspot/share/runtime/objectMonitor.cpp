@@ -277,10 +277,10 @@ void ObjectMonitor::enter(TRAPS) {
     assert(_owner == Self, "must be Self: owner=" INTPTR_FORMAT, p2i(_owner));
     assert(_recursions == 0, "must be 0: recursions=" INTPTR_FORMAT,
            _recursions);
-    assert(((oop)object())->mark() == markOopDesc::encode(this),
+    assert(((oop)object())->mark() == markWord::encode(this),
            "object mark must match encoded this: mark=" INTPTR_FORMAT
-           ", encoded this=" INTPTR_FORMAT, p2i(((oop)object())->mark()),
-           p2i(markOopDesc::encode(this)));
+           ", encoded this=" INTPTR_FORMAT, ((oop)object())->mark().value(),
+           markWord::encode(this).value());
     Self->_Stalled = 0;
     return;
   }
@@ -365,7 +365,7 @@ void ObjectMonitor::enter(TRAPS) {
   assert(_recursions == 0, "invariant");
   assert(_owner == Self, "invariant");
   assert(_succ != Self, "invariant");
-  assert(((oop)(object()))->mark() == markOopDesc::encode(this), "invariant");
+  assert(((oop)(object()))->mark() == markWord::encode(this), "invariant");
 
   // The thread -- now the owner -- is back in vm mode.
   // Report the glorious news via TI,DTrace and jvmstat.
@@ -593,7 +593,7 @@ void ObjectMonitor::EnterI(TRAPS) {
   assert(_owner == Self, "invariant");
   assert(object() != NULL, "invariant");
   // I'd like to write:
-  //   guarantee (((oop)(object()))->mark() == markOopDesc::encode(this), "invariant") ;
+  //   guarantee (((oop)(object()))->mark() == markWord::encode(this), "invariant") ;
   // but as we're at a safepoint that's not safe.
 
   UnlinkAfterAcquire(Self, &node);
@@ -661,7 +661,7 @@ void ObjectMonitor::ReenterI(Thread * Self, ObjectWaiter * SelfNode) {
   assert(SelfNode != NULL, "invariant");
   assert(SelfNode->_thread == Self, "invariant");
   assert(_waiters > 0, "invariant");
-  assert(((oop)(object()))->mark() == markOopDesc::encode(this), "invariant");
+  assert(((oop)(object()))->mark() == markWord::encode(this), "invariant");
   assert(((JavaThread *)Self)->thread_state() != _thread_blocked, "invariant");
   JavaThread * jt = (JavaThread *) Self;
 
@@ -729,7 +729,7 @@ void ObjectMonitor::ReenterI(Thread * Self, ObjectWaiter * SelfNode) {
   // In addition, Self.TState is stable.
 
   assert(_owner == Self, "invariant");
-  assert(((oop)(object()))->mark() == markOopDesc::encode(this), "invariant");
+  assert(((oop)(object()))->mark() == markWord::encode(this), "invariant");
   UnlinkAfterAcquire(Self, SelfNode);
   if (_succ == Self) _succ = NULL;
   assert(_succ != Self, "invariant");
@@ -1395,7 +1395,7 @@ void ObjectMonitor::wait(jlong millis, bool interruptible, TRAPS) {
   // Verify a few postconditions
   assert(_owner == Self, "invariant");
   assert(_succ != Self, "invariant");
-  assert(((oop)(object()))->mark() == markOopDesc::encode(this), "invariant");
+  assert(((oop)(object()))->mark() == markWord::encode(this), "invariant");
 
   // check if the notification happened
   if (!WasNotified) {
@@ -1935,7 +1935,7 @@ void ObjectMonitor::Initialize() {
 }
 
 void ObjectMonitor::print_on(outputStream* st) const {
-  // The minimal things to print for markOop printing, more can be added for debugging and logging.
+  // The minimal things to print for markWord printing, more can be added for debugging and logging.
   st->print("{contentions=0x%08x,waiters=0x%08x"
             ",recursions=" INTPTR_FORMAT ",owner=" INTPTR_FORMAT "}",
             contentions(), waiters(), recursions(),

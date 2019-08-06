@@ -3955,9 +3955,9 @@ bool LibraryCallKit::inline_native_hashcode(bool is_virtual, bool is_static) {
   Node* header = make_load(no_ctrl, header_addr, TypeX_X, TypeX_X->basic_type(), MemNode::unordered);
 
   // Test the header to see if it is unlocked.
-  Node *lock_mask      = _gvn.MakeConX(markOopDesc::biased_lock_mask_in_place);
+  Node *lock_mask      = _gvn.MakeConX(markWord::biased_lock_mask_in_place);
   Node *lmasked_header = _gvn.transform(new AndXNode(header, lock_mask));
-  Node *unlocked_val   = _gvn.MakeConX(markOopDesc::unlocked_value);
+  Node *unlocked_val   = _gvn.MakeConX(markWord::unlocked_value);
   Node *chk_unlocked   = _gvn.transform(new CmpXNode( lmasked_header, unlocked_val));
   Node *test_unlocked  = _gvn.transform(new BoolNode( chk_unlocked, BoolTest::ne));
 
@@ -3967,8 +3967,8 @@ bool LibraryCallKit::inline_native_hashcode(bool is_virtual, bool is_static) {
   // We depend on hash_mask being at most 32 bits and avoid the use of
   // hash_mask_in_place because it could be larger than 32 bits in a 64-bit
   // vm: see markOop.hpp.
-  Node *hash_mask      = _gvn.intcon(markOopDesc::hash_mask);
-  Node *hash_shift     = _gvn.intcon(markOopDesc::hash_shift);
+  Node *hash_mask      = _gvn.intcon(markWord::hash_mask);
+  Node *hash_shift     = _gvn.intcon(markWord::hash_shift);
   Node *hshifted_header= _gvn.transform(new URShiftXNode(header, hash_shift));
   // This hack lets the hash bits live anywhere in the mark object now, as long
   // as the shift drops the relevant bits into the low 32 bits.  Note that
@@ -3977,7 +3977,7 @@ bool LibraryCallKit::inline_native_hashcode(bool is_virtual, bool is_static) {
   hshifted_header      = ConvX2I(hshifted_header);
   Node *hash_val       = _gvn.transform(new AndINode(hshifted_header, hash_mask));
 
-  Node *no_hash_val    = _gvn.intcon(markOopDesc::no_hash);
+  Node *no_hash_val    = _gvn.intcon(markWord::no_hash);
   Node *chk_assigned   = _gvn.transform(new CmpINode( hash_val, no_hash_val));
   Node *test_assigned  = _gvn.transform(new BoolNode( chk_assigned, BoolTest::eq));
 

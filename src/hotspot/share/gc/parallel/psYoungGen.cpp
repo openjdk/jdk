@@ -749,7 +749,7 @@ void PSYoungGen::adjust_pointers() {
 void PSYoungGen::compact() {
   eden_mark_sweep()->compact(ZapUnusedHeapArea);
   from_mark_sweep()->compact(ZapUnusedHeapArea);
-  // Mark sweep stores preserved markOops in to space, don't disturb!
+  // Mark sweep stores preserved markWords in to space, don't disturb!
   to_mark_sweep()->compact(false);
 }
 

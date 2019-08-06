@@ -61,7 +61,7 @@ void ShenandoahAsserts::print_obj(ShenandoahMessageBuffer& msg, oop obj) {
   r->print_on(&ss);
 
   stringStream mw_ss;
-  obj->mark()->print_on(&mw_ss);
+  obj->mark().print_on(&mw_ss);
 
   ShenandoahMarkingContext* const ctx = heap->marking_context();
 

@@ -203,7 +203,7 @@ private:
                                   size_t word_sz,
                                   bool previous_plab_refill_failed);
 
-  inline G1HeapRegionAttr next_region_attr(G1HeapRegionAttr const region_attr, markOop const m, uint& age);
+  inline G1HeapRegionAttr next_region_attr(G1HeapRegionAttr const region_attr, markWord const m, uint& age);
 
   void report_promotion_event(G1HeapRegionAttr const dest_attr,
                               oop const old, size_t word_sz, uint age,
@@ -214,7 +214,7 @@ private:
 
   inline void trim_queue_to_threshold(uint threshold);
 public:
-  oop copy_to_survivor_space(G1HeapRegionAttr const region_attr, oop const obj, markOop const old_mark);
+  oop copy_to_survivor_space(G1HeapRegionAttr const region_attr, oop const obj, markWord const old_mark);
 
   void trim_queue();
   void trim_queue_partially();
@@ -225,7 +225,7 @@ public:
   inline void steal_and_trim_queue(RefToScanQueueSet *task_queues);
 
   // An attempt to evacuate "obj" has failed; take necessary steps.
-  oop handle_evacuation_failure_par(oop obj, markOop m);
+  oop handle_evacuation_failure_par(oop obj, markWord m);
 
   template <typename T>
   inline void remember_root_into_optional_region(T* p);
