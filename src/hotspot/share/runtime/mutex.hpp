@@ -139,10 +139,6 @@ class Monitor : public CHeapObj<mtSynchronizer> {
 
   NOT_PRODUCT(SafepointCheckRequired _safepoint_check_required;)
 
- protected:
-   static void ClearMonitor (Monitor * m, const char* name = NULL) ;
-   Monitor() ;
-
  public:
   Monitor(int rank, const char *name, bool allow_vm_block = false,
           SafepointCheckRequired safepoint_check_required = _safepoint_check_always);

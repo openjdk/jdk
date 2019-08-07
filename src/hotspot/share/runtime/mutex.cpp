@@ -264,35 +264,24 @@ Monitor::~Monitor() {
   assert_owner(NULL);
 }
 
-void Monitor::ClearMonitor(Monitor * m, const char *name) {
-  m->_owner             = NULL;
-  if (name == NULL) {
-    strcpy(m->_name, "UNKNOWN");
-  } else {
-    strncpy(m->_name, name, MONITOR_NAME_LEN - 1);
-    m->_name[MONITOR_NAME_LEN - 1] = '\0';
-  }
-}
-
-Monitor::Monitor() {
-  assert(os::mutex_init_done(), "Too early!");
-  ClearMonitor(this);
-}
-
-
 // Only Threads_lock, Heap_lock and SR_lock may be safepoint_check_sometimes.
 bool is_sometimes_ok(const char* name) {
   return (strcmp(name, "Threads_lock") == 0 || strcmp(name, "Heap_lock") == 0 || strcmp(name, "SR_lock") == 0);
 }
 
 Monitor::Monitor(int Rank, const char * name, bool allow_vm_block,
-                 SafepointCheckRequired safepoint_check_required) {
+                 SafepointCheckRequired safepoint_check_required) : _owner(NULL) {
   assert(os::mutex_init_done(), "Too early!");
-  ClearMonitor(this, name);
+  if (name == NULL) {
+    strcpy(_name, "UNKNOWN");
+  } else {
+    strncpy(_name, name, MONITOR_NAME_LEN - 1);
+    _name[MONITOR_NAME_LEN - 1] = '\0';
+  }
 #ifdef ASSERT
   _allow_vm_block  = allow_vm_block;
   _rank            = Rank;
-  NOT_PRODUCT(_safepoint_check_required = safepoint_check_required;)
+  _safepoint_check_required = safepoint_check_required;
 
   assert(_safepoint_check_required != Monitor::_safepoint_check_sometimes || is_sometimes_ok(name),
          "Lock has _safepoint_check_sometimes %s", name);
@@ -300,17 +289,8 @@ Monitor::Monitor(int Rank, const char * name, bool allow_vm_block,
 }
 
 Mutex::Mutex(int Rank, const char * name, bool allow_vm_block,
-             SafepointCheckRequired safepoint_check_required) {
-  ClearMonitor((Monitor *) this, name);
-#ifdef ASSERT
-  _allow_vm_block   = allow_vm_block;
-  _rank             = Rank;
-  NOT_PRODUCT(_safepoint_check_required = safepoint_check_required;)
-
-  assert(_safepoint_check_required != Monitor::_safepoint_check_sometimes || is_sometimes_ok(name),
-         "Lock has _safepoint_check_sometimes %s", name);
-#endif
-}
+             SafepointCheckRequired safepoint_check_required) :
+  Monitor(Rank, name, allow_vm_block, safepoint_check_required) {}
 
 bool Monitor::owned_by_self() const {
   return _owner == Thread::current();
