@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2009, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,12 +27,14 @@ package jdk.nio.zipfs;
 
 import java.io.IOException;
 import java.io.OutputStream;
+import java.nio.file.attribute.PosixFilePermission;
 import java.time.DateTimeException;
 import java.time.Instant;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.util.Arrays;
 import java.util.Date;
+import java.util.Set;
 import java.util.concurrent.TimeUnit;
 import java.util.regex.PatternSyntaxException;
 
@@ -40,6 +42,102 @@ import java.util.regex.PatternSyntaxException;
  * @author Xueming Shen
  */
 class ZipUtils {
+
+    /**
+     * The bit flag used to specify read permission by the owner.
+     */
+    static final int POSIX_USER_READ = 0400;
+
+    /**
+     * The bit flag used to specify write permission by the owner.
+     */
+    static final int POSIX_USER_WRITE = 0200;
+
+    /**
+     * The bit flag used to specify execute permission by the owner.
+     */
+    static final int POSIX_USER_EXECUTE = 0100;
+
+    /**
+     * The bit flag used to specify read permission by the group.
+     */
+    static final int POSIX_GROUP_READ = 040;
+
+    /**
+     * The bit flag used to specify write permission by the group.
+     */
+    static final int POSIX_GROUP_WRITE = 020;
+
+    /**
+     * The bit flag used to specify execute permission by the group.
+     */
+    static final int POSIX_GROUP_EXECUTE = 010;
+
+    /**
+     * The bit flag used to specify read permission by others.
+     */
+    static final int POSIX_OTHER_READ = 04;
+
+    /**
+     * The bit flag used to specify write permission by others.
+     */
+    static final int POSIX_OTHER_WRITE = 02;
+
+    /**
+     * The bit flag used to specify execute permission by others.
+     */
+    static final int POSIX_OTHER_EXECUTE = 01;
+
+    /**
+     * Convert a {@link PosixFilePermission} object into the appropriate bit
+     * flag.
+     *
+     * @param perm The {@link PosixFilePermission} object.
+     * @return The bit flag as int.
+     */
+    static int permToFlag(PosixFilePermission perm) {
+        switch(perm) {
+        case OWNER_READ:
+            return POSIX_USER_READ;
+        case OWNER_WRITE:
+            return POSIX_USER_WRITE;
+        case OWNER_EXECUTE:
+            return POSIX_USER_EXECUTE;
+        case GROUP_READ:
+            return POSIX_GROUP_READ;
+        case GROUP_WRITE:
+            return POSIX_GROUP_WRITE;
+        case GROUP_EXECUTE:
+            return POSIX_GROUP_EXECUTE;
+        case OTHERS_READ:
+            return POSIX_OTHER_READ;
+        case OTHERS_WRITE:
+            return POSIX_OTHER_WRITE;
+        case OTHERS_EXECUTE:
+            return POSIX_OTHER_EXECUTE;
+        default:
+            return 0;
+        }
+    }
+
+    /**
+     * Converts a set of {@link PosixFilePermission}s into an int value where
+     * the according bits are set.
+     *
+     * @param perms A Set of {@link PosixFilePermission} objects.
+     *
+     * @return A bit mask representing the input Set.
+     */
+    static int permsToFlags(Set<PosixFilePermission> perms) {
+        if (perms == null) {
+            return -1;
+        }
+        int flags = 0;
+        for (PosixFilePermission perm : perms) {
+            flags |= permToFlag(perm);
+        }
+        return flags;
+    }
 
     /*
      * Writes a 16-bit short to the output stream in little-endian byte order.
