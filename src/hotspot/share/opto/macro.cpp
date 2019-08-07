@@ -348,6 +348,7 @@ Node* PhaseMacroExpand::make_arraycopy_load(ArrayCopyNode* ac, intptr_t offset, 
   }
   Node* res = NULL;
   if (ac->is_clonebasic()) {
+    assert(ac->in(ArrayCopyNode::Src) != ac->in(ArrayCopyNode::Dest), "clone source equals destination");
     Node* base = ac->in(ArrayCopyNode::Src)->in(AddPNode::Base);
     Node* adr = _igvn.transform(new AddPNode(base, base, MakeConX(offset)));
     const TypePtr* adr_type = _igvn.type(base)->is_ptr()->add_offset(offset);
@@ -355,7 +356,7 @@ Node* PhaseMacroExpand::make_arraycopy_load(ArrayCopyNode* ac, intptr_t offset, 
   } else {
     if (ac->modifies(offset, offset, &_igvn, true)) {
       assert(ac->in(ArrayCopyNode::Dest) == alloc->result_cast(), "arraycopy destination should be allocation's result");
-      uint shift  = exact_log2(type2aelembytes(bt));
+      uint shift = exact_log2(type2aelembytes(bt));
       Node* diff = _igvn.transform(new SubINode(ac->in(ArrayCopyNode::SrcPos), ac->in(ArrayCopyNode::DestPos)));
 #ifdef _LP64
       diff = _igvn.transform(new ConvI2LNode(diff));
@@ -366,6 +367,10 @@ Node* PhaseMacroExpand::make_arraycopy_load(ArrayCopyNode* ac, intptr_t offset, 
       Node* base = ac->in(ArrayCopyNode::Src);
       Node* adr = _igvn.transform(new AddPNode(base, base, off));
       const TypePtr* adr_type = _igvn.type(base)->is_ptr()->add_offset(offset);
+      if (ac->in(ArrayCopyNode::Src) == ac->in(ArrayCopyNode::Dest)) {
+        // Don't emit a new load from src if src == dst but try to get the value from memory instead
+        return value_from_mem(ac->in(TypeFunc::Memory), ctl, ft, ftype, adr_type->isa_oopptr(), alloc);
+      }
       res = LoadNode::make(_igvn, ctl, mem, adr, adr_type, type, bt, MemNode::unordered, LoadNode::UnknownControl);
     }
   }
@@ -496,7 +501,6 @@ Node *PhaseMacroExpand::value_from_mem(Node *sfpt_mem, Node *sfpt_ctl, BasicType
   Node *alloc_mem = alloc->in(TypeFunc::Memory);
   Arena *a = Thread::current()->resource_area();
   VectorSet visited(a);
-
 
   bool done = sfpt_mem == alloc_mem;
   Node *mem = sfpt_mem;
