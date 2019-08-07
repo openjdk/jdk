@@ -48,6 +48,8 @@ final class Dasher implements PathConsumer2D, MarlinConst {
     static final float CURVE_LEN_ERR = MarlinProperties.getCurveLengthError(); // 0.01
     static final float MIN_T_INC = 1.0f / (1 << REC_LIMIT);
 
+    static final float EPS = 1e-6f;
+
     // More than 24 bits of mantissa means we can no longer accurately
     // measure the number of times cycled through the dash array so we
     // punt and override the phase to just be 0 past that point.
@@ -270,6 +272,9 @@ final class Dasher implements PathConsumer2D, MarlinConst {
 
     private void emitSeg(float[] buf, int off, int type) {
         switch (type) {
+        case 4:
+            out.lineTo(buf[off], buf[off + 1]);
+            return;
         case 8:
             out.curveTo(buf[off    ], buf[off + 1],
                         buf[off + 2], buf[off + 3],
@@ -278,9 +283,6 @@ final class Dasher implements PathConsumer2D, MarlinConst {
         case 6:
             out.quadTo(buf[off    ], buf[off + 1],
                        buf[off + 2], buf[off + 3]);
-            return;
-        case 4:
-            out.lineTo(buf[off], buf[off + 1]);
             return;
         default:
         }
@@ -362,7 +364,7 @@ final class Dasher implements PathConsumer2D, MarlinConst {
 
                 // basic rejection criteria:
                 if (sideCode == 0) {
-                    // ovelap clip:
+                    // overlap clip:
                     if (subdivide) {
                         // avoid reentrance
                         subdivide = false;
@@ -417,13 +419,13 @@ final class Dasher implements PathConsumer2D, MarlinConst {
         boolean _dashOn = dashOn;
         float _phase = phase;
 
-        float leftInThisDashSegment, d;
+        float leftInThisDashSegment, rem;
 
         while (true) {
-            d = _dash[_idx];
-            leftInThisDashSegment = d - _phase;
+            leftInThisDashSegment = _dash[_idx] - _phase;
+            rem = len - leftInThisDashSegment;
 
-            if (len <= leftInThisDashSegment) {
+            if (rem <= EPS) {
                 _curCurvepts[0] = x1;
                 _curCurvepts[1] = y1;
 
@@ -432,8 +434,8 @@ final class Dasher implements PathConsumer2D, MarlinConst {
                 // Advance phase within current dash segment
                 _phase += len;
 
-                // TODO: compare float values using epsilon:
-                if (len == leftInThisDashSegment) {
+                // compare values using epsilon:
+                if (Math.abs(rem) <= EPS) {
                     _phase = 0.0f;
                     _idx = (_idx + 1) % _dashLen;
                     _dashOn = !_dashOn;
@@ -441,17 +443,12 @@ final class Dasher implements PathConsumer2D, MarlinConst {
                 break;
             }
 
-            if (_phase == 0.0f) {
-                _curCurvepts[0] = cx0 + d * cx;
-                _curCurvepts[1] = cy0 + d * cy;
-            } else {
-                _curCurvepts[0] = cx0 + leftInThisDashSegment * cx;
-                _curCurvepts[1] = cy0 + leftInThisDashSegment * cy;
-            }
+            _curCurvepts[0] = cx0 + leftInThisDashSegment * cx;
+            _curCurvepts[1] = cy0 + leftInThisDashSegment * cy;
 
             goTo(_curCurvepts, 0, 4, _dashOn);
 
-            len -= leftInThisDashSegment;
+            len = rem;
             // Advance to next dash segment
             _idx = (_idx + 1) % _dashLen;
             _dashOn = !_dashOn;
@@ -507,18 +504,18 @@ final class Dasher implements PathConsumer2D, MarlinConst {
             _dashOn = (iterations + (_dashOn ? 1L : 0L) & 1L) == 1L;
         }
 
-        float leftInThisDashSegment, d;
+        float leftInThisDashSegment, rem;
 
         while (true) {
-            d = _dash[_idx];
-            leftInThisDashSegment = d - _phase;
+            leftInThisDashSegment = _dash[_idx] - _phase;
+            rem = len - leftInThisDashSegment;
 
-            if (len <= leftInThisDashSegment) {
+            if (rem <= EPS) {
                 // Advance phase within current dash segment
                 _phase += len;
 
-                // TODO: compare float values using epsilon:
-                if (len == leftInThisDashSegment) {
+                // compare values using epsilon:
+                if (Math.abs(rem) <= EPS) {
                     _phase = 0.0f;
                     _idx = (_idx + 1) % _dashLen;
                     _dashOn = !_dashOn;
@@ -526,7 +523,7 @@ final class Dasher implements PathConsumer2D, MarlinConst {
                 break;
             }
 
-            len -= leftInThisDashSegment;
+            len = rem;
             // Advance to next dash segment
             _idx = (_idx + 1) % _dashLen;
             _dashOn = !_dashOn;
@@ -580,7 +577,9 @@ final class Dasher implements PathConsumer2D, MarlinConst {
         goTo(_curCurvepts, curCurveoff + 2, type, _dashOn);
 
         _phase += _li.lastSegLen();
-        if (_phase >= _dash[_idx]) {
+
+        // compare values using epsilon:
+        if (_phase + EPS >= _dash[_idx]) {
             _phase = 0.0f;
             _idx = (_idx + 1) % _dashLen;
             _dashOn = !_dashOn;
@@ -939,7 +938,7 @@ final class Dasher implements PathConsumer2D, MarlinConst {
 
                 // basic rejection criteria:
                 if (sideCode == 0) {
-                    // ovelap clip:
+                    // overlap clip:
                     if (subdivide) {
                         // avoid reentrance
                         subdivide = false;
@@ -1025,7 +1024,7 @@ final class Dasher implements PathConsumer2D, MarlinConst {
 
                 // basic rejection criteria:
                 if (sideCode == 0) {
-                    // ovelap clip:
+                    // overlap clip:
                     if (subdivide) {
                         // avoid reentrance
                         subdivide = false;

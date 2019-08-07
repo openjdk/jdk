@@ -542,7 +542,7 @@ final class Stroker implements PathConsumer2D, MarlinConst {
 
                 // basic rejection criteria:
                 if (sideCode == 0) {
-                    // ovelap clip:
+                    // overlap clip:
                     if (subdivide) {
                         // avoid reentrance
                         subdivide = false;
@@ -636,6 +636,9 @@ final class Stroker implements PathConsumer2D, MarlinConst {
         emitReverse();
 
         this.prev = CLOSE;
+        this.cx0 = sx0;
+        this.cy0 = sy0;
+        this.cOutCode = sOutCode;
 
         if (opened) {
             // do not emit close
@@ -670,7 +673,9 @@ final class Stroker implements PathConsumer2D, MarlinConst {
         //          i.e. if caps must be drawn or not ?
         // Solution: use the ClosedPathDetector before Stroker to determine
         // if the path is a closed path or not
-        if (!rdrCtx.closedPath) {
+        if (rdrCtx.closedPath) {
+            emitReverse();
+        } else {
             if (outcode == 0) {
                 // current point = end's cap:
                 if (capStyle == CAP_ROUND) {
@@ -695,8 +700,6 @@ final class Stroker implements PathConsumer2D, MarlinConst {
                     }
                 }
             }
-        } else {
-            emitReverse();
         }
         emitClose();
     }
@@ -1060,7 +1063,7 @@ final class Stroker implements PathConsumer2D, MarlinConst {
 
                 // basic rejection criteria:
                 if (sideCode == 0) {
-                    // ovelap clip:
+                    // overlap clip:
                     if (subdivide) {
                         // avoid reentrance
                         subdivide = false;
@@ -1208,7 +1211,7 @@ final class Stroker implements PathConsumer2D, MarlinConst {
 
                 // basic rejection criteria:
                 if (sideCode == 0) {
-                    // ovelap clip:
+                    // overlap clip:
                     if (subdivide) {
                         // avoid reentrance
                         subdivide = false;
