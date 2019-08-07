@@ -127,6 +127,10 @@ public class Platform {
         return isOs("win");
     }
 
+    public static boolean isBSD() {
+        return osName.toLowerCase().endsWith("bsd");
+    }
+
     private static boolean isOs(String osname) {
         return osName.toLowerCase(ROOT).startsWith(osname.toLowerCase(ROOT));
     }
