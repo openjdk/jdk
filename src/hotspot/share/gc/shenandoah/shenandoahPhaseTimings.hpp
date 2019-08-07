@@ -52,6 +52,7 @@ class outputStream;
   f(scan_jni_weak_roots,                            "    S: JNI Weak Roots")            \
   f(scan_stringtable_roots,                         "    S: String Table Roots")        \
   f(scan_resolved_method_table_roots,               "    S: Resolved Table Roots")      \
+  f(scan_vm_global_roots,                           "    S: VM Global Roots")           \
   f(scan_vm_weak_roots,                             "    S: VM Weak Roots")             \
   f(scan_synchronizer_roots,                        "    S: Synchronizer Roots")        \
   f(scan_management_roots,                          "    S: Management Roots")          \
@@ -78,6 +79,7 @@ class outputStream;
   f(update_jni_weak_roots,                          "    U: JNI Weak Roots")            \
   f(update_stringtable_roots,                       "    U: String Table Roots")        \
   f(update_resolved_method_table_roots,             "    U: Resolved Table Roots")      \
+  f(update_vm_global_roots,                         "    U: VM Global Roots")           \
   f(update_vm_weak_roots,                           "    U: VM Weak Roots")             \
   f(update_synchronizer_roots,                      "    U: Synchronizer Roots")        \
   f(update_management_roots,                        "    U: Management Roots")          \
@@ -112,6 +114,7 @@ class outputStream;
   f(evac_jni_weak_roots,                            "    E: JNI Weak Roots")            \
   f(evac_stringtable_roots,                         "    E: String Table Roots")        \
   f(evac_resolved_method_table_roots,               "    E: Resolved Table Roots")      \
+  f(evac_vm_global_roots,                           "    E: VM Global Roots")           \
   f(evac_vm_weak_roots,                             "    E: VM Weak Roots")             \
   f(evac_synchronizer_roots,                        "    E: Synchronizer Roots")        \
   f(evac_management_roots,                          "    E: Management Roots")          \
@@ -143,6 +146,7 @@ class outputStream;
   f(final_update_jni_weak_roots,                     "    UR: JNI Weak Roots")          \
   f(final_update_stringtable_roots,                  "    UR: String Table Roots")      \
   f(final_update_resolved_method_table_roots,        "    UR: Resolved Table Roots")    \
+  f(final_update_vm_global_roots,                    "    UR: VM Global Roots")         \
   f(final_update_vm_weak_roots,                      "    UR: VM Weak Roots")           \
   f(final_update_refs_synchronizer_roots,            "    UR: Synchronizer Roots")      \
   f(final_update_refs_management_roots,              "    UR: Management Roots")        \
@@ -169,6 +173,7 @@ class outputStream;
   f(degen_gc_update_jni_weak_roots,                  "    DU: JNI Weak Roots")          \
   f(degen_gc_update_stringtable_roots,               "    DU: String Table Roots")      \
   f(degen_gc_update_resolved_method_table_roots,     "    DU: Resolved Table Roots")    \
+  f(degen_gc_update_vm_global_roots,                 "    DU: VM Global Roots")         \
   f(degen_gc_update_vm_weak_roots,                   "    DU: VM Weak Roots")           \
   f(degen_gc_update_synchronizer_roots,              "    DU: Synchronizer Roots")      \
   f(degen_gc_update_management_roots,                "    DU: Management Roots")        \
@@ -196,6 +201,7 @@ class outputStream;
   f(init_traversal_gc_jni_weak_roots,                "    TI: JNI Weak Roots")          \
   f(init_traversal_gc_stringtable_roots,             "    TI: String Table Roots")      \
   f(init_traversal_gc_resolved_method_table_roots,   "    TI: Resolved Table Roots")    \
+  f(init_traversal_gc_vm_global_roots,               "    TI: VM Global Roots")         \
   f(init_traversal_gc_vm_weak_roots,                 "    TI: VM Weak Roots")           \
   f(init_traversal_gc_synchronizer_roots,            "    TI: Synchronizer Roots")      \
   f(init_traversal_gc_management_roots,              "    TI: Management Roots")        \
@@ -220,6 +226,7 @@ class outputStream;
   f(final_traversal_gc_jni_weak_roots,               "    TF: JNI Weak Roots")          \
   f(final_traversal_gc_stringtable_roots,            "    TF: String Table Roots")      \
   f(final_traversal_gc_resolved_method_table_roots,  "    TF: Resolved Table Roots")    \
+  f(final_traversal_gc_vm_global_roots,              "    TF: VM Global Roots")         \
   f(final_traversal_gc_vm_weak_roots,                "    TF: VM Weak Roots")           \
   f(final_traversal_gc_synchronizer_roots,           "    TF: Synchronizer Roots")      \
   f(final_traversal_gc_management_roots,             "    TF: Management Roots")        \
@@ -242,6 +249,7 @@ class outputStream;
   f(final_traversal_update_jni_weak_roots,              "    TU: JNI Weak Roots")       \
   f(final_traversal_update_stringtable_roots,           "    TU: String Table Roots")   \
   f(final_traversal_update_resolved_method_table_roots, "    TU: Resolved Table Roots") \
+  f(final_traversal_update_vm_global_roots,             "    TU: VM Global Roots")      \
   f(final_traversal_update_vm_weak_roots,               "    TU: VM Weak Roots")        \
   f(final_traversal_update_synchronizer_roots,          "    TU: Synchronizer Roots")   \
   f(final_traversal_update_management_roots,            "    TU: Management Roots")     \
@@ -270,6 +278,7 @@ class outputStream;
   f(full_gc_jni_weak_roots,                          "    F: JNI Weak Roots")           \
   f(full_gc_stringtable_roots,                       "    F: String Table Roots")       \
   f(full_gc_resolved_method_table_roots,             "    F: Resolved Table Roots")     \
+  f(full_gc_vm_global_roots,                         "    F: VM Global Roots")          \
   f(full_gc_vm_weak_roots,                           "    F: VM Weak Roots")            \
   f(full_gc_synchronizer_roots,                      "    F: Synchronizer Roots")       \
   f(full_gc_management_roots,                        "    F: Management Roots")         \
@@ -330,6 +339,7 @@ class outputStream;
   f(JNIWeakRoots,             "JNI Weak Roots (ms):")            \
   f(StringTableRoots,         "StringTable Roots(ms):")          \
   f(ResolvedMethodTableRoots, "Resolved Table Roots(ms):")       \
+  f(VMGlobalRoots,            "VM Global Roots(ms)")             \
   f(VMWeakRoots,              "VM Weak Roots(ms)")               \
   f(ObjectSynchronizerRoots,  "ObjectSynchronizer Roots (ms):")  \
   f(ManagementRoots,          "Management Roots (ms):")          \

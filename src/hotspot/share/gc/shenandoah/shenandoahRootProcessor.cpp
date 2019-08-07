@@ -52,9 +52,9 @@ void ShenandoahSerialRoot::oops_do(OopClosure* cl, uint worker_id) {
   }
 }
 
-// Default the second argument for SD::oops_do.
+// Overwrite the second argument for SD::oops_do, don't include vm global oop storage.
 static void system_dictionary_oops_do(OopClosure* cl) {
-  SystemDictionary::oops_do(cl);
+  SystemDictionary::oops_do(cl, false);
 }
 
 ShenandoahSerialRoots::ShenandoahSerialRoots() :
@@ -173,7 +173,7 @@ void ShenandoahRootEvacuator::roots_do(uint worker_id, OopClosure* oops) {
   _serial_weak_roots.weak_oops_do(oops, worker_id);
   if (_include_concurrent_roots) {
     CLDToOopClosure clds(oops, ClassLoaderData::_claim_strong);
-    _jni_roots.oops_do<OopClosure>(oops, worker_id);
+    _vm_roots.oops_do<OopClosure>(oops, worker_id);
     _cld_roots.cld_do(&clds, worker_id);
     _weak_roots.oops_do<OopClosure>(oops, worker_id);
   }
@@ -202,7 +202,7 @@ void ShenandoahRootAdjuster::roots_do(uint worker_id, OopClosure* oops) {
   AlwaysTrueClosure always_true;
 
   _serial_roots.oops_do(oops, worker_id);
-  _jni_roots.oops_do(oops, worker_id);
+  _vm_roots.oops_do(oops, worker_id);
 
   _thread_roots.oops_do(oops, NULL, worker_id);
   _cld_roots.cld_do(&adjust_cld_closure, worker_id);
@@ -227,7 +227,7 @@ void ShenandoahRootAdjuster::roots_do(uint worker_id, OopClosure* oops) {
    ResourceMark rm;
 
    _serial_roots.oops_do(oops, 0);
-   _jni_roots.oops_do(oops, 0);
+   _vm_roots.oops_do(oops, 0);
    _cld_roots.cld_do(&clds, 0);
    _thread_roots.threads_do(&tc_cl, 0);
    _code_roots.code_blobs_do(&code, 0);
@@ -242,7 +242,7 @@ void ShenandoahRootAdjuster::roots_do(uint worker_id, OopClosure* oops) {
    ResourceMark rm;
 
    _serial_roots.oops_do(oops, 0);
-   _jni_roots.oops_do(oops, 0);
+   _vm_roots.oops_do(oops, 0);
    _cld_roots.always_strong_cld_do(&clds, 0);
    _thread_roots.threads_do(&tc_cl, 0);
  }
