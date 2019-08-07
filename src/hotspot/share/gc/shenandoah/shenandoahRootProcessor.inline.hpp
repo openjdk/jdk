@@ -48,7 +48,7 @@ inline void ShenandoahWeakRoot<CONCURRENT>::oops_do(Closure* cl, uint worker_id)
     _itr.oops_do(cl);
   } else {
     ShenandoahWorkerTimings* worker_times = ShenandoahHeap::heap()->phase_timings()->worker_times();
-    ShenandoahWorkerTimingsTracker timer(worker_times, ShenandoahPhaseTimings::ThreadRoots, worker_id);
+    ShenandoahWorkerTimingsTracker timer(worker_times, _phase, worker_id);
     _itr.oops_do(cl);
   }
 }
