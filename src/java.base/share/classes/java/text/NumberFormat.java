@@ -575,6 +575,15 @@ public abstract class NumberFormat extends Format  {
     /**
      * Returns a currency format for the specified locale.
      *
+     * <p>If the specified locale contains the "{@code cf}" (
+     * <a href="https://www.unicode.org/reports/tr35/tr35.html#UnicodeCurrencyFormatIdentifier">
+     * currency format style</a>)
+     * <a href="../util/Locale.html#def_locale_extension">Unicode extension</a>,
+     * the returned currency format uses the style if it is available.
+     * Otherwise, the style uses the default "{@code standard}" currency format.
+     * For example, if the style designates "{@code account}", negative
+     * currency amounts use a pair of parentheses in some locales.
+     *
      * @param inLocale the desired locale
      * @return the {@code NumberFormat} instance for currency formatting
      */

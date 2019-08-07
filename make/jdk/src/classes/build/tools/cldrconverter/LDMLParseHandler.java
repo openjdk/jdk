@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -596,19 +596,24 @@ class LDMLParseHandler extends AbstractLDMLHandler<Object> {
             }
             break;
         case "currencyFormat":
-            // for FormatData
-            // copy string for later assembly into NumberPatterns
-            if (attributes.getValue("type").equals("standard")) {
-            pushStringEntry(qName, attributes, "NumberPatterns/currency");
-            } else {
-                pushIgnoredContainer(qName);
+            {
+                // for FormatData
+                // copy string for later assembly into NumberPatterns
+                String cfStyle = attributes.getValue("type");
+                if (cfStyle.equals("standard")) {
+                    pushStringEntry(qName, attributes, "NumberPatterns/currency");
+                } else if (cfStyle.equals("accounting")) {
+                    pushStringEntry(qName, attributes, "NumberPatterns/accounting");
+                } else {
+                    pushIgnoredContainer(qName);
+                }
             }
             break;
         case "percentFormat":
             // for FormatData
             // copy string for later assembly into NumberPatterns
             if (attributes.getValue("type").equals("standard")) {
-            pushStringEntry(qName, attributes, "NumberPatterns/percent");
+                pushStringEntry(qName, attributes, "NumberPatterns/percent");
             } else {
                 pushIgnoredContainer(qName);
             }
