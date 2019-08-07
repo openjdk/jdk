@@ -46,7 +46,7 @@ Rule	SystemV	1975	only	-	Oct	lastSun	2:00	0	S
 Rule	SystemV	1976	max	-	Apr	lastSun	2:00	1:00	D
 Rule	SystemV	1976	max	-	Oct	lastSun	2:00	0	S
 
-# Zone	NAME		GMTOFF	RULES/SAVE	FORMAT	[UNTIL]
+# Zone	NAME		STDOFF	RULES/SAVE	FORMAT	[UNTIL]
 ## Zone	SystemV/AST4ADT	-4:00	SystemV		A%sT
 ## Zone	SystemV/EST5EDT	-5:00	SystemV		E%sT
 ## Zone	SystemV/CST6CDT	-6:00	SystemV		C%sT

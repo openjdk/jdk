@@ -419,7 +419,7 @@ Rule	Arg	2008	only	-	Oct	Sun>=15	0:00	1:00	-
 # plus is that this silences a zic complaint that there's no POSIX TZ
 # setting for timestamps past 2038.
 
-# Zone	NAME		GMTOFF	RULES	FORMAT	[UNTIL]
+# Zone	NAME		STDOFF	RULES	FORMAT	[UNTIL]
 #
 # Buenos Aires (BA), Capital Federal (CF),
 Zone America/Argentina/Buenos_Aires -3:53:48 - LMT	1894 Oct 31
@@ -600,7 +600,7 @@ Zone America/Argentina/Ushuaia -4:33:12 - LMT	1894 Oct 31
 Link America/Curacao America/Aruba
 
 # Bolivia
-# Zone	NAME		GMTOFF	RULES	FORMAT	[UNTIL]
+# Zone	NAME		STDOFF	RULES	FORMAT	[UNTIL]
 Zone	America/La_Paz	-4:32:36 -	LMT	1890
 			-4:32:36 -	CMT	1931 Oct 15 # Calamarca MT
 			-4:32:36 1:00	BST	1932 Mar 21 # Bolivia ST
@@ -943,14 +943,13 @@ Rule	Brazil	2012	only	-	Feb	Sun>=22	0:00	0	-
 # removed Tocantins.
 Rule	Brazil	2013	2014	-	Feb	Sun>=15	0:00	0	-
 Rule	Brazil	2015	only	-	Feb	Sun>=22	0:00	0	-
-Rule	Brazil	2016	2022	-	Feb	Sun>=15	0:00	0	-
+Rule	Brazil	2016	2019	-	Feb	Sun>=15	0:00	0	-
 # From Steffen Thorsen (2017-12-18):
 # According to many media sources, next year's DST start in Brazil will move to
-# the first Sunday of November, and it will stay like that for the years after.
+# the first Sunday of November
 # ... https://www.timeanddate.com/news/time/brazil-delays-dst-2018.html
 # From Steffen Thorsen (2017-12-20):
 # http://www.planalto.gov.br/ccivil_03/_ato2015-2018/2017/decreto/D9242.htm
-#
 # From Fábio Gomes (2018-10-04):
 # The Brazilian president just announced a new change on this year DST.
 # It was scheduled to start on November 4th and it was changed to November 18th.
@@ -958,22 +957,21 @@ Rule	Brazil	2016	2022	-	Feb	Sun>=15	0:00	0	-
 # The Brazilian government just announced that the change in DST was
 # canceled....  Maybe the president Michel Temer also woke up one hour
 # earlier today. :)
-Rule	Brazil	2018	max	-	Nov	Sun>=1	0:00	1:00	-
-Rule	Brazil	2023	only	-	Feb	Sun>=22	0:00	0	-
-Rule	Brazil	2024	2025	-	Feb	Sun>=15	0:00	0	-
-Rule	Brazil	2026	only	-	Feb	Sun>=22	0:00	0	-
-Rule	Brazil	2027	2033	-	Feb	Sun>=15	0:00	0	-
-Rule	Brazil	2034	only	-	Feb	Sun>=22	0:00	0	-
-Rule	Brazil	2035	2036	-	Feb	Sun>=15	0:00	0	-
-Rule	Brazil	2037	only	-	Feb	Sun>=22	0:00	0	-
-# From Arthur David Olson (2008-09-29):
-# The next is wrong in some years but is better than nothing.
-Rule	Brazil	2038	max	-	Feb	Sun>=15	0:00	0	-
-
-# The latest ruleset listed above says that the following states observe DST:
+Rule	Brazil	2018	only	-	Nov	Sun>=1	0:00	1:00	-
+# The last ruleset listed above says that the following states observed DST:
 # DF, ES, GO, MG, MS, MT, PR, RJ, RS, SC, SP.
+#
+# From Steffen Thorsen (2019-04-05):
+# According to multiple sources the Brazilian president wants to get rid of DST.
+# https://gmconline.com.br/noticias/politica/bolsonaro-horario-de-verao-deve-acabar-este-ano
+# https://g1.globo.com/economia/noticia/2019/04/05/governo-anuncia-fim-do-horario-de-verao.ghtml
+# From Marcus Diniz (2019-04-25):
+# Brazil no longer has DST changes - decree signed today
+# https://g1.globo.com/politica/noticia/2019/04/25/bolsonaro-assina-decreto-que-acaba-com-o-horario-de-verao.ghtml
+# From Daniel Soares de Oliveira (2019-04-26):
+# http://www.planalto.gov.br/ccivil_03/_Ato2019-2022/2019/Decreto/D9772.htm
 
-# Zone	NAME		GMTOFF	RULES	FORMAT	[UNTIL]
+# Zone	NAME		STDOFF	RULES	FORMAT	[UNTIL]
 #
 # Fernando de Noronha (administratively part of PE)
 Zone America/Noronha	-2:09:40 -	LMT	1914
@@ -1281,6 +1279,8 @@ Zone America/Rio_Branco	-4:31:12 -	LMT	1914
 # https://twitter.com/MinEnergia/status/1029009354001973248
 # "We will keep the new time policy unchanged for at least the next 4 years."
 # So we extend the new rules on Saturdays at 24:00 mainland time indefinitely.
+# From Juan Correa (2019-02-04):
+# http://www.diariooficial.interior.gob.cl/publicaciones/2018/11/23/42212/01/1498738.pdf
 
 # Rule	NAME	FROM	TO	TYPE	IN	ON	AT	SAVE	LETTER/S
 Rule	Chile	1927	1931	-	Sep	 1	0:00	1:00	-
@@ -1321,7 +1321,7 @@ Rule	Chile	2019	max	-	Apr	Sun>=2	3:00u	0	-
 Rule	Chile	2019	max	-	Sep	Sun>=2	4:00u	1:00	-
 # IATA SSIM anomalies: (1992-02) says 1992-03-14;
 # (1996-09) says 1998-03-08.  Ignore these.
-# Zone	NAME		GMTOFF	RULES	FORMAT	[UNTIL]
+# Zone	NAME		STDOFF	RULES	FORMAT	[UNTIL]
 Zone America/Santiago	-4:42:46 -	LMT	1890
 			-4:42:46 -	SMT	1910 Jan 10 # Santiago Mean Time
 			-5:00	-	-05	1916 Jul  1
@@ -1370,7 +1370,7 @@ Zone Pacific/Easter	-7:17:28 -	LMT	1890
 # Palmer has followed Chile.  Prior to that, before the Falklands War,
 # Palmer used to be supplied from Argentina.
 #
-# Zone	NAME		GMTOFF	RULES	FORMAT	[UNTIL]
+# Zone	NAME		STDOFF	RULES	FORMAT	[UNTIL]
 Zone Antarctica/Palmer	0	-	-00	1965
 			-4:00	Arg	-04/-03	1969 Oct  5
 			-3:00	Arg	-03/-02	1982 May
@@ -1385,7 +1385,7 @@ Zone Antarctica/Palmer	0	-	-00	1965
 # Rule	NAME	FROM	TO	TYPE	IN	ON	AT	SAVE	LETTER/S
 Rule	CO	1992	only	-	May	 3	0:00	1:00	-
 Rule	CO	1993	only	-	Apr	 4	0:00	0	-
-# Zone	NAME		GMTOFF	RULES	FORMAT	[UNTIL]
+# Zone	NAME		STDOFF	RULES	FORMAT	[UNTIL]
 Zone	America/Bogota	-4:56:16 -	LMT	1884 Mar 13
 			-4:56:16 -	BMT	1914 Nov 23 # Bogotá Mean Time
 			-5:00	CO	-05/-04
@@ -1410,7 +1410,7 @@ Zone	America/Bogota	-4:56:16 -	LMT	1884 Mar 13
 # Netherlands as Kingdom Islands.  This won't affect their time zones
 # though, as far as we know.
 #
-# Zone	NAME		GMTOFF	RULES	FORMAT	[UNTIL]
+# Zone	NAME		STDOFF	RULES	FORMAT	[UNTIL]
 Zone	America/Curacao	-4:35:47 -	LMT	1912 Feb 12 # Willemstad
 			-4:30	-	-0430	1965
 			-4:00	-	AST
@@ -1446,7 +1446,7 @@ Link	America/Curacao	America/Kralendijk	# Caribbean Netherlands
 Rule	Ecuador	1992	only	-	Nov	28	0:00	1:00	-
 Rule	Ecuador	1993	only	-	Feb	 5	0:00	0	-
 #
-# Zone	NAME		GMTOFF	RULES	FORMAT	[UNTIL]
+# Zone	NAME		STDOFF	RULES	FORMAT	[UNTIL]
 Zone America/Guayaquil	-5:19:20 -	LMT	1890
 			-5:14:00 -	QMT	1931 # Quito Mean Time
 			-5:00	Ecuador	-05/-04
@@ -1549,7 +1549,7 @@ Rule	Falk	1985	2000	-	Sep	Sun>=9	0:00	1:00	-
 Rule	Falk	1986	2000	-	Apr	Sun>=16	0:00	0	-
 Rule	Falk	2001	2010	-	Apr	Sun>=15	2:00	0	-
 Rule	Falk	2001	2010	-	Sep	Sun>=1	2:00	1:00	-
-# Zone	NAME		GMTOFF	RULES	FORMAT	[UNTIL]
+# Zone	NAME		STDOFF	RULES	FORMAT	[UNTIL]
 Zone Atlantic/Stanley	-3:51:24 -	LMT	1890
 			-3:51:24 -	SMT	1912 Mar 12 # Stanley Mean Time
 			-4:00	Falk	-04/-03	1983 May
@@ -1558,13 +1558,13 @@ Zone Atlantic/Stanley	-3:51:24 -	LMT	1890
 			-3:00	-	-03
 
 # French Guiana
-# Zone	NAME		GMTOFF	RULES	FORMAT	[UNTIL]
+# Zone	NAME		STDOFF	RULES	FORMAT	[UNTIL]
 Zone America/Cayenne	-3:29:20 -	LMT	1911 Jul
 			-4:00	-	-04	1967 Oct
 			-3:00	-	-03
 
 # Guyana
-# Zone	NAME		GMTOFF	RULES	FORMAT	[UNTIL]
+# Zone	NAME		STDOFF	RULES	FORMAT	[UNTIL]
 Zone	America/Guyana	-3:52:40 -	LMT	1915 Mar    # Georgetown
 			-3:45	-	-0345	1975 Jul 31
 			-3:00	-	-03	1991
@@ -1658,7 +1658,7 @@ Rule	Para	2010	2012	-	Apr	Sun>=8	0:00	0	-
 # http://www.presidencia.gov.py/archivos/documentos/DECRETO1264_ey9r8zai.pdf
 Rule	Para	2013	max	-	Mar	Sun>=22	0:00	0	-
 
-# Zone	NAME		GMTOFF	RULES	FORMAT	[UNTIL]
+# Zone	NAME		STDOFF	RULES	FORMAT	[UNTIL]
 Zone America/Asuncion	-3:50:40 -	LMT	1890
 			-3:50:40 -	AMT	1931 Oct 10 # Asunción Mean Time
 			-4:00	-	-04	1972 Oct
@@ -1687,13 +1687,13 @@ Rule	Peru	1990	only	-	Apr	 1	0:00	0	-
 # IATA is ambiguous for 1993/1995; go with Shanks & Pottenger.
 Rule	Peru	1994	only	-	Jan	 1	0:00	1:00	-
 Rule	Peru	1994	only	-	Apr	 1	0:00	0	-
-# Zone	NAME		GMTOFF	RULES	FORMAT	[UNTIL]
+# Zone	NAME		STDOFF	RULES	FORMAT	[UNTIL]
 Zone	America/Lima	-5:08:12 -	LMT	1890
 			-5:08:36 -	LMT	1908 Jul 28 # Lima Mean Time?
 			-5:00	Peru	-05/-04
 
 # South Georgia
-# Zone	NAME		GMTOFF	RULES	FORMAT	[UNTIL]
+# Zone	NAME		STDOFF	RULES	FORMAT	[UNTIL]
 Zone Atlantic/South_Georgia -2:26:08 -	LMT	1890 # Grytviken
 			-2:00	-	-02
 
@@ -1701,7 +1701,7 @@ Zone Atlantic/South_Georgia -2:26:08 -	LMT	1890 # Grytviken
 # uninhabited; scientific personnel have wintered
 
 # Suriname
-# Zone	NAME		GMTOFF	RULES	FORMAT	[UNTIL]
+# Zone	NAME		STDOFF	RULES	FORMAT	[UNTIL]
 Zone America/Paramaribo	-3:40:40 -	LMT	1911
 			-3:40:52 -	PMT	1935     # Paramaribo Mean Time
 			-3:40:36 -	PMT	1945 Oct    # The capital moved?
@@ -1709,7 +1709,7 @@ Zone America/Paramaribo	-3:40:40 -	LMT	1911
 			-3:00	-	-03
 
 # Trinidad and Tobago
-# Zone	NAME		GMTOFF	RULES	FORMAT	[UNTIL]
+# Zone	NAME		STDOFF	RULES	FORMAT	[UNTIL]
 Zone America/Port_of_Spain -4:06:04 -	LMT	1912 Mar 2
 			-4:00	-	AST
 
@@ -1980,7 +1980,7 @@ Zone America/Montevideo	-3:44:51 -	LMT	1908 Jun 10
 # ... published in the official Gazette [2016-04-18], here:
 # http://historico.tsj.gob.ve/gaceta_ext/abril/1842016/E-1842016-4551.pdf
 
-# Zone	NAME		GMTOFF	RULES	FORMAT	[UNTIL]
+# Zone	NAME		STDOFF	RULES	FORMAT	[UNTIL]
 Zone	America/Caracas	-4:27:44 -	LMT	1890
 			-4:27:40 -	CMT	1912 Feb 12 # Caracas Mean Time?
 			-4:30	-	-0430	1965 Jan  1  0:00
