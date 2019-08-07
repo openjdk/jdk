@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1995, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1995, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -522,7 +522,7 @@ class ZipEntry implements ZipConstants, Cloneable {
      * @see #getExtra()
      */
     public void setExtra(byte[] extra) {
-        setExtra0(extra, false);
+        setExtra0(extra, false, true);
     }
 
     /**
@@ -532,8 +532,11 @@ class ZipEntry implements ZipConstants, Cloneable {
      *        the extra field data bytes
      * @param doZIP64
      *        if true, set size and csize from ZIP64 fields if present
+     * @param isLOC
+     *        true if setting the extra field for a LOC, false if for
+     *        a CEN
      */
-    void setExtra0(byte[] extra, boolean doZIP64) {
+    void setExtra0(byte[] extra, boolean doZIP64, boolean isLOC) {
         if (extra != null) {
             if (extra.length > 0xFFFF) {
                 throw new IllegalArgumentException("invalid extra field length");
@@ -550,15 +553,29 @@ class ZipEntry implements ZipConstants, Cloneable {
                 switch (tag) {
                 case EXTID_ZIP64:
                     if (doZIP64) {
-                        // LOC extra zip64 entry MUST include BOTH original
-                        // and compressed file size fields.
-                        // If invalid zip64 extra fields, simply skip. Even
-                        // it's rare, it's possible the entry size happens to
-                        // be the magic value and it "accidently" has some
-                        // bytes in extra match the id.
-                        if (sz >= 16) {
-                            size = get64(extra, off);
-                            csize = get64(extra, off + 8);
+                        if (isLOC) {
+                            // LOC extra zip64 entry MUST include BOTH original
+                            // and compressed file size fields.
+                            // If invalid zip64 extra fields, simply skip. Even
+                            // it's rare, it's possible the entry size happens to
+                            // be the magic value and it "accidently" has some
+                            // bytes in extra match the id.
+                            if (sz >= 16) {
+                                size = get64(extra, off);
+                                csize = get64(extra, off + 8);
+                            }
+                        } else {
+                            // CEN extra zip64
+                            if (size == ZIP64_MAGICVAL) {
+                                if (off + 8 > len)  // invalid zip64 extra
+                                    break;          // fields, just skip
+                                size = get64(extra, off);
+                            }
+                            if (csize == ZIP64_MAGICVAL) {
+                                if (off + 16 > len)  // invalid zip64 extra
+                                    break;           // fields, just skip
+                                csize = get64(extra, off + 8);
+                            }
                         }
                     }
                     break;
