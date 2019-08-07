@@ -61,14 +61,14 @@ G1CollectionSet::G1CollectionSet(G1CollectedHeap* g1h, G1Policy* policy) :
   _collection_set_max_length(0),
   _num_optional_regions(0),
   _bytes_used_before(0),
-  _recorded_rs_lengths(0),
+  _recorded_rs_length(0),
   _inc_build_state(Inactive),
   _inc_part_start(0),
   _inc_bytes_used_before(0),
-  _inc_recorded_rs_lengths(0),
-  _inc_recorded_rs_lengths_diffs(0),
+  _inc_recorded_rs_length(0),
+  _inc_recorded_rs_length_diff(0),
   _inc_predicted_elapsed_time_ms(0.0),
-  _inc_predicted_elapsed_time_ms_diffs(0.0) {
+  _inc_predicted_elapsed_time_ms_diff(0.0) {
 }
 
 G1CollectionSet::~G1CollectionSet() {
@@ -108,8 +108,8 @@ void G1CollectionSet::clear_candidates() {
   _candidates = NULL;
 }
 
-void G1CollectionSet::set_recorded_rs_lengths(size_t rs_lengths) {
-  _recorded_rs_lengths = rs_lengths;
+void G1CollectionSet::set_recorded_rs_length(size_t rs_length) {
+  _recorded_rs_length = rs_length;
 }
 
 // Add the heap region at the head of the non-incremental collection set
@@ -127,7 +127,7 @@ void G1CollectionSet::add_old_region(HeapRegion* hr) {
   assert(_collection_set_cur_length <= _collection_set_max_length, "Collection set now larger than maximum size.");
 
   _bytes_used_before += hr->used();
-  _recorded_rs_lengths += hr->rem_set()->occupied();
+  _recorded_rs_length += hr->rem_set()->occupied();
   _old_region_length++;
 
   _g1h->old_set_remove(hr);
@@ -148,10 +148,10 @@ void G1CollectionSet::start_incremental_building() {
 
   _inc_bytes_used_before = 0;
 
-  _inc_recorded_rs_lengths = 0;
-  _inc_recorded_rs_lengths_diffs = 0;
+  _inc_recorded_rs_length = 0;
+  _inc_recorded_rs_length_diff = 0;
   _inc_predicted_elapsed_time_ms = 0.0;
-  _inc_predicted_elapsed_time_ms_diffs = 0.0;
+  _inc_predicted_elapsed_time_ms_diff = 0.0;
 
   update_incremental_marker();
 }
@@ -160,32 +160,32 @@ void G1CollectionSet::finalize_incremental_building() {
   assert(_inc_build_state == Active, "Precondition");
   assert(SafepointSynchronize::is_at_safepoint(), "should be at a safepoint");
 
-  // The two "main" fields, _inc_recorded_rs_lengths and
+  // The two "main" fields, _inc_recorded_rs_length and
   // _inc_predicted_elapsed_time_ms, are updated by the thread
   // that adds a new region to the CSet. Further updates by the
   // concurrent refinement thread that samples the young RSet lengths
-  // are accumulated in the *_diffs fields. Here we add the diffs to
+  // are accumulated in the *_diff fields. Here we add the diffs to
   // the "main" fields.
 
-  if (_inc_recorded_rs_lengths_diffs >= 0) {
-    _inc_recorded_rs_lengths += _inc_recorded_rs_lengths_diffs;
+  if (_inc_recorded_rs_length_diff >= 0) {
+    _inc_recorded_rs_length += _inc_recorded_rs_length_diff;
   } else {
     // This is defensive. The diff should in theory be always positive
     // as RSets can only grow between GCs. However, given that we
     // sample their size concurrently with other threads updating them
     // it's possible that we might get the wrong size back, which
     // could make the calculations somewhat inaccurate.
-    size_t diffs = (size_t) (-_inc_recorded_rs_lengths_diffs);
-    if (_inc_recorded_rs_lengths >= diffs) {
-      _inc_recorded_rs_lengths -= diffs;
+    size_t diffs = (size_t) (-_inc_recorded_rs_length_diff);
+    if (_inc_recorded_rs_length >= diffs) {
+      _inc_recorded_rs_length -= diffs;
     } else {
-      _inc_recorded_rs_lengths = 0;
+      _inc_recorded_rs_length = 0;
     }
   }
-  _inc_predicted_elapsed_time_ms += _inc_predicted_elapsed_time_ms_diffs;
+  _inc_predicted_elapsed_time_ms += _inc_predicted_elapsed_time_ms_diff;
 
-  _inc_recorded_rs_lengths_diffs = 0;
-  _inc_predicted_elapsed_time_ms_diffs = 0.0;
+  _inc_recorded_rs_length_diff = 0;
+  _inc_predicted_elapsed_time_ms_diff = 0.0;
 }
 
 void G1CollectionSet::clear() {
@@ -252,23 +252,23 @@ void G1CollectionSet::update_young_region_prediction(HeapRegion* hr,
   assert(hr->is_young(), "Precondition");
   assert(!SafepointSynchronize::is_at_safepoint(), "should not be at a safepoint");
 
-  // We could have updated _inc_recorded_rs_lengths and
+  // We could have updated _inc_recorded_rs_length and
   // _inc_predicted_elapsed_time_ms directly but we'd need to do
   // that atomically, as this code is executed by a concurrent
   // refinement thread, potentially concurrently with a mutator thread
   // allocating a new region and also updating the same fields. To
   // avoid the atomic operations we accumulate these updates on two
-  // separate fields (*_diffs) and we'll just add them to the "main"
+  // separate fields (*_diff) and we'll just add them to the "main"
   // fields at the start of a GC.
 
   ssize_t old_rs_length = (ssize_t) hr->recorded_rs_length();
-  ssize_t rs_lengths_diff = (ssize_t) new_rs_length - old_rs_length;
-  _inc_recorded_rs_lengths_diffs += rs_lengths_diff;
+  ssize_t rs_length_diff = (ssize_t) new_rs_length - old_rs_length;
+  _inc_recorded_rs_length_diff += rs_length_diff;
 
   double old_elapsed_time_ms = hr->predicted_elapsed_time_ms();
   double new_region_elapsed_time_ms = predict_region_elapsed_time_ms(hr);
   double elapsed_ms_diff = new_region_elapsed_time_ms - old_elapsed_time_ms;
-  _inc_predicted_elapsed_time_ms_diffs += elapsed_ms_diff;
+  _inc_predicted_elapsed_time_ms_diff += elapsed_ms_diff;
 
   hr->set_recorded_rs_length(new_rs_length);
   hr->set_predicted_elapsed_time_ms(new_region_elapsed_time_ms);
@@ -316,7 +316,7 @@ void G1CollectionSet::add_young_region_common(HeapRegion* hr) {
     hr->set_recorded_rs_length(rs_length);
     hr->set_predicted_elapsed_time_ms(region_elapsed_time_ms);
 
-    _inc_recorded_rs_lengths += rs_length;
+    _inc_recorded_rs_length += rs_length;
     _inc_predicted_elapsed_time_ms += region_elapsed_time_ms;
     _inc_bytes_used_before += hr->used();
   }
@@ -437,7 +437,7 @@ double G1CollectionSet::finalize_young_part(double target_pause_time_ms, G1Survi
 
   // The number of recorded young regions is the incremental
   // collection set's current size
-  set_recorded_rs_lengths(_inc_recorded_rs_lengths);
+  set_recorded_rs_length(_inc_recorded_rs_length);
 
   double young_end_time_sec = os::elapsedTime();
   phase_times()->record_young_cset_choice_time_ms((young_end_time_sec - young_start_time_sec) * 1000.0);

@@ -2587,7 +2587,7 @@ void G1CMTask::do_marking_step(double time_target_ms,
   // and do_marking_step() is not being called serially.
   bool do_stealing = do_termination && !is_serial;
 
-  double diff_prediction_ms = _g1h->policy()->predictor().get_new_prediction(&_marking_step_diffs_ms);
+  double diff_prediction_ms = _g1h->policy()->predictor().get_new_prediction(&_marking_step_diff_ms);
   _time_target_ms = time_target_ms - diff_prediction_ms;
 
   // set up the variables that are used in the work-based scheme to
@@ -2829,7 +2829,7 @@ void G1CMTask::do_marking_step(double time_target_ms,
       // Keep statistics of how well we did with respect to hitting
       // our target only if we actually timed out (if we aborted for
       // other reasons, then the results might get skewed).
-      _marking_step_diffs_ms.add(diff_ms);
+      _marking_step_diff_ms.add(diff_ms);
     }
 
     if (_cm->has_overflown()) {
@@ -2912,11 +2912,11 @@ G1CMTask::G1CMTask(uint worker_id,
   _elapsed_time_ms(0.0),
   _termination_time_ms(0.0),
   _termination_start_time_ms(0.0),
-  _marking_step_diffs_ms()
+  _marking_step_diff_ms()
 {
   guarantee(task_queue != NULL, "invariant");
 
-  _marking_step_diffs_ms.add(0.5);
+  _marking_step_diff_ms.add(0.5);
 }
 
 // These are formatting macros that are used below to ensure

@@ -4058,7 +4058,7 @@ private:
   G1SerialFreeCollectionSetClosure _cl;
   const size_t* _surviving_young_words;
 
-  size_t _rs_lengths;
+  size_t _rs_length;
 
   volatile jint _serial_work_claim;
 
@@ -4090,7 +4090,7 @@ private:
     HeapRegion* r = g1h->region_at(region_idx);
     assert(!g1h->is_on_master_free_list(r), "sanity");
 
-    Atomic::add(r->rem_set()->occupied_locked(), &_rs_lengths);
+    Atomic::add(r->rem_set()->occupied_locked(), &_rs_length);
 
     if (!is_young) {
       g1h->_hot_card_cache->reset_card_counts(r);
@@ -4123,7 +4123,7 @@ private:
     _cl.complete_work();
 
     G1Policy* policy = G1CollectedHeap::heap()->policy();
-    policy->record_max_rs_lengths(_rs_lengths);
+    policy->record_max_rs_length(_rs_length);
     policy->cset_regions_freed();
   }
 public:
@@ -4132,7 +4132,7 @@ public:
     _collection_set(collection_set),
     _cl(evacuation_info, surviving_young_words),
     _surviving_young_words(surviving_young_words),
-    _rs_lengths(0),
+    _rs_length(0),
     _serial_work_claim(0),
     _parallel_work_claim(0),
     _num_work_items(collection_set->region_length()),
