@@ -929,7 +929,7 @@ public final class Locale implements Cloneable, Serializable {
      * if no locale is explicitly specified. It can be changed using the
      * setDefault(Locale.Category, Locale) method.
      *
-     * @param category - the specified category to get the default locale
+     * @param category the specified category to get the default locale
      * @throws NullPointerException if category is null
      * @return the default locale for the specified Category for this instance
      *     of the Java Virtual Machine
@@ -1075,8 +1075,8 @@ public final class Locale implements Cloneable, Serializable {
      * prepared to reinitialize locale-sensitive code running within the
      * same Java Virtual Machine.
      *
-     * @param category - the specified category to set the default locale
-     * @param newLocale - the new default locale
+     * @param category the specified category to set the default locale
+     * @param newLocale the new default locale
      * @throws SecurityException if a security manager exists and its
      *     checkPermission method doesn't allow the operation.
      * @throws NullPointerException if category and/or newLocale is null
