@@ -46,9 +46,9 @@ JNIEXPORT void JNICALL
         char fileName[512];
         nsk_jvmti_getFileName(0, FILE_NAME, fileName,
                         sizeof(fileName)/sizeof(char));
-        if (nsk_jvmti_redefineClass(jvmti, klass, fileName) == NSK_TRUE) {
+        if (nsk_jvmti_redefineClass(jvmti, klass, fileName)) {
             nsk_printf("Agent:: Successfully redefined..");
-            if (nsk_jvmti_disableNotification(jvmti,JVMTI_EVENT_CLASS_PREPARE, NULL) == NSK_TRUE) {
+            if (nsk_jvmti_disableNotification(jvmti,JVMTI_EVENT_CLASS_PREPARE, NULL)) {
                 nsk_printf(" Agent :: NOTIFICATIONS ARE DISABLED \n");
             } else {
                 nsk_printf(" Agent :: Failed to disabled \n");
@@ -96,8 +96,7 @@ jint  Agent_Initialize(JavaVM *vm, char *options, void *reserved) {
             nsk_printf(" Agent:: Error occured while setting event call back \n");
             return JNI_ERR;
         }
-        if (nsk_jvmti_enableNotification(jvmti,
-                    JVMTI_EVENT_CLASS_PREPARE, NULL) == NSK_TRUE) {
+        if (nsk_jvmti_enableNotification(jvmti, JVMTI_EVENT_CLASS_PREPARE, NULL)) {
             nsk_printf("Agent :: NOTIFICATIONS ARE ENABLED \n");
         } else {
             nsk_printf(" Error in Eanableing Notifications..");

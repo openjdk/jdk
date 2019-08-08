@@ -96,7 +96,7 @@ Java_nsk_jvmti_unit_ForceEarlyReturn_earlyretbase_suspThread(JNIEnv *env,
     }
 
     int result = suspendThreadAtMethod(jvmti, cls, earlyretThr, midActiveMethod);
-    if( result == NSK_TRUE) {
+    if (result) {
         return PASSED;
     } else {
         RETURN_FAILED;

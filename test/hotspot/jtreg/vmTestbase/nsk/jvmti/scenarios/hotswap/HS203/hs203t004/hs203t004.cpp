@@ -50,7 +50,7 @@ JNIEXPORT void JNICALL callbackClassPrepare(jvmtiEnv *jvmti_env,
         nsk_jvmti_agentFailed();
     } else {
         if (strcmp(className, CLASS_NAME) == 0) {
-            if (nsk_jvmti_enableNotification(jvmti_env, JVMTI_EVENT_COMPILED_METHOD_LOAD, NULL) == NSK_TRUE) {
+            if (nsk_jvmti_enableNotification(jvmti_env, JVMTI_EVENT_COMPILED_METHOD_LOAD, NULL)) {
                 NSK_DISPLAY0(" Agent :: notification enabled for COMPILED_METHOD_LOAD.\n");
                 if (!NSK_JVMTI_VERIFY(jvmti_env->GenerateEvents(JVMTI_EVENT_COMPILED_METHOD_LOAD))) {
                     NSK_COMPLAIN0("#error Agent :: occured while enabling compiled method events.\n");
@@ -106,7 +106,7 @@ JNIEXPORT void JNICALL callbackCompiledMethodLoad(jvmtiEnv *jvmti_env,
 
                 nsk_jvmti_getFileName(redefineNumber, FILE_NAME, fileName, sizeof(fileName)/sizeof(char));
 
-                if (nsk_jvmti_redefineClass(jvmti_env, threadClass, fileName) == NSK_TRUE) {
+                if (nsk_jvmti_redefineClass(jvmti_env, threadClass, fileName)) {
                     NSK_DISPLAY0(" Agent :: Successfully redefined.\n");
                     redefineNumber++;
                 } else {
@@ -171,7 +171,7 @@ jint  Agent_Initialize(JavaVM *vm, char *options, void *reserved) {
             NSK_COMPLAIN0("#error Agent :: occured while setting event callback.\n");
             return JNI_ERR;
         }
-        if (nsk_jvmti_enableNotification(jvmti,JVMTI_EVENT_CLASS_PREPARE, NULL) == NSK_TRUE) {
+        if (nsk_jvmti_enableNotification(jvmti,JVMTI_EVENT_CLASS_PREPARE, NULL)) {
             NSK_DISPLAY0(" Agent :: Notifications are enabled.\n");
         } else {
             NSK_COMPLAIN0("#error Agent :: Error in enableing Notifications.\n");

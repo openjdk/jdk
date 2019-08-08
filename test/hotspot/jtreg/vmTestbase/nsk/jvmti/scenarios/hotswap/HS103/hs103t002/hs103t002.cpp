@@ -73,7 +73,7 @@ JNIEXPORT void JNICALL doRedefineInNativeThread(jvmtiEnv * jvmti,
   nsk_jvmti_getFileName(redefineNumber, FILE_NAME, fileName, sizeof(fileName)/sizeof(char));
   for (i = 0; i < 30; i++) {
     nsk_printf(" Inside the redefine method..\n");
-    if (nsk_jvmti_redefineClass(jvmti, cla,fileName) == NSK_TRUE) {
+    if (nsk_jvmti_redefineClass(jvmti, cla,fileName)) {
       nsk_printf("\nMyClass :: Successfully redefined..\n");
     } else {
       nsk_printf("\nMyClass :: Failed to redefine ..\n");

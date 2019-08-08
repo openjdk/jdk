@@ -81,7 +81,7 @@ Java_nsk_jvmti_scenarios_hotswap_HS104_hs104t002_hs104t002_redefineClasses(
     }
     nsk_jvmti_getFileName(0, FILE_NAME, fileName,
             sizeof(fileName)/sizeof(char));
-    if (nsk_jvmti_redefineClass(jvmti, cla, fileName) == NSK_TRUE) {
+    if (nsk_jvmti_redefineClass(jvmti, cla, fileName)) {
         nsk_printf(" Agent :: Redefine successfull.\n");
     } else {
         nsk_printf("# error Agent :: Redefine failed.\n");

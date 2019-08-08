@@ -49,18 +49,18 @@ static julong prevTime;
 
 /**
  * Get time and optionally compare it with previous one.
- * @returns NSK_FALSE if any error occured.
+ * @returns false if any error occured.
  */
-static int checkTime(jvmtiEnv* jvmti, julong* time,
-                                julong* prevTime, const char where[]) {
+static bool checkTime(jvmtiEnv* jvmti, julong* time,
+                      julong* prevTime, const char where[]) {
 
     char buf[32], buf2[32], buf3[32];
-    int success = NSK_TRUE;
+    bool success = true;
 
     NSK_DISPLAY0("GetTime() for current JVMTI env\n");
     if (!NSK_JVMTI_VERIFY(
             jvmti->GetTime((jlong *)time))) {
-        return NSK_FALSE;
+        return false;
     }
     NSK_DISPLAY1("  ... got time: %s\n", julong_to_string(*time, buf));
 
@@ -81,7 +81,7 @@ static int checkTime(jvmtiEnv* jvmti, julong* time,
                             julong_to_string(*time, buf),
                             julong_to_string(*prevTime, buf2),
                             julong_to_string(diff, buf3));
-            success = NSK_FALSE;
+            success = false;
         }
         *prevTime = *time;
     }
@@ -132,7 +132,7 @@ callbackVMInit(jvmtiEnv* jvmti, JNIEnv* jni, jthread thread) {
  */
 JNIEXPORT void JNICALL
 callbackVMDeath(jvmtiEnv* jvmti, JNIEnv* jni) {
-    int success = NSK_TRUE;
+    bool success = true;
 
     NSK_DISPLAY0(">>> Testcase #4: Check time in VM_DEATH callback\n");
     {
@@ -142,12 +142,12 @@ callbackVMDeath(jvmtiEnv* jvmti, JNIEnv* jni) {
 
     NSK_DISPLAY1("Disable events: %d events\n", EVENTS_COUNT);
     if (!nsk_jvmti_enableEvents(JVMTI_DISABLE, EVENTS_COUNT, events, NULL)) {
-        success = NSK_FALSE;
+        success = false;
     } else {
         NSK_DISPLAY0("  ... disabled\n");
     }
 
-    if (success != NSK_TRUE) {
+    if (!success) {
         NSK_DISPLAY1("Exit with FAIL exit status: %d\n", STATUS_FAIL);
         NSK_BEFORE_TRACE(exit(STATUS_FAIL));
     }

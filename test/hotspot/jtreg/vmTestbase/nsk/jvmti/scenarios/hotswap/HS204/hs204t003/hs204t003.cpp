@@ -118,7 +118,7 @@ JNIEXPORT void JNICALL callbackFieldAccess(jvmtiEnv *jvmti_env,
             jvmtiThreadInfo info;
             nsk_jvmti_getFileName(redefineNumber, FILE_NAME, fileName,
                     sizeof(fileName)/sizeof(char));
-            if (nsk_jvmti_redefineClass(jvmti_env, field_klass, fileName) == NSK_TRUE) {
+            if (nsk_jvmti_redefineClass(jvmti_env, field_klass, fileName)) {
                 NSK_DISPLAY0(" Agent :: Successfully redefined.\n");
                 redefineNumber++;
             } else {

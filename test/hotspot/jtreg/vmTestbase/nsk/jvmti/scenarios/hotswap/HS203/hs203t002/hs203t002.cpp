@@ -98,7 +98,7 @@ void JNICALL callbackSingleStep(jvmtiEnv *jvmti,
     nsk_printf(" %d..",redefineNumber);
     nsk_jvmti_getFileName(redefineNumber, FILE_NAME, fileName, sizeof(fileName)/sizeof(char));
 
-    if (nsk_jvmti_redefineClass(jvmti, threadClass,fileName) == NSK_TRUE) {
+    if (nsk_jvmti_redefineClass(jvmti, threadClass,fileName)) {
         nsk_printf("Agent:: Redefined..\n");
     } else {
         nsk_printf(" Failed to redefine..\n");
@@ -168,10 +168,8 @@ jint Agent_Initialize(JavaVM *vm, char *options, void *reserved) {
             nsk_printf(" Agent:: Error occured while setting event call back \n");
             return JNI_ERR;
         }
-        if ((nsk_jvmti_enableNotification(jvmti,JVMTI_EVENT_CLASS_LOAD,
-                        NULL) == NSK_TRUE) &&
-                (nsk_jvmti_enableNotification(jvmti,JVMTI_EVENT_BREAKPOINT,
-                                              NULL) == NSK_TRUE)) {
+        if (nsk_jvmti_enableNotification(jvmti,JVMTI_EVENT_CLASS_LOAD, NULL) &&
+                nsk_jvmti_enableNotification(jvmti,JVMTI_EVENT_BREAKPOINT, NULL)) {
             nsk_printf("Agent :: NOTIFICATIONS ARE ENABLED \n");
         } else {
             nsk_printf(" Error in Eanableing Notifications..");

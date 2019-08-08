@@ -69,7 +69,7 @@ callbackClassLoad(jvmtiEnv *jvmti_env,
         nsk_jvmti_getFileName(redefineNumber, FILE_NAME, fileName,
                         sizeof(fileName)/sizeof(char));
         NSK_DISPLAY1(">>>>>>CallbackClassLoad ... Name=%s...  >>\n",name);
-        if (nsk_jvmti_redefineClass(jvmti, klass, fileName) == NSK_TRUE) {
+        if (nsk_jvmti_redefineClass(jvmti, klass, fileName)) {
             NSK_DISPLAY0("\nMyClass :: Successfully redefined..\n");
             redefineNumber++;
         } else {
@@ -94,7 +94,7 @@ callbackClassPrepare(jvmtiEnv *jvmti_env,
         nsk_jvmti_getFileName(redefineNumber, FILE_NAME, fileName,
                         sizeof(fileName)/sizeof(char));
         NSK_DISPLAY1(">>>>>>callbackClassPrepare ... Name=%s...  >>\n",name);
-        if (nsk_jvmti_redefineClass(jvmti, klass, fileName) == NSK_TRUE) {
+        if (nsk_jvmti_redefineClass(jvmti, klass, fileName)) {
             NSK_DISPLAY0("\nMyClass :: Successfully redefined..\n");
             redefineNumber++;
         } else {

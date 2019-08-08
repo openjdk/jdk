@@ -99,7 +99,7 @@ JNIEXPORT void JNICALL callbackFieldAccess(jvmtiEnv *jvmti_env,
     } else  {
         nsk_jvmti_getFileName(redefineNumber, FILE_NAME, fileName,
                                 sizeof(fileName)/sizeof(char));
-        if (nsk_jvmti_redefineClass(jvmti_env, clas, fileName) != NSK_TRUE) {
+        if (!nsk_jvmti_redefineClass(jvmti_env, clas, fileName)) {
             nsk_printf(" Agent :: Failed to redefine.\n");
             nsk_jvmti_agentFailed();
         } else {
@@ -155,8 +155,8 @@ jint  Agent_Initialize(JavaVM *vm, char *options, void *reserved) {
             nsk_printf("#error Agent :: while setting event callbacks.\n");
             return JNI_ERR;
         }
-        if ((nsk_jvmti_enableNotification(jvmti,JVMTI_EVENT_CLASS_PREPARE, NULL) == NSK_TRUE) &&
-                (nsk_jvmti_enableNotification(jvmti,JVMTI_EVENT_FIELD_ACCESS, NULL) == NSK_TRUE)) {
+        if (nsk_jvmti_enableNotification(jvmti,JVMTI_EVENT_CLASS_PREPARE, NULL) &&
+                nsk_jvmti_enableNotification(jvmti,JVMTI_EVENT_FIELD_ACCESS, NULL)) {
             nsk_printf(" Agent :: Notifications are enabled.\n");
         } else {
             nsk_printf("#error Agent :: Eanableing Notifications.\n");

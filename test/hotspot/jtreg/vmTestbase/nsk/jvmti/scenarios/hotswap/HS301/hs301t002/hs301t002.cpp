@@ -90,7 +90,7 @@ Java_nsk_jvmti_scenarios_hotswap_HS301_hs301t002_hs301t002_redefine(JNIEnv * jni
     }
     nsk_jvmti_getFileName(redefineNumber, FILE_NAME, fileName,
                         sizeof(fileName)/sizeof(char));
-    if (nsk_jvmti_redefineClass(jvmti, cls, fileName) == NSK_TRUE) {
+    if (nsk_jvmti_redefineClass(jvmti, cls, fileName)) {
         nsk_printf("Agent:: MyClass :: Successfully redefined.\n");
         ret = JNI_TRUE;
     } else {

@@ -124,7 +124,7 @@ static void printKnownCapabilities(const jvmtiCapabilities* caps) {
 
 #define CHECK_CAP(initCaps, caps, name)                                         \
     if (caps->name != 0) {                                                      \
-        success = NSK_FALSE;                                                    \
+        success = false;                                                        \
         NSK_COMPLAIN4("GetCapabilities() in %s returned capability after add and relinguish all potential capabilities:\n"  \
                       "#   capability: %s\n"                                    \
                       "#   got value:  %d\n"                                    \
@@ -134,10 +134,10 @@ static void printKnownCapabilities(const jvmtiCapabilities* caps) {
 
 /**
  * Check value of known capabilities.
- * @returns NSK_FALSE if any error occured.
+ * @returns false if any error occured.
  */
-static int checkCapabilitiesValue(jvmtiCapabilities* caps, jvmtiCapabilities* initCaps, const char where[]) {
-    int success = NSK_TRUE;
+static bool checkCapabilitiesValue(jvmtiCapabilities* caps, jvmtiCapabilities* initCaps, const char where[]) {
+    bool success = true;
 
     CHECK_CAP(initCaps, caps, can_tag_objects);
     CHECK_CAP(initCaps, caps, can_generate_field_modification_events);
@@ -184,17 +184,17 @@ static int checkCapabilitiesValue(jvmtiCapabilities* caps, jvmtiCapabilities* in
 
 /**
  * Get and check current capabilities.
- * @returns NSK_FALSE if any error occured.
+ * @returns false if any error occured.
  */
-static int checkCapabilities(jvmtiEnv* jvmti, jvmtiCapabilities* initCaps, const char where[]) {
-    int success = NSK_TRUE;
+static bool checkCapabilities(jvmtiEnv* jvmti, jvmtiCapabilities* initCaps, const char where[]) {
+    bool success = true;
     jvmtiCapabilities caps;
 
     memset(&caps, 0, sizeof(jvmtiCapabilities));
 
     NSK_DISPLAY0("GetCapabilities() for current JVMTI env\n");
     if (!NSK_JVMTI_VERIFY(jvmti->GetCapabilities(&caps))) {
-        return NSK_FALSE;
+        return false;
     }
 
     NSK_DISPLAY0("Got raw capabilities:\n");
@@ -212,40 +212,40 @@ static int checkCapabilities(jvmtiEnv* jvmti, jvmtiCapabilities* initCaps, const
 
 /**
  * Add given capabilities list.
- * @returns NSK_FALSE if any error occured.
+ * @returns false if any error occured.
  */
-static int addCapabilities(jvmtiEnv* jvmti, jvmtiCapabilities* caps) {
+static bool addCapabilities(jvmtiEnv* jvmti, jvmtiCapabilities* caps) {
     NSK_DISPLAY0("AddCapabilities() for current JVMTI env\n");
     if (!NSK_JVMTI_VERIFY(jvmti->AddCapabilities(caps))) {
-        return NSK_FALSE;
+        return false;
     }
     NSK_DISPLAY0("  ... set\n");
 
-    return NSK_TRUE;
+    return true;
 }
 
 /**
  * Remove given capabilities list.
- * @returns NSK_FALSE if any error occured.
+ * @returns false if any error occured.
  */
-static int removeCapabilities(jvmtiEnv* jvmti, jvmtiCapabilities* caps, const char where[]) {
+static bool removeCapabilities(jvmtiEnv* jvmti, jvmtiCapabilities* caps, const char where[]) {
     NSK_DISPLAY0("RelinquishCapabilities() for current JVMTI env\n");
     if (!NSK_JVMTI_VERIFY(jvmti->RelinquishCapabilities(caps))) {
-        return NSK_FALSE;
+        return false;
     }
     NSK_DISPLAY0("  ... relinguished\n");
 
-    return NSK_TRUE;
+    return true;
 }
 
 /**
  * Get potential capabilities to the given list.
- * @returns NSK_FALSE if any error occured.
+ * @returns false if any error occured.
  */
-static int getPotentialCapabilities(jvmtiEnv* jvmti, jvmtiCapabilities* caps) {
+static bool getPotentialCapabilities(jvmtiEnv* jvmti, jvmtiCapabilities* caps) {
     NSK_DISPLAY0("GetPotentialCapabilities() for current JVMTI env\n");
     if (!NSK_JVMTI_VERIFY(jvmti->GetPotentialCapabilities(caps))) {
-        return NSK_FALSE;
+        return false;
     }
 
     NSK_DISPLAY0("Got raw capabilities:\n");
@@ -254,7 +254,7 @@ static int getPotentialCapabilities(jvmtiEnv* jvmti, jvmtiCapabilities* caps) {
     NSK_DISPLAY0("Known capabilities:\n");
     printKnownCapabilities(caps);
 
-    return NSK_TRUE;
+    return true;
 }
 
 /* ============================================================================= */
@@ -295,19 +295,19 @@ callbackVMInit(jvmtiEnv* jvmti, JNIEnv* jni, jthread thread) {
  */
 JNIEXPORT void JNICALL
 callbackVMDeath(jvmtiEnv* jvmti, JNIEnv* jni) {
-    int success = NSK_TRUE;
+    bool success = true;
 
     NSK_DISPLAY0(">>> Testcase #4: Check capabilities in VM_DEATH callback\n");
     success = checkCapabilities(jvmti, &initCaps, "VM_DEATH callback");
 
     NSK_DISPLAY1("Disable events: %d events\n", EVENTS_COUNT);
     if (!nsk_jvmti_enableEvents(JVMTI_DISABLE, EVENTS_COUNT, events, NULL)) {
-        success = NSK_FALSE;
+        success = false;
     } else {
         NSK_DISPLAY0("  ... disabled\n");
     }
 
-    if (success != NSK_TRUE) {
+    if (success != true) {
         NSK_DISPLAY1("Exit with FAIL exit status: %d\n", STATUS_FAIL);
         NSK_BEFORE_TRACE(exit(STATUS_FAIL));
     }

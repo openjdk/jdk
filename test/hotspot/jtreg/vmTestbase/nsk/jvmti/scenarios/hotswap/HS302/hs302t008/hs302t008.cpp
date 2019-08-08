@@ -44,7 +44,7 @@ void JNICALL callbackClassPrepare(jvmtiEnv *jvmti_env,
     nsk_jvmti_disableNotification(jvmti_env, JVMTI_EVENT_CLASS_PREPARE, NULL);
     nsk_jvmti_getFileName(redefineNumber, FILE_NAME, fileName,
                         sizeof(fileName)/sizeof(char));
-    if (nsk_jvmti_redefineClass(jvmti_env, klass, fileName) == NSK_TRUE) {
+    if (nsk_jvmti_redefineClass(jvmti_env, klass, fileName)) {
       nsk_printf("Redefine successful ..\n");
     } else {
       nsk_printf("# error :: Redefine failed..\n");
@@ -89,7 +89,7 @@ jint  Agent_Initialize(JavaVM *vm, char *options, void *reserved) {
             nsk_printf(" Agent:: Error occured while setting event call back \n");
             return JNI_ERR;
         }
-        if (nsk_jvmti_enableNotification(jvmti, JVMTI_EVENT_CLASS_PREPARE, NULL) == NSK_TRUE) {
+        if (nsk_jvmti_enableNotification(jvmti, JVMTI_EVENT_CLASS_PREPARE, NULL)) {
             nsk_printf(" Enabled. noftification..");
         } else {
             nsk_printf(" Failed to Enable ..");
