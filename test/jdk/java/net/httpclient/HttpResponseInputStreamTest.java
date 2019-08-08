@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -40,13 +40,18 @@ import java.util.concurrent.atomic.AtomicLong;
 
 import org.testng.annotations.Test;
 
+import static org.testng.Assert.*;
+
 /*
  * @test
+ * @bug 8197564 8228970
  * @summary Simple smoke test for BodySubscriber.asInputStream();
  * @run testng/othervm HttpResponseInputStreamTest
  * @author daniel fuchs
  */
 public class HttpResponseInputStreamTest {
+    static final Class<NullPointerException> NPE = NullPointerException.class;
+    static final Class<IndexOutOfBoundsException> OOB = IndexOutOfBoundsException.class;
 
     static class TestException extends IOException {}
 
@@ -181,6 +186,33 @@ public class HttpResponseInputStreamTest {
             io.printStackTrace();
             throw new CompletionException(io);
         }
+    }
+
+    @Test
+    public static void testReadParameters() throws InterruptedException, ExecutionException, IOException {
+        BodySubscriber<InputStream> isb = BodySubscribers.ofInputStream();
+        InputStream is = isb.getBody().toCompletableFuture().get();
+
+        Throwable ex;
+
+        // len == 0
+        assertEquals(is.read(new byte[16], 0, 0), 0);
+        assertEquals(is.read(new byte[16], 16, 0), 0);
+
+        // index == -1
+        ex = expectThrows(OOB, () -> is.read(new byte[16], -1, 10));
+        System.out.println("OutOfBoundsException thrown as expected: " + ex);
+
+        // large offset
+        ex = expectThrows(OOB, () -> is.read(new byte[16], 17, 10));
+        System.out.println("OutOfBoundsException thrown as expected: " + ex);
+
+        ex = expectThrows(OOB, () -> is.read(new byte[16], 10, 10));
+        System.out.println("OutOfBoundsException thrown as expected: " + ex);
+
+        // null value
+        ex = expectThrows(NPE, () -> is.read(null, 0, 10));
+        System.out.println("NullPointerException thrown as expected: " + ex);
     }
 
     @Test
