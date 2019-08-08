@@ -1769,13 +1769,13 @@ const size_t minimumSymbolTableSize = 1024;
           range(0, 100)                                                     \
                                                                             \
   /* AOT parameters */                                                      \
-  product(bool, UseAOT, AOT_ONLY(true) NOT_AOT(false),                      \
+  experimental(bool, UseAOT, false,                                         \
           "Use AOT compiled files")                                         \
                                                                             \
-  product(ccstrlist, AOTLibrary, NULL,                                      \
+  experimental(ccstrlist, AOTLibrary, NULL,                                 \
           "AOT library")                                                    \
                                                                             \
-  product(bool, PrintAOT, false,                                            \
+  experimental(bool, PrintAOT, false,                                       \
           "Print used AOT klasses and methods")                             \
                                                                             \
   notproduct(bool, PrintAOTStatistics, false,                               \

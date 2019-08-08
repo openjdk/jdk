@@ -1,4 +1,4 @@
-# Copyright (c) 2017, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2017, 2019, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -26,7 +26,7 @@ popd > /dev/null
 # set env variables
 . $DIR/test-env.sh
 
-$JAVA_HOME/bin/java -XX:+UnlockDiagnosticVMOptions -XX:+UseAOTStrictLoading -XX:+PrintAOT -version | grep "aot library" || exit 1
+$JAVA_HOME/bin/java -XX:+UnlockDiagnosticVMOptions -XX:+UnlockExperimentalVMOptions -XX:+UseAOTStrictLoading -XX:+PrintAOT -version | grep "aot library" || exit 1
 
 # Dump CDS archive.
 $JAVA_HOME/bin/java -Xshare:dump || exit 1
@@ -41,7 +41,7 @@ $JAVA_HOME/bin/jaotc --info --compile-commands jdk.scripting.nashorn-list.txt --
 
 echo "Tiered C1:"
 for i in `seq 1 $N`; do
-    time $JAVA_HOME/bin/jjs $JAVA_OPTS -J-XX:-UseAOT -J-XX:TieredStopAtLevel=1 $FILE
+    time $JAVA_HOME/bin/jjs $JAVA_OPTS -J-XX:+UnlockExperimentalVMOptions -J-XX:-UseAOT -J-XX:TieredStopAtLevel=1 $FILE
     if [ $? -ne 0 ]; then
         exit 1
     fi
@@ -49,7 +49,7 @@ done
 
 echo "Tiered C1/C2:"
 for i in `seq 1 $N`; do
-    time $JAVA_HOME/bin/jjs $JAVA_OPTS -J-XX:-UseAOT $FILE
+    time $JAVA_HOME/bin/jjs $JAVA_OPTS -J-XX:+UnlockExperimentalVMOptions -J-XX:-UseAOT $FILE
     if [ $? -ne 0 ]; then
         exit 1
     fi
@@ -57,7 +57,7 @@ done
 
 echo "Tiered AOT:"
 for i in `seq 1 $N`; do
-    time $JAVA_HOME/bin/jjs $JAVA_OPTS -J-XX:+UnlockDiagnosticVMOptions -J-XX:+UseAOTStrictLoading -J-XX:AOTLibrary=./libjdk.nashorn.$SO_TYPE $FILE
+    time $JAVA_HOME/bin/jjs $JAVA_OPTS -J-XX:+UnlockDiagnosticVMOptions -J-XX:+UnlockExperimentalVMOptions -J-XX:+UseAOTStrictLoading -J-XX:AOTLibrary=./libjdk.nashorn.$SO_TYPE $FILE
     if [ $? -ne 0 ]; then
         exit 1
     fi
@@ -65,7 +65,7 @@ done
 
 echo "Tiered AOT -Xshare:on:"
 for i in `seq 1 $N`; do
-    time $JAVA_HOME/bin/jjs $JAVA_OPTS -J-Xshare:on -J-XX:+UnlockDiagnosticVMOptions -J-XX:+UseAOTStrictLoading -J-XX:AOTLibrary=./libjdk.nashorn.$SO_TYPE $FILE
+    time $JAVA_HOME/bin/jjs $JAVA_OPTS -J-Xshare:on -J-XX:+UnlockDiagnosticVMOptions -J-XX:+UnlockExperimentalVMOptions -J-XX:+UseAOTStrictLoading -J-XX:AOTLibrary=./libjdk.nashorn.$SO_TYPE $FILE
     if [ $? -ne 0 ]; then
         exit 1
     fi

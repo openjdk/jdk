@@ -185,12 +185,13 @@ define SetupAotModuleBody
 	)
 	$$(call ExecuteWithLog, $$@.check, \
 	    $$(FIXPATH) $$(JDK_UNDER_TEST)/bin/java \
-	        $$($1_VM_OPTIONS) -XX:+UnlockDiagnosticVMOptions \
+	        $$($1_VM_OPTIONS) -XX:+UnlockDiagnosticVMOptions -XX:+UnlockExperimentalVMOptions \
 	        -XX:+PrintAOT -XX:+UseAOTStrictLoading \
 	        -XX:AOTLibrary=$$@ -version \
 	         > $$@.verify-aot \
 	)
 
+  $1_AOT_OPTIONS += -XX:+UnlockExperimentalVMOptions
   $1_AOT_OPTIONS += -XX:AOTLibrary=$$($1_AOT_LIB)
   $1_AOT_TARGETS += $$($1_AOT_LIB)
 endef

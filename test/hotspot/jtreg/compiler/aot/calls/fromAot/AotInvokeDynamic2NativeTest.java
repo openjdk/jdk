@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -36,7 +36,7 @@
  * @run driver compiler.aot.AotCompiler -libname AotInvokeDynamic2NativeTest.so
  *      -class compiler.calls.common.InvokeDynamic
  *      -compile compiler.calls.common.InvokeDynamic.caller()V
- * @run main/othervm/native -XX:+UseAOT
+ * @run main/othervm/native -XX:+UnlockExperimentalVMOptions -XX:+UseAOT
  *       -XX:AOTLibrary=./AotInvokeDynamic2NativeTest.so
  *      -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -Xbootclasspath/a:.
  *       compiler.calls.common.InvokeDynamic -nativeCallee -checkCallerCompileLevel -1
