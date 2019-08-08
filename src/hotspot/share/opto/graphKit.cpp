@@ -3306,18 +3306,6 @@ Node* GraphKit::insert_mem_bar_volatile(int opcode, int alias_idx, Node* precede
   return membar;
 }
 
-void GraphKit::insert_store_load_for_barrier() {
-  Node* mem = reset_memory();
-  MemBarNode* mb = MemBarNode::make(C, Op_MemBarVolatile, Compile::AliasIdxRaw);
-  mb->init_req(TypeFunc::Control, control());
-  mb->init_req(TypeFunc::Memory, mem);
-  Node* membar = _gvn.transform(mb);
-  set_control(_gvn.transform(new ProjNode(membar, TypeFunc::Control)));
-  Node* newmem = _gvn.transform(new ProjNode(membar, TypeFunc::Memory));
-  set_all_memory(mem);
-  set_memory(newmem, Compile::AliasIdxRaw);
-}
-
 //------------------------------shared_lock------------------------------------
 // Emit locking code.
 FastLockNode* GraphKit::shared_lock(Node* obj) {
