@@ -522,7 +522,7 @@ void VM_Exit::wait_if_vm_exited() {
       Thread::current_or_null() != _shutdown_thread) {
     // _vm_exited is set at safepoint, and the Threads_lock is never released
     // we will block here until the process dies
-    Threads_lock->lock_without_safepoint_check();
+    Threads_lock->lock();
     ShouldNotReachHere();
   }
 }

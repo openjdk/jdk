@@ -491,6 +491,10 @@ class Thread: public ThreadShadow {
   // Can this thread make Java upcalls
   virtual bool can_call_java() const                 { return false; }
 
+  // Is this a JavaThread that is on the VM's current ThreadsList?
+  // If so it must participate in the safepoint protocol.
+  virtual bool is_active_Java_thread() const         { return false; }
+
   // Casts
   virtual WorkerThread* as_Worker_thread() const     { return NULL; }
 
@@ -1246,6 +1250,10 @@ class JavaThread: public Thread {
   // Testers
   virtual bool is_Java_thread() const            { return true;  }
   virtual bool can_call_java() const             { return true; }
+
+  virtual bool is_active_Java_thread() const {
+    return on_thread_list() && !is_terminated();
+  }
 
   // Thread oop. threadObj() can be NULL for initial JavaThread
   // (or for threads attached via JNI)

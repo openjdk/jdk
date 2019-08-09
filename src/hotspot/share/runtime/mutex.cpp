@@ -37,7 +37,7 @@ void Monitor::check_safepoint_state(Thread* thread, bool do_safepoint_check) {
   // If the JavaThread checks for safepoint, verify that the lock wasn't created with safepoint_check_never.
   SafepointCheckRequired not_allowed = do_safepoint_check ?  Monitor::_safepoint_check_never :
                                                              Monitor::_safepoint_check_always;
-  assert(!thread->is_Java_thread() || _safepoint_check_required != not_allowed,
+  assert(!thread->is_active_Java_thread() || _safepoint_check_required != not_allowed,
          "This lock should %s have a safepoint check for Java threads: %s",
          _safepoint_check_required ? "always" : "never", name());
 
@@ -52,7 +52,7 @@ void Monitor::lock(Thread * self) {
 
 #ifdef CHECK_UNHANDLED_OOPS
   // Clear unhandled oops in JavaThreads so we get a crash right away.
-  if (self->is_Java_thread()) {
+  if (self->is_active_Java_thread()) {
     self->clear_unhandled_oops();
   }
 #endif // CHECK_UNHANDLED_OOPS
@@ -62,6 +62,7 @@ void Monitor::lock(Thread * self) {
 
   Monitor* in_flight_monitor = NULL;
   DEBUG_ONLY(int retry_cnt = 0;)
+  bool is_active_Java_thread = self->is_active_Java_thread();
   while (!_lock.try_lock()) {
     // The lock is contended
 
@@ -72,7 +73,8 @@ void Monitor::lock(Thread * self) {
     }
   #endif // ASSERT
 
-    if (self->is_Java_thread()) {
+    // Is it a JavaThread participating in the safepoint protocol.
+    if (is_active_Java_thread) {
       assert(rank() > Mutex::special, "Potential deadlock with special or lesser rank mutex");
       { ThreadBlockInVMWithDeadlockCheck tbivmdc((JavaThread *) self, &in_flight_monitor);
         in_flight_monitor = this;  // save for ~ThreadBlockInVMWithDeadlockCheck
@@ -190,8 +192,8 @@ bool Monitor::wait(long timeout, bool as_suspend_equivalent) {
 
   assert_owner(self);
 
-  // Safepoint checking logically implies java_thread
-  guarantee(self->is_Java_thread(), "invariant");
+  // Safepoint checking logically implies an active JavaThread.
+  guarantee(self->is_active_Java_thread(), "invariant");
   assert_wait_lock_state(self);
 
 #ifdef CHECK_UNHANDLED_OOPS
@@ -470,7 +472,7 @@ void Monitor::set_owner_implementation(Thread *new_owner) {
 // Factored out common sanity checks for locking mutex'es. Used by lock() and try_lock()
 void Monitor::check_prelock_state(Thread *thread, bool safepoint_check) {
   if (safepoint_check) {
-    assert((!thread->is_Java_thread() || ((JavaThread *)thread)->thread_state() == _thread_in_vm)
+    assert((!thread->is_active_Java_thread() || ((JavaThread *)thread)->thread_state() == _thread_in_vm)
            || rank() == Mutex::special, "wrong thread state for using locks");
     if (thread->is_VM_thread() && !allow_vm_block()) {
       fatal("VM thread using lock %s (not allowed to block on)", name());

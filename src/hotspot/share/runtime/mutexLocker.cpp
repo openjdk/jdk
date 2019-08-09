@@ -287,7 +287,7 @@ void mutex_init() {
   // CMS_bitMap_lock                          leaf 1
   // CMS_freeList_lock                        leaf 2
 
-  def(Threads_lock                 , PaddedMonitor, barrier,     true,  Monitor::_safepoint_check_sometimes);  // Used for safepoint protocol.
+  def(Threads_lock                 , PaddedMonitor, barrier,     true,  Monitor::_safepoint_check_always);  // Used for safepoint protocol.
   def(NonJavaThreadsList_lock      , PaddedMutex,   leaf,        true,  Monitor::_safepoint_check_never);
   def(NonJavaThreadsListSync_lock  , PaddedMutex,   leaf,        true,  Monitor::_safepoint_check_never);
 

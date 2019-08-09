@@ -4135,14 +4135,13 @@ static jint attach_current_thread(JavaVM *vm, void **penv, void *_args, bool dae
 
   thread->cache_global_variables();
 
-  // Crucial that we do not have a safepoint check for this thread, since it has
+  // This thread will not do a safepoint check, since it has
   // not been added to the Thread list yet.
-  { Threads_lock->lock_without_safepoint_check();
+  { MutexLocker ml(Threads_lock);
     // This must be inside this lock in order to get FullGCALot to work properly, i.e., to
     // avoid this thread trying to do a GC before it is added to the thread-list
     thread->set_active_handles(JNIHandleBlock::allocate_block());
     Threads::add(thread, daemon);
-    Threads_lock->unlock();
   }
   // Create thread group and name info from attach arguments
   oop group = NULL;

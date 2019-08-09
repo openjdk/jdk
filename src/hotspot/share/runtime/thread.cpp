@@ -1804,7 +1804,7 @@ void JavaThread::block_if_vm_exited() {
   if (_terminated == _vm_exited) {
     // _vm_exited is set at safepoint, and Threads_lock is never released
     // we will block here forever
-    Threads_lock->lock_without_safepoint_check();
+    Threads_lock->lock();
     ShouldNotReachHere();
   }
 }
