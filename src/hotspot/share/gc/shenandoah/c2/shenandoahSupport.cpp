@@ -3093,6 +3093,8 @@ bool ShenandoahLoadReferenceBarrierNode::needs_barrier_impl(PhaseGVN* phase, Nod
              needs_barrier_impl(phase, n->in(3), visited);
     case Op_ShenandoahEnqueueBarrier:
       return needs_barrier_impl(phase, n->in(1), visited);
+    case Op_CreateEx:
+      return false;
     default:
       break;
   }
