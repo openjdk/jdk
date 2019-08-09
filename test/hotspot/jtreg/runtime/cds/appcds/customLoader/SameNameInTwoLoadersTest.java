@@ -30,9 +30,7 @@
  * @requires vm.cds.custom.loaders
  *
  * @library /test/lib /test/hotspot/jtreg/runtime/cds/appcds
- * @modules java.base/jdk.internal.misc
- *          java.management
- *          jdk.jartool/sun.tools.jar
+ * @modules jdk.jartool/sun.tools.jar
  * @compile test-classes/CustomLoadee.java
  *     test-classes/CustomLoadee3.java
  *     test-classes/SameNameUnrelatedLoaders.java

@@ -28,9 +28,7 @@
  *          option for testing the interaction with GC and shared strings.
  * @library /test/lib /test/hotspot/jtreg/runtime/cds/appcds /test/hotspot/jtreg/runtime/cds/appcds/test-classes
  * @requires vm.cds.archived.java.heap
- * @modules java.base/jdk.internal.misc
- *          jdk.jartool/sun.tools.jar
- *          java.management
+ * @modules jdk.jartool/sun.tools.jar
  * @build sun.hotspot.WhiteBox GCDuringDumpTransformer GCSharedStringsDuringDumpWb
  * @run driver ClassFileInstaller sun.hotspot.WhiteBox
  * @run main/othervm/timeout=480 GCSharedStringsDuringDump

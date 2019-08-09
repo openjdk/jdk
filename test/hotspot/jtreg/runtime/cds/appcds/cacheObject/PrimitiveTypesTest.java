@@ -27,9 +27,6 @@
  * @summary Test archived primitive type mirrors
  * @requires vm.cds.archived.java.heap
  * @library /test/lib /test/hotspot/jtreg/runtime/cds/appcds
- * @modules java.base/jdk.internal.misc
- * @modules java.management
- *          jdk.jartool/sun.tools.jar
  * @build sun.hotspot.WhiteBox
  * @compile PrimitiveTypesApp.java
  * @run driver ClassFileInstaller -jar app.jar PrimitiveTypesApp FieldsTest

@@ -28,8 +28,6 @@
  * @requires vm.cds
  * @requires vm.bits == 64
  * @library /test/lib
- * @modules java.base/jdk.internal.misc
- *          java.management
  * @run driver CdsSameObjectAlignment
  */
 

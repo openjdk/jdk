@@ -28,9 +28,6 @@
  * @requires vm.cds.archived.java.heap
  * @requires vm.cds.custom.loaders
  * @library /test/lib /test/hotspot/jtreg/runtime/cds/appcds
- * @modules java.base/jdk.internal.misc
- * @modules java.management
- *          jdk.jartool/sun.tools.jar
  * @build sun.hotspot.WhiteBox
  * @compile CheckCachedMirrorApp.java
  * @compile ../test-classes/Hello.java

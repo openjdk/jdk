@@ -31,9 +31,7 @@
  * vm options.
  * @requires (vm.gc=="null")
  * @library /test/lib /test/hotspot/jtreg/runtime/cds/appcds
- * @modules java.base/jdk.internal.misc
- * @modules java.management
- *          jdk.jartool/sun.tools.jar
+ * @modules jdk.jartool/sun.tools.jar
  * @compile ../test-classes/Hello.java
  * @run driver OpenArchiveRegion
  */

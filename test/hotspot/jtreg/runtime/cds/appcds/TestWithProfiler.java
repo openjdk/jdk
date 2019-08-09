@@ -31,9 +31,7 @@
  *          profiler.
  * @requires vm.hasJFR & vm.cds
  * @library /test/lib /test/hotspot/jtreg/runtime/cds/appcds
- * @modules java.base/jdk.internal.misc
- *          java.management
- *          jdk.jartool/sun.tools.jar
+ * @modules jdk.jartool/sun.tools.jar
  * @compile test-classes/MyThread.java
  * @compile test-classes/TestWithProfilerHelper.java
  * @run driver TestWithProfiler

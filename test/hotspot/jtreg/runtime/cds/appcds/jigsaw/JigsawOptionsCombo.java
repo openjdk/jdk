@@ -28,10 +28,7 @@
  *
  * @requires vm.cds & !vm.graal.enabled
  * @library /test/lib ..
- * @modules java.base/jdk.internal.misc
- *          java.management
- *          jdk.jartool/sun.tools.jar
- *          jdk.internal.jvmstat/sun.jvmstat.monitor
+ * @modules jdk.jartool/sun.tools.jar
  * @compile ../test-classes/Hello.java ../test-classes/HelloMore.java
  * @run driver JigsawOptionsCombo
  */

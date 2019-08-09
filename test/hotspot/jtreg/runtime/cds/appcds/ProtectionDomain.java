@@ -27,9 +27,7 @@
  * @summary AppCDS handling of protection domain.
  * @requires vm.cds
  * @library /test/lib
- * @modules java.base/jdk.internal.misc
- *          java.management
- *          jdk.jartool/sun.tools.jar
+ * @modules jdk.jartool/sun.tools.jar
  * @compile test-classes/ProtDomain.java
  * @compile test-classes/ProtDomainB.java
  * @compile test-classes/JimageClassProtDomain.java

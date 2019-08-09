@@ -27,9 +27,7 @@
  * @summary Class-Path: attribute in MANIFEST file
  * @requires vm.cds
  * @library /test/lib
- * @modules java.base/jdk.internal.misc
- *          java.management
- *          jdk.jartool/sun.tools.jar
+ * @modules jdk.jartool/sun.tools.jar
  * @run driver ClassPathAttr
  */
 

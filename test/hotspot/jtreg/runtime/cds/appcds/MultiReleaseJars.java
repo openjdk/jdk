@@ -27,8 +27,7 @@
  * @summary Test multi-release jar with AppCDS.
  * @requires vm.cds
  * @library /test/lib
- * @modules java.base/jdk.internal.misc
- *          jdk.jartool/sun.tools.jar
+ * @modules jdk.jartool/sun.tools.jar
  * @run main/othervm/timeout=2400 MultiReleaseJars
  */
 

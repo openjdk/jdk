@@ -27,9 +27,6 @@
  * @summary Test primitive box caches integrity in various scenarios (IntegerCache etc)
  * @requires vm.cds.archived.java.heap
  * @library /test/jdk/lib/testlibrary /test/lib /test/hotspot/jtreg/runtime/cds/appcds
- * @modules java.base/jdk.internal.misc
- *          java.management
- *          jdk.jartool/sun.tools.jar
  * @build sun.hotspot.WhiteBox
  * @compile CheckIntegerCacheApp.java
  * @run driver ClassFileInstaller -jar boxCache.jar CheckIntegerCacheApp

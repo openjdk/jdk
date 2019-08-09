@@ -26,8 +26,6 @@
  * @bug 8059510
  * @summary Test jcmd VM.symboltable, VM.stringtable and VM.systemdictionary options
  * @library /test/lib
- * @modules java.base/jdk.internal.misc
- *          java.management
  * @run main/othervm -XX:+UnlockDiagnosticVMOptions DumpSymbolAndStringTable
  */
 import jdk.test.lib.cds.CDSTestUtils;

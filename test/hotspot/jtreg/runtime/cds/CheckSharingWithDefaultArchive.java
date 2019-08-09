@@ -28,8 +28,6 @@
  *          Verify a set of well-known shared classes.
  * @requires vm.cds
  * @library /test/lib
- * @modules java.base/jdk.internal.misc
- *          java.management
  * @build sun.hotspot.WhiteBox
  * @run driver ClassFileInstaller sun.hotspot.WhiteBox
  * @run main/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions

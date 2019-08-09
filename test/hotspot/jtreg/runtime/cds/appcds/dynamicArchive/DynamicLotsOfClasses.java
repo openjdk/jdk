@@ -38,7 +38,6 @@ import java.util.ArrayList;
  * @library /test/lib /test/hotspot/jtreg/runtime/cds/appcds /test/hotspot/jtreg/runtime/cds/appcds/dynamicArchive/test-classes
  * @build LoadClasses
  * @build sun.hotspot.WhiteBox
- * @modules jdk.jartool/sun.tools.jar
  * @run driver ClassFileInstaller -jar loadclasses.jar LoadClasses
  * @run driver ClassFileInstaller -jar whitebox.jar sun.hotspot.WhiteBox
  * @run driver/timeout=500 DynamicLotsOfClasses

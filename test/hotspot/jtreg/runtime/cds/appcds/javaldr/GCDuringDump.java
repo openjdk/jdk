@@ -28,9 +28,6 @@
  * @library /test/lib /test/hotspot/jtreg/runtime/cds/appcds /test/hotspot/jtreg/runtime/cds/appcds/test-classes
  * @requires vm.cds
  * @requires vm.flavor != "minimal"
- * @modules java.base/jdk.internal.misc
- *          jdk.jartool/sun.tools.jar
- *          java.management
  * @build GCDuringDumpTransformer Hello
  * @run main/othervm GCDuringDump
  */

@@ -28,7 +28,6 @@
  * @library /test/lib /test/hotspot/jtreg/runtime/cds/appcds /test/hotspot/jtreg/runtime/cds/appcds/test-classes
  * @requires vm.cds
  * @requires vm.flavor != "minimal"
- * @modules jdk.jartool/sun.tools.jar
  * @build SimpleAgent Hello
  * @run main/othervm DumpingWithJavaAgent
  */

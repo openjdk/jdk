@@ -31,8 +31,7 @@
  * @library ../..
  * @library /test/hotspot/jtreg/testlibrary
  * @library /test/lib
- * @modules java.base/jdk.internal.misc
- *          jdk.jartool/sun.tools.jar
+ * @modules jdk.jartool/sun.tools.jar
  * @build PatchMain
  * @run driver MismatchedPatchModule
  */

@@ -30,10 +30,6 @@
  * @requires vm.cds
  * @requires vm.flavor != "minimal"
  * @requires !vm.graal.enabled
- * @modules java.base/jdk.internal.misc
- *          jdk.jartool/sun.tools.jar
- *          java.management
- *          java.instrument
  * @build TransformUtil TransformerAgent SubClass SuperClazz
  * @compile myPkg2/SubClass.java myPkg1/SuperClazz.java
  * @run main/othervm TransformRelatedClasses myPkg1.SuperClazz myPkg2.SubClass

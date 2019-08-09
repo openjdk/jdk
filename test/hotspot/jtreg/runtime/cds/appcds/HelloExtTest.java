@@ -28,10 +28,7 @@
  *          (which used to be called the "extension loader) in AppCDS
  * @requires vm.cds
  * @library /test/lib
- * @modules java.base/jdk.internal.misc
- *          java.management
- *          jdk.jartool/sun.tools.jar
- *          jdk.internal.jvmstat/sun.jvmstat.monitor
+ * @modules jdk.jartool/sun.tools.jar
  * @compile test-classes/HelloExt.java
  * @build sun.hotspot.WhiteBox
  * @run driver ClassFileInstaller sun.hotspot.WhiteBox

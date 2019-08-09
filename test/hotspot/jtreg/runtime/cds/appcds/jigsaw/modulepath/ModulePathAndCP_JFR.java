@@ -26,9 +26,7 @@
  * @test
  * @requires vm.hasJFR & vm.cds
  * @library /test/lib /test/hotspot/jtreg/runtime/cds/appcds
- * @modules jdk.compiler
- *          jdk.jartool/sun.tools.jar
- *          jdk.jlink
+ * @modules jdk.jartool/sun.tools.jar
  * @run driver ModulePathAndCP_JFR
  * @summary Same as ModulePathAndCP, but add -XX:StartFlightRecording=dumponexit=true to the runtime
  *          options. This makes sure that the shared classes are compatible with both

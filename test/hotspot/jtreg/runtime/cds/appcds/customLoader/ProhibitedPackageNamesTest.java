@@ -28,9 +28,7 @@
  * @requires vm.cds
  * @requires vm.cds.custom.loaders
  * @library /test/lib /test/hotspot/jtreg/runtime/cds/appcds
- * @modules java.base/jdk.internal.misc
- *          java.management
- *          jdk.jartool/sun.tools.jar
+ * @modules jdk.jartool/sun.tools.jar
  * @compile ClassListFormatBase.java ../test-classes/Hello.java test-classes/InProhibitedPkg.java
  * @run driver ProhibitedPackageNamesTest
  */

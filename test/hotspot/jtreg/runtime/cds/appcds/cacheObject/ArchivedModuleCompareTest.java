@@ -27,9 +27,6 @@
  * @summary Compare archived system modules with non-archived.
  * @requires vm.cds.archived.java.heap
  * @library /test/jdk/lib/testlibrary /test/lib /test/hotspot/jtreg/runtime/cds/appcds
- * @modules java.base/jdk.internal.misc
- *          java.management
- *          jdk.jartool/sun.tools.jar
  * @compile PrintSystemModulesApp.java
  * @run driver ClassFileInstaller -jar app.jar PrintSystemModulesApp
  * @run driver ArchivedModuleCompareTest

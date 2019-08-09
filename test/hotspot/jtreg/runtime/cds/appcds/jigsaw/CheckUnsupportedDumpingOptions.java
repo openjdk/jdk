@@ -27,10 +27,7 @@
  * @summary Abort dumping if any of the new jigsaw vm options is specified.
  * @requires vm.cds
  * @library /test/lib ..
- * @modules java.base/jdk.internal.misc
- *          java.management
- *          jdk.jartool/sun.tools.jar
- *          jdk.internal.jvmstat/sun.jvmstat.monitor
+ * @modules jdk.jartool/sun.tools.jar
  * @compile ../test-classes/Hello.java
  * @run driver CheckUnsupportedDumpingOptions
  */

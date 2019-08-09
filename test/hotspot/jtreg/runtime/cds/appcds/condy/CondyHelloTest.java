@@ -25,7 +25,6 @@
  * @test
  * @summary Make sure CDS works with a minimal test case that uses a CONSTANT_Dynamic constant-pool entry
  * @requires (vm.cds)
- * @modules java.base/jdk.internal.misc
  * @library /test/lib /test/hotspot/jtreg/runtime/cds/appcds
  * @build CondyHello
  * @build sun.hotspot.WhiteBox CondyHelloTest CondyHelloApp

@@ -27,7 +27,6 @@
  * @summary Make sure CDS and JFR work together.
  * @requires vm.hasJFR & vm.cds
  * @library /test/lib /test/hotspot/jtreg/runtime/cds/appcds /test/hotspot/jtreg/runtime/cds/appcds/test-classes test-classes
- * @modules jdk.jfr
  * @build Hello GetFlightRecorder
  * @run driver ClassFileInstaller -jar CDSandJFR.jar Hello GetFlightRecorder GetFlightRecorder$TestEvent GetFlightRecorder$SimpleEvent
  * @run main/othervm/timeout=500 CDSandJFR

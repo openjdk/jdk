@@ -26,8 +26,6 @@
  * @summary Test to ensure platform and app classes are archived when specified in classlist
  * @requires vm.cds
  * @library /test/lib
- * @modules java.base/jdk.internal.misc
- *          java.management
  * @run driver NonBootLoaderClasses
  */
 

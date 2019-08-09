@@ -27,9 +27,6 @@
  * @summary Redefine shared class. GC should not cause crash with cached resolved_references.
  * @library /test/lib /test/hotspot/jtreg/runtime/cds/appcds /test/hotspot/jtreg/runtime/cds/appcds/test-classes /test/hotspot/jtreg/runtime/cds/appcds/jvmti
  * @requires vm.cds.archived.java.heap
- * @modules java.base/jdk.internal.misc
- *          jdk.jartool/sun.tools.jar
- *          java.management
  * @build sun.hotspot.WhiteBox
  *        RedefineClassApp
  *        InstrumentationClassFileTransformer

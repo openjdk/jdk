@@ -28,8 +28,6 @@
  * @requires vm.cds
  * @requires vm.cds.custom.loaders
  * @library /test/lib /test/hotspot/jtreg/runtime/cds/appcds /runtime/testlibrary
- * @modules java.base/jdk.internal.misc
- *          java.management
  * @compile test-classes/HelloUnload.java test-classes/CustomLoadee.java
  * @build sun.hotspot.WhiteBox ClassUnloadCommon
  * @run driver ClassFileInstaller -jar hello.jar HelloUnload ClassUnloadCommon ClassUnloadCommon$1 ClassUnloadCommon$TestFailure

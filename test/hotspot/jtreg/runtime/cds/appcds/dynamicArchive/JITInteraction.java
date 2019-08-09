@@ -28,7 +28,6 @@
  * @requires vm.cds
  * @library /test/lib /test/hotspot/jtreg/runtime/cds/appcds /test/hotspot/jtreg/runtime/cds/appcds/dynamicArchive/test-classes
  * @build TestJIT
- * @modules jdk.jartool/sun.tools.jar
  * @build sun.hotspot.WhiteBox
  * @run driver ClassFileInstaller -jar WhiteBox.jar sun.hotspot.WhiteBox
  * @run driver ClassFileInstaller -jar testjit.jar TestJIT

@@ -26,9 +26,7 @@
  * @test
  * @requires vm.cds
  * @library /test/lib /test/hotspot/jtreg/runtime/cds/appcds
- * @modules jdk.compiler
- *          jdk.jartool/sun.tools.jar
- *          jdk.jlink
+ * @modules jdk.jartool/sun.tools.jar
  * @run driver ModulePathAndCP
  * @summary 2 sets of tests: one with only --module-path in the command line;
  *          another with both -cp and --module-path in the command line.

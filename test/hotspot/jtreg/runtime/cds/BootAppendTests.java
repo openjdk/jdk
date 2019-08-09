@@ -27,10 +27,6 @@
  * @summary Testing -Xbootclasspath/a support for CDS
  * @requires vm.cds
  * @library /test/lib
- * @modules java.compiler
- *          java.base/jdk.internal.misc
- *          java.management
- *          jdk.internal.jvmstat/sun.jvmstat.monitor
  * @compile javax/sound/sampled/MyClass.jasm
  * @compile javax/annotation/processing/FilerException.jasm
  * @compile nonjdk/myPackage/MyClass.java

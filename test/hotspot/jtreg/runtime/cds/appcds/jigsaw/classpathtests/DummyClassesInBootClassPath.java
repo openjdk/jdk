@@ -27,8 +27,7 @@
  * @summary Ensure that classes found in jimage takes precedence over classes found in -Xbootclasspath/a.
  * @requires vm.cds
  * @library /test/lib /test/hotspot/jtreg/runtime/cds/appcds
- * @modules java.compiler
- *          jdk.jartool/sun.tools.jar
+ * @modules jdk.jartool/sun.tools.jar
  * @compile ../../test-classes/DummyClassHelper.java
  * @compile ../../test-classes/java/net/HttpCookie.jasm
  * @compile ../../../javax/annotation/processing/FilerException.jasm

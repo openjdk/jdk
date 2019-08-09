@@ -28,8 +28,6 @@
  * @requires vm.cds
  * @library /test/lib
  * @modules java.base/jdk.internal.org.objectweb.asm
- *          java.base/jdk.internal.misc
- *          java.management
  *          jdk.jartool/sun.tools.jar
  * @compile test-classes/Hello.java
  * @run build TestCommon JarBuilder

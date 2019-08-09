@@ -27,8 +27,6 @@
  *          VM handles normal values as well as edge values w/o a crash.
  * @requires vm.cds
  * @library /test/lib
- * @modules java.base/jdk.internal.misc
- *          java.management
  * @run driver SharedBaseAddress
  */
 

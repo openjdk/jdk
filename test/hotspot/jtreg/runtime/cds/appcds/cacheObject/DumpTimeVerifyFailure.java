@@ -28,9 +28,7 @@
  * @bug 8186789
  * @requires vm.cds.archived.java.heap
  * @library /test/lib /test/hotspot/jtreg/runtime/cds/appcds
- * @modules java.base/jdk.internal.misc
- * @modules java.management
- *          jdk.jartool/sun.tools.jar
+ * @modules jdk.jartool/sun.tools.jar
  * @compile MyOuter.java MyException.java
  * @run driver DumpTimeVerifyFailure
  */

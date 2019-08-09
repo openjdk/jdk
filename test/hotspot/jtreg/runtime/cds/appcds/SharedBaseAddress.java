@@ -29,9 +29,7 @@
  *          w/o a crash.
  * @requires vm.cds
  * @library /test/lib
- * @modules java.base/jdk.internal.misc
- *          java.management
- *          jdk.jartool/sun.tools.jar
+ * @modules jdk.jartool/sun.tools.jar
  * @compile test-classes/Hello.java
  * @run main/timeout=240 SharedBaseAddress
  */

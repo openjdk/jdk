@@ -27,9 +27,7 @@
  * @summary Load app classes from CDS archive in parallel threads
  * @library /test/lib
  * @requires vm.cds
- * @modules java.base/jdk.internal.misc
- *          java.management
- *          jdk.jartool/sun.tools.jar
+ * @modules jdk.jartool/sun.tools.jar
  * @compile test-classes/ParallelLoad.java
  * @compile test-classes/ParallelClasses.java
  * @run driver ParallelLoadTest

@@ -28,9 +28,7 @@
  * @requires vm.cds
  * @requires vm.cds.custom.loaders
  * @library /test/lib /test/hotspot/jtreg/runtime/cds/appcds
- * @modules java.base/jdk.internal.misc
- *          java.management
- *          jdk.jartool/sun.tools.jar
+ * @modules jdk.jartool/sun.tools.jar
  * @compile ../test-classes/ParallelLoad.java ../test-classes/ParallelClasses.java
  * @run driver ParallelTestMultiFP
  */

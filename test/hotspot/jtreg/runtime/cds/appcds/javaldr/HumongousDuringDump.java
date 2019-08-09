@@ -28,9 +28,6 @@
  * @library /test/lib /test/hotspot/jtreg/runtime/cds/appcds /test/hotspot/jtreg/runtime/cds/appcds/test-classes
  * @requires vm.cds.archived.java.heap
  * @requires vm.flavor != "minimal"
- * @modules java.base/jdk.internal.misc
- *          jdk.jartool/sun.tools.jar
- *          java.management
  * @build HumongousDuringDumpTransformer Hello
  * @run main/othervm/timeout=240 HumongousDuringDump
  */

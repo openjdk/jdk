@@ -27,9 +27,6 @@
  * @summary Test archived mirror with reference fields
  * @requires vm.cds.archived.java.heap
  * @library /test/lib /test/hotspot/jtreg/runtime/cds/appcds
- * @modules java.base/jdk.internal.misc
- * @modules java.management
- *          jdk.jartool/sun.tools.jar
  * @build sun.hotspot.WhiteBox
  * @compile MirrorWithReferenceFieldsApp.java
  * @run driver ClassFileInstaller -jar app.jar MirrorWithReferenceFieldsApp

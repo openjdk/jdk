@@ -27,9 +27,7 @@
  * @summary Adding extra symbols into CDS archive using -XX:SharedArchiveConfigFile
  * @requires vm.cds
  * @library /test/lib
- * @modules java.base/jdk.internal.misc
- *          java.management
- *          jdk.jartool/sun.tools.jar
+ * @modules jdk.jartool/sun.tools.jar
  * @compile test-classes/Hello.java
  * @run driver ExtraSymbols
  */

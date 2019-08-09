@@ -27,11 +27,7 @@
  * @summary SharedArchiveConsistency
  * @requires vm.cds
  * @library /test/lib
- * @modules java.base/jdk.internal.misc
- *          java.compiler
- *          java.management
- *          jdk.jartool/sun.tools.jar
- *          jdk.internal.jvmstat/sun.jvmstat.monitor
+ * @modules jdk.jartool/sun.tools.jar
  * @build sun.hotspot.WhiteBox
  * @compile test-classes/Hello.java
  * @run driver ClassFileInstaller sun.hotspot.WhiteBox

@@ -32,9 +32,7 @@
  * @requires vm.cds & !vm.graal.enabled
  * @library /test/lib /test/hotspot/jtreg/runtime/cds/appcds
  * @modules java.base/jdk.internal.access
- *          java.management
  *          jdk.jartool/sun.tools.jar
- *          jdk.internal.jvmstat/sun.jvmstat.monitor
  * @compile ../../test-classes/EmptyClassHelper.java
  * @compile ../../test-classes/com/sun/tools/javac/Main.jasm
  * @run driver EmptyClassInBootClassPath

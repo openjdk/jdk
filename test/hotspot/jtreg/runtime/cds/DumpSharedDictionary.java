@@ -27,7 +27,6 @@
  * @summary Check that Shared Dictionary is printed out with jcmd
  * @requires vm.cds
  * @library /test/lib
- * @modules java.base/jdk.internal.misc
  * @run driver DumpSharedDictionary
  */
 

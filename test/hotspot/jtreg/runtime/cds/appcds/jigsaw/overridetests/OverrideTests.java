@@ -25,8 +25,7 @@
 /**
  * @test
  * @requires vm.cds
- * @modules java.base/jdk.internal.misc
- *          jdk.jartool/sun.tools.jar
+ * @modules jdk.jartool/sun.tools.jar
  * @library ../..
  * @library /test/lib
  * @compile ../../test-classes/Hello.java

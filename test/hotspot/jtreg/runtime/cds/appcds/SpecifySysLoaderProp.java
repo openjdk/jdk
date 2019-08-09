@@ -27,8 +27,7 @@
  * @summary If -Djava.system.class.loader=xxx is specified in command-line, disable archived non-system classes
  * @requires vm.cds
  * @library /test/lib
- * @modules java.base/jdk.internal.misc
- *      jdk.jartool/sun.tools.jar
+ * @modules jdk.jartool/sun.tools.jar
  * @compile test-classes/TestClassLoader.java
  * @compile test-classes/ReportMyLoader.java
  * @compile test-classes/TrySwitchMyLoader.java

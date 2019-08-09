@@ -27,9 +27,7 @@
  * @summary test the -XX:+PrintSharedArchiveAndExit flag
  * @requires vm.cds
  * @library /test/lib
- * @modules java.base/jdk.internal.misc
- *          java.management
- *          jdk.jartool/sun.tools.jar
+ * @modules jdk.jartool/sun.tools.jar
  * @compile test-classes/Hello.java
  * @compile test-classes/HelloMore.java
  * @run main/othervm/timeout=3600 PrintSharedArchiveAndExit

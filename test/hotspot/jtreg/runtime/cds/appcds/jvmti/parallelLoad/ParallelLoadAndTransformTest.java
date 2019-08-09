@@ -31,10 +31,6 @@
  *     /test/hotspot/jtreg/testlibrary/jvmti
  * @requires vm.cds
  * @requires !vm.graal.enabled
- * @modules java.base/jdk.internal.misc
- *          java.management
- *          jdk.jartool/sun.tools.jar
- *          java.instrument
  * @build TransformUtil TransformerAgent ParallelLoad
  * @run driver ParallelLoadAndTransformTest
  */

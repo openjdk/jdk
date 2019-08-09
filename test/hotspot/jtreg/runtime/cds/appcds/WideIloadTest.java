@@ -27,9 +27,7 @@
  * @summary Test 'iload_w' bytecode in shared class
  * @requires vm.cds
  * @library /test/lib
- * @modules java.base/jdk.internal.misc
- *          java.management
- *          jdk.jartool/sun.tools.jar
+ * @modules jdk.jartool/sun.tools.jar
  * @compile test-classes/Iloadw.jasm
  * @compile test-classes/IloadwMain.java
  * @run driver WideIloadTest

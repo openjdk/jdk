@@ -32,8 +32,6 @@
  * @requires vm.bits == 64
  * @library /test/lib
  * @bug 8025642
- * @modules java.base/jdk.internal.misc
- *          java.management
  * @run driver CdsDifferentObjectAlignment
  */
 

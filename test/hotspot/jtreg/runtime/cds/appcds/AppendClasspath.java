@@ -27,9 +27,7 @@
  * @summary At run time, it is OK to append new elements to the classpath that was used at dump time.
  * @requires vm.cds
  * @library /test/lib
- * @modules java.base/jdk.internal.misc
- *          java.management
- *          jdk.jartool/sun.tools.jar
+ * @modules jdk.jartool/sun.tools.jar
  * @compile test-classes/Hello.java
  * @compile test-classes/HelloMore.java
  * @run driver AppendClasspath

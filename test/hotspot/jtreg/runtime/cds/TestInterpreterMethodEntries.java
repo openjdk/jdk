@@ -30,8 +30,6 @@
  * @comment the test disables intrinsics, so it can't be run w/ AOT'ed java module
  * @requires !vm.aot.enabled
  * @library /test/lib
- * @modules java.base/jdk.internal.misc
- *          java.management
  * @run driver TestInterpreterMethodEntries true false
  */
 
@@ -42,8 +40,6 @@
  *          and the intrinsic flag disabled during dump and enabled during use of the archive.
  * @requires vm.cds
  * @library /test/lib
- * @modules java.base/jdk.internal.misc
- *          java.management
  * @run driver TestInterpreterMethodEntries false true
  */
 

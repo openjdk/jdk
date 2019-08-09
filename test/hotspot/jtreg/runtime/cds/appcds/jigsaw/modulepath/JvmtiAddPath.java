@@ -27,9 +27,7 @@
  * @summary JvmtiEnv::AddToBootstrapClassLoaderSearch and JvmtiEnv::AddToSystemClassLoaderSearch should disable AppCDS
  * @requires vm.cds
  * @library /test/jdk/lib/testlibrary /test/lib /test/hotspot/jtreg/runtime/cds/appcds
- * @modules java.base/jdk.internal.misc
- *          java.management
- *          jdk.jartool/sun.tools.jar
+ * @modules jdk.jartool/sun.tools.jar
  * @build sun.hotspot.WhiteBox
  * @run driver ClassFileInstaller sun.hotspot.WhiteBox
  * @compile ../../test-classes/JvmtiApp.java

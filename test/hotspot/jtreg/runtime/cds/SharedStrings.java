@@ -27,8 +27,6 @@
  *          are actually shared
  * @requires vm.cds.archived.java.heap
  * @library /test/lib
- * @modules java.base/jdk.internal.misc
- *          java.management
  * @build SharedStringsWb sun.hotspot.WhiteBox
  * @run driver ClassFileInstaller -jar whitebox.jar sun.hotspot.WhiteBox
  * @run driver SharedStrings
