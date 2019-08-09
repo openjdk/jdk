@@ -473,7 +473,7 @@ void G1BarrierSetC2::post_barrier(GraphKit* kit,
 
         __ if_then(card_val, BoolTest::ne, young_card, unlikely); {
           kit->sync_kit(ideal);
-          kit->insert_store_load_for_barrier();
+          kit->insert_mem_bar(Op_MemBarVolatile, oop_store);
           __ sync_kit(kit);
 
           Node* card_val_reload = __ load(__ ctrl(), card_adr, TypeInt::INT, T_BYTE, Compile::AliasIdxRaw);

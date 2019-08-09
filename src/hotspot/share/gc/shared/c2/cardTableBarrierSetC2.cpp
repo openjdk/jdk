@@ -105,7 +105,7 @@ void CardTableBarrierSetC2::post_barrier(GraphKit* kit,
 
   if (UseCondCardMark) {
     if (ct->scanned_concurrently()) {
-      kit->insert_store_load_for_barrier();
+      kit->insert_mem_bar(Op_MemBarVolatile, oop_store);
       __ sync_kit(kit);
     }
     // The classic GC reference write barrier is typically implemented
