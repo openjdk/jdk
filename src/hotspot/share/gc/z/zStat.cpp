@@ -63,7 +63,7 @@ struct ZStatSamplerData {
 
   void add(const ZStatSamplerData& new_sample) {
     _nsamples += new_sample._nsamples;
-    _sum += new_sample._nsamples;
+    _sum += new_sample._sum;
     _max = MAX2(_max, new_sample._max);
   }
 };
