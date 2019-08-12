@@ -179,10 +179,6 @@ bool ShenandoahBarrierC2Support::verify_helper(Node* in, Node_Stack& phis, Vecto
       if (trace) {tty->print_cr("NULL");}
     } else if (!in->bottom_type()->make_ptr()->make_oopptr()) {
       if (trace) {tty->print_cr("Non oop");}
-    } else if (t == ShenandoahLoad && ShenandoahOptimizeStableFinals &&
-               in->bottom_type()->make_ptr()->isa_aryptr() &&
-               in->bottom_type()->make_ptr()->is_aryptr()->is_stable()) {
-      if (trace) {tty->print_cr("Stable array load");}
     } else {
       if (in->is_ConstraintCast()) {
         in = in->in(1);
@@ -323,34 +319,8 @@ void ShenandoahBarrierC2Support::verify(RootNode* root) {
                    adr_type->is_instptr()->klass()->is_subtype_of(Compile::current()->env()->Reference_klass()) &&
                    adr_type->is_instptr()->offset() == java_lang_ref_Reference::referent_offset) {
           if (trace) {tty->print_cr("Reference.get()");}
-        } else {
-          bool verify = true;
-          if (adr_type->isa_instptr()) {
-            const TypeInstPtr* tinst = adr_type->is_instptr();
-            ciKlass* k = tinst->klass();
-            assert(k->is_instance_klass(), "");
-            ciInstanceKlass* ik = (ciInstanceKlass*)k;
-            int offset = adr_type->offset();
-
-            if ((ik->debug_final_field_at(offset) && ShenandoahOptimizeInstanceFinals) ||
-                (ik->debug_stable_field_at(offset) && ShenandoahOptimizeStableFinals)) {
-              if (trace) {tty->print_cr("Final/stable");}
-              verify = false;
-            } else if (k == ciEnv::current()->Class_klass() &&
-                       tinst->const_oop() != NULL &&
-                       tinst->offset() >= (ik->size_helper() * wordSize)) {
-              ciInstanceKlass* k = tinst->const_oop()->as_instance()->java_lang_Class_klass()->as_instance_klass();
-              ciField* field = k->get_field_by_offset(tinst->offset(), true);
-              if ((ShenandoahOptimizeStaticFinals && field->is_final()) ||
-                  (ShenandoahOptimizeStableFinals && field->is_stable())) {
-                verify = false;
-              }
-            }
-          }
-
-          if (verify && !verify_helper(n->in(MemNode::Address), phis, visited, ShenandoahLoad, trace, barriers_used)) {
-            report_verify_failure("Shenandoah verification: Load should have barriers", n);
-          }
+        } else if (!verify_helper(n->in(MemNode::Address), phis, visited, ShenandoahLoad, trace, barriers_used)) {
+          report_verify_failure("Shenandoah verification: Load should have barriers", n);
         }
       }
     } else if (n->is_Store()) {
@@ -3215,36 +3185,20 @@ ShenandoahLoadReferenceBarrierNode::Strength ShenandoahLoadReferenceBarrierNode:
         ciField* field = alias_type->field();
         bool is_static = field != NULL && field->is_static();
         bool is_final = field != NULL && field->is_final();
-        bool is_stable = field != NULL && field->is_stable();
         if (ShenandoahOptimizeStaticFinals && is_static && is_final) {
-          // Leave strength as is.
-        } else if (ShenandoahOptimizeInstanceFinals && !is_static && is_final) {
-          // Leave strength as is.
-        } else if (ShenandoahOptimizeStableFinals && (is_stable || (adr_type->isa_aryptr() && adr_type->isa_aryptr()->is_stable()))) {
           // Leave strength as is.
         } else {
           strength = WEAK;
         }
         break;
       }
-      case Op_AryEq: {
-        Node* n1 = n->in(2);
-        Node* n2 = n->in(3);
-        if (!ShenandoahOptimizeStableFinals ||
-            !n1->bottom_type()->isa_aryptr() || !n1->bottom_type()->isa_aryptr()->is_stable() ||
-            !n2->bottom_type()->isa_aryptr() || !n2->bottom_type()->isa_aryptr()->is_stable()) {
-          strength = WEAK;
-        }
-        break;
-      }
+      case Op_AryEq:
       case Op_StrEquals:
       case Op_StrComp:
       case Op_StrIndexOf:
       case Op_StrIndexOfChar:
       case Op_HasNegatives:
-        if (!ShenandoahOptimizeStableFinals) {
-           strength = WEAK;
-        }
+        strength = WEAK;
         break;
       case Op_Conv2B:
       case Op_LoadRange:
