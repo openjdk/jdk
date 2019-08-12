@@ -521,23 +521,45 @@ void ShenandoahBarrierSetAssembler::gen_pre_barrier_stub(LIR_Assembler* ce, Shen
 }
 
 void ShenandoahBarrierSetAssembler::gen_load_reference_barrier_stub(LIR_Assembler* ce, ShenandoahLoadReferenceBarrierStub* stub) {
+  ShenandoahBarrierSetC1* bs = (ShenandoahBarrierSetC1*)BarrierSet::barrier_set()->barrier_set_c1();
+  __ bind(*stub->entry());
 
   Register obj = stub->obj()->as_register();
   Register res = stub->result()->as_register();
+  Register tmp1 = stub->tmp1()->as_register();
+  Register tmp2 = stub->tmp2()->as_register();
 
-  Label done;
-
-  __ bind(*stub->entry());
+  assert(res == r0, "result must arrive in r0");
 
   if (res != obj) {
     __ mov(res, obj);
   }
+
   // Check for null.
-  __ cbz(res, done);
+  __ cbz(res, *stub->continuation());
 
-  load_reference_barrier_not_null(ce->masm(), res, rscratch1);
+  // Check for object in cset.
+  __ mov(tmp2, ShenandoahHeap::in_cset_fast_test_addr());
+  __ lsr(tmp1, res, ShenandoahHeapRegion::region_size_bytes_shift_jint());
+  __ ldrb(tmp2, Address(tmp2, tmp1));
+  __ cbz(tmp2, *stub->continuation());
 
-  __ bind(done);
+  // Check if object is already forwarded.
+  Label slow_path;
+  __ ldr(tmp1, Address(res, oopDesc::mark_offset_in_bytes()));
+  __ eon(tmp1, tmp1, zr);
+  __ ands(zr, tmp1, markOopDesc::lock_mask_in_place);
+  __ br(Assembler::NE, slow_path);
+
+  // Decode forwarded object.
+  __ orr(tmp1, tmp1, markOopDesc::marked_value);
+  __ eon(res, tmp1, zr);
+  __ b(*stub->continuation());
+
+  __ bind(slow_path);
+  ce->store_parameter(res, 0);
+  __ far_call(RuntimeAddress(bs->load_reference_barrier_rt_code_blob()->code_begin()));
+
   __ b(*stub->continuation());
 }
 
@@ -591,6 +613,21 @@ void ShenandoahBarrierSetAssembler::generate_c1_pre_barrier_runtime_stub(StubAss
   __ epilogue();
 }
 
+void ShenandoahBarrierSetAssembler::generate_c1_load_reference_barrier_runtime_stub(StubAssembler* sasm) {
+  __ prologue("shenandoah_load_reference_barrier", false);
+  // arg0 : object to be resolved
+
+  __ push_call_clobbered_registers();
+  __ load_parameter(0, r0);
+  __ mov(lr, CAST_FROM_FN_PTR(address, ShenandoahRuntime::load_reference_barrier));
+  __ blr(lr);
+  __ mov(rscratch1, r0);
+  __ pop_call_clobbered_registers();
+  __ mov(r0, rscratch1);
+
+  __ epilogue();
+}
+
 #undef __
 
 #endif // COMPILER1
@@ -625,11 +662,18 @@ address ShenandoahBarrierSetAssembler::generate_shenandoah_lrb(StubCodeGenerator
   __ ret(lr);
   __ bind(work);
 
-  __ mov(rscratch2, r0);
-  resolve_forward_pointer_not_null(cgen->assembler(), r0, rscratch1);
-  __ cmp(rscratch2, r0);
-  __ br(Assembler::NE, done);
+  Label slow_path;
+  __ ldr(rscratch1, Address(r0, oopDesc::mark_offset_in_bytes()));
+  __ eon(rscratch1, rscratch1, zr);
+  __ ands(zr, rscratch1, markOopDesc::lock_mask_in_place);
+  __ br(Assembler::NE, slow_path);
 
+  // Decode forwarded object.
+  __ orr(rscratch1, rscratch1, markOopDesc::marked_value);
+  __ eon(r0, rscratch1, zr);
+  __ ret(lr);
+
+  __ bind(slow_path);
   __ enter(); // required for proper stackwalking of RuntimeStub frame
 
   __ push_call_clobbered_registers();

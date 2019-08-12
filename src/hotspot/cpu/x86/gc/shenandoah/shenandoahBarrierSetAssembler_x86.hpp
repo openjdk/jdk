@@ -64,9 +64,6 @@ private:
 
   address generate_shenandoah_lrb(StubCodeGenerator* cgen);
 
-  void save_vector_registers(MacroAssembler* masm);
-  void restore_vector_registers(MacroAssembler* masm);
-
 public:
   static address shenandoah_lrb();
 
@@ -75,6 +72,7 @@ public:
   void gen_pre_barrier_stub(LIR_Assembler* ce, ShenandoahPreBarrierStub* stub);
   void gen_load_reference_barrier_stub(LIR_Assembler* ce, ShenandoahLoadReferenceBarrierStub* stub);
   void generate_c1_pre_barrier_runtime_stub(StubAssembler* sasm);
+  void generate_c1_load_reference_barrier_runtime_stub(StubAssembler* sasm);
 #endif
 
   void load_reference_barrier(MacroAssembler* masm, Register dst);
