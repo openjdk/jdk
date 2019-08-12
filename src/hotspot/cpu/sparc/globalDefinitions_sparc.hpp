@@ -36,6 +36,8 @@ const bool CCallingConventionRequiresIntsAsLongs = true;
 
 #define SUPPORTS_NATIVE_CX8
 
+#define CPU_MULTI_COPY_ATOMIC
+
 // The expected size in bytes of a cache line, used to pad data structures.
 #if defined(TIERED)
   // tiered, 64-bit, large machine

@@ -481,10 +481,13 @@ const  uint64_t KlassEncodingMetaspaceMax = (uint64_t(max_juint) + 1) << LogKlas
 // assure their ordering, instead of after volatile stores.
 // (See "A Tutorial Introduction to the ARM and POWER Relaxed Memory Models"
 // by Luc Maranget, Susmit Sarkar and Peter Sewell, INRIA/Cambridge)
-#ifdef CPU_NOT_MULTIPLE_COPY_ATOMIC
-const bool support_IRIW_for_not_multiple_copy_atomic_cpu = true;
-#else
+#ifdef CPU_MULTI_COPY_ATOMIC
+// Not needed.
 const bool support_IRIW_for_not_multiple_copy_atomic_cpu = false;
+#else
+// From all non-multi-copy-atomic architectures, only PPC64 supports IRIW at the moment.
+// Final decision is subject to JEP 188: Java Memory Model Update.
+const bool support_IRIW_for_not_multiple_copy_atomic_cpu = PPC64_ONLY(true) NOT_PPC64(false);
 #endif
 
 // The expected size in bytes of a cache line, used to pad data structures.
