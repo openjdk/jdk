@@ -183,7 +183,7 @@ public class BuiltinClassLoader
         this.parent = parent;
         this.ucp = ucp;
 
-        this.nameToModule = new ConcurrentHashMap<>();
+        this.nameToModule = new ConcurrentHashMap<>(32);
         this.moduleToReader = new ConcurrentHashMap<>();
     }
 
