@@ -4110,6 +4110,7 @@ class StubGenerator: public StubCodeGenerator {
     __ bind(NO_PREFETCH);
     __ subs(cnt2, cnt2, 16);
     __ br(__ LT, TAIL);
+    __ align(OptoLoopAlignment);
     __ bind(SMALL_LOOP); // smaller loop
       __ subs(cnt2, cnt2, 16);
       compare_string_16_x_LU(tmpL, tmpU, DIFF1, DIFF2);
@@ -4199,6 +4200,7 @@ class StubGenerator: public StubCodeGenerator {
     // less than 16 bytes left?
     __ subs(cnt2, cnt2, isLL ? 16 : 8);
     __ br(__ LT, TAIL);
+    __ align(OptoLoopAlignment);
     __ bind(SMALL_LOOP);
       compare_string_16_bytes_same(DIFF, DIFF2);
       __ subs(cnt2, cnt2, isLL ? 16 : 8);
