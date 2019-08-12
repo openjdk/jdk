@@ -828,11 +828,6 @@ void Method::clear_native_function() {
   clear_code();
 }
 
-address Method::critical_native_function() {
-  methodHandle mh(this);
-  return NativeLookup::lookup_critical_entry(mh);
-}
-
 
 void Method::set_signature_handler(address handler) {
   address* signature_handler =  signature_handler_addr();
