@@ -34,7 +34,7 @@ import static sun.security.ssl.SSLExtension.CH_EC_POINT_FORMATS;
 import sun.security.ssl.SSLExtension.ExtensionConsumer;
 import sun.security.ssl.SSLExtension.SSLExtensionSpec;
 import sun.security.ssl.SSLHandshake.HandshakeMessage;
-import sun.security.ssl.NamedGroup.NamedGroupType;
+import sun.security.ssl.NamedGroup.NamedGroupSpec;
 
 /**
  * Pack of the "ec_point_formats" extensions [RFC 4492].
@@ -179,7 +179,7 @@ final class ECPointFormatsExtension {
             // Produce the extension.
             //
             // produce the extension only if EC cipher suite is activated.
-            if (NamedGroupType.NAMED_GROUP_ECDHE.isSupported(
+            if (NamedGroupSpec.NAMED_GROUP_ECDHE.isSupported(
                     chc.activeCipherSuites)) {
                 // We are using uncompressed ECPointFormat only at present.
                 byte[] extData = new byte[] {0x01, 0x00};

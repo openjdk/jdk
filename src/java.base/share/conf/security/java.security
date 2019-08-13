@@ -541,9 +541,9 @@ sun.security.krb5.maxReferrals=5
 #       usage [TLSServer] [TLSClient] [SignedJAR]
 #
 # The "AlgorithmName" is the standard algorithm name of the disabled
-# algorithm. See "Java Cryptography Architecture Standard Algorithm Name
-# Documentation" for information about Standard Algorithm Names.  Matching
-# is performed using a case-insensitive sub-element matching rule.  (For
+# algorithm. See the Java Security Standard Algorithm Names Specification
+# for information about Standard Algorithm Names.  Matching is
+# performed using a case-insensitive sub-element matching rule.  (For
 # example, in "SHA1withECDSA" the sub-elements are "SHA1" for hashing and
 # "ECDSA" for signatures.)  If the assertion "AlgorithmName" is a
 # sub-element of the certificate algorithm name, the algorithm will be
@@ -677,8 +677,9 @@ jdk.jar.disabledAlgorithms=MD2, MD5, RSA keySize < 1024, \
 # In some environments, certain algorithms or key lengths may be undesirable
 # when using SSL/TLS/DTLS.  This section describes the mechanism for disabling
 # algorithms during SSL/TLS/DTLS security parameters negotiation, including
-# protocol version negotiation, cipher suites selection, peer authentication
-# and key exchange mechanisms.
+# protocol version negotiation, cipher suites selection, named groups
+# selection, signature schemes selection, peer authentication and key
+# exchange mechanisms.
 #
 # Disabled algorithms will not be negotiated for SSL/TLS connections, even
 # if they are enabled explicitly in an application.
@@ -699,7 +700,8 @@ jdk.jar.disabledAlgorithms=MD2, MD5, RSA keySize < 1024, \
 # It is not guaranteed to be examined and used by other implementations.
 #
 # Example:
-#   jdk.tls.disabledAlgorithms=MD5, SSLv3, DSA, RSA keySize < 2048
+#   jdk.tls.disabledAlgorithms=MD5, SSLv3, DSA, RSA keySize < 2048, \
+#       rsa_pkcs1_sha1, secp224r1
 jdk.tls.disabledAlgorithms=SSLv3, RC4, DES, MD5withRSA, DH keySize < 1024, \
     EC keySize < 224, 3DES_EDE_CBC, anon, NULL
 
@@ -743,8 +745,8 @@ jdk.tls.disabledAlgorithms=SSLv3, RC4, DES, MD5withRSA, DH keySize < 1024, \
 #     3. JSSE cipher (encryption) algorithm name, e.g., AES_128_CBC
 #     4. JSSE message digest algorithm name, e.g., SHA
 #
-# See SSL/TLS specifications and "Java Cryptography Architecture Standard
-# Algorithm Name Documentation" for information about the algorithm names.
+# See SSL/TLS specifications and the Java Security Standard Algorithm Names
+# Specification for information about the algorithm names.
 #
 # Note: If a legacy algorithm is also restricted through the
 # jdk.tls.disabledAlgorithms property or the

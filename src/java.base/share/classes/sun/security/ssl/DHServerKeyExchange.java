@@ -125,6 +125,7 @@ final class DHServerKeyExchange {
                 Signature signer = null;
                 if (useExplicitSigAlgorithm) {
                     signatureScheme = SignatureScheme.getPreferableAlgorithm(
+                            shc.algorithmConstraints,
                             shc.peerRequestedSignatureSchemes,
                             x509Possession,
                             shc.negotiatedProtocol);

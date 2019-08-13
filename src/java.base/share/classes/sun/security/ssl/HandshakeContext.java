@@ -46,8 +46,8 @@ import javax.crypto.SecretKey;
 import javax.net.ssl.SNIServerName;
 import javax.net.ssl.SSLHandshakeException;
 import javax.security.auth.x500.X500Principal;
-import sun.security.ssl.NamedGroup.NamedGroupType;
-import static sun.security.ssl.NamedGroup.NamedGroupType.*;
+import sun.security.ssl.NamedGroup.NamedGroupSpec;
+import static sun.security.ssl.NamedGroup.NamedGroupSpec.*;
 import sun.security.ssl.SupportedGroupsExtension.SupportedGroups;
 
 abstract class HandshakeContext implements ConnectionContext {
@@ -283,8 +283,8 @@ abstract class HandshakeContext implements ConnectionContext {
             }
 
             boolean found = false;
-            Map<NamedGroupType, Boolean> cachedStatus =
-                    new EnumMap<>(NamedGroupType.class);
+            Map<NamedGroupSpec, Boolean> cachedStatus =
+                    new EnumMap<>(NamedGroupSpec.class);
             for (CipherSuite suite : enabledCipherSuites) {
                 if (suite.isAvailable() && suite.supports(protocol)) {
                     if (isActivatable(suite,
@@ -323,8 +323,8 @@ abstract class HandshakeContext implements ConnectionContext {
 
         List<CipherSuite> suites = new LinkedList<>();
         if (enabledProtocols != null && !enabledProtocols.isEmpty()) {
-            Map<NamedGroupType, Boolean> cachedStatus =
-                    new EnumMap<>(NamedGroupType.class);
+            Map<NamedGroupSpec, Boolean> cachedStatus =
+                    new EnumMap<>(NamedGroupSpec.class);
             for (CipherSuite suite : enabledCipherSuites) {
                 if (!suite.isAvailable()) {
                     continue;
@@ -509,7 +509,7 @@ abstract class HandshakeContext implements ConnectionContext {
 
     private static boolean isActivatable(CipherSuite suite,
             AlgorithmConstraints algorithmConstraints,
-            Map<NamedGroupType, Boolean> cachedStatus) {
+            Map<NamedGroupSpec, Boolean> cachedStatus) {
 
         if (algorithmConstraints.permits(
                 EnumSet.of(CryptoPrimitive.KEY_AGREEMENT), suite.name, null)) {
@@ -520,8 +520,8 @@ abstract class HandshakeContext implements ConnectionContext {
 
             // Is at least one of the group types available?
             boolean groupAvailable, retval = false;
-            NamedGroupType[] groupTypes = suite.keyExchange.groupTypes;
-            for (NamedGroupType groupType : groupTypes) {
+            NamedGroupSpec[] groupTypes = suite.keyExchange.groupTypes;
+            for (NamedGroupSpec groupType : groupTypes) {
                 if (groupType != NAMED_GROUP_NONE) {
                     Boolean checkedStatus = cachedStatus.get(groupType);
                     if (checkedStatus == null) {

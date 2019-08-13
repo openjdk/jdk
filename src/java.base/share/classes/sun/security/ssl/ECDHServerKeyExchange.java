@@ -38,6 +38,7 @@ import java.security.Signature;
 import java.security.SignatureException;
 import java.text.MessageFormat;
 import java.util.Locale;
+import sun.security.ssl.NamedGroup.NamedGroupSpec;
 import sun.security.ssl.SSLHandshake.HandshakeMessage;
 import sun.security.ssl.SupportedGroupsExtension.SupportedGroups;
 import sun.security.ssl.X509Authentication.X509Credentials;
@@ -110,13 +111,18 @@ final class ECDHServerKeyExchange {
 
             // Find the NamedGroup used for the ephemeral keys.
             namedGroup = namedGroupPossession.getNamedGroup();
-            publicPoint = namedGroup.encodePossessionPublicKey(
-                    namedGroupPossession);
-
-            if ((namedGroup == null) || (namedGroup.oid == null) ) {
+            if ((namedGroup == null) || (!namedGroup.isAvailable)) {
                 // unlikely
                 throw shc.conContext.fatal(Alert.ILLEGAL_PARAMETER,
-                    "Missing Named Group");
+                    "Missing or improper named group: " + namedGroup);
+            }
+
+            publicPoint = namedGroup.encodePossessionPublicKey(
+                    namedGroupPossession);
+            if (publicPoint == null) {
+                // unlikely
+                throw shc.conContext.fatal(Alert.ILLEGAL_PARAMETER,
+                    "Missing public point for named group: " + namedGroup);
             }
 
             if (x509Possession == null) {
@@ -130,6 +136,7 @@ final class ECDHServerKeyExchange {
                 Signature signer = null;
                 if (useExplicitSigAlgorithm) {
                     signatureScheme = SignatureScheme.getPreferableAlgorithm(
+                            shc.algorithmConstraints,
                             shc.peerRequestedSignatureSchemes,
                             x509Possession,
                             shc.negotiatedProtocol);
