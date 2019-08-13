@@ -276,20 +276,9 @@ void ShenandoahConcurrentMark::mark_roots(ShenandoahPhaseTimings::Phase root_pha
 
 void ShenandoahConcurrentMark::update_roots(ShenandoahPhaseTimings::Phase root_phase) {
   assert(ShenandoahSafepoint::is_at_shenandoah_safepoint(), "Must be at a safepoint");
-
-  bool update_code_cache = true; // initialize to safer value
-  switch (root_phase) {
-    case ShenandoahPhaseTimings::update_roots:
-    case ShenandoahPhaseTimings::final_update_refs_roots:
-      update_code_cache = false;
-      break;
-    case ShenandoahPhaseTimings::full_gc_roots:
-    case ShenandoahPhaseTimings::degen_gc_update_roots:
-      update_code_cache = true;
-      break;
-    default:
-      ShouldNotReachHere();
-  }
+  assert(root_phase == ShenandoahPhaseTimings::full_gc_roots ||
+         root_phase == ShenandoahPhaseTimings::degen_gc_update_roots,
+         "Only for these phases");
 
   ShenandoahGCPhase phase(root_phase);
 
@@ -299,7 +288,7 @@ void ShenandoahConcurrentMark::update_roots(ShenandoahPhaseTimings::Phase root_p
 
   uint nworkers = _heap->workers()->active_workers();
 
-  ShenandoahRootUpdater root_updater(nworkers, root_phase, update_code_cache);
+  ShenandoahRootUpdater root_updater(nworkers, root_phase);
   ShenandoahUpdateRootsTask update_roots(&root_updater);
   _heap->workers()->run_task(&update_roots);
 

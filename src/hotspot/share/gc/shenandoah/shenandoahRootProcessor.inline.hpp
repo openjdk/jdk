@@ -272,10 +272,7 @@ void ShenandoahRootUpdater::roots_do(uint worker_id, IsAlive* is_alive, KeepAliv
 
   _thread_roots.oops_do(keep_alive, NULL, worker_id);
   _cld_roots.cld_do(&clds, worker_id);
-
-  if(_update_code_cache) {
-    _code_roots.code_blobs_do(&update_blobs, worker_id);
-  }
+  _code_roots.code_blobs_do(&update_blobs, worker_id);
 
   _serial_weak_roots.weak_oops_do(is_alive, keep_alive, worker_id);
   _weak_roots.weak_oops_do(is_alive, keep_alive, worker_id);

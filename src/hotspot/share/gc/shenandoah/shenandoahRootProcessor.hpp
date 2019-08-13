@@ -295,10 +295,9 @@ private:
   ShenandoahWeakRoots<false /*concurrent*/>                 _weak_roots;
   ShenandoahStringDedupRoots                                _dedup_roots;
   ShenandoahCodeCacheRoots<ShenandoahCsetCodeRootsIterator> _code_roots;
-  const bool                                                _update_code_cache;
 
 public:
-  ShenandoahRootUpdater(uint n_workers, ShenandoahPhaseTimings::Phase phase, bool update_code_cache);
+  ShenandoahRootUpdater(uint n_workers, ShenandoahPhaseTimings::Phase phase);
 
   template<typename IsAlive, typename KeepAlive>
   void roots_do(uint worker_id, IsAlive* is_alive, KeepAlive* keep_alive);
