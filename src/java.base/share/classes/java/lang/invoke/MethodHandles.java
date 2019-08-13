@@ -334,7 +334,7 @@ public class MethodHandles {
      * </tr>
      * <tr>
      *     <th scope="row">{@link java.lang.invoke.MethodHandles.Lookup#findStaticGetter lookup.findStaticGetter(C.class,"f",FT.class)}</th>
-     *     <td>{@code static}<br>{@code FT f;}</td><td>{@code (T) C.f;}</td>
+     *     <td>{@code static}<br>{@code FT f;}</td><td>{@code (FT) C.f;}</td>
      * </tr>
      * <tr>
      *     <th scope="row">{@link java.lang.invoke.MethodHandles.Lookup#findSetter lookup.findSetter(C.class,"f",FT.class)}</th>
@@ -377,8 +377,8 @@ public class MethodHandles {
      *     <td>{@code C(A*);}</td><td>{@code (C) aConstructor.newInstance(arg*);}</td>
      * </tr>
      * <tr>
-     *     <th scope="row">{@link java.lang.invoke.MethodHandles.Lookup#unreflect lookup.unreflect(aMethod)}</th>
-     *     <td>({@code static})?<br>{@code T m(A*);}</td><td>{@code (T) aMethod.invoke(thisOrNull, arg*);}</td>
+     *     <th scope="row">{@link java.lang.invoke.MethodHandles.Lookup#unreflectSpecial lookup.unreflectSpecial(aMethod,this.class)}</th>
+     *     <td>{@code T m(A*);}</td><td>{@code (T) super.m(arg*);}</td>
      * </tr>
      * <tr>
      *     <th scope="row">{@link java.lang.invoke.MethodHandles.Lookup#findClass lookup.findClass("C")}</th>
@@ -403,7 +403,7 @@ public class MethodHandles {
      * stands for a null reference if the accessed method or field is static,
      * and {@code this} otherwise.
      * The names {@code aMethod}, {@code aField}, and {@code aConstructor} stand
-     * for reflective objects corresponding to the given members.
+     * for reflective objects corresponding to the given members declared in type {@code C}.
      * <p>
      * The bytecode behavior for a {@code findClass} operation is a load of a constant class,
      * as if by {@code ldc CONSTANT_Class}.
@@ -2504,7 +2504,7 @@ return mh1;
          * @throws NullPointerException if any argument is null
          */
         public MethodHandle unreflectSpecial(Method m, Class<?> specialCaller) throws IllegalAccessException {
-            checkSpecialCaller(specialCaller, null);
+            checkSpecialCaller(specialCaller, m.getDeclaringClass());
             Lookup specialLookup = this.in(specialCaller);
             MemberName method = new MemberName(m, true);
             assert(method.isMethod());
