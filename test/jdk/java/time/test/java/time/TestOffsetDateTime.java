@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -60,7 +60,9 @@
 package test.java.time;
 
 import static org.testng.Assert.assertSame;
+import static org.testng.Assert.assertEquals;
 
+import java.time.Duration;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
@@ -73,6 +75,8 @@ import org.testng.annotations.Test;
 
 /**
  * Test OffsetDateTime.
+ *
+ * @bug 8211990
  */
 @Test
 public class TestOffsetDateTime extends AbstractTest {
@@ -320,4 +324,11 @@ public class TestOffsetDateTime extends AbstractTest {
         assertSame(test, base);
     }
 
+    @Test
+    public void test_duration() {
+        OffsetDateTime start = OffsetDateTime.MAX
+                                .withOffsetSameLocal(ZoneOffset.ofHours(-17));
+        OffsetDateTime end = OffsetDateTime.MAX;
+        assertEquals(Duration.between(start, end), Duration.ofHours(1));
+    }
 }

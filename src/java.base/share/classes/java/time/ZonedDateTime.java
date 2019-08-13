@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -2129,11 +2129,17 @@ public final class ZonedDateTime
     public long until(Temporal endExclusive, TemporalUnit unit) {
         ZonedDateTime end = ZonedDateTime.from(endExclusive);
         if (unit instanceof ChronoUnit) {
-            end = end.withZoneSameInstant(zone);
+            ZonedDateTime start = this;
+            try {
+                end = end.withZoneSameInstant(zone);
+            } catch (DateTimeException ex) {
+                // end may be out of valid range. Adjust to end's zone.
+                start = withZoneSameInstant(end.zone);
+            }
             if (unit.isDateBased()) {
-                return dateTime.until(end.dateTime, unit);
+                return start.dateTime.until(end.dateTime, unit);
             } else {
-                return toOffsetDateTime().until(end.toOffsetDateTime(), unit);
+                return start.toOffsetDateTime().until(end.toOffsetDateTime(), unit);
             }
         }
         return unit.between(this, end);

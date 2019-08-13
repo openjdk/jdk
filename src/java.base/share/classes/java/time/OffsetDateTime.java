@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1654,8 +1654,14 @@ public final class OffsetDateTime
     public long until(Temporal endExclusive, TemporalUnit unit) {
         OffsetDateTime end = OffsetDateTime.from(endExclusive);
         if (unit instanceof ChronoUnit) {
-            end = end.withOffsetSameInstant(offset);
-            return dateTime.until(end.dateTime, unit);
+            OffsetDateTime start = this;
+            try {
+                end = end.withOffsetSameInstant(offset);
+            } catch (DateTimeException ex) {
+                // end may be out of valid range. Adjust to end's offset.
+                start = withOffsetSameInstant(end.offset);
+            }
+            return start.dateTime.until(end.dateTime, unit);
         }
         return unit.between(this, end);
     }
