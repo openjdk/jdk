@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,7 +30,6 @@
  * @library /test/lib /
  * @build jdk.test.lib.net.SimpleSSLContext ProxyServer
  * @compile ../../../com/sun/net/httpserver/LogFilter.java
- * @compile ../../../com/sun/net/httpserver/EchoHandler.java
  * @compile ../../../com/sun/net/httpserver/FileServerHandler.java
  * @run main/othervm
  *      -Djdk.internal.httpclient.debug=true
@@ -50,7 +49,10 @@ import com.sun.net.httpserver.HttpsServer;
 import java.net.InetAddress;
 import java.net.Proxy;
 import java.net.SocketAddress;
+import java.net.http.HttpHeaders;
+import java.nio.charset.StandardCharsets;
 import java.util.Collections;
+import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.net.InetSocketAddress;
@@ -134,6 +136,22 @@ public class SmokeTest {
     static Path midSizedFile;
     static Path smallFile;
     static String fileroot;
+
+    static class HttpEchoHandler implements HttpHandler {
+
+        @Override
+        public void handle(HttpExchange exchange) throws IOException {
+            try (InputStream is = exchange.getRequestBody();
+                 OutputStream os = exchange.getResponseBody()) {
+                byte[] bytes = is.readAllBytes();
+                long responseLength = bytes.length == 0 ? -1 : bytes.length;
+                boolean fixedLength = "yes".equals(exchange.getRequestHeaders()
+                        .getFirst("XFixed"));
+                exchange.sendResponseHeaders(200, fixedLength ? responseLength : 0);
+                os.write(bytes);
+            }
+        }
+    }
 
     static String getFileContent(String path) throws IOException {
         FileInputStream fis = new FileInputStream(path);
@@ -256,6 +274,8 @@ public class SmokeTest {
         HttpRequest request = builder.build();
 
         HttpResponse<String> response = client.send(request, BodyHandlers.ofString());
+
+        checkResponseContentLength(response.headers(), fixedLen);
 
         String body = response.body();
         if (!body.equals("This is foo.txt\r\n")) {
@@ -504,6 +524,8 @@ public class SmokeTest {
 
         HttpResponse<String> response = client.send(request, BodyHandlers.ofString());
 
+        checkResponseContentLength(response.headers(), fixedLen);
+
         String body = response.body();
 
         if (!body.equals(requestBody)) {
@@ -528,6 +550,8 @@ public class SmokeTest {
         HttpRequest request = builder.build();
 
         HttpResponse<String> response = client.send(request, BodyHandlers.ofString());
+
+        checkResponseContentLength(response.headers(), fixedLen);
 
         if (response.statusCode() != 200) {
             throw new RuntimeException(
@@ -694,7 +718,7 @@ public class SmokeTest {
 
         try {
             HttpResponse<String> response = cf.join();
-            throw new RuntimeException("Exepected Completion Exception");
+            throw new RuntimeException("Expected Completion Exception");
         } catch (CompletionException e) {
             //System.out.println(e);
         }
@@ -739,12 +763,12 @@ public class SmokeTest {
 
         HttpContext c1 = s1.createContext("/files", h);
         HttpContext c2 = s2.createContext("/files", h);
-        HttpContext c3 = s1.createContext("/echo", new EchoHandler());
+        HttpContext c3 = s1.createContext("/echo", new HttpEchoHandler());
         redirectHandler = new RedirectHandler("/redirect");
         redirectHandlerSecure = new RedirectHandler("/redirect");
         HttpContext c4 = s1.createContext("/redirect", redirectHandler);
         HttpContext c41 = s2.createContext("/redirect", redirectHandlerSecure);
-        HttpContext c5 = s2.createContext("/echo", new EchoHandler());
+        HttpContext c5 = s2.createContext("/echo", new HttpEchoHandler());
         HttpContext c6 = s1.createContext("/keepalive", new KeepAliveHandler());
         redirectErrorHandler = new RedirectErrorHandler("/redirecterror");
         redirectErrorHandlerSecure = new RedirectErrorHandler("/redirecterror");
@@ -776,6 +800,19 @@ public class SmokeTest {
         System.out.println("Proxy port = " + proxyPort);
     }
 
+    static void checkResponseContentLength(HttpHeaders responseHeaders, boolean fixedLen) {
+        Optional<String> transferEncoding = responseHeaders.firstValue("transfer-encoding");
+        Optional<String> contentLength = responseHeaders.firstValue("content-length");
+        if (fixedLen) {
+            assert contentLength.isPresent();
+            assert !transferEncoding.isPresent();
+        } else {
+            assert !contentLength.isPresent();
+            assert transferEncoding.isPresent();
+            assert "chunked".equals(transferEncoding.get());
+        }
+    }
+
     static class RedirectHandler implements HttpHandler {
         private final String root;
         private volatile int count = 0;
@@ -786,9 +823,8 @@ public class SmokeTest {
 
         @Override
         public synchronized void handle(HttpExchange t) throws IOException {
-            byte[] buf = new byte[2048];
             try (InputStream is = t.getRequestBody()) {
-                while (is.read(buf) != -1) ;
+                is.readAllBytes();
             }
 
             Headers responseHeaders = t.getResponseHeaders();
@@ -1010,14 +1046,13 @@ class KeepAliveHandler implements HttpHandler {
                 System.out.println(result);
             }
         }
-        byte[] buf = new byte[2048];
 
         try (InputStream is = t.getRequestBody()) {
-            while (is.read(buf) != -1) ;
+            is.readAllBytes();
         }
         t.sendResponseHeaders(200, result.length());
         OutputStream o = t.getResponseBody();
-        o.write(result.getBytes("US-ASCII"));
+        o.write(result.getBytes(StandardCharsets.UTF_8));
         t.close();
         nparallel.getAndDecrement();
     }
