@@ -1228,12 +1228,10 @@ bool Node::dominates(Node* sub, Node_List &nlist) {
     if (sub == up && sub->is_Loop()) {
       // Take loop entry path on the way up to 'dom'.
       up = sub->in(1); // in(LoopNode::EntryControl);
-    } else if (sub == up && sub->is_Region() && sub->req() != 3) {
-      // Always take in(1) path on the way up to 'dom' for clone regions
-      // (with only one input) or regions which merge > 2 paths
-      // (usually used to merge fast/slow paths).
+    } else if (sub == up && sub->is_Region() && sub->req() == 2) {
+      // Take in(1) path on the way up to 'dom' for regions with only one input
       up = sub->in(1);
-    } else if (sub == up && sub->is_Region()) {
+    } else if (sub == up && sub->is_Region() && sub->req() == 3) {
       // Try both paths for Regions with 2 input paths (it may be a loop head).
       // It could give conservative 'false' answer without information
       // which region's input is the entry path.

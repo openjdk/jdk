@@ -1435,8 +1435,6 @@ Node *LoadNode::split_through_phi(PhaseGVN *phase) {
     }
   }
 
-  bool load_boxed_phi = load_boxed_values && base_is_phi && (base->in(0) == mem->in(0));
-
   // Split through Phi (see original code in loopopts.cpp).
   assert(C->have_alias_type(t_oop), "instance should have alias type");
 
