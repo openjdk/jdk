@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -124,7 +124,7 @@ public class DocTreeScanner<R,P> implements DocTreeVisitor<R,P> {
  ****************************************************************************/
 
     /**
-     * {@inheritDoc} This implementation returns {@code null}.
+     * {@inheritDoc} This implementation scans the children in left to right order.
      *
      * @param node  {@inheritDoc}
      * @param p  {@inheritDoc}
@@ -132,7 +132,7 @@ public class DocTreeScanner<R,P> implements DocTreeVisitor<R,P> {
      */
     @Override
     public R visitAttribute(AttributeTree node, P p) {
-        return null;
+        return scan(node.getValue(), p);
     }
 
     /**
@@ -311,7 +311,7 @@ public class DocTreeScanner<R,P> implements DocTreeVisitor<R,P> {
     }
 
     /**
-     * {@inheritDoc} This implementation returns {@code null}.
+     * {@inheritDoc} This implementation scans the children in left to right order.
      *
      * @param node  {@inheritDoc}
      * @param p  {@inheritDoc}
@@ -319,7 +319,7 @@ public class DocTreeScanner<R,P> implements DocTreeVisitor<R,P> {
      */
     @Override
     public R visitLiteral(LiteralTree node, P p) {
-        return null;
+        return scan(node.getBody(), p);
     }
 
     /**
