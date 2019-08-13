@@ -3083,6 +3083,10 @@ ShenandoahLoadReferenceBarrierNode::Strength ShenandoahLoadReferenceBarrierNode:
   Unique_Node_List visited;
   Node_Stack stack(0);
   stack.push(this, 0);
+
+  // Look for strongest strength: go over nodes looking for STRONG ones.
+  // Stop once we encountered STRONG. Otherwise, walk until we ran out of nodes,
+  // and then the overall strength is NONE.
   Strength strength = NONE;
   while (strength != STRONG && stack.size() > 0) {
     Node* n = stack.node();
@@ -3093,22 +3097,7 @@ ShenandoahLoadReferenceBarrierNode::Strength ShenandoahLoadReferenceBarrierNode:
     visited.push(n);
     bool visit_users = false;
     switch (n->Opcode()) {
-      case Op_StoreN:
-      case Op_StoreP: {
-        strength = STRONG;
-        break;
-      }
-      case Op_CmpP: {
-        if (!n->in(1)->bottom_type()->higher_equal(TypePtr::NULL_PTR) &&
-            !n->in(2)->bottom_type()->higher_equal(TypePtr::NULL_PTR)) {
-          strength = STRONG;
-        }
-        break;
-      }
-      case Op_CallStaticJava: {
-        strength = STRONG;
-        break;
-      }
+      case Op_CallStaticJava:
       case Op_CallDynamicJava:
       case Op_CallLeaf:
       case Op_CallLeafNoFP:
@@ -3159,6 +3148,8 @@ ShenandoahLoadReferenceBarrierNode::Strength ShenandoahLoadReferenceBarrierNode:
       case Op_StoreLConditional:
       case Op_StoreI:
       case Op_StoreIConditional:
+      case Op_StoreN:
+      case Op_StoreP:
       case Op_StoreVector:
       case Op_StrInflatedCopy:
       case Op_StrCompressedCopy:
@@ -3166,8 +3157,24 @@ ShenandoahLoadReferenceBarrierNode::Strength ShenandoahLoadReferenceBarrierNode:
       case Op_CastP2X:
       case Op_SafePoint:
       case Op_EncodeISOArray:
+      case Op_AryEq:
+      case Op_StrEquals:
+      case Op_StrComp:
+      case Op_StrIndexOf:
+      case Op_StrIndexOfChar:
+      case Op_HasNegatives:
+        // Known to require barriers
         strength = STRONG;
         break;
+      case Op_CmpP: {
+        if (n->in(1)->bottom_type()->higher_equal(TypePtr::NULL_PTR) ||
+            n->in(2)->bottom_type()->higher_equal(TypePtr::NULL_PTR)) {
+          // One of the sides is known null, no need for barrier.
+        } else {
+          strength = STRONG;
+        }
+        break;
+      }
       case Op_LoadB:
       case Op_LoadUB:
       case Op_LoadUS:
@@ -3185,26 +3192,20 @@ ShenandoahLoadReferenceBarrierNode::Strength ShenandoahLoadReferenceBarrierNode:
         ciField* field = alias_type->field();
         bool is_static = field != NULL && field->is_static();
         bool is_final = field != NULL && field->is_final();
+
         if (ShenandoahOptimizeStaticFinals && is_static && is_final) {
-          // Leave strength as is.
+          // Loading the constant does not require barriers: it should be handled
+          // as part of GC roots already.
         } else {
-          strength = WEAK;
+          strength = STRONG;
         }
         break;
       }
-      case Op_AryEq:
-      case Op_StrEquals:
-      case Op_StrComp:
-      case Op_StrIndexOf:
-      case Op_StrIndexOfChar:
-      case Op_HasNegatives:
-        strength = WEAK;
-        break;
       case Op_Conv2B:
       case Op_LoadRange:
       case Op_LoadKlass:
       case Op_LoadNKlass:
-        // NONE, i.e. leave current strength as is
+        // Do not require barriers
         break;
       case Op_AddP:
       case Op_CheckCastPP:
@@ -3212,26 +3213,19 @@ ShenandoahLoadReferenceBarrierNode::Strength ShenandoahLoadReferenceBarrierNode:
       case Op_CMoveP:
       case Op_Phi:
       case Op_ShenandoahLoadReferenceBarrier:
+        // Whether or not these need the barriers depends on their users
         visit_users = true;
         break;
       default: {
 #ifdef ASSERT
-        tty->print_cr("Unknown node in get_barrier_strength:");
-        n->dump(1);
-        ShouldNotReachHere();
+        fatal("Unknown node in get_barrier_strength: %s", NodeClassNames[n->Opcode()]);
 #else
+        // Default to strong: better to have excess barriers, rather than miss some.
         strength = STRONG;
 #endif
       }
     }
-#ifdef ASSERT
-/*
-    if (strength == STRONG) {
-      tty->print("strengthening node: ");
-      n->dump();
-    }
-    */
-#endif
+
     stack.pop();
     if (visit_users) {
       for (DUIterator_Fast imax, i = n->fast_outs(imax); i < imax; i++) {
