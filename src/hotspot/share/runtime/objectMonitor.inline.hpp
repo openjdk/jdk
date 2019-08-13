@@ -77,19 +77,6 @@ inline void ObjectMonitor::set_object(void* obj) {
   _object = obj;
 }
 
-inline bool ObjectMonitor::check(TRAPS) {
-  if (THREAD != _owner) {
-    if (THREAD->is_lock_owned((address) _owner)) {
-      _owner = THREAD;  // regain ownership of inflated monitor
-      assert (_recursions == 0, "invariant") ;
-    } else {
-      check_slow(THREAD);
-      return false;
-    }
-  }
-  return true;
-}
-
 // return number of threads contending for this monitor
 inline jint ObjectMonitor::contentions() const {
   return _contentions;

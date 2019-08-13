@@ -1143,31 +1143,34 @@ void ObjectMonitor::reenter(intptr_t recursions, TRAPS) {
   return;
 }
 
-
-// -----------------------------------------------------------------------------
-// A macro is used below because there may already be a pending
-// exception which should not abort the execution of the routines
-// which use this (which is why we don't put this into check_slow and
-// call it with a CHECK argument).
-
-#define CHECK_OWNER()                                                       \
-  do {                                                                      \
-    if (THREAD != _owner) {                                                 \
-      if (THREAD->is_lock_owned((address) _owner)) {                        \
-        _owner = THREAD;  /* Convert from basiclock addr to Thread addr */  \
-        _recursions = 0;                                                    \
-      } else {                                                              \
-        THROW(vmSymbols::java_lang_IllegalMonitorStateException());         \
-      }                                                                     \
-    }                                                                       \
+// Checks that the current THREAD owns this monitor and causes an
+// immediate return if it doesn't. We don't use the CHECK macro
+// because we want the IMSE to be the only exception that is thrown
+// from the call site when false is returned. Any other pending
+// exception is ignored.
+#define CHECK_OWNER()                                                  \
+  do {                                                                 \
+    if (!check_owner(THREAD)) {                                        \
+       assert(HAS_PENDING_EXCEPTION, "expected a pending IMSE here."); \
+       return;                                                         \
+     }                                                                 \
   } while (false)
 
-// check_slow() is a misnomer.  It's called to simply to throw an IMSX exception.
-// TODO-FIXME: remove check_slow() -- it's likely dead.
-
-void ObjectMonitor::check_slow(TRAPS) {
-  assert(THREAD != _owner && !THREAD->is_lock_owned((address) _owner), "must not be owner");
-  THROW_MSG(vmSymbols::java_lang_IllegalMonitorStateException(), "current thread not owner");
+// Returns true if the specified thread owns the ObjectMonitor.
+// Otherwise returns false and throws IllegalMonitorStateException
+// (IMSE). If there is a pending exception and the specified thread
+// is not the owner, that exception will be replaced by the IMSE.
+bool ObjectMonitor::check_owner(Thread* THREAD) {
+  if (_owner == THREAD) {
+    return true;
+  }
+  if (THREAD->is_lock_owned((address)_owner)) {
+    _owner = THREAD;  // convert from BasicLock addr to Thread addr
+    _recursions = 0;
+    return true;
+  }
+  THROW_MSG_(vmSymbols::java_lang_IllegalMonitorStateException(),
+             "current thread is not owner", false);
 }
 
 static void post_monitor_wait_event(EventJavaMonitorWait* event,
@@ -1197,8 +1200,7 @@ void ObjectMonitor::wait(jlong millis, bool interruptible, TRAPS) {
 
   assert(InitDone, "Unexpectedly not initialized");
 
-  // Throw IMSX or IEX.
-  CHECK_OWNER();
+  CHECK_OWNER();  // Throws IMSE if not owner.
 
   EventJavaMonitorWait event;
 
@@ -1477,7 +1479,7 @@ void ObjectMonitor::INotify(Thread * Self) {
 // that suggests a lost wakeup bug.
 
 void ObjectMonitor::notify(TRAPS) {
-  CHECK_OWNER();
+  CHECK_OWNER();  // Throws IMSE if not owner.
   if (_WaitSet == NULL) {
     return;
   }
@@ -1495,7 +1497,7 @@ void ObjectMonitor::notify(TRAPS) {
 // mode the waitset will be empty and the EntryList will be "DCBAXYZ".
 
 void ObjectMonitor::notifyAll(TRAPS) {
-  CHECK_OWNER();
+  CHECK_OWNER();  // Throws IMSE if not owner.
   if (_WaitSet == NULL) {
     return;
   }

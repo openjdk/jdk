@@ -429,9 +429,10 @@ void ObjectSynchronizer::jni_exit(oop obj, Thread* THREAD) {
   assert(!obj->mark()->has_bias_pattern(), "biases should be revoked by now");
 
   ObjectMonitor* monitor = inflate(THREAD, obj, inflate_cause_jni_exit);
-  // If this thread has locked the object, exit the monitor.  Note:  can't use
-  // monitor->check(CHECK); must exit even if an exception is pending.
-  if (monitor->check(THREAD)) {
+  // If this thread has locked the object, exit the monitor. We
+  // intentionally do not use CHECK here because we must exit the
+  // monitor even if an exception is pending.
+  if (monitor->check_owner(THREAD)) {
     monitor->exit(true, THREAD);
   }
 }

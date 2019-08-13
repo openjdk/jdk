@@ -285,8 +285,9 @@ class ObjectMonitor {
   void*     object_addr();
   void      set_object(void* obj);
 
-  bool      check(TRAPS);       // true if the thread owns the monitor.
-  void      check_slow(TRAPS);
+  // Returns true if the specified thread owns the ObjectMonitor. Otherwise
+  // returns false and throws IllegalMonitorStateException (IMSE).
+  bool      check_owner(Thread* THREAD);
   void      clear();
 
   void      enter(TRAPS);
