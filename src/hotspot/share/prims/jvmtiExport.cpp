@@ -2279,7 +2279,9 @@ void JvmtiExport::post_dynamic_code_generated_while_holding_locks(const char* na
                                                                   address code_begin, address code_end)
 {
   // register the stub with the current dynamic code event collector
-  JvmtiThreadState* state = JvmtiThreadState::state_for(JavaThread::current());
+  // Cannot take safepoint here so do not use state_for to get
+  // jvmti thread state.
+  JvmtiThreadState* state = JavaThread::current()->jvmti_thread_state();
   // state can only be NULL if the current thread is exiting which
   // should not happen since we're trying to post an event
   guarantee(state != NULL, "attempt to register stub via an exiting thread");
@@ -2294,7 +2296,7 @@ void JvmtiExport::record_vm_internal_object_allocation(oop obj) {
   if (thread != NULL && thread->is_Java_thread())  {
     // Can not take safepoint here.
     NoSafepointVerifier no_sfpt;
-    // Can not take safepoint here so can not use state_for to get
+    // Cannot take safepoint here so do not use state_for to get
     // jvmti thread state.
     JvmtiThreadState *state = ((JavaThread*)thread)->jvmti_thread_state();
     if (state != NULL) {
@@ -2318,7 +2320,7 @@ void JvmtiExport::record_sampled_internal_object_allocation(oop obj) {
   if (thread != NULL && thread->is_Java_thread())  {
     // Can not take safepoint here.
     NoSafepointVerifier no_sfpt;
-    // Can not take safepoint here so can not use state_for to get
+    // Cannot take safepoint here so do not use state_for to get
     // jvmti thread state.
     JvmtiThreadState *state = ((JavaThread*)thread)->jvmti_thread_state();
     if (state != NULL) {

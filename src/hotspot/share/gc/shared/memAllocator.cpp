@@ -143,7 +143,6 @@ void MemAllocator::Allocation::verify_before() {
   // Clear unhandled oops for memory allocation.  Memory allocation might
   // not take out a lock if from tlab, so clear here.
   Thread* THREAD = _thread;
-  CHECK_UNHANDLED_OOPS_ONLY(THREAD->clear_unhandled_oops();)
   assert(!HAS_PENDING_EXCEPTION, "Should not allocate with exception pending");
   debug_only(check_for_valid_allocation_state());
   assert(!Universe::heap()->is_gc_active(), "Allocation during gc not allowed");

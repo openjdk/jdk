@@ -50,13 +50,6 @@ void Monitor::check_safepoint_state(Thread* thread, bool do_safepoint_check) {
 void Monitor::lock(Thread * self) {
   check_safepoint_state(self, true);
 
-#ifdef CHECK_UNHANDLED_OOPS
-  // Clear unhandled oops in JavaThreads so we get a crash right away.
-  if (self->is_active_Java_thread()) {
-    self->clear_unhandled_oops();
-  }
-#endif // CHECK_UNHANDLED_OOPS
-
   DEBUG_ONLY(check_prelock_state(self, true));
   assert(_owner != self, "invariant");
 
@@ -195,11 +188,6 @@ bool Monitor::wait(long timeout, bool as_suspend_equivalent) {
   // Safepoint checking logically implies an active JavaThread.
   guarantee(self->is_active_Java_thread(), "invariant");
   assert_wait_lock_state(self);
-
-#ifdef CHECK_UNHANDLED_OOPS
-  // Clear unhandled oops in JavaThreads so we get a crash right away.
-  self->clear_unhandled_oops();
-#endif // CHECK_UNHANDLED_OOPS
 
   int wait_status;
   // conceptually set the owner to NULL in anticipation of

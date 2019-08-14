@@ -87,13 +87,16 @@ class ThreadStateTransition : public StackObj {
     assert(from != _thread_in_native, "use transition_from_native");
     assert((from & 1) == 0 && (to & 1) == 0, "odd numbers are transitions states");
     assert(thread->thread_state() == from, "coming from wrong thread state");
+
+    // Check NoSafepointVerifier
+    // This also clears unhandled oops if CheckUnhandledOops is used.
+    thread->check_possible_safepoint();
+
     // Change to transition state and ensure it is seen by the VM thread.
     thread->set_thread_state_fence((JavaThreadState)(from + 1));
 
     SafepointMechanism::block_if_requested(thread);
     thread->set_thread_state(to);
-
-    CHECK_UNHANDLED_OOPS_ONLY(thread->clear_unhandled_oops();)
   }
 
   // Same as above, but assumes from = _thread_in_Java. This is simpler, since we

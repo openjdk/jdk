@@ -115,8 +115,6 @@ jobject JNIHandles::make_global(Handle obj, AllocFailType alloc_failmode) {
     } else {
       report_handle_allocation_failure(alloc_failmode, "global");
     }
-  } else {
-    CHECK_UNHANDLED_OOPS_ONLY(Thread::current()->clear_unhandled_oops());
   }
 
   return res;
@@ -140,8 +138,6 @@ jobject JNIHandles::make_weak_global(Handle obj, AllocFailType alloc_failmode) {
     } else {
       report_handle_allocation_failure(alloc_failmode, "weak global");
     }
-  } else {
-    CHECK_UNHANDLED_OOPS_ONLY(Thread::current()->clear_unhandled_oops());
   }
   return res;
 }

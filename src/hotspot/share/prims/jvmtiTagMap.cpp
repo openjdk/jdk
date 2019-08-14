@@ -520,7 +520,7 @@ JvmtiTagMap* JvmtiTagMap::tag_map_for(JvmtiEnv* env) {
       tag_map = new JvmtiTagMap(env);
     }
   } else {
-    CHECK_UNHANDLED_OOPS_ONLY(Thread::current()->clear_unhandled_oops());
+    DEBUG_ONLY(Thread::current()->check_possible_safepoint());
   }
   return tag_map;
 }

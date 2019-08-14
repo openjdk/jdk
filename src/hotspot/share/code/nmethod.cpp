@@ -2268,7 +2268,6 @@ void nmethod::verify_interrupt_point(address call_site) {
   if (!is_not_installed()) {
     if (CompiledICLocker::is_safe(this)) {
       CompiledIC_at(this, call_site);
-      CHECK_UNHANDLED_OOPS_ONLY(Thread::current()->clear_unhandled_oops());
     } else {
       CompiledICLocker ml_verify(this);
       CompiledIC_at(this, call_site);

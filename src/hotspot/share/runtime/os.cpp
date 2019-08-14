@@ -1082,6 +1082,7 @@ void os::print_location(outputStream* st, intptr_t x, bool verbose) {
       } else {
         st->print(INTPTR_FORMAT " is pointing into object: " , p2i(addr));
       }
+      ResourceMark rm;
       o->print_on(st);
       return;
     }

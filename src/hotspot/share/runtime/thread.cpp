@@ -1010,26 +1010,32 @@ bool Thread::owns_locks_but_compiled_lock() const {
   return false;
 }
 
+// Checks safepoint allowed and clears unhandled oops at potential safepoints.
+void Thread::check_possible_safepoint() {
+  if (!is_Java_thread()) return;
 
-#endif
-
-#ifndef PRODUCT
+  if (_no_safepoint_count > 0) {
+    fatal("Possible safepoint reached by thread that does not allow it");
+  }
+#ifdef CHECK_UNHANDLED_OOPS
+  // Clear unhandled oops in JavaThreads so we get a crash right away.
+  clear_unhandled_oops();
+#endif // CHECK_UNHANDLED_OOPS
+}
 
 // The flag: potential_vm_operation notifies if this particular safepoint state could potentially
 // invoke the vm-thread (e.g., an oop allocation). In that case, we also have to make sure that
 // no locks which allow_vm_block's are held
 void Thread::check_for_valid_safepoint_state(bool potential_vm_operation) {
-  // Check if current thread is allowed to block at a safepoint
-  if (_no_safepoint_count > 0) {
-    fatal("Possible safepoint reached by thread that does not allow it");
-  }
-  if (is_Java_thread() && ((JavaThread*)this)->thread_state() != _thread_in_vm) {
+  if (!is_Java_thread()) return;
+
+  check_possible_safepoint();
+
+  if (((JavaThread*)this)->thread_state() != _thread_in_vm) {
     fatal("LEAF method calling lock?");
   }
 
-#ifdef ASSERT
-  if (potential_vm_operation && is_Java_thread()
-      && !Universe::is_bootstrapping()) {
+  if (potential_vm_operation && !Universe::is_bootstrapping()) {
     // Make sure we do not hold any locks that the VM thread also uses.
     // This could potentially lead to deadlocks
     for (Monitor *cur = _owned_locks; cur; cur = cur->next()) {
@@ -1052,9 +1058,8 @@ void Thread::check_for_valid_safepoint_state(bool potential_vm_operation) {
     // We could enter a safepoint here and thus have a gc
     InterfaceSupport::check_gc_alot();
   }
-#endif
 }
-#endif
+#endif // ASSERT
 
 bool Thread::is_in_stack(address adr) const {
   assert(Thread::current() == this, "is_in_stack can only be called from current thread");

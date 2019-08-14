@@ -90,7 +90,9 @@ inline JvmtiThreadState* JvmtiThreadState::state_for(JavaThread *thread) {
     // check again with the lock held
     state = state_for_while_locked(thread);
   } else {
-    CHECK_UNHANDLED_OOPS_ONLY(Thread::current()->clear_unhandled_oops());
+    // Check possible safepoint even if state is non-null.
+    // (Note: the thread argument isn't the current thread)
+    DEBUG_ONLY(JavaThread::current()->check_possible_safepoint());
   }
   return state;
 }
