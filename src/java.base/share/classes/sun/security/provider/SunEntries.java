@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -77,6 +77,9 @@ import sun.security.action.GetPropertyAction;
 
 public final class SunEntries {
 
+    // the default algo used by SecureRandom class for new SecureRandom() calls
+    public static final String DEF_SECURE_RANDOM_ALGO;
+
     // create an aliases List from the specified aliases
     public static List<String> createAliases(String ... aliases) {
         return Arrays.asList(aliases);
@@ -89,7 +92,6 @@ public final class SunEntries {
         return Arrays.asList(result);
     }
 
-    // extend LinkedHashSet to preserve the ordering (needed by SecureRandom?)
     SunEntries(Provider p) {
         services = new LinkedHashSet<>(50, 0.9f);
 
@@ -99,41 +101,27 @@ public final class SunEntries {
         HashMap<String, String> attrs = new HashMap<>(3);
 
         /*
-         * SecureRandom
-         *
-         * Register these first to speed up "new SecureRandom()",
-         * which iterates through the list of algorithms
+         * SecureRandom engines
          */
-        // register the native PRNG, if available
-        // if user selected /dev/urandom, we put it before SHA1PRNG,
-        // otherwise after it
-        boolean nativeAvailable = NativePRNG.isAvailable();
-        boolean useNativePRNG = seedSource.equals(URL_DEV_URANDOM) ||
-            seedSource.equals(URL_DEV_RANDOM);
-
         attrs.put("ThreadSafe", "true");
-        if (nativeAvailable && useNativePRNG) {
+        if (NativePRNG.isAvailable()) {
             add(p, "SecureRandom", "NativePRNG",
-               "sun.security.provider.NativePRNG", null, attrs);
+                    "sun.security.provider.NativePRNG",
+                    null, attrs);
         }
-        attrs.put("ImplementedIn", "Software");
-        add(p, "SecureRandom", "DRBG", "sun.security.provider.DRBG", null, attrs);
-        add(p, "SecureRandom", "SHA1PRNG",
-            "sun.security.provider.SecureRandom", null, attrs);
-        attrs.remove("ImplementedIn");
-        if (nativeAvailable && !useNativePRNG) {
-            add(p, "SecureRandom", "NativePRNG", "sun.security.provider.NativePRNG",
-               null, attrs);
-        }
-
         if (NativePRNG.Blocking.isAvailable()) {
             add(p, "SecureRandom", "NativePRNGBlocking",
-                "sun.security.provider.NativePRNG$Blocking", null, attrs);
+                    "sun.security.provider.NativePRNG$Blocking", null, attrs);
         }
         if (NativePRNG.NonBlocking.isAvailable()) {
             add(p, "SecureRandom", "NativePRNGNonBlocking",
-                "sun.security.provider.NativePRNG$NonBlocking", null, attrs);
+                    "sun.security.provider.NativePRNG$NonBlocking", null, attrs);
         }
+        attrs.put("ImplementedIn", "Software");
+        add(p, "SecureRandom", "DRBG", "sun.security.provider.DRBG",
+               null, attrs);
+        add(p, "SecureRandom", "SHA1PRNG",
+                "sun.security.provider.SecureRandom", null, attrs);
 
         /*
          * Signature engines
@@ -148,9 +136,9 @@ public final class SunEntries {
 
         add(p, "Signature", "SHA1withDSA",
                 "sun.security.provider.DSA$SHA1withDSA",
-                createAliasesWithOid("1.2.840.10040.4.3", "DSA", "DSS", "SHA/DSA",
-                    "SHA-1/DSA", "SHA1/DSA", "SHAwithDSA", "DSAWithSHA1",
-                    "1.3.14.3.2.13", "1.3.14.3.2.27"), attrs);
+                createAliasesWithOid("1.2.840.10040.4.3", "DSA", "DSS",
+                    "SHA/DSA", "SHA-1/DSA", "SHA1/DSA", "SHAwithDSA",
+                    "DSAWithSHA1", "1.3.14.3.2.13", "1.3.14.3.2.27"), attrs);
         add(p, "Signature", "NONEwithDSA", "sun.security.provider.DSA$RawDSA",
                 createAliases("RawDSA"), attrs);
 
@@ -195,7 +183,8 @@ public final class SunEntries {
          * Algorithm Parameter Generator engines
          */
         add(p, "AlgorithmParameterGenerator", "DSA",
-            "sun.security.provider.DSAParameterGenerator", dsaAliases, attrs);
+                "sun.security.provider.DSAParameterGenerator", dsaAliases,
+                attrs);
         attrs.remove("KeySize");
 
         /*
@@ -307,8 +296,8 @@ public final class SunEntries {
     }
 
     private void add(Provider p, String type, String algo, String cn,
-             List<String> aliases, HashMap<String, String> attrs) {
-         services.add(new Provider.Service(p, type, algo, cn, aliases, attrs));
+            List<String> aliases, HashMap<String, String> attrs) {
+        services.add(new Provider.Service(p, type, algo, cn, aliases, attrs));
     }
 
     private LinkedHashSet<Provider.Service> services;
@@ -344,6 +333,11 @@ public final class SunEntries {
                 return egdSource;
             }
         });
+
+        DEF_SECURE_RANDOM_ALGO  = (NativePRNG.isAvailable() &&
+            (seedSource.equals(URL_DEV_URANDOM) ||
+             seedSource.equals(URL_DEV_RANDOM)) ?
+            "NativePRNG" : "DRBG");
     }
 
     static String getSeedSource() {
