@@ -73,7 +73,7 @@ CK_VOID_PTR jMechParamToCKMechParamPtrSlow(JNIEnv *env, jobject jParam,
 
 
 /*
- * converts a pointer to a CK_DATE structure into a Java CK_DATE Object.
+ * converts a CK_DATE pointer into a Java CK_DATE Object.
  *
  * @param env - used to call JNI funktions to create the new Java object
  * @param ckpValue - the pointer to the CK_DATE structure
@@ -119,11 +119,11 @@ jobject ckDatePtrToJDateObject(JNIEnv *env, const CK_DATE *ckpDate)
 }
 
 /*
- * converts a pointer to a CK_VERSION structure into a Java CK_VERSION Object.
+ * converts a CK_VERSION pointer into a Java CK_VERSION Object.
  *
  * @param env - used to call JNI funktions to create the new Java object
  * @param ckpVersion - the pointer to the CK_VERSION structure
- * @return - the new Java CK_VERSION object
+ * @return the new Java CK_VERSION object
  */
 jobject ckVersionPtrToJVersion(JNIEnv *env, const CK_VERSION_PTR ckpVersion)
 {
@@ -157,11 +157,11 @@ jobject ckVersionPtrToJVersion(JNIEnv *env, const CK_VERSION_PTR ckpVersion)
 }
 
 /*
- * converts a pointer to a CK_SESSION_INFO structure into a Java CK_SESSION_INFO Object.
+ * converts a CK_SESSION_INFO pointer into a Java CK_SESSION_INFO Object.
  *
  * @param env - used to call JNI funktions to create the new Java object
  * @param ckpSessionInfo - the pointer to the CK_SESSION_INFO structure
- * @return - the new Java CK_SESSION_INFO object
+ * @return the new Java CK_SESSION_INFO object
  */
 jobject ckSessionInfoPtrToJSessionInfo(JNIEnv *env, const CK_SESSION_INFO_PTR ckpSessionInfo)
 {
@@ -200,11 +200,11 @@ jobject ckSessionInfoPtrToJSessionInfo(JNIEnv *env, const CK_SESSION_INFO_PTR ck
 }
 
 /*
- * converts a pointer to a CK_ATTRIBUTE structure into a Java CK_ATTRIBUTE Object.
+ * converts a CK_ATTRIBUTE pointer into a Java CK_ATTRIBUTE Object.
  *
  * @param env - used to call JNI funktions to create the new Java object
  * @param ckpAttribute - the pointer to the CK_ATTRIBUTE structure
- * @return - the new Java CK_ATTRIBUTE object
+ * @return the new Java CK_ATTRIBUTE object
  */
 jobject ckAttributePtrToJAttribute(JNIEnv *env, const CK_ATTRIBUTE_PTR ckpAttribute)
 {
@@ -240,13 +240,14 @@ jobject ckAttributePtrToJAttribute(JNIEnv *env, const CK_ATTRIBUTE_PTR ckpAttrib
 
 
 /*
- * converts a Java CK_VERSION object into a pointer to a CK_VERSION structure
+ * converts a Java CK_VERSION object into a CK_VERSION pointer
  *
  * @param env - used to call JNI funktions to get the values out of the Java object
  * @param jVersion - the Java CK_VERSION object to convert
- * @return - the pointer to the new CK_VERSION structure
+ * @return pointer to the new CK_VERSION structure
  */
-CK_VERSION_PTR jVersionToCKVersionPtr(JNIEnv *env, jobject jVersion)
+CK_VERSION_PTR
+jVersionToCKVersionPtr(JNIEnv *env, jobject jVersion)
 {
     CK_VERSION_PTR ckpVersion;
     jclass jVersionClass;
@@ -257,80 +258,73 @@ CK_VERSION_PTR jVersionToCKVersionPtr(JNIEnv *env, jobject jVersion)
         return NULL;
     }
 
-    /* get CK_VERSION class */
+    // retrieve java values
     jVersionClass = (*env)->GetObjectClass(env, jVersion);
     if (jVersionClass == NULL) { return NULL; }
-
-    /* get Major */
     jFieldID = (*env)->GetFieldID(env, jVersionClass, "major", "B");
     if (jFieldID == NULL) { return NULL; }
     jMajor = (*env)->GetByteField(env, jVersion, jFieldID);
-
-    /* get Minor */
     jFieldID = (*env)->GetFieldID(env, jVersionClass, "minor", "B");
     if (jFieldID == NULL) { return NULL; }
     jMinor = (*env)->GetByteField(env, jVersion, jFieldID);
 
-    /* allocate memory for CK_VERSION pointer */
-    ckpVersion = (CK_VERSION_PTR) malloc(sizeof(CK_VERSION));
+    // allocate memory for CK_VERSION pointer
+    ckpVersion = (CK_VERSION_PTR) calloc(1, sizeof(CK_VERSION));
     if (ckpVersion == NULL) {
         throwOutOfMemoryError(env, 0);
         return NULL;
     }
+
+    // populate using java values
     ckpVersion->major = jByteToCKByte(jMajor);
     ckpVersion->minor = jByteToCKByte(jMinor);
 
-    return ckpVersion ;
+    return ckpVersion;
 }
 
 
 /*
- * converts a Java CK_DATE object into a pointer to a CK_DATE structure
+ * converts a Java CK_DATE object into a CK_DATE pointer
  *
- * @param env - used to call JNI funktions to get the values out of the Java object
- * @param jVersion - the Java CK_DATE object to convert
- * @return - the pointer to the new CK_DATE structure
+ * @param env - used to call JNI functions to get the values out of the Java object
+ * @param jDate - the Java CK_DATE object to convert
+ * @return pointer to the new CK_DATE structure
  */
-CK_DATE * jDateObjectPtrToCKDatePtr(JNIEnv *env, jobject jDate)
+CK_DATE * jDateObjectToCKDatePtr(JNIEnv *env, jobject jDate)
 {
-    CK_DATE * ckpDate;
+    CK_DATE * ckpDate = NULL;
     CK_ULONG ckLength;
     jclass jDateClass;
     jfieldID jFieldID;
     jobject jYear, jMonth, jDay;
-    jchar *jTempChars;
+    jchar *jTempChars = NULL;
     CK_ULONG i;
 
     if (jDate == NULL) {
         return NULL;
     }
 
-    /* get CK_DATE class */
+    // retrieve java values
     jDateClass = (*env)->FindClass(env, CLASS_DATE);
     if (jDateClass == NULL) { return NULL; }
-
-    /* get Year */
     jFieldID = (*env)->GetFieldID(env, jDateClass, "year", "[C");
     if (jFieldID == NULL) { return NULL; }
     jYear = (*env)->GetObjectField(env, jDate, jFieldID);
-
-    /* get Month */
     jFieldID = (*env)->GetFieldID(env, jDateClass, "month", "[C");
     if (jFieldID == NULL) { return NULL; }
     jMonth = (*env)->GetObjectField(env, jDate, jFieldID);
-
-    /* get Day */
     jFieldID = (*env)->GetFieldID(env, jDateClass, "day", "[C");
     if (jFieldID == NULL) { return NULL; }
     jDay = (*env)->GetObjectField(env, jDate, jFieldID);
 
-    /* allocate memory for CK_DATE pointer */
-    ckpDate = (CK_DATE *) malloc(sizeof(CK_DATE));
+    // allocate memory for CK_DATE pointer
+    ckpDate = (CK_DATE *) calloc(1, sizeof(CK_DATE));
     if (ckpDate == NULL) {
         throwOutOfMemoryError(env, 0);
         return NULL;
     }
 
+    // populate using java values
     if (jYear == NULL) {
         ckpDate->year[0] = 0;
         ckpDate->year[1] = 0;
@@ -338,17 +332,14 @@ CK_DATE * jDateObjectPtrToCKDatePtr(JNIEnv *env, jobject jDate)
         ckpDate->year[3] = 0;
     } else {
         ckLength = (*env)->GetArrayLength(env, jYear);
-        jTempChars = (jchar*) malloc((ckLength) * sizeof(jchar));
+        jTempChars = (jchar*) calloc(ckLength, sizeof(jchar));
         if (jTempChars == NULL) {
-            free(ckpDate);
             throwOutOfMemoryError(env, 0);
-            return NULL;
+            goto cleanup;
         }
         (*env)->GetCharArrayRegion(env, jYear, 0, ckLength, jTempChars);
         if ((*env)->ExceptionCheck(env)) {
-            free(ckpDate);
-            free(jTempChars);
-            return NULL;
+            goto cleanup;
         }
 
         for (i = 0; (i < ckLength) && (i < 4) ; i++) {
@@ -362,17 +353,14 @@ CK_DATE * jDateObjectPtrToCKDatePtr(JNIEnv *env, jobject jDate)
         ckpDate->month[1] = 0;
     } else {
         ckLength = (*env)->GetArrayLength(env, jMonth);
-        jTempChars = (jchar*) malloc((ckLength) * sizeof(jchar));
+        jTempChars = (jchar*) calloc(ckLength, sizeof(jchar));
         if (jTempChars == NULL) {
-            free(ckpDate);
             throwOutOfMemoryError(env, 0);
-            return NULL;
+            goto cleanup;
         }
         (*env)->GetCharArrayRegion(env, jMonth, 0, ckLength, jTempChars);
         if ((*env)->ExceptionCheck(env)) {
-            free(ckpDate);
-            free(jTempChars);
-            return NULL;
+            goto cleanup;
         }
 
         for (i = 0; (i < ckLength) && (i < 2) ; i++) {
@@ -386,17 +374,14 @@ CK_DATE * jDateObjectPtrToCKDatePtr(JNIEnv *env, jobject jDate)
         ckpDate->day[1] = 0;
     } else {
         ckLength = (*env)->GetArrayLength(env, jDay);
-        jTempChars = (jchar*) malloc((ckLength) * sizeof(jchar));
+        jTempChars = (jchar*) calloc(ckLength, sizeof(jchar));
         if (jTempChars == NULL) {
-            free(ckpDate);
             throwOutOfMemoryError(env, 0);
-            return NULL;
+            goto cleanup;
         }
         (*env)->GetCharArrayRegion(env, jDay, 0, ckLength, jTempChars);
         if ((*env)->ExceptionCheck(env)) {
-            free(ckpDate);
-            free(jTempChars);
-            return NULL;
+            goto cleanup;
         }
 
         for (i = 0; (i < ckLength) && (i < 2) ; i++) {
@@ -405,7 +390,11 @@ CK_DATE * jDateObjectPtrToCKDatePtr(JNIEnv *env, jobject jDate)
         free(jTempChars);
     }
 
-    return ckpDate ;
+    return ckpDate;
+cleanup:
+    free(jTempChars);
+    free(ckpDate);
+    return NULL;
 }
 
 
@@ -414,7 +403,7 @@ CK_DATE * jDateObjectPtrToCKDatePtr(JNIEnv *env, jobject jDate)
  *
  * @param env - used to call JNI funktions to get the values out of the Java object
  * @param jAttribute - the Java CK_ATTRIBUTE object to convert
- * @return - the new CK_ATTRIBUTE structure
+ * @return the new CK_ATTRIBUTE structure
  */
 CK_ATTRIBUTE jAttributeToCKAttribute(JNIEnv *env, jobject jAttribute)
 {
@@ -423,6 +412,7 @@ CK_ATTRIBUTE jAttributeToCKAttribute(JNIEnv *env, jobject jAttribute)
     jfieldID jFieldID;
     jlong jType;
     jobject jPValue;
+
     memset(&ckAttribute, 0, sizeof(CK_ATTRIBUTE));
 
     // TBD: what if jAttribute == NULL?!
@@ -466,187 +456,279 @@ void masterKeyDeriveParamToCKMasterKeyDeriveParam(JNIEnv *env, jobject jParam,
     jclass jSsl3RandomDataClass;
     jobject jRandomInfo, jRIClientRandom, jRIServerRandom, jVersion;
 
-    /* get RandomInfo */
+    // retrieve java values
     fieldID = (*env)->GetFieldID(env, masterKeyDeriveParamClass, "RandomInfo",
             "Lsun/security/pkcs11/wrapper/CK_SSL3_RANDOM_DATA;");
     if (fieldID == NULL) { return; }
     jRandomInfo = (*env)->GetObjectField(env, jParam, fieldID);
-
-    /* get pClientRandom and ulClientRandomLength out of RandomInfo */
     jSsl3RandomDataClass = (*env)->FindClass(env, CLASS_SSL3_RANDOM_DATA);
     if (jSsl3RandomDataClass == NULL) { return; }
     fieldID = (*env)->GetFieldID(env, jSsl3RandomDataClass, "pClientRandom", "[B");
     if (fieldID == NULL) { return; }
     jRIClientRandom = (*env)->GetObjectField(env, jRandomInfo, fieldID);
-
-    /* get pServerRandom and ulServerRandomLength out of RandomInfo */
     fieldID = (*env)->GetFieldID(env, jSsl3RandomDataClass, "pServerRandom", "[B");
     if (fieldID == NULL) { return; }
     jRIServerRandom = (*env)->GetObjectField(env, jRandomInfo, fieldID);
-
-    /* get pVersion */
     fieldID = (*env)->GetFieldID(env, masterKeyDeriveParamClass, "pVersion",
             "Lsun/security/pkcs11/wrapper/CK_VERSION;");
     if (fieldID == NULL) { return; }
     jVersion = (*env)->GetObjectField(env, jParam, fieldID);
 
-    /* populate java values */
+    // populate using java values
     *cKMasterKeyDeriveParamVersion = jVersionToCKVersionPtr(env, jVersion);
     if ((*env)->ExceptionCheck(env)) { return; }
     jByteArrayToCKByteArray(env, jRIClientRandom,
             &(cKMasterKeyDeriveParamRandomInfo->pClientRandom),
             &(cKMasterKeyDeriveParamRandomInfo->ulClientRandomLen));
     if ((*env)->ExceptionCheck(env)) {
-        free(*cKMasterKeyDeriveParamVersion);
-        return;
+        goto cleanup;
     }
     jByteArrayToCKByteArray(env, jRIServerRandom,
             &(cKMasterKeyDeriveParamRandomInfo->pServerRandom),
             &(cKMasterKeyDeriveParamRandomInfo->ulServerRandomLen));
     if ((*env)->ExceptionCheck(env)) {
-        free(*cKMasterKeyDeriveParamVersion);
-        free(cKMasterKeyDeriveParamRandomInfo->pClientRandom);
-        return;
+        goto cleanup;
     }
+    return;
+cleanup:
+    free(*cKMasterKeyDeriveParamVersion);
+    free(cKMasterKeyDeriveParamRandomInfo->pClientRandom);
+    cKMasterKeyDeriveParamRandomInfo->ulClientRandomLen = 0L;
+    free(cKMasterKeyDeriveParamRandomInfo->pServerRandom);
+    cKMasterKeyDeriveParamRandomInfo->ulServerRandomLen = 0L;
+    // explicitly set to NULL to ensure no double free possible
+    *cKMasterKeyDeriveParamVersion = NULL;
+    cKMasterKeyDeriveParamRandomInfo->pClientRandom = NULL;
+    cKMasterKeyDeriveParamRandomInfo->pServerRandom = NULL;
 }
 
 /*
  * converts the Java CK_SSL3_MASTER_KEY_DERIVE_PARAMS object to a
- * CK_SSL3_MASTER_KEY_DERIVE_PARAMS structure
+ * CK_SSL3_MASTER_KEY_DERIVE_PARAMS pointer
  *
  * @param env - used to call JNI functions to get the Java classes and objects
  * @param jParam - the Java CK_SSL3_MASTER_KEY_DERIVE_PARAMS object to convert
- * @param ckParamPtr - pointer to the new CK_SSL3_MASTER_KEY_DERIVE_PARAMS structure
+ * @param pLength - length of the allocated memory of the returned pointer
+ * @return pointer to the new CK_SSL3_MASTER_KEY_DERIVE_PARAMS structure
  */
-void jSsl3MasterKeyDeriveParamToCKSsl3MasterKeyDeriveParam(JNIEnv *env,
-        jobject jParam, CK_SSL3_MASTER_KEY_DERIVE_PARAMS_PTR ckParamPtr)
+CK_SSL3_MASTER_KEY_DERIVE_PARAMS_PTR
+jSsl3MasterKeyDeriveParamToCKSsl3MasterKeyDeriveParamPtr(JNIEnv *env,
+        jobject jParam, CK_ULONG *pLength)
 {
+    CK_SSL3_MASTER_KEY_DERIVE_PARAMS_PTR ckParamPtr;
     jclass jSsl3MasterKeyDeriveParamsClass;
-    memset(ckParamPtr, 0, sizeof(CK_SSL3_MASTER_KEY_DERIVE_PARAMS));
+
+    if (pLength != NULL) {
+        *pLength = 0L;
+    }
+
+    // allocate memory for CK_SSL3_MASTER_KEY_DERIVE_PARAMS pointer
+    ckParamPtr = calloc(1, sizeof(CK_SSL3_MASTER_KEY_DERIVE_PARAMS));
+    if (ckParamPtr == NULL) {
+        throwOutOfMemoryError(env, 0);
+        return NULL;
+    }
+
+    // retrieve and populate using java values
     jSsl3MasterKeyDeriveParamsClass =
             (*env)->FindClass(env, CLASS_SSL3_MASTER_KEY_DERIVE_PARAMS);
-    if (jSsl3MasterKeyDeriveParamsClass == NULL) { return; }
+    if (jSsl3MasterKeyDeriveParamsClass == NULL) {
+        goto cleanup;
+    }
     masterKeyDeriveParamToCKMasterKeyDeriveParam(env, jParam,
             jSsl3MasterKeyDeriveParamsClass,
             &(ckParamPtr->pVersion), &(ckParamPtr->RandomInfo));
+    if ((*env)->ExceptionCheck(env)) {
+        goto cleanup;
+    }
+
+    if (pLength != NULL) {
+        *pLength = sizeof(CK_SSL3_MASTER_KEY_DERIVE_PARAMS);
+    }
+    return ckParamPtr;
+cleanup:
+    free(ckParamPtr);
+    return NULL;
 }
 
 /*
  * converts the Java CK_TLS12_MASTER_KEY_DERIVE_PARAMS object to a
- * CK_TLS12_MASTER_KEY_DERIVE_PARAMS structure
+ * CK_TLS12_MASTER_KEY_DERIVE_PARAMS pointer
  *
  * @param env - used to call JNI functions to get the Java classes and objects
  * @param jParam - the Java CK_TLS12_MASTER_KEY_DERIVE_PARAMS object to convert
- * @param ckParamPtr - pointer to the new CK_TLS12_MASTER_KEY_DERIVE_PARAMS structure
+ * @param pLength - length of the allocated memory of the returned pointer
+ * @return pointer to the new CK_TLS12_MASTER_KEY_DERIVE_PARAMS structure
  */
-void jTls12MasterKeyDeriveParamToCKTls12MasterKeyDeriveParam(JNIEnv *env,
-        jobject jParam, CK_TLS12_MASTER_KEY_DERIVE_PARAMS_PTR ckParamPtr)
+CK_TLS12_MASTER_KEY_DERIVE_PARAMS_PTR
+jTls12MasterKeyDeriveParamToCKTls12MasterKeyDeriveParamPtr(JNIEnv *env,
+        jobject jParam, CK_ULONG *pLength)
 {
+    CK_TLS12_MASTER_KEY_DERIVE_PARAMS_PTR ckParamPtr;
     jclass jTls12MasterKeyDeriveParamsClass;
     jfieldID fieldID;
-    memset(ckParamPtr, 0, sizeof(CK_TLS12_MASTER_KEY_DERIVE_PARAMS));
+    jlong prfHashMechanism;
+
+    if (pLength != NULL) {
+        *pLength = 0L;
+    }
+
+    // retrieve java values
     jTls12MasterKeyDeriveParamsClass =
-            (*env)->FindClass(env, CLASS_TLS12_MASTER_KEY_DERIVE_PARAMS);
-    if (jTls12MasterKeyDeriveParamsClass == NULL) { return; }
+        (*env)->FindClass(env, CLASS_TLS12_MASTER_KEY_DERIVE_PARAMS);
+    if (jTls12MasterKeyDeriveParamsClass == NULL) { return NULL; }
+    fieldID = (*env)->GetFieldID(env,
+            jTls12MasterKeyDeriveParamsClass, "prfHashMechanism", "J");
+    if (fieldID == NULL) { return NULL; }
+    prfHashMechanism = (*env)->GetLongField(env, jParam, fieldID);
+
+    // allocate memory for CK_TLS12_MASTER_KEY_DERIVE_PARAMS pointer
+    ckParamPtr = calloc(1, sizeof(CK_TLS12_MASTER_KEY_DERIVE_PARAMS));
+    if (ckParamPtr == NULL) {
+        throwOutOfMemoryError(env, 0);
+        return NULL;
+    }
+
+    // populate using java values
     masterKeyDeriveParamToCKMasterKeyDeriveParam(env, jParam,
             jTls12MasterKeyDeriveParamsClass, &ckParamPtr->pVersion,
             &ckParamPtr->RandomInfo);
-    fieldID = (*env)->GetFieldID(env,
-            jTls12MasterKeyDeriveParamsClass, "prfHashMechanism", "J");
-    if (fieldID != NULL) {
-        jlong prfHashMechanism =
-                (*env)->GetLongField(env, jParam, fieldID);
-        ckParamPtr->prfHashMechanism = (CK_MECHANISM_TYPE)prfHashMechanism;
+    if ((*env)->ExceptionCheck(env)) {
+        goto cleanup;
     }
+
+    ckParamPtr->prfHashMechanism = (CK_MECHANISM_TYPE) prfHashMechanism;
+
+    if (pLength != NULL) {
+        *pLength = sizeof(CK_TLS12_MASTER_KEY_DERIVE_PARAMS);
+    }
+    return ckParamPtr;
+cleanup:
+    free(ckParamPtr);
+    return NULL;
 }
 
 /*
- * converts the Java CK_TLS_PRF_PARAMS object to a CK_TLS_PRF_PARAMS structure
+ * converts the Java CK_TLS_PRF_PARAMS object to a CK_TLS_PRF_PARAMS pointer
+ *
+ * @param env - used to call JNI functions to get the Java classes and objects
+ * @param jParam - the Java CK_TLS_PRF_PARAMS object to convert
+ * @param pLength - length of the allocated memory of the returned pointer
+ * @return pointer to the new CK_TLS_PRF_PARAMS structure
  */
-void jTlsPrfParamsToCKTlsPrfParam(JNIEnv *env, jobject jParam,
-CK_TLS_PRF_PARAMS_PTR ckParamPtr)
+CK_TLS_PRF_PARAMS_PTR
+jTlsPrfParamsToCKTlsPrfParamPtr(JNIEnv *env, jobject jParam, CK_ULONG *pLength)
 {
+    CK_TLS_PRF_PARAMS_PTR ckParamPtr;
     jclass jTlsPrfParamsClass;
     jfieldID fieldID;
     jobject jSeed, jLabel, jOutput;
-    memset(ckParamPtr, 0, sizeof(CK_TLS_PRF_PARAMS));
 
-    // TBD: what if jParam == NULL?!
+    if (pLength != NULL) {
+        *pLength = 0;
+    }
 
-    /* get pSeed */
+    // retrieve java values
     jTlsPrfParamsClass = (*env)->FindClass(env, CLASS_TLS_PRF_PARAMS);
-    if (jTlsPrfParamsClass == NULL) { return; }
+    if (jTlsPrfParamsClass == NULL) { return NULL; }
     fieldID = (*env)->GetFieldID(env, jTlsPrfParamsClass, "pSeed", "[B");
-    if (fieldID == NULL) { return; }
+    if (fieldID == NULL) { return NULL; }
     jSeed = (*env)->GetObjectField(env, jParam, fieldID);
-
-    /* get pLabel */
     fieldID = (*env)->GetFieldID(env, jTlsPrfParamsClass, "pLabel", "[B");
-    if (fieldID == NULL) { return; }
+    if (fieldID == NULL) { return NULL; }
     jLabel = (*env)->GetObjectField(env, jParam, fieldID);
-
-    /* get pOutput */
     fieldID = (*env)->GetFieldID(env, jTlsPrfParamsClass, "pOutput", "[B");
-    if (fieldID == NULL) { return; }
+    if (fieldID == NULL) { return NULL; }
     jOutput = (*env)->GetObjectField(env, jParam, fieldID);
 
-    /* populate java values */
+    // allocate memory for CK_TLS_PRF_PARAMS pointer
+    ckParamPtr = calloc(1, sizeof(CK_TLS_PRF_PARAMS));
+    if (ckParamPtr == NULL) {
+        throwOutOfMemoryError(env, 0);
+        return NULL;
+    }
+
+    // populate using java values
     jByteArrayToCKByteArray(env, jSeed, &(ckParamPtr->pSeed), &(ckParamPtr->ulSeedLen));
-    if ((*env)->ExceptionCheck(env)) { return; }
+    if ((*env)->ExceptionCheck(env)) {
+        goto cleanup;
+    }
     jByteArrayToCKByteArray(env, jLabel, &(ckParamPtr->pLabel), &(ckParamPtr->ulLabelLen));
     if ((*env)->ExceptionCheck(env)) {
-        free(ckParamPtr->pSeed);
-        return;
+        goto cleanup;
     }
-    ckParamPtr->pulOutputLen = malloc(sizeof(CK_ULONG));
+    ckParamPtr->pulOutputLen = calloc(1, sizeof(CK_ULONG));
     if (ckParamPtr->pulOutputLen == NULL) {
-        free(ckParamPtr->pSeed);
-        free(ckParamPtr->pLabel);
-        throwOutOfMemoryError(env, 0);
-        return;
+        goto cleanup;
     }
     jByteArrayToCKByteArray(env, jOutput, &(ckParamPtr->pOutput), ckParamPtr->pulOutputLen);
     if ((*env)->ExceptionCheck(env)) {
-        free(ckParamPtr->pSeed);
-        free(ckParamPtr->pLabel);
-        free(ckParamPtr->pOutput);
-        return;
+        goto cleanup;
     }
+
+    if (pLength != NULL) {
+        *pLength = sizeof(CK_TLS_PRF_PARAMS);
+    }
+    return ckParamPtr;
+cleanup:
+    free(ckParamPtr->pSeed);
+    free(ckParamPtr->pLabel);
+    free(ckParamPtr->pOutput);
+    free(ckParamPtr->pulOutputLen);
+    free(ckParamPtr);
+    return NULL;
 }
 
 /*
- * converts the Java CK_TLS_MAC_PARAMS object to a CK_TLS_MAC_PARAMS structure
+ * converts the Java CK_TLS_MAC_PARAMS object to a CK_TLS_MAC_PARAMS pointer
+ *
+ * @param env - used to call JNI functions to get the Java classes and objects
+ * @param jParam - the Java CK_TLS_MAC_PARAMS object to convert
+ * @param pLength - length of the allocated memory of the returned pointer
+ * @return pointer to the new CK_TLS_MAC_PARAMS structure
  */
-void jTlsMacParamsToCKTlsMacParam(JNIEnv *env, jobject jParam,
-        CK_TLS_MAC_PARAMS_PTR ckParamPtr)
+
+CK_TLS_MAC_PARAMS_PTR
+jTlsMacParamsToCKTlsMacParamPtr(JNIEnv *env, jobject jParam, CK_ULONG *pLength)
 {
+    CK_TLS_MAC_PARAMS_PTR ckParamPtr;
     jclass jTlsMacParamsClass;
     jfieldID fieldID;
     jlong jPrfMechanism, jUlMacLength, jUlServerOrClient;
-    memset(ckParamPtr, 0, sizeof(CK_TLS_MAC_PARAMS));
 
+    if (pLength != NULL) {
+        *pLength = 0L;
+    }
+
+    // retrieve java values
     jTlsMacParamsClass = (*env)->FindClass(env, CLASS_TLS_MAC_PARAMS);
-    if (jTlsMacParamsClass == NULL) { return; }
-
-    /* get prfMechanism */
+    if (jTlsMacParamsClass == NULL) { return NULL; }
     fieldID = (*env)->GetFieldID(env, jTlsMacParamsClass, "prfMechanism", "J");
-    if (fieldID == NULL) { return; }
+    if (fieldID == NULL) { return NULL; }
     jPrfMechanism = (*env)->GetLongField(env, jParam, fieldID);
-
-    /* get ulMacLength */
     fieldID = (*env)->GetFieldID(env, jTlsMacParamsClass, "ulMacLength", "J");
-    if (fieldID == NULL) { return; }
+    if (fieldID == NULL) { return NULL; }
     jUlMacLength = (*env)->GetLongField(env, jParam, fieldID);
-
-    /* get ulServerOrClient */
     fieldID = (*env)->GetFieldID(env, jTlsMacParamsClass, "ulServerOrClient", "J");
-    if (fieldID == NULL) { return; }
+    if (fieldID == NULL) { return NULL; }
     jUlServerOrClient = (*env)->GetLongField(env, jParam, fieldID);
 
-    /* populate java values */
+    // allocate memory for CK_TLS_MAC_PARAMS pointer
+    ckParamPtr = calloc(1, sizeof(CK_TLS_MAC_PARAMS));
+    if (ckParamPtr == NULL) {
+        throwOutOfMemoryError(env, 0);
+        return NULL;
+    }
+
+    // populate using java values
     ckParamPtr->prfMechanism = jLongToCKULong(jPrfMechanism);
     ckParamPtr->ulMacLength = jLongToCKULong(jUlMacLength);
     ckParamPtr->ulServerOrClient = jLongToCKULong(jUlServerOrClient);
+
+    if (pLength != NULL) {
+        *pLength = sizeof(CK_TLS_MAC_PARAMS);
+    }
+    return ckParamPtr;
 }
 
 void keyMatParamToCKKeyMatParam(JNIEnv *env, jobject jParam,
@@ -666,63 +748,47 @@ void keyMatParamToCKKeyMatParam(JNIEnv *env, jobject jParam,
     jobject jReturnedKeyMaterial, jRMIvClient, jRMIvServer;
     CK_ULONG ckTemp;
 
-    /* get ulMacSizeInBits */
+    // the pointer arguments should already be initialized by caller
+
+    // retrieve java values
     fieldID = (*env)->GetFieldID(env, jKeyMatParamClass, "ulMacSizeInBits", "J");
     if (fieldID == NULL) { return; }
     jMacSizeInBits = (*env)->GetLongField(env, jParam, fieldID);
-
-    /* get ulKeySizeInBits */
     fieldID = (*env)->GetFieldID(env, jKeyMatParamClass, "ulKeySizeInBits", "J");
     if (fieldID == NULL) { return; }
     jKeySizeInBits = (*env)->GetLongField(env, jParam, fieldID);
-
-    /* get ulIVSizeInBits */
     fieldID = (*env)->GetFieldID(env, jKeyMatParamClass, "ulIVSizeInBits", "J");
     if (fieldID == NULL) { return; }
     jIVSizeInBits = (*env)->GetLongField(env, jParam, fieldID);
-
-    /* get bIsExport */
     fieldID = (*env)->GetFieldID(env, jKeyMatParamClass, "bIsExport", "Z");
     if (fieldID == NULL) { return; }
     jIsExport = (*env)->GetBooleanField(env, jParam, fieldID);
-
-    /* get RandomInfo */
     jSsl3RandomDataClass = (*env)->FindClass(env, CLASS_SSL3_RANDOM_DATA);
     if (jSsl3RandomDataClass == NULL) { return; }
     fieldID = (*env)->GetFieldID(env, jKeyMatParamClass, "RandomInfo",
             "Lsun/security/pkcs11/wrapper/CK_SSL3_RANDOM_DATA;");
     if (fieldID == NULL) { return; }
     jRandomInfo = (*env)->GetObjectField(env, jParam, fieldID);
-
-    /* get pClientRandom and ulClientRandomLength out of RandomInfo */
     fieldID = (*env)->GetFieldID(env, jSsl3RandomDataClass, "pClientRandom", "[B");
     if (fieldID == NULL) { return; }
     jRIClientRandom = (*env)->GetObjectField(env, jRandomInfo, fieldID);
-
-    /* get pServerRandom and ulServerRandomLength out of RandomInfo */
     fieldID = (*env)->GetFieldID(env, jSsl3RandomDataClass, "pServerRandom", "[B");
     if (fieldID == NULL) { return; }
     jRIServerRandom = (*env)->GetObjectField(env, jRandomInfo, fieldID);
-
-    /* get pReturnedKeyMaterial */
     jSsl3KeyMatOutClass = (*env)->FindClass(env, CLASS_SSL3_KEY_MAT_OUT);
     if (jSsl3KeyMatOutClass == NULL) { return; }
     fieldID = (*env)->GetFieldID(env, jKeyMatParamClass, "pReturnedKeyMaterial",
             "Lsun/security/pkcs11/wrapper/CK_SSL3_KEY_MAT_OUT;");
     if (fieldID == NULL) { return; }
     jReturnedKeyMaterial = (*env)->GetObjectField(env, jParam, fieldID);
-
-    /* get pIVClient out of pReturnedKeyMaterial */
     fieldID = (*env)->GetFieldID(env, jSsl3KeyMatOutClass, "pIVClient", "[B");
     if (fieldID == NULL) { return; }
     jRMIvClient = (*env)->GetObjectField(env, jReturnedKeyMaterial, fieldID);
-
-    /* get pIVServer out of pReturnedKeyMaterial */
     fieldID = (*env)->GetFieldID(env, jSsl3KeyMatOutClass, "pIVServer", "[B");
     if (fieldID == NULL) { return; }
     jRMIvServer = (*env)->GetObjectField(env, jReturnedKeyMaterial, fieldID);
 
-    /* populate java values */
+    // populate the specified pointers using java values
     *cKKeyMatParamUlMacSizeInBits = jLongToCKULong(jMacSizeInBits);
     *cKKeyMatParamUlKeySizeInBits = jLongToCKULong(jKeySizeInBits);
     *cKKeyMatParamUlIVSizeInBits = jLongToCKULong(jIVSizeInBits);
@@ -730,22 +796,22 @@ void keyMatParamToCKKeyMatParam(JNIEnv *env, jobject jParam,
     jByteArrayToCKByteArray(env, jRIClientRandom,
             &(cKKeyMatParamRandomInfo->pClientRandom),
             &(cKKeyMatParamRandomInfo->ulClientRandomLen));
-    if ((*env)->ExceptionCheck(env)) { return; }
+    if ((*env)->ExceptionCheck(env)) {
+        // just return as no memory allocation yet
+        return;
+    }
     jByteArrayToCKByteArray(env, jRIServerRandom,
             &(cKKeyMatParamRandomInfo->pServerRandom),
             &(cKKeyMatParamRandomInfo->ulServerRandomLen));
     if ((*env)->ExceptionCheck(env)) {
-        free(cKKeyMatParamRandomInfo->pClientRandom);
-        return;
+        goto cleanup;
     }
     /* allocate memory for pReturnedKeyMaterial */
     *cKKeyMatParamPReturnedKeyMaterial =
-            (CK_SSL3_KEY_MAT_OUT_PTR)malloc(sizeof(CK_SSL3_KEY_MAT_OUT));
+            (CK_SSL3_KEY_MAT_OUT_PTR) calloc(1, sizeof(CK_SSL3_KEY_MAT_OUT));
     if (*cKKeyMatParamPReturnedKeyMaterial == NULL) {
-        free(cKKeyMatParamRandomInfo->pClientRandom);
-        free(cKKeyMatParamRandomInfo->pServerRandom);
         throwOutOfMemoryError(env, 0);
-        return;
+        goto cleanup;
     }
 
     // the handles are output params only, no need to fetch them from Java
@@ -757,219 +823,349 @@ void keyMatParamToCKKeyMatParam(JNIEnv *env, jobject jParam,
     jByteArrayToCKByteArray(env, jRMIvClient,
             &((*cKKeyMatParamPReturnedKeyMaterial)->pIVClient), &ckTemp);
     if ((*env)->ExceptionCheck(env)) {
-        free(cKKeyMatParamRandomInfo->pClientRandom);
-        free(cKKeyMatParamRandomInfo->pServerRandom);
-        free((*cKKeyMatParamPReturnedKeyMaterial));
-        return;
+        goto cleanup;
     }
     jByteArrayToCKByteArray(env, jRMIvServer,
             &((*cKKeyMatParamPReturnedKeyMaterial)->pIVServer), &ckTemp);
     if ((*env)->ExceptionCheck(env)) {
-        free(cKKeyMatParamRandomInfo->pClientRandom);
-        free(cKKeyMatParamRandomInfo->pServerRandom);
-        free((*cKKeyMatParamPReturnedKeyMaterial)->pIVClient);
-        free((*cKKeyMatParamPReturnedKeyMaterial));
-        return;
+        goto cleanup;
     }
 
+    return;
+cleanup:
+    free(cKKeyMatParamRandomInfo->pClientRandom);
+    free(cKKeyMatParamRandomInfo->pServerRandom);
+    if ((*cKKeyMatParamPReturnedKeyMaterial) != NULL) {
+        free((*cKKeyMatParamPReturnedKeyMaterial)->pIVClient);
+        free(*cKKeyMatParamPReturnedKeyMaterial);
+    }
+    // explicitly set to NULL to ensure no double free possible
+    cKKeyMatParamRandomInfo->pClientRandom = NULL;
+    cKKeyMatParamRandomInfo->pServerRandom = NULL;
+    *cKKeyMatParamPReturnedKeyMaterial = NULL;
     return;
 }
 /*
  * converts the Java CK_SSL3_KEY_MAT_PARAMS object to a
- * CK_SSL3_KEY_MAT_PARAMS structure
+ * CK_SSL3_KEY_MAT_PARAMS pointer
  *
  * @param env - used to call JNI funktions to get the Java classes and objects
  * @param jParam - the Java CK_SSL3_KEY_MAT_PARAMS object to convert
- * @param ckParamPtr - pointer to the new CK_SSL3_KEY_MAT_PARAMS structure
+ * @param pLength - length of the allocated memory of the returned pointer
+ * @return pointer to the new CK_SSL3_KEY_MAT_PARAMS structure
  */
-void jSsl3KeyMatParamToCKSsl3KeyMatParam(JNIEnv *env, jobject jParam,
-        CK_SSL3_KEY_MAT_PARAMS_PTR ckParamPtr)
+CK_SSL3_KEY_MAT_PARAMS_PTR
+jSsl3KeyMatParamToCKSsl3KeyMatParamPtr(JNIEnv *env, jobject jParam, CK_ULONG *pLength)
 {
+    CK_SSL3_KEY_MAT_PARAMS_PTR ckParamPtr;
     jclass jSsl3KeyMatParamsClass;
-    memset(ckParamPtr, 0, sizeof(CK_SSL3_KEY_MAT_PARAMS));
+
+    if (pLength != NULL) {
+        *pLength = 0;
+    }
+
+    // allocate memory for CK_SSL3_KEY_MAT_PARAMS pointer
+    ckParamPtr = calloc(1, sizeof(CK_SSL3_KEY_MAT_PARAMS));
+    if (ckParamPtr == NULL) {
+        throwOutOfMemoryError(env, 0);
+        return NULL;
+    }
+
+    // retrieve and  populate using java values
     jSsl3KeyMatParamsClass = (*env)->FindClass(env,
             CLASS_SSL3_KEY_MAT_PARAMS);
-    if (jSsl3KeyMatParamsClass == NULL) { return; }
+    if (jSsl3KeyMatParamsClass == NULL) {
+        goto cleanup;
+    }
     keyMatParamToCKKeyMatParam(env, jParam, jSsl3KeyMatParamsClass,
             &(ckParamPtr->ulMacSizeInBits), &(ckParamPtr->ulKeySizeInBits),
             &(ckParamPtr->ulIVSizeInBits), &(ckParamPtr->bIsExport),
             &(ckParamPtr->RandomInfo), &(ckParamPtr->pReturnedKeyMaterial));
+    if ((*env)->ExceptionCheck(env)) {
+        goto cleanup;
+    }
+
+    if (pLength != NULL) {
+        *pLength = sizeof(CK_SSL3_KEY_MAT_PARAMS);
+    }
+    return ckParamPtr;
+cleanup:
+    free(ckParamPtr);
+    return NULL;
 }
 
 /*
  * converts the Java CK_TLS12_KEY_MAT_PARAMS object to a
- * CK_TLS12_KEY_MAT_PARAMS structure
+ * CK_TLS12_KEY_MAT_PARAMS pointer
  *
  * @param env - used to call JNI functions to get the Java classes and objects
  * @param jParam - the Java CK_TLS12_KEY_MAT_PARAMS object to convert
- * @param ckParamPtr - pointer to the new CK_TLS12_KEY_MAT_PARAMS structure
+ * @param pLength - length of the allocated memory of the returned pointer
+ * @return pointer to the new CK_TLS12_KEY_MAT_PARAMS structure
  */
-void jTls12KeyMatParamToCKTls12KeyMatParam(JNIEnv *env,
-        jobject jParam, CK_TLS12_KEY_MAT_PARAMS_PTR ckParamPtr)
+CK_TLS12_KEY_MAT_PARAMS_PTR jTls12KeyMatParamToCKTls12KeyMatParamPtr(JNIEnv *env,
+        jobject jParam, CK_ULONG *pLength)
 {
+    CK_TLS12_KEY_MAT_PARAMS_PTR ckParamPtr;
     jclass jTls12KeyMatParamsClass;
     jfieldID fieldID;
-    memset(ckParamPtr, 0, sizeof(CK_TLS12_KEY_MAT_PARAMS));
+    jlong prfHashMechanism;
+
+    if (pLength != NULL) {
+        *pLength = 0;
+    }
+
+    // retrieve java values
     jTls12KeyMatParamsClass = (*env)->FindClass(env,
             CLASS_TLS12_KEY_MAT_PARAMS);
-    if (jTls12KeyMatParamsClass == NULL) { return; }
+    if (jTls12KeyMatParamsClass == NULL) { return NULL; }
+    fieldID = (*env)->GetFieldID(env, jTls12KeyMatParamsClass,
+            "prfHashMechanism", "J");
+    if (fieldID == NULL) { return NULL; }
+    prfHashMechanism = (*env)->GetLongField(env, jParam, fieldID);
+
+    // allocate memory for CK_TLS12_KEY_MAT_PARAMS pointer
+    ckParamPtr = calloc(1, sizeof(CK_TLS12_KEY_MAT_PARAMS));
+    if (ckParamPtr == NULL) {
+        throwOutOfMemoryError(env, 0);
+        return NULL;
+    }
+
+    // populate using java values
     keyMatParamToCKKeyMatParam(env, jParam, jTls12KeyMatParamsClass,
             &(ckParamPtr->ulMacSizeInBits), &(ckParamPtr->ulKeySizeInBits),
             &(ckParamPtr->ulIVSizeInBits), &(ckParamPtr->bIsExport),
             &(ckParamPtr->RandomInfo), &(ckParamPtr->pReturnedKeyMaterial));
-    fieldID = (*env)->GetFieldID(env, jTls12KeyMatParamsClass,
-            "prfHashMechanism", "J");
-    if (fieldID != NULL) {
-        jlong prfHashMechanism = (*env)->GetLongField(env, jParam, fieldID);
-        ckParamPtr->prfHashMechanism = (CK_MECHANISM_TYPE)prfHashMechanism;
+    if ((*env)->ExceptionCheck(env)) {
+        goto cleanup;
     }
+    ckParamPtr->prfHashMechanism = (CK_MECHANISM_TYPE)prfHashMechanism;
+
+    if (pLength != NULL) {
+        *pLength = sizeof(CK_TLS12_KEY_MAT_PARAMS);
+    }
+    return ckParamPtr;
+cleanup:
+    free(ckParamPtr);
+    return NULL;
 }
 
 /*
- * converts the Java CK_AES_CTR_PARAMS object to a CK_AES_CTR_PARAMS structure
+ * converts the Java CK_AES_CTR_PARAMS object to a CK_AES_CTR_PARAMS pointer
  *
  * @param env - used to call JNI funktions to get the Java classes and objects
  * @param jParam - the Java CK_AES_CTR_PARAMS object to convert
- * @param ckParamPtr - pointer to the new CK_AES_CTR_PARAMS structure
+ * @param pLength - length of the allocated memory of the returned pointer
+ * @return pointer to the new CK_AES_CTR_PARAMS structure
  */
-void jAesCtrParamsToCKAesCtrParam(JNIEnv *env, jobject jParam,
-                                  CK_AES_CTR_PARAMS_PTR ckParamPtr) {
+CK_AES_CTR_PARAMS_PTR
+jAesCtrParamsToCKAesCtrParamPtr(JNIEnv *env, jobject jParam, CK_ULONG *pLength)
+{
+    CK_AES_CTR_PARAMS_PTR ckParamPtr;
     jclass jAesCtrParamsClass;
     jfieldID fieldID;
     jlong jCounterBits;
     jobject jCb;
-    CK_BYTE_PTR ckBytes;
+    CK_BYTE_PTR ckBytes = NULL;
     CK_ULONG ckTemp;
 
-    /* get ulCounterBits */
+    if (pLength != NULL) {
+        *pLength = 0L;
+    }
+
+    // retrieve java values
     jAesCtrParamsClass = (*env)->FindClass(env, CLASS_AES_CTR_PARAMS);
-    if (jAesCtrParamsClass == NULL) { return; }
+    if (jAesCtrParamsClass == NULL) { return NULL; }
     if (!(*env)->IsInstanceOf(env, jParam, jAesCtrParamsClass)) {
-        return;
+        return NULL;
     }
     fieldID = (*env)->GetFieldID(env, jAesCtrParamsClass, "ulCounterBits", "J");
-    if (fieldID == NULL) { return; }
+    if (fieldID == NULL) { return NULL; }
     jCounterBits = (*env)->GetLongField(env, jParam, fieldID);
-
-    /* get cb */
     fieldID = (*env)->GetFieldID(env, jAesCtrParamsClass, "cb", "[B");
-    if (fieldID == NULL) { return; }
+    if (fieldID == NULL) { return NULL; }
     jCb = (*env)->GetObjectField(env, jParam, fieldID);
 
-    /* populate java values */
-    ckParamPtr->ulCounterBits = jLongToCKULong(jCounterBits);
-    jByteArrayToCKByteArray(env, jCb, &ckBytes, &ckTemp);
-    if ((*env)->ExceptionCheck(env)) { return; }
-    if (ckTemp != 16) {
-        TRACE1("\nERROR: WRONG CTR IV LENGTH %lu", ckTemp);
-    } else {
-        memcpy(ckParamPtr->cb, ckBytes, ckTemp);
-        free(ckBytes);
+    // allocate memory for CK_AES_CTR_PARAMS pointer
+    ckParamPtr = calloc(1, sizeof(CK_AES_CTR_PARAMS));
+    if (ckParamPtr == NULL) {
+        throwOutOfMemoryError(env, 0);
+        return NULL;
     }
+
+    // populate using java values
+    jByteArrayToCKByteArray(env, jCb, &ckBytes, &ckTemp);
+    if ((*env)->ExceptionCheck(env) || ckTemp != 16) {
+        goto cleanup;
+    }
+    memcpy(ckParamPtr->cb, ckBytes, ckTemp);
+    free(ckBytes);
+
+    ckParamPtr->ulCounterBits = jLongToCKULong(jCounterBits);
+
+    if (pLength != NULL) {
+        *pLength = sizeof(CK_AES_CTR_PARAMS);
+    }
+    return ckParamPtr;
+cleanup:
+    free(ckBytes);
+    free(ckParamPtr);
+    return NULL;
 }
 
 /*
- * converts the Java CK_GCM_PARAMS object to a CK_GCM_PARAMS structure
+ * converts the Java CK_GCM_PARAMS object to a CK_GCM_PARAMS pointer
  *
  * @param env - used to call JNI funktions to get the Java classes and objects
  * @param jParam - the Java CK_GCM_PARAMS object to convert
- * @param ckpParam - pointer to the new CK_GCM_PARAMS structure
+ * @param pLength - length of the allocated memory of the returned pointer
+ * @return pointer to the new CK_GCM_PARAMS structure
  */
-void jGCMParamsToCKGCMParam(JNIEnv *env, jobject jParam,
-                            CK_GCM_PARAMS_PTR ckpParam) {
+CK_GCM_PARAMS_PTR
+jGCMParamsToCKGCMParamPtr(JNIEnv *env, jobject jParam, CK_ULONG *pLength)
+{
+    CK_GCM_PARAMS_PTR ckParamPtr;
     jclass jGcmParamsClass;
     jfieldID fieldID;
     jobject jIv, jAad;
     jlong jTagLen;
 
-    /* get iv */
-    jGcmParamsClass = (*env)->FindClass(env, CLASS_GCM_PARAMS);
-    if (jGcmParamsClass == NULL) { return; }
-    if (!(*env)->IsInstanceOf(env, jParam, jGcmParamsClass)) {
-        return;
+    TRACE0("DEBUG jGCMParamsToCKGCMParam is called\n");
+
+    if (pLength != NULL) {
+        *pLength = 0L;
     }
 
+    // retrieve java values
+    jGcmParamsClass = (*env)->FindClass(env, CLASS_GCM_PARAMS);
+    if (jGcmParamsClass == NULL) { return NULL; }
+    if (!(*env)->IsInstanceOf(env, jParam, jGcmParamsClass)) {
+        return NULL;
+    }
     fieldID = (*env)->GetFieldID(env, jGcmParamsClass, "iv", "[B");
-    if (fieldID == NULL) { return; }
+    if (fieldID == NULL) { return NULL; }
     jIv = (*env)->GetObjectField(env, jParam, fieldID);
-
-    /* get aad */
     fieldID = (*env)->GetFieldID(env, jGcmParamsClass, "aad", "[B");
-    if (fieldID == NULL) { return; }
+    if (fieldID == NULL) { return NULL; }
     jAad = (*env)->GetObjectField(env, jParam, fieldID);
-
-    /* get tagLength */
     fieldID = (*env)->GetFieldID(env, jGcmParamsClass, "tagBits", "J");
-    if (fieldID == NULL) { return; }
+    if (fieldID == NULL) { return NULL; }
     jTagLen = (*env)->GetLongField(env, jParam, fieldID);
 
+    // allocate memory for CK_GCM_PARAMS pointer
+    ckParamPtr = calloc(1, sizeof(CK_GCM_PARAMS));
+    if (ckParamPtr == NULL) {
+        throwOutOfMemoryError(env, 0);
+        return NULL;
+    }
 
-    /* populate java values */
-    jByteArrayToCKByteArray(env, jIv, &(ckpParam->pIv), &(ckpParam->ulIvLen));
-    if ((*env)->ExceptionCheck(env)) { return; }
+    // populate using java values
+    jByteArrayToCKByteArray(env, jIv, &(ckParamPtr->pIv), &(ckParamPtr->ulIvLen));
+    if ((*env)->ExceptionCheck(env)) {
+        goto cleanup;
+    }
 
-    jByteArrayToCKByteArray(env, jAad, &(ckpParam->pAAD), &(ckpParam->ulAADLen));
-    if ((*env)->ExceptionCheck(env)) { return; }
+    jByteArrayToCKByteArray(env, jAad, &(ckParamPtr->pAAD), &(ckParamPtr->ulAADLen));
+    if ((*env)->ExceptionCheck(env)) {
+        goto cleanup;
+    }
 
-    ckpParam->ulTagBits = jLongToCKULong(jTagLen);
+    ckParamPtr->ulTagBits = jLongToCKULong(jTagLen);
+
+    if (pLength != NULL) {
+        *pLength = sizeof(CK_GCM_PARAMS);
+    }
+    TRACE1("Created inner GCM_PARAMS PTR %lX\n", ptr_to_jlong(ckParamPtr));
+    return ckParamPtr;
+cleanup:
+    free(ckParamPtr->pIv);
+    free(ckParamPtr->pAAD);
+    free(ckParamPtr);
+    return NULL;
+
 }
 
 /*
- * converts the Java CK_CCM_PARAMS object to a CK_CCM_PARAMS structure
+ * converts the Java CK_CCM_PARAMS object to a CK_CCM_PARAMS pointer
  *
  * @param env - used to call JNI functions to get the Java classes and objects
  * @param jParam - the Java CK_CCM_PARAMS object to convert
- * @param ckpParam - pointer to the new CK_CCM_PARAMS structure
+ * @param pLength - length of the allocated memory of the returned pointer
+ * @return pointer to the new CK_CCM_PARAMS structure
  */
-void jCCMParamsToCKCCMParam(JNIEnv *env, jobject jParam,
-                            CK_CCM_PARAMS_PTR ckpParam) {
+CK_CCM_PARAMS_PTR
+jCCMParamsToCKCCMParamPtr(JNIEnv *env, jobject jParam, CK_ULONG *pLength)
+{
+    CK_CCM_PARAMS_PTR ckParamPtr;
     jclass jCcmParamsClass;
     jfieldID fieldID;
     jobject jNonce, jAad;
     jlong jDataLen, jMacLen;
 
-    /* get iv */
-    jCcmParamsClass = (*env)->FindClass(env, CLASS_CCM_PARAMS);
-    if (jCcmParamsClass == NULL) { return; }
+    if (pLength != NULL) {
+        *pLength = 0;
+    }
 
+    // retrieve java values
+    jCcmParamsClass = (*env)->FindClass(env, CLASS_CCM_PARAMS);
+    if (jCcmParamsClass == NULL) { return NULL; }
     if (!(*env)->IsInstanceOf(env, jParam, jCcmParamsClass)) {
-        return;
+        return NULL;
     }
     fieldID = (*env)->GetFieldID(env, jCcmParamsClass, "dataLen", "J");
-    if (fieldID == NULL) { return; }
+    if (fieldID == NULL) { return NULL; }
     jDataLen = (*env)->GetLongField(env, jParam, fieldID);
-
     fieldID = (*env)->GetFieldID(env, jCcmParamsClass, "nonce", "[B");
-    if (fieldID == NULL) { return; }
+    if (fieldID == NULL) { return NULL; }
     jNonce = (*env)->GetObjectField(env, jParam, fieldID);
-
-    /* get aad */
     fieldID = (*env)->GetFieldID(env, jCcmParamsClass, "aad", "[B");
-    if (fieldID == NULL) { return; }
+    if (fieldID == NULL) { return NULL; }
     jAad = (*env)->GetObjectField(env, jParam, fieldID);
-
-    /* get macLen */
     fieldID = (*env)->GetFieldID(env, jCcmParamsClass, "macLen", "J");
-    if (fieldID == NULL) { return; }
+    if (fieldID == NULL) { return NULL; }
     jMacLen = (*env)->GetLongField(env, jParam, fieldID);
 
-    /* populate java values */
-    ckpParam->ulDataLen = jLongToCKULong(jDataLen);
-    jByteArrayToCKByteArray(env, jNonce, &(ckpParam->pNonce),
-            &(ckpParam->ulNonceLen));
-    jByteArrayToCKByteArray(env, jAad, &(ckpParam->pAAD),
-            &(ckpParam->ulAADLen));
-    ckpParam->ulMACLen = jLongToCKULong(jMacLen);
-    if ((*env)->ExceptionCheck(env)) { return; }
+    // allocate memory for CK_CCM_PARAMS pointer
+    ckParamPtr = calloc(1, sizeof(CK_CCM_PARAMS));
+    if (ckParamPtr == NULL) {
+        throwOutOfMemoryError(env, 0);
+        return NULL;
+    }
+
+    // populate using java values
+    ckParamPtr->ulDataLen = jLongToCKULong(jDataLen);
+    jByteArrayToCKByteArray(env, jNonce, &(ckParamPtr->pNonce),
+            &(ckParamPtr->ulNonceLen));
+    if ((*env)->ExceptionCheck(env)) {
+        goto cleanup;
+    }
+
+    jByteArrayToCKByteArray(env, jAad, &(ckParamPtr->pAAD),
+            &(ckParamPtr->ulAADLen));
+    if ((*env)->ExceptionCheck(env)) {
+        goto cleanup;
+    }
+
+    ckParamPtr->ulMACLen = jLongToCKULong(jMacLen);
+
+    if (pLength != NULL) {
+        *pLength = sizeof(CK_CCM_PARAMS);
+    }
+    return ckParamPtr;
+cleanup:
+    free(ckParamPtr->pNonce);
+    free(ckParamPtr->pAAD);
+    free(ckParamPtr);
+    return NULL;
 }
 
 /*
- * converts a Java CK_MECHANISM object into a pointer to a CK_MECHANISM
- * structure. NOTE: CALLER IS RESPONSIBLE FOR FREEING THE RETURNED POINTER
+ * converts a Java CK_MECHANISM object into a CK_MECHANISM pointer
+ * pointer.
  *
  * @param env - used to call JNI funktions to get the values out of the Java object
- * @param jMechanism - the Java CK_MECHANISM object to convert
- * @return - pointer to the new CK_MECHANISM structure
+ * @param jMech - the Java CK_MECHANISM object to convert
+ * @return pointer to the new CK_MECHANISM structure
  */
 CK_MECHANISM_PTR jMechanismToCKMechanismPtr(JNIEnv *env, jobject jMech)
 {
@@ -978,7 +1174,7 @@ CK_MECHANISM_PTR jMechanismToCKMechanismPtr(JNIEnv *env, jobject jMech)
     jobject jParam = (*env)->GetObjectField(env, jMech, mech_pParameterID);
 
     /* allocate memory for CK_MECHANISM_PTR */
-    ckpMech =  (CK_MECHANISM_PTR) malloc(sizeof(CK_MECHANISM));
+    ckpMech =  (CK_MECHANISM_PTR) calloc(1, sizeof(CK_MECHANISM));
     if (ckpMech == NULL) {
         throwOutOfMemoryError(env, 0);
         return NULL;
@@ -1001,48 +1197,15 @@ CK_MECHANISM_PTR jMechanismToCKMechanismPtr(JNIEnv *env, jobject jMech)
 }
 
 /*
- * the following functions convert Attribute and Mechanism value pointers
- *
- * jobject ckAttributeValueToJObject(JNIEnv *env,
- *                                   const CK_ATTRIBUTE_PTR ckpAttribute);
- *
- * CK_VOID_PTR jObjectToPrimitiveCKObjectPtr(JNIEnv *env,
- *                                       jobject jObject,
- *                                       CK_ULONG *pLength);
- *
- * CK_VOID_PTR jMechParamToCKMechParamPtr(JNIEnv *env,
- *                              jobject jParam,
- *                              CK_MECHANISM_TYPE ckMech,
- *                              CK_ULONG *ckpLength);
- *
- * These functions are used if a PKCS#11 mechanism or attribute structure gets
- * convertet to a Java attribute or mechanism object or vice versa.
- *
- * ckAttributeValueToJObject converts a PKCS#11 attribute value pointer to a Java
- * object depending on the type of the Attribute. A PKCS#11 attribute value can
+ * converts the pValue of a CK_ATTRIBUTE structure into a Java Object by
+ * checking the type of the attribute. A PKCS#11 attribute value can
  * be a CK_ULONG, CK_BYTE[], CK_CHAR[], big integer, CK_BBOOL, CK_UTF8CHAR[],
  * CK_DATE or CK_FLAGS that gets converted to a corresponding Java object.
  *
- * jObjectToPrimitiveCKObjectPtr is used by jAttributeToCKAttributePtr for
- * converting the Java attribute value to a PKCS#11 attribute value pointer.
- * For now only primitive datatypes and arrays of primitive datatypes can get
- * converted. Otherwise this function throws a PKCS#11Exception with the
- * errorcode CKR_VENDOR_DEFINED.
- *
- * jMechParamToCKMechParamPtr converts a Java mechanism parameter to a PKCS#11
- * mechanism parameter. Based on the specified PKCS#11 mechanism type, this
- * function will allocate memory for a PKCS#11 parameter structure and
- * populate its field using the Java object.
- */
-
-/*
- * converts the pValue of a CK_ATTRIBUTE structure into a Java Object by
- * checking the type of the attribute.
- *
- * @param env - used to call JNI funktions to create the new Java object
+ * @param env - used to call JNI functions to create the new Java object
  * @param ckpAttribute - the pointer to the CK_ATTRIBUTE structure that contains the type
  *                       and the pValue to convert
- * @return - the new Java object of the CK-type pValue
+ * @return the new Java object of the CK-type pValue
  */
 jobject ckAttributeValueToJObject(JNIEnv *env, const CK_ATTRIBUTE_PTR ckpAttribute)
 {
@@ -1185,9 +1348,8 @@ jobject ckAttributeValueToJObject(JNIEnv *env, const CK_ATTRIBUTE_PTR ckpAttribu
  */
 
 /*
- * converts the given Java mechanism parameter to a CK mechanism parameter structure
- * and store the length in bytes in the length variable.
- * The memory of *ckpParamPtr has to be freed after use!
+ * converts the given Java mechanism parameter to a CK mechanism parameter
+ * pointer and store the length in bytes in the length variable.
  *
  * @param env - used to call JNI funktions to get the Java classes and objects
  * @param jParam - the Java mechanism parameter object to convert
@@ -1223,156 +1385,68 @@ CK_VOID_PTR jMechParamToCKMechParamPtrSlow(JNIEnv *env, jobject jParam,
      * Most common cases, i.e. NULL/byte[]/long, are already handled by
      * jMechParamToCKMechParam before calling this method.
      */
-    TRACE1("\nDEBUG: jMechParamToCKMechParamPtrSlow, mech=0x%lX", ckMech);
+    TRACE1("\nDEBUG: jMechParamToCKMechParamPtrSlow, mech=0x%lX\n", ckMech);
 
     switch (ckMech) {
         case CKM_SSL3_PRE_MASTER_KEY_GEN:
         case CKM_TLS_PRE_MASTER_KEY_GEN:
-            *ckpLength = sizeof(CK_VERSION);
             ckpParamPtr = jVersionToCKVersionPtr(env, jParam);
+            if (ckpParamPtr != NULL) {
+                *ckpLength = sizeof(CK_VERSION);
+            } else {
+                *ckpLength = 0;
+            }
             break;
         case CKM_SSL3_MASTER_KEY_DERIVE:
         case CKM_TLS_MASTER_KEY_DERIVE:
         case CKM_SSL3_MASTER_KEY_DERIVE_DH:
         case CKM_TLS_MASTER_KEY_DERIVE_DH:
-            ckpParamPtr =
-                    malloc(sizeof(CK_SSL3_MASTER_KEY_DERIVE_PARAMS));
-            if (ckpParamPtr == NULL) {
-                throwOutOfMemoryError(env, 0);
-                return NULL;
-            }
-            *ckpLength = sizeof(CK_SSL3_MASTER_KEY_DERIVE_PARAMS);
-
-            jSsl3MasterKeyDeriveParamToCKSsl3MasterKeyDeriveParam(env, jParam,
-                    (CK_SSL3_MASTER_KEY_DERIVE_PARAMS_PTR) ckpParamPtr);
+            ckpParamPtr = jSsl3MasterKeyDeriveParamToCKSsl3MasterKeyDeriveParamPtr(env, jParam,
+                    ckpLength);
             break;
         case CKM_SSL3_KEY_AND_MAC_DERIVE:
         case CKM_TLS_KEY_AND_MAC_DERIVE:
-            ckpParamPtr =
-                    malloc(sizeof(CK_SSL3_KEY_MAT_PARAMS));
-            if (ckpParamPtr == NULL) {
-                 throwOutOfMemoryError(env, 0);
-                 return NULL;
-            }
-            *ckpLength = sizeof(CK_SSL3_KEY_MAT_PARAMS);
-
-            jSsl3KeyMatParamToCKSsl3KeyMatParam(env, jParam,
-                    (CK_SSL3_KEY_MAT_PARAMS_PTR) ckpParamPtr);
+            ckpParamPtr = jSsl3KeyMatParamToCKSsl3KeyMatParamPtr(env, jParam,
+                    ckpLength);
             break;
         case CKM_TLS12_KEY_AND_MAC_DERIVE:
-            ckpParamPtr =
-                    malloc(sizeof(CK_TLS12_KEY_MAT_PARAMS));
-            if (ckpParamPtr == NULL) {
-                throwOutOfMemoryError(env, 0);
-                return NULL;
-            }
-            *ckpLength = sizeof(CK_TLS12_KEY_MAT_PARAMS);
-
-            jTls12KeyMatParamToCKTls12KeyMatParam(env, jParam,
-                    (CK_TLS12_KEY_MAT_PARAMS_PTR) ckpParamPtr);
+            ckpParamPtr = jTls12KeyMatParamToCKTls12KeyMatParamPtr(env, jParam,
+                    ckpLength);
             break;
         case CKM_TLS12_MASTER_KEY_DERIVE:
         case CKM_TLS12_MASTER_KEY_DERIVE_DH:
-            ckpParamPtr =
-                    malloc(sizeof(CK_TLS12_MASTER_KEY_DERIVE_PARAMS));
-            if (ckpParamPtr == NULL) {
-                throwOutOfMemoryError(env, 0);
-                return NULL;
-            }
-            *ckpLength = sizeof(CK_TLS12_MASTER_KEY_DERIVE_PARAMS);
-
-            jTls12MasterKeyDeriveParamToCKTls12MasterKeyDeriveParam(env, jParam,
-                    (CK_TLS12_MASTER_KEY_DERIVE_PARAMS_PTR) ckpParamPtr);
+            ckpParamPtr = jTls12MasterKeyDeriveParamToCKTls12MasterKeyDeriveParamPtr(env, jParam,
+                    ckpLength);
             break;
         case CKM_TLS_PRF:
         case CKM_NSS_TLS_PRF_GENERAL:
-            ckpParamPtr = malloc(sizeof(CK_TLS_PRF_PARAMS));
-            if (ckpParamPtr == NULL) {
-                throwOutOfMemoryError(env, 0);
-                return NULL;
-            }
-            *ckpLength = sizeof(CK_TLS_PRF_PARAMS);
-
-            jTlsPrfParamsToCKTlsPrfParam(env, jParam,
-                    (CK_TLS_PRF_PARAMS_PTR) ckpParamPtr);
+            ckpParamPtr = jTlsPrfParamsToCKTlsPrfParamPtr(env, jParam,
+                    ckpLength);
             break;
         case CKM_TLS_MAC:
-            ckpParamPtr = malloc(sizeof(CK_TLS_MAC_PARAMS));
-            if (ckpParamPtr == NULL) {
-                throwOutOfMemoryError(env, 0);
-                return NULL;
-            }
-            *ckpLength = sizeof(CK_TLS_MAC_PARAMS);
-
-            jTlsMacParamsToCKTlsMacParam(env, jParam,
-                    (CK_TLS_MAC_PARAMS_PTR) ckpParamPtr);
+            ckpParamPtr = jTlsMacParamsToCKTlsMacParamPtr(env, jParam,
+                    ckpLength);
             break;
         case CKM_AES_CTR:
-            ckpParamPtr = malloc(sizeof(CK_AES_CTR_PARAMS));
-            if (ckpParamPtr == NULL) {
-                throwOutOfMemoryError(env, 0);
-                return NULL;
-            }
-            *ckpLength = sizeof(CK_AES_CTR_PARAMS);
-
-            jAesCtrParamsToCKAesCtrParam(env, jParam,
-                    (CK_AES_CTR_PARAMS_PTR) ckpParamPtr);
+            ckpParamPtr = jAesCtrParamsToCKAesCtrParamPtr(env, jParam,
+                    ckpLength);
             break;
         case CKM_AES_GCM:
-            ckpParamPtr = malloc(sizeof(CK_GCM_PARAMS));
-            if (ckpParamPtr == NULL) {
-                throwOutOfMemoryError(env, 0);
-                return NULL;
-            }
-            *ckpLength = sizeof(CK_GCM_PARAMS);
-
-            jGCMParamsToCKGCMParam(env, jParam, (CK_GCM_PARAMS_PTR) ckpParamPtr);
+            ckpParamPtr = jGCMParamsToCKGCMParamPtr(env, jParam, ckpLength);
             break;
         case CKM_AES_CCM:
-            ckpParamPtr = malloc(sizeof(CK_CCM_PARAMS));
-            if (ckpParamPtr == NULL) {
-                throwOutOfMemoryError(env, 0);
-                return NULL;
-            }
-            *ckpLength = sizeof(CK_CCM_PARAMS);
-
-            jCCMParamsToCKCCMParam(env, jParam,
-                    (CK_CCM_PARAMS_PTR) ckpParamPtr);
+            ckpParamPtr = jCCMParamsToCKCCMParamPtr(env, jParam, ckpLength);
             break;
         case CKM_RSA_PKCS_OAEP:
-            ckpParamPtr = malloc(sizeof(CK_RSA_PKCS_OAEP_PARAMS));
-            if (ckpParamPtr == NULL) {
-                throwOutOfMemoryError(env, 0);
-                return NULL;
-            }
-            *ckpLength = sizeof(CK_RSA_PKCS_OAEP_PARAMS);
-
-            jRsaPkcsOaepParamToCKRsaPkcsOaepParam(env, jParam,
-                    (CK_RSA_PKCS_OAEP_PARAMS_PTR) ckpParamPtr);
+            ckpParamPtr = jRsaPkcsOaepParamToCKRsaPkcsOaepParamPtr(env, jParam, ckpLength);
             break;
         case CKM_PBE_SHA1_DES3_EDE_CBC:
         case CKM_PBE_SHA1_DES2_EDE_CBC:
         case CKM_PBA_SHA1_WITH_SHA1_HMAC:
-            ckpParamPtr = malloc(sizeof(CK_PBE_PARAMS));
-            if (ckpParamPtr == NULL) {
-                throwOutOfMemoryError(env, 0);
-                return NULL;
-            }
-
-            *ckpLength = sizeof(CK_PBE_PARAMS);
-
-            jPbeParamToCKPbeParam(env, jParam, (CK_PBE_PARAMS_PTR) ckpParamPtr);
+            ckpParamPtr = jPbeParamToCKPbeParamPtr(env, jParam, ckpLength);
             break;
         case CKM_PKCS5_PBKD2:
-            ckpParamPtr = malloc(sizeof(CK_PKCS5_PBKD2_PARAMS));
-            if (ckpParamPtr == NULL) {
-                throwOutOfMemoryError(env, 0);
-                return NULL;
-            }
-            *ckpLength = sizeof(CK_PKCS5_PBKD2_PARAMS);
-
-            jPkcs5Pbkd2ParamToCKPkcs5Pbkd2Param(env, jParam,
-                     (CK_PKCS5_PBKD2_PARAMS_PTR) ckpParamPtr);
+            ckpParamPtr = jPkcs5Pbkd2ParamToCKPkcs5Pbkd2ParamPtr(env, jParam, ckpLength);
             break;
         case CKM_RSA_PKCS_PSS:
         case CKM_SHA1_RSA_PKCS_PSS:
@@ -1380,62 +1454,21 @@ CK_VOID_PTR jMechParamToCKMechParamPtrSlow(JNIEnv *env, jobject jParam,
         case CKM_SHA384_RSA_PKCS_PSS:
         case CKM_SHA512_RSA_PKCS_PSS:
         case CKM_SHA224_RSA_PKCS_PSS:
-            ckpParamPtr = malloc(sizeof(CK_RSA_PKCS_PSS_PARAMS));
-            if (ckpParamPtr == NULL) {
-                throwOutOfMemoryError(env, 0);
-                return NULL;
-            }
-            *ckpLength = sizeof(CK_RSA_PKCS_PSS_PARAMS);
-
-            jRsaPkcsPssParamToCKRsaPkcsPssParam(env, jParam,
-                    (CK_RSA_PKCS_PSS_PARAMS_PTR) ckpParamPtr);
+            ckpParamPtr = jRsaPkcsPssParamToCKRsaPkcsPssParamPtr(env, jParam, ckpLength);
             break;
         case CKM_ECDH1_DERIVE:
         case CKM_ECDH1_COFACTOR_DERIVE:
-            ckpParamPtr = malloc(sizeof(CK_ECDH1_DERIVE_PARAMS));
-            if (ckpParamPtr == NULL) {
-                throwOutOfMemoryError(env, 0);
-                return NULL;
-            }
-            *ckpLength = sizeof(CK_ECDH1_DERIVE_PARAMS);
-
-            jEcdh1DeriveParamToCKEcdh1DeriveParam(env, jParam,
-                    (CK_ECDH1_DERIVE_PARAMS_PTR) ckpParamPtr);
+            ckpParamPtr = jEcdh1DeriveParamToCKEcdh1DeriveParamPtr(env, jParam, ckpLength);
             break;
         case CKM_ECMQV_DERIVE:
-            ckpParamPtr = malloc(sizeof(CK_ECDH2_DERIVE_PARAMS));
-            if (ckpParamPtr == NULL) {
-                throwOutOfMemoryError(env, 0);
-                return NULL;
-            }
-            *ckpLength = sizeof(CK_ECDH2_DERIVE_PARAMS);
-
-            jEcdh2DeriveParamToCKEcdh2DeriveParam(env, jParam,
-                    (CK_ECDH2_DERIVE_PARAMS_PTR) ckpParamPtr);
+            ckpParamPtr = jEcdh2DeriveParamToCKEcdh2DeriveParamPtr(env, jParam, ckpLength);
             break;
         case CKM_X9_42_DH_DERIVE:
-            ckpParamPtr = malloc(sizeof(CK_X9_42_DH1_DERIVE_PARAMS));
-            if (ckpParamPtr == NULL) {
-                throwOutOfMemoryError(env, 0);
-                return NULL;
-            }
-            *ckpLength = sizeof(CK_X9_42_DH1_DERIVE_PARAMS);
-
-            /* convert jParameter to CKParameter */
-            jX942Dh1DeriveParamToCKX942Dh1DeriveParam(env, jParam,
-                (CK_X9_42_DH1_DERIVE_PARAMS_PTR) ckpParamPtr);
+            ckpParamPtr = jX942Dh1DeriveParamToCKX942Dh1DeriveParamPtr(env, jParam, ckpLength);
             break;
         case CKM_X9_42_DH_HYBRID_DERIVE:
         case CKM_X9_42_MQV_DERIVE:
-            ckpParamPtr = malloc(sizeof(CK_X9_42_DH2_DERIVE_PARAMS));
-            if (ckpParamPtr == NULL) {
-                throwOutOfMemoryError(env, 0);
-                return NULL;
-            }
-            *ckpLength = sizeof(CK_X9_42_DH2_DERIVE_PARAMS);
-
-            jX942Dh2DeriveParamToCKX942Dh2DeriveParam(env, jParam,
-                    (CK_X9_42_DH2_DERIVE_PARAMS_PTR) ckpParamPtr);
+            ckpParamPtr = jX942Dh2DeriveParamToCKX942Dh2DeriveParamPtr(env, jParam, ckpLength);
             break;
         // defined by pkcs11.h but we don't support
         case CKM_KEA_DERIVE: // CK_KEA_DERIVE_PARAMS
@@ -1460,118 +1493,144 @@ CK_VOID_PTR jMechParamToCKMechParamPtrSlow(JNIEnv *env, jobject jParam,
     TRACE0("\nDEBUG: jMechParamToCKMechParamPtrSlow FINISHED\n");
 
     if ((*env)->ExceptionCheck(env)) {
-        free(ckpParamPtr);
-        *ckpLength = 0;
         return NULL;
     }
 
     return ckpParamPtr;
 }
 
-/* the mechanism parameter convertion functions: */
-
 /*
- * converts the Java CK_RSA_PKCS_OAEP_PARAMS object to a CK_RSA_PKCS_OAEP_PARAMS structure
+ * converts the Java CK_RSA_PKCS_OAEP_PARAMS object to a
+ * CK_RSA_PKCS_OAEP_PARAMS pointer
  *
  * @param env - used to call JNI funktions to get the Java classes and objects
  * @param jParam - the Java CK_RSA_PKCS_OAEP_PARAMS object to convert
- * @return - the new CK_RSA_PKCS_OAEP_PARAMS structure
+ * @param pLength - length of the allocated memory of the returned pointer
+ * @return pointer to the new CK_RSA_PKCS_OAEP_PARAMS structure
  */
-void jRsaPkcsOaepParamToCKRsaPkcsOaepParam(JNIEnv *env, jobject jParam,
-CK_RSA_PKCS_OAEP_PARAMS_PTR ckParamPtr)
+CK_RSA_PKCS_OAEP_PARAMS_PTR
+jRsaPkcsOaepParamToCKRsaPkcsOaepParamPtr(JNIEnv *env, jobject jParam, CK_ULONG *pLength)
 {
+    CK_RSA_PKCS_OAEP_PARAMS_PTR ckParamPtr;
     jclass jRsaPkcsOaepParamsClass;
     jfieldID fieldID;
     jlong jHashAlg, jMgf, jSource;
     jobject jSourceData;
-    CK_BYTE_PTR ckpByte;
-    memset(ckParamPtr, 0, sizeof(CK_RSA_PKCS_OAEP_PARAMS));
 
-    /* get hashAlg */
+    if (pLength!= NULL) {
+        *pLength = 0L;
+    }
+
+    // retrieve java values
     jRsaPkcsOaepParamsClass = (*env)->FindClass(env, CLASS_RSA_PKCS_OAEP_PARAMS);
-    if (jRsaPkcsOaepParamsClass == NULL) { return; }
+    if (jRsaPkcsOaepParamsClass == NULL) { return NULL; }
     fieldID = (*env)->GetFieldID(env, jRsaPkcsOaepParamsClass, "hashAlg", "J");
-    if (fieldID == NULL) { return; }
+    if (fieldID == NULL) { return NULL; }
     jHashAlg = (*env)->GetLongField(env, jParam, fieldID);
-
-    /* get mgf */
     fieldID = (*env)->GetFieldID(env, jRsaPkcsOaepParamsClass, "mgf", "J");
-    if (fieldID == NULL) { return; }
+    if (fieldID == NULL) { return NULL; }
     jMgf = (*env)->GetLongField(env, jParam, fieldID);
-
-    /* get source */
     fieldID = (*env)->GetFieldID(env, jRsaPkcsOaepParamsClass, "source", "J");
-    if (fieldID == NULL) { return; }
+    if (fieldID == NULL) { return NULL; }
     jSource = (*env)->GetLongField(env, jParam, fieldID);
-
-    /* get sourceData and sourceDataLength */
     fieldID = (*env)->GetFieldID(env, jRsaPkcsOaepParamsClass, "pSourceData", "[B");
-    if (fieldID == NULL) { return; }
+    if (fieldID == NULL) { return NULL; }
     jSourceData = (*env)->GetObjectField(env, jParam, fieldID);
 
-    /* populate java values */
+    // allocate memory for CK_RSA_PKCS_OAEP_PARAMS pointer
+    ckParamPtr = calloc(1, sizeof(CK_RSA_PKCS_OAEP_PARAMS));
+    if (ckParamPtr == NULL) {
+        throwOutOfMemoryError(env, 0);
+        return NULL;
+    }
+
+    // populate using java values
     ckParamPtr->hashAlg = jLongToCKULong(jHashAlg);
     ckParamPtr->mgf = jLongToCKULong(jMgf);
     ckParamPtr->source = jLongToCKULong(jSource);
-    jByteArrayToCKByteArray(env, jSourceData, & ckpByte, &(ckParamPtr->ulSourceDataLen));
-    if ((*env)->ExceptionCheck(env)) { return; }
-    ckParamPtr->pSourceData = (CK_VOID_PTR) ckpByte;
+    jByteArrayToCKByteArray(env, jSourceData, (CK_BYTE_PTR*) &(ckParamPtr->pSourceData),
+            &(ckParamPtr->ulSourceDataLen));
+    if ((*env)->ExceptionCheck(env)) {
+        free(ckParamPtr);
+        return NULL;
+    }
+
+    if (pLength!= NULL) {
+        *pLength = sizeof(CK_RSA_PKCS_OAEP_PARAMS);
+    }
+    return ckParamPtr;
 }
 
 /*
- * converts the Java CK_PBE_PARAMS object to a CK_PBE_PARAMS structure
+ * converts the Java CK_PBE_PARAMS object to a CK_PBE_PARAMS pointer
  *
  * @param env - used to call JNI funktions to get the Java classes and objects
  * @param jParam - the Java CK_PBE_PARAMS object to convert
- * @param ckParamPtr pointer to the new CK_PBE_PARAMS structure
+ * @param pLength - length of the allocated memory of the returned pointer
+ * @return pointer to the new CK_PBE_PARAMS structure
  */
-void jPbeParamToCKPbeParam(JNIEnv *env, jobject jParam,
-CK_PBE_PARAMS_PTR ckParamPtr)
+CK_PBE_PARAMS_PTR
+jPbeParamToCKPbeParamPtr(JNIEnv *env, jobject jParam, CK_ULONG *pLength)
 {
+    CK_PBE_PARAMS_PTR ckParamPtr;
     jclass jPbeParamsClass;
     jfieldID fieldID;
     jlong jIteration;
     jobject jInitVector, jPassword, jSalt;
     CK_ULONG ckTemp;
-    memset(ckParamPtr, 0, sizeof(CK_PBE_PARAMS));
 
-    /* get pInitVector */
+    if (pLength != NULL) {
+        *pLength = 0;
+    }
+
+    // retrieve java values
     jPbeParamsClass = (*env)->FindClass(env, CLASS_PBE_PARAMS);
-    if (jPbeParamsClass == NULL) { return; }
+    if (jPbeParamsClass == NULL) { return NULL; }
     fieldID = (*env)->GetFieldID(env, jPbeParamsClass, "pInitVector", "[C");
-    if (fieldID == NULL) { return; }
+    if (fieldID == NULL) { return NULL; }
     jInitVector = (*env)->GetObjectField(env, jParam, fieldID);
-
-    /* get pPassword and ulPasswordLength */
     fieldID = (*env)->GetFieldID(env, jPbeParamsClass, "pPassword", "[C");
-    if (fieldID == NULL) { return; }
+    if (fieldID == NULL) { return NULL; }
     jPassword = (*env)->GetObjectField(env, jParam, fieldID);
-
-    /* get pSalt and ulSaltLength */
     fieldID = (*env)->GetFieldID(env, jPbeParamsClass, "pSalt", "[C");
-    if (fieldID == NULL) { return; }
+    if (fieldID == NULL) { return NULL; }
     jSalt = (*env)->GetObjectField(env, jParam, fieldID);
-
-    /* get ulIteration */
     fieldID = (*env)->GetFieldID(env, jPbeParamsClass, "ulIteration", "J");
-    if (fieldID == NULL) { return; }
+    if (fieldID == NULL) { return NULL; }
     jIteration = (*env)->GetLongField(env, jParam, fieldID);
 
-    /* populate java values */
+    // allocate memory for CK_PBE_PARAMS pointer
+    ckParamPtr = calloc(1, sizeof(CK_PBE_PARAMS));
+    if (ckParamPtr == NULL) {
+        throwOutOfMemoryError(env, 0);
+        return NULL;
+    }
+
+    // populate using java values
     ckParamPtr->ulIteration = jLongToCKULong(jIteration);
     jCharArrayToCKCharArray(env, jInitVector, &(ckParamPtr->pInitVector), &ckTemp);
-    if ((*env)->ExceptionCheck(env)) { return; }
+    if ((*env)->ExceptionCheck(env)) {
+        goto cleanup;
+    }
     jCharArrayToCKCharArray(env, jPassword, &(ckParamPtr->pPassword), &(ckParamPtr->ulPasswordLen));
     if ((*env)->ExceptionCheck(env)) {
-        free(ckParamPtr->pInitVector);
-        return;
+        goto cleanup;
     }
     jCharArrayToCKCharArray(env, jSalt, &(ckParamPtr->pSalt), &(ckParamPtr->ulSaltLen));
     if ((*env)->ExceptionCheck(env)) {
-        free(ckParamPtr->pInitVector);
-        free(ckParamPtr->pPassword);
-        return;
+        goto cleanup;
     }
+
+    if (pLength != NULL) {
+        *pLength = sizeof(CK_PBE_PARAMS);
+    }
+    return ckParamPtr;
+cleanup:
+    free(ckParamPtr->pInitVector);
+    free(ckParamPtr->pPassword);
+    free(ckParamPtr->pSalt);
+    free(ckParamPtr);
+    return NULL;
 }
 
 /*
@@ -1602,7 +1661,7 @@ void copyBackPBEInitializationVector(JNIEnv *env, CK_MECHANISM *ckMechanism, job
     jMechanismType = (*env)->GetLongField(env, jMechanism, fieldID);
     ckMechanismType = jLongToCKULong(jMechanismType);
     if (ckMechanismType != ckMechanism->mechanism) {
-        /* we do not have maching types, this should not occur */
+        /* we do not have matching types, this should not occur */
         return;
     }
 
@@ -1637,321 +1696,426 @@ void copyBackPBEInitializationVector(JNIEnv *env, CK_MECHANISM *ckMechanism, job
 }
 
 /*
- * converts the Java CK_PKCS5_PBKD2_PARAMS object to a CK_PKCS5_PBKD2_PARAMS structure
+ * converts the Java CK_PKCS5_PBKD2_PARAMS object to a CK_PKCS5_PBKD2_PARAMS
+ * pointer
  *
  * @param env - used to call JNI funktions to get the Java classes and objects
  * @param jParam - the Java CK_PKCS5_PBKD2_PARAMS object to convert
- * @param ckParamPtr - pointer to the new CK_PKCS5_PBKD2_PARAMS structure
+ * @param pLength - length of the allocated memory of the returned pointer
+ * @return pointer to the new CK_PKCS5_PBKD2_PARAMS structure
  */
-void jPkcs5Pbkd2ParamToCKPkcs5Pbkd2Param(JNIEnv *env, jobject jParam,
-CK_PKCS5_PBKD2_PARAMS_PTR ckParamPtr)
+CK_PKCS5_PBKD2_PARAMS_PTR
+jPkcs5Pbkd2ParamToCKPkcs5Pbkd2ParamPtr(JNIEnv *env, jobject jParam, CK_ULONG *pLength)
 {
+    CK_PKCS5_PBKD2_PARAMS_PTR ckParamPtr;
     jclass jPkcs5Pbkd2ParamsClass;
     jfieldID fieldID;
     jlong jSaltSource, jIteration, jPrf;
     jobject jSaltSourceData, jPrfData;
-    memset(ckParamPtr, 0, sizeof(CK_PKCS5_PBKD2_PARAMS));
 
-    /* get saltSource */
+    if (pLength != NULL) {
+        *pLength = 0L;
+    }
+
+    // retrieve java values
     jPkcs5Pbkd2ParamsClass = (*env)->FindClass(env, CLASS_PKCS5_PBKD2_PARAMS);
-    if (jPkcs5Pbkd2ParamsClass == NULL) { return; }
+    if (jPkcs5Pbkd2ParamsClass == NULL) { return NULL; }
     fieldID = (*env)->GetFieldID(env, jPkcs5Pbkd2ParamsClass, "saltSource", "J");
-    if (fieldID == NULL) { return; }
+    if (fieldID == NULL) { return NULL; }
     jSaltSource = (*env)->GetLongField(env, jParam, fieldID);
-
-    /* get pSaltSourceData */
     fieldID = (*env)->GetFieldID(env, jPkcs5Pbkd2ParamsClass, "pSaltSourceData", "[B");
-    if (fieldID == NULL) { return; }
+    if (fieldID == NULL) { return NULL; }
     jSaltSourceData = (*env)->GetObjectField(env, jParam, fieldID);
-
-    /* get iterations */
     fieldID = (*env)->GetFieldID(env, jPkcs5Pbkd2ParamsClass, "iterations", "J");
-    if (fieldID == NULL) { return; }
+    if (fieldID == NULL) { return NULL; }
     jIteration = (*env)->GetLongField(env, jParam, fieldID);
-
-    /* get prf */
     fieldID = (*env)->GetFieldID(env, jPkcs5Pbkd2ParamsClass, "prf", "J");
-    if (fieldID == NULL) { return; }
+    if (fieldID == NULL) { return NULL; }
     jPrf = (*env)->GetLongField(env, jParam, fieldID);
-
-    /* get pPrfData and ulPrfDataLength in byte */
     fieldID = (*env)->GetFieldID(env, jPkcs5Pbkd2ParamsClass, "pPrfData", "[B");
-    if (fieldID == NULL) { return; }
+    if (fieldID == NULL) { return NULL; }
     jPrfData = (*env)->GetObjectField(env, jParam, fieldID);
 
-    /* populate java values */
+    // allocate memory for CK_PKCS5_PBKD2_PARAMS pointer
+    ckParamPtr = calloc(1, sizeof(CK_PKCS5_PBKD2_PARAMS));
+    if (ckParamPtr == NULL) {
+        throwOutOfMemoryError(env, 0);
+        return NULL;
+    }
+
+    // populate using java values
     ckParamPtr->saltSource = jLongToCKULong(jSaltSource);
-    jByteArrayToCKByteArray(env, jSaltSourceData, (CK_BYTE_PTR *) &(ckParamPtr->pSaltSourceData), &(ckParamPtr->ulSaltSourceDataLen));
-    if ((*env)->ExceptionCheck(env)) { return; }
+    jByteArrayToCKByteArray(env, jSaltSourceData, (CK_BYTE_PTR *)
+            &(ckParamPtr->pSaltSourceData), &(ckParamPtr->ulSaltSourceDataLen));
+    if ((*env)->ExceptionCheck(env)) {
+        goto cleanup;
+    }
     ckParamPtr->iterations = jLongToCKULong(jIteration);
     ckParamPtr->prf = jLongToCKULong(jPrf);
-    jByteArrayToCKByteArray(env, jPrfData, (CK_BYTE_PTR *) &(ckParamPtr->pPrfData), &(ckParamPtr->ulPrfDataLen));
+    jByteArrayToCKByteArray(env, jPrfData, (CK_BYTE_PTR *)
+            &(ckParamPtr->pPrfData), &(ckParamPtr->ulPrfDataLen));
     if ((*env)->ExceptionCheck(env)) {
-        free(ckParamPtr->pSaltSourceData);
-        return;
+        goto cleanup;
     }
+
+    if (pLength != NULL) {
+        *pLength = sizeof(CK_PKCS5_PBKD2_PARAMS);
+    }
+    return ckParamPtr;
+cleanup:
+    free(ckParamPtr->pSaltSourceData);
+    free(ckParamPtr->pPrfData);
+    free(ckParamPtr);
+    return NULL;
+
 }
 
 /*
- * converts the Java CK_RSA_PKCS_PSS_PARAMS object to a CK_RSA_PKCS_PSS_PARAMS structure
+ * converts the Java CK_RSA_PKCS_PSS_PARAMS object to a CK_RSA_PKCS_PSS_PARAMS
+ * pointer
  *
  * @param env - used to call JNI funktions to get the Java classes and objects
  * @param jParam - the Java CK_RSA_PKCS_PSS_PARAMS object to convert
- * @param ckParamPtr - pointer to the new CK_RSA_PKCS_PSS_PARAMS structure
+ * @param pLength - length of the allocated memory of the returned pointer
+ * @return pointer to the new CK_RSA_PKCS_PSS_PARAMS structure
  */
-void jRsaPkcsPssParamToCKRsaPkcsPssParam(JNIEnv *env, jobject jParam,
-CK_RSA_PKCS_PSS_PARAMS_PTR ckParamPtr)
+CK_RSA_PKCS_PSS_PARAMS_PTR
+jRsaPkcsPssParamToCKRsaPkcsPssParamPtr(JNIEnv *env, jobject jParam, CK_ULONG *pLength)
 {
+    CK_RSA_PKCS_PSS_PARAMS_PTR ckParamPtr;
     jclass jRsaPkcsPssParamsClass;
     jfieldID fieldID;
     jlong jHashAlg, jMgf, jSLen;
-    memset(ckParamPtr, 0, sizeof(CK_RSA_PKCS_PSS_PARAMS));
 
-    /* get hashAlg */
+    if (pLength != NULL) {
+        *pLength = 0;
+    }
+
+    // retrieve java values
     jRsaPkcsPssParamsClass = (*env)->FindClass(env, CLASS_RSA_PKCS_PSS_PARAMS);
-    if (jRsaPkcsPssParamsClass == NULL) { return; }
+    if (jRsaPkcsPssParamsClass == NULL) { return NULL; }
     fieldID = (*env)->GetFieldID(env, jRsaPkcsPssParamsClass, "hashAlg", "J");
-    if (fieldID == NULL) { return; }
+    if (fieldID == NULL) { return NULL; }
     jHashAlg = (*env)->GetLongField(env, jParam, fieldID);
-
-    /* get mgf */
     fieldID = (*env)->GetFieldID(env, jRsaPkcsPssParamsClass, "mgf", "J");
-    if (fieldID == NULL) { return; }
+    if (fieldID == NULL) { return NULL; }
     jMgf = (*env)->GetLongField(env, jParam, fieldID);
-
-    /* get sLen */
     fieldID = (*env)->GetFieldID(env, jRsaPkcsPssParamsClass, "sLen", "J");
-    if (fieldID == NULL) { return; }
+    if (fieldID == NULL) { return NULL; }
     jSLen = (*env)->GetLongField(env, jParam, fieldID);
 
-    /* populate java values */
+    // allocate memory for CK_RSA_PKCS_PSS_PARAMS pointer
+    ckParamPtr = calloc(1, sizeof(CK_RSA_PKCS_PSS_PARAMS));
+    if (ckParamPtr == NULL) {
+        throwOutOfMemoryError(env, 0);
+        return NULL;
+    }
+
+    // populate using java values
     ckParamPtr->hashAlg = jLongToCKULong(jHashAlg);
     ckParamPtr->mgf = jLongToCKULong(jMgf);
     ckParamPtr->sLen = jLongToCKULong(jSLen);
     TRACE1("DEBUG: jRsaPkcsPssParamToCKRsaPkcsPssParam, hashAlg=0x%lX\n", ckParamPtr->hashAlg);
     TRACE1("DEBUG: jRsaPkcsPssParamToCKRsaPkcsPssParam, mgf=0x%lX\n", ckParamPtr->mgf);
     TRACE1("DEBUG: jRsaPkcsPssParamToCKRsaPkcsPssParam, sLen=%lu\n", ckParamPtr->sLen);
+
+    if (pLength != NULL) {
+        *pLength = sizeof(CK_RSA_PKCS_PSS_PARAMS);
+    }
+    return ckParamPtr;
+
 }
 
 /*
- * converts the Java CK_ECDH1_DERIVE_PARAMS object to a CK_ECDH1_DERIVE_PARAMS structure
+ * converts the Java CK_ECDH1_DERIVE_PARAMS object to a CK_ECDH1_DERIVE_PARAMS
+ * pointer
  *
  * @param env - used to call JNI funktions to get the Java classes and objects
  * @param jParam - the Java CK_ECDH1_DERIVE_PARAMS object to convert
- * @param ckParamPtr - the new CK_ECDH1_DERIVE_PARAMS structure
+ * @param pLength - length of the allocated memory of the returned pointer
+ * @retur pointer to nthe new CK_ECDH1_DERIVE_PARAMS structure
  */
-void jEcdh1DeriveParamToCKEcdh1DeriveParam(JNIEnv *env, jobject jParam,
-CK_ECDH1_DERIVE_PARAMS_PTR ckParamPtr)
+CK_ECDH1_DERIVE_PARAMS_PTR
+jEcdh1DeriveParamToCKEcdh1DeriveParamPtr(JNIEnv *env, jobject jParam, CK_ULONG *pLength)
 {
+    CK_ECDH1_DERIVE_PARAMS_PTR ckParamPtr;
     jclass jEcdh1DeriveParamsClass;
     jfieldID fieldID;
     jlong jLong;
     jobject jSharedData, jPublicData;
-    memset(ckParamPtr, 0, sizeof(CK_ECDH1_DERIVE_PARAMS));
 
-    /* get kdf */
+    if (pLength != NULL) {
+        *pLength = 0;
+    }
+
+    // retrieve java values
     jEcdh1DeriveParamsClass = (*env)->FindClass(env, CLASS_ECDH1_DERIVE_PARAMS);
-    if (jEcdh1DeriveParamsClass == NULL) { return; }
+    if (jEcdh1DeriveParamsClass == NULL) { return NULL; }
     fieldID = (*env)->GetFieldID(env, jEcdh1DeriveParamsClass, "kdf", "J");
-    if (fieldID == NULL) { return; }
+    if (fieldID == NULL) { return NULL; }
     jLong = (*env)->GetLongField(env, jParam, fieldID);
-    ckParamPtr->kdf = jLongToCKULong(jLong);
-
-    /* get pSharedData and ulSharedDataLen */
     fieldID = (*env)->GetFieldID(env, jEcdh1DeriveParamsClass, "pSharedData", "[B");
-    if (fieldID == NULL) { return; }
+    if (fieldID == NULL) { return NULL; }
     jSharedData = (*env)->GetObjectField(env, jParam, fieldID);
-
-    /* get pPublicData and ulPublicDataLen */
     fieldID = (*env)->GetFieldID(env, jEcdh1DeriveParamsClass, "pPublicData", "[B");
-    if (fieldID == NULL) { return; }
+    if (fieldID == NULL) { return NULL; }
     jPublicData = (*env)->GetObjectField(env, jParam, fieldID);
 
-    /* populate java values */
-    ckParamPtr->kdf = jLongToCKULong(jLong);
-    jByteArrayToCKByteArray(env, jSharedData, &(ckParamPtr->pSharedData), &(ckParamPtr->ulSharedDataLen));
-    if ((*env)->ExceptionCheck(env)) { return; }
-    jByteArrayToCKByteArray(env, jPublicData, &(ckParamPtr->pPublicData), &(ckParamPtr->ulPublicDataLen));
-    if ((*env)->ExceptionCheck(env)) {
-        free(ckParamPtr->pSharedData);
-        return;
+    // allocate memory for CK_ECDH1_DERIVE_PARAMS pointer
+    ckParamPtr = calloc(1, sizeof(CK_ECDH1_DERIVE_PARAMS));
+    if (ckParamPtr == NULL) {
+        throwOutOfMemoryError(env, 0);
+        return NULL;
     }
+
+    // populate using java values
+    ckParamPtr->kdf = jLongToCKULong(jLong);
+    jByteArrayToCKByteArray(env, jSharedData, &(ckParamPtr->pSharedData),
+            &(ckParamPtr->ulSharedDataLen));
+    if ((*env)->ExceptionCheck(env)) {
+        goto cleanup;
+    }
+    jByteArrayToCKByteArray(env, jPublicData, &(ckParamPtr->pPublicData),
+            &(ckParamPtr->ulPublicDataLen));
+    if ((*env)->ExceptionCheck(env)) {
+        goto cleanup;
+    }
+
+    if (pLength != NULL) {
+        *pLength = sizeof(CK_ECDH1_DERIVE_PARAMS);
+    }
+    return ckParamPtr;
+cleanup:
+    free(ckParamPtr->pSharedData);
+    free(ckParamPtr->pPublicData);
+    free(ckParamPtr);
+    return NULL;
 }
 
 /*
- * converts the Java CK_ECDH2_DERIVE_PARAMS object to a CK_ECDH2_DERIVE_PARAMS structure
+ * converts the Java CK_ECDH2_DERIVE_PARAMS object to a CK_ECDH2_DERIVE_PARAMS
+ * pointer
  *
  * @param env - used to call JNI funktions to get the Java classes and objects
  * @param jParam - the Java CK_ECDH2_DERIVE_PARAMS object to convert
- * @param ckParamPtr - pointer to the new CK_ECDH2_DERIVE_PARAMS structure
+ * @param pLength - length of the allocated memory of the returned pointer
+ * @return pointer to the new CK_ECDH2_DERIVE_PARAMS structure
  */
-void jEcdh2DeriveParamToCKEcdh2DeriveParam(JNIEnv *env, jobject jParam,
-CK_ECDH2_DERIVE_PARAMS_PTR ckParamPtr)
+CK_ECDH2_DERIVE_PARAMS_PTR
+jEcdh2DeriveParamToCKEcdh2DeriveParamPtr(JNIEnv *env, jobject jParam, CK_ULONG *pLength)
 {
+    CK_ECDH2_DERIVE_PARAMS_PTR ckParamPtr;
     jclass jEcdh2DeriveParamsClass;
     jfieldID fieldID;
     jlong jKdf, jPrivateDataLen, jPrivateData;
     jobject jSharedData, jPublicData, jPublicData2;
-    memset(ckParamPtr, 0, sizeof(CK_ECDH2_DERIVE_PARAMS));
 
-    /* get kdf */
+    // retrieve java values
     jEcdh2DeriveParamsClass = (*env)->FindClass(env, CLASS_ECDH2_DERIVE_PARAMS);
-    if (jEcdh2DeriveParamsClass == NULL) { return; }
+    if (jEcdh2DeriveParamsClass == NULL) { return NULL; }
     fieldID = (*env)->GetFieldID(env, jEcdh2DeriveParamsClass, "kdf", "J");
-    if (fieldID == NULL) { return; }
+    if (fieldID == NULL) { return NULL; }
     jKdf = (*env)->GetLongField(env, jParam, fieldID);
-
-    /* get pSharedData and ulSharedDataLen */
     fieldID = (*env)->GetFieldID(env, jEcdh2DeriveParamsClass, "pSharedData", "[B");
-    if (fieldID == NULL) { return; }
+    if (fieldID == NULL) { return NULL; }
     jSharedData = (*env)->GetObjectField(env, jParam, fieldID);
-
-    /* get pPublicData and ulPublicDataLen */
     fieldID = (*env)->GetFieldID(env, jEcdh2DeriveParamsClass, "pPublicData", "[B");
-    if (fieldID == NULL) { return; }
+    if (fieldID == NULL) { return NULL; }
     jPublicData = (*env)->GetObjectField(env, jParam, fieldID);
-
-    /* get ulPrivateDataLen */
     fieldID = (*env)->GetFieldID(env, jEcdh2DeriveParamsClass, "ulPrivateDataLen", "J");
-    if (fieldID == NULL) { return; }
+    if (fieldID == NULL) { return NULL; }
     jPrivateDataLen = (*env)->GetLongField(env, jParam, fieldID);
-
-    /* get hPrivateData */
     fieldID = (*env)->GetFieldID(env, jEcdh2DeriveParamsClass, "hPrivateData", "J");
-    if (fieldID == NULL) { return; }
+    if (fieldID == NULL) { return NULL; }
     jPrivateData = (*env)->GetLongField(env, jParam, fieldID);
-
-    /* get pPublicData2 and ulPublicDataLen2 */
     fieldID = (*env)->GetFieldID(env, jEcdh2DeriveParamsClass, "pPublicData2", "[B");
-    if (fieldID == NULL) { return; }
+    if (fieldID == NULL) { return NULL; }
     jPublicData2 = (*env)->GetObjectField(env, jParam, fieldID);
 
-    /* populate java values */
+    // allocate memory for CK_ECDH2_DERIVE_PARAMS pointer
+    ckParamPtr = calloc(1, sizeof(CK_ECDH2_DERIVE_PARAMS));
+    if (ckParamPtr == NULL) {
+        throwOutOfMemoryError(env, 0);
+        return NULL;
+    }
+
+    // populate using java values
     ckParamPtr->kdf = jLongToCKULong(jKdf);
-    jByteArrayToCKByteArray(env, jSharedData, &(ckParamPtr->pSharedData), &(ckParamPtr->ulSharedDataLen));
-    if ((*env)->ExceptionCheck(env)) { return; }
-    jByteArrayToCKByteArray(env, jPublicData, &(ckParamPtr->pPublicData), &(ckParamPtr->ulPublicDataLen));
+    jByteArrayToCKByteArray(env, jSharedData, &(ckParamPtr->pSharedData),
+            &(ckParamPtr->ulSharedDataLen));
     if ((*env)->ExceptionCheck(env)) {
-        free(ckParamPtr->pSharedData);
-        return;
+        goto cleanup;
+    }
+    jByteArrayToCKByteArray(env, jPublicData, &(ckParamPtr->pPublicData),
+            &(ckParamPtr->ulPublicDataLen));
+    if ((*env)->ExceptionCheck(env)) {
+        goto cleanup;
     }
     ckParamPtr->ulPrivateDataLen = jLongToCKULong(jPrivateDataLen);
     ckParamPtr->hPrivateData = jLongToCKULong(jPrivateData);
-    jByteArrayToCKByteArray(env, jPublicData2, &(ckParamPtr->pPublicData2), &(ckParamPtr->ulPublicDataLen2));
+    jByteArrayToCKByteArray(env, jPublicData2, &(ckParamPtr->pPublicData2),
+            &(ckParamPtr->ulPublicDataLen2));
     if ((*env)->ExceptionCheck(env)) {
-        free(ckParamPtr->pSharedData);
-        free(ckParamPtr->pPublicData);
-        return;
+        goto cleanup;
     }
+
+    if (pLength != NULL) {
+        *pLength = sizeof(CK_ECDH2_DERIVE_PARAMS);
+    }
+    return ckParamPtr;
+cleanup:
+    free(ckParamPtr->pSharedData);
+    free(ckParamPtr->pPublicData);
+    free(ckParamPtr->pPublicData2);
+    free(ckParamPtr);
+    return NULL;
 }
 
 /*
- * converts the Java CK_X9_42_DH1_DERIVE_PARAMS object to a CK_X9_42_DH1_DERIVE_PARAMS structure
+ * converts the Java CK_X9_42_DH1_DERIVE_PARAMS object to a
+ * CK_X9_42_DH1_DERIVE_PARAMS pointer
  *
  * @param env - used to call JNI funktions to get the Java classes and objects
  * @param jParam - the Java CK_X9_42_DH1_DERIVE_PARAMS object to convert
- * @param ckParamPtr - pointer to the new CK_X9_42_DH1_DERIVE_PARAMS structure
+ * @param pLength - length of the allocated memory of the returned pointer
+ * @return pointer to the new CK_X9_42_DH1_DERIVE_PARAMS structure
  */
-void jX942Dh1DeriveParamToCKX942Dh1DeriveParam(JNIEnv *env, jobject jParam,
-        CK_X9_42_DH1_DERIVE_PARAMS_PTR ckParamPtr)
+CK_X9_42_DH1_DERIVE_PARAMS_PTR
+jX942Dh1DeriveParamToCKX942Dh1DeriveParamPtr(JNIEnv *env, jobject jParam, CK_ULONG *pLength)
 {
+    CK_X9_42_DH1_DERIVE_PARAMS_PTR ckParamPtr;
     jclass jX942Dh1DeriveParamsClass;
     jfieldID fieldID;
     jlong jKdf;
     jobject jOtherInfo, jPublicData;
-    memset(ckParamPtr, 0, sizeof(CK_X9_42_DH1_DERIVE_PARAMS));
 
-    /* get kdf */
+    if (pLength != NULL) {
+        *pLength = 0;
+    }
+
+    // retrieve java values
     jX942Dh1DeriveParamsClass = (*env)->FindClass(env, CLASS_X9_42_DH1_DERIVE_PARAMS);
-    if (jX942Dh1DeriveParamsClass == NULL) { return; }
+    if (jX942Dh1DeriveParamsClass == NULL) { return NULL; }
     fieldID = (*env)->GetFieldID(env, jX942Dh1DeriveParamsClass, "kdf", "J");
-    if (fieldID == NULL) { return; }
+    if (fieldID == NULL) { return NULL; }
     jKdf = (*env)->GetLongField(env, jParam, fieldID);
-
-    /* get pOtherInfo and ulOtherInfoLen */
     fieldID = (*env)->GetFieldID(env, jX942Dh1DeriveParamsClass, "pOtherInfo", "[B");
-    if (fieldID == NULL) { return; }
+    if (fieldID == NULL) { return NULL; }
     jOtherInfo = (*env)->GetObjectField(env, jParam, fieldID);
-
-    /* get pPublicData and ulPublicDataLen */
     fieldID = (*env)->GetFieldID(env, jX942Dh1DeriveParamsClass, "pPublicData", "[B");
-    if (fieldID == NULL) { return; }
+    if (fieldID == NULL) { return NULL; }
     jPublicData = (*env)->GetObjectField(env, jParam, fieldID);
 
-    /* populate java values */
-    ckParamPtr->kdf = jLongToCKULong(jKdf);
-    jByteArrayToCKByteArray(env, jOtherInfo, &(ckParamPtr->pOtherInfo), &(ckParamPtr->ulOtherInfoLen));
-    if ((*env)->ExceptionCheck(env)) { return; }
-    jByteArrayToCKByteArray(env, jPublicData, &(ckParamPtr->pPublicData), &(ckParamPtr->ulPublicDataLen));
-    if ((*env)->ExceptionCheck(env)) {
-        free(ckParamPtr->pOtherInfo);
-        return;
+    // allocate memory for CK_X9_42_DH1_DERIVE_PARAMS pointer
+    ckParamPtr = calloc(1, sizeof(CK_X9_42_DH1_DERIVE_PARAMS));
+    if (ckParamPtr == NULL) {
+        throwOutOfMemoryError(env, 0);
+        return NULL;
     }
+
+    // populate using java values
+    ckParamPtr->kdf = jLongToCKULong(jKdf);
+    jByteArrayToCKByteArray(env, jOtherInfo, &(ckParamPtr->pOtherInfo),
+            &(ckParamPtr->ulOtherInfoLen));
+    if ((*env)->ExceptionCheck(env)) {
+        goto cleanup;
+    }
+    jByteArrayToCKByteArray(env, jPublicData, &(ckParamPtr->pPublicData),
+            &(ckParamPtr->ulPublicDataLen));
+    if ((*env)->ExceptionCheck(env)) {
+        goto cleanup;
+    }
+
+    if (pLength != NULL) {
+        *pLength = sizeof(CK_X9_42_DH1_DERIVE_PARAMS);
+    }
+    return ckParamPtr;
+cleanup:
+    free(ckParamPtr->pOtherInfo);
+    free(ckParamPtr->pPublicData);
+    free(ckParamPtr);
+    return NULL;
 }
 
 /*
- * converts the Java CK_X9_42_DH2_DERIVE_PARAMS object to a CK_X9_42_DH2_DERIVE_PARAMS structure
+ * converts the Java CK_X9_42_DH2_DERIVE_PARAMS object to a
+ * CK_X9_42_DH2_DERIVE_PARAMS pointer
  *
  * @param env - used to call JNI funktions to get the Java classes and objects
  * @param jParam - the Java CK_X9_42_DH2_DERIVE_PARAMS object to convert
- * @param ckParamPtr - pointer to the new CK_X9_42_DH2_DERIVE_PARAMS structure
+ * @param pLength - length of the allocated memory of the returned pointer
+ * @return pointer to the new CK_X9_42_DH2_DERIVE_PARAMS structure
  */
-void jX942Dh2DeriveParamToCKX942Dh2DeriveParam(JNIEnv *env, jobject jParam,
-        CK_X9_42_DH2_DERIVE_PARAMS_PTR ckParamPtr)
+CK_X9_42_DH2_DERIVE_PARAMS_PTR
+jX942Dh2DeriveParamToCKX942Dh2DeriveParamPtr(JNIEnv *env, jobject jParam, CK_ULONG *pLength)
 {
+    CK_X9_42_DH2_DERIVE_PARAMS_PTR ckParamPtr;
     jclass jX942Dh2DeriveParamsClass;
     jfieldID fieldID;
     jlong jKdf, jPrivateDataLen, jPrivateData;
     jobject jOtherInfo, jPublicData, jPublicData2;
-    memset(ckParamPtr, 0, sizeof(CK_X9_42_DH2_DERIVE_PARAMS));
 
-    /* get kdf */
+    if (pLength != NULL) {
+        *pLength = 0L;
+    }
+
+    // retrieve java values
     jX942Dh2DeriveParamsClass = (*env)->FindClass(env, CLASS_X9_42_DH2_DERIVE_PARAMS);
-    if (jX942Dh2DeriveParamsClass == NULL) { return; }
+    if (jX942Dh2DeriveParamsClass == NULL) { return NULL; }
     fieldID = (*env)->GetFieldID(env, jX942Dh2DeriveParamsClass, "kdf", "J");
-    if (fieldID == NULL) { return; }
+    if (fieldID == NULL) { return NULL; }
     jKdf = (*env)->GetLongField(env, jParam, fieldID);
-
-    /* get pOtherInfo and ulOtherInfoLen */
     fieldID = (*env)->GetFieldID(env, jX942Dh2DeriveParamsClass, "pOtherInfo", "[B");
-    if (fieldID == NULL) { return; }
+    if (fieldID == NULL) { return NULL; }
     jOtherInfo = (*env)->GetObjectField(env, jParam, fieldID);
-
-    /* get pPublicData and ulPublicDataLen */
     fieldID = (*env)->GetFieldID(env, jX942Dh2DeriveParamsClass, "pPublicData", "[B");
-    if (fieldID == NULL) { return; }
+    if (fieldID == NULL) { return NULL; }
     jPublicData = (*env)->GetObjectField(env, jParam, fieldID);
-
-    /* get ulPrivateDataLen */
     fieldID = (*env)->GetFieldID(env, jX942Dh2DeriveParamsClass, "ulPrivateDataLen", "J");
-    if (fieldID == NULL) { return; }
+    if (fieldID == NULL) { return NULL; }
     jPrivateDataLen = (*env)->GetLongField(env, jParam, fieldID);
-
-    /* get hPrivateData */
     fieldID = (*env)->GetFieldID(env, jX942Dh2DeriveParamsClass, "hPrivateData", "J");
-    if (fieldID == NULL) { return; }
+    if (fieldID == NULL) { return NULL; }
     jPrivateData = (*env)->GetLongField(env, jParam, fieldID);
-
-    /* get pPublicData2 and ulPublicDataLen2 */
     fieldID = (*env)->GetFieldID(env, jX942Dh2DeriveParamsClass, "pPublicData2", "[B");
-    if (fieldID == NULL) { return; }
+    if (fieldID == NULL) { return NULL; }
     jPublicData2 = (*env)->GetObjectField(env, jParam, fieldID);
 
-    /* populate java values */
+    // allocate memory for CK_DATE pointer
+    ckParamPtr = calloc(1, sizeof(CK_X9_42_DH2_DERIVE_PARAMS));
+    if (ckParamPtr == NULL) {
+        throwOutOfMemoryError(env, 0);
+        return NULL;
+    }
+
+    // populate using java values
     ckParamPtr->kdf = jLongToCKULong(jKdf);
-    jByteArrayToCKByteArray(env, jOtherInfo, &(ckParamPtr->pOtherInfo), &(ckParamPtr->ulOtherInfoLen));
-    if ((*env)->ExceptionCheck(env)) { return; }
-    jByteArrayToCKByteArray(env, jPublicData, &(ckParamPtr->pPublicData), &(ckParamPtr->ulPublicDataLen));
+    jByteArrayToCKByteArray(env, jOtherInfo, &(ckParamPtr->pOtherInfo),
+            &(ckParamPtr->ulOtherInfoLen));
     if ((*env)->ExceptionCheck(env)) {
-        free(ckParamPtr->pOtherInfo);
-        return;
+        goto cleanup;
+    }
+    jByteArrayToCKByteArray(env, jPublicData, &(ckParamPtr->pPublicData),
+            &(ckParamPtr->ulPublicDataLen));
+    if ((*env)->ExceptionCheck(env)) {
+        goto cleanup;
     }
     ckParamPtr->ulPrivateDataLen = jLongToCKULong(jPrivateDataLen);
     ckParamPtr->hPrivateData = jLongToCKULong(jPrivateData);
-    jByteArrayToCKByteArray(env, jPublicData2, &(ckParamPtr->pPublicData2), &(ckParamPtr->ulPublicDataLen2));
+    jByteArrayToCKByteArray(env, jPublicData2, &(ckParamPtr->pPublicData2),
+            &(ckParamPtr->ulPublicDataLen2));
     if ((*env)->ExceptionCheck(env)) {
-        free(ckParamPtr->pOtherInfo);
-        free(ckParamPtr->pPublicData);
-        return;
+        goto cleanup;
     }
+
+    if (pLength != NULL) {
+        *pLength = sizeof(CK_X9_42_DH2_DERIVE_PARAMS);
+    }
+    return ckParamPtr;
+cleanup:
+    free(ckParamPtr->pOtherInfo);
+    free(ckParamPtr->pPublicData);
+    free(ckParamPtr->pPublicData2);
+    free(ckParamPtr);
+    return NULL;
 }
