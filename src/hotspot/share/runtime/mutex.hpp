@@ -52,8 +52,10 @@ class Monitor : public CHeapObj<mtSynchronizer> {
   // inherently a bit more special than even locks of the 'special' rank.
   // NOTE: It is critical that the rank 'special' be the lowest (earliest)
   // (except for "event" and "access") for the deadlock detection to work correctly.
-  // The rank native is only for use in Mutex's created by JVM_RawMonitorCreate,
-  // which being external to the VM are not subject to deadlock detection.
+  // The rank native was only for use in Mutexes created by JVM_RawMonitorCreate,
+  // which being external to the VM are not subject to deadlock detection,
+  // however it has now been used by other locks that don't fit into the
+  // deadlock detection scheme.
   // While at a safepoint no mutexes of rank safepoint are held by any thread.
   // The rank named "leaf" is probably historical (and should
   // be changed) -- mutexes of this rank aren't really leaf mutexes
@@ -174,10 +176,6 @@ class Monitor : public CHeapObj<mtSynchronizer> {
   Thread* owner() const         { return _owner; }
   bool owned_by_self() const;
 
-  // Support for JVM_RawMonitorEnter & JVM_RawMonitorExit. These can be called by
-  // non-Java thread. (We should really have a RawMonitor abstraction)
-  void jvm_raw_lock();
-  void jvm_raw_unlock();
   const char *name() const                  { return _name; }
 
   void print_on_error(outputStream* st) const;

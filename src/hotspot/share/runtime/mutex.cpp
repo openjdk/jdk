@@ -232,24 +232,6 @@ bool Monitor::wait(long timeout, bool as_suspend_equivalent) {
   return wait_status != 0;          // return true IFF timeout
 }
 
-
-// Temporary JVM_RawMonitor* support.
-// Yet another degenerate version of Monitor::lock() or lock_without_safepoint_check()
-// jvm_raw_lock() and _unlock() can be called by non-Java threads via JVM_RawMonitorEnter.
-// There's no expectation that JVM_RawMonitors will interoperate properly with the native
-// Mutex-Monitor constructs.  We happen to implement JVM_RawMonitors in terms of
-// native Mutex-Monitors simply as a matter of convenience.
-
-void Monitor::jvm_raw_lock() {
-  _lock.lock();
-  assert_owner(NULL);
-}
-
-void Monitor::jvm_raw_unlock() {
-  assert_owner(NULL);
-  _lock.unlock();
-}
-
 Monitor::~Monitor() {
   assert_owner(NULL);
 }

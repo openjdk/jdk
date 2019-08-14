@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -53,7 +53,6 @@ volatile int ParkEvent::ListLock = 0 ;
 ParkEvent * volatile ParkEvent::FreeList = NULL ;
 
 ParkEvent * ParkEvent::Allocate (Thread * t) {
-  // In rare cases -- JVM_RawMonitor* operations -- we can find t == null.
   ParkEvent * ev ;
 
   // Start by trying to recycle an existing but unassociated
@@ -164,4 +163,3 @@ void Parker::Release (Parker * p) {
   }
   Thread::SpinRelease(&ListLock);
 }
-
