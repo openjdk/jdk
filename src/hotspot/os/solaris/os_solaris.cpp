@@ -5149,36 +5149,42 @@ void Parker::unpark() {
   }
 }
 
-// Platform Monitor implementation
+// Platform Mutex/Monitor implementations
+
+os::PlatformMutex::PlatformMutex() {
+  int status = os::Solaris::mutex_init(&_mutex);
+  assert_status(status == 0, status, "mutex_init");
+}
+
+os::PlatformMutex::~PlatformMutex() {
+  int status = os::Solaris::mutex_destroy(&_mutex);
+  assert_status(status == 0, status, "mutex_destroy");
+}
+
+void os::PlatformMutex::lock() {
+  int status = os::Solaris::mutex_lock(&_mutex);
+  assert_status(status == 0, status, "mutex_lock");
+}
+
+void os::PlatformMutex::unlock() {
+  int status = os::Solaris::mutex_unlock(&_mutex);
+  assert_status(status == 0, status, "mutex_unlock");
+}
+
+bool os::PlatformMutex::try_lock() {
+  int status = os::Solaris::mutex_trylock(&_mutex);
+  assert_status(status == 0 || status == EBUSY, status, "mutex_trylock");
+  return status == 0;
+}
 
 os::PlatformMonitor::PlatformMonitor() {
   int status = os::Solaris::cond_init(&_cond);
   assert_status(status == 0, status, "cond_init");
-  status = os::Solaris::mutex_init(&_mutex);
-  assert_status(status == 0, status, "mutex_init");
 }
 
 os::PlatformMonitor::~PlatformMonitor() {
   int status = os::Solaris::cond_destroy(&_cond);
   assert_status(status == 0, status, "cond_destroy");
-  status = os::Solaris::mutex_destroy(&_mutex);
-  assert_status(status == 0, status, "mutex_destroy");
-}
-
-void os::PlatformMonitor::lock() {
-  int status = os::Solaris::mutex_lock(&_mutex);
-  assert_status(status == 0, status, "mutex_lock");
-}
-
-void os::PlatformMonitor::unlock() {
-  int status = os::Solaris::mutex_unlock(&_mutex);
-  assert_status(status == 0, status, "mutex_unlock");
-}
-
-bool os::PlatformMonitor::try_lock() {
-  int status = os::Solaris::mutex_trylock(&_mutex);
-  assert_status(status == 0 || status == EBUSY, status, "mutex_trylock");
-  return status == 0;
 }
 
 // Must already be locked

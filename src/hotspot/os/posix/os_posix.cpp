@@ -1695,8 +1695,8 @@ static void pthread_init_common(void) {
   if ((status = pthread_mutexattr_settype(_mutexAttr, PTHREAD_MUTEX_NORMAL)) != 0) {
     fatal("pthread_mutexattr_settype: %s", os::strerror(status));
   }
-  // Solaris has it's own PlatformMonitor, distinct from the one for POSIX.
-  NOT_SOLARIS(os::PlatformMonitor::init();)
+  // Solaris has it's own PlatformMutex, distinct from the one for POSIX.
+  NOT_SOLARIS(os::PlatformMutex::init();)
 }
 
 #ifndef SOLARIS
@@ -2274,33 +2274,29 @@ void Parker::unpark() {
   }
 }
 
-// Platform Monitor implementation
-
-os::PlatformMonitor::Impl::Impl() : _next(NULL) {
-  int status = pthread_cond_init(&_cond, _condAttr);
-  assert_status(status == 0, status, "cond_init");
-  status = pthread_mutex_init(&_mutex, _mutexAttr);
-  assert_status(status == 0, status, "mutex_init");
-}
-
-os::PlatformMonitor::Impl::~Impl() {
-  int status = pthread_cond_destroy(&_cond);
-  assert_status(status == 0, status, "cond_destroy");
-  status = pthread_mutex_destroy(&_mutex);
-  assert_status(status == 0, status, "mutex_destroy");
-}
+// Platform Mutex/Monitor implementation
 
 #if PLATFORM_MONITOR_IMPL_INDIRECT
 
-pthread_mutex_t os::PlatformMonitor::_freelist_lock;
-os::PlatformMonitor::Impl* os::PlatformMonitor::_freelist = NULL;
+os::PlatformMutex::Mutex::Mutex() : _next(NULL) {
+  int status = pthread_mutex_init(&_mutex, _mutexAttr);
+  assert_status(status == 0, status, "mutex_init");
+}
 
-void os::PlatformMonitor::init() {
+os::PlatformMutex::Mutex::~Mutex() {
+  int status = pthread_mutex_destroy(&_mutex);
+  assert_status(status == 0, status, "mutex_destroy");
+}
+
+pthread_mutex_t os::PlatformMutex::_freelist_lock;
+os::PlatformMutex::Mutex* os::PlatformMutex::_mutex_freelist = NULL;
+
+void os::PlatformMutex::init() {
   int status = pthread_mutex_init(&_freelist_lock, _mutexAttr);
   assert_status(status == 0, status, "freelist lock init");
 }
 
-struct os::PlatformMonitor::WithFreeListLocked : public StackObj {
+struct os::PlatformMutex::WithFreeListLocked : public StackObj {
   WithFreeListLocked() {
     int status = pthread_mutex_lock(&_freelist_lock);
     assert_status(status == 0, status, "freelist lock");
@@ -2312,24 +2308,78 @@ struct os::PlatformMonitor::WithFreeListLocked : public StackObj {
   }
 };
 
-os::PlatformMonitor::PlatformMonitor() {
+os::PlatformMutex::PlatformMutex() {
   {
     WithFreeListLocked wfl;
-    _impl = _freelist;
+    _impl = _mutex_freelist;
     if (_impl != NULL) {
-      _freelist = _impl->_next;
+      _mutex_freelist = _impl->_next;
       _impl->_next = NULL;
       return;
     }
   }
-  _impl = new Impl();
+  _impl = new Mutex();
+}
+
+os::PlatformMutex::~PlatformMutex() {
+  WithFreeListLocked wfl;
+  assert(_impl->_next == NULL, "invariant");
+  _impl->_next = _mutex_freelist;
+  _mutex_freelist = _impl;
+}
+
+os::PlatformMonitor::Cond::Cond() : _next(NULL) {
+  int status = pthread_cond_init(&_cond, _condAttr);
+  assert_status(status == 0, status, "cond_init");
+}
+
+os::PlatformMonitor::Cond::~Cond() {
+  int status = pthread_cond_destroy(&_cond);
+  assert_status(status == 0, status, "cond_destroy");
+}
+
+os::PlatformMonitor::Cond* os::PlatformMonitor::_cond_freelist = NULL;
+
+os::PlatformMonitor::PlatformMonitor() {
+  {
+    WithFreeListLocked wfl;
+    _impl = _cond_freelist;
+    if (_impl != NULL) {
+      _cond_freelist = _impl->_next;
+      _impl->_next = NULL;
+      return;
+    }
+  }
+  _impl = new Cond();
 }
 
 os::PlatformMonitor::~PlatformMonitor() {
   WithFreeListLocked wfl;
   assert(_impl->_next == NULL, "invariant");
-  _impl->_next = _freelist;
-  _freelist = _impl;
+  _impl->_next = _cond_freelist;
+  _cond_freelist = _impl;
+}
+
+#else
+
+os::PlatformMutex::PlatformMutex() {
+  int status = pthread_mutex_init(&_mutex, _mutexAttr);
+  assert_status(status == 0, status, "mutex_init");
+}
+
+os::PlatformMutex::~PlatformMutex() {
+  int status = pthread_mutex_destroy(&_mutex);
+  assert_status(status == 0, status, "mutex_destroy");
+}
+
+os::PlatformMonitor::PlatformMonitor() {
+  int status = pthread_cond_init(&_cond, _condAttr);
+  assert_status(status == 0, status, "cond_init");
+}
+
+os::PlatformMonitor::~PlatformMonitor() {
+  int status = pthread_cond_destroy(&_cond);
+  assert_status(status == 0, status, "cond_destroy");
 }
 
 #endif // PLATFORM_MONITOR_IMPL_INDIRECT
