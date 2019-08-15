@@ -51,12 +51,9 @@
 const char* VM_Operation::_names[VM_Operation::VMOp_Terminating] = \
   { VM_OPS_DO(VM_OP_NAME_INITIALIZE) };
 
-void VM_Operation::set_calling_thread(Thread* thread, ThreadPriority priority) {
+void VM_Operation::set_calling_thread(Thread* thread) {
   _calling_thread = thread;
-  assert(MinPriority <= priority && priority <= MaxPriority, "sanity check");
-  _priority = priority;
 }
-
 
 void VM_Operation::evaluate() {
   ResourceMark rm;

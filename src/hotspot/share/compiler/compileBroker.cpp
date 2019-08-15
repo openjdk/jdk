@@ -1546,7 +1546,6 @@ void CompileBroker::wait_for_completion(CompileTask* task) {
   assert(task->is_blocking(), "can only wait on blocking task");
 
   JavaThread* thread = JavaThread::current();
-  thread->set_blocked_on_compilation(true);
 
   methodHandle method(thread, task->method());
   bool free_task;
@@ -1564,7 +1563,6 @@ void CompileBroker::wait_for_completion(CompileTask* task) {
     }
   }
 
-  thread->set_blocked_on_compilation(false);
   if (free_task) {
     if (is_compilation_disabled_forever()) {
       CompileTask::free(task);

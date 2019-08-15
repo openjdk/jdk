@@ -223,7 +223,6 @@ Thread::Thread() {
   // stack and get_thread
   set_stack_base(NULL);
   set_stack_size(0);
-  set_self_raw_id(0);
   set_lgrp_id(-1);
   DEBUG_ONLY(clear_suspendible_thread();)
 
@@ -859,23 +858,6 @@ JavaThread::is_thread_fully_suspended(bool wait_for_suspend, uint32_t *bits) {
   return true;
 }
 
-#ifndef PRODUCT
-void JavaThread::record_jump(address target, address instr, const char* file,
-                             int line) {
-
-  // This should not need to be atomic as the only way for simultaneous
-  // updates is via interrupts. Even then this should be rare or non-existent
-  // and we don't care that much anyway.
-
-  int index = _jmp_ring_index;
-  _jmp_ring_index = (index + 1) & (jump_ring_buffer_size - 1);
-  _jmp_ring[index]._target = (intptr_t) target;
-  _jmp_ring[index]._instruction = (intptr_t) instr;
-  _jmp_ring[index]._file = file;
-  _jmp_ring[index]._line = line;
-}
-#endif // PRODUCT
-
 void Thread::interrupt(Thread* thread) {
   debug_only(check_for_dangling_thread_pointer(thread);)
   os::interrupt(thread);
@@ -999,15 +981,6 @@ void Thread::print_owned_locks_on(outputStream* st) const {
       cur = cur->next();
     }
   }
-}
-
-static int ref_use_count  = 0;
-
-bool Thread::owns_locks_but_compiled_lock() const {
-  for (Monitor *cur = _owned_locks; cur; cur = cur->next()) {
-    if (cur != Compile_lock) return true;
-  }
-  return false;
 }
 
 // Checks safepoint allowed and clears unhandled oops at potential safepoints.
@@ -1688,7 +1661,6 @@ void JavaThread::initialize() {
   set_deferred_locals(NULL);
   set_deopt_mark(NULL);
   set_deopt_compiled_method(NULL);
-  clear_must_deopt_id();
   set_monitor_chunks(NULL);
   _on_thread_list = false;
   set_thread_state(_thread_new);
@@ -1723,19 +1695,11 @@ void JavaThread::initialize() {
   _pending_async_exception = NULL;
   _thread_stat = NULL;
   _thread_stat = new ThreadStatistics();
-  _blocked_on_compilation = false;
   _jni_active_critical = 0;
   _pending_jni_exception_check_fn = NULL;
   _do_not_unlock_if_synchronized = false;
   _cached_monitor_info = NULL;
   _parker = Parker::Allocate(this);
-
-#ifndef PRODUCT
-  _jmp_ring_index = 0;
-  for (int ji = 0; ji < jump_ring_buffer_size; ji++) {
-    record_jump(NULL, NULL, NULL, 0);
-  }
-#endif // PRODUCT
 
   // Setup safepoint state info for this thread
   ThreadSafepointState::create(this);
@@ -3048,9 +3012,6 @@ const char* _get_thread_state_name(JavaThreadState _thread_state) {
 void JavaThread::print_thread_state_on(outputStream *st) const {
   st->print_cr("   JavaThread state: %s", _get_thread_state_name(_thread_state));
 };
-void JavaThread::print_thread_state() const {
-  print_thread_state_on(tty);
-}
 #endif // PRODUCT
 
 // Called by Threads::print() for VM_PrintThreads operation
@@ -3171,47 +3132,10 @@ const char* JavaThread::get_thread_name_string(char* buf, int buflen) const {
   return name_str;
 }
 
-
-const char* JavaThread::get_threadgroup_name() const {
-  debug_only(if (JavaThread::current() != this) assert_locked_or_safepoint(Threads_lock);)
-  oop thread_obj = threadObj();
-  if (thread_obj != NULL) {
-    oop thread_group = java_lang_Thread::threadGroup(thread_obj);
-    if (thread_group != NULL) {
-      // ThreadGroup.name can be null
-      return java_lang_ThreadGroup::name(thread_group);
-    }
-  }
-  return NULL;
-}
-
-const char* JavaThread::get_parent_name() const {
-  debug_only(if (JavaThread::current() != this) assert_locked_or_safepoint(Threads_lock);)
-  oop thread_obj = threadObj();
-  if (thread_obj != NULL) {
-    oop thread_group = java_lang_Thread::threadGroup(thread_obj);
-    if (thread_group != NULL) {
-      oop parent = java_lang_ThreadGroup::parent(thread_group);
-      if (parent != NULL) {
-        // ThreadGroup.name can be null
-        return java_lang_ThreadGroup::name(parent);
-      }
-    }
-  }
-  return NULL;
-}
-
-ThreadPriority JavaThread::java_priority() const {
-  oop thr_oop = threadObj();
-  if (thr_oop == NULL) return NormPriority; // Bootstrapping
-  ThreadPriority priority = java_lang_Thread::priority(thr_oop);
-  assert(MinPriority <= priority && priority <= MaxPriority, "sanity check");
-  return priority;
-}
-
 void JavaThread::prepare(jobject jni_thread, ThreadPriority prio) {
 
   assert(Threads_lock->owner() == Thread::current(), "must have threads lock");
+  assert(NoPriority <= prio && prio <= MaxPriority, "sanity check");
   // Link Java Thread object <-> C++ Thread
 
   // Get the C++ thread object (an oop) from the JNI handle (a jthread)
@@ -3350,23 +3274,6 @@ class PrintAndVerifyOopClosure: public OopClosure {
   virtual void do_oop(oop* p) { do_oop_work(p); }
   virtual void do_oop(narrowOop* p)  { do_oop_work(p); }
 };
-
-
-static void oops_print(frame* f, const RegisterMap *map) {
-  PrintAndVerifyOopClosure print;
-  f->print_value();
-  f->oops_do(&print, NULL, (RegisterMap*)map);
-}
-
-// Print our all the locations that contain oops and whether they are
-// valid or not.  This useful when trying to find the oldest frame
-// where an oop has gone bad since the frame walk is from youngest to
-// oldest.
-void JavaThread::trace_oops() {
-  tty->print_cr("[Trace oops]");
-  frames_do(oops_print);
-}
-
 
 #ifdef ASSERT
 // Print or validate the layout of stack frames
