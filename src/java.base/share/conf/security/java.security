@@ -1170,8 +1170,9 @@ jceks.key.serialFilter = java.base/java.lang.Enum;java.base/java.security.KeyRep
 # Disabled mechanisms for the Simple Authentication and Security Layer (SASL)
 #
 # Disabled mechanisms will not be negotiated by both SASL clients and servers.
-# These mechanisms will be ignored if they are specified in the mechanisms argument
-# of `Sasl.createClient` or the mechanism argument of `Sasl.createServer`.
+# These mechanisms will be ignored if they are specified in the "mechanisms"
+# argument of "Sasl.createSaslClient" or the "mechanism" argument of
+# "Sasl.createSaslServer".
 #
 # The value of this property is a comma-separated list of SASL mechanisms.
 # The mechanisms are case-sensitive. Whitespaces around the commas are ignored.
