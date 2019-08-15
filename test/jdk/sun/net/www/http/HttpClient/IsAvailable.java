@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,43 +28,55 @@
  * has been closed
  * @modules java.base/sun.net
  *          java.base/sun.net.www.http:+open
+ * @library /test/lib
  */
 
+import java.net.InetAddress;
+import java.net.InetSocketAddress;
 import java.net.URL;
 import java.net.ServerSocket;
 import sun.net.www.http.HttpClient;
 import java.security.*;
 import java.lang.reflect.Method;
+import jdk.test.lib.net.URIBuilder;
 
 public class IsAvailable {
 
     public static void main(String[] args) throws Exception {
         int readTimeout = 20;
-        ServerSocket ss = new ServerSocket(0);
+        ServerSocket ss = new ServerSocket();
+        InetAddress loopback = InetAddress.getLoopbackAddress();
+        ss.bind(new InetSocketAddress(loopback, 0));
 
-        URL url1 = new URL("http://localhost:" + ss.getLocalPort());
-        HttpClient c1 = HttpClient.New(url1);
+        try (ServerSocket toclose = ss) {
 
-        Method available = HttpClient.class.
-                getDeclaredMethod("available", null);
-        available.setAccessible(true);
+            URL url1 = URIBuilder.newBuilder()
+                .scheme("http")
+                .loopback()
+                .port(ss.getLocalPort())
+                .toURL();
 
-        c1.setReadTimeout(readTimeout);
-        boolean a = (boolean) available.invoke(c1);
-        if (!a) {
-            throw new RuntimeException("connection should be available");
+            HttpClient c1 = HttpClient.New(url1);
+
+            Method available = HttpClient.class.
+                    getDeclaredMethod("available", null);
+            available.setAccessible(true);
+
+            c1.setReadTimeout(readTimeout);
+            boolean a = (boolean) available.invoke(c1);
+            if (!a) {
+                throw new RuntimeException("connection should be available");
+            }
+            if (c1.getReadTimeout() != readTimeout) {
+                throw new RuntimeException("read timeout has been altered");
+            }
+
+            c1.closeServer();
+
+            a = (boolean) available.invoke(c1);
+            if (a) {
+                throw new RuntimeException("connection shouldn't be available");
+            }
         }
-        if (c1.getReadTimeout() != readTimeout) {
-            throw new RuntimeException("read timeout has been altered");
-        }
-
-        c1.closeServer();
-
-        a = (boolean) available.invoke(c1);
-        if (a) {
-            throw new RuntimeException("connection shouldn't be available");
-        }
-
-        ss.close();
     }
 }

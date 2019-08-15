@@ -36,6 +36,7 @@ import jdk.test.lib.net.URIBuilder;
 
 public class SetIfModifiedSince {
     static volatile boolean successfulHeaderCheck = false;
+    static final String MARKER = "A-test-name";
 
     static class XServer extends Thread {
         ServerSocket srv;
@@ -52,28 +53,49 @@ public class SetIfModifiedSince {
         }
 
         public void run() {
-            try {
+            boolean foundMarker = false;
+            while (!foundMarker) {
                 String x;
-                s = srv.accept ();
-                is = s.getInputStream ();
-                BufferedReader r = new BufferedReader(new InputStreamReader(is));
-                os = s.getOutputStream ();
-                while ((x=r.readLine()) != null) {
-                    String header = "If-Modified-Since: ";
-                    if (x.startsWith(header)) {
-                        if (x.charAt(header.length()) == '?') {
-                            s.close ();
-                            srv.close (); // or else the HTTPURLConnection will retry
-                            throw new RuntimeException
-                                    ("Invalid HTTP date specification");
-                        }
-                        break;
-                    }
+                try {
+                    s = srv.accept();
+                    System.out.println("Server: accepting connection from: " + s);
+                    is = s.getInputStream ();
+                } catch (IOException io) {
+                    System.err.println("Server: Failed to accept connection: " + io);
+                    io.printStackTrace();
+                    try { srv.close(); } catch (IOException ioc) { }
+                    break;
                 }
-                successfulHeaderCheck = true;
-                s.close ();
-                srv.close (); // or else the HTTPURLConnection will retry
-            } catch (IOException e) {}
+                try {
+                    BufferedReader r = new BufferedReader(new InputStreamReader(is));
+                    os = s.getOutputStream ();
+                    boolean foundHeader;
+                    while ((x=r.readLine()) != null) {
+                        String testname = MARKER + ": ";
+                        String header = "If-Modified-Since: ";
+                        if (x.startsWith(header)) {
+                            foundHeader = true;
+                            System.out.println("Server: found header: " + x);
+                            if (x.charAt(header.length()) == '?') {
+                                s.close ();
+                                srv.close (); // or else the HTTPURLConnection will retry
+                                throw new RuntimeException
+                                        ("Invalid HTTP date specification");
+                            }
+                            if (foundMarker) break;
+                        } else if (x.startsWith(testname)) {
+                           foundMarker = true;
+                           System.out.println("Server: found marker: " + x);
+                        }
+                    }
+                    successfulHeaderCheck = true;
+                    s.close ();
+                    // only close server if connected from this test.
+                    if (foundMarker) {
+                        srv.close (); // or else the HTTPURLConnection will retry
+                    }
+                } catch (IOException e) {}
+            }
         }
     }
 
@@ -94,6 +116,7 @@ public class SetIfModifiedSince {
                     .path("/index.html")
                     .toURLUnchecked();
             URLConnection urlc = url.openConnection(Proxy.NO_PROXY);
+            urlc.setRequestProperty(MARKER, "SetIfModifiedSince");
             urlc.setIfModifiedSince (10000000);
             InputStream is = urlc.getInputStream ();
             int i = 0, c;

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2001, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,32 +28,42 @@
  *    doPrivileged() call at appropriate places.
  * @modules java.base/sun.net
  *          java.base/sun.net.www.http
+ * @library /test/lib
  * @run main/othervm/policy=IsKeepingAlive.policy IsKeepingAlive
  */
 
+import java.net.InetAddress;
+import java.net.InetSocketAddress;
 import java.net.URL;
 import java.net.ServerSocket;
 import sun.net.www.http.HttpClient;
 import java.security.*;
+import jdk.test.lib.net.URIBuilder;
 
 public class IsKeepingAlive {
 
     public static void main(String[] args) throws Exception {
 
-        ServerSocket ss = new ServerSocket(0);
+        ServerSocket ss = new ServerSocket();
+        InetAddress loopback = InetAddress.getLoopbackAddress();
+        ss.bind(new InetSocketAddress(loopback, 0));
 
-        SecurityManager security = System.getSecurityManager();
-        if (security == null) {
-            security = new SecurityManager();
-            System.setSecurityManager(security);
+        try (ServerSocket toClose = ss) {
+            SecurityManager security = System.getSecurityManager();
+            if (security == null) {
+                security = new SecurityManager();
+                System.setSecurityManager(security);
+            }
+
+            URL url1 = URIBuilder.newBuilder()
+                .scheme("http")
+                .loopback()
+                .port(ss.getLocalPort())
+                .toURL();
+
+            HttpClient c1 = HttpClient.New(url1);
+
+            boolean keepAlive = c1.isKeepingAlive();
         }
-
-        URL url1 = new URL("http://localhost:" + ss.getLocalPort());
-
-        HttpClient c1 = HttpClient.New(url1);
-
-        boolean keepAlive = c1.isKeepingAlive();
-
-        ss.close();
     }
 }

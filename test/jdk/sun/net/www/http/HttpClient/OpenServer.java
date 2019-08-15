@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2001, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,22 +27,31 @@
  * @summary Make sure HttpClient has
  *    doPrivileged() calls at appropriate places.
  * @modules java.base/sun.net.www.http
+ * @library /test/lib
  * @run main/othervm/policy=OpenServer.policy OpenServer
  */
 
 import java.net.*;
 import sun.net.www.http.HttpClient;
+import jdk.test.lib.net.URIBuilder;
 
 public class OpenServer {
 
     OpenServer() throws Exception {
 
-        ServerSocket ss = new ServerSocket(0);
+        ServerSocket ss = new ServerSocket();
+        InetAddress loopback = InetAddress.getLoopbackAddress();
+        ss.bind(new InetSocketAddress(loopback, 0));
 
-        URL myURL = new URL("http://localhost:" + ss.getLocalPort());
-        HttpClient httpC = new HttpClient(myURL, null, -1);
+        try (ServerSocket toClose = ss) {
+            URL myURL = URIBuilder.newBuilder()
+                .scheme("http")
+                .loopback()
+                .port(ss.getLocalPort())
+                .toURL();
 
-        ss.close();
+            HttpClient httpC = new HttpClient(myURL, null, -1);
+        }
     }
 
     public static void main(String [] args) throws Exception {
