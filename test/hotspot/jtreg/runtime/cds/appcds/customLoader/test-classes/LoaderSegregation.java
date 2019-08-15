@@ -81,8 +81,25 @@ public class LoaderSegregation {
         }
 
         { // UNREGISTERED LOADER
-            URLClassLoader urlClassLoader = new URLClassLoader(urls);
-            Class c2 = Util.defineClassFromJAR(urlClassLoader, jarFile, ONLY_BUILTIN);
+            URLClassLoader urlClassLoader = new URLClassLoader(urls) {
+                protected Class<?> loadClass(String name, boolean resolve) throws ClassNotFoundException {
+                    synchronized (getClassLoadingLock(name)) {
+                        Class<?> c = findLoadedClass(name);
+                        if (c == null) {
+                            try {
+                                c = findClass(name);
+                            } catch (ClassNotFoundException e) {
+                                c = getParent().loadClass(name);
+                            }
+                        }
+                        if (resolve) {
+                            resolveClass(c);
+                        }
+                        return c;
+                    }
+                }
+            };
+            Class<?> c2 = urlClassLoader.loadClass(ONLY_BUILTIN);
 
             if (c2.getClassLoader() != urlClassLoader) {
                 throw new RuntimeException("Error in test");

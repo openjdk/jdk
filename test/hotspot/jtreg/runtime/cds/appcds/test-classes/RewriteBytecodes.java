@@ -23,6 +23,7 @@
  */
 
 import java.io.File;
+import java.lang.invoke.MethodHandles;
 import sun.hotspot.WhiteBox;
 
 public class RewriteBytecodes {
@@ -30,7 +31,7 @@ public class RewriteBytecodes {
     String from = "___xxx___";
     String to   = "___yyy___";
     File clsFile = new File(args[0]);
-    Class superClass = Util.defineModifiedClass(RewriteBytecodes.class.getClassLoader(), clsFile, from, to);
+    Class superClass = Util.defineModifiedClass(MethodHandles.lookup(), clsFile, from, to);
 
     Child child = new Child();
 

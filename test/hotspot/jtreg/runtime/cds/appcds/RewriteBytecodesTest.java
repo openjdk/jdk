@@ -24,7 +24,7 @@
 
 /*
  * @test
- * @summary Use ClassLoader.defineClass() to load a class with rewritten bytecode. Make sure
+ * @summary Use Lookup.defineClass() to load a class with rewritten bytecode. Make sure
  *          the archived class with the same name is not loaded.
  * @requires vm.cds
  * @library /test/lib
@@ -52,7 +52,6 @@ public class RewriteBytecodesTest {
 
     OutputAnalyzer output = TestCommon.exec(appJar,
                     // command-line arguments ...
-                    "--add-opens=java.base/java.lang=ALL-UNNAMED",
                     use_whitebox_jar,
                     "-XX:+UnlockDiagnosticVMOptions",
                     "-XX:+WhiteBoxAPI",

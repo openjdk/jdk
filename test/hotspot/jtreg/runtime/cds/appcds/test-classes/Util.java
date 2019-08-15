@@ -23,19 +23,21 @@
  */
 
 import java.io.*;
+import java.lang.invoke.MethodHandles;
+import java.lang.invoke.MethodHandles.Lookup;
 import java.lang.reflect.*;
 import java.util.jar.*;
 
 public class Util {
     /**
-     * Invoke the loader.defineClass() class method to define the class stored in clsFile,
+     * Define the class as stored in clsFile with the provided lookup instance,
      * with the following modification:
      * <ul>
      *  <li> All ASCII strings in the class file bytes that matches fromString will be replaced with toString.
      *       NOTE: the two strings must be the exact same length.
      * </ul>
      */
-    public static Class defineModifiedClass(ClassLoader loader, File clsFile, String fromString, String toString)
+    public static Class<?> defineModifiedClass(Lookup lookup, File clsFile, String fromString, String toString)
         throws FileNotFoundException, IOException, NoSuchMethodException, IllegalAccessException,
                InvocationTargetException
     {
@@ -46,14 +48,11 @@ public class Util {
 
         System.out.println("Loading from: " + clsFile + " (" + buff.length + " bytes)");
 
-        Method defineClass = ClassLoader.class.getDeclaredMethod("defineClass",
-                                                                 buff.getClass(), int.class, int.class);
-        defineClass.setAccessible(true);
 
-        // We directly call into ClassLoader.defineClass() to define the "Super" class. Also,
+        // We directly call into Lookup.defineClass() to define the "Super" class. Also,
         // rewrite its classfile so that it returns ___yyy___ instead of ___xxx___. Changing the
         // classfile will guarantee that this class will NOT be loaded from the CDS archive.
-        Class cls = (Class)defineClass.invoke(loader, buff, new Integer(0), new Integer(buff.length));
+        Class<?> cls = lookup.defineClass(buff);
         System.out.println("Loaded : " + cls);
 
         return cls;
@@ -103,44 +102,6 @@ public class Util {
             b[i] = (byte)s.charAt(i);
         }
         return b;
-    }
-
-    public static Class defineClassFromJAR(ClassLoader loader, File jarFile, String className)
-        throws FileNotFoundException, IOException, NoSuchMethodException, IllegalAccessException,
-               InvocationTargetException {
-        return defineClassFromJAR(loader, jarFile, className, null, null);
-    }
-
-    /**
-     * Invoke the loader.defineClass() class method to define the named class stored in a JAR file.
-     *
-     * If a class exists both in the classpath, as well as in the list of URLs of a URLClassLoader,
-     * by default, the URLClassLoader will not define the class, and instead will delegate to the
-     * app loader. This method is an easy way to force the class to be defined by the URLClassLoader.
-     *
-     * Optionally, you can modify the contents of the classfile buffer. See comments in
-     * defineModifiedClass.
-     */
-    public static Class defineClassFromJAR(ClassLoader loader, File jarFile, String className,
-                                           String fromString, String toString)
-        throws FileNotFoundException, IOException, NoSuchMethodException, IllegalAccessException,
-               InvocationTargetException
-    {
-        byte[] buff = getClassFileFromJar(jarFile, className);
-
-        if (fromString != null) {
-            replace(buff, fromString, toString);
-        }
-
-        //System.out.println("Loading from: " + ent + " (" + buff.length + " bytes)");
-
-        Method defineClass = ClassLoader.class.getDeclaredMethod("defineClass",
-                                                                 buff.getClass(), int.class, int.class);
-        defineClass.setAccessible(true);
-        Class cls = (Class)defineClass.invoke(loader, buff, new Integer(0), new Integer(buff.length));
-
-        //System.out.println("Loaded : " + cls);
-        return cls;
     }
 
     public static byte[] getClassFileFromJar(File jarFile, String className) throws FileNotFoundException, IOException {
