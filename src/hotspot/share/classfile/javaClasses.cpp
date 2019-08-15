@@ -2677,14 +2677,14 @@ void java_lang_StackFrameInfo::to_stack_trace_element(Handle stackFrame, Handle 
   Method* method = java_lang_StackFrameInfo::get_method(stackFrame, holder, CHECK);
 
   short version = stackFrame->short_field(_version_offset);
-  short bci = stackFrame->short_field(_bci_offset);
+  int bci = stackFrame->int_field(_bci_offset);
   Symbol* name = method->name();
   java_lang_StackTraceElement::fill_in(stack_trace_element, holder, method, version, bci, name, CHECK);
 }
 
 #define STACKFRAMEINFO_FIELDS_DO(macro) \
   macro(_memberName_offset,     k, "memberName",  object_signature, false); \
-  macro(_bci_offset,            k, "bci",         short_signature,  false)
+  macro(_bci_offset,            k, "bci",         int_signature,    false)
 
 void java_lang_StackFrameInfo::compute_offsets() {
   InstanceKlass* k = SystemDictionary::StackFrameInfo_klass();
@@ -4224,6 +4224,7 @@ void java_lang_StackFrameInfo::set_version(oop element, short value) {
 }
 
 void java_lang_StackFrameInfo::set_bci(oop element, int value) {
+  assert(value >= 0 && value < max_jushort, "must be a valid bci value");
   element->int_field_put(_bci_offset, value);
 }
 
