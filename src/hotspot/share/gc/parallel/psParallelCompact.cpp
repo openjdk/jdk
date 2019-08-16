@@ -55,6 +55,7 @@
 #include "gc/shared/referenceProcessorPhaseTimes.hpp"
 #include "gc/shared/spaceDecorator.hpp"
 #include "gc/shared/weakProcessor.hpp"
+#include "gc/shared/workerPolicy.hpp"
 #include "logging/log.hpp"
 #include "memory/iterator.inline.hpp"
 #include "memory/resourceArea.hpp"
@@ -1789,6 +1790,12 @@ bool PSParallelCompact::invoke_no_policy(bool maximum_heap_compaction) {
     ResourceMark rm;
     HandleMark hm;
 
+    const uint active_workers =
+      WorkerPolicy::calc_active_workers(ParallelScavengeHeap::heap()->workers().total_workers(),
+                                        ParallelScavengeHeap::heap()->workers().active_workers(),
+                                        Threads::number_of_non_daemon_threads());
+    ParallelScavengeHeap::heap()->workers().update_active_workers(active_workers);
+
     // Set the number of GC threads to be used in this collection
     gc_task_manager()->set_active_gang();
     gc_task_manager()->task_idle_workers();
@@ -2086,6 +2093,66 @@ public:
   PCAddThreadRootsMarkingTaskClosure(GCTaskQueue* q) : _q(q) { }
   void do_thread(Thread* t) {
     _q->enqueue(new ThreadRootsMarkingTask(t));
+  }
+};
+
+static void steal_marking_work(ParallelTaskTerminator& terminator, uint worker_id) {
+  assert(ParallelScavengeHeap::heap()->is_gc_active(), "called outside gc");
+
+  ParCompactionManager* cm =
+    ParCompactionManager::gc_thread_compaction_manager(worker_id);
+
+  oop obj = NULL;
+  ObjArrayTask task;
+  do {
+    while (ParCompactionManager::steal_objarray(worker_id,  task)) {
+      cm->follow_array((objArrayOop)task.obj(), task.index());
+      cm->follow_marking_stacks();
+    }
+    while (ParCompactionManager::steal(worker_id, obj)) {
+      cm->follow_contents(obj);
+      cm->follow_marking_stacks();
+    }
+  } while (!terminator.offer_termination());
+}
+
+class PCRefProcTask : public AbstractGangTask {
+  typedef AbstractRefProcTaskExecutor::ProcessTask ProcessTask;
+  ProcessTask& _task;
+  uint _ergo_workers;
+  TaskTerminator _terminator;
+
+public:
+  PCRefProcTask(ProcessTask& task, uint ergo_workers) :
+      AbstractGangTask("PCRefProcTask"),
+      _task(task),
+      _ergo_workers(ergo_workers),
+      _terminator(_ergo_workers, ParCompactionManager::stack_array()) {
+  }
+
+  virtual void work(uint worker_id) {
+    ParallelScavengeHeap* heap = ParallelScavengeHeap::heap();
+    assert(ParallelScavengeHeap::heap()->is_gc_active(), "called outside gc");
+
+    ParCompactionManager* cm =
+      ParCompactionManager::gc_thread_compaction_manager(worker_id);
+    PCMarkAndPushClosure mark_and_push_closure(cm);
+    ParCompactionManager::FollowStackClosure follow_stack_closure(cm);
+    _task.work(worker_id, *PSParallelCompact::is_alive_closure(),
+               mark_and_push_closure, follow_stack_closure);
+
+    steal_marking_work(*_terminator.terminator(), worker_id);
+  }
+};
+
+class RefProcTaskExecutor: public AbstractRefProcTaskExecutor {
+  void execute(ProcessTask& process_task, uint ergo_workers) {
+    assert(ParallelScavengeHeap::heap()->workers().active_workers() == ergo_workers,
+           "Ergonomically chosen workers (%u) must be equal to active workers (%u)",
+           ergo_workers, ParallelScavengeHeap::heap()->workers().active_workers());
+
+    PCRefProcTask task(process_task, ergo_workers);
+    ParallelScavengeHeap::heap()->workers().run_task(&task);
   }
 };
 

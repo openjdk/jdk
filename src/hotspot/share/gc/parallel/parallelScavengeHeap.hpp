@@ -37,6 +37,7 @@
 #include "gc/shared/referenceProcessor.hpp"
 #include "gc/shared/softRefPolicy.hpp"
 #include "gc/shared/strongRootsScope.hpp"
+#include "gc/shared/workgroup.hpp"
 #include "logging/log.hpp"
 #include "memory/metaspace.hpp"
 #include "utilities/growableArray.hpp"
@@ -78,6 +79,8 @@ class ParallelScavengeHeap : public CollectedHeap {
   MemoryPool* _survivor_pool;
   MemoryPool* _old_pool;
 
+  WorkGang _workers;
+
   virtual void initialize_serviceability();
 
   void trace_heap(GCWhen::Type when, const GCTracer* tracer);
@@ -99,7 +102,11 @@ class ParallelScavengeHeap : public CollectedHeap {
     _old_manager(NULL),
     _eden_pool(NULL),
     _survivor_pool(NULL),
-    _old_pool(NULL) { }
+    _old_pool(NULL),
+    _workers("GC Thread",
+             ParallelGCThreads,
+             true /* are_GC_task_threads */,
+             false /* are_ConcurrentGC_threads */) { }
 
   // For use by VM operations
   enum CollectionType {
@@ -252,6 +259,10 @@ class ParallelScavengeHeap : public CollectedHeap {
 
   GCMemoryManager* old_gc_manager() const { return _old_manager; }
   GCMemoryManager* young_gc_manager() const { return _young_manager; }
+
+  WorkGang& workers() {
+    return _workers;
+  }
 };
 
 // Class that can be used to print information about the

@@ -131,48 +131,6 @@ void MarkFromRootsTask::do_it(GCTaskManager* manager, uint which) {
 
 
 //
-// RefProcTaskProxy
-//
-
-void RefProcTaskProxy::do_it(GCTaskManager* manager, uint which)
-{
-  assert(ParallelScavengeHeap::heap()->is_gc_active(), "called outside gc");
-
-  ParCompactionManager* cm =
-    ParCompactionManager::gc_thread_compaction_manager(which);
-  PCMarkAndPushClosure mark_and_push_closure(cm);
-  ParCompactionManager::FollowStackClosure follow_stack_closure(cm);
-  _rp_task.work(_work_id, *PSParallelCompact::is_alive_closure(),
-                mark_and_push_closure, follow_stack_closure);
-}
-
-//
-// RefProcTaskExecutor
-//
-
-void RefProcTaskExecutor::execute(ProcessTask& task, uint ergo_workers)
-{
-  ParallelScavengeHeap* heap = ParallelScavengeHeap::heap();
-  uint active_gc_threads = heap->gc_task_manager()->active_workers();
-  assert(active_gc_threads == ergo_workers,
-         "Ergonomically chosen workers (%u) must be equal to active workers (%u)",
-         ergo_workers, active_gc_threads);
-  OopTaskQueueSet* qset = ParCompactionManager::stack_array();
-  TaskTerminator terminator(active_gc_threads, qset);
-
-  GCTaskQueue* q = GCTaskQueue::create();
-  for(uint i=0; i<active_gc_threads; i++) {
-    q->enqueue(new RefProcTaskProxy(task, i));
-  }
-  if (task.marks_oops_alive() && (active_gc_threads>1)) {
-    for (uint j=0; j<active_gc_threads; j++) {
-      q->enqueue(new StealMarkingTask(terminator.terminator()));
-    }
-  }
-  PSParallelCompact::gc_task_manager()->execute_and_wait(q);
-}
-
-//
 // StealMarkingTask
 //
 

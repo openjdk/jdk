@@ -47,6 +47,7 @@
 #include "gc/shared/referenceProcessorPhaseTimes.hpp"
 #include "gc/shared/spaceDecorator.hpp"
 #include "gc/shared/weakProcessor.hpp"
+#include "gc/shared/workerPolicy.hpp"
 #include "memory/resourceArea.hpp"
 #include "memory/universe.hpp"
 #include "logging/log.hpp"
@@ -339,15 +340,20 @@ bool PSScavenge::invoke_no_policy() {
     // straying into the promotion labs.
     HeapWord* old_top = old_gen->object_space()->top();
 
+    const uint active_workers =
+      WorkerPolicy::calc_active_workers(ParallelScavengeHeap::heap()->workers().total_workers(),
+                                        ParallelScavengeHeap::heap()->workers().active_workers(),
+                                        Threads::number_of_non_daemon_threads());
+    ParallelScavengeHeap::heap()->workers().update_active_workers(active_workers);
+
     // Release all previously held resources
     gc_task_manager()->release_all_resources();
 
     // Set the number of GC threads to be used in this collection
     gc_task_manager()->set_active_gang();
     gc_task_manager()->task_idle_workers();
-    // Get the active number of workers here and use that value
-    // throughout the methods.
-    uint active_workers = gc_task_manager()->active_workers();
+
+    assert(active_workers == gc_task_manager()->active_workers(), "sanity, taskmanager and workgang ought to agree");
 
     PSPromotionManager::pre_scavenge();
 

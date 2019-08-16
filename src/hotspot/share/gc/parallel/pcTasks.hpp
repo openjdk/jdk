@@ -110,40 +110,6 @@ class MarkFromRootsTask : public GCTask {
   virtual void do_it(GCTaskManager* manager, uint which);
 };
 
-//
-// RefProcTaskProxy
-//
-// This task is used as a proxy to parallel reference processing tasks .
-//
-
-class RefProcTaskProxy : public GCTask {
-  typedef AbstractRefProcTaskExecutor::ProcessTask ProcessTask;
-  ProcessTask & _rp_task;
-  uint          _work_id;
-public:
-  RefProcTaskProxy(ProcessTask & rp_task, uint work_id)
-    : _rp_task(rp_task),
-      _work_id(work_id)
-  { }
-
-private:
-  virtual char* name() { return (char *)"Process referents by policy in parallel"; }
-
-  virtual void do_it(GCTaskManager* manager, uint which);
-};
-
-
-//
-// RefProcTaskExecutor
-//
-// Task executor is an interface for the reference processor to run
-// tasks using GCTaskManager.
-//
-
-class RefProcTaskExecutor: public AbstractRefProcTaskExecutor {
-  virtual void execute(ProcessTask& task, uint ergo_workers);
-};
-
 
 //
 // StealMarkingTask
