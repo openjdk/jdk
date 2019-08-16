@@ -43,55 +43,6 @@ class Thread;
 class VMThread;
 
 //
-// ScavengeRootsTask
-//
-// This task scans all the roots of a given type.
-//
-//
-
-class ScavengeRootsTask : public GCTask {
- public:
-  enum RootType {
-    universe              = 1,
-    jni_handles           = 2,
-    threads               = 3,
-    object_synchronizer   = 4,
-    system_dictionary     = 5,
-    class_loader_data     = 6,
-    management            = 7,
-    jvmti                 = 8,
-    code_cache            = 9
-  };
- private:
-  RootType _root_type;
- public:
-  ScavengeRootsTask(RootType value) : _root_type(value) {}
-
-  char* name() { return (char *)"scavenge-roots-task"; }
-
-  virtual void do_it(GCTaskManager* manager, uint which);
-};
-
-//
-// ThreadRootsTask
-//
-// This task scans the roots of a single thread. This task
-// enables scanning of thread roots in parallel.
-//
-
-class ThreadRootsTask : public GCTask {
- private:
-  Thread* _thread;
-
- public:
-  ThreadRootsTask(Thread* root) : _thread(root) {}
-
-  char* name() { return (char *)"thread-roots-task"; }
-
-  virtual void do_it(GCTaskManager* manager, uint which);
-};
-
-//
 // StealTask
 //
 // This task is used to distribute work to idle threads.
@@ -106,73 +57,6 @@ class StealTask : public GCTask {
   StealTask(ParallelTaskTerminator* t);
 
   ParallelTaskTerminator* terminator() { return _terminator; }
-
-  virtual void do_it(GCTaskManager* manager, uint which);
-};
-
-//
-// OldToYoungRootsTask
-//
-// This task is used to scan old to young roots in parallel
-//
-// A GC thread executing this tasks divides the generation (old gen)
-// into slices and takes a stripe in the slice as its part of the
-// work.
-//
-//      +===============+        slice 0
-//      |  stripe 0     |
-//      +---------------+
-//      |  stripe 1     |
-//      +---------------+
-//      |  stripe 2     |
-//      +---------------+
-//      |  stripe 3     |
-//      +===============+        slice 1
-//      |  stripe 0     |
-//      +---------------+
-//      |  stripe 1     |
-//      +---------------+
-//      |  stripe 2     |
-//      +---------------+
-//      |  stripe 3     |
-//      +===============+        slice 2
-//      ...
-//
-// A task is created for each stripe.  In this case there are 4 tasks
-// created.  A GC thread first works on its stripe within slice 0
-// and then moves to its stripe in the next slice until all stripes
-// exceed the top of the generation.  Note that having fewer GC threads
-// than stripes works because all the tasks are executed so all stripes
-// will be covered.  In this example if 4 tasks have been created to cover
-// all the stripes and there are only 3 threads, one of the threads will
-// get the tasks with the 4th stripe.  However, there is a dependence in
-// PSCardTable::scavenge_contents_parallel() on the number
-// of tasks created.  In scavenge_contents_parallel the distance
-// to the next stripe is calculated based on the number of tasks.
-// If the stripe width is ssize, a task's next stripe is at
-// ssize * number_of_tasks (= slice_stride).  In this case after
-// finishing stripe 0 in slice 0, the thread finds the stripe 0 in slice1
-// by adding slice_stride to the start of stripe 0 in slice 0 to get
-// to the start of stride 0 in slice 1.
-
-class OldToYoungRootsTask : public GCTask {
- private:
-  PSOldGen* _old_gen;
-  HeapWord* _gen_top;
-  uint _stripe_number;
-  uint _stripe_total;
-
- public:
-  OldToYoungRootsTask(PSOldGen *old_gen,
-                      HeapWord* gen_top,
-                      uint stripe_number,
-                      uint stripe_total) :
-    _old_gen(old_gen),
-    _gen_top(gen_top),
-    _stripe_number(stripe_number),
-    _stripe_total(stripe_total) { }
-
-  char* name() { return (char *)"old-to-young-roots-task"; }
 
   virtual void do_it(GCTaskManager* manager, uint which);
 };
