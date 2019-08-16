@@ -213,7 +213,7 @@ address VtableStubs::find_stub(bool is_vtable_stub, int vtable_index) {
   VtableStub* s;
   {
     MutexLocker ml(VtableStubs_lock, Mutex::_no_safepoint_check_flag);
-    s = ShareVtableStubs ? lookup(is_vtable_stub, vtable_index) : NULL;
+    s = lookup(is_vtable_stub, vtable_index);
     if (s == NULL) {
       if (is_vtable_stub) {
         s = create_vtable_stub(vtable_index);

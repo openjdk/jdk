@@ -33,9 +33,6 @@
 // (see globals.hpp)
 // Sorted according to sparc.
 
-// z/Architecture remembers branch targets, so don't share vtables.
-define_pd_global(bool,  ShareVtableStubs,            true);
-
 define_pd_global(bool,  ImplicitNullChecks,          true);  // Generate code for implicit null checks.
 define_pd_global(bool,  TrapBasedNullChecks,         true);
 define_pd_global(bool,  UncommonNullCast,            true);  // Uncommon-trap NULLs passed to check cast.
