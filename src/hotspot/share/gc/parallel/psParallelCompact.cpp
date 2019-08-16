@@ -40,6 +40,7 @@
 #include "gc/parallel/psOldGen.hpp"
 #include "gc/parallel/psParallelCompact.inline.hpp"
 #include "gc/parallel/psPromotionManager.inline.hpp"
+#include "gc/parallel/psRootType.hpp"
 #include "gc/parallel/psScavenge.hpp"
 #include "gc/parallel/psYoungGen.hpp"
 #include "gc/shared/gcCause.hpp"
@@ -56,6 +57,7 @@
 #include "gc/shared/spaceDecorator.hpp"
 #include "gc/shared/weakProcessor.hpp"
 #include "gc/shared/workerPolicy.hpp"
+#include "gc/shared/workgroup.hpp"
 #include "logging/log.hpp"
 #include "memory/iterator.inline.hpp"
 #include "memory/resourceArea.hpp"
@@ -2087,14 +2089,81 @@ GCTaskManager* const PSParallelCompact::gc_task_manager() {
 
 class PCAddThreadRootsMarkingTaskClosure : public ThreadClosure {
 private:
-  GCTaskQueue* _q;
+  uint _worker_id;
 
 public:
-  PCAddThreadRootsMarkingTaskClosure(GCTaskQueue* q) : _q(q) { }
-  void do_thread(Thread* t) {
-    _q->enqueue(new ThreadRootsMarkingTask(t));
+  PCAddThreadRootsMarkingTaskClosure(uint worker_id) : _worker_id(worker_id) { }
+  void do_thread(Thread* thread) {
+    assert(ParallelScavengeHeap::heap()->is_gc_active(), "called outside gc");
+
+    ResourceMark rm;
+
+    ParCompactionManager* cm = ParCompactionManager::gc_thread_compaction_manager(_worker_id);
+
+    PCMarkAndPushClosure mark_and_push_closure(cm);
+    MarkingCodeBlobClosure mark_and_push_in_blobs(&mark_and_push_closure, !CodeBlobToOopClosure::FixRelocations);
+
+    thread->oops_do(&mark_and_push_closure, &mark_and_push_in_blobs);
+
+    // Do the real work
+    cm->follow_marking_stacks();
   }
 };
+
+static void mark_from_roots_work(ParallelRootType::Value root_type, uint worker_id) {
+  assert(ParallelScavengeHeap::heap()->is_gc_active(), "called outside gc");
+
+  ParCompactionManager* cm =
+    ParCompactionManager::gc_thread_compaction_manager(worker_id);
+  PCMarkAndPushClosure mark_and_push_closure(cm);
+
+  switch (root_type) {
+    case ParallelRootType::universe:
+      Universe::oops_do(&mark_and_push_closure);
+      break;
+
+    case ParallelRootType::jni_handles:
+      JNIHandles::oops_do(&mark_and_push_closure);
+      break;
+
+    case ParallelRootType::object_synchronizer:
+      ObjectSynchronizer::oops_do(&mark_and_push_closure);
+      break;
+
+    case ParallelRootType::management:
+      Management::oops_do(&mark_and_push_closure);
+      break;
+
+    case ParallelRootType::jvmti:
+      JvmtiExport::oops_do(&mark_and_push_closure);
+      break;
+
+    case ParallelRootType::system_dictionary:
+      SystemDictionary::oops_do(&mark_and_push_closure);
+      break;
+
+    case ParallelRootType::class_loader_data:
+      {
+        CLDToOopClosure cld_closure(&mark_and_push_closure, ClassLoaderData::_claim_strong);
+        ClassLoaderDataGraph::always_strong_cld_do(&cld_closure);
+      }
+      break;
+
+    case ParallelRootType::code_cache:
+      // Do not treat nmethods as strong roots for mark/sweep, since we can unload them.
+      //ScavengableNMethods::scavengable_nmethods_do(CodeBlobToOopClosure(&mark_and_push_closure));
+      AOTLoader::oops_do(&mark_and_push_closure);
+      break;
+
+    case ParallelRootType::sentinel:
+    DEBUG_ONLY(default:) // DEBUG_ONLY hack will create compile error on release builds (-Wswitch) and runtime check on debug builds
+      fatal("Bad enumeration value: %u", root_type);
+      break;
+  }
+
+  // Do the real work
+  cm->follow_marking_stacks();
+}
 
 static void steal_marking_work(ParallelTaskTerminator& terminator, uint worker_id) {
   assert(ParallelScavengeHeap::heap()->is_gc_active(), "called outside gc");
@@ -2115,6 +2184,39 @@ static void steal_marking_work(ParallelTaskTerminator& terminator, uint worker_i
     }
   } while (!terminator.offer_termination());
 }
+
+class MarkFromRootsTask : public AbstractGangTask {
+  typedef AbstractRefProcTaskExecutor::ProcessTask ProcessTask;
+  StrongRootsScope _strong_roots_scope; // needed for Threads::possibly_parallel_threads_do
+  SequentialSubTasksDone _subtasks;
+  TaskTerminator _terminator;
+  uint _active_workers;
+
+public:
+  MarkFromRootsTask(uint active_workers) :
+      AbstractGangTask("MarkFromRootsTask"),
+      _strong_roots_scope(active_workers),
+      _subtasks(),
+      _terminator(active_workers, ParCompactionManager::stack_array()),
+      _active_workers(active_workers) {
+    _subtasks.set_n_threads(active_workers);
+    _subtasks.set_n_tasks(ParallelRootType::sentinel);
+  }
+
+  virtual void work(uint worker_id) {
+    for (uint task = 0; _subtasks.try_claim_task(task); /*empty*/ ) {
+      mark_from_roots_work(static_cast<ParallelRootType::Value>(task), worker_id);
+    }
+    _subtasks.all_tasks_completed();
+
+    PCAddThreadRootsMarkingTaskClosure closure(worker_id);
+    Threads::possibly_parallel_threads_do(true /*parallel */, &closure);
+
+    if (_active_workers > 1) {
+      steal_marking_work(*_terminator.terminator(), worker_id);
+    }
+  }
+};
 
 class PCRefProcTask : public AbstractGangTask {
   typedef AbstractRefProcTaskExecutor::ProcessTask ProcessTask;
@@ -2177,29 +2279,8 @@ void PSParallelCompact::marking_phase(ParCompactionManager* cm,
   {
     GCTraceTime(Debug, gc, phases) tm("Par Mark", &_gc_timer);
 
-    ParallelScavengeHeap::ParStrongRootsScope psrs;
-
-    GCTaskQueue* q = GCTaskQueue::create();
-
-    q->enqueue(new MarkFromRootsTask(MarkFromRootsTask::universe));
-    q->enqueue(new MarkFromRootsTask(MarkFromRootsTask::jni_handles));
-    // We scan the thread roots in parallel
-    PCAddThreadRootsMarkingTaskClosure cl(q);
-    Threads::java_threads_and_vm_thread_do(&cl);
-    q->enqueue(new MarkFromRootsTask(MarkFromRootsTask::object_synchronizer));
-    q->enqueue(new MarkFromRootsTask(MarkFromRootsTask::management));
-    q->enqueue(new MarkFromRootsTask(MarkFromRootsTask::system_dictionary));
-    q->enqueue(new MarkFromRootsTask(MarkFromRootsTask::class_loader_data));
-    q->enqueue(new MarkFromRootsTask(MarkFromRootsTask::jvmti));
-    q->enqueue(new MarkFromRootsTask(MarkFromRootsTask::code_cache));
-
-    if (active_gc_threads > 1) {
-      for (uint j = 0; j < active_gc_threads; j++) {
-        q->enqueue(new StealMarkingTask(terminator.terminator()));
-      }
-    }
-
-    gc_task_manager()->execute_and_wait(q);
+    MarkFromRootsTask task(active_gc_threads);
+    ParallelScavengeHeap::heap()->workers().run_task(&task);
   }
 
   // Process reference objects found during marking
