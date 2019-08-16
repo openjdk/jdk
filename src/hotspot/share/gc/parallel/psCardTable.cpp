@@ -29,7 +29,6 @@
 #include "gc/parallel/psCardTable.hpp"
 #include "gc/parallel/psPromotionManager.inline.hpp"
 #include "gc/parallel/psScavenge.inline.hpp"
-#include "gc/parallel/psTasks.hpp"
 #include "gc/parallel/psYoungGen.hpp"
 #include "memory/iterator.inline.hpp"
 #include "oops/access.inline.hpp"

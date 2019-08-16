@@ -31,12 +31,12 @@
 #include "gc/parallel/parallelScavengeHeap.hpp"
 #include "gc/parallel/psAdaptiveSizePolicy.hpp"
 #include "gc/parallel/psClosure.inline.hpp"
+#include "gc/parallel/psCompactionManager.hpp"
 #include "gc/parallel/psMarkSweepProxy.hpp"
 #include "gc/parallel/psParallelCompact.inline.hpp"
 #include "gc/parallel/psPromotionManager.inline.hpp"
 #include "gc/parallel/psRootType.hpp"
 #include "gc/parallel/psScavenge.inline.hpp"
-#include "gc/parallel/psTasks.hpp"
 #include "gc/shared/gcCause.hpp"
 #include "gc/shared/gcHeapSummary.hpp"
 #include "gc/shared/gcId.hpp"
@@ -213,57 +213,42 @@ class PSEvacuateFollowersClosure: public VoidClosure {
   }
 };
 
-class PSRefProcTaskProxy: public GCTask {
-  typedef AbstractRefProcTaskExecutor::ProcessTask ProcessTask;
-  ProcessTask & _rp_task;
-  uint          _work_id;
-public:
-  PSRefProcTaskProxy(ProcessTask & rp_task, uint work_id)
-    : _rp_task(rp_task),
-      _work_id(work_id)
-  { }
-
-private:
-  virtual char* name() { return (char *)"Process referents by policy in parallel"; }
-  virtual void do_it(GCTaskManager* manager, uint which);
-};
-
-void PSRefProcTaskProxy::do_it(GCTaskManager* manager, uint which)
-{
-  PSPromotionManager* promotion_manager =
-    PSPromotionManager::gc_thread_promotion_manager(which);
-  assert(promotion_manager != NULL, "sanity check");
-  PSKeepAliveClosure keep_alive(promotion_manager);
-  PSEvacuateFollowersClosure evac_followers(promotion_manager);
-  PSIsAliveClosure is_alive;
-  _rp_task.work(_work_id, is_alive, keep_alive, evac_followers);
-}
-
 class PSRefProcTaskExecutor: public AbstractRefProcTaskExecutor {
-  virtual void execute(ProcessTask& task, uint ergo_workers);
+  virtual void execute(ProcessTask& process_task, uint ergo_workers);
 };
 
-void PSRefProcTaskExecutor::execute(ProcessTask& task, uint ergo_workers)
-{
-  GCTaskQueue* q = GCTaskQueue::create();
-  GCTaskManager* manager = ParallelScavengeHeap::gc_task_manager();
-  uint active_workers = manager->active_workers();
+class PSRefProcTask : public AbstractGangTask {
+  typedef AbstractRefProcTaskExecutor::ProcessTask ProcessTask;
+  TaskTerminator _terminator;
+  ProcessTask& _task;
+  uint _active_workers;
 
-  assert(active_workers == ergo_workers,
-         "Ergonomically chosen workers (%u) must be equal to active workers (%u)",
-         ergo_workers, active_workers);
-
-  for(uint i=0; i < active_workers; i++) {
-    q->enqueue(new PSRefProcTaskProxy(task, i));
+public:
+  PSRefProcTask(ProcessTask& task, uint active_workers)
+    : AbstractGangTask("PSRefProcTask"),
+      _terminator(active_workers, PSPromotionManager::stack_array_depth()),
+      _task(task),
+      _active_workers(active_workers) {
   }
-  TaskTerminator terminator(active_workers,
-                            (TaskQueueSetSuper*) PSPromotionManager::stack_array_depth());
-  if (task.marks_oops_alive() && active_workers > 1) {
-    for (uint j = 0; j < active_workers; j++) {
-      q->enqueue(new StealTask(terminator.terminator()));
+
+  virtual void work(uint worker_id) {
+    PSPromotionManager* promotion_manager =
+      PSPromotionManager::gc_thread_promotion_manager(worker_id);
+    assert(promotion_manager != NULL, "sanity check");
+    PSKeepAliveClosure keep_alive(promotion_manager);
+    PSEvacuateFollowersClosure evac_followers(promotion_manager);
+    PSIsAliveClosure is_alive;
+    _task.work(worker_id, is_alive, keep_alive, evac_followers);
+
+    if (_task.marks_oops_alive() && _active_workers > 1) {
+      steal_work(*_terminator.terminator(), worker_id);
     }
   }
-  manager->execute_and_wait(q);
+};
+
+void PSRefProcTaskExecutor::execute(ProcessTask& process_task, uint ergo_workers) {
+  PSRefProcTask task(process_task, ergo_workers);
+  ParallelScavengeHeap::heap()->workers().run_task(&task);
 }
 
 // This method contains all heap specific policy for invoking scavenge.

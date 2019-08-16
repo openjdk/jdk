@@ -53,6 +53,8 @@ class PSPromotionManager {
   friend class PSScavenge;
   friend class ScavengeRootsTask;
   friend class PSRefProcTaskExecutor;
+  friend class PSRefProcTask;
+
  private:
   static PaddedEnd<PSPromotionManager>* _manager_array;
   static OopStarTaskQueueSet*           _stack_array_depth;
