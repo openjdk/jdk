@@ -46,6 +46,7 @@ class ParCompactionManager : public CHeapObj<mtGC> {
   friend class IdleGCTask;
   friend class PCRefProcTask;
   friend class MarkFromRootsTask;
+  friend class UpdateDensePrefixAndCompactionTask;
 
  public:
 
