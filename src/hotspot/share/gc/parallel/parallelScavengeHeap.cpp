@@ -28,7 +28,6 @@
 #include "gc/parallel/adjoiningGenerationsForHeteroHeap.hpp"
 #include "gc/parallel/adjoiningVirtualSpaces.hpp"
 #include "gc/parallel/parallelArguments.hpp"
-#include "gc/parallel/gcTaskManager.hpp"
 #include "gc/parallel/objectStartArray.inline.hpp"
 #include "gc/parallel/parallelScavengeHeap.inline.hpp"
 #include "gc/parallel/psAdaptiveSizePolicy.hpp"
@@ -59,7 +58,6 @@ PSYoungGen*  ParallelScavengeHeap::_young_gen = NULL;
 PSOldGen*    ParallelScavengeHeap::_old_gen = NULL;
 PSAdaptiveSizePolicy* ParallelScavengeHeap::_size_policy = NULL;
 PSGCAdaptivePolicyCounters* ParallelScavengeHeap::_gc_policy_counters = NULL;
-GCTaskManager* ParallelScavengeHeap::_gc_task_manager = NULL;
 
 jint ParallelScavengeHeap::initialize() {
   const size_t reserved_heap_size = ParallelArguments::heap_reserved_size_bytes();
@@ -115,9 +113,6 @@ jint ParallelScavengeHeap::initialize() {
   // initialize the policy counters - 2 collectors, 2 generations
   _gc_policy_counters =
     new PSGCAdaptivePolicyCounters("ParScav:MSC", 2, 2, _size_policy);
-
-  // Set up the GCTaskManager
-  _gc_task_manager = GCTaskManager::create(ParallelGCThreads);
 
   if (UseParallelOldGC && !PSParallelCompact::initialize()) {
     return JNI_ENOMEM;
@@ -605,11 +600,11 @@ void ParallelScavengeHeap::print_on_error(outputStream* st) const {
 }
 
 void ParallelScavengeHeap::gc_threads_do(ThreadClosure* tc) const {
-  PSScavenge::gc_task_manager()->threads_do(tc);
+  ParallelScavengeHeap::heap()->workers().threads_do(tc);
 }
 
 void ParallelScavengeHeap::print_gc_threads_on(outputStream* st) const {
-  PSScavenge::gc_task_manager()->print_threads_on(st);
+  ParallelScavengeHeap::heap()->workers().print_worker_threads_on(st);
 }
 
 void ParallelScavengeHeap::print_tracing_info() const {

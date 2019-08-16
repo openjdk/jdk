@@ -40,8 +40,7 @@ class PSOldGen;
 class ParCompactionManager;
 class ParallelTaskTerminator;
 class PSParallelCompact;
-class GCTaskManager;
-class GCTaskQueue;
+class PreGCValues;
 class MoveAndUpdateClosure;
 class RefProcTaskExecutor;
 class ParallelOldTracer;
@@ -1113,9 +1112,6 @@ class PSParallelCompact : AllStatic {
   static elapsedTimer* accumulated_time() { return &_accumulated_time; }
   static unsigned int total_invocations() { return _total_invocations; }
   static CollectorCounters* counters()    { return _counters; }
-
-  // Used to add tasks
-  static GCTaskManager* const gc_task_manager();
 
   // Marking support
   static inline bool mark_obj(oop obj);

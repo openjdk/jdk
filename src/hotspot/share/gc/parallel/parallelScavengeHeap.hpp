@@ -45,7 +45,6 @@
 
 class AdjoiningGenerations;
 class GCHeapSummary;
-class GCTaskManager;
 class MemoryManager;
 class MemoryPool;
 class PSAdaptiveSizePolicy;
@@ -68,9 +67,6 @@ class ParallelScavengeHeap : public CollectedHeap {
   // space reserved for the heap.
   AdjoiningGenerations* _gens;
   unsigned int _death_march_count;
-
-  // The task manager
-  static GCTaskManager* _gc_task_manager;
 
   GCMemoryManager* _young_manager;
   GCMemoryManager* _old_manager;
@@ -135,8 +131,6 @@ class ParallelScavengeHeap : public CollectedHeap {
   static PSGCAdaptivePolicyCounters* gc_policy_counters() { return _gc_policy_counters; }
 
   static ParallelScavengeHeap* heap();
-
-  static GCTaskManager* const gc_task_manager() { return _gc_task_manager; }
 
   CardTableBarrierSet* barrier_set();
   PSCardTable* card_table();

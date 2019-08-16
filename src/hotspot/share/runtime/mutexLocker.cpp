@@ -126,8 +126,6 @@ Mutex*   FreeList_lock                = NULL;
 Mutex*   OldSets_lock                 = NULL;
 Monitor* RootRegionScan_lock          = NULL;
 
-Monitor* GCTaskManager_lock           = NULL;
-
 Mutex*   Management_lock              = NULL;
 Monitor* Service_lock                 = NULL;
 Monitor* PeriodicTask_lock            = NULL;

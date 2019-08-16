@@ -27,7 +27,6 @@
 #include "classfile/classLoaderDataGraph.hpp"
 #include "classfile/stringTable.hpp"
 #include "code/codeCache.hpp"
-#include "gc/parallel/gcTaskManager.hpp"
 #include "gc/parallel/parallelScavengeHeap.hpp"
 #include "gc/parallel/psAdaptiveSizePolicy.hpp"
 #include "gc/parallel/psClosure.inline.hpp"
@@ -500,15 +499,6 @@ bool PSScavenge::invoke_no_policy() {
                                         Threads::number_of_non_daemon_threads());
     ParallelScavengeHeap::heap()->workers().update_active_workers(active_workers);
 
-    // Release all previously held resources
-    gc_task_manager()->release_all_resources();
-
-    // Set the number of GC threads to be used in this collection
-    gc_task_manager()->set_active_gang();
-    gc_task_manager()->task_idle_workers();
-
-    assert(active_workers == gc_task_manager()->active_workers(), "sanity, taskmanager and workgang ought to agree");
-
     PSPromotionManager::pre_scavenge();
 
     // We'll use the promotion manager again later.
@@ -728,8 +718,6 @@ bool PSScavenge::invoke_no_policy() {
     // Track memory usage and detect low memory
     MemoryService::track_memory_usage();
     heap->update_counters();
-
-    gc_task_manager()->release_idle_workers();
   }
 
   if (VerifyAfterGC && heap->total_collections() >= VerifyGCStartAt) {
@@ -745,7 +733,6 @@ bool PSScavenge::invoke_no_policy() {
   log_debug(gc, task, time)("VM-Thread " JLONG_FORMAT " " JLONG_FORMAT " " JLONG_FORMAT,
                             scavenge_entry.ticks(), scavenge_midpoint.ticks(),
                             scavenge_exit.ticks());
-  gc_task_manager()->print_task_time_stamps();
 
 #ifdef TRACESPINNING
   ParallelTaskTerminator::print_termination_counts();
@@ -821,13 +808,6 @@ bool PSScavenge::should_attempt_scavenge() {
     }
   }
   return result;
-}
-
-  // Used to add tasks
-GCTaskManager* const PSScavenge::gc_task_manager() {
-  assert(ParallelScavengeHeap::gc_task_manager() != NULL,
-   "shouldn't return NULL");
-  return ParallelScavengeHeap::gc_task_manager();
 }
 
 // Adaptive size policy support.  When the young generation/old generation

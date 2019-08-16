@@ -31,7 +31,6 @@
 class MutableSpace;
 class ObjectStartArray;
 class PSPromotionManager;
-class GCTaskQueue;
 
 class PSCardTable: public CardTable {
  private:

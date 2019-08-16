@@ -83,7 +83,6 @@ class javaVFrame;
 class DeoptResourceMark;
 class jvmtiDeferredLocalVariableSet;
 
-class GCTaskQueue;
 class ThreadClosure;
 class ICRefillVerifier;
 class IdealGraphPrinter;
@@ -108,7 +107,6 @@ class WorkerThread;
 //       - ConcurrentGCThread
 //       - WorkerThread
 //         - GangWorker
-//         - GCTaskThread
 //     - WatcherThread
 //     - JfrThreadSampler
 //

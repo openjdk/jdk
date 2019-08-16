@@ -30,7 +30,6 @@
 #include "classfile/symbolTable.hpp"
 #include "classfile/systemDictionary.hpp"
 #include "code/codeCache.hpp"
-#include "gc/parallel/gcTaskManager.hpp"
 #include "gc/parallel/parallelArguments.hpp"
 #include "gc/parallel/parallelScavengeHeap.inline.hpp"
 #include "gc/parallel/parMarkBitMap.inline.hpp"
@@ -1018,9 +1017,6 @@ void PSParallelCompact::pre_compact()
   DEBUG_ONLY(mark_bitmap()->verify_clear();)
   DEBUG_ONLY(summary_data().verify_clear();)
 
-  // Have worker threads release resources the next time they run a task.
-  gc_task_manager()->release_all_resources();
-
   ParCompactionManager::reset_all_bitmap_query_caches();
 }
 
@@ -1785,7 +1781,7 @@ bool PSParallelCompact::invoke_no_policy(bool maximum_heap_compaction) {
 
   // Get the compaction manager reserved for the VM thread.
   ParCompactionManager* const vmthread_cm =
-    ParCompactionManager::manager_array(gc_task_manager()->workers());
+    ParCompactionManager::manager_array(ParallelScavengeHeap::heap()->workers().total_workers());
 
   {
     ResourceMark rm;
@@ -1796,10 +1792,6 @@ bool PSParallelCompact::invoke_no_policy(bool maximum_heap_compaction) {
                                         ParallelScavengeHeap::heap()->workers().active_workers(),
                                         Threads::number_of_non_daemon_threads());
     ParallelScavengeHeap::heap()->workers().update_active_workers(active_workers);
-
-    // Set the number of GC threads to be used in this collection
-    gc_task_manager()->set_active_gang();
-    gc_task_manager()->task_idle_workers();
 
     GCTraceCPUTime tcpu;
     GCTraceTime(Info, gc) tm("Pause Full", NULL, gc_cause, true);
@@ -1936,7 +1928,6 @@ bool PSParallelCompact::invoke_no_policy(bool maximum_heap_compaction) {
     // Track memory usage and detect low memory
     MemoryService::track_memory_usage();
     heap->update_counters();
-    gc_task_manager()->release_idle_workers();
 
     heap->post_full_gc_dump(&_gc_timer);
   }
@@ -1975,7 +1966,6 @@ bool PSParallelCompact::invoke_no_policy(bool maximum_heap_compaction) {
   log_debug(gc, task, time)("VM-Thread " JLONG_FORMAT " " JLONG_FORMAT " " JLONG_FORMAT,
                          marking_start.ticks(), compaction_start.ticks(),
                          collection_exit.ticks());
-  gc_task_manager()->print_task_time_stamps();
 
 #ifdef TRACESPINNING
   ParallelTaskTerminator::print_termination_counts();
@@ -1999,7 +1989,7 @@ bool PSParallelCompact::absorb_live_data_from_eden(PSAdaptiveSizePolicy* size_po
   assert(young_gen->virtual_space()->alignment() ==
          old_gen->virtual_space()->alignment(), "alignments do not match");
 
-  // We also return false when it's a heterogenous heap because old generation cannot absorb data from eden
+  // We also return false when it's a heterogeneous heap because old generation cannot absorb data from eden
   // when it is allocated on different memory (example, nv-dimm) than young.
   if (!(UseAdaptiveSizePolicy && UseAdaptiveGCBoundary) ||
       ParallelArguments::is_heterogeneous_heap()) {
@@ -2078,12 +2068,6 @@ bool PSParallelCompact::absorb_live_data_from_eden(PSAdaptiveSizePolicy* size_po
 
   size_policy->set_bytes_absorbed_from_eden(absorb_size);
   return true;
-}
-
-GCTaskManager* const PSParallelCompact::gc_task_manager() {
-  assert(ParallelScavengeHeap::gc_task_manager() != NULL,
-    "shouldn't return NULL");
-  return ParallelScavengeHeap::gc_task_manager();
 }
 
 class PCAddThreadRootsMarkingTaskClosure : public ThreadClosure {
@@ -2264,10 +2248,7 @@ void PSParallelCompact::marking_phase(ParCompactionManager* cm,
   GCTraceTime(Info, gc, phases) tm("Marking Phase", &_gc_timer);
 
   ParallelScavengeHeap* heap = ParallelScavengeHeap::heap();
-  uint parallel_gc_threads = heap->gc_task_manager()->workers();
-  uint active_gc_threads = heap->gc_task_manager()->active_workers();
-  TaskQueueSetSuper* qset = ParCompactionManager::stack_array();
-  TaskTerminator terminator(active_gc_threads, qset);
+  uint active_gc_threads = ParallelScavengeHeap::heap()->workers().active_workers();
 
   PCMarkAndPushClosure mark_and_push_closure(cm);
   ParCompactionManager::FollowStackClosure follow_stack_closure(cm);
