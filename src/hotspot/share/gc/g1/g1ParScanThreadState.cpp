@@ -38,12 +38,13 @@
 #include "runtime/prefetch.inline.hpp"
 
 G1ParScanThreadState::G1ParScanThreadState(G1CollectedHeap* g1h,
+                                           G1RedirtyCardsQueueSet* rdcqs,
                                            uint worker_id,
                                            size_t young_cset_length,
                                            size_t optional_cset_length)
   : _g1h(g1h),
     _refs(g1h->task_queue(worker_id)),
-    _rdcq(&g1h->redirty_cards_queue_set()),
+    _rdcq(rdcqs),
     _ct(g1h->card_table()),
     _closures(NULL),
     _plab_allocator(NULL),
@@ -336,7 +337,7 @@ G1ParScanThreadState* G1ParScanThreadStateSet::state_for_worker(uint worker_id) 
   assert(worker_id < _n_workers, "out of bounds access");
   if (_states[worker_id] == NULL) {
     _states[worker_id] =
-      new G1ParScanThreadState(_g1h, worker_id, _young_cset_length, _optional_cset_length);
+      new G1ParScanThreadState(_g1h, _rdcqs, worker_id, _young_cset_length, _optional_cset_length);
   }
   return _states[worker_id];
 }
@@ -407,10 +408,12 @@ oop G1ParScanThreadState::handle_evacuation_failure_par(oop old, markWord m) {
   }
 }
 G1ParScanThreadStateSet::G1ParScanThreadStateSet(G1CollectedHeap* g1h,
+                                                 G1RedirtyCardsQueueSet* rdcqs,
                                                  uint n_workers,
                                                  size_t young_cset_length,
                                                  size_t optional_cset_length) :
     _g1h(g1h),
+    _rdcqs(rdcqs),
     _states(NEW_C_HEAP_ARRAY(G1ParScanThreadState*, n_workers, mtGC)),
     _surviving_young_words_total(NEW_C_HEAP_ARRAY(size_t, young_cset_length, mtGC)),
     _young_cset_length(young_cset_length),

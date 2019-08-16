@@ -97,6 +97,7 @@ class G1ParScanThreadState : public CHeapObj<mtGC> {
 
 public:
   G1ParScanThreadState(G1CollectedHeap* g1h,
+                       G1RedirtyCardsQueueSet* rdcqs,
                        uint worker_id,
                        size_t young_cset_length,
                        size_t optional_cset_length);
@@ -237,6 +238,7 @@ public:
 
 class G1ParScanThreadStateSet : public StackObj {
   G1CollectedHeap* _g1h;
+  G1RedirtyCardsQueueSet* _rdcqs;
   G1ParScanThreadState** _states;
   size_t* _surviving_young_words_total;
   size_t _young_cset_length;
@@ -246,6 +248,7 @@ class G1ParScanThreadStateSet : public StackObj {
 
  public:
   G1ParScanThreadStateSet(G1CollectedHeap* g1h,
+                          G1RedirtyCardsQueueSet* rdcqs,
                           uint n_workers,
                           size_t young_cset_length,
                           size_t optional_cset_length);

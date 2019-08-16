@@ -203,10 +203,10 @@ class RemoveSelfForwardPtrHRClosure: public HeapRegionClosure {
   UpdateLogBuffersDeferred _log_buffer_cl;
 
 public:
-  RemoveSelfForwardPtrHRClosure(uint worker_id) :
+  RemoveSelfForwardPtrHRClosure(G1RedirtyCardsQueueSet* rdcqs, uint worker_id) :
     _g1h(G1CollectedHeap::heap()),
     _worker_id(worker_id),
-    _rdcq(&_g1h->redirty_cards_queue_set()),
+    _rdcq(rdcqs),
     _log_buffer_cl(&_rdcq) {
   }
 
@@ -250,13 +250,14 @@ public:
   }
 };
 
-G1ParRemoveSelfForwardPtrsTask::G1ParRemoveSelfForwardPtrsTask() :
+G1ParRemoveSelfForwardPtrsTask::G1ParRemoveSelfForwardPtrsTask(G1RedirtyCardsQueueSet* rdcqs) :
   AbstractGangTask("G1 Remove Self-forwarding Pointers"),
   _g1h(G1CollectedHeap::heap()),
+  _rdcqs(rdcqs),
   _hrclaimer(_g1h->workers()->active_workers()) { }
 
 void G1ParRemoveSelfForwardPtrsTask::work(uint worker_id) {
-  RemoveSelfForwardPtrHRClosure rsfp_cl(worker_id);
+  RemoveSelfForwardPtrHRClosure rsfp_cl(_rdcqs, worker_id);
 
   _g1h->collection_set_iterate_increment_from(&rsfp_cl, &_hrclaimer, worker_id);
 }

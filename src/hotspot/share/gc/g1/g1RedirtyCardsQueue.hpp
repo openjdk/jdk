@@ -110,10 +110,8 @@ class G1RedirtyCardsQueueSet : public PtrQueueSet {
   void update_tail(BufferNode* node);
 
 public:
-  G1RedirtyCardsQueueSet();
+  G1RedirtyCardsQueueSet(BufferNode::Allocator* allocator);
   ~G1RedirtyCardsQueueSet();
-
-  using PtrQueueSet::initialize;
 
   void verify_empty() const NOT_DEBUG_RETURN;
 
