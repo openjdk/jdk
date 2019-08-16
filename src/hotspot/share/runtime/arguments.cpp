@@ -553,6 +553,8 @@ static SpecialFlag const special_jvm_flags[] = {
   { "SharedMiscDataSize",            JDK_Version::undefined(), JDK_Version::jdk(10), JDK_Version::undefined() },
   { "SharedMiscCodeSize",            JDK_Version::undefined(), JDK_Version::jdk(10), JDK_Version::undefined() },
   { "FailOverToOldVerifier",         JDK_Version::undefined(), JDK_Version::jdk(14), JDK_Version::jdk(15) },
+  { "BindGCTaskThreadsToCPUs",       JDK_Version::undefined(), JDK_Version::jdk(14), JDK_Version::jdk(16) },
+  { "UseGCTaskAffinity",             JDK_Version::undefined(), JDK_Version::jdk(14), JDK_Version::jdk(16) },
 
 #ifdef TEST_VERIFY_SPECIAL_JVM_FLAGS
   // These entries will generate build errors.  Their purpose is to test the macros.
@@ -1965,13 +1967,6 @@ jint Arguments::set_aggressive_heap_flags() {
 
   // This appears to improve mutator locality
   if (FLAG_SET_CMDLINE(ScavengeBeforeFullGC, false) != JVMFlag::SUCCESS) {
-    return JNI_EINVAL;
-  }
-
-  // Get around early Solaris scheduling bug
-  // (affinity vs other jobs on system)
-  // but disallow DR and offlining (5008695).
-  if (FLAG_SET_CMDLINE(BindGCTaskThreadsToCPUs, true) != JVMFlag::SUCCESS) {
     return JNI_EINVAL;
   }
 

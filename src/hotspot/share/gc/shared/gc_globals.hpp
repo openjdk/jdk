@@ -680,12 +680,6 @@
   product(bool, DisableExplicitGC, false,                                   \
           "Ignore calls to System.gc()")                                    \
                                                                             \
-  product(bool, BindGCTaskThreadsToCPUs, false,                             \
-          "Bind GCTaskThreads to CPUs if possible")                         \
-                                                                            \
-  product(bool, UseGCTaskAffinity, false,                                   \
-          "Use worker affinity when asking for GCTasks")                    \
-                                                                            \
   product(bool, PrintGC, false,                                             \
           "Print message at garbage collection. "                           \
           "Deprecated, use -Xlog:gc instead.")                              \
