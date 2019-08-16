@@ -203,6 +203,8 @@ public final class BinaryContainer implements SymbolTable {
         {"StubRoutines::_aescrypt_decryptBlock", "_aot_stub_routines_aescrypt_decryptBlock"},
         {"StubRoutines::_cipherBlockChaining_encryptAESCrypt", "_aot_stub_routines_cipherBlockChaining_encryptAESCrypt"},
         {"StubRoutines::_cipherBlockChaining_decryptAESCrypt", "_aot_stub_routines_cipherBlockChaining_decryptAESCrypt"},
+        {"StubRoutines::_electronicCodeBook_encryptAESCrypt", "_aot_stub_routines_electronicCodeBook_encryptAESCrypt"},
+        {"StubRoutines::_electronicCodeBook_decryptAESCrypt", "_aot_stub_routines_electronicCodeBook_decryptAESCrypt"},
         {"StubRoutines::_updateBytesCRC32", "_aot_stub_routines_update_bytes_crc32"},
         {"StubRoutines::_crc_table_adr", "_aot_stub_routines_crc_table_adr"},
 

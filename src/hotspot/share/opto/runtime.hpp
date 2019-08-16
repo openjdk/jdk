@@ -275,6 +275,7 @@ private:
 
   static const TypeFunc* aescrypt_block_Type();
   static const TypeFunc* cipherBlockChaining_aescrypt_Type();
+  static const TypeFunc* electronicCodeBook_aescrypt_Type();
   static const TypeFunc* counterMode_aescrypt_Type();
 
   static const TypeFunc* sha_implCompress_Type();

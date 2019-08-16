@@ -301,6 +301,8 @@
   static_field(StubRoutines,                _aescrypt_decryptBlock,                           address)                               \
   static_field(StubRoutines,                _cipherBlockChaining_encryptAESCrypt,             address)                               \
   static_field(StubRoutines,                _cipherBlockChaining_decryptAESCrypt,             address)                               \
+  static_field(StubRoutines,                _electronicCodeBook_encryptAESCrypt,              address)                               \
+  static_field(StubRoutines,                _electronicCodeBook_decryptAESCrypt,              address)                               \
   static_field(StubRoutines,                _counterMode_AESCrypt,                            address)                               \
   static_field(StubRoutines,                _base64_encodeBlock,                              address)                               \
   static_field(StubRoutines,                _ghash_processBlocks,                             address)                               \

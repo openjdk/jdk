@@ -1020,6 +1020,12 @@
    do_name(     decrypt_name,                                      "implDecrypt")                                       \
    do_signature(byteArray_int_int_byteArray_int_signature,         "([BII[BI)I")                                        \
                                                                                                                         \
+  do_class(com_sun_crypto_provider_electronicCodeBook, "com/sun/crypto/provider/ElectronicCodeBook")                    \
+   do_intrinsic(_electronicCodeBook_encryptAESCrypt, com_sun_crypto_provider_electronicCodeBook, ecb_encrypt_name, byteArray_int_int_byteArray_int_signature, F_R)  \
+   do_intrinsic(_electronicCodeBook_decryptAESCrypt, com_sun_crypto_provider_electronicCodeBook, ecb_decrypt_name, byteArray_int_int_byteArray_int_signature, F_R)  \
+   do_name(ecb_encrypt_name, "implECBEncrypt")                                                                          \
+   do_name(ecb_decrypt_name, "implECBDecrypt")                                                                          \
+                                                                                                                        \
   do_class(com_sun_crypto_provider_counterMode,      "com/sun/crypto/provider/CounterMode")                             \
    do_intrinsic(_counterMode_AESCrypt, com_sun_crypto_provider_counterMode, crypt_name, byteArray_int_int_byteArray_int_signature, F_R)   \
    do_name(     crypt_name,                                 "implCrypt")                                                    \

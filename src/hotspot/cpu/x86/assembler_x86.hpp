@@ -968,6 +968,9 @@ private:
   void aesenc(XMMRegister dst, XMMRegister src);
   void aesenclast(XMMRegister dst, Address src);
   void aesenclast(XMMRegister dst, XMMRegister src);
+  // Vector AES instructions
+  void vaesenc(XMMRegister dst, XMMRegister nds, XMMRegister src, int vector_len);
+  void vaesenclast(XMMRegister dst, XMMRegister nds, XMMRegister src, int vector_len);
   void vaesdec(XMMRegister dst, XMMRegister nds, XMMRegister src, int vector_len);
   void vaesdeclast(XMMRegister dst, XMMRegister nds, XMMRegister src, int vector_len);
 

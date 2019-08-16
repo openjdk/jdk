@@ -43,7 +43,7 @@ public class AESBench extends CryptoBase {
     @Param({"AES/ECB/NoPadding", "AES/ECB/PKCS5Padding", "AES/CBC/NoPadding", "AES/CBC/PKCS5Padding"})
     private String algorithm;
 
-    @Param({"128"})
+    @Param({"128", "192", "256"})
     private int keyLength;
 
     @Param({"" + 16 * 1024})
