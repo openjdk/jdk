@@ -27,6 +27,8 @@ package sun.print;
 
 import java.security.AccessController;
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Comparator;
 import javax.print.DocFlavor;
 import javax.print.MultiDocPrintService;
 import javax.print.PrintService;
@@ -47,9 +49,11 @@ public class PrintServiceLookupProvider extends PrintServiceLookup {
     private PrintService defaultPrintService;
     private String[] printers; /* excludes the default printer */
     private PrintService[] printServices; /* includes the default printer */
-    private static boolean pollServices = true;
-    private static final int DEFAULT_MINREFRESH = 240;  // 4 minutes
-    private static int minRefreshTime = DEFAULT_MINREFRESH;
+
+    private static final int DEFAULT_REFRESH_TIME = 240;  // 4 minutes
+    private static final int MINIMUM_REFRESH_TIME = 120;  // 2 minutes
+    private static final boolean pollServices;
+    private static final int refreshTime;
 
     static {
         /* The system property "sun.java2d.print.polling"
@@ -58,12 +62,7 @@ public class PrintServiceLookupProvider extends PrintServiceLookup {
          */
         String pollStr = java.security.AccessController.doPrivileged(
             new sun.security.action.GetPropertyAction("sun.java2d.print.polling"));
-
-        if (pollStr != null) {
-            if (pollStr.equalsIgnoreCase("false")) {
-                pollServices = false;
-            }
-        }
+        pollServices = !("false".equalsIgnoreCase(pollStr));
 
         /* The system property "sun.java2d.print.minRefreshTime"
          * can be used to specify minimum refresh time (in seconds)
@@ -72,17 +71,9 @@ public class PrintServiceLookupProvider extends PrintServiceLookup {
         String refreshTimeStr = java.security.AccessController.doPrivileged(
             new sun.security.action.GetPropertyAction(
                 "sun.java2d.print.minRefreshTime"));
-
-        if (refreshTimeStr != null) {
-            try {
-                minRefreshTime = Integer.parseInt(refreshTimeStr);
-            } catch (NumberFormatException e) {
-                // ignore
-            }
-            if (minRefreshTime < DEFAULT_MINREFRESH) {
-                minRefreshTime = DEFAULT_MINREFRESH;
-            }
-        }
+        refreshTime = (refreshTimeStr != null)
+                      ? getRefreshTime(refreshTimeStr)
+                      : DEFAULT_REFRESH_TIME;
 
         java.security.AccessController.doPrivileged(
             new java.security.PrivilegedAction<Void>() {
@@ -91,6 +82,17 @@ public class PrintServiceLookupProvider extends PrintServiceLookup {
                     return null;
                 }
             });
+    }
+
+    private static int getRefreshTime(final String refreshTimeStr) {
+        try {
+            int minRefreshTime = Integer.parseInt(refreshTimeStr);
+            return (minRefreshTime < MINIMUM_REFRESH_TIME)
+                   ? MINIMUM_REFRESH_TIME
+                   : minRefreshTime;
+        } catch (NumberFormatException e) {
+            return DEFAULT_REFRESH_TIME;
+        }
     }
 
     /* The singleton win32 print lookup service.
@@ -398,60 +400,38 @@ public class PrintServiceLookupProvider extends PrintServiceLookup {
        count of printer status changes(add\remove) and based on it update the printers
        list.
     */
-    class RemotePrinterChangeListener implements Runnable {
-        private String[] prevRemotePrinters;
+    class RemotePrinterChangeListener implements Comparator<String>, Runnable {
 
         RemotePrinterChangeListener() {
         }
 
-        private boolean doCompare(String[] str1, String[] str2) {
-            if (str1 == null && str2 == null) {
-                return false;
-            } else if (str1 == null || str2 == null) {
-                return true;
-            }
-
-            if (str1.length != str2.length) {
-                return true;
-            } else {
-                for (int i = 0; i < str1.length; i++) {
-                    for (int j = 0; j < str2.length; j++) {
-                        // skip if both are nulls
-                        if (str1[i] == null && str2[j] == null) {
-                            continue;
-                        }
-
-                        // return true if there is a 'difference' but
-                        // no need to access the individual string
-                        if (str1[i] == null || str2[j] == null) {
-                            return true;
-                        }
-
-                        // do comparison only if they are non-nulls
-                        if (!str1[i].equals(str2[j])) {
-                            return true;
-                        }
-                    }
-                }
-            }
-
-            return false;
+        @Override
+        public int compare(String o1, String o2) {
+            return ((o1 == null)
+                    ? ((o2 == null) ? 0 : 1)
+                    : ((o2 == null) ? -1 : o1.compareTo(o2)));
         }
 
         @Override
         public void run() {
             // Init the list of remote printers
-            prevRemotePrinters = getRemotePrintersNames();
+            String[] prevRemotePrinters = getRemotePrintersNames();
+            if (prevRemotePrinters != null) {
+                Arrays.sort(prevRemotePrinters, this);
+            }
 
             while (true) {
                 try {
-                    Thread.sleep(minRefreshTime * 1000);
+                    Thread.sleep(refreshTime * 1000);
                 } catch (InterruptedException e) {
                     break;
                 }
 
                 String[] currentRemotePrinters = getRemotePrintersNames();
-                if (doCompare(prevRemotePrinters, currentRemotePrinters)) {
+                if (currentRemotePrinters != null) {
+                    Arrays.sort(currentRemotePrinters, this);
+                }
+                if (!Arrays.equals(prevRemotePrinters, currentRemotePrinters)) {
                     // The list of remote printers got updated,
                     // so update the cached list printers which
                     // includes both local and network printers
