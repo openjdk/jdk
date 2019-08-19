@@ -74,6 +74,7 @@ import jdk.internal.logger.LazyLoggers;
 import jdk.internal.logger.LocalizedLoggerWrapper;
 import jdk.internal.util.SystemProps;
 import jdk.internal.vm.annotation.Stable;
+import sun.nio.fs.DefaultFileSystemProvider;
 import sun.reflect.annotation.AnnotationType;
 import sun.nio.ch.Interruptible;
 import sun.security.util.SecurityConstants;
@@ -339,6 +340,8 @@ public final class System {
             if (security == null) {
                 // ensure image reader is initialized
                 Object.class.getResource("java/lang/ANY");
+                // ensure the default file system is initialized
+                DefaultFileSystemProvider.theFileSystem();
             }
             if (sm != null) {
                 try {
