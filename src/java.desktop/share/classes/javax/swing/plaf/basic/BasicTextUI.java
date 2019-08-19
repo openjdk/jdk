@@ -702,6 +702,7 @@ public abstract class BasicTextUI extends TextUI implements ViewFactory {
         Document doc = editor.getDocument();
         Element elem = doc.getDefaultRootElement();
         setView(f.create(elem));
+        rootViewNeedsLayout = false;
     }
 
     /**
@@ -947,11 +948,10 @@ public abstract class BasicTextUI extends TextUI implements ViewFactory {
             if ((d.width > (i.left + i.right + caretMargin)) && (d.height > (i.top + i.bottom))) {
                 rootView.setSize(d.width - i.left - i.right -
                         caretMargin, d.height - i.top - i.bottom);
-            }
-            else if (!rootViewInitialized && (d.width <= 0 || d.height <= 0)) {
+            } if (!rootViewNeedsLayout) {
                 // Probably haven't been layed out yet, force some sort of
                 // initial sizing.
-                rootViewInitialized = true;
+                rootViewNeedsLayout = true;
                 rootView.setSize(Integer.MAX_VALUE, Integer.MAX_VALUE);
             }
             d.width = (int) Math.min((long) rootView.getPreferredSpan(View.X_AXIS) +
@@ -1403,7 +1403,7 @@ public abstract class BasicTextUI extends TextUI implements ViewFactory {
     private static final Position.Bias[] discardBias = new Position.Bias[1];
     private DefaultCaret dropCaret;
     private int caretMargin;
-    private boolean rootViewInitialized;
+    private boolean rootViewNeedsLayout;
 
     /**
      * Root view that acts as a gateway between the component
@@ -1966,6 +1966,7 @@ public abstract class BasicTextUI extends TextUI implements ViewFactory {
             // normal insert update
             Rectangle alloc = (painted) ? getVisibleEditorRect() : null;
             rootView.insertUpdate(e, alloc, rootView.getViewFactory());
+            rootViewNeedsLayout = false;
         }
 
         /**
@@ -1981,6 +1982,7 @@ public abstract class BasicTextUI extends TextUI implements ViewFactory {
         public final void removeUpdate(DocumentEvent e) {
             Rectangle alloc = (painted) ? getVisibleEditorRect() : null;
             rootView.removeUpdate(e, alloc, rootView.getViewFactory());
+            rootViewNeedsLayout = false;
         }
 
         /**
@@ -1996,6 +1998,7 @@ public abstract class BasicTextUI extends TextUI implements ViewFactory {
         public final void changedUpdate(DocumentEvent e) {
             Rectangle alloc = (painted) ? getVisibleEditorRect() : null;
             rootView.changedUpdate(e, alloc, rootView.getViewFactory());
+            rootViewNeedsLayout = false;
         }
 
         // --- LayoutManager2 methods --------------------------------
