@@ -28,7 +28,7 @@
 #include "gc/shared/genOopClosures.hpp"
 #include "oops/compressedOops.inline.hpp"
 #include "oops/markWord.inline.hpp"
-#include "oops/oop.hpp"
+#include "oops/oop.inline.hpp"
 
 /////////////////////////////////////////////////////////////////////////
 //// PromotionInfo

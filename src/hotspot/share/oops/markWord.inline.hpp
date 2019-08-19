@@ -27,88 +27,57 @@
 
 #include "oops/klass.hpp"
 #include "oops/markWord.hpp"
-#include "oops/oop.inline.hpp"
 #include "runtime/globals.hpp"
 
-// Should this header be preserved during GC (when biased locking is enabled)?
-inline bool markWord::must_be_preserved_with_bias(oop obj_containing_mark) const {
-  assert(UseBiasedLocking, "unexpected");
-  if (has_bias_pattern()) {
-    // Will reset bias at end of collection
-    // Mark words of biased and currently locked objects are preserved separately
-    return false;
-  }
-  markWord prototype_header = prototype_for_object(obj_containing_mark);
-  if (prototype_header.has_bias_pattern()) {
-    // Individual instance which has its bias revoked; must return
-    // true for correctness
-    return true;
-  }
-  return (!is_unlocked() || !has_no_hash());
-}
-
 // Should this header be preserved during GC?
-inline bool markWord::must_be_preserved(oop obj_containing_mark) const {
-  if (!UseBiasedLocking)
-    return (!is_unlocked() || !has_no_hash());
-  return must_be_preserved_with_bias(obj_containing_mark);
-}
-
-// Should this header be preserved in the case of a promotion failure
-// during scavenge (when biased locking is enabled)?
-inline bool markWord::must_be_preserved_with_bias_for_promotion_failure(oop obj_containing_mark) const {
-  assert(UseBiasedLocking, "unexpected");
-  // We don't explicitly save off the mark words of biased and
-  // currently-locked objects during scavenges, so if during a
-  // promotion failure we encounter either a biased mark word or a
-  // klass which still has a biasable prototype header, we have to
-  // preserve the mark word. This results in oversaving, but promotion
-  // failures are rare, and this avoids adding more complex logic to
-  // the scavengers to call new variants of
-  // BiasedLocking::preserve_marks() / restore_marks() in the middle
-  // of a scavenge when a promotion failure has first been detected.
-  if (has_bias_pattern() ||
-      prototype_for_object(obj_containing_mark).has_bias_pattern()) {
-    return true;
+template <typename KlassProxy>
+inline bool markWord::must_be_preserved(KlassProxy klass) const {
+  if (UseBiasedLocking) {
+    if (has_bias_pattern()) {
+      // Will reset bias at end of collection
+      // Mark words of biased and currently locked objects are preserved separately
+      return false;
+    }
+    markWord prototype_header = prototype_for_klass(klass);
+    if (prototype_header.has_bias_pattern()) {
+      // Individual instance which has its bias revoked; must return
+      // true for correctness
+      return true;
+    }
   }
   return (!is_unlocked() || !has_no_hash());
 }
 
-// Should this header be preserved in the case of a promotion failure
-// during scavenge?
-inline bool markWord::must_be_preserved_for_promotion_failure(oop obj_containing_mark) const {
-  if (!UseBiasedLocking)
-    return (!is_unlocked() || !has_no_hash());
-  return must_be_preserved_with_bias_for_promotion_failure(obj_containing_mark);
-}
-
-
-// Same as must_be_preserved_with_bias_for_promotion_failure() except that
-// it takes a Klass* argument, instead of the object of which this is the mark word.
-inline bool markWord::must_be_preserved_with_bias_for_cms_scavenge(Klass* klass_of_obj_containing_mark) const {
-  assert(UseBiasedLocking, "unexpected");
-  // CMS scavenges preserve mark words in similar fashion to promotion failures; see above
-  if (has_bias_pattern() ||
-      klass_of_obj_containing_mark->prototype_header().has_bias_pattern()) {
-    return true;
+// Should this header be preserved in the case of a promotion failure during scavenge?
+template <typename KlassProxy>
+inline bool markWord::must_be_preserved_for_promotion_failure(KlassProxy klass) const {
+  if (UseBiasedLocking) {
+    // We don't explicitly save off the mark words of biased and
+    // currently-locked objects during scavenges, so if during a
+    // promotion failure we encounter either a biased mark word or a
+    // klass which still has a biasable prototype header, we have to
+    // preserve the mark word. This results in oversaving, but promotion
+    // failures are rare, and this avoids adding more complex logic to
+    // the scavengers to call new variants of
+    // BiasedLocking::preserve_marks() / restore_marks() in the middle
+    // of a scavenge when a promotion failure has first been detected.
+    if (has_bias_pattern() || prototype_for_klass(klass).has_bias_pattern()) {
+      return true;
+    }
   }
   return (!is_unlocked() || !has_no_hash());
 }
 
-// Same as must_be_preserved_for_promotion_failure() except that
-// it takes a Klass* argument, instead of the object of which this is the mark word.
+// Same as must_be_preserved_for_promotion_failure().
 inline bool markWord::must_be_preserved_for_cms_scavenge(Klass* klass_of_obj_containing_mark) const {
-  if (!UseBiasedLocking)
-    return (!is_unlocked() || !has_no_hash());
-  return must_be_preserved_with_bias_for_cms_scavenge(klass_of_obj_containing_mark);
+  return must_be_preserved_for_promotion_failure(klass_of_obj_containing_mark);
 }
 
-inline markWord markWord::prototype_for_object(oop obj) {
-#ifdef ASSERT
-  markWord prototype_header = obj->klass()->prototype_header();
+inline markWord markWord::prototype_for_klass(const Klass* klass) {
+  markWord prototype_header = klass->prototype_header();
   assert(prototype_header == prototype() || prototype_header.has_bias_pattern(), "corrupt prototype header");
-#endif
-  return obj->klass()->prototype_header();
+
+  return prototype_header;
 }
 
 #endif // SHARE_OOPS_MARKWORD_INLINE_HPP

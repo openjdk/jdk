@@ -31,7 +31,7 @@
 #include "utilities/stack.inline.hpp"
 
 inline bool PreservedMarks::should_preserve_mark(oop obj, markWord m) const {
-  return m.must_be_preserved_for_promotion_failure(obj);
+  return obj->mark_must_be_preserved_for_promotion_failure(m);
 }
 
 inline void PreservedMarks::push(oop obj, markWord m) {

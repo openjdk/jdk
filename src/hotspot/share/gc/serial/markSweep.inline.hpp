@@ -40,7 +40,7 @@ inline void MarkSweep::mark_object(oop obj) {
   markWord mark = obj->mark_raw();
   obj->set_mark_raw(markWord::prototype().set_marked());
 
-  if (mark.must_be_preserved(obj)) {
+  if (obj->mark_must_be_preserved(mark)) {
     preserve_mark(obj, mark);
   }
 }

@@ -1712,7 +1712,7 @@ inline void ObjectMarker::mark(oop o) {
   // object's mark word
   markWord mark = o->mark();
 
-  if (mark.must_be_preserved(o)) {
+  if (o->mark_must_be_preserved(mark)) {
     _saved_mark_stack->push(mark);
     _saved_oop_stack->push(o);
   }

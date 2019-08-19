@@ -8008,14 +8008,14 @@ void CMSCollector::preserve_mark_work(oop p, markWord m) {
 // Single threaded
 void CMSCollector::preserve_mark_if_necessary(oop p) {
   markWord m = p->mark_raw();
-  if (m.must_be_preserved(p)) {
+  if (p->mark_must_be_preserved(m)) {
     preserve_mark_work(p, m);
   }
 }
 
 void CMSCollector::par_preserve_mark_if_necessary(oop p) {
   markWord m = p->mark_raw();
-  if (m.must_be_preserved(p)) {
+  if (p->mark_must_be_preserved(m)) {
     MutexLocker x(ParGCRareEvent_lock, Mutex::_no_safepoint_check_flag);
     // Even though we read the mark word without holding
     // the lock, we are assured that it will not change
