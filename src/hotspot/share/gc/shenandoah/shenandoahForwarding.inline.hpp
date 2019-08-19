@@ -26,7 +26,7 @@
 
 #include "gc/shenandoah/shenandoahAsserts.hpp"
 #include "gc/shenandoah/shenandoahForwarding.hpp"
-#include "oops/markOop.inline.hpp"
+#include "oops/markWord.inline.hpp"
 #include "runtime/atomic.hpp"
 
 inline HeapWord* ShenandoahForwarding::get_forwardee_raw(oop obj) {

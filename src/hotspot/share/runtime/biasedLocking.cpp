@@ -29,7 +29,7 @@
 #include "logging/log.hpp"
 #include "memory/resourceArea.hpp"
 #include "oops/klass.inline.hpp"
-#include "oops/markOop.hpp"
+#include "oops/markWord.hpp"
 #include "oops/oop.inline.hpp"
 #include "runtime/atomic.hpp"
 #include "runtime/basicLock.hpp"

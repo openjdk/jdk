@@ -50,7 +50,7 @@
 #include "oops/arrayOop.inline.hpp"
 #include "oops/instanceKlass.hpp"
 #include "oops/instanceOop.hpp"
-#include "oops/markOop.hpp"
+#include "oops/markWord.hpp"
 #include "oops/method.hpp"
 #include "oops/objArrayKlass.hpp"
 #include "oops/objArrayOop.inline.hpp"

@@ -4030,7 +4030,7 @@ bool LibraryCallKit::inline_native_hashcode(bool is_virtual, bool is_static) {
   // Get the hash value and check to see that it has been properly assigned.
   // We depend on hash_mask being at most 32 bits and avoid the use of
   // hash_mask_in_place because it could be larger than 32 bits in a 64-bit
-  // vm: see markOop.hpp.
+  // vm: see markWord.hpp.
   Node *hash_mask      = _gvn.intcon(markWord::hash_mask);
   Node *hash_shift     = _gvn.intcon(markWord::hash_shift);
   Node *hshifted_header= _gvn.transform(new URShiftXNode(header, hash_shift));

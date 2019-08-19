@@ -22,11 +22,11 @@
  *
  */
 
-#ifndef SHARE_OOPS_MARKOOP_INLINE_HPP
-#define SHARE_OOPS_MARKOOP_INLINE_HPP
+#ifndef SHARE_OOPS_MARKWORD_INLINE_HPP
+#define SHARE_OOPS_MARKWORD_INLINE_HPP
 
 #include "oops/klass.hpp"
-#include "oops/markOop.hpp"
+#include "oops/markWord.hpp"
 #include "oops/oop.inline.hpp"
 #include "runtime/globals.hpp"
 
@@ -111,4 +111,4 @@ inline markWord markWord::prototype_for_object(oop obj) {
   return obj->klass()->prototype_header();
 }
 
-#endif // SHARE_OOPS_MARKOOP_INLINE_HPP
+#endif // SHARE_OOPS_MARKWORD_INLINE_HPP

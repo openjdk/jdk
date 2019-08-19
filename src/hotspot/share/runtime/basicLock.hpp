@@ -25,7 +25,7 @@
 #ifndef SHARE_RUNTIME_BASICLOCK_HPP
 #define SHARE_RUNTIME_BASICLOCK_HPP
 
-#include "oops/markOop.hpp"
+#include "oops/markWord.hpp"
 #include "runtime/atomic.hpp"
 #include "runtime/handles.hpp"
 

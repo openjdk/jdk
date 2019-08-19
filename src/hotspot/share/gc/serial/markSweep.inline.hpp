@@ -28,7 +28,7 @@
 #include "classfile/classLoaderData.inline.hpp"
 #include "gc/serial/markSweep.hpp"
 #include "memory/universe.hpp"
-#include "oops/markOop.inline.hpp"
+#include "oops/markWord.inline.hpp"
 #include "oops/access.inline.hpp"
 #include "oops/compressedOops.inline.hpp"
 #include "oops/oop.inline.hpp"

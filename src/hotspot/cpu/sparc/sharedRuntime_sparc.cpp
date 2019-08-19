@@ -1833,7 +1833,7 @@ nmethod* SharedRuntime::generate_native_wrapper(MacroAssembler* masm,
     // Read the header and build a mask to get its hash field.  Give up if the object is not unlocked.
     // We depend on hash_mask being at most 32 bits and avoid the use of
     // hash_mask_in_place because it could be larger than 32 bits in a 64-bit
-    // vm: see markOop.hpp.
+    // vm: see markWord.hpp.
     __ ld_ptr(obj_reg, oopDesc::mark_offset_in_bytes(), header);
     __ sethi(markWord::hash_mask, mask);
     __ btst(markWord::unlocked_value, header);

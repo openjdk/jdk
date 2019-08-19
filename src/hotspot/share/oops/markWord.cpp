@@ -23,7 +23,7 @@
  */
 
 #include "precompiled.hpp"
-#include "oops/markOop.hpp"
+#include "oops/markWord.hpp"
 #include "runtime/thread.inline.hpp"
 #include "runtime/objectMonitor.hpp"
 

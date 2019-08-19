@@ -27,7 +27,7 @@
 #include "classfile/stringTable.hpp"
 #include "classfile/symbolTable.hpp"
 #include "gc/shared/referenceProcessor.hpp"
-#include "oops/markOop.hpp"
+#include "oops/markWord.hpp"
 #include "runtime/arguments.hpp"
 #include "runtime/flags/jvmFlag.hpp"
 #include "runtime/flags/jvmFlagConstraintList.hpp"

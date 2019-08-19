@@ -27,7 +27,7 @@
 #include "memory/resourceArea.hpp"
 #include "memory/virtualspace.hpp"
 #include "oops/compressedOops.hpp"
-#include "oops/markOop.hpp"
+#include "oops/markWord.hpp"
 #include "oops/oop.inline.hpp"
 #include "runtime/os.inline.hpp"
 #include "services/memTracker.hpp"

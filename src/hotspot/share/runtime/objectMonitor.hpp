@@ -27,7 +27,7 @@
 
 #include "memory/allocation.hpp"
 #include "memory/padded.hpp"
-#include "oops/markOop.hpp"
+#include "oops/markWord.hpp"
 #include "runtime/os.hpp"
 #include "runtime/park.hpp"
 #include "runtime/perfData.hpp"
@@ -75,7 +75,7 @@ class ObjectWaiter : public StackObj {
 // ObjectMonitor Layout Overview/Highlights/Restrictions:
 //
 // - The _header field must be at offset 0 because the displaced header
-//   from markWord is stored there. We do not want markOop.hpp to include
+//   from markWord is stored there. We do not want markWord.hpp to include
 //   ObjectMonitor.hpp to avoid exposing ObjectMonitor everywhere. This
 //   means that ObjectMonitor cannot inherit from any other class nor can
 //   it use any virtual member functions. This restriction is critical to

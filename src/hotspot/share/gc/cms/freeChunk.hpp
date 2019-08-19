@@ -26,7 +26,7 @@
 #define SHARE_GC_CMS_FREECHUNK_HPP
 
 #include "memory/memRegion.hpp"
-#include "oops/markOop.hpp"
+#include "oops/markWord.hpp"
 #include "runtime/mutex.hpp"
 #include "runtime/orderAccess.hpp"
 #include "utilities/debug.hpp"

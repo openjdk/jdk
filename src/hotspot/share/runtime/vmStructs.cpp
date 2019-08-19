@@ -70,7 +70,7 @@
 #include "oops/instanceMirrorKlass.hpp"
 #include "oops/instanceOop.hpp"
 #include "oops/klass.hpp"
-#include "oops/markOop.hpp"
+#include "oops/markWord.hpp"
 #include "oops/method.hpp"
 #include "oops/methodCounters.hpp"
 #include "oops/methodData.hpp"

@@ -32,7 +32,7 @@
 #include "jfr/leakprofiler/sampling/objectSampler.hpp"
 #include "logging/log.hpp"
 #include "memory/resourceArea.hpp"
-#include "oops/markOop.hpp"
+#include "oops/markWord.hpp"
 #include "oops/oop.inline.hpp"
 #include "runtime/thread.inline.hpp"
 #include "runtime/vmThread.hpp"

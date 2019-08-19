@@ -33,7 +33,7 @@
 #include "interpreter/interpreter.hpp"
 #include "interpreter/interpreterRuntime.hpp"
 #include "oops/arrayOop.hpp"
-#include "oops/markOop.hpp"
+#include "oops/markWord.hpp"
 #include "prims/jvmtiExport.hpp"
 #include "prims/jvmtiThreadState.hpp"
 #include "runtime/basicLock.hpp"

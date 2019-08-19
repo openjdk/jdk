@@ -149,7 +149,7 @@ import jdk.vm.ci.meta.ResolvedJavaType;
  * atomic operations with biased locking and bulk rebiasing</a> by Kenneth Russell and David
  * Detlefs.
  *
- * Comment below is reproduced from {@code markOop.hpp} for convenience:
+ * Comment below is reproduced from {@code markWord.hpp} for convenience:
  *
  * <pre>
  *  Bit-format of an object header (most significant first, big endian layout below):

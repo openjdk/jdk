@@ -25,7 +25,7 @@
 #ifndef SHARE_GC_SHARED_AGETABLE_HPP
 #define SHARE_GC_SHARED_AGETABLE_HPP
 
-#include "oops/markOop.hpp"
+#include "oops/markWord.hpp"
 #include "oops/oop.hpp"
 #include "runtime/perfData.hpp"
 

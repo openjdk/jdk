@@ -22,8 +22,8 @@
  *
  */
 
-#ifndef SHARE_OOPS_MARKOOP_HPP
-#define SHARE_OOPS_MARKOOP_HPP
+#ifndef SHARE_OOPS_MARKWORD_HPP
+#define SHARE_OOPS_MARKWORD_HPP
 
 #include "metaprogramming/integralConstant.hpp"
 #include "metaprogramming/primitiveConversions.hpp"
@@ -430,4 +430,4 @@ struct PrimitiveConversions::Translate<markWord> : public TrueType {
   static Value recover(Decayed x) { return Value(x); }
 };
 
-#endif // SHARE_OOPS_MARKOOP_HPP
+#endif // SHARE_OOPS_MARKWORD_HPP

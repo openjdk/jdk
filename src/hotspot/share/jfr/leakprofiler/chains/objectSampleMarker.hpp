@@ -26,7 +26,7 @@
 #define SHARE_JFR_LEAKPROFILER_CHAINS_OBJECTSAMPLEMARKER_HPP
 
 #include "memory/allocation.hpp"
-#include "oops/markOop.hpp"
+#include "oops/markWord.hpp"
 #include "utilities/growableArray.hpp"
 //
 // This class will save the original mark oop of a object sample object.

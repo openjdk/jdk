@@ -27,7 +27,7 @@
 
 #include "oops/compressedOops.hpp"
 #include "oops/klass.hpp"
-#include "oops/markOop.hpp"
+#include "oops/markWord.hpp"
 
 inline void Klass::set_prototype_header(markWord header) {
   assert(!header.has_bias_pattern() || is_instance_klass(), "biased locking currently only supported for Java instances");

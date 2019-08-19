@@ -27,7 +27,7 @@
 
 #include "memory/allocation.hpp"
 #include "memory/iterator.hpp"
-#include "oops/markOop.hpp"
+#include "oops/markWord.hpp"
 #include "utilities/growableArray.hpp"
 
 template <typename T, typename Impl>

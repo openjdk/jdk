@@ -27,7 +27,7 @@
 
 #include "gc/g1/g1HeapRegionAttr.hpp"
 #include "memory/iterator.hpp"
-#include "oops/markOop.hpp"
+#include "oops/markWord.hpp"
 
 class HeapRegion;
 class G1CollectedHeap;

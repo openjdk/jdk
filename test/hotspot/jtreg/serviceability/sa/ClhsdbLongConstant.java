@@ -88,7 +88,7 @@ public class ClhsdbLongConstant {
 
     private static void checkForTruncation(String longConstantOutput) throws Exception {
 
-        // Expected values obtained from the hash_mask_in_place definition in markOop.hpp
+        // Expected values obtained from the hash_mask_in_place definition in markWord.hpp
 
         // Expected output snippet is of the form (on x64-64):
         // ...
