@@ -302,8 +302,15 @@ final class SSLSocketInputRecord extends InputRecord implements SSLRecord {
                 }
 
                 handshakeFrag.mark();
-                // skip the first byte: handshake type
+
+                // Fail fast for unknown handshake message.
                 byte handshakeType = handshakeFrag.get();
+                if (!SSLHandshake.isKnown(handshakeType)) {
+                    throw new SSLProtocolException(
+                        "Unknown handshake type size, Handshake.msg_type = " +
+                        (handshakeType & 0xFF));
+                }
+
                 int handshakeBodyLen = Record.getInt24(handshakeFrag);
                 handshakeFrag.reset();
                 int handshakeMessageLen =

@@ -497,6 +497,16 @@ enum SSLHandshake implements SSLConsumer, HandshakeProducer {
         return "UNKNOWN-HANDSHAKE-MESSAGE(" + id + ")";
     }
 
+    static boolean isKnown(byte id) {
+        for (SSLHandshake hs : SSLHandshake.values()) {
+            if (hs.id == id && id != NOT_APPLICABLE.id) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
     static final void kickstart(HandshakeContext context) throws IOException {
         if (context instanceof ClientHandshakeContext) {
             // For initial handshaking, including session resumption,

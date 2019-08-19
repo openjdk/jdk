@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -287,8 +287,15 @@ final class SSLEngineInputRecord extends InputRecord implements SSLRecord {
                 }
 
                 handshakeFrag.mark();
-                // skip the first byte: handshake type
+
+                // Fail fast for unknown handshake message.
                 byte handshakeType = handshakeFrag.get();
+                if (!SSLHandshake.isKnown(handshakeType)) {
+                    throw new SSLProtocolException(
+                        "Unknown handshake type size, Handshake.msg_type = " +
+                        (handshakeType & 0xFF));
+                }
+
                 int handshakeBodyLen = Record.getInt24(handshakeFrag);
                 handshakeFrag.reset();
                 int handshakeMessageLen =
