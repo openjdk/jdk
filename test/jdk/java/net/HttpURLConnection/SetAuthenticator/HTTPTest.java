@@ -89,8 +89,10 @@ public class HTTPTest {
         // count will be incremented every time getPasswordAuthentication()
         // is called from the client side.
         final AtomicInteger count = new AtomicInteger();
+        private final String name;
 
-        public HttpTestAuthenticator(String realm, String username) {
+        public HttpTestAuthenticator(String name, String realm, String username) {
+            this.name = name;
             this.realm = realm;
             this.username = username;
         }
@@ -98,7 +100,7 @@ public class HTTPTest {
         @Override
         protected PasswordAuthentication getPasswordAuthentication() {
             if (skipCount.get() == null || skipCount.get().booleanValue() == false) {
-                System.out.println("Authenticator called: " + count.incrementAndGet());
+                System.out.println("Authenticator " + name + " called: " + count.incrementAndGet());
             }
             return new PasswordAuthentication(getUserName(),
                     new char[] {'b','a','r'});
@@ -118,6 +120,11 @@ public class HTTPTest {
             throw new SecurityException("User unknown: " + user);
         }
 
+        @Override
+        public String toString() {
+            return super.toString() + "[name=\"" + name + "\"]";
+        }
+
         public final String getUserName() {
             return username;
         }
@@ -128,7 +135,7 @@ public class HTTPTest {
     }
     public static final HttpTestAuthenticator AUTHENTICATOR;
     static {
-        AUTHENTICATOR = new HttpTestAuthenticator("dublin", "foox");
+        AUTHENTICATOR = new HttpTestAuthenticator("AUTHENTICATOR","dublin", "foox");
         Authenticator.setDefault(AUTHENTICATOR);
     }
 
