@@ -145,12 +145,6 @@ public:
   size_t lab_waste_words() const;
   size_t lab_undo_waste_words() const;
 
-  size_t* surviving_young_words() {
-    // We add one to hide entry 0 which accumulates surviving words for
-    // age -1 regions (i.e. non-young ones)
-    return _surviving_young_words + 1;
-  }
-
   void flush(size_t* surviving_young_words);
 
 private:

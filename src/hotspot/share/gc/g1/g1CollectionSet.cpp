@@ -279,8 +279,10 @@ void G1CollectionSet::add_young_region_common(HeapRegion* hr) {
   assert(_inc_build_state == Active, "Precondition");
 
   size_t collection_set_length = _collection_set_cur_length;
-  assert(collection_set_length <= INT_MAX, "Collection set is too large with %d entries", (int)collection_set_length);
-  hr->set_young_index_in_cset((int)collection_set_length);
+  // We use UINT_MAX as "invalid" marker in verification.
+  assert(collection_set_length < (UINT_MAX - 1),
+         "Collection set is too large with " SIZE_FORMAT " entries", collection_set_length);
+  hr->set_young_index_in_cset((uint)collection_set_length + 1);
 
   _collection_set_regions[collection_set_length] = hr->hrm_index();
   // Concurrent readers must observe the store of the value in the array before an
@@ -550,12 +552,12 @@ void G1CollectionSet::abandon_optional_collection_set(G1ParScanThreadStateSet* p
 class G1VerifyYoungCSetIndicesClosure : public HeapRegionClosure {
 private:
   size_t _young_length;
-  int* _heap_region_indices;
+  uint* _heap_region_indices;
 public:
   G1VerifyYoungCSetIndicesClosure(size_t young_length) : HeapRegionClosure(), _young_length(young_length) {
-    _heap_region_indices = NEW_C_HEAP_ARRAY(int, young_length, mtGC);
-    for (size_t i = 0; i < young_length; i++) {
-      _heap_region_indices[i] = -1;
+    _heap_region_indices = NEW_C_HEAP_ARRAY(uint, young_length + 1, mtGC);
+    for (size_t i = 0; i < young_length + 1; i++) {
+      _heap_region_indices[i] = UINT_MAX;
     }
   }
   ~G1VerifyYoungCSetIndicesClosure() {
@@ -563,12 +565,12 @@ public:
   }
 
   virtual bool do_heap_region(HeapRegion* r) {
-    const int idx = r->young_index_in_cset();
+    const uint idx = r->young_index_in_cset();
 
-    assert(idx > -1, "Young index must be set for all regions in the incremental collection set but is not for region %u.", r->hrm_index());
-    assert((size_t)idx < _young_length, "Young cset index too large for region %u", r->hrm_index());
+    assert(idx > 0, "Young index must be set for all regions in the incremental collection set but is not for region %u.", r->hrm_index());
+    assert(idx <= _young_length, "Young cset index %u too large for region %u", idx, r->hrm_index());
 
-    assert(_heap_region_indices[idx] == -1,
+    assert(_heap_region_indices[idx] == UINT_MAX,
            "Index %d used by multiple regions, first use by region %u, second by region %u",
            idx, _heap_region_indices[idx], r->hrm_index());
 

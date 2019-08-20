@@ -59,19 +59,13 @@ G1ParScanThreadState::G1ParScanThreadState(G1CollectedHeap* g1h,
     _old_gen_is_full(false),
     _num_optional_regions(optional_cset_length)
 {
-  // we allocate G1YoungSurvRateNumRegions plus one entries, since
-  // we "sacrifice" entry 0 to keep track of surviving bytes for
-  // non-young regions (where the age is -1)
+  // We allocate number of young gen regions in the collection set plus one
+  // entries, since entry 0 keeps track of surviving bytes for non-young regions.
   // We also add a few elements at the beginning and at the end in
   // an attempt to eliminate cache contention
-  size_t real_length = 1 + young_cset_length;
-  size_t array_length = PADDING_ELEM_NUM +
-                      real_length +
-                      PADDING_ELEM_NUM;
+  size_t real_length = young_cset_length + 1;
+  size_t array_length = PADDING_ELEM_NUM + real_length + PADDING_ELEM_NUM;
   _surviving_young_words_base = NEW_C_HEAP_ARRAY(size_t, array_length, mtGC);
-  if (_surviving_young_words_base == NULL)
-    vm_exit_out_of_memory(array_length * sizeof(size_t), OOM_MALLOC_ERROR,
-                          "Not enough space for young surv histo.");
   _surviving_young_words = _surviving_young_words_base + PADDING_ELEM_NUM;
   memset(_surviving_young_words, 0, real_length * sizeof(size_t));
 
@@ -94,9 +88,9 @@ void G1ParScanThreadState::flush(size_t* surviving_young_words) {
   _plab_allocator->flush_and_retire_stats();
   _g1h->policy()->record_age_table(&_age_table);
 
-  uint length = _g1h->collection_set()->young_region_length();
-  for (uint region_index = 0; region_index < length; region_index++) {
-    surviving_young_words[region_index] += _surviving_young_words[region_index];
+  uint length = _g1h->collection_set()->young_region_length() + 1;
+  for (uint i = 0; i < length; i++) {
+    surviving_young_words[i] += _surviving_young_words[i];
   }
 }
 
@@ -226,11 +220,6 @@ oop G1ParScanThreadState::copy_to_survivor_space(G1HeapRegionAttr const region_a
                                                  oop const old,
                                                  markWord const old_mark) {
   const size_t word_sz = old->size();
-  HeapRegion* const from_region = _g1h->heap_region_containing(old);
-  // +1 to make the -1 indexes valid...
-  const int young_index = from_region->young_index_in_cset()+1;
-  assert( (from_region->is_young() && young_index >  0) ||
-         (!from_region->is_young() && young_index == 0), "invariant" );
 
   uint age = 0;
   G1HeapRegionAttr dest_attr = next_region_attr(region_attr, old_mark, age);
@@ -281,6 +270,12 @@ oop G1ParScanThreadState::copy_to_survivor_space(G1HeapRegionAttr const region_a
   if (forward_ptr == NULL) {
     Copy::aligned_disjoint_words((HeapWord*) old, obj_ptr, word_sz);
 
+    HeapRegion* const from_region = _g1h->heap_region_containing(old);
+    const uint young_index = from_region->young_index_in_cset();
+
+    assert((from_region->is_young() && young_index >  0) ||
+           (!from_region->is_young() && young_index == 0), "invariant" );
+
     if (dest_attr.is_young()) {
       if (age < markWord::max_age) {
         age++;
@@ -303,7 +298,7 @@ oop G1ParScanThreadState::copy_to_survivor_space(G1HeapRegionAttr const region_a
     if (G1StringDedup::is_enabled()) {
       const bool is_from_young = region_attr.is_young();
       const bool is_to_young = dest_attr.is_young();
-      assert(is_from_young == _g1h->heap_region_containing(old)->is_young(),
+      assert(is_from_young == from_region->is_young(),
              "sanity");
       assert(is_to_young == _g1h->heap_region_containing(obj)->is_young(),
              "sanity");
@@ -415,7 +410,7 @@ G1ParScanThreadStateSet::G1ParScanThreadStateSet(G1CollectedHeap* g1h,
     _g1h(g1h),
     _rdcqs(rdcqs),
     _states(NEW_C_HEAP_ARRAY(G1ParScanThreadState*, n_workers, mtGC)),
-    _surviving_young_words_total(NEW_C_HEAP_ARRAY(size_t, young_cset_length, mtGC)),
+    _surviving_young_words_total(NEW_C_HEAP_ARRAY(size_t, young_cset_length + 1, mtGC)),
     _young_cset_length(young_cset_length),
     _optional_cset_length(optional_cset_length),
     _n_workers(n_workers),
@@ -423,7 +418,7 @@ G1ParScanThreadStateSet::G1ParScanThreadStateSet(G1CollectedHeap* g1h,
   for (uint i = 0; i < n_workers; ++i) {
     _states[i] = NULL;
   }
-  memset(_surviving_young_words_total, 0, young_cset_length * sizeof(size_t));
+  memset(_surviving_young_words_total, 0, (young_cset_length + 1) * sizeof(size_t));
 }
 
 G1ParScanThreadStateSet::~G1ParScanThreadStateSet() {
