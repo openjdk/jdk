@@ -53,7 +53,7 @@ ShenandoahTraversalAggressiveHeuristics::ShenandoahTraversalAggressiveHeuristics
 }
 
 bool ShenandoahTraversalAggressiveHeuristics::is_experimental() {
-  return true;
+  return false;
 }
 
 bool ShenandoahTraversalAggressiveHeuristics::is_diagnostic() {
