@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -244,7 +244,7 @@ public final class CompactByteArray implements Cloneable {
     /** For internal use only.  Do not modify the result, the behavior of
       * modified results are undefined.
       */
-    public short getIndexArray()[]
+    public short[] getIndexArray()
     {
         return indices;
     }
@@ -252,7 +252,7 @@ public final class CompactByteArray implements Cloneable {
     /** For internal use only.  Do not modify the result, the behavior of
       * modified results are undefined.
       */
-    public byte getStringArray()[]
+    public byte[] getStringArray()
     {
         return values;
     }

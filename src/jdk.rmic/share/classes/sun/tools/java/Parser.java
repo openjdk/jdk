@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1994, 2004, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1994, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -282,13 +282,13 @@ class Parser extends Scanner implements ParserActions, Constants {
         }
         args[argIndex++] = n;
     }
-    protected final Expression exprArgs(int index)[] {
+    protected final Expression[] exprArgs(int index) {
         Expression e[] = new Expression[argIndex - index];
         System.arraycopy(args, index, e, 0, argIndex - index);
         argIndex = index;
         return e;
     }
-    protected final Statement statArgs(int index)[] {
+    protected final Statement[] statArgs(int index) {
         Statement s[] = new Statement[argIndex - index];
         System.arraycopy(args, index, s, 0, argIndex - index);
         argIndex = index;
