@@ -324,7 +324,7 @@ Node *PhaseIdealLoop::has_local_phi_input( Node *n ) {
       }
       return NULL;
     }
-    assert(m->is_Phi() || is_dominator(get_ctrl(m), n_ctrl), "m has strange control");
+    assert(n->is_Phi() || m->is_Phi() || is_dominator(get_ctrl(m), n_ctrl), "m has strange control");
   }
 
   return n_ctrl;
