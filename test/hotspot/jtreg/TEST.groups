@@ -278,6 +278,7 @@ tier1_runtime = \
  -runtime/ErrorHandling/CreateCoredumpOnCrash.java \
  -runtime/ErrorHandling/ErrorHandler.java \
  -runtime/ErrorHandling/TestHeapDumpOnOutOfMemoryError.java \
+ -runtime/ErrorHandling/TestHeapDumpOnOutOfMemoryErrorInMetaspace.java \
  -runtime/ErrorHandling/TimeoutInErrorHandlingTest.java \
  -runtime/InvocationTests \
  -runtime/logging/MonitorMismatchTest.java \
