@@ -1642,6 +1642,42 @@ class MergeMemStream : public StackObj {
   }
 };
 
+// cachewb node for guaranteeing writeback of the cache line at a
+// given address to (non-volatile) RAM
+class CacheWBNode : public Node {
+public:
+  CacheWBNode(Node *ctrl, Node *mem, Node *addr) : Node(ctrl, mem, addr) {}
+  virtual int Opcode() const;
+  virtual uint ideal_reg() const { return NotAMachineReg; }
+  virtual uint match_edge(uint idx) const { return (idx == 2); }
+  virtual const TypePtr *adr_type() const { return TypePtr::BOTTOM; }
+  virtual const Type *bottom_type() const { return Type::MEMORY; }
+};
+
+// cachewb pre sync node for ensuring that writebacks are serialised
+// relative to preceding or following stores
+class CacheWBPreSyncNode : public Node {
+public:
+  CacheWBPreSyncNode(Node *ctrl, Node *mem) : Node(ctrl, mem) {}
+  virtual int Opcode() const;
+  virtual uint ideal_reg() const { return NotAMachineReg; }
+  virtual uint match_edge(uint idx) const { return false; }
+  virtual const TypePtr *adr_type() const { return TypePtr::BOTTOM; }
+  virtual const Type *bottom_type() const { return Type::MEMORY; }
+};
+
+// cachewb pre sync node for ensuring that writebacks are serialised
+// relative to preceding or following stores
+class CacheWBPostSyncNode : public Node {
+public:
+  CacheWBPostSyncNode(Node *ctrl, Node *mem) : Node(ctrl, mem) {}
+  virtual int Opcode() const;
+  virtual uint ideal_reg() const { return NotAMachineReg; }
+  virtual uint match_edge(uint idx) const { return false; }
+  virtual const TypePtr *adr_type() const { return TypePtr::BOTTOM; }
+  virtual const Type *bottom_type() const { return Type::MEMORY; }
+};
+
 //------------------------------Prefetch---------------------------------------
 
 // Allocation prefetch which may fault, TLAB size have to be adjusted.

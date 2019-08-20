@@ -5833,3 +5833,25 @@ void MacroAssembler::get_thread(Register dst) {
 
   pop(saved_regs, sp);
 }
+
+void MacroAssembler::cache_wb(Address line) {
+  assert(line.getMode() == Address::base_plus_offset, "mode should be base_plus_offset");
+  assert(line.index() == noreg, "index should be noreg");
+  assert(line.offset() == 0, "offset should be 0");
+  // would like to assert this
+  // assert(line._ext.shift == 0, "shift should be zero");
+  if (VM_Version::supports_dcpop()) {
+    // writeback using clear virtual address to point of persistence
+    dc(Assembler::CVAP, line.base());
+  } else {
+    // no need to generate anything as Unsafe.writebackMemory should
+    // never invoke this stub
+  }
+}
+
+void MacroAssembler::cache_wbsync(bool is_pre) {
+  // we only need a barrier post sync
+  if (!is_pre) {
+    membar(Assembler::AnyAny);
+  }
+}

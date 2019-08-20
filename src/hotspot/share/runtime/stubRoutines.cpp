@@ -113,6 +113,9 @@ address StubRoutines::_arrayof_oop_disjoint_arraycopy_uninit  = CAST_FROM_FN_PTR
 
 address StubRoutines::_zero_aligned_words = CAST_FROM_FN_PTR(address, Copy::zero_to_words);
 
+address StubRoutines::_data_cache_writeback              = NULL;
+address StubRoutines::_data_cache_writeback_sync         = NULL;
+
 address StubRoutines::_checkcast_arraycopy               = NULL;
 address StubRoutines::_checkcast_arraycopy_uninit        = NULL;
 address StubRoutines::_unsafe_arraycopy                  = NULL;

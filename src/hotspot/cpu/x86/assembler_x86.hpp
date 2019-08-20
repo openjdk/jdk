@@ -1028,6 +1028,8 @@ private:
   void cld();
 
   void clflush(Address adr);
+  void clflushopt(Address adr);
+  void clwb(Address adr);
 
   void cmovl(Condition cc, Register dst, Register src);
   void cmovl(Condition cc, Register dst, Address src);
@@ -1404,6 +1406,7 @@ private:
   }
 
   void mfence();
+  void sfence();
 
   // Moves
 

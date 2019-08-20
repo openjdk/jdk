@@ -35,6 +35,7 @@
 #include "utilities/virtualizationSupport.hpp"
 #include "vm_version_x86.hpp"
 
+#include OS_HEADER_INLINE(os)
 
 int VM_Version::_cpu;
 int VM_Version::_model;
@@ -608,6 +609,16 @@ void VM_Version::get_processor_features() {
   guarantee(_cpuid_info.std_cpuid1_ebx.bits.clflush_size == 8, "such clflush size is not supported");
 #endif
 
+#ifdef _LP64
+  // assigning this field effectively enables Unsafe.writebackMemory()
+  // by initing UnsafeConstant.DATA_CACHE_LINE_FLUSH_SIZE to non-zero
+  // that is only implemented on x86_64 and only if the OS plays ball
+  if (os::supports_map_sync()) {
+    // publish data cache line flush size to generic field, otherwise
+    // let if default to zero thereby disabling writeback
+    _data_cache_line_flush_size = _cpuid_info.std_cpuid1_ebx.bits.clflush_size * 8;
+  }
+#endif
   // If the OS doesn't support SSE, we can't use this feature even if the HW does
   if (!os::supports_sse())
     _features &= ~(CPU_SSE|CPU_SSE2|CPU_SSE3|CPU_SSSE3|CPU_SSE4A|CPU_SSE4_1|CPU_SSE4_2);

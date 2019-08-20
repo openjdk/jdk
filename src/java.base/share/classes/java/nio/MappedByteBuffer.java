@@ -78,18 +78,33 @@ public abstract class MappedByteBuffer
     // operations if valid; null if the buffer is not mapped.
     private final FileDescriptor fd;
 
+    // A flag true if this buffer is mapped against non-volatile
+    // memory using one of the extended FileChannel.MapMode modes,
+    // MapMode.READ_ONLY_SYNC or MapMode.READ_WRITE_SYNC and false if
+    // it is mapped using any of the other modes. This flag only
+    // determines the behavior of force operations.
+    private final boolean isSync;
+
     // This should only be invoked by the DirectByteBuffer constructors
     //
     MappedByteBuffer(int mark, int pos, int lim, int cap, // package-private
-                     FileDescriptor fd)
-    {
+                     FileDescriptor fd, boolean isSync) {
         super(mark, pos, lim, cap);
         this.fd = fd;
+        this.isSync = isSync;
+    }
+
+    MappedByteBuffer(int mark, int pos, int lim, int cap, // package-private
+                     boolean isSync) {
+        super(mark, pos, lim, cap);
+        this.fd = null;
+        this.isSync = isSync;
     }
 
     MappedByteBuffer(int mark, int pos, int lim, int cap) { // package-private
         super(mark, pos, lim, cap);
         this.fd = null;
+        this.isSync = false;
     }
 
     // Returns the distance (in bytes) of the buffer start from the
@@ -147,6 +162,23 @@ public abstract class MappedByteBuffer
     }
 
     /**
+     * Tells whether this buffer was mapped against a non-volatile
+     * memory device by passing one of the sync map modes {@link
+     * jdk.nio.mapmode.ExtendedMapMode#READ_ONLY_SYNC
+     * ExtendedMapModeMapMode#READ_ONLY_SYNC} or {@link
+     * jdk.nio.mapmode.ExtendedMapMode#READ_ONLY_SYNC
+     * ExtendedMapMode#READ_WRITE_SYNC} in the call to {@link
+     * java.nio.channels.FileChannel#map FileChannel.map} or was
+     * mapped by passing one of the other map modes.
+     *
+     * @return true if the file was mapped using one of the sync map
+     * modes, otherwise false.
+     */
+    private boolean isSync() {
+        return isSync;
+    }
+
+    /**
      * Tells whether or not this buffer's content is resident in physical
      * memory.
      *
@@ -166,6 +198,10 @@ public abstract class MappedByteBuffer
      */
     public final boolean isLoaded() {
         if (fd == null) {
+            return true;
+        }
+        // a sync mapped buffer is always loaded
+        if (isSync()) {
             return true;
         }
         if ((address == 0) || (capacity() == 0))
@@ -190,6 +226,10 @@ public abstract class MappedByteBuffer
      */
     public final MappedByteBuffer load() {
         if (fd == null) {
+            return this;
+        }
+        // no need to load a sync mapped buffer
+        if (isSync()) {
             return this;
         }
         if ((address == 0) || (capacity() == 0))
@@ -247,6 +287,9 @@ public abstract class MappedByteBuffer
         if (fd == null) {
             return this;
         }
+        if (isSync) {
+            return force(0, limit());
+        }
         if ((address != 0) && (capacity() != 0)) {
             long offset = mappingOffset();
             force0(fd, mappingAddress(offset), mappingLength(offset));
@@ -303,8 +346,14 @@ public abstract class MappedByteBuffer
         if ((address != 0) && (limit() != 0)) {
             // check inputs
             Objects.checkFromIndexSize(index, length, limit());
-            long offset = mappingOffset(index);
-            force0(fd, mappingAddress(offset, index), mappingLength(offset, length));
+            if (isSync) {
+                // simply force writeback of associated cache lines
+                Unsafe.getUnsafe().writebackMemory(address + index, length);
+            } else {
+                // force writeback via file descriptor
+                long offset = mappingOffset(index);
+                force0(fd, mappingAddress(offset, index), mappingLength(offset, length));
+            }
         }
         return this;
     }

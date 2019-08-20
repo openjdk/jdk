@@ -3803,6 +3803,10 @@ int os::get_core_path(char* buffer, size_t bufferSize) {
   return n;
 }
 
+bool os::supports_map_sync() {
+  return false;
+}
+
 #ifndef PRODUCT
 void TestReserveMemorySpecial_test() {
   // No tests available for this platform

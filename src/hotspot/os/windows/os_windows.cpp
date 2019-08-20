@@ -5803,3 +5803,7 @@ void os::win32::initialize_thread_ptr_offset() {
   os::os_exception_wrapper((java_call_t)call_wrapper_dummy,
                            NULL, NULL, NULL, NULL);
 }
+
+bool os::supports_map_sync() {
+  return false;
+}

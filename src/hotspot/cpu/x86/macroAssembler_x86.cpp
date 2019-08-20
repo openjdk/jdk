@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -9904,6 +9904,47 @@ void MacroAssembler::byte_array_inflate(Register src, Register dst, Register len
 
   bind(done);
 }
+
+#ifdef _LP64
+void MacroAssembler::cache_wb(Address line)
+{
+  // 64 bit cpus always support clflush
+  assert(VM_Version::supports_clflush(), "clflush should be available");
+  bool optimized = VM_Version::supports_clflushopt();
+  bool no_evict = VM_Version::supports_clwb();
+
+  // prefer clwb (writeback without evict) otherwise
+  // prefer clflushopt (potentially parallel writeback with evict)
+  // otherwise fallback on clflush (serial writeback with evict)
+
+  if (optimized) {
+    if (no_evict) {
+      clwb(line);
+    } else {
+      clflushopt(line);
+    }
+  } else {
+    // no need for fence when using CLFLUSH
+    clflush(line);
+  }
+}
+
+void MacroAssembler::cache_wbsync(bool is_pre)
+{
+  assert(VM_Version::supports_clflush(), "clflush should be available");
+  bool optimized = VM_Version::supports_clflushopt();
+  bool no_evict = VM_Version::supports_clwb();
+
+  // pick the correct implementation
+
+  if (!is_pre && (optimized || no_evict)) {
+    // need an sfence for post flush when using clflushopt or clwb
+    // otherwise no no need for any synchroniaztion
+
+    sfence();
+  }
+}
+#endif // _LP64
 
 Assembler::Condition MacroAssembler::negate_condition(Assembler::Condition cond) {
   switch (cond) {

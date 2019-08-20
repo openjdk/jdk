@@ -168,15 +168,16 @@ class Direct$Type$Buffer$RW$$BO$
     //
     protected Direct$Type$Buffer$RW$(int cap, long addr,
                                      FileDescriptor fd,
-                                     Runnable unmapper)
+                                     Runnable unmapper,
+                                     boolean isSync)
     {
 #if[rw]
-        super(-1, 0, cap, cap, fd);
+        super(-1, 0, cap, cap, fd, isSync);
         address = addr;
         cleaner = Cleaner.create(this, unmapper);
         att = null;
 #else[rw]
-        super(cap, addr, fd, unmapper);
+        super(cap, addr, fd, unmapper, isSync);
         this.isReadOnly = true;
 #end[rw]
     }

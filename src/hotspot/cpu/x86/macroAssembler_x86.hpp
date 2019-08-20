@@ -1801,6 +1801,10 @@ public:
   void byte_array_inflate(Register src, Register dst, Register len,
                           XMMRegister tmp1, Register tmp2);
 
+#ifdef _LP64
+  void cache_wb(Address line);
+  void cache_wbsync(bool is_pre);
+#endif // _LP64
 };
 
 /**

@@ -6185,6 +6185,10 @@ int os::compare_file_modified_times(const char* file1, const char* file2) {
   return diff;
 }
 
+bool os::supports_map_sync() {
+  return true;
+}
+
 /////////////// Unit tests ///////////////
 
 #ifndef PRODUCT

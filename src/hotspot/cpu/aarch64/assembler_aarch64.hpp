@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 1997, 2019, Oracle and/or its affiliates. All rights reserved.
- * Copyright (c) 2014, 2015, Red Hat Inc. All rights reserved.
+ * Copyright (c) 2014, 2019, Red Hat Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1058,12 +1058,13 @@ public:
   //            op1    CRn    CRm    op2
   // IC IVAU     3      7      5      1
   // DC CVAC     3      7      10     1
+  // DC CVAP     3      7      12     1
   // DC CVAU     3      7      11     1
   // DC CIVAC    3      7      14     1
   // DC ZVA      3      7      4      1
   // So only deal with the CRm field.
   enum icache_maintenance {IVAU = 0b0101};
-  enum dcache_maintenance {CVAC = 0b1010, CVAU = 0b1011, CIVAC = 0b1110, ZVA = 0b100};
+  enum dcache_maintenance {CVAC = 0b1010, CVAP = 0b1100, CVAU = 0b1011, CIVAC = 0b1110, ZVA = 0b100};
 
   void dc(dcache_maintenance cm, Register Rt) {
     sys(0b011, 0b0111, cm, 0b001, Rt);

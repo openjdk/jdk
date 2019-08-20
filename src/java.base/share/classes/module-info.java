@@ -192,6 +192,7 @@ module java.base {
         jdk.compiler,
         jdk.jfr,
         jdk.jshell,
+        jdk.nio.mapmode,
         jdk.scripting.nashorn,
         jdk.scripting.nashorn.shell,
         jdk.unsupported,

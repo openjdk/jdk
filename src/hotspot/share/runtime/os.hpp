@@ -823,6 +823,9 @@ class os: AllStatic {
 
   static char** split_path(const char* path, int* n);
 
+  // support for mapping non-volatile memory using MAP_SYNC
+  static bool supports_map_sync();
+
   // Extensions
 #include "runtime/os_ext.hpp"
 

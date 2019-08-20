@@ -2185,17 +2185,21 @@ int HandlerImpl::emit_deopt_handler(CodeBuffer& cbuf)
 //=============================================================================
 
 const bool Matcher::match_rule_supported(int opcode) {
-
-  switch (opcode) {
-  default:
-    break;
-  }
-
-  if (!has_match_rule(opcode)) {
+  if (!has_match_rule(opcode))
     return false;
+
+  bool ret_value = true;
+  switch (opcode) {
+    case Op_CacheWB:
+    case Op_CacheWBPreSync:
+    case Op_CacheWBPostSync:
+      if (!VM_Version::supports_data_cache_line_flush()) {
+        ret_value = false;
+      }
+      break;
   }
 
-  return true;  // Per default match rules are supported.
+  return ret_value; // Per default match rules are supported.
 }
 
 const bool Matcher::match_rule_supported_vector(int opcode, int vlen) {
@@ -7768,6 +7772,47 @@ instruct storeD_volatile(vRegD src, /* sync_memory*/indirect mem)
 %}
 
 //  ---------------- end of volatile loads and stores ----------------
+
+instruct cacheWB(indirect addr)
+%{
+  predicate(VM_Version::supports_data_cache_line_flush());
+  match(CacheWB addr);
+
+  ins_cost(100);
+  format %{"cache wb $addr" %}
+  ins_encode %{
+    assert($addr->index_position() < 0, "should be");
+    assert($addr$$disp == 0, "should be");
+    __ cache_wb(Address($addr$$base$$Register, 0));
+  %}
+  ins_pipe(pipe_slow); // XXX
+%}
+
+instruct cacheWBPreSync()
+%{
+  predicate(VM_Version::supports_data_cache_line_flush());
+  match(CacheWBPreSync);
+
+  ins_cost(100);
+  format %{"cache wb presync" %}
+  ins_encode %{
+    __ cache_wbsync(true);
+  %}
+  ins_pipe(pipe_slow); // XXX
+%}
+
+instruct cacheWBPostSync()
+%{
+  predicate(VM_Version::supports_data_cache_line_flush());
+  match(CacheWBPostSync);
+
+  ins_cost(100);
+  format %{"cache wb postsync" %}
+  ins_encode %{
+    __ cache_wbsync(false);
+  %}
+  ins_pipe(pipe_slow); // XXX
+%}
 
 // ============================================================================
 // BSWAP Instructions

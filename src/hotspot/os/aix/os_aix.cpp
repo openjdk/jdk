@@ -4338,3 +4338,7 @@ int os::compare_file_modified_times(const char* file1, const char* file2) {
   time_t t2 = get_mtime(file2);
   return t1 - t2;
 }
+
+bool os::supports_map_sync() {
+  return false;
+}

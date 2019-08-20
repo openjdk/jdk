@@ -2440,6 +2440,9 @@ const size_t minimumSymbolTableSize = 1024;
   diagnostic(bool, UseSwitchProfiling, true,                                \
           "leverage profiling for table/lookup switch")                     \
                                                                             \
+  develop(bool, TraceMemoryWriteback, false,                                \
+          "Trace memory writeback operations")                              \
+                                                                            \
   JFR_ONLY(product(bool, FlightRecorder, false,                             \
           "(Deprecated) Enable Flight Recorder"))                           \
                                                                             \
