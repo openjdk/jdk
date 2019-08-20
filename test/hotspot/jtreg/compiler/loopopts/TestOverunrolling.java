@@ -26,7 +26,7 @@
  * @bug 8159016 8202949 8203915
  * @summary Tests correct dominator information after over-unrolling a loop.
  * @requires vm.gc == "Parallel" | vm.gc == "null"
- * @run main/othervm -XX:+IgnoreUnrecognizedVMOptions -XX:+UnlockExperimentalVMOptions
+ * @run main/othervm -XX:+IgnoreUnrecognizedVMOptions -XX:+UnlockDiagnosticVMOptions
  *                   -Xcomp -XX:-TieredCompilation -XX:-UseSwitchProfiling
  *                   -XX:-UseCountedLoopSafepoints -XX:LoopUnrollLimit=250
  *                   -XX:-UseG1GC -XX:+UseParallelGC compiler.loopopts.TestOverunrolling

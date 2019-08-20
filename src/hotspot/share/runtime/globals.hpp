@@ -2437,11 +2437,11 @@ const size_t minimumSymbolTableSize = 1024;
   diagnostic(bool, ShowRegistersOnAssert, true,                             \
           "On internal errors, include registers in error report.")         \
                                                                             \
-  experimental(bool, UseSwitchProfiling, true,                              \
+  diagnostic(bool, UseSwitchProfiling, true,                                \
           "leverage profiling for table/lookup switch")                     \
                                                                             \
   JFR_ONLY(product(bool, FlightRecorder, false,                             \
-          "(Deprecated) Enable Flight Recorder"))                                        \
+          "(Deprecated) Enable Flight Recorder"))                           \
                                                                             \
   JFR_ONLY(product(ccstr, FlightRecorderOptions, NULL,                      \
           "Flight Recorder options"))                                       \
