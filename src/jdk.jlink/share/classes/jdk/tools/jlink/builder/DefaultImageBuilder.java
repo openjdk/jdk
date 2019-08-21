@@ -300,7 +300,7 @@ public final class DefaultImageBuilder implements ImageBuilder {
                 sb.append("$DIR/java $JLINK_VM_OPTIONS -m ")
                         .append(module).append('/')
                         .append(mainClassName)
-                        .append(" $@\n");
+                        .append(" \"$@\"\n");
 
                 try (BufferedWriter writer = Files.newBufferedWriter(cmd,
                         StandardCharsets.ISO_8859_1,
