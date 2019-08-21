@@ -49,6 +49,7 @@ import jdk.internal.reflect.CallerSensitive;
 import jdk.internal.reflect.Reflection;
 import jdk.internal.loader.ClassLoaderValue;
 import sun.reflect.misc.ReflectUtil;
+import sun.security.action.GetBooleanAction;
 import sun.security.action.GetPropertyAction;
 import sun.security.util.SecurityConstants;
 
@@ -99,7 +100,7 @@ import static java.lang.module.ModuleDescriptor.Modifier.SYNTHETIC;
  * <li>A proxy class extends {@code java.lang.reflect.Proxy}.
  *
  * <li>A proxy class implements exactly the interfaces specified at its
- * creation, in the same order. Invoking {@link Class#getInterfaces getInterfaces}
+ * creation, in the same order. Invoking {@link Class#getInterfaces() getInterfaces}
  * on its {@code Class} object will return an array containing the same
  * list of interfaces (in the order specified at its creation), invoking
  * {@link Class#getMethods getMethods} on its {@code Class} object will return
@@ -294,6 +295,13 @@ public class Proxy implements java.io.Serializable {
      */
     private static final ClassLoaderValue<Constructor<?>> proxyCache =
         new ClassLoaderValue<>();
+
+    /**
+     * System property to revert to generation of proxy class files for version 1.5 (V49).
+     * Set to "true" to generate v49 class file format.
+     */
+    private static final boolean PROXY_GENERATOR_V49 =
+            GetBooleanAction.privilegedGetProperty("jdk.proxy.ProxyGenerator.v49");
 
     /**
      * the invocation handler for this proxy instance.
@@ -531,8 +539,9 @@ public class Proxy implements java.io.Serializable {
             /*
              * Generate the specified proxy class.
              */
-            byte[] proxyClassFile = ProxyGenerator.generateProxyClass(
-                    proxyName, interfaces.toArray(EMPTY_CLASS_ARRAY), accessFlags);
+            byte[] proxyClassFile = PROXY_GENERATOR_V49
+                    ? ProxyGenerator_v49.generateProxyClass(proxyName, interfaces, accessFlags)
+                    : ProxyGenerator.generateProxyClass(loader, proxyName, interfaces, accessFlags);
             try {
                 Class<?> pc = JLA.defineClass(loader, proxyName, proxyClassFile,
                                               null, "__dynamic_proxy__");
@@ -1116,6 +1125,5 @@ public class Proxy implements java.io.Serializable {
         return ih;
     }
 
-    private static final Class<?>[] EMPTY_CLASS_ARRAY = new Class<?>[0];
     private static final String PROXY_PACKAGE_PREFIX = ReflectUtil.PROXY_PACKAGE;
 }
