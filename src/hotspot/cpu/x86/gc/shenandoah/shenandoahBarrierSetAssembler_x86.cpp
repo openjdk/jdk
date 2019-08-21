@@ -934,7 +934,7 @@ address ShenandoahBarrierSetAssembler::generate_shenandoah_lrb(StubCodeGenerator
   StubCodeMark mark(cgen, "StubRoutines", "shenandoah_lrb");
   address start = __ pc();
 
-  Label resolve_oop, slow_path, done;
+  Label resolve_oop, slow_path;
 
   // We use RDI, which also serves as argument register for slow call.
   // RAX always holds the src object ptr, except after the slow call,
@@ -971,7 +971,6 @@ address ShenandoahBarrierSetAssembler::generate_shenandoah_lrb(StubCodeGenerator
   // At this point, tmp2 contains the decoded forwarding pointer.
   __ mov(rax, tmp2);
 
-  __ bind(done);
   __ pop(tmp2);
   __ pop(tmp1);
   __ ret(0);
@@ -992,9 +991,14 @@ address ShenandoahBarrierSetAssembler::generate_shenandoah_lrb(StubCodeGenerator
   __ push(r14);
   __ push(r15);
 #endif
-
+  __ push(rbp);
+  __ movptr(rbp, rsp);
+  __ andptr(rsp, -StackAlignmentInBytes);
+  __ push_FPU_state();
   __ call_VM_leaf(CAST_FROM_FN_PTR(address, ShenandoahRuntime::load_reference_barrier), rax);
-
+  __ pop_FPU_state();
+  __ movptr(rsp, rbp);
+  __ pop(rbp);
 #ifdef _LP64
   __ pop(r15);
   __ pop(r14);
