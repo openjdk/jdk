@@ -23,11 +23,8 @@
  */
 
 #include "precompiled.hpp"
-#include "classfile/stringTable.hpp"
-#include "classfile/systemDictionary.hpp"
+#include "gc/shared/oopStorageSet.hpp"
 #include "gc/shared/weakProcessorPhases.hpp"
-#include "prims/resolvedMethodTable.hpp"
-#include "runtime/jniHandles.hpp"
 #include "utilities/debug.hpp"
 #include "utilities/macros.hpp"
 
@@ -39,53 +36,84 @@
 #include "prims/jvmtiExport.hpp"
 #endif // INCLUDE_JVMTI
 
-WeakProcessorPhases::Phase WeakProcessorPhases::phase(uint value) {
-  assert(value < phase_count, "Invalid phase value %u", value);
-  return static_cast<Phase>(value);
+// serial_phase_count is 0 if JFR and JVMTI are both not built,
+// requiring some code to be careful to avoid tautological checks
+// that some compilers warn about.
+
+#define HAVE_SERIAL_PHASES (INCLUDE_JVMTI || INCLUDE_JFR)
+
+WeakProcessorPhases::Phase WeakProcessorPhases::serial_phase(uint value) {
+#if HAVE_SERIAL_PHASES
+  assert(value < serial_phase_count, "Invalid serial phase value %u", value);
+  return static_cast<Phase>(value + serial_phase_start);
+#else
+  STATIC_ASSERT(serial_phase_count == 0);
+  fatal("invalid serial phase value %u", value);
+  return static_cast<Phase>(serial_phase_start);
+#endif // HAVE_SERIAL_PHASES
 }
 
-uint WeakProcessorPhases::index(Phase phase) {
-  uint value = static_cast<uint>(phase);
-  assert(value < phase_count, "Invalid phase %u", value);
-  return value;
+WeakProcessorPhases::Phase WeakProcessorPhases::oopstorage_phase(uint value) {
+  assert(value < oopstorage_phase_count, "Invalid oopstorage phase value %u", value);
+  return static_cast<Phase>(value + oopstorage_phase_start);
+}
+
+static uint raw_phase_index(WeakProcessorPhases::Phase phase) {
+  return static_cast<uint>(phase);
 }
 
 uint WeakProcessorPhases::serial_index(Phase phase) {
-  assert(is_serial(phase), "not serial phase %u", index(phase));
-  return index(phase) - serial_phase_start;
+  assert(is_serial(phase), "not serial phase %u", raw_phase_index(phase));
+  return raw_phase_index(phase) - serial_phase_start;
 }
 
-uint WeakProcessorPhases::oop_storage_index(Phase phase) {
-  assert(is_oop_storage(phase), "not oop storage phase %u", index(phase));
-  return index(phase) - oop_storage_phase_start;
+uint WeakProcessorPhases::oopstorage_index(Phase phase) {
+  assert(is_oopstorage(phase), "not oopstorage phase %u", raw_phase_index(phase));
+  return raw_phase_index(phase) - oopstorage_phase_start;
+}
+
+static bool is_phase(WeakProcessorPhases::Phase phase, uint start, uint count) {
+  return (raw_phase_index(phase) - start) < count;
 }
 
 bool WeakProcessorPhases::is_serial(Phase phase) {
-  // serial_phase_count is 0 if JFR and JVMTI are both not built,
-  // making this check with unsigned lhs redundant
-#if INCLUDE_JVMTI || INCLUDE_JFR
-  return (index(phase) - serial_phase_start) < serial_phase_count;
+#if HAVE_SERIAL_PHASES
+  return is_phase(phase, serial_phase_start, serial_phase_count);
 #else
   STATIC_ASSERT(serial_phase_count == 0);
   return false;
-#endif
+#endif // HAVE_SERIAL_PHASES
 }
 
-bool WeakProcessorPhases::is_oop_storage(Phase phase) {
-  return (index(phase) - oop_storage_phase_start) < oop_storage_phase_count;
+bool WeakProcessorPhases::is_oopstorage(Phase phase) {
+  return is_phase(phase, oopstorage_phase_start, oopstorage_phase_count);
 }
+
+#ifdef ASSERT
+
+void WeakProcessorPhases::Iterator::verify_nonsingular() const {
+  assert(_limit != singular_value, "precondition");
+}
+
+void WeakProcessorPhases::Iterator::verify_category_match(const Iterator& other) const {
+  verify_nonsingular();
+  assert(_limit == other._limit, "precondition");
+}
+
+void WeakProcessorPhases::Iterator::verify_dereferenceable() const {
+  verify_nonsingular();
+  assert(_index < _limit, "precondition");
+}
+
+#endif // ASSERT
 
 const char* WeakProcessorPhases::description(Phase phase) {
   switch (phase) {
   JVMTI_ONLY(case jvmti: return "JVMTI weak processing";)
   JFR_ONLY(case jfr: return "JFR weak processing";)
-  case jni: return "JNI weak processing";
-  case stringtable: return "StringTable weak processing";
-  case resolved_method_table: return "ResolvedMethodTable weak processing";
-  case vm: return "VM weak processing";
   default:
     ShouldNotReachHere();
-    return "Invalid weak processing phase";
+    return "Invalid serial weak processing phase";
   }
 }
 
@@ -97,24 +125,4 @@ WeakProcessorPhases::Processor WeakProcessorPhases::processor(Phase phase) {
     ShouldNotReachHere();
     return NULL;
   }
-}
-
-OopStorage* WeakProcessorPhases::oop_storage(Phase phase) {
-  switch (phase) {
-  case jni: return JNIHandles::weak_global_handles();
-  case stringtable: return StringTable::weak_storage();
-  case resolved_method_table: return ResolvedMethodTable::weak_storage();
-  case vm: return SystemDictionary::vm_weak_oop_storage();
-  default:
-    ShouldNotReachHere();
-    return NULL;
-  }
-}
-
-bool WeakProcessorPhases::is_stringtable(Phase phase) {
-  return phase == stringtable;
-}
-
-bool WeakProcessorPhases::is_resolved_method_table(Phase phase) {
-  return phase == resolved_method_table;
 }

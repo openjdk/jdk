@@ -24,6 +24,7 @@
 
 #include "precompiled.hpp"
 #include "gc/shared/oopStorage.inline.hpp"
+#include "gc/shared/oopStorageSet.hpp"
 #include "logging/log.hpp"
 #include "memory/iterator.hpp"
 #include "memory/universe.hpp"
@@ -36,17 +37,21 @@
 #include "utilities/align.hpp"
 #include "utilities/debug.hpp"
 
+static OopStorage* global_handles() {
+  return OopStorageSet::jni_global();
+}
+
+static OopStorage* weak_global_handles() {
+  return OopStorageSet::jni_weak();
+}
+
+// Serviceability agent support.
 OopStorage* JNIHandles::_global_handles = NULL;
 OopStorage* JNIHandles::_weak_global_handles = NULL;
 
-OopStorage* JNIHandles::global_handles() {
-  assert(_global_handles != NULL, "Uninitialized JNI global handles");
-  return _global_handles;
-}
-
-OopStorage* JNIHandles::weak_global_handles() {
-  assert(_weak_global_handles != NULL, "Uninitialized JNI weak global handles");
-  return _weak_global_handles;
+void jni_handles_init() {
+  JNIHandles::_global_handles = global_handles();
+  JNIHandles::_weak_global_handles = weak_global_handles();
 }
 
 
@@ -197,16 +202,6 @@ void JNIHandles::weak_oops_do(OopClosure* f) {
 }
 
 
-void JNIHandles::initialize() {
-  _global_handles = new OopStorage("JNI Global",
-                                   JNIGlobalAlloc_lock,
-                                   JNIGlobalActive_lock);
-  _weak_global_handles = new OopStorage("JNI Weak",
-                                        JNIWeakAlloc_lock,
-                                        JNIWeakActive_lock);
-}
-
-
 inline bool is_storage_handle(const OopStorage* storage, const oop* ptr) {
   return storage->allocation_status(ptr) == OopStorage::ALLOCATED_ENTRY;
 }
@@ -329,11 +324,6 @@ bool JNIHandles::current_thread_in_native() {
   Thread* thread = Thread::current();
   return (thread->is_Java_thread() &&
           JavaThread::current()->thread_state() == _thread_in_native);
-}
-
-
-void jni_handles_init() {
-  JNIHandles::initialize();
 }
 
 

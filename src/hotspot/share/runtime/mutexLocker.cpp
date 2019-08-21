@@ -46,19 +46,7 @@ Mutex*   Module_lock                  = NULL;
 Mutex*   CompiledIC_lock              = NULL;
 Mutex*   InlineCacheBuffer_lock       = NULL;
 Mutex*   VMStatistic_lock             = NULL;
-Mutex*   JNIGlobalAlloc_lock          = NULL;
-Mutex*   JNIGlobalActive_lock         = NULL;
-Mutex*   JNIWeakAlloc_lock            = NULL;
-Mutex*   JNIWeakActive_lock           = NULL;
-Mutex*   StringTableWeakAlloc_lock    = NULL;
-Mutex*   StringTableWeakActive_lock   = NULL;
 Mutex*   JNIHandleBlockFreeList_lock  = NULL;
-Mutex*   VMGlobalAlloc_lock           = NULL;
-Mutex*   VMGlobalActive_lock          = NULL;
-Mutex*   VMWeakAlloc_lock             = NULL;
-Mutex*   VMWeakActive_lock            = NULL;
-Mutex*   ResolvedMethodTableWeakAlloc_lock  = NULL;
-Mutex*   ResolvedMethodTableWeakActive_lock = NULL;
 Mutex*   JmethodIdCreation_lock       = NULL;
 Mutex*   JfieldIdCreation_lock        = NULL;
 Monitor* JNICritical_lock             = NULL;
@@ -214,18 +202,6 @@ void mutex_init() {
   def(CGC_lock                     , PaddedMonitor, special,     true,  Monitor::_safepoint_check_never);      // coordinate between fore- and background GC
   def(STS_lock                     , PaddedMonitor, leaf,        true,  Monitor::_safepoint_check_never);
 
-  def(VMGlobalAlloc_lock           , PaddedMutex  , oopstorage,  true,  Monitor::_safepoint_check_never);
-  def(VMGlobalActive_lock          , PaddedMutex  , oopstorage-1,true,  Monitor::_safepoint_check_never);
-
-  def(VMWeakAlloc_lock             , PaddedMutex  , oopstorage,  true,  Monitor::_safepoint_check_never);
-  def(VMWeakActive_lock            , PaddedMutex  , oopstorage-1,true,  Monitor::_safepoint_check_never);
-
-  def(StringTableWeakAlloc_lock    , PaddedMutex  , oopstorage,  true,  Monitor::_safepoint_check_never);
-  def(StringTableWeakActive_lock   , PaddedMutex  , oopstorage-1,true,  Monitor::_safepoint_check_never);
-
-  def(ResolvedMethodTableWeakAlloc_lock    , PaddedMutex  , oopstorage,   true,  Monitor::_safepoint_check_never);
-  def(ResolvedMethodTableWeakActive_lock   , PaddedMutex  , oopstorage-1, true,  Monitor::_safepoint_check_never);
-
   def(FullGCCount_lock             , PaddedMonitor, leaf,        true,  Monitor::_safepoint_check_never);      // in support of ExplicitGCInvokesConcurrent
   if (UseG1GC) {
     def(DirtyCardQ_CBL_mon         , PaddedMonitor, access,      true,  Monitor::_safepoint_check_never);
@@ -296,10 +272,6 @@ void mutex_init() {
   def(InitCompleted_lock           , PaddedMonitor, leaf,        true,  Monitor::_safepoint_check_never);
   def(VtableStubs_lock             , PaddedMutex  , nonleaf,     true,  Monitor::_safepoint_check_never);
   def(Notify_lock                  , PaddedMonitor, nonleaf,     true,  Monitor::_safepoint_check_always);
-  def(JNIGlobalAlloc_lock          , PaddedMutex  , nonleaf,     true,  Monitor::_safepoint_check_never);
-  def(JNIGlobalActive_lock         , PaddedMutex  , nonleaf-1,   true,  Monitor::_safepoint_check_never);
-  def(JNIWeakAlloc_lock            , PaddedMutex  , nonleaf,     true,  Monitor::_safepoint_check_never);
-  def(JNIWeakActive_lock           , PaddedMutex  , nonleaf-1,   true,  Monitor::_safepoint_check_never);
   def(JNICritical_lock             , PaddedMonitor, nonleaf,     true,  Monitor::_safepoint_check_always); // used for JNI critical regions
   def(AdapterHandlerLibrary_lock   , PaddedMutex  , nonleaf,     true,  Monitor::_safepoint_check_always);
 

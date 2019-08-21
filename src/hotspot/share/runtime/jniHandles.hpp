@@ -37,8 +37,10 @@ class Thread;
 class JNIHandles : AllStatic {
   friend class VMStructs;
  private:
+  // These are used by the serviceability agent.
   static OopStorage* _global_handles;
   static OopStorage* _weak_global_handles;
+  friend void jni_handles_init();
 
   inline static bool is_jweak(jobject handle);
   inline static oop* jobject_ptr(jobject handle); // NOT jweak!
@@ -122,9 +124,6 @@ class JNIHandles : AllStatic {
   static void weak_oops_do(BoolObjectClosure* is_alive, OopClosure* f);
   // Traversal of weak global handles.
   static void weak_oops_do(OopClosure* f);
-
-  static OopStorage* global_handles();
-  static OopStorage* weak_global_handles();
 };
 
 

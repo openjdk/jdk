@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -153,6 +153,8 @@ public:
                 bool concurrent);
   ~BasicParState();
 
+  const OopStorage* storage() const { return _storage; }
+
   template<bool is_const, typename F> void iterate(F f);
 
   static uint default_estimated_thread_count(bool concurrent);
@@ -172,6 +174,7 @@ public:
     _basic_state(storage, estimated_thread_count, concurrent)
   {}
 
+  const OopStorage* storage() const { return _basic_state.storage(); }
   template<typename F> void iterate(F f);
   template<typename Closure> void oops_do(Closure* cl);
 };
@@ -186,6 +189,7 @@ public:
     _basic_state(storage, estimated_thread_count, false)
   {}
 
+  const OopStorage* storage() const { return _basic_state.storage(); }
   template<typename F> void iterate(F f);
   template<typename Closure> void oops_do(Closure* cl);
   template<typename Closure> void weak_oops_do(Closure* cl);

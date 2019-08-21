@@ -27,6 +27,8 @@
 #include "classfile/stringTable.hpp"
 #include "classfile/symbolTable.hpp"
 #include "classfile/systemDictionary.hpp"
+#include "gc/shared/oopStorage.hpp"
+#include "gc/shared/oopStorageSet.hpp"
 #include "memory/universe.hpp"
 #include "runtime/handles.inline.hpp"
 #include "runtime/interfaceSupport.inline.hpp"
@@ -83,22 +85,14 @@ void ServiceThread::initialize() {
   }
 }
 
-static void cleanup_oopstorages(OopStorage* const* storages, size_t size) {
-  for (size_t i = 0; i < size; ++i) {
-    storages[i]->delete_empty_blocks();
+static void cleanup_oopstorages() {
+  OopStorageSet::Iterator it = OopStorageSet::all_iterator();
+  for ( ; !it.is_end(); ++it) {
+    it->delete_empty_blocks();
   }
 }
 
 void ServiceThread::service_thread_entry(JavaThread* jt, TRAPS) {
-  OopStorage* const oopstorages[] = {
-    JNIHandles::global_handles(),
-    JNIHandles::weak_global_handles(),
-    StringTable::weak_storage(),
-    SystemDictionary::vm_global_oop_storage(),
-    SystemDictionary::vm_weak_oop_storage()
-  };
-  const size_t oopstorage_count = ARRAY_SIZE(oopstorages);
-
   while (true) {
     bool sensors_changed = false;
     bool has_jvmti_events = false;
@@ -178,7 +172,7 @@ void ServiceThread::service_thread_entry(JavaThread* jt, TRAPS) {
     }
 
     if (oopstorage_work) {
-      cleanup_oopstorages(oopstorages, oopstorage_count);
+      cleanup_oopstorages();
     }
   }
 }

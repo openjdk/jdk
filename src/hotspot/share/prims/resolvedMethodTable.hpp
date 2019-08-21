@@ -25,7 +25,6 @@
 #ifndef SHARE_PRIMS_RESOLVEDMETHODTABLE_HPP
 #define SHARE_PRIMS_RESOLVEDMETHODTABLE_HPP
 
-#include "gc/shared/oopStorage.hpp"
 #include "memory/allocation.hpp"
 #include "oops/symbol.hpp"
 #include "oops/weakHandle.hpp"
@@ -34,9 +33,8 @@ class ResolvedMethodTable;
 class ResolvedMethodTableConfig;
 
 class ResolvedMethodTable : public AllStatic {
-  static OopStorage*              _weak_handles;
-
   static volatile bool            _has_work;
+
 public:
   // Initialization
   static void create_table();
@@ -53,9 +51,6 @@ public:
 
   // Cleaning
   static bool has_work() { return _has_work; }
-
-  // GC Support - Backing storage for the oop*s
-  static OopStorage* weak_storage() { return _weak_handles; }
 
   // Cleaning and table management
 
