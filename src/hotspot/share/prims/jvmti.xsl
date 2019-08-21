@@ -46,22 +46,48 @@
           .rightAligned { text-align: right; }
           .bgLight { background-color: #EEEEFF; }
           .bgDark { background-color: #CCCCFF}
-          th { background-color: #EEEEFF; }
-          td.tableHeader {font-size: larger; text-align:center; }
+          th { font-weight: normal; text-align: left; }
           div.sep { height: 10px; }
           div.callbackCtnr { margin: 0 5%; }
           hr { border-width:0; color:gray; background-color:gray; }
           hr.thick { height:3px; }
           hr.thin { height:1px; }
-          table.bordered { border: 1px solid gray; border-spacing: 0; border-collapse: separate; }
-          table.bordered td, table.bordered th { padding: 3px; border: 1px solid black; }
-          table.wide { width: 100%; }
+          table.bordered, div.bordered { border: 2px solid black; border-spacing: 0; border-collapse: collapse; }
+          table.bordered td, table.bordered th, div.bordered div.divTableHead, div.bordered .divTableCell {
+            padding: 3px;
+            border: 2px solid black;
+          }
+          .wide { width: 100%; }
+          table.bordered caption, divCaption {
+            border: 2px solid black;
+            border-bottom-width: 0;
+          }
+          .captionTitle {
+            background-color: #CCCCFF;
+            font-size: larger;
+            text-align:center;
+            padding: 3px;
+          }
+          .captionDescr {
+            border-top: 2px solid black;
+            padding: 3px;
+            text-align: left;
+          }
+          div.divTable { display: table; }
+          <!-- workaround for <div> with border, display: table & width: 100% -->
+          div.wideDivTableCtnr { padding-right: 2px; }
+          div.divTableRow { display: table-row; }
+          div.divTableHead, div.divTableCell { display: table-cell; vertical-align: middle; }
+          div.divTableHead { font-weight: bold; text-align: center; }
+          table.bordered td.noPadding { padding: 0; }
+          div.withPadding { padding: 3px; }
+          div.topBorder { border-top: 2px solid black; }
         </style>
   </head>
   <body>
-    <div class="centered" role="banner">
+    <header class="centered">
       <xsl:apply-templates select="title"/>
-    </div>
+    </header>
     <nav>
       <ul>
         <li>
@@ -169,7 +195,7 @@
       </ul>
     </nav>
     <!-- end table of contents, begin body -->
-    <div role="main">
+    <main>
     <div class="sep"/>
     <hr class="thick"/>
     <div class="sep"/>
@@ -205,7 +231,7 @@
     </xsl:if>
     <p id="ChangeHistory"/>
       <xsl:apply-templates select="changehistory"/>
-    </div>
+    </main>
   </body>
 </html>
 </xsl:template>
@@ -349,76 +375,62 @@
 </xsl:template>
 
 <xsl:template match="function" mode="generalinfo">
-  <table class="bordered wide">
-     <tr class="bgLight">
-      <td >
-        <a href="#jvmtiPhase">Phase</a>
-      </td>
-      <td>
-        <a href="#heapCallbacks">Callback Safe</a>
-      </td>
-      <td>
-        <a href="#FunctionTable">Position</a>
-      </td>
-      <td>
-        <a href="#ChangeHistory">Since</a>
-      </td>
-    </tr>
-    <tr>
-      <td>
+  <div class="wideDivTableCtnr">
+  <div class="divTable bordered wide">
+    <div class="divTableRow bgLight">
+      <div class="divTableCell"><a href="#jvmtiPhase">Phase</a></div>
+      <div class="divTableCell"><a href="#heapCallbacks">Callback Safe</a></div>
+      <div class="divTableCell"><a href="#FunctionTable">Position</a></div>
+      <div class="divTableCell"><a href="#ChangeHistory">Since</a></div>
+    </div>
+    <div class="divTableRow">
+      <div class="divTableCell">
         <xsl:apply-templates select="." mode="phaseinfo"/>
-      </td>
-      <td>
+      </div>
+      <div class="divTableCell">
         <xsl:apply-templates select="." mode="callbacksafeinfo"/>
-      </td>
-      <td>
+      </div>
+      <div class="divTableCell">
         <xsl:value-of select="@num"/>
-      </td>
-      <td>
+      </div>
+      <div class="divTableCell">
         <xsl:value-of select="@since"/>
-      </td>
-    </tr>
-  </table>
+      </div>
+    </div>
+  </div>
+  </div>
 </xsl:template>
 
 <xsl:template match="event" mode="generalinfo">
-  <table class="bordered wide">
-    <tr class="bgLight">
-      <td >
-        <a href="#jvmtiPhase">Phase</a>
-      </td>
-      <td>
-        <a href="#jvmtiEvent">Event Type</a>
-      </td>
-      <td>
-        <a href="#jvmtiEvent">Number</a>
-      </td>
-      <td>
-        <a href="#enablingevents">Enabling</a>
-      </td>
-      <td>
-        <a href="#ChangeHistory">Since</a>
-      </td>
-    </tr>
-    <tr>
-      <td >
+  <div class="wideDivTableCtnr">
+  <div class="divTable bordered wide">
+    <div class="divTableRow bgLight">
+      <div class="divTableCell"><a href="#jvmtiPhase">Phase</a></div>
+      <div class="divTableCell"><a href="#heapCallbacks">Event Type</a></div>
+      <div class="divTableCell"><a href="#FunctionTable">Number</a></div>
+      <div class="divTableCell"><a href="#FunctionTable">Enabling</a></div>
+      <div class="divTableCell"><a href="#ChangeHistory">Since</a></div>
+    </div>
+    <div class="divTableRow">
+      <div class="divTableCell">
         <xsl:apply-templates select="." mode="phaseinfo"/>
-      </td>
-      <td>
+      </div>
+      <div class="divTableCell">
         <code><xsl:value-of select="@const"/></code>
-      </td>
-      <td>
+      </div>
+      <div class="divTableCell">
         <xsl:value-of select="@num"/>
-      </td>
-      <td>
-          <code><a href="#SetEventNotificationMode">SetEventNotificationMode</a>(JVMTI_ENABLE, 
-          <xsl:value-of select="@const"/>, NULL)</code>
-      </td>
-      <td>
+      </div>
+      <div class="divTableCell">
+        <code><a href="#SetEventNotificationMode">SetEventNotificationMode</a>(JVMTI_ENABLE, 
+        <xsl:value-of select="@const"/>, NULL)</code>
+      </div>
+      <div class="divTableCell">
         <xsl:value-of select="@since"/>
-      </td>
-    </tr>
-  </table>
+      </div>
+    </div>
+  </div>
+  </div>
 </xsl:template>
 
 <xsl:template match="function" mode="phaseinfo">
@@ -674,21 +686,13 @@ typedef struct {
 
 <xsl:template match="typedef|uniontypedef" mode="justbody">
     <table class="bordered wide">
-      <tr class="bgDark">
-        <td colspan="3" class="tableHeader">
-          <code><xsl:value-of select="@id"/></code> - <xsl:value-of select="@label"/>
-        </td>
-      </tr>
+      <caption class="captionTitle">
+        <code><xsl:value-of select="@id"/></code> - <xsl:value-of select="@label"/>
+      </caption>
       <tr class="bgLight">
-        <td>
-          Field
-        </td>
-        <td>
-          Type
-        </td>
-        <td>
-          Description
-        </td>
+        <th scope="col">Field</th>
+        <th scope="col">Type</th>
+        <th scope="col">Description</th>
       </tr>
       <xsl:apply-templates select="field" mode="body"/>
     </table>
@@ -705,26 +709,16 @@ typedef struct {
 
 <xsl:template match="capabilitiestypedef" mode="justbody">
     <table class="bordered wide">
-      <tr class="bgDark">
-        <td colspan="3" class="tableHeader">
+      <caption>
+        <div class="captionTitle">
           <code><xsl:value-of select="@id"/></code> - <xsl:value-of select="@label"/>
-        </td>
-      </tr>
+        </div>
+        <div class="captionDescr">All types are <code>unsigned int : 1</code></div>
+      </caption>
       <tr class="bgLight">
-        <td colspan="3">
-          All types are <code>unsigned int : 1</code>
-        </td>
-      </tr>
-      <tr class="bgLight">
-        <td>
-          Field
-        </td>
-        <td>
-          Description
-        </td>
-        <td>
-          <a href="#ChangeHistory">Since</a>
-        </td>
+        <th scope="col">Field</th>
+        <th scope="col">Description</th>
+        <th scope="col"><a href="#ChangeHistory">Since</a></th>
       </tr>
       <xsl:apply-templates select="capabilityfield" mode="body"/>
     </table>
@@ -732,7 +726,7 @@ typedef struct {
 
 <xsl:template match="typedef|uniontypedef|capabilitiestypedef|constants" mode="tableentry">
   <tr>
-    <td>
+    <th scope="row">
       <a>
         <xsl:attribute name="href">
           <xsl:text>#</xsl:text>
@@ -740,7 +734,7 @@ typedef struct {
         </xsl:attribute>
         <code><xsl:value-of select="@id"/></code>
       </a>
-    </td>
+    </th>
     <td>
       <xsl:value-of select="@label"/>
     </td>
@@ -749,14 +743,14 @@ typedef struct {
 
 <xsl:template match="field" mode="body">
   <tr>
-    <td>
+    <th scope="row">
       <code>
         <xsl:attribute name="id">
           <xsl:value-of select="../@id"/>.<xsl:value-of select="@id"/>
         </xsl:attribute>
         <xsl:value-of select="@id"/>
       </code>
-    </td>
+    </th>
     <td>
       <code>
         <xsl:apply-templates select="child::*[position()=1]" mode="link"/>
@@ -770,7 +764,7 @@ typedef struct {
 
 <xsl:template match="capabilityfield" mode="body">
   <tr>
-    <td>
+    <th scope="row">
       <code>
         <xsl:choose>
           <xsl:when test="@disp1!=''">
@@ -783,7 +777,7 @@ typedef struct {
           </xsl:otherwise>
         </xsl:choose>
       </code>
-    </td>
+    </th>
     <td>
       <xsl:attribute name="id">
         <xsl:value-of select="../@id"/>.<xsl:value-of select="@id"/>
@@ -798,7 +792,7 @@ typedef struct {
 
 <xsl:template match="callback" mode="tableentry">
   <tr>
-    <td>
+    <th scope="row">
       <a>
         <xsl:attribute name="href">
           <xsl:text>#</xsl:text>
@@ -808,7 +802,7 @@ typedef struct {
           <xsl:value-of select="@id"/>
         </code>
       </a>
-    </td>
+    </th>
     <td>
       <xsl:apply-templates select="synopsis" mode="index"/>
     </td>
@@ -821,28 +815,21 @@ typedef struct {
       <xsl:attribute name="id">
         <xsl:value-of select="@id"/>
       </xsl:attribute>
-      <tr class="bgDark">
-        <td colspan="3" class="tableHeader">
-            <xsl:value-of select="@label"/>
-            <xsl:if test="@kind='enum'">
-              <xsl:text> (</xsl:text>
-              <code>
-                <xsl:value-of select="@id"/>
-              </code>
-              <xsl:text>)</xsl:text>
-            </xsl:if>
-        </td>
-      </tr>
+      <caption class="captionTitle">
+        <xsl:value-of select="@label"/>
+        <xsl:if test="@kind='enum'">
+          <xsl:text> (</xsl:text>
+          <code>
+            <xsl:value-of select="@id"/>
+          </code>
+          <xsl:text>)</xsl:text>
+        </xsl:if>
+      </caption>
+
       <tr class="bgLight">
-        <td>
-          Constant
-        </td>
-        <td>
-          Value
-        </td>
-        <td>
-          Description
-        </td>
+        <th scope="col">Constant</th>
+        <th scope="col">Value</th>
+        <th scope="col">Description</th>
       </tr>
       <xsl:apply-templates select="constant" mode="body"/>
     </table>
@@ -862,14 +849,14 @@ typedef struct {
 
 <xsl:template match="constant" mode="body">
   <tr>
-    <td>
+    <th scope="row">
       <code>
         <xsl:attribute name="id">
           <xsl:value-of select="@id"/>
         </xsl:attribute>
         <xsl:value-of select="@id"/>
       </code>
-    </td>
+    </th>
     <td class="rightAligned">
       <xsl:value-of select="@num"/>
     </td>
@@ -886,74 +873,47 @@ typedef struct {
     </xsl:attribute>
   </p>
     <table class="bordered wide">
-      <tr class="bgDark">
-        <td colspan="2" class="tableHeader">
-          <xsl:value-of select="@label"/>
-        </td>
-      </tr>
+      <caption class="captionTitle"><xsl:value-of select="@label"/></caption>
       <tr class="bgLight">
-        <td>
-          Type
-        </td>
-        <td>
-          Description
-        </td>
+        <th scope="col">Type</th>
+        <th scope="col">Description</th>
       </tr>
       <xsl:apply-templates select="basetype" mode="body"/>
     </table>
 </xsl:template>
 
 <xsl:template match="basetype" mode="body">
-  <xsl:choose>
-    <xsl:when test="count(definition)=0">
-      <tr>
-        <td>
-          <code>
-            <xsl:value-of select="@id"/>
-          </code>
-        </td>
-        <td>
-          <a>
-            <xsl:attribute name="id">
-              <xsl:choose>
-                <xsl:when test="count(@name)=1">
-                  <xsl:value-of select="@name"/>
-                </xsl:when>
-                <xsl:otherwise>
-                  <xsl:value-of select="@id"/>
-                </xsl:otherwise>
-              </xsl:choose>
-            </xsl:attribute>
-          </a>
-          <xsl:apply-templates select="description" mode="brief"/>
-        </td>
-      </tr>
-    </xsl:when>
-    <xsl:otherwise>
-      <tr>
-        <td rowspan="2">
-          <code>
-            <xsl:value-of select="@id"/>
-          </code>
-        </td>
-        <td>
-          <a>
-            <xsl:attribute name="id">
-              <xsl:value-of select="@id"/>
-            </xsl:attribute>
-          </a>
-          <xsl:apply-templates select="description" mode="brief"/>
-        </td>
-      </tr>
-      <tr>
-        <td>
+  <tr>
+    <th scope="row">
+      <code>
+        <xsl:value-of select="@id"/>
+      </code>
+    </th>
+    <td class="noPadding">
+      <div class="withPadding">
+        <a>
+          <xsl:attribute name="id">
+            <xsl:choose>
+              <xsl:when test="count(@name)=1">
+                <xsl:value-of select="@name"/>
+              </xsl:when>
+              <xsl:otherwise>
+                <xsl:value-of select="@id"/>
+              </xsl:otherwise>
+            </xsl:choose>
+          </xsl:attribute>
+        </a>
+        <xsl:apply-templates select="description" mode="brief"/>
+      </div>
+      <xsl:if test="count(definition)!=0">
+        <div class="withPadding topBorder">
           <pre>
             <xsl:apply-templates select="definition"/>
           </pre>
-        </td>
-      </tr>
-    </xsl:otherwise>
-  </xsl:choose>
+        </div>
+      </xsl:if>
+    </td>
+  </tr>
 </xsl:template>
 
 <xsl:template match="description">
@@ -1074,37 +1034,40 @@ typedef struct {
 
 <xsl:template match="parameters" mode="body">
   <div class="sep"/>
-  <table class="bordered wide">
-    <tr class="bgDark">
-      <td colspan="3" class="tableHeader">
-        Parameters
-      </td>
-    </tr>
-    <tr class="bgLight">
-      <td>
-        Name
-      </td>
-      <td>
-        Type
-      </td>
-      <td>
-        Description
-      </td>
-    </tr>
-    <xsl:apply-templates select="param[count(jclass/@method)=0]" mode="body"/>
-  </table>
+  <!--
+  docchecker complains if a table has only one row.
+  -->
+  <xsl:choose>
+    <xsl:when test="count(param)!=0">
+      <table class="bordered wide">
+        <caption class="captionTitle">Parameters</caption>
+        <tr class="bgLight">
+          <th scope="col">Name</th>
+          <th scope="col">Type</th>
+          <th scope="col">Description</th>
+        </tr>
+        <xsl:apply-templates select="param[count(jclass/@method)=0]" mode="body"/>
+      </table>
+    </xsl:when>
+    <xsl:otherwise>
+      <div class="bordered">
+        <div class="captionTitle">Parameters</div>
+        <div class="captionDescr">None</div>
+      </div>
+    </xsl:otherwise>
+  </xsl:choose>
 </xsl:template>
 
 <xsl:template match="param" mode="body">
   <tr>
-    <td>
+    <th scope="row">
       <code>
         <xsl:attribute name="id">
           <xsl:value-of select="../../@id"/>.<xsl:value-of select="@id"/>
         </xsl:attribute>
         <xsl:value-of select="@id"/>
       </code>
-    </td>
+    </th>
     <td>
       <code>
         <xsl:apply-templates select="child::*[position()=1]" mode="link"/>
@@ -1122,120 +1085,97 @@ typedef struct {
 <xsl:template match="capabilities">
   <div class="sep"/>
   <!--
-  W3C Validator reports error if all cells has colspan==2.
-  The workaround is to detect the case and set colspan = 1 for all cells
-  which fills the entire row.
+  docchecker complains if a table has only one column.
   -->
-  <xsl:variable name="fullRowColspan">
-    <xsl:choose>
-      <xsl:when test="count(required)!=0 or count(capability)!=0">2</xsl:when>
-      <xsl:otherwise>1</xsl:otherwise>
-    </xsl:choose>
-  </xsl:variable>
-  <table class="bordered wide">
-    <tr class="bgDark">
-      <td colspan="{$fullRowColspan}" class="tableHeader">
-        Capabilities
-      </td>
-    </tr>
-    <xsl:choose>
-      <xsl:when test="count(required)=0">
-        <tr>
-          <td colspan="{$fullRowColspan}">
-            <b>Required Functionality</b>
-          </td>
-        </tr>
-      </xsl:when>
-      <xsl:otherwise>
-        <tr>
-          <td colspan="2">
-            <b>Optional Functionality:</b> might not be implemented for all
-            virtual machines.
-            <xsl:choose>
-              <xsl:when test="count(required)=1">
-                The following capability
-              </xsl:when>
-              <xsl:otherwise>
-                One of the following capabilities
-              </xsl:otherwise>
-            </xsl:choose>
-            (as returned by
-            <a href="#GetCapabilities"><code>GetCapabilities</code></a>)
-            must be true to use this
-            <xsl:choose>
-              <xsl:when test="ancestor::function">
-                function.
-              </xsl:when>
-              <xsl:otherwise>
-                event.
-              </xsl:otherwise>
-            </xsl:choose>
-          </td>
-        </tr>
-        <tr class="bgLight">
-          <td >
-            Capability
-          </td>
-          <td>
-            Effect
-          </td>
-        </tr>
-        <xsl:apply-templates select="required"/>
-      </xsl:otherwise>
-    </xsl:choose>
-    <xsl:if test="count(capability)!=0">
-      <tr class="bgDark">
-        <td colspan="{$fullRowColspan}" class="centered">
-          Optional Features
-        </td>
-      </tr>
-      <xsl:if test="count(required)=0">
-        <tr class="bgLight">
-          <td >
-            Capability
-          </td>
-          <td>
-            Effect
-          </td>
-        </tr>
-      </xsl:if>
-      <xsl:apply-templates select="capability"/>
-    </xsl:if>
-  </table>
+  <xsl:choose>
+    <xsl:when test="count(required)!=0 or count(capability)!=0">
+      <table class="bordered wide">
+        <caption>
+          <div class="captionTitle">Capabilities</div>
+          <xsl:choose>
+            <xsl:when test="count(required)=0">
+              <div class="captionDescr"><b>Required Functionality</b></div>
+            </xsl:when>
+            <xsl:otherwise>
+              <div class="captionDescr">
+                <b>Optional Functionality:</b> might not be implemented for all virtual machines.
+                <xsl:choose>
+                  <xsl:when test="count(required)=1">
+                    The following capability
+                  </xsl:when>
+                  <xsl:otherwise>
+                    One of the following capabilities
+                  </xsl:otherwise>
+                </xsl:choose>
+                (as returned by <a href="#GetCapabilities"><code>GetCapabilities</code></a>)
+                must be true to use this
+                <xsl:choose>
+                  <xsl:when test="ancestor::function">
+                    function.
+                  </xsl:when>
+                  <xsl:otherwise>
+                    event.
+                  </xsl:otherwise>
+                </xsl:choose>
+              </div>
+            </xsl:otherwise>
+          </xsl:choose>
+        </caption>
+        <xsl:if test="count(required)!=0">
+          <tr class="bgLight">
+            <th scope="col">Capability</th>
+            <th scope="col">Effect</th>
+          </tr>
+          <xsl:apply-templates select="required"/>
+        </xsl:if>
+
+        <xsl:if test="count(capability)!=0">
+          <tr class="bgDark">
+            <th colspan="2" scope="rowgroup" class="centered">
+              Optional Features
+            </th>
+          </tr>
+          <xsl:if test="count(required)=0">
+            <tr class="bgLight">
+              <th scope="col">Capability</th>
+              <th scope="col">Effect</th>
+            </tr>
+          </xsl:if>
+          <xsl:apply-templates select="capability"/>
+        </xsl:if>
+      </table>
+    </xsl:when>
+    <xsl:otherwise>
+      <div class="bordered">
+        <div class="captionTitle">Capabilities</div>
+        <div class="captionDescr"><b>Required Functionality</b></div>
+      </div>
+    </xsl:otherwise>
+  </xsl:choose>
 </xsl:template>
 
 <xsl:template match="eventcapabilities">
   <div class="sep"/>
   <table class="bordered wide">
+    <caption>
+      <div class="captionTitle">Capabilities</div>
+      <div class="captionDescr"><b>Required Functionality</b></div>
+    </caption>
     <tr class="bgDark">
-      <td colspan="2" class="tableHeader">
-        Capabilities
-      </td>
-    </tr>
-    <tr>
-      <td colspan="2">
-        <b>Required Functionality</b>
-      </td>
-    </tr>
-    <tr class="bgDark">
-      <td colspan="2" class="centered">
+      <th colspan="2" scope="rowgroup" class="centered">
         Event Enabling Capabilities
-      </td>
+      </th>
     </tr>
     <tr class="bgLight">
-      <td >
-        Capability
-      </td>
-      <td>
-        Events
-      </td>
+      <th scope="col">Capability</th>
+      <th scope="col">Events</th>
     </tr>
     <xsl:for-each select="//capabilityfield">
       <xsl:variable name="capa" select="@id"/>
       <xsl:variable name="events" select="//event[capabilities/required/@id=$capa]"/>
       <xsl:if test="count($events)">
         <tr>
-          <td>
+          <th scope="row">
             <a>
               <xsl:attribute name="href">#jvmtiCapabilities.<xsl:value-of select="@id"/>
               </xsl:attribute>
@@ -1243,7 +1183,7 @@ typedef struct {
                 <xsl:value-of select="@id"/>
               </code>
             </a>
-          </td>
+          </th>
           <td>
             <xsl:for-each select="$events">
               <a>
@@ -1264,7 +1204,7 @@ typedef struct {
 
 <xsl:template match="capability|required">
   <tr>
-    <td>
+    <th scope="row">
       <a>
         <xsl:attribute name="href">#jvmtiCapabilities.<xsl:value-of select="@id"/>
         </xsl:attribute>
@@ -1272,7 +1212,7 @@ typedef struct {
           <xsl:value-of select="@id"/>
         </code>
       </a>
-    </td>
+    </th>
     <td>
       <xsl:choose>
         <xsl:when test=".=''">
@@ -1297,53 +1237,38 @@ typedef struct {
   </xsl:variable>
   <div class="sep"/>
   <!--
-  W3C Validator reports error if all cells has colspan==2.
-  The workaround is to detect the case and set colspan = 1 for all cells
-  which fills the entire row.
+  docchecker complains if a table has only one column.
   -->
-  <xsl:variable name="fullRowColspan">
-    <xsl:choose>
-      <xsl:when test="contains($haserrors,'yes')">2</xsl:when>
-      <xsl:otherwise>1</xsl:otherwise>
-    </xsl:choose>
-  </xsl:variable>
-  <table class="bordered wide">
-    <tr class="bgDark">
-      <td colspan="{$fullRowColspan}" class="tableHeader">
-        Errors
-      </td>
-    </tr>
-    <xsl:choose>
-      <xsl:when test="contains($haserrors,'yes')">
-        <tr>
-          <td colspan="2">
+  <xsl:choose>
+    <xsl:when test="contains($haserrors,'yes')">
+      <table class="bordered wide">
+        <caption>
+          <div class="captionTitle">Errors</div>
+          <div class="captionDescr">
             This function returns either a
             <a href="#universal-error">universal error</a>
             or one of the following errors
-          </td>
-        </tr>
+          </div>
+        </caption>
         <tr class="bgLight">
-          <td>
-            Error
-          </td>
-          <td>
-            Description
-          </td>
+          <th scope="col">Error</th>
+          <th scope="col">Description</th>
         </tr>
         <xsl:apply-templates select="capabilities/required" mode="errors"/>
         <xsl:apply-templates select="errors/error"/>
         <xsl:apply-templates select="parameters/param" mode="errors"/>
-      </xsl:when>
-      <xsl:otherwise>
-        <tr>
-          <td colspan="{$fullRowColspan}">
+      </table>
+    </xsl:when>
+    <xsl:otherwise>
+      <div class="bordered">
+        <div class="captionTitle">Errors</div>
+        <div class="captionDescr">
             This function returns a
             <a href="#universal-error">universal error</a>
-          </td>
-        </tr>
-      </xsl:otherwise>
-    </xsl:choose>
-  </table>
+        </div>
+      </div>
+    </xsl:otherwise>
+  </xsl:choose>
 </xsl:template>
 
 <xsl:template match="required" mode="haserrors">
@@ -1352,13 +1277,13 @@ typedef struct {
 
 <xsl:template match="required" mode="errors">
   <tr>
-    <td>
+    <th scope="row">
       <a href="#JVMTI_ERROR_MUST_POSSESS_CAPABILITY">
         <code>
           JVMTI_ERROR_MUST_POSSESS_CAPABILITY
         </code>
       </a>
-    </td>
+    </th>
     <td>
       The environment does not possess the capability
       <a>
@@ -1391,14 +1316,14 @@ typedef struct {
     </xsl:variable>
     <xsl:variable name="errorid" select="normalize-space($erroridraw)"/>
     <tr>
-      <td>
+      <th scope="row">
         <a>
           <xsl:attribute name="href">#<xsl:value-of select="$errorid"/></xsl:attribute>
           <code>
             <xsl:value-of select="$errorid"/>
           </code>
         </a>
-      </td>
+      </th>
       <td>
         <xsl:apply-templates mode="errordesc">
           <xsl:with-param name="id" select="@id"/>
@@ -1418,14 +1343,14 @@ typedef struct {
     </xsl:variable>
     <xsl:variable name="errorid2" select="normalize-space($erroridraw2)"/>
     <tr>
-      <td>
+      <th scope="row">
         <a>
           <xsl:attribute name="href">#<xsl:value-of select="$errorid2"/></xsl:attribute>
           <code>
             <xsl:value-of select="$errorid2"/>
           </code>
         </a>
-      </td>
+      </th>
       <td>
         <xsl:apply-templates mode="errordesc2">
           <xsl:with-param name="id" select="@id"/>
@@ -1689,14 +1614,14 @@ typedef struct {
 
 <xsl:template match="error">
   <tr>
-    <td>
+    <th scope="row">
       <a>
         <xsl:attribute name="href">#<xsl:value-of select="@id"/></xsl:attribute>
         <code>
           <xsl:value-of select="@id"/>
         </code>
       </a>
-    </td>
+    </th>
     <td>
       <xsl:apply-templates/>
     </td>
@@ -1727,18 +1652,10 @@ typedef struct {
   <xsl:apply-templates select="basetypes"/>
   <div class="sep"/>
   <table id="StructureTypeDefinitions" class="bordered wide">
-    <tr class="bgDark">
-      <td colspan="2" class="tableHeader">
-        Structure Type Definitions
-      </td>
-    </tr>
+    <caption class="captionTitle">Structure Type Definitions</caption>
     <tr class="bgLight">
-      <td>
-        Type
-      </td>
-      <td>
-        Description
-      </td>
+      <th scope="col">Type</th>
+      <th scope="col">Description</th>
     </tr>
     <xsl:apply-templates select="//typedef|//uniontypedef|//capabilitiestypedef" mode="tableentry">
       <xsl:sort select="@id"/>
@@ -1746,18 +1663,10 @@ typedef struct {
   </table>
   <div class="sep"/>
   <table id="FunctionTypeDefinitions" class="bordered wide">
-    <tr class="bgDark">
-      <td colspan="2" class="tableHeader">
-        Function Type Definitions
-      </td>
-    </tr>
+    <caption class="captionTitle">Function Type Definitions</caption>
     <tr class="bgLight">
-      <td>
-        Type
-      </td>
-      <td>
-        Description
-      </td>
+      <th scope="col">Type</th>
+      <th scope="col">Description</th>
     </tr>
     <xsl:apply-templates select="//callback" mode="tableentry">
       <xsl:sort select="@id"/>
@@ -1765,18 +1674,10 @@ typedef struct {
   </table>
   <div class="sep"/>
   <table id="EnumerationDefinitions" class="bordered wide">
-    <tr class="bgDark">
-      <td colspan="2" class="tableHeader">
-        Enumeration Definitions
-      </td>
-    </tr>
+    <caption class="captionTitle">Enumeration Definitions</caption>
     <tr class="bgLight">
-      <td>
-        Type
-      </td>
-      <td>
-        Description
-      </td>
+      <th scope="col">Type</th>
+      <th scope="col">Description</th>
     </tr>
     <xsl:apply-templates select="//constants[@kind='enum']" mode="tableentry">
       <xsl:sort select="@id"/>
@@ -1784,21 +1685,11 @@ typedef struct {
   </table>
   <div class="sep"/>
   <table id="FunctionTable" class="bordered wide">
-    <tr class="bgDark">
-      <td colspan="3" class="tableHeader">
-        Function Table Layout
-      </td>
-    </tr>
+    <caption class="captionTitle">Function Table Layout</caption>
     <tr class="bgLight">
-      <td>
-        Position
-      </td>
-      <td>
-        Function
-      </td>
-      <td>
-        Declaration
-      </td>
+      <th scope="col">Position</th>
+      <th scope="col">Function</th>
+      <th scope="col">Declaration</th>
     </tr>
     <xsl:call-template name="funcStruct">
       <xsl:with-param name="funcs" select="//functionsection/category/function[count(@hide)=0]"/>
@@ -1814,9 +1705,9 @@ typedef struct {
   <xsl:param name="index"/>
   <xsl:variable name="thisFunction" select="$funcs[@num=$index]"/>
   <tr>
-    <td class="rightAligned">
+    <th scope="row" class="rightAligned">
       <xsl:number value="$index" format="  1"/>
-    </td>
+    </th>
     <xsl:choose>
       <xsl:when test="count($thisFunction)=1">
         <td>
@@ -1920,13 +1811,13 @@ typedef struct {
     <div class="sep"/>
     <table class="bordered wide">
       <tr class="bgLight">
-        <td>
+        <th scope="col">
           <b>Version</b><br/>
           <b>Date</b>
-        </td>
-        <td>
+        </th>
+        <th scope="col">
           <b>Changes</b>
-        </td>
+        </th>
       </tr>
       <xsl:apply-templates select="change"/>
     </table>
@@ -1934,7 +1825,7 @@ typedef struct {
 
 <xsl:template match="change">
   <tr>
-    <td>
+    <th scope="row">
       <xsl:if test="count(@version)">
         <b>
           <xsl:value-of select="@version"/>
@@ -1942,7 +1833,7 @@ typedef struct {
         <br/>
       </xsl:if>
       <xsl:value-of select="@date"/>
-    </td>
+    </th>
     <td>
       <xsl:apply-templates/>
     </td>
@@ -2023,6 +1914,11 @@ typedef struct {
 
 <xsl:template match="tr">
   <tr>
+    <xsl:if test="@class">
+      <xsl:attribute name="class">
+        <xsl:value-of select="@class"/>
+      </xsl:attribute>
+    </xsl:if>
     <xsl:apply-templates/>
   </tr>
 </xsl:template>
@@ -2043,6 +1939,11 @@ typedef struct {
     <xsl:if test="@class">
       <xsl:attribute name="class">
         <xsl:value-of select="@class"/>
+      </xsl:attribute>
+    </xsl:if>
+    <xsl:if test="@scope">
+      <xsl:attribute name="scope">
+        <xsl:value-of select="@scope"/>
       </xsl:attribute>
     </xsl:if>
     <xsl:apply-templates/>

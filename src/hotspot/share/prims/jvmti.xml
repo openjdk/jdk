@@ -341,12 +341,14 @@
    <!ELEMENT table  (tr)+>
 
    <!ELEMENT tr  (td|th)*>
+   <!ATTLIST tr class CDATA #IMPLIED>
 
    <!ELEMENT td  ANY>
    <!ATTLIST td class CDATA #IMPLIED>
 
    <!ELEMENT th  ANY>
-   <!ATTLIST th class CDATA #IMPLIED>
+   <!ATTLIST th class CDATA #IMPLIED
+                scope (col|row) #IMPLIED>
 
    <!ELEMENT ul  (li)+>
    <!ATTLIST ul type (disc|circle|square) "disc">
@@ -3523,10 +3525,15 @@ class C2 extends C1 implements I2 {
             An instance of class <code>C1</code> will have the
             following field indices:
             <blockquote><table>
+              <tr class="bgLight">
+                <th class="centered" scope="col">Field</th>
+                <th class="centered" scope="col">Index</th>
+                <th scope="col">Description</th>
+              </tr>
               <tr>
-                <td class="centered">
+                <th class="centered" scope="row">
                   a
-                </td>
+                </th>
                 <td class="centered">
                   2
                 </td>
@@ -3538,9 +3545,9 @@ class C2 extends C1 implements I2 {
                 </td>
               </tr>
               <tr>
-                <td class="centered">
+                <th class="centered" scope="row">
                   b
-                </td>
+                </th>
                 <td class="centered">
                   3
                 </td>
@@ -3554,10 +3561,15 @@ class C2 extends C1 implements I2 {
             An instance of class <code>C2</code> will have the
             following field indices:
             <blockquote><table>
+              <tr class="bgLight">
+                <th class="centered" scope="col">Field</th>
+                <th class="centered" scope="col">Index</th>
+                <th scope="col">Description</th>
+              </tr>
               <tr>
-                <td class="centered">
+                <th class="centered" scope="row">
                   a
-                </td>
+                </th>
                 <td class="centered">
                   3
                 </td>
@@ -3571,9 +3583,9 @@ class C2 extends C1 implements I2 {
                 </td>
               </tr>
               <tr>
-                <td class="centered">
+                <th class="centered" scope="row">
                   b
-                </td>
+                </th>
                 <td class="centered">
                   4
                 </td>
@@ -3582,9 +3594,9 @@ class C2 extends C1 implements I2 {
                 </td>
               </tr>
               <tr>
-                <td class="centered">
+                <th class="centered" scope="row">
                   q
-                </td>
+                </th>
                 <td class="centered">
                   5
                 </td>
@@ -3593,9 +3605,9 @@ class C2 extends C1 implements I2 {
                 </td>
               </tr>
               <tr>
-                <td class="centered">
+                <th class="centered" scope="row">
                   r
-                </td>
+                </th>
                 <td class="centered">
                   6
                 </td>
@@ -3613,10 +3625,15 @@ class C2 extends C1 implements I2 {
             The interface <code>I1</code> will have the
             following field indices:
             <blockquote><table>
+              <tr class="bgLight">
+                <th class="centered" scope="col">Field</th>
+                <th class="centered" scope="col">Index</th>
+                <th scope="col">Description</th>
+              </tr>
               <tr>
-                <td class="centered">
+                <th class="centered" scope="row">
                   x
-                </td>
+                </th>
                 <td class="centered">
                   1
                 </td>
@@ -4468,20 +4485,14 @@ class C2 extends C1 implements I2 {
         The table below summarizes this:
         <p/>
         <table>
-          <tr>
+          <tr class="bgLight">
             <th/>
-            <th>
-              Controls objects visited
-            </th>
-            <th>
-              Controls objects reported
-            </th>
-            <th>
-              Controls primitives reported
-            </th>
+            <th class="centered" scope="col">Controls objects visited</th>
+            <th class="centered" scope="col">Controls objects reported</th>
+            <th class="centered" scope="col">Controls primitives reported</th>
           </tr>
           <tr>
-            <th class="leftAligned">
+            <th scope="row">
               the
               <datalink id="jvmtiHeapVisitControl">Heap Visit Control Flags</datalink>
               returned by <functionlink id="jvmtiHeapReferenceCallback"/>
@@ -4497,7 +4508,7 @@ class C2 extends C1 implements I2 {
             </td>
           </tr>
           <tr>
-            <th class="leftAligned">
+            <th scope="row">
               <fieldlink id="array_primitive_value_callback" struct="jvmtiHeapCallbacks"/>
               in <paramlink id="callbacks"/> set
             </th>
@@ -4512,7 +4523,7 @@ class C2 extends C1 implements I2 {
             </td>
           </tr>
           <tr>
-            <th class="leftAligned">
+            <th scope="row">
               <paramlink id="heap_filter"/>
             </th>
             <td class="centered">
@@ -4526,7 +4537,7 @@ class C2 extends C1 implements I2 {
             </td>
           </tr>
           <tr>
-            <th class="leftAligned">
+            <th scope="row">
               <paramlink id="klass"/>
             </th>
             <td class="centered">
@@ -4660,20 +4671,14 @@ class C2 extends C1 implements I2 {
         <functionlink id="FollowReferences"/>):
         <p/>
         <table>
-          <tr>
+          <tr class="bgLight">
             <th/>
-            <th>
-              Controls objects visited
-            </th>
-            <th>
-              Controls objects reported
-            </th>
-            <th>
-              Controls primitives reported
-            </th>
+            <th class="centered" scope="col">Controls objects visited</th>
+            <th class="centered" scope="col">Controls objects reported</th>
+            <th class="centered" scope="col">Controls primitives reported</th>
           </tr>
           <tr>
-            <th class="leftAligned">
+            <th scope="row">
               the
               <datalink id="jvmtiHeapVisitControl">Heap Visit Control Flags</datalink>
               returned by <functionlink id="jvmtiHeapIterationCallback"/>
@@ -4689,7 +4694,7 @@ class C2 extends C1 implements I2 {
             </td>
           </tr>
           <tr>
-            <th class="leftAligned">
+            <th scope="row">
               <fieldlink id="array_primitive_value_callback" struct="jvmtiHeapCallbacks"/>
               in <paramlink id="callbacks"/> set
             </th>
@@ -4704,7 +4709,7 @@ class C2 extends C1 implements I2 {
             </td>
           </tr>
           <tr>
-            <th class="leftAligned">
+            <th scope="row">
               <paramlink id="heap_filter"/>
             </th>
             <td class="centered">
@@ -4718,7 +4723,7 @@ class C2 extends C1 implements I2 {
             </td>
           </tr>
           <tr>
-            <th class="leftAligned">
+            <th scope="row">
               <paramlink id="klass"/>
             </th>
             <td class="centered">
