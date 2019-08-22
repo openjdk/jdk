@@ -30,6 +30,8 @@
 #define SUPPORTS_NATIVE_CX8
 #endif
 
+#define THREAD_LOCAL_POLL
+
 #include <ffi.h>
 
 // Indicates whether the C calling conventions require that

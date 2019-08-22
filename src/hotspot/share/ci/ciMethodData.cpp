@@ -258,12 +258,14 @@ void ciMethodData::load_data() {
 void ciReceiverTypeData::translate_receiver_data_from(const ProfileData* data) {
   for (uint row = 0; row < row_limit(); row++) {
     Klass* k = data->as_ReceiverTypeData()->receiver(row);
-    if (k != NULL && k->is_loader_alive()) {
-      ciKlass* klass = CURRENT_ENV->get_klass(k);
-      set_receiver(row, klass);
-    } else {
-      // With concurrent class unloading, the MDO could have stale metadata; override it
-      clear_row(row);
+    if (k != NULL) {
+      if (k->is_loader_alive()) {
+        ciKlass* klass = CURRENT_ENV->get_klass(k);
+        set_receiver(row, klass);
+      } else {
+        // With concurrent class unloading, the MDO could have stale metadata; override it
+        clear_row(row);
+      }
     }
   }
 }

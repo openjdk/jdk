@@ -2265,7 +2265,7 @@ void InterpreterMacroAssembler::get_method_counters(Register method,
   cmpdi(CCR0, Rcounters, 0);
   bne(CCR0, has_counters);
   call_VM(noreg, CAST_FROM_FN_PTR(address,
-                                  InterpreterRuntime::build_method_counters), method, false);
+                                  InterpreterRuntime::build_method_counters), method);
   ld(Rcounters, in_bytes(Method::method_counters_offset()), method);
   cmpdi(CCR0, Rcounters, 0);
   beq(CCR0, skip); // No MethodCounters, OutOfMemory.
