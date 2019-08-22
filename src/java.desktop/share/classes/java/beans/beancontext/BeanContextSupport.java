@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1032,18 +1032,8 @@ public class      BeanContextSupport extends BeanContextChildSupport
         int count = serializable;
 
         while (count-- > 0) {
-            Object                      child = null;
-            BeanContextSupport.BCSChild bscc  = null;
-
-            try {
-                child = ois.readObject();
-                bscc  = (BeanContextSupport.BCSChild)ois.readObject();
-            } catch (IOException ioe) {
-                continue;
-            } catch (ClassNotFoundException cnfe) {
-                continue;
-            }
-
+            Object child = ois.readObject();
+            BCSChild bscc = (BCSChild) ois.readObject();
 
             synchronized(child) {
                 BeanContextChild bcc = null;
