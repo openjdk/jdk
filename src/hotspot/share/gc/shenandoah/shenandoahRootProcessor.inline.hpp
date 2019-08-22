@@ -71,10 +71,10 @@ void ShenandoahWeakRoot<false /* concurrent */>::weak_oops_do(IsAliveClosure* is
 
 template <bool CONCURRENT>
 ShenandoahWeakRoots<CONCURRENT>::ShenandoahWeakRoots() :
-  _jni_roots(JNIHandles::weak_global_handles(), ShenandoahPhaseTimings::JNIWeakRoots),
-  _string_table_roots(StringTable::weak_storage(), ShenandoahPhaseTimings::StringTableRoots),
-  _resolved_method_table_roots(ResolvedMethodTable::weak_storage(), ShenandoahPhaseTimings::ResolvedMethodTableRoots),
-  _vm_roots(SystemDictionary::vm_weak_oop_storage(), ShenandoahPhaseTimings::VMWeakRoots) {
+  _jni_roots(OopStorageSet::jni_weak(), ShenandoahPhaseTimings::JNIWeakRoots),
+  _string_table_roots(OopStorageSet::string_table_weak(), ShenandoahPhaseTimings::StringTableRoots),
+  _resolved_method_table_roots(OopStorageSet::resolved_method_table_weak(), ShenandoahPhaseTimings::ResolvedMethodTableRoots),
+  _vm_roots(OopStorageSet::vm_weak(), ShenandoahPhaseTimings::VMWeakRoots) {
 }
 
 template <bool CONCURRENT>
@@ -87,10 +87,10 @@ void ShenandoahWeakRoots<CONCURRENT>::oops_do(Closure* cl, uint worker_id) {
 }
 
 inline ShenandoahWeakRoots<false /* concurrent */>::ShenandoahWeakRoots() :
-  _jni_roots(JNIHandles::weak_global_handles(), ShenandoahPhaseTimings::JNIWeakRoots),
-  _string_table_roots(StringTable::weak_storage(), ShenandoahPhaseTimings::StringTableRoots),
-  _resolved_method_table_roots(ResolvedMethodTable::weak_storage(), ShenandoahPhaseTimings::ResolvedMethodTableRoots),
-  _vm_roots(SystemDictionary::vm_weak_oop_storage(), ShenandoahPhaseTimings::VMWeakRoots) {
+  _jni_roots(OopStorageSet::jni_weak(), ShenandoahPhaseTimings::JNIWeakRoots),
+  _string_table_roots(OopStorageSet::string_table_weak(), ShenandoahPhaseTimings::StringTableRoots),
+  _resolved_method_table_roots(OopStorageSet::resolved_method_table_weak(), ShenandoahPhaseTimings::ResolvedMethodTableRoots),
+  _vm_roots(OopStorageSet::vm_weak(), ShenandoahPhaseTimings::VMWeakRoots) {
 }
 
 template <typename IsAliveClosure, typename KeepAliveClosure>
@@ -109,8 +109,8 @@ void ShenandoahWeakRoots<false /* concurrent */>::oops_do(Closure* cl, uint work
 
 template <bool CONCURRENT>
 ShenandoahVMRoots<CONCURRENT>::ShenandoahVMRoots() :
-  _jni_handle_roots(JNIHandles::global_handles(), ShenandoahPhaseTimings::JNIRoots),
-  _vm_global_roots(SystemDictionary::vm_global_oop_storage(), ShenandoahPhaseTimings::VMGlobalRoots) {
+  _jni_handle_roots(OopStorageSet::jni_global(), ShenandoahPhaseTimings::JNIRoots),
+  _vm_global_roots(OopStorageSet::vm_global(), ShenandoahPhaseTimings::VMGlobalRoots) {
 }
 
 template <bool CONCURRENT>
