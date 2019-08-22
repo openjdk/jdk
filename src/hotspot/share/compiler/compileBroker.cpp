@@ -2674,8 +2674,8 @@ void CompileBroker::print_heapinfo(outputStream* out, const char* function, size
   // for the entire duration of aggregation and printing. That makes sure
   // we see a consistent picture and do not run into issues caused by
   // the CodeHeap being altered concurrently.
-  Monitor* global_lock   = allFun ? CodeCache_lock : NULL;
-  Monitor* function_lock = allFun ? NULL : CodeCache_lock;
+  Mutex* global_lock   = allFun ? CodeCache_lock : NULL;
+  Mutex* function_lock = allFun ? NULL : CodeCache_lock;
   ts_global.update(); // record starting point
   MutexLocker mu2(global_lock, Mutex::_no_safepoint_check_flag);
   if (global_lock != NULL) {

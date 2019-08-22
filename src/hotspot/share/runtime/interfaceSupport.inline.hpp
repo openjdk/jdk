@@ -254,30 +254,30 @@ class ThreadBlockInVM : public ThreadStateTransition {
 };
 
 // Unlike ThreadBlockInVM, this class is designed to avoid certain deadlock scenarios while making
-// transitions inside class Monitor in cases where we need to block for a safepoint or handshake. It
-// receives an extra argument compared to ThreadBlockInVM, the address of a pointer to the monitor we
-// are trying to acquire. This will be used to access and release the monitor if needed to avoid
+// transitions inside class Mutex in cases where we need to block for a safepoint or handshake. It
+// receives an extra argument compared to ThreadBlockInVM, the address of a pointer to the mutex we
+// are trying to acquire. This will be used to access and release the mutex if needed to avoid
 // said deadlocks.
 // It works like ThreadBlockInVM but differs from it in two ways:
 // - When transitioning in (constructor), it checks for safepoints without blocking, i.e., calls
 //   back if needed to allow a pending safepoint to continue but does not block in it.
 // - When transitioning back (destructor), if there is a pending safepoint or handshake it releases
-//   the monitor that is only partially acquired.
+//   the mutex that is only partially acquired.
 class ThreadBlockInVMWithDeadlockCheck : public ThreadStateTransition {
  private:
-  Monitor** _in_flight_monitor_adr;
+  Mutex** _in_flight_mutex_addr;
 
-  void release_monitor() {
-    assert(_in_flight_monitor_adr != NULL, "_in_flight_monitor_adr should have been set on constructor");
-    Monitor* in_flight_monitor = *_in_flight_monitor_adr;
-    if (in_flight_monitor != NULL) {
-      in_flight_monitor->release_for_safepoint();
-      *_in_flight_monitor_adr = NULL;
+  void release_mutex() {
+    assert(_in_flight_mutex_addr != NULL, "_in_flight_mutex_addr should have been set on constructor");
+    Mutex* in_flight_mutex = *_in_flight_mutex_addr;
+    if (in_flight_mutex != NULL) {
+      in_flight_mutex->release_for_safepoint();
+      *_in_flight_mutex_addr = NULL;
     }
   }
  public:
-  ThreadBlockInVMWithDeadlockCheck(JavaThread* thread, Monitor** in_flight_monitor_adr)
-  : ThreadStateTransition(thread), _in_flight_monitor_adr(in_flight_monitor_adr) {
+  ThreadBlockInVMWithDeadlockCheck(JavaThread* thread, Mutex** in_flight_mutex_addr)
+  : ThreadStateTransition(thread), _in_flight_mutex_addr(in_flight_mutex_addr) {
     // Once we are blocked vm expects stack to be walkable
     thread->frame_anchor()->make_walkable(thread);
 
@@ -293,7 +293,7 @@ class ThreadBlockInVMWithDeadlockCheck : public ThreadStateTransition {
     _thread->set_thread_state_fence((JavaThreadState)(_thread_blocked_trans));
 
     if (SafepointMechanism::should_block(_thread)) {
-      release_monitor();
+      release_mutex();
       SafepointMechanism::block_if_requested(_thread);
     }
 

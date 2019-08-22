@@ -736,7 +736,7 @@ protected:
 #ifdef ASSERT
  private:
   // Deadlock detection support for Mutex locks. List of locks own by thread.
-  Monitor* _owned_locks;
+  Mutex* _owned_locks;
   // Mutex::set_owner_implementation is the only place where _owned_locks is modified,
   // thus the friendship
   friend class Mutex;
@@ -745,7 +745,7 @@ protected:
  public:
   void print_owned_locks_on(outputStream* st) const;
   void print_owned_locks() const                 { print_owned_locks_on(tty);    }
-  Monitor* owned_locks() const                   { return _owned_locks;          }
+  Mutex* owned_locks() const                     { return _owned_locks;          }
   bool owns_locks() const                        { return owned_locks() != NULL; }
 
   // Deadlock detection

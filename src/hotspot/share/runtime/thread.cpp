@@ -971,7 +971,7 @@ void Thread::print_value_on(outputStream* st) const {
 
 #ifdef ASSERT
 void Thread::print_owned_locks_on(outputStream* st) const {
-  Monitor *cur = _owned_locks;
+  Mutex* cur = _owned_locks;
   if (cur == NULL) {
     st->print(" (no locks) ");
   } else {
@@ -1011,7 +1011,7 @@ void Thread::check_for_valid_safepoint_state(bool potential_vm_operation) {
   if (potential_vm_operation && !Universe::is_bootstrapping()) {
     // Make sure we do not hold any locks that the VM thread also uses.
     // This could potentially lead to deadlocks
-    for (Monitor *cur = _owned_locks; cur; cur = cur->next()) {
+    for (Mutex* cur = _owned_locks; cur; cur = cur->next()) {
       // Threads_lock is special, since the safepoint synchronization will not start before this is
       // acquired. Hence, a JavaThread cannot be holding it at a safepoint. So is VMOperationRequest_lock,
       // since it is used to transfer control between JavaThreads and the VMThread

@@ -130,7 +130,7 @@ Monitor* JfrThreadSampler_lock        = NULL;
 #ifndef SUPPORTS_NATIVE_CX8
 Mutex*   UnsafeJlong_lock             = NULL;
 #endif
-Monitor* CodeHeapStateAnalytics_lock  = NULL;
+Mutex*   CodeHeapStateAnalytics_lock  = NULL;
 
 Mutex*   MetaspaceExpand_lock         = NULL;
 Mutex*   ClassLoaderDataGraph_lock    = NULL;
@@ -153,11 +153,11 @@ Monitor* JVMCI_lock                   = NULL;
 
 
 #define MAX_NUM_MUTEX 128
-static Monitor * _mutex_array[MAX_NUM_MUTEX];
+static Mutex* _mutex_array[MAX_NUM_MUTEX];
 static int _num_mutex;
 
 #ifdef ASSERT
-void assert_locked_or_safepoint(const Monitor * lock) {
+void assert_locked_or_safepoint(const Mutex* lock) {
   // check if this thread owns the lock (common case)
   if (IgnoreLockingAssertions) return;
   assert(lock != NULL, "Need non-NULL lock");
@@ -171,7 +171,7 @@ void assert_locked_or_safepoint(const Monitor * lock) {
 }
 
 // a weaker assertion than the above
-void assert_locked_or_safepoint_weak(const Monitor * lock) {
+void assert_locked_or_safepoint_weak(const Mutex* lock) {
   if (IgnoreLockingAssertions) return;
   assert(lock != NULL, "Need non-NULL lock");
   if (lock->is_locked()) return;
@@ -181,7 +181,7 @@ void assert_locked_or_safepoint_weak(const Monitor * lock) {
 }
 
 // a stronger assertion than the above
-void assert_lock_strong(const Monitor * lock) {
+void assert_lock_strong(const Mutex* lock) {
   if (IgnoreLockingAssertions) return;
   assert(lock != NULL, "Need non-NULL lock");
   if (lock->owned_by_self()) return;
@@ -225,7 +225,7 @@ void mutex_init() {
   }
   def(ParGCRareEvent_lock          , PaddedMutex  , leaf     ,   true,  Monitor::_safepoint_check_always);
   def(CGCPhaseManager_lock         , PaddedMonitor, leaf,        false, Monitor::_safepoint_check_always);
-  def(CodeCache_lock               , PaddedMutex  , special,     true,  Monitor::_safepoint_check_never);
+  def(CodeCache_lock               , PaddedMonitor, special,     true,  Monitor::_safepoint_check_never);
   def(RawMonitor_lock              , PaddedMutex  , special,     true,  Monitor::_safepoint_check_never);
   def(OopMapCacheAlloc_lock        , PaddedMutex  , leaf,        true,  Monitor::_safepoint_check_always); // used for oop_map_cache allocation.
 
@@ -334,7 +334,7 @@ void mutex_init() {
 #endif // INCLUDE_CDS
 }
 
-GCMutexLocker::GCMutexLocker(Monitor * mutex) {
+GCMutexLocker::GCMutexLocker(Mutex* mutex) {
   if (SafepointSynchronize::is_at_safepoint()) {
     _locked = false;
   } else {
