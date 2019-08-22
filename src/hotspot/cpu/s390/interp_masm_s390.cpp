@@ -1914,7 +1914,7 @@ void InterpreterMacroAssembler::get_method_counters(Register Rmethod,
   load_and_test_long(Rcounters, Address(Rmethod, Method::method_counters_offset()));
   z_brnz(has_counters);
 
-  call_VM(noreg, CAST_FROM_FN_PTR(address, InterpreterRuntime::build_method_counters), Rmethod, false);
+  call_VM(noreg, CAST_FROM_FN_PTR(address, InterpreterRuntime::build_method_counters), Rmethod);
   z_ltgr(Rcounters, Z_RET); // Runtime call returns MethodCounters object.
   z_brz(skip); // No MethodCounters, out of memory.
 
