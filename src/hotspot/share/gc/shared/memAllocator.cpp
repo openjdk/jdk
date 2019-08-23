@@ -226,10 +226,10 @@ void MemAllocator::Allocation::notify_allocation_jfr_sampler() {
   size_t size_in_bytes = _allocator._word_size * HeapWordSize;
 
   if (_allocated_outside_tlab) {
-    AllocTracer::send_allocation_outside_tlab(_allocator._klass, mem, size_in_bytes, _thread);
+    AllocTracer::send_allocation_outside_tlab(obj()->klass(), mem, size_in_bytes, _thread);
   } else if (_allocated_tlab_size != 0) {
     // TLAB was refilled
-    AllocTracer::send_allocation_in_new_tlab(_allocator._klass, mem, _allocated_tlab_size * HeapWordSize,
+    AllocTracer::send_allocation_in_new_tlab(obj()->klass(), mem, _allocated_tlab_size * HeapWordSize,
                                              size_in_bytes, _thread);
   }
 }
@@ -237,7 +237,7 @@ void MemAllocator::Allocation::notify_allocation_jfr_sampler() {
 void MemAllocator::Allocation::notify_allocation_dtrace_sampler() {
   if (DTraceAllocProbes) {
     // support for Dtrace object alloc event (no-op most of the time)
-    Klass* klass = _allocator._klass;
+    Klass* klass = obj()->klass();
     size_t word_size = _allocator._word_size;
     if (klass != NULL && klass->name() != NULL) {
       SharedRuntime::dtrace_object_alloc(obj(), (int)word_size);

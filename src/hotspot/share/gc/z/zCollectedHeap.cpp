@@ -28,6 +28,7 @@
 #include "gc/z/zGlobals.hpp"
 #include "gc/z/zHeap.inline.hpp"
 #include "gc/z/zNMethod.hpp"
+#include "gc/z/zObjArrayAllocator.hpp"
 #include "gc/z/zServiceability.hpp"
 #include "gc/z/zStat.hpp"
 #include "gc/z/zUtils.inline.hpp"
@@ -125,6 +126,15 @@ HeapWord* ZCollectedHeap::allocate_new_tlab(size_t min_size, size_t requested_si
   }
 
   return (HeapWord*)addr;
+}
+
+oop ZCollectedHeap::array_allocate(Klass* klass, int size, int length, bool do_zero, TRAPS) {
+  if (!do_zero) {
+    return CollectedHeap::array_allocate(klass, size, length, false /* do_zero */, THREAD);
+  }
+
+  ZObjArrayAllocator allocator(klass, size, length, THREAD);
+  return allocator.allocate();
 }
 
 HeapWord* ZCollectedHeap::mem_allocate(size_t size, bool* gc_overhead_limit_was_exceeded) {
