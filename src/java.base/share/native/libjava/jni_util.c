@@ -1096,7 +1096,7 @@ JNU_GetEnv(JavaVM *vm, jint version)
 }
 
 JNIEXPORT jint JNICALL
-JNU_IsInstanceOfByName(JNIEnv *env, jobject object, char* classname)
+JNU_IsInstanceOfByName(JNIEnv *env, jobject object, const char* classname)
 {
     jclass cls;
     if ((*env)->EnsureLocalCapacity(env, 1) < 0)
