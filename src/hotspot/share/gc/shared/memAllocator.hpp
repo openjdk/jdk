@@ -61,11 +61,9 @@ protected:
   // that must be parseable as an oop by concurrent collectors.
   virtual oop finish(HeapWord* mem) const;
 
-  // Raw memory allocation. This may or may not use TLAB allocations to satisfy the
-  // allocation. A GC implementation may override this function to satisfy the allocation
-  // in any way. But the default is to try a TLAB allocation, and otherwise perform
-  // mem_allocate.
-  virtual HeapWord* mem_allocate(Allocation& allocation) const;
+  // Raw memory allocation. This will try to do a TLAB allocation, and otherwise fall
+  // back to calling CollectedHeap::mem_allocate().
+  HeapWord* mem_allocate(Allocation& allocation) const;
 
   virtual MemRegion obj_memory_range(oop obj) const {
     return MemRegion((HeapWord*)obj, _word_size);
