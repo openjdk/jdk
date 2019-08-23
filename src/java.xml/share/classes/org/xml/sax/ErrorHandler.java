@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2005, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -128,32 +128,30 @@ public interface ErrorHandler {
 
 
     /**
-     * Receive notification of a non-recoverable error.
+     * Receive notification of a non-recoverable, fatal error.
      *
-     * <p><strong>There is an apparent contradiction between the
-     * documentation for this method and the documentation for {@link
-     * org.xml.sax.ContentHandler#endDocument}.  Until this ambiguity
-     * is resolved in a future major release, clients should make no
-     * assumptions about whether endDocument() will or will not be
-     * invoked when the parser has reported a fatalError() or thrown
-     * an exception.</strong></p>
+     * <p>
+     * As defined in section 1.2 of the W3C XML 1.0 Recommendation, fatal errors
+     * are those that would make it impossible for a parser to continue normal
+     * processing. These include violation of a well-formedness constraint,
+     * invalid encoding, and forbidden structural errors as described in the
+     * W3C XML 1.0 Recommendation.
      *
-     * <p>This corresponds to the definition of "fatal error" in
-     * section 1.2 of the W3C XML 1.0 Recommendation.  For example, a
-     * parser would use this callback to report the violation of a
-     * well-formedness constraint.</p>
+     * @apiNote An application must assume that the parser can no longer perform
+     * normal processing after reporting a fatal error and may stop by throwing
+     * a {@link SAXException} without calling {@link ContentHandler#endDocument()}.
+     * In addition, the parser cannot be expected to be able to return accurate
+     * information about the logical structure on the rest of the document even
+     * if it may be able to resume parsing.
      *
-     * <p>The application must assume that the document is unusable
-     * after the parser has invoked this method, and should continue
-     * (if at all) only for the sake of collecting additional error
-     * messages: in fact, SAX parsers are free to stop reporting any
-     * other events once this method has been invoked.</p>
+     * @implNote After invoking this method, the parser may stop processing by
+     * throwing a {@link SAXException}, or implement a feature that can direct
+     * it to continue after a fatal error. In the later case, it may report
+     * events on the rest of the document without any guarantee of correctness.
      *
      * @param exception The error information encapsulated in a
-     *                  SAX parse exception.
-     * @exception org.xml.sax.SAXException Any SAX exception, possibly
-     *            wrapping another exception.
-     * @see org.xml.sax.SAXParseException
+     *                  {@link SAXParseException}.
+     * @throws SAXException if the application chooses to discontinue the parsing
      */
     public abstract void fatalError (SAXParseException exception)
         throws SAXException;
