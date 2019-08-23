@@ -1001,16 +1001,12 @@ static void call_catch_cleanup_one(PhaseIdealLoop* phase, LoadNode* load, Node* 
   // Process the loads successor nodes - if any is between
   // the call and the catch blocks, they need to be cloned to.
   // This is done recursively
-  int outcnt = load->outcnt();
-  uint index = 0;
-  for (int i = 0; i < outcnt; i++) {
-    if (index < load->outcnt()) {
-      Node *n = load->raw_out(index);
-      assert(!n->is_LoadBarrier(), "Sanity");
-      if (!fixup_uses_in_catch(phase, ctrl, n)) {
-        // if no successor was cloned, progress to next out.
-        index++;
-      }
+  for (uint i = 0; i < load->outcnt();) {
+    Node *n = load->raw_out(i);
+    assert(!n->is_LoadBarrier(), "Sanity");
+    if (!fixup_uses_in_catch(phase, ctrl, n)) {
+      // if no successor was cloned, progress to next out.
+      i++;
     }
   }
 
