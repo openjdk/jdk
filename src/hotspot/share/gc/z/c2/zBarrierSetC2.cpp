@@ -881,6 +881,18 @@ void ZBarrierSetC2::verify_gc_barriers(bool post_parse) const {
 
 #endif // end verification code
 
+// If a call is the control, we actually want its control projection
+static Node* normalize_ctrl(Node* node) {
+ if (node->is_Call()) {
+   node = node->as_Call()->proj_out(TypeFunc::Control);
+ }
+ return node;
+}
+
+static Node* get_ctrl_normalized(PhaseIdealLoop *phase, Node* node) {
+  return normalize_ctrl(phase->get_ctrl(node));
+}
+
 static void call_catch_cleanup_one(PhaseIdealLoop* phase, LoadNode* load, Node* ctrl);
 
 // This code is cloning all uses of a load that is between a call and the catch blocks,
@@ -894,7 +906,7 @@ static bool fixup_uses_in_catch(PhaseIdealLoop *phase, Node *start_ctrl, Node *n
     return false;
   }
 
-  Node* ctrl = phase->get_ctrl(node);
+  Node* ctrl = get_ctrl_normalized(phase, node);
   if (ctrl != start_ctrl) {
     // We are in a successor block - the node is ok.
     return false; // Unwind
@@ -911,7 +923,6 @@ static bool fixup_uses_in_catch(PhaseIdealLoop *phase, Node *start_ctrl, Node *n
 
   // Now all successors are outside
   // - Clone this node to both successors
-  int no_succs = node->outcnt();
   assert(!node->is_Store(), "Stores not expected here");
 
   // In some very rare cases a load that doesn't need a barrier will end up here
@@ -935,7 +946,7 @@ static bool fixup_uses_in_catch(PhaseIdealLoop *phase, Node *start_ctrl, Node *n
         new_ctrl = use->in(0);
         assert (new_ctrl != NULL, "");
       } else {
-        new_ctrl = phase->get_ctrl(use);
+        new_ctrl = get_ctrl_normalized(phase, use);
       }
 
       phase->set_ctrl(clone, new_ctrl);
@@ -1028,7 +1039,8 @@ static void call_catch_cleanup_one(PhaseIdealLoop* phase, LoadNode* load, Node* 
     Node* load_use = load->raw_out(i);
 
     if (phase->has_ctrl(load_use)) {
-      load_use_control = phase->get_ctrl(load_use);
+      load_use_control = get_ctrl_normalized(phase, load_use);
+      assert(load_use_control != ctrl, "sanity");
     } else {
       load_use_control = load_use->in(0);
     }
@@ -1212,7 +1224,7 @@ static void call_catch_cleanup_one(PhaseIdealLoop* phase, LoadNode* load, Node* 
 static void process_catch_cleanup_candidate(PhaseIdealLoop* phase, LoadNode* load) {
   bool trace = phase->C->directive()->ZTraceLoadBarriersOption;
 
-  Node* ctrl = phase->get_ctrl(load);
+  Node* ctrl = get_ctrl_normalized(phase, load);
   if (!ctrl->is_Proj() || (ctrl->in(0) == NULL) || !ctrl->in(0)->isa_Call()) {
     return;
   }
@@ -1585,6 +1597,7 @@ void ZBarrierSetC2::insert_one_loadbarrier_inner(PhaseIdealLoop* phase, LoadNode
   Node* barrier = new LoadBarrierNode(C, NULL, load->in(LoadNode::Memory), NULL, load->in(LoadNode::Address), load_has_weak_barrier(load));
   Node* barrier_val = new ProjNode(barrier, LoadBarrierNode::Oop);
   Node* barrier_ctrl = new ProjNode(barrier, LoadBarrierNode::Control);
+  ctrl = normalize_ctrl(ctrl);
 
   if (trace) tty->print_cr("Insert load %i with barrier: %i and ctrl : %i", load->_idx, barrier->_idx, ctrl->_idx);
 
