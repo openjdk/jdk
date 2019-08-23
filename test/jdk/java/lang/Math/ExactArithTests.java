@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -56,8 +56,8 @@ public class ExactArithTests {
     }
 
     /**
-     * Test Math.addExact, multiplyExact, subtractExact, toIntValue methods
-     * with {@code int} arguments.
+     * Test Math.addExact, multiplyExact, subtractExact, incrementExact,
+     * decrementExact, negateExact methods with {@code int} arguments.
      */
     static void testIntegerExact() {
         testIntegerExact(0, 0);
@@ -76,7 +76,6 @@ public class ExactArithTests {
         testIntegerExact(Integer.MAX_VALUE, -1);
         testIntegerExact(Integer.MIN_VALUE, -2);
         testIntegerExact(Integer.MAX_VALUE, -2);
-
     }
 
     /**
@@ -101,7 +100,6 @@ public class ExactArithTests {
             long sum2 = (long) x + (long) y;
             if ((int) sum2 == sum2) {
                 fail("FAIL: int Math.addExact(" + x + " + " + y + ")" + "; Unexpected exception: " + ex);
-
             }
         }
 
@@ -147,7 +145,6 @@ public class ExactArithTests {
             long inc2 = (long) x + 1L;
             if ((int) inc2 == inc2) {
                 fail("FAIL: int Math.incrementExact(" + x + ")" + "; Unexpected exception: " + ex);
-
             }
         }
 
@@ -164,31 +161,29 @@ public class ExactArithTests {
             long dec2 = (long) x - 1L;
             if ((int) dec2 == dec2) {
                 fail("FAIL: int Math.decrementExact(" + x + ")" + "; Unexpected exception: " + ex);
-
             }
         }
 
         try {
             // Test negateExact
             int neg = Math.negateExact(x);
-            long neg2 = -((long)x) ;
+            long neg2 = -((long)x);
             if ((int) neg2 != neg2) {
                 fail("FAIL: int Math.negateExact(" + x + ") = " + neg + "; expected Arithmetic exception");
             } else if (neg != neg2) {
                 fail("FAIL: long Math.negateExact(" + x + ") = " + neg + "; expected: " + neg2);
             }
         } catch (ArithmeticException ex) {
-            long neg2 = (long) x - 1L;
+            long neg2 = -((long)x);
             if ((int) neg2 == neg2) {
                 fail("FAIL: int Math.negateExact(" + x + ")" + "; Unexpected exception: " + ex);
-
             }
         }
     }
 
     /**
-     * Test Math.addExact, multiplyExact, subtractExact, toIntExact methods
-     * with {@code long} arguments.
+     * Test Math.addExact, multiplyExact, subtractExact, incrementExact,
+     * decrementExact, negateExact, toIntExact methods with {@code long} arguments.
      */
     static void testLongExact() {
         testLongExactTwice(0, 0);
@@ -215,7 +210,6 @@ public class ExactArithTests {
         testLongExactTwice(Integer.MIN_VALUE-1, Integer.MIN_VALUE-1);
         testLongExactTwice(Integer.MIN_VALUE-1, -Integer.MIN_VALUE-1);
         testLongExactTwice(Integer.MIN_VALUE/2, 2);
-
     }
 
     /**
@@ -319,7 +313,6 @@ public class ExactArithTests {
                 fail("FAIL: long Math.toIntExact(" + x + ")" + "; Unexpected exception: " + ex);
             }
         }
-
     }
 
     /**
