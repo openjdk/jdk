@@ -193,7 +193,7 @@ void ZHeapIterator::objects_do(ObjectClosure* cl) {
   ZStatTimerDisable disable;
 
   // Push roots to visit
-  push_roots<ZRootsIterator,                     false /* Concurrent */, false /* Weak */>();
+  push_roots<ZRootsIteratorNoInvisible,          false /* Concurrent */, false /* Weak */>();
   push_roots<ZConcurrentRootsIteratorClaimOther, true  /* Concurrent */, false /* Weak */>();
   if (VisitWeaks) {
     push_roots<ZWeakRootsIterator,           false /* Concurrent */, true  /* Weak */>();

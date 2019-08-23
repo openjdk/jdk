@@ -159,19 +159,26 @@ public:
 class ZRootsIteratorThreadClosure : public ThreadClosure {
 private:
   ZRootsIteratorClosure* _cl;
+  const bool             _visit_invisible;
 
 public:
-  ZRootsIteratorThreadClosure(ZRootsIteratorClosure* cl) :
-      _cl(cl) {}
+  ZRootsIteratorThreadClosure(ZRootsIteratorClosure* cl, bool visit_invisible) :
+      _cl(cl),
+      _visit_invisible(visit_invisible) {}
 
   virtual void do_thread(Thread* thread) {
     ZRootsIteratorCodeBlobClosure code_cl(_cl);
     thread->oops_do(_cl, ClassUnloading ? &code_cl : NULL);
     _cl->do_thread(thread);
+    if (_visit_invisible && ZThreadLocalData::has_invisible_root(thread)) {
+      _cl->do_oop(ZThreadLocalData::invisible_root(thread));
+    }
   }
 };
 
-ZRootsIterator::ZRootsIterator() :
+ZRootsIterator::ZRootsIterator(bool visit_invisible, bool visit_jvmti_weak_export) :
+    _visit_invisible(visit_invisible),
+    _visit_jvmti_weak_export(visit_jvmti_weak_export),
     _universe(this),
     _object_synchronizer(this),
     _management(this),
@@ -239,7 +246,7 @@ void ZRootsIterator::do_system_dictionary(ZRootsIteratorClosure* cl) {
 void ZRootsIterator::do_threads(ZRootsIteratorClosure* cl) {
   ZStatTimer timer(ZSubPhasePauseRootsThreads);
   ResourceMark rm;
-  ZRootsIteratorThreadClosure thread_cl(cl);
+  ZRootsIteratorThreadClosure thread_cl(cl, _visit_invisible);
   Threads::possibly_parallel_threads_do(true, &thread_cl);
 }
 
@@ -248,7 +255,7 @@ void ZRootsIterator::do_code_cache(ZRootsIteratorClosure* cl) {
   ZNMethod::oops_do(cl);
 }
 
-void ZRootsIterator::oops_do(ZRootsIteratorClosure* cl, bool visit_jvmti_weak_export) {
+void ZRootsIterator::oops_do(ZRootsIteratorClosure* cl) {
   ZStatTimer timer(ZSubPhasePauseRoots);
   _universe.oops_do(cl);
   _object_synchronizer.oops_do(cl);
@@ -259,7 +266,7 @@ void ZRootsIterator::oops_do(ZRootsIteratorClosure* cl, bool visit_jvmti_weak_ex
   if (!ClassUnloading) {
     _code_cache.oops_do(cl);
   }
-  if (visit_jvmti_weak_export) {
+  if (_visit_jvmti_weak_export) {
     _jvmti_weak_export.oops_do(cl);
   }
 }

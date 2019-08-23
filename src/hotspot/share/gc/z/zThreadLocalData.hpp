@@ -34,10 +34,12 @@ class ZThreadLocalData {
 private:
   uintptr_t              _address_bad_mask;
   ZMarkThreadLocalStacks _stacks;
+  oop*                   _invisible_root;
 
   ZThreadLocalData() :
       _address_bad_mask(0),
-      _stacks() {}
+      _stacks(),
+      _invisible_root(NULL) {}
 
   static ZThreadLocalData* data(Thread* thread) {
     return thread->gc_data<ZThreadLocalData>();
@@ -58,6 +60,25 @@ public:
 
   static ZMarkThreadLocalStacks* stacks(Thread* thread) {
     return &data(thread)->_stacks;
+  }
+
+  static void set_invisible_root(Thread* thread, oop* root) {
+    assert(!has_invisible_root(thread), "Already set");
+    data(thread)->_invisible_root = root;
+  }
+
+  static void clear_invisible_root(Thread* thread) {
+    assert(has_invisible_root(thread), "Should be set");
+    data(thread)->_invisible_root = NULL;
+  }
+
+  static bool has_invisible_root(Thread* thread) {
+    return data(thread)->_invisible_root != NULL;
+  }
+
+  static oop* invisible_root(Thread* thread) {
+    assert(has_invisible_root(thread), "Should be set");
+    return data(thread)->_invisible_root;
   }
 
   static ByteSize address_bad_mask_offset() {

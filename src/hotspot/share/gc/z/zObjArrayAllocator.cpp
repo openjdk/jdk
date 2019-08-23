@@ -22,6 +22,7 @@
  */
 
 #include "precompiled.hpp"
+#include "gc/z/zThreadLocalData.hpp"
 #include "gc/z/zObjArrayAllocator.hpp"
 #include "gc/z/zUtils.inline.hpp"
 #include "memory/universe.hpp"
@@ -57,8 +58,12 @@ ZObjArrayAllocator::ZObjArrayAllocator(Klass* klass, size_t word_size, int lengt
     _final_klass(klass) {}
 
 oop ZObjArrayAllocator::finish(HeapWord* mem) const {
-  HandleMark hm;
-  Handle array(_thread, ObjArrayAllocator::finish(mem));
+  // Set mark word and initial klass pointer
+  ObjArrayAllocator::finish(mem);
+
+  // Keep the array alive across safepoints, but make it invisible
+  // to the heap itarator until the final klass pointer has been set
+  ZThreadLocalData::set_invisible_root(_thread, (oop*)&mem);
 
   const size_t segment_max = ZUtils::bytes_to_words(64 * K);
   const size_t skip = arrayOopDesc::header_size(ArrayKlass::cast(_klass)->element_type());
@@ -67,7 +72,7 @@ oop ZObjArrayAllocator::finish(HeapWord* mem) const {
   while (remaining > 0) {
     // Clear segment
     const size_t segment = MIN2(remaining, segment_max);
-    Copy::zero_to_words((HeapWord*)array() + (_word_size - remaining), segment);
+    Copy::zero_to_words(mem + (_word_size - remaining), segment);
     remaining -= segment;
 
     if (remaining > 0) {
@@ -77,9 +82,12 @@ oop ZObjArrayAllocator::finish(HeapWord* mem) const {
   }
 
   if (_klass != _final_klass) {
-    // Set final klass
-    oopDesc::release_set_klass((HeapWord*)array(), _final_klass);
+    // Set final klass pointer
+    oopDesc::release_set_klass(mem, _final_klass);
   }
 
-  return array();
+  // Make the array visible to the heap iterator
+  ZThreadLocalData::clear_invisible_root(_thread);
+
+  return oop(mem);
 }

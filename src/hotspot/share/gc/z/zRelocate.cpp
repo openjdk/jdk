@@ -69,12 +69,12 @@ private:
 public:
   ZRelocateRootsTask() :
       ZTask("ZRelocateRootsTask"),
-      _roots() {}
+      _roots(true /* visit_invisible */, true /* visit_jvmti_weak_export */) {}
 
   virtual void work() {
     // During relocation we need to visit the JVMTI
     // export weak roots to rehash the JVMTI tag map
-    _roots.oops_do(&_cl, true /* visit_jvmti_weak_export */);
+    _roots.oops_do(&_cl);
   }
 };
 
