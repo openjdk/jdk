@@ -821,7 +821,7 @@ class os: AllStatic {
   // Amount beyond the callee frame size that we bang the stack.
   static int extra_bang_size_in_bytes();
 
-  static char** split_path(const char* path, int* n);
+  static char** split_path(const char* path, size_t* elements, size_t file_name_length);
 
   // support for mapping non-volatile memory using MAP_SYNC
   static bool supports_map_sync();
