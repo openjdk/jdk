@@ -329,10 +329,13 @@ public final class URL implements java.io.Serializable {
      * </ol>
      *
      * <p>Protocol handlers for the following protocols are guaranteed
-     * to exist on the search path :-
-     * <blockquote><pre>
-     *     http, https, file, and jar
-     * </pre></blockquote>
+     * to exist on the search path:
+     * <ul>
+     * <li>{@code http}</li>
+     * <li>{@code https}</li>
+     * <li>{@code file}</li>
+     * <li>{@code jar}</li>
+     * </ul>
      * Protocol handlers for additional protocols may also be  available.
      * Some protocol handlers, for example those used for loading platform
      * classes or classes on the class path, may not be overridden. The details
