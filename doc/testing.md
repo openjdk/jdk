@@ -23,7 +23,7 @@ Some example command-lines:
     $ make test-jdk_lang JTREG="JOBS=8"
     $ make test TEST=jdk_lang
     $ make test-only TEST="gtest:LogTagSet gtest:LogTagSetDescriptions" GTEST="REPEAT=-1"
-    $ make test TEST="hotspot:hotspot_gc" JTREG="JOBS=1;TIMEOUT=8;VM_OPTIONS=-XshowSettings -Xlog:gc+ref=debug"
+    $ make test TEST="hotspot:hotspot_gc" JTREG="JOBS=1;TIMEOUT_FACTOR=8;VM_OPTIONS=-XshowSettings -Xlog:gc+ref=debug"
     $ make test TEST="jtreg:test/hotspot:hotspot_gc test/hotspot/jtreg/native_sanity/JniVersion.java"
     $ make test TEST="micro:java.lang.reflect" MICRO="FORK=1;WARMUP_ITER=2"
     $ make exploded-test TEST=tier2
@@ -180,11 +180,11 @@ It is possible to control various aspects of the test suites using make control
 variables.
 
 These variables use a keyword=value approach to allow multiple values to be
-set. So, for instance, `JTREG="JOBS=1;TIMEOUT=8"` will set the JTReg
+set. So, for instance, `JTREG="JOBS=1;TIMEOUT_FACTOR=8"` will set the JTReg
 concurrency level to 1 and the timeout factor to 8. This is equivalent to
-setting `JTREG_JOBS=1 JTREG_TIMEOUT=8`, but using the keyword format means that
+setting `JTREG_JOBS=1 JTREG_TIMEOUT_FACTOR=8`, but using the keyword format means that
 the `JTREG` variable is parsed and verified for correctness, so
-`JTREG="TMIEOUT=8"` would give an error, while `JTREG_TMIEOUT=8` would just
+`JTREG="TMIEOUT_FACTOR=8"` would give an error, while `JTREG_TMIEOUT_FACTOR=8` would just
 pass unnoticed.
 
 To separate multiple keyword=value pairs, use `;` (semicolon). Since the shell
@@ -192,7 +192,7 @@ normally eats `;`, the recommended usage is to write the assignment inside
 qoutes, e.g. `JTREG="...;..."`. This will also make sure spaces are preserved,
 as in `JTREG="VM_OPTIONS=-XshowSettings -Xlog:gc+ref=debug"`.
 
-(Other ways are possible, e.g. using backslash: `JTREG=JOBS=1\;TIMEOUT=8`.
+(Other ways are possible, e.g. using backslash: `JTREG=JOBS=1\;TIMEOUT_FACTOR=8`.
 Also, as a special technique, the string `%20` will be replaced with space for
 certain options, e.g. `JTREG=VM_OPTIONS=-XshowSettings%20-Xlog:gc+ref=debug`.
 This can be useful if you have layers of scripts and have trouble getting
