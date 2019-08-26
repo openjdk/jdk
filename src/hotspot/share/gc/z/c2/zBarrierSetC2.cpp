@@ -1217,7 +1217,7 @@ static void call_catch_cleanup_one(PhaseIdealLoop* phase, LoadNode* load, Node* 
 }
 
 // Sort out the loads that are between a call ant its catch blocks
-static void process_catch_cleanup_candidate(PhaseIdealLoop* phase, LoadNode* load) {
+static void process_catch_cleanup_candidate(PhaseIdealLoop* phase, LoadNode* load, bool verify) {
   bool trace = phase->C->directive()->ZTraceLoadBarriersOption;
 
   Node* ctrl = get_ctrl_normalized(phase, load);
@@ -1228,6 +1228,7 @@ static void process_catch_cleanup_candidate(PhaseIdealLoop* phase, LoadNode* loa
   Node* catch_node = ctrl->isa_Proj()->raw_out(0);
   if (catch_node->is_Catch()) {
     if (catch_node->outcnt() > 1) {
+      assert(!verify, "All loads should already have been moved");
       call_catch_cleanup_one(phase, load, ctrl);
     } else {
       if (trace) tty->print_cr("Call catch cleanup with only one catch: load %i ", load->_idx);
@@ -1245,6 +1246,7 @@ bool ZBarrierSetC2::optimize_loops(PhaseIdealLoop* phase, LoopOptsMode mode, Vec
   if (mode == LoopOptsZBarrierInsertion) {
     // First make sure all loads between call and catch are moved to the catch block
     clean_catch_blocks(phase);
+    DEBUG_ONLY(clean_catch_blocks(phase, true /* verify */);)
 
     // Then expand barriers on all loads
     insert_load_barriers(phase);
@@ -1398,7 +1400,7 @@ void ZBarrierSetC2::insert_barriers_on_unsafe(PhaseIdealLoop* phase) const {
 // Sometimes the loads use will be at a place dominated by all catch blocks, then we need
 // a load in each catch block, and a Phi at the dominated use.
 
-void ZBarrierSetC2::clean_catch_blocks(PhaseIdealLoop* phase) const {
+void ZBarrierSetC2::clean_catch_blocks(PhaseIdealLoop* phase, bool verify) const {
 
   Compile *C = phase->C;
   uint new_ids = C->unique();
@@ -1425,7 +1427,7 @@ void ZBarrierSetC2::clean_catch_blocks(PhaseIdealLoop* phase) const {
       LoadNode* load = n->isa_Load();
       // only care about loads that will have a barrier
       if (load_require_barrier(load)) {
-        process_catch_cleanup_candidate(phase, load);
+        process_catch_cleanup_candidate(phase, load, verify);
       }
     }
   }
