@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -61,7 +61,7 @@ public class LineStreamsAndSurrogatesTest {
     }
 
     @Test
-    void testUncomplete() throws Exception {
+    public void testUncomplete() throws Exception {
         // Uses U+10400 which is encoded as the surrogate pair U+D801 U+DC00
         String text = "Bient\u00f4t\r\n nous plongerons\r\n dans\r les\n\n" +
                 " fr\u00f4\ud801\udc00des\r\n t\u00e9n\u00e8bres\ud801\udc00";
@@ -121,7 +121,7 @@ public class LineStreamsAndSurrogatesTest {
     }
 
     @Test
-    void testStream1() throws Exception {
+    public void testStream1() throws Exception {
         // Uses U+10400 which is encoded as the surrogate pair U+D801 U+DC00
         String text = "Bient\u00f4t\r\n nous plongerons\r\n dans\r\r les\n\n" +
                 " fr\u00f4\ud801\udc00des\r\n t\u00e9n\u00e8bres";
@@ -170,7 +170,7 @@ public class LineStreamsAndSurrogatesTest {
 
 
     @Test
-    void testStream2() throws Exception {
+    public void testStream2() throws Exception {
         String text = "Bient\u00f4t\r\n nous plongerons\r\n dans\r\r" +
                 " les fr\u00f4\ud801\udc00des\r\n t\u00e9n\u00e8bres\r\r";
         Charset charset = UTF_8;
@@ -216,7 +216,7 @@ public class LineStreamsAndSurrogatesTest {
     }
 
     @Test
-    void testStream3_UTF16() throws Exception {
+    public void testStream3_UTF16() throws Exception {
         // Uses U+10400 which is encoded as the surrogate pair U+D801 U+DC00
         String text = "Bient\u00f4t\r\n nous plongerons\r\n dans\r\r" +
                 " les\n\n fr\u00f4\ud801\udc00des\r\n t\u00e9n\u00e8bres";
@@ -263,7 +263,7 @@ public class LineStreamsAndSurrogatesTest {
 
 
     @Test
-    void testStream4_UTF16() throws Exception {
+    public void testStream4_UTF16() throws Exception {
         String text = "Bient\u00f4t\r\n nous plongerons\r\n dans\r\r" +
                 " les fr\u00f4\ud801\udc00des\r\n t\u00e9n\u00e8bres\r\r";
         Charset charset = UTF_16;
