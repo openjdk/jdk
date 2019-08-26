@@ -195,6 +195,7 @@ public final class PKIXValidator extends Validator {
                 ("null or zero-length certificate chain");
         }
 
+
         // Use PKIXExtendedParameters for timestamp and variant additions
         PKIXBuilderParameters pkixParameters = null;
         try {
@@ -224,28 +225,30 @@ public final class PKIXValidator extends Validator {
         for (int i = 0; i < chain.length; i++) {
             X509Certificate cert = chain[i];
             X500Principal dn = cert.getSubjectX500Principal();
-            if (i != 0 && !dn.equals(prevIssuer)) {
-                // chain is not ordered correctly, call builder instead
-                return doBuild(chain, otherCerts, pkixParameters);
-            }
 
-            // Check if chain[i] is already trusted. It may be inside
-            // trustedCerts, or has the same dn and public key as a cert
-            // inside trustedCerts. The latter happens when a CA has
-            // updated its cert with a stronger signature algorithm in JRE
-            // but the weak one is still in circulation.
-
-            if (trustedCerts.contains(cert) ||          // trusted cert
-                    (trustedSubjects.containsKey(dn) && // replacing ...
-                     trustedSubjects.get(dn).contains(  // ... weak cert
-                        cert.getPublicKey()))) {
-                if (i == 0) {
+            if (i == 0) {
+                if (trustedCerts.contains(cert)) {
                     return new X509Certificate[] {chain[0]};
                 }
-                // Remove and call validator on partial chain [0 .. i-1]
-                X509Certificate[] newChain = new X509Certificate[i];
-                System.arraycopy(chain, 0, newChain, 0, i);
-                return doValidate(newChain, pkixParameters);
+            } else {
+                if (!dn.equals(prevIssuer)) {
+                    // chain is not ordered correctly, call builder instead
+                    return doBuild(chain, otherCerts, pkixParameters);
+                }
+                // Check if chain[i] is already trusted. It may be inside
+                // trustedCerts, or has the same dn and public key as a cert
+                // inside trustedCerts. The latter happens when a CA has
+                // updated its cert with a stronger signature algorithm in JRE
+                // but the weak one is still in circulation.
+                if (trustedCerts.contains(cert) ||          // trusted cert
+                        (trustedSubjects.containsKey(dn) && // replacing ...
+                         trustedSubjects.get(dn).contains(  // ... weak cert
+                            cert.getPublicKey()))) {
+                    // Remove and call validator on partial chain [0 .. i-1]
+                    X509Certificate[] newChain = new X509Certificate[i];
+                    System.arraycopy(chain, 0, newChain, 0, i);
+                    return doValidate(newChain, pkixParameters);
+                }
             }
             prevIssuer = cert.getIssuerX500Principal();
         }
