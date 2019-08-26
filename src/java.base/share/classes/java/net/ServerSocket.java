@@ -710,6 +710,10 @@ class ServerSocket implements java.io.Closeable {
 
     /**
      * Returns the binding state of the ServerSocket.
+     * <p>
+     * If the socket was bound prior to being {@linkplain #close closed},
+     * then this method will continue to return {@code true}
+     * after the socket is closed.
      *
      * @return true if the ServerSocket successfully bound to an address
      * @since 1.4
