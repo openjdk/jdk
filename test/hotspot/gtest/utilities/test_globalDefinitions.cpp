@@ -24,6 +24,7 @@
 #include "precompiled.hpp"
 #include "runtime/os.hpp"
 #include "unittest.hpp"
+#include "utilities/align.hpp"
 #include "utilities/globalDefinitions.hpp"
 
 static ::testing::AssertionResult testPageAddress(

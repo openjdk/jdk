@@ -28,6 +28,7 @@
 #include "metaprogramming/integralConstant.hpp"
 #include "metaprogramming/primitiveConversions.hpp"
 #include "oops/oopsHierarchy.hpp"
+#include "runtime/globals.hpp"
 
 // The markWord describes the header of an object.
 //

@@ -29,6 +29,7 @@
 #include "memory/metaspaceChunkFreeListSummary.hpp"
 #include "memory/virtualspace.hpp"
 #include "memory/metaspace/metaspaceSizesSnapshot.hpp"
+#include "runtime/globals.hpp"
 #include "utilities/exceptions.hpp"
 
 // Metaspace

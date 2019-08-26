@@ -25,12 +25,12 @@
 #ifndef SHARE_MEMORY_ALLOCATION_HPP
 #define SHARE_MEMORY_ALLOCATION_HPP
 
-#include "runtime/globals.hpp"
 #include "utilities/globalDefinitions.hpp"
 #include "utilities/macros.hpp"
 
 #include <new>
 
+class outputStream;
 class Thread;
 
 class AllocFailStrategy {

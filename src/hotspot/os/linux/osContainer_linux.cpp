@@ -27,6 +27,7 @@
 #include <errno.h>
 #include "utilities/globalDefinitions.hpp"
 #include "memory/allocation.hpp"
+#include "runtime/globals.hpp"
 #include "runtime/os.hpp"
 #include "logging/log.hpp"
 #include "osContainer_linux.hpp"
@@ -673,4 +674,3 @@ int OSContainer::cpu_shares() {
 
   return shares;
 }
-

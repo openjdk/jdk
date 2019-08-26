@@ -30,6 +30,7 @@
 #include "gc/z/zNUMA.hpp"
 #include "gc/z/zThread.hpp"
 #include "gc/z/zUtils.hpp"
+#include "runtime/globals.hpp"
 #include "utilities/align.hpp"
 
 template <typename S>

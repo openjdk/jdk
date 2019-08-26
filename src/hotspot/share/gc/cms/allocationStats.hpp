@@ -27,6 +27,7 @@
 
 #include "gc/shared/gcUtil.hpp"
 #include "logging/log.hpp"
+#include "runtime/globals.hpp"
 #include "utilities/globalDefinitions.hpp"
 #include "utilities/macros.hpp"
 

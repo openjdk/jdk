@@ -26,6 +26,7 @@
 #define SHARE_MEMORY_ALLOCATION_INLINE_HPP
 
 #include "runtime/atomic.hpp"
+#include "runtime/globals.hpp"
 #include "runtime/os.hpp"
 #include "services/memTracker.hpp"
 #include "utilities/align.hpp"

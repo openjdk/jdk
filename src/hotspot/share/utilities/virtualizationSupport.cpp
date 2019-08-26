@@ -24,6 +24,7 @@
  */
 
 #include "precompiled.hpp"
+#include "runtime/globals.hpp"
 #include "runtime/os.hpp"
 #include "utilities/virtualizationSupport.hpp"
 
@@ -101,4 +102,3 @@ void VirtualizationSupport::print_virtualization_info(outputStream* st) {
     }
   }
 }
-
