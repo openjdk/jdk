@@ -39,13 +39,14 @@
  */
 
 class JVMFlagRange : public CHeapObj<mtArguments> {
-private:
-  const char* _name;
+protected:
+  const JVMFlag* const _flag;
 public:
   // the "name" argument must be a string literal
-  JVMFlagRange(const char* name) { _name=name; }
+  JVMFlagRange(const JVMFlag* flag) : _flag(flag) {}
   ~JVMFlagRange() {}
-  const char* name() { return _name; }
+  const JVMFlag* flag() const { return _flag; }
+  const char* name() const { return _flag->_name; }
   virtual JVMFlag::Error check(bool verbose = true) { ShouldNotReachHere(); return JVMFlag::ERR_OTHER; }
   virtual JVMFlag::Error check_int(int value, bool verbose = true) { ShouldNotReachHere(); return JVMFlag::ERR_OTHER; }
   virtual JVMFlag::Error check_intx(intx value, bool verbose = true) { ShouldNotReachHere(); return JVMFlag::ERR_OTHER; }
@@ -63,9 +64,9 @@ public:
   static void init();
   static int length() { return (_ranges != NULL) ? _ranges->length() : 0; }
   static JVMFlagRange* at(int i) { return (_ranges != NULL) ? _ranges->at(i) : NULL; }
-  static JVMFlagRange* find(const char* name);
+  static JVMFlagRange* find(const JVMFlag* flag);
   static void add(JVMFlagRange* range) { _ranges->append(range); }
-  static void print(outputStream* st, const char* name, RangeStrFunc default_range_str_func);
+  static void print(outputStream* st, const JVMFlag* flag, RangeStrFunc default_range_str_func);
   // Check the final values of all flags for ranges.
   static bool check_ranges();
 };

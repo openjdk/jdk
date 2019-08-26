@@ -91,6 +91,8 @@ class JVMFlagEx : JVMFlag {
   static bool is_cmdline(JVMFlagsEnum flag);
 
   static void setOnCmdLine(JVMFlagsEnum flag);
+
+  static JVMFlag* flag_from_enum(JVMFlagsEnum flag);
 };
 
 // Construct set functions for all flags

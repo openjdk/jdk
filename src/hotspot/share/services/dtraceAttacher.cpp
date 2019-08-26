@@ -50,9 +50,9 @@ class VM_DeoptimizeTheWorld : public VM_Operation {
   }
 };
 
-static void set_bool_flag(const char* flag, bool value) {
-  JVMFlag::boolAtPut((char*)flag, strlen(flag), &value,
-                              JVMFlag::ATTACH_ON_DEMAND);
+static void set_bool_flag(const char* name, bool value) {
+  JVMFlag* flag = JVMFlag::find_flag(name);
+  JVMFlag::boolAtPut(flag, &value, JVMFlag::ATTACH_ON_DEMAND);
 }
 
 // Enable only the "fine grained" flags. Do *not* touch

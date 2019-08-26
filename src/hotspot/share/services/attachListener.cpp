@@ -331,7 +331,7 @@ static jint print_flag(AttachOperation* op, outputStream* out) {
     out->print_cr("flag name is missing");
     return JNI_ERR;
   }
-  JVMFlag* f = JVMFlag::find_flag((char*)name, strlen(name));
+  JVMFlag* f = JVMFlag::find_flag(name);
   if (f) {
     f->print_as_flag(out);
     out->cr();
