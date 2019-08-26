@@ -23,17 +23,19 @@
  */
 
 #include "precompiled.hpp"
+#include "aot/aotLoader.hpp"
+#include "classfile/classLoaderDataGraph.hpp"
 #include "classfile/stringTable.hpp"
 #include "code/codeCache.hpp"
-#include "gc/parallel/gcTaskManager.hpp"
 #include "gc/parallel/parallelScavengeHeap.hpp"
 #include "gc/parallel/psAdaptiveSizePolicy.hpp"
 #include "gc/parallel/psClosure.inline.hpp"
+#include "gc/parallel/psCompactionManager.hpp"
 #include "gc/parallel/psMarkSweepProxy.hpp"
 #include "gc/parallel/psParallelCompact.inline.hpp"
 #include "gc/parallel/psPromotionManager.inline.hpp"
+#include "gc/parallel/psRootType.hpp"
 #include "gc/parallel/psScavenge.inline.hpp"
-#include "gc/parallel/psTasks.hpp"
 #include "gc/shared/gcCause.hpp"
 #include "gc/shared/gcHeapSummary.hpp"
 #include "gc/shared/gcId.hpp"
@@ -45,8 +47,11 @@
 #include "gc/shared/referencePolicy.hpp"
 #include "gc/shared/referenceProcessor.hpp"
 #include "gc/shared/referenceProcessorPhaseTimes.hpp"
+#include "gc/shared/scavengableNMethods.hpp"
 #include "gc/shared/spaceDecorator.hpp"
 #include "gc/shared/weakProcessor.hpp"
+#include "gc/shared/workerPolicy.hpp"
+#include "gc/shared/workgroup.hpp"
 #include "memory/resourceArea.hpp"
 #include "memory/universe.hpp"
 #include "logging/log.hpp"
@@ -58,6 +63,7 @@
 #include "runtime/threadCritical.hpp"
 #include "runtime/vmThread.hpp"
 #include "runtime/vmOperations.hpp"
+#include "services/management.hpp"
 #include "services/memoryService.hpp"
 #include "utilities/stack.inline.hpp"
 
@@ -74,6 +80,87 @@ elapsedTimer                  PSScavenge::_accumulated_time;
 STWGCTimer                    PSScavenge::_gc_timer;
 ParallelScavengeTracer        PSScavenge::_gc_tracer;
 CollectorCounters*            PSScavenge::_counters = NULL;
+
+static void scavenge_roots_work(ParallelRootType::Value root_type, uint worker_id) {
+  assert(ParallelScavengeHeap::heap()->is_gc_active(), "called outside gc");
+
+  PSPromotionManager* pm = PSPromotionManager::gc_thread_promotion_manager(worker_id);
+  PSScavengeRootsClosure roots_closure(pm);
+  PSPromoteRootsClosure  roots_to_old_closure(pm);
+
+  switch (root_type) {
+    case ParallelRootType::universe:
+      Universe::oops_do(&roots_closure);
+      break;
+
+    case ParallelRootType::jni_handles:
+      JNIHandles::oops_do(&roots_closure);
+      break;
+
+    case ParallelRootType::object_synchronizer:
+      ObjectSynchronizer::oops_do(&roots_closure);
+      break;
+
+    case ParallelRootType::system_dictionary:
+      SystemDictionary::oops_do(&roots_closure);
+      break;
+
+    case ParallelRootType::class_loader_data:
+      {
+        PSScavengeCLDClosure cld_closure(pm);
+        ClassLoaderDataGraph::cld_do(&cld_closure);
+      }
+      break;
+
+    case ParallelRootType::management:
+      Management::oops_do(&roots_closure);
+      break;
+
+    case ParallelRootType::jvmti:
+      JvmtiExport::oops_do(&roots_closure);
+      break;
+
+    case ParallelRootType::code_cache:
+      {
+        MarkingCodeBlobClosure code_closure(&roots_to_old_closure, CodeBlobToOopClosure::FixRelocations);
+        ScavengableNMethods::nmethods_do(&code_closure);
+        AOTLoader::oops_do(&roots_closure);
+      }
+      break;
+
+    case ParallelRootType::sentinel:
+    DEBUG_ONLY(default:) // DEBUG_ONLY hack will create compile error on release builds (-Wswitch) and runtime check on debug builds
+      fatal("Bad enumeration value: %u", root_type);
+      break;
+  }
+
+  // Do the real work
+  pm->drain_stacks(false);
+}
+
+static void steal_work(ParallelTaskTerminator& terminator, uint worker_id) {
+  assert(ParallelScavengeHeap::heap()->is_gc_active(), "called outside gc");
+
+  PSPromotionManager* pm =
+    PSPromotionManager::gc_thread_promotion_manager(worker_id);
+  pm->drain_stacks(true);
+  guarantee(pm->stacks_empty(),
+            "stacks should be empty at this point");
+
+  while (true) {
+    StarTask p;
+    if (PSPromotionManager::steal_depth(worker_id, p)) {
+      TASKQUEUE_STATS_ONLY(pm->record_steal(p));
+      pm->process_popped_location_depth(p);
+      pm->drain_stacks_depth(true);
+    } else {
+      if (terminator.offer_termination()) {
+        break;
+      }
+    }
+  }
+  guarantee(pm->stacks_empty(), "stacks should be empty at this point");
+}
 
 // Define before use
 class PSIsAliveClosure: public BoolObjectClosure {
@@ -125,57 +212,42 @@ class PSEvacuateFollowersClosure: public VoidClosure {
   }
 };
 
-class PSRefProcTaskProxy: public GCTask {
-  typedef AbstractRefProcTaskExecutor::ProcessTask ProcessTask;
-  ProcessTask & _rp_task;
-  uint          _work_id;
-public:
-  PSRefProcTaskProxy(ProcessTask & rp_task, uint work_id)
-    : _rp_task(rp_task),
-      _work_id(work_id)
-  { }
-
-private:
-  virtual char* name() { return (char *)"Process referents by policy in parallel"; }
-  virtual void do_it(GCTaskManager* manager, uint which);
-};
-
-void PSRefProcTaskProxy::do_it(GCTaskManager* manager, uint which)
-{
-  PSPromotionManager* promotion_manager =
-    PSPromotionManager::gc_thread_promotion_manager(which);
-  assert(promotion_manager != NULL, "sanity check");
-  PSKeepAliveClosure keep_alive(promotion_manager);
-  PSEvacuateFollowersClosure evac_followers(promotion_manager);
-  PSIsAliveClosure is_alive;
-  _rp_task.work(_work_id, is_alive, keep_alive, evac_followers);
-}
-
 class PSRefProcTaskExecutor: public AbstractRefProcTaskExecutor {
-  virtual void execute(ProcessTask& task, uint ergo_workers);
+  virtual void execute(ProcessTask& process_task, uint ergo_workers);
 };
 
-void PSRefProcTaskExecutor::execute(ProcessTask& task, uint ergo_workers)
-{
-  GCTaskQueue* q = GCTaskQueue::create();
-  GCTaskManager* manager = ParallelScavengeHeap::gc_task_manager();
-  uint active_workers = manager->active_workers();
+class PSRefProcTask : public AbstractGangTask {
+  typedef AbstractRefProcTaskExecutor::ProcessTask ProcessTask;
+  TaskTerminator _terminator;
+  ProcessTask& _task;
+  uint _active_workers;
 
-  assert(active_workers == ergo_workers,
-         "Ergonomically chosen workers (%u) must be equal to active workers (%u)",
-         ergo_workers, active_workers);
-
-  for(uint i=0; i < active_workers; i++) {
-    q->enqueue(new PSRefProcTaskProxy(task, i));
+public:
+  PSRefProcTask(ProcessTask& task, uint active_workers)
+    : AbstractGangTask("PSRefProcTask"),
+      _terminator(active_workers, PSPromotionManager::stack_array_depth()),
+      _task(task),
+      _active_workers(active_workers) {
   }
-  TaskTerminator terminator(active_workers,
-                            (TaskQueueSetSuper*) PSPromotionManager::stack_array_depth());
-  if (task.marks_oops_alive() && active_workers > 1) {
-    for (uint j = 0; j < active_workers; j++) {
-      q->enqueue(new StealTask(terminator.terminator()));
+
+  virtual void work(uint worker_id) {
+    PSPromotionManager* promotion_manager =
+      PSPromotionManager::gc_thread_promotion_manager(worker_id);
+    assert(promotion_manager != NULL, "sanity check");
+    PSKeepAliveClosure keep_alive(promotion_manager);
+    PSEvacuateFollowersClosure evac_followers(promotion_manager);
+    PSIsAliveClosure is_alive;
+    _task.work(worker_id, is_alive, keep_alive, evac_followers);
+
+    if (_task.marks_oops_alive() && _active_workers > 1) {
+      steal_work(*_terminator.terminator(), worker_id);
     }
   }
-  manager->execute_and_wait(q);
+};
+
+void PSRefProcTaskExecutor::execute(ProcessTask& process_task, uint ergo_workers) {
+  PSRefProcTask task(process_task, ergo_workers);
+  ParallelScavengeHeap::heap()->workers().run_task(&task);
 }
 
 // This method contains all heap specific policy for invoking scavenge.
@@ -221,14 +293,96 @@ bool PSScavenge::invoke() {
   return full_gc_done;
 }
 
-class PSAddThreadRootsTaskClosure : public ThreadClosure {
-private:
-  GCTaskQueue* _q;
+class PSThreadRootsTaskClosure : public ThreadClosure {
+  uint _worker_id;
+public:
+  PSThreadRootsTaskClosure(uint worker_id) : _worker_id(worker_id) { }
+  virtual void do_thread(Thread* thread) {
+    assert(ParallelScavengeHeap::heap()->is_gc_active(), "called outside gc");
+
+    PSPromotionManager* pm = PSPromotionManager::gc_thread_promotion_manager(_worker_id);
+    PSScavengeRootsClosure roots_closure(pm);
+    MarkingCodeBlobClosure roots_in_blobs(&roots_closure, CodeBlobToOopClosure::FixRelocations);
+
+    thread->oops_do(&roots_closure, &roots_in_blobs);
+
+    // Do the real work
+    pm->drain_stacks(false);
+  }
+};
+
+class ScavengeRootsTask : public AbstractGangTask {
+  StrongRootsScope _strong_roots_scope; // needed for Threads::possibly_parallel_threads_do
+  SequentialSubTasksDone _subtasks;
+  PSOldGen* _old_gen;
+  HeapWord* _gen_top;
+  uint _active_workers;
+  bool _is_empty;
+  TaskTerminator _terminator;
 
 public:
-  PSAddThreadRootsTaskClosure(GCTaskQueue* q) : _q(q) { }
-  void do_thread(Thread* t) {
-    _q->enqueue(new ThreadRootsTask(t));
+  ScavengeRootsTask(PSOldGen* old_gen,
+                    HeapWord* gen_top,
+                    uint active_workers,
+                    bool is_empty) :
+      AbstractGangTask("ScavengeRootsTask"),
+      _strong_roots_scope(active_workers),
+      _subtasks(),
+      _old_gen(old_gen),
+      _gen_top(gen_top),
+      _active_workers(active_workers),
+      _is_empty(is_empty),
+      _terminator(active_workers, PSPromotionManager::vm_thread_promotion_manager()->stack_array_depth()) {
+    _subtasks.set_n_threads(active_workers);
+    _subtasks.set_n_tasks(ParallelRootType::sentinel);
+  }
+
+  virtual void work(uint worker_id) {
+    ResourceMark rm;
+
+    if (!_is_empty) {
+      // There are only old-to-young pointers if there are objects
+      // in the old gen.
+
+      assert(_old_gen != NULL, "Sanity");
+      // There are no old-to-young pointers if the old gen is empty.
+      assert(!_old_gen->object_space()->is_empty(), "Should not be called is there is no work");
+      assert(_old_gen->object_space()->contains(_gen_top) || _gen_top == _old_gen->object_space()->top(), "Sanity");
+      assert(worker_id < ParallelGCThreads, "Sanity");
+
+      {
+        PSPromotionManager* pm = PSPromotionManager::gc_thread_promotion_manager(worker_id);
+        PSCardTable* card_table = ParallelScavengeHeap::heap()->card_table();
+
+        card_table->scavenge_contents_parallel(_old_gen->start_array(),
+                                               _old_gen->object_space(),
+                                               _gen_top,
+                                               pm,
+                                               worker_id,
+                                               _active_workers);
+
+        // Do the real work
+        pm->drain_stacks(false);
+      }
+    }
+
+    for (uint root_type = 0; _subtasks.try_claim_task(root_type); /* empty */ ) {
+      scavenge_roots_work(static_cast<ParallelRootType::Value>(root_type), worker_id);
+    }
+    _subtasks.all_tasks_completed();
+
+    PSThreadRootsTaskClosure closure(worker_id);
+    Threads::possibly_parallel_threads_do(true /*parallel */, &closure);
+
+
+    // If active_workers can exceed 1, add a steal_work().
+    // PSPromotionManager::drain_stacks_depth() does not fully drain its
+    // stacks and expects a steal_work() to complete the draining if
+    // ParallelGCThreads is > 1.
+
+    if (_active_workers > 1) {
+      steal_work(*_terminator.terminator() , worker_id);
+    }
   }
 };
 
@@ -277,7 +431,7 @@ bool PSScavenge::invoke_no_policy() {
   heap->print_heap_before_gc();
   heap->trace_heap_before_gc(&_gc_tracer);
 
-  assert(!NeverTenure || _tenuring_threshold == markOopDesc::max_age + 1, "Sanity");
+  assert(!NeverTenure || _tenuring_threshold == markWord::max_age + 1, "Sanity");
   assert(!AlwaysTenure || _tenuring_threshold == 0, "Sanity");
 
   // Fill in TLABs
@@ -328,7 +482,7 @@ bool PSScavenge::invoke_no_policy() {
     reference_processor()->enable_discovery();
     reference_processor()->setup_policy(false);
 
-    const PreGCValues pre_gc_values(heap);
+    const PreGenGCValues pre_gc_values = heap->get_pre_gc_values();
 
     // Reset our survivor overflow.
     set_survivor_overflow(false);
@@ -339,15 +493,11 @@ bool PSScavenge::invoke_no_policy() {
     // straying into the promotion labs.
     HeapWord* old_top = old_gen->object_space()->top();
 
-    // Release all previously held resources
-    gc_task_manager()->release_all_resources();
-
-    // Set the number of GC threads to be used in this collection
-    gc_task_manager()->set_active_gang();
-    gc_task_manager()->task_idle_workers();
-    // Get the active number of workers here and use that value
-    // throughout the methods.
-    uint active_workers = gc_task_manager()->active_workers();
+    const uint active_workers =
+      WorkerPolicy::calc_active_workers(ParallelScavengeHeap::heap()->workers().total_workers(),
+                                        ParallelScavengeHeap::heap()->workers().active_workers(),
+                                        Threads::number_of_non_daemon_threads());
+    ParallelScavengeHeap::heap()->workers().update_active_workers(active_workers);
 
     PSPromotionManager::pre_scavenge();
 
@@ -355,44 +505,9 @@ bool PSScavenge::invoke_no_policy() {
     PSPromotionManager* promotion_manager = PSPromotionManager::vm_thread_promotion_manager();
     {
       GCTraceTime(Debug, gc, phases) tm("Scavenge", &_gc_timer);
-      ParallelScavengeHeap::ParStrongRootsScope psrs;
 
-      GCTaskQueue* q = GCTaskQueue::create();
-
-      if (!old_gen->object_space()->is_empty()) {
-        // There are only old-to-young pointers if there are objects
-        // in the old gen.
-        uint stripe_total = active_workers;
-        for(uint i=0; i < stripe_total; i++) {
-          q->enqueue(new OldToYoungRootsTask(old_gen, old_top, i, stripe_total));
-        }
-      }
-
-      q->enqueue(new ScavengeRootsTask(ScavengeRootsTask::universe));
-      q->enqueue(new ScavengeRootsTask(ScavengeRootsTask::jni_handles));
-      // We scan the thread roots in parallel
-      PSAddThreadRootsTaskClosure cl(q);
-      Threads::java_threads_and_vm_thread_do(&cl);
-      q->enqueue(new ScavengeRootsTask(ScavengeRootsTask::object_synchronizer));
-      q->enqueue(new ScavengeRootsTask(ScavengeRootsTask::management));
-      q->enqueue(new ScavengeRootsTask(ScavengeRootsTask::system_dictionary));
-      q->enqueue(new ScavengeRootsTask(ScavengeRootsTask::class_loader_data));
-      q->enqueue(new ScavengeRootsTask(ScavengeRootsTask::jvmti));
-      q->enqueue(new ScavengeRootsTask(ScavengeRootsTask::code_cache));
-
-      TaskTerminator terminator(active_workers,
-                                (TaskQueueSetSuper*) promotion_manager->stack_array_depth());
-        // If active_workers can exceed 1, add a StrealTask.
-        // PSPromotionManager::drain_stacks_depth() does not fully drain its
-        // stacks and expects a StealTask to complete the draining if
-        // ParallelGCThreads is > 1.
-        if (gc_task_manager()->workers() > 1) {
-          for (uint j = 0; j < active_workers; j++) {
-            q->enqueue(new StealTask(terminator.terminator()));
-          }
-        }
-
-      gc_task_manager()->execute_and_wait(q);
+      ScavengeRootsTask task(old_gen, old_top, active_workers, old_gen->object_space()->is_empty());
+      ParallelScavengeHeap::heap()->workers().run_task(&task);
     }
 
     scavenge_midpoint.update();
@@ -598,15 +713,11 @@ bool PSScavenge::invoke_no_policy() {
       accumulated_time()->stop();
     }
 
-    young_gen->print_used_change(pre_gc_values.young_gen_used());
-    old_gen->print_used_change(pre_gc_values.old_gen_used());
-    MetaspaceUtils::print_metaspace_change(pre_gc_values.metaspace_sizes());
+    heap->print_heap_change(pre_gc_values);
 
     // Track memory usage and detect low memory
     MemoryService::track_memory_usage();
     heap->update_counters();
-
-    gc_task_manager()->release_idle_workers();
   }
 
   if (VerifyAfterGC && heap->total_collections() >= VerifyGCStartAt) {
@@ -622,7 +733,6 @@ bool PSScavenge::invoke_no_policy() {
   log_debug(gc, task, time)("VM-Thread " JLONG_FORMAT " " JLONG_FORMAT " " JLONG_FORMAT,
                             scavenge_entry.ticks(), scavenge_midpoint.ticks(),
                             scavenge_exit.ticks());
-  gc_task_manager()->print_task_time_stamps();
 
 #ifdef TRACESPINNING
   ParallelTaskTerminator::print_termination_counts();
@@ -700,13 +810,6 @@ bool PSScavenge::should_attempt_scavenge() {
   return result;
 }
 
-  // Used to add tasks
-GCTaskManager* const PSScavenge::gc_task_manager() {
-  assert(ParallelScavengeHeap::gc_task_manager() != NULL,
-   "shouldn't return NULL");
-  return ParallelScavengeHeap::gc_task_manager();
-}
-
 // Adaptive size policy support.  When the young generation/old generation
 // boundary moves, _young_generation_boundary must be reset
 void PSScavenge::set_young_generation_boundary(HeapWord* v) {
@@ -720,8 +823,8 @@ void PSScavenge::initialize() {
   // Arguments must have been parsed
 
   if (AlwaysTenure || NeverTenure) {
-    assert(MaxTenuringThreshold == 0 || MaxTenuringThreshold == markOopDesc::max_age + 1,
-           "MaxTenuringThreshold should be 0 or markOopDesc::max_age + 1, but is %d", (int) MaxTenuringThreshold);
+    assert(MaxTenuringThreshold == 0 || MaxTenuringThreshold == markWord::max_age + 1,
+           "MaxTenuringThreshold should be 0 or markWord::max_age + 1, but is %d", (int) MaxTenuringThreshold);
     _tenuring_threshold = MaxTenuringThreshold;
   } else {
     // We want to smooth out our startup times for the AdaptiveSizePolicy

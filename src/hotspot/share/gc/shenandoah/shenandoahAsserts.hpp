@@ -66,7 +66,7 @@ public:
   static void assert_rp_isalive_not_installed(const char *file, int line);
   static void assert_rp_isalive_installed(const char *file, int line);
 
-  static void assert_locked_or_shenandoah_safepoint(const Monitor* lock, const char*file, int line);
+  static void assert_locked_or_shenandoah_safepoint(const Mutex* lock, const char*file, int line);
 
 #ifdef ASSERT
 #define shenandoah_assert_in_heap(interior_loc, obj) \

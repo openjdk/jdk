@@ -28,16 +28,19 @@ import java.util.ArrayList;
 import java.util.List;
 
 import org.graalvm.compiler.api.replacements.SnippetReflectionProvider;
+import org.graalvm.compiler.debug.DebugCloseable;
 import org.graalvm.compiler.debug.DebugContext;
 import org.graalvm.compiler.debug.DebugDumpHandler;
 import org.graalvm.compiler.debug.DebugHandler;
 import org.graalvm.compiler.debug.DebugHandlersFactory;
 import org.graalvm.compiler.debug.DebugOptions;
-import org.graalvm.compiler.debug.TTY;
 import org.graalvm.compiler.graph.Node;
 import org.graalvm.compiler.nodeinfo.Verbosity;
+import org.graalvm.compiler.nodes.StructuredGraph;
+import org.graalvm.compiler.nodes.StructuredGraph.ScheduleResult;
 import org.graalvm.compiler.nodes.util.GraphUtil;
 import org.graalvm.compiler.options.OptionValues;
+import org.graalvm.compiler.phases.schedule.SchedulePhase;
 import org.graalvm.compiler.serviceprovider.ServiceProvider;
 
 @ServiceProvider(DebugHandlersFactory.class)
@@ -62,9 +65,6 @@ public class GraalDebugHandlersFactory implements DebugHandlersFactory {
         }
         handlers.add(new NodeDumper());
         if (DebugOptions.PrintCFG.getValue(options) || DebugOptions.PrintBackendCFG.getValue(options)) {
-            if (DebugOptions.PrintCFG.getValue(options)) {
-                TTY.out.println("Complete C1Visualizer dumping slows down PrintBinaryGraphs: use -Dgraal.PrintCFG=false to disable it");
-            }
             handlers.add(new CFGPrinterObserver());
         }
         handlers.add(new NoDeadCodeVerifyHandler());
@@ -91,4 +91,20 @@ public class GraalDebugHandlersFactory implements DebugHandlersFactory {
         return new CanonicalStringGraphPrinter(snippetReflection);
     }
 
+    @SuppressWarnings("try")
+    static ScheduleResult tryGetSchedule(DebugContext debug, StructuredGraph graph) {
+        ScheduleResult scheduleResult = graph.getLastSchedule();
+        if (scheduleResult == null) {
+            // Also provide a schedule when an error occurs
+            if (DebugOptions.PrintGraphWithSchedule.getValue(graph.getOptions()) || debug.contextLookup(Throwable.class) != null) {
+                try (DebugCloseable noIntercept = debug.disableIntercept()) {
+                    SchedulePhase schedule = new SchedulePhase(graph.getOptions());
+                    schedule.apply(graph);
+                    scheduleResult = graph.getLastSchedule();
+                } catch (Throwable t) {
+                }
+            }
+        }
+        return scheduleResult;
+    }
 }

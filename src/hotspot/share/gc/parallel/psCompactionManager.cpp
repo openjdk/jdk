@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,7 +24,6 @@
 
 #include "precompiled.hpp"
 #include "classfile/systemDictionary.hpp"
-#include "gc/parallel/gcTaskManager.hpp"
 #include "gc/parallel/objectStartArray.hpp"
 #include "gc/parallel/parMarkBitMap.inline.hpp"
 #include "gc/parallel/parallelScavengeHeap.hpp"
@@ -68,12 +67,12 @@ ParCompactionManager::ParCompactionManager() :
 }
 
 void ParCompactionManager::initialize(ParMarkBitMap* mbm) {
-  assert(PSParallelCompact::gc_task_manager() != NULL,
+  assert(ParallelScavengeHeap::heap() != NULL,
     "Needed for initialization");
 
   _mark_bitmap = mbm;
 
-  uint parallel_gc_threads = PSParallelCompact::gc_task_manager()->workers();
+  uint parallel_gc_threads = ParallelScavengeHeap::heap()->workers().total_workers();
 
   assert(_manager_array == NULL, "Attempt to initialize twice");
   _manager_array = NEW_C_HEAP_ARRAY(ParCompactionManager*, parallel_gc_threads+1, mtGC);
@@ -100,12 +99,12 @@ void ParCompactionManager::initialize(ParMarkBitMap* mbm) {
   _manager_array[parallel_gc_threads] = new ParCompactionManager();
   guarantee(_manager_array[parallel_gc_threads] != NULL,
     "Could not create ParCompactionManager");
-  assert(PSParallelCompact::gc_task_manager()->workers() != 0,
+  assert(ParallelScavengeHeap::heap()->workers().total_workers() != 0,
     "Not initialized?");
 }
 
 void ParCompactionManager::reset_all_bitmap_query_caches() {
-  uint parallel_gc_threads = PSParallelCompact::gc_task_manager()->workers();
+  uint parallel_gc_threads = ParallelScavengeHeap::heap()->workers().total_workers();
   for (uint i=0; i<=parallel_gc_threads; i++) {
     _manager_array[i]->reset_bitmap_query_cache();
   }

@@ -377,7 +377,6 @@ protected:
 public:
   PhaseValues( Arena *arena, uint est_max_size );
   PhaseValues( PhaseValues *pt );
-  PhaseValues( PhaseValues *ptv, const char *dummy );
   NOT_PRODUCT( ~PhaseValues(); )
   virtual PhaseIterGVN *is_IterGVN() { return 0; }
 
@@ -418,7 +417,6 @@ protected:
 public:
   PhaseGVN( Arena *arena, uint est_max_size ) : PhaseValues( arena, est_max_size ) {}
   PhaseGVN( PhaseGVN *gvn ) : PhaseValues( gvn ) {}
-  PhaseGVN( PhaseGVN *gvn, const char *dummy ) : PhaseValues( gvn, dummy ) {}
 
   // Return a node which computes the same function as this node, but
   // in a faster or cheaper fashion.
@@ -474,7 +472,6 @@ protected:
 public:
   PhaseIterGVN( PhaseIterGVN *igvn ); // Used by CCP constructor
   PhaseIterGVN( PhaseGVN *gvn ); // Used after Parser
-  PhaseIterGVN( PhaseIterGVN *igvn, const char *dummy ); // Used after +VerifyOpto
 
   // Idealize new Node 'n' with respect to its inputs and its value
   virtual Node *transform( Node *a_node );

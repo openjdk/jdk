@@ -487,19 +487,20 @@ void TemplateTable::ldc2_w() {
 
   __ add(Rbase, Rcpool, AsmOperand(Rindex, lsl, LogBytesPerWord));
 
-  Label Condy, exit;
-#ifdef __ABI_HARD__
-  Label Long;
   // get type from tags
   __ add(Rtemp, Rtags, tags_offset);
   __ ldrb(Rtemp, Address(Rtemp, Rindex));
+
+  Label Condy, exit;
+#ifdef __ABI_HARD__
+  Label NotDouble;
   __ cmp(Rtemp, JVM_CONSTANT_Double);
-  __ b(Long, ne);
+  __ b(NotDouble, ne);
   __ ldr_double(D0_tos, Address(Rbase, base_offset));
 
   __ push(dtos);
   __ b(exit);
-  __ bind(Long);
+  __ bind(NotDouble);
 #endif
 
   __ cmp(Rtemp, JVM_CONSTANT_Long);
@@ -4045,7 +4046,7 @@ void TemplateTable::_new() {
     if (UseBiasedLocking) {
       __ ldr(Rtemp, Address(Rklass, Klass::prototype_header_offset()));
     } else {
-      __ mov_slow(Rtemp, (intptr_t)markOopDesc::prototype());
+      __ mov_slow(Rtemp, (intptr_t)markWord::prototype().value());
     }
     // mark
     __ str(Rtemp, Address(Robj, oopDesc::mark_offset_in_bytes()));

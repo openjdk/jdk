@@ -1,4 +1,5 @@
 /*
+ * Copyright (c) 2019, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2019, Red Hat Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -94,10 +95,28 @@ final class UnsafeConstants {
 
     static final boolean UNALIGNED_ACCESS;
 
+    /**
+     * The size of an L1 data cache line which will be either a power
+     * of two or zero.
+     *
+     * <p>A non-zero value indicates that writeback to memory is
+     * enabled for the current processor. The value defines the
+     * natural alignment and size of any data cache line committed to
+     * memory by a single writeback operation. If data cache line
+     * writeback is not enabled for the current hardware the field
+     * will have value 0.
+     *
+     * @implNote
+     * The actual value for this field is injected by the JVM.
+     */
+
+    static final int DATA_CACHE_LINE_FLUSH_SIZE;
+
     static {
         ADDRESS_SIZE0 = 0;
         PAGE_SIZE = 0;
         BIG_ENDIAN = false;
         UNALIGNED_ACCESS = false;
+        DATA_CACHE_LINE_FLUSH_SIZE = 0;
     }
 }

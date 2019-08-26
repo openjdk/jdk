@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -98,7 +98,7 @@ public class StackMoveTest extends LIRTest {
     }
 
     @Test
-    public void runInt() throws Throwable {
+    public void runInt() {
         runTest("testInt", Integer.MIN_VALUE, supply(() -> new int[4]));
         runTest("testInt", -1, supply(() -> new int[4]));
         runTest("testInt", 0, supply(() -> new int[4]));
@@ -125,7 +125,7 @@ public class StackMoveTest extends LIRTest {
     }
 
     @Test
-    public void runLong() throws Throwable {
+    public void runLong() {
         runTest("testLong", Long.MIN_VALUE, supply(() -> new long[3]));
         runTest("testLong", -1L, supply(() -> new long[3]));
         runTest("testLong", 0L, supply(() -> new long[3]));
@@ -152,7 +152,7 @@ public class StackMoveTest extends LIRTest {
     }
 
     @Test
-    public void runFloat() throws Throwable {
+    public void runFloat() {
         runTest("testFloat", Float.MIN_VALUE, supply(() -> new float[3]));
         runTest("testFloat", -1f, supply(() -> new float[3]));
         runTest("testFloat", -0.1f, supply(() -> new float[3]));
@@ -217,7 +217,7 @@ public class StackMoveTest extends LIRTest {
     }
 
     @Test
-    public void runShort() throws Throwable {
+    public void runShort() {
         runTest("testShort", Short.MIN_VALUE, supply(() -> new short[3]));
         runTest("testShort", (short) -1, supply(() -> new short[3]));
         runTest("testShort", (short) 0, supply(() -> new short[3]));
@@ -251,7 +251,7 @@ public class StackMoveTest extends LIRTest {
     }
 
     @Test
-    public void runByte() throws Throwable {
+    public void runByte() {
         runTest("testByte", Byte.MIN_VALUE, supply(() -> new byte[3]));
         runTest("testByte", (byte) -1, supply(() -> new byte[3]));
         runTest("testByte", (byte) 0, supply(() -> new byte[3]));

@@ -25,6 +25,7 @@
 
 package org.graalvm.compiler.hotspot.aarch64;
 
+import org.graalvm.compiler.core.aarch64.AArch64LoweringProviderMixin;
 import org.graalvm.compiler.core.common.spi.ForeignCallsProvider;
 import org.graalvm.compiler.debug.DebugHandlersFactory;
 import org.graalvm.compiler.graph.Node;
@@ -45,7 +46,7 @@ import jdk.vm.ci.code.TargetDescription;
 import jdk.vm.ci.hotspot.HotSpotConstantReflectionProvider;
 import jdk.vm.ci.meta.MetaAccessProvider;
 
-public class AArch64HotSpotLoweringProvider extends DefaultHotSpotLoweringProvider {
+public class AArch64HotSpotLoweringProvider extends DefaultHotSpotLoweringProvider implements AArch64LoweringProviderMixin {
 
     private AArch64IntegerArithmeticSnippets integerArithmeticSnippets;
     private AArch64FloatArithmeticSnippets floatArithmeticSnippets;

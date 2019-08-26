@@ -47,6 +47,7 @@
 #include "compiler/compileBroker.hpp"
 #include "gc/shared/gcTraceTime.inline.hpp"
 #include "gc/shared/oopStorage.inline.hpp"
+#include "gc/shared/oopStorageSet.hpp"
 #include "interpreter/bytecodeStream.hpp"
 #include "interpreter/interpreter.hpp"
 #include "jfr/jfrEvents.hpp"
@@ -113,10 +114,6 @@ bool        SystemDictionary::_has_checkPackageAccess     =  false;
 // Default ProtectionDomainCacheSize value
 
 const int defaultProtectionDomainCacheSize = 1009;
-
-OopStorage* SystemDictionary::_vm_global_oop_storage = NULL;
-OopStorage* SystemDictionary::_vm_weak_oop_storage = NULL;
-
 
 // ----------------------------------------------------------------------------
 // Java-level SystemLoader and PlatformLoader
@@ -1855,7 +1852,7 @@ void SystemDictionary::oops_do(OopClosure* f, bool include_handles) {
   invoke_method_table()->oops_do(f);
 
   if (include_handles) {
-    vm_global_oop_storage()->oops_do(f);
+    OopStorageSet::vm_global()->oops_do(f);
   }
 }
 
@@ -2154,7 +2151,7 @@ void SystemDictionary::update_dictionary(unsigned int d_hash,
       // NOTE that we must only do this when the class is initally
       // defined, not each time it is referenced from a new class loader
       if (oopDesc::equals(k->class_loader(), class_loader())) {
-        k->set_prototype_header(markOopDesc::biased_locking_prototype());
+        k->set_prototype_header(markWord::biased_locking_prototype());
       }
     }
 
@@ -2895,26 +2892,4 @@ int SystemDictionaryDCmd::num_arguments() {
   } else {
     return 0;
   }
-}
-
-void SystemDictionary::initialize_oop_storage() {
-  _vm_global_oop_storage =
-    new OopStorage("VM Global Oop Handles",
-                   VMGlobalAlloc_lock,
-                   VMGlobalActive_lock);
-
-  _vm_weak_oop_storage =
-    new OopStorage("VM Weak Oop Handles",
-                   VMWeakAlloc_lock,
-                   VMWeakActive_lock);
-}
-
-OopStorage* SystemDictionary::vm_global_oop_storage() {
-  assert(_vm_global_oop_storage != NULL, "Uninitialized");
-  return _vm_global_oop_storage;
-}
-
-OopStorage* SystemDictionary::vm_weak_oop_storage() {
-  assert(_vm_weak_oop_storage != NULL, "Uninitialized");
-  return _vm_weak_oop_storage;
 }

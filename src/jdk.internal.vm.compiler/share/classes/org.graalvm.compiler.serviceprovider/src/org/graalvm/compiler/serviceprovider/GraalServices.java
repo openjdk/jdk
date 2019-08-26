@@ -531,11 +531,7 @@ public final class GraalServices {
         return Math.fma(a, b, c);
     }
 
-    /**
-     * Set the flag in the {@link VirtualObject} that indicates that it is a boxed primitive that
-     * was produced as a result of a call to a {@code valueOf} method.
-     */
-    public static void markVirtualObjectAsAutoBox(VirtualObject virtualObject) {
-        virtualObject.setIsAutoBox(true);
+    public static VirtualObject createVirtualObject(ResolvedJavaType type, int id, boolean isAutoBox) {
+        return VirtualObject.get(type, id, isAutoBox);
     }
 }

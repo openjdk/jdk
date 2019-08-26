@@ -2452,15 +2452,15 @@ void MacroAssembler::biased_locking_enter(Register obj_reg, Register mark_reg,
   // whether the epoch is still valid
   // Note that the runtime guarantees sufficient alignment of JavaThread
   // pointers to allow age to be placed into low bits
-  assert(markOopDesc::age_shift == markOopDesc::lock_bits + markOopDesc::biased_lock_bits, "biased locking makes assumptions about bit layout");
-  and3(mark_reg, markOopDesc::biased_lock_mask_in_place, temp_reg);
-  cmp_and_brx_short(temp_reg, markOopDesc::biased_lock_pattern, Assembler::notEqual, Assembler::pn, cas_label);
+  assert(markWord::age_shift == markWord::lock_bits + markWord::biased_lock_bits, "biased locking makes assumptions about bit layout");
+  and3(mark_reg, markWord::biased_lock_mask_in_place, temp_reg);
+  cmp_and_brx_short(temp_reg, markWord::biased_lock_pattern, Assembler::notEqual, Assembler::pn, cas_label);
 
   load_klass(obj_reg, temp_reg);
   ld_ptr(Address(temp_reg, Klass::prototype_header_offset()), temp_reg);
   or3(G2_thread, temp_reg, temp_reg);
   xor3(mark_reg, temp_reg, temp_reg);
-  andcc(temp_reg, ~((int) markOopDesc::age_mask_in_place), temp_reg);
+  andcc(temp_reg, ~((int) markWord::age_mask_in_place), temp_reg);
   if (counters != NULL) {
     cond_inc(Assembler::equal, (address) counters->biased_lock_entry_count_addr(), mark_reg, temp_reg);
     // Reload mark_reg as we may need it later
@@ -2483,7 +2483,7 @@ void MacroAssembler::biased_locking_enter(Register obj_reg, Register mark_reg,
   // If the low three bits in the xor result aren't clear, that means
   // the prototype header is no longer biased and we have to revoke
   // the bias on this object.
-  btst(markOopDesc::biased_lock_mask_in_place, temp_reg);
+  btst(markWord::biased_lock_mask_in_place, temp_reg);
   brx(Assembler::notZero, false, Assembler::pn, try_revoke_bias);
 
   // Biasing is still enabled for this data type. See whether the
@@ -2495,7 +2495,7 @@ void MacroAssembler::biased_locking_enter(Register obj_reg, Register mark_reg,
   // that the current epoch is invalid in order to do this because
   // otherwise the manipulations it performs on the mark word are
   // illegal.
-  delayed()->btst(markOopDesc::epoch_mask_in_place, temp_reg);
+  delayed()->btst(markWord::epoch_mask_in_place, temp_reg);
   brx(Assembler::notZero, false, Assembler::pn, try_rebias);
 
   // The epoch of the current bias is still valid but we know nothing
@@ -2505,7 +2505,7 @@ void MacroAssembler::biased_locking_enter(Register obj_reg, Register mark_reg,
   // Note that we first construct the presumed unbiased header so we
   // don't accidentally blow away another thread's valid bias.
   delayed()->and3(mark_reg,
-                  markOopDesc::biased_lock_mask_in_place | markOopDesc::age_mask_in_place | markOopDesc::epoch_mask_in_place,
+                  markWord::biased_lock_mask_in_place | markWord::age_mask_in_place | markWord::epoch_mask_in_place,
                   mark_reg);
   or3(G2_thread, mark_reg, temp_reg);
   cas_ptr(mark_addr.base(), mark_reg, temp_reg);
@@ -2586,8 +2586,8 @@ void MacroAssembler::biased_locking_exit (Address mark_addr, Register temp_reg, 
   // lock, the object could not be rebiased toward another thread, so
   // the bias bit would be clear.
   ld_ptr(mark_addr, temp_reg);
-  and3(temp_reg, markOopDesc::biased_lock_mask_in_place, temp_reg);
-  cmp(temp_reg, markOopDesc::biased_lock_pattern);
+  and3(temp_reg, markWord::biased_lock_mask_in_place, temp_reg);
+  cmp(temp_reg, markWord::biased_lock_pattern);
   brx(Assembler::equal, allow_delay_slot_filling, Assembler::pt, done);
   delayed();
   if (!allow_delay_slot_filling) {
@@ -2603,12 +2603,12 @@ void MacroAssembler::biased_locking_exit (Address mark_addr, Register temp_reg, 
 // box->dhw disposition - post-conditions at DONE_LABEL.
 // -   Successful inflated lock:  box->dhw != 0.
 //     Any non-zero value suffices.
-//     Consider G2_thread, rsp, boxReg, or markOopDesc::unused_mark()
+//     Consider G2_thread, rsp, boxReg, or markWord::unused_mark()
 // -   Successful Stack-lock: box->dhw == mark.
 //     box->dhw must contain the displaced mark word value
 // -   Failure -- icc.ZFlag == 0 and box->dhw is undefined.
 //     The slow-path fast_enter() and slow_enter() operators
-//     are responsible for setting box->dhw = NonZero (typically markOopDesc::unused_mark()).
+//     are responsible for setting box->dhw = NonZero (typically markWord::unused_mark()).
 // -   Biased: box->dhw is undefined
 //
 // SPARC refworkload performance - specifically jetstream and scimark - are
@@ -2658,7 +2658,7 @@ void MacroAssembler::compiler_lock_object(Register Roop, Register Rmark,
    // This presumes TSO, of course.
 
    mov(0, Rscratch);
-   or3(Rmark, markOopDesc::unlocked_value, Rmark);
+   or3(Rmark, markWord::unlocked_value, Rmark);
    assert(mark_addr.disp() == 0, "cas must take a zero displacement");
    cas_ptr(mark_addr.base(), Rmark, Rscratch);
 // prefetch (mark_addr, Assembler::severalWritesAndPossiblyReads);
@@ -2712,7 +2712,7 @@ void MacroAssembler::compiler_lock_object(Register Roop, Register Rmark,
    // set icc.zf : 1=success 0=failure
    // ST box->displaced_header = NonZero.
    // Any non-zero value suffices:
-   //    markOopDesc::unused_mark(), G2_thread, RBox, RScratch, rsp, etc.
+   //    markWord::unused_mark(), G2_thread, RBox, RScratch, rsp, etc.
    st_ptr(Rbox, Rbox, BasicLock::displaced_header_offset_in_bytes());
    // Intentional fall-through into done
 

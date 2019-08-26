@@ -307,4 +307,3 @@ public class AMD64ArrayIndexOfDispatchNode extends FixedWithNextNode implements 
         return optimizedArrayIndexOf(descriptor, JavaKind.Char, JavaKind.Char, true, array, arrayLength, fromIndex, values);
     }
 }
-

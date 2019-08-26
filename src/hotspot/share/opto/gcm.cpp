@@ -663,6 +663,19 @@ Block* PhaseCFG::insert_anti_dependences(Block* LCA, Node* load, bool verify) {
         // instead of control + memory.
         if (mstore->ideal_Opcode() == Op_SafePoint)
           continue;
+
+        // Check if the store is a membar on which the load is control dependent.
+        // Inserting an anti-dependency between that membar and the load would
+        // create a cycle that causes local scheduling to fail.
+        if (mstore->isa_MachMemBar()) {
+          Node* dom = load->find_exact_control(load->in(0));
+          while (dom != NULL && dom != dom->in(0) && dom != mstore) {
+            dom = dom->in(0);
+          }
+          if (dom == mstore) {
+            continue;
+          }
+        }
       } else {
         // Some raw memory, such as the load of "top" at an allocation,
         // can be control dependent on the previous safepoint. See
@@ -747,7 +760,7 @@ Block* PhaseCFG::insert_anti_dependences(Block* LCA, Node* load, bool verify) {
       // Found a possibly-interfering store in the load's 'early' block.
       // This means 'load' cannot sink at all in the dominator tree.
       // Add an anti-dep edge, and squeeze 'load' into the highest block.
-      assert(store != load->in(0), "dependence cycle found");
+      assert(store != load->find_exact_control(load->in(0)), "dependence cycle found");
       if (verify) {
         assert(store->find_edge(load) != -1, "missing precedence edge");
       } else {
@@ -787,7 +800,7 @@ Block* PhaseCFG::insert_anti_dependences(Block* LCA, Node* load, bool verify) {
       Block* store_block = get_block_for_node(store);
       if (store_block == LCA) {
         // add anti_dependence from store to load in its own block
-        assert(store != load->in(0), "dependence cycle found");
+        assert(store != load->find_exact_control(load->in(0)), "dependence cycle found");
         if (verify) {
           assert(store->find_edge(load) != -1, "missing precedence edge");
         } else {

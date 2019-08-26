@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2005, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -130,19 +130,15 @@ public interface ContentHandler
     /**
      * Receive notification of the end of a document.
      *
-     * <p><strong>There is an apparent contradiction between the
-     * documentation for this method and the documentation for {@link
-     * org.xml.sax.ErrorHandler#fatalError}.  Until this ambiguity is
-     * resolved in a future major release, clients should make no
-     * assumptions about whether endDocument() will or will not be
-     * invoked when the parser has reported a fatalError() or thrown
-     * an exception.</strong></p>
+     * <p>
+     * This method is invoked by the parser to signal it has reached the end of
+     * the document after successfully completing the parsing process.
+     * After the event, the parser will return the control to the application.
      *
-     * <p>The SAX parser will invoke this method only once, and it will
-     * be the last method invoked during the parse.  The parser shall
-     * not invoke this method until it has either abandoned parsing
-     * (because of an unrecoverable error) or reached the end of
-     * input.</p>
+     * @apiNote In case of a fatal error, the parser may choose to stop the
+     * parsing process with a {@link SAXException}, in which case, this method
+     * will never be called. Refer to
+     * {@link ErrorHandler#fatalError(org.xml.sax.SAXParseException)}.
      *
      * @throws org.xml.sax.SAXException any SAX exception, possibly
      *            wrapping another exception

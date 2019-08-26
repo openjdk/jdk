@@ -1506,7 +1506,7 @@ public final class Pattern
             String seq = src.substring(off, j);
             String nfd = Normalizer.normalize(seq, Normalizer.Form.NFD);
             off = j;
-            if (nfd.length() > 1) {
+            if (nfd.codePointCount(0, nfd.length()) > 1) {
                 ch0 = nfd.codePointAt(0);
                 ch1 = nfd.codePointAt(Character.charCount(ch0));
                 if (Character.getType(ch1) == Character.NON_SPACING_MARK) {

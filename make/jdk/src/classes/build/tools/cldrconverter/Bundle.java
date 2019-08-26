@@ -50,7 +50,8 @@ class Bundle {
     private final static String[] NUMBER_PATTERN_KEYS = {
         "NumberPatterns/decimal",
         "NumberPatterns/currency",
-        "NumberPatterns/percent"
+        "NumberPatterns/percent",
+        "NumberPatterns/accounting"
     };
 
     private final static String[] COMPACT_NUMBER_PATTERN_KEYS = {
@@ -222,8 +223,12 @@ class Bundle {
                     if (value == null) {
                         value = (String) parentsMap.remove(key);
                     }
-                    if (value.length() == 0) {
-                        CLDRConverter.warning("empty pattern for " + key);
+                    if (value == null || value.isEmpty()) {
+                        if (!key.endsWith("accounting")) {
+                            // print warning unless it is for "accounting",
+                            // which may be missing.
+                            CLDRConverter.warning("empty pattern for " + key);
+                        }
                     }
                     numberPatterns[i] = value;
                 }

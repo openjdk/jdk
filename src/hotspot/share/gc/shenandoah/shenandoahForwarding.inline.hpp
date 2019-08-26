@@ -26,7 +26,7 @@
 
 #include "gc/shenandoah/shenandoahAsserts.hpp"
 #include "gc/shenandoah/shenandoahForwarding.hpp"
-#include "oops/markOop.inline.hpp"
+#include "oops/markWord.inline.hpp"
 #include "runtime/atomic.hpp"
 
 inline HeapWord* ShenandoahForwarding::get_forwardee_raw(oop obj) {
@@ -35,9 +35,9 @@ inline HeapWord* ShenandoahForwarding::get_forwardee_raw(oop obj) {
 }
 
 inline HeapWord* ShenandoahForwarding::get_forwardee_raw_unchecked(oop obj) {
-  markOop mark = obj->mark_raw();
-  if (mark->is_marked()) {
-    return (HeapWord*) mark->clear_lock_bits();
+  markWord mark = obj->mark_raw();
+  if (mark.is_marked()) {
+    return (HeapWord*) mark.clear_lock_bits().to_pointer();
   } else {
     return (HeapWord*) obj;
   }
@@ -49,21 +49,21 @@ inline oop ShenandoahForwarding::get_forwardee(oop obj) {
 }
 
 inline bool ShenandoahForwarding::is_forwarded(oop obj) {
-  return obj->mark_raw()->is_marked();
+  return obj->mark_raw().is_marked();
 }
 
 inline oop ShenandoahForwarding::try_update_forwardee(oop obj, oop update) {
-  markOop old_mark = obj->mark_raw();
-  if (old_mark->is_marked()) {
-    return (oop) old_mark->clear_lock_bits();
+  markWord old_mark = obj->mark_raw();
+  if (old_mark.is_marked()) {
+    return oop(old_mark.clear_lock_bits().to_pointer());
   }
 
-  markOop new_mark = markOopDesc::encode_pointer_as_mark(update);
-  markOop prev_mark = obj->cas_set_mark_raw(new_mark, old_mark);
+  markWord new_mark = markWord::encode_pointer_as_mark(update);
+  markWord prev_mark = obj->cas_set_mark_raw(new_mark, old_mark);
   if (prev_mark == old_mark) {
     return update;
   } else {
-    return (oop) prev_mark->clear_lock_bits();
+    return oop(prev_mark.clear_lock_bits().to_pointer());
   }
 }
 

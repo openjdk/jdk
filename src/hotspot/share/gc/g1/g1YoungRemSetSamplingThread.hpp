@@ -47,7 +47,7 @@ private:
 
   double _vtime_accum;  // Accumulated virtual time.
 
-  void sample_young_list_rs_lengths();
+  void sample_young_list_rs_length();
 
   void run_service();
   void check_for_periodic_gc();

@@ -808,8 +808,11 @@ public class ClassReader {
                            checkType(var, Double.class, v);
                            break;
                        case CLASS:
-                           Assert.check(var.type.tsym == syms.stringType.tsym);
-                           checkType(var, String.class, v);
+                           if (var.type.tsym == syms.stringType.tsym) {
+                               checkType(var, String.class, v);
+                           } else {
+                               throw badClassFile("bad.constant.value.type", var.type);
+                           }
                            break;
                        default:
                            // ignore ConstantValue attribute if type is not primitive or String

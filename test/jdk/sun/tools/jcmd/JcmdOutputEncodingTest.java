@@ -22,6 +22,8 @@
  */
 
 import java.util.Arrays;
+import java.nio.charset.Charset;
+import java.nio.charset.StandardCharsets;
 
 import jdk.test.lib.process.OutputAnalyzer;
 import jdk.test.lib.process.ProcessTools;
@@ -41,17 +43,19 @@ public class JcmdOutputEncodingTest {
     }
 
     private static void testThreadDump() throws Exception {
-        String markerName = "markerName" + "\u00e4\u0bb5".repeat(10_000);
-        Thread.currentThread().setName(markerName);
+        String marker = "markerName" + "\u00e4\u0bb5".repeat(60);
+        Charset cs = StandardCharsets.UTF_8;
+        Thread.currentThread().setName(marker);
 
         JDKToolLauncher launcher = JDKToolLauncher.createUsingTestJDK("jcmd");
+        launcher.addVMArg("-Dfile.encoding=" + cs);
         launcher.addToolArg(Long.toString(ProcessTools.getProcessId()));
         launcher.addToolArg("Thread.print");
 
         ProcessBuilder processBuilder = new ProcessBuilder();
         processBuilder.command(launcher.getCommand());
-        OutputAnalyzer output = ProcessTools.executeProcess(processBuilder);
+        OutputAnalyzer output = ProcessTools.executeProcess(processBuilder, null, cs);
         output.shouldHaveExitValue(0);
-        output.shouldContain(markerName);
+        output.shouldContain(marker);
     }
 }

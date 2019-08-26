@@ -35,11 +35,12 @@
 
 import java.io.*;
 import java.net.*;
+import java.util.concurrent.CountDownLatch;
 
 import jdk.test.lib.net.URIBuilder;
 
 class RedirLimitServer extends Thread {
-    static final int TIMEOUT = 10 * 1000;
+    static final int TIMEOUT = 20 * 1000;
     static final int NUM_REDIRECTS = 9;
 
     static final String reply1 = "HTTP/1.1 307 Temporary Redirect\r\n" +
@@ -59,6 +60,7 @@ class RedirLimitServer extends Thread {
 
     final ServerSocket ss;
     final int port;
+    final CountDownLatch readyToStart = new CountDownLatch(1);
 
     RedirLimitServer(ServerSocket ss) throws IOException {
         this.ss = ss;
@@ -85,6 +87,7 @@ class RedirLimitServer extends Thread {
 
     public void run() {
         try {
+            readyToStart.countDown();
             for (int i=0; i<NUM_REDIRECTS; i++) {
                 try (Socket s = ss.accept()) {
                     s.setSoTimeout(TIMEOUT);
@@ -100,33 +103,32 @@ class RedirLimitServer extends Thread {
             }
         } catch (Exception e) {
             e.printStackTrace();
-        } finally {
-            try { ss.close(); } catch (IOException unused) {}
         }
     }
 };
 
 public class RedirectLimit {
     public static void main(String[] args) throws Exception {
-        ServerSocket ss = new ServerSocket(0, 0, InetAddress.getLoopbackAddress());
-        int port = ss.getLocalPort();
-        RedirLimitServer server = new RedirLimitServer(ss);
-        server.start();
+        try (ServerSocket ss = new ServerSocket(0, 0, InetAddress.getLoopbackAddress())) {
+            int port = ss.getLocalPort();
+            RedirLimitServer server = new RedirLimitServer(ss);
+            server.start();
+            server.readyToStart.await();
+            URL url = URIBuilder.newBuilder()
+                    .scheme("http")
+                    .loopback()
+                    .port(port)
+                    .toURL();
+            URLConnection conURL = url.openConnection(Proxy.NO_PROXY);
 
-        URL url = URIBuilder.newBuilder()
-                .scheme("http")
-                .loopback()
-                .port(port)
-                .toURL();
-        URLConnection conURL =  url.openConnection();
+            conURL.setDoInput(true);
+            conURL.setAllowUserInteraction(false);
+            conURL.setUseCaches(false);
 
-        conURL.setDoInput(true);
-        conURL.setAllowUserInteraction(false);
-        conURL.setUseCaches(false);
-
-        try (InputStream in = conURL.getInputStream()) {
-            if ((in.read() != (int)'W') || (in.read()!=(int)'o')) {
-                throw new RuntimeException("Unexpected string read");
+            try (InputStream in = conURL.getInputStream()) {
+                if ((in.read() != (int) 'W') || (in.read() != (int) 'o')) {
+                    throw new RuntimeException("Unexpected string read");
+                }
             }
         }
     }

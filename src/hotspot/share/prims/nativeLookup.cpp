@@ -38,6 +38,7 @@
 #include "prims/unsafe.hpp"
 #include "runtime/arguments.hpp"
 #include "runtime/handles.inline.hpp"
+#include "runtime/interfaceSupport.inline.hpp"
 #include "runtime/javaCalls.hpp"
 #include "runtime/os.inline.hpp"
 #include "runtime/sharedRuntime.hpp"
@@ -138,7 +139,7 @@ static JNINativeMethod lookup_special_native_methods[] = {
 #endif
 };
 
-static address lookup_special_native(char* jni_name) {
+static address lookup_special_native(const char* jni_name) {
   int count = sizeof(lookup_special_native_methods) / sizeof(JNINativeMethod);
   for (int i = 0; i < count; i++) {
     // NB: To ignore the jni prefix and jni postfix strstr is used matching.
@@ -151,13 +152,8 @@ static address lookup_special_native(char* jni_name) {
 
 address NativeLookup::lookup_style(const methodHandle& method, char* pure_name, const char* long_name, int args_size, bool os_style, bool& in_base_library, TRAPS) {
   address entry;
-  // Compute complete JNI name for style
-  stringStream st;
-  if (os_style) os::print_jni_name_prefix_on(&st, args_size);
-  st.print_raw(pure_name);
-  st.print_raw(long_name);
-  if (os_style) os::print_jni_name_suffix_on(&st, args_size);
-  char* jni_name = st.as_string();
+  const char* jni_name = compute_complete_jni_name(pure_name, long_name, args_size, os_style);
+
 
   // If the loader is null we have a system class, so we attempt a lookup in
   // the native Java library. This takes care of any bootstrapping problems.
@@ -205,40 +201,26 @@ address NativeLookup::lookup_style(const methodHandle& method, char* pure_name, 
   return entry;
 }
 
-
-address NativeLookup::lookup_critical_style(const methodHandle& method, char* pure_name, const char* long_name, int args_size, bool os_style) {
-  if (!method->has_native_function()) {
-    return NULL;
+const char* NativeLookup::compute_complete_jni_name(const char* pure_name, const char* long_name, int args_size, bool os_style) {
+  stringStream st;
+  if (os_style) {
+    os::print_jni_name_prefix_on(&st, args_size);
   }
 
-  address current_entry = method->native_function();
-
-  char dll_name[JVM_MAXPATHLEN];
-  int offset;
-  if (os::dll_address_to_library_name(current_entry, dll_name, sizeof(dll_name), &offset)) {
-    char ebuf[32];
-    void* dll = os::dll_load(dll_name, ebuf, sizeof(ebuf));
-    if (dll != NULL) {
-      // Compute complete JNI name for style
-      stringStream st;
-      if (os_style) os::print_jni_name_prefix_on(&st, args_size);
-      st.print_raw(pure_name);
-      st.print_raw(long_name);
-      if (os_style) os::print_jni_name_suffix_on(&st, args_size);
-      char* jni_name = st.as_string();
-      address critical_entry = (address)os::dll_lookup(dll, jni_name);
-      // Close the handle to avoid keeping the library alive if the native method holder is unloaded.
-      // This is fine because the library is still kept alive by JNI (see JVM_LoadLibrary). As soon
-      // as the holder class and the library are unloaded (see JVM_UnloadLibrary), the native wrapper
-      // that calls 'critical_entry' becomes unreachable and is unloaded as well.
-      os::dll_unload(dll);
-      return critical_entry;
-    }
+  st.print_raw(pure_name);
+  st.print_raw(long_name);
+  if (os_style) {
+    os::print_jni_name_suffix_on(&st, args_size);
   }
 
-  return NULL;
+  return st.as_string();
 }
 
+address NativeLookup::lookup_critical_style(void* dll, const char* pure_name, const char* long_name, int args_size, bool os_style) {
+  const char* jni_name = compute_complete_jni_name(pure_name, long_name, args_size, os_style);
+  assert(dll != NULL, "dll must be loaded");
+  return (address)os::dll_lookup(dll, jni_name);
+}
 
 // Check all the formats of native implementation name to see if there is one
 // for the specified method.
@@ -277,7 +259,7 @@ address NativeLookup::lookup_entry(const methodHandle& method, bool& in_base_lib
 // Check all the formats of native implementation name to see if there is one
 // for the specified method.
 address NativeLookup::lookup_critical_entry(const methodHandle& method) {
-  if (!CriticalJNINatives) return NULL;
+  assert(CriticalJNINatives, "or should not be here");
 
   if (method->is_synchronized() ||
       !method->is_static()) {
@@ -286,7 +268,6 @@ address NativeLookup::lookup_critical_entry(const methodHandle& method) {
   }
 
   ResourceMark rm;
-  address entry = NULL;
 
   Symbol* signature = method->signature();
   for (int end = 0; end < signature->utf8_length(); end++) {
@@ -296,9 +277,6 @@ address NativeLookup::lookup_critical_entry(const methodHandle& method) {
     }
   }
 
-  // Compute critical name
-  char* critical_name = critical_jni_name(method);
-
   // Compute argument size
   int args_size = method->size_of_parameters();
   for (SignatureStream ss(signature); !ss.at_return_type(); ss.next()) {
@@ -307,25 +285,66 @@ address NativeLookup::lookup_critical_entry(const methodHandle& method) {
     }
   }
 
-  // 1) Try JNI short style
-  entry = lookup_critical_style(method, critical_name, "",        args_size, true);
-  if (entry != NULL) return entry;
+  // dll handling requires I/O. Don't do that while in _thread_in_vm (safepoint may get requested).
+  ThreadToNativeFromVM thread_in_native(JavaThread::current());
 
-  // Compute long name
-  char* long_name = long_jni_name(method);
+  void* dll = dll_load(method);
+  address entry = NULL;
 
-  // 2) Try JNI long style
-  entry = lookup_critical_style(method, critical_name, long_name, args_size, true);
-  if (entry != NULL) return entry;
-
-  // 3) Try JNI short style without os prefix/suffix
-  entry = lookup_critical_style(method, critical_name, "",        args_size, false);
-  if (entry != NULL) return entry;
-
-  // 4) Try JNI long style without os prefix/suffix
-  entry = lookup_critical_style(method, critical_name, long_name, args_size, false);
+  if (dll != NULL) {
+    entry = lookup_critical_style(dll, method, args_size);
+    // Close the handle to avoid keeping the library alive if the native method holder is unloaded.
+    // This is fine because the library is still kept alive by JNI (see JVM_LoadLibrary). As soon
+    // as the holder class and the library are unloaded (see JVM_UnloadLibrary), the native wrapper
+    // that calls 'critical_entry' becomes unreachable and is unloaded as well.
+    os::dll_unload(dll);
+  }
 
   return entry; // NULL indicates not found
+}
+
+void* NativeLookup::dll_load(const methodHandle& method) {
+  if (method->has_native_function()) {
+
+    address current_entry = method->native_function();
+
+    char dll_name[JVM_MAXPATHLEN];
+    int offset;
+    if (os::dll_address_to_library_name(current_entry, dll_name, sizeof(dll_name), &offset)) {
+      char ebuf[32];
+      return os::dll_load(dll_name, ebuf, sizeof(ebuf));
+    }
+  }
+
+  return NULL;
+}
+
+address NativeLookup::lookup_critical_style(void* dll, const methodHandle& method, int args_size) {
+  address entry = NULL;
+  const char* critical_name = critical_jni_name(method);
+
+  // 1) Try JNI short style
+  entry = lookup_critical_style(dll, critical_name, "",        args_size, true);
+  if (entry != NULL) {
+    return entry;
+  }
+
+  const char* long_name = long_jni_name(method);
+
+  // 2) Try JNI long style
+  entry = lookup_critical_style(dll, critical_name, long_name, args_size, true);
+  if (entry != NULL) {
+    return entry;
+  }
+
+  // 3) Try JNI short style without os prefix/suffix
+  entry = lookup_critical_style(dll, critical_name, "",        args_size, false);
+  if (entry != NULL) {
+    return entry;
+  }
+
+  // 4) Try JNI long style without os prefix/suffix
+  return lookup_critical_style(dll, critical_name, long_name, args_size, false);
 }
 
 // Check if there are any JVM TI prefixes which have been applied to the native method name.

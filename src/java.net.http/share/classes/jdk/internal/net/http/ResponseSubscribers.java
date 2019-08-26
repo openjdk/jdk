@@ -438,6 +438,10 @@ public class ResponseSubscribers {
 
         @Override
         public int read(byte[] bytes, int off, int len) throws IOException {
+            Objects.checkFromIndexSize(off, len, bytes.length);
+            if (len == 0) {
+                return 0;
+            }
             // get the buffer to read from, possibly blocking if
             // none is available
             ByteBuffer buffer;

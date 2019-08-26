@@ -111,39 +111,41 @@ public class HotSpotGraalCompiler implements GraalJVMCICompiler, Cancellable {
 
     @SuppressWarnings("try")
     CompilationRequestResult compileMethod(CompilationRequest request, boolean installAsDefault, OptionValues initialOptions) {
-        if (graalRuntime.isShutdown()) {
-            return HotSpotCompilationRequestResult.failure(String.format("Shutdown entered"), true);
-        }
-
-        ResolvedJavaMethod method = request.getMethod();
-
-        if (graalRuntime.isBootstrapping()) {
-            if (DebugOptions.BootstrapInitializeOnly.getValue(initialOptions)) {
-                return HotSpotCompilationRequestResult.failure(String.format("Skip compilation because %s is enabled", DebugOptions.BootstrapInitializeOnly.getName()), true);
+        try (CompilationContext scope = HotSpotGraalServices.openLocalCompilationContext(request)) {
+            if (graalRuntime.isShutdown()) {
+                return HotSpotCompilationRequestResult.failure(String.format("Shutdown entered"), true);
             }
-            if (bootstrapWatchDog != null) {
-                if (bootstrapWatchDog.hitCriticalCompilationRateOrTimeout()) {
-                    // Drain the compilation queue to expedite completion of the bootstrap
-                    return HotSpotCompilationRequestResult.failure("hit critical bootstrap compilation rate or timeout", true);
+
+            ResolvedJavaMethod method = request.getMethod();
+
+            if (graalRuntime.isBootstrapping()) {
+                if (DebugOptions.BootstrapInitializeOnly.getValue(initialOptions)) {
+                    return HotSpotCompilationRequestResult.failure(String.format("Skip compilation because %s is enabled", DebugOptions.BootstrapInitializeOnly.getName()), true);
+                }
+                if (bootstrapWatchDog != null) {
+                    if (bootstrapWatchDog.hitCriticalCompilationRateOrTimeout()) {
+                        // Drain the compilation queue to expedite completion of the bootstrap
+                        return HotSpotCompilationRequestResult.failure("hit critical bootstrap compilation rate or timeout", true);
+                    }
                 }
             }
-        }
-        HotSpotCompilationRequest hsRequest = (HotSpotCompilationRequest) request;
-        CompilationTask task = new CompilationTask(jvmciRuntime, this, hsRequest, true, shouldRetainLocalVariables(hsRequest.getJvmciEnv()), installAsDefault);
-        OptionValues options = task.filterOptions(initialOptions);
-        try (CompilationWatchDog w1 = CompilationWatchDog.watch(method, hsRequest.getId(), options);
-                        BootstrapWatchDog.Watch w2 = bootstrapWatchDog == null ? null : bootstrapWatchDog.watch(request);
-                        CompilationAlarm alarm = CompilationAlarm.trackCompilationPeriod(options);) {
-            if (compilationCounters != null) {
-                compilationCounters.countCompilation(method);
+            HotSpotCompilationRequest hsRequest = (HotSpotCompilationRequest) request;
+            CompilationTask task = new CompilationTask(jvmciRuntime, this, hsRequest, true, shouldRetainLocalVariables(hsRequest.getJvmciEnv()), installAsDefault);
+            OptionValues options = task.filterOptions(initialOptions);
+            try (CompilationWatchDog w1 = CompilationWatchDog.watch(method, hsRequest.getId(), options);
+                            BootstrapWatchDog.Watch w2 = bootstrapWatchDog == null ? null : bootstrapWatchDog.watch(request);
+                            CompilationAlarm alarm = CompilationAlarm.trackCompilationPeriod(options);) {
+                if (compilationCounters != null) {
+                    compilationCounters.countCompilation(method);
+                }
+                CompilationRequestResult r = null;
+                try (DebugContext debug = graalRuntime.openDebugContext(options, task.getCompilationIdentifier(), method, getDebugHandlersFactories(), DebugContext.DEFAULT_LOG_STREAM);
+                                Activation a = debug.activate()) {
+                    r = task.runCompilation(debug);
+                }
+                assert r != null;
+                return r;
             }
-            CompilationRequestResult r = null;
-            try (DebugContext debug = graalRuntime.openDebugContext(options, task.getCompilationIdentifier(), method, getDebugHandlersFactories(), DebugContext.DEFAULT_LOG_STREAM);
-                            Activation a = debug.activate()) {
-                r = task.runCompilation(debug);
-            }
-            assert r != null;
-            return r;
         }
     }
 

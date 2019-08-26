@@ -685,7 +685,7 @@ public class Checker extends DocTreePathScanner<Void, Void> {
 
         // TODO: basic check on value
 
-        return super.visitAttribute(tree, ignore);
+        return null;
     }
 
     private void validateHtml4Attrs(AttributeTree tree, Name name, AttrKind k) {

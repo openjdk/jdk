@@ -313,8 +313,8 @@ public class CompressedOopTest extends GraalCompilerTest {
         Assert.assertTrue(buffer.length() == 28);
         String a = new String("TestTestTestTestTestTestTest");
         installedBenchmarkCode.executeVarargs(buffer, a.toCharArray());
-        Assert.assertTrue(buffer.length() == 56);
-        Assert.assertTrue(buffer.toString().equals("TestTestTestTestTestTestTestTestTestTestTestTestTestTest"));
+        Assert.assertEquals(56, buffer.length());
+        Assert.assertEquals("TestTestTestTestTestTestTestTestTestTestTestTestTestTest", buffer.toString());
     }
 
     public static void stringBuilderTest(Object c1, Object c2) {
@@ -339,8 +339,8 @@ public class CompressedOopTest extends GraalCompilerTest {
         for (int i = 0; i < add.length; i++) {
             buffer.append(add[i]);
         }
-        Assert.assertTrue(buffer.length() == 56);
-        Assert.assertTrue(buffer.toString().equals("TestTestTestTestTestTestTestTestTestTestTestTestTestTest"));
+        Assert.assertEquals(56, buffer.length());
+        Assert.assertEquals("TestTestTestTestTestTestTestTestTestTestTestTestTestTest", buffer.toString());
     }
 
     @Test
@@ -356,8 +356,8 @@ public class CompressedOopTest extends GraalCompilerTest {
         char[] dst = new char[buffer.length() * 2];
         System.arraycopy(buffer.toString().toCharArray(), 0, dst, 0, buffer.length());
         System.arraycopy(a.toCharArray(), 0, dst, buffer.length(), buffer.length());
-        Assert.assertTrue(dst.length == 56);
-        Assert.assertTrue(new String(dst).equals("TestTestTestTestTestTestTestTestTestTestTestTestTestTest"));
+        Assert.assertEquals(56, dst.length);
+        Assert.assertEquals("TestTestTestTestTestTestTestTestTestTestTestTestTestTest", new String(dst));
     }
 
     @Test

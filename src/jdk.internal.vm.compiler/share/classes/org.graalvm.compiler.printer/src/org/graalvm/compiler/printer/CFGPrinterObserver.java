@@ -211,12 +211,14 @@ public class CFGPrinterObserver implements DebugDumpHandler {
             } else if (object instanceof StructuredGraph) {
                 if (cfgPrinter.cfg == null) {
                     StructuredGraph graph = (StructuredGraph) object;
-                    cfgPrinter.cfg = ControlFlowGraph.compute(graph, true, true, true, false);
-                    cfgPrinter.printCFG(message, cfgPrinter.cfg.getBlocks(), true);
-                } else {
+                    ScheduleResult scheduleResult = GraalDebugHandlersFactory.tryGetSchedule(debug, graph);
+                    if (scheduleResult != null) {
+                        cfgPrinter.cfg = scheduleResult.getCFG();
+                    }
+                }
+                if (cfgPrinter.cfg != null) {
                     cfgPrinter.printCFG(message, cfgPrinter.cfg.getBlocks(), true);
                 }
-
             } else if (object instanceof CompilationResult) {
                 final CompilationResult compResult = (CompilationResult) object;
                 cfgPrinter.printMachineCode(disassemble(codeCache, compResult, null), message);

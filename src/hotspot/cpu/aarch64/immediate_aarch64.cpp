@@ -23,7 +23,6 @@
  */
 
 #include <stdlib.h>
-#include "decode_aarch64.hpp"
 #include "immediate_aarch64.hpp"
 
 // there are at most 2^13 possible logical immediate encodings
@@ -69,12 +68,57 @@ static inline u_int64_t ones(int N)
   return (N == 64 ? (u_int64_t)-1UL : ((1UL << N) - 1));
 }
 
+/*
+ * bit twiddling helpers for instruction decode
+ */
+
+// 32 bit mask with bits [hi,...,lo] set
+static inline u_int32_t mask32(int hi = 31, int lo = 0)
+{
+  int nbits = (hi + 1) - lo;
+  return ((1 << nbits) - 1) << lo;
+}
+
+static inline u_int64_t mask64(int hi = 63, int lo = 0)
+{
+  int nbits = (hi + 1) - lo;
+  return ((1L << nbits) - 1) << lo;
+}
+
+// pick bits [hi,...,lo] from val
+static inline u_int32_t pick32(u_int32_t val, int hi = 31, int lo = 0)
+{
+  return (val & mask32(hi, lo));
+}
+
+// pick bits [hi,...,lo] from val
+static inline u_int64_t pick64(u_int64_t val, int hi = 31, int lo = 0)
+{
+  return (val & mask64(hi, lo));
+}
+
+// mask [hi,lo] and shift down to start at bit 0
+static inline u_int32_t pickbits32(u_int32_t val, int hi = 31, int lo = 0)
+{
+  return (pick32(val, hi, lo) >> lo);
+}
+
+// mask [hi,lo] and shift down to start at bit 0
+static inline u_int64_t pickbits64(u_int64_t val, int hi = 63, int lo = 0)
+{
+  return (pick64(val, hi, lo) >> lo);
+}
+
 // result<0> to val<N>
 static inline u_int64_t pickbit(u_int64_t val, int N)
 {
   return pickbits64(val, N, N);
 }
 
+static inline u_int32_t uimm(u_int32_t val, int hi, int lo)
+{
+  return pickbits32(val, hi, lo);
+}
 
 // SPEC bits(M*N) Replicate(bits(M) x, integer N);
 // this is just an educated guess

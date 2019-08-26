@@ -35,6 +35,8 @@
  * @run main/manual/othervm Compatibility
  */
 
+import static java.nio.charset.StandardCharsets.UTF_8;
+
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileOutputStream;
@@ -43,12 +45,12 @@ import java.io.FileWriter;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.io.PrintStream;
-import java.nio.file.Path;
 import java.nio.file.Files;
+import java.nio.file.Path;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
-import java.util.Arrays;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Calendar;
 import java.util.Date;
 import java.util.HashMap;
@@ -57,18 +59,17 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.TimeUnit;
 import java.util.function.Consumer;
 import java.util.function.Function;
-import java.util.jar.Manifest;
 import java.util.jar.Attributes.Name;
-import java.util.concurrent.TimeUnit;
+import java.util.jar.Manifest;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
+
 import jdk.test.lib.process.OutputAnalyzer;
 import jdk.test.lib.process.ProcessTools;
 import jdk.test.lib.util.JarUtils;
-
-import static java.nio.charset.StandardCharsets.UTF_8;
 
 public class Compatibility {
 
@@ -179,7 +180,7 @@ public class Compatibility {
         List<SignItem> signItems =
                 test(jdkInfoList, tsaList, certList, createJars());
 
-        boolean failed = generateReport(tsaList, signItems);
+        boolean failed = generateReport(jdkInfoList, tsaList, signItems);
 
         // Restores the original stdout and stderr.
         System.setOut(origStdOut);
@@ -415,11 +416,15 @@ public class Compatibility {
         }
 
         List<JdkInfo> jdkInfoList = new ArrayList<>();
+        int index = 0;
         for (String jdkPath : jdkList) {
             JdkInfo jdkInfo = "TEST_JDK".equalsIgnoreCase(jdkPath) ?
                     TEST_JDK_INFO : new JdkInfo(jdkPath);
             // The JDK version must be unique.
             if (!jdkInfoList.contains(jdkInfo)) {
+                jdkInfo.index = index++;
+                jdkInfo.version = String.format(
+                        "%s(%d)", jdkInfo.version, jdkInfo.index);
                 jdkInfoList.add(jdkInfo);
             } else {
                 System.out.println("The JDK version is duplicate: " + jdkPath);
@@ -908,13 +913,22 @@ public class Compatibility {
     }
 
     // Generates the test result report.
-    private static boolean generateReport(List<TsaInfo> tsaList,
+    private static boolean generateReport(List<JdkInfo> jdkList, List<TsaInfo> tsaList,
             List<SignItem> signItems) throws IOException {
         System.out.println("Report is being generated...");
 
         StringBuilder report = new StringBuilder();
         report.append(HtmlHelper.startHtml());
         report.append(HtmlHelper.startPre());
+
+        // Generates JDK list
+        report.append("JDK list:\n");
+        for(JdkInfo jdkInfo : jdkList) {
+            report.append(String.format("%d=%s%n",
+                    jdkInfo.index,
+                    jdkInfo.runtimeVersion));
+        }
+
         // Generates TSA URLs
         report.append("TSA list:\n");
         for(TsaInfo tsaInfo : tsaList) {
@@ -1024,9 +1038,11 @@ public class Compatibility {
 
     private static class JdkInfo {
 
+        private int index;
         private final String jdkPath;
         private final String jarsignerPath;
-        private final String version;
+        private final String runtimeVersion;
+        private String version;
         private final int majorVersion;
         private final boolean supportsTsadigestalg;
 
@@ -1034,14 +1050,15 @@ public class Compatibility {
 
         private JdkInfo(String jdkPath) throws Throwable {
             this.jdkPath = jdkPath;
-            version = execJdkUtils(jdkPath, JdkUtils.M_JAVA_RUNTIME_VERSION);
-            if (version == null || version.isBlank()) {
+            jarsignerPath = jarsignerPath(jdkPath);
+            runtimeVersion = execJdkUtils(jdkPath, JdkUtils.M_JAVA_RUNTIME_VERSION);
+            if (runtimeVersion == null || runtimeVersion.isBlank()) {
                 throw new RuntimeException(
                         "Cannot determine the JDK version: " + jdkPath);
             }
-            majorVersion = Integer.parseInt((version.matches("^1[.].*") ?
-                 version.substring(2) : version).replaceAll("[^0-9].*$", ""));
-            jarsignerPath = jarsignerPath(jdkPath);
+            version = execJdkUtils(jdkPath, JdkUtils.M_JAVA_VERSION);
+            majorVersion = Integer.parseInt((runtimeVersion.matches("^1[.].*") ?
+                    runtimeVersion.substring(2) : runtimeVersion).replaceAll("[^0-9].*$", ""));
             supportsTsadigestalg = execTool(jarsignerPath, "-help")
                     .getOutput().contains("-tsadigestalg");
         }
@@ -1073,7 +1090,7 @@ public class Compatibility {
             final int prime = 31;
             int result = 1;
             result = prime * result
-                    + ((version == null) ? 0 : version.hashCode());
+                    + ((runtimeVersion == null) ? 0 : runtimeVersion.hashCode());
             return result;
         }
 
@@ -1086,17 +1103,17 @@ public class Compatibility {
             if (getClass() != obj.getClass())
                 return false;
             JdkInfo other = (JdkInfo) obj;
-            if (version == null) {
-                if (other.version != null)
+            if (runtimeVersion == null) {
+                if (other.runtimeVersion != null)
                     return false;
-            } else if (!version.equals(other.version))
+            } else if (!runtimeVersion.equals(other.runtimeVersion))
                 return false;
             return true;
         }
 
         @Override
         public String toString() {
-            return "JdkInfo[" + version + ", " + jdkPath + "]";
+            return "JdkInfo[" + runtimeVersion + ", " + jdkPath + "]";
         }
     }
 

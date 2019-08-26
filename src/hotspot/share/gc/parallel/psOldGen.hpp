@@ -198,7 +198,6 @@ class PSOldGen : public CHeapObj<mtGC> {
   // Debugging - do not use for time critical operations
   virtual void print() const;
   virtual void print_on(outputStream* st) const;
-  void print_used_change(size_t prev_used) const;
 
   void verify();
   void verify_object_start_array();

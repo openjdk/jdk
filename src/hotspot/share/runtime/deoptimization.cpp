@@ -1252,15 +1252,15 @@ void Deoptimization::relock_objects(GrowableArray<MonitorInfo*>* monitors, JavaT
       assert(!mon_info->owner_is_scalar_replaced() || realloc_failures, "reallocation was missed");
       if (!mon_info->owner_is_scalar_replaced()) {
         Handle obj(thread, mon_info->owner());
-        markOop mark = obj->mark();
-        if (UseBiasedLocking && mark->has_bias_pattern()) {
+        markWord mark = obj->mark();
+        if (UseBiasedLocking && mark.has_bias_pattern()) {
           // New allocated objects may have the mark set to anonymously biased.
           // Also the deoptimized method may called methods with synchronization
           // where the thread-local object is bias locked to the current thread.
-          assert(mark->is_biased_anonymously() ||
-                 mark->biased_locker() == thread, "should be locked to current thread");
+          assert(mark.is_biased_anonymously() ||
+                 mark.biased_locker() == thread, "should be locked to current thread");
           // Reset mark word to unbiased prototype.
-          markOop unbiased_prototype = markOopDesc::prototype()->set_age(mark->age());
+          markWord unbiased_prototype = markWord::prototype().set_age(mark.age());
           obj->set_mark(unbiased_prototype);
         }
         BasicLock* lock = mon_info->lock();

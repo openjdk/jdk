@@ -26,6 +26,7 @@ package jdk.test.lib.containers.cgroup;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
+import java.math.BigInteger;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -157,7 +158,24 @@ public class MetricsTester {
 
     private static long getLongValueFromFile(SubSystem subSystem, String fileName) {
         String data = getFileContents(subSystem, fileName);
-        return data.isEmpty() ? 0L : Long.parseLong(data);
+        return data.isEmpty() ? 0L : convertStringToLong(data);
+    }
+
+    private static long convertStringToLong(String strval) {
+        long retval = 0;
+        if (strval == null) return 0L;
+
+        try {
+            retval = Long.parseLong(strval);
+        } catch (NumberFormatException e) {
+            // For some properties (e.g. memory.limit_in_bytes) we may overflow the range of signed long.
+            // In this case, return Long.MAX_VALUE
+            BigInteger b = new BigInteger(strval);
+            if (b.compareTo(BigInteger.valueOf(Long.MAX_VALUE)) > 0) {
+                return Long.MAX_VALUE;
+            }
+        }
+        return retval;
     }
 
     private static long getLongValueFromFile(SubSystem subSystem, String metric, String subMetric) {
@@ -165,7 +183,8 @@ public class MetricsTester {
         String[] tokens = stats.split("[\\r\\n]+");
         for (int i = 0; i < tokens.length; i++) {
             if (tokens[i].startsWith(subMetric)) {
-                return Long.parseLong(tokens[i].split("\\s+")[1]);
+                String strval = tokens[i].split("\\s+")[1];
+                return convertStringToLong(strval);
             }
         }
         return 0L;

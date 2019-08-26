@@ -64,9 +64,6 @@ private:
 
   address generate_shenandoah_lrb(StubCodeGenerator* cgen);
 
-  void save_vector_registers(MacroAssembler* masm);
-  void restore_vector_registers(MacroAssembler* masm);
-
 public:
   static address shenandoah_lrb();
 
@@ -75,6 +72,7 @@ public:
   void gen_pre_barrier_stub(LIR_Assembler* ce, ShenandoahPreBarrierStub* stub);
   void gen_load_reference_barrier_stub(LIR_Assembler* ce, ShenandoahLoadReferenceBarrierStub* stub);
   void generate_c1_pre_barrier_runtime_stub(StubAssembler* sasm);
+  void generate_c1_load_reference_barrier_runtime_stub(StubAssembler* sasm);
 #endif
 
   void load_reference_barrier(MacroAssembler* masm, Register dst);
@@ -91,6 +89,8 @@ public:
                        Register dst, Address src, Register tmp1, Register tmp_thread);
   virtual void store_at(MacroAssembler* masm, DecoratorSet decorators, BasicType type,
                         Address dst, Register val, Register tmp1, Register tmp2);
+  virtual void try_resolve_jobject_in_native(MacroAssembler* masm, Register jni_env,
+                                             Register obj, Register tmp, Label& slowpath);
 
   virtual void barrier_stubs_init();
 

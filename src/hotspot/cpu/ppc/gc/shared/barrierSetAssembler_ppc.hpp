@@ -49,6 +49,9 @@ public:
 
   virtual void resolve_jobject(MacroAssembler* masm, Register value, Register tmp1, Register tmp2, bool needs_frame);
 
+  virtual void try_resolve_jobject_in_native(MacroAssembler* masm, Register dst, Register jni_env,
+                                             Register obj, Register tmp, Label& slowpath);
+
   virtual void barrier_stubs_init() {}
 };
 

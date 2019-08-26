@@ -62,6 +62,11 @@ public final class GuardProxyNode extends ProxyNode implements GuardingNode, Pro
     }
 
     @Override
+    public PhiNode createPhi(AbstractMergeNode merge) {
+        return graph().addWithoutUnique(new GuardPhiNode(merge));
+    }
+
+    @Override
     public Node getOriginalNode() {
         return (value == null ? null : value.asNode());
     }

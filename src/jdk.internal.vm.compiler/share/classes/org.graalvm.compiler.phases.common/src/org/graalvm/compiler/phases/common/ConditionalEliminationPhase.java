@@ -175,14 +175,9 @@ public class ConditionalEliminationPhase extends BasePhase<CoreProviders> {
             AbstractBeginNode beginNode = b.getBeginNode();
             if (beginNode instanceof AbstractMergeNode && anchorBlock != b) {
                 AbstractMergeNode mergeNode = (AbstractMergeNode) beginNode;
-                for (GuardNode guard : mergeNode.guards().snapshot()) {
-                    try (DebugCloseable closeable = guard.withNodeSourcePosition()) {
-                        GuardNode newlyCreatedGuard = new GuardNode(guard.getCondition(), anchorBlock.getBeginNode(), guard.getReason(), guard.getAction(), guard.isNegated(), guard.getSpeculation(),
-                                        guard.getNoDeoptSuccessorPosition());
-                        GuardNode newGuard = mergeNode.graph().unique(newlyCreatedGuard);
-                        guard.replaceAndDelete(newGuard);
-                    }
-                }
+                mergeNode.replaceAtUsages(InputType.Anchor, anchorBlock.getBeginNode());
+                mergeNode.replaceAtUsages(InputType.Guard, anchorBlock.getBeginNode());
+                assert mergeNode.anchored().isEmpty();
             }
 
             FixedNode endNode = b.getEndNode();

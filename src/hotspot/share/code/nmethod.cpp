@@ -1313,7 +1313,7 @@ bool nmethod::make_not_entrant_or_zombie(int state) {
   nmethodLocker nml(this);
   methodHandle the_method(method());
   // This can be called while the system is already at a safepoint which is ok
-  NoSafepointVerifier nsv(true, !SafepointSynchronize::is_at_safepoint());
+  NoSafepointVerifier nsv;
 
   // during patching, depending on the nmethod state we must notify the GC that
   // code has been unloaded, unregistering it. We cannot do this right while
@@ -2268,7 +2268,6 @@ void nmethod::verify_interrupt_point(address call_site) {
   if (!is_not_installed()) {
     if (CompiledICLocker::is_safe(this)) {
       CompiledIC_at(this, call_site);
-      CHECK_UNHANDLED_OOPS_ONLY(Thread::current()->clear_unhandled_oops());
     } else {
       CompiledICLocker ml_verify(this);
       CompiledIC_at(this, call_site);

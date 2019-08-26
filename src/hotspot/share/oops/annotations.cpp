@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -86,7 +86,7 @@ void Annotations::metaspace_pointers_do(MetaspaceClosure* it) {
 }
 
 void Annotations::print_value_on(outputStream* st) const {
-  st->print("Anotations(" INTPTR_FORMAT ")", p2i(this));
+  st->print("Annotations(" INTPTR_FORMAT ")", p2i(this));
 }
 
 #if INCLUDE_SERVICES

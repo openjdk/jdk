@@ -116,10 +116,33 @@
 # was the first nationwide legal time standard, and apparently
 # time was just called "Standard Time" or "Daylight Saving Time".
 
-# From Arthur David Olson:
-# US Daylight Saving Time ended on the last Sunday of *October* in 1974.
-# See, for example, the front page of the Saturday, 1974-10-26
-# and Sunday, 1974-10-27 editions of the Washington Post.
+# From Paul Eggert (2019-06-04):
+# Here is the legal basis for the US federal rules.
+# * Public Law 65-106 (1918-03-19) implemented standard and daylight saving
+#   time for the first time across the US, springing forward on March's last
+#   Sunday and falling back on October's last Sunday.
+#   https://www.loc.gov/law/help/statutes-at-large/65th-congress/session-2/c65s2ch24.pdf
+# * Public Law 66-40 (1919-08-20) repealed DST on October 1919's last Sunday.
+#   https://www.loc.gov/law/help/statutes-at-large/66th-congress/session-1/c66s1ch51.pdf
+# * Public Law 77-403 (1942-01-20) started wartime DST on 1942-02-09.
+#   https://www.loc.gov/law/help/statutes-at-large/77th-congress/session-2/c77s2ch7.pdf
+# * Public Law 79-187 (1945-09-25) ended wartime DST on 1945-09-30.
+#   https://www.loc.gov/law/help/statutes-at-large/79th-congress/session-1/c79s1ch388.pdf
+# * Public Law 89-387 (1966-04-13) reinstituted a national standard for DST,
+#   from April's last Sunday to October's last Sunday, effective 1967.
+#   https://www.govinfo.gov/content/pkg/STATUTE-80/pdf/STATUTE-80-Pg107.pdf
+# * Public Law 93-182 (1973-12-15) moved the 1974 spring-forward to 01-06.
+#   https://www.govinfo.gov/content/pkg/STATUTE-87/pdf/STATUTE-87-Pg707.pdf
+# * Public Law 93-434 (1974-10-05) moved the 1975 spring-forward to
+#   February's last Sunday.
+#   https://www.govinfo.gov/content/pkg/STATUTE-88/pdf/STATUTE-88-Pg1209.pdf
+# * Public Law 99-359 (1986-07-08) moved the spring-forward to April's first
+#   Sunday.
+#   https://www.govinfo.gov/content/pkg/STATUTE-100/pdf/STATUTE-100-Pg764.pdf
+# * Public Law 109-58 (2005-08-08), effective 2007, moved the spring-forward
+#   to March's second Sunday and the fall-back to November's first Sunday.
+#   https://www.govinfo.gov/content/pkg/PLAW-109publ58/pdf/PLAW-109publ58.pdf
+# All transitions are at 02:00 local time.
 
 # From Arthur David Olson:
 # Before the Uniform Time Act of 1966 took effect in 1967, observance of
@@ -175,11 +198,11 @@ Rule	US	1918	1919	-	Mar	lastSun	2:00	1:00	D
 Rule	US	1918	1919	-	Oct	lastSun	2:00	0	S
 Rule	US	1942	only	-	Feb	9	2:00	1:00	W # War
 Rule	US	1945	only	-	Aug	14	23:00u	1:00	P # Peace
-Rule	US	1945	only	-	Sep	lastSun	2:00	0	S
+Rule	US	1945	only	-	Sep	30	2:00	0	S
 Rule	US	1967	2006	-	Oct	lastSun	2:00	0	S
 Rule	US	1967	1973	-	Apr	lastSun	2:00	1:00	D
 Rule	US	1974	only	-	Jan	6	2:00	1:00	D
-Rule	US	1975	only	-	Feb	23	2:00	1:00	D
+Rule	US	1975	only	-	Feb	lastSun	2:00	1:00	D
 Rule	US	1976	1986	-	Apr	lastSun	2:00	1:00	D
 Rule	US	1987	2006	-	Apr	Sun>=1	2:00	1:00	D
 Rule	US	2007	max	-	Mar	Sun>=8	2:00	1:00	D
@@ -196,7 +219,7 @@ Rule	US	2007	max	-	Nov	Sun>=1	2:00	0	S
 # increase the chances that they'll actually get compiled and to
 # avoid the need to duplicate the US rules in another file.
 
-# Zone	NAME		GMTOFF	RULES	FORMAT	[UNTIL]
+# Zone	NAME		STDOFF	RULES	FORMAT	[UNTIL]
 Zone	EST		 -5:00	-	EST
 Zone	MST		 -7:00	-	MST
 Zone	HST		-10:00	-	HST
@@ -353,7 +376,7 @@ Rule	NYC	1920	only	-	Oct	lastSun	2:00	0	S
 Rule	NYC	1921	1966	-	Apr	lastSun	2:00	1:00	D
 Rule	NYC	1921	1954	-	Sep	lastSun	2:00	0	S
 Rule	NYC	1955	1966	-	Oct	lastSun	2:00	0	S
-# Zone	NAME		GMTOFF	RULES	FORMAT	[UNTIL]
+# Zone	NAME		STDOFF	RULES	FORMAT	[UNTIL]
 Zone America/New_York	-4:56:02 -	LMT	1883 Nov 18 12:03:58
 			-5:00	US	E%sT	1920
 			-5:00	NYC	E%sT	1942
@@ -413,7 +436,7 @@ Rule	Chicago	1921	only	-	Mar	lastSun	2:00	1:00	D
 Rule	Chicago	1922	1966	-	Apr	lastSun	2:00	1:00	D
 Rule	Chicago	1922	1954	-	Sep	lastSun	2:00	0	S
 Rule	Chicago	1955	1966	-	Oct	lastSun	2:00	0	S
-# Zone	NAME		GMTOFF	RULES	FORMAT	[UNTIL]
+# Zone	NAME		STDOFF	RULES	FORMAT	[UNTIL]
 Zone America/Chicago	-5:50:36 -	LMT	1883 Nov 18 12:09:24
 			-6:00	US	C%sT	1920
 			-6:00	Chicago	C%sT	1936 Mar  1  2:00
@@ -481,7 +504,7 @@ Rule	Denver	1920	only	-	Oct	lastSun	2:00	0	S
 Rule	Denver	1921	only	-	May	22	2:00	0	S
 Rule	Denver	1965	1966	-	Apr	lastSun	2:00	1:00	D
 Rule	Denver	1965	1966	-	Oct	lastSun	2:00	0	S
-# Zone	NAME		GMTOFF	RULES	FORMAT	[UNTIL]
+# Zone	NAME		STDOFF	RULES	FORMAT	[UNTIL]
 Zone America/Denver	-6:59:56 -	LMT	1883 Nov 18 12:00:04
 			-7:00	US	M%sT	1920
 			-7:00	Denver	M%sT	1942
@@ -534,7 +557,7 @@ Rule	CA	1949	only	-	Jan	 1	2:00	0	S
 Rule	CA	1950	1966	-	Apr	lastSun	1:00	1:00	D
 Rule	CA	1950	1961	-	Sep	lastSun	2:00	0	S
 Rule	CA	1962	1966	-	Oct	lastSun	2:00	0	S
-# Zone	NAME		GMTOFF	RULES	FORMAT	[UNTIL]
+# Zone	NAME		STDOFF	RULES	FORMAT	[UNTIL]
 Zone America/Los_Angeles -7:52:58 -	LMT	1883 Nov 18 12:07:02
 			-8:00	US	P%sT	1946
 			-8:00	CA	P%sT	1967
@@ -642,7 +665,7 @@ Zone America/Los_Angeles -7:52:58 -	LMT	1883 Nov 18 12:07:02
 # So they won't be waiting for Alaska to join them on 2019-03-10, but will
 # rather change their clocks twice in seven weeks.
 
-# Zone	NAME		GMTOFF	RULES	FORMAT	[UNTIL]
+# Zone	NAME		STDOFF	RULES	FORMAT	[UNTIL]
 Zone America/Juneau	 15:02:19 -	LMT	1867 Oct 19 15:33:32
 			 -8:57:41 -	LMT	1900 Aug 20 12:00
 			 -8:00	-	PST	1942
@@ -762,7 +785,7 @@ Zone America/Adak	 12:13:22 -	LMT	1867 Oct 19 12:44:35
 # Note that 1933-05-21 was a Sunday.
 # We're left to guess the time of day when Act 163 was approved; guess noon.
 
-# Zone	NAME		GMTOFF	RULES	FORMAT	[UNTIL]
+# Zone	NAME		STDOFF	RULES	FORMAT	[UNTIL]
 Zone Pacific/Honolulu	-10:31:26 -	LMT	1896 Jan 13 12:00
 			-10:30	-	HST	1933 Apr 30  2:00
 			-10:30	1:00	HDT	1933 May 21 12:00
@@ -792,7 +815,7 @@ Zone Pacific/Honolulu	-10:31:26 -	LMT	1896 Jan 13 12:00
 # Shanks says the 1944 experiment came to an end on 1944-03-17.
 # Go with the Arizona State Library instead.
 
-# Zone	NAME		GMTOFF	RULES	FORMAT	[UNTIL]
+# Zone	NAME		STDOFF	RULES	FORMAT	[UNTIL]
 Zone America/Phoenix	-7:28:18 -	LMT	1883 Nov 18 11:31:42
 			-7:00	US	M%sT	1944 Jan  1  0:01
 			-7:00	-	MST	1944 Apr  1  0:01
@@ -818,7 +841,7 @@ Zone America/Phoenix	-7:28:18 -	LMT	1883 Nov 18 11:31:42
 # quarter of Idaho county) and eastern Oregon (most of Malheur County)
 # switched four weeks late in 1974.
 #
-# Zone	NAME		GMTOFF	RULES	FORMAT	[UNTIL]
+# Zone	NAME		STDOFF	RULES	FORMAT	[UNTIL]
 Zone America/Boise	-7:44:49 -	LMT	1883 Nov 18 12:15:11
 			-8:00	US	P%sT	1923 May 13  2:00
 			-7:00	US	M%sT	1974
@@ -890,7 +913,7 @@ Zone America/Boise	-7:44:49 -	LMT	1883 Nov 18 12:15:11
 Rule Indianapolis 1941	only	-	Jun	22	2:00	1:00	D
 Rule Indianapolis 1941	1954	-	Sep	lastSun	2:00	0	S
 Rule Indianapolis 1946	1954	-	Apr	lastSun	2:00	1:00	D
-# Zone	NAME		GMTOFF	RULES	FORMAT	[UNTIL]
+# Zone	NAME		STDOFF	RULES	FORMAT	[UNTIL]
 Zone America/Indiana/Indianapolis -5:44:38 - LMT	1883 Nov 18 12:15:22
 			-6:00	US	C%sT	1920
 			-6:00 Indianapolis C%sT	1942
@@ -910,7 +933,7 @@ Rule	Marengo	1951	only	-	Apr	lastSun	2:00	1:00	D
 Rule	Marengo	1951	only	-	Sep	lastSun	2:00	0	S
 Rule	Marengo	1954	1960	-	Apr	lastSun	2:00	1:00	D
 Rule	Marengo	1954	1960	-	Sep	lastSun	2:00	0	S
-# Zone	NAME		GMTOFF	RULES	FORMAT	[UNTIL]
+# Zone	NAME		STDOFF	RULES	FORMAT	[UNTIL]
 Zone America/Indiana/Marengo -5:45:23 -	LMT	1883 Nov 18 12:14:37
 			-6:00	US	C%sT	1951
 			-6:00	Marengo	C%sT	1961 Apr 30  2:00
@@ -934,7 +957,7 @@ Rule Vincennes	1956	1963	-	Apr	lastSun	2:00	1:00	D
 Rule Vincennes	1960	only	-	Oct	lastSun	2:00	0	S
 Rule Vincennes	1961	only	-	Sep	lastSun	2:00	0	S
 Rule Vincennes	1962	1963	-	Oct	lastSun	2:00	0	S
-# Zone	NAME		GMTOFF	RULES	FORMAT	[UNTIL]
+# Zone	NAME		STDOFF	RULES	FORMAT	[UNTIL]
 Zone America/Indiana/Vincennes -5:50:07 - LMT	1883 Nov 18 12:09:53
 			-6:00	US	C%sT	1946
 			-6:00 Vincennes	C%sT	1964 Apr 26  2:00
@@ -955,7 +978,7 @@ Rule Perry	1956	1963	-	Apr	lastSun	2:00	1:00	D
 Rule Perry	1960	only	-	Oct	lastSun	2:00	0	S
 Rule Perry	1961	only	-	Sep	lastSun	2:00	0	S
 Rule Perry	1962	1963	-	Oct	lastSun	2:00	0	S
-# Zone	NAME		GMTOFF	RULES	FORMAT	[UNTIL]
+# Zone	NAME		STDOFF	RULES	FORMAT	[UNTIL]
 Zone America/Indiana/Tell_City -5:47:03 - LMT	1883 Nov 18 12:12:57
 			-6:00	US	C%sT	1946
 			-6:00 Perry	C%sT	1964 Apr 26  2:00
@@ -971,7 +994,7 @@ Rule	Pike	1955	only	-	May	 1	0:00	1:00	D
 Rule	Pike	1955	1960	-	Sep	lastSun	2:00	0	S
 Rule	Pike	1956	1964	-	Apr	lastSun	2:00	1:00	D
 Rule	Pike	1961	1964	-	Oct	lastSun	2:00	0	S
-# Zone	NAME		GMTOFF	RULES	FORMAT	[UNTIL]
+# Zone	NAME		STDOFF	RULES	FORMAT	[UNTIL]
 Zone America/Indiana/Petersburg -5:49:07 - LMT	1883 Nov 18 12:10:53
 			-6:00	US	C%sT	1955
 			-6:00	Pike	C%sT	1965 Apr 25  2:00
@@ -993,7 +1016,7 @@ Rule	Starke	1947	1954	-	Sep	lastSun	2:00	0	S
 Rule	Starke	1955	1956	-	Oct	lastSun	2:00	0	S
 Rule	Starke	1957	1958	-	Sep	lastSun	2:00	0	S
 Rule	Starke	1959	1961	-	Oct	lastSun	2:00	0	S
-# Zone	NAME		GMTOFF	RULES	FORMAT	[UNTIL]
+# Zone	NAME		STDOFF	RULES	FORMAT	[UNTIL]
 Zone America/Indiana/Knox -5:46:30 -	LMT	1883 Nov 18 12:13:30
 			-6:00	US	C%sT	1947
 			-6:00	Starke	C%sT	1962 Apr 29  2:00
@@ -1009,7 +1032,7 @@ Rule	Pulaski	1946	1960	-	Apr	lastSun	2:00	1:00	D
 Rule	Pulaski	1946	1954	-	Sep	lastSun	2:00	0	S
 Rule	Pulaski	1955	1956	-	Oct	lastSun	2:00	0	S
 Rule	Pulaski	1957	1960	-	Sep	lastSun	2:00	0	S
-# Zone	NAME		GMTOFF	RULES	FORMAT	[UNTIL]
+# Zone	NAME		STDOFF	RULES	FORMAT	[UNTIL]
 Zone America/Indiana/Winamac -5:46:25 - LMT	1883 Nov 18 12:13:35
 			-6:00	US	C%sT	1946
 			-6:00	Pulaski	C%sT	1961 Apr 30  2:00
@@ -1020,7 +1043,7 @@ Zone America/Indiana/Winamac -5:46:25 - LMT	1883 Nov 18 12:13:35
 			-5:00	US	E%sT
 #
 # Switzerland County, Indiana, did not observe DST from 1973 through 2005.
-# Zone	NAME		GMTOFF	RULES	FORMAT	[UNTIL]
+# Zone	NAME		STDOFF	RULES	FORMAT	[UNTIL]
 Zone America/Indiana/Vevay -5:40:16 -	LMT	1883 Nov 18 12:19:44
 			-6:00	US	C%sT	1954 Apr 25  2:00
 			-5:00	-	EST	1969
@@ -1045,7 +1068,7 @@ Rule Louisville	1941	only	-	Sep	lastSun	2:00	0	S
 Rule Louisville	1946	only	-	Jun	2	2:00	0	S
 Rule Louisville	1950	1955	-	Sep	lastSun	2:00	0	S
 Rule Louisville	1956	1960	-	Oct	lastSun	2:00	0	S
-# Zone	NAME		GMTOFF	RULES	FORMAT	[UNTIL]
+# Zone	NAME		STDOFF	RULES	FORMAT	[UNTIL]
 Zone America/Kentucky/Louisville -5:43:02 -	LMT	1883 Nov 18 12:16:58
 			-6:00	US	C%sT	1921
 			-6:00 Louisville C%sT	1942
@@ -1151,7 +1174,7 @@ Zone America/Kentucky/Monticello -5:39:24 - LMT	1883 Nov 18 12:20:36
 # Rule	NAME	FROM	TO	TYPE	IN	ON	AT	SAVE	LETTER
 Rule	Detroit	1948	only	-	Apr	lastSun	2:00	1:00	D
 Rule	Detroit	1948	only	-	Sep	lastSun	2:00	0	S
-# Zone	NAME		GMTOFF	RULES	FORMAT	[UNTIL]
+# Zone	NAME		STDOFF	RULES	FORMAT	[UNTIL]
 Zone America/Detroit	-5:32:11 -	LMT	1905
 			-6:00	-	CST	1915 May 15  2:00
 			-5:00	-	EST	1942
@@ -1168,7 +1191,7 @@ Rule Menominee	1946	only	-	Apr	lastSun	2:00	1:00	D
 Rule Menominee	1946	only	-	Sep	lastSun	2:00	0	S
 Rule Menominee	1966	only	-	Apr	lastSun	2:00	1:00	D
 Rule Menominee	1966	only	-	Oct	lastSun	2:00	0	S
-# Zone	NAME		GMTOFF	RULES	FORMAT	[UNTIL]
+# Zone	NAME		STDOFF	RULES	FORMAT	[UNTIL]
 Zone America/Menominee	-5:50:27 -	LMT	1885 Sep 18 12:00
 			-6:00	US	C%sT	1946
 			-6:00 Menominee	C%sT	1969 Apr 27  2:00
@@ -1402,7 +1425,7 @@ Rule	StJohns	2007	2011	-	Mar	Sun>=8	0:01	1:00	D
 Rule	StJohns	2007	2010	-	Nov	Sun>=1	0:01	0	S
 #
 # St John's has an apostrophe, but Posix file names can't have apostrophes.
-# Zone	NAME		GMTOFF	RULES	FORMAT	[UNTIL]
+# Zone	NAME		STDOFF	RULES	FORMAT	[UNTIL]
 Zone America/St_Johns	-3:30:52 -	LMT	1884
 			-3:30:52 StJohns N%sT	1918
 			-3:30:52 Canada	N%sT	1919
@@ -1415,7 +1438,7 @@ Zone America/St_Johns	-3:30:52 -	LMT	1884
 # most of east Labrador
 
 # The name 'Happy Valley-Goose Bay' is too long; use 'Goose Bay'.
-# Zone	NAME		GMTOFF	RULES	FORMAT	[UNTIL]
+# Zone	NAME		STDOFF	RULES	FORMAT	[UNTIL]
 Zone America/Goose_Bay	-4:01:40 -	LMT	1884 # Happy Valley-Goose Bay
 			-3:30:52 -	NST	1918
 			-3:30:52 Canada N%sT	1919
@@ -1489,7 +1512,7 @@ Rule	Halifax	1956	1959	-	Apr	lastSun	2:00	1:00	D
 Rule	Halifax	1956	1959	-	Sep	lastSun	2:00	0	S
 Rule	Halifax	1962	1973	-	Apr	lastSun	2:00	1:00	D
 Rule	Halifax	1962	1973	-	Oct	lastSun	2:00	0	S
-# Zone	NAME		GMTOFF	RULES	FORMAT	[UNTIL]
+# Zone	NAME		STDOFF	RULES	FORMAT	[UNTIL]
 Zone America/Halifax	-4:14:24 -	LMT	1902 Jun 15
 			-4:00	Halifax	A%sT	1918
 			-4:00	Canada	A%sT	1919
@@ -1527,7 +1550,7 @@ Rule	Moncton	1946	1956	-	Sep	lastSun	2:00	0	S
 Rule	Moncton	1957	1972	-	Oct	lastSun	2:00	0	S
 Rule	Moncton	1993	2006	-	Apr	Sun>=1	0:01	1:00	D
 Rule	Moncton	1993	2006	-	Oct	lastSun	0:01	0	S
-# Zone	NAME		GMTOFF	RULES	FORMAT	[UNTIL]
+# Zone	NAME		STDOFF	RULES	FORMAT	[UNTIL]
 Zone America/Moncton	-4:19:08 -	LMT	1883 Dec  9
 			-5:00	-	EST	1902 Jun 15
 			-4:00	Canada	A%sT	1933
@@ -1556,7 +1579,7 @@ Zone America/Moncton	-4:19:08 -	LMT	1883 Dec  9
 # For lack of better info, guess this practice began around 1970, contra to
 # Shanks & Pottenger who have this region observing AST/ADT.
 
-# Zone	NAME		GMTOFF	RULES	FORMAT	[UNTIL]
+# Zone	NAME		STDOFF	RULES	FORMAT	[UNTIL]
 Zone America/Blanc-Sablon -3:48:28 -	LMT	1884
 			-4:00	Canada	A%sT	1970
 			-4:00	-	AST
@@ -1724,19 +1747,10 @@ Rule	Toronto	1922	1923	-	May	Sun>=8	2:00	1:00	D
 # was meant.
 Rule	Toronto	1922	1926	-	Sep	Sun>=15	2:00	0	S
 Rule	Toronto	1924	1927	-	May	Sun>=1	2:00	1:00	D
-# The 1927-to-1939 rules can be expressed more simply as
-# Rule	Toronto	1927	1937	-	Sep	Sun>=25	2:00	0	S
-# Rule	Toronto	1928	1937	-	Apr	Sun>=25	2:00	1:00	D
-# Rule	Toronto	1938	1940	-	Apr	lastSun	2:00	1:00	D
-# Rule	Toronto	1938	1939	-	Sep	lastSun	2:00	0	S
-# The rules below avoid use of Sun>=25
-# (which pre-2004 versions of zic cannot handle).
-Rule	Toronto	1927	1932	-	Sep	lastSun	2:00	0	S
-Rule	Toronto	1928	1931	-	Apr	lastSun	2:00	1:00	D
-Rule	Toronto	1932	only	-	May	1	2:00	1:00	D
-Rule	Toronto	1933	1940	-	Apr	lastSun	2:00	1:00	D
-Rule	Toronto	1933	only	-	Oct	1	2:00	0	S
-Rule	Toronto	1934	1939	-	Sep	lastSun	2:00	0	S
+Rule	Toronto	1927	1937	-	Sep	Sun>=25	2:00	0	S
+Rule	Toronto	1928	1937	-	Apr	Sun>=25	2:00	1:00	D
+Rule	Toronto	1938	1940	-	Apr	lastSun	2:00	1:00	D
+Rule	Toronto	1938	1939	-	Sep	lastSun	2:00	0	S
 Rule	Toronto	1945	1946	-	Sep	lastSun	2:00	0	S
 Rule	Toronto	1946	only	-	Apr	lastSun	2:00	1:00	D
 Rule	Toronto	1947	1949	-	Apr	lastSun	0:00	1:00	D
@@ -1769,7 +1783,7 @@ Rule	Toronto	1957	1973	-	Oct	lastSun	2:00	0	S
 # War,... [t]he cities agreed to implement DST during the summer
 # months for the remainder of the war years.
 
-# Zone	NAME		GMTOFF	RULES	FORMAT	[UNTIL]
+# Zone	NAME		STDOFF	RULES	FORMAT	[UNTIL]
 Zone America/Toronto	-5:17:32 -	LMT	1895
 			-5:00	Canada	E%sT	1919
 			-5:00	Toronto	E%sT	1942 Feb  9  2:00s
@@ -1844,7 +1858,7 @@ Rule	Winn	1963	only	-	Sep	22	2:00	0	S
 Rule	Winn	1966	1986	-	Apr	lastSun	2:00s	1:00	D
 Rule	Winn	1966	2005	-	Oct	lastSun	2:00s	0	S
 Rule	Winn	1987	2005	-	Apr	Sun>=1	2:00s	1:00	D
-# Zone	NAME		GMTOFF	RULES	FORMAT	[UNTIL]
+# Zone	NAME		STDOFF	RULES	FORMAT	[UNTIL]
 Zone America/Winnipeg	-6:28:36 -	LMT	1887 Jul 16
 			-6:00	Winn	C%sT	2006
 			-6:00	Canada	C%sT
@@ -1865,6 +1879,13 @@ Zone America/Winnipeg	-6:28:36 -	LMT	1887 Jul 16
 # From Paul Eggert (2003-07-27):
 # Willett (1914-03) notes that DST "has been in operation ... in the
 # City of Moose Jaw, Saskatchewan, for one year."
+
+# From Paul Eggert (2019-04-26):
+# Chris Pearce's book "The Great Daylight Saving Time Controversy" (2017)
+# says that Regina observed DST in 1914-1917.  No dates and times,
+# unfortunately.  It also says that in 1914 Saskatoon observed DST
+# from 1 June to 6 July, and that DST was also tried out in Davidson,
+# Melfort, and Prince Albert.
 
 # From Paul Eggert (2006-03-22):
 # Shanks & Pottenger say that since 1970 this region has mostly been as Regina.
@@ -1928,7 +1949,7 @@ Rule	Swift	1957	only	-	Oct	lastSun	2:00	0	S
 Rule	Swift	1959	1961	-	Apr	lastSun	2:00	1:00	D
 Rule	Swift	1959	only	-	Oct	lastSun	2:00	0	S
 Rule	Swift	1960	1961	-	Sep	lastSun	2:00	0	S
-# Zone	NAME		GMTOFF	RULES	FORMAT	[UNTIL]
+# Zone	NAME		STDOFF	RULES	FORMAT	[UNTIL]
 Zone America/Regina	-6:58:36 -	LMT	1905 Sep
 			-7:00	Regina	M%sT	1960 Apr lastSun  2:00
 			-6:00	-	CST
@@ -1959,7 +1980,7 @@ Rule	Edm	1969	only	-	Apr	lastSun	2:00	1:00	D
 Rule	Edm	1969	only	-	Oct	lastSun	2:00	0	S
 Rule	Edm	1972	1986	-	Apr	lastSun	2:00	1:00	D
 Rule	Edm	1972	2006	-	Oct	lastSun	2:00	0	S
-# Zone	NAME		GMTOFF	RULES	FORMAT	[UNTIL]
+# Zone	NAME		STDOFF	RULES	FORMAT	[UNTIL]
 Zone America/Edmonton	-7:33:52 -	LMT	1906 Sep
 			-7:00	Edm	M%sT	1987
 			-7:00	Canada	M%sT
@@ -2052,7 +2073,7 @@ Rule	Vanc	1946	1986	-	Apr	lastSun	2:00	1:00	D
 Rule	Vanc	1946	only	-	Oct	13	2:00	0	S
 Rule	Vanc	1947	1961	-	Sep	lastSun	2:00	0	S
 Rule	Vanc	1962	2006	-	Oct	lastSun	2:00	0	S
-# Zone	NAME		GMTOFF	RULES	FORMAT	[UNTIL]
+# Zone	NAME		STDOFF	RULES	FORMAT	[UNTIL]
 Zone America/Vancouver	-8:12:28 -	LMT	1884
 			-8:00	Vanc	P%sT	1987
 			-8:00	Canada	P%sT
@@ -2123,7 +2144,7 @@ Zone America/Creston	-7:46:04 -	LMT	1884
 #     varying the manner of reckoning standard time.
 #
 # * Yukon Territory Commissioner's Order 1966-20 Interpretation Ordinance
-#   http://? - no online source found
+#   [no online source found]
 #
 # * Standard Time and Time Zones in Canada; Thomson, Malcolm M.; JRASC,
 #   Vol. 64, pp.129-162; June 1970; SAO/NASA Astrophysics Data System (ADS)
@@ -2156,7 +2177,7 @@ Zone America/Creston	-7:46:04 -	LMT	1884
 #     to say eight hours behind Greenwich Time.
 #
 # * O.I.C. 1980/02 INTERPRETATION ACT
-#   http://? - no online source found
+#   [no online source found]
 #
 # * Yukon Daylight Saving Time, YOIC 1987/56
 #   https://www.canlii.org/en/yk/laws/regu/yoic-1987-56/latest/yoic-1987-56.html
@@ -2372,7 +2393,7 @@ Rule	NT_YK	1965	only	-	Oct	lastSun	2:00	0	S
 Rule	NT_YK	1980	1986	-	Apr	lastSun	2:00	1:00	D
 Rule	NT_YK	1980	2006	-	Oct	lastSun	2:00	0	S
 Rule	NT_YK	1987	2006	-	Apr	Sun>=1	2:00	1:00	D
-# Zone	NAME		GMTOFF	RULES	FORMAT	[UNTIL]
+# Zone	NAME		STDOFF	RULES	FORMAT	[UNTIL]
 # aka Panniqtuuq
 Zone America/Pangnirtung 0	-	-00	1921 # trading post est.
 			-4:00	NT_YK	A%sT	1995 Apr Sun>=1  2:00
@@ -2519,7 +2540,7 @@ Zone America/Dawson	-9:17:40 -	LMT	1900 Aug 20
 
 # From Paul Eggert (2001-03-03):
 #
-# http://www.latimes.com/news/nation/20010303/t000018766.html
+# https://www.latimes.com/archives/la-xpm-2001-mar-03-mn-32561-story.html
 # James F. Smith writes in today's LA Times
 # * Sonora will continue to observe standard time.
 # * Last week Mexico City's mayor Andrés Manuel López Obrador decreed that
@@ -2646,7 +2667,7 @@ Rule	Mexico	2001	only	-	May	Sun>=1	2:00	1:00	D
 Rule	Mexico	2001	only	-	Sep	lastSun	2:00	0	S
 Rule	Mexico	2002	max	-	Apr	Sun>=1	2:00	1:00	D
 Rule	Mexico	2002	max	-	Oct	lastSun	2:00	0	S
-# Zone	NAME		GMTOFF	RULES	FORMAT	[UNTIL]
+# Zone	NAME		STDOFF	RULES	FORMAT	[UNTIL]
 # Quintana Roo; represented by Cancún
 Zone America/Cancun	-5:47:04 -	LMT	1922 Jan  1  0:12:56
 			-6:00	-	CST	1981 Dec 23
@@ -2839,7 +2860,7 @@ Zone America/Tijuana	-7:48:04 -	LMT	1922 Jan  1  0:11:56
 # Rule	NAME	FROM	TO	TYPE	IN	ON	AT	SAVE	LETTER/S
 Rule	Bahamas	1964	1975	-	Oct	lastSun	2:00	0	S
 Rule	Bahamas	1964	1975	-	Apr	lastSun	2:00	1:00	D
-# Zone	NAME		GMTOFF	RULES	FORMAT	[UNTIL]
+# Zone	NAME		STDOFF	RULES	FORMAT	[UNTIL]
 Zone	America/Nassau	-5:09:30 -	LMT	1912 Mar 2
 			-5:00	Bahamas	E%sT	1976
 			-5:00	US	E%sT
@@ -2854,7 +2875,7 @@ Rule	Barb	1977	1978	-	Oct	Sun>=1	2:00	0	S
 Rule	Barb	1978	1980	-	Apr	Sun>=15	2:00	1:00	D
 Rule	Barb	1979	only	-	Sep	30	2:00	0	S
 Rule	Barb	1980	only	-	Sep	25	2:00	0	S
-# Zone	NAME		GMTOFF	RULES	FORMAT	[UNTIL]
+# Zone	NAME		STDOFF	RULES	FORMAT	[UNTIL]
 Zone America/Barbados	-3:58:29 -	LMT	1924 # Bridgetown
 			-3:58:29 -	BMT	1932 # Bridgetown Mean Time
 			-4:00	Barb	A%sT
@@ -2868,7 +2889,7 @@ Rule	Belize	1973	only	-	Dec	 5	0:00	1:00	CDT
 Rule	Belize	1974	only	-	Feb	 9	0:00	0	CST
 Rule	Belize	1982	only	-	Dec	18	0:00	1:00	CDT
 Rule	Belize	1983	only	-	Feb	12	0:00	0	CST
-# Zone	NAME		GMTOFF	RULES	FORMAT	[UNTIL]
+# Zone	NAME		STDOFF	RULES	FORMAT	[UNTIL]
 Zone	America/Belize	-5:52:48 -	LMT	1912 Apr
 			-6:00	Belize	%s
 
@@ -2885,7 +2906,7 @@ Zone	America/Belize	-5:52:48 -	LMT	1912 Apr
 # Friday, the same thing will happen in Bermuda.
 # http://www.theroyalgazette.com/apps/pbcs.dll/article?AID=/20060529/NEWS/105290135
 
-# Zone	NAME		GMTOFF	RULES	FORMAT	[UNTIL]
+# Zone	NAME		STDOFF	RULES	FORMAT	[UNTIL]
 Zone Atlantic/Bermuda	-4:19:18 -	LMT	1930 Jan  1  2:00 # Hamilton
 			-4:00	-	AST	1974 Apr 28  2:00
 			-4:00	Canada	A%sT	1976
@@ -2907,7 +2928,7 @@ Rule	CR	1991	1992	-	Jan	Sat>=15	0:00	1:00	D
 Rule	CR	1991	only	-	Jul	 1	0:00	0	S
 Rule	CR	1992	only	-	Mar	15	0:00	0	S
 # There are too many San Josés elsewhere, so we'll use 'Costa Rica'.
-# Zone	NAME		GMTOFF	RULES	FORMAT	[UNTIL]
+# Zone	NAME		STDOFF	RULES	FORMAT	[UNTIL]
 Zone America/Costa_Rica	-5:36:13 -	LMT	1890        # San José
 			-5:36:13 -	SJMT	1921 Jan 15 # San José Mean Time
 			-6:00	CR	C%sT
@@ -3113,7 +3134,7 @@ Rule	Cuba	2012	only	-	Apr	1	0:00s	1:00	D
 Rule	Cuba	2012	max	-	Nov	Sun>=1	0:00s	0	S
 Rule	Cuba	2013	max	-	Mar	Sun>=8	0:00s	1:00	D
 
-# Zone	NAME		GMTOFF	RULES	FORMAT	[UNTIL]
+# Zone	NAME		STDOFF	RULES	FORMAT	[UNTIL]
 Zone	America/Havana	-5:29:28 -	LMT	1890
 			-5:29:36 -	HMT	1925 Jul 19 12:00 # Havana MT
 			-5:00	Cuba	C%sT
@@ -3148,7 +3169,7 @@ Rule	DR	1969	1973	-	Oct	lastSun	0:00	0:30	-0430
 Rule	DR	1970	only	-	Feb	21	0:00	0	EST
 Rule	DR	1971	only	-	Jan	20	0:00	0	EST
 Rule	DR	1972	1974	-	Jan	21	0:00	0	EST
-# Zone	NAME		GMTOFF	RULES	FORMAT	[UNTIL]
+# Zone	NAME		STDOFF	RULES	FORMAT	[UNTIL]
 Zone America/Santo_Domingo -4:39:36 -	LMT	1890
 			-4:40	-	SDMT	1933 Apr  1 12:00 # S. Dom. MT
 			-5:00	DR	%s	1974 Oct 27
@@ -3163,7 +3184,7 @@ Rule	Salv	1987	1988	-	May	Sun>=1	0:00	1:00	D
 Rule	Salv	1987	1988	-	Sep	lastSun	0:00	0	S
 # There are too many San Salvadors elsewhere, so use America/El_Salvador
 # instead of America/San_Salvador.
-# Zone	NAME		GMTOFF	RULES	FORMAT	[UNTIL]
+# Zone	NAME		STDOFF	RULES	FORMAT	[UNTIL]
 Zone America/El_Salvador -5:56:48 -	LMT	1921 # San Salvador
 			-6:00	Salv	C%sT
 
@@ -3196,7 +3217,7 @@ Rule	Guat	1991	only	-	Mar	23	0:00	1:00	D
 Rule	Guat	1991	only	-	Sep	 7	0:00	0	S
 Rule	Guat	2006	only	-	Apr	30	0:00	1:00	D
 Rule	Guat	2006	only	-	Oct	 1	0:00	0	S
-# Zone	NAME		GMTOFF	RULES	FORMAT	[UNTIL]
+# Zone	NAME		STDOFF	RULES	FORMAT	[UNTIL]
 Zone America/Guatemala	-6:02:04 -	LMT	1918 Oct 5
 			-6:00	Guat	C%sT
 
@@ -3282,7 +3303,7 @@ Rule	Haiti	2012	2015	-	Mar	Sun>=8	2:00	1:00	D
 Rule	Haiti	2012	2015	-	Nov	Sun>=1	2:00	0	S
 Rule	Haiti	2017	max	-	Mar	Sun>=8	2:00	1:00	D
 Rule	Haiti	2017	max	-	Nov	Sun>=1	2:00	0	S
-# Zone	NAME		GMTOFF	RULES	FORMAT	[UNTIL]
+# Zone	NAME		STDOFF	RULES	FORMAT	[UNTIL]
 Zone America/Port-au-Prince -4:49:20 -	LMT	1890
 			-4:49	-	PPMT	1917 Jan 24 12:00 # P-a-P MT
 			-5:00	Haiti	E%sT
@@ -3321,7 +3342,7 @@ Rule	Hond	1987	1988	-	May	Sun>=1	0:00	1:00	D
 Rule	Hond	1987	1988	-	Sep	lastSun	0:00	0	S
 Rule	Hond	2006	only	-	May	Sun>=1	0:00	1:00	D
 Rule	Hond	2006	only	-	Aug	Mon>=1	0:00	0	S
-# Zone	NAME		GMTOFF	RULES	FORMAT	[UNTIL]
+# Zone	NAME		STDOFF	RULES	FORMAT	[UNTIL]
 Zone America/Tegucigalpa -5:48:52 -	LMT	1921 Apr
 			-6:00	Hond	C%sT
 #
@@ -3342,7 +3363,7 @@ Zone America/Tegucigalpa -5:48:52 -	LMT	1921 Apr
 # Neita L. The politician in all of us. Jamaica Observer 2014-09-20
 # http://www.jamaicaobserver.com/columns/The-politician-in-all-of-us_17573647
 #
-# Zone	NAME		GMTOFF	RULES	FORMAT	[UNTIL]
+# Zone	NAME		STDOFF	RULES	FORMAT	[UNTIL]
 Zone	America/Jamaica	-5:07:10 -	LMT	1890        # Kingston
 			-5:07:10 -	KMT	1912 Feb    # Kingston Mean Time
 			-5:00	-	EST	1974
@@ -3350,7 +3371,7 @@ Zone	America/Jamaica	-5:07:10 -	LMT	1890        # Kingston
 			-5:00	-	EST
 
 # Martinique
-# Zone	NAME		GMTOFF	RULES	FORMAT	[UNTIL]
+# Zone	NAME		STDOFF	RULES	FORMAT	[UNTIL]
 Zone America/Martinique	-4:04:20 -      LMT	1890        # Fort-de-France
 			-4:04:20 -	FFMT	1911 May    # Fort-de-France MT
 			-4:00	-	AST	1980 Apr  6
@@ -3414,7 +3435,7 @@ Rule	Nic	2005	only	-	Apr	10	0:00	1:00	D
 Rule	Nic	2005	only	-	Oct	Sun>=1	0:00	0	S
 Rule	Nic	2006	only	-	Apr	30	2:00	1:00	D
 Rule	Nic	2006	only	-	Oct	Sun>=1	1:00	0	S
-# Zone	NAME		GMTOFF	RULES	FORMAT	[UNTIL]
+# Zone	NAME		STDOFF	RULES	FORMAT	[UNTIL]
 Zone	America/Managua	-5:45:08 -	LMT	1890
 			-5:45:12 -	MMT	1934 Jun 23 # Managua Mean Time?
 			-6:00	-	CST	1973 May
@@ -3426,7 +3447,7 @@ Zone	America/Managua	-5:45:08 -	LMT	1890
 			-6:00	Nic	C%sT
 
 # Panama
-# Zone	NAME		GMTOFF	RULES	FORMAT	[UNTIL]
+# Zone	NAME		STDOFF	RULES	FORMAT	[UNTIL]
 Zone	America/Panama	-5:18:08 -	LMT	1890
 			-5:19:36 -	CMT	1908 Apr 22 # Colón Mean Time
 			-5:00	-	EST
@@ -3434,7 +3455,7 @@ Link America/Panama America/Cayman
 
 # Puerto Rico
 # There are too many San Juans elsewhere, so we'll use 'Puerto_Rico'.
-# Zone	NAME		GMTOFF	RULES	FORMAT	[UNTIL]
+# Zone	NAME		STDOFF	RULES	FORMAT	[UNTIL]
 Zone America/Puerto_Rico -4:24:25 -	LMT	1899 Mar 28 12:00 # San Juan
 			-4:00	-	AST	1942 May  3
 			-4:00	US	A%sT	1946
@@ -3446,7 +3467,7 @@ Zone America/Puerto_Rico -4:24:25 -	LMT	1899 Mar 28 12:00 # San Juan
 
 # St Pierre and Miquelon
 # There are too many St Pierres elsewhere, so we'll use 'Miquelon'.
-# Zone	NAME		GMTOFF	RULES	FORMAT	[UNTIL]
+# Zone	NAME		STDOFF	RULES	FORMAT	[UNTIL]
 Zone America/Miquelon	-3:44:40 -	LMT	1911 May 15 # St Pierre
 			-4:00	-	AST	1980 May
 			-3:00	-	-03	1987
@@ -3492,7 +3513,7 @@ Zone America/Miquelon	-3:44:40 -	LMT	1911 May 15 # St Pierre
 # by March 2018 for TCI. Magnetic Media. 2017-08-25.
 # http://magneticmediatv.com/2017/08/time-change-back-by-march-2018-for-tci/
 #
-# Zone	NAME		GMTOFF	RULES	FORMAT	[UNTIL]
+# Zone	NAME		STDOFF	RULES	FORMAT	[UNTIL]
 Zone America/Grand_Turk	-4:44:32 -	LMT	1890
 			-5:07:10 -	KMT	1912 Feb # Kingston Mean Time
 			-5:00	-	EST	1979

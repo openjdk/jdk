@@ -31,6 +31,7 @@
 import java.io.IOException;
 import java.net.DatagramSocket;
 import java.net.InetAddress;
+import java.net.InetSocketAddress;
 import java.net.MulticastSocket;
 import java.net.ServerSocket;
 import java.net.Socket;
@@ -43,9 +44,9 @@ public class TcpKeepAliveTest {
     private static final int DEFAULT_KEEP_ALIVE_INTVL = 53;
 
     public static void main(String args[]) throws IOException {
-
-        try (ServerSocket ss = new ServerSocket(0);
-                Socket s = new Socket(InetAddress.getLoopbackAddress(), ss.getLocalPort());
+        var loopback = InetAddress.getLoopbackAddress();
+        try (ServerSocket ss = boundServer(loopback);
+                Socket s = new Socket(loopback, ss.getLocalPort());
                 DatagramSocket ds = new DatagramSocket(0);
                 MulticastSocket mc = new MulticastSocket(0)) {
             if (ss.supportedOptions().contains(ExtendedSocketOptions.TCP_KEEPIDLE)) {
@@ -109,5 +110,12 @@ public class TcpKeepAliveTest {
                         + " for TCP Sockets only");
             }
         }
+    }
+
+    private static ServerSocket boundServer(InetAddress address) throws IOException {
+        var socketAddress = new InetSocketAddress(address, 0);
+        var server = new ServerSocket();
+        server.bind(socketAddress);
+        return server;
     }
 }

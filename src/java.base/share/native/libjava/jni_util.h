@@ -208,7 +208,7 @@ JNU_NewObjectByName(JNIEnv *env, const char *class_name,
  * has been thrown.
  */
 JNIEXPORT jint JNICALL
-JNU_IsInstanceOfByName(JNIEnv *env, jobject object, char *classname);
+JNU_IsInstanceOfByName(JNIEnv *env, jobject object, const char *classname);
 
 
 /* Get or set class and instance fields.

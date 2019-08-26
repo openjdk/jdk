@@ -47,6 +47,10 @@ void ShenandoahLoadReferenceBarrierStub::emit_code(LIR_Assembler* ce) {
   bs->gen_load_reference_barrier_stub(ce, this);
 }
 
+ShenandoahBarrierSetC1::ShenandoahBarrierSetC1() :
+  _pre_barrier_c1_runtime_code_blob(NULL),
+  _load_reference_barrier_rt_code_blob(NULL) {}
+
 void ShenandoahBarrierSetC1::pre_barrier(LIRGenerator* gen, CodeEmitInfo* info, DecoratorSet decorators, LIR_Opr addr_opr, LIR_Opr pre_val) {
   // First we test whether marking is in progress.
   BasicType flag_type;
@@ -114,8 +118,10 @@ LIR_Opr ShenandoahBarrierSetC1::load_reference_barrier_impl(LIRGenerator* gen, L
 
   obj = ensure_in_register(gen, obj);
   assert(obj->is_register(), "must be a register at this point");
-  LIR_Opr result = gen->new_register(T_OBJECT);
+  LIR_Opr result = gen->result_register_for(obj->value_type());
   __ move(obj, result);
+  LIR_Opr tmp1 = gen->new_register(T_OBJECT);
+  LIR_Opr tmp2 = gen->new_register(T_OBJECT);
 
   LIR_Opr thrd = gen->getThreadPointer();
   LIR_Address* active_flag_addr =
@@ -140,7 +146,7 @@ LIR_Opr ShenandoahBarrierSetC1::load_reference_barrier_impl(LIRGenerator* gen, L
   }
   __ cmp(lir_cond_notEqual, flag_val, LIR_OprFact::intConst(0));
 
-  CodeStub* slow = new ShenandoahLoadReferenceBarrierStub(obj, result);
+  CodeStub* slow = new ShenandoahLoadReferenceBarrierStub(obj, result, tmp1, tmp2);
   __ branch(lir_cond_notEqual, T_INT, slow);
   __ branch_destination(slow->continuation());
 
@@ -238,11 +244,25 @@ class C1ShenandoahPreBarrierCodeGenClosure : public StubAssemblerCodeGenClosure 
   }
 };
 
+class C1ShenandoahLoadReferenceBarrierCodeGenClosure : public StubAssemblerCodeGenClosure {
+  virtual OopMapSet* generate_code(StubAssembler* sasm) {
+    ShenandoahBarrierSetAssembler* bs = (ShenandoahBarrierSetAssembler*)BarrierSet::barrier_set()->barrier_set_assembler();
+    bs->generate_c1_load_reference_barrier_runtime_stub(sasm);
+    return NULL;
+  }
+};
+
 void ShenandoahBarrierSetC1::generate_c1_runtime_stubs(BufferBlob* buffer_blob) {
   C1ShenandoahPreBarrierCodeGenClosure pre_code_gen_cl;
   _pre_barrier_c1_runtime_code_blob = Runtime1::generate_blob(buffer_blob, -1,
                                                               "shenandoah_pre_barrier_slow",
                                                               false, &pre_code_gen_cl);
+  if (ShenandoahLoadRefBarrier) {
+    C1ShenandoahLoadReferenceBarrierCodeGenClosure lrb_code_gen_cl;
+    _load_reference_barrier_rt_code_blob = Runtime1::generate_blob(buffer_blob, -1,
+                                                                  "shenandoah_load_reference_barrier_slow",
+                                                                  false, &lrb_code_gen_cl);
+  }
 }
 
 const char* ShenandoahBarrierSetC1::rtcall_name_for_address(address entry) {

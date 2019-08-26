@@ -191,4 +191,3 @@ public final class Log {
         println("");
     }
 }
-

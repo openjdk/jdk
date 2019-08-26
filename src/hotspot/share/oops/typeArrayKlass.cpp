@@ -198,13 +198,13 @@ Klass* TypeArrayKlass::array_klass_impl(bool or_null, int n, TRAPS) {
         assert(h_ak->is_objArray_klass(), "incorrect initialization of ObjArrayKlass");
       }
     }
-  } else {
-    CHECK_UNHANDLED_OOPS_ONLY(Thread::current()->clear_unhandled_oops());
   }
+
   ObjArrayKlass* h_ak = ObjArrayKlass::cast(higher_dimension());
   if (or_null) {
     return h_ak->array_klass_or_null(n);
   }
+  THREAD->check_possible_safepoint();
   return h_ak->array_klass(n, THREAD);
 }
 

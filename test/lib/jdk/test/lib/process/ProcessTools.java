@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,6 +27,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.io.PrintStream;
+import java.nio.charset.Charset;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -359,6 +360,21 @@ public final class ProcessTools {
      * @return The {@linkplain OutputAnalyzer} instance wrapping the process.
      */
     public static OutputAnalyzer executeProcess(ProcessBuilder pb, String input) throws Exception {
+        return executeProcess(pb, input, null);
+    }
+
+    /**
+     * Executes a process, pipe some text into its STDIN, waits for it
+     * to finish and returns the process output. The process will have exited
+     * before this method returns.
+     * @param pb The ProcessBuilder to execute.
+     * @param input The text to pipe into STDIN. Can be null.
+     * @param cs The charset used to convert from bytes to chars or null for
+     *           the default charset.
+     * @return The {@linkplain OutputAnalyzer} instance wrapping the process.
+     */
+    public static OutputAnalyzer executeProcess(ProcessBuilder pb, String input,
+            Charset cs) throws Exception {
         OutputAnalyzer output = null;
         Process p = null;
         boolean failed = false;
@@ -370,7 +386,7 @@ public final class ProcessTools {
                }
             }
 
-            output = new OutputAnalyzer(p);
+            output = new OutputAnalyzer(p, cs);
             p.waitFor();
 
             return output;

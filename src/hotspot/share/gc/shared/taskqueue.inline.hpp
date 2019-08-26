@@ -184,6 +184,11 @@ GenericTaskQueue<E, F, N>::pop_local(volatile E& t, uint threshold) {
   } else {
     // Otherwise, the queue contained exactly one element; we take the slow
     // path.
+
+    // The barrier is required to prevent reordering the two reads of _age:
+    // one is the _age.get() below, and the other is _age.top() above the if-stmt.
+    // The algorithm may fail if _age.get() reads an older value than _age.top().
+    OrderAccess::loadload();
     return pop_local_slow(localBot, _age.get());
   }
 }

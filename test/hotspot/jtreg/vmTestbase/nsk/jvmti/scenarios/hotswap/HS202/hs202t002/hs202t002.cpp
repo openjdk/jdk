@@ -64,7 +64,7 @@ void JNICALL callbackMethodExit(jvmtiEnv *jvmti_env,
             nsk_jvmti_getFileName(redefineNumber, FILE_NAME, fileName,
                                   sizeof(fileName)/sizeof(char));
             jvmti_env->GetMethodDeclaringClass(method, &cls);
-            if (nsk_jvmti_redefineClass(jvmti_env, cls,fileName) == NSK_TRUE) {
+            if (nsk_jvmti_redefineClass(jvmti_env, cls,fileName)) {
                 nsk_printf(" Agent:: redefine class success ..\n");
                 nsk_printf("Agent::SUSPENDING>> \n");
                 err=jvmti_env->SuspendThread(thread);
@@ -103,7 +103,7 @@ jint  Agent_Initialize(JavaVM *vm, char *options, void *reserved) {
         jvmtiCapabilities caps;
         jvmtiEventCallbacks eventCallbacks;
         memset(&caps, 0, sizeof(caps));
-        if (nsk_jvmti_parseOptions(options) == NSK_FALSE) {
+        if (!nsk_jvmti_parseOptions(options)) {
             nsk_printf("# error agent Failed to parse options \n");
             return JNI_ERR;
         }
@@ -119,7 +119,7 @@ jint  Agent_Initialize(JavaVM *vm, char *options, void *reserved) {
             nsk_printf(" Agent:: Error occured while setting event callbacks \n");
             return JNI_ERR;
         }
-        if (NSK_TRUE == nsk_jvmti_enableNotification(jvmti,JVMTI_EVENT_METHOD_EXIT, NULL)) {
+        if (nsk_jvmti_enableNotification(jvmti,JVMTI_EVENT_METHOD_EXIT, NULL)) {
             nsk_printf(" Agent :: NOTIFICATIONS ARE ENABLED \n");
         } else {
             nsk_printf(" Agent :: Error Enabling Notifications..");
@@ -160,7 +160,7 @@ Java_nsk_jvmti_scenarios_hotswap_HS202_hs202t002_hs202t002_resumeThread(JNIEnv *
 
     // disable notifications before resuming thread
     // to avoid recursion on PopFrame issued reinvoke
-    if (NSK_TRUE == nsk_jvmti_disableNotification(jvmti,JVMTI_EVENT_METHOD_EXIT, NULL)) {
+    if (nsk_jvmti_disableNotification(jvmti,JVMTI_EVENT_METHOD_EXIT, NULL)) {
         nsk_printf("Agent :: nsk_jvmti_disabled notifications..\n");
     } else {
         nsk_printf("Agent :: Failed to disable notifications..");

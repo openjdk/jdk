@@ -36,12 +36,18 @@ public class JdkUtils {
         KEY, SIG, DIGEST;
     }
 
+    static final String M_JAVA_VERSION = "javaVersion";
     static final String M_JAVA_RUNTIME_VERSION = "javaRuntimeVersion";
     static final String M_IS_SUPPORTED_KEYALG = "isSupportedKeyalg";
     static final String M_IS_SUPPORTED_SIGALG = "isSupportedSigalg";
     static final String M_IS_SUPPORTED_DIGESTALG = "isSupportedDigestalg";
 
     // Returns the JDK build version.
+    static String javaVersion() {
+        return System.getProperty("java.version");
+    }
+
+    // Returns the JDK build runtime version.
     static String javaRuntimeVersion() {
         return System.getProperty("java.runtime.version");
     }
@@ -63,7 +69,9 @@ public class JdkUtils {
     }
 
     public static void main(String[] args) {
-        if (M_JAVA_RUNTIME_VERSION.equals(args[0])) {
+        if (M_JAVA_VERSION.equals(args[0])) {
+            System.out.print(javaVersion());
+        } else if (M_JAVA_RUNTIME_VERSION.equals(args[0])) {
             System.out.print(javaRuntimeVersion());
         } else if (M_IS_SUPPORTED_KEYALG.equals(args[0])) {
             System.out.print(isSupportedAlg(Alg.KEY, args[1]));

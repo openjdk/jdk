@@ -4108,7 +4108,7 @@ void TemplateTable::_new() {
       __ movptr(Address(rax, oopDesc::mark_offset_in_bytes ()), rbx);
     } else {
       __ movptr(Address(rax, oopDesc::mark_offset_in_bytes ()),
-                (intptr_t)markOopDesc::prototype()); // header
+                (intptr_t)markWord::prototype().value()); // header
       __ pop(rcx);   // get saved klass back in the register.
     }
 #ifdef _LP64

@@ -324,7 +324,7 @@ Node *PhaseIdealLoop::has_local_phi_input( Node *n ) {
       }
       return NULL;
     }
-    assert(m->is_Phi() || is_dominator(get_ctrl(m), n_ctrl), "m has strange control");
+    assert(n->is_Phi() || m->is_Phi() || is_dominator(get_ctrl(m), n_ctrl), "m has strange control");
   }
 
   return n_ctrl;
@@ -1427,9 +1427,8 @@ void PhaseIdealLoop::split_if_with_blocks_post(Node *n) {
             // Some institutional knowledge is needed here: 'x' is
             // yanked because if the optimizer runs GVN on it all the
             // cloned x's will common up and undo this optimization and
-            // be forced back in the loop.  This is annoying because it
-            // makes +VerifyOpto report false-positives on progress.  I
-            // tried setting control edges on the x's to force them to
+            // be forced back in the loop.
+            // I tried setting control edges on the x's to force them to
             // not combine, but the matching gets worried when it tries
             // to fold a StoreP and an AddP together (as part of an
             // address expression) and the AddP and StoreP have

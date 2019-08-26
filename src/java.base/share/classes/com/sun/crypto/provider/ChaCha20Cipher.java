@@ -33,12 +33,11 @@ import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.security.*;
 import java.security.spec.AlgorithmParameterSpec;
-import java.util.Arrays;
 import java.util.Objects;
+import javax.crypto.*;
 import javax.crypto.spec.ChaCha20ParameterSpec;
 import javax.crypto.spec.IvParameterSpec;
 import javax.crypto.spec.SecretKeySpec;
-import javax.crypto.*;
 import sun.security.util.DerValue;
 
 /**
@@ -134,8 +133,7 @@ abstract class ChaCha20Cipher extends CipherSpi {
     /**
      * Default constructor.
      */
-    protected ChaCha20Cipher() {
-    }
+    protected ChaCha20Cipher() { }
 
     /**
      * Set the mode of operation.  Since this is a stream cipher, there
@@ -185,11 +183,13 @@ abstract class ChaCha20Cipher extends CipherSpi {
     }
 
     /**
-     * Get the output size based on an input length.  In simple stream-cipher
+     * Get the output size required to hold the result of the next update or
+     * doFinal operation.  In simple stream-cipher
      * mode, the output size will equal the input size.  For ChaCha20-Poly1305
      * for encryption the output size will be the sum of the input length
-     * and tag length.  For decryption, the output size will be the input
-     * length less the tag length or zero, whichever is larger.
+     * and tag length.  For decryption, the output size will be  the input
+     * length plus any previously unprocessed data minus the tag
+     * length, minimum zero.
      *
      * @param inputLen the length in bytes of the input
      *
@@ -197,17 +197,7 @@ abstract class ChaCha20Cipher extends CipherSpi {
      */
     @Override
     protected int engineGetOutputSize(int inputLen) {
-        int outLen = 0;
-
-        if (mode == MODE_NONE) {
-            outLen = inputLen;
-        } else if (mode == MODE_AEAD) {
-            outLen = (direction == Cipher.ENCRYPT_MODE) ?
-                    Math.addExact(inputLen, TAG_LENGTH) :
-                    Integer.max(inputLen - TAG_LENGTH, 0);
-        }
-
-        return outLen;
+        return engine.getOutputSize(inputLen, true);
     }
 
     /**
@@ -237,13 +227,10 @@ abstract class ChaCha20Cipher extends CipherSpi {
         AlgorithmParameters params = null;
         if (mode == MODE_AEAD) {
             try {
-                // Force the 12-byte nonce into a DER-encoded OCTET_STRING
-                byte[] derNonce = new byte[nonce.length + 2];
-                derNonce[0] = 0x04;                 // OCTET_STRING tag
-                derNonce[1] = (byte)nonce.length;   // 12-byte length;
-                System.arraycopy(nonce, 0, derNonce, 2, nonce.length);
+                // Place the 12-byte nonce into a DER-encoded OCTET_STRING
                 params = AlgorithmParameters.getInstance("ChaCha20-Poly1305");
-                params.init(derNonce);
+                params.init((new DerValue(
+                        DerValue.tag_OctetString, nonce).toByteArray()));
             } catch (NoSuchAlgorithmException | IOException exc) {
                 throw new RuntimeException(exc);
             }
@@ -638,7 +625,7 @@ abstract class ChaCha20Cipher extends CipherSpi {
      */
     @Override
     protected byte[] engineUpdate(byte[] in, int inOfs, int inLen) {
-        byte[] out = new byte[inLen];
+        byte[] out = new byte[engine.getOutputSize(inLen, false)];
         try {
             engine.doUpdate(in, inOfs, inLen, out, 0);
         } catch (ShortBufferException | KeyException exc) {
@@ -696,7 +683,7 @@ abstract class ChaCha20Cipher extends CipherSpi {
     @Override
     protected byte[] engineDoFinal(byte[] in, int inOfs, int inLen)
             throws AEADBadTagException {
-        byte[] output = new byte[engineGetOutputSize(inLen)];
+        byte[] output = new byte[engine.getOutputSize(inLen, true)];
         try {
             engine.doFinal(in, inOfs, inLen, output, 0);
         } catch (ShortBufferException | KeyException exc) {
@@ -1158,6 +1145,17 @@ abstract class ChaCha20Cipher extends CipherSpi {
      */
     interface ChaChaEngine {
         /**
+         * Size an output buffer based on the input and where applicable
+         * the current state of the engine in a multipart operation.
+         *
+         * @param inLength the input length.
+         * @param isFinal true if this is invoked from a doFinal call.
+         *
+         * @return the recommended size for the output buffer.
+         */
+        int getOutputSize(int inLength, boolean isFinal);
+
+        /**
          * Perform a multi-part update for ChaCha20.
          *
          * @param in the input data.
@@ -1201,6 +1199,12 @@ abstract class ChaCha20Cipher extends CipherSpi {
         private EngineStreamOnly () { }
 
         @Override
+        public int getOutputSize(int inLength, boolean isFinal) {
+            // The isFinal parameter is not relevant in this kind of engine
+            return inLength;
+        }
+
+        @Override
         public int doUpdate(byte[] in, int inOff, int inLen, byte[] out,
                 int outOff) throws ShortBufferException, KeyException {
             if (initialized) {
@@ -1233,6 +1237,11 @@ abstract class ChaCha20Cipher extends CipherSpi {
     }
 
     private final class EngineAEADEnc implements ChaChaEngine {
+
+        @Override
+        public int getOutputSize(int inLength, boolean isFinal) {
+            return (isFinal ? Math.addExact(inLength, TAG_LENGTH) : inLength);
+        }
 
         private EngineAEADEnc() throws InvalidKeyException {
             initAuthenticator();
@@ -1293,6 +1302,18 @@ abstract class ChaCha20Cipher extends CipherSpi {
 
         private final ByteArrayOutputStream cipherBuf;
         private final byte[] tag;
+
+        @Override
+        public int getOutputSize(int inLen, boolean isFinal) {
+            // If we are performing a decrypt-update we should always return
+            // zero length since we cannot return any data until the tag has
+            // been consumed and verified.  CipherSpi.engineGetOutputSize will
+            // always set isFinal to true to get the required output buffer
+            // size.
+            return (isFinal ?
+                    Integer.max(Math.addExact((inLen - TAG_LENGTH),
+                            cipherBuf.size()), 0) : 0);
+        }
 
         private EngineAEADDec() throws InvalidKeyException {
             initAuthenticator();

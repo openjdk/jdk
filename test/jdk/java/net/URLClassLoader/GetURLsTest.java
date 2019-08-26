@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,11 +25,16 @@ import java.net.*;
 import java.io.*;
 
 /*
- * Regression test for URLClassLoader getURLs() and addURL() methods.
+ * @test
+ * @summary Regression test for URLClassLoader getURLs() and addURL() methods.
  * See RFE 4102580: Need URLClassLoader.getURLs() method
  */
-class GetURLsTest {
+public class GetURLsTest {
+    static final String TEST_DIR = System.getProperty("test.src", ".");
+
     public static void main(String[] args) throws Exception {
+        File testJars = new File(TEST_DIR, "jars");
+
         MyURLClassLoader ucl =
             new MyURLClassLoader(new URL[] { new File(".").toURL() });
         p("initial urls = ", ucl.getURLs());
@@ -37,7 +42,7 @@ class GetURLsTest {
         if (u != null) {
             p("found resource = " + u);
         }
-        ucl.addURL(new File("jars", "class_path_test.jar").toURL());
+        ucl.addURL(new File(testJars, "class_path_test.jar").toURL());
         p("new urls = ", ucl.getURLs());
         Class c = ucl.loadClass("Foo");
         p("found class = " + c);

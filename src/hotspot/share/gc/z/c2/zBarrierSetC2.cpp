@@ -557,7 +557,6 @@ void ZBarrierSetC2::expand_loadbarrier_node(PhaseMacroExpand* phase, LoadBarrier
   result_phi->set_req(1, new_loadp);
   result_phi->set_req(2, barrier->in(LoadBarrierNode::Oop));
 
-
   igvn.replace_node(out_ctrl, result_region);
   igvn.replace_node(out_res, result_phi);
 
@@ -740,29 +739,61 @@ bool ZBarrierSetC2::matcher_find_shared_post_visit(Matcher* matcher, Node* n, ui
 
 #ifdef ASSERT
 
-static bool look_for_barrier(Node* n, bool post_parse, VectorSet& visited) {
-  if (visited.test_set(n->_idx)) {
-    return true;
-  }
+static void verify_slippery_safepoints_internal(Node* ctrl) {
+  // Given a CFG node, make sure it does not contain both safepoints and loads
+  // that have expanded barriers.
+  bool found_safepoint = false;
+  bool found_load = false;
 
-  for (DUIterator_Fast imax, i = n->fast_outs(imax); i < imax; i++) {
-    Node* u = n->fast_out(i);
-    if (u->is_LoadBarrier()) {
-    } else if ((u->is_Phi() || u->is_CMove()) && !post_parse) {
-      if (!look_for_barrier(u, post_parse, visited)) {
-        return false;
-      }
-    } else if (u->Opcode() == Op_EncodeP || u->Opcode() == Op_DecodeN) {
-      if (!look_for_barrier(u, post_parse, visited)) {
-        return false;
-      }
-    } else if (u->Opcode() != Op_SCMemProj) {
-      tty->print("bad use"); u->dump();
-      return false;
+  for (DUIterator_Fast imax, i = ctrl->fast_outs(imax); i < imax; i++) {
+    Node* node = ctrl->fast_out(i);
+    if (node->in(0) != ctrl) {
+      // Skip outgoing precedence edges from ctrl.
+      continue;
+    }
+    if (node->is_SafePoint()) {
+      found_safepoint = true;
+    }
+    if (node->is_Load() && load_require_barrier(node->as_Load()) &&
+        load_has_expanded_barrier(node->as_Load())) {
+      found_load = true;
     }
   }
+  assert(!found_safepoint || !found_load, "found load and safepoint in same block");
+}
 
-  return true;
+static void verify_slippery_safepoints(Compile* C) {
+  ResourceArea *area = Thread::current()->resource_area();
+  Unique_Node_List visited(area);
+  Unique_Node_List checked(area);
+
+  // Recursively walk the graph.
+  visited.push(C->root());
+  while (visited.size() > 0) {
+    Node* node = visited.pop();
+
+    Node* ctrl = node;
+    if (!node->is_CFG()) {
+      ctrl = node->in(0);
+    }
+
+    if (ctrl != NULL && !checked.member(ctrl)) {
+      // For each block found in the graph, verify that it does not
+      // contain both a safepoint and a load requiring barriers.
+      verify_slippery_safepoints_internal(ctrl);
+
+      checked.push(ctrl);
+    }
+
+    checked.push(node);
+
+    for (DUIterator_Fast imax, i = node->fast_outs(imax); i < imax; i++) {
+      Node* use = node->fast_out(i);
+      if (checked.member(use))  continue;
+      if (visited.member(use))  continue;
+      visited.push(use);
+    }
+  }
 }
 
 void ZBarrierSetC2::verify_gc_barriers(Compile* compile, CompilePhase phase) const {
@@ -778,6 +809,7 @@ void ZBarrierSetC2::verify_gc_barriers(Compile* compile, CompilePhase phase) con
     case BarrierSetC2::BeforeCodeGen:
       // Barriers has been fully expanded.
       assert(state()->load_barrier_count() == 0, "No more macro barriers");
+      verify_slippery_safepoints(compile);
       break;
     default:
       assert(0, "Phase without verification");
@@ -849,6 +881,18 @@ void ZBarrierSetC2::verify_gc_barriers(bool post_parse) const {
 
 #endif // end verification code
 
+// If a call is the control, we actually want its control projection
+static Node* normalize_ctrl(Node* node) {
+ if (node->is_Call()) {
+   node = node->as_Call()->proj_out(TypeFunc::Control);
+ }
+ return node;
+}
+
+static Node* get_ctrl_normalized(PhaseIdealLoop *phase, Node* node) {
+  return normalize_ctrl(phase->get_ctrl(node));
+}
+
 static void call_catch_cleanup_one(PhaseIdealLoop* phase, LoadNode* load, Node* ctrl);
 
 // This code is cloning all uses of a load that is between a call and the catch blocks,
@@ -862,7 +906,7 @@ static bool fixup_uses_in_catch(PhaseIdealLoop *phase, Node *start_ctrl, Node *n
     return false;
   }
 
-  Node* ctrl = phase->get_ctrl(node);
+  Node* ctrl = get_ctrl_normalized(phase, node);
   if (ctrl != start_ctrl) {
     // We are in a successor block - the node is ok.
     return false; // Unwind
@@ -879,7 +923,6 @@ static bool fixup_uses_in_catch(PhaseIdealLoop *phase, Node *start_ctrl, Node *n
 
   // Now all successors are outside
   // - Clone this node to both successors
-  int no_succs = node->outcnt();
   assert(!node->is_Store(), "Stores not expected here");
 
   // In some very rare cases a load that doesn't need a barrier will end up here
@@ -903,7 +946,7 @@ static bool fixup_uses_in_catch(PhaseIdealLoop *phase, Node *start_ctrl, Node *n
         new_ctrl = use->in(0);
         assert (new_ctrl != NULL, "");
       } else {
-        new_ctrl = phase->get_ctrl(use);
+        new_ctrl = get_ctrl_normalized(phase, use);
       }
 
       phase->set_ctrl(clone, new_ctrl);
@@ -958,16 +1001,12 @@ static void call_catch_cleanup_one(PhaseIdealLoop* phase, LoadNode* load, Node* 
   // Process the loads successor nodes - if any is between
   // the call and the catch blocks, they need to be cloned to.
   // This is done recursively
-  int outcnt = load->outcnt();
-  uint index = 0;
-  for (int i = 0; i < outcnt; i++) {
-    if (index < load->outcnt()) {
-      Node *n = load->raw_out(index);
-      assert(!n->is_LoadBarrier(), "Sanity");
-      if (!fixup_uses_in_catch(phase, ctrl, n)) {
-        // if no successor was cloned, progress to next out.
-        index++;
-      }
+  for (uint i = 0; i < load->outcnt();) {
+    Node *n = load->raw_out(i);
+    assert(!n->is_LoadBarrier(), "Sanity");
+    if (!fixup_uses_in_catch(phase, ctrl, n)) {
+      // if no successor was cloned, progress to next out.
+      i++;
     }
   }
 
@@ -996,7 +1035,8 @@ static void call_catch_cleanup_one(PhaseIdealLoop* phase, LoadNode* load, Node* 
     Node* load_use = load->raw_out(i);
 
     if (phase->has_ctrl(load_use)) {
-      load_use_control = phase->get_ctrl(load_use);
+      load_use_control = get_ctrl_normalized(phase, load_use);
+      assert(load_use_control != ctrl, "sanity");
     } else {
       load_use_control = load_use->in(0);
     }
@@ -1180,7 +1220,7 @@ static void call_catch_cleanup_one(PhaseIdealLoop* phase, LoadNode* load, Node* 
 static void process_catch_cleanup_candidate(PhaseIdealLoop* phase, LoadNode* load) {
   bool trace = phase->C->directive()->ZTraceLoadBarriersOption;
 
-  Node* ctrl = phase->get_ctrl(load);
+  Node* ctrl = get_ctrl_normalized(phase, load);
   if (!ctrl->is_Proj() || (ctrl->in(0) == NULL) || !ctrl->in(0)->isa_Call()) {
     return;
   }
@@ -1553,6 +1593,7 @@ void ZBarrierSetC2::insert_one_loadbarrier_inner(PhaseIdealLoop* phase, LoadNode
   Node* barrier = new LoadBarrierNode(C, NULL, load->in(LoadNode::Memory), NULL, load->in(LoadNode::Address), load_has_weak_barrier(load));
   Node* barrier_val = new ProjNode(barrier, LoadBarrierNode::Oop);
   Node* barrier_ctrl = new ProjNode(barrier, LoadBarrierNode::Control);
+  ctrl = normalize_ctrl(ctrl);
 
   if (trace) tty->print_cr("Insert load %i with barrier: %i and ctrl : %i", load->_idx, barrier->_idx, ctrl->_idx);
 
@@ -1594,7 +1635,7 @@ void ZBarrierSetC2::insert_one_loadbarrier_inner(PhaseIdealLoop* phase, LoadNode
   // For all successors of ctrl - move all visited to become successors of barrier_ctrl instead
   for (DUIterator_Fast imax, r = ctrl->fast_outs(imax); r < imax; r++) {
     Node* tmp = ctrl->fast_out(r);
-    if (visited2.test(tmp->_idx) && (tmp != load)) {
+    if (tmp->is_SafePoint() || (visited2.test(tmp->_idx) && (tmp != load))) {
       if (trace) tty->print_cr(" Move ctrl_succ %i to barrier_ctrl", tmp->_idx);
       igvn.replace_input_of(tmp, 0, barrier_ctrl);
       --r; --imax;
@@ -1621,6 +1662,9 @@ void ZBarrierSetC2::insert_one_loadbarrier_inner(PhaseIdealLoop* phase, LoadNode
   // Connect barrier to load and control
   barrier->set_req(LoadBarrierNode::Oop, load);
   barrier->set_req(LoadBarrierNode::Control, ctrl);
+
+  igvn.replace_input_of(load, MemNode::Control, ctrl);
+  load->pin();
 
   igvn.rehash_node_delayed(load);
   igvn.register_new_node_with_optimizer(barrier);

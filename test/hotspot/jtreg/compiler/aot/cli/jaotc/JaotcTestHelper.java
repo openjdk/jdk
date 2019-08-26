@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -40,6 +40,7 @@ public class JaotcTestHelper {
     public static final String DEFAULT_LIB_PATH = "./unnamed." + Platform.sharedLibraryExt();
     public static final String DEFAULT_LIBRARY_LOAD_MESSAGE = "loaded    " + DEFAULT_LIB_PATH
             + "  aot library";
+    private static final String UNLOCK_EXPERIMENTAL_VM_OPTIONS = "-XX:+UnlockExperimentalVMOptions";
     private static final String ENABLE_AOT = "-XX:+UseAOT";
     private static final String AOT_LIBRARY = "-XX:AOTLibrary=" + DEFAULT_LIB_PATH;
     private static final String PRINT_AOT = "-XX:+PrintAOT";
@@ -75,7 +76,8 @@ public class JaotcTestHelper {
         try {
             CommandLineOptionTest.verifyJVMStartup(expectedOutput, unexpectedOutput,
                     "Unexpected exit code", "Unexpected output", ExitCode.OK,
-                    /* addTestVMOpts */ true, ENABLE_AOT, AOT_LIBRARY, PRINT_AOT, classToRun);
+                    /* addTestVMOpts */ true, UNLOCK_EXPERIMENTAL_VM_OPTIONS,
+                    ENABLE_AOT, AOT_LIBRARY, PRINT_AOT, classToRun);
         } catch (Throwable t) {
             throw new Error("Library usage verification failed: " + t, t);
         }

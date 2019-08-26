@@ -32,7 +32,9 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.attribute.BasicFileAttributeView;
 import java.nio.file.attribute.FileAttributeView;
+import java.nio.file.attribute.FileOwnerAttributeView;
 import java.nio.file.attribute.FileStoreAttributeView;
+import java.nio.file.attribute.PosixFileAttributeView;
 
 /**
  * @author Xueming Shen, Rajendra Gutupalli, Jaya Hangal
@@ -63,12 +65,15 @@ class ZipFileStore extends FileStore {
     @Override
     public boolean supportsFileAttributeView(Class<? extends FileAttributeView> type) {
         return (type == BasicFileAttributeView.class ||
-                type == ZipFileAttributeView.class);
+                type == ZipFileAttributeView.class ||
+                ((type == FileOwnerAttributeView.class ||
+                  type == PosixFileAttributeView.class) && zfs.supportPosix));
     }
 
     @Override
     public boolean supportsFileAttributeView(String name) {
-        return "basic".equals(name) || "zip".equals(name);
+        return "basic".equals(name) || "zip".equals(name) ||
+               (("owner".equals(name) || "posix".equals(name)) && zfs.supportPosix);
     }
 
     @Override

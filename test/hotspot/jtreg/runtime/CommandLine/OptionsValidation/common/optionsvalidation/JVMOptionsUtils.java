@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -45,6 +45,9 @@ public class JVMOptionsUtils {
 
     /* Java option which print options with ranges */
     private static final String PRINT_FLAGS_RANGES = "-XX:+PrintFlagsRanges";
+
+    private static final String UNLOCK_FLAG1 = "-XX:+UnlockDiagnosticVMOptions";
+    private static final String UNLOCK_FLAG2 = "-XX:+UnlockExperimentalVMOptions";
 
     /* StringBuilder to accumulate failed message */
     private static final StringBuilder finalFailedMessage = new StringBuilder();
@@ -458,7 +461,7 @@ public class JVMOptionsUtils {
      * @throws Exception if a new process can not be created or an error
      * occurred while reading the data
      */
-    public static Map<String, JVMOption> getOptionsAsMap(boolean withRanges, Predicate<String> acceptOrigin,
+    private static Map<String, JVMOption> getOptionsAsMap(boolean withRanges, Predicate<String> acceptOrigin,
             String... additionalArgs) throws Exception {
         Map<String, JVMOption> result;
         Process p;
@@ -475,6 +478,8 @@ public class JVMOptionsUtils {
         if (GCType != null) {
             runJava.add(GCType);
         }
+        runJava.add(UNLOCK_FLAG1);
+        runJava.add(UNLOCK_FLAG2);
         runJava.add(PRINT_FLAGS_RANGES);
         runJava.add("-version");
 

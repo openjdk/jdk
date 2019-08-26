@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,23 +31,23 @@ import java.lang.StackWalker.StackFrame;
 import java.lang.invoke.MethodType;
 
 class StackFrameInfo implements StackFrame {
-    private final byte RETAIN_CLASS_REF = 0x01;
-
     private final static JavaLangInvokeAccess JLIA =
         SharedSecrets.getJavaLangInvokeAccess();
 
-    private final byte flags;
-    private final Object memberName;
-    private final short bci;
+    private final boolean retainClassRef;
+    private final Object memberName;    // MemberName initialized by VM
+    private int bci;                    // initialized by VM to >= 0
     private volatile StackTraceElement ste;
 
     /*
-     * Create StackFrameInfo for StackFrameTraverser and LiveStackFrameTraverser
-     * to use
+     * Construct an empty StackFrameInfo object that will be filled by the VM
+     * during stack walking.
+     *
+     * @see StackStreamFactory.AbstractStackWalker#callStackWalk
+     * @see StackStreamFactory.AbstractStackWalker#fetchStackFrames
      */
     StackFrameInfo(StackWalker walker) {
-        this.flags = walker.retainClassRef ? RETAIN_CLASS_REF : 0;
-        this.bci = -1;
+        this.retainClassRef = walker.retainClassRef;
         this.memberName = JLIA.newMemberName();
     }
 
@@ -135,7 +135,7 @@ class StackFrameInfo implements StackFrame {
     }
 
     private void ensureRetainClassRefEnabled() {
-        if ((flags & RETAIN_CLASS_REF) == 0) {
+        if (!retainClassRef) {
             throw new UnsupportedOperationException("No access to RETAIN_CLASS_REFERENCE");
         }
     }

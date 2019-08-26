@@ -26,7 +26,7 @@
 #define SHARE_RUNTIME_SYNCHRONIZER_HPP
 
 #include "memory/padded.hpp"
-#include "oops/markOop.hpp"
+#include "oops/markWord.hpp"
 #include "runtime/basicLock.hpp"
 #include "runtime/handles.hpp"
 #include "runtime/perfData.hpp"

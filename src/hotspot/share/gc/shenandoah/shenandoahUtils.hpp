@@ -175,15 +175,4 @@ public:
   }
 };
 
-class ShenandoahTimingConverter : public AllStatic {
-public:
-  static void weak_processing_timing_to_shenandoah_timing(WeakProcessorPhaseTimes* weak_processing_timings,
-                                                          ShenandoahWorkerTimings* sh_worker_times);
-private:
-  static void weak_processing_phase_to_shenandoah_phase(WeakProcessorPhases::Phase wpp,
-                                                        WeakProcessorPhaseTimes* weak_processing_timings,
-                                                        ShenandoahPhaseTimings::GCParPhases spp,
-                                                        ShenandoahWorkerTimings* sh_worker_times);
-};
-
 #endif // SHARE_GC_SHENANDOAH_SHENANDOAHUTILS_HPP

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -74,16 +74,17 @@ public final class MultipleAOTLibraryTest {
     private void runTest(String args[]) {
         try {
             boolean addTestVMOptions = true;
-            String[] allArgs = Arrays.copyOf(args, args.length + 4);
-            allArgs[args.length] = "-XX:AOTLibrary="
+            String[] allArgs = Arrays.copyOf(args, args.length + 5);
+            allArgs[args.length] = "-XX:+UnlockExperimentalVMOptions";
+            allArgs[args.length + 1] = "-XX:AOTLibrary="
                     + "." + File.separator
                     + "libMultipleAOTLibraryTest1.so"
                     + File.pathSeparator
                     + "." + File.separator
                     + "libMultipleAOTLibraryTest2.so";
-            allArgs[args.length + 1] = "-XX:+PrintAOT";
-            allArgs[args.length + 2] = "-XX:+UseAOT";
-            allArgs[args.length + 3] = HelloWorldPrinter.class.getName();
+            allArgs[args.length + 2] = "-XX:+PrintAOT";
+            allArgs[args.length + 3] = "-XX:+UseAOT";
+            allArgs[args.length + 4] = HelloWorldPrinter.class.getName();
             CommandLineOptionTest.verifyJVMStartup(EXPECTED_OUTPUT,
                     UNEXPECTED_OUTPUT, "Unexpected exit code",
                     "Unexpected output", ExitCode.OK, addTestVMOptions,

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2004, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2004, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -70,6 +70,15 @@ address JNI_FastGetField::generate_fast_get_int_field0(BasicType type) {
   __ andcc (G4, 1, G0);
   __ br (Assembler::notZero, false, Assembler::pn, label1);
   __ delayed()->srl (O2, 2, O4);
+
+  if (JvmtiExport::can_post_field_access()) {
+    // Check to see if a field access watch has been set before we
+    // take the fast path.
+    AddressLiteral get_field_access_count_addr(JvmtiExport::get_field_access_count_addr());
+    __ load_contents(get_field_access_count_addr, O5);
+    __ cmp_and_br_short(O5, 0, Assembler::notEqual, Assembler::pn, label1);
+  }
+
   __ mov(O1, O5);
 
   // Both O5 and G3 are clobbered by try_resolve_jobject_in_native.
@@ -153,6 +162,15 @@ address JNI_FastGetField::generate_fast_get_long_field() {
   __ andcc (G4, 1, G0);
   __ br (Assembler::notZero, false, Assembler::pn, label1);
   __ delayed()->srl (O2, 2, O4);
+
+  if (JvmtiExport::can_post_field_access()) {
+    // Check to see if a field access watch has been set before we
+    // take the fast path.
+    AddressLiteral get_field_access_count_addr(JvmtiExport::get_field_access_count_addr());
+    __ load_contents(get_field_access_count_addr, O5);
+    __ cmp_and_br_short(O5, 0, Assembler::notEqual, Assembler::pn, label1);
+  }
+
   __ mov(O1, O5);
 
   // Both O5 and G1 are clobbered by try_resolve_jobject_in_native.
@@ -211,6 +229,15 @@ address JNI_FastGetField::generate_fast_get_float_field0(BasicType type) {
   __ andcc (G4, 1, G0);
   __ br (Assembler::notZero, false, Assembler::pn, label1);
   __ delayed()->srl (O2, 2, O4);
+
+  if (JvmtiExport::can_post_field_access()) {
+    // Check to see if a field access watch has been set before we
+    // take the fast path.
+    AddressLiteral get_field_access_count_addr(JvmtiExport::get_field_access_count_addr());
+    __ load_contents(get_field_access_count_addr, O5);
+    __ cmp_and_br_short(O5, 0, Assembler::notEqual, Assembler::pn, label1);
+  }
+
   __ mov(O1, O5);
 
   // Both O5 and G3 are clobbered by try_resolve_jobject_in_native.

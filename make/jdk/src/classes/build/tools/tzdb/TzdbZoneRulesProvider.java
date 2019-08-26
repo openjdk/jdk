@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,24 +31,14 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.Map.Entry;
-import java.util.NavigableMap;
-import java.util.Objects;
-import java.util.Set;
-import java.util.TreeMap;
-import java.util.TreeSet;
 import java.util.concurrent.ConcurrentSkipListMap;
 import java.time.*;
 import java.time.Year;
 import java.time.chrono.IsoChronology;
 import java.time.temporal.TemporalAdjusters;
-import java.time.zone.ZoneOffsetTransition;
-import java.time.zone.ZoneOffsetTransitionRule;
-import java.time.zone.ZoneOffsetTransitionRule.TimeDefinition;
+import build.tools.tzdb.ZoneOffsetTransitionRule.TimeDefinition;
 import java.time.zone.ZoneRulesException;
 
 /**
@@ -272,8 +262,8 @@ class TzdbZoneRulesProvider {
 
         /** Whether this is midnight end of day. */
         boolean endOfDay;
-        /** The time of the cutover. */
 
+        /** The time definition of the cutover. */
         TimeDefinition timeDefinition = TimeDefinition.WALL;
 
         void adjustToForwards(int year) {
@@ -343,6 +333,20 @@ class TzdbZoneRulesProvider {
                         // time must be midnight when end of day flag is true
                         endOfDay = true;
                         secsOfDay = 0;
+                    } else if (secsOfDay < 0 || secsOfDay > 86400) {
+                        // beyond 0:00-24:00 range. Adjust the cutover date.
+                        int beyondDays = secsOfDay / 86400;
+                        secsOfDay %= 86400;
+                        if (secsOfDay < 0) {
+                            secsOfDay = 86400 + secsOfDay;
+                            beyondDays -= 1;
+                        }
+                        LocalDate date = LocalDate.of(2004, month, dayOfMonth).plusDays(beyondDays);  // leap-year
+                        month = date.getMonth();
+                        dayOfMonth = date.getDayOfMonth();
+                        if (dayOfWeek != null) {
+                            dayOfWeek = dayOfWeek.plus(beyondDays);
+                        }
                     }
                     timeDefinition = parseTimeDefinition(timeStr.charAt(timeStr.length() - 1));
                 }
@@ -497,9 +501,11 @@ class TzdbZoneRulesProvider {
          *
          * @param standardOffset  the active standard offset, not null
          * @param savingsBeforeSecs  the active savings before the transition in seconds
+         * @param negativeSavings minimum savings in the rule, usually zero, but negative if negative DST is
+         *                   in effect.
          * @return the transition, not null
         */
-        ZoneOffsetTransitionRule toTransitionRule(ZoneOffset stdOffset, int savingsBefore) {
+        ZoneOffsetTransitionRule toTransitionRule(ZoneOffset stdOffset, int savingsBefore, int negativeSavings) {
             // rule shared by different zones, so don't change it
             Month month = this.month;
             int dayOfMonth = this.dayOfMonth;
@@ -522,6 +528,7 @@ class TzdbZoneRulesProvider {
                 }
                 endOfDay = false;
             }
+
             // build rule
             return ZoneOffsetTransitionRule.of(
                     //month, dayOfMonth, dayOfWeek, time, endOfDay, timeDefinition,
@@ -529,7 +536,7 @@ class TzdbZoneRulesProvider {
                     LocalTime.ofSecondOfDay(secsOfDay), endOfDay, timeDefinition,
                     stdOffset,
                     ZoneOffset.ofTotalSeconds(stdOffset.getTotalSeconds() + savingsBefore),
-                    ZoneOffset.ofTotalSeconds(stdOffset.getTotalSeconds() + savingsAmount));
+                    ZoneOffset.ofTotalSeconds(stdOffset.getTotalSeconds() + savingsAmount - negativeSavings));
         }
 
         RuleLine parse(String[] tokens) {
@@ -643,12 +650,12 @@ class TzdbZoneRulesProvider {
             this.ldtSecs = ldt.toEpochSecond(ZoneOffset.UTC);
         }
 
-        ZoneOffsetTransition toTransition(ZoneOffset standardOffset, int savingsBeforeSecs) {
+        ZoneOffsetTransition toTransition(ZoneOffset standardOffset, int savingsBeforeSecs, int negativeSavings) {
             // copy of code in ZoneOffsetTransitionRule to avoid infinite loop
             ZoneOffset wallOffset = ZoneOffset.ofTotalSeconds(
                 standardOffset.getTotalSeconds() + savingsBeforeSecs);
             ZoneOffset offsetAfter = ZoneOffset.ofTotalSeconds(
-                standardOffset.getTotalSeconds() + rule.savingsAmount);
+                standardOffset.getTotalSeconds() + rule.savingsAmount - negativeSavings);
             LocalDateTime dt = rule.timeDefinition
                                    .createDateTime(ldt, standardOffset, wallOffset);
             return ZoneOffsetTransition.of(dt, wallOffset, offsetAfter);
@@ -666,10 +673,12 @@ class TzdbZoneRulesProvider {
          * Tests if this a real transition with the active savings in seconds
          *
          * @param savingsBefore the active savings in seconds
+         * @param negativeSavings minimum savings in the rule, usually zero, but negative if negative DST is
+         *                   in effect.
          * @return true, if savings changes
          */
-        boolean isTransition(int savingsBefore) {
-            return rule.savingsAmount != savingsBefore;
+        boolean isTransition(int savingsBefore, int negativeSavings) {
+            return rule.savingsAmount - negativeSavings != savingsBefore;
         }
 
         public int compareTo(TransRule other) {
@@ -697,12 +706,22 @@ class TzdbZoneRulesProvider {
         // start ldt of each zone window
         LocalDateTime zoneStart = LocalDateTime.MIN;
 
-        // first stanard offset
+        // first standard offset
         ZoneOffset firstStdOffset = stdOffset;
         // first wall offset
         ZoneOffset firstWallOffset = wallOffset;
 
         for (ZoneLine zone : zones) {
+            // Adjust stdOffset, if negative DST is observed. It should be either
+            // fixed amount, or expressed in the named Rules.
+            int negativeSavings = Math.min(zone.fixedSavingsSecs, findNegativeSavings(zoneStart, zone));
+            if (negativeSavings < 0) {
+                zone.stdOffsetSecs += negativeSavings;
+                if (zone.fixedSavingsSecs < 0) {
+                    zone.fixedSavingsSecs = 0;
+                }
+            }
+
             // check if standard offset changed, update it if yes
             ZoneOffset stdOffsetPrev = stdOffset;  // for effectiveSavings check
             if (zone.stdOffsetSecs != stdOffset.getTotalSeconds()) {
@@ -791,7 +810,7 @@ class TzdbZoneRulesProvider {
                 // sort the merged rules
                 Collections.sort(trules);
 
-                effectiveSavings = 0;
+                effectiveSavings = -negativeSavings;
                 for (TransRule rule : trules) {
                     if (rule.toEpochSecond(stdOffsetPrev, savings) >
                         zoneStart.toEpochSecond(wallOffset)) {
@@ -800,7 +819,7 @@ class TzdbZoneRulesProvider {
                         // (hence isAfter)
                         break;
                     }
-                    effectiveSavings = rule.rule.savingsAmount;
+                    effectiveSavings = rule.rule.savingsAmount - negativeSavings;
                 }
             }
             // check if the start of the window represents a transition
@@ -817,21 +836,21 @@ class TzdbZoneRulesProvider {
             if (trules != null) {
                 long zoneStartEpochSecs = zoneStart.toEpochSecond(wallOffset);
                 for (TransRule trule : trules) {
-                    if (trule.isTransition(savings)) {
+                    if (trule.isTransition(savings, negativeSavings)) {
                         long epochSecs = trule.toEpochSecond(stdOffset, savings);
                         if (epochSecs < zoneStartEpochSecs ||
                             epochSecs >= zone.toDateTimeEpochSecond(savings)) {
                             continue;
                         }
-                        transitionList.add(trule.toTransition(stdOffset, savings));
-                        savings = trule.rule.savingsAmount;
+                        transitionList.add(trule.toTransition(stdOffset, savings, negativeSavings));
+                        savings = trule.rule.savingsAmount - negativeSavings;
                     }
                 }
             }
             if (lastRules != null) {
                 for (TransRule trule : lastRules) {
-                    lastTransitionRuleList.add(trule.rule.toTransitionRule(stdOffset, savings));
-                    savings = trule.rule.savingsAmount;
+                    lastTransitionRuleList.add(trule.rule.toTransitionRule(stdOffset, savings, negativeSavings));
+                    savings = trule.rule.savingsAmount - negativeSavings;
                 }
             }
 
@@ -848,4 +867,38 @@ class TzdbZoneRulesProvider {
                              lastTransitionRuleList);
     }
 
+    /**
+     * Find the minimum negative savings in named Rules for a Zone. Savings are only
+     * looked at for the period of the subject Zone.
+     *
+     * @param zoneStart start LDT of the zone
+     * @param zl ZoneLine to look at
+     */
+    private int findNegativeSavings(LocalDateTime zoneStart, ZoneLine zl) {
+        int negativeSavings = 0;
+        LocalDateTime zoneEnd = zl.toDateTime();
+
+        if (zl.savingsRule != null) {
+            List<RuleLine> rlines = rules.get(zl.savingsRule);
+            if (rlines == null) {
+                throw new IllegalArgumentException("<Rule> not found: " +
+                        zl.savingsRule);
+            }
+
+            negativeSavings = Math.min(0, rlines.stream()
+                    .filter(l -> windowOverlap(l, zoneStart.getYear(), zoneEnd.getYear()))
+                    .map(l -> l.savingsAmount)
+                    .min(Comparator.naturalOrder())
+                    .orElse(0));
+        }
+
+        return negativeSavings;
+    }
+
+    private boolean windowOverlap(RuleLine ruleLine, int zoneStartYear, int zoneEndYear) {
+        boolean overlap = zoneStartYear <= ruleLine.startYear && zoneEndYear >= ruleLine.startYear ||
+                          zoneStartYear <= ruleLine.endYear && zoneEndYear >= ruleLine.endYear;
+
+        return overlap;
+    }
 }

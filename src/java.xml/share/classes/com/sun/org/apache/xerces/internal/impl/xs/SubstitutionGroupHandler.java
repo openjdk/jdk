@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2019, Oracle and/or its affiliates. All rights reserved.
  */
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
@@ -30,6 +30,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 
 /**
  * To store and validate information about substitutionGroup
@@ -38,7 +39,7 @@ import java.util.Map;
  *
  * @author Sandy Gao, IBM
  *
- * @LastModified: Nov 2017
+ * @LastModified: July 2019
  */
 public class SubstitutionGroupHandler {
 
@@ -57,8 +58,8 @@ public class SubstitutionGroupHandler {
     // 3.9.4 Element Sequence Locally Valid (Particle) 2.3.3
     // check whether one element decl matches an element with the given qname
     public XSElementDecl getMatchingElemDecl(QName element, XSElementDecl exemplar) {
-        if (element.localpart == exemplar.fName &&
-            element.uri == exemplar.fTargetNamespace) {
+        if (Objects.equals(element.localpart, exemplar.fName) &&
+            Objects.equals(element.uri, exemplar.fTargetNamespace)) {
             return exemplar;
         }
 

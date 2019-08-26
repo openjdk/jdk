@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2004, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2004, 2019, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2014, Red Hat Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -79,33 +79,57 @@ address JNI_FastGetField::generate_fast_get_int_field0(BasicType type) {
   Address safepoint_counter_addr(rcounter_addr, offset);
   __ ldrw(rcounter, safepoint_counter_addr);
   __ tbnz(rcounter, 0, slow);
-  __ eor(robj, c_rarg1, rcounter);
-  __ eor(robj, robj, rcounter);               // obj, since
-                                              // robj ^ rcounter ^ rcounter == robj
-                                              // robj is address dependent on rcounter.
 
+  if (!UseBarriersForVolatile) {
+    // Field may be volatile. See other usages of this flag.
+    __ membar(MacroAssembler::AnyAny);
+    __ mov(robj, c_rarg1);
+  } else if (JvmtiExport::can_post_field_access()) {
+    // Using barrier to order wrt. JVMTI check and load of result.
+    __ membar(Assembler::LoadLoad);
+    __ mov(robj, c_rarg1);
+  } else {
+    // Using address dependency to order wrt. load of result.
+    __ eor(robj, c_rarg1, rcounter);
+    __ eor(robj, robj, rcounter);         // obj, since
+                                          // robj ^ rcounter ^ rcounter == robj
+                                          // robj is address dependent on rcounter.
+  }
+
+  if (JvmtiExport::can_post_field_access()) {
+    // Check to see if a field access watch has been set before we
+    // take the fast path.
+    unsigned long offset2;
+    __ adrp(result,
+            ExternalAddress((address) JvmtiExport::get_field_access_count_addr()),
+            offset2);
+    __ ldrw(result, Address(result, offset2));
+    __ cbnzw(result, slow);
+  }
+
+  // Both robj and rscratch1 are clobbered by try_resolve_jobject_in_native.
   BarrierSetAssembler* bs = BarrierSet::barrier_set()->barrier_set_assembler();
   bs->try_resolve_jobject_in_native(masm, c_rarg0, robj, rscratch1, slow);
 
   __ lsr(roffset, c_rarg2, 2);                // offset
+  __ add(result, robj, roffset);
 
   assert(count < LIST_CAPACITY, "LIST_CAPACITY too small");
   speculative_load_pclist[count] = __ pc();   // Used by the segfault handler
+  // Using acquire: Order JVMTI check and load of result wrt. succeeding check
+  // (LoadStore for volatile field).
   switch (type) {
-    case T_BOOLEAN: __ ldrb    (result, Address(robj, roffset)); break;
-    case T_BYTE:    __ ldrsb   (result, Address(robj, roffset)); break;
-    case T_CHAR:    __ ldrh    (result, Address(robj, roffset)); break;
-    case T_SHORT:   __ ldrsh   (result, Address(robj, roffset)); break;
-    case T_FLOAT:   __ ldrw    (result, Address(robj, roffset)); break;
-    case T_INT:     __ ldrsw   (result, Address(robj, roffset)); break;
+    case T_BOOLEAN: __ ldarb(result, result); break;
+    case T_BYTE:    __ ldarb(result, result); __ sxtb(result, result); break;
+    case T_CHAR:    __ ldarh(result, result); break;
+    case T_SHORT:   __ ldarh(result, result); __ sxth(result, result); break;
+    case T_FLOAT:   __ ldarw(result, result); break;
+    case T_INT:     __ ldarw(result, result); __ sxtw(result, result); break;
     case T_DOUBLE:
-    case T_LONG:    __ ldr     (result, Address(robj, roffset)); break;
+    case T_LONG:    __ ldar (result, result); break;
     default:        ShouldNotReachHere();
   }
 
-  // counter_addr is address dependent on result.
-  __ eor(rcounter_addr, rcounter_addr, result);
-  __ eor(rcounter_addr, rcounter_addr, result);
   __ ldrw(rscratch1, safepoint_counter_addr);
   __ cmpw(rcounter, rscratch1);
   __ br (Assembler::NE, slow);

@@ -35,8 +35,8 @@ import static sun.security.ssl.CipherSuite.HashAlg.*;
 import static sun.security.ssl.CipherSuite.KeyExchange.*;
 import static sun.security.ssl.CipherSuite.MacAlg.*;
 import static sun.security.ssl.SSLCipher.*;
-import sun.security.ssl.NamedGroup.NamedGroupType;
-import static sun.security.ssl.NamedGroup.NamedGroupType.*;
+import sun.security.ssl.NamedGroup.NamedGroupSpec;
+import static sun.security.ssl.NamedGroup.NamedGroupSpec.*;
 
 /**
  * Enum for SSL/(D)TLS cipher suites.
@@ -1125,12 +1125,12 @@ enum CipherSuite {
         // name of the key exchange algorithm, e.g. DHE_DSS
         final String name;
         final boolean allowed;
-        final NamedGroupType[] groupTypes;
+        final NamedGroupSpec[] groupTypes;
         private final boolean alwaysAvailable;
         private final boolean isAnonymous;
 
         KeyExchange(String name, boolean allowed,
-                boolean isAnonymous, NamedGroupType... groupTypes) {
+                boolean isAnonymous, NamedGroupSpec... groupTypes) {
             this.name = name;
             this.groupTypes = groupTypes;
             this.allowed = allowed;
@@ -1144,8 +1144,8 @@ enum CipherSuite {
                 return true;
             }
 
-            if (NamedGroupType.arrayContains(
-                    groupTypes, NamedGroupType.NAMED_GROUP_ECDHE)) {
+            if (NamedGroupSpec.arrayContains(groupTypes,
+                    NamedGroupSpec.NAMED_GROUP_ECDHE)) {
                 return (allowed && JsseJce.isEcAvailable());
             } else {
                 return allowed;

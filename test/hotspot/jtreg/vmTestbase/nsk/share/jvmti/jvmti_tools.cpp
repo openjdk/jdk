@@ -523,7 +523,7 @@ int nsk_jvmti_redefineClass(jvmtiEnv * jvmti,
 JNIEXPORT jboolean JNICALL
 Java_nsk_share_jvmti_RedefineAgent_redefineAttempted(JNIEnv *jni,  jobject obj) {
 
-    if (redefineAttempted == NSK_TRUE) {
+    if (redefineAttempted) {
         return JNI_TRUE;
     }else {
         return JNI_FALSE;
@@ -534,7 +534,7 @@ Java_nsk_share_jvmti_RedefineAgent_redefineAttempted(JNIEnv *jni,  jobject obj) 
 JNIEXPORT jboolean JNICALL
 Java_nsk_share_jvmti_RedefineAgent_isRedefined(JNIEnv * jni,  jobject obj) {
 
-    if (redefineSucceed == NSK_TRUE) {
+    if (redefineSucceed) {
         return JNI_TRUE;
     }else {
         return JNI_FALSE;
@@ -545,7 +545,7 @@ Java_nsk_share_jvmti_RedefineAgent_isRedefined(JNIEnv * jni,  jobject obj) {
  */
 JNIEXPORT jboolean JNICALL
 Java_nsk_share_jvmti_RedefineAgent_agentStatus(JNIEnv * jni,  jobject obj) {
-    if (agentFailed == NSK_TRUE) {
+    if (agentFailed) {
         return JNI_FALSE;
     } else {
         return JNI_TRUE;

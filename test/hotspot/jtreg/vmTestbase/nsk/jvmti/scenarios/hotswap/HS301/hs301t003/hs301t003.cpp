@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -46,7 +46,7 @@ void JNICALL callbackClassPrepare(jvmtiEnv *jvmti_env,
                   fileName, sizeof(fileName)/sizeof(char));
           nsk_jvmti_disableNotification(jvmti_env,
                   JVMTI_EVENT_CLASS_LOAD, NULL);
-          if (nsk_jvmti_redefineClass(jvmti_env, klass, fileName) == NSK_TRUE) {
+          if (nsk_jvmti_redefineClass(jvmti_env, klass, fileName)) {
               nsk_printf("\n Redefine successful.\n");
           } else {
               nsk_printf("\n Redefine failed.\n");
@@ -75,7 +75,7 @@ jint  Agent_Initialize(JavaVM *vm, char *options, void *reserved) {
     } else {
         jvmtiCapabilities caps;
         jvmtiEventCallbacks eventCallbacks;
-        if (nsk_jvmti_parseOptions(options) == NSK_FALSE) {
+        if (!nsk_jvmti_parseOptions(options)) {
             nsk_printf("# error agent Failed to parse options.\n");
             return JNI_ERR;
         }
@@ -92,7 +92,7 @@ jint  Agent_Initialize(JavaVM *vm, char *options, void *reserved) {
             nsk_printf(" Agent:: Error occured while setting event call back.\n");
             return JNI_ERR;
         }
-        if (nsk_jvmti_enableNotification(jvmti, JVMTI_EVENT_CLASS_PREPARE, NULL) == NSK_TRUE) {
+        if (nsk_jvmti_enableNotification(jvmti, JVMTI_EVENT_CLASS_PREPARE, NULL)) {
             nsk_printf(" Agent:: Enabled notification.\n");
         } else {
             nsk_printf(" Agent:: Failed to enable notification.\n");

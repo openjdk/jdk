@@ -27,6 +27,7 @@
 
 #include "memory/allocation.hpp"
 #include "memory/padded.hpp"
+#include "oops/markWord.hpp"
 #include "runtime/os.hpp"
 #include "runtime/park.hpp"
 #include "runtime/perfData.hpp"
@@ -74,7 +75,7 @@ class ObjectWaiter : public StackObj {
 // ObjectMonitor Layout Overview/Highlights/Restrictions:
 //
 // - The _header field must be at offset 0 because the displaced header
-//   from markOop is stored there. We do not want markOop.hpp to include
+//   from markWord is stored there. We do not want markWord.hpp to include
 //   ObjectMonitor.hpp to avoid exposing ObjectMonitor everywhere. This
 //   means that ObjectMonitor cannot inherit from any other class nor can
 //   it use any virtual member functions. This restriction is critical to
@@ -141,13 +142,13 @@ class ObjectMonitor {
   friend class VMStructs;
   JVMCI_ONLY(friend class JVMCIVMStructs;)
 
-  volatile markOop   _header;       // displaced object header word - mark
+  volatile markWord  _header;       // displaced object header word - mark
   void*     volatile _object;       // backward object pointer - strong root
  public:
   ObjectMonitor*     FreeNext;      // Free list linkage
  private:
   DEFINE_PAD_MINUS_SIZE(0, DEFAULT_CACHE_LINE_SIZE,
-                        sizeof(volatile markOop) + sizeof(void * volatile) +
+                        sizeof(volatile markWord) + sizeof(void * volatile) +
                         sizeof(ObjectMonitor *));
  protected:                         // protected for JvmtiRawMonitor
   void *  volatile _owner;          // pointer to owning thread OR BasicLock
@@ -213,7 +214,7 @@ class ObjectMonitor {
   static int succ_offset_in_bytes()        { return offset_of(ObjectMonitor, _succ); }
   static int EntryList_offset_in_bytes()   { return offset_of(ObjectMonitor, _EntryList); }
 
-  // ObjectMonitor references can be ORed with markOopDesc::monitor_value
+  // ObjectMonitor references can be ORed with markWord::monitor_value
   // as part of the ObjectMonitor tagging mechanism. When we combine an
   // ObjectMonitor reference with an offset, we need to remove the tag
   // value in order to generate the proper address.
@@ -225,11 +226,11 @@ class ObjectMonitor {
   // to the ObjectMonitor reference manipulation code:
   //
   #define OM_OFFSET_NO_MONITOR_VALUE_TAG(f) \
-    ((ObjectMonitor::f ## _offset_in_bytes()) - markOopDesc::monitor_value)
+    ((ObjectMonitor::f ## _offset_in_bytes()) - markWord::monitor_value)
 
-  markOop   header() const;
-  volatile markOop* header_addr();
-  void      set_header(markOop hdr);
+  markWord           header() const;
+  volatile markWord* header_addr();
+  void               set_header(markWord hdr);
 
   intptr_t is_busy() const {
     // TODO-FIXME: assert _owner == null implies _recursions = 0
@@ -285,8 +286,9 @@ class ObjectMonitor {
   void*     object_addr();
   void      set_object(void* obj);
 
-  bool      check(TRAPS);       // true if the thread owns the monitor.
-  void      check_slow(TRAPS);
+  // Returns true if the specified thread owns the ObjectMonitor. Otherwise
+  // returns false and throws IllegalMonitorStateException (IMSE).
+  bool      check_owner(Thread* THREAD);
   void      clear();
 
   void      enter(TRAPS);

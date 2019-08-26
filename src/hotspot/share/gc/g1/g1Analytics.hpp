@@ -58,7 +58,7 @@ class G1Analytics: public CHeapObj<mtGC> {
   TruncatedSeq* _non_young_other_cost_per_region_ms_seq;
 
   TruncatedSeq* _pending_cards_seq;
-  TruncatedSeq* _rs_lengths_seq;
+  TruncatedSeq* _rs_length_seq;
 
   TruncatedSeq* _cost_per_byte_ms_during_cm_seq;
 
@@ -109,7 +109,7 @@ public:
   void report_non_young_other_cost_per_region_ms(double other_cost_per_region_ms);
   void report_constant_other_time_ms(double constant_other_time_ms);
   void report_pending_cards(double pending_cards);
-  void report_rs_lengths(double rs_lengths);
+  void report_rs_length(double rs_length);
 
   size_t predict_rs_length_diff() const;
 
@@ -146,7 +146,7 @@ public:
 
   double predict_cleanup_time_ms() const;
 
-  size_t predict_rs_lengths() const;
+  size_t predict_rs_length() const;
   size_t predict_pending_cards() const;
 
   double predict_cost_per_byte_ms() const;

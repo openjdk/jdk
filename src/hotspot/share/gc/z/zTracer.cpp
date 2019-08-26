@@ -80,7 +80,7 @@ void ZTracer::initialize() {
 }
 
 void ZTracer::send_stat_counter(uint32_t counter_id, uint64_t increment, uint64_t value) {
-  NoSafepointVerifier nsv(true, !SafepointSynchronize::is_at_safepoint());
+  NoSafepointVerifier nsv;
 
   EventZStatisticsCounter e;
   if (e.should_commit()) {
@@ -92,7 +92,7 @@ void ZTracer::send_stat_counter(uint32_t counter_id, uint64_t increment, uint64_
 }
 
 void ZTracer::send_stat_sampler(uint32_t sampler_id, uint64_t value) {
-  NoSafepointVerifier nsv(true, !SafepointSynchronize::is_at_safepoint());
+  NoSafepointVerifier nsv;
 
   EventZStatisticsSampler e;
   if (e.should_commit()) {
@@ -103,7 +103,7 @@ void ZTracer::send_stat_sampler(uint32_t sampler_id, uint64_t value) {
 }
 
 void ZTracer::send_thread_phase(const char* name, const Ticks& start, const Ticks& end) {
-  NoSafepointVerifier nsv(true, !SafepointSynchronize::is_at_safepoint());
+  NoSafepointVerifier nsv;
 
   EventZThreadPhase e(UNTIMED);
   if (e.should_commit()) {
@@ -116,7 +116,7 @@ void ZTracer::send_thread_phase(const char* name, const Ticks& start, const Tick
 }
 
 void ZTracer::send_page_alloc(size_t size, size_t used, size_t free, size_t cache, bool nonblocking, bool noreserve) {
-  NoSafepointVerifier nsv(true, !SafepointSynchronize::is_at_safepoint());
+  NoSafepointVerifier nsv;
 
   EventZPageAllocation e;
   if (e.should_commit()) {

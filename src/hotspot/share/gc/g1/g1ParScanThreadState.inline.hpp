@@ -53,9 +53,9 @@ template <class T> void G1ParScanThreadState::do_oop_evac(T* p) {
     return;
   }
 
-  markOop m = obj->mark_raw();
-  if (m->is_marked()) {
-    obj = (oop) m->decode_pointer();
+  markWord m = obj->mark_raw();
+  if (m.is_marked()) {
+    obj = (oop) m.decode_pointer();
   } else {
     obj = copy_to_survivor_space(region_attr, obj, m);
   }

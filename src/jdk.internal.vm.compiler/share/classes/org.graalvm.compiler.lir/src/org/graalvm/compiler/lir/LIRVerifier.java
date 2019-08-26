@@ -25,7 +25,7 @@
 package org.graalvm.compiler.lir;
 
 import static org.graalvm.compiler.lir.LIRValueUtil.asVariable;
-import static org.graalvm.compiler.lir.LIRValueUtil.isJavaConstant;
+import static org.graalvm.compiler.lir.LIRValueUtil.isConstantValue;
 import static org.graalvm.compiler.lir.LIRValueUtil.isStackSlotValue;
 import static org.graalvm.compiler.lir.LIRValueUtil.isVariable;
 import static jdk.vm.ci.code.ValueUtil.asRegister;
@@ -242,7 +242,7 @@ public final class LIRVerifier {
         if ((isVariable(value) && flags.contains(OperandFlag.REG)) ||
             (isRegister(value) && flags.contains(OperandFlag.REG)) ||
             (isStackSlotValue(value) && flags.contains(OperandFlag.STACK)) ||
-            (isJavaConstant(value) && flags.contains(OperandFlag.CONST) && mode != OperandMode.DEF) ||
+            (isConstantValue(value) && flags.contains(OperandFlag.CONST) && mode != OperandMode.DEF) ||
             (isIllegal(value) && flags.contains(OperandFlag.ILLEGAL))) {
             return;
         }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1995, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1995, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -673,7 +673,7 @@ class ZipFile implements ZipConstants, Closeable {
         e.method = CENHOW(cen, pos);
         if (elen != 0) {
             int start = pos + CENHDR + nlen;
-            e.setExtra0(Arrays.copyOfRange(cen, start, start + elen), true);
+            e.setExtra0(Arrays.copyOfRange(cen, start, start + elen), true, false);
         }
         if (clen != 0) {
             int start = pos + CENHDR + nlen + elen;

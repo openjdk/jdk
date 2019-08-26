@@ -40,8 +40,6 @@ class PSOldGen;
 class ParCompactionManager;
 class ParallelTaskTerminator;
 class PSParallelCompact;
-class GCTaskManager;
-class GCTaskQueue;
 class PreGCValues;
 class MoveAndUpdateClosure;
 class RefProcTaskExecutor;
@@ -914,6 +912,8 @@ inline void ParMarkBitMapClosure::decrement_words_remaining(size_t words) {
 // region that can be put on the ready list.  The regions are atomically added
 // and removed from the ready list.
 
+class TaskQueue;
+
 class PSParallelCompact : AllStatic {
  public:
   // Convenient access to type names.
@@ -925,6 +925,24 @@ class PSParallelCompact : AllStatic {
     old_space_id, eden_space_id,
     from_space_id, to_space_id, last_space_id
   } SpaceId;
+
+  struct UpdateDensePrefixTask : public CHeapObj<mtGC> {
+    SpaceId _space_id;
+    size_t _region_index_start;
+    size_t _region_index_end;
+
+    UpdateDensePrefixTask() :
+        _space_id(SpaceId(0)),
+        _region_index_start(0),
+        _region_index_end(0) {}
+
+    UpdateDensePrefixTask(SpaceId space_id,
+                          size_t region_index_start,
+                          size_t region_index_end) :
+        _space_id(space_id),
+        _region_index_start(region_index_start),
+        _region_index_end(region_index_end) {}
+  };
 
  public:
   // Inline closure decls
@@ -1051,18 +1069,11 @@ class PSParallelCompact : AllStatic {
   static void compact();
 
   // Add available regions to the stack and draining tasks to the task queue.
-  static void prepare_region_draining_tasks(GCTaskQueue* q,
-                                            uint parallel_gc_threads);
+  static void prepare_region_draining_tasks(uint parallel_gc_threads);
 
   // Add dense prefix update tasks to the task queue.
-  static void enqueue_dense_prefix_tasks(GCTaskQueue* q,
+  static void enqueue_dense_prefix_tasks(TaskQueue& task_queue,
                                          uint parallel_gc_threads);
-
-  // Add region stealing tasks to the task queue.
-  static void enqueue_region_stealing_tasks(
-                                       GCTaskQueue* q,
-                                       ParallelTaskTerminator* terminator_ptr,
-                                       uint parallel_gc_threads);
 
   // If objects are left in eden after a collection, try to move the boundary
   // and absorb them into the old gen.  Returns true if eden was emptied.
@@ -1101,9 +1112,6 @@ class PSParallelCompact : AllStatic {
   static elapsedTimer* accumulated_time() { return &_accumulated_time; }
   static unsigned int total_invocations() { return _total_invocations; }
   static CollectorCounters* counters()    { return _counters; }
-
-  // Used to add tasks
-  static GCTaskManager* const gc_task_manager();
 
   // Marking support
   static inline bool mark_obj(oop obj);

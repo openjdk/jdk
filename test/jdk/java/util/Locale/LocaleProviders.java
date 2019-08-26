@@ -28,6 +28,8 @@ import sun.util.locale.provider.LocaleProviderAdapter;
 
 public class LocaleProviders {
 
+    private static final boolean IS_WINDOWS = System.getProperty("os.name").startsWith("Windows");
+
     public static void main(String[] args) {
         String methodName = args[0];
 
@@ -76,6 +78,10 @@ public class LocaleProviders {
                 bug8220227Test();
                 break;
 
+            case "bug8228465Test":
+                bug8228465Test();
+                break;
+
             default:
                 throw new RuntimeException("Test method '"+methodName+"' not found.");
         }
@@ -106,7 +112,7 @@ public class LocaleProviders {
     static void bug7198834Test() {
         LocaleProviderAdapter lda = LocaleProviderAdapter.getAdapter(DateFormatProvider.class, Locale.US);
         LocaleProviderAdapter.Type type = lda.getAdapterType();
-        if (type == LocaleProviderAdapter.Type.HOST && System.getProperty("os.name").startsWith("Windows")) {
+        if (type == LocaleProviderAdapter.Type.HOST && IS_WINDOWS) {
             DateFormat df = DateFormat.getDateInstance(DateFormat.FULL, Locale.US);
             String date = df.format(new Date());
             if (date.charAt(date.length()-1) == ' ') {
@@ -133,7 +139,7 @@ public class LocaleProviders {
 
     // This test assumes Windows localized language/country display names.
     static void bug8010666Test() {
-        if (System.getProperty("os.name").startsWith("Windows")) {
+        if (IS_WINDOWS) {
             NumberFormat nf = NumberFormat.getInstance(Locale.US);
             try {
                 double ver = nf.parse(System.getProperty("os.version"))
@@ -215,7 +221,7 @@ public class LocaleProviders {
     }
 
     static void bug8013903Test() {
-        if (System.getProperty("os.name").startsWith("Windows")) {
+        if (IS_WINDOWS) {
             Date sampleDate = new Date(0x10000000000L);
             String hostResult = "\u5e73\u6210 16.11.03 (Wed) AM 11:53:47";
             String jreResult = "\u5e73\u6210 16.11.03 (\u6c34) \u5348\u524d 11:53:47";
@@ -241,7 +247,7 @@ public class LocaleProviders {
     }
 
     static void bug8027289Test(String expectedCodePoint) {
-        if (System.getProperty("os.name").startsWith("Windows")) {
+        if (IS_WINDOWS) {
             char[] expectedSymbol = Character.toChars(Integer.valueOf(expectedCodePoint, 16));
             NumberFormat nf = NumberFormat.getCurrencyInstance(Locale.CHINA);
             char formatted = nf.format(7000).charAt(0);
@@ -255,12 +261,28 @@ public class LocaleProviders {
     }
 
     static void bug8220227Test() {
-        if (System.getProperty("os.name").startsWith("Windows")) {
+        if (IS_WINDOWS) {
             Locale l = new Locale("xx","XX");
             String country = l.getDisplayCountry();
             if (country.endsWith("(XX)")) {
                 throw new RuntimeException(
                         "Unexpected Region name: " + country);
+            }
+        }
+    }
+
+    static void bug8228465Test() {
+        LocaleProviderAdapter lda = LocaleProviderAdapter.getAdapter(CalendarNameProvider.class, Locale.US);
+        LocaleProviderAdapter.Type type = lda.getAdapterType();
+        if (type == LocaleProviderAdapter.Type.HOST && IS_WINDOWS) {
+            var names =  new GregorianCalendar()
+                .getDisplayNames(Calendar.ERA, Calendar.SHORT_FORMAT, Locale.US);
+            if (!names.keySet().contains("AD") ||
+                names.get("AD").intValue() != 1) {
+                    throw new RuntimeException(
+                            "Short Era name for 'AD' is missing or incorrect");
+            } else {
+                System.out.println("bug8228465Test succeeded.");
             }
         }
     }

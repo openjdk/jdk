@@ -700,7 +700,7 @@ private:
   // When this task got into the termination protocol
   double                      _termination_start_time_ms;
 
-  TruncatedSeq                _marking_step_diffs_ms;
+  TruncatedSeq                _marking_step_diff_ms;
 
   // Updates the local fields after this task has claimed
   // a new region to scan

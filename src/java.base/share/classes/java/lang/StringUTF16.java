@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -489,7 +489,7 @@ final class StringUTF16 {
             final char lo = Character.lowSurrogate(ch);
             checkBoundsBeginEnd(fromIndex, max, value);
             for (int i = fromIndex; i < max - 1; i++) {
-                if (getChar(value, i) == hi && getChar(value, i + 1 ) == lo) {
+                if (getChar(value, i) == hi && getChar(value, i + 1) == lo) {
                     return i;
                 }
             }

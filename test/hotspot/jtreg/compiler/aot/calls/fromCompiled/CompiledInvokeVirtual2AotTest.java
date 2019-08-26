@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -33,12 +33,12 @@
  * @run driver compiler.aot.AotCompiler -libname CompiledInvokeVirtual2AotTest.so
  *      -class compiler.calls.common.InvokeVirtual
  *      -compile compiler.calls.common.InvokeVirtual.callee.*
- * @run main/othervm -Xbatch -XX:+UseAOT
+ * @run main/othervm -Xbatch -XX:+UnlockExperimentalVMOptions -XX:+UseAOT
  *      -XX:AOTLibrary=./CompiledInvokeVirtual2AotTest.so
  *      -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -Xbootclasspath/a:.
  *      compiler.calls.common.InvokeVirtual -compileCaller 1
  *      -checkCalleeCompileLevel -1 -checkCallerCompileLevel 1
- * @run main/othervm -Xbatch -XX:+UseAOT
+ * @run main/othervm -Xbatch -XX:+UnlockExperimentalVMOptions -XX:+UseAOT
  *      -XX:AOTLibrary=./CompiledInvokeVirtual2AotTest.so
  *      -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -Xbootclasspath/a:.
  *      compiler.calls.common.InvokeVirtual -compileCaller 4

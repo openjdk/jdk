@@ -59,12 +59,12 @@ void SharedRuntime::inline_check_hashcode_from_object_header(MacroAssembler* mas
   __ movptr(result, Address(obj_reg, oopDesc::mark_offset_in_bytes()));
 
   // check if locked
-  __ testptr(result, markOopDesc::unlocked_value);
+  __ testptr(result, markWord::unlocked_value);
   __ jcc(Assembler::zero, slowCase);
 
   if (UseBiasedLocking) {
     // Check if biased and fall through to runtime if so
-    __ testptr(result, markOopDesc::biased_lock_bit_in_place);
+    __ testptr(result, markWord::biased_lock_bit_in_place);
     __ jcc(Assembler::notZero, slowCase);
   }
 
@@ -72,17 +72,17 @@ void SharedRuntime::inline_check_hashcode_from_object_header(MacroAssembler* mas
 #ifdef _LP64
   // Read the header and build a mask to get its hash field.
   // Depend on hash_mask being at most 32 bits and avoid the use of hash_mask_in_place
-  // because it could be larger than 32 bits in a 64-bit vm. See markOop.hpp.
-  __ shrptr(result, markOopDesc::hash_shift);
-  __ andptr(result, markOopDesc::hash_mask);
+  // because it could be larger than 32 bits in a 64-bit vm. See markWord.hpp.
+  __ shrptr(result, markWord::hash_shift);
+  __ andptr(result, markWord::hash_mask);
 #else
-  __ andptr(result, markOopDesc::hash_mask_in_place);
+  __ andptr(result, markWord::hash_mask_in_place);
 #endif //_LP64
 
   // test if hashCode exists
   __ jcc(Assembler::zero, slowCase);
 #ifndef _LP64
-  __ shrptr(result, markOopDesc::hash_shift);
+  __ shrptr(result, markWord::hash_shift);
 #endif
   __ ret(0);
   __ bind(slowCase);

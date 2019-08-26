@@ -67,6 +67,7 @@ class Abstract_VM_Version: AllStatic {
   static int          _vm_security_version;
   static int          _vm_patch_version;
   static int          _vm_build_number;
+  static unsigned int _data_cache_line_flush_size;
 
   static VirtualizationType _detected_virtualization;
 
@@ -153,6 +154,18 @@ class Abstract_VM_Version: AllStatic {
 
   static unsigned int L1_data_cache_line_size() {
     return _L1_data_cache_line_size;
+  }
+
+  // the size in bytes of a data cache line flushed by a flush
+  // operation which should be a power of two or zero if cache line
+  // writeback is not supported by the current os_cpu combination
+  static unsigned int data_cache_line_flush_size() {
+    return _data_cache_line_flush_size;
+  }
+
+  // returns true if and only if cache line writeback is supported
+  static bool supports_data_cache_line_flush() {
+    return _data_cache_line_flush_size != 0;
   }
 
   // ARCH specific policy for the BiasedLocking

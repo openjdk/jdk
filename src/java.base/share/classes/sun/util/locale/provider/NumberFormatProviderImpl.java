@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -63,7 +63,7 @@ public class NumberFormatProviderImpl extends NumberFormatProvider implements Av
     private static final int NUMBERSTYLE = 0;
     private static final int CURRENCYSTYLE = 1;
     private static final int PERCENTSTYLE = 2;
-    private static final int SCIENTIFICSTYLE = 3;
+    private static final int ACCOUNTINGSTYLE = 3;
     private static final int INTEGERSTYLE = 4;
 
     private final LocaleProviderAdapter.Type type;
@@ -184,6 +184,12 @@ public class NumberFormatProviderImpl extends NumberFormatProvider implements Av
         String[] numberPatterns = adapter.getLocaleResources(override).getNumberPatterns();
         DecimalFormatSymbols symbols = DecimalFormatSymbols.getInstance(override);
         int entry = (choice == INTEGERSTYLE) ? NUMBERSTYLE : choice;
+        if (choice == CURRENCYSTYLE &&
+            numberPatterns.length > ACCOUNTINGSTYLE &&
+            !numberPatterns[ACCOUNTINGSTYLE].isEmpty() &&
+            "account".equalsIgnoreCase(override.getUnicodeLocaleType("cf"))) {
+            entry = ACCOUNTINGSTYLE;
+        }
         DecimalFormat format = new DecimalFormat(numberPatterns[entry], symbols);
 
         if (choice == INTEGERSTYLE) {

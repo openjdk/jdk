@@ -27,8 +27,8 @@
 #include "gc/cms/promotionInfo.hpp"
 #include "gc/shared/genOopClosures.hpp"
 #include "oops/compressedOops.inline.hpp"
-#include "oops/markOop.inline.hpp"
-#include "oops/oop.hpp"
+#include "oops/markWord.inline.hpp"
+#include "oops/oop.inline.hpp"
 
 /////////////////////////////////////////////////////////////////////////
 //// PromotionInfo
@@ -62,12 +62,12 @@ inline void PromotedObject::setNext(PromotedObject* x) {
 
 // Return the next displaced header, incrementing the pointer and
 // recycling spool area as necessary.
-markOop PromotionInfo::nextDisplacedHeader() {
+markWord PromotionInfo::nextDisplacedHeader() {
   assert(_spoolHead != NULL, "promotionInfo inconsistency");
   assert(_spoolHead != _spoolTail || _firstIndex < _nextIndex,
          "Empty spool space: no displaced header can be fetched");
   assert(_spoolHead->bufferSize > _firstIndex, "Off by one error at head?");
-  markOop hdr = _spoolHead->displacedHdr[_firstIndex];
+  markWord hdr = _spoolHead->displacedHdr[_firstIndex];
   // Spool forward
   if (++_firstIndex == _spoolHead->bufferSize) { // last location in this block
     // forward to next block, recycling this block into spare spool buffer
@@ -93,15 +93,15 @@ void PromotionInfo::track(PromotedObject* trackOop) {
 
 void PromotionInfo::track(PromotedObject* trackOop, Klass* klassOfOop) {
   // make a copy of header as it may need to be spooled
-  markOop mark = oop(trackOop)->mark_raw();
+  markWord mark = oop(trackOop)->mark_raw();
   trackOop->clear_next();
-  if (mark->must_be_preserved_for_cms_scavenge(klassOfOop)) {
+  if (mark.must_be_preserved_for_cms_scavenge(klassOfOop)) {
     // save non-prototypical header, and mark oop
     saveDisplacedHeader(mark);
     trackOop->setDisplacedMark();
   } else {
     // we'd like to assert something like the following:
-    // assert(mark == markOopDesc::prototype(), "consistency check");
+    // assert(mark == markWord::prototype(), "consistency check");
     // ... but the above won't work because the age bits have not (yet) been
     // cleared. The remainder of the check would be identical to the
     // condition checked in must_be_preserved() above, so we don't really
@@ -123,7 +123,7 @@ void PromotionInfo::track(PromotedObject* trackOop, Klass* klassOfOop) {
 
 // Save the given displaced header, incrementing the pointer and
 // obtaining more spool area as necessary.
-void PromotionInfo::saveDisplacedHeader(markOop hdr) {
+void PromotionInfo::saveDisplacedHeader(markWord hdr) {
   assert(_spoolHead != NULL && _spoolTail != NULL,
          "promotionInfo inconsistency");
   assert(_spoolTail->bufferSize > _nextIndex, "Off by one error at tail?");

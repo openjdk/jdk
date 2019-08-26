@@ -28,8 +28,10 @@ package sun.rmi.runtime;
 import java.io.ByteArrayOutputStream;
 import java.io.PrintStream;
 import java.io.OutputStream;
+import java.lang.StackWalker.StackFrame;
 import java.rmi.server.LogStream;
 import java.security.PrivilegedAction;
+import java.util.Set;
 import java.util.logging.Handler;
 import java.util.logging.SimpleFormatter;
 import java.util.logging.Level;
@@ -61,6 +63,8 @@ public abstract class Log {
     /** Logger re-definition of old RMI log values */
     public static final Level BRIEF = Level.FINE;
     public static final Level VERBOSE = Level.FINER;
+
+    private static final StackWalker WALKER = StackWalker.getInstance(Set.of(), 4);
 
     /* selects log implementation */
     private static final LogFactory logFactory;
@@ -217,16 +221,16 @@ public abstract class Log {
 
         public void log(Level level, String message) {
             if (isLoggable(level)) {
-                String[] source = getSource();
-                logger.logp(level, source[0], source[1],
+                StackFrame sourceFrame = getSource();
+                logger.logp(level, sourceFrame.getClassName(), sourceFrame.getMethodName(),
                            Thread.currentThread().getName() + ": " + message);
             }
         }
 
         public void log(Level level, String message, Throwable thrown) {
             if (isLoggable(level)) {
-                String[] source = getSource();
-                logger.logp(level, source[0], source[1],
+                StackFrame sourceFrame = getSource();
+                logger.logp(level, sourceFrame.getClassName(), sourceFrame.getMethodName(),
                     Thread.currentThread().getName() + ": " +
                            message, thrown);
             }
@@ -390,9 +394,9 @@ public abstract class Log {
 
         public void log(Level messageLevel, String message) {
             if (isLoggable(messageLevel)) {
-                String[] source = getSource();
-                stream.println(unqualifiedName(source[0]) +
-                               "." + source[1] + ": " + message);
+                StackFrame sourceFrame = getSource();
+                stream.println(unqualifiedName(sourceFrame.getClassName()) +
+                               "." + sourceFrame.getMethodName() + ": " + message);
             }
         }
 
@@ -403,9 +407,9 @@ public abstract class Log {
                  * RemoteServer.getLog
                  */
                 synchronized (stream) {
-                    String[] source = getSource();
-                    stream.println(unqualifiedName(source[0]) + "." +
-                                   source[1] + ": " + message);
+                    StackFrame sourceFrame = getSource();
+                    stream.println(unqualifiedName(sourceFrame.getClassName()) + "." +
+                                    sourceFrame.getMethodName() + ": " + message);
                     thrown.printStackTrace(stream);
                 }
             }
@@ -441,13 +445,12 @@ public abstract class Log {
     }
 
     /**
-     * Obtain class and method names of code calling a log method.
+     * Obtain stack frame of code calling a log method.
      */
-    private static String[] getSource() {
-        StackTraceElement[] trace = (new Exception()).getStackTrace();
-        return new String[] {
-            trace[3].getClassName(),
-            trace[3].getMethodName()
-        };
+    private static StackFrame getSource() {
+        return WALKER.walk(s -> s
+                                 .skip(3)
+                                 .findFirst()
+                                 .get());
     }
 }

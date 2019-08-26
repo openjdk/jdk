@@ -766,6 +766,8 @@ public abstract class DefaultJavaLoweringProvider implements LoweringProvider {
                     } else {
                         newObject = graph.add(createNewArrayFromVirtual(virtual, ConstantNode.forInt(entryCount, graph)));
                     }
+                    // The final STORE_STORE barrier will be emitted by finishAllocatedObjects
+                    newObject.clearEmitMemoryBarrier();
 
                     recursiveLowerings.add(newObject);
                     graph.addBeforeFixed(commit, newObject);

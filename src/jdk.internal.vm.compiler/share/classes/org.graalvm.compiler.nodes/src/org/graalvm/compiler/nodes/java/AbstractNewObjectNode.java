@@ -32,8 +32,11 @@ import org.graalvm.compiler.graph.NodeClass;
 import org.graalvm.compiler.nodeinfo.NodeInfo;
 import org.graalvm.compiler.nodes.DeoptimizingFixedWithNextNode;
 import org.graalvm.compiler.nodes.FrameState;
+import org.graalvm.compiler.nodes.extended.MembarNode;
 import org.graalvm.compiler.nodes.spi.Lowerable;
 import org.graalvm.compiler.nodes.spi.LoweringTool;
+
+import jdk.vm.ci.code.MemoryBarriers;
 
 /**
  * The {@code AbstractNewObjectNode} is the base class for the new instance and new array nodes.
@@ -43,6 +46,12 @@ public abstract class AbstractNewObjectNode extends DeoptimizingFixedWithNextNod
 
     public static final NodeClass<AbstractNewObjectNode> TYPE = NodeClass.create(AbstractNewObjectNode.class);
     protected final boolean fillContents;
+
+    /**
+     * Controls whether this allocation emits a {@link MembarNode} with
+     * {@link MemoryBarriers#STORE_STORE} as part of the object initialization.
+     */
+    protected boolean emitMemoryBarrier = true;
 
     protected AbstractNewObjectNode(NodeClass<? extends AbstractNewObjectNode> c, Stamp stamp, boolean fillContents, FrameState stateBefore) {
         super(c, stamp, stateBefore);
@@ -64,5 +73,13 @@ public abstract class AbstractNewObjectNode extends DeoptimizingFixedWithNextNod
     @Override
     public boolean canDeoptimize() {
         return true;
+    }
+
+    public boolean emitMemoryBarrier() {
+        return emitMemoryBarrier;
+    }
+
+    public void clearEmitMemoryBarrier() {
+        this.emitMemoryBarrier = false;
     }
 }

@@ -35,6 +35,7 @@ import java.util.EnumSet;
 
 import jdk.internal.vm.compiler.collections.EconomicSet;
 import org.graalvm.compiler.asm.Label;
+import org.graalvm.compiler.core.common.GraalOptions;
 import org.graalvm.compiler.core.common.cfg.AbstractBlockBase;
 import org.graalvm.compiler.debug.GraalError;
 import org.graalvm.compiler.lir.asm.CompilationResultBuilder;
@@ -154,7 +155,7 @@ public class StandardOp {
         @Override
         public void emitCode(CompilationResultBuilder crb) {
             if (align) {
-                crb.asm.align(crb.target.wordSize * 2);
+                crb.asm.align(GraalOptions.LoopHeaderAlignment.getValue(crb.getOptions()));
             }
             crb.asm.bind(label);
         }

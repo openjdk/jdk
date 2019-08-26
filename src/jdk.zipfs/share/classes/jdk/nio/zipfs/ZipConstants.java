@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2009, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -63,6 +63,16 @@ class ZipConstants {
     static final int EXTHDR = 16;       // EXT header size
     static final int CENHDR = 46;       // CEN header size
     static final int ENDHDR = 22;       // END header size
+
+    /*
+     * File attribute compatibility types of CEN field "version made by"
+     */
+    static final int FILE_ATTRIBUTES_UNIX = 3; // Unix
+
+    /*
+     * Base values for CEN field "version made by"
+     */
+    static final int VERSION_MADE_BY_BASE_UNIX = FILE_ATTRIBUTES_UNIX << 8; // Unix
 
     /*
      * Local file (LOC) header field offsets
@@ -228,22 +238,24 @@ class ZipConstants {
     static final long ZIP64_LOCOFF(byte[] b) { return LL(b, 8);}   // zip64 end offset
 
     // central directory header (CEN) fields
-    static final long CENSIG(byte[] b, int pos) { return LG(b, pos + 0); }
-    static final int  CENVEM(byte[] b, int pos) { return SH(b, pos + 4); }
-    static final int  CENVER(byte[] b, int pos) { return SH(b, pos + 6); }
-    static final int  CENFLG(byte[] b, int pos) { return SH(b, pos + 8); }
-    static final int  CENHOW(byte[] b, int pos) { return SH(b, pos + 10);}
-    static final long CENTIM(byte[] b, int pos) { return LG(b, pos + 12);}
-    static final long CENCRC(byte[] b, int pos) { return LG(b, pos + 16);}
-    static final long CENSIZ(byte[] b, int pos) { return LG(b, pos + 20);}
-    static final long CENLEN(byte[] b, int pos) { return LG(b, pos + 24);}
-    static final int  CENNAM(byte[] b, int pos) { return SH(b, pos + 28);}
-    static final int  CENEXT(byte[] b, int pos) { return SH(b, pos + 30);}
-    static final int  CENCOM(byte[] b, int pos) { return SH(b, pos + 32);}
-    static final int  CENDSK(byte[] b, int pos) { return SH(b, pos + 34);}
-    static final int  CENATT(byte[] b, int pos) { return SH(b, pos + 36);}
-    static final long CENATX(byte[] b, int pos) { return LG(b, pos + 38);}
-    static final long CENOFF(byte[] b, int pos) { return LG(b, pos + 42);}
+    static final long CENSIG(byte[] b, int pos) { return LG(b, pos + 0); } // signature
+    static final int  CENVEM(byte[] b, int pos) { return SH(b, pos + 4); } // version made by
+    static final int  CENVEM_FA(byte[] b, int pos) { return CH(b, pos + 5); } // file attribute compatibility
+    static final int  CENVER(byte[] b, int pos) { return SH(b, pos + 6); } // version needed to extract
+    static final int  CENFLG(byte[] b, int pos) { return SH(b, pos + 8); } // encrypt, decrypt flags
+    static final int  CENHOW(byte[] b, int pos) { return SH(b, pos + 10);} // compression method
+    static final long CENTIM(byte[] b, int pos) { return LG(b, pos + 12);} // modification time
+    static final long CENCRC(byte[] b, int pos) { return LG(b, pos + 16);} // uncompressed file crc-32 value
+    static final long CENSIZ(byte[] b, int pos) { return LG(b, pos + 20);} // compressed size
+    static final long CENLEN(byte[] b, int pos) { return LG(b, pos + 24);} // uncompressed size
+    static final int  CENNAM(byte[] b, int pos) { return SH(b, pos + 28);} // filename length
+    static final int  CENEXT(byte[] b, int pos) { return SH(b, pos + 30);} // extra field length
+    static final int  CENCOM(byte[] b, int pos) { return SH(b, pos + 32);} // comment length
+    static final int  CENDSK(byte[] b, int pos) { return SH(b, pos + 34);} // disk number start
+    static final int  CENATT(byte[] b, int pos) { return SH(b, pos + 36);} // internal file attributes
+    static final long CENATX(byte[] b, int pos) { return LG(b, pos + 38);} // external file attributes
+    static final int  CENATX_PERMS(byte[] b, int pos) { return SH(b, pos + 40);} // posix permission data
+    static final long CENOFF(byte[] b, int pos) { return LG(b, pos + 42);} // LOC header offset
 
     /* The END header is followed by a variable length comment of size < 64k. */
     static final long END_MAXLEN = 0xFFFF + ENDHDR;

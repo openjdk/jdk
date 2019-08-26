@@ -453,6 +453,15 @@ bool C2Compiler::is_intrinsic_supported(const methodHandle& method, bool is_virt
   case vmIntrinsics::_minD:
     if (!Matcher::match_rule_supported(Op_MinD)) return false;
     break;
+  case vmIntrinsics::_writeback0:
+    if (!Matcher::match_rule_supported(Op_CacheWB)) return false;
+    break;
+  case vmIntrinsics::_writebackPreSync0:
+    if (!Matcher::match_rule_supported(Op_CacheWBPreSync)) return false;
+    break;
+  case vmIntrinsics::_writebackPostSync0:
+    if (!Matcher::match_rule_supported(Op_CacheWBPostSync)) return false;
+    break;
   case vmIntrinsics::_hashCode:
   case vmIntrinsics::_identityHashCode:
   case vmIntrinsics::_getClass:
@@ -602,6 +611,8 @@ bool C2Compiler::is_intrinsic_supported(const methodHandle& method, bool is_virt
   case vmIntrinsics::_aescrypt_decryptBlock:
   case vmIntrinsics::_cipherBlockChaining_encryptAESCrypt:
   case vmIntrinsics::_cipherBlockChaining_decryptAESCrypt:
+  case vmIntrinsics::_electronicCodeBook_encryptAESCrypt:
+  case vmIntrinsics::_electronicCodeBook_decryptAESCrypt:
   case vmIntrinsics::_counterMode_AESCrypt:
   case vmIntrinsics::_sha_implCompress:
   case vmIntrinsics::_sha2_implCompress:

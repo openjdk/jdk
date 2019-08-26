@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2004, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2004, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -75,6 +75,14 @@ address JNI_FastGetField::generate_fast_get_int_field0(BasicType type) {
   __ mov32 (rcx, counter);
   __ testb (rcx, 1);
   __ jcc (Assembler::notZero, slow);
+
+  if (JvmtiExport::can_post_field_access()) {
+    // Check to see if a field access watch has been set before we
+    // take the fast path.
+    __ cmp32(ExternalAddress((address) JvmtiExport::get_field_access_count_addr()), 0);
+    __ jcc(Assembler::notZero, slow);
+  }
+
   __ mov(rax, rcx);
   __ andptr(rax, 1);                         // rax, must end up 0
   __ movptr(rdx, Address(rsp, rax, Address::times_1, 2*wordSize));
@@ -188,6 +196,14 @@ address JNI_FastGetField::generate_fast_get_long_field() {
   __ mov32 (rcx, counter);
   __ testb (rcx, 1);
   __ jcc (Assembler::notZero, slow);
+
+  if (JvmtiExport::can_post_field_access()) {
+    // Check to see if a field access watch has been set before we
+    // take the fast path.
+    __ cmp32(ExternalAddress((address) JvmtiExport::get_field_access_count_addr()), 0);
+    __ jcc(Assembler::notZero, slow);
+  }
+
   __ mov(rax, rcx);
   __ andptr(rax, 1);                         // rax, must end up 0
   __ movptr(rdx, Address(rsp, rax, Address::times_1, 3*wordSize));
@@ -272,6 +288,14 @@ address JNI_FastGetField::generate_fast_get_float_field0(BasicType type) {
   __ mov32 (rcx, counter);
   __ testb (rcx, 1);
   __ jcc (Assembler::notZero, slow);
+
+  if (JvmtiExport::can_post_field_access()) {
+    // Check to see if a field access watch has been set before we
+    // take the fast path.
+    __ cmp32(ExternalAddress((address) JvmtiExport::get_field_access_count_addr()), 0);
+    __ jcc(Assembler::notZero, slow);
+  }
+
   __ mov(rax, rcx);
   __ andptr(rax, 1);                         // rax, must end up 0
   __ movptr(rdx, Address(rsp, rax, Address::times_1, 2*wordSize));

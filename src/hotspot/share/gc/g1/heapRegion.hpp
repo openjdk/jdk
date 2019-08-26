@@ -255,7 +255,9 @@ class HeapRegion: public G1ContiguousSpace {
   // The index in the optional regions array, if this region
   // is considered optional during a mixed collections.
   uint _index_in_opt_cset;
-  int  _young_index_in_cset;
+
+  // Data for young region survivor prediction.
+  uint  _young_index_in_cset;
   SurvRateGroup* _surv_rate_group;
   int  _age_index;
 
@@ -563,21 +565,24 @@ class HeapRegion: public G1ContiguousSpace {
   void set_index_in_opt_cset(uint index) { _index_in_opt_cset = index; }
   void clear_index_in_opt_cset() { _index_in_opt_cset = InvalidCSetIndex; }
 
-  int  young_index_in_cset() const { return _young_index_in_cset; }
-  void set_young_index_in_cset(int index) {
-    assert( (index == -1) || is_young(), "pre-condition" );
+  uint  young_index_in_cset() const { return _young_index_in_cset; }
+  void clear_young_index_in_cset() { _young_index_in_cset = 0; }
+  void set_young_index_in_cset(uint index) {
+    assert(index != UINT_MAX, "just checking");
+    assert(index != 0, "just checking");
+    assert(is_young(), "pre-condition");
     _young_index_in_cset = index;
   }
 
   int age_in_surv_rate_group() {
-    assert( _surv_rate_group != NULL, "pre-condition" );
-    assert( _age_index > -1, "pre-condition" );
+    assert(_surv_rate_group != NULL, "pre-condition");
+    assert(_age_index > -1, "pre-condition");
     return _surv_rate_group->age_in_group(_age_index);
   }
 
   void record_surv_words_in_group(size_t words_survived) {
-    assert( _surv_rate_group != NULL, "pre-condition" );
-    assert( _age_index > -1, "pre-condition" );
+    assert(_surv_rate_group != NULL, "pre-condition");
+    assert(_age_index > -1, "pre-condition");
     int age_in_group = age_in_surv_rate_group();
     _surv_rate_group->record_surviving_words(age_in_group, words_survived);
   }
@@ -594,9 +599,9 @@ class HeapRegion: public G1ContiguousSpace {
   }
 
   void install_surv_rate_group(SurvRateGroup* surv_rate_group) {
-    assert( surv_rate_group != NULL, "pre-condition" );
-    assert( _surv_rate_group == NULL, "pre-condition" );
-    assert( is_young(), "pre-condition" );
+    assert(surv_rate_group != NULL, "pre-condition");
+    assert(_surv_rate_group == NULL, "pre-condition");
+    assert(is_young(), "pre-condition");
 
     _surv_rate_group = surv_rate_group;
     _age_index = surv_rate_group->next_age_index();
@@ -604,13 +609,13 @@ class HeapRegion: public G1ContiguousSpace {
 
   void uninstall_surv_rate_group() {
     if (_surv_rate_group != NULL) {
-      assert( _age_index > -1, "pre-condition" );
-      assert( is_young(), "pre-condition" );
+      assert(_age_index > -1, "pre-condition");
+      assert(is_young(), "pre-condition");
 
       _surv_rate_group = NULL;
       _age_index = -1;
     } else {
-      assert( _age_index == -1, "pre-condition" );
+      assert(_age_index == -1, "pre-condition");
     }
   }
 

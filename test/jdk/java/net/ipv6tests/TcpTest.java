@@ -133,7 +133,19 @@ public class TcpTest extends Tests {
             dprintln ("connecting to " + ia6addr);
             c2 = new Socket ();
             c2.connect (sadr6, 1000);
-            throw new RuntimeException ("connect to IPv6 address should be refused");
+            dprintln ("Unexpected successful connection: " + c2);
+            // Connect should fail with timeout exception. However, if something else is
+            // accepting connections, verify it is not our server.
+            server.setSoTimeout(500);
+            // Ok if accept() fails because of timeout
+            while (true) {
+                // acceptedSocket could be connected to c1, but not c2
+                try (Socket acceptedSocket = server.accept()) {
+                    dprintln("accepted socket: " + acceptedSocket);
+                    if (acceptedSocket.getRemoteSocketAddress().equals(c2.getLocalSocketAddress()))
+                        throw new RuntimeException("connect to IPv6 address should be refused");
+                }
+            }
         } catch (IOException e) { }
         server.close ();
         c1.close ();
@@ -153,7 +165,19 @@ public class TcpTest extends Tests {
         try {
             dprintln ("connecting to " + ia4addr);
             c2 = new Socket (ia4addr, port);
-            throw new RuntimeException ("connect to IPv4 address should be refused");
+            dprintln ("Unexpected successful connection: " + c2);
+            // Connect should fail with timeout exception. However, if something else is
+            // accepting connections, verify it is not our server.
+            server.setSoTimeout(500);
+            // Ok if accept() fails because of timeout
+            while (true) {
+                // acceptedSocket could be connected to c1, but not c2
+                try (Socket acceptedSocket = server.accept()) {
+                    dprintln("accepted socket: " + acceptedSocket);
+                    if (acceptedSocket.getRemoteSocketAddress().equals(c2.getLocalSocketAddress()))
+                        throw new RuntimeException("connect to IPv4 address should be refused");
+                }
+            }
         } catch (IOException e) { }
         server.close ();
         c1.close ();

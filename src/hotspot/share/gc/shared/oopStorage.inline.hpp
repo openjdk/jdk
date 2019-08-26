@@ -137,7 +137,7 @@ class OopStorage::Block /* No base class, to avoid messing up alignment. */ {
   static const unsigned _data_pos = 0; // Position of _data.
 
   volatile uintx _allocated_bitmask; // One bit per _data element.
-  const OopStorage* _owner;
+  intptr_t _owner_address;
   void* _memory;              // Unaligned storage containing block.
   size_t _active_index;
   AllocationListEntry _allocation_list_entry;

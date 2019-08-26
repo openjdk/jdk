@@ -98,7 +98,7 @@ void HeapShared::fixup_mapped_heap_regions() {
 }
 
 unsigned HeapShared::oop_hash(oop const& p) {
-  assert(!p->mark()->has_bias_pattern(),
+  assert(!p->mark().has_bias_pattern(),
          "this object should never have been locked");  // so identity_hash won't safepoin
   unsigned hash = (unsigned)p->identity_hash();
   return hash;

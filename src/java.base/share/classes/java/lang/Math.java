@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1994, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1994, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -92,12 +92,12 @@ import jdk.internal.HotSpotIntrinsicCandidate;
  * The best practice is to choose the primitive type and algorithm to avoid
  * overflow. In cases where the size is {@code int} or {@code long} and
  * overflow errors need to be detected, the methods {@code addExact},
- * {@code subtractExact}, {@code multiplyExact}, and {@code toIntExact}
+ * {@code subtractExact}, {@code multiplyExact}, {@code toIntExact},
+ * {@code incrementExact}, {@code decrementExact} and {@code negateExact}
  * throw an {@code ArithmeticException} when the results overflow.
- * For other arithmetic operations such as divide, absolute value,
- * increment by one, decrement by one, and negation, overflow occurs only with
- * a specific minimum or maximum value and should be checked against
- * the minimum or maximum as appropriate.
+ * For the arithmetic operations divide and absolute value, overflow
+ * occurs only with a specific minimum or maximum value and
+ * should be checked against the minimum or maximum as appropriate.
  *
  * @author  unascribed
  * @author  Joseph D. Darcy
@@ -1058,7 +1058,7 @@ public final class Math {
     }
 
     /**
-     * Returns the value of the {@code long} argument;
+     * Returns the value of the {@code long} argument,
      * throwing an exception if the value overflows an {@code int}.
      *
      * @param value the long value

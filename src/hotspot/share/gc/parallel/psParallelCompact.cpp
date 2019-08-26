@@ -30,16 +30,15 @@
 #include "classfile/symbolTable.hpp"
 #include "classfile/systemDictionary.hpp"
 #include "code/codeCache.hpp"
-#include "gc/parallel/gcTaskManager.hpp"
 #include "gc/parallel/parallelArguments.hpp"
 #include "gc/parallel/parallelScavengeHeap.inline.hpp"
 #include "gc/parallel/parMarkBitMap.inline.hpp"
-#include "gc/parallel/pcTasks.hpp"
 #include "gc/parallel/psAdaptiveSizePolicy.hpp"
 #include "gc/parallel/psCompactionManager.inline.hpp"
 #include "gc/parallel/psOldGen.hpp"
 #include "gc/parallel/psParallelCompact.inline.hpp"
 #include "gc/parallel/psPromotionManager.inline.hpp"
+#include "gc/parallel/psRootType.hpp"
 #include "gc/parallel/psScavenge.hpp"
 #include "gc/parallel/psYoungGen.hpp"
 #include "gc/shared/gcCause.hpp"
@@ -55,6 +54,8 @@
 #include "gc/shared/referenceProcessorPhaseTimes.hpp"
 #include "gc/shared/spaceDecorator.hpp"
 #include "gc/shared/weakProcessor.hpp"
+#include "gc/shared/workerPolicy.hpp"
+#include "gc/shared/workgroup.hpp"
 #include "logging/log.hpp"
 #include "memory/iterator.inline.hpp"
 #include "memory/resourceArea.hpp"
@@ -1016,9 +1017,6 @@ void PSParallelCompact::pre_compact()
   DEBUG_ONLY(mark_bitmap()->verify_clear();)
   DEBUG_ONLY(summary_data().verify_clear();)
 
-  // Have worker threads release resources the next time they run a task.
-  gc_task_manager()->release_all_resources();
-
   ParCompactionManager::reset_all_bitmap_query_caches();
 }
 
@@ -1779,19 +1777,21 @@ bool PSParallelCompact::invoke_no_policy(bool maximum_heap_compaction) {
   // miscellaneous bookkeeping.
   pre_compact();
 
-  const PreGCValues pre_gc_values(heap);
+  const PreGenGCValues pre_gc_values = heap->get_pre_gc_values();
 
   // Get the compaction manager reserved for the VM thread.
   ParCompactionManager* const vmthread_cm =
-    ParCompactionManager::manager_array(gc_task_manager()->workers());
+    ParCompactionManager::manager_array(ParallelScavengeHeap::heap()->workers().total_workers());
 
   {
     ResourceMark rm;
     HandleMark hm;
 
-    // Set the number of GC threads to be used in this collection
-    gc_task_manager()->set_active_gang();
-    gc_task_manager()->task_idle_workers();
+    const uint active_workers =
+      WorkerPolicy::calc_active_workers(ParallelScavengeHeap::heap()->workers().total_workers(),
+                                        ParallelScavengeHeap::heap()->workers().active_workers(),
+                                        Threads::number_of_non_daemon_threads());
+    ParallelScavengeHeap::heap()->workers().update_active_workers(active_workers);
 
     GCTraceCPUTime tcpu;
     GCTraceTime(Info, gc) tm("Pause Full", NULL, gc_cause, true);
@@ -1923,14 +1923,11 @@ bool PSParallelCompact::invoke_no_policy(bool maximum_heap_compaction) {
       accumulated_time()->stop();
     }
 
-    young_gen->print_used_change(pre_gc_values.young_gen_used());
-    old_gen->print_used_change(pre_gc_values.old_gen_used());
-    MetaspaceUtils::print_metaspace_change(pre_gc_values.metaspace_sizes());
+    heap->print_heap_change(pre_gc_values);
 
     // Track memory usage and detect low memory
     MemoryService::track_memory_usage();
     heap->update_counters();
-    gc_task_manager()->release_idle_workers();
 
     heap->post_full_gc_dump(&_gc_timer);
   }
@@ -1969,7 +1966,6 @@ bool PSParallelCompact::invoke_no_policy(bool maximum_heap_compaction) {
   log_debug(gc, task, time)("VM-Thread " JLONG_FORMAT " " JLONG_FORMAT " " JLONG_FORMAT,
                          marking_start.ticks(), compaction_start.ticks(),
                          collection_exit.ticks());
-  gc_task_manager()->print_task_time_stamps();
 
 #ifdef TRACESPINNING
   ParallelTaskTerminator::print_termination_counts();
@@ -1993,7 +1989,7 @@ bool PSParallelCompact::absorb_live_data_from_eden(PSAdaptiveSizePolicy* size_po
   assert(young_gen->virtual_space()->alignment() ==
          old_gen->virtual_space()->alignment(), "alignments do not match");
 
-  // We also return false when it's a heterogenous heap because old generation cannot absorb data from eden
+  // We also return false when it's a heterogeneous heap because old generation cannot absorb data from eden
   // when it is allocated on different memory (example, nv-dimm) than young.
   if (!(UseAdaptiveSizePolicy && UseAdaptiveGCBoundary) ||
       ParallelArguments::is_heterogeneous_heap()) {
@@ -2074,20 +2070,174 @@ bool PSParallelCompact::absorb_live_data_from_eden(PSAdaptiveSizePolicy* size_po
   return true;
 }
 
-GCTaskManager* const PSParallelCompact::gc_task_manager() {
-  assert(ParallelScavengeHeap::gc_task_manager() != NULL,
-    "shouldn't return NULL");
-  return ParallelScavengeHeap::gc_task_manager();
-}
-
 class PCAddThreadRootsMarkingTaskClosure : public ThreadClosure {
 private:
-  GCTaskQueue* _q;
+  uint _worker_id;
 
 public:
-  PCAddThreadRootsMarkingTaskClosure(GCTaskQueue* q) : _q(q) { }
-  void do_thread(Thread* t) {
-    _q->enqueue(new ThreadRootsMarkingTask(t));
+  PCAddThreadRootsMarkingTaskClosure(uint worker_id) : _worker_id(worker_id) { }
+  void do_thread(Thread* thread) {
+    assert(ParallelScavengeHeap::heap()->is_gc_active(), "called outside gc");
+
+    ResourceMark rm;
+
+    ParCompactionManager* cm = ParCompactionManager::gc_thread_compaction_manager(_worker_id);
+
+    PCMarkAndPushClosure mark_and_push_closure(cm);
+    MarkingCodeBlobClosure mark_and_push_in_blobs(&mark_and_push_closure, !CodeBlobToOopClosure::FixRelocations);
+
+    thread->oops_do(&mark_and_push_closure, &mark_and_push_in_blobs);
+
+    // Do the real work
+    cm->follow_marking_stacks();
+  }
+};
+
+static void mark_from_roots_work(ParallelRootType::Value root_type, uint worker_id) {
+  assert(ParallelScavengeHeap::heap()->is_gc_active(), "called outside gc");
+
+  ParCompactionManager* cm =
+    ParCompactionManager::gc_thread_compaction_manager(worker_id);
+  PCMarkAndPushClosure mark_and_push_closure(cm);
+
+  switch (root_type) {
+    case ParallelRootType::universe:
+      Universe::oops_do(&mark_and_push_closure);
+      break;
+
+    case ParallelRootType::jni_handles:
+      JNIHandles::oops_do(&mark_and_push_closure);
+      break;
+
+    case ParallelRootType::object_synchronizer:
+      ObjectSynchronizer::oops_do(&mark_and_push_closure);
+      break;
+
+    case ParallelRootType::management:
+      Management::oops_do(&mark_and_push_closure);
+      break;
+
+    case ParallelRootType::jvmti:
+      JvmtiExport::oops_do(&mark_and_push_closure);
+      break;
+
+    case ParallelRootType::system_dictionary:
+      SystemDictionary::oops_do(&mark_and_push_closure);
+      break;
+
+    case ParallelRootType::class_loader_data:
+      {
+        CLDToOopClosure cld_closure(&mark_and_push_closure, ClassLoaderData::_claim_strong);
+        ClassLoaderDataGraph::always_strong_cld_do(&cld_closure);
+      }
+      break;
+
+    case ParallelRootType::code_cache:
+      // Do not treat nmethods as strong roots for mark/sweep, since we can unload them.
+      //ScavengableNMethods::scavengable_nmethods_do(CodeBlobToOopClosure(&mark_and_push_closure));
+      AOTLoader::oops_do(&mark_and_push_closure);
+      break;
+
+    case ParallelRootType::sentinel:
+    DEBUG_ONLY(default:) // DEBUG_ONLY hack will create compile error on release builds (-Wswitch) and runtime check on debug builds
+      fatal("Bad enumeration value: %u", root_type);
+      break;
+  }
+
+  // Do the real work
+  cm->follow_marking_stacks();
+}
+
+static void steal_marking_work(ParallelTaskTerminator& terminator, uint worker_id) {
+  assert(ParallelScavengeHeap::heap()->is_gc_active(), "called outside gc");
+
+  ParCompactionManager* cm =
+    ParCompactionManager::gc_thread_compaction_manager(worker_id);
+
+  oop obj = NULL;
+  ObjArrayTask task;
+  do {
+    while (ParCompactionManager::steal_objarray(worker_id,  task)) {
+      cm->follow_array((objArrayOop)task.obj(), task.index());
+      cm->follow_marking_stacks();
+    }
+    while (ParCompactionManager::steal(worker_id, obj)) {
+      cm->follow_contents(obj);
+      cm->follow_marking_stacks();
+    }
+  } while (!terminator.offer_termination());
+}
+
+class MarkFromRootsTask : public AbstractGangTask {
+  typedef AbstractRefProcTaskExecutor::ProcessTask ProcessTask;
+  StrongRootsScope _strong_roots_scope; // needed for Threads::possibly_parallel_threads_do
+  SequentialSubTasksDone _subtasks;
+  TaskTerminator _terminator;
+  uint _active_workers;
+
+public:
+  MarkFromRootsTask(uint active_workers) :
+      AbstractGangTask("MarkFromRootsTask"),
+      _strong_roots_scope(active_workers),
+      _subtasks(),
+      _terminator(active_workers, ParCompactionManager::stack_array()),
+      _active_workers(active_workers) {
+    _subtasks.set_n_threads(active_workers);
+    _subtasks.set_n_tasks(ParallelRootType::sentinel);
+  }
+
+  virtual void work(uint worker_id) {
+    for (uint task = 0; _subtasks.try_claim_task(task); /*empty*/ ) {
+      mark_from_roots_work(static_cast<ParallelRootType::Value>(task), worker_id);
+    }
+    _subtasks.all_tasks_completed();
+
+    PCAddThreadRootsMarkingTaskClosure closure(worker_id);
+    Threads::possibly_parallel_threads_do(true /*parallel */, &closure);
+
+    if (_active_workers > 1) {
+      steal_marking_work(*_terminator.terminator(), worker_id);
+    }
+  }
+};
+
+class PCRefProcTask : public AbstractGangTask {
+  typedef AbstractRefProcTaskExecutor::ProcessTask ProcessTask;
+  ProcessTask& _task;
+  uint _ergo_workers;
+  TaskTerminator _terminator;
+
+public:
+  PCRefProcTask(ProcessTask& task, uint ergo_workers) :
+      AbstractGangTask("PCRefProcTask"),
+      _task(task),
+      _ergo_workers(ergo_workers),
+      _terminator(_ergo_workers, ParCompactionManager::stack_array()) {
+  }
+
+  virtual void work(uint worker_id) {
+    ParallelScavengeHeap* heap = ParallelScavengeHeap::heap();
+    assert(ParallelScavengeHeap::heap()->is_gc_active(), "called outside gc");
+
+    ParCompactionManager* cm =
+      ParCompactionManager::gc_thread_compaction_manager(worker_id);
+    PCMarkAndPushClosure mark_and_push_closure(cm);
+    ParCompactionManager::FollowStackClosure follow_stack_closure(cm);
+    _task.work(worker_id, *PSParallelCompact::is_alive_closure(),
+               mark_and_push_closure, follow_stack_closure);
+
+    steal_marking_work(*_terminator.terminator(), worker_id);
+  }
+};
+
+class RefProcTaskExecutor: public AbstractRefProcTaskExecutor {
+  void execute(ProcessTask& process_task, uint ergo_workers) {
+    assert(ParallelScavengeHeap::heap()->workers().active_workers() == ergo_workers,
+           "Ergonomically chosen workers (%u) must be equal to active workers (%u)",
+           ergo_workers, ParallelScavengeHeap::heap()->workers().active_workers());
+
+    PCRefProcTask task(process_task, ergo_workers);
+    ParallelScavengeHeap::heap()->workers().run_task(&task);
   }
 };
 
@@ -2098,10 +2248,7 @@ void PSParallelCompact::marking_phase(ParCompactionManager* cm,
   GCTraceTime(Info, gc, phases) tm("Marking Phase", &_gc_timer);
 
   ParallelScavengeHeap* heap = ParallelScavengeHeap::heap();
-  uint parallel_gc_threads = heap->gc_task_manager()->workers();
-  uint active_gc_threads = heap->gc_task_manager()->active_workers();
-  TaskQueueSetSuper* qset = ParCompactionManager::stack_array();
-  TaskTerminator terminator(active_gc_threads, qset);
+  uint active_gc_threads = ParallelScavengeHeap::heap()->workers().active_workers();
 
   PCMarkAndPushClosure mark_and_push_closure(cm);
   ParCompactionManager::FollowStackClosure follow_stack_closure(cm);
@@ -2112,29 +2259,8 @@ void PSParallelCompact::marking_phase(ParCompactionManager* cm,
   {
     GCTraceTime(Debug, gc, phases) tm("Par Mark", &_gc_timer);
 
-    ParallelScavengeHeap::ParStrongRootsScope psrs;
-
-    GCTaskQueue* q = GCTaskQueue::create();
-
-    q->enqueue(new MarkFromRootsTask(MarkFromRootsTask::universe));
-    q->enqueue(new MarkFromRootsTask(MarkFromRootsTask::jni_handles));
-    // We scan the thread roots in parallel
-    PCAddThreadRootsMarkingTaskClosure cl(q);
-    Threads::java_threads_and_vm_thread_do(&cl);
-    q->enqueue(new MarkFromRootsTask(MarkFromRootsTask::object_synchronizer));
-    q->enqueue(new MarkFromRootsTask(MarkFromRootsTask::management));
-    q->enqueue(new MarkFromRootsTask(MarkFromRootsTask::system_dictionary));
-    q->enqueue(new MarkFromRootsTask(MarkFromRootsTask::class_loader_data));
-    q->enqueue(new MarkFromRootsTask(MarkFromRootsTask::jvmti));
-    q->enqueue(new MarkFromRootsTask(MarkFromRootsTask::code_cache));
-
-    if (active_gc_threads > 1) {
-      for (uint j = 0; j < active_gc_threads; j++) {
-        q->enqueue(new StealMarkingTask(terminator.terminator()));
-      }
-    }
-
-    gc_task_manager()->execute_and_wait(q);
+    MarkFromRootsTask task(active_gc_threads);
+    ParallelScavengeHeap::heap()->workers().run_task(&task);
   }
 
   // Process reference objects found during marking
@@ -2263,13 +2389,12 @@ public:
   }
 };
 
-void PSParallelCompact::prepare_region_draining_tasks(GCTaskQueue* q,
-                                                      uint parallel_gc_threads)
+void PSParallelCompact::prepare_region_draining_tasks(uint parallel_gc_threads)
 {
   GCTraceTime(Trace, gc, phases) tm("Drain Task Setup", &_gc_timer);
 
   // Find the threads that are active
-  unsigned int which = 0;
+  uint worker_id = 0;
 
   // Find all regions that are available (can be filled immediately) and
   // distribute them to the thread stacks.  The iteration is done in reverse
@@ -2277,7 +2402,6 @@ void PSParallelCompact::prepare_region_draining_tasks(GCTaskQueue* q,
 
   const ParallelCompactData& sd = PSParallelCompact::summary_data();
 
-  which = 0;
   // id + 1 is used to test termination so unsigned  can
   // be used with an old_space_id == 0.
   FillableRegionLogger region_logger;
@@ -2292,12 +2416,12 @@ void PSParallelCompact::prepare_region_draining_tasks(GCTaskQueue* q,
 
     for (size_t cur = end_region - 1; cur + 1 > beg_region; --cur) {
       if (sd.region(cur)->claim_unsafe()) {
-        ParCompactionManager* cm = ParCompactionManager::manager_array(which);
+        ParCompactionManager* cm = ParCompactionManager::manager_array(worker_id);
         cm->region_stack()->push(cur);
         region_logger.handle(cur);
         // Assign regions to tasks in round-robin fashion.
-        if (++which == parallel_gc_threads) {
-          which = 0;
+        if (++worker_id == parallel_gc_threads) {
+          worker_id = 0;
         }
       }
     }
@@ -2305,10 +2429,40 @@ void PSParallelCompact::prepare_region_draining_tasks(GCTaskQueue* q,
   }
 }
 
+class TaskQueue : StackObj {
+  volatile uint _counter;
+  uint _size;
+  uint _insert_index;
+  PSParallelCompact::UpdateDensePrefixTask* _backing_array;
+public:
+  explicit TaskQueue(uint size) : _counter(0), _size(size), _insert_index(0), _backing_array(NULL) {
+    _backing_array = NEW_C_HEAP_ARRAY(PSParallelCompact::UpdateDensePrefixTask, _size, mtGC);
+  }
+  ~TaskQueue() {
+    assert(_counter >= _insert_index, "not all queue elements were claimed");
+    FREE_C_HEAP_ARRAY(T, _backing_array);
+  }
+
+  void push(const PSParallelCompact::UpdateDensePrefixTask& value) {
+    assert(_insert_index < _size, "too small backing array");
+    _backing_array[_insert_index++] = value;
+  }
+
+  bool try_claim(PSParallelCompact::UpdateDensePrefixTask& reference) {
+    uint claimed = Atomic::add(1u, &_counter) - 1; // -1 is so that we start with zero
+    if (claimed < _insert_index) {
+      reference = _backing_array[claimed];
+      return true;
+    } else {
+      return false;
+    }
+  }
+};
+
 #define PAR_OLD_DENSE_PREFIX_OVER_PARTITIONING 4
 
-void PSParallelCompact::enqueue_dense_prefix_tasks(GCTaskQueue* q,
-                                                    uint parallel_gc_threads) {
+void PSParallelCompact::enqueue_dense_prefix_tasks(TaskQueue& task_queue,
+                                                   uint parallel_gc_threads) {
   GCTraceTime(Trace, gc, phases) tm("Dense Prefix Task Setup", &_gc_timer);
 
   ParallelCompactData& sd = PSParallelCompact::summary_data();
@@ -2371,32 +2525,19 @@ void PSParallelCompact::enqueue_dense_prefix_tasks(GCTaskQueue* q,
         // region_index_end is not processed
         size_t region_index_end = MIN2(region_index_start + regions_per_thread,
                                        region_index_end_dense_prefix);
-        q->enqueue(new UpdateDensePrefixTask(SpaceId(space_id),
-                                             region_index_start,
-                                             region_index_end));
+        task_queue.push(UpdateDensePrefixTask(SpaceId(space_id),
+                                              region_index_start,
+                                              region_index_end));
         region_index_start = region_index_end;
       }
     }
     // This gets any part of the dense prefix that did not
     // fit evenly.
     if (region_index_start < region_index_end_dense_prefix) {
-      q->enqueue(new UpdateDensePrefixTask(SpaceId(space_id),
-                                           region_index_start,
-                                           region_index_end_dense_prefix));
+      task_queue.push(UpdateDensePrefixTask(SpaceId(space_id),
+                                            region_index_start,
+                                            region_index_end_dense_prefix));
     }
-  }
-}
-
-void PSParallelCompact::enqueue_region_stealing_tasks(
-                                     GCTaskQueue* q,
-                                     ParallelTaskTerminator* terminator_ptr,
-                                     uint parallel_gc_threads) {
-  GCTraceTime(Trace, gc, phases) tm("Steal Task Setup", &_gc_timer);
-
-  // Once a thread has drained it's stack, it should try to steal regions from
-  // other threads.
-  for (uint j = 0; j < parallel_gc_threads; j++) {
-    q->enqueue(new CompactionWithStealingTask(terminator_ptr));
   }
 }
 
@@ -2442,26 +2583,87 @@ void PSParallelCompact::write_block_fill_histogram()
 }
 #endif // #ifdef ASSERT
 
+static void compaction_with_stealing_work(ParallelTaskTerminator* terminator, uint worker_id) {
+  assert(ParallelScavengeHeap::heap()->is_gc_active(), "called outside gc");
+
+  ParCompactionManager* cm =
+    ParCompactionManager::gc_thread_compaction_manager(worker_id);
+
+  // Drain the stacks that have been preloaded with regions
+  // that are ready to fill.
+
+  cm->drain_region_stacks();
+
+  guarantee(cm->region_stack()->is_empty(), "Not empty");
+
+  size_t region_index = 0;
+
+  while (true) {
+    if (ParCompactionManager::steal(worker_id, region_index)) {
+      PSParallelCompact::fill_and_update_region(cm, region_index);
+      cm->drain_region_stacks();
+    } else {
+      if (terminator->offer_termination()) {
+        break;
+      }
+      // Go around again.
+    }
+  }
+  return;
+}
+
+class UpdateDensePrefixAndCompactionTask: public AbstractGangTask {
+  typedef AbstractRefProcTaskExecutor::ProcessTask ProcessTask;
+  TaskQueue& _tq;
+  TaskTerminator _terminator;
+  uint _active_workers;
+
+public:
+  UpdateDensePrefixAndCompactionTask(TaskQueue& tq, uint active_workers) :
+      AbstractGangTask("UpdateDensePrefixAndCompactionTask"),
+      _tq(tq),
+      _terminator(active_workers, ParCompactionManager::region_array()),
+      _active_workers(active_workers) {
+  }
+  virtual void work(uint worker_id) {
+    ParCompactionManager* cm = ParCompactionManager::gc_thread_compaction_manager(worker_id);
+
+    for (PSParallelCompact::UpdateDensePrefixTask task; _tq.try_claim(task); /* empty */) {
+      PSParallelCompact::update_and_deadwood_in_dense_prefix(cm,
+                                                             task._space_id,
+                                                             task._region_index_start,
+                                                             task._region_index_end);
+    }
+
+    // Once a thread has drained it's stack, it should try to steal regions from
+    // other threads.
+    compaction_with_stealing_work(_terminator.terminator(), worker_id);
+  }
+};
+
 void PSParallelCompact::compact() {
   GCTraceTime(Info, gc, phases) tm("Compaction Phase", &_gc_timer);
 
   ParallelScavengeHeap* heap = ParallelScavengeHeap::heap();
   PSOldGen* old_gen = heap->old_gen();
   old_gen->start_array()->reset();
-  uint parallel_gc_threads = heap->gc_task_manager()->workers();
-  uint active_gc_threads = heap->gc_task_manager()->active_workers();
-  TaskQueueSetSuper* qset = ParCompactionManager::region_array();
-  TaskTerminator terminator(active_gc_threads, qset);
+  uint active_gc_threads = ParallelScavengeHeap::heap()->workers().active_workers();
 
-  GCTaskQueue* q = GCTaskQueue::create();
-  prepare_region_draining_tasks(q, active_gc_threads);
-  enqueue_dense_prefix_tasks(q, active_gc_threads);
-  enqueue_region_stealing_tasks(q, terminator.terminator(), active_gc_threads);
+  // for [0..last_space_id)
+  //     for [0..active_gc_threads * PAR_OLD_DENSE_PREFIX_OVER_PARTITIONING)
+  //         push
+  //     push
+  //
+  // max push count is thus: last_space_id * (active_gc_threads * PAR_OLD_DENSE_PREFIX_OVER_PARTITIONING + 1)
+  TaskQueue task_queue(last_space_id * (active_gc_threads * PAR_OLD_DENSE_PREFIX_OVER_PARTITIONING + 1));
+  prepare_region_draining_tasks(active_gc_threads);
+  enqueue_dense_prefix_tasks(task_queue, active_gc_threads);
 
   {
     GCTraceTime(Trace, gc, phases) tm("Par Compact", &_gc_timer);
 
-    gc_task_manager()->execute_and_wait(q);
+    UpdateDensePrefixAndCompactionTask task(task_queue, active_gc_threads);
+    ParallelScavengeHeap::heap()->workers().run_task(&task);
 
 #ifdef  ASSERT
     // Verify that all regions have been processed before the deferred updates.

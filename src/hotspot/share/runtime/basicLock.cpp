@@ -28,9 +28,9 @@
 
 void BasicLock::print_on(outputStream* st) const {
   st->print("monitor");
-  markOop moop = displaced_header();
-  if (moop != NULL)
-    moop->print_on(st);
+  markWord mark_word = displaced_header();
+  if (mark_word.value() != 0)
+    mark_word.print_on(st);
 }
 
 void BasicLock::move_to(oop obj, BasicLock* dest) {
@@ -62,7 +62,7 @@ void BasicLock::move_to(oop obj, BasicLock* dest) {
   // is small (given the support for inflated fast-path locking in the fast_lock, etc)
   // we'll leave that optimization for another time.
 
-  if (displaced_header()->is_neutral()) {
+  if (displaced_header().is_neutral()) {
     ObjectSynchronizer::inflate_helper(obj);
     // WARNING: We can not put check here, because the inflation
     // will not update the displaced header. Once BasicLock is inflated,

@@ -921,6 +921,101 @@ public final class Unsafe {
         checkPointer(null, address);
     }
 
+    /**
+     * Ensure writeback of a specified virtual memory address range
+     * from cache to physical memory. All bytes in the address range
+     * are guaranteed to have been written back to physical memory on
+     * return from this call i.e. subsequently executed store
+     * instructions are guaranteed not to be visible before the
+     * writeback is completed.
+     *
+     * @param address
+     *        the lowest byte address that must be guaranteed written
+     *        back to memory. bytes at lower addresses may also be
+     *        written back.
+     *
+     * @param length
+     *        the length in bytes of the region starting at address
+     *        that must be guaranteed written back to memory.
+     *
+     * @throws RuntimeException if memory writeback is not supported
+     *         on the current hardware of if the arguments are invalid.
+     *         (<em>Note:</em> after optimization, invalid inputs may
+     *         go undetected, which will lead to unpredictable
+     *         behavior)
+     *
+     * @since 14
+     */
+
+    public void writebackMemory(long address, long length) {
+        checkWritebackEnabled();
+        checkWritebackMemory(address, length);
+
+        // perform any required pre-writeback barrier
+        writebackPreSync0();
+
+        // write back one cache line at a time
+        long line = dataCacheLineAlignDown(address);
+        long end = address + length;
+        while (line < end) {
+            writeback0(line);
+            line += dataCacheLineFlushSize();
+        }
+
+        // perform any required post-writeback barrier
+        writebackPostSync0();
+    }
+
+    /**
+     * Validate the arguments to writebackMemory
+     *
+     * @throws RuntimeException if the arguments are invalid
+     *         (<em>Note:</em> after optimization, invalid inputs may
+     *         go undetected, which will lead to unpredictable
+     *         behavior)
+     */
+    private void checkWritebackMemory(long address, long length) {
+        checkNativeAddress(address);
+        checkSize(length);
+    }
+
+    /**
+     * Validate that the current hardware supports memory writeback.
+     * (<em>Note:</em> this is a belt and braces check.  Clients are
+     * expected to test whether writeback is enabled by calling
+     * ({@link isWritebackEnabled #isWritebackEnabled} and avoid
+     * calling method {@link writeback #writeback} if it is disabled).
+     *
+     *
+     * @throws RuntimeException if memory writeback is not supported
+     */
+    private void checkWritebackEnabled() {
+        if (!isWritebackEnabled()) {
+            throw new RuntimeException("writebackMemory not enabled!");
+        }
+    }
+
+    /**
+     * force writeback of an individual cache line.
+     *
+     * @param address
+     *        the start address of the cache line to be written back
+     */
+    @HotSpotIntrinsicCandidate
+    private native void writeback0(long address);
+
+     /**
+      * Serialize writeback operations relative to preceding memory writes.
+      */
+    @HotSpotIntrinsicCandidate
+    private native void writebackPreSync0();
+
+     /**
+      * Serialize writeback operations relative to following memory writes.
+      */
+    @HotSpotIntrinsicCandidate
+    private native void writebackPostSync0();
+
     /// random queries
 
     /**
@@ -1174,6 +1269,27 @@ public final class Unsafe {
      * This value will always be a power of two.
      */
     public int pageSize() { return PAGE_SIZE; }
+
+    /**
+     * Reports the size in bytes of a data cache line written back by
+     * the hardware cache line flush operation available to the JVM or
+     * 0 if data cache line flushing is not enabled.
+     */
+    public int dataCacheLineFlushSize() { return DATA_CACHE_LINE_FLUSH_SIZE; }
+
+    /**
+     * Rounds down address to a data cache line boundary as
+     * determined by {@link #dataCacheLineFlushSize}
+     * @return the rounded down address
+     */
+    public long dataCacheLineAlignDown(long address) {
+        return (address & ~(DATA_CACHE_LINE_FLUSH_SIZE - 1));
+    }
+
+    /**
+     * Returns true if data cache line writeback
+     */
+    public static boolean isWritebackEnabled() { return DATA_CACHE_LINE_FLUSH_SIZE != 0; }
 
     /// random trusted operations from JNI:
 

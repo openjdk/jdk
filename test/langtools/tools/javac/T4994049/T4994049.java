@@ -10,5 +10,8 @@ public enum T4994049 {
     FOO {
     }
 
-    BAR;
+    BAR1,
+    BAR2(),
+    BAR3 {},
+    BAR4() {};
 }

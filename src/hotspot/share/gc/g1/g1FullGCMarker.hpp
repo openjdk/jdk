@@ -29,7 +29,7 @@
 #include "gc/shared/preservedMarks.hpp"
 #include "gc/shared/taskqueue.hpp"
 #include "memory/iterator.hpp"
-#include "oops/markOop.hpp"
+#include "oops/markWord.hpp"
 #include "oops/oop.hpp"
 #include "runtime/timer.hpp"
 #include "utilities/chunkedList.hpp"

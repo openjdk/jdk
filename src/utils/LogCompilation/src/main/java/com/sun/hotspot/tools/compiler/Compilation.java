@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2009, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -83,9 +83,9 @@ public class Compilation implements LogEvent {
     private String special;
 
     /**
-     * The name of the compiler performing this compilation.
+     * The compilation level for this task.
      */
-    private String compiler;
+    private long level;
 
     /**
      * Start time stamp.
@@ -152,12 +152,12 @@ public class Compilation implements LogEvent {
         return start;
     }
 
-    public void setCompiler(String compiler) {
-        this.compiler = compiler;
-    }
-
     public String getCompiler() {
-        return compiler;
+        assert getNMethod() != null  || getFailureReason() != null : "Null nmethod for Compilation:" + getId() + " " + getMethod();
+        if (getNMethod() != null) {
+            getNMethod().getCompiler();
+        }
+        return "";
     }
 
     @Override
@@ -194,7 +194,7 @@ public class Compilation implements LogEvent {
             stream.println(getSpecial());
         } else {
             int bc = isOsr() ? getBCI() : -1;
-            stream.print(getId() + getMethod().decodeFlags(bc) + " " + compiler + " " + getMethod().format(bc));
+            stream.print(getId() + getMethod().decodeFlags(bc) + " " + getCompiler() + " " + getMethod().format(bc));
         }
     }
 
@@ -222,7 +222,7 @@ public class Compilation implements LogEvent {
                 }
             }
             int bc = isOsr() ? getBCI() : -1;
-            stream.print(getMethod().decodeFlags(bc) + " " + compiler + " " + getMethod().format(bc));
+            stream.print(getMethod().decodeFlags(bc) + " " + getCompiler() + " " + getMethod().format(bc));
             stream.println();
             if (getFailureReason() != null) {
                 stream.println("COMPILE SKIPPED: " + getFailureReason() + " (not retryable)");
@@ -364,5 +364,22 @@ public class Compilation implements LogEvent {
 
     public Compilation getCompilation() {
         return this;
+    }
+
+    /**
+     * @return the level
+     */
+    public long getLevel() {
+        return level;
+    }
+
+    /**
+     * @param level the level to set
+     */
+    public void setLevel(long level) {
+        this.level = level;
+        if (getMethod() != null) {
+            getMethod().setLevel(level);
+        }
     }
 }

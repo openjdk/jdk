@@ -651,14 +651,14 @@ void ContiguousSpace::allocate_temporary_filler(int factor) {
     // allocate uninitialized int array
     typeArrayOop t = (typeArrayOop) allocate(size);
     assert(t != NULL, "allocation should succeed");
-    t->set_mark_raw(markOopDesc::prototype());
+    t->set_mark_raw(markWord::prototype());
     t->set_klass(Universe::intArrayKlassObj());
     t->set_length((int)length);
   } else {
     assert(size == CollectedHeap::min_fill_size(),
            "size for smallest fake object doesn't match");
     instanceOop obj = (instanceOop) allocate(size);
-    obj->set_mark_raw(markOopDesc::prototype());
+    obj->set_mark_raw(markWord::prototype());
     obj->set_klass_gap(0);
     obj->set_klass(SystemDictionary::Object_klass());
   }

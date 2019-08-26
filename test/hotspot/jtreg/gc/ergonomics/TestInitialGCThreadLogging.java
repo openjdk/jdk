@@ -56,7 +56,7 @@ public class TestInitialGCThreadLogging {
 
     if (GC.Parallel.isSupported()) {
       noneGCSupported = false;
-      testInitialGCThreadLogging("UseParallelGC", "ParGC Thread");
+      testInitialGCThreadLogging("UseParallelGC", "GC Thread");
     }
 
     if (GC.Shenandoah.isSupported()) {

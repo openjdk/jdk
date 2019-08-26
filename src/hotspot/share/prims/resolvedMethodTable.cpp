@@ -25,13 +25,14 @@
 #include "precompiled.hpp"
 #include "classfile/javaClasses.hpp"
 #include "gc/shared/oopStorage.inline.hpp"
+#include "gc/shared/oopStorageSet.hpp"
 #include "logging/log.hpp"
 #include "memory/allocation.hpp"
 #include "memory/resourceArea.hpp"
 #include "memory/universe.hpp"
 #include "oops/access.inline.hpp"
-#include "oops/oop.inline.hpp"
 #include "oops/method.hpp"
+#include "oops/oop.inline.hpp"
 #include "oops/weakHandle.inline.hpp"
 #include "prims/resolvedMethodTable.hpp"
 #include "runtime/handles.inline.hpp"
@@ -90,7 +91,6 @@ class ResolvedMethodTableConfig : public AllStatic {
 static ResolvedMethodTableHash* _local_table           = NULL;
 static size_t                   _current_size          = (size_t)1 << ResolvedMethodTableSizeLog;
 
-OopStorage*              ResolvedMethodTable::_weak_handles          = NULL;
 volatile bool            ResolvedMethodTable::_has_work              = false;
 
 volatile size_t          _items_count           = 0;
@@ -98,9 +98,6 @@ volatile size_t          _uncleaned_items_count = 0;
 
 void ResolvedMethodTable::create_table() {
   _local_table  = new ResolvedMethodTableHash(ResolvedMethodTableSizeLog, END_SIZE, GROW_HINT);
-  _weak_handles = new OopStorage("ResolvedMethodTable weak",
-                                 ResolvedMethodTableWeakAlloc_lock,
-                                 ResolvedMethodTableWeakActive_lock);
   log_trace(membername, table)("Start size: " SIZE_FORMAT " (" SIZE_FORMAT ")",
                                _current_size, ResolvedMethodTableSizeLog);
 }

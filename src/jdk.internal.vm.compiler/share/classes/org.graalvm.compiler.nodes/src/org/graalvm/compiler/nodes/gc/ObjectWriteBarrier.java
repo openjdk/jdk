@@ -50,4 +50,3 @@ public abstract class ObjectWriteBarrier extends WriteBarrier {
         return precise;
     }
 }
-

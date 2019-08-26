@@ -156,9 +156,10 @@ public final class HotSpotGraalManagement implements HotSpotGraalManagementRegis
                         platformMBeanServer = ManagementFactory.getPlatformMBeanServer();
                         process();
                     }
-                } catch (SecurityException e) {
+                } catch (SecurityException | UnsatisfiedLinkError | NoClassDefFoundError | UnsupportedOperationException e) {
                     // Without permission to find or create the MBeanServer,
                     // we cannot process any Graal mbeans.
+                    // Various other errors can occur in the ManagementFactory (JDK-8076557)
                     deferred = null;
                 }
             } else {

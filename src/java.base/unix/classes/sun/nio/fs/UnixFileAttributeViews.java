@@ -73,6 +73,7 @@ class UnixFileAttributeViews {
 
             boolean haveFd = false;
             boolean useFutimes = false;
+            boolean useFutimens = false;
             boolean useLutimes = false;
             int fd = -1;
             try {
@@ -84,7 +85,9 @@ class UnixFileAttributeViews {
                     fd = file.openForAttributeAccess(followLinks);
                     if (fd != -1) {
                         haveFd = true;
-                        useFutimes = futimesSupported();
+                        if (!(useFutimens = futimensSupported())) {
+                            useFutimes = futimesSupported();
+                        }
                     }
                 }
             } catch (UnixException x) {
@@ -112,13 +115,17 @@ class UnixFileAttributeViews {
                     }
                 }
 
-                // uptime times
-                long modValue = lastModifiedTime.to(TimeUnit.MICROSECONDS);
-                long accessValue= lastAccessTime.to(TimeUnit.MICROSECONDS);
+                // update times
+                TimeUnit timeUnit = useFutimens ?
+                    TimeUnit.NANOSECONDS : TimeUnit.MICROSECONDS;
+                long modValue = lastModifiedTime.to(timeUnit);
+                long accessValue= lastAccessTime.to(timeUnit);
 
                 boolean retry = false;
                 try {
-                    if (useFutimes) {
+                    if (useFutimens) {
+                        futimens(fd, accessValue, modValue);
+                    } else if (useFutimes) {
                         futimes(fd, accessValue, modValue);
                     } else if (useLutimes) {
                         lutimes(file, accessValue, modValue);
@@ -139,7 +146,9 @@ class UnixFileAttributeViews {
                     if (modValue < 0L) modValue = 0L;
                     if (accessValue < 0L) accessValue= 0L;
                     try {
-                        if (useFutimes) {
+                        if (useFutimens) {
+                            futimens(fd, accessValue, modValue);
+                        } else if (useFutimes) {
                             futimes(fd, accessValue, modValue);
                         } else if (useLutimes) {
                             lutimes(file, accessValue, modValue);

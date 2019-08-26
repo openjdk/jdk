@@ -32,12 +32,6 @@ import sun.jvm.hotspot.runtime.*;
 import sun.jvm.hotspot.types.*;
 import sun.jvm.hotspot.utilities.*;
 
-/** Mark is the analogue of the VM's markOop. In this system it does
-    not subclass Oop but VMObject. For a mark on the stack, the mark's
-    address will be an Address; for a mark in the header of an object,
-    it will be an OopHandle. It is assumed in a couple of places in
-    this code that the mark is the first word in an object. */
-
 public class Mark extends VMObject {
   static {
     VM.registerVMInitializedObserver(new Observer() {
@@ -51,39 +45,39 @@ public class Mark extends VMObject {
     Type type  = db.lookupType("oopDesc");
     markField  = type.getCIntegerField("_mark");
 
-    ageBits             = db.lookupLongConstant("markOopDesc::age_bits").longValue();
-    lockBits            = db.lookupLongConstant("markOopDesc::lock_bits").longValue();
-    biasedLockBits      = db.lookupLongConstant("markOopDesc::biased_lock_bits").longValue();
-    maxHashBits         = db.lookupLongConstant("markOopDesc::max_hash_bits").longValue();
-    hashBits            = db.lookupLongConstant("markOopDesc::hash_bits").longValue();
-    lockShift           = db.lookupLongConstant("markOopDesc::lock_shift").longValue();
-    biasedLockShift     = db.lookupLongConstant("markOopDesc::biased_lock_shift").longValue();
-    ageShift            = db.lookupLongConstant("markOopDesc::age_shift").longValue();
-    hashShift           = db.lookupLongConstant("markOopDesc::hash_shift").longValue();
-    lockMask            = db.lookupLongConstant("markOopDesc::lock_mask").longValue();
-    lockMaskInPlace     = db.lookupLongConstant("markOopDesc::lock_mask_in_place").longValue();
-    biasedLockMask      = db.lookupLongConstant("markOopDesc::biased_lock_mask").longValue();
-    biasedLockMaskInPlace  = db.lookupLongConstant("markOopDesc::biased_lock_mask_in_place").longValue();
-    biasedLockBitInPlace  = db.lookupLongConstant("markOopDesc::biased_lock_bit_in_place").longValue();
-    ageMask             = db.lookupLongConstant("markOopDesc::age_mask").longValue();
-    ageMaskInPlace      = db.lookupLongConstant("markOopDesc::age_mask_in_place").longValue();
-    hashMask            = db.lookupLongConstant("markOopDesc::hash_mask").longValue();
-    hashMaskInPlace     = db.lookupLongConstant("markOopDesc::hash_mask_in_place").longValue();
-    biasedLockAlignment  = db.lookupLongConstant("markOopDesc::biased_lock_alignment").longValue();
-    lockedValue         = db.lookupLongConstant("markOopDesc::locked_value").longValue();
-    unlockedValue       = db.lookupLongConstant("markOopDesc::unlocked_value").longValue();
-    monitorValue        = db.lookupLongConstant("markOopDesc::monitor_value").longValue();
-    markedValue         = db.lookupLongConstant("markOopDesc::marked_value").longValue();
-    biasedLockPattern = db.lookupLongConstant("markOopDesc::biased_lock_pattern").longValue();
-    noHash              = db.lookupLongConstant("markOopDesc::no_hash").longValue();
-    noHashInPlace       = db.lookupLongConstant("markOopDesc::no_hash_in_place").longValue();
-    noLockInPlace       = db.lookupLongConstant("markOopDesc::no_lock_in_place").longValue();
-    maxAge              = db.lookupLongConstant("markOopDesc::max_age").longValue();
+    ageBits             = db.lookupLongConstant("markWord::age_bits").longValue();
+    lockBits            = db.lookupLongConstant("markWord::lock_bits").longValue();
+    biasedLockBits      = db.lookupLongConstant("markWord::biased_lock_bits").longValue();
+    maxHashBits         = db.lookupLongConstant("markWord::max_hash_bits").longValue();
+    hashBits            = db.lookupLongConstant("markWord::hash_bits").longValue();
+    lockShift           = db.lookupLongConstant("markWord::lock_shift").longValue();
+    biasedLockShift     = db.lookupLongConstant("markWord::biased_lock_shift").longValue();
+    ageShift            = db.lookupLongConstant("markWord::age_shift").longValue();
+    hashShift           = db.lookupLongConstant("markWord::hash_shift").longValue();
+    lockMask            = db.lookupLongConstant("markWord::lock_mask").longValue();
+    lockMaskInPlace     = db.lookupLongConstant("markWord::lock_mask_in_place").longValue();
+    biasedLockMask      = db.lookupLongConstant("markWord::biased_lock_mask").longValue();
+    biasedLockMaskInPlace  = db.lookupLongConstant("markWord::biased_lock_mask_in_place").longValue();
+    biasedLockBitInPlace  = db.lookupLongConstant("markWord::biased_lock_bit_in_place").longValue();
+    ageMask             = db.lookupLongConstant("markWord::age_mask").longValue();
+    ageMaskInPlace      = db.lookupLongConstant("markWord::age_mask_in_place").longValue();
+    hashMask            = db.lookupLongConstant("markWord::hash_mask").longValue();
+    hashMaskInPlace     = db.lookupLongConstant("markWord::hash_mask_in_place").longValue();
+    biasedLockAlignment  = db.lookupLongConstant("markWord::biased_lock_alignment").longValue();
+    lockedValue         = db.lookupLongConstant("markWord::locked_value").longValue();
+    unlockedValue       = db.lookupLongConstant("markWord::unlocked_value").longValue();
+    monitorValue        = db.lookupLongConstant("markWord::monitor_value").longValue();
+    markedValue         = db.lookupLongConstant("markWord::marked_value").longValue();
+    biasedLockPattern = db.lookupLongConstant("markWord::biased_lock_pattern").longValue();
+    noHash              = db.lookupLongConstant("markWord::no_hash").longValue();
+    noHashInPlace       = db.lookupLongConstant("markWord::no_hash_in_place").longValue();
+    noLockInPlace       = db.lookupLongConstant("markWord::no_lock_in_place").longValue();
+    maxAge              = db.lookupLongConstant("markWord::max_age").longValue();
 
-    /* Constants in markOop used by CMS. */
-    cmsShift            = db.lookupLongConstant("markOopDesc::cms_shift").longValue();
-    cmsMask             = db.lookupLongConstant("markOopDesc::cms_mask").longValue();
-    sizeShift           = db.lookupLongConstant("markOopDesc::size_shift").longValue();
+    /* Constants in markWord used by CMS. */
+    cmsShift            = db.lookupLongConstant("markWord::cms_shift").longValue();
+    cmsMask             = db.lookupLongConstant("markWord::cms_mask").longValue();
+    sizeShift           = db.lookupLongConstant("markWord::size_shift").longValue();
   }
 
   // Field accessors
@@ -125,7 +119,7 @@ public class Mark extends VMObject {
 
   private static long maxAge;
 
-  /* Constants in markOop used by CMS. */
+  /* Constants in markWord used by CMS. */
   private static long cmsShift;
   private static long cmsMask;
   private static long sizeShift;
@@ -175,7 +169,7 @@ public class Mark extends VMObject {
     return (Bits.maskBitsLong(value(), lockMaskInPlace) == markedValue);
   }
 
-  // Special temporary state of the markOop while being inflated.
+  // Special temporary state of the markWord while being inflated.
   // Code that looks at mark outside a lock need to take this into account.
   public boolean isBeingInflated() {
     return (value() == 0);
@@ -188,12 +182,8 @@ public class Mark extends VMObject {
 
   // WARNING: The following routines are used EXCLUSIVELY by
   // synchronization functions. They are not really gc safe.
-  // They must get updated if markOop layout get changed.
+  // They must get updated if markWord layout get changed.
 
-  // FIXME
-  //  markOop set_unlocked() const {
-  //    return markOop(value() | unlocked_value);
-  //  }
   public boolean hasLocker() {
     return ((value() & lockMaskInPlace) == lockedValue);
   }
@@ -224,44 +214,7 @@ public class Mark extends VMObject {
     Address addr = valueAsAddress().andWithMask(~monitorValue);
     return new Mark(addr.getAddressAt(0));
   }
-  // FIXME
-  //  void set_displaced_mark_helper(markOop m) const {
-  //    assert(has_displaced_mark_helper(), "check");
-  //    intptr_t ptr = (value() & ~monitor_value);
-  //    *(markOop*)ptr = m;
-  //  }
-  //  markOop copy_set_hash(intptr_t hash) const {
-  //    intptr_t tmp = value() & (~hash_mask_in_place);
-  //    tmp |= ((hash & hash_mask) << hash_shift);
-  //    return (markOop)tmp;
-  //  }
-  // it is only used to be stored into BasicLock as the
-  // indicator that the lock is using heavyweight monitor
-  //  static markOop unused_mark() {
-  //    return (markOop) marked_value;
-  //  }
-  //  // the following two functions create the markOop to be
-  //  // stored into object header, it encodes monitor info
-  //  static markOop encode(BasicLock* lock) {
-  //    return (markOop) lock;
-  //  }
-  //  static markOop encode(ObjectMonitor* monitor) {
-  //    intptr_t tmp = (intptr_t) monitor;
-  //    return (markOop) (tmp | monitor_value);
-  //  }
-  // used for alignment-based marking to reuse the busy state to encode pointers
-  // (see markOop_alignment.hpp)
-  //  markOop clear_lock_bits() { return markOop(value() & ~lock_mask_in_place); }
-  //
-  //  // age operations
-  //  markOop set_marked()   { return markOop((value() & ~lock_mask_in_place) | marked_value); }
-  //
   public int age() { return (int) Bits.maskBitsLong(value() >> ageShift, ageMask); }
-  //  markOop set_age(int v) const {
-  //    assert((v & ~age_mask) == 0, "shouldn't overflow age field");
-  //    return markOop((value() & ~age_mask_in_place) | (((intptr_t)v & age_mask) << age_shift));
-  //  }
-  //  markOop incr_age()          const { return age() == max_age ? markOop(this) : set_age(age() + 1); }
 
   // hash operations
   public long hash() {
@@ -271,12 +224,6 @@ public class Mark extends VMObject {
   public boolean hasNoHash() {
     return hash() == noHash;
   }
-
-  // FIXME
-  // Prototype mark for initialization
-  //  static markOop prototype() {
-  //    return markOop( no_hash_in_place | no_lock_in_place );
-  //  }
 
   // Debugging
   public void printOn(PrintStream tty) {
@@ -294,14 +241,7 @@ public class Mark extends VMObject {
     }
   }
 
-  // FIXME
-  //  // Prepare address of oop for placement into mark
-  //  inline static markOop encode_pointer_as_mark(void* p) { return markOop(p)->set_marked(); }
-  //
-  //  // Recover address of oop from encoded form used in mark
-  //  inline void* decode_pointer() { return clear_lock_bits(); }
-
-  // Copy markOop methods for CMS here.
+  // Copy markWord methods for CMS here.
   public boolean isCmsFreeChunk() {
     return isUnlocked() &&
            (Bits.maskBitsLong(value() >> cmsShift, cmsMask) & 0x1L) == 0x1L;

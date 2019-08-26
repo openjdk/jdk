@@ -33,7 +33,7 @@
 #include "interpreter/interpreter.hpp"
 #include "interpreter/interpreterRuntime.hpp"
 #include "oops/arrayOop.hpp"
-#include "oops/markOop.hpp"
+#include "oops/markWord.hpp"
 #include "prims/jvmtiExport.hpp"
 #include "prims/jvmtiThreadState.hpp"
 #include "runtime/basicLock.hpp"
@@ -974,7 +974,7 @@ void InterpreterMacroAssembler::lock_object(Register monitor, Register object) {
 
   // template code:
   //
-  // markOop displaced_header = obj->mark().set_unlocked();
+  // markWord displaced_header = obj->mark().set_unlocked();
   // monitor->lock()->set_displaced_header(displaced_header);
   // if (Atomic::cmpxchg(/*ex=*/monitor, /*addr*/obj->mark_addr(), /*cmp*/displaced_header) == displaced_header) {
   //   // We stored the monitor address into the object's mark word.
@@ -993,17 +993,17 @@ void InterpreterMacroAssembler::lock_object(Register monitor, Register object) {
   NearLabel done;
   NearLabel slow_case;
 
-  // markOop displaced_header = obj->mark().set_unlocked();
+  // markWord displaced_header = obj->mark().set_unlocked();
 
-  // Load markOop from object into displaced_header.
+  // Load markWord from object into displaced_header.
   z_lg(displaced_header, oopDesc::mark_offset_in_bytes(), object);
 
   if (UseBiasedLocking) {
     biased_locking_enter(object, displaced_header, Z_R1, Z_R0, done, &slow_case);
   }
 
-  // Set displaced_header to be (markOop of object | UNLOCK_VALUE).
-  z_oill(displaced_header, markOopDesc::unlocked_value);
+  // Set displaced_header to be (markWord of object | UNLOCK_VALUE).
+  z_oill(displaced_header, markWord::unlocked_value);
 
   // monitor->lock()->set_displaced_header(displaced_header);
 
@@ -1027,7 +1027,7 @@ void InterpreterMacroAssembler::lock_object(Register monitor, Register object) {
 
   // We did not see an unlocked object so try the fast recursive case.
 
-  // Check if owner is self by comparing the value in the markOop of object
+  // Check if owner is self by comparing the value in the markWord of object
   // (current_header) with the stack pointer.
   z_sgr(current_header, Z_SP);
 
@@ -1035,7 +1035,7 @@ void InterpreterMacroAssembler::lock_object(Register monitor, Register object) {
 
   // The prior sequence "LGR, NGR, LTGR" can be done better
   // (Z_R1 is temp and not used after here).
-  load_const_optimized(Z_R0, (~(os::vm_page_size()-1) | markOopDesc::lock_mask_in_place));
+  load_const_optimized(Z_R0, (~(os::vm_page_size()-1) | markWord::lock_mask_in_place));
   z_ngr(Z_R0, current_header); // AND sets CC (result eq/ne 0)
 
   // If condition is true we are done and hence we can store 0 in the displaced
@@ -1914,7 +1914,7 @@ void InterpreterMacroAssembler::get_method_counters(Register Rmethod,
   load_and_test_long(Rcounters, Address(Rmethod, Method::method_counters_offset()));
   z_brnz(has_counters);
 
-  call_VM(noreg, CAST_FROM_FN_PTR(address, InterpreterRuntime::build_method_counters), Rmethod, false);
+  call_VM(noreg, CAST_FROM_FN_PTR(address, InterpreterRuntime::build_method_counters), Rmethod);
   z_ltgr(Rcounters, Z_RET); // Runtime call returns MethodCounters object.
   z_brz(skip); // No MethodCounters, out of memory.
 

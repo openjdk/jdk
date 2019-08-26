@@ -84,7 +84,6 @@ class SymbolPropertyTable;
 class ProtectionDomainCacheTable;
 class ProtectionDomainCacheEntry;
 class GCTimer;
-class OopStorage;
 
 #define WK_KLASS_ENUM_NAME(kname)    kname##_knum
 
@@ -349,7 +348,7 @@ public:
 
   // Applies "f->do_oop" to all root oops in the system dictionary.
   // If include_handles is true (the default), then the handles in the
-  // storage object returned by vm_global_oop_storage() are included.
+  // vm_global OopStorage object are included.
   static void oops_do(OopClosure* f, bool include_handles = true);
 
   // System loader lock
@@ -565,10 +564,6 @@ public:
   // ProtectionDomain cache
   static ProtectionDomainCacheTable*   _pd_cache_table;
 
-  // VM OopStorage objects.
-  static OopStorage*             _vm_global_oop_storage;
-  static OopStorage*             _vm_weak_oop_storage;
-
 protected:
   static void validate_protection_domain(InstanceKlass* klass,
                                          Handle class_loader,
@@ -622,10 +617,6 @@ public:
     assert(m != NULL, "Unexpected NULL Method*");
     return !m->is_public() && m->method_holder() == SystemDictionary::Object_klass();
   }
-
-  static void initialize_oop_storage();
-  static OopStorage* vm_global_oop_storage();
-  static OopStorage* vm_weak_oop_storage();
 
 protected:
   // Setup link to hierarchy

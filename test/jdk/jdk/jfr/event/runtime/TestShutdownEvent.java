@@ -169,7 +169,10 @@ public class TestShutdownEvent {
         @Override
         public void verifyEvents(RecordedEvent event, int exitCode) {
             Events.assertField(event, "reason").equal("VM Error");
-            validateStackTrace(event.getStackTrace());
+            // for now avoid validating the stack trace, in case of compiled code
+            // the vframeStream based solution will not work in this special VMCrash case
+            // see 8219082 for details (running the crashed VM with -Xint would solve the issue too)
+            //validateStackTrace(event.getStackTrace());
         }
     }
 

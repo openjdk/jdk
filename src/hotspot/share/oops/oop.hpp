@@ -28,6 +28,7 @@
 #include "memory/iterator.hpp"
 #include "memory/memRegion.hpp"
 #include "oops/access.hpp"
+#include "oops/markWord.hpp"
 #include "oops/metadata.hpp"
 #include "runtime/atomic.hpp"
 #include "utilities/macros.hpp"
@@ -55,24 +56,24 @@ class oopDesc {
   friend class VMStructs;
   friend class JVMCIVMStructs;
  private:
-  volatile markOop _mark;
+  volatile markWord _mark;
   union _metadata {
     Klass*      _klass;
     narrowKlass _compressed_klass;
   } _metadata;
 
  public:
-  inline markOop  mark()          const;
-  inline markOop  mark_raw()      const;
-  inline markOop* mark_addr_raw() const;
+  inline markWord  mark()          const;
+  inline markWord  mark_raw()      const;
+  inline markWord* mark_addr_raw() const;
 
-  inline void set_mark(volatile markOop m);
-  inline void set_mark_raw(volatile markOop m);
-  static inline void set_mark_raw(HeapWord* mem, markOop m);
+  inline void set_mark(volatile markWord m);
+  inline void set_mark_raw(volatile markWord m);
+  static inline void set_mark_raw(HeapWord* mem, markWord m);
 
-  inline void release_set_mark(markOop m);
-  inline markOop cas_set_mark(markOop new_mark, markOop old_mark);
-  inline markOop cas_set_mark_raw(markOop new_mark, markOop old_mark, atomic_memory_order order = memory_order_conservative);
+  inline void release_set_mark(markWord m);
+  inline markWord cas_set_mark(markWord new_mark, markWord old_mark);
+  inline markWord cas_set_mark_raw(markWord new_mark, markWord old_mark, atomic_memory_order order = memory_order_conservative);
 
   // Used only to re-initialize the mark word (e.g., of promoted
   // objects during a GC) -- requires a valid klass pointer
@@ -266,13 +267,13 @@ class oopDesc {
   inline bool is_forwarded() const;
 
   inline void forward_to(oop p);
-  inline bool cas_forward_to(oop p, markOop compare, atomic_memory_order order = memory_order_conservative);
+  inline bool cas_forward_to(oop p, markWord compare, atomic_memory_order order = memory_order_conservative);
 
   // Like "forward_to", but inserts the forwarding pointer atomically.
   // Exactly one thread succeeds in inserting the forwarding pointer, and
   // this call returns "NULL" for that thread; any other thread has the
   // value of the forwarding pointer returned and does not modify "this".
-  inline oop forward_to_atomic(oop p, markOop compare, atomic_memory_order order = memory_order_conservative);
+  inline oop forward_to_atomic(oop p, markWord compare, atomic_memory_order order = memory_order_conservative);
 
   inline oop forwardee() const;
   inline oop forwardee_acquire() const;
@@ -308,9 +309,14 @@ class oopDesc {
   intptr_t slow_identity_hash();
 
   // marks are forwarded to stack when object is locked
-  inline bool    has_displaced_mark_raw() const;
-  inline markOop displaced_mark_raw() const;
-  inline void    set_displaced_mark_raw(markOop m);
+  inline bool     has_displaced_mark_raw() const;
+  inline markWord displaced_mark_raw() const;
+  inline void     set_displaced_mark_raw(markWord m);
+
+  // Checks if the mark word needs to be preserved
+  inline bool mark_must_be_preserved() const;
+  inline bool mark_must_be_preserved(markWord m) const;
+  inline bool mark_must_be_preserved_for_promotion_failure(markWord m) const;
 
   static bool has_klass_gap();
 

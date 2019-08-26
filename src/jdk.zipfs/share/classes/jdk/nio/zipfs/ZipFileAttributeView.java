@@ -27,15 +27,18 @@ package jdk.nio.zipfs;
 
 import java.io.IOException;
 import java.nio.file.attribute.BasicFileAttributeView;
+import java.nio.file.attribute.BasicFileAttributes;
 import java.nio.file.attribute.FileTime;
+import java.nio.file.attribute.PosixFilePermission;
 import java.util.LinkedHashMap;
 import java.util.Map;
+import java.util.Set;
 
 /**
  * @author Xueming Shen, Rajendra Gutupalli, Jaya Hangal
  */
 class ZipFileAttributeView implements BasicFileAttributeView {
-    private enum AttrID {
+    static enum AttrID {
         size,
         creationTime,
         lastAccessTime,
@@ -47,10 +50,13 @@ class ZipFileAttributeView implements BasicFileAttributeView {
         fileKey,
         compressedSize,
         crc,
-        method
+        method,
+        owner,
+        group,
+        permissions
     }
 
-    private final ZipPath path;
+    final ZipPath path;
     private final boolean isZipView;
 
     ZipFileAttributeView(ZipPath path, boolean isZipView) {
@@ -64,7 +70,7 @@ class ZipFileAttributeView implements BasicFileAttributeView {
     }
 
     @Override
-    public ZipFileAttributes readAttributes() throws IOException {
+    public BasicFileAttributes readAttributes() throws IOException {
         return path.readAttributes();
     }
 
@@ -77,6 +83,11 @@ class ZipFileAttributeView implements BasicFileAttributeView {
         path.setTimes(lastModifiedTime, lastAccessTime, createTime);
     }
 
+    public void setPermissions(Set<PosixFilePermission> perms) throws IOException {
+        path.setPermissions(perms);
+    }
+
+    @SuppressWarnings("unchecked")
     void setAttribute(String attribute, Object value)
         throws IOException
     {
@@ -87,6 +98,8 @@ class ZipFileAttributeView implements BasicFileAttributeView {
                 setTimes(null, (FileTime)value, null);
             if (AttrID.valueOf(attribute) == AttrID.creationTime)
                 setTimes(null, null, (FileTime)value);
+            if (AttrID.valueOf(attribute) == AttrID.permissions)
+                setPermissions((Set<PosixFilePermission>)value);
         } catch (IllegalArgumentException x) {
             throw new UnsupportedOperationException("'" + attribute +
                 "' is unknown or read-only attribute");
@@ -96,7 +109,7 @@ class ZipFileAttributeView implements BasicFileAttributeView {
     Map<String, Object> readAttributes(String attributes)
         throws IOException
     {
-        ZipFileAttributes zfas = readAttributes();
+        ZipFileAttributes zfas = (ZipFileAttributes)readAttributes();
         LinkedHashMap<String, Object> map = new LinkedHashMap<>();
         if ("*".equals(attributes)) {
             for (AttrID id : AttrID.values()) {
@@ -115,7 +128,7 @@ class ZipFileAttributeView implements BasicFileAttributeView {
         return map;
     }
 
-    private Object attribute(AttrID id, ZipFileAttributes zfas) {
+    Object attribute(AttrID id, ZipFileAttributes zfas) {
         switch (id) {
         case size:
             return zfas.size();
@@ -146,6 +159,11 @@ class ZipFileAttributeView implements BasicFileAttributeView {
         case method:
             if (isZipView)
                 return zfas.method();
+            break;
+        case permissions:
+            if (isZipView) {
+                return zfas.storedPermissions().orElse(null);
+            }
             break;
         default:
             break;

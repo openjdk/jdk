@@ -1034,6 +1034,7 @@ final class CertificateMessage {
                 // Don't select a signature scheme unless we will be able to
                 // produce a CertificateVerify message later
                 if (SignatureScheme.getPreferableAlgorithm(
+                        hc.algorithmConstraints,
                         hc.peerRequestedSignatureSchemes,
                         ss, hc.negotiatedProtocol) == null) {
 

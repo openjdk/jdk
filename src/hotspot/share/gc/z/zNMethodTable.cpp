@@ -113,8 +113,8 @@ void ZNMethodTable::rebuild(size_t new_size) {
 
   log_debug(gc, nmethod)("Rebuilding NMethod Table: "
                          SIZE_FORMAT "->" SIZE_FORMAT " entries, "
-                         SIZE_FORMAT "(%.0lf%%->%.0lf%%) registered, "
-                         SIZE_FORMAT "(%.0lf%%->%.0lf%%) unregistered",
+                         SIZE_FORMAT "(%.0f%%->%.0f%%) registered, "
+                         SIZE_FORMAT "(%.0f%%->%.0f%%) unregistered",
                          _size, new_size,
                          _nregistered, percent_of(_nregistered, _size), percent_of(_nregistered, new_size),
                          _nunregistered, percent_of(_nunregistered, _size), 0.0);

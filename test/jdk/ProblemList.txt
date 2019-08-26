@@ -658,11 +658,10 @@ sun/security/tools/keytool/ListKeychainStore.sh                 8156889 macosx-a
 sun/security/tools/keytool/KeyToolTest.java                     8224644 solaris-all
 sun/security/tools/keytool/WeakAlg.java                         8224644 solaris-all
 
-sun/security/tools/jarsigner/compatibility/SignTwice.java       8228341 windows-all
 sun/security/tools/jarsigner/warnings/BadKeyUsageTest.java      8026393 generic-all
+sun/security/tools/jarsigner/PreserveRawManifestEntryAndDigest.java  8228431 solaris-all
 
 javax/net/ssl/ServerName/SSLEngineExplorerMatchedSNI.java       8212096 generic-all
-javax/net/ssl/SSLSocket/Tls13PacketSize.java                    8224718 generic-all
 javax/net/ssl/DTLS/PacketLossRetransmission.java                8169086 macosx-x64
 javax/net/ssl/DTLS/RespondToRetransmit.java                     8169086 macosx-x64
 javax/net/ssl/DTLS/CipherSuite.java                             8202059 macosx-x64
@@ -890,3 +889,8 @@ jdk/jfr/event/io/EvilInstrument.java                            8221331    gener
 
 ############################################################################
 
+# jdk_internal
+
+jdk/internal/platform/docker/TestDockerMemoryMetrics.java       8227317    linux-x64
+
+############################################################################

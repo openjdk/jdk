@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -33,17 +33,17 @@
  *      -compile compiler.aot.HelloWorldPrinter.print()V
  *      -extraopt -XX:+UseCompressedOops
  * @run driver compiler.aot.cli.SingleAOTOptionTest -XX:+UseCompressedOops
- *      -XX:AOTLibrary=./libSingleAOTOptionTest.so
+ *      -XX:+UnlockExperimentalVMOptions -XX:AOTLibrary=./libSingleAOTOptionTest.so
  * @run main compiler.aot.cli.SingleAOTOptionTest
- *      -XX:+UseCompressedOops -XX:+UseAOT
+ *      -XX:+UseCompressedOops -XX:+UnlockExperimentalVMOptions -XX:+UseAOT
  * @run driver compiler.aot.AotCompiler -libname libSingleAOTOptionTest.so
  *      -class compiler.aot.HelloWorldPrinter
  *      -compile compiler.aot.HelloWorldPrinter.print()V
  *      -extraopt -XX:-UseCompressedOops
  * @run driver compiler.aot.cli.SingleAOTOptionTest -XX:-UseCompressedOops
- *      -XX:AOTLibrary=./libSingleAOTOptionTest.so
+ *      -XX:+UnlockExperimentalVMOptions -XX:AOTLibrary=./libSingleAOTOptionTest.so
  * @run driver compiler.aot.cli.SingleAOTOptionTest
- *      -XX:-UseCompressedOops -XX:+UseAOT
+ *      -XX:-UseCompressedOops -XX:+UnlockExperimentalVMOptions -XX:+UseAOT
  * @summary check if specifying only one aot option handled properly
  */
 
@@ -60,24 +60,24 @@ public class SingleAOTOptionTest {
     private static final String[] UNEXPECTED_MESSAGES = null;
 
     public static void main(String args[]) {
-        if (args.length == 2) {
-            new SingleAOTOptionTest().runTest(args[0], args[1]);
+        if (args.length == 3) {
+            new SingleAOTOptionTest().runTest(args[0], args[1], args[2]);
         } else {
             throw new Error("Test expects 2 parameters");
         }
     }
 
-    private void runTest(String arg1, String arg2) {
+    private void runTest(String arg1, String arg2, String arg3) {
         try {
             String exitCodeErrorMessage = String.format("Unexpected exit code "
-                    + "using %s and %s", arg1, arg2);
+                    + "using %s %s %s", arg1, arg2, arg3);
             String outputErrorMessage = String.format("Unexpected output using"
-                    + " %s and %s", arg1, arg2);
+                    + " %s %s", arg1, arg2, arg3);
             boolean addTestVMOptions = true;
             CommandLineOptionTest.verifyJVMStartup(EXPECTED_MESSAGES,
                     UNEXPECTED_MESSAGES, exitCodeErrorMessage,
                     outputErrorMessage, ExitCode.OK, addTestVMOptions, arg1,
-                    arg2, HelloWorldPrinter.class.getName());
+                    arg2, arg3, HelloWorldPrinter.class.getName());
         } catch (Throwable t) {
             throw new Error("Problems executing test: " + t, t);
         }

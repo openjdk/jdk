@@ -165,7 +165,7 @@ public class HTTPTestServer extends HTTPTest {
                 for (int i = 1; i <= max; i++) {
                     B bindable = createBindable();
                     SocketAddress address = getAddress(bindable);
-                    String key = address.toString();
+                    String key = toString(address);
                     if (addresses.addIfAbsent(key)) {
                        System.out.println("Socket bound to: " + key
                                           + " after " + i + " attempt(s)");
@@ -186,6 +186,16 @@ public class HTTPTestServer extends HTTPTest {
             }
             throw new IOException("Couldn't bind socket after " + max + " attempts: "
                                   + "addresses used before: " + addresses);
+        }
+
+        private static String toString(SocketAddress address) {
+            // We don't rely on address.toString(): sometimes it can be
+            // "/127.0.0.1:port", sometimes it can be "localhost/127.0.0.1:port"
+            // Instead we compose our own string representation:
+            InetSocketAddress candidate = (InetSocketAddress) address;
+            String hostAddr = candidate.getAddress().getHostAddress();
+            if (hostAddr.contains(":")) hostAddr = "[" + hostAddr + "]";
+            return hostAddr + ":" + candidate.getPort();
         }
 
         protected abstract B createBindable() throws IOException;

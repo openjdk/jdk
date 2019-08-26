@@ -200,7 +200,7 @@ ShenandoahCodeRootsIterator::ShenandoahCodeRootsIterator() :
       break;
     }
     case 2: {
-      CodeCache_lock->lock();
+      CodeCache_lock->lock_without_safepoint_check();
       break;
     }
     default:

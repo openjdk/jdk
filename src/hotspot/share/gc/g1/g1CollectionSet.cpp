@@ -61,14 +61,14 @@ G1CollectionSet::G1CollectionSet(G1CollectedHeap* g1h, G1Policy* policy) :
   _collection_set_max_length(0),
   _num_optional_regions(0),
   _bytes_used_before(0),
-  _recorded_rs_lengths(0),
+  _recorded_rs_length(0),
   _inc_build_state(Inactive),
   _inc_part_start(0),
   _inc_bytes_used_before(0),
-  _inc_recorded_rs_lengths(0),
-  _inc_recorded_rs_lengths_diffs(0),
+  _inc_recorded_rs_length(0),
+  _inc_recorded_rs_length_diff(0),
   _inc_predicted_elapsed_time_ms(0.0),
-  _inc_predicted_elapsed_time_ms_diffs(0.0) {
+  _inc_predicted_elapsed_time_ms_diff(0.0) {
 }
 
 G1CollectionSet::~G1CollectionSet() {
@@ -108,8 +108,8 @@ void G1CollectionSet::clear_candidates() {
   _candidates = NULL;
 }
 
-void G1CollectionSet::set_recorded_rs_lengths(size_t rs_lengths) {
-  _recorded_rs_lengths = rs_lengths;
+void G1CollectionSet::set_recorded_rs_length(size_t rs_length) {
+  _recorded_rs_length = rs_length;
 }
 
 // Add the heap region at the head of the non-incremental collection set
@@ -127,7 +127,7 @@ void G1CollectionSet::add_old_region(HeapRegion* hr) {
   assert(_collection_set_cur_length <= _collection_set_max_length, "Collection set now larger than maximum size.");
 
   _bytes_used_before += hr->used();
-  _recorded_rs_lengths += hr->rem_set()->occupied();
+  _recorded_rs_length += hr->rem_set()->occupied();
   _old_region_length++;
 
   _g1h->old_set_remove(hr);
@@ -148,10 +148,10 @@ void G1CollectionSet::start_incremental_building() {
 
   _inc_bytes_used_before = 0;
 
-  _inc_recorded_rs_lengths = 0;
-  _inc_recorded_rs_lengths_diffs = 0;
+  _inc_recorded_rs_length = 0;
+  _inc_recorded_rs_length_diff = 0;
   _inc_predicted_elapsed_time_ms = 0.0;
-  _inc_predicted_elapsed_time_ms_diffs = 0.0;
+  _inc_predicted_elapsed_time_ms_diff = 0.0;
 
   update_incremental_marker();
 }
@@ -160,32 +160,32 @@ void G1CollectionSet::finalize_incremental_building() {
   assert(_inc_build_state == Active, "Precondition");
   assert(SafepointSynchronize::is_at_safepoint(), "should be at a safepoint");
 
-  // The two "main" fields, _inc_recorded_rs_lengths and
+  // The two "main" fields, _inc_recorded_rs_length and
   // _inc_predicted_elapsed_time_ms, are updated by the thread
   // that adds a new region to the CSet. Further updates by the
   // concurrent refinement thread that samples the young RSet lengths
-  // are accumulated in the *_diffs fields. Here we add the diffs to
+  // are accumulated in the *_diff fields. Here we add the diffs to
   // the "main" fields.
 
-  if (_inc_recorded_rs_lengths_diffs >= 0) {
-    _inc_recorded_rs_lengths += _inc_recorded_rs_lengths_diffs;
+  if (_inc_recorded_rs_length_diff >= 0) {
+    _inc_recorded_rs_length += _inc_recorded_rs_length_diff;
   } else {
     // This is defensive. The diff should in theory be always positive
     // as RSets can only grow between GCs. However, given that we
     // sample their size concurrently with other threads updating them
     // it's possible that we might get the wrong size back, which
     // could make the calculations somewhat inaccurate.
-    size_t diffs = (size_t) (-_inc_recorded_rs_lengths_diffs);
-    if (_inc_recorded_rs_lengths >= diffs) {
-      _inc_recorded_rs_lengths -= diffs;
+    size_t diffs = (size_t) (-_inc_recorded_rs_length_diff);
+    if (_inc_recorded_rs_length >= diffs) {
+      _inc_recorded_rs_length -= diffs;
     } else {
-      _inc_recorded_rs_lengths = 0;
+      _inc_recorded_rs_length = 0;
     }
   }
-  _inc_predicted_elapsed_time_ms += _inc_predicted_elapsed_time_ms_diffs;
+  _inc_predicted_elapsed_time_ms += _inc_predicted_elapsed_time_ms_diff;
 
-  _inc_recorded_rs_lengths_diffs = 0;
-  _inc_predicted_elapsed_time_ms_diffs = 0.0;
+  _inc_recorded_rs_length_diff = 0;
+  _inc_predicted_elapsed_time_ms_diff = 0.0;
 }
 
 void G1CollectionSet::clear() {
@@ -252,23 +252,23 @@ void G1CollectionSet::update_young_region_prediction(HeapRegion* hr,
   assert(hr->is_young(), "Precondition");
   assert(!SafepointSynchronize::is_at_safepoint(), "should not be at a safepoint");
 
-  // We could have updated _inc_recorded_rs_lengths and
+  // We could have updated _inc_recorded_rs_length and
   // _inc_predicted_elapsed_time_ms directly but we'd need to do
   // that atomically, as this code is executed by a concurrent
   // refinement thread, potentially concurrently with a mutator thread
   // allocating a new region and also updating the same fields. To
   // avoid the atomic operations we accumulate these updates on two
-  // separate fields (*_diffs) and we'll just add them to the "main"
+  // separate fields (*_diff) and we'll just add them to the "main"
   // fields at the start of a GC.
 
   ssize_t old_rs_length = (ssize_t) hr->recorded_rs_length();
-  ssize_t rs_lengths_diff = (ssize_t) new_rs_length - old_rs_length;
-  _inc_recorded_rs_lengths_diffs += rs_lengths_diff;
+  ssize_t rs_length_diff = (ssize_t) new_rs_length - old_rs_length;
+  _inc_recorded_rs_length_diff += rs_length_diff;
 
   double old_elapsed_time_ms = hr->predicted_elapsed_time_ms();
   double new_region_elapsed_time_ms = predict_region_elapsed_time_ms(hr);
   double elapsed_ms_diff = new_region_elapsed_time_ms - old_elapsed_time_ms;
-  _inc_predicted_elapsed_time_ms_diffs += elapsed_ms_diff;
+  _inc_predicted_elapsed_time_ms_diff += elapsed_ms_diff;
 
   hr->set_recorded_rs_length(new_rs_length);
   hr->set_predicted_elapsed_time_ms(new_region_elapsed_time_ms);
@@ -279,8 +279,10 @@ void G1CollectionSet::add_young_region_common(HeapRegion* hr) {
   assert(_inc_build_state == Active, "Precondition");
 
   size_t collection_set_length = _collection_set_cur_length;
-  assert(collection_set_length <= INT_MAX, "Collection set is too large with %d entries", (int)collection_set_length);
-  hr->set_young_index_in_cset((int)collection_set_length);
+  // We use UINT_MAX as "invalid" marker in verification.
+  assert(collection_set_length < (UINT_MAX - 1),
+         "Collection set is too large with " SIZE_FORMAT " entries", collection_set_length);
+  hr->set_young_index_in_cset((uint)collection_set_length + 1);
 
   _collection_set_regions[collection_set_length] = hr->hrm_index();
   // Concurrent readers must observe the store of the value in the array before an
@@ -316,7 +318,7 @@ void G1CollectionSet::add_young_region_common(HeapRegion* hr) {
     hr->set_recorded_rs_length(rs_length);
     hr->set_predicted_elapsed_time_ms(region_elapsed_time_ms);
 
-    _inc_recorded_rs_lengths += rs_length;
+    _inc_recorded_rs_length += rs_length;
     _inc_predicted_elapsed_time_ms += region_elapsed_time_ms;
     _inc_bytes_used_before += hr->used();
   }
@@ -437,7 +439,7 @@ double G1CollectionSet::finalize_young_part(double target_pause_time_ms, G1Survi
 
   // The number of recorded young regions is the incremental
   // collection set's current size
-  set_recorded_rs_lengths(_inc_recorded_rs_lengths);
+  set_recorded_rs_length(_inc_recorded_rs_length);
 
   double young_end_time_sec = os::elapsedTime();
   phase_times()->record_young_cset_choice_time_ms((young_end_time_sec - young_start_time_sec) * 1000.0);
@@ -550,12 +552,12 @@ void G1CollectionSet::abandon_optional_collection_set(G1ParScanThreadStateSet* p
 class G1VerifyYoungCSetIndicesClosure : public HeapRegionClosure {
 private:
   size_t _young_length;
-  int* _heap_region_indices;
+  uint* _heap_region_indices;
 public:
   G1VerifyYoungCSetIndicesClosure(size_t young_length) : HeapRegionClosure(), _young_length(young_length) {
-    _heap_region_indices = NEW_C_HEAP_ARRAY(int, young_length, mtGC);
-    for (size_t i = 0; i < young_length; i++) {
-      _heap_region_indices[i] = -1;
+    _heap_region_indices = NEW_C_HEAP_ARRAY(uint, young_length + 1, mtGC);
+    for (size_t i = 0; i < young_length + 1; i++) {
+      _heap_region_indices[i] = UINT_MAX;
     }
   }
   ~G1VerifyYoungCSetIndicesClosure() {
@@ -563,12 +565,12 @@ public:
   }
 
   virtual bool do_heap_region(HeapRegion* r) {
-    const int idx = r->young_index_in_cset();
+    const uint idx = r->young_index_in_cset();
 
-    assert(idx > -1, "Young index must be set for all regions in the incremental collection set but is not for region %u.", r->hrm_index());
-    assert((size_t)idx < _young_length, "Young cset index too large for region %u", r->hrm_index());
+    assert(idx > 0, "Young index must be set for all regions in the incremental collection set but is not for region %u.", r->hrm_index());
+    assert(idx <= _young_length, "Young cset index %u too large for region %u", idx, r->hrm_index());
 
-    assert(_heap_region_indices[idx] == -1,
+    assert(_heap_region_indices[idx] == UINT_MAX,
            "Index %d used by multiple regions, first use by region %u, second by region %u",
            idx, _heap_region_indices[idx], r->hrm_index());
 

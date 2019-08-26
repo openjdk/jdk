@@ -1623,6 +1623,11 @@ jvmtiError VM_RedefineClasses::merge_cp_and_rewrite(
     return JVMTI_ERROR_INTERNAL;
   }
 
+  if (old_cp->has_dynamic_constant()) {
+    merge_cp->set_has_dynamic_constant();
+    scratch_cp->set_has_dynamic_constant();
+  }
+
   log_info(redefine, class, constantpool)("merge_cp_len=%d, index_map_len=%d", merge_cp_length, _index_map_count);
 
   if (_index_map_count == 0) {
@@ -3245,6 +3250,10 @@ void VM_RedefineClasses::set_new_constant_pool(
   // attach klass to new constant pool
   // reference to the cp holder is needed for copy_operands()
   smaller_cp->set_pool_holder(scratch_class);
+
+  if (scratch_cp->has_dynamic_constant()) {
+    smaller_cp->set_has_dynamic_constant();
+  }
 
   scratch_cp->copy_cp_to(1, scratch_cp_length - 1, smaller_cp, 1, THREAD);
   if (HAS_PENDING_EXCEPTION) {

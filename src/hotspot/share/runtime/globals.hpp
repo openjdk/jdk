@@ -398,10 +398,6 @@ const size_t minimumSymbolTableSize = 1024;
           "Set when executing debug methods in debug.cpp "                  \
           "(to prevent triggering assertions)")                             \
                                                                             \
-  notproduct(bool, StrictSafepointChecks, trueInDebug,                      \
-          "Enable strict checks that safepoints cannot happen for threads " \
-          "that use NoSafepointVerifier")                                   \
-                                                                            \
   notproduct(bool, VerifyLastFrame, false,                                  \
           "Verify oops on last frame on entry to VM")                       \
                                                                             \
@@ -740,9 +736,6 @@ const size_t minimumSymbolTableSize = 1024;
   product(bool, ReduceSignalUsage, false,                                   \
           "Reduce the use of OS signals in Java and/or the VM")             \
                                                                             \
-  develop_pd(bool, ShareVtableStubs,                                        \
-          "Share vtable stubs (smaller code but worse branch prediction")   \
-                                                                            \
   develop(bool, LoadLineNumberTables, true,                                 \
           "Tell whether the class file parser loads line number tables")    \
                                                                             \
@@ -760,9 +753,6 @@ const size_t minimumSymbolTableSize = 1024;
   product(bool, UseSignalChaining, true,                                    \
           "Use signal-chaining to invoke signal handlers installed "        \
           "by the application (Solaris & Linux only)")                      \
-                                                                            \
-  product(bool, AllowJNIEnvProxy, false,                                    \
-          "(Deprecated) Allow JNIEnv proxies for jdbx")                     \
                                                                             \
   product(bool, RestoreMXCSROnJNICalls, false,                              \
           "Restore MXCSR when returning from JNI calls")                    \
@@ -795,13 +785,14 @@ const size_t minimumSymbolTableSize = 1024;
           "Use SSE2 MOVQ instruction for Arraycopy")                        \
                                                                             \
   product(intx, FieldsAllocationStyle, 1,                                   \
-          "0 - type based with oops first, "                                \
+          "(Deprecated) 0 - type based with oops first, "                   \
           "1 - with oops last, "                                            \
           "2 - oops in super and sub classes are together")                 \
           range(0, 2)                                                       \
                                                                             \
   product(bool, CompactFields, true,                                        \
-          "Allocate nonstatic fields in gaps between previous fields")      \
+          "(Deprecated) Allocate nonstatic fields in gaps "                 \
+          "between previous fields")                                        \
                                                                             \
   notproduct(bool, PrintFieldLayout, false,                                 \
           "Print field layout for each class")                              \
@@ -1775,13 +1766,13 @@ const size_t minimumSymbolTableSize = 1024;
           range(0, 100)                                                     \
                                                                             \
   /* AOT parameters */                                                      \
-  product(bool, UseAOT, AOT_ONLY(true) NOT_AOT(false),                      \
+  experimental(bool, UseAOT, false,                                         \
           "Use AOT compiled files")                                         \
                                                                             \
-  product(ccstrlist, AOTLibrary, NULL,                                      \
+  experimental(ccstrlist, AOTLibrary, NULL,                                 \
           "AOT library")                                                    \
                                                                             \
-  product(bool, PrintAOT, false,                                            \
+  experimental(bool, PrintAOT, false,                                       \
           "Print used AOT klasses and methods")                             \
                                                                             \
   notproduct(bool, PrintAOTStatistics, false,                               \
@@ -2342,11 +2333,11 @@ const size_t minimumSymbolTableSize = 1024;
   product(uintx, StringTableSize, defaultStringTableSize,                   \
           "Number of buckets in the interned String table "                 \
           "(will be rounded to nearest higher power of 2)")                 \
-          range(minimumStringTableSize, 16777216ul)                         \
+          range(minimumStringTableSize, 16777216ul /* 2^24 */)              \
                                                                             \
   experimental(uintx, SymbolTableSize, defaultSymbolTableSize,              \
           "Number of buckets in the JVM internal Symbol table")             \
-          range(minimumSymbolTableSize, 111*defaultSymbolTableSize)         \
+          range(minimumSymbolTableSize, 16777216ul /* 2^24 */)              \
                                                                             \
   product(bool, UseStringDeduplication, false,                              \
           "Use string deduplication")                                       \
@@ -2354,7 +2345,7 @@ const size_t minimumSymbolTableSize = 1024;
   product(uintx, StringDeduplicationAgeThreshold, 3,                        \
           "A string must reach this age (or be promoted to an old region) " \
           "to be considered for deduplication")                             \
-          range(1, markOopDesc::max_age)                                    \
+          range(1, markWord::max_age)                                       \
                                                                             \
   diagnostic(bool, StringDeduplicationResizeALot, false,                    \
           "Force table resize every time the table is scanned")             \
@@ -2367,6 +2358,7 @@ const size_t minimumSymbolTableSize = 1024;
                                                                             \
   experimental(intx, SurvivorAlignmentInBytes, 0,                           \
            "Default survivor space alignment in bytes")                     \
+           range(8, 256)                                                    \
            constraint(SurvivorAlignmentInBytesConstraintFunc,AfterErgo)     \
                                                                             \
   product(ccstr, DumpLoadedClassList, NULL,                                 \
@@ -2445,11 +2437,14 @@ const size_t minimumSymbolTableSize = 1024;
   diagnostic(bool, ShowRegistersOnAssert, true,                             \
           "On internal errors, include registers in error report.")         \
                                                                             \
-  experimental(bool, UseSwitchProfiling, true,                              \
+  diagnostic(bool, UseSwitchProfiling, true,                                \
           "leverage profiling for table/lookup switch")                     \
                                                                             \
+  develop(bool, TraceMemoryWriteback, false,                                \
+          "Trace memory writeback operations")                              \
+                                                                            \
   JFR_ONLY(product(bool, FlightRecorder, false,                             \
-          "(Deprecated) Enable Flight Recorder"))                                        \
+          "(Deprecated) Enable Flight Recorder"))                           \
                                                                             \
   JFR_ONLY(product(ccstr, FlightRecorderOptions, NULL,                      \
           "Flight Recorder options"))                                       \

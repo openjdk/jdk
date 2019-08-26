@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -54,7 +54,7 @@ public class LIRTestTest extends LIRTest {
     }
 
     @Test
-    public void runInt() throws Throwable {
+    public void runInt() {
         runTest("testGetOutput", Integer.MIN_VALUE, 0, supply(() -> new int[3]));
         runTest("testGetOutput", -1, Integer.MAX_VALUE, supply(() -> new int[3]));
         runTest("testGetOutput", 0, 42, supply(() -> new int[3]));

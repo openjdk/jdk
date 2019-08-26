@@ -34,11 +34,7 @@ import java.nio.channels.FileChannel;
 import java.nio.channels.SeekableByteChannel;
 import java.nio.file.*;
 import java.nio.file.DirectoryStream.Filter;
-import java.nio.file.attribute.BasicFileAttributeView;
-import java.nio.file.attribute.BasicFileAttributes;
-import java.nio.file.attribute.FileAttribute;
-import java.nio.file.attribute.FileAttributeView;
-import java.nio.file.attribute.FileTime;
+import java.nio.file.attribute.*;
 import java.util.Arrays;
 import java.util.Iterator;
 import java.util.Map;
@@ -711,6 +707,12 @@ final class ZipPath implements Path {
             return (V)new ZipFileAttributeView(this, false);
         if (type == ZipFileAttributeView.class)
             return (V)new ZipFileAttributeView(this, true);
+        if (zfs.supportPosix) {
+            if (type == PosixFileAttributeView.class)
+                return (V)new ZipPosixFileAttributeView(this, false);
+            if (type == FileOwnerAttributeView.class)
+                return (V)new ZipPosixFileAttributeView(this,true);
+        }
         throw new UnsupportedOperationException("view <" + type + "> is not supported");
     }
 
@@ -721,6 +723,12 @@ final class ZipPath implements Path {
             return new ZipFileAttributeView(this, false);
         if ("zip".equals(type))
             return new ZipFileAttributeView(this, true);
+        if (zfs.supportPosix) {
+            if ("posix".equals(type))
+                return new ZipPosixFileAttributeView(this, false);
+            if ("owner".equals(type))
+                return new ZipPosixFileAttributeView(this, true);
+        }
         throw new UnsupportedOperationException("view <" + type + "> is not supported");
     }
 
@@ -764,7 +772,13 @@ final class ZipPath implements Path {
 
     @SuppressWarnings("unchecked") // Cast to A
     <A extends BasicFileAttributes> A readAttributes(Class<A> type) throws IOException {
+        // unconditionally support BasicFileAttributes and ZipFileAttributes
         if (type == BasicFileAttributes.class || type == ZipFileAttributes.class) {
+            return (A)readAttributes();
+        }
+
+        // support PosixFileAttributes when activated
+        if (type == PosixFileAttributes.class && zfs.supportPosix) {
             return (A)readAttributes();
         }
 
@@ -794,9 +808,22 @@ final class ZipPath implements Path {
         zfs.setTimes(getResolvedPath(), mtime, atime, ctime);
     }
 
+    void setOwner(UserPrincipal owner) throws IOException {
+        zfs.setOwner(getResolvedPath(), owner);
+    }
+
+    void setPermissions(Set<PosixFilePermission> perms)
+        throws IOException
+    {
+        zfs.setPermissions(getResolvedPath(), perms);
+    }
+
+    void setGroup(GroupPrincipal group) throws IOException {
+        zfs.setGroup(getResolvedPath(), group);
+    }
+
     Map<String, Object> readAttributes(String attributes, LinkOption... options)
         throws IOException
-
     {
         String view;
         String attrs;
@@ -948,12 +975,14 @@ final class ZipPath implements Path {
             }
         }
         if (copyAttrs) {
-            BasicFileAttributeView view =
-                target.getFileAttributeView(BasicFileAttributeView.class);
+            ZipFileAttributeView view =
+                target.getFileAttributeView(ZipFileAttributeView.class);
             try {
                 view.setTimes(zfas.lastModifiedTime(),
                               zfas.lastAccessTime(),
                               zfas.creationTime());
+                // copy permissions
+                view.setPermissions(zfas.storedPermissions().orElse(null));
             } catch (IOException x) {
                 // rollback?
                 try {

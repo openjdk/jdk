@@ -191,6 +191,10 @@ class StubRoutines: AllStatic {
   static address _arrayof_jlong_disjoint_arraycopy;
   static address _arrayof_oop_disjoint_arraycopy, _arrayof_oop_disjoint_arraycopy_uninit;
 
+  // cache line writeback
+  static address _data_cache_writeback;
+  static address _data_cache_writeback_sync;
+
   // these are recommended but optional:
   static address _checkcast_arraycopy, _checkcast_arraycopy_uninit;
   static address _unsafe_arraycopy;
@@ -210,6 +214,8 @@ class StubRoutines: AllStatic {
   static address _aescrypt_decryptBlock;
   static address _cipherBlockChaining_encryptAESCrypt;
   static address _cipherBlockChaining_decryptAESCrypt;
+  static address _electronicCodeBook_encryptAESCrypt;
+  static address _electronicCodeBook_decryptAESCrypt;
   static address _counterMode_AESCrypt;
   static address _ghash_processBlocks;
   static address _base64_encodeBlock;
@@ -355,6 +361,14 @@ class StubRoutines: AllStatic {
   static address arrayof_oop_disjoint_arraycopy(bool dest_uninitialized = false) {
     return dest_uninitialized ? _arrayof_oop_disjoint_arraycopy_uninit : _arrayof_oop_disjoint_arraycopy;
   }
+  static address data_cache_writeback()              { return _data_cache_writeback; }
+  static address data_cache_writeback_sync()         { return _data_cache_writeback_sync; }
+
+  typedef void (*DataCacheWritebackStub)(void *);
+  static DataCacheWritebackStub DataCacheWriteback_stub()         { return CAST_TO_FN_PTR(DataCacheWritebackStub,  _data_cache_writeback); }
+  typedef void (*DataCacheWritebackSyncStub)(bool);
+  static DataCacheWritebackSyncStub DataCacheWritebackSync_stub() { return CAST_TO_FN_PTR(DataCacheWritebackSyncStub,  _data_cache_writeback_sync); }
+
   static address checkcast_arraycopy(bool dest_uninitialized = false) {
     return dest_uninitialized ? _checkcast_arraycopy_uninit : _checkcast_arraycopy;
   }
@@ -376,6 +390,8 @@ class StubRoutines: AllStatic {
   static address aescrypt_decryptBlock()                { return _aescrypt_decryptBlock; }
   static address cipherBlockChaining_encryptAESCrypt()  { return _cipherBlockChaining_encryptAESCrypt; }
   static address cipherBlockChaining_decryptAESCrypt()  { return _cipherBlockChaining_decryptAESCrypt; }
+  static address electronicCodeBook_encryptAESCrypt()   { return _electronicCodeBook_encryptAESCrypt; }
+  static address electronicCodeBook_decryptAESCrypt()   { return _electronicCodeBook_decryptAESCrypt; }
   static address counterMode_AESCrypt()  { return _counterMode_AESCrypt; }
   static address ghash_processBlocks()   { return _ghash_processBlocks; }
   static address base64_encodeBlock()    { return _base64_encodeBlock; }

@@ -88,7 +88,7 @@ G1Analytics::G1Analytics(const G1Predictions* predictor) :
     _young_other_cost_per_region_ms_seq(new TruncatedSeq(TruncatedSeqLength)),
     _non_young_other_cost_per_region_ms_seq(new TruncatedSeq(TruncatedSeqLength)),
     _pending_cards_seq(new TruncatedSeq(TruncatedSeqLength)),
-    _rs_lengths_seq(new TruncatedSeq(TruncatedSeqLength)),
+    _rs_length_seq(new TruncatedSeq(TruncatedSeqLength)),
     _cost_per_byte_ms_during_cm_seq(new TruncatedSeq(TruncatedSeqLength)),
     _recent_prev_end_times_for_all_gcs_sec(new TruncatedSeq(NumPrevPausesForHeuristics)),
     _recent_avg_pause_time_ratio(0.0),
@@ -210,8 +210,8 @@ void G1Analytics::report_pending_cards(double pending_cards) {
   _pending_cards_seq->add(pending_cards);
 }
 
-void G1Analytics::report_rs_lengths(double rs_lengths) {
-  _rs_lengths_seq->add(rs_lengths);
+void G1Analytics::report_rs_length(double rs_length) {
+  _rs_length_seq->add(rs_length);
 }
 
 size_t G1Analytics::predict_rs_length_diff() const {
@@ -310,8 +310,8 @@ double G1Analytics::predict_cleanup_time_ms() const {
   return get_new_prediction(_concurrent_mark_cleanup_times_ms);
 }
 
-size_t G1Analytics::predict_rs_lengths() const {
-  return get_new_size_prediction(_rs_lengths_seq);
+size_t G1Analytics::predict_rs_length() const {
+  return get_new_size_prediction(_rs_length_seq);
 }
 
 size_t G1Analytics::predict_pending_cards() const {

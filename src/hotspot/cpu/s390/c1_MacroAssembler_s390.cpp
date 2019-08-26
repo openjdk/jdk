@@ -31,7 +31,7 @@
 #include "gc/shared/collectedHeap.hpp"
 #include "interpreter/interpreter.hpp"
 #include "oops/arrayOop.hpp"
-#include "oops/markOop.hpp"
+#include "oops/markWord.hpp"
 #include "runtime/basicLock.hpp"
 #include "runtime/biasedLocking.hpp"
 #include "runtime/os.hpp"
@@ -96,7 +96,7 @@ void C1_MacroAssembler::lock_object(Register hdr, Register obj, Register disp_hd
   }
 
   // and mark it as unlocked.
-  z_oill(hdr, markOopDesc::unlocked_value);
+  z_oill(hdr, markWord::unlocked_value);
   // Save unlocked object header into the displaced header location on the stack.
   z_stg(hdr, Address(disp_hdr, (intptr_t)0));
   // Test if object header is still the same (i.e. unlocked), and if so, store the
@@ -115,19 +115,19 @@ void C1_MacroAssembler::lock_object(Register hdr, Register obj, Register disp_hd
   // If the object header was not the same, it is now in the hdr register.
   // => Test if it is a stack pointer into the same stack (recursive locking), i.e.:
   //
-  // 1) (hdr & markOopDesc::lock_mask_in_place) == 0
+  // 1) (hdr & markWord::lock_mask_in_place) == 0
   // 2) rsp <= hdr
   // 3) hdr <= rsp + page_size
   //
   // These 3 tests can be done by evaluating the following expression:
   //
-  // (hdr - Z_SP) & (~(page_size-1) | markOopDesc::lock_mask_in_place)
+  // (hdr - Z_SP) & (~(page_size-1) | markWord::lock_mask_in_place)
   //
   // assuming both the stack pointer and page_size have their least
   // significant 2 bits cleared and page_size is a power of 2
   z_sgr(hdr, Z_SP);
 
-  load_const_optimized(Z_R0_scratch, (~(os::vm_page_size()-1) | markOopDesc::lock_mask_in_place));
+  load_const_optimized(Z_R0_scratch, (~(os::vm_page_size()-1) | markWord::lock_mask_in_place));
   z_ngr(hdr, Z_R0_scratch); // AND sets CC (result eq/ne 0).
   // For recursive locking, the result is zero. => Save it in the displaced header
   // location (NULL in the displaced hdr location indicates recursive locking).
@@ -192,7 +192,7 @@ void C1_MacroAssembler::initialize_header(Register obj, Register klass, Register
     z_lg(t1, Address(klass, Klass::prototype_header_offset()));
   } else {
     // This assumes that all prototype bits fit in an int32_t.
-    load_const_optimized(t1, (intx)markOopDesc::prototype());
+    load_const_optimized(t1, (intx)markWord::prototype().value());
   }
   z_stg(t1, Address(obj, oopDesc::mark_offset_in_bytes()));
 

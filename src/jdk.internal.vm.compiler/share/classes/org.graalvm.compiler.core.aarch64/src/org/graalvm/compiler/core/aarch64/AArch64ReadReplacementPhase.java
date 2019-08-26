@@ -49,7 +49,7 @@ public class AArch64ReadReplacementPhase extends Phase {
             if (node instanceof ReadNode) {
                 ReadNode readNode = (ReadNode) node;
                 if (readNode.hasExactlyOneUsage()) {
-                    Node usage = readNode.getUsageAt(0);
+                    Node usage = readNode.usages().first();
                     if (usage instanceof ZeroExtendNode || usage instanceof SignExtendNode) {
                         AArch64ReadNode.replace(readNode);
                     }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2009, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -66,6 +66,11 @@ public class LogCompilation extends DefaultHandler implements ErrorHandler {
     }
 
     /**
+     * compare controls how some output is formatted
+     */
+    public static boolean compare = false;
+
+    /**
      * Process command line arguments, parse log files and trigger desired
      * functionality.
      */
@@ -76,7 +81,6 @@ public class LogCompilation extends DefaultHandler implements ErrorHandler {
         boolean cleanup = false;
         boolean trapHistory = false;
         boolean printTimeStamps = false;
-        boolean compare = false;
         boolean printID = true;
         int index = 0;
 
@@ -254,24 +258,29 @@ public class LogCompilation extends DefaultHandler implements ErrorHandler {
      * {@linkplain #compareLogs() comparing logs}.
      */
     static class MethodBCIPair {
-        public MethodBCIPair(Method m, int b, String c) {
+        public MethodBCIPair(Method m, int b, String c, long l) {
             method = m;
             bci = b;
             compiler = c;
+            level = l;
         }
 
         Method method;
         int bci;
         String compiler;
+        long level;
 
         public boolean equals(Object other) {
             if (!(other instanceof MethodBCIPair)) {
                 return false;
             }
             MethodBCIPair otherp = (MethodBCIPair)other;
+            assert otherp.compiler != null : "otherp null compiler: " + otherp;
+            assert method.getCompiler() != compiler : "Compiler doesnt match";
             return (otherp.bci == bci &&
                     otherp.method.equals(method) &&
-                    otherp.compiler.equals(compiler));
+                    otherp.compiler.equals(compiler) &&
+                    otherp.level == level);
         }
 
         public int hashCode() {
@@ -282,7 +291,7 @@ public class LogCompilation extends DefaultHandler implements ErrorHandler {
             if (bci != -1) {
                 return method + "@" + bci + " (" + compiler + ")";
             } else {
-                return method + " (" + compiler + ")";
+                return method + " (" + compiler + "(" + level + "))";
             }
         }
     }
@@ -322,8 +331,23 @@ public class LogCompilation extends DefaultHandler implements ErrorHandler {
             for (LogEvent c : events) {
                 if (c instanceof Compilation) {
                     Compilation comp = (Compilation) c;
-                    MethodBCIPair key = new MethodBCIPair(comp.getMethod(), comp.getBCI(),
-                                                          comp.getCompiler());
+                    assert (comp.getNMethod() != null  || comp.getFailureReason() != null ): "NMethod is null in compare: " + comp;
+                    String compiler = comp.getNMethod() != null ? comp.getNMethod().getCompiler() :
+                            (comp.getCompiler() != null ? comp.getCompiler() : "");
+                    assert compiler != null : "Compiler is null in compare: " + comp;
+                    long level = -99;
+                    if (comp.getLevel() == 0) {
+                        if (comp.getNMethod() != null) {
+                            level = comp.getNMethod().getLevel();
+                        }
+                        if (level == 0) {
+                            level = comp.getMethod().getLevel();
+                        }
+                    } else {
+                        level = comp.getLevel();
+                    }
+                    assert level != -99 || comp.getFailureReason() != null : "Failed Compile";
+                    MethodBCIPair key = new MethodBCIPair(comp.getMethod(), comp.getBCI(), compiler, level);
                     MethodBCIPair e = methods.get(key);
                     if (e == null) {
                         methods.put(key, key);

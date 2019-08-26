@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,56 +23,29 @@
  */
 
 #include "precompiled.hpp"
-#include "runtime/safepointVerifiers.hpp"
 #include "gc/shared/collectedHeap.hpp"
 #include "memory/universe.hpp"
+#include "runtime/safepoint.hpp"
+#include "runtime/safepointVerifiers.hpp"
 #include "utilities/debug.hpp"
-
-// Implementation of NoGCVerifier
 
 #ifdef ASSERT
 
-NoGCVerifier::NoGCVerifier(bool verifygc) {
-  _verifygc = verifygc;
-  if (_verifygc) {
-    CollectedHeap* h = Universe::heap();
-    assert(!h->is_gc_active(), "GC active during NoGCVerifier");
-    _old_invocations = h->total_collections();
-  }
+NoSafepointVerifier::NoSafepointVerifier() : _thread(Thread::current()) {
+  _thread->_no_safepoint_count++;
 }
 
-
-NoGCVerifier::~NoGCVerifier() {
-  if (_verifygc) {
-    CollectedHeap* h = Universe::heap();
-    assert(!h->is_gc_active(), "GC active during NoGCVerifier");
-    if (_old_invocations != h->total_collections()) {
-      fatal("collection in a NoGCVerifier secured function");
-    }
-  }
+NoSafepointVerifier::~NoSafepointVerifier() {
+  _thread->_no_safepoint_count--;
 }
 
-PauseNoGCVerifier::PauseNoGCVerifier(NoGCVerifier * ngcv) {
-  _ngcv = ngcv;
-  if (_ngcv->_verifygc) {
-    // if we were verifying, then make sure that nothing is
-    // wrong before we "pause" verification
-    CollectedHeap* h = Universe::heap();
-    assert(!h->is_gc_active(), "GC active during NoGCVerifier");
-    if (_ngcv->_old_invocations != h->total_collections()) {
-      fatal("collection in a NoGCVerifier secured function");
-    }
-  }
+PauseNoSafepointVerifier::PauseNoSafepointVerifier(NoSafepointVerifier* nsv)
+    : _nsv(nsv) {
+  assert(_nsv->_thread == Thread::current(), "must be");
+  _nsv->_thread->_no_safepoint_count--;
 }
 
-
-PauseNoGCVerifier::~PauseNoGCVerifier() {
-  if (_ngcv->_verifygc) {
-    // if we were verifying before, then reenable verification
-    CollectedHeap* h = Universe::heap();
-    assert(!h->is_gc_active(), "GC active during NoGCVerifier");
-    _ngcv->_old_invocations = h->total_collections();
-  }
+PauseNoSafepointVerifier::~PauseNoSafepointVerifier() {
+  _nsv->_thread->_no_safepoint_count++;
 }
-
-#endif
+#endif // ASSERT

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -40,47 +40,33 @@ public class GetTotalSafepointTime {
     private static HotspotRuntimeMBean mbean =
         (HotspotRuntimeMBean)ManagementFactoryHelper.getHotspotRuntimeMBean();
 
-    private static final long NUM_THREAD_DUMPS = 100;
-
     // Careful with these values.
     private static final long MIN_VALUE_FOR_PASS = 1;
-    private static final long MAX_VALUE_FOR_PASS = Long.MAX_VALUE;
 
-    private static boolean trace = false;
+    // Thread.getAllStackTraces() should cause safepoints.
+    // If this test is failing because it doesn't,
+    // MIN_VALUE_FOR_PASS should be reset to 0
+    public static long executeThreadDumps(long initial_value) {
+        long value;
+        do {
+            Thread.getAllStackTraces();
+            value = mbean.getTotalSafepointTime();
+        } while (value == initial_value);
+        return value;
+    }
 
     public static void main(String args[]) throws Exception {
-        if (args.length > 0 && args[0].equals("trace")) {
-            trace = true;
-        }
+        long value = executeThreadDumps(0);
+        System.out.println("Total safepoint time (ms): " + value);
 
-        // Thread.getAllStackTraces() should cause safepoints.
-        // If this test is failing because it doesn't,
-        // MIN_VALUE_FOR_PASS should be reset to 0
-        for (int i = 0; i < NUM_THREAD_DUMPS; i++) {
-             Thread.getAllStackTraces();
-        }
-
-        long value = mbean.getTotalSafepointTime();
-
-        if (trace) {
-            System.out.println("Total safepoint time (ms): " + value);
-        }
-
-        if (value < MIN_VALUE_FOR_PASS || value > MAX_VALUE_FOR_PASS) {
+        if (value < MIN_VALUE_FOR_PASS) {
             throw new RuntimeException("Total safepoint time " +
                                        "illegal value: " + value + " ms " +
-                                       "(MIN = " + MIN_VALUE_FOR_PASS + "; " +
-                                       "MAX = " + MAX_VALUE_FOR_PASS + ")");
+                                       "(MIN = " + MIN_VALUE_FOR_PASS + ")");
         }
 
-        for (int i = 0; i < 2 * NUM_THREAD_DUMPS; i++) {
-             Thread.getAllStackTraces();
-        }
-        long value2 = mbean.getTotalSafepointTime();
-
-        if (trace) {
-            System.out.println("Total safepoint time2 (ms): " + value2);
-        }
+        long value2 = executeThreadDumps(value);
+        System.out.println("Total safepoint time (ms): " + value2);
 
         if (value2 <= value) {
             throw new RuntimeException("Total safepoint time " +

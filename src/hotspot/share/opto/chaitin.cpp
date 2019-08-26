@@ -1190,7 +1190,7 @@ void PhaseChaitin::Simplify( ) {
       while ((neighbor = elements.next()) != 0) {
         LRG *n = &lrgs(neighbor);
 #ifdef ASSERT
-        if( VerifyOpto || VerifyRegisterAllocator ) {
+        if (VerifyRegisterAllocator) {
           assert( _ifg->effective_degree(neighbor) == n->degree(), "" );
         }
 #endif

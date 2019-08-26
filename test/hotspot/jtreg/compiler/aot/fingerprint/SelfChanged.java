@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -38,7 +38,8 @@
  *
  * @run main/othervm
  *      compiler.aot.fingerprint.SelfChanged TEST-UNMODIFIED
- * @run main/othervm -XX:+UseAOT -XX:+PrintAOT -XX:AOTLibrary=./libSelfChanged.so
+ * @run main/othervm -XX:+UnlockExperimentalVMOptions -XX:+UseAOT -XX:+PrintAOT
+ *      -XX:AOTLibrary=./libSelfChanged.so
  *      -Xlog:aot+class+fingerprint=trace -Xlog:aot+class+load=trace
  *      compiler.aot.fingerprint.SelfChanged TEST-UNMODIFIED
  *
@@ -46,7 +47,8 @@
  *      compiler.aot.fingerprint.SelfChanged WRITE-MODIFIED-CLASS
  * @run main
  *      compiler.aot.fingerprint.SelfChanged TEST-MODIFIED
- * @run main/othervm -XX:+UseAOT -XX:+PrintAOT -XX:AOTLibrary=./libSelfChanged.so
+ * @run main/othervm -XX:+UnlockExperimentalVMOptions -XX:+UseAOT -XX:+PrintAOT
+ *      -XX:AOTLibrary=./libSelfChanged.so
  *      -Xlog:aot+class+fingerprint=trace -Xlog:aot+class+load=trace
  *      compiler.aot.fingerprint.SelfChanged TEST-MODIFIED
  */

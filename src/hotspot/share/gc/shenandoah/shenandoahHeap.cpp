@@ -1582,7 +1582,7 @@ void ShenandoahHeap::op_cleanup() {
 
 class ShenandoahConcurrentRootsEvacUpdateTask : public AbstractGangTask {
 private:
-  ShenandoahJNIHandleRoots<true /*concurrent*/> _jni_roots;
+  ShenandoahVMRoots<true /*concurrent*/>        _vm_roots;
   ShenandoahWeakRoots<true /*concurrent*/>      _weak_roots;
   ShenandoahClassLoaderDataRoots<true /*concurrent*/, false /*single threaded*/> _cld_roots;
 
@@ -1593,12 +1593,19 @@ public:
 
   void work(uint worker_id) {
     ShenandoahEvacOOMScope oom;
-    ShenandoahEvacuateUpdateRootsClosure cl;
-    CLDToOopClosure clds(&cl, ClassLoaderData::_claim_strong);
+    {
+      // jni_roots and weak_roots are OopStorage backed roots, concurrent iteration
+      // may race against OopStorage::release() calls.
+      ShenandoahEvacUpdateOopStorageRootsClosure cl;
+      _vm_roots.oops_do<ShenandoahEvacUpdateOopStorageRootsClosure>(&cl);
+      _weak_roots.oops_do<ShenandoahEvacUpdateOopStorageRootsClosure>(&cl);
+    }
 
-    _jni_roots.oops_do<ShenandoahEvacuateUpdateRootsClosure>(&cl);
-    _cld_roots.cld_do(&clds);
-    _weak_roots.oops_do<ShenandoahEvacuateUpdateRootsClosure>(&cl);
+    {
+      ShenandoahEvacuateUpdateRootsClosure cl;
+      CLDToOopClosure clds(&cl, ClassLoaderData::_claim_strong);
+      _cld_roots.cld_do(&clds);
+    }
   }
 };
 

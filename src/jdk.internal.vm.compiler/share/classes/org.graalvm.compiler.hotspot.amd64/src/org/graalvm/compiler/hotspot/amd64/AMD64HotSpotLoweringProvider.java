@@ -27,6 +27,7 @@ package org.graalvm.compiler.hotspot.amd64;
 import static org.graalvm.compiler.hotspot.HotSpotBackend.Options.GraalArithmeticStubs;
 
 import org.graalvm.compiler.api.replacements.Snippet;
+import org.graalvm.compiler.core.amd64.AMD64LoweringProviderMixin;
 import org.graalvm.compiler.core.common.spi.ForeignCallsProvider;
 import org.graalvm.compiler.debug.DebugHandlersFactory;
 import org.graalvm.compiler.graph.Node;
@@ -53,7 +54,7 @@ import jdk.vm.ci.hotspot.HotSpotConstantReflectionProvider;
 import jdk.vm.ci.meta.MetaAccessProvider;
 import jdk.vm.ci.meta.ResolvedJavaMethod;
 
-public class AMD64HotSpotLoweringProvider extends DefaultHotSpotLoweringProvider {
+public class AMD64HotSpotLoweringProvider extends DefaultHotSpotLoweringProvider implements AMD64LoweringProviderMixin {
 
     private AMD64ConvertSnippets.Templates convertSnippets;
     private ProbabilisticProfileSnippets.Templates profileSnippets;
@@ -134,15 +135,5 @@ public class AMD64HotSpotLoweringProvider extends DefaultHotSpotLoweringProvider
         StructuredGraph graph = dispatchNode.graph();
         ForeignCallNode call = graph.add(new ForeignCallNode(foreignCalls, dispatchNode.getStubCallDescriptor(), dispatchNode.getStubCallArgs()));
         graph.replaceFixed(dispatchNode, call);
-    }
-
-    @Override
-    public Integer smallestCompareWidth() {
-        return 8;
-    }
-
-    @Override
-    public boolean supportBulkZeroing() {
-        return true;
     }
 }

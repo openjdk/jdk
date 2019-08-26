@@ -35,7 +35,7 @@
 #include "runtime/handles.inline.hpp"
 
 bool EdgeUtils::is_leak_edge(const Edge& edge) {
-  return (const Edge*)edge.pointee()->mark() == &edge;
+  return (const Edge*)edge.pointee()->mark().to_pointer() == &edge;
 }
 
 static int field_offset(const StoredEdge& edge) {

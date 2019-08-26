@@ -677,7 +677,7 @@ void VMThread::execute(VM_Operation* op) {
     }
 
     // Setup VM_operations for execution
-    op->set_calling_thread(t, Thread::get_priority(t));
+    op->set_calling_thread(t);
 
     // It does not make sense to execute the epilogue, if the VM operation object is getting
     // deallocated by the VM thread.
@@ -726,7 +726,7 @@ void VMThread::execute(VM_Operation* op) {
         fatal("Nested VM operation %s requested by operation %s",
               op->name(), vm_operation()->name());
       }
-      op->set_calling_thread(prev_vm_operation->calling_thread(), prev_vm_operation->priority());
+      op->set_calling_thread(prev_vm_operation->calling_thread());
     }
 
     EventMark em("Executing %s VM operation: %s", prev_vm_operation ? "nested" : "", op->name());

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2010, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,13 +26,17 @@ import java.lang.reflect.*;
 import java.util.*;
 import javax.tools.*;
 
+import com.sun.source.doctree.DocCommentTree;
+import com.sun.source.doctree.DocTree;
 import com.sun.source.tree.CompilationUnitTree;
 import com.sun.source.tree.Tree;
 import com.sun.source.util.JavacTask;
 import com.sun.tools.javac.api.JavacTool;
+import com.sun.tools.javac.tree.DCTree;
+import com.sun.tools.javac.tree.DCTree.DCDocComment;
 import com.sun.tools.javac.tree.JCTree;
 import com.sun.tools.javac.tree.JCTree.JCCompilationUnit;
-import com.sun.tools.javac.util.List;
+import com.sun.tools.javac.util.Pair;
 
 public abstract class AbstractTreeScannerTest {
 
@@ -141,7 +145,7 @@ public abstract class AbstractTreeScannerTest {
             error("File " + file + " ignored");
     }
 
-    abstract int test(JCCompilationUnit t);
+    abstract int test(Pair<JavacTask, JCCompilationUnit> taskAndTree);
 
     // See CR:  6982992 Tests CheckAttributedTree.java, JavacTreeScannerTest.java, and SourceTreeeScannerTest.java timeout
     StringWriter sw = new StringWriter();
@@ -157,7 +161,7 @@ public abstract class AbstractTreeScannerTest {
      * @throws IOException if any IO errors occur
      * @throws TreePosTest.ParseException if any errors occur while parsing the file
      */
-    JCCompilationUnit read(File file) throws IOException, ParseException {
+    Pair<JavacTask, JCCompilationUnit> read(File file) throws IOException, ParseException {
         JavacTool tool = JavacTool.create();
         r.errors = 0;
         Iterable<? extends JavaFileObject> files = fm.getJavaFileObjects(file);
@@ -172,7 +176,7 @@ public abstract class AbstractTreeScannerTest {
         JCCompilationUnit t = (JCCompilationUnit) iter.next();
         if (iter.hasNext())
             throw new Error("too many trees found");
-        return t;
+        return Pair.of(task, t);
     }
 
     /**
@@ -203,15 +207,26 @@ public abstract class AbstractTreeScannerTest {
      */
     void error(JavaFileObject file, Tree tree, String msg) {
         JCTree t = (JCTree) tree;
-        error(file.getName() + ":" + getLine(file, t) + ": " + msg + " " + trim(t, 64));
+        error(file.getName() + ":" + getLine(file, t.pos) + ": " + msg + " " + trim(t, 64));
+    }
+
+    /**
+     *  Report an error for a specific tree node.
+     *  @param file the source file for the tree
+     *  @param t    the tree node
+     *  @param label an indication of the error
+     */
+    void error(JavaFileObject file, DocCommentTree comment, DocTree tree, String msg) {
+        DCDocComment dc = (DCDocComment) comment;
+        DCTree t = (DCTree) tree;
+        error(file.getName() + ":" + getLine(file, t.getSourcePosition(dc)) + ": " + msg + " " + trim(t, 64));
     }
 
     /**
      * Get a trimmed string for a tree node, with normalized white space and limited length.
      */
-    String trim(Tree tree, int len) {
-        JCTree t = (JCTree) tree;
-        String s = t.toString().replaceAll("\\s+", " ");
+    String trim(Object tree, int len) {
+        String s = tree.toString().replaceAll("\\s+", " ");
         return (s.length() < len) ? s : s.substring(0, len);
     }
 
@@ -276,17 +291,38 @@ public abstract class AbstractTreeScannerTest {
     // where
     Map<JCTree.Tag, Set<Field>> map = new HashMap<JCTree.Tag,Set<Field>>();
 
+    /**
+     * Get the set of fields for a tree node that may contain child tree nodes.
+     * These are the fields that are subtypes of DCTree or List.
+     * The results are cached, based on the tree's tag.
+     */
+    Set<Field> getFields(DCTree tree) {
+        Set<Field> fields = dcMap.get(tree.getKind());
+        if (fields == null) {
+            fields = new HashSet<Field>();
+            for (Field f: tree.getClass().getFields()) {
+                Class<?> fc = f.getType();
+                if (DCTree.class.isAssignableFrom(fc) || List.class.isAssignableFrom(fc))
+                    fields.add(f);
+            }
+            dcMap.put(tree.getKind(), fields);
+        }
+        return fields;
+    }
+    // where
+    Map<DCTree.Kind, Set<Field>> dcMap = new HashMap<>();
+
     /** Get the line number for the primary position for a tree.
      * The code is intended to be simple, although not necessarily efficient.
      * However, note that a file manager such as JavacFileManager is likely
      * to cache the results of file.getCharContent, avoiding the need to read
      * the bits from disk each time this method is called.
      */
-    int getLine(JavaFileObject file, JCTree tree) {
+    int getLine(JavaFileObject file, long pos) {
         try {
             CharSequence cs = file.getCharContent(true);
             int line = 1;
-            for (int i = 0; i < tree.pos; i++) {
+            for (int i = 0; i < pos; i++) {
                 if (cs.charAt(i) == '\n') // jtreg tests always use Unix line endings
                     line++;
             }

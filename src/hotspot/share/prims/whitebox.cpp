@@ -1748,7 +1748,7 @@ WB_END
 
 WB_ENTRY(jboolean, WB_IsMonitorInflated(JNIEnv* env, jobject wb, jobject obj))
   oop obj_oop = JNIHandles::resolve(obj);
-  return (jboolean) obj_oop->mark()->has_monitor();
+  return (jboolean) obj_oop->mark().has_monitor();
 WB_END
 
 WB_ENTRY(void, WB_ForceSafepoint(JNIEnv* env, jobject wb))

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,8 +24,9 @@
 /*
  * @test
  * @bug 4160200
- * @summary Make sure URLConnection.getContnentHandler
+ * @summary Make sure URLConnection.getContentHandler
  *     can handle MIME types with attributes
+ * @library /test/lib
  * @modules java.base/sun.net.www java.base/sun.net.www.content.text
  */
 import java.net.*;
@@ -33,6 +34,8 @@ import java.io.*;
 import sun.net.www.content.text.*;
 import sun.net.www.MessageHeader;
 import static java.net.Proxy.NO_PROXY;
+
+import jdk.test.lib.net.URIBuilder;
 
 public class HandleContentTypeWithAttrs {
 
@@ -43,7 +46,12 @@ public class HandleContentTypeWithAttrs {
         // Request echo.html from myHttpServer.
         // In the header of the response, we make
         // the content type have some attributes.
-        url = new URL("http://localhost:" + port + "/echo.html");
+        url = URIBuilder.newBuilder()
+                .scheme("http")
+                .loopback()
+                .port(port)
+                .path("/echo.html")
+                .toURL();
         URLConnection urlConn = url.openConnection(NO_PROXY);
 
         // the method getContent() calls the method
@@ -135,7 +143,8 @@ class myHttpServer implements Runnable, Cloneable {
     /** Start a server on port <i>port</i>.  It will call serviceRequest()
         for each new connection. */
     final public void startServer(int port) throws IOException {
-        serverSocket = new ServerSocket(port, 50);
+        serverSocket = new ServerSocket(port, 50,
+                InetAddress.getLoopbackAddress());
         serverInstance = new Thread(this);
         serverInstance.start();
     }
@@ -219,10 +228,13 @@ class myHttpServer implements Runnable, Cloneable {
 
     public myHttpServer () {
         try {
-            defaultContext
-            = new URL("http", InetAddress.getLocalHost().getHostName(), "/");
+            defaultContext = URIBuilder.newBuilder()
+                    .scheme("http")
+                    .loopback()
+                    .path("/")
+                    .toURL();
         } catch(Exception e) {
-            System.out.println("Failed to construct defauit URL context: "
+            System.out.println("Failed to construct default URL context: "
                                + e);
             e.printStackTrace();
         }

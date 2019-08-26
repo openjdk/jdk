@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 1997, 2019, Oracle and/or its affiliates. All rights reserved.
- * Copyright (c) 2014, 2015, Red Hat Inc. All rights reserved.
+ * Copyright (c) 2014, 2019, Red Hat Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -170,12 +170,9 @@ class MacroAssembler: public Assembler {
 
   virtual void _call_Unimplemented(address call_site) {
     mov(rscratch2, call_site);
-    haltsim();
   }
 
 #define call_Unimplemented() _call_Unimplemented((address)__PRETTY_FUNCTION__)
-
-  virtual void notify(int type);
 
   // aliases defined in AARCH64 spec
 
@@ -1185,28 +1182,6 @@ public:
   //
 
   public:
-  // enum used for aarch64--x86 linkage to define return type of x86 function
-  enum ret_type { ret_type_void, ret_type_integral, ret_type_float, ret_type_double};
-
-#ifdef BUILTIN_SIM
-  void c_stub_prolog(int gp_arg_count, int fp_arg_count, int ret_type, address *prolog_ptr = NULL);
-#else
-  void c_stub_prolog(int gp_arg_count, int fp_arg_count, int ret_type) { }
-#endif
-
-  // special version of call_VM_leaf_base needed for aarch64 simulator
-  // where we need to specify both the gp and fp arg counts and the
-  // return type so that the linkage routine from aarch64 to x86 and
-  // back knows which aarch64 registers to copy to x86 registers and
-  // which x86 result register to copy back to an aarch64 register
-
-  void call_VM_leaf_base1(
-    address  entry_point,             // the entry point
-    int      number_of_gp_arguments,  // the number of gp reg arguments to pass
-    int      number_of_fp_arguments,  // the number of fp reg arguments to pass
-    ret_type type,                    // the return type for the call
-    Label*   retaddr = NULL
-  );
 
   void ldr_constant(Register dest, const Address &const_addr) {
     if (NearCpool) {
@@ -1369,6 +1344,9 @@ public:
       spill(tmp1, true, dst_offset+8);
     }
   }
+
+  void cache_wb(Address line);
+  void cache_wbsync(bool is_pre);
 };
 
 #ifdef ASSERT

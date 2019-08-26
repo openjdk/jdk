@@ -119,7 +119,7 @@ void HeapRegion::hr_clear(bool keep_remset, bool clear_space, bool locked) {
   assert(!in_collection_set(),
          "Should not clear heap region %u in the collection set", hrm_index());
 
-  set_young_index_in_cset(-1);
+  clear_young_index_in_cset();
   clear_index_in_opt_cset();
   uninstall_surv_rate_group();
   set_free();

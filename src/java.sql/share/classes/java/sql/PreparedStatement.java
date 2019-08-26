@@ -47,12 +47,13 @@ import java.io.InputStream;
  * <P>
  * In the following example of setting a parameter, <code>con</code> represents
  * an active connection:
- * <PRE>
+ * <pre>{@code
+ *   BigDecimal sal = new BigDecimal("153833.00");
  *   PreparedStatement pstmt = con.prepareStatement("UPDATE EMPLOYEES
  *                                     SET SALARY = ? WHERE ID = ?");
- *   pstmt.setBigDecimal(1, 153833.00)
- *   pstmt.setInt(2, 110592)
- * </PRE>
+ *   pstmt.setBigDecimal(1, sal);
+ *   pstmt.setInt(2, 110592);
+ * }</pre>
  *
  * @see Connection#prepareStatement
  * @see ResultSet

@@ -30,6 +30,9 @@ import java.net.SocketException;
 /*
  * @test
  * @bug 8153674
+ * @key intermittent
+ * @summary This test might fail intermittently as it needs a UDP socket that
+ *          binds to the wildcard address.
  * @summary Expected SocketException not thrown when calling bind() with
  *   setReuseAddress(false)
  * @run main/othervm ReuseAddressTest

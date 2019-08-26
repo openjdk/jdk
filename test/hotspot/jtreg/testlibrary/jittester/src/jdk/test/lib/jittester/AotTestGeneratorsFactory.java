@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,7 +28,8 @@ import java.util.List;
 import java.util.function.Function;
 
 public class AotTestGeneratorsFactory implements Function<String[], List<TestsGenerator>> {
-    private static final String AOT_OPTIONS = "-XX:+UseAOT -XX:AOTLibrary=./aottest.so";
+    private static final String AOT_OPTIONS
+            = "-XX:+UnlockExperimentalVMOptions -XX:+UseAOT -XX:AOTLibrary=./aottest.so";
     private static final String AOT_COMPILER_BUILD_ACTION
             = "@build compiler.aot.AotCompiler";
     private static final String AOT_COMPILER_RUN_ACTION_PREFIX

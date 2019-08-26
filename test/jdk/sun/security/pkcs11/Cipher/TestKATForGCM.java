@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -314,8 +314,20 @@ public class TestKATForGCM extends PKCS11Test {
                     ", no support for " + transformation);
             return;
         }
-        if (execute(testValues, c)) {
-            System.out.println("Test Passed!");
+        try {
+            if (execute(testValues, c)) {
+                System.out.println("Test Passed!");
+            }
+        } catch (Exception e) {
+            double ver = getNSSInfo("nss");
+            if (ver < 3.251d && p.getName().contains("SunPKCS11-NSS") &&
+                System.getProperty("os.name").equals("SunOS")) {
+                // buggy behaviour from solaris on 11.2 OS (nss < 3.251)
+                System.out.println("Skipping: SunPKCS11-NSS: Old NSS: " + ver);
+                return; // OK
+            } else {
+                throw e;
+            }
         }
     }
 }

@@ -25,6 +25,7 @@
 #ifndef CPU_X86_VM_VERSION_X86_HPP
 #define CPU_X86_VM_VERSION_X86_HPP
 
+#include "memory/universe.hpp"
 #include "runtime/globals_extension.hpp"
 #include "runtime/vm_version.hpp"
 
@@ -218,7 +219,10 @@ class VM_Version : public Abstract_VM_Version {
                avx512dq : 1,
                         : 1,
                     adx : 1,
-                        : 6,
+                        : 3,
+             clflushopt : 1,
+                   clwb : 1,
+                        : 1,
                avx512pf : 1,
                avx512er : 1,
                avx512cd : 1,
@@ -338,7 +342,11 @@ protected:
 #define CPU_VAES ((uint64_t)UCONST64(0x8000000000))    // Vector AES instructions
 #define CPU_VNNI ((uint64_t)UCONST64(0x10000000000))   // Vector Neural Network Instructions
 
-  enum Extended_Family {
+#define CPU_FLUSH ((uint64_t)UCONST64(0x20000000000))  // flush instruction
+#define CPU_FLUSHOPT ((uint64_t)UCONST64(0x40000000000)) // flushopt instruction
+#define CPU_CLWB ((uint64_t)UCONST64(0x80000000000))   // clwb instruction
+
+enum Extended_Family {
     // AMD
     CPU_FAMILY_AMD_11H       = 0x11,
     // ZX
@@ -495,6 +503,14 @@ protected:
       result |= CPU_CX8;
     if (_cpuid_info.std_cpuid1_edx.bits.cmov != 0)
       result |= CPU_CMOV;
+    if (_cpuid_info.std_cpuid1_edx.bits.clflush != 0)
+      result |= CPU_FLUSH;
+#ifdef _LP64
+    // clflush should always be available on x86_64
+    // if not we are in real trouble because we rely on it
+    // to flush the code cache.
+    assert ((result & CPU_FLUSH) != 0, "clflush should be available");
+#endif
     if (_cpuid_info.std_cpuid1_edx.bits.fxsr != 0 || (is_amd_family() &&
         _cpuid_info.ext_cpuid1_edx.bits.fxsr != 0))
       result |= CPU_FXSR;
@@ -575,6 +591,8 @@ protected:
       result |= CPU_SHA;
     if (_cpuid_info.std_cpuid1_ecx.bits.fma != 0)
       result |= CPU_FMA;
+    if (_cpuid_info.sef_cpuid7_ebx.bits.clflushopt != 0)
+      result |= CPU_FLUSHOPT;
 
     // AMD|Hygon features.
     if (is_amd_family()) {
@@ -593,6 +611,9 @@ protected:
       // for Intel, ecx.bits.misalignsse bit (bit 8) indicates support for prefetchw
       if (_cpuid_info.ext_cpuid1_ecx.bits.misalignsse != 0) {
         result |= CPU_3DNOW_PREFETCH;
+      }
+      if (_cpuid_info.sef_cpuid7_ebx.bits.clwb != 0) {
+        result |= CPU_CLWB;
       }
     }
 
@@ -940,6 +961,44 @@ public:
   static bool supports_fast_class_init_checks() {
     return LP64_ONLY(true) NOT_LP64(false); // not implemented on x86_32
   }
+
+  // there are several insns to force cache line sync to memory which
+  // we can use to ensure mapped non-volatile memory is up to date with
+  // pending in-cache changes.
+  //
+  // 64 bit cpus always support clflush which writes back and evicts
+  // on 32 bit cpus support is recorded via a feature flag
+  //
+  // clflushopt is optional and acts like clflush except it does
+  // not synchronize with other memory ops. it needs a preceding
+  // and trailing StoreStore fence
+  //
+  // clwb is an optional, intel-specific instruction optional which
+  // writes back without evicting the line. it also does not
+  // synchronize with other memory ops. so, it also needs a preceding
+  // and trailing StoreStore fence.
+
+#ifdef _LP64
+  static bool supports_clflush() {
+    // clflush should always be available on x86_64
+    // if not we are in real trouble because we rely on it
+    // to flush the code cache.
+    // Unfortunately, Assembler::clflush is currently called as part
+    // of generation of the code cache flush routine. This happens
+    // under Universe::init before the processor features are set
+    // up. Assembler::flush calls this routine to check that clflush
+    // is allowed. So, we give the caller a free pass if Universe init
+    // is still in progress.
+    assert ((!Universe::is_fully_initialized() || (_features & CPU_FLUSH) != 0), "clflush should be available");
+    return true;
+  }
+  static bool supports_clflushopt() { return ((_features & CPU_FLUSHOPT) != 0); }
+  static bool supports_clwb() { return ((_features & CPU_CLWB) != 0); }
+#else
+  static bool supports_clflush() { return  ((_features & CPU_FLUSH) != 0); }
+  static bool supports_clflushopt() { return false; }
+  static bool supports_clwb() { return false; }
+#endif // _LP64
 
   // support functions for virtualization detection
  private:

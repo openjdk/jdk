@@ -213,7 +213,7 @@ address VtableStubs::find_stub(bool is_vtable_stub, int vtable_index) {
   VtableStub* s;
   {
     MutexLocker ml(VtableStubs_lock, Mutex::_no_safepoint_check_flag);
-    s = ShareVtableStubs ? lookup(is_vtable_stub, vtable_index) : NULL;
+    s = lookup(is_vtable_stub, vtable_index);
     if (s == NULL) {
       if (is_vtable_stub) {
         s = create_vtable_stub(vtable_index);
@@ -234,7 +234,8 @@ address VtableStubs::find_stub(bool is_vtable_stub, int vtable_index) {
       }
       // Notify JVMTI about this stub. The event will be recorded by the enclosing
       // JvmtiDynamicCodeEventCollector and posted when this thread has released
-      // all locks.
+      // all locks. Only post this event if a new state is not required. Creating a new state would
+      // cause a safepoint and the caller of this code has a NoSafepointVerifier.
       if (JvmtiExport::should_post_dynamic_code_generated()) {
         JvmtiExport::post_dynamic_code_generated_while_holding_locks(is_vtable_stub? "vtable stub": "itable stub",
                                                                      s->code_begin(), s->code_end());

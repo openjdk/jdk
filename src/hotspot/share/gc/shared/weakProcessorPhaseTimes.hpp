@@ -25,6 +25,7 @@
 #ifndef SHARE_GC_SHARED_WEAKPROCESSORPHASETIMES_HPP
 #define SHARE_GC_SHARED_WEAKPROCESSORPHASETIMES_HPP
 
+#include "gc/shared/oopStorageSet.hpp"
 #include "gc/shared/weakProcessorPhases.hpp"
 #include "memory/allocation.hpp"
 #include "utilities/globalDefinitions.hpp"
@@ -43,17 +44,20 @@ class WeakProcessorPhaseTimes : public CHeapObj<mtGC> {
   // Total time for weak processor.
   double _total_time_sec;
 
-  // Total time for each serially processed phase.  Entries for phases
-  // processed by multiple threads are unused, as are entries for
-  // unexecuted phases.
-  double _phase_times_sec[WeakProcessorPhases::phase_count];
-  size_t _phase_dead_items[WeakProcessorPhases::phase_count];
-  size_t _phase_total_items[WeakProcessorPhases::phase_count];
+  // Total time and associated items for each serially processed phase.
+  static const uint phase_data_count = WeakProcessorPhases::serial_phase_count;
+  // +1 because serial_phase_count == 0 in some build configurations.
+  // Simpler to always allocate extra space than conditionalize.
+  double _phase_times_sec[phase_data_count + 1];
+  size_t _phase_dead_items[phase_data_count + 1];
+  size_t _phase_total_items[phase_data_count + 1];
+  void reset_phase_data();
 
-  // Per-worker times and linked items, if multiple threads used and the phase was executed.
-  WorkerDataArray<double>* _worker_data[WeakProcessorPhases::oop_storage_phase_count];
-  WorkerDataArray<size_t>* _worker_dead_items[WeakProcessorPhases::oop_storage_phase_count];
-  WorkerDataArray<size_t>* _worker_total_items[WeakProcessorPhases::oop_storage_phase_count];
+  // Per-worker times and linked items.
+  static const uint worker_data_count = WeakProcessorPhases::oopstorage_phase_count;
+  WorkerDataArray<double>* _worker_data[worker_data_count];
+  WorkerDataArray<size_t>* _worker_dead_items[worker_data_count];
+  WorkerDataArray<size_t>* _worker_total_items[worker_data_count];
 
   WorkerDataArray<double>* worker_data(WeakProcessorPhase phase) const;
 
@@ -114,7 +118,7 @@ public:
 
   // For tracking possibly parallel phase times (even if processed by
   // only one thread).
-  // Precondition: WeakProcessorPhases::is_oop_storage(phase)
+  // Precondition: WeakProcessorPhases::is_oopstorage(phase)
   // Precondition: worker_id < times->max_threads().
   WeakProcessorPhaseTimeTracker(WeakProcessorPhaseTimes* times,
                                 WeakProcessorPhase phase,

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -53,7 +53,9 @@ public abstract class TestAESBase {
     int decodeMsgSize;
     String algorithm = System.getProperty("algorithm", "AES");
     String mode = System.getProperty("mode", "CBC");
-    String paddingStr = System.getProperty("paddingStr", "PKCS5Padding");
+    String paddingStr = System.getProperty("paddingStr",
+        (mode.equals("GCM") || mode.equals("CTR") || mode.equals("CTS")) ?
+         "NoPadding" : "PKCS5Padding");
     byte[] input;
     byte[] encode;
     byte[] expectedEncode;

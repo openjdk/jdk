@@ -2902,40 +2902,7 @@ void LIR_Assembler::rt_call(LIR_Opr result, address dest, const LIR_OprList* arg
     __ far_call(RuntimeAddress(dest));
   } else {
     __ mov(rscratch1, RuntimeAddress(dest));
-    int len = args->length();
-    int type = 0;
-    if (! result->is_illegal()) {
-      switch (result->type()) {
-      case T_VOID:
-        type = 0;
-        break;
-      case T_INT:
-      case T_LONG:
-      case T_OBJECT:
-        type = 1;
-        break;
-      case T_FLOAT:
-        type = 2;
-        break;
-      case T_DOUBLE:
-        type = 3;
-        break;
-      default:
-        ShouldNotReachHere();
-        break;
-      }
-    }
-    int num_gpargs = 0;
-    int num_fpargs = 0;
-    for (int i = 0; i < args->length(); i++) {
-      LIR_Opr arg = args->at(i);
-      if (arg->type() == T_FLOAT || arg->type() == T_DOUBLE) {
-        num_fpargs++;
-      } else {
-        num_gpargs++;
-      }
-    }
-    __ blrt(rscratch1, num_gpargs, num_fpargs, type);
+    __ blr(rscratch1);
   }
 
   if (info != NULL) {

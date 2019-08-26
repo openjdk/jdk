@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -36,13 +36,16 @@ import java.io.IOException;
 import java.net.DatagramPacket;
 import java.net.DatagramSocket;
 import java.net.InetAddress;
+import java.net.InetSocketAddress;
 
 public class SendSize {
     static final int bufferLength = 512;
     static final int packetLength = 256;
 
     public static void main(String[] args) throws Exception {
-        DatagramSocket serverSocket = new DatagramSocket();
+        DatagramSocket serverSocket = new DatagramSocket(
+                new InetSocketAddress(InetAddress.getLocalHost(), 0)
+        );
         Thread server = new ServerThread(serverSocket);
         server.start();
         Thread client = new ClientThread(serverSocket.getLocalPort());

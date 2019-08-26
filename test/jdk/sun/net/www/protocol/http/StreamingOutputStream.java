@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2006, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2006, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -60,7 +60,7 @@ public class StreamingOutputStream
             InetSocketAddress address = httpServer.getAddress();
 
             URL url = new URL("http://" + address.getHostName() + ":" + address.getPort() + "/test/");
-            HttpURLConnection uc = (HttpURLConnection)url.openConnection();
+            HttpURLConnection uc = (HttpURLConnection)url.openConnection(Proxy.NO_PROXY);
 
             uc.setDoOutput(true);
             uc.setFixedLengthStreamingMode(1);
@@ -87,7 +87,18 @@ public class StreamingOutputStream
      * Http Server
      */
     void startHttpServer() throws IOException {
-        httpServer = com.sun.net.httpserver.HttpServer.create(new InetSocketAddress(0), 0);
+        InetAddress address = InetAddress.getLocalHost();
+        if (!InetAddress.getByName(address.getHostName()).equals(address)) {
+            // if this happens then we should possibly change the client
+            // side to use the address literal in its URL instead of
+            // the host name.
+            throw new IOException(address.getHostName()
+                                  + " resolves to "
+                                  + InetAddress.getByName(address.getHostName())
+                                  + " not to "
+                                  + address + ": check host configuration.");
+        }
+        httpServer = com.sun.net.httpserver.HttpServer.create(new InetSocketAddress(address, 0), 0);
         HttpContext ctx = httpServer.createContext("/test/", new MyHandler());
         httpServer.start();
     }

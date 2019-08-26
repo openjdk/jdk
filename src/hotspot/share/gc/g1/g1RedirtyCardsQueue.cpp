@@ -99,13 +99,15 @@ void G1RedirtyCardsQueue::flush() {
 
 // G1RedirtyCardsQueueSet
 
-G1RedirtyCardsQueueSet::G1RedirtyCardsQueueSet() :
+G1RedirtyCardsQueueSet::G1RedirtyCardsQueueSet(BufferNode::Allocator* allocator) :
   PtrQueueSet(),
   _list(),
   _entry_count(0),
   _tail(NULL)
   DEBUG_ONLY(COMMA _collecting(true))
-{}
+{
+  initialize(allocator);
+}
 
 G1RedirtyCardsQueueSet::~G1RedirtyCardsQueueSet() {
   verify_empty();

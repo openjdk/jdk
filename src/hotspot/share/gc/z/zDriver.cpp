@@ -87,8 +87,8 @@ public:
     GCIdMark gc_id_mark(_gc_id);
     IsGCActiveMark gc_active_mark;
 
-    // Verify roots
-    ZVerify::roots_strong();
+    // Verify before operation
+    ZVerify::before_zoperation();
 
     // Execute operation
     _success = do_operation();
@@ -211,6 +211,17 @@ public:
   }
 };
 
+class VM_ZVerify : public VM_Operation {
+public:
+  virtual VMOp_Type type() const {
+    return VMOp_ZVerify;
+  }
+
+  virtual void doit() {
+    ZVerify::after_weak_processing();
+  }
+};
+
 ZDriver::ZDriver() :
     _gc_cycle_port(),
     _gc_locker_port() {
@@ -308,10 +319,9 @@ void ZDriver::pause_verify() {
     // Full verification
     VM_Verify op;
     VMThread::execute(&op);
-
   } else if (ZVerifyRoots || ZVerifyObjects) {
     // Limited verification
-    VM_ZVerifyOperation op;
+    VM_ZVerify op;
     VMThread::execute(&op);
   }
 }

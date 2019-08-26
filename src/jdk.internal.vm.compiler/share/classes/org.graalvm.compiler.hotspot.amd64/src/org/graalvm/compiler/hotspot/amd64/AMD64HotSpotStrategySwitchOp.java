@@ -34,7 +34,7 @@ import org.graalvm.compiler.lir.asm.CompilationResultBuilder;
 
 import jdk.vm.ci.code.Register;
 import jdk.vm.ci.code.ValueUtil;
-import jdk.vm.ci.hotspot.HotSpotMetaspaceConstant;
+import jdk.vm.ci.hotspot.HotSpotConstant;
 import jdk.vm.ci.meta.Constant;
 import jdk.vm.ci.meta.Value;
 
@@ -58,8 +58,8 @@ final class AMD64HotSpotStrategySwitchOp extends AMD64ControlFlow.StrategySwitch
 
         @Override
         protected void emitComparison(Constant c) {
-            if (c instanceof HotSpotMetaspaceConstant) {
-                HotSpotMetaspaceConstant meta = (HotSpotMetaspaceConstant) c;
+            if (c instanceof HotSpotConstant) {
+                HotSpotConstant meta = (HotSpotConstant) c;
                 if (meta.isCompressed()) {
                     crb.recordInlineDataInCode(meta);
                     masm.cmpl(keyRegister, 0xDEADDEAD);

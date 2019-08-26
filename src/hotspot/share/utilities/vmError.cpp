@@ -1797,11 +1797,14 @@ void VMError::controlled_crash(int how) {
   // Case 16 is tested by test/hotspot/jtreg/runtime/ErrorHandling/ThreadsListHandleInErrorHandlingTest.java.
   // Case 17 is tested by test/hotspot/jtreg/runtime/ErrorHandling/NestedThreadsListHandleInErrorHandlingTest.java.
 
-  // We grab Threads_lock to keep ThreadsSMRSupport::print_info_on()
+  // We try to grab Threads_lock to keep ThreadsSMRSupport::print_info_on()
   // from racing with Threads::add() or Threads::remove() as we
   // generate the hs_err_pid file. This makes our ErrorHandling tests
   // more stable.
-  MutexLocker ml(Threads_lock->owned_by_self() ? NULL : Threads_lock, Mutex::_no_safepoint_check_flag);
+  if (!Threads_lock->owned_by_self()) {
+    Threads_lock->try_lock();
+    // The VM is going to die so no need to unlock Thread_lock.
+  }
 
   switch (how) {
     case  1: vmassert(str == NULL, "expected null"); break;

@@ -32,12 +32,12 @@
 // variable that supports lock ownership tracking, lock ranking for deadlock
 // detection and coordinates with the safepoint protocol.
 
-// The default length of monitor name was originally chosen to be 64 to avoid
-// false sharing. Now, PaddedMonitor is available for this purpose.
-// TODO: Check if _name[MONITOR_NAME_LEN] should better get replaced by const char*.
-static const int MONITOR_NAME_LEN = 64;
+// The default length of mutex name was originally chosen to be 64 to avoid
+// false sharing. Now, PaddedMutex and PaddedMonitor are available for this purpose.
+// TODO: Check if _name[MUTEX_NAME_LEN] should better get replaced by const char*.
+static const int MUTEX_NAME_LEN = 64;
 
-class Monitor : public CHeapObj<mtSynchronizer> {
+class Mutex : public CHeapObj<mtSynchronizer> {
 
  public:
   // A special lock: Is a lock where you are guaranteed not to block while you are
@@ -52,8 +52,10 @@ class Monitor : public CHeapObj<mtSynchronizer> {
   // inherently a bit more special than even locks of the 'special' rank.
   // NOTE: It is critical that the rank 'special' be the lowest (earliest)
   // (except for "event" and "access") for the deadlock detection to work correctly.
-  // The rank native is only for use in Mutex's created by JVM_RawMonitorCreate,
-  // which being external to the VM are not subject to deadlock detection.
+  // The rank native was only for use in Mutexes created by JVM_RawMonitorCreate,
+  // which being external to the VM are not subject to deadlock detection,
+  // however it has now been used by other locks that don't fit into the
+  // deadlock detection scheme.
   // While at a safepoint no mutexes of rank safepoint are held by any thread.
   // The rank named "leaf" is probably historical (and should
   // be changed) -- mutexes of this rank aren't really leaf mutexes
@@ -76,17 +78,17 @@ class Monitor : public CHeapObj<mtSynchronizer> {
  protected:                              // Monitor-Mutex metadata
   Thread * volatile _owner;              // The owner of the lock
   os::PlatformMonitor _lock;             // Native monitor implementation
-  char _name[MONITOR_NAME_LEN];          // Name of mutex/monitor
+  char _name[MUTEX_NAME_LEN];            // Name of mutex/monitor
 
   // Debugging fields for naming, deadlock detection, etc. (some only used in debug mode)
 #ifndef PRODUCT
   bool      _allow_vm_block;
   DEBUG_ONLY(int _rank;)                 // rank (to avoid/detect potential deadlocks)
-  DEBUG_ONLY(Monitor * _next;)           // Used by a Thread to link up owned locks
+  DEBUG_ONLY(Mutex* _next;)              // Used by a Thread to link up owned locks
   DEBUG_ONLY(Thread* _last_owner;)       // the last thread to own the lock
-  DEBUG_ONLY(static bool contains(Monitor * locks, Monitor * lock);)
-  DEBUG_ONLY(static Monitor * get_least_ranked_lock(Monitor * locks);)
-  DEBUG_ONLY(Monitor * get_least_ranked_lock_besides_this(Monitor * locks);)
+  DEBUG_ONLY(static bool contains(Mutex* locks, Mutex* lock);)
+  DEBUG_ONLY(static Mutex* get_least_ranked_lock(Mutex* locks);)
+  DEBUG_ONLY(Mutex* get_least_ranked_lock_besides_this(Mutex* locks);)
 #endif
 
   void set_owner_implementation(Thread* owner)                        PRODUCT_RETURN;
@@ -94,7 +96,6 @@ class Monitor : public CHeapObj<mtSynchronizer> {
   void check_block_state       (Thread* thread)                       PRODUCT_RETURN;
   void check_safepoint_state   (Thread* thread, bool safepoint_check) NOT_DEBUG_RETURN;
   void assert_owner            (Thread* expected)                     NOT_DEBUG_RETURN;
-  void assert_wait_lock_state  (Thread* self)                         NOT_DEBUG_RETURN;
 
  public:
   enum {
@@ -128,36 +129,21 @@ class Monitor : public CHeapObj<mtSynchronizer> {
   };
 
   enum SafepointCheckRequired {
-    _safepoint_check_never,       // Monitors with this value will cause errors
+    _safepoint_check_never,       // Mutexes with this value will cause errors
                                   // when acquired by a JavaThread with a safepoint check.
     _safepoint_check_sometimes,   // A couple of special locks are acquired by JavaThreads sometimes
                                   // with and sometimes without safepoint checks. These
                                   // locks will not produce errors when locked.
-    _safepoint_check_always       // Monitors with this value will cause errors
+    _safepoint_check_always       // Mutexes with this value will cause errors
                                   // when acquired by a JavaThread without a safepoint check.
   };
 
   NOT_PRODUCT(SafepointCheckRequired _safepoint_check_required;)
 
- protected:
-   static void ClearMonitor (Monitor * m, const char* name = NULL) ;
-   Monitor() ;
-
  public:
-  Monitor(int rank, const char *name, bool allow_vm_block = false,
-          SafepointCheckRequired safepoint_check_required = _safepoint_check_always);
-  ~Monitor();
-
-  // Wait until monitor is notified (or times out).
-  // Defaults are to make safepoint checks, wait time is forever (i.e.,
-  // zero), and not a suspend-equivalent condition. Returns true if wait
-  // times out; otherwise returns false.
-  bool wait(long timeout = 0,
-            bool as_suspend_equivalent = !_as_suspend_equivalent_flag);
-  bool wait_without_safepoint_check(long timeout = 0);
-  void notify();
-  void notify_all();
-
+  Mutex(int rank, const char *name, bool allow_vm_block = false,
+        SafepointCheckRequired safepoint_check_required = _safepoint_check_always);
+  ~Mutex();
 
   void lock(); // prints out warning if VM thread blocks
   void lock(Thread *thread); // overloaded with current thread
@@ -178,10 +164,6 @@ class Monitor : public CHeapObj<mtSynchronizer> {
   Thread* owner() const         { return _owner; }
   bool owned_by_self() const;
 
-  // Support for JVM_RawMonitorEnter & JVM_RawMonitorExit. These can be called by
-  // non-Java thread. (We should really have a RawMonitor abstraction)
-  void jvm_raw_lock();
-  void jvm_raw_unlock();
   const char *name() const                  { return _name; }
 
   void print_on_error(outputStream* st) const;
@@ -192,19 +174,49 @@ class Monitor : public CHeapObj<mtSynchronizer> {
     DEBUG_ONLY(int    rank() const          { return _rank; })
     bool   allow_vm_block()                 { return _allow_vm_block; }
 
-    DEBUG_ONLY(Monitor *next()  const         { return _next; })
-    DEBUG_ONLY(void   set_next(Monitor *next) { _next = next; })
+    DEBUG_ONLY(Mutex *next()  const         { return _next; })
+    DEBUG_ONLY(void   set_next(Mutex *next) { _next = next; })
   #endif
 
   void set_owner(Thread* owner) {
   #ifndef PRODUCT
     set_owner_implementation(owner);
-    DEBUG_ONLY(void verify_Monitor(Thread* thr);)
+    DEBUG_ONLY(void verify_mutex(Thread* thr);)
   #else
     _owner = owner;
   #endif
   }
+};
 
+class Monitor : public Mutex {
+  void assert_wait_lock_state  (Thread* self)                         NOT_DEBUG_RETURN;
+ public:
+   Monitor(int rank, const char *name, bool allow_vm_block = false,
+         SafepointCheckRequired safepoint_check_required = _safepoint_check_always);
+   // default destructor
+
+  // Wait until monitor is notified (or times out).
+  // Defaults are to make safepoint checks, wait time is forever (i.e.,
+  // zero), and not a suspend-equivalent condition. Returns true if wait
+  // times out; otherwise returns false.
+  bool wait(long timeout = 0,
+            bool as_suspend_equivalent = !_as_suspend_equivalent_flag);
+  bool wait_without_safepoint_check(long timeout = 0);
+  void notify();
+  void notify_all();
+};
+
+
+class PaddedMutex : public Mutex {
+  enum {
+    CACHE_LINE_PADDING = (int)DEFAULT_CACHE_LINE_SIZE - (int)sizeof(Mutex),
+    PADDING_LEN = CACHE_LINE_PADDING > 0 ? CACHE_LINE_PADDING : 1
+  };
+  char _padding[PADDING_LEN];
+public:
+  PaddedMutex(int rank, const char *name, bool allow_vm_block = false,
+              SafepointCheckRequired safepoint_check_required = _safepoint_check_always) :
+    Mutex(rank, name, allow_vm_block, safepoint_check_required) {};
 };
 
 class PaddedMonitor : public Monitor {
@@ -217,51 +229,6 @@ class PaddedMonitor : public Monitor {
   PaddedMonitor(int rank, const char *name, bool allow_vm_block = false,
                SafepointCheckRequired safepoint_check_required = _safepoint_check_always) :
     Monitor(rank, name, allow_vm_block, safepoint_check_required) {};
-};
-
-// Normally we'd expect Monitor to extend Mutex in the sense that a monitor
-// constructed from pthreads primitives might extend a mutex by adding
-// a condvar and some extra metadata.  In fact this was the case until J2SE7.
-//
-// Currently, however, the base object is a monitor.  Monitor contains all the
-// logic for wait(), notify(), etc.   Mutex extends monitor and restricts the
-// visibility of wait(), notify(), and notify_all().
-//
-// Another viable alternative would have been to have Monitor extend Mutex and
-// implement all the normal mutex and wait()-notify() logic in Mutex base class.
-// The wait()-notify() facility would be exposed via special protected member functions
-// (e.g., _Wait() and _Notify()) in Mutex.  Monitor would extend Mutex and expose wait()
-// as a call to _Wait().  That is, the public wait() would be a wrapper for the protected
-// _Wait().
-//
-// An even better alternative is to simply eliminate Mutex:: and use Monitor:: instead.
-// After all, monitors are sufficient for Java-level synchronization.   At one point in time
-// there may have been some benefit to having distinct mutexes and monitors, but that time
-// has passed.
-//
-
-class Mutex : public Monitor {      // degenerate Monitor
- public:
-   Mutex(int rank, const char *name, bool allow_vm_block = false,
-         SafepointCheckRequired safepoint_check_required = _safepoint_check_always);
-   // default destructor
- private:
-   void notify();
-   void notify_all();
-   bool wait(long timeout, bool as_suspend_equivalent);
-   bool wait_without_safepoint_check(long timeout);
-};
-
-class PaddedMutex : public Mutex {
-  enum {
-    CACHE_LINE_PADDING = (int)DEFAULT_CACHE_LINE_SIZE - (int)sizeof(Mutex),
-    PADDING_LEN = CACHE_LINE_PADDING > 0 ? CACHE_LINE_PADDING : 1
-  };
-  char _padding[PADDING_LEN];
-public:
-  PaddedMutex(int rank, const char *name, bool allow_vm_block = false,
-              SafepointCheckRequired safepoint_check_required = _safepoint_check_always) :
-    Mutex(rank, name, allow_vm_block, safepoint_check_required) {};
 };
 
 #endif // SHARE_RUNTIME_MUTEX_HPP

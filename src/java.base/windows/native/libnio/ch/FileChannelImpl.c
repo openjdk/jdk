@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -60,7 +60,7 @@ Java_sun_nio_ch_FileChannelImpl_initIDs(JNIEnv *env, jclass clazz)
 
 JNIEXPORT jlong JNICALL
 Java_sun_nio_ch_FileChannelImpl_map0(JNIEnv *env, jobject this,
-                               jint prot, jlong off, jlong len)
+                                     jint prot, jlong off, jlong len, jboolean map_sync)
 {
     void *mapAddress = 0;
     jint lowOffset = (jint)off;
@@ -85,6 +85,11 @@ Java_sun_nio_ch_FileChannelImpl_map0(JNIEnv *env, jobject this,
     } else if (prot == sun_nio_ch_FileChannelImpl_MAP_PV) {
         fileProtect = PAGE_WRITECOPY;
         mapAccess = FILE_MAP_COPY;
+    }
+
+    if (map_sync) {
+        JNU_ThrowInternalError(env, "should never call map on platform where MAP_SYNC is unimplemented");
+        return IOS_THROWN;
     }
 
     mapping = CreateFileMapping(

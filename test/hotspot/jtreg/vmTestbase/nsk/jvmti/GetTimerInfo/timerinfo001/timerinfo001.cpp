@@ -49,18 +49,18 @@ static jvmtiTimerInfo initInfo;
 
 /**
  * Get timer info and optionally compares it with initial one.
- * @returns NSK_FALSE if any error occured.
+ * @returns false if any error occured.
  */
-static int checkTimerInfo(jvmtiEnv* jvmti, jvmtiTimerInfo* info,
-                            jvmtiTimerInfo* initInfo, const char where[]) {
+static bool checkTimerInfo(jvmtiEnv* jvmti, jvmtiTimerInfo* info,
+                           jvmtiTimerInfo* initInfo, const char where[]) {
 
     char buf[32], buf2[32];
-    int success = NSK_TRUE;
+    bool success = true;
 
     NSK_DISPLAY0("GetTimerInfo() for current JVMTI env\n");
     if (!NSK_JVMTI_VERIFY(
             jvmti->GetTimerInfo(info))) {
-        return NSK_FALSE;
+        return false;
     }
     NSK_DISPLAY0("Got timer info:\n");
 
@@ -79,7 +79,7 @@ static int checkTimerInfo(jvmtiEnv* jvmti, jvmtiTimerInfo* info,
                           where, "max_value",
                           julong_to_string((julong)info->max_value, buf),
                           julong_to_string((julong)initInfo->max_value, buf2));
-            success = NSK_FALSE;
+            success = false;
         }
         if (info->may_skip_forward != initInfo->may_skip_forward) {
             NSK_COMPLAIN4("In %s GetTimerInfo() returned different info:\n"
@@ -89,7 +89,7 @@ static int checkTimerInfo(jvmtiEnv* jvmti, jvmtiTimerInfo* info,
                             where, "may_skip_forward",
                             (int)info->may_skip_forward,
                             (int)initInfo->may_skip_forward);
-            success = NSK_FALSE;
+            success = false;
         }
         if (info->may_skip_backward != initInfo->may_skip_backward) {
             NSK_COMPLAIN4("In %s GetTimerInfo() returned different info:\n"
@@ -99,7 +99,7 @@ static int checkTimerInfo(jvmtiEnv* jvmti, jvmtiTimerInfo* info,
                             where, "may_skip_backward",
                             (int)info->may_skip_backward,
                             (int)initInfo->may_skip_backward);
-            success = NSK_FALSE;
+            success = false;
         }
     }
 
@@ -149,7 +149,7 @@ callbackVMInit(jvmtiEnv* jvmti, JNIEnv* jni, jthread thread) {
  */
 JNIEXPORT void JNICALL
 callbackVMDeath(jvmtiEnv* jvmti, JNIEnv* jni) {
-    int success = NSK_TRUE;
+    bool success = true;
 
     NSK_DISPLAY0(">>> Testcase #4: Check timer info in VM_DEATH callback\n");
     {
@@ -159,12 +159,12 @@ callbackVMDeath(jvmtiEnv* jvmti, JNIEnv* jni) {
 
     NSK_DISPLAY1("Disable events: %d events\n", EVENTS_COUNT);
     if (!nsk_jvmti_enableEvents(JVMTI_DISABLE, EVENTS_COUNT, events, NULL)) {
-        success = NSK_FALSE;
+        success = false;
     } else {
         NSK_DISPLAY0("  ... disabled\n");
     }
 
-    if (success != NSK_TRUE) {
+    if (!success) {
         NSK_DISPLAY1("Exit with FAIL exit status: %d\n", STATUS_FAIL);
         NSK_BEFORE_TRACE(exit(STATUS_FAIL));
     }

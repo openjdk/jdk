@@ -81,7 +81,7 @@ public final class ServicesCatalog {
     }
 
     // service name -> list of providers
-    private final Map<String, List<ServiceProvider>> map = new ConcurrentHashMap<>();
+    private final Map<String, List<ServiceProvider>> map = new ConcurrentHashMap<>(32);
 
     private ServicesCatalog() { }
 

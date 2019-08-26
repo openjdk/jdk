@@ -80,9 +80,9 @@ public class AArch64ReadNode extends ReadNode {
      */
     public static void replace(ReadNode readNode) {
         assert readNode.getUsageCount() == 1;
-        assert readNode.getUsageAt(0) instanceof ZeroExtendNode || readNode.getUsageAt(0) instanceof SignExtendNode;
+        assert readNode.usages().first() instanceof ZeroExtendNode || readNode.usages().first() instanceof SignExtendNode;
 
-        ValueNode usage = (ValueNode) readNode.getUsageAt(0);
+        ValueNode usage = (ValueNode) readNode.usages().first();
         boolean isSigned = usage instanceof SignExtendNode;
         IntegerStamp accessStamp = ((IntegerStamp) readNode.getAccessStamp());
 

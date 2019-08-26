@@ -1,6 +1,6 @@
 /*
- * Copyright (c) 1997, 2018, Oracle and/or its affiliates. All rights reserved.
- * Copyright (c) 2015, Red Hat Inc. All rights reserved.
+ * Copyright (c) 1997, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2019, Red Hat Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,18 +28,15 @@
 #include "asm/macroAssembler.inline.hpp"
 #include "memory/resourceArea.hpp"
 #include "runtime/java.hpp"
+#include "runtime/os.hpp"
 #include "runtime/stubCodeGenerator.hpp"
 #include "utilities/macros.hpp"
 #include "vm_version_aarch64.hpp"
 
 #include OS_HEADER_INLINE(os)
 
-#ifndef BUILTIN_SIM
 #include <sys/auxv.h>
 #include <asm/hwcap.h>
-#else
-#define getauxval(hwcap) 0
-#endif
 
 #ifndef HWCAP_AES
 #define HWCAP_AES   (1<<3)
@@ -71,6 +68,7 @@ int VM_Version::_model2;
 int VM_Version::_variant;
 int VM_Version::_revision;
 int VM_Version::_stepping;
+bool VM_Version::_dcpop;
 VM_Version::PsrInfo VM_Version::_psr_info   = { 0, };
 
 static BufferBlob* stub_blob;
@@ -91,10 +89,6 @@ class VM_Version_StubGenerator: public StubCodeGenerator {
     StubCodeMark mark(this, "VM_Version", "getPsrInfo_stub");
 #   define __ _masm->
     address start = __ pc();
-
-#ifdef BUILTIN_SIM
-    __ c_stub_prolog(1, 0, MacroAssembler::ret_type_void);
-#endif
 
     // void getPsrInfo(VM_Version::PsrInfo* psr_info);
 
@@ -175,7 +169,8 @@ void VM_Version::get_processor_features() {
 
   int cpu_lines = 0;
   if (FILE *f = fopen("/proc/cpuinfo", "r")) {
-    char buf[128], *p;
+    // need a large buffer as the flags line may include lots of text
+    char buf[1024], *p;
     while (fgets(buf, sizeof (buf), f) != NULL) {
       if ((p = strchr(buf, ':')) != NULL) {
         long v = strtol(p+1, NULL, 0);
@@ -189,10 +184,23 @@ void VM_Version::get_processor_features() {
           _model = v;
         } else if (strncmp(buf, "CPU revision", sizeof "CPU revision" - 1) == 0) {
           _revision = v;
+        } else if (strncmp(buf, "flags", sizeof("flags") - 1) == 0) {
+          if (strstr(p+1, "dcpop")) {
+            _dcpop = true;
+          }
         }
       }
     }
     fclose(f);
+  }
+
+  if (os::supports_map_sync()) {
+    // if dcpop is available publish data cache line flush size via
+    // generic field, otherwise let if default to zero thereby
+    // disabling writeback
+    if (_dcpop) {
+      _data_cache_line_flush_size = dcache_line;
+    }
   }
 
   // Enable vendor specific features

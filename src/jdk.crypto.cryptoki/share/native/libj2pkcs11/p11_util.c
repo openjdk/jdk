@@ -290,17 +290,122 @@ void freeCKAttributeArray(CK_ATTRIBUTE_PTR attrPtr, int len) {
 }
 
 /* This function frees the specified CK_MECHANISM_PTR pointer and its
- * pParameter. NOTE: mechanism-specific memory allocations have to be
- * freed before this call as this method only frees the generic
- * memory associated with CK_MECHANISM structure.
+ * pParameter including mechanism-specific memory allocations.
  *
  * @param mechPtr pointer to the to-be-freed CK_MECHANISM structure.
  */
-
 void freeCKMechanismPtr(CK_MECHANISM_PTR mechPtr) {
+     void *tmp;
+     CK_SSL3_MASTER_KEY_DERIVE_PARAMS *sslMkdTmp;
+     CK_SSL3_KEY_MAT_PARAMS* sslKmTmp;
+     CK_TLS12_MASTER_KEY_DERIVE_PARAMS *tlsMkdTmp;
+     CK_TLS12_KEY_MAT_PARAMS* tlsKmTmp;
+
      if (mechPtr != NULL) {
-         TRACE1("DEBUG: free CK_MECHANISM %x", mechPtr);
-         free(mechPtr->pParameter);
+         TRACE2("DEBUG: free mech %lX (mech id = 0x%lX)\n",
+                 ptr_to_jlong(mechPtr),  mechPtr->mechanism);
+         if (mechPtr->pParameter != NULL) {
+             switch (mechPtr->mechanism) {
+                 case CKM_AES_GCM:
+                     tmp = mechPtr->pParameter;
+                     TRACE1("\t=> free GCM_PARAMS %lX\n",
+                             ptr_to_jlong(tmp));
+                     free(((CK_GCM_PARAMS*)tmp)->pIv);
+                     free(((CK_GCM_PARAMS*)tmp)->pAAD);
+                     break;
+                 case CKM_AES_CCM:
+                     tmp = mechPtr->pParameter;
+                     TRACE1("\t=> free CK_CCM_PARAMS %lX\n",
+                             ptr_to_jlong(tmp));
+                     free(((CK_CCM_PARAMS*)tmp)->pNonce);
+                     free(((CK_CCM_PARAMS*)tmp)->pAAD);
+                     break;
+                 case CKM_TLS_PRF:
+                 case CKM_NSS_TLS_PRF_GENERAL:
+                     tmp = mechPtr->pParameter;
+                     TRACE1("\t=> free CK_TLS_PRF_PARAMS %lX\n",
+                         ptr_to_jlong(tmp));
+                     free(((CK_TLS_PRF_PARAMS*)tmp)->pSeed);
+                     free(((CK_TLS_PRF_PARAMS*)tmp)->pLabel);
+                     free(((CK_TLS_PRF_PARAMS*)tmp)->pulOutputLen);
+                     free(((CK_TLS_PRF_PARAMS*)tmp)->pOutput);
+                     break;
+                 case CKM_SSL3_MASTER_KEY_DERIVE:
+                 case CKM_TLS_MASTER_KEY_DERIVE:
+                 case CKM_SSL3_MASTER_KEY_DERIVE_DH:
+                 case CKM_TLS_MASTER_KEY_DERIVE_DH:
+                     sslMkdTmp = mechPtr->pParameter;
+                     TRACE1("\t=> free CK_SSL3_MASTER_KEY_DERIVE_PARAMS %lX\n",
+                         ptr_to_jlong(sslMkdTmp));
+                     free(sslMkdTmp->RandomInfo.pClientRandom);
+                     free(sslMkdTmp->RandomInfo.pServerRandom);
+                     free(sslMkdTmp->pVersion);
+                     break;
+                 case CKM_SSL3_KEY_AND_MAC_DERIVE:
+                 case CKM_TLS_KEY_AND_MAC_DERIVE:
+                     sslKmTmp = mechPtr->pParameter;
+                     TRACE1("\t=> free CK_SSL3_KEY_MAT_PARAMS %lX\n",
+                         ptr_to_jlong(sslKmTmp));
+                     free(sslKmTmp->RandomInfo.pClientRandom);
+                     free(sslKmTmp->RandomInfo.pServerRandom);
+                     if (sslKmTmp->pReturnedKeyMaterial != NULL) {
+                         free(sslKmTmp->pReturnedKeyMaterial->pIVClient);
+                         free(sslKmTmp->pReturnedKeyMaterial->pIVServer);
+                         free(sslKmTmp->pReturnedKeyMaterial);
+                     }
+                     break;
+                 case CKM_TLS12_MASTER_KEY_DERIVE:
+                 case CKM_TLS12_MASTER_KEY_DERIVE_DH:
+                     tlsMkdTmp = mechPtr->pParameter;
+                     TRACE1("\t=> CK_TLS12_MASTER_KEY_DERIVE_PARAMS %lX\n",
+                         ptr_to_jlong(tlsMkdTmp));
+                     free(tlsMkdTmp->RandomInfo.pClientRandom);
+                     free(tlsMkdTmp->RandomInfo.pServerRandom);
+                     free(tlsMkdTmp->pVersion);
+                     break;
+                 case CKM_TLS12_KEY_AND_MAC_DERIVE:
+                     tlsKmTmp = mechPtr->pParameter;
+                     TRACE1("\t=> free CK_TLS12_KEY_MAT_PARAMS %lX\n",
+                         ptr_to_jlong(tlsKmTmp));
+                     free(tlsKmTmp->RandomInfo.pClientRandom);
+                     free(tlsKmTmp->RandomInfo.pServerRandom);
+                     if (tlsKmTmp->pReturnedKeyMaterial != NULL) {
+                         free(tlsKmTmp->pReturnedKeyMaterial->pIVClient);
+                         free(tlsKmTmp->pReturnedKeyMaterial->pIVServer);
+                         free(tlsKmTmp->pReturnedKeyMaterial);
+                     }
+                     break;
+                 case CKM_ECDH1_DERIVE:
+                 case CKM_ECDH1_COFACTOR_DERIVE:
+                     tmp = mechPtr->pParameter;
+                     TRACE1("\t=> free CK_ECDH1_DERIVE_PARAMS %lX\n",
+                         ptr_to_jlong(tmp));
+                     free(((CK_ECDH1_DERIVE_PARAMS *)tmp)->pSharedData);
+                     free(((CK_ECDH1_DERIVE_PARAMS *)tmp)->pPublicData);
+                     break;
+                 case CKM_TLS_MAC:
+                 case CKM_AES_CTR:
+                 case CKM_RSA_PKCS_PSS:
+                 case CKM_CAMELLIA_CTR:
+                     TRACE0("\t=> NO OP\n");
+                     // params do not contain pointers
+                     break;
+                 default:
+                     // currently unsupported mechs by SunPKCS11 provider
+                     // CKM_RSA_PKCS_OAEP, CKM_ECMQV_DERIVE,
+                     // CKM_X9_42_*, CKM_KEA_DERIVE, CKM_RC2_*, CKM_RC5_*,
+                     // CKM_SKIPJACK_*, CKM_KEY_WRAP_SET_OAEP, CKM_PKCS5_PBKD2,
+                     // PBE mechs, WTLS mechs, CMS mechs,
+                     // CKM_EXTRACT_KEY_FROM_KEY, CKM_OTP, CKM_KIP,
+                     // CKM_DSA_PARAMETER_GEN?, CKM_GOSTR3410_*
+                     // CK_any_CBC_ENCRYPT_DATA?
+                     TRACE0("\t=> ERROR UNSUPPORTED CK PARAMS\n");
+                     break;
+             }
+             free(mechPtr->pParameter);
+         } else {
+             TRACE0("DEBUG => Parameter NULL\n");
+         }
          free(mechPtr);
      }
 }
@@ -356,7 +461,7 @@ void jBooleanArrayToCKBBoolArray(JNIEnv *env, const jbooleanArray jArray, CK_BBO
         return;
     }
     *ckpLength = (*env)->GetArrayLength(env, jArray);
-    jpTemp = (jboolean*) malloc((*ckpLength) * sizeof(jboolean));
+    jpTemp = (jboolean*) calloc(*ckpLength, sizeof(jboolean));
     if (jpTemp == NULL) {
         throwOutOfMemoryError(env, 0);
         return;
@@ -367,7 +472,7 @@ void jBooleanArrayToCKBBoolArray(JNIEnv *env, const jbooleanArray jArray, CK_BBO
         return;
     }
 
-    *ckpArray = (CK_BBOOL*) malloc ((*ckpLength) * sizeof(CK_BBOOL));
+    *ckpArray = (CK_BBOOL*) calloc (*ckpLength, sizeof(CK_BBOOL));
     if (*ckpArray == NULL) {
         free(jpTemp);
         throwOutOfMemoryError(env, 0);
@@ -398,7 +503,7 @@ void jByteArrayToCKByteArray(JNIEnv *env, const jbyteArray jArray, CK_BYTE_PTR *
         return;
     }
     *ckpLength = (*env)->GetArrayLength(env, jArray);
-    jpTemp = (jbyte*) malloc((*ckpLength) * sizeof(jbyte));
+    jpTemp = (jbyte*) calloc(*ckpLength, sizeof(jbyte));
     if (jpTemp == NULL) {
         throwOutOfMemoryError(env, 0);
         return;
@@ -413,7 +518,7 @@ void jByteArrayToCKByteArray(JNIEnv *env, const jbyteArray jArray, CK_BYTE_PTR *
     if (sizeof(CK_BYTE) == sizeof(jbyte)) {
         *ckpArray = (CK_BYTE_PTR) jpTemp;
     } else {
-        *ckpArray = (CK_BYTE_PTR) malloc ((*ckpLength) * sizeof(CK_BYTE));
+        *ckpArray = (CK_BYTE_PTR) calloc (*ckpLength, sizeof(CK_BYTE));
         if (*ckpArray == NULL) {
             free(jpTemp);
             throwOutOfMemoryError(env, 0);
@@ -445,7 +550,7 @@ void jLongArrayToCKULongArray(JNIEnv *env, const jlongArray jArray, CK_ULONG_PTR
         return;
     }
     *ckpLength = (*env)->GetArrayLength(env, jArray);
-    jTemp = (jlong*) malloc((*ckpLength) * sizeof(jlong));
+    jTemp = (jlong*) calloc(*ckpLength, sizeof(jlong));
     if (jTemp == NULL) {
         throwOutOfMemoryError(env, 0);
         return;
@@ -456,7 +561,7 @@ void jLongArrayToCKULongArray(JNIEnv *env, const jlongArray jArray, CK_ULONG_PTR
         return;
     }
 
-    *ckpArray = (CK_ULONG_PTR) malloc (*ckpLength * sizeof(CK_ULONG));
+    *ckpArray = (CK_ULONG_PTR) calloc(*ckpLength, sizeof(CK_ULONG));
     if (*ckpArray == NULL) {
         free(jTemp);
         throwOutOfMemoryError(env, 0);
@@ -487,7 +592,7 @@ void jCharArrayToCKCharArray(JNIEnv *env, const jcharArray jArray, CK_CHAR_PTR *
         return;
     }
     *ckpLength = (*env)->GetArrayLength(env, jArray);
-    jpTemp = (jchar*) malloc((*ckpLength) * sizeof(jchar));
+    jpTemp = (jchar*) calloc(*ckpLength, sizeof(jchar));
     if (jpTemp == NULL) {
         throwOutOfMemoryError(env, 0);
         return;
@@ -498,7 +603,7 @@ void jCharArrayToCKCharArray(JNIEnv *env, const jcharArray jArray, CK_CHAR_PTR *
         return;
     }
 
-    *ckpArray = (CK_CHAR_PTR) malloc (*ckpLength * sizeof(CK_CHAR));
+    *ckpArray = (CK_CHAR_PTR) calloc (*ckpLength, sizeof(CK_CHAR));
     if (*ckpArray == NULL) {
         free(jpTemp);
         throwOutOfMemoryError(env, 0);
@@ -529,7 +634,7 @@ void jCharArrayToCKUTF8CharArray(JNIEnv *env, const jcharArray jArray, CK_UTF8CH
         return;
     }
     *ckpLength = (*env)->GetArrayLength(env, jArray);
-    jTemp = (jchar*) malloc((*ckpLength) * sizeof(jchar));
+    jTemp = (jchar*) calloc(*ckpLength, sizeof(jchar));
     if (jTemp == NULL) {
         throwOutOfMemoryError(env, 0);
         return;
@@ -540,7 +645,7 @@ void jCharArrayToCKUTF8CharArray(JNIEnv *env, const jcharArray jArray, CK_UTF8CH
         return;
     }
 
-    *ckpArray = (CK_UTF8CHAR_PTR) malloc (*ckpLength * sizeof(CK_UTF8CHAR));
+    *ckpArray = (CK_UTF8CHAR_PTR) calloc(*ckpLength, sizeof(CK_UTF8CHAR));
     if (*ckpArray == NULL) {
         free(jTemp);
         throwOutOfMemoryError(env, 0);
@@ -575,7 +680,7 @@ void jStringToCKUTF8CharArray(JNIEnv *env, const jstring jArray, CK_UTF8CHAR_PTR
     if (pCharArray == NULL) { return; }
 
     *ckpLength = (CK_ULONG) strlen(pCharArray);
-    *ckpArray = (CK_UTF8CHAR_PTR) malloc((*ckpLength + 1) * sizeof(CK_UTF8CHAR));
+    *ckpArray = (CK_UTF8CHAR_PTR) calloc(*ckpLength + 1, sizeof(CK_UTF8CHAR));
     if (*ckpArray == NULL) {
         (*env)->ReleaseStringUTFChars(env, (jstring) jArray, pCharArray);
         throwOutOfMemoryError(env, 0);
@@ -609,7 +714,7 @@ void jAttributeArrayToCKAttributeArray(JNIEnv *env, jobjectArray jArray, CK_ATTR
     }
     jLength = (*env)->GetArrayLength(env, jArray);
     *ckpLength = jLongToCKULong(jLength);
-    *ckpArray = (CK_ATTRIBUTE_PTR) malloc(*ckpLength * sizeof(CK_ATTRIBUTE));
+    *ckpArray = (CK_ATTRIBUTE_PTR) calloc(*ckpLength, sizeof(CK_ATTRIBUTE));
     if (*ckpArray == NULL) {
         throwOutOfMemoryError(env, 0);
         return;
@@ -651,7 +756,7 @@ jbyteArray ckByteArrayToJByteArray(JNIEnv *env, const CK_BYTE_PTR ckpArray, CK_U
     if (sizeof(CK_BYTE) == sizeof(jbyte)) {
         jpTemp = (jbyte*) ckpArray;
     } else {
-        jpTemp = (jbyte*) malloc((ckLength) * sizeof(jbyte));
+        jpTemp = (jbyte*) calloc(ckLength, sizeof(jbyte));
         if (jpTemp == NULL) {
             throwOutOfMemoryError(env, 0);
             return NULL;
@@ -685,7 +790,7 @@ jlongArray ckULongArrayToJLongArray(JNIEnv *env, const CK_ULONG_PTR ckpArray, CK
     jlong* jpTemp;
     jlongArray jArray;
 
-    jpTemp = (jlong*) malloc((ckLength) * sizeof(jlong));
+    jpTemp = (jlong*) calloc(ckLength, sizeof(jlong));
     if (jpTemp == NULL) {
         throwOutOfMemoryError(env, 0);
         return NULL;
@@ -716,7 +821,7 @@ jcharArray ckCharArrayToJCharArray(JNIEnv *env, const CK_CHAR_PTR ckpArray, CK_U
     jchar* jpTemp;
     jcharArray jArray;
 
-    jpTemp = (jchar*) malloc(ckLength * sizeof(jchar));
+    jpTemp = (jchar*) calloc(ckLength, sizeof(jchar));
     if (jpTemp == NULL) {
         throwOutOfMemoryError(env, 0);
         return NULL;
@@ -747,7 +852,7 @@ jcharArray ckUTF8CharArrayToJCharArray(JNIEnv *env, const CK_UTF8CHAR_PTR ckpArr
     jchar* jpTemp;
     jcharArray jArray;
 
-    jpTemp = (jchar*) malloc(ckLength * sizeof(jchar));
+    jpTemp = (jchar*) calloc(ckLength, sizeof(jchar));
     if (jpTemp == NULL) {
         throwOutOfMemoryError(env, 0);
         return NULL;
@@ -1051,7 +1156,7 @@ CK_VOID_PTR jObjectToPrimitiveCKObjectPtr(JNIEnv *env, jobject jObject, CK_ULONG
     jDateClass = (*env)->FindClass(env, CLASS_DATE);
     if (jDateClass == NULL) { return NULL; }
     if ((*env)->IsInstanceOf(env, jObject, jDateClass)) {
-        ckpObject = jDateObjectPtrToCKDatePtr(env, jObject);
+        ckpObject = jDateObjectToCKDatePtr(env, jObject);
         *ckpLength = sizeof(CK_DATE);
         TRACE3("<converted date value %.4s-%.2s-%.2s>", ((CK_DATE *) ckpObject)->year,
                 ((CK_DATE *) ckpObject)->month, ((CK_DATE *) ckpObject)->day);
@@ -1123,7 +1228,7 @@ CK_VOID_PTR jObjectToPrimitiveCKObjectPtr(JNIEnv *env, jobject jObject, CK_ULONG
     if (classNameString == NULL) { return NULL; }
     exceptionMsgPrefix = "Java object of this class cannot be converted to native PKCS#11 type: ";
     exceptionMsg = (char *)
-        malloc((strlen(exceptionMsgPrefix) + strlen(classNameString) + 1));
+        malloc(strlen(exceptionMsgPrefix) + strlen(classNameString) + 1);
     if (exceptionMsg == NULL) {
         (*env)->ReleaseStringUTFChars(env, jClassNameString, classNameString);
         throwOutOfMemoryError(env, 0);
@@ -1143,16 +1248,26 @@ CK_VOID_PTR jObjectToPrimitiveCKObjectPtr(JNIEnv *env, jobject jObject, CK_ULONG
 #ifdef P11_MEMORYDEBUG
 
 #undef malloc
+#undef calloc
 #undef free
 
 void *p11malloc(size_t c, char *file, int line) {
     void *p = malloc(c);
-    printf("malloc\t%08x\t%d\t%s:%d\n", p, c, file, line); fflush(stdout);
+    fprintf(stdout, "malloc\t%08lX\t%lX\t%s:%d\n", ptr_to_jlong(p), c, file, line);
+    fflush(stdout);
+    return p;
+}
+
+void *p11calloc(size_t c, size_t s, char *file, int line) {
+    void *p = calloc(c, s);
+    fprintf(stdout, "calloc\t%08lX\t%lX\t%lX\t%s:%d\n", ptr_to_jlong(p), c, s, file, line);
+    fflush(stdout);
     return p;
 }
 
 void p11free(void *p, char *file, int line) {
-    printf("free\t%08x\t\t%s:%d\n", p, file, line); fflush(stdout);
+    fprintf(stdout, "free\t%08lX\t\t%s:%d\n", ptr_to_jlong(p), file, line);
+    fflush(stdout);
     free(p);
 }
 

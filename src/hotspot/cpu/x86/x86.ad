@@ -1478,6 +1478,13 @@ const bool Matcher::match_rule_supported(int opcode) {
         ret_value = false;
       break;
 #endif
+    case Op_CacheWB:
+    case Op_CacheWBPreSync:
+    case Op_CacheWBPostSync:
+      if (!VM_Version::supports_data_cache_line_flush()) {
+        ret_value = false;
+      }
+      break;
   }
 
   return ret_value;  // Per default match rules are supported.

@@ -159,9 +159,10 @@ public class TestGCLogMessages {
         new LogMessageWithLevel("Reference Processing", Level.DEBUG),
         // VM internal reference processing
         new LogMessageWithLevel("Weak Processing", Level.DEBUG),
-        new LogMessageWithLevel("JNI weak processing", Level.DEBUG),
-        new LogMessageWithLevel("StringTable weak processing", Level.DEBUG),
-        new LogMessageWithLevel("VM weak processing", Level.DEBUG),
+        new LogMessageWithLevel("JNI weak", Level.DEBUG),
+        new LogMessageWithLevel("StringTable weak", Level.DEBUG),
+        new LogMessageWithLevel("ResolvedMethodTable weak", Level.DEBUG),
+        new LogMessageWithLevel("VM weak", Level.DEBUG),
 
         new LogMessageWithLevelC2OrJVMCIOnly("DerivedPointerTable Update", Level.DEBUG),
         new LogMessageWithLevel("Start New Collection Set", Level.DEBUG),

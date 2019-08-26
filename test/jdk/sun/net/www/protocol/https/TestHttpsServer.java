@@ -316,6 +316,7 @@ public class TestHttpsServer {
         HttpCallback cb;
         HandshakeStatus currentHSStatus;
         boolean initialHSComplete;
+        boolean handshakeStarted;
         /*
          * All inbound data goes through this buffer.
          *
@@ -364,6 +365,25 @@ public class TestHttpsServer {
 
                     case NEED_UNWRAP:
                         int bytes = schan.read(inNetBB);
+                        if (!handshakeStarted && bytes > 0) {
+                            handshakeStarted = true;
+                            int byte0 = inNetBB.get(0);
+                            if (byte0 != 0x16) {
+                                // first byte of a TLS connection is supposed to be
+                                // 0x16. If not it may be a plain text connection.
+                                //
+                                // Sometime a rogue client may try to open a plain
+                                // connection with our server. Calling this method
+                                // gives a chance to the test logic to ignore such
+                                // rogue connections.
+                                //
+                                if (cb.dropPlainTextConnections()) {
+                                    try { schan.close(); } catch (IOException x) { };
+                                    return;
+                                }
+                                // else sslEng.unwrap will throw later on...
+                            }
+                        }
 
 needIO:
                         while (currentHSStatus == HandshakeStatus.NEED_UNWRAP) {

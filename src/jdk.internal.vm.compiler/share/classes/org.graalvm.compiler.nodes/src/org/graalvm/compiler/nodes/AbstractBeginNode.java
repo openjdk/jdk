@@ -59,21 +59,20 @@ public abstract class AbstractBeginNode extends FixedWithNextNode implements LIR
         Node next = from;
         while (next != null) {
             if (next instanceof AbstractBeginNode) {
-                AbstractBeginNode begin = (AbstractBeginNode) next;
-                return begin;
+                return (AbstractBeginNode) next;
             }
             next = next.predecessor();
         }
         return null;
     }
 
-    private void evacuateGuards(FixedNode evacuateFrom) {
+    private void evacuateAnchored(FixedNode evacuateFrom) {
         if (!hasNoUsages()) {
             AbstractBeginNode prevBegin = prevBegin(evacuateFrom);
             assert prevBegin != null;
-            for (Node anchored : anchored().snapshot()) {
-                anchored.replaceFirstInput(this, prevBegin);
-            }
+            replaceAtUsages(InputType.Anchor, prevBegin);
+            replaceAtUsages(InputType.Guard, prevBegin);
+            assert anchored().isEmpty() : anchored().snapshot();
         }
     }
 
@@ -82,7 +81,7 @@ public abstract class AbstractBeginNode extends FixedWithNextNode implements LIR
     }
 
     public void prepareDelete(FixedNode evacuateFrom) {
-        evacuateGuards(evacuateFrom);
+        evacuateAnchored(evacuateFrom);
     }
 
     @Override

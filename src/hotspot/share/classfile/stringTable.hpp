@@ -25,7 +25,6 @@
 #ifndef SHARE_CLASSFILE_STRINGTABLE_HPP
 #define SHARE_CLASSFILE_STRINGTABLE_HPP
 
-#include "gc/shared/oopStorage.hpp"
 #include "memory/allocation.hpp"
 #include "memory/padded.hpp"
 #include "oops/oop.hpp"
@@ -33,6 +32,7 @@
 #include "utilities/tableStatistics.hpp"
 
 class CompactHashtableWriter;
+class JavaThread;
 class SerializeClosure;
 
 class StringTable;
@@ -50,8 +50,6 @@ class StringTable : public CHeapObj<mtSymbol>{
 
   // Set if one bucket is out of balance due to hash algorithm deficiency
   static volatile bool _needs_rehashing;
-
-  static OopStorage* _weak_handles;
 
   static void grow(JavaThread* jt);
   static void clean_dead_entries(JavaThread* jt);
@@ -77,8 +75,6 @@ class StringTable : public CHeapObj<mtSymbol>{
  public:
   static size_t table_size();
   static TableStatistics get_table_statistics();
-
-  static OopStorage* weak_storage() { return _weak_handles; }
 
   static void create_table();
 

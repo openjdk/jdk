@@ -1771,7 +1771,9 @@ bool FileMapInfo::initialize(bool is_static) {
   }
 
   init_from_file(_fd, is_static);
-  if (!validate_header(is_static)) {
+  // UseSharedSpaces could be disabled if the checking of some of the header fields in
+  // init_from_file has failed.
+  if (!UseSharedSpaces || !validate_header(is_static)) {
     return false;
   }
   return true;

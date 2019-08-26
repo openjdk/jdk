@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2004, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2004, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -41,11 +41,10 @@
 // c_rarg1:    obj
 // c_rarg2:    jfield id
 
-static const Register rtmp          = r8;
-static const Register robj          = r9;
-static const Register rcounter      = r10;
-static const Register roffset       = r11;
-static const Register rcounter_addr = r11;
+static const Register rtmp     = rax; // r8 == c_rarg2 on Windows
+static const Register robj     = r9;
+static const Register roffset  = r10;
+static const Register rcounter = r11;
 
 // Warning: do not use rip relative addressing after the first counter load
 // since that may scratch r10!
@@ -74,6 +73,15 @@ address JNI_FastGetField::generate_fast_get_int_field0(BasicType type) {
   __ mov   (robj, c_rarg1);
   __ testb (rcounter, 1);
   __ jcc (Assembler::notZero, slow);
+
+  if (JvmtiExport::can_post_field_access()) {
+    // Check to see if a field access watch has been set before we
+    // take the fast path.
+    assert_different_registers(rscratch1, robj, rcounter); // cmp32 clobbers rscratch1!
+    __ cmp32(ExternalAddress((address) JvmtiExport::get_field_access_count_addr()), 0);
+    __ jcc(Assembler::notZero, slow);
+  }
+
   __ mov   (roffset, c_rarg2);
   __ shrptr(roffset, 2);                         // offset
 
@@ -163,6 +171,13 @@ address JNI_FastGetField::generate_fast_get_float_field0(BasicType type) {
   __ mov   (robj, c_rarg1);
   __ testb (rcounter, 1);
   __ jcc (Assembler::notZero, slow);
+
+  if (JvmtiExport::can_post_field_access()) {
+    // Check to see if a field access watch has been set before we
+    // take the fast path.
+    __ cmp32(ExternalAddress((address) JvmtiExport::get_field_access_count_addr()), 0);
+    __ jcc(Assembler::notZero, slow);
+  }
 
   // Both robj and rtmp are clobbered by try_resolve_jobject_in_native.
   BarrierSetAssembler* bs = BarrierSet::barrier_set()->barrier_set_assembler();

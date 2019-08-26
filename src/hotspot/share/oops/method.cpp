@@ -828,11 +828,6 @@ void Method::clear_native_function() {
   clear_code();
 }
 
-address Method::critical_native_function() {
-  methodHandle mh(this);
-  return NativeLookup::lookup_critical_entry(mh);
-}
-
 
 void Method::set_signature_handler(address handler) {
   address* signature_handler =  signature_handler_addr();
@@ -2072,7 +2067,7 @@ class JNIMethodBlock : public CHeapObj<mtClass> {
 #endif // PRODUCT
 };
 
-// Something that can't be mistaken for an address or a markOop
+// Something that can't be mistaken for an address or a markWord
 Method* const JNIMethodBlock::_free_method = (Method*)55;
 
 JNIMethodBlockNode::JNIMethodBlockNode(int num_methods) : _top(0), _next(NULL) {

@@ -211,20 +211,10 @@ class IndexSet : public ResourceObj {
   // Individual IndexSets can be placed on a free list.  This is done in PhaseLive.
 
   IndexSet *next() {
-#ifdef ASSERT
-    if( VerifyOpto ) {
-      check_watch("removed from free list?", ((_next == NULL) ? 0 : _next->_serial_number));
-    }
-#endif
     return _next;
   }
 
   void set_next(IndexSet *next) {
-#ifdef ASSERT
-    if( VerifyOpto ) {
-      check_watch("put on free list?", ((next == NULL) ? 0 : next->_serial_number));
-    }
-#endif
     _next = next;
   }
 
@@ -239,10 +229,6 @@ class IndexSet : public ResourceObj {
 
   // Set a block in the top level array
   void set_block(uint index, BitBlock *block) {
-#ifdef ASSERT
-    if( VerifyOpto )
-      check_watch("set block", index);
-#endif
     _blocks[index] = block;
   }
 
@@ -259,10 +245,6 @@ class IndexSet : public ResourceObj {
   //-------------------------- Primitive set operations --------------------------
 
   void clear() {
-#ifdef ASSERT
-    if( VerifyOpto )
-      check_watch("clear");
-#endif
     _count = 0;
     for (uint i = 0; i < _max_blocks; i++) {
       BitBlock *block = _blocks[i];
@@ -281,10 +263,6 @@ class IndexSet : public ResourceObj {
   }
 
   bool insert(uint element) {
-#ifdef ASSERT
-    if( VerifyOpto )
-      check_watch("insert", element);
-#endif
     if (element == 0) {
       return 0;
     }
@@ -300,11 +278,6 @@ class IndexSet : public ResourceObj {
   }
 
   bool remove(uint element) {
-#ifdef ASSERT
-    if( VerifyOpto )
-      check_watch("remove", element);
-#endif
-
     BitBlock *block = get_block_containing(element);
     bool present = block->remove(element);
     if (present) {
