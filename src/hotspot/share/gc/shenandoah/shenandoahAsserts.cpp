@@ -363,7 +363,7 @@ void ShenandoahAsserts::assert_rp_isalive_installed(const char *file, int line) 
   }
 }
 
-void ShenandoahAsserts::assert_locked_or_shenandoah_safepoint(const Mutex* lock, const char* file, int line) {
+void ShenandoahAsserts::assert_locked_or_shenandoah_safepoint(Mutex* lock, const char* file, int line) {
   if (ShenandoahSafepoint::is_at_shenandoah_safepoint()) {
     return;
   }
