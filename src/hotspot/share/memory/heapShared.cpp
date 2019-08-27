@@ -79,6 +79,7 @@ static ArchivableStaticFieldInfo open_archive_subgraph_entry_fields[] = {
   {"java/util/ImmutableCollections$MapN",      "EMPTY_MAP"},
   {"java/util/ImmutableCollections$SetN",      "EMPTY_SET"},
   {"java/lang/module/Configuration",           "EMPTY_CONFIGURATION"},
+  {"jdk/internal/math/FDBigInteger",           "archivedCaches"},
 };
 
 const static int num_closed_archive_subgraph_entry_fields =
