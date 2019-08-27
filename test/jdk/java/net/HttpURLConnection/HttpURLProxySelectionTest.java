@@ -24,6 +24,7 @@
 import com.sun.net.httpserver.HttpExchange;
 import com.sun.net.httpserver.HttpHandler;
 import com.sun.net.httpserver.HttpServer;
+import jdk.test.lib.net.URIBuilder;
 import org.testng.Assert;
 import org.testng.annotations.AfterTest;
 import org.testng.annotations.BeforeTest;
@@ -43,10 +44,11 @@ import java.util.List;
 
 /**
  * @test
- * @bug 6563286 6797318 8177648
+ * @bug 6563286 6797318 8177648 8230220
  * @summary Tests that sun.net.www.protocol.http.HttpURLConnection when dealing with
  * sun.net.spi.DefaultProxySelector#select() handles any IllegalArgumentException
  * correctly
+ * @library /test/lib
  * @run testng HttpURLProxySelectionTest
  * @modules java.base/sun.net.spi:+open
  */
@@ -88,10 +90,14 @@ public class HttpURLProxySelectionTest {
      */
     @Test
     public void test() throws Exception {
-        final String targetURL = "http://" + server.getAddress().getHostName() + ":"
-                + server.getAddress().getPort() + WEB_APP_CONTEXT;
+        final URL targetURL = URIBuilder.newBuilder()
+                .scheme("http")
+                .host(server.getAddress().getAddress())
+                .port(server.getAddress().getPort())
+                .path(WEB_APP_CONTEXT)
+                .toURL();
         System.out.println("Sending request to " + targetURL);
-        final HttpURLConnection conn = (HttpURLConnection) new URL(targetURL).openConnection();
+        final HttpURLConnection conn = (HttpURLConnection) targetURL.openConnection();
         try {
             conn.getResponseCode();
             Assert.fail("Request to " + targetURL + " was expected to fail during redirect");
@@ -121,7 +127,7 @@ public class HttpURLProxySelectionTest {
     }
 
     private static class SimpleHandler implements HttpHandler {
-        private boolean redirectSent = false;
+        private volatile boolean redirectSent = false;
 
         @Override
         public void handle(final HttpExchange httpExchange) throws IOException {
@@ -135,15 +141,15 @@ public class HttpURLProxySelectionTest {
             final URI requestURI = httpExchange.getRequestURI();
             System.out.println("Handling " + httpExchange.getRequestMethod() + " request "
                     + requestURI + " responding with redirect to " + redirectURL);
-            httpExchange.sendResponseHeaders(301, -1);
             this.redirectSent = true;
+            httpExchange.sendResponseHeaders(301, -1);
         }
 
     }
 
     private static class CustomProxySelector extends DefaultProxySelector {
 
-        private boolean selectorUsedForRedirect = false;
+        private volatile boolean selectorUsedForRedirect = false;
 
         @Override
         public List<Proxy> select(final URI uri) {
