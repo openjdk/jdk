@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -85,6 +85,9 @@ typedef struct {
  * Pointer to native-specific (GLX, WGL, etc.) SurfaceData info, such as the
  * native Drawable handle and GraphicsConfig data.
  *
+ *     jobject graphicsConfig;;
+ * Strong reference to the OGLGraphicsConfig used by this OGLSurfaceData.
+ *
  *     jint drawableType;
  * The surface type; can be any one of the surface type constants defined
  * below (OGLSD_WINDOW, OGLSD_TEXTURE, etc).
@@ -162,6 +165,7 @@ typedef struct {
 struct _OGLSDOps {
     SurfaceDataOps               sdOps;
     void                         *privOps;
+    jobject                      graphicsConfig;
     jint                         drawableType;
     GLenum                       activeBuffer;
     jboolean                     isOpaque;

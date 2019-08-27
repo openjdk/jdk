@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -54,21 +54,30 @@ jboolean surfaceCreationFailed = JNI_FALSE;
 
 JNIEXPORT void JNICALL
 Java_sun_java2d_opengl_GLXSurfaceData_initOps(JNIEnv *env, jobject glxsd,
+                                              jobject gc,
                                               jobject peer, jlong aData)
 {
 #ifndef HEADLESS
-    GLXSDOps *glxsdo = (GLXSDOps *)malloc(sizeof(GLXSDOps));
-
-    if (glxsdo == NULL) {
-        JNU_ThrowOutOfMemoryError(env, "creating native GLX ops");
+    gc = (*env)->NewGlobalRef(env, gc);
+    if (gc == NULL) {
+        JNU_ThrowOutOfMemoryError(env, "Initialization of SurfaceData failed.");
         return;
     }
 
     OGLSDOps *oglsdo = (OGLSDOps *)SurfaceData_InitOps(env, glxsd,
                                                        sizeof(OGLSDOps));
     if (oglsdo == NULL) {
-        free(glxsdo);
+        (*env)->DeleteGlobalRef(env, gc);
         JNU_ThrowOutOfMemoryError(env, "Initialization of SurfaceData failed.");
+        return;
+    }
+    // later the graphicsConfig will be used for deallocation of oglsdo
+    oglsdo->graphicsConfig = gc;
+
+    GLXSDOps *glxsdo = (GLXSDOps *)malloc(sizeof(GLXSDOps));
+
+    if (glxsdo == NULL) {
+        JNU_ThrowOutOfMemoryError(env, "creating native GLX ops");
         return;
     }
 
@@ -150,39 +159,6 @@ GLXSD_MakeCurrentToScratch(JNIEnv *env, OGLContext *oglc)
     }
 
     return JNI_TRUE;
-}
-
-/**
- * Returns a pointer (as a jlong) to the native GLXGraphicsConfigInfo
- * associated with the given OGLSDOps.  This method can be called from
- * shared code to retrieve the native GraphicsConfig data in a platform-
- * independent manner.
- */
-jlong
-OGLSD_GetNativeConfigInfo(OGLSDOps *oglsdo)
-{
-    GLXSDOps *glxsdo;
-
-    if (oglsdo == NULL) {
-        J2dRlsTraceLn(J2D_TRACE_ERROR,
-                      "OGLSD_GetNativeConfigInfo: ops are null");
-        return 0L;
-    }
-
-    glxsdo = (GLXSDOps *)oglsdo->privOps;
-    if (glxsdo == NULL) {
-        J2dRlsTraceLn(J2D_TRACE_ERROR,
-                      "OGLSD_GetNativeConfigInfo: glx ops are null");
-        return 0L;
-    }
-
-    if (glxsdo->configData == NULL) {
-        J2dRlsTraceLn(J2D_TRACE_ERROR,
-                      "OGLSD_GetNativeConfigInfo: config data is null");
-        return 0L;
-    }
-
-    return ptr_to_jlong(glxsdo->configData->glxInfo);
 }
 
 /**

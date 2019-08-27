@@ -27,6 +27,7 @@ package sun.java2d.opengl;
 
 import java.awt.AlphaComposite;
 import java.awt.Composite;
+import java.awt.GraphicsConfiguration;
 import java.awt.GraphicsEnvironment;
 import java.awt.Rectangle;
 import java.awt.Transparency;
@@ -578,16 +579,16 @@ public abstract class OGLSurfaceData extends SurfaceData
      * (referenced by the pData parameter).  This method is invoked from
      * the native Dispose() method from the Disposer thread when the
      * Java-level OGLSurfaceData object is about to go away.  Note that we
-     * also pass a reference to the native GLX/WGLGraphicsConfigInfo
-     * (pConfigInfo) for the purposes of making a context current.
+     * also pass a reference to the OGLGraphicsConfig
+     * for the purposes of making a context current.
      */
-    static void dispose(long pData, long pConfigInfo) {
+    static void dispose(long pData, OGLGraphicsConfig gc) {
         OGLRenderQueue rq = OGLRenderQueue.getInstance();
         rq.lock();
         try {
             // make sure we have a current context before
             // disposing the native resources (e.g. texture object)
-            OGLContext.setScratchSurface(pConfigInfo);
+            OGLContext.setScratchSurface(gc);
 
             RenderBuffer buf = rq.getBuffer();
             rq.ensureCapacityAndAlignment(12, 4);

@@ -40,7 +40,8 @@ public abstract class GLXSurfaceData extends OGLSurfaceData {
     protected X11ComponentPeer peer;
     private GLXGraphicsConfig graphicsConfig;
 
-    private native void initOps(X11ComponentPeer peer, long aData);
+    private native void initOps(OGLGraphicsConfig gc, X11ComponentPeer peer,
+                                long aData);
 
     protected GLXSurfaceData(X11ComponentPeer peer, GLXGraphicsConfig gc,
                              ColorModel cm, int type)
@@ -48,7 +49,7 @@ public abstract class GLXSurfaceData extends OGLSurfaceData {
         super(gc, cm, type);
         this.peer = peer;
         this.graphicsConfig = gc;
-        initOps(peer, graphicsConfig.getAData());
+        initOps(gc, peer, graphicsConfig.getAData());
     }
 
     public GraphicsConfiguration getDeviceConfiguration() {

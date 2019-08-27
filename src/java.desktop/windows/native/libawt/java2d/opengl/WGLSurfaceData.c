@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2004, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2004, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -58,11 +58,25 @@ extern void
 
 JNIEXPORT void JNICALL
 Java_sun_java2d_opengl_WGLSurfaceData_initOps(JNIEnv *env, jobject wglsd,
-                                              jlong pConfigInfo,
+                                              jobject gc, jlong pConfigInfo,
                                               jobject peer, jlong hwnd)
 {
+    gc = (*env)->NewGlobalRef(env, gc);
+    if (gc == NULL) {
+        JNU_ThrowOutOfMemoryError(env, "Initialization of SurfaceData failed.");
+        return;
+    }
+
     OGLSDOps *oglsdo = (OGLSDOps *)SurfaceData_InitOps(env, wglsd,
                                                        sizeof(OGLSDOps));
+    if (oglsdo == NULL) {
+        (*env)->DeleteGlobalRef(env, gc);
+        JNU_ThrowOutOfMemoryError(env, "Initialization of SurfaceData failed.");
+        return;
+    }
+    // later the graphicsConfig will be used for deallocation of oglsdo
+    oglsdo->graphicsConfig = gc;
+
     WGLSDOps *wglsdo = (WGLSDOps *)malloc(sizeof(WGLSDOps));
 
     J2dTraceLn(J2D_TRACE_INFO, "WGLSurfaceData_initOps");
@@ -142,33 +156,6 @@ WGLSD_MakeCurrentToScratch(JNIEnv *env, OGLContext *oglc)
     }
 
     return JNI_TRUE;
-}
-
-/**
- * Returns a pointer (as a jlong) to the native WGLGraphicsConfigInfo
- * associated with the given OGLSDOps.  This method can be called from
- * shared code to retrieve the native GraphicsConfig data in a platform-
- * independent manner.
- */
-jlong
-OGLSD_GetNativeConfigInfo(OGLSDOps *oglsdo)
-{
-    WGLSDOps *wglsdo;
-
-    if (oglsdo == NULL) {
-        J2dRlsTraceLn(J2D_TRACE_ERROR,
-                      "OGLSD_GetNativeConfigInfo: ops are null");
-        return 0L;
-    }
-
-    wglsdo = (WGLSDOps *)oglsdo->privOps;
-    if (wglsdo == NULL) {
-        J2dRlsTraceLn(J2D_TRACE_ERROR,
-                      "OGLSD_GetNativeConfigInfo: wgl ops are null");
-        return 0L;
-    }
-
-    return ptr_to_jlong(wglsdo->configInfo);
 }
 
 /**

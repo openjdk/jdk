@@ -46,8 +46,8 @@ public abstract class WGLSurfaceData extends OGLSurfaceData {
     protected double scaleX = 1;
     protected double scaleY = 1;
 
-    private native void initOps(long pConfigInfo, WComponentPeer peer,
-                                long hwnd);
+    private native void initOps(OGLGraphicsConfig gc, long pConfigInfo,
+                                WComponentPeer peer, long hwnd);
 
     protected WGLSurfaceData(WComponentPeer peer, WGLGraphicsConfig gc,
                              ColorModel cm, int type)
@@ -62,7 +62,7 @@ public abstract class WGLSurfaceData extends OGLSurfaceData {
         long pConfigInfo = gc.getNativeConfigInfo();
         long hwnd = peer != null ? peer.getHWnd() : 0L;
 
-        initOps(pConfigInfo, peer, hwnd);
+        initOps(gc, pConfigInfo, peer, hwnd);
     }
 
     @Override
