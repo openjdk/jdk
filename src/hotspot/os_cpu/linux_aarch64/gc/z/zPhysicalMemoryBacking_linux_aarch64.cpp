@@ -32,6 +32,7 @@
 #include "gc/z/zPhysicalMemory.inline.hpp"
 #include "gc/z/zPhysicalMemoryBacking_linux_aarch64.hpp"
 #include "logging/log.hpp"
+#include "runtime/globals.hpp"
 #include "runtime/init.hpp"
 #include "runtime/os.hpp"
 #include "utilities/align.hpp"
