@@ -23,6 +23,7 @@
  */
 
 #include "precompiled.hpp"
+#include "gc/g1/g1BufferNodeList.hpp"
 #include "gc/g1/g1CardTableEntryClosure.hpp"
 #include "gc/g1/g1CollectedHeap.inline.hpp"
 #include "gc/g1/g1DirtyCardQueue.hpp"
@@ -215,7 +216,7 @@ void G1DirtyCardQueueSet::notify_if_necessary() {
 // must share the monitor.
 void G1DirtyCardQueueSet::merge_bufferlists(G1RedirtyCardsQueueSet* src) {
   assert(allocator() == src->allocator(), "precondition");
-  const G1RedirtyCardsBufferList from = src->take_all_completed_buffers();
+  const G1BufferNodeList from = src->take_all_completed_buffers();
   if (from._head == NULL) return;
 
   MutexLocker x(_cbl_mon, Mutex::_no_safepoint_check_flag);
