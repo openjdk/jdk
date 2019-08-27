@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,6 +24,8 @@
  */
 
 package java.net;
+
+import java.util.Objects;
 
 /**
  * This class represents a Network Interface address. In short it's an
@@ -99,17 +101,17 @@ public class InterfaceAddress {
      * @see     java.net.InterfaceAddress#hashCode()
      */
     public boolean equals(Object obj) {
-        if (!(obj instanceof InterfaceAddress)) {
-            return false;
+        if (obj instanceof InterfaceAddress) {
+            InterfaceAddress cmp = (InterfaceAddress) obj;
+
+            if (Objects.equals(address, cmp.address) &&
+                Objects.equals(broadcast, cmp.broadcast) &&
+                maskLength == cmp.maskLength)
+            {
+                return true;
+            }
         }
-        InterfaceAddress cmp = (InterfaceAddress) obj;
-        if ( !(address == null ? cmp.address == null : address.equals(cmp.address)) )
-            return false;
-        if ( !(broadcast  == null ? cmp.broadcast == null : broadcast.equals(cmp.broadcast)) )
-            return false;
-        if (maskLength != cmp.maskLength)
-            return false;
-        return true;
+        return false;
     }
 
     /**
