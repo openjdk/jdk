@@ -65,22 +65,9 @@ class ObjectSynchronizer : AllStatic {
   // exit must be implemented non-blocking, since the compiler cannot easily handle
   // deoptimization at monitor exit. Hence, it does not take a Handle argument.
 
-  // This is full version of monitor enter and exit. I choose not
-  // to use enter() and exit() in order to make sure user be ware
-  // of the performance and semantics difference. They are normally
-  // used by ObjectLocker etc. The interpreter and compiler use
-  // assembly copies of these routines. Please keep them synchronized.
-  //
-  // attempt_rebias flag is used by UseBiasedLocking implementation
-  static void fast_enter(Handle obj, BasicLock* lock, bool attempt_rebias,
-                         TRAPS);
-  static void fast_exit(oop obj, BasicLock* lock, Thread* THREAD);
-
-  // WARNING: They are ONLY used to handle the slow cases. They should
-  // only be used when the fast cases failed. Use of these functions
-  // without previous fast case check may cause fatal error.
-  static void slow_enter(Handle obj, BasicLock* lock, TRAPS);
-  static void slow_exit(oop obj, BasicLock* lock, Thread* THREAD);
+  // This is the "slow path" version of monitor enter and exit.
+  static void enter(Handle obj, BasicLock* lock, TRAPS);
+  static void exit(oop obj, BasicLock* lock, Thread* THREAD);
 
   // Used only to handle jni locks or other unmatched monitor enter/exit
   // Internally they will use heavy weight monitor.

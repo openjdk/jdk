@@ -1620,8 +1620,8 @@ void MacroAssembler::rtm_inflated_locking(Register objReg, Register boxReg, Regi
 // See also: cmpFastLock and cmpFastUnlock.
 //
 // What follows is a specialized inline transliteration of the code
-// in slow_enter() and slow_exit().  If we're concerned about I$ bloat
-// another option would be to emit TrySlowEnter and TrySlowExit methods
+// in enter() and exit(). If we're concerned about I$ bloat another
+// option would be to emit TrySlowEnter and TrySlowExit methods
 // at startup-time.  These methods would accept arguments as
 // (rax,=Obj, rbx=Self, rcx=box, rdx=Scratch) and return success-failure
 // indications in the icc.ZFlag.  Fast_Lock and Fast_Unlock would simply

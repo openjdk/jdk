@@ -3569,7 +3569,7 @@ encode %{
     // Store a non-null value into the box to avoid looking like a re-entrant
     // lock. The fast-path monitor unlock code checks for
     // markWord::monitor_value so use markWord::unused_mark which has the
-    // relevant bit set, and also matches ObjectSynchronizer::slow_enter.
+    // relevant bit set, and also matches ObjectSynchronizer::enter.
     __ mov(tmp, (address)markWord::unused_mark().value());
     __ str(tmp, Address(box, BasicLock::displaced_header_offset_in_bytes()));
 

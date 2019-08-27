@@ -257,31 +257,48 @@ bool ObjectSynchronizer::quick_enter(oop obj, Thread * Self,
 }
 
 // -----------------------------------------------------------------------------
-//  Fast Monitor Enter/Exit
-// This the fast monitor enter. The interpreter and compiler use
-// some assembly copies of this code. Make sure update those code
-// if the following function is changed. The implementation is
-// extremely sensitive to race condition. Be careful.
+// Monitor Enter/Exit
+// The interpreter and compiler assembly code tries to lock using the fast path
+// of this algorithm. Make sure to update that code if the following function is
+// changed. The implementation is extremely sensitive to race condition. Be careful.
 
-void ObjectSynchronizer::fast_enter(Handle obj, BasicLock* lock,
-                                    bool attempt_rebias, TRAPS) {
+void ObjectSynchronizer::enter(Handle obj, BasicLock* lock, TRAPS) {
   if (UseBiasedLocking) {
     if (!SafepointSynchronize::is_at_safepoint()) {
-      BiasedLocking::Condition cond = BiasedLocking::revoke_and_rebias(obj, attempt_rebias, THREAD);
-      if (cond == BiasedLocking::BIAS_REVOKED_AND_REBIASED) {
-        return;
-      }
+      BiasedLocking::revoke(obj, THREAD);
     } else {
-      assert(!attempt_rebias, "can not rebias toward VM thread");
       BiasedLocking::revoke_at_safepoint(obj);
     }
-    assert(!obj->mark().has_bias_pattern(), "biases should be revoked by now");
   }
 
-  slow_enter(obj, lock, THREAD);
+  markWord mark = obj->mark();
+  assert(!mark.has_bias_pattern(), "should not see bias pattern here");
+
+  if (mark.is_neutral()) {
+    // Anticipate successful CAS -- the ST of the displaced mark must
+    // be visible <= the ST performed by the CAS.
+    lock->set_displaced_header(mark);
+    if (mark == obj()->cas_set_mark(markWord::from_pointer(lock), mark)) {
+      return;
+    }
+    // Fall through to inflate() ...
+  } else if (mark.has_locker() &&
+             THREAD->is_lock_owned((address)mark.locker())) {
+    assert(lock != mark.locker(), "must not re-lock the same lock");
+    assert(lock != (BasicLock*)obj->mark().value(), "don't relock with same BasicLock");
+    lock->set_displaced_header(markWord::from_pointer(NULL));
+    return;
+  }
+
+  // The object header will never be displaced to this lock,
+  // so it does not matter what the value is, except that it
+  // must be non-zero to avoid looking like a re-entrant lock,
+  // and must not look locked either.
+  lock->set_displaced_header(markWord::unused_mark());
+  inflate(THREAD, obj(), inflate_cause_monitor_enter)->enter(THREAD);
 }
 
-void ObjectSynchronizer::fast_exit(oop object, BasicLock* lock, TRAPS) {
+void ObjectSynchronizer::exit(oop object, BasicLock* lock, TRAPS) {
   markWord mark = object->mark();
   // We cannot check for Biased Locking if we are racing an inflation.
   assert(mark == markWord::INFLATING() ||
@@ -331,47 +348,6 @@ void ObjectSynchronizer::fast_exit(oop object, BasicLock* lock, TRAPS) {
 }
 
 // -----------------------------------------------------------------------------
-// Interpreter/Compiler Slow Case
-// This routine is used to handle interpreter/compiler slow case
-// We don't need to use fast path here, because it must have been
-// failed in the interpreter/compiler code.
-void ObjectSynchronizer::slow_enter(Handle obj, BasicLock* lock, TRAPS) {
-  markWord mark = obj->mark();
-  assert(!mark.has_bias_pattern(), "should not see bias pattern here");
-
-  if (mark.is_neutral()) {
-    // Anticipate successful CAS -- the ST of the displaced mark must
-    // be visible <= the ST performed by the CAS.
-    lock->set_displaced_header(mark);
-    if (mark == obj()->cas_set_mark(markWord::from_pointer(lock), mark)) {
-      return;
-    }
-    // Fall through to inflate() ...
-  } else if (mark.has_locker() &&
-             THREAD->is_lock_owned((address)mark.locker())) {
-    assert(lock != mark.locker(), "must not re-lock the same lock");
-    assert(lock != (BasicLock*)obj->mark().value(), "don't relock with same BasicLock");
-    lock->set_displaced_header(markWord::from_pointer(NULL));
-    return;
-  }
-
-  // The object header will never be displaced to this lock,
-  // so it does not matter what the value is, except that it
-  // must be non-zero to avoid looking like a re-entrant lock,
-  // and must not look locked either.
-  lock->set_displaced_header(markWord::unused_mark());
-  inflate(THREAD, obj(), inflate_cause_monitor_enter)->enter(THREAD);
-}
-
-// This routine is used to handle interpreter/compiler slow case
-// We don't need to use fast path here, because it must have
-// failed in the interpreter/compiler code. Simply use the heavy
-// weight monitor should be ok, unless someone find otherwise.
-void ObjectSynchronizer::slow_exit(oop object, BasicLock* lock, TRAPS) {
-  fast_exit(object, lock, THREAD);
-}
-
-// -----------------------------------------------------------------------------
 // Class Loader  support to workaround deadlocks on the class loader lock objects
 // Also used by GC
 // complete_exit()/reenter() are used to wait on a nested lock
@@ -385,7 +361,7 @@ void ObjectSynchronizer::slow_exit(oop object, BasicLock* lock, TRAPS) {
 // NOTE: must use heavy weight monitor to handle complete_exit/reenter()
 intptr_t ObjectSynchronizer::complete_exit(Handle obj, TRAPS) {
   if (UseBiasedLocking) {
-    BiasedLocking::revoke_and_rebias(obj, false, THREAD);
+    BiasedLocking::revoke(obj, THREAD);
     assert(!obj->mark().has_bias_pattern(), "biases should be revoked by now");
   }
 
@@ -397,7 +373,7 @@ intptr_t ObjectSynchronizer::complete_exit(Handle obj, TRAPS) {
 // NOTE: must use heavy weight monitor to handle complete_exit/reenter()
 void ObjectSynchronizer::reenter(Handle obj, intptr_t recursion, TRAPS) {
   if (UseBiasedLocking) {
-    BiasedLocking::revoke_and_rebias(obj, false, THREAD);
+    BiasedLocking::revoke(obj, THREAD);
     assert(!obj->mark().has_bias_pattern(), "biases should be revoked by now");
   }
 
@@ -411,7 +387,7 @@ void ObjectSynchronizer::reenter(Handle obj, intptr_t recursion, TRAPS) {
 void ObjectSynchronizer::jni_enter(Handle obj, TRAPS) {
   // the current locking is from JNI instead of Java code
   if (UseBiasedLocking) {
-    BiasedLocking::revoke_and_rebias(obj, false, THREAD);
+    BiasedLocking::revoke(obj, THREAD);
     assert(!obj->mark().has_bias_pattern(), "biases should be revoked by now");
   }
   THREAD->set_current_pending_monitor_is_from_java(false);
@@ -423,7 +399,7 @@ void ObjectSynchronizer::jni_enter(Handle obj, TRAPS) {
 void ObjectSynchronizer::jni_exit(oop obj, Thread* THREAD) {
   if (UseBiasedLocking) {
     Handle h_obj(THREAD, obj);
-    BiasedLocking::revoke_and_rebias(h_obj, false, THREAD);
+    BiasedLocking::revoke(h_obj, THREAD);
     obj = h_obj();
   }
   assert(!obj->mark().has_bias_pattern(), "biases should be revoked by now");
@@ -447,13 +423,13 @@ ObjectLocker::ObjectLocker(Handle obj, Thread* thread, bool doLock) {
   _obj = obj;
 
   if (_dolock) {
-    ObjectSynchronizer::fast_enter(_obj, &_lock, false, _thread);
+    ObjectSynchronizer::enter(_obj, &_lock, _thread);
   }
 }
 
 ObjectLocker::~ObjectLocker() {
   if (_dolock) {
-    ObjectSynchronizer::fast_exit(_obj(), &_lock, _thread);
+    ObjectSynchronizer::exit(_obj(), &_lock, _thread);
   }
 }
 
@@ -463,7 +439,7 @@ ObjectLocker::~ObjectLocker() {
 // NOTE: must use heavy weight monitor to handle wait()
 int ObjectSynchronizer::wait(Handle obj, jlong millis, TRAPS) {
   if (UseBiasedLocking) {
-    BiasedLocking::revoke_and_rebias(obj, false, THREAD);
+    BiasedLocking::revoke(obj, THREAD);
     assert(!obj->mark().has_bias_pattern(), "biases should be revoked by now");
   }
   if (millis < 0) {
@@ -483,7 +459,7 @@ int ObjectSynchronizer::wait(Handle obj, jlong millis, TRAPS) {
 
 void ObjectSynchronizer::waitUninterruptibly(Handle obj, jlong millis, TRAPS) {
   if (UseBiasedLocking) {
-    BiasedLocking::revoke_and_rebias(obj, false, THREAD);
+    BiasedLocking::revoke(obj, THREAD);
     assert(!obj->mark().has_bias_pattern(), "biases should be revoked by now");
   }
   if (millis < 0) {
@@ -494,7 +470,7 @@ void ObjectSynchronizer::waitUninterruptibly(Handle obj, jlong millis, TRAPS) {
 
 void ObjectSynchronizer::notify(Handle obj, TRAPS) {
   if (UseBiasedLocking) {
-    BiasedLocking::revoke_and_rebias(obj, false, THREAD);
+    BiasedLocking::revoke(obj, THREAD);
     assert(!obj->mark().has_bias_pattern(), "biases should be revoked by now");
   }
 
@@ -508,7 +484,7 @@ void ObjectSynchronizer::notify(Handle obj, TRAPS) {
 // NOTE: see comment of notify()
 void ObjectSynchronizer::notifyall(Handle obj, TRAPS) {
   if (UseBiasedLocking) {
-    BiasedLocking::revoke_and_rebias(obj, false, THREAD);
+    BiasedLocking::revoke(obj, THREAD);
     assert(!obj->mark().has_bias_pattern(), "biases should be revoked by now");
   }
 
@@ -695,7 +671,7 @@ intptr_t ObjectSynchronizer::FastHashCode(Thread * Self, oop obj) {
       assert(Universe::verify_in_progress() ||
              !SafepointSynchronize::is_at_safepoint(),
              "biases should not be seen by VM thread here");
-      BiasedLocking::revoke_and_rebias(hobj, false, JavaThread::current());
+      BiasedLocking::revoke(hobj, JavaThread::current());
       obj = hobj();
       assert(!obj->mark().has_bias_pattern(), "biases should be revoked by now");
     }
@@ -794,7 +770,7 @@ intptr_t ObjectSynchronizer::identity_hash_value_for(Handle obj) {
 bool ObjectSynchronizer::current_thread_holds_lock(JavaThread* thread,
                                                    Handle h_obj) {
   if (UseBiasedLocking) {
-    BiasedLocking::revoke_and_rebias(h_obj, false, thread);
+    BiasedLocking::revoke(h_obj, thread);
     assert(!h_obj->mark().has_bias_pattern(), "biases should be revoked by now");
   }
 
@@ -833,7 +809,7 @@ ObjectSynchronizer::LockOwnership ObjectSynchronizer::query_lock_ownership
 
   if (UseBiasedLocking && h_obj()->mark().has_bias_pattern()) {
     // CASE: biased
-    BiasedLocking::revoke_and_rebias(h_obj, false, self);
+    BiasedLocking::revoke(h_obj, self);
     assert(!h_obj->mark().has_bias_pattern(),
            "biases should be revoked by now");
   }
@@ -869,7 +845,7 @@ JavaThread* ObjectSynchronizer::get_lock_owner(ThreadsList * t_list, Handle h_ob
     if (SafepointSynchronize::is_at_safepoint()) {
       BiasedLocking::revoke_at_safepoint(h_obj);
     } else {
-      BiasedLocking::revoke_and_rebias(h_obj, false, JavaThread::current());
+      BiasedLocking::revoke(h_obj, JavaThread::current());
     }
     assert(!h_obj->mark().has_bias_pattern(), "biases should be revoked by now");
   }
@@ -1463,8 +1439,7 @@ ObjectMonitor* ObjectSynchronizer::inflate(Thread * Self,
     // CAS inflates the object *and* confers ownership to the inflating thread.
     // In the current implementation we use a 2-step mechanism where we CAS()
     // to inflate and then CAS() again to try to swing _owner from NULL to Self.
-    // An inflateTry() method that we could call from fast_enter() and slow_enter()
-    // would be useful.
+    // An inflateTry() method that we could call from enter() would be useful.
 
     // Catch if the object's header is not neutral (not locked and
     // not marked is what we care about here).

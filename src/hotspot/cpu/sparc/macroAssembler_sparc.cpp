@@ -2607,8 +2607,8 @@ void MacroAssembler::biased_locking_exit (Address mark_addr, Register temp_reg, 
 // -   Successful Stack-lock: box->dhw == mark.
 //     box->dhw must contain the displaced mark word value
 // -   Failure -- icc.ZFlag == 0 and box->dhw is undefined.
-//     The slow-path fast_enter() and slow_enter() operators
-//     are responsible for setting box->dhw = NonZero (typically markWord::unused_mark()).
+//     The slow-path enter() is responsible for setting
+//     box->dhw = NonZero (typically markWord::unused_mark()).
 // -   Biased: box->dhw is undefined
 //
 // SPARC refworkload performance - specifically jetstream and scimark - are

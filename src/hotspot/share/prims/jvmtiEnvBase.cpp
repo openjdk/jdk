@@ -960,7 +960,7 @@ JvmtiEnvBase::get_object_monitor_usage(JavaThread* calling_thread, jobject objec
     if (at_safepoint) {
       BiasedLocking::revoke_at_safepoint(hobj);
     } else {
-      BiasedLocking::revoke_and_rebias(hobj, false, calling_thread);
+      BiasedLocking::revoke(hobj, calling_thread);
     }
 
     address owner = NULL;

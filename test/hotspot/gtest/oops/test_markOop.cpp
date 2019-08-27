@@ -98,9 +98,10 @@ TEST_VM(markWord, printing) {
   // Lock using biased locking.
   BasicObjectLock lock;
   lock.set_obj(obj);
-  markWord mark = obj->mark().incr_bias_epoch();
-  obj->set_mark(mark);
-  ObjectSynchronizer::fast_enter(h_obj, lock.lock(), true, THREAD);
+  markWord prototype_header = obj->klass()->prototype_header();
+  markWord mark = obj->mark();
+  markWord biased_mark = markWord::encode((JavaThread*) THREAD, mark.age(), prototype_header.bias_epoch());
+  obj->set_mark(biased_mark);
   // Look for the biased_locker in markWord, not prototype_header.
 #ifdef _LP64
   assert_not_test_pattern(h_obj, "mark(is_biased biased_locker=0x0000000000000000");
