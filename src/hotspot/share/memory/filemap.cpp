@@ -55,6 +55,7 @@
 #include "runtime/vm_version.hpp"
 #include "services/memTracker.hpp"
 #include "utilities/align.hpp"
+#include "utilities/classpathStream.hpp"
 #include "utilities/defaultStream.hpp"
 #if INCLUDE_G1GC
 #include "gc/g1/g1CollectedHeap.hpp"
@@ -566,32 +567,16 @@ int FileMapInfo::num_paths(const char* path) {
   return npaths;
 }
 
-GrowableArray<char*>* FileMapInfo::create_path_array(const char* path) {
-  GrowableArray<char*>* path_array =  new(ResourceObj::RESOURCE_AREA, mtInternal)
-      GrowableArray<char*>(10);
-  char* begin_ptr = (char*)path;
-  char* end_ptr = strchr((char*)path, os::path_separator()[0]);
-  if (end_ptr == NULL) {
-    end_ptr = strchr((char*)path, '\0');
-  }
-  while (end_ptr != NULL) {
-    if ((end_ptr - begin_ptr) > 1) {
-      struct stat st;
-      char* temp_name = NEW_RESOURCE_ARRAY(char, (size_t)(end_ptr - begin_ptr + 1));
-      strncpy(temp_name, begin_ptr, end_ptr - begin_ptr);
-      temp_name[end_ptr - begin_ptr] = '\0';
-      if (os::stat(temp_name, &st) == 0) {
-        path_array->append(temp_name);
-      }
-    }
-    if (end_ptr < (path + strlen(path))) {
-      begin_ptr = ++end_ptr;
-      end_ptr = strchr(begin_ptr, os::path_separator()[0]);
-      if (end_ptr == NULL) {
-        end_ptr = strchr(begin_ptr, '\0');
-      }
-    } else {
-      break;
+GrowableArray<const char*>* FileMapInfo::create_path_array(const char* paths) {
+  GrowableArray<const char*>* path_array =  new(ResourceObj::RESOURCE_AREA, mtInternal)
+      GrowableArray<const char*>(10);
+
+  ClasspathStream cp_stream(paths);
+  while (cp_stream.has_next()) {
+    const char* path = cp_stream.get_next();
+    struct stat st;
+    if (os::stat(path, &st) == 0) {
+      path_array->append(path);
     }
   }
   return path_array;
@@ -603,7 +588,7 @@ bool FileMapInfo::fail(const char* msg, const char* name) {
   return false;
 }
 
-bool FileMapInfo::check_paths(int shared_path_start_idx, int num_paths, GrowableArray<char*>* rp_array) {
+bool FileMapInfo::check_paths(int shared_path_start_idx, int num_paths, GrowableArray<const char*>* rp_array) {
   int i = 0;
   int j = shared_path_start_idx;
   bool mismatch = false;
@@ -657,7 +642,7 @@ bool FileMapInfo::validate_boot_class_paths() {
   } else if (dp_len > 0 && rp != NULL) {
     int num;
     ResourceMark rm;
-    GrowableArray<char*>* rp_array = create_path_array(rp);
+    GrowableArray<const char*>* rp_array = create_path_array(rp);
     int rp_len = rp_array->length();
     if (rp_len >= dp_len) {
       if (relaxed_check) {
@@ -690,7 +675,7 @@ bool FileMapInfo::validate_app_class_paths(int shared_app_paths_len) {
   if (shared_app_paths_len != 0 && rp_len != 0) {
     // Prefix is OK: E.g., dump with -cp foo.jar, but run with -cp foo.jar:bar.jar.
     ResourceMark rm;
-    GrowableArray<char*>* rp_array = create_path_array(appcp);
+    GrowableArray<const char*>* rp_array = create_path_array(appcp);
     if (rp_array->length() == 0) {
       // None of the jar file specified in the runtime -cp exists.
       return fail("None of the jar file specified in the runtime -cp exists: -Djava.class.path=", appcp);

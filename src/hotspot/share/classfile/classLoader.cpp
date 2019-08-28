@@ -69,6 +69,7 @@
 #include "runtime/vm_version.hpp"
 #include "services/management.hpp"
 #include "services/threadService.hpp"
+#include "utilities/classpathStream.hpp"
 #include "utilities/events.hpp"
 #include "utilities/hashtable.inline.hpp"
 #include "utilities/macros.hpp"
@@ -167,41 +168,6 @@ static const char* get_jimage_version_string() {
   }
   return (const char*)version_string;
 }
-
-class ClasspathStream : public StackObj {
-  const char* _class_path;
-  int _len;
-  int _start;
-  int _end;
-
-public:
-  ClasspathStream(const char* class_path) {
-    _class_path = class_path;
-    _len = (int)strlen(class_path);
-    _start = 0;
-    _end = 0;
-  }
-
-  bool has_next() {
-    return _start < _len;
-  }
-
-  const char* get_next() {
-    while (_class_path[_end] != '\0' && _class_path[_end] != os::path_separator()[0]) {
-      _end++;
-    }
-    int path_len = _end - _start;
-    char* path = NEW_RESOURCE_ARRAY(char, path_len + 1);
-    strncpy(path, &_class_path[_start], path_len);
-    path[path_len] = '\0';
-
-    while (_class_path[_end] == os::path_separator()[0]) {
-      _end++;
-    }
-    _start = _end;
-    return path;
-  }
-};
 
 bool ClassLoader::string_ends_with(const char* str, const char* str_to_find) {
   size_t str_len = strlen(str);
