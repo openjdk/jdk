@@ -28,6 +28,7 @@
 #include "gc/z/zErrno.hpp"
 #include "gc/z/zGlobals.hpp"
 #include "gc/z/zLargePages.inline.hpp"
+#include "gc/z/zSyscall_linux.hpp"
 #include "logging/log.hpp"
 #include "runtime/init.hpp"
 #include "runtime/os.hpp"
@@ -38,21 +39,12 @@
 #include <sys/mman.h>
 #include <sys/stat.h>
 #include <sys/statfs.h>
-#include <sys/syscall.h>
 #include <sys/types.h>
 #include <unistd.h>
 
 //
 // Support for building on older Linux systems
 //
-
-// System calls
-#ifndef SYS_fallocate
-#define SYS_fallocate                    285
-#endif
-#ifndef SYS_memfd_create
-#define SYS_memfd_create                 319
-#endif
 
 // memfd_create(2) flags
 #ifndef MFD_CLOEXEC
@@ -112,14 +104,6 @@ static const char* z_preferred_hugetlbfs_mountpoints[] = {
 
 static int z_fallocate_hugetlbfs_attempts = 3;
 static bool z_fallocate_supported = true;
-
-static int z_fallocate(int fd, int mode, size_t offset, size_t length) {
-  return syscall(SYS_fallocate, fd, mode, offset, length);
-}
-
-static int z_memfd_create(const char *name, unsigned int flags) {
-  return syscall(SYS_memfd_create, name, flags);
-}
 
 ZBackingFile::ZBackingFile() :
     _fd(-1),
@@ -197,7 +181,7 @@ int ZBackingFile::create_mem_fd(const char* name) const {
 
   // Create file
   const int extra_flags = ZLargePages::is_explicit() ? MFD_HUGETLB : 0;
-  const int fd = z_memfd_create(filename, MFD_CLOEXEC | extra_flags);
+  const int fd = ZSyscall::memfd_create(filename, MFD_CLOEXEC | extra_flags);
   if (fd == -1) {
     ZErrno err;
     log_debug(gc, init)("Failed to create memfd file (%s)",
@@ -416,7 +400,7 @@ ZErrno ZBackingFile::fallocate_fill_hole_compat(size_t offset, size_t length) {
 
 ZErrno ZBackingFile::fallocate_fill_hole_syscall(size_t offset, size_t length) {
   const int mode = 0; // Allocate
-  const int res = z_fallocate(_fd, mode, offset, length);
+  const int res = ZSyscall::fallocate(_fd, mode, offset, length);
   if (res == -1) {
     // Failed
     return errno;
@@ -471,7 +455,7 @@ ZErrno ZBackingFile::fallocate_punch_hole(size_t offset, size_t length) {
   }
 
   const int mode = FALLOC_FL_PUNCH_HOLE|FALLOC_FL_KEEP_SIZE;
-  if (z_fallocate(_fd, mode, offset, length) == -1) {
+  if (ZSyscall::fallocate(_fd, mode, offset, length) == -1) {
     // Failed
     return errno;
   }
