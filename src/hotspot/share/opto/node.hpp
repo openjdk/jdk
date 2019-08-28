@@ -394,6 +394,7 @@ protected:
 #ifdef ASSERT
   bool is_dead() const;
 #define is_not_dead(n) ((n) == NULL || !VerifyIterativeGVN || !((n)->is_dead()))
+  bool is_reachable_from_root() const;
 #endif
   // Check whether node has become unreachable
   bool is_unreachable(PhaseIterGVN &igvn) const;

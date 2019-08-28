@@ -1718,7 +1718,7 @@ void PhaseIdealLoop::clone_loop_handle_data_uses(Node* old, Node_List &old_new,
 #ifdef ASSERT
     if (loop->_head->as_Loop()->is_strip_mined() && outer_loop->is_member(use_loop) && !loop->is_member(use_loop) && old_new[use->_idx] == NULL) {
       Node* sfpt = loop->_head->as_CountedLoop()->outer_safepoint();
-      assert(mode == ControlAroundStripMined && use == sfpt, "missed a node");
+      assert(mode == ControlAroundStripMined && (use == sfpt || !use->is_reachable_from_root()), "missed a node");
     }
 #endif
     if (!loop->is_member(use_loop) && !outer_loop->is_member(use_loop) && (!old->is_CFG() || !use->is_CFG())) {
