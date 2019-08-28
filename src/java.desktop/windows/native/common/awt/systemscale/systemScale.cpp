@@ -24,7 +24,6 @@
  */
 #include "systemScale.h"
 #include <d2d1.h>
-#pragma comment(lib, "d2d1")
 #include <jdk_util.h>
 #ifndef MDT_EFFECTIVE_DPI
 #define MDT_EFFECTIVE_DPI 0
@@ -53,6 +52,9 @@ void GetScreenDpi(HMONITOR hmon, float *dpiX, float *dpiY)
         return;
     }
 
+    typedef HRESULT(WINAPI D2D1CreateFactoryFunc)
+                   (D2D1_FACTORY_TYPE, REFIID,
+                    CONST D2D1_FACTORY_OPTIONS*, ID2D1Factory**);
     typedef HRESULT(WINAPI GetDpiForMonitorFunc)(HMONITOR, int, UINT*, UINT*);
     static HMODULE hLibSHCoreDll = NULL;
     static GetDpiForMonitorFunc *lpGetDpiForMonitor = NULL;
@@ -73,12 +75,27 @@ void GetScreenDpi(HMONITOR hmon, float *dpiX, float *dpiY)
             *dpiY = static_cast<float>(y);
         }
     } else {
-        ID2D1Factory* m_pDirect2dFactory;
-        HRESULT res = D2D1CreateFactory(D2D1_FACTORY_TYPE_SINGLE_THREADED,
-                                        &m_pDirect2dFactory);
-        if (res == S_OK) {
-            m_pDirect2dFactory->GetDesktopDpi(dpiX, dpiY);
-            m_pDirect2dFactory->Release();
+        static HMODULE d2dDll = NULL;
+        static BOOL loadAttempted = FALSE;
+        static D2D1CreateFactoryFunc *lpD2D1CreateFactory = NULL;
+        if (!loadAttempted && d2dDll == NULL) {
+            loadAttempted = TRUE;
+            d2dDll = JDK_LoadSystemLibrary("d2d1.dll");
+        }
+        if (d2dDll != NULL && lpD2D1CreateFactory == NULL) {
+            lpD2D1CreateFactory = (D2D1CreateFactoryFunc*)GetProcAddress(
+                    d2dDll, "D2D1CreateFactory");
+        }
+        if (lpD2D1CreateFactory != NULL) {
+            ID2D1Factory* m_pDirect2dFactory;
+            HRESULT res = lpD2D1CreateFactory
+                          (D2D1_FACTORY_TYPE_SINGLE_THREADED,
+                           __uuidof(ID2D1Factory), NULL,
+                           &m_pDirect2dFactory);
+            if (res == S_OK) {
+                m_pDirect2dFactory->GetDesktopDpi(dpiX, dpiY);
+                m_pDirect2dFactory->Release();
+            }
         }
     }
     return;

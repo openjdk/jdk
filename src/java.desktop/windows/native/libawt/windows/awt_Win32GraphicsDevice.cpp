@@ -49,8 +49,6 @@
 #include "dither.h"
 #include "img_util_md.h"
 #include "Devices.h"
-#include <d2d1.h>
-#pragma comment(lib, "d2d1")
 #include "systemScale.h"
 
 uns_ordered_dither_array img_oda_alpha;
