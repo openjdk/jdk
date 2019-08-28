@@ -90,9 +90,6 @@ public:
 
   bool is_in(uintptr_t addr) const;
 
-  uintptr_t block_start(uintptr_t addr) const;
-  bool block_is_obj(uintptr_t addr) const;
-
   bool is_marked() const;
   bool is_object_live(uintptr_t addr) const;
   bool is_object_strongly_live(uintptr_t addr) const;

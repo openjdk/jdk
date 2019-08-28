@@ -177,18 +177,6 @@ inline bool ZPage::is_in(uintptr_t addr) const {
   return offset >= start() && offset < top();
 }
 
-inline uintptr_t ZPage::block_start(uintptr_t addr) const {
-  if (block_is_obj(addr)) {
-    return addr;
-  } else {
-    return ZAddress::good(top());
-  }
-}
-
-inline bool ZPage::block_is_obj(uintptr_t addr) const {
-  return ZAddress::offset(addr) < top();
-}
-
 inline bool ZPage::is_marked() const {
   assert(is_relocatable(), "Invalid page state");
   return _livemap.is_marked();

@@ -331,8 +331,6 @@ class oopDesc {
   // for error reporting
   static void* load_klass_raw(oop obj);
   static void* load_oop_raw(oop obj, int offset);
-  static bool  is_valid(oop obj);
-  static oop   oop_or_null(address addr);
 };
 
 #endif // SHARE_OOPS_OOP_HPP

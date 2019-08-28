@@ -194,16 +194,6 @@ bool ZHeap::is_in(uintptr_t addr) const {
   return false;
 }
 
-uintptr_t ZHeap::block_start(uintptr_t addr) const {
-  const ZPage* const page = _page_table.get(addr);
-  return page->block_start(addr);
-}
-
-bool ZHeap::block_is_obj(uintptr_t addr) const {
-  const ZPage* const page = _page_table.get(addr);
-  return page->block_is_obj(addr);
-}
-
 uint ZHeap::nconcurrent_worker_threads() const {
   return _workers.nconcurrent();
 }

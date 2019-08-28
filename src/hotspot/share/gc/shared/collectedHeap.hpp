@@ -402,28 +402,6 @@ class CollectedHeap : public CHeapObj<mtInternal> {
   // over live objects.
   virtual void safe_object_iterate(ObjectClosure* cl) = 0;
 
-  // NOTE! There is no requirement that a collector implement these
-  // functions.
-  //
-  // A CollectedHeap is divided into a dense sequence of "blocks"; that is,
-  // each address in the (reserved) heap is a member of exactly
-  // one block.  The defining characteristic of a block is that it is
-  // possible to find its size, and thus to progress forward to the next
-  // block.  (Blocks may be of different sizes.)  Thus, blocks may
-  // represent Java objects, or they might be free blocks in a
-  // free-list-based heap (or subheap), as long as the two kinds are
-  // distinguishable and the size of each is determinable.
-
-  // Returns the address of the start of the "block" that contains the
-  // address "addr".  We say "blocks" instead of "object" since some heaps
-  // may not pack objects densely; a chunk may either be an object or a
-  // non-object.
-  virtual HeapWord* block_start(const void* addr) const = 0;
-
-  // Requires "addr" to be the start of a block, and returns "TRUE" iff
-  // the block is an object.
-  virtual bool block_is_obj(const HeapWord* addr) const = 0;
-
   // Returns the longest time (in ms) that has elapsed since the last
   // time that any part of the heap was examined by a garbage collection.
   virtual jlong millis_since_last_gc() = 0;
@@ -460,6 +438,9 @@ class CollectedHeap : public CHeapObj<mtInternal> {
   }
 
   virtual void print_on_error(outputStream* st) const;
+
+  // Used to print information about locations in the hs_err file.
+  virtual bool print_location(outputStream* st, void* addr) const = 0;
 
   // Print all GC threads (other than the VM thread)
   // used by this heap.
