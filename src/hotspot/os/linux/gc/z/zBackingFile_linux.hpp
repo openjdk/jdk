@@ -21,8 +21,8 @@
  * questions.
  */
 
-#ifndef OS_CPU_LINUX_AARCH64_GC_Z_ZBACKINGFILE_LINUX_AARCH64_HPP
-#define OS_CPU_LINUX_AARCH64_GC_Z_ZBACKINGFILE_LINUX_AARCH64_HPP
+#ifndef OS_LINUX_GC_Z_ZBACKINGFILE_LINUX_HPP
+#define OS_LINUX_GC_Z_ZBACKINGFILE_LINUX_HPP
 
 #include "memory/allocation.hpp"
 
@@ -70,4 +70,4 @@ public:
   size_t uncommit(size_t offset, size_t length);
 };
 
-#endif // OS_CPU_LINUX_AARCH64_GC_Z_ZBACKINGFILE_LINUX_AARCH64_HPP
+#endif // OS_LINUX_GC_Z_ZBACKINGFILE_LINUX_HPP

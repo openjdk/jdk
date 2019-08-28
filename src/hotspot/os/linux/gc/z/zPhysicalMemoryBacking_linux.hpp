@@ -21,10 +21,10 @@
  * questions.
  */
 
-#ifndef OS_CPU_LINUX_X86_GC_Z_ZPHYSICALMEMORYBACKING_LINUX_X86_HPP
-#define OS_CPU_LINUX_X86_GC_Z_ZPHYSICALMEMORYBACKING_LINUX_X86_HPP
+#ifndef OS_LINUX_GC_Z_ZPHYSICALMEMORYBACKING_LINUX_HPP
+#define OS_LINUX_GC_Z_ZPHYSICALMEMORYBACKING_LINUX_HPP
 
-#include "gc/z/zBackingFile_linux_x86.hpp"
+#include "gc/z/zBackingFile_linux.hpp"
 #include "gc/z/zMemory.hpp"
 
 class ZErrno;
@@ -67,4 +67,4 @@ public:
   void debug_unmap(const ZPhysicalMemory& pmem, uintptr_t offset) const;
 };
 
-#endif // OS_CPU_LINUX_X86_GC_Z_ZPHYSICALMEMORYBACKING_LINUX_X86_HPP
+#endif // OS_LINUX_GC_Z_ZPHYSICALMEMORYBACKING_LINUX_HPP
