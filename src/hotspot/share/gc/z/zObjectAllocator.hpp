@@ -31,7 +31,6 @@
 
 class ZObjectAllocator {
 private:
-  const uint         _nworkers;
   ZPerCPU<size_t>    _used;
   ZPerCPU<size_t>    _undone;
   ZContended<ZPage*> _shared_medium_page;
@@ -64,7 +63,7 @@ private:
   bool undo_alloc_object(ZPage* page, uintptr_t addr, size_t size);
 
 public:
-  ZObjectAllocator(uint nworkers);
+  ZObjectAllocator();
 
   uintptr_t alloc_object(size_t size);
 
