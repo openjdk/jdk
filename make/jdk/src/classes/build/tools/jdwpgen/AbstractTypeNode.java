@@ -40,11 +40,11 @@ abstract class AbstractTypeNode extends AbstractNamedNode
     abstract String javaRead();
 
     void document(PrintWriter writer) {
-        docRowStart(writer);
-        writer.println("<td colspan=" +
-                       (maxStructIndent - structIndent) + ">");
-        writer.println(docType() + "<td><i>" + name() +
-                       "</i><td>" + comment() + "&nbsp;");
+        writer.println("<tr>");
+        writer.println("<td>" + indentElement(structIndent, docType()));
+        writer.println("<th scope=\"row\"><i>" + name() + "</i>");
+        writer.println("<td>" + comment() + "&nbsp;");
+        writer.println("</tr>");
     }
 
     String javaType() {

@@ -38,17 +38,21 @@ class ErrorSetNode extends AbstractSimpleNode {
     }
 
     void document(PrintWriter writer) {
-
-        writer.println("<dt>" + "Error Data");
+        writer.println("<dt>Error Data</dt>");
+        writer.print("<dd>");
         if (components.isEmpty()) {
-            writer.println("<dd>(None)");
+            writer.println("(None)");
         } else {
-            writer.println("<dd><table>");
-        for (Node node : components) {
-            node.document(writer);
+            writer.println("<table><tr>");
+            writer.println("<th class=\"bold\" style=\"width: 20%\" scope=\"col\">Value");
+            writer.println("<th class=\"bold\" scope=\"col\">Description");
+            writer.println("</tr>");
+            for (Node node : components) {
+                node.document(writer);
+            }
+            writer.println("</table>");
         }
-        writer.println("</table>");
-        }
+        writer.print("</dd>");
     }
 
     void genJavaComment(PrintWriter writer, int depth) {}

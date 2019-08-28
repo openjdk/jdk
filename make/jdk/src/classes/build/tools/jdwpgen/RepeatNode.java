@@ -44,15 +44,17 @@ class RepeatNode extends AbstractTypeNode {
     }
 
     void document(PrintWriter writer) {
-        docRowStart(writer);
-        writer.println("<td colspan=" +
-                       (maxStructIndent - structIndent) + ">");
-        writer.println("int<td><i>" + name + "</i><td>" +
-                       comment() + "&nbsp;");
-        docRowStart(writer);
-        writer.println("<td colspan=" +
-                       (maxStructIndent - structIndent + 2) + ">");
-        writer.println("Repeated <i>" + name + "</i> times:");
+        writer.println("<tr>");
+        writer.println("<td>" + indentElement(structIndent, "int"));
+        writer.println("<th scope=\"row\"><i>" + name() + "</i>");
+        writer.println("<td>" + comment() + "&nbsp;");
+        writer.println("</tr>");
+
+        writer.println("<tr>");
+        writer.println("<th colspan=\"3\" scope=\"rowgroup\">"
+                + indentElement(structIndent, "Repeated <i>" + name() + "</i> times:"));
+        writer.println("</tr>");
+
         ++structIndent;
         member.document(writer);
         --structIndent;

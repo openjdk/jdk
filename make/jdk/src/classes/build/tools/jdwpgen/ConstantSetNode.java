@@ -54,14 +54,15 @@ class ConstantSetNode extends AbstractNamedNode {
     }
 
     void document(PrintWriter writer) {
-        writer.println("<h2 id=\"" + context.whereC + "\">" + name +
-                       " Constants</h2>");
+        writer.println("<h2 id=\"" + context.whereC + "\">" + name + " Constants</h2>");
         writer.println(comment());
         writer.println("<table><tr>");
-        writer.println("<th style=\"width: 20%\"><th style=\"width: 5%\"><th style=\"width:  65%\">");
-        ConstantNode n;
+        writer.println("<th class=\"bold\" style=\"width: 30%\" scope=\"col\">Name");
+        writer.println("<th class=\"centered bold\" style=\"width: 5%\" scope=\"col\">Value");
+        writer.println("<th class=\"bold\" style=\"width: 65%\" scope=\"col\">Description");
+        writer.println("</tr>");
         for (Node node : components) {
-            n = (ConstantNode)node;
+            ConstantNode n = (ConstantNode)node;
             writer.println("<span id=\"" + name + "_" + n.name + "\"></span>");
             n.document(writer);
         }
