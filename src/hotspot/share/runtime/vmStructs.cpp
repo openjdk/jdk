@@ -167,8 +167,6 @@ typedef Hashtable<intptr_t, mtInternal>       IntptrHashtable;
 typedef Hashtable<InstanceKlass*, mtClass>       KlassHashtable;
 typedef HashtableEntry<InstanceKlass*, mtClass>  KlassHashtableEntry;
 
-typedef PaddedEnd<ObjectMonitor>              PaddedObjectMonitor;
-
 //--------------------------------------------------------------------------------
 // VM_STRUCTS
 //
@@ -914,11 +912,11 @@ typedef PaddedEnd<ObjectMonitor>              PaddedObjectMonitor;
   volatile_nonstatic_field(ObjectMonitor,      _contentions,                                  jint)                                  \
   volatile_nonstatic_field(ObjectMonitor,      _waiters,                                      jint)                                  \
   volatile_nonstatic_field(ObjectMonitor,      _recursions,                                   intptr_t)                              \
-  nonstatic_field(ObjectMonitor,               FreeNext,                                      ObjectMonitor*)                        \
+  nonstatic_field(ObjectMonitor,               _next_om,                                      ObjectMonitor*)                        \
   volatile_nonstatic_field(BasicLock,          _displaced_header,                             markWord)                              \
   nonstatic_field(BasicObjectLock,             _lock,                                         BasicLock)                             \
   nonstatic_field(BasicObjectLock,             _obj,                                          oop)                                   \
-  static_ptr_volatile_field(ObjectSynchronizer, gBlockList,                                   PaddedObjectMonitor*)                  \
+  static_ptr_volatile_field(ObjectSynchronizer, g_block_list,                                 PaddedObjectMonitor*)                  \
                                                                                                                                      \
   /*********************/                                                                                                            \
   /* Matcher (C2 only) */                                                                                                            \

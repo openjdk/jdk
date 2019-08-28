@@ -259,11 +259,11 @@ Thread::Thread() {
   _current_pending_monitor_is_from_java = true;
   _current_waiting_monitor = NULL;
   _num_nested_signal = 0;
-  omFreeList = NULL;
-  omFreeCount = 0;
-  omFreeProvision = 32;
-  omInUseList = NULL;
-  omInUseCount = 0;
+  om_free_list = NULL;
+  om_free_count = 0;
+  om_free_provision = 32;
+  om_in_use_list = NULL;
+  om_in_use_count = 0;
 
 #ifdef ASSERT
   _visited_for_critical_count = false;
@@ -4414,8 +4414,8 @@ void Threads::add(JavaThread* p, bool force_daemon) {
 
 void Threads::remove(JavaThread* p, bool is_daemon) {
 
-  // Reclaim the ObjectMonitors from the omInUseList and omFreeList of the moribund thread.
-  ObjectSynchronizer::omFlush(p);
+  // Reclaim the ObjectMonitors from the om_in_use_list and om_free_list of the moribund thread.
+  ObjectSynchronizer::om_flush(p);
 
   // Extra scope needed for Thread_lock, so we can check
   // that we do not remove thread without safepoint code notice

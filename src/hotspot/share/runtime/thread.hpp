@@ -408,13 +408,13 @@ class Thread: public ThreadShadow {
   // ObjectMonitor on which this thread called Object.wait()
   ObjectMonitor* _current_waiting_monitor;
 
-  // Private thread-local objectmonitor list - a simple cache organized as a SLL.
+  // Per-thread ObjectMonitor lists:
  public:
-  ObjectMonitor* omFreeList;
-  int omFreeCount;                              // length of omFreeList
-  int omFreeProvision;                          // reload chunk size
-  ObjectMonitor* omInUseList;                   // SLL to track monitors in circulation
-  int omInUseCount;                             // length of omInUseList
+  ObjectMonitor* om_free_list;                  // SLL of free ObjectMonitors
+  int om_free_count;                            // # on om_free_list
+  int om_free_provision;                        // # to try to allocate next
+  ObjectMonitor* om_in_use_list;                // SLL of in-use ObjectMonitors
+  int om_in_use_count;                          // # on om_in_use_list
 
 #ifdef ASSERT
  private:
@@ -522,7 +522,7 @@ class Thread: public ThreadShadow {
     os::set_native_thread_name(name);
   }
 
-  ObjectMonitor** omInUseList_addr()             { return (ObjectMonitor **)&omInUseList; }
+  ObjectMonitor** om_in_use_list_addr()          { return (ObjectMonitor **)&om_in_use_list; }
   Monitor* SR_lock() const                       { return _SR_lock; }
 
   bool has_async_exception() const { return (_suspend_flags & _has_async_exception) != 0; }

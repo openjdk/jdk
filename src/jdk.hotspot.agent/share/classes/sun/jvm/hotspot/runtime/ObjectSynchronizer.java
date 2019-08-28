@@ -44,7 +44,7 @@ public class ObjectSynchronizer {
     Type type;
     try {
       type = db.lookupType("ObjectSynchronizer");
-      gBlockList = type.getAddressField("gBlockList").getValue();
+      gBlockList = type.getAddressField("g_block_list").getValue();
       blockSize = db.lookupIntConstant("ObjectSynchronizer::_BLOCKSIZE").intValue();
       defaultCacheLineSize = db.lookupIntConstant("DEFAULT_CACHE_LINE_SIZE").intValue();
     } catch (RuntimeException e) { }
@@ -101,14 +101,14 @@ public class ObjectSynchronizer {
     }
 
     public boolean hasNext() {
-      return (index > 0 || block.freeNext() != null);
+      return (index > 0 || block.nextOM() != null);
     }
 
     public Object next() {
       Address addr;
       if (index == 0) {
         // advance to next block
-        blockAddr = block.freeNext();
+        blockAddr = block.nextOM();
         if (blockAddr == null) {
           throw new NoSuchElementException();
         }

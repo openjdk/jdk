@@ -128,8 +128,8 @@ void ServiceThread::service_thread_entry(JavaThread* jt, TRAPS) {
               (symboltable_work = SymbolTable::has_work()) |
               (resolved_method_table_work = ResolvedMethodTable::has_work()) |
               (protection_domain_table_work = SystemDictionary::pd_cache_table()->has_work()) |
-              (oopstorage_work = OopStorage::has_cleanup_work_and_reset()))
-             == 0) {
+              (oopstorage_work = OopStorage::has_cleanup_work_and_reset())
+             ) == 0) {
         // Wait until notified that there is some work to do.
         ml.wait();
       }
