@@ -95,7 +95,7 @@ public class TimeoutInErrorHandlingTest {
 
         // we should have crashed with a SIGSEGV
         output_detail.shouldMatch("# A fatal error has been detected by the Java Runtime Environment:.*");
-        output_detail.shouldMatch("# +(?:SIGSEGV|EXCEPTION_ACCESS_VIOLATION).*");
+        output_detail.shouldMatch("# +(?:SIGSEGV|SIGBUS|EXCEPTION_ACCESS_VIOLATION).*");
 
         // VM should have been aborted by WatcherThread
         output_detail.shouldMatch(".*timer expired, abort.*");
