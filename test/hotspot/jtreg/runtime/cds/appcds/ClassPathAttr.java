@@ -42,6 +42,11 @@ import java.nio.file.Paths;
 public class ClassPathAttr {
 
   public static void main(String[] args) throws Exception {
+    testNormalOps();
+    testNonExistentJars();
+  }
+
+  static void testNormalOps() throws Exception {
     buildCpAttr("cpattr1", "cpattr1.mf", "CpAttr1", "CpAttr1");
     buildCpAttr("cpattr1_long", "cpattr1_long.mf", "CpAttr1", "CpAttr1");
     buildCpAttr("cpattr2", "cpattr2.mf", "CpAttr2", "CpAttr2");
@@ -91,6 +96,37 @@ public class ClassPathAttr {
             output.shouldMatch("checking shared classpath entry: .*cpattr3.jar");
           });
     }
+  }
+
+  static void testNonExistentJars() throws Exception {
+    buildCpAttr("cpattr6", "cpattr6.mf", "CpAttr6", "CpAttr6");
+
+    String cp = TestCommon.getTestJar("cpattr6.jar");
+    String nonExistPath = System.getProperty("test.classes") + File.separator + "cpattrX.jar";
+    (new File(nonExistPath)).delete();
+
+    TestCommon.testDump(cp, TestCommon.list("CpAttr6"),
+        "-Xlog:class+path");
+
+    TestCommon.run(
+        "-Xlog:class+path",
+        "-cp", cp,
+        "CpAttr6")
+      .assertNormalExit(output -> {
+          output.shouldMatch("should be non-existent: .*cpattrX.jar");
+        });
+
+    // Now make nonExistPath exist. CDS still loads, but archived non-system classes will not be used.
+    Files.copy(Paths.get(cp), Paths.get(nonExistPath),
+               StandardCopyOption.REPLACE_EXISTING);
+
+    TestCommon.run(
+        "-Xlog:class+path",
+        "-cp", cp,
+        "CpAttr6")
+      .assertNormalExit(output -> {
+          output.shouldMatch("Archived non-system classes are disabled because the file .*cpattrX.jar exists");
+        });
   }
 
   private static void buildCpAttr(String jarName, String manifest, String enclosingClassName, String ...testClassNames) throws Exception {

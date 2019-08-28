@@ -61,7 +61,6 @@ public class SharedArchiveConsistency {
     public static int offset_version;   // CDSFileMapHeaderBase::_version
     public static int offset_jvm_ident; // FileMapHeader::_jvm_ident
     public static int sp_offset_crc;    // CDSFileMapRegion::_crc
-    public static int offset_paths_misc_info_size;
     public static int file_header_size = -1;// total size of header, variant, need calculation
     public static int CDSFileMapRegion_size; // size of CDSFileMapRegion
     public static int sp_offset;       // offset of CDSFileMapRegion
@@ -117,12 +116,6 @@ public class SharedArchiveConsistency {
         // this is not real header size, it is struct size
         int_size = wb.getOffsetForName("int_size");
         file_header_size = wb.getOffsetForName("file_header_size");
-        offset_paths_misc_info_size = wb.getOffsetForName("FileMapHeader::_paths_misc_info_size") -
-            offset_magic;
-        int path_misc_info_size   = (int)readInt(fc, offset_paths_misc_info_size, int_size);
-        file_header_size += path_misc_info_size;
-        System.out.println("offset_paths_misc_info_size = " + offset_paths_misc_info_size);
-        System.out.println("path_misc_info_size   = " + path_misc_info_size);
         System.out.println("file_header_size      = " + file_header_size);
         file_header_size = (int)align_up_page(file_header_size);
         System.out.println("file_header_size (aligned to page) = " + file_header_size);
@@ -405,10 +398,9 @@ public class SharedArchiveConsistency {
         output.shouldNotContain("Checksum verification failed");
 
         copyFile(orgJsaFile, jsa);
-        // modify _jvm_ident and _paths_misc_info_size, test should fail
-        System.out.println("\n2a. Corrupt _jvm_ident and _paths_misc_info_size, should fail\n");
+        // modify _jvm_ident, test should fail
+        System.out.println("\n2a. Corrupt _jvm_ident, should fail\n");
         modifyJvmIdent();
-        modifyHeaderIntField(offset_paths_misc_info_size, Integer.MAX_VALUE);
         output = TestCommon.execCommon(execArgs);
         output.shouldContain("The shared archive file was created by a different version or build of HotSpot");
         output.shouldNotContain("Checksum verification failed");
@@ -422,19 +414,17 @@ public class SharedArchiveConsistency {
         output.shouldContain("Hello World");
 
         copyFile(orgJsaFile, jsa);
-        // modify _magic and _paths_misc_info_size, test should fail
-        System.out.println("\n2c. Corrupt _magic and _paths_misc_info_size, should fail\n");
+        // modify _magic, test should fail
+        System.out.println("\n2c. Corrupt _magic, should fail\n");
         modifyHeaderIntField(offset_magic, 0x00000000);
-        modifyHeaderIntField(offset_paths_misc_info_size, Integer.MAX_VALUE);
         output = TestCommon.execCommon(execArgs);
         output.shouldContain("The shared archive file has a bad magic number");
         output.shouldNotContain("Checksum verification failed");
 
         copyFile(orgJsaFile, jsa);
-        // modify _version and _paths_misc_info_size, test should fail
-        System.out.println("\n2d. Corrupt _version and _paths_misc_info_size, should fail\n");
+        // modify _version, test should fail
+        System.out.println("\n2d. Corrupt _version, should fail\n");
         modifyHeaderIntField(offset_version, 0x00000000);
-        modifyHeaderIntField(offset_paths_misc_info_size, Integer.MAX_VALUE);
         output = TestCommon.execCommon(execArgs);
         output.shouldContain("The shared archive file has the wrong version");
         output.shouldNotContain("Checksum verification failed");

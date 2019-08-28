@@ -47,9 +47,6 @@ private:
   static char* get_class_path_attr(const char* jar_path, char* manifest, jint manifest_size);
   static void setup_app_search_path(); // Only when -Xshare:dump
   static void process_module_table(ModuleEntryTable* met, TRAPS);
-  static SharedPathsMiscInfo* shared_paths_misc_info() {
-    return (SharedPathsMiscInfo*)_shared_paths_misc_info;
-  }
   // index of first app JAR in shared classpath entry table
   static jshort _app_class_paths_start_index;
   // index of first modular JAR in shared modulepath entry table
@@ -83,8 +80,6 @@ public:
     // java.util.jar.Manifest.getManifest() at run-time.
     return read_manifest(entry, manifest_size, false, THREAD);
   }
-
-  static void finalize_shared_paths_misc_info();
 
   static jshort app_class_paths_start_index() { return _app_class_paths_start_index; }
 

@@ -73,9 +73,6 @@
 #include "utilities/events.hpp"
 #include "utilities/hashtable.inline.hpp"
 #include "utilities/macros.hpp"
-#if INCLUDE_CDS
-#include "classfile/sharedPathsMiscInfo.hpp"
-#endif
 
 // Entry points in zip.dll for loading zip/jar file entries
 
@@ -147,7 +144,6 @@ ClassPathEntry* ClassLoader::_app_classpath_entries = NULL;
 ClassPathEntry* ClassLoader::_last_app_classpath_entry = NULL;
 ClassPathEntry* ClassLoader::_module_path_entries = NULL;
 ClassPathEntry* ClassLoader::_last_module_path_entry = NULL;
-SharedPathsMiscInfo* ClassLoader::_shared_paths_misc_info = NULL;
 #endif
 
 // helper routines
@@ -250,12 +246,11 @@ PackageEntry* ClassLoader::get_package_entry(const char* class_name, ClassLoader
   return pkgEntryTable->lookup_only(pkg_symbol);
 }
 
-ClassPathDirEntry::ClassPathDirEntry(const char* dir) : ClassPathEntry() {
-  char* copy = NEW_C_HEAP_ARRAY(char, strlen(dir)+1, mtClass);
-  strcpy(copy, dir);
-  _dir = copy;
+const char* ClassPathEntry::copy_path(const char* path) {
+  char* copy = NEW_C_HEAP_ARRAY(char, strlen(path)+1, mtClass);
+  strcpy(copy, path);
+  return copy;
 }
-
 
 ClassFileStream* ClassPathDirEntry::open_stream(const char* name, TRAPS) {
   // construct full path name
@@ -296,9 +291,7 @@ ClassFileStream* ClassPathDirEntry::open_stream(const char* name, TRAPS) {
 ClassPathZipEntry::ClassPathZipEntry(jzfile* zip, const char* zip_name,
                                      bool is_boot_append, bool from_class_path_attr) : ClassPathEntry() {
   _zip = zip;
-  char *copy = NEW_C_HEAP_ARRAY(char, strlen(zip_name)+1, mtClass);
-  strcpy(copy, zip_name);
-  _zip_name = copy;
+  _zip_name = copy_path(zip_name);
   _from_class_path_attr = from_class_path_attr;
 }
 
@@ -383,8 +376,7 @@ ClassPathImageEntry::ClassPathImageEntry(JImageFile* jimage, const char* name) :
   assert(_singleton == NULL, "VM supports only one jimage");
   DEBUG_ONLY(_singleton = this);
   size_t len = strlen(name) + 1;
-  _name = NEW_C_HEAP_ARRAY(const char, len, mtClass);
-  strncpy((char *)_name, name, len);
+  _name = copy_path(name);
 }
 
 ClassPathImageEntry::~ClassPathImageEntry() {
@@ -537,30 +529,10 @@ void ClassLoader::setup_bootstrap_search_path() {
   } else {
     trace_class_path("bootstrap loader class path=", sys_class_path);
   }
-#if INCLUDE_CDS
-  if (DumpSharedSpaces || DynamicDumpSharedSpaces) {
-    _shared_paths_misc_info->add_boot_classpath(sys_class_path);
-  }
-#endif
   setup_boot_search_path(sys_class_path);
 }
 
 #if INCLUDE_CDS
-int ClassLoader::get_shared_paths_misc_info_size() {
-  return _shared_paths_misc_info->get_used_bytes();
-}
-
-void* ClassLoader::get_shared_paths_misc_info() {
-  return _shared_paths_misc_info->buffer();
-}
-
-bool ClassLoader::check_shared_paths_misc_info(void *buf, int size, bool is_static) {
-  SharedPathsMiscInfo* checker = new SharedPathsMiscInfo((char*)buf, size);
-  bool result = checker->check(is_static);
-  delete checker;
-  return result;
-}
-
 void ClassLoader::setup_app_search_path(const char *class_path) {
   assert(DumpSharedSpaces || DynamicDumpSharedSpaces, "Sanity");
 
@@ -943,11 +915,6 @@ bool ClassLoader::update_class_path_entry_list(const char *path,
     }
     return true;
   } else {
-#if INCLUDE_CDS
-    if (DumpSharedSpaces || DynamicDumpSharedSpaces) {
-      _shared_paths_misc_info->add_nonexist_path(path);
-    }
-#endif
     return false;
   }
 }
@@ -1567,12 +1534,6 @@ void ClassLoader::initialize() {
   load_zip_library();
   // lookup jimage library entry points
   load_jimage_library();
-#if INCLUDE_CDS
-  // initialize search path
-  if (DumpSharedSpaces || DynamicDumpSharedSpaces) {
-    _shared_paths_misc_info = new SharedPathsMiscInfo();
-  }
-#endif
   setup_bootstrap_search_path();
 }
 
@@ -1580,7 +1541,6 @@ void ClassLoader::initialize() {
 void ClassLoader::initialize_shared_path() {
   if (DumpSharedSpaces || DynamicDumpSharedSpaces) {
     ClassLoaderExt::setup_search_paths();
-    _shared_paths_misc_info->write_jint(0); // see comments in SharedPathsMiscInfo::check()
   }
 }
 

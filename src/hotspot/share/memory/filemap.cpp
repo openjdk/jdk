@@ -241,7 +241,6 @@ void FileMapHeader::populate(FileMapInfo* mapinfo, size_t alignment) {
   // JVM version string ... changes on each build.
   get_header_version(_jvm_ident);
 
-  ClassLoaderExt::finalize_shared_paths_misc_info();
   _app_class_paths_start_index = ClassLoaderExt::app_class_paths_start_index();
   _app_module_paths_start_index = ClassLoaderExt::app_module_paths_start_index();
   _num_module_paths = ClassLoader::num_module_path_entries();
@@ -255,6 +254,11 @@ void FileMapHeader::populate(FileMapInfo* mapinfo, size_t alignment) {
   // the following 2 fields will be set in write_header for dynamic archive header
   _base_archive_name_size = 0;
   _base_archive_is_default = false;
+}
+
+void SharedClassPathEntry::init_as_non_existent(const char* path, TRAPS) {
+  _type = non_existent_entry;
+  set_name(path, THREAD);
 }
 
 void SharedClassPathEntry::init(bool is_modules_image,
@@ -288,26 +292,35 @@ void SharedClassPathEntry::init(bool is_modules_image,
     FileMapInfo::fail_stop("Unable to open file %s.", cpe->name());
   }
 
-  size_t len = strlen(cpe->name()) + 1;
-  _name = MetadataFactory::new_array<char>(ClassLoaderData::the_null_class_loader_data(), (int)len, THREAD);
-  strcpy(_name->data(), cpe->name());
+  // No need to save the name of the module file, as it will be computed at run time
+  // to allow relocation of the JDK directory.
+  const char* name = is_modules_image  ? "" : cpe->name();
+  set_name(name, THREAD);
 }
 
-bool SharedClassPathEntry::validate(bool is_class_path) {
+void SharedClassPathEntry::set_name(const char* name, TRAPS) {
+  size_t len = strlen(name) + 1;
+  _name = MetadataFactory::new_array<char>(ClassLoaderData::the_null_class_loader_data(), (int)len, THREAD);
+  strcpy(_name->data(), name);
+}
+
+const char* SharedClassPathEntry::name() const {
+  if (UseSharedSpaces && is_modules_image()) {
+    // In order to validate the runtime modules image file size against the archived
+    // size information, we need to obtain the runtime modules image path. The recorded
+    // dump time modules image path in the archive may be different from the runtime path
+    // if the JDK image has beed moved after generating the archive.
+    return ClassLoader::get_jrt_entry()->name();
+  } else {
+    return _name->data();
+  }
+}
+
+bool SharedClassPathEntry::validate(bool is_class_path) const {
   assert(UseSharedSpaces, "runtime only");
 
   struct stat st;
-  const char* name;
-
-  // In order to validate the runtime modules image file size against the archived
-  // size information, we need to obtain the runtime modules image path. The recorded
-  // dump time modules image path in the archive may be different from the runtime path
-  // if the JDK image has beed moved after generating the archive.
-  if (is_modules_image()) {
-    name = ClassLoader::get_jrt_entry()->name();
-  } else {
-    name = this->name();
-  }
+  const char* name = this->name();
 
   bool ok = true;
   log_info(class, path)("checking shared classpath entry: %s", name);
@@ -345,6 +358,19 @@ bool SharedClassPathEntry::validate(bool is_class_path) {
   return ok;
 }
 
+bool SharedClassPathEntry::check_non_existent() const {
+  assert(_type == non_existent_entry, "must be");
+  log_info(class, path)("should be non-existent: %s", name());
+  struct stat st;
+  if (os::stat(name(), &st) != 0) {
+    log_info(class, path)("ok");
+    return true; // file doesn't exist
+  } else {
+    return false;
+  }
+}
+
+
 void SharedClassPathEntry::metaspace_pointers_do(MetaspaceClosure* it) {
   it->push(&_name);
   it->push(&_manifest);
@@ -359,10 +385,11 @@ void SharedPathTable::metaspace_pointers_do(MetaspaceClosure* it) {
 
 void SharedPathTable::dumptime_init(ClassLoaderData* loader_data, Thread* THREAD) {
   size_t entry_size = sizeof(SharedClassPathEntry);
-  int num_boot_classpath_entries = ClassLoader::num_boot_classpath_entries();
-  int num_app_classpath_entries = ClassLoader::num_app_classpath_entries();
-  int num_module_path_entries = ClassLoader::num_module_path_entries();
-  int num_entries = num_boot_classpath_entries + num_app_classpath_entries + num_module_path_entries;
+  int num_entries = 0;
+  num_entries += ClassLoader::num_boot_classpath_entries();
+  num_entries += ClassLoader::num_app_classpath_entries();
+  num_entries += ClassLoader::num_module_path_entries();
+  num_entries += FileMapInfo::num_non_existent_class_paths();
   size_t bytes = entry_size * num_entries;
 
   _table = MetadataFactory::new_array<u8>(loader_data, (int)(bytes + 7 / 8), THREAD);
@@ -372,7 +399,7 @@ void SharedPathTable::dumptime_init(ClassLoaderData* loader_data, Thread* THREAD
 void FileMapInfo::allocate_shared_path_table() {
   assert(DumpSharedSpaces || DynamicDumpSharedSpaces, "Sanity");
 
-  Thread* THREAD = Thread::current();
+  EXCEPTION_MARK; // The following calls should never throw, but would exit VM on error.
   ClassLoaderData* loader_data = ClassLoaderData::the_null_class_loader_data();
   ClassPathEntry* jrt = ClassLoader::get_jrt_entry();
 
@@ -383,47 +410,37 @@ void FileMapInfo::allocate_shared_path_table() {
 
   // 1. boot class path
   int i = 0;
-  ClassPathEntry* cpe = jrt;
+  i = add_shared_classpaths(i, "boot",   jrt, THREAD);
+  i = add_shared_classpaths(i, "app",    ClassLoader::app_classpath_entries(), THREAD);
+  i = add_shared_classpaths(i, "module", ClassLoader::module_path_entries(), THREAD);
+
+  for (int x = 0; x < num_non_existent_class_paths(); x++, i++) {
+    const char* path = _non_existent_class_paths->at(x);
+    shared_path(i)->init_as_non_existent(path, THREAD);
+  }
+
+  assert(i == _shared_path_table.size(), "number of shared path entry mismatch");
+}
+
+int FileMapInfo::add_shared_classpaths(int i, const char* which, ClassPathEntry *cpe, TRAPS) {
   while (cpe != NULL) {
-    bool is_jrt = (cpe == jrt);
+    bool is_jrt = (cpe == ClassLoader::get_jrt_entry());
     const char* type = (is_jrt ? "jrt" : (cpe->is_jar_file() ? "jar" : "dir"));
-    log_info(class, path)("add main shared path (%s) %s", type, cpe->name());
+    log_info(class, path)("add %s shared path (%s) %s", which, type, cpe->name());
     SharedClassPathEntry* ent = shared_path(i);
     ent->init(is_jrt, cpe, THREAD);
-    if (!is_jrt) {    // No need to do the modules image.
-      EXCEPTION_MARK; // The following call should never throw, but would exit VM on error.
-      update_shared_classpath(cpe, ent, THREAD);
+    if (cpe->is_jar_file()) {
+      update_jar_manifest(cpe, ent, THREAD);
     }
-    cpe = ClassLoader::get_next_boot_classpath_entry(cpe);
-    i++;
-  }
-  assert(i == ClassLoader::num_boot_classpath_entries(),
-         "number of boot class path entry mismatch");
-
-  // 2. app class path
-  ClassPathEntry *acpe = ClassLoader::app_classpath_entries();
-  while (acpe != NULL) {
-    log_info(class, path)("add app shared path %s", acpe->name());
-    SharedClassPathEntry* ent = shared_path(i);
-    ent->init(false, acpe, THREAD);
-    EXCEPTION_MARK;
-    update_shared_classpath(acpe, ent, THREAD);
-    acpe = acpe->next();
+    if (is_jrt) {
+      cpe = ClassLoader::get_next_boot_classpath_entry(cpe);
+    } else {
+      cpe = cpe->next();
+    }
     i++;
   }
 
-  // 3. module path
-  ClassPathEntry *mpe = ClassLoader::module_path_entries();
-  while (mpe != NULL) {
-    log_info(class, path)("add module path %s",mpe->name());
-    SharedClassPathEntry* ent = shared_path(i);
-    ent->init(false, mpe, THREAD);
-    EXCEPTION_MARK;
-    update_shared_classpath(mpe, ent, THREAD);
-    mpe = mpe->next();
-    i++;
-  }
-  assert(i == _shared_path_table.size(), "number of shared path entry mismatch");
+  return i;
 }
 
 void FileMapInfo::check_nonempty_dir_in_shared_path_table() {
@@ -450,6 +467,24 @@ void FileMapInfo::check_nonempty_dir_in_shared_path_table() {
 
   if (has_nonempty_dir) {
     ClassLoader::exit_with_path_failure("Cannot have non-empty directory in paths", NULL);
+  }
+}
+
+void FileMapInfo::record_non_existent_class_path_entry(const char* path) {
+  assert(DumpSharedSpaces || DynamicDumpSharedSpaces, "dump time only");
+  log_info(class, path)("non-existent Class-Path entry %s", path);
+  if (_non_existent_class_paths == NULL) {
+    _non_existent_class_paths = new (ResourceObj::C_HEAP, mtInternal)GrowableArray<const char*>(10, true);
+  }
+  _non_existent_class_paths->append(os::strdup(path));
+}
+
+int FileMapInfo::num_non_existent_class_paths() {
+  assert(DumpSharedSpaces || DynamicDumpSharedSpaces, "dump time only");
+  if (_non_existent_class_paths != NULL) {
+    return _non_existent_class_paths->length();
+  } else {
+    return 0;
   }
 }
 
@@ -501,29 +536,27 @@ class ManifestStream: public ResourceObj {
   }
 };
 
-void FileMapInfo::update_shared_classpath(ClassPathEntry *cpe, SharedClassPathEntry* ent, TRAPS) {
+void FileMapInfo::update_jar_manifest(ClassPathEntry *cpe, SharedClassPathEntry* ent, TRAPS) {
   ClassLoaderData* loader_data = ClassLoaderData::the_null_class_loader_data();
   ResourceMark rm(THREAD);
   jint manifest_size;
 
-  if (cpe->is_jar_file()) {
-    assert(ent->is_jar(), "the shared class path entry is not a JAR file");
-    char* manifest = ClassLoaderExt::read_manifest(cpe, &manifest_size, CHECK);
-    if (manifest != NULL) {
-      ManifestStream* stream = new ManifestStream((u1*)manifest,
-                                                  manifest_size);
-      if (stream->check_is_signed()) {
-        ent->set_is_signed();
-      } else {
-        // Copy the manifest into the shared archive
-        manifest = ClassLoaderExt::read_raw_manifest(cpe, &manifest_size, CHECK);
-        Array<u1>* buf = MetadataFactory::new_array<u1>(loader_data,
-                                                        manifest_size,
-                                                        THREAD);
-        char* p = (char*)(buf->data());
-        memcpy(p, manifest, manifest_size);
-        ent->set_manifest(buf);
-      }
+  assert(cpe->is_jar_file() && ent->is_jar(), "the shared class path entry is not a JAR file");
+  char* manifest = ClassLoaderExt::read_manifest(cpe, &manifest_size, CHECK);
+  if (manifest != NULL) {
+    ManifestStream* stream = new ManifestStream((u1*)manifest,
+                                                manifest_size);
+    if (stream->check_is_signed()) {
+      ent->set_is_signed();
+    } else {
+      // Copy the manifest into the shared archive
+      manifest = ClassLoaderExt::read_raw_manifest(cpe, &manifest_size, CHECK);
+      Array<u1>* buf = MetadataFactory::new_array<u1>(loader_data,
+                                                      manifest_size,
+                                                      THREAD);
+      char* p = (char*)(buf->data());
+      memcpy(p, manifest, manifest_size);
+      ent->set_manifest(buf);
     }
   }
 }
@@ -680,6 +713,16 @@ bool FileMapInfo::validate_app_class_paths(int shared_app_paths_len) {
       // None of the jar file specified in the runtime -cp exists.
       return fail("None of the jar file specified in the runtime -cp exists: -Djava.class.path=", appcp);
     }
+
+    // Handling of non-existent entries in the classpath: we eliminate all the non-existent
+    // entries from both the dump time classpath (ClassLoader::update_class_path_entry_list)
+    // and the runtime classpath (FileMapInfo::create_path_array), and check the remaining
+    // entries. E.g.:
+    //
+    // dump : -cp a.jar:NE1:NE2:b.jar  -> a.jar:b.jar -> recorded in archive.
+    // run 1: -cp NE3:a.jar:NE4:b.jar  -> a.jar:b.jar -> matched
+    // run 2: -cp x.jar:NE4:b.jar      -> x.jar:b.jar -> mismatched
+
     int j = _header->_app_class_paths_start_index;
     mismatch = check_paths(j, shared_app_paths_len, rp_array);
     if (mismatch) {
@@ -687,6 +730,20 @@ bool FileMapInfo::validate_app_class_paths(int shared_app_paths_len) {
     }
   }
   return true;
+}
+
+void FileMapInfo::log_paths(const char* msg, int start_idx, int end_idx) {
+  LogTarget(Info, class, path) lt;
+  if (lt.is_enabled()) {
+    LogStream ls(lt);
+    ls.print("%s", msg);
+    const char* prefix = "";
+    for (int i = start_idx; i < end_idx; i++) {
+      ls.print("%s%s", prefix, shared_path(i)->name());
+      prefix = os::path_separator();
+    }
+    ls.cr();
+  }
 }
 
 bool FileMapInfo::validate_shared_path_table() {
@@ -716,6 +773,9 @@ bool FileMapInfo::validate_shared_path_table() {
         "Dynamic archiving is disabled because base layer archive has module path");
     }
   }
+
+  log_paths("Expecting BOOT path=", 0, _header->_app_class_paths_start_index);
+  log_paths("Expecting -Djava.class.path=", _header->_app_class_paths_start_index, _header->_app_module_paths_start_index);
 
   int module_paths_start_index = _header->_app_module_paths_start_index;
   int shared_app_paths_len = 0;
@@ -757,6 +817,8 @@ bool FileMapInfo::validate_shared_path_table() {
     }
   }
 
+  validate_non_existent_class_paths();
+
   _validating_shared_path_table = false;
 
 #if INCLUDE_JVMTI
@@ -769,6 +831,26 @@ bool FileMapInfo::validate_shared_path_table() {
 #endif
 
   return true;
+}
+
+void FileMapInfo::validate_non_existent_class_paths() {
+  // All of the recorded non-existent paths came from the Class-Path: attribute from the JAR
+  // files on the app classpath. If any of these are found to exist during runtime,
+  // it will change how classes are loading for the app loader. For safety, disable
+  // loading of archived platform/app classes (currently there's no way to disable just the
+  // app classes).
+
+  assert(UseSharedSpaces, "runtime only");
+  for (int i = _header->_app_module_paths_start_index + _header->_num_module_paths;
+       i < get_number_of_shared_paths();
+       i++) {
+    SharedClassPathEntry* ent = shared_path(i);
+    if (!ent->check_non_existent()) {
+      warning("Archived non-system classes are disabled because the "
+              "file %s exists", ent->name());
+      _header->_has_platform_or_app_classes = false;
+    }
+  }
 }
 
 bool FileMapInfo::check_archive(const char* archive_name, bool is_static) {
@@ -840,9 +922,6 @@ bool FileMapInfo::get_base_archive_name_from_header(const char* archive_name,
   if (dynamic_header->_base_archive_is_default) {
     *base_archive_name = Arguments::get_default_shared_archive_path();
   } else {
-    // skip over the _paths_misc_info
-    sz = dynamic_header->_paths_misc_info_size;
-    lseek(fd, (long)sz, SEEK_CUR);
     // read the base archive name
     size_t name_size = dynamic_header->_base_archive_name_size;
     if (name_size == 0) {
@@ -933,18 +1012,7 @@ bool FileMapInfo::init_from_file(int fd, bool is_static) {
     }
   }
 
-  _file_offset = n;
-
-  size_t info_size = _header->_paths_misc_info_size;
-  _paths_misc_info = NEW_C_HEAP_ARRAY(char, info_size, mtClass);
-  n = os::read(fd, _paths_misc_info, (unsigned int)info_size);
-  if (n != info_size) {
-    fail_continue("Unable to read the shared path info header.");
-    FREE_C_HEAP_ARRAY(char, _paths_misc_info);
-    _paths_misc_info = NULL;
-    return false;
-  }
-  _file_offset += n + _header->_base_archive_name_size; // accounts for the size of _base_archive_name
+  _file_offset = n + _header->_base_archive_name_size; // accounts for the size of _base_archive_name
 
   if (is_static) {
     // just checking the last region is sufficient since the archive is written
@@ -1026,10 +1094,6 @@ void FileMapInfo::open_for_write(const char* path) {
 // Write the header to the file, seek to the next allocation boundary.
 
 void FileMapInfo::write_header() {
-  int info_size = ClassLoader::get_shared_paths_misc_info_size();
-
-  _header->_paths_misc_info_size = info_size;
-
   char* base_archive_name = NULL;
   if (_header->_magic == CDS_DYNAMIC_ARCHIVE_MAGIC) {
     base_archive_name = (char*)Arguments::GetSharedArchivePath();
@@ -1039,7 +1103,6 @@ void FileMapInfo::write_header() {
 
   assert(is_file_position_aligned(), "must be");
   write_bytes(_header, _header->_header_size);
-  write_bytes(ClassLoader::get_shared_paths_misc_info(), (size_t)info_size);
   if (base_archive_name != NULL) {
     write_bytes(base_archive_name, (size_t)_header->_base_archive_name_size);
   }
@@ -1728,6 +1791,7 @@ bool FileMapInfo::_heap_pointers_need_patching = false;
 SharedPathTable FileMapInfo::_shared_path_table;
 bool FileMapInfo::_validating_shared_path_table = false;
 bool FileMapInfo::_memory_mapping_failed = false;
+GrowableArray<const char*>* FileMapInfo::_non_existent_class_paths = NULL;
 
 // Open the shared archive file, read and validate the header
 // information (version, boot classpath, etc.).  If initialization
@@ -1736,7 +1800,7 @@ bool FileMapInfo::_memory_mapping_failed = false;
 //
 // Validation of the archive is done in two steps:
 //
-// [1] validate_header() - done here. This checks the header, including _paths_misc_info.
+// [1] validate_header() - done here.
 // [2] validate_shared_path_table - this is done later, because the table is in the RW
 //     region of the archive, which is not mapped yet.
 bool FileMapInfo::initialize(bool is_static) {
@@ -1840,22 +1904,7 @@ bool FileMapHeader::validate() {
 }
 
 bool FileMapInfo::validate_header(bool is_static) {
-  bool status = _header->validate();
-
-  if (status) {
-    if (!ClassLoader::check_shared_paths_misc_info(_paths_misc_info, _header->_paths_misc_info_size, is_static)) {
-      if (!PrintSharedArchiveAndExit) {
-        fail_continue("shared class paths mismatch (hint: enable -Xlog:class+path=info to diagnose the failure)");
-        status = false;
-      }
-    }
-  }
-
-  if (_paths_misc_info != NULL) {
-    FREE_C_HEAP_ARRAY(char, _paths_misc_info);
-    _paths_misc_info = NULL;
-  }
-  return status;
+  return _header->validate();
 }
 
 // Check if a given address is within one of the shared regions
@@ -1907,7 +1956,7 @@ ClassPathEntry* FileMapInfo::get_classpath_entry_for_jvmti(int i, TRAPS) {
   ClassPathEntry* ent = _classpath_entries_for_jvmti[i];
   if (ent == NULL) {
     if (i == 0) {
-      ent = ClassLoader:: get_jrt_entry();
+      ent = ClassLoader::get_jrt_entry();
       assert(ent != NULL, "must be");
     } else {
       SharedClassPathEntry* scpe = shared_path(i);
