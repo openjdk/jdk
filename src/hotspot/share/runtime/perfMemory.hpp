@@ -25,6 +25,7 @@
 #ifndef SHARE_RUNTIME_PERFMEMORY_HPP
 #define SHARE_RUNTIME_PERFMEMORY_HPP
 
+#include "runtime/globals.hpp"
 #include "utilities/exceptions.hpp"
 
 /*

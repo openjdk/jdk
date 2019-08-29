@@ -23,6 +23,7 @@
 
 #include "precompiled.hpp"
 #include "gc/shared/gcHeapSummary.hpp"
+#include "gc/shared/locationPrinter.hpp"
 #include "gc/shared/suspendibleThreadSet.hpp"
 #include "gc/z/zCollectedHeap.hpp"
 #include "gc/z/zGlobals.hpp"
@@ -249,14 +250,6 @@ void ZCollectedHeap::safe_object_iterate(ObjectClosure* cl) {
   _heap.object_iterate(cl, true /* visit_weaks */);
 }
 
-HeapWord* ZCollectedHeap::block_start(const void* addr) const {
-  return (HeapWord*)_heap.block_start((uintptr_t)addr);
-}
-
-bool ZCollectedHeap::block_is_obj(const HeapWord* addr) const {
-  return _heap.block_is_obj((uintptr_t)addr);
-}
-
 void ZCollectedHeap::register_nmethod(nmethod* nm) {
   ZNMethod::register_nmethod(nm);
 }
@@ -354,6 +347,16 @@ void ZCollectedHeap::print_gc_threads_on(outputStream* st) const {
 
 void ZCollectedHeap::print_tracing_info() const {
   // Does nothing
+}
+
+bool ZCollectedHeap::print_location(outputStream* st, void* addr) const {
+  if (LocationPrinter::is_valid_obj(addr)) {
+    st->print(INTPTR_FORMAT " is a %s oop: ", p2i(addr),
+              ZAddress::is_good(reinterpret_cast<uintptr_t>(addr)) ? "good" : "bad");
+    cast_to_oop(addr)->print_on(st);
+    return true;
+  }
+  return false;
 }
 
 void ZCollectedHeap::verify(VerifyOption option /* ignored */) {

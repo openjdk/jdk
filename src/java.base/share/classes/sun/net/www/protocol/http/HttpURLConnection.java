@@ -1178,7 +1178,13 @@ public class HttpURLConnection extends java.net.HttpURLConnection {
                     if (logger.isLoggable(PlatformLogger.Level.FINEST)) {
                         logger.finest("ProxySelector Request for " + uri);
                     }
-                    Iterator<Proxy> it = sel.select(uri).iterator();
+                    final List<Proxy> proxies;
+                    try {
+                        proxies = sel.select(uri);
+                    } catch (IllegalArgumentException iae) {
+                        throw new IOException("Failed to select a proxy", iae);
+                    }
+                    final Iterator<Proxy> it = proxies.iterator();
                     Proxy p;
                     while (it.hasNext()) {
                         p = it.next();

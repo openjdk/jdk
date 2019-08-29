@@ -228,6 +228,9 @@ class ParallelScavengeHeap : public CollectedHeap {
   PreGenGCValues get_pre_gc_values() const;
   void print_heap_change(const PreGenGCValues& pre_gc_values) const;
 
+  // Used to print information about locations in the hs_err file.
+  virtual bool print_location(outputStream* st, void* addr) const;
+
   void verify(VerifyOption option /* ignored */);
 
   // Resize the young generation.  The reserved space for the

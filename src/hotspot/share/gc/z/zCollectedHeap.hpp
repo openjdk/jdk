@@ -100,9 +100,6 @@ public:
   virtual void object_iterate(ObjectClosure* cl);
   virtual void safe_object_iterate(ObjectClosure* cl);
 
-  virtual HeapWord* block_start(const void* addr) const;
-  virtual bool block_is_obj(const HeapWord* addr) const;
-
   virtual void register_nmethod(nmethod* nm);
   virtual void unregister_nmethod(nmethod* nm);
   virtual void flush_nmethod(nmethod* nm);
@@ -124,6 +121,7 @@ public:
   virtual void print_extended_on(outputStream* st) const;
   virtual void print_gc_threads_on(outputStream* st) const;
   virtual void print_tracing_info() const;
+  virtual bool print_location(outputStream* st, void* addr) const;
 
   virtual void prepare_for_verify();
   virtual void verify(VerifyOption option /* ignored */);

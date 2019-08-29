@@ -40,20 +40,21 @@ abstract class AbstractTypeListNode extends AbstractNamedNode {
 
     void document(PrintWriter writer) {
         writer.println("<dt>" + name() + " Data");
+        writer.println("<dd>");
         if (components.isEmpty()) {
-            writer.println("<dd>(None)");
+            writer.println("(None)");
         } else {
-            writer.println("<dd><table><tr>");
-            for (int i = maxStructIndent; i > 0; --i) {
-                writer.print("<th style=\"width: 4%\">");
-            }
-            writer.println("<th style=\"width: 15%\"><th style=\"width: 65%\">");
-            writer.println("");
+            writer.println("<table><tr>");
+            writer.println("<th class=\"bold\" style=\"width: 20%\" scope=\"col\">Type");
+            writer.println("<th class=\"bold\" style=\"width: 15%\" scope=\"col\">Name");
+            writer.println("<th class=\"bold\" style=\"width: 65%\" scope=\"col\">Description");
+            writer.println("</tr>");
             for (Node node : components) {
                 node.document(writer);
             }
             writer.println("</table>");
         }
+        writer.println("</dd>");
     }
 
     void genJavaClassBodyComponents(PrintWriter writer, int depth) {

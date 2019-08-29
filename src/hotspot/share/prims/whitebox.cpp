@@ -1137,27 +1137,29 @@ WB_ENTRY(void, WB_ClearMethodState(JNIEnv* env, jobject o, jobject method))
 WB_END
 
 template <typename T>
-static bool GetVMFlag(JavaThread* thread, JNIEnv* env, jstring name, T* value, JVMFlag::Error (*TAt)(const char*, T*, bool, bool)) {
+static bool GetVMFlag(JavaThread* thread, JNIEnv* env, jstring name, T* value, JVMFlag::Error (*TAt)(const JVMFlag*, T*)) {
   if (name == NULL) {
     return false;
   }
   ThreadToNativeFromVM ttnfv(thread);   // can't be in VM when we call JNI
   const char* flag_name = env->GetStringUTFChars(name, NULL);
   CHECK_JNI_EXCEPTION_(env, false);
-  JVMFlag::Error result = (*TAt)(flag_name, value, true, true);
+  const JVMFlag* flag = JVMFlag::find_declared_flag(flag_name);
+  JVMFlag::Error result = (*TAt)(flag, value);
   env->ReleaseStringUTFChars(name, flag_name);
   return (result == JVMFlag::SUCCESS);
 }
 
 template <typename T>
-static bool SetVMFlag(JavaThread* thread, JNIEnv* env, jstring name, T* value, JVMFlag::Error (*TAtPut)(const char*, T*, JVMFlag::Flags)) {
+static bool SetVMFlag(JavaThread* thread, JNIEnv* env, jstring name, T* value, JVMFlag::Error (*TAtPut)(JVMFlag* flag, T*, JVMFlag::Flags)) {
   if (name == NULL) {
     return false;
   }
   ThreadToNativeFromVM ttnfv(thread);   // can't be in VM when we call JNI
   const char* flag_name = env->GetStringUTFChars(name, NULL);
   CHECK_JNI_EXCEPTION_(env, false);
-  JVMFlag::Error result = (*TAtPut)(flag_name, value, JVMFlag::INTERNAL);
+  JVMFlag* flag = JVMFlag::find_flag(flag_name);
+  JVMFlag::Error result = (*TAtPut)(flag, value, JVMFlag::INTERNAL);
   env->ReleaseStringUTFChars(name, flag_name);
   return (result == JVMFlag::SUCCESS);
 }
@@ -1192,22 +1194,22 @@ static jobject doubleBox(JavaThread* thread, JNIEnv* env, jdouble value) {
   return box(thread, env, vmSymbols::java_lang_Double(), vmSymbols::Double_valueOf_signature(), value);
 }
 
-static JVMFlag* getVMFlag(JavaThread* thread, JNIEnv* env, jstring name) {
+static const JVMFlag* getVMFlag(JavaThread* thread, JNIEnv* env, jstring name) {
   ThreadToNativeFromVM ttnfv(thread);   // can't be in VM when we call JNI
   const char* flag_name = env->GetStringUTFChars(name, NULL);
   CHECK_JNI_EXCEPTION_(env, NULL);
-  JVMFlag* result = JVMFlag::find_flag(flag_name, strlen(flag_name), true, true);
+  const JVMFlag* result = JVMFlag::find_declared_flag(flag_name);
   env->ReleaseStringUTFChars(name, flag_name);
   return result;
 }
 
 WB_ENTRY(jboolean, WB_IsConstantVMFlag(JNIEnv* env, jobject o, jstring name))
-  JVMFlag* flag = getVMFlag(thread, env, name);
+  const JVMFlag* flag = getVMFlag(thread, env, name);
   return (flag != NULL) && flag->is_constant_in_binary();
 WB_END
 
 WB_ENTRY(jboolean, WB_IsLockedVMFlag(JNIEnv* env, jobject o, jstring name))
-  JVMFlag* flag = getVMFlag(thread, env, name);
+  const JVMFlag* flag = getVMFlag(thread, env, name);
   return (flag != NULL) && !(flag->is_unlocked() || flag->is_unlocker());
 WB_END
 

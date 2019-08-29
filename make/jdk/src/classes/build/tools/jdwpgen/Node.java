@@ -88,11 +88,10 @@ abstract class Node {
     void documentIndex(PrintWriter writer) {
     }
 
-    void docRowStart(PrintWriter writer) {
-        writer.println("<tr>");
-        if (structIndent > 0) {
-            writer.println("<td colspan=" + structIndent + ">");
-        }
+    String indentElement(int depth, String content) {
+        return depth > 0
+                ? "<div class=\"indent" + depth + "\">" + content + "</div>"
+                : content;
     }
 
     String comment() {

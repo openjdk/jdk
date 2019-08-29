@@ -21,8 +21,8 @@
  * questions.
  */
 
-#ifndef OS_CPU_LINUX_AARCH64_GC_Z_ZBACKINGPATH_LINUX_AARCH64_HPP
-#define OS_CPU_LINUX_AARCH64_GC_Z_ZBACKINGPATH_LINUX_AARCH64_HPP
+#ifndef OS_LINUX_GC_Z_ZBACKINGPATH_LINUX_HPP
+#define OS_LINUX_GC_Z_ZBACKINGPATH_LINUX_HPP
 
 #include "gc/z/zArray.hpp"
 #include "memory/allocation.hpp"
@@ -49,4 +49,4 @@ public:
   const char* get() const;
 };
 
-#endif // OS_CPU_LINUX_AARCH64_GC_Z_ZBACKINGPATH_LINUX_AARCH64_HPP
+#endif // OS_LINUX_GC_Z_ZBACKINGPATH_LINUX_HPP

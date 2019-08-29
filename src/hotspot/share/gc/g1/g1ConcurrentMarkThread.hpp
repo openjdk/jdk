@@ -56,7 +56,7 @@ class G1ConcurrentMarkThread: public ConcurrentGCThread {
   void sleep_before_next_cycle();
   // Delay marking to meet MMU.
   void delay_to_keep_mmu(G1Policy* g1_policy, bool remark);
-  double mmu_sleep_time(G1Policy* g1_policy, bool remark);
+  double mmu_delay_end(G1Policy* g1_policy, bool remark);
 
   void run_service();
   void stop_service();

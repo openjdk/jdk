@@ -60,15 +60,17 @@ public:
     AfterMemoryInit = 2
   };
 
+protected:
+  const JVMFlag* const _flag;
+
 private:
-  const char* _name;
   ConstraintType _validate_type;
 
 public:
   // the "name" argument must be a string literal
-  JVMFlagConstraint(const char* name, ConstraintType type) { _name=name; _validate_type=type; };
-  ~JVMFlagConstraint() {};
-  const char* name() const { return _name; }
+  JVMFlagConstraint(const JVMFlag* flag, ConstraintType type) : _flag(flag), _validate_type(type) {}
+  ~JVMFlagConstraint() {}
+  const JVMFlag* flag() const { return _flag; }
   ConstraintType type() const { return _validate_type; }
   virtual JVMFlag::Error apply(bool verbose = true) { ShouldNotReachHere(); return JVMFlag::ERR_OTHER; };
   virtual JVMFlag::Error apply_bool(bool value, bool verbose = true) { ShouldNotReachHere(); return JVMFlag::ERR_OTHER; };
@@ -90,8 +92,8 @@ public:
   static void init();
   static int length() { return (_constraints != NULL) ? _constraints->length() : 0; }
   static JVMFlagConstraint* at(int i) { return (_constraints != NULL) ? _constraints->at(i) : NULL; }
-  static JVMFlagConstraint* find(const char* name);
-  static JVMFlagConstraint* find_if_needs_check(const char* name);
+  static JVMFlagConstraint* find(const JVMFlag* flag);
+  static JVMFlagConstraint* find_if_needs_check(const JVMFlag* flag);
   static void add(JVMFlagConstraint* constraint) { _constraints->append(constraint); }
   // True if 'AfterErgo' or later constraint functions are validated.
   static bool validated_after_ergo() { return _validating_type >= JVMFlagConstraint::AfterErgo; };

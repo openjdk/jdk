@@ -30,6 +30,7 @@ import java.io.InputStream;
 import java.io.File;
 import java.io.OutputStream;
 import java.util.Hashtable;
+import java.util.Objects;
 import sun.net.util.IPAddressUtil;
 import sun.net.www.ParseUtil;
 
@@ -343,10 +344,7 @@ public abstract class URLStreamHandler {
      * @since 1.3
      */
     protected boolean equals(URL u1, URL u2) {
-        String ref1 = u1.getRef();
-        String ref2 = u2.getRef();
-        return (ref1 == ref2 || (ref1 != null && ref1.equals(ref2))) &&
-               sameFile(u1, u2);
+        return Objects.equals(u1.getRef(), u2.getRef()) && sameFile(u1, u2);
     }
 
     /**

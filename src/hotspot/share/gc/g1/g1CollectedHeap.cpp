@@ -74,6 +74,7 @@
 #include "gc/shared/gcTraceTime.inline.hpp"
 #include "gc/shared/generationSpec.hpp"
 #include "gc/shared/isGCActiveMark.hpp"
+#include "gc/shared/locationPrinter.inline.hpp"
 #include "gc/shared/oopStorageParState.hpp"
 #include "gc/shared/preservedMarks.inline.hpp"
 #include "gc/shared/suspendibleThreadSet.hpp"
@@ -2489,6 +2490,10 @@ void G1CollectedHeap::print_all_rsets() {
   heap_region_iterate(&cl);
 }
 #endif // PRODUCT
+
+bool G1CollectedHeap::print_location(outputStream* st, void* addr) const {
+  return BlockLocationPrinter<G1CollectedHeap>::print_location(st, addr);
+}
 
 G1HeapSummary G1CollectedHeap::create_g1_heap_summary() {
 

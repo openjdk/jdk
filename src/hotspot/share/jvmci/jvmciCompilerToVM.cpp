@@ -205,7 +205,7 @@ C2V_VMENTRY_NULL(jobject, getFlagValue, (JNIEnv* env, jobject c2vm, jobject name
     JVMCI_THROW_NULL(NullPointerException);
   }
   const char* cstring = JVMCIENV->as_utf8_string(name);
-  JVMFlag* flag = JVMFlag::find_flag(cstring, strlen(cstring), /* allow_locked */ true, /* return_flag */ true);
+  const JVMFlag* flag = JVMFlag::find_declared_flag(cstring);
   if (flag == NULL) {
     return c2vm;
   }

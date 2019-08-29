@@ -116,10 +116,10 @@ void WeakProcessor::Task::initialize() {
   StorageState* cur_state = _storage_states;
   OopStorageSet::Iterator it = OopStorageSet::weak_iterator();
   for ( ; !it.is_end(); ++it, ++cur_state) {
-    assert((cur_state - _storage_states) < storage_count, "invariant");
+    assert(pointer_delta(cur_state, _storage_states, sizeof(StorageState)) < storage_count, "invariant");
     new (cur_state) StorageState(*it, _nworkers);
   }
-  assert((cur_state - _storage_states) == storage_count, "invariant");
+  assert(pointer_delta(cur_state, _storage_states, sizeof(StorageState)) == storage_count, "invariant");
   StringTable::reset_dead_counter();
   ResolvedMethodTable::reset_dead_counter();
 }

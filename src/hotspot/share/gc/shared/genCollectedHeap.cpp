@@ -47,6 +47,7 @@
 #include "gc/shared/genCollectedHeap.hpp"
 #include "gc/shared/genOopClosures.inline.hpp"
 #include "gc/shared/generationSpec.hpp"
+#include "gc/shared/locationPrinter.inline.hpp"
 #include "gc/shared/oopStorageParState.inline.hpp"
 #include "gc/shared/scavengableNMethods.hpp"
 #include "gc/shared/space.hpp"
@@ -1258,6 +1259,10 @@ void GenCollectedHeap::gc_threads_do(ThreadClosure* tc) const {
 }
 
 void GenCollectedHeap::print_gc_threads_on(outputStream* st) const {
+}
+
+bool GenCollectedHeap::print_location(outputStream* st, void* addr) const {
+  return BlockLocationPrinter<GenCollectedHeap>::print_location(st, addr);
 }
 
 void GenCollectedHeap::print_tracing_info() const {

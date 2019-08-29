@@ -87,6 +87,7 @@ public class HelloClasslist {
         String CICI   = "string" + args.length + "string" + args.length;
         String CJ     = "string" + System.currentTimeMillis();
         String JC     = System.currentTimeMillis() + "string";
+        String CD     = "string" + (args.length/2.0);
         String CJC    = "string" + System.currentTimeMillis() + "string";
         String CJCJ   = "string" + System.currentTimeMillis() + "string" + System.currentTimeMillis();
         String CJCJC  = "string" + System.currentTimeMillis() + "string" + System.currentTimeMillis() + "string";

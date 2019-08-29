@@ -26,6 +26,7 @@
 #include "gc/epsilon/epsilonMemoryPool.hpp"
 #include "gc/epsilon/epsilonThreadLocalData.hpp"
 #include "gc/shared/gcArguments.hpp"
+#include "gc/shared/locationPrinter.inline.hpp"
 #include "memory/allocation.hpp"
 #include "memory/allocation.inline.hpp"
 #include "memory/resourceArea.hpp"
@@ -303,6 +304,10 @@ void EpsilonHeap::print_on(outputStream *st) const {
   _space->print_on(st);
 
   MetaspaceUtils::print_on(st);
+}
+
+bool EpsilonHeap::print_location(outputStream* st, void* addr) const {
+  return BlockLocationPrinter<EpsilonHeap>::print_location(st, addr);
 }
 
 void EpsilonHeap::print_tracing_info() const {

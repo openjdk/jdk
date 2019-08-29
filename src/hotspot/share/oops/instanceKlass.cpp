@@ -946,7 +946,7 @@ void InstanceKlass::initialize_impl(TRAPS) {
     while (is_being_initialized() && !is_reentrant_initialization(jt)) {
       wait = true;
       jt->set_class_to_be_initialized(this);
-      ol.waitUninterruptibly(jt);
+      ol.wait_uninterruptibly(jt);
       jt->set_class_to_be_initialized(NULL);
     }
 

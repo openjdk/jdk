@@ -173,35 +173,6 @@ void* oopDesc::load_oop_raw(oop obj, int offset) {
   }
 }
 
-bool oopDesc::is_valid(oop obj) {
-  if (!is_object_aligned(obj)) return false;
-  if ((size_t)(oopDesc*)obj < os::min_page_size()) return false;
-
-  // We need at least the mark and the klass word in the committed region.
-  if (!os::is_readable_range(obj, (oopDesc*)obj + 1)) return false;
-  if (!Universe::heap()->is_in(obj)) return false;
-
-  Klass* k = (Klass*)load_klass_raw(obj);
-  return Klass::is_valid(k);
-}
-
-oop oopDesc::oop_or_null(address addr) {
-  if (is_valid(oop(addr))) {
-    // We were just given an oop directly.
-    return oop(addr);
-  }
-
-  // Try to find addr using block_start.
-  HeapWord* p = Universe::heap()->block_start(addr);
-  if (p != NULL && Universe::heap()->block_is_obj(p)) {
-    if (!is_valid(oop(p))) return NULL;
-    return oop(p);
-  }
-
-  // If we can't find it it just may mean that heap wasn't parsable.
-  return NULL;
-}
-
 oop oopDesc::obj_field_acquire(int offset) const                      { return HeapAccess<MO_ACQUIRE>::oop_load_at(as_oop(), offset); }
 
 void oopDesc::obj_field_put_raw(int offset, oop value)                { RawAccess<>::oop_store_at(as_oop(), offset, value); }

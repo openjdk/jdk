@@ -27,7 +27,9 @@
 
 #include <sys/mman.h>
 
+#include "runtime/globals.hpp"
 #include "runtime/os.hpp"
+#include "utilities/align.hpp"
 #include "unittest.hpp"
 
 namespace {

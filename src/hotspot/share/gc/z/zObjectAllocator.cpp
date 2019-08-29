@@ -41,8 +41,7 @@
 static const ZStatCounter ZCounterUndoObjectAllocationSucceeded("Memory", "Undo Object Allocation Succeeded", ZStatUnitOpsPerSecond);
 static const ZStatCounter ZCounterUndoObjectAllocationFailed("Memory", "Undo Object Allocation Failed", ZStatUnitOpsPerSecond);
 
-ZObjectAllocator::ZObjectAllocator(uint nworkers) :
-    _nworkers(nworkers),
+ZObjectAllocator::ZObjectAllocator() :
     _used(0),
     _undone(0),
     _shared_medium_page(NULL),

@@ -26,6 +26,7 @@
 #define SHARE_CODE_VMREG_HPP
 
 #include "asm/register.hpp"
+#include "runtime/globals.hpp"
 #include "utilities/globalDefinitions.hpp"
 #include "utilities/macros.hpp"
 #include "utilities/ostream.hpp"

@@ -699,22 +699,9 @@ NMethodSweeper::MethodStateChange NMethodSweeper::process_compiled_method(Compil
       // Code cache state change is tracked in make_zombie()
       cm->make_zombie();
       SWEEP(cm);
-      // The nmethod may have been locked by JVMTI after being made zombie (see
-      // JvmtiDeferredEvent::compiled_method_unload_event()). If so, we cannot
-      // flush the osr nmethod directly but have to wait for a later sweeper cycle.
-      if (cm->is_osr_method() && !cm->is_locked_by_vm()) {
-        // No inline caches will ever point to osr methods, so we can just remove it.
-        // Make sure that we unregistered the nmethod with the heap and flushed all
-        // dependencies before removing the nmethod (done in make_zombie()).
-        assert(cm->is_zombie(), "nmethod must be unregistered");
-        cm->flush();
-        assert(result == None, "sanity");
-        result = Flushed;
-      } else {
-        assert(result == None, "sanity");
-        result = MadeZombie;
-        assert(cm->is_zombie(), "nmethod must be zombie");
-      }
+      assert(result == None, "sanity");
+      result = MadeZombie;
+      assert(cm->is_zombie(), "nmethod must be zombie");
     } else {
       // Still alive, clean up its inline caches
       cm->cleanup_inline_caches(false);
@@ -722,20 +709,12 @@ NMethodSweeper::MethodStateChange NMethodSweeper::process_compiled_method(Compil
     }
   } else if (cm->is_unloaded()) {
     // Code is unloaded, so there are no activations on the stack.
-    // Convert the nmethod to zombie or flush it directly in the OSR case.
-    if (cm->is_osr_method()) {
-      SWEEP(cm);
-      // No inline caches will ever point to osr methods, so we can just remove it
-      cm->flush();
-      assert(result == None, "sanity");
-      result = Flushed;
-    } else {
-      // Code cache state change is tracked in make_zombie()
-      cm->make_zombie();
-      SWEEP(cm);
-      assert(result == None, "sanity");
-      result = MadeZombie;
-    }
+    // Convert the nmethod to zombie.
+    // Code cache state change is tracked in make_zombie()
+    cm->make_zombie();
+    SWEEP(cm);
+    assert(result == None, "sanity");
+    result = MadeZombie;
   } else {
     if (cm->is_nmethod()) {
       possibly_flush((nmethod*)cm);

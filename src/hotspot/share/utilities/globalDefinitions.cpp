@@ -23,6 +23,7 @@
  */
 
 #include "precompiled.hpp"
+#include "runtime/globals.hpp"
 #include "runtime/os.hpp"
 #include "utilities/globalDefinitions.hpp"
 

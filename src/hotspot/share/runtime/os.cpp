@@ -1082,36 +1082,9 @@ void os::print_location(outputStream* st, intptr_t x, bool verbose) {
   }
 
   // Check if addr points into Java heap.
-  if (Universe::heap()->is_in(addr)) {
-    oop o = oopDesc::oop_or_null(addr);
-    if (o != NULL) {
-      if ((HeapWord*)o == (HeapWord*)addr) {
-        st->print(INTPTR_FORMAT " is an oop: ", p2i(addr));
-      } else {
-        st->print(INTPTR_FORMAT " is pointing into object: " , p2i(addr));
-      }
-      ResourceMark rm;
-      o->print_on(st);
-      return;
-    }
-  } else if (Universe::heap()->is_in_reserved(addr)) {
-    st->print_cr(INTPTR_FORMAT " is an unallocated location in the heap", p2i(addr));
+  if (Universe::heap()->print_location(st, addr)) {
     return;
   }
-
-  // Compressed oop needs to be decoded first.
-#ifdef _LP64
-  if (UseCompressedOops && ((uintptr_t)addr &~ (uintptr_t)max_juint) == 0) {
-    narrowOop narrow_oop = (narrowOop)(uintptr_t)addr;
-    oop o = CompressedOops::decode_raw(narrow_oop);
-
-    if (oopDesc::is_valid(o)) {
-      st->print(UINT32_FORMAT " is a compressed pointer to object: ", narrow_oop);
-      o->print_on(st);
-      return;
-    }
-  }
-#endif
 
   bool accessible = is_readable_pointer(addr);
 

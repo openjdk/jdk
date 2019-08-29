@@ -28,6 +28,7 @@
 #include "gc/shared/gcArguments.hpp"
 #include "gc/shared/gcTimer.hpp"
 #include "gc/shared/gcTraceTime.inline.hpp"
+#include "gc/shared/locationPrinter.inline.hpp"
 #include "gc/shared/memAllocator.hpp"
 #include "gc/shared/plab.hpp"
 
@@ -1131,6 +1132,10 @@ HeapWord* ShenandoahHeap::block_start(const void* addr) const {
 bool ShenandoahHeap::block_is_obj(const HeapWord* addr) const {
   Space* sp = heap_region_containing(addr);
   return sp->block_is_obj(addr);
+}
+
+bool ShenandoahHeap::print_location(outputStream* st, void* addr) const {
+  return BlockLocationPrinter<ShenandoahHeap>::print_location(st, addr);
 }
 
 jlong ShenandoahHeap::millis_since_last_gc() {

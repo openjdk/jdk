@@ -30,7 +30,6 @@
 #include "classfile/classLoaderData.inline.hpp"
 #include "classfile/klassFactory.hpp"
 #include "classfile/modules.hpp"
-#include "classfile/sharedPathsMiscInfo.hpp"
 #include "classfile/systemDictionaryShared.hpp"
 #include "classfile/vmSymbols.hpp"
 #include "memory/allocation.inline.hpp"
@@ -74,7 +73,6 @@ void ClassLoaderExt::setup_app_search_path() {
     trace_class_path("app loader class path (skipped)=", app_class_path);
   } else {
     trace_class_path("app loader class path=", app_class_path);
-    shared_paths_misc_info()->add_app_classpath(app_class_path);
     ClassLoader::setup_app_search_path(app_class_path);
   }
 }
@@ -212,8 +210,12 @@ void ClassLoaderExt::process_jar_manifest(ClassPathEntry* entry,
         char* libname = NEW_RESOURCE_ARRAY(char, libname_len + 1);
         int n = os::snprintf(libname, libname_len + 1, "%.*s%s", dir_len, dir_name, file_start);
         assert((size_t)n == libname_len, "Unexpected number of characters in string");
-        trace_class_path("library = ", libname);
-        ClassLoader::update_class_path_entry_list(libname, true, false, true /* from_class_path_attr */);
+        if (ClassLoader::update_class_path_entry_list(libname, true, false, true /* from_class_path_attr */)) {
+          trace_class_path("library = ", libname);
+        } else {
+          trace_class_path("library (non-existent) = ", libname);
+          FileMapInfo::record_non_existent_class_path_entry(libname);
+        }
       }
 
       file_start = file_end;
@@ -222,7 +224,6 @@ void ClassLoaderExt::process_jar_manifest(ClassPathEntry* entry,
 }
 
 void ClassLoaderExt::setup_search_paths() {
-  shared_paths_misc_info()->record_app_offset();
   ClassLoaderExt::setup_app_search_path();
 }
 
@@ -246,12 +247,6 @@ void ClassLoaderExt::record_result(const s2 classpath_index,
   }
   result->set_shared_classpath_index(classpath_index);
   result->set_class_loader_type(classloader_type);
-}
-
-void ClassLoaderExt::finalize_shared_paths_misc_info() {
-  if (!_has_app_classes) {
-    shared_paths_misc_info()->pop_app();
-  }
 }
 
 // Load the class of the given name from the location given by path. The path is specified by

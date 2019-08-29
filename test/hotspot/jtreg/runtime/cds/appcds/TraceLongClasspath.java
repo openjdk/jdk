@@ -24,7 +24,7 @@
 
 /*
  * @test
- * @summary ensure -XX:+TraceClassPaths showing entire expecting app classpath
+ * @summary ensure -Xlog:class+path showing entire expecting app classpath
  * @requires vm.cds
  * @library /test/lib
  * @modules jdk.jartool/sun.tools.jar
@@ -85,22 +85,23 @@ public class TraceLongClasspath {
             "/scratch/xxxx/yyyy/ZZZZZZ/aaaaaaaaaa/jdk/lib/tools.jar" + ps +
             "/scratch/xxxx/yyyy/ZZZZZZ/aaaaaaaaaa/xx/foobar_common/modules/foobar.ooo_12.1.3/ooo-manifest.jar";
 
-        String myCP = longClassPath + ps + appJar;
+        String dumpCP = longClassPath + ps + appJar;
         // Dump an archive with a specified JAR file in -classpath
-        TestCommon.testDump(myCP, TestCommon.list("Hello"));
+        TestCommon.testDump(dumpCP, TestCommon.list("Hello"));
 
-        // Then try to execute the archive with a different classpath and with -XX:+TraceClassPaths.
-        // The diagnosis "expecting" app classpath trace should show the entire classpath.
+        // Then try to execute the archive with a different classpath and with -Xlog:class+path.
+        // The diagnostic "expecting" app classpath trace should show the entire classpath (excluding any non-existent dump-time paths).
+        String recordedCP = dummyJar + ps + appJar;
         TestCommon.run(
-            "-XX:+TraceClassPaths", "-Xlog:cds",
+            "-Xlog:class+path", "-Xlog:cds",
             "-cp", appJar,
             "Hello")
             .assertAbnormalExit(output -> {
                 output.shouldContain("Unable to use shared archive");
                 output.shouldContain("shared class paths mismatch");
-                // the "expecting" app classpath from -XX:+TraceClassPaths should not
+                // the "expecting" app classpath from -Xlog:class+path should not
                 // be truncated
-                output.shouldContain(myCP);
+                output.shouldContain(recordedCP);
               });
     }
 }

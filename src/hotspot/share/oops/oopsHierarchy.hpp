@@ -73,7 +73,7 @@ class Thread;
 class PromotedObject;
 class oopDesc;
 
-extern bool CheckUnhandledOops;
+extern "C" bool CheckUnhandledOops;
 
 class oop {
   oopDesc* _o;

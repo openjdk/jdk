@@ -24,6 +24,7 @@
 #include "gc/z/zErrno.hpp"
 #include "gc/z/zCPU.hpp"
 #include "gc/z/zNUMA.hpp"
+#include "runtime/globals.hpp"
 #include "runtime/os.hpp"
 #include "utilities/debug.hpp"
 

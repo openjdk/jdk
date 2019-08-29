@@ -58,7 +58,7 @@ public class ErrorFileRedirectTest {
 
     // we should have crashed with a SIGSEGV
     output_detail.shouldMatch("# A fatal error has been detected by the Java Runtime Environment:.*");
-    output_detail.shouldMatch("# +(?:SIGSEGV|EXCEPTION_ACCESS_VIOLATION).*");
+    output_detail.shouldMatch("# +(?:SIGSEGV|SIGBUS|EXCEPTION_ACCESS_VIOLATION).*");
 
     // If no redirection happened, we should find a mention of the file in the output.
     String hs_err_file = output_detail.firstMatch("# *(\\S*hs_err_pid\\d+\\.log)", 1);

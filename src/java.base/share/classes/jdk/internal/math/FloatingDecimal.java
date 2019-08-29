@@ -131,32 +131,32 @@ public class FloatingDecimal{
          * Converts a floating point value into an ASCII <code>String</code>.
          * @return The value converted to a <code>String</code>.
          */
-        public String toJavaFormatString();
+        String toJavaFormatString();
 
         /**
          * Appends a floating point value to an <code>Appendable</code>.
          * @param buf The <code>Appendable</code> to receive the value.
          */
-        public void appendTo(Appendable buf);
+        void appendTo(Appendable buf);
 
         /**
          * Retrieves the decimal exponent most closely corresponding to this value.
          * @return The decimal exponent.
          */
-        public int getDecimalExponent();
+        int getDecimalExponent();
 
         /**
          * Retrieves the value as an array of digits.
          * @param digits The digit array.
          * @return The number of valid digits copied into the array.
          */
-        public int getDigits(char[] digits);
+        int getDigits(char[] digits);
 
         /**
          * Indicates the sign of the value.
          * @return {@code value < 0.0}.
          */
-        public boolean isNegative();
+        boolean isNegative();
 
         /**
          * Indicates whether the value is either infinite or not a number.
@@ -164,7 +164,7 @@ public class FloatingDecimal{
          * @return <code>true</code> if and only if the value is <code>NaN</code>
          * or infinite.
          */
-        public boolean isExceptional();
+        boolean isExceptional();
 
         /**
          * Indicates whether the value was rounded up during the binary to ASCII
@@ -172,14 +172,14 @@ public class FloatingDecimal{
          *
          * @return <code>true</code> if and only if the value was rounded up.
          */
-        public boolean digitsRoundedUp();
+        boolean digitsRoundedUp();
 
         /**
          * Indicates whether the binary to ASCII conversion was exact.
          *
          * @return <code>true</code> if any only if the conversion was exact.
          */
-        public boolean decimalDigitsExact();
+        boolean decimalDigitsExact();
     }
 
     /**
@@ -321,7 +321,7 @@ public class FloatingDecimal{
 
         @Override
         public int getDigits(char[] digits) {
-            System.arraycopy(this.digits,firstDigitIndex,digits,0,this.nDigits);
+            System.arraycopy(this.digits, firstDigitIndex, digits, 0, this.nDigits);
             return this.nDigits;
         }
 
@@ -849,7 +849,7 @@ public class FloatingDecimal{
          * </pre>
          */
         private static int insignificantDigitsForPow2(int p2) {
-            if(p2>1 && p2 < insignificantDigitsNumber.length) {
+            if (p2 > 1 && p2 < insignificantDigitsNumber.length) {
                 return insignificantDigitsNumber[p2];
             }
             return 0;
@@ -862,7 +862,7 @@ public class FloatingDecimal{
          *  for ( i = 0; insignificant >= 10L; i++ )
          *         insignificant /= 10L;
          */
-        private static int[] insignificantDigitsNumber = {
+        private static final int[] insignificantDigitsNumber = {
             0, 0, 0, 0, 1, 1, 1, 2, 2, 2, 3, 3, 3, 3,
             4, 4, 4, 5, 5, 5, 6, 6, 6, 6, 7, 7, 7,
             8, 8, 8, 9, 9, 9, 9, 10, 10, 10, 11, 11, 11,
@@ -1873,11 +1873,11 @@ public class FloatingDecimal{
             }  // look for and process decimal floating-point string
 
             char[] digits = new char[ len ];
-            int    nDigits= 0;
             boolean decSeen = false;
+            int nDigits = 0;
             int decPt = 0;
             int nLeadZero = 0;
-            int nTrailZero= 0;
+            int nTrailZero = 0;
 
         skipLeadingZerosLoop:
             while (i < len) {
@@ -2137,9 +2137,9 @@ public class FloatingDecimal{
                 // signed zero.
                 //
 
-                String significandString = null;
-                int signifLength = 0;
-                int exponentAdjust = 0;
+                String significandString;
+                int signifLength;
+                int exponentAdjust;
                 {
                     int leftDigits = 0; // number of meaningful digits to
                     // left of "decimal" point
@@ -2246,7 +2246,7 @@ public class FloatingDecimal{
 
                 boolean round = false;
                 boolean sticky = false;
-                int nextShift = 0;
+                int nextShift;
                 long significand = 0L;
                 // First iteration is different, since we only copy
                 // from the leading significand bit; one more exponent
@@ -2525,7 +2525,6 @@ public class FloatingDecimal{
      * Returns <code>s</code> with any leading zeros removed.
      */
     static String stripLeadingZeros(String s) {
-//        return  s.replaceFirst("^0+", "");
         if(!s.isEmpty() && s.charAt(0)=='0') {
             for(int i=1; i<s.length(); i++) {
                 if(s.charAt(i)!='0') {

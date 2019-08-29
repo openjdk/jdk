@@ -705,19 +705,11 @@ JRT_ENTRY_NO_ASYNC(void, Runtime1::monitorenter(JavaThread* thread, oopDesc* obj
     Atomic::inc(BiasedLocking::slow_path_entry_count_addr());
   }
   Handle h_obj(thread, obj);
-  if (UseBiasedLocking) {
-    // Retry fast entry if bias is revoked to avoid unnecessary inflation
-    ObjectSynchronizer::fast_enter(h_obj, lock->lock(), true, CHECK);
-  } else {
-    if (UseFastLocking) {
-      // When using fast locking, the compiled code has already tried the fast case
-      assert(obj == lock->obj(), "must match");
-      ObjectSynchronizer::slow_enter(h_obj, lock->lock(), THREAD);
-    } else {
-      lock->set_obj(obj);
-      ObjectSynchronizer::fast_enter(h_obj, lock->lock(), false, THREAD);
-    }
+  if (!UseFastLocking) {
+    lock->set_obj(obj);
   }
+  assert(obj == lock->obj(), "must match");
+  ObjectSynchronizer::enter(h_obj, lock->lock(), THREAD);
 JRT_END
 
 
@@ -730,12 +722,7 @@ JRT_LEAF(void, Runtime1::monitorexit(JavaThread* thread, BasicObjectLock* lock))
 
   oop obj = lock->obj();
   assert(oopDesc::is_oop(obj), "must be NULL or an object");
-  if (UseFastLocking) {
-    // When using fast locking, the compiled code has already tried the fast case
-    ObjectSynchronizer::slow_exit(obj, lock->lock(), THREAD);
-  } else {
-    ObjectSynchronizer::fast_exit(obj, lock->lock(), THREAD);
-  }
+  ObjectSynchronizer::exit(obj, lock->lock(), THREAD);
 JRT_END
 
 // Cf. OptoRuntime::deoptimize_caller_frame
