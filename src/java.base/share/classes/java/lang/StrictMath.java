@@ -837,6 +837,7 @@ public final class StrictMath {
     /**
      * Returns the argument incremented by one,
      * throwing an exception if the result overflows an {@code int}.
+     * The overflow only occurs for {@linkplain Integer#MAX_VALUE the maximum value}.
      *
      * @param a the value to increment
      * @return the result
@@ -851,6 +852,7 @@ public final class StrictMath {
     /**
      * Returns the argument incremented by one,
      * throwing an exception if the result overflows a {@code long}.
+     * The overflow only occurs for {@linkplain Long#MAX_VALUE the maximum value}.
      *
      * @param a the value to increment
      * @return the result
@@ -865,6 +867,7 @@ public final class StrictMath {
     /**
      * Returns the argument decremented by one,
      * throwing an exception if the result overflows an {@code int}.
+     * The overflow only occurs for {@linkplain Integer#MIN_VALUE the minimum value}.
      *
      * @param a the value to decrement
      * @return the result
@@ -879,6 +882,7 @@ public final class StrictMath {
     /**
      * Returns the argument decremented by one,
      * throwing an exception if the result overflows a {@code long}.
+     * The overflow only occurs for {@linkplain Long#MIN_VALUE the minimum value}.
      *
      * @param a the value to decrement
      * @return the result
@@ -893,6 +897,7 @@ public final class StrictMath {
     /**
      * Returns the negation of the argument,
      * throwing an exception if the result overflows an {@code int}.
+     * The overflow only occurs for {@linkplain Integer#MIN_VALUE the minimum value}.
      *
      * @param a the value to negate
      * @return the result
@@ -907,6 +912,7 @@ public final class StrictMath {
     /**
      * Returns the negation of the argument,
      * throwing an exception if the result overflows a {@code long}.
+     * The overflow only occurs for {@linkplain Long#MIN_VALUE the minimum value}.
      *
      * @param a the value to negate
      * @return the result
