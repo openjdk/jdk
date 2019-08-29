@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1994, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1994, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -171,6 +171,7 @@ public class Hashtable<K,V>
     private transient int modCount = 0;
 
     /** use serialVersionUID from JDK 1.0.2 for interoperability */
+    @java.io.Serial
     private static final long serialVersionUID = 1421746759512286392L;
 
     /**
@@ -1201,6 +1202,7 @@ public class Hashtable<K,V>
      *             for each key-value mapping represented by the Hashtable
      *             The key-value mappings are emitted in no particular order.
      */
+    @java.io.Serial
     private void writeObject(java.io.ObjectOutputStream s)
             throws IOException {
         writeHashtable(s);
@@ -1254,6 +1256,7 @@ public class Hashtable<K,V>
     /**
      * Reconstitute the Hashtable from a stream (i.e., deserialize it).
      */
+    @java.io.Serial
     private void readObject(java.io.ObjectInputStream s)
             throws IOException, ClassNotFoundException {
         readHashtable(s);

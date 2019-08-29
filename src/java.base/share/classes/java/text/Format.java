@@ -133,6 +133,7 @@ import java.io.Serializable;
  */
 public abstract class Format implements Serializable, Cloneable {
 
+    @java.io.Serial
     private static final long serialVersionUID = -299282585814624189L;
 
     /**
@@ -349,6 +350,7 @@ public abstract class Format implements Serializable, Cloneable {
     public static class Field extends AttributedCharacterIterator.Attribute {
 
         // Proclaim serial compatibility with 1.4 FCS
+        @java.io.Serial
         private static final long serialVersionUID = 276966692217360283L;
 
         /**

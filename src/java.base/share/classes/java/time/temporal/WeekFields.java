@@ -242,6 +242,7 @@ public final class WeekFields implements Serializable {
     /**
      * Serialization version.
      */
+    @java.io.Serial
     private static final long serialVersionUID = -1177360819670808121L;
 
     /**
@@ -362,6 +363,7 @@ public final class WeekFields implements Serializable {
      *     value for firstDayOfWeek or minimalDays.
      * @throws ClassNotFoundException if a class cannot be resolved
      */
+    @java.io.Serial
     private void readObject(ObjectInputStream s)
          throws IOException, ClassNotFoundException, InvalidObjectException
     {
@@ -382,6 +384,7 @@ public final class WeekFields implements Serializable {
      * @throws InvalidObjectException if the serialized object has invalid
      *     values for firstDayOfWeek or minimalDays.
      */
+    @java.io.Serial
     private Object readResolve() throws InvalidObjectException {
         try {
             return WeekFields.of(firstDayOfWeek, minimalDays);

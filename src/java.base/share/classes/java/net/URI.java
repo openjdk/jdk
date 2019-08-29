@@ -503,7 +503,7 @@ public final class URI
     // Note: Comments containing the word "ASSERT" indicate places where a
     // throw of an InternalError should be replaced by an appropriate assertion
     // statement once asserts are enabled in the build.
-
+    @java.io.Serial
     static final long serialVersionUID = -6052424284110960213L;
 
 
@@ -1777,6 +1777,7 @@ public final class URI
      * @param  os  The object-output stream to which this object
      *             is to be written
      */
+    @java.io.Serial
     private void writeObject(ObjectOutputStream os)
         throws IOException
     {
@@ -1794,6 +1795,7 @@ public final class URI
      * @param  is  The object-input stream from which this object
      *             is being read
      */
+    @java.io.Serial
     private void readObject(ObjectInputStream is)
         throws ClassNotFoundException, IOException
     {

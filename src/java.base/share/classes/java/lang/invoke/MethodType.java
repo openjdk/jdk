@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -104,6 +104,7 @@ class MethodType
         implements Constable,
                    TypeDescriptor.OfMethod<Class<?>, MethodType>,
                    java.io.Serializable {
+    @java.io.Serial
     private static final long serialVersionUID = 292L;  // {rtype, {ptype...}}
 
     // The rtype and ptypes fields define the structural identity of the method type:
@@ -1229,6 +1230,7 @@ class MethodType
     /**
      * There are no serializable fields for {@code MethodType}.
      */
+    @java.io.Serial
     private static final java.io.ObjectStreamField[] serialPersistentFields = { };
 
     /**
@@ -1251,6 +1253,7 @@ s.writeObject(this.parameterArray());
      * @param s the stream to write the object to
      * @throws java.io.IOException if there is a problem writing the object
      */
+    @java.io.Serial
     private void writeObject(java.io.ObjectOutputStream s) throws java.io.IOException {
         s.defaultWriteObject();  // requires serialPersistentFields to be an empty array
         s.writeObject(returnType());
@@ -1270,6 +1273,7 @@ s.writeObject(this.parameterArray());
      * @see #readResolve
      * @see #writeObject
      */
+    @java.io.Serial
     private void readObject(java.io.ObjectInputStream s) throws java.io.IOException, ClassNotFoundException {
         // Assign temporary defaults in case this object escapes
         MethodType_init(void.class, NO_PTYPES);
@@ -1309,6 +1313,7 @@ s.writeObject(this.parameterArray());
      * after serialization.
      * @return the fully initialized {@code MethodType} object
      */
+    @java.io.Serial
     private Object readResolve() {
         // Do not use a trusted path for deserialization:
         //    return makeImpl(rtype, ptypes, true);

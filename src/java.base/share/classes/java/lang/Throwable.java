@@ -114,6 +114,7 @@ import java.util.*;
  */
 public class Throwable implements Serializable {
     /** use serialVersionUID from JDK 1.0.2 for interoperability */
+    @java.io.Serial
     private static final long serialVersionUID = -3042686055658047285L;
 
     /**
@@ -901,6 +902,7 @@ public class Throwable implements Serializable {
      * cause} field can hold; both {@code null} and {@code this} are
      * valid values for the field.
      */
+    @java.io.Serial
     private void readObject(ObjectInputStream s)
         throws IOException, ClassNotFoundException {
         s.defaultReadObject();     // read in all fields
@@ -989,6 +991,7 @@ public class Throwable implements Serializable {
      * form as a one-element array whose element is equal to {@code
      * new StackTraceElement("", "", null, Integer.MIN_VALUE)}.
      */
+    @java.io.Serial
     private synchronized void writeObject(ObjectOutputStream s)
         throws IOException {
         // Ensure that the stackTrace field is initialized to a

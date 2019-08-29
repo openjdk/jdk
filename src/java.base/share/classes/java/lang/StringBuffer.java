@@ -115,6 +115,7 @@ import jdk.internal.HotSpotIntrinsicCandidate;
     private transient String toStringCache;
 
     /** use serialVersionUID from JDK 1.0.2 for interoperability */
+    @java.io.Serial
     static final long serialVersionUID = 3388685877147921107L;
 
     /**
@@ -723,6 +724,7 @@ import jdk.internal.HotSpotIntrinsicCandidate;
      *              A flag indicating whether the backing array is shared.
      *              The value is ignored upon deserialization.
      */
+    @java.io.Serial
     private static final java.io.ObjectStreamField[] serialPersistentFields =
     {
         new java.io.ObjectStreamField("value", char[].class),
@@ -734,6 +736,7 @@ import jdk.internal.HotSpotIntrinsicCandidate;
      * readObject is called to restore the state of the StringBuffer from
      * a stream.
      */
+    @java.io.Serial
     private synchronized void writeObject(java.io.ObjectOutputStream s)
         throws java.io.IOException {
         java.io.ObjectOutputStream.PutField fields = s.putFields();
@@ -753,6 +756,7 @@ import jdk.internal.HotSpotIntrinsicCandidate;
      * readObject is called to restore the state of the StringBuffer from
      * a stream.
      */
+    @java.io.Serial
     private void readObject(java.io.ObjectInputStream s)
         throws java.io.IOException, ClassNotFoundException {
         java.io.ObjectInputStream.GetField fields = s.readFields();

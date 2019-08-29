@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -290,6 +290,7 @@ public class DateFormatSymbols implements Serializable, Cloneable {
     Locale locale = null;
 
     /* use serialVersionUID from JDK 1.1.4 for interoperability */
+    @java.io.Serial
     static final long serialVersionUID = -5987973545549424702L;
 
     /**
@@ -892,6 +893,7 @@ public class DateFormatSymbols implements Serializable, Cloneable {
      *
      * @since 1.6
      */
+    @java.io.Serial
     private void writeObject(ObjectOutputStream stream) throws IOException {
         if (zoneStrings == null) {
             zoneStrings = TimeZoneNameUtility.getZoneStrings(locale);

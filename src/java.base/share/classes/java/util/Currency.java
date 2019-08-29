@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -113,6 +113,7 @@ import sun.util.logging.PlatformLogger;
  */
 public final class Currency implements Serializable {
 
+    @java.io.Serial
     private static final long serialVersionUID = -158308464356906721L;
 
     /**
@@ -661,6 +662,7 @@ public final class Currency implements Serializable {
     /**
      * Resolves instances being deserialized to a single instance per currency.
      */
+    @java.io.Serial
     private Object readResolve() {
         return getInstance(currencyCode);
     }

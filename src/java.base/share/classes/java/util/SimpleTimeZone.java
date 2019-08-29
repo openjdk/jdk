@@ -1242,6 +1242,7 @@ public class SimpleTimeZone extends TimeZone {
     public static final int UTC_TIME = 2;
 
     // Proclaim compatibility with 1.1
+    @java.io.Serial
     static final long serialVersionUID = -403250971215465050L;
 
     // the internal serial version which says which version was written
@@ -1636,6 +1637,7 @@ public class SimpleTimeZone extends TimeZone {
      * mode <code>DOW_IN_MONTH_MODE</code>, which is the only mode recognized by
      * JDK 1.1.
      */
+    @java.io.Serial
     private void writeObject(ObjectOutputStream stream)
          throws IOException
     {
@@ -1666,6 +1668,7 @@ public class SimpleTimeZone extends TimeZone {
      * We handle both JDK 1.1
      * binary formats and full formats with a packed byte array.
      */
+    @java.io.Serial
     private void readObject(ObjectInputStream stream)
          throws IOException, ClassNotFoundException
     {

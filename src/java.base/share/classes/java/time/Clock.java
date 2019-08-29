@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -479,6 +479,7 @@ public abstract class Clock {
      * {@link System#currentTimeMillis()}.
      */
     static final class SystemClock extends Clock implements Serializable {
+        @java.io.Serial
         private static final long serialVersionUID = 6740630888130243051L;
         private static final long OFFSET_SEED =
                 System.currentTimeMillis()/1000 - 1024; // initial offest
@@ -572,6 +573,7 @@ public abstract class Clock {
         public String toString() {
             return "SystemClock[" + zone + "]";
         }
+        @java.io.Serial
         private void readObject(ObjectInputStream is)
                 throws IOException, ClassNotFoundException {
             // ensure that offset is initialized
@@ -586,6 +588,7 @@ public abstract class Clock {
      * This is typically used for testing.
      */
     static final class FixedClock extends Clock implements Serializable {
+        @java.io.Serial
         private static final long serialVersionUID = 7430389292664866958L;
         private final Instant instant;
         private final ZoneId zone;
@@ -636,6 +639,7 @@ public abstract class Clock {
      * Implementation of a clock that adds an offset to an underlying clock.
      */
     static final class OffsetClock extends Clock implements Serializable {
+        @java.io.Serial
         private static final long serialVersionUID = 2007484719125426256L;
         private final Clock baseClock;
         private final Duration offset;
@@ -686,6 +690,7 @@ public abstract class Clock {
      * Implementation of a clock that adds an offset to an underlying clock.
      */
     static final class TickClock extends Clock implements Serializable {
+        @java.io.Serial
         private static final long serialVersionUID = 6504659149906368850L;
         private final Clock baseClock;
         private final long tickNanos;

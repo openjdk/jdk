@@ -184,6 +184,7 @@ import java.util.concurrent.atomic.AtomicLong;
  */
 public final class CompactNumberFormat extends NumberFormat {
 
+    @java.io.Serial
     private static final long serialVersionUID = 7128367218649234678L;
 
     /**
@@ -1784,6 +1785,7 @@ public final class CompactNumberFormat extends NumberFormat {
      * @throws ClassNotFoundException if the class of a serialized object
      *         could not be found
      */
+    @java.io.Serial
     private void readObject(ObjectInputStream inStream) throws IOException,
             ClassNotFoundException {
 

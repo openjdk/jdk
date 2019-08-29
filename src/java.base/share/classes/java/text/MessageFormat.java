@@ -349,6 +349,7 @@ import java.util.Locale;
 
 public class MessageFormat extends Format {
 
+    @java.io.Serial
     private static final long serialVersionUID = 6479157306784022952L;
 
     /**
@@ -1153,6 +1154,7 @@ public class MessageFormat extends Format {
     public static class Field extends Format.Field {
 
         // Proclaim serial compatibility with 1.4 FCS
+        @java.io.Serial
         private static final long serialVersionUID = 7899943957617360810L;
 
         /**
@@ -1171,6 +1173,7 @@ public class MessageFormat extends Format {
          *         resolved.
          * @return resolved MessageFormat.Field constant
          */
+        @java.io.Serial
         protected Object readResolve() throws InvalidObjectException {
             if (this.getClass() != MessageFormat.Field.class) {
                 throw new InvalidObjectException("subclass didn't correctly implement readResolve");
@@ -1601,6 +1604,7 @@ public class MessageFormat extends Format {
      * to maintain class invariants.
      * @throws InvalidObjectException if the objects read from the stream is invalid.
      */
+    @java.io.Serial
     private void readObject(ObjectInputStream in) throws IOException, ClassNotFoundException {
         in.defaultReadObject();
         boolean isValid = maxOffset >= -1

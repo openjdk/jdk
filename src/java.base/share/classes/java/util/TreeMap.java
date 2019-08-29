@@ -1338,6 +1338,7 @@ public class TreeMap<K,V>
      */
     abstract static class NavigableSubMap<K,V> extends AbstractMap<K,V>
         implements NavigableMap<K,V>, java.io.Serializable {
+        @java.io.Serial
         private static final long serialVersionUID = -2102997345730753016L;
         /**
          * The backing map.
@@ -1843,6 +1844,7 @@ public class TreeMap<K,V>
      * @serial include
      */
     static final class AscendingSubMap<K,V> extends NavigableSubMap<K,V> {
+        @java.io.Serial
         private static final long serialVersionUID = 912986545866124060L;
 
         AscendingSubMap(TreeMap<K,V> m,
@@ -1926,6 +1928,7 @@ public class TreeMap<K,V>
      * @serial include
      */
     static final class DescendingSubMap<K,V>  extends NavigableSubMap<K,V> {
+        @java.io.Serial
         private static final long serialVersionUID = 912986545866120460L;
         DescendingSubMap(TreeMap<K,V> m,
                         boolean fromStart, K lo, boolean loInclusive,
@@ -2018,9 +2021,11 @@ public class TreeMap<K,V>
      */
     private class SubMap extends AbstractMap<K,V>
         implements SortedMap<K,V>, java.io.Serializable {
+        @java.io.Serial
         private static final long serialVersionUID = -6520786458950516097L;
         private boolean fromStart = false, toEnd = false;
         private K fromKey, toKey;
+        @java.io.Serial
         private Object readResolve() {
             return new AscendingSubMap<>(TreeMap.this,
                                          fromStart, fromKey, true,
@@ -2405,6 +2410,7 @@ public class TreeMap<K,V>
         setColor(x, BLACK);
     }
 
+    @java.io.Serial
     private static final long serialVersionUID = 919286545866124006L;
 
     /**
@@ -2419,6 +2425,7 @@ public class TreeMap<K,V>
      *             or by the keys' natural ordering if the TreeMap has no
      *             Comparator).
      */
+    @java.io.Serial
     private void writeObject(java.io.ObjectOutputStream s)
         throws java.io.IOException {
         // Write out the Comparator and any hidden stuff
@@ -2438,6 +2445,7 @@ public class TreeMap<K,V>
      * Reconstitute the {@code TreeMap} instance from a stream (i.e.,
      * deserialize it).
      */
+    @java.io.Serial
     private void readObject(final java.io.ObjectInputStream s)
         throws java.io.IOException, ClassNotFoundException {
         // Read in the Comparator and any hidden stuff

@@ -492,6 +492,7 @@ public class TreeSet<E> extends AbstractSet<E>
      *             set's Comparator, or by the elements' natural ordering if
      *             the set has no Comparator).
      */
+    @java.io.Serial
     private void writeObject(java.io.ObjectOutputStream s)
         throws java.io.IOException {
         // Write out any hidden stuff
@@ -512,6 +513,7 @@ public class TreeSet<E> extends AbstractSet<E>
      * Reconstitute the {@code TreeSet} instance from a stream (that is,
      * deserialize it).
      */
+    @java.io.Serial
     private void readObject(java.io.ObjectInputStream s)
         throws java.io.IOException, ClassNotFoundException {
         // Read in any hidden stuff
@@ -554,5 +556,6 @@ public class TreeSet<E> extends AbstractSet<E>
         return TreeMap.keySpliteratorFor(m);
     }
 
+    @java.io.Serial
     private static final long serialVersionUID = -2479143000061671589L;
 }

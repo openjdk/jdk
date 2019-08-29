@@ -852,6 +852,7 @@ public class DecimalFormatSymbols implements Cloneable, Serializable {
      *      representations of either percent, per mille, and/or minus sign disagree.
      * @since  1.1.6
      */
+    @java.io.Serial
     private void readObject(ObjectInputStream stream)
             throws IOException, ClassNotFoundException {
         stream.defaultReadObject();
@@ -1067,6 +1068,7 @@ public class DecimalFormatSymbols implements Cloneable, Serializable {
     private transient volatile boolean currencyInitialized;
 
     // Proclaim JDK 1.1 FCS compatibility
+    @java.io.Serial
     static final long serialVersionUID = 5772796243397350300L;
 
     // The internal serial version which says which version was written

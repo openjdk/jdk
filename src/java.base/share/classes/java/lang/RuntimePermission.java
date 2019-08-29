@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -400,6 +400,7 @@ import java.lang.module.ModuleFinder;
 
 public final class RuntimePermission extends BasicPermission {
 
+    @java.io.Serial
     private static final long serialVersionUID = 7399184964622342223L;
 
     /**

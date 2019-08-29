@@ -633,6 +633,7 @@ public final class Locale implements Cloneable, Serializable {
 
     /** serialization ID
      */
+    @java.io.Serial
     static final long serialVersionUID = 9149081749638150636L;
 
     /**
@@ -2301,6 +2302,7 @@ public final class Locale implements Cloneable, Serializable {
      *      (See <a href="java.base/java/util/Locale.html#getExtensionKeys()">getExtensionKeys()</a>,
      *      <a href="java.base/java/util/Locale.html#getExtension(char)">getExtension(char)</a>)
      */
+    @java.io.Serial
     private static final ObjectStreamField[] serialPersistentFields = {
         new ObjectStreamField("language", String.class),
         new ObjectStreamField("country", String.class),
@@ -2316,6 +2318,7 @@ public final class Locale implements Cloneable, Serializable {
      * @throws IOException
      * @since 1.7
      */
+    @java.io.Serial
     private void writeObject(ObjectOutputStream out) throws IOException {
         ObjectOutputStream.PutField fields = out.putFields();
         fields.put("language", baseLocale.getLanguage());
@@ -2335,6 +2338,7 @@ public final class Locale implements Cloneable, Serializable {
      * @throws IllformedLocaleException
      * @since 1.7
      */
+    @java.io.Serial
     private void readObject(ObjectInputStream in) throws IOException, ClassNotFoundException {
         ObjectInputStream.GetField fields = in.readFields();
         String language = (String)fields.get("language", "");
@@ -2371,6 +2375,7 @@ public final class Locale implements Cloneable, Serializable {
      * the deserialized <code>Locale</code>.
      * @throws java.io.ObjectStreamException
      */
+    @java.io.Serial
     private Object readResolve() throws java.io.ObjectStreamException {
         return getInstance(baseLocale.getLanguage(), baseLocale.getScript(),
                 baseLocale.getRegion(), baseLocale.getVariant(), localeExtensions);

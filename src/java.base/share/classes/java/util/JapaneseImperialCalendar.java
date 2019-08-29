@@ -251,6 +251,7 @@ class JapaneseImperialCalendar extends Calendar {
 
     // Proclaim serialization compatibility with JDK 1.6
     @SuppressWarnings("FieldNameHidesFieldInSuperclass")
+    @java.io.Serial
     private static final long serialVersionUID = -3364572813905467929L;
 
     static {
@@ -2391,6 +2392,7 @@ class JapaneseImperialCalendar extends Calendar {
     /**
      * Updates internal state.
      */
+    @java.io.Serial
     private void readObject(ObjectInputStream stream)
             throws IOException, ClassNotFoundException {
         stream.defaultReadObject();

@@ -935,6 +935,7 @@ public final class Pattern
      */
 
     /** use serialVersionUID from Merlin b59 for interoperability */
+    @java.io.Serial
     private static final long serialVersionUID = 5073258162644648461L;
 
     /**
@@ -1376,6 +1377,7 @@ public final class Pattern
      * Recompile the Pattern instance from a stream.  The original pattern
      * string is read in and the object tree is recompiled from it.
      */
+    @java.io.Serial
     private void readObject(java.io.ObjectInputStream s)
         throws java.io.IOException, ClassNotFoundException {
 

@@ -441,6 +441,7 @@ public class SimpleDateFormat extends DateFormat {
 
     // the official serial version ID which says cryptically
     // which version we're compatible with
+    @java.io.Serial
     static final long serialVersionUID = 4774881970558875024L;
 
     // the internal serial version which says which version was written
@@ -2471,6 +2472,7 @@ public class SimpleDateFormat extends DateFormat {
      *
      * @exception InvalidObjectException if the pattern is invalid
      */
+    @java.io.Serial
     private void readObject(ObjectInputStream stream)
                          throws IOException, ClassNotFoundException {
         stream.defaultReadObject();

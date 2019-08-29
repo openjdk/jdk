@@ -135,6 +135,7 @@ public final class JapaneseChronology extends AbstractChronology implements Seri
     /**
      * Serialization version.
      */
+    @java.io.Serial
     private static final long serialVersionUID = 459996390165777884L;
 
     //-----------------------------------------------------------------------
@@ -516,6 +517,7 @@ public final class JapaneseChronology extends AbstractChronology implements Seri
      * @return the instance of {@code Ser}, not null
      */
     @Override
+    @java.io.Serial
     Object writeReplace() {
         return super.writeReplace();
     }
@@ -526,6 +528,7 @@ public final class JapaneseChronology extends AbstractChronology implements Seri
      * @param s the stream to read
      * @throws InvalidObjectException always
      */
+    @java.io.Serial
     private void readObject(ObjectInputStream s) throws InvalidObjectException {
         throw new InvalidObjectException("Deserialization via serialization delegate");
     }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2007, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -64,6 +64,7 @@ public final class MathContext implements Serializable {
     private static final int MIN_DIGITS = 0;
 
     // Serialization version
+    @java.io.Serial
     private static final long serialVersionUID = 5579720004786848255L;
 
     /* ----- Public Properties ----- */
@@ -309,6 +310,7 @@ public final class MathContext implements Serializable {
      *
      * @param s the stream being read.
      */
+    @java.io.Serial
     private void readObject(java.io.ObjectInputStream s)
         throws java.io.IOException, ClassNotFoundException {
         s.defaultReadObject();     // read in all fields

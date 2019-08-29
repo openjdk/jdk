@@ -8293,6 +8293,7 @@ class Character implements java.io.Serializable, Comparable<Character> {
     private final char value;
 
     /** use serialVersionUID from JDK 1.0.2 for interoperability */
+    @java.io.Serial
     private static final long serialVersionUID = 3786198910865385080L;
 
     /**

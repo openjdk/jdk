@@ -1857,5 +1857,6 @@ public final class Integer extends Number
     }
 
     /** use serialVersionUID from JDK 1.0.2 for interoperability */
+    @java.io.Serial
     @Native private static final long serialVersionUID = 1360826667806852920L;
 }

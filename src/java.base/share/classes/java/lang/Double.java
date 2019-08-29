@@ -1102,5 +1102,6 @@ public final class Double extends Number
     }
 
     /** use serialVersionUID from JDK 1.0.2 for interoperability */
+    @java.io.Serial
     private static final long serialVersionUID = -9172774392245257468L;
 }

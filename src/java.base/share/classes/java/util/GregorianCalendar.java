@@ -497,6 +497,7 @@ public class GregorianCalendar extends Calendar {
 
     // Proclaim serialization compatibility with JDK 1.1
     @SuppressWarnings("FieldNameHidesFieldInSuperclass")
+    @java.io.Serial
     static final long serialVersionUID = -8125100834729963327L;
 
     // Reference to the sun.util.calendar.Gregorian instance (singleton).
@@ -3229,6 +3230,7 @@ public class GregorianCalendar extends Calendar {
     /**
      * Updates internal state.
      */
+    @java.io.Serial
     private void readObject(ObjectInputStream stream)
             throws IOException, ClassNotFoundException {
         stream.defaultReadObject();

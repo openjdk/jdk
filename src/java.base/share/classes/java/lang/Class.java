@@ -3421,6 +3421,7 @@ public final class Class<T> implements java.io.Serializable,
     }
 
     /** use serialVersionUID from JDK 1.1 for interoperability */
+    @java.io.Serial
     private static final long serialVersionUID = 3206093459760846163L;
 
 
@@ -3440,6 +3441,7 @@ public final class Class<T> implements java.io.Serializable,
      *
      * @see java.io.ObjectStreamClass
      */
+    @java.io.Serial
     private static final ObjectStreamField[] serialPersistentFields =
         new ObjectStreamField[0];
 

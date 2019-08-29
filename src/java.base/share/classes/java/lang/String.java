@@ -172,6 +172,7 @@ public final class String
     private boolean hashIsZero; // Default to false;
 
     /** use serialVersionUID from JDK 1.0.2 for interoperability */
+    @java.io.Serial
     private static final long serialVersionUID = -6849794470754667710L;
 
     /**
@@ -224,6 +225,7 @@ public final class String
      * <a href="{@docRoot}/../specs/serialization/protocol.html#stream-elements">
      * Object Serialization Specification, Section 6.2, "Stream Elements"</a>
      */
+    @java.io.Serial
     private static final ObjectStreamField[] serialPersistentFields =
         new ObjectStreamField[0];
 
@@ -1235,6 +1237,7 @@ public final class String
     private static class CaseInsensitiveComparator
             implements Comparator<String>, java.io.Serializable {
         // use serialVersionUID from JDK 1.2.2 for interoperability
+        @java.io.Serial
         private static final long serialVersionUID = 8575799808933029326L;
 
         public int compare(String s1, String s2) {
@@ -1250,6 +1253,7 @@ public final class String
         }
 
         /** Replaces the de-serialized object. */
+        @java.io.Serial
         private Object readResolve() { return CASE_INSENSITIVE_ORDER; }
     }
 

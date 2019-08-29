@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -605,6 +605,7 @@ class ClassReader {
     }
 
     static class ClassFormatException extends IOException {
+        @java.io.Serial
         private static final long serialVersionUID = -3564121733989501833L;
 
         public ClassFormatException(String message) {

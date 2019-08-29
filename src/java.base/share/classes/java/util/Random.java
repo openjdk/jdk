@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1995, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1995, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -76,6 +76,7 @@ import jdk.internal.misc.Unsafe;
 public
 class Random implements java.io.Serializable {
     /** use serialVersionUID from JDK 1.1 for interoperability */
+    @java.io.Serial
     static final long serialVersionUID = 3905348978240129619L;
 
     /**
@@ -1168,6 +1169,7 @@ class Random implements java.io.Serializable {
      * @serialField      haveNextNextGaussian boolean
      *              nextNextGaussian is valid
      */
+    @java.io.Serial
     private static final ObjectStreamField[] serialPersistentFields = {
         new ObjectStreamField("seed", Long.TYPE),
         new ObjectStreamField("nextNextGaussian", Double.TYPE),
@@ -1178,6 +1180,7 @@ class Random implements java.io.Serializable {
      * Reconstitute the {@code Random} instance from a stream (that is,
      * deserialize it).
      */
+    @java.io.Serial
     private void readObject(java.io.ObjectInputStream s)
         throws java.io.IOException, ClassNotFoundException {
 
@@ -1197,6 +1200,7 @@ class Random implements java.io.Serializable {
     /**
      * Save the {@code Random} instance to a stream.
      */
+    @java.io.Serial
     private synchronized void writeObject(ObjectOutputStream s)
         throws IOException {
 

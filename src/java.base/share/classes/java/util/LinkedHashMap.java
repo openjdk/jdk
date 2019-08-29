@@ -196,6 +196,7 @@ public class LinkedHashMap<K,V>
         }
     }
 
+    @java.io.Serial
     private static final long serialVersionUID = 3801124242820219131L;
 
     /**

@@ -160,6 +160,7 @@ public abstract class TimeZone implements Serializable, Cloneable {
     private static final int ONE_DAY    = 24*ONE_HOUR;
 
     // Proclaim serialization compatibility with JDK 1.1
+    @java.io.Serial
     static final long serialVersionUID = 3581463369166924961L;
 
     /**

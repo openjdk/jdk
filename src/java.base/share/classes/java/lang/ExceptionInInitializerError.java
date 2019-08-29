@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2000, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -50,6 +50,7 @@ public class ExceptionInInitializerError extends LinkageError {
     /**
      * Use serialVersionUID from JDK 1.1.X for interoperability
      */
+    @java.io.Serial
     private static final long serialVersionUID = 1521711792217232256L;
 
     /**
@@ -109,6 +110,7 @@ public class ExceptionInInitializerError extends LinkageError {
      *
      * @serialField exception Throwable
      */
+    @java.io.Serial
     private static final ObjectStreamField[] serialPersistentFields = {
         new ObjectStreamField("exception", Throwable.class)
     };
@@ -122,6 +124,7 @@ public class ExceptionInInitializerError extends LinkageError {
      * field in the older implementation and ExceptionInInitializerError::cause
      * was set to null.
      */
+    @java.io.Serial
     private void readObject(ObjectInputStream s) throws IOException, ClassNotFoundException {
         ObjectInputStream.GetField fields = s.readFields();
         Throwable exception = (Throwable) fields.get("exception", null);
@@ -134,6 +137,7 @@ public class ExceptionInInitializerError extends LinkageError {
      * To maintain compatibility with older implementation, write a serial
      * "exception" field with the cause as the value.
      */
+    @java.io.Serial
     private void writeObject(ObjectOutputStream out) throws IOException {
         ObjectOutputStream.PutField fields = out.putFields();
         fields.put("exception", super.getCause());

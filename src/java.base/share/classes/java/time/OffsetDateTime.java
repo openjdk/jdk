@@ -184,6 +184,7 @@ public final class OffsetDateTime
     /**
      * Serialization version.
      */
+    @java.io.Serial
     private static final long serialVersionUID = 2287754244819255394L;
 
     /**
@@ -1931,6 +1932,7 @@ public final class OffsetDateTime
      *
      * @return the instance of {@code Ser}, not null
      */
+    @java.io.Serial
     private Object writeReplace() {
         return new Ser(Ser.OFFSET_DATE_TIME_TYPE, this);
     }
@@ -1941,6 +1943,7 @@ public final class OffsetDateTime
      * @param s the stream to read
      * @throws InvalidObjectException always
      */
+    @java.io.Serial
     private void readObject(ObjectInputStream s) throws InvalidObjectException {
         throw new InvalidObjectException("Deserialization via serialization delegate");
     }

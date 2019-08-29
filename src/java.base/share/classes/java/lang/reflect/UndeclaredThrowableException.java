@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -62,6 +62,7 @@ import jdk.internal.access.SharedSecrets;
  * @since       1.3
  */
 public class UndeclaredThrowableException extends RuntimeException {
+    @java.io.Serial
     static final long serialVersionUID = 330127114055056639L;
 
     /**
@@ -108,6 +109,7 @@ public class UndeclaredThrowableException extends RuntimeException {
      *
      * @serialField undeclaredThrowable Throwable
      */
+    @java.io.Serial
     private static final ObjectStreamField[] serialPersistentFields = {
         new ObjectStreamField("undeclaredThrowable", Throwable.class)
     };
@@ -117,6 +119,7 @@ public class UndeclaredThrowableException extends RuntimeException {
      * and initialize the cause properly when deserializing from an older
      * version.
      */
+    @java.io.Serial
     private void readObject(ObjectInputStream s) throws IOException, ClassNotFoundException {
         ObjectInputStream.GetField fields = s.readFields();
         Throwable exception = (Throwable) fields.get("undeclaredThrowable", null);
@@ -129,6 +132,7 @@ public class UndeclaredThrowableException extends RuntimeException {
      * To maintain compatibility with older implementation, write a serial
      * "ex" field with the cause as the value.
      */
+    @java.io.Serial
     private void writeObject(ObjectOutputStream out) throws IOException {
         ObjectOutputStream.PutField fields = out.putFields();
         fields.put("undeclaredThrowable", super.getCause());

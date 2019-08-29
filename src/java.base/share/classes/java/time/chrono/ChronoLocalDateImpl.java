@@ -146,6 +146,7 @@ abstract class ChronoLocalDateImpl<D extends ChronoLocalDate>
     /**
      * Serialization version.
      */
+    @java.io.Serial
     private static final long serialVersionUID = 6282433883239719096L;
 
     /**

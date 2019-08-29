@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -385,7 +385,7 @@ public final class PropertyPermission extends BasicPermission {
         return new PropertyPermissionCollection();
     }
 
-
+    @java.io.Serial
     private static final long serialVersionUID = 885438825399942851L;
 
     /**
@@ -393,6 +393,7 @@ public final class PropertyPermission extends BasicPermission {
      * to a stream. The actions are serialized, and the superclass
      * takes care of the name.
      */
+    @java.io.Serial
     private synchronized void writeObject(java.io.ObjectOutputStream s)
         throws IOException
     {
@@ -407,6 +408,7 @@ public final class PropertyPermission extends BasicPermission {
      * readObject is called to restore the state of the PropertyPermission from
      * a stream.
      */
+    @java.io.Serial
     private synchronized void readObject(java.io.ObjectInputStream s)
          throws IOException, ClassNotFoundException
     {
@@ -596,6 +598,7 @@ final class PropertyPermissionCollection extends PermissionCollection
         return (Enumeration)perms.elements();
     }
 
+    @java.io.Serial
     private static final long serialVersionUID = 7015263904581634791L;
 
     // Need to maintain serialization interoperability with earlier releases,
@@ -625,6 +628,7 @@ final class PropertyPermissionCollection extends PermissionCollection
      * serialization compatibility with earlier releases. all_allowed
      * unchanged.
      */
+    @java.io.Serial
     private void writeObject(ObjectOutputStream out) throws IOException {
         // Don't call out.defaultWriteObject()
 
@@ -644,6 +648,7 @@ final class PropertyPermissionCollection extends PermissionCollection
      * Reads in a Hashtable of PropertyPermissions and saves them in the
      * perms field. Reads in all_allowed.
      */
+    @java.io.Serial
     private void readObject(ObjectInputStream in)
         throws IOException, ClassNotFoundException
     {

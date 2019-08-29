@@ -167,6 +167,7 @@ public final class ZonedDateTime
     /**
      * Serialization version.
      */
+    @java.io.Serial
     private static final long serialVersionUID = -6260982410461394882L;
 
     /**
@@ -2241,6 +2242,7 @@ public final class ZonedDateTime
      *
      * @return the instance of {@code Ser}, not null
      */
+    @java.io.Serial
     private Object writeReplace() {
         return new Ser(Ser.ZONE_DATE_TIME_TYPE, this);
     }
@@ -2251,6 +2253,7 @@ public final class ZonedDateTime
      * @param s the stream to read
      * @throws InvalidObjectException always
      */
+    @java.io.Serial
     private void readObject(ObjectInputStream s) throws InvalidObjectException {
         throw new InvalidObjectException("Deserialization via serialization delegate");
     }

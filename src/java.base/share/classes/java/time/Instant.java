@@ -245,6 +245,7 @@ public final class Instant
     /**
      * Serialization version.
      */
+    @java.io.Serial
     private static final long serialVersionUID = -665713676816604388L;
 
     /**
@@ -1342,6 +1343,7 @@ public final class Instant
      *
      * @return the instance of {@code Ser}, not null
      */
+    @java.io.Serial
     private Object writeReplace() {
         return new Ser(Ser.INSTANT_TYPE, this);
     }
@@ -1352,6 +1354,7 @@ public final class Instant
      * @param s the stream to read
      * @throws InvalidObjectException always
      */
+    @java.io.Serial
     private void readObject(ObjectInputStream s) throws InvalidObjectException {
         throw new InvalidObjectException("Deserialization via serialization delegate");
     }

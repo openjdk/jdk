@@ -168,6 +168,7 @@ import java.util.Arrays;
 public class ChoiceFormat extends NumberFormat {
 
     // Proclaim serial compatibility with 1.1 FCS
+    @java.io.Serial
     private static final long serialVersionUID = 1795184449645032964L;
 
     /**
@@ -528,6 +529,7 @@ public class ChoiceFormat extends NumberFormat {
      * to maintain class invariants.
      * @throws InvalidObjectException if the objects read from the stream is invalid.
      */
+    @java.io.Serial
     private void readObject(ObjectInputStream in) throws IOException, ClassNotFoundException {
         in.defaultReadObject();
         if (choiceLimits.length != choiceFormats.length) {

@@ -53,6 +53,7 @@ import sun.net.www.HeaderParser;
 
 public abstract class AuthenticationInfo extends AuthCacheValue implements Cloneable {
 
+    @java.io.Serial
     static final long serialVersionUID = -2588378268010453259L;
 
     // Constants saying what kind of authroization this is.  This determines
@@ -498,6 +499,7 @@ public abstract class AuthenticationInfo extends AuthCacheValue implements Clone
 
     String s1, s2;  /* used for serialization of pw */
 
+    @java.io.Serial
     private synchronized void readObject(ObjectInputStream s)
         throws IOException, ClassNotFoundException
     {
@@ -509,6 +511,7 @@ public abstract class AuthenticationInfo extends AuthCacheValue implements Clone
         }
     }
 
+    @java.io.Serial
     private synchronized void writeObject(java.io.ObjectOutputStream s)
         throws IOException
     {

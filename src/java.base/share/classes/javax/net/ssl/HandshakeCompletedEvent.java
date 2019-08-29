@@ -49,6 +49,7 @@ import java.security.cert.X509Certificate;
  */
 public class HandshakeCompletedEvent extends EventObject
 {
+    @java.io.Serial
     private static final long serialVersionUID = 7914963744257769778L;
 
     private transient SSLSession session;

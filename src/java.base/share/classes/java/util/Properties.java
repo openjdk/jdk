@@ -142,6 +142,7 @@ class Properties extends Hashtable<Object,Object> {
     /**
      * use serialVersionUID from JDK 1.1.X for interoperability
      */
+    @java.io.Serial
     private static final long serialVersionUID = 4112578634029874840L;
 
     private static final Unsafe UNSAFE = Unsafe.getUnsafe();

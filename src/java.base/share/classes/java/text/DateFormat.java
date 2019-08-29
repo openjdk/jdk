@@ -298,6 +298,7 @@ public abstract class DateFormat extends Format {
     public static final int TIMEZONE_FIELD = 17;
 
     // Proclaim serial compatibility with 1.1 FCS
+    @java.io.Serial
     private static final long serialVersionUID = 7218322306649953788L;
 
     /**
@@ -866,6 +867,7 @@ public abstract class DateFormat extends Format {
     public static class Field extends Format.Field {
 
         // Proclaim serial compatibility with 1.4 FCS
+        @java.io.Serial
         private static final long serialVersionUID = 7441350119349544720L;
 
         // table of all instances in this class, used by readResolve
@@ -943,6 +945,7 @@ public abstract class DateFormat extends Format {
          * @return resolved DateFormat.Field constant
          */
         @Override
+        @java.io.Serial
         protected Object readResolve() throws InvalidObjectException {
             if (this.getClass() != DateFormat.Field.class) {
                 throw new InvalidObjectException("subclass didn't correctly implement readResolve");

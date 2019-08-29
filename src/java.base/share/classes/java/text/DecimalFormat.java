@@ -3870,6 +3870,7 @@ public class DecimalFormat extends NumberFormat {
      * literal values.  This is exactly what we want, since that corresponds to
      * the pre-version-2 behavior.
      */
+    @java.io.Serial
     private void readObject(ObjectInputStream stream)
          throws IOException, ClassNotFoundException
     {
@@ -4343,5 +4344,6 @@ public class DecimalFormat extends NumberFormat {
     static final int MAXIMUM_FRACTION_DIGITS = Integer.MAX_VALUE;
 
     // Proclaim JDK 1.1 serial compatibility.
+    @java.io.Serial
     static final long serialVersionUID = 864413376551465018L;
 }

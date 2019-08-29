@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -49,6 +49,7 @@ import sun.security.action.GetIntegerAction;
 public class KeepAliveCache
     extends HashMap<KeepAliveKey, ClientVector>
     implements Runnable {
+    @java.io.Serial
     private static final long serialVersionUID = -2937172892064557949L;
 
     /* maximum # keep-alive connections to maintain at once
@@ -203,10 +204,12 @@ public class KeepAliveCache
     /*
      * Do not serialize this class!
      */
+    @java.io.Serial
     private void writeObject(ObjectOutputStream stream) throws IOException {
         throw new NotSerializableException();
     }
 
+    @java.io.Serial
     private void readObject(ObjectInputStream stream)
         throws IOException, ClassNotFoundException
     {
@@ -218,6 +221,7 @@ public class KeepAliveCache
  * to time them out.  If > maxConns are in use, block.
  */
 class ClientVector extends ArrayDeque<KeepAliveEntry> {
+    @java.io.Serial
     private static final long serialVersionUID = -8680532108106489459L;
 
     // sleep time in milliseconds, before cache clear
@@ -268,10 +272,12 @@ class ClientVector extends ArrayDeque<KeepAliveEntry> {
     /*
      * Do not serialize this class!
      */
+    @java.io.Serial
     private void writeObject(ObjectOutputStream stream) throws IOException {
         throw new NotSerializableException();
     }
 
+    @java.io.Serial
     private void readObject(ObjectInputStream stream)
         throws IOException, ClassNotFoundException
     {

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -163,6 +163,7 @@ public class ZoneInfo extends TimeZone {
      */
     private transient boolean dirty = false;
 
+    @java.io.Serial
     private static final long serialVersionUID = 2653134537216586139L;
 
     /**
@@ -726,6 +727,7 @@ public class ZoneInfo extends TimeZone {
          return ZoneInfoFile.getAliasMap();
     }
 
+    @java.io.Serial
     private void readObject(ObjectInputStream stream)
             throws IOException, ClassNotFoundException {
         stream.defaultReadObject();

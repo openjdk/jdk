@@ -1005,6 +1005,7 @@ public abstract class Calendar implements Serializable, Cloneable, Comparable<Ca
     private int             serialVersionOnStream = currentSerialVersion;
 
     // Proclaim serialization compatibility with JDK 1.1
+    @java.io.Serial
     static final long       serialVersionUID = -1807547505821590642L;
 
     // Mask values for calendar fields
@@ -3526,6 +3527,7 @@ public abstract class Calendar implements Serializable, Cloneable, Comparable<Ca
      * removed from the serialization stream; this will probably happen in the
      * near future.
      */
+    @java.io.Serial
     private synchronized void writeObject(ObjectOutputStream stream)
          throws IOException
     {
@@ -3580,6 +3582,7 @@ public abstract class Calendar implements Serializable, Cloneable, Comparable<Ca
     /**
      * Reconstitutes this object from a stream (i.e., deserialize it).
      */
+    @java.io.Serial
     private void readObject(ObjectInputStream stream)
          throws IOException, ClassNotFoundException
     {

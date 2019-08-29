@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1259,7 +1259,7 @@ public class IdentityHashMap<K,V>
         }
     }
 
-
+    @java.io.Serial
     private static final long serialVersionUID = 8188218128353913216L;
 
     /**
@@ -1272,6 +1272,7 @@ public class IdentityHashMap<K,V>
      *          IdentityHashMap.  The key-value mappings are emitted in no
      *          particular order.
      */
+    @java.io.Serial
     private void writeObject(java.io.ObjectOutputStream s)
         throws java.io.IOException  {
         // Write out and any hidden stuff
@@ -1295,6 +1296,7 @@ public class IdentityHashMap<K,V>
      * Reconstitutes the {@code IdentityHashMap} instance from a stream (i.e.,
      * deserializes it).
      */
+    @java.io.Serial
     private void readObject(java.io.ObjectInputStream s)
         throws java.io.IOException, ClassNotFoundException  {
         // Read in any hidden stuff
