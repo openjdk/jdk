@@ -112,7 +112,7 @@ class G1Policy: public CHeapObj<mtGC> {
     return collector_state()->in_young_only_phase() && !collector_state()->mark_or_rebuild_in_progress();
   }
 
-  double log_buffer_processing_time() const;
+  double logged_cards_processing_time() const;
 public:
   const G1Predictions& predictor() const { return _predictor; }
   const G1Analytics* analytics()   const { return const_cast<const G1Analytics*>(_analytics); }

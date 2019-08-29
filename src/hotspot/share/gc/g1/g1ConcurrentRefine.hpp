@@ -60,28 +60,29 @@ public:
   void stop();
 };
 
-// Controls refinement threads and their activation based on the number of completed
-// buffers currently available in the global dirty card queue.
-// Refinement threads pick work from the queue based on these thresholds. They are activated
-// gradually based on the amount of work to do.
+// Controls refinement threads and their activation based on the number of
+// cards currently available in the global dirty card queue.
+// Refinement threads obtain work from the queue (a buffer at a time) based
+// on these thresholds. They are activated gradually based on the amount of
+// work to do.
 // Refinement thread n activates thread n+1 if the instance of this class determines there
 // is enough work available. Threads deactivate themselves if the current amount of
-// completed buffers falls below their individual threshold.
+// available cards falls below their individual threshold.
 class G1ConcurrentRefine : public CHeapObj<mtGC> {
   G1ConcurrentRefineThreadControl _thread_control;
   /*
    * The value of the completed dirty card queue length falls into one of 3 zones:
    * green, yellow, red. If the value is in [0, green) nothing is
-   * done, the buffers are left unprocessed to enable the caching effect of the
+   * done, the buffered cards are left unprocessed to enable the caching effect of the
    * dirtied cards. In the yellow zone [green, yellow) the concurrent refinement
    * threads are gradually activated. In [yellow, red) all threads are
    * running. If the length becomes red (max queue length) the mutators start
-   * processing the buffers.
+   * processing cards too.
    *
    * There are some interesting cases (when G1UseAdaptiveConcRefinement
    * is turned off):
    * 1) green = yellow = red = 0. In this case the mutator will process all
-   *    buffers. Except for those that are created by the deferred updates
+   *    cards. Except for those that are created by the deferred updates
    *    machinery during a collection.
    * 2) green = 0. Means no caching. Can be a good way to minimize the
    *    amount of time spent updating remembered sets during a collection.
@@ -97,12 +98,12 @@ class G1ConcurrentRefine : public CHeapObj<mtGC> {
                      size_t min_yellow_zone_size);
 
   // Update green/yellow/red zone values based on how well goals are being met.
-  void update_zones(double log_buffer_scan_time,
-                    size_t processed_log_buffers,
+  void update_zones(double logged_cards_scan_time,
+                    size_t processed_logged_cards,
                     double goal_ms);
 
   static uint worker_id_offset();
-  void maybe_activate_more_threads(uint worker_id, size_t num_cur_buffers);
+  void maybe_activate_more_threads(uint worker_id, size_t num_cur_cards);
 
   jint initialize();
 public:
@@ -115,8 +116,9 @@ public:
   void stop();
 
   // Adjust refinement thresholds based on work done during the pause and the goal time.
-  void adjust(double log_buffer_scan_time, size_t processed_log_buffers, double goal_ms);
+  void adjust(double logged_cards_scan_time, size_t processed_logged_cards, double goal_ms);
 
+  // Cards in the dirty card queue set.
   size_t activation_threshold(uint worker_id) const;
   size_t deactivation_threshold(uint worker_id) const;
   // Perform a single refinement step. Called by the refinement threads when woken up.
@@ -130,6 +132,7 @@ public:
 
   void print_threads_on(outputStream* st) const;
 
+  // Cards in the dirty card queue set.
   size_t green_zone() const      { return _green_zone;  }
   size_t yellow_zone() const     { return _yellow_zone; }
   size_t red_zone() const        { return _red_zone;    }
