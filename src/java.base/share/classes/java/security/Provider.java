@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -108,6 +108,7 @@ import java.util.concurrent.ConcurrentHashMap;
 public abstract class Provider extends Properties {
 
     // Declare serialVersionUID to be compatible with JDK1.1
+    @java.io.Serial
     private static final long serialVersionUID = -4298000515446427739L;
 
     private static final sun.security.util.Debug debug =
@@ -890,6 +891,7 @@ public abstract class Provider extends Properties {
     * @param in the {@code ObjectInputStream} to read
     * @serial
     */
+    @java.io.Serial
     private void readObject(ObjectInputStream in)
                 throws IOException, ClassNotFoundException {
         Map<Object,Object> copy = new HashMap<>();

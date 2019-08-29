@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -52,6 +52,7 @@ import static sun.security.rsa.RSAUtil.KeyType;
  */
 public final class RSAPublicKeyImpl extends X509Key implements RSAPublicKey {
 
+    @java.io.Serial
     private static final long serialVersionUID = 2644735423591199609L;
     private static final BigInteger THREE = BigInteger.valueOf(3);
 
@@ -198,6 +199,7 @@ public final class RSAPublicKeyImpl extends X509Key implements RSAPublicKey {
                + "\n  public exponent: " + e;
     }
 
+    @java.io.Serial
     protected Object writeReplace() throws java.io.ObjectStreamException {
         return new KeyRep(KeyRep.Type.PUBLIC,
                         getAlgorithm(),

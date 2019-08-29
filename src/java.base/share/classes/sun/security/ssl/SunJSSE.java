@@ -54,6 +54,7 @@ import static sun.security.provider.SunEntries.createAliases;
  */
 public class SunJSSE extends java.security.Provider {
 
+    @java.io.Serial
     private static final long serialVersionUID = 3231825739635378733L;
 
     private static String info = "Sun JSSE provider" +

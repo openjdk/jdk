@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -44,6 +44,7 @@ import jdk.internal.ref.CleanerFactory;
  */
 final class PBEKey implements SecretKey {
 
+    @java.io.Serial
     static final long serialVersionUID = -2234768909660948176L;
 
     private byte[] key;
@@ -146,6 +147,7 @@ final class PBEKey implements SecretKey {
      * readObject is called to restore the state of this key from
      * a stream.
      */
+    @java.io.Serial
     private void readObject(java.io.ObjectInputStream s)
          throws java.io.IOException, ClassNotFoundException
     {
@@ -162,6 +164,7 @@ final class PBEKey implements SecretKey {
      * @throws java.io.ObjectStreamException if a new object representing
      * this PBE key could not be created
      */
+    @java.io.Serial
     private Object writeReplace() throws java.io.ObjectStreamException {
         return new KeyRep(KeyRep.Type.SECRET,
                         getAlgorithm(),

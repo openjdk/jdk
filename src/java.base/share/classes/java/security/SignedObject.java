@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -118,6 +118,7 @@ import java.io.*;
 
 public final class SignedObject implements Serializable {
 
+    @java.io.Serial
     private static final long serialVersionUID = 720502720485447167L;
 
     /*
@@ -250,6 +251,7 @@ public final class SignedObject implements Serializable {
      * readObject is called to restore the state of the SignedObject from
      * a stream.
      */
+    @java.io.Serial
     private void readObject(java.io.ObjectInputStream s)
         throws java.io.IOException, ClassNotFoundException {
             java.io.ObjectInputStream.GetField fields = s.readFields();

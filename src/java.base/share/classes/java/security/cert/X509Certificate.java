@@ -108,6 +108,7 @@ import sun.security.util.SignatureUtil;
 public abstract class X509Certificate extends Certificate
 implements X509Extension {
 
+    @java.io.Serial
     private static final long serialVersionUID = -2491127588187038216L;
 
     private transient X500Principal subjectX500Principal, issuerX500Principal;

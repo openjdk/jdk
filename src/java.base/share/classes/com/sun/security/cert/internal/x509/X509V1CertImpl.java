@@ -54,6 +54,7 @@ import java.util.Vector;
 @SuppressWarnings("removal")
 @Deprecated(since="9", forRemoval=true)
 public class X509V1CertImpl extends X509Certificate implements Serializable {
+    @java.io.Serial
     static final long serialVersionUID = -2048442350420423405L;
     private java.security.cert.X509Certificate wrappedCert;
 
@@ -307,6 +308,7 @@ public class X509V1CertImpl extends X509Certificate implements Serializable {
         return wrappedCert.getSigAlgParams();
     }
 
+    @java.io.Serial
     private synchronized void writeObject(ObjectOutputStream stream)
         throws IOException {
         try {
@@ -316,6 +318,7 @@ public class X509V1CertImpl extends X509Certificate implements Serializable {
         }
     }
 
+    @java.io.Serial
     private synchronized void readObject(ObjectInputStream stream)
         throws IOException {
         try {

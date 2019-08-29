@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -107,6 +107,7 @@ public final class UnresolvedPermission extends Permission
 implements java.io.Serializable
 {
 
+    @java.io.Serial
     private static final long serialVersionUID = -4821973115467008846L;
 
     private static final sun.security.util.Debug debug =
@@ -521,6 +522,7 @@ implements java.io.Serializable
      * followed by the certificate encoding itself which is written out as an
      * array of bytes.
      */
+    @java.io.Serial
     private void writeObject(java.io.ObjectOutputStream oos)
         throws IOException
     {
@@ -549,6 +551,7 @@ implements java.io.Serializable
     /**
      * Restores this object from a stream (i.e., deserializes it).
      */
+    @java.io.Serial
     private void readObject(java.io.ObjectInputStream ois)
         throws IOException, ClassNotFoundException
     {

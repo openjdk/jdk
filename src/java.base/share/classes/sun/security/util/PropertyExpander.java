@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2004, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -43,6 +43,7 @@ public class PropertyExpander {
 
     public static class ExpandException extends GeneralSecurityException {
 
+        @java.io.Serial
         private static final long serialVersionUID = -7941948581406161702L;
 
         public ExpandException(String msg) {

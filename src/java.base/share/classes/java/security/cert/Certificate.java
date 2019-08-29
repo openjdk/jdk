@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -62,6 +62,7 @@ import sun.security.x509.X509CertImpl;
 
 public abstract class Certificate implements java.io.Serializable {
 
+    @java.io.Serial
     private static final long serialVersionUID = -3585440601605666277L;
 
     // the certificate type
@@ -240,6 +241,7 @@ public abstract class Certificate implements java.io.Serializable {
      */
     protected static class CertificateRep implements java.io.Serializable {
 
+        @java.io.Serial
         private static final long serialVersionUID = -8563758940495660020L;
 
         private String type;
@@ -266,6 +268,7 @@ public abstract class Certificate implements java.io.Serializable {
          * @throws java.io.ObjectStreamException if the Certificate
          *      could not be resolved
          */
+        @java.io.Serial
         protected Object readResolve() throws java.io.ObjectStreamException {
             try {
                 CertificateFactory cf = CertificateFactory.getInstance(type);
@@ -290,6 +293,7 @@ public abstract class Certificate implements java.io.Serializable {
      * this Certificate could not be created
      * @since 1.3
      */
+    @java.io.Serial
     protected Object writeReplace() throws java.io.ObjectStreamException {
         try {
             return new CertificateRep(type, getEncoded());

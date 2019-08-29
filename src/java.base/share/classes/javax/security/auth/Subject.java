@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -100,6 +100,7 @@ import sun.security.util.ResourcesMgr;
  */
 public final class Subject implements java.io.Serializable {
 
+    @java.io.Serial
     private static final long serialVersionUID = -8308522755600156056L;
 
     /**
@@ -946,6 +947,7 @@ public final class Subject implements java.io.Serializable {
     /**
      * Writes this object out to a stream (i.e., serializes it).
      */
+    @java.io.Serial
     private void writeObject(java.io.ObjectOutputStream oos)
                 throws java.io.IOException {
         synchronized(principals) {
@@ -957,6 +959,7 @@ public final class Subject implements java.io.Serializable {
      * Reads this object from a stream (i.e., deserializes it)
      */
     @SuppressWarnings("unchecked")
+    @java.io.Serial
     private void readObject(java.io.ObjectInputStream s)
                 throws java.io.IOException, ClassNotFoundException {
 
@@ -1027,12 +1030,14 @@ public final class Subject implements java.io.Serializable {
     private static class SecureSet<E>
         implements Set<E>, java.io.Serializable {
 
+        @java.io.Serial
         private static final long serialVersionUID = 7911754171111800359L;
 
         /**
          * @serialField this$0 Subject The outer Subject instance.
          * @serialField elements LinkedList The elements in this set.
          */
+        @java.io.Serial
         private static final ObjectStreamField[] serialPersistentFields = {
             new ObjectStreamField("this$0", Subject.class),
             new ObjectStreamField("elements", LinkedList.class),
@@ -1408,6 +1413,7 @@ public final class Subject implements java.io.Serializable {
          *      in the set.  If the security check passes,
          *      the set is serialized.
          */
+        @java.io.Serial
         private void writeObject(java.io.ObjectOutputStream oos)
                 throws java.io.IOException {
 
@@ -1426,6 +1432,7 @@ public final class Subject implements java.io.Serializable {
         }
 
         @SuppressWarnings("unchecked")
+        @java.io.Serial
         private void readObject(ObjectInputStream ois)
             throws IOException, ClassNotFoundException
         {

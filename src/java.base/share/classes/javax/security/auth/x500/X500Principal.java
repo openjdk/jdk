@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -63,6 +63,7 @@ import sun.security.util.*;
  */
 public final class X500Principal implements Principal, java.io.Serializable {
 
+    @java.io.Serial
     private static final long serialVersionUID = -500463348111345721L;
 
     /**
@@ -494,6 +495,7 @@ public final class X500Principal implements Principal, java.io.Serializable {
      *          by writing out its DER-encoded form
      *          (the value of {@code getEncoded} is serialized).
      */
+    @java.io.Serial
     private void writeObject(java.io.ObjectOutputStream s)
         throws IOException {
         s.writeObject(thisX500Name.getEncodedInternal());
@@ -502,6 +504,7 @@ public final class X500Principal implements Principal, java.io.Serializable {
     /**
      * Reads this object from a stream (i.e., deserializes it).
      */
+    @java.io.Serial
     private void readObject(java.io.ObjectInputStream s)
         throws java.io.IOException,
                java.io.NotActiveException,

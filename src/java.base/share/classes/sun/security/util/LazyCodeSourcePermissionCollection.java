@@ -44,6 +44,7 @@ import java.util.Enumeration;
 public final class LazyCodeSourcePermissionCollection
         extends PermissionCollection
 {
+    @java.io.Serial
     private static final long serialVersionUID = -6727011328946861783L;
     private final PermissionCollection perms;
     private final CodeSource cs;
@@ -119,6 +120,7 @@ public final class LazyCodeSourcePermissionCollection
      * On serialization, initialize and replace with the underlying
      * permissions. This removes the laziness on deserialization.
      */
+    @java.io.Serial
     private Object writeReplace() {
         ensureAdded();
         return perms;

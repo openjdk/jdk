@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -50,6 +50,7 @@ import sun.security.x509.InvalidityDateExtension;
  */
 public class CertificateRevokedException extends CertificateException {
 
+    @java.io.Serial
     private static final long serialVersionUID = 7839996631571608627L;
 
     /**
@@ -191,6 +192,7 @@ public class CertificateRevokedException extends CertificateException {
      * flag (boolean), the length of the encoded extension value byte array
      * (int), and the encoded extension value bytes.
      */
+    @java.io.Serial
     private void writeObject(ObjectOutputStream oos) throws IOException {
         // Write out the non-transient fields
         // (revocationDate, reason, authority)
@@ -217,6 +219,7 @@ public class CertificateRevokedException extends CertificateException {
     /**
      * Deserialize the {@code CertificateRevokedException} instance.
      */
+    @java.io.Serial
     private void readObject(ObjectInputStream ois)
         throws IOException, ClassNotFoundException {
         // Read in the non-transient fields

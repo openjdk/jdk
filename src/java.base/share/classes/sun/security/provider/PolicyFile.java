@@ -1942,6 +1942,7 @@ public class PolicyFile extends java.security.Policy {
 
     private static class SelfPermission extends Permission {
 
+        @java.io.Serial
         private static final long serialVersionUID = -8315562579967246806L;
 
         /**

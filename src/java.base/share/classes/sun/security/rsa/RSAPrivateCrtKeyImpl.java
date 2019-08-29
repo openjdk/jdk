@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -55,6 +55,7 @@ import static sun.security.rsa.RSAUtil.KeyType;
 public final class RSAPrivateCrtKeyImpl
         extends PKCS8Key implements RSAPrivateCrtKey {
 
+    @java.io.Serial
     private static final long serialVersionUID = -1326088454257084918L;
 
     private BigInteger n;       // modulus

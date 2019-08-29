@@ -46,6 +46,7 @@ package javax.security.cert;
 @Deprecated(since="9", forRemoval=true)
 public class CertificateExpiredException extends CertificateException {
 
+    @java.io.Serial
     private static final long serialVersionUID = 5091601212177261883L;
     /**
      * Constructs a CertificateExpiredException with no detail message. A

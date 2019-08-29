@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -49,6 +49,7 @@ package java.security;
 
 public class GuardedObject implements java.io.Serializable {
 
+    @java.io.Serial
     private static final long serialVersionUID = -5240450096227834308L;
 
     private Object object; // the object we are guarding
@@ -92,6 +93,7 @@ public class GuardedObject implements java.io.Serializable {
      * Writes this object out to a stream (i.e., serializes it).
      * We check the guard if there is one.
      */
+    @java.io.Serial
     private void writeObject(java.io.ObjectOutputStream oos)
         throws java.io.IOException
     {
