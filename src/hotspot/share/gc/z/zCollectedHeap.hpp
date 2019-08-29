@@ -75,6 +75,7 @@ public:
 
   virtual uint32_t hash_oop(oop obj) const;
 
+  virtual oop array_allocate(Klass* klass, int size, int length, bool do_zero, TRAPS);
   virtual HeapWord* mem_allocate(size_t size, bool* gc_overhead_limit_was_exceeded);
   virtual MetaWord* satisfy_failed_metadata_allocation(ClassLoaderData* loader_data,
                                                        size_t size,
@@ -99,9 +100,6 @@ public:
   virtual void object_iterate(ObjectClosure* cl);
   virtual void safe_object_iterate(ObjectClosure* cl);
 
-  virtual HeapWord* block_start(const void* addr) const;
-  virtual bool block_is_obj(const HeapWord* addr) const;
-
   virtual void register_nmethod(nmethod* nm);
   virtual void unregister_nmethod(nmethod* nm);
   virtual void flush_nmethod(nmethod* nm);
@@ -123,6 +121,7 @@ public:
   virtual void print_extended_on(outputStream* st) const;
   virtual void print_gc_threads_on(outputStream* st) const;
   virtual void print_tracing_info() const;
+  virtual bool print_location(outputStream* st, void* addr) const;
 
   virtual void prepare_for_verify();
   virtual void verify(VerifyOption option /* ignored */);

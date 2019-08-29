@@ -32,7 +32,7 @@
 #include "interpreter/interpreterRuntime.hpp"
 #include "logging/log.hpp"
 #include "oops/arrayOop.hpp"
-#include "oops/markOop.hpp"
+#include "oops/markWord.hpp"
 #include "oops/method.hpp"
 #include "oops/methodData.hpp"
 #include "prims/jvmtiExport.hpp"

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -130,8 +130,7 @@ public class InheritRuntimeEnvironmentTest extends ModuleTestBase {
         // This is the test, to verify that the module being compiled will not be able to read
         // modules on the module path when a --limit-modules is used
         new TestCase(base)
-                .testOpts("--module-path", modules.toString(),
-                        "--limit-modules", "jdk.compiler,jdk.internal.vm.compiler")
+                .testOpts("--module-path", modules.toString(), "--limit-modules", "jdk.compiler")
                 .otherOpts("-XDrawDiagnostics",
                         "--module-source-path", src.toString(),
                         "-classpath", emptyClassPath.toString())

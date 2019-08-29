@@ -61,7 +61,7 @@ void ShenandoahAsserts::print_obj(ShenandoahMessageBuffer& msg, oop obj) {
   r->print_on(&ss);
 
   stringStream mw_ss;
-  obj->mark()->print_on(&mw_ss);
+  obj->mark().print_on(&mw_ss);
 
   ShenandoahMarkingContext* const ctx = heap->marking_context();
 
@@ -363,7 +363,7 @@ void ShenandoahAsserts::assert_rp_isalive_installed(const char *file, int line) 
   }
 }
 
-void ShenandoahAsserts::assert_locked_or_shenandoah_safepoint(const Monitor* lock, const char* file, int line) {
+void ShenandoahAsserts::assert_locked_or_shenandoah_safepoint(Mutex* lock, const char* file, int line) {
   if (ShenandoahSafepoint::is_at_shenandoah_safepoint()) {
     return;
   }

@@ -1480,12 +1480,6 @@ Node* IfNode::dominated_by(Node* prev_dom, PhaseIterGVN *igvn) {
   if (TraceIterativeGVN) {
     tty->print("   Removing IfNode: "); this->dump();
   }
-  if (VerifyOpto && !igvn->allow_progress()) {
-    // Found an equivalent dominating test,
-    // we can not guarantee reaching a fix-point for these during iterativeGVN
-    // since intervening nodes may not change.
-    return NULL;
-  }
 #endif
 
   igvn->hash_delete(this);      // Remove self to prevent spurious V-N

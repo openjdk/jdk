@@ -533,7 +533,6 @@ class Method : public Metadata {
     native_bind_event_is_interesting = true
   };
   address native_function() const                { return *(native_function_addr()); }
-  address critical_native_function();
 
   // Must specify a real function (not NULL).
   // Use clear_native_function() to unregister.

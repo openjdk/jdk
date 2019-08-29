@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -55,7 +55,7 @@ jint  Agent_Initialize(JavaVM *vm, char *options, void *reserved) {
     } else {
         jvmtiCapabilities caps;
         jvmtiEventCallbacks eventCallbacks;
-        if (nsk_jvmti_parseOptions(options) == NSK_FALSE) {
+        if (!nsk_jvmti_parseOptions(options)) {
             nsk_printf("# error agent Failed to parse options.\n");
             return JNI_ERR;
         }
@@ -90,7 +90,7 @@ Java_nsk_jvmti_scenarios_hotswap_HS301_hs301t001_hs301t001_redefine(JNIEnv * jni
     }
     ret = JNI_FALSE;
     nsk_jvmti_getFileName(redefineNumber, FILE_NAME, fileName, sizeof(fileName)/sizeof(char));
-    if (nsk_jvmti_redefineClass(jvmti, cls, fileName) == NSK_TRUE) {
+    if (nsk_jvmti_redefineClass(jvmti, cls, fileName)) {
         nsk_printf("Agent:: Redefine successful.\n");
         ret = JNI_TRUE;
     } else {

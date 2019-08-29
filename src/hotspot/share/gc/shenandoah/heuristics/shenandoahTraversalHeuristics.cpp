@@ -37,7 +37,7 @@ ShenandoahTraversalHeuristics::ShenandoahTraversalHeuristics() : ShenandoahHeuri
   _last_cset_select(0) {}
 
 bool ShenandoahTraversalHeuristics::is_experimental() {
-  return true;
+  return false;
 }
 
 bool ShenandoahTraversalHeuristics::is_diagnostic() {

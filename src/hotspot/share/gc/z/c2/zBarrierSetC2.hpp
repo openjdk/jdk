@@ -202,11 +202,12 @@ public:
   virtual void barrier_insertion_phase(Compile* C, PhaseIterGVN &igvn) const;
   virtual bool optimize_loops(PhaseIdealLoop* phase, LoopOptsMode mode, VectorSet& visited, Node_Stack& nstack, Node_List& worklist) const;
   virtual bool is_gc_specific_loop_opts_pass(LoopOptsMode mode) const { return (mode == LoopOptsZBarrierInsertion); }
+  virtual bool strip_mined_loops_expanded(LoopOptsMode mode) const { return mode == LoopOptsZBarrierInsertion; }
 
 private:
   // Load barrier insertion and expansion internal
   void insert_barriers_on_unsafe(PhaseIdealLoop* phase) const;
-  void clean_catch_blocks(PhaseIdealLoop* phase) const;
+  void clean_catch_blocks(PhaseIdealLoop* phase, bool verify = false) const;
   void insert_load_barriers(PhaseIdealLoop* phase) const;
   LoadNode* insert_one_loadbarrier(PhaseIdealLoop* phase, LoadNode* load, Node* ctrl) const;
   void insert_one_loadbarrier_inner(PhaseIdealLoop* phase, LoadNode* load, Node* ctrl, VectorSet visited) const;

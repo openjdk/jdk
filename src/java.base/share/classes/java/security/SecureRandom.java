@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,6 +32,7 @@ import java.security.Provider.Service;
 
 import sun.security.jca.*;
 import sun.security.jca.GetInstance.Instance;
+import sun.security.provider.SunEntries;
 import sun.security.util.Debug;
 
 /**
@@ -875,6 +876,13 @@ public class SecureRandom extends java.util.Random {
      */
     private static String getPrngAlgorithm() {
         for (Provider p : Providers.getProviderList().providers()) {
+            // For SUN provider, we use SunEntries.DEFF_SECURE_RANDOM_ALGO
+            // as the default SecureRandom algorithm; for other providers,
+            // we continue to iterate through to the 1st SecureRandom
+            // service
+            if (p.getName().equals("SUN")) {
+                return SunEntries.DEF_SECURE_RANDOM_ALGO;
+            }
             for (Service s : p.getServices()) {
                 if (s.getType().equals("SecureRandom")) {
                     return s.getAlgorithm();

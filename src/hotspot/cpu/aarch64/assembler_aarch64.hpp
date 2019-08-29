@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 1997, 2019, Oracle and/or its affiliates. All rights reserved.
- * Copyright (c) 2014, 2015, Red Hat Inc. All rights reserved.
+ * Copyright (c) 2014, 2019, Red Hat Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1058,12 +1058,13 @@ public:
   //            op1    CRn    CRm    op2
   // IC IVAU     3      7      5      1
   // DC CVAC     3      7      10     1
+  // DC CVAP     3      7      12     1
   // DC CVAU     3      7      11     1
   // DC CIVAC    3      7      14     1
   // DC ZVA      3      7      4      1
   // So only deal with the CRm field.
   enum icache_maintenance {IVAU = 0b0101};
-  enum dcache_maintenance {CVAC = 0b1010, CVAU = 0b1011, CIVAC = 0b1110, ZVA = 0b100};
+  enum dcache_maintenance {CVAC = 0b1010, CVAP = 0b1100, CVAU = 0b1011, CIVAC = 0b1110, ZVA = 0b100};
 
   void dc(dcache_maintenance cm, Register Rt) {
     sys(0b011, 0b0111, cm, 0b001, Rt);
@@ -2660,137 +2661,6 @@ void ext(FloatRegister Vd, SIMD_Arrangement T, FloatRegister Vn, FloatRegister V
     f(0, 31), f((int)T & 1, 30), f(0b101110000, 29, 21);
     rf(Vm, 16), f(0, 15), f(index, 14, 11);
     f(0, 10), rf(Vn, 5), rf(Vd, 0);
-  }
-
-/* Simulator extensions to the ISA
-
-   haltsim
-
-   takes no arguments, causes the sim to enter a debug break and then
-   return from the simulator run() call with STATUS_HALT? The linking
-   code will call fatal() when it sees STATUS_HALT.
-
-   blrt Xn, Wm
-   blrt Xn, #gpargs, #fpargs, #type
-   Xn holds the 64 bit x86 branch_address
-   call format is encoded either as immediate data in the call
-   or in register Wm. In the latter case
-     Wm[13..6] = #gpargs,
-     Wm[5..2] = #fpargs,
-     Wm[1,0] = #type
-
-   calls the x86 code address 'branch_address' supplied in Xn passing
-   arguments taken from the general and floating point registers according
-   to the supplied counts 'gpargs' and 'fpargs'. may return a result in r0
-   or v0 according to the the return type #type' where
-
-   address branch_address;
-   uimm4 gpargs;
-   uimm4 fpargs;
-   enum ReturnType type;
-
-   enum ReturnType
-     {
-       void_ret = 0,
-       int_ret = 1,
-       long_ret = 1,
-       obj_ret = 1, // i.e. same as long
-       float_ret = 2,
-       double_ret = 3
-     }
-
-   notify
-
-   notifies the simulator of a transfer of control. instr[14:0]
-   identifies the type of change of control.
-
-   0 ==> initial entry to a method.
-
-   1 ==> return into a method from a submethod call.
-
-   2 ==> exit out of Java method code.
-
-   3 ==> start execution for a new bytecode.
-
-   in cases 1 and 2 the simulator is expected to use a JVM callback to
-   identify the name of the specific method being executed. in case 4
-   the simulator is expected to use a JVM callback to identify the
-   bytecode index.
-
-   Instruction encodings
-   ---------------------
-
-   These are encoded in the space with instr[28:25] = 00 which is
-   unallocated. Encodings are
-
-                     10987654321098765432109876543210
-   PSEUDO_HALT   = 0x11100000000000000000000000000000
-   PSEUDO_BLRT  = 0x11000000000000000_______________
-   PSEUDO_BLRTR = 0x1100000000000000100000__________
-   PSEUDO_NOTIFY = 0x10100000000000000_______________
-
-   instr[31,29] = op1 : 111 ==> HALT, 110 ==> BLRT/BLRTR, 101 ==> NOTIFY
-
-   for BLRT
-     instr[14,11] = #gpargs, instr[10,7] = #fpargs
-     instr[6,5] = #type, instr[4,0] = Rn
-   for BLRTR
-     instr[9,5] = Rm, instr[4,0] = Rn
-   for NOTIFY
-     instr[14:0] = type : 0 ==> entry, 1 ==> reentry, 2 ==> exit, 3 ==> bcstart
-*/
-
-  enum NotifyType { method_entry, method_reentry, method_exit, bytecode_start };
-
-  virtual void notify(int type) {
-    if (UseBuiltinSim) {
-      starti;
-      //  109
-      f(0b101, 31, 29);
-      //  87654321098765
-      f(0b00000000000000, 28, 15);
-      f(type, 14, 0);
-    }
-  }
-
-  void blrt(Register Rn, int gpargs, int fpargs, int type) {
-    if (UseBuiltinSim) {
-      starti;
-      f(0b110, 31 ,29);
-      f(0b00, 28, 25);
-      //  4321098765
-      f(0b0000000000, 24, 15);
-      f(gpargs, 14, 11);
-      f(fpargs, 10, 7);
-      f(type, 6, 5);
-      rf(Rn, 0);
-    } else {
-      blr(Rn);
-    }
-  }
-
-  void blrt(Register Rn, Register Rm) {
-    if (UseBuiltinSim) {
-      starti;
-      f(0b110, 31 ,29);
-      f(0b00, 28, 25);
-      //  4321098765
-      f(0b0000000001, 24, 15);
-      //  43210
-      f(0b00000, 14, 10);
-      rf(Rm, 5);
-      rf(Rn, 0);
-    } else {
-      blr(Rn);
-    }
-  }
-
-  void haltsim() {
-    starti;
-    f(0b111, 31 ,29);
-    f(0b00, 28, 27);
-    //  654321098765432109876543210
-    f(0b000000000000000000000000000, 26, 0);
   }
 
   Assembler(CodeBuffer* code) : AbstractAssembler(code) {

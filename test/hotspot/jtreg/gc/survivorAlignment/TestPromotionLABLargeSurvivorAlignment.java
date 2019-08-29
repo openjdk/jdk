@@ -41,22 +41,7 @@ package gc.survivorAlignment;
  *                   gc.survivorAlignment.TestPromotionLABLargeSurvivorAlignment
  * @run main/othervm -Xmx128m
  *                   -XX:+UnlockExperimentalVMOptions
- *                   -XX:SurvivorAlignmentInBytes=512 -XX:SurvivorRatio=1
- *                   -XX:-ExplicitGCInvokesConcurrent -XX:-ResizePLAB
- *                   gc.survivorAlignment.TestPromotionLABLargeSurvivorAlignment
- * @run main/othervm -Xmx128m
- *                   -XX:+UnlockExperimentalVMOptions
- *                   -XX:SurvivorAlignmentInBytes=1k -XX:SurvivorRatio=1
- *                   -XX:-ExplicitGCInvokesConcurrent -XX:-ResizePLAB
- *                   gc.survivorAlignment.TestPromotionLABLargeSurvivorAlignment
- * @run main/othervm -Xmx128m
- *                   -XX:+UnlockExperimentalVMOptions
- *                   -XX:SurvivorAlignmentInBytes=4k -XX:SurvivorRatio=1
- *                   -XX:-ExplicitGCInvokesConcurrent -XX:-ResizePLAB
- *                   gc.survivorAlignment.TestPromotionLABLargeSurvivorAlignment
- * @run main/othervm -Xmx128m
- *                   -XX:+UnlockExperimentalVMOptions
- *                   -XX:SurvivorAlignmentInBytes=16k -XX:SurvivorRatio=1
+ *                   -XX:SurvivorAlignmentInBytes=256 -XX:SurvivorRatio=1
  *                   -XX:-ExplicitGCInvokesConcurrent -XX:-ResizePLAB
  *                   gc.survivorAlignment.TestPromotionLABLargeSurvivorAlignment
  */

@@ -37,6 +37,7 @@
 import java.io.*;
 import java.net.*;
 import javax.net.ssl.*;
+import java.util.concurrent.atomic.AtomicInteger;
 
 public class ChunkedOutputStream implements HttpCallback {
     /*
@@ -47,6 +48,7 @@ public class ChunkedOutputStream implements HttpCallback {
     static String trustStoreFile = "truststore";
     static String passwd = "passphrase";
     static int count = 0;
+    static final AtomicInteger rogueCount = new AtomicInteger();
 
     static final String str1 = "Helloworld1234567890abcdefghijklmnopqrstuvwxyz"+
                                 "1234567890abcdefkjsdlkjflkjsldkfjlsdkjflkj"+
@@ -132,10 +134,21 @@ public class ChunkedOutputStream implements HttpCallback {
                 req.sendResponse(200, "OK");
                 req.orderlyClose();
                 break;
+            default:
+                req.sendResponse(404, "Not Found");
+                req.orderlyClose();
+                break;
             }
         } catch (IOException e) {
             e.printStackTrace();
         }
+    }
+
+    public boolean dropPlainTextConnections() {
+        System.out.println("Unrecognized SSL message, plaintext connection?");
+        System.out.println("TestHttpsServer receveived rogue connection: ignoring it.");
+        rogueCount.incrementAndGet();
+        return true;
     }
 
     static void readAndCompare(InputStream is, String cmp) throws IOException {
@@ -150,6 +163,26 @@ public class ChunkedOutputStream implements HttpCallback {
         String s1 = new String(buf, 0, off, "ISO8859_1");
         if (!cmp.equals(s1)) {
             throw new IOException("strings not same");
+        }
+    }
+
+    /* basic smoke test: verify that server drops plain connections */
+    static void testPlainText(String authority) throws Exception {
+        URL url = new URL("http://" + authority + "/Donauschiffsgesellschaftskapitaenskajuete");
+        System.out.println("client opening connection to: " + url);
+        HttpURLConnection urlc = (HttpURLConnection)url.openConnection(Proxy.NO_PROXY);
+        int rogue = rogueCount.get();
+        try {
+            int code  = urlc.getResponseCode();
+            System.out.println("Unexpected response: " + code);
+            throw new AssertionError("Unexpected response: " + code);
+        } catch (SocketException x) {
+            // we expect that the server will drop the connection and
+            // close the accepted socket, so we should get a SocketException
+            // on the client side, and confirm that this::dropPlainTextConnections
+            // has ben called.
+            if (rogueCount.get() == rogue) throw x;
+            System.out.println("Got expected exception: " + x);
         }
     }
 
@@ -303,6 +336,7 @@ public class ChunkedOutputStream implements HttpCallback {
                 server = new TestHttpsServer(
                         new ChunkedOutputStream(), 1, 10, loopback, 0);
                 System.out.println("Server started: listening on: " + server.getAuthority());
+                testPlainText(server.getAuthority());
                 // the test server doesn't support keep-alive yet
                 // test1("http://" + server.getAuthority() + "/d0");
                 test1("https://" + server.getAuthority() + "/d01");

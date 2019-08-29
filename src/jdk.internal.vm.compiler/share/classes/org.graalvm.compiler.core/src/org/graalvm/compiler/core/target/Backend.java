@@ -257,7 +257,6 @@ public abstract class Backend implements TargetProvider, ValueKindFactory<LIRKin
      * @throws BailoutException if the code installation failed
      */
     public InstalledCode createDefaultInstalledCode(DebugContext debug, ResolvedJavaMethod method, CompilationResult compilationResult) {
-        System.out.println(compilationResult.getSpeculationLog());
         return createInstalledCode(debug, method, compilationResult, null, true);
     }
 

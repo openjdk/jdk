@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -49,6 +49,7 @@ import java.util.ArrayDeque;
 import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.CountDownLatch;
 
 import com.sun.management.UnixOperatingSystemMXBean;
 
@@ -70,9 +71,10 @@ public class UnreferencedDatagramSockets {
     static class Server implements Runnable {
 
         DatagramSocket ss;
+        CountDownLatch latch = new CountDownLatch(1);
 
         Server() throws IOException {
-            ss = new DatagramSocket(0);
+            ss = new DatagramSocket(0, getHost());
             System.out.printf("  DatagramServer addr: %s: %d%n",
                     this.getHost(), this.getPort());
             pendingSockets.add(new NamedWeak(ss, pendingQueue, "serverDatagramSocket"));
@@ -80,7 +82,7 @@ public class UnreferencedDatagramSockets {
         }
 
         InetAddress getHost() throws UnknownHostException {
-            InetAddress localhost = InetAddress.getByName("localhost"); //.getLocalHost();
+            InetAddress localhost = lookupLocalHost();
             return localhost;
         }
 
@@ -96,7 +98,7 @@ public class UnreferencedDatagramSockets {
                 ss.receive(p);
                 buffer[0] += 1;
                 ss.send(p);         // send back +1
-
+                latch.await();      // wait for the client to receive the packet
                 // do NOT close but 'forget' the datagram socket reference
                 ss = null;
             } catch (Exception ioe) {
@@ -105,11 +107,15 @@ public class UnreferencedDatagramSockets {
         }
     }
 
+    static InetAddress lookupLocalHost() throws UnknownHostException {
+        return InetAddress.getByName("localhost"); //.getLocalHost();
+    }
+
     public static void main(String args[]) throws Exception {
         IPSupport.throwSkippedExceptionIfNonOperational();
 
         // Create and close a DatagramSocket to warm up the FD count for side effects.
-        try (DatagramSocket s = new DatagramSocket(0)) {
+        try (DatagramSocket s = new DatagramSocket(0, lookupLocalHost())) {
             // no-op; close immediately
             s.getLocalPort();   // no-op
         }
@@ -122,7 +128,7 @@ public class UnreferencedDatagramSockets {
         Thread thr = new Thread(svr);
         thr.start();
 
-        DatagramSocket client = new DatagramSocket(0);
+        DatagramSocket client = new DatagramSocket(0, lookupLocalHost());
         client.connect(svr.getHost(), svr.getPort());
         pendingSockets.add(new NamedWeak(client, pendingQueue, "clientDatagramSocket"));
         extractRefs(client, "clientDatagramSocket");
@@ -134,6 +140,8 @@ public class UnreferencedDatagramSockets {
 
         p = new DatagramPacket(msg, msg.length);
         client.receive(p);
+        svr.latch.countDown(); // unblock the server
+
 
         System.out.printf("echo received from: %s%n", p.getSocketAddress());
         if (msg[0] != 2) {

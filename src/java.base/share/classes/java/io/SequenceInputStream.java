@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1994, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1994, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -88,7 +88,7 @@ class SequenceInputStream extends InputStream {
     }
 
     /**
-     *  Continues reading in the next stream if an EOF is reached.
+     * Continues reading in the next stream if an EOF is reached.
      */
     final void nextStream() throws IOException {
         if (in != null) {
@@ -220,8 +220,21 @@ class SequenceInputStream extends InputStream {
      * @exception  IOException  if an I/O error occurs.
      */
     public void close() throws IOException {
-        do {
-            nextStream();
-        } while (in != null);
+        IOException ioe = null;
+        while (in != null) {
+            try {
+                in.close();
+            } catch (IOException e) {
+                if (ioe == null) {
+                    ioe = e;
+                } else {
+                    ioe.addSuppressed(e);
+                }
+            }
+            peekNextStream();
+        }
+        if (ioe != null) {
+            throw ioe;
+        }
     }
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -34,7 +34,7 @@
  *      -libname AotInvokeSpecial2InterpretedTest.so
  *      -class compiler.calls.common.InvokeSpecial
  *      -compile compiler.calls.common.InvokeSpecial.caller()V
- * @run main/othervm -XX:+UseAOT
+ * @run main/othervm -XX:+UnlockExperimentalVMOptions -XX:+UseAOT
  *      -XX:AOTLibrary=./AotInvokeSpecial2InterpretedTest.so
  *      -XX:CompileCommand=exclude,compiler.calls.common.InvokeSpecial::callee
  *      -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -Xbootclasspath/a:.

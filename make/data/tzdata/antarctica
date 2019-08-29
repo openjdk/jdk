@@ -36,7 +36,7 @@
 # for information.
 # Unless otherwise specified, we have no time zone information.
 
-# FORMAT is '-00' and GMTOFF is 0 for locations while uninhabited.
+# FORMAT is '-00' and STDOFF is 0 for locations while uninhabited.
 
 # Argentina - year-round bases
 # Belgrano II, Confin Coast, -770227-0343737, since 1972-02-05
@@ -93,7 +93,7 @@
 # Australian Antarctica Division informed us that Casey changed time
 # zone to UTC+11 in "the morning of 22nd October 2016".
 
-# Zone	NAME		GMTOFF	RULES	FORMAT	[UNTIL]
+# Zone	NAME		STDOFF	RULES	FORMAT	[UNTIL]
 Zone Antarctica/Casey	0	-	-00	1969
 			8:00	-	+08	2009 Oct 18  2:00
 			11:00	-	+11	2010 Mar  5  2:00
@@ -165,7 +165,7 @@ Zone Antarctica/Mawson	0	-	-00	1954 Feb 13
 # St Paul Island - near Amsterdam, uninhabited
 #	fishing stations operated variously 1819/1931
 #
-# Zone	NAME		GMTOFF	RULES	FORMAT	[UNTIL]
+# Zone	NAME		STDOFF	RULES	FORMAT	[UNTIL]
 Zone Indian/Kerguelen	0	-	-00	1950 # Port-aux-Français
 			5:00	-	+05
 #
@@ -176,7 +176,7 @@ Zone Indian/Kerguelen	0	-	-00	1950 # Port-aux-Français
 # Another base at Port-Martin, 50km east, began operation in 1947.
 # It was destroyed by fire on 1952-01-14.
 #
-# Zone	NAME		GMTOFF	RULES	FORMAT	[UNTIL]
+# Zone	NAME		STDOFF	RULES	FORMAT	[UNTIL]
 Zone Antarctica/DumontDUrville 0 -	-00	1947
 			10:00	-	+10	1952 Jan 14
 			0	-	-00	1956 Nov
@@ -204,7 +204,7 @@ Zone Antarctica/DumontDUrville 0 -	-00	1947
 # Syowa station, which is the first antarctic station of Japan,
 # was established on 1957-01-29.  Since Syowa station is still the main
 # station of Japan, it's appropriate for the principal location.
-# Zone	NAME		GMTOFF	RULES	FORMAT	[UNTIL]
+# Zone	NAME		STDOFF	RULES	FORMAT	[UNTIL]
 Zone Antarctica/Syowa	0	-	-00	1957 Jan 29
 			3:00	-	+03
 # See:
@@ -254,7 +254,7 @@ Rule	Troll	2005	max	-	Mar	lastSun	1:00u	2:00	+02
 #Rule	Troll	2004	max	-	Nov	 7	1:00u	0:00	+00
 # Remove the following line when uncommenting the above '#Rule' lines.
 Rule	Troll	2004	max	-	Oct	lastSun	1:00u	0:00	+00
-# Zone	NAME		GMTOFF	RULES	FORMAT	[UNTIL]
+# Zone	NAME		STDOFF	RULES	FORMAT	[UNTIL]
 Zone Antarctica/Troll	0	-	-00	2005 Feb 12
 			0:00	Troll	%s
 
@@ -328,7 +328,7 @@ Zone Antarctica/Vostok	0	-	-00	1957 Dec 16
 # From Paul Eggert (2002-10-22)
 # <http://webexhibits.org/daylightsaving/g.html> says Rothera is -03 all year.
 #
-# Zone	NAME		GMTOFF	RULES	FORMAT	[UNTIL]
+# Zone	NAME		STDOFF	RULES	FORMAT	[UNTIL]
 Zone Antarctica/Rothera	0	-	-00	1976 Dec  1
 			-3:00	-	-03
 

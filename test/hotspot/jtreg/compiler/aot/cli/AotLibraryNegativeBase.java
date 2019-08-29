@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -39,8 +39,8 @@ public class AotLibraryNegativeBase {
                     UNEXPECTED_MESSAGES,
                     "Unexpected exit code using " + option,
                     "Unexpected output using " + option, ExitCode.FAIL,
-                    addTestVMOptions, "-XX:+UseAOT", "-XX:+PrintAOT",
-                    option, HelloWorldPrinter.class.getName());
+                    addTestVMOptions, "-XX:+UnlockExperimentalVMOptions", "-XX:+UseAOT",
+                    "-XX:+PrintAOT", option, HelloWorldPrinter.class.getName());
         } catch (Throwable t) {
             throw new Error("Problems executing test using " + option
                     + ": " + t, t);

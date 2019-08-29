@@ -1642,7 +1642,7 @@ int MachCallRuntimeNode::ret_addr_offset() {
   //   adr(rscratch2, retaddr)
   //   lea(rscratch1, RuntimeAddress(addr)
   //   stp(zr, rscratch2, Address(__ pre(sp, -2 * wordSize)))
-  //   blrt rscratch1
+  //   blr(rscratch1)
   CodeBlob *cb = CodeCache::find_blob(_entry_point);
   if (cb) {
     return MacroAssembler::far_branch_size();
@@ -1771,16 +1771,12 @@ void MachPrologNode::emit(CodeBuffer &cbuf, PhaseRegAlloc *ra_) const {
     __ far_jump(RuntimeAddress(SharedRuntime::get_handle_wrong_method_stub()));
     __ bind(L_skip_barrier);
   }
-  
+
   int bangsize = C->bang_size_in_bytes();
   if (C->need_stack_bang(bangsize) && UseStackBanging)
     __ generate_stack_overflow_check(bangsize);
 
   __ build_frame(framesize);
-
-  if (NotifySimulator) {
-    __ notify(Assembler::method_entry);
-  }
 
   if (VerifyStackAtCalls) {
     Unimplemented();
@@ -1841,10 +1837,6 @@ void MachEpilogNode::emit(CodeBuffer &cbuf, PhaseRegAlloc *ra_) const {
   int framesize = C->frame_slots() << LogBytesPerInt;
 
   __ remove_frame(framesize);
-
-  if (NotifySimulator) {
-    __ notify(Assembler::method_reentry);
-  }
 
   if (StackReservedPages > 0 && C->has_reserved_stack_access()) {
     __ reserved_stack_check();
@@ -2193,17 +2185,21 @@ int HandlerImpl::emit_deopt_handler(CodeBuffer& cbuf)
 //=============================================================================
 
 const bool Matcher::match_rule_supported(int opcode) {
-
-  switch (opcode) {
-  default:
-    break;
-  }
-
-  if (!has_match_rule(opcode)) {
+  if (!has_match_rule(opcode))
     return false;
+
+  bool ret_value = true;
+  switch (opcode) {
+    case Op_CacheWB:
+    case Op_CacheWBPreSync:
+    case Op_CacheWBPostSync:
+      if (!VM_Version::supports_data_cache_line_flush()) {
+        ret_value = false;
+      }
+      break;
   }
 
-  return true;  // Per default match rules are supported.
+  return ret_value; // Per default match rules are supported.
 }
 
 const bool Matcher::match_rule_supported_vector(int opcode, int vlen) {
@@ -2507,47 +2503,6 @@ bool Matcher::clone_address_expressions(AddPNode* m, Matcher::MStack& mstack, Ve
 void Compile::reshape_address(AddPNode* addp) {
 }
 
-// helper for encoding java_to_runtime calls on sim
-//
-// this is needed to compute the extra arguments required when
-// planting a call to the simulator blrt instruction. the TypeFunc
-// can be queried to identify the counts for integral, and floating
-// arguments and the return type
-
-static void getCallInfo(const TypeFunc *tf, int &gpcnt, int &fpcnt, int &rtype)
-{
-  int gps = 0;
-  int fps = 0;
-  const TypeTuple *domain = tf->domain();
-  int max = domain->cnt();
-  for (int i = TypeFunc::Parms; i < max; i++) {
-    const Type *t = domain->field_at(i);
-    switch(t->basic_type()) {
-    case T_FLOAT:
-    case T_DOUBLE:
-      fps++;
-    default:
-      gps++;
-    }
-  }
-  gpcnt = gps;
-  fpcnt = fps;
-  BasicType rt = tf->return_type();
-  switch (rt) {
-  case T_VOID:
-    rtype = MacroAssembler::ret_type_void;
-    break;
-  default:
-    rtype = MacroAssembler::ret_type_integral;
-    break;
-  case T_FLOAT:
-    rtype = MacroAssembler::ret_type_float;
-    break;
-  case T_DOUBLE:
-    rtype = MacroAssembler::ret_type_double;
-    break;
-  }
-}
 
 #define MOV_VOLATILE(REG, BASE, INDEX, SCALE, DISP, SCRATCH, INSN)      \
   MacroAssembler _masm(&cbuf);                                          \
@@ -3497,7 +3452,7 @@ encode %{
 
     // some calls to generated routines (arraycopy code) are scheduled
     // by C2 as runtime calls. if so we can call them using a br (they
-    // will be in a reachable segment) otherwise we have to use a blrt
+    // will be in a reachable segment) otherwise we have to use a blr
     // which loads the absolute address into a register.
     address entry = (address)$meth$$method;
     CodeBlob *cb = CodeCache::find_blob(entry);
@@ -3508,16 +3463,12 @@ encode %{
         return;
       }
     } else {
-      int gpcnt;
-      int fpcnt;
-      int rtype;
-      getCallInfo(tf(), gpcnt, fpcnt, rtype);
       Label retaddr;
       __ adr(rscratch2, retaddr);
       __ lea(rscratch1, RuntimeAddress(entry));
       // Leave a breadcrumb for JavaFrameAnchor::capture_last_Java_pc()
       __ stp(zr, rscratch2, Address(__ pre(sp, -2 * wordSize)));
-      __ blrt(rscratch1, gpcnt, fpcnt, rtype);
+      __ blr(rscratch1);
       __ bind(retaddr);
       __ add(sp, sp, 2 * wordSize);
     }
@@ -3561,7 +3512,7 @@ encode %{
 
     assert_different_registers(oop, box, tmp, disp_hdr);
 
-    // Load markOop from object into displaced_header.
+    // Load markWord from object into displaced_header.
     __ ldr(disp_hdr, Address(oop, oopDesc::mark_offset_in_bytes()));
 
     if (UseBiasedLocking && !UseOptoBiasInlining) {
@@ -3569,17 +3520,17 @@ encode %{
     }
 
     // Check for existing monitor
-    __ tbnz(disp_hdr, exact_log2(markOopDesc::monitor_value), object_has_monitor);
+    __ tbnz(disp_hdr, exact_log2(markWord::monitor_value), object_has_monitor);
 
-    // Set tmp to be (markOop of object | UNLOCK_VALUE).
-    __ orr(tmp, disp_hdr, markOopDesc::unlocked_value);
+    // Set tmp to be (markWord of object | UNLOCK_VALUE).
+    __ orr(tmp, disp_hdr, markWord::unlocked_value);
 
     // Initialize the box. (Must happen before we update the object mark!)
     __ str(tmp, Address(box, BasicLock::displaced_header_offset_in_bytes()));
 
-    // Compare object markOop with an unlocked value (tmp) and if
-    // equal exchange the stack address of our box with object markOop.
-    // On failure disp_hdr contains the possibly locked markOop.
+    // Compare object markWord with an unlocked value (tmp) and if
+    // equal exchange the stack address of our box with object markWord.
+    // On failure disp_hdr contains the possibly locked markWord.
     __ cmpxchg(oop, tmp, box, Assembler::xword, /*acquire*/ true,
                /*release*/ true, /*weak*/ false, disp_hdr);
     __ br(Assembler::EQ, cont);
@@ -3593,10 +3544,10 @@ encode %{
     // We did not see an unlocked object so try the fast recursive case.
 
     // Check if the owner is self by comparing the value in the
-    // markOop of object (disp_hdr) with the stack pointer.
+    // markWord of object (disp_hdr) with the stack pointer.
     __ mov(rscratch1, sp);
     __ sub(disp_hdr, disp_hdr, rscratch1);
-    __ mov(tmp, (address) (~(os::vm_page_size()-1) | (uintptr_t)markOopDesc::lock_mask_in_place));
+    __ mov(tmp, (address) (~(os::vm_page_size()-1) | (uintptr_t)markWord::lock_mask_in_place));
     // If condition is true we are cont and hence we can store 0 as the
     // displaced header in the box, which indicates that it is a recursive lock.
     __ ands(tmp/*==0?*/, disp_hdr, tmp);   // Sets flags for result
@@ -3611,15 +3562,15 @@ encode %{
     // otherwise m->owner may contain a thread or a stack address.
     //
     // Try to CAS m->owner from NULL to current thread.
-    __ add(tmp, disp_hdr, (ObjectMonitor::owner_offset_in_bytes()-markOopDesc::monitor_value));
+    __ add(tmp, disp_hdr, (ObjectMonitor::owner_offset_in_bytes()-markWord::monitor_value));
     __ cmpxchg(tmp, zr, rthread, Assembler::xword, /*acquire*/ true,
                /*release*/ true, /*weak*/ false, noreg); // Sets flags for result
 
     // Store a non-null value into the box to avoid looking like a re-entrant
     // lock. The fast-path monitor unlock code checks for
-    // markOopDesc::monitor_value so use markOopDesc::unused_mark which has the
-    // relevant bit set, and also matches ObjectSynchronizer::slow_enter.
-    __ mov(tmp, (address)markOopDesc::unused_mark());
+    // markWord::monitor_value so use markWord::unused_mark which has the
+    // relevant bit set, and also matches ObjectSynchronizer::enter.
+    __ mov(tmp, (address)markWord::unused_mark().value());
     __ str(tmp, Address(box, BasicLock::displaced_header_offset_in_bytes()));
 
     __ bind(cont);
@@ -3651,10 +3602,10 @@ encode %{
 
     // Handle existing monitor.
     __ ldr(tmp, Address(oop, oopDesc::mark_offset_in_bytes()));
-    __ tbnz(disp_hdr, exact_log2(markOopDesc::monitor_value), object_has_monitor);
+    __ tbnz(disp_hdr, exact_log2(markWord::monitor_value), object_has_monitor);
 
     // Check if it is still a light weight lock, this is is true if we
-    // see the stack address of the basicLock in the markOop of the
+    // see the stack address of the basicLock in the markWord of the
     // object.
 
     __ cmpxchg(oop, box, disp_hdr, Assembler::xword, /*acquire*/ false,
@@ -3665,7 +3616,7 @@ encode %{
 
     // Handle existing monitor.
     __ bind(object_has_monitor);
-    __ add(tmp, tmp, -markOopDesc::monitor_value); // monitor
+    __ add(tmp, tmp, -markWord::monitor_value); // monitor
     __ ldr(rscratch1, Address(tmp, ObjectMonitor::owner_offset_in_bytes()));
     __ ldr(disp_hdr, Address(tmp, ObjectMonitor::recursions_offset_in_bytes()));
     __ eor(rscratch1, rscratch1, rthread); // Will be 0 if we are the owner.
@@ -7821,6 +7772,47 @@ instruct storeD_volatile(vRegD src, /* sync_memory*/indirect mem)
 %}
 
 //  ---------------- end of volatile loads and stores ----------------
+
+instruct cacheWB(indirect addr)
+%{
+  predicate(VM_Version::supports_data_cache_line_flush());
+  match(CacheWB addr);
+
+  ins_cost(100);
+  format %{"cache wb $addr" %}
+  ins_encode %{
+    assert($addr->index_position() < 0, "should be");
+    assert($addr$$disp == 0, "should be");
+    __ cache_wb(Address($addr$$base$$Register, 0));
+  %}
+  ins_pipe(pipe_slow); // XXX
+%}
+
+instruct cacheWBPreSync()
+%{
+  predicate(VM_Version::supports_data_cache_line_flush());
+  match(CacheWBPreSync);
+
+  ins_cost(100);
+  format %{"cache wb presync" %}
+  ins_encode %{
+    __ cache_wbsync(true);
+  %}
+  ins_pipe(pipe_slow); // XXX
+%}
+
+instruct cacheWBPostSync()
+%{
+  predicate(VM_Version::supports_data_cache_line_flush());
+  match(CacheWBPostSync);
+
+  ins_cost(100);
+  format %{"cache wb postsync" %}
+  ins_encode %{
+    __ cache_wbsync(false);
+  %}
+  ins_pipe(pipe_slow); // XXX
+%}
 
 // ============================================================================
 // BSWAP Instructions

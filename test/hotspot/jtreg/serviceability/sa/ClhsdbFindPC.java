@@ -45,8 +45,13 @@ public class ClhsdbFindPC {
         LingeredApp theApp = null;
         try {
             ClhsdbLauncher test = new ClhsdbLauncher();
-            theApp = withXcomp ? LingeredApp.startApp(List.of("-Xcomp"))
-                               : LingeredApp.startApp(List.of("-Xint"));
+
+            theApp = new LingeredAppWithTrivialMain();
+            if (withXcomp) {
+                LingeredApp.startApp(List.of("-Xcomp"), theApp);
+            } else {
+                LingeredApp.startApp(List.of("-Xint"), theApp);
+            }
             System.out.print("Started LingeredApp ");
             if (withXcomp) {
                 System.out.print("(-Xcomp) ");
@@ -67,7 +72,7 @@ public class ClhsdbFindPC {
             // attach permission issues.
             if (output != null) {
                 String cmdStr = null;
-                String[] parts = output.split("LingeredApp.main");
+                String[] parts = output.split("LingeredAppWithTrivialMain.main");
                 String[] tokens = parts[1].split(" ");
                 for (String token : tokens) {
                     if (token.contains("pc")) {
@@ -82,7 +87,7 @@ public class ClhsdbFindPC {
                 Map<String, List<String>> expStrMap = new HashMap<>();
                 if (withXcomp) {
                     expStrMap.put(cmdStr, List.of(
-                            "In code in NMethod for jdk/test/lib/apps/LingeredApp.main",
+                            "In code in NMethod for LingeredAppWithTrivialMain.main",
                             "content:",
                             "oops:",
                             "frame size:"));

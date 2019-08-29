@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2019, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2017, Red Hat Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -139,7 +139,7 @@ public class StackStoreLoadTest extends LIRTest {
     }
 
     @Test
-    public void runByte() throws Throwable {
+    public void runByte() {
         runTest("testByte", Byte.MIN_VALUE, supply(() -> new byte[3]));
         runTest("testByte", (byte) -1, supply(() -> new byte[3]));
         runTest("testByte", (byte) 0, supply(() -> new byte[3]));

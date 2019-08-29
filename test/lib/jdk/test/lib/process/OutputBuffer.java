@@ -25,6 +25,7 @@ package jdk.test.lib.process;
 
 import java.io.ByteArrayOutputStream;
 import java.io.InputStream;
+import java.nio.charset.Charset;
 import java.time.Instant;
 import java.util.concurrent.CancellationException;
 import java.util.concurrent.ExecutionException;
@@ -53,8 +54,12 @@ public interface OutputBuffer {
   public String getStderr();
   public int getExitValue();
 
+  public static OutputBuffer of(Process p, Charset cs) {
+    return new LazyOutputBuffer(p, cs);
+  }
+
   public static OutputBuffer of(Process p) {
-    return new LazyOutputBuffer(p);
+    return new LazyOutputBuffer(p, null);
   }
 
   public static OutputBuffer of(String stdout, String stderr, int exitValue) {
@@ -69,16 +74,18 @@ public interface OutputBuffer {
     private static class StreamTask {
       private final ByteArrayOutputStream buffer;
       private final Future<Void> future;
+      private final Charset cs;
 
-      private StreamTask(InputStream stream) {
+      private StreamTask(InputStream stream, Charset cs) {
         this.buffer = new ByteArrayOutputStream();
+        this.cs = cs;
         this.future = new StreamPumper(stream, buffer).process();
       }
 
       public String get() {
         try {
           future.get();
-          return buffer.toString();
+          return cs == null ? buffer.toString() : buffer.toString(cs);
         } catch (InterruptedException e) {
           Thread.currentThread().interrupt();
           throw new OutputBufferException(e);
@@ -98,11 +105,11 @@ public interface OutputBuffer {
         System.out.flush();
     }
 
-    private LazyOutputBuffer(Process p) {
+    private LazyOutputBuffer(Process p, Charset cs) {
       this.p = p;
       logProgress("Gathering output");
-      outTask = new StreamTask(p.getInputStream());
-      errTask = new StreamTask(p.getErrorStream());
+      outTask = new StreamTask(p.getInputStream(), cs);
+      errTask = new StreamTask(p.getErrorStream(), cs);
     }
 
     @Override

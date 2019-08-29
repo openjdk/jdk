@@ -32,6 +32,7 @@
 package build.tools.classlist;
 
 import java.net.InetAddress;
+import java.nio.file.FileSystems;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
@@ -55,6 +56,8 @@ public class HelloClasslist {
     private static final Logger LOGGER = Logger.getLogger("Hello");
 
     public static void main(String ... args) {
+
+        FileSystems.getDefault();
 
         List<String> strings = Arrays.asList("Hello", "World!", "From: ",
               InetAddress.getLoopbackAddress().toString());
@@ -84,6 +87,7 @@ public class HelloClasslist {
         String CICI   = "string" + args.length + "string" + args.length;
         String CJ     = "string" + System.currentTimeMillis();
         String JC     = System.currentTimeMillis() + "string";
+        String CD     = "string" + (args.length/2.0);
         String CJC    = "string" + System.currentTimeMillis() + "string";
         String CJCJ   = "string" + System.currentTimeMillis() + "string" + System.currentTimeMillis();
         String CJCJC  = "string" + System.currentTimeMillis() + "string" + System.currentTimeMillis() + "string";

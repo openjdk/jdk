@@ -43,4 +43,3 @@ abstract class IsGraalPredicateBase {
         return HotSpotJVMCICompilerFactory.CompilationLevelAdjustment.ByHolder;
     }
 }
-

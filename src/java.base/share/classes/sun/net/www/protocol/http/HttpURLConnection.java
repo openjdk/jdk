@@ -1178,7 +1178,13 @@ public class HttpURLConnection extends java.net.HttpURLConnection {
                     if (logger.isLoggable(PlatformLogger.Level.FINEST)) {
                         logger.finest("ProxySelector Request for " + uri);
                     }
-                    Iterator<Proxy> it = sel.select(uri).iterator();
+                    final List<Proxy> proxies;
+                    try {
+                        proxies = sel.select(uri);
+                    } catch (IllegalArgumentException iae) {
+                        throw new IOException("Failed to select a proxy", iae);
+                    }
+                    final Iterator<Proxy> it = proxies.iterator();
                     Proxy p;
                     while (it.hasNext()) {
                         p = it.next();
@@ -2265,6 +2271,8 @@ public class HttpURLConnection extends java.net.HttpURLConnection {
         if (host != null && authhdr.isPresent()) {
             HeaderParser p = authhdr.headerParser();
             String realm = p.findValue("realm");
+            String charset = p.findValue("charset");
+            boolean isUTF8 = (charset != null && charset.equalsIgnoreCase("UTF-8"));
             String scheme = authhdr.scheme();
             AuthScheme authScheme = UNKNOWN;
             if ("basic".equalsIgnoreCase(scheme)) {
@@ -2310,7 +2318,7 @@ public class HttpURLConnection extends java.net.HttpURLConnection {
                                     realm, scheme, url, RequestorType.PROXY);
                     if (a != null) {
                         ret = new BasicAuthentication(true, host, port, realm, a,
-                                             getAuthenticatorKey());
+                                             isUTF8, getAuthenticatorKey());
                     }
                     break;
                 case DIGEST:
@@ -2428,6 +2436,8 @@ public class HttpURLConnection extends java.net.HttpURLConnection {
             HeaderParser p = authhdr.headerParser();
             String realm = p.findValue("realm");
             String scheme = authhdr.scheme();
+            String charset = p.findValue("charset");
+            boolean isUTF8 = (charset != null && charset.equalsIgnoreCase("UTF-8"));
             AuthScheme authScheme = UNKNOWN;
             if ("basic".equalsIgnoreCase(scheme)) {
                 authScheme = BASIC;
@@ -2479,7 +2489,7 @@ public class HttpURLConnection extends java.net.HttpURLConnection {
                             realm, scheme, url, RequestorType.SERVER);
                     if (a != null) {
                         ret = new BasicAuthentication(false, url, realm, a,
-                                    getAuthenticatorKey());
+                                    isUTF8, getAuthenticatorKey());
                     }
                     break;
                 case DIGEST:

@@ -54,4 +54,3 @@ public abstract class WriteBarrier extends FixedWithNextNode implements Lowerabl
         return address;
     }
 }
-

@@ -64,7 +64,7 @@ ZHeap* ZHeap::_heap = NULL;
 
 ZHeap::ZHeap() :
     _workers(),
-    _object_allocator(_workers.nworkers()),
+    _object_allocator(),
     _page_allocator(heap_min_size(), heap_initial_size(), heap_max_size(), heap_max_reserve_size()),
     _page_table(),
     _forwarding_table(),
@@ -192,16 +192,6 @@ bool ZHeap::is_in(uintptr_t addr) const {
   }
 
   return false;
-}
-
-uintptr_t ZHeap::block_start(uintptr_t addr) const {
-  const ZPage* const page = _page_table.get(addr);
-  return page->block_start(addr);
-}
-
-bool ZHeap::block_is_obj(uintptr_t addr) const {
-  const ZPage* const page = _page_table.get(addr);
-  return page->block_is_obj(addr);
 }
 
 uint ZHeap::nconcurrent_worker_threads() const {

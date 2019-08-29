@@ -1252,19 +1252,19 @@ void Deoptimization::relock_objects(GrowableArray<MonitorInfo*>* monitors, JavaT
       assert(!mon_info->owner_is_scalar_replaced() || realloc_failures, "reallocation was missed");
       if (!mon_info->owner_is_scalar_replaced()) {
         Handle obj(thread, mon_info->owner());
-        markOop mark = obj->mark();
-        if (UseBiasedLocking && mark->has_bias_pattern()) {
+        markWord mark = obj->mark();
+        if (UseBiasedLocking && mark.has_bias_pattern()) {
           // New allocated objects may have the mark set to anonymously biased.
           // Also the deoptimized method may called methods with synchronization
           // where the thread-local object is bias locked to the current thread.
-          assert(mark->is_biased_anonymously() ||
-                 mark->biased_locker() == thread, "should be locked to current thread");
+          assert(mark.is_biased_anonymously() ||
+                 mark.biased_locker() == thread, "should be locked to current thread");
           // Reset mark word to unbiased prototype.
-          markOop unbiased_prototype = markOopDesc::prototype()->set_age(mark->age());
+          markWord unbiased_prototype = markWord::prototype().set_age(mark.age());
           obj->set_mark(unbiased_prototype);
         }
         BasicLock* lock = mon_info->lock();
-        ObjectSynchronizer::slow_enter(obj, lock, thread);
+        ObjectSynchronizer::enter(obj, lock, thread);
         assert(mon_info->owner()->is_locked(), "object must be locked now");
       }
     }
@@ -1374,7 +1374,7 @@ void Deoptimization::pop_frames_failed_reallocs(JavaThread* thread, vframeArray*
       for (int j = 0; j < monitors->number_of_monitors(); j++) {
         BasicObjectLock* src = monitors->at(j);
         if (src->obj() != NULL) {
-          ObjectSynchronizer::fast_exit(src->obj(), src->lock(), thread);
+          ObjectSynchronizer::exit(src->obj(), src->lock(), thread);
         }
       }
       array->element(i)->free_monitors(thread);

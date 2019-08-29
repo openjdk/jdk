@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,11 +25,13 @@
  * @test
  * @bug 4533243
  * @summary Closing a keep alive stream gives NullPointerException
+ * @library /test/lib
  * @run main/othervm/timeout=30 KeepAliveStreamCloseWithWrongContentLength
  */
 
 import java.net.*;
 import java.io.*;
+import jdk.test.lib.net.URIBuilder;
 
 public class KeepAliveStreamCloseWithWrongContentLength {
 
@@ -75,13 +77,20 @@ public class KeepAliveStreamCloseWithWrongContentLength {
     }
 
     public static void main (String[] args) throws Exception {
-        ServerSocket serversocket = new ServerSocket (0);
+        final InetAddress loopback = InetAddress.getLoopbackAddress();
+        final ServerSocket serversocket = new ServerSocket();
+        serversocket.bind(new InetSocketAddress(loopback, 0));
+
         try {
             int port = serversocket.getLocalPort ();
             XServer server = new XServer (serversocket);
             server.start ();
-            URL url = new URL ("http://localhost:"+port);
-            HttpURLConnection urlc = (HttpURLConnection)url.openConnection ();
+            URL url = URIBuilder.newBuilder()
+                .scheme("http")
+                .loopback()
+                .port(port)
+                .toURL();
+            HttpURLConnection urlc = (HttpURLConnection)url.openConnection(Proxy.NO_PROXY);
             InputStream is = urlc.getInputStream ();
             int c = 0;
             while (c != -1) {
@@ -98,7 +107,7 @@ public class KeepAliveStreamCloseWithWrongContentLength {
         } catch (NullPointerException e) {
             throw new RuntimeException (e);
         } finally {
-            if (serversocket != null) serversocket.close();
+            serversocket.close();
         }
     }
 }

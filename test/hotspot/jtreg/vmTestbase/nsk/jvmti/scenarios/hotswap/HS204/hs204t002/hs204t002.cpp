@@ -104,7 +104,7 @@ void JNICALL callbackBreakpoint(jvmtiEnv *jvmti_env,
                         sizeof(fileName)/sizeof(char));
     cls = jni->FindClass(SEARCH_NAME);
     printf("Agent::  Break Pont Reached..");
-    if (nsk_jvmti_redefineClass(jvmti, cls, fileName) == NSK_TRUE) {
+    if (nsk_jvmti_redefineClass(jvmti, cls, fileName)) {
         nsk_printf("\nMyClass :: Successfully redefined..\n");
     } else {
         nsk_printf("\nMyClass :: Failed to redefine ..\n");

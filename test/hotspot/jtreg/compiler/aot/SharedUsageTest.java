@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,7 +31,8 @@
  * @run driver compiler.aot.AotCompiler -libname libSharedUsageTest.so
  *      -class compiler.aot.SharedUsageTest
  *      -extraopt -XX:-UseCompressedOops
- * @run main/othervm -XX:+UseAOT -XX:AOTLibrary=./libSharedUsageTest.so
+ * @run main/othervm -XX:+UnlockExperimentalVMOptions -XX:+UseAOT
+ *      -XX:AOTLibrary=./libSharedUsageTest.so
  *      -XX:-UseCompressedOops
  *      -Dcompiler.aot.SharedUsageTest.parent=true
  *      compiler.aot.SharedUsageTest
@@ -62,7 +63,7 @@ public class SharedUsageTest {
                     new String[]{"libSharedUsageTest.so  aot library",
                         HELLO_MSG}, null, "Unexpected exit code",
                     "Unexpected output", ExitCode.OK, ADD_TEST_VM_OPTION,
-                    "-XX:+UseAOT", "-XX:+PrintAOT",
+                    "-XX:+UnlockExperimentalVMOptions", "-XX:+UseAOT", "-XX:+PrintAOT",
                     "-Dtest.jdk=" + Utils.TEST_JDK,
                     "-XX:AOTLibrary=./libSharedUsageTest.so",
                     SharedUsageTest.class.getName());

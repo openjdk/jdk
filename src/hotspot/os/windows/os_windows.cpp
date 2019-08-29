@@ -1365,11 +1365,14 @@ static int _print_module(const char* fname, address base_address,
 // in case of error it checks if .dll/.so was built for the
 // same architecture as Hotspot is running on
 void * os::dll_load(const char *name, char *ebuf, int ebuflen) {
+  log_info(os)("attempting shared library load of %s", name);
+
   void * result = LoadLibrary(name);
   if (result != NULL) {
     Events::log(NULL, "Loaded shared library %s", name);
     // Recalculate pdb search path if a DLL was loaded successfully.
     SymbolEngine::recalc_search_path();
+    log_info(os)("shared library load of %s was successful", name);
     return result;
   }
   DWORD errcode = GetLastError();
@@ -1378,6 +1381,7 @@ void * os::dll_load(const char *name, char *ebuf, int ebuflen) {
   lasterror(ebuf, (size_t) ebuflen);
   ebuf[ebuflen - 1] = '\0';
   Events::log(NULL, "Loading shared library %s failed, error code %lu", name, errcode);
+  log_info(os)("shared library load of %s failed, error code %lu", name, errcode);
 
   if (errcode == ERROR_MOD_NOT_FOUND) {
     strncpy(ebuf, "Can't find dependent libraries", ebuflen - 1);
@@ -4118,7 +4122,7 @@ jint os::init_2(void) {
   // in order to forward implicit exceptions from code in AOT
   // generated DLLs.  This is necessary since these DLLs are not
   // registered for structured exceptions like codecache methods are.
-  if (UseAOT) {
+  if (AOTLibrary != NULL && (UseAOT || FLAG_IS_DEFAULT(UseAOT))) {
     topLevelVectoredExceptionHandler = AddVectoredExceptionHandler( 1, topLevelVectoredExceptionFilter);
   }
 #endif
@@ -5798,4 +5802,8 @@ static void call_wrapper_dummy() {}
 void os::win32::initialize_thread_ptr_offset() {
   os::os_exception_wrapper((java_call_t)call_wrapper_dummy,
                            NULL, NULL, NULL, NULL);
+}
+
+bool os::supports_map_sync() {
+  return false;
 }

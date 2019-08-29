@@ -30,6 +30,463 @@
 #include "macroAssembler_x86.hpp"
 
 #ifdef _LP64
+
+void MacroAssembler::roundEnc(XMMRegister key, int rnum) {
+    for (int xmm_reg_no = 0; xmm_reg_no <=rnum; xmm_reg_no++) {
+      vaesenc(as_XMMRegister(xmm_reg_no), as_XMMRegister(xmm_reg_no), key, Assembler::AVX_512bit);
+    }
+}
+
+void MacroAssembler::lastroundEnc(XMMRegister key, int rnum) {
+    for (int xmm_reg_no = 0; xmm_reg_no <=rnum; xmm_reg_no++) {
+      vaesenclast(as_XMMRegister(xmm_reg_no), as_XMMRegister(xmm_reg_no), key, Assembler::AVX_512bit);
+    }
+}
+
+void MacroAssembler::roundDec(XMMRegister key, int rnum) {
+    for (int xmm_reg_no = 0; xmm_reg_no <=rnum; xmm_reg_no++) {
+      vaesdec(as_XMMRegister(xmm_reg_no), as_XMMRegister(xmm_reg_no), key, Assembler::AVX_512bit);
+    }
+}
+
+void MacroAssembler::lastroundDec(XMMRegister key, int rnum) {
+    for (int xmm_reg_no = 0; xmm_reg_no <=rnum; xmm_reg_no++) {
+      vaesdeclast(as_XMMRegister(xmm_reg_no), as_XMMRegister(xmm_reg_no), key, Assembler::AVX_512bit);
+    }
+}
+
+// Load key and shuffle operation
+void MacroAssembler::ev_load_key(XMMRegister xmmdst, Register key, int offset, XMMRegister xmm_shuf_mask=NULL) {
+    movdqu(xmmdst, Address(key, offset));
+    if (xmm_shuf_mask != NULL) {
+        pshufb(xmmdst, xmm_shuf_mask);
+    } else {
+       pshufb(xmmdst, ExternalAddress(StubRoutines::x86::key_shuffle_mask_addr()));
+    }
+   evshufi64x2(xmmdst, xmmdst, xmmdst, 0x0, Assembler::AVX_512bit);
+}
+
+// AES-ECB Encrypt Operation
+void MacroAssembler::aesecb_encrypt(Register src_addr, Register dest_addr, Register key, Register len) {
+
+    const Register pos = rax;
+    const Register rounds = r12;
+
+    Label NO_PARTS, LOOP, Loop_start, LOOP2, AES192, END_LOOP, AES256, REMAINDER, LAST2, END, KEY_192, KEY_256, EXIT;
+    push(r13);
+    push(r12);
+
+    // For EVEX with VL and BW, provide a standard mask, VL = 128 will guide the merge
+    // context for the registers used, where all instructions below are using 128-bit mode
+    // On EVEX without VL and BW, these instructions will all be AVX.
+    if (VM_Version::supports_avx512vlbw()) {
+       movl(rax, 0xffff);
+       kmovql(k1, rax);
+    }
+    push(len); // Save
+    push(rbx);
+
+    vzeroupper();
+
+    xorptr(pos, pos);
+
+    // Calculate number of rounds based on key length(128, 192, 256):44 for 10-rounds, 52 for 12-rounds, 60 for 14-rounds
+    movl(rounds, Address(key, arrayOopDesc::length_offset_in_bytes() - arrayOopDesc::base_offset_in_bytes(T_INT)));
+
+    // Load Key shuf mask
+    const XMMRegister xmm_key_shuf_mask = xmm31;  // used temporarily to swap key bytes up front
+    movdqu(xmm_key_shuf_mask, ExternalAddress(StubRoutines::x86::key_shuffle_mask_addr()));
+
+    // Load and shuffle key based on number of rounds
+    ev_load_key(xmm8, key, 0 * 16, xmm_key_shuf_mask);
+    ev_load_key(xmm9, key, 1 * 16, xmm_key_shuf_mask);
+    ev_load_key(xmm10, key, 2 * 16, xmm_key_shuf_mask);
+    ev_load_key(xmm23, key, 3 * 16, xmm_key_shuf_mask);
+    ev_load_key(xmm12, key, 4 * 16, xmm_key_shuf_mask);
+    ev_load_key(xmm13, key, 5 * 16, xmm_key_shuf_mask);
+    ev_load_key(xmm14, key, 6 * 16, xmm_key_shuf_mask);
+    ev_load_key(xmm15, key, 7 * 16, xmm_key_shuf_mask);
+    ev_load_key(xmm16, key, 8 * 16, xmm_key_shuf_mask);
+    ev_load_key(xmm17, key, 9 * 16, xmm_key_shuf_mask);
+    ev_load_key(xmm24, key, 10 * 16, xmm_key_shuf_mask);
+    cmpl(rounds, 52);
+    jcc(Assembler::greaterEqual, KEY_192);
+    jmp(Loop_start);
+
+    bind(KEY_192);
+    ev_load_key(xmm19, key, 11 * 16, xmm_key_shuf_mask);
+    ev_load_key(xmm20, key, 12 * 16, xmm_key_shuf_mask);
+    cmpl(rounds, 60);
+    jcc(Assembler::equal, KEY_256);
+    jmp(Loop_start);
+
+    bind(KEY_256);
+    ev_load_key(xmm21, key, 13 * 16, xmm_key_shuf_mask);
+    ev_load_key(xmm22, key, 14 * 16, xmm_key_shuf_mask);
+
+    bind(Loop_start);
+    movq(rbx, len);
+    // Divide length by 16 to convert it to number of blocks
+    shrq(len, 4);
+    shlq(rbx, 60);
+    jcc(Assembler::equal, NO_PARTS);
+    addq(len, 1);
+    // Check if number of blocks is greater than or equal to 32
+    // If true, 512 bytes are processed at a time (code marked by label LOOP)
+    // If not, 16 bytes are processed (code marked by REMAINDER label)
+    bind(NO_PARTS);
+    movq(rbx, len);
+    shrq(len, 5);
+    jcc(Assembler::equal, REMAINDER);
+    movl(r13, len);
+    // Compute number of blocks that will be processed 512 bytes at a time
+    // Subtract this from the total number of blocks which will then be processed by REMAINDER loop
+    shlq(r13, 5);
+    subq(rbx, r13);
+    //Begin processing 512 bytes
+    bind(LOOP);
+    // Move 64 bytes of PT data into a zmm register, as a result 512 bytes of PT loaded in zmm0-7
+    evmovdquq(xmm0, Address(src_addr, pos, Address::times_1, 0 * 64), Assembler::AVX_512bit);
+    evmovdquq(xmm1, Address(src_addr, pos, Address::times_1, 1 * 64), Assembler::AVX_512bit);
+    evmovdquq(xmm2, Address(src_addr, pos, Address::times_1, 2 * 64), Assembler::AVX_512bit);
+    evmovdquq(xmm3, Address(src_addr, pos, Address::times_1, 3 * 64), Assembler::AVX_512bit);
+    evmovdquq(xmm4, Address(src_addr, pos, Address::times_1, 4 * 64), Assembler::AVX_512bit);
+    evmovdquq(xmm5, Address(src_addr, pos, Address::times_1, 5 * 64), Assembler::AVX_512bit);
+    evmovdquq(xmm6, Address(src_addr, pos, Address::times_1, 6 * 64), Assembler::AVX_512bit);
+    evmovdquq(xmm7, Address(src_addr, pos, Address::times_1, 7 * 64), Assembler::AVX_512bit);
+    // Xor with the first round key
+    evpxorq(xmm0, xmm0, xmm8, Assembler::AVX_512bit);
+    evpxorq(xmm1, xmm1, xmm8, Assembler::AVX_512bit);
+    evpxorq(xmm2, xmm2, xmm8, Assembler::AVX_512bit);
+    evpxorq(xmm3, xmm3, xmm8, Assembler::AVX_512bit);
+    evpxorq(xmm4, xmm4, xmm8, Assembler::AVX_512bit);
+    evpxorq(xmm5, xmm5, xmm8, Assembler::AVX_512bit);
+    evpxorq(xmm6, xmm6, xmm8, Assembler::AVX_512bit);
+    evpxorq(xmm7, xmm7, xmm8, Assembler::AVX_512bit);
+    // 9 Aes encode round operations
+    roundEnc(xmm9,  7);
+    roundEnc(xmm10, 7);
+    roundEnc(xmm23, 7);
+    roundEnc(xmm12, 7);
+    roundEnc(xmm13, 7);
+    roundEnc(xmm14, 7);
+    roundEnc(xmm15, 7);
+    roundEnc(xmm16, 7);
+    roundEnc(xmm17, 7);
+    cmpl(rounds, 52);
+    jcc(Assembler::aboveEqual, AES192);
+    // Aesenclast round operation for keysize = 128
+    lastroundEnc(xmm24, 7);
+    jmp(END_LOOP);
+    //Additional 2 rounds of Aesenc operation for keysize = 192
+    bind(AES192);
+    roundEnc(xmm24, 7);
+    roundEnc(xmm19, 7);
+    cmpl(rounds, 60);
+    jcc(Assembler::aboveEqual, AES256);
+    // Aesenclast round for keysize = 192
+    lastroundEnc(xmm20, 7);
+    jmp(END_LOOP);
+    // 2 rounds of Aesenc operation and Aesenclast for keysize = 256
+    bind(AES256);
+    roundEnc(xmm20, 7);
+    roundEnc(xmm21, 7);
+    lastroundEnc(xmm22, 7);
+
+    bind(END_LOOP);
+    // Move 512 bytes of CT to destination
+    evmovdquq(Address(dest_addr, pos, Address::times_1, 0 * 64), xmm0, Assembler::AVX_512bit);
+    evmovdquq(Address(dest_addr, pos, Address::times_1, 1 * 64), xmm1, Assembler::AVX_512bit);
+    evmovdquq(Address(dest_addr, pos, Address::times_1, 2 * 64), xmm2, Assembler::AVX_512bit);
+    evmovdquq(Address(dest_addr, pos, Address::times_1, 3 * 64), xmm3, Assembler::AVX_512bit);
+    evmovdquq(Address(dest_addr, pos, Address::times_1, 4 * 64), xmm4, Assembler::AVX_512bit);
+    evmovdquq(Address(dest_addr, pos, Address::times_1, 5 * 64), xmm5, Assembler::AVX_512bit);
+    evmovdquq(Address(dest_addr, pos, Address::times_1, 6 * 64), xmm6, Assembler::AVX_512bit);
+    evmovdquq(Address(dest_addr, pos, Address::times_1, 7 * 64), xmm7, Assembler::AVX_512bit);
+
+    addq(pos, 512);
+    decq(len);
+    jcc(Assembler::notEqual, LOOP);
+
+    bind(REMAINDER);
+    vzeroupper();
+    cmpq(rbx, 0);
+    jcc(Assembler::equal, END);
+    // Process 16 bytes at a time
+    bind(LOOP2);
+    movdqu(xmm1, Address(src_addr, pos, Address::times_1, 0));
+    vpxor(xmm1, xmm1, xmm8, Assembler::AVX_128bit);
+    // xmm2 contains shuffled key for Aesenclast operation.
+    vmovdqu(xmm2, xmm24);
+
+    vaesenc(xmm1, xmm1, xmm9, Assembler::AVX_128bit);
+    vaesenc(xmm1, xmm1, xmm10, Assembler::AVX_128bit);
+    vaesenc(xmm1, xmm1, xmm23, Assembler::AVX_128bit);
+    vaesenc(xmm1, xmm1, xmm12, Assembler::AVX_128bit);
+    vaesenc(xmm1, xmm1, xmm13, Assembler::AVX_128bit);
+    vaesenc(xmm1, xmm1, xmm14, Assembler::AVX_128bit);
+    vaesenc(xmm1, xmm1, xmm15, Assembler::AVX_128bit);
+    vaesenc(xmm1, xmm1, xmm16, Assembler::AVX_128bit);
+    vaesenc(xmm1, xmm1, xmm17, Assembler::AVX_128bit);
+
+    cmpl(rounds, 52);
+    jcc(Assembler::below, LAST2);
+    vmovdqu(xmm2, xmm20);
+    vaesenc(xmm1, xmm1, xmm24, Assembler::AVX_128bit);
+    vaesenc(xmm1, xmm1, xmm19, Assembler::AVX_128bit);
+    cmpl(rounds, 60);
+    jcc(Assembler::below, LAST2);
+    vmovdqu(xmm2, xmm22);
+    vaesenc(xmm1, xmm1, xmm20, Assembler::AVX_128bit);
+    vaesenc(xmm1, xmm1, xmm21, Assembler::AVX_128bit);
+
+    bind(LAST2);
+    // Aesenclast round
+    vaesenclast(xmm1, xmm1, xmm2, Assembler::AVX_128bit);
+    // Write 16 bytes of CT to destination
+    movdqu(Address(dest_addr, pos, Address::times_1, 0), xmm1);
+    addq(pos, 16);
+    decq(rbx);
+    jcc(Assembler::notEqual, LOOP2);
+
+    bind(END);
+    // Zero out the round keys
+    evpxorq(xmm8, xmm8, xmm8, Assembler::AVX_512bit);
+    evpxorq(xmm9, xmm9, xmm9, Assembler::AVX_512bit);
+    evpxorq(xmm10, xmm10, xmm10, Assembler::AVX_512bit);
+    evpxorq(xmm23, xmm23, xmm23, Assembler::AVX_512bit);
+    evpxorq(xmm12, xmm12, xmm12, Assembler::AVX_512bit);
+    evpxorq(xmm13, xmm13, xmm13, Assembler::AVX_512bit);
+    evpxorq(xmm14, xmm14, xmm14, Assembler::AVX_512bit);
+    evpxorq(xmm15, xmm15, xmm15, Assembler::AVX_512bit);
+    evpxorq(xmm16, xmm16, xmm16, Assembler::AVX_512bit);
+    evpxorq(xmm17, xmm17, xmm17, Assembler::AVX_512bit);
+    evpxorq(xmm24, xmm24, xmm24, Assembler::AVX_512bit);
+    cmpl(rounds, 44);
+    jcc(Assembler::belowEqual, EXIT);
+    evpxorq(xmm19, xmm19, xmm19, Assembler::AVX_512bit);
+    evpxorq(xmm20, xmm20, xmm20, Assembler::AVX_512bit);
+    cmpl(rounds, 52);
+    jcc(Assembler::belowEqual, EXIT);
+    evpxorq(xmm21, xmm21, xmm21, Assembler::AVX_512bit);
+    evpxorq(xmm22, xmm22, xmm22, Assembler::AVX_512bit);
+    bind(EXIT);
+    pop(rbx);
+    pop(rax); // return length
+    pop(r12);
+    pop(r13);
+}
+
+// AES-ECB Decrypt Operation
+void MacroAssembler::aesecb_decrypt(Register src_addr, Register dest_addr, Register key, Register len)  {
+
+    Label NO_PARTS, LOOP, Loop_start, LOOP2, AES192, END_LOOP, AES256, REMAINDER, LAST2, END, KEY_192, KEY_256, EXIT;
+    const Register pos = rax;
+    const Register rounds = r12;
+    push(r13);
+    push(r12);
+
+    // For EVEX with VL and BW, provide a standard mask, VL = 128 will guide the merge
+    // context for the registers used, where all instructions below are using 128-bit mode
+    // On EVEX without VL and BW, these instructions will all be AVX.
+    if (VM_Version::supports_avx512vlbw()) {
+       movl(rax, 0xffff);
+       kmovql(k1, rax);
+    }
+
+    push(len); // Save
+    push(rbx);
+
+    vzeroupper();
+
+    xorptr(pos, pos);
+    // Calculate number of rounds i.e. based on key length(128, 192, 256):44 for 10-rounds, 52 for 12-rounds, 60 for 14-rounds
+    movl(rounds, Address(key, arrayOopDesc::length_offset_in_bytes() - arrayOopDesc::base_offset_in_bytes(T_INT)));
+
+    // Load Key shuf mask
+    const XMMRegister xmm_key_shuf_mask = xmm31;  // used temporarily to swap key bytes up front
+    movdqu(xmm_key_shuf_mask, ExternalAddress(StubRoutines::x86::key_shuffle_mask_addr()));
+
+    // Load and shuffle round keys. The java expanded key ordering is rotated one position in decryption.
+    // So the first round key is loaded from 1*16 here and last round key is loaded from 0*16
+    ev_load_key(xmm9,  key, 1 * 16, xmm_key_shuf_mask);
+    ev_load_key(xmm10, key, 2 * 16, xmm_key_shuf_mask);
+    ev_load_key(xmm11, key, 3 * 16, xmm_key_shuf_mask);
+    ev_load_key(xmm12, key, 4 * 16, xmm_key_shuf_mask);
+    ev_load_key(xmm13, key, 5 * 16, xmm_key_shuf_mask);
+    ev_load_key(xmm14, key, 6 * 16, xmm_key_shuf_mask);
+    ev_load_key(xmm15, key, 7 * 16, xmm_key_shuf_mask);
+    ev_load_key(xmm16, key, 8 * 16, xmm_key_shuf_mask);
+    ev_load_key(xmm17, key, 9 * 16, xmm_key_shuf_mask);
+    ev_load_key(xmm18, key, 10 * 16, xmm_key_shuf_mask);
+    ev_load_key(xmm27, key, 0 * 16, xmm_key_shuf_mask);
+    cmpl(rounds, 52);
+    jcc(Assembler::greaterEqual, KEY_192);
+    jmp(Loop_start);
+
+    bind(KEY_192);
+    ev_load_key(xmm19, key, 11 * 16, xmm_key_shuf_mask);
+    ev_load_key(xmm20, key, 12 * 16, xmm_key_shuf_mask);
+    cmpl(rounds, 60);
+    jcc(Assembler::equal, KEY_256);
+    jmp(Loop_start);
+
+    bind(KEY_256);
+    ev_load_key(xmm21, key, 13 * 16, xmm_key_shuf_mask);
+    ev_load_key(xmm22, key, 14 * 16, xmm_key_shuf_mask);
+    bind(Loop_start);
+    movq(rbx, len);
+    // Convert input length to number of blocks
+    shrq(len, 4);
+    shlq(rbx, 60);
+    jcc(Assembler::equal, NO_PARTS);
+    addq(len, 1);
+    // Check if number of blocks is greater than/ equal to 32
+    // If true, blocks then 512 bytes are processed at a time (code marked by label LOOP)
+    // If not, 16 bytes are processed (code marked by label REMAINDER)
+    bind(NO_PARTS);
+    movq(rbx, len);
+    shrq(len, 5);
+    jcc(Assembler::equal, REMAINDER);
+    movl(r13, len);
+    // Compute number of blocks that will be processed as 512 bytes at a time
+    // Subtract this from the total number of blocks, which will then be processed by REMAINDER loop.
+    shlq(r13, 5);
+    subq(rbx, r13);
+
+    bind(LOOP);
+    // Move 64 bytes of CT data into a zmm register, as a result 512 bytes of CT loaded in zmm0-7
+    evmovdquq(xmm0, Address(src_addr, pos, Address::times_1, 0 * 64), Assembler::AVX_512bit);
+    evmovdquq(xmm1, Address(src_addr, pos, Address::times_1, 1 * 64), Assembler::AVX_512bit);
+    evmovdquq(xmm2, Address(src_addr, pos, Address::times_1, 2 * 64), Assembler::AVX_512bit);
+    evmovdquq(xmm3, Address(src_addr, pos, Address::times_1, 3 * 64), Assembler::AVX_512bit);
+    evmovdquq(xmm4, Address(src_addr, pos, Address::times_1, 4 * 64), Assembler::AVX_512bit);
+    evmovdquq(xmm5, Address(src_addr, pos, Address::times_1, 5 * 64), Assembler::AVX_512bit);
+    evmovdquq(xmm6, Address(src_addr, pos, Address::times_1, 6 * 64), Assembler::AVX_512bit);
+    evmovdquq(xmm7, Address(src_addr, pos, Address::times_1, 7 * 64), Assembler::AVX_512bit);
+    // Xor with the first round key
+    evpxorq(xmm0, xmm0, xmm9, Assembler::AVX_512bit);
+    evpxorq(xmm1, xmm1, xmm9, Assembler::AVX_512bit);
+    evpxorq(xmm2, xmm2, xmm9, Assembler::AVX_512bit);
+    evpxorq(xmm3, xmm3, xmm9, Assembler::AVX_512bit);
+    evpxorq(xmm4, xmm4, xmm9, Assembler::AVX_512bit);
+    evpxorq(xmm5, xmm5, xmm9, Assembler::AVX_512bit);
+    evpxorq(xmm6, xmm6, xmm9, Assembler::AVX_512bit);
+    evpxorq(xmm7, xmm7, xmm9, Assembler::AVX_512bit);
+    // 9 rounds of Aesdec
+    roundDec(xmm10, 7);
+    roundDec(xmm11, 7);
+    roundDec(xmm12, 7);
+    roundDec(xmm13, 7);
+    roundDec(xmm14, 7);
+    roundDec(xmm15, 7);
+    roundDec(xmm16, 7);
+    roundDec(xmm17, 7);
+    roundDec(xmm18, 7);
+    cmpl(rounds, 52);
+    jcc(Assembler::aboveEqual, AES192);
+    // Aesdeclast round for keysize = 128
+    lastroundDec(xmm27, 7);
+    jmp(END_LOOP);
+
+    bind(AES192);
+    // 2 Additional rounds for keysize = 192
+    roundDec(xmm19, 7);
+    roundDec(xmm20, 7);
+    cmpl(rounds, 60);
+    jcc(Assembler::aboveEqual, AES256);
+    // Aesdeclast round for keysize = 192
+    lastroundDec(xmm27, 7);
+    jmp(END_LOOP);
+    bind(AES256);
+    // 2 Additional rounds and Aesdeclast for keysize = 256
+    roundDec(xmm21, 7);
+    roundDec(xmm22, 7);
+    lastroundDec(xmm27, 7);
+
+    bind(END_LOOP);
+    // Write 512 bytes of PT to the destination
+    evmovdquq(Address(dest_addr, pos, Address::times_1, 0 * 64), xmm0, Assembler::AVX_512bit);
+    evmovdquq(Address(dest_addr, pos, Address::times_1, 1 * 64), xmm1, Assembler::AVX_512bit);
+    evmovdquq(Address(dest_addr, pos, Address::times_1, 2 * 64), xmm2, Assembler::AVX_512bit);
+    evmovdquq(Address(dest_addr, pos, Address::times_1, 3 * 64), xmm3, Assembler::AVX_512bit);
+    evmovdquq(Address(dest_addr, pos, Address::times_1, 4 * 64), xmm4, Assembler::AVX_512bit);
+    evmovdquq(Address(dest_addr, pos, Address::times_1, 5 * 64), xmm5, Assembler::AVX_512bit);
+    evmovdquq(Address(dest_addr, pos, Address::times_1, 6 * 64), xmm6, Assembler::AVX_512bit);
+    evmovdquq(Address(dest_addr, pos, Address::times_1, 7 * 64), xmm7, Assembler::AVX_512bit);
+
+    addq(pos, 512);
+    decq(len);
+    jcc(Assembler::notEqual, LOOP);
+
+    bind(REMAINDER);
+    vzeroupper();
+    cmpq(rbx, 0);
+    jcc(Assembler::equal, END);
+    // Process 16 bytes at a time
+    bind(LOOP2);
+    movdqu(xmm1, Address(src_addr, pos, Address::times_1, 0));
+    vpxor(xmm1, xmm1, xmm9, Assembler::AVX_128bit);
+    // xmm2 contains shuffled key for Aesdeclast operation.
+    vmovdqu(xmm2, xmm27);
+
+    vaesdec(xmm1, xmm1, xmm10, Assembler::AVX_128bit);
+    vaesdec(xmm1, xmm1, xmm11, Assembler::AVX_128bit);
+    vaesdec(xmm1, xmm1, xmm12, Assembler::AVX_128bit);
+    vaesdec(xmm1, xmm1, xmm13, Assembler::AVX_128bit);
+    vaesdec(xmm1, xmm1, xmm14, Assembler::AVX_128bit);
+    vaesdec(xmm1, xmm1, xmm15, Assembler::AVX_128bit);
+    vaesdec(xmm1, xmm1, xmm16, Assembler::AVX_128bit);
+    vaesdec(xmm1, xmm1, xmm17, Assembler::AVX_128bit);
+    vaesdec(xmm1, xmm1, xmm18, Assembler::AVX_128bit);
+
+    cmpl(rounds, 52);
+    jcc(Assembler::below, LAST2);
+    vaesdec(xmm1, xmm1, xmm19, Assembler::AVX_128bit);
+    vaesdec(xmm1, xmm1, xmm20, Assembler::AVX_128bit);
+    cmpl(rounds, 60);
+    jcc(Assembler::below, LAST2);
+    vaesdec(xmm1, xmm1, xmm21, Assembler::AVX_128bit);
+    vaesdec(xmm1, xmm1, xmm22, Assembler::AVX_128bit);
+
+    bind(LAST2);
+    // Aesdeclast round
+    vaesdeclast(xmm1, xmm1, xmm2, Assembler::AVX_128bit);
+    // Write 16 bytes of PT to destination
+    movdqu(Address(dest_addr, pos, Address::times_1, 0), xmm1);
+    addq(pos, 16);
+    decq(rbx);
+    jcc(Assembler::notEqual, LOOP2);
+
+    bind(END);
+    // Zero out the round keys
+    evpxorq(xmm8, xmm8, xmm8, Assembler::AVX_512bit);
+    evpxorq(xmm9, xmm9, xmm9, Assembler::AVX_512bit);
+    evpxorq(xmm10, xmm10, xmm10, Assembler::AVX_512bit);
+    evpxorq(xmm11, xmm11, xmm11, Assembler::AVX_512bit);
+    evpxorq(xmm12, xmm12, xmm12, Assembler::AVX_512bit);
+    evpxorq(xmm13, xmm13, xmm13, Assembler::AVX_512bit);
+    evpxorq(xmm14, xmm14, xmm14, Assembler::AVX_512bit);
+    evpxorq(xmm15, xmm15, xmm15, Assembler::AVX_512bit);
+    evpxorq(xmm16, xmm16, xmm16, Assembler::AVX_512bit);
+    evpxorq(xmm17, xmm17, xmm17, Assembler::AVX_512bit);
+    evpxorq(xmm18, xmm18, xmm18, Assembler::AVX_512bit);
+    evpxorq(xmm27, xmm27, xmm27, Assembler::AVX_512bit);
+    cmpl(rounds, 44);
+    jcc(Assembler::belowEqual, EXIT);
+    evpxorq(xmm19, xmm19, xmm19, Assembler::AVX_512bit);
+    evpxorq(xmm20, xmm20, xmm20, Assembler::AVX_512bit);
+    cmpl(rounds, 52);
+    jcc(Assembler::belowEqual, EXIT);
+    evpxorq(xmm21, xmm21, xmm21, Assembler::AVX_512bit);
+    evpxorq(xmm22, xmm22, xmm22, Assembler::AVX_512bit);
+    bind(EXIT);
+    pop(rbx);
+    pop(rax); // return length
+    pop(r12);
+    pop(r13);
+}
+
 // Multiply 128 x 128 bits, using 4 pclmulqdq operations
 void MacroAssembler::schoolbookAAD(int i, Register htbl, XMMRegister data,
     XMMRegister tmp0, XMMRegister tmp1, XMMRegister tmp2, XMMRegister tmp3) {

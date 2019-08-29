@@ -31,16 +31,18 @@
 #include "utilities/globalDefinitions.hpp"
 
 class G1CollectedHeap;
+class G1RedirtyCardsQueueSet;
 
 // Task to fixup self-forwarding pointers
 // installed as a result of an evacuation failure.
 class G1ParRemoveSelfForwardPtrsTask: public AbstractGangTask {
 protected:
   G1CollectedHeap* _g1h;
+  G1RedirtyCardsQueueSet* _rdcqs;
   HeapRegionClaimer _hrclaimer;
 
 public:
-  G1ParRemoveSelfForwardPtrsTask();
+  G1ParRemoveSelfForwardPtrsTask(G1RedirtyCardsQueueSet* rdcqs);
 
   void work(uint worker_id);
 };

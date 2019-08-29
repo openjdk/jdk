@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2009, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -400,7 +400,7 @@ jobjectArray getRemoteAddresses(JNIEnv *env, jint fd, sctp_assoc_t id) {
     int i, addrCount;
     jobjectArray isaa;
 
-#if __solaris__
+#if defined(__solaris__)
     if ((addrCount = nio_sctp_getpaddrs(fd, id, (void **)&addr_buf)) == -1) {
 #else /* __linux__ */
     if ((addrCount = nio_sctp_getpaddrs(fd, id, (struct sockaddr **)&addr_buf)) == -1) {

@@ -1,4 +1,4 @@
-# Copyright (c) 2017, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2017, 2019, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -38,6 +38,6 @@ $JAVA_HOME/bin/jaotc $JAOTC_OPTS -J-XX:AOTLibrary=./libjdk.aot.$SO_TYPE --info -
 
 $JAVA_HOME/bin/javac -d . $DIR/HelloWorld.java
 
-$JAVA_HOME/bin/java -XX:-UseCompressedOops -XX:AOTLibrary=./libjava.base-aot.$SO_TYPE HelloWorld
+$JAVA_HOME/bin/java -XX:-UseCompressedOops -XX:+UnlockExperimentalVMOptions -XX:AOTLibrary=./libjava.base-aot.$SO_TYPE HelloWorld
 
 rm -f HelloWorld.class libjdk.aot.$SO_TYPE libjava.base-aot.$SO_TYPE

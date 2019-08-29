@@ -100,7 +100,6 @@ public class BasicTest {
         runJmod(classes.toString(), TEST_MODULE, true);
         runJlink(image, TEST_MODULE, "--launcher", "bar=" + TEST_MODULE);
         execute(image, "bar");
-
         Files.delete(jmods.resolve(TEST_MODULE + ".jmod"));
 
         image = Paths.get("myimage2");
@@ -108,7 +107,28 @@ public class BasicTest {
         // specify main class in --launcher command line
         runJlink(image, TEST_MODULE, "--launcher", "bar2=" + TEST_MODULE + "/jdk.test.Test");
         execute(image, "bar2");
+        Files.delete(jmods.resolve(TEST_MODULE + ".jmod"));
 
+        image = Paths.get("myadder");
+        runJmod(classes.toString(), TEST_MODULE, false /* no ModuleMainClass! */);
+        // specify main class in --launcher command line
+        runJlink(image, TEST_MODULE, "--launcher", "adder=" + TEST_MODULE + "/jdk.test.Adder");
+        addAndCheck(image, "adder");
+    }
+
+    private void addAndCheck(Path image, String scriptName) throws Throwable {
+        String cmd = image.resolve("bin").resolve(scriptName).toString();
+        OutputAnalyzer analyzer;
+        if (System.getProperty("os.name").startsWith("Windows")) {
+            analyzer = ProcessTools.executeProcess("sh.exe", cmd, "12", "8", "7", "--", "foo bar");
+        } else {
+            analyzer = ProcessTools.executeProcess(cmd, "12", "8", "7", "--", "foo bar");
+        }
+        if (analyzer.getExitValue() != 27) {
+            throw new AssertionError("Image invocation failed: expected 27, rc=" + analyzer.getExitValue());
+        }
+        // last argument contains space and should be properly quoted.
+        analyzer.stdoutShouldContain("Num args: 5");
     }
 
     private void execute(Path image, String scriptName) throws Throwable {

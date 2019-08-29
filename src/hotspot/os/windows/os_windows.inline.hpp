@@ -81,26 +81,33 @@ inline void os::exit(int num) {
   win32::exit_process_or_thread(win32::EPT_PROCESS, num);
 }
 
-// Platform Monitor implementation
+// Platform Mutex/Monitor implementation
 
-inline os::PlatformMonitor::PlatformMonitor() {
-  InitializeConditionVariable(&_cond);
+inline os::PlatformMutex::PlatformMutex() {
   InitializeCriticalSection(&_mutex);
 }
 
-inline os::PlatformMonitor::~PlatformMonitor() {
+inline os::PlatformMutex::~PlatformMutex() {
   DeleteCriticalSection(&_mutex);
 }
 
-inline void os::PlatformMonitor::lock() {
+inline os::PlatformMonitor::PlatformMonitor() {
+  InitializeConditionVariable(&_cond);
+}
+
+inline os::PlatformMonitor::~PlatformMonitor() {
+  // There is no DeleteConditionVariable API
+}
+
+inline void os::PlatformMutex::lock() {
   EnterCriticalSection(&_mutex);
 }
 
-inline void os::PlatformMonitor::unlock() {
+inline void os::PlatformMutex::unlock() {
   LeaveCriticalSection(&_mutex);
 }
 
-inline bool os::PlatformMonitor::try_lock() {
+inline bool os::PlatformMutex::try_lock() {
   return TryEnterCriticalSection(&_mutex);
 }
 

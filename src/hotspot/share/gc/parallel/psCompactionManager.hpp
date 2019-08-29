@@ -43,7 +43,9 @@ class ParCompactionManager : public CHeapObj<mtGC> {
   friend class CompactionWithStealingTask;
   friend class UpdateAndFillClosure;
   friend class RefProcTaskExecutor;
-  friend class IdleGCTask;
+  friend class PCRefProcTask;
+  friend class MarkFromRootsTask;
+  friend class UpdateDensePrefixAndCompactionTask;
 
  public:
 

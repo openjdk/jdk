@@ -182,11 +182,13 @@ public class File
      * @return true if the file path is invalid.
      */
     final boolean isInvalid() {
-        if (status == null) {
-            status = (this.path.indexOf('\u0000') < 0) ? PathStatus.CHECKED
-                                                       : PathStatus.INVALID;
+        PathStatus s = status;
+        if (s == null) {
+            s = (this.path.indexOf('\u0000') < 0) ? PathStatus.CHECKED
+                                                  : PathStatus.INVALID;
+            status = s;
         }
-        return status == PathStatus.INVALID;
+        return s == PathStatus.INVALID;
     }
 
     /**

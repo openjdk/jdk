@@ -48,4 +48,3 @@ public class WriteBarrierAdditionPhase extends BasePhase<MidTierContext> {
         return false;
     }
 }
-

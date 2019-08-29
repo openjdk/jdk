@@ -107,10 +107,6 @@ public:
   bool is_in(uintptr_t addr) const;
   uint32_t hash_oop(oop obj) const;
 
-  // Block
-  uintptr_t block_start(uintptr_t addr) const;
-  bool block_is_obj(uintptr_t addr) const;
-
   // Workers
   uint nconcurrent_worker_threads() const;
   uint nconcurrent_no_boost_worker_threads() const;

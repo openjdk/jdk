@@ -531,7 +531,7 @@ class BinaryClass extends ClassDefinition implements Constants {
     /**
      * Get a class attribute
      */
-    public byte getAttribute(Identifier name)[] {
+    public byte[] getAttribute(Identifier name) {
         for (BinaryAttribute att = atts ; att != null ; att = att.next) {
             if (att.name.equals(name)) {
                 return att.data;

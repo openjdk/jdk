@@ -23,6 +23,15 @@
  * questions.
  */
 
+import java.nio.file.Files;
+import java.nio.file.LinkOption;
+import java.nio.file.Path;
+import java.nio.file.attribute.FileAttributeView;
+import java.nio.file.attribute.PosixFileAttributes;
+import java.nio.file.attribute.PosixFilePermission;
+import java.nio.file.attribute.PosixFileAttributeView;
+import java.util.Set;
+
 /**
  * Provides the implementation of the Zip file system provider.
  * The Zip file system provider treats the contents of a Zip or JAR file as a file system.
@@ -32,13 +41,90 @@
  * The {@linkplain java.nio.file.FileSystems FileSystems} {@code newFileSystem}
  * static factory methods can be used to:
  * <ul>
- *     <li>Create a Zip file system</li>
- *     <li>Open an existing file as a Zip file system</li>
+ *   <li>Create a Zip file system</li>
+ *   <li>Open an existing file as a Zip file system</li>
  * </ul>
  *
- * <h3>URI Scheme Used to Identify the Zip File System</h3>
+ * <h2>URI Scheme Used to Identify the Zip File System</h2>
  *
  * The URI {@link java.net.URI#getScheme scheme} that identifies the ZIP file system is {@code jar}.
+ *
+ * <h2>POSIX file attributes</h2>
+ *
+ * A Zip file system supports a file attribute {@link FileAttributeView view}
+ * named "{@code zip}" that defines the following file attribute:
+ *
+ * <blockquote>
+ * <table class="striped">
+ * <caption style="display:none">Supported attributes</caption>
+ * <thead>
+ *   <tr>
+ *     <th scope="col">Name</th>
+ *     <th scope="col">Type</th>
+ *   </tr>
+ * </thead>
+ * <tbody>
+ *   <tr>
+ *     <th scope="row">permissions</th>
+ *     <td>{@link Set}&lt;{@link PosixFilePermission}&gt;</td>
+ *   </tr>
+ * </tbody>
+ * </table>
+ * </blockquote>
+ *
+ * The "permissions" attribute is the set of access permissions that are optionally
+ * stored for entries in a Zip file. The value of the attribute is {@code null}
+ * for entries that do not have access permissions. Zip file systems do not
+ * enforce access permissions.
+ *
+ * <p> The "permissions" attribute may be read and set using the
+ * {@linkplain Files#getAttribute(Path, String, LinkOption...) Files.getAttribute} and
+ * {@linkplain Files#setAttribute(Path, String, Object, LinkOption...) Files.setAttribute}
+ * methods. The following example uses these methods to read and set the attribute:
+ * <pre> {@code
+ *     Set<PosixFilePermission> perms = Files.getAttribute(entry, "zip:permissions");
+ *     if (perms == null) {
+ *         perms = PosixFilePermissions.fromString("rw-rw-rw-");
+ *         Files.setAttribute(entry, "zip:permissions", perms);
+ *     }
+ * } </pre>
+ *
+ * <p> In addition to the "{@code zip}" view, a Zip file system optionally supports
+ * the {@link PosixFileAttributeView} ("{@code posix}").
+ * This view extends the "{@code basic}" view with type safe access to the
+ * {@link PosixFileAttributes#owner() owner}, {@link PosixFileAttributes#group() group-owner},
+ * and {@link PosixFileAttributes#permissions() permissions} attributes. The
+ * "{@code posix}" view is only supported when the Zip file system is created with
+ * the provider property "{@code enablePosixFileAttributes}" set to "{@code true}".
+ * The following creates a file system with this property and reads the access
+ * permissions of a file:
+ * <pre> {@code
+ *     var env = Map.of("enablePosixFileAttributes", "true");
+ *     try (FileSystem fs = FileSystems.newFileSystem(file, env) {
+ *         Path entry = fs.getPath("entry");
+ *         Set<PosixFilePermission> perms = Files.getPosixFilePermissions(entry);
+ *     }
+ * } </pre>
+ *
+ * <p> The file owner and group owner attributes are not persisted, meaning they are
+ * not stored in the zip file. The "{@code defaultOwner}" and "{@code defaultGroup}"
+ * provider properties (listed below) can be used to configure the default values
+ * for these attributes. If these properties are not set then the file owner
+ * defaults to the owner of the zip file, and the group owner defaults to the
+ * zip file's group owner (or the file owner on platforms that don't support a
+ * group owner).
+ *
+ * <p> The "{@code permissions}" attribute is not optional in the "{@code posix}"
+ * view so a default set of permissions are used for entries that do not have
+ * access permissions stored in the Zip file. The default set of permissions
+ * are
+ * <ul>
+ *   <li>{@link PosixFilePermission#OWNER_READ OWNER_READ}</li>
+ *   <li>{@link PosixFilePermission#OWNER_WRITE OWNER_WRITE}</li>
+ *   <li>{@link PosixFilePermission#GROUP_READ GROUP_READ}</li>
+ * </ul>
+ * The default permissions can be configured with the "{@code defaultPermissions}"
+ * property described below.
  *
  * <h2>Zip File System Properties</h2>
  *
@@ -50,12 +136,12 @@
  *     a new Zip file system
  * </caption>
  * <thead>
- * <tr>
- * <th scope="col">Property Name</th>
- * <th scope="col">Data Type</th>
- * <th scope="col">Default Value</th>
- * <th scope="col">Description</th>
- * </tr>
+ *   <tr>
+ *     <th scope="col">Property Name</th>
+ *     <th scope="col">Data Type</th>
+ *     <th scope="col">Default Value</th>
+ *     <th scope="col">Description</th>
+ *   </tr>
  * </thead>
  *
  * <tbody>
@@ -75,6 +161,44 @@
  *   <td>
  *       The value indicates the encoding scheme for the
  *       names of the entries in the Zip or JAR file.
+ *   </td>
+ * </tr>
+ * <tr>
+ *   <td scope="row">enablePosixFileAttributes</td>
+ *   <td>java.lang.String</td>
+ *   <td>false</td>
+ *   <td>
+ *       If the value is {@code true}, the Zip file system will support
+ *       the {@link java.nio.file.attribute.PosixFileAttributeView PosixFileAttributeView}.
+ *   </td>
+ * </tr>
+ * <tr>
+ *   <td scope="row">defaultOwner</td>
+ *   <td>{@link java.nio.file.attribute.UserPrincipal UserPrincipal}<br> or java.lang.String</td>
+ *   <td>null/unset</td>
+ *   <td>
+ *       Override the default owner for entries in the Zip file system.<br>
+ *       The value can be a UserPrincipal or a String value that is used as the UserPrincipal's name.
+ *   </td>
+ * </tr>
+ * <tr>
+ *   <td scope="row">defaultGroup</td>
+ *   <td>{@link java.nio.file.attribute.GroupPrincipal GroupPrincipal}<br> or java.lang.String</td>
+ *   <td>null/unset</td>
+ *   <td>
+ *       Override the the default group for entries in the Zip file system.<br>
+ *       The value can be a GroupPrincipal or a String value that is used as the GroupPrincipal's name.
+ *   </td>
+ * </tr>
+ * <tr>
+ *   <td scope="row">defaultPermissions</td>
+ *   <td>{@link java.util.Set Set}&lt;{@link java.nio.file.attribute.PosixFilePermission PosixFilePermission}&gt;<br>
+ *       or java.lang.String</td>
+ *   <td>null/unset</td>
+ *   <td>
+ *       Override the default Set of permissions for entries in the Zip file system.<br>
+ *       The value can be a {@link java.util.Set Set}&lt;{@link java.nio.file.attribute.PosixFilePermission PosixFilePermission}&gt; or<br>
+ *       a String that is parsed by {@link java.nio.file.attribute.PosixFilePermissions#fromString PosixFilePermissions::fromString}
  *   </td>
  * </tr>
  * </tbody>

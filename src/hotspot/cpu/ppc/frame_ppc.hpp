@@ -250,9 +250,6 @@
         (offset_of(frame::top_ijava_frame_abi, _component))
 
   struct ijava_state {
-#ifdef ASSERT
-    uint64_t ijava_reserved; // Used for assertion.
-#endif
     uint64_t method;
     uint64_t mirror;
     uint64_t locals;
@@ -408,12 +405,6 @@
 
   // The size of a cInterpreter object.
   static inline int interpreter_frame_cinterpreterstate_size_in_bytes();
-
- private:
-
-  ConstantPoolCache** interpreter_frame_cpoolcache_addr() const;
-
- public:
 
   // Additional interface for entry frames:
   inline entry_frame_locals* get_entry_frame_locals() const {

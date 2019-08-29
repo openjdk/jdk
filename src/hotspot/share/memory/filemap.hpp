@@ -49,8 +49,12 @@ class SharedClassPathEntry {
     jar_entry,
     signed_jar_entry,
     dir_entry,
+    non_existent_entry,
     unknown_entry
   };
+
+  void set_name(const char* name, TRAPS);
+
 protected:
   u1     _type;
   bool   _from_class_path_attr;
@@ -61,24 +65,25 @@ protected:
 
 public:
   void init(bool is_modules_image, ClassPathEntry* cpe, TRAPS);
+  void init_as_non_existent(const char* path, TRAPS);
   void metaspace_pointers_do(MetaspaceClosure* it);
-  bool validate(bool is_class_path = true);
+  bool validate(bool is_class_path = true) const;
 
   // The _timestamp only gets set for jar files.
-  bool has_timestamp() {
+  bool has_timestamp() const {
     return _timestamp != 0;
   }
-  bool is_dir()            { return _type == dir_entry; }
-  bool is_modules_image()  { return _type == modules_image_entry; }
-  bool is_jar()            { return _type == jar_entry; }
-  bool is_signed()         { return _type == signed_jar_entry; }
-  void set_is_signed()     {
+  bool is_dir()           const { return _type == dir_entry; }
+  bool is_modules_image() const { return _type == modules_image_entry; }
+  bool is_jar()           const { return _type == jar_entry; }
+  bool is_signed()        const { return _type == signed_jar_entry; }
+  void set_is_signed() {
     _type = signed_jar_entry;
   }
   bool from_class_path_attr() { return _from_class_path_attr; }
   time_t timestamp() const { return _timestamp; }
   long   filesize()  const { return _filesize; }
-  const char* name() const { return _name->data(); }
+  const char* name() const;
   const char* manifest() const {
     return (_manifest == NULL) ? NULL : (const char*)_manifest->data();
   }
@@ -88,6 +93,7 @@ public:
   void set_manifest(Array<u1>* manifest) {
     _manifest = manifest;
   }
+  bool check_non_existent() const;
 };
 
 struct ArchiveHeapOopmapInfo {
@@ -147,30 +153,12 @@ struct FileMapHeader : public CDSFileMapHeaderBase {
   // size of the base archive name including NULL terminator
   int _base_archive_name_size;
 
-  // The _paths_misc_info is a variable-size structure that records "miscellaneous"
-  // information during dumping. It is generated and validated by the
-  // SharedPathsMiscInfo class. See SharedPathsMiscInfo.hpp for
-  // detailed description.
-  //
-  // The _paths_misc_info data is stored as a byte array in the archive file header,
-  // immediately after the _header field. This information is used only when
-  // checking the validity of the archive and is deallocated after the archive is loaded.
-  //
-  // Note that the _paths_misc_info does NOT include information for JAR files
-  // that existed during dump time. Their information is stored in _shared_path_table.
-  int _paths_misc_info_size;
-
-  // The following is a table of all the class path entries that were used
-  // during dumping. At run time, we require these files to exist and have the same
-  // size/modification time, or else the archive will refuse to load.
-  //
-  // All of these entries must be JAR files. The dumping process would fail if a non-empty
-  // directory was specified in the classpaths. If an empty directory was specified
-  // it is checked by the _paths_misc_info as described above.
-  //
-  // FIXME -- if JAR files in the tail of the list were specified but not used during dumping,
-  // they should be removed from this table, to save space and to avoid spurious
-  // loading failures during runtime.
+  // The following is a table of all the boot/app/module path entries that were used
+  // during dumping. At run time, we validate these entries according to their
+  // SharedClassPathEntry::_type. See:
+  //      check_nonempty_dir_in_shared_path_table()
+  //      validate_shared_path_table()
+  //      validate_non_existent_class_paths()
   SharedPathTable _shared_path_table;
 
   jshort _app_class_paths_start_index;  // Index of first app classpath entry
@@ -232,19 +220,22 @@ public:
   FileMapHeader * _header;
 
   const char* _full_path;
-  char* _paths_misc_info;
   char* _base_archive_name;
 
   static FileMapInfo* _current_info;
   static FileMapInfo* _dynamic_archive_info;
   static bool _heap_pointers_need_patching;
   static bool _memory_mapping_failed;
+  static GrowableArray<const char*>* _non_existent_class_paths;
+
   static bool get_base_archive_name_from_header(const char* archive_name,
                                                 int* size, char** base_archive_name);
   static bool check_archive(const char* archive_name, bool is_static);
   void restore_shared_path_table();
   bool  init_from_file(int fd, bool is_static);
   static void metaspace_pointers_do(MetaspaceClosure* it);
+
+  void log_paths(const char* msg, int start_idx, int end_idx);
 
 public:
   FileMapInfo(bool is_static);
@@ -353,9 +344,13 @@ public:
   static void stop_sharing_and_unmap(const char* msg);
 
   static void allocate_shared_path_table();
+  static int add_shared_classpaths(int i, const char* which, ClassPathEntry *cpe, TRAPS);
   static void check_nonempty_dir_in_shared_path_table();
   bool validate_shared_path_table();
-  static void update_shared_classpath(ClassPathEntry *cpe, SharedClassPathEntry* ent, TRAPS);
+  void validate_non_existent_class_paths();
+  static void update_jar_manifest(ClassPathEntry *cpe, SharedClassPathEntry* ent, TRAPS);
+  static int num_non_existent_class_paths();
+  static void record_non_existent_class_path_entry(const char* path);
 
 #if INCLUDE_JVMTI
   static ClassFileStream* open_stream_for_jvmti(InstanceKlass* ik, Handle class_loader, TRAPS);
@@ -379,11 +374,10 @@ public:
  private:
   char* skip_first_path_entry(const char* path) NOT_CDS_RETURN_(NULL);
   int   num_paths(const char* path) NOT_CDS_RETURN_(0);
-  GrowableArray<char*>* create_path_array(const char* path) NOT_CDS_RETURN_(NULL);
+  GrowableArray<const char*>* create_path_array(const char* path) NOT_CDS_RETURN_(NULL);
   bool  fail(const char* msg, const char* name) NOT_CDS_RETURN_(false);
-  bool  check_paths(int shared_path_start_idx,
-                    int num_paths,
-                    GrowableArray<char*>* rp_array) NOT_CDS_RETURN_(false);
+  bool  check_paths(int shared_path_start_idx, int num_paths,
+                    GrowableArray<const char*>* rp_array) NOT_CDS_RETURN_(false);
   bool  validate_boot_class_paths() NOT_CDS_RETURN_(false);
   bool  validate_app_class_paths(int shared_app_paths_len) NOT_CDS_RETURN_(false);
   bool  map_heap_data(MemRegion **heap_mem, int first, int max, int* num,

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -415,7 +415,8 @@ public class Util {
                             new Class<?>[] { int.class,
                                              long.class,
                                              FileDescriptor.class,
-                                             Runnable.class });
+                                             Runnable.class,
+                                             boolean.class });
                         ctor.setAccessible(true);
                         directByteBufferConstructor = ctor;
                     } catch (ClassNotFoundException   |
@@ -430,7 +431,8 @@ public class Util {
 
     static MappedByteBuffer newMappedByteBuffer(int size, long addr,
                                                 FileDescriptor fd,
-                                                Runnable unmapper)
+                                                Runnable unmapper,
+                                                boolean isSync)
     {
         MappedByteBuffer dbb;
         if (directByteBufferConstructor == null)
@@ -440,7 +442,8 @@ public class Util {
               new Object[] { size,
                              addr,
                              fd,
-                             unmapper });
+                             unmapper,
+                             isSync});
         } catch (InstantiationException |
                  IllegalAccessException |
                  InvocationTargetException e) {
@@ -460,7 +463,8 @@ public class Util {
                             new Class<?>[] { int.class,
                                              long.class,
                                              FileDescriptor.class,
-                                             Runnable.class });
+                                             Runnable.class,
+                                             boolean.class });
                         ctor.setAccessible(true);
                         directByteBufferRConstructor = ctor;
                     } catch (ClassNotFoundException |
@@ -475,7 +479,8 @@ public class Util {
 
     static MappedByteBuffer newMappedByteBufferR(int size, long addr,
                                                  FileDescriptor fd,
-                                                 Runnable unmapper)
+                                                 Runnable unmapper,
+                                                 boolean isSync)
     {
         MappedByteBuffer dbb;
         if (directByteBufferRConstructor == null)
@@ -485,7 +490,8 @@ public class Util {
               new Object[] { size,
                              addr,
                              fd,
-                             unmapper });
+                             unmapper,
+                             isSync});
         } catch (InstantiationException |
                  IllegalAccessException |
                  InvocationTargetException e) {

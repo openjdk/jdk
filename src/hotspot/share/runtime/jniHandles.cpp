@@ -24,6 +24,7 @@
 
 #include "precompiled.hpp"
 #include "gc/shared/oopStorage.inline.hpp"
+#include "gc/shared/oopStorageSet.hpp"
 #include "logging/log.hpp"
 #include "memory/iterator.hpp"
 #include "memory/universe.hpp"
@@ -36,17 +37,21 @@
 #include "utilities/align.hpp"
 #include "utilities/debug.hpp"
 
+static OopStorage* global_handles() {
+  return OopStorageSet::jni_global();
+}
+
+static OopStorage* weak_global_handles() {
+  return OopStorageSet::jni_weak();
+}
+
+// Serviceability agent support.
 OopStorage* JNIHandles::_global_handles = NULL;
 OopStorage* JNIHandles::_weak_global_handles = NULL;
 
-OopStorage* JNIHandles::global_handles() {
-  assert(_global_handles != NULL, "Uninitialized JNI global handles");
-  return _global_handles;
-}
-
-OopStorage* JNIHandles::weak_global_handles() {
-  assert(_weak_global_handles != NULL, "Uninitialized JNI weak global handles");
-  return _weak_global_handles;
+void jni_handles_init() {
+  JNIHandles::_global_handles = global_handles();
+  JNIHandles::_weak_global_handles = weak_global_handles();
 }
 
 
@@ -115,8 +120,6 @@ jobject JNIHandles::make_global(Handle obj, AllocFailType alloc_failmode) {
     } else {
       report_handle_allocation_failure(alloc_failmode, "global");
     }
-  } else {
-    CHECK_UNHANDLED_OOPS_ONLY(Thread::current()->clear_unhandled_oops());
   }
 
   return res;
@@ -140,8 +143,6 @@ jobject JNIHandles::make_weak_global(Handle obj, AllocFailType alloc_failmode) {
     } else {
       report_handle_allocation_failure(alloc_failmode, "weak global");
     }
-  } else {
-    CHECK_UNHANDLED_OOPS_ONLY(Thread::current()->clear_unhandled_oops());
   }
   return res;
 }
@@ -198,16 +199,6 @@ void JNIHandles::weak_oops_do(BoolObjectClosure* is_alive, OopClosure* f) {
 
 void JNIHandles::weak_oops_do(OopClosure* f) {
   weak_global_handles()->weak_oops_do(f);
-}
-
-
-void JNIHandles::initialize() {
-  _global_handles = new OopStorage("JNI Global",
-                                   JNIGlobalAlloc_lock,
-                                   JNIGlobalActive_lock);
-  _weak_global_handles = new OopStorage("JNI Weak",
-                                        JNIWeakAlloc_lock,
-                                        JNIWeakActive_lock);
 }
 
 
@@ -336,17 +327,30 @@ bool JNIHandles::current_thread_in_native() {
 }
 
 
-void jni_handles_init() {
-  JNIHandles::initialize();
-}
-
-
 int             JNIHandleBlock::_blocks_allocated     = 0;
 JNIHandleBlock* JNIHandleBlock::_block_free_list      = NULL;
 #ifndef PRODUCT
 JNIHandleBlock* JNIHandleBlock::_block_list           = NULL;
 #endif
 
+static inline bool is_tagged_free_list(uintptr_t value) {
+  return (value & 1u) != 0;
+}
+
+static inline uintptr_t tag_free_list(uintptr_t value) {
+  return value | 1u;
+}
+
+static inline uintptr_t untag_free_list(uintptr_t value) {
+  return value & ~(uintptr_t)1u;
+}
+
+// There is a freelist of handles running through the JNIHandleBlock
+// with a tagged next pointer, distinguishing these next pointers from
+// oops. The freelist handling currently relies on the size of oops
+// being the same as a native pointer. If this ever changes, then
+// this freelist handling must change too.
+STATIC_ASSERT(sizeof(oop) == sizeof(uintptr_t));
 
 #ifdef ASSERT
 void JNIHandleBlock::zap() {
@@ -355,7 +359,7 @@ void JNIHandleBlock::zap() {
   for (int index = 0; index < block_size_in_oops; index++) {
     // NOT using Access here; just bare clobbering to NULL, since the
     // block no longer contains valid oops.
-    _handles[index] = NULL;
+    _handles[index] = 0;
   }
 }
 #endif // ASSERT
@@ -459,11 +463,12 @@ void JNIHandleBlock::oops_do(OopClosure* f) {
       assert(current == current_chain || current->pop_frame_link() == NULL,
         "only blocks first in chain should have pop frame link set");
       for (int index = 0; index < current->_top; index++) {
-        oop* root = &(current->_handles)[index];
-        oop value = *root;
+        uintptr_t* addr = &(current->_handles)[index];
+        uintptr_t value = *addr;
         // traverse heap pointers only, not deleted handles or free list
         // pointers
-        if (value != NULL && Universe::heap()->is_in_reserved(value)) {
+        if (value != 0 && !is_tagged_free_list(value)) {
+          oop* root = (oop*)addr;
           f->do_oop(root);
         }
       }
@@ -509,15 +514,15 @@ jobject JNIHandleBlock::allocate_handle(oop obj) {
 
   // Try last block
   if (_last->_top < block_size_in_oops) {
-    oop* handle = &(_last->_handles)[_last->_top++];
+    oop* handle = (oop*)&(_last->_handles)[_last->_top++];
     NativeAccess<IS_DEST_UNINITIALIZED>::oop_store(handle, obj);
     return (jobject) handle;
   }
 
   // Try free list
   if (_free_list != NULL) {
-    oop* handle = _free_list;
-    _free_list = (oop*) *_free_list;
+    oop* handle = (oop*)_free_list;
+    _free_list = (uintptr_t*) untag_free_list(*_free_list);
     NativeAccess<IS_DEST_UNINITIALIZED>::oop_store(handle, obj);
     return (jobject) handle;
   }
@@ -550,10 +555,10 @@ void JNIHandleBlock::rebuild_free_list() {
   int blocks = 0;
   for (JNIHandleBlock* current = this; current != NULL; current = current->_next) {
     for (int index = 0; index < current->_top; index++) {
-      oop* handle = &(current->_handles)[index];
-      if (*handle == NULL) {
+      uintptr_t* handle = &(current->_handles)[index];
+      if (*handle == 0) {
         // this handle was cleared out by a delete call, reuse it
-        *handle = (oop) _free_list;
+        *handle = _free_list == NULL ? 0 : tag_free_list((uintptr_t)_free_list);
         _free_list = handle;
         free++;
       }

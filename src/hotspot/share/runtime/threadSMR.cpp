@@ -942,9 +942,9 @@ void ThreadsSMRSupport::smr_delete(JavaThread *thread) {
 
   while (true) {
     {
-      // No safepoint check because this JavaThread is not on the
-      // Threads list.
-      MutexLocker ml(Threads_lock, Mutex::_no_safepoint_check_flag);
+      // Will not make a safepoint check because this JavaThread
+      // is not on the current ThreadsList.
+      MutexLocker ml(Threads_lock);
       // Cannot use a MonitorLocker helper here because we have
       // to drop the Threads_lock first if we wait.
       ThreadsSMRSupport::delete_lock()->lock_without_safepoint_check();

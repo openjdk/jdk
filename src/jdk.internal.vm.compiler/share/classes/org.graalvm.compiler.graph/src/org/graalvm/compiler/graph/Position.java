@@ -146,4 +146,12 @@ public final class Position {
     public int getIndex() {
         return index;
     }
+
+    public Class<?> getType() {
+        if (index < edges.getDirectCount()) {
+            return edges.getType(index);
+        } else {
+            return Node.class;
+        }
+    }
 }

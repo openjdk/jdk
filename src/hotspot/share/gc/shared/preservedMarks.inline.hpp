@@ -30,17 +30,17 @@
 #include "oops/oop.inline.hpp"
 #include "utilities/stack.inline.hpp"
 
-inline bool PreservedMarks::should_preserve_mark(oop obj, markOop m) const {
-  return m->must_be_preserved_for_promotion_failure(obj);
+inline bool PreservedMarks::should_preserve_mark(oop obj, markWord m) const {
+  return obj->mark_must_be_preserved_for_promotion_failure(m);
 }
 
-inline void PreservedMarks::push(oop obj, markOop m) {
+inline void PreservedMarks::push(oop obj, markWord m) {
   assert(should_preserve_mark(obj, m), "pre-condition");
-  OopAndMarkOop elem(obj, m);
+  OopAndMarkWord elem(obj, m);
   _stack.push(elem);
 }
 
-inline void PreservedMarks::push_if_necessary(oop obj, markOop m) {
+inline void PreservedMarks::push_if_necessary(oop obj, markWord m) {
   if (should_preserve_mark(obj, m)) {
     push(obj, m);
   }
@@ -72,14 +72,14 @@ inline void PreservedMarksSet::restore(RestorePreservedMarksTaskExecutor* execut
 }
 
 inline PreservedMarks::PreservedMarks()
-    : _stack(OopAndMarkOopStack::default_segment_size(),
+    : _stack(OopAndMarkWordStack::default_segment_size(),
              // This stack should be used very infrequently so there's
              // no point in caching stack segments (there will be a
              // waste of space most of the time). So we set the max
              // cache size to 0.
              0 /* max_cache_size */) { }
 
-void PreservedMarks::OopAndMarkOop::set_mark() const {
+void PreservedMarks::OopAndMarkWord::set_mark() const {
   _o->set_mark_raw(_m);
 }
 

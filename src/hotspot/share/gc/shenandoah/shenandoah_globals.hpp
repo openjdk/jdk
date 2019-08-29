@@ -378,18 +378,8 @@
           " 1 - parallel iterator;"                                         \
           " 2 - parallel iterator with cset filters;")                      \
                                                                             \
-  experimental(bool, ShenandoahOptimizeStaticFinals, true,                  \
+  diagnostic(bool, ShenandoahOptimizeStaticFinals, true,                    \
           "Optimize barriers on static final fields. "                      \
-          "Turn it off for maximum compatibility with reflection or JNI "   \
-          "code that manipulates final fields.")                            \
-                                                                            \
-  experimental(bool, ShenandoahOptimizeInstanceFinals, false,               \
-          "Optimize barriers on final instance fields."                     \
-          "Turn it off for maximum compatibility with reflection or JNI "   \
-          "code that manipulates final fields.")                            \
-                                                                            \
-  experimental(bool, ShenandoahOptimizeStableFinals, false,                 \
-          "Optimize barriers on stable fields."                             \
           "Turn it off for maximum compatibility with reflection or JNI "   \
           "code that manipulates final fields.")                            \
                                                                             \

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -35,6 +35,7 @@ import org.graalvm.compiler.asm.amd64.AMD64Assembler.VexRRIOp;
 import org.graalvm.compiler.asm.amd64.AMD64Assembler.VexRVMOp;
 import org.graalvm.compiler.asm.amd64.AMD64MacroAssembler;
 import org.graalvm.compiler.asm.amd64.AVXKind;
+import org.graalvm.compiler.lir.ConstantValue;
 import org.graalvm.compiler.lir.LIRFrameState;
 import org.graalvm.compiler.lir.LIRInstructionClass;
 import org.graalvm.compiler.lir.Opcode;
@@ -42,6 +43,7 @@ import org.graalvm.compiler.lir.amd64.AMD64AddressValue;
 import org.graalvm.compiler.lir.amd64.AMD64LIRInstruction;
 import org.graalvm.compiler.lir.asm.CompilationResultBuilder;
 
+import jdk.vm.ci.amd64.AMD64Kind;
 import jdk.vm.ci.meta.AllocatableValue;
 
 public class AMD64VectorBinary {
@@ -99,6 +101,38 @@ public class AMD64VectorBinary {
         @Override
         public void emitCode(CompilationResultBuilder crb, AMD64MacroAssembler masm) {
             opcode.emit(masm, size, asRegister(result), asRegister(x), y);
+        }
+    }
+
+    public static final class AVXBinaryConstFloatOp extends AMD64LIRInstruction {
+
+        public static final LIRInstructionClass<AVXBinaryConstFloatOp> TYPE = LIRInstructionClass.create(AVXBinaryConstFloatOp.class);
+
+        @Opcode private final VexRVMOp opcode;
+        private final AVXKind.AVXSize size;
+
+        @Def({REG}) protected AllocatableValue result;
+        @Use({REG}) protected AllocatableValue x;
+        protected ConstantValue y;
+
+        public AVXBinaryConstFloatOp(VexRVMOp opcode, AVXKind.AVXSize size, AllocatableValue result, AllocatableValue x, ConstantValue y) {
+            super(TYPE);
+            assert y.getPlatformKind() == AMD64Kind.SINGLE || y.getPlatformKind() == AMD64Kind.DOUBLE;
+            this.opcode = opcode;
+            this.size = size;
+            this.result = result;
+            this.x = x;
+            this.y = y;
+        }
+
+        @Override
+        public void emitCode(CompilationResultBuilder crb, AMD64MacroAssembler masm) {
+            if (y.getPlatformKind() == AMD64Kind.SINGLE) {
+                opcode.emit(masm, size, asRegister(result), asRegister(x), (AMD64Address) crb.asFloatConstRef(y.getJavaConstant()));
+            } else {
+                assert y.getPlatformKind() == AMD64Kind.DOUBLE;
+                opcode.emit(masm, size, asRegister(result), asRegister(x), (AMD64Address) crb.asDoubleConstRef(y.getJavaConstant()));
+            }
         }
     }
 

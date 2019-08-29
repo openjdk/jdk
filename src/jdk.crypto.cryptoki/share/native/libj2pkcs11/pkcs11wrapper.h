@@ -207,6 +207,10 @@
 #define ckULongToJSize(x)       ((jsize) x)
 #define unsignedIntToCKULong(x) ((CK_ULONG) x)
 
+//#define TRACE0d(s) { printf(s); fflush(stdout); }
+//#define TRACE1d(s, p1) { printf(s, p1); fflush(stdout); }
+//#define TRACE2d(s, p1, p2) { printf(s, p1, p2); fflush(stdout); }
+
 #ifdef P11_DEBUG
 #define TRACE0(s) { printf(s); fflush(stdout); }
 #define TRACE1(s, p1) { printf(s, p1); fflush(stdout); }
@@ -352,7 +356,7 @@ CK_ULONG* jIntegerObjectToCKULongPtr(JNIEnv *env, jobject jObject);
 CK_ULONG* jLongObjectToCKULongPtr(JNIEnv *env, jobject jObject);
 CK_CHAR_PTR jCharObjectToCKCharPtr(JNIEnv *env, jobject jObject);
 CK_VERSION_PTR jVersionToCKVersionPtr(JNIEnv *env, jobject jVersion);
-CK_DATE * jDateObjectPtrToCKDatePtr(JNIEnv *env, jobject jDate);
+CK_DATE * jDateObjectToCKDatePtr(JNIEnv *env, jobject jDate);
 CK_ATTRIBUTE jAttributeToCKAttribute(JNIEnv *env, jobject jAttribute);
 CK_MECHANISM_PTR jMechanismToCKMechanismPtr(JNIEnv *env, jobject jMechanism);
 
@@ -363,26 +367,29 @@ CK_VOID_PTR jMechParamToCKMechParamPtr(JNIEnv *env, jobject jParam, CK_MECHANISM
 *ckpLength);
 
 
-/* functions to convert a specific Java mechanism parameter object to a CK-mechanism parameter structure */
+/* functions to convert a specific Java mechanism parameter object to a CK-mechanism parameter pointer */
 
-void jRsaPkcsOaepParamToCKRsaPkcsOaepParam(JNIEnv *env, jobject jParam, CK_RSA_PKCS_OAEP_PARAMS_PTR ckParamPtr);
-void jPbeParamToCKPbeParam(JNIEnv *env, jobject jParam, CK_PBE_PARAMS_PTR ckParamPtr);
+CK_RSA_PKCS_OAEP_PARAMS_PTR jRsaPkcsOaepParamToCKRsaPkcsOaepParamPtr(JNIEnv *env,
+    jobject jParam, CK_ULONG* pLength);
+CK_PBE_PARAMS_PTR jPbeParamToCKPbeParamPtr(JNIEnv *env, jobject jParam, CK_ULONG* pLength);
+CK_PKCS5_PBKD2_PARAMS_PTR jPkcs5Pbkd2ParamToCKPkcs5Pbkd2ParamPtr(JNIEnv *env, jobject jParam, CK_ULONG* pLength);
+CK_SSL3_MASTER_KEY_DERIVE_PARAMS_PTR jSsl3MasterKeyDeriveParamToCKSsl3MasterKeyDeriveParamPtr(JNIEnv *env, jobject jParam, CK_ULONG* pLength);
+CK_SSL3_KEY_MAT_PARAMS_PTR jSsl3KeyMatParamToCKSsl3KeyMatParamPtr(JNIEnv *env, jobject jParam, CK_ULONG* pLength);
+CK_KEY_DERIVATION_STRING_DATA jKeyDerivationStringDataToCKKeyDerivationStringData(JNIEnv *env, jobject jParam);
+CK_RSA_PKCS_PSS_PARAMS_PTR jRsaPkcsPssParamToCKRsaPkcsPssParamPtr(JNIEnv *env, jobject jParam, CK_ULONG* pLength);
+CK_ECDH1_DERIVE_PARAMS_PTR jEcdh1DeriveParamToCKEcdh1DeriveParamPtr(JNIEnv *env, jobject jParam, CK_ULONG* pLength);
+CK_ECDH2_DERIVE_PARAMS_PTR jEcdh2DeriveParamToCKEcdh2DeriveParamPtr(JNIEnv *env, jobject jParam, CK_ULONG* pLength);
+CK_X9_42_DH1_DERIVE_PARAMS_PTR jX942Dh1DeriveParamToCKX942Dh1DeriveParamPtr(JNIEnv *env, jobject jParam, CK_ULONG* pLength);
+CK_X9_42_DH2_DERIVE_PARAMS_PTR jX942Dh2DeriveParamToCKX942Dh2DeriveParamPtr(JNIEnv *env, jobject jParam, CK_ULONG* pLength);
+
+/* functions to copy the returned values inside CK-mechanism back to Java object */
+
 void copyBackPBEInitializationVector(JNIEnv *env, CK_MECHANISM *ckMechanism, jobject jMechanism);
-void jPkcs5Pbkd2ParamToCKPkcs5Pbkd2Param(JNIEnv *env, jobject jParam, CK_PKCS5_PBKD2_PARAMS_PTR ckParamPtr);
 void copyBackSetUnwrappedKey(JNIEnv *env, CK_MECHANISM *ckMechanism, jobject jMechanism);
-void jSsl3MasterKeyDeriveParamToCKSsl3MasterKeyDeriveParam(JNIEnv *env, jobject jParam, CK_SSL3_MASTER_KEY_DERIVE_PARAMS_PTR ckParamPtr);
 void ssl3CopyBackClientVersion(JNIEnv *env, CK_MECHANISM *ckMechanism, jobject jMechanism);
 void tls12CopyBackClientVersion(JNIEnv *env, CK_MECHANISM *ckMechanism, jobject jMechanism);
-void jSsl3KeyMatParamToCKSsl3KeyMatParam(JNIEnv *env, jobject jParam, CK_SSL3_KEY_MAT_PARAMS_PTR ckParamPtr);
 void ssl3CopyBackKeyMatParams(JNIEnv *env, CK_MECHANISM *ckMechanism, jobject jMechanism);
 void tls12CopyBackKeyMatParams(JNIEnv *env, CK_MECHANISM *ckMechanism, jobject jMechanism);
-CK_KEY_DERIVATION_STRING_DATA jKeyDerivationStringDataToCKKeyDerivationStringData(JNIEnv *env, jobject jParam);
-void jRsaPkcsPssParamToCKRsaPkcsPssParam(JNIEnv *env, jobject jParam, CK_RSA_PKCS_PSS_PARAMS_PTR ckParamPtr);
-void jEcdh1DeriveParamToCKEcdh1DeriveParam(JNIEnv *env, jobject jParam, CK_ECDH1_DERIVE_PARAMS_PTR ckParamPtr);
-void jEcdh2DeriveParamToCKEcdh2DeriveParam(JNIEnv *env, jobject jParam,
-CK_ECDH2_DERIVE_PARAMS_PTR ckParamPtr);
-void jX942Dh1DeriveParamToCKX942Dh1DeriveParam(JNIEnv *env, jobject jParam, CK_X9_42_DH1_DERIVE_PARAMS_PTR ckParamPtr);
-void jX942Dh2DeriveParamToCKX942Dh2DeriveParam(JNIEnv *env, jobject jParam, CK_X9_42_DH2_DERIVE_PARAMS_PTR ckParamPtr);
 
 
 /* functions to convert the InitArgs object for calling the right Java mutex functions */
@@ -462,8 +469,9 @@ extern CK_C_INITIALIZE_ARGS_PTR ckpGlobalInitArgs;
 #ifdef P11_MEMORYDEBUG
 #include <stdlib.h>
 
-/* Simple malloc/free dumper */
+/* Simple malloc/calloc/free dumper */
 void *p11malloc(size_t c, char *file, int line);
+void *p11calloc(size_t c, size_t s, char *file, int line);
 void p11free(void *p, char *file, int line);
 
 /* Use THIS_FILE when it is available. */
@@ -472,6 +480,7 @@ void p11free(void *p, char *file, int line);
 #endif
 
 #define malloc(c)       (p11malloc((c), THIS_FILE, __LINE__))
+#define calloc(c, s)    (p11calloc((c), (s), THIS_FILE, __LINE__))
 #define free(c)         (p11free((c), THIS_FILE, __LINE__))
 
 #endif

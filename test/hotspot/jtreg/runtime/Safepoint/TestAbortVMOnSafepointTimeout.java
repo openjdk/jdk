@@ -27,7 +27,7 @@ import jdk.test.lib.process.*;
 /*
  * @test TestAbortVMOnSafepointTimeout
  * @summary Check if VM can kill thread which doesn't reach safepoint.
- * @bug 8219584
+ * @bug 8219584 8227528
  * @requires vm.compiler2.enabled
  * @library /test/lib
  * @modules java.base/jdk.internal.misc
@@ -58,8 +58,16 @@ public class TestAbortVMOnSafepointTimeout {
     }
 
     public static void testWith(int sfpt_interval, int timeout_delay) throws Exception {
+        // -XX:-UseCountedLoopSafepoints - is used to prevent the loop
+        // in test_loop() to poll for safepoints.
+        // -XX:LoopStripMiningIter=0 and -XX:LoopUnrollLimit=0 - are
+        // used to prevent optimizations over the loop in test_loop()
+        // since we actually want it to provoke a safepoint timeout.
+        // -XX:-UseBiasedLocking - is used to prevent biased locking
+        // handshakes from changing the timing of this test.
         ProcessBuilder pb = ProcessTools.createJavaProcessBuilder(
                 "-XX:+UnlockDiagnosticVMOptions",
+                "-XX:-UseBiasedLocking",
                 "-XX:+SafepointTimeout",
                 "-XX:+SafepointALot",
                 "-XX:+AbortVMOnSafepointTimeout",

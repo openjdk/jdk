@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -559,16 +559,16 @@ public class Cipher {
                 // does not support mode or padding we need, ignore
                 continue;
             }
-            if (canuse == S_YES) {
+            // S_YES, S_MAYBE
+            // even when mode and padding are both supported, they
+            // may not be used together, try out and see if it works
+            try {
+                CipherSpi spi = (CipherSpi)s.newInstance(null);
+                tr.setModePadding(spi);
+                // specify null instead of spi for delayed provider selection
                 return new Cipher(null, s, t, transformation, transforms);
-            } else { // S_MAYBE, try out if it works
-                try {
-                    CipherSpi spi = (CipherSpi)s.newInstance(null);
-                    tr.setModePadding(spi);
-                    return new Cipher(spi, s, t, transformation, transforms);
-                } catch (Exception e) {
-                    failure = e;
-                }
+            } catch (Exception e) {
+                failure = e;
             }
         }
         throw new NoSuchAlgorithmException

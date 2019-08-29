@@ -685,6 +685,12 @@ public class Main {
             Vector<JarEntry> entriesVec = new Vector<>();
             byte[] buffer = new byte[8192];
 
+            String suffix1 = "-Digest-Manifest";
+            String suffix2 = "-Digest-" + ManifestDigester.MF_MAIN_ATTRS;
+
+            int suffixLength1 = suffix1.length();
+            int suffixLength2 = suffix2.length();
+
             Enumeration<JarEntry> entries = jf.entries();
             while (entries.hasMoreElements()) {
                 JarEntry je = entries.nextElement();
@@ -701,9 +707,14 @@ public class Main {
                                 boolean found = false;
                                 for (Object obj : sf.getMainAttributes().keySet()) {
                                     String key = obj.toString();
-                                    if (key.endsWith("-Digest-Manifest")) {
-                                        digestMap.put(alias,
-                                                key.substring(0, key.length() - 16));
+                                    if (key.endsWith(suffix1)) {
+                                        digestMap.put(alias, key.substring(
+                                                0, key.length() - suffixLength1));
+                                        found = true;
+                                        break;
+                                    } else if (key.endsWith(suffix2)) {
+                                        digestMap.put(alias, key.substring(
+                                                0, key.length() - suffixLength2));
                                         found = true;
                                         break;
                                     }

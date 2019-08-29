@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -256,7 +256,7 @@ public final class ZoneOffsetTransitionRule implements Serializable {
      * for the encoding of epoch seconds and offsets.
      * <pre style="font-size:1.0em">{@code
      *
-     *      out.writeByte(3);                // identifies a ZoneOffsetTransition
+     *      out.writeByte(3);                // identifies a ZoneOffsetTransitionRule
      *      final int timeSecs = (timeEndOfDay ? 86400 : time.toSecondOfDay());
      *      final int stdOffset = standardOffset.getTotalSeconds();
      *      final int beforeDiff = offsetBefore.getTotalSeconds() - stdOffset;

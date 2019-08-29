@@ -830,8 +830,8 @@ MethodLivenessResult MethodLiveness::BasicBlock::get_liveness_at(ciMethod* metho
 
 #ifdef ASSERT
   ResourceMark rm;
-  ResourceBitMap g(_gen.size()); g.set_from(_gen);
-  ResourceBitMap k(_kill.size()); k.set_from(_kill);
+  ResourceBitMap g(_gen.size(), false); g.set_from(_gen);
+  ResourceBitMap k(_kill.size(), false); k.set_from(_kill);
 #endif
   if (_last_bci != bci || trueInDebug) {
     ciBytecodeStream bytes(method);

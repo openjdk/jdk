@@ -47,19 +47,19 @@ inline int os::Posix::clock_getres(clockid_t clock_id, struct timespec *tp) {
 
 #ifndef SOLARIS
 
-// Platform Monitor implementation
+// Platform Mutex/Monitor implementation
 
-inline void os::PlatformMonitor::lock() {
+inline void os::PlatformMutex::lock() {
   int status = pthread_mutex_lock(mutex());
   assert_status(status == 0, status, "mutex_lock");
 }
 
-inline void os::PlatformMonitor::unlock() {
+inline void os::PlatformMutex::unlock() {
   int status = pthread_mutex_unlock(mutex());
   assert_status(status == 0, status, "mutex_unlock");
 }
 
-inline bool os::PlatformMonitor::try_lock() {
+inline bool os::PlatformMutex::try_lock() {
   int status = pthread_mutex_trylock(mutex());
   assert_status(status == 0 || status == EBUSY, status, "mutex_trylock");
   return status == 0;

@@ -87,13 +87,16 @@ class ThreadStateTransition : public StackObj {
     assert(from != _thread_in_native, "use transition_from_native");
     assert((from & 1) == 0 && (to & 1) == 0, "odd numbers are transitions states");
     assert(thread->thread_state() == from, "coming from wrong thread state");
+
+    // Check NoSafepointVerifier
+    // This also clears unhandled oops if CheckUnhandledOops is used.
+    thread->check_possible_safepoint();
+
     // Change to transition state and ensure it is seen by the VM thread.
     thread->set_thread_state_fence((JavaThreadState)(from + 1));
 
     SafepointMechanism::block_if_requested(thread);
     thread->set_thread_state(to);
-
-    CHECK_UNHANDLED_OOPS_ONLY(thread->clear_unhandled_oops();)
   }
 
   // Same as above, but assumes from = _thread_in_Java. This is simpler, since we
@@ -251,30 +254,30 @@ class ThreadBlockInVM : public ThreadStateTransition {
 };
 
 // Unlike ThreadBlockInVM, this class is designed to avoid certain deadlock scenarios while making
-// transitions inside class Monitor in cases where we need to block for a safepoint or handshake. It
-// receives an extra argument compared to ThreadBlockInVM, the address of a pointer to the monitor we
-// are trying to acquire. This will be used to access and release the monitor if needed to avoid
+// transitions inside class Mutex in cases where we need to block for a safepoint or handshake. It
+// receives an extra argument compared to ThreadBlockInVM, the address of a pointer to the mutex we
+// are trying to acquire. This will be used to access and release the mutex if needed to avoid
 // said deadlocks.
 // It works like ThreadBlockInVM but differs from it in two ways:
 // - When transitioning in (constructor), it checks for safepoints without blocking, i.e., calls
 //   back if needed to allow a pending safepoint to continue but does not block in it.
 // - When transitioning back (destructor), if there is a pending safepoint or handshake it releases
-//   the monitor that is only partially acquired.
+//   the mutex that is only partially acquired.
 class ThreadBlockInVMWithDeadlockCheck : public ThreadStateTransition {
  private:
-  Monitor** _in_flight_monitor_adr;
+  Mutex** _in_flight_mutex_addr;
 
-  void release_monitor() {
-    assert(_in_flight_monitor_adr != NULL, "_in_flight_monitor_adr should have been set on constructor");
-    Monitor* in_flight_monitor = *_in_flight_monitor_adr;
-    if (in_flight_monitor != NULL) {
-      in_flight_monitor->release_for_safepoint();
-      *_in_flight_monitor_adr = NULL;
+  void release_mutex() {
+    assert(_in_flight_mutex_addr != NULL, "_in_flight_mutex_addr should have been set on constructor");
+    Mutex* in_flight_mutex = *_in_flight_mutex_addr;
+    if (in_flight_mutex != NULL) {
+      in_flight_mutex->release_for_safepoint();
+      *_in_flight_mutex_addr = NULL;
     }
   }
  public:
-  ThreadBlockInVMWithDeadlockCheck(JavaThread* thread, Monitor** in_flight_monitor_adr)
-  : ThreadStateTransition(thread), _in_flight_monitor_adr(in_flight_monitor_adr) {
+  ThreadBlockInVMWithDeadlockCheck(JavaThread* thread, Mutex** in_flight_mutex_addr)
+  : ThreadStateTransition(thread), _in_flight_mutex_addr(in_flight_mutex_addr) {
     // Once we are blocked vm expects stack to be walkable
     thread->frame_anchor()->make_walkable(thread);
 
@@ -290,7 +293,7 @@ class ThreadBlockInVMWithDeadlockCheck : public ThreadStateTransition {
     _thread->set_thread_state_fence((JavaThreadState)(_thread_blocked_trans));
 
     if (SafepointMechanism::should_block(_thread)) {
-      release_monitor();
+      release_mutex();
       SafepointMechanism::block_if_requested(_thread);
     }
 
@@ -327,7 +330,7 @@ class ThreadInVMfromJavaNoAsyncException : public ThreadStateTransition {
   }
 };
 
-// Debug class instantiated in JRT_ENTRY and ITR_ENTRY macro.
+// Debug class instantiated in JRT_ENTRY macro.
 // Can be used to verify properties on enter/exit of the VM.
 
 #ifdef ASSERT
@@ -340,45 +343,17 @@ class VMEntryWrapper {
 
 class VMNativeEntryWrapper {
  public:
-  VMNativeEntryWrapper() {
-    if (GCALotAtAllSafepoints) InterfaceSupport::check_gc_alot();
-  }
-
-  ~VMNativeEntryWrapper() {
-    if (GCALotAtAllSafepoints) InterfaceSupport::check_gc_alot();
-  }
+  VMNativeEntryWrapper();
+  ~VMNativeEntryWrapper();
 };
-
-#endif
-
-
-// VM-internal runtime interface support
-
-// Definitions for JRT (Java (Compiler/Shared) Runtime)
-
-// JRT_LEAF currently can be called from either _thread_in_Java or
-// _thread_in_native mode. In _thread_in_native, it is ok
-// for another thread to trigger GC. The rest of the JRT_LEAF
-// rules apply.
-class JRTLeafVerifier : public NoSafepointVerifier {
-  static bool should_verify_GC();
- public:
-#ifdef ASSERT
-  JRTLeafVerifier();
-  ~JRTLeafVerifier();
-#else
-  JRTLeafVerifier() {}
-  ~JRTLeafVerifier() {}
-#endif
-};
-
-#ifdef ASSERT
 
 class RuntimeHistogramElement : public HistogramElement {
   public:
    RuntimeHistogramElement(const char* name);
 };
+#endif // ASSERT
 
+#ifdef ASSERT
 #define TRACE_CALL(result_type, header)                            \
   InterfaceSupport::_number_of_calls++;                            \
   if (CountRuntimeCalls) {                                         \
@@ -388,7 +363,7 @@ class RuntimeHistogramElement : public HistogramElement {
 #else
 #define TRACE_CALL(result_type, header)                            \
   /* do nothing */
-#endif
+#endif // ASSERT
 
 
 // LEAF routines do not lock, GC or throw exceptions
@@ -434,11 +409,24 @@ class RuntimeHistogramElement : public HistogramElement {
     VM_ENTRY_BASE(result_type, header, thread)                       \
     debug_only(VMEntryWrapper __vew;)
 
+// JRT_LEAF currently can be called from either _thread_in_Java or
+// _thread_in_native mode.
+//
+// JRT_LEAF rules:
+// A JRT_LEAF method may not interfere with safepointing by
+//   1) acquiring or blocking on a Mutex or JavaLock - checked
+//   2) allocating heap memory - checked
+//   3) executing a VM operation - checked
+//   4) executing a system call (including malloc) that could block or grab a lock
+//   5) invoking GC
+//   6) reaching a safepoint
+//   7) running too long
+// Nor may any method it calls.
 
 #define JRT_LEAF(result_type, header)                                \
   result_type header {                                               \
   VM_LEAF_BASE(result_type, header)                                  \
-  debug_only(JRTLeafVerifier __jlv;)
+  debug_only(NoSafepointVerifier __nsv;)
 
 
 #define JRT_ENTRY_NO_ASYNC(result_type, header)                      \

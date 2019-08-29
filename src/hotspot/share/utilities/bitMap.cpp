@@ -133,8 +133,8 @@ void BitMap::reinitialize(const Allocator& allocator, idx_t new_size_in_bits, bo
   initialize(allocator, new_size_in_bits, clear);
 }
 
-ResourceBitMap::ResourceBitMap(idx_t size_in_bits)
-    : BitMap(allocate(ResourceBitMapAllocator(), size_in_bits), size_in_bits) {
+ResourceBitMap::ResourceBitMap(idx_t size_in_bits, bool clear)
+    : BitMap(allocate(ResourceBitMapAllocator(), size_in_bits, clear), size_in_bits) {
 }
 
 void ResourceBitMap::resize(idx_t new_size_in_bits) {

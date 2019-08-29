@@ -33,8 +33,6 @@
 #include "oops/oop.hpp"
 #include "utilities/stack.hpp"
 
-class GCTaskManager;
-class GCTaskQueue;
 class OopStack;
 class ReferenceProcessor;
 class ParallelScavengeHeap;
@@ -111,8 +109,6 @@ class PSScavenge: AllStatic {
     assert(_ref_processor != NULL, "Sanity");
     return _ref_processor;
   }
-  // Used to add tasks
-  static GCTaskManager* const gc_task_manager();
   // The promotion managers tell us if they encountered overflow
   static void set_survivor_overflow(bool state) {
     _survivor_overflow = state;

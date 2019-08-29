@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -34,7 +34,7 @@
  *     -class compiler.aot.DeoptimizationTest
  *     -compile compiler.aot.DeoptimizationTest.testMethod()D
  *     -extraopt -XX:-UseCompressedOops
- * @run main/othervm -Xmixed -XX:+UseAOT -XX:+TieredCompilation
+ * @run main/othervm -Xmixed -XX:+UnlockExperimentalVMOptions -XX:+UseAOT -XX:+TieredCompilation
  *     -XX:-UseCompressedOops
  *     -XX:CompileCommand=dontinline,compiler.aot.DeoptimizationTest::*
  *     -XX:AOTLibrary=./libDeoptimizationTest.so -Xbootclasspath/a:.

@@ -771,12 +771,7 @@ JRT_ENTRY_NO_ASYNC(void, InterpreterRuntime::monitorenter(JavaThread* thread, Ba
   Handle h_obj(thread, elem->obj());
   assert(Universe::heap()->is_in_reserved_or_null(h_obj()),
          "must be NULL or an object");
-  if (UseBiasedLocking) {
-    // Retry fast entry if bias is revoked to avoid unnecessary inflation
-    ObjectSynchronizer::fast_enter(h_obj, elem->lock(), true, CHECK);
-  } else {
-    ObjectSynchronizer::slow_enter(h_obj, elem->lock(), CHECK);
-  }
+  ObjectSynchronizer::enter(h_obj, elem->lock(), CHECK);
   assert(Universe::heap()->is_in_reserved_or_null(elem->obj()),
          "must be NULL or an object");
 #ifdef ASSERT
@@ -796,7 +791,7 @@ JRT_ENTRY_NO_ASYNC(void, InterpreterRuntime::monitorexit(JavaThread* thread, Bas
   if (elem == NULL || h_obj()->is_unlocked()) {
     THROW(vmSymbols::java_lang_IllegalMonitorStateException());
   }
-  ObjectSynchronizer::slow_exit(h_obj(), elem->lock(), thread);
+  ObjectSynchronizer::exit(h_obj(), elem->lock(), thread);
   // Free entry. This must be done here, since a pending exception might be installed on
   // exit. If it is not cleared, the exception handling code will try to unlock the monitor again.
   elem->set_obj(NULL);
@@ -1440,7 +1435,7 @@ void SignatureHandlerLibrary::add(const methodHandle& method) {
         method->set_signature_handler(_handlers->at(handler_index));
       }
     } else {
-      CHECK_UNHANDLED_OOPS_ONLY(Thread::current()->clear_unhandled_oops());
+      DEBUG_ONLY(Thread::current()->check_possible_safepoint());
       // use generic signature handler
       method->set_signature_handler(Interpreter::slow_signature_handler());
     }

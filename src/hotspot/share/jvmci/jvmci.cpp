@@ -25,13 +25,13 @@
 #include "classfile/systemDictionary.hpp"
 #include "gc/shared/collectedHeap.hpp"
 #include "gc/shared/oopStorage.hpp"
+#include "gc/shared/oopStorageSet.hpp"
 #include "jvmci/jvmci.hpp"
 #include "jvmci/jvmciJavaClasses.hpp"
 #include "jvmci/jvmciRuntime.hpp"
 #include "jvmci/metadataHandleBlock.hpp"
 #include "memory/universe.hpp"
 
-OopStorage* JVMCI::_object_handles = NULL;
 MetadataHandleBlock* JVMCI::_metadata_handles = NULL;
 JVMCIRuntime* JVMCI::_compiler_runtime = NULL;
 JVMCIRuntime* JVMCI::_java_runtime = NULL;
@@ -58,7 +58,6 @@ void JVMCI::initialize_compiler(TRAPS) {
 }
 
 void JVMCI::initialize_globals() {
-  _object_handles = SystemDictionary::vm_global_oop_storage();
   _metadata_handles = MetadataHandleBlock::allocate_block();
   if (UseJVMCINativeLibrary) {
     // There are two runtimes.
@@ -70,9 +69,9 @@ void JVMCI::initialize_globals() {
   }
 }
 
-OopStorage* JVMCI::object_handles() {
-  assert(_object_handles != NULL, "Uninitialized");
-  return _object_handles;
+// Handles to objects in the Hotspot heap.
+static OopStorage* object_handles() {
+  return OopStorageSet::vm_global();
 }
 
 jobject JVMCI::make_global(const Handle& obj) {

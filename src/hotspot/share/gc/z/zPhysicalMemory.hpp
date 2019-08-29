@@ -25,7 +25,7 @@
 #define SHARE_GC_Z_ZPHYSICALMEMORY_HPP
 
 #include "memory/allocation.hpp"
-#include OS_CPU_HEADER(gc/z/zPhysicalMemoryBacking)
+#include OS_HEADER(gc/z/zPhysicalMemoryBacking)
 
 class ZPhysicalMemorySegment : public CHeapObj<mtGC> {
 private:

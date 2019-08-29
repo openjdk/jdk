@@ -48,8 +48,8 @@ public class ObjectMonitor extends VMObject {
     objectFieldOffset = f.getOffset();
     f = type.getField("_owner");
     ownerFieldOffset = f.getOffset();
-    f = type.getField("FreeNext");
-    FreeNextFieldOffset = f.getOffset();
+    f = type.getField("_next_om");
+    nextOMFieldOffset = f.getOffset();
     contentionsField  = type.getJIntField("_contentions");
     waitersField = type.getJIntField("_waiters");
     recursionsField = type.getCIntegerField("_recursions");
@@ -64,7 +64,7 @@ public class ObjectMonitor extends VMObject {
   }
 
   // FIXME
-  //  void      set_header(markOop hdr);
+  //  void      set_header(markWord hdr);
 
   // FIXME: must implement and delegate to platform-dependent implementation
   //  public boolean isBusy();
@@ -83,7 +83,7 @@ public class ObjectMonitor extends VMObject {
 
   public int    waiters() { return waitersField.getValue(addr); }
 
-  public Address freeNext() { return addr.getAddressAt(FreeNextFieldOffset); }
+  public Address nextOM() { return addr.getAddressAt(nextOMFieldOffset); }
   // FIXME
   //  void      set_queue(void* owner);
 
@@ -108,7 +108,7 @@ public class ObjectMonitor extends VMObject {
   private static long          headerFieldOffset;
   private static long          objectFieldOffset;
   private static long          ownerFieldOffset;
-  private static long          FreeNextFieldOffset;
+  private static long          nextOMFieldOffset;
   private static JIntField     contentionsField;
   private static JIntField     waitersField;
   private static CIntegerField recursionsField;

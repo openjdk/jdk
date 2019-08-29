@@ -28,6 +28,7 @@
 #include "classfile/classLoaderData.hpp"
 #include "memory/iterator.hpp"
 #include "memory/memRegion.hpp"
+#include "oops/markWord.hpp"
 #include "oops/metadata.hpp"
 #include "oops/oop.hpp"
 #include "oops/oopHandle.hpp"
@@ -159,7 +160,7 @@ class Klass : public Metadata {
   // Biased locking implementation and statistics
   // (the 64-bit chunk goes first, to avoid some fragmentation)
   jlong    _last_biased_lock_bulk_revocation_time;
-  markOop  _prototype_header;   // Used when biased locking is both enabled and disabled for this type
+  markWord _prototype_header;   // Used when biased locking is both enabled and disabled for this type
   jint     _biased_lock_revocation_count;
 
   // vtable length
@@ -619,9 +620,9 @@ protected:
 
   // Biased locking support
   // Note: the prototype header is always set up to be at least the
-  // prototype markOop. If biased locking is enabled it may further be
+  // prototype markWord. If biased locking is enabled it may further be
   // biasable and have an epoch.
-  markOop prototype_header() const      { return _prototype_header; }
+  markWord prototype_header() const      { return _prototype_header; }
   // NOTE: once instances of this klass are floating around in the
   // system, this header must only be updated at a safepoint.
   // NOTE 2: currently we only ever set the prototype header to the
@@ -630,7 +631,7 @@ protected:
   // wanting to reduce the initial scope of this optimization. There
   // are potential problems in setting the bias pattern for
   // JVM-internal oops.
-  inline void set_prototype_header(markOop header);
+  inline void set_prototype_header(markWord header);
   static ByteSize prototype_header_offset() { return in_ByteSize(offset_of(Klass, _prototype_header)); }
 
   int  biased_lock_revocation_count() const { return (int) _biased_lock_revocation_count; }

@@ -35,28 +35,28 @@ class WorkGang;
 
 class PreservedMarks {
 private:
-  class OopAndMarkOop {
+  class OopAndMarkWord {
   private:
     oop _o;
-    markOop _m;
+    markWord _m;
 
   public:
-    OopAndMarkOop(oop obj, markOop m) : _o(obj), _m(m) { }
+    OopAndMarkWord(oop obj, markWord m) : _o(obj), _m(m) { }
 
     oop get_oop() { return _o; }
     inline void set_mark() const;
     void set_oop(oop obj) { _o = obj; }
   };
-  typedef Stack<OopAndMarkOop, mtGC> OopAndMarkOopStack;
+  typedef Stack<OopAndMarkWord, mtGC> OopAndMarkWordStack;
 
-  OopAndMarkOopStack _stack;
+  OopAndMarkWordStack _stack;
 
-  inline bool should_preserve_mark(oop obj, markOop m) const;
+  inline bool should_preserve_mark(oop obj, markWord m) const;
 
 public:
   size_t size() const { return _stack.size(); }
-  inline void push(oop obj, markOop m);
-  inline void push_if_necessary(oop obj, markOop m);
+  inline void push(oop obj, markWord m);
+  inline void push_if_necessary(oop obj, markWord m);
   // Iterate over the stack, restore all preserved marks, and
   // reclaim the memory taken up by the stack segments.
   void restore();

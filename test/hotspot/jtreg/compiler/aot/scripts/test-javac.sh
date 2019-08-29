@@ -1,4 +1,4 @@
-# Copyright (c) 2017, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2017, 2019, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,7 @@ pushd `dirname $0` > /dev/null
 DIR=`pwd`
 popd > /dev/null
 
-AOT_OPTS="-XX:+UseAOT"
+AOT_OPTS="-XX:+UnlockExperimentalVMOptions -XX:+UseAOT"
 
 $JAVA_HOME/bin/java $AOT_OPTS -XX:+PrintAOT -version | grep "aot library" || exit 1
 
@@ -64,7 +64,7 @@ N=5
 
 echo "Tiered C1:"
 for i in `seq 1 $N`; do
-    time $JAVA_HOME/bin/java $JAVA_OPTS -XX:-UseAOT -XX:TieredStopAtLevel=1 $APP $FILE.java
+    time $JAVA_HOME/bin/java $JAVA_OPTS -XX:+UnlockExperimentalVMOptions -XX:-UseAOT -XX:TieredStopAtLevel=1 $APP $FILE.java
     if [ $? -ne 0 ]; then
         exit 1
     fi
@@ -73,7 +73,7 @@ done
 
 echo "Tiered C1/C2:"
 for i in `seq 1 $N`; do
-    time $JAVA_HOME/bin/java $JAVA_OPTS -XX:-UseAOT $APP $FILE.java
+    time $JAVA_HOME/bin/java $JAVA_OPTS -XX:+UnlockExperimentalVMOptions -XX:-UseAOT $APP $FILE.java
     if [ $? -ne 0 ]; then
         exit 1
     fi
@@ -82,7 +82,7 @@ done
 
 echo "Tiered C1/C2 -Xshare:on:"
 for i in `seq 1 $N`; do
-    time $JAVA_HOME/bin/java $JAVA_OPTS -XX:-UseAOT -Xshare:on $APP $FILE.java
+    time $JAVA_HOME/bin/java $JAVA_OPTS -XX:+UnlockExperimentalVMOptions -XX:-UseAOT -Xshare:on $APP $FILE.java
     if [ $? -ne 0 ]; then
         exit 1
     fi
@@ -117,7 +117,7 @@ rm -rf tmp
 echo "Tiered C1 (compiling $NAME: $COUNT classes):"
 for i in `seq 1 $N`; do
     mkdir tmp
-    time $JAVA_HOME/bin/javac -J-XX:-UseAOT -J-XX:TieredStopAtLevel=1 -XDignore.symbol.file -d tmp $FILES
+    time $JAVA_HOME/bin/javac -J-XX:+UnlockExperimentalVMOptions -J-XX:-UseAOT -J-XX:TieredStopAtLevel=1 -XDignore.symbol.file -d tmp $FILES
     if [ $? -ne 0 ]; then
         exit 1
     fi
@@ -127,7 +127,7 @@ done
 echo "Tiered C1/C2 (compiling $NAME: $COUNT classes):"
 for i in `seq 1 $N`; do
     mkdir tmp
-    time $JAVA_HOME/bin/javac -J-XX:-UseAOT -XDignore.symbol.file -cp /java/devtools/share/junit/latest/junit.jar -d tmp $FILES
+    time $JAVA_HOME/bin/javac -J-XX:+UnlockExperimentalVMOptions -J-XX:-UseAOT -XDignore.symbol.file -cp /java/devtools/share/junit/latest/junit.jar -d tmp $FILES
     if [ $? -ne 0 ]; then
         exit 1
     fi
@@ -137,7 +137,7 @@ done
 echo "Tiered AOT (compiling $NAME: $COUNT classes):"
 for i in `seq 1 $N`; do
     mkdir tmp
-    time $JAVA_HOME/bin/javac -J-XX:+UseAOT -XDignore.symbol.file -cp /java/devtools/share/junit/latest/junit.jar -d tmp $FILES
+    time $JAVA_HOME/bin/javac -J-XX:+UnlockExperimentalVMOptions -J-XX:+UseAOT -XDignore.symbol.file -cp /java/devtools/share/junit/latest/junit.jar -d tmp $FILES
     if [ $? -ne 0 ]; then
         exit 1
     fi
@@ -147,7 +147,7 @@ done
 echo "Tiered AOT -Xshare:on (compiling $NAME: $COUNT classes):"
 for i in `seq 1 $N`; do
     mkdir tmp
-    time $JAVA_HOME/bin/javac -J-Xshare:on -J-XX:+UseAOT -XDignore.symbol.file -cp /java/devtools/share/junit/latest/junit.jar -d tmp $FILES
+    time $JAVA_HOME/bin/javac -J-Xshare:on -J-XX:+UnlockExperimentalVMOptions -J-XX:+UseAOT -XDignore.symbol.file -cp /java/devtools/share/junit/latest/junit.jar -d tmp $FILES
     if [ $? -ne 0 ]; then
         exit 1
     fi

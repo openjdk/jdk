@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,37 +21,19 @@
  * questions.
  */
 
-import java.util.*;
-import java.util.concurrent.*;
-import java.util.logging.*;
-import java.io.*;
-import java.net.*;
-import java.security.*;
-import javax.net.ssl.*;
-import com.sun.net.httpserver.*;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
+import java.nio.charset.StandardCharsets;
+
+import com.sun.net.httpserver.Headers;
+import com.sun.net.httpserver.HttpExchange;
+import com.sun.net.httpserver.HttpHandler;
 
 /**
  * Implements a basic static EchoHandler for an HTTP server
  */
 public class EchoHandler implements HttpHandler {
-
-    byte[] read(InputStream is) throws IOException {
-        byte[] buf = new byte[1024];
-        byte[] result = new byte[0];
-
-        while (true) {
-            int n = is.read(buf);
-            if (n > 0) {
-                byte[] b1 = new byte[result.length + n];
-                System.arraycopy(result, 0, b1, 0, result.length);
-                System.arraycopy(buf, 0, b1, result.length, n);
-                result = b1;
-            } else if (n == -1) {
-                return result;
-            }
-        }
-    }
-
     public void handle (HttpExchange t)
         throws IOException
     {
@@ -61,32 +43,20 @@ public class EchoHandler implements HttpHandler {
 
         // return the number of bytes received (no echo)
         String summary = map.getFirst ("XSummary");
-        if (fixedrequest != null && summary == null)  {
-            byte[] in = read(is);
-            t.sendResponseHeaders(200, in.length);
-            OutputStream os = t.getResponseBody();
-            os.write(in);
-            close(t, os);
-            close(t, is);
-        } else {
-            OutputStream os = t.getResponseBody();
-            byte[] buf = new byte[64 * 1024];
-            t.sendResponseHeaders(200, 0);
-            int n, count=0;;
-
-            while ((n = is.read(buf)) != -1) {
-                if (summary == null) {
-                    os.write(buf, 0, n);
-                }
-                count += n;
-            }
-            if (summary != null) {
-                String s = Integer.toString(count);
-                os.write(s.getBytes());
-            }
-            close(t, os);
-            close(t, is);
+        OutputStream os = t.getResponseBody();
+        byte[] in;
+        in = is.readAllBytes();
+        if (summary != null) {
+            in = Integer.toString(in.length).getBytes(StandardCharsets.UTF_8);
         }
+        if (fixedrequest != null) {
+            t.sendResponseHeaders(200, in.length == 0 ? -1 : in.length);
+        } else {
+            t.sendResponseHeaders(200, 0);
+        }
+        os.write(in);
+        close(t, os);
+        close(t, is);
     }
 
     protected void close(OutputStream os) throws IOException {

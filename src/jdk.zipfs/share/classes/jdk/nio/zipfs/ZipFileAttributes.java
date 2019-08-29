@@ -26,6 +26,9 @@
 package jdk.nio.zipfs;
 
 import java.nio.file.attribute.BasicFileAttributes;
+import java.nio.file.attribute.PosixFilePermission;
+import java.util.Optional;
+import java.util.Set;
 
 /**
  * The attributes of a file stored in a zip file.
@@ -38,4 +41,5 @@ interface ZipFileAttributes extends BasicFileAttributes {
     int method();
     byte[] extra();
     byte[] comment();
+    Optional<Set<PosixFilePermission>> storedPermissions();
 }

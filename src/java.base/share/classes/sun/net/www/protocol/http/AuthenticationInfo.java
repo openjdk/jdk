@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1995, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1995, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,6 +31,7 @@ import java.net.PasswordAuthentication;
 import java.net.URL;
 import java.util.HashMap;
 import java.util.Objects;
+import java.util.function.Function;
 
 import sun.net.www.HeaderParser;
 
@@ -125,25 +126,42 @@ public abstract class AuthenticationInfo extends AuthCacheValue implements Clone
      */
     private static HashMap<String,Thread> requests = new HashMap<>();
 
-    /* check if a request for this destination is in progress
-     * return false immediately if not. Otherwise block until
-     * request is finished and return true
+    /*
+     * check if AuthenticationInfo is available in the cache.
+     * If not, check if a request for this destination is in progress
+     * and if so block until the other request is finished authenticating
+     * and returns the cached authentication value.
+     * Otherwise, returns the cached authentication value, which may be null.
      */
-    private static boolean requestIsInProgress (String key) {
-        if (!serializeAuth) {
-            /* behavior is disabled. Revert to concurrent requests */
-            return false;
+    private static AuthenticationInfo requestAuthentication(String key, Function<String, AuthenticationInfo> cache) {
+        AuthenticationInfo cached = cache.apply(key);
+        if (cached != null || !serializeAuth) {
+            // either we already have a value in the cache, and we can
+            // use that immediately, or the serializeAuth behavior is disabled,
+            // and we can revert to concurrent requests
+            return cached;
         }
         synchronized (requests) {
+            // check again after synchronizing, and if available
+            // just return the cached value.
+            cached = cache.apply(key);
+            if (cached != null) return cached;
+
+            // Otherwise, if no request is in progress, record this
+            // thread as performing authentication and returns null.
             Thread t, c;
             c = Thread.currentThread();
             if ((t = requests.get(key)) == null) {
                 requests.put (key, c);
-                return false;
+                assert cached == null;
+                return cached;
             }
             if (t == c) {
-                return false;
+                assert cached == null;
+                return cached;
             }
+            // Otherwise, an other thread is currently performing authentication:
+            // wait until it finishes.
             while (requests.containsKey(key)) {
                 try {
                     requests.wait ();
@@ -151,7 +169,7 @@ public abstract class AuthenticationInfo extends AuthCacheValue implements Clone
             }
         }
         /* entry may be in cache now. */
-        return true;
+        return cache.apply(key);
     }
 
     /* signal completion of an authentication (whether it succeeded or not)
@@ -318,13 +336,13 @@ public abstract class AuthenticationInfo extends AuthCacheValue implements Clone
         return key;
     }
 
+    private static AuthenticationInfo getCachedServerAuth(String key) {
+        return getAuth(key, null);
+    }
+
     static AuthenticationInfo getServerAuth(String key) {
-        AuthenticationInfo cached = getAuth(key, null);
-        if ((cached == null) && requestIsInProgress (key)) {
-            /* check the cache again, it might contain an entry */
-            cached = getAuth(key, null);
-        }
-        return cached;
+        if (!serializeAuth) return getCachedServerAuth(key);
+        return requestAuthentication(key, AuthenticationInfo::getCachedServerAuth);
     }
 
 
@@ -367,13 +385,13 @@ public abstract class AuthenticationInfo extends AuthCacheValue implements Clone
         return key;
     }
 
+    private static AuthenticationInfo getCachedProxyAuth(String key) {
+        return (AuthenticationInfo) cache.get(key, null);
+    }
+
     static AuthenticationInfo getProxyAuth(String key) {
-        AuthenticationInfo cached = (AuthenticationInfo) cache.get(key, null);
-        if ((cached == null) && requestIsInProgress (key)) {
-            /* check the cache again, it might contain an entry */
-            cached = (AuthenticationInfo) cache.get(key, null);
-        }
-        return cached;
+        if (!serializeAuth) return getCachedProxyAuth(key);
+        return requestAuthentication(key, AuthenticationInfo::getCachedProxyAuth);
     }
 
 

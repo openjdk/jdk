@@ -198,6 +198,13 @@ public abstract class SwitchNode extends ControlSplitNode {
     }
 
     /**
+     * Returns the probability of taking the default branch.
+     */
+    public double defaultProbability() {
+        return keyProbabilities[keyProbabilities.length - 1];
+    }
+
+    /**
      * Returns the index of the default (fall through) successor of this switch.
      */
     public int defaultSuccessorIndex() {

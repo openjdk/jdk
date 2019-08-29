@@ -75,6 +75,9 @@ public class AArch64BitCountAssemblerTest extends AssemblerTest {
                 AArch64MacroAssembler masm = new AArch64MacroAssembler(target);
                 Register dst = registerConfig.getReturnRegister(JavaKind.Int);
                 Register src = asRegister(cc.getArgument(0));
+                // Generate a nop first as AArch64 Hotspot requires instruction at nmethod verified
+                // entry to be a jump or nop. (See https://github.com/oracle/graal/issues/1439)
+                masm.nop();
                 RegisterArray registers = registerConfig.filterAllocatableRegisters(AArch64Kind.V64_BYTE, registerConfig.getAllocatableRegisters());
                 masm.popcnt(size, dst, src, registers.get(registers.size() - 1));
                 masm.ret(AArch64.lr);

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -81,7 +81,7 @@ public class LineSubscribersAndSurrogatesTest {
     }
 
     @Test
-    void testIncomplete() throws Exception {
+    public void testIncomplete() throws Exception {
         // Uses U+10400 which is encoded as the surrogate pair U+D801 U+DC00
         String text = "Bient\u00f4t\r\n nous plongerons\r\n dans\r" +
                 " les\n\n fr\u00f4\ud801\udc00des\r\n t\u00e9n\u00e8bres\ud801\udc00";
@@ -123,7 +123,7 @@ public class LineSubscribersAndSurrogatesTest {
 
 
     @Test
-    void testStringWithFinisherLF() throws Exception {
+    public void testStringWithFinisherLF() throws Exception {
         // Uses U+10400 which is encoded as the surrogate pair U+D801 U+DC00
         String text = "Bient\u00f4t\r\n nous plongerons\r\n dans\r" +
                 " les\n\n fr\u00f4\ud801\udc00des\r\n t\u00e9n\u00e8bres\r";
@@ -155,7 +155,7 @@ public class LineSubscribersAndSurrogatesTest {
 
 
     @Test
-    void testStringWithFinisherCR() throws Exception {
+    public void testStringWithFinisherCR() throws Exception {
         String text = "Bient\u00f4t\r\n nous plongerons\r\n dans\r" +
                 " les fr\u00f4\ud801\udc00des\r\n t\u00e9n\u00e8bres\r\r";
         ObjectSubscriber subscriber = new ObjectSubscriber();
@@ -183,7 +183,7 @@ public class LineSubscribersAndSurrogatesTest {
     }
 
     @Test
-    void testStringWithFinisherCRLF() throws Exception {
+    public void testStringWithFinisherCRLF() throws Exception {
         String text = "Bient\u00f4t\r\n nous plongerons\r\n dans\r" +
                 " les fr\u00f4\ud801\udc00des\r\n t\u00e9n\u00e8bres";
         ObjectSubscriber subscriber = new ObjectSubscriber();
@@ -210,7 +210,7 @@ public class LineSubscribersAndSurrogatesTest {
 
 
     @Test
-    void testStringWithFinisherBR() throws Exception {
+    public void testStringWithFinisherBR() throws Exception {
         String text = "Bient\u00f4t\r\n nous plongerons\r\n dans\r" +
                 " les\r\r fr\u00f4\ud801\udc00des\r\n t\u00e9n\u00e8bres";
         ObjectSubscriber subscriber = new ObjectSubscriber();
@@ -240,7 +240,7 @@ public class LineSubscribersAndSurrogatesTest {
     }
 
     @Test
-    void testStringWithFinisherBR_UTF_16() throws Exception {
+    public void testStringWithFinisherBR_UTF_16() throws Exception {
         String text = "Bient\u00f4t\r\n nous plongerons\r\n dans\r" +
                 " les\r\r fr\u00f4\ud801\udc00des\r\n t\u00e9n\u00e8bres\r\r";
         ObjectSubscriber subscriber = new ObjectSubscriber();

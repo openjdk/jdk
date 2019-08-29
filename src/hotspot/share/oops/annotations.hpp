@@ -100,7 +100,7 @@ class Annotations: public MetaspaceObj {
  private:
   static julong count_bytes(Array<AnnotationArray*>* p);
  public:
-  const char* internal_name() const { return "{constant pool}"; }
+  const char* internal_name() const { return "{annotations}"; }
 #ifndef PRODUCT
   void print_on(outputStream* st) const;
 #endif

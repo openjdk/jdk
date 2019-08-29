@@ -39,19 +39,7 @@ extern Mutex*   Module_lock;                     // a lock on module and package
 extern Mutex*   CompiledIC_lock;                 // a lock used to guard compiled IC patching and access
 extern Mutex*   InlineCacheBuffer_lock;          // a lock used to guard the InlineCacheBuffer
 extern Mutex*   VMStatistic_lock;                // a lock used to guard statistics count increment
-extern Mutex*   JNIGlobalAlloc_lock;             // JNI global storage allocate list lock
-extern Mutex*   JNIGlobalActive_lock;            // JNI global storage active list lock
-extern Mutex*   JNIWeakAlloc_lock;               // JNI weak storage allocate list lock
-extern Mutex*   JNIWeakActive_lock;              // JNI weak storage active list lock
-extern Mutex*   StringTableWeakAlloc_lock;       // StringTable weak storage allocate list lock
-extern Mutex*   StringTableWeakActive_lock;      // STringTable weak storage active list lock
 extern Mutex*   JNIHandleBlockFreeList_lock;     // a lock on the JNI handle block free list
-extern Mutex*   VMGlobalAlloc_lock;              // VM Global Handles storage allocate list lock
-extern Mutex*   VMGlobalActive_lock;             // VM Global Handles storage active list lock
-extern Mutex*   VMWeakAlloc_lock;                // VM Weak Handles storage allocate list lock
-extern Mutex*   VMWeakActive_lock;               // VM Weak Handles storage active list lock
-extern Mutex*   ResolvedMethodTableWeakAlloc_lock;  // ResolvedMethodTable weak storage allocate list
-extern Mutex*   ResolvedMethodTableWeakActive_lock; // ResolvedMethodTable weak storage active list
 extern Mutex*   JmethodIdCreation_lock;          // a lock on creating JNI method identifiers
 extern Mutex*   JfieldIdCreation_lock;           // a lock on creating JNI static field identifiers
 extern Monitor* JNICritical_lock;                // a lock used while entering and exiting JNI critical regions, allows GC to sometimes get in
@@ -154,7 +142,7 @@ extern Mutex*   MetaspaceExpand_lock;            // protects Metaspace virtualsp
 extern Mutex*   ClassLoaderDataGraph_lock;       // protects CLDG list, needed for concurrent unloading
 
 
-extern Monitor* CodeHeapStateAnalytics_lock;     // lock print functions against concurrent analyze functions.
+extern Mutex*   CodeHeapStateAnalytics_lock;     // lock print functions against concurrent analyze functions.
                                                  // Only used locally in PrintCodeCacheLayout processing.
 
 #if INCLUDE_JVMCI
@@ -183,9 +171,9 @@ char *lock_name(Mutex *mutex);
 
 // for debugging: check that we're already owning this lock (or are at a safepoint)
 #ifdef ASSERT
-void assert_locked_or_safepoint(const Monitor * lock);
-void assert_locked_or_safepoint_weak(const Monitor * lock);
-void assert_lock_strong(const Monitor * lock);
+void assert_locked_or_safepoint(const Mutex* lock);
+void assert_locked_or_safepoint_weak(const Mutex* lock);
+void assert_lock_strong(const Mutex* lock);
 #else
 #define assert_locked_or_safepoint(lock)
 #define assert_locked_or_safepoint_weak(lock)
@@ -194,10 +182,10 @@ void assert_lock_strong(const Monitor * lock);
 
 class MutexLocker: public StackObj {
  protected:
-  Monitor* _mutex;
+  Mutex* _mutex;
  private:
  public:
-  MutexLocker(Monitor* mutex, Mutex::SafepointCheckFlag flag = Mutex::_safepoint_check_flag) :
+  MutexLocker(Mutex* mutex, Mutex::SafepointCheckFlag flag = Mutex::_safepoint_check_flag) :
     _mutex(mutex) {
     bool no_safepoint_check = flag == Mutex::_no_safepoint_check_flag;
     if (_mutex != NULL) {
@@ -211,7 +199,7 @@ class MutexLocker: public StackObj {
     }
   }
 
-  MutexLocker(Monitor* mutex, Thread* thread, Mutex::SafepointCheckFlag flag = Mutex::_safepoint_check_flag) :
+  MutexLocker(Mutex* mutex, Thread* thread, Mutex::SafepointCheckFlag flag = Mutex::_safepoint_check_flag) :
     _mutex(mutex) {
     bool no_safepoint_check = flag == Mutex::_no_safepoint_check_flag;
     if (_mutex != NULL) {
@@ -239,35 +227,36 @@ class MutexLocker: public StackObj {
 
 class MonitorLocker: public MutexLocker {
   Mutex::SafepointCheckFlag _flag;
+  Monitor* _monitor;
  public:
   MonitorLocker(Monitor* monitor, Mutex::SafepointCheckFlag flag = Mutex::_safepoint_check_flag) :
-    MutexLocker(monitor, flag), _flag(flag) {
+    MutexLocker(monitor, flag), _flag(flag), _monitor(monitor) {
     // Superclass constructor did locking
-    assert(_mutex != NULL, "NULL monitor not allowed");
+    assert(_monitor != NULL, "NULL monitor not allowed");
   }
 
   MonitorLocker(Monitor* monitor, Thread* thread, Mutex::SafepointCheckFlag flag = Mutex::_safepoint_check_flag) :
-    MutexLocker(monitor, thread, flag), _flag(flag)  {
+    MutexLocker(monitor, thread, flag), _flag(flag), _monitor(monitor)  {
     // Superclass constructor did locking
-    assert(_mutex != NULL, "NULL monitor not allowed");
+    assert(_monitor != NULL, "NULL monitor not allowed");
   }
 
   bool wait(long timeout = 0,
             bool as_suspend_equivalent = !Mutex::_as_suspend_equivalent_flag) {
     if (_flag == Mutex::_safepoint_check_flag) {
-      return _mutex->wait(timeout, as_suspend_equivalent);
+      return _monitor->wait(timeout, as_suspend_equivalent);
     } else {
-      return _mutex->wait_without_safepoint_check(timeout);
+      return _monitor->wait_without_safepoint_check(timeout);
     }
     return false;
   }
 
   void notify_all() {
-    _mutex->notify_all();
+    _monitor->notify_all();
   }
 
   void notify() {
-    _mutex->notify();
+    _monitor->notify();
   }
 };
 
@@ -280,10 +269,10 @@ class MonitorLocker: public MutexLocker {
 
 class GCMutexLocker: public StackObj {
 private:
-  Monitor* _mutex;
+  Mutex* _mutex;
   bool _locked;
 public:
-  GCMutexLocker(Monitor* mutex);
+  GCMutexLocker(Mutex* mutex);
   ~GCMutexLocker() { if (_locked) _mutex->unlock(); }
 };
 
@@ -292,11 +281,11 @@ public:
 
 class MutexUnlocker: StackObj {
  private:
-  Monitor* _mutex;
+  Mutex* _mutex;
   bool _no_safepoint_check;
 
  public:
-  MutexUnlocker(Monitor* mutex, Mutex::SafepointCheckFlag flag = Mutex::_safepoint_check_flag) :
+  MutexUnlocker(Mutex* mutex, Mutex::SafepointCheckFlag flag = Mutex::_safepoint_check_flag) :
     _mutex(mutex),
     _no_safepoint_check(flag) {
     _mutex->unlock();

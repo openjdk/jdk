@@ -238,7 +238,7 @@ class CompilationWatchDog implements Runnable, AutoCloseable {
                                             TTY.printf("======================= WATCH DOG THREAD =======================%n" +
                                                             "%s took %d identical stack traces, which indicates a stuck compilation (id=%d) of %s%n%sExiting VM%n", this,
                                                             numberOfIdenticalStackTraces, currentId, fmt(currentMethod), fmt(lastStackTrace));
-                                            System.exit(-1);
+                                            HotSpotGraalServices.exit(-1);
                                         }
                                     } else if (newStackTrace) {
                                         synchronized (CompilationWatchDog.class) {

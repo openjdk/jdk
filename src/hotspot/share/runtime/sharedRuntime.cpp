@@ -2091,12 +2091,7 @@ JRT_BLOCK_ENTRY(void, SharedRuntime::complete_monitor_locking_C(oopDesc* _obj, B
     Atomic::inc(BiasedLocking::slow_path_entry_count_addr());
   }
   Handle h_obj(THREAD, obj);
-  if (UseBiasedLocking) {
-    // Retry fast entry if bias is revoked to avoid unnecessary inflation
-    ObjectSynchronizer::fast_enter(h_obj, lock, true, CHECK);
-  } else {
-    ObjectSynchronizer::slow_enter(h_obj, lock, CHECK);
-  }
+  ObjectSynchronizer::enter(h_obj, lock, CHECK);
   assert(!HAS_PENDING_EXCEPTION, "Should have no exception here");
   JRT_BLOCK_END
 JRT_END
@@ -2127,7 +2122,7 @@ JRT_LEAF(void, SharedRuntime::complete_monitor_unlocking_C(oopDesc* _obj, BasicL
   {
     // Exit must be non-blocking, and therefore no exceptions can be thrown.
     EXCEPTION_MARK;
-    ObjectSynchronizer::slow_exit(obj, lock, THREAD);
+    ObjectSynchronizer::exit(obj, lock, THREAD);
   }
 
 #ifdef MIGHT_HAVE_PENDING
@@ -2849,10 +2844,16 @@ bool AdapterHandlerEntry::compare_code(unsigned char* buffer, int length) {
 void AdapterHandlerLibrary::create_native_wrapper(const methodHandle& method) {
   ResourceMark rm;
   nmethod* nm = NULL;
+  address critical_entry = NULL;
 
   assert(method->is_native(), "must be native");
   assert(method->is_method_handle_intrinsic() ||
          method->has_native_function(), "must have something valid to call!");
+
+  if (CriticalJNINatives && !method->is_method_handle_intrinsic()) {
+    // We perform the I/O with transition to native before acquiring AdapterHandlerLibrary_lock.
+    critical_entry = NativeLookup::lookup_critical_entry(method);
+  }
 
   {
     // Perform the work while holding the lock, but perform any printing outside the lock
@@ -2898,7 +2899,7 @@ void AdapterHandlerLibrary::create_native_wrapper(const methodHandle& method) {
       int comp_args_on_stack = SharedRuntime::java_calling_convention(sig_bt, regs, total_args_passed, is_outgoing);
 
       // Generate the compiled-to-native wrapper code
-      nm = SharedRuntime::generate_native_wrapper(&_masm, method, compile_id, sig_bt, regs, ret_type);
+      nm = SharedRuntime::generate_native_wrapper(&_masm, method, compile_id, sig_bt, regs, ret_type, critical_entry);
 
       if (nm != NULL) {
         method->set_code(method, nm);
@@ -3106,10 +3107,10 @@ JRT_LEAF(intptr_t*, SharedRuntime::OSR_migration_begin( JavaThread *thread) )
     if (kptr2->obj() != NULL) {         // Avoid 'holes' in the monitor array
       BasicLock *lock = kptr2->lock();
       // Inflate so the displaced header becomes position-independent
-      if (lock->displaced_header()->is_unlocked())
+      if (lock->displaced_header().is_unlocked())
         ObjectSynchronizer::inflate_helper(kptr2->obj());
       // Now the displaced header is free to move
-      buf[i++] = (intptr_t)lock->displaced_header();
+      buf[i++] = (intptr_t)lock->displaced_header().value();
       buf[i++] = cast_from_oop<intptr_t>(kptr2->obj());
     }
   }

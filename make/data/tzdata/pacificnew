@@ -44,7 +44,7 @@
 ## Rule	Twilite	XXXX	max	uspres	Nov	Sun>=7	2:00	0	S
 ## Rule	Twilite	XXXX	max	nonpres	Oct	lastSun	2:00	0	S
 
-# Zone	NAME			GMTOFF	RULES/SAVE	FORMAT	[UNTIL]
+# Zone	NAME			STDOFF	RULES/SAVE	FORMAT	[UNTIL]
 ## Zone	America/Los_Angeles-PET	-8:00	US		P%sT	XXXX
 ##				-8:00	Twilite		P%sT
 

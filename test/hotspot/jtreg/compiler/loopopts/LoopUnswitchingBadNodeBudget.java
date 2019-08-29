@@ -32,7 +32,7 @@
  * @run main/othervm -XX:-TieredCompilation -XX:-BackgroundCompilation
  *      -XX:-UseOnStackReplacement -XX:CompileOnly=LoopUnswitchingBadNodeBudget::test
  *      -XX:CompileCommand=dontinline,LoopUnswitchingBadNodeBudget::helper
- *      -XX:+UnlockExperimentalVMOptions -XX:-UseSwitchProfiling LoopUnswitchingBadNodeBudget
+ *      -XX:+UnlockDiagnosticVMOptions -XX:-UseSwitchProfiling LoopUnswitchingBadNodeBudget
  *
  */
 

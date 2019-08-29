@@ -31,7 +31,7 @@
 #include "gc/shared/collectedHeap.hpp"
 #include "interpreter/interpreter.hpp"
 #include "oops/arrayOop.hpp"
-#include "oops/markOop.hpp"
+#include "oops/markWord.hpp"
 #include "runtime/basicLock.hpp"
 #include "runtime/biasedLocking.hpp"
 #include "runtime/os.hpp"
@@ -61,7 +61,7 @@ int C1_MacroAssembler::lock_object(Register hdr, Register obj, Register disp_hdr
   // Load object header
   movptr(hdr, Address(obj, hdr_offset));
   // and mark it as unlocked
-  orptr(hdr, markOopDesc::unlocked_value);
+  orptr(hdr, markWord::unlocked_value);
   // save unlocked object header into the displaced header location on the stack
   movptr(Address(disp_hdr, 0), hdr);
   // test if object header is still the same (i.e. unlocked), and if so, store the
@@ -156,7 +156,7 @@ void C1_MacroAssembler::initialize_header(Register obj, Register klass, Register
     movptr(Address(obj, oopDesc::mark_offset_in_bytes()), t1);
   } else {
     // This assumes that all prototype bits fit in an int32_t
-    movptr(Address(obj, oopDesc::mark_offset_in_bytes ()), (int32_t)(intptr_t)markOopDesc::prototype());
+    movptr(Address(obj, oopDesc::mark_offset_in_bytes ()), (int32_t)(intptr_t)markWord::prototype().value());
   }
 #ifdef _LP64
   if (UseCompressedClassPointers) { // Take care not to kill klass

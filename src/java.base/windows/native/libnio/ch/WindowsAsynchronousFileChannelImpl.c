@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -115,7 +115,7 @@ Java_sun_nio_ch_WindowsAsynchronousFileChannelImpl_lockFile(JNIEnv *env, jobject
         if (error == ERROR_IO_PENDING) {
             return IOS_UNAVAILABLE;
         }
-        JNU_ThrowIOExceptionWithLastError(env, "WriteFile failed");
+        JNU_ThrowIOExceptionWithLastError(env, "LockFile failed");
         return IOS_THROWN;
     }
     return 0;

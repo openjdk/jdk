@@ -97,7 +97,7 @@ void JNICALL callbackBreakpoint(jvmtiEnv *jvmti_env,
     /* Redefine the class loader and then pop the
        frame and resume the thread..*/
     nsk_jvmti_getFileName(redefineNumber, FILE_NAME, fileName, sizeof(fileName)/sizeof(char));
-    if (nsk_jvmti_redefineClass(jvmti_env, clas, fileName) == NSK_TRUE) {
+    if (nsk_jvmti_redefineClass(jvmti_env, clas, fileName)) {
         nsk_printf("\nMyClass :: Successfully redefined..\n");
     } else {
         nsk_printf("\nMyClass :: Failed to redefine ..\n");

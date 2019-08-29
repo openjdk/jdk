@@ -30,7 +30,7 @@
 #include "gc/shared/collectedHeap.hpp"
 #include "interpreter/interpreter.hpp"
 #include "oops/arrayOop.hpp"
-#include "oops/markOop.hpp"
+#include "oops/markWord.hpp"
 #include "runtime/basicLock.hpp"
 #include "runtime/biasedLocking.hpp"
 #include "runtime/os.hpp"
@@ -97,12 +97,12 @@ void C1_MacroAssembler::lock_object(Register Rmark, Register Roop, Register Rbox
   mov(Rbox, Rscratch);
 
   // and mark it unlocked
-  or3(Rmark, markOopDesc::unlocked_value, Rmark);
+  or3(Rmark, markWord::unlocked_value, Rmark);
 
   // save unlocked object header into the displaced header location on the stack
   st_ptr(Rmark, Rbox, BasicLock::displaced_header_offset_in_bytes());
 
-  // compare object markOop with Rmark and if equal exchange Rscratch with object markOop
+  // compare object markWord with Rmark and if equal exchange Rscratch with object markWord
   assert(mark_addr.disp() == 0, "cas must take a zero displacement");
   cas_ptr(mark_addr.base(), Rmark, Rscratch);
   // if compare/exchange succeeded we found an unlocked object and we now have locked it
@@ -144,7 +144,7 @@ void C1_MacroAssembler::unlock_object(Register Rmark, Register Roop, Register Rb
   }
 
   // Check if it is still a light weight lock, this is is true if we see
-  // the stack address of the basicLock in the markOop of the object
+  // the stack address of the basicLock in the markWord of the object
   cas_ptr(mark_addr.base(), Rbox, Rmark);
   cmp(Rbox, Rmark);
 
@@ -179,7 +179,7 @@ void C1_MacroAssembler::initialize_header(Register obj, Register klass, Register
   if (UseBiasedLocking && !len->is_valid()) {
     ld_ptr(klass, in_bytes(Klass::prototype_header_offset()), t1);
   } else {
-    set((intx)markOopDesc::prototype(), t1);
+    set((intx)markWord::prototype().value(), t1);
   }
   st_ptr(t1, obj, oopDesc::mark_offset_in_bytes());
   if (UseCompressedClassPointers) {

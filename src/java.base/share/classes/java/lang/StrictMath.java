@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -67,12 +67,12 @@ import jdk.internal.HotSpotIntrinsicCandidate;
  * The best practice is to choose the primitive type and algorithm to avoid
  * overflow. In cases where the size is {@code int} or {@code long} and
  * overflow errors need to be detected, the methods {@code addExact},
- * {@code subtractExact}, {@code multiplyExact}, and {@code toIntExact}
+ * {@code subtractExact}, {@code multiplyExact}, {@code toIntExact},
+ * {@code incrementExact}, {@code decrementExact} and {@code negateExact}
  * throw an {@code ArithmeticException} when the results overflow.
- * For other arithmetic operations such as divide, absolute value,
- * increment by one, decrement by one, and negation overflow occurs only with
- * a specific minimum or maximum value and should be checked against
- * the minimum or maximum as appropriate.
+ * For the arithmetic operations divide and absolute value, overflow
+ * occurs only with a specific minimum or maximum value and
+ * should be checked against the minimum or maximum as appropriate.
  *
  * @author  unascribed
  * @author  Joseph D. Darcy
@@ -835,8 +835,98 @@ public final class StrictMath {
     }
 
     /**
-     * Returns the value of the {@code long} argument;
-     * throwing an exception if the value overflows an {@code int}.
+     * Returns the argument incremented by one,
+     * throwing an exception if the result overflows an {@code int}.
+     * The overflow only occurs for {@linkplain Integer#MAX_VALUE the maximum value}.
+     *
+     * @param a the value to increment
+     * @return the result
+     * @throws ArithmeticException if the result overflows an int
+     * @see Math#incrementExact(int)
+     * @since 14
+     */
+    public static int incrementExact(int a) {
+        return Math.incrementExact(a);
+    }
+
+    /**
+     * Returns the argument incremented by one,
+     * throwing an exception if the result overflows a {@code long}.
+     * The overflow only occurs for {@linkplain Long#MAX_VALUE the maximum value}.
+     *
+     * @param a the value to increment
+     * @return the result
+     * @throws ArithmeticException if the result overflows a long
+     * @see Math#incrementExact(long)
+     * @since 14
+     */
+    public static long incrementExact(long a) {
+        return Math.incrementExact(a);
+    }
+
+    /**
+     * Returns the argument decremented by one,
+     * throwing an exception if the result overflows an {@code int}.
+     * The overflow only occurs for {@linkplain Integer#MIN_VALUE the minimum value}.
+     *
+     * @param a the value to decrement
+     * @return the result
+     * @throws ArithmeticException if the result overflows an int
+     * @see Math#decrementExact(int)
+     * @since 14
+     */
+    public static int decrementExact(int a) {
+        return Math.decrementExact(a);
+    }
+
+    /**
+     * Returns the argument decremented by one,
+     * throwing an exception if the result overflows a {@code long}.
+     * The overflow only occurs for {@linkplain Long#MIN_VALUE the minimum value}.
+     *
+     * @param a the value to decrement
+     * @return the result
+     * @throws ArithmeticException if the result overflows a long
+     * @see Math#decrementExact(long)
+     * @since 14
+     */
+    public static long decrementExact(long a) {
+        return Math.decrementExact(a);
+    }
+
+    /**
+     * Returns the negation of the argument,
+     * throwing an exception if the result overflows an {@code int}.
+     * The overflow only occurs for {@linkplain Integer#MIN_VALUE the minimum value}.
+     *
+     * @param a the value to negate
+     * @return the result
+     * @throws ArithmeticException if the result overflows an int
+     * @see Math#negateExact(int)
+     * @since 14
+     */
+    public static int negateExact(int a) {
+        return Math.negateExact(a);
+    }
+
+    /**
+     * Returns the negation of the argument,
+     * throwing an exception if the result overflows a {@code long}.
+     * The overflow only occurs for {@linkplain Long#MIN_VALUE the minimum value}.
+     *
+     * @param a the value to negate
+     * @return the result
+     * @throws ArithmeticException if the result overflows a long
+     * @see Math#negateExact(long)
+     * @since 14
+     */
+    public static long negateExact(long a) {
+        return Math.negateExact(a);
+    }
+
+    /**
+     * Returns the value of the {@code long} argument, throwing an exception
+     * if the value overflows an {@code int}.
      *
      * @param value the long value
      * @return the argument as an int

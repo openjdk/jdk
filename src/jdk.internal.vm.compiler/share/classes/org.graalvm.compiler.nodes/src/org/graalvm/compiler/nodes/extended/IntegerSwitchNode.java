@@ -36,6 +36,7 @@ import org.graalvm.compiler.core.common.type.IntegerStamp;
 import org.graalvm.compiler.core.common.type.PrimitiveStamp;
 import org.graalvm.compiler.core.common.type.Stamp;
 import org.graalvm.compiler.core.common.type.StampFactory;
+import org.graalvm.compiler.graph.Node;
 import org.graalvm.compiler.graph.NodeClass;
 import org.graalvm.compiler.graph.spi.Simplifiable;
 import org.graalvm.compiler.graph.spi.SimplifierTool;
@@ -51,6 +52,7 @@ import org.graalvm.compiler.nodes.calc.IntegerBelowNode;
 import org.graalvm.compiler.nodes.java.LoadIndexedNode;
 import org.graalvm.compiler.nodes.spi.LIRLowerable;
 import org.graalvm.compiler.nodes.spi.NodeLIRBuilderTool;
+import org.graalvm.compiler.nodes.spi.SwitchFoldable;
 import org.graalvm.compiler.nodes.util.GraphUtil;
 
 import jdk.vm.ci.meta.DeoptimizationAction;
@@ -63,7 +65,7 @@ import jdk.vm.ci.meta.JavaKind;
  * values. The actual implementation of the switch will be decided by the backend.
  */
 @NodeInfo
-public final class IntegerSwitchNode extends SwitchNode implements LIRLowerable, Simplifiable {
+public final class IntegerSwitchNode extends SwitchNode implements LIRLowerable, Simplifiable, SwitchFoldable {
     public static final NodeClass<IntegerSwitchNode> TYPE = NodeClass.create(IntegerSwitchNode.class);
 
     protected final int[] keys;
@@ -75,11 +77,24 @@ public final class IntegerSwitchNode extends SwitchNode implements LIRLowerable,
         this.keys = keys;
         assert value.stamp(NodeView.DEFAULT) instanceof PrimitiveStamp && value.stamp(NodeView.DEFAULT).getStackKind().isNumericInteger();
         assert assertSorted();
+        assert assertNoUntargettedSuccessor();
     }
 
     private boolean assertSorted() {
         for (int i = 1; i < keys.length; i++) {
             assert keys[i - 1] < keys[i];
+        }
+        return true;
+    }
+
+    private boolean assertNoUntargettedSuccessor() {
+        boolean[] checker = new boolean[successors.size()];
+        for (int successorIndex : keySuccessors) {
+            checker[successorIndex] = true;
+        }
+        checker[defaultSuccessorIndex()] = true;
+        for (boolean b : checker) {
+            assert b;
         }
         return true;
     }
@@ -102,6 +117,14 @@ public final class IntegerSwitchNode extends SwitchNode implements LIRLowerable,
     @Override
     public JavaConstant keyAt(int i) {
         return JavaConstant.forInt(keys[i]);
+    }
+
+    /**
+     * Gets the key at the specified index, as a java int.
+     */
+    @Override
+    public int intKeyAt(int i) {
+        return keys[i];
     }
 
     @Override
@@ -148,7 +171,61 @@ public final class IntegerSwitchNode extends SwitchNode implements LIRLowerable,
             return;
         } else if (tryRemoveUnreachableKeys(tool, value().stamp(view))) {
             return;
+        } else if (switchTransformationOptimization(tool)) {
+            return;
         }
+    }
+
+    private void addSuccessorForDeletion(AbstractBeginNode defaultNode) {
+        successors.add(defaultNode);
+    }
+
+    @Override
+    public Node getNextSwitchFoldableBranch() {
+        return defaultSuccessor();
+    }
+
+    @Override
+    public boolean isInSwitch(ValueNode switchValue) {
+        return value == switchValue;
+    }
+
+    @Override
+    public void cutOffCascadeNode() {
+        AbstractBeginNode toKill = defaultSuccessor();
+        clearSuccessors();
+        addSuccessorForDeletion(toKill);
+    }
+
+    @Override
+    public void cutOffLowestCascadeNode() {
+        clearSuccessors();
+    }
+
+    @Override
+    public AbstractBeginNode getDefault() {
+        return defaultSuccessor();
+    }
+
+    @Override
+    public ValueNode switchValue() {
+        return value();
+    }
+
+    @Override
+    public boolean isNonInitializedProfile() {
+        int nbSuccessors = getSuccessorCount();
+        double prob = 0.0d;
+        for (int i = 0; i < nbSuccessors; i++) {
+            if (keyProbabilities[i] > 0.0d) {
+                if (prob == 0.0d) {
+                    prob = keyProbabilities[i];
+                } else if (keyProbabilities[i] != prob) {
+                    return false;
+                }
+            }
+        }
+        return true;
     }
 
     static final class KeyData {
@@ -208,7 +285,7 @@ public final class IntegerSwitchNode extends SwitchNode implements LIRLowerable,
      * because {@link Enum#ordinal()} can change when recompiling an enum, it cannot be used
      * directly as the value that is switched on. An intermediate int[] array, which is initialized
      * once at run time based on the actual {@link Enum#ordinal()} values, is used.
-     *
+     * <p>
      * The {@link ConstantFieldProvider} of Graal already detects the int[] arrays and marks them as
      * {@link ConstantNode#isDefaultStable() stable}, i.e., the array elements are constant. The
      * code in this method detects array loads from such a stable array and re-wires the switch to

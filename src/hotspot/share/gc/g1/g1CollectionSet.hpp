@@ -164,7 +164,7 @@ class G1CollectionSet {
   // The number of cards in the remembered set in the collection set. Set from
   // the incrementally built collection set at the start of an evacuation
   // pause, and updated as more regions are added to the collection set.
-  size_t _recorded_rs_lengths;
+  size_t _recorded_rs_length;
 
   enum CSetBuildType {
     Active,             // We are actively building the collection set
@@ -188,25 +188,25 @@ class G1CollectionSet {
   // only one thread can be allocating a new CSet region (currently,
   // it does so after taking the Heap_lock) hence no need to
   // synchronize updates to this field.
-  size_t _inc_recorded_rs_lengths;
+  size_t _inc_recorded_rs_length;
 
   // A concurrent refinement thread periodically samples the young
-  // region RSets and needs to update _inc_recorded_rs_lengths as
+  // region RSets and needs to update _inc_recorded_rs_length as
   // the RSets grow. Instead of having to synchronize updates to that
   // field we accumulate them in this field and add it to
-  // _inc_recorded_rs_lengths_diffs at the start of a GC.
-  ssize_t _inc_recorded_rs_lengths_diffs;
+  // _inc_recorded_rs_length_diff at the start of a GC.
+  ssize_t _inc_recorded_rs_length_diff;
 
   // The predicted elapsed time it will take to collect the regions in
   // the CSet. This is updated by the thread that adds a new region to
-  // the CSet. See the comment for _inc_recorded_rs_lengths about
+  // the CSet. See the comment for _inc_recorded_rs_length about
   // MT-safety assumptions.
   double _inc_predicted_elapsed_time_ms;
 
-  // See the comment for _inc_recorded_rs_lengths_diffs.
-  double _inc_predicted_elapsed_time_ms_diffs;
+  // See the comment for _inc_recorded_rs_length_diff.
+  double _inc_predicted_elapsed_time_ms_diff;
 
-  void set_recorded_rs_lengths(size_t rs_lengths);
+  void set_recorded_rs_length(size_t rs_length);
 
   G1CollectorState* collector_state();
   G1GCPhaseTimes* phase_times();
@@ -293,7 +293,7 @@ public:
 
   void iterate_optional(HeapRegionClosure* cl) const;
 
-  size_t recorded_rs_lengths() { return _recorded_rs_lengths; }
+  size_t recorded_rs_length() { return _recorded_rs_length; }
 
   size_t bytes_used_before() const {
     return _bytes_used_before;

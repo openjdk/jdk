@@ -385,8 +385,8 @@ JRT_ENTRY_NO_ASYNC(void, JVMCIRuntime::monitorenter(JavaThread* thread, oopDesc*
   IF_TRACE_jvmci_3 {
     char type[O_BUFLEN];
     obj->klass()->name()->as_C_string(type, O_BUFLEN);
-    markOop mark = obj->mark();
-    TRACE_jvmci_3("%s: entered locking slow case with obj=" INTPTR_FORMAT ", type=%s, mark=" INTPTR_FORMAT ", lock=" INTPTR_FORMAT, thread->name(), p2i(obj), type, p2i(mark), p2i(lock));
+    markWord mark = obj->mark();
+    TRACE_jvmci_3("%s: entered locking slow case with obj=" INTPTR_FORMAT ", type=%s, mark=" INTPTR_FORMAT ", lock=" INTPTR_FORMAT, thread->name(), p2i(obj), type, mark.value(), p2i(lock));
     tty->flush();
   }
   if (PrintBiasedLockingStatistics) {
@@ -394,17 +394,7 @@ JRT_ENTRY_NO_ASYNC(void, JVMCIRuntime::monitorenter(JavaThread* thread, oopDesc*
   }
   Handle h_obj(thread, obj);
   assert(oopDesc::is_oop(h_obj()), "must be NULL or an object");
-  if (UseBiasedLocking) {
-    // Retry fast entry if bias is revoked to avoid unnecessary inflation
-    ObjectSynchronizer::fast_enter(h_obj, lock, true, CHECK);
-  } else {
-    if (JVMCIUseFastLocking) {
-      // When using fast locking, the compiled code has already tried the fast case
-      ObjectSynchronizer::slow_enter(h_obj, lock, THREAD);
-    } else {
-      ObjectSynchronizer::fast_enter(h_obj, lock, false, THREAD);
-    }
-  }
+  ObjectSynchronizer::enter(h_obj, lock, THREAD);
   TRACE_jvmci_3("%s: exiting locking slow with obj=" INTPTR_FORMAT, thread->name(), p2i(obj));
 JRT_END
 
@@ -426,16 +416,11 @@ JRT_LEAF(void, JVMCIRuntime::monitorexit(JavaThread* thread, oopDesc* obj, Basic
   }
 #endif
 
-  if (JVMCIUseFastLocking) {
-    // When using fast locking, the compiled code has already tried the fast case
-    ObjectSynchronizer::slow_exit(obj, lock, THREAD);
-  } else {
-    ObjectSynchronizer::fast_exit(obj, lock, THREAD);
-  }
+  ObjectSynchronizer::exit(obj, lock, THREAD);
   IF_TRACE_jvmci_3 {
     char type[O_BUFLEN];
     obj->klass()->name()->as_C_string(type, O_BUFLEN);
-    TRACE_jvmci_3("%s: exited locking slow case with obj=" INTPTR_FORMAT ", type=%s, mark=" INTPTR_FORMAT ", lock=" INTPTR_FORMAT, thread->name(), p2i(obj), type, p2i(obj->mark()), p2i(lock));
+    TRACE_jvmci_3("%s: exited locking slow case with obj=" INTPTR_FORMAT ", type=%s, mark=" INTPTR_FORMAT ", lock=" INTPTR_FORMAT, thread->name(), p2i(obj), type, obj->mark().value(), p2i(lock));
     tty->flush();
   }
 JRT_END

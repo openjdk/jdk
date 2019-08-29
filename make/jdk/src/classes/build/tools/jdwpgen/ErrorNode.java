@@ -55,9 +55,10 @@ class ErrorNode extends AbstractCommandNode {
         if (com == null || com.length() == 0) {
             com = ConstantSetNode.getConstant("Error_" + name);
         }
-        writer.println("<tr><td>" + "<a href=\"#" + NAME_OF_ERROR_TABLE + "_" + name + "\">"
-                       + name + "</a></td>" +
-                       "<td>" + com + "&nbsp;</td></tr>");
+        writer.println("<tr>"
+                + "<th scope=\"row\">" + "<a href=\"#" + NAME_OF_ERROR_TABLE + "_" + name + "\">" + name + "</a>"
+                + "<td>" + com + "&nbsp;"
+                + "</tr>");
     }
 
     void genJavaComment(PrintWriter writer, int depth) {}

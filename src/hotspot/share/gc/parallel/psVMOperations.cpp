@@ -49,11 +49,16 @@ void VM_ParallelGCFailedAllocation::doit() {
   }
 }
 
+static bool is_cause_full(GCCause::Cause cause) {
+  return (cause != GCCause::_gc_locker) && (cause != GCCause::_wb_young_gc)
+         DEBUG_ONLY(&& (cause != GCCause::_scavenge_alot));
+}
+
 // Only used for System.gc() calls
 VM_ParallelGCSystemGC::VM_ParallelGCSystemGC(uint gc_count,
                                              uint full_gc_count,
                                              GCCause::Cause gc_cause) :
-  VM_GC_Operation(gc_count, gc_cause, full_gc_count, true /* full */)
+  VM_GC_Operation(gc_count, gc_cause, full_gc_count, is_cause_full(gc_cause))
 {
 }
 
@@ -63,8 +68,7 @@ void VM_ParallelGCSystemGC::doit() {
   ParallelScavengeHeap* heap = ParallelScavengeHeap::heap();
 
   GCCauseSetter gccs(heap, _gc_cause);
-  if (_gc_cause == GCCause::_gc_locker || _gc_cause == GCCause::_wb_young_gc
-      DEBUG_ONLY(|| _gc_cause == GCCause::_scavenge_alot)) {
+  if (!_full) {
     // If (and only if) the scavenge fails, this will invoke a full gc.
     heap->invoke_scavenge();
   } else {

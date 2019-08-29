@@ -44,6 +44,7 @@
 #include "runtime/jniHandles.inline.hpp"
 #include "runtime/orderAccess.hpp"
 #include "runtime/reflection.hpp"
+#include "runtime/sharedRuntime.hpp"
 #include "runtime/thread.hpp"
 #include "runtime/threadSMR.hpp"
 #include "runtime/vm_version.hpp"
@@ -443,6 +444,46 @@ UNSAFE_LEAF(void, Unsafe_CopySwapMemory0(JNIEnv *env, jobject unsafe, jobject sr
       }
     } JVM_END
   }
+} UNSAFE_END
+
+UNSAFE_LEAF (void, Unsafe_WriteBack0(JNIEnv *env, jobject unsafe, jlong line)) {
+  assert(VM_Version::supports_data_cache_line_flush(), "should not get here");
+#ifdef ASSERT
+  if (TraceMemoryWriteback) {
+    tty->print_cr("Unsafe: writeback 0x%p", addr_from_java(line));
+  }
+#endif
+
+  assert(StubRoutines::data_cache_writeback() != NULL, "sanity");
+  (StubRoutines::DataCacheWriteback_stub())(addr_from_java(line));
+} UNSAFE_END
+
+static void doWriteBackSync0(bool is_pre)
+{
+  assert(StubRoutines::data_cache_writeback_sync() != NULL, "sanity");
+  (StubRoutines::DataCacheWritebackSync_stub())(is_pre);
+}
+
+UNSAFE_LEAF (void, Unsafe_WriteBackPreSync0(JNIEnv *env, jobject unsafe)) {
+  assert(VM_Version::supports_data_cache_line_flush(), "should not get here");
+#ifdef ASSERT
+  if (TraceMemoryWriteback) {
+      tty->print_cr("Unsafe: writeback pre-sync");
+  }
+#endif
+
+  doWriteBackSync0(true);
+} UNSAFE_END
+
+UNSAFE_LEAF (void, Unsafe_WriteBackPostSync0(JNIEnv *env, jobject unsafe)) {
+  assert(VM_Version::supports_data_cache_line_flush(), "should not get here");
+#ifdef ASSERT
+  if (TraceMemoryWriteback) {
+    tty->print_cr("Unsafe: writeback pre-sync");
+  }
+#endif
+
+  doWriteBackSync0(false);
 } UNSAFE_END
 
 ////// Random queries
@@ -1073,6 +1114,9 @@ static JNINativeMethod jdk_internal_misc_Unsafe_methods[] = {
 
     {CC "copyMemory0",        CC "(" OBJ "J" OBJ "JJ)V", FN_PTR(Unsafe_CopyMemory0)},
     {CC "copySwapMemory0",    CC "(" OBJ "J" OBJ "JJJ)V", FN_PTR(Unsafe_CopySwapMemory0)},
+    {CC "writeback0",         CC "(" "J" ")V",           FN_PTR(Unsafe_WriteBack0)},
+    {CC "writebackPreSync0",  CC "()V",                  FN_PTR(Unsafe_WriteBackPreSync0)},
+    {CC "writebackPostSync0", CC "()V",                  FN_PTR(Unsafe_WriteBackPostSync0)},
     {CC "setMemory0",         CC "(" OBJ "JJB)V",        FN_PTR(Unsafe_SetMemory0)},
 
     {CC "defineAnonymousClass0", CC "(" DAC_Args ")" CLS, FN_PTR(Unsafe_DefineAnonymousClass0)},

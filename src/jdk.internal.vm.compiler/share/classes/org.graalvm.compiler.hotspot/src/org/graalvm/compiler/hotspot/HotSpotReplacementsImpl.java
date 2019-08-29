@@ -208,6 +208,7 @@ public class HotSpotReplacementsImpl extends ReplacementsImpl {
         return super.getSnippet(method, recursiveEntry, args, trackNodeSourcePosition, replaceePosition, options);
     }
 
+    @SuppressWarnings("try")
     private StructuredGraph getEncodedSnippet(ResolvedJavaMethod method, Object[] args, StructuredGraph.AllowAssumptions allowAssumptions, OptionValues options) {
         boolean useEncodedGraphs = UseEncodedGraphs.getValue(options);
         if (IS_IN_NATIVE_IMAGE || useEncodedGraphs) {
@@ -219,11 +220,15 @@ public class HotSpotReplacementsImpl extends ReplacementsImpl {
                 if (getEncodedSnippets() == null) {
                     throw GraalError.shouldNotReachHere("encoded snippets not found");
                 }
-                StructuredGraph graph = getEncodedSnippets().getEncodedSnippet(method, this, args, allowAssumptions, options);
-                if (graph == null) {
-                    throw GraalError.shouldNotReachHere("snippet not found: " + method.format("%H.%n(%p)"));
+                // Snippets graphs can contain foreign object reference and
+                // outlive a single compilation.
+                try (CompilationContext scope = HotSpotGraalServices.enterGlobalCompilationContext()) {
+                    StructuredGraph graph = getEncodedSnippets().getEncodedSnippet(method, this, args, allowAssumptions, options);
+                    if (graph == null) {
+                        throw GraalError.shouldNotReachHere("snippet not found: " + method.format("%H.%n(%p)"));
+                    }
+                    return graph;
                 }
-                return graph;
             }
         } else {
             assert registeredSnippets == null || registeredSnippets.contains(method) : "Asking for snippet method that was never registered: " + method.format("%H.%n(%p)");

@@ -34,7 +34,7 @@
 #include "interpreter/interpreterRuntime.hpp"
 #include "logging/log.hpp"
 #include "oops/arrayOop.hpp"
-#include "oops/markOop.hpp"
+#include "oops/markWord.hpp"
 #include "oops/method.hpp"
 #include "oops/methodData.hpp"
 #include "prims/jvmtiExport.hpp"
@@ -878,7 +878,7 @@ void InterpreterMacroAssembler::lock_object(Register Rlock) {
     ldr(Rmark, Address(Robj, oopDesc::mark_offset_in_bytes()));
 
     // Test if object is already locked
-    tst(Rmark, markOopDesc::unlocked_value);
+    tst(Rmark, markWord::unlocked_value);
     b(already_locked, eq);
 
     // Save old object->mark() into BasicLock's displaced header

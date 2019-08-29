@@ -28,6 +28,7 @@
 #include "classfile/stringTable.hpp"
 #include "gc/shared/oopStorage.inline.hpp"
 #include "gc/shared/oopStorageParState.inline.hpp"
+#include "gc/shared/oopStorageSet.hpp"
 #include "gc/shared/weakProcessor.hpp"
 #include "gc/shared/weakProcessorPhases.hpp"
 #include "gc/shared/weakProcessorPhaseTimes.hpp"
@@ -94,31 +95,36 @@ void WeakProcessor::Task::work(uint worker_id,
          "worker_id (%u) exceeds task's configured workers (%u)",
          worker_id, _nworkers);
 
-  FOR_EACH_WEAK_PROCESSOR_PHASE(phase) {
-    if (WeakProcessorPhases::is_serial(phase)) {
-      CountingIsAliveClosure<IsAlive> cl(is_alive);
-      uint serial_index = WeakProcessorPhases::serial_index(phase);
-      if (_serial_phases_done.try_claim_task(serial_index)) {
-        WeakProcessorPhaseTimeTracker pt(_phase_times, phase);
-        WeakProcessorPhases::processor(phase)(&cl, keep_alive);
-        if (_phase_times != NULL) {
-          _phase_times->record_phase_items(phase, cl.num_dead(), cl.num_total());
-        }
-      }
-    } else {
-      CountingSkippedIsAliveClosure<IsAlive, KeepAlive> cl(is_alive, keep_alive);
-      WeakProcessorPhaseTimeTracker pt(_phase_times, phase, worker_id);
-      uint storage_index = WeakProcessorPhases::oop_storage_index(phase);
-      _storage_states[storage_index].oops_do(&cl);
+  typedef WeakProcessorPhases::Iterator Iterator;
+
+  for (Iterator it = WeakProcessorPhases::serial_iterator(); !it.is_end(); ++it) {
+    WeakProcessorPhase phase = *it;
+    CountingIsAliveClosure<IsAlive> cl(is_alive);
+    uint serial_index = WeakProcessorPhases::serial_index(phase);
+    if (_serial_phases_done.try_claim_task(serial_index)) {
+      WeakProcessorPhaseTimeTracker pt(_phase_times, phase);
+      WeakProcessorPhases::processor(phase)(&cl, keep_alive);
       if (_phase_times != NULL) {
-        _phase_times->record_worker_items(worker_id, phase, cl.num_dead(), cl.num_total());
+        _phase_times->record_phase_items(phase, cl.num_dead(), cl.num_total());
       }
-      if (WeakProcessorPhases::is_stringtable(phase)) {
-        StringTable::inc_dead_counter(cl.num_dead() + cl.num_skipped());
-      }
-      if (WeakProcessorPhases::is_resolved_method_table(phase)) {
-        ResolvedMethodTable::inc_dead_counter(cl.num_dead() + cl.num_skipped());
-      }
+    }
+  }
+
+  for (Iterator it = WeakProcessorPhases::oopstorage_iterator(); !it.is_end(); ++it) {
+    WeakProcessorPhase phase = *it;
+    CountingSkippedIsAliveClosure<IsAlive, KeepAlive> cl(is_alive, keep_alive);
+    WeakProcessorPhaseTimeTracker pt(_phase_times, phase, worker_id);
+    uint oopstorage_index = WeakProcessorPhases::oopstorage_index(phase);
+    StorageState& cur_state = _storage_states[oopstorage_index];
+    cur_state.oops_do(&cl);
+    if (_phase_times != NULL) {
+      _phase_times->record_worker_items(worker_id, phase, cl.num_dead(), cl.num_total());
+    }
+    const OopStorage* cur_storage = cur_state.storage();
+    if (cur_storage == OopStorageSet::string_table_weak()) {
+      StringTable::inc_dead_counter(cl.num_dead() + cl.num_skipped());
+    } else if (cur_storage == OopStorageSet::resolved_method_table_weak()) {
+      ResolvedMethodTable::inc_dead_counter(cl.num_dead() + cl.num_skipped());
     }
   }
 

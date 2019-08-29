@@ -51,12 +51,9 @@
 const char* VM_Operation::_names[VM_Operation::VMOp_Terminating] = \
   { VM_OPS_DO(VM_OP_NAME_INITIALIZE) };
 
-void VM_Operation::set_calling_thread(Thread* thread, ThreadPriority priority) {
+void VM_Operation::set_calling_thread(Thread* thread) {
   _calling_thread = thread;
-  assert(MinPriority <= priority && priority <= MaxPriority, "sanity check");
-  _priority = priority;
 }
-
 
 void VM_Operation::evaluate() {
   ResourceMark rm;
@@ -522,7 +519,7 @@ void VM_Exit::wait_if_vm_exited() {
       Thread::current_or_null() != _shutdown_thread) {
     // _vm_exited is set at safepoint, and the Threads_lock is never released
     // we will block here until the process dies
-    Threads_lock->lock_without_safepoint_check();
+    Threads_lock->lock();
     ShouldNotReachHere();
   }
 }

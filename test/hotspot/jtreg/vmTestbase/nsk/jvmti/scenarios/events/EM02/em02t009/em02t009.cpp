@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2004, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2004, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -69,7 +69,7 @@ showEventStatistics(int step) {
 int checkEvents(int step) {
     int i;
     jvmtiEvent curr;
-    int result = NSK_TRUE;
+    bool result = true;
     int *currentCounts;
     int isExpected = 0;
 
@@ -85,7 +85,7 @@ int checkEvents(int step) {
 
         default:
             NSK_COMPLAIN1("Unexpected step no: %d\n", step);
-            return NSK_FALSE;
+            return false;
     }
 
     for (i = 0; i < JVMTI_EVENT_COUNT; i++) {
@@ -115,7 +115,7 @@ int checkEvents(int step) {
                         NSK_COMPLAIN2("Unexpected events number %7d for %s\n\texpected value must be greater than 1\n",
                                             currentCounts[i],
                                             TranslateEvent(curr));
-                    result = NSK_FALSE;
+                    result = false;
                 }
             } else {
                 if (currentCounts[i] != NUMBER_OF_INVOCATIONS) {
@@ -123,7 +123,7 @@ int checkEvents(int step) {
                                         TranslateEvent(curr),
                                         currentCounts[i],
                                         NUMBER_OF_INVOCATIONS);
-                    result = NSK_FALSE;
+                    result = false;
                 }
             }
         } else {
@@ -132,7 +132,7 @@ int checkEvents(int step) {
                 NSK_COMPLAIN2("Unexpected event %s was sent %d times\n",
                                     TranslateEvent(curr),
                                     currentCounts[i]);
-                result = NSK_FALSE;
+                result = false;
             }
         }
     }
@@ -378,7 +378,7 @@ cbVMObjectAlloc(jvmtiEnv *jvmti_env, JNIEnv* jni_env, jthread thread,
 
 /* ============================================================================= */
 
-static int enableEvent(jvmtiEvent event) {
+static bool enableEvent(jvmtiEvent event) {
 
     if (nsk_jvmti_isOptionalEvent(event)
             && (event != JVMTI_EVENT_METHOD_ENTRY)
@@ -387,23 +387,23 @@ static int enableEvent(jvmtiEvent event) {
                 jvmti->SetEventNotificationMode(JVMTI_ENABLE, event, NULL))) {
             NSK_COMPLAIN1("Unexpected error enabling %s\n",
                 TranslateEvent(event));
-            return NSK_FALSE;
+            return false;
         }
     } else {
         if (!NSK_JVMTI_VERIFY(jvmti->SetEventNotificationMode(JVMTI_ENABLE, event, NULL))) {
             NSK_COMPLAIN1("Unexpected error enabling %s\n",
                 TranslateEvent(event));
-            return NSK_FALSE;
+            return false;
         }
     }
 
-    return NSK_TRUE;
+    return true;
 }
 
 /**
  * Enable or disable tested events.
  */
-static int enableEventList() {
+static bool enableEventList() {
 
     int i, result;
 
@@ -419,18 +419,17 @@ static int enableEventList() {
             result = result && enableEvent(event);
     }
 
-    if (result == NSK_FALSE) {
+    if (!result) {
         nsk_jvmti_setFailStatus();
-        return NSK_FALSE;
+        return false;
     }
 
-    return NSK_TRUE;
+    return true;
 }
 
 /* ============================================================================= */
 
-static int
-setCallBacks(int step) {
+static bool setCallBacks(int step) {
 
     int i;
 
@@ -485,9 +484,9 @@ setCallBacks(int step) {
 
     }
     if (!NSK_JVMTI_VERIFY(jvmti->SetEventCallbacks(&eventCallbacks, sizeof(eventCallbacks))))
-        return NSK_FALSE;
+        return false;
 
-    return NSK_TRUE;
+    return true;
 }
 
 /* ============================================================================= */

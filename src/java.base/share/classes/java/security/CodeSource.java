@@ -57,7 +57,7 @@ public class CodeSource implements java.io.Serializable {
      *
      * @serial
      */
-    private URL location;
+    private final URL location;
 
     /*
      * The code signers.

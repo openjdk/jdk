@@ -27,7 +27,7 @@
 #include "memory/resourceArea.hpp"
 #include "memory/virtualspace.hpp"
 #include "oops/compressedOops.hpp"
-#include "oops/markOop.hpp"
+#include "oops/markWord.hpp"
 #include "oops/oop.inline.hpp"
 #include "runtime/os.inline.hpp"
 #include "services/memTracker.hpp"
@@ -623,9 +623,9 @@ ReservedHeapSpace::ReservedHeapSpace(size_t size, size_t alignment, bool large, 
     initialize(size, alignment, large, NULL, false);
   }
 
-  assert(markOopDesc::encode_pointer_as_mark(_base)->decode_pointer() == _base,
+  assert(markWord::encode_pointer_as_mark(_base).decode_pointer() == _base,
          "area must be distinguishable from marks for mark-sweep");
-  assert(markOopDesc::encode_pointer_as_mark(&_base[size])->decode_pointer() == &_base[size],
+  assert(markWord::encode_pointer_as_mark(&_base[size]).decode_pointer() == &_base[size],
          "area must be distinguishable from marks for mark-sweep");
 
   if (base() != NULL) {

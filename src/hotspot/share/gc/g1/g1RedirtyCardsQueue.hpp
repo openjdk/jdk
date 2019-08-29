@@ -25,6 +25,7 @@
 #ifndef SHARE_GC_G1_G1REDIRTYCARDSQUEUE_HPP
 #define SHARE_GC_G1_G1REDIRTYCARDSQUEUE_HPP
 
+#include "gc/g1/g1BufferNodeList.hpp"
 #include "gc/shared/ptrQueue.hpp"
 #include "memory/allocation.hpp"
 #include "memory/padded.hpp"
@@ -32,15 +33,6 @@
 class G1CardTableEntryClosure;
 class G1RedirtyCardsQueue;
 class G1RedirtyCardsQueueSet;
-
-struct G1RedirtyCardsBufferList {
-  BufferNode* _head;
-  BufferNode* _tail;
-  size_t _entry_count;
-
-  G1RedirtyCardsBufferList();
-  G1RedirtyCardsBufferList(BufferNode* head, BufferNode* tail, size_t entry_count);
-};
 
 // Provide G1RedirtyCardsQueue with a thread-local qset.  It provides an
 // uncontended staging area for completed buffers, to be flushed to the
@@ -52,7 +44,7 @@ class G1RedirtyCardsQueueBase {
 
   class LocalQSet : public PtrQueueSet {
     G1RedirtyCardsQueueSet* _shared_qset;
-    G1RedirtyCardsBufferList _buffers;
+    G1BufferNodeList _buffers;
 
   public:
     LocalQSet(G1RedirtyCardsQueueSet* shared_qset);
@@ -64,7 +56,7 @@ class G1RedirtyCardsQueueBase {
     // Transfer all completed buffers to the shared qset.
     void flush();
 
-    G1RedirtyCardsBufferList take_all_completed_buffers();
+    G1BufferNodeList take_all_completed_buffers();
   };
 
   G1RedirtyCardsQueueBase(G1RedirtyCardsQueueSet* shared_qset) :
@@ -110,10 +102,8 @@ class G1RedirtyCardsQueueSet : public PtrQueueSet {
   void update_tail(BufferNode* node);
 
 public:
-  G1RedirtyCardsQueueSet();
+  G1RedirtyCardsQueueSet(BufferNode::Allocator* allocator);
   ~G1RedirtyCardsQueueSet();
-
-  using PtrQueueSet::initialize;
 
   void verify_empty() const NOT_DEBUG_RETURN;
 
@@ -125,7 +115,7 @@ public:
   // Processing phase operations.
   // precondition: Must not be concurrent with buffer collection.
   BufferNode* all_completed_buffers() const;
-  G1RedirtyCardsBufferList take_all_completed_buffers();
+  G1BufferNodeList take_all_completed_buffers();
 };
 
 #endif // SHARE_GC_G1_G1REDIRTYCARDSQUEUE_HPP

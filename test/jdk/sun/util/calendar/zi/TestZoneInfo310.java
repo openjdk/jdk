@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 8007572 8008161 8157792 8224560
+ * @bug 8007572 8008161 8157792 8212970 8224560
  * @summary Test whether the TimeZone generated from JSR310 tzdb is the same
  * as the one from the tz data from javazic
  * @modules java.base/sun.util.calendar:+open
@@ -46,18 +46,18 @@ public class TestZoneInfo310 {
     public static void main(String[] args) throws Throwable {
 
         String TESTDIR = System.getProperty("test.dir", ".");
-        String SRCDIR = System.getProperty("test.src", ".");
-        String tzdir = SRCDIR + File.separator + "tzdata";
-        String tzfiles = "africa antarctica asia australasia europe northamerica pacificnew southamerica backward etcetera systemv";
-        String jdk_tzdir = SRCDIR + File.separator + "tzdata_jdk";
-        String jdk_tzfiles = "gmt jdk11_backward";
+        Path tzdir = Paths.get(System.getProperty("test.root"),
+            "..", "..", "make", "data", "tzdata");
+        String tzfiles = "africa antarctica asia australasia europe northamerica pacificnew southamerica backward etcetera systemv gmt";
+        Path jdk_tzdir = Paths.get(System.getProperty("test.src"), "tzdata_jdk");
+        String jdk_tzfiles = "jdk11_backward";
         String zidir = TESTDIR + File.separator + "zi";
         File fZidir = new File(zidir);
         if (!fZidir.exists()) {
             fZidir.mkdirs();
         }
         Matcher m = Pattern.compile("tzdata(?<ver>[0-9]{4}[A-z])")
-                           .matcher(new String(Files.readAllBytes(Paths.get(tzdir, "VERSION")), "ascii"));
+                           .matcher(new String(Files.readAllBytes(tzdir.resolve("VERSION")), "ascii"));
         String ver = m.find() ? m.group("ver") : "NULL";
 
         ArrayList<String> alist = new ArrayList<>();
@@ -66,10 +66,10 @@ public class TestZoneInfo310 {
         alist.add("-d");
         alist.add(zidir);
         for (String f : tzfiles.split(" ")) {
-            alist.add(tzdir + File.separator + f);
+            alist.add(tzdir.resolve(f).toString());
         }
         for (String f : jdk_tzfiles.split(" ")) {
-            alist.add(jdk_tzdir + File.separator + f);
+            alist.add(jdk_tzdir.resolve(f).toString());
         }
         System.out.println("Compiling tz files!");
         Main.main(alist.toArray(new String[alist.size()]));
@@ -174,10 +174,30 @@ public class TestZoneInfo310 {
              * Temporary ignoring the failing TimeZones which are having zone
              * rules defined till year 2037 and/or above and have negative DST
              * save time in IANA tzdata. This bug is tracked via JDK-8223388.
+             *
+             * These are the zones/rules that employ negative DST in vanguard
+             * format (as of 2019a):
+             *
+             *  - Rule "Eire"
+             *  - Rule "Morocco"
+             *  - Rule "Namibia"
+             *  - Zone "Europe/Prague"
+             *
+             * Tehran/Iran rule has rules beyond 2037, in which javazic assumes
+             * to be the last year. Thus javazic's rule is based on year 2037
+             * (Mar 20th/Sep 20th are the cutover dates), while the real rule
+             * has year 2087 where Mar 21st/Sep 21st are the cutover dates.
              */
-            if (zid.equals("Africa/Casablanca") || zid.equals("Africa/El_Aaiun")
-                || zid.equals("Asia/Tehran") || zid.equals("Iran")) {
-                continue;
+            if (zid.equals("Africa/Casablanca") || // uses "Morocco" rule
+                zid.equals("Africa/El_Aaiun") || // uses "Morocco" rule
+                zid.equals("Africa/Windhoek") || // uses "Namibia" rule
+                zid.equals("Eire") ||
+                zid.equals("Europe/Bratislava") || // link to "Europe/Prague"
+                zid.equals("Europe/Dublin") || // uses "Eire" rule
+                zid.equals("Europe/Prague") ||
+                zid.equals("Asia/Tehran") || // last rule mismatch
+                zid.equals("Iran")) { // last rule mismatch
+                    continue;
             }
             if (! zi.equalsTo(ziOLD)) {
                 System.out.println(zi.diffsTo(ziOLD));

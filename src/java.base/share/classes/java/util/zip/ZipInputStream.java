@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -321,7 +321,7 @@ class ZipInputStream extends InflaterInputStream implements ZipConstants {
             byte[] extra = new byte[len];
             readFully(extra, 0, len);
             e.setExtra0(extra,
-                        e.csize == ZIP64_MAGICVAL || e.size == ZIP64_MAGICVAL);
+                        e.csize == ZIP64_MAGICVAL || e.size == ZIP64_MAGICVAL, true);
         }
         return e;
     }

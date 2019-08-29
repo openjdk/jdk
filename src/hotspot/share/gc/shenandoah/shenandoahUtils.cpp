@@ -34,6 +34,7 @@
 #include "gc/shenandoah/shenandoahHeap.hpp"
 #include "gc/shenandoah/shenandoahHeuristics.hpp"
 #include "gc/shenandoah/shenandoahUtils.hpp"
+#include "utilities/debug.hpp"
 
 ShenandoahPhaseTimings::Phase ShenandoahGCPhase::_current_phase = ShenandoahGCPhase::_invalid_phase;
 
@@ -182,48 +183,4 @@ ShenandoahWorkerSession::~ShenandoahWorkerSession() {
   assert(ShenandoahThreadLocalData::worker_id(thr) != ShenandoahThreadLocalData::INVALID_WORKER_ID, "Must be set");
   ShenandoahThreadLocalData::set_worker_id(thr, ShenandoahThreadLocalData::INVALID_WORKER_ID);
 #endif
-}
-
-struct PhaseMap {
-   WeakProcessorPhases::Phase            _weak_processor_phase;
-   ShenandoahPhaseTimings::GCParPhases   _shenandoah_phase;
-};
-
-static const struct PhaseMap phase_mapping[] = {
-#if INCLUDE_JVMTI
-  {WeakProcessorPhases::jvmti,                 ShenandoahPhaseTimings::JVMTIWeakRoots},
-#endif
-#if INCLUDE_JFR
-  {WeakProcessorPhases::jfr,                   ShenandoahPhaseTimings::JFRWeakRoots},
-#endif
-  {WeakProcessorPhases::jni,                   ShenandoahPhaseTimings::JNIWeakRoots},
-  {WeakProcessorPhases::stringtable,           ShenandoahPhaseTimings::StringTableRoots},
-  {WeakProcessorPhases::resolved_method_table, ShenandoahPhaseTimings::ResolvedMethodTableRoots},
-  {WeakProcessorPhases::vm,                    ShenandoahPhaseTimings::VMWeakRoots}
-};
-
-STATIC_ASSERT(sizeof(phase_mapping) / sizeof(PhaseMap) == WeakProcessorPhases::phase_count);
-
-void ShenandoahTimingConverter::weak_processing_timing_to_shenandoah_timing(WeakProcessorPhaseTimes* weak_processing_timings,
-                                                                            ShenandoahWorkerTimings* sh_worker_times) {
-  assert(weak_processing_timings->max_threads() == weak_processing_timings->max_threads(), "Must match");
-  for (uint index = 0; index < WeakProcessorPhases::phase_count; index ++) {
-    weak_processing_phase_to_shenandoah_phase(phase_mapping[index]._weak_processor_phase,
-                                              weak_processing_timings,
-                                              phase_mapping[index]._shenandoah_phase,
-                                              sh_worker_times);
-  }
-}
-
-void ShenandoahTimingConverter::weak_processing_phase_to_shenandoah_phase(WeakProcessorPhases::Phase wpp,
-                                                                          WeakProcessorPhaseTimes* weak_processing_timings,
-                                                                          ShenandoahPhaseTimings::GCParPhases spp,
-                                                                          ShenandoahWorkerTimings* sh_worker_times) {
-  if (WeakProcessorPhases::is_serial(wpp)) {
-    sh_worker_times->record_time_secs(spp, 0, weak_processing_timings->phase_time_sec(wpp));
-  } else {
-    for (uint index = 0; index < weak_processing_timings->max_threads(); index ++) {
-      sh_worker_times->record_time_secs(spp, index, weak_processing_timings->worker_time_sec(index, wpp));
-    }
-  }
 }

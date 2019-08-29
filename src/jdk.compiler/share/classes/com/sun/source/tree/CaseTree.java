@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -49,7 +49,7 @@ public interface CaseTree extends Tree {
     /**
      * Returns the expression for the case, or
      * {@code null} if this is the default case.
-     * If this case has multiple lables, returns the first label.
+     * If this case has multiple labels, returns the first label.
      * @return the expression for the case, or null
      */
     ExpressionTree getExpression();

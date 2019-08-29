@@ -381,7 +381,7 @@ class ParNewGeneration: public DefNewGeneration {
   // that must not contain a forwarding pointer (though one might be
   // inserted in "obj"s mark word by a parallel thread).
   oop copy_to_survivor_space(ParScanThreadState* par_scan_state,
-                             oop obj, size_t obj_sz, markOop m);
+                             oop obj, size_t obj_sz, markWord m);
 
   // in support of testing overflow code
   NOT_PRODUCT(int _overflow_counter;)

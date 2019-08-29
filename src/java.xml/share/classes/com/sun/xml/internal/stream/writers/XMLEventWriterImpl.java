@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -51,15 +51,16 @@ import javax.xml.stream.events.XMLEvent;
 public class XMLEventWriterImpl implements XMLEventWriter {
 
     //delegate everything to XMLStreamWriter..
-    private final XMLStreamWriterBase fStreamWriter;
+    private final XMLStreamWriter fStreamWriter;
     private static final boolean DEBUG = false;
 
     /**
-     *
+     * Constructs an XMLEventWriterImpl that implements the standard XMLStreamWriter
+     * interface.
      * @param streamWriter
      */
     public XMLEventWriterImpl(XMLStreamWriter streamWriter) {
-        fStreamWriter = (XMLStreamWriterBase) streamWriter;
+        fStreamWriter = streamWriter;
     }
 
     /**
@@ -98,9 +99,18 @@ public class XMLEventWriterImpl implements XMLEventWriter {
                     System.out.println("Adding StartDocument = " + startDocument.toString());
                 }
                 try {
-                    fStreamWriter.writeStartDocument(startDocument.getCharacterEncodingScheme(),
-                            startDocument.getVersion(),
-                            startDocument.isStandalone(), startDocument.standaloneSet());
+                    if (XMLStreamWriterBase.class.isAssignableFrom(fStreamWriter.getClass())) {
+                        // internal impl uses the extended interface
+                        ((XMLStreamWriterBase)fStreamWriter).writeStartDocument(
+                                startDocument.getCharacterEncodingScheme(),
+                                startDocument.getVersion(),
+                                startDocument.isStandalone(),
+                                startDocument.standaloneSet());
+                    } else {
+                        fStreamWriter.writeStartDocument(
+                                startDocument.getCharacterEncodingScheme(),
+                                startDocument.getVersion());
+                    }
                 } catch (XMLStreamException e) {
                     fStreamWriter.writeStartDocument(startDocument.getVersion());
                 }

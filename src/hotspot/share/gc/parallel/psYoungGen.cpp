@@ -749,7 +749,7 @@ void PSYoungGen::adjust_pointers() {
 void PSYoungGen::compact() {
   eden_mark_sweep()->compact(ZapUnusedHeapArea);
   from_mark_sweep()->compact(ZapUnusedHeapArea);
-  // Mark sweep stores preserved markOops in to space, don't disturb!
+  // Mark sweep stores preserved markWords in to space, don't disturb!
   to_mark_sweep()->compact(false);
 }
 
@@ -764,12 +764,6 @@ void PSYoungGen::print_on(outputStream* st) const {
   st->print("  eden"); eden_space()->print_on(st);
   st->print("  from"); from_space()->print_on(st);
   st->print("  to  "); to_space()->print_on(st);
-}
-
-// Note that a space is not printed before the [NAME:
-void PSYoungGen::print_used_change(size_t prev_used) const {
-  log_info(gc, heap)("%s: "  SIZE_FORMAT "K->" SIZE_FORMAT "K("  SIZE_FORMAT "K)",
-      name(), prev_used / K, used_in_bytes() / K, capacity_in_bytes() / K);
 }
 
 size_t PSYoungGen::available_for_expansion() {

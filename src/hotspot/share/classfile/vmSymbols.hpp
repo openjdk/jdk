@@ -452,6 +452,7 @@
   template(page_size_name,                            "PAGE_SIZE")                                \
   template(big_endian_name,                           "BIG_ENDIAN")                               \
   template(use_unaligned_access_name,                 "UNALIGNED_ACCESS")                         \
+  template(data_cache_line_flush_size_name,           "DATA_CACHE_LINE_FLUSH_SIZE")               \
                                                                                                   \
   /* name symbols needed by intrinsics */                                                         \
   VM_INTRINSICS_DO(VM_INTRINSIC_IGNORE, VM_SYMBOL_IGNORE, template, VM_SYMBOL_IGNORE, VM_ALIAS_IGNORE) \
@@ -480,6 +481,7 @@
   template(long_int_signature,                        "(J)I")                                     \
   template(long_long_signature,                       "(J)J")                                     \
   template(long_double_signature,                     "(J)D")                                     \
+  template(long_void_signature,                       "(J)V")                                     \
   template(byte_signature,                            "B")                                        \
   template(char_signature,                            "C")                                        \
   template(double_signature,                          "D")                                        \
@@ -1020,6 +1022,12 @@
    do_name(     decrypt_name,                                      "implDecrypt")                                       \
    do_signature(byteArray_int_int_byteArray_int_signature,         "([BII[BI)I")                                        \
                                                                                                                         \
+  do_class(com_sun_crypto_provider_electronicCodeBook, "com/sun/crypto/provider/ElectronicCodeBook")                    \
+   do_intrinsic(_electronicCodeBook_encryptAESCrypt, com_sun_crypto_provider_electronicCodeBook, ecb_encrypt_name, byteArray_int_int_byteArray_int_signature, F_R)  \
+   do_intrinsic(_electronicCodeBook_decryptAESCrypt, com_sun_crypto_provider_electronicCodeBook, ecb_decrypt_name, byteArray_int_int_byteArray_int_signature, F_R)  \
+   do_name(ecb_encrypt_name, "implECBEncrypt")                                                                          \
+   do_name(ecb_decrypt_name, "implECBDecrypt")                                                                          \
+                                                                                                                        \
   do_class(com_sun_crypto_provider_counterMode,      "com/sun/crypto/provider/CounterMode")                             \
    do_intrinsic(_counterMode_AESCrypt, com_sun_crypto_provider_counterMode, crypt_name, byteArray_int_int_byteArray_int_signature, F_R)   \
    do_name(     crypt_name,                                 "implCrypt")                                                    \
@@ -1087,6 +1095,12 @@
   do_class(jdk_internal_misc_Unsafe,               "jdk/internal/misc/Unsafe")                                          \
   do_class(sun_misc_Unsafe,                        "sun/misc/Unsafe")                                                   \
                                                                                                                         \
+  do_intrinsic(_writeback0,               jdk_internal_misc_Unsafe,     writeback0_name, long_void_signature , F_RN)             \
+   do_name(     writeback0_name,                                        "writeback0")                                            \
+  do_intrinsic(_writebackPreSync0,        jdk_internal_misc_Unsafe,     writebackPreSync0_name, void_method_signature , F_RN)    \
+   do_name(     writebackPreSync0_name,                                 "writebackPreSync0")                                     \
+  do_intrinsic(_writebackPostSync0,       jdk_internal_misc_Unsafe,    writebackPostSync0_name, void_method_signature , F_RN)    \
+   do_name(     writebackPostSync0_name,                                "writebackPostSync0")                                    \
   do_intrinsic(_allocateInstance,         jdk_internal_misc_Unsafe,     allocateInstance_name, allocateInstance_signature, F_RN) \
    do_name(     allocateInstance_name,                                  "allocateInstance")                                      \
    do_signature(allocateInstance_signature,                             "(Ljava/lang/Class;)Ljava/lang/Object;")                 \

@@ -90,13 +90,6 @@ import javax.sql.*;
  *     com.sun.rowset.providers.RIOptimisticProvider
  * </pre>
  * <p>
- * A vendor can register a <code>SyncProvider</code> implementation class name
- * with Oracle Corporation by sending email to jdbc@sun.com.
- * Oracle will maintain a database listing the
- * available <code>SyncProvider</code> implementations for use with compliant
- * <code>RowSet</code> implementations.  This database will be similar to the
- * one already maintained to list available JDBC drivers.
- * <P>
  * Vendors should refer to the reference implementation synchronization
  * providers for additional guidance on how to implement a new
  * <code>SyncProvider</code> implementation.

@@ -28,6 +28,7 @@
 
 #include "memory/allocation.hpp"
 #include "gc/shared/gcCause.hpp"
+#include "runtime/globals.hpp"
 
 class SoftRefPolicy;
 

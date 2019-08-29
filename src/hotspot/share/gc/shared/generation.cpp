@@ -68,6 +68,12 @@ size_t Generation::initial_size() {
   return gch->old_gen_spec()->init_size();
 }
 
+// This is for CMS. It returns stable monotonic used space size.
+// Remove this when CMS is removed.
+size_t Generation::used_stable() const {
+  return used();
+}
+
 size_t Generation::max_capacity() const {
   return reserved().byte_size();
 }
@@ -178,7 +184,7 @@ oop Generation::promote(oop obj, size_t obj_size) {
 }
 
 oop Generation::par_promote(int thread_num,
-                            oop obj, markOop m, size_t word_sz) {
+                            oop obj, markWord m, size_t word_sz) {
   // Could do a bad general impl here that gets a lock.  But no.
   ShouldNotCallThis();
   return NULL;

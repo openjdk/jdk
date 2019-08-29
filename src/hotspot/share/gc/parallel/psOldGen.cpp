@@ -443,11 +443,6 @@ void PSOldGen::print_on(outputStream* st) const {
   st->print("  object"); object_space()->print_on(st);
 }
 
-void PSOldGen::print_used_change(size_t prev_used) const {
-  log_info(gc, heap)("%s: "  SIZE_FORMAT "K->" SIZE_FORMAT "K("  SIZE_FORMAT "K)",
-      name(), prev_used / K, used_in_bytes() / K, capacity_in_bytes() / K);
-}
-
 void PSOldGen::update_counters() {
   if (UsePerfData) {
     _space_counters->update_all();

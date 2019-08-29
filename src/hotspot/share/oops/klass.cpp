@@ -195,7 +195,7 @@ void* Klass::operator new(size_t size, ClassLoaderData* loader_data, size_t word
 // should be NULL before setting it.
 Klass::Klass(KlassID id) : _id(id),
                            _java_mirror(NULL),
-                           _prototype_header(markOopDesc::prototype()),
+                           _prototype_header(markWord::prototype()),
                            _shared_class_path_index(-1) {
   CDS_ONLY(_shared_class_flags = 0;)
   CDS_JAVA_HEAP_ONLY(_archived_mirror = 0;)
@@ -568,6 +568,12 @@ void Klass::restore_unshareable_info(ClassLoaderData* loader_data, Handle protec
     // Restore class_loader_data to the null class loader data
     set_class_loader_data(loader_data);
 
+    // Workaround for suspected bug.  Make sure other threads see this assignment.
+    // This shouldn't be necessary but the compiler thread seems to be behind
+    // the times, even though this thread takes MethodCompileQueue_lock and the thread
+    // that doesn't see this value also takes that lock.
+    OrderAccess::fence();
+
     // Add to null class loader list first before creating the mirror
     // (same order as class file parsing)
     loader_data->add_class(this);
@@ -744,9 +750,9 @@ void Klass::oop_print_on(oop obj, outputStream* st) {
 
   if (WizardMode) {
      // print header
-     obj->mark()->print_on(st);
+     obj->mark().print_on(st);
      st->cr();
-     st->print(BULLET"prototype_header: " INTPTR_FORMAT, p2i(_prototype_header));
+     st->print(BULLET"prototype_header: " INTPTR_FORMAT, _prototype_header.value());
      st->cr();
   }
 

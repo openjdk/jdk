@@ -230,9 +230,9 @@ void G1ParCopyClosure<barrier, do_mark_object>::do_oop_work(T* p) {
   const G1HeapRegionAttr state = _g1h->region_attr(obj);
   if (state.is_in_cset()) {
     oop forwardee;
-    markOop m = obj->mark_raw();
-    if (m->is_marked()) {
-      forwardee = (oop) m->decode_pointer();
+    markWord m = obj->mark_raw();
+    if (m.is_marked()) {
+      forwardee = (oop) m.decode_pointer();
     } else {
       forwardee = _par_scan_state->copy_to_survivor_space(state, obj, m);
     }

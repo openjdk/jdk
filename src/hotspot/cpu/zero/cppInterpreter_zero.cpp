@@ -273,12 +273,12 @@ int CppInterpreter::native_entry(Method* method, intptr_t UNUSED, TRAPS) {
   if (method->is_synchronized()) {
     monitor = (BasicObjectLock*) istate->stack_base();
     oop lockee = monitor->obj();
-    markOop disp = lockee->mark()->set_unlocked();
+    markWord disp = lockee->mark().set_unlocked();
 
     monitor->lock()->set_displaced_header(disp);
-    if (lockee->cas_set_mark((markOop)monitor, disp) != disp) {
-      if (thread->is_lock_owned((address) disp->clear_lock_bits())) {
-        monitor->lock()->set_displaced_header(NULL);
+    if (lockee->cas_set_mark(markWord::from_pointer(monitor), disp) != disp) {
+      if (thread->is_lock_owned((address) disp.clear_lock_bits().to_pointer())) {
+        monitor->lock()->set_displaced_header(markWord::from_pointer(NULL));
       }
       else {
         CALL_VM_NOCHECK(InterpreterRuntime::monitorenter(thread, monitor));
@@ -413,12 +413,12 @@ int CppInterpreter::native_entry(Method* method, intptr_t UNUSED, TRAPS) {
   // Unlock if necessary
   if (monitor) {
     BasicLock *lock = monitor->lock();
-    markOop header = lock->displaced_header();
+    markWord header = lock->displaced_header();
     oop rcvr = monitor->obj();
     monitor->set_obj(NULL);
 
-    if (header != NULL) {
-      markOop old_header = markOopDesc::encode(lock);
+    if (header.to_pointer() != NULL) {
+      markWord old_header = markWord::encode(lock);
       if (rcvr->cas_set_mark(header, old_header) != old_header) {
         monitor->set_obj(rcvr); {
           HandleMark hm(thread);

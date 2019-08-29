@@ -41,7 +41,7 @@ import javax.crypto.interfaces.DHPublicKey;
 import javax.crypto.spec.DHParameterSpec;
 import javax.crypto.spec.DHPublicKeySpec;
 import sun.security.action.GetPropertyAction;
-import sun.security.ssl.NamedGroup.NamedGroupType;
+import sun.security.ssl.NamedGroup.NamedGroupSpec;
 import sun.security.ssl.SupportedGroupsExtension.SupportedGroups;
 import sun.security.ssl.X509Authentication.X509Possession;
 import sun.security.util.KeyUtil;
@@ -76,7 +76,7 @@ final class DHKeyExchange {
         static DHECredentials valueOf(NamedGroup ng,
             byte[] encodedPublic) throws IOException, GeneralSecurityException {
 
-            if (ng.type != NamedGroupType.NAMED_GROUP_FFDHE) {
+            if (ng.spec != NamedGroupSpec.NAMED_GROUP_FFDHE) {
                 throw new RuntimeException(
                         "Credentials decoding:  Not FFDHE named group");
             }
@@ -85,11 +85,7 @@ final class DHKeyExchange {
                 return null;
             }
 
-            DHParameterSpec params = (DHParameterSpec)ng.getParameterSpec();
-            if (params == null) {
-                return null;
-            }
-
+            DHParameterSpec params = (DHParameterSpec)ng.keAlgParamSpec;
             KeyFactory kf = KeyFactory.getInstance("DiffieHellman");
             DHPublicKeySpec spec = new DHPublicKeySpec(
                     new BigInteger(1, encodedPublic),
@@ -110,9 +106,7 @@ final class DHKeyExchange {
             try {
                 KeyPairGenerator kpg =
                         KeyPairGenerator.getInstance("DiffieHellman");
-                DHParameterSpec params =
-                        (DHParameterSpec)namedGroup.getParameterSpec();
-                kpg.initialize(params, random);
+                kpg.initialize(namedGroup.keAlgParamSpec, random);
                 KeyPair kp = generateDHKeyPair(kpg);
                 if (kp == null) {
                     throw new RuntimeException("Could not generate DH keypair");
@@ -321,11 +315,10 @@ final class DHKeyExchange {
                     (context.clientRequestedNamedGroups != null) &&
                     (!context.clientRequestedNamedGroups.isEmpty())) {
                 preferableNamedGroup =
-                        SupportedGroups.getPreferredGroup(
-                                context.negotiatedProtocol,
+                        SupportedGroups.getPreferredGroup(context.negotiatedProtocol,
                                 context.algorithmConstraints,
-                                new NamedGroupType [] {
-                                    NamedGroupType.NAMED_GROUP_FFDHE },
+                                new NamedGroupSpec [] {
+                                    NamedGroupSpec.NAMED_GROUP_FFDHE },
                                 context.clientRequestedNamedGroups);
                 if (preferableNamedGroup != null) {
                     return new DHEPossession(preferableNamedGroup,

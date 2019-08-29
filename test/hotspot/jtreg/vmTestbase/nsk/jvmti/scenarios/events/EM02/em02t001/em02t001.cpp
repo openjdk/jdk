@@ -114,27 +114,27 @@ getStaticObjField(const char* className, const char* objFieldName,
 
 /* ============================================================================= */
 
-static int prepare() {
+static bool prepare() {
 
     ExceptionCheckingJniEnvPtr ec_jni(jni);
     mainThread = findThread(MAIN_THREAD_NAME);
     if (!NSK_VERIFY(mainThread != NULL)) {
         NSK_COMPLAIN1("<%s> thread not found\n", MAIN_THREAD_NAME);
-        return NSK_FALSE;
+        return false;
     }
 
     /* make thread accessable for a long time */
     mainThread = ec_jni->NewGlobalRef(mainThread, TRACE_JNI_CALL);
     startObject = getStaticObjField(DEBUGEE_CLASS_NAME, START_FIELD_NAME, OBJECT_FIELD_SIG);
     if (!NSK_VERIFY(startObject != NULL))
-        return NSK_FALSE;
+        return false;
 
     /*make object accessable for a long time*/
     startObject = ec_jni->NewGlobalRef(startObject, TRACE_JNI_CALL);
 
     endObject = getStaticObjField(DEBUGEE_CLASS_NAME, END_FIELD_NAME, OBJECT_FIELD_SIG);
     if (!NSK_VERIFY(endObject != NULL))
-        return NSK_FALSE;
+        return false;
 
     /*make object accessable for a long time*/
     endObject = ec_jni->NewGlobalRef(endObject, TRACE_JNI_CALL);
@@ -143,17 +143,16 @@ static int prepare() {
                                                  THREAD_FIELD_NAME,
                                                  THREAD_FIELD_SIG);
     if (!NSK_VERIFY(debuggeeThread != NULL))
-        return NSK_FALSE;
+        return false;
 
     /* make thread accessable for a long time */
     debuggeeThread = ec_jni->NewGlobalRef(debuggeeThread, TRACE_JNI_CALL);
-    return NSK_TRUE;
+    return true;
 }
 
 /* ============================================================================= */
 
-static int
-clean() {
+static bool clean() {
 
     ExceptionCheckingJniEnvPtr ec_jni(jni);
     /* disable MonitorContendedEnter event */
@@ -173,7 +172,7 @@ clean() {
     debuggeeThread = NULL;
     mainThread = NULL;
 
-    return NSK_TRUE;
+    return true;
 }
 
 /* ========================================================================== */
@@ -224,10 +223,10 @@ changeCount(jvmtiEvent event, int *currentCounts) {
 
 /* ============================================================================= */
 
-int checkEvents(int step) {
+bool checkEvents(int step) {
     int i;
     jvmtiEvent curr;
-    int result = NSK_TRUE;
+    bool result = true;
     int *currentCounts;
     int isExpected = 0;
 
@@ -243,7 +242,7 @@ int checkEvents(int step) {
 
         default:
             NSK_COMPLAIN1("Unexpected step no: %d\n", step);
-            return NSK_FALSE;
+            return false;
     }
 
     for (i = 0; i < JVMTI_EVENT_COUNT; i++) {
@@ -277,14 +276,14 @@ int checkEvents(int step) {
                     NSK_COMPLAIN2("Unexpected events number %7d for %s\n\texpected value is 1\n",
                                         currentCounts[i],
                                         TranslateEvent(curr));
-                result = NSK_FALSE;
+                result = false;
             }
         } else {
             if (currentCounts[i] > 0) {
                 NSK_COMPLAIN2("Unexpected event %s was sent %d times\n",
                                     TranslateEvent(curr),
                                     currentCounts[i]);
-                result = NSK_FALSE;
+                result = false;
             }
         }
     }
@@ -546,7 +545,7 @@ cbNewMonitorContendedEnter(jvmtiEnv* jvmti, JNIEnv* jni_env, jthread thread,
 
 /* ============================================================================= */
 
-static int enableEvent(jvmtiEvent event) {
+static bool enableEvent(jvmtiEvent event) {
 
     if (nsk_jvmti_isOptionalEvent(event)
             && (event != JVMTI_EVENT_MONITOR_CONTENDED_ENTER)
@@ -557,22 +556,22 @@ static int enableEvent(jvmtiEvent event) {
                 jvmti->SetEventNotificationMode(JVMTI_ENABLE, event, NULL))) {
             NSK_COMPLAIN1("Unexpected error enabling %s\n",
                 TranslateEvent(event));
-            return NSK_FALSE;
+            return false;
         }
     } else {
         if (!NSK_JVMTI_VERIFY(jvmti->SetEventNotificationMode(JVMTI_ENABLE, event, NULL))) {
             NSK_COMPLAIN1("Unexpected error enabling %s\n",
                 TranslateEvent(event));
-            return NSK_FALSE;
+            return false;
         }
     }
 
-    return NSK_TRUE;
+    return true;
 }
 
-static int enableEventList() {
+static bool enableEventList() {
     int i;
-    int result = NSK_TRUE;
+    bool result = true;
 
     NSK_DISPLAY0("Enable events\n");
 
@@ -588,18 +587,17 @@ static int enableEventList() {
             result = result && enableEvent(event);
     }
 
-    if (result == NSK_FALSE) {
+    if (!result) {
         nsk_jvmti_setFailStatus();
-        return NSK_FALSE;
+        return false;
     }
 
-    return NSK_TRUE;
+    return true;
 }
 
 /* ============================================================================= */
 
-static int
-setCallBacks(int step) {
+static bool setCallBacks(int step) {
 
     int i;
 
@@ -659,9 +657,9 @@ setCallBacks(int step) {
 
     }
     if (!NSK_JVMTI_VERIFY(jvmti->SetEventCallbacks(&eventCallbacks, sizeof(eventCallbacks))))
-        return NSK_FALSE;
+        return false;
 
-    return NSK_TRUE;
+    return true;
 }
 
 /* ============================================================================= */

@@ -46,13 +46,15 @@ class AltNode extends AbstractGroupNode implements TypeNode {
     }
 
     void document(PrintWriter writer) {
-        docRowStart(writer);
-        writer.println("<td colspan=" +
-                       (maxStructIndent - structIndent + 1) + ">");
-        writer.println("Case " + nameNode.name + " - if <i>" +
-                       ((SelectNode)parent).typeNode.name +
-                       "</i> is " + nameNode.value() + ":");
+        writer.println("<tr>");
+        writer.println("<th colspan=\"2\" scope=\"row\">"
+                + indentElement(structIndent,
+                    "Case " + nameNode.name
+                    + " - if <i>" + ((SelectNode)parent).typeNode.name + "</i>" +
+                    " is " + nameNode.value() + ":"));
         writer.println("<td>" + comment() + "&nbsp;");
+        writer.println("</tr>");
+
         ++structIndent;
         super.document(writer);
         --structIndent;

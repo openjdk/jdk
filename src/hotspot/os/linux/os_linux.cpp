@@ -1739,6 +1739,8 @@ void * os::dll_load(const char *filename, char *ebuf, int ebuflen) {
   void * result = NULL;
   bool load_attempted = false;
 
+  log_info(os)("attempting shared library load of %s", filename);
+
   // Check whether the library to load might change execution rights
   // of the stack. If they are changed, the protection of the stack
   // guard pages will be lost. We need a safepoint to fix this.
@@ -1990,8 +1992,10 @@ void * os::Linux::dlopen_helper(const char *filename, char *ebuf,
       ebuf[ebuflen-1]='\0';
     }
     Events::log(NULL, "Loading shared library %s failed, %s", filename, error_report);
+    log_info(os)("shared library load of %s failed, %s", filename, error_report);
   } else {
     Events::log(NULL, "Loaded shared library %s", filename);
+    log_info(os)("shared library load of %s was successful", filename);
   }
   return result;
 }
@@ -2676,16 +2680,7 @@ void os::print_jni_name_suffix_on(outputStream* st, int args_size) {
 ////////////////////////////////////////////////////////////////////////////////
 // sun.misc.Signal support
 
-static volatile jint sigint_count = 0;
-
 static void UserHandler(int sig, void *siginfo, void *context) {
-  // 4511530 - sem_post is serialized and handled by the manager thread. When
-  // the program is interrupted by Ctrl-C, SIGINT is sent to every thread. We
-  // don't want to flood the manager thread with sem_post requests.
-  if (sig == SIGINT && Atomic::add(1, &sigint_count) > 1) {
-    return;
-  }
-
   // Ctrl-C is pressed during error reporting, likely because the error
   // handler fails to abort. Let VM die immediately.
   if (sig == SIGINT && VMError::is_error_reported()) {
@@ -2758,7 +2753,6 @@ void os::signal_notify(int sig) {
 }
 
 static int check_pending_signals() {
-  Atomic::store(0, &sigint_count);
   for (;;) {
     for (int i = 0; i < NSIG + 1; i++) {
       jint n = pending_signals[i];
@@ -6189,6 +6183,10 @@ int os::compare_file_modified_times(const char* file1, const char* file2) {
     return filetime1.tv_nsec - filetime2.tv_nsec;
   }
   return diff;
+}
+
+bool os::supports_map_sync() {
+  return true;
 }
 
 /////////////// Unit tests ///////////////

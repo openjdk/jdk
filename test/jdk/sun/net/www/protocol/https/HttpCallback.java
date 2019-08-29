@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -36,4 +36,15 @@ public interface HttpCallback {
      *        client and used to send the response
      */
     void request (HttpTransaction msg);
+
+    /**
+     * Tells whether the server should simply close the
+     * connection and ignore the request when the first
+     * byte received by the server looks like a plain
+     * text connection.
+     * @return true if the request should be ignored.
+     **/
+    default boolean dropPlainTextConnections() {
+        return false;
+    }
 }

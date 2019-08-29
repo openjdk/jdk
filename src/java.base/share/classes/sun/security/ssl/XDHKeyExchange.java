@@ -29,7 +29,7 @@ import java.math.BigInteger;
 import java.security.*;
 import java.security.interfaces.XECPublicKey;
 import java.security.spec.*;
-import sun.security.ssl.NamedGroup.NamedGroupType;
+import sun.security.ssl.NamedGroup.NamedGroupSpec;
 import sun.security.util.*;
 
 /**
@@ -68,7 +68,7 @@ final class XDHKeyExchange {
                 byte[] encodedPoint) throws IOException,
                 GeneralSecurityException {
 
-            if (namedGroup.type != NamedGroupType.NAMED_GROUP_XDH) {
+            if (namedGroup.spec != NamedGroupSpec.NAMED_GROUP_XDH) {
                 throw new RuntimeException(
                         "Credentials decoding:  Not XDH named group");
             }
@@ -101,8 +101,7 @@ final class XDHKeyExchange {
             try {
                 KeyPairGenerator kpg
                         = KeyPairGenerator.getInstance(namedGroup.algorithm);
-                AlgorithmParameterSpec params = namedGroup.getParameterSpec();
-                kpg.initialize(params, random);
+                kpg.initialize(namedGroup.keAlgParamSpec, random);
                 KeyPair kp = kpg.generateKeyPair();
                 privateKey = kp.getPrivate();
                 publicKey = (XECPublicKey) kp.getPublic();

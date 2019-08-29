@@ -27,7 +27,6 @@
 
 #include "jfr/utilities/jfrTypes.hpp"
 #include "runtime/atomic.hpp"
-#include "runtime/orderAccess.hpp"
 #include "utilities/macros.hpp"
 
 #ifdef VM_LITTLE_ENDIAN
@@ -40,46 +39,45 @@ static const int leakp_offset = low_offset - 1;
 
 inline void set_bits(jbyte bits, jbyte* const dest) {
   assert(dest != NULL, "invariant");
-  const jbyte current = OrderAccess::load_acquire(dest);
-  if (bits != (current & bits)) {
+  if (bits != (*dest & bits)) {
     *dest |= bits;
   }
 }
 
-inline void set_mask(jbyte mask, jbyte* const dest) {
+inline jbyte traceid_and(jbyte current, jbyte bits) {
+  return current & bits;
+}
+
+inline jbyte traceid_or(jbyte current, jbyte bits) {
+  return current | bits;
+}
+
+inline jbyte traceid_xor(jbyte current, jbyte bits) {
+  return current ^ bits;
+}
+
+template <jbyte op(jbyte, jbyte)>
+inline void set_bits_cas_form(jbyte bits, jbyte* const dest) {
   assert(dest != NULL, "invariant");
-  const jbyte current = OrderAccess::load_acquire(dest);
-  if (mask != (current & mask)) {
-    *dest &= mask;
-  }
+  do {
+    const jbyte current = *dest;
+    const jbyte new_value = op(current, bits);
+    if (Atomic::cmpxchg(new_value, dest, current) == current) {
+      return;
+    }
+  } while (true);
 }
 
 inline void set_bits_cas(jbyte bits, jbyte* const dest) {
-  assert(dest != NULL, "invariant");
-  do {
-    const jbyte current = OrderAccess::load_acquire(dest);
-    if (bits == (current & bits)) {
-      return;
-    }
-    const jbyte new_value = current | bits;
-    if (Atomic::cmpxchg(new_value, dest, current) == current) {
-      return;
-    }
-  } while (true);
+  set_bits_cas_form<traceid_or>(bits, dest);
 }
 
 inline void clear_bits_cas(jbyte bits, jbyte* const dest) {
-  assert(dest != NULL, "invariant");
-  do {
-    const jbyte current = OrderAccess::load_acquire(dest);
-    if (bits != (current & bits)) {
-      return;
-    }
-    const jbyte new_value = current ^ bits;
-    if (Atomic::cmpxchg(new_value, dest, current) == current) {
-      return;
-    }
-  } while (true);
+  set_bits_cas_form<traceid_xor>(bits, dest);
+}
+
+inline void set_mask(jbyte mask, jbyte* const dest) {
+  set_bits_cas_form<traceid_and>(mask, dest);
 }
 
 inline void set_traceid_bits(jbyte bits, traceid* dest) {

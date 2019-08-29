@@ -75,4 +75,6 @@ public abstract class ProxyNode extends FloatingNode implements ValueNumberable 
     public static GuardProxyNode forGuard(GuardingNode value, LoopExitNode exit, StructuredGraph graph) {
         return graph.unique(new GuardProxyNode(value, exit));
     }
+
+    public abstract PhiNode createPhi(AbstractMergeNode merge);
 }

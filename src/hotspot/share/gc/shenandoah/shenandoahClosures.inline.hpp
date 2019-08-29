@@ -107,6 +107,31 @@ void ShenandoahEvacuateUpdateRootsClosure::do_oop(narrowOop* p) {
   do_oop_work(p);
 }
 
+ShenandoahEvacUpdateOopStorageRootsClosure::ShenandoahEvacUpdateOopStorageRootsClosure() :
+  _heap(ShenandoahHeap::heap()), _thread(Thread::current()) {
+}
+
+void ShenandoahEvacUpdateOopStorageRootsClosure::do_oop(oop* p) {
+  assert(_heap->is_evacuation_in_progress(), "Only do this when evacuation is in progress");
+
+  oop obj = RawAccess<>::oop_load(p);
+  if (! CompressedOops::is_null(obj)) {
+    if (_heap->in_collection_set(obj)) {
+      shenandoah_assert_marked(p, obj);
+      oop resolved = ShenandoahBarrierSet::resolve_forwarded_not_null(obj);
+      if (oopDesc::equals_raw(resolved, obj)) {
+        resolved = _heap->evacuate_object(obj, _thread);
+      }
+
+      Atomic::cmpxchg(resolved, p, obj);
+    }
+  }
+}
+
+void ShenandoahEvacUpdateOopStorageRootsClosure::do_oop(narrowOop* p) {
+  ShouldNotReachHere();
+}
+
 #ifdef ASSERT
 template <class T>
 void ShenandoahAssertNotForwardedClosure::do_oop_work(T* p) {

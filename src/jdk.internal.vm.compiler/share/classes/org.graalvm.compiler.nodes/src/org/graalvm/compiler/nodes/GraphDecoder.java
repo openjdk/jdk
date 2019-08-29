@@ -319,7 +319,7 @@ public class GraphDecoder {
         public static final NodeClass<ProxyPlaceholder> TYPE = NodeClass.create(ProxyPlaceholder.class);
 
         @Input ValueNode value;
-        @Input(InputType.Unchecked) Node proxyPoint;
+        @Input(InputType.Association) Node proxyPoint;
 
         public ProxyPlaceholder(ValueNode value, MergeNode proxyPoint) {
             super(TYPE, value.stamp(NodeView.DEFAULT));
@@ -884,14 +884,7 @@ public class GraphDecoder {
 
                 if (!merge.isPhiAtMerge(existing)) {
                     /* Now we have two different values, so we need to create a phi node. */
-                    PhiNode phi;
-                    if (proxy instanceof ValueProxyNode) {
-                        phi = graph.addWithoutUnique(new ValuePhiNode(proxy.stamp(NodeView.DEFAULT), merge));
-                    } else if (proxy instanceof GuardProxyNode) {
-                        phi = graph.addWithoutUnique(new GuardPhiNode(merge));
-                    } else {
-                        throw GraalError.shouldNotReachHere();
-                    }
+                    PhiNode phi = proxy.createPhi(merge);
                     /* Add the inputs from all previous exits. */
                     for (int j = 0; j < merge.phiPredecessorCount() - 1; j++) {
                         phi.addInput(existing);
@@ -1336,6 +1329,11 @@ public class GraphDecoder {
      * @param methodScope The current method.
      */
     protected void cleanupGraph(MethodScope methodScope) {
+        for (MergeNode merge : graph.getNodes(MergeNode.TYPE)) {
+            for (ProxyPlaceholder placeholder : merge.usages().filter(ProxyPlaceholder.class).snapshot()) {
+                placeholder.replaceAndDelete(placeholder.value);
+            }
+        }
         assert verifyEdges();
     }
 

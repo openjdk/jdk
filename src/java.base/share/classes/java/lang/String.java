@@ -1868,18 +1868,7 @@ public final class String
      *             length of this {@code String} object.
      */
     public String substring(int beginIndex) {
-        if (beginIndex < 0) {
-            throw new StringIndexOutOfBoundsException(beginIndex);
-        }
-        int subLen = length() - beginIndex;
-        if (subLen < 0) {
-            throw new StringIndexOutOfBoundsException(subLen);
-        }
-        if (beginIndex == 0) {
-            return this;
-        }
-        return isLatin1() ? StringLatin1.newString(value, beginIndex, subLen)
-                          : StringUTF16.newString(value, beginIndex, subLen);
+        return substring(beginIndex, length());
     }
 
     /**
@@ -3677,7 +3666,7 @@ public final class String
     static void checkIndex(int index, int length) {
         if (index < 0 || index >= length) {
             throw new StringIndexOutOfBoundsException("index " + index +
-                                                      ",length " + length);
+                                                      ", length " + length);
         }
     }
 
@@ -3688,7 +3677,7 @@ public final class String
     static void checkOffset(int offset, int length) {
         if (offset < 0 || offset > length) {
             throw new StringIndexOutOfBoundsException("offset " + offset +
-                                                      ",length " + length);
+                                                      ", length " + length);
         }
     }
 

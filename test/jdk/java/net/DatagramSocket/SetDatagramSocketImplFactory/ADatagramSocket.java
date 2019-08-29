@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,9 +31,10 @@
 import java.io.*;
 import java.net.*;
 import java.util.*;
+import java.util.concurrent.CountDownLatch;
 
 public class ADatagramSocket {
-    public static void main(String[] args) throws IOException {
+    public static void main(String[] args) throws Exception {
         // testing out setDatagramSocketImplFactory
         System.err.println("setting DatagramSocketImplFactory...");
         try {
@@ -46,6 +47,8 @@ public class ADatagramSocket {
         int port = server.getPort();
         System.out.println("Server port is " + port);
         server.start();
+        // Wait server thread to reach receive call
+        server.readyToStart.await();
 
         // get a datagram socket
         DatagramSocket socket = new DatagramSocket();
@@ -72,6 +75,7 @@ class QuoteServerThread extends Thread {
 
     protected DatagramSocket socket = null;
     private final int port;
+    final CountDownLatch readyToStart = new CountDownLatch(1);
 
     public QuoteServerThread() throws IOException {
         this("QuoteServerThread");
@@ -79,7 +83,7 @@ class QuoteServerThread extends Thread {
 
     public QuoteServerThread(String name) throws IOException {
         super(name);
-        socket = new DatagramSocket(0);
+        socket = new DatagramSocket(0, InetAddress.getLocalHost());
         port =  socket.getLocalPort();
     }
     public int getPort(){
@@ -92,6 +96,8 @@ class QuoteServerThread extends Thread {
 
         // receive request
         DatagramPacket packet = new DatagramPacket(buf, buf.length);
+        // Notify client that server is ready to receive packet
+        readyToStart.countDown();
         socket.receive(packet);
 
         // figure out response

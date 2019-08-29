@@ -47,6 +47,7 @@
 #include "gc/shared/genCollectedHeap.hpp"
 #include "gc/shared/genOopClosures.inline.hpp"
 #include "gc/shared/generationSpec.hpp"
+#include "gc/shared/locationPrinter.inline.hpp"
 #include "gc/shared/oopStorageParState.inline.hpp"
 #include "gc/shared/scavengableNMethods.hpp"
 #include "gc/shared/space.hpp"
@@ -947,8 +948,9 @@ HeapWord** GenCollectedHeap::end_addr() const {
 // public collection interfaces
 
 void GenCollectedHeap::collect(GCCause::Cause cause) {
-  if (cause == GCCause::_wb_young_gc) {
-    // Young collection for the WhiteBox API.
+  if ((cause == GCCause::_wb_young_gc) ||
+      (cause == GCCause::_gc_locker)) {
+    // Young collection for WhiteBox or GCLocker.
     collect(cause, YoungGen);
   } else {
 #ifdef ASSERT
@@ -986,6 +988,11 @@ void GenCollectedHeap::collect_locked(GCCause::Cause cause, GenerationType max_g
   // Read the GC count while holding the Heap_lock
   unsigned int gc_count_before      = total_collections();
   unsigned int full_gc_count_before = total_full_collections();
+
+  if (GCLocker::should_discard(cause, gc_count_before)) {
+    return;
+  }
+
   {
     MutexUnlocker mu(Heap_lock);  // give up heap lock, execute gets it back
     VM_GenCollectFull op(gc_count_before, full_gc_count_before,
@@ -1000,24 +1007,15 @@ void GenCollectedHeap::do_full_collection(bool clear_all_soft_refs) {
 
 void GenCollectedHeap::do_full_collection(bool clear_all_soft_refs,
                                           GenerationType last_generation) {
-  GenerationType local_last_generation;
-  if (!incremental_collection_will_fail(false /* don't consult_young */) &&
-      gc_cause() == GCCause::_gc_locker) {
-    local_last_generation = YoungGen;
-  } else {
-    local_last_generation = last_generation;
-  }
-
   do_collection(true,                   // full
                 clear_all_soft_refs,    // clear_all_soft_refs
                 0,                      // size
                 false,                  // is_tlab
-                local_last_generation); // last_generation
+                last_generation);       // last_generation
   // Hack XXX FIX ME !!!
   // A scavenge may not have been attempted, or may have
   // been attempted and failed, because the old gen was too full
-  if (local_last_generation == YoungGen && gc_cause() == GCCause::_gc_locker &&
-      incremental_collection_will_fail(false /* don't consult_young */)) {
+  if (gc_cause() == GCCause::_gc_locker && incremental_collection_failed()) {
     log_debug(gc, jni)("GC locker: Trying a full collection because scavenge failed");
     // This time allow the old gen to be collected as well
     do_collection(true,                // full
@@ -1261,6 +1259,10 @@ void GenCollectedHeap::gc_threads_do(ThreadClosure* tc) const {
 }
 
 void GenCollectedHeap::print_gc_threads_on(outputStream* st) const {
+}
+
+bool GenCollectedHeap::print_location(outputStream* st, void* addr) const {
+  return BlockLocationPrinter<GenCollectedHeap>::print_location(st, addr);
 }
 
 void GenCollectedHeap::print_tracing_info() const {

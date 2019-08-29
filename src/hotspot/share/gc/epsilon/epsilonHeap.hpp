@@ -114,8 +114,8 @@ public:
   virtual void unpin_object(JavaThread* thread, oop obj) { }
 
   // No support for block parsing.
-  virtual HeapWord* block_start(const void* addr) const { return NULL;  }
-  virtual bool block_is_obj(const HeapWord* addr) const { return false; }
+  HeapWord* block_start(const void* addr) const { return NULL;  }
+  bool block_is_obj(const HeapWord* addr) const { return false; }
 
   // No GC threads
   virtual void print_gc_threads_on(outputStream* st) const {}
@@ -138,6 +138,7 @@ public:
 
   virtual void print_on(outputStream* st) const;
   virtual void print_tracing_info() const;
+  virtual bool print_location(outputStream* st, void* addr) const;
 
 private:
   void print_heap_info(size_t used) const;

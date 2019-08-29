@@ -288,14 +288,44 @@ class MessageHeader {
         return Collections.unmodifiableMap(m);
     }
 
+    /** Check if a line of message header looks like a request line.
+     * This method does not perform a full validation but simply
+     * returns false if the line does not end with 'HTTP/[1-9].[0-9]'
+     * @param line the line to check.
+     * @return true if the line might be a request line.
+     */
+    private boolean isRequestline(String line) {
+        String k = line.trim();
+        int i = k.lastIndexOf(' ');
+        if (i <= 0) return false;
+        int len = k.length();
+        if (len - i < 9) return false;
+
+        char c1 = k.charAt(len-3);
+        char c2 = k.charAt(len-2);
+        char c3 = k.charAt(len-1);
+        if (c1 < '1' || c1 > '9') return false;
+        if (c2 != '.') return false;
+        if (c3 < '0' || c3 > '9') return false;
+
+        return (k.substring(i+1, len-3).equalsIgnoreCase("HTTP/"));
+    }
+
+
     /** Prints the key-value pairs represented by this
-        header.  Also prints the RFC required blank line
-        at the end. Omits pairs with a null key. */
+        header. Also prints the RFC required blank line
+        at the end. Omits pairs with a null key. Omits
+        colon if key-value pair is the requestline. */
     public synchronized void print(PrintStream p) {
         for (int i = 0; i < nkeys; i++)
             if (keys[i] != null) {
-                p.print(keys[i] +
-                    (values[i] != null ? ": "+values[i]: "") + "\r\n");
+                StringBuilder sb = new StringBuilder(keys[i]);
+                if (values[i] != null) {
+                    sb.append(": " + values[i]);
+                } else if (i != 0 || !isRequestline(keys[i])) {
+                    sb.append(":");
+                }
+                p.print(sb.append("\r\n"));
             }
         p.print("\r\n");
         p.flush();

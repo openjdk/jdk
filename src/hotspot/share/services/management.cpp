@@ -1546,7 +1546,7 @@ JVM_ENTRY(jint, jmm_GetVMGlobals(JNIEnv *env,
 
       Handle sh(THREAD, s);
       char* str = java_lang_String::as_utf8_string(s);
-      JVMFlag* flag = JVMFlag::find_flag(str, strlen(str));
+      JVMFlag* flag = JVMFlag::find_flag(str);
       if (flag != NULL &&
           add_global_entry(env, sh, &globals[i], flag, THREAD)) {
         num_entries++;

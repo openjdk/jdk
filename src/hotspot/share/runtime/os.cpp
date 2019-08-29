@@ -279,6 +279,19 @@ static bool conc_path_file_and_check(char *buffer, char *printbuffer, size_t pri
   return false;
 }
 
+// Frees all memory allocated on the heap for the
+// supplied array of arrays of chars (a), where n
+// is the number of elements in the array.
+static void free_array_of_char_arrays(char** a, size_t n) {
+      while (n > 0) {
+          n--;
+          if (a[n] != NULL) {
+            FREE_C_HEAP_ARRAY(char, a[n]);
+          }
+      }
+      FREE_C_HEAP_ARRAY(char*, a);
+}
+
 bool os::dll_locate_lib(char *buffer, size_t buflen,
                         const char* pname, const char* fname) {
   bool retval = false;
@@ -299,10 +312,10 @@ bool os::dll_locate_lib(char *buffer, size_t buflen,
       }
     } else if (strchr(pname, *os::path_separator()) != NULL) {
       // A list of paths. Search for the path that contains the library.
-      int n;
-      char** pelements = split_path(pname, &n);
+      size_t n;
+      char** pelements = split_path(pname, &n, fullfnamelen);
       if (pelements != NULL) {
-        for (int i = 0; i < n; i++) {
+        for (size_t i = 0; i < n; i++) {
           char* path = pelements[i];
           // Really shouldn't be NULL, but check can't hurt.
           size_t plen = (path == NULL) ? 0 : strlen(path);
@@ -314,12 +327,7 @@ bool os::dll_locate_lib(char *buffer, size_t buflen,
           if (retval) break;
         }
         // Release the storage allocated by split_path.
-        for (int i = 0; i < n; i++) {
-          if (pelements[i] != NULL) {
-            FREE_C_HEAP_ARRAY(char, pelements[i]);
-          }
-        }
-        FREE_C_HEAP_ARRAY(char*, pelements);
+        free_array_of_char_arrays(pelements, n);
       }
     } else {
       // A definite path.
@@ -1074,35 +1082,9 @@ void os::print_location(outputStream* st, intptr_t x, bool verbose) {
   }
 
   // Check if addr points into Java heap.
-  if (Universe::heap()->is_in(addr)) {
-    oop o = oopDesc::oop_or_null(addr);
-    if (o != NULL) {
-      if ((HeapWord*)o == (HeapWord*)addr) {
-        st->print(INTPTR_FORMAT " is an oop: ", p2i(addr));
-      } else {
-        st->print(INTPTR_FORMAT " is pointing into object: " , p2i(addr));
-      }
-      o->print_on(st);
-      return;
-    }
-  } else if (Universe::heap()->is_in_reserved(addr)) {
-    st->print_cr(INTPTR_FORMAT " is an unallocated location in the heap", p2i(addr));
+  if (Universe::heap()->print_location(st, addr)) {
     return;
   }
-
-  // Compressed oop needs to be decoded first.
-#ifdef _LP64
-  if (UseCompressedOops && ((uintptr_t)addr &~ (uintptr_t)max_juint) == 0) {
-    narrowOop narrow_oop = (narrowOop)(uintptr_t)addr;
-    oop o = CompressedOops::decode_raw(narrow_oop);
-
-    if (oopDesc::is_valid(o)) {
-      st->print(UINT32_FORMAT " is a compressed pointer to object: ", narrow_oop);
-      o->print_on(st);
-      return;
-    }
-  }
-#endif
 
   bool accessible = is_readable_pointer(addr);
 
@@ -1334,17 +1316,22 @@ bool os::set_boot_path(char fileSep, char pathSep) {
   return false;
 }
 
-/*
- * Splits a path, based on its separator, the number of
- * elements is returned back in n.
- * It is the callers responsibility to:
- *   a> check the value of n, and n may be 0.
- *   b> ignore any empty path elements
- *   c> free up the data.
- */
-char** os::split_path(const char* path, int* n) {
-  *n = 0;
-  if (path == NULL || strlen(path) == 0) {
+// Splits a path, based on its separator, the number of
+// elements is returned back in "elements".
+// file_name_length is used as a modifier for each path's
+// length when compared to JVM_MAXPATHLEN. So if you know
+// each returned path will have something appended when
+// in use, you can pass the length of that in
+// file_name_length, to ensure we detect if any path
+// exceeds the maximum path length once prepended onto
+// the sub-path/file name.
+// It is the callers responsibility to:
+//   a> check the value of "elements", which may be 0.
+//   b> ignore any empty path elements
+//   c> free up the data.
+char** os::split_path(const char* path, size_t* elements, size_t file_name_length) {
+  *elements = (size_t)0;
+  if (path == NULL || strlen(path) == 0 || file_name_length == (size_t)NULL) {
     return NULL;
   }
   const char psepchar = *os::path_separator();
@@ -1353,7 +1340,7 @@ char** os::split_path(const char* path, int* n) {
     return NULL;
   }
   strcpy(inpath, path);
-  int count = 1;
+  size_t count = 1;
   char* p = strchr(inpath, psepchar);
   // Get a count of elements to allocate memory
   while (p != NULL) {
@@ -1362,20 +1349,23 @@ char** os::split_path(const char* path, int* n) {
     p = strchr(p, psepchar);
   }
   char** opath = (char**) NEW_C_HEAP_ARRAY(char*, count, mtInternal);
-  if (opath == NULL) {
-    return NULL;
-  }
 
   // do the actual splitting
   p = inpath;
-  for (int i = 0 ; i < count ; i++) {
+  for (size_t i = 0 ; i < count ; i++) {
     size_t len = strcspn(p, os::path_separator());
-    if (len > JVM_MAXPATHLEN) {
-      return NULL;
+    if (len + file_name_length > JVM_MAXPATHLEN) {
+      // release allocated storage before exiting the vm
+      free_array_of_char_arrays(opath, i++);
+      vm_exit_during_initialization("The VM tried to use a path that exceeds the maximum path length for "
+                                    "this system. Review path-containing parameters and properties, such as "
+                                    "sun.boot.library.path, to identify potential sources for this path.");
     }
     // allocate the string and add terminator storage
-    char* s  = (char*)NEW_C_HEAP_ARRAY(char, len + 1, mtInternal);
+    char* s  = (char*)NEW_C_HEAP_ARRAY_RETURN_NULL(char, len + 1, mtInternal);
     if (s == NULL) {
+      // release allocated storage before returning null
+      free_array_of_char_arrays(opath, i++);
       return NULL;
     }
     strncpy(s, p, len);
@@ -1384,7 +1374,7 @@ char** os::split_path(const char* path, int* n) {
     p += len + 1;
   }
   FREE_C_HEAP_ARRAY(char, inpath);
-  *n = count;
+  *elements = count;
   return opath;
 }
 

@@ -1532,10 +1532,13 @@ static void change_endianness(Elf32_Half& val) {
 // same architecture as Hotspot is running on
 
 void * os::dll_load(const char *filename, char *ebuf, int ebuflen) {
+  log_info(os)("attempting shared library load of %s", filename);
+
   void * result= ::dlopen(filename, RTLD_LAZY);
   if (result != NULL) {
     // Successful loading
     Events::log(NULL, "Loaded shared library %s", filename);
+    log_info(os)("shared library load of %s was successful", filename);
     return result;
   }
 
@@ -1550,6 +1553,7 @@ void * os::dll_load(const char *filename, char *ebuf, int ebuflen) {
   }
 
   Events::log(NULL, "Loading shared library %s failed, %s", filename, error_report);
+  log_info(os)("shared library load of %s failed, %s", filename, error_report);
 
   int diag_msg_max_length=ebuflen-strlen(ebuf);
   char* diag_msg_buf=ebuf+strlen(ebuf);
@@ -1592,6 +1596,10 @@ void * os::dll_load(const char *filename, char *ebuf, int ebuflen) {
     unsigned char endianess;    // MSB or LSB
     char*         name;         // String representation
   } arch_t;
+
+#ifndef EM_AARCH64
+  #define EM_AARCH64    183               /* ARM AARCH64 */
+#endif
 
   static const arch_t arch_array[]={
     {EM_386,         EM_386,     ELFCLASS32, ELFDATA2LSB, (char*)"IA 32"},
@@ -5145,36 +5153,42 @@ void Parker::unpark() {
   }
 }
 
-// Platform Monitor implementation
+// Platform Mutex/Monitor implementations
+
+os::PlatformMutex::PlatformMutex() {
+  int status = os::Solaris::mutex_init(&_mutex);
+  assert_status(status == 0, status, "mutex_init");
+}
+
+os::PlatformMutex::~PlatformMutex() {
+  int status = os::Solaris::mutex_destroy(&_mutex);
+  assert_status(status == 0, status, "mutex_destroy");
+}
+
+void os::PlatformMutex::lock() {
+  int status = os::Solaris::mutex_lock(&_mutex);
+  assert_status(status == 0, status, "mutex_lock");
+}
+
+void os::PlatformMutex::unlock() {
+  int status = os::Solaris::mutex_unlock(&_mutex);
+  assert_status(status == 0, status, "mutex_unlock");
+}
+
+bool os::PlatformMutex::try_lock() {
+  int status = os::Solaris::mutex_trylock(&_mutex);
+  assert_status(status == 0 || status == EBUSY, status, "mutex_trylock");
+  return status == 0;
+}
 
 os::PlatformMonitor::PlatformMonitor() {
   int status = os::Solaris::cond_init(&_cond);
   assert_status(status == 0, status, "cond_init");
-  status = os::Solaris::mutex_init(&_mutex);
-  assert_status(status == 0, status, "mutex_init");
 }
 
 os::PlatformMonitor::~PlatformMonitor() {
   int status = os::Solaris::cond_destroy(&_cond);
   assert_status(status == 0, status, "cond_destroy");
-  status = os::Solaris::mutex_destroy(&_mutex);
-  assert_status(status == 0, status, "mutex_destroy");
-}
-
-void os::PlatformMonitor::lock() {
-  int status = os::Solaris::mutex_lock(&_mutex);
-  assert_status(status == 0, status, "mutex_lock");
-}
-
-void os::PlatformMonitor::unlock() {
-  int status = os::Solaris::mutex_unlock(&_mutex);
-  assert_status(status == 0, status, "mutex_unlock");
-}
-
-bool os::PlatformMonitor::try_lock() {
-  int status = os::Solaris::mutex_trylock(&_mutex);
-  assert_status(status == 0 || status == EBUSY, status, "mutex_trylock");
-  return status == 0;
 }
 
 // Must already be locked
@@ -5368,6 +5382,10 @@ int os::get_core_path(char* buffer, size_t bufferSize) {
                                               p, current_process_id());
 
   return strlen(buffer);
+}
+
+bool os::supports_map_sync() {
+  return false;
 }
 
 #ifndef PRODUCT

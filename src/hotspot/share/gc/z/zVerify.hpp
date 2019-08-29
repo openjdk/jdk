@@ -28,47 +28,21 @@
 
 class ZVerify : public AllStatic {
 private:
-  template <typename RootsIterator>
-  static void roots_impl();
-  static void roots(bool verify_weaks);
+  template <typename RootsIterator> static void roots();
 
+  static void roots_strong();
   static void roots_weak();
-  static void roots_concurrent();
+  static void roots_concurrent_strong();
   static void roots_concurrent_weak();
 
+  static void roots(bool verify_weaks);
   static void objects(bool verify_weaks);
-
-  static void roots_and_objects(bool visit_weaks);
+  static void roots_and_objects(bool verify_weaks);
 
 public:
-  // Verify strong (non-concurrent) roots. Should always be good.
-  static void roots_strong();
-
-  // Verify all strong roots and references after marking.
+  static void before_zoperation();
   static void after_mark();
-
-  // Verify strong and weak roots and references.
   static void after_weak_processing();
-};
-
-class VM_ZVerifyOperation : public VM_Operation {
-public:
-  virtual bool needs_inactive_gc_locker() const {
-    // An inactive GC locker is needed in operations where we change the bad
-    // mask or move objects. Changing the bad mask will invalidate all oops,
-    // which makes it conceptually the same thing as moving all objects.
-    return false;
-  }
-
-  virtual void doit() {
-    ZVerify::after_weak_processing();
-  }
-
-  bool success() const {
-    return true;
-  }
-
-  virtual VMOp_Type type() const { return VMOp_ZVerify; }
 };
 
 #endif // SHARE_GC_Z_ZVERIFY_HPP

@@ -25,7 +25,11 @@
 
 package com.sun.net.httpserver;
 
+import java.nio.charset.Charset;
 import java.util.Base64;
+import java.util.Objects;
+
+import static java.nio.charset.StandardCharsets.UTF_8;
 
 /**
  * BasicAuthenticator provides an implementation of HTTP Basic
@@ -35,15 +39,44 @@ import java.util.Base64;
  */
 public abstract class BasicAuthenticator extends Authenticator {
 
-    protected String realm;
+    protected final String realm;
+    protected final Charset charset;
+    private final boolean isUTF8;
 
     /**
-     * Creates a BasicAuthenticator for the given HTTP realm
+     * Creates a BasicAuthenticator for the given HTTP realm.
+     * The Basic authentication credentials (username and password) are decoded
+     * using the platform's {@link Charset#defaultCharset() default character set}.
+     *
      * @param realm The HTTP Basic authentication realm
-     * @throws NullPointerException if the realm is an empty string
+     * @throws NullPointerException if realm is {@code null}
+     * @throws IllegalArgumentException if realm is an empty string
      */
     public BasicAuthenticator (String realm) {
+        this(realm, Charset.defaultCharset());
+    }
+
+    /**
+     * Creates a BasicAuthenticator for the given HTTP realm and using the
+     * given {@link Charset} to decode the Basic authentication credentials
+     * (username and password).
+     *
+     * @apiNote {@code UTF-8} is the recommended charset because its usage is
+     * communicated to the client, and therefore more likely to be used also
+     * by the client.
+     *
+     * @param realm The HTTP Basic authentication realm
+     * @param charset The Charset to decode incoming credentials from the client
+     * @throws NullPointerException if realm or charset are {@code null}
+     * @throws IllegalArgumentException if realm is an empty string
+     */
+    public BasicAuthenticator (String realm, Charset charset) {
+        Objects.requireNonNull(charset);
+        if (realm.isEmpty()) // implicit NPE check
+            throw new IllegalArgumentException("realm must not be empty");
         this.realm = realm;
+        this.charset = charset;
+        this.isUTF8 = charset.equals(UTF_8);
     }
 
     /**
@@ -63,7 +96,9 @@ public abstract class BasicAuthenticator extends Authenticator {
         String auth = rmap.getFirst ("Authorization");
         if (auth == null) {
             Headers map = t.getResponseHeaders();
-            map.set ("WWW-Authenticate", "Basic realm=" + "\""+realm+"\"");
+            var authString = "Basic realm=" + "\"" + realm + "\"" +
+                (isUTF8 ? " charset=\"UTF-8\"" : "");
+            map.set ("WWW-Authenticate", authString);
             return new Authenticator.Retry (401);
         }
         int sp = auth.indexOf (' ');
@@ -71,7 +106,7 @@ public abstract class BasicAuthenticator extends Authenticator {
             return new Authenticator.Failure (401);
         }
         byte[] b = Base64.getDecoder().decode(auth.substring(sp+1));
-        String userpass = new String (b);
+        String userpass = new String (b, charset);
         int colon = userpass.indexOf (':');
         String uname = userpass.substring (0, colon);
         String pass = userpass.substring (colon+1);

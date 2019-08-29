@@ -137,7 +137,7 @@ class VM_HandshakeOneThread: public VM_Handshake {
       // There is an assumption in the code that the Threads_lock should be
       // locked during certain phases.
       {
-        MutexLocker ml(Threads_lock, Mutex::_no_safepoint_check_flag);
+        MutexLocker ml(Threads_lock);
         _target->handshake_process_by_vmthread();
       }
     } while (!poll_for_completed_thread());
@@ -186,7 +186,7 @@ class VM_HandshakeAllThreads: public VM_Handshake {
           // There is an assumption in the code that the Threads_lock should
           // be locked during certain phases.
           jtiwh.rewind();
-          MutexLocker ml(Threads_lock, Mutex::_no_safepoint_check_flag);
+          MutexLocker ml(Threads_lock);
           for (JavaThread *thr = jtiwh.next(); thr != NULL; thr = jtiwh.next()) {
             // A new thread on the ThreadsList will not have an operation,
             // hence it is skipped in handshake_process_by_vmthread.

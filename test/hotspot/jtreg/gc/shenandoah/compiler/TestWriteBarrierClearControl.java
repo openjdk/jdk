@@ -26,6 +26,7 @@
  * @summary Clearing control during final graph reshape causes memory barrier to loose dependency on null check
  * @key gc
  * @requires vm.gc.Shenandoah & !vm.graal.enabled
+ * @requires vm.flavor == "server"
  * @run main/othervm -XX:-BackgroundCompilation -XX:-UseOnStackReplacement -XX:-TieredCompilation
  *                   -XX:+UnlockExperimentalVMOptions -XX:+UseShenandoahGC
  *                   -XX:+UnlockDiagnosticVMOptions -XX:+StressLCM -XX:+StressGCM

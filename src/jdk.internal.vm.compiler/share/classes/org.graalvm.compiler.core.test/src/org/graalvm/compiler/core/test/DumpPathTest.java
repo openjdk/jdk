@@ -53,17 +53,18 @@ public class DumpPathTest extends GraalCompilerTest {
         String[] extensions = new String[]{".cfg", ".bgv", ".graph-strings"};
         EconomicMap<OptionKey<?>, Object> overrides = OptionValues.newOptionMap();
         overrides.put(DebugOptions.DumpPath, dumpDirectoryPath.toString());
+        overrides.put(DebugOptions.PrintCFG, true);
         overrides.put(DebugOptions.PrintGraph, PrintGraphTarget.File);
         overrides.put(DebugOptions.PrintCanonicalGraphStrings, true);
         overrides.put(DebugOptions.Dump, "*");
 
         // Generate dump files.
         test(new OptionValues(getInitialOptions(), overrides), "snippet");
-        // Check that Ideal files got created, in the right place.
+        // Check that IGV files got created, in the right place.
         checkForFiles(dumpDirectoryPath, extensions);
 
         // Clean up the generated files.
-        scrubDirectory(dumpDirectoryPath);
+        removeDirectory(dumpDirectoryPath);
     }
 
     /**
@@ -90,26 +91,6 @@ public class DumpPathTest extends GraalCompilerTest {
         // Ensure that all file names are the same.
         for (int i = 1; i < paths.length; i++) {
             assertTrue(paths[0].equals(paths[i]), paths[0] + " != " + paths[i]);
-        }
-    }
-
-    /**
-     * Remove the temporary directory.
-     */
-    private static void scrubDirectory(Path directoryPath) {
-        try {
-            try (DirectoryStream<Path> stream = Files.newDirectoryStream(directoryPath)) {
-                for (Path filePath : stream) {
-                    if (Files.isRegularFile(filePath)) {
-                        Files.delete(filePath);
-                    } else if (Files.isDirectory(filePath)) {
-                        scrubDirectory(filePath);
-                    }
-                }
-            }
-            Files.delete(directoryPath);
-        } catch (IOException ioe) {
-            ioe.printStackTrace();
         }
     }
 }

@@ -53,6 +53,9 @@ hotspot_handshake = \
 hotspot_serviceability = \
   serviceability
 
+hotspot_resourcehogs = \
+  resourcehogs
+
 hotspot_misc = \
   / \
  -applications \
@@ -61,7 +64,8 @@ hotspot_misc = \
  -:hotspot_gc \
  -:hotspot_runtime \
  -:hotspot_serviceability \
- -gc/nvdimm
+ -gc/nvdimm \
+ -:hotspot_containers
 
 hotspot_native_sanity = \
   native_sanity
@@ -274,6 +278,7 @@ tier1_runtime = \
  -runtime/ErrorHandling/CreateCoredumpOnCrash.java \
  -runtime/ErrorHandling/ErrorHandler.java \
  -runtime/ErrorHandling/TestHeapDumpOnOutOfMemoryError.java \
+ -runtime/ErrorHandling/TestHeapDumpOnOutOfMemoryErrorInMetaspace.java \
  -runtime/ErrorHandling/TimeoutInErrorHandlingTest.java \
  -runtime/InvocationTests \
  -runtime/logging/MonitorMismatchTest.java \
@@ -296,8 +301,8 @@ tier1_runtime = \
  -runtime/SelectionResolution/InvokeStaticICCE.java \
  -runtime/SelectionResolution/InvokeVirtualICCE.java \
  -runtime/SelectionResolution/InvokeVirtualSuccessTest.java \
- -runtime/SharedArchiveFile/CdsSameObjectAlignment.java \
- -runtime/SharedArchiveFile/SharedBaseAddress.java \
+ -runtime/cds/CdsSameObjectAlignment.java \
+ -runtime/cds/SharedBaseAddress.java \
  -runtime/Thread/CancellableThreadTest.java \
  -runtime/Thread/TestThreadDumpMonitorContention.java \
  -runtime/Unsafe/RangeCheck.java \
@@ -307,40 +312,36 @@ tier1_runtime = \
  -runtime/signal
 
 hotspot_cds = \
-  runtime/SharedArchiveFile/ \
+  runtime/cds/ \
   runtime/CompressedOops/
 
-# AppCDS
-# If modifying AppCDS it is also recommended to run the open hotspot_cds group
-hotspot_appcds = \
-  runtime/appcds/
 
 hotspot_appcds_dynamic = \
-  runtime/appcds/ \
- -runtime/appcds/cacheObject \
- -runtime/appcds/customLoader \
- -runtime/appcds/dynamicArchive \
- -runtime/appcds/javaldr/ArrayTest.java \
- -runtime/appcds/javaldr/GCSharedStringsDuringDump.java \
- -runtime/appcds/javaldr/HumongousDuringDump.java \
- -runtime/appcds/sharedStrings \
- -runtime/appcds/DumpClassList.java \
- -runtime/appcds/ExtraSymbols.java \
- -runtime/appcds/LongClassListPath.java \
- -runtime/appcds/LotsOfClasses.java \
- -runtime/appcds/RelativePath.java \
- -runtime/appcds/SharedArchiveConsistency.java \
- -runtime/appcds/UnusedCPDuringDump.java \
- -runtime/appcds/VerifierTest_1B.java
+  runtime/cds/appcds/ \
+ -runtime/cds/appcds/cacheObject \
+ -runtime/cds/appcds/customLoader \
+ -runtime/cds/appcds/dynamicArchive \
+ -runtime/cds/appcds/javaldr/ArrayTest.java \
+ -runtime/cds/appcds/javaldr/GCSharedStringsDuringDump.java \
+ -runtime/cds/appcds/javaldr/HumongousDuringDump.java \
+ -runtime/cds/appcds/sharedStrings \
+ -runtime/cds/appcds/DumpClassList.java \
+ -runtime/cds/appcds/ExtraSymbols.java \
+ -runtime/cds/appcds/LongClassListPath.java \
+ -runtime/cds/appcds/LotsOfClasses.java \
+ -runtime/cds/appcds/RelativePath.java \
+ -runtime/cds/appcds/SharedArchiveConsistency.java \
+ -runtime/cds/appcds/UnusedCPDuringDump.java \
+ -runtime/cds/appcds/VerifierTest_1B.java
 
 # A subset of AppCDS tests to be run in tier1
 tier1_runtime_appcds = \
-  runtime/appcds/HelloTest.java \
-  runtime/appcds/sharedStrings/SharedStringsBasic.java \
-  runtime/appcds/ClassLoaderTest.java
+  runtime/cds/appcds/HelloTest.java \
+  runtime/cds/appcds/sharedStrings/SharedStringsBasic.java \
+  runtime/cds/appcds/ClassLoaderTest.java
 
 tier1_runtime_appcds_exclude = \
-  runtime/appcds/ \
+  runtime/cds/appcds/ \
   -:tier1_runtime_appcds
 
 # This group should be executed with "jtreg -Dtest.cds.run.with.jfr=true ..."
@@ -350,13 +351,13 @@ tier1_runtime_appcds_exclude = \
 # The excluded tests disallow the jdk.jfr module, which is required to
 # run with JFR.
 hotspot_appcds_with_jfr = \
-  runtime/appcds/ \
- -runtime/appcds/cacheObject/ArchivedModuleCompareTest.java \
- -runtime/appcds/jigsaw/classpathtests/BootAppendTests.java \
- -runtime/appcds/jigsaw/classpathtests/ClassPathTests.java \
- -runtime/appcds/jigsaw/classpathtests/EmptyClassInBootClassPath.java \
- -runtime/appcds/jigsaw/JigsawOptionsCombo.java \
- -runtime/appcds/jigsaw/modulepath/MainModuleOnly.java
+  runtime/cds/appcds/ \
+ -runtime/cds/appcds/cacheObject/ArchivedModuleCompareTest.java \
+ -runtime/cds/appcds/jigsaw/classpathtests/BootAppendTests.java \
+ -runtime/cds/appcds/jigsaw/classpathtests/ClassPathTests.java \
+ -runtime/cds/appcds/jigsaw/classpathtests/EmptyClassInBootClassPath.java \
+ -runtime/cds/appcds/jigsaw/JigsawOptionsCombo.java \
+ -runtime/cds/appcds/jigsaw/modulepath/MainModuleOnly.java
 
 tier1_serviceability = \
   serviceability/dcmd/compiler \
@@ -371,8 +372,7 @@ tier1_serviceability = \
   serviceability/sa \
   -serviceability/sa/ClhsdbScanOops.java \
   -serviceability/sa/TestJmapCore.java \
-  -serviceability/sa/TestJmapCoreMetaspace.java \
-  -serviceability/sa/TestHeapDumpForLargeArray.java
+  -serviceability/sa/TestJmapCoreMetaspace.java
 
 tier1 = \
   :tier1_common \

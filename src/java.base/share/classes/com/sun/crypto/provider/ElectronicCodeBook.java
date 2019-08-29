@@ -28,6 +28,8 @@ package com.sun.crypto.provider;
 import java.security.InvalidKeyException;
 import java.security.ProviderException;
 import sun.security.util.ArrayUtil;
+import java.util.Objects;
+import jdk.internal.HotSpotIntrinsicCandidate;
 
 /**
  * This class represents ciphers in electronic codebook (ECB) mode.
@@ -95,6 +97,16 @@ final class ElectronicCodeBook extends FeedbackCipher {
         embeddedCipher.init(decrypting, algorithm, key);
     }
 
+    @HotSpotIntrinsicCandidate
+    private int implECBEncrypt(byte [] in, int inOff, int len, byte[] out, int outOff) {
+        for (int i = len; i >= blockSize; i -= blockSize) {
+            embeddedCipher.encryptBlock(in, inOff, out, outOff);
+            inOff += blockSize;
+            outOff += blockSize;
+        }
+        return len;
+    }
+
     /**
      * Performs encryption operation.
      *
@@ -116,9 +128,13 @@ final class ElectronicCodeBook extends FeedbackCipher {
         ArrayUtil.blockSizeCheck(len, blockSize);
         ArrayUtil.nullAndBoundsCheck(in, inOff, len);
         ArrayUtil.nullAndBoundsCheck(out, outOff, len);
+        return implECBEncrypt(in, inOff, len, out, outOff);
+    }
 
+    @HotSpotIntrinsicCandidate
+    private int implECBDecrypt(byte [] in, int inOff, int len, byte[] out, int outOff) {
         for (int i = len; i >= blockSize; i -= blockSize) {
-            embeddedCipher.encryptBlock(in, inOff, out, outOff);
+            embeddedCipher.decryptBlock(in, inOff, out, outOff);
             inOff += blockSize;
             outOff += blockSize;
         }
@@ -146,12 +162,6 @@ final class ElectronicCodeBook extends FeedbackCipher {
         ArrayUtil.blockSizeCheck(len, blockSize);
         ArrayUtil.nullAndBoundsCheck(in, inOff, len);
         ArrayUtil.nullAndBoundsCheck(out, outOff, len);
-
-        for (int i = len; i >= blockSize; i -= blockSize) {
-            embeddedCipher.decryptBlock(in, inOff, out, outOff);
-            inOff += blockSize;
-            outOff += blockSize;
-        }
-        return len;
-    }
+        return implECBDecrypt(in, inOff, len, out, outOff);
+   }
 }

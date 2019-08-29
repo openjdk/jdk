@@ -25,7 +25,7 @@
 #ifndef SHARE_GC_SHARED_AGETABLE_HPP
 #define SHARE_GC_SHARED_AGETABLE_HPP
 
-#include "oops/markOop.hpp"
+#include "oops/markWord.hpp"
 #include "oops/oop.hpp"
 #include "runtime/perfData.hpp"
 
@@ -41,7 +41,7 @@ class AgeTable {
 
  public:
   // constants
-  enum { table_size = markOopDesc::max_age + 1 };
+  enum { table_size = markWord::max_age + 1 };
 
   // instance variables
   size_t sizes[table_size];

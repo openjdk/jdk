@@ -23,7 +23,7 @@
 
 /**
  * @test
- * @bug 4769350 8017779
+ * @bug 4769350 8017779 8191169
  * @modules jdk.httpserver
  * @run main/othervm B4769350 server
  * @run main/othervm B4769350 proxy

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -87,8 +87,8 @@ public class BasicFlagsChange {
                so, a message like "skipped $pathTolibrary aot library" or
                "loaded    $pathToLibrary  aot library" is present for cases of
                incompatible or compatible flags respectively */
-            pb = ProcessTools.createJavaProcessBuilder(true, "-XX:+UseAOT",
-                    "-XX:+PrintAOT", "-XX:AOTLibrary=./" + libName, option,
+            pb = ProcessTools.createJavaProcessBuilder(true, "-XX:+UnlockExperimentalVMOptions",
+                    "-XX:+UseAOT", "-XX:+PrintAOT", "-XX:AOTLibrary=./" + libName, option,
                     HelloWorldPrinter.class.getName());
         } catch (Exception ex) {
             throw new Error("Problems creating ProcessBuilder using " + option

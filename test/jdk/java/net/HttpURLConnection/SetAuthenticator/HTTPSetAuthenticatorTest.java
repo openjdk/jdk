@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -115,8 +115,8 @@ public class HTTPSetAuthenticatorTest extends HTTPTest {
                    HttpAuthType mode)
             throws IOException
     {
-        HttpTestAuthenticator authOne = new HttpTestAuthenticator("dublin", "foox");
-        HttpTestAuthenticator authTwo = new HttpTestAuthenticator("dublin", "foox");
+        HttpTestAuthenticator authOne = new HttpTestAuthenticator("authOne", "dublin", "foox");
+        HttpTestAuthenticator authTwo = new HttpTestAuthenticator("authTwo", "dublin", "foox");
         int expectedIncrement = scheme == HttpSchemeType.NONE
                                 ? 0 : EXPECTED_AUTH_CALLS_PER_TEST;
         int count;

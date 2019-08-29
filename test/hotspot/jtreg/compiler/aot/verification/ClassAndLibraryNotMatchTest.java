@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -93,8 +93,8 @@ public class ClassAndLibraryNotMatchTest {
         ProcessBuilder pb;
         try {
             pb = ProcessTools.createJavaProcessBuilder(true, "-cp", ".",
-                    "-XX:+UseAOT", "-XX:AOTLibrary=./" + LIB_NAME,
-                    HELLO_WORLD_CLASS_NAME);
+                    "-XX:+UnlockExperimentalVMOptions", "-XX:+UseAOT",
+                    "-XX:AOTLibrary=./" + LIB_NAME, HELLO_WORLD_CLASS_NAME);
         } catch (Exception e) {
             throw new Error("Can't create ProcessBuilder to run "
                     + HELLO_WORLD_CLASS_NAME + " " + e, e);

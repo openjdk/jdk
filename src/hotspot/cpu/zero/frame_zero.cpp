@@ -29,7 +29,7 @@
 #include "interpreter/interpreterRuntime.hpp"
 #include "memory/resourceArea.hpp"
 #include "memory/universe.hpp"
-#include "oops/markOop.hpp"
+#include "oops/markWord.hpp"
 #include "oops/method.hpp"
 #include "oops/oop.inline.hpp"
 #include "runtime/frame.inline.hpp"

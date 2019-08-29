@@ -2909,6 +2909,45 @@ class StubGenerator: public StubCodeGenerator {
     return start;
   }
 
+  address generate_data_cache_writeback() {
+    const Register src        = c_rarg0;  // source address
+
+    __ align(CodeEntryAlignment);
+
+    StubCodeMark mark(this, "StubRoutines", "_data_cache_writeback");
+
+    address start = __ pc();
+    __ enter();
+    __ cache_wb(Address(src, 0));
+    __ leave();
+    __ ret(0);
+
+    return start;
+  }
+
+  address generate_data_cache_writeback_sync() {
+    const Register is_pre    = c_rarg0;  // pre or post sync
+
+    __ align(CodeEntryAlignment);
+
+    StubCodeMark mark(this, "StubRoutines", "_data_cache_writeback_sync");
+
+    // pre wbsync is a no-op
+    // post wbsync translates to an sfence
+
+    Label skip;
+    address start = __ pc();
+    __ enter();
+    __ cmpl(is_pre, 0);
+    __ jcc(Assembler::notEqual, skip);
+    __ cache_wbsync(false);
+    __ bind(skip);
+    __ leave();
+    __ ret(0);
+
+    return start;
+  }
+
   void generate_arraycopy_stubs() {
     address entry;
     address entry_jbyte_arraycopy;
@@ -3684,6 +3723,36 @@ class StubGenerator: public StubCodeGenerator {
     __ ret(0);
     return start;
 }
+
+  address generate_electronicCodeBook_encryptAESCrypt() {
+    __ align(CodeEntryAlignment);
+    StubCodeMark mark(this, "StubRoutines", "electronicCodeBook_encryptAESCrypt");
+    address start = __ pc();
+    const Register from = c_rarg0;  // source array address
+    const Register to = c_rarg1;  // destination array address
+    const Register key = c_rarg2;  // key array address
+    const Register len = c_rarg3;  // src len (must be multiple of blocksize 16)
+    __ enter(); // required for proper stackwalking of RuntimeStub frame
+    __ aesecb_encrypt(from, to, key, len);
+    __ leave(); // required for proper stackwalking of RuntimeStub frame
+    __ ret(0);
+    return start;
+ }
+
+  address generate_electronicCodeBook_decryptAESCrypt() {
+    __ align(CodeEntryAlignment);
+    StubCodeMark mark(this, "StubRoutines", "electronicCodeBook_decryptAESCrypt");
+    address start = __ pc();
+    const Register from = c_rarg0;  // source array address
+    const Register to = c_rarg1;  // destination array address
+    const Register key = c_rarg2;  // key array address
+    const Register len = c_rarg3;  // src len (must be multiple of blocksize 16)
+    __ enter(); // required for proper stackwalking of RuntimeStub frame
+    __ aesecb_decrypt(from, to, key, len);
+    __ leave(); // required for proper stackwalking of RuntimeStub frame
+    __ ret(0);
+    return start;
+  }
 
   address generate_upper_word_mask() {
     __ align(64);
@@ -5968,6 +6037,10 @@ address generate_avx_ghash_processBlocks() {
     // support for verify_oop (must happen after universe_init)
     StubRoutines::_verify_oop_subroutine_entry = generate_verify_oop();
 
+    // data cache line writeback
+    StubRoutines::_data_cache_writeback = generate_data_cache_writeback();
+    StubRoutines::_data_cache_writeback_sync = generate_data_cache_writeback_sync();
+
     // arraycopy stubs used by compilers
     generate_arraycopy_stubs();
 
@@ -5979,6 +6052,8 @@ address generate_avx_ghash_processBlocks() {
       StubRoutines::_cipherBlockChaining_encryptAESCrypt = generate_cipherBlockChaining_encryptAESCrypt();
       if (VM_Version::supports_vaes() &&  VM_Version::supports_avx512vl() && VM_Version::supports_avx512dq() ) {
         StubRoutines::_cipherBlockChaining_decryptAESCrypt = generate_cipherBlockChaining_decryptVectorAESCrypt();
+        StubRoutines::_electronicCodeBook_encryptAESCrypt = generate_electronicCodeBook_encryptAESCrypt();
+        StubRoutines::_electronicCodeBook_decryptAESCrypt = generate_electronicCodeBook_decryptAESCrypt();
       } else {
         StubRoutines::_cipherBlockChaining_decryptAESCrypt = generate_cipherBlockChaining_decryptAESCrypt_Parallel();
       }

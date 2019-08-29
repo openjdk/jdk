@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,24 +25,29 @@
  * @test
  * @bug 4151665
  * @modules jdk.httpserver
+ * @library /test/lib
  * @summary Test for FileNotFoundException when loading bogus class
  */
 
 import java.io.InputStream;
 import java.io.IOException;
+import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.URL;
 import java.net.URLClassLoader;
 import com.sun.net.httpserver.HttpExchange;
 import com.sun.net.httpserver.HttpHandler;
 import com.sun.net.httpserver.HttpServer;
+import jdk.test.lib.net.URIBuilder;
 
 public class ClassLoad {
      public static void main(String[] args) throws Exception {
          boolean error = true;
 
          // Start a dummy server to return 404
-         HttpServer server = HttpServer.create(new InetSocketAddress(0), 0);
+         HttpServer server = HttpServer.create();
+         server.bind(new InetSocketAddress(
+                 InetAddress.getLoopbackAddress(), 0), 0);
          HttpHandler handler = new HttpHandler() {
              public void handle(HttpExchange t) throws IOException {
                  InputStream is = t.getRequestBody();
@@ -56,7 +61,11 @@ public class ClassLoad {
 
          // Client request
          try {
-             URL url = new URL("http://localhost:" + server.getAddress().getPort());
+             URL url = URIBuilder.newBuilder()
+                     .scheme("http")
+                     .loopback()
+                     .port(server.getAddress().getPort())
+                     .toURL();
              String name = args.length >= 2 ? args[1] : "foo.bar.Baz";
              ClassLoader loader = new URLClassLoader(new URL[] { url });
              System.out.println(url);

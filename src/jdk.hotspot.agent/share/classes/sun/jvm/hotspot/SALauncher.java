@@ -26,6 +26,11 @@ package sun.jvm.hotspot;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.function.Consumer;
 
 import sun.jvm.hotspot.tools.JStack;
 import sun.jvm.hotspot.tools.JMap;
@@ -132,36 +137,43 @@ public class SALauncher {
     }
 
     private static boolean toolHelp(String toolName) {
-        if (toolName.equals("jstack")) {
-            return jstackHelp();
+        switch (toolName) {
+            case "jstack":
+                return jstackHelp();
+            case "jinfo":
+                return jinfoHelp();
+            case "jmap":
+                return jmapHelp();
+            case "jsnap":
+                return jsnapHelp();
+            case "debugd":
+                return debugdHelp();
+            case "hsdb":
+            case "clhsdb":
+                return commonHelp(toolName);
+            default:
+                return launcherHelp();
         }
-        if (toolName.equals("jinfo")) {
-            return jinfoHelp();
-        }
-        if (toolName.equals("jmap")) {
-            return jmapHelp();
-        }
-        if (toolName.equals("jsnap")) {
-            return jsnapHelp();
-        }
-        if (toolName.equals("debugd")) {
-            return debugdHelp();
-        }
-        if (toolName.equals("hsdb")) {
-            return commonHelp("hsdb");
-        }
-        if (toolName.equals("clhsdb")) {
-            return commonHelp("clhsdb");
-        }
-        return launcherHelp();
     }
 
     private static final String NO_REMOTE = null;
 
-    private static void buildAttachArgs(ArrayList<String> newArgs, String pid,
-                                  String exe, String core, String remote, boolean allowEmpty) {
-        if (!allowEmpty && (pid == null) && (exe == null) && (remote == NO_REMOTE)) {
+    private static String[] buildAttachArgs(Map<String, String> newArgMap,
+                                            boolean allowEmpty) {
+        String pid = newArgMap.remove("pid");
+        String exe = newArgMap.remove("exe");
+        String core = newArgMap.remove("core");
+        String connect = newArgMap.remove("connect");
+        if (!allowEmpty && (pid == null) && (exe == null) && (connect == NO_REMOTE)) {
             throw new SAGetoptException("You have to set --pid or --exe or --connect.");
+        }
+
+        List<String> newArgs = new ArrayList<>();
+        for (var entry : newArgMap.entrySet()) {
+            newArgs.add(entry.getKey());
+            if (entry.getValue() != null) {
+                newArgs.add(entry.getValue());
+            }
         }
 
         if (pid != null) { // Attach to live process
@@ -169,7 +181,7 @@ public class SALauncher {
                 throw new SAGetoptException("Unnecessary argument: --exe");
             } else if (core != null) {
                 throw new SAGetoptException("Unnecessary argument: --core");
-            } else if (remote != NO_REMOTE) {
+            } else if (connect != NO_REMOTE) {
                 throw new SAGetoptException("Unnecessary argument: --connect");
             } else if (!pid.matches("^\\d+$")) {
                 throw new SAGetoptException("Invalid pid: " + pid);
@@ -177,7 +189,7 @@ public class SALauncher {
 
             newArgs.add(pid);
         } else if (exe != null) {
-            if (remote != NO_REMOTE) {
+            if (connect != NO_REMOTE) {
                 throw new SAGetoptException("Unnecessary argument: --connect");
             } else if (exe.length() == 0) {
                 throw new SAGetoptException("You have to set --exe.");
@@ -190,264 +202,144 @@ public class SALauncher {
             }
 
             newArgs.add(core);
-        } else if (remote != NO_REMOTE) {
-            newArgs.add(remote);
+        } else if (connect != NO_REMOTE) {
+            newArgs.add(connect);
         }
+
+        return newArgs.toArray(new String[0]);
+    }
+
+    /**
+     * This method converts jhsdb-style options (oldArgs) to old fashioned
+     * style. SALauncher delegates the work to the entry point of each tool.
+     * Thus we need to convert the arguments.
+     * For example, `jhsdb jstack --mixed` needs to be converted to `jstack -m`.
+     *
+     * longOptsMap holds the rule how this method should convert the args.
+     * The key is the name of jhsdb style, the value is the name of
+     * old fashioned style. If you want to convert mixed option in jstack,
+     * you need to set "mixed" to the key, and to set "-m" to the value
+     * in longOptsMap. If the option have the value, you need to add "=" to
+     * the key like "exe=".
+     *
+     * You also can set the options which cannot be mapped to old fashioned
+     * arguments. For example, `jhsdb jmap --binaryheap` cannot be mapped to
+     * `jmap` option directly. But you set it to longOptsMap, then you can know
+     * the user sets "binaryheap" option, and SALauncher should set
+     * "-heap:format:b" to jmap option.
+     *
+     * This method returns the map of the old fashioned key/val pairs.
+     * It can be used to build args in string array at buildAttachArgs().
+     */
+    private static Map<String, String> parseOptions(String[] oldArgs,
+                                                    Map<String, String> longOptsMap) {
+        SAGetopt sg = new SAGetopt(oldArgs);
+        String[] longOpts = longOptsMap.keySet().toArray(new String[0]);
+        Map<String, String> newArgMap = new HashMap<>();
+
+        /*
+         * Parse each jhsdb-style option via SAGetopt.
+         * SAGetopt parses and validates the argument. If the user passes invalid
+         * option, SAGetoptException will be occurred at SAGetopt::next.
+         * Thus there is no need to validate it here.
+         *
+         * We can get option value via SAGetopt::get. If jhsdb-style option has
+         * '=' at the tail, we put old fashioned option with it to newArgMap.
+         */
+        String s;
+        while ((s = sg.next(null, longOpts)) != null) {
+            var val = longOptsMap.get(s);
+            if (val != null) {
+                newArgMap.put(val, null);
+            } else {
+                val = longOptsMap.get(s + "=");
+                if (val != null) {
+                    newArgMap.put(val, sg.getOptarg());
+                }
+            }
+        }
+
+        return newArgMap;
     }
 
     private static void runCLHSDB(String[] oldArgs) {
-        SAGetopt sg = new SAGetopt(oldArgs);
-        String[] longOpts = {"exe=", "core=", "pid="};
-
-        ArrayList<String> newArgs = new ArrayList();
-        String pid = null;
-        String exe = null;
-        String core = null;
-        String s = null;
-
-        while((s = sg.next(null, longOpts)) != null) {
-            if (s.equals("exe")) {
-                exe = sg.getOptarg();
-                continue;
-            }
-            if (s.equals("core")) {
-                core = sg.getOptarg();
-                continue;
-            }
-            if (s.equals("pid")) {
-                pid = sg.getOptarg();
-                continue;
-            }
-        }
-
-        buildAttachArgs(newArgs, pid, exe, core, NO_REMOTE, true);
-        CLHSDB.main(newArgs.toArray(new String[newArgs.size()]));
+        Map<String, String> longOptsMap = Map.of("exe=", "exe",
+                                                 "core=", "core",
+                                                 "pid=", "pid");
+        Map<String, String> newArgMap = parseOptions(oldArgs, longOptsMap);
+        CLHSDB.main(buildAttachArgs(newArgMap, true));
     }
 
     private static void runHSDB(String[] oldArgs) {
-        SAGetopt sg = new SAGetopt(oldArgs);
-        String[] longOpts = {"exe=", "core=", "pid="};
-
-        ArrayList<String> newArgs = new ArrayList();
-        String pid = null;
-        String exe = null;
-        String core = null;
-        String s = null;
-
-        while((s = sg.next(null, longOpts)) != null) {
-            if (s.equals("exe")) {
-                exe = sg.getOptarg();
-                continue;
-            }
-            if (s.equals("core")) {
-                core = sg.getOptarg();
-                continue;
-            }
-            if (s.equals("pid")) {
-                pid = sg.getOptarg();
-                continue;
-            }
-        }
-
-        buildAttachArgs(newArgs, pid, exe, core, NO_REMOTE, true);
-        HSDB.main(newArgs.toArray(new String[newArgs.size()]));
+        Map<String, String> longOptsMap = Map.of("exe=", "exe",
+                                                 "core=", "core",
+                                                 "pid=", "pid");
+        Map<String, String> newArgMap = parseOptions(oldArgs, longOptsMap);
+        HSDB.main(buildAttachArgs(newArgMap, true));
     }
 
     private static void runJSTACK(String[] oldArgs) {
-        SAGetopt sg = new SAGetopt(oldArgs);
-        String[] longOpts = {"exe=", "core=", "pid=", "connect=",
-                                 "mixed", "locks"};
-
-        ArrayList<String> newArgs = new ArrayList();
-        String pid = null;
-        String exe = null;
-        String core = null;
-        String remote = NO_REMOTE;
-        String s = null;
-
-        while((s = sg.next(null, longOpts)) != null) {
-            if (s.equals("exe")) {
-                exe = sg.getOptarg();
-                continue;
-            }
-            if (s.equals("core")) {
-                core = sg.getOptarg();
-                continue;
-            }
-            if (s.equals("pid")) {
-                pid = sg.getOptarg();
-                continue;
-            }
-            if (s.equals("connect")) {
-                remote = sg.getOptarg();
-                continue;
-            }
-            if (s.equals("mixed")) {
-                newArgs.add("-m");
-                continue;
-            }
-            if (s.equals("locks")) {
-                newArgs.add("-l");
-                continue;
-            }
-        }
-
-        buildAttachArgs(newArgs, pid, exe, core, remote, false);
+        Map<String, String> longOptsMap = Map.of("exe=", "exe",
+                                                 "core=", "core",
+                                                 "pid=", "pid",
+                                                 "connect=", "connect",
+                                                 "mixed", "-m",
+                                                 "locks", "-l");
+        Map<String, String> newArgMap = parseOptions(oldArgs, longOptsMap);
         JStack jstack = new JStack(false, false);
-        jstack.runWithArgs(newArgs.toArray(new String[newArgs.size()]));
+        jstack.runWithArgs(buildAttachArgs(newArgMap, false));
     }
 
     private static void runJMAP(String[] oldArgs) {
-        SAGetopt sg = new SAGetopt(oldArgs);
-        String[] longOpts = {"exe=", "core=", "pid=", "connect=",
-              "heap", "binaryheap", "dumpfile=", "histo", "clstats", "finalizerinfo"};
+        Map<String, String> longOptsMap = Map.of("exe=", "exe",
+                                                 "core=", "core",
+                                                 "pid=", "pid",
+                                                 "connect=", "connect",
+                                                 "heap", "-heap",
+                                                 "binaryheap", "binaryheap",
+                                                 "dumpfile=", "dumpfile",
+                                                 "histo", "-histo",
+                                                 "clstats", "-clstats",
+                                                 "finalizerinfo", "-finalizerinfo");
+        Map<String, String> newArgMap = parseOptions(oldArgs, longOptsMap);
 
-        ArrayList<String> newArgs = new ArrayList();
-        String pid = null;
-        String exe = null;
-        String core = null;
-        String remote = NO_REMOTE;
-        String s = null;
-        String dumpfile = null;
-        boolean requestHeapdump = false;
-
-        while((s = sg.next(null, longOpts)) != null) {
-            if (s.equals("exe")) {
-                exe = sg.getOptarg();
-                continue;
-            }
-            if (s.equals("core")) {
-                core = sg.getOptarg();
-                continue;
-            }
-            if (s.equals("pid")) {
-                pid = sg.getOptarg();
-                continue;
-            }
-            if (s.equals("connect")) {
-                remote = sg.getOptarg();
-                continue;
-            }
-            if (s.equals("heap")) {
-                newArgs.add("-heap");
-                continue;
-            }
-            if (s.equals("binaryheap")) {
-                requestHeapdump = true;
-                continue;
-            }
-            if (s.equals("dumpfile")) {
-                dumpfile = sg.getOptarg();
-                continue;
-            }
-            if (s.equals("histo")) {
-                newArgs.add("-histo");
-                continue;
-            }
-            if (s.equals("clstats")) {
-                newArgs.add("-clstats");
-                continue;
-            }
-            if (s.equals("finalizerinfo")) {
-                newArgs.add("-finalizerinfo");
-                continue;
-            }
-        }
-
+        boolean requestHeapdump = newArgMap.containsKey("binaryheap");
+        String dumpfile = newArgMap.get("dumpfile");
         if (!requestHeapdump && (dumpfile != null)) {
-            throw new IllegalArgumentException("Unexpected argument dumpfile");
+            throw new IllegalArgumentException("Unexpected argument: dumpfile");
         }
         if (requestHeapdump) {
             if (dumpfile == null) {
-                newArgs.add("-heap:format=b");
+                newArgMap.put("-heap:format=b", null);
             } else {
-                newArgs.add("-heap:format=b,file=" + dumpfile);
+                newArgMap.put("-heap:format=b,file=" + dumpfile, null);
             }
         }
 
-        buildAttachArgs(newArgs, pid, exe, core, remote, false);
-        JMap.main(newArgs.toArray(new String[newArgs.size()]));
+        newArgMap.remove("binaryheap");
+        newArgMap.remove("dumpfile");
+        JMap.main(buildAttachArgs(newArgMap, false));
     }
 
     private static void runJINFO(String[] oldArgs) {
-        SAGetopt sg = new SAGetopt(oldArgs);
-        String[] longOpts = {"exe=", "core=", "pid=", "connect=",
-                                     "flags", "sysprops"};
-
-        ArrayList<String> newArgs = new ArrayList();
-        String exe = null;
-        String pid = null;
-        String core = null;
-        String remote = NO_REMOTE;
-        String s = null;
-
-        while((s = sg.next(null, longOpts)) != null) {
-            if (s.equals("exe")) {
-                exe = sg.getOptarg();
-                continue;
-            }
-            if (s.equals("core")) {
-                core = sg.getOptarg();
-                continue;
-            }
-            if (s.equals("pid")) {
-                pid = sg.getOptarg();
-                continue;
-            }
-            if (s.equals("connect")) {
-                remote = sg.getOptarg();
-                continue;
-            }
-            if (s.equals("flags")) {
-                newArgs.add("-flags");
-                continue;
-            }
-            if (s.equals("sysprops")) {
-                newArgs.add("-sysprops");
-                continue;
-            }
-        }
-
-        buildAttachArgs(newArgs, pid, exe, core, remote, false);
-        JInfo.main(newArgs.toArray(new String[newArgs.size()]));
+        Map<String, String> longOptsMap = Map.of("exe=", "exe",
+                                                 "core=", "core",
+                                                 "pid=", "pid",
+                                                 "connect=", "connect",
+                                                 "flags", "-flags",
+                                                 "sysprops", "-sysprops");
+        Map<String, String> newArgMap = parseOptions(oldArgs, longOptsMap);
+        JInfo.main(buildAttachArgs(newArgMap, false));
     }
 
     private static void runJSNAP(String[] oldArgs) {
-        SAGetopt sg = new SAGetopt(oldArgs);
-        String[] longOpts = {"exe=", "core=", "pid=", "connect=", "all"};
-
-        ArrayList<String> newArgs = new ArrayList();
-        String exe = null;
-        String pid = null;
-        String core = null;
-        String remote = NO_REMOTE;
-        String s = null;
-
-        while((s = sg.next(null, longOpts)) != null) {
-            if (s.equals("exe")) {
-                exe = sg.getOptarg();
-                continue;
-            }
-            if (s.equals("core")) {
-                core = sg.getOptarg();
-                continue;
-            }
-            if (s.equals("pid")) {
-                pid = sg.getOptarg();
-                continue;
-            }
-            if (s.equals("connect")) {
-                remote = sg.getOptarg();
-                continue;
-            }
-            if (s.equals("all")) {
-                newArgs.add("-a");
-                continue;
-            }
-        }
-
-        buildAttachArgs(newArgs, pid, exe, core, remote, false);
-        JSnap.main(newArgs.toArray(new String[newArgs.size()]));
+        Map<String, String> longOptsMap = Map.of("exe=", "exe",
+                                                 "core=", "core",
+                                                 "pid=", "pid",
+                                                 "connect=", "connect",
+                                                 "all", "-a");
+        Map<String, String> newArgMap = parseOptions(oldArgs, longOptsMap);
+        JSnap.main(buildAttachArgs(newArgMap, false));
     }
 
     private static void runDEBUGD(String[] oldArgs) {
@@ -457,43 +349,33 @@ public class SALauncher {
         // attaching to SA agent.
         System.setProperty("sun.jvm.hotspot.debugger.useWindbgDebugger", "true");
 
-        SAGetopt sg = new SAGetopt(oldArgs);
-        String[] longOpts = {"exe=", "core=", "pid=", "serverid="};
+        Map<String, String> longOptsMap = Map.of("exe=", "exe",
+                                                 "core=", "core",
+                                                 "pid=", "pid",
+                                                 "serverid=", "serverid");
+        Map<String, String> newArgMap = parseOptions(oldArgs, longOptsMap);
+        var serverid = newArgMap.remove("serverid");
+        List<String> newArgArray = new ArrayList<>();
+        newArgArray.addAll(Arrays.asList(buildAttachArgs(newArgMap, false)));
 
-        ArrayList<String> newArgs = new ArrayList<>();
-        String exe = null;
-        String pid = null;
-        String core = null;
-        String s = null;
-        String serverid = null;
-
-        while((s = sg.next(null, longOpts)) != null) {
-          if (s.equals("exe")) {
-              exe = sg.getOptarg();
-              continue;
-          }
-          if (s.equals("core")) {
-              core = sg.getOptarg();
-              continue;
-          }
-          if (s.equals("pid")) {
-              pid = sg.getOptarg();
-              continue;
-          }
-          if (s.equals("serverid")) {
-              serverid = sg.getOptarg();
-              continue;
-          }
-        }
-
-        buildAttachArgs(newArgs, pid, exe, core, NO_REMOTE, false);
+        // `serverid` must be located at the tail.
         if (serverid != null) {
-            newArgs.add(serverid);
+            newArgArray.add(serverid);
         }
 
         // delegate to the actual SA debug server.
-        sun.jvm.hotspot.DebugServer.main(newArgs.toArray(new String[newArgs.size()]));
+        DebugServer.main(newArgArray.toArray(new String[0]));
     }
+
+    // Key: tool name, Value: launcher method
+    private static Map<String, Consumer<String[]>> toolMap =
+        Map.of("clhsdb", SALauncher::runCLHSDB,
+               "hsdb", SALauncher::runHSDB,
+               "jstack", SALauncher::runJSTACK,
+               "jmap", SALauncher::runJMAP,
+               "jinfo", SALauncher::runJINFO,
+               "jsnap", SALauncher::runJSNAP,
+               "debugd", SALauncher::runDEBUGD);
 
     public static void main(String[] args) {
         // Provide a help
@@ -517,44 +399,12 @@ public class SALauncher {
         String[] oldArgs = Arrays.copyOfRange(args, 1, args.length);
 
         try {
-            // Run SA interactive mode
-            if (args[0].equals("clhsdb")) {
-                runCLHSDB(oldArgs);
-                return;
+            var func = toolMap.get(args[0]);
+            if (func == null) {
+                throw new SAGetoptException("Unknown tool: " + args[0]);
+            } else {
+                func.accept(oldArgs);
             }
-
-            if (args[0].equals("hsdb")) {
-                runHSDB(oldArgs);
-                return;
-            }
-
-            // Run SA tmtools mode
-            if (args[0].equals("jstack")) {
-                runJSTACK(oldArgs);
-                return;
-            }
-
-            if (args[0].equals("jmap")) {
-                runJMAP(oldArgs);
-                return;
-            }
-
-            if (args[0].equals("jinfo")) {
-                runJINFO(oldArgs);
-                return;
-            }
-
-            if (args[0].equals("jsnap")) {
-                runJSNAP(oldArgs);
-                return;
-            }
-
-            if (args[0].equals("debugd")) {
-                runDEBUGD(oldArgs);
-                return;
-            }
-
-            throw new SAGetoptException("Unknown tool: " + args[0]);
         } catch (SAGetoptException e) {
             System.err.println(e.getMessage());
             toolHelp(args[0]);

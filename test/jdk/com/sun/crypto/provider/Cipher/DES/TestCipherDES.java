@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,19 +30,20 @@
 
 public class TestCipherDES extends TestCipher {
 
-    TestCipherDES() {
-        super("DES",
-                new String[]{"CBC", "CTR", "CTS", "ECB", "PCBC",
-                    //CFBx
-                    "CFB", "CFB8", "CFB16", "CFB24", "CFB32", "CFB40", "CFB48", "CFB56",
-                    "CFB64",
-                    //OFBx
-                    "OFB", "OFB8", "OFB16", "OFB24", "OFB32", "OFB40", "OFB48", "OFB56",
-                    "OFB64"},
-                new String[]{"NoPaDDing", "PKCS5Padding"});
+    TestCipherDES(String[] modes, String[] paddings) {
+        super("DES", modes, paddings);
     }
 
     public static void main(String[] args) throws Exception {
-        new TestCipherDES().runAll();
+        new TestCipherDES(new String[]{ "CBC", "ECB", "PCBC",
+            //CFBx
+            "CFB", "CFB8", "CFB16", "CFB24", "CFB32", "CFB40",
+            "CFB48", "CFB56", "CFB64",
+            //OFBx
+            "OFB", "OFB8", "OFB16", "OFB24", "OFB32", "OFB40",
+            "OFB48", "OFB56", "OFB64" },
+            new String[]{ "NoPaDDing", "PKCS5Padding" }).runAll();
+        new TestCipherDES(new String[]{ "CTR", "CTS" },
+            new String[]{ "NoPaDDing" }).runAll();
     }
 }

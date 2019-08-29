@@ -329,8 +329,8 @@ class ResourceBitMap : public BitMap {
 
  public:
   ResourceBitMap() : BitMap(NULL, 0) {}
-  // Clears the bitmap memory.
-  ResourceBitMap(idx_t size_in_bits);
+  // Conditionally clears the bitmap memory.
+  ResourceBitMap(idx_t size_in_bits, bool clear = true);
 
   // Resize the backing bitmap memory.
   //

@@ -1050,17 +1050,14 @@ void TemplateInterpreterGenerator::generate_fixed_frame(bool native_call, Regist
   // Get mirror and store it in the frame as GC root for this Method*.
   __ load_mirror_from_const_method(R12_scratch2, Rconst_method);
 
-  __ addi(R26_monitor, R1_SP, - frame::ijava_state_size);
-  __ addi(R15_esp, R26_monitor, - Interpreter::stackElementSize);
+  __ addi(R26_monitor, R1_SP, -frame::ijava_state_size);
+  __ addi(R15_esp, R26_monitor, -Interpreter::stackElementSize);
 
   // Store values.
-  // R15_esp, R14_bcp, R26_monitor, R28_mdx are saved at java calls
-  // in InterpreterMacroAssembler::call_from_interpreter.
   __ std(R19_method, _ijava_state_neg(method), R1_SP);
   __ std(R12_scratch2, _ijava_state_neg(mirror), R1_SP);
-  __ std(R21_sender_SP, _ijava_state_neg(sender_sp), R1_SP);
-  __ std(R27_constPoolCache, _ijava_state_neg(cpoolCache), R1_SP);
   __ std(R18_locals, _ijava_state_neg(locals), R1_SP);
+  __ std(R27_constPoolCache, _ijava_state_neg(cpoolCache), R1_SP);
 
   // Note: esp, bcp, monitor, mdx live in registers. Hence, the correct version can only
   // be found in the frame after save_interpreter_state is done. This is always true
@@ -1068,31 +1065,20 @@ void TemplateInterpreterGenerator::generate_fixed_frame(bool native_call, Regist
   // because e.g. frame::interpreter_frame_bcp() will not access the correct value
   // (Enhanced Stack Trace).
   // The signal handler does not save the interpreter state into the frame.
+
+  // We have to initialize some of these frame slots for native calls (accessed by GC).
+  // Also initialize them for non-native calls for better tool support (even though
+  // you may not get the most recent version as described above).
   __ li(R0, 0);
-#ifdef ASSERT
-  // Fill remaining slots with constants.
-  __ load_const_optimized(R11_scratch1, 0x5afe);
-  __ load_const_optimized(R12_scratch2, 0xdead);
-#endif
-  // We have to initialize some frame slots for native calls (accessed by GC).
-  if (native_call) {
-    __ std(R26_monitor, _ijava_state_neg(monitors), R1_SP);
-    __ std(R14_bcp, _ijava_state_neg(bcp), R1_SP);
-    if (ProfileInterpreter) { __ std(R28_mdx, _ijava_state_neg(mdx), R1_SP); }
-  }
-#ifdef ASSERT
-  else {
-    __ std(R12_scratch2, _ijava_state_neg(monitors), R1_SP);
-    __ std(R12_scratch2, _ijava_state_neg(bcp), R1_SP);
-    __ std(R12_scratch2, _ijava_state_neg(mdx), R1_SP);
-  }
-  __ std(R11_scratch1, _ijava_state_neg(ijava_reserved), R1_SP);
-  __ std(R12_scratch2, _ijava_state_neg(esp), R1_SP);
-  __ std(R12_scratch2, _ijava_state_neg(lresult), R1_SP);
-  __ std(R12_scratch2, _ijava_state_neg(fresult), R1_SP);
-#endif
+  __ std(R26_monitor, _ijava_state_neg(monitors), R1_SP);
+  __ std(R14_bcp, _ijava_state_neg(bcp), R1_SP);
+  if (ProfileInterpreter) { __ std(R28_mdx, _ijava_state_neg(mdx), R1_SP); }
+  __ std(R15_esp, _ijava_state_neg(esp), R1_SP);
+  __ std(R0, _ijava_state_neg(oop_tmp), R1_SP); // only used for native_call
+
+  // Store sender's SP and this frame's top SP.
   __ subf(R12_scratch2, top_frame_size, R1_SP);
-  __ std(R0, _ijava_state_neg(oop_tmp), R1_SP);
+  __ std(R21_sender_SP, _ijava_state_neg(sender_sp), R1_SP);
   __ std(R12_scratch2, _ijava_state_neg(top_frame_sp), R1_SP);
 
   // Push top frame.

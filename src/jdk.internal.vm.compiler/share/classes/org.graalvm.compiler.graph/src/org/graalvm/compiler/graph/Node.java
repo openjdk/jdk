@@ -818,22 +818,24 @@ public abstract class Node implements Cloneable, Formattable, NodeInterface {
 
     private void replaceAtMatchingUsages(Node other, Predicate<Node> filter, Node toBeDeleted) {
         if (filter == null) {
-            fail("filter cannot be null");
+            throw fail("filter cannot be null");
         }
         checkReplaceWith(other);
         int i = 0;
-        while (i < this.getUsageCount()) {
+        int usageCount = this.getUsageCount();
+        while (i < usageCount) {
             Node usage = this.getUsageAt(i);
             if (filter.test(usage)) {
                 replaceAtUsage(other, toBeDeleted, usage);
                 this.movUsageFromEndTo(i);
+                usageCount--;
             } else {
                 ++i;
             }
         }
     }
 
-    public Node getUsageAt(int index) {
+    private Node getUsageAt(int index) {
         if (index == 0) {
             return this.usage0;
         } else if (index == 1) {
@@ -848,14 +850,35 @@ public abstract class Node implements Cloneable, Formattable, NodeInterface {
         replaceAtMatchingUsages(other, usagePredicate, null);
     }
 
+    private void replaceAtUsagePos(Node other, Node usage, Position pos) {
+        pos.initialize(usage, other);
+        maybeNotifyInputChanged(usage);
+        if (other != null) {
+            other.addUsage(usage);
+        }
+    }
+
     public void replaceAtUsages(InputType type, Node other) {
         checkReplaceWith(other);
-        for (Node usage : usages().snapshot()) {
+        int i = 0;
+        int usageCount = this.getUsageCount();
+        if (usageCount == 0) {
+            return;
+        }
+        usages: while (i < usageCount) {
+            Node usage = this.getUsageAt(i);
             for (Position pos : usage.inputPositions()) {
                 if (pos.getInputType() == type && pos.get(usage) == this) {
-                    pos.set(usage, other);
+                    replaceAtUsagePos(other, usage, pos);
+                    this.movUsageFromEndTo(i);
+                    usageCount--;
+                    continue usages;
                 }
             }
+            i++;
+        }
+        if (hasNoUsages()) {
+            maybeNotifyZeroUsages(this);
         }
     }
 
@@ -910,6 +933,14 @@ public abstract class Node implements Cloneable, Formattable, NodeInterface {
     public void replaceFirstInput(Node oldInput, Node newInput) {
         if (nodeClass.replaceFirstInput(this, oldInput, newInput)) {
             updateUsages(oldInput, newInput);
+        }
+    }
+
+    public void replaceFirstInput(Node oldInput, Node newInput, InputType type) {
+        for (Position pos : inputPositions()) {
+            if (pos.getInputType() == type && pos.get(this) == oldInput) {
+                pos.set(this, newInput);
+            }
         }
     }
 
@@ -1059,6 +1090,8 @@ public abstract class Node implements Cloneable, Formattable, NodeInterface {
                 assertFalse(input.isDeleted(), "input was deleted %s", input);
                 assertTrue(input.isAlive(), "input is not alive yet, i.e., it was not yet added to the graph");
                 assertTrue(pos.getInputType() == InputType.Unchecked || input.isAllowedUsageType(pos.getInputType()), "invalid usage type %s %s", input, pos.getInputType());
+                Class<?> expectedType = pos.getType();
+                assertTrue(expectedType.isAssignableFrom(input.getClass()), "Invalid input type for %s: expected a %s but was a %s", pos, expectedType, input.getClass());
             }
         }
         return true;

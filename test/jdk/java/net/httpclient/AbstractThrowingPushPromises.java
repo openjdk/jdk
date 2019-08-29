@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,18 +21,24 @@
  * questions.
  */
 
-/*
- * @test
- * @summary Tests what happens when push promise handlers and their
- *          response body handlers and subscribers throw unexpected exceptions.
+
+/**
+ * This is not a test. Actual tests are implemented by concrete subclasses.
+ * The abstract class AbstractThrowingPushPromises provides a base framework
+ * to test what happens when push promise handlers and their
+ * response body handlers and subscribers throw unexpected exceptions.
+ * Concrete tests that extend this abstract class will need to include
+ * the following jtreg tags:
+ *
  * @library /test/lib http2/server
  * @build jdk.test.lib.net.SimpleSSLContext HttpServerAdapters
-  *       ReferenceTracker AbstractThrowingPushPromises
+ *        ReferenceTracker AbstractThrowingPushPromises
+ *        <concrete-class-name>
  * @modules java.base/sun.net.www.http
  *          java.net.http/jdk.internal.net.http.common
  *          java.net.http/jdk.internal.net.http.frame
  *          java.net.http/jdk.internal.net.http.hpack
- * @run testng/othervm -Djdk.internal.httpclient.debug=true AbstractThrowingPushPromises
+ * @run testng/othervm -Djdk.internal.httpclient.debug=true <concrete-class-name>
  */
 
 import jdk.test.lib.net.SimpleSSLContext;

@@ -105,7 +105,7 @@ void ShenandoahPhaseTimings::print_on(outputStream* out) const {
   out->cr();
   out->print_cr("GC STATISTICS:");
   out->print_cr("  \"(G)\" (gross) pauses include VM time: time to notify and block threads, do the pre-");
-  out->print_cr("        and post-safepoint housekeeping. Use -XX:+PrintSafepointStatistics to dissect.");
+  out->print_cr("        and post-safepoint housekeeping. Use -Xlog:safepoint+stats to dissect.");
   out->print_cr("  \"(N)\" (net) pauses are the times spent in the actual GC code.");
   out->print_cr("  \"a\" is average time for each phase, look at levels to see if average makes sense.");
   out->print_cr("  \"lvls\" are quantiles: 0%% (minimum), 25%%, 50%% (median), 75%%, 100%% (maximum).");

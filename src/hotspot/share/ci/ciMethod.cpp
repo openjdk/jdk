@@ -111,7 +111,7 @@ ciMethod::ciMethod(const methodHandle& h_m, ciInstanceKlass* holder) :
       _can_be_parsed = false;
     }
   } else {
-    CHECK_UNHANDLED_OOPS_ONLY(Thread::current()->clear_unhandled_oops());
+    DEBUG_ONLY(CompilerThread::current()->check_possible_safepoint());
   }
 
   if (h_m()->method_holder()->is_linked()) {

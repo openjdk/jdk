@@ -1751,7 +1751,8 @@ nmethod* SharedRuntime::generate_native_wrapper(MacroAssembler* masm,
                                                 int compile_id,
                                                 BasicType* in_sig_bt,
                                                 VMRegPair* in_regs,
-                                                BasicType ret_type) {
+                                                BasicType ret_type,
+                                                address critical_entry) {
   if (method->is_method_handle_intrinsic()) {
     vmIntrinsics::ID iid = method->intrinsic_id();
     intptr_t start = (intptr_t)__ pc();
@@ -1774,7 +1775,7 @@ nmethod* SharedRuntime::generate_native_wrapper(MacroAssembler* masm,
                                        (OopMapSet*)NULL);
   }
   bool is_critical_native = true;
-  address native_func = method->critical_native_function();
+  address native_func = critical_entry;
   if (native_func == NULL) {
     native_func = method->native_function();
     is_critical_native = false;
@@ -1832,21 +1833,21 @@ nmethod* SharedRuntime::generate_native_wrapper(MacroAssembler* masm,
     // Read the header and build a mask to get its hash field.  Give up if the object is not unlocked.
     // We depend on hash_mask being at most 32 bits and avoid the use of
     // hash_mask_in_place because it could be larger than 32 bits in a 64-bit
-    // vm: see markOop.hpp.
+    // vm: see markWord.hpp.
     __ ld_ptr(obj_reg, oopDesc::mark_offset_in_bytes(), header);
-    __ sethi(markOopDesc::hash_mask, mask);
-    __ btst(markOopDesc::unlocked_value, header);
+    __ sethi(markWord::hash_mask, mask);
+    __ btst(markWord::unlocked_value, header);
     __ br(Assembler::zero, false, Assembler::pn, slowCase);
     if (UseBiasedLocking) {
       // Check if biased and fall through to runtime if so
       __ delayed()->nop();
-      __ btst(markOopDesc::biased_lock_bit_in_place, header);
+      __ btst(markWord::biased_lock_bit_in_place, header);
       __ br(Assembler::notZero, false, Assembler::pn, slowCase);
     }
-    __ delayed()->or3(mask, markOopDesc::hash_mask & 0x3ff, mask);
+    __ delayed()->or3(mask, markWord::hash_mask & 0x3ff, mask);
 
     // Check for a valid (non-zero) hash code and get its value.
-    __ srlx(header, markOopDesc::hash_shift, hash);
+    __ srlx(header, markWord::hash_shift, hash);
     __ andcc(hash, mask, hash);
     __ br(Assembler::equal, false, Assembler::pn, slowCase);
     __ delayed()->nop();

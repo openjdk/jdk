@@ -32,7 +32,7 @@
 #include "oops/arrayOop.hpp"
 #include "oops/compressedOops.inline.hpp"
 #include "oops/klass.inline.hpp"
-#include "oops/markOop.inline.hpp"
+#include "oops/markWord.inline.hpp"
 #include "oops/oop.hpp"
 #include "runtime/atomic.hpp"
 #include "runtime/orderAccess.hpp"
@@ -43,48 +43,50 @@
 // Implementation of all inlined member functions defined in oop.hpp
 // We need a separate file to avoid circular references
 
-markOop  oopDesc::mark()      const {
-  return HeapAccess<MO_VOLATILE>::load_at(as_oop(), mark_offset_in_bytes());
+markWord oopDesc::mark() const {
+  uintptr_t v = HeapAccess<MO_VOLATILE>::load_at(as_oop(), mark_offset_in_bytes());
+  return markWord(v);
 }
 
-markOop  oopDesc::mark_raw()  const {
-  return _mark;
+markWord oopDesc::mark_raw() const {
+  return Atomic::load(&_mark);
 }
 
-markOop* oopDesc::mark_addr_raw() const {
-  return (markOop*) &_mark;
+markWord* oopDesc::mark_addr_raw() const {
+  return (markWord*) &_mark;
 }
 
-void oopDesc::set_mark(volatile markOop m) {
-  HeapAccess<MO_VOLATILE>::store_at(as_oop(), mark_offset_in_bytes(), m);
+void oopDesc::set_mark(markWord m) {
+  HeapAccess<MO_VOLATILE>::store_at(as_oop(), mark_offset_in_bytes(), m.value());
 }
 
-void oopDesc::set_mark_raw(volatile markOop m) {
-  _mark = m;
+void oopDesc::set_mark_raw(markWord m) {
+  Atomic::store(m, &_mark);
 }
 
-void oopDesc::set_mark_raw(HeapWord* mem, markOop m) {
-  *(markOop*)(((char*)mem) + mark_offset_in_bytes()) = m;
+void oopDesc::set_mark_raw(HeapWord* mem, markWord m) {
+  *(markWord*)(((char*)mem) + mark_offset_in_bytes()) = m;
 }
 
-void oopDesc::release_set_mark(markOop m) {
-  HeapAccess<MO_RELEASE>::store_at(as_oop(), mark_offset_in_bytes(), m);
+void oopDesc::release_set_mark(markWord m) {
+  HeapAccess<MO_RELEASE>::store_at(as_oop(), mark_offset_in_bytes(), m.value());
 }
 
-markOop oopDesc::cas_set_mark(markOop new_mark, markOop old_mark) {
-  return HeapAccess<>::atomic_cmpxchg_at(new_mark, as_oop(), mark_offset_in_bytes(), old_mark);
+markWord oopDesc::cas_set_mark(markWord new_mark, markWord old_mark) {
+  uintptr_t v = HeapAccess<>::atomic_cmpxchg_at(new_mark.value(), as_oop(), mark_offset_in_bytes(), old_mark.value());
+  return markWord(v);
 }
 
-markOop oopDesc::cas_set_mark_raw(markOop new_mark, markOop old_mark, atomic_memory_order order) {
+markWord oopDesc::cas_set_mark_raw(markWord new_mark, markWord old_mark, atomic_memory_order order) {
   return Atomic::cmpxchg(new_mark, &_mark, old_mark, order);
 }
 
 void oopDesc::init_mark() {
-  set_mark(markOopDesc::prototype_for_object(this));
+  set_mark(markWord::prototype_for_klass(klass()));
 }
 
 void oopDesc::init_mark_raw() {
-  set_mark_raw(markOopDesc::prototype_for_object(this));
+  set_mark_raw(markWord::prototype_for_klass(klass()));
 }
 
 Klass* oopDesc::klass() const {
@@ -319,31 +321,31 @@ inline jdouble oopDesc::double_field(int offset) const              { return Hea
 inline void    oopDesc::double_field_put(int offset, jdouble value) { HeapAccess<>::store_at(as_oop(), offset, value); }
 
 bool oopDesc::is_locked() const {
-  return mark()->is_locked();
+  return mark().is_locked();
 }
 
 bool oopDesc::is_unlocked() const {
-  return mark()->is_unlocked();
+  return mark().is_unlocked();
 }
 
 bool oopDesc::has_bias_pattern() const {
-  return mark()->has_bias_pattern();
+  return mark().has_bias_pattern();
 }
 
 bool oopDesc::has_bias_pattern_raw() const {
-  return mark_raw()->has_bias_pattern();
+  return mark_raw().has_bias_pattern();
 }
 
 // Used only for markSweep, scavenging
 bool oopDesc::is_gc_marked() const {
-  return mark_raw()->is_marked();
+  return mark_raw().is_marked();
 }
 
 // Used by scavengers
 bool oopDesc::is_forwarded() const {
   // The extra heap check is needed since the obj might be locked, in which case the
   // mark would point to a stack location and have the sentinel bit cleared
-  return mark_raw()->is_marked();
+  return mark_raw().is_marked();
 }
 
 // Used by scavengers
@@ -355,36 +357,36 @@ void oopDesc::forward_to(oop p) {
   assert(!is_archived_object(oop(this)) &&
          !is_archived_object(p),
          "forwarding archive object");
-  markOop m = markOopDesc::encode_pointer_as_mark(p);
-  assert(m->decode_pointer() == p, "encoding must be reversable");
+  markWord m = markWord::encode_pointer_as_mark(p);
+  assert(m.decode_pointer() == p, "encoding must be reversable");
   set_mark_raw(m);
 }
 
 // Used by parallel scavengers
-bool oopDesc::cas_forward_to(oop p, markOop compare, atomic_memory_order order) {
+bool oopDesc::cas_forward_to(oop p, markWord compare, atomic_memory_order order) {
   assert(check_obj_alignment(p),
          "forwarding to something not aligned");
   assert(Universe::heap()->is_in_reserved(p),
          "forwarding to something not in heap");
-  markOop m = markOopDesc::encode_pointer_as_mark(p);
-  assert(m->decode_pointer() == p, "encoding must be reversable");
+  markWord m = markWord::encode_pointer_as_mark(p);
+  assert(m.decode_pointer() == p, "encoding must be reversable");
   return cas_set_mark_raw(m, compare, order) == compare;
 }
 
-oop oopDesc::forward_to_atomic(oop p, markOop compare, atomic_memory_order order) {
+oop oopDesc::forward_to_atomic(oop p, markWord compare, atomic_memory_order order) {
   // CMS forwards some non-heap value into the mark oop to reserve oops during
   // promotion, so the next two asserts do not hold.
   assert(UseConcMarkSweepGC || check_obj_alignment(p),
          "forwarding to something not aligned");
   assert(UseConcMarkSweepGC || Universe::heap()->is_in_reserved(p),
          "forwarding to something not in heap");
-  markOop m = markOopDesc::encode_pointer_as_mark(p);
-  assert(m->decode_pointer() == p, "encoding must be reversable");
-  markOop old_mark = cas_set_mark_raw(m, compare, order);
+  markWord m = markWord::encode_pointer_as_mark(p);
+  assert(m.decode_pointer() == p, "encoding must be reversable");
+  markWord old_mark = cas_set_mark_raw(m, compare, order);
   if (old_mark == compare) {
     return NULL;
   } else {
-    return (oop)old_mark->decode_pointer();
+    return (oop)old_mark.decode_pointer();
   }
 }
 
@@ -392,33 +394,32 @@ oop oopDesc::forward_to_atomic(oop p, markOop compare, atomic_memory_order order
 // The forwardee is used when copying during scavenge and mark-sweep.
 // It does need to clear the low two locking- and GC-related bits.
 oop oopDesc::forwardee() const {
-  return (oop) mark_raw()->decode_pointer();
+  return (oop) mark_raw().decode_pointer();
 }
 
 // Note that the forwardee is not the same thing as the displaced_mark.
 // The forwardee is used when copying during scavenge and mark-sweep.
 // It does need to clear the low two locking- and GC-related bits.
 oop oopDesc::forwardee_acquire() const {
-  markOop m = OrderAccess::load_acquire(&_mark);
-  return (oop) m->decode_pointer();
+  return (oop) OrderAccess::load_acquire(&_mark).decode_pointer();
 }
 
 // The following method needs to be MT safe.
 uint oopDesc::age() const {
   assert(!is_forwarded(), "Attempt to read age from forwarded mark");
   if (has_displaced_mark_raw()) {
-    return displaced_mark_raw()->age();
+    return displaced_mark_raw().age();
   } else {
-    return mark_raw()->age();
+    return mark_raw().age();
   }
 }
 
 void oopDesc::incr_age() {
   assert(!is_forwarded(), "Attempt to increment age of forwarded mark");
   if (has_displaced_mark_raw()) {
-    set_displaced_mark_raw(displaced_mark_raw()->incr_age());
+    set_displaced_mark_raw(displaced_mark_raw().incr_age());
   } else {
-    set_mark_raw(mark_raw()->incr_age());
+    set_mark_raw(mark_raw().incr_age());
   }
 }
 
@@ -460,26 +461,56 @@ bool oopDesc::is_instanceof_or_null(oop obj, Klass* klass) {
 intptr_t oopDesc::identity_hash() {
   // Fast case; if the object is unlocked and the hash value is set, no locking is needed
   // Note: The mark must be read into local variable to avoid concurrent updates.
-  markOop mrk = mark();
-  if (mrk->is_unlocked() && !mrk->has_no_hash()) {
-    return mrk->hash();
-  } else if (mrk->is_marked()) {
-    return mrk->hash();
+  markWord mrk = mark();
+  if (mrk.is_unlocked() && !mrk.has_no_hash()) {
+    return mrk.hash();
+  } else if (mrk.is_marked()) {
+    return mrk.hash();
   } else {
     return slow_identity_hash();
   }
 }
 
 bool oopDesc::has_displaced_mark_raw() const {
-  return mark_raw()->has_displaced_mark_helper();
+  return mark_raw().has_displaced_mark_helper();
 }
 
-markOop oopDesc::displaced_mark_raw() const {
-  return mark_raw()->displaced_mark_helper();
+markWord oopDesc::displaced_mark_raw() const {
+  return mark_raw().displaced_mark_helper();
 }
 
-void oopDesc::set_displaced_mark_raw(markOop m) {
-  mark_raw()->set_displaced_mark_helper(m);
+void oopDesc::set_displaced_mark_raw(markWord m) {
+  mark_raw().set_displaced_mark_helper(m);
+}
+
+// Supports deferred calling of obj->klass().
+class DeferredObjectToKlass {
+  const oopDesc* _obj;
+
+public:
+  DeferredObjectToKlass(const oopDesc* obj) : _obj(obj) {}
+
+  // Implicitly convertible to const Klass*.
+  operator const Klass*() const {
+    return _obj->klass();
+  }
+};
+
+bool oopDesc::mark_must_be_preserved() const {
+  return mark_must_be_preserved(mark_raw());
+}
+
+bool oopDesc::mark_must_be_preserved(markWord m) const {
+  // There's a circular dependency between oop.inline.hpp and
+  // markWord.inline.hpp because markWord::must_be_preserved wants to call
+  // oopDesc::klass(). This could be solved by calling klass() here. However,
+  // not all paths inside must_be_preserved calls klass(). Defer the call until
+  // the klass is actually needed.
+  return m.must_be_preserved(DeferredObjectToKlass(this));
+}
+
+bool oopDesc::mark_must_be_preserved_for_promotion_failure(markWord m) const {
+  return m.must_be_preserved_for_promotion_failure(DeferredObjectToKlass(this));
 }
 
 #endif // SHARE_OOPS_OOP_INLINE_HPP

@@ -240,12 +240,6 @@ bool NodeHash::hash_delete( const Node *n ) {
     k = _table[key];            // Get hashed value
     if( !k ) {                  // Miss?
       NOT_PRODUCT( _delete_misses++ );
-#ifdef ASSERT
-      if( VerifyOpto ) {
-        for( uint i=0; i < _max; i++ )
-          assert( _table[i] != n, "changed edges with rehashing" );
-      }
-#endif
       return false;             // Miss! Not in chain
     }
     else if( n == k ) {
@@ -707,13 +701,6 @@ PhaseValues::PhaseValues( PhaseValues *ptv ) : PhaseTransform( ptv, GVN ),
   NOT_PRODUCT( clear_new_values(); )
 }
 
-//------------------------------PhaseValues------------------------------------
-// Used by +VerifyOpto.  Clear out hash table but copy _types array.
-PhaseValues::PhaseValues( PhaseValues *ptv, const char *dummy ) : PhaseTransform( ptv, GVN ),
-  _table(ptv->arena(),ptv->_table.size()) {
-  NOT_PRODUCT( clear_new_values(); )
-}
-
 //------------------------------~PhaseValues-----------------------------------
 #ifndef PRODUCT
 PhaseValues::~PhaseValues() {
@@ -949,14 +936,6 @@ void PhaseGVN::dead_loop_check( Node *n ) {
 
 //=============================================================================
 //------------------------------PhaseIterGVN-----------------------------------
-// Initialize hash table to fresh and clean for +VerifyOpto
-PhaseIterGVN::PhaseIterGVN( PhaseIterGVN *igvn, const char *dummy ) : PhaseGVN(igvn,dummy),
-                                                                      _delay_transform(false),
-                                                                      _stack(C->live_nodes() >> 1),
-                                                                      _worklist( ) {
-}
-
-//------------------------------PhaseIterGVN-----------------------------------
 // Initialize with previous PhaseIterGVN info; used by PhaseCCP
 PhaseIterGVN::PhaseIterGVN( PhaseIterGVN *igvn ) : PhaseGVN(igvn),
                                                    _delay_transform(igvn->_delay_transform),
@@ -1134,24 +1113,6 @@ void PhaseIterGVN::verify_PhaseIterGVN() {
 #endif
 
   C->verify_graph_edges();
-  if( VerifyOpto && allow_progress() ) {
-    // Must turn off allow_progress to enable assert and break recursion
-    C->root()->verify();
-    { // Check if any progress was missed using IterGVN
-      // Def-Use info enables transformations not attempted in wash-pass
-      // e.g. Region/Phi cleanup, ...
-      // Null-check elision -- may not have reached fixpoint
-      //                       do not propagate to dominated nodes
-      ResourceMark rm;
-      PhaseIterGVN igvn2(this,"Verify"); // Fresh and clean!
-      // Fill worklist completely
-      igvn2.init_worklist(C->root());
-
-      igvn2.set_allow_progress(false);
-      igvn2.optimize();
-      igvn2.set_allow_progress(true);
-    }
-  }
   if (VerifyIterativeGVN && PrintOpto) {
     if (_verify_counter == _verify_full_passes) {
       tty->print_cr("VerifyIterativeGVN: %d transforms and verify passes",
@@ -1276,22 +1237,6 @@ Node *PhaseIterGVN::transform_old(Node* n) {
   assert(i != k || is_new || i->outcnt() > 0, "don't return dead nodes");
 #ifndef PRODUCT
   verify_step(k);
-  if (i && VerifyOpto ) {
-    if (!allow_progress()) {
-      if (i->is_Add() && (i->outcnt() == 1)) {
-        // Switched input to left side because this is the only use
-      } else if (i->is_If() && (i->in(0) == NULL)) {
-        // This IF is dead because it is dominated by an equivalent IF When
-        // dominating if changed, info is not propagated sparsely to 'this'
-        // Propagating this info further will spuriously identify other
-        // progress.
-        return i;
-      } else
-        set_progress();
-    } else {
-      set_progress();
-    }
-  }
 #endif
 
   while (i != NULL) {
@@ -1318,9 +1263,6 @@ Node *PhaseIterGVN::transform_old(Node* n) {
     assert(i != k || is_new || (i->outcnt() > 0), "don't return dead nodes");
 #ifndef PRODUCT
     verify_step(k);
-    if (i && VerifyOpto) {
-      set_progress();
-    }
 #endif
   }
 

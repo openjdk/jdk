@@ -253,6 +253,8 @@ class LibraryCallKit : public GraphKit {
   static bool klass_needs_init_guard(Node* kls);
   bool inline_unsafe_allocate();
   bool inline_unsafe_newArray(bool uninitialized);
+  bool inline_unsafe_writeback0();
+  bool inline_unsafe_writebackSync0(bool is_pre);
   bool inline_unsafe_copyMemory();
   bool inline_native_currentThread();
 
@@ -293,8 +295,10 @@ class LibraryCallKit : public GraphKit {
   bool inline_Class_cast();
   bool inline_aescrypt_Block(vmIntrinsics::ID id);
   bool inline_cipherBlockChaining_AESCrypt(vmIntrinsics::ID id);
+  bool inline_electronicCodeBook_AESCrypt(vmIntrinsics::ID id);
   bool inline_counterMode_AESCrypt(vmIntrinsics::ID id);
   Node* inline_cipherBlockChaining_AESCrypt_predicate(bool decrypting);
+  Node* inline_electronicCodeBook_AESCrypt_predicate(bool decrypting);
   Node* inline_counterMode_AESCrypt_predicate();
   Node* get_key_start_from_aescrypt_object(Node* aescrypt_object);
   Node* get_original_key_start_from_aescrypt_object(Node* aescrypt_object);
@@ -753,6 +757,9 @@ bool LibraryCallKit::try_to_inline(int predicate) {
 #endif
   case vmIntrinsics::_currentTimeMillis:        return inline_native_time_funcs(CAST_FROM_FN_PTR(address, os::javaTimeMillis), "currentTimeMillis");
   case vmIntrinsics::_nanoTime:                 return inline_native_time_funcs(CAST_FROM_FN_PTR(address, os::javaTimeNanos), "nanoTime");
+  case vmIntrinsics::_writeback0:               return inline_unsafe_writeback0();
+  case vmIntrinsics::_writebackPreSync0:        return inline_unsafe_writebackSync0(true);
+  case vmIntrinsics::_writebackPostSync0:       return inline_unsafe_writebackSync0(false);
   case vmIntrinsics::_allocateInstance:         return inline_unsafe_allocate();
   case vmIntrinsics::_copyMemory:               return inline_unsafe_copyMemory();
   case vmIntrinsics::_getLength:                return inline_native_getLength();
@@ -806,6 +813,10 @@ bool LibraryCallKit::try_to_inline(int predicate) {
   case vmIntrinsics::_cipherBlockChaining_encryptAESCrypt:
   case vmIntrinsics::_cipherBlockChaining_decryptAESCrypt:
     return inline_cipherBlockChaining_AESCrypt(intrinsic_id());
+
+  case vmIntrinsics::_electronicCodeBook_encryptAESCrypt:
+  case vmIntrinsics::_electronicCodeBook_decryptAESCrypt:
+    return inline_electronicCodeBook_AESCrypt(intrinsic_id());
 
   case vmIntrinsics::_counterMode_AESCrypt:
     return inline_counterMode_AESCrypt(intrinsic_id());
@@ -912,6 +923,10 @@ Node* LibraryCallKit::try_to_predicate(int predicate) {
     return inline_cipherBlockChaining_AESCrypt_predicate(false);
   case vmIntrinsics::_cipherBlockChaining_decryptAESCrypt:
     return inline_cipherBlockChaining_AESCrypt_predicate(true);
+  case vmIntrinsics::_electronicCodeBook_encryptAESCrypt:
+    return inline_electronicCodeBook_AESCrypt_predicate(false);
+  case vmIntrinsics::_electronicCodeBook_decryptAESCrypt:
+    return inline_electronicCodeBook_AESCrypt_predicate(true);
   case vmIntrinsics::_counterMode_AESCrypt:
     return inline_counterMode_AESCrypt_predicate();
   case vmIntrinsics::_digestBase_implCompressMB:
@@ -2838,6 +2853,55 @@ bool LibraryCallKit::klass_needs_init_guard(Node* kls) {
   return !ik->is_initialized();
 }
 
+//----------------------------inline_unsafe_writeback0-------------------------
+// public native void Unsafe.writeback0(long address)
+bool LibraryCallKit::inline_unsafe_writeback0() {
+  if (!Matcher::has_match_rule(Op_CacheWB)) {
+    return false;
+  }
+#ifndef PRODUCT
+  assert(Matcher::has_match_rule(Op_CacheWBPreSync), "found match rule for CacheWB but not CacheWBPreSync");
+  assert(Matcher::has_match_rule(Op_CacheWBPostSync), "found match rule for CacheWB but not CacheWBPostSync");
+  ciSignature* sig = callee()->signature();
+  assert(sig->type_at(0)->basic_type() == T_LONG, "Unsafe_writeback0 address is long!");
+#endif
+  null_check_receiver();  // null-check, then ignore
+  Node *addr = argument(1);
+  addr = new CastX2PNode(addr);
+  addr = _gvn.transform(addr);
+  Node *flush = new CacheWBNode(control(), memory(TypeRawPtr::BOTTOM), addr);
+  flush = _gvn.transform(flush);
+  set_memory(flush, TypeRawPtr::BOTTOM);
+  return true;
+}
+
+//----------------------------inline_unsafe_writeback0-------------------------
+// public native void Unsafe.writeback0(long address)
+bool LibraryCallKit::inline_unsafe_writebackSync0(bool is_pre) {
+  if (is_pre && !Matcher::has_match_rule(Op_CacheWBPreSync)) {
+    return false;
+  }
+  if (!is_pre && !Matcher::has_match_rule(Op_CacheWBPostSync)) {
+    return false;
+  }
+#ifndef PRODUCT
+  assert(Matcher::has_match_rule(Op_CacheWB),
+         (is_pre ? "found match rule for CacheWBPreSync but not CacheWB"
+                : "found match rule for CacheWBPostSync but not CacheWB"));
+
+#endif
+  null_check_receiver();  // null-check, then ignore
+  Node *sync;
+  if (is_pre) {
+    sync = new CacheWBPreSyncNode(control(), memory(TypeRawPtr::BOTTOM));
+  } else {
+    sync = new CacheWBPostSyncNode(control(), memory(TypeRawPtr::BOTTOM));
+  }
+  sync = _gvn.transform(sync);
+  set_memory(sync, TypeRawPtr::BOTTOM);
+  return true;
+}
+
 //----------------------------inline_unsafe_allocate---------------------------
 // public native Object Unsafe.allocateInstance(Class<?> cls);
 bool LibraryCallKit::inline_unsafe_allocate() {
@@ -3955,9 +4019,9 @@ bool LibraryCallKit::inline_native_hashcode(bool is_virtual, bool is_static) {
   Node* header = make_load(no_ctrl, header_addr, TypeX_X, TypeX_X->basic_type(), MemNode::unordered);
 
   // Test the header to see if it is unlocked.
-  Node *lock_mask      = _gvn.MakeConX(markOopDesc::biased_lock_mask_in_place);
+  Node *lock_mask      = _gvn.MakeConX(markWord::biased_lock_mask_in_place);
   Node *lmasked_header = _gvn.transform(new AndXNode(header, lock_mask));
-  Node *unlocked_val   = _gvn.MakeConX(markOopDesc::unlocked_value);
+  Node *unlocked_val   = _gvn.MakeConX(markWord::unlocked_value);
   Node *chk_unlocked   = _gvn.transform(new CmpXNode( lmasked_header, unlocked_val));
   Node *test_unlocked  = _gvn.transform(new BoolNode( chk_unlocked, BoolTest::ne));
 
@@ -3966,9 +4030,9 @@ bool LibraryCallKit::inline_native_hashcode(bool is_virtual, bool is_static) {
   // Get the hash value and check to see that it has been properly assigned.
   // We depend on hash_mask being at most 32 bits and avoid the use of
   // hash_mask_in_place because it could be larger than 32 bits in a 64-bit
-  // vm: see markOop.hpp.
-  Node *hash_mask      = _gvn.intcon(markOopDesc::hash_mask);
-  Node *hash_shift     = _gvn.intcon(markOopDesc::hash_shift);
+  // vm: see markWord.hpp.
+  Node *hash_mask      = _gvn.intcon(markWord::hash_mask);
+  Node *hash_shift     = _gvn.intcon(markWord::hash_shift);
   Node *hshifted_header= _gvn.transform(new URShiftXNode(header, hash_shift));
   // This hack lets the hash bits live anywhere in the mark object now, as long
   // as the shift drops the relevant bits into the low 32 bits.  Note that
@@ -3977,7 +4041,7 @@ bool LibraryCallKit::inline_native_hashcode(bool is_virtual, bool is_static) {
   hshifted_header      = ConvX2I(hshifted_header);
   Node *hash_val       = _gvn.transform(new AndINode(hshifted_header, hash_mask));
 
-  Node *no_hash_val    = _gvn.intcon(markOopDesc::no_hash);
+  Node *no_hash_val    = _gvn.intcon(markWord::no_hash);
   Node *chk_assigned   = _gvn.transform(new CmpINode( hash_val, no_hash_val));
   Node *test_assigned  = _gvn.transform(new BoolNode( chk_assigned, BoolTest::eq));
 
@@ -6019,6 +6083,94 @@ bool LibraryCallKit::inline_cipherBlockChaining_AESCrypt(vmIntrinsics::ID id) {
   return true;
 }
 
+//------------------------------inline_electronicCodeBook_AESCrypt-----------------------
+bool LibraryCallKit::inline_electronicCodeBook_AESCrypt(vmIntrinsics::ID id) {
+  address stubAddr = NULL;
+  const char *stubName = NULL;
+
+  assert(UseAES, "need AES instruction support");
+
+  switch (id) {
+  case vmIntrinsics::_electronicCodeBook_encryptAESCrypt:
+    stubAddr = StubRoutines::electronicCodeBook_encryptAESCrypt();
+    stubName = "electronicCodeBook_encryptAESCrypt";
+    break;
+  case vmIntrinsics::_electronicCodeBook_decryptAESCrypt:
+    stubAddr = StubRoutines::electronicCodeBook_decryptAESCrypt();
+    stubName = "electronicCodeBook_decryptAESCrypt";
+    break;
+  default:
+    break;
+  }
+
+  if (stubAddr == NULL) return false;
+
+  Node* electronicCodeBook_object = argument(0);
+  Node* src                       = argument(1);
+  Node* src_offset                = argument(2);
+  Node* len                       = argument(3);
+  Node* dest                      = argument(4);
+  Node* dest_offset               = argument(5);
+
+  // (1) src and dest are arrays.
+  const Type* src_type = src->Value(&_gvn);
+  const Type* dest_type = dest->Value(&_gvn);
+  const TypeAryPtr* top_src = src_type->isa_aryptr();
+  const TypeAryPtr* top_dest = dest_type->isa_aryptr();
+  assert(top_src != NULL && top_src->klass() != NULL
+         &&  top_dest != NULL && top_dest->klass() != NULL, "args are strange");
+
+  // checks are the responsibility of the caller
+  Node* src_start = src;
+  Node* dest_start = dest;
+  if (src_offset != NULL || dest_offset != NULL) {
+    assert(src_offset != NULL && dest_offset != NULL, "");
+    src_start = array_element_address(src, src_offset, T_BYTE);
+    dest_start = array_element_address(dest, dest_offset, T_BYTE);
+  }
+
+  // if we are in this set of code, we "know" the embeddedCipher is an AESCrypt object
+  // (because of the predicated logic executed earlier).
+  // so we cast it here safely.
+  // this requires a newer class file that has this array as littleEndian ints, otherwise we revert to java
+
+  Node* embeddedCipherObj = load_field_from_object(electronicCodeBook_object, "embeddedCipher", "Lcom/sun/crypto/provider/SymmetricCipher;", /*is_exact*/ false);
+  if (embeddedCipherObj == NULL) return false;
+
+  // cast it to what we know it will be at runtime
+  const TypeInstPtr* tinst = _gvn.type(electronicCodeBook_object)->isa_instptr();
+  assert(tinst != NULL, "ECB obj is null");
+  assert(tinst->klass()->is_loaded(), "ECB obj is not loaded");
+  ciKlass* klass_AESCrypt = tinst->klass()->as_instance_klass()->find_klass(ciSymbol::make("com/sun/crypto/provider/AESCrypt"));
+  assert(klass_AESCrypt->is_loaded(), "predicate checks that this class is loaded");
+
+  ciInstanceKlass* instklass_AESCrypt = klass_AESCrypt->as_instance_klass();
+  const TypeKlassPtr* aklass = TypeKlassPtr::make(instklass_AESCrypt);
+  const TypeOopPtr* xtype = aklass->as_instance_type();
+  Node* aescrypt_object = new CheckCastPPNode(control(), embeddedCipherObj, xtype);
+  aescrypt_object = _gvn.transform(aescrypt_object);
+
+  // we need to get the start of the aescrypt_object's expanded key array
+  Node* k_start = get_key_start_from_aescrypt_object(aescrypt_object);
+  if (k_start == NULL) return false;
+
+  Node* ecbCrypt;
+  if (Matcher::pass_original_key_for_aes()) {
+    // no SPARC version for AES/ECB intrinsics now.
+    return false;
+  }
+  // Call the stub, passing src_start, dest_start, k_start, r_start and src_len
+  ecbCrypt = make_runtime_call(RC_LEAF | RC_NO_FP,
+                               OptoRuntime::electronicCodeBook_aescrypt_Type(),
+                               stubAddr, stubName, TypePtr::BOTTOM,
+                               src_start, dest_start, k_start, len);
+
+  // return cipher length (int)
+  Node* retvalue = _gvn.transform(new ProjNode(ecbCrypt, TypeFunc::Parms));
+  set_result(retvalue);
+  return true;
+}
+
 //------------------------------inline_counterMode_AESCrypt-----------------------
 bool LibraryCallKit::inline_counterMode_AESCrypt(vmIntrinsics::ID id) {
   assert(UseAES, "need AES instruction support");
@@ -6206,6 +6358,65 @@ Node* LibraryCallKit::inline_cipherBlockChaining_AESCrypt_predicate(bool decrypt
   RegionNode* region = new RegionNode(3);
   region->init_req(1, instof_false);
 
+  Node* cmp_src_dest = _gvn.transform(new CmpPNode(src, dest));
+  Node* bool_src_dest = _gvn.transform(new BoolNode(cmp_src_dest, BoolTest::eq));
+  Node* src_dest_conjoint = generate_guard(bool_src_dest, NULL, PROB_MIN);
+  region->init_req(2, src_dest_conjoint);
+
+  record_for_igvn(region);
+  return _gvn.transform(region);
+}
+
+//----------------------------inline_electronicCodeBook_AESCrypt_predicate----------------------------
+// Return node representing slow path of predicate check.
+// the pseudo code we want to emulate with this predicate is:
+// for encryption:
+//    if (embeddedCipherObj instanceof AESCrypt) do_intrinsic, else do_javapath
+// for decryption:
+//    if ((embeddedCipherObj instanceof AESCrypt) && (cipher!=plain)) do_intrinsic, else do_javapath
+//    note cipher==plain is more conservative than the original java code but that's OK
+//
+Node* LibraryCallKit::inline_electronicCodeBook_AESCrypt_predicate(bool decrypting) {
+  // The receiver was checked for NULL already.
+  Node* objECB = argument(0);
+
+  // Load embeddedCipher field of ElectronicCodeBook object.
+  Node* embeddedCipherObj = load_field_from_object(objECB, "embeddedCipher", "Lcom/sun/crypto/provider/SymmetricCipher;", /*is_exact*/ false);
+
+  // get AESCrypt klass for instanceOf check
+  // AESCrypt might not be loaded yet if some other SymmetricCipher got us to this compile point
+  // will have same classloader as ElectronicCodeBook object
+  const TypeInstPtr* tinst = _gvn.type(objECB)->isa_instptr();
+  assert(tinst != NULL, "ECBobj is null");
+  assert(tinst->klass()->is_loaded(), "ECBobj is not loaded");
+
+  // we want to do an instanceof comparison against the AESCrypt class
+  ciKlass* klass_AESCrypt = tinst->klass()->as_instance_klass()->find_klass(ciSymbol::make("com/sun/crypto/provider/AESCrypt"));
+  if (!klass_AESCrypt->is_loaded()) {
+    // if AESCrypt is not even loaded, we never take the intrinsic fast path
+    Node* ctrl = control();
+    set_control(top()); // no regular fast path
+    return ctrl;
+  }
+  ciInstanceKlass* instklass_AESCrypt = klass_AESCrypt->as_instance_klass();
+
+  Node* instof = gen_instanceof(embeddedCipherObj, makecon(TypeKlassPtr::make(instklass_AESCrypt)));
+  Node* cmp_instof = _gvn.transform(new CmpINode(instof, intcon(1)));
+  Node* bool_instof = _gvn.transform(new BoolNode(cmp_instof, BoolTest::ne));
+
+  Node* instof_false = generate_guard(bool_instof, NULL, PROB_MIN);
+
+  // for encryption, we are done
+  if (!decrypting)
+    return instof_false;  // even if it is NULL
+
+  // for decryption, we need to add a further check to avoid
+  // taking the intrinsic path when cipher and plain are the same
+  // see the original java code for why.
+  RegionNode* region = new RegionNode(3);
+  region->init_req(1, instof_false);
+  Node* src = argument(1);
+  Node* dest = argument(4);
   Node* cmp_src_dest = _gvn.transform(new CmpPNode(src, dest));
   Node* bool_src_dest = _gvn.transform(new BoolNode(cmp_src_dest, BoolTest::eq));
   Node* src_dest_conjoint = generate_guard(bool_src_dest, NULL, PROB_MIN);

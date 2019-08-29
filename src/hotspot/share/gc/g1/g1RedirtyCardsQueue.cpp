@@ -28,20 +28,6 @@
 #include "utilities/debug.hpp"
 #include "utilities/macros.hpp"
 
-// G1RedirtyCardsBufferList
-
-G1RedirtyCardsBufferList::G1RedirtyCardsBufferList() :
-  _head(NULL), _tail(NULL), _entry_count(0) {}
-
-G1RedirtyCardsBufferList::G1RedirtyCardsBufferList(BufferNode* head,
-                                                   BufferNode* tail,
-                                                   size_t entry_count) :
-  _head(head), _tail(tail), _entry_count(entry_count)
-{
-  assert((_head == NULL) == (_tail == NULL), "invariant");
-  assert((_head == NULL) == (_entry_count == 0), "invariant");
-}
-
 // G1RedirtyCardsQueueBase::LocalQSet
 
 G1RedirtyCardsQueueBase::LocalQSet::LocalQSet(G1RedirtyCardsQueueSet* shared_qset) :
@@ -67,9 +53,9 @@ void G1RedirtyCardsQueueBase::LocalQSet::enqueue_completed_buffer(BufferNode* no
   }
 }
 
-G1RedirtyCardsBufferList G1RedirtyCardsQueueBase::LocalQSet::take_all_completed_buffers() {
-  G1RedirtyCardsBufferList result = _buffers;
-  _buffers = G1RedirtyCardsBufferList();
+G1BufferNodeList G1RedirtyCardsQueueBase::LocalQSet::take_all_completed_buffers() {
+  G1BufferNodeList result = _buffers;
+  _buffers = G1BufferNodeList();
   return result;
 }
 
@@ -99,13 +85,15 @@ void G1RedirtyCardsQueue::flush() {
 
 // G1RedirtyCardsQueueSet
 
-G1RedirtyCardsQueueSet::G1RedirtyCardsQueueSet() :
+G1RedirtyCardsQueueSet::G1RedirtyCardsQueueSet(BufferNode::Allocator* allocator) :
   PtrQueueSet(),
   _list(),
   _entry_count(0),
   _tail(NULL)
   DEBUG_ONLY(COMMA _collecting(true))
-{}
+{
+  initialize(allocator);
+}
 
 G1RedirtyCardsQueueSet::~G1RedirtyCardsQueueSet() {
   verify_empty();
@@ -124,9 +112,9 @@ BufferNode* G1RedirtyCardsQueueSet::all_completed_buffers() const {
   return _list.top();
 }
 
-G1RedirtyCardsBufferList G1RedirtyCardsQueueSet::take_all_completed_buffers() {
+G1BufferNodeList G1RedirtyCardsQueueSet::take_all_completed_buffers() {
   DEBUG_ONLY(_collecting = false;)
-  G1RedirtyCardsBufferList result(_list.pop_all(), _tail, _entry_count);
+  G1BufferNodeList result(_list.pop_all(), _tail, _entry_count);
   _tail = NULL;
   _entry_count = 0;
   DEBUG_ONLY(_collecting = true;)
@@ -152,7 +140,7 @@ void G1RedirtyCardsQueueSet::enqueue_completed_buffer(BufferNode* node) {
 
 void G1RedirtyCardsQueueSet::merge_bufferlist(LocalQSet* src) {
   assert(_collecting, "precondition");
-  const G1RedirtyCardsBufferList from = src->take_all_completed_buffers();
+  const G1BufferNodeList from = src->take_all_completed_buffers();
   if (from._head != NULL) {
     assert(from._tail != NULL, "invariant");
     Atomic::add(from._entry_count, &_entry_count);

@@ -96,9 +96,9 @@ class G1Policy: public CHeapObj<mtGC> {
 
   uint _free_regions_at_end_of_collection;
 
-  size_t _max_rs_lengths;
+  size_t _max_rs_length;
 
-  size_t _rs_lengths_prediction;
+  size_t _rs_length_prediction;
 
   size_t _pending_cards;
 
@@ -132,8 +132,8 @@ public:
     hr->install_surv_rate_group(_survivor_surv_rate_group);
   }
 
-  void record_max_rs_lengths(size_t rs_lengths) {
-    _max_rs_lengths = rs_lengths;
+  void record_max_rs_length(size_t rs_length) {
+    _max_rs_length = rs_length;
   }
 
   double predict_base_elapsed_time_ms(size_t pending_cards) const;
@@ -194,17 +194,17 @@ private:
   double _mark_cleanup_start_sec;
 
   // Updates the internal young list maximum and target lengths. Returns the
-  // unbounded young list target length.
+  // unbounded young list target length. If no rs_length parameter is passed,
+  // predict the RS length using the prediction model, otherwise use the
+  // given rs_length as the prediction.
   uint update_young_list_max_and_target_length();
-  uint update_young_list_max_and_target_length(size_t rs_lengths);
+  uint update_young_list_max_and_target_length(size_t rs_length);
 
   // Update the young list target length either by setting it to the
   // desired fixed value or by calculating it using G1's pause
-  // prediction model. If no rs_lengths parameter is passed, predict
-  // the RS lengths using the prediction model, otherwise use the
-  // given rs_lengths as the prediction.
+  // prediction model.
   // Returns the unbounded young list target length.
-  uint update_young_list_target_length(size_t rs_lengths);
+  uint update_young_list_target_length(size_t rs_length);
 
   // Calculate and return the minimum desired young list target
   // length. This is the minimum desired young list length according
@@ -217,12 +217,12 @@ private:
   uint calculate_young_list_desired_max_length() const;
 
   // Calculate and return the maximum young list target length that
-  // can fit into the pause time goal. The parameters are: rs_lengths
+  // can fit into the pause time goal. The parameters are: rs_length
   // represent the prediction of how large the young RSet lengths will
   // be, base_min_length is the already existing number of regions in
   // the young list, min_length and max_length are the desired min and
   // max young list length according to the user's inputs.
-  uint calculate_young_list_target_length(size_t rs_lengths,
+  uint calculate_young_list_target_length(size_t rs_length,
                                           uint base_min_length,
                                           uint desired_min_length,
                                           uint desired_max_length) const;
@@ -230,10 +230,10 @@ private:
   // Result of the bounded_young_list_target_length() method, containing both the
   // bounded as well as the unbounded young list target lengths in this order.
   typedef Pair<uint, uint, StackObj> YoungTargetLengths;
-  YoungTargetLengths young_list_target_lengths(size_t rs_lengths) const;
+  YoungTargetLengths young_list_target_lengths(size_t rs_length) const;
 
-  void update_rs_lengths_prediction();
-  void update_rs_lengths_prediction(size_t prediction);
+  void update_rs_length_prediction();
+  void update_rs_length_prediction(size_t prediction);
 
   // Check whether a given young length (young_length) fits into the
   // given target pause time and whether the prediction for the amount
@@ -295,10 +295,10 @@ public:
 
   G1GCPhaseTimes* phase_times() const { return _phase_times; }
 
-  // Check the current value of the young list RSet lengths and
+  // Check the current value of the young list RSet length and
   // compare it against the last prediction. If the current value is
   // higher, recalculate the young list target length prediction.
-  void revise_young_list_target_length_if_necessary(size_t rs_lengths);
+  void revise_young_list_target_length_if_necessary(size_t rs_length);
 
   // This should be called after the heap is resized.
   void record_new_heap_size(uint new_number_of_regions);

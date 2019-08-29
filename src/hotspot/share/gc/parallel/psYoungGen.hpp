@@ -180,7 +180,6 @@ class PSYoungGen : public CHeapObj<mtGC> {
   // Debugging - do not use for time critical operations
   void print() const;
   void print_on(outputStream* st) const;
-  void print_used_change(size_t prev_used) const;
   virtual const char* name() const { return "PSYoungGen"; }
 
   void verify();

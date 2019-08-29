@@ -1,4 +1,4 @@
-# Copyright (c) 2017, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2017, 2019, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -37,7 +37,7 @@ done
 $JAVA_HOME/bin/javac -d . $DIR/$TEST.java
 
 JAOTC_OPTS="-J-ea -J-Xmx4g --compile-for-tiered --info"
-JAVA_OPTS="-Xmx4g -XX:+UseAOT -XX:+UnlockDiagnosticVMOptions -XX:+UseAOTStrictLoading"
+JAVA_OPTS="-Xmx4g -XX:+UnlockExperimentalVMOptions -XX:+UseAOT -XX:+UnlockDiagnosticVMOptions -XX:+UseAOTStrictLoading"
 
 # Compile with: +UseCompressedOops +UseG1GC
 LIBRARIES=""

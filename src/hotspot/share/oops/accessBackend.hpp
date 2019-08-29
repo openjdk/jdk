@@ -38,6 +38,7 @@
 #include "metaprogramming/isVolatile.hpp"
 #include "oops/accessDecorators.hpp"
 #include "oops/oopsHierarchy.hpp"
+#include "runtime/globals.hpp"
 #include "utilities/debug.hpp"
 #include "utilities/globalDefinitions.hpp"
 

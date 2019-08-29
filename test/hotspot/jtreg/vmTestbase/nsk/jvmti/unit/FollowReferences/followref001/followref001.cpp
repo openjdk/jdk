@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -101,8 +101,7 @@ static const char* ref_kind_str[28] = {
 /* ============================================================================= */
 
 static int get_reference_index(jvmtiHeapReferenceKind   reference_kind,
-                               const jvmtiHeapReferenceInfo* reference_info)
-{
+                               const jvmtiHeapReferenceInfo* reference_info) {
     int referrer_index = 0;
 
     switch (reference_kind) {
@@ -132,11 +131,10 @@ static int get_reference_index(jvmtiHeapReferenceKind   reference_kind,
 
 
 /** Initialize objectDescList. */
-static int initObjectDescList(jvmtiEnv*    jvmti,
-                              int          chainLength,
-                              int*         objectsCount,
-                              ObjectDesc** objectDescList)
-{
+static bool initObjectDescList(jvmtiEnv*    jvmti,
+                               int          chainLength,
+                               int*         objectsCount,
+                               ObjectDesc** objectDescList) {
     /* root object + reachable and unreachable object chains */
     *objectsCount = 1 + 2 * chainLength;
 
@@ -145,7 +143,7 @@ static int initObjectDescList(jvmtiEnv*    jvmti,
     if (!NSK_JVMTI_VERIFY(jvmti->Allocate((*objectsCount * sizeof(ObjectDesc)),
                                           (unsigned char**) objectDescList))) {
         nsk_jvmti_setFailStatus();
-        return NSK_FALSE;
+        return false;
     }
     printf("  ... allocated array: 0x%p\n", (void*)objectDescList);
     fflush(0);
@@ -166,21 +164,20 @@ static int initObjectDescList(jvmtiEnv*    jvmti,
     (*objectDescList)[chainLength].exp_found = 1;
 
 
-     return NSK_TRUE;
+     return true;
 } /* initObjectDescList */
 
 
 /** Find and tag classes. */
-static int getAndTagClasses(jvmtiEnv*    jvmti,
-                            JNIEnv*      jni,
-                            jclass*      debugeeClass,
-                            jclass*      rootObjectClass,
-                            jclass*      chainObjectClass)
-{
+static bool getAndTagClasses(jvmtiEnv*    jvmti,
+                             JNIEnv*      jni,
+                             jclass*      debugeeClass,
+                             jclass*      rootObjectClass,
+                             jclass*      chainObjectClass) {
 
     if (!NSK_JNI_VERIFY(jni, (*debugeeClass = jni->FindClass(DEBUGEE_CLASS_NAME)) != NULL)) {
         nsk_jvmti_setFailStatus();
-        return NSK_FALSE;
+        return false;
     }
     printf("\nFound debugee class: 0x%p\n  %s\n",
            (void*) *debugeeClass, DEBUGEE_CLASS_NAME);
@@ -189,7 +186,7 @@ static int getAndTagClasses(jvmtiEnv*    jvmti,
     if (!NSK_JNI_VERIFY(jni, (*rootObjectClass =
             jni->FindClass(ROOT_OBJECT_CLASS_NAME)) != NULL)) {
         nsk_jvmti_setFailStatus();
-        return NSK_FALSE;
+        return false;
     }
 
     if (!NSK_JVMTI_VERIFY(jvmti->SetTag(*rootObjectClass, ROOT_CLASS_TAG))) {
@@ -205,7 +202,7 @@ static int getAndTagClasses(jvmtiEnv*    jvmti,
     if (!NSK_JNI_VERIFY(jni, (*chainObjectClass =
             jni->FindClass(CHAIN_OBJECT_CLASS_NAME)) != NULL)) {
         nsk_jvmti_setFailStatus();
-        return NSK_FALSE;
+        return false;
     }
 
     if (!NSK_JVMTI_VERIFY(jvmti->SetTag(*chainObjectClass, CHAIN_CLASS_TAG))) {
@@ -216,27 +213,26 @@ static int getAndTagClasses(jvmtiEnv*    jvmti,
            CHAIN_OBJECT_CLASS_NAME);
     fflush(0);
 
-     return NSK_TRUE;
+     return true;
 } /* getAndTagClasses */
 
 
 /** Obtain chain of tested objects and tag them recursively. */
-static int getFieldsAndObjects(jvmtiEnv*  jvmti,
-                             JNIEnv*     jni,
-                             jclass      debugeeClass,
-                             jclass      rootObjectClass,
-                             jclass      chainObjectClass,
-                             jobject*    rootObjectPtr,
-                             jfieldID*   reachableChainField,
-                             jfieldID*   unreachableChainField,
-                             jfieldID*   nextField)
-{
+static bool getFieldsAndObjects(jvmtiEnv*  jvmti,
+                                JNIEnv*    jni,
+                                jclass     debugeeClass,
+                                jclass     rootObjectClass,
+                                jclass     chainObjectClass,
+                                jobject*   rootObjectPtr,
+                                jfieldID*  reachableChainField,
+                                jfieldID*  unreachableChainField,
+                                jfieldID*  nextField) {
     jfieldID rootObjectField = NULL;
 
     if (!NSK_JNI_VERIFY(jni, (rootObjectField =
             jni->GetStaticFieldID(debugeeClass, OBJECT_FIELD_NAME, ROOT_OBJECT_CLASS_SIG)) != NULL)) {
         nsk_jvmti_setFailStatus();
-        return NSK_FALSE;
+        return false;
     }
     printf("\nFound fieldID: 0x%p - \'%s\' static field in debugee class\n",
            (void*) rootObjectField, OBJECT_FIELD_NAME);
@@ -245,7 +241,7 @@ static int getFieldsAndObjects(jvmtiEnv*  jvmti,
     if (!NSK_JNI_VERIFY(jni, (*reachableChainField =
             jni->GetFieldID(rootObjectClass, REACHABLE_CHAIN_FIELD_NAME, CHAIN_OBJECT_CLASS_SIG)) != NULL)) {
         nsk_jvmti_setFailStatus();
-        return NSK_FALSE;
+        return false;
     }
     printf("\nFound fieldID: 0x%p - \'%s\' field in root object class\n",
            (void*) reachableChainField, REACHABLE_CHAIN_FIELD_NAME);
@@ -254,7 +250,7 @@ static int getFieldsAndObjects(jvmtiEnv*  jvmti,
     if (!NSK_JNI_VERIFY(jni, (*unreachableChainField =
             jni->GetFieldID(rootObjectClass, UNREACHABLE_CHAIN_FIELD_NAME, CHAIN_OBJECT_CLASS_SIG)) != NULL)) {
         nsk_jvmti_setFailStatus();
-        return NSK_FALSE;
+        return false;
     }
 
     printf("\nFound fieldID: 0x%p - \'%s\' field in root object class\n",
@@ -264,7 +260,7 @@ static int getFieldsAndObjects(jvmtiEnv*  jvmti,
     if (!NSK_JNI_VERIFY(jni, (*nextField =
             jni->GetFieldID(chainObjectClass, NEXT_FIELD_NAME, CHAIN_OBJECT_CLASS_SIG)) != NULL)) {
         nsk_jvmti_setFailStatus();
-        return NSK_FALSE;
+        return false;
     }
     printf("\nFound fieldID: 0x%p - \'%s\' field in chain object class\n",
            (void*) nextField, NEXT_FIELD_NAME);
@@ -273,24 +269,24 @@ static int getFieldsAndObjects(jvmtiEnv*  jvmti,
     if (!NSK_JNI_VERIFY(jni, (*rootObjectPtr =
             jni->GetStaticObjectField(debugeeClass, rootObjectField)) != NULL)) {
         nsk_jvmti_setFailStatus();
-        return NSK_FALSE;
+        return false;
     }
     printf("\nFound root object: 0x%p\n", (void*) *rootObjectPtr);
     fflush(0);
 
     if (!NSK_JNI_VERIFY(jni, (*rootObjectPtr = jni->NewGlobalRef(*rootObjectPtr)) != NULL)) {
         nsk_jvmti_setFailStatus();
-        return NSK_FALSE;
+        return false;
     }
     printf("Created root object global ref: 0x%p\n", (void*)*rootObjectPtr);
     fflush(0);
 
-     return NSK_TRUE;
+     return true;
 } /* getFieldsAndObjects */
 
 
 /** Obtain chain of tested objects and tag them recursively. */
-static int getAndTagChainObjects(
+static bool getAndTagChainObjects(
     jvmtiEnv*  jvmti,
     JNIEnv*    jni,
     jobject    currObj,
@@ -299,13 +295,12 @@ static int getAndTagChainObjects(
     int        count,
     ObjectDesc objectDescList[],
     jlong      tag,
-    int        reachable)
-{
+    bool       reachable) {
     jobject nextObj = NULL;
     jlong objTag = (reachable ? tag : -tag);
 
     if (count <= 0) {
-        return NSK_TRUE;
+        return true;
     }
 
     count--;
@@ -313,7 +308,7 @@ static int getAndTagChainObjects(
 
     if (!NSK_JNI_VERIFY(jni, (nextObj = jni->GetObjectField(currObj, refField)) != NULL)) {
         nsk_jvmti_setFailStatus();
-        return NSK_FALSE;
+        return false;
     }
 
     objectDescList[count].tag = objTag;
@@ -338,12 +333,12 @@ static int getAndTagChainObjects(
                                tag,
                                reachable)
     ) {
-        return NSK_FALSE;
+        return false;
     }
 
     NSK_TRACE(jni->DeleteLocalRef(nextObj));
 
-    return NSK_TRUE;
+    return true;
 } /* getAndTagChainObjects */
 
 /** Obtain all tested objects from debugee class and tag them recursively. */
@@ -363,31 +358,31 @@ static int getAndTagTestedObjects(
     jfieldID unreachableChainField = NULL;
     jfieldID nextField             = NULL;
 
-    if (initObjectDescList(jvmti,
-                           chainLength,
-                           objectsCount,
-                           objectDescList) == NSK_FALSE) {
-        return NSK_FALSE;
+    if (!initObjectDescList(jvmti,
+                            chainLength,
+                            objectsCount,
+                            objectDescList)) {
+        return false;
     }
 
-    if (getAndTagClasses(jvmti,
-                         jni,
-                         &debugeeClass,
-                         &rootObjectClass,
-                         &chainObjectClass) == NSK_FALSE) {
-        return NSK_FALSE;
+    if (!getAndTagClasses(jvmti,
+                          jni,
+                          &debugeeClass,
+                          &rootObjectClass,
+                          &chainObjectClass)) {
+        return false;
     }
 
-    if (getFieldsAndObjects(jvmti,
-                            jni,
-                            debugeeClass,
-                            rootObjectClass,
-                            chainObjectClass,
-                            rootObjectPtr,
-                            &reachableChainField,
-                            &unreachableChainField,
-                            &nextField) == NSK_FALSE) {
-        return NSK_FALSE;
+    if (!getFieldsAndObjects(jvmti,
+                             jni,
+                             debugeeClass,
+                             rootObjectClass,
+                             chainObjectClass,
+                             rootObjectPtr,
+                             &reachableChainField,
+                             &unreachableChainField,
+                             &nextField)) {
+        return false;
     }
 
     printf("\nObtain and tag chain objects:\n");
@@ -411,10 +406,10 @@ static int getAndTagTestedObjects(
                                chainLength,
                                (*objectDescList) + 1,
                                CHAIN_OBJECT_TAG,
-                               NSK_TRUE)  /* reachable objects */
+                               true)  /* reachable objects */
     ) {
         nsk_jvmti_setFailStatus();
-        return NSK_FALSE;
+        return false;
     }
 
     printf("    unreachable objects chain: %d objects\n", chainLength);
@@ -426,22 +421,22 @@ static int getAndTagTestedObjects(
                                chainLength,
                                (*objectDescList) + 1 + chainLength,
                                CHAIN_OBJECT_TAG,
-                               NSK_FALSE) /* unreachable objects */
+                               false) /* unreachable objects */
     ) {
         nsk_jvmti_setFailStatus();
-        return NSK_FALSE;
+        return false;
     }
 
-    return NSK_TRUE;
+    return true;
 } /* getAndTagTestedObjects */
 
 /** Check if tagged objects were iterated. */
-static int checkTestedObjects(jvmtiEnv*  jvmti,
-                              JNIEnv*    jni,
-                              int        chainLength,
-                              ObjectDesc objectDescList[])
+static bool checkTestedObjects(jvmtiEnv*  jvmti,
+                               JNIEnv*    jni,
+                               int        chainLength,
+                               ObjectDesc objectDescList[])
 {
-    int success = NSK_TRUE;
+    bool success = true;
     int i, idx;
 
     printf("Following tagged objects were iterated:\n");
@@ -498,16 +493,16 @@ static int checkTestedObjects(jvmtiEnv*  jvmti,
         fflush(0);
     }
 
-    return NSK_TRUE;
+    return true;
 } /* checkTestedObjects */
 
 
 /** Release references to the tested objects and free allocated memory. */
-static int releaseTestedObjects(jvmtiEnv*   jvmti,
-                                JNIEnv*     jni,
-                                int         chainLength,
-                                ObjectDesc* objectDescList,
-                                jobject     rootObject)
+static void releaseTestedObjects(jvmtiEnv*   jvmti,
+                                 JNIEnv*     jni,
+                                 int         chainLength,
+                                 ObjectDesc* objectDescList,
+                                 jobject     rootObject)
 {
     if (rootObject != NULL) {
         printf("Release object reference to root tested object: 0x%p\n", rootObject);
@@ -522,7 +517,6 @@ static int releaseTestedObjects(jvmtiEnv*   jvmti,
     }
 
     fflush(0);
-    return NSK_TRUE;
 } /* releaseTestedObjects */
 
 
@@ -784,10 +778,7 @@ agentProc(jvmtiEnv* jvmti, JNIEnv* jni, void* arg) {
     printf(">>> Clean used data\n");
     fflush(0);
 
-    if (!NSK_VERIFY(releaseTestedObjects(jvmti, jni, chainLength,
-                                         objectDescList, rootObject))) {
-        return;
-    }
+    releaseTestedObjects(jvmti, jni, chainLength, objectDescList, rootObject);
 
     printf(">>> Let debugee to finish\n");
     fflush(0);

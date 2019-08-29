@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -91,18 +91,22 @@ char *getMacOSXLocale(int cat) {
 
             if (hyphenPos == NULL || // languageString contains ISO639 only, e.g., "en"
                 languageString + langStrLen - hyphenPos == 5) { // ISO639-ScriptCode, e.g., "en-Latn"
-                CFStringGetCString(CFLocaleGetIdentifier(CFLocaleCopyCurrent()),
-                               localeString, LOCALEIDLENGTH, CFStringGetSystemEncoding());
-                char *underscorePos = strrchr(localeString, '_');
-                char *region = NULL;
+                CFLocaleRef cflocale = CFLocaleCopyCurrent();
+                if (cflocale != NULL) {
+                    CFStringGetCString(CFLocaleGetIdentifier(cflocale),
+                                   localeString, LOCALEIDLENGTH, CFStringGetSystemEncoding());
+                    char *underscorePos = strrchr(localeString, '_');
+                    char *region = NULL;
 
-                if (underscorePos != NULL) {
-                    region = underscorePos + 1;
-                }
+                    if (underscorePos != NULL) {
+                        region = underscorePos + 1;
+                    }
 
-                if (region != NULL) {
-                    strcat(languageString, "-");
-                    strcat(languageString, region);
+                    if (region != NULL) {
+                        strcat(languageString, "-");
+                        strcat(languageString, region);
+                    }
+                    CFRelease(cflocale);
                 }
             }
 
@@ -112,12 +116,19 @@ char *getMacOSXLocale(int cat) {
 
     default:
         {
-            if (!CFStringGetCString(CFLocaleGetIdentifier(CFLocaleCopyCurrent()),
-                                    localeString, LOCALEIDLENGTH, CFStringGetSystemEncoding())) {
+            CFLocaleRef cflocale = CFLocaleCopyCurrent();
+            if (cflocale != NULL) {
+                if (!CFStringGetCString(CFLocaleGetIdentifier(cflocale),
+                                        localeString, LOCALEIDLENGTH, CFStringGetSystemEncoding())) {
+                    CFRelease(cflocale);
+                    return NULL;
+                }
+
+                retVal = localeString;
+                CFRelease(cflocale);
+            } else {
                 return NULL;
             }
-
-            retVal = localeString;
         }
         break;
     }

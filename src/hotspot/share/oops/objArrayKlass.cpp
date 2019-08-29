@@ -328,7 +328,7 @@ Klass* ObjArrayKlass::array_klass_impl(bool or_null, int n, TRAPS) {
 
   // lock-free read needs acquire semantics
   if (higher_dimension_acquire() == NULL) {
-    if (or_null)  return NULL;
+    if (or_null) return NULL;
 
     ResourceMark rm;
     JavaThread *jt = (JavaThread *)THREAD;
@@ -349,14 +349,13 @@ Klass* ObjArrayKlass::array_klass_impl(bool or_null, int n, TRAPS) {
         assert(ak->is_objArray_klass(), "incorrect initialization of ObjArrayKlass");
       }
     }
-  } else {
-    CHECK_UNHANDLED_OOPS_ONLY(Thread::current()->clear_unhandled_oops());
   }
 
   ObjArrayKlass *ak = ObjArrayKlass::cast(higher_dimension());
   if (or_null) {
     return ak->array_klass_or_null(n);
   }
+  THREAD->check_possible_safepoint();
   return ak->array_klass(n, THREAD);
 }
 

@@ -383,7 +383,7 @@ void PhaseChaitin::verify_base_ptrs( ResourceArea *a ) const {
 // Verify that graphs and base pointers are still sane.
 void PhaseChaitin::verify( ResourceArea *a, bool verify_ifg ) const {
 #ifdef ASSERT
-  if( VerifyOpto || VerifyRegisterAllocator ) {
+  if (VerifyRegisterAllocator) {
     _cfg.verify();
     verify_base_ptrs(a);
     if(verify_ifg)

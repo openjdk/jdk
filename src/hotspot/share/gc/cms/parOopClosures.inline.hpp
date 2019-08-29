@@ -44,9 +44,9 @@ template <class T> inline void ParScanWeakRefClosure::do_oop_work(T* p) {
     // we need to ensure that it is copied (see comment in
     // ParScanClosure::do_oop_work).
     Klass* objK = obj->klass();
-    markOop m = obj->mark_raw();
+    markWord m = obj->mark_raw();
     oop new_obj;
-    if (m->is_marked()) { // Contains forwarding pointer.
+    if (m.is_marked()) { // Contains forwarding pointer.
       new_obj = ParNewGeneration::real_forwardee(obj);
     } else {
       size_t obj_sz = obj->size_given_klass(objK);
@@ -108,9 +108,9 @@ inline void ParScanClosure::do_oop_work(T* p,
       // overwritten with an overflow next pointer after the object is
       // forwarded.
       Klass* objK = obj->klass();
-      markOop m = obj->mark_raw();
+      markWord m = obj->mark_raw();
       oop new_obj;
-      if (m->is_marked()) { // Contains forwarding pointer.
+      if (m.is_marked()) { // Contains forwarding pointer.
         new_obj = ParNewGeneration::real_forwardee(obj);
         RawAccess<IS_NOT_NULL>::oop_store(p, new_obj);
         log_develop_trace(gc, scavenge)("{%s %s ( " PTR_FORMAT " ) " PTR_FORMAT " -> " PTR_FORMAT " (%d)}",

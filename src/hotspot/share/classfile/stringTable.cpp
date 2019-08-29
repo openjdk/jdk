@@ -30,6 +30,7 @@
 #include "classfile/systemDictionary.hpp"
 #include "gc/shared/collectedHeap.hpp"
 #include "gc/shared/oopStorage.inline.hpp"
+#include "gc/shared/oopStorageSet.hpp"
 #include "logging/log.hpp"
 #include "logging/logStream.hpp"
 #include "memory/allocation.inline.hpp"
@@ -86,7 +87,6 @@ volatile bool StringTable::_has_work = false;
 volatile bool StringTable::_needs_rehashing = false;
 
 volatile size_t StringTable::_uncleaned_items_count = 0;
-OopStorage* StringTable::_weak_handles = NULL;
 
 static size_t _current_size = 0;
 static volatile size_t _items_count = 0;
@@ -206,9 +206,6 @@ static size_t ceil_log2(size_t val) {
 }
 
 void StringTable::create_table() {
-  _weak_handles = new OopStorage("StringTable weak",
-                                 StringTableWeakAlloc_lock,
-                                 StringTableWeakActive_lock);
   size_t start_size_log_2 = ceil_log2(StringTableSize);
   _current_size = ((size_t)1) << start_size_log_2;
   log_trace(stringtable)("Start size: " SIZE_FORMAT " (" SIZE_FORMAT ")",
@@ -388,7 +385,7 @@ oop StringTable::do_intern(Handle string_or_null_h, const jchar* name,
 
 void StringTable::oops_do(OopClosure* f) {
   assert(f != NULL, "No closure");
-  _weak_handles->oops_do(f);
+  OopStorageSet::string_table_weak()->oops_do(f);
 }
 
 // Concurrent work

@@ -419,6 +419,11 @@ class UnixNativeDispatcher {
     static native void futimes(int fd, long times0, long times1) throws UnixException;
 
     /**
+     * futimens(int fildes, const struct timespec times[2])
+     */
+    static native void futimens(int fd, long times0, long times1) throws UnixException;
+
+    /**
      * lutimes(const char* path, const struct timeval times[2])
      */
     static void lutimes(UnixPath path, long times0, long times1)
@@ -593,7 +598,8 @@ class UnixNativeDispatcher {
      */
     private static final int SUPPORTS_OPENAT        = 1 << 1;  // syscalls
     private static final int SUPPORTS_FUTIMES       = 1 << 2;
-    private static final int SUPPORTS_LUTIMES       = 1 << 4;
+    private static final int SUPPORTS_FUTIMENS      = 1 << 4;
+    private static final int SUPPORTS_LUTIMES       = 1 << 8;
     private static final int SUPPORTS_BIRTHTIME     = 1 << 16; // other features
     private static final int capabilities;
 
@@ -609,6 +615,13 @@ class UnixNativeDispatcher {
      */
     static boolean futimesSupported() {
         return (capabilities & SUPPORTS_FUTIMES) != 0;
+    }
+
+    /**
+     * Supports futimens
+     */
+    static boolean futimensSupported() {
+        return (capabilities & SUPPORTS_FUTIMENS) != 0;
     }
 
     /**

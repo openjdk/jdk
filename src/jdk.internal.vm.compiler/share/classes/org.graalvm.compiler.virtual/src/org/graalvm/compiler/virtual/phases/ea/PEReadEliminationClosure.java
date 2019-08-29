@@ -217,7 +217,11 @@ public final class PEReadEliminationClosure extends PartialEscapeClosure<PEReadE
                 long offset = store.offset().asJavaConstant().asLong();
                 boolean overflowAccess = isOverflowAccess(accessKind, componentKind);
                 int index = overflowAccess ? -1 : VirtualArrayNode.entryIndexForOffset(tool.getMetaAccess(), offset, accessKind, type.getComponentType(), Integer.MAX_VALUE);
-                return processStore(store, store.object(), location, index, accessKind, overflowAccess, store.value(), state, effects);
+                if (index != -1) {
+                    return processStore(store, store.object(), location, index, accessKind, overflowAccess, store.value(), state, effects);
+                } else {
+                    state.killReadCache(location, index);
+                }
             } else {
                 processIdentity(state, location);
             }

@@ -24,6 +24,9 @@
 
 package org.graalvm.compiler.hotspot.test;
 
+import static org.graalvm.compiler.hotspot.meta.HotSpotGraphBuilderPlugins.aesDecryptName;
+import static org.graalvm.compiler.hotspot.meta.HotSpotGraphBuilderPlugins.aesEncryptName;
+
 import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -41,6 +44,7 @@ import jdk.internal.vm.compiler.collections.MapCursor;
 import org.graalvm.compiler.api.test.Graal;
 import org.graalvm.compiler.hotspot.GraalHotSpotVMConfig;
 import org.graalvm.compiler.hotspot.HotSpotGraalRuntimeProvider;
+import org.graalvm.compiler.hotspot.meta.HotSpotGraphBuilderPlugins;
 import org.graalvm.compiler.hotspot.meta.HotSpotProviders;
 import org.graalvm.compiler.nodes.graphbuilderconf.GraphBuilderConfiguration.Plugins;
 import org.graalvm.compiler.nodes.graphbuilderconf.InvocationPlugin;
@@ -405,6 +409,16 @@ public class CheckGraalIntrinsics extends GraalTest {
                             "java/lang/Math.max(FF)F",
                             "java/lang/Math.min(DD)D",
                             "java/lang/Math.min(FF)F");
+            add(toBeInvestigated,
+                            "jdk/internal/misc/Unsafe.writeback0(J)V",
+                            "jdk/internal/misc/Unsafe.writebackPostSync0()V",
+                            "jdk/internal/misc/Unsafe.writebackPreSync0()V");
+        }
+
+        if (isJDK14OrHigher()) {
+            add(toBeInvestigated,
+                            "com/sun/crypto/provider/ElectronicCodeBook.implECBDecrypt([BII[BI)I",
+                            "com/sun/crypto/provider/ElectronicCodeBook.implECBEncrypt([BII[BI)I");
         }
 
         if (!config.inlineNotify()) {
@@ -501,21 +515,17 @@ public class CheckGraalIntrinsics extends GraalTest {
                             "java/util/zip/CRC32C.updateDirectByteBuffer(IJII)I");
         }
 
+        boolean implNames = HotSpotGraphBuilderPlugins.cbcUsesImplNames(config);
+        String cbcEncryptName = implNames ? "implEncrypt" : "encrypt";
+        String cbcDecryptName = implNames ? "implDecrypt" : "decrypt";
+
         // AES intrinsics
         if (!config.useAESIntrinsics) {
-            if (isJDK9OrHigher()) {
-                add(ignore,
-                                "com/sun/crypto/provider/AESCrypt.implDecryptBlock([BI[BI)V",
-                                "com/sun/crypto/provider/AESCrypt.implEncryptBlock([BI[BI)V",
-                                "com/sun/crypto/provider/CipherBlockChaining.implDecrypt([BII[BI)I",
-                                "com/sun/crypto/provider/CipherBlockChaining.implEncrypt([BII[BI)I");
-            } else {
-                add(ignore,
-                                "com/sun/crypto/provider/AESCrypt.decryptBlock([BI[BI)V",
-                                "com/sun/crypto/provider/AESCrypt.encryptBlock([BI[BI)V",
-                                "com/sun/crypto/provider/CipherBlockChaining.decrypt([BII[BI)I",
-                                "com/sun/crypto/provider/CipherBlockChaining.encrypt([BII[BI)I");
-            }
+            add(ignore,
+                            "com/sun/crypto/provider/AESCrypt." + aesDecryptName + "([BI[BI)V",
+                            "com/sun/crypto/provider/AESCrypt." + aesEncryptName + "([BI[BI)V",
+                            "com/sun/crypto/provider/CipherBlockChaining." + cbcDecryptName + "([BII[BI)I",
+                            "com/sun/crypto/provider/CipherBlockChaining." + cbcEncryptName + "([BII[BI)I");
         }
 
         // BigInteger intrinsics
@@ -581,6 +591,10 @@ public class CheckGraalIntrinsics extends GraalTest {
 
     private static boolean isJDK13OrHigher() {
         return JavaVersionUtil.JAVA_SPEC >= 13;
+    }
+
+    private static boolean isJDK14OrHigher() {
+        return JavaVersionUtil.JAVA_SPEC >= 14;
     }
 
     public interface Refiner {

@@ -97,6 +97,7 @@ class G1ParScanThreadState : public CHeapObj<mtGC> {
 
 public:
   G1ParScanThreadState(G1CollectedHeap* g1h,
+                       G1RedirtyCardsQueueSet* rdcqs,
                        uint worker_id,
                        size_t young_cset_length,
                        size_t optional_cset_length);
@@ -143,12 +144,6 @@ public:
 
   size_t lab_waste_words() const;
   size_t lab_undo_waste_words() const;
-
-  size_t* surviving_young_words() {
-    // We add one to hide entry 0 which accumulates surviving words for
-    // age -1 regions (i.e. non-young ones)
-    return _surviving_young_words + 1;
-  }
 
   void flush(size_t* surviving_young_words);
 
@@ -203,7 +198,7 @@ private:
                                   size_t word_sz,
                                   bool previous_plab_refill_failed);
 
-  inline G1HeapRegionAttr next_region_attr(G1HeapRegionAttr const region_attr, markOop const m, uint& age);
+  inline G1HeapRegionAttr next_region_attr(G1HeapRegionAttr const region_attr, markWord const m, uint& age);
 
   void report_promotion_event(G1HeapRegionAttr const dest_attr,
                               oop const old, size_t word_sz, uint age,
@@ -214,7 +209,7 @@ private:
 
   inline void trim_queue_to_threshold(uint threshold);
 public:
-  oop copy_to_survivor_space(G1HeapRegionAttr const region_attr, oop const obj, markOop const old_mark);
+  oop copy_to_survivor_space(G1HeapRegionAttr const region_attr, oop const obj, markWord const old_mark);
 
   void trim_queue();
   void trim_queue_partially();
@@ -225,7 +220,7 @@ public:
   inline void steal_and_trim_queue(RefToScanQueueSet *task_queues);
 
   // An attempt to evacuate "obj" has failed; take necessary steps.
-  oop handle_evacuation_failure_par(oop obj, markOop m);
+  oop handle_evacuation_failure_par(oop obj, markWord m);
 
   template <typename T>
   inline void remember_root_into_optional_region(T* p);
@@ -237,6 +232,7 @@ public:
 
 class G1ParScanThreadStateSet : public StackObj {
   G1CollectedHeap* _g1h;
+  G1RedirtyCardsQueueSet* _rdcqs;
   G1ParScanThreadState** _states;
   size_t* _surviving_young_words_total;
   size_t _young_cset_length;
@@ -246,6 +242,7 @@ class G1ParScanThreadStateSet : public StackObj {
 
  public:
   G1ParScanThreadStateSet(G1CollectedHeap* g1h,
+                          G1RedirtyCardsQueueSet* rdcqs,
                           uint n_workers,
                           size_t young_cset_length,
                           size_t optional_cset_length);

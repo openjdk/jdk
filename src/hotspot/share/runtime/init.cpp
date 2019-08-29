@@ -50,6 +50,7 @@
 void check_ThreadShadow();
 void eventlog_init();
 void mutex_init();
+void oopstorage_init();
 void chunkpool_init();
 void perfMemory_init();
 void SuspendibleThreadSet_init();
@@ -98,6 +99,7 @@ void vm_init_globals() {
   basic_types_init();
   eventlog_init();
   mutex_init();
+  oopstorage_init();
   chunkpool_init();
   perfMemory_init();
   SuspendibleThreadSet_init();

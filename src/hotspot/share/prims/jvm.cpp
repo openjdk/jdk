@@ -3384,32 +3384,33 @@ JVM_ENTRY(jstring, JVM_InternString(JNIEnv *env, jstring str))
 JVM_END
 
 
-// Raw monitor support //////////////////////////////////////////////////////////////////////
+// VM Raw monitor support //////////////////////////////////////////////////////////////////////
 
-// The lock routine below calls lock_without_safepoint_check in order to get a raw lock
-// without interfering with the safepoint mechanism. The routines are not JVM_LEAF because
-// they might be called by non-java threads. The JVM_LEAF installs a NoHandleMark check
-// that only works with java threads.
+// VM Raw monitors (not to be confused with JvmtiRawMonitors) are a simple mutual exclusion
+// lock (not actually monitors: no wait/notify) that is exported by the VM for use by JDK
+// library code. They may be used by JavaThreads and non-JavaThreads and do not participate
+// in the safepoint protocol, thread suspension, thread interruption, or anything of that
+// nature. JavaThreads will be "in native" when using this API from JDK code.
 
 
 JNIEXPORT void* JNICALL JVM_RawMonitorCreate(void) {
   VM_Exit::block_if_vm_exited();
   JVMWrapper("JVM_RawMonitorCreate");
-  return new Mutex(Mutex::native, "JVM_RawMonitorCreate");
+  return new os::PlatformMutex();
 }
 
 
 JNIEXPORT void JNICALL  JVM_RawMonitorDestroy(void *mon) {
   VM_Exit::block_if_vm_exited();
   JVMWrapper("JVM_RawMonitorDestroy");
-  delete ((Mutex*) mon);
+  delete ((os::PlatformMutex*) mon);
 }
 
 
 JNIEXPORT jint JNICALL JVM_RawMonitorEnter(void *mon) {
   VM_Exit::block_if_vm_exited();
   JVMWrapper("JVM_RawMonitorEnter");
-  ((Mutex*) mon)->jvm_raw_lock();
+  ((os::PlatformMutex*) mon)->lock();
   return 0;
 }
 
@@ -3417,7 +3418,7 @@ JNIEXPORT jint JNICALL JVM_RawMonitorEnter(void *mon) {
 JNIEXPORT void JNICALL JVM_RawMonitorExit(void *mon) {
   VM_Exit::block_if_vm_exited();
   JVMWrapper("JVM_RawMonitorExit");
-  ((Mutex*) mon)->jvm_raw_unlock();
+  ((os::PlatformMutex*) mon)->unlock();
 }
 
 

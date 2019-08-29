@@ -35,10 +35,14 @@ class NativeLookup : AllStatic {
  private:
   // Style specific lookup
   static address lookup_style(const methodHandle& method, char* pure_name, const char* long_name, int args_size, bool os_style, bool& in_base_library, TRAPS);
-  static address lookup_critical_style(const methodHandle& method, char* pure_name, const char* long_name, int args_size, bool os_style);
+  static address lookup_critical_style(void* dll, const char* pure_name, const char* long_name, int args_size, bool os_style);
+  static address lookup_critical_style(void* dll, const methodHandle& method, int args_size);
   static address lookup_base (const methodHandle& method, bool& in_base_library, TRAPS);
   static address lookup_entry(const methodHandle& method, bool& in_base_library, TRAPS);
   static address lookup_entry_prefixed(const methodHandle& method, bool& in_base_library, TRAPS);
+
+  static void* dll_load(const methodHandle& method);
+  static const char* compute_complete_jni_name(const char* pure_name, const char* long_name, int args_size, bool os_style);
  public:
   // JNI name computation
   static char* pure_jni_name(const methodHandle& method);

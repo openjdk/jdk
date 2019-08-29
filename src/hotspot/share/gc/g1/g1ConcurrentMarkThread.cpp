@@ -107,7 +107,7 @@ public:
   }
 };
 
-double G1ConcurrentMarkThread::mmu_sleep_time(G1Policy* g1_policy, bool remark) {
+double G1ConcurrentMarkThread::mmu_delay_end(G1Policy* g1_policy, bool remark) {
   // There are 3 reasons to use SuspendibleThreadSetJoiner.
   // 1. To avoid concurrency problem.
   //    - G1MMUTracker::add_pause(), when_sec() and its variation(when_ms() etc..) can be called
@@ -119,18 +119,30 @@ double G1ConcurrentMarkThread::mmu_sleep_time(G1Policy* g1_policy, bool remark) 
   SuspendibleThreadSetJoiner sts_join;
 
   const G1Analytics* analytics = g1_policy->analytics();
-  double now = os::elapsedTime();
   double prediction_ms = remark ? analytics->predict_remark_time_ms()
                                 : analytics->predict_cleanup_time_ms();
+  double prediction = prediction_ms / MILLIUNITS;
   G1MMUTracker *mmu_tracker = g1_policy->mmu_tracker();
-  return mmu_tracker->when_ms(now, prediction_ms);
+  double now = os::elapsedTime();
+  return now + mmu_tracker->when_sec(now, prediction);
 }
 
 void G1ConcurrentMarkThread::delay_to_keep_mmu(G1Policy* g1_policy, bool remark) {
   if (g1_policy->use_adaptive_young_list_length()) {
-    jlong sleep_time_ms = mmu_sleep_time(g1_policy, remark);
-    if (!_cm->has_aborted() && sleep_time_ms > 0) {
-      os::sleep(this, sleep_time_ms, false);
+    double delay_end_sec = mmu_delay_end(g1_policy, remark);
+    // Wait for timeout or thread termination request.
+    MonitorLocker ml(CGC_lock, Monitor::_no_safepoint_check_flag);
+    while (!_cm->has_aborted()) {
+      double sleep_time_sec = (delay_end_sec - os::elapsedTime());
+      jlong sleep_time_ms = ceil(sleep_time_sec * MILLIUNITS);
+      if (sleep_time_ms <= 0) {
+        break;                  // Passed end time.
+      } else if (ml.wait(sleep_time_ms, Monitor::_no_safepoint_check_flag)) {
+        break;                  // Timeout => reached end time.
+      } else if (should_terminate()) {
+        break;                  // Wakeup for pending termination request.
+      }
+      // Other (possibly spurious) wakeup.  Retry with updated sleep time.
     }
   }
 }

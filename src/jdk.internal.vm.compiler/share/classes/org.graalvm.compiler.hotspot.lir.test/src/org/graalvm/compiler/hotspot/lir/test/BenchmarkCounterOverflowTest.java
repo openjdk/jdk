@@ -28,6 +28,7 @@ import static org.graalvm.compiler.test.SubprocessUtil.getVMCommandLine;
 import static org.graalvm.compiler.test.SubprocessUtil.withoutDebuggerArguments;
 
 import java.io.File;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
@@ -100,7 +101,7 @@ public class BenchmarkCounterOverflowTest extends LIRTest {
     }
 
     @Test
-    public void spawnSubprocess() throws Throwable {
+    public void spawnSubprocess() throws IOException, InterruptedException {
         Assume.assumeFalse("subprocess already spawned -> skip", Boolean.getBoolean(SUBPROCESS_PROPERTY));
         List<String> vmArgs = withoutDebuggerArguments(getVMCommandLine());
         vmArgs.add("-XX:JVMCICounterSize=1");

@@ -68,8 +68,8 @@ G1Policy::G1Policy(STWGCTimer* gc_timer) :
   _reserve_regions(0),
   _young_gen_sizer(G1YoungGenSizer::create_gen_sizer()),
   _free_regions_at_end_of_collection(0),
-  _max_rs_lengths(0),
-  _rs_lengths_prediction(0),
+  _max_rs_length(0),
+  _rs_length_prediction(0),
   _pending_cards(0),
   _bytes_allocated_in_old_since_last_gc(0),
   _initial_mark_to_mixed(),
@@ -219,23 +219,23 @@ uint G1Policy::calculate_young_list_desired_max_length() const {
 }
 
 uint G1Policy::update_young_list_max_and_target_length() {
-  return update_young_list_max_and_target_length(_analytics->predict_rs_lengths());
+  return update_young_list_max_and_target_length(_analytics->predict_rs_length());
 }
 
-uint G1Policy::update_young_list_max_and_target_length(size_t rs_lengths) {
-  uint unbounded_target_length = update_young_list_target_length(rs_lengths);
+uint G1Policy::update_young_list_max_and_target_length(size_t rs_length) {
+  uint unbounded_target_length = update_young_list_target_length(rs_length);
   update_max_gc_locker_expansion();
   return unbounded_target_length;
 }
 
-uint G1Policy::update_young_list_target_length(size_t rs_lengths) {
-  YoungTargetLengths young_lengths = young_list_target_lengths(rs_lengths);
+uint G1Policy::update_young_list_target_length(size_t rs_length) {
+  YoungTargetLengths young_lengths = young_list_target_lengths(rs_length);
   _young_list_target_length = young_lengths.first;
 
   return young_lengths.second;
 }
 
-G1Policy::YoungTargetLengths G1Policy::young_list_target_lengths(size_t rs_lengths) const {
+G1Policy::YoungTargetLengths G1Policy::young_list_target_lengths(size_t rs_length) const {
   YoungTargetLengths result;
 
   // Calculate the absolute and desired min bounds first.
@@ -256,7 +256,7 @@ G1Policy::YoungTargetLengths G1Policy::young_list_target_lengths(size_t rs_lengt
   if (use_adaptive_young_list_length()) {
     if (collector_state()->in_young_only_phase()) {
       young_list_target_length =
-                        calculate_young_list_target_length(rs_lengths,
+                        calculate_young_list_target_length(rs_length,
                                                            base_min_length,
                                                            desired_min_length,
                                                            desired_max_length);
@@ -301,7 +301,7 @@ G1Policy::YoungTargetLengths G1Policy::young_list_target_lengths(size_t rs_lengt
 }
 
 uint
-G1Policy::calculate_young_list_target_length(size_t rs_lengths,
+G1Policy::calculate_young_list_target_length(size_t rs_length,
                                                     uint base_min_length,
                                                     uint desired_min_length,
                                                     uint desired_max_length) const {
@@ -326,8 +326,8 @@ G1Policy::calculate_young_list_target_length(size_t rs_lengths,
   const double target_pause_time_ms = _mmu_tracker->max_gc_time() * 1000.0;
   const double survivor_regions_evac_time = predict_survivor_regions_evac_time();
   const size_t pending_cards = _analytics->predict_pending_cards();
-  const size_t adj_rs_lengths = rs_lengths + _analytics->predict_rs_length_diff();
-  const size_t scanned_cards = _analytics->predict_card_num(adj_rs_lengths, true /* for_young_gc */);
+  const size_t adj_rs_length = rs_length + _analytics->predict_rs_length_diff();
+  const size_t scanned_cards = _analytics->predict_card_num(adj_rs_length, true /* for_young_gc */);
   const double base_time_ms =
     predict_base_elapsed_time_ms(pending_cards, scanned_cards) +
     survivor_regions_evac_time;
@@ -414,25 +414,25 @@ double G1Policy::predict_survivor_regions_evac_time() const {
   return survivor_regions_evac_time;
 }
 
-void G1Policy::revise_young_list_target_length_if_necessary(size_t rs_lengths) {
+void G1Policy::revise_young_list_target_length_if_necessary(size_t rs_length) {
   guarantee(use_adaptive_young_list_length(), "should not call this otherwise" );
 
-  if (rs_lengths > _rs_lengths_prediction) {
+  if (rs_length > _rs_length_prediction) {
     // add 10% to avoid having to recalculate often
-    size_t rs_lengths_prediction = rs_lengths * 1100 / 1000;
-    update_rs_lengths_prediction(rs_lengths_prediction);
+    size_t rs_length_prediction = rs_length * 1100 / 1000;
+    update_rs_length_prediction(rs_length_prediction);
 
-    update_young_list_max_and_target_length(rs_lengths_prediction);
+    update_young_list_max_and_target_length(rs_length_prediction);
   }
 }
 
-void G1Policy::update_rs_lengths_prediction() {
-  update_rs_lengths_prediction(_analytics->predict_rs_lengths());
+void G1Policy::update_rs_length_prediction() {
+  update_rs_length_prediction(_analytics->predict_rs_length());
 }
 
-void G1Policy::update_rs_lengths_prediction(size_t prediction) {
+void G1Policy::update_rs_length_prediction(size_t prediction) {
   if (collector_state()->in_young_only_phase() && use_adaptive_young_list_length()) {
-    _rs_lengths_prediction = prediction;
+    _rs_length_prediction = prediction;
   }
 }
 
@@ -471,7 +471,7 @@ void G1Policy::record_full_collection_end() {
   // Reset survivors SurvRateGroup.
   _survivor_surv_rate_group->reset();
   update_young_list_max_and_target_length();
-  update_rs_lengths_prediction();
+  update_rs_length_prediction();
 
   _bytes_allocated_in_old_since_last_gc = 0;
 
@@ -692,29 +692,29 @@ void G1Policy::record_collection_pause_end(double pause_time_ms, size_t heap_use
       _analytics->report_cost_per_remset_card_ms(cost_per_remset_card_ms, this_pause_was_young_only);
     }
 
-    if (_max_rs_lengths > 0) {
+    if (_max_rs_length > 0) {
       double cards_per_entry_ratio =
-        (double) remset_cards_scanned / (double) _max_rs_lengths;
+        (double) remset_cards_scanned / (double) _max_rs_length;
       _analytics->report_cards_per_entry_ratio(cards_per_entry_ratio, this_pause_was_young_only);
     }
 
-    // This is defensive. For a while _max_rs_lengths could get
-    // smaller than _recorded_rs_lengths which was causing
+    // This is defensive. For a while _max_rs_length could get
+    // smaller than _recorded_rs_length which was causing
     // rs_length_diff to get very large and mess up the RSet length
     // predictions. The reason was unsafe concurrent updates to the
-    // _inc_cset_recorded_rs_lengths field which the code below guards
+    // _inc_cset_recorded_rs_length field which the code below guards
     // against (see CR 7118202). This bug has now been fixed (see CR
     // 7119027). However, I'm still worried that
-    // _inc_cset_recorded_rs_lengths might still end up somewhat
+    // _inc_cset_recorded_rs_length might still end up somewhat
     // inaccurate. The concurrent refinement thread calculates an
     // RSet's length concurrently with other CR threads updating it
     // which might cause it to calculate the length incorrectly (if,
     // say, it's in mid-coarsening). So I'll leave in the defensive
     // conditional below just in case.
     size_t rs_length_diff = 0;
-    size_t recorded_rs_lengths = _collection_set->recorded_rs_lengths();
-    if (_max_rs_lengths > recorded_rs_lengths) {
-      rs_length_diff = _max_rs_lengths - recorded_rs_lengths;
+    size_t recorded_rs_length = _collection_set->recorded_rs_length();
+    if (_max_rs_length > recorded_rs_length) {
+      rs_length_diff = _max_rs_length - recorded_rs_length;
     }
     _analytics->report_rs_length_diff((double) rs_length_diff);
 
@@ -745,7 +745,7 @@ void G1Policy::record_collection_pause_end(double pause_time_ms, size_t heap_use
     // During mixed gc we do not use them for young gen sizing.
     if (this_pause_was_young_only) {
       _analytics->report_pending_cards((double) _pending_cards);
-      _analytics->report_rs_lengths((double) _max_rs_lengths);
+      _analytics->report_rs_length((double) _max_rs_length);
     }
   }
 
@@ -757,7 +757,7 @@ void G1Policy::record_collection_pause_end(double pause_time_ms, size_t heap_use
 
   _free_regions_at_end_of_collection = _g1h->num_free_regions();
 
-  update_rs_lengths_prediction();
+  update_rs_length_prediction();
 
   // Do not update dynamic IHOP due to G1 periodic collection as it is highly likely
   // that in this case we are not running in a "normal" operating mode.
@@ -889,7 +889,7 @@ double G1Policy::predict_base_elapsed_time_ms(size_t pending_cards,
 }
 
 double G1Policy::predict_base_elapsed_time_ms(size_t pending_cards) const {
-  size_t rs_length = _analytics->predict_rs_lengths() + _analytics->predict_rs_length_diff();
+  size_t rs_length = _analytics->predict_rs_length() + _analytics->predict_rs_length_diff();
   size_t card_num = _analytics->predict_card_num(rs_length, collector_state()->in_young_only_phase());
   return predict_base_elapsed_time_ms(pending_cards, card_num);
 }

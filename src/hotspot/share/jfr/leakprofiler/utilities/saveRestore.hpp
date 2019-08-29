@@ -27,7 +27,7 @@
 
 #include "memory/allocation.hpp"
 #include "memory/iterator.hpp"
-#include "oops/markOop.hpp"
+#include "oops/markWord.hpp"
 #include "utilities/growableArray.hpp"
 
 template <typename T, typename Impl>
@@ -78,20 +78,20 @@ public:
 * The destructor will restore the original mark oop.
 */
 
-class MarkOopContext {
+class MarkWordContext {
  private:
   oop _obj;
-  markOop _mark_oop;
-  void swap(MarkOopContext& rhs);
+  markWord _mark_word;
+  void swap(MarkWordContext& rhs);
  public:
-  MarkOopContext();
-  MarkOopContext(const oop obj);
-  MarkOopContext(const MarkOopContext& rhs);
-  void operator=(MarkOopContext rhs);
-  ~MarkOopContext();
+  MarkWordContext();
+  MarkWordContext(const oop obj);
+  MarkWordContext(const MarkWordContext& rhs);
+  void operator=(MarkWordContext rhs);
+  ~MarkWordContext();
 };
 
-typedef SaveRestore<oop, ContextStore<oop, MarkOopContext> > SaveRestoreMarkOops;
+typedef SaveRestore<oop, ContextStore<oop, MarkWordContext> > SaveRestoreMarkWords;
 
 class ClassLoaderData;
 

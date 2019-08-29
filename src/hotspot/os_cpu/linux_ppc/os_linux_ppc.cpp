@@ -502,6 +502,15 @@ JVM_handle_linux_signal(int sig,
         return true;
       }
     }
+
+    // jni_fast_Get<Primitive>Field can trap at certain pc's if a GC kicks in
+    // and the heap gets shrunk before the field access.
+    if ((sig == SIGSEGV) || (sig == SIGBUS)) {
+      address addr = JNI_FastGetField::find_slowcase_pc(pc);
+      if (addr != (address)-1) {
+        stub = addr;
+      }
+    }
   }
 
   if (stub != NULL) {

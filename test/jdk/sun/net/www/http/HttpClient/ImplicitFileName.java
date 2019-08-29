@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2001, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,19 +27,29 @@
  * @summary Make sure that implicit filenames will be returned as "/"
  * @modules java.base/sun.net
  *          java.base/sun.net.www.http
+ * @library /test/lib
  */
 
+import java.net.InetAddress;
+import java.net.InetSocketAddress;
 import java.net.URL;
 import java.net.ServerSocket;
 import sun.net.www.http.HttpClient;
+import jdk.test.lib.net.URIBuilder;
 
 public class ImplicitFileName {
 
     public static void main(String[] args) throws Exception {
 
-        ServerSocket ss = new ServerSocket(0);
+        ServerSocket ss = new ServerSocket();
+        InetAddress loopback = InetAddress.getLoopbackAddress();
+        ss.bind(new InetSocketAddress(loopback, 0));
 
-        URL url = new URL("http://localhost:" + ss.getLocalPort());
+        URL url = URIBuilder.newBuilder()
+            .scheme("http")
+            .loopback()
+            .port(ss.getLocalPort())
+            .toURL();
 
         HttpClient c = HttpClient.New(url);
 

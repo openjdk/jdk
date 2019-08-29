@@ -27,10 +27,16 @@ package org.graalvm.compiler.test;
 import static org.graalvm.compiler.debug.DebugContext.DEFAULT_LOG_STREAM;
 import static org.graalvm.compiler.debug.DebugContext.NO_DESCRIPTION;
 
+import java.io.IOException;
 import java.io.PrintStream;
 import java.io.PrintWriter;
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
+import java.nio.file.FileVisitResult;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.SimpleFileVisitor;
+import java.nio.file.attribute.BasicFileAttributes;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
@@ -498,5 +504,32 @@ public class GraalTest {
      */
     public static TestRule createTimeoutMillis(long milliseconds) {
         return createTimeout(milliseconds, TimeUnit.MILLISECONDS);
+    }
+
+    /**
+     * Tries to recursively remove {@code directory}. If it fails with an {@link IOException}, the
+     * exception's {@code toString()} is printed to {@link System#err} and the exception is
+     * returned.
+     */
+    public static IOException removeDirectory(Path directory) {
+        try {
+            Files.walkFileTree(directory, new SimpleFileVisitor<Path>() {
+                @Override
+                public FileVisitResult visitFile(Path file, BasicFileAttributes attrs) throws IOException {
+                    Files.delete(file);
+                    return FileVisitResult.CONTINUE;
+                }
+
+                @Override
+                public FileVisitResult postVisitDirectory(Path dir, IOException exc) throws IOException {
+                    Files.delete(dir);
+                    return FileVisitResult.CONTINUE;
+                }
+            });
+        } catch (IOException e) {
+            System.err.println(e);
+            return e;
+        }
+        return null;
     }
 }

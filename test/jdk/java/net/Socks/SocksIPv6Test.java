@@ -24,6 +24,7 @@
 /* @test
  * @bug 7100957
  * @modules jdk.httpserver
+ * @library /test/lib
  * @summary Java doesn't correctly handle the SOCKS protocol when used over IPv6.
  * @run testng SocksIPv6Test
  */
@@ -46,9 +47,12 @@ import java.util.Collections;
 import java.util.List;
 import com.sun.net.httpserver.*;
 import java.io.BufferedWriter;
+import org.testng.SkipException;
 import org.testng.annotations.AfterClass;
 import org.testng.annotations.BeforeClass;
 import org.testng.annotations.Test;
+
+import jdk.test.lib.NetworkConfiguration;
 
 import static org.testng.Assert.*;
 
@@ -57,11 +61,13 @@ public class SocksIPv6Test {
     private HttpServer server;
     private SocksServer socks;
     private String response = "Hello.";
-    private static boolean shouldRun = false;
 
     @BeforeClass
     public void setUp() throws Exception {
-        shouldRun = ensureInet6AddressFamily() && ensureIPv6OnLoopback();
+        if (!ensureInet6AddressFamily() || !ensureIPv6OnLoopback()) {
+            NetworkConfiguration.printSystemConfiguration(System.out);
+            throw new SkipException("Host does not support IPv6");
+        }
 
         server = HttpServer.create(new InetSocketAddress("::1", 0), 0);
         server.createContext("/", ex -> {
@@ -120,8 +126,6 @@ public class SocksIPv6Test {
 
     @Test(groups = "unit")
     public void testSocksOverIPv6() throws Exception {
-        if (!shouldRun) return;
-
         Proxy proxy = new Proxy(Proxy.Type.SOCKS, new InetSocketAddress("::1",
                 socks.getPort()));
         URL url = new URL("http://[::1]:" + server.getAddress().getPort());
@@ -136,8 +140,6 @@ public class SocksIPv6Test {
 
     @Test(groups = "unit")
     public void testSocksOverIPv6Hostname() throws Exception {
-        if (!shouldRun) return;
-
         InetAddress ipv6Loopback = InetAddress.getByName("::1");
         String ipv6Hostname = ipv6Loopback.getHostName();
         String ipv6HostAddress = ipv6Loopback.getHostAddress();

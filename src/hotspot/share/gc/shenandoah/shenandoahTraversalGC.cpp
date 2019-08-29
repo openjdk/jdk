@@ -706,7 +706,7 @@ void ShenandoahTraversalGC::fixup_roots() {
 #if COMPILER2_OR_JVMCI
   DerivedPointerTable::clear();
 #endif
-  ShenandoahRootUpdater rp(_heap->workers()->active_workers(), ShenandoahPhaseTimings::final_traversal_update_roots, true /* update code cache */);
+  ShenandoahRootUpdater rp(_heap->workers()->active_workers(), ShenandoahPhaseTimings::final_traversal_update_roots);
   ShenandoahTraversalFixRootsTask update_roots_task(&rp);
   _heap->workers()->run_task(&update_roots_task);
 #if COMPILER2_OR_JVMCI

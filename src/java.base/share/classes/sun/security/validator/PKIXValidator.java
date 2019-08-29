@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -143,6 +143,7 @@ public final class PKIXValidator extends Validator {
         return subjectMap;
     }
 
+    @Override
     public Collection<X509Certificate> getTrustedCertificates() {
         return trustedCerts;
     }
@@ -399,55 +400,67 @@ public final class PKIXValidator extends Validator {
      */
     private static void addResponses(PKIXBuilderParameters pkixParams,
             X509Certificate[] chain, List<byte[]> responseList) {
+        try {
+            boolean createdRevChk = false;
 
-        if (pkixParams.isRevocationEnabled()) {
-            try {
-                // Make a modifiable copy of the CertPathChecker list
-                PKIXRevocationChecker revChecker = null;
-                List<PKIXCertPathChecker> checkerList =
-                        new ArrayList<>(pkixParams.getCertPathCheckers());
+            // Obtain the current CertPathChecker list
+            PKIXRevocationChecker revChecker = null;
+            List<PKIXCertPathChecker> checkerList =
+                    pkixParams.getCertPathCheckers();
 
-                // Find the first PKIXRevocationChecker in the list
-                for (PKIXCertPathChecker checker : checkerList) {
-                    if (checker instanceof PKIXRevocationChecker) {
-                        revChecker = (PKIXRevocationChecker)checker;
-                        break;
-                    }
+            // Find the first PKIXRevocationChecker in the list
+            for (PKIXCertPathChecker checker : checkerList) {
+                if (checker instanceof PKIXRevocationChecker) {
+                    revChecker = (PKIXRevocationChecker)checker;
+                    break;
                 }
+            }
 
-                // If we still haven't found one, make one
-                if (revChecker == null) {
+            // If we still haven't found one, make one, unless revocation
+            // is disabled - then there's no point adding OCSP responses.
+            // If a PKIXRevocationChecker was added externally, then we
+            // must add the responses since revocation checking is performed
+            // independent of the revocation flag (per the
+            // PKIXRevocationChecker spec).
+            if (revChecker == null) {
+                if (pkixParams.isRevocationEnabled()) {
                     revChecker = (PKIXRevocationChecker)CertPathValidator.
                             getInstance("PKIX").getRevocationChecker();
-                    checkerList.add(revChecker);
+                    createdRevChk = true;
+                } else {
+                    return;
                 }
-
-                // Each response in the list should be in parallel with
-                // the certificate list.  If there is a zero-length response
-                // treat it as being absent.  If the user has provided their
-                // own PKIXRevocationChecker with pre-populated responses, do
-                // not overwrite them with the ones from the handshake.
-                Map<X509Certificate, byte[]> responseMap =
-                        revChecker.getOcspResponses();
-                int limit = Integer.min(chain.length, responseList.size());
-                for (int idx = 0; idx < limit; idx++) {
-                    byte[] respBytes = responseList.get(idx);
-                    if (respBytes != null && respBytes.length > 0 &&
-                            !responseMap.containsKey(chain[idx])) {
-                        responseMap.put(chain[idx], respBytes);
-                    }
-                }
-
-                // Add the responses and push it all back into the
-                // PKIXBuilderParameters
-                revChecker.setOcspResponses(responseMap);
-                pkixParams.setCertPathCheckers(checkerList);
-            } catch (NoSuchAlgorithmException exc) {
-                // This should not occur, but if it does happen then
-                // stapled OCSP responses won't be part of revocation checking.
-                // Clients can still fall back to other means of revocation
-                // checking.
             }
+
+            // Each response in the list should be in parallel with
+            // the certificate list.  If there is a zero-length response
+            // treat it as being absent.  If the user has provided their
+            // own PKIXRevocationChecker with pre-populated responses, do
+            // not overwrite them with the ones from the handshake.
+            Map<X509Certificate, byte[]> responseMap =
+                    revChecker.getOcspResponses();
+            int limit = Integer.min(chain.length, responseList.size());
+            for (int idx = 0; idx < limit; idx++) {
+                byte[] respBytes = responseList.get(idx);
+                if (respBytes != null && respBytes.length > 0 &&
+                        !responseMap.containsKey(chain[idx])) {
+                    responseMap.put(chain[idx], respBytes);
+                }
+            }
+            revChecker.setOcspResponses(responseMap);
+
+            // Add the responses and push it all back into the
+            // PKIXBuilderParameters
+            if (createdRevChk) {
+                pkixParams.addCertPathChecker(revChecker);
+            } else {
+                pkixParams.setCertPathCheckers(checkerList);
+            }
+        } catch (NoSuchAlgorithmException exc) {
+            // This should not occur, but if it does happen then
+            // stapled OCSP responses won't be part of revocation checking.
+            // Clients can still fall back to other means of revocation
+            // checking.
         }
     }
 }

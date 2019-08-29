@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,7 +24,6 @@
 
 #include "precompiled.hpp"
 #include "classfile/javaClasses.inline.hpp"
-#include "gc/parallel/gcTaskManager.hpp"
 #include "gc/parallel/mutableSpace.hpp"
 #include "gc/parallel/parallelScavengeHeap.hpp"
 #include "gc/parallel/psOldGen.hpp"
@@ -240,52 +239,8 @@ void PSPromotionManager::register_preserved_marks(PreservedMarks* preserved_mark
   _preserved_marks = preserved_marks;
 }
 
-class ParRestoreGCTask : public GCTask {
-private:
-  const uint _id;
-  PreservedMarksSet* const _preserved_marks_set;
-  volatile size_t* const _total_size_addr;
-
-public:
-  virtual char* name() {
-    return (char*) "preserved mark restoration task";
-  }
-
-  virtual void do_it(GCTaskManager* manager, uint which){
-    _preserved_marks_set->get(_id)->restore_and_increment(_total_size_addr);
-  }
-
-  ParRestoreGCTask(uint id,
-                   PreservedMarksSet* preserved_marks_set,
-                   volatile size_t* total_size_addr)
-    : _id(id),
-      _preserved_marks_set(preserved_marks_set),
-      _total_size_addr(total_size_addr) { }
-};
-
-class PSRestorePreservedMarksTaskExecutor : public RestorePreservedMarksTaskExecutor {
-private:
-  GCTaskManager* _gc_task_manager;
-
-public:
-  PSRestorePreservedMarksTaskExecutor(GCTaskManager* gc_task_manager)
-      : _gc_task_manager(gc_task_manager) { }
-
-  void restore(PreservedMarksSet* preserved_marks_set,
-               volatile size_t* total_size_addr) {
-    // GCTask / GCTaskQueue are ResourceObjs
-    ResourceMark rm;
-
-    GCTaskQueue* q = GCTaskQueue::create();
-    for (uint i = 0; i < preserved_marks_set->num(); i += 1) {
-      q->enqueue(new ParRestoreGCTask(i, preserved_marks_set, total_size_addr));
-    }
-    _gc_task_manager->execute_and_wait(q);
-  }
-};
-
 void PSPromotionManager::restore_preserved_marks() {
-  PSRestorePreservedMarksTaskExecutor task_executor(PSScavenge::gc_task_manager());
+  SharedRestorePreservedMarksTaskExecutor task_executor(&ParallelScavengeHeap::heap()->workers());
   _preserved_marks_set->restore(&task_executor);
 }
 
@@ -390,7 +345,7 @@ void PSPromotionManager::process_array_chunk(oop old) {
   }
 }
 
-oop PSPromotionManager::oop_promotion_failed(oop obj, markOop obj_mark) {
+oop PSPromotionManager::oop_promotion_failed(oop obj, markWord obj_mark) {
   assert(_old_gen_is_full || PromotionFailureALot, "Sanity");
 
   // Attempt to CAS in the header.
