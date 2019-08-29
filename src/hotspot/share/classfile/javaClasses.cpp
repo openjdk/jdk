@@ -2594,10 +2594,6 @@ void java_lang_StackTraceElement::fill_in(Handle element,
         source_file = NULL;
         java_lang_Class::set_source_file(java_class(), source_file);
       }
-      if (ShowHiddenFrames) {
-        source = vmSymbols::unknown_class_name();
-        source_file = StringTable::intern(source, CHECK);
-      }
     }
     java_lang_StackTraceElement::set_fileName(element(), source_file);
 
@@ -2635,11 +2631,7 @@ void java_lang_StackTraceElement::decode(Handle mirror, int method_id, int versi
     // via the previous versions list.
     holder = holder->get_klass_version(version);
     assert(holder != NULL, "sanity check");
-    Symbol* source = holder->source_file_name();
-    if (ShowHiddenFrames && source == NULL) {
-      source = vmSymbols::unknown_class_name();
-    }
-    filename = source;
+    filename = holder->source_file_name();
     line_number = Backtrace::get_line_number(method, bci);
   }
 }

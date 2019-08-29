@@ -274,9 +274,6 @@ inline int Backtrace::get_line_number(const methodHandle& method, int bci) {
   } else {
     // Returns -1 if no LineNumberTable, and otherwise actual line number
     line_number = method->line_number_from_bci(bci);
-    if (line_number == -1 && ShowHiddenFrames) {
-      line_number = bci + 1000000;
-    }
   }
   return line_number;
 }
