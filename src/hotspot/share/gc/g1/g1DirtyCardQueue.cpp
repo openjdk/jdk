@@ -80,7 +80,7 @@ void G1DirtyCardQueue::handle_completed_buffer() {
   }
 }
 
-G1DirtyCardQueueSet::G1DirtyCardQueueSet(bool notify_when_complete) :
+G1DirtyCardQueueSet::G1DirtyCardQueueSet() :
   PtrQueueSet(),
   _cbl_mon(NULL),
   _completed_buffers_head(NULL),
@@ -88,7 +88,6 @@ G1DirtyCardQueueSet::G1DirtyCardQueueSet(bool notify_when_complete) :
   _num_cards(0),
   _process_cards_threshold(ProcessCardsThresholdNever),
   _process_completed_buffers(false),
-  _notify_when_complete(notify_when_complete),
   _max_cards(MaxCardsUnlimited),
   _max_cards_padding(0),
   _free_ids(NULL),
@@ -124,7 +123,7 @@ void G1DirtyCardQueueSet::handle_zero_index_for_thread(Thread* t) {
 }
 
 void G1DirtyCardQueueSet::enqueue_completed_buffer(BufferNode* cbn) {
-  MutexLocker x(_cbl_mon, Mutex::_no_safepoint_check_flag);
+  MonitorLocker ml(_cbl_mon, Mutex::_no_safepoint_check_flag);
   cbn->set_next(NULL);
   if (_completed_buffers_tail == NULL) {
     assert(_completed_buffers_head == NULL, "Well-formedness");
@@ -139,9 +138,7 @@ void G1DirtyCardQueueSet::enqueue_completed_buffer(BufferNode* cbn) {
   if (!process_completed_buffers() &&
       (num_cards() > process_cards_threshold())) {
     set_process_completed_buffers(true);
-    if (_notify_when_complete) {
-      _cbl_mon->notify_all();
-    }
+    ml.notify_all();
   }
   verify_num_cards();
 }
@@ -203,11 +200,10 @@ void G1DirtyCardQueueSet::abandon_completed_buffers() {
 }
 
 void G1DirtyCardQueueSet::notify_if_necessary() {
-  MutexLocker x(_cbl_mon, Mutex::_no_safepoint_check_flag);
+  MonitorLocker ml(_cbl_mon, Mutex::_no_safepoint_check_flag);
   if (num_cards() > process_cards_threshold()) {
     set_process_completed_buffers(true);
-    if (_notify_when_complete)
-      _cbl_mon->notify();
+    ml.notify_all();
   }
 }
 

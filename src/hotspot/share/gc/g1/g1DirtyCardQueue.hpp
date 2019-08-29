@@ -76,9 +76,6 @@ class G1DirtyCardQueueSet: public PtrQueueSet {
   size_t _process_cards_threshold;
   volatile bool _process_completed_buffers;
 
-  // If true, notify_all on _cbl_mon when the threshold is reached.
-  bool _notify_when_complete;
-
   void abandon_completed_buffers();
 
   // Apply the closure to the elements of "node" from it's index to
@@ -126,7 +123,7 @@ class G1DirtyCardQueueSet: public PtrQueueSet {
   jint _processed_buffers_rs_thread;
 
 public:
-  G1DirtyCardQueueSet(bool notify_when_complete = true);
+  G1DirtyCardQueueSet();
   ~G1DirtyCardQueueSet();
 
   void initialize(Monitor* cbl_mon,
