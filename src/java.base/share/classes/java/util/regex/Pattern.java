@@ -2888,12 +2888,12 @@ loop:   for(int x=0, offset=0; x<nCodePoints; x++, offset+=len) {
                 p = CharPredicates.forUnicodeBlock(name.substring(2));
             } else if (name.startsWith("Is")) {
                 // \p{IsGeneralCategory} and \p{IsScriptName}
-                name = name.substring(2);
-                p = CharPredicates.forUnicodeProperty(name);
+                String shortName = name.substring(2);
+                p = CharPredicates.forUnicodeProperty(shortName);
                 if (p == null)
-                    p = CharPredicates.forProperty(name);
+                    p = CharPredicates.forProperty(shortName);
                 if (p == null)
-                    p = CharPredicates.forUnicodeScript(name);
+                    p = CharPredicates.forUnicodeScript(shortName);
             } else {
                 if (has(UNICODE_CHARACTER_CLASS)) {
                     p = CharPredicates.forPOSIXName(name);
@@ -2902,7 +2902,7 @@ loop:   for(int x=0, offset=0; x<nCodePoints; x++, offset+=len) {
                     p = CharPredicates.forProperty(name);
             }
             if (p == null)
-                throw error("Unknown character property name {In/Is" + name + "}");
+                throw error("Unknown character property name {" + name + "}");
         }
         if (isComplement) {
             // it might be too expensive to detect if a complement of
