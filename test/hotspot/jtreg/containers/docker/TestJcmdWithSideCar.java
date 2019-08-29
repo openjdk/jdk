@@ -37,11 +37,12 @@
  * @build EventGeneratorLoop
  * @run driver TestJcmdWithSideCar
  */
-import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.Arrays;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.TimeUnit;
+import java.util.function.Consumer;
 import java.util.stream.Collectors;
 import jdk.test.lib.Container;
 import jdk.test.lib.Utils;
@@ -49,11 +50,13 @@ import jdk.test.lib.containers.docker.Common;
 import jdk.test.lib.containers.docker.DockerRunOptions;
 import jdk.test.lib.containers.docker.DockerTestUtils;
 import jdk.test.lib.process.OutputAnalyzer;
+import jdk.test.lib.process.ProcessTools;
 
 
 public class TestJcmdWithSideCar {
     private static final String IMAGE_NAME = Common.imageName("jfr-jcmd");
     private static final int TIME_TO_RUN_MAIN_PROCESS = (int) (30 * Utils.TIMEOUT_FACTOR); // seconds
+    private static final long TIME_TO_WAIT_FOR_MAIN_METHOD_START = 5 * 1000; // milliseconds
     private static final String MAIN_CONTAINER_NAME = "test-container-main";
 
     public static void main(String[] args) throws Exception {
@@ -66,36 +69,41 @@ public class TestJcmdWithSideCar {
         try {
             // Start the loop process in the "main" container, then run test cases
             // using a sidecar container.
-            DockerThread t = startMainContainer();
+            MainContainer mainContainer = new MainContainer();
+            mainContainer.start();
+            mainContainer.waitForMainMethodStart(TIME_TO_WAIT_FOR_MAIN_METHOD_START);
 
-            waitForMainContainerToStart(500, 10);
-            t.checkForErrors();
+            long mainProcPid = testCase01();
 
-            OutputAnalyzer jcmdOut = testCase01();
-            long mainProcPid = findProcess(jcmdOut, "EventGeneratorLoop");
-
-            t.assertIsAlive();
-            testCase02(mainProcPid);
+            // Excluding the test case below until JDK-8228850 is fixed
+            // JDK-8228850: jhsdb jinfo fails with ClassCastException:
+            // s.j.h.oops.TypeArray cannot be cast to s.j.h.oops.Instance
+            // mainContainer.assertIsAlive();
+            // testCase02(mainProcPid);
 
             // JCMD does not work in sidecar configuration, except for "jcmd -l".
             // Including this test case to assist in reproduction of the problem.
-            // t.assertIsAlive();
+            // mainContainer.assertIsAlive();
             // testCase03(mainProcPid);
 
-            t.join(TIME_TO_RUN_MAIN_PROCESS * 1000);
-            t.checkForErrors();
+            mainContainer.waitForAndCheck(TIME_TO_RUN_MAIN_PROCESS * 1000);
         } finally {
             DockerTestUtils.removeDockerImage(IMAGE_NAME);
         }
     }
 
 
-    // Run "jcmd -l" in a sidecar container and find a process that runs EventGeneratorLoop
-    private static OutputAnalyzer testCase01() throws Exception {
-        return runSideCar(MAIN_CONTAINER_NAME, "/jdk/bin/jcmd", "-l")
+    // Run "jcmd -l" in a sidecar container, find a target process.
+    private static long testCase01() throws Exception {
+        OutputAnalyzer out = runSideCar(MAIN_CONTAINER_NAME, "/jdk/bin/jcmd", "-l")
             .shouldHaveExitValue(0)
-            .shouldContain("sun.tools.jcmd.JCmd")
-            .shouldContain("EventGeneratorLoop");
+            .shouldContain("sun.tools.jcmd.JCmd");
+        long pid = findProcess(out, "EventGeneratorLoop");
+        if (pid == -1) {
+            throw new RuntimeException("Could not find specified process");
+        }
+
+        return pid;
     }
 
     // run jhsdb jinfo <PID> (jhsdb uses PTRACE)
@@ -117,57 +125,20 @@ public class TestJcmdWithSideCar {
             .shouldContain("Started recording");
     }
 
-    private static DockerThread startMainContainer() throws Exception {
-        // start "main" container (the observee)
-        DockerRunOptions opts = commonDockerOpts("EventGeneratorLoop");
-        opts.addDockerOpts("--cap-add=SYS_PTRACE")
-            .addDockerOpts("--name", MAIN_CONTAINER_NAME)
-            .addDockerOpts("-v", "/tmp")
-            .addJavaOpts("-XX:+UsePerfData")
-            .addClassOptions("" + TIME_TO_RUN_MAIN_PROCESS);
-        DockerThread t = new DockerThread(opts);
-        t.start();
-
-        return t;
-    }
-
-    private static void waitForMainContainerToStart(int delayMillis, int count) throws Exception {
-        boolean started = false;
-        for(int i=0; i < count; i++) {
-            try {
-                Thread.sleep(delayMillis);
-            } catch (InterruptedException e) {}
-            if (isMainContainerRunning()) {
-                started = true;
-                break;
-            }
-        }
-        if (!started) {
-            throw new RuntimeException("Main container did not start");
-        }
-    }
-
-    private static boolean isMainContainerRunning() throws Exception {
-        OutputAnalyzer out =
-            DockerTestUtils.execute(Container.ENGINE_COMMAND,
-                                    "ps", "--no-trunc",
-                                    "--filter", "name=" + MAIN_CONTAINER_NAME);
-        return out.getStdout().contains(MAIN_CONTAINER_NAME);
-    }
 
     // JCMD relies on the attach mechanism (com.sun.tools.attach),
     // which in turn relies on JVMSTAT mechanism, which puts its mapped
     // buffers in /tmp directory (hsperfdata_<user>). Thus, in sidecar
     // we mount /tmp via --volumes-from from the main container.
-    private static OutputAnalyzer runSideCar(String MAIN_CONTAINER_NAME, String whatToRun,
+    private static OutputAnalyzer runSideCar(String mainContainerName, String whatToRun,
                                              String... args) throws Exception {
         List<String> cmd = new ArrayList<>();
         String[] command = new String[] {
             Container.ENGINE_COMMAND, "run",
             "--tty=true", "--rm",
             "--cap-add=SYS_PTRACE", "--sig-proxy=true",
-            "--pid=container:" + MAIN_CONTAINER_NAME,
-            "--volumes-from", MAIN_CONTAINER_NAME,
+            "--pid=container:" + mainContainerName,
+            "--volumes-from", mainContainerName,
             IMAGE_NAME, whatToRun
         };
 
@@ -176,13 +147,14 @@ public class TestJcmdWithSideCar {
         return DockerTestUtils.execute(cmd);
     }
 
+    // Returns PID of a matching process, or -1 if not found.
     private static long findProcess(OutputAnalyzer out, String name) throws Exception {
         List<String> l = out.asLines()
             .stream()
             .filter(s -> s.contains(name))
             .collect(Collectors.toList());
         if (l.isEmpty()) {
-            throw new RuntimeException("Could not find matching process");
+            return -1;
         }
         String psInfo = l.get(0);
         System.out.println("findProcess(): psInfo: " + psInfo);
@@ -197,35 +169,75 @@ public class TestJcmdWithSideCar {
             .addJavaOpts("-cp", "/test-classes/");
     }
 
+    private static void sleep(long delay) {
+        try {
+            Thread.sleep(delay);
+        } catch (InterruptedException e) {
+            System.out.println("InterruptedException" + e.getMessage());
+        }
+    }
 
-    static class DockerThread extends Thread {
-        DockerRunOptions runOpts;
-        Exception exception;
 
-        DockerThread(DockerRunOptions opts) {
-            runOpts = opts;
+    static class MainContainer {
+        boolean mainMethodStarted;
+        Process p;
+
+        private Consumer<String> outputConsumer = s -> {
+            if (!mainMethodStarted && s.contains(EventGeneratorLoop.MAIN_METHOD_STARTED)) {
+                System.out.println("MainContainer: setting mainMethodStarted");
+                mainMethodStarted = true;
+            }
+        };
+
+        public Process start() throws Exception {
+            // start "main" container (the observee)
+            DockerRunOptions opts = commonDockerOpts("EventGeneratorLoop");
+            opts.addDockerOpts("--cap-add=SYS_PTRACE")
+                .addDockerOpts("--name", MAIN_CONTAINER_NAME)
+                .addDockerOpts("--volume", "/tmp")
+                .addDockerOpts("--volume", Paths.get(".").toAbsolutePath() + ":/workdir/")
+                .addJavaOpts("-XX:+UsePerfData")
+                .addClassOptions("" + TIME_TO_RUN_MAIN_PROCESS);
+
+            List<String> cmd = DockerTestUtils.buildJavaCommand(opts);
+            ProcessBuilder pb = new ProcessBuilder(cmd);
+            p = ProcessTools.startProcess("main-container-process",
+                                          pb,
+                                          outputConsumer);
+            return p;
         }
 
-        public void run() {
-            try {
-                DockerTestUtils.dockerRunJava(runOpts);
-            } catch (Exception e) {
-                exception = e;
-            }
+        public void waitForMainMethodStart(long howLong) {
+            long expiration = System.currentTimeMillis() + howLong;
+
+            do {
+                if (mainMethodStarted) {
+                    return;
+                }
+                sleep(200);
+            } while (System.currentTimeMillis() < expiration);
+
+            throw new RuntimeException("Timed out while waiting for main() to start");
         }
 
         public void assertIsAlive() throws Exception {
-            if (!isAlive()) {
+            if (!p.isAlive()) {
+                throw new RuntimeException("Main container process stopped unexpectedly, exit value: "
+                                           + p.exitValue());
+            }
+        }
+
+        public void waitFor(long timeout) throws Exception {
+            p.waitFor(timeout, TimeUnit.MILLISECONDS);
+        }
+
+        public void waitForAndCheck(long timeout) throws Exception {
+            waitFor(timeout);
+            if (p.exitValue() != 0) {
                 throw new RuntimeException("DockerThread stopped unexpectedly");
             }
         }
 
-        public void checkForErrors() throws Exception {
-            if (exception != null) {
-                throw new RuntimeException("DockerThread threw exception"
-                                           + exception.getMessage());
-            }
-        }
     }
 
 }
