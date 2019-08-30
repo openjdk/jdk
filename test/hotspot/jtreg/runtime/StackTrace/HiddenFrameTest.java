@@ -26,8 +26,8 @@
  * @bug 8216977
  * @summary Test null source file and negative line number from hidden frame produces correct output.
  * @library /test/lib
- * @run main/othervm -XX:+ShowHiddenFrames HiddenFrameTest visible
- * @run main/othervm -XX:-ShowHiddenFrames HiddenFrameTest hidden
+ * @run main/othervm -XX:+UnlockDiagnosticVMOptions -XX:+ShowHiddenFrames HiddenFrameTest visible
+ * @run main/othervm -XX:+UnlockDiagnosticVMOptions -XX:-ShowHiddenFrames HiddenFrameTest hidden
  */
 
 import jdk.test.lib.Asserts;
