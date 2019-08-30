@@ -666,7 +666,7 @@ BytecodeInterpreter::run(interpreterState istate) {
         BasicObjectLock* mon = &istate->monitor_base()[-1];
         mon->set_obj(rcvr);
         bool success = false;
-        uintptr_t epoch_mask_in_place = (uintptr_t)markWord::epoch_mask_in_place;
+        uintptr_t epoch_mask_in_place = markWord::epoch_mask_in_place;
         markWord mark = rcvr->mark();
         intptr_t hash = (intptr_t) markWord::no_hash;
         // Implies UseBiasedLocking.
@@ -675,8 +675,8 @@ BytecodeInterpreter::run(interpreterState istate) {
           uintptr_t anticipated_bias_locking_value;
           thread_ident = (uintptr_t)istate->thread();
           anticipated_bias_locking_value =
-            (((uintptr_t)rcvr->klass()->prototype_header().value() | thread_ident) ^ mark.value()) &
-            ~((uintptr_t) markWord::age_mask_in_place);
+            ((rcvr->klass()->prototype_header().value() | thread_ident) ^ mark.value()) &
+            ~(markWord::age_mask_in_place);
 
           if (anticipated_bias_locking_value == 0) {
             // Already biased towards this thread, nothing to do.
@@ -711,8 +711,8 @@ BytecodeInterpreter::run(interpreterState istate) {
           } else {
             // Try to bias towards thread in case object is anonymously biased.
             markWord header(mark.value() &
-                            ((uintptr_t)markWord::biased_lock_mask_in_place |
-                             (uintptr_t)markWord::age_mask_in_place | epoch_mask_in_place));
+                            (markWord::biased_lock_mask_in_place |
+                             markWord::age_mask_in_place | epoch_mask_in_place));
             if (hash != markWord::no_hash) {
               header = header.copy_set_hash(hash);
             }
@@ -851,7 +851,7 @@ BytecodeInterpreter::run(interpreterState istate) {
       assert(entry->obj() == NULL, "Frame manager didn't allocate the monitor");
       entry->set_obj(lockee);
       bool success = false;
-      uintptr_t epoch_mask_in_place = (uintptr_t)markWord::epoch_mask_in_place;
+      uintptr_t epoch_mask_in_place = markWord::epoch_mask_in_place;
 
       markWord mark = lockee->mark();
       intptr_t hash = (intptr_t) markWord::no_hash;
@@ -861,8 +861,8 @@ BytecodeInterpreter::run(interpreterState istate) {
         uintptr_t anticipated_bias_locking_value;
         thread_ident = (uintptr_t)istate->thread();
         anticipated_bias_locking_value =
-          (((uintptr_t)lockee->klass()->prototype_header().value() | thread_ident) ^ mark.value()) &
-          ~((uintptr_t) markWord::age_mask_in_place);
+          ((lockee->klass()->prototype_header().value() | thread_ident) ^ mark.value()) &
+          ~(markWord::age_mask_in_place);
 
         if  (anticipated_bias_locking_value == 0) {
           // already biased towards this thread, nothing to do
@@ -897,8 +897,8 @@ BytecodeInterpreter::run(interpreterState istate) {
           success = true;
         } else {
           // try to bias towards thread in case object is anonymously biased
-          markWord header(mark.value() & ((uintptr_t)markWord::biased_lock_mask_in_place |
-                                          (uintptr_t)markWord::age_mask_in_place | epoch_mask_in_place));
+          markWord header(mark.value() & (markWord::biased_lock_mask_in_place |
+                                          markWord::age_mask_in_place | epoch_mask_in_place));
           if (hash != markWord::no_hash) {
             header = header.copy_set_hash(hash);
           }
@@ -1791,7 +1791,7 @@ run:
         if (entry != NULL) {
           entry->set_obj(lockee);
           int success = false;
-          uintptr_t epoch_mask_in_place = (uintptr_t)markWord::epoch_mask_in_place;
+          uintptr_t epoch_mask_in_place = markWord::epoch_mask_in_place;
 
           markWord mark = lockee->mark();
           intptr_t hash = (intptr_t) markWord::no_hash;
@@ -1801,8 +1801,8 @@ run:
             uintptr_t anticipated_bias_locking_value;
             thread_ident = (uintptr_t)istate->thread();
             anticipated_bias_locking_value =
-              (((uintptr_t)lockee->klass()->prototype_header().value() | thread_ident) ^ mark.value()) &
-              ~((uintptr_t) markWord::age_mask_in_place);
+              ((lockee->klass()->prototype_header().value() | thread_ident) ^ mark.value()) &
+              ~(markWord::age_mask_in_place);
 
             if  (anticipated_bias_locking_value == 0) {
               // already biased towards this thread, nothing to do
@@ -1839,8 +1839,8 @@ run:
             }
             else {
               // try to bias towards thread in case object is anonymously biased
-              markWord header(mark.value() & ((uintptr_t)markWord::biased_lock_mask_in_place |
-                                              (uintptr_t)markWord::age_mask_in_place |
+              markWord header(mark.value() & (markWord::biased_lock_mask_in_place |
+                                              markWord::age_mask_in_place |
                                               epoch_mask_in_place));
               if (hash != markWord::no_hash) {
                 header = header.copy_set_hash(hash);

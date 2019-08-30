@@ -131,61 +131,54 @@ class markWord {
   uintptr_t value() const { return _value; }
 
   // Constants
-  enum { age_bits                 = 4,
-         lock_bits                = 2,
-         biased_lock_bits         = 1,
-         max_hash_bits            = BitsPerWord - age_bits - lock_bits - biased_lock_bits,
-         hash_bits                = max_hash_bits > 31 ? 31 : max_hash_bits,
-         cms_bits                 = LP64_ONLY(1) NOT_LP64(0),
-         epoch_bits               = 2
-  };
+  static const int age_bits                       = 4;
+  static const int lock_bits                      = 2;
+  static const int biased_lock_bits               = 1;
+  static const int max_hash_bits                  = BitsPerWord - age_bits - lock_bits - biased_lock_bits;
+  static const int hash_bits                      = max_hash_bits > 31 ? 31 : max_hash_bits;
+  static const int cms_bits                       = LP64_ONLY(1) NOT_LP64(0);
+  static const int epoch_bits                     = 2;
 
   // The biased locking code currently requires that the age bits be
   // contiguous to the lock bits.
-  enum { lock_shift               = 0,
-         biased_lock_shift        = lock_bits,
-         age_shift                = lock_bits + biased_lock_bits,
-         cms_shift                = age_shift + age_bits,
-         hash_shift               = cms_shift + cms_bits,
-         epoch_shift              = hash_shift
-  };
+  static const int lock_shift                     = 0;
+  static const int biased_lock_shift              = lock_bits;
+  static const int age_shift                      = lock_bits + biased_lock_bits;
+  static const int cms_shift                      = age_shift + age_bits;
+  static const int hash_shift                     = cms_shift + cms_bits;
+  static const int epoch_shift                    = hash_shift;
 
-  enum { lock_mask                = right_n_bits(lock_bits),
-         lock_mask_in_place       = lock_mask << lock_shift,
-         biased_lock_mask         = right_n_bits(lock_bits + biased_lock_bits),
-         biased_lock_mask_in_place= biased_lock_mask << lock_shift,
-         biased_lock_bit_in_place = 1 << biased_lock_shift,
-         age_mask                 = right_n_bits(age_bits),
-         age_mask_in_place        = age_mask << age_shift,
-         epoch_mask               = right_n_bits(epoch_bits),
-         epoch_mask_in_place      = epoch_mask << epoch_shift,
-         cms_mask                 = right_n_bits(cms_bits),
-         cms_mask_in_place        = cms_mask << cms_shift
-  };
+  static const uintptr_t lock_mask                = right_n_bits(lock_bits);
+  static const uintptr_t lock_mask_in_place       = lock_mask << lock_shift;
+  static const uintptr_t biased_lock_mask         = right_n_bits(lock_bits + biased_lock_bits);
+  static const uintptr_t biased_lock_mask_in_place= biased_lock_mask << lock_shift;
+  static const uintptr_t biased_lock_bit_in_place = 1 << biased_lock_shift;
+  static const uintptr_t age_mask                 = right_n_bits(age_bits);
+  static const uintptr_t age_mask_in_place        = age_mask << age_shift;
+  static const uintptr_t epoch_mask               = right_n_bits(epoch_bits);
+  static const uintptr_t epoch_mask_in_place      = epoch_mask << epoch_shift;
+  static const uintptr_t cms_mask                 = right_n_bits(cms_bits);
+  static const uintptr_t cms_mask_in_place        = cms_mask << cms_shift;
 
-  const static uintptr_t hash_mask = right_n_bits(hash_bits);
-  const static uintptr_t hash_mask_in_place = hash_mask << hash_shift;
+  static const uintptr_t hash_mask                = right_n_bits(hash_bits);
+  static const uintptr_t hash_mask_in_place       = hash_mask << hash_shift;
 
   // Alignment of JavaThread pointers encoded in object header required by biased locking
-  enum { biased_lock_alignment    = 2 << (epoch_shift + epoch_bits)
-  };
+  static const size_t biased_lock_alignment       = 2 << (epoch_shift + epoch_bits);
 
-  enum { locked_value             = 0,
-         unlocked_value           = 1,
-         monitor_value            = 2,
-         marked_value             = 3,
-         biased_lock_pattern      = 5
-  };
+  static const uintptr_t locked_value             = 0;
+  static const uintptr_t unlocked_value           = 1;
+  static const uintptr_t monitor_value            = 2;
+  static const uintptr_t marked_value             = 3;
+  static const uintptr_t biased_lock_pattern      = 5;
 
-  enum { no_hash                  = 0 };  // no hash value assigned
+  static const uintptr_t no_hash                  = 0 ;  // no hash value assigned
+  static const uintptr_t no_hash_in_place         = (address_word)no_hash << hash_shift;
+  static const uintptr_t no_lock_in_place         = unlocked_value;
 
-  enum { no_hash_in_place         = (address_word)no_hash << hash_shift,
-         no_lock_in_place         = unlocked_value
-  };
+  static const uint max_age                       = age_mask;
 
-  enum { max_age                  = age_mask };
-
-  enum { max_bias_epoch           = epoch_mask };
+  static const int max_bias_epoch                 = epoch_mask;
 
   // Creates a markWord with all bits set to zero.
   static markWord zero() { return markWord(uintptr_t(0)); }
@@ -201,7 +194,7 @@ class markWord {
   }
   JavaThread* biased_locker() const {
     assert(has_bias_pattern(), "should not call this otherwise");
-    return (JavaThread*) ((intptr_t) (mask_bits(value(), ~(biased_lock_mask_in_place | age_mask_in_place | epoch_mask_in_place))));
+    return (JavaThread*) mask_bits(value(), ~(biased_lock_mask_in_place | age_mask_in_place | epoch_mask_in_place));
   }
   // Indicates that the mark has the bias bit set but that it has not
   // yet been biased toward a particular thread
@@ -308,16 +301,16 @@ class markWord {
   }
   markWord displaced_mark_helper() const {
     assert(has_displaced_mark_helper(), "check");
-    intptr_t ptr = (value() & ~monitor_value);
+    uintptr_t ptr = (value() & ~monitor_value);
     return *(markWord*)ptr;
   }
   void set_displaced_mark_helper(markWord m) const {
     assert(has_displaced_mark_helper(), "check");
-    intptr_t ptr = (value() & ~monitor_value);
+    uintptr_t ptr = (value() & ~monitor_value);
     ((markWord*)ptr)->_value = m._value;
   }
   markWord copy_set_hash(intptr_t hash) const {
-    intptr_t tmp = value() & (~hash_mask_in_place);
+    uintptr_t tmp = value() & (~hash_mask_in_place);
     tmp |= ((hash & hash_mask) << hash_shift);
     return markWord(tmp);
   }
@@ -332,11 +325,11 @@ class markWord {
     return from_pointer(lock);
   }
   static markWord encode(ObjectMonitor* monitor) {
-    intptr_t tmp = (intptr_t) monitor;
+    uintptr_t tmp = (uintptr_t) monitor;
     return markWord(tmp | monitor_value);
   }
   static markWord encode(JavaThread* thread, uint age, int bias_epoch) {
-    intptr_t tmp = (intptr_t) thread;
+    uintptr_t tmp = (uintptr_t) thread;
     assert(UseBiasedLocking && ((tmp & (epoch_mask_in_place | age_mask_in_place | biased_lock_mask_in_place)) == 0), "misaligned JavaThread pointer");
     assert(age <= max_age, "age too large");
     assert(bias_epoch <= max_bias_epoch, "bias epoch too large");
@@ -353,7 +346,7 @@ class markWord {
   uint     age()           const { return mask_bits(value() >> age_shift, age_mask); }
   markWord set_age(uint v) const {
     assert((v & ~age_mask) == 0, "shouldn't overflow age field");
-    return markWord((value() & ~age_mask_in_place) | (((uintptr_t)v & age_mask) << age_shift));
+    return markWord((value() & ~age_mask_in_place) | ((v & age_mask) << age_shift));
   }
   markWord incr_age()      const { return age() == max_age ? markWord(_value) : set_age(age() + 1); }
 
@@ -400,7 +393,7 @@ class markWord {
 
 #ifdef _LP64
   static markWord cms_free_prototype() {
-    return markWord(((intptr_t)prototype().value() & ~cms_mask_in_place) |
+    return markWord((prototype().value() & ~cms_mask_in_place) |
                     ((cms_free_chunk_pattern & cms_mask) << cms_shift));
   }
   uintptr_t cms_encoding() const {
@@ -414,8 +407,8 @@ class markWord {
   size_t get_size() const       { return (size_t)(value() >> size_shift); }
   static markWord set_size_and_free(size_t size) {
     assert((size & ~size_mask) == 0, "shouldn't overflow size field");
-    return markWord(((intptr_t)cms_free_prototype().value() & ~size_mask_in_place) |
-                    (((intptr_t)size & size_mask) << size_shift));
+    return markWord((cms_free_prototype().value() & ~size_mask_in_place) |
+                    ((size & size_mask) << size_shift));
   }
 #endif // _LP64
 };

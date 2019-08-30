@@ -2225,8 +2225,9 @@ void PhaseMacroExpand::expand_lock_node(LockNode *lock) {
     Node* x_node = transform_later(new XorXNode(o_node, mark_node));
 
     // Get slow path - mark word does NOT match the value.
+    STATIC_ASSERT(markWord::age_mask_in_place <= INT_MAX);
     Node* not_biased_ctrl =  opt_bits_test(ctrl, region, 3, x_node,
-                                      (~markWord::age_mask_in_place), 0);
+                                      (~(int)markWord::age_mask_in_place), 0);
     // region->in(3) is set to fast path - the object is biased to the current thread.
     mem_phi->init_req(3, mem);
 
