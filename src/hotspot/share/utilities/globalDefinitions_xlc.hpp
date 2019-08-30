@@ -51,11 +51,13 @@
 
 #include <stdint.h>
 
-// __IBMCPP__ is not defined any more with xlclang++
-#ifdef __IBMCPP__
-#if __IBMCPP__ < 1200
-#error "xlc < 12 not supported"
-#endif
+// check for xlc16 or higher
+#ifdef __ibmxl_version__
+  #if __ibmxl_version__ < 16
+  #error "xlc < 16 not supported"
+  #endif
+#else
+  #error "xlc < 16 not supported, macro __ibmxl_version__ not found"
 #endif
 
 #ifndef _AIX

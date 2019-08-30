@@ -523,7 +523,7 @@ query_multipage_support_end:
       describe_pagesize(g_multipage_support.pthr_stack_pagesize));
   trcVerbose("Default shared memory page size: %s",
       describe_pagesize(g_multipage_support.shmpsize));
-  trcVerbose("Can use 64K pages dynamically with shared meory: %s",
+  trcVerbose("Can use 64K pages dynamically with shared memory: %s",
       (g_multipage_support.can_use_64K_pages ? "yes" :"no"));
   trcVerbose("Can use 16M pages dynamically with shared memory: %s",
       (g_multipage_support.can_use_16M_pages ? "yes" :"no"));
@@ -1440,7 +1440,7 @@ void os::print_memory_info(outputStream* st) {
     describe_pagesize(g_multipage_support.pthr_stack_pagesize));
   st->print_cr("  Default shared memory page size:        %s",
     describe_pagesize(g_multipage_support.shmpsize));
-  st->print_cr("  Can use 64K pages dynamically with shared meory:  %s",
+  st->print_cr("  Can use 64K pages dynamically with shared memory:  %s",
     (g_multipage_support.can_use_64K_pages ? "yes" :"no"));
   st->print_cr("  Can use 16M pages dynamically with shared memory: %s",
     (g_multipage_support.can_use_16M_pages ? "yes" :"no"));

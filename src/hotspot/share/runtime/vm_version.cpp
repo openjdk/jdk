@@ -249,9 +249,6 @@ const char* Abstract_VM_Version::internal_vm_info_string() {
         #define HOTSPOT_BUILD_COMPILER "clang " __VERSION__
     #elif defined(__GNUC__)
         #define HOTSPOT_BUILD_COMPILER "gcc " __VERSION__
-    #elif defined(__IBMCPP__)
-        #define HOTSPOT_BUILD_COMPILER "xlC " XSTR(__IBMCPP__)
-
     #else
       #define HOTSPOT_BUILD_COMPILER "unknown compiler"
     #endif

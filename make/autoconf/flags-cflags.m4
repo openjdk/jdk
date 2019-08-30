@@ -121,11 +121,7 @@ AC_DEFUN([FLAGS_SETUP_DEBUG_SYMBOLS],
     # -g0 enables debug symbols without disabling inlining.
     CFLAGS_DEBUG_SYMBOLS="-g0 -xs"
   elif test "x$TOOLCHAIN_TYPE" = xxlc; then
-    if test "x$XLC_USES_CLANG" = xtrue; then
-      CFLAGS_DEBUG_SYMBOLS="-g1"
-    else
-      CFLAGS_DEBUG_SYMBOLS="-g"
-    fi
+    CFLAGS_DEBUG_SYMBOLS="-g1"
   elif test "x$TOOLCHAIN_TYPE" = xmicrosoft; then
     CFLAGS_DEBUG_SYMBOLS="-Z7 -d2Zi+"
   fi

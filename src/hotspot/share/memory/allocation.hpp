@@ -230,9 +230,6 @@ class StackObj ALLOCATION_SUPER_CLASS_SPEC {
  private:
   void* operator new(size_t size) throw();
   void* operator new [](size_t size) throw();
-#ifdef __IBMCPP__
- public:
-#endif
   void  operator delete(void* p);
   void  operator delete [](void* p);
 };
