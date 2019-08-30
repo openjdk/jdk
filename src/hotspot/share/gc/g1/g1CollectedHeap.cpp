@@ -1687,8 +1687,7 @@ jint G1CollectedHeap::initialize() {
   // process_cards_threshold and max_cards are updated
   // later, based on the concurrent refinement object.
   G1BarrierSet::dirty_card_queue_set().initialize(DirtyCardQ_CBL_mon,
-                                                  &bs->dirty_card_queue_buffer_allocator(),
-                                                  true); // init_free_ids
+                                                  &bs->dirty_card_queue_buffer_allocator());
 
   // Create the hot card cache.
   _hot_card_cache = new G1HotCardCache(this);

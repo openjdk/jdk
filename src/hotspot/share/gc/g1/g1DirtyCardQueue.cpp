@@ -90,7 +90,7 @@ G1DirtyCardQueueSet::G1DirtyCardQueueSet() :
   _process_completed_buffers(false),
   _max_cards(MaxCardsUnlimited),
   _max_cards_padding(0),
-  _free_ids(NULL),
+  _free_ids(0, num_par_ids()),
   _processed_buffers_mut(0),
   _processed_buffers_rs_thread(0)
 {
@@ -99,7 +99,6 @@ G1DirtyCardQueueSet::G1DirtyCardQueueSet() :
 
 G1DirtyCardQueueSet::~G1DirtyCardQueueSet() {
   abandon_completed_buffers();
-  delete _free_ids;
 }
 
 // Determines how many mutator threads can process the buffers in parallel.
@@ -108,14 +107,10 @@ uint G1DirtyCardQueueSet::num_par_ids() {
 }
 
 void G1DirtyCardQueueSet::initialize(Monitor* cbl_mon,
-                                     BufferNode::Allocator* allocator,
-                                     bool init_free_ids) {
+                                     BufferNode::Allocator* allocator) {
   PtrQueueSet::initialize(allocator);
   assert(_cbl_mon == NULL, "Init order issue?");
   _cbl_mon = cbl_mon;
-  if (init_free_ids) {
-    _free_ids = new G1FreeIdSet(0, num_par_ids());
-  }
 }
 
 void G1DirtyCardQueueSet::handle_zero_index_for_thread(Thread* t) {
@@ -286,12 +281,10 @@ bool G1DirtyCardQueueSet::process_or_enqueue_completed_buffer(BufferNode* node) 
 }
 
 bool G1DirtyCardQueueSet::mut_process_buffer(BufferNode* node) {
-  guarantee(_free_ids != NULL, "must be");
-
-  uint worker_i = _free_ids->claim_par_id(); // temporarily claim an id
+  uint worker_id = _free_ids.claim_par_id(); // temporarily claim an id
   G1RefineCardConcurrentlyClosure cl;
-  bool result = apply_closure_to_buffer(&cl, node, worker_i);
-  _free_ids->release_par_id(worker_i); // release the id
+  bool result = apply_closure_to_buffer(&cl, node, worker_id);
+  _free_ids.release_par_id(worker_id); // release the id
 
   if (result) {
     assert_fully_consumed(node, buffer_size());

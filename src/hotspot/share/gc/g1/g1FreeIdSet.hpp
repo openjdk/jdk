@@ -25,7 +25,6 @@
 #ifndef SHARE_GC_G1_G1FREEIDSET_HPP
 #define SHARE_GC_G1_G1FREEIDSET_HPP
 
-#include "memory/allocation.hpp"
 #include "runtime/semaphore.hpp"
 #include "utilities/globalDefinitions.hpp"
 
@@ -34,7 +33,7 @@
 // contiguous range from 'start' to 'start + size'.  Used to obtain a
 // distinct worker_id value for a mutator thread that doesn't normally
 // have such an id.
-class G1FreeIdSet : public CHeapObj<mtGC> {
+class G1FreeIdSet {
   Semaphore _sem;
   uint* _next;
   uint _start;

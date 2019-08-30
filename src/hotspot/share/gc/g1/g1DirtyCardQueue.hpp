@@ -25,12 +25,12 @@
 #ifndef SHARE_GC_G1_G1DIRTYCARDQUEUE_HPP
 #define SHARE_GC_G1_G1DIRTYCARDQUEUE_HPP
 
+#include "gc/g1/g1FreeIdSet.hpp"
 #include "gc/shared/ptrQueue.hpp"
 #include "memory/allocation.hpp"
 
 class G1CardTableEntryClosure;
 class G1DirtyCardQueueSet;
-class G1FreeIdSet;
 class G1RedirtyCardsQueueSet;
 class Thread;
 class Monitor;
@@ -115,7 +115,7 @@ class G1DirtyCardQueueSet: public PtrQueueSet {
   size_t _max_cards_padding;
   static const size_t MaxCardsUnlimited = SIZE_MAX;
 
-  G1FreeIdSet* _free_ids;
+  G1FreeIdSet _free_ids;
 
   // The number of completed buffers processed by mutator and rs thread,
   // respectively.
@@ -126,9 +126,7 @@ public:
   G1DirtyCardQueueSet();
   ~G1DirtyCardQueueSet();
 
-  void initialize(Monitor* cbl_mon,
-                  BufferNode::Allocator* allocator,
-                  bool init_free_ids = false);
+  void initialize(Monitor* cbl_mon, BufferNode::Allocator* allocator);
 
   // The number of parallel ids that can be claimed to allow collector or
   // mutator threads to do card-processing work.
