@@ -21,8 +21,8 @@
  * questions.
  */
 
-#ifndef OS_CPU_LINUX_AARCH64_GC_Z_ZGLOBALS_LINUX_AARCH64_HPP
-#define OS_CPU_LINUX_AARCH64_GC_Z_ZGLOBALS_LINUX_AARCH64_HPP
+#ifndef CPU_X86_GC_Z_ZGLOBALS_X86_HPP
+#define CPU_X86_GC_Z_ZGLOBALS_X86_HPP
 
 //
 // Page Allocation Tiers
@@ -48,4 +48,4 @@ uintptr_t    ZPlatformAddressBase();
 size_t       ZPlatformAddressOffsetBits();
 size_t       ZPlatformAddressMetadataShift();
 
-#endif // OS_CPU_LINUX_AARCH64_GC_Z_ZGLOBALS_LINUX_AARCH64_HPP
+#endif // CPU_X86_GC_Z_ZGLOBALS_X86_HPP

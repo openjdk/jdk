@@ -26,7 +26,7 @@
 
 #include "utilities/globalDefinitions.hpp"
 #include "utilities/macros.hpp"
-#include OS_CPU_HEADER(gc/z/zGlobals)
+#include CPU_HEADER(gc/z/zGlobals)
 
 // Collector name
 const char* const ZName                         = "The Z Garbage Collector";
