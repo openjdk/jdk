@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -38,7 +38,9 @@ public class ReuseBuf {
         DatagramSocket ds;
         public ServerThread() {
             try {
-                ds = new DatagramSocket();
+                InetAddress local = InetAddress.getLocalHost();
+                InetSocketAddress bindaddr = new InetSocketAddress(local, 0);
+                ds = new DatagramSocket(bindaddr);
                 port = ds.getLocalPort();
             } catch (Exception e) {
                 throw new RuntimeException(e.getMessage());
@@ -68,7 +70,9 @@ public class ReuseBuf {
     public static void main(String args[]) throws Exception {
         ServerThread st = new ServerThread();
         st.start();
-        DatagramSocket ds = new DatagramSocket();
+        InetAddress local = InetAddress.getLocalHost();
+        InetSocketAddress bindaddr = new InetSocketAddress(local, 0);
+        DatagramSocket ds = new DatagramSocket(bindaddr);
         byte b[] = new byte[100];
         DatagramPacket dp = new DatagramPacket(b,b.length);
         for (int i = 0; i < msgs.length; i++) {
