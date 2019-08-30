@@ -2178,6 +2178,9 @@ bool ConnectionGraph::not_global_escape(Node *n) {
     return false;
   }
   PointsToNode* ptn = ptnode_adr(idx);
+  if (ptn == NULL) {
+    return false; // not in congraph (e.g. ConI)
+  }
   PointsToNode::EscapeState es = ptn->escape_state();
   // If we have already computed a value, return it.
   if (es >= PointsToNode::GlobalEscape)
