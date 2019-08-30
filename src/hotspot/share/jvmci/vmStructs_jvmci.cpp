@@ -544,11 +544,10 @@
   declare_constant(JumpData::taken_off_set)                               \
   declare_constant(JumpData::displacement_off_set)                        \
                                                                           \
-  declare_preprocessor_constant("JVMCIEnv::ok",                   JVMCI::ok)                      \
-  declare_preprocessor_constant("JVMCIEnv::dependencies_failed",  JVMCI::dependencies_failed)     \
-  declare_preprocessor_constant("JVMCIEnv::dependencies_invalid", JVMCI::dependencies_invalid)    \
-  declare_preprocessor_constant("JVMCIEnv::cache_full",           JVMCI::cache_full)              \
-  declare_preprocessor_constant("JVMCIEnv::code_too_large",       JVMCI::code_too_large)          \
+  declare_preprocessor_constant("JVMCI::ok",                   JVMCI::ok)                      \
+  declare_preprocessor_constant("JVMCI::dependencies_failed",  JVMCI::dependencies_failed)     \
+  declare_preprocessor_constant("JVMCI::cache_full",           JVMCI::cache_full)              \
+  declare_preprocessor_constant("JVMCI::code_too_large",       JVMCI::code_too_large)          \
   declare_constant(JVMCIRuntime::none)                                    \
   declare_constant(JVMCIRuntime::by_holder)                               \
   declare_constant(JVMCIRuntime::by_full_signature)                       \

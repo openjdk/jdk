@@ -351,11 +351,10 @@ class HotSpotVMConfig extends HotSpotVMConfigAccess {
     final int vmIntrinsicLinkToSpecial = getConstant("vmIntrinsics::_linkToSpecial", Integer.class);
     final int vmIntrinsicLinkToInterface = getConstant("vmIntrinsics::_linkToInterface", Integer.class);
 
-    final int codeInstallResultOk = getConstant("JVMCIEnv::ok", Integer.class);
-    final int codeInstallResultDependenciesFailed = getConstant("JVMCIEnv::dependencies_failed", Integer.class);
-    final int codeInstallResultDependenciesInvalid = getConstant("JVMCIEnv::dependencies_invalid", Integer.class);
-    final int codeInstallResultCacheFull = getConstant("JVMCIEnv::cache_full", Integer.class);
-    final int codeInstallResultCodeTooLarge = getConstant("JVMCIEnv::code_too_large", Integer.class);
+    final int codeInstallResultOk = getConstant("JVMCI::ok", Integer.class);
+    final int codeInstallResultDependenciesFailed = getConstant("JVMCI::dependencies_failed", Integer.class);
+    final int codeInstallResultCacheFull = getConstant("JVMCI::cache_full", Integer.class);
+    final int codeInstallResultCodeTooLarge = getConstant("JVMCI::code_too_large", Integer.class);
 
     String getCodeInstallResultDescription(int codeInstallResult) {
         if (codeInstallResult == codeInstallResultOk) {
@@ -363,9 +362,6 @@ class HotSpotVMConfig extends HotSpotVMConfigAccess {
         }
         if (codeInstallResult == codeInstallResultDependenciesFailed) {
             return "dependencies failed";
-        }
-        if (codeInstallResult == codeInstallResultDependenciesInvalid) {
-            return "dependencies invalid";
         }
         if (codeInstallResult == codeInstallResultCacheFull) {
             return "code cache is full";

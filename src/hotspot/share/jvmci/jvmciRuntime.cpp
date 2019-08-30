@@ -1310,21 +1310,13 @@ JVMCI::CodeInstallResult JVMCIRuntime::validate_compile_task_dependencies(Depend
     return JVMCI::dependencies_failed;
   }
 
-  // Dependencies must be checked when the system dictionary changes
-  // or if we don't know whether it has changed (i.e., compile_state == NULL).
   CompileTask* task = compile_state == NULL ? NULL : compile_state->task();
   Dependencies::DepType result = dependencies->validate_dependencies(task, failure_detail);
   if (result == Dependencies::end_marker) {
     return JVMCI::ok;
   }
 
-  if (!Dependencies::is_klass_type(result) || compile_state == NULL) {
-    return JVMCI::dependencies_failed;
-  }
-  // The dependencies were invalid at the time of installation
-  // without any intervening modification of the system
-  // dictionary.  That means they were invalidly constructed.
-  return JVMCI::dependencies_invalid;
+  return JVMCI::dependencies_failed;
 }
 
 // Reports a pending exception and exits the VM.
