@@ -125,8 +125,6 @@ G1GCPhaseTimes::G1GCPhaseTimes(STWGCTimer* gc_timer, uint max_gc_threads) :
   _opt_scan_hr_used_memory = new WorkerDataArray<size_t>(max_gc_threads, "Used Memory:");
   _gc_par_phases[OptScanHR]->link_thread_work_items(_opt_scan_hr_used_memory, ScanHRUsedMemory);
 
-  _merge_lb_processed_buffers = new WorkerDataArray<size_t>(max_gc_threads, "Processed Buffers:");
-  _gc_par_phases[MergeLB]->link_thread_work_items(_merge_lb_processed_buffers, MergeLBProcessedBuffers);
   _merge_lb_dirty_cards = new WorkerDataArray<size_t>(max_gc_threads, "Dirty Cards:");
   _gc_par_phases[MergeLB]->link_thread_work_items(_merge_lb_dirty_cards, MergeLBDirtyCards);
   _merge_lb_skipped_cards = new WorkerDataArray<size_t>(max_gc_threads, "Skipped Cards:");

@@ -1948,12 +1948,8 @@ void G1CollectedHeap::iterate_hcc_closure(G1CardTableEntryClosure* cl, uint work
 
 void G1CollectedHeap::iterate_dirty_card_closure(G1CardTableEntryClosure* cl, uint worker_i) {
   G1DirtyCardQueueSet& dcqs = G1BarrierSet::dirty_card_queue_set();
-  size_t n_completed_buffers = 0;
-  while (dcqs.apply_closure_during_gc(cl, worker_i)) {
-    n_completed_buffers++;
-  }
+  while (dcqs.apply_closure_during_gc(cl, worker_i)) {}
   assert(dcqs.num_cards() == 0, "Completed buffers exist!");
-  phase_times()->record_thread_work_item(G1GCPhaseTimes::MergeLB, worker_i, n_completed_buffers, G1GCPhaseTimes::MergeLBProcessedBuffers);
 }
 
 // Computes the sum of the storage used by the various regions.
