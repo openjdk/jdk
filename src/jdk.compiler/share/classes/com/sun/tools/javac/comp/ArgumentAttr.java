@@ -136,7 +136,7 @@ public class ArgumentAttr extends JCTree.Visitor {
      */
     void setResult(JCExpression tree, Type type) {
         result = type;
-        if (env.info.isSpeculative) {
+        if (env.info.attributionMode == DeferredAttr.AttributionMode.SPECULATIVE) {
             //if we are in a speculative branch we can save the type in the tree itself
             //as there's no risk of polluting the original tree.
             tree.type = result;
@@ -365,7 +365,7 @@ public class ArgumentAttr extends JCTree.Visitor {
                 speculativeTypes.put(resultInfo, t);
                 return t;
             } else {
-                if (!env.info.isSpeculative) {
+                if (!env.info.attributionMode.isSpeculative) {
                     argumentTypeCache.remove(new UniquePos(dt.tree));
                 }
                 return deferredAttr.basicCompleter.complete(dt, resultInfo, deferredAttrContext);

@@ -26,11 +26,12 @@
 package com.sun.tools.javac.comp;
 
 import java.util.ArrayDeque;
+import java.util.Arrays;
 import java.util.EnumSet;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Queue;
-import java.util.function.Predicate;
+import java.util.stream.Collectors;
 
 import com.sun.source.tree.LambdaExpressionTree;
 import com.sun.source.tree.NewClassTree;
@@ -42,6 +43,7 @@ import com.sun.tools.javac.code.Symbol.ClassSymbol;
 import com.sun.tools.javac.code.Type;
 import com.sun.tools.javac.code.Types;
 import com.sun.tools.javac.comp.ArgumentAttr.LocalCacheContext;
+import com.sun.tools.javac.comp.DeferredAttr.AttributionMode;
 import com.sun.tools.javac.resources.CompilerProperties.Warnings;
 import com.sun.tools.javac.tree.JCTree;
 import com.sun.tools.javac.tree.JCTree.JCBlock;
@@ -446,7 +448,7 @@ public class Analyzer {
      */
     Env<AttrContext> copyEnvIfNeeded(JCTree tree, Env<AttrContext> env) {
         if (!analyzerModes.isEmpty() &&
-                !env.info.isSpeculative &&
+                !env.info.attributionMode.isSpeculative &&
                 TreeInfo.isStatement(tree) &&
                 !tree.hasTag(LABELLED)) {
             Env<AttrContext> analyzeEnv =
@@ -562,10 +564,14 @@ public class Analyzer {
 
             //TODO: to further refine the analysis, try all rewriting combinations
             deferredAttr.attribSpeculative(treeToAnalyze, rewriting.env, attr.statInfo, new TreeRewriter(rewriting),
-                    t -> rewriting.diagHandler(), argumentAttr.withLocalCacheContext());
+                    t -> rewriting.diagHandler(), AttributionMode.ANALYZER, argumentAttr.withLocalCacheContext());
             rewriting.analyzer.process(rewriting.oldTree, rewriting.replacement, rewriting.erroneous);
         } catch (Throwable ex) {
-            Assert.error("Analyzer error when processing: " + rewriting.originalTree);
+            Assert.error("Analyzer error when processing: " +
+                         rewriting.originalTree + ":" + ex.toString() + "\n" +
+                         Arrays.stream(ex.getStackTrace())
+                               .map(se -> se.toString())
+                               .collect(Collectors.joining("\n")));
         } finally {
             log.useSource(prevSource.getFile());
             localCacheContext.leave();
@@ -626,6 +632,11 @@ public class Analyzer {
         @Override
         public void visitBlock(JCBlock tree) {
             //do nothing (prevents seeing same stuff twice)
+        }
+
+        @Override
+        public void visitLambda(JCLambda tree) {
+            //do nothing (prevents seeing same stuff in lambda expression twice)
         }
 
         @Override

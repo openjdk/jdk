@@ -481,25 +481,28 @@ public class DeferredAttr extends JCTree.Visitor {
      */
     JCTree attribSpeculative(JCTree tree, Env<AttrContext> env, ResultInfo resultInfo) {
         return attribSpeculative(tree, env, resultInfo, treeCopier,
-                (newTree)->new DeferredAttrDiagHandler(log, newTree), null);
+                (newTree)->new DeferredAttrDiagHandler(log, newTree), AttributionMode.SPECULATIVE, null);
     }
 
     JCTree attribSpeculative(JCTree tree, Env<AttrContext> env, ResultInfo resultInfo, LocalCacheContext localCache) {
         return attribSpeculative(tree, env, resultInfo, treeCopier,
-                (newTree)->new DeferredAttrDiagHandler(log, newTree), localCache);
+                (newTree)->new DeferredAttrDiagHandler(log, newTree), AttributionMode.SPECULATIVE, localCache);
     }
 
     <Z> JCTree attribSpeculative(JCTree tree, Env<AttrContext> env, ResultInfo resultInfo, TreeCopier<Z> deferredCopier,
-                                 Function<JCTree, DeferredDiagnosticHandler> diagHandlerCreator,
+                                 Function<JCTree, DeferredDiagnosticHandler> diagHandlerCreator, AttributionMode attributionMode,
                                  LocalCacheContext localCache) {
         final JCTree newTree = deferredCopier.copy(tree);
         Env<AttrContext> speculativeEnv = env.dup(newTree, env.info.dup(env.info.scope.dupUnshared(env.info.scope.owner)));
-        speculativeEnv.info.isSpeculative = true;
+        speculativeEnv.info.attributionMode = attributionMode;
         Log.DeferredDiagnosticHandler deferredDiagnosticHandler = diagHandlerCreator.apply(newTree);
+        int nwarnings = log.nwarnings;
+        log.nwarnings = 0;
         try {
             attr.attribTree(newTree, speculativeEnv, resultInfo);
             return newTree;
         } finally {
+            log.nwarnings += nwarnings;
             enter.unenter(env.toplevel, newTree);
             log.popDiagnosticHandler(deferredDiagnosticHandler);
             if (localCache != null) {
@@ -1285,5 +1288,27 @@ public class DeferredAttr extends JCTree.Visitor {
                 stuck = true;
             }
         }
+    }
+
+    /**
+     * Mode of attribution (used in AttrContext).
+     */
+    enum AttributionMode {
+        /**Normal, non-speculative, attribution.*/
+        FULL(false),
+        /**Speculative attribution on behalf of an Analyzer.*/
+        ANALYZER(true),
+        /**Speculative attribution.*/
+        SPECULATIVE(true);
+
+        AttributionMode(boolean isSpeculative) {
+            this.isSpeculative = isSpeculative;
+        }
+
+        boolean isSpeculative() {
+            return isSpeculative;
+        }
+
+        final boolean isSpeculative;
     }
 }
