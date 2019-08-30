@@ -623,7 +623,6 @@ PreGenGCValues ParallelScavengeHeap::get_pre_gc_values() const {
   const PSYoungGen* const young = young_gen();
   const MutableSpace* const eden = young->eden_space();
   const MutableSpace* const from = young->from_space();
-  const MutableSpace* const to = young->to_space();
   const PSOldGen* const old = old_gen();
 
   return PreGenGCValues(young->used_in_bytes(),

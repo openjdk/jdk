@@ -28,6 +28,7 @@
 #include "gc/shared/collectedHeap.hpp"
 #include "gc/shared/generation.hpp"
 #include "gc/shared/oopStorageParState.hpp"
+#include "gc/shared/preGCValues.hpp"
 #include "gc/shared/softRefGenPolicy.hpp"
 
 class AdaptiveSizePolicy;
@@ -99,6 +100,8 @@ private:
 
   // Initialize ("weak") refs processing support
   void ref_processing_init();
+
+  PreGenGCValues get_pre_gc_values() const;
 
 protected:
 
@@ -335,7 +338,7 @@ public:
   // Used to print information about locations in the hs_err file.
   virtual bool print_location(outputStream* st, void* addr) const;
 
-  void print_heap_change(size_t young_prev_used, size_t old_prev_used) const;
+  void print_heap_change(const PreGenGCValues& pre_gc_values) const;
 
   // The functions below are helper functions that a subclass of
   // "CollectedHeap" can use in the implementation of its virtual
