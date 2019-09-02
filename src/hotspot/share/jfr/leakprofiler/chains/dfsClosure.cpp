@@ -178,8 +178,7 @@ void DFSClosure::do_oop(narrowOop* ref) {
 
 void DFSClosure::do_root(const oop* ref) {
   assert(ref != NULL, "invariant");
-  assert(is_aligned(ref, HeapWordSize), "invariant");
-  const oop pointee = *ref;
+  const oop pointee = UnifiedOop::dereference(ref);
   assert(pointee != NULL, "invariant");
   closure_impl(ref, pointee);
 }

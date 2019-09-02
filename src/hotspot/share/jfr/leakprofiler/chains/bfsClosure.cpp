@@ -230,8 +230,6 @@ void BFSClosure::do_oop(narrowOop* ref) {
 
 void BFSClosure::do_root(const oop* ref) {
   assert(ref != NULL, "invariant");
-  assert(is_aligned(ref, HeapWordSize), "invariant");
-  assert(*ref != NULL, "invariant");
   if (!_edge_queue->is_full()) {
     _edge_queue->add(NULL, ref);
   }
