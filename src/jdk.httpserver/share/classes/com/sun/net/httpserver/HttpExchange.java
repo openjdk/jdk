@@ -64,7 +64,7 @@ import java.util.*;
  * @since 1.6
  */
 
-public abstract class HttpExchange {
+public abstract class HttpExchange implements AutoCloseable {
 
     protected HttpExchange () {
     }
