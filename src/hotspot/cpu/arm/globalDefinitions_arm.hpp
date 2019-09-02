@@ -45,6 +45,9 @@ const bool HaveVFP = true;
 #define SUPPORTS_NATIVE_CX8
 #endif
 
+// arm32 is not specified as multi-copy-atomic
+// So we must not #define CPU_MULTI_COPY_ATOMIC
+
 #define STUBROUTINES_MD_HPP    "stubRoutines_arm.hpp"
 #define INTERP_MASM_MD_HPP     "interp_masm_arm.hpp"
 #define TEMPLATETABLE_MD_HPP   "templateTable_arm.hpp"

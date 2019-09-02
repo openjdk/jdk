@@ -317,29 +317,28 @@ class CheckpointWriteOp {
 };
 
 typedef CheckpointWriteOp<JfrCheckpointMspace::Type> WriteOperation;
-typedef MutexedWriteOp<WriteOperation> MutexedWriteOperation;
 typedef ReleaseOp<JfrCheckpointMspace> CheckpointReleaseOperation;
-typedef CompositeOperation<MutexedWriteOperation, CheckpointReleaseOperation> CheckpointWriteOperation;
 
-static size_t write_mspace_exclusive(JfrCheckpointMspace* mspace, JfrChunkWriter& chunkwriter) {
-  Thread* const thread = Thread::current();
+template <template <typename> class WriterHost, template <typename, typename> class CompositeOperation>
+static size_t write_mspace(JfrCheckpointMspace* mspace, JfrChunkWriter& chunkwriter) {
+  assert(mspace != NULL, "invariant");
   WriteOperation wo(chunkwriter);
-  MutexedWriteOperation mwo(wo);
-  CheckpointReleaseOperation cro(mspace, thread, false);
-  CheckpointWriteOperation cpwo(&mwo, &cro);
+  WriterHost<WriteOperation> wh(wo);
+  CheckpointReleaseOperation cro(mspace, Thread::current(), false);
+  CompositeOperation<WriterHost<WriteOperation>, CheckpointReleaseOperation> co(&wh, &cro);
   assert(mspace->is_full_empty(), "invariant");
-  process_free_list(cpwo, mspace);
+  process_free_list(co, mspace);
   return wo.processed();
 }
 
 size_t JfrCheckpointManager::write() {
-  const size_t processed = write_mspace_exclusive(_free_list_mspace, _chunkwriter);
+  const size_t processed = write_mspace<MutexedWriteOp, CompositeOperation>(_free_list_mspace, _chunkwriter);
   synchronize_epoch();
   return processed;
 }
 
 size_t JfrCheckpointManager::write_epoch_transition_mspace() {
-  return write_mspace_exclusive(_epoch_transition_mspace, _chunkwriter);
+  return write_mspace<ExclusiveOp, CompositeOperation>(_epoch_transition_mspace, _chunkwriter);
 }
 
 typedef DiscardOp<DefaultDiscarder<JfrBuffer> > DiscardOperation;
