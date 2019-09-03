@@ -28,7 +28,7 @@
 
 bool ShenandoahConcurrentRoots::can_do_concurrent_roots() {
   // Don't support traversal GC at this moment
-  return !ShenandoahHeap::heap()->is_concurrent_traversal_in_progress();
+  return !ShenandoahHeap::heap()->is_traversal_mode();
 }
 
 bool ShenandoahConcurrentRoots::should_do_concurrent_roots() {
