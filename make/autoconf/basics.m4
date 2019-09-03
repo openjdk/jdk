@@ -1134,6 +1134,8 @@ AC_DEFUN([BASIC_CHECK_TAR],
     TAR_TYPE="bsd"
   elif test "x$OPENJDK_BUILD_OS" = "xsolaris"; then
     TAR_TYPE="solaris"
+  elif test "x$OPENJDK_BUILD_OS" = "xaix"; then
+    TAR_TYPE="aix"
   fi
   AC_MSG_CHECKING([what type of tar was found])
   AC_MSG_RESULT([$TAR_TYPE])
@@ -1147,6 +1149,11 @@ AC_DEFUN([BASIC_CHECK_TAR],
       # When using gnu tar for Solaris targets, need to use compatibility mode
       TAR_CREATE_EXTRA_PARAM="--format=ustar"
     fi
+  elif test "x$TAR_TYPE" = "aix"; then
+    # -L InputList of aix tar: name of file listing the files and directories
+    # that need to be   archived or extracted
+    TAR_INCLUDE_PARAM="L"
+    TAR_SUPPORTS_TRANSFORM="false"
   else
     TAR_INCLUDE_PARAM="I"
     TAR_SUPPORTS_TRANSFORM="false"
