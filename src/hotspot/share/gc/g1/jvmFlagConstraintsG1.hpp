@@ -25,7 +25,7 @@
 #ifndef SHARE_GC_G1_JVMFLAGCONSTRAINTSG1_HPP
 #define SHARE_GC_G1_JVMFLAGCONSTRAINTSG1_HPP
 
-#include "runtime/globals.hpp"
+#include "runtime/flags/jvmFlag.hpp"
 #include "utilities/globalDefinitions.hpp"
 
 // G1 Flag Constraints

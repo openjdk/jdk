@@ -25,7 +25,7 @@
 #ifndef SHARE_GC_PARALLEL_JVMFLAGCONSTRAINTSPARALLEL_HPP
 #define SHARE_GC_PARALLEL_JVMFLAGCONSTRAINTSPARALLEL_HPP
 
-#include "runtime/globals.hpp"
+#include "runtime/flags/jvmFlag.hpp"
 #include "utilities/globalDefinitions.hpp"
 
 // Parallel Subconstraints

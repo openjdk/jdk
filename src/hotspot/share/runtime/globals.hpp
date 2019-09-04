@@ -2494,8 +2494,4 @@ ALL_FLAGS(DECLARE_DEVELOPER_FLAG,     \
           IGNORE_CONSTRAINT,          \
           IGNORE_WRITEABLE)
 
-// Extensions
-
-#include "runtime/globals_ext.hpp"
-
 #endif // SHARE_RUNTIME_GLOBALS_HPP

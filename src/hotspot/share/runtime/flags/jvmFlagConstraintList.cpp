@@ -269,8 +269,6 @@ void JVMFlagConstraintList::init(void) {
             EMIT_CONSTRAINT_CHECK,
             IGNORE_WRITEABLE)
 
-  EMIT_CONSTRAINTS_FOR_GLOBALS_EXT
-
   EMIT_CONSTRAINT_END
 }
 

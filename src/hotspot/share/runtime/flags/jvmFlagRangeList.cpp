@@ -334,8 +334,6 @@ void JVMFlagRangeList::init(void) {
             IGNORE_CONSTRAINT,
             IGNORE_WRITEABLE)
 
-  EMIT_RANGES_FOR_GLOBALS_EXT
-
   EMIT_RANGE_END
 }
 
