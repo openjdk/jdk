@@ -124,7 +124,7 @@ class ClassLoaderData : public CHeapObj<mtClass> {
   bool _modified_oops;             // Card Table Equivalent (YC/CMS support)
   bool _accumulated_modified_oops; // Mod Union Equivalent (CMS support)
 
-  s2 _keep_alive;          // if this CLD is kept alive.
+  int _keep_alive;         // if this CLD is kept alive.
                            // Used for unsafe anonymous classes and the boot class
                            // loader. _keep_alive does not need to be volatile or
                            // atomic since there is one unique CLD per unsafe anonymous class.
