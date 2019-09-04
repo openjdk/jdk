@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,12 +24,13 @@
 /*
  * @test
  * @key headful
- * @bug 8145896
+ * @bug 8145896 8194944
  * @summary JInternalFrame setMaximum before adding to desktop throws null pointer exception
  * @library ../../regtesthelpers
  * @build Util
  * @run main TestJInternalFrameMaximize
  */
+
 import java.awt.Point;
 import java.awt.Robot;
 import java.awt.event.ActionEvent;
@@ -55,18 +56,27 @@ public class TestJInternalFrameMaximize {
     private static JMenuItem menuItem;
     private static Robot robot;
     private static volatile String errorMessage = "";
+    private static volatile boolean isFrameShowing;
 
     public static void main(String[] args) throws Exception {
         robot = new Robot();
+        robot.setAutoDelay(100);
         UIManager.LookAndFeelInfo[] lookAndFeelArray
                 = UIManager.getInstalledLookAndFeels();
         for (UIManager.LookAndFeelInfo lookAndFeelItem : lookAndFeelArray) {
-            String lookAndFeelString = lookAndFeelItem.getClassName();
-            if (tryLookAndFeel(lookAndFeelString)) {
-                createUI();
+            try {
+                String lookAndFeelString = lookAndFeelItem.getClassName();
+                if (tryLookAndFeel(lookAndFeelString)) {
+                    createUI();
+                    robot.waitForIdle();
+                    blockTillDisplayed(frame);
+                    executeTest();
+                    robot.delay(1000);
+                }
+            } finally {
+                frame.dispose();
+                isFrameShowing = false;
                 robot.waitForIdle();
-                executeTest();
-                robot.delay(1000);
             }
         }
         if (!"".equals(errorMessage)) {
@@ -113,8 +123,6 @@ public class TestJInternalFrameMaximize {
                 } catch (PropertyVetoException ex) {
                 } catch (RuntimeException ex) {
                     errorMessage = "Test Failed";
-                } finally {
-                    frame.dispose();
                 }
             });
             menu.add(menuItem);
@@ -124,8 +132,21 @@ public class TestJInternalFrameMaximize {
         });
     }
 
-    private static void executeTest() throws Exception {
+    private static void blockTillDisplayed(JFrame frame) throws Exception {
+        while (!isFrameShowing) {
+            try {
+                SwingUtilities.invokeAndWait(()-> isFrameShowing = frame.isShowing());
+                if (!isFrameShowing) {
+                    Thread.sleep(1000);
+                }
+            } catch (InterruptedException ex) {
+            } catch (Exception ex) {
+                throw new RuntimeException(ex);
+            }
+        }
+    }
 
+    private static void executeTest() throws Exception {
         Point point = Util.getCenterPoint(menu);
         performMouseOperations(point);
         point = Util.getCenterPoint(menuItem);
