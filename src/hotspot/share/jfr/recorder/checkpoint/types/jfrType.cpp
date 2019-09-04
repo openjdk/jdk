@@ -56,10 +56,6 @@
 #include "opto/compile.hpp"
 #include "opto/node.hpp"
 #endif
-#if INCLUDE_G1GC
-#include "gc/g1/g1HeapRegionTraceType.hpp"
-#include "gc/g1/g1YCTypes.hpp"
-#endif
 
 // Requires a ResourceMark for get_thread_name/as_utf8
 class JfrCheckpointThreadClosure : public ThreadClosure {
@@ -188,15 +184,6 @@ void GCWhenConstant::serialize(JfrCheckpointWriter& writer) {
   }
 }
 
-void G1HeapRegionTypeConstant::serialize(JfrCheckpointWriter& writer) {
-  static const u4 nof_entries = G1HeapRegionTraceType::G1HeapRegionTypeEndSentinel;
-  writer.write_count(nof_entries);
-  for (u4 i = 0; i < nof_entries; ++i) {
-    writer.write_key(i);
-    writer.write(G1HeapRegionTraceType::to_string((G1HeapRegionTraceType::Type)i));
-  }
-}
-
 void GCThresholdUpdaterConstant::serialize(JfrCheckpointWriter& writer) {
   static const u4 nof_entries = MetaspaceGCThresholdUpdater::Last;
   writer.write_count(nof_entries);
@@ -222,17 +209,6 @@ void MetaspaceObjectTypeConstant::serialize(JfrCheckpointWriter& writer) {
     writer.write_key(i);
     writer.write(MetaspaceObj::type_name((MetaspaceObj::Type)i));
   }
-}
-
-void G1YCTypeConstant::serialize(JfrCheckpointWriter& writer) {
-#if INCLUDE_G1GC
-  static const u4 nof_entries = G1YCTypeEndSentinel;
-  writer.write_count(nof_entries);
-  for (u4 i = 0; i < nof_entries; ++i) {
-    writer.write_key(i);
-    writer.write(G1YCTypeHelper::to_string((G1YCType)i));
-  }
-#endif
 }
 
 static const char* reference_type_to_string(ReferenceType rt) {

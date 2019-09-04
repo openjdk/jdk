@@ -226,11 +226,9 @@ bool JfrTypeManager::initialize() {
   register_type(TYPE_GCCAUSE, false, true, new GCCauseConstant());
   register_type(TYPE_GCNAME, false, true, new GCNameConstant());
   register_type(TYPE_GCWHEN, false, true, new GCWhenConstant());
-  register_type(TYPE_G1HEAPREGIONTYPE, false, true, new G1HeapRegionTypeConstant());
   register_type(TYPE_GCTHRESHOLDUPDATER, false, true, new GCThresholdUpdaterConstant());
   register_type(TYPE_METADATATYPE, false, true, new MetadataTypeConstant());
   register_type(TYPE_METASPACEOBJECTTYPE, false, true, new MetaspaceObjectTypeConstant());
-  register_type(TYPE_G1YCTYPE, false, true, new G1YCTypeConstant());
   register_type(TYPE_REFERENCETYPE, false, true, new ReferenceTypeConstant());
   register_type(TYPE_NARROWOOPMODE, false, true, new NarrowOopModeConstant());
   register_type(TYPE_COMPILERPHASETYPE, false, true, new CompilerPhaseTypeConstant());

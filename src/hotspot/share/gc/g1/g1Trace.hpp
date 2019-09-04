@@ -48,6 +48,7 @@ class G1NewTracer : public YoungGCTracer {
 public:
   G1NewTracer() : YoungGCTracer(G1New) {}
 
+  void initialize();
   void report_yc_type(G1YCType type);
   void report_gc_end_impl(const Ticks& timestamp, TimePartitions* time_partitions);
   void report_evacuation_info(G1EvacuationInfo* info);
