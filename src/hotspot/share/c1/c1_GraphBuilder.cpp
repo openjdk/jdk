@@ -1467,11 +1467,12 @@ void GraphBuilder::method_return(Value x, bool ignore_return) {
     call_register_finalizer();
   }
 
+  // The conditions for a memory barrier are described in Parse::do_exits().
   bool need_mem_bar = false;
   if (method()->name() == ciSymbol::object_initializer_name() &&
-      (scope()->wrote_final() || (AlwaysSafeConstructors && scope()->wrote_fields())
-                              || (support_IRIW_for_not_multiple_copy_atomic_cpu && scope()->wrote_volatile())
-     )){
+       (scope()->wrote_final() ||
+         (AlwaysSafeConstructors && scope()->wrote_fields()) ||
+         (support_IRIW_for_not_multiple_copy_atomic_cpu && scope()->wrote_volatile()))) {
     need_mem_bar = true;
   }
 

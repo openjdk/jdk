@@ -979,15 +979,18 @@ void Parse::do_exits() {
   //    Rather than put a barrier on only those writes which are required
   //    to complete, we force all writes to complete.
   //
-  // 2. On PPC64, also add MemBarRelease for constructors which write
-  //    volatile fields. As support_IRIW_for_not_multiple_copy_atomic_cpu
-  //    is set on PPC64, no sync instruction is issued after volatile
-  //    stores. We want to guarantee the same behavior as on platforms
-  //    with total store order, although this is not required by the Java
-  //    memory model. So as with finals, we add a barrier here.
-  //
-  // 3. Experimental VM option is used to force the barrier if any field
+  // 2. Experimental VM option is used to force the barrier if any field
   //    was written out in the constructor.
+  //
+  // 3. On processors which are not CPU_MULTI_COPY_ATOMIC (e.g. PPC64),
+  //    support_IRIW_for_not_multiple_copy_atomic_cpu selects that
+  //    MemBarVolatile is used before volatile load instead of after volatile
+  //    store, so there's no barrier after the store.
+  //    We want to guarantee the same behavior as on platforms with total store
+  //    order, although this is not required by the Java memory model.
+  //    In this case, we want to enforce visibility of volatile field
+  //    initializations which are performed in constructors.
+  //    So as with finals, we add a barrier here.
   //
   // "All bets are off" unless the first publication occurs after a
   // normal return from the constructor.  We do not attempt to detect
@@ -995,9 +998,9 @@ void Parse::do_exits() {
   // exceptional returns, since they cannot publish normally.
   //
   if (method()->is_initializer() &&
-        (wrote_final() ||
-           PPC64_ONLY(wrote_volatile() ||)
-           (AlwaysSafeConstructors && wrote_fields()))) {
+       (wrote_final() ||
+         (AlwaysSafeConstructors && wrote_fields()) ||
+         (support_IRIW_for_not_multiple_copy_atomic_cpu && wrote_volatile()))) {
     _exits.insert_mem_bar(Op_MemBarRelease, alloc_with_final());
 
     // If Memory barrier is created for final fields write
