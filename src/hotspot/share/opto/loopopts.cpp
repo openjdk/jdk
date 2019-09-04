@@ -1191,6 +1191,22 @@ bool PhaseIdealLoop::can_split_if(Node* n_ctrl) {
   return true;
 }
 
+// Detect if the node is the inner strip-mined loop
+// Return: NULL if it's not the case, or the exit of outer strip-mined loop
+static Node* is_inner_of_stripmined_loop(const Node* out) {
+  Node* out_le = NULL;
+
+  if (out->is_CountedLoopEnd()) {
+      const CountedLoopNode* loop = out->as_CountedLoopEnd()->loopnode();
+
+      if (loop != NULL && loop->is_strip_mined()) {
+        out_le = loop->in(LoopNode::EntryControl)->as_OuterStripMinedLoop()->outer_loop_exit();
+      }
+  }
+
+  return out_le;
+}
+
 //------------------------------split_if_with_blocks_post----------------------
 // Do the real work in a non-recursive function.  CFG hackery wants to be
 // in the post-order, so it can dirty the I-DOM info and not use the dirtied
@@ -1324,6 +1340,15 @@ void PhaseIdealLoop::split_if_with_blocks_post(Node *n) {
       Node *dom = idom(prevdom);
       while (dom != cutoff) {
         if (dom->req() > 1 && dom->in(1) == bol && prevdom->in(0) == dom) {
+          // It's invalid to move control dependent data nodes in the inner
+          // strip-mined loop, because:
+          //  1) break validation of LoopNode::verify_strip_mined()
+          //  2) move code with side-effect in strip-mined loop
+          // Move to the exit of outer strip-mined loop in that case.
+          Node* out_le = is_inner_of_stripmined_loop(dom);
+          if (out_le != NULL) {
+            prevdom = out_le;
+          }
           // Replace the dominated test with an obvious true or false.
           // Place it on the IGVN worklist for later cleanup.
           C->set_major_progress();
