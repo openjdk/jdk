@@ -341,6 +341,9 @@ static char **getX11FontPath ()
      * cost us a little wasted effort upstream.
      */
     fontdirs = (char**)calloc(nPaths+1, sizeof(char*));
+    if (fontdirs == NULL) {
+        return NULL;
+    }
     pos = 0;
     for (i=0; i < nPaths; i++) {
         if (x11Path[i][0] != '/') {
@@ -420,6 +423,9 @@ static char* mergePaths(char **p1, char **p2, char **p3, jboolean noType1) {
     }
     totalLen = len1+len2+len3;
     fontdirs = (char**)calloc(totalLen, sizeof(char*));
+    if (fontdirs == NULL) {
+        return NULL;
+    }
 
     for (i=0; i < len1; i++) {
         if (noType1 && strstr(p1[i], "Type1") != NULL) {
@@ -816,6 +822,10 @@ static char **getFontConfigLocations() {
         fontdirs = NULL;
     } else {
         fontdirs = (char**)calloc(fontSet->nfont+1, sizeof(char*));
+        if (fontdirs == NULL) {
+            (*FcFontSetDestroy)(fontSet);
+            goto cleanup;
+        }
         for (f=0; f < fontSet->nfont; f++) {
             FcChar8 *file;
             FcChar8 *dir;
@@ -840,6 +850,7 @@ static char **getFontConfigLocations() {
         (*FcFontSetDestroy)(fontSet);
     }
 
+cleanup:
     /* Free memory and close the ".so" */
     (*FcPatternDestroy)(pattern);
     closeFontConfig(libfontconfig, JNI_TRUE);

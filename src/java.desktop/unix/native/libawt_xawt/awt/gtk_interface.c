@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -66,6 +66,9 @@ static GtkLib** get_libs_order(GtkVersion version) {
     if (!n_libs) {
         n_libs = sizeof(gtk_libs) / sizeof(GtkLib);
         load_order = calloc(n_libs + 1, sizeof(GtkLib *));
+        if (load_order == NULL) {
+          return NULL;
+        }
     }
     int i, first = 0;
     for (i = 0; i < n_libs; i++) {
@@ -85,6 +88,7 @@ static GtkLib** get_libs_order(GtkVersion version) {
 
 static GtkLib* get_loaded() {
     GtkLib** libs = get_libs_order(GTK_ANY);
+    if (libs == NULL) return NULL;
     while(!gtk && *libs) {
         GtkLib* lib = *libs++;
         if (lib->check(lib->vname, /* load = */FALSE)) {
@@ -111,7 +115,7 @@ gboolean gtk_load(JNIEnv *env, GtkVersion version, gboolean verbose) {
             }
         } else {
             GtkLib** libs = get_libs_order(version);
-            while (!gtk && *libs) {
+            while (!gtk && libs && *libs) {
                 lib = *libs++;
                 if (version == GTK_ANY || lib->version == version) {
                     if (verbose) {
@@ -141,6 +145,7 @@ gboolean gtk_load(JNIEnv *env, GtkVersion version, gboolean verbose) {
 
 static gboolean check_version(GtkVersion version) {
     GtkLib** libs = get_libs_order(version);
+    if (libs == NULL) return FALSE;
     while (*libs) {
         GtkLib* lib = *libs++;
         if (lib->check(lib->vname, /* load = */TRUE)) {

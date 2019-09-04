@@ -414,11 +414,18 @@ static void* CreatePortControl(PortMixer *mixer, PortControlCreator *creator, Po
                                AudioControl **audioControls, int offset, int len) {
     void *jControl = NULL;
     PortControl *control = (PortControl *)calloc(1, sizeof(PortControl));
+    if (control == NULL) {
+        return NULL;
+    }
     float precision = 0.01;
 
     control->type = type;
     control->controlCount = len;
     control->audioControls = (AudioControl **)malloc(len * sizeof(AudioControl *));
+    if (control->audioControls == NULL) {
+        free(control);
+        return NULL;
+    }
     memcpy(control->audioControls, audioControls + offset, len * sizeof(AudioControl *));
 
     switch (control->type) {
@@ -482,6 +489,9 @@ void PORT_GetControls(void* id, INT32 portIndex, PortControlCreator* creator) {
                 OS_ERROR1(err, "PORT_GetControls (portIndex = %d) get OwnedObject values", portIndex);
             } else {
                 mixer->deviceControls = (AudioControl *)calloc(mixer->deviceControlCount, sizeof(AudioControl));
+                if (mixer->deviceControls == NULL) {
+                    return;
+                }
 
                 for (int i = 0; i < mixer->deviceControlCount; i++) {
                     AudioControl *control = &mixer->deviceControls[i];
@@ -615,10 +625,16 @@ void PORT_GetControls(void* id, INT32 portIndex, PortControlCreator* creator) {
                 if (err == noErr) {
                     CFIndex length = CFStringGetLength(cfname) + 1;
                     channelName = (char *)malloc(length);
+                    if (channelName == NULL) {
+                        return;
+                    }
                     CFStringGetCString(cfname, channelName, length, kCFStringEncodingUTF8);
                     CFRelease(cfname);
                 } else {
                     channelName = (char *)malloc(16);
+                    if (channelName == NULL) {
+                        return;
+                    }
                     sprintf(channelName, "Ch %d", ch);
                 }
 

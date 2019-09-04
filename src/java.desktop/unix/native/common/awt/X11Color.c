@@ -402,6 +402,9 @@ awt_allocate_colors(AwtGraphicsConfigDataPtr awt_data)
     pVI = &awt_data->awt_visInfo;
     awt_data->awt_num_colors = awt_data->awt_visInfo.colormap_size;
     awt_data->awtImage = (awtImageData *) calloc (1, sizeof (awtImageData));
+    if (awt_data->awtImage == NULL) {
+        return 0;
+    }
 
     pPFV = XListPixmapFormats(dpy, &numpfv);
     if (pPFV) {
@@ -572,12 +575,17 @@ awt_allocate_colors(AwtGraphicsConfigDataPtr awt_data)
     }
 
     if (awt_data->awt_num_colors > paletteSize) {
-        free (awt_data->awtImage);
+        free(awt_data->awtImage);
         return 0;
     }
 
     /* Allocate ColorData structure */
     awt_data->color_data = ZALLOC (_ColorData);
+    if (awt_data->color_data == NULL) {
+        free(awt_data->awtImage);
+        return 0;
+    }
+
     awt_data->color_data->screendata = 1; /* This ColorData struct corresponds
                                              to some AWT screen/visual, so when
                                              any IndexColorModel using this
@@ -594,6 +602,11 @@ awt_allocate_colors(AwtGraphicsConfigDataPtr awt_data)
 
     awt_data->color_data->awt_Colors =
         (ColorEntry *)calloc(paletteSize, sizeof (ColorEntry));
+    if (awt_data->color_data->awt_Colors == NULL) {
+        free(awt_data->awtImage);
+        free(awt_data->color_data);
+        return 0;
+    }
 
     XQueryColors(dpy, cm, cols, awt_data->awt_num_colors);
     for (i = 0; i < awt_data->awt_num_colors; i++) {
@@ -667,6 +680,11 @@ awt_allocate_colors(AwtGraphicsConfigDataPtr awt_data)
 
         awt_data->color_data->img_grays =
             (unsigned char *)calloc(256, sizeof(unsigned char));
+        if ( awt_data->color_data->img_grays == NULL) {
+            free(awt_data->awtImage);
+            free(awt_data->color_data);
+            return 0;
+        }
         for (g = 0; g < 256; g++) {
             int mindist, besti;
             int d;
@@ -810,6 +828,11 @@ awt_allocate_colors(AwtGraphicsConfigDataPtr awt_data)
     awt_data->color_data->img_clr_tbl =
         (unsigned char *)calloc(LOOKUPSIZE * LOOKUPSIZE * LOOKUPSIZE,
                                 sizeof(unsigned char));
+    if (awt_data->color_data->img_clr_tbl == NULL) {
+        free(awt_data->awtImage);
+        free(awt_data->color_data);
+        return 0;
+    }
     img_makePalette(cmapsize, k, LOOKUPSIZE, 50, 250,
                     allocatedColorsNum, TRUE, reds, greens, blues,
                     awt_data->color_data->img_clr_tbl);
@@ -858,6 +881,12 @@ awt_allocate_colors(AwtGraphicsConfigDataPtr awt_data)
     awt_data->color_data->awt_icmLUT2Colors =
         (unsigned char *)calloc(paletteSize, sizeof (unsigned char));
     awt_data->color_data->awt_icmLUT = (int *)calloc(paletteSize, sizeof(int));
+    if (awt_data->color_data->awt_icmLUT2Colors == NULL || awt_data->color_data->awt_icmLUT == NULL) {
+        free(awt_data->awtImage);
+        free(awt_data->color_data);
+        return 0;
+    }
+
     for (i=0; i < paletteSize; i++) {
         /* Keep the mapping between this lut and the actual cmap */
         awt_data->color_data->awt_icmLUT2Colors
