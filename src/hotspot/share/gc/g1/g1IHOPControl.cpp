@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,7 +26,7 @@
 #include "gc/g1/g1CollectedHeap.inline.hpp"
 #include "gc/g1/g1IHOPControl.hpp"
 #include "gc/g1/g1Predictions.hpp"
-#include "gc/shared/gcTrace.hpp"
+#include "gc/g1/g1Trace.hpp"
 #include "logging/log.hpp"
 
 G1IHOPControl::G1IHOPControl(double initial_ihop_percent) :

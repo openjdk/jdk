@@ -27,8 +27,8 @@
 
 #include "gc/g1/g1CollectedHeap.hpp"
 #include "gc/g1/g1HeapTransition.hpp"
+#include "gc/g1/g1Trace.hpp"
 #include "gc/shared/gcId.hpp"
-#include "gc/shared/gcTrace.hpp"
 #include "gc/shared/gcTraceTime.hpp"
 #include "gc/shared/gcTimer.hpp"
 #include "gc/shared/gcVMOperations.hpp"

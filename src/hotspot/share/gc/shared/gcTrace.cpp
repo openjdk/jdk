@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -36,9 +36,6 @@
 #include "utilities/globalDefinitions.hpp"
 #include "utilities/macros.hpp"
 #include "utilities/ticks.hpp"
-#if INCLUDE_G1GC
-#include "gc/g1/g1EvacuationInfo.hpp"
-#endif
 
 void GCTracer::report_gc_start_impl(GCCause::Cause cause, const Ticks& timestamp) {
   _shared_gc_info.set_cause(cause);
@@ -183,73 +180,3 @@ void ParallelOldTracer::report_dense_prefix(void* dense_prefix) {
 void OldGCTracer::report_concurrent_mode_failure() {
   send_concurrent_mode_failure_event();
 }
-
-#if INCLUDE_G1GC
-void G1MMUTracer::report_mmu(double time_slice_sec, double gc_time_sec, double max_time_sec) {
-  send_g1_mmu_event(time_slice_sec * MILLIUNITS,
-                    gc_time_sec * MILLIUNITS,
-                    max_time_sec * MILLIUNITS);
-}
-
-void G1NewTracer::report_yc_type(G1YCType type) {
-  _g1_young_gc_info.set_type(type);
-}
-
-void G1NewTracer::report_gc_end_impl(const Ticks& timestamp, TimePartitions* time_partitions) {
-  YoungGCTracer::report_gc_end_impl(timestamp, time_partitions);
-  send_g1_young_gc_event();
-}
-
-void G1NewTracer::report_evacuation_info(G1EvacuationInfo* info) {
-  send_evacuation_info_event(info);
-}
-
-void G1NewTracer::report_evacuation_failed(EvacuationFailedInfo& ef_info) {
-  send_evacuation_failed_event(ef_info);
-  ef_info.reset();
-}
-
-void G1NewTracer::report_evacuation_statistics(const G1EvacSummary& young_summary, const G1EvacSummary& old_summary) const {
-  send_young_evacuation_statistics(young_summary);
-  send_old_evacuation_statistics(old_summary);
-}
-
-void G1NewTracer::report_basic_ihop_statistics(size_t threshold,
-                                               size_t target_ccupancy,
-                                               size_t current_occupancy,
-                                               size_t last_allocation_size,
-                                               double last_allocation_duration,
-                                               double last_marking_length) {
-  send_basic_ihop_statistics(threshold,
-                             target_ccupancy,
-                             current_occupancy,
-                             last_allocation_size,
-                             last_allocation_duration,
-                             last_marking_length);
-}
-
-void G1NewTracer::report_adaptive_ihop_statistics(size_t threshold,
-                                                  size_t internal_target_occupancy,
-                                                  size_t current_occupancy,
-                                                  size_t additional_buffer_size,
-                                                  double predicted_allocation_rate,
-                                                  double predicted_marking_length,
-                                                  bool prediction_active) {
-  send_adaptive_ihop_statistics(threshold,
-                                internal_target_occupancy,
-                                additional_buffer_size,
-                                current_occupancy,
-                                predicted_allocation_rate,
-                                predicted_marking_length,
-                                prediction_active);
-}
-
-void G1OldTracer::report_gc_start_impl(GCCause::Cause cause, const Ticks& timestamp) {
-  _shared_gc_info.set_start_timestamp(timestamp);
-}
-
-void G1OldTracer::set_gc_cause(GCCause::Cause cause) {
-  _shared_gc_info.set_cause(cause);
-}
-
-#endif // INCLUDE_G1GC

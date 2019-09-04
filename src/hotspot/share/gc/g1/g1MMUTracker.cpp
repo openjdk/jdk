@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,7 +24,7 @@
 
 #include "precompiled.hpp"
 #include "gc/g1/g1MMUTracker.hpp"
-#include "gc/shared/gcTrace.hpp"
+#include "gc/g1/g1Trace.hpp"
 #include "logging/log.hpp"
 #include "runtime/mutexLocker.hpp"
 #include "utilities/ostream.hpp"

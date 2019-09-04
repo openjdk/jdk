@@ -30,7 +30,7 @@
 #include "gc/g1/g1ParScanThreadState.inline.hpp"
 #include "gc/g1/g1RootClosures.hpp"
 #include "gc/g1/g1StringDedup.hpp"
-#include "gc/shared/gcTrace.hpp"
+#include "gc/g1/g1Trace.hpp"
 #include "gc/shared/taskqueue.inline.hpp"
 #include "memory/allocation.inline.hpp"
 #include "oops/access.inline.hpp"
