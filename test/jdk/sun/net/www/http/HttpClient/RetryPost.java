@@ -84,13 +84,17 @@ public class RetryPost
             throw new RuntimeException("Failed: POST request being retried");
 
         } catch (SocketException se) {
+            System.out.println("Got expected exception: " + se);
             // this is what we expect to happen and is OK.
-            if (shouldRetry && httpHandler.getCallCount() != 2)
+            if (shouldRetry && httpHandler.getCallCount() != 2) {
+                se.printStackTrace(System.out);
                 throw new RuntimeException("Failed: Handler should have been called twice. " +
                                            "It was called "+ httpHandler.getCallCount() + " times");
-            else if (!shouldRetry && httpHandler.getCallCount() != 1)
+            } else if (!shouldRetry && httpHandler.getCallCount() != 1) {
+                se.printStackTrace(System.out);
                 throw new RuntimeException("Failed: Handler should have only been called once" +
                                            "It was called "+ httpHandler.getCallCount() + " times");
+            }
         } finally {
             httpServer.stop(1);
             executorService.shutdown();

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -139,8 +139,8 @@ public class B6216082 {
         // Both the https server and the proxy let the
         // system pick up an ephemeral port.
         httpTrans = new SimpleHttpTransaction();
-        server = new TestHttpsServer(httpTrans, 1, 10, 0);
-        proxy = new TunnelProxy(1, 10, 0);
+        server = new TestHttpsServer(httpTrans, 1, 10, firstNonLoAddress, 0);
+        proxy = new TunnelProxy(1, 10, firstNonLoAddress, 0);
     }
 
     public static void makeHttpCall() throws Exception {

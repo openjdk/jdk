@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -34,6 +34,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.net.Authenticator;
 import java.net.Proxy;
+import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.PasswordAuthentication;
 import java.net.ServerSocket;
@@ -51,9 +52,11 @@ public class HttpsProxyStackOverflow {
     static void doClient(BadAuthProxyServer server) throws IOException {
         // url doesn't matter since we will never make the connection
         URL url = new URL("https://anythingwilldo/");
+        InetAddress loopback = InetAddress.getLoopbackAddress();
+        String loopbackAddress = loopback.getHostAddress();
         HttpsURLConnection conn = (HttpsURLConnection) url.openConnection(
                       new Proxy(Proxy.Type.HTTP,
-                      new InetSocketAddress("localhost", server.getPort())));
+                      InetSocketAddress.createUnresolved(loopbackAddress, server.getPort())));
         try (InputStream is = conn.getInputStream()) {
         } catch(IOException unused) {
             // no real server, IOException is expected.
@@ -70,8 +73,11 @@ public class HttpsProxyStackOverflow {
                 return new PasswordAuthentication("xyz", "xyz".toCharArray());
             }
             });
-
-        BadAuthProxyServer server = new BadAuthProxyServer(new ServerSocket(0));
+        InetAddress loopback = InetAddress.getLoopbackAddress();
+        InetSocketAddress address = new InetSocketAddress(loopback, 0);
+        ServerSocket ss = new ServerSocket();
+        ss.bind(address);
+        BadAuthProxyServer server = new BadAuthProxyServer(ss);
         Thread serverThread = new Thread(server);
         serverThread.start();
         return server;
@@ -113,4 +119,3 @@ public class HttpsProxyStackOverflow {
         }
     }
 }
-

@@ -85,7 +85,7 @@ public class AuthHeaderTest implements HttpCallback {
     static void client (String u) throws Exception {
         URL url = new URL (u);
         System.out.println ("client opening connection to: " + u);
-        URLConnection urlc = url.openConnection ();
+        URLConnection urlc = url.openConnection (Proxy.NO_PROXY);
         InputStream is = urlc.getInputStream ();
         read (is);
         is.close();

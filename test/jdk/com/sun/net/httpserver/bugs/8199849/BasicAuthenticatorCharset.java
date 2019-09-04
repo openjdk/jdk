@@ -157,7 +157,7 @@ public class BasicAuthenticatorCharset {
         String defaultCharset = System.getProperty("file.encoding");
         boolean isUTF8 = defaultCharset.equalsIgnoreCase("UTF-8");
         testHandler = new Handler();
-        InetSocketAddress addr = new InetSocketAddress(0);
+        InetSocketAddress addr = new InetSocketAddress(InetAddress.getLoopbackAddress(), 0);
         testHttpServer = HttpServer.create(addr, 0);
 
         // Set the passing credentials OLD client

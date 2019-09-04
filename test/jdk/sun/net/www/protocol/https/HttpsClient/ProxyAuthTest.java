@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -59,6 +59,7 @@ import java.io.DataOutputStream;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.net.Authenticator;
+import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.PasswordAuthentication;
 import java.net.Proxy;
@@ -79,6 +80,10 @@ import static java.nio.charset.StandardCharsets.US_ASCII;
 
 public class ProxyAuthTest extends SSLSocketTemplate {
     private static boolean expectSuccess;
+
+    ProxyAuthTest() {
+        serverAddress = InetAddress.getLoopbackAddress();
+    }
 
     /*
      * Run the test case.
@@ -143,18 +148,25 @@ public class ProxyAuthTest extends SSLSocketTemplate {
          */
         HttpsURLConnection.setDefaultHostnameVerifier(new NameVerifier());
 
-        InetSocketAddress paddr =
-                new InetSocketAddress("localhost", ps.getPort());
+        InetSocketAddress paddr = InetSocketAddress
+            .createUnresolved(ps.getInetAddress().getHostAddress(),
+                              ps.getPort());
         Proxy proxy = new Proxy(Proxy.Type.HTTP, paddr);
 
+        InetAddress serverAddress = this.serverAddress;
+        String host = serverAddress == null
+                ? "localhost"
+                : serverAddress.getHostAddress();
+        if (host.indexOf(':') > -1) host = "[" + host + "]";
         URL url = new URL(
-                "https://" + "localhost:" + serverPort + "/index.html");
+                "https://" + host + ":" + serverPort + "/index.html");
+        System.out.println("URL: " + url);
         BufferedReader in = null;
         HttpsURLConnection uc = (HttpsURLConnection) url.openConnection(proxy);
         try {
             in = new BufferedReader(new InputStreamReader(uc.getInputStream()));
             String inputLine;
-            System.out.print("Client recieved from the server: ");
+            System.out.print("Client received from the server: ");
             while ((inputLine = in.readLine()) != null) {
                 System.out.println(inputLine);
             }
@@ -226,7 +238,8 @@ public class ProxyAuthTest extends SSLSocketTemplate {
     }
 
     private static ProxyTunnelServer setupProxy() throws IOException {
-        ProxyTunnelServer pserver = new ProxyTunnelServer();
+        InetAddress loopback = InetAddress.getLoopbackAddress();
+        ProxyTunnelServer pserver = new ProxyTunnelServer(loopback);
 
         /*
          * register a system wide authenticator and setup the proxy for

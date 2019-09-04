@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -47,12 +47,14 @@ public class B6226610 {
         proxy = new HeaderCheckerProxyTunnelServer();
         proxy.start();
 
-        String hostname = InetAddress.getLocalHost().getHostName();
+        InetAddress localHost = InetAddress.getLocalHost();
+        String hostname = localHost.getHostName();
+        String hostAddress = localHost.getHostAddress();
 
         try {
            URL u = new URL("https://" + hostname + "/");
            System.out.println("Connecting to " + u);
-           InetSocketAddress proxyAddr = new InetSocketAddress(hostname, proxy.getLocalPort());
+           InetSocketAddress proxyAddr = InetSocketAddress.createUnresolved(hostAddress, proxy.getLocalPort());
            java.net.URLConnection c = u.openConnection(new Proxy(Proxy.Type.HTTP, proxyAddr));
 
            /* I want this header to go to the destination server only, protected
@@ -96,7 +98,8 @@ class HeaderCheckerProxyTunnelServer extends Thread
     public HeaderCheckerProxyTunnelServer() throws IOException
     {
        if (ss == null) {
-          ss = new ServerSocket(0);
+           ss = new ServerSocket();
+           ss.bind(new InetSocketAddress(InetAddress.getLocalHost(), 0));
        }
     }
 
@@ -143,16 +146,16 @@ class HeaderCheckerProxyTunnelServer extends Thread
            retrieveConnectInfo(statusLine);
 
            if (mheader.findValue("X-TestHeader") != null) {
-             System.out.println("Proxy should not receive user defined headers for tunneled requests");
-             failed = true;
+               System.out.println("Proxy should not receive user defined headers for tunneled requests");
+               failed = true;
            }
 
            // 6973030
            String value;
            if ((value = mheader.findValue("Proxy-Connection")) == null ||
                 !value.equals("keep-alive")) {
-             System.out.println("Proxy-Connection:keep-alive not being sent");
-             failed = true;
+               System.out.println("Proxy-Connection:keep-alive not being sent");
+               failed = true;
            }
 
            //This will allow the main thread to terminate without trying to perform the SSL handshake.
@@ -206,8 +209,8 @@ class HeaderCheckerProxyTunnelServer extends Thread
             serverPort = Integer.parseInt(connectInfo.substring(endi+1));
         } catch (Exception e) {
             throw new IOException("Proxy recieved a request: "
-                                        + connectStr);
-          }
+                                  + connectStr, e);
+        }
         serverInetAddr = InetAddress.getByName(serverName);
     }
 }

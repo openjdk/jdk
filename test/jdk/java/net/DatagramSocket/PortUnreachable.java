@@ -24,6 +24,7 @@
 /**
  * @test
  * @bug 4361783
+ * @key intermittent
  * @summary  Test to see if ICMP Port Unreachable on non-connected
  *           DatagramSocket causes a SocketException "socket closed"
  *           exception on Windows 2000.
@@ -43,7 +44,7 @@ public class PortUnreachable {
     public void serverSend() {
         try {
             InetAddress addr = InetAddress.getLocalHost();
-            Thread.currentThread().sleep(1000);
+            Thread.sleep(1000);
             // send a delayed packet which should mean a delayed icmp
             // port unreachable
             byte b[] = "A late msg".getBytes();
@@ -64,24 +65,68 @@ public class PortUnreachable {
     DatagramSocket recreateServerSocket (int serverPort) throws Exception {
         DatagramSocket serverSocket = null;
         int retryCount = 0;
+        long sleeptime = 0;
         System.out.println("Attempting to recreate server socket with port: " +
                 serverPort);
+        // it's possible that this method intermittently fails, if some other
+        // process running on the machine grabs the port we want before us,
+        // and doesn't release it before the 5 * 500 ms are elapsed...
         while (serverSocket == null) {
             try {
                 serverSocket = new DatagramSocket(serverPort, InetAddress.getLocalHost());
             } catch (BindException bEx) {
                 if (retryCount++ < 5) {
-                    Thread.sleep(500);
+                   sleeptime += sleepAtLeast(500);
                 } else {
-                    System.out.println("Give up after 5 retries");
+                    System.out.println("Give up after 5 retries and " + sleeptime(sleeptime));
+                    System.out.println("Has some other process grabbed port " + serverPort + "?");
                     throw bEx;
                 }
             }
         }
 
         System.out.println("PortUnreachableTest.recreateServerSocket: returning socket == "
-                + serverSocket.getLocalAddress() + ":" + serverSocket.getLocalPort());
+                + serverSocket.getLocalAddress() + ":" + serverSocket.getLocalPort()
+                + " obtained at " + attempt(retryCount) + " attempt with " + sleeptime(sleeptime));
         return serverSocket;
+    }
+
+    long sleepAtLeast(long millis) throws Exception {
+        long start = System.nanoTime();
+        long ms = millis;
+        while (ms > 0) {
+            assert ms < Long.MAX_VALUE/1000_000L;
+            Thread.sleep(ms);
+            long elapsedms = (System.nanoTime() - start)/1000_000L;
+            ms = millis - elapsedms;
+        }
+        return millis - ms;
+    }
+
+    String attempt(int retry) {
+        switch (retry) {
+            case 0: return "first";
+            case 1: return "second";
+            case 2: return "third";
+            default: return retry + "th";
+        }
+    }
+
+    String sleeptime(long millis) {
+        if (millis == 0) return "no sleep";
+        long sec = millis / 1000L;
+        long ms =  millis % 1000L;
+        String sleeptime = "";
+        if (millis > 0) {
+           if (sec > 0) {
+               sleeptime = "" + sec + " s" +
+                   (ms > 0 ? " " : "");
+            }
+            if (ms > 0 ) {
+                sleeptime += ms + " ms";
+            }
+        } else sleeptime = millis + " ms"; // should not happen
+        return sleeptime + " of sleep time";
     }
 
     PortUnreachable() throws Exception {
@@ -126,4 +171,3 @@ public class PortUnreachable {
     }
 
 }
-
