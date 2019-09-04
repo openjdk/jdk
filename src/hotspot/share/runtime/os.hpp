@@ -167,9 +167,6 @@ class os: AllStatic {
                                                // before VM ergonomics processing.
   static jint init_2(void);                    // Called after command line parsing
                                                // and VM ergonomics processing
-  static void init_globals(void) {             // Called from init_globals() in init.cpp
-    init_globals_ext();
-  }
 
   // unset environment variable
   static bool unsetenv(const char* name);
@@ -831,9 +828,6 @@ class os: AllStatic {
 
   // support for mapping non-volatile memory using MAP_SYNC
   static bool supports_map_sync();
-
-  // Extensions
-#include "runtime/os_ext.hpp"
 
  public:
   class CrashProtectionCallback : public StackObj {
