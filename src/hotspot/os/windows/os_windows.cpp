@@ -497,7 +497,10 @@ static OSThread* create_os_thread(Thread* thread, HANDLE thread_handle,
   OSThread* osthread = new OSThread(NULL, NULL);
   if (osthread == NULL) return NULL;
 
-  // Initialize support for Java interrupts
+  // Initialize the JDK library's interrupt event.
+  // This should really be done when OSThread is constructed,
+  // but there is no way for a constructor to report failure to
+  // allocate the event.
   HANDLE interrupt_event = CreateEvent(NULL, true, false, NULL);
   if (interrupt_event == NULL) {
     delete osthread;
@@ -599,7 +602,10 @@ bool os::create_thread(Thread* thread, ThreadType thr_type,
     return false;
   }
 
-  // Initialize support for Java interrupts
+  // Initialize the JDK library's interrupt event.
+  // This should really be done when OSThread is constructed,
+  // but there is no way for a constructor to report failure to
+  // allocate the event.
   HANDLE interrupt_event = CreateEvent(NULL, true, false, NULL);
   if (interrupt_event == NULL) {
     delete osthread;
@@ -3480,87 +3486,7 @@ void os::pd_start_thread(Thread* thread) {
   assert(ret != SYS_THREAD_ERROR, "StartThread failed"); // should propagate back
 }
 
-class HighResolutionInterval : public CHeapObj<mtThread> {
-  // The default timer resolution seems to be 10 milliseconds.
-  // (Where is this written down?)
-  // If someone wants to sleep for only a fraction of the default,
-  // then we set the timer resolution down to 1 millisecond for
-  // the duration of their interval.
-  // We carefully set the resolution back, since otherwise we
-  // seem to incur an overhead (3%?) that we don't need.
-  // CONSIDER: if ms is small, say 3, then we should run with a high resolution time.
-  // Buf if ms is large, say 500, or 503, we should avoid the call to timeBeginPeriod().
-  // Alternatively, we could compute the relative error (503/500 = .6%) and only use
-  // timeBeginPeriod() if the relative error exceeded some threshold.
-  // timeBeginPeriod() has been linked to problems with clock drift on win32 systems and
-  // to decreased efficiency related to increased timer "tick" rates.  We want to minimize
-  // (a) calls to timeBeginPeriod() and timeEndPeriod() and (b) time spent with high
-  // resolution timers running.
- private:
-  jlong resolution;
- public:
-  HighResolutionInterval(jlong ms) {
-    resolution = ms % 10L;
-    if (resolution != 0) {
-      MMRESULT result = timeBeginPeriod(1L);
-    }
-  }
-  ~HighResolutionInterval() {
-    if (resolution != 0) {
-      MMRESULT result = timeEndPeriod(1L);
-    }
-    resolution = 0L;
-  }
-};
 
-int os::sleep(Thread* thread, jlong ms, bool interruptable) {
-  jlong limit = (jlong) MAXDWORD;
-
-  while (ms > limit) {
-    int res;
-    if ((res = sleep(thread, limit, interruptable)) != OS_TIMEOUT) {
-      return res;
-    }
-    ms -= limit;
-  }
-
-  assert(thread == Thread::current(), "thread consistency check");
-  OSThread* osthread = thread->osthread();
-  OSThreadWaitState osts(osthread, false /* not Object.wait() */);
-  int result;
-  if (interruptable) {
-    assert(thread->is_Java_thread(), "must be java thread");
-    JavaThread *jt = (JavaThread *) thread;
-    ThreadBlockInVM tbivm(jt);
-
-    jt->set_suspend_equivalent();
-    // cleared by handle_special_suspend_equivalent_condition() or
-    // java_suspend_self() via check_and_wait_while_suspended()
-
-    HANDLE events[1];
-    events[0] = osthread->interrupt_event();
-    HighResolutionInterval *phri=NULL;
-    if (!ForceTimeHighResolution) {
-      phri = new HighResolutionInterval(ms);
-    }
-    if (WaitForMultipleObjects(1, events, FALSE, (DWORD)ms) == WAIT_TIMEOUT) {
-      result = OS_TIMEOUT;
-    } else {
-      ResetEvent(osthread->interrupt_event());
-      osthread->set_interrupted(false);
-      result = OS_INTRPT;
-    }
-    delete phri; //if it is NULL, harmless
-
-    // were we externally suspended while we were waiting?
-    jt->check_and_wait_while_suspended();
-  } else {
-    assert(!thread->is_Java_thread(), "must not be java thread");
-    Sleep((long) ms);
-    result = OS_TIMEOUT;
-  }
-  return result;
-}
 
 // Short sleep, direct OS call.
 //
@@ -3686,6 +3612,9 @@ void os::interrupt(Thread* thread) {
   }
 
   ParkEvent * ev = thread->_ParkEvent;
+  if (ev != NULL) ev->unpark();
+
+  ev = thread->_SleepEvent;
   if (ev != NULL) ev->unpark();
 }
 
@@ -5170,6 +5099,40 @@ bool os::ThreadCrashProtection::call(os::CrashProtectionCallback& cb) {
   return success;
 }
 
+
+class HighResolutionInterval : public CHeapObj<mtThread> {
+  // The default timer resolution seems to be 10 milliseconds.
+  // (Where is this written down?)
+  // If someone wants to sleep for only a fraction of the default,
+  // then we set the timer resolution down to 1 millisecond for
+  // the duration of their interval.
+  // We carefully set the resolution back, since otherwise we
+  // seem to incur an overhead (3%?) that we don't need.
+  // CONSIDER: if ms is small, say 3, then we should run with a high resolution time.
+  // Buf if ms is large, say 500, or 503, we should avoid the call to timeBeginPeriod().
+  // Alternatively, we could compute the relative error (503/500 = .6%) and only use
+  // timeBeginPeriod() if the relative error exceeded some threshold.
+  // timeBeginPeriod() has been linked to problems with clock drift on win32 systems and
+  // to decreased efficiency related to increased timer "tick" rates.  We want to minimize
+  // (a) calls to timeBeginPeriod() and timeEndPeriod() and (b) time spent with high
+  // resolution timers running.
+ private:
+  jlong resolution;
+ public:
+  HighResolutionInterval(jlong ms) {
+    resolution = ms % 10L;
+    if (resolution != 0) {
+      MMRESULT result = timeBeginPeriod(1L);
+    }
+  }
+  ~HighResolutionInterval() {
+    if (resolution != 0) {
+      MMRESULT result = timeEndPeriod(1L);
+    }
+    resolution = 0L;
+  }
+};
+
 // An Event wraps a win32 "CreateEvent" kernel handle.
 //
 // We have a number of choices regarding "CreateEvent" win32 handle leakage:
@@ -5205,7 +5168,7 @@ bool os::ThreadCrashProtection::call(os::CrashProtectionCallback& cb) {
 // 1.  Reconcile Doug's JSR166 j.u.c park-unpark with the objectmonitor implementation.
 // 2.  Consider wrapping the WaitForSingleObject(Ex) calls in SEH try/finally blocks
 //     to recover from (or at least detect) the dreaded Windows 841176 bug.
-// 3.  Collapse the interrupt_event, the JSR166 parker event, and the objectmonitor ParkEvent
+// 3.  Collapse the JSR166 parker event, and the objectmonitor ParkEvent
 //     into a single win32 CreateEvent() handle.
 //
 // Assumption:
@@ -5278,11 +5241,16 @@ int os::PlatformEvent::park(jlong Millis) {
     if (Millis > MAXTIMEOUT) {
       prd = MAXTIMEOUT;
     }
+    HighResolutionInterval *phri = NULL;
+    if (!ForceTimeHighResolution) {
+      phri = new HighResolutionInterval(prd);
+    }
     rv = ::WaitForSingleObject(_ParkHandle, prd);
     assert(rv == WAIT_OBJECT_0 || rv == WAIT_TIMEOUT, "WaitForSingleObject failed");
     if (rv == WAIT_TIMEOUT) {
       Millis -= prd;
     }
+    delete phri; // if it is NULL, harmless
   }
   v = _Event;
   _Event = 0;

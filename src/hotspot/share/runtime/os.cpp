@@ -1836,3 +1836,86 @@ os::SuspendResume::State os::SuspendResume::switch_state(os::SuspendResume::Stat
   return result;
 }
 #endif
+
+int os::sleep(Thread* thread, jlong millis, bool interruptible) {
+  assert(thread == Thread::current(),  "thread consistency check");
+
+  ParkEvent * const slp = thread->_SleepEvent;
+  // Because there can be races with thread interruption sending an unpark()
+  // to the event, we explicitly reset it here to avoid an immediate return.
+  // The actual interrupt state will be checked before we park().
+  slp->reset();
+  // Thread interruption establishes a happens-before ordering in the
+  // Java Memory Model, so we need to ensure we synchronize with the
+  // interrupt state.
+  OrderAccess::fence();
+
+  if (interruptible) {
+    jlong prevtime = javaTimeNanos();
+
+    assert(thread->is_Java_thread(), "sanity check");
+    JavaThread *jt = (JavaThread *) thread;
+
+    for (;;) {
+      // interruption has precedence over timing out
+      if (os::is_interrupted(thread, true)) {
+        return OS_INTRPT;
+      }
+
+      jlong newtime = javaTimeNanos();
+
+      if (newtime - prevtime < 0) {
+        // time moving backwards, should only happen if no monotonic clock
+        // not a guarantee() because JVM should not abort on kernel/glibc bugs
+        assert(!os::supports_monotonic_clock(),
+               "unexpected time moving backwards detected in os::sleep(interruptible)");
+      } else {
+        millis -= (newtime - prevtime) / NANOSECS_PER_MILLISEC;
+      }
+
+      if (millis <= 0) {
+        return OS_OK;
+      }
+
+      prevtime = newtime;
+
+      {
+        ThreadBlockInVM tbivm(jt);
+        OSThreadWaitState osts(jt->osthread(), false /* not Object.wait() */);
+
+        jt->set_suspend_equivalent();
+        // cleared by handle_special_suspend_equivalent_condition() or
+        // java_suspend_self() via check_and_wait_while_suspended()
+
+        slp->park(millis);
+
+        // were we externally suspended while we were waiting?
+        jt->check_and_wait_while_suspended();
+      }
+    }
+   } else {
+    OSThreadWaitState osts(thread->osthread(), false /* not Object.wait() */);
+    jlong prevtime = javaTimeNanos();
+
+    for (;;) {
+      // It'd be nice to avoid the back-to-back javaTimeNanos() calls on
+      // the 1st iteration ...
+      jlong newtime = javaTimeNanos();
+
+      if (newtime - prevtime < 0) {
+        // time moving backwards, should only happen if no monotonic clock
+        // not a guarantee() because JVM should not abort on kernel/glibc bugs
+        assert(!os::supports_monotonic_clock(),
+               "unexpected time moving backwards detected on os::sleep(!interruptible)");
+      } else {
+        millis -= (newtime - prevtime) / NANOSECS_PER_MILLISEC;
+      }
+
+      if (millis <= 0) break ;
+
+      prevtime = newtime;
+      slp->park(millis);
+    }
+    return OS_OK ;
+  }
+}
