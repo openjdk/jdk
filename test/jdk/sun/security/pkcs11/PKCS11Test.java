@@ -906,21 +906,21 @@ public abstract class PKCS11Test {
     @Artifact(
             organization = "jpg.tests.jdk.nsslib",
             name = "nsslib-windows_x64",
-            revision = "3.41-VS2017",
+            revision = "3.46-VS2017",
             extension = "zip")
     private static class WINDOWS_X64 { }
 
     @Artifact(
             organization = "jpg.tests.jdk.nsslib",
             name = "nsslib-windows_x86",
-            revision = "3.41-VS2017",
+            revision = "3.46-VS2017",
             extension = "zip")
     private static class WINDOWS_X86 { }
 
     @Artifact(
             organization = "jpg.tests.jdk.nsslib",
             name = "nsslib-macosx_x64",
-            revision = "3.41",
+            revision = "3.46",
             extension = "zip")
     private static class MACOSX_X64 { }
 }
