@@ -24,7 +24,6 @@
 #ifndef SHARE_LOGGING_LOGTAG_HPP
 #define SHARE_LOGGING_LOGTAG_HPP
 
-#include "logging/logTag_ext.hpp"
 #include "memory/allocation.hpp"
 #include "utilities/globalDefinitions.hpp"
 
@@ -176,8 +175,7 @@
   LOG_TAG(vmthread) \
   LOG_TAG(vtables) \
   LOG_TAG(vtablestubs) \
-  LOG_TAG(workgang) \
-  LOG_TAG_LIST_EXT
+  LOG_TAG(workgang)
 
 #define PREFIX_LOG_TAG(T) (LogTag::_##T)
 
