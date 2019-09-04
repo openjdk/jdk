@@ -628,14 +628,7 @@ static bool version_less_than(JDK_Version v, JDK_Version other) {
   }
 }
 
-extern bool lookup_special_flag_ext(const char *flag_name, SpecialFlag& flag);
-
 static bool lookup_special_flag(const char *flag_name, SpecialFlag& flag) {
-  // Allow extensions to have priority
-  if (lookup_special_flag_ext(flag_name, flag)) {
-    return true;
-  }
-
   for (size_t i = 0; special_jvm_flags[i].name != NULL; i++) {
     if ((strcmp(special_jvm_flags[i].name, flag_name) == 0)) {
       flag = special_jvm_flags[i];
