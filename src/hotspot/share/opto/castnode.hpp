@@ -91,6 +91,19 @@ class CastIINode: public ConstraintCastNode {
 #endif
 };
 
+//------------------------------CastLLNode-------------------------------------
+// cast long to long (different range)
+class CastLLNode: public ConstraintCastNode {
+  public:
+  CastLLNode(Node* n, const Type* t, bool carry_dependency = false)
+    : ConstraintCastNode(n, t, carry_dependency) {
+    init_class_id(Class_CastLL);
+  }
+  virtual int Opcode() const;
+  virtual uint ideal_reg() const { return Op_RegL; }
+  virtual Node* Ideal(PhaseGVN* phase, bool can_reshape);
+};
+
 //------------------------------CastPPNode-------------------------------------
 // cast pointer to pointer (different type)
 class CastPPNode: public ConstraintCastNode {

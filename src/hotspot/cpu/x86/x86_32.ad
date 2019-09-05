@@ -7315,6 +7315,14 @@ instruct castII( rRegI dst ) %{
   ins_pipe( empty );
 %}
 
+instruct castLL( rRegL dst ) %{
+  match(Set dst (CastLL dst));
+  format %{ "#castLL of $dst" %}
+  ins_encode( /*empty encoding*/ );
+  ins_cost(0);
+  ins_pipe( empty );
+%}
+
 
 // Load-locked - same as a regular pointer load when used with compare-swap
 instruct loadPLocked(eRegP dst, memory mem) %{
