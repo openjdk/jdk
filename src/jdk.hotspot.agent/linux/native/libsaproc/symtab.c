@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -210,6 +210,9 @@ static int open_file_from_debug_link(const char *name,
                                 + strlen(".debug/")
                                 + strlen(debug_file_directory)
                                 + 2);
+  if (debug_pathname == NULL) {
+    return -1;
+  }
   strcpy(debug_pathname, name);
   char *last_slash = strrchr(debug_pathname, '/');
   if (last_slash == NULL) {
@@ -279,6 +282,9 @@ build_id_to_debug_filename (size_t size, unsigned char *data)
 
   filename = malloc(strlen (debug_file_directory) + (sizeof "/.build-id/" - 1) + 1
                     + 2 * size + (sizeof ".debug" - 1) + 1);
+  if (filename == NULL) {
+    return NULL;
+  }
   s = filename + sprintf (filename, "%s/.build-id/", debug_file_directory);
   if (size > 0)
     {
@@ -305,7 +311,9 @@ static struct symtab* build_symtab_from_build_id(Elf64_Nhdr *note)
     = (unsigned char*)(note+1) + note->n_namesz;
   char *filename
     = (build_id_to_debug_filename (note->n_descsz, bytes));
-
+  if (filename == NULL) {
+    return NULL;
+  }
   fd = pathmap_open(filename);
   if (fd >= 0) {
     symtab = build_symtab_internal(fd, NULL, /* try_debuginfo */ false);
@@ -417,6 +425,10 @@ static struct symtab* build_symtab_internal(int fd, const char *filename, bool t
       htab_sz = n*1.25;
 
       symtab->hash_table = (struct hsearch_data*) calloc(1, sizeof(struct hsearch_data));
+      if (symtab->hash_table == NULL) {
+        goto bad;
+      }
+
       rslt = hcreate_r(n, symtab->hash_table);
       // guarantee(rslt, "unexpected failure: hcreate_r");
 
@@ -426,11 +438,17 @@ static struct symtab* build_symtab_internal(int fd, const char *filename, bool t
       // strings will not be destroyed by elf_end.
       size = scn_cache[shdr->sh_link].c_shdr->sh_size;
       symtab->strs = (char *)malloc(size);
+      if (symtab->strs == NULL) {
+        goto bad;
+      }
       memcpy(symtab->strs, scn_cache[shdr->sh_link].c_data, size);
 
       // allocate memory for storing symbol offset and size;
       symtab->num_symbols = n;
       symtab->symbols = (struct elf_symbol *)calloc(n , sizeof(struct elf_symbol));
+      if (symtab->symbols == NULL) {
+        goto bad;
+      }
 
       // copy symbols info our symtab and enter them info the hash table
       for (j = 0; j < n; j++, syms++) {
@@ -512,6 +530,11 @@ static struct symtab* build_symtab_internal(int fd, const char *filename, bool t
       symtab = prev_symtab;
     }
   }
+  goto quit;
+
+bad:
+  destroy_symtab(symtab);
+  symtab = NULL;
 
 quit:
   if (shbuf) free(shbuf);
