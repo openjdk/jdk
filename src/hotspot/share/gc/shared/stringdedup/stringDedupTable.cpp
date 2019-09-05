@@ -599,7 +599,7 @@ void StringDedupTable::verify() {
     while (*entry != NULL) {
       typeArrayOop value = (*entry)->obj();
       guarantee(value != NULL, "Object must not be NULL");
-      guarantee(Universe::heap()->is_in_reserved(value), "Object must be on the heap");
+      guarantee(Universe::heap()->is_in(value), "Object must be on the heap");
       guarantee(!value->is_forwarded(), "Object must not be forwarded");
       guarantee(value->is_typeArray(), "Object must be a typeArrayOop");
       bool latin1 = (*entry)->latin1();

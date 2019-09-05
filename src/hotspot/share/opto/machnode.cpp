@@ -348,7 +348,7 @@ const class TypePtr *MachNode::adr_type() const {
       return TypePtr::BOTTOM;
     }
     // %%% make offset be intptr_t
-    assert(!Universe::heap()->is_in_reserved(cast_to_oop(offset)), "must be a raw ptr");
+    assert(!Universe::heap()->is_in(cast_to_oop(offset)), "must be a raw ptr");
     return TypeRawPtr::BOTTOM;
   }
 

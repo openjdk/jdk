@@ -96,7 +96,7 @@ private:
                           bool restore_marks_for_biased_locking);
 
   // Reserve aligned space for the heap as needed by the contained generations.
-  char* allocate(size_t alignment, ReservedSpace* heap_rs);
+  ReservedHeapSpace allocate(size_t alignment);
 
   // Initialize ("weak") refs processing support
   void ref_processing_init();
@@ -179,6 +179,9 @@ public:
 
   bool is_young_gen(const Generation* gen) const { return gen == _young_gen; }
   bool is_old_gen(const Generation* gen) const { return gen == _old_gen; }
+
+  MemRegion reserved_region() const { return _reserved; }
+  bool is_in_reserved(const void* addr) const { return _reserved.contains(addr); }
 
   GenerationSpec* young_gen_spec() const;
   GenerationSpec* old_gen_spec() const;

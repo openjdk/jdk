@@ -51,7 +51,7 @@ void Relocation::pd_set_data_value(address x, intptr_t o, bool verify_only) {
   } else if (which == Assembler::narrow_oop_operand) {
     address disp = Assembler::locate_operand(addr(), which);
     // both compressed oops and compressed classes look the same
-    if (Universe::heap()->is_in_reserved((oop)x)) {
+    if (CompressedOops::is_in((void*)x)) {
     if (verify_only) {
       guarantee(*(uint32_t*) disp == CompressedOops::encode((oop)x), "instructions must match");
     } else {

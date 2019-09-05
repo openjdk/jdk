@@ -1545,7 +1545,7 @@ class TagObjectCollector : public JvmtiTagHashmapEntryClosure {
         // SATB marking similar to other j.l.ref.Reference referents. This is
         // achieved by using a phantom load in the object() accessor.
         oop o = entry->object();
-        assert(o != NULL && Universe::heap()->is_in_reserved(o), "sanity check");
+        assert(o != NULL && Universe::heap()->is_in(o), "sanity check");
         jobject ref = JNIHandles::make_local(JavaThread::current(), o);
         _object_results->append(ref);
         _tag_results->append((uint64_t)entry->tag());
@@ -2572,7 +2572,7 @@ class SimpleRootsClosure : public OopClosure {
       return;
     }
 
-    assert(Universe::heap()->is_in_reserved(o), "should be impossible");
+    assert(Universe::heap()->is_in(o), "should be impossible");
 
     jvmtiHeapReferenceKind kind = root_kind();
     if (kind == JVMTI_HEAP_REFERENCE_SYSTEM_CLASS) {
@@ -2964,7 +2964,7 @@ inline bool VM_HeapWalkOperation::iterate_over_object(oop o) {
       oop fld_o = o->obj_field(field->field_offset());
       // ignore any objects that aren't visible to profiler
       if (fld_o != NULL) {
-        assert(Universe::heap()->is_in_reserved(fld_o), "unsafe code should not "
+        assert(Universe::heap()->is_in(fld_o), "unsafe code should not "
                "have references to Klass* anymore");
         int slot = field->field_index();
         if (!CallbackInvoker::report_field_reference(o, fld_o, slot)) {

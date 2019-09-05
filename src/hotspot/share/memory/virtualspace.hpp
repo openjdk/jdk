@@ -25,6 +25,7 @@
 #ifndef SHARE_MEMORY_VIRTUALSPACE_HPP
 #define SHARE_MEMORY_VIRTUALSPACE_HPP
 
+#include "memory/memRegion.hpp"
 #include "utilities/globalDefinitions.hpp"
 
 class outputStream;
@@ -122,7 +123,8 @@ class ReservedHeapSpace : public ReservedSpace {
   ReservedHeapSpace(size_t size, size_t forced_base_alignment, bool large, const char* heap_allocation_directory = NULL);
   // Returns the base to be used for compression, i.e. so that null can be
   // encoded safely and implicit null checks can work.
-  char *compressed_oop_base() { return _base - _noaccess_prefix; }
+  char *compressed_oop_base() const { return _base - _noaccess_prefix; }
+  MemRegion region() const;
 };
 
 // Class encapsulating behavior specific memory space for Code

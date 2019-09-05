@@ -179,8 +179,8 @@ jint ShenandoahHeap::initialize() {
   // Reserve and commit memory for heap
   //
 
-  ReservedSpace heap_rs = Universe::reserve_heap(max_byte_size, heap_alignment);
-  initialize_reserved_region((HeapWord*)heap_rs.base(), (HeapWord*) (heap_rs.base() + heap_rs.size()));
+  ReservedHeapSpace heap_rs = Universe::reserve_heap(max_byte_size, heap_alignment);
+  initialize_reserved_region(heap_rs);
   _heap_region = MemRegion((HeapWord*)heap_rs.base(), heap_rs.size() / HeapWordSize);
   _heap_region_special = heap_rs.special();
 

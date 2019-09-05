@@ -105,10 +105,7 @@ jint GenCollectedHeap::initialize() {
 
   // Allocate space for the heap.
 
-  char* heap_address;
-  ReservedSpace heap_rs;
-
-  heap_address = allocate(HeapAlignment, &heap_rs);
+  ReservedHeapSpace heap_rs = allocate(HeapAlignment);
 
   if (!heap_rs.is_reserved()) {
     vm_shutdown_during_initialization(
@@ -116,9 +113,9 @@ jint GenCollectedHeap::initialize() {
     return JNI_ENOMEM;
   }
 
-  initialize_reserved_region((HeapWord*)heap_rs.base(), (HeapWord*)(heap_rs.base() + heap_rs.size()));
+  initialize_reserved_region(heap_rs);
 
-  _rem_set = create_rem_set(reserved_region());
+  _rem_set = create_rem_set(heap_rs.region());
   _rem_set->initialize();
   CardTableBarrierSet *bs = new CardTableBarrierSet(_rem_set);
   bs->initialize();
@@ -126,9 +123,9 @@ jint GenCollectedHeap::initialize() {
 
   ReservedSpace young_rs = heap_rs.first_part(_young_gen_spec->max_size(), false, false);
   _young_gen = _young_gen_spec->init(young_rs, rem_set());
-  heap_rs = heap_rs.last_part(_young_gen_spec->max_size());
+  ReservedSpace old_rs = heap_rs.last_part(_young_gen_spec->max_size());
 
-  ReservedSpace old_rs = heap_rs.first_part(_old_gen_spec->max_size(), false, false);
+  old_rs = old_rs.first_part(_old_gen_spec->max_size(), false, false);
   _old_gen = _old_gen_spec->init(old_rs, rem_set());
   clear_incremental_collection_failed();
 
@@ -150,8 +147,7 @@ void GenCollectedHeap::initialize_size_policy(size_t init_eden_size,
                                         GCTimeRatio);
 }
 
-char* GenCollectedHeap::allocate(size_t alignment,
-                                 ReservedSpace* heap_rs){
+ReservedHeapSpace GenCollectedHeap::allocate(size_t alignment) {
   // Now figure out the total size.
   const size_t pageSize = UseLargePages ? os::large_page_size() : os::vm_page_size();
   assert(alignment % pageSize == 0, "Must be");
@@ -166,16 +162,16 @@ char* GenCollectedHeap::allocate(size_t alignment,
          "Gen size; total_reserved=" SIZE_FORMAT ", alignment="
          SIZE_FORMAT, total_reserved, alignment);
 
-  *heap_rs = Universe::reserve_heap(total_reserved, alignment);
+  ReservedHeapSpace heap_rs = Universe::reserve_heap(total_reserved, alignment);
 
   os::trace_page_sizes("Heap",
                        MinHeapSize,
                        total_reserved,
                        alignment,
-                       heap_rs->base(),
-                       heap_rs->size());
+                       heap_rs.base(),
+                       heap_rs.size());
 
-  return heap_rs->base();
+  return heap_rs;
 }
 
 class GenIsScavengable : public BoolObjectClosure {

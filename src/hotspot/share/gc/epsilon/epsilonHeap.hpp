@@ -136,6 +136,9 @@ public:
     return os::elapsed_counter() / NANOSECS_PER_MILLISEC;
   }
 
+  MemRegion reserved_region() const { return _reserved; }
+  bool is_in_reserved(const void* addr) const { return _reserved.contains(addr); }
+
   virtual void print_on(outputStream* st) const;
   virtual void print_tracing_info() const;
   virtual bool print_location(outputStream* st, void* addr) const;

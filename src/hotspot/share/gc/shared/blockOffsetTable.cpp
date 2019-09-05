@@ -244,10 +244,10 @@ void
 BlockOffsetArray::do_block_internal(HeapWord* blk_start,
                                     HeapWord* blk_end,
                                     Action action, bool reducing) {
-  assert(Universe::heap()->is_in_reserved(blk_start),
-         "reference must be into the heap");
-  assert(Universe::heap()->is_in_reserved(blk_end-1),
-         "limit must be within the heap");
+  assert(_sp->is_in_reserved(blk_start),
+         "reference must be into the space");
+  assert(_sp->is_in_reserved(blk_end-1),
+         "limit must be within the space");
   // This is optimized to make the test fast, assuming we only rarely
   // cross boundaries.
   uintptr_t end_ui = (uintptr_t)(blk_end - 1);
@@ -718,10 +718,10 @@ void BlockOffsetArrayContigSpace::alloc_block_work(HeapWord* blk_start,
          "blk_start should be at or before threshold");
   assert(pointer_delta(_next_offset_threshold, blk_start) <= BOTConstants::N_words,
          "offset should be <= BlockOffsetSharedArray::N");
-  assert(Universe::heap()->is_in_reserved(blk_start),
-         "reference must be into the heap");
-  assert(Universe::heap()->is_in_reserved(blk_end-1),
-         "limit must be within the heap");
+  assert(_sp->is_in_reserved(blk_start),
+         "reference must be into the space");
+  assert(_sp->is_in_reserved(blk_end-1),
+         "limit must be within the space");
   assert(_next_offset_threshold ==
          _array->_reserved.start() + _next_offset_index*BOTConstants::N_words,
          "index must agree with threshold");
@@ -775,8 +775,6 @@ void BlockOffsetArrayContigSpace::alloc_block_work(HeapWord* blk_start,
 }
 
 HeapWord* BlockOffsetArrayContigSpace::initialize_threshold() {
-  assert(!Universe::heap()->is_in_reserved(_array->_offset_array),
-         "just checking");
   _next_offset_index = _array->index_for(_bottom);
   _next_offset_index++;
   _next_offset_threshold =
@@ -785,8 +783,6 @@ HeapWord* BlockOffsetArrayContigSpace::initialize_threshold() {
 }
 
 void BlockOffsetArrayContigSpace::zero_bottom_entry() {
-  assert(!Universe::heap()->is_in_reserved(_array->_offset_array),
-         "just checking");
   size_t bottom_index = _array->index_for(_bottom);
   _array->set_offset_array(bottom_index, 0);
 }

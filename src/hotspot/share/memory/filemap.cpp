@@ -231,7 +231,7 @@ void FileMapHeader::populate(FileMapInfo* mapinfo, size_t alignment) {
   _narrow_klass_shift = CompressedKlassPointers::shift();
   _shared_path_table = mapinfo->_shared_path_table;
   if (HeapShared::is_heap_object_archiving_allowed()) {
-    _heap_reserved = Universe::heap()->reserved_region();
+    _heap_end = CompressedOops::end();
   }
 
   // The following fields are for sanity checks for whether this archive
@@ -1500,8 +1500,6 @@ void FileMapInfo::map_heap_regions_impl() {
     // referenced objects are replaced. See HeapShared::initialize_from_archived_subgraph().
   }
 
-  MemRegion heap_reserved = Universe::heap()->reserved_region();
-
   log_info(cds)("CDS archive was created with max heap size = " SIZE_FORMAT "M, and the following configuration:",
                 max_heap_size()/M);
   log_info(cds)("    narrow_klass_base = " PTR_FORMAT ", narrow_klass_shift = %d",
@@ -1510,7 +1508,7 @@ void FileMapInfo::map_heap_regions_impl() {
                 narrow_oop_mode(), p2i(narrow_oop_base()), narrow_oop_shift());
 
   log_info(cds)("The current max heap size = " SIZE_FORMAT "M, HeapRegion::GrainBytes = " SIZE_FORMAT,
-                heap_reserved.byte_size()/M, HeapRegion::GrainBytes);
+                MaxHeapSize/M, HeapRegion::GrainBytes);
   log_info(cds)("    narrow_klass_base = " PTR_FORMAT ", narrow_klass_shift = %d",
                 p2i(CompressedKlassPointers::base()), CompressedKlassPointers::shift());
   log_info(cds)("    narrow_oop_mode = %d, narrow_oop_base = " PTR_FORMAT ", narrow_oop_shift = %d",
@@ -1529,10 +1527,10 @@ void FileMapInfo::map_heap_regions_impl() {
     _heap_pointers_need_patching = true;
   } else {
     MemRegion range = get_heap_regions_range_with_current_oop_encoding_mode();
-    if (!heap_reserved.contains(range)) {
+    if (!CompressedOops::is_in(range)) {
       log_info(cds)("CDS heap data need to be relocated because");
       log_info(cds)("the desired range " PTR_FORMAT " - "  PTR_FORMAT, p2i(range.start()), p2i(range.end()));
-      log_info(cds)("is outside of the heap " PTR_FORMAT " - "  PTR_FORMAT, p2i(heap_reserved.start()), p2i(heap_reserved.end()));
+      log_info(cds)("is outside of the heap " PTR_FORMAT " - "  PTR_FORMAT, p2i(CompressedOops::begin()), p2i(CompressedOops::end()));
       _heap_pointers_need_patching = true;
     }
   }
@@ -1548,8 +1546,8 @@ void FileMapInfo::map_heap_regions_impl() {
     // At run time, they may not be inside the heap, so we move them so
     // that they are now near the top of the runtime time. This can be done by
     // the simple math of adding the delta as shown above.
-    address dumptime_heap_end = (address)_header->_heap_reserved.end();
-    address runtime_heap_end = (address)heap_reserved.end();
+    address dumptime_heap_end = (address)_header->_heap_end;
+    address runtime_heap_end = (address)CompressedOops::end();
     delta = runtime_heap_end - dumptime_heap_end;
   }
 

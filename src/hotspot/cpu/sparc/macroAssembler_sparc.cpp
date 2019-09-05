@@ -990,7 +990,7 @@ AddressLiteral MacroAssembler::constant_oop_address(jobject obj) {
   {
     ThreadInVMfromUnknown tiv;
     assert(oop_recorder() != NULL, "this assembler needs an OopRecorder");
-    assert(Universe::heap()->is_in_reserved(JNIHandles::resolve(obj)), "not an oop");
+    assert(Universe::heap()->is_in(JNIHandles::resolve(obj)), "not an oop");
   }
 #endif
   int oop_index = oop_recorder()->find_index(obj);

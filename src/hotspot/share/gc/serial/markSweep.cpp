@@ -127,7 +127,7 @@ MarkSweep::FollowStackClosure MarkSweep::follow_stack_closure;
 void MarkSweep::FollowStackClosure::do_void() { follow_stack(); }
 
 template <class T> inline void MarkSweep::follow_root(T* p) {
-  assert(!Universe::heap()->is_in_reserved(p),
+  assert(!Universe::heap()->is_in(p),
          "roots shouldn't be things within the heap");
   T heap_oop = RawAccess<>::oop_load(p);
   if (!CompressedOops::is_null(heap_oop)) {

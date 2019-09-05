@@ -1129,6 +1129,18 @@ public:
     return _hrm->reserved();
   }
 
+  MemRegion reserved_region() const {
+    return _reserved;
+  }
+
+  HeapWord* base() const {
+    return _reserved.start();
+  }
+
+  bool is_in_reserved(const void* addr) const {
+    return _reserved.contains(addr);
+  }
+
   G1HotCardCache* g1_hot_card_cache() const { return _hot_card_cache; }
 
   G1CardTable* card_table() const {

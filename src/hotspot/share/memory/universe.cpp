@@ -666,8 +666,6 @@ jint universe_init() {
     return status;
   }
 
-  CompressedOops::initialize();
-
   Universe::initialize_tlab();
 
   Metaspace::global_initialize();
@@ -747,7 +745,7 @@ void Universe::initialize_tlab() {
   }
 }
 
-ReservedSpace Universe::reserve_heap(size_t heap_size, size_t alignment) {
+ReservedHeapSpace Universe::reserve_heap(size_t heap_size, size_t alignment) {
 
   assert(alignment <= Arguments::conservative_max_heap_alignment(),
          "actual alignment " SIZE_FORMAT " must be within maximum heap alignment " SIZE_FORMAT,
@@ -770,16 +768,16 @@ ReservedSpace Universe::reserve_heap(size_t heap_size, size_t alignment) {
            "must be exactly of required size and alignment");
     // We are good.
 
-    if (UseCompressedOops) {
-      // Universe::initialize_heap() will reset this to NULL if unscaled
-      // or zero-based narrow oops are actually used.
-      // Else heap start and base MUST differ, so that NULL can be encoded nonambigous.
-      CompressedOops::set_base((address)total_rs.compressed_oop_base());
-    }
-
     if (AllocateHeapAt != NULL) {
       log_info(gc,heap)("Successfully allocated Java heap at location %s", AllocateHeapAt);
     }
+
+    if (UseCompressedOops) {
+      CompressedOops::initialize(total_rs);
+    }
+
+    Universe::calculate_verify_data((HeapWord*)total_rs.base(), (HeapWord*)total_rs.end());
+
     return total_rs;
   }
 
@@ -1171,14 +1169,10 @@ void Universe::calculate_verify_data(HeapWord* low_boundary, HeapWord* high_boun
 // Oop verification (see MacroAssembler::verify_oop)
 
 uintptr_t Universe::verify_oop_mask() {
-  MemRegion m = heap()->reserved_region();
-  calculate_verify_data(m.start(), m.end());
   return _verify_oop_mask;
 }
 
 uintptr_t Universe::verify_oop_bits() {
-  MemRegion m = heap()->reserved_region();
-  calculate_verify_data(m.start(), m.end());
   return _verify_oop_bits;
 }
 

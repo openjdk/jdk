@@ -483,7 +483,7 @@ void JNIHandleBlock::oops_do(OopClosure* f) {
 
 
 jobject JNIHandleBlock::allocate_handle(oop obj) {
-  assert(Universe::heap()->is_in_reserved(obj), "sanity check");
+  assert(Universe::heap()->is_in(obj), "sanity check");
   if (_top == 0) {
     // This is the first allocation or the initial block got zapped when
     // entering a native function. If we have any following blocks they are

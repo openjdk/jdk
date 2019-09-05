@@ -1666,13 +1666,13 @@ jint G1CollectedHeap::initialize() {
   // If this happens then we could end up using a non-optimal
   // compressed oops mode.
 
-  ReservedSpace heap_rs = Universe::reserve_heap(reserved_byte_size,
-                                                 HeapAlignment);
+  ReservedHeapSpace heap_rs = Universe::reserve_heap(reserved_byte_size,
+                                                     HeapAlignment);
 
-  initialize_reserved_region((HeapWord*)heap_rs.base(), (HeapWord*)(heap_rs.base() + heap_rs.size()));
+  initialize_reserved_region(heap_rs);
 
   // Create the barrier set for the entire reserved region.
-  G1CardTable* ct = new G1CardTable(reserved_region());
+  G1CardTable* ct = new G1CardTable(heap_rs.region());
   ct->initialize();
   G1BarrierSet* bs = new G1BarrierSet(ct);
   bs->initialize();
@@ -1742,6 +1742,7 @@ jint G1CollectedHeap::initialize() {
 
   _hrm->initialize(heap_storage, prev_bitmap_storage, next_bitmap_storage, bot_storage, cardtable_storage, card_counts_storage);
   _card_table->initialize(cardtable_storage);
+
   // Do later initialization work for concurrent refinement.
   _hot_card_cache->initialize(card_counts_storage);
 

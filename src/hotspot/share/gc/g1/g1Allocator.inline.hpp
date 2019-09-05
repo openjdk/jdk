@@ -99,11 +99,11 @@ inline void G1ArchiveAllocator::enable_archive_object_check() {
 
   _archive_check_enabled = true;
   size_t length = G1CollectedHeap::heap()->max_reserved_capacity();
-  _closed_archive_region_map.initialize((HeapWord*)Universe::heap()->base(),
-                                        (HeapWord*)Universe::heap()->base() + length,
+  _closed_archive_region_map.initialize(G1CollectedHeap::heap()->base(),
+                                        G1CollectedHeap::heap()->base() + length,
                                         HeapRegion::GrainBytes);
-  _open_archive_region_map.initialize((HeapWord*)Universe::heap()->base(),
-                                      (HeapWord*)Universe::heap()->base() + length,
+  _open_archive_region_map.initialize(G1CollectedHeap::heap()->base(),
+                                      G1CollectedHeap::heap()->base() + length,
                                       HeapRegion::GrainBytes);
 }
 

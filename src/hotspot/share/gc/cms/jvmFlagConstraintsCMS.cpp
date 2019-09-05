@@ -70,7 +70,7 @@ JVMFlag::Error ParGCStridesPerThreadConstraintFunc(uintx value, bool verbose) {
 JVMFlag::Error ParGCCardsPerStrideChunkConstraintFunc(intx value, bool verbose) {
   if (UseConcMarkSweepGC) {
     // ParGCCardsPerStrideChunk should be compared with card table size.
-    size_t heap_size = Universe::heap()->reserved_region().word_size();
+    size_t heap_size = CMSHeap::heap()->reserved_region().word_size();
     CardTableRS* ct = GenCollectedHeap::heap()->rem_set();
     size_t card_table_size = ct->cards_required(heap_size) - 1; // Valid card table size
 

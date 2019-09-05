@@ -269,7 +269,7 @@ void DiscoveredListIterator::load_ptrs(DEBUG_ONLY(bool allow_null_referent)) {
 
   _referent_addr = java_lang_ref_Reference::referent_addr_raw(_current_discovered);
   _referent = java_lang_ref_Reference::referent(_current_discovered);
-  assert(Universe::heap()->is_in_reserved_or_null(_referent),
+  assert(Universe::heap()->is_in_or_null(_referent),
          "Wrong oop found in java.lang.Reference object");
   assert(allow_null_referent ?
              oopDesc::is_oop_or_null(_referent)

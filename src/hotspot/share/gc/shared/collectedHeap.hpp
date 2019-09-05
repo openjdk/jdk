@@ -51,6 +51,7 @@ class GCTracer;
 class GCMemoryManager;
 class MemoryPool;
 class MetaspaceSummary;
+class ReservedHeapSpace;
 class SoftRefPolicy;
 class Thread;
 class ThreadClosure;
@@ -102,9 +103,10 @@ class CollectedHeap : public CHeapObj<mtInternal> {
  private:
   GCHeapLog* _gc_heap_log;
 
+ protected:
+  // Not used by all GCs
   MemRegion _reserved;
 
- protected:
   bool _is_gc_active;
 
   // Used for filler objects (static, but initialized in ctor).
@@ -203,9 +205,7 @@ class CollectedHeap : public CHeapObj<mtInternal> {
   virtual void safepoint_synchronize_begin() {}
   virtual void safepoint_synchronize_end() {}
 
-  void initialize_reserved_region(HeapWord *start, HeapWord *end);
-  MemRegion reserved_region() const { return _reserved; }
-  address base() const { return (address)reserved_region().start(); }
+  void initialize_reserved_region(const ReservedHeapSpace& rs);
 
   virtual size_t capacity() const = 0;
   virtual size_t used() const = 0;
@@ -226,21 +226,17 @@ class CollectedHeap : public CHeapObj<mtInternal> {
   // spaces).
   virtual size_t max_capacity() const = 0;
 
-  // Returns "TRUE" if "p" points into the reserved area of the heap.
-  bool is_in_reserved(const void* p) const {
-    return _reserved.contains(p);
-  }
-
-  bool is_in_reserved_or_null(const void* p) const {
-    return p == NULL || is_in_reserved(p);
-  }
-
   // Returns "TRUE" iff "p" points into the committed areas of the heap.
   // This method can be expensive so avoid using it in performance critical
   // code.
   virtual bool is_in(const void* p) const = 0;
 
   DEBUG_ONLY(bool is_in_or_null(const void* p) const { return p == NULL || is_in(p); })
+
+  // This function verifies that "addr" is a valid oop location, w.r.t. heap
+  // datastructures such as bitmaps and virtual memory address. It does *not*
+  // check if the location is within committed heap memory.
+  virtual void check_oop_location(void* addr) const;
 
   virtual uint32_t hash_oop(oop obj) const;
 

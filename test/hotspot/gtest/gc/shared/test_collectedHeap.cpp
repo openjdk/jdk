@@ -30,25 +30,12 @@ TEST_VM(CollectedHeap, is_in) {
   CollectedHeap* heap = Universe::heap();
 
   uintptr_t epsilon = (uintptr_t) MinObjAlignment;
-  uintptr_t heap_start = (uintptr_t) heap->reserved_region().start();
-  uintptr_t heap_end = (uintptr_t) heap->reserved_region().end();
+  uintptr_t outside_heap = (uintptr_t) &epsilon;
 
   // Test that NULL is not in the heap.
   ASSERT_FALSE(heap->is_in(NULL)) << "NULL is unexpectedly in the heap";
 
-  // Test that a pointer to before the heap start is reported as outside the heap.
-  ASSERT_GE(heap_start, ((uintptr_t) NULL + epsilon))
-          << "Sanity check - heap should not start at 0";
-
-  void* before_heap = (void*) (heap_start - epsilon);
-  ASSERT_FALSE(heap->is_in(before_heap)) << "before_heap: " << p2i(before_heap)
-          << " is unexpectedly in the heap";
-
-  // Test that a pointer to after the heap end is reported as outside the heap.
-  ASSERT_LE(heap_end, ((uintptr_t)-1 - epsilon))
-          << "Sanity check - heap should not end at the end of address space";
-
-  void* after_heap = (void*) (heap_end + epsilon);
-  ASSERT_FALSE(heap->is_in(after_heap)) << "after_heap: " << p2i(after_heap)
+  // Test that a pointer to outside the heap start is reported as outside the heap.
+  ASSERT_FALSE(heap->is_in((void*)outside_heap)) << "outside_heap: " << outside_heap
           << " is unexpectedly in the heap";
 }

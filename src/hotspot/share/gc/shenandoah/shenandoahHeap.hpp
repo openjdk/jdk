@@ -530,6 +530,9 @@ public:
 
   bool is_in(const void* p) const;
 
+  MemRegion reserved_region() const { return _reserved; }
+  bool is_in_reserved(const void* addr) const { return _reserved.contains(addr); }
+
   void collect(GCCause::Cause cause);
   void do_full_collection(bool clear_all_soft_refs);
 

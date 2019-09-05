@@ -394,7 +394,7 @@ bool Symbol::is_valid(Symbol* s) {
   if (!os::is_readable_range(s, s + 1)) return false;
 
   // Symbols are not allocated in Java heap.
-  if (Universe::heap()->is_in_reserved(s)) return false;
+  if (Universe::heap()->is_in(s)) return false;
 
   int len = s->utf8_length();
   if (len < 0) return false;

@@ -87,8 +87,7 @@ template <class T> inline void MarkSweep::adjust_pointer(T* p) {
            "should be forwarded");
 
     if (new_obj != NULL) {
-      assert(Universe::heap()->is_in_reserved(new_obj),
-             "should be in object space");
+      DEBUG_ONLY(Universe::heap()->check_oop_location((HeapWord*)new_obj);)
       RawAccess<IS_NOT_NULL>::oop_store(p, new_obj);
     }
   }

@@ -190,8 +190,8 @@ template <class T> inline T cast_from_oop(oop o) {
   return (T)(CHECK_UNHANDLED_OOPS_ONLY((void*))o);
 }
 
-inline bool check_obj_alignment(oop obj) {
-  return (cast_from_oop<intptr_t>(obj) & MinObjAlignmentInBytesMask) == 0;
+inline bool check_obj_alignment(void* ptr) {
+  return (uintptr_t(ptr) & MinObjAlignmentInBytesMask) == 0;
 }
 
 // The metadata hierarchy is separate from the oop hierarchy

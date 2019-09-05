@@ -350,13 +350,7 @@ bool oopDesc::is_forwarded() const {
 
 // Used by scavengers
 void oopDesc::forward_to(oop p) {
-  assert(check_obj_alignment(p),
-         "forwarding to something not aligned");
-  assert(Universe::heap()->is_in_reserved(p),
-         "forwarding to something not in heap");
-  assert(!is_archived_object(oop(this)) &&
-         !is_archived_object(p),
-         "forwarding archive object");
+  verify_forwardee(p);
   markWord m = markWord::encode_pointer_as_mark(p);
   assert(m.decode_pointer() == p, "encoding must be reversable");
   set_mark_raw(m);
@@ -364,22 +358,14 @@ void oopDesc::forward_to(oop p) {
 
 // Used by parallel scavengers
 bool oopDesc::cas_forward_to(oop p, markWord compare, atomic_memory_order order) {
-  assert(check_obj_alignment(p),
-         "forwarding to something not aligned");
-  assert(Universe::heap()->is_in_reserved(p),
-         "forwarding to something not in heap");
+  verify_forwardee(p);
   markWord m = markWord::encode_pointer_as_mark(p);
   assert(m.decode_pointer() == p, "encoding must be reversable");
   return cas_set_mark_raw(m, compare, order) == compare;
 }
 
 oop oopDesc::forward_to_atomic(oop p, markWord compare, atomic_memory_order order) {
-  // CMS forwards some non-heap value into the mark oop to reserve oops during
-  // promotion, so the next two asserts do not hold.
-  assert(UseConcMarkSweepGC || check_obj_alignment(p),
-         "forwarding to something not aligned");
-  assert(UseConcMarkSweepGC || Universe::heap()->is_in_reserved(p),
-         "forwarding to something not in heap");
+  verify_forwardee(p);
   markWord m = markWord::encode_pointer_as_mark(p);
   assert(m.decode_pointer() == p, "encoding must be reversable");
   markWord old_mark = cas_set_mark_raw(m, compare, order);

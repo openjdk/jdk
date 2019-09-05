@@ -769,10 +769,10 @@ JRT_ENTRY_NO_ASYNC(void, InterpreterRuntime::monitorenter(JavaThread* thread, Ba
     Atomic::inc(BiasedLocking::slow_path_entry_count_addr());
   }
   Handle h_obj(thread, elem->obj());
-  assert(Universe::heap()->is_in_reserved_or_null(h_obj()),
+  assert(Universe::heap()->is_in_or_null(h_obj()),
          "must be NULL or an object");
   ObjectSynchronizer::enter(h_obj, elem->lock(), CHECK);
-  assert(Universe::heap()->is_in_reserved_or_null(elem->obj()),
+  assert(Universe::heap()->is_in_or_null(elem->obj()),
          "must be NULL or an object");
 #ifdef ASSERT
   thread->last_frame().interpreter_frame_verify_monitor(elem);
@@ -786,7 +786,7 @@ JRT_ENTRY_NO_ASYNC(void, InterpreterRuntime::monitorexit(JavaThread* thread, Bas
   thread->last_frame().interpreter_frame_verify_monitor(elem);
 #endif
   Handle h_obj(thread, elem->obj());
-  assert(Universe::heap()->is_in_reserved_or_null(h_obj()),
+  assert(Universe::heap()->is_in_or_null(h_obj()),
          "must be NULL or an object");
   if (elem == NULL || h_obj()->is_unlocked()) {
     THROW(vmSymbols::java_lang_IllegalMonitorStateException());
@@ -853,10 +853,10 @@ void InterpreterRuntime::resolve_invoke(JavaThread* thread, Bytecodes::Code byte
     Symbol* signature = call.signature();
     receiver = Handle(thread, last_frame.callee_receiver(signature));
 
-    assert(Universe::heap()->is_in_reserved_or_null(receiver()),
+    assert(Universe::heap()->is_in_or_null(receiver()),
            "sanity check");
     assert(receiver.is_null() ||
-           !Universe::heap()->is_in_reserved(receiver->klass()),
+           !Universe::heap()->is_in(receiver->klass()),
            "sanity check");
   }
 

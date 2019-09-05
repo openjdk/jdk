@@ -39,13 +39,13 @@ jint EpsilonHeap::initialize() {
   size_t max_byte_size  = align_up(MaxHeapSize, align);
 
   // Initialize backing storage
-  ReservedSpace heap_rs = Universe::reserve_heap(max_byte_size, align);
+  ReservedHeapSpace heap_rs = Universe::reserve_heap(max_byte_size, align);
   _virtual_space.initialize(heap_rs, init_byte_size);
 
   MemRegion committed_region((HeapWord*)_virtual_space.low(),          (HeapWord*)_virtual_space.high());
   MemRegion  reserved_region((HeapWord*)_virtual_space.low_boundary(), (HeapWord*)_virtual_space.high_boundary());
 
-  initialize_reserved_region(reserved_region.start(), reserved_region.end());
+  initialize_reserved_region(heap_rs);
 
   _space = new ContiguousSpace();
   _space->initialize(committed_region, /* clear_space = */ true, /* mangle_space = */ true);

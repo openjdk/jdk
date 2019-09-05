@@ -858,17 +858,6 @@ JVMCIObject JVMCIRuntime::get_HotSpotJVMCIRuntime(JVMCI_TRAPS) {
 
 // private void CompilerToVM.registerNatives()
 JVM_ENTRY_NO_ENV(void, JVM_RegisterJVMCINatives(JNIEnv *env, jclass c2vmClass))
-
-#ifdef _LP64
-#ifndef TARGET_ARCH_sparc
-  uintptr_t heap_end = (uintptr_t) Universe::heap()->reserved_region().end();
-  uintptr_t allocation_end = heap_end + ((uintptr_t)16) * 1024 * 1024 * 1024;
-  guarantee(heap_end < allocation_end, "heap end too close to end of address space (might lead to erroneous TLAB allocations)");
-#endif // TARGET_ARCH_sparc
-#else
-  fatal("check TLAB allocation code for address space conflicts");
-#endif
-
   JNI_JVMCIENV(thread, env);
 
   if (!EnableJVMCI) {

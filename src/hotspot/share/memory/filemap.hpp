@@ -142,7 +142,7 @@ struct FileMapHeader : public CDSFileMapHeaderBase {
   size_t  _cds_i2i_entry_code_buffers_size;
   size_t  _core_spaces_size;        // number of bytes allocated by the core spaces
                                     // (mc, md, ro, rw and od).
-  MemRegion _heap_reserved;         // reserved region for the entire heap at dump time.
+  address _heap_end;                // heap end at dump time.
   bool _base_archive_is_default;    // indicates if the base archive is the system default one
 
   // The following fields are all sanity checks for whether this archive

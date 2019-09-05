@@ -67,8 +67,8 @@ jint ZCollectedHeap::initialize() {
     return JNI_ENOMEM;
   }
 
-  initialize_reserved_region((HeapWord*)ZAddressReservedStart,
-                             (HeapWord*)ZAddressReservedEnd);
+  Universe::calculate_verify_data((HeapWord*)ZAddressReservedStart,
+                                  (HeapWord*)ZAddressReservedEnd);
 
   return JNI_OK;
 }
@@ -286,9 +286,10 @@ void ZCollectedHeap::gc_threads_do(ThreadClosure* tc) const {
 VirtualSpaceSummary ZCollectedHeap::create_heap_space_summary() {
   const size_t capacity_in_words = capacity() / HeapWordSize;
   const size_t max_capacity_in_words = max_capacity() / HeapWordSize;
-  return VirtualSpaceSummary(reserved_region().start(),
-                             reserved_region().start() + capacity_in_words,
-                             reserved_region().start() + max_capacity_in_words);
+  HeapWord* const heap_start = (HeapWord*)ZAddressReservedStart;
+  return VirtualSpaceSummary(heap_start,
+                             heap_start + capacity_in_words,
+                             heap_start + max_capacity_in_words);
 }
 
 void ZCollectedHeap::safepoint_synchronize_begin() {
@@ -365,4 +366,12 @@ void ZCollectedHeap::verify(VerifyOption option /* ignored */) {
 
 bool ZCollectedHeap::is_oop(oop object) const {
   return CollectedHeap::is_oop(object) && _heap.is_oop(object);
+}
+
+void ZCollectedHeap::check_oop_location(void* addr) const {
+  assert(check_obj_alignment(addr), "address is not aligned");
+
+  const uintptr_t addr_int = reinterpret_cast<uintptr_t>(addr);
+  assert(addr_int >= ZAddressSpaceStart, "address is outside of the heap");
+  assert(addr_int < ZAddressSpaceEnd,    "address is outside of the heap");
 }

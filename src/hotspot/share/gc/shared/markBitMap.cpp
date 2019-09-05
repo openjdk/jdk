@@ -62,7 +62,7 @@ void MarkBitMap::do_clear(MemRegion mr, bool large) {
 
 #ifdef ASSERT
 void MarkBitMap::check_mark(HeapWord* addr) {
-  assert(Universe::heap()->is_in_reserved(addr),
+  assert(Universe::heap()->is_in(addr),
          "Trying to access bitmap " PTR_FORMAT " for address " PTR_FORMAT " not in the heap.",
          p2i(this), p2i(addr));
 }
