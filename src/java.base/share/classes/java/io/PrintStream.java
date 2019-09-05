@@ -415,6 +415,7 @@ public class PrintStream extends FilterOutputStream
      *
      * @see        java.io.OutputStream#flush()
      */
+    @Override
     public void flush() {
         synchronized (this) {
             try {
@@ -435,6 +436,7 @@ public class PrintStream extends FilterOutputStream
      *
      * @see        java.io.OutputStream#close()
      */
+    @Override
     public void close() {
         synchronized (this) {
             if (! closing) {
@@ -526,6 +528,7 @@ public class PrintStream extends FilterOutputStream
      * @see #print(char)
      * @see #println(char)
      */
+    @Override
     public void write(int b) {
         try {
             synchronized (this) {
@@ -557,6 +560,7 @@ public class PrintStream extends FilterOutputStream
      * @param  off   Offset from which to start taking bytes
      * @param  len   Number of bytes to write
      */
+    @Override
     public void write(byte buf[], int off, int len) {
         try {
             synchronized (this) {
@@ -572,6 +576,66 @@ public class PrintStream extends FilterOutputStream
         catch (IOException x) {
             trouble = true;
         }
+    }
+
+    /**
+     * Writes all bytes from the specified byte array to this stream. If
+     * automatic flushing is enabled then the {@code flush} method will be
+     * invoked.
+     *
+     * <p> Note that the bytes will be written as given; to write characters
+     * that will be translated according to the platform's default character
+     * encoding, use the {@code print(char[])} or {@code println(char[])}
+     * methods.
+     *
+     * @apiNote
+     * Although declared to throw {@code IOException}, this method never
+     * actually does so. Instead, like other methods that this class
+     * overrides, it sets an internal flag which may be tested via the
+     * {@link #checkError()} method. To write an array of bytes without having
+     * to write a {@code catch} block for the {@code IOException}, use either
+     * {@link #writeBytes(byte[] buf) writeBytes(buf)} or
+     * {@link #write(byte[], int, int) write(buf, 0, buf.length)}.
+     *
+     * @implSpec
+     * This method is equivalent to
+     * {@link java.io.PrintStream#write(byte[],int,int)
+     * this.write(buf, 0, buf.length)}.
+     *
+     * @param  buf   A byte array
+     *
+     * @throws IOException If an I/O error occurs.
+     *
+     * @see #writeBytes(byte[])
+     * @see #write(byte[],int,int)
+     *
+     * @since 14
+     */
+    @Override
+    public void write(byte buf[]) throws IOException {
+        this.write(buf, 0, buf.length);
+    }
+
+    /**
+     * Writes all bytes from the specified byte array to this stream.
+     * If automatic flushing is enabled then the {@code flush} method
+     * will be invoked.
+     *
+     * <p> Note that the bytes will be written as given; to write characters
+     * that will be translated according to the platform's default character
+     * encoding, use the {@code print(char[])} or {@code println(char[])}
+     * methods.
+     *
+     * @implSpec
+     * This method is equivalent to
+     * {@link #write(byte[], int, int) this.write(buf, 0, buf.length)}.
+     *
+     * @param  buf   A byte array
+     *
+     * @since 14
+     */
+    public void writeBytes(byte buf[]) {
+        this.write(buf, 0, buf.length);
     }
 
     /*
