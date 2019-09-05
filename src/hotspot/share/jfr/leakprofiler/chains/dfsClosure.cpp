@@ -23,7 +23,7 @@
  */
 
 #include "precompiled.hpp"
-#include "jfr/leakprofiler/chains/bitset.hpp"
+#include "jfr/leakprofiler/chains/bitset.inline.hpp"
 #include "jfr/leakprofiler/chains/dfsClosure.hpp"
 #include "jfr/leakprofiler/chains/edge.hpp"
 #include "jfr/leakprofiler/chains/edgeStore.hpp"

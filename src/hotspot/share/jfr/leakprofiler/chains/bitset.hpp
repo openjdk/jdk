@@ -26,53 +26,91 @@
 #define SHARE_JFR_LEAKPROFILER_CHAINS_BITSET_HPP
 
 #include "memory/allocation.hpp"
+#include "oops/oop.hpp"
 #include "oops/oopsHierarchy.hpp"
-#include "utilities/bitMap.inline.hpp"
+#include "utilities/bitMap.hpp"
+#include "utilities/hashtable.hpp"
 
 class JfrVirtualMemory;
 class MemRegion;
 
 class BitSet : public CHeapObj<mtTracing> {
- private:
-  JfrVirtualMemory* _vmm;
-  const HeapWord* const _region_start;
-  BitMapView _bits;
-  const size_t _region_size;
+  const static size_t _bitmap_granularity_shift = 26; // 64M
+  const static size_t _bitmap_granularity_size = (size_t)1 << _bitmap_granularity_shift;
+  const static size_t _bitmap_granularity_mask = _bitmap_granularity_size - 1;
+
+  class BitMapFragment;
+
+  class BitMapFragmentTable : public BasicHashtable<mtTracing> {
+    class Entry : public BasicHashtableEntry<mtTracing> {
+    public:
+      uintptr_t _key;
+      CHeapBitMap* _value;
+
+      Entry* next() {
+        return (Entry*)BasicHashtableEntry<mtTracing>::next();
+      }
+    };
+
+  protected:
+    Entry* bucket(int i) const;
+
+    Entry* new_entry(unsigned int hashValue, uintptr_t key, CHeapBitMap* value);
+
+    unsigned hash_segment(uintptr_t key) {
+      unsigned hash = (unsigned)key;
+      return hash ^ (hash >> 3);
+    }
+
+    unsigned hash_to_index(unsigned hash) {
+      return hash & (BasicHashtable<mtTracing>::table_size() - 1);
+    }
+
+  public:
+    BitMapFragmentTable(int table_size) : BasicHashtable<mtTracing>(table_size, sizeof(Entry)) {}
+    void add(uintptr_t key, CHeapBitMap* value);
+    CHeapBitMap** lookup(uintptr_t key);
+  };
+
+  CHeapBitMap* get_fragment_bits(uintptr_t addr);
+
+  BitMapFragmentTable _bitmap_fragments;
+  BitMapFragment* _fragment_list;
+  CHeapBitMap* _last_fragment_bits;
+  uintptr_t _last_fragment_granule;
 
  public:
-  BitSet(const MemRegion& covered_region);
+  BitSet();
   ~BitSet();
 
-  bool initialize();
+  BitMap::idx_t addr_to_bit(uintptr_t addr) const;
 
-  BitMap::idx_t mark_obj(const HeapWord* addr) {
-    const BitMap::idx_t bit = addr_to_bit(addr);
-    _bits.set_bit(bit);
-    return bit;
+  void mark_obj(uintptr_t addr);
+
+  void mark_obj(oop obj) {
+    return mark_obj(cast_from_oop<uintptr_t>(obj));
   }
 
-  BitMap::idx_t mark_obj(oop obj) {
-    return mark_obj((HeapWord*)obj);
+  bool is_marked(uintptr_t addr);
+
+  bool is_marked(oop obj) {
+    return is_marked(cast_from_oop<uintptr_t>(obj));
+  }
+};
+
+class BitSet::BitMapFragment : public CHeapObj<mtTracing> {
+  CHeapBitMap _bits;
+  BitMapFragment* _next;
+
+public:
+  BitMapFragment(uintptr_t granule, BitMapFragment* next);
+
+  BitMapFragment* next() const {
+    return _next;
   }
 
-  bool is_marked(const HeapWord* addr) const {
-    return is_marked(addr_to_bit(addr));
-  }
-
-  bool is_marked(oop obj) const {
-    return is_marked((HeapWord*)obj);
-  }
-
-  BitMap::idx_t size() const {
-    return _bits.size();
-  }
-
-  BitMap::idx_t addr_to_bit(const HeapWord* addr) const {
-    return pointer_delta(addr, _region_start) >> LogMinObjAlignment;
-  }
-
-  bool is_marked(const BitMap::idx_t bit) const {
-    return _bits.at(bit);
+  CHeapBitMap* bits() {
+    return &_bits;
   }
 };
 
