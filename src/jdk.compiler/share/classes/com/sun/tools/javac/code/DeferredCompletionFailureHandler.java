@@ -86,6 +86,26 @@ public class DeferredCompletionFailureHandler {
         }
     };
 
+    public final Handler speculativeCodeHandler = new Handler() {
+        private final Map<ClassSymbol, FlipSymbolDescription> class2Flip = new HashMap<>();
+
+        public void install() {
+        }
+        public void handleAPICompletionFailure(CompletionFailure cf) {
+            throw cf;
+        }
+        public void classSymbolCompleteFailed(ClassSymbol sym, Completer origCompleter) {
+            class2Flip.put(sym, new FlipSymbolDescription(sym, new DeferredCompleter(origCompleter)));
+        }
+        public void classSymbolRemoved(ClassSymbol sym) {
+            class2Flip.remove(sym);
+        }
+        public void uninstall() {
+            class2Flip.values().forEach(f -> f.flip());
+            class2Flip.clear();
+        }
+    };
+
     public final Handler javacCodeHandler = new Handler() {
         public void install() {
         }

@@ -96,6 +96,7 @@ public class DeferredAttr extends JCTree.Visitor {
     final Flow flow;
     final Names names;
     final TypeEnvs typeEnvs;
+    final DeferredCompletionFailureHandler dcfh;
 
     public static DeferredAttr instance(Context context) {
         DeferredAttr instance = context.get(deferredAttrKey);
@@ -121,6 +122,7 @@ public class DeferredAttr extends JCTree.Visitor {
         names = Names.instance(context);
         stuckTree = make.Ident(names.empty).setType(Type.stuckType);
         typeEnvs = TypeEnvs.instance(context);
+        dcfh = DeferredCompletionFailureHandler.instance(context);
         emptyDeferredAttrContext =
             new DeferredAttrContext(AttrMode.CHECK, null, MethodResolutionPhase.BOX, infer.emptyContext, null, null) {
                 @Override
@@ -481,12 +483,12 @@ public class DeferredAttr extends JCTree.Visitor {
      */
     JCTree attribSpeculative(JCTree tree, Env<AttrContext> env, ResultInfo resultInfo) {
         return attribSpeculative(tree, env, resultInfo, treeCopier,
-                (newTree)->new DeferredAttrDiagHandler(log, newTree), AttributionMode.SPECULATIVE, null);
+                newTree->new DeferredDiagnosticHandler(log), AttributionMode.SPECULATIVE, null);
     }
 
     JCTree attribSpeculative(JCTree tree, Env<AttrContext> env, ResultInfo resultInfo, LocalCacheContext localCache) {
         return attribSpeculative(tree, env, resultInfo, treeCopier,
-                (newTree)->new DeferredAttrDiagHandler(log, newTree), AttributionMode.SPECULATIVE, localCache);
+                newTree->new DeferredDiagnosticHandler(log), AttributionMode.SPECULATIVE, localCache);
     }
 
     <Z> JCTree attribSpeculative(JCTree tree, Env<AttrContext> env, ResultInfo resultInfo, TreeCopier<Z> deferredCopier,
@@ -496,12 +498,14 @@ public class DeferredAttr extends JCTree.Visitor {
         Env<AttrContext> speculativeEnv = env.dup(newTree, env.info.dup(env.info.scope.dupUnshared(env.info.scope.owner)));
         speculativeEnv.info.attributionMode = attributionMode;
         Log.DeferredDiagnosticHandler deferredDiagnosticHandler = diagHandlerCreator.apply(newTree);
+        DeferredCompletionFailureHandler.Handler prevCFHandler = dcfh.setHandler(dcfh.speculativeCodeHandler);
         int nwarnings = log.nwarnings;
         log.nwarnings = 0;
         try {
             attr.attribTree(newTree, speculativeEnv, resultInfo);
             return newTree;
         } finally {
+            dcfh.setHandler(prevCFHandler);
             log.nwarnings += nwarnings;
             enter.unenter(env.toplevel, newTree);
             log.popDiagnosticHandler(deferredDiagnosticHandler);
@@ -510,35 +514,6 @@ public class DeferredAttr extends JCTree.Visitor {
             }
         }
     }
-    //where
-        static class DeferredAttrDiagHandler extends Log.DeferredDiagnosticHandler {
-
-            static class PosScanner extends TreeScanner {
-                DiagnosticPosition pos;
-                boolean found = false;
-
-                PosScanner(DiagnosticPosition pos) {
-                    this.pos = pos;
-                }
-
-                @Override
-                public void scan(JCTree tree) {
-                    if (tree != null &&
-                            tree.pos() == pos) {
-                        found = true;
-                    }
-                    super.scan(tree);
-                }
-            }
-
-            DeferredAttrDiagHandler(Log log, JCTree newTree) {
-                super(log, d -> {
-                    PosScanner posScanner = new PosScanner(d.getDiagnosticPosition());
-                    posScanner.scan(newTree);
-                    return posScanner.found;
-                });
-            }
-        }
 
     /**
      * A deferred context is created on each method check. A deferred context is
