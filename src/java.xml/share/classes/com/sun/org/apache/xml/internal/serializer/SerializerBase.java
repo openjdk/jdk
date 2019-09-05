@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2019, Oracle and/or its affiliates. All rights reserved.
  */
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
@@ -25,7 +25,7 @@ import com.sun.org.apache.xml.internal.serializer.utils.Utils;
 import java.io.IOException;
 import java.util.HashMap;
 import java.util.Set;
-import java.util.ArrayList;
+import javax.xml.transform.ErrorListener;
 import javax.xml.transform.OutputKeys;
 import javax.xml.transform.SourceLocator;
 import javax.xml.transform.Transformer;
@@ -42,10 +42,12 @@ import org.xml.sax.ext.Locator2;
  * It contains a number of common fields and methods.
  *
  * @xsl.usage internal
+ * @LastModified: Aug 2019
  */
 public abstract class SerializerBase
     implements SerializationHandler, SerializerConstants
 {
+    protected ErrorListener m_errListener;
 
     /**
      * To fire off the end element trace event

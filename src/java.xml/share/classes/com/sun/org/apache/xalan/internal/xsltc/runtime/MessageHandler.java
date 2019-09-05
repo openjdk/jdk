@@ -1,6 +1,5 @@
 /*
- * reserved comment block
- * DO NOT REMOVE OR ALTER!
+ * Copyright (c) 2019, Oracle and/or its affiliates. All rights reserved.
  */
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
@@ -21,11 +20,18 @@
 
 package com.sun.org.apache.xalan.internal.xsltc.runtime;
 
+import javax.xml.transform.ErrorListener;
+
 /**
  * @author Morten Jorgensen
+ * @LastModified: Aug 2019
  */
 public class MessageHandler {
     public void displayMessage(String msg) {
         System.err.println(msg);
+    }
+
+    public ErrorListener getErrorListener() {
+        return null;
     }
 }

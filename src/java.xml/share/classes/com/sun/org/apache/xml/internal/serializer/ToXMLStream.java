@@ -40,7 +40,7 @@ import org.xml.sax.SAXException;
  * be viewed as internal or package private, this is not an API.
  *
  * @xsl.usage internal
- * @LastModified: July 2019
+ * @LastModified: Aug 2019
  */
 public final class ToXMLStream extends ToStream
 {
@@ -64,12 +64,20 @@ public final class ToXMLStream extends ToStream
      */
     public ToXMLStream()
     {
+        this(null);
+    }
+
+    /**
+     * Default constructor.
+     */
+    public ToXMLStream(ErrorListener l)
+    {
+        super(l);
         m_charInfo = m_xmlcharInfo;
 
         initCDATA();
         // initialize namespaces
         m_prefixMap = new NamespaceMappings();
-
     }
 
     /**

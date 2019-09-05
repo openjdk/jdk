@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2006, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2006, 2019, Oracle and/or its affiliates. All rights reserved.
  */
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
@@ -54,7 +54,7 @@ import org.w3c.dom.Document;
  * @author Morten Jorgensen
  * @author G. Todd Miller
  * @author John Howard, JohnH@schemasoft.com
- * @LastModified: Oct 2017
+ * @LastModified: Aug 2019
  */
 public abstract class AbstractTranslet implements Translet {
 
@@ -558,8 +558,8 @@ public abstract class AbstractTranslet implements Translet {
         throws TransletException
     {
         try {
-            final TransletOutputHandlerFactory factory
-                = TransletOutputHandlerFactory.newInstance(_overrideDefaultParser);
+            final TransletOutputHandlerFactory factory = TransletOutputHandlerFactory
+                    .newInstance(_overrideDefaultParser, _msgHandler.getErrorListener());
 
             String dirStr = new File(filename).getParent();
             if ((null != dirStr) && (dirStr.length() > 0)) {

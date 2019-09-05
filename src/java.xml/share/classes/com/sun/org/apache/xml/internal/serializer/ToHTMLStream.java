@@ -30,6 +30,7 @@ import org.xml.sax.SAXException;
 
 import com.sun.org.apache.xml.internal.serializer.utils.MsgKey;
 import com.sun.org.apache.xml.internal.serializer.utils.Utils;
+import javax.xml.transform.ErrorListener;
 
 /**
  * This serializer takes a series of SAX or
@@ -40,7 +41,7 @@ import com.sun.org.apache.xml.internal.serializer.utils.Utils;
  * because it is used from another package.
  *
  * @xsl.usage internal
- * @LastModified: July 2019
+ * @LastModified: Aug 2019
  */
 public final class ToHTMLStream extends ToStream
 {
@@ -638,12 +639,15 @@ public final class ToHTMLStream extends ToStream
      */
     public ToHTMLStream()
     {
+        this(null);
+    }
 
-        super();
+    public ToHTMLStream(ErrorListener l)
+    {
+        super(l);
         m_charInfo = m_htmlcharInfo;
         // initialize namespaces
         m_prefixMap = new NamespaceMappings();
-
     }
 
     /** The name of the current element. */

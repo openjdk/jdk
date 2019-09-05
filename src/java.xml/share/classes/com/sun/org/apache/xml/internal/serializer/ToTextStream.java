@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2019, Oracle and/or its affiliates. All rights reserved.
  */
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
@@ -24,6 +24,7 @@ import java.io.IOException;
 
 import com.sun.org.apache.xml.internal.serializer.utils.MsgKey;
 import com.sun.org.apache.xml.internal.serializer.utils.Utils;
+import javax.xml.transform.ErrorListener;
 import org.xml.sax.Attributes;
 import org.xml.sax.SAXException;
 
@@ -33,7 +34,7 @@ import org.xml.sax.SAXException;
  * This class converts SAX or SAX-like calls to a
  * serialized document for xsl:output method of "text".
  * @xsl.usage internal
- * @LastModified: Sept 2018
+ * @LastModified: Aug 2019
  */
 public final class ToTextStream extends ToStream
 {
@@ -44,7 +45,12 @@ public final class ToTextStream extends ToStream
    */
   public ToTextStream()
   {
-    super();
+    this(null);
+  }
+
+  public ToTextStream(ErrorListener l)
+  {
+    super(l);
   }
 
 
