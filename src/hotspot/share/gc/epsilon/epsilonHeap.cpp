@@ -110,8 +110,8 @@ GrowableArray<MemoryPool*> EpsilonHeap::memory_pools() {
 
 size_t EpsilonHeap::unsafe_max_tlab_alloc(Thread* thr) const {
   // Return max allocatable TLAB size, and let allocation path figure out
-  // the actual TLAB allocation size.
-  return _max_tlab_size;
+  // the actual allocation size. Note: result should be in bytes.
+  return _max_tlab_size * HeapWordSize;
 }
 
 EpsilonHeap* EpsilonHeap::heap() {
