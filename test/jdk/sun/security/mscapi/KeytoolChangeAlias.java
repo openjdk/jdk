@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,6 +22,7 @@
  */
 
 import jdk.test.lib.SecurityTools;
+import jdk.test.lib.security.CertUtils;
 
 import java.security.KeyStore;
 
@@ -30,7 +31,6 @@ import java.security.KeyStore;
  * @bug 6415696 6931562 8180570
  * @requires os.family == "windows"
  * @library /test/lib
- * @library /test/jdk/java/security/testlibrary
  * @summary Test "keytool -changealias" using the Microsoft CryptoAPI provider.
  */
 public class KeytoolChangeAlias {

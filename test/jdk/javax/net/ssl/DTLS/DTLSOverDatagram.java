@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,16 +29,18 @@
  * @bug 8043758
  * @summary Datagram Transport Layer Security (DTLS)
  * @modules java.base/sun.security.util
+ * @library /test/lib
  * @run main/othervm DTLSOverDatagram
  */
 
-import java.io.*;
 import java.nio.*;
 import java.net.*;
 import java.util.*;
-import java.security.*;
-import java.security.cert.*;
 import javax.net.ssl.*;
+
+import jdk.test.lib.security.KeyStoreUtils;
+import jdk.test.lib.security.SSLContextBuilder;
+
 import java.util.concurrent.*;
 
 import sun.security.util.HexDumpEncoder;
@@ -60,7 +62,6 @@ public class DTLSOverDatagram {
     private static String pathToStores = "../etc";
     private static String keyStoreFile = "keystore";
     private static String trustStoreFile = "truststore";
-    private static String passwd = "passphrase";
 
     private static String keyFilename =
             System.getProperty("test.src", ".") + "/" + pathToStores +
@@ -537,30 +538,13 @@ public class DTLSOverDatagram {
 
     // get DTSL context
     SSLContext getDTLSContext() throws Exception {
-        KeyStore ks = KeyStore.getInstance("JKS");
-        KeyStore ts = KeyStore.getInstance("JKS");
-
-        char[] passphrase = "passphrase".toCharArray();
-
-        try (FileInputStream fis = new FileInputStream(keyFilename)) {
-            ks.load(fis, passphrase);
-        }
-
-        try (FileInputStream fis = new FileInputStream(trustFilename)) {
-            ts.load(fis, passphrase);
-        }
-
-        KeyManagerFactory kmf = KeyManagerFactory.getInstance("SunX509");
-        kmf.init(ks, passphrase);
-
-        TrustManagerFactory tmf = TrustManagerFactory.getInstance("SunX509");
-        tmf.init(ts);
-
-        SSLContext sslCtx = SSLContext.getInstance("DTLS");
-
-        sslCtx.init(kmf.getKeyManagers(), tmf.getTrustManagers(), null);
-
-        return sslCtx;
+        String passphrase = "passphrase";
+        return SSLContextBuilder.builder()
+                .trustStore(KeyStoreUtils.loadKeyStore(trustFilename, passphrase))
+                .keyStore(KeyStoreUtils.loadKeyStore(keyFilename, passphrase))
+                .kmfPassphrase(passphrase)
+                .protocol("DTLS")
+                .build();
     }
 
 

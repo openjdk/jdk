@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,39 +21,35 @@
  * questions.
  */
 
-// SunJSSE does not support dynamic system properties, no way to re-use
-// system properties in samevm/agentvm mode.
+package jdk.test.lib.security;
 
 /*
- * @test
- * @bug 8043758
- * @summary Datagram Transport Layer Security (DTLS)
- * @modules java.base/sun.security.util
- * @library /test/lib
- * @build DTLSOverDatagram
- * @run main/othervm ClientAuth
+ * An entry in key store.
  */
+public class KeyEntry {
 
-import javax.net.ssl.SSLEngine;
+    // The key algorithm
+    public final String keyAlgo;
 
-/**
- * Test DTLS client authentication.
- */
-public class ClientAuth extends DTLSOverDatagram {
+    // The PEM-encoded PKCS8 key string
+    public final String keyStr;
 
-    public static void main(String[] args) throws Exception {
-        ClientAuth testCase = new ClientAuth();
-        testCase.runTest(testCase);
+    // The password to protect the key
+    public final String password;
+
+    // The certificate chain
+    // Every certificate is a PEM-encoded string
+    public final String[] certStrs;
+
+    public KeyEntry(String keyAlgo, String keyStr, String password,
+            String[] certStrs) {
+        this.keyAlgo = keyAlgo;
+        this.keyStr = keyStr;
+        this.password = password;
+        this.certStrs = certStrs;
     }
 
-    @Override
-    SSLEngine createSSLEngine(boolean isClient) throws Exception {
-        SSLEngine engine = super.createSSLEngine(isClient);
-
-        if (!isClient) {
-            engine.setNeedClientAuth(true);
-        }
-
-        return engine;
+    public KeyEntry(String keyAlgo, String keyStr, String[] certStrs) {
+        this(keyAlgo, keyStr, null, certStrs);
     }
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,12 +25,13 @@
  * @test
  * @bug 4514108
  * @summary Verify host name matching behaves as defined in RFC2818.
+ * @library /test/lib
  * @modules java.base/sun.security.util
  */
 
-import java.io.*;
 import java.security.cert.*;
 
+import jdk.test.lib.security.CertUtils;
 import sun.security.util.*;
 
 /**
@@ -172,28 +173,15 @@ import sun.security.util.*;
 
 public class TestHostnameChecker {
 
-    private final static String PATH = System.getProperty("test.src", ".");
-
     public static void main(String[] args) throws Exception {
-        CertificateFactory cf = CertificateFactory.getInstance("X.509");
-        InputStream in = new FileInputStream(new File(PATH, "cert1.crt"));
-        X509Certificate cert1 = (X509Certificate)cf.generateCertificate(in);
-        in.close();
-        in = new FileInputStream(new File(PATH, "cert2.crt"));
-        X509Certificate cert2 = (X509Certificate)cf.generateCertificate(in);
-        in.close();
-        in = new FileInputStream(new File(PATH, "cert3.crt"));
-        X509Certificate cert3 = (X509Certificate)cf.generateCertificate(in);
-        in.close();
-        in = new FileInputStream(new File(PATH, "cert4.crt"));
-        X509Certificate cert4 = (X509Certificate)cf.generateCertificate(in);
-        in.close();
-        in = new FileInputStream(new File(PATH, "cert5.crt"));
-        X509Certificate cert5 = (X509Certificate)cf.generateCertificate(in);
-        in.close();
+        X509Certificate cert1 = CertUtils.getCertFromFile("cert1.crt");
+        X509Certificate cert2 = CertUtils.getCertFromFile("cert2.crt");
+        X509Certificate cert3 = CertUtils.getCertFromFile("cert3.crt");
+        X509Certificate cert4 = CertUtils.getCertFromFile("cert4.crt");
+        X509Certificate cert5 = CertUtils.getCertFromFile("cert5.crt");
 
         HostnameChecker checker = HostnameChecker.getInstance(
-                                        HostnameChecker.TYPE_TLS);
+                HostnameChecker.TYPE_TLS);
         System.out.println("TLS tests.........");
         System.out.println("==================");
         check(checker, "foo1.com", cert1, true);
