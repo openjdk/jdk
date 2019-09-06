@@ -128,7 +128,7 @@ serviceability/sa/TestDefaultMethods.java 8193639 solaris-all
 serviceability/sa/TestG1HeapRegion.java 8193639 solaris-all
 serviceability/sa/TestHeapDumpForInvokeDynamic.java 8193639 solaris-all
 serviceability/sa/TestHeapDumpForLargeArray.java 8193639 solaris-all
-serviceability/sa/TestInstanceKlassSize.java 8193639 solaris-all
+serviceability/sa/TestInstanceKlassSize.java 8193639,8230664 solaris-all,linux-ppc64le,linux-ppc64
 serviceability/sa/TestInstanceKlassSizeForInterface.java 8193639 solaris-all
 serviceability/sa/TestIntConstant.java 8193639,8211767 solaris-all,linux-ppc64le,linux-ppc64
 serviceability/sa/TestJhsdbJstackLock.java 8193639 solaris-all
