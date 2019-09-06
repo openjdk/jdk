@@ -65,6 +65,7 @@ ifeq ($(INCLUDE_GRAAL), true)
           -processorpath $(BUILDTOOLS_OUTPUTDIR)/jdk.vm.compiler.replacements.verifier.jar \
           --add-exports jdk.unsupported/sun.misc=ALL-UNNAMED \
           --add-exports java.base/jdk.internal.misc=ALL-UNNAMED \
+          --add-exports java.base/jdk.internal.module=ALL-UNNAMED \
 
       ### Copy 3rd party libs
       $(eval $(call SetupCopyFiles, COPY_GRAALUNIT_LIBS, \
