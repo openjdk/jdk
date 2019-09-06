@@ -7315,7 +7315,7 @@ instruct castII( rRegI dst ) %{
   ins_pipe( empty );
 %}
 
-instruct castLL( rRegL dst ) %{
+instruct castLL( eRegL dst ) %{
   match(Set dst (CastLL dst));
   format %{ "#castLL of $dst" %}
   ins_encode( /*empty encoding*/ );
