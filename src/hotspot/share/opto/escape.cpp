@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -2125,6 +2125,9 @@ JavaObjectNode* ConnectionGraph::unique_java_object(Node *n) {
     return NULL;
   }
   PointsToNode* ptn = ptnode_adr(idx);
+  if (ptn == NULL) {
+    return NULL;
+  }
   if (ptn->is_JavaObject()) {
     return ptn->as_JavaObject();
   }
