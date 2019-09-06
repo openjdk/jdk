@@ -1,6 +1,6 @@
 #!/bin/bash
 #
-# Copyright (c) 2012, 2018, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2012, 2019, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -361,6 +361,12 @@ compare_file_types() {
                 # the way we produce zip-files make it so that directories are stored in
                 # old file but not in new (only files with full-path) this makes file
                 # report them as different
+                continue
+            elif [ "`echo $OF | $GREP -c 'MSVC program database ver 7.00'`" -gt 0 ] \
+                     && [ "`echo $TF | $GREP -c 'MSVC program database ver 7.00'`" -gt 0 ]
+            then
+                # For Windows pdb files the file command reports some kind of size data
+                # which may sometimes come out randomly different.
                 continue
             else
                 if [ -z "$found" ]; then echo ; found="yes"; fi
