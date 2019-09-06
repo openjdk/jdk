@@ -25,11 +25,11 @@
 #ifndef SHARE_GC_G1_G1DIRTYCARDQUEUE_HPP
 #define SHARE_GC_G1_G1DIRTYCARDQUEUE_HPP
 
+#include "gc/g1/g1BufferNodeList.hpp"
 #include "gc/g1/g1FreeIdSet.hpp"
 #include "gc/shared/ptrQueue.hpp"
 #include "memory/allocation.hpp"
 
-class G1CardTableEntryClosure;
 class G1DirtyCardQueueSet;
 class G1RedirtyCardsQueueSet;
 class Thread;
@@ -78,34 +78,14 @@ class G1DirtyCardQueueSet: public PtrQueueSet {
 
   void abandon_completed_buffers();
 
-  // Apply the closure to the elements of "node" from it's index to
-  // buffer_size.  If all closure applications return true, then
-  // returns true.  Stops processing after the first closure
-  // application that returns false, and returns false from this
-  // function.  The node's index is updated to exclude the processed
-  // elements, e.g. up to the element for which the closure returned
-  // false, or one past the last element if the closure always
-  // returned true.
-  bool apply_closure_to_buffer(G1CardTableEntryClosure* cl,
-                               BufferNode* node,
-                               uint worker_i = 0);
-
-  // If there are more than stop_at completed buffers, pop one, apply
-  // the specified closure to its active elements, and return true.
-  // Otherwise return false.
-  //
-  // A completely processed buffer is freed.  However, if a closure
-  // invocation returns false, processing is stopped and the partially
-  // processed buffer (with its index updated to exclude the processed
-  // elements, e.g. up to the element for which the closure returned
-  // false) is returned to the completed buffer set.
-  //
-  // If during_pause is true, stop_at must be zero, and the closure
-  // must never return false.
-  bool apply_closure_to_completed_buffer(G1CardTableEntryClosure* cl,
-                                         uint worker_i,
-                                         size_t stop_at,
-                                         bool during_pause);
+  // Refine the cards in "node" from it's index to buffer_size.
+  // Stops processing if SuspendibleThreadSet::should_yield() is true.
+  // Returns true if the entire buffer was processed, false if there
+  // is a pending yield request.  The node's index is updated to exclude
+  // the processed elements, e.g. up to the element before processing
+  // stopped, or one past the last element if the entire buffer was
+  // processed.
+  bool refine_buffer(BufferNode* node, uint worker_id);
 
   bool mut_process_buffer(BufferNode* node);
 
@@ -171,13 +151,16 @@ public:
 
   void merge_bufferlists(G1RedirtyCardsQueueSet* src);
 
-  // Apply G1RefineCardConcurrentlyClosure to completed buffers until there are stop_at
-  // completed buffers remaining.
-  bool refine_completed_buffer_concurrently(uint worker_i, size_t stop_at);
+  G1BufferNodeList take_all_completed_buffers();
 
-  // Apply the given closure to all completed buffers. The given closure's do_card_ptr
-  // must never return false. Must only be called during GC.
-  bool apply_closure_during_gc(G1CardTableEntryClosure* cl, uint worker_i);
+  // If there are more than stop_at cards in the completed buffers, pop
+  // a buffer, refine its contents, and return true.  Otherwise return
+  // false.
+  //
+  // Stops processing a buffer if SuspendibleThreadSet::should_yield(),
+  // returning the incompletely processed buffer to the completed buffer
+  // list, for later processing of the remainder.
+  bool refine_completed_buffer_concurrently(uint worker_i, size_t stop_at);
 
   // If a full collection is happening, reset partial logs, and release
   // completed ones: the full collection will make them all irrelevant.

@@ -132,7 +132,7 @@ class RedirtyLoggedCardTableEntryClosure : public G1CardTableEntryClosure {
   RedirtyLoggedCardTableEntryClosure(G1CollectedHeap* g1h) : G1CardTableEntryClosure(),
     _num_dirtied(0), _g1h(g1h), _g1_ct(g1h->card_table()) { }
 
-  bool do_card_ptr(CardValue* card_ptr, uint worker_i) {
+  void do_card_ptr(CardValue* card_ptr, uint worker_i) {
     HeapRegion* hr = region_for_card(card_ptr);
 
     // Should only dirty cards in regions that won't be freed.
@@ -140,8 +140,6 @@ class RedirtyLoggedCardTableEntryClosure : public G1CardTableEntryClosure {
       *card_ptr = G1CardTable::dirty_card_val();
       _num_dirtied++;
     }
-
-    return true;
   }
 
   size_t num_dirtied()   const { return _num_dirtied; }
@@ -1948,12 +1946,6 @@ void G1CollectedHeap::iterate_hcc_closure(G1CardTableEntryClosure* cl, uint work
   _hot_card_cache->drain(cl, worker_i);
 }
 
-void G1CollectedHeap::iterate_dirty_card_closure(G1CardTableEntryClosure* cl, uint worker_i) {
-  G1DirtyCardQueueSet& dcqs = G1BarrierSet::dirty_card_queue_set();
-  while (dcqs.apply_closure_during_gc(cl, worker_i)) {}
-  assert(dcqs.num_cards() == 0, "Completed buffers exist!");
-}
-
 // Computes the sum of the storage used by the various regions.
 size_t G1CollectedHeap::used() const {
   size_t result = _summary_bytes_used + _allocator->used_in_alloc_regions();
@@ -3225,23 +3217,14 @@ class G1RedirtyLoggedCardsTask : public AbstractGangTask {
   G1CollectedHeap* _g1h;
   BufferNode* volatile _nodes;
 
-  void apply(G1CardTableEntryClosure* cl, BufferNode* node, uint worker_id) {
-    void** buf = BufferNode::make_buffer_from_node(node);
-    size_t limit = _qset->buffer_size();
-    for (size_t i = node->index(); i < limit; ++i) {
-      CardTable::CardValue* card_ptr = static_cast<CardTable::CardValue*>(buf[i]);
-      bool result = cl->do_card_ptr(card_ptr, worker_id);
-      assert(result, "Closure should always return true");
-    }
-  }
-
-  void par_apply(G1CardTableEntryClosure* cl, uint worker_id) {
+  void par_apply(RedirtyLoggedCardTableEntryClosure* cl, uint worker_id) {
+    size_t buffer_size = _qset->buffer_size();
     BufferNode* next = Atomic::load(&_nodes);
     while (next != NULL) {
       BufferNode* node = next;
       next = Atomic::cmpxchg(node->next(), &_nodes, node);
       if (next == node) {
-        apply(cl, node, worker_id);
+        cl->apply_to_buffer(node, buffer_size, worker_id);
         next = node->next();
       }
     }

@@ -99,8 +99,7 @@ void G1HotCardCache::drain(G1CardTableEntryClosure* cl, uint worker_i) {
     for (size_t i = start_idx; i < end_idx; i++) {
       CardValue* card_ptr = _hot_cache[i];
       if (card_ptr != NULL) {
-        bool result = cl->do_card_ptr(card_ptr, worker_i);
-        assert(result, "Closure should always return true");
+        cl->do_card_ptr(card_ptr, worker_i);
       } else {
         break;
       }

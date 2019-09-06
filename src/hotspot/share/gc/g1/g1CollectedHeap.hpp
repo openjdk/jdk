@@ -993,9 +993,6 @@ public:
   // Apply the given closure on all cards in the Hot Card Cache, emptying it.
   void iterate_hcc_closure(G1CardTableEntryClosure* cl, uint worker_i);
 
-  // Apply the given closure on all cards in the Dirty Card Queue Set, emptying it.
-  void iterate_dirty_card_closure(G1CardTableEntryClosure* cl, uint worker_i);
-
   // The shared block offset table array.
   G1BlockOffsetTable* bot() const { return _bot; }
 

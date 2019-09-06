@@ -41,24 +41,6 @@
 #include "runtime/thread.inline.hpp"
 #include "runtime/threadSMR.hpp"
 
-// Closure used for updating remembered sets and recording references that
-// point into the collection set while the mutator is running.
-// Assumed to be only executed concurrently with the mutator. Yields via
-// SuspendibleThreadSet after every card.
-class G1RefineCardConcurrentlyClosure: public G1CardTableEntryClosure {
-public:
-  bool do_card_ptr(CardValue* card_ptr, uint worker_i) {
-    G1CollectedHeap::heap()->rem_set()->refine_card_concurrently(card_ptr, worker_i);
-
-    if (SuspendibleThreadSet::should_yield()) {
-      // Caller will actually yield.
-      return false;
-    }
-    // Otherwise, we finished successfully; return true.
-    return true;
-  }
-};
-
 G1DirtyCardQueue::G1DirtyCardQueue(G1DirtyCardQueueSet* qset) :
   // Dirty card queues are always active, so we create them with their
   // active field set to true.
@@ -228,25 +210,27 @@ void G1DirtyCardQueueSet::merge_bufferlists(G1RedirtyCardsQueueSet* src) {
   verify_num_cards();
 }
 
-bool G1DirtyCardQueueSet::apply_closure_to_buffer(G1CardTableEntryClosure* cl,
-                                                  BufferNode* node,
-                                                  uint worker_i) {
-  if (cl == NULL) return true;
-  bool result = true;
-  void** buf = BufferNode::make_buffer_from_node(node);
-  size_t i = node->index();
-  size_t limit = buffer_size();
-  for ( ; i < limit; ++i) {
-    CardTable::CardValue* card_ptr = static_cast<CardTable::CardValue*>(buf[i]);
-    assert(card_ptr != NULL, "invariant");
-    if (!cl->do_card_ptr(card_ptr, worker_i)) {
-      result = false;           // Incomplete processing.
-      break;
-    }
-  }
-  assert(i <= buffer_size(), "invariant");
-  node->set_index(i);
+G1BufferNodeList G1DirtyCardQueueSet::take_all_completed_buffers() {
+  MutexLocker x(_cbl_mon, Mutex::_no_safepoint_check_flag);
+  G1BufferNodeList result(_completed_buffers_head, _completed_buffers_tail, _num_cards);
+  _completed_buffers_head = NULL;
+  _completed_buffers_tail = NULL;
+  _num_cards = 0;
   return result;
+}
+
+bool G1DirtyCardQueueSet::refine_buffer(BufferNode* node, uint worker_id) {
+  G1RemSet* rem_set = G1CollectedHeap::heap()->rem_set();
+  size_t size = buffer_size();
+  void** buffer = BufferNode::make_buffer_from_node(node);
+  size_t i = node->index();
+  assert(i <= size, "invariant");
+  for ( ; (i < size) && !SuspendibleThreadSet::should_yield(); ++i) {
+    CardTable::CardValue* cp = static_cast<CardTable::CardValue*>(buffer[i]);
+    rem_set->refine_card_concurrently(cp, worker_id);
+  }
+  node->set_index(i);
+  return i == size;
 }
 
 #ifndef ASSERT
@@ -282,8 +266,7 @@ bool G1DirtyCardQueueSet::process_or_enqueue_completed_buffer(BufferNode* node) 
 
 bool G1DirtyCardQueueSet::mut_process_buffer(BufferNode* node) {
   uint worker_id = _free_ids.claim_par_id(); // temporarily claim an id
-  G1RefineCardConcurrentlyClosure cl;
-  bool result = apply_closure_to_buffer(&cl, node, worker_id);
+  bool result = refine_buffer(node, worker_id);
   _free_ids.release_par_id(worker_id); // release the id
 
   if (result) {
@@ -293,35 +276,19 @@ bool G1DirtyCardQueueSet::mut_process_buffer(BufferNode* node) {
   return result;
 }
 
-bool G1DirtyCardQueueSet::refine_completed_buffer_concurrently(uint worker_i, size_t stop_at) {
-  G1RefineCardConcurrentlyClosure cl;
-  return apply_closure_to_completed_buffer(&cl, worker_i, stop_at, false);
-}
-
-bool G1DirtyCardQueueSet::apply_closure_during_gc(G1CardTableEntryClosure* cl, uint worker_i) {
-  assert_at_safepoint();
-  return apply_closure_to_completed_buffer(cl, worker_i, 0, true);
-}
-
-bool G1DirtyCardQueueSet::apply_closure_to_completed_buffer(G1CardTableEntryClosure* cl,
-                                                            uint worker_i,
-                                                            size_t stop_at,
-                                                            bool during_pause) {
-  assert(!during_pause || stop_at == 0, "Should not leave any completed buffers during a pause");
-  BufferNode* nd = get_completed_buffer(stop_at);
-  if (nd == NULL) {
+bool G1DirtyCardQueueSet::refine_completed_buffer_concurrently(uint worker_id, size_t stop_at) {
+  BufferNode* node = get_completed_buffer(stop_at);
+  if (node == NULL) {
     return false;
+  } else if (refine_buffer(node, worker_id)) {
+    assert_fully_consumed(node, buffer_size());
+    // Done with fully processed buffer.
+    deallocate_buffer(node);
+    Atomic::inc(&_processed_buffers_rs_thread);
+    return true;
   } else {
-    if (apply_closure_to_buffer(cl, nd, worker_i)) {
-      assert_fully_consumed(nd, buffer_size());
-      // Done with fully processed buffer.
-      deallocate_buffer(nd);
-      Atomic::inc(&_processed_buffers_rs_thread);
-    } else {
-      // Return partially processed buffer to the queue.
-      guarantee(!during_pause, "Should never stop early");
-      enqueue_completed_buffer(nd);
-    }
+    // Return partially processed buffer to the queue.
+    enqueue_completed_buffer(node);
     return true;
   }
 }
