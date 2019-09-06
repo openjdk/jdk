@@ -36,6 +36,8 @@ public class UCDFiles {
 
     public static Path BLOCKS =
         UCD_DIR.resolve("Blocks.txt");
+    public static Path DERIVED_PROPS =
+        UCD_DIR.resolve("DerivedCoreProperties.txt");
     public static Path GRAPHEME_BREAK_PROPERTY =
         UCD_DIR.resolve("auxiliary").resolve("GraphemeBreakProperty.txt");
     public static Path GRAPHEME_BREAK_TEST =

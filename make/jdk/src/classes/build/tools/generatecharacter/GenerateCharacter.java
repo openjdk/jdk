@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -73,6 +73,7 @@ public class GenerateCharacter {
     static String DefaultUnicodeSpecFileName  = ROOT + "UnicodeData.txt";
     static String DefaultSpecialCasingFileName = ROOT + "SpecialCasing.txt";
     static String DefaultPropListFileName     = ROOT + "PropList.txt";
+    static String DefaultDerivedPropsFileName = ROOT + "DerivedCoreProperties.txt";
     static String DefaultJavaTemplateFileName = ROOT + "Character.java.template";
     static String DefaultJavaOutputFileName   = ROOT + "Character.java";
     static String DefaultCTemplateFileName    = ROOT + "Character.c.template";
@@ -159,6 +160,8 @@ public class GenerateCharacter {
     1 bit Other_Math property
     1 bit Ideographic property
     1 bit Noncharacter codepoint property
+    1 bit ID_Start property
+    1 bit ID_Continue property
     */
 
 
@@ -190,7 +193,7 @@ public class GenerateCharacter {
     // maskMirrored needs to be long, if up 16-bit
     private static final long maskMirrored          = 0x80000000L;
 
-    // bit masks identify the 16-bit priperty field described above, in B
+    // bit masks identify the 16-bit property field described above, in B
     // table
     private static final long
         maskOtherLowercase  = 0x100000000L,
@@ -198,7 +201,9 @@ public class GenerateCharacter {
         maskOtherAlphabetic = 0x400000000L,
         maskOtherMath       = 0x800000000L,
         maskIdeographic     = 0x1000000000L,
-        maskNoncharacterCP  = 0x2000000000L;
+        maskNoncharacterCP  = 0x2000000000L,
+        maskIDStart         = 0x4000000000L,
+        maskIDContinue      = 0x8000000000L;
 
     // Can compare masked values with these to determine
     // numeric or lexical types.
@@ -367,6 +372,8 @@ public class GenerateCharacter {
         addExProp(result, propList, "Ideographic", maskIdeographic);
         //addExProp(result, propList, "Other_Math", maskOtherMath);
         //addExProp(result, propList, "Noncharacter_CodePoint", maskNoncharacterCP);
+        addExProp(result, propList, "ID_Start", maskIDStart);
+        addExProp(result, propList, "ID_Continue", maskIDContinue);
 
         return result;
     }
@@ -780,6 +787,8 @@ OUTER:  for (int i = 0; i < n; i += m) {
         if (x.equals("maskOtherUppercase")) return "0x" + hex4(maskOtherUppercase >> 32);
         if (x.equals("maskOtherAlphabetic")) return "0x" + hex4(maskOtherAlphabetic >> 32);
         if (x.equals("maskIdeographic")) return "0x" + hex4(maskIdeographic >> 32);
+        if (x.equals("maskIDStart")) return "0x" + hex4(maskIDStart >> 32);
+        if (x.equals("maskIDContinue")) return "0x" + hex4(maskIDContinue >> 32);
         if (x.equals("valueIgnorable")) return "0x" + hex8(valueIgnorable);
         if (x.equals("valueJavaUnicodeStart")) return "0x" + hex8(valueJavaUnicodeStart);
         if (x.equals("valueJavaOnlyStart")) return "0x" + hex8(valueJavaOnlyStart);
@@ -1612,6 +1621,7 @@ OUTER:  for (int i = 0; i < n; i += m) {
     static String UnicodeSpecFileName = null; // liu
     static String SpecialCasingFileName = null;
     static String PropListFileName = null;
+    static String DerivedPropsFileName = null;
     static boolean useCharForByte = false;
     static int[] sizes;
     static int bins = 0; // liu; if > 0, then perform search
@@ -1739,6 +1749,14 @@ OUTER:  for (int i = 0; i < n; i += m) {
                     PropListFileName = args[++j];
                 }
             }
+            else if (args[j].equals("-derivedprops")) {
+                if (j == args.length -1) {
+                    FAIL("File name missing after -derivedprops");
+                }
+                else {
+                    DerivedPropsFileName = args[++j];
+                }
+            }
             else if (args[j].equals("-plane")) {
                 if (j == args.length -1) {
                     FAIL("Plane number missing after -plane");
@@ -1802,6 +1820,10 @@ OUTER:  for (int i = 0; i < n; i += m) {
         if (PropListFileName == null) {
             PropListFileName = DefaultPropListFileName;
             desc.append(" [-proplist " + PropListFileName + ']');
+        }
+        if (DerivedPropsFileName == null) {
+            DerivedPropsFileName = DefaultDerivedPropsFileName;
+            desc.append(" [-derivedprops " + DerivedPropsFileName + ']');
         }
         if (TemplateFileName == null) {
             TemplateFileName = (Csyntax ? DefaultCTemplateFileName
@@ -1954,6 +1976,7 @@ OUTER:  for (int i = 0; i < n; i += m) {
             UnicodeSpec[] data = UnicodeSpec.readSpecFile(new File(UnicodeSpecFileName), plane);
             specialCaseMaps = SpecialCaseMap.readSpecFile(new File(SpecialCasingFileName), plane);
             PropList propList = PropList.readSpecFile(new File(PropListFileName), plane);
+            propList.putAll(PropList.readSpecFile(new File(DerivedPropsFileName), plane));
 
             if (verbose) {
                 System.out.println(data.length + " items read from Unicode spec file " + UnicodeSpecFileName); // liu

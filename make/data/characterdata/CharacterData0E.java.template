@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -113,15 +113,16 @@ class CharacterData0E extends CharacterData {
     }
 
     boolean isUnicodeIdentifierStart(int ch) {
-        int props = getProperties(ch);
-        return ((props & $$maskIdentifierInfo) == $$valueUnicodeStart);
+        return (getPropertiesEx(ch) & $$maskIDStart) != 0 ||
+               ch == 0x2E2F;
     }
 
     boolean isUnicodeIdentifierPart(int ch) {
-        int props = getProperties(ch);
-        return ((props & $$maskUnicodePart) != 0);
+        return (getPropertiesEx(ch) & $$maskIDContinue) != 0 ||
+               isIdentifierIgnorable(ch) ||
+               ch == 0x2E2F;
     }
-
+    
     boolean isIdentifierIgnorable(int ch) {
         int props = getProperties(ch);
         return ((props & $$maskIdentifierInfo) == $$valueIgnorable);
