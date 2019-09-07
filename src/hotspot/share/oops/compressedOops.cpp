@@ -79,7 +79,7 @@ void CompressedOops::initialize(const ReservedHeapSpace& heap_space) {
                                                  false));
 
   // base() is one page below the heap.
-  assert((intptr_t)base() <= (intptr_t)(_heap_address_range.start() - os::vm_page_size()) ||
+  assert((intptr_t)base() <= ((intptr_t)_heap_address_range.start() - os::vm_page_size()) ||
          base() == NULL, "invalid value");
   assert(shift() == LogMinObjAlignmentInBytes ||
          shift() == 0, "invalid value");
