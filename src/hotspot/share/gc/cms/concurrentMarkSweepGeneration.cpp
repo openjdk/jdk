@@ -2645,7 +2645,7 @@ ConcurrentMarkSweepGeneration::expand_and_allocate(size_t word_size,
   MutexLocker x(freelistLock(), Mutex::_no_safepoint_check_flag);
   expand_for_gc_cause(word_size*HeapWordSize, MinHeapDeltaBytes, CMSExpansionCause::_satisfy_allocation);
   if (GCExpandToAllocateDelayMillis > 0) {
-    os::sleep(Thread::current(), GCExpandToAllocateDelayMillis, false);
+    os::naked_sleep(GCExpandToAllocateDelayMillis);
   }
   return have_lock_and_allocate(word_size, tlab);
 }
@@ -2684,7 +2684,7 @@ HeapWord* ConcurrentMarkSweepGeneration::expand_and_par_lab_allocate(CMSParGCThr
     // A competing par_promote might beat us to the expansion space,
     // so we may go around the loop again if promotion fails again.
     if (GCExpandToAllocateDelayMillis > 0) {
-      os::sleep(Thread::current(), GCExpandToAllocateDelayMillis, false);
+      os::naked_sleep(GCExpandToAllocateDelayMillis);
     }
   }
 }
@@ -2711,7 +2711,7 @@ bool ConcurrentMarkSweepGeneration::expand_and_ensure_spooling_space(
     // A competing allocation might beat us to the expansion space,
     // so we may go around the loop again if allocation fails again.
     if (GCExpandToAllocateDelayMillis > 0) {
-      os::sleep(Thread::current(), GCExpandToAllocateDelayMillis, false);
+      os::naked_sleep(GCExpandToAllocateDelayMillis);
     }
   }
 }
@@ -3544,7 +3544,7 @@ void CMSConcMarkingTask::coordinator_yield() {
   for (unsigned i = 0; i < CMSCoordinatorYieldSleepCount &&
                    ConcurrentMarkSweepThread::should_yield() &&
                    !CMSCollector::foregroundGCIsActive(); ++i) {
-    os::sleep(Thread::current(), 1, false);
+    os::naked_short_sleep(1);
   }
 
   ConcurrentMarkSweepThread::synchronize(true);
@@ -5541,7 +5541,7 @@ void CMSCollector::reset_concurrent() {
         for (unsigned i = 0; i < CMSYieldSleepCount &&
                          ConcurrentMarkSweepThread::should_yield() &&
                          !CMSCollector::foregroundGCIsActive(); ++i) {
-          os::sleep(Thread::current(), 1, false);
+          os::naked_short_sleep(1);
         }
 
         ConcurrentMarkSweepThread::synchronize(true);
@@ -5995,7 +5995,7 @@ void MarkRefsIntoAndScanClosure::do_yield_work() {
        ConcurrentMarkSweepThread::should_yield() &&
        !CMSCollector::foregroundGCIsActive();
        ++i) {
-    os::sleep(Thread::current(), 1, false);
+    os::naked_short_sleep(1);
   }
 
   ConcurrentMarkSweepThread::synchronize(true);
@@ -6150,7 +6150,7 @@ void ScanMarkedObjectsAgainCarefullyClosure::do_yield_work() {
   for (unsigned i = 0; i < CMSYieldSleepCount &&
                    ConcurrentMarkSweepThread::should_yield() &&
                    !CMSCollector::foregroundGCIsActive(); ++i) {
-    os::sleep(Thread::current(), 1, false);
+    os::naked_short_sleep(1);
   }
 
   ConcurrentMarkSweepThread::synchronize(true);
@@ -6217,7 +6217,7 @@ void SurvivorSpacePrecleanClosure::do_yield_work() {
   for (unsigned i = 0; i < CMSYieldSleepCount &&
                        ConcurrentMarkSweepThread::should_yield() &&
                        !CMSCollector::foregroundGCIsActive(); ++i) {
-    os::sleep(Thread::current(), 1, false);
+    os::naked_short_sleep(1);
   }
 
   ConcurrentMarkSweepThread::synchronize(true);
@@ -6368,7 +6368,7 @@ void MarkFromRootsClosure::do_yield_work() {
   for (unsigned i = 0; i < CMSYieldSleepCount &&
                        ConcurrentMarkSweepThread::should_yield() &&
                        !CMSCollector::foregroundGCIsActive(); ++i) {
-    os::sleep(Thread::current(), 1, false);
+    os::naked_short_sleep(1);
   }
 
   ConcurrentMarkSweepThread::synchronize(true);
@@ -6982,7 +6982,7 @@ void CMSPrecleanRefsYieldClosure::do_yield_work() {
   for (unsigned i = 0; i < CMSYieldSleepCount &&
                        ConcurrentMarkSweepThread::should_yield() &&
                        !CMSCollector::foregroundGCIsActive(); ++i) {
-    os::sleep(Thread::current(), 1, false);
+    os::naked_short_sleep(1);
   }
 
   ConcurrentMarkSweepThread::synchronize(true);
@@ -7547,7 +7547,7 @@ void SweepClosure::do_yield_work(HeapWord* addr) {
   for (unsigned i = 0; i < CMSYieldSleepCount &&
                        ConcurrentMarkSweepThread::should_yield() &&
                        !CMSCollector::foregroundGCIsActive(); ++i) {
-    os::sleep(Thread::current(), 1, false);
+    os::naked_short_sleep(1);
   }
 
   ConcurrentMarkSweepThread::synchronize(true);
@@ -7845,7 +7845,6 @@ bool CMSCollector::par_take_from_overflow_list(size_t num,
   }
   // Grab the entire list; we'll put back a suffix
   oop prefix = cast_to_oop(Atomic::xchg((oopDesc*)BUSY, &_overflow_list));
-  Thread* tid = Thread::current();
   // Before "no_of_gc_threads" was introduced CMSOverflowSpinCount was
   // set to ParallelGCThreads.
   size_t CMSOverflowSpinCount = (size_t) no_of_gc_threads; // was ParallelGCThreads;
@@ -7853,7 +7852,7 @@ bool CMSCollector::par_take_from_overflow_list(size_t num,
   // If the list is busy, we spin for a short while,
   // sleeping between attempts to get the list.
   for (size_t spin = 0; prefix == BUSY && spin < CMSOverflowSpinCount; spin++) {
-    os::sleep(tid, sleep_time_millis, false);
+    os::naked_sleep(sleep_time_millis);
     if (_overflow_list == NULL) {
       // Nothing left to take
       return false;

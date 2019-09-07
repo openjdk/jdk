@@ -1837,7 +1837,19 @@ os::SuspendResume::State os::SuspendResume::switch_state(os::SuspendResume::Stat
 }
 #endif
 
-int os::sleep(Thread* thread, jlong millis, bool interruptible) {
+// Convenience wrapper around naked_short_sleep to allow for longer sleep
+// times. Only for use by non-JavaThreads.
+void os::naked_sleep(jlong millis) {
+  assert(!Thread::current()->is_Java_thread(), "not for use by JavaThreads");
+  const jlong limit = 999;
+  while (millis > limit) {
+    naked_short_sleep(limit);
+    millis -= limit;
+  }
+  naked_short_sleep(millis);
+}
+
+int os::sleep(JavaThread* thread, jlong millis) {
   assert(thread == Thread::current(),  "thread consistency check");
 
   ParkEvent * const slp = thread->_SleepEvent;
@@ -1850,72 +1862,43 @@ int os::sleep(Thread* thread, jlong millis, bool interruptible) {
   // interrupt state.
   OrderAccess::fence();
 
-  if (interruptible) {
-    jlong prevtime = javaTimeNanos();
+  jlong prevtime = javaTimeNanos();
 
-    assert(thread->is_Java_thread(), "sanity check");
-    JavaThread *jt = (JavaThread *) thread;
-
-    for (;;) {
-      // interruption has precedence over timing out
-      if (os::is_interrupted(thread, true)) {
-        return OS_INTRPT;
-      }
-
-      jlong newtime = javaTimeNanos();
-
-      if (newtime - prevtime < 0) {
-        // time moving backwards, should only happen if no monotonic clock
-        // not a guarantee() because JVM should not abort on kernel/glibc bugs
-        assert(!os::supports_monotonic_clock(),
-               "unexpected time moving backwards detected in os::sleep(interruptible)");
-      } else {
-        millis -= (newtime - prevtime) / NANOSECS_PER_MILLISEC;
-      }
-
-      if (millis <= 0) {
-        return OS_OK;
-      }
-
-      prevtime = newtime;
-
-      {
-        ThreadBlockInVM tbivm(jt);
-        OSThreadWaitState osts(jt->osthread(), false /* not Object.wait() */);
-
-        jt->set_suspend_equivalent();
-        // cleared by handle_special_suspend_equivalent_condition() or
-        // java_suspend_self() via check_and_wait_while_suspended()
-
-        slp->park(millis);
-
-        // were we externally suspended while we were waiting?
-        jt->check_and_wait_while_suspended();
-      }
+  for (;;) {
+    // interruption has precedence over timing out
+    if (os::is_interrupted(thread, true)) {
+      return OS_INTRPT;
     }
-   } else {
-    OSThreadWaitState osts(thread->osthread(), false /* not Object.wait() */);
-    jlong prevtime = javaTimeNanos();
 
-    for (;;) {
-      // It'd be nice to avoid the back-to-back javaTimeNanos() calls on
-      // the 1st iteration ...
-      jlong newtime = javaTimeNanos();
+    jlong newtime = javaTimeNanos();
 
-      if (newtime - prevtime < 0) {
-        // time moving backwards, should only happen if no monotonic clock
-        // not a guarantee() because JVM should not abort on kernel/glibc bugs
-        assert(!os::supports_monotonic_clock(),
-               "unexpected time moving backwards detected on os::sleep(!interruptible)");
-      } else {
-        millis -= (newtime - prevtime) / NANOSECS_PER_MILLISEC;
-      }
+    if (newtime - prevtime < 0) {
+      // time moving backwards, should only happen if no monotonic clock
+      // not a guarantee() because JVM should not abort on kernel/glibc bugs
+      assert(!os::supports_monotonic_clock(),
+             "unexpected time moving backwards detected in os::sleep()");
+    } else {
+      millis -= (newtime - prevtime) / NANOSECS_PER_MILLISEC;
+    }
 
-      if (millis <= 0) break ;
+    if (millis <= 0) {
+      return OS_OK;
+    }
 
-      prevtime = newtime;
+    prevtime = newtime;
+
+    {
+      ThreadBlockInVM tbivm(thread);
+      OSThreadWaitState osts(thread->osthread(), false /* not Object.wait() */);
+
+      thread->set_suspend_equivalent();
+      // cleared by handle_special_suspend_equivalent_condition() or
+      // java_suspend_self() via check_and_wait_while_suspended()
+
       slp->park(millis);
+
+      // were we externally suspended while we were waiting?
+      thread->check_and_wait_while_suspended();
     }
-    return OS_OK ;
   }
 }

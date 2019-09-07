@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -225,7 +225,7 @@ HeapWord* PSOldGen::allocate(size_t word_size) {
 HeapWord* PSOldGen::expand_and_allocate(size_t word_size) {
   expand(word_size*HeapWordSize);
   if (GCExpandToAllocateDelayMillis > 0) {
-    os::sleep(Thread::current(), GCExpandToAllocateDelayMillis, false);
+    os::naked_sleep(GCExpandToAllocateDelayMillis);
   }
   return allocate_noexpand(word_size);
 }
@@ -233,7 +233,7 @@ HeapWord* PSOldGen::expand_and_allocate(size_t word_size) {
 HeapWord* PSOldGen::expand_and_cas_allocate(size_t word_size) {
   expand(word_size*HeapWordSize);
   if (GCExpandToAllocateDelayMillis > 0) {
-    os::sleep(Thread::current(), GCExpandToAllocateDelayMillis, false);
+    os::naked_sleep(GCExpandToAllocateDelayMillis);
   }
   return cas_allocate_noexpand(word_size);
 }

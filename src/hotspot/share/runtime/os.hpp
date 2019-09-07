@@ -467,13 +467,19 @@ class os: AllStatic {
   // thread id on Linux/64bit is 64bit, on Windows and Solaris, it's 32bit
   static intx current_thread_id();
   static int current_process_id();
-  static int sleep(Thread* thread, jlong ms, bool interruptable);
-  // Short standalone OS sleep suitable for slow path spin loop.
-  // Ignores Thread.interrupt() (so keep it short).
-  // ms = 0, will sleep for the least amount of time allowed by the OS.
+  // Implementation of java.lang.Thread.sleep for JavaThreads
+  static int sleep(JavaThread* thread, jlong ms);
+  // Short standalone OS sleep routines suitable for slow path spin loop.
+  // Ignores safepoints/suspension/Thread.interrupt() (so keep it short).
+  // ms/ns = 0, will sleep for the least amount of time allowed by the OS.
+  // Maximum sleep time is just under 1 second.
   static void naked_short_sleep(jlong ms);
   static void naked_short_nanosleep(jlong ns);
-  static void infinite_sleep(); // never returns, use with CAUTION
+  // Longer standalone OS sleep routine - a convenience wrapper around
+  // multiple calls to naked_short_sleep. Only for use by non-JavaThreads.
+  static void naked_sleep(jlong millis);
+  // Never returns, use with CAUTION
+  static void infinite_sleep();
   static void naked_yield () ;
   static OSReturn set_priority(Thread* thread, ThreadPriority priority);
   static OSReturn get_priority(const Thread* const thread, ThreadPriority& priority);

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -62,7 +62,7 @@ static void do_time_measurements(volatile jlong& time_base,
     fstart = os::rdtsc();
 
     // use sleep to prevent compiler from optimizing
-    os::sleep(Thread::current(), FT_SLEEP_MILLISECS, true);
+    os::sleep(JavaThread::current(), FT_SLEEP_MILLISECS);
 
     end = os::elapsed_counter();
     OrderAccess::fence();

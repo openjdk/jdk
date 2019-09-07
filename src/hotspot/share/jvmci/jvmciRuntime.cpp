@@ -941,10 +941,8 @@ void JVMCIRuntime::exit_on_pending_exception(JVMCIEnv* JVMCIENV, const char* mes
       describe_pending_hotspot_exception(THREAD, true);
     }
   } else {
-    // Allow error reporting thread to print the stack trace.  Windows
-    // doesn't allow uninterruptible wait for JavaThreads
-    const bool interruptible = true;
-    os::sleep(THREAD, 200, interruptible);
+    // Allow error reporting thread to print the stack trace.
+    os::sleep(THREAD, 200);
   }
 
   before_exit(THREAD);

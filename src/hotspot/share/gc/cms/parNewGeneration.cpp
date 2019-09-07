@@ -1304,13 +1304,12 @@ bool ParNewGeneration::take_from_overflow_list_work(ParScanThreadState* par_scan
   // Otherwise, there was something there; try claiming the list.
   oop prefix = cast_to_oop(Atomic::xchg((oopDesc*)BUSY, &_overflow_list));
   // Trim off a prefix of at most objsFromOverflow items
-  Thread* tid = Thread::current();
   size_t spin_count = ParallelGCThreads;
   size_t sleep_time_millis = MAX2((size_t)1, objsFromOverflow/100);
   for (size_t spin = 0; prefix == BUSY && spin < spin_count; spin++) {
     // someone grabbed it before we did ...
-    // ... we spin for a short while...
-    os::sleep(tid, sleep_time_millis, false);
+    // ... we spin/block for a short while...
+    os::naked_sleep(sleep_time_millis);
     if (_overflow_list == NULL) {
       // nothing left to take
       return false;

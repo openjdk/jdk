@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -133,9 +133,10 @@ TEST_VM(TestSingleWriterSynchronizer, stress) {
   writer->doit();
 
   tty->print_cr("Stressing synchronizer for %u ms", milliseconds_to_run);
+  JavaThread* cur = JavaThread::current();
   {
-    ThreadInVMfromNative invm(JavaThread::current());
-    os::sleep(Thread::current(), milliseconds_to_run, true);
+    ThreadInVMfromNative invm(cur);
+    os::sleep(cur, milliseconds_to_run);
   }
   continue_running = 0;
   for (uint i = 0; i < nreaders + 1; ++i) {

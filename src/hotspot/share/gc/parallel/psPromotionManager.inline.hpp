@@ -224,7 +224,7 @@ inline oop PSPromotionManager::copy_to_survivor_space(oop o) {
               // Delay the initialization of the promotion lab (plab).
               // This exposes uninitialized plabs to card table processing.
               if (GCWorkerDelayMillis > 0) {
-                os::sleep(Thread::current(), GCWorkerDelayMillis, false);
+                os::naked_sleep(GCWorkerDelayMillis);
               }
 #endif
               _old_lab.initialize(MemRegion(lab_base, OldPLABSize));
