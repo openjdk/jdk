@@ -1408,10 +1408,8 @@ Java_sun_lwawt_macosx_CPlatformView_nativeGetNSViewDisplayID
     JNF_COCOA_ENTER(env);
 
     NSView *view = (NSView *)jlong_to_ptr(viewPtr);
-    NSWindow *window = [view window];
-
     [ThreadUtilities performOnMainThreadWaiting:YES block:^(){
-
+        NSWindow *window = [view window];
         ret = (jint)[[AWTWindow getNSWindowDisplayID_AppKitThread: window] intValue];
     }];
 
