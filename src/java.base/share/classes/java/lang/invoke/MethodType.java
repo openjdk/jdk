@@ -926,8 +926,8 @@ class MethodType
                 return false;
             return true;
         }
-        if ((oldForm.primitiveParameterCount() == 0 && oldForm.erasedType == this) ||
-            (newForm.primitiveParameterCount() == 0 && newForm.erasedType == newType)) {
+        if ((!oldForm.hasPrimitives() && oldForm.erasedType == this) ||
+            (!newForm.hasPrimitives() && newForm.erasedType == newType)) {
             // Somewhat complicated test to avoid a loop of 2 or more trips.
             // If either type has only Object parameters, we know we can convert.
             assert(canConvertParameters(srcTypes, dstTypes));
@@ -1071,49 +1071,6 @@ class MethodType
         if (inv != null)  return inv;
         invokers = inv = new Invokers(this);
         return inv;
-    }
-
-    /** Reports the number of JVM stack slots which carry all parameters including and after
-     * the given position, which must be in the range of 0 to
-     * {@code parameterCount} inclusive.  Successive parameters are
-     * more shallowly stacked, and parameters are indexed in the bytecodes
-     * according to their trailing edge.  Thus, to obtain the depth
-     * in the outgoing call stack of parameter {@code N}, obtain
-     * the {@code parameterSlotDepth} of its trailing edge
-     * at position {@code N+1}.
-     * <p>
-     * Parameters of type {@code long} and {@code double} occupy
-     * two stack slots (for historical reasons) and all others occupy one.
-     * Therefore, the number returned is the number of arguments
-     * <em>including</em> and <em>after</em> the given parameter,
-     * <em>plus</em> the number of long or double arguments
-     * at or after the argument for the given parameter.
-     * <p>
-     * This method is included for the benefit of applications that must
-     * generate bytecodes that process method handles and invokedynamic.
-     * @param num an index (zero-based, inclusive) within the parameter types
-     * @return the index of the (shallowest) JVM stack slot transmitting the
-     *         given parameter
-     * @throws IllegalArgumentException if {@code num} is negative or greater than {@code parameterCount()}
-     */
-    /*non-public*/ int parameterSlotDepth(int num) {
-        if (num < 0 || num > ptypes.length)
-            parameterType(num);  // force a range check
-        return form.parameterToArgSlot(num-1);
-    }
-
-    /** Reports the number of JVM stack slots required to receive a return value
-     * from a method of this type.
-     * If the {@link #returnType() return type} is void, it will be zero,
-     * else if the return type is long or double, it will be two, else one.
-     * <p>
-     * This method is included for the benefit of applications that must
-     * generate bytecodes that process method handles and invokedynamic.
-     * @return the number of JVM stack slots (0, 1, or 2) for this type's return value
-     * Will be removed for PFD.
-     */
-    /*non-public*/ int returnSlotCount() {
-        return form.returnSlotCount();
     }
 
     /**
