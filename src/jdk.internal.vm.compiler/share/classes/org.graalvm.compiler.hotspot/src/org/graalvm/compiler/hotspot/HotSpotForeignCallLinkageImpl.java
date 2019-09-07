@@ -179,11 +179,6 @@ public class HotSpotForeignCallLinkageImpl extends HotSpotForeignCallTarget impl
     }
 
     @Override
-    public boolean isReexecutableOnlyAfterException() {
-        return reexecutability == Reexecutability.REEXECUTABLE_ONLY_AFTER_EXCEPTION;
-    }
-
-    @Override
     public boolean isGuaranteedSafepoint() {
         return transition == Transition.SAFEPOINT;
     }

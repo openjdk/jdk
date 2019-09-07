@@ -236,7 +236,7 @@ public class ForeignCallStub extends Stub {
         Class<?>[] args = linkage.getDescriptor().getArgumentTypes();
         boolean isObjectResult = !LIRKind.isValue(linkage.getOutgoingCallingConvention().getReturn());
         // Do we want to clear the pending exception?
-        boolean shouldClearException = linkage.isReexecutable() || linkage.isReexecutableOnlyAfterException();
+        boolean shouldClearException = linkage.isReexecutable();
         try {
             HotSpotLoweringProvider lowerer = (HotSpotLoweringProvider) providers.getLowerer();
             Templates foreignCallSnippets = lowerer.getForeignCallSnippets();

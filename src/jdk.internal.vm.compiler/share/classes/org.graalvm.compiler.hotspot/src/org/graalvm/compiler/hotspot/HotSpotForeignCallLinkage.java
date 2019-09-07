@@ -97,15 +97,6 @@ public interface HotSpotForeignCallLinkage extends ForeignCallLinkage, InvokeTar
         NOT_REEXECUTABLE,
 
         /**
-         * Denotes a call that can only be re-executed if it returns with a pending exception. This
-         * type of call models a function that may throw exceptions before any side effects happen.
-         * In this case if an exception is raised the call may be deoptimized and reexecuted. It
-         * also means that while the call has side effects and may deoptimize it doesn't necessarily
-         * need to have a precise frame state.
-         */
-        REEXECUTABLE_ONLY_AFTER_EXCEPTION,
-
-        /**
          * Denotes a call that can always be re-executed. If an exception is raised by the call it
          * may be cleared, compiled code deoptimized and reexecuted. Since the call has no side
          * effects it is assumed that the same exception will be thrown.
@@ -122,11 +113,6 @@ public interface HotSpotForeignCallLinkage extends ForeignCallLinkage, InvokeTar
      * Determines if the call has side effects.
      */
     boolean isReexecutable();
-
-    /**
-     * Determines if the call returning a pending exception implies it is side-effect free.
-     */
-    boolean isReexecutableOnlyAfterException();
 
     LocationIdentity[] getKilledLocations();
 
