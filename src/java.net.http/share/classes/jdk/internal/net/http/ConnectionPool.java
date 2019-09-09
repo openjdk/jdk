@@ -138,6 +138,8 @@ final class ConnectionPool {
                                               InetSocketAddress addr,
                                               InetSocketAddress proxy) {
         if (stopped) return null;
+        // for plain (unsecure) proxy connection the destination address is irrelevant.
+        addr = secure || proxy == null ? addr : null;
         CacheKey key = new CacheKey(addr, proxy);
         HttpConnection c = secure ? findConnection(key, sslPool)
                                   : findConnection(key, plainPool);
