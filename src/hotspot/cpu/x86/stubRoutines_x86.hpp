@@ -55,13 +55,7 @@ class x86 {
   static address _double_sign_mask;
   static address _double_sign_flip;
 
-  static address _method_entry_barrier;
-
  public:
-
-  static address method_entry_barrier() {
-    return _method_entry_barrier;
-  }
 
   static address get_previous_fp_entry() {
     return _get_previous_fp_entry;
@@ -120,6 +114,8 @@ class x86 {
 
   //shuffle mask for big-endian 128-bit integers
   static address _counter_shuffle_mask_addr;
+
+  static address _method_entry_barrier;
 
   // masks and table for CRC32
   static uint64_t _crc_by128_masks[];
@@ -221,6 +217,7 @@ class x86 {
   static address upper_word_mask_addr() { return _upper_word_mask_addr; }
   static address shuffle_byte_flip_mask_addr() { return _shuffle_byte_flip_mask_addr; }
   static address k256_addr()      { return _k256_adr; }
+  static address method_entry_barrier() { return _method_entry_barrier; }
 
   static address vector_short_to_byte_mask() {
     return _vector_short_to_byte_mask;

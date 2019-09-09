@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -327,24 +327,42 @@ void BarrierSetAssembler::incr_allocated_bytes(MacroAssembler* masm, Register th
 #endif
 }
 
+#ifdef _LP64
 void BarrierSetAssembler::nmethod_entry_barrier(MacroAssembler* masm) {
   BarrierSetNMethod* bs_nm = BarrierSet::barrier_set()->barrier_set_nmethod();
   if (bs_nm == NULL) {
     return;
   }
-#ifndef _LP64
-  ShouldNotReachHere();
-#else
   Label continuation;
-  Register thread = LP64_ONLY(r15_thread);
+  Register thread = r15_thread;
   Address disarmed_addr(thread, in_bytes(bs_nm->thread_disarmed_offset()));
   __ align(8);
   __ cmpl(disarmed_addr, 0);
   __ jcc(Assembler::equal, continuation);
   __ call(RuntimeAddress(StubRoutines::x86::method_entry_barrier()));
   __ bind(continuation);
-#endif
 }
+#else
+void BarrierSetAssembler::nmethod_entry_barrier(MacroAssembler* masm) {
+  BarrierSetNMethod* bs_nm = BarrierSet::barrier_set()->barrier_set_nmethod();
+  if (bs_nm == NULL) {
+    return;
+  }
+
+  Label continuation;
+
+  Register tmp = rdi;
+  __ push(tmp);
+  __ movptr(tmp, (intptr_t)bs_nm->disarmed_value_address());
+  Address disarmed_addr(tmp, 0);
+  __ align(4);
+  __ cmpl(disarmed_addr, 0);
+  __ pop(tmp);
+  __ jcc(Assembler::equal, continuation);
+  __ call(RuntimeAddress(StubRoutines::x86::method_entry_barrier()));
+  __ bind(continuation);
+}
+#endif
 
 void BarrierSetAssembler::c2i_entry_barrier(MacroAssembler* masm) {
   BarrierSetNMethod* bs = BarrierSet::barrier_set()->barrier_set_nmethod();
