@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1995, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1995, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -41,8 +41,8 @@ import javax.accessibility.AccessibleStateSet;
  * <p>
  * The following image shows the appearance of a text area:
  * <p>
- * <img src="doc-files/TextArea-1.gif" alt="A TextArea showing the word 'Hello!'"
- * style="float:center; margin: 7px 10px;">
+ * <img src="doc-files/TextArea-1.gif" alt="A TextArea showing the word
+ * 'Hello!'" style="margin: 7px 10px;">
  * <p>
  * This text area could be created by the following line of code:
  *

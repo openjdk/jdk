@@ -9,7 +9,7 @@
   </style>
 </head>
 <!--
- Copyright (c) 2005, 2018, Oracle and/or its affiliates. All rights reserved.
+ Copyright (c) 2005, 2019, Oracle and/or its affiliates. All rights reserved.
  DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 
  This code is free software; you can redistribute it and/or modify it
@@ -57,14 +57,14 @@
     <h2>Definitions</h2>
 
     <p>
-      <u>Document</u> - a window without an owner that, together with
+      Document - a window without an owner that, together with
       all its child hierarchy, may be operated on as a single self-contained
       document.
       Every window belongs to some document &mdash; its root can be found as
       the closest ancestor window without an owner.
     </p><p>
       <a id="ModalBlocked"></a>
-      <u>Modal blocked window</u> - a window, that:
+      Modal blocked window - a window, that:
       </p><ul>
         <li>doesn't receive any user input events
         </li><li>doesn't receive input focus
@@ -78,15 +78,15 @@
         <hr>
       </blockquote>
     <p>
-      <u>Modal dialog</u> - a dialog that blocks some windows while it is
+      Modal dialog - a dialog that blocks some windows while it is
       visible. The blocked windows are determined according to the dialog's
       scope of blocking.
     </p><p>
-      <u>Modal excluded window</u> - a window that stays unblocked
+      Modal excluded window - a window that stays unblocked
       while the modal dialog is visible. If a window is modal excluded
       then all its owned windows and child components are also excluded.
     </p><p>
-      <u>Scope of blocking (SB)</u> - the set of windows (instances of
+      Scope of blocking (SB) - the set of windows (instances of
       <code>java.awt.Window</code> and all derived classes) that are blocked by
       the modal dialog while it is visible.
      <blockquote><hr>
@@ -109,20 +109,20 @@
       A dialog is, by default, modeless.  A modal dialog is, by default,
       application-modal.
     <ol>
-      <li><u>Modeless dialogs</u><br>
+      <li>Modeless dialogs<br>
         A modeless dialog doesn't block any windows while visible.
-      </li><li><u>Document-modal dialogs</u><br>
+      </li><li>Document-modal dialogs<br>
         A document-modal dialog blocks all windows from the same
         document except those from its child hierarchy. The document root
         is determined as the closest ancestor window without an
         owner.
-      </li><li><u>Application-modal dialogs</u><br>
+      </li><li>Application-modal dialogs<br>
         An application-modal dialog blocks all windows from the same
         application except for those from its child hierarchy.
         If there are several applets launched in a browser, they can be
         treated either as separate applications or a single application.
 	This behavior is implementation-dependent.
-      </li><li><u>Toolkit-modal dialogs</u><br>
+      </li><li>Toolkit-modal dialogs<br>
         A toolkit-modal dialog blocks all windows that run in the same
         toolkit except those from its child hierarchy. If there
         are several applets launched all of them run with the same toolkit,
@@ -163,13 +163,13 @@
     <h2>Show/hide blocking</h2>
 
     <p>
-      <u>Showing the window or modeless dialog: "F"</u><br>
+      Showing the window or modeless dialog: "F"<br>
       All the visible modal dialogs are looked through &mdash; if F is from the SB
       of one of them, it becomes blocked by it. If there are several such
       dialogs, the first shown is used. If no such dialogs exist, F remains
       unblocked.
     </p><p>
-      <u>Showing the modal dialog: "M"</u><br>
+      Showing the modal dialog: "M"<br>
       When modal dialog M is shown, all the visible windows fall into one of
       three distinct groups:
       <ul>
@@ -188,57 +188,57 @@
       second one become blocked by M, and all the windows from the third group
       remain untouched.
     </p><p>
-      <u>In typical cases</u>, when no child dialogs are shown before their owners,
+      In typical cases, when no child dialogs are shown before their owners,
       this rule can be simplified. (The following, simplified case, may
       leave out some details).
       </p><p>
-      <u>Showing the document-modal dialog: "M"</u><br>
+      Showing the document-modal dialog: "M"<br>
       All the visible application- and toolkit-modal dialogs are looked
       through &mdash; if M is from the SB of one of them,
       it becomes blocked by it. If there are several such dialogs,
       the first shown is used. If no such dialogs exist, M remains unblocked.
       </p><p>
-      <u>Showing the application-modal dialog: "M"</u><br>
+      Showing the application-modal dialog: "M"<br>
       All the visible toolkit-modal dialogs are looked through &mdash;
       if M is from the SB of one of them, it becomes blocked by it.
       If there are several such dialogs, the first shown is used.
       If no such dialogs exist, M remains unblocked.
       </p><p>
-      <u>Showing the toolkit-modal dialog: "M"</u><br>
+      Showing the toolkit-modal dialog: "M"<br>
       M remains unblocked.
 
           <table border="1">
-	  <caption>The Standard Blocking Matrix</caption>
+	        <caption>The Standard Blocking Matrix</caption>
             <tbody><tr>
-              <td>current/shown</td>
-              <td>frame &amp; modeless</td>
-              <td>document</td>
-              <td>application</td>
-              <td>toolkit</td>
+              <th scope="col">current/shown</th>
+              <th scope="col">frame &amp; modeless</th>
+              <th scope="col">document</th>
+              <th scope="col">application</th>
+              <th scope="col">toolkit</th>
             </tr>
             <tr>
-              <td>-</td>
+              <th scope="row">-</th>
               <td>-</td>
               <td>-</td>
               <td>-</td>
               <td>-</td>
             </tr>
             <tr>
-              <td>document</td>
+              <th scope="row">document</th>
               <td>blocked</td>
               <td>-</td>
               <td>-</td>
               <td>-</td>
             </tr>
             <tr>
-              <td>application</td>
+              <th scope="row">application</th>
               <td>blocked</td>
               <td>blocked</td>
               <td>-</td>
               <td>-</td>
             </tr>
             <tr>
-              <td>toolkit</td>
+              <th scope="row">toolkit</th>
               <td>blocked</td>
               <td>blocked</td>
               <td>blocked</td>
@@ -250,11 +250,11 @@
       After the modal dialog is shown, all the windows from its SB are blocked,
       except those that block this modal dialog.
     </p><p>
-      <u>Hiding the window or modeless dialog: "F"</u><br>
+      Hiding the window or modeless dialog: "F"<br>
       If F was blocked by any modal dialog M, it becomes unblocked and is
       removed from M's blocked windows list.
     </p><p>
-      <u>Hiding the modal dialog: "M"</u><br>
+      Hiding the modal dialog: "M"<br>
       If M was blocked by any other modal dialog, for example, "N",
       it becomes unblocked and
       is removed from N's blocked windows list. Then, all the windows and dialogs
@@ -273,11 +273,11 @@
       </li></ul>
       By default, a window's modal exclusion property is turned off.
       <ol>
-        <li><u>Application-modal exclusion</u><br>
+        <li>Application-modal exclusion<br>
           If a window is application-modal excluded, it is not blocked by any
           application-modal dialogs. Also, it is not blocked by document-modal
           dialogs from outside of its child hierarchy.
-        </li><li><u>Toolkit-modal exclusion</u><br>
+        </li><li>Toolkit-modal exclusion<br>
           If a window is toolkit-modal excluded, it is not blocked
           by any application- or toolkit-modal dialogs. Also, it is not
           blocked by document-modal dialogs from outside of their child hierarchy.
@@ -285,19 +285,19 @@
     <blockquote>
       <hr>
         <b>Implementation note</b>: Changing the modal exclusion type for a visible window
-        may have no effect until it is hidden and then shown again.
+        may have no effect until it is hidden and then shown again.<hr>
     </blockquote>
 
     <a id="Related"></a>
     <h2>Related AWT features</h2>
 
     <p>
-      <u>Always-On-Top</u><br>
+      Always-On-Top<br>
       When a modal dialog that is not always-on-top blocks an always-on-top window,
       their relative Z-order is unspecified and platform-dependent.
     </p>
     <p>
-      <u>The <code>toFront()</code> and <code>toBack()</code> methods</u><br>
+      The <code>toFront()</code> and <code>toBack()</code> methods<br>
       A modal dialog should always be above all its blocked windows. Thus, if a blocked
       window is brought to the front, its blocking dialog, if any, is also brought to the
       front and remains above the blocked window. Likewise, if a modal dialog is sent to
@@ -305,7 +305,7 @@
       blocking dialog.
     </p>
     <p>
-      <u>Minimizing, maximizing and closing blocked windows</u><br>
+      Minimizing, maximizing and closing blocked windows<br>
       When a modal dialog blocks a window, the user may not be able to maximize or
       minimize the blocked window&mdash; however, the actual behavior is unspecified
       and platform-dependent. In any case, the user can't close the blocked window
@@ -314,13 +314,13 @@
       window.
     </p>
     <p>
-      <u>Blocked windows activations</u><br>
+      Blocked windows activations<br>
       When the user selects a blocked window, it may be brought to the front, along
       with the blocking modal dialog which would then become the active window&mdash;
       however, the actual behavior is unspecified and platform-dependent.
     </p>
     <p>
-      <u>Hiding a modal dialog</u><br>
+      Hiding a modal dialog<br>
       When the modal dialog that currently has focus is hidden, it is unspecified
       and platform-dependent, which other window will become the active window.
       Any of the following may become the active window:
@@ -378,87 +378,67 @@
     <a id="Examples"></a>
     </p><h2>Examples</h2>
 
-    <table border="0">
-      <tbody><tr>
-        <td style="text-align:left" >
-	<ol>
-          <li>Frame "F" is shown<br>
-          <li>Document-modal dialog "D<sub>i</sub>" is shown<br>
-          <li>F becomes blocked by D<sub>i</sub> &mdash; it's in the same document<br>
-          <li>Document-modal dialog "D<sub>ii</sub>" is shown<br>
-          <li>D<sub>i</sub> becomes blocked by D<sub>ii</sub> &mdash; it's in the
-              same document<br>
-	  </ol>
-          <br>
-        </td>
-        <td>
-          <img src="modal-example1.gif" alt="Example 1">
-          <br>
-        </td>
-      </tr>
-      <tr>
-        <td style="text-align:left">
-	<ol>
-         <li>Frame "F" is shown<br>
-         <li>Document-modal dialog "D<sub>i</sub>" is shown<br>
-         <li>F becomes blocked by D<sub>i</sub> &mdash; it's in the same document<br>
-         <li>Document-modal dialog "D<sub>ii</sub>" is shown<br>
-         <li>D<sub>i</sub> becomes blocked by D<sub>ii</sub> &mdash;
-             it's in the same document<br>
-         <li>D<sub>i</sub> is hidden<br>
-         <li>F becomes blocked by D<sub>ii</sub> &mdash; it's in the same document<br>
-         </ol>
-	 <br>
-        </td>
-        <td>
-          <img src="modal-example2.gif" alt="Example 2">
-          <br>
-        </td>
-      </tr>
-      <tr>
-        <td style="text-align:left">
-	<ol>
-          <li>Frame "F" is shown<br>
-          <li>Toolkit-modal dialog "D<sub>i</sub>" is created, but not shown<br>
-          <li>Document-modal dialog "D<sub>ii</sub>" is shown<br>
-          <li>F becomes blocked by D<sub>ii</sub> &mdash; it's in the same document<br>
-          <li>Application-modal dialog "D<sub>iii</sub>" is shown<br>
-          <li>D<sub>ii</sub> becomes blocked by D<sub>iii</sub> &mdash;
-              it's in the same application<br>
-          <li>D<sub>i</sub> is shown<br>
-          <li>D<sub>i</sub> becomes blocked by D<sub>ii</sub> &mdash; it's its owner<br>
-          <li>D<sub>iii</sub> remains unblocked &mdash; it blocks D<sub>ii</sub> and
-              D<sub>ii</sub> blocks D<sub>i</sub><br>
-	  </ol>
-          <br>
-        </td>
-        <td>
-          <img src="modal-example3.gif" alt="Example 3">
-          <br>
-        </td>
-      </tr>
-      <tr>
-        <td style="text-align:left">
-    <ol>
-          <li>Frame "F" is shown<br>
-          <li>Toolkit-modal dialog "D<sub>i</sub>" is created, but not shown<br>
-          <li>Document-modal dialog "D<sub>ii</sub>" is shown<br>
-          <li>F becomes blocked by D<sub>ii</sub> &mdash; it's in the same document<br>
-          <li>Application-modal dialog "D<sub>iii</sub>" is shown<br>
-          <li>D<sub>ii</sub> becomes blocked by D<sub>iii</sub> &mdash; it's in the
-              same application<br>
-          <li>D<sub>i</sub> is shown<br>
-          <li>D<sub>iii</sub> becomes blocked by D<sub>i</sub> &mdash; D<sub>i</sub>
-              is not blocked<br>
-          <li>D<sub>i</sub> remains unblocked<br>
-	  </ol>
-          <br>
-        </td>
-        <td>
-          <img src="modal-example4.gif" alt="Example 4">
-          <br>
-        </td>
-      </tr>
-    </tbody></table>
+    <h3>Example 1</h3>
+    <ol style="float: left">
+        <li>Frame F is shown<br>
+        <li>Document-modal dialog D<sub>i</sub> is shown<br>
+        <li>F becomes blocked by D<sub>i</sub> &mdash; it's in the same document<br>
+        <li>Document-modal dialog D<sub>ii</sub> is shown<br>
+        <li>D<sub>i</sub> becomes blocked by D<sub>ii</sub> &mdash; it's in the
+            same document<br>
+    </ol>
+    <p style="float: left; margin-left: 1em">
+        <img src="modal-example1.gif" alt="Example 1">
+    </p>
+
+    <h3 style="clear: left">Example 2</h3>
+    <ol style="float: left">
+        <li>Frame F is shown<br>
+        <li>Document-modal dialog D<sub>i</sub> is shown<br>
+        <li>F becomes blocked by D<sub>i</sub> &mdash; it's in the same document<br>
+        <li>Document-modal dialog D<sub>ii</sub> is shown<br>
+        <li>D<sub>i</sub> becomes blocked by D<sub>ii</sub> &mdash; it's in the
+            same document<br>
+    </ol>
+    <p style="float: left; margin-left: 1em">
+        <img src="modal-example2.gif" alt="Example 2">
+    </p>
+
+    <h3 style="clear: left">Example 3</h3>
+    <ol style="float: left">
+        <li>Frame F is shown<br>
+        <li>Toolkit-modal dialog D<sub>i</sub> is created, but not shown<br>
+        <li>Document-modal dialog D<sub>ii</sub> is shown<br>
+        <li>F becomes blocked by D<sub>ii</sub> &mdash; it's in the same document<br>
+        <li>Application-modal dialog D<sub>iii</sub> is shown<br>
+        <li>D<sub>ii</sub> becomes blocked by D<sub>iii</sub> &mdash;
+            it's in the same application<br>
+        <li>D<sub>i</sub> is shown<br>
+        <li>D<sub>i</sub> becomes blocked by D<sub>ii</sub> &mdash; it's its owner<br>
+        <li>D<sub>iii</sub> remains unblocked &mdash; it blocks D<sub>ii</sub> and
+            D<sub>ii</sub> blocks D<sub>i</sub><br>
+    </ol>
+    <p style="float: left; margin-left: 1em">
+        <img src="modal-example3.gif" alt="Example 3">
+    </p>
+
+    <h3 style="clear: left">Example 4</h3>
+    <ol style="float: left">
+        <li>Frame F is shown<br>
+        <li>Toolkit-modal dialog D<sub>i</sub> is created, but not shown<br>
+        <li>Document-modal dialog D<sub>ii</sub> is shown<br>
+        <li>F becomes blocked by D<sub>ii</sub> &mdash; it's in the same document<br>
+        <li>Application-modal dialog D<sub>iii</sub> is shown<br>
+        <li>D<sub>ii</sub> becomes blocked by D<sub>iii</sub> &mdash; it's in the
+            same application<br>
+        <li>D<sub>i</sub> is shown<br>
+        <li>D<sub>iii</sub> becomes blocked by D<sub>i</sub> &mdash; D<sub>i</sub>
+            is not blocked<br>
+        <li>D<sub>i</sub> remains unblocked<br>
+    </ol>
+    <p style="float: left; margin-left: 1em">
+        <img src="modal-example4.gif" alt="Example 4">
+    </p>
+    <br style="clear:both;">
 </main>
 </body></html>

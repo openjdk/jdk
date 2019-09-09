@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1995, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1995, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -54,7 +54,7 @@ import java.io.IOException;
  * <p>
  * <img src="doc-files/FlowLayout-1.gif"
  * ALT="Graphic of Layout for Three Buttons"
- * style="float:center; margin: 7px 10px;">
+ * style="margin: 7px 10px;">
  * <p>
  * Here is the code for this applet:
  *

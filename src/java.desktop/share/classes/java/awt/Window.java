@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1995, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1995, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -96,8 +96,9 @@ import sun.util.logging.PlatformLogger;
  * possible, as shown in the following figure.
  * <p>
  * <img src="doc-files/MultiScreen.gif"
- * alt="Diagram shows virtual device containing 4 physical screens. Primary physical screen shows coords (0,0), other screen shows (-80,-100)."
- * style="float:center; margin: 7px 10px;">
+ * alt="Diagram shows virtual device containing 4 physical screens. Primary
+ * physical screen shows coords (0,0), other screen shows (-80,-100)."
+ * style="margin: 7px 10px;">
  * <p>
  * In such an environment, when calling {@code setLocation},
  * you must pass a virtual coordinate to this method.  Similarly,

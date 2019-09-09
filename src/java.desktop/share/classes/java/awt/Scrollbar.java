@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1995, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1995, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -41,8 +41,8 @@ import javax.accessibility.*;
  * scroll bars could be used as slider controls to pick
  * the red, green, and blue components of a color:
  * <p>
- * <img src="doc-files/Scrollbar-1.gif" alt="Image shows 3 vertical sliders, side-by-side."
- * style="float:center; margin: 7px 10px;">
+ * <img src="doc-files/Scrollbar-1.gif" alt="Image shows 3 vertical sliders,
+ * side-by-side." style="margin: 7px 10px;">
  * <p>
  * Each scroll bar in this example could be created with
  * code similar to the following:
@@ -59,8 +59,8 @@ import javax.accessibility.*;
  * Here is an example of a scroll bar that represents a range:
  * <p>
  * <img src="doc-files/Scrollbar-2.gif"
- * alt="Image shows horizontal slider with starting range of 0 and ending range of 300. The slider thumb is labeled 60."
- * style="float:center; margin: 7px 10px;">
+ * alt="Image shows horizontal slider with starting range of 0 and ending range
+ * of 300. The slider thumb is labeled 60." style="margin: 7px 10px;">
  * <p>
  * The value range represented by the bubble in this example
  * is the <em>visible amount</em>. The horizontal scroll bar

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -40,50 +40,31 @@ import javax.print.attribute.PrintRequestAttribute;
  * determines what constitutes a "copy" for purposes of finishing.
  * <p>
  * Standard Finishings values are:
- * <table class="borderless" style="width:100%;margin: 0px auto">
- * <caption>Standard Finishings values</caption>
- *   <tr>
- *     <td style="width:10%">&nbsp;
- *     <td style="width:27%">{@link #NONE NONE}
- *     <td style="width:27%">{@link #STAPLE STAPLE}
- *     <td style="width:36%">{@link #EDGE_STITCH EDGE_STITCH}
- *   <tr>
- *     <td>&nbsp;
- *     <td>{@link #BIND BIND}
- *     <td>{@link #SADDLE_STITCH SADDLE_STITCH}
- *     <td>{@link #COVER COVER}
- *     <td>&nbsp;
- * </table>
+ * <ul>
+ *   <li>{@link #NONE NONE}
+ *   <li>{@link #STAPLE STAPLE}
+ *   <li>{@link #EDGE_STITCH EDGE_STITCH}
+ *   <li>{@link #BIND BIND}
+ *   <li>{@link #SADDLE_STITCH SADDLE_STITCH}
+ *   <li>{@link #COVER COVER}
+ * </ul>
  * <p>
  * The following {@code Finishings} values are more specific; they indicate a
  * corner or an edge as if the document were a portrait document:
- * <table class="borderless" style="width:100%;margin: 0px auto">
- * <caption>Specific Finishings values</caption>
- *   <tr>
- *     <td style="width:10%">&nbsp;
- *     <td style="width:27%">{@link #STAPLE_TOP_LEFT STAPLE_TOP_LEFT}
- *     <td style="width:27%">{@link #EDGE_STITCH_LEFT EDGE_STITCH_LEFT}
- *     <td style="width:27%">{@link #STAPLE_DUAL_LEFT STAPLE_DUAL_LEFT}
- *     <td style="width:9%">&nbsp;
- *   <tr>
- *     <td style="width:10%">&nbsp;
- *     <td style="width:27%">{@link #STAPLE_BOTTOM_LEFT STAPLE_BOTTOM_LEFT}
- *     <td style="width:27%">{@link #EDGE_STITCH_TOP EDGE_STITCH_TOP}
- *     <td style="width:27%">{@link #STAPLE_DUAL_TOP STAPLE_DUAL_TOP}
- *     <td style="width:9%">&nbsp;
- *   <tr>
- *     <td style="width:10%">&nbsp;
- *     <td style="width:27%">{@link #STAPLE_TOP_RIGHT STAPLE_TOP_RIGHT}
- *     <td style="width:27%">{@link #EDGE_STITCH_RIGHT EDGE_STITCH_RIGHT}
- *     <td style="width:27%">{@link #STAPLE_DUAL_RIGHT STAPLE_DUAL_RIGHT}
- *     <td style="width:9%">&nbsp;
- *   <tr>
- *     <td style="width:10%">&nbsp;
- *     <td style="width:27%">{@link #STAPLE_BOTTOM_RIGHT STAPLE_BOTTOM_RIGHT}
- *     <td style="width:27%">{@link #EDGE_STITCH_BOTTOM EDGE_STITCH_BOTTOM}
- *     <td style="width:27%">{@link #STAPLE_DUAL_BOTTOM STAPLE_DUAL_BOTTOM}
- *     <td style="width:9%">&nbsp;
- * </table>
+ * <ul>
+ *   <li>{@link #STAPLE_TOP_LEFT STAPLE_TOP_LEFT}
+ *   <li>{@link #EDGE_STITCH_LEFT EDGE_STITCH_LEFT}
+ *   <li>{@link #STAPLE_DUAL_LEFT STAPLE_DUAL_LEFT}
+ *   <li>{@link #STAPLE_BOTTOM_LEFT STAPLE_BOTTOM_LEFT}
+ *   <li>{@link #EDGE_STITCH_TOP EDGE_STITCH_TOP}
+ *   <li>{@link #STAPLE_DUAL_TOP STAPLE_DUAL_TOP}
+ *   <li>{@link #STAPLE_TOP_RIGHT STAPLE_TOP_RIGHT}
+ *   <li>{@link #EDGE_STITCH_RIGHT EDGE_STITCH_RIGHT}
+ *   <li>{@link #STAPLE_DUAL_RIGHT STAPLE_DUAL_RIGHT}
+ *   <li>{@link #STAPLE_BOTTOM_RIGHT STAPLE_BOTTOM_RIGHT}
+ *   <li>{@link #EDGE_STITCH_BOTTOM EDGE_STITCH_BOTTOM}
+ *   <li>{@link #STAPLE_DUAL_BOTTOM STAPLE_DUAL_BOTTOM}
+ * </ul>
  * <p>
  * The STAPLE_<i>XXX</i> values are specified with respect to the document as if
  * the document were a portrait document. If the document is actually a

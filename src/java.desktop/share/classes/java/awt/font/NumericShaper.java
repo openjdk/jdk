@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -116,17 +116,19 @@ import jdk.internal.access.SharedSecrets;
  * </thead>
  * <tbody>
  *   <tr>
- *     <th scope="row" rowspan="2">Arabic
+ *     <th scope="rowgroup" rowspan="2">Arabic
  *     <td>{@link NumericShaper#ARABIC NumericShaper.ARABIC}
  *     <br>
  *     {@link NumericShaper#EASTERN_ARABIC NumericShaper.EASTERN_ARABIC}
  *     <td>{@link NumericShaper#EASTERN_ARABIC NumericShaper.EASTERN_ARABIC}
  *   </tr>
  *   <tr>
- *     <th scope="row">{@link NumericShaper.Range#ARABIC}
+ *     <td>{@link NumericShaper.Range#ARABIC}
  *     <br>
  *     {@link NumericShaper.Range#EASTERN_ARABIC}
  *     <td>{@link NumericShaper.Range#EASTERN_ARABIC}
+ * </tbody>
+ * <tbody>
  *   <tr>
  *     <th scope="row">Tai Tham
  *     <td>{@link NumericShaper.Range#TAI_THAM_HORA}

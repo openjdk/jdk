@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1995, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1995, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -52,7 +52,7 @@ import sun.awt.AWTAccessor;
  * <img src="doc-files/MenuBar-1.gif"
  * alt="Menu labeled Examples, containing items Basic, Simple, Check, and More
  * Examples. The Check item is a CheckBoxMenuItem instance, in the off state."
- * style="float:center; margin: 7px 10px;">
+ * style="margin: 7px 10px;">
  * <p>
  * The item labeled {@code Check} shows a check box menu item
  * in its "off" state.

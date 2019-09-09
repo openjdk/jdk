@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -47,16 +47,12 @@ import javax.accessibility.*;
  * <a href="https://docs.oracle.com/javase/tutorial/uiswing/components/layeredpane.html">How to Use a Layered Pane</a>,
  * a section in <em>The Java Tutorial</em>.
  *
- * <table class="borderless" style="float:right">
- * <caption>Example</caption>
- * <TR>
- *   <TD style="text-align:center">
- *     <P STYLE="TEXT-ALIGN:CENTER"><IMG SRC="doc-files/JLayeredPane-1.gif"
- *     alt="The following text describes this image."
- *     WIDTH="269" HEIGHT="264" STYLE="FLOAT:BOTTOM; BORDER=0">
- *   </TD>
- * </TR>
- * </TABLE>
+ * <div style="float:right;text-align:center">
+ *   <p><b>Example:</b>
+ *   <p><img src="doc-files/JLayeredPane-1.gif"
+ *       alt="The following text describes this image."
+ *       width="269" height="264">
+ * </div>
  * For convenience, <code>JLayeredPane</code> divides the depth-range
  * into several different layers. Putting a component into one of those
  * layers makes it easy to ensure that components overlap properly,

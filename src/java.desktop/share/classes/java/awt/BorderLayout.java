@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1995, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1995, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -92,11 +92,10 @@ import java.util.Hashtable;
  * Here is an example of five buttons in an applet laid out using
  * the {@code BorderLayout} layout manager:
  * <p>
- * <img src="doc-files/BorderLayout-1.gif"
- * alt="Diagram of an applet demonstrating BorderLayout.
- *      Each section of the BorderLayout contains a Button corresponding to its position in the layout, one of:
- *      North, West, Center, East, or South."
- * style="float:center; margin: 7px 10px;">
+ * <img src="doc-files/BorderLayout-1.gif" alt="Diagram of an applet
+ * demonstrating BorderLayout. Each section of the BorderLayout contains a
+ * Button corresponding to its position in the layout, one of: North, West,
+ * Center, East, or South." style="margin: 7px 10px;">
  * <p>
  * The code for this applet is as follows:
  *

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1995, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1995, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -46,9 +46,9 @@ package java.awt;
  * <p>
  * This image depicts the check box group created by this example:
  * <p>
- * <img src="doc-files/CheckboxGroup-1.gif"
- * alt="Shows three checkboxes, arranged vertically, labeled one, two, and three. Checkbox one is in the on state."
- * style="float:center; margin: 7px 10px;">
+ * <img src="doc-files/CheckboxGroup-1.gif" alt="Shows three checkboxes,
+ * arranged vertically, labeled one, two, and three. Checkbox one is in the on
+ * state." style="margin: 7px 10px;">
  *
  * @author      Sami Shaio
  * @see         java.awt.Checkbox

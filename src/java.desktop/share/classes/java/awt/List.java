@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1995, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1995, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -61,7 +61,8 @@ import javax.accessibility.*;
  * scrolling list:
  * <p>
  * <img src="doc-files/List-1.gif"
- * alt="Shows a list containing: Venus, Earth, JavaSoft, and Mars. Javasoft is selected." style="float:center; margin: 7px 10px;">
+ * alt="Shows a list containing: Venus, Earth, JavaSoft, and Mars. Javasoft is
+ * selected." style="margin: 7px 10px;">
  * <p>
  * If the List allows multiple selections, then clicking on
  * an item that is already selected deselects it. In the preceding

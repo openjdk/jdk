@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1995, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1995, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -52,8 +52,8 @@ import javax.accessibility.*;
  * This image depicts the check boxes and grid layout
  * created by this code example:
  * <p>
- * <img src="doc-files/Checkbox-1.gif" alt="The following context describes the graphic."
- * style="float:center; margin: 7px 10px;">
+ * <img src="doc-files/Checkbox-1.gif" alt="The following context describes the
+ * graphic." style="margin: 7px 10px;">
  * <p>
  * The button labeled {@code one} is in the "on" state, and the
  * other two are in the "off" state. In this example, which uses the

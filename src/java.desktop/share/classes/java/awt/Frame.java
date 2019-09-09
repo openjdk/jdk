@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1995, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1995, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -83,10 +83,10 @@ import sun.awt.SunToolkit;
  * of the primary screen in the virtual device, negative coordinates
  * are possible, as shown in the following figure.
  * <p>
- * <img src="doc-files/MultiScreen.gif"
- * alt="Diagram of virtual device encompassing three physical screens and one primary physical screen. The primary physical screen
- * shows (0,0) coords while a different physical screen shows (-80,-100) coords."
- * style="float:center; margin: 7px 10px;">
+ * <img src="doc-files/MultiScreen.gif" alt="Diagram of virtual device
+ * encompassing three physical screens and one primary physical screen. The
+ * primary physical screen shows (0,0) coords while a different physical screen
+ * shows (-80,-100) coords." style="margin: 7px 10px;">
  * <p>
  * In such an environment, when calling {@code setLocation},
  * you must pass a virtual coordinate to this method.  Similarly,

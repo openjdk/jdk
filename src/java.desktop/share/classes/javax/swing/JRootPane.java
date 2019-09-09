@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -71,15 +71,11 @@ import sun.security.action.GetBooleanAction;
  * a given component.
  * </blockquote>
  *
- * <table class="borderless" style="float:right">
- * <caption>Example</caption>
- * <tr>
- * <td style="text-align:center">
- * <img src="doc-files/JRootPane-2.gif"
- * alt="The following text describes this graphic." HEIGHT=386 WIDTH=349>
- * </td>
- * </tr>
- * </table>
+ * <div style="float:right;text-align:center;font-weight:bold">
+ *   <p>Example:
+ *   <p><img src="doc-files/JRootPane-2.gif"
+ *      alt="the following text describes this graphic." height=386 width=349>
+ * </div>
  * The diagram at right shows the structure of a <code>JRootPane</code>.
  * A <code>JRootpane</code> is made up of a <code>glassPane</code>,
  * an optional <code>menuBar</code>, and a <code>contentPane</code>.

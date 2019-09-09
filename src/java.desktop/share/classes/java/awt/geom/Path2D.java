@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2006, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2006, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -892,83 +892,83 @@ public abstract class Path2D implements Shape, Cloneable {
          * <caption>Constants</caption>
          * <thead>
          * <tr>
-         * <th>Constant Name</th>
-         * <th>Byte Value</th>
-         * <th>Followed by</th>
-         * <th>Description</th>
+         * <th scope="col">Constant Name</th>
+         * <th scope="col">Byte Value</th>
+         * <th scope="col">Followed by</th>
+         * <th scope="col">Description</th>
          * </tr>
          * </thead>
          * <tbody>
          * <tr>
-         * <td>{@code SERIAL_STORAGE_FLT_ARRAY}</td>
+         * <th scope="row">{@code SERIAL_STORAGE_FLT_ARRAY}</th>
          * <td>0x30</td>
          * <td></td>
          * <td>A hint that the original {@code Path2D} object stored
          * the coordinates in a Java array of floats.</td>
          * </tr>
          * <tr>
-         * <td>{@code SERIAL_STORAGE_DBL_ARRAY}</td>
+         * <th scope="row">{@code SERIAL_STORAGE_DBL_ARRAY}</th>
          * <td>0x31</td>
          * <td></td>
          * <td>A hint that the original {@code Path2D} object stored
          * the coordinates in a Java array of doubles.</td>
          * </tr>
          * <tr>
-         * <td>{@code SERIAL_SEG_FLT_MOVETO}</td>
+         * <th scope="row">{@code SERIAL_SEG_FLT_MOVETO}</th>
          * <td>0x40</td>
          * <td>2 floats</td>
          * <td>A {@link #moveTo moveTo} path segment follows.</td>
          * </tr>
          * <tr>
-         * <td>{@code SERIAL_SEG_FLT_LINETO}</td>
+         * <th scope="row">{@code SERIAL_SEG_FLT_LINETO}</th>
          * <td>0x41</td>
          * <td>2 floats</td>
          * <td>A {@link #lineTo lineTo} path segment follows.</td>
          * </tr>
          * <tr>
-         * <td>{@code SERIAL_SEG_FLT_QUADTO}</td>
+         * <th scope="row">{@code SERIAL_SEG_FLT_QUADTO}</th>
          * <td>0x42</td>
          * <td>4 floats</td>
          * <td>A {@link #quadTo quadTo} path segment follows.</td>
          * </tr>
          * <tr>
-         * <td>{@code SERIAL_SEG_FLT_CUBICTO}</td>
+         * <th scope="row">{@code SERIAL_SEG_FLT_CUBICTO}</th>
          * <td>0x43</td>
          * <td>6 floats</td>
          * <td>A {@link #curveTo curveTo} path segment follows.</td>
          * </tr>
          * <tr>
-         * <td>{@code SERIAL_SEG_DBL_MOVETO}</td>
+         * <th scope="row">{@code SERIAL_SEG_DBL_MOVETO}</th>
          * <td>0x50</td>
          * <td>2 doubles</td>
          * <td>A {@link #moveTo moveTo} path segment follows.</td>
          * </tr>
          * <tr>
-         * <td>{@code SERIAL_SEG_DBL_LINETO}</td>
+         * <th scope="row">{@code SERIAL_SEG_DBL_LINETO}</th>
          * <td>0x51</td>
          * <td>2 doubles</td>
          * <td>A {@link #lineTo lineTo} path segment follows.</td>
          * </tr>
          * <tr>
-         * <td>{@code SERIAL_SEG_DBL_QUADTO}</td>
+         * <th scope="row">{@code SERIAL_SEG_DBL_QUADTO}</th>
          * <td>0x52</td>
          * <td>4 doubles</td>
          * <td>A {@link #curveTo curveTo} path segment follows.</td>
          * </tr>
          * <tr>
-         * <td>{@code SERIAL_SEG_DBL_CUBICTO}</td>
+         * <th scope="row">{@code SERIAL_SEG_DBL_CUBICTO}</th>
          * <td>0x53</td>
          * <td>6 doubles</td>
          * <td>A {@link #curveTo curveTo} path segment follows.</td>
          * </tr>
          * <tr>
-         * <td>{@code SERIAL_SEG_CLOSE}</td>
+         * <th scope="row">{@code SERIAL_SEG_CLOSE}</th>
          * <td>0x60</td>
          * <td></td>
          * <td>A {@link #closePath closePath} path segment.</td>
          * </tr>
          * <tr>
-         * <td>{@code SERIAL_PATH_END}</td>
+         * <th scope="row">{@code SERIAL_PATH_END}</th>
          * <td>0x61</td>
          * <td></td>
          * <td>There are no more path segments following.</td>
@@ -1666,83 +1666,83 @@ public abstract class Path2D implements Shape, Cloneable {
          * <caption>Constants</caption>
          * <thead>
          * <tr>
-         * <th>Constant Name</th>
-         * <th>Byte Value</th>
-         * <th>Followed by</th>
-         * <th>Description</th>
+         * <th scope="col">Constant Name</th>
+         * <th scope="col">Byte Value</th>
+         * <th scope="col">Followed by</th>
+         * <th scope="col">Description</th>
          * </tr>
          * </thead>
          * <tbody>
          * <tr>
-         * <td>{@code SERIAL_STORAGE_FLT_ARRAY}</td>
+         * <th scope="row">{@code SERIAL_STORAGE_FLT_ARRAY}</th>
          * <td>0x30</td>
          * <td></td>
          * <td>A hint that the original {@code Path2D} object stored
          * the coordinates in a Java array of floats.</td>
          * </tr>
          * <tr>
-         * <td>{@code SERIAL_STORAGE_DBL_ARRAY}</td>
+         * <th scope="row">{@code SERIAL_STORAGE_DBL_ARRAY}</th>
          * <td>0x31</td>
          * <td></td>
          * <td>A hint that the original {@code Path2D} object stored
          * the coordinates in a Java array of doubles.</td>
          * </tr>
          * <tr>
-         * <td>{@code SERIAL_SEG_FLT_MOVETO}</td>
+         * <th scope="row">{@code SERIAL_SEG_FLT_MOVETO}</th>
          * <td>0x40</td>
          * <td>2 floats</td>
          * <td>A {@link #moveTo moveTo} path segment follows.</td>
          * </tr>
          * <tr>
-         * <td>{@code SERIAL_SEG_FLT_LINETO}</td>
+         * <th scope="row">{@code SERIAL_SEG_FLT_LINETO}</th>
          * <td>0x41</td>
          * <td>2 floats</td>
          * <td>A {@link #lineTo lineTo} path segment follows.</td>
          * </tr>
          * <tr>
-         * <td>{@code SERIAL_SEG_FLT_QUADTO}</td>
+         * <th scope="row">{@code SERIAL_SEG_FLT_QUADTO}</th>
          * <td>0x42</td>
          * <td>4 floats</td>
          * <td>A {@link #quadTo quadTo} path segment follows.</td>
          * </tr>
          * <tr>
-         * <td>{@code SERIAL_SEG_FLT_CUBICTO}</td>
+         * <th scope="row">{@code SERIAL_SEG_FLT_CUBICTO}</th>
          * <td>0x43</td>
          * <td>6 floats</td>
          * <td>A {@link #curveTo curveTo} path segment follows.</td>
          * </tr>
          * <tr>
-         * <td>{@code SERIAL_SEG_DBL_MOVETO}</td>
+         * <th scope="row">{@code SERIAL_SEG_DBL_MOVETO}</th>
          * <td>0x50</td>
          * <td>2 doubles</td>
          * <td>A {@link #moveTo moveTo} path segment follows.</td>
          * </tr>
          * <tr>
-         * <td>{@code SERIAL_SEG_DBL_LINETO}</td>
+         * <th scope="row">{@code SERIAL_SEG_DBL_LINETO}</th>
          * <td>0x51</td>
          * <td>2 doubles</td>
          * <td>A {@link #lineTo lineTo} path segment follows.</td>
          * </tr>
          * <tr>
-         * <td>{@code SERIAL_SEG_DBL_QUADTO}</td>
+         * <th scope="row">{@code SERIAL_SEG_DBL_QUADTO}</th>
          * <td>0x52</td>
          * <td>4 doubles</td>
          * <td>A {@link #curveTo curveTo} path segment follows.</td>
          * </tr>
          * <tr>
-         * <td>{@code SERIAL_SEG_DBL_CUBICTO}</td>
+         * <th scope="row">{@code SERIAL_SEG_DBL_CUBICTO}</th>
          * <td>0x53</td>
          * <td>6 doubles</td>
          * <td>A {@link #curveTo curveTo} path segment follows.</td>
          * </tr>
          * <tr>
-         * <td>{@code SERIAL_SEG_CLOSE}</td>
+         * <th scope="row">{@code SERIAL_SEG_CLOSE}</th>
          * <td>0x60</td>
          * <td></td>
          * <td>A {@link #closePath closePath} path segment.</td>
          * </tr>
          * <tr>
-         * <td>{@code SERIAL_PATH_END}</td>
+         * <th scope="row">{@code SERIAL_PATH_END}</th>
          * <td>0x61</td>
          * <td></td>
          * <td>There are no more path segments following.</td>

@@ -4,7 +4,7 @@
   <meta charset="utf-8"/>
   <title>Synth File Format</title>
 <!--
- Copyright (c) 1998, 2018, Oracle and/or its affiliates. All rights reserved.
+ Copyright (c) 1998, 2019, Oracle and/or its affiliates. All rights reserved.
  DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 
  This code is free software; you can redistribute it and/or modify it
@@ -777,12 +777,32 @@ div.example {
       SynthPainter method:
     </p>
     <table border=1>
-     <caption> Painters for SynthPainter methods </caption>
-      <tr><th>State<th>Method<th>Painter
-	<tr><td>SELECTED<td>paintButtonBackground<td>stateButtonBackgroundPainter
-	<tr><td>SELECTED<td>Anything but paintButtonBackground<td>stateFallbackPainter
-	<tr><td>Anything but SELECTED<td>paintButtonBackground<td>styleButtonBackgroundPainter
-	<tr><td>Anything but SELECTED<td>Anything but paintButtonBackground<td>fallbackPainter
+     <caption>Painters for SynthPainter methods</caption>
+      <thead>
+      <tr>
+        <th scope="col">Index
+        <th scope="col">State
+        <th scope="col">Method
+        <th scope="col">Painter
+      </thead>
+      <tbody>
+	    <tr>
+        <th scope="row">1
+        <td>SELECTED
+        <td>paintButtonBackground<td>stateButtonBackgroundPainter
+	    <tr>
+        <th scope="row">2
+        <td>SELECTED
+        <td>Anything but paintButtonBackground<td>stateFallbackPainter
+	    <tr>
+        <th scope="row">3
+        <td>Anything but SELECTED
+        <td>paintButtonBackground<td>styleButtonBackgroundPainter
+	    <tr>
+        <th scope="row">4
+        <td>Anything but SELECTED
+        <td>Anything but paintButtonBackground<td>fallbackPainter
+      </tbody>
     </table>
 
     <p>

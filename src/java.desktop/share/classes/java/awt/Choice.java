@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1995, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1995, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -51,8 +51,8 @@ import javax.accessibility.*;
  * After this choice menu has been added to a panel,
  * it appears as follows in its normal state:
  * <p>
- * <img src="doc-files/Choice-1.gif" alt="The following text describes the graphic"
- * style="float:center; margin: 7px 10px;">
+ * <img src="doc-files/Choice-1.gif" alt="The following text describes the
+ * graphic" style="margin: 7px 10px;">
  * <p>
  * In the picture, {@code "Green"} is the current choice.
  * Pushing the mouse button down on the object causes a menu to
