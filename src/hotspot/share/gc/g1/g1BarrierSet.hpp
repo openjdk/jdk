@@ -82,9 +82,6 @@ class G1BarrierSet: public CardTableBarrierSet {
   virtual void on_thread_attach(Thread* thread);
   virtual void on_thread_detach(Thread* thread);
 
-  BufferNode::Allocator& satb_mark_queue_buffer_allocator();
-  BufferNode::Allocator& dirty_card_queue_buffer_allocator();
-
   static G1SATBMarkQueueSet& satb_mark_queue_set() {
     return g1_barrier_set()->_satb_mark_queue_set;
   }

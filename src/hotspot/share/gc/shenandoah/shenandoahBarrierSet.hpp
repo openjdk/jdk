@@ -41,6 +41,7 @@ public:
 private:
 
   ShenandoahHeap* _heap;
+  BufferNode::Allocator _satb_mark_queue_buffer_allocator;
   ShenandoahSATBMarkQueueSet _satb_mark_queue_set;
 
 public:

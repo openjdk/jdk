@@ -32,17 +32,9 @@
 #include "utilities/debug.hpp"
 #include "utilities/globalDefinitions.hpp"
 
-G1SATBMarkQueueSet::G1SATBMarkQueueSet() : _g1h(NULL) {}
-
-void G1SATBMarkQueueSet::initialize(G1CollectedHeap* g1h,
-                                    BufferNode::Allocator* allocator,
-                                    size_t process_completed_buffers_threshold,
-                                    uint buffer_enqueue_threshold_percentage) {
-  SATBMarkQueueSet::initialize(allocator,
-                               process_completed_buffers_threshold,
-                               buffer_enqueue_threshold_percentage);
-  _g1h = g1h;
-}
+G1SATBMarkQueueSet::G1SATBMarkQueueSet(BufferNode::Allocator* allocator) :
+  SATBMarkQueueSet(allocator)
+{}
 
 void G1SATBMarkQueueSet::handle_zero_index_for_thread(Thread* t) {
   G1ThreadLocalData::satb_mark_queue(t).handle_zero_index();
@@ -112,7 +104,7 @@ class G1SATBMarkQueueFilterFn {
   G1CollectedHeap* _g1h;
 
 public:
-  G1SATBMarkQueueFilterFn(G1CollectedHeap* g1h) : _g1h(g1h) {}
+  G1SATBMarkQueueFilterFn() : _g1h(G1CollectedHeap::heap()) {}
 
   // Return true if entry should be filtered out (removed), false if
   // it should be retained.
@@ -122,6 +114,5 @@ public:
 };
 
 void G1SATBMarkQueueSet::filter(SATBMarkQueue* queue) {
-  assert(_g1h != NULL, "SATB queue set not initialized");
-  apply_filter(G1SATBMarkQueueFilterFn(_g1h), queue);
+  apply_filter(G1SATBMarkQueueFilterFn(), queue);
 }

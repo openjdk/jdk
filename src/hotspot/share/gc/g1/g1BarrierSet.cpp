@@ -57,8 +57,8 @@ G1BarrierSet::G1BarrierSet(G1CardTable* card_table) :
                       BarrierSet::FakeRtti(BarrierSet::G1BarrierSet)),
   _satb_mark_queue_buffer_allocator("SATB Buffer Allocator", G1SATBBufferSize),
   _dirty_card_queue_buffer_allocator("DC Buffer Allocator", G1UpdateBufferSize),
-  _satb_mark_queue_set(),
-  _dirty_card_queue_set(),
+  _satb_mark_queue_set(&_satb_mark_queue_buffer_allocator),
+  _dirty_card_queue_set(DirtyCardQ_CBL_mon, &_dirty_card_queue_buffer_allocator),
   _shared_dirty_card_queue(&_dirty_card_queue_set)
 {}
 
@@ -158,12 +158,4 @@ void G1BarrierSet::on_thread_detach(Thread* thread) {
   CardTableBarrierSet::on_thread_detach(thread);
   G1ThreadLocalData::satb_mark_queue(thread).flush();
   G1ThreadLocalData::dirty_card_queue(thread).flush();
-}
-
-BufferNode::Allocator& G1BarrierSet::satb_mark_queue_buffer_allocator() {
-  return _satb_mark_queue_buffer_allocator;
-}
-
-BufferNode::Allocator& G1BarrierSet::dirty_card_queue_buffer_allocator() {
-  return _dirty_card_queue_buffer_allocator;
 }

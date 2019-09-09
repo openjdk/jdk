@@ -35,12 +35,7 @@ class G1SATBMarkQueueSet : public SATBMarkQueueSet {
   G1CollectedHeap* _g1h;
 
 public:
-  G1SATBMarkQueueSet();
-
-  void initialize(G1CollectedHeap* g1h,
-                  BufferNode::Allocator* allocator,
-                  size_t process_completed_buffers_threshold,
-                  uint buffer_enqueue_threshold_percentage);
+  G1SATBMarkQueueSet(BufferNode::Allocator* allocator);
 
   static void handle_zero_index_for_thread(Thread* t);
   virtual SATBMarkQueue& satb_queue_for_thread(Thread* const t) const;

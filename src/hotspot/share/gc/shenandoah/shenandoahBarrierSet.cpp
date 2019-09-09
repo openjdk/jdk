@@ -75,7 +75,8 @@ ShenandoahBarrierSet::ShenandoahBarrierSet(ShenandoahHeap* heap) :
              NULL /* barrier_set_nmethod */,
              BarrierSet::FakeRtti(BarrierSet::ShenandoahBarrierSet)),
   _heap(heap),
-  _satb_mark_queue_set()
+  _satb_mark_queue_buffer_allocator("SATB Buffer Allocator", ShenandoahSATBBufferSize),
+  _satb_mark_queue_set(&_satb_mark_queue_buffer_allocator)
 {
 }
 

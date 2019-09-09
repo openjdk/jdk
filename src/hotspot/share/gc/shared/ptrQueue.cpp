@@ -40,7 +40,7 @@ PtrQueue::PtrQueue(PtrQueueSet* qset, bool active) :
   _qset(qset),
   _active(active),
   _index(0),
-  _capacity_in_bytes(0),
+  _capacity_in_bytes(index_to_byte_index(qset->buffer_size())),
   _buf(NULL)
 {}
 
@@ -80,13 +80,6 @@ void PtrQueue::handle_zero_index() {
   if (_buf != NULL) {
     handle_completed_buffer();
   } else {
-    // Bootstrapping kludge; lazily initialize capacity.  The initial
-    // thread's queues are constructed before the second phase of the
-    // two-phase initialization of the associated qsets.  As a result,
-    // we can't initialize _capacity_in_bytes in the queue constructor.
-    if (_capacity_in_bytes == 0) {
-      _capacity_in_bytes = index_to_byte_index(qset()->buffer_size());
-    }
     allocate_buffer();
   }
 }
@@ -250,17 +243,12 @@ size_t BufferNode::Allocator::reduce_free_list(size_t remove_goal) {
   return removed;
 }
 
-PtrQueueSet::PtrQueueSet() :
-  _allocator(NULL),
+PtrQueueSet::PtrQueueSet(BufferNode::Allocator* allocator) :
+  _allocator(allocator),
   _all_active(false)
 {}
 
 PtrQueueSet::~PtrQueueSet() {}
-
-void PtrQueueSet::initialize(BufferNode::Allocator* allocator) {
-  assert(allocator != NULL, "Init order issue?");
-  _allocator = allocator;
-}
 
 void** PtrQueueSet::allocate_buffer() {
   BufferNode* node = _allocator->allocate();

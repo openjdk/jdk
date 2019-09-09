@@ -31,12 +31,10 @@
 // G1RedirtyCardsQueueBase::LocalQSet
 
 G1RedirtyCardsQueueBase::LocalQSet::LocalQSet(G1RedirtyCardsQueueSet* shared_qset) :
-  PtrQueueSet(),
+  PtrQueueSet(shared_qset->allocator()),
   _shared_qset(shared_qset),
   _buffers()
-{
-  PtrQueueSet::initialize(_shared_qset->allocator());
-}
+{}
 
 G1RedirtyCardsQueueBase::LocalQSet::~LocalQSet() {
   assert(_buffers._head == NULL, "unflushed qset");
@@ -86,14 +84,12 @@ void G1RedirtyCardsQueue::flush() {
 // G1RedirtyCardsQueueSet
 
 G1RedirtyCardsQueueSet::G1RedirtyCardsQueueSet(BufferNode::Allocator* allocator) :
-  PtrQueueSet(),
+  PtrQueueSet(allocator),
   _list(),
   _entry_count(0),
   _tail(NULL)
   DEBUG_ONLY(COMMA _collecting(true))
-{
-  initialize(allocator);
-}
+{}
 
 G1RedirtyCardsQueueSet::~G1RedirtyCardsQueueSet() {
   verify_empty();

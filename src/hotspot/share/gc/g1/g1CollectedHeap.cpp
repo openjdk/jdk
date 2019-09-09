@@ -1678,15 +1678,11 @@ jint G1CollectedHeap::initialize() {
   BarrierSet::set_barrier_set(bs);
   _card_table = ct;
 
-  G1BarrierSet::satb_mark_queue_set().initialize(this,
-                                                 &bs->satb_mark_queue_buffer_allocator(),
-                                                 G1SATBProcessCompletedThreshold,
-                                                 G1SATBBufferEnqueueingThresholdPercent);
-
-  // process_cards_threshold and max_cards are updated
-  // later, based on the concurrent refinement object.
-  G1BarrierSet::dirty_card_queue_set().initialize(DirtyCardQ_CBL_mon,
-                                                  &bs->dirty_card_queue_buffer_allocator());
+  {
+    G1SATBMarkQueueSet& satbqs = bs->satb_mark_queue_set();
+    satbqs.set_process_completed_buffers_threshold(G1SATBProcessCompletedThreshold);
+    satbqs.set_buffer_enqueue_threshold_percentage(G1SATBBufferEnqueueingThresholdPercent);
+  }
 
   // Create the hot card cache.
   _hot_card_cache = new G1HotCardCache(this);

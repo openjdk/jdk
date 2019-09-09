@@ -303,12 +303,8 @@ protected:
   bool _all_active;
 
   // Create an empty ptr queue set.
-  PtrQueueSet();
+  PtrQueueSet(BufferNode::Allocator* allocator);
   ~PtrQueueSet();
-
-  // Because of init-order concerns, we can't pass these as constructor
-  // arguments.
-  void initialize(BufferNode::Allocator* allocator);
 
 public:
 

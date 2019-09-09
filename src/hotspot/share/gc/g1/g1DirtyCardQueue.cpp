@@ -62,9 +62,10 @@ void G1DirtyCardQueue::handle_completed_buffer() {
   }
 }
 
-G1DirtyCardQueueSet::G1DirtyCardQueueSet() :
-  PtrQueueSet(),
-  _cbl_mon(NULL),
+G1DirtyCardQueueSet::G1DirtyCardQueueSet(Monitor* cbl_mon,
+                                         BufferNode::Allocator* allocator) :
+  PtrQueueSet(allocator),
+  _cbl_mon(cbl_mon),
   _completed_buffers_head(NULL),
   _completed_buffers_tail(NULL),
   _num_cards(0),
@@ -86,13 +87,6 @@ G1DirtyCardQueueSet::~G1DirtyCardQueueSet() {
 // Determines how many mutator threads can process the buffers in parallel.
 uint G1DirtyCardQueueSet::num_par_ids() {
   return (uint)os::initial_active_processor_count();
-}
-
-void G1DirtyCardQueueSet::initialize(Monitor* cbl_mon,
-                                     BufferNode::Allocator* allocator) {
-  PtrQueueSet::initialize(allocator);
-  assert(_cbl_mon == NULL, "Init order issue?");
-  _cbl_mon = cbl_mon;
 }
 
 void G1DirtyCardQueueSet::handle_zero_index_for_thread(Thread* t) {

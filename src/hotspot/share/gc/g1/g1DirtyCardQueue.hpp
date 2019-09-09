@@ -103,10 +103,8 @@ class G1DirtyCardQueueSet: public PtrQueueSet {
   jint _processed_buffers_rs_thread;
 
 public:
-  G1DirtyCardQueueSet();
+  G1DirtyCardQueueSet(Monitor* cbl_mon, BufferNode::Allocator* allocator);
   ~G1DirtyCardQueueSet();
-
-  void initialize(Monitor* cbl_mon, BufferNode::Allocator* allocator);
 
   // The number of parallel ids that can be claimed to allow collector or
   // mutator threads to do card-processing work.
