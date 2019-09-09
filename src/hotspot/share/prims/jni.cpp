@@ -559,7 +559,7 @@ JNI_ENTRY(jclass, jni_GetSuperclass(JNIEnv *env, jclass sub))
   return obj;
 JNI_END
 
-JNI_QUICK_ENTRY(jboolean, jni_IsAssignableFrom(JNIEnv *env, jclass sub, jclass super))
+JNI_ENTRY_NO_PRESERVE(jboolean, jni_IsAssignableFrom(JNIEnv *env, jclass sub, jclass super))
   JNIWrapper("IsSubclassOf");
 
   HOTSPOT_JNI_ISASSIGNABLEFROM_ENTRY(env, sub, super);
@@ -694,7 +694,7 @@ JNI_ENTRY_NO_PRESERVE(void, jni_ExceptionDescribe(JNIEnv *env))
 JNI_END
 
 
-JNI_QUICK_ENTRY(void, jni_ExceptionClear(JNIEnv *env))
+JNI_ENTRY_NO_PRESERVE(void, jni_ExceptionClear(JNIEnv *env))
   JNIWrapper("ExceptionClear");
 
   HOTSPOT_JNI_EXCEPTIONCLEAR_ENTRY(env);
@@ -791,7 +791,7 @@ JNI_ENTRY_NO_PRESERVE(void, jni_DeleteGlobalRef(JNIEnv *env, jobject ref))
   HOTSPOT_JNI_DELETEGLOBALREF_RETURN();
 JNI_END
 
-JNI_QUICK_ENTRY(void, jni_DeleteLocalRef(JNIEnv *env, jobject obj))
+JNI_ENTRY_NO_PRESERVE(void, jni_DeleteLocalRef(JNIEnv *env, jobject obj))
   JNIWrapper("DeleteLocalRef");
 
   HOTSPOT_JNI_DELETELOCALREF_ENTRY(env, obj);
@@ -801,7 +801,7 @@ JNI_QUICK_ENTRY(void, jni_DeleteLocalRef(JNIEnv *env, jobject obj))
   HOTSPOT_JNI_DELETELOCALREF_RETURN();
 JNI_END
 
-JNI_QUICK_ENTRY(jboolean, jni_IsSameObject(JNIEnv *env, jobject r1, jobject r2))
+JNI_ENTRY_NO_PRESERVE(jboolean, jni_IsSameObject(JNIEnv *env, jobject r1, jobject r2))
   JNIWrapper("IsSameObject");
 
   HOTSPOT_JNI_ISSAMEOBJECT_ENTRY(env, r1, r2);
@@ -1277,7 +1277,7 @@ JNI_ENTRY(jclass, jni_GetObjectClass(JNIEnv *env, jobject obj))
   return ret;
 JNI_END
 
-JNI_QUICK_ENTRY(jboolean, jni_IsInstanceOf(JNIEnv *env, jobject obj, jclass clazz))
+JNI_ENTRY_NO_PRESERVE(jboolean, jni_IsInstanceOf(JNIEnv *env, jobject obj, jclass clazz))
   JNIWrapper("IsInstanceOf");
 
   HOTSPOT_JNI_ISINSTANCEOF_ENTRY(env, obj, clazz);
@@ -2066,7 +2066,7 @@ JNI_END
   DT_RETURN_MARK_DECL_FOR(Result, Get##Result##Field, Return \
   , ReturnProbe); \
 \
-JNI_QUICK_ENTRY(Return, jni_Get##Result##Field(JNIEnv *env, jobject obj, jfieldID fieldID)) \
+JNI_ENTRY_NO_PRESERVE(Return, jni_Get##Result##Field(JNIEnv *env, jobject obj, jfieldID fieldID)) \
   JNIWrapper("Get" XSTR(Result) "Field"); \
 \
   EntryProbe; \
@@ -2137,7 +2137,7 @@ address jni_GetDoubleField_addr() {
   return (address)jni_GetDoubleField;
 }
 
-JNI_QUICK_ENTRY(void, jni_SetObjectField(JNIEnv *env, jobject obj, jfieldID fieldID, jobject value))
+JNI_ENTRY_NO_PRESERVE(void, jni_SetObjectField(JNIEnv *env, jobject obj, jfieldID fieldID, jobject value))
   JNIWrapper("SetObjectField");
   HOTSPOT_JNI_SETOBJECTFIELD_ENTRY(env, obj, (uintptr_t) fieldID, value);
   oop o = JNIHandles::resolve_non_null(obj);
@@ -2159,7 +2159,7 @@ JNI_END
 #define DEFINE_SETFIELD(Argument,Fieldname,Result,SigType,unionType \
                         , EntryProbe, ReturnProbe) \
 \
-JNI_QUICK_ENTRY(void, jni_Set##Result##Field(JNIEnv *env, jobject obj, jfieldID fieldID, Argument value)) \
+JNI_ENTRY_NO_PRESERVE(void, jni_Set##Result##Field(JNIEnv *env, jobject obj, jfieldID fieldID, Argument value)) \
   JNIWrapper("Set" XSTR(Result) "Field"); \
 \
   EntryProbe; \
@@ -2425,7 +2425,7 @@ JNI_ENTRY(jstring, jni_NewString(JNIEnv *env, const jchar *unicodeChars, jsize l
 JNI_END
 
 
-JNI_QUICK_ENTRY(jsize, jni_GetStringLength(JNIEnv *env, jstring string))
+JNI_ENTRY_NO_PRESERVE(jsize, jni_GetStringLength(JNIEnv *env, jstring string))
   JNIWrapper("GetStringLength");
   HOTSPOT_JNI_GETSTRINGLENGTH_ENTRY(env, string);
   jsize ret = 0;
@@ -2436,7 +2436,7 @@ JNI_QUICK_ENTRY(jsize, jni_GetStringLength(JNIEnv *env, jstring string))
 JNI_END
 
 
-JNI_QUICK_ENTRY(const jchar*, jni_GetStringChars(
+JNI_ENTRY_NO_PRESERVE(const jchar*, jni_GetStringChars(
   JNIEnv *env, jstring string, jboolean *isCopy))
   JNIWrapper("GetStringChars");
  HOTSPOT_JNI_GETSTRINGCHARS_ENTRY(env, string, (uintptr_t *) isCopy);
@@ -2471,7 +2471,7 @@ JNI_QUICK_ENTRY(const jchar*, jni_GetStringChars(
 JNI_END
 
 
-JNI_QUICK_ENTRY(void, jni_ReleaseStringChars(JNIEnv *env, jstring str, const jchar *chars))
+JNI_ENTRY_NO_PRESERVE(void, jni_ReleaseStringChars(JNIEnv *env, jstring str, const jchar *chars))
   JNIWrapper("ReleaseStringChars");
   HOTSPOT_JNI_RELEASESTRINGCHARS_ENTRY(env, str, (uint16_t *) chars);
   //%note jni_6
@@ -2543,7 +2543,7 @@ HOTSPOT_JNI_RELEASESTRINGUTFCHARS_RETURN();
 JNI_END
 
 
-JNI_QUICK_ENTRY(jsize, jni_GetArrayLength(JNIEnv *env, jarray array))
+JNI_ENTRY_NO_PRESERVE(jsize, jni_GetArrayLength(JNIEnv *env, jarray array))
   JNIWrapper("GetArrayLength");
  HOTSPOT_JNI_GETARRAYLENGTH_ENTRY(env, array);
   arrayOop a = arrayOop(JNIHandles::resolve_non_null(array));
@@ -2700,7 +2700,7 @@ static char* get_bad_address() {
 #define DEFINE_GETSCALARARRAYELEMENTS(ElementTag,ElementType,Result, Tag \
                                       , EntryProbe, ReturnProbe) \
 \
-JNI_QUICK_ENTRY(ElementType*, \
+JNI_ENTRY_NO_PRESERVE(ElementType*, \
           jni_Get##Result##ArrayElements(JNIEnv *env, ElementType##Array array, jboolean *isCopy)) \
   JNIWrapper("Get" XSTR(Result) "ArrayElements"); \
   EntryProbe; \
@@ -2762,7 +2762,7 @@ DEFINE_GETSCALARARRAYELEMENTS(T_DOUBLE,  jdouble,  Double,  double
 #define DEFINE_RELEASESCALARARRAYELEMENTS(ElementTag,ElementType,Result,Tag \
                                           , EntryProbe, ReturnProbe);\
 \
-JNI_QUICK_ENTRY(void, \
+JNI_ENTRY_NO_PRESERVE(void, \
           jni_Release##Result##ArrayElements(JNIEnv *env, ElementType##Array array, \
                                              ElementType *buf, jint mode)) \
   JNIWrapper("Release" XSTR(Result) "ArrayElements"); \
@@ -3262,7 +3262,7 @@ JNI_ENTRY(void, jni_DeleteWeakGlobalRef(JNIEnv *env, jweak ref))
 JNI_END
 
 
-JNI_QUICK_ENTRY(jboolean, jni_ExceptionCheck(JNIEnv *env))
+JNI_ENTRY_NO_PRESERVE(jboolean, jni_ExceptionCheck(JNIEnv *env))
   JNIWrapper("jni_ExceptionCheck");
  HOTSPOT_JNI_EXCEPTIONCHECK_ENTRY(env);
   jni_check_async_exceptions(thread);
