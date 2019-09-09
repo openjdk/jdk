@@ -88,6 +88,7 @@ serviceability/jvmti/HeapMonitor/MyPackage/HeapMonitorMultiArrayTest.java 819661
 serviceability/tmtools/jstat/GcTest02.java                      8196611 generic-all
 serviceability/tmtools/jstat/GcCapacityTest.java                8196611 generic-all
 
+serviceability/sa/ClhsdbInspect.java                            8230419 generic-all
 
 gc/g1/ihop/TestIHOPErgo.java                                    8191048   generic-all
 gc/g1/plab/TestPLABEvacuationFailure.java                       8191048   generic-all
