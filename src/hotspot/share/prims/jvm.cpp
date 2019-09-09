@@ -717,6 +717,17 @@ JVM_END
 // Misc. class handling ///////////////////////////////////////////////////////////
 
 
+JVM_ENTRY(void, JVM_LinkClass(JNIEnv* env, jclass classClass, jclass arg))
+  JVMWrapper("JVM_LinkClass");
+
+  oop r = JNIHandles::resolve(arg);
+  Klass* klass = java_lang_Class::as_Klass(r);
+
+  if (!ClassForNameDeferLinking && klass->is_instance_klass()) {
+    InstanceKlass::cast(klass)->link_class(CHECK);
+  }
+JVM_END
+
 JVM_ENTRY(jclass, JVM_GetCallerClass(JNIEnv* env))
   JVMWrapper("JVM_GetCallerClass");
 
@@ -827,9 +838,10 @@ JVM_ENTRY(jclass, JVM_FindClassFromCaller(JNIEnv* env, const char* name,
 
   Handle h_loader(THREAD, loader_oop);
   Handle h_prot(THREAD, protection_domain);
-  jclass result = find_class_from_class_loader(env, h_name, init, h_loader,
-                                               h_prot, false, THREAD);
 
+  jboolean link = !ClassForNameDeferLinking;
+  jclass result = find_class_from_class_loader(env, h_name, init, link, h_loader,
+                                               h_prot, false, THREAD);
   if (log_is_enabled(Debug, class, resolve) && result != NULL) {
     trace_class_resolution(java_lang_Class::as_Klass(JNIHandles::resolve_non_null(result)));
   }
@@ -866,7 +878,7 @@ JVM_ENTRY(jclass, JVM_FindClassFromClass(JNIEnv *env, const char *name,
   }
   Handle h_loader(THREAD, class_loader);
   Handle h_prot  (THREAD, protection_domain);
-  jclass result = find_class_from_class_loader(env, h_name, init, h_loader,
+  jclass result = find_class_from_class_loader(env, h_name, init, false, h_loader,
                                                h_prot, true, thread);
 
   if (log_is_enabled(Debug, class, resolve) && result != NULL) {
@@ -3424,9 +3436,12 @@ JNIEXPORT void JNICALL JVM_RawMonitorExit(void *mon) {
 
 // Shared JNI/JVM entry points //////////////////////////////////////////////////////////////
 
-jclass find_class_from_class_loader(JNIEnv* env, Symbol* name, jboolean init,
+jclass find_class_from_class_loader(JNIEnv* env, Symbol* name, jboolean init, jboolean link,
                                     Handle loader, Handle protection_domain,
                                     jboolean throwError, TRAPS) {
+  // Initialization also implies linking - check for coherent args
+  assert((init && link) || !init, "incorrect use of init/link arguments");
+
   // Security Note:
   //   The Java level wrapper will perform the necessary security check allowing
   //   us to pass the NULL as the initiating class loader.  The VM is responsible for
@@ -3435,9 +3450,11 @@ jclass find_class_from_class_loader(JNIEnv* env, Symbol* name, jboolean init,
   //   if there is no security manager in 3-arg Class.forName().
   Klass* klass = SystemDictionary::resolve_or_fail(name, loader, protection_domain, throwError != 0, CHECK_NULL);
 
-  // Check if we should initialize the class
+  // Check if we should initialize the class (which implies linking), or just link it
   if (init && klass->is_instance_klass()) {
     klass->initialize(CHECK_NULL);
+  } else if (link && klass->is_instance_klass()) {
+    InstanceKlass::cast(klass)->link_class(CHECK_NULL);
   }
   return (jclass) JNIHandles::make_local(env, klass->java_mirror());
 }

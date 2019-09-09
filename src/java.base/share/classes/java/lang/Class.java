@@ -392,6 +392,10 @@ public final class Class<T> implements java.io.Serializable,
      *
      * @see       java.lang.Class#forName(String)
      * @see       java.lang.ClassLoader
+     *
+     * @jls 12.2 Loading of Classes and Interfaces
+     * @jls 12.3 Linking of Classes and Interfaces
+     * @jls 12.4 Initialization of Classes and Interfaces
      * @since     1.2
      */
     @CallerSensitive
@@ -438,6 +442,10 @@ public final class Class<T> implements java.io.Serializable,
      * <p> This method does not check whether the requested class is
      * accessible to its caller. </p>
      *
+     * <p> Note that this method throws errors related to loading and linking as
+     * specified in Sections 12.2 and 12.3 of <em>The Java Language
+     * Specification</em>.
+     *
      * @apiNote
      * This method returns {@code null} on failure rather than
      * throwing a {@link ClassNotFoundException}, as is done by
@@ -465,6 +473,8 @@ public final class Class<T> implements java.io.Serializable,
      *         in a module.</li>
      *         </ul>
      *
+     * @jls 12.2 Loading of Classes and Interfaces
+     * @jls 12.3 Linking of Classes and Interfaces
      * @since 9
      * @spec JPMS
      */
@@ -488,12 +498,20 @@ public final class Class<T> implements java.io.Serializable,
             cl = module.getClassLoader();
         }
 
+        Class<?> ret;
         if (cl != null) {
-            return cl.loadClass(module, name);
+            ret = cl.loadClass(module, name);
         } else {
-            return BootLoader.loadClass(module, name);
+            ret = BootLoader.loadClass(module, name);
         }
+        if (ret != null) {
+            // The loaded class should also be linked
+            linkClass(ret);
+        }
+        return ret;
     }
+
+    private static native void linkClass(Class<?> c);
 
     /**
      * Creates a new instance of the class represented by this {@code Class}
