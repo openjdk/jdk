@@ -56,6 +56,11 @@ public abstract class InputStream implements Closeable {
     private static final int DEFAULT_BUFFER_SIZE = 8192;
 
     /**
+     * Constructor for subclasses to call.
+     */
+    public InputStream() {}
+
+    /**
      * Returns a new {@code InputStream} that reads no bytes. The returned
      * stream is initially open.  The stream is closed by calling the
      * {@code close()} method.  Subsequent calls to {@code close()} have no

@@ -1321,6 +1321,10 @@ public class ObjectInputStream
      * Provide access to the persistent fields read from the input stream.
      */
     public abstract static class GetField {
+        /**
+         * Constructor for subclasses to call.
+         */
+        public GetField() {}
 
         /**
          * Get the ObjectStreamClass that describes the fields in the stream.

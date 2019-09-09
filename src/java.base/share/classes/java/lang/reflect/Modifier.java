@@ -43,6 +43,12 @@ import java.util.StringJoiner;
  * @since 1.1
  */
 public class Modifier {
+    /**
+     * Do not call.
+     */
+    @Deprecated(forRemoval=true, since="14")
+    public Modifier() {}
+
 
     /**
      * Return {@code true} if the integer argument includes the

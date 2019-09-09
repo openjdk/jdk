@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -40,6 +40,12 @@ import static java.util.Objects.requireNonNull;
  * @since 11
  */
 public final class ConstantBootstraps {
+    /**
+     * Do not call.
+     */
+    @Deprecated(forRemoval=true, since="14")
+    public ConstantBootstraps() {}
+
     // implements the upcall from the JVM, MethodHandleNatives.linkDynamicConstant:
     /*non-public*/
     static Object makeConstant(MethodHandle bootstrapMethod,
