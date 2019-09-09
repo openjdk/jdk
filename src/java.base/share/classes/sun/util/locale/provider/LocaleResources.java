@@ -178,36 +178,44 @@ public class LocaleResources {
             // elements are provided by the caller, yet they are cached here.
             ResourceBundle rb = localeData.getNumberFormatData(locale);
             dfsdata = new Object[3];
-
-            // NumberElements look up. First, try the Unicode extension
-            String numElemKey;
-            String numberType = locale.getUnicodeLocaleType("nu");
-            if (numberType != null) {
-                numElemKey = numberType + ".NumberElements";
-                if (rb.containsKey(numElemKey)) {
-                    dfsdata[0] = rb.getStringArray(numElemKey);
-                }
-            }
-
-            // Next, try DefaultNumberingSystem value
-            if (dfsdata[0] == null && rb.containsKey("DefaultNumberingSystem")) {
-                numElemKey = rb.getString("DefaultNumberingSystem") + ".NumberElements";
-                if (rb.containsKey(numElemKey)) {
-                    dfsdata[0] = rb.getStringArray(numElemKey);
-                }
-            }
-
-            // Last resort. No need to check the availability.
-            // Just let it throw MissingResourceException when needed.
-            if (dfsdata[0] == null) {
-                dfsdata[0] = rb.getStringArray("NumberElements");
-            }
+            dfsdata[0] = getNumberStrings(rb, "NumberElements");
 
             cache.put(DECIMAL_FORMAT_SYMBOLS_DATA_CACHEKEY,
                       new ResourceReference(DECIMAL_FORMAT_SYMBOLS_DATA_CACHEKEY, (Object) dfsdata, referenceQueue));
         }
 
         return dfsdata;
+    }
+
+    private String[] getNumberStrings(ResourceBundle rb, String type) {
+        String[] ret = null;
+        String key;
+        String numSys;
+
+        // Number strings look up. First, try the Unicode extension
+        numSys = locale.getUnicodeLocaleType("nu");
+        if (numSys != null) {
+            key = numSys + "." + type;
+            if (rb.containsKey(key)) {
+                ret = rb.getStringArray(key);
+            }
+        }
+
+        // Next, try DefaultNumberingSystem value
+        if (ret == null && rb.containsKey("DefaultNumberingSystem")) {
+            key = rb.getString("DefaultNumberingSystem") + "." + type;
+            if (rb.containsKey(key)) {
+                ret = rb.getStringArray(key);
+            }
+        }
+
+        // Last resort. No need to check the availability.
+        // Just let it throw MissingResourceException when needed.
+        if (ret == null) {
+            ret = rb.getStringArray(type);
+        }
+
+        return ret;
     }
 
     public String getCurrencyName(String key) {
@@ -485,7 +493,7 @@ public class LocaleResources {
 
         if (data == null || ((numberPatterns = (String[]) data.get()) == null)) {
             ResourceBundle resource = localeData.getNumberFormatData(locale);
-            numberPatterns = resource.getStringArray("NumberPatterns");
+            numberPatterns = getNumberStrings(resource, "NumberPatterns");
             cache.put(NUMBER_PATTERNS_CACHEKEY,
                       new ResourceReference(NUMBER_PATTERNS_CACHEKEY, (Object) numberPatterns, referenceQueue));
         }
