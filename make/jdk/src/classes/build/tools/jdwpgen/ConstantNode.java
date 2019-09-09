@@ -55,8 +55,14 @@ class ConstantNode extends AbstractCommandNode {
 
     void document(PrintWriter writer) {
         //Add anchor to each constant with format <constant table name>_<constant name>
+        if (!(parent instanceof AbstractNamedNode)) {
+            error("Parent must be ConstantSetNode, but it's " + parent.getClass().getSimpleName());
+        }
+        String tableName = ((AbstractNamedNode)parent).name;
         writer.println("<tr>"
-                        + "<th scope=\"row\">" + name
+                        + "<th scope=\"row\">"
+                            + "<span id=\"" + tableName + "_" + name + "\"></span>"
+                            + name
                         + "<td class=\"centered\">" + nameNode.value()
                         + "<td>" + comment() + "&nbsp;"
                     + "</tr>");
