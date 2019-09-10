@@ -159,25 +159,19 @@ public:
 class ZRootsIteratorThreadClosure : public ThreadClosure {
 private:
   ZRootsIteratorClosure* _cl;
-  const bool             _visit_invisible;
 
 public:
-  ZRootsIteratorThreadClosure(ZRootsIteratorClosure* cl, bool visit_invisible) :
-      _cl(cl),
-      _visit_invisible(visit_invisible) {}
+  ZRootsIteratorThreadClosure(ZRootsIteratorClosure* cl) :
+      _cl(cl) {}
 
   virtual void do_thread(Thread* thread) {
     ZRootsIteratorCodeBlobClosure code_cl(_cl);
     thread->oops_do(_cl, ClassUnloading ? &code_cl : NULL);
     _cl->do_thread(thread);
-    if (_visit_invisible && ZThreadLocalData::has_invisible_root(thread)) {
-      _cl->do_oop(ZThreadLocalData::invisible_root(thread));
-    }
   }
 };
 
-ZRootsIterator::ZRootsIterator(bool visit_invisible, bool visit_jvmti_weak_export) :
-    _visit_invisible(visit_invisible),
+ZRootsIterator::ZRootsIterator(bool visit_jvmti_weak_export) :
     _visit_jvmti_weak_export(visit_jvmti_weak_export),
     _universe(this),
     _object_synchronizer(this),
@@ -246,7 +240,7 @@ void ZRootsIterator::do_system_dictionary(ZRootsIteratorClosure* cl) {
 void ZRootsIterator::do_threads(ZRootsIteratorClosure* cl) {
   ZStatTimer timer(ZSubPhasePauseRootsThreads);
   ResourceMark rm;
-  ZRootsIteratorThreadClosure thread_cl(cl, _visit_invisible);
+  ZRootsIteratorThreadClosure thread_cl(cl);
   Threads::possibly_parallel_threads_do(true, &thread_cl);
 }
 

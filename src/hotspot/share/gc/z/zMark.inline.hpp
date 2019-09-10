@@ -31,12 +31,12 @@
 #include "runtime/thread.hpp"
 #include "utilities/debug.hpp"
 
-template <bool finalizable, bool publish>
+template <bool follow, bool finalizable, bool publish>
 inline void ZMark::mark_object(uintptr_t addr) {
   assert(ZAddress::is_marked(addr), "Should be marked");
   ZMarkThreadLocalStacks* const stacks = ZThreadLocalData::stacks(Thread::current());
   ZMarkStripe* const stripe = _stripes.stripe_for_addr(addr);
-  ZMarkStackEntry entry(addr, finalizable);
+  ZMarkStackEntry entry(addr, follow, finalizable);
 
   stacks->push(&_allocator, &_stripes, stripe, entry, publish);
 }

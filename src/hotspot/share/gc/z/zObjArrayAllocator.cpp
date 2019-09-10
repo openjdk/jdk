@@ -25,46 +25,24 @@
 #include "gc/z/zThreadLocalData.hpp"
 #include "gc/z/zObjArrayAllocator.hpp"
 #include "gc/z/zUtils.inline.hpp"
-#include "memory/universe.hpp"
 #include "oops/arrayKlass.hpp"
 #include "runtime/interfaceSupport.inline.hpp"
-#include "runtime/handles.hpp"
-#include "runtime/os.hpp"
-#include "utilities/debug.hpp"
-#include "utilities/globalDefinitions.hpp"
-
-// To avoid delaying safepoints, clearing of arrays is split up in segments
-// with safepoint polling inbetween. However, we can't have a not-yet-cleared
-// array of oops on the heap when we safepoint since the GC will then stumble
-// across uninitialized oops. To avoid this we let an array of oops be an
-// array of a primitive type of the same size until the clearing has completed.
-// A max segment size of 64K was chosen because benchmarking suggests that is
-// offers a good trade-off between allocation time and time-to-safepoint.
-
-static Klass* substitute_object_array_klass(Klass* klass) {
-  if (!klass->is_objArray_klass()) {
-    return klass;
-  }
-
-  Klass* const substitute_klass = Universe::longArrayKlassObj();
-  const BasicType type = ArrayKlass::cast(klass)->element_type();
-  const BasicType substitute_type = ArrayKlass::cast(substitute_klass)->element_type();
-  assert(type2aelembytes(type) == type2aelembytes(substitute_type), "Element size mismatch");
-  return substitute_klass;
-}
 
 ZObjArrayAllocator::ZObjArrayAllocator(Klass* klass, size_t word_size, int length, Thread* thread) :
-    ObjArrayAllocator(substitute_object_array_klass(klass), word_size, length, false /* do_zero */, thread),
-    _final_klass(klass) {}
+    ObjArrayAllocator(klass, word_size, length, false /* do_zero */, thread) {}
 
 oop ZObjArrayAllocator::finish(HeapWord* mem) const {
-  // Set mark word and initial klass pointer
+  // Initialize object header and length field
   ObjArrayAllocator::finish(mem);
 
-  // Keep the array alive across safepoints, but make it invisible
-  // to the heap itarator until the final klass pointer has been set
+  // Keep the array alive across safepoints through an invisible
+  // root. Invisible roots are not visited by the heap itarator
+  // and the marking logic will not attempt to follow its elements.
   ZThreadLocalData::set_invisible_root(_thread, (oop*)&mem);
 
+  // A max segment size of 64K was chosen because microbenchmarking
+  // suggested that it offered a good trade-off between allocation
+  // time and time-to-safepoint
   const size_t segment_max = ZUtils::bytes_to_words(64 * K);
   const size_t skip = arrayOopDesc::header_size(ArrayKlass::cast(_klass)->element_type());
   size_t remaining = _word_size - skip;
@@ -81,12 +59,6 @@ oop ZObjArrayAllocator::finish(HeapWord* mem) const {
     }
   }
 
-  if (_klass != _final_klass) {
-    // Set final klass pointer
-    oopDesc::release_set_klass(mem, _final_klass);
-  }
-
-  // Make the array visible to the heap iterator
   ZThreadLocalData::clear_invisible_root(_thread);
 
   return oop(mem);

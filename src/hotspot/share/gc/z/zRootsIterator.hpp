@@ -84,7 +84,6 @@ public:
 
 class ZRootsIterator {
 private:
-  bool _visit_invisible;
   bool _visit_jvmti_weak_export;
 
   void do_universe(ZRootsIteratorClosure* cl);
@@ -106,16 +105,10 @@ private:
   ZParallelOopsDo<ZRootsIterator, &ZRootsIterator::do_code_cache>        _code_cache;
 
 public:
-  ZRootsIterator(bool visit_invisible = true, bool visit_jvmti_weak_export = false);
+  ZRootsIterator(bool visit_jvmti_weak_export = false);
   ~ZRootsIterator();
 
   void oops_do(ZRootsIteratorClosure* cl);
-};
-
-class ZRootsIteratorNoInvisible : public ZRootsIterator {
-public:
-  ZRootsIteratorNoInvisible() :
-      ZRootsIterator(false /* visit_invisible */, false /* visit_jvmti_weak_export */) {}
 };
 
 class ZConcurrentRootsIterator {

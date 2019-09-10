@@ -32,6 +32,9 @@ typedef uintptr_t (*ZBarrierSlowPath)(uintptr_t);
 
 class ZBarrier : public AllStatic {
 private:
+  static const bool Follow      = true;
+  static const bool DontFollow  = false;
+
   static const bool Strong      = false;
   static const bool Finalizable = true;
 
@@ -51,7 +54,7 @@ private:
   static bool during_mark();
   static bool during_relocate();
   template <bool finalizable> static bool should_mark_through(uintptr_t addr);
-  template <bool finalizable, bool publish> static uintptr_t mark(uintptr_t addr);
+  template <bool follow, bool finalizable, bool publish> static uintptr_t mark(uintptr_t addr);
   static uintptr_t remap(uintptr_t addr);
   static uintptr_t relocate(uintptr_t addr);
   static uintptr_t relocate_or_mark(uintptr_t addr);
@@ -69,6 +72,7 @@ private:
   static uintptr_t mark_barrier_on_oop_slow_path(uintptr_t addr);
   static uintptr_t mark_barrier_on_finalizable_oop_slow_path(uintptr_t addr);
   static uintptr_t mark_barrier_on_root_oop_slow_path(uintptr_t addr);
+  static uintptr_t mark_barrier_on_invisible_root_oop_slow_path(uintptr_t addr);
 
   static uintptr_t relocate_barrier_on_root_oop_slow_path(uintptr_t addr);
 
@@ -106,6 +110,7 @@ public:
   static void mark_barrier_on_oop_field(volatile oop* p, bool finalizable);
   static void mark_barrier_on_oop_array(volatile oop* p, size_t length, bool finalizable);
   static void mark_barrier_on_root_oop_field(oop* p);
+  static void mark_barrier_on_invisible_root_oop_field(oop* p);
 
   // Relocate barrier
   static void relocate_barrier_on_root_oop_field(oop* p);

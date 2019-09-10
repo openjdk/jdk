@@ -48,6 +48,9 @@ public:
     // Update thread local address bad mask
     ZThreadLocalData::set_address_bad_mask(thread, ZAddressBadMask);
 
+    // Relocate invisible root
+    ZThreadLocalData::do_invisible_root(thread, ZBarrier::relocate_barrier_on_root_oop_field);
+
     // Remap TLAB
     ZThreadLocalAllocBuffer::remap(thread);
   }
@@ -69,7 +72,7 @@ private:
 public:
   ZRelocateRootsTask() :
       ZTask("ZRelocateRootsTask"),
-      _roots(true /* visit_invisible */, true /* visit_jvmti_weak_export */) {}
+      _roots(true /* visit_jvmti_weak_export */) {}
 
   virtual void work() {
     // During relocation we need to visit the JVMTI
