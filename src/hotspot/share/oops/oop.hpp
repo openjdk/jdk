@@ -40,8 +40,6 @@
 //
 // no virtual functions allowed
 
-extern bool always_do_update_barrier;
-
 // Forward declarations.
 class OopClosure;
 class ScanClosure;

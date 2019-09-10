@@ -37,8 +37,6 @@
 #include "utilities/copy.hpp"
 #include "utilities/macros.hpp"
 
-bool always_do_update_barrier = false;
-
 void oopDesc::print_on(outputStream* st) const {
   klass()->oop_print_on(oop(this), st);
 }

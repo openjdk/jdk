@@ -2517,7 +2517,6 @@ G1CollectedHeap* G1CollectedHeap::heap() {
 }
 
 void G1CollectedHeap::gc_prologue(bool full) {
-  // always_do_update_barrier = false;
   assert(InlineCacheBuffer::is_empty(), "should have cleaned up ICBuffer");
 
   // This summary needs to be printed before incrementing total collections.
@@ -2551,7 +2550,6 @@ void G1CollectedHeap::gc_epilogue(bool full) {
 #if COMPILER2_OR_JVMCI
   assert(DerivedPointerTable::is_empty(), "derived pointer present");
 #endif
-  // always_do_update_barrier = true;
 
   double start = os::elapsedTime();
   resize_all_tlabs();
