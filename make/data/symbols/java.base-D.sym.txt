@@ -90,6 +90,10 @@ innerclass innerClass java/util/concurrent/ForkJoinPool$ManagedBlocker outerClas
 innerclass innerClass java/lang/ProcessHandle$Info outerClass java/lang/ProcessHandle innerClassName Info flags 609
 innerclass innerClass java/lang/invoke/MethodHandles$Lookup outerClass java/lang/invoke/MethodHandles innerClassName Lookup flags 19
 
+class name java/lang/Runtime
+-method name traceInstructions descriptor (Z)V
+-method name traceMethodCalls descriptor (Z)V
+
 class name java/lang/StrictMath
 -method name max descriptor (FF)F
 -method name max descriptor (DD)D
@@ -104,6 +108,9 @@ class name java/lang/String
 header extends java/lang/Object implements java/io/Serializable,java/lang/Comparable,java/lang/CharSequence,java/lang/constant/Constable,java/lang/constant/ConstantDesc flags 31 signature Ljava/lang/Object;Ljava/io/Serializable;Ljava/lang/Comparable<Ljava/lang/String;>;Ljava/lang/CharSequence;Ljava/lang/constant/Constable;Ljava/lang/constant/ConstantDesc;
 innerclass innerClass java/util/Spliterator$OfInt outerClass java/util/Spliterator innerClassName OfInt flags 609
 innerclass innerClass java/lang/invoke/MethodHandles$Lookup outerClass java/lang/invoke/MethodHandles innerClassName Lookup flags 19
+method name stripIndent descriptor ()Ljava/lang/String; flags 1 deprecated true runtimeAnnotations @Ljava/lang/Deprecated;(forRemoval=Ztrue,since="13")
+method name translateEscapes descriptor ()Ljava/lang/String; flags 1 deprecated true runtimeAnnotations @Ljava/lang/Deprecated;(forRemoval=Ztrue,since="13")
+method name formatted descriptor ([Ljava/lang/Object;)Ljava/lang/String; flags 81 deprecated true runtimeAnnotations @Ljava/lang/Deprecated;(forRemoval=Ztrue,since="13")
 
 class name java/lang/System
 header extends java/lang/Object nestMembers java/lang/System$LoggerFinder,java/lang/System$Logger,java/lang/System$Logger$Level flags 31
