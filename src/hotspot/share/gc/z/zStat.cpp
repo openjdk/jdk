@@ -359,7 +359,6 @@ void ZStatValue::initialize() {
   // Allocation aligned memory
   const size_t size = _cpu_offset * ZCPU::count();
   _base = ZUtils::alloc_aligned(ZCacheLineSize, size);
-  memset((void*)_base, 0, size);
 }
 
 const char* ZStatValue::group() const {
