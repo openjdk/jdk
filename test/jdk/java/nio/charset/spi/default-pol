@@ -1,7 +1,6 @@
 grant codeBase "jrt:/jdk.charsets" {
         permission java.io.FilePermission "${java.home}/-", "read";
         permission java.util.PropertyPermission "os.name", "read";
-        permission java.util.PropertyPermission "sun.nio.cs.map", "read";
         permission java.lang.RuntimePermission "charsetProvider";
         permission java.lang.RuntimePermission "accessClassInPackage.jdk.internal.misc";
         permission java.lang.RuntimePermission "accessClassInPackage.sun.nio.cs";

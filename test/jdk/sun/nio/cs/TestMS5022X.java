@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,7 +22,7 @@
  */
 
 /* @test
- * @bug 6173388 6319716
+ * @bug 6173388 6319716 8229960
  * @summary Check full coverage encode/decode for Microsoft
  *          ISO2022_JP variants MS50220, MS50221 and MSISO2022JP
  * @modules jdk.charsets
@@ -666,23 +666,6 @@ public class TestMS5022X {
      }
 
     public static void main(String[] args) throws Exception {
-        String map = System.getProperty("sun.nio.cs.map");
-        if (map != null) {
-            map = map.toLowerCase(java.util.Locale.US);
-            Charset cs = Charset.forName("ISO-2022-JP");
-            if (map.indexOf("x-windows-50221/ISO-2022-jp") != -1 &&
-                !"x-windows-50220".equals(cs.name()) ||
-                map.indexOf("x-windows-50220/ISO-2022-jp") != -1 &&
-                !"x-windows-50220".equals(cs.name()) ||
-                map.indexOf("x-windows-iso2022jp/ISO-2022-jp") != -1 &&
-                !"x-windows-iso2022jp".equals(cs.name())) {
-                throw new Exception("Error: sun.nio.cs.map=" + map +
-                                    ", ISO-2022-JP=" + cs.name());
-            } else {
-                System.out.printf("ISO-2022-JP=%s\n", cs.name());
-            }
-        }
-
         String testStr = US_ASCII +
                          JISX0208SUBSET +
                          JISX0201KATAKANA +

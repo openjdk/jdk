@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2010, 2019 Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,13 +22,12 @@
  */
 
 /* @test
- * @bug 4712786
+ * @bug 4712786 8229960
  * @summary Check charsets against reference files
  * @modules jdk.charsets
  *
  * @build Util
  * @run main Check shift_jis ref.shift_jis
- * @run main/othervm -Dsun.nio.cs.map=Windows-31J/Shift_JIS Check shift_jis ref.windows-31j
  */
 
 import java.io.*;
