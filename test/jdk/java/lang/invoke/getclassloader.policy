@@ -1,5 +1,6 @@
 /*
- * Security policy used by the FindClassSecurityManager test.
+ * Security policy used by the FindClassSecurityManager and 
+ * MethodTypeSecurityManager test.
  * Must allow file reads so that jtreg itself can run, and getting class loaders.
  */
 

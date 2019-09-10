@@ -1,12 +1,10 @@
 /*
- * Copyright (c) 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License version 2 only, as
- * published by the Free Software Foundation.  Oracle designates this
- * particular file as subject to the "Classpath" exception as provided
- * by Oracle in the LICENSE file that accompanied this code.
+ * published by the Free Software Foundation.
  *
  * This code is distributed in the hope that it will be useful, but WITHOUT
  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
@@ -23,23 +21,11 @@
  * questions.
  */
 
-/* @test
- * @bug 8139885
- * @run main/othervm/policy=getclassloader.policy/secure=java.lang.SecurityManager -ea -esa test.java.lang.invoke.FindClassSecurityManager
- */
-
-package test.java.lang.invoke;
+package sun.misc;
 
 import java.lang.invoke.MethodHandles;
+import java.lang.invoke.MethodHandles.Lookup;
 
-public class FindClassSecurityManager {
-    public static void main(String[] args) throws Throwable {
-        assert null != System.getSecurityManager();
-        Class<?> thisClass = FindClassSecurityManager.class;
-        MethodHandles.Lookup lookup = MethodHandles.lookup();
-        Class<?> lookedUp = lookup.findClass(thisClass.getName());
-        assert thisClass == lookedUp;
-        Class<?> accessed = lookup.accessClass(thisClass);
-        assert thisClass == accessed;
-    }
+public class Test {
+     public static final Lookup LOOKUP = MethodHandles.lookup();
 }

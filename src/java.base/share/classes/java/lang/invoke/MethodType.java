@@ -46,9 +46,11 @@ import jdk.internal.vm.annotation.Stable;
 import sun.invoke.util.BytecodeDescriptor;
 import sun.invoke.util.VerifyType;
 import sun.invoke.util.Wrapper;
+import sun.security.util.SecurityConstants;
 
 import static java.lang.invoke.MethodHandleStatics.UNSAFE;
 import static java.lang.invoke.MethodHandleStatics.newIllegalArgumentException;
+import static java.lang.invoke.MethodType.fromDescriptor;
 
 /**
  * A method type represents the arguments and return type accepted and
@@ -1076,9 +1078,8 @@ class MethodType
     /**
      * Finds or creates an instance of a method type, given the spelling of its bytecode descriptor.
      * Convenience method for {@link #methodType(java.lang.Class, java.lang.Class[]) methodType}.
-     * Any class or interface name embedded in the descriptor string
-     * will be resolved by calling {@link ClassLoader#loadClass(java.lang.String)}
-     * on the given loader (or if it is null, on the system class loader).
+     * Any class or interface name embedded in the descriptor string will be
+     * resolved by the given loader (or if it is null, on the system class loader).
      * <p>
      * Note that it is possible to encounter method types which cannot be
      * constructed by this method, because their component types are
@@ -1092,10 +1093,19 @@ class MethodType
      * @throws NullPointerException if the string is null
      * @throws IllegalArgumentException if the string is not well-formed
      * @throws TypeNotPresentException if a named type cannot be found
+     * @throws SecurityException if the security manager is present and
+     *         {@code loader} is {@code null} and the caller does not have the
+     *         {@link RuntimePermission}{@code ("getClassLoader")}
      */
     public static MethodType fromMethodDescriptorString(String descriptor, ClassLoader loader)
         throws IllegalArgumentException, TypeNotPresentException
     {
+        if (loader == null) {
+            SecurityManager sm = System.getSecurityManager();
+            if (sm != null) {
+                sm.checkPermission(SecurityConstants.GET_CLASSLOADER_PERMISSION);
+            }
+        }
         return fromDescriptor(descriptor,
                               (loader == null) ? ClassLoader.getSystemClassLoader() : loader);
     }
