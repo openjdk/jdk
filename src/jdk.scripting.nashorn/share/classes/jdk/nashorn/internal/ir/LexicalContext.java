@@ -697,7 +697,7 @@ public class LexicalContext {
      * @return {@code true} if in unprotected switch statement.
      */
     public boolean inUnprotectedSwitchContext() {
-        for (int i = sp; i > 0; i--) {
+        for (int i = sp - 1; i > 0; i--) {
             final LexicalContextNode next = stack[i];
             if (next instanceof Block) {
                 return stack[i - 1] instanceof SwitchNode;
