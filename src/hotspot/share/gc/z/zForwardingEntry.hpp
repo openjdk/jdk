@@ -46,7 +46,7 @@
 //
 
 class ZForwardingEntry {
-  friend struct PrimitiveConversions;
+  friend class PrimitiveConversions;
 
 private:
   typedef ZBitField<uint64_t, bool,   0,   1> field_populated;
