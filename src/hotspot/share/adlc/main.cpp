@@ -252,6 +252,7 @@ int main(int argc, char *argv[])
   AD.addInclude(AD._CPP_GEN_file, "adfiles", get_basename(AD._HPP_file._name));
   AD.addInclude(AD._CPP_GEN_file, "opto/cfgnode.hpp");
   AD.addInclude(AD._CPP_GEN_file, "opto/locknode.hpp");
+  AD.addInclude(AD._CPP_GEN_file, "opto/rootnode.hpp");
   AD.addInclude(AD._CPP_MISC_file, "precompiled.hpp");
   AD.addInclude(AD._CPP_MISC_file, "adfiles", get_basename(AD._HPP_file._name));
   AD.addInclude(AD._CPP_PEEPHOLE_file, "precompiled.hpp");

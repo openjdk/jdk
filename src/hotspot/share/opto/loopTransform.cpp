@@ -1293,7 +1293,7 @@ Node* PhaseIdealLoop::clone_skeleton_predicate(Node* iff, Node* value, Node* pre
   Node *frame = new ParmNode(C->start(), TypeFunc::FramePtr);
   register_new_node(frame, C->start());
   // It's impossible for the predicate to fail at runtime. Use an Halt node.
-  Node* halt = new HaltNode(other_proj, frame);
+  Node* halt = new HaltNode(other_proj, frame, "duplicated predicate failed which is impossible");
   C->root()->add_req(halt);
   new_iff->set_req(0, prev_proj);
 
@@ -2455,7 +2455,7 @@ Node* PhaseIdealLoop::add_range_check_predicate(IdealLoopTree* loop, CountedLoop
   register_control(iftrue, loop->_parent, new_iff);
   Node *frame = new ParmNode(C->start(), TypeFunc::FramePtr);
   register_new_node(frame, C->start());
-  Node* halt = new HaltNode(iffalse, frame);
+  Node* halt = new HaltNode(iffalse, frame, "range check predicate failed which is impossible");
   register_control(halt, _ltree_root, iffalse);
   C->root()->add_req(halt);
   return iftrue;
