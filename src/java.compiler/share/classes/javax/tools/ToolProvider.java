@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -43,6 +43,12 @@ public class ToolProvider {
 
     private static final String systemJavaCompilerModule = "jdk.compiler";
     private static final String systemJavaCompilerName   = "com.sun.tools.javac.api.JavacTool";
+
+    /**
+     * Do not call.
+     */
+    @Deprecated(forRemoval=true, since="14")
+    public ToolProvider() {}
 
     /**
      * Returns the Java&trade; programming language compiler provided
