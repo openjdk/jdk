@@ -62,7 +62,6 @@ class OSContainer: AllStatic {
 };
 
 inline bool OSContainer::is_containerized() {
-  assert(_is_initialized, "OSContainer not initialized");
   return _is_containerized;
 }
 
