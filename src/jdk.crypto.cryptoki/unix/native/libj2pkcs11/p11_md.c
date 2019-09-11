@@ -109,6 +109,7 @@ JNIEXPORT void JNICALL Java_sun_security_pkcs11_wrapper_PKCS11_connect
         exceptionMessage = (char *) malloc(sizeof(char) * (strlen(systemErrorMessage) + strlen(libraryNameStr) + 1));
         if (exceptionMessage == NULL) {
             throwOutOfMemoryError(env, 0);
+            (*env)->ReleaseStringUTFChars(env, jPkcs11ModulePath, libraryNameStr);
             return;
         }
         strcpy(exceptionMessage, systemErrorMessage);
