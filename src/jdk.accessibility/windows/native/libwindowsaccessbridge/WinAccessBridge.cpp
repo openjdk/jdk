@@ -296,7 +296,7 @@ WinAccessBridge::~WinAccessBridge() {
 
     PrintDebugString("[INFO]:   finished deleting eventHandler, messageQueue, and javaVMs");
     PrintDebugString("[INFO]: GOODBYE CRUEL WORLD...");
-
+    finalizeFileLogger();
     DestroyWindow(theDialogWindow);
 }
 
