@@ -239,6 +239,7 @@ JNIEXPORT jobject JNICALL Java_java_net_NetworkInterface_getByName0
 
     ifs = enumInterfaces(env);
     if (ifs == NULL) {
+        (*env)->ReleaseStringUTFChars(env, name, name_utf);
         return NULL;
     }
 
