@@ -212,12 +212,8 @@ AOTLib::~AOTLib() {
 }
 
 AOTCodeHeap::~AOTCodeHeap() {
-  if (_classes != NULL) {
-    FREE_C_HEAP_ARRAY(AOTClass, _classes);
-  }
-  if (_code_to_aot != NULL) {
-    FREE_C_HEAP_ARRAY(CodeToAMethod, _code_to_aot);
-  }
+  FREE_C_HEAP_ARRAY(AOTClass, _classes);
+  FREE_C_HEAP_ARRAY(CodeToAMethod, _code_to_aot);
 }
 
 AOTLib::AOTLib(void* handle, const char* name, int dso_id) : _valid(true), _dl_handle(handle), _dso_id(dso_id) {

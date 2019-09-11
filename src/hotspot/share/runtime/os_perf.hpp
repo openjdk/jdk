@@ -41,12 +41,8 @@ class EnvironmentVariable : public CHeapObj<mtInternal> {
   }
 
   ~EnvironmentVariable() {
-    if (_key != NULL) {
-      FREE_C_HEAP_ARRAY(char, _key);
-    }
-    if (_value != NULL) {
-      FREE_C_HEAP_ARRAY(char, _value);
-    }
+    FREE_C_HEAP_ARRAY(char, _key);
+    FREE_C_HEAP_ARRAY(char, _value);
   }
 
   EnvironmentVariable(char* key, char* value) {
@@ -181,15 +177,9 @@ class SystemProcess : public CHeapObj<mtInternal> {
   }
 
   virtual ~SystemProcess(void) {
-    if (_name != NULL) {
-      FREE_C_HEAP_ARRAY(char, _name);
-    }
-    if (_path != NULL) {
-      FREE_C_HEAP_ARRAY(char, _path);
-    }
-    if (_command_line != NULL) {
-      FREE_C_HEAP_ARRAY(char, _command_line);
-    }
+    FREE_C_HEAP_ARRAY(char, _name);
+    FREE_C_HEAP_ARRAY(char, _path);
+    FREE_C_HEAP_ARRAY(char, _command_line);
   }
 };
 

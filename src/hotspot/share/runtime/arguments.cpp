@@ -941,10 +941,8 @@ static bool append_to_string_flag(JVMFlag* flag, const char* new_value, JVMFlag:
   (void) JVMFlag::ccstrAtPut(flag, &value, origin);
   // JVMFlag always returns a pointer that needs freeing.
   FREE_C_HEAP_ARRAY(char, value);
-  if (free_this_too != NULL) {
-    // JVMFlag made its own copy, so I must delete my own temp. buffer.
-    FREE_C_HEAP_ARRAY(char, free_this_too);
-  }
+  // JVMFlag made its own copy, so I must delete my own temp. buffer.
+  FREE_C_HEAP_ARRAY(char, free_this_too);
   return true;
 }
 

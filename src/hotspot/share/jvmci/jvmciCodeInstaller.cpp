@@ -510,9 +510,7 @@ void CodeInstaller::initialize_dependencies(JVMCIObject compiled_code, OopRecord
 
 #if INCLUDE_AOT
 RelocBuffer::~RelocBuffer() {
-  if (_buffer != NULL) {
-    FREE_C_HEAP_ARRAY(char, _buffer);
-  }
+  FREE_C_HEAP_ARRAY(char, _buffer);
 }
 
 address RelocBuffer::begin() const {

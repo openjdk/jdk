@@ -326,9 +326,7 @@ bool CPUPerformanceInterface::CPUPerformance::initialize() {
 }
 
 CPUPerformanceInterface::CPUPerformance::~CPUPerformance() {
-  if (_counters.jvmTicks != NULL) {
-    FREE_C_HEAP_ARRAY(char, _counters.jvmTicks);
-  }
+  FREE_C_HEAP_ARRAY(char, _counters.jvmTicks);
   if (_counters.kstat_ctrl != NULL) {
     kstat_close(_counters.kstat_ctrl);
   }

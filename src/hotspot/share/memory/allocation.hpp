@@ -184,6 +184,7 @@ char* ReallocateHeap(char *old,
                      MEMFLAGS flag,
                      AllocFailType alloc_failmode = AllocFailStrategy::EXIT_OOM);
 
+// handles NULL pointers
 void FreeHeap(void* p);
 
 template <MEMFLAGS F> class CHeapObj ALLOCATION_SUPER_CLASS_SPEC {

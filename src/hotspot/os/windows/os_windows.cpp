@@ -2727,9 +2727,7 @@ class NUMANodeListHolder {
   int _numa_used_node_count;
 
   void free_node_list() {
-    if (_numa_used_node_list != NULL) {
-      FREE_C_HEAP_ARRAY(int, _numa_used_node_list);
-    }
+    FREE_C_HEAP_ARRAY(int, _numa_used_node_list);
   }
 
  public:

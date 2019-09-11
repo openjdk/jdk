@@ -629,7 +629,7 @@ static char* get_user_name_slow(int vmid, int nspid, TRAPS) {
           if (statbuf.st_ctime > oldest_ctime) {
             char* user = strchr(dentry->d_name, '_') + 1;
 
-            if (oldest_user != NULL) FREE_C_HEAP_ARRAY(char, oldest_user);
+            FREE_C_HEAP_ARRAY(char, oldest_user);
             oldest_user = NEW_C_HEAP_ARRAY(char, strlen(user)+1, mtInternal);
 
             strcpy(oldest_user, user);

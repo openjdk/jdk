@@ -155,10 +155,8 @@ RuntimeBlob::RuntimeBlob(
 }
 
 void CodeBlob::flush() {
-  if (_oop_maps) {
-    FREE_C_HEAP_ARRAY(unsigned char, _oop_maps);
-    _oop_maps = NULL;
-  }
+  FREE_C_HEAP_ARRAY(unsigned char, _oop_maps);
+  _oop_maps = NULL;
   _strings.free();
 }
 

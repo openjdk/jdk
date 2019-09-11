@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -117,9 +117,7 @@ void JfrThreadLocal::release(JfrThreadLocal* tl, Thread* t) {
     assert(t->is_Java_thread(), "invariant");
     JfrJavaSupport::destroy_global_jni_handle(tl->java_event_writer());
   }
-  if (tl->_stackframes != NULL) {
-    FREE_C_HEAP_ARRAY(JfrStackFrame, tl->_stackframes);
-  }
+  FREE_C_HEAP_ARRAY(JfrStackFrame, tl->_stackframes);
   tl->_dead = true;
 }
 

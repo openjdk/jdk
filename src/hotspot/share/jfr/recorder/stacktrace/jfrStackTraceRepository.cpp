@@ -272,9 +272,7 @@ JfrStackTraceRepository::StackTrace::StackTrace(traceid id, const JfrStackTrace&
 }
 
 JfrStackTraceRepository::StackTrace::~StackTrace() {
-  if (_frames != NULL) {
-    FREE_C_HEAP_ARRAY(JfrStackFrame, _frames);
-  }
+  FREE_C_HEAP_ARRAY(JfrStackFrame, _frames);
 }
 
 bool JfrStackTraceRepository::StackTrace::equals(const JfrStackTrace& rhs) const {

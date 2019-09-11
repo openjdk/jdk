@@ -225,11 +225,9 @@ static int allocate_counters(ProcessQueryP process_query, size_t nofCounters) {
 }
 
 static void deallocate_counters(MultiCounterQueryP query) {
-  if (query->counters != NULL) {
-    FREE_C_HEAP_ARRAY(char, query->counters);
-    query->counters = NULL;
-    query->noOfCounters = 0;
-  }
+  FREE_C_HEAP_ARRAY(char, query->counters);
+  query->counters = NULL;
+  query->noOfCounters = 0;
 }
 
 static OSReturn add_counter(UpdateQueryP query, HCOUNTER* counter, const char* path, bool first_sample_on_init) {
@@ -659,14 +657,10 @@ static const char* pdh_process_image_name() {
 }
 
 static void deallocate_pdh_constants() {
-  if (process_image_name != NULL) {
-    FREE_C_HEAP_ARRAY(char, process_image_name);
-    process_image_name = NULL;
-  }
-  if (pdh_IDProcess_counter_fmt != NULL) {
-    FREE_C_HEAP_ARRAY(char, pdh_IDProcess_counter_fmt);
-    pdh_IDProcess_counter_fmt = NULL;
-  }
+  FREE_C_HEAP_ARRAY(char, process_image_name);
+  process_image_name = NULL;
+  FREE_C_HEAP_ARRAY(char, pdh_IDProcess_counter_fmt);
+  pdh_IDProcess_counter_fmt = NULL;
 }
 
 static int allocate_pdh_constants() {
@@ -1352,16 +1346,10 @@ bool CPUInformationInterface::initialize() {
 
 CPUInformationInterface::~CPUInformationInterface() {
   if (_cpu_info != NULL) {
-    const char* cpu_name = _cpu_info->cpu_name();
-    if (cpu_name != NULL) {
-      FREE_C_HEAP_ARRAY(char, cpu_name);
-      _cpu_info->set_cpu_name(NULL);
-    }
-    const char* cpu_desc = _cpu_info->cpu_description();
-    if (cpu_desc != NULL) {
-      FREE_C_HEAP_ARRAY(char, cpu_desc);
-      _cpu_info->set_cpu_description(NULL);
-    }
+    FREE_C_HEAP_ARRAY(char, _cpu_info->cpu_name());
+    _cpu_info->set_cpu_name(NULL);
+    FREE_C_HEAP_ARRAY(char, _cpu_info->cpu_description());
+    _cpu_info->set_cpu_description(NULL);
     delete _cpu_info;
     _cpu_info = NULL;
   }

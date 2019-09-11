@@ -72,9 +72,7 @@ G1CollectionSet::G1CollectionSet(G1CollectedHeap* g1h, G1Policy* policy) :
 }
 
 G1CollectionSet::~G1CollectionSet() {
-  if (_collection_set_regions != NULL) {
-    FREE_C_HEAP_ARRAY(uint, _collection_set_regions);
-  }
+  FREE_C_HEAP_ARRAY(uint, _collection_set_regions);
   free_optional_regions();
   clear_candidates();
 }

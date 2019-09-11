@@ -383,10 +383,8 @@ ClassPathImageEntry::~ClassPathImageEntry() {
   assert(_singleton == this, "must be");
   DEBUG_ONLY(_singleton = NULL);
 
-  if (_name != NULL) {
-    FREE_C_HEAP_ARRAY(const char, _name);
-    _name = NULL;
-  }
+  FREE_C_HEAP_ARRAY(const char, _name);
+
   if (_jimage != NULL) {
     (*JImageClose)(_jimage);
     _jimage = NULL;

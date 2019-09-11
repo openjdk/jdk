@@ -875,9 +875,7 @@ UNSAFE_ENTRY(jclass, Unsafe_DefineAnonymousClass0(JNIEnv *env, jobject unsafe, j
   }
 
   // try/finally clause:
-  if (temp_alloc != NULL) {
-    FREE_C_HEAP_ARRAY(u1, temp_alloc);
-  }
+  FREE_C_HEAP_ARRAY(u1, temp_alloc);
 
   // The anonymous class loader data has been artificially been kept alive to
   // this point.   The mirror and any instances of this class have to keep

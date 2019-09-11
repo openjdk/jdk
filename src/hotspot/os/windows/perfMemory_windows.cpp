@@ -394,7 +394,7 @@ static char* get_user_name_slow(int vmid) {
         if (statbuf.st_ctime > latest_ctime) {
           char* user = strchr(dentry->d_name, '_') + 1;
 
-          if (latest_user != NULL) FREE_C_HEAP_ARRAY(char, latest_user);
+          FREE_C_HEAP_ARRAY(char, latest_user);
           latest_user = NEW_C_HEAP_ARRAY(char, strlen(user)+1, mtInternal);
 
           strcpy(latest_user, user);

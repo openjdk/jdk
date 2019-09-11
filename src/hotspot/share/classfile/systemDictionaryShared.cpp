@@ -1059,10 +1059,8 @@ void SystemDictionaryShared::remove_dumptime_info(InstanceKlass* k) {
     FREE_C_HEAP_ARRAY(DTConstraint, p->_verifier_constraints);
     p->_verifier_constraints = NULL;
   }
-  if (p->_verifier_constraint_flags != NULL) {
-    FREE_C_HEAP_ARRAY(char, p->_verifier_constraint_flags);
-    p->_verifier_constraint_flags = NULL;
-  }
+  FREE_C_HEAP_ARRAY(char, p->_verifier_constraint_flags);
+  p->_verifier_constraint_flags = NULL;
   _dumptime_table->remove(k);
 }
 

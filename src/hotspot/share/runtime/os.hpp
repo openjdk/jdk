@@ -740,6 +740,7 @@ class os: AllStatic {
   static void* realloc (void *memblock, size_t size, MEMFLAGS flag, const NativeCallStack& stack);
   static void* realloc (void *memblock, size_t size, MEMFLAGS flag);
 
+  // handles NULL pointers
   static void  free    (void *memblock);
   static char* strdup(const char *, MEMFLAGS flags = mtInternal);  // Like strdup
   // Like strdup, but exit VM when strdup() returns NULL
