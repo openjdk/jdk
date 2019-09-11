@@ -30,7 +30,7 @@
 
 class ZPage;
 
-typedef uint32_t ZForwardingCursor;
+typedef size_t ZForwardingCursor;
 
 class ZForwarding {
   friend class VMStructs;
@@ -54,7 +54,7 @@ private:
   ZForwardingEntry first(uintptr_t from_index, ZForwardingCursor* cursor) const;
   ZForwardingEntry next(ZForwardingCursor* cursor) const;
 
-  ZForwarding(ZPage* page, uint32_t nentries);
+  ZForwarding(ZPage* page, size_t nentries);
 
 public:
   static ZForwarding* create(ZPage* page);

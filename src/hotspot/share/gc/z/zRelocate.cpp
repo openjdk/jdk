@@ -126,7 +126,7 @@ uintptr_t ZRelocate::relocate_object_inner(ZForwarding* forwarding, uintptr_t fr
   // Relocation contention
   ZStatInc(ZCounterRelocationContention);
   log_trace(gc)("Relocation contention, thread: " PTR_FORMAT " (%s), forwarding: " PTR_FORMAT
-                ", entry: " UINT32_FORMAT ", oop: " PTR_FORMAT ", size: " SIZE_FORMAT,
+                ", entry: " SIZE_FORMAT ", oop: " PTR_FORMAT ", size: " SIZE_FORMAT,
                 ZThread::id(), ZThread::name(), p2i(forwarding), cursor, from_good, size);
 
   // Try undo allocation

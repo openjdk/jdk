@@ -34,7 +34,7 @@ ZForwarding* ZForwarding::create(ZPage* page) {
   // The table is sized to have a load factor of 50%, i.e. sized to have
   // double the number of entries actually inserted.
   assert(page->live_objects() > 0, "Invalid value");
-  const uint32_t nentries = ZUtils::round_up_power_of_2(page->live_objects() * 2);
+  const size_t nentries = ZUtils::round_up_power_of_2(page->live_objects() * 2);
   return ::new (AttachedArray::alloc(nentries)) ZForwarding(page, nentries);
 }
 
@@ -42,7 +42,7 @@ void ZForwarding::destroy(ZForwarding* forwarding) {
   AttachedArray::free(forwarding);
 }
 
-ZForwarding::ZForwarding(ZPage* page, uint32_t nentries) :
+ZForwarding::ZForwarding(ZPage* page, size_t nentries) :
     _virtual(page->virtual_memory()),
     _object_alignment_shift(page->object_alignment_shift()),
     _entries(nentries),
@@ -54,7 +54,7 @@ void ZForwarding::verify() const {
   guarantee(_refcount > 0, "Invalid refcount");
   guarantee(_page != NULL, "Invalid page");
 
-  uint32_t live_objects = 0;
+  size_t live_objects = 0;
 
   for (ZForwardingCursor i = 0; i < _entries.length(); i++) {
     const ZForwardingEntry entry = at(&i);

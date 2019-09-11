@@ -40,19 +40,19 @@ class ZForwardingTest : public Test {
 public:
   // Helper functions
 
-  static bool is_power_of_2(uint32_t value) {
+  static bool is_power_of_2(size_t value) {
     return ::is_power_of_2((intptr_t)value);
   }
 
   class SequenceToFromIndex : AllStatic {
   public:
-    static uintptr_t even(uint32_t sequence_number) {
+    static uintptr_t even(size_t sequence_number) {
       return sequence_number * 2;
     }
-    static uintptr_t odd(uint32_t sequence_number) {
+    static uintptr_t odd(size_t sequence_number) {
       return even(sequence_number) + 1;
     }
-    static uintptr_t one_to_one(uint32_t sequence_number) {
+    static uintptr_t one_to_one(size_t sequence_number) {
       return sequence_number;
     }
   };
@@ -64,10 +64,10 @@ public:
   }
 
   static void find_empty(ZForwarding* forwarding) {
-    uint32_t size = forwarding->_entries.length();
-    uint32_t entries_to_check = size * 2;
+    size_t size = forwarding->_entries.length();
+    size_t entries_to_check = size * 2;
 
-    for (uint32_t i = 0; i < entries_to_check; i++) {
+    for (size_t i = 0; i < entries_to_check; i++) {
       uintptr_t from_index = SequenceToFromIndex::one_to_one(i);
 
       EXPECT_FALSE(forwarding->find(from_index).populated()) << CAPTURE2(from_index, size);
@@ -75,11 +75,11 @@ public:
   }
 
   static void find_full(ZForwarding* forwarding) {
-    uint32_t size = forwarding->_entries.length();
-    uint32_t entries_to_populate = size;
+    size_t size = forwarding->_entries.length();
+    size_t entries_to_populate = size;
 
     // Populate
-    for (uint32_t i = 0; i < entries_to_populate; i++) {
+    for (size_t i = 0; i < entries_to_populate; i++) {
       uintptr_t from_index = SequenceToFromIndex::one_to_one(i);
 
       ZForwardingCursor cursor;
@@ -90,7 +90,7 @@ public:
     }
 
     // Verify
-    for (uint32_t i = 0; i < entries_to_populate; i++) {
+    for (size_t i = 0; i < entries_to_populate; i++) {
       uintptr_t from_index = SequenceToFromIndex::one_to_one(i);
 
       ZForwardingEntry entry = forwarding->find(from_index);
@@ -102,11 +102,11 @@ public:
   }
 
   static void find_every_other(ZForwarding* forwarding) {
-    uint32_t size = forwarding->_entries.length();
-    uint32_t entries_to_populate = size / 2;
+    size_t size = forwarding->_entries.length();
+    size_t entries_to_populate = size / 2;
 
     // Populate even from indices
-    for (uint32_t i = 0; i < entries_to_populate; i++) {
+    for (size_t i = 0; i < entries_to_populate; i++) {
       uintptr_t from_index = SequenceToFromIndex::even(i);
 
       ZForwardingCursor cursor;
@@ -117,7 +117,7 @@ public:
     }
 
     // Verify populated even indices
-    for (uint32_t i = 0; i < entries_to_populate; i++) {
+    for (size_t i = 0; i < entries_to_populate; i++) {
       uintptr_t from_index = SequenceToFromIndex::even(i);
 
       ZForwardingCursor cursor;
@@ -132,7 +132,7 @@ public:
     //
     // This check could be done on a larger range of sequence numbers,
     // but currently entries_to_populate is used.
-    for (uint32_t i = 0; i < entries_to_populate; i++) {
+    for (size_t i = 0; i < entries_to_populate; i++) {
       uintptr_t from_index = SequenceToFromIndex::odd(i);
 
       ZForwardingEntry entry = forwarding->find(from_index);
@@ -158,7 +158,7 @@ public:
     page.mark_object(ZAddress::marked(object), dummy, dummy);
 
     const uint32_t live_objects = size;
-    const uint32_t live_bytes = live_objects * object_size;
+    const size_t live_bytes = live_objects * object_size;
     page.inc_live_atomic(live_objects, live_bytes);
 
     // Setup forwarding
