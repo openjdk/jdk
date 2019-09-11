@@ -881,6 +881,7 @@ bool JvmtiSuspendControl::resume(JavaThread *java_thread) {
 
 void JvmtiSuspendControl::print() {
 #ifndef PRODUCT
+  ResourceMark rm;
   LogStreamHandle(Trace, jvmti) log_stream;
   log_stream.print("Suspended Threads: [");
   for (JavaThreadIteratorWithHandle jtiwh; JavaThread *thread = jtiwh.next(); ) {
