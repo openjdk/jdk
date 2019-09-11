@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -59,6 +59,7 @@
  */
 package test.java.time.format;
 
+import static java.time.temporal.ChronoField.MILLI_OF_SECOND;
 import static java.time.temporal.ChronoField.NANO_OF_SECOND;
 import static java.time.temporal.ChronoField.SECOND_OF_MINUTE;
 import static org.testng.Assert.assertEquals;
@@ -77,6 +78,8 @@ import test.java.time.temporal.MockFieldValue;
 
 /**
  * Test FractionPrinterParser.
+ *
+ * @bug 8230136
  */
 @Test
 public class TestFractionPrinterParser extends AbstractTestPrinterParser {
@@ -329,6 +332,24 @@ public class TestFractionPrinterParser extends AbstractTestPrinterParser {
         TemporalAccessor parsed = getFormatter(field, min, max, decimalPoint).parseUnresolved(text, ppos);
         assertEquals(ppos.getErrorIndex(), expected);
         assertEquals(parsed, null);
+    }
+
+    @DataProvider(name="ParseMinWidth")
+    Object[][] provider_parseMinWidth() {
+        return new Object[][] {
+            {MILLI_OF_SECOND, 3, 3, true, ".1x"},
+            {MILLI_OF_SECOND, 3, 3, true, ".12x"},
+            {MILLI_OF_SECOND, 3, 3, true, ".1234x"},
+        };
+    }
+
+    @Test(dataProvider="ParseMinWidth", expectedExceptions=DateTimeException.class)
+    public void test_parse_minWidth(TemporalField field, int min, int max, boolean decimalPoint, String text) throws Exception {
+        builder
+            .appendFraction(field, min, max, decimalPoint)
+            .appendLiteral("x")
+            .toFormatter(locale)
+            .parse(text);
     }
 
     //-----------------------------------------------------------------------
