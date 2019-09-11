@@ -428,7 +428,7 @@ void os::init_system_properties_values() {
   const size_t bufsize =
     MAX2((size_t)MAXPATHLEN,  // For dll_dir & friends.
          (size_t)MAXPATHLEN + sizeof(EXTENSIONS_DIR) + sizeof(SYS_EXT_DIR) + sizeof(EXTENSIONS_DIR)); // extensions dir
-  char *buf = (char *)NEW_C_HEAP_ARRAY(char, bufsize, mtInternal);
+  char *buf = NEW_C_HEAP_ARRAY(char, bufsize, mtInternal);
 
   // sysclasspath, java_home, dll_dir
   {
@@ -477,10 +477,10 @@ void os::init_system_properties_values() {
     const char *v_colon = ":";
     if (v == NULL) { v = ""; v_colon = ""; }
     // That's +1 for the colon and +1 for the trailing '\0'.
-    char *ld_library_path = (char *)NEW_C_HEAP_ARRAY(char,
-                                                     strlen(v) + 1 +
-                                                     sizeof(SYS_EXT_DIR) + sizeof("/lib/") + sizeof(DEFAULT_LIBPATH) + 1,
-                                                     mtInternal);
+    char *ld_library_path = NEW_C_HEAP_ARRAY(char,
+                                             strlen(v) + 1 +
+                                             sizeof(SYS_EXT_DIR) + sizeof("/lib/") + sizeof(DEFAULT_LIBPATH) + 1,
+                                             mtInternal);
     sprintf(ld_library_path, "%s%s" SYS_EXT_DIR "/lib:" DEFAULT_LIBPATH, v, v_colon);
     Arguments::set_library_path(ld_library_path);
     FREE_C_HEAP_ARRAY(char, ld_library_path);

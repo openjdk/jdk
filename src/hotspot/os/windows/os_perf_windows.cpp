@@ -136,7 +136,7 @@ static void pdh_cleanup(HQUERY* const query, HCOUNTER* const counter) {
 }
 
 static CounterQueryP create_counter_query() {
-  CounterQueryP const query = NEW_C_HEAP_ARRAY(CounterQueryS, 1, mtInternal);
+  CounterQueryP const query = NEW_C_HEAP_OBJ(CounterQueryS, mtInternal);
   memset(query, 0, sizeof(CounterQueryS));
   return query;
 }
@@ -144,7 +144,7 @@ static CounterQueryP create_counter_query() {
 static void destroy_counter_query(CounterQueryP query) {
   assert(query != NULL, "invariant");
   pdh_cleanup(&query->query.query, &query->counter);
-  FREE_C_HEAP_ARRAY(CounterQueryS, query);
+  FREE_C_HEAP_OBJ(query);
 }
 
 static MultiCounterQueryP create_multi_counter_query() {
@@ -182,7 +182,7 @@ static void destroy_counter_query(MultiCounterQuerySetP counter_query_set) {
 
 static void destroy_counter_query(ProcessQueryP process_query) {
   destroy_multi_counter_query(&process_query->set);
-  FREE_C_HEAP_ARRAY(ProcessQueryS, process_query);
+  FREE_C_HEAP_OBJ(process_query);
 }
 
 static int open_query(HQUERY* query) {
@@ -199,7 +199,7 @@ static int allocate_counters(MultiCounterQueryP query, size_t nofCounters) {
   assert(!query->initialized, "invariant");
   assert(0 == query->noOfCounters, "invariant");
   assert(query->counters == NULL, "invariant");
-  query->counters = (HCOUNTER*)NEW_C_HEAP_ARRAY(char, nofCounters * sizeof(HCOUNTER), mtInternal);
+  query->counters = NEW_C_HEAP_ARRAY(HCOUNTER, nofCounters, mtInternal);
   if (query->counters == NULL) {
     return OS_ERR;
   }
@@ -388,7 +388,7 @@ static ProcessQueryP create_process_query() {
   if (OS_ERR == current_process_idx) {
     return NULL;
   }
-  ProcessQueryP const process_query = NEW_C_HEAP_ARRAY(ProcessQueryS, 1, mtInternal);
+  ProcessQueryP const process_query = NEW_C_HEAP_OBJ(ProcessQueryS, mtInternal);
   memset(process_query, 0, sizeof(ProcessQueryS));
   process_query->set.queries = NEW_C_HEAP_ARRAY(MultiCounterQueryS, current_process_idx + 1, mtInternal);
   memset(process_query->set.queries, 0, sizeof(MultiCounterQueryS) * (current_process_idx + 1));

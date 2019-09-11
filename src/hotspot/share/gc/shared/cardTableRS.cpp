@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -656,11 +656,7 @@ void CardTableRS::initialize() {
     NEW_C_HEAP_ARRAY(uintptr_t, _max_covered_regions, mtGC);
   _last_LNC_resizing_collection =
     NEW_C_HEAP_ARRAY(int, _max_covered_regions, mtGC);
-  if (_lowest_non_clean == NULL
-      || _lowest_non_clean_chunk_size == NULL
-      || _lowest_non_clean_base_chunk_index == NULL
-      || _last_LNC_resizing_collection == NULL)
-    vm_exit_during_initialization("couldn't allocate an LNC array.");
+
   for (int i = 0; i < _max_covered_regions; i++) {
     _lowest_non_clean[i] = NULL;
     _lowest_non_clean_chunk_size[i] = 0;

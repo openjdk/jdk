@@ -337,7 +337,7 @@ void os::init_system_properties_values() {
   const size_t bufsize =
     MAX2((size_t)MAXPATHLEN,  // For dll_dir & friends.
          (size_t)MAXPATHLEN + sizeof(EXTENSIONS_DIR) + sizeof(SYS_EXT_DIR) + sizeof(EXTENSIONS_DIR)); // extensions dir
-  char *buf = (char *)NEW_C_HEAP_ARRAY(char, bufsize, mtInternal);
+  char *buf = NEW_C_HEAP_ARRAY(char, bufsize, mtInternal);
 
   // sysclasspath, java_home, dll_dir
   {
@@ -387,10 +387,10 @@ void os::init_system_properties_values() {
     const char *v_colon = ":";
     if (v == NULL) { v = ""; v_colon = ""; }
     // That's +1 for the colon and +1 for the trailing '\0'.
-    char *ld_library_path = (char *)NEW_C_HEAP_ARRAY(char,
-                                                     strlen(v) + 1 +
-                                                     sizeof(SYS_EXT_DIR) + sizeof("/lib/") + strlen(cpu_arch) + sizeof(DEFAULT_LIBPATH) + 1,
-                                                     mtInternal);
+    char *ld_library_path = NEW_C_HEAP_ARRAY(char,
+                                             strlen(v) + 1 +
+                                             sizeof(SYS_EXT_DIR) + sizeof("/lib/") + strlen(cpu_arch) + sizeof(DEFAULT_LIBPATH) + 1,
+                                             mtInternal);
     sprintf(ld_library_path, "%s%s" SYS_EXT_DIR "/lib/%s:" DEFAULT_LIBPATH, v, v_colon, cpu_arch);
     Arguments::set_library_path(ld_library_path);
     FREE_C_HEAP_ARRAY(char, ld_library_path);
@@ -418,7 +418,7 @@ void os::init_system_properties_values() {
   const size_t bufsize =
     MAX2((size_t)MAXPATHLEN,  // for dll_dir & friends.
          (size_t)MAXPATHLEN + sizeof(EXTENSIONS_DIR) + system_ext_size); // extensions dir
-  char *buf = (char *)NEW_C_HEAP_ARRAY(char, bufsize, mtInternal);
+  char *buf = NEW_C_HEAP_ARRAY(char, bufsize, mtInternal);
 
   // sysclasspath, java_home, dll_dir
   {
@@ -480,10 +480,10 @@ void os::init_system_properties_values() {
     // could cause a change in behavior, but Apple's Java6 behavior
     // can be achieved by putting "." at the beginning of the
     // JAVA_LIBRARY_PATH environment variable.
-    char *ld_library_path = (char *)NEW_C_HEAP_ARRAY(char,
-                                                     strlen(v) + 1 + strlen(l) + 1 +
-                                                     system_ext_size + 3,
-                                                     mtInternal);
+    char *ld_library_path = NEW_C_HEAP_ARRAY(char,
+                                             strlen(v) + 1 + strlen(l) + 1 +
+                                             system_ext_size + 3,
+                                             mtInternal);
     sprintf(ld_library_path, "%s%s%s%s%s" SYS_EXTENSIONS_DIR ":" SYS_EXTENSIONS_DIRS ":.",
             v, v_colon, l, l_colon, user_home_dir);
     Arguments::set_library_path(ld_library_path);

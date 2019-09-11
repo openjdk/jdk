@@ -1337,7 +1337,6 @@ NamedThread::~NamedThread() {
 void NamedThread::set_name(const char* format, ...) {
   guarantee(_name == NULL, "Only get to set name once.");
   _name = NEW_C_HEAP_ARRAY(char, max_name_len, mtThread);
-  guarantee(_name != NULL, "alloc failure");
   va_list ap;
   va_start(ap, format);
   jio_vsnprintf(_name, max_name_len, format, ap);

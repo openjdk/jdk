@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -119,9 +119,6 @@ ReferenceProcessor::ReferenceProcessor(BoolObjectClosure* is_subject_to_discover
   _discovered_refs     = NEW_C_HEAP_ARRAY(DiscoveredList,
             _max_num_queues * number_of_subclasses_of_ref(), mtGC);
 
-  if (_discovered_refs == NULL) {
-    vm_exit_during_initialization("Could not allocated RefProc Array");
-  }
   _discoveredSoftRefs    = &_discovered_refs[0];
   _discoveredWeakRefs    = &_discoveredSoftRefs[_max_num_queues];
   _discoveredFinalRefs   = &_discoveredWeakRefs[_max_num_queues];

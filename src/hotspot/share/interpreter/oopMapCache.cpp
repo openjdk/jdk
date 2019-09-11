@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -594,9 +594,9 @@ void OopMapCache::cleanup_old_entries() {
 
 void OopMapCache::compute_one_oop_map(const methodHandle& method, int bci, InterpreterOopMap* entry) {
   // Due to the invariants above it's tricky to allocate a temporary OopMapCacheEntry on the stack
-  OopMapCacheEntry* tmp = NEW_C_HEAP_ARRAY(OopMapCacheEntry, 1, mtClass);
+  OopMapCacheEntry* tmp = NEW_C_HEAP_OBJ(OopMapCacheEntry, mtClass);
   tmp->initialize();
   tmp->fill(method, bci);
   entry->resource_copy(tmp);
-  FREE_C_HEAP_ARRAY(OopMapCacheEntry, tmp);
+  FREE_C_HEAP_OBJ(tmp);
 }

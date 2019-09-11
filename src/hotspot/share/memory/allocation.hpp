@@ -80,16 +80,21 @@ typedef AllocFailStrategy::AllocFailEnum AllocFailType;
 // stored in the array then must pay attention to calling destructors
 // at needed.
 //
-//   NEW_RESOURCE_ARRAY(type, size)
-//   NEW_RESOURCE_OBJ(type)
-//   NEW_C_HEAP_ARRAY(type, size)
-//   NEW_C_HEAP_OBJ(type, memflags)
-//   FREE_C_HEAP_ARRAY(type, old)
-//   FREE_C_HEAP_OBJ(objname, type, memflags)
-//   char* AllocateHeap(size_t size, const char* name);
-//   void  FreeHeap(void* p);
+// NEW_RESOURCE_ARRAY*
+// REALLOC_RESOURCE_ARRAY*
+// FREE_RESOURCE_ARRAY*
+// NEW_RESOURCE_OBJ*
+// NEW_C_HEAP_ARRAY*
+// REALLOC_C_HEAP_ARRAY*
+// FREE_C_HEAP_ARRAY*
+// NEW_C_HEAP_OBJ*
+// FREE_C_HEAP_OBJ
 //
-
+// char* AllocateHeap(size_t size, MEMFLAGS flags, const NativeCallStack& stack, AllocFailType alloc_failmode = AllocFailStrategy::EXIT_OOM);
+// char* AllocateHeap(size_t size, MEMFLAGS flags, AllocFailType alloc_failmode = AllocFailStrategy::EXIT_OOM);
+// char* ReallocateHeap(char *old, size_t size, MEMFLAGS flag, AllocFailType alloc_failmode = AllocFailStrategy::EXIT_OOM);
+// void FreeHeap(void* p);
+//
 // In non product mode we introduce a super class for all allocation classes
 // that supports printing.
 // We avoid the superclass in product mode to save space.

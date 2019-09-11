@@ -732,7 +732,7 @@ ImmutableOopMapSet* ImmutableOopMapBuilder::build() {
   _required = heap_size();
 
   // We need to allocate a chunk big enough to hold the ImmutableOopMapSet and all of its ImmutableOopMaps
-  address buffer = (address) NEW_C_HEAP_ARRAY(unsigned char, _required, mtCode);
+  address buffer = NEW_C_HEAP_ARRAY(unsigned char, _required, mtCode);
   return generate_into(buffer);
 }
 
