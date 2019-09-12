@@ -671,76 +671,50 @@ void PhaseIdealLoop::do_peeling(IdealLoopTree *loop, Node_List &old_new) {
   loop->record_for_igvn();
 }
 
-// The Estimated Loop Unroll Size: UnrollFactor * (106% * BodySize + BC) + CC,
-// where BC  and CC are  (totally) ad-hoc/magic "body" and  "clone" constants,
-// respectively, used to ensure that node usage estimates made are on the safe
-// side, for the  most part.  This is  a simplified version of  the loop clone
-// size calculation in est_loop_clone_sz(),  defined for unroll factors larger
-// than one  (>1), performing  an overflow check  and returning  'UINT_MAX' in
-// case of an overflow.
-static uint est_loop_unroll_sz(uint factor, uint size) {
-  precond(0 < factor);
-
-  uint const bc = 5;
-  uint const cc = 7;
-  uint const sz = size + (size + 15) / 16;
-  uint estimate = factor * (sz + bc) + cc;
-
-  return (estimate - cc) / factor == sz + bc ? estimate : UINT_MAX;
-}
-
-#define EMPTY_LOOP_SIZE 7   // Number of nodes in an empty loop.
-
 //------------------------------policy_maximally_unroll------------------------
 // Calculate the exact  loop trip-count and return TRUE if loop can be fully,
 // i.e. maximally, unrolled, otherwise return FALSE. When TRUE, the estimated
 // node budget is also requested.
-bool IdealLoopTree::policy_maximally_unroll(PhaseIdealLoop *phase) const {
-  CountedLoopNode *cl = _head->as_CountedLoop();
+bool IdealLoopTree::policy_maximally_unroll(PhaseIdealLoop* phase) const {
+  CountedLoopNode* cl = _head->as_CountedLoop();
   assert(cl->is_normal_loop(), "");
   if (!cl->is_valid_counted_loop()) {
-    return false; // Malformed counted loop
+    return false;   // Malformed counted loop.
   }
   if (!cl->has_exact_trip_count()) {
-    // Trip count is not exact.
-    return false;
+    return false;   // Trip count is not exact.
   }
 
   uint trip_count = cl->trip_count();
   // Note, max_juint is used to indicate unknown trip count.
   assert(trip_count > 1, "one iteration loop should be optimized out already");
-  assert(trip_count < max_juint, "exact trip_count should be less than max_uint.");
+  assert(trip_count < max_juint, "exact trip_count should be less than max_juint.");
 
   // If nodes are depleted, some transform has miscalculated its needs.
   assert(!phase->exceeding_node_budget(), "sanity");
 
-  // Real policy: if we maximally unroll, does it get too big?
-  // Allow the unrolled mess to get larger than standard loop
-  // size.  After all, it will no longer be a loop.
-  uint body_size    = _body.size();
+  // Allow the unrolled body to get larger than the standard loop size limit.
   uint unroll_limit = (uint)LoopUnrollLimit * 4;
   assert((intx)unroll_limit == LoopUnrollLimit * 4, "LoopUnrollLimit must fit in 32bits");
-  if (trip_count > unroll_limit || body_size > unroll_limit) {
+  if (trip_count > unroll_limit || _body.size() > unroll_limit) {
     return false;
   }
 
-  // Take into account that after unroll conjoined heads and tails will fold,
-  // otherwise policy_unroll() may allow more unrolling than max unrolling.
-  uint new_body_size = est_loop_unroll_sz(trip_count, body_size - EMPTY_LOOP_SIZE);
+  uint new_body_size = est_loop_unroll_sz(trip_count);
 
   if (new_body_size == UINT_MAX) { // Check for bad estimate (overflow).
     return false;
   }
 
-  // Fully unroll a loop with few iterations regardless next conditions since
-  // following loop optimizations will split such loop anyway (pre-main-post).
+  // Fully unroll a loop with few iterations, regardless of other conditions,
+  // since the following (general) loop optimizations will split such loop in
+  // any case (into pre-main-post).
   if (trip_count <= 3) {
     return phase->may_require_nodes(new_body_size);
   }
 
-  if (new_body_size > unroll_limit ||
-      // Unrolling can result in a large amount of node construction
-      phase->exceeding_node_budget(new_body_size)) {
+  // Reject if unrolling will result in too much node construction.
+  if (new_body_size > unroll_limit || phase->exceeding_node_budget(new_body_size)) {
     return false;
   }
 

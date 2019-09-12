@@ -2471,6 +2471,39 @@ uint IdealLoopTree::est_loop_clone_sz(uint factor) const {
 
   assert((estimate - cc) / factor == sz + bc, "overflow");
 
+  return estimate + est_loop_flow_merge_sz();
+}
+
+// The Estimated Loop (full-) Unroll Size:
+//   UnrollFactor * (~106% * BodySize) + CC + FanOutTerm,
+// where CC is a (totally) ad-hoc/magic "clone" constant, used to ensure that
+// node usage estimates made are on the safe side, for the most part. This is
+// a "light" version of the loop clone size calculation (above), based on the
+// assumption that most of the loop-construct overhead will be unraveled when
+// (fully) unrolled. Defined for unroll factors larger or equal to one (>=1),
+// including an overflow check and returning UINT_MAX in case of an overflow.
+uint IdealLoopTree::est_loop_unroll_sz(uint factor) const {
+
+  precond(factor > 0);
+
+  // Take into account that after unroll conjoined heads and tails will fold.
+  uint const b0 = _body.size() - EMPTY_LOOP_SIZE;
+  uint const cc = 7;
+  uint const sz = b0 + (b0 + 15) / 16;
+  uint estimate = factor * sz + cc;
+
+  if ((estimate - cc) / factor != sz) {
+    return UINT_MAX;
+  }
+
+  return estimate + est_loop_flow_merge_sz();
+}
+
+// Estimate the growth effect (in nodes) of merging control and data flow when
+// cloning a loop body, based on the amount of  control and data flow reaching
+// outside of the (current) loop body.
+uint IdealLoopTree::est_loop_flow_merge_sz() const {
+
   uint ctrl_edge_out_cnt = 0;
   uint data_edge_out_cnt = 0;
 
@@ -2494,24 +2527,21 @@ uint IdealLoopTree::est_loop_clone_sz(uint factor) const {
       }
     }
   }
-  // Add data and control count (x2.0) to estimate iff both are > 0. This is
+  // Use data and control count (x2.0) in estimate iff both are > 0. This is
   // a rather pessimistic estimate for the most part, in particular for some
   // complex loops, but still not enough to capture all loops.
   if (ctrl_edge_out_cnt > 0 && data_edge_out_cnt > 0) {
-    estimate += 2 * (ctrl_edge_out_cnt + data_edge_out_cnt);
+    return 2 * (ctrl_edge_out_cnt + data_edge_out_cnt);
   }
-
-  return estimate;
+  return 0;
 }
 
 #ifndef PRODUCT
 //------------------------------dump_head--------------------------------------
 // Dump 1 liner for loop header info
 void IdealLoopTree::dump_head() const {
-  for (uint i = 0; i < _nest; i++) {
-    tty->print("  ");
-  }
-  tty->print("Loop: N%d/N%d ",_head->_idx,_tail->_idx);
+  tty->sp(2 * _nest);
+  tty->print("Loop: N%d/N%d ", _head->_idx, _tail->_idx);
   if (_irreducible) tty->print(" IRREDUCIBLE");
   Node* entry = _head->is_Loop() ? _head->as_Loop()->skip_strip_mined(-1)->in(LoopNode::EntryControl) : _head->in(LoopNode::EntryControl);
   Node* predicate = PhaseIdealLoop::find_predicate_insertion_point(entry, Deoptimization::Reason_loop_limit_check);
@@ -4501,69 +4531,67 @@ void PhaseIdealLoop::dump_bad_graph(const char* msg, Node* n, Node* early, Node*
 
 #ifndef PRODUCT
 //------------------------------dump-------------------------------------------
-void PhaseIdealLoop::dump( ) const {
+void PhaseIdealLoop::dump() const {
   ResourceMark rm;
   Arena* arena = Thread::current()->resource_area();
   Node_Stack stack(arena, C->live_nodes() >> 2);
   Node_List rpo_list;
   VectorSet visited(arena);
   visited.set(C->top()->_idx);
-  rpo( C->root(), stack, visited, rpo_list );
+  rpo(C->root(), stack, visited, rpo_list);
   // Dump root loop indexed by last element in PO order
-  dump( _ltree_root, rpo_list.size(), rpo_list );
+  dump(_ltree_root, rpo_list.size(), rpo_list);
 }
 
-void PhaseIdealLoop::dump( IdealLoopTree *loop, uint idx, Node_List &rpo_list ) const {
+void PhaseIdealLoop::dump(IdealLoopTree* loop, uint idx, Node_List &rpo_list) const {
   loop->dump_head();
 
   // Now scan for CFG nodes in the same loop
-  for( uint j=idx; j > 0;  j-- ) {
-    Node *n = rpo_list[j-1];
-    if( !_nodes[n->_idx] )      // Skip dead nodes
+  for (uint j = idx; j > 0; j--) {
+    Node* n = rpo_list[j-1];
+    if (!_nodes[n->_idx])      // Skip dead nodes
       continue;
-    if( get_loop(n) != loop ) { // Wrong loop nest
-      if( get_loop(n)->_head == n &&    // Found nested loop?
-          get_loop(n)->_parent == loop )
-        dump(get_loop(n),rpo_list.size(),rpo_list);     // Print it nested-ly
+
+    if (get_loop(n) != loop) { // Wrong loop nest
+      if (get_loop(n)->_head == n &&    // Found nested loop?
+          get_loop(n)->_parent == loop)
+        dump(get_loop(n), rpo_list.size(), rpo_list);     // Print it nested-ly
       continue;
     }
 
     // Dump controlling node
-    for( uint x = 0; x < loop->_nest; x++ )
-      tty->print("  ");
+    tty->sp(2 * loop->_nest);
     tty->print("C");
-    if( n == C->root() ) {
+    if (n == C->root()) {
       n->dump();
     } else {
       Node* cached_idom   = idom_no_update(n);
-      Node *computed_idom = n->in(0);
-      if( n->is_Region() ) {
+      Node* computed_idom = n->in(0);
+      if (n->is_Region()) {
         computed_idom = compute_idom(n);
         // computed_idom() will return n->in(0) when idom(n) is an IfNode (or
         // any MultiBranch ctrl node), so apply a similar transform to
         // the cached idom returned from idom_no_update.
         cached_idom = find_non_split_ctrl(cached_idom);
       }
-      tty->print(" ID:%d",computed_idom->_idx);
+      tty->print(" ID:%d", computed_idom->_idx);
       n->dump();
-      if( cached_idom != computed_idom ) {
+      if (cached_idom != computed_idom) {
         tty->print_cr("*** BROKEN IDOM!  Computed as: %d, cached as: %d",
                       computed_idom->_idx, cached_idom->_idx);
       }
     }
     // Dump nodes it controls
-    for( uint k = 0; k < _nodes.Size(); k++ ) {
+    for (uint k = 0; k < _nodes.Size(); k++) {
       // (k < C->unique() && get_ctrl(find(k)) == n)
       if (k < C->unique() && _nodes[k] == (Node*)((intptr_t)n + 1)) {
-        Node *m = C->root()->find(k);
-        if( m && m->outcnt() > 0 ) {
+        Node* m = C->root()->find(k);
+        if (m && m->outcnt() > 0) {
           if (!(has_ctrl(m) && get_ctrl_no_update(m) == n)) {
             tty->print_cr("*** BROKEN CTRL ACCESSOR!  _nodes[k] is %p, ctrl is %p",
                           _nodes[k], has_ctrl(m) ? get_ctrl_no_update(m) : NULL);
           }
-          for( uint j = 0; j < loop->_nest; j++ )
-            tty->print("  ");
-          tty->print(" ");
+          tty->sp(2 * loop->_nest + 1);
           m->dump();
         }
       }
@@ -4574,7 +4602,7 @@ void PhaseIdealLoop::dump( IdealLoopTree *loop, uint idx, Node_List &rpo_list ) 
 
 // Collect a R-P-O for the whole CFG.
 // Result list is in post-order (scan backwards for RPO)
-void PhaseIdealLoop::rpo( Node *start, Node_Stack &stk, VectorSet &visited, Node_List &rpo_list ) const {
+void PhaseIdealLoop::rpo(Node* start, Node_Stack &stk, VectorSet &visited, Node_List &rpo_list) const {
   stk.push(start, 0);
   visited.set(start->_idx);
 
@@ -4596,7 +4624,7 @@ void PhaseIdealLoop::rpo( Node *start, Node_Stack &stk, VectorSet &visited, Node
 
 
 //=============================================================================
-//------------------------------LoopTreeIterator-----------------------------------
+//------------------------------LoopTreeIterator-------------------------------
 
 // Advance to next loop tree using a preorder, left-to-right traversal.
 void LoopTreeIterator::next() {
