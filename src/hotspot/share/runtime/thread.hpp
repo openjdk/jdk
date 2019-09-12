@@ -789,7 +789,6 @@ protected:
   volatile intptr_t _Stalled;
   volatile int _TypeTag;
   ParkEvent * _ParkEvent;                     // for synchronized()
-  ParkEvent * _SleepEvent;                    // for Thread.sleep
   ParkEvent * _MuxEvent;                      // for low-level muxAcquire-muxRelease
   int NativeSyncRecursion;                    // diagnostic
 
@@ -2055,6 +2054,10 @@ class JavaThread: public Thread {
 private:
   InstanceKlass* _class_to_be_initialized;
 
+  // java.lang.Thread.sleep support
+public:
+  ParkEvent * _SleepEvent;
+  bool sleep(jlong millis);
 };
 
 // Inline implementation of JavaThread::current

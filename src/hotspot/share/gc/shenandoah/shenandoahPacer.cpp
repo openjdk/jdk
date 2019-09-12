@@ -242,7 +242,7 @@ void ShenandoahPacer::pace_for_alloc(size_t words) {
     }
     cur = MAX2<size_t>(1, cur);
 
-    os::sleep(JavaThread::current(), cur);
+    JavaThread::current()->sleep(cur);
 
     double end = os::elapsedTime();
     total = (size_t)((end - start) * 1000);

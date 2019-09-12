@@ -645,7 +645,8 @@ void os::naked_short_sleep(jlong ms) {
 
 void os::interrupt(Thread* thread) {
   debug_only(Thread::check_for_dangling_thread_pointer(thread);)
-
+  assert(thread->is_Java_thread(), "invariant");
+  JavaThread* jt = (JavaThread*) thread;
   OSThread* osthread = thread->osthread();
 
   if (!osthread->interrupted()) {
@@ -654,13 +655,12 @@ void os::interrupt(Thread* thread) {
     // resulting in multiple notifications.  We do, however, want the store
     // to interrupted() to be visible to other threads before we execute unpark().
     OrderAccess::fence();
-    ParkEvent * const slp = thread->_SleepEvent ;
+    ParkEvent * const slp = jt->_SleepEvent ;
     if (slp != NULL) slp->unpark() ;
   }
 
   // For JSR166. Unpark even if interrupt status already was set
-  if (thread->is_Java_thread())
-    ((JavaThread*)thread)->parker()->unpark();
+  jt->parker()->unpark();
 
   ParkEvent * ev = thread->_ParkEvent ;
   if (ev != NULL) ev->unpark() ;
@@ -682,7 +682,7 @@ bool os::is_interrupted(Thread* thread, bool clear_interrupted) {
   // is allowed and not harmful, and the possibility is so rare that
   // it is not worth the added complexity to add yet another lock.
   // For the sleep event an explicit reset is performed on entry
-  // to os::sleep, so there is no early return. It has also been
+  // to JavaThread::sleep, so there is no early return. It has also been
   // recommended not to put the interrupted flag into the "event"
   // structure because it hides the issue.
   if (interrupted && clear_interrupted) {
@@ -2049,7 +2049,7 @@ void os::PlatformEvent::unpark() {
   // shake out uses of park() and unpark() without checking state conditions
   // properly. This spurious return doesn't manifest itself in any user code
   // but only in the correctly written condition checking loops of ObjectMonitor,
-  // Mutex/Monitor, Thread::muxAcquire and os::sleep
+  // Mutex/Monitor, Thread::muxAcquire and JavaThread::sleep
 
   if (Atomic::xchg(1, &_event) >= 0) return;
 

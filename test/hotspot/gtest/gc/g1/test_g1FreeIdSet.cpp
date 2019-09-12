@@ -145,7 +145,7 @@ TEST_VM(G1FreeIdSetTest, stress) {
   tty->print_cr("Stressing G1FreeIdSet for %u ms", milliseconds_to_run);
   {
     ThreadInVMfromNative invm(this_thread);
-    os::sleep(this_thread, milliseconds_to_run);
+    this_thread->sleep(milliseconds_to_run);
   }
   OrderAccess::release_store(&continue_running, false);
   for (uint i = 0; i < nthreads; ++i) {

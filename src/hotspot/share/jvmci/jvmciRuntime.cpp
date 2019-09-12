@@ -942,7 +942,7 @@ void JVMCIRuntime::exit_on_pending_exception(JVMCIEnv* JVMCIENV, const char* mes
     }
   } else {
     // Allow error reporting thread to print the stack trace.
-    os::sleep(THREAD, 200);
+    THREAD->sleep(200);
   }
 
   before_exit(THREAD);

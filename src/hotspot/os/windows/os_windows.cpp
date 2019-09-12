@@ -3595,7 +3595,8 @@ OSReturn os::get_native_priority(const Thread* const thread,
 
 void os::interrupt(Thread* thread) {
   debug_only(Thread::check_for_dangling_thread_pointer(thread);)
-
+  assert(thread->is_Java_thread(), "invariant");
+  JavaThread* jt = (JavaThread*) thread;
   OSThread* osthread = thread->osthread();
   osthread->set_interrupted(true);
   // More than one thread can get here with the same value of osthread,
@@ -3605,14 +3606,12 @@ void os::interrupt(Thread* thread) {
   OrderAccess::release();
   SetEvent(osthread->interrupt_event());
   // For JSR166:  unpark after setting status
-  if (thread->is_Java_thread()) {
-    ((JavaThread*)thread)->parker()->unpark();
-  }
+  jt->parker()->unpark();
 
   ParkEvent * ev = thread->_ParkEvent;
   if (ev != NULL) ev->unpark();
 
-  ev = thread->_SleepEvent;
+  ev = jt->_SleepEvent;
   if (ev != NULL) ev->unpark();
 }
 
