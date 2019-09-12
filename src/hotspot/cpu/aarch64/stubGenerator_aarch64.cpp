@@ -598,6 +598,7 @@ class StubGenerator: public StubCodeGenerator {
     BLOCK_COMMENT("call MacroAssembler::debug");
     __ mov(rscratch1, CAST_FROM_FN_PTR(address, MacroAssembler::debug64));
     __ blr(rscratch1);
+    __ hlt(0);
 
     return start;
   }

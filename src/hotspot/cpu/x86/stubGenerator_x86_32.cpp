@@ -710,8 +710,7 @@ class StubGenerator: public StubCodeGenerator {
     __ pusha();                                  // push registers (eip = return address & msg are already pushed)
     BLOCK_COMMENT("call MacroAssembler::debug");
     __ call(RuntimeAddress(CAST_FROM_FN_PTR(address, MacroAssembler::debug32)));
-    __ popa();
-    __ ret(3 * wordSize);                        // pop arguments
+    __ hlt();
     return start;
   }
 
