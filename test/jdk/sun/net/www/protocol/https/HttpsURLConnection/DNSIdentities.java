@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2010, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -651,8 +651,13 @@ public class DNSIdentities {
             serverModulus, serverPrivateExponent, passphrase);
         SSLServerSocketFactory sslssf = context.getServerSocketFactory();
 
+        // doClientSide() connects to "localhost"
+        InetAddress localHost = InetAddress.getByName("localhost");
+        InetSocketAddress address = new InetSocketAddress(localHost, serverPort);
+
         sslServerSocket =
-            (SSLServerSocket) sslssf.createServerSocket(serverPort);
+            (SSLServerSocket) sslssf.createServerSocket();
+        sslServerSocket.bind(address);
         serverPort = sslServerSocket.getLocalPort();
 
         /*
@@ -717,7 +722,7 @@ public class DNSIdentities {
             System.out.println("url is "+url.toString());
 
             try {
-                http = (HttpsURLConnection)url.openConnection();
+                http = (HttpsURLConnection)url.openConnection(Proxy.NO_PROXY);
 
                 int respCode = http.getResponseCode();
                 System.out.println("respCode = "+respCode);

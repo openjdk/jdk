@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -95,6 +95,16 @@ public class ImpactOnSNI {
      * smart about it....
      */
 
+    private SSLServerSocket createServerSocket(SSLServerSocketFactory sslssf)
+        throws Exception {
+        SSLServerSocket sslServerSocket =
+            (SSLServerSocket)sslssf.createServerSocket();
+        InetAddress localHost = InetAddress.getLocalHost();
+        InetSocketAddress address = new InetSocketAddress(localHost, serverPort);
+        sslServerSocket.bind(address);
+        return sslServerSocket;
+    }
+
     /*
      * Define the server side of the test.
      *
@@ -104,8 +114,7 @@ public class ImpactOnSNI {
     private void doServerSide() throws Exception {
         SSLServerSocketFactory sslssf =
             (SSLServerSocketFactory)SSLServerSocketFactory.getDefault();
-        try (SSLServerSocket sslServerSocket =
-                (SSLServerSocket)sslssf.createServerSocket(serverPort)) {
+        try (SSLServerSocket sslServerSocket = createServerSocket(sslssf)) {
 
             serverPort = sslServerSocket.getLocalPort();
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -135,8 +135,14 @@ public class JavaxHostnameVerifier {
 
         SSLServerSocketFactory sslssf =
           (SSLServerSocketFactory) SSLServerSocketFactory.getDefault();
+
+        // doClientSide() connects to "localhost"
+        InetAddress localHost = InetAddress.getByName("localhost");
+        InetSocketAddress address = new InetSocketAddress(localHost, serverPort);
+
         SSLServerSocket sslServerSocket =
-            (SSLServerSocket) sslssf.createServerSocket(serverPort);
+            (SSLServerSocket) sslssf.createServerSocket();
+        sslServerSocket.bind(address);
         serverPort = sslServerSocket.getLocalPort();
 
         String ciphers[]= { "SSL_DH_anon_WITH_3DES_EDE_CBC_SHA" };
@@ -205,7 +211,7 @@ public class JavaxHostnameVerifier {
 
         URL url = new URL("https://" + "localhost:" + serverPort +
                                 "/etc/hosts");
-        URLConnection urlc = url.openConnection();
+        URLConnection urlc = url.openConnection(Proxy.NO_PROXY);
 
         if (!(urlc instanceof javax.net.ssl.HttpsURLConnection)) {
             throw new Exception(

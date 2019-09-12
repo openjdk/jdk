@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -42,7 +42,10 @@ import java.io.InputStream;
 import java.io.BufferedWriter;
 import java.io.OutputStreamWriter;
 import java.net.HttpURLConnection;
+import java.net.InetAddress;
+import java.net.Proxy;
 import java.net.URL;
+import java.net.UnknownHostException;
 
 import javax.net.ssl.HttpsURLConnection;
 import javax.net.ssl.SSLContext;
@@ -62,6 +65,10 @@ public final class ServerIdentityTest extends SSLSocketTemplate {
         initialize(args);
 
         (new ServerIdentityTest()).run();
+    }
+
+    ServerIdentityTest() throws UnknownHostException {
+        serverAddress = InetAddress.getByName(hostname);
     }
 
     @Override
@@ -88,7 +95,7 @@ public final class ServerIdentityTest extends SSLSocketTemplate {
         HttpURLConnection urlc = null;
         InputStream is = null;
         try {
-            urlc = (HttpURLConnection)url.openConnection();
+            urlc = (HttpURLConnection)url.openConnection(Proxy.NO_PROXY);
             is = urlc.getInputStream();
         } finally {
             if (is != null) {
