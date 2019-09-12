@@ -37,12 +37,24 @@
 #include "utilities/macros.hpp"
 #include "utilities/resourceHash.hpp"
 
-// We want to include all archive header information in the dynamic archive.
-// This helps simplify the process if the base layer archive is missing at
-// dynamic archiving time.
-struct DynamicArchiveHeader : public FileMapHeader {
-  // crc for the base archive header and regions
-  int _base_archive_crc[MetaspaceShared::n_regions+1];
+class DynamicArchiveHeader : public FileMapHeader {
+  friend class CDSOffsets;
+private:
+  int _base_header_crc;
+  int _base_region_crc[MetaspaceShared::n_regions];
+
+public:
+  int base_header_crc() const { return _base_header_crc; }
+  int base_region_crc(int i) const {
+    assert(is_valid_region(i), "must be");
+    return _base_region_crc[i];
+  }
+
+  void set_base_header_crc(int c) { _base_header_crc = c; }
+  void set_base_region_crc(int i, int c) {
+    assert(is_valid_region(i), "must be");
+    _base_region_crc[i] = c;
+  }
 };
 
 class DynamicArchive : AllStatic {

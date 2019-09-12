@@ -114,7 +114,7 @@ public class ArchiveConsistency extends DynamicArchiveTestBase {
             bbuf.put((byte)0);
         }
 
-        int baseArchiveCRCOffset = wb.getOffsetForName("DynamicArchiveHeader::_base_archive_crc");
+        int baseArchiveCRCOffset = wb.getOffsetForName("DynamicArchiveHeader::_base_region_crc");
         int crc = 0;
         System.out.printf("%-12s%-12s\n", "Space name", "CRC");
         for (int i = 0; i < 4; i++) {
