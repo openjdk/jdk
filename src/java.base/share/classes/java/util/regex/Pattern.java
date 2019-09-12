@@ -3931,12 +3931,14 @@ loop:   for(int x=0, offset=0; x<nCodePoints; x++, offset+=len) {
         boolean match(Matcher matcher, int i, CharSequence seq) {
             if (i < matcher.to) {
                 int ch = Character.codePointAt(seq, i);
-                return predicate.is(ch) &&
-                       next.match(matcher, i + Character.charCount(ch), seq);
-            } else {
-                matcher.hitEnd = true;
-                return false;
+                i += Character.charCount(ch);
+                if (i <= matcher.to) {
+                    return predicate.is(ch) &&
+                           next.match(matcher, i, seq);
+                }
             }
+            matcher.hitEnd = true;
+            return false;
         }
         boolean study(TreeInfo info) {
             info.minLength++;
