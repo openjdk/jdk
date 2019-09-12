@@ -25,6 +25,7 @@
 #include "precompiled.hpp"
 #include "jfr/recorder/storage/jfrVirtualMemory.hpp"
 #include "memory/virtualspace.hpp"
+#include "runtime/globals.hpp"
 #include "runtime/orderAccess.hpp"
 #include "runtime/os.hpp"
 #include "services/memTracker.hpp"
