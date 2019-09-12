@@ -1325,7 +1325,7 @@ InstanceKlass* ClassLoader::load_class(Symbol* name, bool search_append_only, TR
                                                            THREAD);
   if (HAS_PENDING_EXCEPTION) {
     if (DumpSharedSpaces) {
-      tty->print_cr("Preload Error: Failed to load %s", class_name);
+      log_error(cds)("Preload Error: Failed to load %s", class_name);
     }
     return NULL;
   }

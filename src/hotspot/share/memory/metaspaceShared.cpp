@@ -1814,7 +1814,7 @@ int MetaspaceShared::preload_classes(const char* class_list_path, TRAPS) {
       if (klass == NULL &&
           (PENDING_EXCEPTION->klass()->name() == vmSymbols::java_lang_ClassNotFoundException())) {
         // print a warning only when the pending exception is class not found
-        tty->print_cr("Preload Warning: Cannot find %s", parser.current_class_name());
+        log_warning(cds)("Preload Warning: Cannot find %s", parser.current_class_name());
       }
       CLEAR_PENDING_EXCEPTION;
     }
@@ -1860,7 +1860,7 @@ bool MetaspaceShared::try_link_class(InstanceKlass* ik, TRAPS) {
     ik->link_class(THREAD);
     if (HAS_PENDING_EXCEPTION) {
       ResourceMark rm;
-      tty->print_cr("Preload Warning: Verification failed for %s",
+      log_warning(cds)("Preload Warning: Verification failed for %s",
                     ik->external_name());
       CLEAR_PENDING_EXCEPTION;
       ik->set_in_error_state();

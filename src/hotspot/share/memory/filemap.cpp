@@ -459,7 +459,7 @@ void FileMapInfo::check_nonempty_dir_in_shared_path_table() {
     if (e->is_dir()) {
       const char* path = e->name();
       if (!os::dir_is_empty(path)) {
-        tty->print_cr("Error: non-empty directory '%s'", path);
+        log_error(cds)("Error: non-empty directory '%s'", path);
         has_nonempty_dir = true;
       }
     }
