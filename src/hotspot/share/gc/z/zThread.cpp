@@ -26,13 +26,13 @@
 #include "runtime/thread.hpp"
 #include "utilities/debug.hpp"
 
-__thread bool      ZThread::_initialized;
-__thread uintptr_t ZThread::_id;
-__thread bool      ZThread::_is_vm;
-__thread bool      ZThread::_is_java;
-__thread bool      ZThread::_is_worker;
-__thread bool      ZThread::_is_runtime_worker;
-__thread uint      ZThread::_worker_id;
+THREAD_LOCAL bool      ZThread::_initialized;
+THREAD_LOCAL uintptr_t ZThread::_id;
+THREAD_LOCAL bool      ZThread::_is_vm;
+THREAD_LOCAL bool      ZThread::_is_java;
+THREAD_LOCAL bool      ZThread::_is_worker;
+THREAD_LOCAL bool      ZThread::_is_runtime_worker;
+THREAD_LOCAL uint      ZThread::_worker_id;
 
 void ZThread::initialize() {
   assert(!_initialized, "Already initialized");

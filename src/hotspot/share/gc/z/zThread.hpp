@@ -25,6 +25,7 @@
 #define SHARE_GC_Z_ZTHREAD_HPP
 
 #include "memory/allocation.hpp"
+#include "utilities/globalDefinitions.hpp"
 #include "utilities/debug.hpp"
 
 class ZThread : public AllStatic {
@@ -33,13 +34,13 @@ class ZThread : public AllStatic {
   friend class ZRuntimeWorkersInitializeTask;
 
 private:
-  static __thread bool      _initialized;
-  static __thread uintptr_t _id;
-  static __thread bool      _is_vm;
-  static __thread bool      _is_java;
-  static __thread bool      _is_worker;
-  static __thread bool      _is_runtime_worker;
-  static __thread uint      _worker_id;
+  static THREAD_LOCAL bool      _initialized;
+  static THREAD_LOCAL uintptr_t _id;
+  static THREAD_LOCAL bool      _is_vm;
+  static THREAD_LOCAL bool      _is_java;
+  static THREAD_LOCAL bool      _is_worker;
+  static THREAD_LOCAL bool      _is_runtime_worker;
+  static THREAD_LOCAL uint      _worker_id;
 
   static void initialize();
 

@@ -755,7 +755,7 @@ void ZStatCriticalPhase::register_end(const Ticks& start, const Ticks& end) cons
 //
 // Stat timer
 //
-__thread uint32_t ZStatTimerDisable::_active = 0;
+THREAD_LOCAL uint32_t ZStatTimerDisable::_active = 0;
 
 //
 // Stat sample/inc
