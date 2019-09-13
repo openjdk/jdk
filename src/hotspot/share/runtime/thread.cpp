@@ -166,7 +166,7 @@ void universe_post_module_init();  // must happen after call_initPhase2
 
 #ifndef USE_LIBRARY_BASED_TLS_ONLY
 // Current thread is maintained as a thread-local variable
-THREAD_LOCAL_DECL Thread* Thread::_thr_current = NULL;
+THREAD_LOCAL Thread* Thread::_thr_current = NULL;
 #endif
 
 // ======= Thread ========

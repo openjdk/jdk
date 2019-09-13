@@ -153,9 +153,7 @@ inline int g_isfinite(jdouble f)                 { return _finite(f); }
 
 #define offset_of(klass,field) offsetof(klass,field)
 
-#ifndef USE_LIBRARY_BASED_TLS_ONLY
-#define THREAD_LOCAL_DECL __declspec( thread )
-#endif
+#define THREAD_LOCAL __declspec(thread)
 
 // Inlining support
 // MSVC has '__declspec(noinline)' but according to the official documentation

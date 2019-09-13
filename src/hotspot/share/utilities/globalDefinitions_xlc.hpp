@@ -130,10 +130,6 @@ inline int wcslen(const jchar* x) { return wcslen((const wchar_t*)x); }
 // AIX 5.3 has buggy __thread support. (see JDK-8176442).
 #define USE_LIBRARY_BASED_TLS_ONLY 1
 
-#ifndef USE_LIBRARY_BASED_TLS_ONLY
-#define THREAD_LOCAL_DECL __thread
-#endif
-
 // Inlining support
 //
 // Be aware that for function/method declarations, xlC only supports the following
