@@ -2558,14 +2558,16 @@ public final class XToolkit extends UNIXToolkit implements Runnable {
                  //System.out.println("XkbNewKeyboard:"+(xke.get_new_kbd()));
                  break;
             case XConstants.XkbMapNotify :
-                 //TODO: provide a simple unit test.
-                 XlibWrapper.XkbGetUpdatedMap(getDisplay(),
-                                              XConstants.XkbKeyTypesMask    |
-                                              XConstants.XkbKeySymsMask     |
-                                              XConstants.XkbModifierMapMask |
-                                              XConstants.XkbVirtualModsMask,
-                                              awt_XKBDescPtr);
-                 //System.out.println("XkbMap:"+(xke.get_map()));
+                 if (awt_XKBDescPtr != 0) {
+                    //TODO: provide a simple unit test.
+                    XlibWrapper.XkbGetUpdatedMap(getDisplay(),
+                                                 XConstants.XkbKeyTypesMask    |
+                                                 XConstants.XkbKeySymsMask     |
+                                                 XConstants.XkbModifierMapMask |
+                                                 XConstants.XkbVirtualModsMask,
+                                                 awt_XKBDescPtr);
+                 }
+                //System.out.println("XkbMap:"+(xke.get_map()));
                  break;
             case XConstants.XkbStateNotify :
                  // May use it later e.g. to obtain an effective group etc.
