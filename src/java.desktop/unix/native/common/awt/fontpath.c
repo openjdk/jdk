@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -887,9 +887,9 @@ Java_sun_font_FontConfigManager_getFontConfigAASettings
     locale = (*env)->GetStringUTFChars(env, localeStr, 0);
 
     if ((libfontconfig = openFontConfig()) == NULL) {
-        (*env)->ReleaseStringUTFChars (env, fcNameStr, (const char*)fcName);
+        (*env)->ReleaseStringUTFChars(env, fcNameStr, (const char*)fcName);
         if (locale) {
-            (*env)->ReleaseStringUTFChars (env, localeStr,(const char*)locale);
+            (*env)->ReleaseStringUTFChars(env, localeStr,(const char*)locale);
         }
         return -1;
     }
@@ -918,9 +918,9 @@ Java_sun_font_FontConfigManager_getFontConfigAASettings
         FcPatternGetInteger  == NULL ||
         FcPatternDestroy     == NULL) { /* problem with the library: return. */
 
-        (*env)->ReleaseStringUTFChars (env, fcNameStr, (const char*)fcName);
+        (*env)->ReleaseStringUTFChars(env, fcNameStr, (const char*)fcName);
         if (locale) {
-            (*env)->ReleaseStringUTFChars (env, localeStr,(const char*)locale);
+            (*env)->ReleaseStringUTFChars(env, localeStr,(const char*)locale);
         }
         closeFontConfig(libfontconfig, JNI_FALSE);
         return -1;
@@ -945,9 +945,9 @@ Java_sun_font_FontConfigManager_getFontConfigAASettings
     }
     (*FcPatternDestroy)(pattern);
 
-    (*env)->ReleaseStringUTFChars (env, fcNameStr, (const char*)fcName);
+    (*env)->ReleaseStringUTFChars(env, fcNameStr, (const char*)fcName);
     if (locale) {
-        (*env)->ReleaseStringUTFChars (env, localeStr, (const char*)locale);
+        (*env)->ReleaseStringUTFChars(env, localeStr, (const char*)locale);
     }
     closeFontConfig(libfontconfig, JNI_TRUE);
 
@@ -1179,6 +1179,9 @@ Java_sun_font_FontConfigManager_getFontConfig
         (*env)->DeleteLocalRef(env, fcNameStr);
         if (pattern == NULL) {
             closeFontConfig(libfontconfig, JNI_FALSE);
+            if (locale) {
+                (*env)->ReleaseStringUTFChars(env, localeStr, (const char*)locale);
+            }
             return;
         }
 
@@ -1196,6 +1199,9 @@ Java_sun_font_FontConfigManager_getFontConfig
         if (fontset == NULL) {
             (*FcPatternDestroy)(pattern);
             closeFontConfig(libfontconfig, JNI_FALSE);
+            if (locale) {
+                (*env)->ReleaseStringUTFChars(env, localeStr, (const char*)locale);
+            }
             return;
         }
 
@@ -1227,6 +1233,9 @@ Java_sun_font_FontConfigManager_getFontConfig
             (*FcPatternDestroy)(pattern);
             (*FcFontSetDestroy)(fontset);
             closeFontConfig(libfontconfig, JNI_FALSE);
+            if (locale) {
+                (*env)->ReleaseStringUTFChars(env, localeStr, (const char*)locale);
+            }
             return;
         }
         fontCount = 0;
@@ -1269,6 +1278,9 @@ Java_sun_font_FontConfigManager_getFontConfig
                 (*FcPatternDestroy)(pattern);
                 (*FcFontSetDestroy)(fontset);
                 closeFontConfig(libfontconfig, JNI_FALSE);
+                if (locale) {
+                    (*env)->ReleaseStringUTFChars(env, localeStr, (const char*)locale);
+                }
                 return;
             }
 
@@ -1323,6 +1335,9 @@ Java_sun_font_FontConfigManager_getFontConfig
                 (*FcPatternDestroy)(pattern);
                 (*FcFontSetDestroy)(fontset);
                 closeFontConfig(libfontconfig, JNI_FALSE);
+                if (locale) {
+                    (*env)->ReleaseStringUTFChars(env, localeStr, (const char*)locale);
+                }
                 return;
             }
             (*env)->SetObjectField(env,fcCompFontObj, fcAllFontsID, fcFontArr);
@@ -1384,7 +1399,7 @@ Java_sun_font_FontConfigManager_getFontConfig
     /* release resources and close the ".so" */
 
     if (locale) {
-        (*env)->ReleaseStringUTFChars (env, localeStr, (const char*)locale);
+        (*env)->ReleaseStringUTFChars(env, localeStr, (const char*)locale);
     }
     closeFontConfig(libfontconfig, JNI_TRUE);
 }
