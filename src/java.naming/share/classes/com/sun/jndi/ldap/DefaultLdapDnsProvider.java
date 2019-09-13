@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -76,7 +76,7 @@ public class DefaultLdapDnsProvider {
         }
 
         LdapDnsProviderResult res = new LdapDnsProviderResult(domainName, endpoints);
-        if (res.getEndpoints().size() == 0 && res.getDomainName().isEmpty()) {
+        if (res.getEndpoints().isEmpty() && res.getDomainName().isEmpty()) {
             return Optional.empty();
         } else {
             return Optional.of(res);

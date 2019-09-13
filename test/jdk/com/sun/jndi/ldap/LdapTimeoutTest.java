@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,424 +21,487 @@
  * questions.
  */
 
-/**
+/*
  * @test
- * @run main/othervm LdapTimeoutTest
- * @bug 7094377 8000487 6176036 7056489
+ * @library /test/lib
+ *          lib/
+ * @run testng/othervm LdapTimeoutTest
+ * @bug 7094377 8000487 6176036 7056489 8151678
  * @summary Timeout tests for ldap
  */
 
-import java.net.Socket;
-import java.net.ServerSocket;
-import java.net.SocketTimeoutException;
-import java.io.*;
-import javax.naming.*;
-import javax.naming.directory.*;
-import java.util.List;
-import java.util.Hashtable;
-import java.util.ArrayList;
-import java.util.concurrent.Callable;
-import java.util.concurrent.ExecutionException;
-import java.util.concurrent.Executors;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Future;
-import java.util.concurrent.ScheduledExecutorService;
-import java.util.concurrent.ScheduledFuture;
-import java.util.concurrent.TimeoutException;
-import java.util.concurrent.TimeUnit;
-import javax.net.ssl.SSLHandshakeException;
+import org.testng.Assert;
+import org.testng.annotations.BeforeTest;
+import org.testng.annotations.Test;
 
+import javax.naming.Context;
+import javax.naming.NamingException;
+import javax.naming.directory.InitialDirContext;
+import javax.naming.directory.SearchControls;
+import java.io.IOException;
+import java.io.OutputStream;
+import java.net.Socket;
+import java.util.ArrayList;
+import java.util.Hashtable;
+import java.util.List;
+import java.util.Objects;
+import java.util.concurrent.Callable;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
+import java.util.concurrent.FutureTask;
+import java.util.concurrent.SynchronousQueue;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
+
+import static java.lang.String.format;
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
 import static java.util.concurrent.TimeUnit.NANOSECONDS;
-
-
-abstract class LdapTest implements Callable {
-
-    Hashtable env;
-    TestServer server;
-    ScheduledExecutorService killSwitchPool;
-    boolean passed = false;
-    private int HANGING_TEST_TIMEOUT = 20_000;
-
-    public LdapTest (TestServer server, Hashtable env) {
-        this.server = server;
-        this.env = env;
-    }
-
-    public LdapTest(TestServer server, Hashtable env,
-            ScheduledExecutorService killSwitchPool)
-    {
-        this(server, env);
-        this.killSwitchPool = killSwitchPool;
-    }
-
-    public abstract void performOp(InitialContext ctx) throws NamingException;
-    public abstract void handleNamingException(
-        NamingException e, long start, long end);
-
-    public void pass() {
-        this.passed = true;
-    }
-
-    public void fail() {
-        throw new RuntimeException("Test failed");
-    }
-
-    public void fail(Exception e) {
-        throw new RuntimeException("Test failed", e);
-    }
-
-    boolean shutItDown(InitialContext ctx) {
-        try {
-            if (ctx != null) ctx.close();
-            return true;
-        } catch (NamingException ex) {
-            return false;
-        }
-    }
-
-    public Boolean call() {
-        InitialContext ctx = null;
-        ScheduledFuture killer = null;
-        long start = System.nanoTime();
-
-        try {
-            while(!server.accepting())
-                Thread.sleep(200); // allow the server to start up
-            Thread.sleep(200); // to be sure
-
-            // if this is a hanging test, scheduled a thread to
-            // interrupt after a certain time
-            if (killSwitchPool != null) {
-                final Thread current = Thread.currentThread();
-                killer = killSwitchPool.schedule(
-                    new Callable<Void>() {
-                        public Void call() throws Exception {
-                            current.interrupt();
-                            return null;
-                        }
-                    }, HANGING_TEST_TIMEOUT, MILLISECONDS);
-            }
-
-            env.put(Context.PROVIDER_URL, "ldap://localhost:" +
-                    server.getLocalPort());
-
-            try {
-                ctx = new InitialDirContext(env);
-                performOp(ctx);
-                fail();
-            } catch (NamingException e) {
-                long end = System.nanoTime();
-                System.out.println(this.getClass().toString() + " - elapsed: "
-                        + NANOSECONDS.toMillis(end - start));
-                handleNamingException(e, start, end);
-            } finally {
-                if (killer != null && !killer.isDone())
-                    killer.cancel(true);
-                shutItDown(ctx);
-                server.close();
-            }
-            return passed;
-        } catch (IOException|InterruptedException e) {
-            throw new RuntimeException(e);
-        }
-    }
-}
-
-abstract class ReadServerTest extends LdapTest {
-
-    public ReadServerTest(Hashtable env) throws IOException {
-        super(new BindableServer(), env);
-    }
-
-    public ReadServerTest(Hashtable env,
-                          ScheduledExecutorService killSwitchPool)
-            throws IOException
-    {
-        super(new BindableServer(), env, killSwitchPool);
-    }
-
-    public void performOp(InitialContext ctx) throws NamingException {
-        SearchControls scl = new SearchControls();
-        scl.setSearchScope(SearchControls.SUBTREE_SCOPE);
-        NamingEnumeration<SearchResult> answer = ((InitialDirContext)ctx)
-            .search("ou=People,o=JNDITutorial", "(objectClass=*)", scl);
-    }
-}
-
-abstract class DeadServerTest extends LdapTest {
-
-    public DeadServerTest(Hashtable env) throws IOException {
-        super(new DeadServer(), env);
-    }
-
-    public DeadServerTest(Hashtable env,
-                          ScheduledExecutorService killSwitchPool)
-            throws IOException
-    {
-        super(new DeadServer(), env, killSwitchPool);
-    }
-
-    public void performOp(InitialContext ctx) throws NamingException {}
-}
-
-class DeadServerNoTimeoutTest extends DeadServerTest {
-
-    public DeadServerNoTimeoutTest(Hashtable env,
-                                   ScheduledExecutorService killSwitchPool)
-            throws IOException
-    {
-        super(env, killSwitchPool);
-    }
-
-    public void handleNamingException(NamingException e, long start, long end) {
-        if (e instanceof InterruptedNamingException) Thread.interrupted();
-
-        if (NANOSECONDS.toMillis(end - start) < LdapTimeoutTest.MIN_TIMEOUT) {
-            System.err.printf("DeadServerNoTimeoutTest fail: timeout should be " +
-                              "at least %s ms, actual time is %s ms%n",
-                              LdapTimeoutTest.MIN_TIMEOUT,
-                              NANOSECONDS.toMillis(end - start));
-            fail();
-        } else {
-            pass();
-        }
-    }
-}
-
-class DeadServerTimeoutTest extends DeadServerTest {
-
-    public DeadServerTimeoutTest(Hashtable env) throws IOException {
-        super(env);
-    }
-
-    public void handleNamingException(NamingException e, long start, long end)
-    {
-        // non SSL connect will timeout via readReply using connectTimeout
-        if (NANOSECONDS.toMillis(end - start) < 2_900) {
-            pass();
-        } else {
-            System.err.println("Fail: Waited too long");
-            fail();
-        }
-    }
-}
-
-
-class ReadServerNoTimeoutTest extends ReadServerTest {
-
-    public ReadServerNoTimeoutTest(Hashtable env,
-                                   ScheduledExecutorService killSwitchPool)
-            throws IOException
-    {
-        super(env, killSwitchPool);
-    }
-
-    public void handleNamingException(NamingException e, long start, long end) {
-        if (e instanceof InterruptedNamingException) Thread.interrupted();
-
-        if (NANOSECONDS.toMillis(end - start) < LdapTimeoutTest.MIN_TIMEOUT) {
-            System.err.printf("ReadServerNoTimeoutTest fail: timeout should be " +
-                              "at least %s ms, actual time is %s ms%n",
-                              LdapTimeoutTest.MIN_TIMEOUT,
-                              NANOSECONDS.toMillis(end - start));
-            fail();
-        } else {
-            pass();
-        }
-    }
-}
-
-class ReadServerTimeoutTest extends ReadServerTest {
-
-    public ReadServerTimeoutTest(Hashtable env) throws IOException {
-        super(env);
-    }
-
-    public void handleNamingException(NamingException e, long start, long end) {
-        System.out.println("ReadServerTimeoutTest: end-start=" + NANOSECONDS.toMillis(end - start));
-        if (NANOSECONDS.toMillis(end - start) < 2_500) {
-            fail();
-        } else {
-            pass();
-        }
-    }
-}
-
-class TestServer extends Thread {
-    ServerSocket serverSock;
-    boolean accepting = false;
-
-    public TestServer() throws IOException {
-        this.serverSock = new ServerSocket(0);
-        start();
-    }
-
-    public int getLocalPort() {
-        return serverSock.getLocalPort();
-    }
-
-    public boolean accepting() {
-        return accepting;
-    }
-
-    public void close() throws IOException {
-        serverSock.close();
-    }
-}
-
-class BindableServer extends TestServer {
-
-    public BindableServer() throws IOException {
-        super();
-    }
-
-    private byte[] bindResponse = {
-        0x30, 0x0C, 0x02, 0x01, 0x01, 0x61, 0x07, 0x0A,
-        0x01, 0x00, 0x04, 0x00, 0x04, 0x00
-    };
-
-    public void run() {
-        try {
-            accepting = true;
-            Socket socket = serverSock.accept();
-            InputStream in = socket.getInputStream();
-            OutputStream out = socket.getOutputStream();
-
-            // Read the LDAP BindRequest
-            while (in.read() != -1) {
-                in.skip(in.available());
-                break;
-            }
-
-            // Write an LDAP BindResponse
-            out.write(bindResponse);
-            out.flush();
-        } catch (IOException e) {
-            // ignore
-        }
-    }
-}
-
-class DeadServer extends TestServer {
-
-    public DeadServer() throws IOException {
-        super();
-    }
-
-    public void run() {
-        while(true) {
-            try {
-                accepting = true;
-                Socket socket = serverSock.accept();
-            } catch (Exception e) {
-                break;
-            }
-        }
-    }
-}
+import static jdk.test.lib.Utils.adjustTimeout;
+import static org.testng.Assert.assertTrue;
+import static org.testng.Assert.expectThrows;
 
 public class LdapTimeoutTest {
 
-    private static final ExecutorService testPool =
-        Executors.newFixedThreadPool(3);
-    private static final ScheduledExecutorService killSwitchPool =
-        Executors.newScheduledThreadPool(3);
-    public static int MIN_TIMEOUT = 18_000;
+    // ------ configure test timeouts here ------
 
-    static Hashtable createEnv() {
-        Hashtable env = new Hashtable(11);
-        env.put(Context.INITIAL_CONTEXT_FACTORY,
-            "com.sun.jndi.ldap.LdapCtxFactory");
-        return env;
+    /*
+     * Practical representation of an infinite timeout.
+     */
+    private static final long INFINITY_MILLIS = adjustTimeout(20_000);
+    /*
+     * The acceptable variation in timeout measurements.
+     */
+    private static final long TOLERANCE       = adjustTimeout( 3_500);
+
+    private static final long CONNECT_MILLIS  = adjustTimeout( 3_000);
+    private static final long READ_MILLIS     = adjustTimeout(10_000);
+
+    static {
+        // a series of checks to make sure this timeouts configuration is
+        // consistent and the timeouts do not overlap
+
+        assert (TOLERANCE >= 0);
+        // context creation
+        assert (2 * CONNECT_MILLIS + TOLERANCE < READ_MILLIS);
+        // context creation immediately followed by search
+        assert (2 * CONNECT_MILLIS + READ_MILLIS + TOLERANCE < INFINITY_MILLIS);
     }
 
-    public static void main(String[] args) throws Exception {
+    @BeforeTest
+    public void beforeTest() {
+        startAuxiliaryDiagnosticOutput();
+    }
 
-        InitialContext ctx = null;
-        List<Future> results = new ArrayList<>();
-
+    /*
+     * These are timeout tests and they are run in parallel to reduce the total
+     * amount of run time.
+     *
+     * Currently it doesn't seem possible to instruct JTREG to run TestNG test
+     * methods in parallel. That said, this JTREG test is still
+     * a "TestNG-flavored" test for the sake of having org.testng.Assert
+     * capability.
+     */
+    @Test
+    public void test() throws Exception {
+        List<Future<?>> futures = new ArrayList<>();
+        ExecutorService executorService = Executors.newCachedThreadPool();
         try {
-            // run the DeadServerTest with no timeouts set
-            // this should get stuck indefinitely, so we need to kill
-            // it after a timeout
-            System.out.println("Running connect timeout test with 20s kill switch");
-            Hashtable env = createEnv();
-            results.add(
-                    testPool.submit(new DeadServerNoTimeoutTest(env, killSwitchPool)));
-
-            // run the ReadServerTest with connect timeout set
-            // this should get stuck indefinitely so we need to kill
-            // it after a timeout
-            System.out.println("Running read timeout test with 10ms connect timeout & 20s kill switch");
-            Hashtable env1 = createEnv();
-            env1.put("com.sun.jndi.ldap.connect.timeout", "10");
-            results.add(testPool.submit(
-                    new ReadServerNoTimeoutTest(env1, killSwitchPool)));
-
-            // run the ReadServerTest with no timeouts set
-            // this should get stuck indefinitely, so we need to kill
-            // it after a timeout
-            System.out.println("Running read timeout test with 20s kill switch");
-            Hashtable env2 = createEnv();
-            results.add(testPool.submit(
-                    new ReadServerNoTimeoutTest(env2, killSwitchPool)));
-
-            // run the DeadServerTest with connect / read timeouts set
-            // this should exit after the connect timeout expires
-            System.out.println("Running connect timeout test with 10ms connect timeout, 3000ms read timeout");
-            Hashtable env3 = createEnv();
-            env3.put("com.sun.jndi.ldap.connect.timeout", "10");
-            env3.put("com.sun.jndi.ldap.read.timeout", "3000");
-            results.add(testPool.submit(new DeadServerTimeoutTest(env3)));
-
-
-            // run the ReadServerTest with connect / read timeouts set
-            // this should exit after the connect timeout expires
-            //
-            // NOTE: commenting this test out as it is failing intermittently.
-            //
-            // System.out.println("Running read timeout test with 10ms connect timeout, 3000ms read timeout");
-            // Hashtable env4 = createEnv();
-            // env4.put("com.sun.jndi.ldap.connect.timeout", "10");
-            // env4.put("com.sun.jndi.ldap.read.timeout", "3000");
-            // results.add(testPool.submit(new ReadServerTimeoutTest(env4)));
-
-            // run the DeadServerTest with connect timeout set
-            // this should exit after the connect timeout expires
-            System.out.println("Running connect timeout test with 10ms connect timeout");
-            Hashtable env5 = createEnv();
-            env5.put("com.sun.jndi.ldap.connect.timeout", "10");
-            results.add(testPool.submit(new DeadServerTimeoutTest(env5)));
-
-            // 8000487: Java JNDI connection library on ldap conn is
-            // not honoring configured timeout
-            System.out.println("Running simple auth connection test");
-            Hashtable env6 = createEnv();
-            env6.put("com.sun.jndi.ldap.connect.timeout", "10");
-            env6.put("com.sun.jndi.ldap.read.timeout", "3000");
-            env6.put(Context.SECURITY_AUTHENTICATION, "simple");
-            env6.put(Context.SECURITY_PRINCIPAL, "user");
-            env6.put(Context.SECURITY_CREDENTIALS, "password");
-            results.add(testPool.submit(new DeadServerTimeoutTest(env6)));
-
-            boolean testFailed = false;
-            for (Future test : results) {
-                while (!test.isDone()) {
-                    if ((Boolean) test.get() == false)
-                        testFailed = true;
-                }
-            }
-
-            if (testFailed) {
-                throw new AssertionError("some tests failed");
-            }
-
+            futures.add(executorService.submit(() -> { test1(); return null; }));
+            futures.add(executorService.submit(() -> { test2(); return null; }));
+            futures.add(executorService.submit(() -> { test3(); return null; }));
+            futures.add(executorService.submit(() -> { test4(); return null; }));
+            futures.add(executorService.submit(() -> { test5(); return null; }));
+            futures.add(executorService.submit(() -> { test6(); return null; }));
+            futures.add(executorService.submit(() -> { test7(); return null; }));
         } finally {
-            LdapTimeoutTest.killSwitchPool.shutdown();
-            LdapTimeoutTest.testPool.shutdown();
+            executorService.shutdown();
+        }
+        int failedCount = 0;
+        for (var f : futures) {
+            try {
+                f.get();
+            } catch (ExecutionException e) {
+                failedCount++;
+                e.getCause().printStackTrace(System.out);
+            }
+        }
+        if (failedCount > 0)
+            throw new RuntimeException(failedCount + " (sub)tests failed");
+    }
+
+    static void test1() throws Exception {
+        Hashtable<Object, Object> env = new Hashtable<>();
+        env.put(Context.INITIAL_CONTEXT_FACTORY, "com.sun.jndi.ldap.LdapCtxFactory");
+        // Here and in the other tests it's important to close the server as
+        // calling `thread.interrupt` from assertion may not be enough
+        // (depending on where the blocking call has stuck)
+        try (TestServer server = new NotBindableServer()) {
+            env.put(Context.PROVIDER_URL, urlTo(server));
+            server.start();
+            // Here and in the other tests joining done purely to reduce timing
+            // jitter. Commenting out or removing that should not make the test
+            // incorrect. (ServerSocket can accept connection as soon as it is
+            // bound, not need to call `accept` before that.)
+            server.starting().join();
+            assertIncompletion(INFINITY_MILLIS, () -> new InitialDirContext(env));
         }
     }
 
-}
+    static void test2() throws Exception {
+        Hashtable<Object, Object> env = new Hashtable<>();
+        env.put(Context.INITIAL_CONTEXT_FACTORY, "com.sun.jndi.ldap.LdapCtxFactory");
+        env.put("com.sun.jndi.ldap.connect.timeout", String.valueOf(CONNECT_MILLIS));
+        try (TestServer server = new BindableButNotReadableServer()) {
+            env.put(Context.PROVIDER_URL, urlTo(server));
+            server.start();
+            server.starting().join();
+            InitialDirContext ctx = new InitialDirContext(env);
+            SearchControls scl = new SearchControls();
+            scl.setSearchScope(SearchControls.SUBTREE_SCOPE);
+            assertIncompletion(INFINITY_MILLIS,
+                               () -> ctx.search("ou=People,o=JNDITutorial", "(objectClass=*)", scl));
+        }
+    }
 
+    static void test3() throws Exception {
+        Hashtable<Object, Object> env = new Hashtable<>();
+        env.put(Context.INITIAL_CONTEXT_FACTORY, "com.sun.jndi.ldap.LdapCtxFactory");
+        try (TestServer server = new BindableButNotReadableServer()) {
+            env.put(Context.PROVIDER_URL, urlTo(server));
+            server.start();
+            server.starting().join();
+            InitialDirContext ctx = new InitialDirContext(env);
+            SearchControls scl = new SearchControls();
+            scl.setSearchScope(SearchControls.SUBTREE_SCOPE);
+            assertIncompletion(INFINITY_MILLIS,
+                               () -> ctx.search("ou=People,o=JNDITutorial", "(objectClass=*)", scl));
+        }
+    }
+
+    static void test4() throws Exception {
+        Hashtable<Object, Object> env = new Hashtable<>();
+        env.put(Context.INITIAL_CONTEXT_FACTORY, "com.sun.jndi.ldap.LdapCtxFactory");
+        env.put("com.sun.jndi.ldap.connect.timeout", String.valueOf(CONNECT_MILLIS));
+        env.put("com.sun.jndi.ldap.read.timeout", String.valueOf(READ_MILLIS));
+        try (TestServer server = new NotBindableServer()) {
+            env.put(Context.PROVIDER_URL, urlTo(server));
+            server.start();
+            server.starting().join();
+            Assert.ThrowingRunnable completion =
+                    () -> assertCompletion(CONNECT_MILLIS,
+                                           2 * CONNECT_MILLIS + TOLERANCE,
+                                           () -> new InitialDirContext(env));
+            NamingException e = expectThrows(NamingException.class, completion);
+            String msg = e.getMessage();
+            assertTrue(msg != null && msg.contains("timeout")
+                               && msg.contains(String.valueOf(CONNECT_MILLIS)),
+                       msg);
+        }
+    }
+
+    static void test5() throws Exception {
+        Hashtable<Object, Object> env = new Hashtable<>();
+        env.put(Context.INITIAL_CONTEXT_FACTORY, "com.sun.jndi.ldap.LdapCtxFactory");
+        env.put("com.sun.jndi.ldap.connect.timeout", String.valueOf(CONNECT_MILLIS));
+        env.put("com.sun.jndi.ldap.read.timeout", String.valueOf(READ_MILLIS));
+        try (TestServer server = new BindableButNotReadableServer()) {
+            env.put(Context.PROVIDER_URL, urlTo(server));
+            server.start();
+            server.starting().join();
+            InitialDirContext ctx = new InitialDirContext(env);
+            SearchControls scl = new SearchControls();
+            scl.setSearchScope(SearchControls.SUBTREE_SCOPE);
+            Assert.ThrowingRunnable completion =
+                    () -> assertCompletion(READ_MILLIS,
+                                           READ_MILLIS + TOLERANCE,
+                                           () -> ctx.search("ou=People,o=JNDITutorial", "(objectClass=*)", scl));
+            NamingException e = expectThrows(NamingException.class, completion);
+            String msg = e.getMessage();
+            assertTrue(msg != null && msg.contains("timeout")
+                               && msg.contains(String.valueOf(READ_MILLIS)),
+                       msg);
+        }
+    }
+
+    static void test6() throws Exception {
+        Hashtable<Object, Object> env = new Hashtable<>();
+        env.put(Context.INITIAL_CONTEXT_FACTORY, "com.sun.jndi.ldap.LdapCtxFactory");
+        env.put("com.sun.jndi.ldap.connect.timeout", String.valueOf(CONNECT_MILLIS));
+        env.put("com.sun.jndi.ldap.read.timeout", String.valueOf(READ_MILLIS));
+        try (TestServer server = new NotBindableServer()) {
+            env.put(Context.PROVIDER_URL, urlTo(server));
+            server.start();
+            server.starting().join();
+            Assert.ThrowingRunnable completion =
+                    () -> assertCompletion(CONNECT_MILLIS,
+                                           2 * CONNECT_MILLIS + TOLERANCE,
+                                           () -> new InitialDirContext(env));
+            NamingException e = expectThrows(NamingException.class, completion);
+            String msg = e.getMessage();
+            assertTrue(msg != null && msg.contains("timeout")
+                               && msg.contains(String.valueOf(CONNECT_MILLIS)),
+                       msg);
+        }
+    }
+
+    static void test7() throws Exception {
+        // 8000487: Java JNDI connection library on ldap conn is
+        // not honoring configured timeout
+        Hashtable<Object, Object> env = new Hashtable<>();
+        env.put(Context.INITIAL_CONTEXT_FACTORY, "com.sun.jndi.ldap.LdapCtxFactory");
+        env.put("com.sun.jndi.ldap.connect.timeout", String.valueOf(CONNECT_MILLIS));
+        env.put("com.sun.jndi.ldap.read.timeout", String.valueOf(READ_MILLIS));
+        env.put(Context.SECURITY_AUTHENTICATION, "simple");
+        env.put(Context.SECURITY_PRINCIPAL, "user");
+        env.put(Context.SECURITY_CREDENTIALS, "password");
+        try (TestServer server = new NotBindableServer()) {
+            env.put(Context.PROVIDER_URL, urlTo(server));
+            server.start();
+            server.starting().join();
+            Assert.ThrowingRunnable completion =
+                    () -> assertCompletion(CONNECT_MILLIS,
+                                           2 * CONNECT_MILLIS + TOLERANCE,
+                                           () -> new InitialDirContext(env));
+            NamingException e = expectThrows(NamingException.class, completion);
+            String msg = e.getMessage();
+            assertTrue(msg != null && msg.contains("timeout")
+                               && msg.contains(String.valueOf(CONNECT_MILLIS)),
+                       msg);
+        }
+    }
+
+    // ------ test stub servers ------
+
+    static class TestServer extends BaseLdapServer {
+
+        private final CompletableFuture<Void> starting = new CompletableFuture<>();
+
+        TestServer() throws IOException { }
+
+        @Override
+        protected void beforeAcceptingConnections() {
+            starting.completeAsync(() -> null);
+        }
+
+        public CompletableFuture<Void> starting() {
+            return starting.copy();
+        }
+    }
+
+    static class BindableButNotReadableServer extends TestServer {
+
+        BindableButNotReadableServer() throws IOException { }
+
+        private static final byte[] bindResponse = {
+                0x30, 0x0C, 0x02, 0x01, 0x01, 0x61, 0x07, 0x0A,
+                0x01, 0x00, 0x04, 0x00, 0x04, 0x00
+        };
+
+        @Override
+        protected void handleRequest(Socket socket,
+                                     LdapMessage msg,
+                                     OutputStream out)
+                throws IOException {
+            switch (msg.getOperation()) {
+                case BIND_REQUEST:
+                    out.write(bindResponse);
+                    out.flush();
+                default:
+                    break;
+            }
+        }
+    }
+
+    static class NotBindableServer extends TestServer {
+
+        NotBindableServer() throws IOException { }
+
+        @Override
+        protected void beforeConnectionHandled(Socket socket) {
+            try {
+                TimeUnit.DAYS.sleep(Integer.MAX_VALUE);
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
+            }
+        }
+    }
+
+    // ------ timeouts check utilities ------
+
+    /*
+     * Asserts that the specified executable yields a result or an exception
+     * within the specified time frame. Interrupts the executable
+     * unconditionally.
+     *
+     * If the executable yields a result or an exception within the specified
+     * time frame, the result will be returned and the exception will be
+     * rethrown respectively in a transparent fashion as if the executable was
+     * executed directly.
+     */
+    public static <T> T assertCompletion(long loMillis,
+                                         long hiMillis,
+                                         Callable<T> code)
+            throws Throwable {
+        if (loMillis < 0 || hiMillis < 0 || loMillis > hiMillis) {
+            throw new IllegalArgumentException("loMillis=" + loMillis +
+                                                       ", hiMillis=" + hiMillis);
+        }
+        Objects.requireNonNull(code);
+
+        // this queue acts both as an exchange point and a barrier
+        SynchronousQueue<Long> startTime = new SynchronousQueue<>();
+
+        Callable<T> wrappedTask = () -> {
+            // by the time this value reaches the "stopwatch" thread it might be
+            // well outdated and that's okay, we will adjust the wait time
+            startTime.put(System.nanoTime());
+            return code.call();
+        };
+
+        FutureTask<T> task = new FutureTask<>(wrappedTask);
+        Thread t = new Thread(task);
+        t.start();
+
+        final long startNanos;
+        try {
+            startNanos = startTime.take(); // (1) wait for the initial time mark
+        } catch (Throwable e) {
+            t.interrupt();
+            throw e;
+        }
+
+        final long waitTime = hiMillis -
+                NANOSECONDS.toMillis(System.nanoTime() - startNanos); // (2) adjust wait time
+
+        try {
+            T r = task.get(waitTime, MILLISECONDS); // (3) wait for the task to complete
+            long elapsed = NANOSECONDS.toMillis(System.nanoTime() - startNanos);
+            if (elapsed < loMillis || elapsed > hiMillis) {
+                throw new RuntimeException(format(
+                        "After %s ms. (waitTime %s ms.) returned result '%s'", elapsed, waitTime, r));
+            }
+            return r;
+        } catch (ExecutionException e) {
+            long elapsed = NANOSECONDS.toMillis(System.nanoTime() - startNanos);
+            if (elapsed < loMillis || elapsed > hiMillis) {
+                throw new RuntimeException(format(
+                        "After %s ms. (waitTime %s ms.) thrown exception", elapsed, waitTime), e);
+            }
+            throw e.getCause();
+        } catch (TimeoutException e) {
+            // We trust timed get not to throw TimeoutException prematurely
+            // (i.e. before the wait time elapses)
+            long elapsed = NANOSECONDS.toMillis(System.nanoTime() - startNanos);
+            throw new RuntimeException(format(
+                    "After %s ms. (waitTime %s ms.) is incomplete", elapsed, waitTime));
+        } finally {
+            t.interrupt();
+        }
+    }
+
+    /*
+     * Asserts that the specified executable yields no result and no exception
+     * for at least the specified amount of time. Interrupts the executable
+     * unconditionally.
+     */
+    public static void assertIncompletion(long millis, Callable<?> code)
+            throws Exception
+    {
+        if (millis < 0) {
+            throw new IllegalArgumentException("millis=" + millis);
+        }
+        Objects.requireNonNull(code);
+
+        // this queue acts both as an exchange point and a barrier
+        SynchronousQueue<Long> startTime = new SynchronousQueue<>();
+
+        Callable<?> wrappedTask = () -> {
+            // by the time this value reaches the "stopwatch" thread it might be
+            // well outdated and that's okay, we will adjust the wait time
+            startTime.put(System.nanoTime());
+            return code.call();
+        };
+
+        FutureTask<?> task = new FutureTask<>(wrappedTask);
+        Thread t = new Thread(task);
+        t.start();
+
+        final long startNanos;
+        try {
+            startNanos = startTime.take(); // (1) wait for the initial time mark
+        } catch (Throwable e) {
+            t.interrupt();
+            throw e;
+        }
+
+        final long waitTime = millis -
+                NANOSECONDS.toMillis(System.nanoTime() - startNanos); // (2) adjust wait time
+
+        try {
+            Object r = task.get(waitTime, MILLISECONDS); // (3) wait for the task to complete
+            long elapsed = NANOSECONDS.toMillis(System.nanoTime() - startNanos);
+            if (elapsed < waitTime) {
+                throw new RuntimeException(format(
+                        "After %s ms. (waitTime %s ms.) returned result '%s'", elapsed, waitTime, r));
+            }
+        } catch (ExecutionException e) {
+            long elapsed = NANOSECONDS.toMillis(System.nanoTime() - startNanos);
+            if (elapsed < waitTime) {
+                throw new RuntimeException(format(
+                        "After %s ms. (waitTime %s ms.) thrown exception", elapsed, waitTime), e);
+            }
+        } catch (TimeoutException expected) {
+        } finally {
+            t.interrupt();
+        }
+    }
+
+    // ------ miscellaneous utilities ------
+
+    private static String urlTo(TestServer server) {
+        String hostAddress = server.getInetAddress().getHostAddress();
+        String addr;
+        if (hostAddress.contains(":")) { // IPv6
+            addr = '[' + hostAddress + ']';
+        } else {                         // IPv4
+            addr = hostAddress;
+        }
+        return "ldap://" + addr + ":" + server.getPort();
+    }
+
+    /*
+     * A diagnostic aid that might help with debugging timeout issues. The idea
+     * is to continuously measure accuracy and responsiveness of the system that
+     * runs this test. If the system is overwhelmed (with something else), it
+     * might affect the test run. At the very least we will have traces of that
+     * in the logs.
+     *
+     * This utility does not automatically scale up test timeouts, it simply
+     * gathers information.
+     */
+    private static void startAuxiliaryDiagnosticOutput() {
+        System.out.printf("Starting diagnostic output (probe)%n");
+        Thread t = new Thread(() -> {
+            for (int i = 0; ; i = ((i % 20) + 1)) {
+                // 500, 1_000, 1_500, ..., 9_500, 10_000, 500, 1_000, ...
+                long expected = i * 500;
+                long start = System.nanoTime();
+                try {
+                    MILLISECONDS.sleep(expected);
+                } catch (InterruptedException e) {
+                    return;
+                }
+                long stop = System.nanoTime();
+                long actual = NANOSECONDS.toMillis(stop - start);
+                System.out.printf("(probe) expected [ms.]: %s, actual [ms.]: %s%n",
+                                  expected, actual);
+
+            }
+        }, "probe");
+        t.setDaemon(true);
+        t.start();
+    }
+}
