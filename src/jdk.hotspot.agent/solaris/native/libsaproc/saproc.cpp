@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -692,11 +692,15 @@ static void attach_internal(JNIEnv* env, jobject this_obj, jstring cmdLine, jboo
   char errMsg[ERR_MSG_SIZE];
   td_err_e te;
   CHECK_EXCEPTION;
+  if (cmdLine_cstr == NULL) {
+    return;
+  }
 
   // some older versions of libproc.so crash when trying to attach 32 bit
   // debugger to 64 bit core file. check and throw error.
 #ifndef _LP64
-  atoi(cmdLine_cstr);
+  errno = 0;
+  strtol(cmdLine_cstr, NULL, 10);
   if (errno) {
      // core file
      int core_fd;
@@ -706,6 +710,7 @@ static void attach_internal(JNIEnv* env, jobject this_obj, jstring cmdLine, jboo
             memcmp(&e32.e_ident[EI_MAG0], ELFMAG, SELFMAG) == 0 &&
             e32.e_type == ET_CORE && e32.e_ident[EI_CLASS] == ELFCLASS64) {
               close(core_fd);
+              env->ReleaseStringUTFChars(cmdLine, cmdLine_cstr);
               THROW_NEW_DEBUGGER_EXCEPTION("debuggee is 64 bit, use java -d64 for debugger");
         }
         close(core_fd);
@@ -718,6 +723,7 @@ static void attach_internal(JNIEnv* env, jobject this_obj, jstring cmdLine, jboo
   ps_prochandle_t* ph = proc_arg_grab(cmdLine_cstr, (isProcess? PR_ARG_PIDS : PR_ARG_CORES), PGRAB_FORCE, &gcode, NULL);
 
   env->ReleaseStringUTFChars(cmdLine, cmdLine_cstr);
+
   if (! ph) {
      if (gcode > 0 && gcode < sizeof(proc_arg_grab_errmsgs)/sizeof(const char*)) {
         snprintf(errMsg, ERR_MSG_SIZE, "Attach failed : %s", proc_arg_grab_errmsgs[gcode]);
