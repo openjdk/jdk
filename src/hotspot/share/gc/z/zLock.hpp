@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,16 +25,13 @@
 #define SHARE_GC_Z_ZLOCK_HPP
 
 #include "memory/allocation.hpp"
-#include <pthread.h>
+#include "runtime/os.hpp"
 
 class ZLock {
 private:
-  pthread_mutex_t _lock;
+  os::PlatformMutex _lock;
 
 public:
-  ZLock();
-  ~ZLock();
-
   void lock();
   bool try_lock();
   void unlock();
