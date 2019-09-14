@@ -75,7 +75,7 @@ public final class CGLGraphicsConfig extends CGraphicsConfig
     private BufferCapabilities bufferCaps;
     private long pConfigInfo;
     private ContextCapabilities oglCaps;
-    private OGLContext context;
+    private final OGLContext context;
     private final Object disposerReferent = new Object();
     private final int maxTextureSize;
 
@@ -105,7 +105,7 @@ public final class CGLGraphicsConfig extends CGraphicsConfig
         this.pConfigInfo = configInfo;
         this.oglCaps = oglCaps;
         this.maxTextureSize = maxTextureSize;
-        context = new OGLContext(OGLRenderQueue.getInstance(), this);
+        context = new OGLContext(OGLRenderQueue.getInstance());
 
         // add a record to the Disposer so that we destroy the native
         // CGLGraphicsConfigInfo data when this object goes away

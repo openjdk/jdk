@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -500,31 +500,6 @@ Java_sun_java2d_opengl_OGLRenderQueue_flushBuffer
                 // destination surface that are maintained at the native level
                 oglc = NULL;
                 dstOps = NULL;
-            }
-            break;
-        case sun_java2d_pipe_BufferedOpCodes_SAVE_STATE:
-            {
-                j2d_glPushAttrib(GL_ALL_ATTRIB_BITS);
-                j2d_glPushClientAttrib(GL_CLIENT_ALL_ATTRIB_BITS);
-                j2d_glMatrixMode(GL_MODELVIEW);
-                j2d_glPushMatrix();
-                j2d_glMatrixMode(GL_PROJECTION);
-                j2d_glPushMatrix();
-                j2d_glMatrixMode(GL_TEXTURE);
-                j2d_glPushMatrix();
-            }
-            break;
-
-        case sun_java2d_pipe_BufferedOpCodes_RESTORE_STATE:
-            {
-                j2d_glPopAttrib();
-                j2d_glPopClientAttrib();
-                j2d_glMatrixMode(GL_MODELVIEW);
-                j2d_glPopMatrix();
-                j2d_glMatrixMode(GL_PROJECTION);
-                j2d_glPopMatrix();
-                j2d_glMatrixMode(GL_TEXTURE);
-                j2d_glPopMatrix();
             }
             break;
         case sun_java2d_pipe_BufferedOpCodes_SYNC:

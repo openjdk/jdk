@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,16 +30,27 @@ import java.awt.Color;
 import java.awt.Composite;
 import java.awt.Paint;
 import java.awt.geom.AffineTransform;
-import sun.java2d.pipe.hw.AccelSurface;
-import sun.java2d.InvalidPipeException;
-import sun.java2d.SunGraphics2D;
-import sun.java2d.loops.XORComposite;
-import static sun.java2d.pipe.BufferedOpCodes.*;
-import static sun.java2d.pipe.BufferedRenderPipe.BYTES_PER_SPAN;
-
 import java.lang.annotation.Native;
 import java.lang.ref.Reference;
 import java.lang.ref.WeakReference;
+
+import sun.java2d.InvalidPipeException;
+import sun.java2d.SunGraphics2D;
+import sun.java2d.loops.XORComposite;
+import sun.java2d.pipe.hw.AccelSurface;
+
+import static sun.java2d.pipe.BufferedOpCodes.BEGIN_SHAPE_CLIP;
+import static sun.java2d.pipe.BufferedOpCodes.END_SHAPE_CLIP;
+import static sun.java2d.pipe.BufferedOpCodes.RESET_CLIP;
+import static sun.java2d.pipe.BufferedOpCodes.RESET_COMPOSITE;
+import static sun.java2d.pipe.BufferedOpCodes.RESET_TRANSFORM;
+import static sun.java2d.pipe.BufferedOpCodes.SET_ALPHA_COMPOSITE;
+import static sun.java2d.pipe.BufferedOpCodes.SET_RECT_CLIP;
+import static sun.java2d.pipe.BufferedOpCodes.SET_SHAPE_CLIP_SPANS;
+import static sun.java2d.pipe.BufferedOpCodes.SET_SURFACES;
+import static sun.java2d.pipe.BufferedOpCodes.SET_TRANSFORM;
+import static sun.java2d.pipe.BufferedOpCodes.SET_XOR_COMPOSITE;
+import static sun.java2d.pipe.BufferedRenderPipe.BYTES_PER_SPAN;
 
 /**
  * Base context class for managing state in a single-threaded rendering
@@ -77,8 +88,8 @@ public abstract class BufferedContext {
      */
     @Native public static final int USE_MASK         = (1 << 1);
 
-    protected RenderQueue rq;
-    protected RenderBuffer buf;
+    private final RenderQueue rq;
+    private final RenderBuffer buf;
 
     /**
      * This is a reference to the most recently validated BufferedContext.  If
@@ -172,7 +183,7 @@ public abstract class BufferedContext {
      * @throws InvalidPipeException if either src or dest surface is not valid
      * or lost
      */
-    public void validate(AccelSurface srcData, AccelSurface dstData,
+    private void validate(AccelSurface srcData, AccelSurface dstData,
                          Region clip, Composite comp,
                          AffineTransform xform,
                          Paint paint, SunGraphics2D sg2d, int flags)
@@ -310,21 +321,6 @@ public abstract class BufferedContext {
         dstData.markDirty();
     }
 
-    /**
-     * Invalidates the surfaces associated with this context.  This is
-     * useful when the context is no longer needed, and we want to break
-     * the chain caused by these surface references.
-     *
-     * Note: must be called while the RenderQueue lock is held.
-     *
-     * @see RenderQueue#lock
-     * @see RenderQueue#unlock
-     */
-    private void invalidateSurfaces() {
-        validSrcDataRef.clear();
-        validDstDataRef.clear();
-    }
-
     private void setSurfaces(AccelSurface srcData,
                              AccelSurface dstData)
     {
@@ -433,12 +429,13 @@ public abstract class BufferedContext {
      * @see RenderQueue#lock
      * @see RenderQueue#unlock
      */
-    public void invalidateContext() {
+    public final void invalidateContext() {
         resetTransform();
         resetComposite();
         resetClip();
         BufferedPaints.resetPaint(rq);
-        invalidateSurfaces();
+        validSrcDataRef.clear();
+        validDstDataRef.clear();
         validCompRef.clear();
         validClipRef.clear();
         validPaintRef.clear();
@@ -453,27 +450,7 @@ public abstract class BufferedContext {
      * @return a render queue
      * @see RenderQueue
      */
-    public abstract RenderQueue getRenderQueue();
-
-    /**
-     * Saves the state of this context.
-     * It may reset the current context.
-     *
-     * Note: must be called while the RenderQueue lock is held.
-     *
-     * @see RenderQueue#lock
-     * @see RenderQueue#unlock
-     */
-    public abstract void saveState();
-
-    /**
-     * Restores the native state of this context.
-     * It may reset the current context.
-     *
-     * Note: must be called while the RenderQueue lock is held.
-     *
-     * @see RenderQueue#lock
-     * @see RenderQueue#unlock
-     */
-    public abstract void restoreState();
+    public final RenderQueue getRenderQueue() {
+        return rq;
+    }
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2008, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -677,23 +677,6 @@ void D3DRQ_FlushBuffer(void *pParam)
                 }
             }
             break;
-
-        case sun_java2d_pipe_BufferedOpCodes_SAVE_STATE:
-            {
-                CONTINUE_IF_NULL(d3dc);
-
-                res = d3dc->SaveState();
-            }
-            break;
-
-        case sun_java2d_pipe_BufferedOpCodes_RESTORE_STATE:
-            {
-                CONTINUE_IF_NULL(d3dc);
-
-                res = d3dc->RestoreState();
-            }
-            break;
-
         // multibuffering ops
         case sun_java2d_pipe_BufferedOpCodes_SWAP_BUFFERS:
             {

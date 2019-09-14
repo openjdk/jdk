@@ -71,7 +71,7 @@ public final class GLXGraphicsConfig
     private BufferCapabilities bufferCaps;
     private long pConfigInfo;
     private ContextCapabilities oglCaps;
-    private OGLContext context;
+    private final OGLContext context;
 
     private static native long getGLXConfigInfo(int screennum, int visualnum);
     private static native int getOGLCapabilities(long configInfo);
@@ -85,7 +85,7 @@ public final class GLXGraphicsConfig
         pConfigInfo = configInfo;
         initConfig(getAData(), configInfo);
         this.oglCaps = oglCaps;
-        context = new OGLContext(OGLRenderQueue.getInstance(), this);
+        context = new OGLContext(OGLRenderQueue.getInstance());
     }
 
     @Override

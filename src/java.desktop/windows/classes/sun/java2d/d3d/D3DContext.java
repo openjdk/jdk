@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,19 +26,20 @@
 package sun.java2d.d3d;
 
 import java.lang.annotation.Native;
+
 import sun.java2d.pipe.BufferedContext;
 import sun.java2d.pipe.RenderBuffer;
 import sun.java2d.pipe.RenderQueue;
 import sun.java2d.pipe.hw.ContextCapabilities;
-import static sun.java2d.pipe.BufferedOpCodes.*;
-import static sun.java2d.pipe.hw.ContextCapabilities.*;
-import static sun.java2d.d3d.D3DContext.D3DContextCaps.*;
+
+import static sun.java2d.pipe.BufferedOpCodes.INVALIDATE_CONTEXT;
+import static sun.java2d.pipe.BufferedOpCodes.SET_SCRATCH_SURFACE;
 
 /**
  * Note that the RenderQueue lock must be acquired before calling any of
  * the methods in this class.
  */
-class D3DContext extends BufferedContext {
+final class D3DContext extends BufferedContext {
 
     private final D3DGraphicsDevice device;
 
@@ -99,42 +100,6 @@ class D3DContext extends BufferedContext {
         rq.ensureCapacity(8);
         buf.putInt(SET_SCRATCH_SURFACE);
         buf.putInt(d3dc.getDevice().getScreen());
-    }
-
-    public RenderQueue getRenderQueue() {
-        return D3DRenderQueue.getInstance();
-    }
-
-    @Override
-    public void saveState() {
-        // assert rq.lock.isHeldByCurrentThread();
-
-        // reset all attributes of this and current contexts
-        invalidateContext();
-        invalidateCurrentContext();
-
-        setScratchSurface(this);
-
-        // save the state on the native level
-        rq.ensureCapacity(4);
-        buf.putInt(SAVE_STATE);
-        rq.flushNow();
-    }
-
-    @Override
-    public void restoreState() {
-        // assert rq.lock.isHeldByCurrentThread();
-
-        // reset all attributes of this and current contexts
-        invalidateContext();
-        invalidateCurrentContext();
-
-        setScratchSurface(this);
-
-        // restore the state on the native level
-        rq.ensureCapacity(4);
-        buf.putInt(RESTORE_STATE);
-        rq.flushNow();
     }
 
     D3DGraphicsDevice getDevice() {

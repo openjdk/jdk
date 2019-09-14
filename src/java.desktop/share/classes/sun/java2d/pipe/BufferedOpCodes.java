@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,7 +27,7 @@ package sun.java2d.pipe;
 
 import java.lang.annotation.Native;
 
-public class BufferedOpCodes {
+public final class BufferedOpCodes {
     // draw ops
     @Native public static final int DRAW_LINE            = 10;
     @Native public static final int DRAW_RECT            = 11;
@@ -74,8 +74,6 @@ public class BufferedOpCodes {
     @Native public static final int INVALIDATE_CONTEXT   = 75;
     @Native public static final int SYNC                 = 76;
     @Native public static final int RESTORE_DEVICES      = 77;
-    @Native public static final int SAVE_STATE           = 78;
-    @Native public static final int RESTORE_STATE        = 79;
 
     // multibuffering ops
     @Native public static final int SWAP_BUFFERS         = 80;

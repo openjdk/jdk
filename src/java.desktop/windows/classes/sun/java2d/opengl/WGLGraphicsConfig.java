@@ -71,7 +71,7 @@ public final class WGLGraphicsConfig
     private BufferCapabilities bufferCaps;
     private long pConfigInfo;
     private ContextCapabilities oglCaps;
-    private OGLContext context;
+    private final OGLContext context;
     private Object disposerReferent = new Object();
 
     public static native int getDefaultPixFmt(int screennum);
@@ -90,7 +90,7 @@ public final class WGLGraphicsConfig
         super(device, visualnum);
         this.pConfigInfo = configInfo;
         this.oglCaps = oglCaps;
-        context = new OGLContext(OGLRenderQueue.getInstance(), this);
+        context = new OGLContext(OGLRenderQueue.getInstance());
 
         // add a record to the Disposer so that we destroy the native
         // WGLGraphicsConfigInfo data when this object goes away
