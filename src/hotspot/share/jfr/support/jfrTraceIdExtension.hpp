@@ -26,6 +26,7 @@
 #define SHARE_JFR_SUPPORT_JFRTRACEIDEXTENSION_HPP
 
 #include "jfr/recorder/checkpoint/types/traceid/jfrTraceId.hpp"
+#include "utilities/macros.hpp"
 
 #define DEFINE_TRACE_ID_FIELD mutable traceid _trace_id
 
@@ -59,10 +60,19 @@ class JfrTraceFlag {
   }
 
   jbyte* flags_addr() const {
+#ifdef VM_LITTLE_ENDIAN
     return (jbyte*)&_flags;
-  }
-  jbyte* meta_addr() const {
+#else
     return ((jbyte*)&_flags) + 1;
+#endif
+  }
+
+  jbyte* meta_addr() const {
+#ifdef VM_LITTLE_ENDIAN
+    return (jbyte*)(&_flags) + 1;
+#else
+    return (jbyte*)&_flags;
+#endif
   }
 };
 
