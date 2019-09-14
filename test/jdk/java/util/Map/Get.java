@@ -120,8 +120,8 @@ public class Get {
     //--------------------- Infrastructure ---------------------------
     static volatile int passed = 0, failed = 0;
     static void pass() { passed++; }
-    static void fail() { failed++; (new Error("Failure")).printStackTrace(System.err); }
-    static void fail(String msg) { failed++; (new Error("Failure: " + msg)).printStackTrace(System.err); }
+    static void fail() { failed++; new Error("Failure").printStackTrace(System.err); }
+    static void fail(String msg) { failed++; new Error("Failure: " + msg).printStackTrace(System.err); }
     static void unexpected(String msg, Throwable t) { System.err.println("Unexpected: " + msg); unexpected(t); }
     static void unexpected(Throwable t) { failed++; t.printStackTrace(System.err); }
     static void check(boolean cond) { if (cond) pass(); else fail(); }

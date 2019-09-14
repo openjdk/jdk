@@ -38,6 +38,7 @@ package java.util.concurrent.atomic;
 import java.lang.invoke.VarHandle;
 import java.util.function.LongBinaryOperator;
 import java.util.function.LongUnaryOperator;
+import jdk.internal.misc.Unsafe;
 
 /**
  * A {@code long} value that may be updated atomically.  See the
@@ -72,8 +73,9 @@ public class AtomicLong extends Number implements java.io.Serializable {
      * This class intended to be implemented using VarHandles, but there
      * are unresolved cyclic startup dependencies.
      */
-    private static final jdk.internal.misc.Unsafe U = jdk.internal.misc.Unsafe.getUnsafe();
-    private static final long VALUE = U.objectFieldOffset(AtomicLong.class, "value");
+    private static final Unsafe U = Unsafe.getUnsafe();
+    private static final long VALUE
+        = U.objectFieldOffset(AtomicLong.class, "value");
 
     private volatile long value;
 

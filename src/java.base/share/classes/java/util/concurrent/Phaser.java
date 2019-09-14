@@ -97,7 +97,7 @@ import java.util.concurrent.locks.LockSupport;
  *       associated recovery within handlers of those exceptions,
  *       often after invoking {@code forceTermination}.  Phasers may
  *       also be used by tasks executing in a {@link ForkJoinPool}.
- *       Progress is ensured if the pool's parallelismLevel can
+ *       Progress is ensured if the pool's parallelism level can
  *       accommodate the maximum number of simultaneously blocked
  *       parties.
  *

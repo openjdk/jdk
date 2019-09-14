@@ -666,7 +666,7 @@ public class ScheduledExecutorTest extends JSR166TestCase {
         Runnable waiter = new CheckedRunnable() { public void realRun() {
             threadsStarted.countDown();
             try {
-                MILLISECONDS.sleep(2 * LONG_DELAY_MS);
+                MILLISECONDS.sleep(LONGER_DELAY_MS);
             } catch (InterruptedException success) {}
             ran.getAndIncrement();
         }};

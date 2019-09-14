@@ -103,7 +103,7 @@ public class BlockingTaskExecutor {
      */
     static class NotificationReceiver {
         /** Has the notifiee been notified? */
-        boolean notified = false;
+        boolean notified;
 
         /**
          * Notify the notification receiver.

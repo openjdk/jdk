@@ -38,7 +38,6 @@ import static java.util.concurrent.TimeUnit.MILLISECONDS;
 import java.util.Collection;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.Semaphore;
-import java.util.concurrent.ThreadLocalRandom;
 
 import junit.framework.Test;
 import junit.framework.TestSuite;
@@ -220,24 +219,22 @@ public class SemaphoreTest extends JSR166TestCase {
     /**
      * timed tryAcquire times out
      */
-    public void testTryAcquire_timeout() {
-        final boolean fair = ThreadLocalRandom.current().nextBoolean();
+    public void testTryAcquire_timeout() throws InterruptedException {
+        final boolean fair = randomBoolean();
         final Semaphore s = new Semaphore(0, fair);
         final long startTime = System.nanoTime();
-        try { assertFalse(s.tryAcquire(timeoutMillis(), MILLISECONDS)); }
-        catch (InterruptedException e) { threadUnexpectedException(e); }
+        assertFalse(s.tryAcquire(timeoutMillis(), MILLISECONDS));
         assertTrue(millisElapsedSince(startTime) >= timeoutMillis());
     }
 
     /**
      * timed tryAcquire(N) times out
      */
-    public void testTryAcquireN_timeout() {
-        final boolean fair = ThreadLocalRandom.current().nextBoolean();
+    public void testTryAcquireN_timeout() throws InterruptedException {
+        final boolean fair = randomBoolean();
         final Semaphore s = new Semaphore(2, fair);
         final long startTime = System.nanoTime();
-        try { assertFalse(s.tryAcquire(3, timeoutMillis(), MILLISECONDS)); }
-        catch (InterruptedException e) { threadUnexpectedException(e); }
+        assertFalse(s.tryAcquire(3, timeoutMillis(), MILLISECONDS));
         assertTrue(millisElapsedSince(startTime) >= timeoutMillis());
     }
 

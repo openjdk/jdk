@@ -747,7 +747,7 @@ public class FutureTaskTest extends JSR166TestCase {
     /**
      * get is interruptible
      */
-    public void testGet_interruptible() {
+    public void testGet_Interruptible() {
         final CountDownLatch pleaseInterrupt = new CountDownLatch(1);
         final FutureTask task = new FutureTask(new NoOpCallable());
         Thread t = newStartedThread(new CheckedRunnable() {
@@ -776,27 +776,28 @@ public class FutureTaskTest extends JSR166TestCase {
     /**
      * timed get is interruptible
      */
-    public void testTimedGet_interruptible() {
+    public void testTimedGet_Interruptible() {
         final CountDownLatch pleaseInterrupt = new CountDownLatch(1);
         final FutureTask task = new FutureTask(new NoOpCallable());
         Thread t = newStartedThread(new CheckedRunnable() {
             public void realRun() throws Exception {
                 Thread.currentThread().interrupt();
                 try {
-                    task.get(2*LONG_DELAY_MS, MILLISECONDS);
+                    task.get(randomTimeout(), randomTimeUnit());
                     shouldThrow();
                 } catch (InterruptedException success) {}
                 assertFalse(Thread.interrupted());
 
                 pleaseInterrupt.countDown();
                 try {
-                    task.get(2*LONG_DELAY_MS, MILLISECONDS);
+                    task.get(LONGER_DELAY_MS, MILLISECONDS);
                     shouldThrow();
                 } catch (InterruptedException success) {}
                 assertFalse(Thread.interrupted());
             }});
 
         await(pleaseInterrupt);
+        if (randomBoolean()) assertThreadBlocks(t, Thread.State.TIMED_WAITING);
         t.interrupt();
         awaitTermination(t);
         checkNotDone(task);

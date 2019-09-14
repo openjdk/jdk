@@ -940,7 +940,7 @@ public class ConcurrentLinkedDequeTest extends JSR166TestCase {
     }
 
     void runAsync(Runnable r1, Runnable r2) {
-        boolean b = ThreadLocalRandom.current().nextBoolean();
+        boolean b = randomBoolean();
         CompletableFuture<Void> f1 = CompletableFuture.runAsync(b ? r1 : r2);
         CompletableFuture<Void> f2 = CompletableFuture.runAsync(b ? r2 : r1);
         f1.join();
@@ -1001,10 +1001,6 @@ public class ConcurrentLinkedDequeTest extends JSR166TestCase {
 
             runAsync(getter, adder);
         }
-    }
-
-    <T> T chooseRandomly(T... choices) {
-        return choices[ThreadLocalRandom.current().nextInt(choices.length)];
     }
 
     /**

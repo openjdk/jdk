@@ -25,7 +25,8 @@
  * @test
  * @bug 6316155 6595669 6871697 6868712
  * @summary Test concurrent offer vs. remove
- * @run main OfferRemoveLoops 300
+ * @library /test/lib
+ * @run main OfferRemoveLoops 100
  * @author Martin Buchholz
  */
 
@@ -43,10 +44,12 @@ import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.LinkedTransferQueue;
 import java.util.concurrent.PriorityBlockingQueue;
 import java.util.concurrent.Semaphore;
+import jdk.test.lib.Utils;
 
 @SuppressWarnings({"unchecked", "rawtypes", "deprecation"})
 public class OfferRemoveLoops {
-    final long testDurationMillisDefault = 10L * 1000L;
+    static final long LONG_DELAY_MS = Utils.adjustTimeout(10_000);
+    final long testDurationMillisDefault = 10_000L;
     final long testDurationMillis;
 
     OfferRemoveLoops(String[] args) {
@@ -75,7 +78,6 @@ public class OfferRemoveLoops {
         System.err.println(q.getClass().getSimpleName());
         final long testDurationNanos = testDurationMillis * 1000L * 1000L;
         final long quittingTimeNanos = System.nanoTime() + testDurationNanos;
-        final long timeoutMillis = 10L * 1000L;
         final int maxChunkSize = 1042;
         final int maxQueueSize = 10 * maxChunkSize;
         final CountDownLatch done = new CountDownLatch(3);
@@ -156,7 +158,7 @@ public class OfferRemoveLoops {
                 done.countDown();
             }};
 
-        if (! done.await(timeoutMillis + testDurationMillis, MILLISECONDS)) {
+        if (! done.await(LONG_DELAY_MS + testDurationMillis, MILLISECONDS)) {
             for (Thread thread : new Thread[] { offerer, remover, scanner }) {
                 if (thread.isAlive()) {
                     System.err.printf("Hung thread: %s%n", thread.getName());

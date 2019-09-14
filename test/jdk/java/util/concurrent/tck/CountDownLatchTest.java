@@ -36,6 +36,7 @@
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
 
 import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.ThreadLocalRandom;
 
 import junit.framework.Test;
 import junit.framework.TestSuite;
@@ -99,7 +100,7 @@ public class CountDownLatchTest extends JSR166TestCase {
         assertEquals(2, l.getCount());
         l.countDown();
         assertEquals(1, l.getCount());
-        assertThreadBlocks(t, Thread.State.WAITING);
+        if (randomBoolean()) assertThreadBlocks(t, Thread.State.WAITING);
         l.countDown();
         assertEquals(0, l.getCount());
         awaitTermination(t);
@@ -124,7 +125,7 @@ public class CountDownLatchTest extends JSR166TestCase {
         assertEquals(2, l.getCount());
         l.countDown();
         assertEquals(1, l.getCount());
-        assertThreadBlocks(t, Thread.State.TIMED_WAITING);
+        if (randomBoolean()) assertThreadBlocks(t, Thread.State.TIMED_WAITING);
         l.countDown();
         assertEquals(0, l.getCount());
         awaitTermination(t);
@@ -156,7 +157,7 @@ public class CountDownLatchTest extends JSR166TestCase {
             }});
 
         await(pleaseInterrupt);
-        assertThreadBlocks(t, Thread.State.WAITING);
+        if (randomBoolean()) assertThreadBlocks(t, Thread.State.WAITING);
         t.interrupt();
         awaitTermination(t);
     }
@@ -165,29 +166,30 @@ public class CountDownLatchTest extends JSR166TestCase {
      * timed await throws InterruptedException if interrupted before counted down
      */
     public void testTimedAwait_Interruptible() {
-        final CountDownLatch l = new CountDownLatch(1);
+        final int initialCount = ThreadLocalRandom.current().nextInt(1, 3);
+        final CountDownLatch l = new CountDownLatch(initialCount);
         final CountDownLatch pleaseInterrupt = new CountDownLatch(1);
         Thread t = newStartedThread(new CheckedRunnable() {
             public void realRun() throws InterruptedException {
                 Thread.currentThread().interrupt();
                 try {
-                    l.await(LONG_DELAY_MS, MILLISECONDS);
+                    l.await(randomTimeout(), randomTimeUnit());
                     shouldThrow();
                 } catch (InterruptedException success) {}
                 assertFalse(Thread.interrupted());
 
                 pleaseInterrupt.countDown();
                 try {
-                    l.await(LONG_DELAY_MS, MILLISECONDS);
+                    l.await(LONGER_DELAY_MS, MILLISECONDS);
                     shouldThrow();
                 } catch (InterruptedException success) {}
                 assertFalse(Thread.interrupted());
 
-                assertEquals(1, l.getCount());
+                assertEquals(initialCount, l.getCount());
             }});
 
         await(pleaseInterrupt);
-        assertThreadBlocks(t, Thread.State.TIMED_WAITING);
+        if (randomBoolean()) assertThreadBlocks(t, Thread.State.TIMED_WAITING);
         t.interrupt();
         awaitTermination(t);
     }
@@ -200,7 +202,11 @@ public class CountDownLatchTest extends JSR166TestCase {
         Thread t = newStartedThread(new CheckedRunnable() {
             public void realRun() throws InterruptedException {
                 assertEquals(1, l.getCount());
+
+                long startTime = System.nanoTime();
                 assertFalse(l.await(timeoutMillis(), MILLISECONDS));
+                assertTrue(millisElapsedSince(startTime) >= timeoutMillis());
+
                 assertEquals(1, l.getCount());
             }});
 

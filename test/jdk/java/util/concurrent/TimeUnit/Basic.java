@@ -24,6 +24,7 @@
 /* @test
  * @bug 5057341 6363898
  * @summary Basic tests for TimeUnit
+ * @library /test/lib
  * @author Martin Buchholz
  */
 
@@ -39,12 +40,20 @@ import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.util.List;
 import java.io.ObjectOutputStream;
 import java.io.ObjectInputStream;
 import java.util.Arrays;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ThreadLocalRandom;
 import java.util.concurrent.TimeUnit;
+import java.util.stream.Collectors;
+import java.util.stream.IntStream;
+import jdk.test.lib.Utils;
 
 public class Basic {
+    static final long LONG_DELAY_MS = Utils.adjustTimeout(10_000);
+
     private static void realMain(String[] args) throws Throwable {
 
         for (TimeUnit u : TimeUnit.values()) {
@@ -71,18 +80,33 @@ public class Basic {
         equal(1000L, MILLISECONDS.toMicros(1));
         equal(1000L, MICROSECONDS.toNanos(1));
 
-        long t0 = System.nanoTime();
-        MILLISECONDS.sleep(3); /* See windows bug 6313903, might not sleep */
-        long elapsedMillis = (System.nanoTime() - t0)/(1000L * 1000L);
-        System.out.printf("elapsed=%d%n", elapsedMillis);
-        check(elapsedMillis >= 0);
-        /* Might not sleep on windows: check(elapsedMillis >= 3); */
-        check(elapsedMillis < 1000);
+        //----------------------------------------------------------------
+        // TimeUnit.sleep sleeps for at least the specified time.
+        // TimeUnit.sleep(x, unit) for x <= 0 does not sleep at all.
+        //----------------------------------------------------------------
+        ThreadLocalRandom rnd = ThreadLocalRandom.current();
+        int maxTimeoutMillis = rnd.nextInt(1, 12);
+        List<CompletableFuture<?>> workers =
+            IntStream.range(-1, maxTimeoutMillis + 1)
+            .mapToObj(timeoutMillis -> (Runnable) () -> {
+                try {
+                    long startTime = System.nanoTime();
+                    MILLISECONDS.sleep(timeoutMillis);
+                    long elapsedNanos = System.nanoTime() - startTime;
+                    long timeoutNanos = MILLISECONDS.toNanos(timeoutMillis);
+                    check(elapsedNanos >= timeoutNanos);
+                } catch (InterruptedException fail) {
+                    throw new AssertionError(fail);
+                }})
+            .map(CompletableFuture::runAsync)
+            .collect(Collectors.toList());
+
+        workers.forEach(CompletableFuture<?>::join);
 
         //----------------------------------------------------------------
         // Tests for serialized form compatibility with previous release
         //----------------------------------------------------------------
-        byte[] serializedForm = /* Generated using tiger */
+        byte[] serializedForm = /* Generated using JDK 5 */
             {-84, -19, 0, 5, '~', 'r', 0, 29, 'j', 'a', 'v', 'a', '.',
              'u', 't', 'i', 'l', '.', 'c', 'o', 'n', 'c', 'u', 'r', 'r', 'e',
              'n', 't', '.', 'T', 'i', 'm', 'e', 'U', 'n', 'i', 't', 0, 0,

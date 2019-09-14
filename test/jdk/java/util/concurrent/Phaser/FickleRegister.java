@@ -43,7 +43,7 @@ import java.util.concurrent.atomic.AtomicLong;
 
 public class FickleRegister {
     final AtomicLong count = new AtomicLong(0);
-    final long testDurationMillisDefault = 10L * 1000L;
+    final long testDurationMillisDefault = 10_000L;
     final long testDurationMillis;
     final long quittingTimeNanos;
     final int chunkSize = 1000;
