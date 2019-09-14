@@ -27,47 +27,11 @@
 
 #include "jfr/utilities/jfrAllocation.hpp"
 
-class ClassLoaderData;
-class JfrArtifactClosure;
-class JfrArtifactSet;
 class JfrCheckpointWriter;
-class Klass;
-
-class ModuleEntry;
-class PackageEntry;
 
 class JfrTypeSet : AllStatic {
-  friend class CLDCallback;
-  friend class JfrTypeManager;
-  friend class TypeSetSerialization;
- private:
-  static JfrArtifactSet* _artifacts;
-  static JfrArtifactClosure* _subsystem_callback;
-  static bool _class_unload;
-
-  static void do_klass(Klass* k);
-  static void do_unloaded_klass(Klass* k);
-  static void do_klasses();
-
-  static void do_package(PackageEntry* entry);
-  static void do_unloaded_package(PackageEntry* entry);
-  static void do_packages();
-
-  static void do_module(ModuleEntry* entry);
-  static void do_unloaded_module(ModuleEntry* entry);
-  static void do_modules();
-
-  static void do_class_loader_data(ClassLoaderData* cld);
-  static void do_unloaded_class_loader_data(ClassLoaderData* cld);
-  static void do_class_loaders();
-
-  static void write_klass_constants(JfrCheckpointWriter* writer, JfrCheckpointWriter* leakp_writer);
-  static void write_package_constants(JfrCheckpointWriter* writer, JfrCheckpointWriter* leakp_writer);
-  static void write_module_constants(JfrCheckpointWriter* writer, JfrCheckpointWriter* leakp_writer);
-  static void write_class_loader_constants(JfrCheckpointWriter* writer, JfrCheckpointWriter* leakp_writer);
-  static void write_method_constants(JfrCheckpointWriter* writer, JfrCheckpointWriter* leakp_writer);
-  static void write_symbol_constants(JfrCheckpointWriter* writer, JfrCheckpointWriter* leakp_writer);
-  static void serialize(JfrCheckpointWriter* writer, JfrCheckpointWriter* leakp_writer, bool class_unload);
+ public:
+  static size_t serialize(JfrCheckpointWriter* writer, JfrCheckpointWriter* leakp_writer, bool class_unload);
 };
 
 #endif // SHARE_JFR_RECORDER_CHECKPOINT_TYPES_JFRTYPESET_HPP

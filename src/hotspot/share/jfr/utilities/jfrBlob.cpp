@@ -22,30 +22,46 @@
  *
  */
 
-#ifndef SHARE_JFR_UTILITIES_JFRTYPES_HPP
-#define SHARE_JFR_UTILITIES_JFRTYPES_HPP
+#include "precompiled.hpp"
+#include "jfr/utilities/jfrBlob.hpp"
 
-#include "jfrfiles/jfrEventIds.hpp"
-
-typedef u8 traceid;
-typedef int fio_fd;
-const int invalid_fd = -1;
-const jlong invalid_offset = -1;
-const u4 STACK_DEPTH_DEFAULT = 64;
-const u4 MIN_STACK_DEPTH = 1;
-const u4 MAX_STACK_DEPTH = 2048;
-
-inline int compare_traceid(const traceid& lhs, const traceid& rhs) {
-  return lhs > rhs ? 1 : (lhs < rhs) ? -1 : 0;
+JfrBlob::JfrBlob(const u1* checkpoint, size_t size) :
+  _data(JfrCHeapObj::new_array<u1>(size)),
+  _next(),
+  _size(size),
+  _written(false) {
+  assert(_data != NULL, "invariant");
+  memcpy(const_cast<u1*>(_data), checkpoint, size);
 }
 
-inline int sort_traceid(traceid* lhs, traceid* rhs) {
-  return compare_traceid(*lhs, *rhs);
+JfrBlob::~JfrBlob() {
+  JfrCHeapObj::free(const_cast<u1*>(_data), _size);
 }
 
-enum EventStartTime {
-  UNTIMED,
-  TIMED
-};
+void JfrBlob::reset_write_state() const {
+  if (!_written) {
+    return;
+  }
+  _written = false;
+  if (_next.valid()) {
+    _next->reset_write_state();
+  }
+}
 
-#endif // SHARE_JFR_UTILITIES_JFRTYPES_HPP
+void JfrBlob::set_next(const JfrBlobHandle& ref) {
+  if (_next == ref) {
+    return;
+  }
+  assert(_next != ref, "invariant");
+  if (_next.valid()) {
+    _next->set_next(ref);
+    return;
+  }
+  _next = ref;
+}
+
+JfrBlobHandle JfrBlob::make(const u1* data, size_t size) {
+  const JfrBlob* const blob = new JfrBlob(data, size);
+  assert(blob != NULL, "invariant");
+  return JfrBlobReference::make(blob);
+}

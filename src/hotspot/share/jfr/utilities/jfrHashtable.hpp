@@ -25,13 +25,13 @@
 #ifndef SHARE_JFR_UTILITIES_JFRHASHTABLE_HPP
 #define SHARE_JFR_UTILITIES_JFRHASHTABLE_HPP
 
-#include "memory/allocation.inline.hpp"
+#include "jfr/utilities/jfrAllocation.hpp"
 #include "runtime/orderAccess.hpp"
 #include "utilities/debug.hpp"
 #include "utilities/macros.hpp"
 
 template <typename T>
-class JfrBasicHashtableEntry {
+class JfrBasicHashtableEntry : public JfrCHeapObj {
  private:
   typedef JfrBasicHashtableEntry<T> Entry;
   Entry* _next;
@@ -39,8 +39,8 @@ class JfrBasicHashtableEntry {
   uintptr_t _hash;
 
  public:
+  JfrBasicHashtableEntry(uintptr_t hash, const T& data) : _next(NULL), _literal(data), _hash(hash) {}
   uintptr_t hash() const { return _hash; }
-  void set_hash(uintptr_t hash) { _hash = hash; }
   T literal() const { return _literal; }
   T* literal_addr() { return &_literal; }
   void set_literal(T s) { _literal = s; }
@@ -93,7 +93,6 @@ class JfrBasicHashtable : public CHeapObj<mtTracing> {
   }
   void free_buckets() {
     FREE_C_HEAP_ARRAY(Bucket, _buckets);
-    _buckets = NULL;
   }
   TableEntry* bucket(size_t i) { return _buckets[i].get_entry();}
   TableEntry** bucket_addr(size_t i) { return _buckets[i].entry_addr(); }
@@ -108,18 +107,18 @@ class JfrBasicHashtable : public CHeapObj<mtTracing> {
 };
 
 template <typename IdType, typename Entry, typename T>
-class AscendingId : public CHeapObj<mtTracing>  {
+class AscendingId : public JfrCHeapObj  {
  private:
   IdType _id;
  public:
   AscendingId() : _id(0) {}
   // callbacks
-  void assign_id(Entry* entry) {
+  void on_link(Entry* entry) {
     assert(entry != NULL, "invariant");
     assert(entry->id() == 0, "invariant");
     entry->set_id(++_id);
   }
-  bool equals(const T& data, uintptr_t hash, const Entry* entry) {
+  bool on_equals(uintptr_t hash, const Entry* entry) {
     assert(entry->hash() == hash, "invariant");
     return true;
   }
@@ -127,18 +126,16 @@ class AscendingId : public CHeapObj<mtTracing>  {
 
 // IdType must be scalar
 template <typename T, typename IdType>
-class Entry : public JfrBasicHashtableEntry<T> {
+class JfrHashtableEntry : public JfrBasicHashtableEntry<T> {
  public:
+  JfrHashtableEntry(uintptr_t hash, const T& data) : JfrBasicHashtableEntry<T>(hash, data), _id(0) {}
   typedef IdType ID;
-  void init() { _id = 0; }
   ID id() const { return _id; }
-  void set_id(ID id) { _id = id; }
-  void set_value(const T& value) { this->set_literal(value); }
-  T& value() const { return *const_cast<Entry*>(this)->literal_addr();}
-  const T* value_addr() const { return const_cast<Entry*>(this)->literal_addr(); }
-
+  void set_id(ID id) const { _id = id; }
+  T& value() const { return *const_cast<JfrHashtableEntry*>(this)->literal_addr();}
+  const T* value_addr() const { return const_cast<JfrHashtableEntry*>(this)->literal_addr(); }
  private:
-  ID _id;
+  mutable ID _id;
 };
 
 template <typename T, typename IdType, template <typename, typename> class Entry,
@@ -147,29 +144,28 @@ template <typename T, typename IdType, template <typename, typename> class Entry
 class HashTableHost : public JfrBasicHashtable<T> {
  public:
   typedef Entry<T, IdType> HashEntry;
-  HashTableHost() : _callback(new Callback()) {}
-  HashTableHost(Callback* cb) : JfrBasicHashtable<T>(TABLE_SIZE, sizeof(HashEntry)), _callback(cb) {}
+  HashTableHost(size_t size = 0) : JfrBasicHashtable<T>(size == 0 ? TABLE_SIZE : size, sizeof(HashEntry)), _callback(new Callback()) {}
+  HashTableHost(Callback* cb, size_t size = 0) : JfrBasicHashtable<T>(size == 0 ? TABLE_SIZE : size, sizeof(HashEntry)), _callback(cb) {}
   ~HashTableHost() {
     this->clear_entries();
     this->free_buckets();
   }
 
   // direct insert assumes non-existing entry
-  HashEntry& put(const T& data, uintptr_t hash);
+  HashEntry& put(uintptr_t hash, const T& data);
 
   // lookup entry, will put if not found
-  HashEntry& lookup_put(const T& data, uintptr_t hash) {
-    HashEntry* entry = lookup_only(data, hash);
-    return entry == NULL ? put(data, hash) : *entry;
+  HashEntry& lookup_put(uintptr_t hash, const T& data) {
+    HashEntry* entry = lookup_only(hash);
+    return entry == NULL ? put(hash, data) : *entry;
   }
 
-  // read-only lookup
-  HashEntry* lookup_only(const T& query, uintptr_t hash);
+  HashEntry* lookup_only(uintptr_t hash);
 
   // id retrieval
-  IdType id(const T& data, uintptr_t hash) {
+  IdType id(uintptr_t hash, const T& data) {
     assert(data != NULL, "invariant");
-    const HashEntry& entry = lookup_put(data, hash);
+    const HashEntry& entry = lookup_put(hash, data);
     assert(entry.id() > 0, "invariant");
     return entry.id();
   }
@@ -188,34 +184,35 @@ class HashTableHost : public JfrBasicHashtable<T> {
   void free_entry(HashEntry* entry) {
     assert(entry != NULL, "invariant");
     JfrBasicHashtable<T>::unlink_entry(entry);
-    FREE_C_HEAP_ARRAY(char, entry);
+    _callback->on_unlink(entry);
+    delete entry;
   }
 
  private:
   Callback* _callback;
   size_t index_for(uintptr_t hash) { return this->hash_to_index(hash); }
-  HashEntry* new_entry(const T& data, uintptr_t hash);
+  HashEntry* new_entry(uintptr_t hash, const T& data);
   void add_entry(size_t index, HashEntry* new_entry) {
     assert(new_entry != NULL, "invariant");
-    _callback->assign_id(new_entry);
+    _callback->on_link(new_entry);
     assert(new_entry->id() > 0, "invariant");
     JfrBasicHashtable<T>::add_entry(index, new_entry);
   }
 };
 
 template <typename T, typename IdType, template <typename, typename> class Entry, typename Callback, size_t TABLE_SIZE>
-Entry<T, IdType>& HashTableHost<T, IdType, Entry, Callback, TABLE_SIZE>::put(const T& data, uintptr_t hash) {
-  assert(lookup_only(data, hash) == NULL, "use lookup_put()");
-  HashEntry* const entry = new_entry(data, hash);
+Entry<T, IdType>& HashTableHost<T, IdType, Entry, Callback, TABLE_SIZE>::put(uintptr_t hash, const T& data) {
+  assert(lookup_only(hash) == NULL, "use lookup_put()");
+  HashEntry* const entry = new_entry(hash, data);
   add_entry(index_for(hash), entry);
   return *entry;
 }
 
 template <typename T, typename IdType, template <typename, typename> class Entry, typename Callback, size_t TABLE_SIZE>
-Entry<T, IdType>* HashTableHost<T, IdType, Entry, Callback, TABLE_SIZE>::lookup_only(const T& query, uintptr_t hash) {
+Entry<T, IdType>* HashTableHost<T, IdType, Entry, Callback, TABLE_SIZE>::lookup_only(uintptr_t hash) {
   HashEntry* entry = (HashEntry*)this->bucket(index_for(hash));
   while (entry != NULL) {
-    if (entry->hash() == hash && _callback->equals(query, hash, entry)) {
+    if (entry->hash() == hash && _callback->on_equals(hash, entry)) {
       return entry;
     }
     entry = (HashEntry*)entry->next();
@@ -267,13 +264,10 @@ void HashTableHost<T, IdType, Entry, Callback, TABLE_SIZE>::clear_entries() {
 }
 
 template <typename T, typename IdType, template <typename, typename> class Entry, typename Callback, size_t TABLE_SIZE>
-Entry<T, IdType>* HashTableHost<T, IdType, Entry, Callback, TABLE_SIZE>::new_entry(const T& data, uintptr_t hash) {
+Entry<T, IdType>* HashTableHost<T, IdType, Entry, Callback, TABLE_SIZE>::new_entry(uintptr_t hash, const T& data) {
   assert(sizeof(HashEntry) == this->entry_size(), "invariant");
-  HashEntry* const entry = (HashEntry*) NEW_C_HEAP_ARRAY2(char, this->entry_size(), mtTracing, CURRENT_PC);
-  entry->init();
-  entry->set_hash(hash);
-  entry->set_value(data);
-  entry->set_next(NULL);
+  HashEntry* const entry = new HashEntry(hash, data);
+  assert(entry != NULL, "invariant");
   assert(0 == entry->id(), "invariant");
   return entry;
 }

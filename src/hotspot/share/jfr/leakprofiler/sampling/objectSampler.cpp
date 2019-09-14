@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -110,63 +110,42 @@ static traceid get_thread_id(JavaThread* thread) {
   }
   const JfrThreadLocal* const tl = thread->jfr_thread_local();
   assert(tl != NULL, "invariant");
-  if (!tl->has_thread_checkpoint()) {
-    JfrCheckpointManager::create_thread_checkpoint(thread);
+  if (!tl->has_thread_blob()) {
+    JfrCheckpointManager::create_thread_blob(thread);
   }
-  assert(tl->has_thread_checkpoint(), "invariant");
+  assert(tl->has_thread_blob(), "invariant");
   return tl->thread_id();
 }
 
-// Populates the thread local stack frames, but does not add them
-// to the stacktrace repository (...yet, see stacktrace_id() below)
-//
-void ObjectSampler::fill_stacktrace(JfrStackTrace* stacktrace, JavaThread* thread) {
-  assert(stacktrace != NULL, "invariant");
+static void record_stacktrace(JavaThread* thread) {
   assert(thread != NULL, "invariant");
   if (JfrEventSetting::has_stacktrace(EventOldObjectSample::eventId)) {
-    JfrStackTraceRepository::fill_stacktrace_for(thread, stacktrace, 0);
+    JfrStackTraceRepository::record_and_cache(thread);
   }
-}
-
-// We were successful in acquiring the try lock and have been selected for adding a sample.
-// Go ahead with installing our previously taken stacktrace into the stacktrace repository.
-//
-traceid ObjectSampler::stacktrace_id(const JfrStackTrace* stacktrace, JavaThread* thread) {
-  assert(stacktrace != NULL, "invariant");
-  assert(stacktrace->hash() != 0, "invariant");
-  const traceid stacktrace_id = JfrStackTraceRepository::add(stacktrace, thread);
-  thread->jfr_thread_local()->set_cached_stack_trace_id(stacktrace_id, stacktrace->hash());
-  return stacktrace_id;
 }
 
 void ObjectSampler::sample(HeapWord* obj, size_t allocated, JavaThread* thread) {
   assert(thread != NULL, "invariant");
   assert(is_created(), "invariant");
-
   const traceid thread_id = get_thread_id(thread);
   if (thread_id == 0) {
     return;
   }
-
-  const JfrThreadLocal* const tl = thread->jfr_thread_local();
-  JfrStackTrace stacktrace(tl->stackframes(), tl->stackdepth());
-  fill_stacktrace(&stacktrace, thread);
-
+  record_stacktrace(thread);
   // try enter critical section
   JfrTryLock tryLock(&_lock);
   if (!tryLock.has_lock()) {
     log_trace(jfr, oldobject, sampling)("Skipping old object sample due to lock contention");
     return;
   }
-
-  instance().add(obj, allocated, thread_id, &stacktrace, thread);
+  instance().add(obj, allocated, thread_id, thread);
 }
 
-void ObjectSampler::add(HeapWord* obj, size_t allocated, traceid thread_id, JfrStackTrace* stacktrace, JavaThread* thread) {
-  assert(stacktrace != NULL, "invariant");
+void ObjectSampler::add(HeapWord* obj, size_t allocated, traceid thread_id, JavaThread* thread) {
+  assert(obj != NULL, "invariant");
   assert(thread_id != 0, "invariant");
   assert(thread != NULL, "invariant");
-  assert(thread->jfr_thread_local()->has_thread_checkpoint(), "invariant");
+  assert(thread->jfr_thread_local()->has_thread_blob(), "invariant");
 
   if (_dead_samples) {
     scavenge();
@@ -190,11 +169,13 @@ void ObjectSampler::add(HeapWord* obj, size_t allocated, traceid thread_id, JfrS
 
   assert(sample != NULL, "invariant");
   sample->set_thread_id(thread_id);
-  sample->set_thread_checkpoint(thread->jfr_thread_local()->thread_checkpoint());
 
-  const unsigned int stacktrace_hash = stacktrace->hash();
+  const JfrThreadLocal* const tl = thread->jfr_thread_local();
+  sample->set_thread(tl->thread_blob());
+
+  const unsigned int stacktrace_hash = tl->cached_stack_trace_hash();
   if (stacktrace_hash != 0) {
-    sample->set_stack_trace_id(stacktrace_id(stacktrace, thread));
+    sample->set_stack_trace_id(tl->cached_stack_trace_id());
     sample->set_stack_trace_hash(stacktrace_hash);
   }
 
@@ -253,7 +234,7 @@ void ObjectSampler::oops_do(BoolObjectClosure* is_alive, OopClosure* f) {
   sampler._last_sweep = JfrTicks::now();
 }
 
-const ObjectSample* ObjectSampler::last() const {
+ObjectSample* ObjectSampler::last() const {
   return _list->last();
 }
 

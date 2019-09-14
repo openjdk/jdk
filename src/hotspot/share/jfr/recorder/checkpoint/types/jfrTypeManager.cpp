@@ -23,12 +23,17 @@
  */
 
 #include "precompiled.hpp"
+#include "jfr/jfr.hpp"
+#include "jfr/leakprofiler/leakProfiler.hpp"
+#include "jfr/leakprofiler/checkpoint/objectSampleCheckpoint.hpp"
 #include "jfr/metadata/jfrSerializer.hpp"
 #include "jfr/recorder/checkpoint/jfrCheckpointWriter.hpp"
 #include "jfr/recorder/checkpoint/types/jfrType.hpp"
 #include "jfr/recorder/checkpoint/types/jfrTypeManager.hpp"
 #include "jfr/utilities/jfrDoublyLinkedList.hpp"
 #include "jfr/utilities/jfrIterator.hpp"
+#include "memory/resourceArea.hpp"
+#include "runtime/handles.inline.hpp"
 #include "runtime/safepoint.hpp"
 #include "runtime/thread.inline.hpp"
 #include "utilities/exceptions.hpp"
@@ -39,7 +44,7 @@ class JfrSerializerRegistration : public JfrCHeapObj {
   JfrSerializerRegistration* _next;
   JfrSerializerRegistration* _prev;
   JfrSerializer* _serializer;
-  mutable JfrCheckpointBlobHandle _cache;
+  mutable JfrBlobHandle _cache;
   JfrTypeId _id;
   bool _permit_cache;
 
@@ -148,45 +153,59 @@ void JfrTypeManager::write_safepoint_types(JfrCheckpointWriter& writer) {
 }
 
 void JfrTypeManager::write_type_set() {
-  // can safepoint here because of Module_lock
-  MutexLocker cld_lock(SafepointSynchronize::is_at_safepoint() ? NULL : ClassLoaderDataGraph_lock);
-  MutexLocker lock(SafepointSynchronize::is_at_safepoint() ? NULL : Module_lock);
-
-  JfrCheckpointWriter writer(true, true, Thread::current());
-  TypeSet set;
+  assert(!SafepointSynchronize::is_at_safepoint(), "invariant");
+  // can safepoint here
+  MutexLocker cld_lock(ClassLoaderDataGraph_lock);
+  MutexLocker module_lock(Module_lock);
+  if (!LeakProfiler::is_running()) {
+    JfrCheckpointWriter writer(true, true, Thread::current());
+    TypeSet set;
+    set.serialize(writer);
+    return;
+  }
+  JfrCheckpointWriter leakp_writer(false, true, Thread::current());
+  JfrCheckpointWriter writer(false, true, Thread::current());
+  TypeSet set(&leakp_writer);
   set.serialize(writer);
+  ObjectSampleCheckpoint::on_type_set(leakp_writer);
 }
 
 void JfrTypeManager::write_type_set_for_unloaded_classes() {
   assert_locked_or_safepoint(ClassLoaderDataGraph_lock);
   JfrCheckpointWriter writer(false, true, Thread::current());
+  const JfrCheckpointContext ctx = writer.context();
   ClassUnloadTypeSet class_unload_set;
   class_unload_set.serialize(writer);
+  if (LeakProfiler::is_running()) {
+    ObjectSampleCheckpoint::on_type_set_unload(writer);
+  }
+  if (!Jfr::is_recording()) {
+    // discard anything written
+    writer.set_context(ctx);
+  }
 }
 
-void JfrTypeManager::create_thread_checkpoint(JavaThread* jt) {
+void JfrTypeManager::create_thread_blob(JavaThread* jt) {
   assert(jt != NULL, "invariant");
+  ResourceMark rm(jt);
+  HandleMark hm(jt);
   JfrThreadConstant type_thread(jt);
   JfrCheckpointWriter writer(false, true, jt);
   writer.write_type(TYPE_THREAD);
   type_thread.serialize(writer);
   // create and install a checkpoint blob
-  jt->jfr_thread_local()->set_thread_checkpoint(writer.checkpoint_blob());
-  assert(jt->jfr_thread_local()->has_thread_checkpoint(), "invariant");
+  jt->jfr_thread_local()->set_thread_blob(writer.move());
+  assert(jt->jfr_thread_local()->has_thread_blob(), "invariant");
 }
 
 void JfrTypeManager::write_thread_checkpoint(JavaThread* jt) {
   assert(jt != NULL, "JavaThread is NULL!");
   ResourceMark rm(jt);
-  if (jt->jfr_thread_local()->has_thread_checkpoint()) {
-    JfrCheckpointWriter writer(false, false, jt);
-    jt->jfr_thread_local()->thread_checkpoint()->write(writer);
-  } else {
-    JfrThreadConstant type_thread(jt);
-    JfrCheckpointWriter writer(false, true, jt);
-    writer.write_type(TYPE_THREAD);
-    type_thread.serialize(writer);
-  }
+  HandleMark hm(jt);
+  JfrThreadConstant type_thread(jt);
+  JfrCheckpointWriter writer(false, true, jt);
+  writer.write_type(TYPE_THREAD);
+  type_thread.serialize(writer);
 }
 
 #ifdef ASSERT

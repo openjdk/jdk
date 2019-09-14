@@ -22,15 +22,15 @@
  *
  */
 
-#ifndef SHARE_JFR_RECORDER_CHECKPOINT_TYPES_JFRTYPESETWRITER_HPP
-#define SHARE_JFR_RECORDER_CHECKPOINT_TYPES_JFRTYPESETWRITER_HPP
+#ifndef SHARE_JFR_WRITERS_JFRTYPEWRITERHOST_HPP
+#define SHARE_JFR_WRITERS_JFRTYPEWRITERHOST_HPP
 
 #include "jfr/recorder/checkpoint/jfrCheckpointWriter.hpp"
 #include "jfr/utilities/jfrTypes.hpp"
 #include "memory/allocation.hpp"
 
 template <typename WriterImpl, u4 ID>
-class JfrArtifactWriterHost : public StackObj {
+class JfrTypeWriterHost : public StackObj {
  private:
   WriterImpl _impl;
   JfrCheckpointWriter* _writer;
@@ -39,14 +39,13 @@ class JfrArtifactWriterHost : public StackObj {
   int _count;
   bool _skip_header;
  public:
-  JfrArtifactWriterHost(JfrCheckpointWriter* writer,
-                        JfrArtifactSet* artifacts,
-                        bool class_unload,
-                        bool skip_header = false) : _impl(writer, artifacts, class_unload),
-                                                    _writer(writer),
-                                                    _ctx(writer->context()),
-                                                    _count(0),
-                                                    _skip_header(skip_header) {
+  JfrTypeWriterHost(JfrCheckpointWriter* writer,
+                    bool class_unload = false,
+                    bool skip_header = false) : _impl(writer, class_unload),
+                                                _writer(writer),
+                                                _ctx(writer->context()),
+                                                _count(0),
+                                                _skip_header(skip_header) {
     assert(_writer != NULL, "invariant");
     if (!_skip_header) {
       _writer->write_type((JfrTypeId)ID);
@@ -54,7 +53,7 @@ class JfrArtifactWriterHost : public StackObj {
     }
   }
 
-  ~JfrArtifactWriterHost() {
+  ~JfrTypeWriterHost() {
     if (_count == 0) {
       // nothing written, restore context for rewind
       _writer->set_context(_ctx);
@@ -75,34 +74,31 @@ class JfrArtifactWriterHost : public StackObj {
   void add(int count) { _count += count; }
 };
 
-typedef int(*artifact_write_operation)(JfrCheckpointWriter*, JfrArtifactSet*, const void*);
+typedef int(*type_write_operation)(JfrCheckpointWriter*, const void*);
 
-template <typename T, artifact_write_operation op>
-class JfrArtifactWriterImplHost {
+template <typename T, type_write_operation op>
+class JfrTypeWriterImplHost {
  private:
   JfrCheckpointWriter* _writer;
-  JfrArtifactSet* _artifacts;
-  bool _class_unload;
  public:
   typedef T Type;
-  JfrArtifactWriterImplHost(JfrCheckpointWriter* writer, JfrArtifactSet* artifacts, bool class_unload) :
-    _writer(writer), _artifacts(artifacts), _class_unload(class_unload) {}
+  JfrTypeWriterImplHost(JfrCheckpointWriter* writer, bool class_unload = false) : _writer(writer) {}
   int operator()(T const& value) {
-    return op(this->_writer, this->_artifacts, value);
+    return op(this->_writer, value);
   }
 };
 
-template <typename T, typename Predicate, artifact_write_operation op>
-class JfrPredicatedArtifactWriterImplHost : public JfrArtifactWriterImplHost<T, op> {
+template <typename T, typename Predicate, type_write_operation op>
+class JfrPredicatedTypeWriterImplHost : public JfrTypeWriterImplHost<T, op> {
  private:
   Predicate _predicate;
-  typedef JfrArtifactWriterImplHost<T, op> Parent;
+  typedef JfrTypeWriterImplHost<T, op> Parent;
  public:
-  JfrPredicatedArtifactWriterImplHost(JfrCheckpointWriter* writer, JfrArtifactSet* artifacts, bool class_unload) :
-    Parent(writer, artifacts, class_unload), _predicate(class_unload) {}
+  JfrPredicatedTypeWriterImplHost(JfrCheckpointWriter* writer, bool class_unload = false) :
+    Parent(writer), _predicate(class_unload) {}
   int operator()(T const& value) {
     return _predicate(value) ? Parent::operator()(value) : 0;
   }
 };
 
-#endif // SHARE_JFR_RECORDER_CHECKPOINT_TYPES_JFRTYPESETWRITER_HPP
+#endif // SHARE_JFR_WRITERS_JFRTYPEWRITERHOST_HPP

@@ -32,12 +32,8 @@
 #define METHOD_USED_BIT (USED_BIT << 2)
 #define EPOCH_1_SHIFT 0
 #define EPOCH_2_SHIFT 1
-#define LEAKP_SHIFT 8
-
 #define USED_EPOCH_1_BIT (USED_BIT << EPOCH_1_SHIFT)
 #define USED_EPOCH_2_BIT (USED_BIT << EPOCH_2_SHIFT)
-#define LEAKP_USED_EPOCH_1_BIT (USED_EPOCH_1_BIT << LEAKP_SHIFT)
-#define LEAKP_USED_EPOCH_2_BIT (USED_EPOCH_2_BIT << LEAKP_SHIFT)
 #define METHOD_USED_EPOCH_1_BIT (METHOD_USED_BIT << EPOCH_1_SHIFT)
 #define METHOD_USED_EPOCH_2_BIT (METHOD_USED_BIT << EPOCH_2_SHIFT)
 #define METHOD_AND_CLASS_IN_USE_BITS (METHOD_USED_BIT | USED_BIT)
@@ -73,14 +69,6 @@ class JfrTraceIdEpoch : AllStatic {
 
   static traceid in_use_prev_epoch_bit() {
     return _epoch_state ? USED_EPOCH_1_BIT : USED_EPOCH_2_BIT;
-  }
-
-  static traceid leakp_in_use_this_epoch_bit() {
-    return _epoch_state ? LEAKP_USED_EPOCH_2_BIT : LEAKP_USED_EPOCH_1_BIT;
-  }
-
-  static traceid leakp_in_use_prev_epoch_bit() {
-    return _epoch_state ? LEAKP_USED_EPOCH_1_BIT : LEAKP_USED_EPOCH_2_BIT;
   }
 
   static traceid method_in_use_this_epoch_bit() {

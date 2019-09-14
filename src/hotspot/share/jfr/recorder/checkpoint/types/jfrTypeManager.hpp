@@ -37,7 +37,7 @@ class JfrTypeManager : public AllStatic {
   static void write_safepoint_types(JfrCheckpointWriter& writer);
   static void write_type_set();
   static void write_type_set_for_unloaded_classes();
-  static void create_thread_checkpoint(JavaThread* jt);
+  static void create_thread_blob(JavaThread* jt);
   static void write_thread_checkpoint(JavaThread* jt);
 };
 

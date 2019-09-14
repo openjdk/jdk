@@ -22,38 +22,50 @@
  *
  */
 
-#ifndef SHARE_JFR_RECORDER_CHECKPOINT_JFRCHECKPOINTBLOB_HPP
-#define SHARE_JFR_RECORDER_CHECKPOINT_JFRCHECKPOINTBLOB_HPP
+#ifndef SHARE_JFR_UTILITIES_JFRBLOB_HPP
+#define SHARE_JFR_UTILITIES_JFRBLOB_HPP
 
 #include "jfr/utilities/jfrAllocation.hpp"
 #include "jfr/utilities/jfrRefCountPointer.hpp"
 
-class JfrCheckpointBlob;
-class JfrCheckpointWriter;
+class JfrBlob;
+typedef RefCountPointer<JfrBlob, MultiThreadedRefCounter> JfrBlobReference;
+typedef RefCountHandle<JfrBlobReference> JfrBlobHandle;
 
-typedef RefCountPointer<JfrCheckpointBlob, MultiThreadedRefCounter> JfrCheckpointBlobReference;
-typedef RefCountHandle<JfrCheckpointBlobReference> JfrCheckpointBlobHandle;
-
-class JfrCheckpointBlob : public JfrCHeapObj {
+class JfrBlob : public JfrCHeapObj {
   template <typename, typename>
   friend class RefCountPointer;
  private:
-  const u1* _checkpoint;
+  const u1* const _data;
+  JfrBlobHandle _next;
   const size_t _size;
-  JfrCheckpointBlobHandle _next;
   mutable bool _written;
 
-  JfrCheckpointBlob(const u1* checkpoint, size_t size);
-  ~JfrCheckpointBlob();
-  const JfrCheckpointBlobHandle& next() const;
-  void write_this(JfrCheckpointWriter& writer) const;
+  JfrBlob(const u1* data, size_t size);
+  ~JfrBlob();
 
  public:
-  void write(JfrCheckpointWriter& writer) const;
-  void exclusive_write(JfrCheckpointWriter& writer) const;
+  void set_next(const JfrBlobHandle& ref);
   void reset_write_state() const;
-  void set_next(const JfrCheckpointBlobHandle& ref);
-  static JfrCheckpointBlobHandle make(const u1* checkpoint, size_t size);
+  static JfrBlobHandle make(const u1* data, size_t size);
+  template <typename Writer>
+  void write(Writer& writer) const {
+    writer.bytes(_data, _size);
+    if (_next.valid()) {
+      _next->write(writer);
+    }
+  }
+  template <typename Writer>
+  void exclusive_write(Writer& writer) const {
+    if (_written) {
+      return;
+    }
+    writer.bytes(_data, _size);
+    _written = true;
+    if (_next.valid()) {
+      _next->exclusive_write(writer);
+    }
+  }
 };
 
-#endif // SHARE_JFR_RECORDER_CHECKPOINT_JFRCHECKPOINTBLOB_HPP
+#endif // SHARE_JFR_UTILITIES_JFRBLOB_HPP

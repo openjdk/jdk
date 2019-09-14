@@ -25,13 +25,13 @@
 #include "precompiled.hpp"
 #include "jfr/jfrEvents.hpp"
 #include "jfr/jni/jfrJavaSupport.hpp"
+#include "jfr/leakprofiler/checkpoint/objectSampleCheckpoint.hpp"
 #include "jfr/periodic/jfrThreadCPULoadEvent.hpp"
 #include "jfr/recorder/jfrRecorder.hpp"
 #include "jfr/recorder/checkpoint/jfrCheckpointManager.hpp"
 #include "jfr/recorder/checkpoint/types/traceid/jfrTraceId.inline.hpp"
 #include "jfr/recorder/service/jfrOptionSet.hpp"
 #include "jfr/recorder/storage/jfrStorage.hpp"
-#include "jfr/recorder/stacktrace/jfrStackTraceRepository.hpp"
 #include "jfr/support/jfrThreadLocal.hpp"
 #include "memory/allocation.inline.hpp"
 #include "runtime/os.hpp"
@@ -46,7 +46,7 @@ JfrThreadLocal::JfrThreadLocal() :
   _shelved_buffer(NULL),
   _stackframes(NULL),
   _trace_id(JfrTraceId::assign_thread_id()),
-  _thread_cp(),
+  _thread(),
   _data_lost(0),
   _stack_trace_id(max_julong),
   _user_time(0),
@@ -62,17 +62,17 @@ u8 JfrThreadLocal::add_data_lost(u8 value) {
   return _data_lost;
 }
 
-bool JfrThreadLocal::has_thread_checkpoint() const {
-  return _thread_cp.valid();
+bool JfrThreadLocal::has_thread_blob() const {
+  return _thread.valid();
 }
 
-void JfrThreadLocal::set_thread_checkpoint(const JfrCheckpointBlobHandle& ref) {
-  assert(!_thread_cp.valid(), "invariant");
-  _thread_cp = ref;
+void JfrThreadLocal::set_thread_blob(const JfrBlobHandle& ref) {
+  assert(!_thread.valid(), "invariant");
+  _thread = ref;
 }
 
-const JfrCheckpointBlobHandle& JfrThreadLocal::thread_checkpoint() const {
-  return _thread_cp;
+const JfrBlobHandle& JfrThreadLocal::thread_blob() const {
+  return _thread;
 }
 
 static void send_java_thread_start_event(JavaThread* jt) {
@@ -95,10 +95,12 @@ static void send_java_thread_end_events(traceid id, JavaThread* jt) {
   assert(jt != NULL, "invariant");
   assert(Thread::current() == jt, "invariant");
   assert(jt->jfr_thread_local()->trace_id() == id, "invariant");
-  EventThreadEnd event;
-  event.set_thread(id);
-  event.commit();
-  JfrThreadCPULoadEvent::send_event_for_thread(jt);
+  if (JfrRecorder::is_recording()) {
+    EventThreadEnd event;
+    event.set_thread(id);
+    event.commit();
+    JfrThreadCPULoadEvent::send_event_for_thread(jt);
+  }
 }
 
 void JfrThreadLocal::release(JfrThreadLocal* tl, Thread* t) {
@@ -125,10 +127,10 @@ void JfrThreadLocal::on_exit(Thread* t) {
   assert(t != NULL, "invariant");
   JfrThreadLocal * const tl = t->jfr_thread_local();
   assert(!tl->is_dead(), "invariant");
-  if (JfrRecorder::is_recording()) {
-    if (t->is_Java_thread()) {
-      send_java_thread_end_events(tl->thread_id(), (JavaThread*)t);
-    }
+  if (t->is_Java_thread()) {
+    JavaThread* const jt = (JavaThread*)t;
+    ObjectSampleCheckpoint::on_thread_exit(jt);
+    send_java_thread_end_events(tl->thread_id(), jt);
   }
   release(tl, Thread::current()); // because it could be that Thread::current() != t
 }

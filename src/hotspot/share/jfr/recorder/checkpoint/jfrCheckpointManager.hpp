@@ -92,7 +92,7 @@ class JfrCheckpointManager : public JfrCHeapObj {
  public:
   void register_service_thread(const Thread* t);
   static void write_type_set_for_unloaded_classes();
-  static void create_thread_checkpoint(JavaThread* jt);
+  static void create_thread_blob(JavaThread* jt);
   static void write_thread_checkpoint(JavaThread* jt);
 
   friend class JfrRecorder;

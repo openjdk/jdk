@@ -30,7 +30,6 @@
 #include "gc/shared/gcName.hpp"
 #include "gc/shared/gcTrace.hpp"
 #include "gc/shared/gcWhen.hpp"
-#include "jfr/leakprofiler/checkpoint/objectSampleCheckpoint.hpp"
 #include "jfr/leakprofiler/leakProfiler.hpp"
 #include "jfr/recorder/checkpoint/jfrCheckpointManager.hpp"
 #include "jfr/recorder/checkpoint/types/jfrType.hpp"
@@ -274,34 +273,26 @@ void VMOperationTypeConstant::serialize(JfrCheckpointWriter& writer) {
 
 class TypeSetSerialization {
  private:
+  JfrCheckpointWriter* _leakp_writer;
   bool _class_unload;
  public:
-  explicit TypeSetSerialization(bool class_unload) : _class_unload(class_unload) {}
-  void write(JfrCheckpointWriter& writer, JfrCheckpointWriter* leakp_writer) {
-    JfrTypeSet::serialize(&writer, leakp_writer, _class_unload);
+  TypeSetSerialization(bool class_unload, JfrCheckpointWriter* leakp_writer = NULL) :
+    _leakp_writer(leakp_writer), _class_unload(class_unload) {}
+  void write(JfrCheckpointWriter& writer) {
+    JfrTypeSet::serialize(&writer, _leakp_writer, _class_unload);
   }
 };
 
 void ClassUnloadTypeSet::serialize(JfrCheckpointWriter& writer) {
   TypeSetSerialization type_set(true);
-  if (LeakProfiler::is_running()) {
-    JfrCheckpointWriter leakp_writer(false, true, Thread::current());
-    type_set.write(writer, &leakp_writer);
-    ObjectSampleCheckpoint::install(leakp_writer, true, true);
-    return;
-  }
-  type_set.write(writer, NULL);
+  type_set.write(writer);
 };
 
+TypeSet::TypeSet(JfrCheckpointWriter* leakp_writer) : _leakp_writer(leakp_writer) {}
+
 void TypeSet::serialize(JfrCheckpointWriter& writer) {
-  TypeSetSerialization type_set(false);
-  if (LeakProfiler::is_running()) {
-    JfrCheckpointWriter leakp_writer(false, true, Thread::current());
-    type_set.write(writer, &leakp_writer);
-    ObjectSampleCheckpoint::install(leakp_writer, false, true);
-    return;
-  }
-  type_set.write(writer, NULL);
+  TypeSetSerialization type_set(false, _leakp_writer);
+  type_set.write(writer);
 };
 
 void ThreadStateConstant::serialize(JfrCheckpointWriter& writer) {
@@ -312,7 +303,6 @@ void JfrThreadConstant::serialize(JfrCheckpointWriter& writer) {
   assert(_thread != NULL, "invariant");
   assert(_thread == Thread::current(), "invariant");
   assert(_thread->is_Java_thread(), "invariant");
-  assert(!_thread->jfr_thread_local()->has_thread_checkpoint(), "invariant");
   ResourceMark rm(_thread);
   const oop threadObj = _thread->threadObj();
   assert(threadObj != NULL, "invariant");
