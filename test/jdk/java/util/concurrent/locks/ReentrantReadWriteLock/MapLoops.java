@@ -91,8 +91,8 @@ public class MapLoops {
             premove = Integer.parseInt(args[4]);
 
         // normalize probabilities wrt random number generator
-        removesPerMaxRandom = (int)(((double)premove/100.0 * 0x7FFFFFFFL));
-        insertsPerMaxRandom = (int)(((double)pinsert/100.0 * 0x7FFFFFFFL));
+        removesPerMaxRandom = (int)((double)premove/100.0 * 0x7FFFFFFFL);
+        insertsPerMaxRandom = (int)((double)pinsert/100.0 * 0x7FFFFFFFL);
 
         System.out.println("Using " + mapClass.getName());
 
@@ -125,7 +125,7 @@ public class MapLoops {
             long time = timer.getTime();
             long tpo = time / (i * (long)nops);
             System.out.print(LoopHelpers.rightJustify(tpo) + " ns per op");
-            double secs = (double)(time) / 1000000000.0;
+            double secs = (double)time / 1000000000.0;
             System.out.println("\t " + secs + "s run time");
             map.clear();
         }

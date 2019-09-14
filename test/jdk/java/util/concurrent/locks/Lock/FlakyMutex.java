@@ -49,31 +49,51 @@ public class FlakyMutex implements Lock {
     static class MyRuntimeException extends RuntimeException {}
 
     static void checkThrowable(Throwable t) {
-        check((t instanceof MyError) ||
+        if (!((t instanceof MyError) ||
               (t instanceof MyException) ||
-              (t instanceof MyRuntimeException));
+              (t instanceof MyRuntimeException)))
+            unexpected(t);
     }
 
     static void realMain(String[] args) throws Throwable {
-        final int nThreads = 3;
+        final ThreadLocalRandom rndMain = ThreadLocalRandom.current();
+        final int nCpus = Runtime.getRuntime().availableProcessors();
+        final int maxThreads = Math.min(4, nCpus);
+        final int nThreads = rndMain.nextInt(1, maxThreads + 1);
         final int iterations = 10_000;
         final CyclicBarrier startingGate = new CyclicBarrier(nThreads);
-        final FlakyMutex mutex = new FlakyMutex();
         final ExecutorService es = Executors.newFixedThreadPool(nThreads);
+        final FlakyMutex mutex = new FlakyMutex();
         final Runnable task = () -> {
             try {
+                ThreadLocalRandom rnd = ThreadLocalRandom.current();
                 startingGate.await();
                 for (int i = 0; i < iterations; i++) {
                     for (;;) {
-                        try { mutex.lock(); break; }
-                        catch (Throwable t) { checkThrowable(t); }
+                        try {
+                            if (rnd.nextBoolean())
+                                mutex.lock();
+                            else
+                                mutex.lockInterruptibly();
+                            break;
+                        } catch (Throwable t) { checkThrowable(t); }
                     }
 
-                    try { check(! mutex.tryLock()); }
-                    catch (Throwable t) { checkThrowable(t); }
+                    if (rnd.nextBoolean()) {
+                        try {
+                            check(! mutex.tryLock());
+                        } catch (Throwable t) { checkThrowable(t); }
+                    }
 
-                    try { check(! mutex.tryLock(1, TimeUnit.MICROSECONDS)); }
-                    catch (Throwable t) { checkThrowable(t); }
+                    if (rnd.nextInt(10) == 0) {
+                        try {
+                            check(! mutex.tryLock(1, TimeUnit.MICROSECONDS));
+                        } catch (Throwable t) { checkThrowable(t); }
+                    }
+
+                    if (rnd.nextBoolean()) {
+                        check(mutex.isLocked());
+                    }
 
                     mutex.unlock();
                 }
@@ -146,7 +166,11 @@ public class FlakyMutex implements Lock {
         if (x == null ? y == null : x.equals(y)) pass();
         else fail(x + " not equal to " + y);}
     public static void main(String[] args) throws Throwable {
-        try {realMain(args);} catch (Throwable t) {unexpected(t);}
+        int runsPerTest = Integer.getInteger("jsr166.runsPerTest", 1);
+        try {
+            for (int i = runsPerTest; i--> 0; )
+                realMain(args);
+        } catch (Throwable t) { unexpected(t); }
         System.out.printf("%nPassed = %d, failed = %d%n%n", passed, failed);
         if (failed > 0) throw new AssertionError("Some tests failed");}
     @SuppressWarnings("unchecked")

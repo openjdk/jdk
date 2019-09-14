@@ -95,7 +95,7 @@ public final class SimpleReentrantLockLoops {
                 long time = timer.getTime();
                 long tpi = time / ((long)iters * nthreads);
                 System.out.print("\t" + LoopHelpers.rightJustify(tpi) + " ns per lock");
-                double secs = (double)(time) / 1000000000.0;
+                double secs = (double)time / 1000000000.0;
                 System.out.println("\t " + secs + "s run time");
             }
 

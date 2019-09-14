@@ -42,6 +42,8 @@ import java.io.PrintStream;
 import java.io.Reader;
 import java.lang.ref.ReferenceQueue;
 import java.lang.ref.WeakReference;
+import java.util.ArrayList;
+import java.util.Collections;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.Callable;
 import java.util.concurrent.CountDownLatch;
@@ -72,9 +74,9 @@ public class TimedAcquireLeak {
         return new File(bin, programName).getPath();
     }
 
-    static final String java = javaProgramPath("java");
-    static final String jmap = javaProgramPath("jmap");
-    static final String jps  = javaProgramPath("jps");
+    static final String javaPath = javaProgramPath("java");
+    static final String jmapPath = javaProgramPath("jmap");
+    static final String jpsPath  = javaProgramPath("jps");
 
     static String outputOf(Reader r) throws IOException {
         final StringBuilder sb = new StringBuilder();
@@ -159,7 +161,11 @@ public class TimedAcquireLeak {
 
     static String match(String s, String regex, int group) {
         Matcher matcher = Pattern.compile(regex).matcher(s);
-        matcher.find();
+        if (! matcher.find()) {
+            String msg = String.format(
+                "match failed: s=%s regex=%s", s, regex);
+            throw new AssertionError(msg);
+        }
         return matcher.group(group);
     }
 
@@ -171,21 +177,20 @@ public class TimedAcquireLeak {
 
     static int objectsInUse(final Process child,
                             final String childPid,
-                            final String className) {
-        final String regex =
-            "(?m)^ *[0-9]+: +([0-9]+) +[0-9]+ +\\Q"+className+"\\E(?:$| )";
-        final Callable<Integer> objectsInUse =
-            new Callable<Integer>() { public Integer call() {
-                Integer i = Integer.parseInt(
-                    match(commandOutputOf(jmap, "-histo:live", childPid),
-                          regex, 1));
-                if (i > 100)
-                    System.out.print(
-                        commandOutputOf(jmap,
-                                        "-dump:file=dump,format=b",
-                                        childPid));
-                return i;
-            }};
+                            final String classNameRegex) {
+        String regex =
+            "(?m)^ *[0-9]+: +([0-9]+) +[0-9]+ +"+classNameRegex+"(?:$| )";
+        Callable<Integer> objectsInUse = () -> {
+            int i = Integer.parseInt(
+                match(commandOutputOf(jmapPath, "-histo:live", childPid),
+                      regex, 1));
+            if (i > 100)
+                System.out.print(
+                    commandOutputOf(jmapPath,
+                                    "-dump:file=dump,format=b",
+                                    childPid));
+            return i;
+        };
         try { return rendezvousParent(child, objectsInUse); }
         catch (Throwable t) { unexpected(t); return -1; }
     }
@@ -196,26 +201,27 @@ public class TimedAcquireLeak {
             return;
 
         final String childClassName = Job.class.getName();
-        final String classToCheckForLeaks = Job.classToCheckForLeaks();
-        final String uniqueID =
-            String.valueOf(ThreadLocalRandom.current().nextInt(Integer.MAX_VALUE));
+        final String classNameRegex = Job.classNameRegexToCheckForLeaks();
+        final String uniqueID = String.valueOf(
+            ThreadLocalRandom.current().nextInt(Integer.MAX_VALUE));
 
-        final String[] jobCmd = {
-            java, "-Xmx8m", "-XX:+UsePerfData",
-            "-classpath", System.getProperty("test.class.path"),
-            childClassName, uniqueID
-        };
+        final ArrayList<String> jobCmd = new ArrayList<>();
+        Collections.addAll(
+            jobCmd, javaPath, "-Xmx8m", "-XX:+UsePerfData",
+            "-classpath", System.getProperty("test.class.path"));
+        Collections.addAll(jobCmd, Utils.getTestJavaOpts());
+        Collections.addAll(jobCmd, childClassName, uniqueID);
         final Process p = new ProcessBuilder(jobCmd).start();
         // Ensure subprocess jvm has started, so that jps can find it
         p.getInputStream().read();
         sendByte(p.getOutputStream());
 
         final String childPid =
-            match(commandOutputOf(jps, "-m"),
+            match(commandOutputOf(jpsPath, "-m"),
                   "(?m)^ *([0-9]+) +\\Q"+childClassName+"\\E *"+uniqueID+"$", 1);
 
-        final int n0 = objectsInUse(p, childPid, classToCheckForLeaks);
-        final int n1 = objectsInUse(p, childPid, classToCheckForLeaks);
+        final int n0 = objectsInUse(p, childPid, classNameRegex);
+        final int n1 = objectsInUse(p, childPid, classNameRegex);
         equal(p.waitFor(), 0);
         equal(p.exitValue(), 0);
         failed += p.exitValue();
@@ -226,7 +232,7 @@ public class TimedAcquireLeak {
         // implementation, and needing occasional adjustment.
         System.out.printf("%d -> %d%n", n0, n1);
         // Almost always n0 == n1
-        // Maximum jitter observed in practice is 10 -> 17
+        // Maximum jitter observed in practice is 7
         check(Math.abs(n1 - n0) < 10);
         check(n1 < 25);
         drainers.shutdown();
@@ -244,9 +250,9 @@ public class TimedAcquireLeak {
     // - in between calls to rendezvousChild, run code that may leak.
     //----------------------------------------------------------------
     public static class Job {
-        static String classToCheckForLeaks() {
+        static String classNameRegexToCheckForLeaks() {
             return
-                "java.util.concurrent.locks.AbstractQueuedSynchronizer$Node";
+                "\\Qjava.util.concurrent.locks.AbstractQueuedSynchronizer$\\E[A-Za-z]+";
         }
 
         public static void main(String[] args) throws Throwable {

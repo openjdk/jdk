@@ -122,9 +122,8 @@ import java.util.concurrent.TimeUnit;
  * <p>All {@code Lock} implementations <em>must</em> enforce the same
  * memory synchronization semantics as provided by the built-in monitor
  * lock, as described in
- * <a href="https://docs.oracle.com/javase/specs/jls/se11/html/jls-17.html#jls-17.4">
  * Chapter 17 of
- * <cite>The Java&trade; Language Specification</cite></a>:
+ * <cite>The Java&trade; Language Specification</cite>:
  * <ul>
  * <li>A successful {@code lock} operation has the same memory
  * synchronization effects as a successful <em>Lock</em> action.
@@ -162,6 +161,7 @@ import java.util.concurrent.TimeUnit;
  * @see ReentrantLock
  * @see Condition
  * @see ReadWriteLock
+ * @jls 17.4 Memory Model
  *
  * @since 1.5
  * @author Doug Lea
