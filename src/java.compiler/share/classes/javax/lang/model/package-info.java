@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2006, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,7 +24,8 @@
  */
 
 /**
- * Classes and hierarchies of packages used to model the Java
+ * Types and hierarchies of packages comprising a {@index "Java language
+ * model"}, a model of the declarations and types of the Java
  * programming language.
  *
  * The members of this package and its subpackages are for use in
@@ -41,14 +42,14 @@
  * Languages and Applications, October 2004.
  * </blockquote>
  *
- * In particular, the model makes a distinction between static
+ * In particular, the model makes a distinction between declared
  * language constructs, like the {@linkplain javax.lang.model.element
  * element} representing {@code java.util.Set}, and the family of
  * {@linkplain javax.lang.model.type types} that may be associated
  * with an element, like the raw type {@code java.util.Set}, {@code
  * java.util.Set<String>}, and {@code java.util.Set<T>}.
  *
- * <p> Unless otherwise specified, methods in this package will throw
+ * <p>Unless otherwise specified, methods in this package will throw
  * a {@code NullPointerException} if given a {@code null} argument.
  *
  * @author Joseph D. Darcy
