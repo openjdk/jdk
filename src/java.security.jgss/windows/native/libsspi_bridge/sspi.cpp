@@ -218,7 +218,7 @@ is_same_oid(gss_const_OID o2, gss_const_OID o1)
 static BOOLEAN
 has_oid(gss_const_OID_set set, gss_const_OID oid)
 {
-    for (int i = 0; i < set->count; i++) {
+    for (size_t i = 0; i < set->count; i++) {
         if (is_same_oid(&set->elements[i], oid)) {
             return TRUE;
         }
@@ -257,7 +257,7 @@ show_oid_set(gss_const_OID_set mechs)
             return;
         }
         PP("gss_OID_set.count is %d", (int)mechs->count);
-        for (int i = 0; i < mechs->count; i++) {
+        for (size_t i = 0; i < mechs->count; i++) {
             show_oid(&mechs->elements[i]);
         }
     }
@@ -1584,7 +1584,7 @@ gss_release_oid_set(OM_uint32 *minor_status,
     if (set == NULL || *set == GSS_C_NO_OID_SET) {
         return GSS_S_COMPLETE;
     }
-    for (int i = 0; i < (*set)->count; i++) {
+    for (size_t i = 0; i < (*set)->count; i++) {
         delete[] (*set)->elements[i].elements;
     }
     delete[] (*set)->elements;
