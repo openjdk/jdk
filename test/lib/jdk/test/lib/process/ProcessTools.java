@@ -495,7 +495,6 @@ public final class ProcessTools {
             return AccessController.doPrivileged(
                 (PrivilegedExceptionAction<Process>) () -> pb.start());
         } catch (PrivilegedActionException e) {
-            @SuppressWarnings("unchecked")
             IOException t = (IOException) e.getException();
             throw t;
         }
