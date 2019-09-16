@@ -189,6 +189,26 @@ public class TestProcessHelper {
 
     private void checkMainClass(Process p, String expectedMainClass) {
         String mainClass = PROCESS_HELPER.getMainClass(Long.toString(p.pid()));
+        // getMainClass() may return null, e.g. due to timing issues.
+        // Attempt some limited retries.
+        if (mainClass == null) {
+            System.err.println("Main class returned by ProcessHelper was null.");
+            // sleep time doubles each round, altogether, wait no longer than 1 sec
+            final int MAX_RETRIES = 10;
+            int retrycount = 0;
+            long sleepms = 1;
+            while (retrycount < MAX_RETRIES && mainClass == null) {
+                System.err.println("Retry " + retrycount + ", sleeping for " + sleepms + "ms.");
+                try {
+                    Thread.sleep(sleepms);
+                } catch (InterruptedException e) {
+                    // ignore
+                }
+                mainClass = PROCESS_HELPER.getMainClass(Long.toString(p.pid()));
+                retrycount++;
+                sleepms *= 2;
+            }
+        }
         p.destroyForcibly();
         if (!expectedMainClass.equals(mainClass)) {
             throw new RuntimeException("Main class is wrong: " + mainClass);
