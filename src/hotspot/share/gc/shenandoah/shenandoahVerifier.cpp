@@ -35,6 +35,7 @@
 #include "memory/iterator.inline.hpp"
 #include "memory/resourceArea.hpp"
 #include "oops/compressedOops.inline.hpp"
+#include "utilities/align.hpp"
 
 // Avoid name collision on verify_oop (defined in macroAssembler_arm.hpp)
 #ifdef verify_oop
@@ -98,7 +99,7 @@ private:
 
     check(ShenandoahAsserts::_safe_unknown, obj, _heap->is_in(obj),
               "oop must be in heap");
-    check(ShenandoahAsserts::_safe_unknown, obj, check_obj_alignment(obj),
+    check(ShenandoahAsserts::_safe_unknown, obj, is_object_aligned(obj),
               "oop must be aligned");
 
     ShenandoahHeapRegion *obj_reg = _heap->heap_region_containing(obj);
@@ -158,7 +159,7 @@ private:
              "Forwardee must be in heap");
       check(ShenandoahAsserts::_safe_oop, obj, !CompressedOops::is_null(fwd),
              "Forwardee is set");
-      check(ShenandoahAsserts::_safe_oop, obj, check_obj_alignment(fwd),
+      check(ShenandoahAsserts::_safe_oop, obj, is_object_aligned(fwd),
              "Forwardee must be aligned");
 
       // Do this before touching fwd->size()

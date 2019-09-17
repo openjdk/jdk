@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,6 +29,7 @@
 #include "memory/universe.hpp"
 #include "oops/compressedOops.hpp"
 #include "oops/oop.hpp"
+#include "utilities/align.hpp"
 
 // Functions for encoding and decoding compressed oops.
 // If the oops are compressed, the type passed to these overloaded functions
@@ -47,7 +48,7 @@ inline oop CompressedOops::decode_raw(narrowOop v) {
 inline oop CompressedOops::decode_not_null(narrowOop v) {
   assert(!is_null(v), "narrow oop value can never be zero");
   oop result = decode_raw(v);
-  assert(check_obj_alignment(result), "address not aligned: " INTPTR_FORMAT, p2i((void*) result));
+  assert(is_object_aligned(result), "address not aligned: " INTPTR_FORMAT, p2i((void*) result));
   return result;
 }
 

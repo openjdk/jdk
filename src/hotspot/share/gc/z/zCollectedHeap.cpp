@@ -35,6 +35,7 @@
 #include "gc/z/zUtils.inline.hpp"
 #include "memory/universe.hpp"
 #include "runtime/mutexLocker.hpp"
+#include "utilities/align.hpp"
 
 ZCollectedHeap* ZCollectedHeap::heap() {
   CollectedHeap* heap = Universe::heap();
@@ -369,7 +370,7 @@ bool ZCollectedHeap::is_oop(oop object) const {
 }
 
 void ZCollectedHeap::check_oop_location(void* addr) const {
-  assert(check_obj_alignment(addr), "address is not aligned");
+  assert(is_object_aligned(addr), "address is not aligned");
 
   const uintptr_t addr_int = reinterpret_cast<uintptr_t>(addr);
   assert(addr_int >= ZAddressSpaceStart, "address is outside of the heap");

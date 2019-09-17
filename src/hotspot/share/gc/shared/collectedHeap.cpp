@@ -174,7 +174,7 @@ bool CollectedHeap::request_concurrent_phase(const char* phase) {
 }
 
 bool CollectedHeap::is_oop(oop object) const {
-  if (!check_obj_alignment(object)) {
+  if (!is_object_aligned(object)) {
     return false;
   }
 
@@ -344,7 +344,7 @@ void CollectedHeap::check_for_non_bad_heap_word_value(HeapWord* addr, size_t siz
 #endif // PRODUCT
 
 void CollectedHeap::check_oop_location(void* addr) const {
-  assert(check_obj_alignment(addr), "address is not aligned");
+  assert(is_object_aligned(addr), "address is not aligned");
   assert(_reserved.contains(addr),  "address is not in reserved heap");
 }
 
