@@ -640,61 +640,6 @@ void os::naked_short_sleep(jlong ms) {
   return;
 }
 
-////////////////////////////////////////////////////////////////////////////////
-// interrupt support
-
-void os::interrupt(Thread* thread) {
-  debug_only(Thread::check_for_dangling_thread_pointer(thread);)
-  assert(thread->is_Java_thread(), "invariant");
-  JavaThread* jt = (JavaThread*) thread;
-  OSThread* osthread = thread->osthread();
-
-  if (!osthread->interrupted()) {
-    osthread->set_interrupted(true);
-    // More than one thread can get here with the same value of osthread,
-    // resulting in multiple notifications.  We do, however, want the store
-    // to interrupted() to be visible to other threads before we execute unpark().
-    OrderAccess::fence();
-    ParkEvent * const slp = jt->_SleepEvent ;
-    if (slp != NULL) slp->unpark() ;
-  }
-
-  // For JSR166. Unpark even if interrupt status already was set
-  jt->parker()->unpark();
-
-  ParkEvent * ev = thread->_ParkEvent ;
-  if (ev != NULL) ev->unpark() ;
-}
-
-bool os::is_interrupted(Thread* thread, bool clear_interrupted) {
-  debug_only(Thread::check_for_dangling_thread_pointer(thread);)
-
-  OSThread* osthread = thread->osthread();
-
-  bool interrupted = osthread->interrupted();
-
-  // NOTE that since there is no "lock" around the interrupt and
-  // is_interrupted operations, there is the possibility that the
-  // interrupted flag (in osThread) will be "false" but that the
-  // low-level events will be in the signaled state. This is
-  // intentional. The effect of this is that Object.wait() and
-  // LockSupport.park() will appear to have a spurious wakeup, which
-  // is allowed and not harmful, and the possibility is so rare that
-  // it is not worth the added complexity to add yet another lock.
-  // For the sleep event an explicit reset is performed on entry
-  // to JavaThread::sleep, so there is no early return. It has also been
-  // recommended not to put the interrupted flag into the "event"
-  // structure because it hides the issue.
-  if (interrupted && clear_interrupted) {
-    osthread->set_interrupted(false);
-    // consider thread->_SleepEvent->reset() ... optional optimization
-  }
-
-  return interrupted;
-}
-
-
-
 static const struct {
   int sig; const char* name;
 }
@@ -2107,7 +2052,7 @@ void Parker::park(bool isAbsolute, jlong time) {
 
   // Optional optimization -- avoid state transitions if there's
   // an interrupt pending.
-  if (Thread::is_interrupted(thread, false)) {
+  if (jt->is_interrupted(false)) {
     return;
   }
 
@@ -2130,7 +2075,7 @@ void Parker::park(bool isAbsolute, jlong time) {
 
   // Don't wait if cannot get lock since interference arises from
   // unparking. Also re-check interrupt before trying wait.
-  if (Thread::is_interrupted(thread, false) ||
+  if (jt->is_interrupted(false) ||
       pthread_mutex_trylock(_mutex) != 0) {
     return;
   }

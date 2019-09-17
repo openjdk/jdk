@@ -32,7 +32,8 @@
  private:
   // Win32-specific thread information
   HANDLE _thread_handle;        // Win32 thread handle
-  HANDLE _interrupt_event;      // Event signalled on thread interrupt
+  HANDLE _interrupt_event;      // Event signalled on thread interrupt for use by
+                                // Process.waitFor().
   ThreadState _last_state;
 
  public:
@@ -42,6 +43,11 @@
   void set_thread_handle(HANDLE handle)            { _thread_handle = handle; }
   HANDLE interrupt_event() const                   { return _interrupt_event; }
   void set_interrupt_event(HANDLE interrupt_event) { _interrupt_event = interrupt_event; }
+  // These are specialized on Windows to interact with the _interrupt_event.
+  // Also note that Windows does not skip these calls if we are interrupted - see
+  // LibraryCallKit::inline_native_isInterrupted
+  volatile bool interrupted();
+  void set_interrupted(bool z);
 
 #ifndef PRODUCT
   // Used for debugging, return a unique integer for each thread.
@@ -54,7 +60,6 @@
     return false;
   }
 #endif // ASSERT
-  bool is_try_mutex_enter()                        { return false; }
 
   // This is a temporary fix for the thread states during
   // suspend/resume until we throw away OSThread completely.

@@ -631,7 +631,7 @@ JRT_ENTRY(jboolean, JVMCIRuntime::thread_is_interrupted(JavaThread* thread, oopD
     // The other thread may exit during this process, which is ok so return false.
     return JNI_FALSE;
   } else {
-    return (jint) Thread::is_interrupted(receiverThread, clear_interrupted != 0);
+    return (jint) receiverThread->is_interrupted(clear_interrupted != 0);
   }
 JRT_END
 

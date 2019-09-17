@@ -82,10 +82,11 @@ class OSThread: public CHeapObj<mtThread> {
   void set_start_proc(OSThreadStartFunc start_proc) { _start_proc = start_proc; }
   void* start_parm() const                          { return _start_parm; }
   void set_start_parm(void* start_parm)             { _start_parm = start_parm; }
-
+  // These are specialized on Windows.
+#ifndef _WINDOWS
   volatile bool interrupted() const                 { return _interrupted != 0; }
   void set_interrupted(bool z)                      { _interrupted = z ? 1 : 0; }
-
+#endif
   // Printing
   void print_on(outputStream* st) const;
   void print() const;

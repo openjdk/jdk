@@ -5063,7 +5063,7 @@ void Parker::park(bool isAbsolute, jlong time) {
   Thread* thread = Thread::current();
   assert(thread->is_Java_thread(), "Must be JavaThread");
   JavaThread *jt = (JavaThread *)thread;
-  if (Thread::is_interrupted(thread, false)) {
+  if (jt->is_interrupted(false)) {
     return;
   }
 
@@ -5088,7 +5088,7 @@ void Parker::park(bool isAbsolute, jlong time) {
 
   // Don't wait if cannot get lock since interference arises from
   // unblocking.  Also. check interrupt before trying wait
-  if (Thread::is_interrupted(thread, false) ||
+  if (jt->is_interrupted(false) ||
       os::Solaris::mutex_trylock(_mutex) != 0) {
     return;
   }

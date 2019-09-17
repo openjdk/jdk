@@ -514,8 +514,6 @@ class Thread: public ThreadShadow {
   static void set_priority(Thread* thread, ThreadPriority priority);
   static ThreadPriority get_priority(const Thread* const thread);
   static void start(Thread* thread);
-  static void interrupt(Thread* thr);
-  static bool is_interrupted(Thread* thr, bool clear_interrupted);
 
   void set_native_thread_name(const char *name) {
     assert(Thread::current() == this, "set_native_thread_name can only be called on the current thread");
@@ -2055,9 +2053,14 @@ private:
   InstanceKlass* _class_to_be_initialized;
 
   // java.lang.Thread.sleep support
-public:
   ParkEvent * _SleepEvent;
+public:
   bool sleep(jlong millis);
+
+  // java.lang.Thread interruption support
+  void interrupt();
+  bool is_interrupted(bool clear_interrupted);
+
 };
 
 // Inline implementation of JavaThread::current

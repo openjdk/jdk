@@ -856,19 +856,6 @@ JavaThread::is_thread_fully_suspended(bool wait_for_suspend, uint32_t *bits) {
   return true;
 }
 
-void Thread::interrupt(Thread* thread) {
-  debug_only(check_for_dangling_thread_pointer(thread);)
-  os::interrupt(thread);
-}
-
-bool Thread::is_interrupted(Thread* thread, bool clear_interrupted) {
-  debug_only(check_for_dangling_thread_pointer(thread);)
-  // Note:  If clear_interrupted==false, this simply fetches and
-  // returns the value of the field osthread()->interrupted().
-  return os::is_interrupted(thread, clear_interrupted);
-}
-
-
 // GC Support
 bool Thread::claim_par_threads_do(uintx claim_token) {
   uintx token = _threads_do_token;
@@ -1726,6 +1713,56 @@ JavaThread::JavaThread(bool is_attaching_via_jni) :
   assert(deferred_card_mark().is_empty(), "Default MemRegion ctor");
 }
 
+
+// interrupt support
+
+void JavaThread::interrupt() {
+  debug_only(check_for_dangling_thread_pointer(this);)
+
+  if (!osthread()->interrupted()) {
+    osthread()->set_interrupted(true);
+    // More than one thread can get here with the same value of osthread,
+    // resulting in multiple notifications.  We do, however, want the store
+    // to interrupted() to be visible to other threads before we execute unpark().
+    OrderAccess::fence();
+
+    // For JavaThread::sleep. Historically we only unpark if changing to the interrupted
+    // state, in contrast to the other events below. Not clear exactly why.
+    _SleepEvent->unpark();
+  }
+
+  // For JSR166. Unpark even if interrupt status already was set.
+  parker()->unpark();
+
+  // For ObjectMonitor and JvmtiRawMonitor
+  _ParkEvent->unpark();
+}
+
+
+bool JavaThread::is_interrupted(bool clear_interrupted) {
+  debug_only(check_for_dangling_thread_pointer(this);)
+  bool interrupted = osthread()->interrupted();
+
+  // NOTE that since there is no "lock" around the interrupt and
+  // is_interrupted operations, there is the possibility that the
+  // interrupted flag (in osThread) will be "false" but that the
+  // low-level events will be in the signaled state. This is
+  // intentional. The effect of this is that Object.wait() and
+  // LockSupport.park() will appear to have a spurious wakeup, which
+  // is allowed and not harmful, and the possibility is so rare that
+  // it is not worth the added complexity to add yet another lock.
+  // For the sleep event an explicit reset is performed on entry
+  // to JavaThread::sleep, so there is no early return. It has also been
+  // recommended not to put the interrupted flag into the "event"
+  // structure because it hides the issue.
+  if (interrupted && clear_interrupted) {
+    osthread()->set_interrupted(false);
+    // consider thread->_SleepEvent->reset() ... optional optimization
+  }
+
+  return interrupted;
+}
+
 bool JavaThread::reguard_stack(address cur_sp) {
   if (_stack_guard_state != stack_guard_yellow_reserved_disabled
       && _stack_guard_state != stack_guard_reserved_disabled) {
@@ -2370,8 +2407,8 @@ void JavaThread::send_thread_stop(oop java_throwable)  {
   }
 
 
-  // Interrupt thread so it will wake up from a potential wait()
-  Thread::interrupt(this);
+  // Interrupt thread so it will wake up from a potential wait()/sleep()/park()
+  this->interrupt();
 }
 
 // External suspension mechanism.
@@ -3361,7 +3398,7 @@ bool JavaThread::sleep(jlong millis) {
 
   for (;;) {
     // interruption has precedence over timing out
-    if (os::is_interrupted(this, true)) {
+    if (this->is_interrupted(true)) {
       return false;
     }
 
@@ -3389,7 +3426,7 @@ bool JavaThread::sleep(jlong millis) {
       // time moving backwards, should only happen if no monotonic clock
       // not a guarantee() because JVM should not abort on kernel/glibc bugs
       assert(!os::supports_monotonic_clock(),
-             "unexpected time moving backwards detected in os::sleep()");
+             "unexpected time moving backwards detected in JavaThread::sleep()");
     } else {
       millis -= (newtime - prevtime) / NANOSECS_PER_MILLISEC;
     }

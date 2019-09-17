@@ -1101,7 +1101,7 @@ JvmtiEnv::InterruptThread(jthread thread) {
     return err;
   }
 
-  Thread::interrupt(java_thread);
+  java_thread->interrupt();
 
   return JVMTI_ERROR_NONE;
 } /* end InterruptThread */

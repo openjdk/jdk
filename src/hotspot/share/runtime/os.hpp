@@ -480,9 +480,6 @@ class os: AllStatic {
   static OSReturn set_priority(Thread* thread, ThreadPriority priority);
   static OSReturn get_priority(const Thread* const thread, ThreadPriority& priority);
 
-  static void interrupt(Thread* thread);
-  static bool is_interrupted(Thread* thread, bool clear_interrupted);
-
   static int pd_self_suspend_thread(Thread* thread);
 
   static ExtendedPC fetch_frame_from_context(const void* ucVoid, intptr_t** sp, intptr_t** fp);

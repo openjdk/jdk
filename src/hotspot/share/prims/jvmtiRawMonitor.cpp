@@ -373,8 +373,12 @@ int JvmtiRawMonitor::raw_wait(jlong millis, bool interruptible, TRAPS) {
   OrderAccess::fence() ;
 
   // check interrupt event
-  if (interruptible && Thread::is_interrupted(THREAD, true)) {
-    return OM_INTERRUPTED;
+  if (interruptible) {
+    assert(THREAD->is_Java_thread(), "Only JavaThreads can be interruptible");
+    JavaThread* jt = (JavaThread*) THREAD;
+    if (jt->is_interrupted(true)) {
+      return OM_INTERRUPTED;
+    }
   }
 
   intptr_t save = _recursions ;
@@ -401,8 +405,11 @@ int JvmtiRawMonitor::raw_wait(jlong millis, bool interruptible, TRAPS) {
   }
   guarantee (THREAD == _owner, "invariant") ;
 
-  if (interruptible && Thread::is_interrupted(THREAD, true)) {
-    return OM_INTERRUPTED;
+  if (interruptible) {
+    JavaThread* jt = (JavaThread*) THREAD;
+    if (jt->is_interrupted(true)) {
+      return OM_INTERRUPTED;
+    }
   }
   return OM_OK ;
 }

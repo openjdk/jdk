@@ -30,7 +30,7 @@ OSThread::OSThread(OSThreadStartFunc start_proc, void* start_parm) {
   pd_initialize();
   set_start_proc(start_proc);
   set_start_parm(start_parm);
-  set_interrupted(false);
+  _interrupted = 0;
 }
 
 OSThread::~OSThread() {
