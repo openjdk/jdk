@@ -58,7 +58,6 @@
 // * arraycopy: Copy data from one heap array to another heap array. The ArrayAccess class has convenience functions for this.
 // * clone: Clone the contents of an object to a newly allocated object.
 // * resolve: Resolve a stable to-space invariant oop that is guaranteed not to relocate its payload until a subsequent thread transition.
-// * equals: Object equality, e.g. when different copies of the same objects are in use (from-space vs. to-space)
 //
 // == IMPLEMENTATION ==
 // Each access goes through the following steps in a template pipeline.
@@ -274,11 +273,6 @@ public:
   static oop resolve(oop obj) {
     verify_decorators<DECORATORS_NONE>();
     return AccessInternal::resolve<decorators>(obj);
-  }
-
-  static bool equals(oop o1, oop o2) {
-    verify_decorators<AS_RAW>();
-    return AccessInternal::equals<decorators>(o1, o2);
   }
 };
 

@@ -64,8 +64,7 @@ namespace AccessInternal {
     BARRIER_ATOMIC_XCHG_AT,
     BARRIER_ARRAYCOPY,
     BARRIER_CLONE,
-    BARRIER_RESOLVE,
-    BARRIER_EQUALS
+    BARRIER_RESOLVE
   };
 
   template <DecoratorSet decorators, typename T>
@@ -116,7 +115,6 @@ namespace AccessInternal {
                                      size_t length);
     typedef void (*clone_func_t)(oop src, oop dst, size_t size);
     typedef oop (*resolve_func_t)(oop obj);
-    typedef bool (*equals_func_t)(oop o1, oop o2);
   };
 
   template <DecoratorSet decorators>
@@ -144,7 +142,6 @@ namespace AccessInternal {
   ACCESS_GENERATE_ACCESS_FUNCTION(BARRIER_ARRAYCOPY, arraycopy_func_t);
   ACCESS_GENERATE_ACCESS_FUNCTION(BARRIER_CLONE, clone_func_t);
   ACCESS_GENERATE_ACCESS_FUNCTION(BARRIER_RESOLVE, resolve_func_t);
-  ACCESS_GENERATE_ACCESS_FUNCTION(BARRIER_EQUALS, equals_func_t);
 #undef ACCESS_GENERATE_ACCESS_FUNCTION
 
   template <DecoratorSet decorators, typename T, BarrierType barrier_type>
@@ -410,8 +407,6 @@ public:
   static void clone(oop src, oop dst, size_t size);
 
   static oop resolve(oop obj) { return obj; }
-
-  static bool equals(oop o1, oop o2) { return (void*)o1 == (void*)o2; }
 };
 
 // Below is the implementation of the first 4 steps of the template pipeline:
@@ -605,18 +600,6 @@ namespace AccessInternal {
     }
   };
 
-  template <DecoratorSet decorators, typename T>
-  struct RuntimeDispatch<decorators, T, BARRIER_EQUALS>: AllStatic {
-    typedef typename AccessFunction<decorators, T, BARRIER_EQUALS>::type func_t;
-    static func_t _equals_func;
-
-    static bool equals_init(oop o1, oop o2);
-
-    static inline bool equals(oop o1, oop o2) {
-      return _equals_func(o1, o2);
-    }
-  };
-
   // Initialize the function pointers to point to the resolving function.
   template <DecoratorSet decorators, typename T>
   typename AccessFunction<decorators, T, BARRIER_STORE>::type
@@ -661,10 +644,6 @@ namespace AccessInternal {
   template <DecoratorSet decorators, typename T>
   typename AccessFunction<decorators, T, BARRIER_RESOLVE>::type
   RuntimeDispatch<decorators, T, BARRIER_RESOLVE>::_resolve_func = &resolve_init;
-
-  template <DecoratorSet decorators, typename T>
-  typename AccessFunction<decorators, T, BARRIER_EQUALS>::type
-  RuntimeDispatch<decorators, T, BARRIER_EQUALS>::_equals_func = &equals_init;
 
   // Step 3: Pre-runtime dispatching.
   // The PreRuntimeDispatch class is responsible for filtering the barrier strength
@@ -996,21 +975,6 @@ namespace AccessInternal {
     resolve(oop obj) {
       return RuntimeDispatch<decorators, oop, BARRIER_RESOLVE>::resolve(obj);
     }
-
-    template <DecoratorSet decorators>
-    inline static typename EnableIf<
-      HasDecorator<decorators, AS_RAW>::value || HasDecorator<decorators, INTERNAL_BT_TO_SPACE_INVARIANT>::value, bool>::type
-    equals(oop o1, oop o2) {
-      typedef RawAccessBarrier<decorators & RAW_DECORATOR_MASK> Raw;
-      return Raw::equals(o1, o2);
-    }
-
-    template <DecoratorSet decorators>
-    inline static typename EnableIf<
-      !HasDecorator<decorators, AS_RAW>::value && !HasDecorator<decorators, INTERNAL_BT_TO_SPACE_INVARIANT>::value, bool>::type
-    equals(oop o1, oop o2) {
-      return RuntimeDispatch<decorators, oop, BARRIER_EQUALS>::equals(o1, o2);
-    }
   };
 
   // Step 2: Reduce types.
@@ -1307,12 +1271,6 @@ namespace AccessInternal {
   inline oop resolve(oop obj) {
     const DecoratorSet expanded_decorators = DecoratorFixup<decorators>::value;
     return PreRuntimeDispatch::resolve<expanded_decorators>(obj);
-  }
-
-  template <DecoratorSet decorators>
-  inline bool equals(oop o1, oop o2) {
-    const DecoratorSet expanded_decorators = DecoratorFixup<decorators>::value;
-    return PreRuntimeDispatch::equals<expanded_decorators>(o1, o2);
   }
 
   // Infer the type that should be returned from an Access::oop_load.
