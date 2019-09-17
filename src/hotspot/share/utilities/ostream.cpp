@@ -99,13 +99,14 @@ const char* outputStream::do_vsnprintf(char* buffer, size_t buflen,
     result_len = strlen(result);
     if (add_cr && result_len >= buflen)  result_len = buflen-1;  // truncate
   } else {
-    int written = os::vsnprintf(buffer, buflen, format, ap);
-    assert(written >= 0, "vsnprintf encoding error");
+    int required_len = os::vsnprintf(buffer, buflen, format, ap);
+    assert(required_len >= 0, "vsnprintf encoding error");
     result = buffer;
-    if ((size_t)written < buflen) {
-      result_len = written;
+    if ((size_t)required_len < buflen) {
+      result_len = required_len;
     } else {
-      DEBUG_ONLY(warning("increase O_BUFLEN in ostream.hpp -- output truncated");)
+      DEBUG_ONLY(warning("outputStream::do_vsnprintf output truncated -- buffer length is %d bytes but %d bytes are needed.",
+                         add_cr ? (int)buflen + 1 : (int)buflen, add_cr ? required_len + 2 : required_len + 1);)
       result_len = buflen - 1;
     }
   }
