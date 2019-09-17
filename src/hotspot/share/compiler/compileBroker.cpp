@@ -557,8 +557,14 @@ void CompileQueue::print(outputStream* st) {
 }
 
 void CompileQueue::print_tty() {
-  ttyLocker ttyl;
-  print(tty);
+  ResourceMark rm;
+  stringStream ss;
+  // Dump the compile queue into a buffer before locking the tty
+  print(&ss);
+  {
+    ttyLocker ttyl;
+    tty->print("%s", ss.as_string());
+  }
 }
 
 CompilerCounters::CompilerCounters() {
