@@ -357,19 +357,38 @@ Node* PhaseMacroExpand::make_arraycopy_load(ArrayCopyNode* ac, intptr_t offset, 
     if (ac->modifies(offset, offset, &_igvn, true)) {
       assert(ac->in(ArrayCopyNode::Dest) == alloc->result_cast(), "arraycopy destination should be allocation's result");
       uint shift = exact_log2(type2aelembytes(bt));
-      Node* diff = _igvn.transform(new SubINode(ac->in(ArrayCopyNode::SrcPos), ac->in(ArrayCopyNode::DestPos)));
-#ifdef _LP64
-      diff = _igvn.transform(new ConvI2LNode(diff));
-#endif
-      diff = _igvn.transform(new LShiftXNode(diff, intcon(shift)));
+      Node* src_pos = ac->in(ArrayCopyNode::SrcPos);
+      Node* dest_pos = ac->in(ArrayCopyNode::DestPos);
+      const TypeInt* src_pos_t = _igvn.type(src_pos)->is_int();
+      const TypeInt* dest_pos_t = _igvn.type(dest_pos)->is_int();
 
-      Node* off = _igvn.transform(new AddXNode(MakeConX(offset), diff));
-      Node* base = ac->in(ArrayCopyNode::Src);
-      Node* adr = _igvn.transform(new AddPNode(base, base, off));
-      const TypePtr* adr_type = _igvn.type(base)->is_ptr()->add_offset(offset);
-      if (ac->in(ArrayCopyNode::Src) == ac->in(ArrayCopyNode::Dest)) {
-        // Don't emit a new load from src if src == dst but try to get the value from memory instead
-        return value_from_mem(ac->in(TypeFunc::Memory), ctl, ft, ftype, adr_type->isa_oopptr(), alloc);
+      Node* adr = NULL;
+      const TypePtr* adr_type = NULL;
+      if (src_pos_t->is_con() && dest_pos_t->is_con()) {
+        intptr_t off = ((src_pos_t->get_con() - dest_pos_t->get_con()) << shift) + offset;
+        Node* base = ac->in(ArrayCopyNode::Src);
+        adr = _igvn.transform(new AddPNode(base, base, MakeConX(off)));
+        adr_type = _igvn.type(base)->is_ptr()->add_offset(off);
+        if (ac->in(ArrayCopyNode::Src) == ac->in(ArrayCopyNode::Dest)) {
+          // Don't emit a new load from src if src == dst but try to get the value from memory instead
+          return value_from_mem(ac->in(TypeFunc::Memory), ctl, ft, ftype, adr_type->isa_oopptr(), alloc);
+        }
+      } else {
+        Node* diff = _igvn.transform(new SubINode(ac->in(ArrayCopyNode::SrcPos), ac->in(ArrayCopyNode::DestPos)));
+#ifdef _LP64
+        diff = _igvn.transform(new ConvI2LNode(diff));
+#endif
+        diff = _igvn.transform(new LShiftXNode(diff, intcon(shift)));
+
+        Node* off = _igvn.transform(new AddXNode(MakeConX(offset), diff));
+        Node* base = ac->in(ArrayCopyNode::Src);
+        adr = _igvn.transform(new AddPNode(base, base, off));
+        adr_type = _igvn.type(base)->is_ptr()->add_offset(Type::OffsetBot);
+        if (ac->in(ArrayCopyNode::Src) == ac->in(ArrayCopyNode::Dest)) {
+          // Non constant offset in the array: we can't statically
+          // determine the value
+          return NULL;
+        }
       }
       res = LoadNode::make(_igvn, ctl, mem, adr, adr_type, type, bt, MemNode::unordered, LoadNode::UnknownControl);
     }
