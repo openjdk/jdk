@@ -238,7 +238,7 @@ oop ShenandoahBarrierSet::load_reference_barrier_mutator(oop obj) {
   shenandoah_assert_in_cset(NULL, obj);
 
   oop fwd = resolve_forwarded_not_null(obj);
-  if (oopDesc::equals_raw(obj, fwd)) {
+  if (obj == fwd) {
     ShenandoahEvacOOMScope oom_evac_scope;
 
     Thread* thread = Thread::current();
@@ -267,7 +267,7 @@ oop ShenandoahBarrierSet::load_reference_barrier_mutator(oop obj) {
       size_t count = 0;
       while ((cur < r->top()) && ctx->is_marked(oop(cur)) && (count++ < max)) {
         oop cur_oop = oop(cur);
-        if (oopDesc::equals_raw(cur_oop, resolve_forwarded_not_null(cur_oop))) {
+        if (cur_oop == resolve_forwarded_not_null(cur_oop)) {
           _heap->evacuate_object(cur_oop, thread);
         }
         cur = cur + cur_oop->size();
@@ -286,7 +286,7 @@ oop ShenandoahBarrierSet::load_reference_barrier_impl(oop obj) {
     oop fwd = resolve_forwarded_not_null(obj);
     if (evac_in_progress &&
         _heap->in_collection_set(obj) &&
-        oopDesc::equals_raw(obj, fwd)) {
+        obj == fwd) {
       Thread *t = Thread::current();
       if (t->is_GC_task_thread()) {
         return _heap->evacuate_object(obj, t);

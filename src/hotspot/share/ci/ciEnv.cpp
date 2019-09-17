@@ -539,7 +539,7 @@ ciKlass* ciEnv::get_klass_by_index_impl(const constantPoolHandle& cpool,
     // Calculate accessibility the hard way.
     if (!k->is_loaded()) {
       is_accessible = false;
-    } else if (!oopDesc::equals(k->loader(), accessor->loader()) &&
+    } else if (k->loader() != accessor->loader() &&
                get_klass_by_name_impl(accessor, cpool, k->name(), true) == NULL) {
       // Loaded only remotely.  Not linked yet.
       is_accessible = false;
@@ -590,7 +590,7 @@ ciConstant ciEnv::get_constant_by_index_impl(const constantPoolHandle& cpool,
     index = cpool->object_to_cp_index(cache_index);
     oop obj = cpool->resolved_references()->obj_at(cache_index);
     if (obj != NULL) {
-      if (oopDesc::equals(obj, Universe::the_null_sentinel())) {
+      if (obj == Universe::the_null_sentinel()) {
         return ciConstant(T_OBJECT, get_object(NULL));
       }
       BasicType bt = T_OBJECT;

@@ -1257,7 +1257,7 @@ JVM_ENTRY(jobject, JVM_GetStackAccessControlContext(JNIEnv *env, jclass cls))
       protection_domain = method->method_holder()->protection_domain();
     }
 
-    if ((!oopDesc::equals(previous_protection_domain, protection_domain)) && (protection_domain != NULL)) {
+    if ((previous_protection_domain != protection_domain) && (protection_domain != NULL)) {
       local_array->push(protection_domain);
       previous_protection_domain = protection_domain;
     }

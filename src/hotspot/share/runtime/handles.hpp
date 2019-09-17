@@ -79,8 +79,8 @@ class Handle {
   oop     operator () () const                   { return obj(); }
   oop     operator -> () const                   { return non_null_obj(); }
 
-  bool operator == (oop o) const                 { return oopDesc::equals(obj(), o); }
-  bool operator == (const Handle& h) const       { return oopDesc::equals(obj(), h.obj()); }
+  bool operator == (oop o) const                 { return obj() == o; }
+  bool operator == (const Handle& h) const       { return obj() == h.obj(); }
 
   // Null checks
   bool    is_null() const                        { return _handle == NULL; }

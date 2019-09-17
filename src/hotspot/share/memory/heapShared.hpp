@@ -125,7 +125,7 @@ class HeapShared: AllStatic {
   static bool _archive_heap_region_fixed;
 
   static bool oop_equals(oop const& p1, oop const& p2) {
-    return oopDesc::equals(p1, p2);
+    return p1 == p2;
   }
   static unsigned oop_hash(oop const& p);
 

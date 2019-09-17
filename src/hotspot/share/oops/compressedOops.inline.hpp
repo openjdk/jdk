@@ -62,7 +62,7 @@ inline narrowOop CompressedOops::encode_not_null(oop v) {
   assert(OopEncodingHeapMax > pd, "change encoding max if new encoding");
   uint64_t result = pd >> shift();
   assert((result & CONST64(0xffffffff00000000)) == 0, "narrow oop overflow");
-  assert(oopDesc::equals_raw(decode(result), v), "reversibility");
+  assert(decode(result) == v, "reversibility");
   return (narrowOop)result;
 }
 

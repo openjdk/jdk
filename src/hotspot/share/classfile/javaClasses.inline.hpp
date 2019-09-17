@@ -52,7 +52,7 @@ bool java_lang_String::hash_is_set(oop java_string) {
 
 // Accessors
 bool java_lang_String::value_equals(typeArrayOop str_value1, typeArrayOop str_value2) {
-  return (oopDesc::equals(str_value1, str_value2) ||
+  return ((str_value1 == str_value2) ||
           (str_value1->length() == str_value2->length() &&
            (!memcmp(str_value1->base(T_BYTE),
                     str_value2->base(T_BYTE),

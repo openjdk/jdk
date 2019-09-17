@@ -50,7 +50,7 @@ void BaseFrameStream::setup_magic_on_entry(objArrayHandle frames_array) {
 bool BaseFrameStream::check_magic(objArrayHandle frames_array) {
   oop   m1 = frames_array->obj_at(magic_pos);
   jlong m2 = _anchor;
-  if (oopDesc::equals(m1, _thread->threadObj()) && m2 == address_value())  return true;
+  if (m1 == _thread->threadObj() && m2 == address_value())  return true;
   return false;
 }
 
@@ -81,7 +81,7 @@ BaseFrameStream* BaseFrameStream::from_current(JavaThread* thread, jlong magic,
 {
   assert(thread != NULL && thread->is_Java_thread(), "");
   oop m1 = frames_array->obj_at(magic_pos);
-  if (!oopDesc::equals(m1, thread->threadObj())) return NULL;
+  if (m1 != thread->threadObj()) return NULL;
   if (magic == 0L)                    return NULL;
   BaseFrameStream* stream = (BaseFrameStream*) (intptr_t) magic;
   if (!stream->is_valid_in(thread, frames_array))   return NULL;

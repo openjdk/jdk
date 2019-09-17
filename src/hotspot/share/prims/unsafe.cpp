@@ -935,7 +935,7 @@ UNSAFE_ENTRY(jboolean, Unsafe_CompareAndSetReference(JNIEnv *env, jobject unsafe
   oop p = JNIHandles::resolve(obj);
   assert_field_offset_sane(p, offset);
   oop ret = HeapAccess<ON_UNKNOWN_OOP_REF>::oop_atomic_cmpxchg_at(x, p, (ptrdiff_t)offset, e);
-  return oopDesc::equals(ret, e);
+  return ret == e;
 } UNSAFE_END
 
 UNSAFE_ENTRY(jboolean, Unsafe_CompareAndSetInt(JNIEnv *env, jobject unsafe, jobject obj, jlong offset, jint e, jint x)) {

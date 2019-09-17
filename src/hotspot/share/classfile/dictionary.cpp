@@ -153,13 +153,13 @@ bool DictionaryEntry::contains_protection_domain(oop protection_domain) const {
   // a Dictionary entry, which can be moved if the Dictionary is resized.
   MutexLocker ml(ProtectionDomainSet_lock, Mutex::_no_safepoint_check_flag);
 #ifdef ASSERT
-  if (oopDesc::equals(protection_domain, instance_klass()->protection_domain())) {
+  if (protection_domain == instance_klass()->protection_domain()) {
     // Ensure this doesn't show up in the pd_set (invariant)
     bool in_pd_set = false;
     for (ProtectionDomainEntry* current = pd_set();
                                 current != NULL;
                                 current = current->next()) {
-      if (oopDesc::equals(current->object_no_keepalive(), protection_domain)) {
+      if (current->object_no_keepalive() == protection_domain) {
         in_pd_set = true;
         break;
       }
@@ -171,7 +171,7 @@ bool DictionaryEntry::contains_protection_domain(oop protection_domain) const {
   }
 #endif /* ASSERT */
 
-  if (oopDesc::equals(protection_domain, instance_klass()->protection_domain())) {
+  if (protection_domain == instance_klass()->protection_domain()) {
     // Succeeds trivially
     return true;
   }
@@ -179,7 +179,7 @@ bool DictionaryEntry::contains_protection_domain(oop protection_domain) const {
   for (ProtectionDomainEntry* current = pd_set();
                               current != NULL;
                               current = current->next()) {
-    if (oopDesc::equals(current->object_no_keepalive(), protection_domain)) return true;
+    if (current->object_no_keepalive() == protection_domain) return true;
   }
   return false;
 }

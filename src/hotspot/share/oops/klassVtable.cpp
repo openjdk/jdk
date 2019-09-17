@@ -491,7 +491,7 @@ bool klassVtable::update_inherited_vtable(InstanceKlass* klass, const methodHand
           // to link to the first super, and we get all the others.
           Handle super_loader(THREAD, super_klass->class_loader());
 
-          if (!oopDesc::equals(target_loader(), super_loader())) {
+          if (target_loader() != super_loader()) {
             ResourceMark rm(THREAD);
             Symbol* failed_type_symbol =
               SystemDictionary::check_signature_loaders(signature, target_loader,
@@ -1237,7 +1237,7 @@ void klassItable::initialize_itable_for_interface(int method_table_offset, Insta
       // if checkconstraints requested
       if (checkconstraints) {
         Handle method_holder_loader (THREAD, target->method_holder()->class_loader());
-        if (!oopDesc::equals(method_holder_loader(), interface_loader())) {
+        if (method_holder_loader() != interface_loader()) {
           ResourceMark rm(THREAD);
           Symbol* failed_type_symbol =
             SystemDictionary::check_signature_loaders(m->signature(),

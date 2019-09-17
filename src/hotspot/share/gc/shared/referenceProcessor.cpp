@@ -282,7 +282,7 @@ void DiscoveredListIterator::remove() {
 
   // First _prev_next ref actually points into DiscoveredList (gross).
   oop new_next;
-  if (oopDesc::equals_raw(_next_discovered, _current_discovered)) {
+  if (_next_discovered == _current_discovered) {
     // At the end of the list, we should make _prev point to itself.
     // If _ref is the first ref, then _prev_next will be in the DiscoveredList,
     // and _prev will be NULL.
@@ -472,7 +472,7 @@ void
 ReferenceProcessor::clear_discovered_references(DiscoveredList& refs_list) {
   oop obj = NULL;
   oop next = refs_list.head();
-  while (!oopDesc::equals_raw(next, obj)) {
+  while (next != obj) {
     obj = next;
     next = java_lang_ref_Reference::discovered(obj);
     java_lang_ref_Reference::set_discovered_raw(obj, NULL);
@@ -744,7 +744,7 @@ void ReferenceProcessor::balance_queues(DiscoveredList ref_lists[])
         ref_lists[to_idx].inc_length(refs_to_move);
 
         // Remove the chain from the from list.
-        if (oopDesc::equals_raw(move_tail, new_head)) {
+        if (move_tail == new_head) {
           // We found the end of the from list.
           ref_lists[from_idx].set_head(NULL);
         } else {

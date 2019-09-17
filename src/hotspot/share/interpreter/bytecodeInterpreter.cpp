@@ -2436,7 +2436,7 @@ run:
                   handle_exception);
           result = THREAD->vm_result();
         }
-        if (oopDesc::equals(result, Universe::the_null_sentinel()))
+        if (result == Universe::the_null_sentinel())
           result = NULL;
 
         VERIFY_OOP(result);

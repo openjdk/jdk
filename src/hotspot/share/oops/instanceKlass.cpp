@@ -2717,7 +2717,7 @@ bool InstanceKlass::is_same_class_package(const Klass* class2) const {
   // and package entries. Both must be the same. This rule
   // applies even to classes that are defined in the unnamed
   // package, they still must have the same class loader.
-  if (oopDesc::equals(classloader1, classloader2) && (classpkg1 == classpkg2)) {
+  if ((classloader1 == classloader2) && (classpkg1 == classpkg2)) {
     return true;
   }
 
@@ -2728,7 +2728,7 @@ bool InstanceKlass::is_same_class_package(const Klass* class2) const {
 // and classname information is enough to determine a class's package
 bool InstanceKlass::is_same_class_package(oop other_class_loader,
                                           const Symbol* other_class_name) const {
-  if (!oopDesc::equals(class_loader(), other_class_loader)) {
+  if (class_loader() != other_class_loader) {
     return false;
   }
   if (name()->fast_compare(other_class_name) == 0) {

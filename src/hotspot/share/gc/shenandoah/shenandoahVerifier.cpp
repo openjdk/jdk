@@ -153,7 +153,7 @@ private:
 
     ShenandoahHeapRegion* fwd_reg = NULL;
 
-    if (!oopDesc::equals_raw(obj, fwd)) {
+    if (obj != fwd) {
       check(ShenandoahAsserts::_safe_oop, obj, _heap->is_in(fwd),
              "Forwardee must be in heap");
       check(ShenandoahAsserts::_safe_oop, obj, !CompressedOops::is_null(fwd),
@@ -183,7 +183,7 @@ private:
              "Forwardee end should be within the region");
 
       oop fwd2 = (oop) ShenandoahForwarding::get_forwardee_raw_unchecked(fwd);
-      check(ShenandoahAsserts::_safe_oop, obj, oopDesc::equals_raw(fwd, fwd2),
+      check(ShenandoahAsserts::_safe_oop, obj, (fwd == fwd2),
              "Double forwarding");
     } else {
       fwd_reg = obj_reg;
@@ -212,12 +212,12 @@ private:
         // skip
         break;
       case ShenandoahVerifier::_verify_forwarded_none: {
-        check(ShenandoahAsserts::_safe_all, obj, oopDesc::equals_raw(obj, fwd),
+        check(ShenandoahAsserts::_safe_all, obj, (obj == fwd),
                "Should not be forwarded");
         break;
       }
       case ShenandoahVerifier::_verify_forwarded_allow: {
-        if (!oopDesc::equals_raw(obj, fwd)) {
+        if (obj != fwd) {
           check(ShenandoahAsserts::_safe_all, obj, obj_reg != fwd_reg,
                  "Forwardee should be in another region");
         }
@@ -237,7 +237,7 @@ private:
         break;
       case ShenandoahVerifier::_verify_cset_forwarded:
         if (_heap->in_collection_set(obj)) {
-          check(ShenandoahAsserts::_safe_all, obj, !oopDesc::equals_raw(obj, fwd),
+          check(ShenandoahAsserts::_safe_all, obj, (obj != fwd),
                  "Object in collection set, should have forwardee");
         }
         break;
@@ -952,7 +952,7 @@ private:
     if (!CompressedOops::is_null(o)) {
       oop obj = CompressedOops::decode_not_null(o);
       oop fwd = (oop) ShenandoahForwarding::get_forwardee_raw_unchecked(obj);
-      if (!oopDesc::equals_raw(obj, fwd)) {
+      if (obj != fwd) {
         ShenandoahAsserts::print_failure(ShenandoahAsserts::_safe_all, obj, p, NULL,
                                          "Verify Roots", "Should not be forwarded", __FILE__, __LINE__);
       }
@@ -984,7 +984,7 @@ private:
       }
 
       oop fwd = (oop) ShenandoahForwarding::get_forwardee_raw_unchecked(obj);
-      if (!oopDesc::equals_raw(obj, fwd)) {
+      if (obj != fwd) {
         ShenandoahAsserts::print_failure(ShenandoahAsserts::_safe_all, obj, p, NULL,
                 "Verify Roots In To-Space", "Should not be forwarded", __FILE__, __LINE__);
       }

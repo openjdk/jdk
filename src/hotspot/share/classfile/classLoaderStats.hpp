@@ -98,7 +98,7 @@ public:
 class ClassLoaderStatsClosure : public CLDClosure {
 protected:
   static bool oop_equals(oop const& s1, oop const& s2) {
-    return oopDesc::equals(s1, s2);
+    return s1 == s2;
   }
 
   static unsigned oop_hash(oop const& s1) {

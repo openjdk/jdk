@@ -363,7 +363,7 @@ void StringDedupTable::deduplicate(oop java_string, StringDedupStat* stat) {
   }
 
   typeArrayOop existing_value = lookup_or_add(value, latin1, hash);
-  if (oopDesc::equals_raw(existing_value, value)) {
+  if (existing_value == value) {
     // Same value, already known
     stat->inc_known();
     return;

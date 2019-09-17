@@ -218,15 +218,6 @@ template<class E> class GrowableArray : public GenericGrowableArray {
 
   void print();
 
-  inline static bool safe_equals(oop obj1, oop obj2) {
-    return oopDesc::equals(obj1, obj2);
-  }
-
-  template <class X>
-  inline static bool safe_equals(X i1, X i2) {
-    return i1 == i2;
-  }
-
   int append(const E& elem) {
     check_nesting();
     if (_len == _max) grow(_len);
@@ -311,7 +302,7 @@ template<class E> class GrowableArray : public GenericGrowableArray {
 
   bool contains(const E& elem) const {
     for (int i = 0; i < _len; i++) {
-      if (safe_equals(_data[i], elem)) return true;
+      if (_data[i] == elem) return true;
     }
     return false;
   }

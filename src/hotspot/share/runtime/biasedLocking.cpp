@@ -257,7 +257,7 @@ void BiasedLocking::single_revoke_at_safepoint(oop obj, bool is_bulk, JavaThread
   BasicLock* highest_lock = NULL;
   for (int i = 0; i < cached_monitor_info->length(); i++) {
     MonitorInfo* mon_info = cached_monitor_info->at(i);
-    if (oopDesc::equals(mon_info->owner(), obj)) {
+    if (mon_info->owner() == obj) {
       log_trace(biasedlocking)("   mon_info->owner (" PTR_FORMAT ") == obj (" PTR_FORMAT ")",
                                p2i((void *) mon_info->owner()),
                                p2i((void *) obj));
@@ -693,7 +693,7 @@ void BiasedLocking::walk_stack_and_revoke(oop obj, JavaThread* biased_locker) {
   BasicLock* highest_lock = NULL;
   for (int i = 0; i < cached_monitor_info->length(); i++) {
     MonitorInfo* mon_info = cached_monitor_info->at(i);
-    if (oopDesc::equals(mon_info->owner(), obj)) {
+    if (mon_info->owner() == obj) {
       log_trace(biasedlocking)("   mon_info->owner (" PTR_FORMAT ") == obj (" PTR_FORMAT ")",
                                p2i(mon_info->owner()),
                                p2i(obj));

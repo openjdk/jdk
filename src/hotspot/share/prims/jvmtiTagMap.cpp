@@ -105,7 +105,7 @@ class JvmtiTagHashmapEntry : public CHeapObj<mtInternal> {
   }
 
   inline bool equals(oop object) {
-    return oopDesc::equals(object, object_peek());
+    return object == object_peek();
   }
 
   inline JvmtiTagHashmapEntry* next() const        { return _next; }

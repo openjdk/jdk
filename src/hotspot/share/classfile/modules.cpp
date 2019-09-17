@@ -306,7 +306,7 @@ void Modules::define_module(jobject module, jboolean is_open, jstring version,
 
   oop loader = java_lang_Module::loader(module_handle());
   // Make sure loader is not the jdk.internal.reflect.DelegatingClassLoader.
-  if (!oopDesc::equals(loader, java_lang_ClassLoader::non_reflection_class_loader(loader))) {
+  if (loader != java_lang_ClassLoader::non_reflection_class_loader(loader)) {
     THROW_MSG(vmSymbols::java_lang_IllegalArgumentException(),
               "Class loader is an invalid delegating class loader");
   }
