@@ -115,6 +115,7 @@ ifeq ($(INCLUDE_GRAAL), true)
           BIN := $(COMPILE_OUTPUTDIR)/jdk.vm.compiler.tests, \
           CLASSPATH := $(TEST_COMPILE_CP), \
           ADD_JAVAC_FLAGS := $(TEST_JAVAC_FLAGS), \
+          COPY := .input, \
       ))
 
       TARGETS_BUILD += $(BUILD_VM_COMPILER_TESTS)
@@ -142,6 +143,7 @@ ifeq ($(INCLUDE_GRAAL), true)
       $(eval $(call SetupJarArchive, BUILD_VM_COMPILER_TESTS_JAR, \
           DEPENDENCIES := $(BUILD_VM_COMPILER_TESTS) $(BUILD_VM_COMPILER_TESTS_SET2), \
           SRCS := $(COMPILE_OUTPUTDIR)/jdk.vm.compiler.tests, \
+          SUFFIXES:=.class .input, \
           JAR := $(COMPILE_OUTPUTDIR)/jdk.vm.compiler.tests.jar, \
       ))
 
