@@ -3026,7 +3026,7 @@ public class XMLDocumentFragmentScannerImpl
                                 return XMLEvent.ENTITY_REFERENCE;
                             }
                         }
-                        //Wether it was character reference, entity reference or built-in entity
+                        //Whether it was character reference, entity reference or built-in entity
                         //set the next possible state to SCANNER_STATE_CONTENT
                         setScannerState(SCANNER_STATE_CONTENT);
                         fLastSectionWasEntityReference = true ;

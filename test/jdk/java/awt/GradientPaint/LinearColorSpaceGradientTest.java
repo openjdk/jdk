@@ -30,7 +30,7 @@ import java.awt.image.*;
  * @test
  * @key headful
  * @bug 8023483
- * @summary tests wether the colorspace-parameter is applied correctly when
+ * @summary tests whether the colorspace-parameter is applied correctly when
  *          creating a gradient.
  * @author ceisserer
  */
