@@ -32,15 +32,16 @@ class oopDesc;
 
 class ShenandoahRuntime : public AllStatic {
 public:
-  static void write_ref_array_pre_oop_entry(oop* dst, size_t length);
-  static void write_ref_array_pre_narrow_oop_entry(narrowOop* dst, size_t length);
-  static void write_ref_array_post_entry(HeapWord* dst, size_t length);
+  static void write_ref_array_pre_oop_entry(oop* src, oop* dst, size_t length);
+  static void write_ref_array_pre_narrow_oop_entry(narrowOop* src, narrowOop* dst, size_t length);
+  static void write_ref_array_pre_duinit_oop_entry(oop* src, oop* dst, size_t length);
+  static void write_ref_array_pre_duinit_narrow_oop_entry(narrowOop* src, narrowOop* dst, size_t length);
   static void write_ref_field_pre_entry(oopDesc* orig, JavaThread* thread);
 
   static oopDesc* load_reference_barrier(oopDesc *src);
   static oopDesc* load_reference_barrier_native(oopDesc *src);
 
-  static void shenandoah_clone_barrier(oopDesc* obj);
+  static void shenandoah_clone_barrier(oopDesc* s, oopDesc* d, size_t length);
 };
 
 #endif // SHARE_GC_SHENANDOAH_SHENANDOAHRUNTIME_HPP

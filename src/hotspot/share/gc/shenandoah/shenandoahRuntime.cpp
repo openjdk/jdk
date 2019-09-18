@@ -22,25 +22,30 @@
  */
 
 #include "precompiled.hpp"
-#include "gc/shenandoah/shenandoahBarrierSet.hpp"
+#include "gc/shenandoah/shenandoahBarrierSet.inline.hpp"
 #include "gc/shenandoah/shenandoahRuntime.hpp"
 #include "gc/shenandoah/shenandoahThreadLocalData.hpp"
 #include "runtime/interfaceSupport.inline.hpp"
 #include "oops/oop.inline.hpp"
 
-void ShenandoahRuntime::write_ref_array_pre_oop_entry(oop* dst, size_t length) {
+void ShenandoahRuntime::write_ref_array_pre_oop_entry(oop* src, oop* dst, size_t length) {
   ShenandoahBarrierSet *bs = ShenandoahBarrierSet::barrier_set();
-  bs->write_ref_array_pre(dst, length, false);
+  bs->arraycopy_pre(src, dst, length);
 }
 
-void ShenandoahRuntime::write_ref_array_pre_narrow_oop_entry(narrowOop* dst, size_t length) {
+void ShenandoahRuntime::write_ref_array_pre_narrow_oop_entry(narrowOop* src, narrowOop* dst, size_t length) {
   ShenandoahBarrierSet *bs = ShenandoahBarrierSet::barrier_set();
-  bs->write_ref_array_pre(dst, length, false);
+  bs->arraycopy_pre(src, dst, length);
 }
 
-void ShenandoahRuntime::write_ref_array_post_entry(HeapWord* dst, size_t length) {
+void ShenandoahRuntime::write_ref_array_pre_duinit_oop_entry(oop* src, oop* dst, size_t length) {
   ShenandoahBarrierSet *bs = ShenandoahBarrierSet::barrier_set();
-  bs->ShenandoahBarrierSet::write_ref_array(dst, length);
+  bs->arraycopy_update(src, length);
+}
+
+void ShenandoahRuntime::write_ref_array_pre_duinit_narrow_oop_entry(narrowOop* src, narrowOop* dst, size_t length) {
+  ShenandoahBarrierSet *bs = ShenandoahBarrierSet::barrier_set();
+  bs->arraycopy_update(src, length);
 }
 
 // Shenandoah pre write barrier slowpath
@@ -62,8 +67,13 @@ JRT_END
 
 // Shenandoah clone barrier: makes sure that references point to to-space
 // in cloned objects.
-JRT_LEAF(void, ShenandoahRuntime::shenandoah_clone_barrier(oopDesc* obj))
-  ShenandoahBarrierSet::barrier_set()->write_region(MemRegion((HeapWord*) obj, obj->size()));
+JRT_LEAF(void, ShenandoahRuntime::shenandoah_clone_barrier(oopDesc* s, oopDesc* d, size_t length))
+  oop src = oop(s);
+  oop dst = oop(d);
+  shenandoah_assert_correct(NULL, src);
+  shenandoah_assert_correct(NULL, dst);
+  ShenandoahBarrierSet::barrier_set()->clone_barrier(src);
+  RawAccessBarrier<IS_NOT_NULL>::clone(src, dst, length);
 JRT_END
 
 JRT_LEAF(oopDesc*, ShenandoahRuntime::load_reference_barrier_native(oopDesc * src))

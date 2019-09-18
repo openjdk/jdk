@@ -41,33 +41,6 @@
 class ShenandoahBarrierSetC1;
 class ShenandoahBarrierSetC2;
 
-template <bool STOREVAL_EVAC_BARRIER>
-class ShenandoahUpdateRefsForOopClosure: public BasicOopIterateClosure {
-private:
-  ShenandoahHeap* _heap;
-  ShenandoahBarrierSet* _bs;
-
-  template <class T>
-  inline void do_oop_work(T* p) {
-    oop o;
-    if (STOREVAL_EVAC_BARRIER) {
-      o = _heap->evac_update_with_forwarded(p);
-      if (!CompressedOops::is_null(o)) {
-        _bs->enqueue(o);
-      }
-    } else {
-      _heap->maybe_update_with_forwarded(p);
-    }
-  }
-public:
-  ShenandoahUpdateRefsForOopClosure() : _heap(ShenandoahHeap::heap()), _bs(ShenandoahBarrierSet::barrier_set()) {
-    assert(UseShenandoahGC && ShenandoahCloneBarrier, "should be enabled");
-  }
-
-  virtual void do_oop(oop* p)       { do_oop_work(p); }
-  virtual void do_oop(narrowOop* p) { do_oop_work(p); }
-};
-
 ShenandoahBarrierSet::ShenandoahBarrierSet(ShenandoahHeap* heap) :
   BarrierSet(make_barrier_set_assembler<ShenandoahBarrierSetAssembler>(),
              make_barrier_set_c1<ShenandoahBarrierSetC1>(),
@@ -95,73 +68,6 @@ bool ShenandoahBarrierSet::is_a(BarrierSet::Name bsn) {
 
 bool ShenandoahBarrierSet::is_aligned(HeapWord* hw) {
   return true;
-}
-
-template <class T, bool STOREVAL_EVAC_BARRIER>
-void ShenandoahBarrierSet::write_ref_array_loop(HeapWord* start, size_t count) {
-  assert(UseShenandoahGC && ShenandoahCloneBarrier, "should be enabled");
-  ShenandoahUpdateRefsForOopClosure<STOREVAL_EVAC_BARRIER> cl;
-  T* dst = (T*) start;
-  for (size_t i = 0; i < count; i++) {
-    cl.do_oop(dst++);
-  }
-}
-
-void ShenandoahBarrierSet::write_ref_array(HeapWord* start, size_t count) {
-  assert(_heap->is_update_refs_in_progress(), "should not be here otherwise");
-  assert(count > 0, "Should have been filtered before");
-
-  if (_heap->is_concurrent_traversal_in_progress()) {
-    ShenandoahEvacOOMScope oom_evac_scope;
-    if (UseCompressedOops) {
-      write_ref_array_loop<narrowOop, /* evac = */ true>(start, count);
-    } else {
-      write_ref_array_loop<oop,       /* evac = */ true>(start, count);
-    }
-  } else {
-    if (UseCompressedOops) {
-      write_ref_array_loop<narrowOop, /* evac = */ false>(start, count);
-    } else {
-      write_ref_array_loop<oop,       /* evac = */ false>(start, count);
-    }
-  }
-}
-
-template <class T>
-void ShenandoahBarrierSet::write_ref_array_pre_work(T* dst, size_t count) {
-  shenandoah_assert_not_in_cset_loc_except(dst, _heap->cancelled_gc());
-  assert(ShenandoahThreadLocalData::satb_mark_queue(Thread::current()).is_active(), "Shouldn't be here otherwise");
-  assert(ShenandoahSATBBarrier, "Shouldn't be here otherwise");
-  assert(count > 0, "Should have been filtered before");
-
-  Thread* thread = Thread::current();
-  ShenandoahMarkingContext* ctx = _heap->marking_context();
-  bool has_forwarded = _heap->has_forwarded_objects();
-  T* elem_ptr = dst;
-  for (size_t i = 0; i < count; i++, elem_ptr++) {
-    T heap_oop = RawAccess<>::oop_load(elem_ptr);
-    if (!CompressedOops::is_null(heap_oop)) {
-      oop obj = CompressedOops::decode_not_null(heap_oop);
-      if (has_forwarded) {
-        obj = resolve_forwarded_not_null(obj);
-      }
-      if (!ctx->is_marked(obj)) {
-        ShenandoahThreadLocalData::satb_mark_queue(thread).enqueue_known_active(obj);
-      }
-    }
-  }
-}
-
-void ShenandoahBarrierSet::write_ref_array_pre(oop* dst, size_t count, bool dest_uninitialized) {
-  if (! dest_uninitialized) {
-    write_ref_array_pre_work(dst, count);
-  }
-}
-
-void ShenandoahBarrierSet::write_ref_array_pre(narrowOop* dst, size_t count, bool dest_uninitialized) {
-  if (! dest_uninitialized) {
-    write_ref_array_pre_work(dst, count);
-  }
 }
 
 template <class T>
@@ -192,27 +98,6 @@ void ShenandoahBarrierSet::write_ref_field_work(void* v, oop o, bool release) {
   shenandoah_assert_not_in_cset_loc_except(v, _heap->cancelled_gc());
   shenandoah_assert_not_forwarded_except  (v, o, o == NULL || _heap->cancelled_gc() || !_heap->is_concurrent_mark_in_progress());
   shenandoah_assert_not_in_cset_except    (v, o, o == NULL || _heap->cancelled_gc() || !_heap->is_concurrent_mark_in_progress());
-}
-
-void ShenandoahBarrierSet::write_region(MemRegion mr) {
-  if (!ShenandoahCloneBarrier) return;
-  if (!_heap->is_update_refs_in_progress()) return;
-
-  // This is called for cloning an object (see jvm.cpp) after the clone
-  // has been made. We are not interested in any 'previous value' because
-  // it would be NULL in any case. But we *are* interested in any oop*
-  // that potentially need to be updated.
-
-  oop obj = oop(mr.start());
-  shenandoah_assert_correct(NULL, obj);
-  if (_heap->is_concurrent_traversal_in_progress()) {
-    ShenandoahEvacOOMScope oom_evac_scope;
-    ShenandoahUpdateRefsForOopClosure</* evac = */ true> cl;
-    obj->oop_iterate(&cl);
-  } else {
-    ShenandoahUpdateRefsForOopClosure</* evac = */ false> cl;
-    obj->oop_iterate(&cl);
-  }
 }
 
 oop ShenandoahBarrierSet::load_reference_barrier_not_null(oop obj) {
