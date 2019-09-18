@@ -3552,16 +3552,16 @@ void ClassFileParser::parse_classfile_attributes(const ClassFileStream* const cf
       cfs->skip_u1(attribute_length, CHECK);
     }
   }
-  _annotations = assemble_annotations(runtime_visible_annotations,
-                                      runtime_visible_annotations_length,
-                                      runtime_invisible_annotations,
-                                      runtime_invisible_annotations_length,
-                                      CHECK);
-  _type_annotations = assemble_annotations(runtime_visible_type_annotations,
-                                           runtime_visible_type_annotations_length,
-                                           runtime_invisible_type_annotations,
-                                           runtime_invisible_type_annotations_length,
-                                           CHECK);
+  _class_annotations = assemble_annotations(runtime_visible_annotations,
+                                            runtime_visible_annotations_length,
+                                            runtime_invisible_annotations,
+                                            runtime_invisible_annotations_length,
+                                            CHECK);
+  _class_type_annotations = assemble_annotations(runtime_visible_type_annotations,
+                                                 runtime_visible_type_annotations_length,
+                                                 runtime_invisible_type_annotations,
+                                                 runtime_invisible_type_annotations_length,
+                                                 CHECK);
 
   if (parsed_innerclasses_attribute || parsed_enclosingmethod_attribute) {
     const u2 num_of_classes = parse_classfile_inner_classes_attribute(
@@ -3615,8 +3615,8 @@ void ClassFileParser::apply_parsed_class_attributes(InstanceKlass* k) {
 // Create the Annotations object that will
 // hold the annotations array for the Klass.
 void ClassFileParser::create_combined_annotations(TRAPS) {
-    if (_annotations == NULL &&
-        _type_annotations == NULL &&
+    if (_class_annotations == NULL &&
+        _class_type_annotations == NULL &&
         _fields_annotations == NULL &&
         _fields_type_annotations == NULL) {
       // Don't create the Annotations object unnecessarily.
@@ -3624,8 +3624,8 @@ void ClassFileParser::create_combined_annotations(TRAPS) {
     }
 
     Annotations* const annotations = Annotations::allocate(_loader_data, CHECK);
-    annotations->set_class_annotations(_annotations);
-    annotations->set_class_type_annotations(_type_annotations);
+    annotations->set_class_annotations(_class_annotations);
+    annotations->set_class_type_annotations(_class_type_annotations);
     annotations->set_fields_annotations(_fields_annotations);
     annotations->set_fields_type_annotations(_fields_type_annotations);
 
@@ -3635,8 +3635,8 @@ void ClassFileParser::create_combined_annotations(TRAPS) {
 
     // The annotations arrays below has been transfered the
     // _combined_annotations so these fields can now be cleared.
-    _annotations             = NULL;
-    _type_annotations        = NULL;
+    _class_annotations       = NULL;
+    _class_type_annotations  = NULL;
     _fields_annotations      = NULL;
     _fields_type_annotations = NULL;
 }
@@ -5790,8 +5790,8 @@ ClassFileParser::ClassFileParser(ClassFileStream* stream,
   _local_interfaces(NULL),
   _transitive_interfaces(NULL),
   _combined_annotations(NULL),
-  _annotations(NULL),
-  _type_annotations(NULL),
+  _class_annotations(NULL),
+  _class_type_annotations(NULL),
   _fields_annotations(NULL),
   _fields_type_annotations(NULL),
   _klass(NULL),
@@ -5895,7 +5895,7 @@ void ClassFileParser::clear_class_metadata() {
   _nest_members = NULL;
   _local_interfaces = NULL;
   _combined_annotations = NULL;
-  _annotations = _type_annotations = NULL;
+  _class_annotations = _class_type_annotations = NULL;
   _fields_annotations = _fields_type_annotations = NULL;
 }
 
@@ -5937,15 +5937,15 @@ ClassFileParser::~ClassFileParser() {
 
     // If the _combined_annotations pointer is non-NULL,
     // then the other annotations fields should have been cleared.
-    assert(_annotations             == NULL, "Should have been cleared");
-    assert(_type_annotations        == NULL, "Should have been cleared");
+    assert(_class_annotations       == NULL, "Should have been cleared");
+    assert(_class_type_annotations  == NULL, "Should have been cleared");
     assert(_fields_annotations      == NULL, "Should have been cleared");
     assert(_fields_type_annotations == NULL, "Should have been cleared");
   } else {
     // If the annotations arrays were not installed into the Annotations object,
     // then they have to be deallocated explicitly.
-    MetadataFactory::free_array<u1>(_loader_data, _annotations);
-    MetadataFactory::free_array<u1>(_loader_data, _type_annotations);
+    MetadataFactory::free_array<u1>(_loader_data, _class_annotations);
+    MetadataFactory::free_array<u1>(_loader_data, _class_type_annotations);
     Annotations::free_contents(_loader_data, _fields_annotations);
     Annotations::free_contents(_loader_data, _fields_type_annotations);
   }

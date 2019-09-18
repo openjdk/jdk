@@ -101,8 +101,8 @@ class ClassFileParser {
   Array<InstanceKlass*>* _local_interfaces;
   Array<InstanceKlass*>* _transitive_interfaces;
   Annotations* _combined_annotations;
-  AnnotationArray* _annotations;
-  AnnotationArray* _type_annotations;
+  AnnotationArray* _class_annotations;
+  AnnotationArray* _class_type_annotations;
   Array<AnnotationArray*>* _fields_annotations;
   Array<AnnotationArray*>* _fields_type_annotations;
   InstanceKlass* _klass;  // InstanceKlass* once created.
