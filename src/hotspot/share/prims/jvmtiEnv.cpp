@@ -3411,7 +3411,7 @@ JvmtiEnv::RawMonitorWait(JvmtiRawMonitor * rmonitor, jlong millis) {
 #endif /* PROPER_TRANSITIONS */
   } else {
     if (thread->is_Named_thread()) {
-      r = rmonitor->raw_wait(millis, true, thread);
+      r = rmonitor->raw_wait(millis, false, thread);
     } else {
       ShouldNotReachHere();
     }
