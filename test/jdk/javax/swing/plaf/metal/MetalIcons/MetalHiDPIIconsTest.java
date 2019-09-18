@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 8160986 8174845 8176883
+ * @bug 8160986 8174845 8176883 8165828
  * @summary Bad rendering of Swing UI controls with Metal L&F on HiDPI display
  * @run main/manual MetalHiDPIIconsTest
  */
@@ -50,7 +50,7 @@ public class MetalHiDPIIconsTest {
             + "Verify that icons are painted smoothly for standard Swing UI controls.\n\n"
             + "If the display does not support HiDPI mode press PASS.\n\n"
             + "1. Run the SwingSet2 demo on HiDPI Display.\n"
-            + "2. Select Metal Look and Feel\n"
+            + "2. Select Java Look and Feel. It is equivalent to Metal Look And Feel\n"
             + "3. Check that the icons are painted smoothly on Swing UI controls like:\n"
             + "  - JRadioButton\n"
             + "  - JCheckBox\n"
