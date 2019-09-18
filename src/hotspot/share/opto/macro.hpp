@@ -63,6 +63,22 @@ public:
   Node* make_store(Node* ctl, Node* mem, Node* base, int offset,
                    Node* value, BasicType bt);
 
+  Node* make_leaf_call(Node* ctrl, Node* mem,
+                       const TypeFunc* call_type, address call_addr,
+                       const char* call_name,
+                       const TypePtr* adr_type,
+                       Node* parm0 = NULL, Node* parm1 = NULL,
+                       Node* parm2 = NULL, Node* parm3 = NULL,
+                       Node* parm4 = NULL, Node* parm5 = NULL,
+                       Node* parm6 = NULL, Node* parm7 = NULL);
+
+  address basictype2arraycopy(BasicType t,
+                              Node* src_offset,
+                              Node* dest_offset,
+                              bool disjoint_bases,
+                              const char* &name,
+                              bool dest_uninitialized);
+
 private:
   // projections extracted from a call node
   ProjNode *_fallthroughproj;
@@ -103,14 +119,6 @@ private:
   void insert_mem_bar(Node** ctrl, Node** mem, int opcode, Node* precedent = NULL);
   Node* array_element_address(Node* ary, Node* idx, BasicType elembt);
   Node* ConvI2L(Node* offset);
-  Node* make_leaf_call(Node* ctrl, Node* mem,
-                       const TypeFunc* call_type, address call_addr,
-                       const char* call_name,
-                       const TypePtr* adr_type,
-                       Node* parm0 = NULL, Node* parm1 = NULL,
-                       Node* parm2 = NULL, Node* parm3 = NULL,
-                       Node* parm4 = NULL, Node* parm5 = NULL,
-                       Node* parm6 = NULL, Node* parm7 = NULL);
 
   // helper methods modeled after LibraryCallKit for array copy
   Node* generate_guard(Node** ctrl, Node* test, RegionNode* region, float true_prob);
@@ -121,12 +129,6 @@ private:
   // More helper methods for array copy
   Node* generate_nonpositive_guard(Node** ctrl, Node* index, bool never_negative);
   void finish_arraycopy_call(Node* call, Node** ctrl, MergeMemNode** mem, const TypePtr* adr_type);
-  address basictype2arraycopy(BasicType t,
-                              Node* src_offset,
-                              Node* dest_offset,
-                              bool disjoint_bases,
-                              const char* &name,
-                              bool dest_uninitialized);
   Node* generate_arraycopy(ArrayCopyNode *ac,
                            AllocateArrayNode* alloc,
                            Node** ctrl, MergeMemNode* mem, Node** io,
