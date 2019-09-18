@@ -29,6 +29,7 @@ import java.lang.management.ManagementFactory;
 import java.lang.management.ThreadInfo;
 import java.lang.management.ThreadMXBean;
 import javax.management.ObjectName;
+import java.util.Objects;
 
 /**
  * Implementation for java.lang.management.ThreadMXBean as well as providing the
@@ -112,11 +113,15 @@ public class ThreadImpl implements ThreadMXBean {
         return cpuTimeEnabled;
     }
 
-    protected boolean isThreadAllocatedMemoryEnabled() {
+    private void ensureThreadAllocatedMemorySupported() {
         if (!isThreadAllocatedMemorySupported()) {
             throw new UnsupportedOperationException(
-                "Thread allocated memory measurement is not supported");
+                "Thread allocated memory measurement is not supported.");
         }
+    }
+
+    protected boolean isThreadAllocatedMemoryEnabled() {
+        ensureThreadAllocatedMemorySupported();
         return allocatedMemoryEnabled;
     }
 
@@ -155,16 +160,18 @@ public class ThreadImpl implements ThreadMXBean {
         return getThreadInfo(ids, 0);
     }
 
-    private void verifyThreadIds(long[] ids) {
-        if (ids == null) {
-            throw new NullPointerException("Null ids parameter.");
+    private void verifyThreadId(long id) {
+        if (id <= 0) {
+            throw new IllegalArgumentException(
+                "Invalid thread ID parameter: " + id);
         }
+    }
+
+    private void verifyThreadIds(long[] ids) {
+        Objects.requireNonNull(ids);
 
         for (int i = 0; i < ids.length; i++) {
-            if (ids[i] <= 0) {
-                throw new IllegalArgumentException(
-                    "Invalid thread ID parameter: " + ids[i]);
-            }
+            verifyThreadId(ids[i]);
         }
     }
 
@@ -342,26 +349,41 @@ public class ThreadImpl implements ThreadMXBean {
         }
     }
 
+    protected long getCurrentThreadAllocatedBytes() {
+        if (isThreadAllocatedMemoryEnabled()) {
+            return getThreadAllocatedMemory0(0);
+        }
+        return -1;
+    }
+
+    private boolean verifyThreadAllocatedMemory(long id) {
+        verifyThreadId(id);
+        return isThreadAllocatedMemoryEnabled();
+    }
+
     protected long getThreadAllocatedBytes(long id) {
-        long[] ids = new long[1];
-        ids[0] = id;
-        final long[] sizes = getThreadAllocatedBytes(ids);
-        return sizes[0];
+        boolean verified = verifyThreadAllocatedMemory(id);
+
+        if (verified) {
+            return getThreadAllocatedMemory0(
+                Thread.currentThread().getId() == id ? 0 : id);
+        }
+        return -1;
     }
 
     private boolean verifyThreadAllocatedMemory(long[] ids) {
         verifyThreadIds(ids);
-
-        // check if Thread allocated memory measurement is supported.
-        if (!isThreadAllocatedMemorySupported()) {
-            throw new UnsupportedOperationException(
-                "Thread allocated memory measurement is not supported.");
-        }
-
         return isThreadAllocatedMemoryEnabled();
     }
 
     protected long[] getThreadAllocatedBytes(long[] ids) {
+        Objects.requireNonNull(ids);
+
+        if (ids.length == 1) {
+            long size = getThreadAllocatedBytes(ids[0]);
+            return new long[] { size };
+        }
+
         boolean verified = verifyThreadAllocatedMemory(ids);
 
         long[] sizes = new long[ids.length];
@@ -374,10 +396,7 @@ public class ThreadImpl implements ThreadMXBean {
     }
 
     protected void setThreadAllocatedMemoryEnabled(boolean enable) {
-        if (!isThreadAllocatedMemorySupported()) {
-            throw new UnsupportedOperationException(
-                "Thread allocated memory measurement is not supported.");
-        }
+        ensureThreadAllocatedMemorySupported();
 
         Util.checkControlAccess();
         synchronized (this) {
@@ -511,6 +530,7 @@ public class ThreadImpl implements ThreadMXBean {
     private static native void getThreadTotalCpuTime1(long[] ids, long[] result);
     private static native long getThreadUserCpuTime0(long id);
     private static native void getThreadUserCpuTime1(long[] ids, long[] result);
+    private static native long getThreadAllocatedMemory0(long id);
     private static native void getThreadAllocatedMemory1(long[] ids, long[] result);
     private static native void setThreadCpuTimeEnabled0(boolean enable);
     private static native void setThreadAllocatedMemoryEnabled0(boolean enable);
