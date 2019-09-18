@@ -94,6 +94,7 @@ import com.sun.tools.javac.util.Iterators;
 import com.sun.tools.javac.util.Pair;
 import com.sun.tools.javac.util.StringUtils;
 
+import static javax.tools.StandardLocation.SYSTEM_MODULES;
 import static javax.tools.StandardLocation.PLATFORM_CLASS_PATH;
 
 import static com.sun.tools.javac.main.Option.BOOT_CLASS_PATH;
@@ -183,6 +184,12 @@ public class Locations {
         BootClassPathLocationHandler h
                 = (BootClassPathLocationHandler) getHandler(PLATFORM_CLASS_PATH);
         return h.isDefault();
+    }
+
+    boolean isDefaultSystemModulesPath() {
+        SystemModulesLocationHandler h
+                = (SystemModulesLocationHandler) getHandler(SYSTEM_MODULES);
+        return !h.isExplicit();
     }
 
     /**
