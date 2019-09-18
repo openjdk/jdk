@@ -391,5 +391,10 @@
                                                                             \
   experimental(bool, ShenandoahLoopOptsAfterExpansion, true,                \
           "Attempt more loop opts after barrier expansion")                 \
+                                                                            \
+  diagnostic(bool, ShenandoahSelfFixing, true,                              \
+          "Fix references with load reference barrier. Disabling this "     \
+          "might degrade performance.")                                     \
+
 
 #endif // SHARE_GC_SHENANDOAH_SHENANDOAH_GLOBALS_HPP
