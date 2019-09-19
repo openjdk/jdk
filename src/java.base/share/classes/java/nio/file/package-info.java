@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -34,7 +34,7 @@
  * platform default provider, or to construct other provider implementations. </p>
  *
  * <h2><a id="links">Symbolic Links</a></h2>
- * <p> Many operating systems and file systems support for <em>symbolic links</em>.
+ * <p> Many operating systems and file systems have support for <em>symbolic links</em>.
  * A symbolic link is a special file that serves as a reference to another file.
  * For the most part, symbolic links are transparent to applications and
  * operations on symbolic links are automatically redirected to the <em>target</em>
@@ -62,8 +62,8 @@
  * to caching performed by the underlying operating system and delays induced by
  * network-filesystem protocols. This is true regardless of the language in which
  * these other programs are written, and whether they are running on the same machine
- * or on some other machine.  The exact nature of any such inconsistencies are
- * system-dependent and are therefore unspecified. </p>
+ * or on some other machine.  The exact nature of any such inconsistencies is
+ * system-dependent and therefore unspecified. </p>
  *
  * <h2><a id="integrity">Synchronized I/O File Integrity</a></h2>
  * <p> The {@link java.nio.file.StandardOpenOption#SYNC SYNC} and {@link
