@@ -2973,6 +2973,7 @@ void InstanceKlass::adjust_default_methods(bool* trace_name_printed) {
 
 // On-stack replacement stuff
 void InstanceKlass::add_osr_nmethod(nmethod* n) {
+  assert_lock_strong(CompiledMethod_lock);
 #ifndef PRODUCT
   if (TieredCompilation) {
       nmethod * prev = lookup_osr_nmethod(n->method(), n->osr_entry_bci(), n->comp_level(), true);
@@ -2982,8 +2983,6 @@ void InstanceKlass::add_osr_nmethod(nmethod* n) {
 #endif
   // only one compilation can be active
   {
-    // This is a short non-blocking critical region, so the no safepoint check is ok.
-    MutexLocker ml(OsrList_lock, Mutex::_no_safepoint_check_flag);
     assert(n->is_osr_method(), "wrong kind of nmethod");
     n->set_osr_link(osr_nmethods_head());
     set_osr_nmethods_head(n);
@@ -3008,7 +3007,8 @@ void InstanceKlass::add_osr_nmethod(nmethod* n) {
 // Remove osr nmethod from the list. Return true if found and removed.
 bool InstanceKlass::remove_osr_nmethod(nmethod* n) {
   // This is a short non-blocking critical region, so the no safepoint check is ok.
-  MutexLocker ml(OsrList_lock, Mutex::_no_safepoint_check_flag);
+  MutexLocker ml(CompiledMethod_lock->owned_by_self() ? NULL : CompiledMethod_lock
+                 , Mutex::_no_safepoint_check_flag);
   assert(n->is_osr_method(), "wrong kind of nmethod");
   nmethod* last = NULL;
   nmethod* cur  = osr_nmethods_head();
@@ -3051,8 +3051,8 @@ bool InstanceKlass::remove_osr_nmethod(nmethod* n) {
 }
 
 int InstanceKlass::mark_osr_nmethods(const Method* m) {
-  // This is a short non-blocking critical region, so the no safepoint check is ok.
-  MutexLocker ml(OsrList_lock, Mutex::_no_safepoint_check_flag);
+  MutexLocker ml(CompiledMethod_lock->owned_by_self() ? NULL : CompiledMethod_lock,
+                 Mutex::_no_safepoint_check_flag);
   nmethod* osr = osr_nmethods_head();
   int found = 0;
   while (osr != NULL) {
@@ -3067,8 +3067,8 @@ int InstanceKlass::mark_osr_nmethods(const Method* m) {
 }
 
 nmethod* InstanceKlass::lookup_osr_nmethod(const Method* m, int bci, int comp_level, bool match_level) const {
-  // This is a short non-blocking critical region, so the no safepoint check is ok.
-  MutexLocker ml(OsrList_lock, Mutex::_no_safepoint_check_flag);
+  MutexLocker ml(CompiledMethod_lock->owned_by_self() ? NULL : CompiledMethod_lock,
+                 Mutex::_no_safepoint_check_flag);
   nmethod* osr = osr_nmethods_head();
   nmethod* best = NULL;
   while (osr != NULL) {

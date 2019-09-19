@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -266,10 +266,11 @@ private:
     // handshake separating unlink and purge.
     nm->flush_dependencies(false /* delete_immediately */);
 
-    // We don't need to take the lock when unlinking nmethods from
+    // unlink_from_method will take the CompiledMethod_lock.
+    // In this case we don't strictly need it when unlinking nmethods from
     // the Method, because it is only concurrently unlinked by
     // the entry barrier, which acquires the per nmethod lock.
-    nm->unlink_from_method(false /* acquire_lock */);
+    nm->unlink_from_method();
 
     if (nm->is_osr_method()) {
       // Invalidate the osr nmethod before the handshake. The nmethod

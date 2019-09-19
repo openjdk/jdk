@@ -1520,7 +1520,10 @@ JVMCI::CodeInstallResult JVMCIRuntime::register_method(JVMCIEnv* JVMCIENV,
                         comp_level, method_name, nm->entry_point());
             }
             // Allow the code to be executed
-            method->set_code(method, nm);
+            MutexLocker ml(CompiledMethod_lock, Mutex::_no_safepoint_check_flag);
+            if (nm->make_in_use()) {
+              method->set_code(method, nm);
+            }
           } else {
             LogTarget(Info, nmethod, install) lt;
             if (lt.is_enabled()) {
@@ -1529,12 +1532,14 @@ JVMCI::CodeInstallResult JVMCIRuntime::register_method(JVMCIEnv* JVMCIENV,
               lt.print("Installing osr method (%d) %s @ %d",
                         comp_level, method_name, entry_bci);
             }
-            InstanceKlass::cast(method->method_holder())->add_osr_nmethod(nm);
+            MutexLocker ml(CompiledMethod_lock, Mutex::_no_safepoint_check_flag);
+            if (nm->make_in_use()) {
+              InstanceKlass::cast(method->method_holder())->add_osr_nmethod(nm);
+            }
           }
         } else {
           assert(!nmethod_mirror.is_hotspot() || data->get_nmethod_mirror(nm, /* phantom_ref */ false) == HotSpotJVMCI::resolve(nmethod_mirror), "must be");
         }
-        nm->make_in_use();
       }
       result = nm != NULL ? JVMCI::ok :JVMCI::cache_full;
     }

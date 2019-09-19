@@ -104,6 +104,13 @@ const char* CompiledMethod::state() const {
 }
 
 //-----------------------------------------------------------------------------
+void CompiledMethod::mark_for_deoptimization(bool inc_recompile_counts) {
+  MutexLocker ml(CompiledMethod_lock->owned_by_self() ? NULL : CompiledMethod_lock,
+                 Mutex::_no_safepoint_check_flag);
+  _mark_for_deoptimization_status = (inc_recompile_counts ? deoptimize : deoptimize_noupdate);
+}
+
+//-----------------------------------------------------------------------------
 
 ExceptionCache* CompiledMethod::exception_cache_acquire() const {
   return OrderAccess::load_acquire(&_exception_cache);

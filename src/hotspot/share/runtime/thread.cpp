@@ -2894,7 +2894,7 @@ void JavaThread::make_zombies() {
 #endif // PRODUCT
 
 
-void JavaThread::deoptimized_wrt_marked_nmethods() {
+void JavaThread::deoptimize_marked_methods() {
   if (!has_last_Java_frame()) return;
   // BiasedLocking needs an updated RegisterMap for the revoke monitors pass
   StackFrameStream fst(this, UseBiasedLocking);
@@ -2904,7 +2904,6 @@ void JavaThread::deoptimized_wrt_marked_nmethods() {
     }
   }
 }
-
 
 // If the caller is a NamedThread, then remember, in the current scope,
 // the given JavaThread in its _processed_thread field.
@@ -4637,13 +4636,6 @@ void Threads::metadata_handles_do(void f(Metadata*)) {
   ThreadHandlesClosure handles_closure(f);
   threads_do(&handles_closure);
 }
-
-void Threads::deoptimized_wrt_marked_nmethods() {
-  ALL_JAVA_THREADS(p) {
-    p->deoptimized_wrt_marked_nmethods();
-  }
-}
-
 
 // Get count Java threads that are waiting to enter the specified monitor.
 GrowableArray<JavaThread*>* Threads::get_pending_threads(ThreadsList * t_list,

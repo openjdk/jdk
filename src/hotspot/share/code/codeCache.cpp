@@ -1143,28 +1143,17 @@ void CodeCache::flush_evol_dependents() {
 
   // At least one nmethod has been marked for deoptimization
 
-  // All this already happens inside a VM_Operation, so we'll do all the work here.
-  // Stuff copied from VM_Deoptimize and modified slightly.
-
-  // We do not want any GCs to happen while we are in the middle of this VM operation
-  ResourceMark rm;
-  DeoptimizationMarker dm;
-
-  // Deoptimize all activations depending on marked nmethods
-  Deoptimization::deoptimize_dependents();
-
-  // Make the dependent methods not entrant
-  make_marked_nmethods_not_entrant();
+  Deoptimization::deoptimize_all_marked();
 }
 #endif // INCLUDE_JVMTI
 
-// Deoptimize all methods
+// Mark methods for deopt (if safe or possible).
 void CodeCache::mark_all_nmethods_for_deoptimization() {
   MutexLocker mu(CodeCache_lock, Mutex::_no_safepoint_check_flag);
   CompiledMethodIterator iter(CompiledMethodIterator::only_alive_and_not_unloading);
   while(iter.next()) {
     CompiledMethod* nm = iter.method();
-    if (!nm->method()->is_method_handle_intrinsic()) {
+    if (!nm->is_native_method()) {
       nm->mark_for_deoptimization();
     }
   }
@@ -1192,7 +1181,7 @@ void CodeCache::make_marked_nmethods_not_entrant() {
   CompiledMethodIterator iter(CompiledMethodIterator::only_alive_and_not_unloading);
   while(iter.next()) {
     CompiledMethod* nm = iter.method();
-    if (nm->is_marked_for_deoptimization() && !nm->is_not_entrant()) {
+    if (nm->is_marked_for_deoptimization()) {
       nm->make_not_entrant();
     }
   }
@@ -1204,17 +1193,12 @@ void CodeCache::flush_dependents_on(InstanceKlass* dependee) {
 
   if (number_of_nmethods_with_dependencies() == 0) return;
 
-  // CodeCache can only be updated by a thread_in_VM and they will all be
-  // stopped during the safepoint so CodeCache will be safe to update without
-  // holding the CodeCache_lock.
-
   KlassDepChange changes(dependee);
 
   // Compute the dependent nmethods
   if (mark_for_deoptimization(changes) > 0) {
     // At least one nmethod has been marked for deoptimization
-    VM_Deoptimize op;
-    VMThread::execute(&op);
+    Deoptimization::deoptimize_all_marked();
   }
 }
 
@@ -1223,26 +1207,9 @@ void CodeCache::flush_dependents_on_method(const methodHandle& m_h) {
   // --- Compile_lock is not held. However we are at a safepoint.
   assert_locked_or_safepoint(Compile_lock);
 
-  // CodeCache can only be updated by a thread_in_VM and they will all be
-  // stopped dring the safepoint so CodeCache will be safe to update without
-  // holding the CodeCache_lock.
-
   // Compute the dependent nmethods
   if (mark_for_deoptimization(m_h()) > 0) {
-    // At least one nmethod has been marked for deoptimization
-
-    // All this already happens inside a VM_Operation, so we'll do all the work here.
-    // Stuff copied from VM_Deoptimize and modified slightly.
-
-    // We do not want any GCs to happen while we are in the middle of this VM operation
-    ResourceMark rm;
-    DeoptimizationMarker dm;
-
-    // Deoptimize all activations depending on marked nmethods
-    Deoptimization::deoptimize_dependents();
-
-    // Make the dependent methods not entrant
-    make_marked_nmethods_not_entrant();
+    Deoptimization::deoptimize_all_marked();
   }
 }
 

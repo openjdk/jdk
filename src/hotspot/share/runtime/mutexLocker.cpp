@@ -39,6 +39,7 @@
 // Consider using GCC's __read_mostly.
 
 Mutex*   Patching_lock                = NULL;
+Mutex*   CompiledMethod_lock          = NULL;
 Monitor* SystemDictionary_lock        = NULL;
 Mutex*   ProtectionDomainSet_lock     = NULL;
 Mutex*   SharedDictionary_lock        = NULL;
@@ -93,7 +94,6 @@ Monitor* BeforeExit_lock              = NULL;
 Monitor* Notify_lock                  = NULL;
 Mutex*   ProfilePrint_lock            = NULL;
 Mutex*   ExceptionCache_lock          = NULL;
-Mutex*   OsrList_lock                 = NULL;
 Mutex*   NMethodSweeperStats_lock     = NULL;
 #ifndef PRODUCT
 Mutex*   FullGCALot_lock              = NULL;
@@ -233,6 +233,7 @@ void mutex_init() {
   def(ClassLoaderDataGraph_lock    , PaddedMutex  , nonleaf,     true,  Monitor::_safepoint_check_always);
 
   def(Patching_lock                , PaddedMutex  , special,     true,  Monitor::_safepoint_check_never);      // used for safepointing and code patching.
+  def(CompiledMethod_lock          , PaddedMutex  , special-1,   true,  Monitor::_safepoint_check_never);
   def(Service_lock                 , PaddedMonitor, special,     true,  Monitor::_safepoint_check_never);      // used for service thread operations
   def(JmethodIdCreation_lock       , PaddedMutex  , leaf,        true,  Monitor::_safepoint_check_always); // used for creating jmethodIDs.
 
@@ -248,7 +249,6 @@ void mutex_init() {
   def(SymbolArena_lock             , PaddedMutex  , leaf+2,      true,  Monitor::_safepoint_check_never);
   def(ProfilePrint_lock            , PaddedMutex  , leaf,        false, Monitor::_safepoint_check_always); // serial profile printing
   def(ExceptionCache_lock          , PaddedMutex  , leaf,        false, Monitor::_safepoint_check_always); // serial profile printing
-  def(OsrList_lock                 , PaddedMutex  , leaf,        true,  Monitor::_safepoint_check_never);
   def(Debug1_lock                  , PaddedMutex  , leaf,        true,  Monitor::_safepoint_check_never);
 #ifndef PRODUCT
   def(FullGCALot_lock              , PaddedMutex  , leaf,        false, Monitor::_safepoint_check_always); // a lock to make FullGCALot MT safe

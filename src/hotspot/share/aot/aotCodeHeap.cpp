@@ -38,6 +38,7 @@
 #include "memory/universe.hpp"
 #include "oops/compressedOops.hpp"
 #include "oops/method.inline.hpp"
+#include "runtime/deoptimization.hpp"
 #include "runtime/handles.inline.hpp"
 #include "runtime/os.hpp"
 #include "runtime/safepointVerifiers.hpp"
@@ -351,7 +352,10 @@ void AOTCodeHeap::publish_aot(const methodHandle& mh, AOTMethodData* method_data
 #ifdef TIERED
     mh->set_aot_code(aot);
 #endif
-    Method::set_code(mh, aot);
+    {
+      MutexLocker pl(CompiledMethod_lock, Mutex::_no_safepoint_check_flag);
+      Method::set_code(mh, aot);
+    }
     if (PrintAOT || (PrintCompilation && PrintAOT)) {
       PauseNoSafepointVerifier pnsv(&nsv); // aot code is registered already
       aot->print_on(tty, NULL);
@@ -731,8 +735,7 @@ void AOTCodeHeap::sweep_dependent_methods(int* indexes, int methods_cnt) {
     }
   }
   if (marked > 0) {
-    VM_Deoptimize op;
-    VMThread::execute(&op);
+    Deoptimization::deoptimize_all_marked();
   }
 }
 

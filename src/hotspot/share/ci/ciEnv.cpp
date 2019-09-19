@@ -1072,7 +1072,10 @@ void ciEnv::register_method(ciMethod* target,
                     task()->comp_level(), method_name);
         }
         // Allow the code to be executed
-        method->set_code(method, nm);
+        MutexLocker ml(CompiledMethod_lock, Mutex::_no_safepoint_check_flag);
+        if (nm->make_in_use()) {
+          method->set_code(method, nm);
+        }
       } else {
         LogTarget(Info, nmethod, install) lt;
         if (lt.is_enabled()) {
@@ -1081,9 +1084,11 @@ void ciEnv::register_method(ciMethod* target,
           lt.print("Installing osr method (%d) %s @ %d",
                     task()->comp_level(), method_name, entry_bci);
         }
-        method->method_holder()->add_osr_nmethod(nm);
+        MutexLocker ml(CompiledMethod_lock, Mutex::_no_safepoint_check_flag);
+        if (nm->make_in_use()) {
+          method->method_holder()->add_osr_nmethod(nm);
+        }
       }
-      nm->make_in_use();
     }
   }  // safepoints are allowed again
 

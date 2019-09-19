@@ -32,6 +32,7 @@
 // Mutexes used in the VM.
 
 extern Mutex*   Patching_lock;                   // a lock used to guard code patching of compiled code
+extern Mutex*   CompiledMethod_lock;             // a lock used to guard a compiled method and OSR queues
 extern Monitor* SystemDictionary_lock;           // a lock on the system dictionary
 extern Mutex*   ProtectionDomainSet_lock;        // a lock on the pd_set list in the system dictionary
 extern Mutex*   SharedDictionary_lock;           // a lock on the CDS shared dictionary
@@ -90,7 +91,6 @@ extern Monitor* BeforeExit_lock;                 // a lock used to guard cleanup
 extern Monitor* Notify_lock;                     // a lock used to synchronize the start-up of the vm
 extern Mutex*   ProfilePrint_lock;               // a lock used to serialize the printing of profiles
 extern Mutex*   ExceptionCache_lock;             // a lock used to synchronize exception cache updates
-extern Mutex*   OsrList_lock;                    // a lock used to serialize access to OSR queues
 extern Mutex*   NMethodSweeperStats_lock;        // a lock used to serialize access to sweeper statistics
 
 #ifndef PRODUCT

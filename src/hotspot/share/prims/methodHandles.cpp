@@ -42,6 +42,7 @@
 #include "oops/typeArrayOop.inline.hpp"
 #include "prims/methodHandles.hpp"
 #include "runtime/compilationPolicy.hpp"
+#include "runtime/deoptimization.hpp"
 #include "runtime/fieldDescriptor.inline.hpp"
 #include "runtime/handles.inline.hpp"
 #include "runtime/interfaceSupport.inline.hpp"
@@ -1109,8 +1110,7 @@ void MethodHandles::flush_dependent_nmethods(Handle call_site, Handle target) {
   }
   if (marked > 0) {
     // At least one nmethod has been marked for deoptimization.
-    VM_Deoptimize op;
-    VMThread::execute(&op);
+    Deoptimization::deoptimize_all_marked();
   }
 }
 
@@ -1506,8 +1506,7 @@ JVM_ENTRY(void, MHN_clearCallSiteContext(JNIEnv* env, jobject igcls, jobject con
     }
     if (marked > 0) {
       // At least one nmethod has been marked for deoptimization
-      VM_Deoptimize op;
-      VMThread::execute(&op);
+      Deoptimization::deoptimize_all_marked();
     }
   }
 }
