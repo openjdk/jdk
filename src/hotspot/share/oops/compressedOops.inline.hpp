@@ -58,7 +58,8 @@ inline oop CompressedOops::decode(narrowOop v) {
 
 inline narrowOop CompressedOops::encode_not_null(oop v) {
   assert(!is_null(v), "oop value can never be zero");
-  DEBUG_ONLY(Universe::heap()->check_oop_location(v);)
+  assert(is_object_aligned(v), "address not aligned: " PTR_FORMAT, p2i((void*)v));
+  assert(is_in(v), "address not in heap range: " PTR_FORMAT, p2i((void*)v));
   uint64_t  pd = (uint64_t)(pointer_delta((void*)v, (void*)base(), 1));
   assert(OopEncodingHeapMax > pd, "change encoding max if new encoding");
   uint64_t result = pd >> shift();

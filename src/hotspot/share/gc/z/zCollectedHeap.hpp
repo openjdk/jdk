@@ -126,7 +126,6 @@ public:
   virtual void prepare_for_verify();
   virtual void verify(VerifyOption option /* ignored */);
   virtual bool is_oop(oop object) const;
-  virtual void check_oop_location(void* addr) const;
 };
 
 #endif // SHARE_GC_Z_ZCOLLECTEDHEAP_HPP

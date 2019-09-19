@@ -233,11 +233,6 @@ class CollectedHeap : public CHeapObj<mtInternal> {
 
   DEBUG_ONLY(bool is_in_or_null(const void* p) const { return p == NULL || is_in(p); })
 
-  // This function verifies that "addr" is a valid oop location, w.r.t. heap
-  // datastructures such as bitmaps and virtual memory address. It does *not*
-  // check if the location is within committed heap memory.
-  virtual void check_oop_location(void* addr) const;
-
   virtual uint32_t hash_oop(oop obj) const;
 
   void set_gc_cause(GCCause::Cause v) {

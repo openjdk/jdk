@@ -368,11 +368,3 @@ void ZCollectedHeap::verify(VerifyOption option /* ignored */) {
 bool ZCollectedHeap::is_oop(oop object) const {
   return CollectedHeap::is_oop(object) && _heap.is_oop(object);
 }
-
-void ZCollectedHeap::check_oop_location(void* addr) const {
-  assert(is_object_aligned(addr), "address is not aligned");
-
-  const uintptr_t addr_int = reinterpret_cast<uintptr_t>(addr);
-  assert(addr_int >= ZAddressSpaceStart, "address is outside of the heap");
-  assert(addr_int < ZAddressSpaceEnd,    "address is outside of the heap");
-}

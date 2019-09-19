@@ -135,10 +135,6 @@ private:
   bool should_do_concurrent_full_gc(GCCause::Cause cause);
 
   void collect_mostly_concurrent(GCCause::Cause cause);
-
-  // CMS forwards some non-heap value into the mark oop to reserve oops during
-  // promotion, so we can't assert about obj alignment or that the forwardee is in heap
-  virtual void check_oop_location(void* addr) const {}
 };
 
 #endif // SHARE_GC_CMS_CMSHEAP_HPP
