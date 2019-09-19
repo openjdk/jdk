@@ -126,6 +126,29 @@ public interface ContentHandler
     public void startDocument ()
         throws SAXException;
 
+    /**
+     * Receives notification of the XML declaration.
+     *
+     * @implSpec
+     * The default implementation in the SAX API is to do nothing.
+     *
+     * @param version the version string as in the input document, null if not
+     * specified
+     * @param encoding the encoding string as in the input document, null if not
+     * specified
+     * @param standalone the standalone string as in the input document, null if
+     * not specified
+     *
+     * @throws SAXException if the application wants to report an error or
+     * interrupt the parsing process
+     *
+     * @since 14
+     */
+    default void declaration(String version, String encoding, String standalone)
+        throws SAXException
+    {
+        //no op
+    }
 
     /**
      * Receive notification of the end of a document.
