@@ -25,7 +25,6 @@
 
 package java.lang.invoke;
 
-import jdk.internal.vm.annotation.Stable;
 import sun.invoke.util.Wrapper;
 
 import java.lang.ref.SoftReference;
@@ -52,7 +51,8 @@ final class MethodTypeForm {
     final MethodType basicType;         // the canonical erasure, with primitives simplified
 
     // Cached adapter information:
-    @Stable final SoftReference<MethodHandle>[] methodHandles;
+    final SoftReference<MethodHandle>[] methodHandles;
+
     // Indexes into methodHandles:
     static final int
             MH_BASIC_INV      =  0,  // cached instance of MH.invokeBasic
@@ -61,7 +61,8 @@ final class MethodTypeForm {
             MH_LIMIT          =  3;
 
     // Cached lambda form information, for basic types only:
-    final @Stable SoftReference<LambdaForm>[] lambdaForms;
+    final SoftReference<LambdaForm>[] lambdaForms;
+
     // Indexes into lambdaForms:
     static final int
             LF_INVVIRTUAL              =  0,  // DMH invokeVirtual
@@ -103,15 +104,7 @@ final class MethodTypeForm {
         return basicType;
     }
 
-    private boolean assertIsBasicType() {
-        // primitives must be flattened also
-        assert(erasedType == basicType)
-                : "erasedType: " + erasedType + " != basicType: " + basicType;
-        return true;
-    }
-
     public MethodHandle cachedMethodHandle(int which) {
-        assert(assertIsBasicType());
         SoftReference<MethodHandle> entry = methodHandles[which];
         return (entry != null) ? entry.get() : null;
     }
@@ -130,7 +123,6 @@ final class MethodTypeForm {
     }
 
     public LambdaForm cachedLambdaForm(int which) {
-        assert(assertIsBasicType());
         SoftReference<LambdaForm> entry = lambdaForms[which];
         return (entry != null) ? entry.get() : null;
     }
@@ -162,59 +154,57 @@ final class MethodTypeForm {
 
         // Walk the argument types, looking for primitives.
         short primitiveCount = 0, longArgCount = 0;
-        Class<?>[] epts = ptypes;
-        Class<?>[] bpts = epts;
-        for (int i = 0; i < epts.length; i++) {
-            Class<?> pt = epts[i];
-            if (pt != Object.class) {
+        Class<?>[] erasedPtypes = ptypes;
+        Class<?>[] basicPtypes = erasedPtypes;
+        for (int i = 0; i < erasedPtypes.length; i++) {
+            Class<?> ptype = erasedPtypes[i];
+            if (ptype != Object.class) {
                 ++primitiveCount;
-                Wrapper w = Wrapper.forPrimitiveType(pt);
+                Wrapper w = Wrapper.forPrimitiveType(ptype);
                 if (w.isDoubleWord())  ++longArgCount;
-                if (w.isSubwordOrInt() && pt != int.class) {
-                    if (bpts == epts)
-                        bpts = bpts.clone();
-                    bpts[i] = int.class;
+                if (w.isSubwordOrInt() && ptype != int.class) {
+                    if (basicPtypes == erasedPtypes)
+                        basicPtypes = basicPtypes.clone();
+                    basicPtypes[i] = int.class;
                 }
             }
         }
         pslotCount += longArgCount;                  // #slots = #args + #longs
-        Class<?> rt = erasedType.returnType();
-        Class<?> bt = rt;
-        if (rt != Object.class) {
+        Class<?> returnType = erasedType.returnType();
+        Class<?> basicReturnType = returnType;
+        if (returnType != Object.class) {
             ++primitiveCount; // even void.class counts as a prim here
-            Wrapper w = Wrapper.forPrimitiveType(rt);
-            if (w.isSubwordOrInt() && rt != int.class)
-                bt = int.class;
+            Wrapper w = Wrapper.forPrimitiveType(returnType);
+            if (w.isSubwordOrInt() && returnType != int.class)
+                basicReturnType = int.class;
         }
-        if (epts == bpts && bt == rt) {
+        if (erasedPtypes == basicPtypes && basicReturnType == returnType) {
+            // Basic type
             this.basicType = erasedType;
+
+            if (pslotCount >= 256)  throw newIllegalArgumentException("too many arguments");
+
+            this.primitiveCount = primitiveCount;
+            this.parameterSlotCount = (short)pslotCount;
+            this.lambdaForms   = new SoftReference[LF_LIMIT];
+            this.methodHandles = new SoftReference[MH_LIMIT];
         } else {
-            this.basicType = MethodType.makeImpl(bt, bpts, true);
+            this.basicType = MethodType.makeImpl(basicReturnType, basicPtypes, true);
             // fill in rest of data from the basic type:
             MethodTypeForm that = this.basicType.form();
             assert(this != that);
+
             this.parameterSlotCount = that.parameterSlotCount;
             this.primitiveCount = that.primitiveCount;
             this.methodHandles = null;
             this.lambdaForms = null;
-            return;
         }
-
-        if (pslotCount >= 256)  throw newIllegalArgumentException("too many arguments");
-
-        this.primitiveCount = primitiveCount;
-        this.parameterSlotCount = (short)pslotCount;
-
-        // Initialize caches, but only for basic types
-        assert(basicType == erasedType);
-        this.lambdaForms   = new SoftReference[LF_LIMIT];
-        this.methodHandles = new SoftReference[MH_LIMIT];
     }
 
-    public int parameterCount() {                      // # outgoing values
+    public int parameterCount() {
         return erasedType.parameterCount();
     }
-    public int parameterSlotCount() {                  // # outgoing interpreter slots
+    public int parameterSlotCount() {
         return parameterSlotCount;
     }
     public boolean hasPrimitives() {
@@ -250,17 +240,17 @@ final class MethodTypeForm {
      */
     public static MethodType canonicalize(MethodType mt, int howRet, int howArgs) {
         Class<?>[] ptypes = mt.ptypes();
-        Class<?>[] ptc = canonicalizeAll(ptypes, howArgs);
+        Class<?>[] ptypesCanonical = canonicalizeAll(ptypes, howArgs);
         Class<?> rtype = mt.returnType();
-        Class<?> rtc = canonicalize(rtype, howRet);
-        if (ptc == null && rtc == null) {
+        Class<?> rtypeCanonical = canonicalize(rtype, howRet);
+        if (ptypesCanonical == null && rtypeCanonical == null) {
             // It is already canonical.
             return null;
         }
         // Find the erased version of the method type:
-        if (rtc == null)  rtc = rtype;
-        if (ptc == null)  ptc = ptypes;
-        return MethodType.makeImpl(rtc, ptc, true);
+        if (rtypeCanonical == null)  rtypeCanonical = rtype;
+        if (ptypesCanonical == null)  ptypesCanonical = ptypes;
+        return MethodType.makeImpl(rtypeCanonical, ptypesCanonical, true);
     }
 
     /** Canonicalize the given return or param type.
