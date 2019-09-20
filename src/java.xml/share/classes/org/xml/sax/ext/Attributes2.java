@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2004, 2005, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2004, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,11 +23,6 @@
  * questions.
  */
 
-// Attributes2.java - extended Attributes
-// http://www.saxproject.org
-// Public Domain: no warranty.
-// $Id: Attributes2.java,v 1.2 2004/11/03 22:49:07 jsuttor Exp $
-
 package org.xml.sax.ext;
 
 import org.xml.sax.Attributes;
@@ -35,17 +30,12 @@ import org.xml.sax.Attributes;
 
 /**
  * SAX2 extension to augment the per-attribute information
- * provided though {@link Attributes}.
+ * provided through {@link Attributes}.
  * If an implementation supports this extension, the attributes
  * provided in {@link org.xml.sax.ContentHandler#startElement
  * ContentHandler.startElement() } will implement this interface,
  * and the <em>http://xml.org/sax/features/use-attributes2</em>
  * feature flag will have the value <em>true</em>.
- *
- * <blockquote>
- * <em>This module, both source code and documentation, is in the
- * Public Domain, and comes with <strong>NO WARRANTY</strong>.</em>
- * </blockquote>
  *
  * <p> XMLReader implementations are not required to support this
  * information, and it is not part of core-only SAX2 distributions.</p>

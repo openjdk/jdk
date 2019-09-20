@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2005, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,24 +23,12 @@
  * questions.
  */
 
-// LexicalHandler.java - optional handler for lexical parse events.
-// http://www.saxproject.org
-// Public Domain: no warranty.
-// $Id: LexicalHandler.java,v 1.2 2004/11/03 22:49:08 jsuttor Exp $
-
 package org.xml.sax.ext;
 
 import org.xml.sax.SAXException;
 
 /**
  * SAX2 extension handler for lexical events.
- *
- * <blockquote>
- * <em>This module, both source code and documentation, is in the
- * Public Domain, and comes with <strong>NO WARRANTY</strong>.</em>
- * See <a href='http://www.saxproject.org'>http://www.saxproject.org</a>
- * for further information.
- * </blockquote>
  *
  * <p>This is an optional extension handler for SAX2 to provide
  * lexical information about an XML document, such as comments

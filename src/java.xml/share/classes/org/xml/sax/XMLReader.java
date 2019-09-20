@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2005, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,12 +23,6 @@
  * questions.
  */
 
-// XMLReader.java - read an XML document.
-// http://www.saxproject.org
-// Written by David Megginson
-// NO WARRANTY!  This class is in the Public Domain.
-// $Id: XMLReader.java,v 1.3 2004/11/03 22:55:32 jsuttor Exp $
-
 package org.xml.sax;
 
 import java.io.IOException;
@@ -37,17 +31,6 @@ import java.io.IOException;
 /**
  * Interface for reading an XML document using callbacks.
  *
- * <blockquote>
- * <em>This module, both source code and documentation, is in the
- * Public Domain, and comes with <strong>NO WARRANTY</strong>.</em>
- * See <a href='http://www.saxproject.org'>http://www.saxproject.org</a>
- * for further information.
- * </blockquote>
- *
- * <p><strong>Note:</strong> despite its name, this interface does
- * <em>not</em> extend the standard Java {@link java.io.Reader Reader}
- * interface, because reading XML is a fundamentally different activity
- * than reading character data.</p>
  *
  * <p>XMLReader is the interface that an XML parser's SAX2 driver must
  * implement.  This interface allows an application to set and
@@ -74,6 +57,11 @@ import java.io.IOException;
  *
  * <p>There are adapters available to convert a SAX1 Parser to
  * a SAX2 XMLReader and vice-versa.</p>
+ *
+ * @apiNote Despite its name, this interface does
+ * <em>not</em> extend the standard Java {@link java.io.Reader Reader}
+ * interface, because reading XML is a fundamentally different activity
+ * than reading character data.
  *
  * @since 1.4, SAX 2.0
  * @author David Megginson

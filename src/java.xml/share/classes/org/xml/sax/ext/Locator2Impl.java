@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2004, 2005, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2004, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,11 +23,6 @@
  * questions.
  */
 
-// Locator2Impl.java - extended LocatorImpl
-// http://www.saxproject.org
-// Public Domain: no warranty.
-// $Id: Locator2Impl.java,v 1.2 2004/11/03 22:49:08 jsuttor Exp $
-
 package org.xml.sax.ext;
 
 import org.xml.sax.Locator;
@@ -37,11 +32,6 @@ import org.xml.sax.helpers.LocatorImpl;
 /**
  * SAX2 extension helper for holding additional Entity information,
  * implementing the {@link Locator2} interface.
- *
- * <blockquote>
- * <em>This module, both source code and documentation, is in the
- * Public Domain, and comes with <strong>NO WARRANTY</strong>.</em>
- * </blockquote>
  *
  * <p> This is not part of core-only SAX2 distributions.</p>
  *

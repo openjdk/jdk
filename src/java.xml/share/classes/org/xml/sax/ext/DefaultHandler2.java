@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2004, 2005, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2004, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,11 +23,6 @@
  * questions.
  */
 
-// DefaultHandler2.java - extended DefaultHandler
-// http://www.saxproject.org
-// Public Domain: no warranty.
-// $Id: DefaultHandler2.java,v 1.2 2004/11/03 22:49:08 jsuttor Exp $
-
 package org.xml.sax.ext;
 
 import java.io.IOException;
@@ -43,11 +38,6 @@ import org.xml.sax.helpers.DefaultHandler;
  * original SAX1 {@link DefaultHandler#resolveEntity resolveEntity()}
  * method the added handler methods just return.  Subclassers may
  * override everything on a method-by-method basis.
- *
- * <blockquote>
- * <em>This module, both source code and documentation, is in the
- * Public Domain, and comes with <strong>NO WARRANTY</strong>.</em>
- * </blockquote>
  *
  * <p> <em>Note:</em> this class might yet learn that the
  * <em>ContentHandler.setDocumentLocator()</em> call might be passed a
