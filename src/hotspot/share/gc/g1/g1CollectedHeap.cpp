@@ -2377,7 +2377,8 @@ void G1CollectedHeap::print_on(outputStream* st) const {
 void G1CollectedHeap::print_regions_on(outputStream* st) const {
   st->print_cr("Heap Regions: E=young(eden), S=young(survivor), O=old, "
                "HS=humongous(starts), HC=humongous(continues), "
-               "CS=collection set, F=free, A=archive, "
+               "CS=collection set, F=free, "
+               "OA=open archive, CA=closed archive, "
                "TAMS=top-at-mark-start (previous, next)");
   PrintRegionClosure blk(st);
   heap_region_iterate(&blk);
