@@ -4992,65 +4992,6 @@ void Thread::muxAcquire(volatile intptr_t * Lock, const char * LockName) {
   }
 }
 
-void Thread::muxAcquireW(volatile intptr_t * Lock, ParkEvent * ev) {
-  intptr_t w = Atomic::cmpxchg(LOCKBIT, Lock, (intptr_t)0);
-  if (w == 0) return;
-  if ((w & LOCKBIT) == 0 && Atomic::cmpxchg(w|LOCKBIT, Lock, w) == w) {
-    return;
-  }
-
-  ParkEvent * ReleaseAfter = NULL;
-  if (ev == NULL) {
-    ev = ReleaseAfter = ParkEvent::Allocate(NULL);
-  }
-  assert((intptr_t(ev) & LOCKBIT) == 0, "invariant");
-  for (;;) {
-    guarantee(ev->OnList == 0, "invariant");
-    int its = (os::is_MP() ? 100 : 0) + 1;
-
-    // Optional spin phase: spin-then-park strategy
-    while (--its >= 0) {
-      w = *Lock;
-      if ((w & LOCKBIT) == 0 && Atomic::cmpxchg(w|LOCKBIT, Lock, w) == w) {
-        if (ReleaseAfter != NULL) {
-          ParkEvent::Release(ReleaseAfter);
-        }
-        return;
-      }
-    }
-
-    ev->reset();
-    ev->OnList = intptr_t(Lock);
-    // The following fence() isn't _strictly necessary as the subsequent
-    // CAS() both serializes execution and ratifies the fetched *Lock value.
-    OrderAccess::fence();
-    for (;;) {
-      w = *Lock;
-      if ((w & LOCKBIT) == 0) {
-        if (Atomic::cmpxchg(w|LOCKBIT, Lock, w) == w) {
-          ev->OnList = 0;
-          // We call ::Release while holding the outer lock, thus
-          // artificially lengthening the critical section.
-          // Consider deferring the ::Release() until the subsequent unlock(),
-          // after we've dropped the outer lock.
-          if (ReleaseAfter != NULL) {
-            ParkEvent::Release(ReleaseAfter);
-          }
-          return;
-        }
-        continue;      // Interference -- *Lock changed -- Just retry
-      }
-      assert(w & LOCKBIT, "invariant");
-      ev->ListNext = (ParkEvent *) (w & ~LOCKBIT);
-      if (Atomic::cmpxchg(intptr_t(ev)|LOCKBIT, Lock, w) == w) break;
-    }
-
-    while (ev->OnList != 0) {
-      ev->park();
-    }
-  }
-}
-
 // Release() must extract a successor from the list and then wake that thread.
 // It can "pop" the front of the list or use a detach-modify-reattach (DMR) scheme
 // similar to that used by ParkEvent::Allocate() and ::Release().  DMR-based

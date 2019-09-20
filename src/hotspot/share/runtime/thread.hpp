@@ -802,7 +802,6 @@ protected:
   static void SpinAcquire(volatile int * Lock, const char * Name);
   static void SpinRelease(volatile int * Lock);
   static void muxAcquire(volatile intptr_t * Lock, const char * Name);
-  static void muxAcquireW(volatile intptr_t * Lock, ParkEvent * ev);
   static void muxRelease(volatile intptr_t * Lock);
 };
 
