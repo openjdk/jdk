@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -132,11 +132,9 @@ public class TestSpecialArgs extends TestHelper {
          *       Code to create env variable not executed.
          * 4) give and invalid value and check to make sure JVM commented
          */
-        String launcherPidString = "launcher.pid=";
         String envVarPidString = "TRACER_MARKER: NativeMemoryTracking: env var is NMT_LEVEL_";
         String NMT_Option_Value = "off";
         String myClassName = "helloworld";
-        boolean haveLauncherPid = false;
 
         // === Run the tests ===
         // ---Test 1a
@@ -161,46 +159,6 @@ public class TestSpecialArgs extends TestHelper {
         if (envVarPid.length() < 1) {
             System.out.println(tr);
             throw new RuntimeException("Error: env Var Pid in tracking info is empty string");
-        }
-
-        /*
-         * On Linux, Launcher Tracking will print the PID.  Use this info
-         * to validate what we got as the PID in the Launcher itself.
-         * Linux is the only one that prints this, and trying to get it
-         * here for win is awful.  So let the linux test make sure we get
-         * the valid pid, and for non-linux, just make sure pid string is
-         * non-zero.
-         */
-        if (isLinux) {
-            // get what the test says is the launcher pid
-            String launcherPid = null;
-            for (String line : tr.testOutput) {
-                int index = line.indexOf(launcherPidString);
-                if (index >= 0) {
-                    int sindex = index + launcherPidString.length();
-                    int tindex = sindex + line.substring(sindex).indexOf("'");
-                    System.out.println("DEBUG INFO: sindex = " + sindex);
-                    System.out.println("DEBUG INFO: searching substring: " + line.substring(sindex));
-                    System.out.println("DEBUG INFO: tindex = " + tindex);
-                    // DEBUG INFO
-                    System.out.println(tr);
-                    launcherPid = line.substring(sindex, tindex);
-                    break;
-                }
-            }
-            if (launcherPid == null) {
-                System.out.println(tr);
-                throw new RuntimeException("Error: failed to find launcher Pid in launcher tracking info");
-            }
-
-            // did we create the env var with the correct pid?
-            if (!launcherPid.equals(envVarPid)) {
-                System.out.println(tr);
-                System.out.println("Error: wrong pid in creating env var");
-                System.out.println("Error Info: launcherPid = " + launcherPid);
-                System.out.println("Error Info: envVarPid   = " + envVarPid);
-                throw new RuntimeException("Error: wrong pid in creating env var");
-            }
         }
 
         // --- Test 1b

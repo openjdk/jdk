@@ -803,9 +803,6 @@ CallJavaMainInNewThread(jlong stack_size, void* args) {
     return rslt;
 }
 
-/* Unix only, empty on windows. */
-void SetJavaLauncherPlatformProps() {}
-
 /*
  * The implementation for finding classes from the bootstrap
  * class loader, refer to java.h

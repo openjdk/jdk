@@ -136,8 +136,6 @@ static int clock_tics_per_sec = 100;
 static sigset_t check_signal_done;
 static bool check_signals = true;
 
-static pid_t _initial_pid = 0;
-
 // Signal number used to suspend/resume a thread
 
 // do not use any signal number less than SIGSEGV, see 4355769
@@ -1124,24 +1122,7 @@ intx os::current_thread_id() {
 }
 
 int os::current_process_id() {
-
-  // Under the old bsd thread library, bsd gives each thread
-  // its own process id. Because of this each thread will return
-  // a different pid if this method were to return the result
-  // of getpid(2). Bsd provides no api that returns the pid
-  // of the launcher thread for the vm. This implementation
-  // returns a unique pid, the pid of the launcher thread
-  // that starts the vm 'process'.
-
-  // Under the NPTL, getpid() returns the same pid as the
-  // launcher thread rather than a unique pid per thread.
-  // Use gettid() if you want the old pre NPTL behaviour.
-
-  // if you are looking for the result of a call to getpid() that
-  // returns a unique pid for the calling thread, then look at the
-  // OSThread::thread_id() method in osThread_bsd.hpp file
-
-  return (int)(_initial_pid ? _initial_pid : getpid());
+  return (int)(getpid());
 }
 
 // DLL functions
@@ -3086,16 +3067,6 @@ extern void report_error(char* file_name, int line_no, char* title,
 // this is called _before_ the most of global arguments have been parsed
 void os::init(void) {
   char dummy;   // used to get a guess on initial stack address
-
-  // With BsdThreads the JavaMain thread pid (primordial thread)
-  // is different than the pid of the java launcher thread.
-  // So, on Bsd, the launcher thread pid is passed to the VM
-  // via the sun.java.launcher.pid property.
-  // Use this property instead of getpid() if it was correctly passed.
-  // See bug 6351349.
-  pid_t java_launcher_pid = (pid_t) Arguments::sun_java_launcher_pid();
-
-  _initial_pid = (java_launcher_pid > 0) ? java_launcher_pid : getpid();
 
   clock_tics_per_sec = CLK_TCK;
 
