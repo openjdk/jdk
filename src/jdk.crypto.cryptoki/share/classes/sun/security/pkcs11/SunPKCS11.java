@@ -62,7 +62,6 @@ public final class SunPKCS11 extends AuthProvider {
     private static final long serialVersionUID = -1354835039035306505L;
 
     static final Debug debug = Debug.getInstance("sunpkcs11");
-
     // the PKCS11 object through which we make the native calls
     final PKCS11 p11;
 
@@ -913,6 +912,25 @@ public final class SunPKCS11 extends AuthProvider {
         createPoller();
     }
 
+    private static boolean isLegacy(CK_MECHANISM_INFO mechInfo)
+            throws PKCS11Exception {
+        // assume full support if no mech info available
+        // For vendor-specific mechanisms, often no mech info is provided
+        boolean partialSupport = false;
+
+        if (mechInfo != null) {
+            if ((mechInfo.flags & CKF_DECRYPT) != 0) {
+                // non-legacy cipher mechs should support encryption
+                partialSupport |= ((mechInfo.flags & CKF_ENCRYPT) == 0);
+            }
+            if ((mechInfo.flags & CKF_VERIFY) != 0) {
+                // non-legacy signature mechs should support signing
+                partialSupport |= ((mechInfo.flags & CKF_SIGN) == 0);
+            }
+        }
+        return partialSupport;
+    }
+
     // test if a token is present and initialize this provider for it if so.
     // does nothing if no token is found
     // called from constructor and by poller
@@ -946,24 +964,35 @@ public final class SunPKCS11 extends AuthProvider {
         // return a CKM_DES_CBC_PAD.
         final Map<Descriptor,Integer> supportedAlgs =
                                         new HashMap<Descriptor,Integer>();
+
         for (int i = 0; i < supportedMechanisms.length; i++) {
             long longMech = supportedMechanisms[i];
-            boolean isEnabled = config.isEnabled(longMech);
+            CK_MECHANISM_INFO mechInfo = token.getMechanismInfo(longMech);
             if (showInfo) {
-                CK_MECHANISM_INFO mechInfo =
-                        p11.C_GetMechanismInfo(slotID, longMech);
                 System.out.println("Mechanism " +
-                        Functions.getMechanismName(longMech) + ":");
-                if (isEnabled == false) {
+                    Functions.getMechanismName(longMech) + ":");
+                System.out.println(mechInfo == null?
+                    (Constants.INDENT + "info n/a") :
+                    mechInfo);
+            }
+            if (!config.isEnabled(longMech)) {
+                if (showInfo) {
                     System.out.println("DISABLED in configuration");
                 }
-                System.out.println(mechInfo);
-            }
-            if (isEnabled == false) {
                 continue;
             }
+            if (isLegacy(mechInfo)) {
+                if (showInfo) {
+                    System.out.println("DISABLED due to legacy");
+                }
+                continue;
+            }
+
             // we do not know of mechs with the upper 32 bits set
             if (longMech >>> 32 != 0) {
+                if (showInfo) {
+                    System.out.println("DISABLED due to unknown mech value");
+                }
                 continue;
             }
             int mech = (int)longMech;
