@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -167,7 +167,7 @@ public abstract class MessageDigestSpi {
      *
      * @return the length of the digest stored in the output buffer.
      *
-     * @exception DigestException if an error occurs.
+     * @throws    DigestException if an error occurs.
      *
      * @since 1.2
      */
@@ -194,7 +194,7 @@ public abstract class MessageDigestSpi {
      *
      * @return a clone if the implementation is cloneable.
      *
-     * @exception CloneNotSupportedException if this is called on an
+     * @throws    CloneNotSupportedException if this is called on an
      * implementation that does not support {@code Cloneable}.
      */
     public Object clone() throws CloneNotSupportedException {

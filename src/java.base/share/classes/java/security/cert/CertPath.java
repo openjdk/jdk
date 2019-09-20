@@ -248,7 +248,7 @@ public abstract class CertPath implements Serializable {
      * encoding.
      *
      * @return the encoded bytes
-     * @exception CertificateEncodingException if an encoding error occurs
+     * @throws    CertificateEncodingException if an encoding error occurs
      */
     public abstract byte[] getEncoded()
         throws CertificateEncodingException;
@@ -259,7 +259,7 @@ public abstract class CertPath implements Serializable {
      *
      * @param encoding the name of the encoding to use
      * @return the encoded bytes
-     * @exception CertificateEncodingException if an encoding error occurs or
+     * @throws    CertificateEncodingException if an encoding error occurs or
      *   the encoding requested is not supported
      */
     public abstract byte[] getEncoded(String encoding)

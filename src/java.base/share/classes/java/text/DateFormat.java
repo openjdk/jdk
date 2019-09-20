@@ -323,7 +323,7 @@ public abstract class DateFormat extends Format {
      * first occurrence of the timezone pattern character {@code 'z'}.
      * @return the string buffer passed in as {@code toAppendTo},
      *         with formatted text appended.
-     * @exception IllegalArgumentException if the {@code Format} cannot format
+     * @throws    IllegalArgumentException if the {@code Format} cannot format
      *            the given {@code obj}.
      * @see java.text.Format
      */
@@ -385,7 +385,7 @@ public abstract class DateFormat extends Format {
      *
      * @param source A <code>String</code> whose beginning should be parsed.
      * @return A <code>Date</code> parsed from the string.
-     * @exception ParseException if the beginning of the specified string
+     * @throws    ParseException if the beginning of the specified string
      *            cannot be parsed.
      */
     public Date parse(String source) throws ParseException

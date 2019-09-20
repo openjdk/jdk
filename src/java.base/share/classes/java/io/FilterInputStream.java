@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1994, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1994, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -76,7 +76,7 @@ class FilterInputStream extends InputStream {
      *
      * @return     the next byte of data, or <code>-1</code> if the end of the
      *             stream is reached.
-     * @exception  IOException  if an I/O error occurs.
+     * @throws     IOException  if an I/O error occurs.
      * @see        java.io.FilterInputStream#in
      */
     public int read() throws IOException {
@@ -100,7 +100,7 @@ class FilterInputStream extends InputStream {
      * @return     the total number of bytes read into the buffer, or
      *             <code>-1</code> if there is no more data because the end of
      *             the stream has been reached.
-     * @exception  IOException  if an I/O error occurs.
+     * @throws     IOException  if an I/O error occurs.
      * @see        java.io.FilterInputStream#read(byte[], int, int)
      */
     public int read(byte b[]) throws IOException {
@@ -122,11 +122,11 @@ class FilterInputStream extends InputStream {
      * @return     the total number of bytes read into the buffer, or
      *             <code>-1</code> if there is no more data because the end of
      *             the stream has been reached.
-     * @exception  NullPointerException If <code>b</code> is <code>null</code>.
-     * @exception  IndexOutOfBoundsException If <code>off</code> is negative,
-     * <code>len</code> is negative, or <code>len</code> is greater than
-     * <code>b.length - off</code>
-     * @exception  IOException  if an I/O error occurs.
+     * @throws     NullPointerException If <code>b</code> is <code>null</code>.
+     * @throws     IndexOutOfBoundsException If <code>off</code> is negative,
+     *             <code>len</code> is negative, or <code>len</code> is greater than
+     *             <code>b.length - off</code>
+     * @throws     IOException  if an I/O error occurs.
      * @see        java.io.FilterInputStream#in
      */
     public int read(byte b[], int off, int len) throws IOException {
@@ -161,7 +161,7 @@ class FilterInputStream extends InputStream {
      *
      * @return     an estimate of the number of bytes that can be read (or skipped
      *             over) from this input stream without blocking.
-     * @exception  IOException  if an I/O error occurs.
+     * @throws     IOException  if an I/O error occurs.
      */
     public int available() throws IOException {
         return in.available();
@@ -173,7 +173,7 @@ class FilterInputStream extends InputStream {
      * This
      * method simply performs <code>in.close()</code>.
      *
-     * @exception  IOException  if an I/O error occurs.
+     * @throws     IOException  if an I/O error occurs.
      * @see        java.io.FilterInputStream#in
      */
     public void close() throws IOException {
@@ -216,7 +216,7 @@ class FilterInputStream extends InputStream {
      * If this happens within readlimit bytes, it allows the outer
      * code to reset the stream and try another parser.
      *
-     * @exception  IOException  if the stream has not been marked or if the
+     * @throws     IOException  if the stream has not been marked or if the
      *               mark has been invalidated.
      * @see        java.io.FilterInputStream#in
      * @see        java.io.FilterInputStream#mark(int)

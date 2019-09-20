@@ -180,7 +180,7 @@ public class Hashtable<K,V>
      *
      * @param      initialCapacity   the initial capacity of the hashtable.
      * @param      loadFactor        the load factor of the hashtable.
-     * @exception  IllegalArgumentException  if the initial capacity is less
+     * @throws     IllegalArgumentException  if the initial capacity is less
      *             than zero, or if the load factor is nonpositive.
      */
     public Hashtable(int initialCapacity, float loadFactor) {
@@ -202,7 +202,7 @@ public class Hashtable<K,V>
      * and default load factor (0.75).
      *
      * @param     initialCapacity   the initial capacity of the hashtable.
-     * @exception IllegalArgumentException if the initial capacity is less
+     * @throws    IllegalArgumentException if the initial capacity is less
      *              than zero.
      */
     public Hashtable(int initialCapacity) {
@@ -304,7 +304,7 @@ public class Hashtable<K,V>
      *             {@code value} argument in this hashtable as
      *             determined by the {@code equals} method;
      *             {@code false} otherwise.
-     * @exception  NullPointerException  if the value is {@code null}
+     * @throws     NullPointerException  if the value is {@code null}
      */
     public synchronized boolean contains(Object value) {
         if (value == null) {
@@ -465,7 +465,7 @@ public class Hashtable<K,V>
      * @param      value   the value
      * @return     the previous value of the specified key in this hashtable,
      *             or {@code null} if it did not have one
-     * @exception  NullPointerException  if the key or value is
+     * @throws     NullPointerException  if the key or value is
      *               {@code null}
      * @see     Object#equals(Object)
      * @see     #get(Object)

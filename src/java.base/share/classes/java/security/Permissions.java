@@ -116,7 +116,7 @@ implements Serializable
      *
      * @param permission the Permission object to add.
      *
-     * @exception SecurityException if this Permissions object is
+     * @throws    SecurityException if this Permissions object is
      * marked as readonly.
      *
      * @see PermissionCollection#isReadOnly()

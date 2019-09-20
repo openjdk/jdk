@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -68,7 +68,7 @@ public class SecureClassLoader extends ClassLoader {
      * method  to ensure creation of a class loader is allowed.
      *
      * @param parent the parent ClassLoader
-     * @exception  SecurityException  if a security manager exists and its
+     * @throws     SecurityException  if a security manager exists and its
      *             {@code checkCreateClassLoader} method doesn't allow
      *             creation of a class loader.
      * @see SecurityManager#checkCreateClassLoader
@@ -85,7 +85,7 @@ public class SecureClassLoader extends ClassLoader {
      * calls the security manager's {@code checkCreateClassLoader}
      * method  to ensure creation of a class loader is allowed.
      *
-     * @exception  SecurityException  if a security manager exists and its
+     * @throws     SecurityException  if a security manager exists and its
      *             {@code checkCreateClassLoader} method doesn't allow
      *             creation of a class loader.
      * @see SecurityManager#checkCreateClassLoader
@@ -134,12 +134,12 @@ public class SecureClassLoader extends ClassLoader {
      * @param      cs   the associated CodeSource, or {@code null} if none
      * @return the {@code Class} object created from the data,
      *         and optional CodeSource.
-     * @exception  ClassFormatError if the data did not contain a valid class
-     * @exception  IndexOutOfBoundsException if either {@code off} or
+     * @throws     ClassFormatError if the data did not contain a valid class
+     * @throws     IndexOutOfBoundsException if either {@code off} or
      *             {@code len} is negative, or if
      *             {@code off+len} is greater than {@code b.length}.
      *
-     * @exception  SecurityException if an attempt is made to add this class
+     * @throws     SecurityException if an attempt is made to add this class
      *             to a package that contains classes that were signed by
      *             a different set of certificates than this class, or if
      *             the class name begins with "java.".
@@ -169,8 +169,8 @@ public class SecureClassLoader extends ClassLoader {
      * @param      cs   the associated CodeSource, or {@code null} if none
      * @return the {@code Class} object created from the data,
      *         and optional CodeSource.
-     * @exception  ClassFormatError if the data did not contain a valid class
-     * @exception  SecurityException if an attempt is made to add this class
+     * @throws     ClassFormatError if the data did not contain a valid class
+     * @throws     SecurityException if an attempt is made to add this class
      *             to a package that contains classes that were signed by
      *             a different set of certificates than this class, or if
      *             the class name begins with "java.".

@@ -403,7 +403,7 @@ public abstract class Provider extends Properties {
      * Reads a property list (key and element pairs) from the input stream.
      *
      * @param inStream the input stream.
-     * @exception IOException if an error occurred when reading from the
+     * @throws    IOException if an error occurred when reading from the
      *               input stream.
      * @see java.util.Properties#load
      */

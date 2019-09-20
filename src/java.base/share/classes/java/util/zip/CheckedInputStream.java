@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2006, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -54,7 +54,7 @@ class CheckedInputStream extends FilterInputStream {
     /**
      * Reads a byte. Will block if no input is available.
      * @return the byte read, or -1 if the end of the stream is reached.
-     * @exception IOException if an I/O error has occurred
+     * @throws    IOException if an I/O error has occurred
      */
     public int read() throws IOException {
         int b = in.read();
@@ -73,11 +73,11 @@ class CheckedInputStream extends FilterInputStream {
      * @param len the maximum number of bytes read
      * @return    the actual number of bytes read, or -1 if the end
      *            of the stream is reached.
-     * @exception  NullPointerException If <code>buf</code> is <code>null</code>.
-     * @exception  IndexOutOfBoundsException If <code>off</code> is negative,
+     * @throws     NullPointerException If <code>buf</code> is <code>null</code>.
+     * @throws     IndexOutOfBoundsException If <code>off</code> is negative,
      * <code>len</code> is negative, or <code>len</code> is greater than
      * <code>buf.length - off</code>
-     * @exception IOException if an I/O error has occurred
+     * @throws    IOException if an I/O error has occurred
      */
     public int read(byte[] buf, int off, int len) throws IOException {
         len = in.read(buf, off, len);
@@ -91,7 +91,7 @@ class CheckedInputStream extends FilterInputStream {
      * Skips specified number of bytes of input.
      * @param n the number of bytes to skip
      * @return the actual number of bytes skipped
-     * @exception IOException if an I/O error has occurred
+     * @throws    IOException if an I/O error has occurred
      */
     public long skip(long n) throws IOException {
         byte[] buf = new byte[512];

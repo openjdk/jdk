@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -116,7 +116,7 @@ public class MGF1ParameterSpec implements AlgorithmParameterSpec {
      *
      * @param mdName the algorithm name for the message digest
      * used in this mask generation function MGF1.
-     * @exception NullPointerException if {@code mdName} is null.
+     * @throws    NullPointerException if {@code mdName} is null.
      */
     public MGF1ParameterSpec(String mdName) {
         if (mdName == null) {

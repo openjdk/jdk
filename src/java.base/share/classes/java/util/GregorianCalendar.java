@@ -904,7 +904,7 @@ public class GregorianCalendar extends Calendar {
      *
      * @param field the calendar field.
      * @param amount the amount of date or time to be added to the field.
-     * @exception IllegalArgumentException if <code>field</code> is
+     * @throws    IllegalArgumentException if <code>field</code> is
      * <code>ZONE_OFFSET</code>, <code>DST_OFFSET</code>, or unknown,
      * or if any calendar fields have out-of-range values in
      * non-lenient mode.
@@ -1101,7 +1101,7 @@ public class GregorianCalendar extends Calendar {
      *
      * @param up indicates if the value of the specified calendar field is to be
      * rolled up or rolled down. Use <code>true</code> if rolling up, <code>false</code> otherwise.
-     * @exception IllegalArgumentException if <code>field</code> is
+     * @throws    IllegalArgumentException if <code>field</code> is
      * <code>ZONE_OFFSET</code>, <code>DST_OFFSET</code>, or unknown,
      * or if any calendar fields have out-of-range values in
      * non-lenient mode.
@@ -1148,7 +1148,7 @@ public class GregorianCalendar extends Calendar {
      *
      * @param field the calendar field.
      * @param amount the signed amount to add to <code>field</code>.
-     * @exception IllegalArgumentException if <code>field</code> is
+     * @throws    IllegalArgumentException if <code>field</code> is
      * <code>ZONE_OFFSET</code>, <code>DST_OFFSET</code>, or unknown,
      * or if any calendar fields have out-of-range values in
      * non-lenient mode.
@@ -2183,7 +2183,7 @@ public class GregorianCalendar extends Calendar {
      *                    for the {@link #DAY_OF_WEEK DAY_OF_WEEK} field:
      *                    {@link Calendar#SUNDAY SUNDAY}, ...,
      *                    {@link Calendar#SATURDAY SATURDAY}.
-     * @exception IllegalArgumentException
+     * @throws    IllegalArgumentException
      *            if any of the given date specifiers is invalid,
      *            or if any of the calendar fields are inconsistent
      *            with the given date specifiers in non-lenient mode
@@ -2626,7 +2626,7 @@ public class GregorianCalendar extends Calendar {
      * Converts calendar field values to the time value (millisecond
      * offset from the <a href="Calendar.html#Epoch">Epoch</a>).
      *
-     * @exception IllegalArgumentException if any calendar fields are invalid.
+     * @throws    IllegalArgumentException if any calendar fields are invalid.
      */
     @Override
     protected void computeTime() {
@@ -3279,8 +3279,8 @@ public class GregorianCalendar extends Calendar {
      * @param zdt  the zoned date-time object to convert
      * @return  the gregorian calendar representing the same point on the
      *  time-line as the zoned date-time provided
-     * @exception NullPointerException if {@code zdt} is null
-     * @exception IllegalArgumentException if the zoned date-time is too
+     * @throws    NullPointerException if {@code zdt} is null
+     * @throws    IllegalArgumentException if the zoned date-time is too
      * large to represent as a {@code GregorianCalendar}
      * @since 1.8
      */

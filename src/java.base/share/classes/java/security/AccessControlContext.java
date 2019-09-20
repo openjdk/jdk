@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -162,10 +162,10 @@ public final class AccessControlContext {
      * @param combiner the {@code DomainCombiner} to be associated
      *          with the provided {@code AccessControlContext}.
      *
-     * @exception NullPointerException if the provided
+     * @throws    NullPointerException if the provided
      *          {@code context} is {@code null}.
      *
-     * @exception SecurityException if a security manager is installed and the
+     * @throws    SecurityException if a security manager is installed and the
      *          caller does not have the "createAccessControlContext"
      *          {@link SecurityPermission}
      * @since 1.3
@@ -344,7 +344,7 @@ public final class AccessControlContext {
      *          {@code AccessControlContext}, or {@code null}
      *          if there is none.
      *
-     * @exception SecurityException if a security manager is installed and
+     * @throws    SecurityException if a security manager is installed and
      *          the caller does not have the "getDomainCombiner"
      *          {@link SecurityPermission}
      * @since 1.3
@@ -383,10 +383,10 @@ public final class AccessControlContext {
      *
      * @param perm the requested permission.
      *
-     * @exception AccessControlException if the specified permission
+     * @throws    AccessControlException if the specified permission
      * is not permitted, based on the current security policy and the
      * context encapsulated by this object.
-     * @exception NullPointerException if the permission to check for is null.
+     * @throws    NullPointerException if the permission to check for is null.
      */
     public void checkPermission(Permission perm)
         throws AccessControlException

@@ -148,7 +148,7 @@ public abstract class Certificate implements java.io.Serializable {
      *
      * @return the encoded form of this certificate
      *
-     * @exception CertificateEncodingException if an encoding error occurs.
+     * @throws    CertificateEncodingException if an encoding error occurs.
      */
     public abstract byte[] getEncoded()
         throws CertificateEncodingException;
@@ -159,12 +159,12 @@ public abstract class Certificate implements java.io.Serializable {
      *
      * @param key the PublicKey used to carry out the verification.
      *
-     * @exception NoSuchAlgorithmException on unsupported signature
+     * @throws    NoSuchAlgorithmException on unsupported signature
      * algorithms.
-     * @exception InvalidKeyException on incorrect key.
-     * @exception NoSuchProviderException if there's no default provider.
-     * @exception SignatureException on signature errors.
-     * @exception CertificateException on encoding errors.
+     * @throws    InvalidKeyException on incorrect key.
+     * @throws    NoSuchProviderException if there's no default provider.
+     * @throws    SignatureException on signature errors.
+     * @throws    CertificateException on encoding errors.
      */
     public abstract void verify(PublicKey key)
         throws CertificateException, NoSuchAlgorithmException,
@@ -180,12 +180,12 @@ public abstract class Certificate implements java.io.Serializable {
      * @param key the PublicKey used to carry out the verification.
      * @param sigProvider the name of the signature provider.
      *
-     * @exception NoSuchAlgorithmException on unsupported signature
+     * @throws    NoSuchAlgorithmException on unsupported signature
      * algorithms.
-     * @exception InvalidKeyException on incorrect key.
-     * @exception NoSuchProviderException on incorrect provider.
-     * @exception SignatureException on signature errors.
-     * @exception CertificateException on encoding errors.
+     * @throws    InvalidKeyException on incorrect key.
+     * @throws    NoSuchProviderException on incorrect provider.
+     * @throws    SignatureException on signature errors.
+     * @throws    CertificateException on encoding errors.
      */
     public abstract void verify(PublicKey key, String sigProvider)
         throws CertificateException, NoSuchAlgorithmException,
@@ -207,12 +207,12 @@ public abstract class Certificate implements java.io.Serializable {
      * @param key the PublicKey used to carry out the verification.
      * @param sigProvider the signature provider.
      *
-     * @exception NoSuchAlgorithmException on unsupported signature
+     * @throws    NoSuchAlgorithmException on unsupported signature
      * algorithms.
-     * @exception InvalidKeyException on incorrect key.
-     * @exception SignatureException on signature errors.
-     * @exception CertificateException on encoding errors.
-     * @exception UnsupportedOperationException if the method is not supported
+     * @throws    InvalidKeyException on incorrect key.
+     * @throws    SignatureException on signature errors.
+     * @throws    CertificateException on encoding errors.
+     * @throws    UnsupportedOperationException if the method is not supported
      * @since 1.8
      */
     public void verify(PublicKey key, Provider sigProvider)

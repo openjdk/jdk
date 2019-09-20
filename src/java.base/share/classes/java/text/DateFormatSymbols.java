@@ -122,7 +122,7 @@ public class DateFormatSymbols implements Serializable, Cloneable {
      * @see #getInstance()
      * @see java.util.Locale#getDefault(java.util.Locale.Category)
      * @see java.util.Locale.Category#FORMAT
-     * @exception  java.util.MissingResourceException
+     * @throws     java.util.MissingResourceException
      *             if the resources for the default locale cannot be
      *             found or cannot be loaded.
      */
@@ -142,7 +142,7 @@ public class DateFormatSymbols implements Serializable, Cloneable {
      *
      * @param locale the desired locale
      * @see #getInstance(Locale)
-     * @exception  java.util.MissingResourceException
+     * @throws     java.util.MissingResourceException
      *             if the resources for the specified locale cannot be
      *             found or cannot be loaded.
      */
@@ -340,7 +340,7 @@ public class DateFormatSymbols implements Serializable, Cloneable {
      * implementations.
      * @param locale the given locale.
      * @return a <code>DateFormatSymbols</code> instance.
-     * @exception NullPointerException if <code>locale</code> is null
+     * @throws    NullPointerException if <code>locale</code> is null
      * @since 1.6
      */
     public static final DateFormatSymbols getInstance(Locale locale) {
@@ -596,9 +596,9 @@ public class DateFormatSymbols implements Serializable, Cloneable {
      * All other entries are localized names.
      *
      * @param newZoneStrings the new time zone strings.
-     * @exception IllegalArgumentException if the length of any row in
+     * @throws    IllegalArgumentException if the length of any row in
      *    <code>newZoneStrings</code> is less than 5
-     * @exception NullPointerException if <code>newZoneStrings</code> is null
+     * @throws    NullPointerException if <code>newZoneStrings</code> is null
      * @see #getZoneStrings()
      */
     public void setZoneStrings(String[][] newZoneStrings) {

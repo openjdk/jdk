@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -273,7 +273,7 @@ public class RuleBasedCollator extends Collator{
      * description for more details on the collation rule syntax.
      * @see java.util.Locale
      * @param rules the collation rules to build the collation table from.
-     * @exception ParseException A format exception
+     * @throws    ParseException A format exception
      * will be thrown if the build process of the rules fails. For
      * example, build rule "a &lt; ? &lt; d" will cause the constructor to
      * throw the ParseException because the '?' is not quoted.
@@ -290,7 +290,7 @@ public class RuleBasedCollator extends Collator{
      * @param rules the collation rules to build the collation table from.
      * @param decomp the decomposition strength used to build the
      * collation table and to perform comparisons.
-     * @exception ParseException A format exception
+     * @throws    ParseException A format exception
      * will be thrown if the build process of the rules fails. For
      * example, build rule "a < ? < d" will cause the constructor to
      * throw the ParseException because the '?' is not quoted.
@@ -350,7 +350,7 @@ public class RuleBasedCollator extends Collator{
      * than, greater than or equal to another string in a language.
      * This can be overridden in a subclass.
      *
-     * @exception NullPointerException if <code>source</code> or <code>target</code> is null.
+     * @throws    NullPointerException if <code>source</code> or <code>target</code> is null.
      */
     public synchronized int compare(String source, String target)
     {

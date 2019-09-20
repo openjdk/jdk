@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -68,11 +68,11 @@ public abstract class TimeZoneNameProvider extends LocaleServiceProvider {
      * @param locale the desired locale
      * @return the human-readable name of the given time zone in the
      *     given locale, or null if it's not available.
-     * @exception IllegalArgumentException if <code>style</code> is invalid,
+     * @throws    IllegalArgumentException if <code>style</code> is invalid,
      *     or <code>locale</code> isn't one of the locales returned from
      *     {@link java.util.spi.LocaleServiceProvider#getAvailableLocales()
      *     getAvailableLocales()}.
-     * @exception NullPointerException if <code>ID</code> or <code>locale</code>
+     * @throws    NullPointerException if <code>ID</code> or <code>locale</code>
      *     is null
      * @see java.util.TimeZone#getDisplayName(boolean, int, java.util.Locale)
      */
@@ -96,11 +96,11 @@ public abstract class TimeZoneNameProvider extends LocaleServiceProvider {
      * @param locale the desired locale
      * @return the human-readable generic name of the given time zone in the
      *     given locale, or {@code null} if it's not available.
-     * @exception IllegalArgumentException if <code>style</code> is invalid,
+     * @throws    IllegalArgumentException if <code>style</code> is invalid,
      *     or <code>locale</code> isn't one of the locales returned from
      *     {@link LocaleServiceProvider#getAvailableLocales()
      *     getAvailableLocales()}.
-     * @exception NullPointerException if <code>ID</code> or <code>locale</code>
+     * @throws    NullPointerException if <code>ID</code> or <code>locale</code>
      *     is {@code null}
      * @since 1.8
      */

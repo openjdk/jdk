@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1995, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1995, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -90,7 +90,7 @@ public abstract class ContentHandler {
      *
      * @param      urlc   a URL connection.
      * @return     the object read by the {@code ContentHandler}.
-     * @exception  IOException  if an I/O error occurs while reading the object.
+     * @throws     IOException  if an I/O error occurs while reading the object.
      */
     public abstract Object getContent(URLConnection urlc) throws IOException;
 
@@ -108,7 +108,7 @@ public abstract class ContentHandler {
      * @return     the object read by the {@code ContentHandler} that is
      *                 the first match of the suggested types or
      *                 {@code null} if none of the requested  are supported.
-     * @exception  IOException  if an I/O error occurs while reading the object.
+     * @throws     IOException  if an I/O error occurs while reading the object.
      * @since 1.3
      */
     @SuppressWarnings("rawtypes")

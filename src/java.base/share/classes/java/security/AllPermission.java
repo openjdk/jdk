@@ -178,10 +178,10 @@ final class AllPermissionCollection
      *
      * @param permission the Permission object to add.
      *
-     * @exception IllegalArgumentException - if the permission is not a
+     * @throws    IllegalArgumentException - if the permission is not a
      *                                       AllPermission
      *
-     * @exception SecurityException - if this AllPermissionCollection object
+     * @throws    SecurityException - if this AllPermissionCollection object
      *                                has been marked readonly
      */
 

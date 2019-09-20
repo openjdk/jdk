@@ -1161,7 +1161,7 @@ class InetAddress implements java.io.Serializable {
      * @param host the specified host
      * @param addr the raw IP address in network byte order
      * @return  an InetAddress object created from the raw IP address.
-     * @exception  UnknownHostException  if IP address is of illegal length
+     * @throws     UnknownHostException  if IP address is of illegal length
      * @since 1.4
      */
     public static InetAddress getByAddress(String host, byte[] addr)
@@ -1216,10 +1216,10 @@ class InetAddress implements java.io.Serializable {
      *
      * @param      host   the specified host, or {@code null}.
      * @return     an IP address for the given host name.
-     * @exception  UnknownHostException  if no IP address for the
+     * @throws     UnknownHostException  if no IP address for the
      *               {@code host} could be found, or if a scope_id was specified
      *               for a global IPv6 address.
-     * @exception  SecurityException if a security manager exists
+     * @throws     SecurityException if a security manager exists
      *             and its checkConnect method doesn't allow the operation
      */
     public static InetAddress getByName(String host)
@@ -1264,10 +1264,10 @@ class InetAddress implements java.io.Serializable {
      * @param      host   the name of the host, or {@code null}.
      * @return     an array of all the IP addresses for a given host name.
      *
-     * @exception  UnknownHostException  if no IP address for the
+     * @throws     UnknownHostException  if no IP address for the
      *               {@code host} could be found, or if a scope_id was specified
      *               for a global IPv6 address.
-     * @exception  SecurityException  if a security manager exists and its
+     * @throws     SecurityException  if a security manager exists and its
      *               {@code checkConnect} method doesn't allow the operation.
      *
      * @see SecurityManager#checkConnect
@@ -1542,7 +1542,7 @@ class InetAddress implements java.io.Serializable {
      *
      * @param addr the raw IP address in network byte order
      * @return  an InetAddress object created from the raw IP address.
-     * @exception  UnknownHostException  if IP address is of illegal length
+     * @throws     UnknownHostException  if IP address is of illegal length
      * @since 1.4
      */
     public static InetAddress getByAddress(byte[] addr)
@@ -1580,7 +1580,7 @@ class InetAddress implements java.io.Serializable {
      *
      * @return     the address of the local host.
      *
-     * @exception  UnknownHostException  if the local host name could not
+     * @throws     UnknownHostException  if the local host name could not
      *             be resolved into an address.
      *
      * @see SecurityManager#checkConnect

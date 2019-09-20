@@ -425,8 +425,8 @@ public class DecimalFormat extends NumberFormat {
      * locale.
      *
      * @param pattern a non-localized pattern string.
-     * @exception NullPointerException if {@code pattern} is null
-     * @exception IllegalArgumentException if the given pattern is invalid.
+     * @throws    NullPointerException if {@code pattern} is null
+     * @throws    IllegalArgumentException if the given pattern is invalid.
      * @see java.text.NumberFormat#getInstance
      * @see java.text.NumberFormat#getNumberInstance
      * @see java.text.NumberFormat#getCurrencyInstance
@@ -452,8 +452,8 @@ public class DecimalFormat extends NumberFormat {
      *
      * @param pattern a non-localized pattern string
      * @param symbols the set of symbols to be used
-     * @exception NullPointerException if any of the given arguments is null
-     * @exception IllegalArgumentException if the given pattern is invalid
+     * @throws    NullPointerException if any of the given arguments is null
+     * @throws    IllegalArgumentException if the given pattern is invalid
      * @see java.text.NumberFormat#getInstance
      * @see java.text.NumberFormat#getNumberInstance
      * @see java.text.NumberFormat#getCurrencyInstance
@@ -486,11 +486,11 @@ public class DecimalFormat extends NumberFormat {
      *                   to 0 and 9, respectively for the output string
      *                   {@code 1,234,567.89}.
      * @return           the value passed in as {@code toAppendTo}
-     * @exception        IllegalArgumentException if {@code number} is
+     * @throws           IllegalArgumentException if {@code number} is
      *                   null or not an instance of {@code Number}.
-     * @exception        NullPointerException if {@code toAppendTo} or
+     * @throws           NullPointerException if {@code toAppendTo} or
      *                   {@code pos} is null
-     * @exception        ArithmeticException if rounding is needed with rounding
+     * @throws           ArithmeticException if rounding is needed with rounding
      *                   mode being set to RoundingMode.UNNECESSARY
      * @see              java.text.FieldPosition
      */
@@ -528,9 +528,9 @@ public class DecimalFormat extends NumberFormat {
      *                         and end index of {@code fieldPosition} will be set
      *                         to 0 and 9, respectively for the output string
      *                         {@code 1,234,567.89}.
-     * @exception NullPointerException if {@code result} or
+     * @throws    NullPointerException if {@code result} or
      *            {@code fieldPosition} is {@code null}
-     * @exception ArithmeticException if rounding is needed with rounding
+     * @throws    ArithmeticException if rounding is needed with rounding
      *            mode being set to RoundingMode.UNNECESSARY
      * @return The formatted number string
      * @see java.text.FieldPosition
@@ -565,7 +565,7 @@ public class DecimalFormat extends NumberFormat {
      * @param number    The double to format
      * @param result    where the text is to be appended
      * @param delegate notified of locations of sub fields
-     * @exception       ArithmeticException if rounding is needed with rounding
+     * @throws          ArithmeticException if rounding is needed with rounding
      *                  mode being set to RoundingMode.UNNECESSARY
      * @return The formatted number string
      */
@@ -698,9 +698,9 @@ public class DecimalFormat extends NumberFormat {
      *                         and end index of {@code fieldPosition} will be set
      *                         to 0 and 11, respectively for the output string
      *                         {@code 123,456,789}.
-     * @exception       NullPointerException if {@code result} or
+     * @throws          NullPointerException if {@code result} or
      *                  {@code fieldPosition} is {@code null}
-     * @exception       ArithmeticException if rounding is needed with rounding
+     * @throws          ArithmeticException if rounding is needed with rounding
      *                  mode being set to RoundingMode.UNNECESSARY
      * @return The formatted number string
      * @see java.text.FieldPosition
@@ -720,7 +720,7 @@ public class DecimalFormat extends NumberFormat {
      * @param result    where the text is to be appended
      * @param delegate notified of locations of sub fields
      * @return The formatted number string
-     * @exception        ArithmeticException if rounding is needed with rounding
+     * @throws           ArithmeticException if rounding is needed with rounding
      *                   mode being set to RoundingMode.UNNECESSARY
      * @see java.text.FieldPosition
      */
@@ -795,7 +795,7 @@ public class DecimalFormat extends NumberFormat {
      *                         to 0 and 9, respectively for the output string
      *                         {@code 1,234,567.89}.
      * @return The formatted number string
-     * @exception        ArithmeticException if rounding is needed with rounding
+     * @throws           ArithmeticException if rounding is needed with rounding
      *                   mode being set to RoundingMode.UNNECESSARY
      * @see java.text.FieldPosition
      */
@@ -811,7 +811,7 @@ public class DecimalFormat extends NumberFormat {
      * @param number    The BigDecimal to format
      * @param result    where the text is to be appended
      * @param delegate notified of locations of sub fields
-     * @exception        ArithmeticException if rounding is needed with rounding
+     * @throws           ArithmeticException if rounding is needed with rounding
      *                   mode being set to RoundingMode.UNNECESSARY
      * @return The formatted number string
      */
@@ -854,7 +854,7 @@ public class DecimalFormat extends NumberFormat {
      *                         to 0 and 11, respectively for the output string
      *                         {@code 123,456,789}.
      * @return The formatted number string
-     * @exception        ArithmeticException if rounding is needed with rounding
+     * @throws           ArithmeticException if rounding is needed with rounding
      *                   mode being set to RoundingMode.UNNECESSARY
      * @see java.text.FieldPosition
      */
@@ -872,7 +872,7 @@ public class DecimalFormat extends NumberFormat {
      * @param result    where the text is to be appended
      * @param delegate notified of locations of sub fields
      * @return The formatted number string
-     * @exception        ArithmeticException if rounding is needed with rounding
+     * @throws           ArithmeticException if rounding is needed with rounding
      *                   mode being set to RoundingMode.UNNECESSARY
      * @see java.text.FieldPosition
      */
@@ -923,10 +923,10 @@ public class DecimalFormat extends NumberFormat {
      * {@code NumberFormat.Field}, with the attribute value being the
      * same as the attribute key.
      *
-     * @exception NullPointerException if obj is null.
-     * @exception IllegalArgumentException when the Format cannot format the
+     * @throws    NullPointerException if obj is null.
+     * @throws    IllegalArgumentException when the Format cannot format the
      *            given object.
-     * @exception        ArithmeticException if rounding is needed with rounding
+     * @throws           ArithmeticException if rounding is needed with rounding
      *                   mode being set to RoundingMode.UNNECESSARY
      * @param obj The object to format
      * @return AttributedCharacterIterator describing the formatted value.
@@ -2130,7 +2130,7 @@ public class DecimalFormat extends NumberFormat {
      * @param pos  A {@code ParsePosition} object with index and error
      *             index information as described above.
      * @return     the parsed value, or {@code null} if the parse fails
-     * @exception  NullPointerException if {@code text} or
+     * @throws     NullPointerException if {@code text} or
      *             {@code pos} is null.
      */
     @Override
@@ -3254,8 +3254,8 @@ public class DecimalFormat extends NumberFormat {
      * these are presumed to be set in the positive pattern.
      *
      * @param pattern a new pattern
-     * @exception NullPointerException if {@code pattern} is null
-     * @exception IllegalArgumentException if the given pattern is invalid.
+     * @throws    NullPointerException if {@code pattern} is null
+     * @throws    IllegalArgumentException if the given pattern is invalid.
      */
     public void applyPattern(String pattern) {
         applyPattern(pattern, false);
@@ -3281,8 +3281,8 @@ public class DecimalFormat extends NumberFormat {
      * these are presumed to be set in the positive pattern.
      *
      * @param pattern a new pattern
-     * @exception NullPointerException if {@code pattern} is null
-     * @exception IllegalArgumentException if the given pattern is invalid.
+     * @throws    NullPointerException if {@code pattern} is null
+     * @throws    IllegalArgumentException if the given pattern is invalid.
      */
     public void applyLocalizedPattern(String pattern) {
         applyPattern(pattern, true);
@@ -3782,7 +3782,7 @@ public class DecimalFormat extends NumberFormat {
      * on this number format's symbols.
      *
      * @param currency the new currency to be used by this decimal format
-     * @exception NullPointerException if {@code currency} is null
+     * @throws    NullPointerException if {@code currency} is null
      * @since 1.4
      */
     @Override
@@ -3813,7 +3813,7 @@ public class DecimalFormat extends NumberFormat {
      *
      * @param roundingMode The {@code RoundingMode} to be used
      * @see #getRoundingMode()
-     * @exception NullPointerException if {@code roundingMode} is null.
+     * @throws    NullPointerException if {@code roundingMode} is null.
      * @since 1.6
      */
     @Override

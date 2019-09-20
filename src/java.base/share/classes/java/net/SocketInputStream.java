@@ -86,7 +86,7 @@ class SocketInputStream extends FileInputStream {
      * @param timeout the read timeout in ms
      * @return the actual number of bytes read, -1 is
      *          returned when the end of the stream is reached.
-     * @exception IOException If an I/O error has occurred.
+     * @throws    IOException If an I/O error has occurred.
      */
     private native int socketRead0(FileDescriptor fd,
                                    byte b[], int off, int len,
@@ -104,7 +104,7 @@ class SocketInputStream extends FileInputStream {
      * @param timeout the read timeout in ms
      * @return the actual number of bytes read, -1 is
      *          returned when the end of the stream is reached.
-     * @exception IOException If an I/O error has occurred.
+     * @throws    IOException If an I/O error has occurred.
      */
     private int socketRead(FileDescriptor fd,
                            byte b[], int off, int len,
@@ -118,7 +118,7 @@ class SocketInputStream extends FileInputStream {
      * @param b the buffer into which the data is read
      * @return the actual number of bytes read, -1 is
      *          returned when the end of the stream is reached.
-     * @exception IOException If an I/O error has occurred.
+     * @throws    IOException If an I/O error has occurred.
      */
     public int read(byte b[]) throws IOException {
         return read(b, 0, b.length);
@@ -132,7 +132,7 @@ class SocketInputStream extends FileInputStream {
      * @param length the maximum number of bytes read
      * @return the actual number of bytes read, -1 is
      *          returned when the end of the stream is reached.
-     * @exception IOException If an I/O error has occurred.
+     * @throws    IOException If an I/O error has occurred.
      */
     public int read(byte b[], int off, int length) throws IOException {
         return read(b, off, length, impl.getTimeout());
@@ -206,7 +206,7 @@ class SocketInputStream extends FileInputStream {
      * Skips n bytes of input.
      * @param numbytes the number of bytes to skip
      * @return  the actual number of bytes skipped.
-     * @exception IOException If an I/O error has occurred.
+     * @throws    IOException If an I/O error has occurred.
      */
     public long skip(long numbytes) throws IOException {
         if (numbytes <= 0) {

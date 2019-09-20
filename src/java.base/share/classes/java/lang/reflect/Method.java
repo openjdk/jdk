@@ -524,10 +524,10 @@ public final class Method extends Executable {
      * this object on {@code obj} with parameters
      * {@code args}
      *
-     * @exception IllegalAccessException    if this {@code Method} object
+     * @throws    IllegalAccessException    if this {@code Method} object
      *              is enforcing Java language access control and the underlying
      *              method is inaccessible.
-     * @exception IllegalArgumentException  if the method is an
+     * @throws    IllegalArgumentException  if the method is an
      *              instance method and the specified object argument
      *              is not an instance of the class or interface
      *              declaring the underlying method (or of a subclass
@@ -537,11 +537,11 @@ public final class Method extends Executable {
      *              after possible unwrapping, a parameter value
      *              cannot be converted to the corresponding formal
      *              parameter type by a method invocation conversion.
-     * @exception InvocationTargetException if the underlying method
+     * @throws    InvocationTargetException if the underlying method
      *              throws an exception.
-     * @exception NullPointerException      if the specified object is null
+     * @throws    NullPointerException      if the specified object is null
      *              and the method is an instance method.
-     * @exception ExceptionInInitializerError if the initialization
+     * @throws    ExceptionInInitializerError if the initialization
      * provoked by this method fails.
      */
     @CallerSensitive

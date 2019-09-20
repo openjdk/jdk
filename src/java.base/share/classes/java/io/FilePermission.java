@@ -1127,10 +1127,10 @@ final class FilePermissionCollection extends PermissionCollection
      *
      * @param permission the Permission object to add.
      *
-     * @exception IllegalArgumentException - if the permission is not a
+     * @throws    IllegalArgumentException - if the permission is not a
      *                                       FilePermission
      *
-     * @exception SecurityException - if this FilePermissionCollection object
+     * @throws    SecurityException - if this FilePermissionCollection object
      *                                has been marked readonly
      */
     @Override

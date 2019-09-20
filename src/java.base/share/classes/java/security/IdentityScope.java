@@ -121,7 +121,7 @@ class IdentityScope extends Identity {
      * @param name the scope name.
      * @param scope the scope for the new identity scope.
      *
-     * @exception KeyManagementException if there is already an identity
+     * @throws    KeyManagementException if there is already an identity
      * with the same name in the scope.
      */
     public IdentityScope(String name, IdentityScope scope)
@@ -155,7 +155,7 @@ class IdentityScope extends Identity {
      *
      * @param scope the scope to set.
      *
-     * @exception  SecurityException  if a security manager exists and its
+     * @throws     SecurityException  if a security manager exists and its
      * {@code checkSecurityAccess} method doesn't allow
      * setting the identity scope.
      *
@@ -214,7 +214,7 @@ class IdentityScope extends Identity {
      *
      * @param identity the identity to be added.
      *
-     * @exception KeyManagementException if the identity is not
+     * @throws    KeyManagementException if the identity is not
      * valid, a name conflict occurs, another identity has the same
      * public key as the identity being added, or another exception
      * occurs. */
@@ -226,7 +226,7 @@ class IdentityScope extends Identity {
      *
      * @param identity the identity to be removed.
      *
-     * @exception KeyManagementException if the identity is missing,
+     * @throws    KeyManagementException if the identity is missing,
      * or another exception occurs.
      */
     public abstract void removeIdentity(Identity identity)

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -63,9 +63,9 @@ public abstract class CurrencyNameProvider extends LocaleServiceProvider {
      * @param locale the desired locale
      * @return the symbol of the given currency code for the specified locale, or null if
      *     the symbol is not available for the locale
-     * @exception NullPointerException if <code>currencyCode</code> or
+     * @throws    NullPointerException if <code>currencyCode</code> or
      *     <code>locale</code> is null
-     * @exception IllegalArgumentException if <code>currencyCode</code> is not in
+     * @throws    IllegalArgumentException if <code>currencyCode</code> is not in
      *     the form of three upper-case letters, or <code>locale</code> isn't
      *     one of the locales returned from
      *     {@link java.util.spi.LocaleServiceProvider#getAvailableLocales()
@@ -84,12 +84,12 @@ public abstract class CurrencyNameProvider extends LocaleServiceProvider {
      * @param locale the desired locale
      * @return the name for the currency that is appropriate for display to the
      *     user, or null if the name is not available for the locale
-     * @exception IllegalArgumentException if <code>currencyCode</code> is not in
+     * @throws    IllegalArgumentException if <code>currencyCode</code> is not in
      *     the form of three upper-case letters, or <code>locale</code> isn't
      *     one of the locales returned from
      *     {@link java.util.spi.LocaleServiceProvider#getAvailableLocales()
      *     getAvailableLocales()}.
-     * @exception NullPointerException if <code>currencyCode</code> or
+     * @throws    NullPointerException if <code>currencyCode</code> or
      *     <code>locale</code> is <code>null</code>
      * @since 1.7
      */

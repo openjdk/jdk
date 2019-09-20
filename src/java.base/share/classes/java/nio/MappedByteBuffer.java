@@ -322,14 +322,14 @@ public abstract class MappedByteBuffer
      * mapping modes. This method may or may not have an effect for
      * implementation-specific mapping modes. </p>
      *
-     * @param index
-     *        The index of the first byte in the buffer region that is
-     *        to be written back to storage; must be non-negative
-     *        and less than limit()
+     * @param  index
+     *         The index of the first byte in the buffer region that is
+     *         to be written back to storage; must be non-negative
+     *         and less than limit()
      *
-     * @param length
-     *        The length of the region in bytes; must be non-negative
-     *        and no larger than limit() - index
+     * @param  length
+     *         The length of the region in bytes; must be non-negative
+     *         and no larger than limit() - index
      *
      * @throws IndexOutOfBoundsException
      *         if the preconditions on the index and length do not

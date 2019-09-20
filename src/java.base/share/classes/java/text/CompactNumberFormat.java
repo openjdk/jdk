@@ -1342,7 +1342,7 @@ public final class CompactNumberFormat extends NumberFormat {
      * @param pos  a {@code ParsePosition} object with index and error
      *             index information as described above
      * @return the parsed value, or {@code null} if the parse fails
-     * @exception  NullPointerException if {@code text} or
+     * @throws     NullPointerException if {@code text} or
      *             {@code pos} is null
      *
      */
@@ -2143,4 +2143,3 @@ public final class CompactNumberFormat extends NumberFormat {
     }
 
 }
-

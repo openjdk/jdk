@@ -77,7 +77,7 @@ public class GuardedObject implements java.io.Serializable {
      *
      * @return the guarded object.
      *
-     * @exception SecurityException if access to the guarded object is
+     * @throws    SecurityException if access to the guarded object is
      * denied.
      */
     public Object getObject()

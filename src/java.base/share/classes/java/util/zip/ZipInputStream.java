@@ -110,8 +110,8 @@ class ZipInputStream extends InflaterInputStream implements ZipConstants {
      * Reads the next ZIP file entry and positions the stream at the
      * beginning of the entry data.
      * @return the next ZIP file entry, or null if there are no more entries
-     * @exception ZipException if a ZIP file error has occurred
-     * @exception IOException if an I/O error has occurred
+     * @throws    ZipException if a ZIP file error has occurred
+     * @throws    IOException if an I/O error has occurred
      */
     public ZipEntry getNextEntry() throws IOException {
         ensureOpen();
@@ -133,8 +133,8 @@ class ZipInputStream extends InflaterInputStream implements ZipConstants {
     /**
      * Closes the current ZIP entry and positions the stream for reading the
      * next entry.
-     * @exception ZipException if a ZIP file error has occurred
-     * @exception IOException if an I/O error has occurred
+     * @throws    ZipException if a ZIP file error has occurred
+     * @throws    IOException if an I/O error has occurred
      */
     public void closeEntry() throws IOException {
         ensureOpen();
@@ -150,7 +150,7 @@ class ZipInputStream extends InflaterInputStream implements ZipConstants {
      * of bytes that could be read without blocking.
      *
      * @return     1 before EOF and 0 after EOF has reached for current entry.
-     * @exception  IOException  if an I/O error occurs.
+     * @throws     IOException  if an I/O error occurs.
      *
      */
     public int available() throws IOException {
@@ -172,12 +172,12 @@ class ZipInputStream extends InflaterInputStream implements ZipConstants {
      * @param len the maximum number of bytes read
      * @return the actual number of bytes read, or -1 if the end of the
      *         entry is reached
-     * @exception  NullPointerException if <code>b</code> is <code>null</code>.
-     * @exception  IndexOutOfBoundsException if <code>off</code> is negative,
+     * @throws     NullPointerException if <code>b</code> is <code>null</code>.
+     * @throws     IndexOutOfBoundsException if <code>off</code> is negative,
      * <code>len</code> is negative, or <code>len</code> is greater than
      * <code>b.length - off</code>
-     * @exception ZipException if a ZIP file error has occurred
-     * @exception IOException if an I/O error has occurred
+     * @throws    ZipException if a ZIP file error has occurred
+     * @throws    IOException if an I/O error has occurred
      */
     public int read(byte[] b, int off, int len) throws IOException {
         ensureOpen();
@@ -231,9 +231,9 @@ class ZipInputStream extends InflaterInputStream implements ZipConstants {
      * Skips specified number of bytes in the current ZIP entry.
      * @param n the number of bytes to skip
      * @return the actual number of bytes skipped
-     * @exception ZipException if a ZIP file error has occurred
-     * @exception IOException if an I/O error has occurred
-     * @exception IllegalArgumentException if {@code n < 0}
+     * @throws    ZipException if a ZIP file error has occurred
+     * @throws    IOException if an I/O error has occurred
+     * @throws    IllegalArgumentException if {@code n < 0}
      */
     public long skip(long n) throws IOException {
         if (n < 0) {
@@ -260,7 +260,7 @@ class ZipInputStream extends InflaterInputStream implements ZipConstants {
     /**
      * Closes this input stream and releases any system resources associated
      * with the stream.
-     * @exception IOException if an I/O error has occurred
+     * @throws    IOException if an I/O error has occurred
      */
     public void close() throws IOException {
         if (!closed) {

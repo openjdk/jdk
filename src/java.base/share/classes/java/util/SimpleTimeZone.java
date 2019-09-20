@@ -209,7 +209,7 @@ public class SimpleTimeZone extends TimeZone {
      * @param endTime         The daylight saving ending time in local wall clock time,
      *                        (in milliseconds within the day) which is local daylight
      *                        time in this case.
-     * @exception IllegalArgumentException if the month, day, dayOfWeek, or time
+     * @throws    IllegalArgumentException if the month, day, dayOfWeek, or time
      * parameters are out of range for the start or end rule
      */
     public SimpleTimeZone(int rawOffset, String ID,
@@ -266,7 +266,7 @@ public class SimpleTimeZone extends TimeZone {
      *                        which is local daylight time in this case.
      * @param dstSavings      The amount of time in milliseconds saved during
      *                        daylight saving time.
-     * @exception IllegalArgumentException if the month, day, dayOfWeek, or time
+     * @throws    IllegalArgumentException if the month, day, dayOfWeek, or time
      * parameters are out of range for the start or end rule
      * @since 1.2
      */
@@ -316,7 +316,7 @@ public class SimpleTimeZone extends TimeZone {
      * @param dstSavings      The amount of time in milliseconds saved during
      *                        daylight saving time.
      *
-     * @exception IllegalArgumentException if the month, day, dayOfWeek, time more, or
+     * @throws    IllegalArgumentException if the month, day, dayOfWeek, time more, or
      * time parameters are out of range for the start or end rule, or if a time mode
      * value is invalid.
      *
@@ -380,7 +380,7 @@ public class SimpleTimeZone extends TimeZone {
      *                        See the class description for the special cases of this parameter.
      * @param startTime       The daylight saving time starting time in local wall clock
      *                        time, which is local standard time in this case.
-     * @exception IllegalArgumentException if the <code>startMonth</code>, <code>startDay</code>,
+     * @throws    IllegalArgumentException if the <code>startMonth</code>, <code>startDay</code>,
      * <code>startDayOfWeek</code>, or <code>startTime</code> parameters are out of range
      */
     public void setStartRule(int startMonth, int startDay, int startDayOfWeek, int startTime)
@@ -406,7 +406,7 @@ public class SimpleTimeZone extends TimeZone {
      * @param startTime       The daylight saving time starting time in local wall clock
      *                        time, which is local standard time in this case.
      *                        See the class description for the special cases of this parameter.
-     * @exception IllegalArgumentException if the <code>startMonth</code>,
+     * @throws    IllegalArgumentException if the <code>startMonth</code>,
      * <code>startDayOfMonth</code>, or <code>startTime</code> parameters are out of range
      * @since 1.2
      */
@@ -429,7 +429,7 @@ public class SimpleTimeZone extends TimeZone {
      *                        <em>after</em> <code>dayOfMonth</code>.  If false, this rule
      *                        selects the last <code>dayOfWeek</code> on or <em>before</em>
      *                        <code>dayOfMonth</code>.
-     * @exception IllegalArgumentException if the <code>startMonth</code>, <code>startDay</code>,
+     * @throws    IllegalArgumentException if the <code>startMonth</code>, <code>startDay</code>,
      * <code>startDayOfWeek</code>, or <code>startTime</code> parameters are out of range
      * @since 1.2
      */
@@ -460,7 +460,7 @@ public class SimpleTimeZone extends TimeZone {
      * @param endTime         The daylight saving ending time in local wall clock time,
      *                        (in milliseconds within the day) which is local daylight
      *                        time in this case.
-     * @exception IllegalArgumentException if the <code>endMonth</code>, <code>endDay</code>,
+     * @throws    IllegalArgumentException if the <code>endMonth</code>, <code>endDay</code>,
      * <code>endDayOfWeek</code>, or <code>endTime</code> parameters are out of range
      */
     public void setEndRule(int endMonth, int endDay, int endDayOfWeek,
@@ -487,7 +487,7 @@ public class SimpleTimeZone extends TimeZone {
      * @param endTime         The daylight saving ending time in local wall clock time,
      *                        (in milliseconds within the day) which is local daylight
      *                        time in this case.
-     * @exception IllegalArgumentException the <code>endMonth</code>, <code>endDay</code>,
+     * @throws    IllegalArgumentException the <code>endMonth</code>, <code>endDay</code>,
      * or <code>endTime</code> parameters are out of range
      * @since 1.2
      */
@@ -512,7 +512,7 @@ public class SimpleTimeZone extends TimeZone {
      *                        or <em>after</em> <code>endDay</code>.  If false, this rule
      *                        selects the last <code>endDayOfWeek</code> on or before
      *                        <code>endDay</code> of the month.
-     * @exception IllegalArgumentException the <code>endMonth</code>, <code>endDay</code>,
+     * @throws    IllegalArgumentException the <code>endMonth</code>, <code>endDay</code>,
      * <code>endDayOfWeek</code>, or <code>endTime</code> parameters are out of range
      * @since 1.2
      */
@@ -597,7 +597,7 @@ public class SimpleTimeZone extends TimeZone {
      * @param dayOfWeek The day-of-week of the given date.
      * @param millis    The milliseconds in day in <em>standard</em> local time.
      * @return          The milliseconds to add to UTC to get local time.
-     * @exception       IllegalArgumentException the <code>era</code>,
+     * @throws          IllegalArgumentException the <code>era</code>,
      *                  <code>month</code>, <code>day</code>, <code>dayOfWeek</code>,
      *                  or <code>millis</code> parameters are out of range
      */

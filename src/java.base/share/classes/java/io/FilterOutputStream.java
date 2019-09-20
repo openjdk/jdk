@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1994, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1994, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -80,7 +80,7 @@ public class FilterOutputStream extends OutputStream {
      * Implements the abstract {@code write} method of {@code OutputStream}.
      *
      * @param      b   the <code>byte</code>.
-     * @exception  IOException  if an I/O error occurs.
+     * @throws     IOException  if an I/O error occurs.
      */
     @Override
     public void write(int b) throws IOException {
@@ -100,7 +100,7 @@ public class FilterOutputStream extends OutputStream {
      * the single argument <code>b</code>.
      *
      * @param      b   the data to be written.
-     * @exception  IOException  if an I/O error occurs.
+     * @throws     IOException  if an I/O error occurs.
      * @see        java.io.FilterOutputStream#write(byte[], int, int)
      */
     @Override
@@ -125,7 +125,7 @@ public class FilterOutputStream extends OutputStream {
      * @param      b     the data.
      * @param      off   the start offset in the data.
      * @param      len   the number of bytes to write.
-     * @exception  IOException  if an I/O error occurs.
+     * @throws     IOException  if an I/O error occurs.
      * @see        java.io.FilterOutputStream#write(int)
      */
     @Override
@@ -145,7 +145,7 @@ public class FilterOutputStream extends OutputStream {
      * The <code>flush</code> method of <code>FilterOutputStream</code>
      * calls the <code>flush</code> method of its underlying output stream.
      *
-     * @exception  IOException  if an I/O error occurs.
+     * @throws     IOException  if an I/O error occurs.
      * @see        java.io.FilterOutputStream#out
      */
     @Override
@@ -161,7 +161,7 @@ public class FilterOutputStream extends OutputStream {
      * FilterOutputStream} calls its {@code flush} method, and then
      * calls the {@code close} method of its underlying output stream.
      *
-     * @exception  IOException  if an I/O error occurs.
+     * @throws     IOException  if an I/O error occurs.
      * @see        java.io.FilterOutputStream#flush()
      * @see        java.io.FilterOutputStream#out
      */

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -125,7 +125,7 @@ public final class DomainLoadStoreParameter implements LoadStoreParameter {
      *     been specified by properties in the domain configuration data.
      *     It is cloned to prevent subsequent modification.
      *
-     * @exception NullPointerException if {@code configuration} or
+     * @throws    NullPointerException if {@code configuration} or
      *     {@code protectionParams} is {@code null}
      */
     public DomainLoadStoreParameter(URI configuration,

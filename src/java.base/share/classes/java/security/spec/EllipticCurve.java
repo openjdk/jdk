@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -73,9 +73,9 @@ public class EllipticCurve {
      * @param field the finite field that this elliptic curve is over.
      * @param a the first coefficient of this elliptic curve.
      * @param b the second coefficient of this elliptic curve.
-     * @exception NullPointerException if {@code field},
+     * @throws    NullPointerException if {@code field},
      * {@code a}, or {@code b} is null.
-     * @exception IllegalArgumentException if {@code a}
+     * @throws    IllegalArgumentException if {@code a}
      * or {@code b} is not null and not in {@code field}.
      */
     public EllipticCurve(ECField field, BigInteger a,
@@ -93,9 +93,9 @@ public class EllipticCurve {
      * @param seed the bytes used during curve generation for later
      * validation. Contents of this array are copied to protect against
      * subsequent modification.
-     * @exception NullPointerException if {@code field},
+     * @throws    NullPointerException if {@code field},
      * {@code a}, or {@code b} is null.
-     * @exception IllegalArgumentException if {@code a}
+     * @throws    IllegalArgumentException if {@code a}
      * or {@code b} is not null and not in {@code field}.
      */
     public EllipticCurve(ECField field, BigInteger a,

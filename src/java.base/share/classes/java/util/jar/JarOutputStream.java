@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -52,7 +52,7 @@ class JarOutputStream extends ZipOutputStream {
      *
      * @param out the actual output stream
      * @param man the optional <code>Manifest</code>
-     * @exception IOException if an I/O error has occurred
+     * @throws    IOException if an I/O error has occurred
      */
     public JarOutputStream(OutputStream out, Manifest man) throws IOException {
         super(out);
@@ -68,7 +68,7 @@ class JarOutputStream extends ZipOutputStream {
     /**
      * Creates a new <code>JarOutputStream</code> with no manifest.
      * @param out the actual output stream
-     * @exception IOException if an I/O error has occurred
+     * @throws    IOException if an I/O error has occurred
      */
     public JarOutputStream(OutputStream out) throws IOException {
         super(out);
@@ -83,8 +83,8 @@ class JarOutputStream extends ZipOutputStream {
      * time.
      *
      * @param ze the ZIP/JAR entry to be written
-     * @exception ZipException if a ZIP error has occurred
-     * @exception IOException if an I/O error has occurred
+     * @throws    ZipException if a ZIP error has occurred
+     * @throws    IOException if an I/O error has occurred
      */
     public void putNextEntry(ZipEntry ze) throws IOException {
         if (firstEntry) {

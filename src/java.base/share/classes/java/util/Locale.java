@@ -740,7 +740,7 @@ public final class Locale implements Cloneable, Serializable {
      * See the <code>Locale</code> class description about valid country values.
      * @param variant Any arbitrary value used to indicate a variation of a <code>Locale</code>.
      * See the <code>Locale</code> class description for the details.
-     * @exception NullPointerException thrown if any argument is null.
+     * @throws    NullPointerException thrown if any argument is null.
      */
     public Locale(String language, String country, String variant) {
         if (language == null || country == null || variant == null) {
@@ -770,7 +770,7 @@ public final class Locale implements Cloneable, Serializable {
      * valid language values.
      * @param country An ISO 3166 alpha-2 country code or a UN M.49 numeric-3 area code.
      * See the <code>Locale</code> class description about valid country values.
-     * @exception NullPointerException thrown if either argument is null.
+     * @throws    NullPointerException thrown if either argument is null.
      */
     public Locale(String language, String country) {
         this(language, country, "");
@@ -793,7 +793,7 @@ public final class Locale implements Cloneable, Serializable {
      * @param language An ISO 639 alpha-2 or alpha-3 language code, or a language subtag
      * up to 8 characters in length.  See the <code>Locale</code> class description about
      * valid language values.
-     * @exception NullPointerException thrown if argument is null.
+     * @throws    NullPointerException thrown if argument is null.
      * @since 1.4
      */
     public Locale(String language) {
@@ -812,7 +812,7 @@ public final class Locale implements Cloneable, Serializable {
      * @param country uppercase two-letter ISO-3166 code and numeric-3 UN M.49 area code.
      * @param variant vendor and browser specific code. See class description.
      * @return the <code>Locale</code> instance requested
-     * @exception NullPointerException if any argument is null.
+     * @throws    NullPointerException if any argument is null.
      */
     static Locale getInstance(String language, String country, String variant) {
         return getInstance(language, "", country, variant, null);
@@ -1737,7 +1737,7 @@ public final class Locale implements Cloneable, Serializable {
      * not specify a language the empty string is returned.
      *
      * @return A three-letter abbreviation of this locale's language.
-     * @exception MissingResourceException Throws MissingResourceException if
+     * @throws    MissingResourceException Throws MissingResourceException if
      * three-letter language abbreviation is not available for this locale.
      */
     public String getISO3Language() throws MissingResourceException {
@@ -1764,7 +1764,7 @@ public final class Locale implements Cloneable, Serializable {
      * <p>The ISO 3166-1 codes can be found on-line.
      *
      * @return A three-letter abbreviation of this locale's country.
-     * @exception MissingResourceException Throws MissingResourceException if the
+     * @throws    MissingResourceException Throws MissingResourceException if the
      * three-letter country abbreviation is not available for this locale.
      */
     public String getISO3Country() throws MissingResourceException {
@@ -1834,7 +1834,7 @@ public final class Locale implements Cloneable, Serializable {
      *
      * @param inLocale The locale for which to retrieve the display language.
      * @return The name of the display language appropriate to the given locale.
-     * @exception NullPointerException if <code>inLocale</code> is <code>null</code>
+     * @throws    NullPointerException if <code>inLocale</code> is <code>null</code>
      */
     public String getDisplayLanguage(Locale inLocale) {
         return getDisplayString(baseLocale.getLanguage(), null, inLocale, DISPLAY_LANGUAGE);
@@ -1907,7 +1907,7 @@ public final class Locale implements Cloneable, Serializable {
      *
      * @param inLocale The locale for which to retrieve the display country.
      * @return The name of the country appropriate to the given locale.
-     * @exception NullPointerException if <code>inLocale</code> is <code>null</code>
+     * @throws    NullPointerException if <code>inLocale</code> is <code>null</code>
      */
     public String getDisplayCountry(Locale inLocale) {
         return getDisplayString(baseLocale.getRegion(), null, inLocale, DISPLAY_COUNTRY);
@@ -1949,7 +1949,7 @@ public final class Locale implements Cloneable, Serializable {
      *
      * @param inLocale The locale for which to retrieve the display variant code.
      * @return The name of the display variant code appropriate to the given locale.
-     * @exception NullPointerException if <code>inLocale</code> is <code>null</code>
+     * @throws    NullPointerException if <code>inLocale</code> is <code>null</code>
      */
     public String getDisplayVariant(Locale inLocale) {
         if (baseLocale.getVariant().isEmpty())

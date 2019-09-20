@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -296,7 +296,7 @@ public abstract class Collator
      * @return a negative integer, zero, or a positive integer as the
      *         first argument is less than, equal to, or greater than the
      *         second.
-     * @exception ClassCastException the arguments cannot be cast to Strings.
+     * @throws    ClassCastException the arguments cannot be cast to Strings.
      * @see java.util.Comparator
      * @since   1.2
      */
@@ -358,7 +358,7 @@ public abstract class Collator
      * @see java.text.Collator#SECONDARY
      * @see java.text.Collator#TERTIARY
      * @see java.text.Collator#IDENTICAL
-     * @exception  IllegalArgumentException If the new strength value is not one of
+     * @throws     IllegalArgumentException If the new strength value is not one of
      * PRIMARY, SECONDARY, TERTIARY or IDENTICAL.
      */
     public synchronized void setStrength(int newStrength) {
@@ -402,7 +402,7 @@ public abstract class Collator
      * @see java.text.Collator#NO_DECOMPOSITION
      * @see java.text.Collator#CANONICAL_DECOMPOSITION
      * @see java.text.Collator#FULL_DECOMPOSITION
-     * @exception IllegalArgumentException If the given value is not a valid decomposition
+     * @throws    IllegalArgumentException If the given value is not a valid decomposition
      * mode.
      */
     public synchronized void setDecomposition(int decompositionMode) {

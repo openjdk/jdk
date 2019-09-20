@@ -592,8 +592,8 @@ public class SimpleDateFormat extends DateFormat {
      * @see java.util.Locale#getDefault(java.util.Locale.Category)
      * @see java.util.Locale.Category#FORMAT
      * @param pattern the pattern describing the date and time format
-     * @exception NullPointerException if the given pattern is null
-     * @exception IllegalArgumentException if the given pattern is invalid
+     * @throws    NullPointerException if the given pattern is null
+     * @throws    IllegalArgumentException if the given pattern is invalid
      */
     public SimpleDateFormat(String pattern)
     {
@@ -609,8 +609,8 @@ public class SimpleDateFormat extends DateFormat {
      *
      * @param pattern the pattern describing the date and time format
      * @param locale the locale whose date format symbols should be used
-     * @exception NullPointerException if the given pattern or locale is null
-     * @exception IllegalArgumentException if the given pattern is invalid
+     * @throws    NullPointerException if the given pattern or locale is null
+     * @throws    IllegalArgumentException if the given pattern is invalid
      */
     public SimpleDateFormat(String pattern, Locale locale)
     {
@@ -631,8 +631,8 @@ public class SimpleDateFormat extends DateFormat {
      *
      * @param pattern the pattern describing the date and time format
      * @param formatSymbols the date format symbols to be used for formatting
-     * @exception NullPointerException if the given pattern or formatSymbols is null
-     * @exception IllegalArgumentException if the given pattern is invalid
+     * @throws    NullPointerException if the given pattern or formatSymbols is null
+     * @throws    IllegalArgumentException if the given pattern is invalid
      */
     public SimpleDateFormat(String pattern, DateFormatSymbols formatSymbols)
     {
@@ -739,8 +739,8 @@ public class SimpleDateFormat extends DateFormat {
      * is "'o'", the TaggedData entry is
      * <code>((TAG_QUOTE_ASCII_CHAR&nbs;<<&nbs;8)&nbs;|&nbs;'o')</code>.
      *
-     * @exception NullPointerException if the given pattern is null
-     * @exception IllegalArgumentException if the given pattern is invalid
+     * @throws    NullPointerException if the given pattern is null
+     * @throws    IllegalArgumentException if the given pattern is invalid
      */
     private char[] compile(String pattern) {
         int length = pattern.length();
@@ -958,7 +958,7 @@ public class SimpleDateFormat extends DateFormat {
      * {@code fieldPosition} will be set to 5 and 8, respectively, for the
      * first occurrence of the timezone pattern character {@code 'z'}.
      * @return the formatted date-time string.
-     * @exception NullPointerException if any of the parameters is {@code null}.
+     * @throws    NullPointerException if any of the parameters is {@code null}.
      */
     @Override
     public StringBuffer format(Date date, StringBuffer toAppendTo,
@@ -1012,8 +1012,8 @@ public class SimpleDateFormat extends DateFormat {
      * <code>DateFormat.Field</code>, with the corresponding attribute value
      * being the same as the attribute key.
      *
-     * @exception NullPointerException if obj is null.
-     * @exception IllegalArgumentException if the Format cannot format the
+     * @throws    NullPointerException if obj is null.
+     * @throws    IllegalArgumentException if the Format cannot format the
      *            given object, or if the Format's pattern string is invalid.
      * @param obj The object to format
      * @return AttributedCharacterIterator describing the formatted value.
@@ -1459,7 +1459,7 @@ public class SimpleDateFormat extends DateFormat {
      *              index information as described above.
      * @return A <code>Date</code> parsed from the string. In case of
      *         error, returns null.
-     * @exception NullPointerException if <code>text</code> or <code>pos</code> is null.
+     * @throws    NullPointerException if <code>text</code> or <code>pos</code> is null.
      */
     @Override
     public Date parse(String text, ParsePosition pos)
@@ -2276,7 +2276,7 @@ public class SimpleDateFormat extends DateFormat {
      * Translates a pattern, mapping each character in the from string to the
      * corresponding character in the to string.
      *
-     * @exception IllegalArgumentException if the given pattern is invalid
+     * @throws    IllegalArgumentException if the given pattern is invalid
      */
     private String translatePattern(String pattern, String from, String to) {
         StringBuilder result = new StringBuilder();
@@ -2339,8 +2339,8 @@ public class SimpleDateFormat extends DateFormat {
      * Applies the given pattern string to this date format.
      *
      * @param pattern the new date and time pattern for this date format
-     * @exception NullPointerException if the given pattern is null
-     * @exception IllegalArgumentException if the given pattern is invalid
+     * @throws    NullPointerException if the given pattern is null
+     * @throws    IllegalArgumentException if the given pattern is invalid
      */
     public void applyPattern(String pattern)
     {
@@ -2357,8 +2357,8 @@ public class SimpleDateFormat extends DateFormat {
      *
      * @param pattern a String to be mapped to the new date and time format
      *        pattern for this format
-     * @exception NullPointerException if the given pattern is null
-     * @exception IllegalArgumentException if the given pattern is invalid
+     * @throws    NullPointerException if the given pattern is null
+     * @throws    IllegalArgumentException if the given pattern is invalid
      */
     public void applyLocalizedPattern(String pattern) {
          String p = translatePattern(pattern,
@@ -2383,7 +2383,7 @@ public class SimpleDateFormat extends DateFormat {
      * Sets the date and time format symbols of this date format.
      *
      * @param newFormatSymbols the new date and time format symbols
-     * @exception NullPointerException if the given newFormatSymbols is null
+     * @throws    NullPointerException if the given newFormatSymbols is null
      * @see #getDateFormatSymbols
      */
     public void setDateFormatSymbols(DateFormatSymbols newFormatSymbols)
@@ -2470,7 +2470,7 @@ public class SimpleDateFormat extends DateFormat {
      * After reading an object from the input stream, the format
      * pattern in the object is verified.
      *
-     * @exception InvalidObjectException if the pattern is invalid
+     * @throws    InvalidObjectException if the pattern is invalid
      */
     @java.io.Serial
     private void readObject(ObjectInputStream stream)

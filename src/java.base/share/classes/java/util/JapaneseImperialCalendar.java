@@ -418,7 +418,7 @@ class JapaneseImperialCalendar extends Calendar {
      *
      * @param field the calendar field.
      * @param amount the amount of date or time to be added to the field.
-     * @exception IllegalArgumentException if {@code field} is
+     * @throws    IllegalArgumentException if {@code field} is
      * {@code ZONE_OFFSET}, {@code DST_OFFSET}, or unknown,
      * or if any calendar fields have out-of-range values in
      * non-lenient mode.
@@ -569,7 +569,7 @@ class JapaneseImperialCalendar extends Calendar {
      *
      * @param field the calendar field.
      * @param amount the signed amount to add to {@code field}.
-     * @exception IllegalArgumentException if {@code field} is
+     * @throws    IllegalArgumentException if {@code field} is
      * {@code ZONE_OFFSET}, {@code DST_OFFSET}, or unknown,
      * or if any calendar fields have out-of-range values in
      * non-lenient mode.
@@ -1867,7 +1867,7 @@ class JapaneseImperialCalendar extends Calendar {
      * Converts calendar field values to the time value (millisecond
      * offset from the <a href="Calendar.html#Epoch">Epoch</a>).
      *
-     * @exception IllegalArgumentException if any calendar fields are invalid.
+     * @throws    IllegalArgumentException if any calendar fields are invalid.
      */
     protected void computeTime() {
         // In non-lenient mode, perform brief checking of calendar

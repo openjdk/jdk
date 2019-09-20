@@ -114,7 +114,7 @@ public abstract class SocketImpl implements SocketOptions {
      *
      * @param      stream   if {@code true}, create a stream socket;
      *                      otherwise, create a datagram socket.
-     * @exception  IOException  if an I/O error occurs while creating the
+     * @throws     IOException  if an I/O error occurs while creating the
      *               socket.
      */
     protected abstract void create(boolean stream) throws IOException;
@@ -124,7 +124,7 @@ public abstract class SocketImpl implements SocketOptions {
      *
      * @param      host   the name of the remote host.
      * @param      port   the port number.
-     * @exception  IOException  if an I/O error occurs when connecting to the
+     * @throws     IOException  if an I/O error occurs when connecting to the
      *               remote host.
      */
     protected abstract void connect(String host, int port) throws IOException;
@@ -134,7 +134,7 @@ public abstract class SocketImpl implements SocketOptions {
      *
      * @param      address   the IP address of the remote host.
      * @param      port      the port number.
-     * @exception  IOException  if an I/O error occurs when attempting a
+     * @throws     IOException  if an I/O error occurs when attempting a
      *               connection.
      */
     protected abstract void connect(InetAddress address, int port) throws IOException;
@@ -146,7 +146,7 @@ public abstract class SocketImpl implements SocketOptions {
      *
      * @param      address   the Socket address of the remote host.
      * @param     timeout  the timeout value, in milliseconds, or zero for no timeout.
-     * @exception  IOException  if an I/O error occurs when attempting a
+     * @throws     IOException  if an I/O error occurs when attempting a
      *               connection.
      * @since 1.4
      */
@@ -157,7 +157,7 @@ public abstract class SocketImpl implements SocketOptions {
      *
      * @param      host   an IP address that belongs to a local interface.
      * @param      port   the port number.
-     * @exception  IOException  if an I/O error occurs when binding this socket.
+     * @throws     IOException  if an I/O error occurs when binding this socket.
      */
     protected abstract void bind(InetAddress host, int port) throws IOException;
 
@@ -168,7 +168,7 @@ public abstract class SocketImpl implements SocketOptions {
      * connection is refused.
      *
      * @param      backlog   the maximum length of the queue.
-     * @exception  IOException  if an I/O error occurs when creating the queue.
+     * @throws     IOException  if an I/O error occurs when creating the queue.
      */
     protected abstract void listen(int backlog) throws IOException;
 
@@ -176,7 +176,7 @@ public abstract class SocketImpl implements SocketOptions {
      * Accepts a connection.
      *
      * @param      s   the accepted connection.
-     * @exception  IOException  if an I/O error occurs when accepting the
+     * @throws     IOException  if an I/O error occurs when accepting the
      *               connection.
      */
     protected abstract void accept(SocketImpl s) throws IOException;
@@ -185,7 +185,7 @@ public abstract class SocketImpl implements SocketOptions {
      * Returns an input stream for this socket.
      *
      * @return     a stream for reading from this socket.
-     * @exception  IOException  if an I/O error occurs when creating the
+     * @throws     IOException  if an I/O error occurs when creating the
      *               input stream.
     */
     protected abstract InputStream getInputStream() throws IOException;
@@ -194,7 +194,7 @@ public abstract class SocketImpl implements SocketOptions {
      * Returns an output stream for this socket.
      *
      * @return     an output stream for writing to this socket.
-     * @exception  IOException  if an I/O error occurs when creating the
+     * @throws     IOException  if an I/O error occurs when creating the
      *               output stream.
      */
     protected abstract OutputStream getOutputStream() throws IOException;
@@ -205,7 +205,7 @@ public abstract class SocketImpl implements SocketOptions {
      *
      * @return     the number of bytes that can be read from this socket
      *             without blocking.
-     * @exception  IOException  if an I/O error occurs when determining the
+     * @throws     IOException  if an I/O error occurs when determining the
      *               number of bytes available.
      */
     protected abstract int available() throws IOException;
@@ -213,7 +213,7 @@ public abstract class SocketImpl implements SocketOptions {
     /**
      * Closes this socket.
      *
-     * @exception  IOException  if an I/O error occurs when closing this socket.
+     * @throws     IOException  if an I/O error occurs when closing this socket.
      */
     protected abstract void close() throws IOException;
 
@@ -235,7 +235,7 @@ public abstract class SocketImpl implements SocketOptions {
      * socket, the stream's {@code available} method will return 0, and its
      * {@code read} methods will return {@code -1} (end of stream).
      *
-     * @exception IOException if an I/O error occurs when shutting down this
+     * @throws    IOException if an I/O error occurs when shutting down this
      * socket.
      * @see java.net.Socket#shutdownOutput()
      * @see java.net.Socket#close()
@@ -255,7 +255,7 @@ public abstract class SocketImpl implements SocketOptions {
      * shutdownOutput() on the socket, the stream will throw
      * an IOException.
      *
-     * @exception IOException if an I/O error occurs when shutting down this
+     * @throws    IOException if an I/O error occurs when shutting down this
      * socket.
      * @see java.net.Socket#shutdownInput()
      * @see java.net.Socket#close()
@@ -313,7 +313,7 @@ public abstract class SocketImpl implements SocketOptions {
      * Send one byte of urgent data on the socket.
      * The byte to be sent is the low eight bits of the parameter
      * @param data The byte of data to send
-     * @exception IOException if there is an error
+     * @throws    IOException if there is an error
      *  sending the data.
      * @since 1.4
      */

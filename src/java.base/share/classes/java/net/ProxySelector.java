@@ -85,10 +85,10 @@ public abstract class ProxySelector {
      *
      * @throws  SecurityException
      *          If a security manager has been installed and it denies
-     * {@link NetPermission}{@code ("getProxySelector")}
-     * @see #setDefault(ProxySelector)
-     * @return the system-wide {@code ProxySelector}
-     * @since 1.5
+     *          {@link NetPermission}{@code ("getProxySelector")}
+     * @see     #setDefault(ProxySelector)
+     * @return  the system-wide {@code ProxySelector}
+     * @since   1.5
      */
     public static ProxySelector getDefault() {
         SecurityManager sm = System.getSecurityManager();
@@ -108,7 +108,7 @@ public abstract class ProxySelector {
      *
      * @throws  SecurityException
      *          If a security manager has been installed and it denies
-     * {@link NetPermission}{@code ("setProxySelector")}
+     *          {@link NetPermission}{@code ("setProxySelector")}
      *
      * @see #getDefault()
      * @since 1.5
@@ -163,7 +163,7 @@ public abstract class ProxySelector {
      *
      * @param   ioe
      *          The I/O exception thrown when the connect failed.
-     * @throws IllegalArgumentException if either argument is null
+     * @throws  IllegalArgumentException if either argument is null
      */
     public abstract void connectFailed(URI uri, SocketAddress sa, IOException ioe);
 

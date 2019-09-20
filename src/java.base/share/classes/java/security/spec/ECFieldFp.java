@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -45,8 +45,8 @@ public class ECFieldFp implements ECField {
      * Creates an elliptic curve prime finite field
      * with the specified prime {@code p}.
      * @param p the prime.
-     * @exception NullPointerException if {@code p} is null.
-     * @exception IllegalArgumentException if {@code p}
+     * @throws    NullPointerException if {@code p} is null.
+     * @throws    IllegalArgumentException if {@code p}
      * is not positive.
      */
     public ECFieldFp(BigInteger p) {

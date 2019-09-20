@@ -268,7 +268,7 @@ interface DataInput {
      *
      * @param      n   the number of bytes to be skipped.
      * @return     the number of bytes actually skipped.
-     * @exception  IOException   if an I/O error occurs.
+     * @throws     IOException   if an I/O error occurs.
      */
     int skipBytes(int n) throws IOException;
 
@@ -281,9 +281,9 @@ interface DataInput {
      * method of interface {@code DataOutput}.
      *
      * @return     the {@code boolean} value read.
-     * @exception  EOFException  if this stream reaches the end before reading
+     * @throws     EOFException  if this stream reaches the end before reading
      *               all the bytes.
-     * @exception  IOException   if an I/O error occurs.
+     * @throws     IOException   if an I/O error occurs.
      */
     boolean readBoolean() throws IOException;
 
@@ -297,9 +297,9 @@ interface DataInput {
      * method of interface {@code DataOutput}.
      *
      * @return     the 8-bit value read.
-     * @exception  EOFException  if this stream reaches the end before reading
+     * @throws     EOFException  if this stream reaches the end before reading
      *               all the bytes.
-     * @exception  IOException   if an I/O error occurs.
+     * @throws     IOException   if an I/O error occurs.
      */
     byte readByte() throws IOException;
 
@@ -317,9 +317,9 @@ interface DataInput {
      * {@code 0} through {@code 255}.
      *
      * @return     the unsigned 8-bit value read.
-     * @exception  EOFException  if this stream reaches the end before reading
+     * @throws     EOFException  if this stream reaches the end before reading
      *               all the bytes.
-     * @exception  IOException   if an I/O error occurs.
+     * @throws     IOException   if an I/O error occurs.
      */
     int readUnsignedByte() throws IOException;
 
@@ -338,9 +338,9 @@ interface DataInput {
      * interface {@code DataOutput}.
      *
      * @return     the 16-bit value read.
-     * @exception  EOFException  if this stream reaches the end before reading
+     * @throws     EOFException  if this stream reaches the end before reading
      *               all the bytes.
-     * @exception  IOException   if an I/O error occurs.
+     * @throws     IOException   if an I/O error occurs.
      */
     short readShort() throws IOException;
 
@@ -361,9 +361,9 @@ interface DataInput {
      * {@code 0} through {@code 65535}.
      *
      * @return     the unsigned 16-bit value read.
-     * @exception  EOFException  if this stream reaches the end before reading
+     * @throws     EOFException  if this stream reaches the end before reading
      *               all the bytes.
-     * @exception  IOException   if an I/O error occurs.
+     * @throws     IOException   if an I/O error occurs.
      */
     int readUnsignedShort() throws IOException;
 
@@ -381,9 +381,9 @@ interface DataInput {
      * {@code DataOutput}.
      *
      * @return     the {@code char} value read.
-     * @exception  EOFException  if this stream reaches the end before reading
+     * @throws     EOFException  if this stream reaches the end before reading
      *               all the bytes.
-     * @exception  IOException   if an I/O error occurs.
+     * @throws     IOException   if an I/O error occurs.
      */
     char readChar() throws IOException;
 
@@ -400,9 +400,9 @@ interface DataInput {
      * method of interface {@code DataOutput}.
      *
      * @return     the {@code int} value read.
-     * @exception  EOFException  if this stream reaches the end before reading
+     * @throws     EOFException  if this stream reaches the end before reading
      *               all the bytes.
-     * @exception  IOException   if an I/O error occurs.
+     * @throws     IOException   if an I/O error occurs.
      */
     int readInt() throws IOException;
 
@@ -427,9 +427,9 @@ interface DataInput {
      * method of interface {@code DataOutput}.
      *
      * @return     the {@code long} value read.
-     * @exception  EOFException  if this stream reaches the end before reading
+     * @throws     EOFException  if this stream reaches the end before reading
      *               all the bytes.
-     * @exception  IOException   if an I/O error occurs.
+     * @throws     IOException   if an I/O error occurs.
      */
     long readLong() throws IOException;
 
@@ -447,9 +447,9 @@ interface DataInput {
      * method of interface {@code DataOutput}.
      *
      * @return     the {@code float} value read.
-     * @exception  EOFException  if this stream reaches the end before reading
+     * @throws     EOFException  if this stream reaches the end before reading
      *               all the bytes.
-     * @exception  IOException   if an I/O error occurs.
+     * @throws     IOException   if an I/O error occurs.
      */
     float readFloat() throws IOException;
 
@@ -467,9 +467,9 @@ interface DataInput {
      * method of interface {@code DataOutput}.
      *
      * @return     the {@code double} value read.
-     * @exception  EOFException  if this stream reaches the end before reading
+     * @throws     EOFException  if this stream reaches the end before reading
      *               all the bytes.
-     * @exception  IOException   if an I/O error occurs.
+     * @throws     IOException   if an I/O error occurs.
      */
     double readDouble() throws IOException;
 
@@ -510,7 +510,7 @@ interface DataInput {
      * @return the next line of text from the input stream,
      *         or {@code null} if the end of file is
      *         encountered before a byte can be read.
-     * @exception  IOException  if an I/O error occurs.
+     * @throws IOException  if an I/O error occurs.
      */
     String readLine() throws IOException;
 
@@ -593,10 +593,10 @@ interface DataInput {
      * may be used to write data that is suitable
      * for reading by this method.
      * @return     a Unicode string.
-     * @exception  EOFException            if this stream reaches the end
+     * @throws     EOFException            if this stream reaches the end
      *               before reading all the bytes.
-     * @exception  IOException             if an I/O error occurs.
-     * @exception  UTFDataFormatException  if the bytes do not represent a
+     * @throws     IOException             if an I/O error occurs.
+     * @throws     UTFDataFormatException  if the bytes do not represent a
      *               valid modified UTF-8 encoding of a string.
      */
     String readUTF() throws IOException;

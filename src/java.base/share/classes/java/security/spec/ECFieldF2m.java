@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -47,7 +47,7 @@ public class ECFieldF2m implements ECField {
      * Creates an elliptic curve characteristic 2 finite
      * field which has 2^{@code m} elements with normal basis.
      * @param m with 2^{@code m} being the number of elements.
-     * @exception IllegalArgumentException if {@code m}
+     * @throws    IllegalArgumentException if {@code m}
      * is not positive.
      */
     public ECFieldF2m(int m) {
@@ -76,8 +76,8 @@ public class ECFieldF2m implements ECField {
      * @param m with 2^{@code m} being the number of elements.
      * @param rp the BigInteger whose i-th bit corresponds to
      * the i-th coefficient of the reduction polynomial.
-     * @exception NullPointerException if {@code rp} is null.
-     * @exception IllegalArgumentException if {@code m}
+     * @throws    NullPointerException if {@code rp} is null.
+     * @throws    IllegalArgumentException if {@code m}
      * is not positive, or {@code rp} does not represent
      * a valid reduction polynomial.
      */
@@ -123,8 +123,8 @@ public class ECFieldF2m implements ECField {
      * @param ks the order of the middle term(s) of the
      * reduction polynomial. Contents of this array are copied
      * to protect against subsequent modification.
-     * @exception NullPointerException if {@code ks} is null.
-     * @exception IllegalArgumentException if{@code m}
+     * @throws    NullPointerException if {@code ks} is null.
+     * @throws    IllegalArgumentException if{@code m}
      * is not positive, or the length of {@code ks}
      * is neither 1 nor 3, or values in {@code ks}
      * are not between {@code m}-1 and 1 (inclusive)

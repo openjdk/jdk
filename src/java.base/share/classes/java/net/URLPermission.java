@@ -175,7 +175,7 @@ public final class URLPermission extends Permission {
      *
      * @param actions the actions string
      *
-     * @exception IllegalArgumentException if url is invalid or if actions contains white-space.
+     * @throws    IllegalArgumentException if url is invalid or if actions contains white-space.
      */
     public URLPermission(String url, String actions) {
         super(normalize(url));

@@ -79,7 +79,7 @@ class SocketOutputStream extends FileOutputStream {
      * @param b the data to be written
      * @param off the start offset in the data
      * @param len the number of bytes that are written
-     * @exception IOException If an I/O error has occurred.
+     * @throws    IOException If an I/O error has occurred.
      */
     private native void socketWrite0(FileDescriptor fd, byte[] b, int off,
                                      int len) throws IOException;
@@ -90,7 +90,7 @@ class SocketOutputStream extends FileOutputStream {
      * @param b the data to be written
      * @param off the start offset in the data
      * @param len the number of bytes that are written
-     * @exception IOException If an I/O error has occurred.
+     * @throws    IOException If an I/O error has occurred.
      */
     private void socketWrite(byte b[], int off, int len) throws IOException {
 
@@ -120,7 +120,7 @@ class SocketOutputStream extends FileOutputStream {
     /**
      * Writes a byte to the socket.
      * @param b the data to be written
-     * @exception IOException If an I/O error has occurred.
+     * @throws    IOException If an I/O error has occurred.
      */
     public void write(int b) throws IOException {
         temp[0] = (byte)b;
@@ -130,7 +130,7 @@ class SocketOutputStream extends FileOutputStream {
     /**
      * Writes the contents of the buffer <i>b</i> to the socket.
      * @param b the data to be written
-     * @exception SocketException If an I/O error has occurred.
+     * @throws    SocketException If an I/O error has occurred.
      */
     public void write(byte b[]) throws IOException {
         socketWrite(b, 0, b.length);
@@ -142,7 +142,7 @@ class SocketOutputStream extends FileOutputStream {
      * @param b the data to be written
      * @param off the start offset in the data
      * @param len the number of bytes that are written
-     * @exception SocketException If an I/O error has occurred.
+     * @throws    SocketException If an I/O error has occurred.
      */
     public void write(byte b[], int off, int len) throws IOException {
         socketWrite(b, off, len);

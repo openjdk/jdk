@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -80,7 +80,7 @@ public class CollectionCertStoreParameters
      *
      * @param collection a {@code Collection} of
      *        {@code Certificate}s and {@code CRL}s
-     * @exception NullPointerException if {@code collection} is
+     * @throws    NullPointerException if {@code collection} is
      * {@code null}
      */
     public CollectionCertStoreParameters(Collection<?> collection) {

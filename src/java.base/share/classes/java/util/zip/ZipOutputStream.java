@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -140,8 +140,8 @@ class ZipOutputStream extends DeflaterOutputStream implements ZipConstants {
 
     /**
      * Sets the ZIP file comment.
-     * @param comment the comment string
-     * @exception IllegalArgumentException if the length of the specified
+     * @param     comment the comment string
+     * @throws    IllegalArgumentException if the length of the specified
      *            ZIP file comment is greater than 0xFFFF bytes
      */
     public void setComment(String comment) {
@@ -156,8 +156,8 @@ class ZipOutputStream extends DeflaterOutputStream implements ZipConstants {
      * Sets the default compression method for subsequent entries. This
      * default will be used whenever the compression method is not specified
      * for an individual ZIP file entry, and is initially set to DEFLATED.
-     * @param method the default compression method
-     * @exception IllegalArgumentException if the specified compression method
+     * @param     method the default compression method
+     * @throws    IllegalArgumentException if the specified compression method
      *            is invalid
      */
     public void setMethod(int method) {
@@ -170,8 +170,8 @@ class ZipOutputStream extends DeflaterOutputStream implements ZipConstants {
     /**
      * Sets the compression level for subsequent entries which are DEFLATED.
      * The default setting is DEFAULT_COMPRESSION.
-     * @param level the compression level (0-9)
-     * @exception IllegalArgumentException if the compression level is invalid
+     * @param     level the compression level (0-9)
+     * @throws    IllegalArgumentException if the compression level is invalid
      */
     public void setLevel(int level) {
         def.setLevel(level);
@@ -183,9 +183,9 @@ class ZipOutputStream extends DeflaterOutputStream implements ZipConstants {
      * The default compression method will be used if no compression method
      * was specified for the entry, and the current time will be used if
      * the entry has no set modification time.
-     * @param e the ZIP entry to be written
-     * @exception ZipException if a ZIP format error has occurred
-     * @exception IOException if an I/O error has occurred
+     * @param     e the ZIP entry to be written
+     * @throws    ZipException if a ZIP format error has occurred
+     * @throws    IOException if an I/O error has occurred
      */
     public void putNextEntry(ZipEntry e) throws IOException {
         ensureOpen();
@@ -242,8 +242,8 @@ class ZipOutputStream extends DeflaterOutputStream implements ZipConstants {
     /**
      * Closes the current ZIP entry and positions the stream for writing
      * the next entry.
-     * @exception ZipException if a ZIP format error has occurred
-     * @exception IOException if an I/O error has occurred
+     * @throws    ZipException if a ZIP format error has occurred
+     * @throws    IOException if an I/O error has occurred
      */
     public void closeEntry() throws IOException {
         ensureOpen();
@@ -307,11 +307,11 @@ class ZipOutputStream extends DeflaterOutputStream implements ZipConstants {
     /**
      * Writes an array of bytes to the current ZIP entry data. This method
      * will block until all the bytes are written.
-     * @param b the data to be written
-     * @param off the start offset in the data
-     * @param len the number of bytes that are written
-     * @exception ZipException if a ZIP file error has occurred
-     * @exception IOException if an I/O error has occurred
+     * @param     b the data to be written
+     * @param     off the start offset in the data
+     * @param     len the number of bytes that are written
+     * @throws    ZipException if a ZIP file error has occurred
+     * @throws    IOException if an I/O error has occurred
      */
     public synchronized void write(byte[] b, int off, int len)
         throws IOException
@@ -349,8 +349,8 @@ class ZipOutputStream extends DeflaterOutputStream implements ZipConstants {
      * Finishes writing the contents of the ZIP output stream without closing
      * the underlying stream. Use this method when applying multiple filters
      * in succession to the same output stream.
-     * @exception ZipException if a ZIP file error has occurred
-     * @exception IOException if an I/O exception has occurred
+     * @throws    ZipException if a ZIP file error has occurred
+     * @throws    IOException if an I/O exception has occurred
      */
     public void finish() throws IOException {
         ensureOpen();
@@ -370,8 +370,8 @@ class ZipOutputStream extends DeflaterOutputStream implements ZipConstants {
 
     /**
      * Closes the ZIP output stream as well as the stream being filtered.
-     * @exception ZipException if a ZIP file error has occurred
-     * @exception IOException if an I/O error has occurred
+     * @throws    ZipException if a ZIP file error has occurred
+     * @throws    IOException if an I/O error has occurred
      */
     public void close() throws IOException {
         if (!closed) {

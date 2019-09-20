@@ -152,7 +152,7 @@ public abstract class Format implements Serializable, Cloneable {
      *
      * @param obj    The object to format
      * @return       Formatted string.
-     * @exception IllegalArgumentException if the Format cannot format the given
+     * @throws    IllegalArgumentException if the Format cannot format the given
      *            object
      */
     public final String format (Object obj) {
@@ -172,9 +172,9 @@ public abstract class Format implements Serializable, Cloneable {
      *               in the formatted text
      * @return       the string buffer passed in as <code>toAppendTo</code>,
      *               with formatted text appended
-     * @exception NullPointerException if <code>toAppendTo</code> or
+     * @throws    NullPointerException if <code>toAppendTo</code> or
      *            <code>pos</code> is null
-     * @exception IllegalArgumentException if the Format cannot format the given
+     * @throws    IllegalArgumentException if the Format cannot format the given
      *            object
      */
     public abstract StringBuffer format(Object obj,
@@ -197,8 +197,8 @@ public abstract class Format implements Serializable, Cloneable {
      * that support fields should override this and create an
      * <code>AttributedCharacterIterator</code> with meaningful attributes.
      *
-     * @exception NullPointerException if obj is null.
-     * @exception IllegalArgumentException when the Format cannot format the
+     * @throws    NullPointerException if obj is null.
+     * @throws    IllegalArgumentException when the Format cannot format the
      *            given object.
      * @param obj The object to format
      * @return AttributedCharacterIterator describing the formatted value.
@@ -237,7 +237,7 @@ public abstract class Format implements Serializable, Cloneable {
      *
      * @param source A <code>String</code> whose beginning should be parsed.
      * @return An <code>Object</code> parsed from the string.
-     * @exception ParseException if the beginning of the specified string
+     * @throws    ParseException if the beginning of the specified string
      *            cannot be parsed.
      * @throws NullPointerException if {@code source} is null.
      */

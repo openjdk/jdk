@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1994, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1994, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -112,10 +112,10 @@ class FileOutputStream extends OutputStream
      * new FileOutputStream(name, false)}.
      *
      * @param      name   the system-dependent filename
-     * @exception  FileNotFoundException  if the file exists but is a directory
+     * @throws     FileNotFoundException  if the file exists but is a directory
      *                   rather than a regular file, does not exist but cannot
      *                   be created, or cannot be opened for any other reason
-     * @exception  SecurityException  if a security manager exists and its
+     * @throws     SecurityException  if a security manager exists and its
      *               <code>checkWrite</code> method denies write access
      *               to the file.
      * @see        java.lang.SecurityManager#checkWrite(java.lang.String)
@@ -141,10 +141,10 @@ class FileOutputStream extends OutputStream
      * @param     name        the system-dependent file name
      * @param     append      if <code>true</code>, then bytes will be written
      *                   to the end of the file rather than the beginning
-     * @exception  FileNotFoundException  if the file exists but is a directory
+     * @throws     FileNotFoundException  if the file exists but is a directory
      *                   rather than a regular file, does not exist but cannot
      *                   be created, or cannot be opened for any other reason.
-     * @exception  SecurityException  if a security manager exists and its
+     * @throws     SecurityException  if a security manager exists and its
      *               <code>checkWrite</code> method denies write access
      *               to the file.
      * @see        java.lang.SecurityManager#checkWrite(java.lang.String)
@@ -171,10 +171,10 @@ class FileOutputStream extends OutputStream
      * reason then a <code>FileNotFoundException</code> is thrown.
      *
      * @param      file               the file to be opened for writing.
-     * @exception  FileNotFoundException  if the file exists but is a directory
+     * @throws     FileNotFoundException  if the file exists but is a directory
      *                   rather than a regular file, does not exist but cannot
      *                   be created, or cannot be opened for any other reason
-     * @exception  SecurityException  if a security manager exists and its
+     * @throws     SecurityException  if a security manager exists and its
      *               <code>checkWrite</code> method denies write access
      *               to the file.
      * @see        java.io.File#getPath()
@@ -203,10 +203,10 @@ class FileOutputStream extends OutputStream
      * @param      file               the file to be opened for writing.
      * @param     append      if <code>true</code>, then bytes will be written
      *                   to the end of the file rather than the beginning
-     * @exception  FileNotFoundException  if the file exists but is a directory
+     * @throws     FileNotFoundException  if the file exists but is a directory
      *                   rather than a regular file, does not exist but cannot
      *                   be created, or cannot be opened for any other reason
-     * @exception  SecurityException  if a security manager exists and its
+     * @throws     SecurityException  if a security manager exists and its
      *               <code>checkWrite</code> method denies write access
      *               to the file.
      * @see        java.io.File#getPath()
@@ -254,7 +254,7 @@ class FileOutputStream extends OutputStream
      * I/O on the stream, an <code>IOException</code> is thrown.
      *
      * @param      fdObj   the file descriptor to be opened for writing
-     * @exception  SecurityException  if a security manager exists and its
+     * @throws     SecurityException  if a security manager exists and its
      *               <code>checkWrite</code> method denies
      *               write access to the file descriptor
      * @see        java.lang.SecurityManager#checkWrite(java.io.FileDescriptor)
@@ -306,7 +306,7 @@ class FileOutputStream extends OutputStream
      * the <code>write</code> method of <code>OutputStream</code>.
      *
      * @param      b   the byte to be written.
-     * @exception  IOException  if an I/O error occurs.
+     * @throws     IOException  if an I/O error occurs.
      */
     public void write(int b) throws IOException {
         write(b, fdAccess.getAppend(fd));
@@ -319,7 +319,7 @@ class FileOutputStream extends OutputStream
      * @param len the number of bytes that are written
      * @param append {@code true} to first advance the position to the
      *     end of file
-     * @exception IOException If an I/O error has occurred.
+     * @throws    IOException If an I/O error has occurred.
      */
     private native void writeBytes(byte b[], int off, int len, boolean append)
         throws IOException;
@@ -329,7 +329,7 @@ class FileOutputStream extends OutputStream
      * to this file output stream.
      *
      * @param      b   the data.
-     * @exception  IOException  if an I/O error occurs.
+     * @throws     IOException  if an I/O error occurs.
      */
     public void write(byte b[]) throws IOException {
         writeBytes(b, 0, b.length, fdAccess.getAppend(fd));
@@ -342,7 +342,7 @@ class FileOutputStream extends OutputStream
      * @param      b     the data.
      * @param      off   the start offset in the data.
      * @param      len   the number of bytes to write.
-     * @exception  IOException  if an I/O error occurs.
+     * @throws     IOException  if an I/O error occurs.
      */
     public void write(byte b[], int off, int len) throws IOException {
         writeBytes(b, off, len, fdAccess.getAppend(fd));
@@ -364,7 +364,7 @@ class FileOutputStream extends OutputStream
      * If cleanup of native resources is needed, other mechanisms such as
      * {@linkplain java.lang.ref.Cleaner} should be used.
      *
-     * @exception  IOException  if an I/O error occurs.
+     * @throws     IOException  if an I/O error occurs.
      *
      * @revised 1.4
      * @spec JSR-51
@@ -401,7 +401,7 @@ class FileOutputStream extends OutputStream
      *          the connection to the file in the file system being used
      *          by this <code>FileOutputStream</code> object.
      *
-     * @exception  IOException  if an I/O error occurs.
+     * @throws     IOException  if an I/O error occurs.
      * @see        java.io.FileDescriptor
      */
      public final FileDescriptor getFD()  throws IOException {

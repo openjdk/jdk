@@ -84,7 +84,7 @@ public abstract class Signer extends Identity {
      *
      * @param scope the scope of the identity.
      *
-     * @exception KeyManagementException if there is already an identity
+     * @throws    KeyManagementException if there is already an identity
      * with the same name in the scope.
      */
     public Signer(String name, IdentityScope scope)
@@ -102,7 +102,7 @@ public abstract class Signer extends Identity {
      * @return this signer's private key, or null if the private key has
      * not yet been set.
      *
-     * @exception  SecurityException  if a security manager exists and its
+     * @throws     SecurityException  if a security manager exists and its
      * {@code checkSecurityAccess} method doesn't allow
      * returning the private key.
      *
@@ -122,11 +122,11 @@ public abstract class Signer extends Identity {
      *
      * @param pair an initialized key pair.
      *
-     * @exception InvalidParameterException if the key pair is not
+     * @throws    InvalidParameterException if the key pair is not
      * properly initialized.
-     * @exception KeyException if the key pair cannot be set for any
+     * @throws    KeyException if the key pair cannot be set for any
      * other reason.
-     * @exception  SecurityException  if a security manager exists and its
+     * @throws     SecurityException  if a security manager exists and its
      * {@code checkSecurityAccess} method doesn't allow
      * setting the key pair.
      *

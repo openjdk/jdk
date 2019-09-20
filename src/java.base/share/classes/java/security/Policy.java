@@ -837,7 +837,7 @@ public abstract class Policy {
          *
          * @param permission the Permission object to add.
          *
-         * @exception SecurityException - if this PermissionCollection object
+         * @throws    SecurityException - if this PermissionCollection object
          *                                has been marked readonly
          */
         @Override public void add(Permission permission) {

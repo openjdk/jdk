@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -81,11 +81,11 @@ public interface SocketOptions {
      * Throws SocketException if the option is unrecognized,
      * the socket is closed, or some low-level error occurred
      * <BR>
-     * @param optID identifies the option
-     * @param value the parameter of the socket option
+     * @param  optID identifies the option
+     * @param  value the parameter of the socket option
      * @throws SocketException if the option is unrecognized,
-     * the socket is closed, or some low-level error occurred
-     * @see #getOption(int)
+     *         the socket is closed, or some low-level error occurred
+     * @see    #getOption(int)
      */
     public void
         setOption(int optID, Object value) throws SocketException;
@@ -116,7 +116,7 @@ public interface SocketOptions {
      * }
      * </PRE>
      *
-     * @param optID an {@code int} identifying the option to fetch
+     * @param  optID an {@code int} identifying the option to fetch
      * @return the value of the option
      * @throws SocketException if the socket is closed
      * @throws SocketException if <I>optID</I> is unknown along the

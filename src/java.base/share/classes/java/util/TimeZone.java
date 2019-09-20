@@ -329,7 +329,7 @@ public abstract class TimeZone implements Serializable, Cloneable {
      *
      * @param locale the locale in which to supply the display name.
      * @return the human-readable name of this time zone in the given locale.
-     * @exception NullPointerException if {@code locale} is {@code null}.
+     * @throws    NullPointerException if {@code locale} is {@code null}.
      * @since 1.2
      * @see #getDisplayName(boolean, int, Locale)
      */
@@ -354,7 +354,7 @@ public abstract class TimeZone implements Serializable, Cloneable {
      *                 {@code false} specifying a Standard Time name
      * @param style either {@link #LONG} or {@link #SHORT}
      * @return the human-readable name of this time zone in the default locale.
-     * @exception IllegalArgumentException if {@code style} is invalid.
+     * @throws    IllegalArgumentException if {@code style} is invalid.
      * @since 1.2
      * @see #getDisplayName(boolean, int, Locale)
      * @see Locale#getDefault(Locale.Category)
@@ -389,8 +389,8 @@ public abstract class TimeZone implements Serializable, Cloneable {
      * @param style either {@link #LONG} or {@link #SHORT}
      * @param locale   the locale in which to supply the display name.
      * @return the human-readable name of this time zone in the given locale.
-     * @exception IllegalArgumentException if {@code style} is invalid.
-     * @exception NullPointerException if {@code locale} is {@code null}.
+     * @throws    IllegalArgumentException if {@code style} is invalid.
+     * @throws    NullPointerException if {@code locale} is {@code null}.
      * @since 1.2
      * @see java.text.DateFormatSymbols#getZoneStrings()
      */

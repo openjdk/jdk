@@ -321,10 +321,10 @@ public final class Class<T> implements java.io.Serializable,
      * @param      className   the fully qualified name of the desired class.
      * @return     the {@code Class} object for the class with the
      *             specified name.
-     * @exception LinkageError if the linkage fails
-     * @exception ExceptionInInitializerError if the initialization provoked
+     * @throws    LinkageError if the linkage fails
+     * @throws    ExceptionInInitializerError if the initialization provoked
      *            by this method fails
-     * @exception ClassNotFoundException if the class cannot be located
+     * @throws    ClassNotFoundException if the class cannot be located
      */
     @CallerSensitive
     public static Class<?> forName(String className)
@@ -379,12 +379,12 @@ public final class Class<T> implements java.io.Serializable,
      * @param loader     class loader from which the class must be loaded
      * @return           class object representing the desired class
      *
-     * @exception LinkageError if the linkage fails
-     * @exception ExceptionInInitializerError if the initialization provoked
+     * @throws    LinkageError if the linkage fails
+     * @throws    ExceptionInInitializerError if the initialization provoked
      *            by this method fails
-     * @exception ClassNotFoundException if the class cannot be located by
+     * @throws    ClassNotFoundException if the class cannot be located by
      *            the specified class loader
-     * @exception SecurityException
+     * @throws    SecurityException
      *            if a security manager is present, and the {@code loader} is
      *            {@code null}, and the caller's class loader is not
      *            {@code null}, and the caller does not have the
@@ -667,12 +667,12 @@ public final class Class<T> implements java.io.Serializable,
      * or via a widening reference conversion. See <em>The Java Language
      * Specification</em>, sections 5.1.1 and 5.1.4 , for details.
      *
-     * @param cls the {@code Class} object to be checked
-     * @return the {@code boolean} value indicating whether objects of the
-     * type {@code cls} can be assigned to objects of this class
-     * @exception NullPointerException if the specified Class parameter is
+     * @param     cls the {@code Class} object to be checked
+     * @return    the {@code boolean} value indicating whether objects of the
+     *            type {@code cls} can be assigned to objects of this class
+     * @throws    NullPointerException if the specified Class parameter is
      *            null.
-     * @since 1.1
+     * @since     1.1
      */
     @HotSpotIntrinsicCandidate
     public native boolean isAssignableFrom(Class<?> cls);
@@ -1512,7 +1512,7 @@ public final class Class<T> implements java.io.Serializable,
      * class.  If the underlying class is a top level class this
      * method returns {@code null}.
      * @return the immediately enclosing class of the underlying class
-     * @exception  SecurityException
+     * @throws     SecurityException
      *             If a security manager, <i>s</i>, is present and the caller's
      *             class loader is not the same as or an ancestor of the class
      *             loader for the enclosing class and invocation of {@link

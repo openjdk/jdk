@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -68,7 +68,7 @@ public abstract class KeyPairGeneratorSpi {
      *
      * @param random the source of randomness for this generator.
      *
-     * @exception InvalidParameterException if the {@code keysize} is not
+     * @throws    InvalidParameterException if the {@code keysize} is not
      * supported by this KeyPairGeneratorSpi object.
      */
     public abstract void initialize(int keysize, SecureRandom random);
@@ -90,7 +90,7 @@ public abstract class KeyPairGeneratorSpi {
      *
      * @param random the source of randomness for this generator.
      *
-     * @exception InvalidAlgorithmParameterException if the given parameters
+     * @throws    InvalidAlgorithmParameterException if the given parameters
      * are inappropriate for this key pair generator.
      *
      * @since 1.2

@@ -141,8 +141,8 @@ implements X509Extension {
      *     generalTime    GeneralizedTime }
      * </pre>
      *
-     * @exception CertificateExpiredException if the certificate has expired.
-     * @exception CertificateNotYetValidException if the certificate is not
+     * @throws    CertificateExpiredException if the certificate has expired.
+     * @throws    CertificateNotYetValidException if the certificate is not
      * yet valid.
      */
     public abstract void checkValidity()
@@ -156,9 +156,9 @@ implements X509Extension {
      * @param date the Date to check against to see if this certificate
      *        is valid at that date/time.
      *
-     * @exception CertificateExpiredException if the certificate has expired
+     * @throws    CertificateExpiredException if the certificate has expired
      * with respect to the {@code date} supplied.
-     * @exception CertificateNotYetValidException if the certificate is not
+     * @throws    CertificateNotYetValidException if the certificate is not
      * yet valid with respect to the {@code date} supplied.
      *
      * @see #checkValidity()
@@ -334,7 +334,7 @@ implements X509Extension {
      * This can be used to verify the signature independently.
      *
      * @return the DER-encoded certificate information.
-     * @exception CertificateEncodingException if an encoding error occurs.
+     * @throws    CertificateEncodingException if an encoding error occurs.
      */
     public abstract byte[] getTBSCertificate()
         throws CertificateEncodingException;
@@ -666,12 +666,12 @@ implements X509Extension {
      * @param key the PublicKey used to carry out the verification.
      * @param sigProvider the signature provider.
      *
-     * @exception NoSuchAlgorithmException on unsupported signature
+     * @throws    NoSuchAlgorithmException on unsupported signature
      * algorithms.
-     * @exception InvalidKeyException on incorrect key.
-     * @exception SignatureException on signature errors.
-     * @exception CertificateException on encoding errors.
-     * @exception UnsupportedOperationException if the method is not supported
+     * @throws    InvalidKeyException on incorrect key.
+     * @throws    SignatureException on signature errors.
+     * @throws    CertificateException on encoding errors.
+     * @throws    UnsupportedOperationException if the method is not supported
      * @since 1.8
      */
     public void verify(PublicKey key, Provider sigProvider)

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -99,12 +99,12 @@ public class URLClassLoader extends SecureClassLoader implements Closeable {
      * calls the security manager's {@code checkCreateClassLoader} method
      * to ensure creation of a class loader is allowed.
      *
-     * @param urls the URLs from which to load classes and resources
-     * @param parent the parent class loader for delegation
-     * @exception  SecurityException  if a security manager exists and its
+     * @param      urls the URLs from which to load classes and resources
+     * @param      parent the parent class loader for delegation
+     * @throws     SecurityException  if a security manager exists and its
      *             {@code checkCreateClassLoader} method doesn't allow
      *             creation of a class loader.
-     * @exception  NullPointerException if {@code urls} or any of its
+     * @throws     NullPointerException if {@code urls} or any of its
      *             elements is {@code null}.
      * @see SecurityManager#checkCreateClassLoader
      */
@@ -134,12 +134,12 @@ public class URLClassLoader extends SecureClassLoader implements Closeable {
      * calls the security manager's {@code checkCreateClassLoader} method
      * to ensure creation of a class loader is allowed.
      *
-     * @param urls the URLs from which to load classes and resources
+     * @param      urls the URLs from which to load classes and resources
      *
-     * @exception  SecurityException  if a security manager exists and its
+     * @throws     SecurityException  if a security manager exists and its
      *             {@code checkCreateClassLoader} method doesn't allow
      *             creation of a class loader.
-     * @exception  NullPointerException if {@code urls} or any of its
+     * @throws     NullPointerException if {@code urls} or any of its
      *             elements is {@code null}.
      * @see SecurityManager#checkCreateClassLoader
      */
@@ -166,15 +166,15 @@ public class URLClassLoader extends SecureClassLoader implements Closeable {
      * calls the security manager's {@code checkCreateClassLoader} method
      * to ensure creation of a class loader is allowed.
      *
-     * @param urls the URLs from which to load classes and resources
-     * @param parent the parent class loader for delegation
-     * @param factory the URLStreamHandlerFactory to use when creating URLs
+     * @param  urls the URLs from which to load classes and resources
+     * @param  parent the parent class loader for delegation
+     * @param  factory the URLStreamHandlerFactory to use when creating URLs
      *
-     * @exception  SecurityException  if a security manager exists and its
-     *             {@code checkCreateClassLoader} method doesn't allow
-     *             creation of a class loader.
-     * @exception  NullPointerException if {@code urls} or any of its
-     *             elements is {@code null}.
+     * @throws SecurityException  if a security manager exists and its
+     *         {@code checkCreateClassLoader} method doesn't allow
+     *         creation of a class loader.
+     * @throws NullPointerException if {@code urls} or any of its
+     *         elements is {@code null}.
      * @see SecurityManager#checkCreateClassLoader
      */
     public URLClassLoader(URL[] urls, ClassLoader parent,
@@ -326,13 +326,13 @@ public class URLClassLoader extends SecureClassLoader implements Closeable {
     * and errors are not caught. Calling close on an already closed
     * loader has no effect.
     *
-    * @exception IOException if closing any file opened by this class loader
+    * @throws    IOException if closing any file opened by this class loader
     * resulted in an IOException. Any such exceptions are caught internally.
     * If only one is caught, then it is re-thrown. If more than one exception
     * is caught, then the second and following exceptions are added
     * as suppressed exceptions of the first one caught, which is then re-thrown.
     *
-    * @exception SecurityException if a security manager is set, and it denies
+    * @throws    SecurityException if a security manager is set, and it denies
     *   {@link RuntimePermission}{@code ("closeClassLoader")}
     *
     * @since 1.7
@@ -401,11 +401,11 @@ public class URLClassLoader extends SecureClassLoader implements Closeable {
      * path. Any URLs referring to JAR files are loaded and opened as needed
      * until the class is found.
      *
-     * @param name the name of the class
-     * @return the resulting class
-     * @exception ClassNotFoundException if the class could not be found,
+     * @param     name the name of the class
+     * @return    the resulting class
+     * @throws    ClassNotFoundException if the class could not be found,
      *            or if the loader is closed.
-     * @exception NullPointerException if {@code name} is {@code null}.
+     * @throws    NullPointerException if {@code name} is {@code null}.
      */
     protected Class<?> findClass(final String name)
         throws ClassNotFoundException
@@ -628,7 +628,7 @@ public class URLClassLoader extends SecureClassLoader implements Closeable {
      * on the URL search path having the specified name.
      *
      * @param name the resource name
-     * @exception IOException if an I/O exception occurs
+     * @throws    IOException if an I/O exception occurs
      * @return An {@code Enumeration} of {@code URL}s.
      *         If the loader is closed, the Enumeration contains no elements.
      */
@@ -696,7 +696,7 @@ public class URLClassLoader extends SecureClassLoader implements Closeable {
      * If the protocol is not "file", then permission
      * to connect to and accept connections from the URL's host is granted.
      * @param codesource the codesource
-     * @exception NullPointerException if {@code codesource} is {@code null}.
+     * @throws    NullPointerException if {@code codesource} is {@code null}.
      * @return the permissions granted to the codesource
      */
     protected PermissionCollection getPermissions(CodeSource codesource)
@@ -776,7 +776,7 @@ public class URLClassLoader extends SecureClassLoader implements Closeable {
      *
      * @param urls the URLs to search for classes and resources
      * @param parent the parent class loader for delegation
-     * @exception  NullPointerException if {@code urls} or any of its
+     * @throws     NullPointerException if {@code urls} or any of its
      *             elements is {@code null}.
      * @return the resulting class loader
      */
@@ -803,7 +803,7 @@ public class URLClassLoader extends SecureClassLoader implements Closeable {
      * loading the class.
      *
      * @param urls the URLs to search for classes and resources
-     * @exception  NullPointerException if {@code urls} or any of its
+     * @throws     NullPointerException if {@code urls} or any of its
      *             elements is {@code null}.
      * @return the resulting class loader
      */

@@ -910,7 +910,7 @@ public class Date
      *            represented by this {@code Date} object is strictly
      *            earlier than the instant represented by {@code when};
      *          {@code false} otherwise.
-     * @exception NullPointerException if {@code when} is null.
+     * @throws    NullPointerException if {@code when} is null.
      */
     public boolean before(Date when) {
         return getMillisOf(this) < getMillisOf(when);
@@ -924,7 +924,7 @@ public class Date
      *          by this {@code Date} object is strictly later than the
      *          instant represented by {@code when};
      *          {@code false} otherwise.
-     * @exception NullPointerException if {@code when} is null.
+     * @throws    NullPointerException if {@code when} is null.
      */
     public boolean after(Date when) {
         return getMillisOf(this) > getMillisOf(when);
@@ -973,7 +973,7 @@ public class Date
      *          is before the Date argument; and a value greater than
      *      {@code 0} if this Date is after the Date argument.
      * @since   1.2
-     * @exception NullPointerException if {@code anotherDate} is null.
+     * @throws    NullPointerException if {@code anotherDate} is null.
      */
     public int compareTo(Date anotherDate) {
         long thisTime = getMillisOf(this);
@@ -1353,8 +1353,8 @@ public class Date
      * @param instant  the instant to convert
      * @return a {@code Date} representing the same point on the time-line as
      *  the provided instant
-     * @exception NullPointerException if {@code instant} is null.
-     * @exception IllegalArgumentException if the instant is too large to
+     * @throws    NullPointerException if {@code instant} is null.
+     * @throws    IllegalArgumentException if the instant is too large to
      *  represent as a {@code Date}
      * @since 1.8
      */
