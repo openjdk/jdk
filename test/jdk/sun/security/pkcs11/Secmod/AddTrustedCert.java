@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -67,6 +67,13 @@ public class AddTrustedCert extends SecmodTest {
         String configName = BASE + SEP + "nss.cfg";
         Provider p = getSunPKCS11(configName);
 
+        if (improperNSSVersion(p)) {
+            System.out.println(
+                    "Skip test due to improper NSS version in [3.28, 3.35). "
+                    + "See JDK-8180837 for more detatils.");
+            return;
+        }
+
         System.out.println(p);
         Security.addProvider(p);
 
@@ -125,4 +132,13 @@ public class AddTrustedCert extends SecmodTest {
         System.out.println("OK");
     }
 
+    private static boolean improperNSSVersion(Provider p) {
+        double nssVersion = getNSSVersion();
+        if (p.getName().equalsIgnoreCase("SunPKCS11-NSSKeyStore")
+                && nssVersion >= 3.28 && nssVersion < 3.35) {
+            return true;
+        }
+
+        return false;
+    }
 }
