@@ -809,22 +809,12 @@ HeapWord* ShenandoahHeap::allocate_memory(ShenandoahAllocRequest& req) {
     // way later after GC happened, only to fail the second allocation, because
     // other threads have already depleted the free storage. In this case, a better
     // strategy is to try again, as long as GC makes progress.
-    //
-    // Then, we need to make sure the allocation was retried after at least one
-    // Full GC, which means we want to try more than ShenandoahFullGCThreshold times.
 
-    size_t tries = 0;
-
-    while (result == NULL && _progress_last_gc.is_set()) {
-      tries++;
-      control_thread()->handle_alloc_failure(req.size());
-      result = allocate_memory_under_lock(req, in_new_region);
-    }
-
-    while (result == NULL && tries <= ShenandoahFullGCThreshold) {
-      tries++;
-      control_thread()->handle_alloc_failure(req.size());
-      result = allocate_memory_under_lock(req, in_new_region);
+    if (result == NULL) {
+      do {
+        control_thread()->handle_alloc_failure(req.size());
+        result = allocate_memory_under_lock(req, in_new_region);
+      } while (result == NULL && _progress_last_gc.is_set());
     }
 
   } else {
