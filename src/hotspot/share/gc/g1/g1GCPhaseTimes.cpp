@@ -272,37 +272,37 @@ void G1GCPhaseTimes::note_gc_end() {
 #undef ASSERT_PHASE_UNINITIALIZED
 
 // record the time a phase took in seconds
-void G1GCPhaseTimes::record_time_secs(GCParPhases phase, uint worker_i, double secs) {
-  _gc_par_phases[phase]->set(worker_i, secs);
+void G1GCPhaseTimes::record_time_secs(GCParPhases phase, uint worker_id, double secs) {
+  _gc_par_phases[phase]->set(worker_id, secs);
 }
 
 // add a number of seconds to a phase
-void G1GCPhaseTimes::add_time_secs(GCParPhases phase, uint worker_i, double secs) {
-  _gc_par_phases[phase]->add(worker_i, secs);
+void G1GCPhaseTimes::add_time_secs(GCParPhases phase, uint worker_id, double secs) {
+  _gc_par_phases[phase]->add(worker_id, secs);
 }
 
-void G1GCPhaseTimes::record_or_add_time_secs(GCParPhases phase, uint worker_i, double secs) {
-  if (_gc_par_phases[phase]->get(worker_i) == _gc_par_phases[phase]->uninitialized()) {
-    record_time_secs(phase, worker_i, secs);
+void G1GCPhaseTimes::record_or_add_time_secs(GCParPhases phase, uint worker_id, double secs) {
+  if (_gc_par_phases[phase]->get(worker_id) == _gc_par_phases[phase]->uninitialized()) {
+    record_time_secs(phase, worker_id, secs);
   } else {
-    add_time_secs(phase, worker_i, secs);
+    add_time_secs(phase, worker_id, secs);
   }
 }
 
-double G1GCPhaseTimes::get_time_secs(GCParPhases phase, uint worker_i) {
-  return _gc_par_phases[phase]->get(worker_i);
+double G1GCPhaseTimes::get_time_secs(GCParPhases phase, uint worker_id) {
+  return _gc_par_phases[phase]->get(worker_id);
 }
 
-void G1GCPhaseTimes::record_thread_work_item(GCParPhases phase, uint worker_i, size_t count, uint index) {
-  _gc_par_phases[phase]->set_thread_work_item(worker_i, count, index);
+void G1GCPhaseTimes::record_thread_work_item(GCParPhases phase, uint worker_id, size_t count, uint index) {
+  _gc_par_phases[phase]->set_thread_work_item(worker_id, count, index);
 }
 
-void G1GCPhaseTimes::record_or_add_thread_work_item(GCParPhases phase, uint worker_i, size_t count, uint index) {
-  _gc_par_phases[phase]->set_or_add_thread_work_item(worker_i, count, index);
+void G1GCPhaseTimes::record_or_add_thread_work_item(GCParPhases phase, uint worker_id, size_t count, uint index) {
+  _gc_par_phases[phase]->set_or_add_thread_work_item(worker_id, count, index);
 }
 
-size_t G1GCPhaseTimes::get_thread_work_item(GCParPhases phase, uint worker_i, uint index) {
-  return _gc_par_phases[phase]->get_thread_work_item(worker_i, index);
+size_t G1GCPhaseTimes::get_thread_work_item(GCParPhases phase, uint worker_id, uint index) {
+  return _gc_par_phases[phase]->get_thread_work_item(worker_id, index);
 }
 
 // return the average time for a phase in milliseconds

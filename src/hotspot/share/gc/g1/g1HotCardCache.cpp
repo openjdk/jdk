@@ -84,7 +84,7 @@ CardTable::CardValue* G1HotCardCache::insert(CardValue* card_ptr) {
   return (previous_ptr == current_ptr) ? previous_ptr : card_ptr;
 }
 
-void G1HotCardCache::drain(G1CardTableEntryClosure* cl, uint worker_i) {
+void G1HotCardCache::drain(G1CardTableEntryClosure* cl, uint worker_id) {
   assert(default_use_cache(), "Drain only necessary if we use the hot card cache.");
 
   assert(_hot_cache != NULL, "Logic");
@@ -99,7 +99,7 @@ void G1HotCardCache::drain(G1CardTableEntryClosure* cl, uint worker_i) {
     for (size_t i = start_idx; i < end_idx; i++) {
       CardValue* card_ptr = _hot_cache[i];
       if (card_ptr != NULL) {
-        cl->do_card_ptr(card_ptr, worker_i);
+        cl->do_card_ptr(card_ptr, worker_id);
       } else {
         break;
       }

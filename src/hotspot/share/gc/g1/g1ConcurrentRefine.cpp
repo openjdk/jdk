@@ -198,10 +198,10 @@ inline size_t deactivation_level(const Thresholds& t) { return t.second; }
 
 static Thresholds calc_thresholds(size_t green_zone,
                                   size_t yellow_zone,
-                                  uint worker_i) {
+                                  uint worker_id) {
   double yellow_size = yellow_zone - green_zone;
   double step = yellow_size / G1ConcurrentRefine::max_num_threads();
-  if (worker_i == 0) {
+  if (worker_id == 0) {
     // Potentially activate worker 0 more aggressively, to keep
     // available buffers near green_zone value.  When yellow_size is
     // large we don't want to allow a full step to accumulate before
@@ -209,8 +209,8 @@ static Thresholds calc_thresholds(size_t green_zone,
     // than green_zone buffers to be processed during scanning.
     step = MIN2(step, ParallelGCThreads / 2.0);
   }
-  size_t activate_offset = static_cast<size_t>(ceil(step * (worker_i + 1)));
-  size_t deactivate_offset = static_cast<size_t>(floor(step * worker_i));
+  size_t activate_offset = static_cast<size_t>(ceil(step * (worker_id + 1)));
+  size_t deactivate_offset = static_cast<size_t>(floor(step * worker_id));
   return Thresholds(green_zone + activate_offset,
                     green_zone + deactivate_offset);
 }

@@ -209,12 +209,12 @@ public:
 
 class G1ConcurrentRefineOopClosure: public BasicOopIterateClosure {
   G1CollectedHeap* _g1h;
-  uint _worker_i;
+  uint _worker_id;
 
 public:
-  G1ConcurrentRefineOopClosure(G1CollectedHeap* g1h, uint worker_i) :
+  G1ConcurrentRefineOopClosure(G1CollectedHeap* g1h, uint worker_id) :
     _g1h(g1h),
-    _worker_i(worker_i) {
+    _worker_id(worker_id) {
   }
 
   virtual ReferenceIterationMode reference_iteration_mode() { return DO_FIELDS; }

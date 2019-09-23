@@ -117,7 +117,7 @@ public:
   // Refine the card corresponding to "card_ptr". Safe to be called concurrently
   // to the mutator.
   void refine_card_concurrently(CardValue* card_ptr,
-                                uint worker_i);
+                                uint worker_id);
 
   // Print accumulated summary info from the start of the VM.
   void print_summary_info();

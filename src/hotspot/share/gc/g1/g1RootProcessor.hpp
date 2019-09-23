@@ -74,16 +74,16 @@ class G1RootProcessor : public StackObj {
 
   void process_java_roots(G1RootClosures* closures,
                           G1GCPhaseTimes* phase_times,
-                          uint worker_i,
+                          uint worker_id,
                           bool notify_claimed_nmethods_done = false);
 
   void process_vm_roots(G1RootClosures* closures,
                         G1GCPhaseTimes* phase_times,
-                        uint worker_i);
+                        uint worker_id);
 
   void process_code_cache_roots(CodeBlobClosure* code_closure,
                                 G1GCPhaseTimes* phase_times,
-                                uint worker_i);
+                                uint worker_id);
 
 public:
   G1RootProcessor(G1CollectedHeap* g1h, uint n_workers);
