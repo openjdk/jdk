@@ -218,7 +218,11 @@ QueryColorMap(Display *disp, Colormap src_cmap, Visual *src_vis,
      XColor *colors ;
 
      ncolors = (unsigned) src_vis->map_entries ;
-     *src_colors = colors = (XColor *)malloc(ncolors * sizeof(XColor) ) ;
+/* JDK modification.
+ * use calloc instead of malloc to initialize allocated memory
+ *   *src_colors = colors = (XColor *)malloc(ncolors * sizeof(XColor) ) ;
+ */
+     *src_colors = colors = (XColor *)calloc(ncolors, sizeof(XColor));
 
      if(src_vis->class != TrueColor && src_vis->class != DirectColor)
      {
