@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,8 +28,6 @@
  *      -Djdk.internal.httpclient.websocket.debug=true
  *       AutomaticPong
  */
-
-import org.testng.annotations.AfterTest;
 import org.testng.annotations.DataProvider;
 import org.testng.annotations.Test;
 
@@ -46,16 +44,6 @@ import static org.testng.Assert.assertTrue;
 import static org.testng.Assert.fail;
 
 public class AutomaticPong {
-
-    private DummyWebSocketServer server;
-    private WebSocket webSocket;
-
-    @AfterTest
-    public void cleanup() {
-        server.close();
-        webSocket.abort();
-    }
-
     /*
      * The sendClose method has been invoked and a Ping comes from the server.
      * Naturally, the client cannot reply with a Pong (the output has been
@@ -72,32 +60,36 @@ public class AutomaticPong {
                 0x89, 0x06, 0x68, 0x65, 0x6c, 0x6c, 0x6f, 0x3f, // ping hello?
                 0x88, 0x00,                                     // close
         };
-        server = Support.serverWithCannedData(bytes);
-        server.open();
-        MockListener listener = new MockListener() {
-            @Override
-            protected void onOpen0(WebSocket webSocket) {
-                /* request nothing */
+        try (var server = Support.serverWithCannedData(bytes)) {
+            server.open();
+            MockListener listener = new MockListener() {
+                @Override
+                protected void onOpen0(WebSocket webSocket) {
+                    /* request nothing */
+                }
+            };
+            var webSocket = newHttpClient()
+                    .newWebSocketBuilder()
+                    .buildAsync(server.getURI(), listener)
+                    .join();
+            try {
+                webSocket.sendClose(WebSocket.NORMAL_CLOSURE, "ok").join();
+                // now request all messages available
+                webSocket.request(Long.MAX_VALUE);
+                List<MockListener.Invocation> actual = listener.invocations();
+                ByteBuffer hello = ByteBuffer.wrap("hello?".getBytes(StandardCharsets.UTF_8));
+                ByteBuffer empty = ByteBuffer.allocate(0);
+                List<MockListener.Invocation> expected = List.of(
+                        MockListener.Invocation.onOpen(webSocket),
+                        MockListener.Invocation.onPing(webSocket, empty),
+                        MockListener.Invocation.onPing(webSocket, hello),
+                        MockListener.Invocation.onClose(webSocket, 1005, "")
+                );
+                assertEquals(actual, expected);
+            } finally {
+                webSocket.abort();
             }
-        };
-        webSocket = newHttpClient()
-                .newWebSocketBuilder()
-                .buildAsync(server.getURI(), listener)
-                .join();
-
-        webSocket.sendClose(WebSocket.NORMAL_CLOSURE, "ok").join();
-        // now request all messages available
-        webSocket.request(Long.MAX_VALUE);
-        List<MockListener.Invocation> actual = listener.invocations();
-        ByteBuffer hello = ByteBuffer.wrap("hello?".getBytes(StandardCharsets.UTF_8));
-        ByteBuffer empty = ByteBuffer.allocate(0);
-        List<MockListener.Invocation> expected = List.of(
-                MockListener.Invocation.onOpen(webSocket),
-                MockListener.Invocation.onPing(webSocket, empty),
-                MockListener.Invocation.onPing(webSocket, hello),
-                MockListener.Invocation.onClose(webSocket, 1005, "")
-        );
-        assertEquals(actual, expected);
+        }
     }
 
     /*
@@ -131,84 +123,100 @@ public class AutomaticPong {
         .write(buffer);
         buffer.putChar((char) 1000);
         buffer.flip();
-        server = Support.serverWithCannedData(buffer.array());
-        server.open();
-        MockListener listener = new MockListener();
-        webSocket = newHttpClient()
-                .newWebSocketBuilder()
-                .buildAsync(server.getURI(), listener)
-                .join();
-        List<MockListener.Invocation> inv = listener.invocations();
-        assertEquals(inv.size(), nPings + 2); // n * onPing + onOpen + onClose
+        try (var server = Support.serverWithCannedData(buffer.array())) {
+            server.open();
+            MockListener listener = new MockListener();
+            var webSocket = newHttpClient()
+                    .newWebSocketBuilder()
+                    .buildAsync(server.getURI(), listener)
+                    .join();
+            try {
+                List<MockListener.Invocation> inv = listener.invocations();
+                assertEquals(inv.size(), nPings + 2); // n * onPing + onOpen + onClose
 
-        ByteBuffer data = server.read();
-        Frame.Reader reader = new Frame.Reader();
+                ByteBuffer data = server.read();
+                Frame.Reader reader = new Frame.Reader();
 
-        Frame.Consumer consumer = new Frame.Consumer() {
+                Frame.Consumer consumer = new Frame.Consumer() {
 
-            ByteBuffer number = ByteBuffer.allocate(4);
-            Frame.Masker masker = new Frame.Masker();
-            int i = -1;
-            boolean closed;
+                    ByteBuffer number = ByteBuffer.allocate(4);
+                    Frame.Masker masker = new Frame.Masker();
+                    int i = -1;
+                    boolean closed;
 
-            @Override
-            public void fin(boolean value) { assertTrue(value); }
+                    @Override
+                    public void fin(boolean value) {
+                        assertTrue(value);
+                    }
 
-            @Override
-            public void rsv1(boolean value) { assertFalse(value); }
+                    @Override
+                    public void rsv1(boolean value) {
+                        assertFalse(value);
+                    }
 
-            @Override
-            public void rsv2(boolean value) { assertFalse(value); }
+                    @Override
+                    public void rsv2(boolean value) {
+                        assertFalse(value);
+                    }
 
-            @Override
-            public void rsv3(boolean value) { assertFalse(value); }
+                    @Override
+                    public void rsv3(boolean value) {
+                        assertFalse(value);
+                    }
 
-            @Override
-            public void opcode(Frame.Opcode value) {
-                if (value == Frame.Opcode.CLOSE) {
-                    closed = true;
-                    return;
+                    @Override
+                    public void opcode(Frame.Opcode value) {
+                        if (value == Frame.Opcode.CLOSE) {
+                            closed = true;
+                            return;
+                        }
+                        assertEquals(value, Frame.Opcode.PONG);
+                    }
+
+                    @Override
+                    public void mask(boolean value) {
+                        assertTrue(value);
+                    }
+
+                    @Override
+                    public void payloadLen(long value) {
+                        if (!closed)
+                            assertEquals(value, 4);
+                    }
+
+                    @Override
+                    public void maskingKey(int value) {
+                        masker.mask(value);
+                    }
+
+                    @Override
+                    public void payloadData(ByteBuffer src) {
+                        masker.transferMasking(src, number);
+                        if (closed) {
+                            return;
+                        }
+                        number.flip();
+                        int n = number.getInt();
+                        System.out.printf("pong number=%s%n", n);
+                        number.clear();
+                        // a Pong with the number less than the maximum of Pongs already
+                        // received MUST never be received
+                        if (i >= n) {
+                            fail(String.format("i=%s, n=%s", i, n));
+                        }
+                        i = n;
+                    }
+
+                    @Override
+                    public void endFrame() {
+                    }
+                };
+                while (data.hasRemaining()) {
+                    reader.readFrame(data, consumer);
                 }
-                assertEquals(value, Frame.Opcode.PONG);
+            } finally {
+                webSocket.abort();
             }
-
-            @Override
-            public void mask(boolean value) { assertTrue(value); }
-
-            @Override
-            public void payloadLen(long value) {
-                if (!closed)
-                    assertEquals(value, 4);
-            }
-
-            @Override
-            public void maskingKey(int value) {
-                masker.mask(value);
-            }
-
-            @Override
-            public void payloadData(ByteBuffer src) {
-                masker.transferMasking(src, number);
-                if (closed) {
-                    return;
-                }
-                number.flip();
-                int n = number.getInt();
-                System.out.printf("pong number=%s%n", n);
-                number.clear();
-                // a Pong with the number less than the maximum of Pongs already
-                // received MUST never be received
-                if (i >= n) {
-                    fail(String.format("i=%s, n=%s", i, n));
-                }
-                i = n;
-            }
-
-            @Override
-            public void endFrame() { }
-        };
-        while (data.hasRemaining()) {
-            reader.readFrame(data, consumer);
         }
     }
 
