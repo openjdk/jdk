@@ -47,8 +47,6 @@ public:
   CodeBlobClosure* strong_codeblobs()      { return &_closures._codeblobs; }
   CodeBlobClosure* weak_codeblobs()        { return &_closures._codeblobs; }
 
-  OopClosure* raw_strong_oops() { return &_closures._oops; }
-
   bool trace_metadata()         { return false; }
 };
 
@@ -89,8 +87,6 @@ public:
 
   CodeBlobClosure* strong_codeblobs()      { return &_strong._codeblobs; }
   CodeBlobClosure* weak_codeblobs()        { return &_weak._codeblobs; }
-
-  OopClosure* raw_strong_oops() { return &_strong._oops; }
 
   // If we are not marking all weak roots then we are tracing
   // which metadata is alive.

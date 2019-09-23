@@ -830,7 +830,7 @@ class G1ScanCollectionSetRegionClosure : public HeapRegionClosure {
 
     G1ScanCardClosure scan_cl(G1CollectedHeap::heap(), _pss);
     G1ScanRSForOptionalClosure cl(G1CollectedHeap::heap(), &scan_cl);
-    _opt_refs_scanned += opt_rem_set_list->oops_do(&cl, _pss->closures()->raw_strong_oops());
+    _opt_refs_scanned += opt_rem_set_list->oops_do(&cl, _pss->closures()->strong_oops());
     _opt_refs_memory_used += opt_rem_set_list->used_memory();
 
     event.commit(GCId::current(), _worker_id, G1GCPhaseTimes::phase_name(_scan_phase));
