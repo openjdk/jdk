@@ -25,6 +25,7 @@
 import java.io.*;
 import java.net.*;
 import java.lang.reflect.Field;
+import java.util.concurrent.atomic.AtomicInteger;
 
 
 // This test helper is parameterized by:
@@ -78,7 +79,7 @@ public class ParallelLoad {
             if ("FINGERPRINT_MODE".equals(args[1])) {
                 mode = FINGERPRINT_MODE;
                 classLoaders = new ClassLoader[NUM_THREADS];
-                for (int i=0; i<NUM_THREADS; i++) {
+                for (int i = 0; i < NUM_THREADS; i++) {
                     URL url = new File(customJar).toURI().toURL();
                     URL[] urls = new URL[] {url};
                     classLoaders[i] = new URLClassLoader(urls);
@@ -93,7 +94,7 @@ public class ParallelLoad {
         System.out.println("Start Parallel Load ...");
 
         Thread thread[] = new Thread[NUM_THREADS];
-        for (int i=0; i<NUM_THREADS; i++) {
+        for (int i = 0; i < NUM_THREADS; i++) {
             Thread t = new ParallelLoadThread(i);
             t.start();
             thread[i] = t;
@@ -103,7 +104,7 @@ public class ParallelLoad {
         watchdog.setDaemon(true);
         watchdog.start();
 
-        for (int i=0; i<NUM_THREADS; i++) {
+        for (int i = 0; i < NUM_THREADS; i++) {
             thread[i].join();
         }
         System.out.println("Parallel Load ... done");
@@ -128,8 +129,13 @@ class ParallelLoadWatchdog extends Thread {
 
 
 class ParallelLoadThread extends Thread {
-    static int num_ready[] = new int[ParallelLoad.MAX_CLASSES];
-    static Object lock = new Object();
+    static AtomicInteger num_ready[];
+    static {
+        num_ready = new AtomicInteger[ParallelLoad.MAX_CLASSES];
+        for (int i = 0; i < ParallelLoad.MAX_CLASSES; i++) {
+            num_ready[i] = new AtomicInteger();
+        }
+    }
     static String transformMode =
         System.getProperty("appcds.parallel.transform.mode", "none");
 
@@ -153,35 +159,36 @@ class ParallelLoadThread extends Thread {
     }
 
     private void run0() throws Throwable {
-        for (int i=0; i<ParallelLoad.MAX_CLASSES; i++) {
-            synchronized(lock) {
-                num_ready[i] ++;
-                while (num_ready[i] < ParallelLoad.NUM_THREADS) {
-                    lock.wait();
-                }
-                lock.notifyAll();
-            }
-            log("this = %s %d", this, i);
+        for (int i = 0;  i < ParallelLoad.MAX_CLASSES; i++) {
             String className = "ParallelClass" + i;
-            if (transformMode.equals("cflh"))
+            if (transformMode.equals("cflh")) {
                 className = "ParallelClassTr" + i;
-
+            }
             Class clazz = null;
 
-            switch (ParallelLoad.loaderType) {
-            case ParallelLoad.SYSTEM_LOADER:
-                clazz = Class.forName(className);
-                break;
-            case ParallelLoad.SINGLE_CUSTOM_LOADER:
-                clazz = ParallelLoad.classLoaders[0].loadClass(className);
-                break;
-            case ParallelLoad.MULTI_CUSTOM_LOADER:
-                clazz = ParallelLoad.classLoaders[thread_id].loadClass(className);
-                break;
+            // Spin until every thread is ready to proceed
+            num_ready[i].incrementAndGet();
+            while (num_ready[i].intValue() < ParallelLoad.NUM_THREADS) {
+                ;
             }
 
-            log("clazz = %s", clazz);
-            testTransformation(clazz);
+            {   // Avoid logging in this block so the threads can proceed without
+                // waiting for the stdout lock, etc.
+                switch (ParallelLoad.loaderType) {
+                case ParallelLoad.SYSTEM_LOADER:
+                    clazz = Class.forName(className);
+                    break;
+                case ParallelLoad.SINGLE_CUSTOM_LOADER:
+                    clazz = ParallelLoad.classLoaders[0].loadClass(className);
+                    break;
+                case ParallelLoad.MULTI_CUSTOM_LOADER:
+                    clazz = ParallelLoad.classLoaders[thread_id].loadClass(className);
+                    break;
+                }
+                testTransformation(clazz);
+            }
+
+            log("thread[%d] t = %s, c = %s, l = %s", thread_id, this, clazz, clazz.getClassLoader());
         }
     }
 

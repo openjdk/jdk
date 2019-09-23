@@ -36,10 +36,34 @@
 public class ParallelLoadTest {
     public static final int MAX_CLASSES = 40;
 
+    /* For easy stress testing, do this:
+
+       i=0; while jtreg -DParallelLoadTest.app.loops=100 -DParallelLoadTest.boot.loops=100 \
+           ParallelLoadTest.java; do i=$(expr $i + 1); echo =====$i; done
+
+     */
+
+    private static final int APP_LOOPS  = Integer.parseInt(System.getProperty("ParallelLoadTest.app.loops", "1"));
+    private static final int BOOT_LOOPS = Integer.parseInt(System.getProperty("ParallelLoadTest.boot.loops", "1"));
+
     public static void main(String[] args) throws Exception {
         JarBuilder.build("parallel_load", getClassList(true));
-        String appJar = TestCommon.getTestJar("parallel_load.jar");
-        TestCommon.test(appJar, getClassList(false), "ParallelLoad");
+        String testJar = TestCommon.getTestJar("parallel_load.jar");
+
+        // (1) Load the classes from app class loader
+        TestCommon.testDump(testJar, getClassList(false));
+        for (int i = 0; i < APP_LOOPS; i++) {
+            TestCommon.run("-cp", testJar,  "ParallelLoad").assertNormalExit();
+        }
+
+        // (2) Load the classes from boot class loader
+        String bootcp = "-Xbootclasspath/a:" + testJar;
+        TestCommon.testDump(null, getClassList(false), bootcp);
+        for (int i = 0; i < BOOT_LOOPS; i++) {
+            TestCommon.run(bootcp,
+                           // "-Xlog:class+load=debug",
+                           "ParallelLoad").assertNormalExit();
+        }
     }
 
     private static String[] getClassList(boolean includeWatchdog) {
@@ -47,7 +71,7 @@ public class ParallelLoadTest {
         String[] classList = new String[MAX_CLASSES + extra];
 
         int i;
-        for (i=0; i<MAX_CLASSES; i++) {
+        for (i = 0; i < MAX_CLASSES; i++) {
             classList[i] = "ParallelClass" + i;
         }
 

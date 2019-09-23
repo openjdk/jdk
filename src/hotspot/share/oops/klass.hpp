@@ -524,6 +524,18 @@ protected:
   virtual void remove_java_mirror();
   virtual void restore_unshareable_info(ClassLoaderData* loader_data, Handle protection_domain, TRAPS);
 
+  bool is_unshareable_info_restored() const {
+    assert(is_shared(), "use this for shared classes only");
+    if (has_raw_archived_mirror()) {
+      // _java_mirror is not a valid OopHandle but rather an encoded reference in the shared heap
+      return false;
+    } else if (_java_mirror.ptr_raw() == NULL) {
+      return false;
+    } else {
+      return true;
+    }
+  }
+
  public:
   // subclass accessor (here for convenience; undefined for non-klass objects)
   virtual bool is_leaf_class() const { fatal("not a class"); return false; }
