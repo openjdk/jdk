@@ -719,16 +719,15 @@ void jAttributeArrayToCKAttributeArray(JNIEnv *env, jobjectArray jArray, CK_ATTR
         throwOutOfMemoryError(env, 0);
         return;
     }
-    TRACE1(", converting %d attributes", jLength);
+    TRACE1(", converting %lld attributes", (long long int) jLength);
     for (i=0; i<(*ckpLength); i++) {
-        TRACE1(", getting %d. attribute", i);
+        TRACE1(", getting %lu. attribute", i);
         jAttribute = (*env)->GetObjectArrayElement(env, jArray, i);
         if ((*env)->ExceptionCheck(env)) {
             freeCKAttributeArray(*ckpArray, i);
             return;
         }
-        TRACE1(", jAttribute = %d", jAttribute);
-        TRACE1(", converting %d. attribute", i);
+        TRACE1(", jAttribute , converting %lu. attribute", i);
         (*ckpArray)[i] = jAttributeToCKAttribute(env, jAttribute);
         if ((*env)->ExceptionCheck(env)) {
             freeCKAttributeArray(*ckpArray, i);
@@ -1116,7 +1115,7 @@ CK_VOID_PTR jObjectToPrimitiveCKObjectPtr(JNIEnv *env, jobject jObject, CK_ULONG
     if ((*env)->IsInstanceOf(env, jObject, jLongClass)) {
         ckpObject = jLongObjectToCKULongPtr(env, jObject);
         *ckpLength = sizeof(CK_ULONG);
-        TRACE1("<converted long value %X>", *((CK_ULONG *) ckpObject));
+        TRACE1("<converted long value %lu>", *((CK_ULONG *) ckpObject));
         return ckpObject;
     }
 
@@ -1126,7 +1125,7 @@ CK_VOID_PTR jObjectToPrimitiveCKObjectPtr(JNIEnv *env, jobject jObject, CK_ULONG
         ckpObject = jBooleanObjectToCKBBoolPtr(env, jObject);
         *ckpLength = sizeof(CK_BBOOL);
         TRACE0(" <converted boolean value ");
-        TRACE0((*((CK_BBOOL *) ckpObjectPtr) == TRUE) ? "TRUE>" : "FALSE>");
+        TRACE0((*((CK_BBOOL *) ckpObject) == TRUE) ? "TRUE>" : "FALSE>");
         return ckpObject;
     }
 
@@ -1177,7 +1176,7 @@ CK_VOID_PTR jObjectToPrimitiveCKObjectPtr(JNIEnv *env, jobject jObject, CK_ULONG
     if ((*env)->IsInstanceOf(env, jObject, jIntegerClass)) {
         ckpObject = jIntegerObjectToCKULongPtr(env, jObject);
         *ckpLength = sizeof(CK_ULONG);
-        TRACE1("<converted integer value %X>", *((CK_ULONG *) ckpObject));
+        TRACE1("<converted integer value %lu>", *((CK_ULONG *) ckpObject));
         return ckpObject;
     }
 

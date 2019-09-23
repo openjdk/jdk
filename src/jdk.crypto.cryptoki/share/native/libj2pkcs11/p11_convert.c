@@ -1179,7 +1179,7 @@ CK_MECHANISM_PTR jMechanismToCKMechanismPtr(JNIEnv *env, jobject jMech)
         throwOutOfMemoryError(env, 0);
         return NULL;
     }
-    TRACE1("DEBUG jMechanismToCKMechanismPtr: allocated mech 0x%lX\n", ckpMech);
+    TRACE1("DEBUG jMechanismToCKMechanismPtr: allocated mech %p \n", ckpMech);
 
     ckpMech->mechanism = jLongToCKULong(jMechType);
 

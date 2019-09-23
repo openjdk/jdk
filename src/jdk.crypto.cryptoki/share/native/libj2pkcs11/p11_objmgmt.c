@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2019, Oracle and/or its affiliates. All rights reserved.
  */
 
 /* Copyright  (c) 2002 Graz University of Technology. All rights reserved.
@@ -223,18 +223,18 @@ JNIEXPORT void JNICALL Java_sun_security_pkcs11_wrapper_PKCS11_C_1GetAttributeVa
     if (ckpFunctions == NULL) { return; }
 
     TRACE0("DEBUG: C_GetAttributeValue");
-    TRACE1(", hSession=%u", jSessionHandle);
-    TRACE1(", hObject=%u", jObjectHandle);
+    TRACE1(", hSession=%lld", (long long) jSessionHandle);
+    TRACE1(", hObject=%lld", (long long) jObjectHandle);
     TRACE1(", pTemplate=%p", jTemplate);
     TRACE0(" ... ");
 
     ckSessionHandle = jLongToCKULong(jSessionHandle);
     ckObjectHandle = jLongToCKULong(jObjectHandle);
-    TRACE1("jAttributeArrayToCKAttributeArray now with jTemplate = %d", jTemplate);
+    TRACE1("jAttributeArrayToCKAttributeArray now with jTemplate = %p", jTemplate);
     jAttributeArrayToCKAttributeArray(env, jTemplate, &ckpAttributes, &ckAttributesLength);
     if ((*env)->ExceptionCheck(env)) { return; }
 
-    TRACE2("DEBUG: jAttributeArrayToCKAttributeArray finished with ckpAttribute = %d, Length = %d\n", ckpAttributes, ckAttributesLength);
+    TRACE2("DEBUG: jAttributeArrayToCKAttributeArray finished with ckpAttribute = %p, Length = %lu\n", ckpAttributes, (unsigned long) ckAttributesLength);
 
     /* first set all pValue to NULL, to get the needed buffer length */
     for(i = 0; i < ckAttributesLength; i++) {
@@ -345,7 +345,7 @@ JNIEXPORT void JNICALL Java_sun_security_pkcs11_wrapper_PKCS11_C_1FindObjectsIni
     if (ckpFunctions == NULL) { return; }
 
     TRACE0("DEBUG: C_FindObjectsInit");
-    TRACE1(", hSession=%u", jSessionHandle);
+    TRACE1(", hSession=%lld", (long long int) jSessionHandle);
     TRACE1(", pTemplate=%p", jTemplate);
     TRACE0(" ... ");
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2019, Oracle and/or its affiliates. All rights reserved.
  */
 
 /* Copyright  (c) 2002 Graz University of Technology. All rights reserved.
@@ -98,7 +98,7 @@ Java_sun_security_pkcs11_wrapper_PKCS11_freeMechanism
 (JNIEnv *env, jclass thisClass, jlong ckpMechanism) {
     if (ckpMechanism != 0L) {
         freeCKMechanismPtr(jlong_to_ptr(ckpMechanism));
-        TRACE1("DEBUG PKCS11_freeMechanism: free pMech = %x\n", ckpMechanism);
+        TRACE1("DEBUG PKCS11_freeMechanism: free pMech = %lld\n", (long long int) ckpMechanism);
     }
     return 0L;
 }
@@ -232,7 +232,10 @@ Java_sun_security_pkcs11_wrapper_PKCS11_C_1Initialize
 
     free(ckpInitArgs);
 
-    if (ckAssertReturnValueOK(env, rv) != CK_ASSERT_OK) { return; }
+    if (ckAssertReturnValueOK(env, rv) != CK_ASSERT_OK) {
+      TRACE1("DEBUG: C_Initialize had a bad return value %lu \n", (unsigned long) rv);
+      return;
+    }
 
     TRACE0("FINISHED\n");
 }
