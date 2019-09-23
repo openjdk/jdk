@@ -466,17 +466,13 @@ void ShenandoahBarrierSetAssembler::load_at(MacroAssembler* masm, DecoratorSet d
   bool on_phantom = (decorators & ON_PHANTOM_OOP_REF) != 0;
   bool not_in_heap = (decorators & IN_NATIVE) != 0;
   bool on_reference = on_weak || on_phantom;
-  bool keep_alive = (decorators & AS_NO_KEEPALIVE) == 0;
+  bool is_traversal_mode = ShenandoahHeap::heap()->is_traversal_mode();
+  bool keep_alive = ((decorators & AS_NO_KEEPALIVE) == 0) || is_traversal_mode;
 
   BarrierSetAssembler::load_at(masm, decorators, type, dst, src, tmp1, tmp_thread);
   if (on_oop) {
-    if (not_in_heap) {
-      if (ShenandoahHeap::heap()->is_traversal_mode()) {
-        load_reference_barrier(masm, dst);
-        keep_alive = true;
-      } else {
-        load_reference_barrier_native(masm, dst);
-      }
+    if (not_in_heap && !is_traversal_mode) {
+      load_reference_barrier_native(masm, dst);
     } else {
       load_reference_barrier(masm, dst);
     }
