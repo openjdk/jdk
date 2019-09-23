@@ -148,6 +148,8 @@ AC_DEFUN([BASIC_FIXUP_PATH_CYGWIN],
   path="[$]$1"
   new_path=`$CYGPATH -u "$path"`
 
+  BASIC_ABSOLUTE_PATH(new_path)
+
   # Cygwin tries to hide some aspects of the Windows file system, such that binaries are
   # named .exe but called without that suffix. Therefore, "foo" and "foo.exe" are considered
   # the same file, most of the time (as in "test -f"). But not when running cygpath -s, then
@@ -181,6 +183,8 @@ AC_DEFUN([BASIC_FIXUP_PATH_MSYS],
     new_path=`cmd //c echo $path`
   fi
 
+  BASIC_ABSOLUTE_PATH(new_path)
+
   BASIC_MAKE_WINDOWS_SPACE_SAFE_MSYS([$new_path])
   BASIC_WINDOWS_REWRITE_AS_UNIX_PATH(new_path)
   if test "x$path" != "x$new_path"; then
@@ -198,6 +202,8 @@ AC_DEFUN([BASIC_FIXUP_PATH_WSL],
   # unix format.
   new_path="[$]$1"
   BASIC_WINDOWS_REWRITE_AS_UNIX_PATH([new_path])
+
+  BASIC_ABSOLUTE_PATH(new_path)
 
   # Call helper function which possibly converts this using DOS-style short mode.
   # If so, the updated path is stored in $new_path.
