@@ -29,6 +29,7 @@ import com.sun.tools.javac.tree.JCTree;
 import com.sun.tools.javac.util.*;
 import com.sun.tools.javac.code.*;
 import com.sun.tools.javac.code.Scope.WriteableScope;
+import com.sun.tools.javac.comp.DeferredAttr.AttributionMode;
 
 /** Contains information specific to the attribute and enter
  *  passes, to be used in place of the generic field in environments.
@@ -67,7 +68,7 @@ public class AttrContext {
 
     /** Is this a speculative attribution environment?
      */
-    boolean isSpeculative = false;
+    AttributionMode attributionMode = AttributionMode.FULL;
 
     /**
      *  Is this an attribution environment for an anonymous class instantiated using <> ?
@@ -133,7 +134,7 @@ public class AttrContext {
         info.defaultSuperCallSite = defaultSuperCallSite;
         info.isSerializable = isSerializable;
         info.isLambda = isLambda;
-        info.isSpeculative = isSpeculative;
+        info.attributionMode = attributionMode;
         info.isAnonymousDiamond = isAnonymousDiamond;
         info.isNewClass = isNewClass;
         info.preferredTreeForDiagnostics = preferredTreeForDiagnostics;

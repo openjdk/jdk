@@ -166,6 +166,7 @@ public final class JapaneseEra
     /**
      * Serialization version.
      */
+    @java.io.Serial
     private static final long serialVersionUID = 1466499369062886794L;
 
     // array for the singleton JapaneseEra instances
@@ -426,6 +427,7 @@ public final class JapaneseEra
      * @param s the stream to read
      * @throws InvalidObjectException always
      */
+    @java.io.Serial
     private void readObject(ObjectInputStream s) throws InvalidObjectException {
         throw new InvalidObjectException("Deserialization via serialization delegate");
     }
@@ -442,6 +444,7 @@ public final class JapaneseEra
      *
      * @return the instance of {@code Ser}, not null
      */
+    @java.io.Serial
     private Object writeReplace() {
         return new Ser(Ser.JAPANESE_ERA_TYPE, this);
     }

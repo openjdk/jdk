@@ -133,13 +133,13 @@ class RotationLock : public StackObj {
 };
 
 static int64_t write_checkpoint_event_prologue(JfrChunkWriter& cw, u8 type_id) {
-  const int64_t prev_cp_offset = cw.previous_checkpoint_offset();
-  const int64_t prev_cp_relative_offset = 0 == prev_cp_offset ? 0 : prev_cp_offset - cw.current_offset();
+  const int64_t last_cp_offset = cw.last_checkpoint_offset();
+  const int64_t delta_to_last_checkpoint = 0 == last_cp_offset ? 0 : last_cp_offset - cw.current_offset();
   cw.reserve(sizeof(u4));
   cw.write<u8>(EVENT_CHECKPOINT);
   cw.write(JfrTicks::now());
-  cw.write((int64_t)0);
-  cw.write(prev_cp_relative_offset); // write previous checkpoint offset delta
+  cw.write((int64_t)0); // duration
+  cw.write(delta_to_last_checkpoint);
   cw.write<bool>(false); // flushpoint
   cw.write((u4)1); // nof types in this checkpoint
   cw.write(type_id);
@@ -178,7 +178,7 @@ class WriteCheckpointEvent : public StackObj {
     _cw.write_padded_at_offset<u4>(number_of_elements, num_elements_offset);
     _cw.write_padded_at_offset<u4>((u4)_cw.current_offset() - current_cp_offset, current_cp_offset);
     // update writer with last checkpoint position
-    _cw.set_previous_checkpoint_offset(current_cp_offset);
+    _cw.set_last_checkpoint_offset(current_cp_offset);
     return true;
   }
 };
@@ -317,19 +317,16 @@ void JfrRecorderService::rotate(int msgs) {
     vm_error = true;
     prepare_for_vm_error_rotation();
   }
+  if (!_storage.control().to_disk()) {
+    in_memory_rotation();
+  } else if (vm_error) {
+    vm_error_rotation();
+  } else {
+    chunk_rotation();
+  }
   if (msgs & (MSGBIT(MSG_STOP))) {
     stop();
   }
-  // action determined by chunkwriter state
-  if (!_chunkwriter.is_valid()) {
-    in_memory_rotation();
-    return;
-  }
-  if (vm_error) {
-    vm_error_rotation();
-    return;
-  }
-  chunk_rotation();
 }
 
 void JfrRecorderService::prepare_for_vm_error_rotation() {
@@ -400,12 +397,6 @@ static void write_stacktrace_checkpoint(JfrStackTraceRepository& stack_trace_rep
   WriteStackTraceCheckpoint write_stack_trace_checkpoint(chunkwriter, TYPE_STACKTRACE, write_stacktrace_repo);
   write_stack_trace_checkpoint.process();
 }
-
-static void write_object_sample_stacktrace(ObjectSampler* sampler, JfrStackTraceRepository& stack_trace_repository) {
-  WriteObjectSampleStacktrace object_sample_stacktrace(sampler, stack_trace_repository);
-  object_sample_stacktrace.process();
-}
-
 static void write_stringpool_checkpoint(JfrStringPool& string_pool, JfrChunkWriter& chunkwriter) {
   WriteStringPool write_string_pool(string_pool);
   WriteStringPoolCheckpoint write_string_pool_checkpoint(chunkwriter, TYPE_STRING, write_string_pool);
@@ -440,9 +431,7 @@ void JfrRecorderService::pre_safepoint_write() {
   if (LeakProfiler::is_running()) {
     // Exclusive access to the object sampler instance.
     // The sampler is released (unlocked) later in post_safepoint_write.
-    ObjectSampler* const sampler = ObjectSampler::acquire();
-    assert(sampler != NULL, "invariant");
-    write_object_sample_stacktrace(sampler, _stack_trace_repository);
+    ObjectSampleCheckpoint::on_rotation(ObjectSampler::acquire(), _stack_trace_repository);
   }
   _storage.write();
 }

@@ -107,9 +107,7 @@ G1RemSetSummary::G1RemSetSummary(G1RemSet* rem_set) :
 }
 
 G1RemSetSummary::~G1RemSetSummary() {
-  if (_rs_threads_vtimes) {
-    FREE_C_HEAP_ARRAY(double, _rs_threads_vtimes);
-  }
+  FREE_C_HEAP_ARRAY(double, _rs_threads_vtimes);
 }
 
 void G1RemSetSummary::set(G1RemSetSummary* other) {

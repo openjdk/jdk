@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -151,6 +151,7 @@ import java.security.Permission;
  */
 public final class URLPermission extends Permission {
 
+    @java.io.Serial
     private static final long serialVersionUID = -2702463814894478682L;
 
     private transient String scheme;
@@ -174,7 +175,7 @@ public final class URLPermission extends Permission {
      *
      * @param actions the actions string
      *
-     * @exception IllegalArgumentException if url is invalid or if actions contains white-space.
+     * @throws    IllegalArgumentException if url is invalid or if actions contains white-space.
      */
     public URLPermission(String url, String actions) {
         super(normalize(url));
@@ -505,6 +506,7 @@ public final class URLPermission extends Permission {
     /**
      * restore the state of this object from stream
      */
+    @java.io.Serial
     private void readObject(ObjectInputStream s)
         throws IOException, ClassNotFoundException {
         ObjectInputStream.GetField fields = s.readFields();

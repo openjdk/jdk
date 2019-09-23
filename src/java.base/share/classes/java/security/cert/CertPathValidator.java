@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -296,9 +296,9 @@ public class CertPathValidator {
      * @param certPath the {@code CertPath} to be validated
      * @param params the algorithm parameters
      * @return the result of the validation algorithm
-     * @exception CertPathValidatorException if the {@code CertPath}
+     * @throws    CertPathValidatorException if the {@code CertPath}
      * does not validate
-     * @exception InvalidAlgorithmParameterException if the specified
+     * @throws    InvalidAlgorithmParameterException if the specified
      * parameters or the type of the specified {@code CertPath} are
      * inappropriate for this {@code CertPathValidator}
      */

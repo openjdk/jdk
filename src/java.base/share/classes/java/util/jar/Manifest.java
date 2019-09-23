@@ -195,7 +195,7 @@ public class Manifest implements Cloneable {
      * MainAttributes prior to invoking this method.
      *
      * @param out the output stream
-     * @exception IOException if an I/O error has occurred
+     * @throws    IOException if an I/O error has occurred
      * @see #getMainAttributes
      */
     public void write(OutputStream out) throws IOException {
@@ -276,7 +276,7 @@ public class Manifest implements Cloneable {
      * manifest entries.
      *
      * @param is the input stream
-     * @exception IOException if an I/O error has occurred
+     * @throws    IOException if an I/O error has occurred
      */
     public void read(InputStream is) throws IOException {
         read(is, null);

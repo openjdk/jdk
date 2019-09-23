@@ -274,10 +274,10 @@ public class MethodHandles {
      * @param target a direct method handle to crack into symbolic reference components
      * @param expected a class object representing the desired result type {@code T}
      * @return a reference to the method, constructor, or field object
-     * @exception SecurityException if the caller is not privileged to call {@code setAccessible}
-     * @exception NullPointerException if either argument is {@code null}
-     * @exception IllegalArgumentException if the target is not a direct method handle
-     * @exception ClassCastException if the member is not of the expected type
+     * @throws    SecurityException if the caller is not privileged to call {@code setAccessible}
+     * @throws    NullPointerException if either argument is {@code null}
+     * @throws    IllegalArgumentException if the target is not a direct method handle
+     * @throws    ClassCastException if the member is not of the expected type
      * @since 1.8
      */
     public static <T extends Member> T
@@ -1754,7 +1754,7 @@ assertEquals("[x, y]", MH_asList.invoke("x", "y").toString());
          *                                or if the method is not {@code static},
          *                                or if the method's variable arity modifier bit
          *                                is set and {@code asVarargsCollector} fails
-         * @exception SecurityException if a security manager is present and it
+         * @throws    SecurityException if a security manager is present and it
          *                              <a href="MethodHandles.Lookup.html#secmgr">refuses access</a>
          * @throws NullPointerException if any argument is null
          */
@@ -1839,7 +1839,7 @@ assertEquals("", (String) MH_newString.invokeExact());
          *                                or if the method is {@code static},
          *                                or if the method's variable arity modifier bit
          *                                is set and {@code asVarargsCollector} fails
-         * @exception SecurityException if a security manager is present and it
+         * @throws    SecurityException if a security manager is present and it
          *                              <a href="MethodHandles.Lookup.html#secmgr">refuses access</a>
          * @throws NullPointerException if any argument is null
          */
@@ -1913,7 +1913,7 @@ assertEquals("[x, y, z]", pb.command().toString());
          * @throws IllegalAccessException if access checking fails
          *                                or if the method's variable arity modifier bit
          *                                is set and {@code asVarargsCollector} fails
-         * @exception SecurityException if a security manager is present and it
+         * @throws    SecurityException if a security manager is present and it
          *                              <a href="MethodHandles.Lookup.html#secmgr">refuses access</a>
          * @throws NullPointerException if any argument is null
          */
@@ -1927,23 +1927,31 @@ assertEquals("[x, y, z]", pb.command().toString());
         }
 
         /**
-         * Looks up a class by name from the lookup context defined by this {@code Lookup} object. The static
+         * Looks up a class by name from the lookup context defined by this {@code Lookup} object.
+         * This method attempts to locate, load, and link the class, and then determines whether
+         * the class is accessible to this {@code Lookup} object.  The static
          * initializer of the class is not run.
          * <p>
          * The lookup context here is determined by the {@linkplain #lookupClass() lookup class}, its class
-         * loader, and the {@linkplain #lookupModes() lookup modes}. In particular, the method first attempts to
-         * load the requested class, and then determines whether the class is accessible to this lookup object.
+         * loader, and the {@linkplain #lookupModes() lookup modes}.
+         * <p>
+         * Note that this method throws errors related to loading and linking as
+         * specified in Sections 12.2 and 12.3 of <em>The Java Language
+         * Specification</em>.
          *
          * @param targetName the fully qualified name of the class to be looked up.
          * @return the requested class.
-         * @exception SecurityException if a security manager is present and it
+         * @throws    SecurityException if a security manager is present and it
          *            <a href="MethodHandles.Lookup.html#secmgr">refuses access</a>
          * @throws LinkageError if the linkage fails
          * @throws ClassNotFoundException if the class cannot be loaded by the lookup class' loader.
          * @throws IllegalAccessException if the class is not accessible, using the allowed access
          * modes.
-         * @exception SecurityException if a security manager is present and it
+         * @throws    SecurityException if a security manager is present and it
          *                              <a href="MethodHandles.Lookup.html#secmgr">refuses access</a>
+         *
+         * @jls 12.2 Loading of Classes and Interfaces
+         * @jls 12.3 Linking of Classes and Interfaces
          * @since 9
          */
         public Class<?> findClass(String targetName) throws ClassNotFoundException, IllegalAccessException {
@@ -2014,7 +2022,7 @@ assertEquals("[x, y, z]", pb.command().toString());
          * @return the class that has been access-checked
          * @throws IllegalAccessException if the class is not accessible from the lookup class
          * and previous lookup class, if present, using the allowed access modes.
-         * @exception SecurityException if a security manager is present and it
+         * @throws    SecurityException if a security manager is present and it
          *                              <a href="MethodHandles.Lookup.html#secmgr">refuses access</a>
          * @since 9
          * @see <a href="#cross-module-lookup">Cross-module lookups</a>
@@ -2096,7 +2104,7 @@ assertEquals(""+l, (String) MH_this.invokeExact(subl)); // Listie method
          *                                or if the method is {@code static},
          *                                or if the method's variable arity modifier bit
          *                                is set and {@code asVarargsCollector} fails
-         * @exception SecurityException if a security manager is present and it
+         * @throws    SecurityException if a security manager is present and it
          *                              <a href="MethodHandles.Lookup.html#secmgr">refuses access</a>
          * @throws NullPointerException if any argument is null
          */
@@ -2121,7 +2129,7 @@ assertEquals(""+l, (String) MH_this.invokeExact(subl)); // Listie method
          * @return a method handle which can load values from the field
          * @throws NoSuchFieldException if the field does not exist
          * @throws IllegalAccessException if access checking fails, or if the field is {@code static}
-         * @exception SecurityException if a security manager is present and it
+         * @throws    SecurityException if a security manager is present and it
          *                              <a href="MethodHandles.Lookup.html#secmgr">refuses access</a>
          * @throws NullPointerException if any argument is null
          * @see #findVarHandle(Class, String, Class)
@@ -2145,7 +2153,7 @@ assertEquals(""+l, (String) MH_this.invokeExact(subl)); // Listie method
          * @throws NoSuchFieldException if the field does not exist
          * @throws IllegalAccessException if access checking fails, or if the field is {@code static}
          *                                or {@code final}
-         * @exception SecurityException if a security manager is present and it
+         * @throws    SecurityException if a security manager is present and it
          *                              <a href="MethodHandles.Lookup.html#secmgr">refuses access</a>
          * @throws NullPointerException if any argument is null
          * @see #findVarHandle(Class, String, Class)
@@ -2218,7 +2226,7 @@ assertEquals(""+l, (String) MH_this.invokeExact(subl)); // Listie method
          * @return a VarHandle giving access to non-static fields.
          * @throws NoSuchFieldException if the field does not exist
          * @throws IllegalAccessException if access checking fails, or if the field is {@code static}
-         * @exception SecurityException if a security manager is present and it
+         * @throws    SecurityException if a security manager is present and it
          *                              <a href="MethodHandles.Lookup.html#secmgr">refuses access</a>
          * @throws NullPointerException if any argument is null
          * @since 9
@@ -2244,7 +2252,7 @@ assertEquals(""+l, (String) MH_this.invokeExact(subl)); // Listie method
          * @return a method handle which can load values from the field
          * @throws NoSuchFieldException if the field does not exist
          * @throws IllegalAccessException if access checking fails, or if the field is not {@code static}
-         * @exception SecurityException if a security manager is present and it
+         * @throws    SecurityException if a security manager is present and it
          *                              <a href="MethodHandles.Lookup.html#secmgr">refuses access</a>
          * @throws NullPointerException if any argument is null
          */
@@ -2269,7 +2277,7 @@ assertEquals(""+l, (String) MH_this.invokeExact(subl)); // Listie method
          * @throws NoSuchFieldException if the field does not exist
          * @throws IllegalAccessException if access checking fails, or if the field is not {@code static}
          *                                or is {@code final}
-         * @exception SecurityException if a security manager is present and it
+         * @throws    SecurityException if a security manager is present and it
          *                              <a href="MethodHandles.Lookup.html#secmgr">refuses access</a>
          * @throws NullPointerException if any argument is null
          */
@@ -2343,7 +2351,7 @@ assertEquals(""+l, (String) MH_this.invokeExact(subl)); // Listie method
          * @return a VarHandle giving access to a static field
          * @throws NoSuchFieldException if the field does not exist
          * @throws IllegalAccessException if access checking fails, or if the field is not {@code static}
-         * @exception SecurityException if a security manager is present and it
+         * @throws    SecurityException if a security manager is present and it
          *                              <a href="MethodHandles.Lookup.html#secmgr">refuses access</a>
          * @throws NullPointerException if any argument is null
          * @since 9
@@ -2397,7 +2405,7 @@ return mh1;
          * @throws IllegalAccessException if access checking fails
          *                                or if the method's variable arity modifier bit
          *                                is set and {@code asVarargsCollector} fails
-         * @exception SecurityException if a security manager is present and it
+         * @throws    SecurityException if a security manager is present and it
          *                              <a href="MethodHandles.Lookup.html#secmgr">refuses access</a>
          * @throws NullPointerException if any argument is null
          * @see MethodHandle#bindTo
@@ -2699,10 +2707,10 @@ return mh1;
          * and was created by a lookup object for a different class.
          * @param target a direct method handle to crack into symbolic reference components
          * @return a symbolic reference which can be used to reconstruct this method handle from this lookup object
-         * @exception SecurityException if a security manager is present and it
+         * @throws    SecurityException if a security manager is present and it
          *                              <a href="MethodHandles.Lookup.html#secmgr">refuses access</a>
          * @throws IllegalArgumentException if the target is not a direct method handle or if access checking fails
-         * @exception NullPointerException if the target is {@code null}
+         * @throws    NullPointerException if the target is {@code null}
          * @see MethodHandleInfo
          * @since 1.8
          */

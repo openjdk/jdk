@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -61,9 +61,14 @@ public class ProxyTunnelServer extends Thread {
     static boolean needAuth = false;
 
     public ProxyTunnelServer() throws IOException {
+        this(null); // use wildcard
+    }
+
+    public ProxyTunnelServer(InetAddress proxyAddress) throws IOException {
         if (ss == null) {
-          ss = (ServerSocket) ServerSocketFactory.getDefault().
-          createServerSocket(0);
+            ss = (ServerSocket) ServerSocketFactory.getDefault().
+                createServerSocket();
+            ss.bind(new InetSocketAddress(proxyAddress, 0));
         }
         setDaemon(true);
     }
@@ -274,14 +279,18 @@ public class ProxyTunnelServer extends Thread {
             serverName = connectInfo.substring(0, endi);
             serverPort = Integer.parseInt(connectInfo.substring(endi+1));
         } catch (Exception e) {
-            throw new IOException("Proxy recieved a request: "
-                                        + connectStr);
-          }
+            throw new IOException("Proxy received a request: "
+                                  + connectStr, e);
+        }
         serverInetAddr = InetAddress.getByName(serverName);
     }
 
     public int getPort() {
         return ss.getLocalPort();
+    }
+
+    public InetAddress getInetAddress() {
+        return ss.getInetAddress();
     }
 
     /*

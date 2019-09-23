@@ -40,6 +40,7 @@ import com.sun.jdi.request.*;
 import com.sun.jdi.connect.*;
 
 import java.util.*;
+import java.util.concurrent.CopyOnWriteArrayList;
 import java.io.*;
 
 public class TTY implements EventNotifier {
@@ -48,7 +49,7 @@ public class TTY implements EventNotifier {
     /**
      * List of Strings to execute at each stop.
      */
-    private List<String> monitorCommands = new ArrayList<String>();
+    private List<String> monitorCommands = new CopyOnWriteArrayList<>();
     private int monitorCount = 0;
 
     /**

@@ -342,7 +342,7 @@ Node *MemNode::Ideal_common(PhaseGVN *phase, bool can_reshape) {
       }
     }
     Node* frame = igvn->transform(new ParmNode(phase->C->start(), TypeFunc::FramePtr));
-    Node* halt = igvn->transform(new HaltNode(ctl, frame));
+    Node* halt = igvn->transform(new HaltNode(ctl, frame, "unsafe off-heap access with zero address"));
     phase->C->root()->add_req(halt);
     return this;
   }

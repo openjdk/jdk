@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -116,6 +116,7 @@ public final class ThaiBuddhistChronology extends AbstractChronology implements 
     /**
      * Serialization version.
      */
+    @java.io.Serial
     private static final long serialVersionUID = 2775954514031616474L;
     /**
      * Containing the offset to add to the ISO year.
@@ -384,6 +385,7 @@ public final class ThaiBuddhistChronology extends AbstractChronology implements 
      * @return the instance of {@code Ser}, not null
      */
     @Override
+    @java.io.Serial
     Object writeReplace() {
         return super.writeReplace();
     }
@@ -394,6 +396,7 @@ public final class ThaiBuddhistChronology extends AbstractChronology implements 
      * @param s the stream to read
      * @throws InvalidObjectException always
      */
+    @java.io.Serial
     private void readObject(ObjectInputStream s) throws InvalidObjectException {
         throw new InvalidObjectException("Deserialization via serialization delegate");
     }

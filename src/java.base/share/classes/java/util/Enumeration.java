@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1994, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1994, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -76,7 +76,7 @@ public interface Enumeration<E> {
      * object has at least one more element to provide.
      *
      * @return     the next element of this enumeration.
-     * @exception  NoSuchElementException  if no more elements exist.
+     * @throws     NoSuchElementException  if no more elements exist.
      */
     E nextElement();
 

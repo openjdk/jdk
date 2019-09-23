@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -59,8 +59,8 @@ public abstract class LocaleNameProvider extends LocaleServiceProvider {
      * @param locale the desired locale
      * @return the name of the given language code for the specified locale, or null if it's not
      *     available.
-     * @exception NullPointerException if <code>languageCode</code> or <code>locale</code> is null
-     * @exception IllegalArgumentException if <code>languageCode</code> is not in the form of
+     * @throws    NullPointerException if <code>languageCode</code> or <code>locale</code> is null
+     * @throws    IllegalArgumentException if <code>languageCode</code> is not in the form of
      *     two or three lower-case letters, or <code>locale</code> isn't
      *     one of the locales returned from
      *     {@link java.util.spi.LocaleServiceProvider#getAvailableLocales()
@@ -86,8 +86,8 @@ public abstract class LocaleNameProvider extends LocaleServiceProvider {
      * @param locale the desired locale
      * @return the name of the given script code for the specified locale, or null if it's not
      *     available.
-     * @exception NullPointerException if <code>scriptCode</code> or <code>locale</code> is null
-     * @exception IllegalArgumentException if <code>scriptCode</code> is not in the form of
+     * @throws    NullPointerException if <code>scriptCode</code> or <code>locale</code> is null
+     * @throws    IllegalArgumentException if <code>scriptCode</code> is not in the form of
      *     four title case letters, or <code>locale</code> isn't
      *     one of the locales returned from
      *     {@link java.util.spi.LocaleServiceProvider#getAvailableLocales()
@@ -115,8 +115,8 @@ public abstract class LocaleNameProvider extends LocaleServiceProvider {
      * @param locale the desired locale
      * @return the name of the given country code for the specified locale, or null if it's not
      *     available.
-     * @exception NullPointerException if <code>countryCode</code> or <code>locale</code> is null
-     * @exception IllegalArgumentException if <code>countryCode</code> is not in the form of
+     * @throws    NullPointerException if <code>countryCode</code> or <code>locale</code> is null
+     * @throws    IllegalArgumentException if <code>countryCode</code> is not in the form of
      *     two upper-case letters or three digit letters, or <code>locale</code> isn't
      *     one of the locales returned from
      *     {@link java.util.spi.LocaleServiceProvider#getAvailableLocales()
@@ -134,8 +134,8 @@ public abstract class LocaleNameProvider extends LocaleServiceProvider {
      * @param locale the desired locale
      * @return the name of the given variant string for the specified locale, or null if it's not
      *     available.
-     * @exception NullPointerException if <code>variant</code> or <code>locale</code> is null
-     * @exception IllegalArgumentException if <code>locale</code> isn't
+     * @throws    NullPointerException if <code>variant</code> or <code>locale</code> is null
+     * @throws    IllegalArgumentException if <code>locale</code> isn't
      *     one of the locales returned from
      *     {@link java.util.spi.LocaleServiceProvider#getAvailableLocales()
      *     getAvailableLocales()}.
@@ -154,8 +154,8 @@ public abstract class LocaleNameProvider extends LocaleServiceProvider {
      * @param locale the desired locale, not null.
      * @return the name of the given key string for the specified locale,
      *  or null if it's not available.
-     * @exception NullPointerException if {@code key} or {@code locale} is null
-     * @exception IllegalArgumentException if {@code locale} isn't
+     * @throws    NullPointerException if {@code key} or {@code locale} is null
+     * @throws    IllegalArgumentException if {@code locale} isn't
      *     one of the locales returned from
      *     {@link java.util.spi.LocaleServiceProvider#getAvailableLocales()
      *     getAvailableLocales()}.
@@ -179,8 +179,8 @@ public abstract class LocaleNameProvider extends LocaleServiceProvider {
      * @param locale the desired locale, not null.
      * @return the name of the given type string for the specified locale,
      *  or null if it's not available.
-     * @exception NullPointerException if {@code key}, {@code type} or {@code locale} is null
-     * @exception IllegalArgumentException if {@code locale} isn't
+     * @throws    NullPointerException if {@code key}, {@code type} or {@code locale} is null
+     * @throws    IllegalArgumentException if {@code locale} isn't
      *     one of the locales returned from
      *     {@link java.util.spi.LocaleServiceProvider#getAvailableLocales()
      *     getAvailableLocales()}.

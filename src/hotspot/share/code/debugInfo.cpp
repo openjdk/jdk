@@ -225,7 +225,7 @@ void ConstantOopWriteValue::write_on(DebugInfoWriteStream* stream) {
     // thread is already in VM state.
     ThreadInVMfromUnknown tiv;
     assert(JNIHandles::resolve(value()) == NULL ||
-           Universe::heap()->is_in_reserved(JNIHandles::resolve(value())),
+           Universe::heap()->is_in(JNIHandles::resolve(value())),
            "Should be in heap");
  }
 #endif
@@ -246,7 +246,7 @@ void ConstantOopWriteValue::print_on(outputStream* st) const {
 ConstantOopReadValue::ConstantOopReadValue(DebugInfoReadStream* stream) {
   _value = Handle(Thread::current(), stream->read_oop());
   assert(_value() == NULL ||
-         Universe::heap()->is_in_reserved(_value()), "Should be in heap");
+         Universe::heap()->is_in(_value()), "Should be in heap");
 }
 
 void ConstantOopReadValue::write_on(DebugInfoWriteStream* stream) {

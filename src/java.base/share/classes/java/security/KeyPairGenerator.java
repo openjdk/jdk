@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -369,7 +369,7 @@ public abstract class KeyPairGenerator extends KeyPairGeneratorSpi {
      * algorithm-specific metric, such as modulus length, specified in
      * number of bits.
      *
-     * @exception InvalidParameterException if the {@code keysize} is not
+     * @throws    InvalidParameterException if the {@code keysize} is not
      * supported by this KeyPairGenerator object.
      */
     public void initialize(int keysize) {
@@ -385,7 +385,7 @@ public abstract class KeyPairGenerator extends KeyPairGeneratorSpi {
      * number of bits.
      * @param random the source of randomness.
      *
-     * @exception InvalidParameterException if the {@code keysize} is not
+     * @throws    InvalidParameterException if the {@code keysize} is not
      * supported by this KeyPairGenerator object.
      *
      * @since 1.2
@@ -426,7 +426,7 @@ public abstract class KeyPairGenerator extends KeyPairGeneratorSpi {
      *
      * @param params the parameter set used to generate the keys.
      *
-     * @exception InvalidAlgorithmParameterException if the given parameters
+     * @throws    InvalidAlgorithmParameterException if the given parameters
      * are inappropriate for this key pair generator.
      *
      * @since 1.2
@@ -454,7 +454,7 @@ public abstract class KeyPairGenerator extends KeyPairGeneratorSpi {
      * @param params the parameter set used to generate the keys.
      * @param random the source of randomness.
      *
-     * @exception InvalidAlgorithmParameterException if the given parameters
+     * @throws    InvalidAlgorithmParameterException if the given parameters
      * are inappropriate for this key pair generator.
      *
      * @since 1.2

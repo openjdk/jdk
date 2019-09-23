@@ -34,17 +34,11 @@
 #include "memory/referenceType.hpp"
 #include "utilities/macros.hpp"
 #include "utilities/ticks.hpp"
-#if INCLUDE_G1GC
-#include "gc/g1/g1YCTypes.hpp"
-#endif
 
-class G1EvacuationInfo;
 class GCHeapSummary;
 class MetaspaceChunkFreeListSummary;
 class MetaspaceSummary;
 class PSHeapSummary;
-class G1HeapSummary;
-class G1EvacSummary;
 class ReferenceProcessorStats;
 class TimePartitions;
 class BoolObjectClosure;
@@ -96,20 +90,6 @@ class ParallelOldGCInfo {
   }
   void* dense_prefix() const { return _dense_prefix; }
 };
-
-#if INCLUDE_G1GC
-
-class G1YoungGCInfo {
-  G1YCType _type;
- public:
-  G1YoungGCInfo() : _type(G1YCTypeEndSentinel) {}
-  void set_type(G1YCType type) {
-    _type = type;
-  }
-  G1YCType type() const { return _type; }
-};
-
-#endif // INCLUDE_G1GC
 
 class GCTracer : public ResourceObj {
  protected:
@@ -232,81 +212,9 @@ class ParNewTracer : public YoungGCTracer {
   ParNewTracer() : YoungGCTracer(ParNew) {}
 };
 
-#if INCLUDE_G1GC
-class G1MMUTracer : public AllStatic {
-  static void send_g1_mmu_event(double time_slice_ms, double gc_time_ms, double max_time_ms);
-
- public:
-  static void report_mmu(double time_slice_sec, double gc_time_sec, double max_time_sec);
-};
-
-class G1NewTracer : public YoungGCTracer {
-  G1YoungGCInfo _g1_young_gc_info;
-
- public:
-  G1NewTracer() : YoungGCTracer(G1New) {}
-
-  void report_yc_type(G1YCType type);
-  void report_gc_end_impl(const Ticks& timestamp, TimePartitions* time_partitions);
-  void report_evacuation_info(G1EvacuationInfo* info);
-  void report_evacuation_failed(EvacuationFailedInfo& ef_info);
-
-  void report_evacuation_statistics(const G1EvacSummary& young_summary, const G1EvacSummary& old_summary) const;
-
-  void report_basic_ihop_statistics(size_t threshold,
-                                    size_t target_occupancy,
-                                    size_t current_occupancy,
-                                    size_t last_allocation_size,
-                                    double last_allocation_duration,
-                                    double last_marking_length);
-  void report_adaptive_ihop_statistics(size_t threshold,
-                                       size_t internal_target_occupancy,
-                                       size_t current_occupancy,
-                                       size_t additional_buffer_size,
-                                       double predicted_allocation_rate,
-                                       double predicted_marking_length,
-                                       bool prediction_active);
- private:
-  void send_g1_young_gc_event();
-  void send_evacuation_info_event(G1EvacuationInfo* info);
-  void send_evacuation_failed_event(const EvacuationFailedInfo& ef_info) const;
-
-  void send_young_evacuation_statistics(const G1EvacSummary& summary) const;
-  void send_old_evacuation_statistics(const G1EvacSummary& summary) const;
-
-  void send_basic_ihop_statistics(size_t threshold,
-                                  size_t target_occupancy,
-                                  size_t current_occupancy,
-                                  size_t last_allocation_size,
-                                  double last_allocation_duration,
-                                  double last_marking_length);
-  void send_adaptive_ihop_statistics(size_t threshold,
-                                     size_t internal_target_occupancy,
-                                     size_t current_occupancy,
-                                     size_t additional_buffer_size,
-                                     double predicted_allocation_rate,
-                                     double predicted_marking_length,
-                                     bool prediction_active);
-};
-
-class G1FullGCTracer : public OldGCTracer {
- public:
-  G1FullGCTracer() : OldGCTracer(G1Full) {}
-};
-
-#endif // INCLUDE_G1GC
-
 class CMSTracer : public OldGCTracer {
  public:
   CMSTracer() : OldGCTracer(ConcurrentMarkSweep) {}
-};
-
-class G1OldTracer : public OldGCTracer {
- protected:
-  void report_gc_start_impl(GCCause::Cause cause, const Ticks& timestamp);
- public:
-  G1OldTracer() : OldGCTracer(G1Old) {}
-  void set_gc_cause(GCCause::Cause cause);
 };
 
 #endif // SHARE_GC_SHARED_GCTRACE_HPP

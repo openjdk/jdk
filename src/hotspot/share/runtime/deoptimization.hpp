@@ -137,13 +137,19 @@ class Deoptimization : AllStatic {
     Unpack_LIMIT                = 4
   };
 
+  static void deoptimize_all_marked();
+
+ private:
   // Checks all compiled methods. Invalid methods are deleted and
   // corresponding activations are deoptimized.
   static int deoptimize_dependents();
 
+  // Revoke biased locks at deopt.
+  static void revoke_from_deopt_handler(JavaThread* thread, frame fr, RegisterMap* map);
+
+ public:
   // Deoptimizes a frame lazily. nmethod gets patched deopt happens on return to the frame
-  static void deoptimize(JavaThread* thread, frame fr, RegisterMap *reg_map);
-  static void deoptimize(JavaThread* thread, frame fr, RegisterMap *reg_map, DeoptReason reason);
+  static void deoptimize(JavaThread* thread, frame fr, RegisterMap *reg_map, DeoptReason reason = Reason_constraint);
 
 #if INCLUDE_JVMCI
   static address deoptimize_for_missing_exception_handler(CompiledMethod* cm);
@@ -154,12 +160,8 @@ class Deoptimization : AllStatic {
   // Does the actual work for deoptimizing a single frame
   static void deoptimize_single_frame(JavaThread* thread, frame fr, DeoptReason reason);
 
-  // Helper function to revoke biases of all monitors in frame if UseBiasedLocking
-  // is enabled
-  static void revoke_biases_of_monitors(JavaThread* thread, frame fr, RegisterMap* map);
-
 #if COMPILER2_OR_JVMCI
-JVMCI_ONLY(public:)
+ public:
 
   // Support for restoring non-escaping objects
   static bool realloc_objects(JavaThread* thread, frame* fr, RegisterMap* reg_map, GrowableArray<ScopeValue*>* objects, TRAPS);

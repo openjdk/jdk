@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -89,7 +89,7 @@ public class BufferedWriter extends Writer {
      * @param  out  A Writer
      * @param  sz   Output-buffer size, a positive integer
      *
-     * @exception  IllegalArgumentException  If {@code sz <= 0}
+     * @throws     IllegalArgumentException  If {@code sz <= 0}
      */
     public BufferedWriter(Writer out, int sz) {
         super(out);
@@ -125,7 +125,7 @@ public class BufferedWriter extends Writer {
     /**
      * Writes a single character.
      *
-     * @exception  IOException  If an I/O error occurs
+     * @throws     IOException  If an I/O error occurs
      */
     public void write(int c) throws IOException {
         synchronized (lock) {
@@ -240,7 +240,7 @@ public class BufferedWriter extends Writer {
      * system property {@code line.separator}, and is not necessarily a single
      * newline ('\n') character.
      *
-     * @exception  IOException  If an I/O error occurs
+     * @throws     IOException  If an I/O error occurs
      */
     public void newLine() throws IOException {
         write(System.lineSeparator());
@@ -249,7 +249,7 @@ public class BufferedWriter extends Writer {
     /**
      * Flushes the stream.
      *
-     * @exception  IOException  If an I/O error occurs
+     * @throws     IOException  If an I/O error occurs
      */
     public void flush() throws IOException {
         synchronized (lock) {

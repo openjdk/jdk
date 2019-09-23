@@ -40,12 +40,10 @@ import java.util.List;
 import jdk.test.lib.Container;
 import jdk.test.lib.Utils;
 import jdk.test.lib.process.OutputAnalyzer;
-import jdk.test.lib.process.ProcessTools;
 import jtreg.SkippedException;
 
 
 public class DockerTestUtils {
-    private static final String FS = File.separator;
     private static boolean isDockerEngineAvailable = false;
     private static boolean wasDockerEngineChecked = false;
 
@@ -212,6 +210,7 @@ public class DockerTestUtils {
         if (opts.appendTestJavaOptions) {
             Collections.addAll(cmd, Utils.getTestJavaOpts());
         }
+        cmd.addAll(opts.javaOptsAppended);
 
         cmd.add(opts.classToRun);
         cmd.addAll(opts.classParams);

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -57,6 +57,7 @@ import javax.crypto.spec.SecretKeySpec;
 
 public class KeyRep implements Serializable {
 
+    @java.io.Serial
     private static final long serialVersionUID = -4757683898830641853L;
 
     /**
@@ -120,7 +121,7 @@ public class KeyRep implements Serializable {
      * @param encoded the encoded bytes returned from
      *          {@code Key.getEncoded()}
      *
-     * @exception NullPointerException
+     * @throws    NullPointerException
      *          if type is {@code null},
      *          if algorithm is {@code null},
      *          if format is {@code null},
@@ -157,11 +158,12 @@ public class KeyRep implements Serializable {
      *
      * @return the resolved Key object
      *
-     * @exception ObjectStreamException if the Type/format
+     * @throws    ObjectStreamException if the Type/format
      *  combination is unrecognized, if the algorithm, key format, or
      *  encoded key bytes are unrecognized/invalid, of if the
      *  resolution of the key fails for any reason
      */
+    @java.io.Serial
     protected Object readResolve() throws ObjectStreamException {
         try {
             if (type == Type.SECRET && RAW.equals(format)) {

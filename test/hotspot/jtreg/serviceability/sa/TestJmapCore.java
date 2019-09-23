@@ -98,8 +98,8 @@ public class TestJmapCore {
             : ProcessTools.executeProcess("sh", "-c", "ulimit -c unlimited && "
                     + ProcessTools.getCommandLine(pb));
         File core;
-        String pattern = Platform.isWindows() ? "mdmp" : "core";
-        File[] cores = new File(".").listFiles((dir, name) -> name.contains(pattern));
+        String pattern = Platform.isWindows() ? ".*\\.mdmp" : "core(\\.\\d+)?";
+        File[] cores = new File(".").listFiles((dir, name) -> name.matches(pattern));
         if (cores.length == 0) {
             // /cores/core.$pid might be generated on macosx by default
             String pid = output.firstMatch("^(\\d+)" + pidSeparator, 1);

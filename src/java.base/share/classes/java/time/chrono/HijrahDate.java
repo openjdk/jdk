@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -123,6 +123,7 @@ public final class HijrahDate
     /**
      * Serialization version.
      */
+    @java.io.Serial
     private static final long serialVersionUID = -5207853542612002020L;
     /**
      * The Chronology of this HijrahDate.
@@ -657,6 +658,7 @@ public final class HijrahDate
      * @param s the stream to read
      * @throws InvalidObjectException always
      */
+    @java.io.Serial
     private void readObject(ObjectInputStream s) throws InvalidObjectException {
         throw new InvalidObjectException("Deserialization via serialization delegate");
     }
@@ -675,6 +677,7 @@ public final class HijrahDate
      *
      * @return the instance of {@code Ser}, not null
      */
+    @java.io.Serial
     private Object writeReplace() {
         return new Ser(Ser.HIJRAH_DATE_TYPE, this);
     }

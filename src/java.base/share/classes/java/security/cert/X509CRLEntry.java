@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -122,7 +122,7 @@ public abstract class X509CRLEntry implements X509Extension {
      * that is the inner SEQUENCE.
      *
      * @return the encoded form of this certificate
-     * @exception CRLException if an encoding error occurs.
+     * @throws    CRLException if an encoding error occurs.
      */
     public abstract byte[] getEncoded() throws CRLException;
 

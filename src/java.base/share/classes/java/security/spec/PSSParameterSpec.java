@@ -128,9 +128,9 @@ public class PSSParameterSpec implements AlgorithmParameterSpec {
      *         getMGFParameters().
      * @param saltLen      the length of salt
      * @param trailerField the value of the trailer field
-     * @exception NullPointerException if {@code mdName}, or {@code mgfName}
+     * @throws    NullPointerException if {@code mdName}, or {@code mgfName}
      *         is null
-     * @exception IllegalArgumentException if {@code saltLen} or
+     * @throws    IllegalArgumentException if {@code saltLen} or
      *         {@code trailerField} is less than 0
      * @since 1.5
      */
@@ -161,7 +161,7 @@ public class PSSParameterSpec implements AlgorithmParameterSpec {
      *
      * @param saltLen the length of salt in bytes to be used in PKCS#1
      *         PSS encoding
-     * @exception IllegalArgumentException if {@code saltLen} is
+     * @throws    IllegalArgumentException if {@code saltLen} is
      *         less than 0
      */
     public PSSParameterSpec(int saltLen) {

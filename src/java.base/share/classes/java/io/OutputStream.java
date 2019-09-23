@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1994, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1994, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -46,6 +46,11 @@ import java.util.Objects;
  * @since   1.0
  */
 public abstract class OutputStream implements Closeable, Flushable {
+    /**
+     * Constructor for subclasses to call.
+     */
+    public OutputStream() {}
+
     /**
      * Returns a new {@code OutputStream} which discards all bytes.  The
      * returned stream is initially open.  The stream is closed by calling
@@ -102,7 +107,7 @@ public abstract class OutputStream implements Closeable, Flushable {
      * implementation for this method.
      *
      * @param      b   the <code>byte</code>.
-     * @exception  IOException  if an I/O error occurs. In particular,
+     * @throws     IOException  if an I/O error occurs. In particular,
      *             an <code>IOException</code> may be thrown if the
      *             output stream has been closed.
      */
@@ -115,7 +120,7 @@ public abstract class OutputStream implements Closeable, Flushable {
      * <code>write(b, 0, b.length)</code>.
      *
      * @param      b   the data.
-     * @exception  IOException  if an I/O error occurs.
+     * @throws     IOException  if an I/O error occurs.
      * @see        java.io.OutputStream#write(byte[], int, int)
      */
     public void write(byte b[]) throws IOException {
@@ -146,7 +151,7 @@ public abstract class OutputStream implements Closeable, Flushable {
      * @param      b     the data.
      * @param      off   the start offset in the data.
      * @param      len   the number of bytes to write.
-     * @exception  IOException  if an I/O error occurs. In particular,
+     * @throws     IOException  if an I/O error occurs. In particular,
      *             an <code>IOException</code> is thrown if the output
      *             stream is closed.
      */
@@ -174,7 +179,7 @@ public abstract class OutputStream implements Closeable, Flushable {
      * <p>
      * The <code>flush</code> method of <code>OutputStream</code> does nothing.
      *
-     * @exception  IOException  if an I/O error occurs.
+     * @throws     IOException  if an I/O error occurs.
      */
     public void flush() throws IOException {
     }
@@ -187,7 +192,7 @@ public abstract class OutputStream implements Closeable, Flushable {
      * <p>
      * The <code>close</code> method of <code>OutputStream</code> does nothing.
      *
-     * @exception  IOException  if an I/O error occurs.
+     * @throws     IOException  if an I/O error occurs.
      */
     public void close() throws IOException {
     }

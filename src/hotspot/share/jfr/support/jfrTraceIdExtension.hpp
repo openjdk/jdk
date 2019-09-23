@@ -26,6 +26,7 @@
 #define SHARE_JFR_SUPPORT_JFRTRACEIDEXTENSION_HPP
 
 #include "jfr/recorder/checkpoint/types/traceid/jfrTraceId.hpp"
+#include "utilities/macros.hpp"
 
 #define DEFINE_TRACE_ID_FIELD mutable traceid _trace_id
 
@@ -43,39 +44,55 @@
 
 class JfrTraceFlag {
  private:
-  mutable jbyte _flags;
+  mutable jshort _flags;
  public:
   JfrTraceFlag() : _flags(0) {}
-  explicit JfrTraceFlag(jbyte flags) : _flags(flags) {}
-  void set_flag(jbyte flag) const {
-    _flags |= flag;
-  }
-  void clear_flag(jbyte flag) const {
-    _flags &= (~flag);
-  }
-  jbyte flags() const { return _flags; }
-  bool is_set(jbyte flag) const {
+  bool is_set(jshort flag) const {
     return (_flags & flag) != 0;
   }
-  jbyte* const flags_addr() const {
-    return &_flags;
+
+  jshort flags() const {
+    return _flags;
+  }
+
+  void set_flags(jshort flags) const {
+    _flags = flags;
+  }
+
+  jbyte* flags_addr() const {
+#ifdef VM_LITTLE_ENDIAN
+    return (jbyte*)&_flags;
+#else
+    return ((jbyte*)&_flags) + 1;
+#endif
+  }
+
+  jbyte* meta_addr() const {
+#ifdef VM_LITTLE_ENDIAN
+    return (jbyte*)(&_flags) + 1;
+#else
+    return (jbyte*)&_flags;
+#endif
   }
 };
 
 #define DEFINE_TRACE_FLAG mutable JfrTraceFlag _trace_flags
 
 #define DEFINE_TRACE_FLAG_ACCESSOR                 \
-  void set_trace_flag(jbyte flag) const {          \
-    _trace_flags.set_flag(flag);                   \
-  }                                                \
-  jbyte trace_flags() const {                      \
-    return _trace_flags.flags();                   \
-  }                                                \
-  bool is_trace_flag_set(jbyte flag) const {       \
+  bool is_trace_flag_set(jshort flag) const {      \
     return _trace_flags.is_set(flag);              \
   }                                                \
-  jbyte* const trace_flags_addr() const {          \
+  jshort trace_flags() const {                     \
+    return _trace_flags.flags();                   \
+  }                                                \
+  void set_trace_flags(jshort flags) const {       \
+    _trace_flags.set_flags(flags);                 \
+  }                                                \
+  jbyte* trace_flags_addr() const {                \
     return _trace_flags.flags_addr();              \
+  }                                                \
+  jbyte* trace_meta_addr() const {                 \
+    return _trace_flags.meta_addr();               \
   }
 
 #endif // SHARE_JFR_SUPPORT_JFRTRACEIDEXTENSION_HPP

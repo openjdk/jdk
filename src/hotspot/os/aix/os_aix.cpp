@@ -523,7 +523,7 @@ query_multipage_support_end:
       describe_pagesize(g_multipage_support.pthr_stack_pagesize));
   trcVerbose("Default shared memory page size: %s",
       describe_pagesize(g_multipage_support.shmpsize));
-  trcVerbose("Can use 64K pages dynamically with shared meory: %s",
+  trcVerbose("Can use 64K pages dynamically with shared memory: %s",
       (g_multipage_support.can_use_64K_pages ? "yes" :"no"));
   trcVerbose("Can use 16M pages dynamically with shared memory: %s",
       (g_multipage_support.can_use_16M_pages ? "yes" :"no"));
@@ -554,7 +554,7 @@ void os::init_system_properties_values() {
   const size_t bufsize =
     MAX2((size_t)MAXPATHLEN,  // For dll_dir & friends.
          (size_t)MAXPATHLEN + sizeof(EXTENSIONS_DIR)); // extensions dir
-  char *buf = (char *)NEW_C_HEAP_ARRAY(char, bufsize, mtInternal);
+  char *buf = NEW_C_HEAP_ARRAY(char, bufsize, mtInternal);
 
   // sysclasspath, java_home, dll_dir
   {
@@ -596,7 +596,7 @@ void os::init_system_properties_values() {
 
   // Concatenate user and invariant part of ld_library_path.
   // That's +1 for the colon and +1 for the trailing '\0'.
-  char *ld_library_path = (char *)NEW_C_HEAP_ARRAY(char, strlen(v) + 1 + sizeof(DEFAULT_LIBPATH) + 1, mtInternal);
+  char *ld_library_path = NEW_C_HEAP_ARRAY(char, strlen(v) + 1 + sizeof(DEFAULT_LIBPATH) + 1, mtInternal);
   sprintf(ld_library_path, "%s%s" DEFAULT_LIBPATH, v, v_colon);
   Arguments::set_library_path(ld_library_path);
   FREE_C_HEAP_ARRAY(char, ld_library_path);
@@ -1440,7 +1440,7 @@ void os::print_memory_info(outputStream* st) {
     describe_pagesize(g_multipage_support.pthr_stack_pagesize));
   st->print_cr("  Default shared memory page size:        %s",
     describe_pagesize(g_multipage_support.shmpsize));
-  st->print_cr("  Can use 64K pages dynamically with shared meory:  %s",
+  st->print_cr("  Can use 64K pages dynamically with shared memory:  %s",
     (g_multipage_support.can_use_64K_pages ? "yes" :"no"));
   st->print_cr("  Can use 16M pages dynamically with shared memory: %s",
     (g_multipage_support.can_use_16M_pages ? "yes" :"no"));
@@ -4228,7 +4228,7 @@ extern char** environ;
 // Unlike system(), this function can be called from signal handler. It
 // doesn't block SIGINT et al.
 int os::fork_and_exec(char* cmd, bool use_vfork_if_available) {
-  char * argv[4] = {"sh", "-c", cmd, NULL};
+  char* argv[4] = { (char*)"sh", (char*)"-c", cmd, NULL};
 
   pid_t pid = fork();
 

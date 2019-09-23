@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -202,4 +202,25 @@ Java_sun_nio_fs_BsdNativeDispatcher_endfsstat(JNIEnv* env, jclass this, jlong va
         free(iter->buf);
         free(iter);
     }
+}
+
+JNIEXPORT jbyteArray JNICALL
+Java_sun_nio_fs_BsdNativeDispatcher_getmntonname0(JNIEnv *env, jclass this,
+    jlong pathAddress)
+{
+    struct statfs buf;
+    const char* path = (const char*)jlong_to_ptr(pathAddress);
+
+    if (statfs(path, &buf) != 0) {
+        throwUnixException(env, errno);
+    }
+
+    jsize len = strlen(buf.f_mntonname);
+    jbyteArray mntonname = (*env)->NewByteArray(env, len);
+    if (mntonname != NULL) {
+        (*env)->SetByteArrayRegion(env, mntonname, 0, len,
+            (jbyte*)buf.f_mntonname);
+    }
+
+    return mntonname;
 }

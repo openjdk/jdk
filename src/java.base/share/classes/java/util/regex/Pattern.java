@@ -935,6 +935,7 @@ public final class Pattern
      */
 
     /** use serialVersionUID from Merlin b59 for interoperability */
+    @java.io.Serial
     private static final long serialVersionUID = 5073258162644648461L;
 
     /**
@@ -1376,6 +1377,7 @@ public final class Pattern
      * Recompile the Pattern instance from a stream.  The original pattern
      * string is read in and the object tree is recompiled from it.
      */
+    @java.io.Serial
     private void readObject(java.io.ObjectInputStream s)
         throws java.io.IOException, ClassNotFoundException {
 
@@ -2888,12 +2890,12 @@ loop:   for(int x=0, offset=0; x<nCodePoints; x++, offset+=len) {
                 p = CharPredicates.forUnicodeBlock(name.substring(2));
             } else if (name.startsWith("Is")) {
                 // \p{IsGeneralCategory} and \p{IsScriptName}
-                name = name.substring(2);
-                p = CharPredicates.forUnicodeProperty(name);
+                String shortName = name.substring(2);
+                p = CharPredicates.forUnicodeProperty(shortName);
                 if (p == null)
-                    p = CharPredicates.forProperty(name);
+                    p = CharPredicates.forProperty(shortName);
                 if (p == null)
-                    p = CharPredicates.forUnicodeScript(name);
+                    p = CharPredicates.forUnicodeScript(shortName);
             } else {
                 if (has(UNICODE_CHARACTER_CLASS)) {
                     p = CharPredicates.forPOSIXName(name);
@@ -2902,7 +2904,7 @@ loop:   for(int x=0, offset=0; x<nCodePoints; x++, offset+=len) {
                     p = CharPredicates.forProperty(name);
             }
             if (p == null)
-                throw error("Unknown character property name {In/Is" + name + "}");
+                throw error("Unknown character property name {" + name + "}");
         }
         if (isComplement) {
             // it might be too expensive to detect if a complement of
@@ -3929,12 +3931,14 @@ loop:   for(int x=0, offset=0; x<nCodePoints; x++, offset+=len) {
         boolean match(Matcher matcher, int i, CharSequence seq) {
             if (i < matcher.to) {
                 int ch = Character.codePointAt(seq, i);
-                return predicate.is(ch) &&
-                       next.match(matcher, i + Character.charCount(ch), seq);
-            } else {
-                matcher.hitEnd = true;
-                return false;
+                i += Character.charCount(ch);
+                if (i <= matcher.to) {
+                    return predicate.is(ch) &&
+                           next.match(matcher, i, seq);
+                }
             }
+            matcher.hitEnd = true;
+            return false;
         }
         boolean study(TreeInfo info) {
             info.minLength++;

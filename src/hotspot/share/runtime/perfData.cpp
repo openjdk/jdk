@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -85,7 +85,7 @@ PerfData::PerfData(CounterNS ns, const char* name, Units u, Variability v)
   const char* prefix = PerfDataManager::ns_to_string(ns);
 
   _name = NEW_C_HEAP_ARRAY(char, strlen(name) + strlen(prefix) + 2, mtInternal);
-  assert(_name != NULL && strlen(name) != 0, "invalid name");
+  assert(strlen(name) != 0, "invalid name");
 
   if (ns == NULL_NS) {
      // No prefix is added to counters with the NULL_NS namespace.
@@ -113,9 +113,7 @@ PerfData::PerfData(CounterNS ns, const char* name, Units u, Variability v)
 }
 
 PerfData::~PerfData() {
-  if (_name != NULL) {
-    FREE_C_HEAP_ARRAY(char, _name);
-  }
+  FREE_C_HEAP_ARRAY(char, _name);
   if (is_on_c_heap()) {
     FREE_C_HEAP_ARRAY(PerfDataEntry, _pdep);
   }

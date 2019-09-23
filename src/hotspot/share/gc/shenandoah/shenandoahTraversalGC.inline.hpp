@@ -42,14 +42,14 @@ void ShenandoahTraversalGC::process_oop(T* p, Thread* thread, ShenandoahObjToSca
     oop obj = CompressedOops::decode_not_null(o);
     if (DEGEN) {
       oop forw = ShenandoahBarrierSet::resolve_forwarded_not_null(obj);
-      if (!oopDesc::equals_raw(obj, forw)) {
+      if (obj != forw) {
         // Update reference.
         RawAccess<IS_NOT_NULL>::oop_store(p, forw);
       }
       obj = forw;
     } else if (_heap->in_collection_set(obj)) {
       oop forw = ShenandoahBarrierSet::resolve_forwarded_not_null(obj);
-      if (oopDesc::equals_raw(obj, forw)) {
+      if (obj == forw) {
         forw = _heap->evacuate_object(obj, thread);
       }
       shenandoah_assert_forwarded_except(p, obj, _heap->cancelled_gc());

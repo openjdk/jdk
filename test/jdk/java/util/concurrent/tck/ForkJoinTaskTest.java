@@ -526,6 +526,8 @@ public class ForkJoinTaskTest extends JSR166TestCase {
                 AsyncFib f = new AsyncFib(8);
                 assertSame(f, f.fork());
                 helpQuiesce();
+                while (!f.isDone()) // wait out race
+                    ;
                 assertEquals(21, f.number);
                 assertEquals(0, getQueuedTaskCount());
                 checkCompletedNormally(f);

@@ -202,7 +202,7 @@ TenuredGeneration::expand_and_allocate(size_t word_size,
     while (true) {
       expand(byte_size, _min_heap_delta_bytes);
       if (GCExpandToAllocateDelayMillis > 0) {
-        os::sleep(Thread::current(), GCExpandToAllocateDelayMillis, false);
+        os::naked_sleep(GCExpandToAllocateDelayMillis);
       }
       result = _the_space->par_allocate(word_size);
       if ( result != NULL) {

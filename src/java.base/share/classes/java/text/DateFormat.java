@@ -298,6 +298,7 @@ public abstract class DateFormat extends Format {
     public static final int TIMEZONE_FIELD = 17;
 
     // Proclaim serial compatibility with 1.1 FCS
+    @java.io.Serial
     private static final long serialVersionUID = 7218322306649953788L;
 
     /**
@@ -322,7 +323,7 @@ public abstract class DateFormat extends Format {
      * first occurrence of the timezone pattern character {@code 'z'}.
      * @return the string buffer passed in as {@code toAppendTo},
      *         with formatted text appended.
-     * @exception IllegalArgumentException if the {@code Format} cannot format
+     * @throws    IllegalArgumentException if the {@code Format} cannot format
      *            the given {@code obj}.
      * @see java.text.Format
      */
@@ -384,7 +385,7 @@ public abstract class DateFormat extends Format {
      *
      * @param source A <code>String</code> whose beginning should be parsed.
      * @return A <code>Date</code> parsed from the string.
-     * @exception ParseException if the beginning of the specified string
+     * @throws    ParseException if the beginning of the specified string
      *            cannot be parsed.
      */
     public Date parse(String source) throws ParseException
@@ -866,6 +867,7 @@ public abstract class DateFormat extends Format {
     public static class Field extends Format.Field {
 
         // Proclaim serial compatibility with 1.4 FCS
+        @java.io.Serial
         private static final long serialVersionUID = 7441350119349544720L;
 
         // table of all instances in this class, used by readResolve
@@ -943,6 +945,7 @@ public abstract class DateFormat extends Format {
          * @return resolved DateFormat.Field constant
          */
         @Override
+        @java.io.Serial
         protected Object readResolve() throws InvalidObjectException {
             if (this.getClass() != DateFormat.Field.class) {
                 throw new InvalidObjectException("subclass didn't correctly implement readResolve");

@@ -55,6 +55,7 @@ import jdk.internal.ref.CleanerFactory;
  */
 final class PBKDF2KeyImpl implements javax.crypto.interfaces.PBEKey {
 
+    @java.io.Serial
     static final long serialVersionUID = -2234868909660948157L;
 
     private char[] passwd;
@@ -146,6 +147,7 @@ final class PBKDF2KeyImpl implements javax.crypto.interfaces.PBEKey {
             byte[] ti = new byte[hlen];
             // SecretKeySpec cannot be used, since password can be empty here.
             SecretKey macKey = new SecretKey() {
+                @java.io.Serial
                 private static final long serialVersionUID = 7874493593505141603L;
                 @Override
                 public String getAlgorithm() {
@@ -278,6 +280,7 @@ final class PBKDF2KeyImpl implements javax.crypto.interfaces.PBEKey {
      * @throws ObjectStreamException if a new object representing
      * this PBE key could not be created
      */
+    @java.io.Serial
     private Object writeReplace() throws ObjectStreamException {
             return new KeyRep(KeyRep.Type.SECRET, getAlgorithm(),
                               getFormat(), getEncoded());

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,7 +21,10 @@
  * questions.
  */
 
-import javax.net.ssl.KeyManagerFactory;
+import java.nio.ByteBuffer;
+import java.security.cert.CertificateException;
+import java.security.cert.X509Certificate;
+
 import javax.net.ssl.SSLContext;
 import javax.net.ssl.SSLEngine;
 import javax.net.ssl.SSLEngineResult;
@@ -30,35 +33,29 @@ import javax.net.ssl.SSLHandshakeException;
 import javax.net.ssl.SSLParameters;
 import javax.net.ssl.TrustManager;
 import javax.net.ssl.X509TrustManager;
-import java.io.ByteArrayInputStream;
-import java.nio.ByteBuffer;
-import java.security.KeyStore;
-import java.security.cert.CertificateException;
-import java.security.cert.X509Certificate;
-import java.util.Base64;
+
+import jdk.test.lib.security.KeyStoreUtils;
+import jdk.test.lib.security.SSLContextBuilder;
 
 /*
  * @test
  * @bug 8211339
  * @summary Verify hostname returns an exception instead of null pointer when
  * creating a new engine
+ * @library /test/lib
  * @run main NullHostnameCheck
  */
-
 
 public final class NullHostnameCheck {
 
     public static void main(String[] args) throws Exception {
-        KeyStore keyStore = KeyStore.getInstance(KeyStore.getDefaultType());
-        keyStore.load(
-                new ByteArrayInputStream(Base64.getDecoder().
-                        decode(keystoreB64)),
-                "123456".toCharArray());
-        KeyManagerFactory kmf = KeyManagerFactory.getInstance(
-                KeyManagerFactory.getDefaultAlgorithm());
-        kmf.init(keyStore, "123456".toCharArray());
-        SSLContext serverCtx = SSLContext.getInstance("TLSv1.2");
-        serverCtx.init(kmf.getKeyManagers(), null, null);
+        String password = "123456";
+        SSLContext serverCtx = SSLContextBuilder.builder()
+                .keyStore(KeyStoreUtils.loadKeyStoreBase64(
+                        keystoreB64, password))
+                .kmfPassphrase(password)
+                .protocol("TLSv1.2")
+                .build();
         SSLEngine serverEngine = serverCtx.createSSLEngine("localhost", -1);
         serverEngine.setUseClientMode(false);
 
@@ -67,12 +64,12 @@ public final class NullHostnameCheck {
                 new X509TrustManager() {
                     @Override
                     public void checkClientTrusted(
-                            X509Certificate[] x509Certificates, String s) {
+                        X509Certificate[] x509Certificates, String s) {
                     }
 
                     @Override
                     public void checkServerTrusted(
-                            X509Certificate[] x509Certificates, String s) {
+                        X509Certificate[] x509Certificates, String s) {
                     }
 
                     @Override

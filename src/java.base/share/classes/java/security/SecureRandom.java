@@ -1032,6 +1032,7 @@ public class SecureRandom extends java.util.Random {
     }
 
     // Declare serialVersionUID to be compatible with JDK1.1
+    @java.io.Serial
     static final long serialVersionUID = 4940670005562187L;
 
     // Retain unused values serialized from JDK1.1

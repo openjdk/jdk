@@ -25,4 +25,4 @@ JIS_X_0212
 JIS_X_0208_Solaris
 JIS_X_0212_Solaris
 MS932
-SJIS       # SJIS must go together with MS932 to support sun.nio.cs.map
+SJIS

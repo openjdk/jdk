@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1995, 2006, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1995, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -58,7 +58,7 @@ class PipedOutputStream extends OutputStream {
      * available as input from <code>snk</code>.
      *
      * @param      snk   The piped input stream to connect to.
-     * @exception  IOException  if an I/O error occurs.
+     * @throws     IOException  if an I/O error occurs.
      */
     public PipedOutputStream(PipedInputStream snk)  throws IOException {
         connect(snk);
@@ -91,7 +91,7 @@ class PipedOutputStream extends OutputStream {
      * The two calls have the same effect.
      *
      * @param      snk   the piped input stream to connect to.
-     * @exception  IOException  if an I/O error occurs.
+     * @throws     IOException  if an I/O error occurs.
      */
     public synchronized void connect(PipedInputStream snk) throws IOException {
         if (snk == null) {
@@ -110,8 +110,8 @@ class PipedOutputStream extends OutputStream {
      * <p>
      * Implements the <code>write</code> method of <code>OutputStream</code>.
      *
-     * @param      b   the <code>byte</code> to be written.
-     * @exception IOException if the pipe is <a href=#BROKEN> broken</a>,
+     * @param   b   the <code>byte</code> to be written.
+     * @throws  IOException if the pipe is <a href=#BROKEN> broken</a>,
      *          {@link #connect(java.io.PipedInputStream) unconnected},
      *          closed, or if an I/O error occurs.
      */
@@ -128,10 +128,10 @@ class PipedOutputStream extends OutputStream {
      * This method blocks until all the bytes are written to the output
      * stream.
      *
-     * @param      b     the data.
-     * @param      off   the start offset in the data.
-     * @param      len   the number of bytes to write.
-     * @exception IOException if the pipe is <a href=#BROKEN> broken</a>,
+     * @param   b     the data.
+     * @param   off   the start offset in the data.
+     * @param   len   the number of bytes to write.
+     * @throws  IOException if the pipe is <a href=#BROKEN> broken</a>,
      *          {@link #connect(java.io.PipedInputStream) unconnected},
      *          closed, or if an I/O error occurs.
      */
@@ -154,7 +154,7 @@ class PipedOutputStream extends OutputStream {
      * to be written out.
      * This will notify any readers that bytes are waiting in the pipe.
      *
-     * @exception IOException if an I/O error occurs.
+     * @throws    IOException if an I/O error occurs.
      */
     public synchronized void flush() throws IOException {
         if (sink != null) {
@@ -169,7 +169,7 @@ class PipedOutputStream extends OutputStream {
      * associated with this stream. This stream may no longer be used for
      * writing bytes.
      *
-     * @exception  IOException  if an I/O error occurs.
+     * @throws     IOException  if an I/O error occurs.
      */
     public void close()  throws IOException {
         if (sink != null) {

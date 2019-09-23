@@ -4007,39 +4007,12 @@ bool MatchRule::is_chain_rule(FormDict &globals) const {
 }
 
 int MatchRule::is_ideal_copy() const {
-  if( _rChild ) {
-    const char  *opType = _rChild->_opType;
-#if 1
-    if( strcmp(opType,"CastIP")==0 )
-      return 1;
-#else
-    if( strcmp(opType,"CastII")==0 )
-      return 1;
-    // Do not treat *CastPP this way, because it
-    // may transfer a raw pointer to an oop.
-    // If the register allocator were to coalesce this
-    // into a single LRG, the GC maps would be incorrect.
-    //if( strcmp(opType,"CastPP")==0 )
-    //  return 1;
-    //if( strcmp(opType,"CheckCastPP")==0 )
-    //  return 1;
-    //
-    // Do not treat CastX2P or CastP2X this way, because
-    // raw pointers and int types are treated differently
-    // when saving local & stack info for safepoints in
-    // Output().
-    //if( strcmp(opType,"CastX2P")==0 )
-    //  return 1;
-    //if( strcmp(opType,"CastP2X")==0 )
-    //  return 1;
-#endif
-  }
-  if( is_chain_rule(_AD.globalNames()) &&
-      _lChild && strncmp(_lChild->_opType,"stackSlot",9)==0 )
+  if (is_chain_rule(_AD.globalNames()) &&
+      _lChild && strncmp(_lChild->_opType, "stackSlot", 9) == 0) {
     return 1;
+  }
   return 0;
 }
-
 
 int MatchRule::is_expensive() const {
   if( _rChild ) {

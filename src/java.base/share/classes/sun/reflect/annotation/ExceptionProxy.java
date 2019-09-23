@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2004, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2004, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -37,6 +37,7 @@ package sun.reflect.annotation;
  * @since   1.5
  */
 public abstract class ExceptionProxy implements java.io.Serializable {
+    @java.io.Serial
     private static final long serialVersionUID = 7241930048386631401L;
     protected abstract RuntimeException generateException();
 }

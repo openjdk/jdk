@@ -329,6 +329,7 @@ hotspot_appcds_dynamic = \
  -runtime/cds/appcds/ExtraSymbols.java \
  -runtime/cds/appcds/LongClassListPath.java \
  -runtime/cds/appcds/LotsOfClasses.java \
+ -runtime/cds/appcds/NonExistClasspath.java \
  -runtime/cds/appcds/RelativePath.java \
  -runtime/cds/appcds/SharedArchiveConsistency.java \
  -runtime/cds/appcds/UnusedCPDuringDump.java \

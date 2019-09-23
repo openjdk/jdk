@@ -29,6 +29,7 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.io.BufferedOutputStream;
 import java.security.AccessController;
+import java.util.Iterator;
 
 import jdk.internal.util.StaticProperty;
 import sun.net.SocksProxy;
@@ -327,8 +328,12 @@ class SocksSocketImpl extends DelegatingSocketImpl implements SocksConsts {
             }
             Proxy p = null;
             IOException savedExc = null;
-            java.util.Iterator<Proxy> iProxy = null;
-            iProxy = sel.select(uri).iterator();
+            final Iterator<Proxy> iProxy;
+            try {
+                iProxy = sel.select(uri).iterator();
+            } catch (IllegalArgumentException iae) {
+                throw new IOException("Failed to select a proxy", iae);
+            }
             if (iProxy == null || !(iProxy.hasNext())) {
                 delegate.connect(epoint, remainingMillis(deadlineMillis));
                 return;

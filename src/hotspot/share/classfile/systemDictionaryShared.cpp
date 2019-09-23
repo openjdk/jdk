@@ -744,11 +744,11 @@ bool SystemDictionaryShared::is_shared_class_visible_for_classloader(
 }
 
 bool SystemDictionaryShared::has_platform_or_app_classes() {
-  if (FileMapInfo::current_info()->header()->has_platform_or_app_classes()) {
+  if (FileMapInfo::current_info()->has_platform_or_app_classes()) {
     return true;
   }
   if (DynamicArchive::is_mapped() &&
-      FileMapInfo::dynamic_info()->header()->has_platform_or_app_classes()) {
+      FileMapInfo::dynamic_info()->has_platform_or_app_classes()) {
     return true;
   }
   return false;
@@ -1059,10 +1059,8 @@ void SystemDictionaryShared::remove_dumptime_info(InstanceKlass* k) {
     FREE_C_HEAP_ARRAY(DTConstraint, p->_verifier_constraints);
     p->_verifier_constraints = NULL;
   }
-  if (p->_verifier_constraint_flags != NULL) {
-    FREE_C_HEAP_ARRAY(char, p->_verifier_constraint_flags);
-    p->_verifier_constraint_flags = NULL;
-  }
+  FREE_C_HEAP_ARRAY(char, p->_verifier_constraint_flags);
+  p->_verifier_constraint_flags = NULL;
   _dumptime_table->remove(k);
 }
 

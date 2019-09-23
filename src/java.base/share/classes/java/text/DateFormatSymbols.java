@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -122,7 +122,7 @@ public class DateFormatSymbols implements Serializable, Cloneable {
      * @see #getInstance()
      * @see java.util.Locale#getDefault(java.util.Locale.Category)
      * @see java.util.Locale.Category#FORMAT
-     * @exception  java.util.MissingResourceException
+     * @throws     java.util.MissingResourceException
      *             if the resources for the default locale cannot be
      *             found or cannot be loaded.
      */
@@ -142,7 +142,7 @@ public class DateFormatSymbols implements Serializable, Cloneable {
      *
      * @param locale the desired locale
      * @see #getInstance(Locale)
-     * @exception  java.util.MissingResourceException
+     * @throws     java.util.MissingResourceException
      *             if the resources for the specified locale cannot be
      *             found or cannot be loaded.
      */
@@ -290,6 +290,7 @@ public class DateFormatSymbols implements Serializable, Cloneable {
     Locale locale = null;
 
     /* use serialVersionUID from JDK 1.1.4 for interoperability */
+    @java.io.Serial
     static final long serialVersionUID = -5987973545549424702L;
 
     /**
@@ -339,7 +340,7 @@ public class DateFormatSymbols implements Serializable, Cloneable {
      * implementations.
      * @param locale the given locale.
      * @return a <code>DateFormatSymbols</code> instance.
-     * @exception NullPointerException if <code>locale</code> is null
+     * @throws    NullPointerException if <code>locale</code> is null
      * @since 1.6
      */
     public static final DateFormatSymbols getInstance(Locale locale) {
@@ -595,9 +596,9 @@ public class DateFormatSymbols implements Serializable, Cloneable {
      * All other entries are localized names.
      *
      * @param newZoneStrings the new time zone strings.
-     * @exception IllegalArgumentException if the length of any row in
+     * @throws    IllegalArgumentException if the length of any row in
      *    <code>newZoneStrings</code> is less than 5
-     * @exception NullPointerException if <code>newZoneStrings</code> is null
+     * @throws    NullPointerException if <code>newZoneStrings</code> is null
      * @see #getZoneStrings()
      */
     public void setZoneStrings(String[][] newZoneStrings) {
@@ -892,6 +893,7 @@ public class DateFormatSymbols implements Serializable, Cloneable {
      *
      * @since 1.6
      */
+    @java.io.Serial
     private void writeObject(ObjectOutputStream stream) throws IOException {
         if (zoneStrings == null) {
             zoneStrings = TimeZoneNameUtility.getZoneStrings(locale);

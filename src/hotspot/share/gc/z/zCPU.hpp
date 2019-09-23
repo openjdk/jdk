@@ -26,6 +26,7 @@
 
 #include "memory/allocation.hpp"
 #include "memory/padded.hpp"
+#include "utilities/globalDefinitions.hpp"
 
 class Thread;
 
@@ -36,8 +37,8 @@ private:
   };
 
   static PaddedEnd<ZCPUAffinity>* _affinity;
-  static __thread Thread*         _self;
-  static __thread uint32_t        _cpu;
+  static THREAD_LOCAL Thread*     _self;
+  static THREAD_LOCAL uint32_t    _cpu;
 
 public:
   static void initialize();

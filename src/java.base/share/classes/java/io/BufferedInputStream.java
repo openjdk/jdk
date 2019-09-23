@@ -192,7 +192,7 @@ class BufferedInputStream extends FilterInputStream {
      *
      * @param   in     the underlying input stream.
      * @param   size   the buffer size.
-     * @exception IllegalArgumentException if {@code size <= 0}.
+     * @throws  IllegalArgumentException if {@code size <= 0}.
      */
     public BufferedInputStream(InputStream in, int size) {
         super(in);
@@ -254,7 +254,7 @@ class BufferedInputStream extends FilterInputStream {
      *
      * @return     the next byte of data, or <code>-1</code> if the end of the
      *             stream is reached.
-     * @exception  IOException  if this input stream has been closed by
+     * @throws     IOException  if this input stream has been closed by
      *                          invoking its {@link #close()} method,
      *                          or an I/O error occurs.
      * @see        java.io.FilterInputStream#in
@@ -325,7 +325,7 @@ class BufferedInputStream extends FilterInputStream {
      * @param      len   maximum number of bytes to read.
      * @return     the number of bytes read, or <code>-1</code> if the end of
      *             the stream has been reached.
-     * @exception  IOException  if this input stream has been closed by
+     * @throws     IOException  if this input stream has been closed by
      *                          invoking its {@link #close()} method,
      *                          or an I/O error occurs.
      */
@@ -400,7 +400,7 @@ class BufferedInputStream extends FilterInputStream {
      *
      * @return     an estimate of the number of bytes that can be read (or skipped
      *             over) from this input stream without blocking.
-     * @exception  IOException  if this input stream has been closed by
+     * @throws     IOException  if this input stream has been closed by
      *                          invoking its {@link #close()} method,
      *                          or an I/O error occurs.
      */
@@ -435,7 +435,7 @@ class BufferedInputStream extends FilterInputStream {
      * is thrown. Otherwise, <code>pos</code> is
      * set equal to <code>markpos</code>.
      *
-     * @exception  IOException  if this stream has not been marked or,
+     * @throws     IOException  if this stream has not been marked or,
      *                  if the mark has been invalidated, or the stream
      *                  has been closed by invoking its {@link #close()}
      *                  method, or an I/O error occurs.
@@ -470,7 +470,7 @@ class BufferedInputStream extends FilterInputStream {
      * or skip() invocations will throw an IOException.
      * Closing a previously closed stream has no effect.
      *
-     * @exception  IOException  if an I/O error occurs.
+     * @throws     IOException  if an I/O error occurs.
      */
     public void close() throws IOException {
         byte[] buffer;

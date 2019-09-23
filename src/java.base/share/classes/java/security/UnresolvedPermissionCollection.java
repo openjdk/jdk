@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -137,6 +137,7 @@ implements java.io.Serializable
         return Collections.enumeration(results);
     }
 
+    @java.io.Serial
     private static final long serialVersionUID = -7176153071733132400L;
 
     // Need to maintain serialization interoperability with earlier releases,
@@ -148,6 +149,7 @@ implements java.io.Serializable
      *     A table of the UnresolvedPermissions keyed on type, value is Vector
      *     of permissions
      */
+    @java.io.Serial
     private static final ObjectStreamField[] serialPersistentFields = {
         new ObjectStreamField("permissions", Hashtable.class),
     };
@@ -160,6 +162,7 @@ implements java.io.Serializable
      * in which the values are Vectors for
      * serialization compatibility with earlier releases.
      */
+    @java.io.Serial
     private void writeObject(ObjectOutputStream out) throws IOException {
         // Don't call out.defaultWriteObject()
 
@@ -188,6 +191,7 @@ implements java.io.Serializable
      * Reads in a Hashtable in which the values are Vectors of
      * UnresolvedPermissions and saves them in the perms field.
      */
+    @java.io.Serial
     private void readObject(ObjectInputStream in) throws IOException,
     ClassNotFoundException {
         // Don't call defaultReadObject()

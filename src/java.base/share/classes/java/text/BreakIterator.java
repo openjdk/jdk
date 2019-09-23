@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -327,7 +327,7 @@ public abstract class BreakIterator implements Cloneable
      * @return The first boundary after the specified offset or
      * <code>BreakIterator.DONE</code> if the last text boundary is passed in
      * as the offset.
-     * @exception  IllegalArgumentException if the specified offset is less than
+     * @throws     IllegalArgumentException if the specified offset is less than
      * the first text boundary or greater than the last text boundary.
      */
     public abstract int following(int offset);
@@ -343,7 +343,7 @@ public abstract class BreakIterator implements Cloneable
      * @return The last boundary before the specified offset or
      * <code>BreakIterator.DONE</code> if the first text boundary is passed in
      * as the offset.
-     * @exception   IllegalArgumentException if the specified offset is less than
+     * @throws      IllegalArgumentException if the specified offset is less than
      * the first text boundary or greater than the last text boundary.
      * @since 1.2
      */
@@ -363,7 +363,7 @@ public abstract class BreakIterator implements Cloneable
      * @param offset the character offset to check.
      * @return <code>true</code> if "offset" is a boundary position,
      * <code>false</code> otherwise.
-     * @exception   IllegalArgumentException if the specified offset is less than
+     * @throws      IllegalArgumentException if the specified offset is less than
      * the first text boundary or greater than the last text boundary.
      * @since 1.2
      */
@@ -453,7 +453,7 @@ public abstract class BreakIterator implements Cloneable
      * for the given locale.
      * @param locale the desired locale
      * @return A break iterator for word breaks
-     * @exception NullPointerException if <code>locale</code> is null
+     * @throws    NullPointerException if <code>locale</code> is null
      */
     public static BreakIterator getWordInstance(Locale locale)
     {
@@ -477,7 +477,7 @@ public abstract class BreakIterator implements Cloneable
      * for the given locale.
      * @param locale the desired locale
      * @return A break iterator for line breaks
-     * @exception NullPointerException if <code>locale</code> is null
+     * @throws    NullPointerException if <code>locale</code> is null
      */
     public static BreakIterator getLineInstance(Locale locale)
     {
@@ -501,7 +501,7 @@ public abstract class BreakIterator implements Cloneable
      * for the given locale.
      * @param locale the desired locale
      * @return A break iterator for character breaks
-     * @exception NullPointerException if <code>locale</code> is null
+     * @throws    NullPointerException if <code>locale</code> is null
      */
     public static BreakIterator getCharacterInstance(Locale locale)
     {
@@ -525,7 +525,7 @@ public abstract class BreakIterator implements Cloneable
      * for the given locale.
      * @param locale the desired locale
      * @return A break iterator for sentence breaks
-     * @exception NullPointerException if <code>locale</code> is null
+     * @throws    NullPointerException if <code>locale</code> is null
      */
     public static BreakIterator getSentenceInstance(Locale locale)
     {

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -96,7 +96,10 @@ public class B4957695 {
     public static void main (String[] args) throws Exception {
         String tmpdir = System.getProperty("java.io.tmpdir");
         String[] list1 = listTmpFiles(tmpdir);
-        ServerSocket serverSocket = new ServerSocket(0);
+        InetAddress localHost = InetAddress.getByName("localhost");
+        InetSocketAddress address = new InetSocketAddress(localHost, 0);
+        ServerSocket serverSocket = new ServerSocket();
+        serverSocket.bind(address);
         server = new Server(serverSocket);
         server.start();
         int port = serverSocket.getLocalPort();
@@ -108,7 +111,9 @@ public class B4957695 {
             read (is);
             is.close();
         } catch (IOException e) {
-            System.out.println ("Received IOException as expected");
+            System.out.println ("Received IOException as expected: " + e);
+        } finally {
+            try {serverSocket.close();} catch (IOException x) {}
         }
         String[] list2 = listTmpFiles(tmpdir);
         if (!sameList (list1, list2)) {

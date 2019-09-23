@@ -126,8 +126,6 @@ void JVMFlagWriteableList::init(void) {
             IGNORE_CONSTRAINT,
             EMIT_WRITEABLE_CHECK)
 
-  EMIT_WRITEABLES_FOR_GLOBALS_EXT
-
   EMIT_WRITEABLE_END
 }
 

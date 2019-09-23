@@ -23,24 +23,11 @@
  * questions.
  */
 
-// ContentHandler.java - handle main document content.
-// http://www.saxproject.org
-// Written by David Megginson
-// NO WARRANTY!  This class is in the public domain.
-// $Id: ContentHandler.java,v 1.2 2004/11/03 22:44:51 jsuttor Exp $
-
 package org.xml.sax;
 
 
 /**
  * Receive notification of the logical content of a document.
- *
- * <blockquote>
- * <em>This module, both source code and documentation, is in the
- * Public Domain, and comes with <strong>NO WARRANTY</strong>.</em>
- * See <a href='http://www.saxproject.org'>http://www.saxproject.org</a>
- * for further information.
- * </blockquote>
  *
  * <p>This is the main interface that most SAX applications
  * implement: if the application needs to be informed of basic parsing
@@ -126,6 +113,29 @@ public interface ContentHandler
     public void startDocument ()
         throws SAXException;
 
+    /**
+     * Receives notification of the XML declaration.
+     *
+     * @implSpec
+     * The default implementation in the SAX API is to do nothing.
+     *
+     * @param version the version string as in the input document, null if not
+     * specified
+     * @param encoding the encoding string as in the input document, null if not
+     * specified
+     * @param standalone the standalone string as in the input document, null if
+     * not specified
+     *
+     * @throws SAXException if the application wants to report an error or
+     * interrupt the parsing process
+     *
+     * @since 14
+     */
+    default void declaration(String version, String encoding, String standalone)
+        throws SAXException
+    {
+        //no op
+    }
 
     /**
      * Receive notification of the end of a document.

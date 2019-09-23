@@ -35,8 +35,7 @@
 #include "runtime/handles.inline.hpp"
 #include "runtime/thread.inline.hpp"
 #include "utilities/copy.hpp"
-
-bool always_do_update_barrier = false;
+#include "utilities/macros.hpp"
 
 void oopDesc::print_on(outputStream* st) const {
   klass()->oop_print_on(oop(this), st);
@@ -123,14 +122,6 @@ bool oopDesc::is_oop_or_null(oop obj, bool ignore_mark_word) {
   return obj == NULL ? true : is_oop(obj, ignore_mark_word);
 }
 
-#ifndef PRODUCT
-#if INCLUDE_CDS_JAVA_HEAP
-bool oopDesc::is_archived_object(oop p) {
-  return HeapShared::is_archived_object(p);
-}
-#endif
-#endif // PRODUCT
-
 VerifyOopClosure VerifyOopClosure::verify_oop;
 
 template <class T> void VerifyOopClosure::do_oop_work(T* p) {
@@ -215,3 +206,12 @@ void oopDesc::release_float_field_put(int offset, jfloat value)       { HeapAcce
 
 jdouble oopDesc::double_field_acquire(int offset) const               { return HeapAccess<MO_ACQUIRE>::load_at(as_oop(), offset); }
 void oopDesc::release_double_field_put(int offset, jdouble value)     { HeapAccess<MO_RELEASE>::store_at(as_oop(), offset, value); }
+
+#ifdef ASSERT
+void oopDesc::verify_forwardee(oop forwardee) {
+#if INCLUDE_CDS_JAVA_HEAP
+  assert(!HeapShared::is_archived_object(forwardee) && !HeapShared::is_archived_object(this),
+         "forwarding archive object");
+#endif
+}
+#endif

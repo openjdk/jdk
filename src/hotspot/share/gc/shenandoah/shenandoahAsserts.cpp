@@ -142,7 +142,7 @@ void ShenandoahAsserts::print_failure(SafeLevel level, oop obj, void* interior_l
   if (level >= _safe_oop) {
     oop fwd = (oop) ShenandoahForwarding::get_forwardee_raw_unchecked(obj);
     msg.append("Forwardee:\n");
-    if (!oopDesc::equals_raw(obj, fwd)) {
+    if (obj != fwd) {
       if (level >= _safe_oop_fwd) {
         print_obj(msg, fwd);
       } else {
@@ -157,7 +157,7 @@ void ShenandoahAsserts::print_failure(SafeLevel level, oop obj, void* interior_l
   if (level >= _safe_oop_fwd) {
     oop fwd = (oop) ShenandoahForwarding::get_forwardee_raw_unchecked(obj);
     oop fwd2 = (oop) ShenandoahForwarding::get_forwardee_raw_unchecked(fwd);
-    if (!oopDesc::equals_raw(fwd, fwd2)) {
+    if (fwd != fwd2) {
       msg.append("Second forwardee:\n");
       print_obj_safe(msg, fwd2);
       msg.append("\n");
@@ -203,7 +203,7 @@ void ShenandoahAsserts::assert_correct(void* interior_loc, oop obj, const char* 
 
   oop fwd = oop(ShenandoahForwarding::get_forwardee_raw_unchecked(obj));
 
-  if (!oopDesc::equals_raw(obj, fwd)) {
+  if (obj != fwd) {
     // When Full GC moves the objects, we cannot trust fwdptrs. If we got here, it means something
     // tries fwdptr manipulation when Full GC is running. The only exception is using the fwdptr
     // that still points to the object itself.
@@ -235,7 +235,7 @@ void ShenandoahAsserts::assert_correct(void* interior_loc, oop obj, const char* 
 
     // Step 4. Check for multiple forwardings
     oop fwd2 = oop(ShenandoahForwarding::get_forwardee_raw_unchecked(fwd));
-    if (!oopDesc::equals_raw(fwd, fwd2)) {
+    if (fwd != fwd2) {
       print_failure(_safe_all, obj, interior_loc, NULL, "Shenandoah assert_correct failed",
                     "Multiple forwardings",
                     file, line);
@@ -278,7 +278,7 @@ void ShenandoahAsserts::assert_forwarded(void* interior_loc, oop obj, const char
   assert_correct(interior_loc, obj, file, line);
   oop fwd = oop(ShenandoahForwarding::get_forwardee_raw_unchecked(obj));
 
-  if (oopDesc::equals_raw(obj, fwd)) {
+  if (obj == fwd) {
     print_failure(_safe_all, obj, interior_loc, NULL, "Shenandoah assert_forwarded failed",
                   "Object should be forwarded",
                   file, line);
@@ -289,7 +289,7 @@ void ShenandoahAsserts::assert_not_forwarded(void* interior_loc, oop obj, const 
   assert_correct(interior_loc, obj, file, line);
   oop fwd = oop(ShenandoahForwarding::get_forwardee_raw_unchecked(obj));
 
-  if (!oopDesc::equals_raw(obj, fwd)) {
+  if (obj != fwd) {
     print_failure(_safe_all, obj, interior_loc, NULL, "Shenandoah assert_not_forwarded failed",
                   "Object should not be forwarded",
                   file, line);

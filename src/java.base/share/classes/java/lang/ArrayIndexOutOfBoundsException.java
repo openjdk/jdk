@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1994, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1994, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,6 +32,7 @@ package java.lang;
  * @since 1.0
  */
 public class ArrayIndexOutOfBoundsException extends IndexOutOfBoundsException {
+    @java.io.Serial
     private static final long serialVersionUID = -5116101128118950844L;
 
     /**

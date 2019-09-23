@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -46,6 +46,7 @@ import sun.security.util.ResourcesMgr;
  */
 class SubjectCodeSource extends CodeSource implements java.io.Serializable {
 
+    @java.io.Serial
     private static final long serialVersionUID = 6039418085604715275L;
 
     private Subject subject;

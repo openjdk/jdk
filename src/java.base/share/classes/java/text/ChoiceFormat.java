@@ -168,12 +168,13 @@ import java.util.Arrays;
 public class ChoiceFormat extends NumberFormat {
 
     // Proclaim serial compatibility with 1.1 FCS
+    @java.io.Serial
     private static final long serialVersionUID = 1795184449645032964L;
 
     /**
      * Sets the pattern.
      * @param newPattern See the class description.
-     * @exception NullPointerException if {@code newPattern}
+     * @throws    NullPointerException if {@code newPattern}
      *            is {@code null}
      */
     public void applyPattern(String newPattern) {
@@ -312,7 +313,7 @@ public class ChoiceFormat extends NumberFormat {
      * Constructs with limits and corresponding formats based on the pattern.
      *
      * @param newPattern the new pattern string
-     * @exception NullPointerException if {@code newPattern} is
+     * @throws    NullPointerException if {@code newPattern} is
      *            {@code null}
      * @see #applyPattern
      */
@@ -325,7 +326,7 @@ public class ChoiceFormat extends NumberFormat {
      *
      * @param limits limits in ascending order
      * @param formats corresponding format strings
-     * @exception NullPointerException if {@code limits} or {@code formats}
+     * @throws    NullPointerException if {@code limits} or {@code formats}
      *            is {@code null}
      * @see #setChoices
      */
@@ -346,7 +347,7 @@ public class ChoiceFormat extends NumberFormat {
      * When formatting with object Y,
      * if the object is a NumberFormat, then ((NumberFormat) Y).format(X)
      * is called. Otherwise Y.toString() is called.
-     * @exception NullPointerException if {@code limits} or
+     * @throws    NullPointerException if {@code limits} or
      *            {@code formats} is {@code null}
      */
     public void setChoices(double[] limits, String formats[]) {
@@ -395,7 +396,7 @@ public class ChoiceFormat extends NumberFormat {
      * @param number number to be formatted and substituted.
      * @param toAppendTo where text is appended.
      * @param status ignore no useful status is returned.
-     * @exception NullPointerException if {@code toAppendTo}
+     * @throws    NullPointerException if {@code toAppendTo}
      *            is {@code null}
      */
    public StringBuffer format(double number, StringBuffer toAppendTo,
@@ -425,7 +426,7 @@ public class ChoiceFormat extends NumberFormat {
      * status.index is unchanged and status.errorIndex is set to the
      * first index of the character that caused the parse to fail.
      * @return A Number representing the value of the number parsed.
-     * @exception NullPointerException if {@code status} is {@code null}
+     * @throws    NullPointerException if {@code status} is {@code null}
      *            or if {@code text} is {@code null} and the list of
      *            choice strings is not empty.
      */
@@ -528,6 +529,7 @@ public class ChoiceFormat extends NumberFormat {
      * to maintain class invariants.
      * @throws InvalidObjectException if the objects read from the stream is invalid.
      */
+    @java.io.Serial
     private void readObject(ObjectInputStream in) throws IOException, ClassNotFoundException {
         in.defaultReadObject();
         if (choiceLimits.length != choiceFormats.length) {

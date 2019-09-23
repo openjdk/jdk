@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -66,9 +66,9 @@ public abstract class KeyStoreSpi {
      * @return the requested key, or null if the given alias does not exist
      * or does not identify a key-related entry.
      *
-     * @exception NoSuchAlgorithmException if the algorithm for recovering the
+     * @throws    NoSuchAlgorithmException if the algorithm for recovering the
      * key cannot be found
-     * @exception UnrecoverableKeyException if the key cannot be recovered
+     * @throws    UnrecoverableKeyException if the key cannot be recovered
      * (e.g., the given password is wrong).
      */
     public abstract Key engineGetKey(String alias, char[] password)
@@ -141,7 +141,7 @@ public abstract class KeyStoreSpi {
      * key (only required if the given key is of type
      * {@code java.security.PrivateKey}).
      *
-     * @exception KeyStoreException if the given key cannot be protected, or
+     * @throws    KeyStoreException if the given key cannot be protected, or
      * this operation fails for some other reason
      */
     public abstract void engineSetKeyEntry(String alias, Key key,
@@ -168,7 +168,7 @@ public abstract class KeyStoreSpi {
      * key (only useful if the protected key is of type
      * {@code java.security.PrivateKey}).
      *
-     * @exception KeyStoreException if this operation fails.
+     * @throws    KeyStoreException if this operation fails.
      */
     public abstract void engineSetKeyEntry(String alias, byte[] key,
                                            Certificate[] chain)
@@ -187,7 +187,7 @@ public abstract class KeyStoreSpi {
      * @param alias the alias name
      * @param cert the certificate
      *
-     * @exception KeyStoreException if the given alias already exists and does
+     * @throws    KeyStoreException if the given alias already exists and does
      * not identify an entry containing a trusted certificate,
      * or this operation fails for some other reason.
      */
@@ -200,7 +200,7 @@ public abstract class KeyStoreSpi {
      *
      * @param alias the alias name
      *
-     * @exception KeyStoreException if the entry cannot be removed.
+     * @throws    KeyStoreException if the entry cannot be removed.
      */
     public abstract void engineDeleteEntry(String alias)
         throws KeyStoreException;
@@ -286,10 +286,10 @@ public abstract class KeyStoreSpi {
      * @param stream the output stream to which this keystore is written.
      * @param password the password to generate the keystore integrity check
      *
-     * @exception IOException if there was an I/O problem with data
-     * @exception NoSuchAlgorithmException if the appropriate data integrity
+     * @throws    IOException if there was an I/O problem with data
+     * @throws    NoSuchAlgorithmException if the appropriate data integrity
      * algorithm could not be found
-     * @exception CertificateException if any of the certificates included in
+     * @throws    CertificateException if any of the certificates included in
      * the keystore data could not be stored
      */
     public abstract void engineStore(OutputStream stream, char[] password)
@@ -303,13 +303,13 @@ public abstract class KeyStoreSpi {
      *          that specifies how to store the keystore,
      *          which may be {@code null}
      *
-     * @exception IllegalArgumentException if the given
+     * @throws    IllegalArgumentException if the given
      *          {@code KeyStore.LoadStoreParmeter}
      *          input is not recognized
-     * @exception IOException if there was an I/O problem with data
-     * @exception NoSuchAlgorithmException if the appropriate data integrity
+     * @throws    IOException if there was an I/O problem with data
+     * @throws    NoSuchAlgorithmException if the appropriate data integrity
      *          algorithm could not be found
-     * @exception CertificateException if any of the certificates included in
+     * @throws    CertificateException if any of the certificates included in
      *          the keystore data could not be stored
      *
      * @since 1.5
@@ -335,15 +335,15 @@ public abstract class KeyStoreSpi {
      * the keystore, the password used to unlock the keystore,
      * or {@code null}
      *
-     * @exception IOException if there is an I/O or format problem with the
+     * @throws    IOException if there is an I/O or format problem with the
      * keystore data, if a password is required but not given,
      * or if the given password was incorrect. If the error is due to a
      * wrong password, the {@link Throwable#getCause cause} of the
      * {@code IOException} should be an
      * {@code UnrecoverableKeyException}
-     * @exception NoSuchAlgorithmException if the algorithm used to check
+     * @throws    NoSuchAlgorithmException if the algorithm used to check
      * the integrity of the keystore cannot be found
-     * @exception CertificateException if any of the certificates in the
+     * @throws    CertificateException if any of the certificates in the
      * keystore could not be loaded
      */
     public abstract void engineLoad(InputStream stream, char[] password)
@@ -376,18 +376,18 @@ public abstract class KeyStoreSpi {
      * extracted. If the {@code KeyStore.ProtectionParameter} is neither
      * of those classes then a {@code NoSuchAlgorithmException} is thrown.
      *
-     * @exception IllegalArgumentException if the given
+     * @throws    IllegalArgumentException if the given
      *          {@code KeyStore.LoadStoreParameter}
      *          input is not recognized
-     * @exception IOException if there is an I/O or format problem with the
+     * @throws    IOException if there is an I/O or format problem with the
      *          keystore data. If the error is due to an incorrect
      *         {@code ProtectionParameter} (e.g. wrong password)
      *         the {@link Throwable#getCause cause} of the
      *         {@code IOException} should be an
      *         {@code UnrecoverableKeyException}
-     * @exception NoSuchAlgorithmException if the algorithm used to check
+     * @throws    NoSuchAlgorithmException if the algorithm used to check
      *          the integrity of the keystore cannot be found
-     * @exception CertificateException if any of the certificates in the
+     * @throws    CertificateException if any of the certificates in the
      *          keystore could not be loaded
      *
      * @since 1.5
@@ -447,12 +447,12 @@ public abstract class KeyStoreSpi {
      * @return the {@code KeyStore.Entry} for the specified alias,
      *          or {@code null} if there is no such entry
      *
-     * @exception KeyStoreException if the operation failed
-     * @exception NoSuchAlgorithmException if the algorithm for recovering the
+     * @throws    KeyStoreException if the operation failed
+     * @throws    NoSuchAlgorithmException if the algorithm for recovering the
      *          entry cannot be found
-     * @exception UnrecoverableEntryException if the specified
+     * @throws    UnrecoverableEntryException if the specified
      *          {@code protParam} were insufficient or invalid
-     * @exception UnrecoverableKeyException if the entry is a
+     * @throws    UnrecoverableKeyException if the entry is a
      *          {@code PrivateKeyEntry} or {@code SecretKeyEntry}
      *          and the specified {@code protParam} does not contain
      *          the information needed to recover the key (e.g. wrong password)
@@ -518,7 +518,7 @@ public abstract class KeyStoreSpi {
      *          used to protect the {@code Entry},
      *          which may be {@code null}
      *
-     * @exception KeyStoreException if this operation fails
+     * @throws    KeyStoreException if this operation fails
      *
      * @since 1.5
      */

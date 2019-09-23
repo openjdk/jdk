@@ -116,7 +116,7 @@ implements Serializable
      *
      * @param permission the Permission object to add.
      *
-     * @exception SecurityException if this Permissions object is
+     * @throws    SecurityException if this Permissions object is
      * marked as readonly.
      *
      * @see PermissionCollection#isReadOnly()
@@ -328,6 +328,7 @@ implements Serializable
         return pc;
     }
 
+    @java.io.Serial
     private static final long serialVersionUID = 4858622370623524688L;
 
     // Need to maintain serialization interoperability with earlier releases,
@@ -339,6 +340,7 @@ implements Serializable
      *     A table of the Permission classes and PermissionCollections.
      * @serialField allPermission java.security.PermissionCollection
      */
+    @java.io.Serial
     private static final ObjectStreamField[] serialPersistentFields = {
         new ObjectStreamField("perms", Hashtable.class),
         new ObjectStreamField("allPermission", PermissionCollection.class),
@@ -352,6 +354,7 @@ implements Serializable
      * serialization compatibility with earlier releases. allPermission
      * unchanged.
      */
+    @java.io.Serial
     private void writeObject(ObjectOutputStream out) throws IOException {
         // Don't call out.defaultWriteObject()
 
@@ -372,6 +375,7 @@ implements Serializable
      * Reads in a Hashtable of Class/PermissionCollections and saves them in the
      * permsMap field. Reads in allPermission.
      */
+    @java.io.Serial
     private void readObject(ObjectInputStream in) throws IOException,
     ClassNotFoundException {
         // Don't call defaultReadObject()
@@ -547,6 +551,7 @@ implements Serializable
         return permsMap.elements();
     }
 
+    @java.io.Serial
     private static final long serialVersionUID = -8491988220802933440L;
     // Need to maintain serialization interoperability with earlier releases,
     // which had the serializable field:
@@ -555,6 +560,7 @@ implements Serializable
      * @serialField perms java.util.Hashtable
      *     A table of the Permissions (both key and value are same).
      */
+    @java.io.Serial
     private static final ObjectStreamField[] serialPersistentFields = {
         new ObjectStreamField("perms", Hashtable.class),
     };
@@ -566,6 +572,7 @@ implements Serializable
      * Writes the contents of the permsMap field out as a Hashtable for
      * serialization compatibility with earlier releases.
      */
+    @java.io.Serial
     private void writeObject(ObjectOutputStream out) throws IOException {
         // Don't call out.defaultWriteObject()
 
@@ -584,6 +591,7 @@ implements Serializable
      * Reads in a Hashtable of Permission/Permission and saves them in the
      * permsMap field.
      */
+    @java.io.Serial
     private void readObject(ObjectInputStream in) throws IOException,
     ClassNotFoundException {
         // Don't call defaultReadObject()

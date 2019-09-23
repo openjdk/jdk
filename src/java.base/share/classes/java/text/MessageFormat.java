@@ -349,6 +349,7 @@ import java.util.Locale;
 
 public class MessageFormat extends Format {
 
+    @java.io.Serial
     private static final long serialVersionUID = 6479157306784022952L;
 
     /**
@@ -361,8 +362,8 @@ public class MessageFormat extends Format {
      * <a href="#patterns">class description</a>.
      *
      * @param pattern the pattern for this message format
-     * @exception IllegalArgumentException if the pattern is invalid
-     * @exception NullPointerException if {@code pattern} is
+     * @throws    IllegalArgumentException if the pattern is invalid
+     * @throws    NullPointerException if {@code pattern} is
      *            {@code null}
      */
     public MessageFormat(String pattern) {
@@ -380,8 +381,8 @@ public class MessageFormat extends Format {
      *
      * @param pattern the pattern for this message format
      * @param locale the locale for this message format
-     * @exception IllegalArgumentException if the pattern is invalid
-     * @exception NullPointerException if {@code pattern} is
+     * @throws    IllegalArgumentException if the pattern is invalid
+     * @throws    NullPointerException if {@code pattern} is
      *            {@code null}
      * @since 1.4
      */
@@ -429,8 +430,8 @@ public class MessageFormat extends Format {
      * <a href="#patterns">class description</a>.
      *
      * @param pattern the pattern for this message format
-     * @exception IllegalArgumentException if the pattern is invalid
-     * @exception NullPointerException if {@code pattern} is
+     * @throws    IllegalArgumentException if the pattern is invalid
+     * @throws    NullPointerException if {@code pattern} is
      *            {@code null}
      */
     @SuppressWarnings("fallthrough") // fallthrough in switch is expected, suppress it
@@ -613,7 +614,7 @@ public class MessageFormat extends Format {
      * than <code>newFormats.length</code> are replaced.
      *
      * @param newFormats the new formats to use
-     * @exception NullPointerException if <code>newFormats</code> is null
+     * @throws    NullPointerException if <code>newFormats</code> is null
      * @since 1.4
      */
     public void setFormatsByArgumentIndex(Format[] newFormats) {
@@ -645,7 +646,7 @@ public class MessageFormat extends Format {
      * the <code>parse</code> methods.
      *
      * @param newFormats the new formats to use
-     * @exception NullPointerException if <code>newFormats</code> is null
+     * @throws    NullPointerException if <code>newFormats</code> is null
      */
     public void setFormats(Format[] newFormats) {
         int runsToCopy = newFormats.length;
@@ -697,7 +698,7 @@ public class MessageFormat extends Format {
      *
      * @param formatElementIndex the index of a format element within the pattern
      * @param newFormat the format to use for the specified format element
-     * @exception ArrayIndexOutOfBoundsException if {@code formatElementIndex} is equal to or
+     * @throws    ArrayIndexOutOfBoundsException if {@code formatElementIndex} is equal to or
      *            larger than the number of format elements in the pattern string
      */
     public void setFormat(int formatElementIndex, Format newFormat) {
@@ -828,10 +829,10 @@ public class MessageFormat extends Format {
                   in the output string.
      * @return the string buffer passed in as {@code result}, with formatted
      * text appended
-     * @exception IllegalArgumentException if an argument in the
+     * @throws    IllegalArgumentException if an argument in the
      *            <code>arguments</code> array is not of the type
      *            expected by the format element(s) that use it.
-     * @exception NullPointerException if {@code result} is {@code null}
+     * @throws    NullPointerException if {@code result} is {@code null}
      */
     public final StringBuffer format(Object[] arguments, StringBuffer result,
                                      FieldPosition pos)
@@ -849,11 +850,11 @@ public class MessageFormat extends Format {
      * @param pattern   the pattern string
      * @param arguments object(s) to format
      * @return the formatted string
-     * @exception IllegalArgumentException if the pattern is invalid,
+     * @throws    IllegalArgumentException if the pattern is invalid,
      *            or if an argument in the <code>arguments</code> array
      *            is not of the type expected by the format element(s)
      *            that use it.
-     * @exception NullPointerException if {@code pattern} is {@code null}
+     * @throws    NullPointerException if {@code pattern} is {@code null}
      */
     public static String format(String pattern, Object ... arguments) {
         MessageFormat temp = new MessageFormat(pattern);
@@ -874,10 +875,10 @@ public class MessageFormat extends Format {
      * @param result where text is appended.
      * @param pos keeps track on the position of the first replaced argument
      *            in the output string.
-     * @exception IllegalArgumentException if an argument in the
+     * @throws    IllegalArgumentException if an argument in the
      *            <code>arguments</code> array is not of the type
      *            expected by the format element(s) that use it.
-     * @exception NullPointerException if {@code result} is {@code null}
+     * @throws    NullPointerException if {@code result} is {@code null}
      */
     public final StringBuffer format(Object arguments, StringBuffer result,
                                      FieldPosition pos)
@@ -914,8 +915,8 @@ public class MessageFormat extends Format {
      *
      * @param arguments an array of objects to be formatted and substituted.
      * @return AttributedCharacterIterator describing the formatted value.
-     * @exception NullPointerException if <code>arguments</code> is null.
-     * @exception IllegalArgumentException if an argument in the
+     * @throws    NullPointerException if <code>arguments</code> is null.
+     * @throws    IllegalArgumentException if an argument in the
      *            <code>arguments</code> array is not of the type
      *            expected by the format element(s) that use it.
      * @since 1.4
@@ -967,7 +968,7 @@ public class MessageFormat extends Format {
      * @param source the string to parse
      * @param pos    the parse position
      * @return an array of parsed objects
-     * @exception NullPointerException if {@code pos} is {@code null}
+     * @throws    NullPointerException if {@code pos} is {@code null}
      *            for a non-null {@code source} string.
      */
     public Object[] parse(String source, ParsePosition pos) {
@@ -1056,7 +1057,7 @@ public class MessageFormat extends Format {
      *
      * @param source A <code>String</code> whose beginning should be parsed.
      * @return An <code>Object</code> array parsed from the string.
-     * @exception ParseException if the beginning of the specified string
+     * @throws    ParseException if the beginning of the specified string
      *            cannot be parsed.
      */
     public Object[] parse(String source) throws ParseException {
@@ -1153,6 +1154,7 @@ public class MessageFormat extends Format {
     public static class Field extends Format.Field {
 
         // Proclaim serial compatibility with 1.4 FCS
+        @java.io.Serial
         private static final long serialVersionUID = 7899943957617360810L;
 
         /**
@@ -1171,6 +1173,7 @@ public class MessageFormat extends Format {
          *         resolved.
          * @return resolved MessageFormat.Field constant
          */
+        @java.io.Serial
         protected Object readResolve() throws InvalidObjectException {
             if (this.getClass() != MessageFormat.Field.class) {
                 throw new InvalidObjectException("subclass didn't correctly implement readResolve");
@@ -1250,7 +1253,7 @@ public class MessageFormat extends Format {
      * {@code Field.ARGUMENT} as the field attribute, the location of
      * the first replaced argument will be set in it.
      *
-     * @exception IllegalArgumentException if an argument in the
+     * @throws    IllegalArgumentException if an argument in the
      *            <code>arguments</code> array is not of the type
      *            expected by the format element(s) that use it.
      */
@@ -1601,6 +1604,7 @@ public class MessageFormat extends Format {
      * to maintain class invariants.
      * @throws InvalidObjectException if the objects read from the stream is invalid.
      */
+    @java.io.Serial
     private void readObject(ObjectInputStream in) throws IOException, ClassNotFoundException {
         in.defaultReadObject();
         boolean isValid = maxOffset >= -1

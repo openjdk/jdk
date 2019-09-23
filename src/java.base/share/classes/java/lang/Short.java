@@ -579,5 +579,6 @@ public final class Short extends Number implements Comparable<Short> {
     }
 
     /** use serialVersionUID from JDK 1.1. for interoperability */
+    @java.io.Serial
     private static final long serialVersionUID = 7515723908773894738L;
 }

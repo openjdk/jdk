@@ -91,7 +91,7 @@ VirtualSpaceSummary CollectedHeap::create_heap_space_summary() {
   size_t capacity_in_words = capacity() / HeapWordSize;
 
   return VirtualSpaceSummary(
-    reserved_region().start(), reserved_region().start() + capacity_in_words, reserved_region().end());
+    _reserved.start(), _reserved.start() + capacity_in_words, _reserved.end());
 }
 
 GCHeapSummary CollectedHeap::create_heap_summary() {
@@ -174,15 +174,15 @@ bool CollectedHeap::request_concurrent_phase(const char* phase) {
 }
 
 bool CollectedHeap::is_oop(oop object) const {
-  if (!check_obj_alignment(object)) {
+  if (!is_object_aligned(object)) {
     return false;
   }
 
-  if (!is_in_reserved(object)) {
+  if (!is_in(object)) {
     return false;
   }
 
-  if (is_in_reserved(object->klass_or_null())) {
+  if (is_in(object->klass_or_null())) {
     return false;
   }
 
@@ -371,8 +371,6 @@ void CollectedHeap::fill_args_check(HeapWord* start, size_t words)
 {
   assert(words >= min_fill_size(), "too small to fill");
   assert(is_object_aligned(words), "unaligned size");
-  assert(Universe::heap()->is_in_reserved(start), "not in heap");
-  assert(Universe::heap()->is_in_reserved(start + words - 1), "not in heap");
 }
 
 void CollectedHeap::zap_filler_array(HeapWord* start, size_t words, bool zap)
@@ -516,12 +514,12 @@ void CollectedHeap::post_full_gc_dump(GCTimer* timer) {
   full_gc_dump(timer, false);
 }
 
-void CollectedHeap::initialize_reserved_region(HeapWord *start, HeapWord *end) {
+void CollectedHeap::initialize_reserved_region(const ReservedHeapSpace& rs) {
   // It is important to do this in a way such that concurrent readers can't
   // temporarily think something is in the heap.  (Seen this happen in asserts.)
   _reserved.set_word_size(0);
-  _reserved.set_start(start);
-  _reserved.set_end(end);
+  _reserved.set_start((HeapWord*)rs.base());
+  _reserved.set_end((HeapWord*)rs.end());
 }
 
 void CollectedHeap::post_initialize() {

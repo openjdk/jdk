@@ -34,6 +34,7 @@
 #include <stdlib.h>
 #include <string.h>
 
+#include "util.h"
 #include "path_md.h"
 
 #ifdef __APPLE__
@@ -45,8 +46,10 @@
 static void dll_build_name(char* buffer, size_t buflen,
                            const char* paths, const char* fname) {
     char *path, *paths_copy, *next_token;
+    *buffer = '\0';
 
-    paths_copy = strdup(paths);
+    paths_copy = jvmtiAllocate((int)strlen(paths) + 1);
+    strcpy(paths_copy, paths);
     if (paths_copy == NULL) {
         return;
     }
@@ -55,15 +58,18 @@ static void dll_build_name(char* buffer, size_t buflen,
     path = strtok_r(paths_copy, PATH_SEPARATOR, &next_token);
 
     while (path != NULL) {
-        snprintf(buffer, buflen, "%s/lib%s." LIB_SUFFIX, path, fname);
-        if (access(buffer, F_OK) == 0) {
+        size_t result_len = (size_t)snprintf(buffer, buflen, "%s/lib%s." LIB_SUFFIX, path, fname);
+        if (result_len >= buflen) {
+            EXIT_ERROR(JVMTI_ERROR_INVALID_LOCATION, "One or more of the library paths supplied to jdwp, "
+                                                     "likely by sun.boot.library.path, is too long.");
+        } else if (access(buffer, F_OK) == 0) {
             break;
         }
         *buffer = '\0';
         path = strtok_r(NULL, PATH_SEPARATOR, &next_token);
     }
 
-    free(paths_copy);
+    jvmtiDeallocate(paths_copy);
 }
 
 /*
@@ -89,13 +95,11 @@ dbgsysBuildLibName(char *holder, int holderlen, const char *pname,
 {
     const int pnamelen = pname ? strlen(pname) : 0;
 
-    *holder = '\0';
-    // Quietly truncate on buffer overflow.  Should be an error.
-    if (pnamelen + (int)strlen(fname) + 10 > holderlen) {
-        return;
-    }
-
     if (pnamelen == 0) {
+        if (pnamelen + (int)strlen(fname) + 10 > holderlen) {
+            EXIT_ERROR(JVMTI_ERROR_INVALID_LOCATION, "One or more of the library paths supplied to jdwp, "
+                                                     "likely by sun.boot.library.path, is too long.");
+        }
         (void)snprintf(holder, holderlen, "lib%s." LIB_SUFFIX, fname);
     } else {
       dll_build_name(holder, holderlen, pname, fname);

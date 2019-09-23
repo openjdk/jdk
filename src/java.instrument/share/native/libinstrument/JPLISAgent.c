@@ -1486,6 +1486,7 @@ appendToClassLoaderSearch(JNIEnv * jnienv, JPLISAgent * agent, jstring jarFile, 
             platformLen = convertUft8ToPlatformString((char*)utf8Chars, utf8Len, platformChars, MAXPATHLEN);
             if (platformLen < 0) {
                 createAndThrowInternalError(jnienv);
+                (*jnienv)->ReleaseStringUTFChars(jnienv, jarFile, utf8Chars);
                 return;
             }
 

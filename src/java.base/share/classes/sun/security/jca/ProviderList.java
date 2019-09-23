@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -77,6 +77,7 @@ public final class ProviderList {
     // used to avoid explicit null checks in various places
     private static final Provider EMPTY_PROVIDER =
         new Provider("##Empty##", "1.0", "initialization in progress") {
+            @java.io.Serial
             private static final long serialVersionUID = 1151354171352296389L;
             // override getService() to return null slightly faster
             public Service getService(String type, String algorithm) {

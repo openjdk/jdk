@@ -23,7 +23,7 @@
 
 /**
  * @test
- * @bug 8220309
+ * @bug 8220309 8230284
  * @library /java/text/testlib
  * @summary Test String representation of MinusSign/Percent/PerMill symbols.
  *          This test assumes CLDR has numbering systems for "arab" and
@@ -55,14 +55,14 @@ public class DFSMinusPerCentMill {
             // Locale, FormatStyle, expected format, expected single char symbol
             {US_ARAB, Type.NUMBER, "\u061c-\u0661\u066c\u0662\u0663\u0664\u066b\u0665\u0666"},
             {US_ARAB, Type.PERCENT, "\u061c-\u0661\u0662\u0663\u066c\u0664\u0665\u0666\u066a\u061c"},
-            {US_ARAB, Type.CURRENCY, "\u061c-$\u0661\u066c\u0662\u0663\u0664\u066b\u0665\u0666"},
+            {US_ARAB, Type.CURRENCY, "\u061c-\u0661\u066c\u0662\u0663\u0664\u066b\u0665\u0666\u00a0$"},
             {US_ARAB, Type.INTEGER, "\u061c-\u0661\u066c\u0662\u0663\u0665"},
             {US_ARAB, Type.COMPACT, "\u061c-\u0661K"},
             {US_ARAB, Type.PERMILL, "\u061c-\u0661\u0662\u0663\u0664\u0665\u0666\u0660\u0609"},
 
             {US_ARABEXT, Type.NUMBER, "\u200e-\u200e\u06f1\u066c\u06f2\u06f3\u06f4\u066b\u06f5\u06f6"},
             {US_ARABEXT, Type.PERCENT, "\u200e-\u200e\u06f1\u06f2\u06f3\u066c\u06f4\u06f5\u06f6\u066a"},
-            {US_ARABEXT, Type.CURRENCY, "\u200e-\u200e$\u06f1\u066c\u06f2\u06f3\u06f4\u066b\u06f5\u06f6"},
+            {US_ARABEXT, Type.CURRENCY, "\u200e-\u200e$\u00a0\u06f1\u066c\u06f2\u06f3\u06f4\u066b\u06f5\u06f6"},
             {US_ARABEXT, Type.INTEGER, "\u200e-\u200e\u06f1\u066c\u06f2\u06f3\u06f5"},
             {US_ARABEXT, Type.COMPACT, "\u200e-\u200e\u06f1K"},
             {US_ARABEXT, Type.PERMILL, "\u200e-\u200e\u06f1\u06f2\u06f3\u06f4\u06f5\u06f6\u06f0\u0609"},

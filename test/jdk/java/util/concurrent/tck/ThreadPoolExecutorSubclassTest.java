@@ -796,7 +796,7 @@ public class ThreadPoolExecutorSubclassTest extends JSR166TestCase {
         Runnable waiter = new CheckedRunnable() { public void realRun() {
             threadsStarted.countDown();
             try {
-                MILLISECONDS.sleep(2 * LONG_DELAY_MS);
+                MILLISECONDS.sleep(LONGER_DELAY_MS);
             } catch (InterruptedException success) {}
             ran.getAndIncrement();
         }};
@@ -1669,7 +1669,7 @@ public class ThreadPoolExecutorSubclassTest extends JSR166TestCase {
             l.add(latchAwaitingStringTask(latch));
             l.add(null);
             try {
-                e.invokeAny(l, randomTimeout(), MILLISECONDS);
+                e.invokeAny(l, randomTimeout(), randomTimeUnit());
                 shouldThrow();
             } catch (NullPointerException success) {}
             latch.countDown();

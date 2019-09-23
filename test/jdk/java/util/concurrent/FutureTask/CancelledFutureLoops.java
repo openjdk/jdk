@@ -130,7 +130,7 @@ public final class CancelledFutureLoops {
             long endTime = System.nanoTime();
             long time = endTime - timer.startTime;
             if (print) {
-                double secs = (double)(time) / 1000000000.0;
+                double secs = (double)time / 1000000000.0;
                 System.out.println("\t " + secs + "s run time");
             }
 

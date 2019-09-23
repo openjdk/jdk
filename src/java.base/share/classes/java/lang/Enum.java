@@ -275,11 +275,13 @@ public abstract class Enum<E extends Enum<E>>
     /**
      * prevent default deserialization
      */
+    @java.io.Serial
     private void readObject(ObjectInputStream in) throws IOException,
         ClassNotFoundException {
         throw new InvalidObjectException("can't deserialize enum");
     }
 
+    @java.io.Serial
     private void readObjectNoData() throws ObjectStreamException {
         throw new InvalidObjectException("can't deserialize enum");
     }

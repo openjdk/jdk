@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1994, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1994, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -171,6 +171,7 @@ public class Hashtable<K,V>
     private transient int modCount = 0;
 
     /** use serialVersionUID from JDK 1.0.2 for interoperability */
+    @java.io.Serial
     private static final long serialVersionUID = 1421746759512286392L;
 
     /**
@@ -179,7 +180,7 @@ public class Hashtable<K,V>
      *
      * @param      initialCapacity   the initial capacity of the hashtable.
      * @param      loadFactor        the load factor of the hashtable.
-     * @exception  IllegalArgumentException  if the initial capacity is less
+     * @throws     IllegalArgumentException  if the initial capacity is less
      *             than zero, or if the load factor is nonpositive.
      */
     public Hashtable(int initialCapacity, float loadFactor) {
@@ -201,7 +202,7 @@ public class Hashtable<K,V>
      * and default load factor (0.75).
      *
      * @param     initialCapacity   the initial capacity of the hashtable.
-     * @exception IllegalArgumentException if the initial capacity is less
+     * @throws    IllegalArgumentException if the initial capacity is less
      *              than zero.
      */
     public Hashtable(int initialCapacity) {
@@ -303,7 +304,7 @@ public class Hashtable<K,V>
      *             {@code value} argument in this hashtable as
      *             determined by the {@code equals} method;
      *             {@code false} otherwise.
-     * @exception  NullPointerException  if the value is {@code null}
+     * @throws     NullPointerException  if the value is {@code null}
      */
     public synchronized boolean contains(Object value) {
         if (value == null) {
@@ -464,7 +465,7 @@ public class Hashtable<K,V>
      * @param      value   the value
      * @return     the previous value of the specified key in this hashtable,
      *             or {@code null} if it did not have one
-     * @exception  NullPointerException  if the key or value is
+     * @throws     NullPointerException  if the key or value is
      *               {@code null}
      * @see     Object#equals(Object)
      * @see     #get(Object)
@@ -1201,6 +1202,7 @@ public class Hashtable<K,V>
      *             for each key-value mapping represented by the Hashtable
      *             The key-value mappings are emitted in no particular order.
      */
+    @java.io.Serial
     private void writeObject(java.io.ObjectOutputStream s)
             throws IOException {
         writeHashtable(s);
@@ -1254,6 +1256,7 @@ public class Hashtable<K,V>
     /**
      * Reconstitute the Hashtable from a stream (i.e., deserialize it).
      */
+    @java.io.Serial
     private void readObject(java.io.ObjectInputStream s)
             throws IOException, ClassNotFoundException {
         readHashtable(s);

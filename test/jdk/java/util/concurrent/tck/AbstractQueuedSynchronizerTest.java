@@ -40,7 +40,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.HashSet;
-import java.util.concurrent.ThreadLocalRandom;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.locks.AbstractQueuedSynchronizer;
 import java.util.concurrent.locks.AbstractQueuedSynchronizer.ConditionObject;
 
@@ -1337,19 +1337,31 @@ public class AbstractQueuedSynchronizerTest extends JSR166TestCase {
     /**
      * Tests scenario for
      * JDK-8191937: Lost interrupt in AbstractQueuedSynchronizer when tryAcquire methods throw
+     * ant -Djsr166.tckTestClass=AbstractQueuedSynchronizerTest -Djsr166.methodFilter=testInterruptedFailingAcquire -Djsr166.runsPerTest=10000 tck
      */
-    public void testInterruptedFailingAcquire() throws InterruptedException {
-        final RuntimeException ex = new RuntimeException();
+    public void testInterruptedFailingAcquire() throws Throwable {
+        class PleaseThrow extends RuntimeException {}
+        final PleaseThrow ex = new PleaseThrow();
+        final AtomicBoolean thrown = new AtomicBoolean();
 
         // A synchronizer only offering a choice of failure modes
         class Sync extends AbstractQueuedSynchronizer {
-            boolean pleaseThrow;
+            volatile boolean pleaseThrow;
+            void maybeThrow() {
+                if (pleaseThrow) {
+                    // assert: tryAcquire methods can throw at most once
+                    if (! thrown.compareAndSet(false, true))
+                        throw new AssertionError();
+                    throw ex;
+                }
+            }
+
             @Override protected boolean tryAcquire(int ignored) {
-                if (pleaseThrow) throw ex;
+                maybeThrow();
                 return false;
             }
             @Override protected int tryAcquireShared(int ignored) {
-                if (pleaseThrow) throw ex;
+                maybeThrow();
                 return -1;
             }
             @Override protected boolean tryRelease(int ignored) {
@@ -1361,30 +1373,87 @@ public class AbstractQueuedSynchronizerTest extends JSR166TestCase {
         }
 
         final Sync s = new Sync();
+        final boolean acquireInterruptibly = randomBoolean();
+        final Action[] uninterruptibleAcquireActions = {
+            () -> s.acquire(1),
+            () -> s.acquireShared(1),
+        };
+        final long nanosTimeout = MILLISECONDS.toNanos(2 * LONG_DELAY_MS);
+        final Action[] interruptibleAcquireActions = {
+            () -> s.acquireInterruptibly(1),
+            () -> s.acquireSharedInterruptibly(1),
+            () -> s.tryAcquireNanos(1, nanosTimeout),
+            () -> s.tryAcquireSharedNanos(1, nanosTimeout),
+        };
+        final Action[] releaseActions = {
+            () -> s.release(1),
+            () -> s.releaseShared(1),
+        };
+        final Action acquireAction = acquireInterruptibly
+            ? chooseRandomly(interruptibleAcquireActions)
+            : chooseRandomly(uninterruptibleAcquireActions);
+        final Action releaseAction
+            = chooseRandomly(releaseActions);
 
+        // From os_posix.cpp:
+        //
+        // NOTE that since there is no "lock" around the interrupt and
+        // is_interrupted operations, there is the possibility that the
+        // interrupted flag (in osThread) will be "false" but that the
+        // low-level events will be in the signaled state. This is
+        // intentional. The effect of this is that Object.wait() and
+        // LockSupport.park() will appear to have a spurious wakeup, which
+        // is allowed and not harmful, and the possibility is so rare that
+        // it is not worth the added complexity to add yet another lock.
         final Thread thread = newStartedThread(new CheckedRunnable() {
-            public void realRun() {
+            public void realRun() throws Throwable {
                 try {
-                    if (ThreadLocalRandom.current().nextBoolean())
-                        s.acquire(1);
-                    else
-                        s.acquireShared(1);
+                    acquireAction.run();
                     shouldThrow();
-                } catch (Throwable t) {
-                    assertSame(ex, t);
-                    assertTrue(Thread.interrupted());
+                } catch (InterruptedException possible) {
+                    assertTrue(acquireInterruptibly);
+                    assertFalse(Thread.interrupted());
+                } catch (PleaseThrow possible) {
+                    awaitInterrupted();
                 }
             }});
-        waitForThreadToEnterWaitState(thread);
-        assertSame(thread, s.getFirstQueuedThread());
-        assertTrue(s.hasQueuedPredecessors());
-        assertTrue(s.hasQueuedThreads());
-        assertEquals(1, s.getQueueLength());
+        for (long startTime = 0L;; ) {
+            waitForThreadToEnterWaitState(thread);
+            if (s.getFirstQueuedThread() == thread
+                && s.hasQueuedPredecessors()
+                && s.hasQueuedThreads()
+                && s.getQueueLength() == 1
+                && s.hasContended())
+                break;
+            if (startTime == 0L)
+                startTime = System.nanoTime();
+            else if (millisElapsedSince(startTime) > LONG_DELAY_MS)
+                fail("timed out waiting for AQS state: "
+                     + "thread state=" + thread.getState()
+                     + ", queued threads=" + s.getQueuedThreads());
+            Thread.yield();
+        }
 
         s.pleaseThrow = true;
-        thread.interrupt();
-        s.release(1);
+        // release and interrupt, in random order
+        if (randomBoolean()) {
+            thread.interrupt();
+            releaseAction.run();
+        } else {
+            releaseAction.run();
+            thread.interrupt();
+        }
         awaitTermination(thread);
+
+        if (! acquireInterruptibly)
+            assertTrue(thrown.get());
+
+        assertNull(s.getFirstQueuedThread());
+        assertFalse(s.hasQueuedPredecessors());
+        assertFalse(s.hasQueuedThreads());
+        assertEquals(0, s.getQueueLength());
+        assertTrue(s.getQueuedThreads().isEmpty());
+        assertTrue(s.hasContended());
     }
 
 }

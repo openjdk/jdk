@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,6 +29,7 @@
 #include "memory/universe.hpp"
 #include "oops/compressedOops.hpp"
 #include "oops/oop.hpp"
+#include "utilities/align.hpp"
 
 // Functions for encoding and decoding compressed oops.
 // If the oops are compressed, the type passed to these overloaded functions
@@ -47,7 +48,7 @@ inline oop CompressedOops::decode_raw(narrowOop v) {
 inline oop CompressedOops::decode_not_null(narrowOop v) {
   assert(!is_null(v), "narrow oop value can never be zero");
   oop result = decode_raw(v);
-  assert(check_obj_alignment(result), "address not aligned: " INTPTR_FORMAT, p2i((void*) result));
+  assert(is_object_aligned(result), "address not aligned: " INTPTR_FORMAT, p2i((void*) result));
   return result;
 }
 
@@ -57,13 +58,13 @@ inline oop CompressedOops::decode(narrowOop v) {
 
 inline narrowOop CompressedOops::encode_not_null(oop v) {
   assert(!is_null(v), "oop value can never be zero");
-  assert(check_obj_alignment(v), "Address not aligned");
-  assert(Universe::heap()->is_in_reserved(v), "Address not in heap");
+  assert(is_object_aligned(v), "address not aligned: " PTR_FORMAT, p2i((void*)v));
+  assert(is_in(v), "address not in heap range: " PTR_FORMAT, p2i((void*)v));
   uint64_t  pd = (uint64_t)(pointer_delta((void*)v, (void*)base(), 1));
   assert(OopEncodingHeapMax > pd, "change encoding max if new encoding");
   uint64_t result = pd >> shift();
   assert((result & CONST64(0xffffffff00000000)) == 0, "narrow oop overflow");
-  assert(oopDesc::equals_raw(decode(result), v), "reversibility");
+  assert(decode(result) == v, "reversibility");
   return (narrowOop)result;
 }
 

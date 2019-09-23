@@ -212,9 +212,9 @@ class Universe: AllStatic {
   static uintptr_t _verify_oop_mask;
   static uintptr_t _verify_oop_bits;
 
+ public:
   static void calculate_verify_data(HeapWord* low_boundary, HeapWord* high_boundary) PRODUCT_RETURN;
 
- public:
   // Known classes in the VM
   static Klass* boolArrayKlassObj()                 { return typeArrayKlassObj(T_BOOLEAN); }
   static Klass* byteArrayKlassObj()                 { return typeArrayKlassObj(T_BYTE); }
@@ -326,7 +326,7 @@ class Universe: AllStatic {
   static CollectedHeap* heap() { return _collectedHeap; }
 
   // Reserve Java heap and determine CompressedOops mode
-  static ReservedSpace reserve_heap(size_t heap_size, size_t alignment);
+  static ReservedHeapSpace reserve_heap(size_t heap_size, size_t alignment);
 
   // Historic gc information
   static size_t get_heap_free_at_last_gc()             { return _heap_capacity_at_last_gc - _heap_used_at_last_gc; }

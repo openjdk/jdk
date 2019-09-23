@@ -72,6 +72,7 @@ import sun.security.provider.X509Factory;
  */
 public class X509CertImpl extends X509Certificate implements DerEncoder {
 
+    @java.io.Serial
     private static final long serialVersionUID = -3457612960190864406L;
 
     private static final char DOT = '.';

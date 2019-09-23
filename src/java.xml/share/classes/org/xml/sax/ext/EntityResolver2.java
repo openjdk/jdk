@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2004, 2005, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2004, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,11 +23,6 @@
  * questions.
  */
 
-// EntityResolver2.java - Extended SAX entity resolver.
-// http://www.saxproject.org
-// No warranty; no copyright -- use this as you will.
-// $Id: EntityResolver2.java,v 1.2 2004/11/03 22:49:08 jsuttor Exp $
-
 package org.xml.sax.ext;
 
 import java.io.IOException;
@@ -47,11 +42,6 @@ import org.xml.sax.SAXException;
  * {@link EntityResolver2#resolveEntity EntityResolver2.resolveEntity()}
  * method (in this interface) is used <em>instead of</em> the older (SAX 1.0)
  * {@link EntityResolver#resolveEntity EntityResolver.resolveEntity()} method.
- *
- * <blockquote>
- * <em>This module, both source code and documentation, is in the
- * Public Domain, and comes with <strong>NO WARRANTY</strong>.</em>
- * </blockquote>
  *
  * <p>If a SAX application requires the customized handling which this
  * interface defines for external entities, it must ensure that it uses

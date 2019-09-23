@@ -208,7 +208,7 @@ AbstractInterpreter::MethodKind AbstractInterpreter::method_kind(const methodHan
 
 address AbstractInterpreter::get_trampoline_code_buffer(AbstractInterpreter::MethodKind kind) {
   const size_t trampoline_size = SharedRuntime::trampoline_size();
-  address addr = MetaspaceShared::cds_i2i_entry_code_buffers((size_t)(AbstractInterpreter::number_of_method_entries) * trampoline_size);
+  address addr = MetaspaceShared::i2i_entry_code_buffers((size_t)(AbstractInterpreter::number_of_method_entries) * trampoline_size);
   addr += (size_t)(kind) * trampoline_size;
 
   return addr;

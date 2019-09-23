@@ -44,6 +44,7 @@ package javax.security.cert;
 @Deprecated(since="9", forRemoval=true)
 public class CertificateEncodingException extends CertificateException {
 
+    @java.io.Serial
     private static final long serialVersionUID = -8187642723048403470L;
     /**
      * Constructs a CertificateEncodingException with no detail message. A

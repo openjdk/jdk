@@ -25,7 +25,7 @@
 #ifndef SHARE_GC_CMS_JVMFLAGCONSTRAINTSCMS_HPP
 #define SHARE_GC_CMS_JVMFLAGCONSTRAINTSCMS_HPP
 
-#include "runtime/globals.hpp"
+#include "runtime/flags/jvmFlag.hpp"
 #include "utilities/globalDefinitions.hpp"
 
 // CMS Flag Constraints

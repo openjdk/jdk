@@ -32,6 +32,7 @@
 #include "oops/access.inline.hpp"
 #include "oops/compressedOops.inline.hpp"
 #include "oops/oop.inline.hpp"
+#include "utilities/align.hpp"
 #include "utilities/stack.inline.hpp"
 
 inline void MarkSweep::mark_object(oop obj) {
@@ -87,8 +88,7 @@ template <class T> inline void MarkSweep::adjust_pointer(T* p) {
            "should be forwarded");
 
     if (new_obj != NULL) {
-      assert(Universe::heap()->is_in_reserved(new_obj),
-             "should be in object space");
+      assert(is_object_aligned(new_obj), "oop must be aligned");
       RawAccess<IS_NOT_NULL>::oop_store(p, new_obj);
     }
   }

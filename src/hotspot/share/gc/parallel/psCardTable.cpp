@@ -200,7 +200,7 @@ void PSCardTable::scavenge_contents_parallel(ObjectStartArray* start_array,
       // Delay 1 worker so that it proceeds after all the work
       // has been completed.
       if (stripe_number < 2) {
-        os::sleep(Thread::current(), GCWorkerDelayMillis, false);
+        os::naked_sleep(GCWorkerDelayMillis);
       }
     }
 #endif

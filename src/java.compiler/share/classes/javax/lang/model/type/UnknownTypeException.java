@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -58,7 +58,7 @@ public class UnknownTypeException extends UnknownEntityException {
      * @param p an additional parameter, may be {@code null}
      */
     public UnknownTypeException(TypeMirror t, Object p) {
-        super("Unknown type: " + t);
+        super("Unknown type: \"" + t + "\"");
         type = t;
         this.parameter = p;
     }

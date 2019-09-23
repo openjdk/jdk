@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -43,6 +43,7 @@ import java.util.Vector;
 
 final class CryptoAllPermission extends CryptoPermission {
 
+    @java.io.Serial
     private static final long serialVersionUID = -5066513634293192112L;
 
     // This class is similar to java.security.AllPermission.
@@ -116,6 +117,7 @@ final class CryptoAllPermissionCollection extends PermissionCollection
     implements java.io.Serializable
 {
 
+    @java.io.Serial
     private static final long serialVersionUID = 7450076868380144072L;
 
     // true if a CryptoAllPermission has been added

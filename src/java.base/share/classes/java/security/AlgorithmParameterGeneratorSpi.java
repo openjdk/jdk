@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -76,7 +76,7 @@ public abstract class AlgorithmParameterGeneratorSpi {
      * @param genParamSpec the set of algorithm-specific parameter generation values.
      * @param random the source of randomness.
      *
-     * @exception InvalidAlgorithmParameterException if the given parameter
+     * @throws    InvalidAlgorithmParameterException if the given parameter
      * generation values are inappropriate for this parameter generator.
      */
     protected abstract void engineInit(AlgorithmParameterSpec genParamSpec,

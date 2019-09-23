@@ -86,7 +86,7 @@ void JfrChunkWriter::write_header(int64_t metadata_offset) {
   // Chunk size
   this->write_be_at_offset(size_written(), CHUNK_SIZE_OFFSET);
   // initial checkpoint event offset
-  this->write_be_at_offset(_chunkstate->previous_checkpoint_offset(), CHUNK_SIZE_OFFSET + (1 * FILEHEADER_SLOT_SIZE));
+  this->write_be_at_offset(_chunkstate->last_checkpoint_offset(), CHUNK_SIZE_OFFSET + (1 * FILEHEADER_SLOT_SIZE));
   // metadata event offset
   this->write_be_at_offset(metadata_offset, CHUNK_SIZE_OFFSET + (2 * FILEHEADER_SLOT_SIZE));
   // start of chunk in nanos since epoch
@@ -105,12 +105,12 @@ int64_t JfrChunkWriter::size_written() const {
   return this->is_valid() ? this->current_offset() : 0;
 }
 
-int64_t JfrChunkWriter::previous_checkpoint_offset() const {
-  return _chunkstate->previous_checkpoint_offset();
+int64_t JfrChunkWriter::last_checkpoint_offset() const {
+  return _chunkstate->last_checkpoint_offset();
 }
 
-void JfrChunkWriter::set_previous_checkpoint_offset(int64_t offset) {
-  _chunkstate->set_previous_checkpoint_offset(offset);
+void JfrChunkWriter::set_last_checkpoint_offset(int64_t offset) {
+  _chunkstate->set_last_checkpoint_offset(offset);
 }
 
 void JfrChunkWriter::time_stamp_chunk_now() {

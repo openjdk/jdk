@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -77,7 +77,7 @@ public abstract class KeyFactorySpi {
      *
      * @return the public key.
      *
-     * @exception InvalidKeySpecException if the given key specification
+     * @throws    InvalidKeySpecException if the given key specification
      * is inappropriate for this key factory to produce a public key.
      */
     protected abstract PublicKey engineGeneratePublic(KeySpec keySpec)
@@ -91,7 +91,7 @@ public abstract class KeyFactorySpi {
      *
      * @return the private key.
      *
-     * @exception InvalidKeySpecException if the given key specification
+     * @throws    InvalidKeySpecException if the given key specification
      * is inappropriate for this key factory to produce a private key.
      */
     protected abstract PrivateKey engineGeneratePrivate(KeySpec keySpec)
@@ -116,7 +116,7 @@ public abstract class KeyFactorySpi {
      * @return the underlying key specification (key material) in an instance
      * of the requested specification class.
 
-     * @exception InvalidKeySpecException if the requested key specification is
+     * @throws    InvalidKeySpecException if the requested key specification is
      * inappropriate for the given key, or the given key cannot be dealt with
      * (e.g., the given key has an unrecognized format).
      */
@@ -133,7 +133,7 @@ public abstract class KeyFactorySpi {
      *
      * @return the translated key.
      *
-     * @exception InvalidKeyException if the given key cannot be processed
+     * @throws    InvalidKeyException if the given key cannot be processed
      * by this key factory.
      */
     protected abstract Key engineTranslateKey(Key key)

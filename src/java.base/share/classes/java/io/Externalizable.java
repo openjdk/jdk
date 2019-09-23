@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2004, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -76,8 +76,8 @@ public interface Externalizable extends java.io.Serializable {
      *             relate the element to a public/protected field and/or
      *             method of this Externalizable class.
      *
-     * @param out the stream to write the object to
-     * @exception IOException Includes any I/O exceptions that may occur
+     * @param     out the stream to write the object to
+     * @throws    IOException Includes any I/O exceptions that may occur
      */
     void writeExternal(ObjectOutput out) throws IOException;
 
@@ -88,10 +88,10 @@ public interface Externalizable extends java.io.Serializable {
      * readExternal method must read the values in the same sequence
      * and with the same types as were written by writeExternal.
      *
-     * @param in the stream to read data from in order to restore the object
-     * @exception IOException if I/O errors occur
-     * @exception ClassNotFoundException If the class for an object being
-     *              restored cannot be found.
+     * @param     in the stream to read data from in order to restore the object
+     * @throws    IOException if I/O errors occur
+     * @throws    ClassNotFoundException If the class for an object being
+     *            restored cannot be found.
      */
     void readExternal(ObjectInput in) throws IOException, ClassNotFoundException;
 }

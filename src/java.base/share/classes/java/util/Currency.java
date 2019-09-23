@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -113,6 +113,7 @@ import sun.util.logging.PlatformLogger;
  */
 public final class Currency implements Serializable {
 
+    @java.io.Serial
     private static final long serialVersionUID = -158308464356906721L;
 
     /**
@@ -288,8 +289,8 @@ public final class Currency implements Serializable {
      *
      * @param currencyCode the ISO 4217 code of the currency
      * @return the <code>Currency</code> instance for the given currency code
-     * @exception NullPointerException if <code>currencyCode</code> is null
-     * @exception IllegalArgumentException if <code>currencyCode</code> is not
+     * @throws    NullPointerException if <code>currencyCode</code> is null
+     * @throws    IllegalArgumentException if <code>currencyCode</code> is not
      * a supported ISO 4217 code.
      */
     public static Currency getInstance(String currencyCode) {
@@ -371,9 +372,9 @@ public final class Currency implements Serializable {
      * instance is needed
      * @return the <code>Currency</code> instance for the country of the given
      * locale, or {@code null}
-     * @exception NullPointerException if <code>locale</code>
+     * @throws    NullPointerException if <code>locale</code>
      * is {@code null}
-     * @exception IllegalArgumentException if the country of the given {@code locale}
+     * @throws    IllegalArgumentException if the country of the given {@code locale}
      * is not a supported ISO 3166 country code.
      */
     public static Currency getInstance(Locale locale) {
@@ -536,7 +537,7 @@ public final class Currency implements Serializable {
      * @param locale the locale for which a display name for this currency is
      * needed
      * @return the symbol of this currency for the specified locale
-     * @exception NullPointerException if <code>locale</code> is null
+     * @throws    NullPointerException if <code>locale</code> is null
      */
     public String getSymbol(Locale locale) {
         LocaleServiceProviderPool pool =
@@ -631,7 +632,7 @@ public final class Currency implements Serializable {
      * @param locale the locale for which a display name for this currency is
      * needed
      * @return the display name of this currency for the specified locale
-     * @exception NullPointerException if <code>locale</code> is null
+     * @throws    NullPointerException if <code>locale</code> is null
      * @since 1.7
      */
     public String getDisplayName(Locale locale) {
@@ -661,6 +662,7 @@ public final class Currency implements Serializable {
     /**
      * Resolves instances being deserialized to a single instance per currency.
      */
+    @java.io.Serial
     private Object readResolve() {
         return getInstance(currencyCode);
     }
@@ -1195,5 +1197,3 @@ public final class Currency implements Serializable {
     }
 
 }
-
-

@@ -300,12 +300,12 @@ bool CPUPerformanceInterface::CPUPerformance::initialize() {
   }
 
   // Data structure(s) for saving CPU load (one per CPU)
-  size_t tick_array_size = _counters.nProcs * sizeof(CPUPerfTicks);
-  _counters.jvmTicks = (CPUPerfTicks*)NEW_C_HEAP_ARRAY(char, tick_array_size, mtInternal);
+  size_t array_entry_count = _counters.nProcs;
+  _counters.jvmTicks = NEW_C_HEAP_ARRAY(CPUPerfTicks, array_entry_count, mtInternal);
   if (NULL == _counters.jvmTicks) {
     return false;
   }
-  memset(_counters.jvmTicks, 0, tick_array_size);
+  memset(_counters.jvmTicks, 0, array_entry_count * sizeof(*_counters.jvmTicks));
 
   // Get kstat cpu_stat counters for every CPU
   // loop over kstat to find our cpu_stat(s)
@@ -326,9 +326,7 @@ bool CPUPerformanceInterface::CPUPerformance::initialize() {
 }
 
 CPUPerformanceInterface::CPUPerformance::~CPUPerformance() {
-  if (_counters.jvmTicks != NULL) {
-    FREE_C_HEAP_ARRAY(char, _counters.jvmTicks);
-  }
+  FREE_C_HEAP_ARRAY(char, _counters.jvmTicks);
   if (_counters.kstat_ctrl != NULL) {
     kstat_close(_counters.kstat_ctrl);
   }

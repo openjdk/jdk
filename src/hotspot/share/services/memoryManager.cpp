@@ -143,8 +143,8 @@ void MemoryManager::oops_do(OopClosure* f) {
 
 GCStatInfo::GCStatInfo(int num_pools) {
   // initialize the arrays for memory usage
-  _before_gc_usage_array = (MemoryUsage*) NEW_C_HEAP_ARRAY(MemoryUsage, num_pools, mtInternal);
-  _after_gc_usage_array  = (MemoryUsage*) NEW_C_HEAP_ARRAY(MemoryUsage, num_pools, mtInternal);
+  _before_gc_usage_array = NEW_C_HEAP_ARRAY(MemoryUsage, num_pools, mtInternal);
+  _after_gc_usage_array  = NEW_C_HEAP_ARRAY(MemoryUsage, num_pools, mtInternal);
   _usage_array_size = num_pools;
   clear();
 }

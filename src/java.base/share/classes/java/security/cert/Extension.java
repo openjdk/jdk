@@ -94,8 +94,8 @@ public interface Extension {
      * stream.
      *
      * @param out the output stream
-     * @exception IOException on encoding or output error.
-     * @exception NullPointerException if {@code out} is {@code null}.
+     * @throws    IOException on encoding or output error.
+     * @throws    NullPointerException if {@code out} is {@code null}.
      */
     void encode(OutputStream out) throws IOException;
 }

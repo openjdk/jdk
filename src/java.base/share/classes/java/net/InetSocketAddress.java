@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -136,6 +136,7 @@ public class InetSocketAddress
 
     private final transient InetSocketAddressHolder holder;
 
+    @java.io.Serial
     private static final long serialVersionUID = 5076001401234631237L;
 
     private static int checkPort(int port) {
@@ -259,11 +260,13 @@ public class InetSocketAddress
      * @serialField addr InetAddress
      * @serialField port int
      */
+    @java.io.Serial
     private static final ObjectStreamField[] serialPersistentFields = {
          new ObjectStreamField("hostname", String.class),
          new ObjectStreamField("addr", InetAddress.class),
          new ObjectStreamField("port", int.class)};
 
+    @java.io.Serial
     private void writeObject(ObjectOutputStream out)
         throws IOException
     {
@@ -275,6 +278,7 @@ public class InetSocketAddress
          out.writeFields();
      }
 
+    @java.io.Serial
     private void readObject(ObjectInputStream in)
         throws IOException, ClassNotFoundException
     {
@@ -296,6 +300,7 @@ public class InetSocketAddress
         UNSAFE.putReference(this, FIELDS_OFFSET, h);
     }
 
+    @java.io.Serial
     private void readObjectNoData()
         throws ObjectStreamException
     {

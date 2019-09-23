@@ -1569,13 +1569,13 @@ void Compile::fill_buffer(CodeBuffer* cb, uint* blk_starts) {
                    "");
       }
       if (method() != NULL) {
-        tty->print_cr("----------------------------------- MetaData -----------------------------------");
+        tty->print_cr("----------------------- MetaData before Compile_id = %d ------------------------", compile_id());
         method()->print_metadata();
       } else if (stub_name() != NULL) {
         tty->print_cr("----------------------------- RuntimeStub %s -------------------------------", stub_name());
       }
       tty->cr();
-      tty->print_cr("--------------------------------- OptoAssembly ---------------------------------");
+      tty->print_cr("------------------------ OptoAssembly for Compile_id = %d -----------------------", compile_id());
       dump_asm(node_offsets, node_offset_limit);
       tty->print_cr("--------------------------------------------------------------------------------");
       if (xtty != NULL) {

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,7 +31,8 @@ import java.io.*;
 
 /**
  * A PropList object contains the lists of code points that have
- * the same Unicode property defined in PropList.txt
+ * the same Unicode property defined in PropList.txt and
+ * DerivedCoreProperties.txt
  *
  * @author Xueming Shen
  */
@@ -51,8 +52,13 @@ public class PropList {
         return propMap.keySet();
     }
 
-    private Map<String, ArrayList<Integer>> propMap =
-        new LinkedHashMap<String, ArrayList<Integer>>();
+    public void putAll(PropList pl) {
+        pl.names().stream()
+            .forEach(name -> propMap.put(name, pl.codepoints(name)));
+    }
+
+    private Map<String, List<Integer>> propMap =
+        new LinkedHashMap<String, List<Integer>>();
 
     private PropList(File file, int plane) throws IOException {
 
@@ -78,7 +84,7 @@ public class PropList {
                 start &= 0xffff;
                 end &= 0xffff;
 
-                ArrayList<Integer> list = propMap.get(name);
+                List<Integer> list = propMap.get(name);
                 if (list == null) {
                     list = new ArrayList<Integer>();
                     propMap.put(name, list);

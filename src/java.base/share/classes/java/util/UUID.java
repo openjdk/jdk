@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -75,6 +75,7 @@ public final class UUID implements java.io.Serializable, Comparable<UUID> {
     /**
      * Explicit serialVersionUID for interoperability.
      */
+    @java.io.Serial
     private static final long serialVersionUID = -4856846361193249489L;
 
     /*

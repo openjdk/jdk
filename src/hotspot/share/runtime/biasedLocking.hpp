@@ -190,12 +190,14 @@ public:
   // This should be called by JavaThreads to revoke the bias of an object
   static void revoke(Handle obj, TRAPS);
 
+  // This must only be called by a JavaThread to revoke the bias of an owned object.
+  static void revoke_own_lock(Handle obj, TRAPS);
+
   static void revoke_at_safepoint(Handle obj);
 
   // These are used by deoptimization to ensure that monitors on the stack
   // can be migrated
   static void revoke(GrowableArray<Handle>* objs, JavaThread *biaser);
-  static void revoke_at_safepoint(GrowableArray<Handle>* objs);
 
   static void print_counters() { _counters.print(); }
   static BiasedLockingCounters* counters() { return &_counters; }

@@ -249,8 +249,8 @@ public abstract class Buffer {
      * @param  capacity
      *         The new buffer's capacity, in $type$s
      *
-     * @throws  IllegalArgumentException
-     *          If the {@code capacity} is a negative integer
+     * @throws IllegalArgumentException
+     *         If the {@code capacity} is a negative integer
      */
     static IllegalArgumentException createCapacityException(int capacity) {
         assert capacity < 0 : "capacity expected to be negative";

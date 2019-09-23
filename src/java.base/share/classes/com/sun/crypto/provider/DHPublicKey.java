@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -48,6 +48,7 @@ import sun.security.util.*;
 final class DHPublicKey implements PublicKey,
 javax.crypto.interfaces.DHPublicKey, Serializable {
 
+    @java.io.Serial
     static final long serialVersionUID = 7647557958927458271L;
 
     // the public key
@@ -314,6 +315,7 @@ javax.crypto.interfaces.DHPublicKey, Serializable {
      * @throws java.io.ObjectStreamException if a new object representing
      * this DH public key could not be created
      */
+    @java.io.Serial
     private Object writeReplace() throws java.io.ObjectStreamException {
         return new KeyRep(KeyRep.Type.PUBLIC,
                         getAlgorithm(),

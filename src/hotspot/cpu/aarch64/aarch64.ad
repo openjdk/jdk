@@ -3547,7 +3547,7 @@ encode %{
     // markWord of object (disp_hdr) with the stack pointer.
     __ mov(rscratch1, sp);
     __ sub(disp_hdr, disp_hdr, rscratch1);
-    __ mov(tmp, (address) (~(os::vm_page_size()-1) | (uintptr_t)markWord::lock_mask_in_place));
+    __ mov(tmp, (address) (~(os::vm_page_size()-1) | markWord::lock_mask_in_place));
     // If condition is true we are cont and hence we can store 0 as the
     // displaced header in the box, which indicates that it is a recursive lock.
     __ ands(tmp/*==0?*/, disp_hdr, tmp);   // Sets flags for result
@@ -3616,7 +3616,8 @@ encode %{
 
     // Handle existing monitor.
     __ bind(object_has_monitor);
-    __ add(tmp, tmp, -markWord::monitor_value); // monitor
+    STATIC_ASSERT(markWord::monitor_value <= INT_MAX);
+    __ add(tmp, tmp, -(int)markWord::monitor_value); // monitor
     __ ldr(rscratch1, Address(tmp, ObjectMonitor::owner_offset_in_bytes()));
     __ ldr(disp_hdr, Address(tmp, ObjectMonitor::recursions_offset_in_bytes()));
     __ eor(rscratch1, rscratch1, rthread); // Will be 0 if we are the owner.
@@ -8348,6 +8349,17 @@ instruct castII(iRegI dst)
 
   size(0);
   format %{ "# castII of $dst" %}
+  ins_encode(/* empty encoding */);
+  ins_cost(0);
+  ins_pipe(pipe_class_empty);
+%}
+
+instruct castLL(iRegL dst)
+%{
+  match(Set dst (CastLL dst));
+
+  size(0);
+  format %{ "# castLL of $dst" %}
   ins_encode(/* empty encoding */);
   ins_cost(0);
   ins_pipe(pipe_class_empty);

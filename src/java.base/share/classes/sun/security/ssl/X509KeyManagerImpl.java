@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2004, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2004, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -90,6 +90,7 @@ final class X509KeyManagerImpl extends X509ExtendedKeyManager
     // LinkedHashMap with a max size of 10
     // see LinkedHashMap JavaDocs
     private static class SizedMap<K,V> extends LinkedHashMap<K,V> {
+        @java.io.Serial
         private static final long serialVersionUID = -8211222668790986062L;
 
         @Override protected boolean removeEldestEntry(Map.Entry<K,V> eldest) {

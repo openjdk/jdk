@@ -105,7 +105,6 @@ grant codeBase "jrt:/jdk.accessibility" {
 
 grant codeBase "jrt:/jdk.charsets" {
     permission java.util.PropertyPermission "os.name", "read";
-    permission java.util.PropertyPermission "sun.nio.cs.map", "read";
     permission java.lang.RuntimePermission "charsetProvider";
     permission java.lang.RuntimePermission
                    "accessClassInPackage.jdk.internal.misc";

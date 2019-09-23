@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -53,6 +53,7 @@ import sun.security.util.*;
 public class PKCS8Key implements PrivateKey {
 
     /** use serialVersionUID from JDK 1.1. for interoperability */
+    @java.io.Serial
     private static final long serialVersionUID = -3836890099307167124L;
 
     /* The algorithm information (name, parameters, etc). */
@@ -355,6 +356,7 @@ public class PKCS8Key implements PrivateKey {
         decode(new ByteArrayInputStream(encodedKey));
     }
 
+    @java.io.Serial
     protected Object writeReplace() throws java.io.ObjectStreamException {
         return new KeyRep(KeyRep.Type.PRIVATE,
                         getAlgorithm(),
@@ -366,6 +368,7 @@ public class PKCS8Key implements PrivateKey {
      * Serialization read ... PKCS#8 keys serialize as
      * themselves, and they're parsed when they get read back.
      */
+    @java.io.Serial
     private void readObject (ObjectInputStream stream)
     throws IOException {
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -67,9 +67,7 @@ HSpaceCounters::HSpaceCounters(const char* name_space,
 }
 
 HSpaceCounters::~HSpaceCounters() {
-  if (_name_space != NULL) {
-    FREE_C_HEAP_ARRAY(char, _name_space);
-  }
+  FREE_C_HEAP_ARRAY(char, _name_space);
 }
 
 void HSpaceCounters::update_capacity(size_t v) {

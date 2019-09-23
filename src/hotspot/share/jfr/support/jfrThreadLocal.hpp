@@ -25,7 +25,7 @@
 #ifndef SHARE_JFR_SUPPORT_JFRTHREADLOCAL_HPP
 #define SHARE_JFR_SUPPORT_JFRTHREADLOCAL_HPP
 
-#include "jfr/recorder/checkpoint/jfrCheckpointBlob.hpp"
+#include "jfr/utilities/jfrBlob.hpp"
 #include "jfr/utilities/jfrTypes.hpp"
 
 class JavaThread;
@@ -41,7 +41,7 @@ class JfrThreadLocal {
   JfrBuffer* _shelved_buffer;
   mutable JfrStackFrame* _stackframes;
   mutable traceid _trace_id;
-  JfrCheckpointBlobHandle _thread_cp;
+  JfrBlobHandle _thread;
   u8 _data_lost;
   traceid _stack_trace_id;
   jlong _user_time;
@@ -207,9 +207,9 @@ class JfrThreadLocal {
     return _dead;
   }
 
-  bool has_thread_checkpoint() const;
-  void set_thread_checkpoint(const JfrCheckpointBlobHandle& handle);
-  const JfrCheckpointBlobHandle& thread_checkpoint() const;
+  bool has_thread_blob() const;
+  void set_thread_blob(const JfrBlobHandle& handle);
+  const JfrBlobHandle& thread_blob() const;
 
   static void on_start(Thread* t);
   static void on_exit(Thread* t);

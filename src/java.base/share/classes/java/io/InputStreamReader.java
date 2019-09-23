@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -88,7 +88,7 @@ public class InputStreamReader extends Reader {
      *         The name of a supported
      *         {@link java.nio.charset.Charset charset}
      *
-     * @exception  UnsupportedEncodingException
+     * @throws     UnsupportedEncodingException
      *             If the named charset is not supported
      */
     public InputStreamReader(InputStream in, String charsetName)
@@ -162,7 +162,7 @@ public class InputStreamReader extends Reader {
      * @return The character read, or -1 if the end of the stream has been
      *         reached
      *
-     * @exception  IOException  If an I/O error occurs
+     * @throws     IOException  If an I/O error occurs
      */
     public int read() throws IOException {
         return sd.read();
@@ -178,8 +178,8 @@ public class InputStreamReader extends Reader {
      * @return     The number of characters read, or -1 if the end of the
      *             stream has been reached
      *
-     * @exception  IOException  If an I/O error occurs
-     * @exception  IndexOutOfBoundsException {@inheritDoc}
+     * @throws     IOException  If an I/O error occurs
+     * @throws     IndexOutOfBoundsException {@inheritDoc}
      */
     public int read(char cbuf[], int offset, int length) throws IOException {
         return sd.read(cbuf, offset, length);
@@ -190,7 +190,7 @@ public class InputStreamReader extends Reader {
      * ready if its input buffer is not empty, or if bytes are available to be
      * read from the underlying byte stream.
      *
-     * @exception  IOException  If an I/O error occurs
+     * @throws     IOException  If an I/O error occurs
      */
     public boolean ready() throws IOException {
         return sd.ready();

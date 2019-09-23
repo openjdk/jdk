@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,9 +28,9 @@
  * Provides helper classes, including
  * support for bootstrapping SAX-based applications.
  *
- * <p>
- * See <a target='_top' href='http://www.saxproject.org'>http://www.saxproject.org</a>
- * for more information about SAX.
+ * @apiNote The SAX API, originally developed at
+ * <a href="http://www.saxproject.org">the SAX Project</a>,
+ * has been defined by Java SE since 1.4.
  *
  * @since 1.4
  */

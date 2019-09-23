@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -50,11 +50,11 @@ public class FileReader extends InputStreamReader {
     * using the platform's
     * {@linkplain java.nio.charset.Charset#defaultCharset() default charset}.
     *
-    * @param fileName the name of the file to read
-    * @exception  FileNotFoundException  if the named file does not exist,
-    *                   is a directory rather than a regular file,
-    *                   or for some other reason cannot be opened for
-    *                   reading.
+    * @param      fileName the name of the file to read
+    * @throws     FileNotFoundException  if the named file does not exist,
+    *             is a directory rather than a regular file,
+    *             or for some other reason cannot be opened for
+    *             reading.
     */
     public FileReader(String fileName) throws FileNotFoundException {
         super(new FileInputStream(fileName));
@@ -65,11 +65,11 @@ public class FileReader extends InputStreamReader {
     * using the platform's
     * {@linkplain java.nio.charset.Charset#defaultCharset() default charset}.
     *
-    * @param file the {@code File} to read
-    * @exception  FileNotFoundException  if the file does not exist,
-    *                   is a directory rather than a regular file,
-    *                   or for some other reason cannot be opened for
-    *                   reading.
+    * @param      file the {@code File} to read
+    * @throws     FileNotFoundException  if the file does not exist,
+    *             is a directory rather than a regular file,
+    *             or for some other reason cannot be opened for
+    *             reading.
     */
     public FileReader(File file) throws FileNotFoundException {
         super(new FileInputStream(file));
@@ -90,12 +90,12 @@ public class FileReader extends InputStreamReader {
     * Creates a new {@code FileReader}, given the name of the file to read
     * and the {@linkplain java.nio.charset.Charset charset}.
     *
-    * @param fileName the name of the file to read
-    * @param charset the {@linkplain java.nio.charset.Charset charset}
-    * @exception  IOException  if the named file does not exist,
-    *                   is a directory rather than a regular file,
-    *                   or for some other reason cannot be opened for
-    *                   reading.
+    * @param      fileName the name of the file to read
+    * @param      charset the {@linkplain java.nio.charset.Charset charset}
+    * @throws     IOException  if the named file does not exist,
+    *             is a directory rather than a regular file,
+    *             or for some other reason cannot be opened for
+    *             reading.
     *
     * @since 11
     */
@@ -107,12 +107,12 @@ public class FileReader extends InputStreamReader {
     * Creates a new {@code FileReader}, given the {@code File} to read and
     * the {@linkplain java.nio.charset.Charset charset}.
     *
-    * @param file the {@code File} to read
-    * @param charset the {@linkplain java.nio.charset.Charset charset}
-    * @exception  IOException  if the file does not exist,
-    *                   is a directory rather than a regular file,
-    *                   or for some other reason cannot be opened for
-    *                   reading.
+    * @param      file the {@code File} to read
+    * @param      charset the {@linkplain java.nio.charset.Charset charset}
+    * @throws     IOException  if the file does not exist,
+    *             is a directory rather than a regular file,
+    *             or for some other reason cannot be opened for
+    *             reading.
     *
     * @since 11
     */

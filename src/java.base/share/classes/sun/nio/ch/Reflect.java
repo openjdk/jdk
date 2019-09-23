@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -36,6 +36,7 @@ class Reflect {                                 // package-private
     private Reflect() { }
 
     private static class ReflectionError extends Error {
+        @java.io.Serial
         private static final long serialVersionUID = -8659519328078164097L;
         ReflectionError(Throwable x) {
             super(x);

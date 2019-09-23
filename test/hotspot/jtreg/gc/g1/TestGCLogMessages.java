@@ -105,7 +105,6 @@ public class TestGCLogMessages {
         new LogMessageWithLevel("Merged Coarse", Level.DEBUG),
         new LogMessageWithLevel("Hot Card Cache", Level.DEBUG),
         new LogMessageWithLevel("Log Buffers", Level.DEBUG),
-        new LogMessageWithLevel("Processed Buffers", Level.DEBUG),
         new LogMessageWithLevel("Dirty Cards", Level.DEBUG),
         new LogMessageWithLevel("Skipped Cards", Level.DEBUG),
         // Scan Heap Roots

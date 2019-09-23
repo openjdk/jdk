@@ -179,8 +179,8 @@ jint ShenandoahHeap::initialize() {
   // Reserve and commit memory for heap
   //
 
-  ReservedSpace heap_rs = Universe::reserve_heap(max_byte_size, heap_alignment);
-  initialize_reserved_region((HeapWord*)heap_rs.base(), (HeapWord*) (heap_rs.base() + heap_rs.size()));
+  ReservedHeapSpace heap_rs = Universe::reserve_heap(max_byte_size, heap_alignment);
+  initialize_reserved_region(heap_rs);
   _heap_region = MemRegion((HeapWord*)heap_rs.base(), heap_rs.size() / HeapWordSize);
   _heap_region_special = heap_rs.special();
 
@@ -343,11 +343,13 @@ jint ShenandoahHeap::initialize() {
     Copy::fill_to_bytes(_liveness_cache[worker], _num_regions * sizeof(jushort));
   }
 
-  // The call below uses stuff (the SATB* things) that are in G1, but probably
-  // belong into a shared location.
-  ShenandoahBarrierSet::satb_mark_queue_set().initialize(this,
-                                                         20 /* G1SATBProcessCompletedThreshold */,
-                                                         60 /* G1SATBBufferEnqueueingThresholdPercent */);
+  // There should probably be Shenandoah-specific options for these,
+  // just as there are G1-specific options.
+  {
+    ShenandoahSATBMarkQueueSet& satbqs = ShenandoahBarrierSet::satb_mark_queue_set();
+    satbqs.set_process_completed_buffers_threshold(20); // G1SATBProcessCompletedThreshold
+    satbqs.set_buffer_enqueue_threshold_percentage(60); // G1SATBBufferEnqueueingThresholdPercent
+  }
 
   _monitoring_support = new ShenandoahMonitoringSupport(this);
   _phase_timings = new ShenandoahPhaseTimings();
@@ -1223,7 +1225,22 @@ private:
     T o = RawAccess<>::oop_load(p);
     if (!CompressedOops::is_null(o)) {
       oop obj = CompressedOops::decode_not_null(o);
-      obj = ShenandoahBarrierSet::resolve_forwarded_not_null(obj);
+      oop fwd = (oop) ShenandoahForwarding::get_forwardee_raw_unchecked(obj);
+      if (fwd == NULL) {
+        // There is an odd interaction with VM_HeapWalkOperation, see jvmtiTagMap.cpp.
+        //
+        // That operation walks the reachable objects on its own, storing the marking
+        // wavefront in the object marks. When it is done, it calls the CollectedHeap
+        // to iterate over all objects to clean up the mess. When it reaches here,
+        // the Shenandoah fwdptr resolution code encounters the marked objects with
+        // NULL forwardee. Trying to act on that would crash the VM. Or fail the
+        // asserts, should we go for resolve_forwarded_pointer(obj).
+        //
+        // Therefore, we have to dodge it by doing the raw access to forwardee, and
+        // assuming the object had no forwardee, if that thing is NULL.
+      } else {
+        obj = fwd;
+      }
       assert(oopDesc::is_oop(obj), "must be a valid oop");
       if (!_bitmap->is_marked((HeapWord*) obj)) {
         _bitmap->mark((HeapWord*) obj);
@@ -1279,7 +1296,10 @@ void ShenandoahHeap::object_iterate(ObjectClosure* cl) {
   ShenandoahHeapIterationRootScanner rp;
   ObjectIterateScanRootClosure oops(&_aux_bit_map, &oop_stack);
 
-  if (unload_classes()) {
+  // If we are unloading classes right now, we should not touch weak roots,
+  // on the off-chance we would evacuate them and make them live accidentally.
+  // In other cases, we have to scan all roots.
+  if (is_evacuation_in_progress() && unload_classes()) {
     rp.strong_roots_do(&oops);
   } else {
     rp.roots_do(&oops);
@@ -1918,7 +1938,7 @@ bool ShenandoahHeap::try_cancel_gc() {
     else if (prev == CANCELLED) return false;
     assert(ShenandoahSuspendibleWorkers, "should not get here when not using suspendible workers");
     assert(prev == NOT_CANCELLED, "must be NOT_CANCELLED");
-    {
+    if (Thread::current()->is_Java_thread()) {
       // We need to provide a safepoint here, otherwise we might
       // spin forever if a SP is pending.
       ThreadBlockInVM sp(JavaThread::current());

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -51,6 +51,11 @@ import java.lang.ref.*;
  */
 
 public class InheritableThreadLocal<T> extends ThreadLocal<T> {
+    /**
+     * Creates an inheritable thread local variable.
+     */
+    public InheritableThreadLocal() {}
+
     /**
      * Computes the child's initial value for this inheritable thread-local
      * variable as a function of the parent's value at the time the child

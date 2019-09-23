@@ -327,7 +327,7 @@ public abstract class URLConnection {
      * This could result in a SecurityException.
      *
      * @param map the FileNameMap to be set
-     * @exception  SecurityException  if a security manager exists and its
+     * @throws     SecurityException  if a security manager exists and its
      *             {@code checkSetFactory} method doesn't allow the operation.
      * @see        SecurityManager#checkSetFactory
      * @see #getFileNameMap()
@@ -357,7 +357,7 @@ public abstract class URLConnection {
      *
      * @throws SocketTimeoutException if the timeout expires before
      *               the connection can be established
-     * @exception  IOException  if an I/O error occurs while opening the
+     * @throws     IOException  if an I/O error occurs while opening the
      *               connection.
      * @see java.net.URLConnection#connected
      * @see #getConnectTimeout()
@@ -734,9 +734,9 @@ public abstract class URLConnection {
      * @return     the object fetched. The {@code instanceof} operator
      *               should be used to determine the specific kind of object
      *               returned.
-     * @exception  IOException              if an I/O error occurs while
+     * @throws     IOException              if an I/O error occurs while
      *               getting the content.
-     * @exception  UnknownServiceException  if the protocol does not support
+     * @throws     UnknownServiceException  if the protocol does not support
      *               the content type.
      * @see        java.net.ContentHandlerFactory#createContentHandler(java.lang.String)
      * @see        java.net.URLConnection#getContentType()
@@ -760,9 +760,9 @@ public abstract class URLConnection {
      *               the requested types are supported.
      *               The {@code instanceof} operator should be used to
      *               determine the specific kind of object returned.
-     * @exception  IOException              if an I/O error occurs while
+     * @throws     IOException              if an I/O error occurs while
      *               getting the content.
-     * @exception  UnknownServiceException  if the protocol does not support
+     * @throws     UnknownServiceException  if the protocol does not support
      *               the content type.
      * @see        java.net.URLConnection#getContent()
      * @see        java.net.ContentHandlerFactory#createContentHandler(java.lang.String)
@@ -813,7 +813,7 @@ public abstract class URLConnection {
      * necessary to make the connection represented by this
      * URLConnection.
      *
-     * @exception IOException if the computation of the permission
+     * @throws    IOException if the computation of the permission
      * requires network or file I/O and an exception occurs while
      * computing it.
      */
@@ -829,9 +829,9 @@ public abstract class URLConnection {
      * is available for read.
      *
      * @return     an input stream that reads from this open connection.
-     * @exception  IOException              if an I/O error occurs while
+     * @throws     IOException              if an I/O error occurs while
      *               creating the input stream.
-     * @exception  UnknownServiceException  if the protocol does not support
+     * @throws     UnknownServiceException  if the protocol does not support
      *               input.
      * @see #setReadTimeout(int)
      * @see #getReadTimeout()
@@ -844,9 +844,9 @@ public abstract class URLConnection {
      * Returns an output stream that writes to this connection.
      *
      * @return     an output stream that writes to this connection.
-     * @exception  IOException              if an I/O error occurs while
+     * @throws     IOException              if an I/O error occurs while
      *               creating the output stream.
-     * @exception  UnknownServiceException  if the protocol does not support
+     * @throws     UnknownServiceException  if the protocol does not support
      *               output.
      */
     public OutputStream getOutputStream() throws IOException {
@@ -1250,8 +1250,8 @@ public abstract class URLConnection {
      * This could result in a SecurityException.
      *
      * @param      fac   the desired factory.
-     * @exception  Error  if the factory has already been defined.
-     * @exception  SecurityException  if a security manager exists and its
+     * @throws     Error  if the factory has already been defined.
+     * @throws     SecurityException  if a security manager exists and its
      *             {@code checkSetFactory} method doesn't allow the operation.
      * @see        java.net.ContentHandlerFactory
      * @see        java.net.URLConnection#getContent()
@@ -1479,7 +1479,7 @@ public abstract class URLConnection {
      * @param      is   an input stream that supports marks.
      * @return     a guess at the content type, or {@code null} if none
      *             can be determined.
-     * @exception  IOException  if an I/O error occurs while reading the
+     * @throws     IOException  if an I/O error occurs while reading the
      *               input stream.
      * @see        java.io.InputStream#mark(int)
      * @see        java.io.InputStream#markSupported()

@@ -88,12 +88,6 @@ static size_t cur_malloc_words = 0;  // current size for MallocMaxTestWords
 
 DEBUG_ONLY(bool os::_mutex_init_done = false;)
 
-void os_init_globals() {
-  // Called from init_globals().
-  // See Threads::create_vm() in thread.cpp, and init.cpp.
-  os::init_globals();
-}
-
 static time_t get_timezone(const struct tm* time_struct) {
 #if defined(_ALLBSD_SOURCE)
   return time_struct->tm_gmtoff;
@@ -297,7 +291,7 @@ bool os::dll_locate_lib(char *buffer, size_t buflen,
   bool retval = false;
 
   size_t fullfnamelen = strlen(JNI_LIB_PREFIX) + strlen(fname) + strlen(JNI_LIB_SUFFIX);
-  char* fullfname = (char*)NEW_C_HEAP_ARRAY(char, fullfnamelen + 1, mtInternal);
+  char* fullfname = NEW_C_HEAP_ARRAY(char, fullfnamelen + 1, mtInternal);
   if (dll_build_name(fullfname, fullfnamelen + 1, fname)) {
     const size_t pnamelen = pname ? strlen(pname) : 0;
 
@@ -802,7 +796,7 @@ void* os::realloc(void *memblock, size_t size, MEMFLAGS memflags, const NativeCa
 #endif
 }
 
-
+// handles NULL pointers
 void  os::free(void *memblock) {
   NOT_PRODUCT(inc_stat_counter(&num_frees, 1));
 #ifdef ASSERT
@@ -1335,7 +1329,7 @@ char** os::split_path(const char* path, size_t* elements, size_t file_name_lengt
     return NULL;
   }
   const char psepchar = *os::path_separator();
-  char* inpath = (char*)NEW_C_HEAP_ARRAY(char, strlen(path) + 1, mtInternal);
+  char* inpath = NEW_C_HEAP_ARRAY(char, strlen(path) + 1, mtInternal);
   if (inpath == NULL) {
     return NULL;
   }
@@ -1348,7 +1342,8 @@ char** os::split_path(const char* path, size_t* elements, size_t file_name_lengt
     p++;
     p = strchr(p, psepchar);
   }
-  char** opath = (char**) NEW_C_HEAP_ARRAY(char*, count, mtInternal);
+
+  char** opath = NEW_C_HEAP_ARRAY(char*, count, mtInternal);
 
   // do the actual splitting
   p = inpath;
@@ -1362,7 +1357,8 @@ char** os::split_path(const char* path, size_t* elements, size_t file_name_lengt
                                     "sun.boot.library.path, to identify potential sources for this path.");
     }
     // allocate the string and add terminator storage
-    char* s  = (char*)NEW_C_HEAP_ARRAY_RETURN_NULL(char, len + 1, mtInternal);
+    char* s  = NEW_C_HEAP_ARRAY_RETURN_NULL(char, len + 1, mtInternal);
+
     if (s == NULL) {
       // release allocated storage before returning null
       free_array_of_char_arrays(opath, i++);
@@ -1836,3 +1832,15 @@ os::SuspendResume::State os::SuspendResume::switch_state(os::SuspendResume::Stat
   return result;
 }
 #endif
+
+// Convenience wrapper around naked_short_sleep to allow for longer sleep
+// times. Only for use by non-JavaThreads.
+void os::naked_sleep(jlong millis) {
+  assert(!Thread::current()->is_Java_thread(), "not for use by JavaThreads");
+  const jlong limit = 999;
+  while (millis > limit) {
+    naked_short_sleep(limit);
+    millis -= limit;
+  }
+  naked_short_sleep(millis);
+}

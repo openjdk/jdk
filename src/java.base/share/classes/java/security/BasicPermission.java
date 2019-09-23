@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -69,6 +69,7 @@ public abstract class BasicPermission extends Permission
     implements java.io.Serializable
 {
 
+    @java.io.Serial
     private static final long serialVersionUID = 6279438298436773498L;
 
     // does this permission have a wildcard at the end?
@@ -260,6 +261,7 @@ public abstract class BasicPermission extends Permission
      * readObject is called to restore the state of the BasicPermission from
      * a stream.
      */
+    @java.io.Serial
     private void readObject(ObjectInputStream s)
          throws IOException, ClassNotFoundException
     {
@@ -305,6 +307,7 @@ final class BasicPermissionCollection
     implements java.io.Serializable
 {
 
+    @java.io.Serial
     private static final long serialVersionUID = 739301742472979399L;
 
     /**
@@ -346,13 +349,13 @@ final class BasicPermissionCollection
      *
      * @param permission the Permission object to add.
      *
-     * @exception IllegalArgumentException - if the permission is not a
+     * @throws    IllegalArgumentException - if the permission is not a
      *                                       BasicPermission, or if
      *                                       the permission is not of the
      *                                       same Class as the other
      *                                       permissions in this collection.
      *
-     * @exception SecurityException - if this BasicPermissionCollection object
+     * @throws    SecurityException - if this BasicPermissionCollection object
      *                                has been marked readonly
      */
     @Override
@@ -478,6 +481,7 @@ final class BasicPermissionCollection
      *   The class to which all BasicPermissions in this
      *   BasicPermissionCollection belongs.
      */
+    @java.io.Serial
     private static final ObjectStreamField[] serialPersistentFields = {
         new ObjectStreamField("permissions", Hashtable.class),
         new ObjectStreamField("all_allowed", Boolean.TYPE),
@@ -492,6 +496,7 @@ final class BasicPermissionCollection
      * serialization compatibility with earlier releases. all_allowed
      * and permClass unchanged.
      */
+    @java.io.Serial
     private void writeObject(ObjectOutputStream out) throws IOException {
         // Don't call out.defaultWriteObject()
 
@@ -513,6 +518,7 @@ final class BasicPermissionCollection
      * readObject is called to restore the state of the
      * BasicPermissionCollection from a stream.
      */
+    @java.io.Serial
     private void readObject(java.io.ObjectInputStream in)
          throws IOException, ClassNotFoundException
     {

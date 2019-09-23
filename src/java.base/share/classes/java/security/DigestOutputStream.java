@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -108,7 +108,7 @@ public class DigestOutputStream extends FilterOutputStream {
      * @param b the byte to be used for updating and writing to the
      * output stream.
      *
-     * @exception IOException if an I/O error occurs.
+     * @throws    IOException if an I/O error occurs.
      *
      * @see MessageDigest#update(byte)
      */
@@ -138,7 +138,7 @@ public class DigestOutputStream extends FilterOutputStream {
      * @param len the number of bytes of data to be updated and written
      * from {@code b}, starting at offset {@code off}.
      *
-     * @exception IOException if an I/O error occurs.
+     * @throws    IOException if an I/O error occurs.
      *
      * @see MessageDigest#update(byte[], int, int)
      */

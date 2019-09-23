@@ -115,13 +115,14 @@ class CharacterData00 extends CharacterData {
     }
 
     boolean isUnicodeIdentifierStart(int ch) {
-        int props = getProperties(ch);
-        return ((props & $$maskIdentifierInfo) == $$valueUnicodeStart);
+        return (getPropertiesEx(ch) & $$maskIDStart) != 0 ||
+               ch == 0x2E2F;
     }
 
     boolean isUnicodeIdentifierPart(int ch) {
-        int props = getProperties(ch);
-        return ((props & $$maskUnicodePart) != 0);
+        return (getPropertiesEx(ch) & $$maskIDContinue) != 0 ||
+               isIdentifierIgnorable(ch) ||
+               ch == 0x2E2F;
     }
 
     boolean isIdentifierIgnorable(int ch) {

@@ -83,6 +83,7 @@ import javax.xml.transform.stream.StreamResult;
 import javax.xml.transform.stream.StreamSource;
 import jdk.xml.internal.JdkXmlFeatures;
 import jdk.xml.internal.JdkXmlUtils;
+import jdk.xml.internal.TransformErrorListener;
 import org.xml.sax.ContentHandler;
 import org.xml.sax.InputSource;
 import org.xml.sax.SAXException;
@@ -93,10 +94,10 @@ import org.xml.sax.ext.LexicalHandler;
  * @author Morten Jorgensen
  * @author G. Todd Miller
  * @author Santiago Pericas-Geertsen
- * @LastModified: Feb 2019
+ * @LastModified: Aug 2019
  */
 public final class TransformerImpl extends Transformer
-    implements DOMCache, ErrorListener
+    implements DOMCache
 {
 
     private final static String LEXICAL_HANDLER_PROPERTY =
@@ -129,9 +130,14 @@ public final class TransformerImpl extends Transformer
     private String _sourceSystemId = null;
 
     /**
+     * Default error listener
+     */
+    private final ErrorListener _defaultListener = new TransformErrorListener();
+
+    /**
      * An error listener for runtime errors.
      */
-    private ErrorListener _errorListener = this;
+    private ErrorListener _errorListener = _defaultListener;
 
     /**
      * A reference to a URI resolver for calls to document().
@@ -250,6 +256,10 @@ public final class TransformerImpl extends Transformer
                 }
             }
         }
+
+        public ErrorListener getErrorListener() {
+            return _errorListener;
+        }
     }
 
     protected TransformerImpl(Properties outputProperties, int indentNumber,
@@ -264,6 +274,9 @@ public final class TransformerImpl extends Transformer
         int indentNumber, TransformerFactoryImpl tfactory)
     {
         _translet = (AbstractTranslet) translet;
+        if (_translet != null) {
+            _translet.setMessageHandler(new MessageHandler(_errorListener));
+        }
         _properties = createOutputProperties(outputProperties);
         _propertiesClone = (Properties) _properties.clone();
         _indentNumber = indentNumber;
@@ -400,7 +413,8 @@ public final class TransformerImpl extends Transformer
         // Get encoding using getProperty() to use defaults
         _encoding = _properties.getProperty(OutputKeys.ENCODING);
 
-        _tohFactory = TransletOutputHandlerFactory.newInstance(_overrideDefaultParser);
+        _tohFactory = TransletOutputHandlerFactory
+                .newInstance(_overrideDefaultParser, _errorListener);
         _tohFactory.setEncoding(_encoding);
         if (_method != null) {
             _tohFactory.setOutputMethod(_method);
@@ -829,8 +843,8 @@ public final class TransformerImpl extends Transformer
         _errorListener = listener;
 
         // Register a message handler to report xsl:messages
-    if (_translet != null)
-        _translet.setMessageHandler(new MessageHandler(_errorListener));
+        if (_translet != null)
+            _translet.setMessageHandler(new MessageHandler(_errorListener));
     }
 
     /**
@@ -1353,90 +1367,6 @@ public final class TransformerImpl extends Transformer
     }
 
     /**
-     * Receive notification of a recoverable error.
-     * The transformer must continue to provide normal parsing events after
-     * invoking this method. It should still be possible for the application
-     * to process the document through to the end.
-     *
-     * @param e The warning information encapsulated in a transformer
-     * exception.
-     * @throws TransformerException if the application chooses to discontinue
-     * the transformation (always does in our case).
-     */
-    @Override
-    public void error(TransformerException e)
-        throws TransformerException
-    {
-        Throwable wrapped = e.getException();
-        if (wrapped != null) {
-            System.err.println(new ErrorMsg(ErrorMsg.ERROR_PLUS_WRAPPED_MSG,
-                                            e.getMessageAndLocation(),
-                                            wrapped.getMessage()));
-        } else {
-            System.err.println(new ErrorMsg(ErrorMsg.ERROR_MSG,
-                                            e.getMessageAndLocation()));
-        }
-        throw e;
-    }
-
-    /**
-     * Receive notification of a non-recoverable error.
-     * The application must assume that the transformation cannot continue
-     * after the Transformer has invoked this method, and should continue
-     * (if at all) only to collect addition error messages. In fact,
-     * Transformers are free to stop reporting events once this method has
-     * been invoked.
-     *
-     * @param e The warning information encapsulated in a transformer
-     * exception.
-     * @throws TransformerException if the application chooses to discontinue
-     * the transformation (always does in our case).
-     */
-    @Override
-    public void fatalError(TransformerException e)
-        throws TransformerException
-    {
-        Throwable wrapped = e.getException();
-        if (wrapped != null) {
-            System.err.println(new ErrorMsg(ErrorMsg.FATAL_ERR_PLUS_WRAPPED_MSG,
-                                            e.getMessageAndLocation(),
-                                            wrapped.getMessage()));
-        } else {
-            System.err.println(new ErrorMsg(ErrorMsg.FATAL_ERR_MSG,
-                                            e.getMessageAndLocation()));
-        }
-        throw e;
-    }
-
-    /**
-     * Receive notification of a warning.
-     * Transformers can use this method to report conditions that are not
-     * errors or fatal errors. The default behaviour is to take no action.
-     * After invoking this method, the Transformer must continue with the
-     * transformation. It should still be possible for the application to
-     * process the document through to the end.
-     *
-     * @param e The warning information encapsulated in a transformer
-     * exception.
-     * @throws TransformerException if the application chooses to discontinue
-     * the transformation (never does in our case).
-     */
-    @Override
-    public void warning(TransformerException e)
-        throws TransformerException
-    {
-        Throwable wrapped = e.getException();
-        if (wrapped != null) {
-            System.err.println(new ErrorMsg(ErrorMsg.WARNING_PLUS_WRAPPED_MSG,
-                                            e.getMessageAndLocation(),
-                                            wrapped.getMessage()));
-        } else {
-            System.err.println(new ErrorMsg(ErrorMsg.WARNING_MSG,
-                                            e.getMessageAndLocation()));
-        }
-    }
-
-    /**
      * This method resets  the Transformer to its original configuration
      * Transformer code is reset to the same state it was when it was
      * created
@@ -1448,7 +1378,7 @@ public final class TransformerImpl extends Transformer
         _method = null;
         _encoding = null;
         _sourceSystemId = null;
-        _errorListener = this;
+        _errorListener = _defaultListener;
         _uriResolver = null;
         _dom = null;
         _parameters = null;

@@ -286,7 +286,7 @@ JVM_FEATURES_custom := @JVM_FEATURES_custom@
 VALID_JVM_FEATURES := @VALID_JVM_FEATURES@
 VALID_JVM_VARIANTS := @VALID_JVM_VARIANTS@
 
-# Control wether Hotspot builds gtest tests
+# Control whether Hotspot builds gtest tests
 BUILD_GTEST := @BUILD_GTEST@
 
 # Allow overriding the default hotspot library path

@@ -76,6 +76,7 @@ static JNINativeMethod methods[] = {
     {"getRawTypeAnnotations", "()" BA,      (void *)&JVM_GetClassTypeAnnotations},
     {"getNestHost0",         "()" CLS,      (void *)&JVM_GetNestHost},
     {"getNestMembers0",      "()[" CLS,     (void *)&JVM_GetNestMembers},
+    {"linkClass",            "(" CLS ")V",  (void *)&JVM_LinkClass},
 };
 
 #undef OBJ

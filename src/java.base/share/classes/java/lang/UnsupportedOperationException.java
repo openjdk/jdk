@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -90,5 +90,6 @@ public class UnsupportedOperationException extends RuntimeException {
         super(cause);
     }
 
+    @java.io.Serial
     static final long serialVersionUID = -1242599979055084673L;
 }

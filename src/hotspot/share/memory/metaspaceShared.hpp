@@ -183,8 +183,8 @@ class MetaspaceShared : AllStatic {
   static bool _has_error_classes;
   static bool _archive_loading_failed;
   static bool _remapped_readwrite;
-  static address _cds_i2i_entry_code_buffers;
-  static size_t  _cds_i2i_entry_code_buffers_size;
+  static address _i2i_entry_code_buffers;
+  static size_t  _i2i_entry_code_buffers_size;
   static size_t  _core_spaces_size;
   static void* _shared_metaspace_static_top;
  public:
@@ -332,13 +332,13 @@ class MetaspaceShared : AllStatic {
     return align_up(byte_size, BytesPerWord);
   }
 
-  static address cds_i2i_entry_code_buffers(size_t total_size);
+  static address i2i_entry_code_buffers(size_t total_size);
 
-  static address cds_i2i_entry_code_buffers() {
-    return _cds_i2i_entry_code_buffers;
+  static address i2i_entry_code_buffers() {
+    return _i2i_entry_code_buffers;
   }
-  static size_t cds_i2i_entry_code_buffers_size() {
-    return _cds_i2i_entry_code_buffers_size;
+  static size_t i2i_entry_code_buffers_size() {
+    return _i2i_entry_code_buffers_size;
   }
   static void relocate_klass_ptr(oop o);
 

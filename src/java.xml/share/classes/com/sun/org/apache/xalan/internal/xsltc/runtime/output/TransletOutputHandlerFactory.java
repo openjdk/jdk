@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2019, Oracle and/or its affiliates. All rights reserved.
  */
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
@@ -41,6 +41,7 @@ import com.sun.org.apache.xml.internal.serializer.ToUnknownStream;
 import com.sun.org.apache.xml.internal.serializer.ToXMLSAXHandler;
 import com.sun.org.apache.xml.internal.serializer.ToXMLStream;
 import com.sun.org.apache.xml.internal.serializer.SerializationHandler;
+import javax.xml.transform.ErrorListener;
 import org.w3c.dom.Node;
 
 import org.xml.sax.ContentHandler;
@@ -48,7 +49,7 @@ import org.xml.sax.ext.LexicalHandler;
 
 /**
  * @author Santiago Pericas-Geertsen
- * @LastModified: Oct 2017
+ * @LastModified: Aug 2019
  */
 public class TransletOutputHandlerFactory {
 
@@ -71,16 +72,17 @@ public class TransletOutputHandlerFactory {
     private LexicalHandler _lexHandler              = null;
 
     private boolean _overrideDefaultParser;
+    private ErrorListener _errListener;
 
-    static public TransletOutputHandlerFactory newInstance() {
-        return new TransletOutputHandlerFactory(true);
-    }
-    static public TransletOutputHandlerFactory newInstance(boolean overrideDefaultParser) {
-        return new TransletOutputHandlerFactory(overrideDefaultParser);
+    static public TransletOutputHandlerFactory newInstance(boolean overrideDefaultParser,
+            ErrorListener errListener) {
+        return new TransletOutputHandlerFactory(overrideDefaultParser, errListener);
     }
 
-    public TransletOutputHandlerFactory(boolean overrideDefaultParser) {
+    public TransletOutputHandlerFactory(boolean overrideDefaultParser,
+            ErrorListener errListener) {
         _overrideDefaultParser = overrideDefaultParser;
+        _errListener = errListener;
     }
     public void setOutputType(int outputType) {
         _outputType = outputType;
@@ -156,24 +158,24 @@ public class TransletOutputHandlerFactory {
 
                 if (_method == null)
                 {
-                    result = new ToUnknownStream();
+                    result = new ToUnknownStream(_errListener);
                 }
                 else if (_method.equalsIgnoreCase("xml"))
                 {
 
-                    result = new ToXMLStream();
+                    result = new ToXMLStream(_errListener);
 
                 }
                 else if (_method.equalsIgnoreCase("html"))
                 {
 
-                    result = new ToHTMLStream();
+                    result = new ToHTMLStream(_errListener);
 
                 }
                 else if (_method.equalsIgnoreCase("text"))
                 {
 
-                    result = new ToTextStream();
+                    result = new ToTextStream(_errListener);
 
                 }
 

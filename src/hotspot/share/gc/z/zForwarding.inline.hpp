@@ -99,14 +99,14 @@ inline ZForwardingEntry ZForwarding::at(ZForwardingCursor* cursor) const {
 }
 
 inline ZForwardingEntry ZForwarding::first(uintptr_t from_index, ZForwardingCursor* cursor) const {
-  const uint32_t mask = _entries.length() - 1;
-  const uint32_t hash = ZHash::uint32_to_uint32((uint32_t)from_index);
+  const size_t mask = _entries.length() - 1;
+  const size_t hash = ZHash::uint32_to_uint32((uint32_t)from_index);
   *cursor = hash & mask;
   return at(cursor);
 }
 
 inline ZForwardingEntry ZForwarding::next(ZForwardingCursor* cursor) const {
-  const uint32_t mask = _entries.length() - 1;
+  const size_t mask = _entries.length() - 1;
   *cursor = (*cursor + 1) & mask;
   return at(cursor);
 }

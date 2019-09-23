@@ -306,7 +306,7 @@ public final class DateTimeFormatterBuilder {
     /**
      * Changes the parse style to be strict for the remainder of the formatter.
      * <p>
-     * Parsing can be strict or lenient - by default its strict.
+     * Parsing can be strict or lenient - by default it is strict.
      * This controls the degree of flexibility in matching the text and sign styles.
      * <p>
      * When used, this method changes the parsing to be strict from this point onwards.
@@ -325,7 +325,7 @@ public final class DateTimeFormatterBuilder {
      * Changes the parse style to be lenient for the remainder of the formatter.
      * Note that case sensitivity is set separately to this method.
      * <p>
-     * Parsing can be strict or lenient - by default its strict.
+     * Parsing can be strict or lenient - by default it is strict.
      * This controls the degree of flexibility in matching the text and sign styles.
      * Applications calling this method should typically also call {@link #parseCaseInsensitive()}.
      * <p>
@@ -3200,7 +3200,7 @@ public final class DateTimeFormatterBuilder {
                 char ch = text.charAt(pos++);
                 int digit = context.getDecimalStyle().convertToDigit(ch);
                 if (digit < 0) {
-                    if (pos < minEndPos) {
+                    if (pos <= minEndPos) {
                         return ~position;  // need at least min width digits
                     }
                     pos--;

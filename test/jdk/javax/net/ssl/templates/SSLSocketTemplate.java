@@ -45,6 +45,7 @@ import javax.net.ssl.SSLServerSocketFactory;
 import javax.net.ssl.SSLSocket;
 import javax.net.ssl.SSLSocketFactory;
 import javax.net.ssl.TrustManagerFactory;
+import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.SocketTimeoutException;
 import java.security.KeyStore;
@@ -222,14 +223,24 @@ public class SSLSocketTemplate {
     protected volatile int serverPort = 0;
 
     /*
+     * What's the server address?  null means binding to the wildcard.
+     */
+    protected volatile InetAddress serverAddress = null;
+
+    /*
      * Define the server side of the test.
      */
     protected void doServerSide() throws Exception {
         // kick start the server side service
         SSLContext context = createServerSSLContext();
         SSLServerSocketFactory sslssf = context.getServerSocketFactory();
-        SSLServerSocket sslServerSocket =
-                (SSLServerSocket)sslssf.createServerSocket(serverPort);
+        InetAddress serverAddress = this.serverAddress;
+        SSLServerSocket sslServerSocket = serverAddress == null ?
+                (SSLServerSocket)sslssf.createServerSocket(serverPort)
+                : (SSLServerSocket)sslssf.createServerSocket();
+        if (serverAddress != null) {
+            sslServerSocket.bind(new InetSocketAddress(serverAddress, serverPort));
+        }
         configureServerSocket(sslServerSocket);
         serverPort = sslServerSocket.getLocalPort();
 
@@ -317,8 +328,11 @@ public class SSLSocketTemplate {
         try (SSLSocket sslSocket = (SSLSocket)sslsf.createSocket()) {
             try {
                 configureClientSocket(sslSocket);
-                sslSocket.connect(
-                        new InetSocketAddress("localhost", serverPort), 15000);
+                InetAddress serverAddress = this.serverAddress;
+                InetSocketAddress connectAddress = serverAddress == null
+                        ? new InetSocketAddress("localhost", serverPort)
+                        : new InetSocketAddress(serverAddress, serverPort);
+                sslSocket.connect(connectAddress, 15000);
             } catch (IOException ioe) {
                 // The server side may be impacted by naughty test cases or
                 // third party routines, and cannot accept connections.

@@ -316,7 +316,11 @@ void ShenandoahNMethod::assert_alive_and_correct() {
     oop *loc = _oops[c];
     assert(_nm->code_contains((address) loc) || _nm->oops_contains(loc), "nmethod should contain the oop*");
     oop o = RawAccess<>::oop_load(loc);
-    shenandoah_assert_correct_except(loc, o, o == NULL || heap->is_full_gc_move_in_progress());
+    shenandoah_assert_correct_except(loc, o,
+             o == NULL ||
+             heap->is_full_gc_move_in_progress() ||
+             (VMThread::vm_operation() != NULL) && (VMThread::vm_operation()->type() == VM_Operation::VMOp_HeapWalkOperation)
+    );
   }
 }
 

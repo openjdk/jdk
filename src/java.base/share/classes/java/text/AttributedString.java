@@ -117,7 +117,7 @@ public class AttributedString {
     /**
      * Constructs an AttributedString instance with the given text.
      * @param text The text for this attributed string.
-     * @exception NullPointerException if <code>text</code> is null.
+     * @throws    NullPointerException if <code>text</code> is null.
      */
     public AttributedString(String text) {
         if (text == null) {
@@ -130,9 +130,9 @@ public class AttributedString {
      * Constructs an AttributedString instance with the given text and attributes.
      * @param text The text for this attributed string.
      * @param attributes The attributes that apply to the entire string.
-     * @exception NullPointerException if <code>text</code> or
+     * @throws    NullPointerException if <code>text</code> or
      *            <code>attributes</code> is null.
-     * @exception IllegalArgumentException if the text has length 0
+     * @throws    IllegalArgumentException if the text has length 0
      * and the attributes parameter is not an empty Map (attributes
      * cannot be applied to a 0-length range).
      */
@@ -171,7 +171,7 @@ public class AttributedString {
      * Constructs an AttributedString instance with the given attributed
      * text represented by AttributedCharacterIterator.
      * @param text The text for this attributed string.
-     * @exception NullPointerException if <code>text</code> is null.
+     * @throws    NullPointerException if <code>text</code> is null.
      */
     public AttributedString(AttributedCharacterIterator text) {
         // If performance is critical, this constructor should be
@@ -192,8 +192,8 @@ public class AttributedString {
      * @param beginIndex Index of the first character of the range.
      * @param endIndex Index of the character following the last character
      * of the range.
-     * @exception NullPointerException if <code>text</code> is null.
-     * @exception IllegalArgumentException if the subrange given by
+     * @throws    NullPointerException if <code>text</code> is null.
+     * @throws    IllegalArgumentException if the subrange given by
      * beginIndex and endIndex is out of the text range.
      * @see java.text.Annotation
      */
@@ -220,8 +220,8 @@ public class AttributedString {
      * @param attributes Specifies attributes to be extracted
      * from the text. If null is specified, all available attributes will
      * be used.
-     * @exception NullPointerException if <code>text</code> is null.
-     * @exception IllegalArgumentException if the subrange given by
+     * @throws    NullPointerException if <code>text</code> is null.
+     * @throws    IllegalArgumentException if the subrange given by
      * beginIndex and endIndex is out of the text range.
      * @see java.text.Annotation
      */
@@ -307,8 +307,8 @@ public class AttributedString {
      * Adds an attribute to the entire string.
      * @param attribute the attribute key
      * @param value the value of the attribute; may be null
-     * @exception NullPointerException if <code>attribute</code> is null.
-     * @exception IllegalArgumentException if the AttributedString has length 0
+     * @throws    NullPointerException if <code>attribute</code> is null.
+     * @throws    IllegalArgumentException if the AttributedString has length 0
      * (attributes cannot be applied to a 0-length range).
      */
     public void addAttribute(Attribute attribute, Object value) {
@@ -331,8 +331,8 @@ public class AttributedString {
      * @param value The value of the attribute. May be null.
      * @param beginIndex Index of the first character of the range.
      * @param endIndex Index of the character following the last character of the range.
-     * @exception NullPointerException if <code>attribute</code> is null.
-     * @exception IllegalArgumentException if beginIndex is less than 0, endIndex is
+     * @throws    NullPointerException if <code>attribute</code> is null.
+     * @throws    IllegalArgumentException if beginIndex is less than 0, endIndex is
      * greater than the length of the string, or beginIndex and endIndex together don't
      * define a non-empty subrange of the string.
      */
@@ -356,8 +356,8 @@ public class AttributedString {
      * @param beginIndex Index of the first character of the range.
      * @param endIndex Index of the character following the last
      * character of the range.
-     * @exception NullPointerException if <code>attributes</code> is null.
-     * @exception IllegalArgumentException if beginIndex is less than
+     * @throws    NullPointerException if <code>attributes</code> is null.
+     * @throws    IllegalArgumentException if beginIndex is less than
      * 0, endIndex is greater than the length of the string, or
      * beginIndex and endIndex together don't define a non-empty
      * subrange of the string and the attributes parameter is not an
@@ -580,7 +580,7 @@ public class AttributedString {
      * @param beginIndex the index of the first character
      * @param endIndex the index of the character following the last character
      * @return an iterator providing access to the text and its attributes
-     * @exception IllegalArgumentException if beginIndex is less than 0,
+     * @throws    IllegalArgumentException if beginIndex is less than 0,
      * endIndex is greater than the length of the string, or beginIndex is
      * greater than endIndex.
      */

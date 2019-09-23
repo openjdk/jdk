@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -62,6 +62,7 @@ import sun.security.x509.X509CertImpl;
 
 public abstract class Certificate implements java.io.Serializable {
 
+    @java.io.Serial
     private static final long serialVersionUID = -3585440601605666277L;
 
     // the certificate type
@@ -147,7 +148,7 @@ public abstract class Certificate implements java.io.Serializable {
      *
      * @return the encoded form of this certificate
      *
-     * @exception CertificateEncodingException if an encoding error occurs.
+     * @throws    CertificateEncodingException if an encoding error occurs.
      */
     public abstract byte[] getEncoded()
         throws CertificateEncodingException;
@@ -158,12 +159,12 @@ public abstract class Certificate implements java.io.Serializable {
      *
      * @param key the PublicKey used to carry out the verification.
      *
-     * @exception NoSuchAlgorithmException on unsupported signature
+     * @throws    NoSuchAlgorithmException on unsupported signature
      * algorithms.
-     * @exception InvalidKeyException on incorrect key.
-     * @exception NoSuchProviderException if there's no default provider.
-     * @exception SignatureException on signature errors.
-     * @exception CertificateException on encoding errors.
+     * @throws    InvalidKeyException on incorrect key.
+     * @throws    NoSuchProviderException if there's no default provider.
+     * @throws    SignatureException on signature errors.
+     * @throws    CertificateException on encoding errors.
      */
     public abstract void verify(PublicKey key)
         throws CertificateException, NoSuchAlgorithmException,
@@ -179,12 +180,12 @@ public abstract class Certificate implements java.io.Serializable {
      * @param key the PublicKey used to carry out the verification.
      * @param sigProvider the name of the signature provider.
      *
-     * @exception NoSuchAlgorithmException on unsupported signature
+     * @throws    NoSuchAlgorithmException on unsupported signature
      * algorithms.
-     * @exception InvalidKeyException on incorrect key.
-     * @exception NoSuchProviderException on incorrect provider.
-     * @exception SignatureException on signature errors.
-     * @exception CertificateException on encoding errors.
+     * @throws    InvalidKeyException on incorrect key.
+     * @throws    NoSuchProviderException on incorrect provider.
+     * @throws    SignatureException on signature errors.
+     * @throws    CertificateException on encoding errors.
      */
     public abstract void verify(PublicKey key, String sigProvider)
         throws CertificateException, NoSuchAlgorithmException,
@@ -206,12 +207,12 @@ public abstract class Certificate implements java.io.Serializable {
      * @param key the PublicKey used to carry out the verification.
      * @param sigProvider the signature provider.
      *
-     * @exception NoSuchAlgorithmException on unsupported signature
+     * @throws    NoSuchAlgorithmException on unsupported signature
      * algorithms.
-     * @exception InvalidKeyException on incorrect key.
-     * @exception SignatureException on signature errors.
-     * @exception CertificateException on encoding errors.
-     * @exception UnsupportedOperationException if the method is not supported
+     * @throws    InvalidKeyException on incorrect key.
+     * @throws    SignatureException on signature errors.
+     * @throws    CertificateException on encoding errors.
+     * @throws    UnsupportedOperationException if the method is not supported
      * @since 1.8
      */
     public void verify(PublicKey key, Provider sigProvider)
@@ -240,6 +241,7 @@ public abstract class Certificate implements java.io.Serializable {
      */
     protected static class CertificateRep implements java.io.Serializable {
 
+        @java.io.Serial
         private static final long serialVersionUID = -8563758940495660020L;
 
         private String type;
@@ -266,6 +268,7 @@ public abstract class Certificate implements java.io.Serializable {
          * @throws java.io.ObjectStreamException if the Certificate
          *      could not be resolved
          */
+        @java.io.Serial
         protected Object readResolve() throws java.io.ObjectStreamException {
             try {
                 CertificateFactory cf = CertificateFactory.getInstance(type);
@@ -290,6 +293,7 @@ public abstract class Certificate implements java.io.Serializable {
      * this Certificate could not be created
      * @since 1.3
      */
+    @java.io.Serial
     protected Object writeReplace() throws java.io.ObjectStreamException {
         try {
             return new CertificateRep(type, getEncoded());

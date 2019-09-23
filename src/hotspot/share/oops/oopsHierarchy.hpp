@@ -100,9 +100,9 @@ public:
 
   // General access
   oopDesc*  operator->() const        { return obj(); }
-  bool operator==(const oop o) const;
+  bool operator==(const oop o) const  { return obj() == o.obj(); }
   bool operator==(void *p) const      { return obj() == p; }
-  bool operator!=(const volatile oop o) const;
+  bool operator!=(const volatile oop o) const { return obj() != o.obj(); }
   bool operator!=(void *p) const      { return obj() != p; }
 
   // Assignment
@@ -188,10 +188,6 @@ template <class T> inline oop cast_to_oop(T value) {
 }
 template <class T> inline T cast_from_oop(oop o) {
   return (T)(CHECK_UNHANDLED_OOPS_ONLY((void*))o);
-}
-
-inline bool check_obj_alignment(oop obj) {
-  return (cast_from_oop<intptr_t>(obj) & MinObjAlignmentInBytesMask) == 0;
 }
 
 // The metadata hierarchy is separate from the oop hierarchy

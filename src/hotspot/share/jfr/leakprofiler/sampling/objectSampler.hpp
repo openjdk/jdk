@@ -31,25 +31,19 @@
 typedef u8 traceid;
 
 class BoolObjectClosure;
-class JfrStackTrace;
+class JavaThread;
 class OopClosure;
 class ObjectSample;
-class ObjectSampler;
 class SampleList;
 class SamplePriorityQueue;
-class Thread;
 
 // Class reponsible for holding samples and
 // making sure the samples are evenly distributed as
 // new entries are added and removed.
 class ObjectSampler : public CHeapObj<mtTracing> {
-  friend class EventEmitter;
-  friend class JfrRecorderService;
   friend class LeakProfiler;
   friend class StartOperation;
   friend class StopOperation;
-  friend class ObjectSampleCheckpoint;
-  friend class WriteObjectSampleStacktrace;
  private:
   SamplePriorityQueue* _priority_queue;
   SampleList* _list;
@@ -64,20 +58,11 @@ class ObjectSampler : public CHeapObj<mtTracing> {
   ~ObjectSampler();
   static bool create(size_t size);
   static bool is_created();
-  static ObjectSampler* sampler();
   static void destroy();
-
-  // For operations that require exclusive access (non-safepoint)
-  static ObjectSampler* acquire();
-  static void release();
-
-  // Stacktrace
-  static void fill_stacktrace(JfrStackTrace* stacktrace, JavaThread* thread);
-  traceid stacktrace_id(const JfrStackTrace* stacktrace, JavaThread* thread);
 
   // Sampling
   static void sample(HeapWord* object, size_t size, JavaThread* thread);
-  void add(HeapWord* object, size_t size, traceid thread_id, JfrStackTrace* stacktrace, JavaThread* thread);
+  void add(HeapWord* object, size_t size, traceid thread_id, JavaThread* thread);
   void scavenge();
   void remove_dead(ObjectSample* sample);
 
@@ -87,8 +72,15 @@ class ObjectSampler : public CHeapObj<mtTracing> {
   const ObjectSample* item_at(int index) const;
   ObjectSample* item_at(int index);
   int item_count() const;
+
+ public:
+  static ObjectSampler* sampler();
+  // For operations that require exclusive access (non-safepoint)
+  static ObjectSampler* acquire();
+  static void release();
+
   const ObjectSample* first() const;
-  const ObjectSample* last() const;
+  ObjectSample* last() const;
   const ObjectSample* last_resolved() const;
   void set_last_resolved(const ObjectSample* sample);
   const JfrTicks& last_sweep() const;

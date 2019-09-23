@@ -42,6 +42,7 @@
 #include "oops/typeArrayOop.inline.hpp"
 #include "prims/methodHandles.hpp"
 #include "runtime/compilationPolicy.hpp"
+#include "runtime/deoptimization.hpp"
 #include "runtime/fieldDescriptor.inline.hpp"
 #include "runtime/handles.inline.hpp"
 #include "runtime/interfaceSupport.inline.hpp"
@@ -1003,7 +1004,7 @@ int MethodHandles::find_MemberNames(Klass* k,
         if (!java_lang_invoke_MemberName::is_instance(result()))
           return -99;  // caller bug!
         oop saved = MethodHandles::init_field_MemberName(result, st.field_descriptor());
-        if (!oopDesc::equals(saved, result()))
+        if (saved != result())
           results->obj_at_put(rfill-1, saved);  // show saved instance to user
       } else if (++overflow >= overflow_limit) {
         match_flags = 0; break; // got tired of looking at overflow
@@ -1055,7 +1056,7 @@ int MethodHandles::find_MemberNames(Klass* k,
           return -99;  // caller bug!
         CallInfo info(m, NULL, CHECK_0);
         oop saved = MethodHandles::init_method_MemberName(result, info);
-        if (!oopDesc::equals(saved, result()))
+        if (saved != result())
           results->obj_at_put(rfill-1, saved);  // show saved instance to user
       } else if (++overflow >= overflow_limit) {
         match_flags = 0; break; // got tired of looking at overflow
@@ -1109,8 +1110,7 @@ void MethodHandles::flush_dependent_nmethods(Handle call_site, Handle target) {
   }
   if (marked > 0) {
     // At least one nmethod has been marked for deoptimization.
-    VM_Deoptimize op;
-    VMThread::execute(&op);
+    Deoptimization::deoptimize_all_marked();
   }
 }
 
@@ -1506,8 +1506,7 @@ JVM_ENTRY(void, MHN_clearCallSiteContext(JNIEnv* env, jobject igcls, jobject con
     }
     if (marked > 0) {
       // At least one nmethod has been marked for deoptimization
-      VM_Deoptimize op;
-      VMThread::execute(&op);
+      Deoptimization::deoptimize_all_marked();
     }
   }
 }

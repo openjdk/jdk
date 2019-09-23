@@ -38,6 +38,7 @@
 #include "oops/oopsHierarchy.hpp"
 #include "oops/oop.inline.hpp"
 #include "runtime/prefetch.inline.hpp"
+#include "utilities/align.hpp"
 
 template <class T>
 inline void G1ScanClosureBase::prefetch_and_push(T* p, const oop obj) {
@@ -115,8 +116,8 @@ inline static void check_obj_during_refinement(T* p, oop const obj) {
   G1CollectedHeap* g1h = G1CollectedHeap::heap();
   // can't do because of races
   // assert(oopDesc::is_oop_or_null(obj), "expected an oop");
-  assert(check_obj_alignment(obj), "not oop aligned");
-  assert(g1h->is_in_reserved(obj), "must be in heap");
+  assert(is_object_aligned(obj), "oop must be aligned");
+  assert(g1h->is_in_reserved(obj), "oop must be in reserved");
 
   HeapRegion* from = g1h->heap_region_containing(p);
 

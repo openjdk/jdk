@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2004, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2004, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -39,7 +39,11 @@ static const jlong EXPECTED_TIMEOUT = 1;
  */
 static const jlong EXPECTED_TIMEOUT_ACCURACY_NS = 300000;
 
-static const jlong EXPECTED_ACCURACY = 10;
+#if (defined(WIN32) || defined(_WIN32))
+static const jlong EXPECTED_ACCURACY = 16; // 16ms is longest clock update interval
+#else
+static const jlong EXPECTED_ACCURACY = 10; // high frequency clock updates expected
+#endif
 
 /* scaffold objects */
 static jlong timeout = 0;
@@ -264,7 +268,7 @@ agentProc(jvmtiEnv* jvmti, JNIEnv* jni, void* arg) {
         jlong_to_string(waitedTime - waitTime, buffer));
     if (!(NSK_VERIFY((waitedTime - waitTime) >= (EXPECTED_TIMEOUT * 1000000) - EXPECTED_TIMEOUT_ACCURACY_NS))) {
 #if (defined(WIN32) || defined(_WIN32))
-        /* Do not fail on Windows as spurious wakeups are expected. The JDK-6313903 was closed as "Won't Fix". */
+        /* Do not fail on Windows as early returns are expected and wait() treats them as spurious wakeups. */
 #else
         nsk_jvmti_setFailStatus();
 #endif

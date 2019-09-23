@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -84,7 +84,9 @@ void Jfr::on_vm_shutdown(bool exception_handler) {
 }
 
 void Jfr::weak_oops_do(BoolObjectClosure* is_alive, OopClosure* f) {
-  LeakProfiler::oops_do(is_alive, f);
+  if (LeakProfiler::is_running()) {
+    LeakProfiler::oops_do(is_alive, f);
+  }
 }
 
 bool Jfr::on_flight_recorder_option(const JavaVMOption** option, char* delimiter) {

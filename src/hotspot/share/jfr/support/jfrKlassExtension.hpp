@@ -36,6 +36,7 @@
 #define JDK_JFR_EVENT_SUBKLASS 16
 #define JDK_JFR_EVENT_KLASS    32
 #define EVENT_HOST_KLASS       64
+#define EVENT_RESERVED         128
 #define IS_EVENT_KLASS(ptr) (((ptr)->trace_id() & (JDK_JFR_EVENT_KLASS | JDK_JFR_EVENT_SUBKLASS)) != 0)
 #define ON_KLASS_CREATION(k, p, t) if (IS_EVENT_KLASS(k)) JfrEventClassTransformer::on_klass_creation(k, p, t)
 

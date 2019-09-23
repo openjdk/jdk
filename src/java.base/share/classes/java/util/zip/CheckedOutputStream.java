@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 1999, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -55,7 +55,7 @@ class CheckedOutputStream extends FilterOutputStream {
     /**
      * Writes a byte. Will block until the byte is actually written.
      * @param b the byte to be written
-     * @exception IOException if an I/O error has occurred
+     * @throws    IOException if an I/O error has occurred
      */
     public void write(int b) throws IOException {
         out.write(b);
@@ -68,7 +68,7 @@ class CheckedOutputStream extends FilterOutputStream {
      * @param b the data to be written
      * @param off the start offset of the data
      * @param len the number of bytes to be written
-     * @exception IOException if an I/O error has occurred
+     * @throws    IOException if an I/O error has occurred
      */
     public void write(byte[] b, int off, int len) throws IOException {
         out.write(b, off, len);

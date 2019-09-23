@@ -33,7 +33,7 @@ import com.sun.org.apache.xerces.internal.xni.parser.XMLInputSource;
  *
  * @author  Neeraj
  *
- * This class wraps XMLInputSource and is also capable of telling wether application
+ * This class wraps XMLInputSource and is also capable of telling whether application
  * returned XMLStreamReader or not when XMLResolver.resolveEntity
  * was called.
  */

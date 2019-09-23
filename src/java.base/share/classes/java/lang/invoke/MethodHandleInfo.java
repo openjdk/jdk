@@ -199,9 +199,9 @@ interface MethodHandleInfo {
      * @param expected a class object representing the desired result type {@code T}
      * @param lookup the lookup object that created this MethodHandleInfo, or one with equivalent access privileges
      * @return a reference to the method, constructor, or field object
-     * @exception ClassCastException if the member is not of the expected type
-     * @exception NullPointerException if either argument is {@code null}
-     * @exception IllegalArgumentException if the underlying member is not accessible to the given lookup object
+     * @throws    ClassCastException if the member is not of the expected type
+     * @throws    NullPointerException if either argument is {@code null}
+     * @throws    IllegalArgumentException if the underlying member is not accessible to the given lookup object
      */
     public <T extends Member> T reflectAs(Class<T> expected, Lookup lookup);
 
@@ -243,7 +243,7 @@ interface MethodHandleInfo {
      * The conventional prefix "REF_" is omitted.
      * @param referenceKind an integer code for a kind of reference used to access a class member
      * @return a mixed-case string such as {@code "getField"}
-     * @exception IllegalArgumentException if the argument is not a valid
+     * @throws    IllegalArgumentException if the argument is not a valid
      *            <a href="MethodHandleInfo.html#refkinds">reference kind number</a>
      */
     public static String referenceKindToString(int referenceKind) {
@@ -278,9 +278,9 @@ interface MethodHandleInfo {
      * @param name the {@linkplain #getName member name} part of the symbolic reference
      * @param type the {@linkplain #getMethodType method type} part of the symbolic reference
      * @return a string of the form {@code "RK C.N:MT"}
-     * @exception IllegalArgumentException if the first argument is not a valid
+     * @throws    IllegalArgumentException if the first argument is not a valid
      *            <a href="MethodHandleInfo.html#refkinds">reference kind number</a>
-     * @exception NullPointerException if any reference argument is {@code null}
+     * @throws    NullPointerException if any reference argument is {@code null}
      */
     public static String toString(int kind, Class<?> defc, String name, MethodType type) {
         Objects.requireNonNull(name); Objects.requireNonNull(type);

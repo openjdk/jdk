@@ -1,6 +1,5 @@
 /*
- * reserved comment block
- * DO NOT REMOVE OR ALTER!
+ * Copyright (c) 2019, Oracle and/or its affiliates. All rights reserved.
  */
 /*
  * Licensed to the Apache Software Foundation (ASF) under one
@@ -68,6 +67,7 @@ import org.w3c.dom.ls.LSSerializerFilter;
  * @version $Id:
  *
  * @xsl.usage internal
+ * @LastModified: Aug 2019
  */
 final public class LSSerializerImpl implements DOMConfiguration, LSSerializer {
 
@@ -220,7 +220,7 @@ final public class LSSerializerImpl implements DOMConfiguration, LSSerializer {
 
         // Get a serializer that seriailizes according to the properties,
         // which in this case is to xml
-        fXMLSerializer = new ToXMLStream();
+        fXMLSerializer = new ToXMLStream(null);
         fXMLSerializer.setOutputFormat(configProps);
 
         // Initialize Serializer

@@ -443,12 +443,12 @@ CPUPerformanceInterface::CPUPerformance::CPUPerformance() {
 }
 
 bool CPUPerformanceInterface::CPUPerformance::initialize() {
-  size_t tick_array_size = (_counters.nProcs +1) * sizeof(CPUPerfTicks);
-  _counters.cpus = (CPUPerfTicks*)NEW_C_HEAP_ARRAY(char, tick_array_size, mtInternal);
+  size_t array_entry_count = _counters.nProcs + 1;
+  _counters.cpus = NEW_C_HEAP_ARRAY(CPUPerfTicks, array_entry_count, mtInternal);
   if (NULL == _counters.cpus) {
     return false;
   }
-  memset(_counters.cpus, 0, tick_array_size);
+  memset(_counters.cpus, 0, array_entry_count * sizeof(*_counters.cpus));
 
   // For the CPU load total
   get_total_ticks(-1, &_counters.cpus[_counters.nProcs]);

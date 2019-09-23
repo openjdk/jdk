@@ -63,6 +63,7 @@ import sun.security.util.*;
 public class AlgorithmId implements Serializable, DerEncoder {
 
     /** use serialVersionUID from JDK 1.1. for interoperability */
+    @java.io.Serial
     private static final long serialVersionUID = 7205873507486557157L;
 
     /**

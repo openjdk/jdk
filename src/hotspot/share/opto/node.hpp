@@ -52,6 +52,7 @@ class CallNode;
 class CallRuntimeNode;
 class CallStaticJavaNode;
 class CastIINode;
+class CastLLNode;
 class CatchNode;
 class CatchProjNode;
 class CheckCastPPNode;
@@ -72,6 +73,7 @@ class EncodePNode;
 class EncodePKlassNode;
 class FastLockNode;
 class FastUnlockNode;
+class HaltNode;
 class IfNode;
 class IfProjNode;
 class IfFalseNode;
@@ -666,7 +668,8 @@ public:
       DEFINE_CLASS_ID(Phi,   Type, 0)
       DEFINE_CLASS_ID(ConstraintCast, Type, 1)
         DEFINE_CLASS_ID(CastII, ConstraintCast, 0)
-        DEFINE_CLASS_ID(CheckCastPP, ConstraintCast, 1)
+        DEFINE_CLASS_ID(CastLL, ConstraintCast, 1)
+        DEFINE_CLASS_ID(CheckCastPP, ConstraintCast, 2)
       DEFINE_CLASS_ID(CMove, Type, 3)
       DEFINE_CLASS_ID(SafePointScalarObject, Type, 4)
       DEFINE_CLASS_ID(DecodeNarrowPtr, Type, 5)
@@ -715,8 +718,9 @@ public:
     DEFINE_CLASS_ID(Mul,      Node, 12)
     DEFINE_CLASS_ID(Vector,   Node, 13)
     DEFINE_CLASS_ID(ClearArray, Node, 14)
+    DEFINE_CLASS_ID(Halt, Node, 15)
 
-    _max_classes  = ClassMask_ClearArray
+    _max_classes  = ClassMask_Halt
   };
   #undef DEFINE_CLASS_ID
 
@@ -747,7 +751,6 @@ private:
 protected:
   // These methods should be called from constructors only.
   void init_class_id(jushort c) {
-    assert(c <= _max_classes, "invalid node class");
     _class_id = c; // cast out const
   }
   void init_flags(jushort fl) {
@@ -805,6 +808,7 @@ public:
   DEFINE_CLASS_QUERY(CatchProj)
   DEFINE_CLASS_QUERY(CheckCastPP)
   DEFINE_CLASS_QUERY(CastII)
+  DEFINE_CLASS_QUERY(CastLL)
   DEFINE_CLASS_QUERY(ConstraintCast)
   DEFINE_CLASS_QUERY(ClearArray)
   DEFINE_CLASS_QUERY(CMove)
@@ -819,6 +823,7 @@ public:
   DEFINE_CLASS_QUERY(EncodePKlass)
   DEFINE_CLASS_QUERY(FastLock)
   DEFINE_CLASS_QUERY(FastUnlock)
+  DEFINE_CLASS_QUERY(Halt)
   DEFINE_CLASS_QUERY(If)
   DEFINE_CLASS_QUERY(RangeCheck)
   DEFINE_CLASS_QUERY(IfProj)

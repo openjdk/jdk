@@ -531,9 +531,7 @@ HeapRegionClaimer::HeapRegionClaimer(uint n_workers) :
 }
 
 HeapRegionClaimer::~HeapRegionClaimer() {
-  if (_claims != NULL) {
-    FREE_C_HEAP_ARRAY(uint, _claims);
-  }
+  FREE_C_HEAP_ARRAY(uint, _claims);
 }
 
 uint HeapRegionClaimer::offset_for_worker(uint worker_id) const {

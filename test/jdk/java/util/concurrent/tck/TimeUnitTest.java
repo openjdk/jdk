@@ -56,243 +56,56 @@ public class TimeUnitTest extends JSR166TestCase {
         return new TestSuite(TimeUnitTest.class);
     }
 
-    // (loops to 88888 check increments at all time divisions.)
+    void testConversion(TimeUnit x, TimeUnit y, long n, long expected) {
+        assertEquals(expected, x.convert(n, y));
+        switch (x) {
+        case NANOSECONDS:  assertEquals(expected, y.toNanos(n));   break;
+        case MICROSECONDS: assertEquals(expected, y.toMicros(n));  break;
+        case MILLISECONDS: assertEquals(expected, y.toMillis(n));  break;
+        case SECONDS:      assertEquals(expected, y.toSeconds(n)); break;
+        case MINUTES:      assertEquals(expected, y.toMinutes(n)); break;
+        case HOURS:        assertEquals(expected, y.toHours(n));   break;
+        case DAYS:         assertEquals(expected, y.toDays(n));    break;
+        default: throw new AssertionError();
+        }
+
+        if (n > 0) testConversion(x, y, -n, -expected);
+    }
+
+    void testConversion(TimeUnit x, TimeUnit y) {
+        long ratio = x.toNanos(1)/y.toNanos(1);
+        assertTrue(ratio > 0);
+        long[] ns = { 0, 1, 2, Long.MAX_VALUE/ratio, Long.MIN_VALUE/ratio };
+        for (long n : ns) {
+            testConversion(y, x, n, n * ratio);
+            long[] ks = { n * ratio, n * ratio + 1, n * ratio - 1 };
+            for (long k : ks) {
+                testConversion(x, y, k, k / ratio);
+            }
+        }
+    }
 
     /**
-     * convert correctly converts sample values across the units
+     * Conversion methods correctly convert sample values
      */
-    public void testConvert() {
-        for (long t = 0; t < 88888; ++t) {
-            assertEquals(t*60*60*24,
-                         SECONDS.convert(t, DAYS));
-            assertEquals(t*60*60,
-                         SECONDS.convert(t, HOURS));
-            assertEquals(t*60,
-                         SECONDS.convert(t, MINUTES));
-            assertEquals(t,
-                         SECONDS.convert(t, SECONDS));
-            assertEquals(t,
-                         SECONDS.convert(1000L*t, MILLISECONDS));
-            assertEquals(t,
-                         SECONDS.convert(1000000L*t, MICROSECONDS));
-            assertEquals(t,
-                         SECONDS.convert(1000000000L*t, NANOSECONDS));
-
-            assertEquals(1000L*t*60*60*24,
-                         MILLISECONDS.convert(t, DAYS));
-            assertEquals(1000L*t*60*60,
-                         MILLISECONDS.convert(t, HOURS));
-            assertEquals(1000L*t*60,
-                         MILLISECONDS.convert(t, MINUTES));
-            assertEquals(1000L*t,
-                         MILLISECONDS.convert(t, SECONDS));
-            assertEquals(t,
-                         MILLISECONDS.convert(t, MILLISECONDS));
-            assertEquals(t,
-                         MILLISECONDS.convert(1000L*t, MICROSECONDS));
-            assertEquals(t,
-                         MILLISECONDS.convert(1000000L*t, NANOSECONDS));
-
-            assertEquals(1000000L*t*60*60*24,
-                         MICROSECONDS.convert(t, DAYS));
-            assertEquals(1000000L*t*60*60,
-                         MICROSECONDS.convert(t, HOURS));
-            assertEquals(1000000L*t*60,
-                         MICROSECONDS.convert(t, MINUTES));
-            assertEquals(1000000L*t,
-                         MICROSECONDS.convert(t, SECONDS));
-            assertEquals(1000L*t,
-                         MICROSECONDS.convert(t, MILLISECONDS));
-            assertEquals(t,
-                         MICROSECONDS.convert(t, MICROSECONDS));
-            assertEquals(t,
-                         MICROSECONDS.convert(1000L*t, NANOSECONDS));
-
-            assertEquals(1000000000L*t*60*60*24,
-                         NANOSECONDS.convert(t, DAYS));
-            assertEquals(1000000000L*t*60*60,
-                         NANOSECONDS.convert(t, HOURS));
-            assertEquals(1000000000L*t*60,
-                         NANOSECONDS.convert(t, MINUTES));
-            assertEquals(1000000000L*t,
-                         NANOSECONDS.convert(t, SECONDS));
-            assertEquals(1000000L*t,
-                         NANOSECONDS.convert(t, MILLISECONDS));
-            assertEquals(1000L*t,
-                         NANOSECONDS.convert(t, MICROSECONDS));
-            assertEquals(t,
-                         NANOSECONDS.convert(t, NANOSECONDS));
-        }
+    public void testConversions() {
+        // Sanity check
+        assertEquals(1, NANOSECONDS.toNanos(1));
+        assertEquals(1000L * NANOSECONDS.toNanos(1), MICROSECONDS.toNanos(1));
+        assertEquals(1000L * MICROSECONDS.toNanos(1), MILLISECONDS.toNanos(1));
+        assertEquals(1000L * MILLISECONDS.toNanos(1), SECONDS.toNanos(1));
+        assertEquals(60L * SECONDS.toNanos(1), MINUTES.toNanos(1));
+        assertEquals(60L * MINUTES.toNanos(1), HOURS.toNanos(1));
+        assertEquals(24L * HOURS.toNanos(1), DAYS.toNanos(1));
 
         for (TimeUnit x : TimeUnit.values()) {
-            long[] zs = {
-                0, 1, -1,
-                Integer.MAX_VALUE, Integer.MIN_VALUE,
-                Long.MAX_VALUE, Long.MIN_VALUE,
-            };
-            for (long z : zs) assertEquals(z, x.convert(z, x));
+            assertEquals(x.toNanos(1), NANOSECONDS.convert(1, x));
         }
-    }
 
-    /**
-     * toNanos correctly converts sample values in different units to
-     * nanoseconds
-     */
-    public void testToNanos() {
-        for (long t = 0; t < 88888; ++t) {
-            assertEquals(t*1000000000L*60*60*24,
-                         DAYS.toNanos(t));
-            assertEquals(t*1000000000L*60*60,
-                         HOURS.toNanos(t));
-            assertEquals(t*1000000000L*60,
-                         MINUTES.toNanos(t));
-            assertEquals(1000000000L*t,
-                         SECONDS.toNanos(t));
-            assertEquals(1000000L*t,
-                         MILLISECONDS.toNanos(t));
-            assertEquals(1000L*t,
-                         MICROSECONDS.toNanos(t));
-            assertEquals(t,
-                         NANOSECONDS.toNanos(t));
-        }
-    }
-
-    /**
-     * toMicros correctly converts sample values in different units to
-     * microseconds
-     */
-    public void testToMicros() {
-        for (long t = 0; t < 88888; ++t) {
-            assertEquals(t*1000000L*60*60*24,
-                         DAYS.toMicros(t));
-            assertEquals(t*1000000L*60*60,
-                         HOURS.toMicros(t));
-            assertEquals(t*1000000L*60,
-                         MINUTES.toMicros(t));
-            assertEquals(1000000L*t,
-                         SECONDS.toMicros(t));
-            assertEquals(1000L*t,
-                         MILLISECONDS.toMicros(t));
-            assertEquals(t,
-                         MICROSECONDS.toMicros(t));
-            assertEquals(t,
-                         NANOSECONDS.toMicros(t*1000L));
-        }
-    }
-
-    /**
-     * toMillis correctly converts sample values in different units to
-     * milliseconds
-     */
-    public void testToMillis() {
-        for (long t = 0; t < 88888; ++t) {
-            assertEquals(t*1000L*60*60*24,
-                         DAYS.toMillis(t));
-            assertEquals(t*1000L*60*60,
-                         HOURS.toMillis(t));
-            assertEquals(t*1000L*60,
-                         MINUTES.toMillis(t));
-            assertEquals(1000L*t,
-                         SECONDS.toMillis(t));
-            assertEquals(t,
-                         MILLISECONDS.toMillis(t));
-            assertEquals(t,
-                         MICROSECONDS.toMillis(t*1000L));
-            assertEquals(t,
-                         NANOSECONDS.toMillis(t*1000000L));
-        }
-    }
-
-    /**
-     * toSeconds correctly converts sample values in different units to
-     * seconds
-     */
-    public void testToSeconds() {
-        for (long t = 0; t < 88888; ++t) {
-            assertEquals(t*60*60*24,
-                         DAYS.toSeconds(t));
-            assertEquals(t*60*60,
-                         HOURS.toSeconds(t));
-            assertEquals(t*60,
-                         MINUTES.toSeconds(t));
-            assertEquals(t,
-                         SECONDS.toSeconds(t));
-            assertEquals(t,
-                         MILLISECONDS.toSeconds(t*1000L));
-            assertEquals(t,
-                         MICROSECONDS.toSeconds(t*1000000L));
-            assertEquals(t,
-                         NANOSECONDS.toSeconds(t*1000000000L));
-        }
-    }
-
-    /**
-     * toMinutes correctly converts sample values in different units to
-     * minutes
-     */
-    public void testToMinutes() {
-        for (long t = 0; t < 88888; ++t) {
-            assertEquals(t*60*24,
-                         DAYS.toMinutes(t));
-            assertEquals(t*60,
-                         HOURS.toMinutes(t));
-            assertEquals(t,
-                         MINUTES.toMinutes(t));
-            assertEquals(t,
-                         SECONDS.toMinutes(t*60));
-            assertEquals(t,
-                         MILLISECONDS.toMinutes(t*1000L*60));
-            assertEquals(t,
-                         MICROSECONDS.toMinutes(t*1000000L*60));
-            assertEquals(t,
-                         NANOSECONDS.toMinutes(t*1000000000L*60));
-        }
-    }
-
-    /**
-     * toHours correctly converts sample values in different units to
-     * hours
-     */
-    public void testToHours() {
-        for (long t = 0; t < 88888; ++t) {
-            assertEquals(t*24,
-                         DAYS.toHours(t));
-            assertEquals(t,
-                         HOURS.toHours(t));
-            assertEquals(t,
-                         MINUTES.toHours(t*60));
-            assertEquals(t,
-                         SECONDS.toHours(t*60*60));
-            assertEquals(t,
-                         MILLISECONDS.toHours(t*1000L*60*60));
-            assertEquals(t,
-                         MICROSECONDS.toHours(t*1000000L*60*60));
-            assertEquals(t,
-                         NANOSECONDS.toHours(t*1000000000L*60*60));
-        }
-    }
-
-    /**
-     * toDays correctly converts sample values in different units to
-     * days
-     */
-    public void testToDays() {
-        for (long t = 0; t < 88888; ++t) {
-            assertEquals(t,
-                         DAYS.toDays(t));
-            assertEquals(t,
-                         HOURS.toDays(t*24));
-            assertEquals(t,
-                         MINUTES.toDays(t*60*24));
-            assertEquals(t,
-                         SECONDS.toDays(t*60*60*24));
-            assertEquals(t,
-                         MILLISECONDS.toDays(t*1000L*60*60*24));
-            assertEquals(t,
-                         MICROSECONDS.toDays(t*1000000L*60*60*24));
-            assertEquals(t,
-                         NANOSECONDS.toDays(t*1000000000L*60*60*24));
-        }
+        for (TimeUnit x : TimeUnit.values())
+            for (TimeUnit y : TimeUnit.values())
+                if (x.toNanos(1) >= y.toNanos(1))
+                    testConversion(x, y);
     }
 
     /**
@@ -494,14 +307,21 @@ public class TimeUnitTest extends JSR166TestCase {
      * toString returns name of unit
      */
     public void testToString() {
+        assertEquals("NANOSECONDS", NANOSECONDS.toString());
+        assertEquals("MICROSECONDS", MICROSECONDS.toString());
+        assertEquals("MILLISECONDS", MILLISECONDS.toString());
         assertEquals("SECONDS", SECONDS.toString());
+        assertEquals("MINUTES", MINUTES.toString());
+        assertEquals("HOURS", HOURS.toString());
+        assertEquals("DAYS", DAYS.toString());
     }
 
     /**
      * name returns name of unit
      */
     public void testName() {
-        assertEquals("SECONDS", SECONDS.name());
+        for (TimeUnit x : TimeUnit.values())
+            assertEquals(x.toString(), x.name());
     }
 
     /**
@@ -512,10 +332,8 @@ public class TimeUnitTest extends JSR166TestCase {
         Thread t = newStartedThread(new CheckedRunnable() {
             public void realRun() throws InterruptedException {
                 Object o = new Object();
-                TimeUnit tu = MILLISECONDS;
-
                 try {
-                    tu.timedWait(o, LONG_DELAY_MS);
+                    MILLISECONDS.timedWait(o, LONGER_DELAY_MS);
                     threadShouldThrow();
                 } catch (IllegalMonitorStateException success) {}
             }});
@@ -531,12 +349,11 @@ public class TimeUnitTest extends JSR166TestCase {
         Thread t = newStartedThread(new CheckedRunnable() {
             public void realRun() throws InterruptedException {
                 Object o = new Object();
-                TimeUnit tu = MILLISECONDS;
 
                 Thread.currentThread().interrupt();
                 try {
                     synchronized (o) {
-                        tu.timedWait(o, LONG_DELAY_MS);
+                        MILLISECONDS.timedWait(o, LONGER_DELAY_MS);
                     }
                     shouldThrow();
                 } catch (InterruptedException success) {}
@@ -545,7 +362,7 @@ public class TimeUnitTest extends JSR166TestCase {
                 pleaseInterrupt.countDown();
                 try {
                     synchronized (o) {
-                        tu.timedWait(o, LONG_DELAY_MS);
+                        MILLISECONDS.timedWait(o, LONGER_DELAY_MS);
                     }
                     shouldThrow();
                 } catch (InterruptedException success) {}
@@ -553,7 +370,7 @@ public class TimeUnitTest extends JSR166TestCase {
             }});
 
         await(pleaseInterrupt);
-        assertThreadBlocks(t, Thread.State.TIMED_WAITING);
+        if (randomBoolean()) assertThreadBlocks(t, Thread.State.TIMED_WAITING);
         t.interrupt();
         awaitTermination(t);
     }
@@ -565,28 +382,27 @@ public class TimeUnitTest extends JSR166TestCase {
         final CountDownLatch pleaseInterrupt = new CountDownLatch(1);
         final Thread s = newStartedThread(new CheckedInterruptedRunnable() {
             public void realRun() throws InterruptedException {
-                Thread.sleep(LONG_DELAY_MS);
+                Thread.sleep(LONGER_DELAY_MS);
             }});
         final Thread t = newStartedThread(new CheckedRunnable() {
             public void realRun() throws InterruptedException {
-                TimeUnit tu = MILLISECONDS;
                 Thread.currentThread().interrupt();
                 try {
-                    tu.timedJoin(s, LONG_DELAY_MS);
+                    MILLISECONDS.timedJoin(s, LONGER_DELAY_MS);
                     shouldThrow();
                 } catch (InterruptedException success) {}
                 assertFalse(Thread.interrupted());
 
                 pleaseInterrupt.countDown();
                 try {
-                    tu.timedJoin(s, LONG_DELAY_MS);
+                    MILLISECONDS.timedJoin(s, LONGER_DELAY_MS);
                     shouldThrow();
                 } catch (InterruptedException success) {}
                 assertFalse(Thread.interrupted());
             }});
 
         await(pleaseInterrupt);
-        assertThreadBlocks(t, Thread.State.TIMED_WAITING);
+        if (randomBoolean()) assertThreadBlocks(t, Thread.State.TIMED_WAITING);
         t.interrupt();
         awaitTermination(t);
         s.interrupt();
@@ -594,32 +410,43 @@ public class TimeUnitTest extends JSR166TestCase {
     }
 
     /**
-     * timedSleep throws InterruptedException when interrupted
+     * timeUnit.sleep throws InterruptedException when interrupted
      */
     public void testTimedSleep_Interruptible() {
         final CountDownLatch pleaseInterrupt = new CountDownLatch(1);
         Thread t = newStartedThread(new CheckedRunnable() {
             public void realRun() throws InterruptedException {
-                TimeUnit tu = MILLISECONDS;
                 Thread.currentThread().interrupt();
                 try {
-                    tu.sleep(LONG_DELAY_MS);
+                    MILLISECONDS.sleep(LONGER_DELAY_MS);
                     shouldThrow();
                 } catch (InterruptedException success) {}
                 assertFalse(Thread.interrupted());
 
                 pleaseInterrupt.countDown();
                 try {
-                    tu.sleep(LONG_DELAY_MS);
+                    MILLISECONDS.sleep(LONGER_DELAY_MS);
                     shouldThrow();
                 } catch (InterruptedException success) {}
                 assertFalse(Thread.interrupted());
             }});
 
         await(pleaseInterrupt);
-        assertThreadBlocks(t, Thread.State.TIMED_WAITING);
+        if (randomBoolean()) assertThreadBlocks(t, Thread.State.TIMED_WAITING);
         t.interrupt();
         awaitTermination(t);
+    }
+
+    /**
+     * timeUnit.sleep(x) for x <= 0 does not sleep at all.
+     */
+    public void testTimedSleep_nonPositive() throws InterruptedException {
+        boolean interrupt = randomBoolean();
+        if (interrupt) Thread.currentThread().interrupt();
+        randomTimeUnit().sleep(0L);
+        randomTimeUnit().sleep(-1L);
+        randomTimeUnit().sleep(Long.MIN_VALUE);
+        if (interrupt) assertTrue(Thread.interrupted());
     }
 
     /**

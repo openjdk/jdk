@@ -51,7 +51,7 @@ import org.xml.sax.SAXException;
  * serializers (xml, html, text ...) that write output to a stream.
  *
  * @xsl.usage internal
- * @LastModified: July 2019
+ * @LastModified: Aug 2019
  */
 abstract public class ToStream extends SerializerBase {
 
@@ -198,7 +198,13 @@ abstract public class ToStream extends SerializerBase {
     /**
      * Default constructor
      */
-    public ToStream() { }
+    public ToStream() {
+        this(null);
+    }
+
+    public ToStream(ErrorListener l) {
+        m_errListener = l;
+    }
 
     /**
      * This helper method to writes out "]]>" when closing a CDATA section.
@@ -422,45 +428,30 @@ abstract public class ToStream extends SerializerBase {
                        // from what it was
 
                        EncodingInfo encodingInfo = Encodings.getEncodingInfo(newEncoding);
-                       if (newEncoding != null && encodingInfo.name == null) {
-                        // We tried to get an EncodingInfo for Object for the given
-                        // encoding, but it came back with an internall null name
-                        // so the encoding is not supported by the JDK, issue a message.
-                        final String msg = Utils.messages.createMessage(
-                                MsgKey.ER_ENCODING_NOT_SUPPORTED,new Object[]{ newEncoding });
+                       if (encodingInfo.name == null) {
+                            // We tried to get an EncodingInfo for Object for the given
+                            // encoding, but it came back with an internall null name
+                            // so the encoding is not supported by the JDK, issue a message.
+                            final String msg = Utils.messages.createMessage(
+                                    MsgKey.ER_ENCODING_NOT_SUPPORTED,new Object[]{ newEncoding });
 
-                        final String msg2 =
-                            "Warning: encoding \"" + newEncoding + "\" not supported, using "
-                                   + Encodings.DEFAULT_MIME_ENCODING;
-                        try {
-                                // Prepare to issue the warning message
-                                final Transformer tran = super.getTransformer();
-                                if (tran != null) {
-                                    final ErrorListener errHandler = tran
-                                            .getErrorListener();
-                                    // Issue the warning message
-                                    if (null != errHandler
-                                            && m_sourceLocator != null) {
-                                        errHandler
-                                                .warning(new TransformerException(
-                                                        msg, m_sourceLocator));
-                                        errHandler
-                                                .warning(new TransformerException(
-                                                        msg2, m_sourceLocator));
-                                    } else {
-                                        System.out.println(msg);
-                                        System.out.println(msg2);
-                                    }
-                                } else {
-                                    System.out.println(msg);
-                                    System.out.println(msg2);
+                            final String msg2 =
+                                "Warning: encoding \"" + newEncoding + "\" not supported, using "
+                                       + Encodings.DEFAULT_MIME_ENCODING;
+                            try {
+                                // refer to JDK-8229005, should throw Exception instead of warning and
+                                // then falling back to the default encoding. Keep it for now.
+                                if (m_errListener != null) {
+                                    m_errListener.warning(new TransformerException(msg, m_sourceLocator));
+                                    m_errListener.warning(new TransformerException(msg2, m_sourceLocator));
                                 }
                             } catch (Exception e) {
                             }
 
                             // We said we are using UTF-8, so use it
                             newEncoding = Encodings.DEFAULT_MIME_ENCODING;
-                            val = Encodings.DEFAULT_MIME_ENCODING; // to store the modified value into the properties a little later
+                            // to store the modified value into the properties a little later
+                            val = Encodings.DEFAULT_MIME_ENCODING;
                             encodingInfo = Encodings.getEncodingInfo(newEncoding);
                         }
                        // The encoding was good, or was forced to UTF-8 above

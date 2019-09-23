@@ -63,7 +63,7 @@ PSGCAdaptivePolicyCounters* ParallelScavengeHeap::_gc_policy_counters = NULL;
 jint ParallelScavengeHeap::initialize() {
   const size_t reserved_heap_size = ParallelArguments::heap_reserved_size_bytes();
 
-  ReservedSpace heap_rs = Universe::reserve_heap(reserved_heap_size, HeapAlignment);
+  ReservedHeapSpace heap_rs = Universe::reserve_heap(reserved_heap_size, HeapAlignment);
 
   os::trace_page_sizes("Heap",
                        MinHeapSize,
@@ -72,9 +72,9 @@ jint ParallelScavengeHeap::initialize() {
                        heap_rs.base(),
                        heap_rs.size());
 
-  initialize_reserved_region((HeapWord*)heap_rs.base(), (HeapWord*)(heap_rs.base() + heap_rs.size()));
+  initialize_reserved_region(heap_rs);
 
-  PSCardTable* card_table = new PSCardTable(reserved_region());
+  PSCardTable* card_table = new PSCardTable(heap_rs.region());
   card_table->initialize();
   CardTableBarrierSet* const barrier_set = new CardTableBarrierSet(card_table);
   barrier_set->initialize();
@@ -623,7 +623,6 @@ PreGenGCValues ParallelScavengeHeap::get_pre_gc_values() const {
   const PSYoungGen* const young = young_gen();
   const MutableSpace* const eden = young->eden_space();
   const MutableSpace* const from = young->from_space();
-  const MutableSpace* const to = young->to_space();
   const PSOldGen* const old = old_gen();
 
   return PreGenGCValues(young->used_in_bytes(),

@@ -339,9 +339,8 @@ bool JVMFlag::is_constant_in_binary() const {
 }
 
 bool JVMFlag::is_unlocker() const {
-  return strcmp(_name, "UnlockDiagnosticVMOptions") == 0     ||
-  strcmp(_name, "UnlockExperimentalVMOptions") == 0   ||
-  is_unlocker_ext();
+  return strcmp(_name, "UnlockDiagnosticVMOptions") == 0 ||
+         strcmp(_name, "UnlockExperimentalVMOptions") == 0;
 }
 
 bool JVMFlag::is_unlocked() const {
@@ -351,7 +350,7 @@ bool JVMFlag::is_unlocked() const {
   if (is_experimental()) {
     return UnlockExperimentalVMOptions;
   }
-  return is_unlocked_ext();
+  return true;
 }
 
 void JVMFlag::clear_diagnostic() {
@@ -388,18 +387,18 @@ JVMFlag::MsgType JVMFlag::get_locked_message(char* buf, int buflen) const {
                  _name);
     return JVMFlag::NOTPRODUCT_FLAG_BUT_PRODUCT_BUILD;
   }
-  return get_locked_message_ext(buf, buflen);
+  return JVMFlag::NONE;
 }
 
 bool JVMFlag::is_writeable() const {
-  return is_manageable() || (is_product() && is_read_write()) || is_writeable_ext();
+  return is_manageable() || (is_product() && is_read_write());
 }
 
 // All flags except "manageable" are assumed to be internal flags.
 // Long term, we need to define a mechanism to specify which flags
 // are external/stable and change this function accordingly.
 bool JVMFlag::is_external() const {
-  return is_manageable() || is_external_ext();
+  return is_manageable();
 }
 
 // Helper function for JVMFlag::print_on().
@@ -881,7 +880,6 @@ static JVMFlag flagTable[] = {
              IGNORE_RANGE, \
              IGNORE_CONSTRAINT, \
              IGNORE_WRITEABLE)
-  FLAGTABLE_EXT
   {0, NULL, NULL}
 };
 

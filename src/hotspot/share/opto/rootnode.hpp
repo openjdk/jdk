@@ -51,7 +51,8 @@ public:
 // Throw an exception & die
 class HaltNode : public Node {
 public:
-  HaltNode( Node *ctrl, Node *frameptr );
+  const char* _halt_reason;
+  HaltNode(Node* ctrl, Node* frameptr, const char* halt_reason);
   virtual int Opcode() const;
   virtual bool  pinned() const { return true; };
   virtual Node *Ideal(PhaseGVN *phase, bool can_reshape);

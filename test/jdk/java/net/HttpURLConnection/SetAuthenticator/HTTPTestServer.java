@@ -980,6 +980,8 @@ public class HTTPTestServer extends HTTPTest {
             implements Runnable {
 
         final ServerSocket ss;
+        private volatile boolean stop;
+
         public HttpsProxyTunnel(HttpServer server, HTTPTestServer target,
                                HttpHandler delegate)
                 throws IOException {
@@ -998,9 +1000,10 @@ public class HTTPTestServer extends HTTPTest {
 
         @Override
         public void stop() {
-            super.stop();
-            try {
-                ss.close();
+            try (var toClose = ss) {
+                stop = true;
+                System.out.println("Server " + ss + " stop requested");
+                super.stop();
             } catch (IOException ex) {
                 if (DEBUG) ex.printStackTrace(System.out);
             }
@@ -1050,6 +1053,9 @@ public class HTTPTestServer extends HTTPTest {
                 if (c == '\n') break;
                 b.appendCodePoint(c);
             }
+            if (b.length() == 0) {
+                return "";
+            }
             if (b.codePointAt(b.length() -1) == '\r') {
                 b.delete(b.length() -1, b.length());
             }
@@ -1059,80 +1065,121 @@ public class HTTPTestServer extends HTTPTest {
         @Override
         public void run() {
             Socket clientConnection = null;
-            try {
-                while (true) {
-                    System.out.println("Tunnel: Waiting for client at: " + ss);
-                    Socket previous = clientConnection;
-                    try {
-                        clientConnection = ss.accept();
-                    } catch (IOException io) {
-                        if (DEBUG) io.printStackTrace(System.out);
-                        break;
-                    } finally {
-                        // close the previous connection
-                        if (previous != null) previous.close();
-                    }
-                    System.out.println("Tunnel: Client accepted");
-                    Socket targetConnection = null;
-                    InputStream  ccis = clientConnection.getInputStream();
-                    OutputStream ccos = clientConnection.getOutputStream();
-                    Writer w = new OutputStreamWriter(
-                                   clientConnection.getOutputStream(), "UTF-8");
-                    PrintWriter pw = new PrintWriter(w);
-                    System.out.println("Tunnel: Reading request line");
-                    String requestLine = readLine(ccis);
-                    System.out.println("Tunnel: Request line: " + requestLine);
-                    if (requestLine.startsWith("CONNECT ")) {
-                        // We should probably check that the next word following
-                        // CONNECT is the host:port of our HTTPS serverImpl.
-                        // Some improvement for a followup!
-
-                        // Read all headers until we find the empty line that
-                        // signals the end of all headers.
-                        while(!requestLine.equals("")) {
-                            System.out.println("Tunnel: Reading header: "
-                                               + (requestLine = readLine(ccis)));
-                        }
-
-                        targetConnection = new Socket(
-                                serverImpl.getAddress().getAddress(),
-                                serverImpl.getAddress().getPort());
-
-                        // Then send the 200 OK response to the client
-                        System.out.println("Tunnel: Sending "
-                                           + "HTTP/1.1 200 OK\r\n\r\n");
-                        pw.print("HTTP/1.1 200 OK\r\nContent-Length: 0\r\n\r\n");
-                        pw.flush();
-                    } else {
-                        // This should not happen. If it does let our serverImpl
-                        // deal with it.
-                        throw new IOException("Tunnel: Unexpected status line: "
-                                             + requestLine);
-                    }
-
-                    // Pipe the input stream of the client connection to the
-                    // output stream of the target connection and conversely.
-                    // Now the client and target will just talk to each other.
-                    System.out.println("Tunnel: Starting tunnel pipes");
-                    Thread t1 = pipe(ccis, targetConnection.getOutputStream(), '+');
-                    Thread t2 = pipe(targetConnection.getInputStream(), ccos, '-');
-                    t1.start();
-                    t2.start();
-
-                    // We have only 1 client... wait until it has finished before
-                    // accepting a new connection request.
-                    t1.join();
-                    t2.join();
-                }
-            } catch (Throwable ex) {
+            while (!stop) {
+                System.out.println("Tunnel: Waiting for client at: " + ss);
+                final Socket previous = clientConnection;
                 try {
-                    ss.close();
-                } catch (IOException ex1) {
-                    ex.addSuppressed(ex1);
+                    clientConnection = ss.accept();
+                } catch (IOException io) {
+                    try {
+                        ss.close();
+                    } catch (IOException ex) {
+                        if (DEBUG) {
+                            ex.printStackTrace(System.out);
+                        }
+                    }
+                    // log the reason that caused the server to stop accepting connections
+                    if (!stop) {
+                        System.err.println("Server will stop accepting connections due to an exception:");
+                        io.printStackTrace();
+                    }
+                    break;
+                } finally {
+                    // close the previous connection
+                    if (previous != null) {
+                        try {
+                            previous.close();
+                        } catch (IOException e) {
+                            // ignore
+                            if (DEBUG) {
+                                System.out.println("Ignoring exception that happened while closing " +
+                                        "an older connection:");
+                                e.printStackTrace(System.out);
+                            }
+                        }
+                    }
                 }
-                ex.printStackTrace(System.err);
+                System.out.println("Tunnel: Client accepted");
+                try {
+                    // We have only 1 client... process the current client
+                    // request and wait until it has finished before
+                    // accepting a new connection request.
+                    processRequestAndWaitToComplete(clientConnection);
+                } catch (IOException ioe) {
+                    // close the client connection
+                    try {
+                        clientConnection.close();
+                    } catch (IOException io) {
+                        // ignore
+                        if (DEBUG) {
+                            System.out.println("Ignoring exception that happened during client" +
+                                    " connection close:");
+                            io.printStackTrace(System.out);
+                        }
+                    } finally {
+                        clientConnection = null;
+                    }
+                } catch (Throwable t) {
+                    // don't close the client connection for non-IOExceptions, instead
+                    // just log it and move on to accept next connection
+                    if (!stop) {
+                        t.printStackTrace();
+                    }
+                }
             }
         }
 
+        private void processRequestAndWaitToComplete(final Socket clientConnection)
+                throws IOException, InterruptedException {
+            final Socket targetConnection;
+            InputStream  ccis = clientConnection.getInputStream();
+            OutputStream ccos = clientConnection.getOutputStream();
+            Writer w = new OutputStreamWriter(
+                    clientConnection.getOutputStream(), "UTF-8");
+            PrintWriter pw = new PrintWriter(w);
+            System.out.println("Tunnel: Reading request line");
+            String requestLine = readLine(ccis);
+            System.out.println("Tunnel: Request line: " + requestLine);
+            if (requestLine.startsWith("CONNECT ")) {
+                // We should probably check that the next word following
+                // CONNECT is the host:port of our HTTPS serverImpl.
+                // Some improvement for a followup!
+
+                // Read all headers until we find the empty line that
+                // signals the end of all headers.
+                while(!requestLine.equals("")) {
+                    System.out.println("Tunnel: Reading header: "
+                            + (requestLine = readLine(ccis)));
+                }
+
+                targetConnection = new Socket(
+                        serverImpl.getAddress().getAddress(),
+                        serverImpl.getAddress().getPort());
+
+                // Then send the 200 OK response to the client
+                System.out.println("Tunnel: Sending "
+                        + "HTTP/1.1 200 OK\r\n\r\n");
+                pw.print("HTTP/1.1 200 OK\r\nContent-Length: 0\r\n\r\n");
+                pw.flush();
+            } else {
+                // This should not happen. If it does then consider it a
+                // client error and throw an IOException
+                System.out.println("Tunnel: Throwing an IOException due to unexpected" +
+                        " request line: " + requestLine);
+                throw new IOException("Client request error - Unexpected request line");
+            }
+
+            // Pipe the input stream of the client connection to the
+            // output stream of the target connection and conversely.
+            // Now the client and target will just talk to each other.
+            System.out.println("Tunnel: Starting tunnel pipes");
+            Thread t1 = pipe(ccis, targetConnection.getOutputStream(), '+');
+            Thread t2 = pipe(targetConnection.getInputStream(), ccos, '-');
+            t1.start();
+            t2.start();
+            // wait for the request to complete
+            t1.join();
+            t2.join();
+        }
     }
 }

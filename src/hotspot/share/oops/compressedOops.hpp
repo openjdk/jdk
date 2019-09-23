@@ -26,10 +26,12 @@
 #define SHARE_OOPS_COMPRESSEDOOPS_HPP
 
 #include "memory/allocation.hpp"
+#include "memory/memRegion.hpp"
 #include "oops/oopsHierarchy.hpp"
 #include "utilities/globalDefinitions.hpp"
 
 class outputStream;
+class ReservedHeapSpace;
 
 struct NarrowPtrStruct {
   // Base address for oop-within-java-object materialization.
@@ -49,7 +51,8 @@ class CompressedOops : public AllStatic {
   // For UseCompressedOops.
   static NarrowPtrStruct _narrow_oop;
 
-  static address _narrow_ptrs_base;
+  // The address range of the heap
+  static MemRegion _heap_address_range;
 
 public:
   // For UseCompressedOops
@@ -73,21 +76,24 @@ public:
     AnyNarrowOopMode = 4
   };
 
-  static void initialize();
+  static void initialize(const ReservedHeapSpace& heap_space);
 
   static void set_base(address base);
   static void set_shift(int shift);
   static void set_use_implicit_null_checks(bool use);
 
-  static void set_ptrs_base(address addr);
-
-  static address  base()                     { return  _narrow_oop._base; }
+  static address  base()                     { return _narrow_oop._base; }
+  static address  begin()                    { return (address)_heap_address_range.start(); }
+  static address  end()                      { return (address)_heap_address_range.end(); }
   static bool     is_base(void* addr)        { return (base() == (address)addr); }
-  static int      shift()                    { return  _narrow_oop._shift; }
-  static bool     use_implicit_null_checks() { return  _narrow_oop._use_implicit_null_checks; }
+  static int      shift()                    { return _narrow_oop._shift; }
+  static bool     use_implicit_null_checks() { return _narrow_oop._use_implicit_null_checks; }
 
-  static address* ptrs_base_addr()           { return &_narrow_ptrs_base; }
-  static address  ptrs_base()                { return _narrow_ptrs_base; }
+  static address* ptrs_base_addr()           { return &_narrow_oop._base; }
+  static address  ptrs_base()                { return _narrow_oop._base; }
+
+  static bool is_in(void* addr);
+  static bool is_in(MemRegion mr);
 
   static Mode mode();
   static const char* mode_to_string(Mode mode);

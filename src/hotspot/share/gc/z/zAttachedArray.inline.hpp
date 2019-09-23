@@ -51,7 +51,7 @@ inline ZAttachedArray<ObjectT, ArrayT>::ZAttachedArray(size_t length) :
     _length(length) {}
 
 template <typename ObjectT, typename ArrayT>
-inline uint32_t ZAttachedArray<ObjectT, ArrayT>::length() const {
+inline size_t ZAttachedArray<ObjectT, ArrayT>::length() const {
   return _length;
 }
 

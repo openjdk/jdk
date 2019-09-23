@@ -1005,6 +1005,7 @@ public abstract class Calendar implements Serializable, Cloneable, Comparable<Ca
     private int             serialVersionOnStream = currentSerialVersion;
 
     // Proclaim serialization compatibility with JDK 1.1
+    @java.io.Serial
     static final long       serialVersionUID = -1807547505821590642L;
 
     // Mask values for calendar fields
@@ -2099,11 +2100,11 @@ public abstract class Calendar implements Serializable, Cloneable, Comparable<Ca
      *        {@code field} in the given {@code style}, or
      *        {@code null} if no string representation is
      *        applicable.
-     * @exception IllegalArgumentException
+     * @throws    IllegalArgumentException
      *        if {@code field} or {@code style} is invalid,
      *        or if this {@code Calendar} is non-lenient and any
      *        of the calendar fields have invalid values
-     * @exception NullPointerException
+     * @throws    NullPointerException
      *        if {@code locale} is null
      * @since 1.6
      */
@@ -2190,11 +2191,11 @@ public abstract class Calendar implements Serializable, Cloneable, Comparable<Ca
      *        {@code style} and {@code locale} and their
      *        field values, or {@code null} if no display names
      *        are defined for {@code field}
-     * @exception IllegalArgumentException
+     * @throws    IllegalArgumentException
      *        if {@code field} or {@code style} is invalid,
      *        or if this {@code Calendar} is non-lenient and any
      *        of the calendar fields have invalid values
-     * @exception NullPointerException
+     * @throws    NullPointerException
      *        if {@code locale} is null
      * @since 1.6
      */
@@ -2310,7 +2311,7 @@ public abstract class Calendar implements Serializable, Cloneable, Comparable<Ca
      *
      * @return <code>true</code> if the field has been set externally,
      * <code>false</code> otherwise.
-     * @exception IndexOutOfBoundsException if the specified
+     * @throws    IndexOutOfBoundsException if the specified
      *                <code>field</code> is out of range
      *               (<code>field &lt; 0 || field &gt;= FIELD_COUNT</code>).
      * @see #selectFields()
@@ -2343,7 +2344,7 @@ public abstract class Calendar implements Serializable, Cloneable, Comparable<Ca
      * rather than by calling one of the setter methods.
      *
      * @param fieldMask the field to be marked as computed.
-     * @exception IndexOutOfBoundsException if the specified
+     * @throws    IndexOutOfBoundsException if the specified
      *                <code>field</code> is out of range
      *               (<code>field &lt; 0 || field &gt;= FIELD_COUNT</code>).
      * @see #isExternallySet(int)
@@ -2380,7 +2381,7 @@ public abstract class Calendar implements Serializable, Cloneable, Comparable<Ca
      *
      * @param fieldMask the field mask indicating which calendar fields are in
      * sync with the time value.
-     * @exception IndexOutOfBoundsException if the specified
+     * @throws    IndexOutOfBoundsException if the specified
      *                <code>field</code> is out of range
      *               (<code>field &lt; 0 || field &gt;= FIELD_COUNT</code>).
      * @see #isExternallySet(int)
@@ -2805,9 +2806,9 @@ public abstract class Calendar implements Serializable, Cloneable, Comparable<Ca
      * before the time represented by the argument; and a value greater than
      * <code>0</code> if the time of this <code>Calendar</code> is after the
      * time represented by the argument.
-     * @exception NullPointerException if the specified <code>Calendar</code> is
+     * @throws    NullPointerException if the specified <code>Calendar</code> is
      *            <code>null</code>.
-     * @exception IllegalArgumentException if the time value of the
+     * @throws    IllegalArgumentException if the time value of the
      * specified <code>Calendar</code> object can't be obtained due to
      * any invalid calendar values.
      * @since   1.5
@@ -3053,7 +3054,7 @@ public abstract class Calendar implements Serializable, Cloneable, Comparable<Ca
      * {@link UnsupportedOperationException}.
      *
      * @return the week year of this {@code Calendar}
-     * @exception UnsupportedOperationException
+     * @throws    UnsupportedOperationException
      *            if any week year numbering isn't supported
      *            in this {@code Calendar}.
      * @see #isWeekDateSupported()
@@ -3085,11 +3086,11 @@ public abstract class Calendar implements Serializable, Cloneable, Comparable<Ca
      * @param dayOfWeek  the day of week value: one of the constants
      *                   for the {@link #DAY_OF_WEEK} field: {@link
      *                   #SUNDAY}, ..., {@link #SATURDAY}.
-     * @exception IllegalArgumentException
+     * @throws    IllegalArgumentException
      *            if any of the given date specifiers is invalid
      *            or any of the calendar fields are inconsistent
      *            with the given date specifiers in non-lenient mode
-     * @exception UnsupportedOperationException
+     * @throws    UnsupportedOperationException
      *            if any week year numbering isn't supported in this
      *            {@code Calendar}.
      * @see #isWeekDateSupported()
@@ -3109,7 +3110,7 @@ public abstract class Calendar implements Serializable, Cloneable, Comparable<Ca
      * {@code UnsupportedOperationException}.
      *
      * @return the number of weeks in the week year.
-     * @exception UnsupportedOperationException
+     * @throws    UnsupportedOperationException
      *            if any week year numbering isn't supported in this
      *            {@code Calendar}.
      * @see #WEEK_OF_YEAR
@@ -3350,7 +3351,7 @@ public abstract class Calendar implements Serializable, Cloneable, Comparable<Ca
      *
      * @param field the calendar field
      * @return the calendar field name
-     * @exception IndexOutOfBoundsException if <code>field</code> is negative,
+     * @throws    IndexOutOfBoundsException if <code>field</code> is negative,
      * equal to or greater than {@code FIELD_COUNT}.
      */
     static String getFieldName(int field) {
@@ -3526,6 +3527,7 @@ public abstract class Calendar implements Serializable, Cloneable, Comparable<Ca
      * removed from the serialization stream; this will probably happen in the
      * near future.
      */
+    @java.io.Serial
     private synchronized void writeObject(ObjectOutputStream stream)
          throws IOException
     {
@@ -3580,6 +3582,7 @@ public abstract class Calendar implements Serializable, Cloneable, Comparable<Ca
     /**
      * Reconstitutes this object from a stream (i.e., deserialize it).
      */
+    @java.io.Serial
     private void readObject(ObjectInputStream stream)
          throws IOException, ClassNotFoundException
     {

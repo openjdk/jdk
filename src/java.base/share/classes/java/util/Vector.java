@@ -124,6 +124,7 @@ public class Vector<E>
     protected int capacityIncrement;
 
     /** use serialVersionUID from JDK 1.0.2 for interoperability */
+    @java.io.Serial
     private static final long serialVersionUID = -2767605614048989439L;
 
     /**
@@ -1149,6 +1150,7 @@ public class Vector<E>
      * @throws ClassNotFoundException if the stream contains data
      *         of a non-existing class
      */
+    @java.io.Serial
     private void readObject(ObjectInputStream in)
             throws IOException, ClassNotFoundException {
         ObjectInputStream.GetField gfields = in.readFields();
@@ -1170,6 +1172,7 @@ public class Vector<E>
      * @param s the stream
      * @throws java.io.IOException if an I/O error occurs
      */
+    @java.io.Serial
     private void writeObject(java.io.ObjectOutputStream s)
             throws java.io.IOException {
         final java.io.ObjectOutputStream.PutField fields = s.putFields();

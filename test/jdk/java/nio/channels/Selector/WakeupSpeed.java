@@ -23,7 +23,7 @@
 
 /* @test
  * @bug 4467968
- * @summary Tests wether wakeup makes the next select() call return immediately
+ * @summary Tests whether wakeup makes the next select() call return immediately
  */
 
 import java.io.IOException;

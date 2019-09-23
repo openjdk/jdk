@@ -280,6 +280,7 @@ public class BigDecimal extends Number implements Comparable<BigDecimal> {
     private static final int MAX_COMPACT_DIGITS = 18;
 
     /* Appease the serialization gods */
+    @java.io.Serial
     private static final long serialVersionUID = 6108874887143696463L;
 
     private static final ThreadLocal<StringBuilderHelper>
@@ -4127,6 +4128,7 @@ public class BigDecimal extends Number implements Comparable<BigDecimal> {
      *
      * @param s the stream being read.
      */
+    @java.io.Serial
     private void readObject(java.io.ObjectInputStream s)
         throws java.io.IOException, ClassNotFoundException {
         // Read in all fields
@@ -4145,6 +4147,7 @@ public class BigDecimal extends Number implements Comparable<BigDecimal> {
     *
     * @param s the stream to serialize to.
     */
+    @java.io.Serial
    private void writeObject(java.io.ObjectOutputStream s)
        throws java.io.IOException {
        // Must inflate to maintain compatible serial form.

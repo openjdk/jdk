@@ -453,30 +453,45 @@ public interface Elements {
      * itself.
      * The package of a module is {@code null}.
      *
-     * @param type the element being examined
+     * The package of a top-level type is its {@linkplain
+     * TypeElement#getEnclosingElement enclosing package}. Otherwise,
+     * the package of an element is equal to the package of the
+     * {@linkplain Element#getEnclosingElement enclosing element}.
+     *
+     * @param e the element being examined
      * @return the package of an element
      */
-    PackageElement getPackageOf(Element type);
+    PackageElement getPackageOf(Element e);
 
     /**
      * Returns the module of an element.  The module of a module is
      * itself.
-     * If there is no module for the element, null is returned. One situation where there is
-     * no module for an element is if the environment does not include modules, such as
-     * an annotation processing environment configured for
-     * a {@linkplain
+     *
+     * If a package has a module as its {@linkplain
+     * PackageElement#getEnclosingElement enclosing element}, that
+     * module is the module of the package. If the enclosing element
+     * of a package is {@code null}, {@code null} is returned for the
+     * package's module.
+     *
+     * (One situation where a package may have a {@code null} module
+     * is if the environment does not include modules, such as an
+     * annotation processing environment configured for a {@linkplain
      * javax.annotation.processing.ProcessingEnvironment#getSourceVersion
-     * source version} without modules.
+     * source version} without modules.)
+     *
+     * Otherwise, the module of an element is equal to the module
+     * {@linkplain #getPackageOf(Element) of the package} of the
+     * element.
      *
      * @implSpec The default implementation of this method returns
      * {@code null}.
      *
-     * @param type the element being examined
+     * @param e the element being examined
      * @return the module of an element
      * @since 9
      * @spec JPMS
      */
-    default ModuleElement getModuleOf(Element type) {
+    default ModuleElement getModuleOf(Element e) {
         return null;
     }
 

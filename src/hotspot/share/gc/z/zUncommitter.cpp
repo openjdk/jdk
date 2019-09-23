@@ -36,7 +36,7 @@ ZUncommitter::ZUncommitter() :
 
 bool ZUncommitter::idle(uint64_t timeout) {
   // Idle for at least one second
-  const uint64_t expires = os::elapsedTime() + MAX2(timeout, 1ul);
+  const uint64_t expires = os::elapsedTime() + MAX2<uint64_t>(timeout, 1);
 
   for (;;) {
     // We might wake up spuriously from wait, so always recalculate

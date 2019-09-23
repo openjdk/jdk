@@ -2546,7 +2546,7 @@ void InstanceKlass::release_C_heap_structures() {
   // unreference array name derived from this class name (arrays of an unloaded
   // class can't be referenced anymore).
   if (_array_name != NULL)  _array_name->decrement_refcount();
-  if (_source_debug_extension != NULL) FREE_C_HEAP_ARRAY(char, _source_debug_extension);
+  FREE_C_HEAP_ARRAY(char, _source_debug_extension);
 }
 
 void InstanceKlass::set_source_debug_extension(const char* array, int length) {
@@ -2717,7 +2717,7 @@ bool InstanceKlass::is_same_class_package(const Klass* class2) const {
   // and package entries. Both must be the same. This rule
   // applies even to classes that are defined in the unnamed
   // package, they still must have the same class loader.
-  if (oopDesc::equals(classloader1, classloader2) && (classpkg1 == classpkg2)) {
+  if ((classloader1 == classloader2) && (classpkg1 == classpkg2)) {
     return true;
   }
 
@@ -2728,7 +2728,7 @@ bool InstanceKlass::is_same_class_package(const Klass* class2) const {
 // and classname information is enough to determine a class's package
 bool InstanceKlass::is_same_class_package(oop other_class_loader,
                                           const Symbol* other_class_name) const {
-  if (!oopDesc::equals(class_loader(), other_class_loader)) {
+  if (class_loader() != other_class_loader) {
     return false;
   }
   if (name()->fast_compare(other_class_name) == 0) {
@@ -2973,6 +2973,7 @@ void InstanceKlass::adjust_default_methods(bool* trace_name_printed) {
 
 // On-stack replacement stuff
 void InstanceKlass::add_osr_nmethod(nmethod* n) {
+  assert_lock_strong(CompiledMethod_lock);
 #ifndef PRODUCT
   if (TieredCompilation) {
       nmethod * prev = lookup_osr_nmethod(n->method(), n->osr_entry_bci(), n->comp_level(), true);
@@ -2982,8 +2983,6 @@ void InstanceKlass::add_osr_nmethod(nmethod* n) {
 #endif
   // only one compilation can be active
   {
-    // This is a short non-blocking critical region, so the no safepoint check is ok.
-    MutexLocker ml(OsrList_lock, Mutex::_no_safepoint_check_flag);
     assert(n->is_osr_method(), "wrong kind of nmethod");
     n->set_osr_link(osr_nmethods_head());
     set_osr_nmethods_head(n);
@@ -3008,7 +3007,8 @@ void InstanceKlass::add_osr_nmethod(nmethod* n) {
 // Remove osr nmethod from the list. Return true if found and removed.
 bool InstanceKlass::remove_osr_nmethod(nmethod* n) {
   // This is a short non-blocking critical region, so the no safepoint check is ok.
-  MutexLocker ml(OsrList_lock, Mutex::_no_safepoint_check_flag);
+  MutexLocker ml(CompiledMethod_lock->owned_by_self() ? NULL : CompiledMethod_lock
+                 , Mutex::_no_safepoint_check_flag);
   assert(n->is_osr_method(), "wrong kind of nmethod");
   nmethod* last = NULL;
   nmethod* cur  = osr_nmethods_head();
@@ -3051,8 +3051,8 @@ bool InstanceKlass::remove_osr_nmethod(nmethod* n) {
 }
 
 int InstanceKlass::mark_osr_nmethods(const Method* m) {
-  // This is a short non-blocking critical region, so the no safepoint check is ok.
-  MutexLocker ml(OsrList_lock, Mutex::_no_safepoint_check_flag);
+  MutexLocker ml(CompiledMethod_lock->owned_by_self() ? NULL : CompiledMethod_lock,
+                 Mutex::_no_safepoint_check_flag);
   nmethod* osr = osr_nmethods_head();
   int found = 0;
   while (osr != NULL) {
@@ -3067,8 +3067,8 @@ int InstanceKlass::mark_osr_nmethods(const Method* m) {
 }
 
 nmethod* InstanceKlass::lookup_osr_nmethod(const Method* m, int bci, int comp_level, bool match_level) const {
-  // This is a short non-blocking critical region, so the no safepoint check is ok.
-  MutexLocker ml(OsrList_lock, Mutex::_no_safepoint_check_flag);
+  MutexLocker ml(CompiledMethod_lock->owned_by_self() ? NULL : CompiledMethod_lock,
+                 Mutex::_no_safepoint_check_flag);
   nmethod* osr = osr_nmethods_head();
   nmethod* best = NULL;
   while (osr != NULL) {

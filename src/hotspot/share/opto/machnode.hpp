@@ -1004,6 +1004,7 @@ public:
 // Machine-specific versions of halt nodes
 class MachHaltNode : public MachReturnNode {
 public:
+  const char* _halt_reason;
   virtual JVMState* jvms() const;
 };
 

@@ -38,7 +38,6 @@ import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ForkJoinPool;
 import java.util.concurrent.ForkJoinTask;
 import java.util.concurrent.Future;
-import java.util.concurrent.ThreadLocalRandom;
 import java.util.stream.Stream;
 
 import junit.framework.Test;
@@ -81,7 +80,7 @@ public class ForkJoinPool9Test extends JSR166TestCase {
             Thread currentThread = Thread.currentThread();
 
             Stream.of(systemClassLoader, null).forEach(cl -> {
-                if (ThreadLocalRandom.current().nextBoolean())
+                if (randomBoolean())
                     // should always be permitted, without effect
                     currentThread.setContextClassLoader(cl);
                 });

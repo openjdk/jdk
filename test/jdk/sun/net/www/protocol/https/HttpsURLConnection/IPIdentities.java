@@ -29,6 +29,7 @@
 /* @test
  * @summary X509 certificate hostname checking is broken in JDK1.6.0_10
  * @bug 6766775
+ * @library /test/lib
  * @run main/othervm IPIdentities
  * @author Xuelei Fan
  */
@@ -45,6 +46,7 @@ import java.security.cert.CertificateFactory;
 import java.security.spec.*;
 import java.security.interfaces.*;
 import java.math.BigInteger;
+import jdk.test.lib.net.URIBuilder;
 
 /*
  * Certificates and key used in the test.
@@ -652,8 +654,13 @@ public class IPIdentities {
             serverModulus, serverPrivateExponent, passphrase);
         SSLServerSocketFactory sslssf = context.getServerSocketFactory();
 
+        // doClientSide() connects to the loopback address
+        InetAddress loopback = InetAddress.getLoopbackAddress();
+        InetSocketAddress address = new InetSocketAddress(loopback, serverPort);
+
         sslServerSocket =
-            (SSLServerSocket) sslssf.createServerSocket(serverPort);
+            (SSLServerSocket) sslssf.createServerSocket();
+        sslServerSocket.bind(address);
         serverPort = sslServerSocket.getLocalPort();
 
         /*
@@ -713,11 +720,16 @@ public class IPIdentities {
             HttpsURLConnection http = null;
 
             /* establish http connection to server */
-            URL url = new URL("https://localhost:" + serverPort+"/");
+            URL url = URIBuilder.newBuilder()
+                .scheme("https")
+                .loopback()
+                .port(serverPort)
+                .path("/")
+                .toURL();
             System.out.println("url is "+url.toString());
 
             try {
-                http = (HttpsURLConnection)url.openConnection();
+                http = (HttpsURLConnection)url.openConnection(Proxy.NO_PROXY);
 
                 int respCode = http.getResponseCode();
                 System.out.println("respCode = "+respCode);

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1995, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1995, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -41,6 +41,7 @@ package java.lang;
  * @since   1.0
  */
 public class RuntimeException extends Exception {
+    @java.io.Serial
     static final long serialVersionUID = -7034897190745766939L;
 
     /** Constructs a new runtime exception with {@code null} as its

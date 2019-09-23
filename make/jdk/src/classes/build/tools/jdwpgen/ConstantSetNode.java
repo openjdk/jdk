@@ -62,9 +62,7 @@ class ConstantSetNode extends AbstractNamedNode {
         writer.println("<th class=\"bold\" style=\"width: 65%\" scope=\"col\">Description");
         writer.println("</tr>");
         for (Node node : components) {
-            ConstantNode n = (ConstantNode)node;
-            writer.println("<span id=\"" + name + "_" + n.name + "\"></span>");
-            n.document(writer);
+            node.document(writer);
         }
         writer.println("</table>");
     }

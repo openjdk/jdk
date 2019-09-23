@@ -508,7 +508,8 @@ class LDMLParseHandler extends AbstractLDMLHandler<Object> {
             String type = attributes.getValue("type");
             if (null == type) {
                 // format data for decimal number format
-                pushStringEntry(qName, attributes, "NumberPatterns/decimal");
+                pushStringEntry(qName, attributes,
+                    currentNumberingSystem + "NumberPatterns/decimal");
                 currentStyle = type;
             } else {
                 switch (type) {
@@ -586,6 +587,18 @@ class LDMLParseHandler extends AbstractLDMLHandler<Object> {
                 pushContainer(qName, attributes);
             }
             break;
+        case "currencyFormats":
+        case "decimalFormats":
+        case "percentFormats":
+            {
+                String script = attributes.getValue("numberSystem");
+                if (script != null) {
+                    addNumberingScript(script);
+                    currentNumberingSystem = script + ".";
+                }
+                pushContainer(qName, attributes);
+            }
+            break;
         case "currencyFormatLength":
             if (attributes.getValue("type") == null) {
                 // skipping type="short" data
@@ -601,9 +614,11 @@ class LDMLParseHandler extends AbstractLDMLHandler<Object> {
                 // copy string for later assembly into NumberPatterns
                 String cfStyle = attributes.getValue("type");
                 if (cfStyle.equals("standard")) {
-                    pushStringEntry(qName, attributes, "NumberPatterns/currency");
+                    pushStringEntry(qName, attributes,
+                        currentNumberingSystem + "NumberPatterns/currency");
                 } else if (cfStyle.equals("accounting")) {
-                    pushStringEntry(qName, attributes, "NumberPatterns/accounting");
+                    pushStringEntry(qName, attributes,
+                        currentNumberingSystem + "NumberPatterns/accounting");
                 } else {
                     pushIgnoredContainer(qName);
                 }
@@ -613,7 +628,8 @@ class LDMLParseHandler extends AbstractLDMLHandler<Object> {
             // for FormatData
             // copy string for later assembly into NumberPatterns
             if (attributes.getValue("type").equals("standard")) {
-                pushStringEntry(qName, attributes, "NumberPatterns/percent");
+                pushStringEntry(qName, attributes,
+                    currentNumberingSystem + "NumberPatterns/percent");
             } else {
                 pushIgnoredContainer(qName);
             }
@@ -641,13 +657,7 @@ class LDMLParseHandler extends AbstractLDMLHandler<Object> {
                     break;
                 }
 
-                @SuppressWarnings("unchecked")
-                List<String> numberingScripts = (List<String>) get("numberingScripts");
-                if (numberingScripts == null) {
-                    numberingScripts = new ArrayList<>();
-                    put("numberingScripts", numberingScripts);
-                }
-                numberingScripts.add(script);
+                addNumberingScript(script);
                 put(currentNumberingSystem + "NumberElements/zero", digits.substring(0, 1));
                 pushContainer(qName, attributes);
             }
@@ -1020,6 +1030,13 @@ class LDMLParseHandler extends AbstractLDMLHandler<Object> {
             compactCount = "";
             putIfEntry();
             break;
+        case "currencyFormats":
+        case "decimalFormats":
+        case "percentFormats":
+        case "symbols":
+            currentNumberingSystem = "";
+            putIfEntry();
+            break;
         default:
             putIfEntry();
         }
@@ -1084,6 +1101,18 @@ class LDMLParseHandler extends AbstractLDMLHandler<Object> {
                 return "tz";
             default:
                 return key;
+        }
+    }
+
+    private void addNumberingScript(String script) {
+        @SuppressWarnings("unchecked")
+        List<String> numberingScripts = (List<String>) get("numberingScripts");
+        if (numberingScripts == null) {
+            numberingScripts = new ArrayList<>();
+            put("numberingScripts", numberingScripts);
+        }
+        if (!numberingScripts.contains(script)) {
+            numberingScripts.add(script);
         }
     }
 }

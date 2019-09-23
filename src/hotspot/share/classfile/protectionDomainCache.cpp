@@ -160,7 +160,7 @@ ProtectionDomainCacheEntry* ProtectionDomainCacheTable::get(Handle protection_do
 ProtectionDomainCacheEntry* ProtectionDomainCacheTable::find_entry(int index, Handle protection_domain) {
   assert_locked_or_safepoint(SystemDictionary_lock);
   for (ProtectionDomainCacheEntry* e = bucket(index); e != NULL; e = e->next()) {
-    if (oopDesc::equals(e->object_no_keepalive(), protection_domain())) {
+    if (e->object_no_keepalive() == protection_domain()) {
       return e;
     }
   }

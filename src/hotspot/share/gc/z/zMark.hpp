@@ -105,7 +105,7 @@ public:
 
   bool is_initialized() const;
 
-  template <bool finalizable, bool publish> void mark_object(uintptr_t addr);
+  template <bool follow, bool finalizable, bool publish> void mark_object(uintptr_t addr);
 
   void start();
   void mark(bool initial);

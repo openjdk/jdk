@@ -80,8 +80,8 @@ MetaspaceSharedStats MetaspaceShared::_stats;
 bool MetaspaceShared::_has_error_classes;
 bool MetaspaceShared::_archive_loading_failed = false;
 bool MetaspaceShared::_remapped_readwrite = false;
-address MetaspaceShared::_cds_i2i_entry_code_buffers = NULL;
-size_t MetaspaceShared::_cds_i2i_entry_code_buffers_size = 0;
+address MetaspaceShared::_i2i_entry_code_buffers = NULL;
+size_t MetaspaceShared::_i2i_entry_code_buffers_size = 0;
 size_t MetaspaceShared::_core_spaces_size = 0;
 void* MetaspaceShared::_shared_metaspace_static_top = NULL;
 
@@ -356,14 +356,14 @@ void MetaspaceShared::post_initialize(TRAPS) {
     if (size > 0) {
       SystemDictionaryShared::allocate_shared_data_arrays(size, THREAD);
       if (!DynamicDumpSharedSpaces) {
-        FileMapHeader* header;
+        FileMapInfo* info;
         if (FileMapInfo::dynamic_info() == NULL) {
-          header = FileMapInfo::current_info()->header();
+          info = FileMapInfo::current_info();
         } else {
-          header = FileMapInfo::dynamic_info()->header();
+          info = FileMapInfo::dynamic_info();
         }
-        ClassLoaderExt::init_paths_start_index(header->_app_class_paths_start_index);
-        ClassLoaderExt::init_app_module_paths_start_index(header->_app_module_paths_start_index);
+        ClassLoaderExt::init_paths_start_index(info->app_class_paths_start_index());
+        ClassLoaderExt::init_app_module_paths_start_index(info->app_module_paths_start_index());
       }
     }
   }
@@ -492,20 +492,20 @@ void MetaspaceShared::serialize(SerializeClosure* soc) {
   soc->do_tag(666);
 }
 
-address MetaspaceShared::cds_i2i_entry_code_buffers(size_t total_size) {
+address MetaspaceShared::i2i_entry_code_buffers(size_t total_size) {
   if (DumpSharedSpaces) {
-    if (_cds_i2i_entry_code_buffers == NULL) {
-      _cds_i2i_entry_code_buffers = (address)misc_code_space_alloc(total_size);
-      _cds_i2i_entry_code_buffers_size = total_size;
+    if (_i2i_entry_code_buffers == NULL) {
+      _i2i_entry_code_buffers = (address)misc_code_space_alloc(total_size);
+      _i2i_entry_code_buffers_size = total_size;
     }
   } else if (UseSharedSpaces) {
-    assert(_cds_i2i_entry_code_buffers != NULL, "must already been initialized");
+    assert(_i2i_entry_code_buffers != NULL, "must already been initialized");
   } else {
     return NULL;
   }
 
-  assert(_cds_i2i_entry_code_buffers_size == total_size, "must not change");
-  return _cds_i2i_entry_code_buffers;
+  assert(_i2i_entry_code_buffers_size == total_size, "must not change");
+  return _i2i_entry_code_buffers;
 }
 
 uintx MetaspaceShared::object_delta_uintx(void* obj) {
@@ -1545,8 +1545,8 @@ void VM_PopulateDumpSharedSpace::doit() {
   mapinfo->populate_header(os::vm_allocation_granularity());
   mapinfo->set_read_only_tables_start(read_only_tables_start);
   mapinfo->set_misc_data_patching_start(vtbl_list);
-  mapinfo->set_cds_i2i_entry_code_buffers(MetaspaceShared::cds_i2i_entry_code_buffers());
-  mapinfo->set_cds_i2i_entry_code_buffers_size(MetaspaceShared::cds_i2i_entry_code_buffers_size());
+  mapinfo->set_i2i_entry_code_buffers(MetaspaceShared::i2i_entry_code_buffers(),
+                                          MetaspaceShared::i2i_entry_code_buffers_size());
   mapinfo->set_core_spaces_size(core_spaces_size);
 
   for (int pass=1; pass<=2; pass++) {
@@ -1814,7 +1814,7 @@ int MetaspaceShared::preload_classes(const char* class_list_path, TRAPS) {
       if (klass == NULL &&
           (PENDING_EXCEPTION->klass()->name() == vmSymbols::java_lang_ClassNotFoundException())) {
         // print a warning only when the pending exception is class not found
-        tty->print_cr("Preload Warning: Cannot find %s", parser.current_class_name());
+        log_warning(cds)("Preload Warning: Cannot find %s", parser.current_class_name());
       }
       CLEAR_PENDING_EXCEPTION;
     }
@@ -1860,7 +1860,7 @@ bool MetaspaceShared::try_link_class(InstanceKlass* ik, TRAPS) {
     ik->link_class(THREAD);
     if (HAS_PENDING_EXCEPTION) {
       ResourceMark rm;
-      tty->print_cr("Preload Warning: Verification failed for %s",
+      log_warning(cds)("Preload Warning: Verification failed for %s",
                     ik->external_name());
       CLEAR_PENDING_EXCEPTION;
       ik->set_in_error_state();
@@ -2043,8 +2043,8 @@ bool MetaspaceShared::map_shared_spaces(FileMapInfo* mapinfo) {
 
 void MetaspaceShared::initialize_shared_spaces() {
   FileMapInfo *mapinfo = FileMapInfo::current_info();
-  _cds_i2i_entry_code_buffers = mapinfo->cds_i2i_entry_code_buffers();
-  _cds_i2i_entry_code_buffers_size = mapinfo->cds_i2i_entry_code_buffers_size();
+  _i2i_entry_code_buffers = mapinfo->i2i_entry_code_buffers();
+  _i2i_entry_code_buffers_size = mapinfo->i2i_entry_code_buffers_size();
   // _core_spaces_size is loaded from the shared archive immediatelly after mapping
   assert(_core_spaces_size == mapinfo->core_spaces_size(), "sanity");
   char* buffer = mapinfo->misc_data_patching_start();

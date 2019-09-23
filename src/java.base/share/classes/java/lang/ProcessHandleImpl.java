@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -223,9 +223,9 @@ final class ProcessHandleImpl implements ProcessHandle {
     /**
      * Returns a ProcessHandle for an existing native process.
      *
-     * @param pid the native process identifier
+     * @param  pid the native process identifier
      * @return The ProcessHandle for the pid if the process is alive;
-     *      or {@code null} if the process ID does not exist in the native system.
+     *         or {@code null} if the process ID does not exist in the native system.
      * @throws SecurityException if RuntimePermission("manageProcess") is not granted
      */
     static Optional<ProcessHandle> get(long pid) {

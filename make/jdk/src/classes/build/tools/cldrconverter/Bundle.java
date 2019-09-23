@@ -33,6 +33,7 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Optional;
 
 class Bundle {
     static enum Type {
@@ -213,27 +214,16 @@ class Bundle {
 
         // merge individual strings into arrays
 
-        // if myMap has any of the NumberPatterns members
-        for (String k : NUMBER_PATTERN_KEYS) {
-            if (myMap.containsKey(k)) {
-                String[] numberPatterns = new String[NUMBER_PATTERN_KEYS.length];
-                for (int i = 0; i < NUMBER_PATTERN_KEYS.length; i++) {
-                    String key = NUMBER_PATTERN_KEYS[i];
-                    String value = (String) myMap.remove(key);
-                    if (value == null) {
-                        value = (String) parentsMap.remove(key);
-                    }
-                    if (value == null || value.isEmpty()) {
-                        if (!key.endsWith("accounting")) {
-                            // print warning unless it is for "accounting",
-                            // which may be missing.
-                            CLDRConverter.warning("empty pattern for " + key);
-                        }
-                    }
-                    numberPatterns[i] = value;
-                }
-                myMap.put("NumberPatterns", numberPatterns);
-                break;
+        // if myMap has any of the NumberPatterns/NumberElements members, create a
+        // complete array of patterns/elements.
+        @SuppressWarnings("unchecked")
+        List<String> scripts = (List<String>) myMap.get("numberingScripts");
+        if (scripts != null) {
+            for (String script : scripts) {
+                myMap.put(script + ".NumberPatterns",
+                        createNumberArray(myMap, parentsMap, NUMBER_PATTERN_KEYS, script));
+                myMap.put(script + ".NumberElements",
+                        createNumberArray(myMap, parentsMap, NUMBER_ELEMENT_KEYS, script));
             }
         }
 
@@ -244,40 +234,6 @@ class Bundle {
                 String[] arrPatterns = patterns.stream()
                         .map(s -> s == null ? "" : s).toArray(String[]::new);
                 myMap.put(k, arrPatterns);
-            }
-        }
-
-        // if myMap has any of NUMBER_ELEMENT_KEYS, create a complete NumberElements.
-        String defaultScript = (String) myMap.get("DefaultNumberingSystem");
-        @SuppressWarnings("unchecked")
-        List<String> scripts = (List<String>) myMap.get("numberingScripts");
-        if (scripts != null) {
-            for (String script : scripts) {
-                for (String k : NUMBER_ELEMENT_KEYS) {
-                    String[] numberElements = new String[NUMBER_ELEMENT_KEYS.length];
-                    for (int i = 0; i < NUMBER_ELEMENT_KEYS.length; i++) {
-                        String key = script + "." + NUMBER_ELEMENT_KEYS[i];
-                        String value = (String) myMap.remove(key);
-                        if (value == null) {
-                            if (key.endsWith("/pattern")) {
-                                value = "#";
-                            } else {
-                                value = (String) parentsMap.get(key);
-                                if (value == null) {
-                                    // the last resort is "latn"
-                                    key = "latn." + NUMBER_ELEMENT_KEYS[i];
-                                    value = (String) parentsMap.get(key);
-                                    if (value == null) {
-                                        throw new InternalError("NumberElements: null for " + key);
-                                    }
-                                }
-                            }
-                        }
-                        numberElements[i] = value;
-                    }
-                    myMap.put(script + "." + "NumberElements", numberElements);
-                    break;
-                }
             }
         }
 
@@ -797,5 +753,46 @@ class Bundle {
     @FunctionalInterface
     private interface ConvertDateTimeLetters {
         void convert(CalendarType calendarType, char cldrLetter, int count, StringBuilder sb);
+    }
+
+    /**
+     * Returns a complete string array for NumberElements or NumberPatterns. If any
+     * array element is missing, it will fall back to parents map, as well as
+     * numbering script fallback.
+     */
+    private String[] createNumberArray(Map<String, Object> myMap, Map<String, Object>parentsMap,
+                                        String[] keys, String script) {
+        String[] numArray = new String[keys.length];
+        for (int i = 0; i < keys.length; i++) {
+            String key = script + "." + keys[i];
+            final int idx = i;
+            Optional.ofNullable(
+                myMap.getOrDefault(key,
+                    // if value not found in myMap, search for parentsMap
+                    parentsMap.getOrDefault(key,
+                        parentsMap.getOrDefault(keys[i],
+                            // the last resort is "latn"
+                            parentsMap.get("latn." + keys[i])))))
+                .ifPresentOrElse(v -> numArray[idx] = (String)v, () -> {
+                    if (keys == NUMBER_PATTERN_KEYS) {
+                        // NumberPatterns
+                        if (!key.endsWith("accounting")) {
+                            // throw error unless it is for "accounting",
+                            // which may be missing.
+                            throw new InternalError("NumberPatterns: null for " +
+                                                    key + ", id: " + id);
+                        }
+                    } else {
+                        // NumberElements
+                        assert keys == NUMBER_ELEMENT_KEYS;
+                        if (key.endsWith("/pattern")) {
+                            numArray[idx] = "#";
+                        } else {
+                            throw new InternalError("NumberElements: null for " +
+                                                    key + ", id: " + id);
+                        }
+                    }});
+        }
+        return numArray;
     }
 }

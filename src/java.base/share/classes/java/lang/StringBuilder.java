@@ -88,6 +88,7 @@ public final class StringBuilder
 {
 
     /** use serialVersionUID for interoperability */
+    @java.io.Serial
     static final long serialVersionUID = 4383685877147921099L;
 
     /**
@@ -458,6 +459,7 @@ public final class StringBuilder
      *             characters currently stored in the string builder, in which
      *             case extra characters are ignored.
      */
+    @java.io.Serial
     private void writeObject(java.io.ObjectOutputStream s)
         throws java.io.IOException {
         s.defaultWriteObject();
@@ -475,6 +477,7 @@ public final class StringBuilder
      * readObject is called to restore the state of the StringBuffer from
      * a stream.
      */
+    @java.io.Serial
     private void readObject(java.io.ObjectInputStream s)
         throws java.io.IOException, ClassNotFoundException {
         s.defaultReadObject();

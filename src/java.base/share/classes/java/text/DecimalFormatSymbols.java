@@ -109,7 +109,7 @@ public class DecimalFormatSymbols implements Cloneable, Serializable {
      * instead of the Latin numbering system.
      *
      * @param locale the desired locale
-     * @exception NullPointerException if {@code locale} is null
+     * @throws    NullPointerException if {@code locale} is null
      */
     public DecimalFormatSymbols( Locale locale ) {
         initialize( locale );
@@ -172,7 +172,7 @@ public class DecimalFormatSymbols implements Cloneable, Serializable {
      *
      * @param locale the desired locale.
      * @return a {@code DecimalFormatSymbols} instance.
-     * @exception NullPointerException if {@code locale} is null
+     * @throws    NullPointerException if {@code locale} is null
      * @since 1.6
      */
     public static final DecimalFormatSymbols getInstance(Locale locale) {
@@ -576,7 +576,7 @@ public class DecimalFormatSymbols implements Cloneable, Serializable {
      * symbol attribute to the currency's ISO 4217 currency code.
      *
      * @param currency the new currency to be used
-     * @exception NullPointerException if {@code currency} is null
+     * @throws    NullPointerException if {@code currency} is null
      * @since 1.4
      * @see #setCurrencySymbol
      * @see #setInternationalCurrencySymbol
@@ -652,7 +652,7 @@ public class DecimalFormatSymbols implements Cloneable, Serializable {
      * Examples: "x10^" for 1.23x10^4, "E" for 1.23E4.
      *
      * @param exp the exponent separator string
-     * @exception NullPointerException if {@code exp} is null
+     * @throws    NullPointerException if {@code exp} is null
      * @see #getExponentSeparator()
      * @since 1.6
      */
@@ -852,6 +852,7 @@ public class DecimalFormatSymbols implements Cloneable, Serializable {
      *      representations of either percent, per mille, and/or minus sign disagree.
      * @since  1.1.6
      */
+    @java.io.Serial
     private void readObject(ObjectInputStream stream)
             throws IOException, ClassNotFoundException {
         stream.defaultReadObject();
@@ -1067,6 +1068,7 @@ public class DecimalFormatSymbols implements Cloneable, Serializable {
     private transient volatile boolean currencyInitialized;
 
     // Proclaim JDK 1.1 FCS compatibility
+    @java.io.Serial
     static final long serialVersionUID = 5772796243397350300L;
 
     // The internal serial version which says which version was written

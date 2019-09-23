@@ -598,7 +598,7 @@ public final class Integer extends Number
      * @param      radix   the radix to be used while parsing {@code s}.
      * @return     the integer represented by the string argument in the
      *             specified radix.
-     * @exception  NumberFormatException if the {@code String}
+     * @throws     NumberFormatException if the {@code String}
      *             does not contain a parsable {@code int}.
      */
     public static int parseInt(String s, int radix)
@@ -763,7 +763,7 @@ public final class Integer extends Number
      * @param s    a {@code String} containing the {@code int}
      *             representation to be parsed
      * @return     the integer value represented by the argument in decimal.
-     * @exception  NumberFormatException  if the string does not contain a
+     * @throws     NumberFormatException  if the string does not contain a
      *               parsable integer.
      */
     public static int parseInt(String s) throws NumberFormatException {
@@ -950,7 +950,7 @@ public final class Integer extends Number
      * @return     an {@code Integer} object holding the value
      *             represented by the string argument in the specified
      *             radix.
-     * @exception NumberFormatException if the {@code String}
+     * @throws    NumberFormatException if the {@code String}
      *            does not contain a parsable {@code int}.
      */
     public static Integer valueOf(String s, int radix) throws NumberFormatException {
@@ -976,7 +976,7 @@ public final class Integer extends Number
      * @param      s   the string to be parsed.
      * @return     an {@code Integer} object holding the value
      *             represented by the string argument.
-     * @exception  NumberFormatException  if the string cannot be parsed
+     * @throws     NumberFormatException  if the string cannot be parsed
      *             as an integer.
      */
     public static Integer valueOf(String s) throws NumberFormatException {
@@ -1393,7 +1393,7 @@ public final class Integer extends Number
      * @param     nm the {@code String} to decode.
      * @return    an {@code Integer} object holding the {@code int}
      *             value represented by {@code nm}
-     * @exception NumberFormatException  if the {@code String} does not
+     * @throws    NumberFormatException  if the {@code String} does not
      *            contain a parsable integer.
      * @see java.lang.Integer#parseInt(java.lang.String, int)
      */
@@ -1857,5 +1857,6 @@ public final class Integer extends Number
     }
 
     /** use serialVersionUID from JDK 1.0.2 for interoperability */
+    @java.io.Serial
     @Native private static final long serialVersionUID = 1360826667806852920L;
 }

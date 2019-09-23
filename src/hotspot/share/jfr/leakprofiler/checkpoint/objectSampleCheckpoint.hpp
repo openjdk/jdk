@@ -26,27 +26,35 @@
 #define SHARE_JFR_LEAKPROFILER_CHECKPOINT_OBJECTSAMPLECHECKPOINT_HPP
 
 #include "memory/allocation.hpp"
+#include "jfr/utilities/jfrTypes.hpp"
 
 class EdgeStore;
+class JavaThread;
 class JfrCheckpointWriter;
+class JfrStackTrace;
 class JfrStackTraceRepository;
+class Klass;
+class Method;
+class ObjectSample;
 class ObjectSampleMarker;
 class ObjectSampler;
+class Thread;
 
 class ObjectSampleCheckpoint : AllStatic {
- public:
-  static void install(JfrCheckpointWriter& writer, bool class_unload, bool type_set);
-  static void write(ObjectSampler* sampler, EdgeStore* edge_store, bool emit_all, Thread* thread);
-  static int mark(ObjectSampler* sampler, ObjectSampleMarker& marker, bool emit_all);
-};
-
-class WriteObjectSampleStacktrace : public StackObj {
+  friend class EventEmitter;
+  friend class PathToGcRootsOperation;
+  friend class StackTraceBlobInstaller;
  private:
-  ObjectSampler* const _sampler;
-  JfrStackTraceRepository& _stack_trace_repo;
+  static void add_to_leakp_set(const Method* method, traceid method_id);
+  static int save_mark_words(const ObjectSampler* sampler, ObjectSampleMarker& marker, bool emit_all);
+  static void write_stacktrace(const JfrStackTrace* trace, JfrCheckpointWriter& writer);
+  static void write(const ObjectSampler* sampler, EdgeStore* edge_store, bool emit_all, Thread* thread);
  public:
-  WriteObjectSampleStacktrace(ObjectSampler* sampler, JfrStackTraceRepository& repo);
-  bool process();
+  static void on_klass_unload(const Klass* k);
+  static void on_type_set(JfrCheckpointWriter& writer);
+  static void on_type_set_unload(JfrCheckpointWriter& writer);
+  static void on_thread_exit(JavaThread* jt);
+  static void on_rotation(const ObjectSampler* sampler, JfrStackTraceRepository& repo);
 };
 
 #endif // SHARE_JFR_LEAKPROFILER_CHECKPOINT_OBJECTSAMPLECHECKPOINT_HPP

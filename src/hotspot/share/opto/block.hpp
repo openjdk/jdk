@@ -317,7 +317,7 @@ public:
   uint find_node( const Node *n ) const;
   // Find and remove n from block list
   void find_remove( const Node *n );
-  // Check wether the node is in the block.
+  // Check whether the node is in the block.
   bool contains (const Node *n) const;
 
   // Return the empty status of a block

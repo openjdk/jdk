@@ -29,7 +29,7 @@
 template <typename ObjectT, typename ArrayT>
 class ZAttachedArray {
 private:
-  const uint32_t _length;
+  const size_t _length;
 
   static size_t object_size();
 
@@ -39,7 +39,7 @@ public:
 
   ZAttachedArray(size_t length);
 
-  uint32_t length() const;
+  size_t length() const;
   ArrayT* operator()(const ObjectT* obj) const;
 };
 

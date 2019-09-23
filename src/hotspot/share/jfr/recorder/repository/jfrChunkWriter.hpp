@@ -49,8 +49,8 @@ class JfrChunkWriter : public JfrChunkWriterBase {
   JfrChunkWriter();
   bool initialize();
   int64_t size_written() const;
-  int64_t previous_checkpoint_offset() const;
-  void set_previous_checkpoint_offset(int64_t offset);
+  int64_t last_checkpoint_offset() const;
+  void set_last_checkpoint_offset(int64_t offset);
   void time_stamp_chunk_now();
 };
 

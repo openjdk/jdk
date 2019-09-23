@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -554,7 +554,7 @@ public abstract class Pack200 {
          * Closes its input but not its output.  (Pack200 archives are appendable.)
          * @param in a JarFile
          * @param out an OutputStream
-         * @exception IOException if an error is encountered.
+         * @throws    IOException if an error is encountered.
          */
         void pack(JarFile in, OutputStream out) throws IOException ;
 
@@ -570,7 +570,7 @@ public abstract class Pack200 {
          * @see #DEFLATE_HINT
          * @param in a JarInputStream
          * @param out an OutputStream
-         * @exception IOException if an error is encountered.
+         * @throws    IOException if an error is encountered.
          */
         void pack(JarInputStream in, OutputStream out) throws IOException ;
     }
@@ -673,7 +673,7 @@ public abstract class Pack200 {
          * Closes its input but not its output.  (The output can accumulate more elements.)
          * @param in an InputStream.
          * @param out a JarOutputStream.
-         * @exception IOException if an error is encountered.
+         * @throws    IOException if an error is encountered.
          */
         void unpack(InputStream in, JarOutputStream out) throws IOException;
 
@@ -684,7 +684,7 @@ public abstract class Pack200 {
          * Does not close its output.  (The output can accumulate more elements.)
          * @param in a File.
          * @param out a JarOutputStream.
-         * @exception IOException if an error is encountered.
+         * @throws    IOException if an error is encountered.
          */
         void unpack(File in, JarOutputStream out) throws IOException;
     }

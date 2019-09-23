@@ -372,9 +372,8 @@ final class CompilerToVM {
      * @return the outcome of the installation which will be one of
      *         {@link HotSpotVMConfig#codeInstallResultOk},
      *         {@link HotSpotVMConfig#codeInstallResultCacheFull},
-     *         {@link HotSpotVMConfig#codeInstallResultCodeTooLarge},
-     *         {@link HotSpotVMConfig#codeInstallResultDependenciesFailed} or
-     *         {@link HotSpotVMConfig#codeInstallResultDependenciesInvalid}.
+     *         {@link HotSpotVMConfig#codeInstallResultCodeTooLarge} or
+     *         {@link HotSpotVMConfig#codeInstallResultDependenciesFailed}.
      * @throws JVMCIError if there is something wrong with the compiled code or the associated
      *             metadata.
      */
@@ -390,9 +389,8 @@ final class CompilerToVM {
      * @return the outcome of the installation which will be one of
      *         {@link HotSpotVMConfig#codeInstallResultOk},
      *         {@link HotSpotVMConfig#codeInstallResultCacheFull},
-     *         {@link HotSpotVMConfig#codeInstallResultCodeTooLarge},
-     *         {@link HotSpotVMConfig#codeInstallResultDependenciesFailed} or
-     *         {@link HotSpotVMConfig#codeInstallResultDependenciesInvalid}.
+     *         {@link HotSpotVMConfig#codeInstallResultCodeTooLarge} or
+     *         {@link HotSpotVMConfig#codeInstallResultDependenciesFailed}.
      * @throws JVMCIError if there is something wrong with the compiled code or the metadata
      */
     native int getMetadata(TargetDescription target, HotSpotCompiledCode compiledCode, HotSpotMetaData metaData);

@@ -993,9 +993,6 @@ public:
   // Apply the given closure on all cards in the Hot Card Cache, emptying it.
   void iterate_hcc_closure(G1CardTableEntryClosure* cl, uint worker_i);
 
-  // Apply the given closure on all cards in the Dirty Card Queue Set, emptying it.
-  void iterate_dirty_card_closure(G1CardTableEntryClosure* cl, uint worker_i);
-
   // The shared block offset table array.
   G1BlockOffsetTable* bot() const { return _bot; }
 
@@ -1127,6 +1124,18 @@ public:
   // reserved for the heap
   MemRegion g1_reserved() const {
     return _hrm->reserved();
+  }
+
+  MemRegion reserved_region() const {
+    return _reserved;
+  }
+
+  HeapWord* base() const {
+    return _reserved.start();
+  }
+
+  bool is_in_reserved(const void* addr) const {
+    return _reserved.contains(addr);
   }
 
   G1HotCardCache* g1_hot_card_cache() const { return _hot_card_cache; }

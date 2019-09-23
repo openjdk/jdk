@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -62,6 +62,7 @@ import java.util.*;
 public abstract class Identity implements Principal, Serializable {
 
     /** use serialVersionUID from JDK 1.1.x for interoperability */
+    @java.io.Serial
     private static final long serialVersionUID = 3609922007826600659L;
 
     /**
@@ -112,7 +113,7 @@ public abstract class Identity implements Principal, Serializable {
      * @param name the identity name.
      * @param scope the scope of the identity.
      *
-     * @exception KeyManagementException if there is already an identity
+     * @throws    KeyManagementException if there is already an identity
      * with the same name in the scope.
      */
     public Identity(String name, IdentityScope scope) throws
@@ -172,10 +173,10 @@ public abstract class Identity implements Principal, Serializable {
      *
      * @param key the public key for this identity.
      *
-     * @exception KeyManagementException if another identity in the
+     * @throws    KeyManagementException if another identity in the
      * identity's scope has the same public key, or if another exception occurs.
      *
-     * @exception  SecurityException  if a security manager exists and its
+     * @throws     SecurityException  if a security manager exists and its
      * {@code checkSecurityAccess} method doesn't allow
      * setting the public key.
      *
@@ -199,7 +200,7 @@ public abstract class Identity implements Principal, Serializable {
      *
      * @param info the information string.
      *
-     * @exception  SecurityException  if a security manager exists and its
+     * @throws     SecurityException  if a security manager exists and its
      * {@code checkSecurityAccess} method doesn't allow
      * setting the information string.
      *
@@ -234,11 +235,11 @@ public abstract class Identity implements Principal, Serializable {
      *
      * @param certificate the certificate to be added.
      *
-     * @exception KeyManagementException if the certificate is not valid,
+     * @throws    KeyManagementException if the certificate is not valid,
      * if the public key in the certificate being added conflicts with
      * this identity's public key, or if another exception occurs.
      *
-     * @exception  SecurityException  if a security manager exists and its
+     * @throws     SecurityException  if a security manager exists and its
      * {@code checkSecurityAccess} method doesn't allow
      * adding a certificate.
      *
@@ -285,10 +286,10 @@ public abstract class Identity implements Principal, Serializable {
      *
      * @param certificate the certificate to be removed.
      *
-     * @exception KeyManagementException if the certificate is
+     * @throws    KeyManagementException if the certificate is
      * missing, or if another exception occurs.
      *
-     * @exception  SecurityException  if a security manager exists and its
+     * @throws     SecurityException  if a security manager exists and its
      * {@code checkSecurityAccess} method doesn't allow
      * removing a certificate.
      *
@@ -399,7 +400,7 @@ public abstract class Identity implements Principal, Serializable {
      * @return information about this identity, such as its name and the
      * name of its scope (if any).
      *
-     * @exception  SecurityException  if a security manager exists and its
+     * @throws     SecurityException  if a security manager exists and its
      * {@code checkSecurityAccess} method doesn't allow
      * returning a string describing this identity.
      *
@@ -429,7 +430,7 @@ public abstract class Identity implements Principal, Serializable {
      * is true, then this method returns more information than that
      * provided by the {@code toString} method without any arguments.
      *
-     * @exception  SecurityException  if a security manager exists and its
+     * @throws     SecurityException  if a security manager exists and its
      * {@code checkSecurityAccess} method doesn't allow
      * returning a string describing this identity.
      *

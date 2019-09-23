@@ -64,6 +64,7 @@ char* ReallocateHeap(char *old,
   return p;
 }
 
+// handles NULL pointers
 void FreeHeap(void* p) {
   os::free(p);
 }

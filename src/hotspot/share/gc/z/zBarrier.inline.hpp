@@ -326,6 +326,11 @@ inline void ZBarrier::mark_barrier_on_root_oop_field(oop* p) {
   root_barrier<is_good_or_null_fast_path, mark_barrier_on_root_oop_slow_path>(p, o);
 }
 
+inline void ZBarrier::mark_barrier_on_invisible_root_oop_field(oop* p) {
+  const oop o = *p;
+  root_barrier<is_good_or_null_fast_path, mark_barrier_on_invisible_root_oop_slow_path>(p, o);
+}
+
 //
 // Relocate barrier
 //

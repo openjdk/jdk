@@ -631,7 +631,7 @@ JRT_ENTRY(jboolean, JVMCIRuntime::thread_is_interrupted(JavaThread* thread, oopD
     // The other thread may exit during this process, which is ok so return false.
     return JNI_FALSE;
   } else {
-    return (jint) Thread::is_interrupted(receiverThread, clear_interrupted != 0);
+    return (jint) receiverThread->is_interrupted(clear_interrupted != 0);
   }
 JRT_END
 
@@ -858,17 +858,6 @@ JVMCIObject JVMCIRuntime::get_HotSpotJVMCIRuntime(JVMCI_TRAPS) {
 
 // private void CompilerToVM.registerNatives()
 JVM_ENTRY_NO_ENV(void, JVM_RegisterJVMCINatives(JNIEnv *env, jclass c2vmClass))
-
-#ifdef _LP64
-#ifndef TARGET_ARCH_sparc
-  uintptr_t heap_end = (uintptr_t) Universe::heap()->reserved_region().end();
-  uintptr_t allocation_end = heap_end + ((uintptr_t)16) * 1024 * 1024 * 1024;
-  guarantee(heap_end < allocation_end, "heap end too close to end of address space (might lead to erroneous TLAB allocations)");
-#endif // TARGET_ARCH_sparc
-#else
-  fatal("check TLAB allocation code for address space conflicts");
-#endif
-
   JNI_JVMCIENV(thread, env);
 
   if (!EnableJVMCI) {
@@ -952,10 +941,8 @@ void JVMCIRuntime::exit_on_pending_exception(JVMCIEnv* JVMCIENV, const char* mes
       describe_pending_hotspot_exception(THREAD, true);
     }
   } else {
-    // Allow error reporting thread to print the stack trace.  Windows
-    // doesn't allow uninterruptible wait for JavaThreads
-    const bool interruptible = true;
-    os::sleep(THREAD, 200, interruptible);
+    // Allow error reporting thread to print the stack trace.
+    THREAD->sleep(200);
   }
 
   before_exit(THREAD);
@@ -1310,21 +1297,13 @@ JVMCI::CodeInstallResult JVMCIRuntime::validate_compile_task_dependencies(Depend
     return JVMCI::dependencies_failed;
   }
 
-  // Dependencies must be checked when the system dictionary changes
-  // or if we don't know whether it has changed (i.e., compile_state == NULL).
   CompileTask* task = compile_state == NULL ? NULL : compile_state->task();
   Dependencies::DepType result = dependencies->validate_dependencies(task, failure_detail);
   if (result == Dependencies::end_marker) {
     return JVMCI::ok;
   }
 
-  if (!Dependencies::is_klass_type(result) || compile_state == NULL) {
-    return JVMCI::dependencies_failed;
-  }
-  // The dependencies were invalid at the time of installation
-  // without any intervening modification of the system
-  // dictionary.  That means they were invalidly constructed.
-  return JVMCI::dependencies_invalid;
+  return JVMCI::dependencies_failed;
 }
 
 // Reports a pending exception and exits the VM.
@@ -1541,7 +1520,10 @@ JVMCI::CodeInstallResult JVMCIRuntime::register_method(JVMCIEnv* JVMCIENV,
                         comp_level, method_name, nm->entry_point());
             }
             // Allow the code to be executed
-            method->set_code(method, nm);
+            MutexLocker ml(CompiledMethod_lock, Mutex::_no_safepoint_check_flag);
+            if (nm->make_in_use()) {
+              method->set_code(method, nm);
+            }
           } else {
             LogTarget(Info, nmethod, install) lt;
             if (lt.is_enabled()) {
@@ -1550,12 +1532,14 @@ JVMCI::CodeInstallResult JVMCIRuntime::register_method(JVMCIEnv* JVMCIENV,
               lt.print("Installing osr method (%d) %s @ %d",
                         comp_level, method_name, entry_bci);
             }
-            InstanceKlass::cast(method->method_holder())->add_osr_nmethod(nm);
+            MutexLocker ml(CompiledMethod_lock, Mutex::_no_safepoint_check_flag);
+            if (nm->make_in_use()) {
+              InstanceKlass::cast(method->method_holder())->add_osr_nmethod(nm);
+            }
           }
         } else {
           assert(!nmethod_mirror.is_hotspot() || data->get_nmethod_mirror(nm, /* phantom_ref */ false) == HotSpotJVMCI::resolve(nmethod_mirror), "must be");
         }
-        nm->make_in_use();
       }
       result = nm != NULL ? JVMCI::ok :JVMCI::cache_full;
     }

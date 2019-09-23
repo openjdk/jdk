@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -59,6 +59,7 @@ import sun.security.util.*;
 public class X509Key implements PublicKey {
 
     /** use serialVersionUID from JDK 1.1. for interoperability */
+    @java.io.Serial
     private static final long serialVersionUID = -5359250853002055002L;
 
     /* The algorithm information (name, parameters, etc). */
@@ -405,6 +406,7 @@ public class X509Key implements PublicKey {
      * Serialization write ... X.509 keys serialize as
      * themselves, and they're parsed when they get read back.
      */
+    @java.io.Serial
     private void writeObject(ObjectOutputStream stream) throws IOException {
         stream.write(getEncoded());
     }
@@ -413,6 +415,7 @@ public class X509Key implements PublicKey {
      * Serialization read ... X.509 keys serialize as
      * themselves, and they're parsed when they get read back.
      */
+    @java.io.Serial
     private void readObject(ObjectInputStream stream) throws IOException {
         try {
             decode(stream);

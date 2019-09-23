@@ -87,6 +87,7 @@ import jdk.internal.util.ArraysSupport;
 public class PriorityQueue<E> extends AbstractQueue<E>
     implements java.io.Serializable {
 
+    @java.io.Serial
     private static final long serialVersionUID = -7720805057305804111L;
 
     private static final int DEFAULT_INITIAL_CAPACITY = 11;
@@ -755,6 +756,7 @@ public class PriorityQueue<E> extends AbstractQueue<E>
      *             emitted (int), followed by all of its elements
      *             (each an {@code Object}) in the proper order.
      */
+    @java.io.Serial
     private void writeObject(java.io.ObjectOutputStream s)
         throws java.io.IOException {
         // Write out element count, and any hidden stuff
@@ -778,6 +780,7 @@ public class PriorityQueue<E> extends AbstractQueue<E>
      *         could not be found
      * @throws java.io.IOException if an I/O error occurs
      */
+    @java.io.Serial
     private void readObject(java.io.ObjectInputStream s)
         throws java.io.IOException, ClassNotFoundException {
         // Read in size, and any hidden stuff

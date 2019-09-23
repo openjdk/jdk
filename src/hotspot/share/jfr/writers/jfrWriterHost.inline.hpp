@@ -170,7 +170,7 @@ inline u1* WriterHost<BE, IE, WriterPolicyImpl>::ensure_size(size_t requested) {
   }
   if (this->available_size() < requested + size_safety_cushion) {
     if (!this->accommodate(this->used_size(), requested + size_safety_cushion)) {
-      this->cancel();
+      assert(!this->is_valid(), "invariant");
       return NULL;
     }
   }

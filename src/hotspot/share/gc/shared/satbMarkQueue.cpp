@@ -108,8 +108,8 @@ void SATBMarkQueue::print(const char* name) {
 
 #endif // PRODUCT
 
-SATBMarkQueueSet::SATBMarkQueueSet() :
-  PtrQueueSet(),
+SATBMarkQueueSet::SATBMarkQueueSet(BufferNode::Allocator* allocator) :
+  PtrQueueSet(allocator),
   _list(),
   _count_and_process_flag(0),
   _process_completed_buffers_threshold(SIZE_MAX),
@@ -153,27 +153,21 @@ static void decrement_count(volatile size_t* cfptr) {
   } while (value != old);
 }
 
-// Scale requested threshold to align with count field.  If scaling
-// overflows, just use max value.  Set process flag field to make
-// comparison in increment_count exact.
-static size_t scale_threshold(size_t value) {
+void SATBMarkQueueSet::set_process_completed_buffers_threshold(size_t value) {
+  // Scale requested threshold to align with count field.  If scaling
+  // overflows, just use max value.  Set process flag field to make
+  // comparison in increment_count exact.
   size_t scaled_value = value << 1;
   if ((scaled_value >> 1) != value) {
     scaled_value = SIZE_MAX;
   }
-  return scaled_value | 1;
+  _process_completed_buffers_threshold = scaled_value | 1;
 }
 
-void SATBMarkQueueSet::initialize(BufferNode::Allocator* allocator,
-                                  size_t process_completed_buffers_threshold,
-                                  uint buffer_enqueue_threshold_percentage) {
-  PtrQueueSet::initialize(allocator);
-  _process_completed_buffers_threshold =
-    scale_threshold(process_completed_buffers_threshold);
-  assert(buffer_size() != 0, "buffer size not initialized");
+void SATBMarkQueueSet::set_buffer_enqueue_threshold_percentage(uint value) {
   // Minimum threshold of 1 ensures enqueuing of completely full buffers.
   size_t size = buffer_size();
-  size_t enqueue_qty = (size * buffer_enqueue_threshold_percentage) / 100;
+  size_t enqueue_qty = (size * value) / 100;
   _buffer_enqueue_threshold = MAX2(size - enqueue_qty, (size_t)1);
 }
 

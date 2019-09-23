@@ -41,6 +41,7 @@ public:
 private:
 
   ShenandoahHeap* _heap;
+  BufferNode::Allocator _satb_mark_queue_buffer_allocator;
   ShenandoahSATBMarkQueueSet _satb_mark_queue_set;
 
 public:
@@ -62,14 +63,14 @@ public:
 
   bool is_aligned(HeapWord* hw);
 
-  void write_ref_array(HeapWord* start, size_t count);
-
   template <class T> void
-  write_ref_array_pre_work(T* dst, size_t count);
+  write_ref_array_pre_work(T* src, T* dst, size_t count, bool dest_uninitialized);
 
-  void write_ref_array_pre(oop* dst, size_t count, bool dest_uninitialized);
-
-  void write_ref_array_pre(narrowOop* dst, size_t count, bool dest_uninitialized);
+  inline void arraycopy_pre(oop* src, oop* dst, size_t count);
+  inline void arraycopy_pre(narrowOop* src, narrowOop* dst, size_t count);
+  inline void arraycopy_update(oop* src, size_t count);
+  inline void arraycopy_update(narrowOop* src, size_t count);
+  inline void clone_barrier(oop src);
 
   // We export this to make it available in cases where the static
   // type of the barrier set is known.  Note that it is non-virtual.
@@ -81,7 +82,6 @@ public:
   void write_ref_field_pre_work(void* field, oop new_val);
 
   void write_ref_field_work(void* v, oop o, bool release = false);
-  void write_region(MemRegion mr);
 
   oop oop_load_from_native_barrier(oop obj);
 
@@ -97,14 +97,23 @@ public:
   void keep_alive_barrier(oop obj);
 
   oop load_reference_barrier(oop obj);
-  oop load_reference_barrier_mutator(oop obj);
   oop load_reference_barrier_not_null(oop obj);
+
+  oop load_reference_barrier_mutator(oop obj, oop* load_addr);
+  oop load_reference_barrier_mutator(oop obj, narrowOop* load_addr);
+
+  template <class T>
+  oop load_reference_barrier_mutator_work(oop obj, T* load_addr);
 
   void enqueue(oop obj);
 
 private:
-  template <class T, bool STOREVAL_WRITE_BARRIER>
-  void write_ref_array_loop(HeapWord* start, size_t count);
+  template <class T>
+  inline void arraycopy_pre_work(T* src, T* dst, size_t count);
+  template <class T, bool HAS_FWD, bool EVAC, bool ENQUEUE>
+  inline void arraycopy_work(T* src, size_t count);
+  template <class T>
+  inline void arraycopy_update_impl(T* src, size_t count);
 
   oop load_reference_barrier_impl(oop obj);
 
@@ -116,24 +125,6 @@ private:
       ShenandoahBarrierSet::barrier_set()->keep_alive_barrier(value);
     }
   }
-
-  template <typename T>
-  bool arraycopy_loop_1(T* src, T* dst, size_t length, Klass* bound,
-                        bool checkcast, bool satb, bool disjoint, ShenandoahBarrierSet::ArrayCopyStoreValMode storeval_mode);
-
-  template <typename T, bool CHECKCAST>
-  bool arraycopy_loop_2(T* src, T* dst, size_t length, Klass* bound,
-                        bool satb, bool disjoint, ShenandoahBarrierSet::ArrayCopyStoreValMode storeval_mode);
-
-  template <typename T, bool CHECKCAST, bool SATB>
-  bool arraycopy_loop_3(T* src, T* dst, size_t length, Klass* bound,
-                        bool disjoint, ShenandoahBarrierSet::ArrayCopyStoreValMode storeval_mode);
-
-  template <typename T, bool CHECKCAST, bool SATB, ShenandoahBarrierSet::ArrayCopyStoreValMode STOREVAL_MODE>
-  bool arraycopy_loop(T* src, T* dst, size_t length, Klass* bound, bool disjoint);
-
-  template <typename T, bool CHECKCAST, bool SATB, ShenandoahBarrierSet::ArrayCopyStoreValMode STOREVAL_MODE>
-  bool arraycopy_element(T* cur_src, T* cur_dst, Klass* bound, Thread* const thread, ShenandoahMarkingContext* const ctx);
 
 public:
   // Callbacks for runtime accesses.

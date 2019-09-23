@@ -3000,7 +3000,8 @@ void MacroAssembler::compiler_fast_unlock_object(ConditionRegister flag, Registe
   b(cont);
 
   bind(object_has_monitor);
-  addi(current_header, current_header, -markWord::monitor_value); // monitor
+  STATIC_ASSERT(markWord::monitor_value <= INT_MAX);
+  addi(current_header, current_header, -(int)markWord::monitor_value); // monitor
   ld(temp,             ObjectMonitor::owner_offset_in_bytes(), current_header);
 
     // It's inflated.

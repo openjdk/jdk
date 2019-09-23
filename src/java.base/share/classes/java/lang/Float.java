@@ -1014,5 +1014,6 @@ public final class Float extends Number
     }
 
     /** use serialVersionUID from JDK 1.0.2 for interoperability */
+    @java.io.Serial
     private static final long serialVersionUID = -2671257302660747028L;
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -4604,6 +4604,7 @@ public class BigInteger extends Number implements Comparable<BigInteger> {
     }
 
     /** use serialVersionUID from JDK 1.1. for interoperability */
+    @java.io.Serial
     private static final long serialVersionUID = -8287574255936472291L;
 
     /**
@@ -4622,6 +4623,7 @@ public class BigInteger extends Number implements Comparable<BigInteger> {
      * @serialField lowestSetBit int
      *              appears in the serialized form for backward compatibility
      */
+    @java.io.Serial
     private static final ObjectStreamField[] serialPersistentFields = {
         new ObjectStreamField("signum", Integer.TYPE),
         new ObjectStreamField("magnitude", byte[].class),
@@ -4643,6 +4645,7 @@ public class BigInteger extends Number implements Comparable<BigInteger> {
      * be taken in readObject because those fields already have a 0 value by
      * default since defaultReadObject is not being used.
      */
+    @java.io.Serial
     private void readObject(java.io.ObjectInputStream s)
         throws java.io.IOException, ClassNotFoundException {
         // prepare to read the alternate persistent fields
@@ -4709,6 +4712,7 @@ public class BigInteger extends Number implements Comparable<BigInteger> {
      * with older implementations, but will be ignored by current
      * implementations.
      */
+    @java.io.Serial
     private void writeObject(ObjectOutputStream s) throws IOException {
         // set the values of the Serializable fields
         ObjectOutputStream.PutField fields = s.putFields();

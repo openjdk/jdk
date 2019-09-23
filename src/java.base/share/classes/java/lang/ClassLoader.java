@@ -445,10 +445,10 @@ public abstract class ClassLoader {
      * @param  parent
      *         The parent class loader
      *
-     * @throws  SecurityException
-     *          If a security manager exists and its
-     *          {@code checkCreateClassLoader} method doesn't allow creation
-     *          of a new class loader.
+     * @throws SecurityException
+     *         If a security manager exists and its
+     *         {@code checkCreateClassLoader} method doesn't allow creation
+     *         of a new class loader.
      *
      * @since  1.2
      */
@@ -509,8 +509,8 @@ public abstract class ClassLoader {
      * to invoking {@link #loadClass(String, boolean) loadClass(name,
      * false)}.
      *
-     * @param  name
-     *         The <a href="#binary-name">binary name</a> of the class
+     * @param   name
+     *          The <a href="#binary-name">binary name</a> of the class
      *
      * @return  The resulting {@code Class} object
      *
@@ -551,11 +551,11 @@ public abstract class ClassLoader {
      * {@link #getClassLoadingLock getClassLoadingLock} method
      * during the entire class loading process.
      *
-     * @param  name
-     *         The <a href="#binary-name">binary name</a> of the class
+     * @param   name
+     *          The <a href="#binary-name">binary name</a> of the class
      *
-     * @param  resolve
-     *         If {@code true} then resolve the class
+     * @param   resolve
+     *          If {@code true} then resolve the class
      *
      * @return  The resulting {@code Class} object
      *
@@ -704,8 +704,8 @@ public abstract class ClassLoader {
      *
      * @implSpec The default implementation throws {@code ClassNotFoundException}.
      *
-     * @param  name
-     *         The <a href="#binary-name">binary name</a> of the class
+     * @param   name
+     *          The <a href="#binary-name">binary name</a> of the class
      *
      * @return  The resulting {@code Class} object
      *

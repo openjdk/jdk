@@ -299,6 +299,7 @@ class InetAddress implements java.io.Serializable {
     private transient String canonicalHostName = null;
 
     /** use serialVersionUID from JDK 1.0.2 for interoperability */
+    @java.io.Serial
     private static final long serialVersionUID = 3286316764910316507L;
 
     /*
@@ -353,6 +354,7 @@ class InetAddress implements java.io.Serializable {
      * @throws ObjectStreamException if a new object replacing this
      * object could not be created
      */
+    @java.io.Serial
     private Object readResolve() throws ObjectStreamException {
         // will replace the deserialized 'this' object
         return new Inet4Address(holder().getHostName(), holder().getAddress());
@@ -1159,7 +1161,7 @@ class InetAddress implements java.io.Serializable {
      * @param host the specified host
      * @param addr the raw IP address in network byte order
      * @return  an InetAddress object created from the raw IP address.
-     * @exception  UnknownHostException  if IP address is of illegal length
+     * @throws     UnknownHostException  if IP address is of illegal length
      * @since 1.4
      */
     public static InetAddress getByAddress(String host, byte[] addr)
@@ -1214,10 +1216,10 @@ class InetAddress implements java.io.Serializable {
      *
      * @param      host   the specified host, or {@code null}.
      * @return     an IP address for the given host name.
-     * @exception  UnknownHostException  if no IP address for the
+     * @throws     UnknownHostException  if no IP address for the
      *               {@code host} could be found, or if a scope_id was specified
      *               for a global IPv6 address.
-     * @exception  SecurityException if a security manager exists
+     * @throws     SecurityException if a security manager exists
      *             and its checkConnect method doesn't allow the operation
      */
     public static InetAddress getByName(String host)
@@ -1262,10 +1264,10 @@ class InetAddress implements java.io.Serializable {
      * @param      host   the name of the host, or {@code null}.
      * @return     an array of all the IP addresses for a given host name.
      *
-     * @exception  UnknownHostException  if no IP address for the
+     * @throws     UnknownHostException  if no IP address for the
      *               {@code host} could be found, or if a scope_id was specified
      *               for a global IPv6 address.
-     * @exception  SecurityException  if a security manager exists and its
+     * @throws     SecurityException  if a security manager exists and its
      *               {@code checkConnect} method doesn't allow the operation.
      *
      * @see SecurityManager#checkConnect
@@ -1540,7 +1542,7 @@ class InetAddress implements java.io.Serializable {
      *
      * @param addr the raw IP address in network byte order
      * @return  an InetAddress object created from the raw IP address.
-     * @exception  UnknownHostException  if IP address is of illegal length
+     * @throws     UnknownHostException  if IP address is of illegal length
      * @since 1.4
      */
     public static InetAddress getByAddress(byte[] addr)
@@ -1578,7 +1580,7 @@ class InetAddress implements java.io.Serializable {
      *
      * @return     the address of the local host.
      *
-     * @exception  UnknownHostException  if the local host name could not
+     * @throws     UnknownHostException  if the local host name could not
      *             be resolved into an address.
      *
      * @see SecurityManager#checkConnect
@@ -1687,6 +1689,7 @@ class InetAddress implements java.io.Serializable {
         return (InetAddressImpl) impl;
     }
 
+    @java.io.Serial
     private void readObjectNoData () {
         if (getClass().getClassLoader() != null) {
             throw new SecurityException ("invalid address type");
@@ -1698,6 +1701,7 @@ class InetAddress implements java.io.Serializable {
     private static final long FIELDS_OFFSET
             = UNSAFE.objectFieldOffset(InetAddress.class, "holder");
 
+    @java.io.Serial
     private void readObject (ObjectInputStream s) throws
                          IOException, ClassNotFoundException {
         if (getClass().getClassLoader() != null) {
@@ -1721,12 +1725,14 @@ class InetAddress implements java.io.Serializable {
      * @serialField address int
      * @serialField family int
      */
+    @java.io.Serial
     private static final ObjectStreamField[] serialPersistentFields = {
         new ObjectStreamField("hostName", String.class),
         new ObjectStreamField("address", int.class),
         new ObjectStreamField("family", int.class),
     };
 
+    @java.io.Serial
     private void writeObject (ObjectOutputStream s) throws
                         IOException {
         if (getClass().getClassLoader() != null) {

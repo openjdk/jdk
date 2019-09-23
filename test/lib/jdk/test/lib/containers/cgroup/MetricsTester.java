@@ -582,19 +582,28 @@ public class MetricsTester {
         Metrics metrics = Metrics.systemMetrics();
         long memoryMaxUsage = metrics.getMemoryMaxUsage();
         long memoryUsage = metrics.getMemoryUsage();
+        long newMemoryMaxUsage = 0, newMemoryUsage = 0;
 
-        byte[] bb = new byte[64*1024*1024]; // 64M
+        // allocate memory in a loop and check more than once for new values
+        // otherwise we might see seldom the effect of decreasing new memory values
+        // e.g. because the system could free up memory
+        byte[][] bytes = new byte[32][];
+        for (int i = 0; i < 32; i++) {
+            bytes[i] = new byte[8*1024*1024];
+            newMemoryUsage = metrics.getMemoryUsage();
+            if (newMemoryUsage > memoryUsage) {
+                break;
+            }
+        }
+        newMemoryMaxUsage = metrics.getMemoryMaxUsage();
 
-        long newMemoryMaxUsage = metrics.getMemoryMaxUsage();
-        long newMemoryUsage = metrics.getMemoryUsage();
-
-        if(newMemoryMaxUsage < memoryMaxUsage) {
-            fail(SubSystem.MEMORY, "getMemoryMaxUsage", newMemoryMaxUsage,
-                    memoryMaxUsage);
+        if (newMemoryMaxUsage < memoryMaxUsage) {
+            fail(SubSystem.MEMORY, "getMemoryMaxUsage", memoryMaxUsage,
+                    newMemoryMaxUsage);
         }
 
-        if(newMemoryUsage < memoryUsage) {
-            fail(SubSystem.MEMORY, "getMemoryUsage", newMemoryUsage, memoryUsage);
+        if (newMemoryUsage < memoryUsage) {
+            fail(SubSystem.MEMORY, "getMemoryUsage", memoryUsage, newMemoryUsage);
         }
     }
 

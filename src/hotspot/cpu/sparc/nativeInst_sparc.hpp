@@ -315,7 +315,7 @@ class NativeCall;
 
 inline NativeCall* nativeCall_at(address instr);
 inline NativeCall* nativeCall_overwriting_at(address instr,
-                                             address destination);
+                                             address destination = NULL);
 inline NativeCall* nativeCall_before(address return_address);
 class NativeCall: public NativeInstruction {
  public:
@@ -344,7 +344,7 @@ class NativeCall: public NativeInstruction {
 
   // Creation
   friend inline NativeCall* nativeCall_at(address instr);
-  friend NativeCall* nativeCall_overwriting_at(address instr, address destination = NULL) {
+  friend NativeCall* nativeCall_overwriting_at(address instr, address destination) {
     // insert a "blank" call:
     NativeCall* call = (NativeCall*)instr;
     call->set_long_at(0 * BytesPerInstWord, call_instruction(destination, instr));
@@ -413,7 +413,7 @@ class NativeCallReg: public NativeInstruction {
 //      == sethi %hi54(addr), O7 ;  jumpl O7, %lo10(addr), O7 ;  <delay>
 // That is, it is essentially the same as a NativeJump.
 class NativeFarCall;
-inline NativeFarCall* nativeFarCall_overwriting_at(address instr, address destination);
+inline NativeFarCall* nativeFarCall_overwriting_at(address instr, address destination = NULL);
 inline NativeFarCall* nativeFarCall_at(address instr);
 class NativeFarCall: public NativeInstruction {
  public:
@@ -452,7 +452,7 @@ class NativeFarCall: public NativeInstruction {
     return call;
   }
 
-  friend inline NativeFarCall* nativeFarCall_overwriting_at(address instr, address destination = NULL) {
+  friend inline NativeFarCall* nativeFarCall_overwriting_at(address instr, address destination) {
     Unimplemented();
     NativeFarCall* call = (NativeFarCall*)instr;
     return call;

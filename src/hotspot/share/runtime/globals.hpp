@@ -713,7 +713,7 @@ const size_t minimumSymbolTableSize = 1024;
           "Use LWP-based instead of libthread-based synchronization "       \
           "(SPARC only)")                                                   \
                                                                             \
-  product(intx, MonitorBound, 0, "Bound Monitor population")                \
+  product(intx, MonitorBound, 0, "(Deprecated) Bound Monitor population")   \
           range(0, max_jint)                                                \
                                                                             \
   experimental(intx, MonitorUsedDeflationThreshold, 90,                     \
@@ -2164,6 +2164,9 @@ const size_t minimumSymbolTableSize = 1024;
           "Maximum total size of NIO direct-buffer allocations")            \
           range(0, max_jlong)                                               \
                                                                             \
+  product(bool, ClassForNameDeferLinking, false,                            \
+          "Revert to not linking in Class.forName()")                       \
+                                                                            \
   /* Flags used for temporary code during development  */                   \
                                                                             \
   diagnostic(bool, UseNewCode, false,                                       \
@@ -2493,9 +2496,5 @@ ALL_FLAGS(DECLARE_DEVELOPER_FLAG,     \
           IGNORE_RANGE,               \
           IGNORE_CONSTRAINT,          \
           IGNORE_WRITEABLE)
-
-// Extensions
-
-#include "runtime/globals_ext.hpp"
 
 #endif // SHARE_RUNTIME_GLOBALS_HPP

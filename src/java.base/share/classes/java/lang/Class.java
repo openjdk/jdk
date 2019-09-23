@@ -321,10 +321,10 @@ public final class Class<T> implements java.io.Serializable,
      * @param      className   the fully qualified name of the desired class.
      * @return     the {@code Class} object for the class with the
      *             specified name.
-     * @exception LinkageError if the linkage fails
-     * @exception ExceptionInInitializerError if the initialization provoked
+     * @throws    LinkageError if the linkage fails
+     * @throws    ExceptionInInitializerError if the initialization provoked
      *            by this method fails
-     * @exception ClassNotFoundException if the class cannot be located
+     * @throws    ClassNotFoundException if the class cannot be located
      */
     @CallerSensitive
     public static Class<?> forName(String className)
@@ -379,12 +379,12 @@ public final class Class<T> implements java.io.Serializable,
      * @param loader     class loader from which the class must be loaded
      * @return           class object representing the desired class
      *
-     * @exception LinkageError if the linkage fails
-     * @exception ExceptionInInitializerError if the initialization provoked
+     * @throws    LinkageError if the linkage fails
+     * @throws    ExceptionInInitializerError if the initialization provoked
      *            by this method fails
-     * @exception ClassNotFoundException if the class cannot be located by
+     * @throws    ClassNotFoundException if the class cannot be located by
      *            the specified class loader
-     * @exception SecurityException
+     * @throws    SecurityException
      *            if a security manager is present, and the {@code loader} is
      *            {@code null}, and the caller's class loader is not
      *            {@code null}, and the caller does not have the
@@ -392,6 +392,10 @@ public final class Class<T> implements java.io.Serializable,
      *
      * @see       java.lang.Class#forName(String)
      * @see       java.lang.ClassLoader
+     *
+     * @jls 12.2 Loading of Classes and Interfaces
+     * @jls 12.3 Linking of Classes and Interfaces
+     * @jls 12.4 Initialization of Classes and Interfaces
      * @since     1.2
      */
     @CallerSensitive
@@ -438,6 +442,10 @@ public final class Class<T> implements java.io.Serializable,
      * <p> This method does not check whether the requested class is
      * accessible to its caller. </p>
      *
+     * <p> Note that this method throws errors related to loading and linking as
+     * specified in Sections 12.2 and 12.3 of <em>The Java Language
+     * Specification</em>.
+     *
      * @apiNote
      * This method returns {@code null} on failure rather than
      * throwing a {@link ClassNotFoundException}, as is done by
@@ -465,6 +473,8 @@ public final class Class<T> implements java.io.Serializable,
      *         in a module.</li>
      *         </ul>
      *
+     * @jls 12.2 Loading of Classes and Interfaces
+     * @jls 12.3 Linking of Classes and Interfaces
      * @since 9
      * @spec JPMS
      */
@@ -488,12 +498,20 @@ public final class Class<T> implements java.io.Serializable,
             cl = module.getClassLoader();
         }
 
+        Class<?> ret;
         if (cl != null) {
-            return cl.loadClass(module, name);
+            ret = cl.loadClass(module, name);
         } else {
-            return BootLoader.loadClass(module, name);
+            ret = BootLoader.loadClass(module, name);
         }
+        if (ret != null) {
+            // The loaded class should also be linked
+            linkClass(ret);
+        }
+        return ret;
     }
+
+    private static native void linkClass(Class<?> c);
 
     /**
      * Creates a new instance of the class represented by this {@code Class}
@@ -649,12 +667,12 @@ public final class Class<T> implements java.io.Serializable,
      * or via a widening reference conversion. See <em>The Java Language
      * Specification</em>, sections 5.1.1 and 5.1.4 , for details.
      *
-     * @param cls the {@code Class} object to be checked
-     * @return the {@code boolean} value indicating whether objects of the
-     * type {@code cls} can be assigned to objects of this class
-     * @exception NullPointerException if the specified Class parameter is
+     * @param     cls the {@code Class} object to be checked
+     * @return    the {@code boolean} value indicating whether objects of the
+     *            type {@code cls} can be assigned to objects of this class
+     * @throws    NullPointerException if the specified Class parameter is
      *            null.
-     * @since 1.1
+     * @since     1.1
      */
     @HotSpotIntrinsicCandidate
     public native boolean isAssignableFrom(Class<?> cls);
@@ -1494,7 +1512,7 @@ public final class Class<T> implements java.io.Serializable,
      * class.  If the underlying class is a top level class this
      * method returns {@code null}.
      * @return the immediately enclosing class of the underlying class
-     * @exception  SecurityException
+     * @throws     SecurityException
      *             If a security manager, <i>s</i>, is present and the caller's
      *             class loader is not the same as or an ancestor of the class
      *             loader for the enclosing class and invocation of {@link
@@ -3421,6 +3439,7 @@ public final class Class<T> implements java.io.Serializable,
     }
 
     /** use serialVersionUID from JDK 1.1 for interoperability */
+    @java.io.Serial
     private static final long serialVersionUID = 3206093459760846163L;
 
 
@@ -3440,6 +3459,7 @@ public final class Class<T> implements java.io.Serializable,
      *
      * @see java.io.ObjectStreamClass
      */
+    @java.io.Serial
     private static final ObjectStreamField[] serialPersistentFields =
         new ObjectStreamField[0];
 

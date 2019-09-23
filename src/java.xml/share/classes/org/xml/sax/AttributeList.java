@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2005, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,22 +23,10 @@
  * questions.
  */
 
-// SAX Attribute List Interface.
-// http://www.saxproject.org
-// No warranty; no copyright -- use this as you will.
-// $Id: AttributeList.java,v 1.3 2004/11/03 22:44:51 jsuttor Exp $
-
 package org.xml.sax;
 
 /**
  * Interface for an element's attribute specifications.
- *
- * <blockquote>
- * <em>This module, both source code and documentation, is in the
- * Public Domain, and comes with <strong>NO WARRANTY</strong>.</em>
- * See <a href='http://www.saxproject.org'>http://www.saxproject.org</a>
- * for further information.
- * </blockquote>
  *
  * <p>This is the original SAX1 interface for reporting an element's
  * attributes.  Unlike the new {@link org.xml.sax.Attributes Attributes}

@@ -23,23 +23,11 @@
  * questions.
  */
 
-// SAX error handler.
-// http://www.saxproject.org
-// No warranty; no copyright -- use this as you will.
-// $Id: ErrorHandler.java,v 1.2 2004/11/03 22:44:52 jsuttor Exp $
-
 package org.xml.sax;
 
 
 /**
  * Basic interface for SAX error handlers.
- *
- * <blockquote>
- * <em>This module, both source code and documentation, is in the
- * Public Domain, and comes with <strong>NO WARRANTY</strong>.</em>
- * See <a href='http://www.saxproject.org'>http://www.saxproject.org</a>
- * for further information.
- * </blockquote>
  *
  * <p>If a SAX application needs to implement customized error
  * handling, it must implement this interface and then register an

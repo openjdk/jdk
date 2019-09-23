@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2019, Oracle and/or its affiliates. All rights reserved.
  */
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
@@ -78,6 +78,7 @@ import org.xml.sax.helpers.LocatorImpl;
  * @author Arnaud Le Hors, IBM
  * @author Andy Clark, IBM
  *
+ * @LastModified: Sep 2019
  */
 @SuppressWarnings("deprecation")
 public abstract class AbstractSAXParser
@@ -318,6 +319,13 @@ public abstract class AbstractSAXParser
         // document's XML 1.0|1.1, that's how it'll stay
         fVersion = version;
         fStandalone = "yes".equals(standalone);
+        if (fContentHandler != null) {
+            try {
+                fContentHandler.declaration(version, encoding, standalone);
+            } catch (SAXException e) {
+                throw new XNIException(e);
+            }
+        }
     } // xmlDecl(String,String,String)
 
     /**

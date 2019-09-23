@@ -86,7 +86,7 @@ public class GCRetention {
                     if (q.remove(1000) != null)
                         break;
                     System.out.printf(
-                        "%d/%d unqueued references remaining%n", j, n);
+                        "%d/%d unqueued references remaining%n", j + 1, n);
                 }
             }
         }

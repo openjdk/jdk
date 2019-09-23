@@ -565,8 +565,13 @@ public class Arguments {
         boolean lintOptions = options.isUnset(Option.XLINT_CUSTOM, "-" + LintCategory.OPTIONS.option);
         if (lintOptions && source.compareTo(Source.DEFAULT) < 0 && !options.isSet(Option.RELEASE)) {
             if (fm instanceof BaseFileManager) {
-                if (((BaseFileManager) fm).isDefaultBootClassPath())
-                    log.warning(LintCategory.OPTIONS, Warnings.SourceNoBootclasspath(source.name));
+                if (source.compareTo(Source.JDK8) <= 0) {
+                    if (((BaseFileManager) fm).isDefaultBootClassPath())
+                        log.warning(LintCategory.OPTIONS, Warnings.SourceNoBootclasspath(source.name));
+                } else {
+                    if (((BaseFileManager) fm).isDefaultSystemModulesPath())
+                        log.warning(LintCategory.OPTIONS, Warnings.SourceNoSystemModulesPath(source.name));
+                }
             }
         }
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,10 +31,6 @@
 #include "jfr/jfrEvents.hpp"
 #include "runtime/os.hpp"
 #include "utilities/macros.hpp"
-#if INCLUDE_G1GC
-#include "gc/g1/g1EvacuationInfo.hpp"
-#include "gc/g1/g1YCTypes.hpp"
-#endif
 
 // All GC dependencies against the trace framework is contained within this file.
 
@@ -185,131 +181,6 @@ void OldGCTracer::send_concurrent_mode_failure_event() {
     e.commit();
   }
 }
-
-#if INCLUDE_G1GC
-void G1NewTracer::send_g1_young_gc_event() {
-  EventG1GarbageCollection e(UNTIMED);
-  if (e.should_commit()) {
-    e.set_gcId(GCId::current());
-    e.set_type(_g1_young_gc_info.type());
-    e.set_starttime(_shared_gc_info.start_timestamp());
-    e.set_endtime(_shared_gc_info.end_timestamp());
-    e.commit();
-  }
-}
-
-void G1MMUTracer::send_g1_mmu_event(double time_slice_ms, double gc_time_ms, double max_time_ms) {
-  EventG1MMU e;
-  if (e.should_commit()) {
-    e.set_gcId(GCId::current());
-    e.set_timeSlice(time_slice_ms);
-    e.set_gcTime(gc_time_ms);
-    e.set_pauseTarget(max_time_ms);
-    e.commit();
-  }
-}
-
-void G1NewTracer::send_evacuation_info_event(G1EvacuationInfo* info) {
-  EventEvacuationInformation e;
-  if (e.should_commit()) {
-    e.set_gcId(GCId::current());
-    e.set_cSetRegions(info->collectionset_regions());
-    e.set_cSetUsedBefore(info->collectionset_used_before());
-    e.set_cSetUsedAfter(info->collectionset_used_after());
-    e.set_allocationRegions(info->allocation_regions());
-    e.set_allocationRegionsUsedBefore(info->alloc_regions_used_before());
-    e.set_allocationRegionsUsedAfter(info->alloc_regions_used_before() + info->bytes_copied());
-    e.set_bytesCopied(info->bytes_copied());
-    e.set_regionsFreed(info->regions_freed());
-    e.commit();
-  }
-}
-
-void G1NewTracer::send_evacuation_failed_event(const EvacuationFailedInfo& ef_info) const {
-  EventEvacuationFailed e;
-  if (e.should_commit()) {
-    e.set_gcId(GCId::current());
-    e.set_evacuationFailed(to_struct(ef_info));
-    e.commit();
-  }
-}
-
-static JfrStructG1EvacuationStatistics
-create_g1_evacstats(unsigned gcid, const G1EvacSummary& summary) {
-  JfrStructG1EvacuationStatistics s;
-  s.set_gcId(gcid);
-  s.set_allocated(summary.allocated() * HeapWordSize);
-  s.set_wasted(summary.wasted() * HeapWordSize);
-  s.set_used(summary.used() * HeapWordSize);
-  s.set_undoWaste(summary.undo_wasted() * HeapWordSize);
-  s.set_regionEndWaste(summary.region_end_waste() * HeapWordSize);
-  s.set_regionsRefilled(summary.regions_filled());
-  s.set_directAllocated(summary.direct_allocated() * HeapWordSize);
-  s.set_failureUsed(summary.failure_used() * HeapWordSize);
-  s.set_failureWaste(summary.failure_waste() * HeapWordSize);
-  return s;
-}
-
-void G1NewTracer::send_young_evacuation_statistics(const G1EvacSummary& summary) const {
-  EventG1EvacuationYoungStatistics surv_evt;
-  if (surv_evt.should_commit()) {
-    surv_evt.set_statistics(create_g1_evacstats(GCId::current(), summary));
-    surv_evt.commit();
-  }
-}
-
-void G1NewTracer::send_old_evacuation_statistics(const G1EvacSummary& summary) const {
-  EventG1EvacuationOldStatistics old_evt;
-  if (old_evt.should_commit()) {
-    old_evt.set_statistics(create_g1_evacstats(GCId::current(), summary));
-    old_evt.commit();
-  }
-}
-
-void G1NewTracer::send_basic_ihop_statistics(size_t threshold,
-                                             size_t target_occupancy,
-                                             size_t current_occupancy,
-                                             size_t last_allocation_size,
-                                             double last_allocation_duration,
-                                             double last_marking_length) {
-  EventG1BasicIHOP evt;
-  if (evt.should_commit()) {
-    evt.set_gcId(GCId::current());
-    evt.set_threshold(threshold);
-    evt.set_targetOccupancy(target_occupancy);
-    evt.set_thresholdPercentage(target_occupancy > 0 ? ((double)threshold / target_occupancy) : 0.0);
-    evt.set_currentOccupancy(current_occupancy);
-    evt.set_recentMutatorAllocationSize(last_allocation_size);
-    evt.set_recentMutatorDuration(last_allocation_duration * MILLIUNITS);
-    evt.set_recentAllocationRate(last_allocation_duration != 0.0 ? last_allocation_size / last_allocation_duration : 0.0);
-    evt.set_lastMarkingDuration(last_marking_length * MILLIUNITS);
-    evt.commit();
-  }
-}
-
-void G1NewTracer::send_adaptive_ihop_statistics(size_t threshold,
-                                                size_t internal_target_occupancy,
-                                                size_t current_occupancy,
-                                                size_t additional_buffer_size,
-                                                double predicted_allocation_rate,
-                                                double predicted_marking_length,
-                                                bool prediction_active) {
-  EventG1AdaptiveIHOP evt;
-  if (evt.should_commit()) {
-    evt.set_gcId(GCId::current());
-    evt.set_threshold(threshold);
-    evt.set_thresholdPercentage(internal_target_occupancy > 0 ? ((double)threshold / internal_target_occupancy) : 0.0);
-    evt.set_ihopTargetOccupancy(internal_target_occupancy);
-    evt.set_currentOccupancy(current_occupancy);
-    evt.set_additionalBufferSize(additional_buffer_size);
-    evt.set_predictedAllocationRate(predicted_allocation_rate);
-    evt.set_predictedMarkingDuration(predicted_marking_length * MILLIUNITS);
-    evt.set_predictionActive(prediction_active);
-    evt.commit();
-  }
-}
-
-#endif // INCLUDE_G1GC
 
 static JfrStructVirtualSpace to_struct(const VirtualSpaceSummary& summary) {
   JfrStructVirtualSpace space;

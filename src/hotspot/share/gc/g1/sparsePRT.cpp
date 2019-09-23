@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -104,14 +104,8 @@ RSHashTable::RSHashTable(size_t capacity) :
 }
 
 RSHashTable::~RSHashTable() {
-  if (_entries != NULL) {
-    FREE_C_HEAP_ARRAY(SparsePRTEntry, _entries);
-    _entries = NULL;
-  }
-  if (_buckets != NULL) {
-    FREE_C_HEAP_ARRAY(int, _buckets);
-    _buckets = NULL;
-  }
+  FREE_C_HEAP_ARRAY(SparsePRTEntry, _entries);
+  FREE_C_HEAP_ARRAY(int, _buckets);
 }
 
 void RSHashTable::clear() {

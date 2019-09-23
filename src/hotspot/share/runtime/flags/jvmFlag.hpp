@@ -206,11 +206,6 @@ public:
   bool is_writeable() const;
   bool is_external() const;
 
-  bool is_unlocker_ext() const;
-  bool is_unlocked_ext() const;
-  bool is_writeable_ext() const;
-  bool is_external_ext() const;
-
   void clear_diagnostic();
 
   JVMFlag::MsgType get_locked_message(char*, int) const;

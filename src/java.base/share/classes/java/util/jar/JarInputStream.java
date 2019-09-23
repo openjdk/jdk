@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -56,7 +56,7 @@ class JarInputStream extends ZipInputStream {
      * manifest. If a manifest is present, also attempts to verify
      * the signatures if the JarInputStream is signed.
      * @param in the actual input stream
-     * @exception IOException if an I/O error has occurred
+     * @throws    IOException if an I/O error has occurred
      */
     public JarInputStream(InputStream in) throws IOException {
         this(in, true);
@@ -70,7 +70,7 @@ class JarInputStream extends ZipInputStream {
      * @param in the actual input stream
      * @param verify whether or not to verify the JarInputStream if
      * it is signed.
-     * @exception IOException if an I/O error has occurred
+     * @throws    IOException if an I/O error has occurred
      */
     public JarInputStream(InputStream in, boolean verify) throws IOException {
         super(in);
@@ -131,9 +131,9 @@ class JarInputStream extends ZipInputStream {
      * beginning of the entry data. If verification has been enabled,
      * any invalid signature detected while positioning the stream for
      * the next entry will result in an exception.
-     * @exception ZipException if a ZIP file error has occurred
-     * @exception IOException if an I/O error has occurred
-     * @exception SecurityException if any of the jar file entries
+     * @throws    ZipException if a ZIP file error has occurred
+     * @throws    IOException if an I/O error has occurred
+     * @throws    SecurityException if any of the jar file entries
      *         are incorrectly signed.
      */
     public ZipEntry getNextEntry() throws IOException {
@@ -170,9 +170,9 @@ class JarInputStream extends ZipInputStream {
      * any invalid signature detected while positioning the stream for
      * the next entry will result in an exception.
      * @return the next JAR file entry, or null if there are no more entries
-     * @exception ZipException if a ZIP file error has occurred
-     * @exception IOException if an I/O error has occurred
-     * @exception SecurityException if any of the jar file entries
+     * @throws    ZipException if a ZIP file error has occurred
+     * @throws    IOException if an I/O error has occurred
+     * @throws    SecurityException if any of the jar file entries
      *         are incorrectly signed.
      */
     public JarEntry getNextJarEntry() throws IOException {
@@ -192,13 +192,13 @@ class JarInputStream extends ZipInputStream {
      * @param len the maximum number of bytes to read
      * @return the actual number of bytes read, or -1 if the end of the
      *         entry is reached
-     * @exception  NullPointerException If <code>b</code> is <code>null</code>.
-     * @exception  IndexOutOfBoundsException If <code>off</code> is negative,
+     * @throws     NullPointerException If <code>b</code> is <code>null</code>.
+     * @throws     IndexOutOfBoundsException If <code>off</code> is negative,
      * <code>len</code> is negative, or <code>len</code> is greater than
      * <code>b.length - off</code>
-     * @exception ZipException if a ZIP file error has occurred
-     * @exception IOException if an I/O error has occurred
-     * @exception SecurityException if any of the jar file entries
+     * @throws    ZipException if a ZIP file error has occurred
+     * @throws    IOException if an I/O error has occurred
+     * @throws    SecurityException if any of the jar file entries
      *         are incorrectly signed.
      */
     public int read(byte[] b, int off, int len) throws IOException {

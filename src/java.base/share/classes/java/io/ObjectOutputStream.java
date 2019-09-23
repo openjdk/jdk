@@ -879,6 +879,10 @@ public class ObjectOutputStream
      * @since 1.2
      */
     public abstract static class PutField {
+        /**
+         * Constructor for subclasses to call.
+         */
+        public PutField() {}
 
         /**
          * Put the value of the named boolean field into the persistent field.
@@ -1588,22 +1592,6 @@ public class ObjectOutputStream
     }
 
     /**
-     * Converts specified span of float values into byte values.
-     */
-    // REMIND: remove once hotspot inlines Float.floatToIntBits
-    private static native void floatsToBytes(float[] src, int srcpos,
-                                             byte[] dst, int dstpos,
-                                             int nfloats);
-
-    /**
-     * Converts specified span of double values into byte values.
-     */
-    // REMIND: remove once hotspot inlines Double.doubleToLongBits
-    private static native void doublesToBytes(double[] src, int srcpos,
-                                              byte[] dst, int dstpos,
-                                              int ndoubles);
-
-    /**
      * Default PutField implementation.
      */
     private class PutFieldImpl extends PutField {
@@ -2092,10 +2080,11 @@ public class ObjectOutputStream
             while (off < endoff) {
                 if (pos <= limit) {
                     int avail = (MAX_BLOCK_SIZE - pos) >> 2;
-                    int chunklen = Math.min(endoff - off, avail);
-                    floatsToBytes(v, off, buf, pos, chunklen);
-                    off += chunklen;
-                    pos += chunklen << 2;
+                    int stop = Math.min(endoff, off + avail);
+                    while (off < stop) {
+                        Bits.putFloat(buf, pos, v[off++]);
+                        pos += 4;
+                    }
                 } else {
                     dout.writeFloat(v[off++]);
                 }
@@ -2125,10 +2114,11 @@ public class ObjectOutputStream
             while (off < endoff) {
                 if (pos <= limit) {
                     int avail = (MAX_BLOCK_SIZE - pos) >> 3;
-                    int chunklen = Math.min(endoff - off, avail);
-                    doublesToBytes(v, off, buf, pos, chunklen);
-                    off += chunklen;
-                    pos += chunklen << 3;
+                    int stop = Math.min(endoff, off + avail);
+                    while (off < stop) {
+                        Bits.putDouble(buf, pos, v[off++]);
+                        pos += 8;
+                    }
                 } else {
                     dout.writeDouble(v[off++]);
                 }

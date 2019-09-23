@@ -1021,6 +1021,7 @@ public class Collections {
      * @serial include
      */
     static class UnmodifiableCollection<E> implements Collection<E>, Serializable {
+        @java.io.Serial
         private static final long serialVersionUID = 1820017752578914078L;
 
         final Collection<? extends E> c;
@@ -1127,6 +1128,7 @@ public class Collections {
      */
     static class UnmodifiableSet<E> extends UnmodifiableCollection<E>
                                  implements Set<E>, Serializable {
+        @java.io.Serial
         private static final long serialVersionUID = -9215047833775013803L;
 
         UnmodifiableSet(Set<? extends E> s)     {super(s);}
@@ -1160,6 +1162,7 @@ public class Collections {
     static class UnmodifiableSortedSet<E>
                              extends UnmodifiableSet<E>
                              implements SortedSet<E>, Serializable {
+        @java.io.Serial
         private static final long serialVersionUID = -4929149591599911165L;
         private final SortedSet<E> ss;
 
@@ -1212,6 +1215,7 @@ public class Collections {
                              extends UnmodifiableSortedSet<E>
                              implements NavigableSet<E>, Serializable {
 
+        @java.io.Serial
         private static final long serialVersionUID = -6027448201786391929L;
 
         /**
@@ -1222,12 +1226,14 @@ public class Collections {
          */
         private static class EmptyNavigableSet<E> extends UnmodifiableNavigableSet<E>
             implements Serializable {
+            @java.io.Serial
             private static final long serialVersionUID = -6291252904449939134L;
 
             public EmptyNavigableSet() {
                 super(new TreeSet<>());
             }
 
+            @java.io.Serial
             private Object readResolve()        { return EMPTY_NAVIGABLE_SET; }
         }
 
@@ -1295,6 +1301,7 @@ public class Collections {
      */
     static class UnmodifiableList<E> extends UnmodifiableCollection<E>
                                   implements List<E> {
+        @java.io.Serial
         private static final long serialVersionUID = -283967356065247728L;
 
         final List<? extends E> list;
@@ -1379,6 +1386,7 @@ public class Collections {
          * serialized in 1.4.1 and deserialized in 1.4 will become
          * UnmodifiableList instances, as this method was missing in 1.4.
          */
+        @java.io.Serial
         private Object readResolve() {
             return (list instanceof RandomAccess
                     ? new UnmodifiableRandomAccessList<>(list)
@@ -1401,6 +1409,7 @@ public class Collections {
                 list.subList(fromIndex, toIndex));
         }
 
+        @java.io.Serial
         private static final long serialVersionUID = -2542308836966382001L;
 
         /**
@@ -1409,6 +1418,7 @@ public class Collections {
          * a readResolve method that inverts this transformation upon
          * deserialization.
          */
+        @java.io.Serial
         private Object writeReplace() {
             return new UnmodifiableList<>(list);
         }
@@ -1437,6 +1447,7 @@ public class Collections {
      * @serial include
      */
     private static class UnmodifiableMap<K,V> implements Map<K,V>, Serializable {
+        @java.io.Serial
         private static final long serialVersionUID = -1034234728574286014L;
 
         private final Map<? extends K, ? extends V> m;
@@ -1563,6 +1574,7 @@ public class Collections {
          */
         static class UnmodifiableEntrySet<K,V>
             extends UnmodifiableSet<Map.Entry<K,V>> {
+            @java.io.Serial
             private static final long serialVersionUID = 7854390611657943733L;
 
             @SuppressWarnings({"unchecked", "rawtypes"})
@@ -1794,6 +1806,7 @@ public class Collections {
     static class UnmodifiableSortedMap<K,V>
           extends UnmodifiableMap<K,V>
           implements SortedMap<K,V>, Serializable {
+        @java.io.Serial
         private static final long serialVersionUID = -8806743815996713206L;
 
         private final SortedMap<K, ? extends V> sm;
@@ -1838,6 +1851,7 @@ public class Collections {
     static class UnmodifiableNavigableMap<K,V>
           extends UnmodifiableSortedMap<K,V>
           implements NavigableMap<K,V>, Serializable {
+        @java.io.Serial
         private static final long serialVersionUID = -4858195264774772197L;
 
         /**
@@ -1850,6 +1864,7 @@ public class Collections {
         private static class EmptyNavigableMap<K,V> extends UnmodifiableNavigableMap<K,V>
             implements Serializable {
 
+            @java.io.Serial
             private static final long serialVersionUID = -2239321462712562324L;
 
             EmptyNavigableMap()                       { super(new TreeMap<>()); }
@@ -1858,6 +1873,7 @@ public class Collections {
             public NavigableSet<K> navigableKeySet()
                                                 { return emptyNavigableSet(); }
 
+            @java.io.Serial
             private Object readResolve()        { return EMPTY_NAVIGABLE_MAP; }
         }
 
@@ -1998,6 +2014,7 @@ public class Collections {
      * @serial include
      */
     static class SynchronizedCollection<E> implements Collection<E>, Serializable {
+        @java.io.Serial
         private static final long serialVersionUID = 3053995032091335093L;
 
         final Collection<E> c;  // Backing Collection
@@ -2082,6 +2099,7 @@ public class Collections {
         public Stream<E> parallelStream() {
             return c.parallelStream(); // Must be manually synched by user!
         }
+        @java.io.Serial
         private void writeObject(ObjectOutputStream s) throws IOException {
             synchronized (mutex) {s.defaultWriteObject();}
         }
@@ -2128,6 +2146,7 @@ public class Collections {
     static class SynchronizedSet<E>
           extends SynchronizedCollection<E>
           implements Set<E> {
+        @java.io.Serial
         private static final long serialVersionUID = 487447009682186044L;
 
         SynchronizedSet(Set<E> s) {
@@ -2197,6 +2216,7 @@ public class Collections {
         extends SynchronizedSet<E>
         implements SortedSet<E>
     {
+        @java.io.Serial
         private static final long serialVersionUID = 8695801310862127406L;
 
         private final SortedSet<E> ss;
@@ -2291,6 +2311,7 @@ public class Collections {
         extends SynchronizedSortedSet<E>
         implements NavigableSet<E>
     {
+        @java.io.Serial
         private static final long serialVersionUID = -5505529816273629798L;
 
         private final NavigableSet<E> ns;
@@ -2400,6 +2421,7 @@ public class Collections {
     static class SynchronizedList<E>
         extends SynchronizedCollection<E>
         implements List<E> {
+        @java.io.Serial
         private static final long serialVersionUID = -7754090372962971524L;
 
         final List<E> list;
@@ -2482,6 +2504,7 @@ public class Collections {
          * serialized in 1.4.1 and deserialized in 1.4 will become
          * SynchronizedList instances, as this method was missing in 1.4.
          */
+        @java.io.Serial
         private Object readResolve() {
             return (list instanceof RandomAccess
                     ? new SynchronizedRandomAccessList<>(list)
@@ -2511,6 +2534,7 @@ public class Collections {
             }
         }
 
+        @java.io.Serial
         private static final long serialVersionUID = 1530674583602358482L;
 
         /**
@@ -2519,6 +2543,7 @@ public class Collections {
          * a readResolve method that inverts this transformation upon
          * deserialization.
          */
+        @java.io.Serial
         private Object writeReplace() {
             return new SynchronizedList<>(list);
         }
@@ -2563,6 +2588,7 @@ public class Collections {
      */
     private static class SynchronizedMap<K,V>
         implements Map<K,V>, Serializable {
+        @java.io.Serial
         private static final long serialVersionUID = 1978198479659022715L;
 
         private final Map<K,V> m;     // Backing Map
@@ -2697,6 +2723,7 @@ public class Collections {
             synchronized (mutex) {return m.merge(key, value, remappingFunction);}
         }
 
+        @java.io.Serial
         private void writeObject(ObjectOutputStream s) throws IOException {
             synchronized (mutex) {s.defaultWriteObject();}
         }
@@ -2758,6 +2785,7 @@ public class Collections {
         extends SynchronizedMap<K,V>
         implements SortedMap<K,V>
     {
+        @java.io.Serial
         private static final long serialVersionUID = -8798146769416483793L;
 
         private final SortedMap<K,V> sm;
@@ -2860,6 +2888,7 @@ public class Collections {
         extends SynchronizedSortedMap<K,V>
         implements NavigableMap<K,V>
     {
+        @java.io.Serial
         private static final long serialVersionUID = 699392247599746807L;
 
         private final NavigableMap<K,V> nm;
@@ -3038,6 +3067,7 @@ public class Collections {
      * @serial include
      */
     static class CheckedCollection<E> implements Collection<E>, Serializable {
+        @java.io.Serial
         private static final long serialVersionUID = 1578914078182001775L;
 
         final Collection<E> c;
@@ -3187,6 +3217,7 @@ public class Collections {
         extends CheckedCollection<E>
         implements Queue<E>, Serializable
     {
+        @java.io.Serial
         private static final long serialVersionUID = 1433151992604707767L;
         final Queue<E> queue;
 
@@ -3241,6 +3272,7 @@ public class Collections {
     static class CheckedSet<E> extends CheckedCollection<E>
                                  implements Set<E>, Serializable
     {
+        @java.io.Serial
         private static final long serialVersionUID = 4694047833775013803L;
 
         CheckedSet(Set<E> s, Class<E> elementType) { super(s, elementType); }
@@ -3288,6 +3320,7 @@ public class Collections {
     static class CheckedSortedSet<E> extends CheckedSet<E>
         implements SortedSet<E>, Serializable
     {
+        @java.io.Serial
         private static final long serialVersionUID = 1599911165492914959L;
 
         private final SortedSet<E> ss;
@@ -3351,6 +3384,7 @@ public class Collections {
     static class CheckedNavigableSet<E> extends CheckedSortedSet<E>
         implements NavigableSet<E>, Serializable
     {
+        @java.io.Serial
         private static final long serialVersionUID = -5429120189805438922L;
 
         private final NavigableSet<E> ns;
@@ -3434,6 +3468,7 @@ public class Collections {
         extends CheckedCollection<E>
         implements List<E>
     {
+        @java.io.Serial
         private static final long serialVersionUID = 65247728283967356L;
         final List<E> list;
 
@@ -3519,6 +3554,7 @@ public class Collections {
     static class CheckedRandomAccessList<E> extends CheckedList<E>
                                             implements RandomAccess
     {
+        @java.io.Serial
         private static final long serialVersionUID = 1638200125423088369L;
 
         CheckedRandomAccessList(List<E> list, Class<E> type) {
@@ -3580,6 +3616,7 @@ public class Collections {
     private static class CheckedMap<K,V>
         implements Map<K,V>, Serializable
     {
+        @java.io.Serial
         private static final long serialVersionUID = 5742860141034234728L;
 
         private final Map<K, V> m;
@@ -3979,6 +4016,7 @@ public class Collections {
     static class CheckedSortedMap<K,V> extends CheckedMap<K,V>
         implements SortedMap<K,V>, Serializable
     {
+        @java.io.Serial
         private static final long serialVersionUID = 1599671320688067438L;
 
         private final SortedMap<K, V> sm;
@@ -4053,6 +4091,7 @@ public class Collections {
     static class CheckedNavigableMap<K,V> extends CheckedSortedMap<K,V>
         implements NavigableMap<K,V>, Serializable
     {
+        @java.io.Serial
         private static final long serialVersionUID = -4852462692372534096L;
 
         private final NavigableMap<K, V> nm;
@@ -4331,6 +4370,7 @@ public class Collections {
         extends AbstractSet<E>
         implements Serializable
     {
+        @java.io.Serial
         private static final long serialVersionUID = 1582296315990362920L;
 
         public Iterator<E> iterator() { return emptyIterator(); }
@@ -4364,6 +4404,7 @@ public class Collections {
         public Spliterator<E> spliterator() { return Spliterators.emptySpliterator(); }
 
         // Preserves singleton property
+        @java.io.Serial
         private Object readResolve() {
             return EMPTY_SET;
         }
@@ -4455,6 +4496,7 @@ public class Collections {
     private static class EmptyList<E>
         extends AbstractList<E>
         implements RandomAccess, Serializable {
+        @java.io.Serial
         private static final long serialVersionUID = 8842843931221139166L;
 
         public Iterator<E> iterator() {
@@ -4512,6 +4554,7 @@ public class Collections {
         public Spliterator<E> spliterator() { return Spliterators.emptySpliterator(); }
 
         // Preserves singleton property
+        @java.io.Serial
         private Object readResolve() {
             return EMPTY_LIST;
         }
@@ -4598,6 +4641,7 @@ public class Collections {
         extends AbstractMap<K,V>
         implements Serializable
     {
+        @java.io.Serial
         private static final long serialVersionUID = 6428348081105594320L;
 
         public int size()                          {return 0;}
@@ -4678,6 +4722,7 @@ public class Collections {
         }
 
         // Preserves singleton property
+        @java.io.Serial
         private Object readResolve() {
             return EMPTY_MAP;
         }
@@ -4777,6 +4822,7 @@ public class Collections {
         extends AbstractSet<E>
         implements Serializable
     {
+        @java.io.Serial
         private static final long serialVersionUID = 3193687207550431679L;
 
         private final E element;
@@ -4830,6 +4876,7 @@ public class Collections {
         extends AbstractList<E>
         implements RandomAccess, Serializable {
 
+        @java.io.Serial
         private static final long serialVersionUID = 3093736618740652951L;
 
         private final E element;
@@ -4898,6 +4945,7 @@ public class Collections {
     private static class SingletonMap<K,V>
           extends AbstractMap<K,V>
           implements Serializable {
+        @java.io.Serial
         private static final long serialVersionUID = -6979724477215052911L;
 
         private final K k;
@@ -5035,6 +5083,7 @@ public class Collections {
         extends AbstractList<E>
         implements RandomAccess, Serializable
     {
+        @java.io.Serial
         private static final long serialVersionUID = 2739099268398711800L;
 
         final int n;
@@ -5166,6 +5215,7 @@ public class Collections {
             return stream().spliterator();
         }
 
+        @java.io.Serial
         private void readObject(ObjectInputStream ois) throws IOException, ClassNotFoundException {
             ois.defaultReadObject();
             SharedSecrets.getJavaObjectInputStreamAccess().checkArray(ois, Object[].class, n);
@@ -5203,6 +5253,7 @@ public class Collections {
     private static class ReverseComparator
         implements Comparator<Comparable<Object>>, Serializable {
 
+        @java.io.Serial
         private static final long serialVersionUID = 7207038068494060240L;
 
         static final ReverseComparator REVERSE_ORDER
@@ -5212,6 +5263,7 @@ public class Collections {
             return c2.compareTo(c1);
         }
 
+        @java.io.Serial
         private Object readResolve() { return Collections.reverseOrder(); }
 
         @Override
@@ -5258,6 +5310,7 @@ public class Collections {
     private static class ReverseComparator2<T> implements Comparator<T>,
         Serializable
     {
+        @java.io.Serial
         private static final long serialVersionUID = 4374092139857L;
 
         /**
@@ -5592,8 +5645,10 @@ public class Collections {
         @Override
         public Stream<E> parallelStream()   {return s.parallelStream();}
 
+        @java.io.Serial
         private static final long serialVersionUID = 2454657854757543876L;
 
+        @java.io.Serial
         private void readObject(java.io.ObjectInputStream stream)
             throws IOException, ClassNotFoundException
         {
@@ -5629,6 +5684,7 @@ public class Collections {
      */
     static class AsLIFOQueue<E> extends AbstractQueue<E>
         implements Queue<E>, Serializable {
+        @java.io.Serial
         private static final long serialVersionUID = 1802017725587941708L;
         private final Deque<E> q;
         AsLIFOQueue(Deque<E> q)                     { this.q = q; }

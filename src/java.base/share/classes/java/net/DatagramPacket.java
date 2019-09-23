@@ -245,7 +245,7 @@ class DatagramPacket {
      * @param length the length of the data
      *       and/or the length of the buffer used to receive data
      *
-     * @exception NullPointerException if the argument is null
+     * @throws    NullPointerException if the argument is null
      *
      * @see #getData
      * @see #getOffset
@@ -331,7 +331,7 @@ class DatagramPacket {
      *
      * @param buf the buffer to set for this packet.
      *
-     * @exception NullPointerException if the argument is null.
+     * @throws    NullPointerException if the argument is null.
      *
      * @see #getLength
      * @see #getData
@@ -357,7 +357,7 @@ class DatagramPacket {
      *
      * @param length the length to set for this packet.
      *
-     * @exception IllegalArgumentException if the length is negative
+     * @throws    IllegalArgumentException if the length is negative
      * of if the length is greater than the packet's data buffer
      * length.
      *

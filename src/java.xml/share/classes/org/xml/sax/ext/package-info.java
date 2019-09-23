@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,9 +27,6 @@
  * Provides interfaces to SAX2 facilities that
  * conformant SAX drivers won't necessarily support.
  *
- * <p>
- * See <a target='_top' href='http://www.saxproject.org'>http://www.saxproject.org</a>
- * for more information about SAX.
  *
  * <p>
  * This package is independent of the SAX2 core, though the functionality
@@ -65,6 +62,10 @@
  * be recognized directly by parsers, however.
  * As an example, most validation systems can be cleanly layered on top
  * of parsers supporting the standardized SAX2 interfaces.
+ *
+ * @apiNote The SAX API, originally developed at
+ * <a href="http://www.saxproject.org">the SAX Project</a>,
+ * has been defined by Java SE since 1.4.
  *
  * @since 1.4
  */

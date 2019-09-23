@@ -21,6 +21,7 @@
  * questions.
  */
 
+#include "precompiled.hpp"
 #include "gc/z/zNUMA.hpp"
 #include "logging/log.hpp"
 #include "runtime/os.hpp"

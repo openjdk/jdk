@@ -207,7 +207,7 @@ bool GenericTaskQueue<E, F, N>::pop_global(volatile E& t) {
   // Architectures with weak memory model require a barrier here
   // to guarantee that bottom is not older than age,
   // which is crucial for the correctness of the algorithm.
-#if !(defined SPARC || defined IA32 || defined AMD64)
+#ifndef CPU_MULTI_COPY_ATOMIC
   OrderAccess::fence();
 #endif
   uint localBot = OrderAccess::load_acquire(&_bottom);

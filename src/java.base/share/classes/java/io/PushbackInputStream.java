@@ -84,7 +84,7 @@ class PushbackInputStream extends FilterInputStream {
      *
      * @param  in    the input stream from which bytes will be read.
      * @param  size  the size of the pushback buffer.
-     * @exception IllegalArgumentException if {@code size <= 0}
+     * @throws IllegalArgumentException if {@code size <= 0}
      * @since  1.1
      */
     public PushbackInputStream(InputStream in, int size) {
@@ -123,7 +123,7 @@ class PushbackInputStream extends FilterInputStream {
      *
      * @return     the next byte of data, or <code>-1</code> if the end of the
      *             stream has been reached.
-     * @exception  IOException  if this input stream has been closed by
+     * @throws     IOException  if this input stream has been closed by
      *             invoking its {@link #close()} method,
      *             or an I/O error occurs.
      * @see        java.io.InputStream#read()
@@ -150,11 +150,11 @@ class PushbackInputStream extends FilterInputStream {
      * @return     the total number of bytes read into the buffer, or
      *             <code>-1</code> if there is no more data because the end of
      *             the stream has been reached.
-     * @exception  NullPointerException If <code>b</code> is <code>null</code>.
-     * @exception  IndexOutOfBoundsException If <code>off</code> is negative,
-     * <code>len</code> is negative, or <code>len</code> is greater than
-     * <code>b.length - off</code>
-     * @exception  IOException  if this input stream has been closed by
+     * @throws     NullPointerException If <code>b</code> is <code>null</code>.
+     * @throws     IndexOutOfBoundsException If <code>off</code> is negative,
+     *             <code>len</code> is negative, or <code>len</code> is greater than
+     *             <code>b.length - off</code>
+     * @throws     IOException  if this input stream has been closed by
      *             invoking its {@link #close()} method,
      *             or an I/O error occurs.
      * @see        java.io.InputStream#read(byte[], int, int)
@@ -196,7 +196,7 @@ class PushbackInputStream extends FilterInputStream {
      *
      * @param      b   the <code>int</code> value whose low-order
      *                  byte is to be pushed back.
-     * @exception IOException If there is not enough room in the pushback
+     * @throws    IOException If there is not enough room in the pushback
      *            buffer for the byte, or this input stream has been closed by
      *            invoking its {@link #close()} method.
      */
@@ -214,11 +214,11 @@ class PushbackInputStream extends FilterInputStream {
      * read will have the value <code>b[off]</code>, the byte after that will
      * have the value <code>b[off+1]</code>, and so forth.
      *
-     * @param b the byte array to push back.
-     * @param off the start offset of the data.
-     * @param len the number of bytes to push back.
-     * @exception NullPointerException If <code>b</code> is <code>null</code>.
-     * @exception IOException If there is not enough room in the pushback
+     * @param     b the byte array to push back.
+     * @param     off the start offset of the data.
+     * @param     len the number of bytes to push back.
+     * @throws    NullPointerException If <code>b</code> is <code>null</code>.
+     * @throws    IOException If there is not enough room in the pushback
      *            buffer for the specified number of bytes,
      *            or this input stream has been closed by
      *            invoking its {@link #close()} method.
@@ -239,9 +239,9 @@ class PushbackInputStream extends FilterInputStream {
      * will have the value <code>b[0]</code>, the byte after that will have the
      * value <code>b[1]</code>, and so forth.
      *
-     * @param b the byte array to push back
-     * @exception NullPointerException If <code>b</code> is <code>null</code>.
-     * @exception IOException If there is not enough room in the pushback
+     * @param     b the byte array to push back
+     * @throws    NullPointerException If <code>b</code> is <code>null</code>.
+     * @throws    IOException If there is not enough room in the pushback
      *            buffer for the specified number of bytes,
      *            or this input stream has been closed by
      *            invoking its {@link #close()} method.
@@ -264,7 +264,7 @@ class PushbackInputStream extends FilterInputStream {
      *
      * @return     the number of bytes that can be read (or skipped over) from
      *             the input stream without blocking.
-     * @exception  IOException  if this input stream has been closed by
+     * @throws     IOException  if this input stream has been closed by
      *             invoking its {@link #close()} method,
      *             or an I/O error occurs.
      * @see        java.io.FilterInputStream#in
@@ -327,8 +327,8 @@ class PushbackInputStream extends FilterInputStream {
      *
      * @return   <code>false</code>, since this class does not support the
      *           <code>mark</code> and <code>reset</code> methods.
-     * @see     java.io.InputStream#mark(int)
-     * @see     java.io.InputStream#reset()
+     * @see      java.io.InputStream#mark(int)
+     * @see      java.io.InputStream#reset()
      */
     public boolean markSupported() {
         return false;
@@ -355,7 +355,7 @@ class PushbackInputStream extends FilterInputStream {
      * <code>PushbackInputStream</code> does nothing except throw an
      * <code>IOException</code>.
      *
-     * @exception  IOException  if this method is invoked.
+     * @throws  IOException  if this method is invoked.
      * @see     java.io.InputStream#mark(int)
      * @see     java.io.IOException
      */
@@ -370,7 +370,7 @@ class PushbackInputStream extends FilterInputStream {
      * available(), reset(), or skip() invocations will throw an IOException.
      * Closing a previously closed stream has no effect.
      *
-     * @exception  IOException  if an I/O error occurs.
+     * @throws     IOException  if an I/O error occurs.
      */
     public synchronized void close() throws IOException {
         if (in == null)

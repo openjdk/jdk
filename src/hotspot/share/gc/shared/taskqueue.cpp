@@ -134,7 +134,7 @@ void ParallelTaskTerminator::yield() {
 
 void ParallelTaskTerminator::sleep(uint millis) {
   assert(_offered_termination <= _n_threads, "Invariant");
-  os::sleep(Thread::current(), millis, false);
+  os::naked_sleep(millis);
 }
 
 bool
@@ -280,4 +280,3 @@ TaskTerminator::~TaskTerminator() {
     delete _terminator;
   }
 }
-

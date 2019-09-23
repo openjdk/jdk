@@ -1101,7 +1101,7 @@ JvmtiEnv::InterruptThread(jthread thread) {
     return err;
   }
 
-  Thread::interrupt(java_thread);
+  java_thread->interrupt();
 
   return JVMTI_ERROR_NONE;
 } /* end InterruptThread */
@@ -3411,7 +3411,7 @@ JvmtiEnv::RawMonitorWait(JvmtiRawMonitor * rmonitor, jlong millis) {
 #endif /* PROPER_TRANSITIONS */
   } else {
     if (thread->is_Named_thread()) {
-      r = rmonitor->raw_wait(millis, true, thread);
+      r = rmonitor->raw_wait(millis, false, thread);
     } else {
       ShouldNotReachHere();
     }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -55,6 +55,7 @@ import java.security.NoSuchProviderException;
 public final class SecureRandom extends SecureRandomSpi
 implements java.io.Serializable {
 
+    @java.io.Serial
     private static final long serialVersionUID = 3581829991155417889L;
 
     private static final int DIGEST_SIZE = 20;
@@ -271,6 +272,7 @@ implements java.io.Serializable {
      * If you do not want this behaviour, you should re-seed the restored
      * random object, using engineSetSeed().
      */
+    @java.io.Serial
     private void readObject(java.io.ObjectInputStream s)
         throws IOException, ClassNotFoundException {
 

@@ -110,7 +110,7 @@ LIR_Opr ShenandoahBarrierSetC1::atomic_xchg_at_resolved(LIRAccess& access, LIRIt
   __ xchg(access.resolved_addr(), result, result, LIR_OprFact::illegalOpr);
 
   if (access.is_oop()) {
-    result = load_reference_barrier(access.gen(), result);
+    result = load_reference_barrier(access.gen(), result, LIR_OprFact::addressConst(0));
     LIR_Opr tmp = gen->new_register(type);
     __ move(result, tmp);
     result = tmp;

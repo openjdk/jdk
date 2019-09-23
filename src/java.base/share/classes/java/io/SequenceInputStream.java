@@ -118,13 +118,13 @@ class SequenceInputStream extends InputStream {
      * This method simply calls {@code available} of the current underlying
      * input stream and returns the result.
      *
-     * @return an estimate of the number of bytes that can be read (or
-     *         skipped over) from the current underlying input stream
-     *         without blocking or {@code 0} if this input stream
-     *         has been closed by invoking its {@link #close()} method
-     * @exception  IOException  if an I/O error occurs.
+     * @return   an estimate of the number of bytes that can be read (or
+     *           skipped over) from the current underlying input stream
+     *           without blocking or {@code 0} if this input stream
+     *           has been closed by invoking its {@link #close()} method
+     * @throw    IOException  if an I/O error occurs.
      *
-     * @since   1.1
+     * @since    1.1
      */
     public int available() throws IOException {
         if (in == null) {
@@ -149,7 +149,7 @@ class SequenceInputStream extends InputStream {
      *
      * @return     the next byte of data, or <code>-1</code> if the end of the
      *             stream is reached.
-     * @exception  IOException  if an I/O error occurs.
+     * @throws     IOException  if an I/O error occurs.
      */
     public int read() throws IOException {
         while (in != null) {
@@ -179,11 +179,11 @@ class SequenceInputStream extends InputStream {
      *                   at which the data is written.
      * @param      len   the maximum number of bytes read.
      * @return     int   the number of bytes read.
-     * @exception  NullPointerException If <code>b</code> is <code>null</code>.
-     * @exception  IndexOutOfBoundsException If <code>off</code> is negative,
-     * <code>len</code> is negative, or <code>len</code> is greater than
-     * <code>b.length - off</code>
-     * @exception  IOException  if an I/O error occurs.
+     * @throws     NullPointerException If <code>b</code> is <code>null</code>.
+     * @throws     IndexOutOfBoundsException If <code>off</code> is negative,
+     *             <code>len</code> is negative, or <code>len</code> is
+     *             greater than <code>b.length - off</code>
+     * @throws     IOException  if an I/O error occurs.
      */
     public int read(byte b[], int off, int len) throws IOException {
         if (in == null) {
@@ -217,7 +217,7 @@ class SequenceInputStream extends InputStream {
      * are requested from the enumeration and closed
      * before the <code>close</code> method returns.
      *
-     * @exception  IOException  if an I/O error occurs.
+     * @throws     IOException  if an I/O error occurs.
      */
     public void close() throws IOException {
         IOException ioe = null;

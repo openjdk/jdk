@@ -36,9 +36,7 @@ StringArrayArgument::StringArrayArgument() {
 
 StringArrayArgument::~StringArrayArgument() {
   for (int i=0; i<_array->length(); i++) {
-    if(_array->at(i) != NULL) { // Safety check
-      FREE_C_HEAP_ARRAY(char, _array->at(i));
-    }
+    FREE_C_HEAP_ARRAY(char, _array->at(i));
   }
   delete _array;
 }
@@ -197,10 +195,8 @@ template <> void DCmdArgument<char*>::init_value(TRAPS) {
 }
 
 template <> void DCmdArgument<char*>::destroy_value() {
-  if (_value != NULL) {
-    FREE_C_HEAP_ARRAY(char, _value);
-    set_value(NULL);
-  }
+  FREE_C_HEAP_ARRAY(char, _value);
+  set_value(NULL);
 }
 
 template <> void DCmdArgument<NanoTimeArgument>::parse_value(const char* str,

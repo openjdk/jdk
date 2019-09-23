@@ -8293,6 +8293,7 @@ class Character implements java.io.Serializable, Comparable<Character> {
     private final char value;
 
     /** use serialVersionUID from JDK 1.0.2 for interoperability */
+    @java.io.Serial
     private static final long serialVersionUID = 3786198910865385080L;
 
     /**
@@ -9916,7 +9917,18 @@ class Character implements java.io.Serializable, Comparable<Character> {
      * <li> {@link #isLetter(char) isLetter(ch)} returns {@code true}
      * <li> {@link #getType(char) getType(ch)} returns
      *      {@code LETTER_NUMBER}.
+     * <li> it is an <a href="http://www.unicode.org/reports/tr44/#Other_ID_Start">
+     *      {@code Other_ID_Start}</a> character.
      * </ul>
+     * <p>
+     * This method conforms to <a href="https://unicode.org/reports/tr31/#R1">
+     * UAX31-R1: Default Identifiers</a> requirement of the Unicode Standard,
+     * with the following profile of UAX31:
+     * <pre>
+     * Start := ID_Start + 'VERTICAL TILDE' (U+2E2F)
+     * </pre>
+     * {@code 'VERTICAL TILDE'} is added to {@code Start} for backward
+     * compatibility.
      *
      * <p><b>Note:</b> This method cannot handle <a
      * href="#supplementary"> supplementary characters</a>. To support
@@ -9946,7 +9958,19 @@ class Character implements java.io.Serializable, Comparable<Character> {
      *      returns {@code true}
      * <li> {@link #getType(int) getType(codePoint)}
      *      returns {@code LETTER_NUMBER}.
+     * <li> it is an <a href="http://www.unicode.org/reports/tr44/#Other_ID_Start">
+     *      {@code Other_ID_Start}</a> character.
      * </ul>
+     * <p>
+     * This method conforms to <a href="https://unicode.org/reports/tr31/#R1">
+     * UAX31-R1: Default Identifiers</a> requirement of the Unicode Standard,
+     * with the following profile of UAX31:
+     * <pre>
+     * Start := ID_Start + 'VERTICAL TILDE' (U+2E2F)
+     * </pre>
+     * {@code 'VERTICAL TILDE'} is added to {@code Start} for backward
+     * compatibility.
+     *
      * @param   codePoint the character (Unicode code point) to be tested.
      * @return  {@code true} if the character may start a Unicode
      *          identifier; {@code false} otherwise.
@@ -9974,7 +9998,22 @@ class Character implements java.io.Serializable, Comparable<Character> {
      * <li>  it is a non-spacing mark
      * <li> {@code isIdentifierIgnorable} returns
      * {@code true} for this character.
+     * <li> it is an <a href="http://www.unicode.org/reports/tr44/#Other_ID_Start">
+     *      {@code Other_ID_Start}</a> character.
+     * <li> it is an <a href="http://www.unicode.org/reports/tr44/#Other_ID_Continue">
+     *      {@code Other_ID_Continue}</a> character.
      * </ul>
+     * <p>
+     * This method conforms to <a href="https://unicode.org/reports/tr31/#R1">
+     * UAX31-R1: Default Identifiers</a> requirement of the Unicode Standard,
+     * with the following profile of UAX31:
+     * <pre>
+     * Continue := Start + ID_Continue + ignorable
+     * Medial := empty
+     * ignorable := isIdentifierIgnorable(char) returns true for the character
+     * </pre>
+     * {@code ignorable} is added to {@code Continue} for backward
+     * compatibility.
      *
      * <p><b>Note:</b> This method cannot handle <a
      * href="#supplementary"> supplementary characters</a>. To support
@@ -10009,7 +10048,23 @@ class Character implements java.io.Serializable, Comparable<Character> {
      * <li>  it is a non-spacing mark
      * <li> {@code isIdentifierIgnorable} returns
      * {@code true} for this character.
+     * <li> it is an <a href="http://www.unicode.org/reports/tr44/#Other_ID_Start">
+     *      {@code Other_ID_Start}</a> character.
+     * <li> it is an <a href="http://www.unicode.org/reports/tr44/#Other_ID_Continue">
+     *      {@code Other_ID_Continue}</a> character.
      * </ul>
+     * <p>
+     * This method conforms to <a href="https://unicode.org/reports/tr31/#R1">
+     * UAX31-R1: Default Identifiers</a> requirement of the Unicode Standard,
+     * with the following profile of UAX31:
+     * <pre>
+     * Continue := Start + ID_Continue + ignorable
+     * Medial := empty
+     * ignorable := isIdentifierIgnorable(int) returns true for the character
+     * </pre>
+     * {@code ignorable} is added to {@code Continue} for backward
+     * compatibility.
+     *
      * @param   codePoint the character (Unicode code point) to be tested.
      * @return  {@code true} if the character may be part of a
      *          Unicode identifier; {@code false} otherwise.

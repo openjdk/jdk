@@ -33,7 +33,7 @@ import javax.swing.*;
  * @test
  * @key headful
  * @bug 8028722
- * @summary tests wether drawString with 254 characters causes the xrender
+ * @summary tests whether drawString with 254 characters causes the xrender
  *          pipeline to hang.
  * @author ceisserer
  */

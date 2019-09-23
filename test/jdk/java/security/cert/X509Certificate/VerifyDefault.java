@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,7 +24,7 @@
 /**
  * @test
  * @bug 8175029
- * @library ../../testlibrary
+ * @library /test/lib
  * @summary check that default implementation of
  *          X509Certificate.verify(PublicKey, Provider) works on custom
  *          X509Certificate impl.
@@ -47,6 +47,7 @@ import java.util.Collection;
 import java.util.Date;
 import java.util.List;
 import java.util.Set;
+import jdk.test.lib.security.CertUtils;
 
 public class VerifyDefault {
     private static final String TEST_CERT =

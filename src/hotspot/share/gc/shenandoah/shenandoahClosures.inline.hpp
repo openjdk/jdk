@@ -92,7 +92,7 @@ void ShenandoahEvacuateUpdateRootsClosure::do_oop_work(T* p) {
     if (_heap->in_collection_set(obj)) {
       shenandoah_assert_marked(p, obj);
       oop resolved = ShenandoahBarrierSet::resolve_forwarded_not_null(obj);
-      if (oopDesc::equals_raw(resolved, obj)) {
+      if (resolved == obj) {
         resolved = _heap->evacuate_object(obj, _thread);
       }
       RawAccess<IS_NOT_NULL>::oop_store(p, resolved);
@@ -119,7 +119,7 @@ void ShenandoahEvacUpdateOopStorageRootsClosure::do_oop(oop* p) {
     if (_heap->in_collection_set(obj)) {
       shenandoah_assert_marked(p, obj);
       oop resolved = ShenandoahBarrierSet::resolve_forwarded_not_null(obj);
-      if (oopDesc::equals_raw(resolved, obj)) {
+      if (resolved == obj) {
         resolved = _heap->evacuate_object(obj, _thread);
       }
 

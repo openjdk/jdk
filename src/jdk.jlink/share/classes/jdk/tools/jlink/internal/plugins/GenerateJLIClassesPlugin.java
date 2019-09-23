@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -148,7 +148,7 @@ public final class GenerateJLIClassesPlugin implements Plugin {
     private static Map<String, Set<String>> defaultDMHMethods() {
         return Map.of(
             DMH_INVOKE_INTERFACE, Set.of("LL_L", "L3_I", "L3_V"),
-            DMH_INVOKE_VIRTUAL, Set.of("L_L", "LL_L", "LLI_I", "L3_V"),
+            DMH_INVOKE_VIRTUAL, Set.of("LL_L", "LLI_I", "L3_V"),
             DMH_INVOKE_SPECIAL, Set.of("LL_I", "LL_L", "LLF_L", "LLD_L",
                 "L3_I", "L3_L", "L4_L", "L5_L", "L6_L", "L7_L", "L8_L",
                 "LLI_I", "LLI_L", "LLIL_I", "LLIL_L", "LLII_I", "LLII_L",
@@ -166,15 +166,18 @@ public final class GenerateJLIClassesPlugin implements Plugin {
         );
     }
 
+    private static int DMH_INVOKE_VIRTUAL_TYPE = 0;
+    private static int DMH_INVOKE_INTERFACE_TYPE = 4;
+
     // Map from DirectMethodHandle method type to internal ID, matching values
     // of the corresponding constants in java.lang.invoke.MethodTypeForm
     private static final Map<String, Integer> DMH_METHOD_TYPE_MAP =
             Map.of(
-                DMH_INVOKE_VIRTUAL,     0,
+                DMH_INVOKE_VIRTUAL,     DMH_INVOKE_VIRTUAL_TYPE,
                 DMH_INVOKE_STATIC,      1,
                 DMH_INVOKE_SPECIAL,     2,
                 DMH_NEW_INVOKE_SPECIAL, 3,
-                DMH_INVOKE_INTERFACE,   4,
+                DMH_INVOKE_INTERFACE,   DMH_INVOKE_INTERFACE_TYPE,
                 DMH_INVOKE_STATIC_INIT, 5,
                 DMH_INVOKE_SPECIAL_IFC, 20
             );
@@ -380,10 +383,23 @@ public final class GenerateJLIClassesPlugin implements Plugin {
                 if (mt.parameterCount() < 1 ||
                     mt.parameterType(0) != Object.class) {
                     throw new PluginException(
-                            "DMH type parameter must start with L");
+                            "DMH type parameter must start with L: " + dmhType + " " + type);
                 }
+
+                // Adapt the method type of the LF to retrieve
                 directMethodTypes[index] = mt.dropParameterTypes(0, 1);
+
+                // invokeVirtual and invokeInterface must have a leading Object
+                // parameter, i.e., the receiver
                 dmhTypes[index] = DMH_METHOD_TYPE_MAP.get(dmhType);
+                if (dmhTypes[index] == DMH_INVOKE_INTERFACE_TYPE ||
+                    dmhTypes[index] == DMH_INVOKE_VIRTUAL_TYPE) {
+                    if (mt.parameterCount() < 2 ||
+                        mt.parameterType(1) != Object.class) {
+                        throw new PluginException(
+                                "DMH type parameter must start with LL: " + dmhType + " " + type);
+                    }
+                }
                 index++;
             }
         }

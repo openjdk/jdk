@@ -32,6 +32,7 @@
 #include "classfile/modules.hpp"
 #include "classfile/systemDictionaryShared.hpp"
 #include "classfile/vmSymbols.hpp"
+#include "logging/log.hpp"
 #include "memory/allocation.inline.hpp"
 #include "memory/filemap.hpp"
 #include "memory/resourceArea.hpp"
@@ -55,7 +56,7 @@ bool ClassLoaderExt::_has_platform_classes = false;
 void ClassLoaderExt::append_boot_classpath(ClassPathEntry* new_entry) {
   if (UseSharedSpaces) {
     warning("Sharing is only supported for boot loader classes because bootstrap classpath has been appended");
-    FileMapInfo::current_info()->header()->set_has_platform_or_app_classes(false);
+    FileMapInfo::current_info()->set_has_platform_or_app_classes(false);
   }
   ClassLoader::add_to_boot_append_entries(new_entry);
 }
@@ -146,7 +147,7 @@ char* ClassLoaderExt::get_class_path_attr(const char* jar_path, char* manifest, 
       if (found != NULL) {
         // Same behavior as jdk/src/share/classes/java/util/jar/Attributes.java
         // If duplicated entries are found, the last one is used.
-        tty->print_cr("Warning: Duplicate name in Manifest: %s.\n"
+        log_warning(cds)("Warning: Duplicate name in Manifest: %s.\n"
                       "Ensure that the manifest does not have duplicate entries, and\n"
                       "that blank lines separate individual sections in both your\n"
                       "manifest and in the META-INF/MANIFEST.MF entry in the jar file:\n%s\n", tag, jar_path);
@@ -276,7 +277,7 @@ InstanceKlass* ClassLoaderExt::load_class(Symbol* name, const char* path, TRAPS)
   }
 
   if (NULL == stream) {
-    tty->print_cr("Preload Warning: Cannot find %s", class_name);
+    log_warning(cds)("Preload Warning: Cannot find %s", class_name);
     return NULL;
   }
 
@@ -295,7 +296,7 @@ InstanceKlass* ClassLoaderExt::load_class(Symbol* name, const char* path, TRAPS)
                                                            THREAD);
 
   if (HAS_PENDING_EXCEPTION) {
-    tty->print_cr("Preload Error: Failed to load %s", class_name);
+    log_error(cds)("Preload Error: Failed to load %s", class_name);
     return NULL;
   }
   return result;

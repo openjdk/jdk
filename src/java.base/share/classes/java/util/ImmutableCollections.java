@@ -418,10 +418,12 @@ class ImmutableCollections {
             throw outOfBounds(index);
         }
 
+        @java.io.Serial
         private void readObject(ObjectInputStream in) throws IOException, ClassNotFoundException {
             throw new InvalidObjectException("not serial proxy");
         }
 
+        @java.io.Serial
         private Object writeReplace() {
             if (e1 == null) {
                 return new CollSer(CollSer.IMM_LIST, e0);
@@ -498,10 +500,12 @@ class ImmutableCollections {
             return elements[index];
         }
 
+        @java.io.Serial
         private void readObject(ObjectInputStream in) throws IOException, ClassNotFoundException {
             throw new InvalidObjectException("not serial proxy");
         }
 
+        @java.io.Serial
         private Object writeReplace() {
             return new CollSer(CollSer.IMM_LIST, elements);
         }
@@ -623,10 +627,12 @@ class ImmutableCollections {
             };
         }
 
+        @java.io.Serial
         private void readObject(ObjectInputStream in) throws IOException, ClassNotFoundException {
             throw new InvalidObjectException("not serial proxy");
         }
 
+        @java.io.Serial
         private Object writeReplace() {
             if (e1 == null) {
                 return new CollSer(CollSer.IMM_SET, e0);
@@ -806,10 +812,12 @@ class ImmutableCollections {
             }
         }
 
+        @java.io.Serial
         private void readObject(ObjectInputStream in) throws IOException, ClassNotFoundException {
             throw new InvalidObjectException("not serial proxy");
         }
 
+        @java.io.Serial
         private Object writeReplace() {
             Object[] array = new Object[size];
             int dest = 0;
@@ -906,10 +914,12 @@ class ImmutableCollections {
             return false;
         }
 
+        @java.io.Serial
         private void readObject(ObjectInputStream in) throws IOException, ClassNotFoundException {
             throw new InvalidObjectException("not serial proxy");
         }
 
+        @java.io.Serial
         private Object writeReplace() {
             return new CollSer(CollSer.IMM_MAP, k0, v0);
         }
@@ -1110,10 +1120,12 @@ class ImmutableCollections {
             }
         }
 
+        @java.io.Serial
         private void readObject(ObjectInputStream in) throws IOException, ClassNotFoundException {
             throw new InvalidObjectException("not serial proxy");
         }
 
+        @java.io.Serial
         private Object writeReplace() {
             Object[] array = new Object[2 * size];
             int len = table.length;
@@ -1138,6 +1150,7 @@ class ImmutableCollections {
  * @since 9
  */
 final class CollSer implements Serializable {
+    @java.io.Serial
     private static final long serialVersionUID = 6309168927139932177L;
 
     static final int IMM_LIST = 1;
@@ -1198,6 +1211,7 @@ final class CollSer implements Serializable {
      * @throws InvalidObjectException if the count is negative
      * @since 9
      */
+    @java.io.Serial
     private void readObject(ObjectInputStream ois) throws IOException, ClassNotFoundException {
         ois.defaultReadObject();
         int len = ois.readInt();
@@ -1227,6 +1241,7 @@ final class CollSer implements Serializable {
      * @throws IOException if an I/O error occurs
      * @since 9
      */
+    @java.io.Serial
     private void writeObject(ObjectOutputStream oos) throws IOException {
         oos.defaultWriteObject();
         oos.writeInt(array.length);
@@ -1253,6 +1268,7 @@ final class CollSer implements Serializable {
      * @throws ObjectStreamException if another serialization error has occurred
      * @since 9
      */
+   @java.io.Serial
     private Object readResolve() throws ObjectStreamException {
         try {
             if (array == null) {

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -69,18 +69,22 @@ void build_search_table(symtab_t *symtab) {
     if (is_debug()) {
       DBT rkey, rvalue;
       char* tmp = (char *)malloc(strlen(symtab->symbols[i].name) + 1);
-      strcpy(tmp, symtab->symbols[i].name);
-      rkey.data = tmp;
-      rkey.size = strlen(tmp) + 1;
-      (*symtab->hash_table->get)(symtab->hash_table, &rkey, &rvalue, 0);
-      // we may get a copy back so compare contents
-      symtab_symbol *res = (symtab_symbol *)rvalue.data;
-      if (strcmp(res->name, symtab->symbols[i].name)  ||
+      if (tmp == NULL) {
+        print_debug("error allocating array in build_search_table\n");
+      } else {
+        strcpy(tmp, symtab->symbols[i].name);
+        rkey.data = tmp;
+        rkey.size = strlen(tmp) + 1;
+        (*symtab->hash_table->get)(symtab->hash_table, &rkey, &rvalue, 0);
+        // we may get a copy back so compare contents
+        symtab_symbol *res = (symtab_symbol *)rvalue.data;
+        if (strcmp(res->name, symtab->symbols[i].name)  ||
           res->offset != symtab->symbols[i].offset    ||
           res->size != symtab->symbols[i].size) {
-        print_debug("error to get hash_table value!\n");
+            print_debug("error to get hash_table value!\n");
+        }
+        free(tmp);
       }
-      free(tmp);
     }
   }
 }

@@ -2217,6 +2217,7 @@ public class File
      *
      * @serialData  Default fields followed by separator character.
      */
+    @java.io.Serial
     private synchronized void writeObject(java.io.ObjectOutputStream s)
         throws IOException
     {
@@ -2230,6 +2231,7 @@ public class File
      * than the separator character on this system, then the old separator
      * is replaced by the local separator.
      */
+    @java.io.Serial
     private synchronized void readObject(java.io.ObjectInputStream s)
          throws IOException, ClassNotFoundException
     {
@@ -2251,6 +2253,7 @@ public class File
             = UNSAFE.objectFieldOffset(File.class, "prefixLength");
 
     /** use serialVersionUID from JDK 1.0.2 for interoperability */
+    @java.io.Serial
     private static final long serialVersionUID = 301077366599181567L;
 
     // -- Integration with java.nio.file --

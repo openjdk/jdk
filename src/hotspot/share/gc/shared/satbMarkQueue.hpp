@@ -112,17 +112,13 @@ class SATBMarkQueueSet: public PtrQueueSet {
 #endif // ASSERT
 
 protected:
-  SATBMarkQueueSet();
+  SATBMarkQueueSet(BufferNode::Allocator* allocator);
   ~SATBMarkQueueSet();
 
   template<typename Filter>
   void apply_filter(Filter filter, SATBMarkQueue* queue) {
     queue->apply_filter(filter);
   }
-
-  void initialize(BufferNode::Allocator* allocator,
-                  size_t process_completed_buffers_threshold,
-                  uint buffer_enqueue_threshold_percentage);
 
 public:
   virtual SATBMarkQueue& satb_queue_for_thread(Thread* const t) const = 0;
@@ -133,7 +129,11 @@ public:
   // set itself, has an active value same as expected_active.
   void set_active_all_threads(bool active, bool expected_active);
 
+  void set_process_completed_buffers_threshold(size_t value);
+
   size_t buffer_enqueue_threshold() const { return _buffer_enqueue_threshold; }
+  void set_buffer_enqueue_threshold_percentage(uint value);
+
   virtual void filter(SATBMarkQueue* queue) = 0;
 
   // If there exists some completed buffer, pop and process it, and

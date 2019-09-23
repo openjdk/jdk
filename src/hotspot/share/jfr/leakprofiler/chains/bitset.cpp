@@ -22,37 +22,25 @@
  *
  */
 #include "precompiled.hpp"
-#include "jfr/leakprofiler/chains/bitset.hpp"
-#include "jfr/recorder/storage/jfrVirtualMemory.hpp"
-#include "memory/memRegion.hpp"
+#include "jfr/leakprofiler/chains/bitset.inline.hpp"
 
-BitSet::BitSet(const MemRegion& covered_region) :
-  _vmm(NULL),
-  _region_start(covered_region.start()),
-  _region_size(covered_region.word_size()) {
+BitSet::BitMapFragment::BitMapFragment(uintptr_t granule, BitMapFragment* next) :
+    _bits(_bitmap_granularity_size >> LogMinObjAlignmentInBytes, mtTracing, true /* clear */),
+    _next(next) {
+}
+
+BitSet::BitSet() :
+    _bitmap_fragments(32),
+    _fragment_list(NULL),
+    _last_fragment_bits(NULL),
+    _last_fragment_granule(0) {
 }
 
 BitSet::~BitSet() {
-  delete _vmm;
-}
-
-bool BitSet::initialize() {
-  assert(_vmm == NULL, "invariant");
-  _vmm = new JfrVirtualMemory();
-  if (_vmm == NULL) {
-    return false;
+  BitMapFragment* current = _fragment_list;
+  while (current != NULL) {
+    BitMapFragment* next = current->next();
+    delete current;
+    current = next;
   }
-
-  const BitMap::idx_t bits = _region_size >> LogMinObjAlignment;
-  const size_t words = bits / BitsPerWord;
-  const size_t raw_bytes = words * sizeof(BitMap::idx_t);
-
-  // the virtual memory invocation will reserve and commit the entire space
-  BitMap::bm_word_t* map = (BitMap::bm_word_t*)_vmm->initialize(raw_bytes, raw_bytes);
-  if (map == NULL) {
-    return false;
-  }
-  _bits = BitMapView(map, bits);
-  return true;
 }
-

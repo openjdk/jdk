@@ -39,7 +39,7 @@ JfrChunkState::JfrChunkState() :
   _start_nanos(0),
   _previous_start_ticks(0),
   _previous_start_nanos(0),
-  _previous_checkpoint_offset(0) {}
+  _last_checkpoint_offset(0) {}
 
 JfrChunkState::~JfrChunkState() {
   reset();
@@ -50,15 +50,15 @@ void JfrChunkState::reset() {
     JfrCHeapObj::free(_path, strlen(_path) + 1);
     _path = NULL;
   }
-  set_previous_checkpoint_offset(0);
+  set_last_checkpoint_offset(0);
 }
 
-void JfrChunkState::set_previous_checkpoint_offset(int64_t offset) {
-  _previous_checkpoint_offset = offset;
+void JfrChunkState::set_last_checkpoint_offset(int64_t offset) {
+  _last_checkpoint_offset = offset;
 }
 
-int64_t JfrChunkState::previous_checkpoint_offset() const {
-  return _previous_checkpoint_offset;
+int64_t JfrChunkState::last_checkpoint_offset() const {
+  return _last_checkpoint_offset;
 }
 
 int64_t JfrChunkState::previous_start_ticks() const {

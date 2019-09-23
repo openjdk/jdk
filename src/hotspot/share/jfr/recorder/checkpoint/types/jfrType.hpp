@@ -67,11 +67,6 @@ class GCWhenConstant : public JfrSerializer {
   void serialize(JfrCheckpointWriter& writer);
 };
 
-class G1HeapRegionTypeConstant : public JfrSerializer {
- public:
-  void serialize(JfrCheckpointWriter& writer);
-};
-
 class GCThresholdUpdaterConstant : public JfrSerializer {
  public:
   void serialize(JfrCheckpointWriter& writer);
@@ -83,11 +78,6 @@ class MetadataTypeConstant : public JfrSerializer {
 };
 
 class MetaspaceObjectTypeConstant : public JfrSerializer {
- public:
-  void serialize(JfrCheckpointWriter& writer);
-};
-
-class G1YCTypeConstant : public JfrSerializer {
  public:
   void serialize(JfrCheckpointWriter& writer);
 };
@@ -118,7 +108,10 @@ class VMOperationTypeConstant : public JfrSerializer {
 };
 
 class TypeSet : public JfrSerializer {
+ private:
+  JfrCheckpointWriter* _leakp_writer;
  public:
+  explicit TypeSet(JfrCheckpointWriter* leakp_writer = NULL);
   void serialize(JfrCheckpointWriter& writer);
 };
 

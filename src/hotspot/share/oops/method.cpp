@@ -103,7 +103,7 @@ Method::Method(ConstMethod* xconst, AccessFlags access_flags) {
   // Fix and bury in Method*
   set_interpreter_entry(NULL); // sets i2i entry and from_int
   set_adapter_entry(NULL);
-  clear_code(false /* don't need a lock */); // from_c/from_i get set to c2i/i2i
+  Method::clear_code(); // from_c/from_i get set to c2i/i2i
 
   if (access_flags.is_native()) {
     clear_native_function();
@@ -825,7 +825,7 @@ void Method::clear_native_function() {
   set_native_function(
     SharedRuntime::native_method_throw_unsatisfied_link_error_entry(),
     !native_bind_event_is_interesting);
-  clear_code();
+  this->unlink_code();
 }
 
 
@@ -941,8 +941,7 @@ void Method::set_not_osr_compilable(const char* reason, int comp_level, bool rep
 }
 
 // Revert to using the interpreter and clear out the nmethod
-void Method::clear_code(bool acquire_lock /* = true */) {
-  MutexLocker pl(acquire_lock ? Patching_lock : NULL, Mutex::_no_safepoint_check_flag);
+void Method::clear_code() {
   // this may be NULL if c2i adapters have not been made yet
   // Only should happen at allocate time.
   if (adapter() == NULL) {
@@ -954,6 +953,25 @@ void Method::clear_code(bool acquire_lock /* = true */) {
   _from_interpreted_entry = _i2i_entry;
   OrderAccess::storestore();
   _code = NULL;
+}
+
+void Method::unlink_code(CompiledMethod *compare) {
+  MutexLocker ml(CompiledMethod_lock->owned_by_self() ? NULL : CompiledMethod_lock, Mutex::_no_safepoint_check_flag);
+  // We need to check if either the _code or _from_compiled_code_entry_point
+  // refer to this nmethod because there is a race in setting these two fields
+  // in Method* as seen in bugid 4947125.
+  // If the vep() points to the zombie nmethod, the memory for the nmethod
+  // could be flushed and the compiler and vtable stubs could still call
+  // through it.
+  if (code() == compare ||
+      from_compiled_entry() == compare->verified_entry_point()) {
+    clear_code();
+  }
+}
+
+void Method::unlink_code() {
+  MutexLocker ml(CompiledMethod_lock->owned_by_self() ? NULL : CompiledMethod_lock, Mutex::_no_safepoint_check_flag);
+  clear_code();
 }
 
 #if INCLUDE_CDS
@@ -1182,7 +1200,7 @@ bool Method::check_code() const {
 
 // Install compiled code.  Instantly it can execute.
 void Method::set_code(const methodHandle& mh, CompiledMethod *code) {
-  MutexLocker pl(Patching_lock, Mutex::_no_safepoint_check_flag);
+  assert_lock_strong(CompiledMethod_lock);
   assert( code, "use clear_code to remove code" );
   assert( mh->check_code(), "" );
 

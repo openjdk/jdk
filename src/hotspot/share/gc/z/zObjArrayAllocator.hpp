@@ -27,9 +27,6 @@
 #include "gc/shared/memAllocator.hpp"
 
 class ZObjArrayAllocator : public ObjArrayAllocator {
-private:
-  Klass* const _final_klass;
-
 public:
   ZObjArrayAllocator(Klass* klass, size_t word_size, int length, Thread* thread);
 

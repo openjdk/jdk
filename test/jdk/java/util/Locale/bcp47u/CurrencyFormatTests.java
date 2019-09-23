@@ -24,10 +24,10 @@
 /*
  *
  * @test
- * @bug 8215181
+ * @bug 8215181 8230284
  * @summary Tests the "u-cf" extension
  * @modules jdk.localedata
- * @run testng/othervm CurrencyFormatTests
+ * @run testng/othervm -Djava.locale.providers=CLDR CurrencyFormatTests
  */
 
 import static org.testng.Assert.assertEquals;
@@ -78,6 +78,22 @@ public class CurrencyFormatTests {
             {Locale.forLanguageTag("en-US-u-rg-CHZZZZ-cf-standard"), -100, "CHF-100.00"},
             {Locale.forLanguageTag("en-US-u-rg-CHZZZZ-cf-account"), -100, "CHF-100.00"},
             {Locale.forLanguageTag("en-US-u-rg-CHZZZZ-cf-bogus"), -100, "CHF-100.00"},
+
+            // Numbering systems
+            // explicit
+            {Locale.forLanguageTag("zh-CN-u-nu-arab"), -100, "\u061c-\uffe5\u0661\u0660\u0660\u066b\u0660\u0660"},
+            {Locale.forLanguageTag("zh-CN-u-nu-arab-cf-standard"), -100, "\u061c-\uffe5\u0661\u0660\u0660\u066b\u0660\u0660"},
+            {Locale.forLanguageTag("zh-CN-u-nu-arab-cf-account"), -100, "\u061c-\uffe5\u0661\u0660\u0660\u066b\u0660\u0660"},
+            {Locale.forLanguageTag("zh-CN-u-nu-arab-cf-bogus"), -100, "\u061c-\uffe5\u0661\u0660\u0660\u066b\u0660\u0660"},
+            // implicit
+            {Locale.forLanguageTag("zh-CN"), -100, "-\uffe5100.00"},
+            {Locale.forLanguageTag("zh-CN-u-cf-standard"), -100, "-\uffe5100.00"},
+            {Locale.forLanguageTag("zh-CN-u-cf-account"), -100, "(\uffe5100.00)"},
+            {Locale.forLanguageTag("zh-CN-u-cf-bogus"), -100, "-\uffe5100.00"},
+            {Locale.forLanguageTag("ar-SA"), -100, "\u061c-\u0661\u0660\u0660\u066b\u0660\u0660\u00a0\u0631.\u0633.\u200f"},
+            {Locale.forLanguageTag("ar-SA-u-cf-standard"), -100, "\u061c-\u0661\u0660\u0660\u066b\u0660\u0660\u00a0\u0631.\u0633.\u200f"},
+            {Locale.forLanguageTag("ar-SA-u-cf-account"), -100, "\u061c-\u0661\u0660\u0660\u066b\u0660\u0660\u00a0\u0631.\u0633.\u200f"},
+            {Locale.forLanguageTag("ar-SA-u-cf-bogus"), -100, "\u061c-\u0661\u0660\u0660\u066b\u0660\u0660\u00a0\u0631.\u0633.\u200f"},
         };
     }
 

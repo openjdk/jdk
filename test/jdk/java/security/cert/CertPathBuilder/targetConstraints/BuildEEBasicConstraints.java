@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,8 +27,7 @@
 /**
  * @test
  * @bug 6714842
- * @library ../../../testlibrary
- * @build CertUtils
+ * @library /test/lib
  * @run main/othervm BuildEEBasicConstraints
  * @summary make sure a PKIX CertPathBuilder builds a path to an
  *      end entity certificate when the setBasicConstraints method of the
@@ -49,6 +48,7 @@ import java.security.cert.X509CertSelector;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import jdk.test.lib.security.CertUtils;
 
 public final class BuildEEBasicConstraints {
 

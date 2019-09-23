@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -108,6 +108,7 @@ import java.util.concurrent.ConcurrentHashMap;
 public abstract class Provider extends Properties {
 
     // Declare serialVersionUID to be compatible with JDK1.1
+    @java.io.Serial
     private static final long serialVersionUID = -4298000515446427739L;
 
     private static final sun.security.util.Debug debug =
@@ -402,7 +403,7 @@ public abstract class Provider extends Properties {
      * Reads a property list (key and element pairs) from the input stream.
      *
      * @param inStream the input stream.
-     * @exception IOException if an error occurred when reading from the
+     * @throws    IOException if an error occurred when reading from the
      *               input stream.
      * @see java.util.Properties#load
      */
@@ -890,6 +891,7 @@ public abstract class Provider extends Properties {
     * @param in the {@code ObjectInputStream} to read
     * @serial
     */
+    @java.io.Serial
     private void readObject(ObjectInputStream in)
                 throws IOException, ClassNotFoundException {
         Map<Object,Object> copy = new HashMap<>();

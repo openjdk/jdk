@@ -217,7 +217,7 @@ public abstract class JarURLConnection extends URLConnection {
      * a connection to an entry of a JAR file, the JAR file object is
      * returned
      *
-     * @exception IOException if an IOException occurs while trying to
+     * @throws    IOException if an IOException occurs while trying to
      * connect to the JAR file for this connection.
      *
      * @see #connect
@@ -230,7 +230,7 @@ public abstract class JarURLConnection extends URLConnection {
      * @return the manifest object corresponding to the JAR file object
      * for this connection.
      *
-     * @exception IOException if getting the JAR file for this
+     * @throws    IOException if getting the JAR file for this
      * connection causes an IOException to be thrown.
      *
      * @see #getJarFile
@@ -247,7 +247,7 @@ public abstract class JarURLConnection extends URLConnection {
      * @return the JAR entry object for this connection, or null if
      * the JAR URL for this connection points to a JAR file.
      *
-     * @exception IOException if getting the JAR file for this
+     * @throws    IOException if getting the JAR file for this
      * connection causes an IOException to be thrown.
      *
      * @see #getJarFile
@@ -264,7 +264,7 @@ public abstract class JarURLConnection extends URLConnection {
      * @return the Attributes object for this connection if the URL
      * for it points to a JAR file entry, null otherwise.
      *
-     * @exception IOException if getting the JAR entry causes an
+     * @throws    IOException if getting the JAR entry causes an
      * IOException to be thrown.
      *
      * @see #getJarEntry
@@ -281,7 +281,7 @@ public abstract class JarURLConnection extends URLConnection {
      * @return the main Attributes for the JAR file for this
      * connection.
      *
-     * @exception IOException if getting the manifest causes an
+     * @throws    IOException if getting the manifest causes an
      * IOException to be thrown.
      *
      * @see #getJarFile
@@ -303,7 +303,7 @@ public abstract class JarURLConnection extends URLConnection {
      * @return the Certificate object for this connection if the URL
      * for it points to a JAR file entry, null otherwise.
      *
-     * @exception IOException if getting the JAR entry causes an
+     * @throws    IOException if getting the JAR entry causes an
      * IOException to be thrown.
      *
      * @see #getJarEntry

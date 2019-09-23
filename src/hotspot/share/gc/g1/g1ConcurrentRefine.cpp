@@ -145,7 +145,7 @@ void G1ConcurrentRefineThreadControl::stop() {
 STATIC_ASSERT(sizeof(LP64_ONLY(jint) NOT_LP64(jshort)) <= (sizeof(size_t)/2));
 const size_t max_yellow_zone = LP64_ONLY(max_jint) NOT_LP64(max_jshort);
 const size_t max_green_zone = max_yellow_zone / 2;
-const size_t max_red_zone = INT_MAX; // For dcqs.set_max_completed_buffers.
+const size_t max_red_zone = INT_MAX; // For dcqs.set_max_cards.
 STATIC_ASSERT(max_yellow_zone <= max_red_zone);
 
 // Range check assertions for green zone values.
@@ -232,8 +232,12 @@ jint G1ConcurrentRefine::initialize() {
   return _thread_control.initialize(this, max_num_threads());
 }
 
+static size_t buffers_to_cards(size_t value) {
+  return value * G1UpdateBufferSize;
+}
+
 static size_t calc_min_yellow_zone_size() {
-  size_t step = G1ConcRefinementThresholdStep;
+  size_t step = buffers_to_cards(G1ConcRefinementThresholdStep);
   uint n_workers = G1ConcurrentRefine::max_num_threads();
   if ((max_yellow_zone / step) < n_workers) {
     return max_yellow_zone;
@@ -247,11 +251,12 @@ static size_t calc_init_green_zone() {
   if (FLAG_IS_DEFAULT(G1ConcRefinementGreenZone)) {
     green = ParallelGCThreads;
   }
+  green = buffers_to_cards(green);
   return MIN2(green, max_green_zone);
 }
 
 static size_t calc_init_yellow_zone(size_t green, size_t min_size) {
-  size_t config = G1ConcRefinementYellowZone;
+  size_t config = buffers_to_cards(G1ConcRefinementYellowZone);
   size_t size = 0;
   if (FLAG_IS_DEFAULT(G1ConcRefinementYellowZone)) {
     size = green * 2;
@@ -266,7 +271,7 @@ static size_t calc_init_yellow_zone(size_t green, size_t min_size) {
 static size_t calc_init_red_zone(size_t green, size_t yellow) {
   size_t size = yellow - green;
   if (!FLAG_IS_DEFAULT(G1ConcRefinementRedZone)) {
-    size_t config = G1ConcRefinementRedZone;
+    size_t config = buffers_to_cards(G1ConcRefinementRedZone);
     if (yellow < config) {
       size = MAX2(size, config - yellow);
     }
@@ -322,18 +327,18 @@ void G1ConcurrentRefine::print_threads_on(outputStream* st) const {
 }
 
 static size_t calc_new_green_zone(size_t green,
-                                  double log_buffer_scan_time,
-                                  size_t processed_log_buffers,
+                                  double logged_cards_scan_time,
+                                  size_t processed_logged_cards,
                                   double goal_ms) {
   // Adjust green zone based on whether we're meeting the time goal.
   // Limit to max_green_zone.
   const double inc_k = 1.1, dec_k = 0.9;
-  if (log_buffer_scan_time > goal_ms) {
+  if (logged_cards_scan_time > goal_ms) {
     if (green > 0) {
       green = static_cast<size_t>(green * dec_k);
     }
-  } else if (log_buffer_scan_time < goal_ms &&
-             processed_log_buffers > green) {
+  } else if (logged_cards_scan_time < goal_ms &&
+             processed_logged_cards > green) {
     green = static_cast<size_t>(MAX2(green * inc_k, green + 1.0));
     green = MIN2(green, max_green_zone);
   }
@@ -350,20 +355,20 @@ static size_t calc_new_red_zone(size_t green, size_t yellow) {
   return MIN2(yellow + (yellow - green), max_red_zone);
 }
 
-void G1ConcurrentRefine::update_zones(double log_buffer_scan_time,
-                                      size_t processed_log_buffers,
+void G1ConcurrentRefine::update_zones(double logged_cards_scan_time,
+                                      size_t processed_logged_cards,
                                       double goal_ms) {
   log_trace( CTRL_TAGS )("Updating Refinement Zones: "
-                         "log buffer scan time: %.3fms, "
-                         "processed buffers: " SIZE_FORMAT ", "
+                         "logged cards scan time: %.3fms, "
+                         "processed cards: " SIZE_FORMAT ", "
                          "goal time: %.3fms",
-                         log_buffer_scan_time,
-                         processed_log_buffers,
+                         logged_cards_scan_time,
+                         processed_logged_cards,
                          goal_ms);
 
   _green_zone = calc_new_green_zone(_green_zone,
-                                    log_buffer_scan_time,
-                                    processed_log_buffers,
+                                    logged_cards_scan_time,
+                                    processed_logged_cards,
                                     goal_ms);
   _yellow_zone = calc_new_yellow_zone(_green_zone, _min_yellow_zone_size);
   _red_zone = calc_new_red_zone(_green_zone, _yellow_zone);
@@ -376,33 +381,33 @@ void G1ConcurrentRefine::update_zones(double log_buffer_scan_time,
             _green_zone, _yellow_zone, _red_zone);
 }
 
-void G1ConcurrentRefine::adjust(double log_buffer_scan_time,
-                                size_t processed_log_buffers,
+void G1ConcurrentRefine::adjust(double logged_cards_scan_time,
+                                size_t processed_logged_cards,
                                 double goal_ms) {
   G1DirtyCardQueueSet& dcqs = G1BarrierSet::dirty_card_queue_set();
 
   if (G1UseAdaptiveConcRefinement) {
-    update_zones(log_buffer_scan_time, processed_log_buffers, goal_ms);
+    update_zones(logged_cards_scan_time, processed_logged_cards, goal_ms);
 
     // Change the barrier params
     if (max_num_threads() == 0) {
       // Disable dcqs notification when there are no threads to notify.
-      dcqs.set_process_completed_buffers_threshold(G1DirtyCardQueueSet::ProcessCompletedBuffersThresholdNever);
+      dcqs.set_process_cards_threshold(G1DirtyCardQueueSet::ProcessCardsThresholdNever);
     } else {
       // Worker 0 is the primary; wakeup is via dcqs notification.
       STATIC_ASSERT(max_yellow_zone <= INT_MAX);
       size_t activate = activation_threshold(0);
-      dcqs.set_process_completed_buffers_threshold(activate);
+      dcqs.set_process_cards_threshold(activate);
     }
-    dcqs.set_max_completed_buffers(red_zone());
+    dcqs.set_max_cards(red_zone());
   }
 
-  size_t curr_queue_size = dcqs.num_completed_buffers();
-  if ((dcqs.max_completed_buffers() > 0) &&
+  size_t curr_queue_size = dcqs.num_cards();
+  if ((dcqs.max_cards() > 0) &&
       (curr_queue_size >= yellow_zone())) {
-    dcqs.set_completed_buffers_padding(curr_queue_size);
+    dcqs.set_max_cards_padding(curr_queue_size);
   } else {
-    dcqs.set_completed_buffers_padding(0);
+    dcqs.set_max_cards_padding(0);
   }
   dcqs.notify_if_necessary();
 }
@@ -430,16 +435,16 @@ void G1ConcurrentRefine::maybe_activate_more_threads(uint worker_id, size_t num_
 bool G1ConcurrentRefine::do_refinement_step(uint worker_id) {
   G1DirtyCardQueueSet& dcqs = G1BarrierSet::dirty_card_queue_set();
 
-  size_t curr_buffer_num = dcqs.num_completed_buffers();
-  // If the number of the buffers falls down into the yellow zone,
+  size_t curr_cards = dcqs.num_cards();
+  // If the number of the cards falls down into the yellow zone,
   // that means that the transition period after the evacuation pause has ended.
   // Since the value written to the DCQS is the same for all threads, there is no
   // need to synchronize.
-  if (dcqs.completed_buffers_padding() > 0 && curr_buffer_num <= yellow_zone()) {
-    dcqs.set_completed_buffers_padding(0);
+  if (dcqs.max_cards_padding() > 0 && curr_cards <= yellow_zone()) {
+    dcqs.set_max_cards_padding(0);
   }
 
-  maybe_activate_more_threads(worker_id, curr_buffer_num);
+  maybe_activate_more_threads(worker_id, curr_cards);
 
   // Process the next buffer, if there are enough left.
   return dcqs.refine_completed_buffer_concurrently(worker_id + worker_id_offset(),

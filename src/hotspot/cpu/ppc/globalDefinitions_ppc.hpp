@@ -41,8 +41,8 @@ const bool CCallingConventionRequiresIntsAsLongs = true;
 
 #define SUPPORTS_NATIVE_CX8
 
-// The PPC CPUs are NOT multiple-copy-atomic.
-#define CPU_NOT_MULTIPLE_COPY_ATOMIC
+// PPC64 is not specified as multi-copy-atomic
+// So we must not #define CPU_MULTI_COPY_ATOMIC
 
 // The expected size in bytes of a cache line, used to pad data structures.
 #define DEFAULT_CACHE_LINE_SIZE 128

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -394,7 +394,7 @@ static char* get_user_name_slow(int vmid) {
         if (statbuf.st_ctime > latest_ctime) {
           char* user = strchr(dentry->d_name, '_') + 1;
 
-          if (latest_user != NULL) FREE_C_HEAP_ARRAY(char, latest_user);
+          FREE_C_HEAP_ARRAY(char, latest_user);
           latest_user = NEW_C_HEAP_ARRAY(char, strlen(user)+1, mtInternal);
 
           strcpy(latest_user, user);
@@ -764,7 +764,7 @@ static void free_security_attr(LPSECURITY_ATTRIBUTES lpSA) {
     lpSA->lpSecurityDescriptor = NULL;
 
     // free the security attributes structure
-    FREE_C_HEAP_ARRAY(char, lpSA);
+    FREE_C_HEAP_OBJ(lpSA);
   }
 }
 
@@ -1073,8 +1073,8 @@ static LPSECURITY_ATTRIBUTES make_security_attr(ace_data_t aces[], int count) {
   // allocate and initialize the security attributes structure and
   // return it to the caller.
   //
-  LPSECURITY_ATTRIBUTES lpSA = (LPSECURITY_ATTRIBUTES)
-    NEW_C_HEAP_ARRAY(char, sizeof(SECURITY_ATTRIBUTES), mtInternal);
+  LPSECURITY_ATTRIBUTES lpSA =
+      NEW_C_HEAP_OBJ(SECURITY_ATTRIBUTES, mtInternal);
   lpSA->nLength = sizeof(SECURITY_ATTRIBUTES);
   lpSA->lpSecurityDescriptor = pSD;
   lpSA->bInheritHandle = FALSE;

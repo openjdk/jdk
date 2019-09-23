@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,11 +23,6 @@
  * questions.
  */
 
-// SAX default implementation for AttributeList.
-// http://www.saxproject.org
-// No warranty; no copyright -- use this as you will.
-// $Id: AttributeListImpl.java,v 1.2 2004/11/03 22:53:08 jsuttor Exp $
-
 package org.xml.sax.helpers;
 
 import java.util.ArrayList;
@@ -37,13 +32,6 @@ import org.xml.sax.AttributeList;
 
 /**
  * Default implementation for AttributeList.
- *
- * <blockquote>
- * <em>This module, both source code and documentation, is in the
- * Public Domain, and comes with <strong>NO WARRANTY</strong>.</em>
- * See <a href='http://www.saxproject.org'>http://www.saxproject.org</a>
- * for further information.
- * </blockquote>
  *
  * <p>AttributeList implements the deprecated SAX1 {@link
  * org.xml.sax.AttributeList AttributeList} interface, and has been

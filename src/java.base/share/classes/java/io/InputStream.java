@@ -56,6 +56,11 @@ public abstract class InputStream implements Closeable {
     private static final int DEFAULT_BUFFER_SIZE = 8192;
 
     /**
+     * Constructor for subclasses to call.
+     */
+    public InputStream() {}
+
+    /**
      * Returns a new {@code InputStream} that reads no bytes. The returned
      * stream is initially open.  The stream is closed by calling the
      * {@code close()} method.  Subsequent calls to {@code close()} have no
@@ -172,7 +177,7 @@ public abstract class InputStream implements Closeable {
      *
      * @return     the next byte of data, or <code>-1</code> if the end of the
      *             stream is reached.
-     * @exception  IOException  if an I/O error occurs.
+     * @throws     IOException  if an I/O error occurs.
      */
     public abstract int read() throws IOException;
 
@@ -203,10 +208,10 @@ public abstract class InputStream implements Closeable {
      * @return     the total number of bytes read into the buffer, or
      *             <code>-1</code> if there is no more data because the end of
      *             the stream has been reached.
-     * @exception  IOException  If the first byte cannot be read for any reason
-     * other than the end of the file, if the input stream has been closed, or
-     * if some other I/O error occurs.
-     * @exception  NullPointerException  if <code>b</code> is <code>null</code>.
+     * @throws     IOException  If the first byte cannot be read for any reason
+     *             other than the end of the file, if the input stream has been
+     *             closed, or if some other I/O error occurs.
+     * @throws     NullPointerException  if <code>b</code> is <code>null</code>.
      * @see        java.io.InputStream#read(byte[], int, int)
      */
     public int read(byte b[]) throws IOException {
@@ -261,13 +266,13 @@ public abstract class InputStream implements Closeable {
      * @return     the total number of bytes read into the buffer, or
      *             <code>-1</code> if there is no more data because the end of
      *             the stream has been reached.
-     * @exception  IOException If the first byte cannot be read for any reason
-     * other than end of file, or if the input stream has been closed, or if
-     * some other I/O error occurs.
-     * @exception  NullPointerException If <code>b</code> is <code>null</code>.
-     * @exception  IndexOutOfBoundsException If <code>off</code> is negative,
-     * <code>len</code> is negative, or <code>len</code> is greater than
-     * <code>b.length - off</code>
+     * @throws     IOException If the first byte cannot be read for any reason
+     *             other than end of file, or if the input stream has been closed,
+     *             or if some other I/O error occurs.
+     * @throws     NullPointerException If <code>b</code> is <code>null</code>.
+     * @throws     IndexOutOfBoundsException If <code>off</code> is negative,
+     *             <code>len</code> is negative, or <code>len</code> is greater than
+     *             <code>b.length - off</code>
      * @see        java.io.InputStream#read()
      */
     public int read(byte b[], int off, int len) throws IOException {
@@ -629,7 +634,7 @@ public abstract class InputStream implements Closeable {
      * @return     an estimate of the number of bytes that can be read (or
      *             skipped over) from this input stream without blocking or
      *             {@code 0} when it reaches the end of the input stream.
-     * @exception  IOException if an I/O error occurs.
+     * @throws     IOException if an I/O error occurs.
      */
     public int available() throws IOException {
         return 0;
@@ -642,7 +647,7 @@ public abstract class InputStream implements Closeable {
      * <p> The <code>close</code> method of <code>InputStream</code> does
      * nothing.
      *
-     * @exception  IOException  if an I/O error occurs.
+     * @throws     IOException  if an I/O error occurs.
      */
     public void close() throws IOException {}
 
@@ -713,8 +718,8 @@ public abstract class InputStream implements Closeable {
      * <p>The method <code>reset</code> for class <code>InputStream</code>
      * does nothing except throw an <code>IOException</code>.
      *
-     * @exception  IOException  if this stream has not been marked or if the
-     *               mark has been invalidated.
+     * @throws  IOException  if this stream has not been marked or if the
+     *          mark has been invalidated.
      * @see     java.io.InputStream#mark(int)
      * @see     java.io.IOException
      */

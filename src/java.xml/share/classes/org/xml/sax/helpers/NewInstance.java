@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,13 +23,6 @@
  * questions.
  */
 
-// NewInstance.java - create a new instance of a class by name.
-// http://www.saxproject.org
-// Written by Edwin Goei, edwingo@apache.org
-// and by David Brownell, dbrownell@users.sourceforge.net
-// NO WARRANTY!  This class is in the Public Domain.
-// $Id: NewInstance.java,v 1.2 2005/06/10 03:50:50 jeffsuttor Exp $
-
 package org.xml.sax.helpers;
 
 import java.lang.reflect.InvocationTargetException;
@@ -38,12 +31,6 @@ import java.util.Objects;
 /**
  * Create a new instance of a class by name.
  *
- * <blockquote>
- * <em>This module, both source code and documentation, is in the
- * Public Domain, and comes with <strong>NO WARRANTY</strong>.</em>
- * See <a href='http://www.saxproject.org'>http://www.saxproject.org</a>
- * for further information.
- * </blockquote>
  *
  * <p>This class contains a static method for creating an instance of a
  * class from an explicit class name.  It tries to use the thread's context

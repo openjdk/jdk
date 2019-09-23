@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2005, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,22 +23,10 @@
  * questions.
  */
 
-// SAX exception class.
-// http://www.saxproject.org
-// No warranty; no copyright -- use this as you will.
-// $Id: SAXParseException.java,v 1.2 2004/11/03 22:55:32 jsuttor Exp $
-
 package org.xml.sax;
 
 /**
  * Encapsulate an XML parse error or warning.
- *
- * <blockquote>
- * <em>This module, both source code and documentation, is in the
- * Public Domain, and comes with <strong>NO WARRANTY</strong>.</em>
- * See <a href='http://www.saxproject.org'>http://www.saxproject.org</a>
- * for further information.
- * </blockquote>
  *
  * <p>This exception may include information for locating the error
  * in the original XML document, as if it came from a {@link Locator}

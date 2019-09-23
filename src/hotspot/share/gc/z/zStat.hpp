@@ -29,6 +29,7 @@
 #include "gc/z/zMetronome.hpp"
 #include "logging/logHandle.hpp"
 #include "memory/allocation.hpp"
+#include "utilities/globalDefinitions.hpp"
 #include "utilities/numberSeq.hpp"
 #include "utilities/ticks.hpp"
 
@@ -271,7 +272,7 @@ public:
 //
 class ZStatTimerDisable : public StackObj {
 private:
-  static __thread uint32_t _active;
+  static THREAD_LOCAL uint32_t _active;
 
 public:
   ZStatTimerDisable() {

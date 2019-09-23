@@ -283,6 +283,7 @@ import static java.lang.module.ModuleDescriptor.Modifier.SYNTHETIC;
  * @spec JPMS
  */
 public class Proxy implements java.io.Serializable {
+    @java.io.Serial
     private static final long serialVersionUID = -2222568056686623797L;
 
     /** parameter types of a proxy class constructor */

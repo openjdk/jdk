@@ -1321,6 +1321,10 @@ public class ObjectInputStream
      * Provide access to the persistent fields read from the input stream.
      */
     public abstract static class GetField {
+        /**
+         * Constructor for subclasses to call.
+         */
+        public GetField() {}
 
         /**
          * Get the ObjectStreamClass that describes the fields in the stream.
@@ -2410,22 +2414,6 @@ public class ObjectInputStream
     }
 
     /**
-     * Converts specified span of bytes into float values.
-     */
-    // REMIND: remove once hotspot inlines Float.intBitsToFloat
-    private static native void bytesToFloats(byte[] src, int srcpos,
-                                             float[] dst, int dstpos,
-                                             int nfloats);
-
-    /**
-     * Converts specified span of bytes into double values.
-     */
-    // REMIND: remove once hotspot inlines Double.longBitsToDouble
-    private static native void bytesToDoubles(byte[] src, int srcpos,
-                                              double[] dst, int dstpos,
-                                              int ndoubles);
-
-    /**
      * Returns the first non-null and non-platform class loader (not counting
      * class loaders of generated reflection implementation classes) up the
      * execution stack, or the platform class loader if only code from the
@@ -3429,22 +3417,24 @@ public class ObjectInputStream
         }
 
         void readFloats(float[] v, int off, int len) throws IOException {
-            int span, endoff = off + len;
+            int stop, endoff = off + len;
             while (off < endoff) {
                 if (!blkmode) {
-                    span = Math.min(endoff - off, MAX_BLOCK_SIZE >> 2);
+                    int span = Math.min(endoff - off, MAX_BLOCK_SIZE >> 2);
                     in.readFully(buf, 0, span << 2);
+                    stop = off + span;
                     pos = 0;
                 } else if (end - pos < 4) {
                     v[off++] = din.readFloat();
                     continue;
                 } else {
-                    span = Math.min(endoff - off, ((end - pos) >> 2));
+                    stop = Math.min(endoff, ((end - pos) >> 2));
                 }
 
-                bytesToFloats(buf, pos, v, off, span);
-                off += span;
-                pos += span << 2;
+                while (off < stop) {
+                    v[off++] = Bits.getFloat(buf, pos);
+                    pos += 4;
+                }
             }
         }
 
@@ -3471,22 +3461,24 @@ public class ObjectInputStream
         }
 
         void readDoubles(double[] v, int off, int len) throws IOException {
-            int span, endoff = off + len;
+            int stop, endoff = off + len;
             while (off < endoff) {
                 if (!blkmode) {
-                    span = Math.min(endoff - off, MAX_BLOCK_SIZE >> 3);
+                    int span = Math.min(endoff - off, MAX_BLOCK_SIZE >> 3);
                     in.readFully(buf, 0, span << 3);
+                    stop = off + span;
                     pos = 0;
                 } else if (end - pos < 8) {
                     v[off++] = din.readDouble();
                     continue;
                 } else {
-                    span = Math.min(endoff - off, ((end - pos) >> 3));
+                    stop = Math.min(endoff - off, ((end - pos) >> 3));
                 }
 
-                bytesToDoubles(buf, pos, v, off, span);
-                off += span;
-                pos += span << 3;
+                while (off < stop) {
+                    v[off++] = Bits.getDouble(buf, pos);
+                    pos += 8;
+                }
             }
         }
 

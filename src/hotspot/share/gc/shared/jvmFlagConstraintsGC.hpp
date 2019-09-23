@@ -25,6 +25,7 @@
 #ifndef SHARE_GC_SHARED_JVMFLAGCONSTRAINTSGC_HPP
 #define SHARE_GC_SHARED_JVMFLAGCONSTRAINTSGC_HPP
 
+#include "runtime/flags/jvmFlag.hpp"
 #include "utilities/globalDefinitions.hpp"
 #include "utilities/macros.hpp"
 #if INCLUDE_CMSGC

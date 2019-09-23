@@ -130,7 +130,7 @@ public class TestMetaSpaceLog {
     public static void loadClass(WhiteBox wb) {
       try {
         URLClassLoader ucl = new URLClassLoader(urls);
-        Class.forName("case00", false, ucl);
+        ucl.loadClass("case00");
       } catch (Exception e) {
         e.printStackTrace();
       }

@@ -735,11 +735,9 @@ public class Attr extends JCTree.Visitor {
      */
     public Type attribStat(JCTree tree, Env<AttrContext> env) {
         Env<AttrContext> analyzeEnv = analyzer.copyEnvIfNeeded(tree, env);
-        try {
-            return attribTree(tree, env, statInfo);
-        } finally {
-            analyzer.analyzeIfNeeded(tree, analyzeEnv);
-        }
+        Type result = attribTree(tree, env, statInfo);
+        analyzer.analyzeIfNeeded(tree, analyzeEnv);
+        return result;
     }
 
     /** Attribute a list of expressions, returning a list of types.
@@ -933,7 +931,7 @@ public class Attr extends JCTree.Visitor {
 
     public void visitClassDef(JCClassDecl tree) {
         Optional<ArgumentAttr.LocalCacheContext> localCacheContext =
-                Optional.ofNullable(env.info.isSpeculative ?
+                Optional.ofNullable(env.info.attributionMode.isSpeculative ?
                         argumentAttr.withLocalCacheContext() : null);
         try {
             // Local and anonymous classes have not been entered yet, so we need to
@@ -2776,6 +2774,8 @@ public class Attr extends JCTree.Visitor {
             resultInfo.checkContext.report(that, cause);
             result = that.type = types.createErrorType(pt());
             return;
+        } catch (CompletionFailure cf) {
+            chk.completionError(that.pos(), cf);
         } catch (Throwable t) {
             //when an unexpected exception happens, avoid attempts to attribute the same tree again
             //as that would likely cause the same exception again.
@@ -3232,7 +3232,7 @@ public class Attr extends JCTree.Visitor {
                 return;
             }
 
-            if (!env.info.isSpeculative && that.getMode() == JCMemberReference.ReferenceMode.NEW) {
+            if (!env.info.attributionMode.isSpeculative && that.getMode() == JCMemberReference.ReferenceMode.NEW) {
                 Type enclosingType = exprType.getEnclosingType();
                 if (enclosingType != null && enclosingType.hasTag(CLASS)) {
                     // Check for the existence of an apropriate outer instance

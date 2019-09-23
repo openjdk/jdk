@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1995, 2004, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1995, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -59,6 +59,7 @@ public class ClassNotFoundException extends ReflectiveOperationException {
     /**
      * use serialVersionUID from JDK 1.1.X for interoperability
      */
+     @java.io.Serial
      private static final long serialVersionUID = 9176873029745254542L;
 
     /**
@@ -111,6 +112,7 @@ public class ClassNotFoundException extends ReflectiveOperationException {
      *
      * @serialField ex Throwable
      */
+    @java.io.Serial
     private static final ObjectStreamField[] serialPersistentFields = {
         new ObjectStreamField("ex", Throwable.class)
     };
@@ -124,6 +126,7 @@ public class ClassNotFoundException extends ReflectiveOperationException {
      * in the older implementation and ClassNotFoundException::cause
      * was set to null.
      */
+    @java.io.Serial
     private void readObject(ObjectInputStream s) throws IOException, ClassNotFoundException {
         ObjectInputStream.GetField fields = s.readFields();
         Throwable exception = (Throwable) fields.get("ex", null);
@@ -136,6 +139,7 @@ public class ClassNotFoundException extends ReflectiveOperationException {
      * To maintain compatibility with older implementation, write a serial
      * "ex" field with the cause as the value.
      */
+    @java.io.Serial
     private void writeObject(ObjectOutputStream out) throws IOException {
         ObjectOutputStream.PutField fields = out.putFields();
         fields.put("ex", super.getCause());

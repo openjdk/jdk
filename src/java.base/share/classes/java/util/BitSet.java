@@ -83,6 +83,7 @@ public class BitSet implements Cloneable, java.io.Serializable {
      * bit position i % 64 (where bit position 0 refers to the least
      * significant bit and 63 refers to the most significant bit).
      */
+    @java.io.Serial
     private static final ObjectStreamField[] serialPersistentFields = {
         new ObjectStreamField("bits", long[].class),
     };
@@ -104,6 +105,7 @@ public class BitSet implements Cloneable, java.io.Serializable {
     private transient boolean sizeIsSticky = false;
 
     /* use serialVersionUID from JDK 1.0.2 for interoperability */
+    @java.io.Serial
     private static final long serialVersionUID = 7997698588986878753L;
 
     /**
@@ -1124,6 +1126,7 @@ public class BitSet implements Cloneable, java.io.Serializable {
      * Save the state of the {@code BitSet} instance to a stream (i.e.,
      * serialize it).
      */
+    @java.io.Serial
     private void writeObject(ObjectOutputStream s)
         throws IOException {
 
@@ -1141,6 +1144,7 @@ public class BitSet implements Cloneable, java.io.Serializable {
      * Reconstitute the {@code BitSet} instance from a stream (i.e.,
      * deserialize it).
      */
+    @java.io.Serial
     private void readObject(ObjectInputStream s)
         throws IOException, ClassNotFoundException {
 

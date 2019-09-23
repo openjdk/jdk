@@ -624,78 +624,6 @@ char* os::build_agent_function_name(const char *sym_name, const char *lib_name,
   return agent_entry_name;
 }
 
-int os::sleep(Thread* thread, jlong millis, bool interruptible) {
-  assert(thread == Thread::current(),  "thread consistency check");
-
-  ParkEvent * const slp = thread->_SleepEvent ;
-  slp->reset() ;
-  OrderAccess::fence() ;
-
-  if (interruptible) {
-    jlong prevtime = javaTimeNanos();
-
-    for (;;) {
-      if (os::is_interrupted(thread, true)) {
-        return OS_INTRPT;
-      }
-
-      jlong newtime = javaTimeNanos();
-
-      if (newtime - prevtime < 0) {
-        // time moving backwards, should only happen if no monotonic clock
-        // not a guarantee() because JVM should not abort on kernel/glibc bugs
-        assert(!os::supports_monotonic_clock(), "unexpected time moving backwards detected in os::sleep(interruptible)");
-      } else {
-        millis -= (newtime - prevtime) / NANOSECS_PER_MILLISEC;
-      }
-
-      if (millis <= 0) {
-        return OS_OK;
-      }
-
-      prevtime = newtime;
-
-      {
-        assert(thread->is_Java_thread(), "sanity check");
-        JavaThread *jt = (JavaThread *) thread;
-        ThreadBlockInVM tbivm(jt);
-        OSThreadWaitState osts(jt->osthread(), false /* not Object.wait() */);
-
-        jt->set_suspend_equivalent();
-        // cleared by handle_special_suspend_equivalent_condition() or
-        // java_suspend_self() via check_and_wait_while_suspended()
-
-        slp->park(millis);
-
-        // were we externally suspended while we were waiting?
-        jt->check_and_wait_while_suspended();
-      }
-    }
-  } else {
-    OSThreadWaitState osts(thread->osthread(), false /* not Object.wait() */);
-    jlong prevtime = javaTimeNanos();
-
-    for (;;) {
-      // It'd be nice to avoid the back-to-back javaTimeNanos() calls on
-      // the 1st iteration ...
-      jlong newtime = javaTimeNanos();
-
-      if (newtime - prevtime < 0) {
-        // time moving backwards, should only happen if no monotonic clock
-        // not a guarantee() because JVM should not abort on kernel/glibc bugs
-        assert(!os::supports_monotonic_clock(), "unexpected time moving backwards detected on os::sleep(!interruptible)");
-      } else {
-        millis -= (newtime - prevtime) / NANOSECS_PER_MILLISEC;
-      }
-
-      if (millis <= 0) break ;
-
-      prevtime = newtime;
-      slp->park(millis);
-    }
-    return OS_OK ;
-  }
-}
 
 void os::naked_short_nanosleep(jlong ns) {
   struct timespec req;
@@ -711,61 +639,6 @@ void os::naked_short_sleep(jlong ms) {
   os::naked_short_nanosleep(ms * (NANOUNITS / MILLIUNITS));
   return;
 }
-
-////////////////////////////////////////////////////////////////////////////////
-// interrupt support
-
-void os::interrupt(Thread* thread) {
-  debug_only(Thread::check_for_dangling_thread_pointer(thread);)
-
-  OSThread* osthread = thread->osthread();
-
-  if (!osthread->interrupted()) {
-    osthread->set_interrupted(true);
-    // More than one thread can get here with the same value of osthread,
-    // resulting in multiple notifications.  We do, however, want the store
-    // to interrupted() to be visible to other threads before we execute unpark().
-    OrderAccess::fence();
-    ParkEvent * const slp = thread->_SleepEvent ;
-    if (slp != NULL) slp->unpark() ;
-  }
-
-  // For JSR166. Unpark even if interrupt status already was set
-  if (thread->is_Java_thread())
-    ((JavaThread*)thread)->parker()->unpark();
-
-  ParkEvent * ev = thread->_ParkEvent ;
-  if (ev != NULL) ev->unpark() ;
-}
-
-bool os::is_interrupted(Thread* thread, bool clear_interrupted) {
-  debug_only(Thread::check_for_dangling_thread_pointer(thread);)
-
-  OSThread* osthread = thread->osthread();
-
-  bool interrupted = osthread->interrupted();
-
-  // NOTE that since there is no "lock" around the interrupt and
-  // is_interrupted operations, there is the possibility that the
-  // interrupted flag (in osThread) will be "false" but that the
-  // low-level events will be in the signaled state. This is
-  // intentional. The effect of this is that Object.wait() and
-  // LockSupport.park() will appear to have a spurious wakeup, which
-  // is allowed and not harmful, and the possibility is so rare that
-  // it is not worth the added complexity to add yet another lock.
-  // For the sleep event an explicit reset is performed on entry
-  // to os::sleep, so there is no early return. It has also been
-  // recommended not to put the interrupted flag into the "event"
-  // structure because it hides the issue.
-  if (interrupted && clear_interrupted) {
-    osthread->set_interrupted(false);
-    // consider thread->_SleepEvent->reset() ... optional optimization
-  }
-
-  return interrupted;
-}
-
-
 
 static const struct {
   int sig; const char* name;
@@ -2121,7 +1994,7 @@ void os::PlatformEvent::unpark() {
   // shake out uses of park() and unpark() without checking state conditions
   // properly. This spurious return doesn't manifest itself in any user code
   // but only in the correctly written condition checking loops of ObjectMonitor,
-  // Mutex/Monitor, Thread::muxAcquire and os::sleep
+  // Mutex/Monitor, Thread::muxAcquire and JavaThread::sleep
 
   if (Atomic::xchg(1, &_event) >= 0) return;
 
@@ -2179,7 +2052,7 @@ void Parker::park(bool isAbsolute, jlong time) {
 
   // Optional optimization -- avoid state transitions if there's
   // an interrupt pending.
-  if (Thread::is_interrupted(thread, false)) {
+  if (jt->is_interrupted(false)) {
     return;
   }
 
@@ -2202,7 +2075,7 @@ void Parker::park(bool isAbsolute, jlong time) {
 
   // Don't wait if cannot get lock since interference arises from
   // unparking. Also re-check interrupt before trying wait.
-  if (Thread::is_interrupted(thread, false) ||
+  if (jt->is_interrupted(false) ||
       pthread_mutex_trylock(_mutex) != 0) {
     return;
   }

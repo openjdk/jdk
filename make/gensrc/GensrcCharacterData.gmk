@@ -42,6 +42,7 @@ define SetupCharacterData
 	    -spec $(UNICODEDATA)/UnicodeData.txt \
 	    -specialcasing $(UNICODEDATA)/SpecialCasing.txt \
 	    -proplist $(UNICODEDATA)/PropList.txt \
+	    -derivedprops $(UNICODEDATA)/DerivedCoreProperties.txt \
 	    -o $(SUPPORT_OUTPUTDIR)/gensrc/java.base/java/lang/$1.java \
 	    -usecharforbyte $3
 

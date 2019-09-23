@@ -284,7 +284,7 @@ ModuleEntry* ModuleEntry::create_boot_unnamed_module(ClassLoaderData* cld) {
 // This is okay because the unnamed module gets created before the ClassLoaderData
 // is available to other threads.
 ModuleEntry* ModuleEntry::new_unnamed_module_entry(Handle module_handle, ClassLoaderData* cld) {
-  ModuleEntry* entry = (ModuleEntry*) NEW_C_HEAP_ARRAY(char, sizeof(ModuleEntry), mtModule);
+  ModuleEntry* entry = NEW_C_HEAP_OBJ(ModuleEntry, mtModule);
 
   // Initialize everything BasicHashtable would
   entry->set_next(NULL);
@@ -311,7 +311,7 @@ ModuleEntry* ModuleEntry::new_unnamed_module_entry(Handle module_handle, ClassLo
 
 void ModuleEntry::delete_unnamed_module() {
   // Do not need unlink_entry() since the unnamed module is not in the hashtable
-  FREE_C_HEAP_ARRAY(char, this);
+  FREE_C_HEAP_OBJ(this);
 }
 
 ModuleEntryTable::ModuleEntryTable(int table_size)

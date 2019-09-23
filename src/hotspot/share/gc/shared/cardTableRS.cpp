@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -624,26 +624,11 @@ CardTableRS::CardTableRS(MemRegion whole_heap, bool scanned_concurrently) :
 }
 
 CardTableRS::~CardTableRS() {
-  if (_last_cur_val_in_gen) {
-    FREE_C_HEAP_ARRAY(CardValue, _last_cur_val_in_gen);
-    _last_cur_val_in_gen = NULL;
-  }
-  if (_lowest_non_clean) {
-    FREE_C_HEAP_ARRAY(CardArr, _lowest_non_clean);
-    _lowest_non_clean = NULL;
-  }
-  if (_lowest_non_clean_chunk_size) {
-    FREE_C_HEAP_ARRAY(size_t, _lowest_non_clean_chunk_size);
-    _lowest_non_clean_chunk_size = NULL;
-  }
-  if (_lowest_non_clean_base_chunk_index) {
-    FREE_C_HEAP_ARRAY(uintptr_t, _lowest_non_clean_base_chunk_index);
-    _lowest_non_clean_base_chunk_index = NULL;
-  }
-  if (_last_LNC_resizing_collection) {
-    FREE_C_HEAP_ARRAY(int, _last_LNC_resizing_collection);
-    _last_LNC_resizing_collection = NULL;
-  }
+  FREE_C_HEAP_ARRAY(CardValue, _last_cur_val_in_gen);
+  FREE_C_HEAP_ARRAY(CardArr, _lowest_non_clean);
+  FREE_C_HEAP_ARRAY(size_t, _lowest_non_clean_chunk_size);
+  FREE_C_HEAP_ARRAY(uintptr_t, _lowest_non_clean_base_chunk_index);
+  FREE_C_HEAP_ARRAY(int, _last_LNC_resizing_collection);
 }
 
 void CardTableRS::initialize() {
@@ -656,11 +641,7 @@ void CardTableRS::initialize() {
     NEW_C_HEAP_ARRAY(uintptr_t, _max_covered_regions, mtGC);
   _last_LNC_resizing_collection =
     NEW_C_HEAP_ARRAY(int, _max_covered_regions, mtGC);
-  if (_lowest_non_clean == NULL
-      || _lowest_non_clean_chunk_size == NULL
-      || _lowest_non_clean_base_chunk_index == NULL
-      || _last_LNC_resizing_collection == NULL)
-    vm_exit_during_initialization("couldn't allocate an LNC array.");
+
   for (int i = 0; i < _max_covered_regions; i++) {
     _lowest_non_clean[i] = NULL;
     _lowest_non_clean_chunk_size[i] = 0;

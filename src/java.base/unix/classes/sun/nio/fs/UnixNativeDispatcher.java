@@ -33,7 +33,7 @@ class UnixNativeDispatcher {
     protected UnixNativeDispatcher() { }
 
     // returns a NativeBuffer containing the given path
-    private static NativeBuffer copyToNativeBuffer(UnixPath path) {
+    static NativeBuffer copyToNativeBuffer(UnixPath path) {
         byte[] cstr = path.getByteArrayForSysCalls();
         int size = cstr.length + 1;
         NativeBuffer buffer = NativeBuffers.getNativeBufferFromCache(size);

@@ -35,7 +35,6 @@ import java.util.List;
 import java.util.Objects;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
-import java.util.concurrent.RejectedExecutionException;
 
 import static java.lang.System.Logger.Level.INFO;
 
@@ -44,6 +43,7 @@ import static java.lang.System.Logger.Level.INFO;
  *
  * Override the following methods to provide customized behavior
  *
+ *     * beforeAcceptingConnections
  *     * beforeConnectionHandled
  *     * handleRequest
  *
@@ -83,6 +83,7 @@ public class BaseLdapServer implements Closeable {
         logger().log(INFO, "Server is accepting connections at port {0}",
                      getPort());
         try {
+            beforeAcceptingConnections();
             while (isRunning()) {
                 Socket socket = serverSocket.accept();
                 logger().log(INFO, "Accepted new connection at {0}", socket);
@@ -97,16 +98,23 @@ public class BaseLdapServer implements Closeable {
                 }
                 connectionsPool.submit(() -> handleConnection(socket));
             }
-        } catch (IOException | RejectedExecutionException e) {
+        } catch (Throwable t) {
             if (isRunning()) {
                 throw new RuntimeException(
-                        "Unexpected exception while accepting connections", e);
+                        "Unexpected exception while accepting connections", t);
             }
         } finally {
             logger().log(INFO, "Server stopped accepting connections at port {0}",
                                 getPort());
         }
     }
+
+    /*
+     * Called once immediately preceding the server accepting connections.
+     *
+     * Override to customize the behavior.
+     */
+    protected void beforeAcceptingConnections() { }
 
     /*
      * A "Template Method" describing how a connection (represented by a socket)
@@ -240,10 +248,23 @@ public class BaseLdapServer implements Closeable {
     /**
      * Returns the local port this server is listening at.
      *
+     * This method can be called at any time.
+     *
      * @return the port this server is listening at
      */
     public int getPort() {
         return serverSocket.getLocalPort();
+    }
+
+    /**
+     * Returns the address this server is listening at.
+     *
+     * This method can be called at any time.
+     *
+     * @return the address
+     */
+    public InetAddress getInetAddress() {
+        return serverSocket.getInetAddress();
     }
 
     /*

@@ -113,11 +113,11 @@ inline oop ShenandoahHeap::evac_update_with_forwarded(T* p) {
     oop heap_oop = CompressedOops::decode_not_null(o);
     if (in_collection_set(heap_oop)) {
       oop forwarded_oop = ShenandoahBarrierSet::resolve_forwarded_not_null(heap_oop);
-      if (oopDesc::equals_raw(forwarded_oop, heap_oop)) {
+      if (forwarded_oop == heap_oop) {
         forwarded_oop = evacuate_object(heap_oop, Thread::current());
       }
       oop prev = cas_oop(forwarded_oop, p, heap_oop);
-      if (oopDesc::equals_raw(prev, heap_oop)) {
+      if (prev == heap_oop) {
         return forwarded_oop;
       } else {
         return NULL;
@@ -133,6 +133,11 @@ inline oop ShenandoahHeap::cas_oop(oop n, oop* addr, oop c) {
   return (oop) Atomic::cmpxchg(n, addr, c);
 }
 
+inline oop ShenandoahHeap::cas_oop(oop n, narrowOop* addr, narrowOop c) {
+  narrowOop val = CompressedOops::encode(n);
+  return CompressedOops::decode((narrowOop) Atomic::cmpxchg(val, addr, c));
+}
+
 inline oop ShenandoahHeap::cas_oop(oop n, narrowOop* addr, oop c) {
   narrowOop cmp = CompressedOops::encode(c);
   narrowOop val = CompressedOops::encode(n);
@@ -146,7 +151,7 @@ inline oop ShenandoahHeap::maybe_update_with_forwarded_not_null(T* p, oop heap_o
 
   if (in_collection_set(heap_oop)) {
     oop forwarded_oop = ShenandoahBarrierSet::resolve_forwarded_not_null(heap_oop);
-    if (oopDesc::equals_raw(forwarded_oop, heap_oop)) {
+    if (forwarded_oop == heap_oop) {
       // E.g. during evacuation.
       return forwarded_oop;
     }
@@ -159,7 +164,7 @@ inline oop ShenandoahHeap::maybe_update_with_forwarded_not_null(T* p, oop heap_o
     // reference be updated later.
     oop witness = cas_oop(forwarded_oop, p, heap_oop);
 
-    if (!oopDesc::equals_raw(witness, heap_oop)) {
+    if (witness != heap_oop) {
       // CAS failed, someone had beat us to it. Normally, we would return the failure witness,
       // because that would be the proper write of to-space object, enforced by strong barriers.
       // However, there is a corner case with arraycopy. It can happen that a Java thread
@@ -279,7 +284,7 @@ inline oop ShenandoahHeap::evacuate_object(oop p, Thread* thread) {
   // Try to install the new forwarding pointer.
   oop copy_val = oop(copy);
   oop result = ShenandoahForwarding::try_update_forwardee(p, copy_val);
-  if (oopDesc::equals_raw(result, copy_val)) {
+  if (result == copy_val) {
     // Successfully evacuated. Our copy is now the public one!
     shenandoah_assert_correct(NULL, copy_val);
     return copy_val;

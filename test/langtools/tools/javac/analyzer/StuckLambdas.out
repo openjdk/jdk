@@ -1,0 +1,3 @@
+StuckLambdas.java:50:20: compiler.warn.local.redundant.type
+StuckLambdas.java:53:64: compiler.warn.local.redundant.type
+2 warnings

@@ -652,7 +652,7 @@ public:
       it->push(&_symbols->at(i));
     }
 
-    _header->_shared_path_table.metaspace_pointers_do(it);
+    _header->shared_path_table_metaspace_pointers_do(it);
 
     // Do not call these again, as we have already collected all the classes and symbols
     // that we want to archive. Also, these calls would corrupt the tables when
@@ -733,14 +733,13 @@ void DynamicArchiveBuilder::init_header(address reserved_bottom) {
   init_first_dump_space(reserved_bottom);
 
   FileMapInfo* mapinfo = new FileMapInfo(false);
-  _header = (DynamicArchiveHeader*)mapinfo->_header;
+  _header = mapinfo->dynamic_header();
 
   Thread* THREAD = Thread::current();
   FileMapInfo* base_info = FileMapInfo::current_info();
-  int* crc = _header->_base_archive_crc;
-  *crc++ = base_info->crc(); // base archive header crc
+  _header->set_base_header_crc(base_info->crc());
   for (int i = 0; i < MetaspaceShared::n_regions; i++) {
-    *crc++ = base_info->space_crc(i);
+    _header->set_base_region_crc(i, base_info->space_crc(i));
   }
   _header->populate(base_info, os::vm_allocation_granularity());
 }
@@ -907,9 +906,9 @@ void DynamicArchiveBuilder::relocate_buffer_to_target() {
   RelocateBufferToTarget patcher(this, (address*)_alloc_bottom, _buffer_to_target_delta);
   _ptrmap.iterate(&patcher);
 
-  Array<u8>* table = _header->_shared_path_table.table();
+  Array<u8>* table = _header->shared_path_table().table();
   table = to_target(table);
- _header->_shared_path_table.set_table(table);
+ _header->relocate_shared_path_table(table);
 }
 
 static void write_archive_info(FileMapInfo* dynamic_info, DynamicArchiveHeader *header) {
@@ -933,7 +932,7 @@ void DynamicArchiveBuilder::write_archive(char* read_only_tables_start) {
   int num_klasses = _klasses->length();
   int num_symbols = _symbols->length();
 
-  _header->_read_only_tables_start = to_target(read_only_tables_start);
+  _header->set_read_only_tables_start(to_target(read_only_tables_start));
 
   FileMapInfo* dynamic_info = FileMapInfo::dynamic_info();
   assert(dynamic_info != NULL, "Sanity");
@@ -953,10 +952,11 @@ void DynamicArchiveBuilder::write_archive(char* read_only_tables_start) {
 
   address base = to_target(_alloc_bottom);
   address top  = address(current_dump_space()->top()) + _buffer_to_target_delta;
-  int file_size = int(top - base);
+  size_t file_size = pointer_delta(top, base, sizeof(char));
 
-  log_info(cds, dynamic)("Written dynamic archive " PTR_FORMAT " - " PTR_FORMAT " [%d bytes header, %d bytes total]",
-                         p2i(base), p2i(top), (int)_header->_header_size, file_size);
+  log_info(cds, dynamic)("Written dynamic archive " PTR_FORMAT " - " PTR_FORMAT
+                         " [" SIZE_FORMAT " bytes header, " SIZE_FORMAT " bytes total]",
+                         p2i(base), p2i(top), _header->header_size(), file_size);
   log_info(cds, dynamic)("%d klasses; %d symbols", num_klasses, num_symbols);
 }
 
@@ -1046,8 +1046,8 @@ static DynamicArchiveHeader *_dynamic_header = NULL;
 DynamicArchiveBuilder* DynamicArchive::_builder = NULL;
 
 void DynamicArchive::map_failed(FileMapInfo* mapinfo) {
-  if (mapinfo->_header != NULL) {
-    os::free(mapinfo->_header);
+  if (mapinfo->dynamic_header() != NULL) {
+    os::free((void*)mapinfo->dynamic_header());
   }
   delete mapinfo;
 }
@@ -1081,15 +1081,12 @@ address DynamicArchive::map() {
 }
 
 address DynamicArchive::map_impl(FileMapInfo* mapinfo) {
-
-
   // Read header
   if (!mapinfo->initialize(false)) {
     return NULL;
   }
 
-  _dynamic_header = (DynamicArchiveHeader*)mapinfo->header();
-
+  _dynamic_header = mapinfo->dynamic_header();
   int regions[] = {MetaspaceShared::rw,
                    MetaspaceShared::ro,
                    MetaspaceShared::mc};
@@ -1111,7 +1108,7 @@ address DynamicArchive::map_impl(FileMapInfo* mapinfo) {
     return NULL;
   }
 
-  intptr_t* buffer = (intptr_t*)_dynamic_header->_read_only_tables_start;
+  intptr_t* buffer = (intptr_t*)_dynamic_header->read_only_tables_start();
   ReadClosure rc(&buffer);
   SymbolTable::serialize_shared_table_header(&rc, false);
   SystemDictionaryShared::serialize_dictionary_headers(&rc, false);
@@ -1122,18 +1119,17 @@ address DynamicArchive::map_impl(FileMapInfo* mapinfo) {
 bool DynamicArchive::validate(FileMapInfo* dynamic_info) {
   // Check if the recorded base archive matches with the current one
   FileMapInfo* base_info = FileMapInfo::current_info();
-  DynamicArchiveHeader* dynamic_header = (DynamicArchiveHeader*)dynamic_info->header();
-  int* crc = dynamic_header->_base_archive_crc;
+  DynamicArchiveHeader* dynamic_header = dynamic_info->dynamic_header();
 
   // Check the header crc
-  if (*crc++ != base_info->crc()) {
+  if (dynamic_header->base_header_crc() != base_info->crc()) {
     FileMapInfo::fail_continue("Archive header checksum verification failed.");
     return false;
   }
 
   // Check each space's crc
   for (int i = 0; i < MetaspaceShared::n_regions; i++) {
-    if (*crc++ != base_info->space_crc(i)) {
+    if (dynamic_header->base_region_crc(i) != base_info->space_crc(i)) {
       FileMapInfo::fail_continue("Archive region #%d checksum verification failed.", i);
       return false;
     }

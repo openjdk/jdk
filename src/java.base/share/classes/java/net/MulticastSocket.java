@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1995, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1995, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -103,9 +103,9 @@ class MulticastSocket extends DatagramSocket {
      * {@link DatagramSocket#setReuseAddress(boolean)} method is called to
      * enable the SO_REUSEADDR socket option.
      *
-     * @exception IOException if an I/O exception occurs while creating the
+     * @throws    IOException if an I/O exception occurs while creating the
      * MulticastSocket
-     * @exception SecurityException if a security manager exists and its
+     * @throws    SecurityException if a security manager exists and its
      * {@code checkListen} method doesn't allow the operation.
      * @see SecurityManager#checkListen
      * @see java.net.DatagramSocket#setReuseAddress(boolean)
@@ -128,13 +128,13 @@ class MulticastSocket extends DatagramSocket {
      * {@link DatagramSocket#setReuseAddress(boolean)} method is
      * called to enable the SO_REUSEADDR socket option.
      *
-     * @param port port to use
-     * @exception IOException if an I/O exception occurs
-     * while creating the MulticastSocket
-     * @exception  SecurityException  if a security manager exists and its
-     *             {@code checkListen} method doesn't allow the operation.
-     * @see SecurityManager#checkListen
-     * @see java.net.DatagramSocket#setReuseAddress(boolean)
+     * @param     port port to use
+     * @throws    IOException if an I/O exception occurs
+     *            while creating the MulticastSocket
+     * @throws    SecurityException  if a security manager exists and its
+     *            {@code checkListen} method doesn't allow the operation.
+     * @see       SecurityManager#checkListen
+     * @see       java.net.DatagramSocket#setReuseAddress(boolean)
      */
     public MulticastSocket(int port) throws IOException {
         this(new InetSocketAddress(port));
@@ -154,14 +154,14 @@ class MulticastSocket extends DatagramSocket {
      * {@link DatagramSocket#setReuseAddress(boolean)} method is
      * called to enable the SO_REUSEADDR socket option.
      *
-     * @param bindaddr Socket address to bind to, or {@code null} for
-     *                 an unbound socket.
-     * @exception IOException if an I/O exception occurs
-     * while creating the MulticastSocket
-     * @exception  SecurityException  if a security manager exists and its
-     *             {@code checkListen} method doesn't allow the operation.
-     * @see SecurityManager#checkListen
-     * @see java.net.DatagramSocket#setReuseAddress(boolean)
+     * @param    bindaddr Socket address to bind to, or {@code null} for
+     *           an unbound socket.
+     * @throws   IOException if an I/O exception occurs
+     *           while creating the MulticastSocket
+     * @throws   SecurityException  if a security manager exists and its
+     *           {@code checkListen} method doesn't allow the operation.
+     * @see      SecurityManager#checkListen
+     * @see      java.net.DatagramSocket#setReuseAddress(boolean)
      *
      * @since 1.4
      */
@@ -208,11 +208,11 @@ class MulticastSocket extends DatagramSocket {
      * <p>The ttl is an <b>unsigned</b> 8-bit quantity, and so <B>must</B> be
      * in the range {@code 0 <= ttl <= 0xFF }.
      *
-     * @param ttl the time-to-live
-     * @exception IOException if an I/O exception occurs
-     * while setting the default time-to-live value
+     * @param      ttl the time-to-live
+     * @throws     IOException if an I/O exception occurs
+     *             while setting the default time-to-live value
      * @deprecated use the setTimeToLive method instead, which uses
-     * <b>int</b> instead of <b>byte</b> as the type for ttl.
+     *             <b>int</b> instead of <b>byte</b> as the type for ttl.
      * @see #getTTL()
      */
     @Deprecated
@@ -254,7 +254,7 @@ class MulticastSocket extends DatagramSocket {
      * Get the default time-to-live for multicast packets sent out on
      * the socket.
      *
-     * @exception IOException if an I/O exception occurs
+     * @throws    IOException if an I/O exception occurs
      * while getting the default time-to-live value
      * @return the default time-to-live value
      * @deprecated use the getTimeToLive method instead, which returns
@@ -271,7 +271,7 @@ class MulticastSocket extends DatagramSocket {
     /**
      * Get the default time-to-live for multicast packets sent out on
      * the socket.
-     * @exception IOException if an I/O exception occurs while
+     * @throws    IOException if an I/O exception occurs while
      * getting the default time-to-live value
      * @return the default time-to-live value
      * @see #setTimeToLive(int)
@@ -293,10 +293,10 @@ class MulticastSocket extends DatagramSocket {
      *
      * @param mcastaddr is the multicast address to join
      *
-     * @exception IOException if there is an error joining, or when the address
+     * @throws    IOException if there is an error joining, or when the address
      *            is not a multicast address, or the platform does not support
      *            multicasting
-     * @exception  SecurityException  if a security manager exists and its
+     * @throws     SecurityException  if a security manager exists and its
      * {@code checkMulticast} method doesn't allow the join.
      *
      * @see SecurityManager#checkMulticast(InetAddress)
@@ -339,9 +339,9 @@ class MulticastSocket extends DatagramSocket {
      * as its argument.
      *
      * @param mcastaddr is the multicast address to leave
-     * @exception IOException if there is an error leaving
+     * @throws    IOException if there is an error leaving
      * or when the address is not a multicast address.
-     * @exception  SecurityException  if a security manager exists and its
+     * @throws     SecurityException  if a security manager exists and its
      * {@code checkMulticast} method doesn't allow the operation.
      *
      * @see SecurityManager#checkMulticast(InetAddress)
@@ -378,10 +378,10 @@ class MulticastSocket extends DatagramSocket {
      *       {@link MulticastSocket#setInterface(InetAddress)} or
      *       {@link MulticastSocket#setNetworkInterface(NetworkInterface)}
      *
-     * @exception IOException if there is an error joining, or when the address
+     * @throws    IOException if there is an error joining, or when the address
      *            is not a multicast address, or the platform does not support
      *            multicasting
-     * @exception  SecurityException  if a security manager exists and its
+     * @throws     SecurityException  if a security manager exists and its
      * {@code checkMulticast} method doesn't allow the join.
      * @throws  IllegalArgumentException if mcastaddr is null or is a
      *          SocketAddress subclass not supported by this socket
@@ -426,9 +426,9 @@ class MulticastSocket extends DatagramSocket {
      *             to the interface set by
      *             {@link MulticastSocket#setInterface(InetAddress)} or
      *             {@link MulticastSocket#setNetworkInterface(NetworkInterface)}
-     * @exception IOException if there is an error leaving
+     * @throws    IOException if there is an error leaving
      * or when the address is not a multicast address.
-     * @exception  SecurityException  if a security manager exists and its
+     * @throws     SecurityException  if a security manager exists and its
      * {@code checkMulticast} method doesn't allow the operation.
      * @throws  IllegalArgumentException if mcastaddr is null or is a
      *          SocketAddress subclass not supported by this socket
@@ -465,7 +465,7 @@ class MulticastSocket extends DatagramSocket {
      * whose behavior would be affected by the value of the
      * network interface. Useful for multihomed hosts.
      * @param inf the InetAddress
-     * @exception SocketException if there is an error in
+     * @throws    SocketException if there is an error in
      * the underlying protocol, such as a TCP error.
      * @see #getInterface()
      */
@@ -489,7 +489,7 @@ class MulticastSocket extends DatagramSocket {
      *  the address of the network interface used for
      *  multicast packets.
      *
-     * @exception SocketException if there is an error in
+     * @throws    SocketException if there is an error in
      * the underlying protocol, such as a TCP error.
      *
      * @see #setInterface(java.net.InetAddress)
@@ -549,7 +549,7 @@ class MulticastSocket extends DatagramSocket {
      * sent on this socket.
      *
      * @param netIf the interface
-     * @exception SocketException if there is an error in
+     * @throws    SocketException if there is an error in
      * the underlying protocol, such as a TCP error.
      * @see #getNetworkInterface()
      * @since 1.4
@@ -567,7 +567,7 @@ class MulticastSocket extends DatagramSocket {
     /**
      * Get the multicast network interface set.
      *
-     * @exception SocketException if there is an error in
+     * @throws    SocketException if there is an error in
      * the underlying protocol, such as a TCP error.
      * @return the multicast {@code NetworkInterface} currently set
      * @see #setNetworkInterface(NetworkInterface)
@@ -643,9 +643,9 @@ class MulticastSocket extends DatagramSocket {
      * @param ttl optional time to live for multicast packet.
      * default ttl is 1.
      *
-     * @exception IOException is raised if an error occurs i.e
+     * @throws    IOException is raised if an error occurs i.e
      * error while setting ttl.
-     * @exception  SecurityException  if a security manager exists and its
+     * @throws     SecurityException  if a security manager exists and its
      *             {@code checkMulticast} or {@code checkConnect}
      *             method doesn't allow the send.
      *

@@ -87,7 +87,7 @@
  *
  *  Note  that these benchmarks  will provide numbers  without any knowledge of
  *  the  implementation of DecimalFormat class. So  to check regression any run
- *  should be compared to another reference run with  a previous JDK, wether or
+ *  should be compared to another reference run with  a previous JDK, whether or
  *  not this previous reference JDK contains fast-path implementation.
  *
  *  The eight benchmarks below are dedicated to measure throughput on different

@@ -64,7 +64,7 @@ public abstract class SignatureSpi {
      * @param publicKey the public key of the identity whose signature is
      * going to be verified.
      *
-     * @exception InvalidKeyException if the key is improperly
+     * @throws    InvalidKeyException if the key is improperly
      * encoded, parameters are missing, and so on.
      */
     protected abstract void engineInitVerify(PublicKey publicKey)
@@ -78,9 +78,9 @@ public abstract class SignatureSpi {
      * going to be verified.
      * @param params the parameters for generating this signature
      *
-     * @exception InvalidKeyException if the key is improperly
+     * @throws    InvalidKeyException if the key is improperly
      * encoded, does not work with the given parameters, and so on.
-     * @exception InvalidAlgorithmParameterException if the given parameters
+     * @throws    InvalidAlgorithmParameterException if the given parameters
      * is invalid.
      */
     void engineInitVerify(PublicKey publicKey,
@@ -104,7 +104,7 @@ public abstract class SignatureSpi {
      * @param privateKey the private key of the identity whose signature
      * will be generated.
      *
-     * @exception InvalidKeyException if the key is improperly
+     * @throws    InvalidKeyException if the key is improperly
      * encoded, parameters are missing, and so on.
      */
     protected abstract void engineInitSign(PrivateKey privateKey)
@@ -121,7 +121,7 @@ public abstract class SignatureSpi {
      * will be generated.
      * @param random the source of randomness
      *
-     * @exception InvalidKeyException if the key is improperly
+     * @throws    InvalidKeyException if the key is improperly
      * encoded, parameters are missing, and so on.
      */
     protected void engineInitSign(PrivateKey privateKey,
@@ -143,9 +143,9 @@ public abstract class SignatureSpi {
      * @param params the parameters for generating this signature
      * @param random the source of randomness
      *
-     * @exception InvalidKeyException if the key is improperly
+     * @throws    InvalidKeyException if the key is improperly
      * encoded, parameters are missing, and so on.
-     * @exception InvalidAlgorithmParameterException if the parameters is
+     * @throws    InvalidAlgorithmParameterException if the parameters is
      * invalid.
      */
     void engineInitSign(PrivateKey privateKey,
@@ -168,7 +168,7 @@ public abstract class SignatureSpi {
      *
      * @param b the byte to use for the update.
      *
-     * @exception SignatureException if the engine is not initialized
+     * @throws    SignatureException if the engine is not initialized
      * properly.
      */
     protected abstract void engineUpdate(byte b) throws SignatureException;
@@ -181,7 +181,7 @@ public abstract class SignatureSpi {
      * @param off the offset to start from in the array of bytes
      * @param len the number of bytes to use, starting at offset
      *
-     * @exception SignatureException if the engine is not initialized
+     * @throws    SignatureException if the engine is not initialized
      * properly
      */
     protected abstract void engineUpdate(byte[] b, int off, int len)
@@ -234,7 +234,7 @@ public abstract class SignatureSpi {
      *
      * @return the signature bytes of the signing operation's result.
      *
-     * @exception SignatureException if the engine is not
+     * @throws    SignatureException if the engine is not
      * initialized properly or if this signature algorithm is unable to
      * process the input data provided.
      */
@@ -273,7 +273,7 @@ public abstract class SignatureSpi {
      *
      * @return the number of bytes placed into {@code outbuf}
      *
-     * @exception SignatureException if the engine is not
+     * @throws    SignatureException if the engine is not
      * initialized properly, if this signature algorithm is unable to
      * process the input data provided, or if {@code len} is less
      * than the actual signature length.
@@ -303,7 +303,7 @@ public abstract class SignatureSpi {
      *
      * @return true if the signature was verified, false if not.
      *
-     * @exception SignatureException if the engine is not
+     * @throws    SignatureException if the engine is not
      * initialized properly, the passed-in signature is improperly
      * encoded or of the wrong type, if this signature algorithm is unable to
      * process the input data provided, etc.
@@ -324,7 +324,7 @@ public abstract class SignatureSpi {
      *
      * @return true if the signature was verified, false if not.
      *
-     * @exception SignatureException if the engine is not
+     * @throws    SignatureException if the engine is not
      * initialized properly, the passed-in signature is improperly
      * encoded or of the wrong type, if this signature algorithm is unable to
      * process the input data provided, etc.
@@ -352,7 +352,7 @@ public abstract class SignatureSpi {
      *
      * @param value the parameter value.
      *
-     * @exception InvalidParameterException if {@code param} is an
+     * @throws    InvalidParameterException if {@code param} is an
      * invalid parameter for this signature algorithm engine,
      * the parameter is already set
      * and cannot be set again, a security exception occurs, and so on.
@@ -371,10 +371,10 @@ public abstract class SignatureSpi {
      *
      * @param params the parameters
      *
-     * @exception UnsupportedOperationException if this method is not
+     * @throws    UnsupportedOperationException if this method is not
      * overridden by a provider
      *
-     * @exception InvalidAlgorithmParameterException if this method is
+     * @throws    InvalidAlgorithmParameterException if this method is
      * overridden by a provider and the given parameters
      * are inappropriate for this signature engine
      */
@@ -397,7 +397,7 @@ public abstract class SignatureSpi {
      *
      * @return the parameters used with this signature engine, or {@code null}
      *
-     * @exception UnsupportedOperationException if this method is
+     * @throws    UnsupportedOperationException if this method is
      * not overridden by a provider
      * @since 1.4
      */
@@ -421,7 +421,7 @@ public abstract class SignatureSpi {
      * @return the object that represents the parameter value, or {@code null} if
      * there is none.
      *
-     * @exception InvalidParameterException if {@code param} is an
+     * @throws    InvalidParameterException if {@code param} is an
      * invalid parameter for this engine, or another exception occurs while
      * trying to get this parameter.
      *
@@ -436,7 +436,7 @@ public abstract class SignatureSpi {
      *
      * @return a clone if the implementation is cloneable.
      *
-     * @exception CloneNotSupportedException if this is called
+     * @throws    CloneNotSupportedException if this is called
      * on an implementation that does not support {@code Cloneable}.
      */
     public Object clone() throws CloneNotSupportedException {

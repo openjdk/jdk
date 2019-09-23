@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -67,6 +67,7 @@ import java.security.BasicPermission;
  * @see Files#createSymbolicLink
  */
 public final class LinkPermission extends BasicPermission {
+    @java.io.Serial
     static final long serialVersionUID = -1441492453772213220L;
 
     private void checkName(String name) {

@@ -257,7 +257,7 @@ void BiasedLocking::single_revoke_at_safepoint(oop obj, bool is_bulk, JavaThread
   BasicLock* highest_lock = NULL;
   for (int i = 0; i < cached_monitor_info->length(); i++) {
     MonitorInfo* mon_info = cached_monitor_info->at(i);
-    if (oopDesc::equals(mon_info->owner(), obj)) {
+    if (mon_info->owner() == obj) {
       log_trace(biasedlocking)("   mon_info->owner (" PTR_FORMAT ") == obj (" PTR_FORMAT ")",
                                p2i((void *) mon_info->owner()),
                                p2i((void *) obj));
@@ -693,7 +693,7 @@ void BiasedLocking::walk_stack_and_revoke(oop obj, JavaThread* biased_locker) {
   BasicLock* highest_lock = NULL;
   for (int i = 0; i < cached_monitor_info->length(); i++) {
     MonitorInfo* mon_info = cached_monitor_info->at(i);
-    if (oopDesc::equals(mon_info->owner(), obj)) {
+    if (mon_info->owner() == obj) {
       log_trace(biasedlocking)("   mon_info->owner (" PTR_FORMAT ") == obj (" PTR_FORMAT ")",
                                p2i(mon_info->owner()),
                                p2i(obj));
@@ -726,6 +726,29 @@ void BiasedLocking::walk_stack_and_revoke(oop obj, JavaThread* biased_locker) {
   assert(!obj->mark().has_bias_pattern(), "must not be biased");
 }
 
+void BiasedLocking::revoke_own_lock(Handle obj, TRAPS) {
+  assert(THREAD->is_Java_thread(), "must be called by a JavaThread");
+  JavaThread* thread = (JavaThread*)THREAD;
+
+  markWord mark = obj->mark();
+
+  if (!mark.has_bias_pattern()) {
+    return;
+  }
+
+  Klass *k = obj->klass();
+  assert(mark.biased_locker() == thread &&
+         k->prototype_header().bias_epoch() == mark.bias_epoch(), "Revoke failed, unhandled biased lock state");
+  ResourceMark rm;
+  log_info(biasedlocking)("Revoking bias by walking my own stack:");
+  EventBiasedLockSelfRevocation event;
+  BiasedLocking::walk_stack_and_revoke(obj(), (JavaThread*) thread);
+  thread->set_cached_monitor_info(NULL);
+  assert(!obj->mark().has_bias_pattern(), "invariant");
+  if (event.should_commit()) {
+    post_self_revocation_event(&event, k);
+  }
+}
 
 void BiasedLocking::revoke(Handle obj, TRAPS) {
   assert(!SafepointSynchronize::is_at_safepoint(), "must not be called while at safepoint");
@@ -861,23 +884,6 @@ void BiasedLocking::revoke_at_safepoint(Handle h_obj) {
     bulk_revoke_at_safepoint(obj, (heuristics == HR_BULK_REBIAS), NULL);
     clean_up_cached_monitor_info();
   }
-}
-
-
-void BiasedLocking::revoke_at_safepoint(GrowableArray<Handle>* objs) {
-  assert(SafepointSynchronize::is_at_safepoint(), "must only be called while at safepoint");
-  int len = objs->length();
-  for (int i = 0; i < len; i++) {
-    oop obj = (objs->at(i))();
-    HeuristicsResult heuristics = update_heuristics(obj);
-    if (heuristics == HR_SINGLE_REVOKE) {
-      single_revoke_at_safepoint(obj, false, NULL, NULL);
-    } else if ((heuristics == HR_BULK_REBIAS) ||
-               (heuristics == HR_BULK_REVOKE)) {
-      bulk_revoke_at_safepoint(obj, (heuristics == HR_BULK_REBIAS), NULL);
-    }
-  }
-  clean_up_cached_monitor_info();
 }
 
 

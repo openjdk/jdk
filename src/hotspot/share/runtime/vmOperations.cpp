@@ -115,18 +115,6 @@ void VM_ClearICs::doit() {
   }
 }
 
-void VM_Deoptimize::doit() {
-  // We do not want any GCs to happen while we are in the middle of this VM operation
-  ResourceMark rm;
-  DeoptimizationMarker dm;
-
-  // Deoptimize all activations depending on marked nmethods
-  Deoptimization::deoptimize_dependents();
-
-  // Make the dependent methods not entrant
-  CodeCache::make_marked_nmethods_not_entrant();
-}
-
 void VM_MarkActiveNMethods::doit() {
   NMethodSweeper::mark_active_nmethods();
 }

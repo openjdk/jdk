@@ -41,6 +41,7 @@
 # :hotspot_compiler
 
 compiler/ciReplay/TestSAServer.java 8029528 generic-all
+compiler/codecache/jmx/PoolsIndependenceTest.java 8167015 generic-all
 compiler/codecache/stress/OverloadCompileQueueTest.java 8166554 generic-all
 compiler/codegen/Test6896617.java 8193479 generic-all
 compiler/compilercontrol/jcmd/ClearDirectivesFileStackTest.java 8225370 generic-all
@@ -66,7 +67,9 @@ compiler/rtm/locking/TestRTMDeoptOnHighAbortRatio.java 8183263 generic-x64
 compiler/rtm/locking/TestRTMDeoptOnLowAbortRatio.java 8183263 generic-x64
 compiler/rtm/locking/TestRTMLockingCalculationDelay.java 8183263 generic-x64
 compiler/rtm/locking/TestRTMLockingThreshold.java 8183263 generic-x64
+compiler/rtm/locking/TestRTMSpinLoopCount.java 8183263 generic-x64
 compiler/rtm/locking/TestUseRTMDeopt.java 8183263 generic-x64
+compiler/rtm/locking/TestUseRTMXendForLockBusy.java 8183263 generic-x64
 compiler/rtm/print/TestPrintPreciseRTMLockingStatistics.java 8183263 generic-x64
 
 #############################################################################
@@ -88,6 +91,7 @@ gc/metaspace/CompressedClassSpaceSizeInJmapHeap.java 8193639 solaris-all
 # :hotspot_runtime
 
 runtime/jni/terminatedThread/TestTerminatedThread.java 8219652 aix-ppc64
+runtime/ReservedStack/ReservedStackTest.java 8231031 generic-all
 
 #############################################################################
 
@@ -126,7 +130,7 @@ serviceability/sa/TestDefaultMethods.java 8193639 solaris-all
 serviceability/sa/TestG1HeapRegion.java 8193639 solaris-all
 serviceability/sa/TestHeapDumpForInvokeDynamic.java 8193639 solaris-all
 serviceability/sa/TestHeapDumpForLargeArray.java 8193639 solaris-all
-serviceability/sa/TestInstanceKlassSize.java 8193639 solaris-all
+serviceability/sa/TestInstanceKlassSize.java 8193639,8230664 solaris-all,linux-ppc64le,linux-ppc64
 serviceability/sa/TestInstanceKlassSizeForInterface.java 8193639 solaris-all
 serviceability/sa/TestIntConstant.java 8193639,8211767 solaris-all,linux-ppc64le,linux-ppc64
 serviceability/sa/TestJhsdbJstackLock.java 8193639 solaris-all
@@ -149,15 +153,6 @@ serviceability/jvmti/HeapMonitor/MyPackage/HeapMonitorStatArrayCorrectnessTest.j
 
 #############################################################################
 
-# :hotspot_containers
-
-containers/docker/TestJcmdWithSideCar.java 8228850,8228960 generic-all
-
-#############################################################################
-
-
-#############################################################################
-
 # :vmTestbase_*
 
 #############################################################################
@@ -174,7 +169,7 @@ vmTestbase/nsk/jdi/ThreadReference/stop/stop001/TestDescription.java 7034630 gen
 vmTestbase/nsk/jdi/VirtualMachine/redefineClasses/redefineclasses021/TestDescription.java 8065773 generic-all
 vmTestbase/nsk/jdi/VirtualMachine/redefineClasses/redefineclasses023/TestDescription.java 8065773 generic-all
 
-vmTestbase/nsk/jdb/eval/eval001/eval001.java 8212117 generic-all
+vmTestbase/nsk/jdb/eval/eval001/eval001.java 8221503 generic-all
 
 vmTestbase/metaspace/gc/firstGC_10m/TestDescription.java 8208250 generic-all
 vmTestbase/metaspace/gc/firstGC_50m/TestDescription.java 8208250 generic-all
@@ -210,5 +205,17 @@ vmTestbase/vm/mlvm/indy/func/jvmti/mergeCP_indy2manySame_b/TestDescription.java 
 
 
 vmTestbase/nsk/jdwp/ThreadReference/ForceEarlyReturn/forceEarlyReturn001/forceEarlyReturn001.java 7199837 generic-all
+
+vmTestbase/nsk/monitoring/ThreadMXBean/ThreadInfo/SynchronizerLockingThreads/SynchronizerLockingThreads001/TestDescription.java 8231032 generic-all
+vmTestbase/nsk/monitoring/ThreadMXBean/ThreadInfo/SynchronizerLockingThreads/SynchronizerLockingThreads002/TestDescription.java 8231032 generic-all
+vmTestbase/nsk/monitoring/ThreadMXBean/ThreadInfo/SynchronizerLockingThreads/SynchronizerLockingThreads003/TestDescription.java 8231032 generic-all
+vmTestbase/nsk/monitoring/ThreadMXBean/ThreadInfo/SynchronizerLockingThreads/SynchronizerLockingThreads004/TestDescription.java 8231032 generic-all
+vmTestbase/nsk/monitoring/ThreadMXBean/ThreadInfo/SynchronizerLockingThreads/SynchronizerLockingThreads005/TestDescription.java 8231032 generic-all
+
+vmTestbase/nsk/monitoring/ThreadMXBean/ThreadInfo/Multi/Multi001/Multi001.java 8231032 generic-all
+vmTestbase/nsk/monitoring/ThreadMXBean/ThreadInfo/Multi/Multi002/TestDescription.java 8231032 generic-all
+vmTestbase/nsk/monitoring/ThreadMXBean/ThreadInfo/Multi/Multi003/TestDescription.java 8231032 generic-all
+vmTestbase/nsk/monitoring/ThreadMXBean/ThreadInfo/Multi/Multi004/TestDescription.java 8231032 generic-all
+vmTestbase/nsk/monitoring/ThreadMXBean/ThreadInfo/Multi/Multi005/TestDescription.java 8231032 generic-all
 
 #############################################################################

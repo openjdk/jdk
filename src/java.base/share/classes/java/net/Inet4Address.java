@@ -89,6 +89,7 @@ class Inet4Address extends InetAddress {
     /** use serialVersionUID from InetAddress, but Inet4Address instance
      *  is always replaced by an InetAddress instance before being
      *  serialized */
+    @java.io.Serial
     private static final long serialVersionUID = 3286316764910316507L;
 
     /*
@@ -134,6 +135,7 @@ class Inet4Address extends InetAddress {
      * @throws ObjectStreamException if a new object replacing this
      * object could not be created
      */
+    @java.io.Serial
     private Object writeReplace() throws ObjectStreamException {
         // will replace the to be serialized 'this' object
         InetAddress inet = new InetAddress();

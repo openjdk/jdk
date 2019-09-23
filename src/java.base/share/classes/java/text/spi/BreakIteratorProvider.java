@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -51,8 +51,8 @@ public abstract class BreakIteratorProvider extends LocaleServiceProvider {
      * for the given locale.
      * @param locale the desired locale
      * @return A break iterator for word breaks
-     * @exception NullPointerException if <code>locale</code> is null
-     * @exception IllegalArgumentException if <code>locale</code> isn't
+     * @throws    NullPointerException if <code>locale</code> is null
+     * @throws    IllegalArgumentException if <code>locale</code> isn't
      *     one of the locales returned from
      *     {@link java.util.spi.LocaleServiceProvider#getAvailableLocales()
      *     getAvailableLocales()}.
@@ -66,8 +66,8 @@ public abstract class BreakIteratorProvider extends LocaleServiceProvider {
      * for the given locale.
      * @param locale the desired locale
      * @return A break iterator for line breaks
-     * @exception NullPointerException if <code>locale</code> is null
-     * @exception IllegalArgumentException if <code>locale</code> isn't
+     * @throws    NullPointerException if <code>locale</code> is null
+     * @throws    IllegalArgumentException if <code>locale</code> isn't
      *     one of the locales returned from
      *     {@link java.util.spi.LocaleServiceProvider#getAvailableLocales()
      *     getAvailableLocales()}.
@@ -81,8 +81,8 @@ public abstract class BreakIteratorProvider extends LocaleServiceProvider {
      * for the given locale.
      * @param locale the desired locale
      * @return A break iterator for character breaks
-     * @exception NullPointerException if <code>locale</code> is null
-     * @exception IllegalArgumentException if <code>locale</code> isn't
+     * @throws    NullPointerException if <code>locale</code> is null
+     * @throws    IllegalArgumentException if <code>locale</code> isn't
      *     one of the locales returned from
      *     {@link java.util.spi.LocaleServiceProvider#getAvailableLocales()
      *     getAvailableLocales()}.
@@ -96,8 +96,8 @@ public abstract class BreakIteratorProvider extends LocaleServiceProvider {
      * for the given locale.
      * @param locale the desired locale
      * @return A break iterator for sentence breaks
-     * @exception NullPointerException if <code>locale</code> is null
-     * @exception IllegalArgumentException if <code>locale</code> isn't
+     * @throws    NullPointerException if <code>locale</code> is null
+     * @throws    IllegalArgumentException if <code>locale</code> isn't
      *     one of the locales returned from
      *     {@link java.util.spi.LocaleServiceProvider#getAvailableLocales()
      *     getAvailableLocales()}.

@@ -592,9 +592,6 @@ charset x-mswin-936 MS936
     alias   ms936                # JDK historical
     alias   ms_936 // IANA aliases
 
-# The definition of this charset may be overridden by the init method,
-# below, if the sun.nio.cs.map property is defined.
-# 
 charset Shift_JIS SJIS
     package sun.nio.cs.ext
     type    dbcs
@@ -609,8 +606,6 @@ charset Shift_JIS SJIS
     alias   x-sjis
     alias   csShiftJIS
 
-# The definition of this charset may be overridden by the init method,
-# below, if the sun.nio.cs.map property is defined.
 charset windows-31j MS932
     package sun.nio.cs.ext
     type    dbcs

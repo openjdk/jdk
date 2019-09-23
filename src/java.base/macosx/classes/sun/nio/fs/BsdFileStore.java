@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -62,22 +62,14 @@ class BsdFileStore
         }
 
         // step 2: find mount point
-        UnixPath parent = path.getParent();
-        while (parent != null) {
-            UnixFileAttributes attrs = null;
-            try {
-                attrs = UnixFileAttributes.get(parent, true);
-            } catch (UnixException x) {
-                x.rethrowAsIOException(parent);
-            }
-            if (attrs.dev() != dev())
-                break;
-            path = parent;
-            parent = parent.getParent();
+        byte[] dir = null;
+        try {
+            dir = BsdNativeDispatcher.getmntonname(path);
+        } catch (UnixException x) {
+            x.rethrowAsIOException(path);
         }
 
         // step 3: lookup mounted file systems
-        byte[] dir = path.asByteArray();
         for (UnixMountEntry entry: fs.getMountEntries()) {
             if (Arrays.equals(dir, entry.dir()))
                 return entry;

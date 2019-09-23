@@ -34,8 +34,7 @@
 
 // For UseCompressedOops.
 NarrowPtrStruct CompressedOops::_narrow_oop = { NULL, 0, true };
-
-address CompressedOops::_narrow_ptrs_base;
+MemRegion       CompressedOops::_heap_address_range;
 
 // Choose the heap base address and oop encoding mode
 // when compressed oops are used:
@@ -44,41 +43,43 @@ address CompressedOops::_narrow_ptrs_base;
 // ZeroBased - Use zero based compressed oops with encoding when
 //     NarrowOopHeapBaseMin + heap_size < 32Gb
 // HeapBased - Use compressed oops with heap base + encoding.
-void CompressedOops::initialize() {
+void CompressedOops::initialize(const ReservedHeapSpace& heap_space) {
 #ifdef _LP64
-  if (UseCompressedOops) {
-    // Subtract a page because something can get allocated at heap base.
-    // This also makes implicit null checking work, because the
-    // memory+1 page below heap_base needs to cause a signal.
-    // See needs_explicit_null_check.
-    // Only set the heap base for compressed oops because it indicates
-    // compressed oops for pstack code.
-    if ((uint64_t)Universe::heap()->reserved_region().end() > UnscaledOopHeapMax) {
-      // Didn't reserve heap below 4Gb.  Must shift.
-      set_shift(LogMinObjAlignmentInBytes);
-    }
-    if ((uint64_t)Universe::heap()->reserved_region().end() <= OopEncodingHeapMax) {
-      // Did reserve heap below 32Gb. Can use base == 0;
-      set_base(0);
-    }
-    AOTLoader::set_narrow_oop_shift();
-
-    set_ptrs_base(base());
-
-    LogTarget(Info, gc, heap, coops) lt;
-    if (lt.is_enabled()) {
-      ResourceMark rm;
-      LogStream ls(lt);
-      print_mode(&ls);
-    }
-
-    // Tell tests in which mode we run.
-    Arguments::PropertyList_add(new SystemProperty("java.vm.compressedOopsMode",
-                                                   mode_to_string(mode()),
-                                                   false));
+  // Subtract a page because something can get allocated at heap base.
+  // This also makes implicit null checking work, because the
+  // memory+1 page below heap_base needs to cause a signal.
+  // See needs_explicit_null_check.
+  // Only set the heap base for compressed oops because it indicates
+  // compressed oops for pstack code.
+  if ((uint64_t)heap_space.end() > UnscaledOopHeapMax) {
+    // Didn't reserve heap below 4Gb.  Must shift.
+    set_shift(LogMinObjAlignmentInBytes);
   }
+  if ((uint64_t)heap_space.end() <= OopEncodingHeapMax) {
+    // Did reserve heap below 32Gb. Can use base == 0;
+    set_base(0);
+  } else {
+    set_base((address)heap_space.compressed_oop_base());
+  }
+
+  AOTLoader::set_narrow_oop_shift();
+
+  _heap_address_range = heap_space.region();
+
+  LogTarget(Info, gc, heap, coops) lt;
+  if (lt.is_enabled()) {
+    ResourceMark rm;
+    LogStream ls(lt);
+    print_mode(&ls);
+  }
+
+  // Tell tests in which mode we run.
+  Arguments::PropertyList_add(new SystemProperty("java.vm.compressedOopsMode",
+                                                 mode_to_string(mode()),
+                                                 false));
+
   // base() is one page below the heap.
-  assert((intptr_t)base() <= (intptr_t)(Universe::heap()->base() - os::vm_page_size()) ||
+  assert((intptr_t)base() <= ((intptr_t)_heap_address_range.start() - os::vm_page_size()) ||
          base() == NULL, "invalid value");
   assert(shift() == LogMinObjAlignmentInBytes ||
          shift() == 0, "invalid value");
@@ -99,8 +100,12 @@ void CompressedOops::set_use_implicit_null_checks(bool use) {
   _narrow_oop._use_implicit_null_checks   = use;
 }
 
-void CompressedOops::set_ptrs_base(address addr) {
-  _narrow_ptrs_base = addr;
+bool CompressedOops::is_in(void* addr) {
+  return _heap_address_range.contains(addr);
+}
+
+bool CompressedOops::is_in(MemRegion mr) {
+  return _heap_address_range.contains(mr);
 }
 
 CompressedOops::Mode CompressedOops::mode() {
@@ -155,7 +160,7 @@ bool CompressedOops::base_overlaps() {
 
 void CompressedOops::print_mode(outputStream* st) {
   st->print("Heap address: " PTR_FORMAT ", size: " SIZE_FORMAT " MB",
-            p2i(Universe::heap()->base()), Universe::heap()->reserved_region().byte_size()/M);
+            p2i(_heap_address_range.start()), _heap_address_range.byte_size()/M);
 
   st->print(", Compressed Oops mode: %s", mode_to_string(mode()));
 

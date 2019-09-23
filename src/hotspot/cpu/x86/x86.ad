@@ -2097,7 +2097,7 @@ instruct ShouldNotReachHere() %{
   match(Halt);
   format %{ "ud2\t# ShouldNotReachHere" %}
   ins_encode %{
-    __ ud2();
+    __ stop(_halt_reason);
   %}
   ins_pipe(pipe_slow);
 %}

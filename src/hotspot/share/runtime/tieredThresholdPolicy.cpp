@@ -445,6 +445,7 @@ void TieredThresholdPolicy::compile(const methodHandle& mh, int bci, CompLevel l
         if (mh->has_compiled_code()) {
           mh->code()->make_not_entrant();
         }
+        MutexLocker pl(CompiledMethod_lock, Mutex::_no_safepoint_check_flag);
         Method::set_code(mh, mh->aot_code());
       }
     }

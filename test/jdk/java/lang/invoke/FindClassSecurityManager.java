@@ -25,7 +25,7 @@
 
 /* @test
  * @bug 8139885
- * @run main/othervm/policy=findclass.security.policy/secure=java.lang.SecurityManager -ea -esa test.java.lang.invoke.FindClassSecurityManager
+ * @run main/othervm/policy=getclassloader.policy/secure=java.lang.SecurityManager -ea -esa test.java.lang.invoke.FindClassSecurityManager
  */
 
 package test.java.lang.invoke;

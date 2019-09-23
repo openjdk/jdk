@@ -512,9 +512,9 @@ public abstract class ResourceBundle {
      * </blockquote>
      *
      * @param key the key for the desired string
-     * @exception NullPointerException if <code>key</code> is <code>null</code>
-     * @exception MissingResourceException if no object for the given key can be found
-     * @exception ClassCastException if the object found for the given key is not a string
+     * @throws    NullPointerException if <code>key</code> is <code>null</code>
+     * @throws    MissingResourceException if no object for the given key can be found
+     * @throws    ClassCastException if the object found for the given key is not a string
      * @return the string for the given key
      */
     public final String getString(String key) {
@@ -529,9 +529,9 @@ public abstract class ResourceBundle {
      * </blockquote>
      *
      * @param key the key for the desired string array
-     * @exception NullPointerException if <code>key</code> is <code>null</code>
-     * @exception MissingResourceException if no object for the given key can be found
-     * @exception ClassCastException if the object found for the given key is not a string array
+     * @throws    NullPointerException if <code>key</code> is <code>null</code>
+     * @throws    MissingResourceException if no object for the given key can be found
+     * @throws    ClassCastException if the object found for the given key is not a string array
      * @return the string array for the given key
      */
     public final String[] getStringArray(String key) {
@@ -547,8 +547,8 @@ public abstract class ResourceBundle {
      * If still not successful, it throws a MissingResourceException.
      *
      * @param key the key for the desired object
-     * @exception NullPointerException if <code>key</code> is <code>null</code>
-     * @exception MissingResourceException if no object for the given key can be found
+     * @throws    NullPointerException if <code>key</code> is <code>null</code>
+     * @throws    MissingResourceException if no object for the given key can be found
      * @return the object for the given key
      */
     public final Object getObject(String key) {
@@ -841,9 +841,9 @@ public abstract class ResourceBundle {
      * </blockquote>
      *
      * @param baseName the base name of the resource bundle, a fully qualified class name
-     * @exception java.lang.NullPointerException
+     * @throws    java.lang.NullPointerException
      *     if <code>baseName</code> is <code>null</code>
-     * @exception MissingResourceException
+     * @throws    MissingResourceException
      *     if no resource bundle for the specified base name can be found
      * @return a resource bundle for the given base name and the default locale
      *
@@ -915,9 +915,9 @@ public abstract class ResourceBundle {
      *        the base name of the resource bundle, a fully qualified class name
      * @param locale
      *        the locale for which a resource bundle is desired
-     * @exception NullPointerException
+     * @throws    NullPointerException
      *        if <code>baseName</code> or <code>locale</code> is <code>null</code>
-     * @exception MissingResourceException
+     * @throws    MissingResourceException
      *        if no resource bundle for the specified base name can be found
      * @return a resource bundle for the given base name and locale
      *
@@ -1264,9 +1264,9 @@ public abstract class ResourceBundle {
      * @param locale the locale for which a resource bundle is desired
      * @param loader the class loader from which to load the resource bundle
      * @return a resource bundle for the given base name and locale
-     * @exception java.lang.NullPointerException
+     * @throws    java.lang.NullPointerException
      *        if <code>baseName</code>, <code>locale</code>, or <code>loader</code> is <code>null</code>
-     * @exception MissingResourceException
+     * @throws    MissingResourceException
      *        if no resource bundle for the specified base name can be found
      * @since 1.2
      * @revised 9
@@ -2250,7 +2250,7 @@ public abstract class ResourceBundle {
      * by the given class loader.
      *
      * @param loader the class loader
-     * @exception NullPointerException if <code>loader</code> is null
+     * @throws    NullPointerException if <code>loader</code> is null
      * @since 1.6
      * @see ResourceBundle.Control#getTimeToLive(String,Locale)
      */
@@ -2271,7 +2271,7 @@ public abstract class ResourceBundle {
      * object for the given key.
      *
      * @param key the key for the desired object
-     * @exception NullPointerException if <code>key</code> is <code>null</code>
+     * @throws    NullPointerException if <code>key</code> is <code>null</code>
      * @return the object for the given key, or null
      */
     protected abstract Object handleGetObject(String key);
@@ -2293,7 +2293,7 @@ public abstract class ResourceBundle {
      * @return <code>true</code> if the given <code>key</code> is
      *        contained in this <code>ResourceBundle</code> or its
      *        parent bundles; <code>false</code> otherwise.
-     * @exception NullPointerException
+     * @throws    NullPointerException
      *         if <code>key</code> is <code>null</code>
      * @since 1.6
      */
@@ -2598,9 +2598,9 @@ public abstract class ResourceBundle {
          *        <code>ResourceBundle.Control.getFormats</code> method
          * @return a <code>ResourceBundle.Control</code> supporting the
          *        specified <code>formats</code>
-         * @exception NullPointerException
+         * @throws    NullPointerException
          *        if <code>formats</code> is <code>null</code>
-         * @exception IllegalArgumentException
+         * @throws    IllegalArgumentException
          *        if <code>formats</code> is unknown
          */
         public static final Control getControl(List<String> formats) {
@@ -2633,9 +2633,9 @@ public abstract class ResourceBundle {
          * @return a <code>ResourceBundle.Control</code> supporting the
          *        specified <code>formats</code> with no fallback
          *        <code>Locale</code> support
-         * @exception NullPointerException
+         * @throws    NullPointerException
          *        if <code>formats</code> is <code>null</code>
-         * @exception IllegalArgumentException
+         * @throws    IllegalArgumentException
          *        if <code>formats</code> is unknown
          */
         public static final Control getNoFallbackControl(List<String> formats) {
@@ -2679,7 +2679,7 @@ public abstract class ResourceBundle {
          *        name
          * @return a <code>List</code> of <code>String</code>s containing
          *        formats for loading resource bundles.
-         * @exception NullPointerException
+         * @throws    NullPointerException
          *        if <code>baseName</code> is null
          * @see #FORMAT_DEFAULT
          * @see #FORMAT_CLASS
@@ -2866,7 +2866,7 @@ public abstract class ResourceBundle {
          *        the locale for which a resource bundle is desired
          * @return a <code>List</code> of candidate
          *        <code>Locale</code>s for the given <code>locale</code>
-         * @exception NullPointerException
+         * @throws    NullPointerException
          *        if <code>baseName</code> or <code>locale</code> is
          *        <code>null</code>
          */
@@ -3034,7 +3034,7 @@ public abstract class ResourceBundle {
          * @return a <code>Locale</code> for the fallback search,
          *        or <code>null</code> if no further fallback search
          *        is desired.
-         * @exception NullPointerException
+         * @throws    NullPointerException
          *        if <code>baseName</code> or <code>locale</code>
          *        is <code>null</code>
          */
@@ -3127,29 +3127,29 @@ public abstract class ResourceBundle {
          *        <code>false</code> otherwise
          * @return the resource bundle instance,
          *        or <code>null</code> if none could be found.
-         * @exception NullPointerException
+         * @throws    NullPointerException
          *        if <code>bundleName</code>, <code>locale</code>,
          *        <code>format</code>, or <code>loader</code> is
          *        <code>null</code>, or if <code>null</code> is returned by
          *        {@link #toBundleName(String, Locale) toBundleName}
-         * @exception IllegalArgumentException
+         * @throws    IllegalArgumentException
          *        if <code>format</code> is unknown, or if the resource
          *        found for the given parameters contains malformed data.
-         * @exception ClassCastException
+         * @throws    ClassCastException
          *        if the loaded class cannot be cast to <code>ResourceBundle</code>
-         * @exception IllegalAccessException
+         * @throws    IllegalAccessException
          *        if the class or its nullary constructor is not
          *        accessible.
-         * @exception InstantiationException
+         * @throws    InstantiationException
          *        if the instantiation of a class fails for some other
          *        reason.
-         * @exception ExceptionInInitializerError
+         * @throws    ExceptionInInitializerError
          *        if the initialization provoked by this method fails.
-         * @exception SecurityException
+         * @throws    SecurityException
          *        If a security manager is present and creation of new
          *        instances is denied. See {@link Class#newInstance()}
          *        for details.
-         * @exception IOException
+         * @throws    IOException
          *        if an error occurred when reading resources using
          *        any I/O operations
          * @see java.util.spi.ResourceBundleProvider#getBundle(String, Locale)
@@ -3295,7 +3295,7 @@ public abstract class ResourceBundle {
          *        {@link #TTL_NO_EXPIRATION_CONTROL} to disable the
          *        expiration control, or {@link #TTL_DONT_CACHE} to disable
          *        caching.
-         * @exception NullPointerException
+         * @throws    NullPointerException
          *        if <code>baseName</code> or <code>locale</code> is
          *        <code>null</code>
          */
@@ -3350,7 +3350,7 @@ public abstract class ResourceBundle {
          *        in the cache
          * @return <code>true</code> if the expired bundle needs to be
          *        reloaded; <code>false</code> otherwise.
-         * @exception NullPointerException
+         * @throws    NullPointerException
          *        if <code>baseName</code>, <code>locale</code>,
          *        <code>format</code>, <code>loader</code>, or
          *        <code>bundle</code> is <code>null</code>
@@ -3437,7 +3437,7 @@ public abstract class ResourceBundle {
          *        the locale for which a resource bundle should be
          *        loaded
          * @return the bundle name for the resource bundle
-         * @exception NullPointerException
+         * @throws    NullPointerException
          *        if <code>baseName</code> or <code>locale</code>
          *        is <code>null</code>
          * @see java.util.spi.AbstractResourceBundleProvider#toBundleName(String, Locale)
@@ -3495,7 +3495,7 @@ public abstract class ResourceBundle {
          * @param suffix
          *        the file type suffix
          * @return the converted resource name
-         * @exception NullPointerException
+         * @throws    NullPointerException
          *         if {@code bundleName} or {@code suffix}
          *         is {@code null}
          */

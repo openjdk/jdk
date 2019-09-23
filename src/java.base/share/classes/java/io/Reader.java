@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -203,7 +203,7 @@ public abstract class Reader implements Readable, Closeable {
      *             ({@code 0x00-0xffff}), or -1 if the end of the stream has
      *             been reached
      *
-     * @exception  IOException  If an I/O error occurs
+     * @throws     IOException  If an I/O error occurs
      */
     public int read() throws IOException {
         char cb[] = new char[1];
@@ -223,7 +223,7 @@ public abstract class Reader implements Readable, Closeable {
      *              if the end of the stream
      *              has been reached
      *
-     * @exception   IOException  If an I/O error occurs
+     * @throws      IOException  If an I/O error occurs
      */
     public int read(char cbuf[]) throws IOException {
         return read(cbuf, 0, cbuf.length);
@@ -241,8 +241,8 @@ public abstract class Reader implements Readable, Closeable {
      * @return     The number of characters read, or -1 if the end of the
      *             stream has been reached
      *
-     * @exception  IOException  If an I/O error occurs
-     * @exception  IndexOutOfBoundsException
+     * @throws     IOException  If an I/O error occurs
+     * @throws     IndexOutOfBoundsException
      *             If {@code off} is negative, or {@code len} is negative,
      *             or {@code len} is greater than {@code cbuf.length - off}
      */
@@ -262,8 +262,8 @@ public abstract class Reader implements Readable, Closeable {
      *
      * @return    The number of characters actually skipped
      *
-     * @exception  IllegalArgumentException  If <code>n</code> is negative.
-     * @exception  IOException  If an I/O error occurs
+     * @throws     IllegalArgumentException  If <code>n</code> is negative.
+     * @throws     IOException  If an I/O error occurs
      */
     public long skip(long n) throws IOException {
         if (n < 0L)
@@ -290,7 +290,7 @@ public abstract class Reader implements Readable, Closeable {
      * false otherwise.  Note that returning false does not guarantee that the
      * next read will block.
      *
-     * @exception  IOException  If an I/O error occurs
+     * @throws     IOException  If an I/O error occurs
      */
     public boolean ready() throws IOException {
         return false;
@@ -317,7 +317,7 @@ public abstract class Reader implements Readable, Closeable {
      *                         reading this many characters, attempting to
      *                         reset the stream may fail.
      *
-     * @exception  IOException  If the stream does not support mark(),
+     * @throws     IOException  If the stream does not support mark(),
      *                          or if some other I/O error occurs
      */
     public void mark(int readAheadLimit) throws IOException {
@@ -332,7 +332,7 @@ public abstract class Reader implements Readable, Closeable {
      * character-input streams support the reset() operation, and some support
      * reset() without supporting mark().
      *
-     * @exception  IOException  If the stream has not been marked,
+     * @throws     IOException  If the stream has not been marked,
      *                          or if the mark has been invalidated,
      *                          or if the stream does not support reset(),
      *                          or if some other I/O error occurs
@@ -347,7 +347,7 @@ public abstract class Reader implements Readable, Closeable {
      * mark(), reset(), or skip() invocations will throw an IOException.
      * Closing a previously closed stream has no effect.
      *
-     * @exception  IOException  If an I/O error occurs
+     * @throws     IOException  If an I/O error occurs
      */
      public abstract void close() throws IOException;
 

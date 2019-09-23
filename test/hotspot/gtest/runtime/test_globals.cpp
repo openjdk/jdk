@@ -24,6 +24,7 @@
 #include "precompiled.hpp"
 #include "runtime/globals.hpp"
 #include "runtime/flags/flagSetting.hpp"
+#include "runtime/flags/jvmFlag.hpp"
 #include "unittest.hpp"
 
 #define TEST_FLAG(f, type, value)                                \

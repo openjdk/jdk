@@ -168,6 +168,9 @@ class ParallelScavengeHeap : public CollectedHeap {
   bool is_in_young(oop p);  // reserved part
   bool is_in_old(oop p);    // reserved part
 
+  MemRegion reserved_region() const { return _reserved; }
+  HeapWord* base() const { return _reserved.start(); }
+
   // Memory allocation.   "gc_time_limit_was_exceeded" will
   // be set to true if the adaptive size policy determine that
   // an excessive amount of time is being spent doing collections

@@ -46,6 +46,7 @@ package javax.security.cert;
 @Deprecated(since="9", forRemoval=true)
 public class CertificateNotYetValidException extends CertificateException {
 
+    @java.io.Serial
     private static final long serialVersionUID = -8976172474266822818L;
     /**
      * Constructs a CertificateNotYetValidException with no detail message. A

@@ -672,7 +672,7 @@ private:
     if (!CompressedOops::is_null(o)) {
       oop obj = CompressedOops::decode_not_null(o);
       oop forw = ShenandoahBarrierSet::resolve_forwarded_not_null(obj);
-      if (!oopDesc::equals_raw(obj, forw)) {
+      if (obj != forw) {
         RawAccess<IS_NOT_NULL>::oop_store(p, forw);
       }
     }

@@ -25,13 +25,14 @@
 #ifndef SHARE_JFR_LEAKPROFILER_SAMPLING_OBJECTSAMPLE_HPP
 #define SHARE_JFR_LEAKPROFILER_SAMPLING_OBJECTSAMPLE_HPP
 
-#include "jfr/recorder/checkpoint/jfrCheckpointBlob.hpp"
 #include "jfr/utilities/jfrAllocation.hpp"
+#include "jfr/utilities/jfrBlob.hpp"
 #include "jfr/utilities/jfrTime.hpp"
 #include "jfr/utilities/jfrTypes.hpp"
 #include "memory/allocation.hpp"
 #include "oops/oop.hpp"
 #include "utilities/ticks.hpp"
+
 /*
  * Handle for diagnosing Java memory leaks.
  *
@@ -44,8 +45,9 @@ class ObjectSample : public JfrCHeapObj {
  private:
   ObjectSample* _next;
   ObjectSample* _previous;
-  JfrCheckpointBlobHandle _thread_cp;
-  JfrCheckpointBlobHandle _klass_cp;
+  JfrBlobHandle _stacktrace;
+  JfrBlobHandle _thread;
+  JfrBlobHandle _type_set;
   oop _object;
   Ticks _allocation_time;
   traceid _stack_trace_id;
@@ -62,17 +64,14 @@ class ObjectSample : public JfrCHeapObj {
   }
 
   void release_references() {
-    if (_thread_cp.valid()) {
-      _thread_cp.~JfrCheckpointBlobHandle();
-    }
-    if (_klass_cp.valid()) {
-      _klass_cp.~JfrCheckpointBlobHandle();
-    }
+    _stacktrace.~JfrBlobHandle();
+    _thread.~JfrBlobHandle();
+    _type_set.~JfrBlobHandle();
   }
 
   void reset() {
     set_stack_trace_id(0);
-    set_stack_trace_hash(0),
+    set_stack_trace_hash(0);
     release_references();
     _dead = false;
   }
@@ -80,8 +79,9 @@ class ObjectSample : public JfrCHeapObj {
  public:
   ObjectSample() : _next(NULL),
                    _previous(NULL),
-                   _thread_cp(),
-                   _klass_cp(),
+                   _stacktrace(),
+                   _thread(),
+                   _type_set(),
                    _object(NULL),
                    _allocation_time(),
                    _stack_trace_id(0),
@@ -174,7 +174,7 @@ class ObjectSample : public JfrCHeapObj {
     return _heap_used_at_last_gc;
   }
 
-  bool has_stack_trace() const {
+  bool has_stack_trace_id() const {
     return stack_trace_id() != 0;
   }
 
@@ -194,10 +194,6 @@ class ObjectSample : public JfrCHeapObj {
     _stack_trace_hash = hash;
   }
 
-  bool has_thread() const {
-    return _thread_id != 0;
-  }
-
   traceid thread_id() const {
     return _thread_id;
   }
@@ -211,37 +207,51 @@ class ObjectSample : public JfrCHeapObj {
       _allocation_time.ft_value() : _allocation_time.value()) < time_stamp;
   }
 
-  const JfrCheckpointBlobHandle& thread_checkpoint() const {
-    return _thread_cp;
+  const JfrBlobHandle& stacktrace() const {
+    return _stacktrace;
   }
 
-  bool has_thread_checkpoint() const {
-    return _thread_cp.valid();
+  bool has_stacktrace() const {
+    return _stacktrace.valid();
   }
 
-  // JfrCheckpointBlobHandle assignment operator
+  // JfrBlobHandle assignment operator
   // maintains proper reference counting
-  void set_thread_checkpoint(const JfrCheckpointBlobHandle& ref) {
-    if (_thread_cp != ref) {
-      _thread_cp = ref;
+  void set_stacktrace(const JfrBlobHandle& ref) {
+    if (_stacktrace != ref) {
+      _stacktrace = ref;
     }
   }
 
-  const JfrCheckpointBlobHandle& klass_checkpoint() const {
-    return _klass_cp;
+  const JfrBlobHandle& thread() const {
+    return _thread;
   }
 
-  bool has_klass_checkpoint() const {
-    return _klass_cp.valid();
+  bool has_thread() const {
+    return _thread.valid();
   }
 
-  void set_klass_checkpoint(const JfrCheckpointBlobHandle& ref) {
-    if (_klass_cp != ref) {
-      if (_klass_cp.valid()) {
-        _klass_cp->set_next(ref);
+  void set_thread(const JfrBlobHandle& ref) {
+    if (_thread != ref) {
+      _thread = ref;
+    }
+  }
+
+  const JfrBlobHandle& type_set() const {
+    return _type_set;
+  }
+
+  bool has_type_set() const {
+    return _type_set.valid();
+  }
+
+  void set_type_set(const JfrBlobHandle& ref) {
+    if (_type_set != ref) {
+      if (_type_set.valid()) {
+        _type_set->set_next(ref);
         return;
       }
-      _klass_cp = ref;
+      _type_set = ref;
     }
   }
 };

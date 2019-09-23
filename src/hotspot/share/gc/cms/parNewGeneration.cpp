@@ -1245,7 +1245,7 @@ void ParNewGeneration::push_on_overflow_list(oop from_space_obj, ParScanThreadSt
     assert(_num_par_pushes > 0, "Tautology");
 #endif
     if (from_space_obj->forwardee() == from_space_obj) {
-      oopDesc* listhead = NEW_C_HEAP_ARRAY(oopDesc, 1, mtGC);
+      oopDesc* listhead = NEW_C_HEAP_OBJ(oopDesc, mtGC);
       listhead->forward_to(from_space_obj);
       from_space_obj = listhead;
     }
@@ -1304,13 +1304,12 @@ bool ParNewGeneration::take_from_overflow_list_work(ParScanThreadState* par_scan
   // Otherwise, there was something there; try claiming the list.
   oop prefix = cast_to_oop(Atomic::xchg((oopDesc*)BUSY, &_overflow_list));
   // Trim off a prefix of at most objsFromOverflow items
-  Thread* tid = Thread::current();
   size_t spin_count = ParallelGCThreads;
   size_t sleep_time_millis = MAX2((size_t)1, objsFromOverflow/100);
   for (size_t spin = 0; prefix == BUSY && spin < spin_count; spin++) {
     // someone grabbed it before we did ...
-    // ... we spin for a short while...
-    os::sleep(tid, sleep_time_millis, false);
+    // ... we spin/block for a short while...
+    os::naked_sleep(sleep_time_millis);
     if (_overflow_list == NULL) {
       // nothing left to take
       return false;
@@ -1402,7 +1401,7 @@ bool ParNewGeneration::take_from_overflow_list_work(ParScanThreadState* par_scan
       // This can become a scaling bottleneck when there is work queue overflow coincident
       // with promotion failure.
       oopDesc* f = cur;
-      FREE_C_HEAP_ARRAY(oopDesc, f);
+      FREE_C_HEAP_OBJ(f);
     } else if (par_scan_state->should_be_partially_scanned(obj_to_push, cur)) {
       assert(arrayOop(cur)->length() == 0, "entire array remaining to be scanned");
       obj_to_push = cur;

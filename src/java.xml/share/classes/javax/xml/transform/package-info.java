@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -183,11 +183,6 @@
  * to report errors that occur during the transformation. The <code>ErrorListener</code>
  * on both objects will always be valid and non-<code>null</code>, whether set by
  * the application or a default implementation provided by the processor.
- * The default implementation provided by the processor will report all warnings
- * and errors to <code>System.err</code> and does not throw any <code>Exception</code>s.
- * Applications are <em>strongly</em> encouraged to register and use
- * <code>ErrorListener</code>s that insure proper behavior for warnings and
- * errors.
  *
  *
  * <h2>Resolution of URIs within a transformation</h2>

@@ -26,7 +26,7 @@
 #include "gc/shared/collectedHeap.hpp"
 #include "jfr/leakprofiler/leakProfiler.hpp"
 #include "jfr/leakprofiler/chains/bfsClosure.hpp"
-#include "jfr/leakprofiler/chains/bitset.hpp"
+#include "jfr/leakprofiler/chains/bitset.inline.hpp"
 #include "jfr/leakprofiler/chains/dfsClosure.hpp"
 #include "jfr/leakprofiler/chains/edge.hpp"
 #include "jfr/leakprofiler/chains/edgeQueue.hpp"
@@ -43,7 +43,6 @@
 #include "jfr/leakprofiler/utilities/granularTimer.hpp"
 #include "logging/log.hpp"
 #include "memory/universe.hpp"
-#include "oops/markWord.hpp"
 #include "oops/oop.inline.hpp"
 #include "runtime/safepoint.hpp"
 #include "utilities/globalDefinitions.hpp"
@@ -57,8 +56,8 @@ PathToGcRootsOperation::PathToGcRootsOperation(ObjectSampler* sampler, EdgeStore
  * Initial memory reservation: 5% of the heap OR at least 32 Mb
  * Commit ratio: 1 : 10 (subject to allocation granularties)
  */
-static size_t edge_queue_memory_reservation(const MemRegion& heap_region) {
-  const size_t memory_reservation_bytes = MAX2(heap_region.byte_size() / 20, 32*M);
+static size_t edge_queue_memory_reservation() {
+  const size_t memory_reservation_bytes = MAX2(MaxHeapSize / 20, 32*M);
   assert(memory_reservation_bytes >= (size_t)32*M, "invariant");
   return memory_reservation_bytes;
 }
@@ -84,17 +83,16 @@ void PathToGcRootsOperation::doit() {
   assert(_cutoff_ticks > 0, "invariant");
 
   // The bitset used for marking is dimensioned as a function of the heap size
-  const MemRegion heap_region = Universe::heap()->reserved_region();
-  BitSet mark_bits(heap_region);
+  BitSet mark_bits;
 
   // The edge queue is dimensioned as a fraction of the heap size
-  const size_t edge_queue_reservation_size = edge_queue_memory_reservation(heap_region);
+  const size_t edge_queue_reservation_size = edge_queue_memory_reservation();
   EdgeQueue edge_queue(edge_queue_reservation_size, edge_queue_memory_commit_size(edge_queue_reservation_size));
 
   // The initialize() routines will attempt to reserve and allocate backing storage memory.
   // Failure to accommodate will render root chain processing impossible.
   // As a fallback on failure, just write out the existing samples, flat, without chains.
-  if (!(mark_bits.initialize() && edge_queue.initialize())) {
+  if (!edge_queue.initialize()) {
     log_warning(jfr)("Unable to allocate memory for root chain processing");
     return;
   }
@@ -102,7 +100,7 @@ void PathToGcRootsOperation::doit() {
   // Save the original markWord for the potential leak objects,
   // to be restored on function exit
   ObjectSampleMarker marker;
-  if (ObjectSampleCheckpoint::mark(_sampler, marker, _emit_all) == 0) {
+  if (ObjectSampleCheckpoint::save_mark_words(_sampler, marker, _emit_all) == 0) {
     // no valid samples to process
     return;
   }

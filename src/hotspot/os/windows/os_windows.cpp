@@ -497,7 +497,10 @@ static OSThread* create_os_thread(Thread* thread, HANDLE thread_handle,
   OSThread* osthread = new OSThread(NULL, NULL);
   if (osthread == NULL) return NULL;
 
-  // Initialize support for Java interrupts
+  // Initialize the JDK library's interrupt event.
+  // This should really be done when OSThread is constructed,
+  // but there is no way for a constructor to report failure to
+  // allocate the event.
   HANDLE interrupt_event = CreateEvent(NULL, true, false, NULL);
   if (interrupt_event == NULL) {
     delete osthread;
@@ -599,14 +602,19 @@ bool os::create_thread(Thread* thread, ThreadType thr_type,
     return false;
   }
 
-  // Initialize support for Java interrupts
+  // Initialize the JDK library's interrupt event.
+  // This should really be done when OSThread is constructed,
+  // but there is no way for a constructor to report failure to
+  // allocate the event.
   HANDLE interrupt_event = CreateEvent(NULL, true, false, NULL);
   if (interrupt_event == NULL) {
     delete osthread;
     return false;
   }
   osthread->set_interrupt_event(interrupt_event);
-  osthread->set_interrupted(false);
+  // We don't call set_interrupted(false) as it will trip the assert in there
+  // as we are not operating on the current thread. We don't need to call it
+  // because the initial state is already correct.
 
   thread->set_osthread(osthread);
 
@@ -678,7 +686,6 @@ bool os::create_thread(Thread* thread, ThreadType thr_type,
 
   if (thread_handle == NULL) {
     // Need to clean up stuff we've allocated so far
-    CloseHandle(osthread->interrupt_event());
     thread->set_osthread(NULL);
     delete osthread;
     return false;
@@ -708,7 +715,6 @@ void os::free_thread(OSThread* osthread) {
          "os::free_thread but not current thread");
 
   CloseHandle(osthread->thread_handle());
-  CloseHandle(osthread->interrupt_event());
   delete osthread;
 }
 
@@ -2721,9 +2727,7 @@ class NUMANodeListHolder {
   int _numa_used_node_count;
 
   void free_node_list() {
-    if (_numa_used_node_list != NULL) {
-      FREE_C_HEAP_ARRAY(int, _numa_used_node_list);
-    }
+    FREE_C_HEAP_ARRAY(int, _numa_used_node_list);
   }
 
  public:
@@ -3480,87 +3484,6 @@ void os::pd_start_thread(Thread* thread) {
   assert(ret != SYS_THREAD_ERROR, "StartThread failed"); // should propagate back
 }
 
-class HighResolutionInterval : public CHeapObj<mtThread> {
-  // The default timer resolution seems to be 10 milliseconds.
-  // (Where is this written down?)
-  // If someone wants to sleep for only a fraction of the default,
-  // then we set the timer resolution down to 1 millisecond for
-  // the duration of their interval.
-  // We carefully set the resolution back, since otherwise we
-  // seem to incur an overhead (3%?) that we don't need.
-  // CONSIDER: if ms is small, say 3, then we should run with a high resolution time.
-  // Buf if ms is large, say 500, or 503, we should avoid the call to timeBeginPeriod().
-  // Alternatively, we could compute the relative error (503/500 = .6%) and only use
-  // timeBeginPeriod() if the relative error exceeded some threshold.
-  // timeBeginPeriod() has been linked to problems with clock drift on win32 systems and
-  // to decreased efficiency related to increased timer "tick" rates.  We want to minimize
-  // (a) calls to timeBeginPeriod() and timeEndPeriod() and (b) time spent with high
-  // resolution timers running.
- private:
-  jlong resolution;
- public:
-  HighResolutionInterval(jlong ms) {
-    resolution = ms % 10L;
-    if (resolution != 0) {
-      MMRESULT result = timeBeginPeriod(1L);
-    }
-  }
-  ~HighResolutionInterval() {
-    if (resolution != 0) {
-      MMRESULT result = timeEndPeriod(1L);
-    }
-    resolution = 0L;
-  }
-};
-
-int os::sleep(Thread* thread, jlong ms, bool interruptable) {
-  jlong limit = (jlong) MAXDWORD;
-
-  while (ms > limit) {
-    int res;
-    if ((res = sleep(thread, limit, interruptable)) != OS_TIMEOUT) {
-      return res;
-    }
-    ms -= limit;
-  }
-
-  assert(thread == Thread::current(), "thread consistency check");
-  OSThread* osthread = thread->osthread();
-  OSThreadWaitState osts(osthread, false /* not Object.wait() */);
-  int result;
-  if (interruptable) {
-    assert(thread->is_Java_thread(), "must be java thread");
-    JavaThread *jt = (JavaThread *) thread;
-    ThreadBlockInVM tbivm(jt);
-
-    jt->set_suspend_equivalent();
-    // cleared by handle_special_suspend_equivalent_condition() or
-    // java_suspend_self() via check_and_wait_while_suspended()
-
-    HANDLE events[1];
-    events[0] = osthread->interrupt_event();
-    HighResolutionInterval *phri=NULL;
-    if (!ForceTimeHighResolution) {
-      phri = new HighResolutionInterval(ms);
-    }
-    if (WaitForMultipleObjects(1, events, FALSE, (DWORD)ms) == WAIT_TIMEOUT) {
-      result = OS_TIMEOUT;
-    } else {
-      ResetEvent(osthread->interrupt_event());
-      osthread->set_interrupted(false);
-      result = OS_INTRPT;
-    }
-    delete phri; //if it is NULL, harmless
-
-    // were we externally suspended while we were waiting?
-    jt->check_and_wait_while_suspended();
-  } else {
-    assert(!thread->is_Java_thread(), "must not be java thread");
-    Sleep((long) ms);
-    result = OS_TIMEOUT;
-  }
-  return result;
-}
 
 // Short sleep, direct OS call.
 //
@@ -3667,47 +3590,6 @@ OSReturn os::get_native_priority(const Thread* const thread,
   }
   *priority_ptr = os_prio;
   return OS_OK;
-}
-
-void os::interrupt(Thread* thread) {
-  debug_only(Thread::check_for_dangling_thread_pointer(thread);)
-
-  OSThread* osthread = thread->osthread();
-  osthread->set_interrupted(true);
-  // More than one thread can get here with the same value of osthread,
-  // resulting in multiple notifications.  We do, however, want the store
-  // to interrupted() to be visible to other threads before we post
-  // the interrupt event.
-  OrderAccess::release();
-  SetEvent(osthread->interrupt_event());
-  // For JSR166:  unpark after setting status
-  if (thread->is_Java_thread()) {
-    ((JavaThread*)thread)->parker()->unpark();
-  }
-
-  ParkEvent * ev = thread->_ParkEvent;
-  if (ev != NULL) ev->unpark();
-}
-
-
-bool os::is_interrupted(Thread* thread, bool clear_interrupted) {
-  debug_only(Thread::check_for_dangling_thread_pointer(thread);)
-
-  OSThread* osthread = thread->osthread();
-  // There is no synchronization between the setting of the interrupt
-  // and it being cleared here. It is critical - see 6535709 - that
-  // we only clear the interrupt state, and reset the interrupt event,
-  // if we are going to report that we were indeed interrupted - else
-  // an interrupt can be "lost", leading to spurious wakeups or lost wakeups
-  // depending on the timing. By checking thread interrupt event to see
-  // if the thread gets real interrupt thus prevent spurious wakeup.
-  bool interrupted = osthread->interrupted() && (WaitForSingleObject(osthread->interrupt_event(), 0) == WAIT_OBJECT_0);
-  if (interrupted && clear_interrupted) {
-    osthread->set_interrupted(false);
-    ResetEvent(osthread->interrupt_event());
-  } // Otherwise leave the interrupted state alone
-
-  return interrupted;
 }
 
 // GetCurrentThreadId() returns DWORD
@@ -5170,6 +5052,40 @@ bool os::ThreadCrashProtection::call(os::CrashProtectionCallback& cb) {
   return success;
 }
 
+
+class HighResolutionInterval : public CHeapObj<mtThread> {
+  // The default timer resolution seems to be 10 milliseconds.
+  // (Where is this written down?)
+  // If someone wants to sleep for only a fraction of the default,
+  // then we set the timer resolution down to 1 millisecond for
+  // the duration of their interval.
+  // We carefully set the resolution back, since otherwise we
+  // seem to incur an overhead (3%?) that we don't need.
+  // CONSIDER: if ms is small, say 3, then we should run with a high resolution time.
+  // Buf if ms is large, say 500, or 503, we should avoid the call to timeBeginPeriod().
+  // Alternatively, we could compute the relative error (503/500 = .6%) and only use
+  // timeBeginPeriod() if the relative error exceeded some threshold.
+  // timeBeginPeriod() has been linked to problems with clock drift on win32 systems and
+  // to decreased efficiency related to increased timer "tick" rates.  We want to minimize
+  // (a) calls to timeBeginPeriod() and timeEndPeriod() and (b) time spent with high
+  // resolution timers running.
+ private:
+  jlong resolution;
+ public:
+  HighResolutionInterval(jlong ms) {
+    resolution = ms % 10L;
+    if (resolution != 0) {
+      MMRESULT result = timeBeginPeriod(1L);
+    }
+  }
+  ~HighResolutionInterval() {
+    if (resolution != 0) {
+      MMRESULT result = timeEndPeriod(1L);
+    }
+    resolution = 0L;
+  }
+};
+
 // An Event wraps a win32 "CreateEvent" kernel handle.
 //
 // We have a number of choices regarding "CreateEvent" win32 handle leakage:
@@ -5205,7 +5121,7 @@ bool os::ThreadCrashProtection::call(os::CrashProtectionCallback& cb) {
 // 1.  Reconcile Doug's JSR166 j.u.c park-unpark with the objectmonitor implementation.
 // 2.  Consider wrapping the WaitForSingleObject(Ex) calls in SEH try/finally blocks
 //     to recover from (or at least detect) the dreaded Windows 841176 bug.
-// 3.  Collapse the interrupt_event, the JSR166 parker event, and the objectmonitor ParkEvent
+// 3.  Collapse the JSR166 parker event, and the objectmonitor ParkEvent
 //     into a single win32 CreateEvent() handle.
 //
 // Assumption:
@@ -5278,11 +5194,16 @@ int os::PlatformEvent::park(jlong Millis) {
     if (Millis > MAXTIMEOUT) {
       prd = MAXTIMEOUT;
     }
+    HighResolutionInterval *phri = NULL;
+    if (!ForceTimeHighResolution) {
+      phri = new HighResolutionInterval(prd);
+    }
     rv = ::WaitForSingleObject(_ParkHandle, prd);
     assert(rv == WAIT_OBJECT_0 || rv == WAIT_TIMEOUT, "WaitForSingleObject failed");
     if (rv == WAIT_TIMEOUT) {
       Millis -= prd;
     }
+    delete phri; // if it is NULL, harmless
   }
   v = _Event;
   _Event = 0;
@@ -5381,7 +5302,7 @@ void Parker::park(bool isAbsolute, jlong time) {
   JavaThread* thread = JavaThread::current();
 
   // Don't wait if interrupted or already triggered
-  if (Thread::is_interrupted(thread, false) ||
+  if (thread->is_interrupted(false) ||
       WaitForSingleObject(_ParkEvent, 0) == WAIT_OBJECT_0) {
     ResetEvent(_ParkEvent);
     return;

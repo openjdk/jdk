@@ -572,16 +572,16 @@ bool G1Policy::need_to_start_conc_mark(const char* source, size_t alloc_word_siz
   return result;
 }
 
-double G1Policy::log_buffer_processing_time() const {
+double G1Policy::logged_cards_processing_time() const {
   double all_cards_processing_time = average_time_ms(G1GCPhaseTimes::ScanHR) + average_time_ms(G1GCPhaseTimes::OptScanHR);
-  size_t log_buffer_dirty_cards = phase_times()->sum_thread_work_items(G1GCPhaseTimes::MergeLB, G1GCPhaseTimes::MergeLBDirtyCards);
+  size_t logged_dirty_cards = phase_times()->sum_thread_work_items(G1GCPhaseTimes::MergeLB, G1GCPhaseTimes::MergeLBDirtyCards);
   size_t scan_heap_roots_cards = phase_times()->sum_thread_work_items(G1GCPhaseTimes::ScanHR, G1GCPhaseTimes::ScanHRScannedCards) +
                                  phase_times()->sum_thread_work_items(G1GCPhaseTimes::OptScanHR, G1GCPhaseTimes::ScanHRScannedCards);
   // This may happen if there are duplicate cards in different log buffers.
-  if (log_buffer_dirty_cards > scan_heap_roots_cards) {
+  if (logged_dirty_cards > scan_heap_roots_cards) {
     return all_cards_processing_time + average_time_ms(G1GCPhaseTimes::MergeLB);
   }
-  return (all_cards_processing_time * log_buffer_dirty_cards / scan_heap_roots_cards) + average_time_ms(G1GCPhaseTimes::MergeLB);
+  return (all_cards_processing_time * logged_dirty_cards / scan_heap_roots_cards) + average_time_ms(G1GCPhaseTimes::MergeLB);
 }
 
 // Anything below that is considered to be zero
@@ -662,11 +662,11 @@ void G1Policy::record_collection_pause_end(double pause_time_ms, size_t heap_use
   double scan_hcc_time_ms = G1HotCardCache::default_use_cache() ? average_time_ms(G1GCPhaseTimes::MergeHCC) : 0.0;
 
   if (update_stats) {
-    double cost_per_log_buffer_entry = 0.0;
-    size_t const pending_log_buffer_entries = p->sum_thread_work_items(G1GCPhaseTimes::MergeLB, G1GCPhaseTimes::MergeLBDirtyCards);
-    if (pending_log_buffer_entries > 0) {
-      cost_per_log_buffer_entry = log_buffer_processing_time() / pending_log_buffer_entries;
-      _analytics->report_cost_per_log_buffer_entry_ms(cost_per_log_buffer_entry);
+    double cost_per_logged_card = 0.0;
+    size_t const pending_logged_cards = p->sum_thread_work_items(G1GCPhaseTimes::MergeLB, G1GCPhaseTimes::MergeLBDirtyCards);
+    if (pending_logged_cards > 0) {
+      cost_per_logged_card = logged_cards_processing_time() / pending_logged_cards;
+      _analytics->report_cost_per_logged_card_ms(cost_per_logged_card);
     }
     _analytics->report_cost_scan_hcc(scan_hcc_time_ms);
 
@@ -676,8 +676,8 @@ void G1Policy::record_collection_pause_end(double pause_time_ms, size_t heap_use
     // There might have been duplicate log buffer entries in the queues which could
     // increase this value beyond the cards scanned. In this case attribute all cards
     // to the log buffers.
-    if (pending_log_buffer_entries <= total_cards_scanned) {
-      remset_cards_scanned = total_cards_scanned - pending_log_buffer_entries;
+    if (pending_logged_cards <= total_cards_scanned) {
+      remset_cards_scanned = total_cards_scanned - pending_logged_cards;
     }
 
     double cost_per_remset_card_ms = 0.0;
@@ -786,26 +786,26 @@ void G1Policy::record_collection_pause_end(double pause_time_ms, size_t heap_use
   }
 
   // Note that _mmu_tracker->max_gc_time() returns the time in seconds.
-  double scan_log_buffer_time_goal_ms = _mmu_tracker->max_gc_time() * MILLIUNITS * G1RSetUpdatingPauseTimePercent / 100.0;
+  double scan_logged_cards_time_goal_ms = _mmu_tracker->max_gc_time() * MILLIUNITS * G1RSetUpdatingPauseTimePercent / 100.0;
 
-  if (scan_log_buffer_time_goal_ms < scan_hcc_time_ms) {
+  if (scan_logged_cards_time_goal_ms < scan_hcc_time_ms) {
     log_debug(gc, ergo, refine)("Adjust concurrent refinement thresholds (scanning the HCC expected to take longer than Update RS time goal)."
-                                "Log Buffer Scan time goal: %1.2fms Scan HCC time: %1.2fms",
-                                scan_log_buffer_time_goal_ms, scan_hcc_time_ms);
+                                "Logged Cards Scan time goal: %1.2fms Scan HCC time: %1.2fms",
+                                scan_logged_cards_time_goal_ms, scan_hcc_time_ms);
 
-    scan_log_buffer_time_goal_ms = 0;
+    scan_logged_cards_time_goal_ms = 0;
   } else {
-    scan_log_buffer_time_goal_ms -= scan_hcc_time_ms;
+    scan_logged_cards_time_goal_ms -= scan_hcc_time_ms;
   }
 
-  double const log_buffer_time = log_buffer_processing_time();
+  double const logged_cards_time = logged_cards_processing_time();
 
-  log_debug(gc, ergo, refine)("Concurrent refinement times: Log Buffer Scan time goal: %1.2fms Log Buffer Scan time: %1.2fms HCC time: %1.2fms",
-                              scan_log_buffer_time_goal_ms, log_buffer_time, scan_hcc_time_ms);
+  log_debug(gc, ergo, refine)("Concurrent refinement times: Logged Cards Scan time goal: %1.2fms Logged Cards Scan time: %1.2fms HCC time: %1.2fms",
+                              scan_logged_cards_time_goal_ms, logged_cards_time, scan_hcc_time_ms);
 
-  _g1h->concurrent_refine()->adjust(log_buffer_time,
-                                    phase_times()->sum_thread_work_items(G1GCPhaseTimes::MergeLB, G1GCPhaseTimes::MergeLBProcessedBuffers),
-                                    scan_log_buffer_time_goal_ms);
+  _g1h->concurrent_refine()->adjust(logged_cards_time,
+                                    phase_times()->sum_thread_work_items(G1GCPhaseTimes::MergeLB, G1GCPhaseTimes::MergeLBDirtyCards),
+                                    scan_logged_cards_time_goal_ms);
 }
 
 G1IHOPControl* G1Policy::create_ihop_control(const G1Predictions* predictor){

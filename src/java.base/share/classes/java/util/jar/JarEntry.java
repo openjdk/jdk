@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -46,8 +46,8 @@ class JarEntry extends ZipEntry {
      * entry name.
      *
      * @param name the JAR file entry name
-     * @exception NullPointerException if the entry name is <code>null</code>
-     * @exception IllegalArgumentException if the entry name is longer than
+     * @throws    NullPointerException if the entry name is <code>null</code>
+     * @throws    IllegalArgumentException if the entry name is longer than
      *            0xFFFF bytes.
      */
     public JarEntry(String name) {

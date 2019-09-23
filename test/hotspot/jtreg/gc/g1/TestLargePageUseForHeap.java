@@ -67,7 +67,9 @@ public class TestLargePageUseForHeap {
         String errorStr = "Reserve regular memory without large pages";
         String heapPattern = ".*Heap: ";
         // If errorStr is printed just before heap page log, reservation for Java Heap is failed.
-        String result = output.firstMatch(errorStr + "\n" + heapPattern);
+        String result = output.firstMatch(errorStr + "\n" +
+                                          "(?:.*Heap address: .*\n)?" // Heap address: 0x00000000f8000000, size: 128 MB, Compressed Oops mode: 32-bit
+                                          + heapPattern);
         if (result != null) {
             return false;
         }
@@ -149,4 +151,3 @@ public class TestLargePageUseForHeap {
         return longValue * multiplier;
     }
 }
-

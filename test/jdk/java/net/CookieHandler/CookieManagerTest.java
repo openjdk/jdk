@@ -26,7 +26,8 @@
  * @summary Unit test for java.net.CookieManager
  * @bug 6244040 7150552 7051862
  * @modules jdk.httpserver
- * @run main/othervm -ea CookieManagerTest
+ *          java.logging
+ * @run main/othervm -ea -esa CookieManagerTest
  * @author Edward Wang
  */
 
@@ -36,6 +37,8 @@ import java.util.LinkedList;
 import java.util.List;
 import java.io.IOException;
 import java.net.*;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 import static java.net.Proxy.NO_PROXY;
 
 public class CookieManagerTest {
@@ -63,6 +66,11 @@ public class CookieManagerTest {
     }
 
     public static void main(String[] args) throws Exception {
+        // logs everything...
+        Logger root = Logger.getLogger("");
+        root.setLevel(Level.ALL);
+        root.getHandlers()[0].setLevel(Level.ALL);
+
         startHttpServer();
         makeHttpCall();
 

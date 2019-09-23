@@ -95,6 +95,7 @@ import java.lang.annotation.*;
  *
  * @see Serializable
  * @see Externalizable
+ * @since 14
  */
 @Target({ElementType.METHOD, ElementType.FIELD})
 @Retention(RetentionPolicy.SOURCE)

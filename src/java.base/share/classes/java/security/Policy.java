@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -818,6 +818,7 @@ public abstract class Policy {
     private static class UnsupportedEmptyCollection
         extends PermissionCollection {
 
+        @java.io.Serial
         private static final long serialVersionUID = -8492269157353014774L;
 
         private Permissions perms;
@@ -836,7 +837,7 @@ public abstract class Policy {
          *
          * @param permission the Permission object to add.
          *
-         * @exception SecurityException - if this PermissionCollection object
+         * @throws    SecurityException - if this PermissionCollection object
          *                                has been marked readonly
          */
         @Override public void add(Permission permission) {

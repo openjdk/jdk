@@ -76,7 +76,6 @@ void ParCompactionManager::initialize(ParMarkBitMap* mbm) {
 
   assert(_manager_array == NULL, "Attempt to initialize twice");
   _manager_array = NEW_C_HEAP_ARRAY(ParCompactionManager*, parallel_gc_threads+1, mtGC);
-  guarantee(_manager_array != NULL, "Could not allocate manager_array");
 
   _stack_array = new OopTaskQueueSet(parallel_gc_threads);
   guarantee(_stack_array != NULL, "Could not allocate stack_array");

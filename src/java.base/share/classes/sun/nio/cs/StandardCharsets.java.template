@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2019, Oracle and/or its affiliates. All rights reserved.
  *
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -35,7 +35,6 @@ import java.util.Iterator;
 import java.util.Map;
 import java.util.Set;
 import jdk.internal.vm.annotation.Stable;
-import sun.security.action.GetPropertyAction;
 
 public class StandardCharsets extends CharsetProvider {
 
@@ -120,8 +119,6 @@ public class StandardCharsets extends CharsetProvider {
     }
 
     private Charset lookup(String charsetName) {
-        init();
-
         // By checking these built-ins we can avoid initializing Aliases,
         // Classes and Cache eagerly during bootstrap.
         //
@@ -177,7 +174,6 @@ public class StandardCharsets extends CharsetProvider {
     public final Iterator<Charset> charsets() {
         Set<String> charsetNames;
         synchronized (this) {
-            init();
             // Ensure initialized in synchronized block
             charsetNames = classMap().keySet();
             aliasMap();
@@ -202,53 +198,4 @@ public class StandardCharsets extends CharsetProvider {
 
             };
     }
-
-    private boolean initialized = false;
-
-    /*   provider the sun.nio.cs.map property fir sjis/ms932 mapping hack
-     */
-    private void init() {
-        if (initialized)
-            return;
-        if (!jdk.internal.misc.VM.isBooted())
-            return;
-        initialized = true;
-
-        String map = GetPropertyAction.privilegedGetProperty("sun.nio.cs.map");
-        if (map != null) {
-            Map<String,String> aliasMap = aliasMap();
-            Map<String,String> classMap = classMap();
-            String[] maps = map.split(",");
-            for (int i = 0; i < maps.length; i++) {
-                if (maps[i].equalsIgnoreCase("Windows-31J/Shift_JIS")) {
-                    // if we dont have both sjis and ms932, do nothing
-                    if (classMap.get("shift_jis") == null ||
-                        classMap.get("windows-31j") == null) {
-                        break;
-                    }
-                    aliases_MS932 = new String[] {
-                        "MS932",        // JDK historical
-                        "windows-932",
-                        "csWindows31J",
-                        "shift-jis",
-                        "ms_kanji",
-                        "x-sjis",
-                        "csShiftJIS",
-                        // This alias takes precedence over the actual
-                        // Shift_JIS charset itself since aliases are always
-                        // resolved first, before looking up canonical names.
-                        "shift_jis"
-                    };
-                    aliases_SJIS = new String[] { "sjis" };
-
-                    for (String alias : aliases_MS932) {
-                        aliasMap.put(toLower(alias), "windows-31j");
-                    }
-                    cache().put("shift_jis", null);
-                    break;
-                }
-            }
-        }
-    }
-
 }

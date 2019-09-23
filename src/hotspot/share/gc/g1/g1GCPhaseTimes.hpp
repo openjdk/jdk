@@ -106,7 +106,6 @@ class G1GCPhaseTimes : public CHeapObj<mtGC> {
   };
 
   enum GCMergeLBWorkItems {
-    MergeLBProcessedBuffers,
     MergeLBDirtyCards,
     MergeLBSkippedCards
   };
@@ -129,7 +128,6 @@ class G1GCPhaseTimes : public CHeapObj<mtGC> {
   WorkerDataArray<size_t>* _merge_hcc_dirty_cards;
   WorkerDataArray<size_t>* _merge_hcc_skipped_cards;
 
-  WorkerDataArray<size_t>* _merge_lb_processed_buffers;
   WorkerDataArray<size_t>* _merge_lb_dirty_cards;
   WorkerDataArray<size_t>* _merge_lb_skipped_cards;
 

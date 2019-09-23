@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,6 +21,7 @@
  * questions.
  */
 
+import java.net.ConnectException;
 import java.net.Socket;
 
 import com.sun.jdi.Bootstrap;
@@ -34,10 +35,8 @@ import java.util.Map;
 import java.util.List;
 import java.util.Iterator;
 import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicBoolean;
 
-import jdk.test.lib.Utils;
-import jdk.test.lib.process.ProcessTools;
+import lib.jdb.Debuggee;
 
 /* @test
  * @bug 6306165 6432567
@@ -46,7 +45,7 @@ import jdk.test.lib.process.ProcessTools;
  *
  * @modules java.management
  *          jdk.jdi
- * @build VMConnection BadHandshakeTest Exit0
+ * @build BadHandshakeTest Exit0
  * @run driver BadHandshakeTest
  */
 public class BadHandshakeTest {
@@ -58,7 +57,7 @@ public class BadHandshakeTest {
         List<Connector> connectors = Bootstrap.virtualMachineManager().allConnectors();
         Iterator<Connector> iter = connectors.iterator();
         while (iter.hasNext()) {
-            Connector connector = (Connector)iter.next();
+            Connector connector = iter.next();
             if (connector.name().equals(name)) {
                 return connector;
             }
@@ -66,121 +65,76 @@ public class BadHandshakeTest {
         return null;
     }
 
-    /*
-     * Launch a server debuggee with the given address
-     */
-    private static LaunchResult launch(String address, String class_name) throws Exception {
-        String[] args = VMConnection.insertDebuggeeVMOptions(new String[] {
-            "-agentlib:jdwp=transport=dt_socket" +
-            ",server=y" + ",suspend=y" + ",address=" + address,
-            class_name
-        });
-
-        ProcessBuilder pb = ProcessTools.createJavaProcessBuilder(args);
-
-        final AtomicBoolean success = new AtomicBoolean();
-        final AtomicBoolean bindFailed = new AtomicBoolean();
-        Process p = ProcessTools.startProcess(
-            class_name,
-            pb,
-            (line) -> {
-                // 'Listening for transport dt_socket at address: xxxxx'
-                // indicates the debuggee is ready to accept connections
-                if (line.contains("Listening for transport dt_socket at address:")) {
-                    success.set(true);
-                    return true;
-                }
-                // 'Address already in use' indicates
-                // the debuggee has failed to start due to busy port.
-                if (line.contains("Address already in use")) {
-                    bindFailed.set(true);
-                    return true;
-                }
-                return false;
-            },
-            Integer.MAX_VALUE,
-            TimeUnit.MILLISECONDS
-        );
-
-        return new LaunchResult(success.get() ? p : null,
-                bindFailed.get());
+    private static void log(Object s) {
+        System.out.println(String.valueOf(s));
     }
 
-    /*
-     * - pick a TCP port
-     * - Launch a server debuggee: server=y,suspend=y,address=${port}
-     * - run it to VM death
-     * - verify we saw no error
-     */
     public static void main(String args[]) throws Exception {
-        // Launch the server debuggee
-        int port = 0;
-        Process process = null;
-        while (process == null) {
-            port = Utils.getFreePort();
-            String address = String.valueOf(port);
-            LaunchResult launchResult = launch(address, "Exit0");
-            process = launchResult.getProcess();
-            if (launchResult.isBindFailed()) {
-                System.out.println("Port " + port + " already in use. Trying to restart debuggee with a new one...");
-                Thread.sleep(100);
-            } else if (process == null ) {
-                throw new RuntimeException("Unable to start debugee");
+        // Launch the server debugee
+        log("Starting debuggee...");
+        try (Debuggee debuggee = Debuggee.launcher("Exit0").launch()) {
+            log("Debuggee started.");
+            int port = Integer.parseInt(debuggee.getAddress());
+            log("Debuggee port: " + port);
+
+            log("testcase 1...");
+            // Connect to the debuggee and handshake with garbage
+            Socket s = new Socket("localhost", port);
+            s.getOutputStream().write("Here's a poke in the eye".getBytes("UTF-8"));
+            s.close();
+
+            log("testcase 2...");
+            // Re-connect and do a partial handshake - don't disconnect
+            // Re-connect just after disconnect may cause "connection refused" error (see JDK-8192057)
+            Exception error = null;
+            long retryDelay = 20;
+            for (int retry = 0; retry < 5; retry++) {
+                if (error != null) {
+                    try {
+                        Thread.sleep(retryDelay);
+                    } catch (InterruptedException ex) {
+                        // ignore
+                    }
+                    retryDelay *= 2;
+                    error = null;
+                }
+                try {
+                    log("retry: " + retry);
+                    s = new Socket("localhost", port);
+                    s.getOutputStream().write("JDWP-".getBytes("UTF-8"));
+                    break;
+                } catch (ConnectException ex) {
+                    log("got exception: " + ex.toString());
+                    error = ex;
+                }
             }
-        }
-
-        // Connect to the debuggee and handshake with garbage
-        Socket s = new Socket("localhost", port);
-        s.getOutputStream().write("Here's a poke in the eye".getBytes("UTF-8"));
-        s.close();
-
-        // Re-connect and to a partial handshake - don't disconnect
-        s = new Socket("localhost", port);
-        s.getOutputStream().write("JDWP-".getBytes("UTF-8"));
-
-
-        // Attach to server debuggee and resume it so it can exit
-        AttachingConnector conn = (AttachingConnector)findConnector("com.sun.jdi.SocketAttach");
-        Map<String, Argument> conn_args = conn.defaultArguments();
-        Connector.IntegerArgument port_arg =
-            (Connector.IntegerArgument)conn_args.get("port");
-        port_arg.setValue(port);
-        VirtualMachine vm = conn.attach(conn_args);
-
-        // The first event is always a VMStartEvent, and it is always in
-        // an EventSet by itself.  Wait for it.
-        EventSet evtSet = vm.eventQueue().remove();
-        for (Event event: evtSet) {
-            if (event instanceof VMStartEvent) {
-                break;
+            if (error != null) {
+                throw error;
             }
-            throw new RuntimeException("Test failed - debuggee did not start properly");
+
+            log("cleaning...");
+            // Attach to server debuggee and resume it so it can exit
+            AttachingConnector conn = (AttachingConnector)findConnector("com.sun.jdi.SocketAttach");
+            Map<String, Argument> conn_args = conn.defaultArguments();
+            Connector.IntegerArgument port_arg =
+                    (Connector.IntegerArgument)conn_args.get("port");
+            port_arg.setValue(port);
+            VirtualMachine vm = conn.attach(conn_args);
+
+            // The first event is always a VMStartEvent, and it is always in
+            // an EventSet by itself.  Wait for it.
+            EventSet evtSet = vm.eventQueue().remove();
+            for (Event event : evtSet) {
+                if (event instanceof VMStartEvent) {
+                    break;
+                }
+                throw new RuntimeException("Test failed - debuggee did not start properly");
+            }
+
+            vm.eventRequestManager().deleteAllBreakpoints();
+            vm.resume();
+
+            debuggee.waitFor(10, TimeUnit.SECONDS);
         }
-
-        vm.eventRequestManager().deleteAllBreakpoints();
-        vm.resume();
-
-        process.waitFor();
     }
-
-    private static class LaunchResult {
-
-        private final Process p;
-        private final boolean bindFailed;
-
-        public LaunchResult(Process p, boolean bindFailed) {
-            this.p = p;
-            this.bindFailed = bindFailed;
-        }
-
-        public Process getProcess() {
-            return p;
-        }
-
-        public boolean isBindFailed() {
-            return bindFailed;
-        }
-
-    }
-
 }

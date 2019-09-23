@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -123,9 +123,13 @@ class InvokerBytecodeGenerator {
     private InvokerBytecodeGenerator(String className, String invokerName, MethodType invokerType) {
         this(null, invokerType.parameterCount(),
              className, invokerName, invokerType);
+        MethodType mt = invokerType.erase();
         // Create an array to map name indexes to locals indexes.
-        for (int i = 0; i < localsMap.length; i++) {
-            localsMap[i] = invokerType.parameterSlotCount() - invokerType.parameterSlotDepth(i);
+        localsMap[0] = 0; // localsMap has at least one element
+        for (int i = 1, index = 0; i < localsMap.length; i++) {
+            Wrapper w = Wrapper.forBasicType(mt.parameterType(i - 1));
+            index += w.stackSlots();
+            localsMap[i] = index;
         }
     }
 

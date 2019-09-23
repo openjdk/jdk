@@ -116,6 +116,11 @@ interface LiveStackFrame extends StackFrame {
      */
     public abstract class PrimitiveSlot {
         /**
+         * Constructor.
+         */
+        PrimitiveSlot() {}
+
+        /**
          * Returns the size, in bytes, of the slot.
          */
         public abstract int size();

@@ -259,11 +259,11 @@ public abstract class NumberFormat extends Format  {
      *                   to 0 and 9, respectively for the output string
      *                   {@code 1,234,567.89}.
      * @return           the value passed in as <code>toAppendTo</code>
-     * @exception        IllegalArgumentException if <code>number</code> is
+     * @throws           IllegalArgumentException if <code>number</code> is
      *                   null or not an instance of <code>Number</code>.
-     * @exception        NullPointerException if <code>toAppendTo</code> or
+     * @throws           NullPointerException if <code>toAppendTo</code> or
      *                   <code>pos</code> is null
-     * @exception        ArithmeticException if rounding is needed with rounding
+     * @throws           ArithmeticException if rounding is needed with rounding
      *                   mode being set to RoundingMode.UNNECESSARY
      * @see              java.text.FieldPosition
      */
@@ -318,7 +318,7 @@ public abstract class NumberFormat extends Format  {
      *
      * @param number the double number to format
      * @return the formatted String
-     * @exception        ArithmeticException if rounding is needed with rounding
+     * @throws           ArithmeticException if rounding is needed with rounding
      *                   mode being set to RoundingMode.UNNECESSARY
      * @see java.text.Format#format
      */
@@ -343,7 +343,7 @@ public abstract class NumberFormat extends Format  {
      *
      * @param number the long number to format
      * @return the formatted String
-     * @exception        ArithmeticException if rounding is needed with rounding
+     * @throws           ArithmeticException if rounding is needed with rounding
      *                   mode being set to RoundingMode.UNNECESSARY
      * @see java.text.Format#format
      */
@@ -367,7 +367,7 @@ public abstract class NumberFormat extends Format  {
      *                   to 0 and 9, respectively for the output string
      *                   {@code 1,234,567.89}.
      * @return the formatted StringBuffer
-     * @exception        ArithmeticException if rounding is needed with rounding
+     * @throws           ArithmeticException if rounding is needed with rounding
      *                   mode being set to RoundingMode.UNNECESSARY
      * @see java.text.Format#format
      */
@@ -390,7 +390,7 @@ public abstract class NumberFormat extends Format  {
      *                   to 0 and 11, respectively for the output string
      *                   {@code 123,456,789}.
      * @return the formatted StringBuffer
-     * @exception        ArithmeticException if rounding is needed with rounding
+     * @throws           ArithmeticException if rounding is needed with rounding
      *                   mode being set to RoundingMode.UNNECESSARY
      * @see java.text.Format#format
      */
@@ -424,7 +424,7 @@ public abstract class NumberFormat extends Format  {
      *
      * @param source A <code>String</code> whose beginning should be parsed.
      * @return A <code>Number</code> parsed from the string.
-     * @exception ParseException if the beginning of the specified string
+     * @throws    ParseException if the beginning of the specified string
      *            cannot be parsed.
      */
     public Number parse(String source) throws ParseException {
@@ -891,7 +891,7 @@ public abstract class NumberFormat extends Format  {
      * <code>UnsupportedOperationException</code>.
      *
      * @return the currency used by this number format, or <code>null</code>
-     * @exception UnsupportedOperationException if the number format class
+     * @throws    UnsupportedOperationException if the number format class
      * doesn't implement currency formatting
      * @since 1.4
      */
@@ -908,9 +908,9 @@ public abstract class NumberFormat extends Format  {
      * <code>UnsupportedOperationException</code>.
      *
      * @param currency the new currency to be used by this number format
-     * @exception UnsupportedOperationException if the number format class
+     * @throws    UnsupportedOperationException if the number format class
      * doesn't implement currency formatting
-     * @exception NullPointerException if <code>currency</code> is null
+     * @throws    NullPointerException if <code>currency</code> is null
      * @since 1.4
      */
     public void setCurrency(Currency currency) {
@@ -924,7 +924,7 @@ public abstract class NumberFormat extends Format  {
      * Subclasses which handle different rounding modes should override
      * this method.
      *
-     * @exception UnsupportedOperationException The default implementation
+     * @throws    UnsupportedOperationException The default implementation
      *     always throws this exception
      * @return The <code>RoundingMode</code> used for this NumberFormat.
      * @see #setRoundingMode(RoundingMode)
@@ -941,9 +941,9 @@ public abstract class NumberFormat extends Format  {
      * Subclasses which handle different rounding modes should override
      * this method.
      *
-     * @exception UnsupportedOperationException The default implementation
+     * @throws    UnsupportedOperationException The default implementation
      *     always throws this exception
-     * @exception NullPointerException if <code>roundingMode</code> is null
+     * @throws    NullPointerException if <code>roundingMode</code> is null
      * @param roundingMode The <code>RoundingMode</code> to be used
      * @see #getRoundingMode()
      * @since 1.6
@@ -1013,6 +1013,7 @@ public abstract class NumberFormat extends Format  {
      *
      * @since 1.2
      */
+    @java.io.Serial
     private void readObject(ObjectInputStream stream)
          throws IOException, ClassNotFoundException
     {
@@ -1041,6 +1042,7 @@ public abstract class NumberFormat extends Format  {
      *
      * @since 1.2
      */
+    @java.io.Serial
     private void writeObject(ObjectOutputStream stream)
          throws IOException
     {
@@ -1225,6 +1227,7 @@ public abstract class NumberFormat extends Format  {
 
     // Removed "implements Cloneable" clause.  Needs to update serialization
     // ID for backward compatibility.
+    @java.io.Serial
     static final long serialVersionUID = -2308460125733713944L;
 
 
@@ -1242,6 +1245,7 @@ public abstract class NumberFormat extends Format  {
     public static class Field extends Format.Field {
 
         // Proclaim serial compatibility with 1.4 FCS
+        @java.io.Serial
         private static final long serialVersionUID = 7494728892700160890L;
 
         // table of all instances in this class, used by readResolve
@@ -1267,6 +1271,7 @@ public abstract class NumberFormat extends Format  {
          * @return resolved NumberFormat.Field constant
          */
         @Override
+        @java.io.Serial
         protected Object readResolve() throws InvalidObjectException {
             if (this.getClass() != NumberFormat.Field.class) {
                 throw new InvalidObjectException("subclass didn't correctly implement readResolve");

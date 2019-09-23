@@ -3651,7 +3651,7 @@ int PhaseIdealLoop::build_loop_tree_impl( Node *n, int pre_order ) {
           Node *frame = new ParmNode( C->start(), TypeFunc::FramePtr );
           _igvn.register_new_node_with_optimizer(frame);
           // Halt & Catch Fire
-          Node *halt = new HaltNode( if_f, frame );
+          Node* halt = new HaltNode(if_f, frame, "never-taken loop exit reached");
           _igvn.register_new_node_with_optimizer(halt);
           set_loop(halt, l);
           C->root()->add_req(halt);

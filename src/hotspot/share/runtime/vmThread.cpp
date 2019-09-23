@@ -556,6 +556,7 @@ void VMThread::loop() {
           _cur_vm_operation = safepoint_ops;
           if (_cur_vm_operation != NULL) {
             do {
+              EventMark em("Executing coalesced safepoint VM operation: %s", _cur_vm_operation->name());
               log_debug(vmthread)("Evaluating coalesced safepoint VM operation: %s", _cur_vm_operation->name());
               // evaluate_operation deletes the op object so we have
               // to grab the next op now

@@ -298,7 +298,7 @@ public final class AccessController {
      *
      * @return the value returned by the action's {@code run} method.
      *
-     * @exception NullPointerException if the action is {@code null}
+     * @throws    NullPointerException if the action is {@code null}
      *
      * @see #doPrivileged(PrivilegedAction,AccessControlContext)
      * @see #doPrivileged(PrivilegedExceptionAction)
@@ -330,7 +330,7 @@ public final class AccessController {
      *
      * @return the value returned by the action's {@code run} method.
      *
-     * @exception NullPointerException if the action is {@code null}
+     * @throws    NullPointerException if the action is {@code null}
      *
      * @see #doPrivileged(PrivilegedAction)
      * @see java.security.DomainCombiner
@@ -377,7 +377,7 @@ public final class AccessController {
      *
      * @return the value returned by the action's {@code run} method.
      *
-     * @exception NullPointerException if the action is {@code null}
+     * @throws    NullPointerException if the action is {@code null}
      *
      * @see #doPrivileged(PrivilegedAction)
      * @see #doPrivileged(PrivilegedExceptionAction,AccessControlContext)
@@ -534,9 +534,9 @@ public final class AccessController {
      *
      * @return the value returned by the action's {@code run} method
      *
-     * @exception PrivilegedActionException if the specified action's
+     * @throws    PrivilegedActionException if the specified action's
      *         {@code run} method threw a <i>checked</i> exception
-     * @exception NullPointerException if the action is {@code null}
+     * @throws    NullPointerException if the action is {@code null}
      *
      * @see #doPrivileged(PrivilegedAction)
      * @see #doPrivileged(PrivilegedExceptionAction,AccessControlContext)
@@ -577,9 +577,9 @@ public final class AccessController {
      *
      * @return the value returned by the action's {@code run} method
      *
-     * @exception PrivilegedActionException if the specified action's
+     * @throws    PrivilegedActionException if the specified action's
      *         {@code run} method threw a <i>checked</i> exception
-     * @exception NullPointerException if the action is {@code null}
+     * @throws    NullPointerException if the action is {@code null}
      *
      * @see #doPrivileged(PrivilegedAction)
      * @see #doPrivileged(PrivilegedExceptionAction,AccessControlContext)
@@ -672,9 +672,9 @@ public final class AccessController {
      *
      * @return the value returned by the action's {@code run} method
      *
-     * @exception PrivilegedActionException if the specified action's
+     * @throws    PrivilegedActionException if the specified action's
      *         {@code run} method threw a <i>checked</i> exception
-     * @exception NullPointerException if the action is {@code null}
+     * @throws    NullPointerException if the action is {@code null}
      *
      * @see #doPrivileged(PrivilegedAction)
      * @see #doPrivileged(PrivilegedAction,AccessControlContext)
@@ -990,9 +990,9 @@ public final class AccessController {
      *
      * @param perm the requested permission.
      *
-     * @exception AccessControlException if the specified permission
+     * @throws    AccessControlException if the specified permission
      *            is not permitted, based on the current security policy.
-     * @exception NullPointerException if the specified permission
+     * @throws    NullPointerException if the specified permission
      *            is {@code null} and is checked based on the
      *            security policy currently in effect.
      */

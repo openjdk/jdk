@@ -2000,5 +2000,6 @@ public final class Long extends Number
     }
 
     /** use serialVersionUID from JDK 1.0.2 for interoperability */
+    @java.io.Serial
     @Native private static final long serialVersionUID = 4290774380558885855L;
 }

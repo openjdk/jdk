@@ -177,7 +177,7 @@ bool SystemDictionary::is_system_class_loader(oop class_loader) {
     return false;
   }
   return (class_loader->klass() == SystemDictionary::jdk_internal_loader_ClassLoaders_AppClassLoader_klass() ||
-         oopDesc::equals(class_loader, _java_system_loader));
+         class_loader == _java_system_loader);
 }
 
 // Returns true if the passed class loader is the platform class loader.
@@ -393,7 +393,7 @@ InstanceKlass* SystemDictionary::resolve_super_or_fail(Symbol* child_name,
     if ((childk != NULL ) && (is_superclass) &&
         ((quicksuperk = childk->java_super()) != NULL) &&
          ((quicksuperk->name() == super_name) &&
-            (oopDesc::equals(quicksuperk->class_loader(), class_loader())))) {
+            (quicksuperk->class_loader() == class_loader()))) {
            return quicksuperk;
     } else {
       PlaceholderEntry* probe = placeholders()->get_entry(p_index, p_hash, child_name, loader_data);
@@ -542,7 +542,7 @@ void SystemDictionary::double_lock_wait(Handle lockObject, TRAPS) {
   bool calledholdinglock
       = ObjectSynchronizer::current_thread_holds_lock((JavaThread*)THREAD, lockObject);
   assert(calledholdinglock,"must hold lock for notify");
-  assert((!oopDesc::equals(lockObject(), _system_loader_lock_obj) && !is_parallelCapable(lockObject)), "unexpected double_lock_wait");
+  assert((lockObject() != _system_loader_lock_obj && !is_parallelCapable(lockObject)), "unexpected double_lock_wait");
   ObjectSynchronizer::notifyall(lockObject, THREAD);
   intptr_t recursions =  ObjectSynchronizer::complete_exit(lockObject, THREAD);
   SystemDictionary_lock->wait();
@@ -850,7 +850,7 @@ InstanceKlass* SystemDictionary::resolve_instance_class_or_null(Symbol* name,
       // If everything was OK (no exceptions, no null return value), and
       // class_loader is NOT the defining loader, do a little more bookkeeping.
       if (!HAS_PENDING_EXCEPTION && k != NULL &&
-        !oopDesc::equals(k->class_loader(), class_loader())) {
+        k->class_loader() != class_loader()) {
 
         check_constraints(d_hash, k, class_loader, false, THREAD);
 
@@ -1003,7 +1003,7 @@ InstanceKlass* SystemDictionary::parse_stream(Symbol* class_name,
   if (unsafe_anonymous_host != NULL) {
     // Create a new CLD for an unsafe anonymous class, that uses the same class loader
     // as the unsafe_anonymous_host
-    guarantee(oopDesc::equals(unsafe_anonymous_host->class_loader(), class_loader()), "should be the same");
+    guarantee(unsafe_anonymous_host->class_loader() == class_loader(), "should be the same");
     loader_data = ClassLoaderData::unsafe_anonymous_class_loader_data(class_loader);
   } else {
     loader_data = ClassLoaderData::class_loader_data(class_loader());
@@ -1268,116 +1268,116 @@ InstanceKlass* SystemDictionary::load_shared_class(InstanceKlass* ik,
                                                    Handle protection_domain,
                                                    const ClassFileStream *cfs,
                                                    TRAPS) {
+  assert(ik != NULL, "sanity");
+  assert(!ik->is_unshareable_info_restored(), "shared class can be loaded only once");
+  Symbol* class_name = ik->name();
 
-  if (ik != NULL) {
-    Symbol* class_name = ik->name();
+  bool visible = is_shared_class_visible(
+                          class_name, ik, class_loader, CHECK_NULL);
+  if (!visible) {
+    return NULL;
+  }
 
-    bool visible = is_shared_class_visible(
-                            class_name, ik, class_loader, CHECK_NULL);
-    if (!visible) {
+  // Resolve the superclass and interfaces. They must be the same
+  // as in dump time, because the layout of <ik> depends on
+  // the specific layout of ik->super() and ik->local_interfaces().
+  //
+  // If unexpected superclass or interfaces are found, we cannot
+  // load <ik> from the shared archive.
+
+  if (ik->super() != NULL) {
+    Symbol*  cn = ik->super()->name();
+    Klass *s = resolve_super_or_fail(class_name, cn,
+                                     class_loader, protection_domain, true, CHECK_NULL);
+    if (s != ik->super()) {
+      // The dynamically resolved super class is not the same as the one we used during dump time,
+      // so we cannot use ik.
       return NULL;
-    }
-
-    // Resolve the superclass and interfaces. They must be the same
-    // as in dump time, because the layout of <ik> depends on
-    // the specific layout of ik->super() and ik->local_interfaces().
-    //
-    // If unexpected superclass or interfaces are found, we cannot
-    // load <ik> from the shared archive.
-
-    if (ik->super() != NULL) {
-      Symbol*  cn = ik->super()->name();
-      Klass *s = resolve_super_or_fail(class_name, cn,
-                                       class_loader, protection_domain, true, CHECK_NULL);
-      if (s != ik->super()) {
-        // The dynamically resolved super class is not the same as the one we used during dump time,
-        // so we cannot use ik.
-        return NULL;
-      } else {
-        assert(s->is_shared(), "must be");
-      }
-    }
-
-    Array<InstanceKlass*>* interfaces = ik->local_interfaces();
-    int num_interfaces = interfaces->length();
-    for (int index = 0; index < num_interfaces; index++) {
-      InstanceKlass* k = interfaces->at(index);
-      Symbol* name  = k->name();
-      Klass* i = resolve_super_or_fail(class_name, name, class_loader, protection_domain, false, CHECK_NULL);
-      if (k != i) {
-        // The dynamically resolved interface class is not the same as the one we used during dump time,
-        // so we cannot use ik.
-        return NULL;
-      } else {
-        assert(i->is_shared(), "must be");
-      }
-    }
-
-    InstanceKlass* new_ik = KlassFactory::check_shared_class_file_load_hook(
-        ik, class_name, class_loader, protection_domain, cfs, CHECK_NULL);
-    if (new_ik != NULL) {
-      // The class is changed by CFLH. Return the new class. The shared class is
-      // not used.
-      return new_ik;
-    }
-
-    // Adjust methods to recover missing data.  They need addresses for
-    // interpreter entry points and their default native method address
-    // must be reset.
-
-    // Updating methods must be done under a lock so multiple
-    // threads don't update these in parallel
-    //
-    // Shared classes are all currently loaded by either the bootstrap or
-    // internal parallel class loaders, so this will never cause a deadlock
-    // on a custom class loader lock.
-
-    ClassLoaderData* loader_data = ClassLoaderData::class_loader_data(class_loader());
-    {
-      HandleMark hm(THREAD);
-      Handle lockObject = compute_loader_lock_object(class_loader, THREAD);
-      check_loader_lock_contention(lockObject, THREAD);
-      ObjectLocker ol(lockObject, THREAD, true);
-      // prohibited package check assumes all classes loaded from archive call
-      // restore_unshareable_info which calls ik->set_package()
-      ik->restore_unshareable_info(loader_data, protection_domain, CHECK_NULL);
-    }
-
-    ik->print_class_load_logging(loader_data, NULL, NULL);
-
-    // For boot loader, ensure that GetSystemPackage knows that a class in this
-    // package was loaded.
-    if (class_loader.is_null()) {
-      int path_index = ik->shared_classpath_index();
-      ResourceMark rm;
-      ClassLoader::add_package(ik->name()->as_C_string(), path_index, THREAD);
-    }
-
-    if (DumpLoadedClassList != NULL && classlist_file->is_open()) {
-      // Only dump the classes that can be stored into CDS archive
-      if (SystemDictionaryShared::is_sharing_possible(loader_data)) {
-        ResourceMark rm(THREAD);
-        classlist_file->print_cr("%s", ik->name()->as_C_string());
-        classlist_file->flush();
-      }
-    }
-
-    // notify a class loaded from shared object
-    ClassLoadingService::notify_class_loaded(ik, true /* shared class */);
-
-    ik->set_has_passed_fingerprint_check(false);
-    if (UseAOT && ik->supers_have_passed_fingerprint_checks()) {
-      uint64_t aot_fp = AOTLoader::get_saved_fingerprint(ik);
-      uint64_t cds_fp = ik->get_stored_fingerprint();
-      if (aot_fp != 0 && aot_fp == cds_fp) {
-        // This class matches with a class saved in an AOT library
-        ik->set_has_passed_fingerprint_check(true);
-      } else {
-        ResourceMark rm;
-        log_info(class, fingerprint)("%s :  expected = " PTR64_FORMAT " actual = " PTR64_FORMAT, ik->external_name(), aot_fp, cds_fp);
-      }
+    } else {
+      assert(s->is_shared(), "must be");
     }
   }
+
+  Array<InstanceKlass*>* interfaces = ik->local_interfaces();
+  int num_interfaces = interfaces->length();
+  for (int index = 0; index < num_interfaces; index++) {
+    InstanceKlass* k = interfaces->at(index);
+    Symbol* name  = k->name();
+    Klass* i = resolve_super_or_fail(class_name, name, class_loader, protection_domain, false, CHECK_NULL);
+    if (k != i) {
+      // The dynamically resolved interface class is not the same as the one we used during dump time,
+      // so we cannot use ik.
+      return NULL;
+    } else {
+      assert(i->is_shared(), "must be");
+    }
+  }
+
+  InstanceKlass* new_ik = KlassFactory::check_shared_class_file_load_hook(
+      ik, class_name, class_loader, protection_domain, cfs, CHECK_NULL);
+  if (new_ik != NULL) {
+    // The class is changed by CFLH. Return the new class. The shared class is
+    // not used.
+    return new_ik;
+  }
+
+  // Adjust methods to recover missing data.  They need addresses for
+  // interpreter entry points and their default native method address
+  // must be reset.
+
+  // Updating methods must be done under a lock so multiple
+  // threads don't update these in parallel
+  //
+  // Shared classes are all currently loaded by either the bootstrap or
+  // internal parallel class loaders, so this will never cause a deadlock
+  // on a custom class loader lock.
+
+  ClassLoaderData* loader_data = ClassLoaderData::class_loader_data(class_loader());
+  {
+    HandleMark hm(THREAD);
+    Handle lockObject = compute_loader_lock_object(class_loader, THREAD);
+    check_loader_lock_contention(lockObject, THREAD);
+    ObjectLocker ol(lockObject, THREAD, true);
+    // prohibited package check assumes all classes loaded from archive call
+    // restore_unshareable_info which calls ik->set_package()
+    ik->restore_unshareable_info(loader_data, protection_domain, CHECK_NULL);
+  }
+
+  ik->print_class_load_logging(loader_data, NULL, NULL);
+
+  // For boot loader, ensure that GetSystemPackage knows that a class in this
+  // package was loaded.
+  if (class_loader.is_null()) {
+    int path_index = ik->shared_classpath_index();
+    ResourceMark rm;
+    ClassLoader::add_package(ik->name()->as_C_string(), path_index, THREAD);
+  }
+
+  if (DumpLoadedClassList != NULL && classlist_file->is_open()) {
+    // Only dump the classes that can be stored into CDS archive
+    if (SystemDictionaryShared::is_sharing_possible(loader_data)) {
+      ResourceMark rm(THREAD);
+      classlist_file->print_cr("%s", ik->name()->as_C_string());
+      classlist_file->flush();
+    }
+  }
+
+  // notify a class loaded from shared object
+  ClassLoadingService::notify_class_loaded(ik, true /* shared class */);
+
+  ik->set_has_passed_fingerprint_check(false);
+  if (UseAOT && ik->supers_have_passed_fingerprint_checks()) {
+    uint64_t aot_fp = AOTLoader::get_saved_fingerprint(ik);
+    uint64_t cds_fp = ik->get_stored_fingerprint();
+    if (aot_fp != 0 && aot_fp == cds_fp) {
+      // This class matches with a class saved in an AOT library
+      ik->set_has_passed_fingerprint_check(true);
+    } else {
+      ResourceMark rm;
+      log_info(class, fingerprint)("%s :  expected = " PTR64_FORMAT " actual = " PTR64_FORMAT, ik->external_name(), aot_fp, cds_fp);
+    }
+  }
+
   return ik;
 }
 #endif // INCLUDE_CDS
@@ -1729,7 +1729,7 @@ void SystemDictionary::check_loader_lock_contention(Handle loader_lock, TRAPS) {
       == ObjectSynchronizer::owner_other) {
     // contention will likely happen, so increment the corresponding
     // contention counter.
-    if (oopDesc::equals(loader_lock(), _system_loader_lock_obj)) {
+    if (loader_lock() == _system_loader_lock_obj) {
       ClassLoader::sync_systemLoaderLockContentionRate()->inc();
     } else {
       ClassLoader::sync_nonSystemLoaderLockContentionRate()->inc();
@@ -2150,7 +2150,7 @@ void SystemDictionary::update_dictionary(unsigned int d_hash,
       // cleared if revocation occurs too often for this type
       // NOTE that we must only do this when the class is initally
       // defined, not each time it is referenced from a new class loader
-      if (oopDesc::equals(k->class_loader(), class_loader())) {
+      if (k->class_loader() == class_loader()) {
         k->set_prototype_header(markWord::biased_locking_prototype());
       }
     }
@@ -2343,7 +2343,7 @@ Symbol* SystemDictionary::check_signature_loaders(Symbol* signature,
                                                Handle loader1, Handle loader2,
                                                bool is_method, TRAPS)  {
   // Nothing to do if loaders are the same.
-  if (oopDesc::equals(loader1(), loader2())) {
+  if (loader1() == loader2()) {
     return NULL;
   }
 

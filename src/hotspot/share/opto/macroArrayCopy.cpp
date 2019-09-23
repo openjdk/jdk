@@ -1093,22 +1093,8 @@ void PhaseMacroExpand::expand_arraycopy_node(ArrayCopyNode *ac) {
   MergeMemNode* merge_mem = NULL;
 
   if (ac->is_clonebasic()) {
-    assert (src_offset == NULL && dest_offset == NULL, "for clone offsets should be null");
-    Node* mem = ac->in(TypeFunc::Memory);
-    const char* copyfunc_name = "arraycopy";
-    address     copyfunc_addr =
-      basictype2arraycopy(T_LONG, NULL, NULL,
-                          true, copyfunc_name, true);
-
-    const TypePtr* raw_adr_type = TypeRawPtr::BOTTOM;
-    const TypeFunc* call_type = OptoRuntime::fast_arraycopy_Type();
-
-    Node* call = make_leaf_call(ctrl, mem, call_type, copyfunc_addr, copyfunc_name, raw_adr_type, src, dest, length XTOP);
-    transform_later(call);
-
     BarrierSetC2* bs = BarrierSet::barrier_set()->barrier_set_c2();
-    bs->clone_barrier_at_expansion(ac, call, _igvn);
-
+    bs->clone_at_expansion(this, ac);
     return;
   } else if (ac->is_copyof() || ac->is_copyofrange() || ac->is_cloneoop()) {
     Node* mem = ac->in(TypeFunc::Memory);

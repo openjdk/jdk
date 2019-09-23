@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -92,6 +92,7 @@ final class ZoneRegion extends ZoneId implements Serializable {
     /**
      * Serialization version.
      */
+    @java.io.Serial
     private static final long serialVersionUID = 8386373296231747096L;
     /**
      * The time-zone ID, not null.
@@ -189,6 +190,7 @@ final class ZoneRegion extends ZoneId implements Serializable {
      *
      * @return the instance of {@code Ser}, not null
      */
+    @java.io.Serial
     private Object writeReplace() {
         return new Ser(Ser.ZONE_REGION_TYPE, this);
     }
@@ -199,6 +201,7 @@ final class ZoneRegion extends ZoneId implements Serializable {
      * @param s the stream to read
      * @throws InvalidObjectException always
      */
+    @java.io.Serial
     private void readObject(ObjectInputStream s) throws InvalidObjectException {
         throw new InvalidObjectException("Deserialization via serialization delegate");
     }

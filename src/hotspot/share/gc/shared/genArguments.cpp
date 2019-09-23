@@ -196,8 +196,6 @@ void GenArguments::initialize_heap_flags_and_sizes() {
     }
   }
 
-  always_do_update_barrier = UseConcMarkSweepGC;
-
   DEBUG_ONLY(assert_flags();)
 }
 

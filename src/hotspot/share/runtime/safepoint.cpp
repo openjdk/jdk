@@ -939,7 +939,7 @@ void SafepointSynchronize::print_safepoint_timeout() {
           break; // Could not send signal. Report fatal error.
         }
         // Give cur_thread a chance to report the error and terminate the VM.
-        os::sleep(Thread::current(), 3000, false);
+        os::naked_sleep(3000);
       }
     }
     fatal("Safepoint sync time longer than " INTX_FORMAT "ms detected when executing %s.",

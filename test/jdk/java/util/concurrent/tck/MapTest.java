@@ -122,6 +122,7 @@ public class MapTest extends JSR166TestCase {
      */
     public void testBug8186171() {
         if (!impl.supportsSetValue()) return;
+        if (!atLeastJava10()) return; // jdk9 is no longer maintained
         final ThreadLocalRandom rnd = ThreadLocalRandom.current();
         final boolean permitsNullValues = impl.permitsNullValues();
         final Object v1 = (permitsNullValues && rnd.nextBoolean())

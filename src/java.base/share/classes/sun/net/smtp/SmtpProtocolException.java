@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1995, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1995, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,6 +32,7 @@ import java.io.IOException;
  * an SMTP session.
  */
 public class SmtpProtocolException extends IOException {
+    @java.io.Serial
     private static final long serialVersionUID = -7547136771133814908L;
 
     SmtpProtocolException(String s) {

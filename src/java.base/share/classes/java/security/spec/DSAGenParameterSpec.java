@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -46,7 +46,7 @@ public final class DSAGenParameterSpec implements AlgorithmParameterSpec {
      * length of the domain parameter seed in bits.
      * @param primePLen the desired length of the prime P in bits.
      * @param subprimeQLen the desired length of the sub-prime Q in bits.
-     * @exception IllegalArgumentException if {@code primePLen}
+     * @throws    IllegalArgumentException if {@code primePLen}
      * or {@code subprimeQLen} is illegal per the specification of
      * FIPS 186-3.
      */
@@ -62,7 +62,7 @@ public final class DSAGenParameterSpec implements AlgorithmParameterSpec {
      * @param subprimeQLen the desired length of the sub-prime Q in bits.
      * @param seedLen the desired length of the domain parameter seed in bits,
      * shall be equal to or greater than {@code subprimeQLen}.
-     * @exception IllegalArgumentException if {@code primePLenLen},
+     * @throws    IllegalArgumentException if {@code primePLenLen},
      * {@code subprimeQLen}, or {@code seedLen} is illegal per the
      * specification of FIPS 186-3.
      */

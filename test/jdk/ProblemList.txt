@@ -564,6 +564,8 @@ java/lang/management/ThreadMXBean/AllThreadIds.java             8131745 generic-
 javax/management/monitor/DerivedGaugeMonitorTest.java         8042211 generic-all
 javax/management/remote/mandatory/connection/MultiThreadDeadLockTest.java 8042215 generic-all
 
+java/lang/management/ThreadMXBean/LockedSynchronizers.java 8231032 generic-all
+
 ############################################################################
 
 # jdk_io
@@ -650,8 +652,6 @@ com/sun/nio/sctp/SctpChannel/SocketOptionTests.java             8141694 linux-al
 # jdk_security
 
 sun/security/pkcs11/ec/TestKeyFactory.java                      8026976 generic-all
-sun/security/pkcs11/Secmod/AddTrustedCert.java                  8180837 generic-all
-sun/security/pkcs11/tls/TestKeyMaterial.java                    8180837 generic-all
 sun/security/pkcs11/sslecc/ClientJSSEServerJSSE.java            8161536 generic-all
 
 sun/security/tools/keytool/ListKeychainStore.sh                 8156889 macosx-all
@@ -871,8 +871,6 @@ sun/tools/jhsdb/HeapDumpTest.java                               8193639 solaris-
 
 com/sun/jndi/ldap/DeadSSLLdapTimeoutTest.java                   8169942 linux-i586,macosx-all,windows-x64
 
-com/sun/jndi/ldap/LdapTimeoutTest.java                          8151678 generic-all
-
 com/sun/jndi/dns/ConfigTests/PortUnreachable.java               7164518 macosx-all
 
 javax/rmi/ssl/SSLSocketParametersTest.sh                        8162906 generic-all
@@ -885,6 +883,8 @@ jdk/jfr/event/io/TestInstrumentation.java                       8202142    gener
 jdk/jfr/api/recording/event/TestPeriod.java                     8215890    generic-all
 jdk/jfr/event/io/EvilInstrument.java                            8221331    generic-all
 jdk/jfr/event/runtime/TestNetworkUtilizationEvent.java          8228990,8229370    generic-all
+jdk/jfr/event/compiler/TestCodeSweeper.java                     8225209    generic-all
+jdk/jfr/jcmd/TestJcmdConfigure.java                             8231317    windows-x64
 
 ############################################################################
 

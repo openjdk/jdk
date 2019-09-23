@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2006, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2006, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -33,23 +33,6 @@
 
 #ifdef SOLARIS
 
-class VM_DeoptimizeTheWorld : public VM_Operation {
- public:
-  VMOp_Type type() const {
-    return VMOp_DeoptimizeTheWorld;
-  }
-  void doit() {
-    CodeCache::mark_all_nmethods_for_deoptimization();
-    ResourceMark rm;
-    DeoptimizationMarker dm;
-    // Deoptimize all activations depending on marked methods
-    Deoptimization::deoptimize_dependents();
-
-    // Mark the dependent methods non entrant
-    CodeCache::make_marked_nmethods_not_entrant();
-  }
-};
-
 static void set_bool_flag(const char* name, bool value) {
   JVMFlag* flag = JVMFlag::find_flag(name);
   JVMFlag::boolAtPut(flag, &value, JVMFlag::ATTACH_ON_DEMAND);
@@ -74,8 +57,8 @@ void DTrace::enable_dprobes(int probes) {
 
   if (changed) {
     // one or more flags changed, need to deoptimize
-    VM_DeoptimizeTheWorld op;
-    VMThread::execute(&op);
+    CodeCache::mark_all_nmethods_for_deoptimization();
+    Deoptimization::deoptimize_all_marked();
   }
 }
 
@@ -97,8 +80,8 @@ void DTrace::disable_dprobes(int probes) {
   }
   if (changed) {
     // one or more flags changed, need to deoptimize
-    VM_DeoptimizeTheWorld op;
-    VMThread::execute(&op);
+    CodeCache::mark_all_nmethods_for_deoptimization();
+    Deoptimization::deoptimize_all_marked();
   }
 }
 

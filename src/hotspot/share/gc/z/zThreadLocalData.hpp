@@ -63,22 +63,20 @@ public:
   }
 
   static void set_invisible_root(Thread* thread, oop* root) {
-    assert(!has_invisible_root(thread), "Already set");
+    assert(data(thread)->_invisible_root == NULL, "Already set");
     data(thread)->_invisible_root = root;
   }
 
   static void clear_invisible_root(Thread* thread) {
-    assert(has_invisible_root(thread), "Should be set");
+    assert(data(thread)->_invisible_root != NULL, "Should be set");
     data(thread)->_invisible_root = NULL;
   }
 
-  static bool has_invisible_root(Thread* thread) {
-    return data(thread)->_invisible_root != NULL;
-  }
-
-  static oop* invisible_root(Thread* thread) {
-    assert(has_invisible_root(thread), "Should be set");
-    return data(thread)->_invisible_root;
+  template <typename T>
+  static void do_invisible_root(Thread* thread, T f) {
+    if (data(thread)->_invisible_root != NULL) {
+      f(data(thread)->_invisible_root);
+    }
   }
 
   static ByteSize address_bad_mask_offset() {

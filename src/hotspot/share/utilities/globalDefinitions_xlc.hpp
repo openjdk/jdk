@@ -51,11 +51,13 @@
 
 #include <stdint.h>
 
-// __IBMCPP__ is not defined any more with xlclang++
-#ifdef __IBMCPP__
-#if __IBMCPP__ < 1200
-#error "xlc < 12 not supported"
-#endif
+// check for xlc16 or higher
+#ifdef __ibmxl_version__
+  #if __ibmxl_version__ < 16
+  #error "xlc < 16 not supported"
+  #endif
+#else
+  #error "xlc < 16 not supported, macro __ibmxl_version__ not found"
 #endif
 
 #ifndef _AIX
@@ -127,10 +129,6 @@ inline int wcslen(const jchar* x) { return wcslen((const wchar_t*)x); }
 
 // AIX 5.3 has buggy __thread support. (see JDK-8176442).
 #define USE_LIBRARY_BASED_TLS_ONLY 1
-
-#ifndef USE_LIBRARY_BASED_TLS_ONLY
-#define THREAD_LOCAL_DECL __thread
-#endif
 
 // Inlining support
 //

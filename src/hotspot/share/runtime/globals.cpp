@@ -78,5 +78,3 @@ ALL_FLAGS(MATERIALIZE_DEVELOPER_FLAG,     \
           IGNORE_RANGE,                   \
           IGNORE_CONSTRAINT,              \
           IGNORE_WRITEABLE)
-
-MATERIALIZE_FLAGS_EXT

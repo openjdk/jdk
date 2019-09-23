@@ -631,7 +631,7 @@ public class LinkedBlockingDequeTest extends JSR166TestCase {
             }});
 
         await(pleaseInterrupt);
-        assertThreadBlocks(t, Thread.State.WAITING);
+        if (randomBoolean()) assertThreadBlocks(t, Thread.State.WAITING);
         t.interrupt();
         awaitTermination(t);
         assertEquals(SIZE, q.size());
@@ -673,7 +673,7 @@ public class LinkedBlockingDequeTest extends JSR166TestCase {
         assertEquals(0, q.take());
 
         await(pleaseInterrupt);
-        assertThreadBlocks(t, Thread.State.WAITING);
+        if (randomBoolean()) assertThreadBlocks(t, Thread.State.WAITING);
         t.interrupt();
         awaitTermination(t);
         assertEquals(0, q.remainingCapacity());
@@ -690,26 +690,27 @@ public class LinkedBlockingDequeTest extends JSR166TestCase {
                 q.put(new Object());
                 q.put(new Object());
                 long startTime = System.nanoTime();
+
                 assertFalse(q.offer(new Object(), timeoutMillis(), MILLISECONDS));
                 assertTrue(millisElapsedSince(startTime) >= timeoutMillis());
 
                 Thread.currentThread().interrupt();
                 try {
-                    q.offer(new Object(), 2 * LONG_DELAY_MS, MILLISECONDS);
+                    q.offer(new Object(), randomTimeout(), randomTimeUnit());
                     shouldThrow();
                 } catch (InterruptedException success) {}
                 assertFalse(Thread.interrupted());
 
                 pleaseInterrupt.countDown();
                 try {
-                    q.offer(new Object(), 2 * LONG_DELAY_MS, MILLISECONDS);
+                    q.offer(new Object(), LONGER_DELAY_MS, MILLISECONDS);
                     shouldThrow();
                 } catch (InterruptedException success) {}
                 assertFalse(Thread.interrupted());
             }});
 
         await(pleaseInterrupt);
-        assertThreadBlocks(t, Thread.State.TIMED_WAITING);
+        if (randomBoolean()) assertThreadBlocks(t, Thread.State.TIMED_WAITING);
         t.interrupt();
         awaitTermination(t);
     }
@@ -750,7 +751,7 @@ public class LinkedBlockingDequeTest extends JSR166TestCase {
             }});
 
         await(pleaseInterrupt);
-        assertThreadBlocks(t, Thread.State.WAITING);
+        if (randomBoolean()) assertThreadBlocks(t, Thread.State.WAITING);
         t.interrupt();
         awaitTermination(t);
     }
@@ -802,29 +803,26 @@ public class LinkedBlockingDequeTest extends JSR166TestCase {
         final CountDownLatch pleaseInterrupt = new CountDownLatch(1);
         Thread t = newStartedThread(new CheckedRunnable() {
             public void realRun() throws InterruptedException {
-                long startTime = System.nanoTime();
                 for (int i = 0; i < SIZE; i++)
                     assertEquals(i, (int) q.poll(LONG_DELAY_MS, MILLISECONDS));
 
                 Thread.currentThread().interrupt();
                 try {
-                    q.poll(LONG_DELAY_MS, MILLISECONDS);
+                    q.poll(randomTimeout(), randomTimeUnit());
                     shouldThrow();
                 } catch (InterruptedException success) {}
                 assertFalse(Thread.interrupted());
 
                 pleaseInterrupt.countDown();
                 try {
-                    q.poll(LONG_DELAY_MS, MILLISECONDS);
+                    q.poll(LONGER_DELAY_MS, MILLISECONDS);
                     shouldThrow();
                 } catch (InterruptedException success) {}
                 assertFalse(Thread.interrupted());
-
-                assertTrue(millisElapsedSince(startTime) < LONG_DELAY_MS);
             }});
 
         await(pleaseInterrupt);
-        assertThreadBlocks(t, Thread.State.TIMED_WAITING);
+        if (randomBoolean()) assertThreadBlocks(t, Thread.State.TIMED_WAITING);
         t.interrupt();
         awaitTermination(t);
         checkEmpty(q);
@@ -883,7 +881,7 @@ public class LinkedBlockingDequeTest extends JSR166TestCase {
             }});
 
         await(pleaseInterrupt);
-        assertThreadBlocks(t, Thread.State.WAITING);
+        if (randomBoolean()) assertThreadBlocks(t, Thread.State.WAITING);
         t.interrupt();
         awaitTermination(t);
         assertEquals(SIZE, q.size());
@@ -918,7 +916,7 @@ public class LinkedBlockingDequeTest extends JSR166TestCase {
         assertEquals(capacity - 1, q.take());
 
         await(pleaseInterrupt);
-        assertThreadBlocks(t, Thread.State.WAITING);
+        if (randomBoolean()) assertThreadBlocks(t, Thread.State.WAITING);
         t.interrupt();
         awaitTermination(t);
         assertEquals(0, q.remainingCapacity());
@@ -935,26 +933,27 @@ public class LinkedBlockingDequeTest extends JSR166TestCase {
                 q.putFirst(new Object());
                 q.putFirst(new Object());
                 long startTime = System.nanoTime();
+
                 assertFalse(q.offerFirst(new Object(), timeoutMillis(), MILLISECONDS));
                 assertTrue(millisElapsedSince(startTime) >= timeoutMillis());
 
                 Thread.currentThread().interrupt();
                 try {
-                    q.offerFirst(new Object(), 2 * LONG_DELAY_MS, MILLISECONDS);
+                    q.offerFirst(new Object(), randomTimeout(), randomTimeUnit());
                     shouldThrow();
                 } catch (InterruptedException success) {}
                 assertFalse(Thread.interrupted());
 
                 pleaseInterrupt.countDown();
                 try {
-                    q.offerFirst(new Object(), 2 * LONG_DELAY_MS, MILLISECONDS);
+                    q.offerFirst(new Object(), LONGER_DELAY_MS, MILLISECONDS);
                     shouldThrow();
                 } catch (InterruptedException success) {}
                 assertFalse(Thread.interrupted());
             }});
 
         await(pleaseInterrupt);
-        assertThreadBlocks(t, Thread.State.TIMED_WAITING);
+        if (randomBoolean()) assertThreadBlocks(t, Thread.State.TIMED_WAITING);
         t.interrupt();
         awaitTermination(t);
     }
@@ -986,7 +985,7 @@ public class LinkedBlockingDequeTest extends JSR166TestCase {
             }});
 
         await(threadStarted);
-        assertThreadBlocks(t, Thread.State.WAITING);
+        if (randomBoolean()) assertThreadBlocks(t, Thread.State.WAITING);
         t.interrupt();
         awaitTermination(t);
     }
@@ -1027,7 +1026,7 @@ public class LinkedBlockingDequeTest extends JSR166TestCase {
             }});
 
         await(threadStarted);
-        assertThreadBlocks(t, Thread.State.WAITING);
+        if (randomBoolean()) assertThreadBlocks(t, Thread.State.WAITING);
         t.interrupt();
         awaitTermination(t);
     }
@@ -1077,7 +1076,7 @@ public class LinkedBlockingDequeTest extends JSR166TestCase {
             }});
 
         await(pleaseInterrupt);
-        assertThreadBlocks(t, Thread.State.WAITING);
+        if (randomBoolean()) assertThreadBlocks(t, Thread.State.WAITING);
         t.interrupt();
         awaitTermination(t);
     }
@@ -1118,29 +1117,26 @@ public class LinkedBlockingDequeTest extends JSR166TestCase {
         final CountDownLatch pleaseInterrupt = new CountDownLatch(1);
         Thread t = newStartedThread(new CheckedRunnable() {
             public void realRun() throws InterruptedException {
-                long startTime = System.nanoTime();
                 for (int i = 0; i < SIZE; i++)
                     assertEquals(i, q.pollFirst(LONG_DELAY_MS, MILLISECONDS));
 
                 Thread.currentThread().interrupt();
                 try {
-                    q.pollFirst(LONG_DELAY_MS, MILLISECONDS);
+                    q.pollFirst(randomTimeout(), randomTimeUnit());
                     shouldThrow();
                 } catch (InterruptedException success) {}
                 assertFalse(Thread.interrupted());
 
                 pleaseInterrupt.countDown();
                 try {
-                    q.pollFirst(LONG_DELAY_MS, MILLISECONDS);
+                    q.pollFirst(LONGER_DELAY_MS, MILLISECONDS);
                     shouldThrow();
                 } catch (InterruptedException success) {}
                 assertFalse(Thread.interrupted());
-
-                assertTrue(millisElapsedSince(startTime) < LONG_DELAY_MS);
             }});
 
         await(pleaseInterrupt);
-        assertThreadBlocks(t, Thread.State.TIMED_WAITING);
+        if (randomBoolean()) assertThreadBlocks(t, Thread.State.TIMED_WAITING);
         t.interrupt();
         awaitTermination(t);
     }
@@ -1164,7 +1160,7 @@ public class LinkedBlockingDequeTest extends JSR166TestCase {
 
                 Thread.currentThread().interrupt();
                 try {
-                    q.pollFirst(LONG_DELAY_MS, MILLISECONDS);
+                    q.pollFirst(randomTimeout(), randomTimeUnit());
                     shouldThrow();
                 } catch (InterruptedException success) {}
 
@@ -1174,6 +1170,7 @@ public class LinkedBlockingDequeTest extends JSR166TestCase {
                     shouldThrow();
                 } catch (InterruptedException success) {}
                 assertFalse(Thread.interrupted());
+
                 assertTrue(millisElapsedSince(startTime) < LONG_DELAY_MS);
             }});
 
@@ -1182,7 +1179,7 @@ public class LinkedBlockingDequeTest extends JSR166TestCase {
         assertTrue(q.offerFirst(zero, LONG_DELAY_MS, MILLISECONDS));
         assertTrue(millisElapsedSince(startTime) < LONG_DELAY_MS);
         barrier.await();
-        assertThreadBlocks(t, Thread.State.TIMED_WAITING);
+        if (randomBoolean()) assertThreadBlocks(t, Thread.State.TIMED_WAITING);
         t.interrupt();
         awaitTermination(t);
     }
@@ -1240,7 +1237,7 @@ public class LinkedBlockingDequeTest extends JSR166TestCase {
             }});
 
         await(pleaseInterrupt);
-        assertThreadBlocks(t, Thread.State.WAITING);
+        if (randomBoolean()) assertThreadBlocks(t, Thread.State.WAITING);
         t.interrupt();
         awaitTermination(t);
         assertEquals(SIZE, q.size());
@@ -1282,7 +1279,7 @@ public class LinkedBlockingDequeTest extends JSR166TestCase {
         assertEquals(0, q.take());
 
         await(pleaseInterrupt);
-        assertThreadBlocks(t, Thread.State.WAITING);
+        if (randomBoolean()) assertThreadBlocks(t, Thread.State.WAITING);
         t.interrupt();
         awaitTermination(t);
         assertEquals(0, q.remainingCapacity());
@@ -1299,24 +1296,25 @@ public class LinkedBlockingDequeTest extends JSR166TestCase {
                 q.putLast(new Object());
                 q.putLast(new Object());
                 long startTime = System.nanoTime();
+
                 assertFalse(q.offerLast(new Object(), timeoutMillis(), MILLISECONDS));
                 assertTrue(millisElapsedSince(startTime) >= timeoutMillis());
 
                 Thread.currentThread().interrupt();
                 try {
-                    q.offerLast(new Object(), 2 * LONG_DELAY_MS, MILLISECONDS);
+                    q.offerLast(new Object(), randomTimeout(), randomTimeUnit());
                     shouldThrow();
                 } catch (InterruptedException success) {}
 
                 pleaseInterrupt.countDown();
                 try {
-                    q.offerLast(new Object(), 2 * LONG_DELAY_MS, MILLISECONDS);
+                    q.offerLast(new Object(), LONGER_DELAY_MS, MILLISECONDS);
                     shouldThrow();
                 } catch (InterruptedException success) {}
             }});
 
         await(pleaseInterrupt);
-        assertThreadBlocks(t, Thread.State.TIMED_WAITING);
+        if (randomBoolean()) assertThreadBlocks(t, Thread.State.TIMED_WAITING);
         t.interrupt();
         awaitTermination(t);
     }
@@ -1358,7 +1356,7 @@ public class LinkedBlockingDequeTest extends JSR166TestCase {
             }});
 
         await(pleaseInterrupt);
-        assertThreadBlocks(t, Thread.State.WAITING);
+        if (randomBoolean()) assertThreadBlocks(t, Thread.State.WAITING);
         t.interrupt();
         awaitTermination(t);
     }
@@ -1399,30 +1397,27 @@ public class LinkedBlockingDequeTest extends JSR166TestCase {
         final CountDownLatch pleaseInterrupt = new CountDownLatch(1);
         Thread t = newStartedThread(new CheckedRunnable() {
             public void realRun() throws InterruptedException {
-                long startTime = System.nanoTime();
                 for (int i = 0; i < SIZE; i++)
                     assertEquals(SIZE - i - 1,
                                  q.pollLast(LONG_DELAY_MS, MILLISECONDS));
 
                 Thread.currentThread().interrupt();
                 try {
-                    q.pollLast(LONG_DELAY_MS, MILLISECONDS);
+                    q.pollLast(randomTimeout(), randomTimeUnit());
                     shouldThrow();
                 } catch (InterruptedException success) {}
                 assertFalse(Thread.interrupted());
 
                 pleaseInterrupt.countDown();
                 try {
-                    q.pollLast(LONG_DELAY_MS, MILLISECONDS);
+                    q.pollLast(LONGER_DELAY_MS, MILLISECONDS);
                     shouldThrow();
                 } catch (InterruptedException success) {}
                 assertFalse(Thread.interrupted());
-
-                assertTrue(millisElapsedSince(startTime) < LONG_DELAY_MS);
             }});
 
         await(pleaseInterrupt);
-        assertThreadBlocks(t, Thread.State.TIMED_WAITING);
+        if (randomBoolean()) assertThreadBlocks(t, Thread.State.TIMED_WAITING);
         t.interrupt();
         awaitTermination(t);
         checkEmpty(q);
@@ -1447,7 +1442,7 @@ public class LinkedBlockingDequeTest extends JSR166TestCase {
 
                 Thread.currentThread().interrupt();
                 try {
-                    q.poll(LONG_DELAY_MS, MILLISECONDS);
+                    q.poll(randomTimeout(), randomTimeUnit());
                     shouldThrow();
                 } catch (InterruptedException success) {}
                 assertFalse(Thread.interrupted());
@@ -1468,7 +1463,7 @@ public class LinkedBlockingDequeTest extends JSR166TestCase {
         assertTrue(millisElapsedSince(startTime) < LONG_DELAY_MS);
 
         barrier.await();
-        assertThreadBlocks(t, Thread.State.TIMED_WAITING);
+        if (randomBoolean()) assertThreadBlocks(t, Thread.State.TIMED_WAITING);
         t.interrupt();
         awaitTermination(t);
     }

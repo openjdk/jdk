@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -104,6 +104,7 @@ import sun.security.util.ResourcesMgr;
  */
 public final class PrivateCredentialPermission extends Permission {
 
+    @java.io.Serial
     private static final long serialVersionUID = 5284372143517237068L;
 
     private static final CredOwner[] EMPTY_PRINCIPALS = new CredOwner[0];
@@ -474,6 +475,7 @@ public final class PrivateCredentialPermission extends Permission {
     /**
      * Reads this object from a stream (i.e., deserializes it)
      */
+    @java.io.Serial
     private void readObject(java.io.ObjectInputStream s) throws
                                         java.io.IOException,
                                         ClassNotFoundException {
@@ -500,6 +502,7 @@ public final class PrivateCredentialPermission extends Permission {
      */
     static class CredOwner implements java.io.Serializable {
 
+        @java.io.Serial
         private static final long serialVersionUID = -5607449830436408266L;
 
         /**

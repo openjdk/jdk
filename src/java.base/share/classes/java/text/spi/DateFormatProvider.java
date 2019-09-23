@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -54,12 +54,12 @@ public abstract class DateFormatProvider extends LocaleServiceProvider {
      *     {@link java.text.DateFormat#LONG DateFormat.LONG}, or
      *     {@link java.text.DateFormat#FULL DateFormat.FULL}.
      * @param locale the desired locale.
-     * @exception IllegalArgumentException if <code>style</code> is invalid,
+     * @throws    IllegalArgumentException if <code>style</code> is invalid,
      *     or if <code>locale</code> isn't
      *     one of the locales returned from
      *     {@link java.util.spi.LocaleServiceProvider#getAvailableLocales()
      *     getAvailableLocales()}.
-     * @exception NullPointerException if <code>locale</code> is null
+     * @throws    NullPointerException if <code>locale</code> is null
      * @return a time formatter.
      * @see java.text.DateFormat#getTimeInstance(int, java.util.Locale)
      */
@@ -74,12 +74,12 @@ public abstract class DateFormatProvider extends LocaleServiceProvider {
      *     {@link java.text.DateFormat#LONG DateFormat.LONG}, or
      *     {@link java.text.DateFormat#FULL DateFormat.FULL}.
      * @param locale the desired locale.
-     * @exception IllegalArgumentException if <code>style</code> is invalid,
+     * @throws    IllegalArgumentException if <code>style</code> is invalid,
      *     or if <code>locale</code> isn't
      *     one of the locales returned from
      *     {@link java.util.spi.LocaleServiceProvider#getAvailableLocales()
      *     getAvailableLocales()}.
-     * @exception NullPointerException if <code>locale</code> is null
+     * @throws    NullPointerException if <code>locale</code> is null
      * @return a date formatter.
      * @see java.text.DateFormat#getDateInstance(int, java.util.Locale)
      */
@@ -99,13 +99,13 @@ public abstract class DateFormatProvider extends LocaleServiceProvider {
      *     {@link java.text.DateFormat#LONG DateFormat.LONG}, or
      *     {@link java.text.DateFormat#FULL DateFormat.FULL}.
      * @param locale the desired locale.
-     * @exception IllegalArgumentException if <code>dateStyle</code> or
+     * @throws    IllegalArgumentException if <code>dateStyle</code> or
      *     <code>timeStyle</code> is invalid,
      *     or if <code>locale</code> isn't
      *     one of the locales returned from
      *     {@link java.util.spi.LocaleServiceProvider#getAvailableLocales()
      *     getAvailableLocales()}.
-     * @exception NullPointerException if <code>locale</code> is null
+     * @throws    NullPointerException if <code>locale</code> is null
      * @return a date/time formatter.
      * @see java.text.DateFormat#getDateTimeInstance(int, int, java.util.Locale)
      */

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -95,7 +95,7 @@ public class CharArrayReader extends Reader {
     /**
      * Reads a single character.
      *
-     * @exception   IOException  If an I/O error occurs
+     * @throws      IOException  If an I/O error occurs
      */
     public int read() throws IOException {
         synchronized (lock) {
@@ -109,14 +109,14 @@ public class CharArrayReader extends Reader {
 
     /**
      * Reads characters into a portion of an array.
-     * @param b  Destination buffer
-     * @param off  Offset at which to start storing characters
-     * @param len   Maximum number of characters to read
+     * @param   b  Destination buffer
+     * @param   off  Offset at which to start storing characters
+     * @param   len   Maximum number of characters to read
      * @return  The actual number of characters read, or -1 if
      *          the end of the stream has been reached
      *
-     * @exception   IOException  If an I/O error occurs
-     * @exception   IndexOutOfBoundsException {@inheritDoc}
+     * @throws  IOException  If an I/O error occurs
+     * @throws  IndexOutOfBoundsException {@inheritDoc}
      */
     public int read(char b[], int off, int len) throws IOException {
         synchronized (lock) {
@@ -153,9 +153,9 @@ public class CharArrayReader extends Reader {
      * an exception in this case. If <code>n</code> is negative, then
      * this method does nothing and returns <code>0</code>.
      *
-     * @param n The number of characters to skip
-     * @return       The number of characters actually skipped
-     * @exception  IOException If the stream is closed, or an I/O error occurs
+     * @param      n The number of characters to skip
+     * @return     The number of characters actually skipped
+     * @throws     IOException If the stream is closed, or an I/O error occurs
      */
     public long skip(long n) throws IOException {
         synchronized (lock) {
@@ -177,7 +177,7 @@ public class CharArrayReader extends Reader {
      * Tells whether this stream is ready to be read.  Character-array readers
      * are always ready to be read.
      *
-     * @exception  IOException  If an I/O error occurs
+     * @throws     IOException  If an I/O error occurs
      */
     public boolean ready() throws IOException {
         synchronized (lock) {
@@ -203,7 +203,7 @@ public class CharArrayReader extends Reader {
      *                         there is no actual limit; hence this argument is
      *                         ignored.
      *
-     * @exception  IOException  If an I/O error occurs
+     * @throws     IOException  If an I/O error occurs
      */
     public void mark(int readAheadLimit) throws IOException {
         synchronized (lock) {
@@ -216,7 +216,7 @@ public class CharArrayReader extends Reader {
      * Resets the stream to the most recent mark, or to the beginning if it has
      * never been marked.
      *
-     * @exception  IOException  If an I/O error occurs
+     * @throws     IOException  If an I/O error occurs
      */
     public void reset() throws IOException {
         synchronized (lock) {

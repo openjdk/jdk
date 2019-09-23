@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,24 +23,12 @@
  * questions.
  */
 
-// SAX default handler base class.
-// http://www.saxproject.org
-// No warranty; no copyright -- use this as you will.
-// $Id: HandlerBase.java,v 1.2 2005/06/10 03:50:47 jeffsuttor Exp $
-
 package org.xml.sax;
 
 /**
  * Default base class for handlers.
  *
- * <blockquote>
- * <em>This module, both source code and documentation, is in the
- * Public Domain, and comes with <strong>NO WARRANTY</strong>.</em>
- * See <a href='http://www.saxproject.org'>http://www.saxproject.org</a>
- * for further information.
- * </blockquote>
- *
- * <p>This class implements the default behaviour for four SAX1
+ * <p>This class implements the default behavior for four SAX1
  * interfaces: EntityResolver, DTDHandler, DocumentHandler,
  * and ErrorHandler.  It is now obsolete, but is included in SAX2 to
  * support legacy SAX1 applications.  SAX2 applications should use

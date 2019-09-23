@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -56,6 +56,7 @@ import jdk.internal.access.SharedSecrets;
  */
 public class PrivilegedActionException extends Exception {
     // use serialVersionUID from JDK 1.2.2 for interoperability
+    @java.io.Serial
     private static final long serialVersionUID = 4724086851538908602L;
 
     /**
@@ -99,6 +100,7 @@ public class PrivilegedActionException extends Exception {
      *
      * @serialField undeclaredThrowable Throwable
      */
+    @java.io.Serial
     private static final ObjectStreamField[] serialPersistentFields = {
         new ObjectStreamField("exception", Exception.class)
     };
@@ -112,6 +114,7 @@ public class PrivilegedActionException extends Exception {
      * field in the older implementation and PrivilegedActionException::cause
      * was set to null.
      */
+    @java.io.Serial
     private void readObject(ObjectInputStream s) throws IOException, ClassNotFoundException {
         ObjectInputStream.GetField fields = s.readFields();
         Exception exception = (Exception) fields.get("exception", null);
@@ -124,6 +127,7 @@ public class PrivilegedActionException extends Exception {
      * To maintain compatibility with older implementation, write a serial
      * "exception" field with the cause as the value.
      */
+    @java.io.Serial
     private void writeObject(ObjectOutputStream out) throws IOException {
         ObjectOutputStream.PutField fields = out.putFields();
         fields.put("exception", super.getCause());

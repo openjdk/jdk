@@ -539,7 +539,7 @@ ciKlass* ciEnv::get_klass_by_index_impl(const constantPoolHandle& cpool,
     // Calculate accessibility the hard way.
     if (!k->is_loaded()) {
       is_accessible = false;
-    } else if (!oopDesc::equals(k->loader(), accessor->loader()) &&
+    } else if (k->loader() != accessor->loader() &&
                get_klass_by_name_impl(accessor, cpool, k->name(), true) == NULL) {
       // Loaded only remotely.  Not linked yet.
       is_accessible = false;
@@ -590,7 +590,7 @@ ciConstant ciEnv::get_constant_by_index_impl(const constantPoolHandle& cpool,
     index = cpool->object_to_cp_index(cache_index);
     oop obj = cpool->resolved_references()->obj_at(cache_index);
     if (obj != NULL) {
-      if (oopDesc::equals(obj, Universe::the_null_sentinel())) {
+      if (obj == Universe::the_null_sentinel()) {
         return ciConstant(T_OBJECT, get_object(NULL));
       }
       BasicType bt = T_OBJECT;
@@ -1072,7 +1072,10 @@ void ciEnv::register_method(ciMethod* target,
                     task()->comp_level(), method_name);
         }
         // Allow the code to be executed
-        method->set_code(method, nm);
+        MutexLocker ml(CompiledMethod_lock, Mutex::_no_safepoint_check_flag);
+        if (nm->make_in_use()) {
+          method->set_code(method, nm);
+        }
       } else {
         LogTarget(Info, nmethod, install) lt;
         if (lt.is_enabled()) {
@@ -1081,9 +1084,11 @@ void ciEnv::register_method(ciMethod* target,
           lt.print("Installing osr method (%d) %s @ %d",
                     task()->comp_level(), method_name, entry_bci);
         }
-        method->method_holder()->add_osr_nmethod(nm);
+        MutexLocker ml(CompiledMethod_lock, Mutex::_no_safepoint_check_flag);
+        if (nm->make_in_use()) {
+          method->method_holder()->add_osr_nmethod(nm);
+        }
       }
-      nm->make_in_use();
     }
   }  // safepoints are allowed again
 

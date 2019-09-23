@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2005, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,29 +26,39 @@
 package javax.xml.transform;
 
 /**
- * <p>To provide customized error handling, implement this interface and
- * use the <code>setErrorListener</code> method to register an instance of the
- * implementation with the {@link javax.xml.transform.Transformer}.  The
- * <code>Transformer</code> then reports all errors and warnings through this
- * interface.</p>
+ * The listener interface used by a {@link TransformerFactory} or {@link Transformer}
+ * to notify callers of error messages that occur during a transformation process.
+ * An ErrorListener receives three levels of messages: warnings, errors and fatal
+ * errors as classified by their severity. Each of them is handled as described
+ * in their respective method.
  *
- * <p>If an application does <em>not</em> register its own custom
- * <code>ErrorListener</code>, the default <code>ErrorListener</code>
- * is used which reports all warnings and errors to <code>System.err</code>
- * and does not throw any <code>Exception</code>s.
- * Applications are <em>strongly</em> encouraged to register and use
- * <code>ErrorListener</code>s that insure proper behavior for warnings and
- * errors.</p>
+ * <p>
+ * An ErrorListener instance can be registered to a {@link TransformerFactory}
+ * or {@link Transformer} through
+ * the {@link TransformerFactory#setErrorListener(ErrorListener)}
+ * or {@link Transformer#setErrorListener(ErrorListener)}
+ * method to receive errors and warnings reported by the TransformerFactory
+ * or Transformer.
  *
- * <p>For transformation errors, a <code>Transformer</code> must use this
- * interface instead of throwing an <code>Exception</code>: it is up to the
- * application to decide whether to throw an <code>Exception</code> for
- * different types of errors and warnings.  Note however that the
- * <code>Transformer</code> is not required to continue with the transformation
- * after a call to {@link #fatalError(TransformerException exception)}.</p>
+ * <p>
+ * When a listener is registered, the {@link TransformerFactory} or {@link Transformer}
+ * must use this interface to pass on all warnings and errors to the listener
+ * and let the application decide how to handle them.
+ * Note that the {@code TransformerFactory} or {@code Transformer} is not
+ * required to continue with the transformation after a call to
+ * {@link #fatalError(TransformerException exception)}.
  *
- * <p><code>Transformer</code>s may use this mechanism to report XML parsing
- * errors as well as transformation errors.</p>
+ * <p>
+ * If an application does not provide a listener, the {@link TransformerFactory}
+ * or {@link Transformer} shall create one on its own. The default {@code ErrorListener}
+ * may take no action for warnings and recoverable errors, and allow the
+ * transformation to continue.
+ * However, the {@code TransformerFactory} or {@code Transformer} may still throw
+ * {@code TransformerException} when it decides it can not continue processing.
+ *
+ * @apiNote It is recommended that applications register and use their own
+ * {@code ErrorListener} to override the default behavior in order to ensure
+ * proper handling of warnings and errors.
  *
  * @since 1.4
  */

@@ -254,6 +254,7 @@ public abstract class ZoneId implements Serializable {
     /**
      * Serialization version.
      */
+    @java.io.Serial
     private static final long serialVersionUID = 8352817235686L;
 
     //-----------------------------------------------------------------------
@@ -624,6 +625,7 @@ public abstract class ZoneId implements Serializable {
      * @param s the stream to read
      * @throws InvalidObjectException always
      */
+    @java.io.Serial
     private void readObject(ObjectInputStream s) throws InvalidObjectException {
         throw new InvalidObjectException("Deserialization via serialization delegate");
     }
@@ -655,6 +657,7 @@ public abstract class ZoneId implements Serializable {
      * @return the instance of {@code Ser}, not null
      */
     // this is here for serialization Javadoc
+    @java.io.Serial
     private Object writeReplace() {
         return new Ser(Ser.ZONE_REGION_TYPE, this);
     }

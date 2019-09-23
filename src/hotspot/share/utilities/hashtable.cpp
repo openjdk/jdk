@@ -101,10 +101,8 @@ template <class T, MEMFLAGS F> HashtableEntry<T, F>* Hashtable<T, F>::allocate_n
 }
 
 template <MEMFLAGS F> void BasicHashtable<F>::free_buckets() {
-  if (NULL != _buckets) {
-    FREE_C_HEAP_ARRAY(HashtableBucket, _buckets);
-    _buckets = NULL;
-  }
+  FREE_C_HEAP_ARRAY(HashtableBucket, _buckets);
+  _buckets = NULL;
 }
 
 // For oops and Strings the size of the literal is interesting. For other types, nobody cares.
@@ -306,6 +304,7 @@ template class BasicHashtable<mtCode>;
 template class BasicHashtable<mtInternal>;
 template class BasicHashtable<mtModule>;
 template class BasicHashtable<mtCompiler>;
+template class BasicHashtable<mtTracing>;
 
 template void BasicHashtable<mtClass>::verify_table<DictionaryEntry>(char const*);
 template void BasicHashtable<mtModule>::verify_table<ModuleEntry>(char const*);

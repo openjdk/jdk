@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1130,6 +1130,9 @@ JNIEXPORT jlong JNICALL Java_sun_awt_shell_Win32ShellFolder2_getIconResource
     const char *pLibName = env->GetStringUTFChars(libName, NULL);
     JNU_CHECK_EXCEPTION_RETURN(env, 0);
     HINSTANCE libHandle = (HINSTANCE)JDK_LoadSystemLibrary(pLibName);
+    if (pLibName != NULL) {
+        env->ReleaseStringUTFChars(libName, pLibName);
+    }
     if (libHandle != NULL) {
         UINT fuLoad = (useVGAColors && !IS_WINXP) ? LR_VGACOLOR : 0;
         return ptr_to_jlong(LoadImage(libHandle, MAKEINTRESOURCE(iconID),

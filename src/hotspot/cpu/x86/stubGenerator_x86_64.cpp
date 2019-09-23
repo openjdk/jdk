@@ -1129,10 +1129,7 @@ class StubGenerator: public StubCodeGenerator {
     __ andptr(rsp, -16);                            // align stack as required by ABI
     BLOCK_COMMENT("call MacroAssembler::debug");
     __ call(RuntimeAddress(CAST_FROM_FN_PTR(address, MacroAssembler::debug64)));
-    __ mov(rsp, r12);                               // restore rsp
-    __ popa();                                      // pop registers (includes r12)
-    __ ret(4 * wordSize);                           // pop caller saved stuff
-
+    __ hlt();
     return start;
   }
 

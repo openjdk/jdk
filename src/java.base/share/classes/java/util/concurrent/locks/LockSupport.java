@@ -140,8 +140,25 @@ public class LockSupport {
     private LockSupport() {} // Cannot be instantiated.
 
     private static void setBlocker(Thread t, Object arg) {
-        // Even though volatile, hotspot doesn't need a write barrier here.
-        U.putReference(t, PARKBLOCKER, arg);
+        U.putReferenceOpaque(t, PARKBLOCKER, arg);
+    }
+
+    /**
+     * Sets the object to be returned by invocations of {@link
+     * #getBlocker getBlocker} for the current thread. This method may
+     * be used before invoking the no-argument version of {@link
+     * LockSupport#park() park()} from non-public objects, allowing
+     * more helpful diagnostics, or retaining compatibility with
+     * previous implementations of blocking methods.  Previous values
+     * of the blocker are not automatically restored after blocking.
+     * To obtain the effects of {@code park(b}}, use {@code
+     * setCurrentBlocker(b); park(); setCurrentBlocker(null);}
+     *
+     * @param blocker the blocker object
+     * @since 14
+     */
+    public static void setCurrentBlocker(Object blocker) {
+        U.putReferenceOpaque(Thread.currentThread(), PARKBLOCKER, blocker);
     }
 
     /**
@@ -292,7 +309,7 @@ public class LockSupport {
     public static Object getBlocker(Thread t) {
         if (t == null)
             throw new NullPointerException();
-        return U.getReferenceVolatile(t, PARKBLOCKER);
+        return U.getReferenceOpaque(t, PARKBLOCKER);
     }
 
     /**
@@ -394,24 +411,6 @@ public class LockSupport {
     }
 
     /**
-     * Returns the pseudo-randomly initialized or updated secondary seed.
-     * Copied from ThreadLocalRandom due to package access restrictions.
-     */
-    static final int nextSecondarySeed() {
-        int r;
-        Thread t = Thread.currentThread();
-        if ((r = U.getInt(t, SECONDARY)) != 0) {
-            r ^= r << 13;   // xorshift
-            r ^= r >>> 17;
-            r ^= r << 5;
-        }
-        else if ((r = java.util.concurrent.ThreadLocalRandom.current().nextInt()) == 0)
-            r = 1; // avoid zero
-        U.putInt(t, SECONDARY, r);
-        return r;
-    }
-
-    /**
      * Returns the thread id for the given thread.  We must access
      * this directly rather than via method Thread.getId() because
      * getId() has been known to be overridden in ways that do not
@@ -423,11 +422,9 @@ public class LockSupport {
 
     // Hotspot implementation via intrinsics API
     private static final Unsafe U = Unsafe.getUnsafe();
-    private static final long PARKBLOCKER = U.objectFieldOffset
-            (Thread.class, "parkBlocker");
-    private static final long SECONDARY = U.objectFieldOffset
-            (Thread.class, "threadLocalRandomSecondarySeed");
-    private static final long TID = U.objectFieldOffset
-            (Thread.class, "tid");
+    private static final long PARKBLOCKER
+        = U.objectFieldOffset(Thread.class, "parkBlocker");
+    private static final long TID
+        = U.objectFieldOffset(Thread.class, "tid");
 
 }

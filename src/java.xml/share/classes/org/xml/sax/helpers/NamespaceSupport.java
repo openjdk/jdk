@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,12 +23,6 @@
  * questions.
  */
 
-// NamespaceSupport.java - generic Namespace support for SAX.
-// http://www.saxproject.org
-// Written by David Megginson
-// This class is in the Public Domain.  NO WARRANTY!
-// $Id: NamespaceSupport.java,v 1.5 2004/11/03 22:53:09 jsuttor Exp $
-
 package org.xml.sax.helpers;
 
 import java.util.ArrayList;
@@ -43,13 +37,6 @@ import java.util.Map;
 /**
  * Encapsulate Namespace logic for use by applications using SAX,
  * or internally by SAX drivers.
- *
- * <blockquote>
- * <em>This module, both source code and documentation, is in the
- * Public Domain, and comes with <strong>NO WARRANTY</strong>.</em>
- * See <a href='http://www.saxproject.org'>http://www.saxproject.org</a>
- * for further information.
- * </blockquote>
  *
  * <p>This class encapsulates the logic of Namespace processing: it
  * tracks the declarations currently in force for each context and

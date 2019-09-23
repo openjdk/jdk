@@ -54,7 +54,7 @@ CDSOffsets* CDSOffsets::_all = NULL;
     ADD_NEXT(_all, "CDSFileMapRegion::_crc", offset_of(CDSFileMapRegion, _crc));            \
     ADD_NEXT(_all, "CDSFileMapRegion::_used", offset_of(CDSFileMapRegion, _used));          \
     ADD_NEXT(_all, "file_header_size", sizeof(FileMapHeader));                              \
-    ADD_NEXT(_all, "DynamicArchiveHeader::_base_archive_crc", offset_of(DynamicArchiveHeader, _base_archive_crc)); \
+    ADD_NEXT(_all, "DynamicArchiveHeader::_base_region_crc", offset_of(DynamicArchiveHeader, _base_region_crc)); \
     ADD_NEXT(_all, "CDSFileMapRegion_size", sizeof(CDSFileMapRegion));
 
 int CDSOffsets::find_offset(const char* name) {

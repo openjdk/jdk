@@ -27,10 +27,6 @@
 #include "jfr/utilities/jfrAllocation.hpp"
 #include "jfr/utilities/jfrDoublyLinkedList.hpp"
 #include "jfr/utilities/jfrIterator.hpp"
-#include "jfr/utilities/jfrTypes.hpp"
-#include "runtime/os.hpp"
-#include "utilities/globalDefinitions.hpp"
-#include "utilities/macros.hpp"
 
 template <typename T, template <typename> class RetrievalType, typename Callback>
 class JfrMemorySpace : public JfrCHeapObj {
@@ -105,64 +101,6 @@ class JfrMemorySpace : public JfrCHeapObj {
 
   debug_only(bool in_full_list(const Type* t) const { return _full.in_list(t); })
   debug_only(bool in_free_list(const Type* t) const { return _free.in_list(t); })
-};
-
-// allocations are even multiples of the mspace min size
-inline u8 align_allocation_size(u8 requested_size, size_t min_elem_size) {
-  assert((int)min_elem_size % os::vm_page_size() == 0, "invariant");
-  u8 alloc_size_bytes = min_elem_size;
-  while (requested_size > alloc_size_bytes) {
-    alloc_size_bytes <<= 1;
-  }
-  assert((int)alloc_size_bytes % os::vm_page_size() == 0, "invariant");
-  return alloc_size_bytes;
-}
-
-template <typename T, template <typename> class RetrievalType, typename Callback>
-T* JfrMemorySpace<T, RetrievalType, Callback>::allocate(size_t size) {
-  const u8 aligned_size_bytes = align_allocation_size(size, _min_elem_size);
-  void* const allocation = JfrCHeapObj::new_array<u1>(aligned_size_bytes + sizeof(T));
-  if (allocation == NULL) {
-    return NULL;
-  }
-  T* const t = new (allocation) T;
-  assert(t != NULL, "invariant");
-  if (!t->initialize(sizeof(T), aligned_size_bytes)) {
-    JfrCHeapObj::free(t, aligned_size_bytes + sizeof(T));
-    return NULL;
-  }
-  return t;
-}
-
-template <typename T, template <typename> class RetrievalType, typename Callback>
-void JfrMemorySpace<T, RetrievalType, Callback>::deallocate(T* t) {
-  assert(t != NULL, "invariant");
-  assert(!_free.in_list(t), "invariant");
-  assert(!_full.in_list(t), "invariant");
-  assert(t != NULL, "invariant");
-  JfrCHeapObj::free(t, t->total_size());
-}
-
-template <typename Mspace>
-class MspaceLock {
- private:
-  Mspace* _mspace;
- public:
-  MspaceLock(Mspace* mspace) : _mspace(mspace) { _mspace->lock(); }
-  ~MspaceLock() { _mspace->unlock(); }
-};
-
-template <typename Mspace>
-class ReleaseOp : public StackObj {
- private:
-  Mspace* _mspace;
-  Thread* _thread;
-  bool _release_full;
- public:
-  typedef typename Mspace::Type Type;
-  ReleaseOp(Mspace* mspace, Thread* thread, bool release_full = true) : _mspace(mspace), _thread(thread), _release_full(release_full) {}
-  bool process(Type* t);
-  size_t processed() const { return 0; }
 };
 
 #endif // SHARE_JFR_RECORDER_STORAGE_JFRMEMORYSPACE_HPP

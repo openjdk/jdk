@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -157,6 +157,7 @@ public final class LocalDate
     /**
      * Serialization version.
      */
+    @java.io.Serial
     private static final long serialVersionUID = 2942565459149668126L;
     /**
      * The number of days in a 400 year cycle.
@@ -2200,6 +2201,7 @@ public final class LocalDate
      *
      * @return the instance of {@code Ser}, not null
      */
+    @java.io.Serial
     private Object writeReplace() {
         return new Ser(Ser.LOCAL_DATE_TYPE, this);
     }
@@ -2210,6 +2212,7 @@ public final class LocalDate
      * @param s the stream to read
      * @throws InvalidObjectException always
      */
+    @java.io.Serial
     private void readObject(ObjectInputStream s) throws InvalidObjectException {
         throw new InvalidObjectException("Deserialization via serialization delegate");
     }

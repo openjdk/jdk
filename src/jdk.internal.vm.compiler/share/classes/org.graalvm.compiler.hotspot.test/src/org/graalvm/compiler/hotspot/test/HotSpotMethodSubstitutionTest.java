@@ -28,6 +28,7 @@ import java.lang.invoke.ConstantCallSite;
 import java.lang.invoke.MethodHandles;
 import java.lang.invoke.MethodType;
 
+import org.graalvm.compiler.nodes.IfNode;
 import org.junit.Test;
 
 import org.graalvm.compiler.api.directives.GraalDirectives;
@@ -133,8 +134,8 @@ public class HotSpotMethodSubstitutionTest extends MethodSubstitutionTest {
     @Test
     public void testThreadSubstitutions() {
         testGraph("currentThread");
-        testGraph("threadIsInterrupted");
-        testGraph("threadInterrupted");
+        assertInGraph(testGraph("threadIsInterrupted", "isInterrupted", true), IfNode.class);
+        assertInGraph(testGraph("threadInterrupted", "isInterrupted", true), IfNode.class);
 
         Thread currentThread = Thread.currentThread();
         test("currentThread", currentThread);

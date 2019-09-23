@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,12 +22,6 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
-
-// XMLReaderAdapter.java - adapt an SAX2 XMLReader to a SAX1 Parser
-// http://www.saxproject.org
-// Written by David Megginson
-// NO WARRANTY!  This class is in the public domain.
-// $Id: XMLReaderAdapter.java,v 1.3 2004/11/03 22:53:09 jsuttor Exp $
 
 package org.xml.sax.helpers;
 
@@ -52,13 +46,6 @@ import org.xml.sax.SAXNotSupportedException;
 
 /**
  * Adapt a SAX2 XMLReader as a SAX1 Parser.
- *
- * <blockquote>
- * <em>This module, both source code and documentation, is in the
- * Public Domain, and comes with <strong>NO WARRANTY</strong>.</em>
- * See <a href='http://www.saxproject.org'>http://www.saxproject.org</a>
- * for further information.
- * </blockquote>
  *
  * <p>This class wraps a SAX2 {@link org.xml.sax.XMLReader XMLReader}
  * and makes it act as a SAX1 {@link org.xml.sax.Parser Parser}.  The XMLReader

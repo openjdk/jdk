@@ -45,7 +45,6 @@ import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.SynchronousQueue;
-import java.util.concurrent.ThreadLocalRandom;
 
 import junit.framework.Test;
 
@@ -166,7 +165,7 @@ public class SynchronousQueueTest extends JSR166TestCase {
             }});
 
         await(pleaseInterrupt);
-        assertThreadBlocks(t, Thread.State.WAITING);
+        if (randomBoolean()) assertThreadBlocks(t, Thread.State.WAITING);
         t.interrupt();
         awaitTermination(t);
         assertEquals(0, q.remainingCapacity());
@@ -207,7 +206,7 @@ public class SynchronousQueueTest extends JSR166TestCase {
         catch (InterruptedException e) { threadUnexpectedException(e); }
 
         await(pleaseInterrupt);
-        assertThreadBlocks(t, Thread.State.WAITING);
+        if (randomBoolean()) assertThreadBlocks(t, Thread.State.WAITING);
         t.interrupt();
         awaitTermination(t);
         assertEquals(0, q.remainingCapacity());
@@ -217,32 +216,33 @@ public class SynchronousQueueTest extends JSR166TestCase {
      * timed offer times out if elements not taken
      */
     public void testTimedOffer() {
-        final boolean fair = ThreadLocalRandom.current().nextBoolean();
+        final boolean fair = randomBoolean();
         final SynchronousQueue q = new SynchronousQueue(fair);
         final CountDownLatch pleaseInterrupt = new CountDownLatch(1);
         Thread t = newStartedThread(new CheckedRunnable() {
             public void realRun() throws InterruptedException {
                 long startTime = System.nanoTime();
+
                 assertFalse(q.offer(new Object(), timeoutMillis(), MILLISECONDS));
                 assertTrue(millisElapsedSince(startTime) >= timeoutMillis());
 
                 Thread.currentThread().interrupt();
                 try {
-                    q.offer(new Object(), 2 * LONG_DELAY_MS, MILLISECONDS);
+                    q.offer(new Object(), randomTimeout(), randomTimeUnit());
                     shouldThrow();
                 } catch (InterruptedException success) {}
                 assertFalse(Thread.interrupted());
 
                 pleaseInterrupt.countDown();
                 try {
-                    q.offer(new Object(), 2 * LONG_DELAY_MS, MILLISECONDS);
+                    q.offer(new Object(), LONGER_DELAY_MS, MILLISECONDS);
                     shouldThrow();
                 } catch (InterruptedException success) {}
                 assertFalse(Thread.interrupted());
             }});
 
         await(pleaseInterrupt);
-        assertThreadBlocks(t, Thread.State.TIMED_WAITING);
+        if (randomBoolean()) assertThreadBlocks(t, Thread.State.TIMED_WAITING);
         t.interrupt();
         awaitTermination(t);
     }
@@ -272,7 +272,7 @@ public class SynchronousQueueTest extends JSR166TestCase {
      * timed poll with nonzero timeout times out if no active putter
      */
     public void testTimedPoll() {
-        final boolean fair = ThreadLocalRandom.current().nextBoolean();
+        final boolean fair = randomBoolean();
         final SynchronousQueue q = new SynchronousQueue(fair);
         final long startTime = System.nanoTime();
         try { assertNull(q.poll(timeoutMillis(), MILLISECONDS)); }
@@ -285,7 +285,7 @@ public class SynchronousQueueTest extends JSR166TestCase {
      * after offer succeeds; on interruption throws
      */
     public void testTimedPollWithOffer() {
-        final boolean fair = ThreadLocalRandom.current().nextBoolean();
+        final boolean fair = randomBoolean();
         final SynchronousQueue q = new SynchronousQueue(fair);
         final CountDownLatch pleaseOffer = new CountDownLatch(1);
         final CountDownLatch pleaseInterrupt = new CountDownLatch(1);
@@ -301,7 +301,7 @@ public class SynchronousQueueTest extends JSR166TestCase {
 
                 Thread.currentThread().interrupt();
                 try {
-                    q.poll(LONG_DELAY_MS, MILLISECONDS);
+                    q.poll(randomTimeout(), randomTimeUnit());
                     shouldThrow();
                 } catch (InterruptedException success) {}
                 assertFalse(Thread.interrupted());
@@ -323,7 +323,7 @@ public class SynchronousQueueTest extends JSR166TestCase {
         assertTrue(millisElapsedSince(startTime) < LONG_DELAY_MS);
 
         await(pleaseInterrupt);
-        assertThreadBlocks(t, Thread.State.TIMED_WAITING);
+        if (randomBoolean()) assertThreadBlocks(t, Thread.State.TIMED_WAITING);
         t.interrupt();
         awaitTermination(t);
     }

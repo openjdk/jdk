@@ -875,9 +875,7 @@ UNSAFE_ENTRY(jclass, Unsafe_DefineAnonymousClass0(JNIEnv *env, jobject unsafe, j
   }
 
   // try/finally clause:
-  if (temp_alloc != NULL) {
-    FREE_C_HEAP_ARRAY(u1, temp_alloc);
-  }
+  FREE_C_HEAP_ARRAY(u1, temp_alloc);
 
   // The anonymous class loader data has been artificially been kept alive to
   // this point.   The mirror and any instances of this class have to keep
@@ -937,7 +935,7 @@ UNSAFE_ENTRY(jboolean, Unsafe_CompareAndSetReference(JNIEnv *env, jobject unsafe
   oop p = JNIHandles::resolve(obj);
   assert_field_offset_sane(p, offset);
   oop ret = HeapAccess<ON_UNKNOWN_OOP_REF>::oop_atomic_cmpxchg_at(x, p, (ptrdiff_t)offset, e);
-  return oopDesc::equals(ret, e);
+  return ret == e;
 } UNSAFE_END
 
 UNSAFE_ENTRY(jboolean, Unsafe_CompareAndSetInt(JNIEnv *env, jobject unsafe, jobject obj, jlong offset, jint e, jint x)) {

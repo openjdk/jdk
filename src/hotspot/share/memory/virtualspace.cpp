@@ -637,6 +637,10 @@ ReservedHeapSpace::ReservedHeapSpace(size_t size, size_t alignment, bool large, 
   }
 }
 
+MemRegion ReservedHeapSpace::region() const {
+  return MemRegion((HeapWord*)base(), (HeapWord*)end());
+}
+
 // Reserve space for code segment.  Same as Java heap only we mark this as
 // executable.
 ReservedCodeSpace::ReservedCodeSpace(size_t r_size,

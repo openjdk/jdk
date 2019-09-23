@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -94,6 +94,7 @@ final class Ser implements Externalizable {
     /**
      * Serialization version.
      */
+    @java.io.Serial
     private static final long serialVersionUID = -6103370247208168577L;
 
     static final byte CHRONO_TYPE = 1;
@@ -249,6 +250,7 @@ final class Ser implements Externalizable {
      *
      * @return the read object, should never be null
      */
+    @java.io.Serial
     private Object readResolve() {
          return object;
     }
