@@ -754,7 +754,7 @@ bool ShenandoahBarrierSetC2::optimize_loops(PhaseIdealLoop* phase, LoopOptsMode 
 }
 
 bool ShenandoahBarrierSetC2::array_copy_requires_gc_barriers(bool tightly_coupled_alloc, BasicType type, bool is_clone, ArrayCopyPhase phase) const {
-  bool is_oop = type == T_OBJECT || type == T_ARRAY;
+  bool is_oop = is_reference_type(type);
   if (!is_oop) {
     return false;
   }
@@ -787,7 +787,7 @@ bool ShenandoahBarrierSetC2::clone_needs_barrier(Node* src, PhaseGVN& gvn) {
         }
   } else if (src_type->isa_aryptr()) {
     BasicType src_elem  = src_type->klass()->as_array_klass()->element_type()->basic_type();
-    if (src_elem == T_OBJECT || src_elem == T_ARRAY) {
+    if (is_reference_type(src_elem)) {
       return true;
     }
   } else {

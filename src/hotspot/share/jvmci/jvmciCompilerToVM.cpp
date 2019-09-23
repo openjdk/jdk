@@ -1034,7 +1034,7 @@ C2V_VMENTRY_NULL(jobject, executeHotSpotNmethod, (JNIEnv* env, jobject, jobject 
 
   if (jap.get_ret_type() == T_VOID) {
     return NULL;
-  } else if (jap.get_ret_type() == T_OBJECT || jap.get_ret_type() == T_ARRAY) {
+  } else if (is_reference_type(jap.get_ret_type())) {
     return JNIHandles::make_local((oop) result.get_jobject());
   } else {
     jvalue *value = (jvalue *) result.get_value_addr();

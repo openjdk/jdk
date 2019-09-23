@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -58,7 +58,7 @@ void ModRefBarrierSetAssembler::arraycopy_epilogue(MacroAssembler* masm, Decorat
 
 void ModRefBarrierSetAssembler::store_at(MacroAssembler* masm, DecoratorSet decorators, BasicType type,
                                          Register val, Address dst, Register tmp) {
-  if (type == T_OBJECT || type == T_ARRAY) {
+  if (is_reference_type(type)) {
     oop_store_at(masm, decorators, type, val, dst, tmp);
   } else {
     BarrierSetAssembler::store_at(masm, decorators, type, val, dst, tmp);

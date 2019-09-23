@@ -92,7 +92,7 @@ oop Reflection::box(jvalue* value, BasicType type, TRAPS) {
   if (type == T_VOID) {
     return NULL;
   }
-  if (type == T_OBJECT || type == T_ARRAY) {
+  if (is_reference_type(type)) {
     // regular objects are not boxed
     return (oop) value->l;
   }
@@ -756,7 +756,7 @@ static oop get_mirror_from_signature(const methodHandle& method,
                                      TRAPS) {
 
 
-  if (T_OBJECT == ss->type() || T_ARRAY == ss->type()) {
+  if (is_reference_type(ss->type())) {
     Symbol* name = ss->as_symbol();
     oop loader = method->method_holder()->class_loader();
     oop protection_domain = method->method_holder()->protection_domain();

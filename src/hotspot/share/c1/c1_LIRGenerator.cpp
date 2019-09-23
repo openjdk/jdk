@@ -1546,7 +1546,7 @@ void LIRGenerator::do_StoreIndexed(StoreIndexed* x) {
   assert(x->is_pinned(),"");
   bool needs_range_check = x->compute_needs_range_check();
   bool use_length = x->length() != NULL;
-  bool obj_store = x->elt_type() == T_ARRAY || x->elt_type() == T_OBJECT;
+  bool obj_store = is_reference_type(x->elt_type());
   bool needs_store_check = obj_store && (x->value()->as_Constant() == NULL ||
                                          !get_jobject_constant(x->value())->is_null_object() ||
                                          x->should_profile());
@@ -2163,7 +2163,7 @@ void LIRGenerator::do_UnsafeGetObject(UnsafeGetObject* x) {
   if (type == T_BOOLEAN) {
     decorators |= C1_MASK_BOOLEAN;
   }
-  if (type == T_ARRAY || type == T_OBJECT) {
+  if (is_reference_type(type)) {
     decorators |= ON_UNKNOWN_OOP_REF;
   }
 
@@ -2190,7 +2190,7 @@ void LIRGenerator::do_UnsafePutObject(UnsafePutObject* x) {
   set_no_result(x);
 
   DecoratorSet decorators = IN_HEAP | C1_UNSAFE_ACCESS;
-  if (type == T_ARRAY || type == T_OBJECT) {
+  if (is_reference_type(type)) {
     decorators |= ON_UNKNOWN_OOP_REF;
   }
   if (x->is_volatile()) {
@@ -2207,7 +2207,7 @@ void LIRGenerator::do_UnsafeGetAndSetObject(UnsafeGetAndSetObject* x) {
 
   DecoratorSet decorators = IN_HEAP | C1_UNSAFE_ACCESS | MO_SEQ_CST;
 
-  if (type == T_ARRAY || type == T_OBJECT) {
+  if (is_reference_type(type)) {
     decorators |= ON_UNKNOWN_OOP_REF;
   }
 
@@ -2600,7 +2600,7 @@ void LIRGenerator::profile_parameters(Base* x) {
         LIR_Opr src = args->at(i);
         assert(!src->is_illegal(), "check");
         BasicType t = src->type();
-        if (t == T_OBJECT || t == T_ARRAY) {
+        if (is_reference_type(t)) {
           intptr_t profiled_k = parameters->type(j);
           Local* local = x->state()->local_at(java_index)->as_Local();
           ciKlass* exact = profile_type(md, md->byte_offset_of_slot(parameters_type_data, ParametersTypeData::type_offset(0)),
