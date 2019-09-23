@@ -45,7 +45,7 @@
 #include "services/management.hpp"
 #include "utilities/macros.hpp"
 
-void G1RootProcessor::worker_has_discovered_all_strong_classes() {
+void G1RootProcessor::worker_has_discovered_all_strong_nmethods() {
   assert(ClassUnloadingWithConcurrentMark, "Currently only needed when doing G1 Class Unloading");
 
   uint new_value = (uint)Atomic::add(1, &_n_workers_discovered_strong_classes);
@@ -56,7 +56,7 @@ void G1RootProcessor::worker_has_discovered_all_strong_classes() {
   }
 }
 
-void G1RootProcessor::wait_until_all_strong_classes_discovered() {
+void G1RootProcessor::wait_until_all_strong_nmethods_discovered() {
   assert(ClassUnloadingWithConcurrentMark, "Currently only needed when doing G1 Class Unloading");
 
   if ((uint)_n_workers_discovered_strong_classes != n_workers()) {
@@ -71,7 +71,7 @@ G1RootProcessor::G1RootProcessor(G1CollectedHeap* g1h, uint n_workers) :
     _g1h(g1h),
     _process_strong_tasks(G1RP_PS_NumElements),
     _srs(n_workers),
-    _lock(Mutex::leaf, "G1 Root Scanning barrier lock", false, Monitor::_safepoint_check_never),
+    _lock(Mutex::leaf, "G1 Root Scan barrier lock", false, Monitor::_safepoint_check_never),
     _n_workers_discovered_strong_classes(0) {}
 
 void G1RootProcessor::evacuate_roots(G1ParScanThreadState* pss, uint worker_i) {
@@ -80,13 +80,7 @@ void G1RootProcessor::evacuate_roots(G1ParScanThreadState* pss, uint worker_i) {
   G1EvacPhaseTimesTracker timer(phase_times, pss, G1GCPhaseTimes::ExtRootScan, worker_i);
 
   G1EvacuationRootClosures* closures = pss->closures();
-  process_java_roots(closures, phase_times, worker_i);
-
-  // This is the point where this worker thread will not find more strong CLDs/nmethods.
-  // Report this so G1 can synchronize the strong and weak CLDs/nmethods processing.
-  if (closures->trace_metadata()) {
-    worker_has_discovered_all_strong_classes();
-  }
+  process_java_roots(closures, phase_times, worker_i, closures->trace_metadata() /* notify_claimed_nmethods_done */);
 
   process_vm_roots(closures, phase_times, worker_i);
 
@@ -103,21 +97,9 @@ void G1RootProcessor::evacuate_roots(G1ParScanThreadState* pss, uint worker_i) {
   }
 
   if (closures->trace_metadata()) {
-    {
-      G1GCParPhaseTimesTracker x(phase_times, G1GCPhaseTimes::WaitForStrongCLD, worker_i);
-      // Barrier to make sure all workers passed
-      // the strong CLD and strong nmethods phases.
-      wait_until_all_strong_classes_discovered();
-    }
-
-    // Now take the complement of the strong CLDs.
-    G1GCParPhaseTimesTracker x(phase_times, G1GCPhaseTimes::WeakCLDRoots, worker_i);
-    assert(closures->second_pass_weak_clds() != NULL, "Should be non-null if we are tracing metadata.");
-    ClassLoaderDataGraph::roots_cld_do(NULL, closures->second_pass_weak_clds());
-  } else {
-    phase_times->record_time_secs(G1GCPhaseTimes::WaitForStrongCLD, worker_i, 0.0);
-    phase_times->record_time_secs(G1GCPhaseTimes::WeakCLDRoots, worker_i, 0.0);
-    assert(closures->second_pass_weak_clds() == NULL, "Should be null if not tracing metadata.");
+    G1GCParPhaseTimesTracker x(phase_times, G1GCPhaseTimes::WaitForStrongRoots, worker_i);
+    // Wait to make sure all workers passed the strong nmethods phase.
+    wait_until_all_strong_nmethods_discovered();
   }
 
   _process_strong_tasks.all_tasks_completed(n_workers());
@@ -189,23 +171,43 @@ void G1RootProcessor::process_all_roots(OopClosure* oops,
 
 void G1RootProcessor::process_java_roots(G1RootClosures* closures,
                                          G1GCPhaseTimes* phase_times,
-                                         uint worker_i) {
-  // Iterating over the CLDG and the Threads are done early to allow us to
-  // first process the strong CLDs and nmethods and then, after a barrier,
-  // let the thread process the weak CLDs and nmethods.
-  {
-    G1GCParPhaseTimesTracker x(phase_times, G1GCPhaseTimes::CLDGRoots, worker_i);
-    if (_process_strong_tasks.try_claim_task(G1RP_PS_ClassLoaderDataGraph_oops_do)) {
-      ClassLoaderDataGraph::roots_cld_do(closures->strong_clds(), closures->weak_clds());
-    }
-  }
-
+                                         uint worker_i,
+                                         bool notify_claimed_nmethods_done) {
+  // We need to make make sure that the "strong" nmethods are processed first
+  // using the strong closure. Only after that we process the weakly reachable
+  // nmethods.
+  // We need to strictly separate the strong and weak nmethod processing because
+  // any processing claims that nmethod, i.e. will not be iterated again.
+  // Which means if an nmethod is processed first and claimed, the strong processing
+  // will not happen, and the oops reachable by that nmethod will not be marked
+  // properly.
+  //
+  // That is why we process strong nmethods first, synchronize all threads via a
+  // barrier, and only then allow weak processing. To minimize the wait time at
+  // that barrier we do the strong nmethod processing first, and immediately after-
+  // wards indicate that that thread is done. Hopefully other root processing after
+  // nmethod processing is enough so there is no need to wait.
+  //
+  // This is only required in the concurrent start pause with class unloading enabled.
   {
     G1GCParPhaseTimesTracker x(phase_times, G1GCPhaseTimes::ThreadRoots, worker_i);
     bool is_par = n_workers() > 1;
     Threads::possibly_parallel_oops_do(is_par,
                                        closures->strong_oops(),
                                        closures->strong_codeblobs());
+  }
+
+  // This is the point where this worker thread will not find more strong nmethods.
+  // Report this so G1 can synchronize the strong and weak CLDs/nmethods processing.
+  if (notify_claimed_nmethods_done) {
+    worker_has_discovered_all_strong_nmethods();
+  }
+
+  {
+    G1GCParPhaseTimesTracker x(phase_times, G1GCPhaseTimes::CLDGRoots, worker_i);
+    if (_process_strong_tasks.try_claim_task(G1RP_PS_ClassLoaderDataGraph_oops_do)) {
+      ClassLoaderDataGraph::roots_cld_do(closures->strong_clds(), closures->weak_clds());
+    }
   }
 }
 

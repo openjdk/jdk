@@ -57,8 +57,7 @@ class G1GCPhaseTimes : public CHeapObj<mtGC> {
     JVMTIRoots,
     AOT_ONLY(AOTCodeRoots COMMA)
     CMRefRoots,
-    WaitForStrongCLD,
-    WeakCLDRoots,
+    WaitForStrongRoots,
     MergeER,
     MergeRS,
     OptMergeRS,
@@ -84,7 +83,7 @@ class G1GCPhaseTimes : public CHeapObj<mtGC> {
   };
 
   static const GCParPhases ExtRootScanSubPhasesFirst = ThreadRoots;
-  static const GCParPhases ExtRootScanSubPhasesLast = WeakCLDRoots;
+  static const GCParPhases ExtRootScanSubPhasesLast = WaitForStrongRoots;
 
   enum GCMergeRSWorkTimes {
     MergeRSMergedSparse,

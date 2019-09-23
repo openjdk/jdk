@@ -175,12 +175,10 @@ public:
 class G1CLDScanClosure : public CLDClosure {
   G1ParCopyHelper* _closure;
   bool             _process_only_dirty;
-  int              _claim;
   int              _count;
 public:
-  G1CLDScanClosure(G1ParCopyHelper* closure,
-                   bool process_only_dirty, int claim_value)
-  : _closure(closure), _process_only_dirty(process_only_dirty), _claim(claim_value), _count(0) {}
+  G1CLDScanClosure(G1ParCopyHelper* closure, bool process_only_dirty)
+  : _closure(closure), _process_only_dirty(process_only_dirty), _count(0) {}
   void do_cld(ClassLoaderData* cld);
 };
 

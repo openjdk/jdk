@@ -62,8 +62,7 @@ G1GCPhaseTimes::G1GCPhaseTimes(STWGCTimer* gc_timer, uint max_gc_threads) :
   _gc_par_phases[JVMTIRoots] = new WorkerDataArray<double>(max_gc_threads, "JVMTI Roots (ms):");
   AOT_ONLY(_gc_par_phases[AOTCodeRoots] = new WorkerDataArray<double>(max_gc_threads, "AOT Root Scan (ms):");)
   _gc_par_phases[CMRefRoots] = new WorkerDataArray<double>(max_gc_threads, "CM RefProcessor Roots (ms):");
-  _gc_par_phases[WaitForStrongCLD] = new WorkerDataArray<double>(max_gc_threads, "Wait For Strong CLD (ms):");
-  _gc_par_phases[WeakCLDRoots] = new WorkerDataArray<double>(max_gc_threads, "Weak CLD Roots (ms):");
+  _gc_par_phases[WaitForStrongRoots] = new WorkerDataArray<double>(max_gc_threads, "Wait For Strong Roots (ms):");
 
   _gc_par_phases[MergeER] = new WorkerDataArray<double>(max_gc_threads, "Eager Reclaim (ms):");
 
@@ -567,8 +566,7 @@ const char* G1GCPhaseTimes::phase_name(GCParPhases phase) {
       "JVMTIRoots",
       AOT_ONLY("AOTCodeRoots" COMMA)
       "CMRefRoots",
-      "WaitForStrongCLD",
-      "WeakCLDRoots",
+      "WaitForStrongRoots",
       "MergeER",
       "MergeRS",
       "OptMergeRS",
