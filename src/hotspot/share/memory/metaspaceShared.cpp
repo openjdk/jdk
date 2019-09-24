@@ -1427,12 +1427,11 @@ char* VM_PopulateDumpSharedSpace::dump_read_only_tables() {
 
   SystemDictionaryShared::write_to_archive();
 
-  char* start = _ro_region.top();
-
   size_t vtptrs_bytes = _num_cloned_vtable_kinds * sizeof(intptr_t*);
   _cloned_cpp_vtptrs = (intptr_t**)_ro_region.allocate(vtptrs_bytes, sizeof(intptr_t*));
 
   // Write the other data to the output array.
+  char* start = _ro_region.top();
   WriteClosure wc(&_ro_region);
   MetaspaceShared::serialize(&wc);
 
@@ -1515,7 +1514,7 @@ void VM_PopulateDumpSharedSpace::doit() {
 
   ArchiveCompactor::relocate_well_known_klasses();
 
-  char* read_only_tables_start = dump_read_only_tables();
+  char* serialized_data_start = dump_read_only_tables();
   _ro_region.pack(&_md_region);
 
   char* vtbl_list = _md_region.top();
@@ -1540,7 +1539,7 @@ void VM_PopulateDumpSharedSpace::doit() {
 
   FileMapInfo* mapinfo = new FileMapInfo(true);
   mapinfo->populate_header(os::vm_allocation_granularity());
-  mapinfo->set_read_only_tables_start(read_only_tables_start);
+  mapinfo->set_serialized_data_start(serialized_data_start);
   mapinfo->set_misc_data_patching_start(vtbl_list);
   mapinfo->set_i2i_entry_code_buffers(MetaspaceShared::i2i_entry_code_buffers(),
                                       MetaspaceShared::i2i_entry_code_buffers_size());
@@ -2033,14 +2032,9 @@ void MetaspaceShared::initialize_shared_spaces() {
   char* buffer = mapinfo->misc_data_patching_start();
   clone_cpp_vtables((intptr_t*)buffer);
 
-  // The rest of the data is now stored in the RW region
-  buffer = mapinfo->read_only_tables_start();
-
-  // Skip over _cloned_cpp_vtptrs;
-  buffer += _num_cloned_vtable_kinds * sizeof(intptr_t*);
-
   // Verify various attributes of the archive, plus initialize the
   // shared string/symbol tables
+  buffer = mapinfo->serialized_data_start();
   intptr_t* array = (intptr_t*)buffer;
   ReadClosure rc(&array);
   serialize(&rc);

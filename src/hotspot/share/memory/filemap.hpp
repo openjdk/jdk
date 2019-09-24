@@ -179,10 +179,8 @@ class FileMapHeader: private CDSFileMapHeaderBase {
   CompressedOops::Mode _narrow_oop_mode; // compressed oop encoding mode
   int     _narrow_klass_shift;      // save narrow klass base and shift
   address _narrow_klass_base;
-
-
   char*   _misc_data_patching_start;
-  char*   _read_only_tables_start;
+  char*   _serialized_data_start;  // Data accessed using {ReadClosure,WriteClosure}::serialize()
   address _i2i_entry_code_buffers;
   size_t  _i2i_entry_code_buffers_size;
   size_t  _core_spaces_size;        // number of bytes allocated by the core spaces
@@ -238,7 +236,7 @@ public:
   int narrow_klass_shift()                 const { return _narrow_klass_shift; }
   address narrow_klass_base()              const { return _narrow_klass_base; }
   char* misc_data_patching_start()         const { return _misc_data_patching_start; }
-  char* read_only_tables_start()           const { return _read_only_tables_start; }
+  char* serialized_data_start()            const { return _serialized_data_start; }
   address i2i_entry_code_buffers()         const { return _i2i_entry_code_buffers; }
   size_t i2i_entry_code_buffers_size()     const { return _i2i_entry_code_buffers_size; }
   size_t core_spaces_size()                const { return _core_spaces_size; }
@@ -259,7 +257,7 @@ public:
   void set_core_spaces_size(size_t s)            { _core_spaces_size = s; }
   void set_has_platform_or_app_classes(bool v)   { _has_platform_or_app_classes = v; }
   void set_misc_data_patching_start(char* p)     { _misc_data_patching_start = p; }
-  void set_read_only_tables_start(char* p)       { _read_only_tables_start   = p; }
+  void set_serialized_data_start(char* p)        { _serialized_data_start   = p; }
   void set_base_archive_name_size(size_t s)      { _base_archive_name_size = s; }
   void set_base_archive_is_default(bool b)       { _base_archive_is_default = b; }
   void set_header_size(size_t s)                 { _header_size = s; }
@@ -360,8 +358,8 @@ public:
 
   char* misc_data_patching_start()            const { return header()->misc_data_patching_start(); }
   void  set_misc_data_patching_start(char* p) const { header()->set_misc_data_patching_start(p); }
-  char* read_only_tables_start()              const { return header()->read_only_tables_start(); }
-  void  set_read_only_tables_start(char* p)   const { header()->set_read_only_tables_start(p); }
+  char* serialized_data_start()               const { return header()->serialized_data_start(); }
+  void  set_serialized_data_start(char* p)    const { header()->set_serialized_data_start(p); }
 
   bool  is_file_position_aligned() const;
   void  align_file_position();
