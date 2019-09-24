@@ -412,8 +412,7 @@ public:
                      bool read_only, bool allow_exec);
   size_t write_archive_heap_regions(GrowableArray<MemRegion> *heap_mem,
                                     GrowableArray<ArchiveHeapOopmapInfo> *oopmaps,
-                                    int first_region_id, int max_num_regions,
-                                    bool print_log);
+                                    int first_region_id, int max_num_regions);
   void  write_bytes(const void* buffer, size_t count);
   void  write_bytes_aligned(const void* buffer, size_t count);
   size_t  read_bytes(void* buffer, size_t count);
@@ -479,6 +478,7 @@ public:
   char* region_addr(int idx);
 
  private:
+  void  seek_to_position(size_t pos);
   char* skip_first_path_entry(const char* path) NOT_CDS_RETURN_(NULL);
   int   num_paths(const char* path) NOT_CDS_RETURN_(0);
   GrowableArray<const char*>* create_path_array(const char* path) NOT_CDS_RETURN_(NULL);

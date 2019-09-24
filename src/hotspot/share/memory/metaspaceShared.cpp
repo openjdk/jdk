@@ -1137,7 +1137,9 @@ public:
 
   VMOp_Type type() const { return VMOp_PopulateDumpSharedSpace; }
   void doit();   // outline because gdb sucks
-  static void write_region(FileMapInfo* mapinfo, int region, DumpRegion* space, bool read_only,  bool allow_exec);
+  static void write_region(FileMapInfo* mapinfo, int region_idx, DumpRegion* dump_region, bool read_only,  bool allow_exec) {
+    mapinfo->write_region(region_idx, dump_region->base(), dump_region->used(), read_only, allow_exec);
+  }
   bool allow_nested_vm_operations() const { return true; }
 }; // class VM_PopulateDumpSharedSpace
 
@@ -1406,11 +1408,6 @@ DumpAllocStats* ArchiveCompactor::_alloc_stats;
 SortedSymbolClosure* ArchiveCompactor::_ssc;
 ArchiveCompactor::RelocationTable* ArchiveCompactor::_new_loc_table;
 
-void VM_PopulateDumpSharedSpace::write_region(FileMapInfo* mapinfo, int region_idx,
-                                              DumpRegion* dump_region, bool read_only,  bool allow_exec) {
-  mapinfo->write_region(region_idx, dump_region->base(), dump_region->used(), read_only, allow_exec);
-}
-
 void VM_PopulateDumpSharedSpace::dump_symbols() {
   tty->print_cr("Dumping symbol table ...");
 
@@ -1546,44 +1543,30 @@ void VM_PopulateDumpSharedSpace::doit() {
   mapinfo->set_read_only_tables_start(read_only_tables_start);
   mapinfo->set_misc_data_patching_start(vtbl_list);
   mapinfo->set_i2i_entry_code_buffers(MetaspaceShared::i2i_entry_code_buffers(),
-                                          MetaspaceShared::i2i_entry_code_buffers_size());
+                                      MetaspaceShared::i2i_entry_code_buffers_size());
   mapinfo->set_core_spaces_size(core_spaces_size);
+  mapinfo->open_for_write();
 
-  for (int pass=1; pass<=2; pass++) {
-    bool print_archive_log = (pass==1);
-    if (pass == 1) {
-      // The first pass doesn't actually write the data to disk. All it
-      // does is to update the fields in the mapinfo->_header.
-    } else {
-      // After the first pass, the contents of mapinfo->_header are finalized,
-      // so we can compute the header's CRC, and write the contents of the header
-      // and the regions into disk.
-      mapinfo->open_for_write();
-      mapinfo->set_header_crc(mapinfo->compute_header_crc());
-    }
-    mapinfo->write_header();
+  // NOTE: md contains the trampoline code for method entries, which are patched at run time,
+  // so it needs to be read/write.
+  write_region(mapinfo, MetaspaceShared::mc, &_mc_region, /*read_only=*/false,/*allow_exec=*/true);
+  write_region(mapinfo, MetaspaceShared::rw, &_rw_region, /*read_only=*/false,/*allow_exec=*/false);
+  write_region(mapinfo, MetaspaceShared::ro, &_ro_region, /*read_only=*/true, /*allow_exec=*/false);
+  write_region(mapinfo, MetaspaceShared::md, &_md_region, /*read_only=*/false,/*allow_exec=*/false);
 
-    // NOTE: md contains the trampoline code for method entries, which are patched at run time,
-    // so it needs to be read/write.
-    write_region(mapinfo, MetaspaceShared::mc, &_mc_region, /*read_only=*/false,/*allow_exec=*/true);
-    write_region(mapinfo, MetaspaceShared::rw, &_rw_region, /*read_only=*/false,/*allow_exec=*/false);
-    write_region(mapinfo, MetaspaceShared::ro, &_ro_region, /*read_only=*/true, /*allow_exec=*/false);
-    write_region(mapinfo, MetaspaceShared::md, &_md_region, /*read_only=*/false,/*allow_exec=*/false);
-
-    _total_closed_archive_region_size = mapinfo->write_archive_heap_regions(
+  _total_closed_archive_region_size = mapinfo->write_archive_heap_regions(
                                         _closed_archive_heap_regions,
                                         _closed_archive_heap_oopmaps,
                                         MetaspaceShared::first_closed_archive_heap_region,
-                                        MetaspaceShared::max_closed_archive_heap_region,
-                                        print_archive_log);
-    _total_open_archive_region_size = mapinfo->write_archive_heap_regions(
+                                        MetaspaceShared::max_closed_archive_heap_region);
+  _total_open_archive_region_size = mapinfo->write_archive_heap_regions(
                                         _open_archive_heap_regions,
                                         _open_archive_heap_oopmaps,
                                         MetaspaceShared::first_open_archive_heap_region,
-                                        MetaspaceShared::max_open_archive_heap_region,
-                                        print_archive_log);
-  }
+                                        MetaspaceShared::max_open_archive_heap_region);
 
+  mapinfo->set_header_crc(mapinfo->compute_header_crc());
+  mapinfo->write_header();
   mapinfo->close();
 
   // Restore the vtable in case we invoke any virtual methods.

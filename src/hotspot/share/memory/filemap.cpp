@@ -1033,6 +1033,11 @@ bool FileMapInfo::init_from_file(int fd, bool is_static) {
   return true;
 }
 
+void FileMapInfo::seek_to_position(size_t pos) {
+  if (lseek(_fd, (long)pos, SEEK_SET) < 0) {
+    fail_stop("Unable to seek to position " SIZE_FORMAT, pos);
+  }
+}
 
 // Read the FileMapInfo information from the file.
 bool FileMapInfo::open_for_read(const char* path) {
@@ -1088,14 +1093,26 @@ void FileMapInfo::open_for_write(const char* path) {
               os::strerror(errno));
   }
   _fd = fd;
-  _file_offset = 0;
   _file_open = true;
+
+  // Seek past the header. We will write the header after all regions are written
+  // and their CRCs computed.
+  size_t header_bytes = header()->header_size();
+  if (header()->magic() == CDS_DYNAMIC_ARCHIVE_MAGIC) {
+    header_bytes += strlen(Arguments::GetSharedArchivePath()) + 1;
+  }
+
+  header_bytes = align_up(header_bytes, os::vm_allocation_granularity());
+  _file_offset = header_bytes;
+  seek_to_position(_file_offset);
 }
 
 
 // Write the header to the file, seek to the next allocation boundary.
 
 void FileMapInfo::write_header() {
+  _file_offset = 0;
+  seek_to_position(_file_offset);
   char* base_archive_name = NULL;
   if (header()->magic() == CDS_DYNAMIC_ARCHIVE_MAGIC) {
     base_archive_name = (char*)Arguments::GetSharedArchivePath();
@@ -1108,7 +1125,6 @@ void FileMapInfo::write_header() {
   if (base_archive_name != NULL) {
     write_bytes(base_archive_name, header()->base_archive_name_size());
   }
-  align_file_position();
 }
 
 void FileMapRegion::init(bool is_heap_region, char* base, size_t size, bool read_only,
@@ -1132,9 +1148,6 @@ void FileMapRegion::init(bool is_heap_region, char* base, size_t size, bool read
   _crc = crc;
 }
 
-// Dump region to file.
-// This is called twice for each region during archiving, once before
-// the archive file is open (_file_open is false) and once after.
 void FileMapInfo::write_region(int region, char* base, size_t size,
                                bool read_only, bool allow_exec) {
   assert(DumpSharedSpaces || DynamicDumpSharedSpaces, "Dump time only");
@@ -1146,14 +1159,10 @@ void FileMapInfo::write_region(int region, char* base, size_t size,
     target_base = DynamicArchive::buffer_to_target(base);
   }
 
-  if (_file_open) {
-    guarantee(si->file_offset() == _file_offset, "file offset mismatch.");
-    log_info(cds)("Shared file region %d: " SIZE_FORMAT_HEX_W(08)
-                  " bytes, addr " INTPTR_FORMAT " file offset " SIZE_FORMAT_HEX_W(08),
-                  region, size, p2i(target_base), _file_offset);
-  } else {
-    si->set_file_offset(_file_offset);
-  }
+  si->set_file_offset(_file_offset);
+  log_info(cds)("Shared file region %d: " SIZE_FORMAT_HEX_W(08)
+                " bytes, addr " INTPTR_FORMAT " file offset " SIZE_FORMAT_HEX_W(08),
+                region, size, p2i(target_base), _file_offset);
 
   int crc = ClassLoader::crc32(0, base, (jint)size);
   si->init(HeapShared::is_heap_region(region), target_base, size, read_only, allow_exec, crc);
@@ -1196,8 +1205,7 @@ void FileMapInfo::write_region(int region, char* base, size_t size,
 //             +-- gap
 size_t FileMapInfo::write_archive_heap_regions(GrowableArray<MemRegion> *heap_mem,
                                                GrowableArray<ArchiveHeapOopmapInfo> *oopmaps,
-                                               int first_region_id, int max_num_regions,
-                                               bool print_log) {
+                                               int first_region_id, int max_num_regions) {
   assert(max_num_regions <= 2, "Only support maximum 2 memory regions");
 
   int arr_len = heap_mem == NULL ? 0 : heap_mem->length();
@@ -1221,10 +1229,8 @@ size_t FileMapInfo::write_archive_heap_regions(GrowableArray<MemRegion> *heap_me
       total_size += size;
     }
 
-    if (print_log) {
-      log_info(cds)("Archive heap region %d " INTPTR_FORMAT " - " INTPTR_FORMAT " = " SIZE_FORMAT_W(8) " bytes",
-                    i, p2i(start), p2i(start + size), size);
-    }
+    log_info(cds)("Archive heap region %d " INTPTR_FORMAT " - " INTPTR_FORMAT " = " SIZE_FORMAT_W(8) " bytes",
+                  i, p2i(start), p2i(start + size), size);
     write_region(i, start, size, false, false);
     if (size > 0) {
       space_at(i)->init_oopmap(oopmaps->at(arr_idx)._oopmap,
@@ -1237,14 +1243,13 @@ size_t FileMapInfo::write_archive_heap_regions(GrowableArray<MemRegion> *heap_me
 // Dump bytes to file -- at the current file position.
 
 void FileMapInfo::write_bytes(const void* buffer, size_t nbytes) {
-  if (_file_open) {
-    size_t n = os::write(_fd, buffer, (unsigned int)nbytes);
-    if (n != nbytes) {
-      // If the shared archive is corrupted, close it and remove it.
-      close();
-      remove(_full_path);
-      fail_stop("Unable to write to shared archive file.");
-    }
+  assert(_file_open, "must be");
+  size_t n = os::write(_fd, buffer, (unsigned int)nbytes);
+  if (n != nbytes) {
+    // If the shared archive is corrupted, close it and remove it.
+    close();
+    remove(_full_path);
+    fail_stop("Unable to write to shared archive file.");
   }
   _file_offset += nbytes;
 }
@@ -1257,20 +1262,17 @@ bool FileMapInfo::is_file_position_aligned() const {
 // Align file position to an allocation unit boundary.
 
 void FileMapInfo::align_file_position() {
+  assert(_file_open, "must be");
   size_t new_file_offset = align_up(_file_offset,
-                                         os::vm_allocation_granularity());
+                                    os::vm_allocation_granularity());
   if (new_file_offset != _file_offset) {
     _file_offset = new_file_offset;
-    if (_file_open) {
-      // Seek one byte back from the target and write a byte to insure
-      // that the written file is the correct length.
-      _file_offset -= 1;
-      if (lseek(_fd, (long)_file_offset, SEEK_SET) < 0) {
-        fail_stop("Unable to seek.");
-      }
-      char zero = 0;
-      write_bytes(&zero, 1);
-    }
+    // Seek one byte back from the target and write a byte to insure
+    // that the written file is the correct length.
+    _file_offset -= 1;
+    seek_to_position(_file_offset);
+    char zero = 0;
+    write_bytes(&zero, 1);
   }
 }
 
