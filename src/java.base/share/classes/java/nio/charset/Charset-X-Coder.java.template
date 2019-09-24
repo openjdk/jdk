@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -455,7 +455,14 @@ public abstract class Charset$Coder$ {
     /**
      * Returns the maximum number of $otype$s that will be produced for each
      * $itype$ of input.  This value may be used to compute the worst-case size
-     * of the output buffer required for a given input sequence.
+     * of the output buffer required for a given input sequence. This value
+     * accounts for any necessary content-independent prefix or suffix
+#if[encoder]
+     * $otype$s, such as byte-order marks.
+#end[encoder]
+#if[decoder]
+     * $otype$s.
+#end[decoder]
      *
      * @return  The maximum number of $otype$s that will be produced per
      *          $itype$ of input
