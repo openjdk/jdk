@@ -119,6 +119,16 @@ class UnixNativeDispatcher {
     static native void fclose(long stream) throws UnixException;
 
     /**
+     * void rewind(FILE* stream);
+     */
+    static native void rewind(long stream) throws UnixException;
+
+    /**
+     * ssize_t getline(char **lineptr, size_t *n, FILE *stream);
+     */
+    static native int getlinelen(long stream) throws UnixException;
+
+    /**
      * link(const char* existing, const char* new)
      */
     static void link(UnixPath existing, UnixPath newfile) throws UnixException {

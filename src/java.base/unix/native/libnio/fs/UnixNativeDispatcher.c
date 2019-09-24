@@ -403,6 +403,51 @@ Java_sun_nio_fs_UnixNativeDispatcher_fclose(JNIEnv* env, jclass this, jlong stre
     }
 }
 
+JNIEXPORT void JNICALL
+Java_sun_nio_fs_UnixNativeDispatcher_rewind(JNIEnv* env, jclass this, jlong stream)
+{
+    FILE* fp = jlong_to_ptr(stream);
+    int saved_errno;
+
+    errno = 0;
+    rewind(fp);
+    saved_errno = errno;
+    if (ferror(fp)) {
+        throwUnixException(env, saved_errno);
+    }
+}
+
+/**
+ * This function returns line length without NUL terminator or -1 on EOF.
+ */
+JNIEXPORT jint JNICALL
+Java_sun_nio_fs_UnixNativeDispatcher_getlinelen(JNIEnv* env, jclass this, jlong stream)
+{
+    FILE* fp = jlong_to_ptr(stream);
+    size_t lineSize = 0;
+    char * lineBuffer = NULL;
+    int saved_errno;
+
+    ssize_t res = getline(&lineBuffer, &lineSize, fp);
+    saved_errno = errno;
+
+    /* Should free lineBuffer no matter result, according to man page */
+    if (lineBuffer != NULL)
+        free(lineBuffer);
+
+    if (feof(fp))
+        return -1;
+
+    /* On successfull return res >= 0, otherwise res is -1 */
+    if (res == -1)
+        throwUnixException(env, saved_errno);
+
+    if (res > INT_MAX)
+        throwUnixException(env, EOVERFLOW);
+
+    return (jint)res;
+}
+
 JNIEXPORT jint JNICALL
 Java_sun_nio_fs_UnixNativeDispatcher_open0(JNIEnv* env, jclass this,
     jlong pathAddress, jint oflags, jint mode)
