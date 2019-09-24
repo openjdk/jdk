@@ -50,11 +50,12 @@ private:
   ZMemoryManager _manager;
   bool           _initialized;
 
-  bool reserve(uintptr_t start, size_t size);
+  bool reserve_platform(uintptr_t start, size_t size);
+  size_t reserve(uintptr_t start, size_t size);
   void nmt_reserve(uintptr_t start, size_t size);
 
 public:
-  ZVirtualMemoryManager();
+  ZVirtualMemoryManager(size_t max_capacity);
 
   bool is_initialized() const;
 
