@@ -32,10 +32,10 @@ package java.io;
  * basic sink of data, but possibly transforming the data along the
  * way or providing additional functionality.
  * <p>
- * The class <code>FilterOutputStream</code> itself simply overrides
- * all methods of <code>OutputStream</code> with versions that pass
+ * The class {@code FilterOutputStream} itself simply overrides
+ * all methods of {@code OutputStream} with versions that pass
  * all requests to the underlying output stream. Subclasses of
- * <code>FilterOutputStream</code> may further override some of these
+ * {@code FilterOutputStream} may further override some of these
  * methods as well as provide additional methods and fields.
  *
  * @author  Jonathan Payne
@@ -63,7 +63,7 @@ public class FilterOutputStream extends OutputStream {
      *
      * @param   out   the underlying output stream to be assigned to
      *                the field {@code this.out} for later use, or
-     *                <code>null</code> if this instance is to be
+     *                {@code null} if this instance is to be
      *                created without an underlying stream.
      */
     public FilterOutputStream(OutputStream out) {
@@ -71,15 +71,15 @@ public class FilterOutputStream extends OutputStream {
     }
 
     /**
-     * Writes the specified <code>byte</code> to this output stream.
+     * Writes the specified {@code byte} to this output stream.
      * <p>
-     * The <code>write</code> method of <code>FilterOutputStream</code>
-     * calls the <code>write</code> method of its underlying output stream,
+     * The {@code write} method of {@code FilterOutputStream}
+     * calls the {@code write} method of its underlying output stream,
      * that is, it performs {@code out.write(b)}.
      * <p>
      * Implements the abstract {@code write} method of {@code OutputStream}.
      *
-     * @param      b   the <code>byte</code>.
+     * @param      b   the {@code byte}.
      * @throws     IOException  if an I/O error occurs.
      */
     @Override
@@ -88,16 +88,16 @@ public class FilterOutputStream extends OutputStream {
     }
 
     /**
-     * Writes <code>b.length</code> bytes to this output stream.
+     * Writes {@code b.length} bytes to this output stream.
      * <p>
-     * The <code>write</code> method of <code>FilterOutputStream</code>
-     * calls its <code>write</code> method of three arguments with the
-     * arguments <code>b</code>, <code>0</code>, and
-     * <code>b.length</code>.
+     * The {@code write} method of {@code FilterOutputStream}
+     * calls its {@code write} method of three arguments with the
+     * arguments {@code b}, {@code 0}, and
+     * {@code b.length}.
      * <p>
      * Note that this method does not call the one-argument
-     * <code>write</code> method of its underlying output stream with
-     * the single argument <code>b</code>.
+     * {@code write} method of its underlying output stream with
+     * the single argument {@code b}.
      *
      * @param      b   the data to be written.
      * @throws     IOException  if an I/O error occurs.
@@ -109,17 +109,17 @@ public class FilterOutputStream extends OutputStream {
     }
 
     /**
-     * Writes <code>len</code> bytes from the specified
-     * <code>byte</code> array starting at offset <code>off</code> to
+     * Writes {@code len} bytes from the specified
+     * {@code byte} array starting at offset {@code off} to
      * this output stream.
      * <p>
-     * The <code>write</code> method of <code>FilterOutputStream</code>
-     * calls the <code>write</code> method of one argument on each
-     * <code>byte</code> to output.
+     * The {@code write} method of {@code FilterOutputStream}
+     * calls the {@code write} method of one argument on each
+     * {@code byte} to output.
      * <p>
-     * Note that this method does not call the <code>write</code> method
+     * Note that this method does not call the {@code write} method
      * of its underlying output stream with the same arguments. Subclasses
-     * of <code>FilterOutputStream</code> should provide a more efficient
+     * of {@code FilterOutputStream} should provide a more efficient
      * implementation of this method.
      *
      * @param      b     the data.
@@ -142,8 +142,8 @@ public class FilterOutputStream extends OutputStream {
      * Flushes this output stream and forces any buffered output bytes
      * to be written out to the stream.
      * <p>
-     * The <code>flush</code> method of <code>FilterOutputStream</code>
-     * calls the <code>flush</code> method of its underlying output stream.
+     * The {@code flush} method of {@code FilterOutputStream}
+     * calls the {@code flush} method of its underlying output stream.
      *
      * @throws     IOException  if an I/O error occurs.
      * @see        java.io.FilterOutputStream#out

@@ -141,11 +141,11 @@ public class InputStreamReader extends Reader {
      * <p> If this instance was created with the {@link
      * #InputStreamReader(InputStream, String)} constructor then the returned
      * name, being unique for the encoding, may differ from the name passed to
-     * the constructor. This method will return <code>null</code> if the
+     * the constructor. This method will return {@code null} if the
      * stream has been closed.
      * </p>
      * @return The historical name of this encoding, or
-     *         <code>null</code> if the stream has been closed
+     *         {@code null} if the stream has been closed
      *
      * @see java.nio.charset.Charset
      *

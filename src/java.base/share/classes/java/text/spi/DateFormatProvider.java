@@ -46,7 +46,7 @@ public abstract class DateFormatProvider extends LocaleServiceProvider {
     }
 
     /**
-     * Returns a new <code>DateFormat</code> instance which formats time
+     * Returns a new {@code DateFormat} instance which formats time
      * with the given formatting style for the specified locale.
      * @param style the given formatting style.  Either one of
      *     {@link java.text.DateFormat#SHORT DateFormat.SHORT},
@@ -54,19 +54,19 @@ public abstract class DateFormatProvider extends LocaleServiceProvider {
      *     {@link java.text.DateFormat#LONG DateFormat.LONG}, or
      *     {@link java.text.DateFormat#FULL DateFormat.FULL}.
      * @param locale the desired locale.
-     * @throws    IllegalArgumentException if <code>style</code> is invalid,
-     *     or if <code>locale</code> isn't
+     * @throws    IllegalArgumentException if {@code style} is invalid,
+     *     or if {@code locale} isn't
      *     one of the locales returned from
      *     {@link java.util.spi.LocaleServiceProvider#getAvailableLocales()
      *     getAvailableLocales()}.
-     * @throws    NullPointerException if <code>locale</code> is null
+     * @throws    NullPointerException if {@code locale} is null
      * @return a time formatter.
      * @see java.text.DateFormat#getTimeInstance(int, java.util.Locale)
      */
     public abstract DateFormat getTimeInstance(int style, Locale locale);
 
     /**
-     * Returns a new <code>DateFormat</code> instance which formats date
+     * Returns a new {@code DateFormat} instance which formats date
      * with the given formatting style for the specified locale.
      * @param style the given formatting style.  Either one of
      *     {@link java.text.DateFormat#SHORT DateFormat.SHORT},
@@ -74,19 +74,19 @@ public abstract class DateFormatProvider extends LocaleServiceProvider {
      *     {@link java.text.DateFormat#LONG DateFormat.LONG}, or
      *     {@link java.text.DateFormat#FULL DateFormat.FULL}.
      * @param locale the desired locale.
-     * @throws    IllegalArgumentException if <code>style</code> is invalid,
-     *     or if <code>locale</code> isn't
+     * @throws    IllegalArgumentException if {@code style} is invalid,
+     *     or if {@code locale} isn't
      *     one of the locales returned from
      *     {@link java.util.spi.LocaleServiceProvider#getAvailableLocales()
      *     getAvailableLocales()}.
-     * @throws    NullPointerException if <code>locale</code> is null
+     * @throws    NullPointerException if {@code locale} is null
      * @return a date formatter.
      * @see java.text.DateFormat#getDateInstance(int, java.util.Locale)
      */
     public abstract DateFormat getDateInstance(int style, Locale locale);
 
     /**
-     * Returns a new <code>DateFormat</code> instance which formats date and time
+     * Returns a new {@code DateFormat} instance which formats date and time
      * with the given formatting style for the specified locale.
      * @param dateStyle the given date formatting style.  Either one of
      *     {@link java.text.DateFormat#SHORT DateFormat.SHORT},
@@ -99,13 +99,13 @@ public abstract class DateFormatProvider extends LocaleServiceProvider {
      *     {@link java.text.DateFormat#LONG DateFormat.LONG}, or
      *     {@link java.text.DateFormat#FULL DateFormat.FULL}.
      * @param locale the desired locale.
-     * @throws    IllegalArgumentException if <code>dateStyle</code> or
-     *     <code>timeStyle</code> is invalid,
-     *     or if <code>locale</code> isn't
+     * @throws    IllegalArgumentException if {@code dateStyle} or
+     *     {@code timeStyle} is invalid,
+     *     or if {@code locale} isn't
      *     one of the locales returned from
      *     {@link java.util.spi.LocaleServiceProvider#getAvailableLocales()
      *     getAvailableLocales()}.
-     * @throws    NullPointerException if <code>locale</code> is null
+     * @throws    NullPointerException if {@code locale} is null
      * @return a date/time formatter.
      * @see java.text.DateFormat#getDateTimeInstance(int, int, java.util.Locale)
      */

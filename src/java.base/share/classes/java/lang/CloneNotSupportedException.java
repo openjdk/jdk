@@ -26,12 +26,12 @@
 package java.lang;
 
 /**
- * Thrown to indicate that the <code>clone</code> method in class
- * <code>Object</code> has been called to clone an object, but that
- * the object's class does not implement the <code>Cloneable</code>
+ * Thrown to indicate that the {@code clone} method in class
+ * {@code Object} has been called to clone an object, but that
+ * the object's class does not implement the {@code Cloneable}
  * interface.
  * <p>
- * Applications that override the <code>clone</code> method can also
+ * Applications that override the {@code clone} method can also
  * throw this exception to indicate that an object could not or
  * should not be cloned.
  *
@@ -47,7 +47,7 @@ class CloneNotSupportedException extends Exception {
     private static final long serialVersionUID = 5195511250079656443L;
 
     /**
-     * Constructs a <code>CloneNotSupportedException</code> with no
+     * Constructs a {@code CloneNotSupportedException} with no
      * detail message.
      */
     public CloneNotSupportedException() {
@@ -55,7 +55,7 @@ class CloneNotSupportedException extends Exception {
     }
 
     /**
-     * Constructs a <code>CloneNotSupportedException</code> with the
+     * Constructs a {@code CloneNotSupportedException} with the
      * specified detail message.
      *
      * @param   s   the detail message.

@@ -27,7 +27,7 @@ package java.lang;
 
 /**
  * Thrown if the Java Virtual Machine cannot find an appropriate
- * native-language definition of a method declared <code>native</code>.
+ * native-language definition of a method declared {@code native}.
  *
  * @author unascribed
  * @see     java.lang.Runtime
@@ -39,14 +39,14 @@ class UnsatisfiedLinkError extends LinkageError {
     private static final long serialVersionUID = -4019343241616879428L;
 
     /**
-     * Constructs an <code>UnsatisfiedLinkError</code> with no detail message.
+     * Constructs an {@code UnsatisfiedLinkError} with no detail message.
      */
     public UnsatisfiedLinkError() {
         super();
     }
 
     /**
-     * Constructs an <code>UnsatisfiedLinkError</code> with the
+     * Constructs an {@code UnsatisfiedLinkError} with the
      * specified detail message.
      *
      * @param   s   the detail message.

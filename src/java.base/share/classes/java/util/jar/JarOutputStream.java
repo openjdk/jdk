@@ -29,11 +29,11 @@ import java.util.zip.*;
 import java.io.*;
 
 /**
- * The <code>JarOutputStream</code> class is used to write the contents
+ * The {@code JarOutputStream} class is used to write the contents
  * of a JAR file to any output stream. It extends the class
- * <code>java.util.zip.ZipOutputStream</code> with support
- * for writing an optional <code>Manifest</code> entry. The
- * <code>Manifest</code> can be used to specify meta-information about
+ * {@code java.util.zip.ZipOutputStream} with support
+ * for writing an optional {@code Manifest} entry. The
+ * {@code Manifest} can be used to specify meta-information about
  * the JAR file and its entries.
  *
  * @author  David Connelly
@@ -46,12 +46,12 @@ class JarOutputStream extends ZipOutputStream {
     private static final int JAR_MAGIC = 0xCAFE;
 
     /**
-     * Creates a new <code>JarOutputStream</code> with the specified
-     * <code>Manifest</code>. The manifest is written as the first
+     * Creates a new {@code JarOutputStream} with the specified
+     * {@code Manifest}. The manifest is written as the first
      * entry to the output stream.
      *
      * @param out the actual output stream
-     * @param man the optional <code>Manifest</code>
+     * @param man the optional {@code Manifest}
      * @throws    IOException if an I/O error has occurred
      */
     public JarOutputStream(OutputStream out, Manifest man) throws IOException {
@@ -66,7 +66,7 @@ class JarOutputStream extends ZipOutputStream {
     }
 
     /**
-     * Creates a new <code>JarOutputStream</code> with no manifest.
+     * Creates a new {@code JarOutputStream} with no manifest.
      * @param out the actual output stream
      * @throws    IOException if an I/O error has occurred
      */

@@ -33,12 +33,12 @@ import java.util.Locale;
  * interfaces (SPIs).
  * <p>
  * Locale sensitive  service provider interfaces are interfaces that
- * correspond to locale sensitive classes in the <code>java.text</code>
- * and <code>java.util</code> packages. The interfaces enable the
+ * correspond to locale sensitive classes in the {@code java.text}
+ * and {@code java.util} packages. The interfaces enable the
  * construction of locale sensitive objects and the retrieval of
  * localized names for these packages. Locale sensitive factory methods
- * and methods for name retrieval in the <code>java.text</code> and
- * <code>java.util</code> packages use implementations of the provider
+ * and methods for name retrieval in the {@code java.text} and
+ * {@code java.util} packages use implementations of the provider
  * interfaces to offer support for locales beyond the set of locales
  * supported by the Java runtime environment itself.
  *
@@ -68,17 +68,17 @@ import java.util.Locale;
  * <pre>
  * META-INF/services/java.text.spi.DateFormatProvider
  * </pre>
- * And the file <code>java.text.spi.DateFormatProvider</code> should have
+ * And the file {@code java.text.spi.DateFormatProvider} should have
  * a line such as:
  * <pre>
- * <code>com.foo.DateFormatProviderImpl</code>
+ * {@code com.foo.DateFormatProviderImpl}
  * </pre>
  * which is the fully qualified class name of the class implementing
- * <code>DateFormatProvider</code>.
+ * {@code DateFormatProvider}.
  * <h3>Invocation of Locale Sensitive Services</h3>
  * <p>
  * Locale sensitive factory methods and methods for name retrieval in the
- * <code>java.text</code> and <code>java.util</code> packages invoke
+ * {@code java.text} and {@code java.util} packages invoke
  * service provider methods when needed to support the requested locale.
  * The methods first check whether the Java runtime environment itself
  * supports the requested locale, and use its support if available.
@@ -93,7 +93,7 @@ import java.util.Locale;
  * supports the requested locale, the methods go through a list of candidate
  * locales and repeat the availability check for each until a match is found.
  * The algorithm used for creating a list of candidate locales is same as
- * the one used by <code>ResourceBundle</code> by default (see
+ * the one used by {@code ResourceBundle} by default (see
  * {@link java.util.ResourceBundle.Control#getCandidateLocales getCandidateLocales}
  * for the details).  Even if a locale is resolved from the candidate list,
  * methods that return requested objects or names are invoked with the original
@@ -104,7 +104,7 @@ import java.util.Locale;
  * Providers of names (but not providers of other objects) are allowed to
  * return null for some name requests even for locales that they claim to
  * support by including them in their return value for
- * <code>getAvailableLocales</code>. Similarly, the Java runtime
+ * {@code getAvailableLocales}. Similarly, the Java runtime
  * environment itself may not have all names for all locales that it
  * supports. This is because the sets of objects for which names are
  * requested can be large and vary over time, so that it's not always

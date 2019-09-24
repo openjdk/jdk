@@ -180,7 +180,7 @@ import java.lang.module.ModuleFinder;
  *
  * <tr>
  *   <th scope="row">stopThread</th>
- *   <td>Stopping of threads via calls to the Thread <code>stop</code>
+ *   <td>Stopping of threads via calls to the Thread {@code stop}
  * method</td>
  *   <td>This allows code to stop any thread in the system provided that it is
  * already granted permission to access that thread.
@@ -191,9 +191,9 @@ import java.lang.module.ModuleFinder;
  * <tr>
  *   <th scope="row">modifyThreadGroup</th>
  *   <td>modification of thread groups, e.g., via calls to ThreadGroup
- * <code>destroy</code>, <code>getParent</code>, <code>resume</code>,
- * <code>setDaemon</code>, <code>setMaxPriority</code>, <code>stop</code>,
- * and <code>suspend</code> methods</td>
+ * {@code destroy}, {@code getParent}, {@code resume},
+ * {@code setDaemon}, {@code setMaxPriority}, {@code stop},
+ * and {@code suspend} methods</td>
  *   <td>This allows an attacker to create thread groups and
  * set their run priority.</td>
  * </tr>
@@ -246,8 +246,8 @@ import java.lang.module.ModuleFinder;
  * <tr>
  *   <th scope="row">accessClassInPackage.{package name}</th>
  *   <td>Access to the specified package via a class loader's
- * <code>loadClass</code> method when that class loader calls
- * the SecurityManager <code>checkPackageAccess</code> method</td>
+ * {@code loadClass} method when that class loader calls
+ * the SecurityManager {@code checkPackageAccess} method</td>
  *   <td>This gives code access to classes in packages
  * to which it normally does not have access. Malicious code
  * may use these classes to help in its attempt to compromise
@@ -257,12 +257,12 @@ import java.lang.module.ModuleFinder;
  * <tr>
  *   <th scope="row">defineClassInPackage.{package name}</th>
  *   <td>Definition of classes in the specified package, via a class
- * loader's <code>defineClass</code> method when that class loader calls
- * the SecurityManager <code>checkPackageDefinition</code> method.</td>
+ * loader's {@code defineClass} method when that class loader calls
+ * the SecurityManager {@code checkPackageDefinition} method.</td>
  *   <td>This grants code permission to define a class
  * in a particular package. This is dangerous because malicious
  * code with this permission may define rogue classes in
- * trusted packages like <code>java.security</code> or <code>java.lang</code>,
+ * trusted packages like {@code java.security} or {@code java.lang},
  * for example.</td>
  * </tr>
  *
@@ -412,8 +412,8 @@ public final class RuntimePermission extends BasicPermission {
      *
      * @param name the name of the RuntimePermission.
      *
-     * @throws NullPointerException if <code>name</code> is <code>null</code>.
-     * @throws IllegalArgumentException if <code>name</code> is empty.
+     * @throws NullPointerException if {@code name} is {@code null}.
+     * @throws IllegalArgumentException if {@code name} is empty.
      */
 
     public RuntimePermission(String name)
@@ -429,8 +429,8 @@ public final class RuntimePermission extends BasicPermission {
      * @param name the name of the RuntimePermission.
      * @param actions should be null.
      *
-     * @throws NullPointerException if <code>name</code> is <code>null</code>.
-     * @throws IllegalArgumentException if <code>name</code> is empty.
+     * @throws NullPointerException if {@code name} is {@code null}.
+     * @throws IllegalArgumentException if {@code name} is empty.
      */
 
     public RuntimePermission(String name, String actions)

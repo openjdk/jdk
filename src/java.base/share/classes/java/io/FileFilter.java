@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -43,7 +43,7 @@ public interface FileFilter {
      * included in a pathname list.
      *
      * @param  pathname  The abstract pathname to be tested
-     * @return  <code>true</code> if and only if <code>pathname</code>
+     * @return  {@code true} if and only if {@code pathname}
      *          should be included
      */
     boolean accept(File pathname);

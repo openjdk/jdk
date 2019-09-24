@@ -35,7 +35,7 @@ package java.lang;
 public
 class IllegalArgumentException extends RuntimeException {
     /**
-     * Constructs an <code>IllegalArgumentException</code> with no
+     * Constructs an {@code IllegalArgumentException} with no
      * detail message.
      */
     public IllegalArgumentException() {
@@ -43,7 +43,7 @@ class IllegalArgumentException extends RuntimeException {
     }
 
     /**
-     * Constructs an <code>IllegalArgumentException</code> with the
+     * Constructs an {@code IllegalArgumentException} with the
      * specified detail message.
      *
      * @param   s   the detail message.
@@ -56,7 +56,7 @@ class IllegalArgumentException extends RuntimeException {
      * Constructs a new exception with the specified detail message and
      * cause.
      *
-     * <p>Note that the detail message associated with <code>cause</code> is
+     * <p>Note that the detail message associated with {@code cause} is
      * <i>not</i> automatically incorporated in this exception's detail
      * message.
      *

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,16 +28,16 @@ import java.util.ArrayList;
 
 /**
  * CharacterIteratorFieldDelegate combines the notifications from a Format
- * into a resulting <code>AttributedCharacterIterator</code>. The resulting
- * <code>AttributedCharacterIterator</code> can be retrieved by way of
- * the <code>getIterator</code> method.
+ * into a resulting {@code AttributedCharacterIterator}. The resulting
+ * {@code AttributedCharacterIterator} can be retrieved by way of
+ * the {@code getIterator} method.
  *
  */
 class CharacterIteratorFieldDelegate implements Format.FieldDelegate {
     /**
-     * Array of AttributeStrings. Whenever <code>formatted</code> is invoked
+     * Array of AttributeStrings. Whenever {@code formatted} is invoked
      * for a region > size, a new instance of AttributedString is added to
-     * attributedStrings. Subsequent invocations of <code>formatted</code>
+     * attributedStrings. Subsequent invocations of {@code formatted}
      * for existing regions result in invoking addAttribute on the existing
      * AttributedStrings.
      */
@@ -98,7 +98,7 @@ class CharacterIteratorFieldDelegate implements Format.FieldDelegate {
     }
 
     /**
-     * Returns an <code>AttributedCharacterIterator</code> that can be used
+     * Returns an {@code AttributedCharacterIterator} that can be used
      * to iterate over the resulting formatted String.
      *
      * @pararm string Result of formatting.

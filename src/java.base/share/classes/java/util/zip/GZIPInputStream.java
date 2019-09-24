@@ -93,19 +93,19 @@ class GZIPInputStream extends InflaterInputStream {
     }
 
     /**
-     * Reads uncompressed data into an array of bytes. If <code>len</code> is not
+     * Reads uncompressed data into an array of bytes. If {@code len} is not
      * zero, the method will block until some input can be decompressed; otherwise,
-     * no bytes are read and <code>0</code> is returned.
+     * no bytes are read and {@code 0} is returned.
      * @param buf the buffer into which the data is read
-     * @param off the start offset in the destination array <code>b</code>
+     * @param off the start offset in the destination array {@code b}
      * @param len the maximum number of bytes read
      * @return  the actual number of bytes read, or -1 if the end of the
      *          compressed input stream is reached
      *
-     * @throws     NullPointerException If <code>buf</code> is <code>null</code>.
-     * @throws     IndexOutOfBoundsException If <code>off</code> is negative,
-     * <code>len</code> is negative, or <code>len</code> is greater than
-     * <code>buf.length - off</code>
+     * @throws     NullPointerException If {@code buf} is {@code null}.
+     * @throws     IndexOutOfBoundsException If {@code off} is negative,
+     * {@code len} is negative, or {@code len} is greater than
+     * {@code buf.length - off}
      * @throws    ZipException if the compressed input data is corrupt.
      * @throws    IOException if an I/O error has occurred.
      *

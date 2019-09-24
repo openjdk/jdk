@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -60,10 +60,10 @@ public class ObjectStreamField
 
     /**
      * Create a Serializable field with the specified type.  This field should
-     * be documented with a <code>serialField</code> tag.
+     * be documented with a {@code serialField} tag.
      *
      * @param   name the name of the serializable field
-     * @param   type the <code>Class</code> object of the serializable field
+     * @param   type the {@code Class} object of the serializable field
      */
     public ObjectStreamField(String name, Class<?> type) {
         this(name, type, false);
@@ -197,7 +197,7 @@ public class ObjectStreamField
     /**
      * Get the name of this field.
      *
-     * @return  a <code>String</code> representing the name of the serializable
+     * @return  a {@code String} representing the name of the serializable
      *          field
      */
     public String getName() {
@@ -206,12 +206,12 @@ public class ObjectStreamField
 
     /**
      * Get the type of the field.  If the type is non-primitive and this
-     * <code>ObjectStreamField</code> was obtained from a deserialized {@link
-     * ObjectStreamClass} instance, then <code>Object.class</code> is returned.
-     * Otherwise, the <code>Class</code> object for the type of the field is
+     * {@code ObjectStreamField} was obtained from a deserialized {@link
+     * ObjectStreamClass} instance, then {@code Object.class} is returned.
+     * Otherwise, the {@code Class} object for the type of the field is
      * returned.
      *
-     * @return  a <code>Class</code> object representing the type of the
+     * @return  a {@code Class} object representing the type of the
      *          serializable field
      */
     @CallerSensitive
@@ -303,7 +303,7 @@ public class ObjectStreamField
     }
 
     /**
-     * Compare this field with another <code>ObjectStreamField</code>.  Return
+     * Compare this field with another {@code ObjectStreamField}.  Return
      * -1 if this is smaller, 0 if equal, 1 if greater.  Types that are
      * primitives are "smaller" than object types.  If equal, the field names
      * are compared.

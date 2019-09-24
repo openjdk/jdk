@@ -39,34 +39,34 @@
 package java.text;
 
 /**
- * A <code>CollationKey</code> represents a <code>String</code> under the
- * rules of a specific <code>Collator</code> object. Comparing two
- * <code>CollationKey</code>s returns the relative order of the
- * <code>String</code>s they represent. Using <code>CollationKey</code>s
- * to compare <code>String</code>s is generally faster than using
- * <code>Collator.compare</code>. Thus, when the <code>String</code>s
+ * A {@code CollationKey} represents a {@code String} under the
+ * rules of a specific {@code Collator} object. Comparing two
+ * {@code CollationKey}s returns the relative order of the
+ * {@code String}s they represent. Using {@code CollationKey}s
+ * to compare {@code String}s is generally faster than using
+ * {@code Collator.compare}. Thus, when the {@code String}s
  * must be compared multiple times, for example when sorting a list
- * of <code>String</code>s. It's more efficient to use <code>CollationKey</code>s.
+ * of {@code String}s. It's more efficient to use {@code CollationKey}s.
  *
  * <p>
- * You can not create <code>CollationKey</code>s directly. Rather,
- * generate them by calling <code>Collator.getCollationKey</code>.
- * You can only compare <code>CollationKey</code>s generated from
- * the same <code>Collator</code> object.
+ * You can not create {@code CollationKey}s directly. Rather,
+ * generate them by calling {@code Collator.getCollationKey}.
+ * You can only compare {@code CollationKey}s generated from
+ * the same {@code Collator} object.
  *
  * <p>
- * Generating a <code>CollationKey</code> for a <code>String</code>
- * involves examining the entire <code>String</code>
+ * Generating a {@code CollationKey} for a {@code String}
+ * involves examining the entire {@code String}
  * and converting it to series of bits that can be compared bitwise. This
  * allows fast comparisons once the keys are generated. The cost of generating
- * keys is recouped in faster comparisons when <code>String</code>s need
+ * keys is recouped in faster comparisons when {@code String}s need
  * to be compared many times. On the other hand, the result of a comparison
- * is often determined by the first couple of characters of each <code>String</code>.
- * <code>Collator.compare</code> examines only as many characters as it needs which
+ * is often determined by the first couple of characters of each {@code String}.
+ * {@code Collator.compare} examines only as many characters as it needs which
  * allows it to be faster when doing single comparisons.
  * <p>
- * The following example shows how <code>CollationKey</code>s might be used
- * to sort a list of <code>String</code>s.
+ * The following example shows how {@code CollationKey}s might be used
+ * to sort a list of {@code String}s.
  * <blockquote>
  * <pre>{@code
  * // Create an array of CollationKeys for the Strings to be sorted.

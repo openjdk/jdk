@@ -34,10 +34,10 @@ import java.io.ObjectStreamField;
  * Thrown when an application tries to load in a class through its
  * string name using:
  * <ul>
- * <li>The <code>forName</code> method in class <code>Class</code>.
- * <li>The <code>findSystemClass</code> method in class
- *     <code>ClassLoader</code> .
- * <li>The <code>loadClass</code> method in class <code>ClassLoader</code>.
+ * <li>The {@code forName} method in class {@code Class}.
+ * <li>The {@code findSystemClass} method in class
+ *     {@code ClassLoader} .
+ * <li>The {@code loadClass} method in class {@code ClassLoader}.
  * </ul>
  * <p>
  * but no definition for the class with the specified name could be found.
@@ -63,14 +63,14 @@ public class ClassNotFoundException extends ReflectiveOperationException {
      private static final long serialVersionUID = 9176873029745254542L;
 
     /**
-     * Constructs a <code>ClassNotFoundException</code> with no detail message.
+     * Constructs a {@code ClassNotFoundException} with no detail message.
      */
     public ClassNotFoundException() {
         super((Throwable)null);  // Disallow initCause
     }
 
     /**
-     * Constructs a <code>ClassNotFoundException</code> with the
+     * Constructs a {@code ClassNotFoundException} with the
      * specified detail message.
      *
      * @param   s   the detail message.
@@ -80,7 +80,7 @@ public class ClassNotFoundException extends ReflectiveOperationException {
     }
 
     /**
-     * Constructs a <code>ClassNotFoundException</code> with the
+     * Constructs a {@code ClassNotFoundException} with the
      * specified detail message and optional exception that was
      * raised while loading the class.
      *
@@ -100,7 +100,7 @@ public class ClassNotFoundException extends ReflectiveOperationException {
      * The {@link Throwable#getCause()} method is now the preferred means of
      * obtaining this information.
      *
-     * @return the <code>Exception</code> that was raised while loading a class
+     * @return the {@code Exception} that was raised while loading a class
      * @since 1.2
      */
     public Throwable getException() {

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -40,10 +40,10 @@ package java.text;
 import sun.text.normalizer.NormalizerBase;
 
 /**
- * This class provides the method <code>normalize</code> which transforms Unicode
+ * This class provides the method {@code normalize} which transforms Unicode
  * text into an equivalent composed or decomposed form, allowing for easier
  * sorting and searching of text.
- * The <code>normalize</code> method supports the standard normalization forms
+ * The {@code normalize} method supports the standard normalization forms
  * described in
  * <a href="http://www.unicode.org/unicode/reports/tr15/tr15-23.html">
  * Unicode Standard Annex #15 &mdash; Unicode Normalization Forms</a>.
@@ -88,12 +88,12 @@ import sun.text.normalizer.NormalizerBase;
  * into the corresponding semantic characters.  When sorting and searching, you
  * will often want to use these mappings.
  * <p>
- * The <code>normalize</code> method helps solve these problems by transforming
+ * The {@code normalize} method helps solve these problems by transforming
  * text into the canonical composed and decomposed forms as shown in the first
  * example above. In addition, you can have it perform compatibility
  * decompositions so that you can treat compatibility characters the same as
  * their equivalents.
- * Finally, the <code>normalize</code> method rearranges accents into the
+ * Finally, the {@code normalize} method rearranges accents into the
  * proper canonical order, so that you do not have to worry about accent
  * rearrangement on your own.
  * <p>
@@ -152,7 +152,7 @@ public final class Normalizer {
      *                   {@link java.text.Normalizer.Form#NFKC},
      *                   {@link java.text.Normalizer.Form#NFKD}
      * @return The normalized String
-     * @throws NullPointerException If <code>src</code> or <code>form</code>
+     * @throws NullPointerException If {@code src} or {@code form}
      * is null.
      */
     public static String normalize(CharSequence src, Form form) {
@@ -169,7 +169,7 @@ public final class Normalizer {
      *                   {@link java.text.Normalizer.Form#NFKD}
      * @return true if the sequence of char values is normalized;
      * false otherwise.
-     * @throws NullPointerException If <code>src</code> or <code>form</code>
+     * @throws NullPointerException If {@code src} or {@code form}
      * is null.
      */
     public static boolean isNormalized(CharSequence src, Form form) {

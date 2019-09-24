@@ -46,7 +46,7 @@ import sun.security.util.SecurityConstants;
  * <P>
  * Pathname is the pathname of the file or directory granted the specified
  * actions. A pathname that ends in "/*" (where "/" is
- * the file separator character, <code>File.separatorChar</code>) indicates
+ * the file separator character, {@code File.separatorChar}) indicates
  * all the files and directories contained in that directory. A pathname
  * that ends with "/-" indicates (recursively) all files
  * and subdirectories contained in that directory. Such a pathname is called
@@ -70,11 +70,11 @@ import sun.security.util.SecurityConstants;
  *    <DT> read <DD> read permission
  *    <DT> write <DD> write permission
  *    <DT> execute
- *    <DD> execute permission. Allows <code>Runtime.exec</code> to
- *         be called. Corresponds to <code>SecurityManager.checkExec</code>.
+ *    <DD> execute permission. Allows {@code Runtime.exec} to
+ *         be called. Corresponds to {@code SecurityManager.checkExec}.
  *    <DT> delete
- *    <DD> delete permission. Allows <code>File.delete</code> to
- *         be called. Corresponds to <code>SecurityManager.checkDelete</code>.
+ *    <DD> delete permission. Allows {@code File.delete} to
+ *         be called. Corresponds to {@code SecurityManager.checkDelete}.
  *    <DT> readlink
  *    <DD> read link permission. Allows the target of a
  *         <a href="../nio/file/package-summary.html#links">symbolic link</a>
@@ -426,7 +426,7 @@ public final class FilePermission extends Permission implements Serializable {
      * "read", "write", "execute", "delete", and "readlink".
      *
      * <p>A pathname that ends in "/*" (where "/" is
-     * the file separator character, <code>File.separatorChar</code>)
+     * the file separator character, {@code File.separatorChar})
      * indicates all the files and directories contained in that directory.
      * A pathname that ends with "/-" indicates (recursively) all files and
      * subdirectories contained in that directory. The special pathname
@@ -468,7 +468,7 @@ public final class FilePermission extends Permission implements Serializable {
      * @param actions the action string.
      *
      * @throws IllegalArgumentException
-     *          If actions is <code>null</code>, empty or contains an action
+     *          If actions is {@code null}, empty or contains an action
      *          other than the specified possible actions.
      */
     public FilePermission(String path, String actions) {
@@ -481,7 +481,7 @@ public final class FilePermission extends Permission implements Serializable {
      * More efficient than the FilePermission(String, String) constructor.
      * Can be used from within
      * code that needs to create a FilePermission object to pass into the
-     * <code>implies</code> method.
+     * {@code implies} method.
      *
      * @param path the pathname of the file/directory.
      * @param mask the action mask to use.
@@ -547,9 +547,9 @@ public final class FilePermission extends Permission implements Serializable {
      *
      * @param p the permission to check against.
      *
-     * @return <code>true</code> if the specified permission is not
-     *                  <code>null</code> and is implied by this object,
-     *                  <code>false</code> otherwise.
+     * @return {@code true} if the specified permission is not
+     *                  {@code null} and is implied by this object,
+     *                  {@code false} otherwise.
      */
     @Override
     public boolean implies(Permission p) {
@@ -769,9 +769,9 @@ public final class FilePermission extends Permission implements Serializable {
      * for itself, even if they are created using the same invalid path.
      *
      * @param obj the object we are testing for equality with this object.
-     * @return <code>true</code> if obj is a FilePermission, and has the same
+     * @return {@code true} if obj is a FilePermission, and has the same
      *          pathname and actions as this FilePermission object,
-     *          <code>false</code> otherwise.
+     *          {@code false} otherwise.
      */
     @Override
     public boolean equals(Object obj) {
@@ -987,7 +987,7 @@ public final class FilePermission extends Permission implements Serializable {
      * Returns the "canonical string representation" of the actions.
      * That is, this method always returns present actions in the following order:
      * read, write, execute, delete, readlink. For example, if this FilePermission
-     * object allows both write and read actions, a call to <code>getActions</code>
+     * object allows both write and read actions, a call to {@code getActions}
      * will return the string "read,write".
      *
      * @return the canonical string representation of the actions.
@@ -1006,27 +1006,27 @@ public final class FilePermission extends Permission implements Serializable {
      * <p>
      * FilePermission objects must be stored in a manner that allows them
      * to be inserted into the collection in any order, but that also enables the
-     * PermissionCollection <code>implies</code>
+     * PermissionCollection {@code implies}
      * method to be implemented in an efficient (and consistent) manner.
      *
      * <p>For example, if you have two FilePermissions:
      * <OL>
-     * <LI>  <code>"/tmp/-", "read"</code>
-     * <LI>  <code>"/tmp/scratch/foo", "write"</code>
+     * <LI>  {@code "/tmp/-", "read"}
+     * <LI>  {@code "/tmp/scratch/foo", "write"}
      * </OL>
      *
-     * <p>and you are calling the <code>implies</code> method with the FilePermission:
+     * <p>and you are calling the {@code implies} method with the FilePermission:
      *
      * <pre>
      *   "/tmp/scratch/foo", "read,write",
      * </pre>
      *
-     * then the <code>implies</code> function must
+     * then the {@code implies} function must
      * take into account both the "/tmp/-" and "/tmp/scratch/foo"
      * permissions, so the effective permission is "read,write",
-     * and <code>implies</code> returns true. The "implies" semantics for
+     * and {@code implies} returns true. The "implies" semantics for
      * FilePermissions are handled properly by the PermissionCollection object
-     * returned by this <code>newPermissionCollection</code> method.
+     * returned by this {@code newPermissionCollection} method.
      *
      * @return a new PermissionCollection object suitable for storing
      * FilePermissions.

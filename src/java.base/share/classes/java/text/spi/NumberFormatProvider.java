@@ -46,12 +46,12 @@ public abstract class NumberFormatProvider extends LocaleServiceProvider {
     }
 
     /**
-     * Returns a new <code>NumberFormat</code> instance which formats
+     * Returns a new {@code NumberFormat} instance which formats
      * monetary values for the specified locale.
      *
      * @param locale the desired locale.
-     * @throws    NullPointerException if <code>locale</code> is null
-     * @throws    IllegalArgumentException if <code>locale</code> isn't
+     * @throws    NullPointerException if {@code locale} is null
+     * @throws    IllegalArgumentException if {@code locale} isn't
      *     one of the locales returned from
      *     {@link java.util.spi.LocaleServiceProvider#getAvailableLocales()
      *     getAvailableLocales()}.
@@ -61,7 +61,7 @@ public abstract class NumberFormatProvider extends LocaleServiceProvider {
     public abstract NumberFormat getCurrencyInstance(Locale locale);
 
     /**
-     * Returns a new <code>NumberFormat</code> instance which formats
+     * Returns a new {@code NumberFormat} instance which formats
      * integer values for the specified locale.
      * The returned number format is configured to
      * round floating point numbers to the nearest integer using
@@ -71,8 +71,8 @@ public abstract class NumberFormatProvider extends LocaleServiceProvider {
      * java.text.NumberFormat#isParseIntegerOnly isParseIntegerOnly}).
      *
      * @param locale the desired locale
-     * @throws    NullPointerException if <code>locale</code> is null
-     * @throws    IllegalArgumentException if <code>locale</code> isn't
+     * @throws    NullPointerException if {@code locale} is null
+     * @throws    IllegalArgumentException if {@code locale} isn't
      *     one of the locales returned from
      *     {@link java.util.spi.LocaleServiceProvider#getAvailableLocales()
      *     getAvailableLocales()}.
@@ -82,12 +82,12 @@ public abstract class NumberFormatProvider extends LocaleServiceProvider {
     public abstract NumberFormat getIntegerInstance(Locale locale);
 
     /**
-     * Returns a new general-purpose <code>NumberFormat</code> instance for
+     * Returns a new general-purpose {@code NumberFormat} instance for
      * the specified locale.
      *
      * @param locale the desired locale
-     * @throws    NullPointerException if <code>locale</code> is null
-     * @throws    IllegalArgumentException if <code>locale</code> isn't
+     * @throws    NullPointerException if {@code locale} is null
+     * @throws    IllegalArgumentException if {@code locale} isn't
      *     one of the locales returned from
      *     {@link java.util.spi.LocaleServiceProvider#getAvailableLocales()
      *     getAvailableLocales()}.
@@ -97,12 +97,12 @@ public abstract class NumberFormatProvider extends LocaleServiceProvider {
     public abstract NumberFormat getNumberInstance(Locale locale);
 
     /**
-     * Returns a new <code>NumberFormat</code> instance which formats
+     * Returns a new {@code NumberFormat} instance which formats
      * percentage values for the specified locale.
      *
      * @param locale the desired locale
-     * @throws    NullPointerException if <code>locale</code> is null
-     * @throws    IllegalArgumentException if <code>locale</code> isn't
+     * @throws    NullPointerException if {@code locale} is null
+     * @throws    IllegalArgumentException if {@code locale} isn't
      *     one of the locales returned from
      *     {@link java.util.spi.LocaleServiceProvider#getAvailableLocales()
      *     getAvailableLocales()}.

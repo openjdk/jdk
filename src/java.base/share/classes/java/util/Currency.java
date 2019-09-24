@@ -55,9 +55,9 @@ import sun.util.logging.PlatformLogger;
  * ISO web site</a> for more information.
  * <p>
  * The class is designed so that there's never more than one
- * <code>Currency</code> instance for any given currency. Therefore, there's
- * no public constructor. You obtain a <code>Currency</code> instance using
- * the <code>getInstance</code> methods.
+ * {@code Currency} instance for any given currency. Therefore, there's
+ * no public constructor. You obtain a {@code Currency} instance using
+ * the {@code getInstance} methods.
  * <p>
  * Users can supersede the Java runtime currency data by means of the system
  * property {@systemProperty java.util.currency.data}. If this system property is
@@ -274,7 +274,7 @@ public final class Currency implements Serializable {
 
 
     /**
-     * Constructs a <code>Currency</code> instance. The constructor is private
+     * Constructs a {@code Currency} instance. The constructor is private
      * so that we can insure that there's never more than one instance for a
      * given currency.
      */
@@ -285,12 +285,12 @@ public final class Currency implements Serializable {
     }
 
     /**
-     * Returns the <code>Currency</code> instance for the given currency code.
+     * Returns the {@code Currency} instance for the given currency code.
      *
      * @param currencyCode the ISO 4217 code of the currency
-     * @return the <code>Currency</code> instance for the given currency code
-     * @throws    NullPointerException if <code>currencyCode</code> is null
-     * @throws    IllegalArgumentException if <code>currencyCode</code> is not
+     * @return the {@code Currency} instance for the given currency code
+     * @throws    NullPointerException if {@code currencyCode} is null
+     * @throws    IllegalArgumentException if {@code currencyCode} is not
      * a supported ISO 4217 code.
      */
     public static Currency getInstance(String currencyCode) {
@@ -350,7 +350,7 @@ public final class Currency implements Serializable {
     }
 
     /**
-     * Returns the <code>Currency</code> instance for the country of the
+     * Returns the {@code Currency} instance for the country of the
      * given locale. The language and variant components of the locale
      * are ignored. The result may vary over time, as countries change their
      * currencies. For example, for the original member countries of the
@@ -365,14 +365,14 @@ public final class Currency implements Serializable {
      * specified, the currency from the "cu" extension supersedes the implicit one
      * from the "rg" extension.
      * <p>
-     * The method returns <code>null</code> for territories that don't
+     * The method returns {@code null} for territories that don't
      * have a currency, such as Antarctica.
      *
-     * @param locale the locale for whose country a <code>Currency</code>
+     * @param locale the locale for whose country a {@code Currency}
      * instance is needed
-     * @return the <code>Currency</code> instance for the country of the given
+     * @return the {@code Currency} instance for the country of the given
      * locale, or {@code null}
-     * @throws    NullPointerException if <code>locale</code>
+     * @throws    NullPointerException if {@code locale}
      * is {@code null}
      * @throws    IllegalArgumentException if the country of the given {@code locale}
      * is not a supported ISO 3166 country code.
@@ -537,7 +537,7 @@ public final class Currency implements Serializable {
      * @param locale the locale for which a display name for this currency is
      * needed
      * @return the symbol of this currency for the specified locale
-     * @throws    NullPointerException if <code>locale</code> is null
+     * @throws    NullPointerException if {@code locale} is null
      */
     public String getSymbol(Locale locale) {
         LocaleServiceProviderPool pool =
@@ -632,7 +632,7 @@ public final class Currency implements Serializable {
      * @param locale the locale for which a display name for this currency is
      * needed
      * @return the display name of this currency for the specified locale
-     * @throws    NullPointerException if <code>locale</code> is null
+     * @throws    NullPointerException if {@code locale} is null
      * @since 1.7
      */
     public String getDisplayName(Locale locale) {

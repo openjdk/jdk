@@ -276,7 +276,7 @@ public class ObjectStreamClass implements Serializable {
      * Return the class in the local VM that this version is mapped to.  Null
      * is returned if there is no corresponding local class.
      *
-     * @return  the <code>Class</code> instance that this descriptor represents
+     * @return  the {@code Class} instance that this descriptor represents
      */
     @CallerSensitive
     public Class<?> forClass() {

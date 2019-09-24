@@ -108,9 +108,9 @@ public class StringReader extends Reader {
      * Skips the specified number of characters in the stream. Returns
      * the number of characters that were skipped.
      *
-     * <p>The <code>ns</code> parameter may be negative, even though the
-     * <code>skip</code> method of the {@link Reader} superclass throws
-     * an exception in this case. Negative values of <code>ns</code> cause the
+     * <p>The {@code ns} parameter may be negative, even though the
+     * {@code skip} method of the {@link Reader} superclass throws
+     * an exception in this case. Negative values of {@code ns} cause the
      * stream to skip backwards. Negative return values indicate a skip
      * backwards. It is not possible to skip backwards past the beginning of
      * the string.

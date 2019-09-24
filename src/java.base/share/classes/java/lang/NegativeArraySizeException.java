@@ -37,7 +37,7 @@ class NegativeArraySizeException extends RuntimeException {
     private static final long serialVersionUID = -8960118058596991861L;
 
     /**
-     * Constructs a <code>NegativeArraySizeException</code> with no
+     * Constructs a {@code NegativeArraySizeException} with no
      * detail message.
      */
     public NegativeArraySizeException() {
@@ -45,7 +45,7 @@ class NegativeArraySizeException extends RuntimeException {
     }
 
     /**
-     * Constructs a <code>NegativeArraySizeException</code> with the
+     * Constructs a {@code NegativeArraySizeException} with the
      * specified detail message.
      *
      * @param   s   the detail message.

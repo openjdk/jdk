@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -44,7 +44,7 @@ import sun.text.CollatorUtilities;
 import sun.text.normalizer.NormalizerBase;
 
 /**
- * The <code>CollationElementIterator</code> class is used as an iterator
+ * The {@code CollationElementIterator} class is used as an iterator
  * to walk through each character of an international string. Use the iterator
  * to return the ordering priority of the positioned character. The ordering
  * priority of a character, which we refer to as a key, defines how a character
@@ -68,9 +68,9 @@ import sun.text.normalizer.NormalizerBase;
  * The key of a character is an integer composed of primary order(short),
  * secondary order(byte), and tertiary order(byte). Java strictly defines
  * the size and signedness of its primitive data types. Therefore, the static
- * functions <code>primaryOrder</code>, <code>secondaryOrder</code>, and
- * <code>tertiaryOrder</code> return <code>int</code>, <code>short</code>,
- * and <code>short</code> respectively to ensure the correctness of the key
+ * functions {@code primaryOrder}, {@code secondaryOrder}, and
+ * {@code tertiaryOrder} return {@code int}, {@code short},
+ * and {@code short} respectively to ensure the correctness of the key
  * value.
  *
  * <p>
@@ -90,16 +90,16 @@ import sun.text.normalizer.NormalizerBase;
  * </blockquote>
  *
  * <p>
- * <code>CollationElementIterator.next</code> returns the collation order
+ * {@code CollationElementIterator.next} returns the collation order
  * of the next character. A collation order consists of primary order,
  * secondary order and tertiary order. The data type of the collation
  * order is <strong>int</strong>. The first 16 bits of a collation order
  * is its primary order; the next 8 bits is the secondary order and the
  * last 8 bits is the tertiary order.
  *
- * <p><b>Note:</b> <code>CollationElementIterator</code> is a part of
- * <code>RuleBasedCollator</code> implementation. It is only usable
- * with <code>RuleBasedCollator</code> instances.
+ * <p><b>Note:</b> {@code CollationElementIterator} is a part of
+ * {@code RuleBasedCollator} implementation. It is only usable
+ * with {@code RuleBasedCollator} instances.
  *
  * @see                Collator
  * @see                RuleBasedCollator

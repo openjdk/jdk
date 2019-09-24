@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,7 +31,7 @@
  *
  * <h2>Package Specification</h2>
  *
- * The <code>java.util.jar</code> package is based on the following
+ * The {@code java.util.jar} package is based on the following
  * specifications:
  *
  * <ul>

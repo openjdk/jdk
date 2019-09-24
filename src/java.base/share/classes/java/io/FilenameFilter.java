@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1994, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1994, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,8 +28,8 @@ package java.io;
 /**
  * Instances of classes that implement this interface are used to
  * filter filenames. These instances are used to filter directory
- * listings in the <code>list</code> method of class
- * <code>File</code>, and by the Abstract Window Toolkit's file
+ * listings in the {@code list} method of class
+ * {@code File}, and by the Abstract Window Toolkit's file
  * dialog component.
  *
  * @author  Arthur van Hoff
@@ -46,8 +46,8 @@ public interface FilenameFilter {
      *
      * @param   dir    the directory in which the file was found.
      * @param   name   the name of the file.
-     * @return  <code>true</code> if and only if the name should be
-     * included in the file list; <code>false</code> otherwise.
+     * @return  {@code true} if and only if the name should be
+     * included in the file list; {@code false} otherwise.
      */
     boolean accept(File dir, String name);
 }

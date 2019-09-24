@@ -62,10 +62,10 @@ import sun.util.locale.provider.TimeZoneNameUtility;
 import sun.util.spi.CalendarProvider;
 
 /**
- * The <code>Calendar</code> class is an abstract class that provides methods
+ * The {@code Calendar} class is an abstract class that provides methods
  * for converting between a specific instant in time and a set of {@link
- * #fields calendar fields} such as <code>YEAR</code>, <code>MONTH</code>,
- * <code>DAY_OF_MONTH</code>, <code>HOUR</code>, and so on, and for
+ * #fields calendar fields} such as {@code YEAR}, {@code MONTH},
+ * {@code DAY_OF_MONTH}, {@code HOUR}, and so on, and for
  * manipulating the calendar fields, such as getting the date of the next
  * week. An instant in time can be represented by a millisecond value that is
  * an offset from the <a id="Epoch"><em>Epoch</em></a>, January 1, 1970
@@ -73,13 +73,13 @@ import sun.util.spi.CalendarProvider;
  *
  * <p>The class also provides additional fields and methods for
  * implementing a concrete calendar system outside the package. Those
- * fields and methods are defined as <code>protected</code>.
+ * fields and methods are defined as {@code protected}.
  *
  * <p>
- * Like other locale-sensitive classes, <code>Calendar</code> provides a
- * class method, <code>getInstance</code>, for getting a generally useful
- * object of this type. <code>Calendar</code>'s <code>getInstance</code> method
- * returns a <code>Calendar</code> object whose
+ * Like other locale-sensitive classes, {@code Calendar} provides a
+ * class method, {@code getInstance}, for getting a generally useful
+ * object of this type. {@code Calendar}'s {@code getInstance} method
+ * returns a {@code Calendar} object whose
  * calendar fields have been initialized with the current date and time:
  * <blockquote>
  * <pre>
@@ -87,47 +87,47 @@ import sun.util.spi.CalendarProvider;
  * </pre>
  * </blockquote>
  *
- * <p>A <code>Calendar</code> object can produce all the calendar field values
+ * <p>A {@code Calendar} object can produce all the calendar field values
  * needed to implement the date-time formatting for a particular language and
  * calendar style (for example, Japanese-Gregorian, Japanese-Traditional).
- * <code>Calendar</code> defines the range of values returned by
+ * {@code Calendar} defines the range of values returned by
  * certain calendar fields, as well as their meaning.  For example,
  * the first month of the calendar system has value <code>MONTH ==
  * JANUARY</code> for all calendars.  Other values are defined by the
- * concrete subclass, such as <code>ERA</code>.  See individual field
+ * concrete subclass, such as {@code ERA}.  See individual field
  * documentation and subclass documentation for details.
  *
  * <h2>Getting and Setting Calendar Field Values</h2>
  *
- * <p>The calendar field values can be set by calling the <code>set</code>
- * methods. Any field values set in a <code>Calendar</code> will not be
+ * <p>The calendar field values can be set by calling the {@code set}
+ * methods. Any field values set in a {@code Calendar} will not be
  * interpreted until it needs to calculate its time value (milliseconds from
  * the Epoch) or values of the calendar fields. Calling the
- * <code>get</code>, <code>getTimeInMillis</code>, <code>getTime</code>,
- * <code>add</code> and <code>roll</code> involves such calculation.
+ * {@code get}, {@code getTimeInMillis}, {@code getTime},
+ * {@code add} and {@code roll} involves such calculation.
  *
  * <h3>Leniency</h3>
  *
- * <p><code>Calendar</code> has two modes for interpreting the calendar
+ * <p>{@code Calendar} has two modes for interpreting the calendar
  * fields, <em>lenient</em> and <em>non-lenient</em>.  When a
- * <code>Calendar</code> is in lenient mode, it accepts a wider range of
- * calendar field values than it produces.  When a <code>Calendar</code>
- * recomputes calendar field values for return by <code>get()</code>, all of
+ * {@code Calendar} is in lenient mode, it accepts a wider range of
+ * calendar field values than it produces.  When a {@code Calendar}
+ * recomputes calendar field values for return by {@code get()}, all of
  * the calendar fields are normalized. For example, a lenient
- * <code>GregorianCalendar</code> interprets <code>MONTH == JANUARY</code>,
- * <code>DAY_OF_MONTH == 32</code> as February 1.
+ * {@code GregorianCalendar} interprets {@code MONTH == JANUARY},
+ * {@code DAY_OF_MONTH == 32} as February 1.
 
- * <p>When a <code>Calendar</code> is in non-lenient mode, it throws an
+ * <p>When a {@code Calendar} is in non-lenient mode, it throws an
  * exception if there is any inconsistency in its calendar fields. For
- * example, a <code>GregorianCalendar</code> always produces
- * <code>DAY_OF_MONTH</code> values between 1 and the length of the month. A
- * non-lenient <code>GregorianCalendar</code> throws an exception upon
+ * example, a {@code GregorianCalendar} always produces
+ * {@code DAY_OF_MONTH} values between 1 and the length of the month. A
+ * non-lenient {@code GregorianCalendar} throws an exception upon
  * calculating its time or calendar field values if any out-of-range field
  * value has been set.
  *
  * <h3><a id="first_week">First Week</a></h3>
  *
- * <code>Calendar</code> defines a locale-specific seven day week using two
+ * {@code Calendar} defines a locale-specific seven day week using two
  * parameters: the first day of the week and the minimal days in first week
  * (from 1 to 7).  These numbers are taken from the locale resource data or the
  * locale itself when a {@code Calendar} is constructed. If the designated
@@ -138,15 +138,15 @@ import sun.util.spi.CalendarProvider;
  * They may also be specified explicitly through the methods for setting their
  * values.
  *
- * <p>When setting or getting the <code>WEEK_OF_MONTH</code> or
- * <code>WEEK_OF_YEAR</code> fields, <code>Calendar</code> must determine the
+ * <p>When setting or getting the {@code WEEK_OF_MONTH} or
+ * {@code WEEK_OF_YEAR} fields, {@code Calendar} must determine the
  * first week of the month or year as a reference point.  The first week of a
  * month or year is defined as the earliest seven day period beginning on
- * <code>getFirstDayOfWeek()</code> and containing at least
- * <code>getMinimalDaysInFirstWeek()</code> days of that month or year.  Weeks
+ * {@code getFirstDayOfWeek()} and containing at least
+ * {@code getMinimalDaysInFirstWeek()} days of that month or year.  Weeks
  * numbered ..., -1, 0 precede the first week; weeks numbered 2, 3,... follow
- * it.  Note that the normalized numbering returned by <code>get()</code> may be
- * different.  For example, a specific <code>Calendar</code> subclass may
+ * it.  Note that the normalized numbering returned by {@code get()} may be
+ * different.  For example, a specific {@code Calendar} subclass may
  * designate the week before week 1 of a year as week <code><i>n</i></code> of
  * the previous year.
  *
@@ -156,12 +156,12 @@ import sun.util.spi.CalendarProvider;
  * may be insufficient information for the computation (such as only
  * year and month with no day of month), or there may be inconsistent
  * information (such as Tuesday, July 15, 1996 (Gregorian) -- July 15,
- * 1996 is actually a Monday). <code>Calendar</code> will resolve
+ * 1996 is actually a Monday). {@code Calendar} will resolve
  * calendar field values to determine the date and time in the
  * following way.
  *
  * <p><a id="resolution">If there is any conflict in calendar field values,
- * <code>Calendar</code> gives priorities to calendar fields that have been set
+ * {@code Calendar} gives priorities to calendar fields that have been set
  * more recently.</a> The following are the default combinations of the
  * calendar fields. The most recent combination, as determined by the
  * most recently set single field, will be used.
@@ -184,11 +184,11 @@ import sun.util.spi.CalendarProvider;
  * </pre></blockquote>
  *
  * <p>If there are any calendar fields whose values haven't been set in the selected
- * field combination, <code>Calendar</code> uses their default values. The default
+ * field combination, {@code Calendar} uses their default values. The default
  * value of each field may vary by concrete calendar systems. For example, in
- * <code>GregorianCalendar</code>, the default of a field is the same as that
- * of the start of the Epoch: i.e., <code>YEAR = 1970</code>, <code>MONTH =
- * JANUARY</code>, <code>DAY_OF_MONTH = 1</code>, etc.
+ * {@code GregorianCalendar}, the default of a field is the same as that
+ * of the start of the Epoch: i.e., {@code YEAR = 1970}, <code>MONTH =
+ * JANUARY</code>, {@code DAY_OF_MONTH = 1}, etc.
  *
  * <p>
  * <strong>Note:</strong> There are certain possible ambiguities in
@@ -213,98 +213,98 @@ import sun.util.spi.CalendarProvider;
  * <h3>Field Manipulation</h3>
  *
  * The calendar fields can be changed using three methods:
- * <code>set()</code>, <code>add()</code>, and <code>roll()</code>.
+ * {@code set()}, {@code add()}, and {@code roll()}.
  *
- * <p><strong><code>set(f, value)</code></strong> changes calendar field
- * <code>f</code> to <code>value</code>.  In addition, it sets an
- * internal member variable to indicate that calendar field <code>f</code> has
- * been changed. Although calendar field <code>f</code> is changed immediately,
+ * <p><strong>{@code set(f, value)}</strong> changes calendar field
+ * {@code f} to {@code value}.  In addition, it sets an
+ * internal member variable to indicate that calendar field {@code f} has
+ * been changed. Although calendar field {@code f} is changed immediately,
  * the calendar's time value in milliseconds is not recomputed until the next call to
- * <code>get()</code>, <code>getTime()</code>, <code>getTimeInMillis()</code>,
- * <code>add()</code>, or <code>roll()</code> is made. Thus, multiple calls to
- * <code>set()</code> do not trigger multiple, unnecessary
+ * {@code get()}, {@code getTime()}, {@code getTimeInMillis()},
+ * {@code add()}, or {@code roll()} is made. Thus, multiple calls to
+ * {@code set()} do not trigger multiple, unnecessary
  * computations. As a result of changing a calendar field using
- * <code>set()</code>, other calendar fields may also change, depending on the
+ * {@code set()}, other calendar fields may also change, depending on the
  * calendar field, the calendar field value, and the calendar system. In addition,
- * <code>get(f)</code> will not necessarily return <code>value</code> set by
- * the call to the <code>set</code> method
+ * {@code get(f)} will not necessarily return {@code value} set by
+ * the call to the {@code set} method
  * after the calendar fields have been recomputed. The specifics are determined by
  * the concrete calendar class.</p>
  *
- * <p><em>Example</em>: Consider a <code>GregorianCalendar</code>
+ * <p><em>Example</em>: Consider a {@code GregorianCalendar}
  * originally set to August 31, 1999. Calling <code>set(Calendar.MONTH,
  * Calendar.SEPTEMBER)</code> sets the date to September 31,
  * 1999. This is a temporary internal representation that resolves to
- * October 1, 1999 if <code>getTime()</code>is then called. However, a
- * call to <code>set(Calendar.DAY_OF_MONTH, 30)</code> before the call to
- * <code>getTime()</code> sets the date to September 30, 1999, since
- * no recomputation occurs after <code>set()</code> itself.</p>
+ * October 1, 1999 if {@code getTime()}is then called. However, a
+ * call to {@code set(Calendar.DAY_OF_MONTH, 30)} before the call to
+ * {@code getTime()} sets the date to September 30, 1999, since
+ * no recomputation occurs after {@code set()} itself.</p>
  *
- * <p><strong><code>add(f, delta)</code></strong> adds <code>delta</code>
- * to field <code>f</code>.  This is equivalent to calling <code>set(f,
+ * <p><strong>{@code add(f, delta)}</strong> adds {@code delta}
+ * to field {@code f}.  This is equivalent to calling <code>set(f,
  * get(f) + delta)</code> with two adjustments:</p>
  *
  * <blockquote>
- *   <p><strong>Add rule 1</strong>. The value of field <code>f</code>
- *   after the call minus the value of field <code>f</code> before the
- *   call is <code>delta</code>, modulo any overflow that has occurred in
- *   field <code>f</code>. Overflow occurs when a field value exceeds its
+ *   <p><strong>Add rule 1</strong>. The value of field {@code f}
+ *   after the call minus the value of field {@code f} before the
+ *   call is {@code delta}, modulo any overflow that has occurred in
+ *   field {@code f}. Overflow occurs when a field value exceeds its
  *   range and, as a result, the next larger field is incremented or
  *   decremented and the field value is adjusted back into its range.</p>
  *
  *   <p><strong>Add rule 2</strong>. If a smaller field is expected to be
  *   invariant, but it is impossible for it to be equal to its
  *   prior value because of changes in its minimum or maximum after field
- *   <code>f</code> is changed or other constraints, such as time zone
+ *   {@code f} is changed or other constraints, such as time zone
  *   offset changes, then its value is adjusted to be as close
  *   as possible to its expected value. A smaller field represents a
- *   smaller unit of time. <code>HOUR</code> is a smaller field than
- *   <code>DAY_OF_MONTH</code>. No adjustment is made to smaller fields
+ *   smaller unit of time. {@code HOUR} is a smaller field than
+ *   {@code DAY_OF_MONTH}. No adjustment is made to smaller fields
  *   that are not expected to be invariant. The calendar system
  *   determines what fields are expected to be invariant.</p>
  * </blockquote>
  *
- * <p>In addition, unlike <code>set()</code>, <code>add()</code> forces
+ * <p>In addition, unlike {@code set()}, {@code add()} forces
  * an immediate recomputation of the calendar's milliseconds and all
  * fields.</p>
  *
- * <p><em>Example</em>: Consider a <code>GregorianCalendar</code>
+ * <p><em>Example</em>: Consider a {@code GregorianCalendar}
  * originally set to August 31, 1999. Calling <code>add(Calendar.MONTH,
  * 13)</code> sets the calendar to September 30, 2000. <strong>Add rule
- * 1</strong> sets the <code>MONTH</code> field to September, since
+ * 1</strong> sets the {@code MONTH} field to September, since
  * adding 13 months to August gives September of the next year. Since
- * <code>DAY_OF_MONTH</code> cannot be 31 in September in a
- * <code>GregorianCalendar</code>, <strong>add rule 2</strong> sets the
- * <code>DAY_OF_MONTH</code> to 30, the closest possible value. Although
- * it is a smaller field, <code>DAY_OF_WEEK</code> is not adjusted by
+ * {@code DAY_OF_MONTH} cannot be 31 in September in a
+ * {@code GregorianCalendar}, <strong>add rule 2</strong> sets the
+ * {@code DAY_OF_MONTH} to 30, the closest possible value. Although
+ * it is a smaller field, {@code DAY_OF_WEEK} is not adjusted by
  * rule 2, since it is expected to change when the month changes in a
- * <code>GregorianCalendar</code>.</p>
+ * {@code GregorianCalendar}.</p>
  *
- * <p><strong><code>roll(f, delta)</code></strong> adds
- * <code>delta</code> to field <code>f</code> without changing larger
- * fields. This is equivalent to calling <code>add(f, delta)</code> with
+ * <p><strong>{@code roll(f, delta)}</strong> adds
+ * {@code delta} to field {@code f} without changing larger
+ * fields. This is equivalent to calling {@code add(f, delta)} with
  * the following adjustment:</p>
  *
  * <blockquote>
  *   <p><strong>Roll rule</strong>. Larger fields are unchanged after the
  *   call. A larger field represents a larger unit of
- *   time. <code>DAY_OF_MONTH</code> is a larger field than
- *   <code>HOUR</code>.</p>
+ *   time. {@code DAY_OF_MONTH} is a larger field than
+ *   {@code HOUR}.</p>
  * </blockquote>
  *
  * <p><em>Example</em>: See {@link java.util.GregorianCalendar#roll(int, int)}.
  *
  * <p><strong>Usage model</strong>. To motivate the behavior of
- * <code>add()</code> and <code>roll()</code>, consider a user interface
+ * {@code add()} and {@code roll()}, consider a user interface
  * component with increment and decrement buttons for the month, day, and
- * year, and an underlying <code>GregorianCalendar</code>. If the
+ * year, and an underlying {@code GregorianCalendar}. If the
  * interface reads January 31, 1999 and the user presses the month
  * increment button, what should it read? If the underlying
- * implementation uses <code>set()</code>, it might read March 3, 1999. A
+ * implementation uses {@code set()}, it might read March 3, 1999. A
  * better result would be February 28, 1999. Furthermore, if the user
  * presses the month increment button again, it should read March 31,
  * 1999, not March 28, 1999. By saving the original date and using either
- * <code>add()</code> or <code>roll()</code>, depending on whether larger
+ * {@code add()} or {@code roll()}, depending on whether larger
  * fields should be affected, the user interface can behave as most users
  * will intuitively expect.</p>
  *
@@ -369,7 +369,7 @@ public abstract class Calendar implements Serializable, Cloneable, Comparable<Ca
     // ranges when they are regenerated.
 
     /**
-     * Field number for <code>get</code> and <code>set</code> indicating the
+     * Field number for {@code get} and {@code set} indicating the
      * era, e.g., AD or BC in the Julian calendar. This is a calendar-specific
      * value; see subclass documentation.
      *
@@ -379,16 +379,16 @@ public abstract class Calendar implements Serializable, Cloneable, Comparable<Ca
     public static final int ERA = 0;
 
     /**
-     * Field number for <code>get</code> and <code>set</code> indicating the
+     * Field number for {@code get} and {@code set} indicating the
      * year. This is a calendar-specific value; see subclass documentation.
      */
     public static final int YEAR = 1;
 
     /**
-     * Field number for <code>get</code> and <code>set</code> indicating the
+     * Field number for {@code get} and {@code set} indicating the
      * month. This is a calendar-specific value. The first month of
      * the year in the Gregorian and Julian calendars is
-     * <code>JANUARY</code> which is 0; the last depends on the number
+     * {@code JANUARY} which is 0; the last depends on the number
      * of months in a year.
      *
      * @see #JANUARY
@@ -408,11 +408,11 @@ public abstract class Calendar implements Serializable, Cloneable, Comparable<Ca
     public static final int MONTH = 2;
 
     /**
-     * Field number for <code>get</code> and <code>set</code> indicating the
+     * Field number for {@code get} and {@code set} indicating the
      * week number within the current year.  The first week of the year, as
-     * defined by <code>getFirstDayOfWeek()</code> and
-     * <code>getMinimalDaysInFirstWeek()</code>, has value 1.  Subclasses define
-     * the value of <code>WEEK_OF_YEAR</code> for days before the first week of
+     * defined by {@code getFirstDayOfWeek()} and
+     * {@code getMinimalDaysInFirstWeek()}, has value 1.  Subclasses define
+     * the value of {@code WEEK_OF_YEAR} for days before the first week of
      * the year.
      *
      * @see #getFirstDayOfWeek
@@ -421,11 +421,11 @@ public abstract class Calendar implements Serializable, Cloneable, Comparable<Ca
     public static final int WEEK_OF_YEAR = 3;
 
     /**
-     * Field number for <code>get</code> and <code>set</code> indicating the
+     * Field number for {@code get} and {@code set} indicating the
      * week number within the current month.  The first week of the month, as
-     * defined by <code>getFirstDayOfWeek()</code> and
-     * <code>getMinimalDaysInFirstWeek()</code>, has value 1.  Subclasses define
-     * the value of <code>WEEK_OF_MONTH</code> for days before the first week of
+     * defined by {@code getFirstDayOfWeek()} and
+     * {@code getMinimalDaysInFirstWeek()}, has value 1.  Subclasses define
+     * the value of {@code WEEK_OF_MONTH} for days before the first week of
      * the month.
      *
      * @see #getFirstDayOfWeek
@@ -434,8 +434,8 @@ public abstract class Calendar implements Serializable, Cloneable, Comparable<Ca
     public static final int WEEK_OF_MONTH = 4;
 
     /**
-     * Field number for <code>get</code> and <code>set</code> indicating the
-     * day of the month. This is a synonym for <code>DAY_OF_MONTH</code>.
+     * Field number for {@code get} and {@code set} indicating the
+     * day of the month. This is a synonym for {@code DAY_OF_MONTH}.
      * The first day of the month has value 1.
      *
      * @see #DAY_OF_MONTH
@@ -443,8 +443,8 @@ public abstract class Calendar implements Serializable, Cloneable, Comparable<Ca
     public static final int DATE = 5;
 
     /**
-     * Field number for <code>get</code> and <code>set</code> indicating the
-     * day of the month. This is a synonym for <code>DATE</code>.
+     * Field number for {@code get} and {@code set} indicating the
+     * day of the month. This is a synonym for {@code DATE}.
      * The first day of the month has value 1.
      *
      * @see #DATE
@@ -452,16 +452,16 @@ public abstract class Calendar implements Serializable, Cloneable, Comparable<Ca
     public static final int DAY_OF_MONTH = 5;
 
     /**
-     * Field number for <code>get</code> and <code>set</code> indicating the day
+     * Field number for {@code get} and {@code set} indicating the day
      * number within the current year.  The first day of the year has value 1.
      */
     public static final int DAY_OF_YEAR = 6;
 
     /**
-     * Field number for <code>get</code> and <code>set</code> indicating the day
-     * of the week.  This field takes values <code>SUNDAY</code>,
-     * <code>MONDAY</code>, <code>TUESDAY</code>, <code>WEDNESDAY</code>,
-     * <code>THURSDAY</code>, <code>FRIDAY</code>, and <code>SATURDAY</code>.
+     * Field number for {@code get} and {@code set} indicating the day
+     * of the week.  This field takes values {@code SUNDAY},
+     * {@code MONDAY}, {@code TUESDAY}, {@code WEDNESDAY},
+     * {@code THURSDAY}, {@code FRIDAY}, and {@code SATURDAY}.
      *
      * @see #SUNDAY
      * @see #MONDAY
@@ -474,24 +474,24 @@ public abstract class Calendar implements Serializable, Cloneable, Comparable<Ca
     public static final int DAY_OF_WEEK = 7;
 
     /**
-     * Field number for <code>get</code> and <code>set</code> indicating the
+     * Field number for {@code get} and {@code set} indicating the
      * ordinal number of the day of the week within the current month. Together
-     * with the <code>DAY_OF_WEEK</code> field, this uniquely specifies a day
-     * within a month.  Unlike <code>WEEK_OF_MONTH</code> and
-     * <code>WEEK_OF_YEAR</code>, this field's value does <em>not</em> depend on
-     * <code>getFirstDayOfWeek()</code> or
-     * <code>getMinimalDaysInFirstWeek()</code>.  <code>DAY_OF_MONTH 1</code>
-     * through <code>7</code> always correspond to <code>DAY_OF_WEEK_IN_MONTH
-     * 1</code>; <code>8</code> through <code>14</code> correspond to
-     * <code>DAY_OF_WEEK_IN_MONTH 2</code>, and so on.
-     * <code>DAY_OF_WEEK_IN_MONTH 0</code> indicates the week before
-     * <code>DAY_OF_WEEK_IN_MONTH 1</code>.  Negative values count back from the
+     * with the {@code DAY_OF_WEEK} field, this uniquely specifies a day
+     * within a month.  Unlike {@code WEEK_OF_MONTH} and
+     * {@code WEEK_OF_YEAR}, this field's value does <em>not</em> depend on
+     * {@code getFirstDayOfWeek()} or
+     * {@code getMinimalDaysInFirstWeek()}.  {@code DAY_OF_MONTH 1}
+     * through {@code 7} always correspond to <code>DAY_OF_WEEK_IN_MONTH
+     * 1</code>; {@code 8} through {@code 14} correspond to
+     * {@code DAY_OF_WEEK_IN_MONTH 2}, and so on.
+     * {@code DAY_OF_WEEK_IN_MONTH 0} indicates the week before
+     * {@code DAY_OF_WEEK_IN_MONTH 1}.  Negative values count back from the
      * end of the month, so the last Sunday of a month is specified as
-     * <code>DAY_OF_WEEK = SUNDAY, DAY_OF_WEEK_IN_MONTH = -1</code>.  Because
+     * {@code DAY_OF_WEEK = SUNDAY, DAY_OF_WEEK_IN_MONTH = -1}.  Because
      * negative values count backward they will usually be aligned differently
      * within the month than positive values.  For example, if a month has 31
-     * days, <code>DAY_OF_WEEK_IN_MONTH -1</code> will overlap
-     * <code>DAY_OF_WEEK_IN_MONTH 5</code> and the end of <code>4</code>.
+     * days, {@code DAY_OF_WEEK_IN_MONTH -1} will overlap
+     * {@code DAY_OF_WEEK_IN_MONTH 5} and the end of {@code 4}.
      *
      * @see #DAY_OF_WEEK
      * @see #WEEK_OF_MONTH
@@ -499,9 +499,9 @@ public abstract class Calendar implements Serializable, Cloneable, Comparable<Ca
     public static final int DAY_OF_WEEK_IN_MONTH = 8;
 
     /**
-     * Field number for <code>get</code> and <code>set</code> indicating
-     * whether the <code>HOUR</code> is before or after noon.
-     * E.g., at 10:04:15.250 PM the <code>AM_PM</code> is <code>PM</code>.
+     * Field number for {@code get} and {@code set} indicating
+     * whether the {@code HOUR} is before or after noon.
+     * E.g., at 10:04:15.250 PM the {@code AM_PM} is {@code PM}.
      *
      * @see #AM
      * @see #PM
@@ -510,10 +510,10 @@ public abstract class Calendar implements Serializable, Cloneable, Comparable<Ca
     public static final int AM_PM = 9;
 
     /**
-     * Field number for <code>get</code> and <code>set</code> indicating the
-     * hour of the morning or afternoon. <code>HOUR</code> is used for the
+     * Field number for {@code get} and {@code set} indicating the
+     * hour of the morning or afternoon. {@code HOUR} is used for the
      * 12-hour clock (0 - 11). Noon and midnight are represented by 0, not by 12.
-     * E.g., at 10:04:15.250 PM the <code>HOUR</code> is 10.
+     * E.g., at 10:04:15.250 PM the {@code HOUR} is 10.
      *
      * @see #AM_PM
      * @see #HOUR_OF_DAY
@@ -521,60 +521,60 @@ public abstract class Calendar implements Serializable, Cloneable, Comparable<Ca
     public static final int HOUR = 10;
 
     /**
-     * Field number for <code>get</code> and <code>set</code> indicating the
-     * hour of the day. <code>HOUR_OF_DAY</code> is used for the 24-hour clock.
-     * E.g., at 10:04:15.250 PM the <code>HOUR_OF_DAY</code> is 22.
+     * Field number for {@code get} and {@code set} indicating the
+     * hour of the day. {@code HOUR_OF_DAY} is used for the 24-hour clock.
+     * E.g., at 10:04:15.250 PM the {@code HOUR_OF_DAY} is 22.
      *
      * @see #HOUR
      */
     public static final int HOUR_OF_DAY = 11;
 
     /**
-     * Field number for <code>get</code> and <code>set</code> indicating the
+     * Field number for {@code get} and {@code set} indicating the
      * minute within the hour.
-     * E.g., at 10:04:15.250 PM the <code>MINUTE</code> is 4.
+     * E.g., at 10:04:15.250 PM the {@code MINUTE} is 4.
      */
     public static final int MINUTE = 12;
 
     /**
-     * Field number for <code>get</code> and <code>set</code> indicating the
+     * Field number for {@code get} and {@code set} indicating the
      * second within the minute.
-     * E.g., at 10:04:15.250 PM the <code>SECOND</code> is 15.
+     * E.g., at 10:04:15.250 PM the {@code SECOND} is 15.
      */
     public static final int SECOND = 13;
 
     /**
-     * Field number for <code>get</code> and <code>set</code> indicating the
+     * Field number for {@code get} and {@code set} indicating the
      * millisecond within the second.
-     * E.g., at 10:04:15.250 PM the <code>MILLISECOND</code> is 250.
+     * E.g., at 10:04:15.250 PM the {@code MILLISECOND} is 250.
      */
     public static final int MILLISECOND = 14;
 
     /**
-     * Field number for <code>get</code> and <code>set</code>
+     * Field number for {@code get} and {@code set}
      * indicating the raw offset from GMT in milliseconds.
      * <p>
      * This field reflects the correct GMT offset value of the time
-     * zone of this <code>Calendar</code> if the
-     * <code>TimeZone</code> implementation subclass supports
+     * zone of this {@code Calendar} if the
+     * {@code TimeZone} implementation subclass supports
      * historical GMT offset changes.
      */
     public static final int ZONE_OFFSET = 15;
 
     /**
-     * Field number for <code>get</code> and <code>set</code> indicating the
+     * Field number for {@code get} and {@code set} indicating the
      * daylight saving offset in milliseconds.
      * <p>
      * This field reflects the correct daylight saving offset value of
-     * the time zone of this <code>Calendar</code> if the
-     * <code>TimeZone</code> implementation subclass supports
+     * the time zone of this {@code Calendar} if the
+     * {@code TimeZone} implementation subclass supports
      * historical Daylight Saving Time schedule changes.
      */
     public static final int DST_OFFSET = 16;
 
     /**
-     * The number of distinct fields recognized by <code>get</code> and <code>set</code>.
-     * Field numbers range from <code>0..FIELD_COUNT-1</code>.
+     * The number of distinct fields recognized by {@code get} and {@code set}.
+     * Field numbers range from {@code 0..FIELD_COUNT-1}.
      */
     public static final int FIELD_COUNT = 17;
 
@@ -694,7 +694,7 @@ public abstract class Calendar implements Serializable, Cloneable, Comparable<Ca
 
     /**
      * Value of the {@link #MONTH} field indicating the
-     * thirteenth month of the year. Although <code>GregorianCalendar</code>
+     * thirteenth month of the year. Although {@code GregorianCalendar}
      * does not use this value, lunar calendars do.
      */
     public static final int UNDECIMBER = 12;
@@ -839,8 +839,8 @@ public abstract class Calendar implements Serializable, Cloneable, Comparable<Ca
 
     /**
      * The calendar field values for the currently set time for this calendar.
-     * This is an array of <code>FIELD_COUNT</code> integers, with index values
-     * <code>ERA</code> through <code>DST_OFFSET</code>.
+     * This is an array of {@code FIELD_COUNT} integers, with index values
+     * {@code ERA} through {@code DST_OFFSET}.
      * @serial
      */
     @SuppressWarnings("ProtectedField")
@@ -850,8 +850,8 @@ public abstract class Calendar implements Serializable, Cloneable, Comparable<Ca
      * The flags which tell if a specified calendar field for the calendar is set.
      * A new object has no fields set.  After the first call to a method
      * which generates the fields, they all remain set after that.
-     * This is an array of <code>FIELD_COUNT</code> booleans, with index values
-     * <code>ERA</code> through <code>DST_OFFSET</code>.
+     * This is an array of {@code FIELD_COUNT} booleans, with index values
+     * {@code ERA} through {@code DST_OFFSET}.
      * @serial
      */
     @SuppressWarnings("ProtectedField")
@@ -874,8 +874,8 @@ public abstract class Calendar implements Serializable, Cloneable, Comparable<Ca
     protected long          time;
 
     /**
-     * True if then the value of <code>time</code> is valid.
-     * The time is made invalid by a change to an item of <code>field[]</code>.
+     * True if then the value of {@code time} is valid.
+     * The time is made invalid by a change to an item of {@code field[]}.
      * @see #time
      * @serial
      */
@@ -883,10 +883,10 @@ public abstract class Calendar implements Serializable, Cloneable, Comparable<Ca
     protected boolean       isTimeSet;
 
     /**
-     * True if <code>fields[]</code> are in sync with the currently set time.
+     * True if {@code fields[]} are in sync with the currently set time.
      * If false, then the next attempt to get the value of a field will
      * force a recomputation of all fields from the current value of
-     * <code>time</code>.
+     * {@code time}.
      * @serial
      */
     @SuppressWarnings("ProtectedField")
@@ -899,8 +899,8 @@ public abstract class Calendar implements Serializable, Cloneable, Comparable<Ca
     transient boolean       areAllFieldsSet;
 
     /**
-     * <code>True</code> if this calendar allows out-of-range field values during computation
-     * of <code>time</code> from <code>fields[]</code>.
+     * {@code True} if this calendar allows out-of-range field values during computation
+     * of {@code time} from {@code fields[]}.
      * @see #setLenient
      * @see #isLenient
      * @serial
@@ -908,20 +908,20 @@ public abstract class Calendar implements Serializable, Cloneable, Comparable<Ca
     private boolean         lenient = true;
 
     /**
-     * The <code>TimeZone</code> used by this calendar. <code>Calendar</code>
+     * The {@code TimeZone} used by this calendar. {@code Calendar}
      * uses the time zone data to translate between locale and GMT time.
      * @serial
      */
     private TimeZone        zone;
 
     /**
-     * <code>True</code> if zone references to a shared TimeZone object.
+     * {@code True} if zone references to a shared TimeZone object.
      */
     private transient boolean sharedZone = false;
 
     /**
-     * The first day of the week, with possible values <code>SUNDAY</code>,
-     * <code>MONDAY</code>, etc.  This is a locale-dependent value.
+     * The first day of the week, with possible values {@code SUNDAY},
+     * {@code MONDAY}, etc.  This is a locale-dependent value.
      * @serial
      */
     private int             firstDayOfWeek;
@@ -964,10 +964,10 @@ public abstract class Calendar implements Serializable, Cloneable, Comparable<Ca
     static final int ALL_FIELDS = (1 << FIELD_COUNT) - 1;
 
     /**
-     * The next available value for <code>stamp[]</code>, an internal array.
+     * The next available value for {@code stamp[]}, an internal array.
      * This actually should not be written out to the stream, and will probably
      * be removed from the stream in the near future.  In the meantime,
-     * a value of <code>MINIMUM_USER_STAMP</code> should be used.
+     * a value of {@code MINIMUM_USER_STAMP} should be used.
      * @serial
      */
     private int             nextStamp = MINIMUM_USER_STAMP;
@@ -997,7 +997,7 @@ public abstract class Calendar implements Serializable, Cloneable, Comparable<Ca
      * </dd>
      * </dl>
      * When streaming out this class, the most recent format
-     * and the highest allowable <code>serialVersionOnStream</code>
+     * and the highest allowable {@code serialVersionOnStream}
      * is written.
      * @serial
      * @since 1.1.6
@@ -1307,7 +1307,7 @@ public abstract class Calendar implements Serializable, Cloneable, Comparable<Ca
          * Sets the time zone parameter to the given {@code zone}. If no time
          * zone parameter is given to this {@code Calendar.Builder}, the
          * {@linkplain TimeZone#getDefault() default
-         * <code>TimeZone</code>} will be used in the {@link #build() build}
+         * {@code TimeZone}} will be used in the {@link #build() build}
          * method.
          *
          * @param zone the {@link TimeZone}
@@ -1378,7 +1378,7 @@ public abstract class Calendar implements Serializable, Cloneable, Comparable<Ca
         /**
          * Sets the locale parameter to the given {@code locale}. If no locale
          * is given to this {@code Calendar.Builder}, the {@linkplain
-         * Locale#getDefault(Locale.Category) default <code>Locale</code>}
+         * Locale#getDefault(Locale.Category) default {@code Locale}}
          * for {@link Locale.Category#FORMAT} will be used.
          *
          * <p>If no calendar type is explicitly given by a call to the
@@ -1614,7 +1614,7 @@ public abstract class Calendar implements Serializable, Cloneable, Comparable<Ca
 
     /**
      * Gets a calendar using the default time zone and locale. The
-     * <code>Calendar</code> returned is based on the current time
+     * {@code Calendar} returned is based on the current time
      * in the default time zone with the default
      * {@link Locale.Category#FORMAT FORMAT} locale.
      * <p>
@@ -1632,7 +1632,7 @@ public abstract class Calendar implements Serializable, Cloneable, Comparable<Ca
 
     /**
      * Gets a calendar using the specified time zone and default locale.
-     * The <code>Calendar</code> returned is based on the current time
+     * The {@code Calendar} returned is based on the current time
      * in the given time zone with the default
      * {@link Locale.Category#FORMAT FORMAT} locale.
      *
@@ -1646,7 +1646,7 @@ public abstract class Calendar implements Serializable, Cloneable, Comparable<Ca
 
     /**
      * Gets a calendar using the default time zone and specified locale.
-     * The <code>Calendar</code> returned is based on the current time
+     * The {@code Calendar} returned is based on the current time
      * in the default time zone with the given locale.
      * <p>
      * If the locale contains the time zone with "tz"
@@ -1663,7 +1663,7 @@ public abstract class Calendar implements Serializable, Cloneable, Comparable<Ca
 
     /**
      * Gets a calendar with the specified time zone and locale.
-     * The <code>Calendar</code> returned is based on the current time
+     * The {@code Calendar} returned is based on the current time
      * in the given time zone with the given locale.
      *
      * @param zone the time zone to use
@@ -1738,13 +1738,13 @@ public abstract class Calendar implements Serializable, Cloneable, Comparable<Ca
     }
 
     /**
-     * Returns an array of all locales for which the <code>getInstance</code>
+     * Returns an array of all locales for which the {@code getInstance}
      * methods of this class can return localized instances.
-     * The array returned must contain at least a <code>Locale</code>
+     * The array returned must contain at least a {@code Locale}
      * instance equal to {@link java.util.Locale#US Locale.US}.
      *
      * @return An array of locales for which localized
-     *         <code>Calendar</code> instances are available.
+     *         {@code Calendar} instances are available.
      */
     public static synchronized Locale[] getAvailableLocales()
     {
@@ -1774,11 +1774,11 @@ public abstract class Calendar implements Serializable, Cloneable, Comparable<Ca
     protected abstract void computeFields();
 
     /**
-     * Returns a <code>Date</code> object representing this
-     * <code>Calendar</code>'s time value (millisecond offset from the <a
+     * Returns a {@code Date} object representing this
+     * {@code Calendar}'s time value (millisecond offset from the <a
      * href="#Epoch">Epoch</a>").
      *
-     * @return a <code>Date</code> representing the time value.
+     * @return a {@code Date} representing the time value.
      * @see #setTime(Date)
      * @see #getTimeInMillis()
      */
@@ -1787,11 +1787,11 @@ public abstract class Calendar implements Serializable, Cloneable, Comparable<Ca
     }
 
     /**
-     * Sets this Calendar's time with the given <code>Date</code>.
+     * Sets this Calendar's time with the given {@code Date}.
      * <p>
-     * Note: Calling <code>setTime()</code> with
-     * <code>Date(Long.MAX_VALUE)</code> or <code>Date(Long.MIN_VALUE)</code>
-     * may yield incorrect field values from <code>get()</code>.
+     * Note: Calling {@code setTime()} with
+     * {@code Date(Long.MAX_VALUE)} or {@code Date(Long.MIN_VALUE)}
+     * may yield incorrect field values from {@code get()}.
      *
      * @param date the given Date.
      * @see #getTime()
@@ -1874,7 +1874,7 @@ public abstract class Calendar implements Serializable, Cloneable, Comparable<Ca
     /**
      * Sets the value of the given calendar field. This method does
      * not affect any setting state of the field in this
-     * <code>Calendar</code> instance.
+     * {@code Calendar} instance.
      *
      * @throws IndexOutOfBoundsException if the specified field is out of range
      *             (<code>field &lt; 0 || field &gt;= FIELD_COUNT</code>).
@@ -1920,15 +1920,15 @@ public abstract class Calendar implements Serializable, Cloneable, Comparable<Ca
     }
 
     /**
-     * Sets the values for the calendar fields <code>YEAR</code>,
-     * <code>MONTH</code>, and <code>DAY_OF_MONTH</code>.
+     * Sets the values for the calendar fields {@code YEAR},
+     * {@code MONTH}, and {@code DAY_OF_MONTH}.
      * Previous values of other calendar fields are retained.  If this is not desired,
      * call {@link #clear()} first.
      *
-     * @param year the value used to set the <code>YEAR</code> calendar field.
-     * @param month the value used to set the <code>MONTH</code> calendar field.
+     * @param year the value used to set the {@code YEAR} calendar field.
+     * @param month the value used to set the {@code MONTH} calendar field.
      * Month value is 0-based. e.g., 0 for January.
-     * @param date the value used to set the <code>DAY_OF_MONTH</code> calendar field.
+     * @param date the value used to set the {@code DAY_OF_MONTH} calendar field.
      * @see #set(int,int)
      * @see #set(int,int,int,int,int)
      * @see #set(int,int,int,int,int,int)
@@ -1941,18 +1941,18 @@ public abstract class Calendar implements Serializable, Cloneable, Comparable<Ca
     }
 
     /**
-     * Sets the values for the calendar fields <code>YEAR</code>,
-     * <code>MONTH</code>, <code>DAY_OF_MONTH</code>,
-     * <code>HOUR_OF_DAY</code>, and <code>MINUTE</code>.
+     * Sets the values for the calendar fields {@code YEAR},
+     * {@code MONTH}, {@code DAY_OF_MONTH},
+     * {@code HOUR_OF_DAY}, and {@code MINUTE}.
      * Previous values of other fields are retained.  If this is not desired,
      * call {@link #clear()} first.
      *
-     * @param year the value used to set the <code>YEAR</code> calendar field.
-     * @param month the value used to set the <code>MONTH</code> calendar field.
+     * @param year the value used to set the {@code YEAR} calendar field.
+     * @param month the value used to set the {@code MONTH} calendar field.
      * Month value is 0-based. e.g., 0 for January.
-     * @param date the value used to set the <code>DAY_OF_MONTH</code> calendar field.
-     * @param hourOfDay the value used to set the <code>HOUR_OF_DAY</code> calendar field.
-     * @param minute the value used to set the <code>MINUTE</code> calendar field.
+     * @param date the value used to set the {@code DAY_OF_MONTH} calendar field.
+     * @param hourOfDay the value used to set the {@code HOUR_OF_DAY} calendar field.
+     * @param minute the value used to set the {@code MINUTE} calendar field.
      * @see #set(int,int)
      * @see #set(int,int,int)
      * @see #set(int,int,int,int,int,int)
@@ -1967,19 +1967,19 @@ public abstract class Calendar implements Serializable, Cloneable, Comparable<Ca
     }
 
     /**
-     * Sets the values for the fields <code>YEAR</code>, <code>MONTH</code>,
-     * <code>DAY_OF_MONTH</code>, <code>HOUR_OF_DAY</code>, <code>MINUTE</code>, and
-     * <code>SECOND</code>.
+     * Sets the values for the fields {@code YEAR}, {@code MONTH},
+     * {@code DAY_OF_MONTH}, {@code HOUR_OF_DAY}, {@code MINUTE}, and
+     * {@code SECOND}.
      * Previous values of other fields are retained.  If this is not desired,
      * call {@link #clear()} first.
      *
-     * @param year the value used to set the <code>YEAR</code> calendar field.
-     * @param month the value used to set the <code>MONTH</code> calendar field.
+     * @param year the value used to set the {@code YEAR} calendar field.
+     * @param month the value used to set the {@code MONTH} calendar field.
      * Month value is 0-based. e.g., 0 for January.
-     * @param date the value used to set the <code>DAY_OF_MONTH</code> calendar field.
-     * @param hourOfDay the value used to set the <code>HOUR_OF_DAY</code> calendar field.
-     * @param minute the value used to set the <code>MINUTE</code> calendar field.
-     * @param second the value used to set the <code>SECOND</code> calendar field.
+     * @param date the value used to set the {@code DAY_OF_MONTH} calendar field.
+     * @param hourOfDay the value used to set the {@code HOUR_OF_DAY} calendar field.
+     * @param minute the value used to set the {@code MINUTE} calendar field.
+     * @param second the value used to set the {@code SECOND} calendar field.
      * @see #set(int,int)
      * @see #set(int,int,int)
      * @see #set(int,int,int,int,int)
@@ -1998,14 +1998,14 @@ public abstract class Calendar implements Serializable, Cloneable, Comparable<Ca
     /**
      * Sets all the calendar field values and the time value
      * (millisecond offset from the <a href="#Epoch">Epoch</a>) of
-     * this <code>Calendar</code> undefined. This means that {@link
-     * #isSet(int) isSet()} will return <code>false</code> for all the
+     * this {@code Calendar} undefined. This means that {@link
+     * #isSet(int) isSet()} will return {@code false} for all the
      * calendar fields, and the date and time calculations will treat
      * the fields as if they had never been set. A
-     * <code>Calendar</code> implementation class may use its specific
+     * {@code Calendar} implementation class may use its specific
      * default field values for date/time calculations. For example,
-     * <code>GregorianCalendar</code> uses 1970 if the
-     * <code>YEAR</code> field value is undefined.
+     * {@code GregorianCalendar} uses 1970 if the
+     * {@code YEAR} field value is undefined.
      *
      * @see #clear(int)
      */
@@ -2022,10 +2022,10 @@ public abstract class Calendar implements Serializable, Cloneable, Comparable<Ca
     /**
      * Sets the given calendar field value and the time value
      * (millisecond offset from the <a href="#Epoch">Epoch</a>) of
-     * this <code>Calendar</code> undefined. This means that {@link
-     * #isSet(int) isSet(field)} will return <code>false</code>, and
+     * this {@code Calendar} undefined. This means that {@link
+     * #isSet(int) isSet(field)} will return {@code false}, and
      * the date and time calculations will treat the field as if it
-     * had never been set. A <code>Calendar</code> implementation
+     * had never been set. A {@code Calendar} implementation
      * class may use the field's specific default value for date and
      * time calculations.
      *
@@ -2033,7 +2033,7 @@ public abstract class Calendar implements Serializable, Cloneable, Comparable<Ca
      * fields are handled independently and the <a
      * href="#time_resolution">the resolution rule for the time of
      * day</a> is applied. Clearing one of the fields doesn't reset
-     * the hour of day value of this <code>Calendar</code>. Use {@link
+     * the hour of day value of this {@code Calendar}. Use {@link
      * #set(int,int) set(Calendar.HOUR_OF_DAY, 0)} to reset the hour
      * value.
      *
@@ -2053,11 +2053,11 @@ public abstract class Calendar implements Serializable, Cloneable, Comparable<Ca
     /**
      * Determines if the given calendar field has a value set,
      * including cases that the value has been set by internal fields
-     * calculations triggered by a <code>get</code> method call.
+     * calculations triggered by a {@code get} method call.
      *
      * @param field the calendar field to test
-     * @return <code>true</code> if the given calendar field has a value set;
-     * <code>false</code> otherwise.
+     * @return {@code true} if the given calendar field has a value set;
+     * {@code false} otherwise.
      */
     public final boolean isSet(int field)
     {
@@ -2066,24 +2066,24 @@ public abstract class Calendar implements Serializable, Cloneable, Comparable<Ca
 
     /**
      * Returns the string representation of the calendar
-     * <code>field</code> value in the given <code>style</code> and
-     * <code>locale</code>.  If no string representation is
-     * applicable, <code>null</code> is returned. This method calls
+     * {@code field} value in the given {@code style} and
+     * {@code locale}.  If no string representation is
+     * applicable, {@code null} is returned. This method calls
      * {@link Calendar#get(int) get(field)} to get the calendar
-     * <code>field</code> value if the string representation is
-     * applicable to the given calendar <code>field</code>.
+     * {@code field} value if the string representation is
+     * applicable to the given calendar {@code field}.
      *
-     * <p>For example, if this <code>Calendar</code> is a
-     * <code>GregorianCalendar</code> and its date is 2005-01-01, then
+     * <p>For example, if this {@code Calendar} is a
+     * {@code GregorianCalendar} and its date is 2005-01-01, then
      * the string representation of the {@link #MONTH} field would be
      * "January" in the long style in an English locale or "Jan" in
      * the short style. However, no string representation would be
      * available for the {@link #DAY_OF_MONTH} field, and this method
-     * would return <code>null</code>.
+     * would return {@code null}.
      *
      * <p>The default implementation supports the calendar fields for
      * which a {@link DateFormatSymbols} has names in the given
-     * <code>locale</code>.
+     * {@code locale}.
      *
      * @param field
      *        the calendar field for which the string representation
@@ -2309,10 +2309,10 @@ public abstract class Calendar implements Serializable, Cloneable, Comparable<Ca
      * externally by calling one of the setter methods rather than by the
      * internal time calculation.
      *
-     * @return <code>true</code> if the field has been set externally,
-     * <code>false</code> otherwise.
+     * @return {@code true} if the field has been set externally,
+     * {@code false} otherwise.
      * @throws    IndexOutOfBoundsException if the specified
-     *                <code>field</code> is out of range
+     *                {@code field} is out of range
      *               (<code>field &lt; 0 || field &gt;= FIELD_COUNT</code>).
      * @see #selectFields()
      * @see #setFieldsComputed(int)
@@ -2345,7 +2345,7 @@ public abstract class Calendar implements Serializable, Cloneable, Comparable<Ca
      *
      * @param fieldMask the field to be marked as computed.
      * @throws    IndexOutOfBoundsException if the specified
-     *                <code>field</code> is out of range
+     *                {@code field} is out of range
      *               (<code>field &lt; 0 || field &gt;= FIELD_COUNT</code>).
      * @see #isExternallySet(int)
      * @see #selectFields()
@@ -2374,15 +2374,15 @@ public abstract class Calendar implements Serializable, Cloneable, Comparable<Ca
 
     /**
      * Sets the state of the calendar fields that are <em>not</em> specified
-     * by <code>fieldMask</code> to <em>unset</em>. If <code>fieldMask</code>
+     * by {@code fieldMask} to <em>unset</em>. If {@code fieldMask}
      * specifies all the calendar fields, then the state of this
-     * <code>Calendar</code> becomes that all the calendar fields are in sync
+     * {@code Calendar} becomes that all the calendar fields are in sync
      * with the time value (millisecond offset from the Epoch).
      *
      * @param fieldMask the field mask indicating which calendar fields are in
      * sync with the time value.
      * @throws    IndexOutOfBoundsException if the specified
-     *                <code>field</code> is out of range
+     *                {@code field} is out of range
      *               (<code>field &lt; 0 || field &gt;= FIELD_COUNT</code>).
      * @see #isExternallySet(int)
      * @see #selectFields()
@@ -2428,8 +2428,8 @@ public abstract class Calendar implements Serializable, Cloneable, Comparable<Ca
     }
 
     /**
-     * Returns whether the specified <code>field</code> is on in the
-     * <code>fieldMask</code>.
+     * Returns whether the specified {@code field} is on in the
+     * {@code fieldMask}.
      */
     static boolean isFieldSet(int fieldMask, int field) {
         return (fieldMask & (1 << field)) != 0;
@@ -2439,16 +2439,16 @@ public abstract class Calendar implements Serializable, Cloneable, Comparable<Ca
      * Returns a field mask indicating which calendar field values
      * to be used to calculate the time value. The calendar fields are
      * returned as a bit mask, each bit of which corresponds to a field, i.e.,
-     * the mask value of <code>field</code> is <code>(1 &lt;&lt;
-     * field)</code>. For example, 0x26 represents the <code>YEAR</code>,
-     * <code>MONTH</code>, and <code>DAY_OF_MONTH</code> fields (i.e., 0x26 is
+     * the mask value of {@code field} is <code>(1 &lt;&lt;
+     * field)</code>. For example, 0x26 represents the {@code YEAR},
+     * {@code MONTH}, and {@code DAY_OF_MONTH} fields (i.e., 0x26 is
      * equal to
      * <code>(1&lt;&lt;YEAR)|(1&lt;&lt;MONTH)|(1&lt;&lt;DAY_OF_MONTH))</code>.
      *
      * <p>This method supports the calendar fields resolution as described in
      * the class description. If the bit mask for a given field is on and its
-     * field has not been set (i.e., <code>isSet(field)</code> is
-     * <code>false</code>), then the default value of the field has to be
+     * field has not been set (i.e., {@code isSet(field)} is
+     * {@code false}), then the default value of the field has to be
      * used, which case means that the field has been selected because the
      * selected combination involves the field.
      *
@@ -2693,26 +2693,26 @@ public abstract class Calendar implements Serializable, Cloneable, Comparable<Ca
     }
 
     /**
-     * Compares this <code>Calendar</code> to the specified
-     * <code>Object</code>.  The result is <code>true</code> if and only if
-     * the argument is a <code>Calendar</code> object of the same calendar
+     * Compares this {@code Calendar} to the specified
+     * {@code Object}.  The result is {@code true} if and only if
+     * the argument is a {@code Calendar} object of the same calendar
      * system that represents the same time value (millisecond offset from the
      * <a href="#Epoch">Epoch</a>) under the same
-     * <code>Calendar</code> parameters as this object.
+     * {@code Calendar} parameters as this object.
      *
-     * <p>The <code>Calendar</code> parameters are the values represented
-     * by the <code>isLenient</code>, <code>getFirstDayOfWeek</code>,
-     * <code>getMinimalDaysInFirstWeek</code> and <code>getTimeZone</code>
+     * <p>The {@code Calendar} parameters are the values represented
+     * by the {@code isLenient}, {@code getFirstDayOfWeek},
+     * {@code getMinimalDaysInFirstWeek} and {@code getTimeZone}
      * methods. If there is any difference in those parameters
-     * between the two <code>Calendar</code>s, this method returns
-     * <code>false</code>.
+     * between the two {@code Calendar}s, this method returns
+     * {@code false}.
      *
      * <p>Use the {@link #compareTo(Calendar) compareTo} method to
      * compare only the time values.
      *
      * @param obj the object to compare with.
-     * @return <code>true</code> if this object is equal to <code>obj</code>;
-     * <code>false</code> otherwise.
+     * @return {@code true} if this object is equal to {@code obj};
+     * {@code false} otherwise.
      */
     @SuppressWarnings("EqualsWhichDoesntCheckParameterClass")
     @Override
@@ -2753,19 +2753,19 @@ public abstract class Calendar implements Serializable, Cloneable, Comparable<Ca
     }
 
     /**
-     * Returns whether this <code>Calendar</code> represents a time
+     * Returns whether this {@code Calendar} represents a time
      * before the time represented by the specified
-     * <code>Object</code>. This method is equivalent to:
+     * {@code Object}. This method is equivalent to:
      * <pre>{@code
      *         compareTo(when) < 0
      * }</pre>
-     * if and only if <code>when</code> is a <code>Calendar</code>
-     * instance. Otherwise, the method returns <code>false</code>.
+     * if and only if {@code when} is a {@code Calendar}
+     * instance. Otherwise, the method returns {@code false}.
      *
-     * @param when the <code>Object</code> to be compared
-     * @return <code>true</code> if the time of this
-     * <code>Calendar</code> is before the time represented by
-     * <code>when</code>; <code>false</code> otherwise.
+     * @param when the {@code Object} to be compared
+     * @return {@code true} if the time of this
+     * {@code Calendar} is before the time represented by
+     * {@code when}; {@code false} otherwise.
      * @see     #compareTo(Calendar)
      */
     public boolean before(Object when) {
@@ -2774,18 +2774,18 @@ public abstract class Calendar implements Serializable, Cloneable, Comparable<Ca
     }
 
     /**
-     * Returns whether this <code>Calendar</code> represents a time
+     * Returns whether this {@code Calendar} represents a time
      * after the time represented by the specified
-     * <code>Object</code>. This method is equivalent to:
+     * {@code Object}. This method is equivalent to:
      * <pre>{@code
      *         compareTo(when) > 0
      * }</pre>
-     * if and only if <code>when</code> is a <code>Calendar</code>
-     * instance. Otherwise, the method returns <code>false</code>.
+     * if and only if {@code when} is a {@code Calendar}
+     * instance. Otherwise, the method returns {@code false}.
      *
-     * @param when the <code>Object</code> to be compared
-     * @return <code>true</code> if the time of this <code>Calendar</code> is
-     * after the time represented by <code>when</code>; <code>false</code>
+     * @param when the {@code Object} to be compared
+     * @return {@code true} if the time of this {@code Calendar} is
+     * after the time represented by {@code when}; {@code false}
      * otherwise.
      * @see     #compareTo(Calendar)
      */
@@ -2797,19 +2797,19 @@ public abstract class Calendar implements Serializable, Cloneable, Comparable<Ca
     /**
      * Compares the time values (millisecond offsets from the <a
      * href="#Epoch">Epoch</a>) represented by two
-     * <code>Calendar</code> objects.
+     * {@code Calendar} objects.
      *
-     * @param anotherCalendar the <code>Calendar</code> to be compared.
-     * @return the value <code>0</code> if the time represented by the argument
-     * is equal to the time represented by this <code>Calendar</code>; a value
-     * less than <code>0</code> if the time of this <code>Calendar</code> is
+     * @param anotherCalendar the {@code Calendar} to be compared.
+     * @return the value {@code 0} if the time represented by the argument
+     * is equal to the time represented by this {@code Calendar}; a value
+     * less than {@code 0} if the time of this {@code Calendar} is
      * before the time represented by the argument; and a value greater than
-     * <code>0</code> if the time of this <code>Calendar</code> is after the
+     * {@code 0} if the time of this {@code Calendar} is after the
      * time represented by the argument.
-     * @throws    NullPointerException if the specified <code>Calendar</code> is
-     *            <code>null</code>.
+     * @throws    NullPointerException if the specified {@code Calendar} is
+     *            {@code null}.
      * @throws    IllegalArgumentException if the time value of the
-     * specified <code>Calendar</code> object can't be obtained due to
+     * specified {@code Calendar} object can't be obtained due to
      * any invalid calendar values.
      * @since   1.5
      */
@@ -2822,7 +2822,7 @@ public abstract class Calendar implements Serializable, Cloneable, Comparable<Ca
      * Adds or subtracts the specified amount of time to the given calendar field,
      * based on the calendar's rules. For example, to subtract 5 days from
      * the current time of the calendar, you can achieve it by calling:
-     * <p><code>add(Calendar.DAY_OF_MONTH, -5)</code>.
+     * <p>{@code add(Calendar.DAY_OF_MONTH, -5)}.
      *
      * @param field the calendar field.
      * @param amount the amount of date or time to be added to the field.
@@ -2838,7 +2838,7 @@ public abstract class Calendar implements Serializable, Cloneable, Comparable<Ca
      * <p>roll(Calendar.DATE, true).
      * When rolling on the year or Calendar.YEAR field, it will roll the year
      * value in the range between 1 and the value returned by calling
-     * <code>getMaximum(Calendar.YEAR)</code>.
+     * {@code getMaximum(Calendar.YEAR)}.
      * When rolling on the month or Calendar.MONTH field, other fields like
      * date might conflict and, need to be changed. For instance,
      * rolling the month on the date 01/31/96 will result in 02/29/96.
@@ -2858,15 +2858,15 @@ public abstract class Calendar implements Serializable, Cloneable, Comparable<Ca
      * without changing larger fields.  A negative amount means to roll
      * down.
      *
-     * <p>NOTE:  This default implementation on <code>Calendar</code> just repeatedly calls the
+     * <p>NOTE:  This default implementation on {@code Calendar} just repeatedly calls the
      * version of {@link #roll(int,boolean) roll()} that rolls by one unit.  This may not
-     * always do the right thing.  For example, if the <code>DAY_OF_MONTH</code> field is 31,
-     * rolling through February will leave it set to 28.  The <code>GregorianCalendar</code>
+     * always do the right thing.  For example, if the {@code DAY_OF_MONTH} field is 31,
+     * rolling through February will leave it set to 28.  The {@code GregorianCalendar}
      * version of this function takes care of this problem.  Other subclasses
      * should also provide overrides of this function that do the right thing.
      *
      * @param field the calendar field.
-     * @param amount the signed amount to add to the calendar <code>field</code>.
+     * @param amount the signed amount to add to the calendar {@code field}.
      * @since 1.2
      * @see #roll(int,boolean)
      * @see #add(int,int)
@@ -2929,7 +2929,7 @@ public abstract class Calendar implements Serializable, Cloneable, Comparable<Ca
     }
 
     /**
-     * Sets the sharedZone flag to <code>shared</code>.
+     * Sets the sharedZone flag to {@code shared}.
      */
     void setZoneShared(boolean shared) {
         sharedZone = shared;
@@ -2942,8 +2942,8 @@ public abstract class Calendar implements Serializable, Cloneable, Comparable<Ca
      * With strict (non-lenient) interpretation, such dates will cause an exception to be
      * thrown. The default is lenient.
      *
-     * @param lenient <code>true</code> if the lenient mode is to be turned
-     * on; <code>false</code> if it is to be turned off.
+     * @param lenient {@code true} if the lenient mode is to be turned
+     * on; {@code false} if it is to be turned off.
      * @see #isLenient()
      * @see java.text.DateFormat#setLenient
      */
@@ -2955,8 +2955,8 @@ public abstract class Calendar implements Serializable, Cloneable, Comparable<Ca
     /**
      * Tells whether date/time interpretation is to be lenient.
      *
-     * @return <code>true</code> if the interpretation mode of this calendar is lenient;
-     * <code>false</code> otherwise.
+     * @return {@code true} if the interpretation mode of this calendar is lenient;
+     * {@code false} otherwise.
      * @see #setLenient(boolean)
      */
     public boolean isLenient()
@@ -2965,8 +2965,8 @@ public abstract class Calendar implements Serializable, Cloneable, Comparable<Ca
     }
 
     /**
-     * Sets what the first day of the week is; e.g., <code>SUNDAY</code> in the U.S.,
-     * <code>MONDAY</code> in France.
+     * Sets what the first day of the week is; e.g., {@code SUNDAY} in the U.S.,
+     * {@code MONDAY} in France.
      *
      * @param value the given first day of the week.
      * @see #getFirstDayOfWeek()
@@ -2982,8 +2982,8 @@ public abstract class Calendar implements Serializable, Cloneable, Comparable<Ca
     }
 
     /**
-     * Gets what the first day of the week is; e.g., <code>SUNDAY</code> in the U.S.,
-     * <code>MONDAY</code> in France.
+     * Gets what the first day of the week is; e.g., {@code SUNDAY} in the U.S.,
+     * {@code MONDAY} in France.
      *
      * @return the first day of the week.
      * @see #setFirstDayOfWeek(int)
@@ -3125,7 +3125,7 @@ public abstract class Calendar implements Serializable, Cloneable, Comparable<Ca
 
     /**
      * Returns the minimum value for the given calendar field of this
-     * <code>Calendar</code> instance. The minimum value is defined as
+     * {@code Calendar} instance. The minimum value is defined as
      * the smallest value returned by the {@link #get(int) get} method
      * for any possible time value.  The minimum value depends on
      * calendar system specific parameters of the instance.
@@ -3142,7 +3142,7 @@ public abstract class Calendar implements Serializable, Cloneable, Comparable<Ca
 
     /**
      * Returns the maximum value for the given calendar field of this
-     * <code>Calendar</code> instance. The maximum value is defined as
+     * {@code Calendar} instance. The maximum value is defined as
      * the largest value returned by the {@link #get(int) get} method
      * for any possible time value. The maximum value depends on
      * calendar system specific parameters of the instance.
@@ -3159,7 +3159,7 @@ public abstract class Calendar implements Serializable, Cloneable, Comparable<Ca
 
     /**
      * Returns the highest minimum value for the given calendar field
-     * of this <code>Calendar</code> instance. The highest minimum
+     * of this {@code Calendar} instance. The highest minimum
      * value is defined as the largest value returned by {@link
      * #getActualMinimum(int)} for any possible time value. The
      * greatest minimum value depends on calendar system specific
@@ -3177,13 +3177,13 @@ public abstract class Calendar implements Serializable, Cloneable, Comparable<Ca
 
     /**
      * Returns the lowest maximum value for the given calendar field
-     * of this <code>Calendar</code> instance. The lowest maximum
+     * of this {@code Calendar} instance. The lowest maximum
      * value is defined as the smallest value returned by {@link
      * #getActualMaximum(int)} for any possible time value. The least
      * maximum value depends on calendar system specific parameters of
-     * the instance. For example, a <code>Calendar</code> for the
+     * the instance. For example, a {@code Calendar} for the
      * Gregorian calendar system returns 28 for the
-     * <code>DAY_OF_MONTH</code> field, because the 28th is the last
+     * {@code DAY_OF_MONTH} field, because the 28th is the last
      * day of the shortest month of this calendar, February in a
      * common year.
      *
@@ -3199,17 +3199,17 @@ public abstract class Calendar implements Serializable, Cloneable, Comparable<Ca
 
     /**
      * Returns the minimum value that the specified calendar field
-     * could have, given the time value of this <code>Calendar</code>.
+     * could have, given the time value of this {@code Calendar}.
      *
      * <p>The default implementation of this method uses an iterative
      * algorithm to determine the actual minimum value for the
      * calendar field. Subclasses should, if possible, override this
      * with a more efficient implementation - in many cases, they can
-     * simply return <code>getMinimum()</code>.
+     * simply return {@code getMinimum()}.
      *
      * @param field the calendar field
      * @return the minimum of the given calendar field for the time
-     * value of this <code>Calendar</code>
+     * value of this {@code Calendar}
      * @see #getMinimum(int)
      * @see #getMaximum(int)
      * @see #getGreatestMinimum(int)
@@ -3252,8 +3252,8 @@ public abstract class Calendar implements Serializable, Cloneable, Comparable<Ca
     /**
      * Returns the maximum value that the specified calendar field
      * could have, given the time value of this
-     * <code>Calendar</code>. For example, the actual maximum value of
-     * the <code>MONTH</code> field is 12 in some years, and 13 in
+     * {@code Calendar}. For example, the actual maximum value of
+     * the {@code MONTH} field is 12 in some years, and 13 in
      * other years in the Hebrew calendar system.
      *
      * <p>The default implementation of this method uses an iterative
@@ -3263,7 +3263,7 @@ public abstract class Calendar implements Serializable, Cloneable, Comparable<Ca
      *
      * @param field the calendar field
      * @return the maximum of the given calendar field for the time
-     * value of this <code>Calendar</code>
+     * value of this {@code Calendar}
      * @see #getMinimum(int)
      * @see #getMaximum(int)
      * @see #getGreatestMinimum(int)
@@ -3351,7 +3351,7 @@ public abstract class Calendar implements Serializable, Cloneable, Comparable<Ca
      *
      * @param field the calendar field
      * @return the calendar field name
-     * @throws    IndexOutOfBoundsException if <code>field</code> is negative,
+     * @throws    IndexOutOfBoundsException if {@code field} is negative,
      * equal to or greater than {@code FIELD_COUNT}.
      */
     static String getFieldName(int field) {
@@ -3362,7 +3362,7 @@ public abstract class Calendar implements Serializable, Cloneable, Comparable<Ca
      * Return a string representation of this calendar. This method
      * is intended to be used only for debugging purposes, and the
      * format of the returned string may vary between implementations.
-     * The returned string may be empty but may not be <code>null</code>.
+     * The returned string may be empty but may not be {@code null}.
      *
      * @return  a string representation of this calendar.
      */
@@ -3517,13 +3517,13 @@ public abstract class Calendar implements Serializable, Cloneable, Comparable<Ca
     /**
      * Save the state of this object to a stream (i.e., serialize it).
      *
-     * Ideally, <code>Calendar</code> would only write out its state data and
+     * Ideally, {@code Calendar} would only write out its state data and
      * the current time, and not write any field data out, such as
-     * <code>fields[]</code>, <code>isTimeSet</code>, <code>areFieldsSet</code>,
-     * and <code>isSet[]</code>.  <code>nextStamp</code> also should not be part
+     * {@code fields[]}, {@code isTimeSet}, {@code areFieldsSet},
+     * and {@code isSet[]}.  {@code nextStamp} also should not be part
      * of the persistent state. Unfortunately, this didn't happen before JDK 1.1
      * shipped. To be compatible with JDK 1.1, we will always have to write out
-     * the field values and state flags.  However, <code>nextStamp</code> can be
+     * the field values and state flags.  However, {@code nextStamp} can be
      * removed from the serialization stream; this will probably happen in the
      * near future.
      */

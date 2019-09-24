@@ -56,16 +56,16 @@ public abstract class DecimalFormatSymbolsProvider extends LocaleServiceProvider
     }
 
     /**
-     * Returns a new <code>DecimalFormatSymbols</code> instance for the
+     * Returns a new {@code DecimalFormatSymbols} instance for the
      * specified locale.
      *
      * @param locale the desired locale
-     * @throws    NullPointerException if <code>locale</code> is null
-     * @throws    IllegalArgumentException if <code>locale</code> isn't
+     * @throws    NullPointerException if {@code locale} is null
+     * @throws    IllegalArgumentException if {@code locale} isn't
      *     one of the locales returned from
      *     {@link java.util.spi.LocaleServiceProvider#getAvailableLocales()
      *     getAvailableLocales()}.
-     * @return a <code>DecimalFormatSymbols</code> instance.
+     * @return a {@code DecimalFormatSymbols} instance.
      * @see java.text.DecimalFormatSymbols#getInstance(java.util.Locale)
      */
     public abstract DecimalFormatSymbols getInstance(Locale locale);

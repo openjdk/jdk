@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -51,18 +51,18 @@ import sun.util.PropertyResourceBundleCharset;
 import sun.util.ResourceBundleEnumeration;
 
 /**
- * <code>PropertyResourceBundle</code> is a concrete subclass of
- * <code>ResourceBundle</code> that manages resources for a locale
+ * {@code PropertyResourceBundle} is a concrete subclass of
+ * {@code ResourceBundle} that manages resources for a locale
  * using a set of static strings from a property file. See
  * {@link ResourceBundle ResourceBundle} for more information about resource
  * bundles.
  *
  * <p>
  * Unlike other types of resource bundle, you don't subclass
- * <code>PropertyResourceBundle</code>.  Instead, you supply properties
- * files containing the resource data.  <code>ResourceBundle.getBundle</code>
+ * {@code PropertyResourceBundle}.  Instead, you supply properties
+ * files containing the resource data.  {@code ResourceBundle.getBundle}
  * will automatically look for the appropriate properties file and create a
- * <code>PropertyResourceBundle</code> that refers to it. See
+ * {@code PropertyResourceBundle} that refers to it. See
  * {@link ResourceBundle#getBundle(String, Locale, ClassLoader) ResourceBundle.getBundle}
  * for a complete description of the search and instantiation strategy.
  *
@@ -71,11 +71,11 @@ import sun.util.ResourceBundleEnumeration;
  * bundle family with the base name "MyResources".
  * The text defines the bundle "MyResources_de",
  * the German member of the bundle family.
- * This member is based on <code>PropertyResourceBundle</code>, and the text
+ * This member is based on {@code PropertyResourceBundle}, and the text
  * therefore is the content of the file "MyResources_de.properties"
  * (a related <a href="ListResourceBundle.html#sample">example</a> shows
  * how you can add bundles to this family that are implemented as subclasses
- * of <code>ListResourceBundle</code>).
+ * of {@code ListResourceBundle}).
  * The keys in this example are of the form "s1" etc. The actual
  * keys are entirely up to your choice, so long as they are the same as
  * the keys you use in your program to retrieve the objects from the bundle.
@@ -162,7 +162,7 @@ public class PropertyResourceBundle extends ResourceBundle {
      * @param stream an InputStream that represents a property file
      *        to read from.
      * @throws IOException if an I/O error occurs
-     * @throws NullPointerException if <code>stream</code> is null
+     * @throws NullPointerException if {@code stream} is null
      * @throws IllegalArgumentException if {@code stream} contains a
      *     malformed Unicode escape sequence.
      * @throws MalformedInputException if the system property
@@ -189,7 +189,7 @@ public class PropertyResourceBundle extends ResourceBundle {
      * @param reader a Reader that represents a property file to
      *        read from.
      * @throws IOException if an I/O error occurs
-     * @throws NullPointerException if <code>reader</code> is null
+     * @throws NullPointerException if {@code reader} is null
      * @throws IllegalArgumentException if a malformed Unicode escape sequence appears
      *     from {@code reader}.
      * @since 1.6
@@ -210,11 +210,11 @@ public class PropertyResourceBundle extends ResourceBundle {
     }
 
     /**
-     * Returns an <code>Enumeration</code> of the keys contained in
-     * this <code>ResourceBundle</code> and its parent bundles.
+     * Returns an {@code Enumeration} of the keys contained in
+     * this {@code ResourceBundle} and its parent bundles.
      *
-     * @return an <code>Enumeration</code> of the keys contained in
-     *         this <code>ResourceBundle</code> and its parent bundles.
+     * @return an {@code Enumeration} of the keys contained in
+     *         this {@code ResourceBundle} and its parent bundles.
      * @see #keySet()
      */
     public Enumeration<String> getKeys() {
@@ -224,11 +224,11 @@ public class PropertyResourceBundle extends ResourceBundle {
     }
 
     /**
-     * Returns a <code>Set</code> of the keys contained
-     * <em>only</em> in this <code>ResourceBundle</code>.
+     * Returns a {@code Set} of the keys contained
+     * <em>only</em> in this {@code ResourceBundle}.
      *
-     * @return a <code>Set</code> of the keys contained only in this
-     *         <code>ResourceBundle</code>
+     * @return a {@code Set} of the keys contained only in this
+     *         {@code ResourceBundle}
      * @since 1.6
      * @see #keySet()
      */
