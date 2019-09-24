@@ -1803,7 +1803,10 @@ bool JavaThread::reguard_stack(void) {
 void JavaThread::block_if_vm_exited() {
   if (_terminated == _vm_exited) {
     // _vm_exited is set at safepoint, and Threads_lock is never released
-    // we will block here forever
+    // we will block here forever.
+    // Here we can be doing a jump from a safe state to an unsafe state without
+    // proper transition, but it happens after the final safepoint has begun.
+    set_thread_state(_thread_in_vm);
     Threads_lock->lock();
     ShouldNotReachHere();
   }
