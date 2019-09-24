@@ -218,7 +218,7 @@ public class TestCommon extends CDSTestUtils {
                 if (!mainModuleSpecified && !patchModuleSpecified) {
                     // If you have an empty classpath, you cannot specify a classlist!
                     if (opts.classList != null && opts.classList.length > 0) {
-                        throw new RuntimeException("test.dynamic.dump not supported empty classpath with non-empty classlist");
+                        throw new RuntimeException("test.dynamic.dump is not supported with an empty classpath while the classlist is not empty");
                     }
                     cmd.add("-version");
                 }

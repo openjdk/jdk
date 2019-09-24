@@ -33,6 +33,8 @@
  * @run driver ParallelLoadTest
  */
 
+import java.io.File;
+
 public class ParallelLoadTest {
     public static final int MAX_CLASSES = 40;
 
@@ -47,38 +49,35 @@ public class ParallelLoadTest {
     private static final int BOOT_LOOPS = Integer.parseInt(System.getProperty("ParallelLoadTest.boot.loops", "1"));
 
     public static void main(String[] args) throws Exception {
-        JarBuilder.build("parallel_load", getClassList(true));
-        String testJar = TestCommon.getTestJar("parallel_load.jar");
+        JarBuilder.build("parallel_load_app", "ParallelLoad", "ParallelLoadThread", "ParallelLoadWatchdog");
+        JarBuilder.build("parallel_load_classes", getClassList());
+        String appJar     = TestCommon.getTestJar("parallel_load_app.jar");
+        String classesJar = TestCommon.getTestJar("parallel_load_classes.jar");
 
         // (1) Load the classes from app class loader
-        TestCommon.testDump(testJar, getClassList(false));
+        String CP = appJar + File.pathSeparator + classesJar;
+        TestCommon.testDump(CP, getClassList());
         for (int i = 0; i < APP_LOOPS; i++) {
-            TestCommon.run("-cp", testJar,  "ParallelLoad").assertNormalExit();
+            TestCommon.run("-cp", CP,  "ParallelLoad").assertNormalExit();
         }
 
         // (2) Load the classes from boot class loader
-        String bootcp = "-Xbootclasspath/a:" + testJar;
-        TestCommon.testDump(null, getClassList(false), bootcp);
+        String bootcp = "-Xbootclasspath/a:" + classesJar;
+        TestCommon.testDump(appJar, getClassList(), bootcp);
         for (int i = 0; i < BOOT_LOOPS; i++) {
-            TestCommon.run(bootcp,
+            TestCommon.run(bootcp, "-cp", appJar,
                            // "-Xlog:class+load=debug",
                            "ParallelLoad").assertNormalExit();
         }
     }
 
-    private static String[] getClassList(boolean includeWatchdog) {
-        int extra = includeWatchdog ? 3 : 2;
-        String[] classList = new String[MAX_CLASSES + extra];
+    private static String[] getClassList() {
+        String[] classList = new String[MAX_CLASSES];
 
         int i;
         for (i = 0; i < MAX_CLASSES; i++) {
             classList[i] = "ParallelClass" + i;
         }
-
-        classList[i++] = "ParallelLoad";
-        classList[i++] = "ParallelLoadThread";
-        if (includeWatchdog)
-            classList[i++] = "ParallelLoadWatchdog";
 
         return classList;
     }
