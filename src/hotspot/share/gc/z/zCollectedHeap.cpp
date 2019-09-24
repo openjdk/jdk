@@ -68,8 +68,7 @@ jint ZCollectedHeap::initialize() {
     return JNI_ENOMEM;
   }
 
-  Universe::calculate_verify_data((HeapWord*)ZAddressReservedStart,
-                                  (HeapWord*)ZAddressReservedEnd);
+  Universe::calculate_verify_data((HeapWord*)0, (HeapWord*)UINTPTR_MAX);
 
   return JNI_OK;
 }
@@ -285,12 +284,7 @@ void ZCollectedHeap::gc_threads_do(ThreadClosure* tc) const {
 }
 
 VirtualSpaceSummary ZCollectedHeap::create_heap_space_summary() {
-  const size_t capacity_in_words = capacity() / HeapWordSize;
-  const size_t max_capacity_in_words = max_capacity() / HeapWordSize;
-  HeapWord* const heap_start = (HeapWord*)ZAddressReservedStart;
-  return VirtualSpaceSummary(heap_start,
-                             heap_start + capacity_in_words,
-                             heap_start + max_capacity_in_words);
+  return VirtualSpaceSummary((HeapWord*)0, (HeapWord*)capacity(), (HeapWord*)max_capacity());
 }
 
 void ZCollectedHeap::safepoint_synchronize_begin() {
@@ -312,10 +306,6 @@ void ZCollectedHeap::print_on(outputStream* st) const {
 void ZCollectedHeap::print_on_error(outputStream* st) const {
   CollectedHeap::print_on_error(st);
 
-  st->print_cr("Address Space");
-  st->print_cr( "     Start:             " PTR_FORMAT, ZAddressSpaceStart);
-  st->print_cr( "     End:               " PTR_FORMAT, ZAddressSpaceEnd);
-  st->print_cr( "     Size:              " SIZE_FORMAT_W(-15) " (" PTR_FORMAT ")", ZAddressSpaceSize, ZAddressSpaceSize);
   st->print_cr( "Heap");
   st->print_cr( "     GlobalPhase:       %u", ZGlobalPhase);
   st->print_cr( "     GlobalSeqNum:      %u", ZGlobalSeqNum);

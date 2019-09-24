@@ -48,11 +48,3 @@ uintptr_t ZAddressMetadataMarked0;
 uintptr_t ZAddressMetadataMarked1;
 uintptr_t ZAddressMetadataRemapped;
 uintptr_t ZAddressMetadataFinalizable;
-
-uintptr_t ZAddressSpaceStart;
-uintptr_t ZAddressSpaceEnd;
-size_t    ZAddressSpaceSize;
-
-uintptr_t ZAddressReservedStart;
-uintptr_t ZAddressReservedEnd;
-size_t    ZAddressReservedSize;

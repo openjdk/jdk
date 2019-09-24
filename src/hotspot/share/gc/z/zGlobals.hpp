@@ -112,16 +112,6 @@ extern uintptr_t  ZAddressMetadataMarked1;
 extern uintptr_t  ZAddressMetadataRemapped;
 extern uintptr_t  ZAddressMetadataFinalizable;
 
-// Address space start/end/size
-extern uintptr_t  ZAddressSpaceStart;
-extern uintptr_t  ZAddressSpaceEnd;
-extern size_t     ZAddressSpaceSize;
-
-// Reserved space start/end
-extern uintptr_t  ZAddressReservedStart;
-extern uintptr_t  ZAddressReservedEnd;
-extern size_t     ZAddressReservedSize;
-
 // NMethod entry barrier
 const size_t      ZNMethodDisarmedOffset        = ZPlatformNMethodDisarmedOffset;
 
