@@ -429,6 +429,31 @@ Zone America/New_York	-4:56:02 -	LMT	1883 Nov 18 12:03:58
 # From Paul Eggert (2015-12-25):
 # Assume this practice predates 1970, so Fort Pierre can use America/Chicago.
 
+# From Paul Eggert (2015-04-06):
+# In 1950s Nashville a public clock had dueling faces, one for conservatives
+# and the other for liberals; the two sides didn't agree about the time of day.
+# I haven't found a photo of this clock, nor have I tracked down the TIME
+# magazine report cited below, but here's the story as told by the late
+# American journalist John Seigenthaler, who was there:
+#
+# "The two [newspaper] owners held strongly contrasting political and
+# ideological views.  Evans was a New South liberal, Stahlman an Old South
+# conservative, and their two papers frequently clashed editorially, often on
+# the same day....  In the 1950s as the state legislature was grappling with
+# the question of whether to approve daylight saving time for the entire state,
+# TIME magazine reported:
+#
+# "'The Nashville Banner and The Nashville Tennessean rarely agree on anything
+# but the time of day - and last week they couldn't agree on that.'
+#
+# "It was all too true. The clock on the front of the building had two faces -
+# The Tennessean side of the building facing west, the other, east.  When it
+# was high noon Banner time, it was 11 a.m. Tennessean time."
+#
+# Seigenthaler J. For 100 years, Tennessean had it covered.
+# The Tennessean 2007-05-11, republished 2015-04-06.
+# https://www.tennessean.com/story/insider/extras/2015/04/06/archives-seigenthaler-for-100-years-the-tennessean-had-it-covered/25348545/
+
 # Rule	NAME	FROM	TO	TYPE	IN	ON	AT	SAVE	LETTER
 Rule	Chicago	1920	only	-	Jun	13	2:00	1:00	D
 Rule	Chicago	1920	1921	-	Oct	lastSun	2:00	0	S
@@ -968,21 +993,21 @@ Zone America/Indiana/Vincennes -5:50:07 - LMT	1883 Nov 18 12:09:53
 			-5:00	US	E%sT
 #
 # Perry County, Indiana, switched from eastern to central time in April 2006.
+# From Alois Triendl (2019-07-09):
+# The Indianapolis News, Friday 27 October 1967 states that Perry County
+# returned to CST.  It went again to EST on 27 April 1969, as documented by the
+# Indianapolis star of Saturday 26 April.
 # Rule	NAME	FROM	TO	TYPE	IN	ON	AT	SAVE	LETTER
-Rule Perry	1946	only	-	Apr	lastSun	2:00	1:00	D
-Rule Perry	1946	only	-	Sep	lastSun	2:00	0	S
-Rule Perry	1953	1954	-	Apr	lastSun	2:00	1:00	D
-Rule Perry	1953	1959	-	Sep	lastSun	2:00	0	S
 Rule Perry	1955	only	-	May	 1	0:00	1:00	D
+Rule Perry	1955	1960	-	Sep	lastSun	2:00	0	S
 Rule Perry	1956	1963	-	Apr	lastSun	2:00	1:00	D
-Rule Perry	1960	only	-	Oct	lastSun	2:00	0	S
-Rule Perry	1961	only	-	Sep	lastSun	2:00	0	S
-Rule Perry	1962	1963	-	Oct	lastSun	2:00	0	S
+Rule Perry	1961	1963	-	Oct	lastSun	2:00	0	S
 # Zone	NAME		STDOFF	RULES	FORMAT	[UNTIL]
 Zone America/Indiana/Tell_City -5:47:03 - LMT	1883 Nov 18 12:12:57
 			-6:00	US	C%sT	1946
 			-6:00 Perry	C%sT	1964 Apr 26  2:00
-			-5:00	-	EST	1969
+			-5:00	-	EST	1967 Oct 29  2:00
+			-6:00	US	C%sT	1969 Apr 27  2:00
 			-5:00	US	E%sT	1971
 			-5:00	-	EST	2006 Apr  2  2:00
 			-6:00	US	C%sT
@@ -1058,16 +1083,27 @@ Zone America/Indiana/Vevay -5:40:16 -	LMT	1883 Nov 18 12:19:44
 # clear how this matched civil time in Louisville, so for now continue
 # to assume Louisville switched at noon new local time, like New York.
 #
+# From Michael Deckers (2019-08-06):
+# From the contemporary source given by Alois Treindl,
+# the switch in Louisville on 1946-04-28 was on 00:01
+# From Paul Eggert (2019-08-26):
+# That source was the Louisville Courier-Journal, 1946-04-27, p 4.
+# Shanks gives 02:00 for all 20th-century transition times in Louisville.
+# Evidently this is wrong for spring 1946.  Although also likely wrong
+# for other dates, we have no data.
+#
 # Part of Kentucky left its clocks alone in 1974.
 # This also includes Clark, Floyd, and Harrison counties in Indiana.
 # Rule	NAME	FROM	TO	TYPE	IN	ON	AT	SAVE	LETTER
 Rule Louisville	1921	only	-	May	1	2:00	1:00	D
 Rule Louisville	1921	only	-	Sep	1	2:00	0	S
-Rule Louisville	1941	1961	-	Apr	lastSun	2:00	1:00	D
+Rule Louisville	1941	only	-	Apr	lastSun	2:00	1:00	D
 Rule Louisville	1941	only	-	Sep	lastSun	2:00	0	S
+Rule Louisville	1946	only	-	Apr	lastSun	0:01	1:00	D
 Rule Louisville	1946	only	-	Jun	2	2:00	0	S
+Rule Louisville	1950	1961	-	Apr	lastSun	2:00	1:00	D
 Rule Louisville	1950	1955	-	Sep	lastSun	2:00	0	S
-Rule Louisville	1956	1960	-	Oct	lastSun	2:00	0	S
+Rule Louisville	1956	1961	-	Oct	lastSun	2:00	0	S
 # Zone	NAME		STDOFF	RULES	FORMAT	[UNTIL]
 Zone America/Kentucky/Louisville -5:43:02 -	LMT	1883 Nov 18 12:16:58
 			-6:00	US	C%sT	1921
@@ -1157,18 +1193,19 @@ Zone America/Kentucky/Monticello -5:39:24 - LMT	1883 Nov 18 12:20:36
 # one hour in 1914."  This change is not in Shanks.  We have no more
 # info, so omit this for now.
 #
-# From Paul Eggert (2017-07-26):
-# Although Shanks says Detroit observed DST in 1967 from 06-14 00:01
-# until 10-29 00:01, I now see multiple reports that this is incorrect.
-# For example, according to a 50-year anniversary report about the 1967
-# Detroit riots and a major-league doubleheader on 1967-07-23, "By the time
-# the last fly ball of the doubleheader settled into the glove of leftfielder
-# Lenny Green, it was after 7 p.m.  Detroit did not observe daylight saving
-# time, so light was already starting to fail.  Twilight was made even deeper
-# by billowing columns of smoke that ascended in an unbroken wall north of the
-# ballpark."  See: Dow B. Detroit '67: As violence unfolded, Tigers played two
-# at home vs. Yankees. Detroit Free Press 2017-07-23.
-# https://www.freep.com/story/sports/mlb/tigers/2017/07/23/detroit-tigers-1967-riot-new-york-yankees/499951001/
+# From Paul Eggert (2019-07-06):
+# Due to a complicated set of legal maneuvers, in 1967 Michigan did
+# not start daylight saving time when the rest of the US did.
+# Instead, it began DST on Jun 14 at 00:01.  This was big news:
+# the Detroit Free Press reported it at the top of Page 1 on
+# 1967-06-14, in an article "State Adjusting to Switch to Fast Time"
+# by Gary Blonston, above an article about Thurgood Marshall's
+# confirmation to the US Supreme Court.  Although Shanks says Detroit
+# observed DST until 1967-10-29 00:01, that time of day seems to be
+# incorrect, as the Free Press later said DST ended in Michigan at the
+# same time as the rest of the US.  Also, although Shanks reports no DST in
+# Detroit in 1968, it did observe DST that year; in the November 1968
+# election Michigan voters narrowly repealed DST, effective 1969.
 #
 # Most of Michigan observed DST from 1973 on, but was a bit late in 1975.
 # Rule	NAME	FROM	TO	TYPE	IN	ON	AT	SAVE	LETTER
@@ -1179,7 +1216,9 @@ Zone America/Detroit	-5:32:11 -	LMT	1905
 			-6:00	-	CST	1915 May 15  2:00
 			-5:00	-	EST	1942
 			-5:00	US	E%sT	1946
-			-5:00	Detroit	E%sT	1973
+			-5:00	Detroit	E%sT	1967 Jun 14  0:01
+			-5:00	US	E%sT	1969
+			-5:00	-	EST	1973
 			-5:00	US	E%sT	1975
 			-5:00	-	EST	1975 Apr 27  2:00
 			-5:00	US	E%sT
@@ -1228,6 +1267,12 @@ Zone America/Menominee	-5:50:27 -	LMT	1885 Sep 18 12:00
 #
 # Other sources occasionally used include:
 #
+#	Milne J. Civil time. Geogr J. 1899 Feb;13(2):173-94
+#	<https://www.jstor.org/stable/1774359>.
+#
+#	Pearce C. The Great Daylight Saving Time Controversy.
+#	Australian Ebook Publisher. 2017. ISBN 978-1-925516-96-8.
+#
 #	Edward W. Whitman, World Time Differences,
 #	Whitman Publishing Co, 2 Niagara Av, Ealing, London (undated),
 #	which I found in the UCLA library.
@@ -1235,9 +1280,6 @@ Zone America/Menominee	-5:50:27 -	LMT	1885 Sep 18 12:00
 #	William Willett, The Waste of Daylight, 19th edition
 #	<http://cs.ucla.edu/~eggert/The-Waste-of-Daylight-19th.pdf>
 #	[PDF] (1914-03)
-#
-#	Milne J. Civil time. Geogr J. 1899 Feb;13(2):173-94
-#	<https://www.jstor.org/stable/1774359>.
 #
 # See the 'europe' file for Greenland.
 
@@ -1880,9 +1922,8 @@ Zone America/Winnipeg	-6:28:36 -	LMT	1887 Jul 16
 # Willett (1914-03) notes that DST "has been in operation ... in the
 # City of Moose Jaw, Saskatchewan, for one year."
 
-# From Paul Eggert (2019-04-26):
-# Chris Pearce's book "The Great Daylight Saving Time Controversy" (2017)
-# says that Regina observed DST in 1914-1917.  No dates and times,
+# From Paul Eggert (2019-07-25):
+# Pearce's book says Regina observed DST in 1914-1917.  No dates and times,
 # unfortunately.  It also says that in 1914 Saskatoon observed DST
 # from 1 June to 6 July, and that DST was also tried out in Davidson,
 # Melfort, and Prince Albert.
@@ -1962,6 +2003,19 @@ Zone America/Swift_Current -7:11:20 -	LMT	1905 Sep
 
 # Alberta
 
+# From Alois Triendl (2019-07-19):
+# There was no DST in Alberta in 1967... Calgary Herald, 29 April 1967.
+# 1969, no DST, from Edmonton Journal 18 April 1969
+#
+# From Paul Eggert (2019-07-25):
+# Pearce's book says that Alberta's 1948 Daylight Saving Act required
+# Mountain Standard Time without DST, and that "anyone who broke that law
+# could be fined up to $25 and costs".  There seems to be no record of
+# anybody paying the fine.  The law was not changed until an August 1971
+# plebiscite reinstituted DST in 1972.  This story is also mentioned in:
+# Boyer JP. Forcing Choice: The Risky Reward of Referendums. Dundum. 2017.
+# ISBN 978-1459739123.
+
 # Rule	NAME	FROM	TO	TYPE	IN	ON	AT	SAVE	LETTER/S
 Rule	Edm	1918	1919	-	Apr	Sun>=8	2:00	1:00	D
 Rule	Edm	1918	only	-	Oct	27	2:00	0	S
@@ -1974,10 +2028,6 @@ Rule	Edm	1945	only	-	Aug	14	23:00u	1:00	P # Peace
 Rule	Edm	1945	only	-	Sep	lastSun	2:00	0	S
 Rule	Edm	1947	only	-	Apr	lastSun	2:00	1:00	D
 Rule	Edm	1947	only	-	Sep	lastSun	2:00	0	S
-Rule	Edm	1967	only	-	Apr	lastSun	2:00	1:00	D
-Rule	Edm	1967	only	-	Oct	lastSun	2:00	0	S
-Rule	Edm	1969	only	-	Apr	lastSun	2:00	1:00	D
-Rule	Edm	1969	only	-	Oct	lastSun	2:00	0	S
 Rule	Edm	1972	1986	-	Apr	lastSun	2:00	1:00	D
 Rule	Edm	1972	2006	-	Oct	lastSun	2:00	0	S
 # Zone	NAME		STDOFF	RULES	FORMAT	[UNTIL]
@@ -2060,8 +2110,20 @@ Zone America/Edmonton	-7:33:52 -	LMT	1906 Sep
 # been on MST (-0700) like Dawson Creek since it advanced its clocks on
 # 2015-03-08.
 #
-# From Paul Eggert (2015-09-23):
+# From Paul Eggert (2019-07-25):
 # Shanks says Fort Nelson did not observe DST in 1946, unlike Vancouver.
+# Alois Triendl confirmed this on 07-22, citing the 1946-04-27 Vancouver Daily
+# Province.  He also cited the 1946-09-28 Victoria Daily Times, which said
+# that Vancouver, Victoria, etc. "change at midnight Saturday"; for now,
+# guess they meant 02:00 Sunday since 02:00 was common practice in Vancouver.
+#
+# Early Vancouver, Volume Four, by Major J.S. Matthews, V.D., 2011 edition
+# says that a 1922 plebiscite adopted DST, but a 1923 plebiscite rejected it.
+# http://former.vancouver.ca/ctyclerk/archives/digitized/EarlyVan/SearchEarlyVan/Vol4pdf/MatthewsEarlyVancouverVol4_DaylightSavings.pdf
+# A catalog entry for a newspaper clipping seems to indicate that Vancouver
+# observed DST in 1941 from 07-07 through 09-27; see
+# https://searcharchives.vancouver.ca/daylight-saving-1918-starts-again-july-7-1941-start-d-s-sept-27-end-of-d-s-1941
+# We have no further details, so omit them for now.
 
 # Rule	NAME	FROM	TO	TYPE	IN	ON	AT	SAVE	LETTER/S
 Rule	Vanc	1918	only	-	Apr	14	2:00	1:00	D
@@ -2070,7 +2132,7 @@ Rule	Vanc	1942	only	-	Feb	 9	2:00	1:00	W # War
 Rule	Vanc	1945	only	-	Aug	14	23:00u	1:00	P # Peace
 Rule	Vanc	1945	only	-	Sep	30	2:00	0	S
 Rule	Vanc	1946	1986	-	Apr	lastSun	2:00	1:00	D
-Rule	Vanc	1946	only	-	Oct	13	2:00	0	S
+Rule	Vanc	1946	only	-	Sep	29	2:00	0	S
 Rule	Vanc	1947	1961	-	Sep	lastSun	2:00	0	S
 Rule	Vanc	1962	2006	-	Oct	lastSun	2:00	0	S
 # Zone	NAME		STDOFF	RULES	FORMAT	[UNTIL]
