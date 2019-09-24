@@ -98,7 +98,7 @@ public:
   size_t unsafe_max_tlab_alloc() const;
 
   bool is_in(uintptr_t addr) const;
-  uint32_t hash_oop(oop obj) const;
+  uint32_t hash_oop(uintptr_t addr) const;
 
   // Workers
   uint nconcurrent_worker_threads() const;
@@ -161,9 +161,10 @@ public:
   // Printing
   void print_on(outputStream* st) const;
   void print_extended_on(outputStream* st) const;
+  bool print_location(outputStream* st, uintptr_t addr) const;
 
   // Verification
-  bool is_oop(oop object) const;
+  bool is_oop(uintptr_t addr) const;
   void verify();
 };
 

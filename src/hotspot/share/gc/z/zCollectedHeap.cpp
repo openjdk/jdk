@@ -23,13 +23,13 @@
 
 #include "precompiled.hpp"
 #include "gc/shared/gcHeapSummary.hpp"
-#include "gc/shared/locationPrinter.hpp"
 #include "gc/shared/suspendibleThreadSet.hpp"
 #include "gc/z/zCollectedHeap.hpp"
 #include "gc/z/zGlobals.hpp"
 #include "gc/z/zHeap.inline.hpp"
 #include "gc/z/zNMethod.hpp"
 #include "gc/z/zObjArrayAllocator.hpp"
+#include "gc/z/zOop.inline.hpp"
 #include "gc/z/zServiceability.hpp"
 #include "gc/z/zStat.hpp"
 #include "gc/z/zUtils.inline.hpp"
@@ -116,7 +116,7 @@ bool ZCollectedHeap::is_in(const void* p) const {
 }
 
 uint32_t ZCollectedHeap::hash_oop(oop obj) const {
-  return _heap.hash_oop(obj);
+  return _heap.hash_oop(ZOop::to_address(obj));
 }
 
 HeapWord* ZCollectedHeap::allocate_new_tlab(size_t min_size, size_t requested_size, size_t* actual_size) {
@@ -352,13 +352,7 @@ void ZCollectedHeap::print_tracing_info() const {
 }
 
 bool ZCollectedHeap::print_location(outputStream* st, void* addr) const {
-  if (LocationPrinter::is_valid_obj(addr)) {
-    st->print(INTPTR_FORMAT " is a %s oop: ", p2i(addr),
-              ZAddress::is_good(reinterpret_cast<uintptr_t>(addr)) ? "good" : "bad");
-    cast_to_oop(addr)->print_on(st);
-    return true;
-  }
-  return false;
+  return _heap.print_location(st, (uintptr_t)addr);
 }
 
 void ZCollectedHeap::verify(VerifyOption option /* ignored */) {
@@ -366,5 +360,5 @@ void ZCollectedHeap::verify(VerifyOption option /* ignored */) {
 }
 
 bool ZCollectedHeap::is_oop(oop object) const {
-  return CollectedHeap::is_oop(object) && _heap.is_oop(object);
+  return _heap.is_oop(ZOop::to_address(object));
 }
