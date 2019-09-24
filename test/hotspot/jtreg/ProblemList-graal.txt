@@ -43,8 +43,6 @@ compiler/graalunit/JttThreadsTest.java                          8207757   generi
 
 compiler/unsafe/UnsafeGetConstantField.java                     8181833   generic-all
 compiler/unsafe/UnsafeGetStableArrayElement.java                8181833   generic-all
-compiler/unsafe/UnsafeOffHeapBooleanTest.java                   8181833   generic-all
-compiler/unsafe/UnsafeOnHeapBooleanTest.java                    8181833   generic-all
 
 compiler/whitebox/ClearMethodStateTest.java                     8181831   generic-all
 compiler/whitebox/EnqueueMethodForCompilationTest.java          8181831   generic-all
