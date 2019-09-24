@@ -33,7 +33,6 @@
 #include "gc/z/zOop.inline.hpp"
 #include "gc/z/zPage.inline.hpp"
 #include "gc/z/zPageTable.inline.hpp"
-#include "gc/z/zUtils.inline.hpp"
 #include "utilities/debug.hpp"
 
 inline ZHeap* ZHeap::heap() {

@@ -24,12 +24,8 @@
 #ifndef SHARE_GC_Z_ZHEAP_HPP
 #define SHARE_GC_Z_ZHEAP_HPP
 
-#include "gc/shared/gcTimer.hpp"
 #include "gc/z/zAllocationFlags.hpp"
-#include "gc/z/zArray.hpp"
 #include "gc/z/zForwardingTable.hpp"
-#include "gc/z/zList.hpp"
-#include "gc/z/zLock.hpp"
 #include "gc/z/zMark.hpp"
 #include "gc/z/zObjectAllocator.hpp"
 #include "gc/z/zPage.hpp"
@@ -38,13 +34,10 @@
 #include "gc/z/zReferenceProcessor.hpp"
 #include "gc/z/zRelocate.hpp"
 #include "gc/z/zRelocationSet.hpp"
-#include "gc/z/zRelocationSetSelector.hpp"
-#include "gc/z/zRootsIterator.hpp"
 #include "gc/z/zWeakRootsProcessor.hpp"
 #include "gc/z/zServiceability.hpp"
 #include "gc/z/zUnload.hpp"
 #include "gc/z/zWorkers.hpp"
-#include "memory/allocation.hpp"
 
 class ZHeap {
   friend class VMStructs;
