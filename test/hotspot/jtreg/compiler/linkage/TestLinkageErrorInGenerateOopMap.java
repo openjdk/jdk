@@ -47,6 +47,8 @@ public class TestLinkageErrorInGenerateOopMap {
                               "-XX:-BytecodeVerificationLocal",
                               "-XX:-TieredCompilation",
                               "-XX:CompileCommand=dontinline,compiler/linkage/OSRWithBadOperandStack.m*",
+                              "-XX:-CreateCoredumpOnCrash",
+                              "-Xmx64m",
                               "compiler.linkage.TestLinkageErrorInGenerateOopMap", "run"};
             ProcessBuilder pb = ProcessTools.createJavaProcessBuilder(flags);
             OutputAnalyzer out = new OutputAnalyzer(pb.start());
