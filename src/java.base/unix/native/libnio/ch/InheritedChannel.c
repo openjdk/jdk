@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -79,6 +79,39 @@ Java_sun_nio_ch_InheritedChannel_peerPort0(JNIEnv *env, jclass cla, jint fd)
     }
 
     return remote_port;
+}
+
+JNIEXPORT jint JNICALL
+Java_sun_nio_ch_InheritedChannel_addressFamily(JNIEnv *env, jclass cla, jint fd)
+{
+    SOCKETADDRESS addr;
+    socklen_t addrlen = sizeof(addr);
+
+    if (getsockname(fd, (struct sockaddr *)&addr, &addrlen) < 0) {
+        return sun_nio_ch_InheritedChannel_AF_UNKNOWN;
+    }
+    if (addr.sa.sa_family == AF_INET) {
+        return sun_nio_ch_InheritedChannel_AF_INET;
+    }
+    if (addr.sa.sa_family == AF_INET6) {
+        return sun_nio_ch_InheritedChannel_AF_INET6;
+    }
+    if (addr.sa.sa_family == AF_UNIX) {
+        return sun_nio_ch_InheritedChannel_AF_UNIX;
+    }
+    return sun_nio_ch_InheritedChannel_AF_UNKNOWN;
+}
+
+JNIEXPORT jboolean JNICALL
+Java_sun_nio_ch_InheritedChannel_isConnected(JNIEnv *env, jclass cla, jint fd)
+{
+    SOCKETADDRESS addr;
+    socklen_t addrlen = sizeof(addr);
+
+    if (getpeername(fd, (struct sockaddr *)&addr, &addrlen) < 0) {
+        return JNI_FALSE;
+    }
+    return JNI_TRUE;
 }
 
 JNIEXPORT jint JNICALL
