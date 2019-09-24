@@ -194,34 +194,27 @@ static int open_query(QueryP query) {
   return open_query(&query->query);
 }
 
-static int allocate_counters(MultiCounterQueryP query, size_t nofCounters) {
+static void allocate_counters(MultiCounterQueryP query, size_t nofCounters) {
   assert(query != NULL, "invariant");
   assert(!query->initialized, "invariant");
   assert(0 == query->noOfCounters, "invariant");
   assert(query->counters == NULL, "invariant");
   query->counters = NEW_C_HEAP_ARRAY(HCOUNTER, nofCounters, mtInternal);
-  if (query->counters == NULL) {
-    return OS_ERR;
-  }
   memset(query->counters, 0, nofCounters * sizeof(HCOUNTER));
   query->noOfCounters = (int)nofCounters;
-  return OS_OK;
 }
 
-static int allocate_counters(MultiCounterQuerySetP query_set, size_t nofCounters) {
+static void allocate_counters(MultiCounterQuerySetP query_set, size_t nofCounters) {
   assert(query_set != NULL, "invariant");
   assert(!query_set->initialized, "invariant");
   for (int i = 0; i < query_set->size; ++i) {
-    if (allocate_counters(&query_set->queries[i], nofCounters) != OS_OK) {
-      return OS_ERR;
-    }
+    allocate_counters(&query_set->queries[i], nofCounters);
   }
-  return OS_OK;
 }
 
-static int allocate_counters(ProcessQueryP process_query, size_t nofCounters) {
+static void allocate_counters(ProcessQueryP process_query, size_t nofCounters) {
   assert(process_query != NULL, "invariant");
-  return allocate_counters(&process_query->set, nofCounters);
+  allocate_counters(&process_query->set, nofCounters);
 }
 
 static void deallocate_counters(MultiCounterQueryP query) {
@@ -600,7 +593,7 @@ static OSReturn lookup_name_by_index(DWORD index, char** p_string) {
 static const char* copy_string_to_c_heap(const char* string) {
   assert(string != NULL, "invariant");
   const size_t len = strlen(string);
-  char* const cheap_allocated_string = NEW_C_HEAP_ARRAY(char, len + 1, mtInternal);
+  char* const cheap_allocated_string = NEW_C_HEAP_ARRAY_RETURN_NULL(char, len + 1, mtInternal);
   if (NULL == cheap_allocated_string) {
     return NULL;
   }
@@ -849,9 +842,7 @@ static int initialize_cpu_query(MultiCounterQueryP cpu_query, DWORD pdh_counter_
   const int logical_cpu_count = number_of_logical_cpus();
   assert(logical_cpu_count >= os::processor_count(), "invariant");
   // we also add another counter for instance "_Total"
-  if (allocate_counters(cpu_query, logical_cpu_count + 1) != OS_OK) {
-    return OS_ERR;
-  }
+  allocate_counters(cpu_query, logical_cpu_count + 1);
   assert(cpu_query->noOfCounters == logical_cpu_count + 1, "invariant");
   return initialize_cpu_query_counters(cpu_query, pdh_counter_idx);
 }
@@ -1017,9 +1008,7 @@ bool CPUPerformanceInterface::CPUPerformance::initialize() {
   if (_process_cpu_load == NULL) {
     return true;
   }
-  if (allocate_counters(_process_cpu_load, 2) != OS_OK) {
-    return true;
-  }
+  allocate_counters(_process_cpu_load, 2);
   if (initialize_process_counter(_process_cpu_load, 0, PDH_PROCESSOR_TIME_IDX) != OS_OK) {
     return true;
   }
@@ -1057,7 +1046,7 @@ CPUPerformanceInterface::CPUPerformanceInterface() {
 
 bool CPUPerformanceInterface::initialize() {
   _impl = new CPUPerformanceInterface::CPUPerformance();
-  return _impl != NULL && _impl->initialize();
+  return _impl->initialize();
 }
 
 CPUPerformanceInterface::~CPUPerformanceInterface() {
@@ -1263,7 +1252,7 @@ SystemProcessInterface::SystemProcesses::SystemProcesses() {
 
 bool SystemProcessInterface::SystemProcesses::initialize() {
   _iterator = new SystemProcessInterface::SystemProcesses::ProcessIterator();
-  return _iterator != NULL && _iterator->initialize();
+  return _iterator->initialize();
 }
 
 SystemProcessInterface::SystemProcesses::~SystemProcesses() {
@@ -1318,7 +1307,7 @@ SystemProcessInterface::SystemProcessInterface() {
 
 bool SystemProcessInterface::initialize() {
   _impl = new SystemProcessInterface::SystemProcesses();
-  return _impl != NULL && _impl->initialize();
+  return _impl->initialize();
 }
 
 SystemProcessInterface::~SystemProcessInterface() {
@@ -1333,9 +1322,6 @@ CPUInformationInterface::CPUInformationInterface() {
 
 bool CPUInformationInterface::initialize() {
   _cpu_info = new CPUInformation();
-  if (NULL == _cpu_info) {
-    return false;
-  }
   _cpu_info->set_number_of_hardware_threads(VM_Version_Ext::number_of_threads());
   _cpu_info->set_number_of_cores(VM_Version_Ext::number_of_cores());
   _cpu_info->set_number_of_sockets(VM_Version_Ext::number_of_sockets());
@@ -1431,7 +1417,7 @@ NetworkPerformanceInterface::~NetworkPerformanceInterface() {
 
 bool NetworkPerformanceInterface::initialize() {
   _impl = new NetworkPerformanceInterface::NetworkPerformance();
-  return _impl != NULL && _impl->initialize();
+  return _impl->initialize();
 }
 
 int NetworkPerformanceInterface::network_utilization(NetworkInterface** network_interfaces) const {

@@ -3472,10 +3472,8 @@ char* Arguments::get_default_shared_archive_path() {
   size_t file_sep_len = strlen(os::file_separator());
   const size_t len = jvm_path_len + file_sep_len + 20;
   default_archive_path = NEW_C_HEAP_ARRAY(char, len, mtArguments);
-  if (default_archive_path != NULL) {
-    jio_snprintf(default_archive_path, len, "%s%sclasses.jsa",
-      jvm_path, os::file_separator());
-  }
+  jio_snprintf(default_archive_path, len, "%s%sclasses.jsa",
+               jvm_path, os::file_separator());
   return default_archive_path;
 }
 
