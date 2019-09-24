@@ -27,13 +27,11 @@ package org.graalvm.compiler.hotspot.jdk9.test;
 import static org.junit.Assume.assumeTrue;
 
 import org.graalvm.compiler.core.test.GraalCompilerTest;
-import org.graalvm.compiler.test.AddExports;
 import org.junit.Before;
 import org.junit.Test;
 
 import jdk.vm.ci.amd64.AMD64;
 
-@AddExports({"java.base/java.lang"})
 public final class MathFMAConstantInputTest extends GraalCompilerTest {
 
     @Before

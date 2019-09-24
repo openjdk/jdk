@@ -51,4 +51,8 @@ public enum CanonicalCondition {
     public boolean foldCondition(PrimitiveConstant lp, PrimitiveConstant rp, boolean unorderedIsTrue) {
         return asCondition().foldCondition(lp, rp, unorderedIsTrue);
     }
+
+    public boolean isUnsigned() {
+        return this == BT;
+    }
 }

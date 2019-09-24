@@ -24,7 +24,6 @@
 
 package org.graalvm.compiler.phases.common;
 
-import org.graalvm.compiler.core.common.type.FloatStamp;
 import org.graalvm.compiler.core.common.type.Stamp;
 import org.graalvm.compiler.debug.DebugCloseable;
 import org.graalvm.compiler.debug.GraalError;
@@ -42,12 +41,8 @@ import org.graalvm.compiler.nodes.NodeView;
 import org.graalvm.compiler.nodes.ShortCircuitOrNode;
 import org.graalvm.compiler.nodes.StructuredGraph;
 import org.graalvm.compiler.nodes.ValueNode;
+import org.graalvm.compiler.nodes.calc.AbstractNormalizeCompareNode;
 import org.graalvm.compiler.nodes.calc.ConditionalNode;
-import org.graalvm.compiler.nodes.calc.FloatEqualsNode;
-import org.graalvm.compiler.nodes.calc.FloatLessThanNode;
-import org.graalvm.compiler.nodes.calc.IntegerEqualsNode;
-import org.graalvm.compiler.nodes.calc.IntegerLessThanNode;
-import org.graalvm.compiler.nodes.calc.NormalizeCompareNode;
 import org.graalvm.compiler.phases.Phase;
 
 public class ExpandLogicPhase extends Phase {
@@ -61,7 +56,7 @@ public class ExpandLogicPhase extends Phase {
         }
         assert graph.getNodes(ShortCircuitOrNode.TYPE).isEmpty();
 
-        for (NormalizeCompareNode logic : graph.getNodes(NormalizeCompareNode.TYPE)) {
+        for (AbstractNormalizeCompareNode logic : graph.getNodes(AbstractNormalizeCompareNode.TYPE)) {
             try (DebugCloseable context = logic.withNodeSourcePosition()) {
                 processNormalizeCompareNode(logic);
             }
@@ -69,23 +64,12 @@ public class ExpandLogicPhase extends Phase {
         graph.setAfterExpandLogic();
     }
 
-    private static void processNormalizeCompareNode(NormalizeCompareNode normalize) {
-        LogicNode equalComp;
-        LogicNode lessComp;
+    private static void processNormalizeCompareNode(AbstractNormalizeCompareNode normalize) {
         StructuredGraph graph = normalize.graph();
-        ValueNode x = normalize.getX();
-        ValueNode y = normalize.getY();
-        if (x.stamp(NodeView.DEFAULT) instanceof FloatStamp) {
-            equalComp = graph.addOrUniqueWithInputs(FloatEqualsNode.create(x, y, NodeView.DEFAULT));
-            lessComp = graph.addOrUniqueWithInputs(FloatLessThanNode.create(x, y, normalize.isUnorderedLess(), NodeView.DEFAULT));
-        } else {
-            equalComp = graph.addOrUniqueWithInputs(IntegerEqualsNode.create(x, y, NodeView.DEFAULT));
-            lessComp = graph.addOrUniqueWithInputs(IntegerLessThanNode.create(x, y, NodeView.DEFAULT));
-        }
-
+        LogicNode equalComp = graph.addOrUniqueWithInputs(normalize.createEqualComparison());
+        LogicNode lessComp = graph.addOrUniqueWithInputs(normalize.createLowerComparison());
         Stamp stamp = normalize.stamp(NodeView.DEFAULT);
-        ConditionalNode equalValue = graph.unique(
-                        new ConditionalNode(equalComp, ConstantNode.forIntegerStamp(stamp, 0, graph), ConstantNode.forIntegerStamp(stamp, 1, graph)));
+        ConditionalNode equalValue = graph.unique(new ConditionalNode(equalComp, ConstantNode.forIntegerStamp(stamp, 0, graph), ConstantNode.forIntegerStamp(stamp, 1, graph)));
         ConditionalNode value = graph.unique(new ConditionalNode(lessComp, ConstantNode.forIntegerStamp(stamp, -1, graph), equalValue));
         normalize.replaceAtUsagesAndDelete(value);
     }

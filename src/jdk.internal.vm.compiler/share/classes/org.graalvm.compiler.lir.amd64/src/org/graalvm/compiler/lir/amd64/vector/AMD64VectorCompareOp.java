@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -44,12 +44,18 @@ public final class AMD64VectorCompareOp extends AMD64LIRInstruction {
     public static final LIRInstructionClass<AMD64VectorCompareOp> TYPE = LIRInstructionClass.create(AMD64VectorCompareOp.class);
 
     @Opcode private final VexRMOp opcode;
+    private final AVXSize size;
     @Use({REG}) protected AllocatableValue x;
     @Use({REG, STACK}) protected AllocatableValue y;
 
     public AMD64VectorCompareOp(VexRMOp opcode, AllocatableValue x, AllocatableValue y) {
+        this(opcode, AVXSize.XMM, x, y);
+    }
+
+    public AMD64VectorCompareOp(VexRMOp opcode, AVXSize size, AllocatableValue x, AllocatableValue y) {
         super(TYPE);
         this.opcode = opcode;
+        this.size = size;
         this.x = x;
         this.y = y;
     }
@@ -57,9 +63,9 @@ public final class AMD64VectorCompareOp extends AMD64LIRInstruction {
     @Override
     public void emitCode(CompilationResultBuilder crb, AMD64MacroAssembler masm) {
         if (isRegister(y)) {
-            opcode.emit(masm, AVXSize.XMM, asRegister(x), asRegister(y));
+            opcode.emit(masm, size, asRegister(x), asRegister(y));
         } else {
-            opcode.emit(masm, AVXSize.XMM, asRegister(x), (AMD64Address) crb.asAddress(y));
+            opcode.emit(masm, size, asRegister(x), (AMD64Address) crb.asAddress(y));
         }
     }
 }

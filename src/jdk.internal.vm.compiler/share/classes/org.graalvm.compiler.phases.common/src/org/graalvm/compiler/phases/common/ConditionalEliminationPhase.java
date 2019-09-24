@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -309,7 +309,7 @@ public class ConditionalEliminationPhase extends BasePhase<CoreProviders> {
             this.conditions = new ArrayDeque<>();
             tool = GraphUtil.getDefaultSimplifier(context.getMetaAccess(), context.getConstantReflection(), context.getConstantFieldProvider(), false, graph.getAssumptions(), graph.getOptions(),
                             context.getLowerer());
-            mergeMaps = EconomicMap.create();
+            mergeMaps = EconomicMap.create(Equivalence.IDENTITY);
         }
 
         protected void processConditionAnchor(ConditionAnchorNode node) {
@@ -616,7 +616,7 @@ public class ConditionalEliminationPhase extends BasePhase<CoreProviders> {
                         Stamp newStamp = infoElement.getStamp();
                         if (phi.stamp(NodeView.DEFAULT).tryImproveWith(newStamp) != null) {
                             if (mergeMap == null) {
-                                mergeMap = EconomicMap.create();
+                                mergeMap = EconomicMap.create(Equivalence.IDENTITY);
                                 mergeMaps.put(merge, mergeMap);
                             }
 

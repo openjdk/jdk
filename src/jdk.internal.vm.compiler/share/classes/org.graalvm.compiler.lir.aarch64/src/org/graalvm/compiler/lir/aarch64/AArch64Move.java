@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -549,7 +549,7 @@ public class AArch64Move {
         try (ScratchRegister addrReg = masm.getScratchRegister()) {
             StackSlot slot = (StackSlot) result;
             AArch64Address resultAddress = loadStackSlotAddress(crb, masm, slot, addrReg.getRegister());
-            if (constant.isDefaultForKind() || constant.isNull()) {
+            if (constant.isNull() && !crb.mustReplaceWithUncompressedNullRegister(constant)) {
                 emitStore(crb, masm, (AArch64Kind) result.getPlatformKind(), resultAddress, zr.asValue(LIRKind.combine(result)));
             } else {
                 try (ScratchRegister sc = masm.getScratchRegister()) {

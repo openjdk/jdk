@@ -137,8 +137,4 @@ public interface ArithmeticLIRGeneratorTool {
         throw GraalError.unimplemented("No specialized implementation available");
     }
 
-    @SuppressWarnings("unused")
-    default void emitZeroMemory(Value address, Value length) {
-        throw GraalError.unimplemented("Bulk zeroing is not supported on this platform");
-    }
 }

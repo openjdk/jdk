@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,23 +28,28 @@ import static jdk.vm.ci.code.ValueUtil.isStackSlot;
 
 import java.util.ArrayList;
 
+import jdk.internal.vm.compiler.collections.EconomicSet;
+import jdk.internal.vm.compiler.collections.Equivalence;
 import org.graalvm.compiler.core.common.cfg.AbstractBlockBase;
 import org.graalvm.compiler.debug.DebugContext;
 import org.graalvm.compiler.debug.Indent;
 import org.graalvm.compiler.hotspot.HotSpotLIRGenerationResult;
 import org.graalvm.compiler.hotspot.stubs.Stub;
 import org.graalvm.compiler.lir.LIR;
-import org.graalvm.compiler.lir.LIRFrameState;
 import org.graalvm.compiler.lir.LIRInsertionBuffer;
 import org.graalvm.compiler.lir.LIRInstruction;
-import org.graalvm.compiler.lir.StandardOp.SaveRegistersOp;
+import org.graalvm.compiler.lir.StandardOp.ZapRegistersOp;
+import org.graalvm.compiler.lir.ValueConsumer;
 import org.graalvm.compiler.lir.gen.DiagnosticLIRGeneratorTool;
 import org.graalvm.compiler.lir.gen.DiagnosticLIRGeneratorTool.ZapRegistersAfterInstruction;
 import org.graalvm.compiler.lir.gen.DiagnosticLIRGeneratorTool.ZapStackArgumentSpaceBeforeInstruction;
 import org.graalvm.compiler.lir.gen.LIRGenerationResult;
 import org.graalvm.compiler.lir.phases.PostAllocationOptimizationPhase;
 
+import jdk.vm.ci.code.CallingConvention;
+import jdk.vm.ci.code.Register;
 import jdk.vm.ci.code.TargetDescription;
+import jdk.vm.ci.code.ValueUtil;
 import jdk.vm.ci.meta.AllocatableValue;
 
 /**
@@ -58,9 +63,10 @@ public final class HotSpotZapRegistersPhase extends PostAllocationOptimizationPh
     @Override
     protected void run(TargetDescription target, LIRGenerationResult lirGenRes, PostAllocationOptimizationContext context) {
         Stub stub = ((HotSpotLIRGenerationResult) lirGenRes).getStub();
-        boolean zapRegisters = stub != null && !stub.preservesRegisters();
+        boolean zapRegisters = stub == null;
         boolean zapStack = false;
-        for (AllocatableValue arg : lirGenRes.getCallingConvention().getArguments()) {
+        CallingConvention callingConvention = lirGenRes.getCallingConvention();
+        for (AllocatableValue arg : callingConvention.getArguments()) {
             if (isStackSlot(arg)) {
                 zapStack = true;
                 break;
@@ -68,21 +74,25 @@ public final class HotSpotZapRegistersPhase extends PostAllocationOptimizationPh
         }
         if (zapRegisters || zapStack) {
             LIR lir = lirGenRes.getLIR();
-            processLIR(context.diagnosticLirGenTool, (HotSpotLIRGenerationResult) lirGenRes, lir, zapRegisters, zapStack);
+            EconomicSet<Register> allocatableRegisters = EconomicSet.create(Equivalence.IDENTITY);
+            for (Register r : lirGenRes.getFrameMap().getRegisterConfig().getAllocatableRegisters()) {
+                allocatableRegisters.add(r);
+            }
+            processLIR(context.diagnosticLirGenTool, lir, allocatableRegisters, zapRegisters, zapStack);
         }
     }
 
-    private static void processLIR(DiagnosticLIRGeneratorTool diagnosticLirGenTool, HotSpotLIRGenerationResult res, LIR lir, boolean zapRegisters, boolean zapStack) {
+    private static void processLIR(DiagnosticLIRGeneratorTool diagnosticLirGenTool, LIR lir, EconomicSet<Register> allocatableRegisters, boolean zapRegisters, boolean zapStack) {
         LIRInsertionBuffer buffer = new LIRInsertionBuffer();
         for (AbstractBlockBase<?> block : lir.codeEmittingOrder()) {
             if (block != null) {
-                processBlock(diagnosticLirGenTool, res, lir, buffer, block, zapRegisters, zapStack);
+                processBlock(diagnosticLirGenTool, lir, allocatableRegisters, buffer, block, zapRegisters, zapStack);
             }
         }
     }
 
     @SuppressWarnings("try")
-    private static void processBlock(DiagnosticLIRGeneratorTool diagnosticLirGenTool, HotSpotLIRGenerationResult res, LIR lir, LIRInsertionBuffer buffer, AbstractBlockBase<?> block,
+    private static void processBlock(DiagnosticLIRGeneratorTool diagnosticLirGenTool, LIR lir, EconomicSet<Register> allocatableRegisters, LIRInsertionBuffer buffer, AbstractBlockBase<?> block,
                     boolean zapRegisters, boolean zapStack) {
         DebugContext debug = lir.getDebug();
         try (Indent indent = debug.logAndIndent("Process block %s", block)) {
@@ -97,31 +107,30 @@ public final class HotSpotZapRegistersPhase extends PostAllocationOptimizationPh
                     }
                 }
                 if (zapRegisters && inst instanceof ZapRegistersAfterInstruction) {
-                    LIRFrameState state = getLIRState(inst);
-                    if (state != null) {
-                        SaveRegistersOp zap = diagnosticLirGenTool.createZapRegisters();
-                        SaveRegistersOp old = res.getCalleeSaveInfo().put(state, zap);
-                        assert old == null : "Already another SaveRegisterOp registered! " + old;
-                        buffer.append(index + 1, (LIRInstruction) zap);
-                        debug.log("Insert ZapRegister after %s", inst);
-                    }
+                    final EconomicSet<Register> destroyedRegisters = EconomicSet.create(Equivalence.IDENTITY);
+                    ValueConsumer tempConsumer = (value, mode, flags) -> {
+                        if (ValueUtil.isRegister(value)) {
+                            final Register reg = ValueUtil.asRegister(value);
+                            if (allocatableRegisters.contains(reg)) {
+                                destroyedRegisters.add(reg);
+                            }
+                        }
+                    };
+                    ValueConsumer defConsumer = (value, mode, flags) -> {
+                        if (ValueUtil.isRegister(value)) {
+                            final Register reg = ValueUtil.asRegister(value);
+                            destroyedRegisters.remove(reg);
+                        }
+                    };
+                    inst.visitEachTemp(tempConsumer);
+                    inst.visitEachOutput(defConsumer);
+
+                    ZapRegistersOp zap = diagnosticLirGenTool.createZapRegisters(destroyedRegisters.toArray(new Register[destroyedRegisters.size()]));
+                    buffer.append(index + 1, (LIRInstruction) zap);
+                    debug.log("Insert ZapRegister after %s", inst);
                 }
             }
             buffer.finish();
         }
     }
-
-    /**
-     * Returns the {@link LIRFrameState} of an instruction.
-     */
-    private static LIRFrameState getLIRState(LIRInstruction inst) {
-        final LIRFrameState[] lirState = {null};
-        inst.forEachState(state -> {
-            assert lirState[0] == null : "Multiple states: " + inst;
-            lirState[0] = state;
-        });
-        assert lirState[0] != null : "No state: " + inst;
-        return lirState[0];
-    }
-
 }

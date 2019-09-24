@@ -345,7 +345,7 @@ public class SymbolicSnippetEncoder {
                         IntrinsicContext.CompilationContext context, EncodedGraph encodedGraph) {
             super(providers.getCodeCache().getTarget().arch, result, providers, null,
                             replacements.getGraphBuilderPlugins().getInvocationPlugins(), new InlineInvokePlugin[0], parameterPlugin,
-                            null, null, null);
+                            null, null, null, null);
             this.method = method;
             this.encodedGraph = encodedGraph;
             intrinsic = new IntrinsicContext(method, null, replacements.getDefaultReplacementBytecodeProvider(), context, false);
@@ -790,7 +790,11 @@ public class SymbolicSnippetEncoder {
         @Override
         public JavaConstant readFieldValue(ResolvedJavaField field, JavaConstant receiver) {
             JavaConstant javaConstant = constantReflection.readFieldValue(field, receiver);
-            if (!safeConstants.contains(receiver) && !field.getDeclaringClass().getName().contains("graalvm") && !field.getDeclaringClass().getName().contains("jdk/vm/ci/") &&
+            if (!safeConstants.contains(receiver) &&
+                            !field.getDeclaringClass().getName().contains("graalvm") &&
+                            !field.getDeclaringClass().getName().contains("jdk/vm/ci/") &&
+                            !field.getDeclaringClass().getName().contains("jdk/internal/vm/compiler") &&
+
                             !field.getName().equals("TYPE")) {
                 // Only permit constant reflection on compiler classes. This is necessary primarily
                 // because of the boxing snippets which are compiled as snippets but are really just
@@ -1045,7 +1049,7 @@ public class SymbolicSnippetEncoder {
         public boolean canDeferPlugin(GeneratedInvocationPlugin plugin) {
             // Fold is always deferred but NodeIntrinsics may have to wait if all their arguments
             // aren't constant yet.
-            return plugin.getSource().equals(Fold.class) || plugin.getSource().equals(Node.NodeIntrinsic.class);
+            return plugin.isGeneratedFromFoldOrNodeIntrinsic();
         }
 
         @Override

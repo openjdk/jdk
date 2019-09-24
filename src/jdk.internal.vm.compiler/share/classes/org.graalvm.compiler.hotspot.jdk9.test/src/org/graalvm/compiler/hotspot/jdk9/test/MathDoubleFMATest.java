@@ -34,7 +34,6 @@ import org.graalvm.compiler.api.test.Graal;
 import org.graalvm.compiler.core.test.GraalCompilerTest;
 import org.graalvm.compiler.hotspot.HotSpotGraalRuntimeProvider;
 import org.graalvm.compiler.runtime.RuntimeProvider;
-import org.graalvm.compiler.test.AddExports;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -44,7 +43,6 @@ import org.junit.runners.Parameterized.Parameters;
 
 import jdk.vm.ci.amd64.AMD64;
 
-@AddExports({"java.base/java.lang"})
 @RunWith(Parameterized.class)
 public final class MathDoubleFMATest extends GraalCompilerTest {
 

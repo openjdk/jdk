@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,30 +26,19 @@ package org.graalvm.compiler.core.test;
 
 import static java.lang.String.format;
 
-import java.io.ByteArrayOutputStream;
-import java.io.File;
 import java.io.IOException;
-import java.io.InputStream;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Executable;
 import java.lang.reflect.Method;
-import java.net.URL;
-import java.net.URLClassLoader;
-import java.nio.file.Files;
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashSet;
-import java.util.LinkedHashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Objects;
 import java.util.Set;
 
 import org.graalvm.compiler.options.OptionDescriptor;
 import org.graalvm.compiler.options.OptionDescriptors;
 import org.graalvm.compiler.options.OptionKey;
 import org.graalvm.compiler.options.OptionsParser;
-import org.graalvm.compiler.serviceprovider.JavaVersionUtil;
+import org.graalvm.compiler.serviceprovider.GraalServices;
 import org.junit.Test;
 import org.objectweb.asm.ClassReader;
 import org.objectweb.asm.ClassVisitor;
@@ -67,87 +56,26 @@ public class OptionsVerifierTest {
 
     @Test
     public void verifyOptions() throws IOException {
-        try (Classpath cp = new Classpath()) {
-            HashSet<Class<?>> checked = new HashSet<>();
-            for (OptionDescriptors opts : OptionsParser.getOptionsLoader()) {
-                for (OptionDescriptor desc : opts) {
-                    OptionsVerifier.checkClass(desc.getDeclaringClass(), desc, checked, cp);
-                }
+        HashSet<Class<?>> checked = new HashSet<>();
+        for (OptionDescriptors opts : OptionsParser.getOptionsLoader()) {
+            for (OptionDescriptor desc : opts) {
+                OptionsVerifier.checkClass(desc.getDeclaringClass(), desc, checked);
             }
-        }
-    }
-
-    static class Classpath implements AutoCloseable {
-        private final Map<String, Object> entries = new LinkedHashMap<>();
-
-        Classpath() throws IOException {
-            List<String> names = new ArrayList<>(Arrays.asList(System.getProperty("java.class.path").split(File.pathSeparator)));
-            if (JavaVersionUtil.JAVA_SPEC <= 8) {
-                names.addAll(Arrays.asList(System.getProperty("sun.boot.class.path").split(File.pathSeparator)));
-            } else {
-                names.addAll(Arrays.asList(System.getProperty("jdk.module.path").split(File.pathSeparator)));
-            }
-            for (String n : names) {
-                File path = new File(n);
-                if (path.exists()) {
-                    if (path.isDirectory()) {
-                        entries.put(n, path);
-                    } else if (n.endsWith(".jar") || n.endsWith(".zip")) {
-                        URL url = new URL("jar", "", "file:" + n + "!/");
-                        entries.put(n, new URLClassLoader(new URL[]{url}));
-                    }
-                }
-            }
-        }
-
-        @Override
-        public void close() throws IOException {
-            for (Object e : entries.values()) {
-                if (e instanceof URLClassLoader) {
-                    ((URLClassLoader) e).close();
-                }
-            }
-        }
-
-        public byte[] getInputStream(String classFilePath) throws IOException {
-            for (Object e : entries.values()) {
-                if (e instanceof File) {
-                    File path = new File((File) e, classFilePath.replace('/', File.separatorChar));
-                    if (path.exists()) {
-                        return Files.readAllBytes(path.toPath());
-                    }
-                } else {
-                    assert e instanceof URLClassLoader;
-                    URLClassLoader ucl = (URLClassLoader) e;
-                    try (InputStream in = ucl.getResourceAsStream(classFilePath)) {
-                        if (in != null) {
-                            ByteArrayOutputStream buffer = new ByteArrayOutputStream();
-                            int nRead;
-                            byte[] data = new byte[1024];
-                            while ((nRead = in.read(data, 0, data.length)) != -1) {
-                                buffer.write(data, 0, nRead);
-                            }
-                            return buffer.toByteArray();
-                        }
-                    }
-                }
-            }
-            return null;
         }
     }
 
     static final class OptionsVerifier extends ClassVisitor {
 
-        public static void checkClass(Class<?> cls, OptionDescriptor option, Set<Class<?>> checked, Classpath cp) throws IOException {
+        public static void checkClass(Class<?> cls, OptionDescriptor option, Set<Class<?>> checked) throws IOException {
             if (!checked.contains(cls)) {
                 checked.add(cls);
                 Class<?> superclass = cls.getSuperclass();
                 if (superclass != null && !superclass.equals(Object.class)) {
-                    checkClass(superclass, option, checked, cp);
+                    checkClass(superclass, option, checked);
                 }
 
-                String classFilePath = cls.getName().replace('.', '/') + ".class";
-                ClassReader cr = new ClassReader(Objects.requireNonNull(cp.getInputStream(classFilePath), "Could not find class file for " + cls.getName()));
+                GraalServices.getClassfileAsStream(cls);
+                ClassReader cr = new ClassReader(GraalServices.getClassfileAsStream(cls));
 
                 ClassVisitor cv = new OptionsVerifier(cls, option);
                 cr.accept(cv, 0);

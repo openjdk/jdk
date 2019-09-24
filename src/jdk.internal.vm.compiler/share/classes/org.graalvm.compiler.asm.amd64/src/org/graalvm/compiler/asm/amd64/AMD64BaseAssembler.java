@@ -32,11 +32,11 @@ import static jdk.vm.ci.amd64.AMD64.rbp;
 import static jdk.vm.ci.amd64.AMD64.rsp;
 import static org.graalvm.compiler.asm.amd64.AMD64BaseAssembler.EVEXPrefixConfig.B0;
 import static org.graalvm.compiler.asm.amd64.AMD64BaseAssembler.EVEXPrefixConfig.B1;
-import static org.graalvm.compiler.asm.amd64.AMD64BaseAssembler.EVEXPrefixConfig.L512;
 import static org.graalvm.compiler.asm.amd64.AMD64BaseAssembler.EVEXPrefixConfig.Z0;
 import static org.graalvm.compiler.asm.amd64.AMD64BaseAssembler.EVEXPrefixConfig.Z1;
 import static org.graalvm.compiler.asm.amd64.AMD64BaseAssembler.VEXPrefixConfig.L128;
 import static org.graalvm.compiler.asm.amd64.AMD64BaseAssembler.VEXPrefixConfig.L256;
+import static org.graalvm.compiler.asm.amd64.AMD64BaseAssembler.VEXPrefixConfig.L512;
 import static org.graalvm.compiler.asm.amd64.AMD64BaseAssembler.VEXPrefixConfig.LZ;
 import static org.graalvm.compiler.asm.amd64.AMD64BaseAssembler.VEXPrefixConfig.M_0F;
 import static org.graalvm.compiler.asm.amd64.AMD64BaseAssembler.VEXPrefixConfig.M_0F38;
@@ -510,6 +510,8 @@ public abstract class AMD64BaseAssembler extends Assembler {
         emitModRM(reg.encoding & 0x07, rm);
     }
 
+    public static final int DEFAULT_DISP8_SCALE = 1;
+
     /**
      * Emits the ModR/M byte and optionally the SIB byte for one register and one memory operand.
      *
@@ -517,19 +519,19 @@ public abstract class AMD64BaseAssembler extends Assembler {
      */
     protected final void emitOperandHelper(Register reg, AMD64Address addr, boolean force4Byte, int additionalInstructionSize) {
         assert !reg.equals(Register.None);
-        emitOperandHelper(encode(reg), addr, force4Byte, additionalInstructionSize, 1);
+        emitOperandHelper(encode(reg), addr, force4Byte, additionalInstructionSize, DEFAULT_DISP8_SCALE);
     }
 
     protected final void emitOperandHelper(int reg, AMD64Address addr, int additionalInstructionSize) {
-        emitOperandHelper(reg, addr, false, additionalInstructionSize, 1);
+        emitOperandHelper(reg, addr, false, additionalInstructionSize, DEFAULT_DISP8_SCALE);
     }
 
     protected final void emitOperandHelper(Register reg, AMD64Address addr, int additionalInstructionSize) {
         assert !reg.equals(Register.None);
-        emitOperandHelper(encode(reg), addr, false, additionalInstructionSize, 1);
+        emitOperandHelper(encode(reg), addr, false, additionalInstructionSize, DEFAULT_DISP8_SCALE);
     }
 
-    protected final void emitEVEXOperandHelper(Register reg, AMD64Address addr, int additionalInstructionSize, int evexDisp8Scale) {
+    protected final void emitOperandHelper(Register reg, AMD64Address addr, int additionalInstructionSize, int evexDisp8Scale) {
         assert !reg.equals(Register.None);
         emitOperandHelper(encode(reg), addr, false, additionalInstructionSize, evexDisp8Scale);
     }
@@ -739,6 +741,7 @@ public abstract class AMD64BaseAssembler extends Assembler {
     public static final class VEXPrefixConfig {
         public static final int L128 = 0;
         public static final int L256 = 1;
+        public static final int L512 = 2;
         public static final int LZ = 0;
 
         public static final int W0 = 0;
@@ -936,18 +939,29 @@ public abstract class AMD64BaseAssembler extends Assembler {
         }
     }
 
-    public final void vexPrefix(Register dst, Register nds, Register src, AVXSize size, int pp, int mmmmm, int w, boolean checkAVX) {
-        emitVEX(getLFlag(size), pp, mmmmm, w, getRXB(dst, src), nds.isValid() ? nds.encoding() : 0, checkAVX);
+    public static boolean isAVX512Register(Register reg) {
+        return reg != null && reg.isValid() && AMD64.XMM.equals(reg.getRegisterCategory()) && reg.encoding > 15;
     }
 
-    public final void vexPrefix(Register dst, Register nds, AMD64Address src, AVXSize size, int pp, int mmmmm, int w, boolean checkAVX) {
+    public final boolean vexPrefix(Register dst, Register nds, Register src, AVXSize size, int pp, int mmmmm, int w, int wEvex, boolean checkAVX) {
+        if (isAVX512Register(dst) || isAVX512Register(nds) || isAVX512Register(src)) {
+            evexPrefix(dst, Register.None, nds, src, size, pp, mmmmm, wEvex, Z0, B0);
+            return true;
+        }
         emitVEX(getLFlag(size), pp, mmmmm, w, getRXB(dst, src), nds.isValid() ? nds.encoding() : 0, checkAVX);
+        return false;
+    }
+
+    public final boolean vexPrefix(Register dst, Register nds, AMD64Address src, AVXSize size, int pp, int mmmmm, int w, int wEvex, boolean checkAVX) {
+        if (isAVX512Register(dst) || isAVX512Register(nds)) {
+            evexPrefix(dst, Register.None, nds, src, size, pp, mmmmm, wEvex, Z0, B0);
+            return true;
+        }
+        emitVEX(getLFlag(size), pp, mmmmm, w, getRXB(dst, src), nds.isValid() ? nds.encoding() : 0, checkAVX);
+        return false;
     }
 
     protected static final class EVEXPrefixConfig {
-        public static final int L512 = 2;
-        public static final int LIG = 0;
-
         public static final int Z0 = 0x0;
         public static final int Z1 = 0x1;
 
@@ -967,6 +981,7 @@ public abstract class AMD64BaseAssembler extends Assembler {
      * Reference: Intel Software Developer's Manual Volume 2, Section 2.6.5
      */
     protected enum EVEXTuple {
+        INVALID(NOT_SUPPORTED_VECTOR_LENGTH, NOT_SUPPORTED_VECTOR_LENGTH, NOT_SUPPORTED_VECTOR_LENGTH),
         FV_NO_BROADCAST_32BIT(16, 32, 64),
         FV_BROADCAST_32BIT(4, 4, 4),
         FV_NO_BROADCAST_64BIT(16, 32, 64),
@@ -1154,7 +1169,7 @@ public abstract class AMD64BaseAssembler extends Assembler {
      * Helper method for emitting EVEX prefix in the form of RRRM. Because the memory addressing in
      * EVEX-encoded instructions employ a compressed displacement scheme when using disp8 form, the
      * user of this API should make sure to encode the operands using
-     * {@link #emitEVEXOperandHelper(Register, AMD64Address, int, int)}.
+     * {@link #emitOperandHelper(Register, AMD64Address, int, int)}.
      */
     protected final void evexPrefix(Register dst, Register mask, Register nds, AMD64Address src, AVXSize size, int pp, int mm, int w, int z, int b) {
         assert !mask.isValid() || inRC(MASK, mask);

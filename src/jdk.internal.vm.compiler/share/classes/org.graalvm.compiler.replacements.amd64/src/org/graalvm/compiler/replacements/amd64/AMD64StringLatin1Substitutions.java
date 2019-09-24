@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -134,8 +134,6 @@ public class AMD64StringLatin1Substitutions {
         }
         if (targetCount == 1) {
             return AMD64ArrayIndexOf.indexOf1Byte(source, sourceCount, fromIndex, target[0]);
-        } else if (targetCount == 2) {
-            return AMD64ArrayIndexOf.indexOfTwoConsecutiveBytes(source, sourceCount, fromIndex, target[0], target[1]);
         } else {
             int haystackLength = sourceCount - (targetCount - 2);
             int offset = fromIndex;
@@ -147,7 +145,7 @@ public class AMD64StringLatin1Substitutions {
                 offset = indexOfResult;
                 Pointer cmpSourcePointer = byteOffsetPointer(source, offset);
                 Pointer targetPointer = pointer(target);
-                if (ArrayRegionEqualsNode.regionEquals(cmpSourcePointer, targetPointer, targetCount, JavaKind.Byte)) {
+                if (targetCount == 2 || ArrayRegionEqualsNode.regionEquals(cmpSourcePointer, targetPointer, targetCount, JavaKind.Byte)) {
                     return offset;
                 }
                 offset++;

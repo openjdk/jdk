@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,6 +25,7 @@
 package org.graalvm.compiler.phases.common;
 
 import jdk.internal.vm.compiler.collections.EconomicMap;
+import jdk.internal.vm.compiler.collections.Equivalence;
 import jdk.internal.vm.compiler.collections.MapCursor;
 import org.graalvm.compiler.core.common.GraalOptions;
 import org.graalvm.compiler.core.common.cfg.BlockMap;
@@ -209,7 +210,7 @@ public class FixReadsPhase extends BasePhase<LowTierContext> {
             this.schedule = schedule;
             this.metaAccess = metaAccess;
             blockActionStart = new BlockMap<>(schedule.getCFG());
-            endMaps = EconomicMap.create();
+            endMaps = EconomicMap.create(Equivalence.IDENTITY);
             stampMap = graph.createNodeMap();
             undoOperations = new NodeStack();
             replaceConstantInputs = replaceInputsWithConstants && GraalOptions.ReplaceInputsWithConstantsBasedOnStamps.getValue(graph.getOptions());
@@ -310,7 +311,7 @@ public class FixReadsPhase extends BasePhase<LowTierContext> {
 
                 if (currentEndMap == null || !currentEndMap.isEmpty()) {
 
-                    EconomicMap<ValueNode, Stamp> endMap = EconomicMap.create();
+                    EconomicMap<ValueNode, Stamp> endMap = EconomicMap.create(Equivalence.IDENTITY);
 
                     // Process phis
                     for (ValuePhiNode phi : merge.valuePhis()) {

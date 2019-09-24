@@ -109,30 +109,15 @@ public final class IntegerEqualsNode extends CompareNode implements BinaryCommut
     public static class IntegerEqualsOp extends CompareOp {
         @Override
         protected LogicNode optimizeNormalizeCompare(ConstantReflectionProvider constantReflection, MetaAccessProvider metaAccess, OptionValues options, Integer smallestCompareWidth,
-                        Constant constant, NormalizeCompareNode normalizeNode, boolean mirrored, NodeView view) {
+                        Constant constant, AbstractNormalizeCompareNode normalizeNode, boolean mirrored, NodeView view) {
             PrimitiveConstant primitive = (PrimitiveConstant) constant;
-            ValueNode a = normalizeNode.getX();
-            ValueNode b = normalizeNode.getY();
             long cst = primitive.asLong();
-
             if (cst == 0) {
-                if (normalizeNode.getX().getStackKind() == JavaKind.Double || normalizeNode.getX().getStackKind() == JavaKind.Float) {
-                    return FloatEqualsNode.create(constantReflection, metaAccess, options, smallestCompareWidth, a, b, view);
-                } else {
-                    return IntegerEqualsNode.create(constantReflection, metaAccess, options, smallestCompareWidth, a, b, view);
-                }
+                return normalizeNode.createEqualComparison(constantReflection, metaAccess, options, smallestCompareWidth, view);
             } else if (cst == 1) {
-                if (normalizeNode.getX().getStackKind() == JavaKind.Double || normalizeNode.getX().getStackKind() == JavaKind.Float) {
-                    return FloatLessThanNode.create(b, a, !normalizeNode.isUnorderedLess, view);
-                } else {
-                    return IntegerLessThanNode.create(constantReflection, metaAccess, options, smallestCompareWidth, b, a, view);
-                }
+                return normalizeNode.createLowerComparison(true, constantReflection, metaAccess, options, smallestCompareWidth, view);
             } else if (cst == -1) {
-                if (normalizeNode.getX().getStackKind() == JavaKind.Double || normalizeNode.getX().getStackKind() == JavaKind.Float) {
-                    return FloatLessThanNode.create(a, b, normalizeNode.isUnorderedLess, view);
-                } else {
-                    return IntegerLessThanNode.create(constantReflection, metaAccess, options, smallestCompareWidth, a, b, view);
-                }
+                return normalizeNode.createLowerComparison(false, constantReflection, metaAccess, options, smallestCompareWidth, view);
             } else {
                 return LogicConstantNode.contradiction();
             }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -357,6 +357,12 @@ public abstract class EffectsClosure<BlockT extends EffectsBlockState<BlockT>> e
                     lastMergedState = mergeProcessor.newState;
                     for (Block block : loop.getBlocks()) {
                         blockEffects.get(block).clear();
+                        if (block.isLoopHeader()) {
+                            final GraphEffectList loopEffects = loopMergeEffects.get(block.getLoop());
+                            if (loopEffects != null) {
+                                loopEffects.clear();
+                            }
+                        }
                     }
                 }
             }

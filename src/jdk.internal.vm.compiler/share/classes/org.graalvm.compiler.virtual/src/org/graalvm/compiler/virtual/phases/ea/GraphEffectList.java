@@ -132,7 +132,7 @@ public final class GraphEffectList extends EffectList {
      */
     public void initializePhiInput(PhiNode node, int index, ValueNode value) {
         add("set phi input", (graph, obsoleteNodes) -> {
-            assert node.isAlive() && index >= 0;
+            assert node.isAlive() && index >= 0 : node;
             node.initializeValueAt(index, graph.addOrUniqueWithInputs(value));
         });
     }

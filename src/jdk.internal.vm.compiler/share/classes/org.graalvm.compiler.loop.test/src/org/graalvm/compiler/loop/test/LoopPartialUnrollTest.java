@@ -143,6 +143,35 @@ public class LoopPartialUnrollTest extends GraalCompilerTest {
     }
 
     @Test
+    @Ignore
+    public void testUnsignedLoopCarried() {
+        for (int i = -1; i < 64; i++) {
+            for (int j = 0; j < 64; j++) {
+                test("testUnsignedLoopCarriedSnippet", i, j);
+            }
+        }
+        test("testUnsignedLoopCarriedSnippet", -1 - 32, -1);
+        test("testUnsignedLoopCarriedSnippet", -1 - 4, -1);
+        test("testUnsignedLoopCarriedSnippet", -1 - 32, 0);
+    }
+
+    public static int testUnsignedLoopCarriedSnippet(int start, int end) {
+        int a = 0;
+        int b = 0;
+        int c = 0;
+
+        for (int i = start; branchProbability(0.99, Integer.compareUnsigned(i, end) < 0); i++) {
+            int t1 = volatileInt;
+            int t2 = a + b;
+            c = b;
+            b = a;
+            a = t1 + t2;
+        }
+
+        return c;
+    }
+
+    @Test
     public void testLoopCarried2() {
         for (int i = -1; i < 64; i++) {
             for (int j = -1; j < 64; j++) {

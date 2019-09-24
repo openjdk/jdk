@@ -29,7 +29,6 @@ import static org.graalvm.compiler.loop.MathUtil.unsignedDivBefore;
 import static org.graalvm.compiler.nodes.calc.BinaryArithmeticNode.add;
 import static org.graalvm.compiler.nodes.calc.BinaryArithmeticNode.sub;
 
-import org.graalvm.compiler.core.common.NumUtil;
 import org.graalvm.compiler.core.common.type.IntegerStamp;
 import org.graalvm.compiler.core.common.type.Stamp;
 import org.graalvm.compiler.core.common.util.UnsignedLong;
@@ -44,10 +43,12 @@ import org.graalvm.compiler.nodes.NodeView;
 import org.graalvm.compiler.nodes.StructuredGraph;
 import org.graalvm.compiler.nodes.ValueNode;
 import org.graalvm.compiler.nodes.calc.ConditionalNode;
-import org.graalvm.compiler.nodes.calc.IntegerLessThanNode;
 import org.graalvm.compiler.nodes.calc.NegateNode;
 import org.graalvm.compiler.nodes.extended.GuardingNode;
 import org.graalvm.compiler.nodes.util.GraphUtil;
+import org.graalvm.compiler.nodes.util.IntegerHelper;
+import org.graalvm.compiler.nodes.util.SignedIntegerHelper;
+import org.graalvm.compiler.nodes.util.UnsignedIntegerHelper;
 
 import jdk.vm.ci.meta.DeoptimizationAction;
 import jdk.vm.ci.meta.DeoptimizationReason;
@@ -61,8 +62,9 @@ public class CountedLoopInfo {
     private boolean oneOff;
     private AbstractBeginNode body;
     private IfNode ifNode;
+    private final boolean unsigned;
 
-    CountedLoopInfo(LoopEx loop, InductionVariable iv, IfNode ifNode, ValueNode end, boolean oneOff, AbstractBeginNode body) {
+    CountedLoopInfo(LoopEx loop, InductionVariable iv, IfNode ifNode, ValueNode end, boolean oneOff, AbstractBeginNode body, boolean unsigned) {
         assert iv.direction() != null;
         this.loop = loop;
         this.iv = iv;
@@ -70,6 +72,7 @@ public class CountedLoopInfo {
         this.oneOff = oneOff;
         this.body = body;
         this.ifNode = ifNode;
+        this.unsigned = unsigned;
     }
 
     /**
@@ -83,6 +86,10 @@ public class CountedLoopInfo {
      */
     public ValueNode maxTripCountNode() {
         return maxTripCountNode(false);
+    }
+
+    public boolean isUnsignedCheck() {
+        return this.unsigned;
     }
 
     /**
@@ -127,7 +134,10 @@ public class CountedLoopInfo {
             return graph.addOrUniqueWithInputs(div);
         }
         ConstantNode zero = ConstantNode.forIntegerStamp(stamp, 0);
-        LogicNode noEntryCheck = IntegerLessThanNode.create(max, min, NodeView.DEFAULT);
+        // This check is "wide": it looks like min <= max
+        // That's OK even if the loop is strict (`!isLimitIncluded()`)
+        // because in this case, `div` will be zero when min == max
+        LogicNode noEntryCheck = getCounterIntegerHelper().createCompareNode(max, min, NodeView.DEFAULT);
         return graph.addOrUniqueWithInputs(ConditionalNode.create(noEntryCheck, zero, div, NodeView.DEFAULT));
     }
 
@@ -152,15 +162,16 @@ public class CountedLoopInfo {
         long initValue = iv.constantInit();
         long range;
         long absStride;
+        IntegerHelper helper = getCounterIntegerHelper(64);
         if (iv.direction() == Direction.Up) {
-            if (endValue < initValue) {
+            if (helper.compare(endValue, initValue) < 0) {
                 return 0;
             }
             range = endValue - iv.constantInit();
             absStride = iv.constantStride();
         } else {
             assert iv.direction() == Direction.Down;
-            if (initValue < endValue) {
+            if (helper.compare(initValue, endValue) < 0) {
                 return 0;
             }
             range = iv.constantInit() - endValue;
@@ -171,6 +182,21 @@ public class CountedLoopInfo {
         }
         long denominator = range + absStride - 1;
         return Long.divideUnsigned(denominator, absStride);
+    }
+
+    public IntegerHelper getCounterIntegerHelper() {
+        IntegerStamp stamp = (IntegerStamp) iv.valueNode().stamp(NodeView.DEFAULT);
+        return getCounterIntegerHelper(stamp.getBits());
+    }
+
+    public IntegerHelper getCounterIntegerHelper(int bits) {
+        IntegerHelper helper;
+        if (isUnsignedCheck()) {
+            helper = new UnsignedIntegerHelper(bits);
+        } else {
+            helper = new SignedIntegerHelper(bits);
+        }
+        return helper;
     }
 
     public boolean isExactTripCount() {
@@ -246,12 +272,13 @@ public class CountedLoopInfo {
         ValueNode strideNode = iv.strideNode();
         IntegerStamp strideStamp = (IntegerStamp) strideNode.stamp(NodeView.DEFAULT);
         GraphUtil.tryKillUnused(strideNode);
+        IntegerHelper integerHelper = getCounterIntegerHelper();
         if (getDirection() == Direction.Up) {
-            long max = NumUtil.maxValue(endStamp.getBits());
-            return endStamp.upperBound() <= max - (strideStamp.upperBound() - 1) - (oneOff ? 1 : 0);
+            long max = integerHelper.maxValue();
+            return integerHelper.compare(endStamp.upperBound(), max - (strideStamp.upperBound() - 1) - (oneOff ? 1 : 0)) <= 0;
         } else if (getDirection() == Direction.Down) {
-            long min = NumUtil.minValue(endStamp.getBits());
-            return min + (1 - strideStamp.lowerBound()) + (oneOff ? 1 : 0) <= endStamp.lowerBound();
+            long min = integerHelper.minValue();
+            return integerHelper.compare(min + (1 - strideStamp.lowerBound()) + (oneOff ? 1 : 0), endStamp.lowerBound()) <= 0;
         }
         return false;
     }
@@ -264,22 +291,23 @@ public class CountedLoopInfo {
         }
         try (DebugCloseable position = loop.loopBegin().withNodeSourcePosition()) {
             IntegerStamp stamp = (IntegerStamp) iv.valueNode().stamp(NodeView.DEFAULT);
+            IntegerHelper integerHelper = getCounterIntegerHelper();
             StructuredGraph graph = iv.valueNode().graph();
             LogicNode cond; // we use a negated guard with a < condition to achieve a >=
             ConstantNode one = ConstantNode.forIntegerStamp(stamp, 1, graph);
             if (iv.direction() == Direction.Up) {
-                ValueNode v1 = sub(ConstantNode.forIntegerStamp(stamp, NumUtil.maxValue(stamp.getBits())), sub(iv.strideNode(), one));
+                ValueNode v1 = sub(ConstantNode.forIntegerStamp(stamp, integerHelper.maxValue()), sub(iv.strideNode(), one));
                 if (oneOff) {
                     v1 = sub(v1, one);
                 }
-                cond = graph.addOrUniqueWithInputs(IntegerLessThanNode.create(v1, end, NodeView.DEFAULT));
+                cond = graph.addOrUniqueWithInputs(integerHelper.createCompareNode(v1, end, NodeView.DEFAULT));
             } else {
                 assert iv.direction() == Direction.Down;
-                ValueNode v1 = add(ConstantNode.forIntegerStamp(stamp, NumUtil.minValue(stamp.getBits())), sub(one, iv.strideNode()));
+                ValueNode v1 = add(ConstantNode.forIntegerStamp(stamp, integerHelper.minValue()), sub(one, iv.strideNode()));
                 if (oneOff) {
                     v1 = add(v1, one);
                 }
-                cond = graph.addOrUniqueWithInputs(IntegerLessThanNode.create(end, v1, NodeView.DEFAULT));
+                cond = graph.addOrUniqueWithInputs(integerHelper.createCompareNode(end, v1, NodeView.DEFAULT));
             }
             assert graph.getGuardsStage().allowsFloatingGuards();
             overflowGuard = graph.unique(new GuardNode(cond, AbstractBeginNode.prevBegin(loop.entryPoint()), DeoptimizationReason.LoopLimitCheck, DeoptimizationAction.InvalidateRecompile, true,

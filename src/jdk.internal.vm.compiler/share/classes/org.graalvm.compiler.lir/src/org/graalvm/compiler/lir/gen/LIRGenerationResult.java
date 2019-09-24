@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,6 +28,7 @@ import jdk.internal.vm.compiler.collections.EconomicMap;
 import jdk.internal.vm.compiler.collections.Equivalence;
 import org.graalvm.compiler.core.common.CompilationIdentifier;
 import org.graalvm.compiler.core.common.CompilationIdentifier.Verbosity;
+import org.graalvm.compiler.core.common.alloc.RegisterAllocationConfig;
 import org.graalvm.compiler.debug.DebugContext;
 import org.graalvm.compiler.lir.LIR;
 import org.graalvm.compiler.lir.LIRInstruction;
@@ -42,6 +43,7 @@ public class LIRGenerationResult {
     private final LIR lir;
     private final FrameMapBuilder frameMapBuilder;
     private FrameMap frameMap;
+    private final RegisterAllocationConfig registerAllocationConfig;
     private final CallingConvention callingConvention;
     /**
      * Records whether the code being generated makes at least one foreign call.
@@ -57,11 +59,16 @@ public class LIRGenerationResult {
      */
     private EconomicMap<LIRInstruction, String> comments;
 
-    public LIRGenerationResult(CompilationIdentifier compilationId, LIR lir, FrameMapBuilder frameMapBuilder, CallingConvention callingConvention) {
+    public LIRGenerationResult(CompilationIdentifier compilationId, LIR lir, FrameMapBuilder frameMapBuilder, RegisterAllocationConfig registerAllocationConfig, CallingConvention callingConvention) {
         this.lir = lir;
         this.frameMapBuilder = frameMapBuilder;
+        this.registerAllocationConfig = registerAllocationConfig;
         this.callingConvention = callingConvention;
         this.compilationId = compilationId;
+    }
+
+    public RegisterAllocationConfig getRegisterAllocationConfig() {
+        return registerAllocationConfig;
     }
 
     /**

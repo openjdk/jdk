@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,7 +25,7 @@
 
 package org.graalvm.compiler.hotspot.test;
 
-import static org.graalvm.compiler.test.JLModule.uncheckedAddExports;
+import static org.graalvm.compiler.serviceprovider.JavaVersionUtil.JAVA_SPEC;
 
 import java.lang.reflect.Method;
 
@@ -36,7 +36,7 @@ import org.graalvm.compiler.nodes.Invoke;
 import org.graalvm.compiler.nodes.StructuredGraph;
 import org.graalvm.compiler.nodes.StructuredGraph.AllowAssumptions;
 import org.graalvm.compiler.serviceprovider.JavaVersionUtil;
-import org.graalvm.compiler.test.JLModule;
+import org.graalvm.compiler.test.ModuleSupport;
 import org.junit.BeforeClass;
 import org.junit.Test;
 import org.objectweb.asm.ClassWriter;
@@ -109,19 +109,12 @@ public class ConstantPoolSubstitutionsTests extends GraalCompilerTest {
     }
 
     /**
-     * This test uses some API hidden by the JDK9 module system.
+     * This test uses some non-public API.
      */
     private static void addExports(Class<?> c) {
-        if (JavaVersionUtil.JAVA_SPEC > 8) {
-            Object javaBaseModule = JLModule.fromClass(String.class);
-            Object cModule = JLModule.fromClass(c);
-            uncheckedAddExports(javaBaseModule, "jdk.internal.reflect", cModule);
-            if (JavaVersionUtil.JAVA_SPEC <= 11) {
-                uncheckedAddExports(javaBaseModule, "jdk.internal.misc", cModule);
-            } else {
-                uncheckedAddExports(javaBaseModule, "jdk.internal.access", cModule);
-            }
-        }
+        String packageName = JAVA_SPEC <= 11 ? "jdk.internal.misc" : "jdk.internal.access";
+        ModuleSupport.exportPackageTo(String.class, packageName, c);
+        ModuleSupport.exportPackageTo(String.class, "jdk.internal.reflect", c);
     }
 
     @Test

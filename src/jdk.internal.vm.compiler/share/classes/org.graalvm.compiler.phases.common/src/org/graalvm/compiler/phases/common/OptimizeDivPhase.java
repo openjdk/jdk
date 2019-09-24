@@ -49,12 +49,12 @@ public class OptimizeDivPhase extends Phase {
 
     @Override
     protected void run(StructuredGraph graph) {
-        for (IntegerDivRemNode rem : graph.getNodes().filter(IntegerDivRemNode.class)) {
+        for (IntegerDivRemNode rem : graph.getNodes(IntegerDivRemNode.TYPE)) {
             if (rem instanceof SignedRemNode && divByNonZeroConstant(rem)) {
                 optimizeRem(rem);
             }
         }
-        for (IntegerDivRemNode div : graph.getNodes().filter(IntegerDivRemNode.class)) {
+        for (IntegerDivRemNode div : graph.getNodes(IntegerDivRemNode.TYPE)) {
             if (div instanceof SignedDivNode && divByNonZeroConstant(div)) {
                 optimizeSignedDiv((SignedDivNode) div);
             }

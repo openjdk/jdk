@@ -120,7 +120,7 @@ public class SwitchCanonicalizerTest extends GraalCompilerTest {
     private void shouldFoldSwitch(String methodName) {
         StructuredGraph graph = parseForCompile(getResolvedJavaMethod(methodName));
         new CanonicalizerPhase().apply(graph, getDefaultHighTierContext());
-        assertFalse(graph.hasNode(IntegerSwitchNode.TYPE));
+        assertTrue(graph.getNodes().filter(IntegerSwitchNode.class).isEmpty());
     }
 
 }

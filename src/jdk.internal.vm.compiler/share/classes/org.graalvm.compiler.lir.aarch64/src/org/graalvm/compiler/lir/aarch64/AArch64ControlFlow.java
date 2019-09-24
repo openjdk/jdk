@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -45,6 +45,7 @@ import org.graalvm.compiler.core.common.NumUtil;
 import org.graalvm.compiler.core.common.calc.Condition;
 import org.graalvm.compiler.debug.GraalError;
 import org.graalvm.compiler.lir.ConstantValue;
+import org.graalvm.compiler.lir.LIRInstruction;
 import org.graalvm.compiler.lir.LIRInstructionClass;
 import org.graalvm.compiler.lir.LabelRef;
 import org.graalvm.compiler.lir.Opcode;
@@ -148,10 +149,25 @@ public class AArch64ControlFlow {
             assert kind.isInteger();
             int size = kind.getSizeInBytes() * Byte.SIZE;
 
-            if (negate) {
-                masm.cbnz(size, asRegister(this.value), target.label());
+            Label label = target.label();
+            boolean isFarBranch = isFarBranch(this, 21, crb, masm, label);
+            boolean useCbnz;
+            if (isFarBranch) {
+                useCbnz = !negate;
+                label = new Label();
             } else {
-                masm.cbz(size, asRegister(this.value), target.label());
+                useCbnz = negate;
+            }
+
+            if (useCbnz) {
+                masm.cbnz(size, asRegister(this.value), label);
+            } else {
+                masm.cbz(size, asRegister(this.value), label);
+            }
+
+            if (isFarBranch) {
+                masm.jmp(target.label());
+                masm.bind(label);
             }
         }
     }
@@ -172,20 +188,7 @@ public class AArch64ControlFlow {
         protected void emitBranch(CompilationResultBuilder crb, AArch64MacroAssembler masm, LabelRef target, boolean negate) {
             ConditionFlag cond = negate ? ConditionFlag.NE : ConditionFlag.EQ;
             Label label = target.label();
-            boolean isFarBranch;
-
-            if (label.isBound()) {
-                // The label.position() is a byte based index. The TBZ instruction has 14 bits for
-                // the offset and AArch64 instruction is 4 bytes aligned. So TBZ can encode 16 bits
-                // signed offset.
-                isFarBranch = !NumUtil.isSignedNbit(16, masm.position() - label.position());
-            } else {
-                // Max range of tbz is +-2^13 instructions. We estimate that each LIR instruction
-                // emits 2 AArch64 instructions on average. Thus we test for maximum 2^12 LIR
-                // instruction offset.
-                int maxLIRDistance = (1 << 12);
-                isFarBranch = !crb.labelWithinRange(this, label, maxLIRDistance);
-            }
+            boolean isFarBranch = isFarBranch(this, 14, crb, masm, label);
 
             if (isFarBranch) {
                 cond = cond.negate();
@@ -392,4 +395,20 @@ public class AArch64ControlFlow {
         }
     }
 
+    private static boolean isFarBranch(LIRInstruction instruction, int offsetBits, CompilationResultBuilder crb, AArch64MacroAssembler masm, Label label) {
+        boolean isFarBranch;
+        if (label.isBound()) {
+            // The label.position() is a byte based index. The instruction instruction has
+            // offsetBits bits for the offset and AArch64 instruction is 4 bytes aligned. So
+            // instruction can encode offsetBits+2 bits signed offset.
+            isFarBranch = !NumUtil.isSignedNbit(offsetBits + 2, masm.position() - label.position());
+        } else {
+            // Max range of instruction is 2^offsetBits instructions. We estimate that each LIR
+            // instruction emits 2 AArch64 instructions on average. Thus we test for maximum
+            // 2^(offsetBits-2) LIR instruction offset.
+            int maxLIRDistance = (1 << (offsetBits - 2));
+            isFarBranch = !crb.labelWithinRange(instruction, label, maxLIRDistance);
+        }
+        return isFarBranch;
+    }
 }

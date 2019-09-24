@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -40,6 +40,7 @@ import jdk.tools.jaotc.collect.classname.ClassNameSourceProvider;
 import jdk.tools.jaotc.collect.directory.DirectorySourceProvider;
 import jdk.tools.jaotc.collect.jar.JarSourceProvider;
 import jdk.tools.jaotc.collect.module.ModuleSourceProvider;
+import jdk.vm.ci.hotspot.HotSpotResolvedObjectType;
 import jdk.vm.ci.meta.MetaAccessProvider;
 import jdk.vm.ci.meta.ResolvedJavaMethod;
 import jdk.vm.ci.meta.ResolvedJavaType;
@@ -92,6 +93,7 @@ final class Collector {
         if (!main.filters.shouldCompileMethod(method)) {
             return;
         }
+        assert ((HotSpotResolvedObjectType) method.getDeclaringClass()).getFingerprint() != 0 : "no fingerprint for " + method.getDeclaringClass().getName();
 
         aotClass.addMethod(method);
         main.printer.printlnVerbose("  added " + method.getName() + method.getSignature().toMethodDescriptor());

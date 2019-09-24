@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -75,11 +75,11 @@ public class SwitchDyingLoopTest extends GraalCompilerTest {
         StructuredGraph graph = parseEager("snippet", StructuredGraph.AllowAssumptions.YES);
         // there should be 1 loop and 1 switch
         assertThat(graph.getNodes(LoopBeginNode.TYPE), hasCount(1));
-        assertThat(graph.getNodes(IntegerSwitchNode.TYPE), hasCount(1));
+        assertThat(graph.getNodes().filter(IntegerSwitchNode.class), hasCount(1));
         canonicalizerPhase.apply(graph, highTierContext);
         // after canonicalization, the loop and switch should still be there
         assertThat(graph.getNodes(LoopBeginNode.TYPE), hasCount(1));
-        assertThat(graph.getNodes(IntegerSwitchNode.TYPE), hasCount(1));
+        assertThat(graph.getNodes().filter(IntegerSwitchNode.class), hasCount(1));
         // add stamp to `a` so that paths leading to continue can be trimmed
         ParameterNode parameter = graph.getParameter(0);
         assertNotNull(parameter);
@@ -87,6 +87,6 @@ public class SwitchDyingLoopTest extends GraalCompilerTest {
         canonicalizerPhase.apply(graph, highTierContext);
         // the loop should have disappeared and there should still be a switch
         assertThat(graph.getNodes(LoopBeginNode.TYPE), isEmpty());
-        assertThat(graph.getNodes(IntegerSwitchNode.TYPE), hasCount(1));
+        assertThat(graph.getNodes().filter(IntegerSwitchNode.class), hasCount(1));
     }
 }
