@@ -156,6 +156,7 @@ class ClassLoaderDataGraph : public AllStatic {
 class LockedClassesDo : public KlassClosure {
   typedef void (*classes_do_func_t)(Klass*);
   classes_do_func_t _function;
+  bool _do_lock;
 public:
   LockedClassesDo();  // For callers who provide their own do_klass
   LockedClassesDo(classes_do_func_t function);

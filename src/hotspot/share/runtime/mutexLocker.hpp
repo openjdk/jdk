@@ -149,6 +149,8 @@ extern Mutex*   CodeHeapStateAnalytics_lock;     // lock print functions against
 extern Monitor* JVMCI_lock;                      // Monitor to control initialization of JVMCI
 #endif
 
+extern Mutex* tty_lock;                          // lock to synchronize output.
+
 // A MutexLocker provides mutual exclusion with respect to a given mutex
 // for the scope which contains the locker.  The lock is an OS lock, not
 // an object lock, and the two do not interoperate.  Do not use Mutex-based

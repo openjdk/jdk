@@ -753,7 +753,7 @@ protected:
 
   // These functions check conditions on a JavaThread before possibly going to a safepoint,
   // including NoSafepointVerifier.
-  void check_for_valid_safepoint_state(bool potential_vm_operation) NOT_DEBUG_RETURN;
+  void check_for_valid_safepoint_state() NOT_DEBUG_RETURN;
   void check_possible_safepoint() NOT_DEBUG_RETURN;
 
  private:

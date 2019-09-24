@@ -556,7 +556,8 @@ Klass* ConstantPool::klass_at_if_loaded(const constantPoolHandle& this_cp, int w
     Handle h_loader (thread, loader);
     Klass* k = SystemDictionary::find(name, h_loader, h_prot, thread);
 
-    if (k != NULL) {
+    // Avoid constant pool verification at a safepoint, which takes the Module_lock.
+    if (k != NULL && !SafepointSynchronize::is_at_safepoint()) {
       // Make sure that resolving is legal
       EXCEPTION_MARK;
       // return NULL if verification fails

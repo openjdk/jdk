@@ -285,17 +285,27 @@ void ClassLoaderDataGraph::always_strong_cld_do(CLDClosure* cl) {
   }
 }
 
-// Closure for locking and iterating through classes.
-LockedClassesDo::LockedClassesDo(classes_do_func_t f) : _function(f) {
-  ClassLoaderDataGraph_lock->lock();
+// Closure for locking and iterating through classes. Only lock outside of safepoint.
+LockedClassesDo::LockedClassesDo(classes_do_func_t f) : _function(f),
+  _do_lock(!SafepointSynchronize::is_at_safepoint()) {
+  if (_do_lock) {
+    ClassLoaderDataGraph_lock->lock();
+  }
 }
 
-LockedClassesDo::LockedClassesDo() : _function(NULL) {
+LockedClassesDo::LockedClassesDo() : _function(NULL),
+  _do_lock(!SafepointSynchronize::is_at_safepoint()) {
   // callers provide their own do_klass
-  ClassLoaderDataGraph_lock->lock();
+  if (_do_lock) {
+    ClassLoaderDataGraph_lock->lock();
+  }
 }
 
-LockedClassesDo::~LockedClassesDo() { ClassLoaderDataGraph_lock->unlock(); }
+LockedClassesDo::~LockedClassesDo() {
+  if (_do_lock) {
+    ClassLoaderDataGraph_lock->unlock();
+  }
+}
 
 
 // Iterating over the CLDG needs to be locked because
