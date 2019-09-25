@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,8 +24,6 @@
 
 package org.graalvm.compiler.core.test;
 
-import org.junit.Test;
-
 import org.graalvm.compiler.nodes.StructuredGraph;
 import org.graalvm.compiler.nodes.extended.IntegerSwitchNode;
 import org.graalvm.compiler.nodes.java.LoadIndexedNode;
@@ -33,6 +31,8 @@ import org.graalvm.compiler.options.OptionValues;
 import org.graalvm.compiler.phases.Phase;
 import org.graalvm.compiler.phases.common.RemoveValueProxyPhase;
 import org.graalvm.compiler.phases.tiers.Suites;
+import org.junit.Assume;
+import org.junit.Test;
 
 public class EnumSwitchTest extends GraalCompilerTest {
 
@@ -145,6 +145,7 @@ public class EnumSwitchTest extends GraalCompilerTest {
         ret.getHighTier().prependPhase(new Phase() {
             @Override
             protected void run(StructuredGraph graph) {
+                Assume.assumeTrue(graph.getNodes().filter(LoadIndexedNode.class).first().array().isConstant());
                 /* Array load from the enum switch map. */
                 assertTrue(graph.getNodes().filter(LoadIndexedNode.class).count() == 1);
                 /* The actual switch. */

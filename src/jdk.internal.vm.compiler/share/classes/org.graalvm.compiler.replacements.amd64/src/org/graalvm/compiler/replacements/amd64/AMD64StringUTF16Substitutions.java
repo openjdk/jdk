@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -122,8 +122,6 @@ public class AMD64StringUTF16Substitutions {
         ReplacementsUtil.runtimeAssert(sourceCount >= targetCount, "StringUTF16.indexOfUnsafe invalid args: sourceCount < targetCount");
         if (targetCount == 1) {
             return AMD64ArrayIndexOf.indexOf1Char(source, sourceCount, fromIndex, StringUTF16Substitutions.getChar(target, 0));
-        } else if (targetCount == 2) {
-            return AMD64ArrayIndexOf.indexOfTwoConsecutiveChars(source, sourceCount, fromIndex, StringUTF16Substitutions.getChar(target, 0), StringUTF16Substitutions.getChar(target, 1));
         } else {
             int haystackLength = sourceCount - (targetCount - 2);
             int offset = fromIndex;
@@ -136,7 +134,7 @@ public class AMD64StringUTF16Substitutions {
                 offset = indexOfResult;
                 Pointer cmpSourcePointer = charOffsetPointer(source, offset);
                 Pointer targetPointer = pointer(target);
-                if (ArrayRegionEqualsNode.regionEquals(cmpSourcePointer, targetPointer, targetCount, JavaKind.Char)) {
+                if (targetCount == 2 || ArrayRegionEqualsNode.regionEquals(cmpSourcePointer, targetPointer, targetCount, JavaKind.Char)) {
                     return offset;
                 }
                 offset++;
@@ -153,8 +151,6 @@ public class AMD64StringUTF16Substitutions {
         ReplacementsUtil.runtimeAssert(sourceCount >= targetCount, "StringUTF16.indexOfLatin1Unsafe invalid args: sourceCount < targetCount");
         if (targetCount == 1) {
             return AMD64ArrayIndexOf.indexOf1Char(source, sourceCount, fromIndex, (char) Byte.toUnsignedInt(target[0]));
-        } else if (targetCount == 2) {
-            return AMD64ArrayIndexOf.indexOfTwoConsecutiveChars(source, sourceCount, fromIndex, (char) Byte.toUnsignedInt(target[0]), (char) Byte.toUnsignedInt(target[1]));
         } else {
             int haystackLength = sourceCount - (targetCount - 2);
             int offset = fromIndex;
@@ -166,7 +162,7 @@ public class AMD64StringUTF16Substitutions {
                 offset = indexOfResult;
                 Pointer cmpSourcePointer = charOffsetPointer(source, offset);
                 Pointer targetPointer = pointer(target);
-                if (ArrayRegionEqualsNode.regionEquals(cmpSourcePointer, targetPointer, targetCount, JavaKind.Char, JavaKind.Byte)) {
+                if (targetCount == 2 || ArrayRegionEqualsNode.regionEquals(cmpSourcePointer, targetPointer, targetCount, JavaKind.Char, JavaKind.Byte)) {
                     return offset;
                 }
                 offset++;
@@ -185,9 +181,7 @@ public class AMD64StringUTF16Substitutions {
      */
     @MethodSubstitution
     public static int compress(char[] src, int srcIndex, byte[] dest, int destIndex, int len) {
-        if (len < 0 || srcIndex < 0 || (srcIndex + len > src.length) || destIndex < 0 || (destIndex + len > dest.length)) {
-            DeoptimizeNode.deopt(DeoptimizationAction.None, DeoptimizationReason.BoundsCheckException);
-        }
+        checkLimits(src.length, srcIndex, dest.length, destIndex, len);
 
         Pointer srcPointer = Word.objectToTrackedPointer(src).add(charArrayBaseOffset(INJECTED)).add(srcIndex * charArrayIndexScale(INJECTED));
         Pointer destPointer = Word.objectToTrackedPointer(dest).add(byteArrayBaseOffset(INJECTED)).add(destIndex * byteArrayIndexScale(INJECTED));
@@ -208,13 +202,17 @@ public class AMD64StringUTF16Substitutions {
      */
     @MethodSubstitution
     public static int compress(byte[] src, int srcIndex, byte[] dest, int destIndex, int len) {
-        if (len < 0 || srcIndex < 0 || (srcIndex * 2 + len * 2 > src.length) || destIndex < 0 || (destIndex + len > dest.length)) {
-            DeoptimizeNode.deopt(DeoptimizationAction.None, DeoptimizationReason.BoundsCheckException);
-        }
+        checkLimits(src.length >> 1, srcIndex, dest.length, destIndex, len);
 
         Pointer srcPointer = Word.objectToTrackedPointer(src).add(byteArrayBaseOffset(INJECTED)).add(srcIndex * 2 * byteArrayIndexScale(INJECTED));
         Pointer destPointer = Word.objectToTrackedPointer(dest).add(byteArrayBaseOffset(INJECTED)).add(destIndex * byteArrayIndexScale(INJECTED));
         return AMD64StringUTF16CompressNode.compress(srcPointer, destPointer, len, JavaKind.Byte);
+    }
+
+    private static void checkLimits(int srcLen, int srcIndex, int destLen, int destIndex, int len) {
+        if (len < 0 || srcIndex < 0 || (srcIndex + len > srcLen) || destIndex < 0 || (destIndex + len > destLen)) {
+            DeoptimizeNode.deopt(DeoptimizationAction.None, DeoptimizationReason.BoundsCheckException);
+        }
     }
 
 }

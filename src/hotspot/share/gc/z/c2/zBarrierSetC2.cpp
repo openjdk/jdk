@@ -660,7 +660,7 @@ Node* ZBarrierSetC2::step_over_gc_barrier_ctrl(Node* c) const {
 }
 
 bool ZBarrierSetC2::array_copy_requires_gc_barriers(bool tightly_coupled_alloc, BasicType type, bool is_clone, ArrayCopyPhase phase) const {
-  return type == T_OBJECT || type == T_ARRAY;
+  return is_reference_type(type);
 }
 
 bool ZBarrierSetC2::final_graph_reshaping(Compile* compile, Node* n, uint opcode) const {
@@ -1367,7 +1367,7 @@ void ZBarrierSetC2::insert_barriers_on_unsafe(PhaseIdealLoop* phase) const {
         LoadStoreNode* lsn = n->as_LoadStore();
         if (lsn->has_barrier()) {
           BasicType bt = lsn->in(MemNode::Address)->bottom_type()->basic_type();
-          assert ((bt == T_OBJECT || bt == T_ARRAY), "Sanity test");
+          assert (is_reference_type(bt), "Sanity test");
           insert_barrier_before_unsafe(phase, lsn);
         }
       }

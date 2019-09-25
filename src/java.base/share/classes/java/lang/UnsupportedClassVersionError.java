@@ -38,7 +38,7 @@ class UnsupportedClassVersionError extends ClassFormatError {
     private static final long serialVersionUID = -7123279212883497373L;
 
     /**
-     * Constructs a <code>UnsupportedClassVersionError</code>
+     * Constructs a {@code UnsupportedClassVersionError}
      * with no detail message.
      */
     public UnsupportedClassVersionError() {
@@ -46,7 +46,7 @@ class UnsupportedClassVersionError extends ClassFormatError {
     }
 
     /**
-     * Constructs a <code>UnsupportedClassVersionError</code> with
+     * Constructs a {@code UnsupportedClassVersionError} with
      * the specified detail message.
      *
      * @param   s   the detail message.

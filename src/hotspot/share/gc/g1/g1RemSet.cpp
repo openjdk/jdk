@@ -830,7 +830,7 @@ class G1ScanCollectionSetRegionClosure : public HeapRegionClosure {
 
     G1ScanCardClosure scan_cl(G1CollectedHeap::heap(), _pss);
     G1ScanRSForOptionalClosure cl(G1CollectedHeap::heap(), &scan_cl);
-    _opt_refs_scanned += opt_rem_set_list->oops_do(&cl, _pss->closures()->raw_strong_oops());
+    _opt_refs_scanned += opt_rem_set_list->oops_do(&cl, _pss->closures()->strong_oops());
     _opt_refs_memory_used += opt_rem_set_list->used_memory();
 
     event.commit(GCId::current(), _worker_id, G1GCPhaseTimes::phase_name(_scan_phase));
@@ -839,14 +839,14 @@ class G1ScanCollectionSetRegionClosure : public HeapRegionClosure {
 public:
   G1ScanCollectionSetRegionClosure(G1RemSetScanState* scan_state,
                                    G1ParScanThreadState* pss,
-                                   uint worker_i,
+                                   uint worker_id,
                                    G1GCPhaseTimes::GCParPhases scan_phase,
                                    G1GCPhaseTimes::GCParPhases code_roots_phase) :
     _pss(pss),
     _scan_state(scan_state),
     _scan_phase(scan_phase),
     _code_roots_phase(code_roots_phase),
-    _worker_id(worker_i),
+    _worker_id(worker_id),
     _opt_refs_scanned(0),
     _opt_refs_memory_used(0),
     _strong_code_root_scan_time(),
@@ -1061,7 +1061,7 @@ class G1MergeHeapRootsTask : public AbstractGangTask {
       _scan_state(scan_state), _ct(g1h->card_table()), _cards_dirty(0), _cards_skipped(0)
     {}
 
-    void do_card_ptr(CardValue* card_ptr, uint worker_i) {
+    void do_card_ptr(CardValue* card_ptr, uint worker_id) {
       // The only time we care about recording cards that
       // contain references that point into the collection set
       // is during RSet updating within an evacuation pause.
@@ -1263,7 +1263,7 @@ inline void check_card_ptr(CardTable::CardValue* card_ptr, G1CardTable* ct) {
 }
 
 void G1RemSet::refine_card_concurrently(CardValue* card_ptr,
-                                        uint worker_i) {
+                                        uint worker_id) {
   assert(!_g1h->is_gc_active(), "Only call concurrently");
 
   // Construct the region representing the card.
@@ -1375,7 +1375,7 @@ void G1RemSet::refine_card_concurrently(CardValue* card_ptr,
   MemRegion dirty_region(start, MIN2(scan_limit, end));
   assert(!dirty_region.is_empty(), "sanity");
 
-  G1ConcurrentRefineOopClosure conc_refine_cl(_g1h, worker_i);
+  G1ConcurrentRefineOopClosure conc_refine_cl(_g1h, worker_id);
   if (r->oops_on_memregion_seq_iterate_careful<false>(dirty_region, &conc_refine_cl) != NULL) {
     _num_conc_refined_cards++; // Unsynchronized update, only used for logging.
     return;

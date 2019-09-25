@@ -94,7 +94,7 @@ ZPageAllocator::ZPageAllocator(size_t min_capacity,
                                size_t max_capacity,
                                size_t max_reserve) :
     _lock(),
-    _virtual(),
+    _virtual(max_capacity),
     _physical(),
     _cache(),
     _min_capacity(min_capacity),

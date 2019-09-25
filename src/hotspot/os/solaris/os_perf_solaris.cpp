@@ -302,9 +302,6 @@ bool CPUPerformanceInterface::CPUPerformance::initialize() {
   // Data structure(s) for saving CPU load (one per CPU)
   size_t array_entry_count = _counters.nProcs;
   _counters.jvmTicks = NEW_C_HEAP_ARRAY(CPUPerfTicks, array_entry_count, mtInternal);
-  if (NULL == _counters.jvmTicks) {
-    return false;
-  }
   memset(_counters.jvmTicks, 0, array_entry_count * sizeof(*_counters.jvmTicks));
 
   // Get kstat cpu_stat counters for every CPU
@@ -432,7 +429,7 @@ CPUPerformanceInterface::CPUPerformanceInterface() {
 
 bool CPUPerformanceInterface::initialize() {
   _impl = new CPUPerformanceInterface::CPUPerformance();
-  return _impl != NULL && _impl->initialize();
+  return _impl->initialize();
 }
 
 CPUPerformanceInterface::~CPUPerformanceInterface(void) {
@@ -574,10 +571,8 @@ int SystemProcessInterface::SystemProcesses::ProcessIterator::current(SystemProc
     if (path_substring != NULL) {
       int len = path_substring - psinfo_data.pr_psargs;
       exe_path = NEW_C_HEAP_ARRAY(char, len+1, mtInternal);
-      if (exe_path != NULL) {
-        jio_snprintf(exe_path, len, "%s", psinfo_data.pr_psargs);
-        exe_path[len] = '\0';
-      }
+      jio_snprintf(exe_path, len, "%s", psinfo_data.pr_psargs);
+      exe_path[len] = '\0';
     }
   }
 
@@ -642,7 +637,7 @@ SystemProcessInterface::SystemProcesses::SystemProcesses() {
 
 bool SystemProcessInterface::SystemProcesses::initialize() {
   _iterator = new SystemProcessInterface::SystemProcesses::ProcessIterator();
-  return _iterator != NULL && _iterator->initialize();
+  return _iterator->initialize();
 }
 
 SystemProcessInterface::SystemProcesses::~SystemProcesses() {
@@ -689,7 +684,7 @@ SystemProcessInterface::SystemProcessInterface() {
 
 bool SystemProcessInterface::initialize() {
   _impl = new SystemProcessInterface::SystemProcesses();
-  return _impl != NULL && _impl->initialize();
+  return _impl->initialize();
 
 }
 
@@ -705,9 +700,6 @@ CPUInformationInterface::CPUInformationInterface() {
 
 bool CPUInformationInterface::initialize() {
   _cpu_info = new CPUInformation();
-  if (_cpu_info == NULL) {
-    return false;
-  }
   _cpu_info->set_number_of_hardware_threads(VM_Version_Ext::number_of_threads());
   _cpu_info->set_number_of_cores(VM_Version_Ext::number_of_cores());
   _cpu_info->set_number_of_sockets(VM_Version_Ext::number_of_sockets());
@@ -820,7 +812,7 @@ NetworkPerformanceInterface::~NetworkPerformanceInterface() {
 
 bool NetworkPerformanceInterface::initialize() {
   _impl = new NetworkPerformanceInterface::NetworkPerformance();
-  return _impl != NULL && _impl->initialize();
+  return _impl->initialize();
 }
 
 int NetworkPerformanceInterface::network_utilization(NetworkInterface** network_interfaces) const {

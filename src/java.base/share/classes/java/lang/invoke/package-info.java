@@ -216,22 +216,22 @@
  * <tbody>
  * <tr><th scope="row" style="font-weight:normal; vertical-align:top">*</th><td>
  *     <ul style="list-style:none; padding-left: 0; margin:0">
- *     <li><code>CallSite bootstrap(Lookup caller, String name, MethodType type, Object... args)</code>
- *     <li><code>CallSite bootstrap(Object... args)</code>
- *     <li><code>CallSite bootstrap(Object caller, Object... nameAndTypeWithArgs)</code>
+ *     <li>{@code CallSite bootstrap(Lookup caller, String name, MethodType type, Object... args)}
+ *     <li>{@code CallSite bootstrap(Object... args)}
+ *     <li>{@code CallSite bootstrap(Object caller, Object... nameAndTypeWithArgs)}
  *     </ul></td></tr>
  * <tr><th scope="row" style="font-weight:normal; vertical-align:top">0</th><td>
  *     <ul style="list-style:none; padding-left: 0; margin:0">
- *     <li><code>CallSite bootstrap(Lookup caller, String name, MethodType type)</code>
- *     <li><code>CallSite bootstrap(Lookup caller, Object... nameAndType)</code>
+ *     <li>{@code CallSite bootstrap(Lookup caller, String name, MethodType type)}
+ *     <li>{@code CallSite bootstrap(Lookup caller, Object... nameAndType)}
  *     </ul></td></tr>
  * <tr><th scope="row" style="font-weight:normal; vertical-align:top">1</th><td>
- *     <code>CallSite bootstrap(Lookup caller, String name, MethodType type, Object arg)</code></td></tr>
+ *     {@code CallSite bootstrap(Lookup caller, String name, MethodType type, Object arg)}</td></tr>
  * <tr><th scope="row" style="font-weight:normal; vertical-align:top">2</th><td>
  *     <ul style="list-style:none; padding-left: 0; margin:0">
- *     <li><code>CallSite bootstrap(Lookup caller, String name, MethodType type, Object... args)</code>
- *     <li><code>CallSite bootstrap(Lookup caller, String name, MethodType type, String... args)</code>
- *     <li><code>CallSite bootstrap(Lookup caller, String name, MethodType type, String x, int y)</code>
+ *     <li>{@code CallSite bootstrap(Lookup caller, String name, MethodType type, Object... args)}
+ *     <li>{@code CallSite bootstrap(Lookup caller, String name, MethodType type, String... args)}
+ *     <li>{@code CallSite bootstrap(Lookup caller, String name, MethodType type, String x, int y)}
  *     </ul></td></tr>
  * </tbody>
  * </table>

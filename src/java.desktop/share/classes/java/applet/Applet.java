@@ -544,6 +544,7 @@ public class Applet extends Panel {
     /**
      * The accessible context associated with this {@code Applet}.
      */
+    @SuppressWarnings("serial") // Not statically typed as Serializable
     AccessibleContext accessibleContext = null;
 
     /**

@@ -50,6 +50,7 @@ public class IIOInvalidTreeException extends IIOException {
      * The {@code Node} that led to the parsing error, or
      * {@code null}.
      */
+    @SuppressWarnings("serial") // Not statically typed as Serializable
     protected Node offendingNode = null;
 
     /**

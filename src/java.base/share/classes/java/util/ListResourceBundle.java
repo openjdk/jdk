@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -43,16 +43,16 @@ package java.util;
 import sun.util.ResourceBundleEnumeration;
 
 /**
- * <code>ListResourceBundle</code> is an abstract subclass of
- * <code>ResourceBundle</code> that manages resources for a locale
- * in a convenient and easy to use list. See <code>ResourceBundle</code> for
+ * {@code ListResourceBundle} is an abstract subclass of
+ * {@code ResourceBundle} that manages resources for a locale
+ * in a convenient and easy to use list. See {@code ResourceBundle} for
  * more information about resource bundles in general.
  *
  * <P>
- * Subclasses must override <code>getContents</code> and provide an array,
+ * Subclasses must override {@code getContents} and provide an array,
  * where each item in the array is a pair of objects.
  * The first element of each pair is the key, which must be a
- * <code>String</code>, and the second element is the value associated with
+ * {@code String}, and the second element is the value associated with
  * that key.
  *
  * <p>
@@ -60,7 +60,7 @@ import sun.util.ResourceBundleEnumeration;
  * bundle family with the base name "MyResources".
  * "MyResources" is the default member of the bundle family, and
  * "MyResources_fr" is the French member.
- * These members are based on <code>ListResourceBundle</code>
+ * These members are based on {@code ListResourceBundle}
  * (a related <a href="PropertyResourceBundle.html#sample">example</a> shows
  * how you can add a bundle to this family that's based on a properties file).
  * The keys in this example are of the form "s1" etc. The actual
@@ -136,11 +136,11 @@ public abstract class ListResourceBundle extends ResourceBundle {
     }
 
     /**
-     * Returns an <code>Enumeration</code> of the keys contained in
-     * this <code>ResourceBundle</code> and its parent bundles.
+     * Returns an {@code Enumeration} of the keys contained in
+     * this {@code ResourceBundle} and its parent bundles.
      *
-     * @return an <code>Enumeration</code> of the keys contained in
-     *         this <code>ResourceBundle</code> and its parent bundles.
+     * @return an {@code Enumeration} of the keys contained in
+     *         this {@code ResourceBundle} and its parent bundles.
      * @see #keySet()
      */
     public Enumeration<String> getKeys() {
@@ -155,11 +155,11 @@ public abstract class ListResourceBundle extends ResourceBundle {
     }
 
     /**
-     * Returns a <code>Set</code> of the keys contained
-     * <em>only</em> in this <code>ResourceBundle</code>.
+     * Returns a {@code Set} of the keys contained
+     * <em>only</em> in this {@code ResourceBundle}.
      *
-     * @return a <code>Set</code> of the keys contained only in this
-     *         <code>ResourceBundle</code>
+     * @return a {@code Set} of the keys contained only in this
+     *         {@code ResourceBundle}
      * @since 1.6
      * @see #keySet()
      */
@@ -172,12 +172,12 @@ public abstract class ListResourceBundle extends ResourceBundle {
 
     /**
      * Returns an array in which each item is a pair of objects in an
-     * <code>Object</code> array. The first element of each pair is
-     * the key, which must be a <code>String</code>, and the second
+     * {@code Object} array. The first element of each pair is
+     * the key, which must be a {@code String}, and the second
      * element is the value associated with that key.  See the class
      * description for details.
      *
-     * @return an array of an <code>Object</code> array representing a
+     * @return an array of an {@code Object} array representing a
      * key-value pair.
      */
     protected abstract Object[][] getContents();

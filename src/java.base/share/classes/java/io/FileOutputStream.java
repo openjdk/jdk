@@ -33,16 +33,16 @@ import sun.nio.ch.FileChannelImpl;
 
 /**
  * A file output stream is an output stream for writing data to a
- * <code>File</code> or to a <code>FileDescriptor</code>. Whether or not
+ * {@code File} or to a {@code FileDescriptor}. Whether or not
  * a file is available or may be created depends upon the underlying
  * platform.  Some platforms, in particular, allow a file to be opened
  * for writing by only one {@code FileOutputStream} (or other
  * file-writing object) at a time.  In such situations the constructors in
  * this class will fail if the file involved is already open.
  *
- * <p><code>FileOutputStream</code> is meant for writing streams of raw bytes
+ * <p>{@code FileOutputStream} is meant for writing streams of raw bytes
  * such as image data. For writing streams of characters, consider using
- * <code>FileWriter</code>.
+ * {@code FileWriter}.
  *
  * @apiNote
  * To release resources used by this stream {@link #close} should be called
@@ -97,15 +97,15 @@ class FileOutputStream extends OutputStream
 
     /**
      * Creates a file output stream to write to the file with the
-     * specified name. A new <code>FileDescriptor</code> object is
+     * specified name. A new {@code FileDescriptor} object is
      * created to represent this file connection.
      * <p>
-     * First, if there is a security manager, its <code>checkWrite</code>
-     * method is called with <code>name</code> as its argument.
+     * First, if there is a security manager, its {@code checkWrite}
+     * method is called with {@code name} as its argument.
      * <p>
      * If the file exists but is a directory rather than a regular file, does
      * not exist but cannot be created, or cannot be opened for any other
-     * reason then a <code>FileNotFoundException</code> is thrown.
+     * reason then a {@code FileNotFoundException} is thrown.
      *
      * @implSpec Invoking this constructor with the parameter {@code name} is
      * equivalent to invoking {@link #FileOutputStream(String,boolean)
@@ -116,7 +116,7 @@ class FileOutputStream extends OutputStream
      *                   rather than a regular file, does not exist but cannot
      *                   be created, or cannot be opened for any other reason
      * @throws     SecurityException  if a security manager exists and its
-     *               <code>checkWrite</code> method denies write access
+     *               {@code checkWrite} method denies write access
      *               to the file.
      * @see        java.lang.SecurityManager#checkWrite(java.lang.String)
      */
@@ -126,26 +126,26 @@ class FileOutputStream extends OutputStream
 
     /**
      * Creates a file output stream to write to the file with the specified
-     * name.  If the second argument is <code>true</code>, then
+     * name.  If the second argument is {@code true}, then
      * bytes will be written to the end of the file rather than the beginning.
-     * A new <code>FileDescriptor</code> object is created to represent this
+     * A new {@code FileDescriptor} object is created to represent this
      * file connection.
      * <p>
-     * First, if there is a security manager, its <code>checkWrite</code>
-     * method is called with <code>name</code> as its argument.
+     * First, if there is a security manager, its {@code checkWrite}
+     * method is called with {@code name} as its argument.
      * <p>
      * If the file exists but is a directory rather than a regular file, does
      * not exist but cannot be created, or cannot be opened for any other
-     * reason then a <code>FileNotFoundException</code> is thrown.
+     * reason then a {@code FileNotFoundException} is thrown.
      *
      * @param     name        the system-dependent file name
-     * @param     append      if <code>true</code>, then bytes will be written
+     * @param     append      if {@code true}, then bytes will be written
      *                   to the end of the file rather than the beginning
      * @throws     FileNotFoundException  if the file exists but is a directory
      *                   rather than a regular file, does not exist but cannot
      *                   be created, or cannot be opened for any other reason.
      * @throws     SecurityException  if a security manager exists and its
-     *               <code>checkWrite</code> method denies write access
+     *               {@code checkWrite} method denies write access
      *               to the file.
      * @see        java.lang.SecurityManager#checkWrite(java.lang.String)
      * @since     1.1
@@ -158,24 +158,24 @@ class FileOutputStream extends OutputStream
 
     /**
      * Creates a file output stream to write to the file represented by
-     * the specified <code>File</code> object. A new
-     * <code>FileDescriptor</code> object is created to represent this
+     * the specified {@code File} object. A new
+     * {@code FileDescriptor} object is created to represent this
      * file connection.
      * <p>
-     * First, if there is a security manager, its <code>checkWrite</code>
-     * method is called with the path represented by the <code>file</code>
+     * First, if there is a security manager, its {@code checkWrite}
+     * method is called with the path represented by the {@code file}
      * argument as its argument.
      * <p>
      * If the file exists but is a directory rather than a regular file, does
      * not exist but cannot be created, or cannot be opened for any other
-     * reason then a <code>FileNotFoundException</code> is thrown.
+     * reason then a {@code FileNotFoundException} is thrown.
      *
      * @param      file               the file to be opened for writing.
      * @throws     FileNotFoundException  if the file exists but is a directory
      *                   rather than a regular file, does not exist but cannot
      *                   be created, or cannot be opened for any other reason
      * @throws     SecurityException  if a security manager exists and its
-     *               <code>checkWrite</code> method denies write access
+     *               {@code checkWrite} method denies write access
      *               to the file.
      * @see        java.io.File#getPath()
      * @see        java.lang.SecurityException
@@ -187,27 +187,27 @@ class FileOutputStream extends OutputStream
 
     /**
      * Creates a file output stream to write to the file represented by
-     * the specified <code>File</code> object. If the second argument is
-     * <code>true</code>, then bytes will be written to the end of the file
-     * rather than the beginning. A new <code>FileDescriptor</code> object is
+     * the specified {@code File} object. If the second argument is
+     * {@code true}, then bytes will be written to the end of the file
+     * rather than the beginning. A new {@code FileDescriptor} object is
      * created to represent this file connection.
      * <p>
-     * First, if there is a security manager, its <code>checkWrite</code>
-     * method is called with the path represented by the <code>file</code>
+     * First, if there is a security manager, its {@code checkWrite}
+     * method is called with the path represented by the {@code file}
      * argument as its argument.
      * <p>
      * If the file exists but is a directory rather than a regular file, does
      * not exist but cannot be created, or cannot be opened for any other
-     * reason then a <code>FileNotFoundException</code> is thrown.
+     * reason then a {@code FileNotFoundException} is thrown.
      *
      * @param      file               the file to be opened for writing.
-     * @param     append      if <code>true</code>, then bytes will be written
+     * @param     append      if {@code true}, then bytes will be written
      *                   to the end of the file rather than the beginning
      * @throws     FileNotFoundException  if the file exists but is a directory
      *                   rather than a regular file, does not exist but cannot
      *                   be created, or cannot be opened for any other reason
      * @throws     SecurityException  if a security manager exists and its
-     *               <code>checkWrite</code> method denies write access
+     *               {@code checkWrite} method denies write access
      *               to the file.
      * @see        java.io.File#getPath()
      * @see        java.lang.SecurityException
@@ -241,21 +241,21 @@ class FileOutputStream extends OutputStream
      * descriptor, which represents an existing connection to an actual
      * file in the file system.
      * <p>
-     * First, if there is a security manager, its <code>checkWrite</code>
-     * method is called with the file descriptor <code>fdObj</code>
+     * First, if there is a security manager, its {@code checkWrite}
+     * method is called with the file descriptor {@code fdObj}
      * argument as its argument.
      * <p>
-     * If <code>fdObj</code> is null then a <code>NullPointerException</code>
+     * If {@code fdObj} is null then a {@code NullPointerException}
      * is thrown.
      * <p>
-     * This constructor does not throw an exception if <code>fdObj</code>
+     * This constructor does not throw an exception if {@code fdObj}
      * is {@link java.io.FileDescriptor#valid() invalid}.
      * However, if the methods are invoked on the resulting stream to attempt
-     * I/O on the stream, an <code>IOException</code> is thrown.
+     * I/O on the stream, an {@code IOException} is thrown.
      *
      * @param      fdObj   the file descriptor to be opened for writing
      * @throws     SecurityException  if a security manager exists and its
-     *               <code>checkWrite</code> method denies
+     *               {@code checkWrite} method denies
      *               write access to the file descriptor
      * @see        java.lang.SecurityManager#checkWrite(java.io.FileDescriptor)
      */
@@ -303,7 +303,7 @@ class FileOutputStream extends OutputStream
 
     /**
      * Writes the specified byte to this file output stream. Implements
-     * the <code>write</code> method of <code>OutputStream</code>.
+     * the {@code write} method of {@code OutputStream}.
      *
      * @param      b   the byte to be written.
      * @throws     IOException  if an I/O error occurs.
@@ -325,7 +325,7 @@ class FileOutputStream extends OutputStream
         throws IOException;
 
     /**
-     * Writes <code>b.length</code> bytes from the specified byte array
+     * Writes {@code b.length} bytes from the specified byte array
      * to this file output stream.
      *
      * @param      b   the data.
@@ -336,8 +336,8 @@ class FileOutputStream extends OutputStream
     }
 
     /**
-     * Writes <code>len</code> bytes from the specified byte array
-     * starting at offset <code>off</code> to this file output stream.
+     * Writes {@code len} bytes from the specified byte array
+     * starting at offset {@code off} to this file output stream.
      *
      * @param      b     the data.
      * @param      off   the start offset in the data.
@@ -397,9 +397,9 @@ class FileOutputStream extends OutputStream
     /**
      * Returns the file descriptor associated with this stream.
      *
-     * @return  the <code>FileDescriptor</code> object that represents
+     * @return  the {@code FileDescriptor} object that represents
      *          the connection to the file in the file system being used
-     *          by this <code>FileOutputStream</code> object.
+     *          by this {@code FileOutputStream} object.
      *
      * @throws     IOException  if an I/O error occurs.
      * @see        java.io.FileDescriptor

@@ -470,7 +470,8 @@ private:
   void sort_methods(InstanceKlass* ik) const;
   void set_symbols_permanent();
   void relocate_buffer_to_target();
-  void write_archive(char* read_only_tables_start);
+  void write_archive(char* serialized_data_start);
+  void write_regions(FileMapInfo* dynamic_info);
 
   void init_first_dump_space(address reserved_bottom) {
     address first_space_base = reserved_bottom;
@@ -595,7 +596,7 @@ public:
 
     verify_estimate_size(_estimated_metsapceobj_bytes, "MetaspaceObjs");
 
-    char* read_only_tables_start;
+    char* serialized_data_start;
     {
       set_symbols_permanent();
 
@@ -608,7 +609,7 @@ public:
       SymbolTable::write_to_archive(false);
       SystemDictionaryShared::write_to_archive(false);
 
-      read_only_tables_start = ro_space->top();
+      serialized_data_start = ro_space->top();
       WriteClosure wc(ro_space);
       SymbolTable::serialize_shared_table_header(&wc, false);
       SystemDictionaryShared::serialize_dictionary_headers(&wc, false);
@@ -634,7 +635,7 @@ public:
       relocate_buffer_to_target();
     }
 
-    write_archive(read_only_tables_start);
+    write_archive(serialized_data_start);
 
     assert(_num_dump_regions_used == _total_dump_regions, "must be");
     verify_universe("After CDS dynamic dump");
@@ -911,9 +912,7 @@ void DynamicArchiveBuilder::relocate_buffer_to_target() {
  _header->relocate_shared_path_table(table);
 }
 
-static void write_archive_info(FileMapInfo* dynamic_info, DynamicArchiveHeader *header) {
-  dynamic_info->write_header();
-  dynamic_info->align_file_position();
+void DynamicArchiveBuilder::write_regions(FileMapInfo* dynamic_info) {
   dynamic_info->write_region(MetaspaceShared::rw,
                              MetaspaceShared::read_write_dump_space()->base(),
                              MetaspaceShared::read_write_dump_space()->used(),
@@ -928,27 +927,22 @@ static void write_archive_info(FileMapInfo* dynamic_info, DynamicArchiveHeader *
                              /*read_only=*/false,/*allow_exec=*/true);
 }
 
-void DynamicArchiveBuilder::write_archive(char* read_only_tables_start) {
+void DynamicArchiveBuilder::write_archive(char* serialized_data_start) {
   int num_klasses = _klasses->length();
   int num_symbols = _symbols->length();
 
-  _header->set_read_only_tables_start(to_target(read_only_tables_start));
+  _header->set_serialized_data_start(to_target(serialized_data_start));
 
   FileMapInfo* dynamic_info = FileMapInfo::dynamic_info();
   assert(dynamic_info != NULL, "Sanity");
 
-  // Populate the file offsets, region crcs, etc. No data is written out.
-  write_archive_info(dynamic_info, _header);
-
-  // the header will no longer change. Compute its crc.
-  dynamic_info->set_header_crc(dynamic_info->compute_header_crc());
-
   // Now write the archived data including the file offsets.
   const char* archive_name = Arguments::GetSharedDynamicArchivePath();
   dynamic_info->open_for_write(archive_name);
-  write_archive_info(dynamic_info, _header);
+  write_regions(dynamic_info);
+  dynamic_info->set_header_crc(dynamic_info->compute_header_crc());
+  dynamic_info->write_header();
   dynamic_info->close();
-
 
   address base = to_target(_alloc_bottom);
   address top  = address(current_dump_space()->top()) + _buffer_to_target_delta;
@@ -1108,7 +1102,7 @@ address DynamicArchive::map_impl(FileMapInfo* mapinfo) {
     return NULL;
   }
 
-  intptr_t* buffer = (intptr_t*)_dynamic_header->read_only_tables_start();
+  intptr_t* buffer = (intptr_t*)_dynamic_header->serialized_data_start();
   ReadClosure rc(&buffer);
   SymbolTable::serialize_shared_table_header(&rc, false);
   SystemDictionaryShared::serialize_dictionary_headers(&rc, false);

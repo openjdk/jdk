@@ -164,7 +164,7 @@ public class OutputStreamWriter extends Writer {
      * been closed. </p>
      *
      * @return The historical name of this encoding, or possibly
-     *         <code>null</code> if the stream has been closed
+     *         {@code null} if the stream has been closed
      *
      * @see java.nio.charset.Charset
      *

@@ -407,6 +407,20 @@ For example:
     $ export LANG="en_US" && make test TEST=...
     $ make test JTREG="VM_OPTIONS=-Duser.language=en -Duser.country=US" TEST=...
 
+### PKCS11 Tests
+
+It is highly recommended to use the latest NSS version when running PKCS11 tests.
+Improper NSS version may lead to unexpected failures which are hard to diagnose.
+For example, sun/security/pkcs11/Secmod/AddTrustedCert.java may fail on Ubuntu
+18.04 with the default NSS version in the system.
+To run these tests correctly, the system property `test.nss.lib.paths` is required
+on Ubuntu 18.04 to specify the alternative NSS lib directories.
+For example:
+
+    $ make test TEST="jtreg:sun/security/pkcs11/Secmod/AddTrustedCert.java" JTREG="JAVA_OPTIONS=-Dtest.nss.lib.paths=/path/to/your/latest/NSS-libs"
+
+For more notes about the PKCS11 tests, please refer to test/jdk/sun/security/pkcs11/README.
+
 ---
 # Override some definitions in the global css file that are not optimal for
 # this document.

@@ -35,19 +35,16 @@ public:
   G1EvacuationClosures(G1CollectedHeap* g1h,
                        G1ParScanThreadState* pss,
                        bool in_young_gc) :
-      _closures(g1h, pss, in_young_gc, /* cld_claim */ ClassLoaderData::_claim_none) {}
+      _closures(g1h, pss, in_young_gc) {}
 
   OopClosure* weak_oops()   { return &_closures._oops; }
   OopClosure* strong_oops() { return &_closures._oops; }
 
   CLDClosure* weak_clds()             { return &_closures._clds; }
   CLDClosure* strong_clds()           { return &_closures._clds; }
-  CLDClosure* second_pass_weak_clds() { return NULL; }
 
   CodeBlobClosure* strong_codeblobs()      { return &_closures._codeblobs; }
   CodeBlobClosure* weak_codeblobs()        { return &_closures._codeblobs; }
-
-  OopClosure* raw_strong_oops() { return &_closures._oops; }
 
   bool trace_metadata()         { return false; }
 };
@@ -60,37 +57,20 @@ class G1InitialMarkClosures : public G1EvacuationRootClosures {
   G1SharedClosures<G1MarkFromRoot> _strong;
   G1SharedClosures<MarkWeak>       _weak;
 
-  // Filter method to help with returning the appropriate closures
-  // depending on the class template parameter.
-  template <G1Mark Mark, typename T>
-  T* null_if(T* t) {
-    if (Mark == MarkWeak) {
-      return NULL;
-    }
-    return t;
-  }
-
 public:
   G1InitialMarkClosures(G1CollectedHeap* g1h,
                         G1ParScanThreadState* pss) :
-      _strong(g1h, pss, /* process_only_dirty_klasses */ false, /* cld_claim */ ClassLoaderData::_claim_strong),
-      _weak(g1h, pss,   /* process_only_dirty_klasses */ false, /* cld_claim */ ClassLoaderData::_claim_strong) {}
+      _strong(g1h, pss, /* process_only_dirty_klasses */ false),
+      _weak(g1h, pss,   /* process_only_dirty_klasses */ false) {}
 
   OopClosure* weak_oops()   { return &_weak._oops; }
   OopClosure* strong_oops() { return &_strong._oops; }
 
-  // If MarkWeak is G1MarkPromotedFromRoot then the weak CLDs must be processed in a second pass.
-  CLDClosure* weak_clds()             { return null_if<G1MarkPromotedFromRoot>(&_weak._clds); }
+  CLDClosure* weak_clds()             { return &_weak._clds; }
   CLDClosure* strong_clds()           { return &_strong._clds; }
-
-  // If MarkWeak is G1MarkFromRoot then all CLDs are processed by the weak and strong variants
-  // return a NULL closure for the following specialized versions in that case.
-  CLDClosure* second_pass_weak_clds() { return null_if<G1MarkFromRoot>(&_weak._clds); }
 
   CodeBlobClosure* strong_codeblobs()      { return &_strong._codeblobs; }
   CodeBlobClosure* weak_codeblobs()        { return &_weak._codeblobs; }
-
-  OopClosure* raw_strong_oops() { return &_strong._oops; }
 
   // If we are not marking all weak roots then we are tracing
   // which metadata is alive.

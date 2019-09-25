@@ -98,15 +98,15 @@ public class BufferedOutputStream extends FilterOutputStream {
     }
 
     /**
-     * Writes <code>len</code> bytes from the specified byte array
-     * starting at offset <code>off</code> to this buffered output stream.
+     * Writes {@code len} bytes from the specified byte array
+     * starting at offset {@code off} to this buffered output stream.
      *
      * <p> Ordinarily this method stores bytes from the given array into this
      * stream's buffer, flushing the buffer to the underlying output stream as
      * needed.  If the requested length is at least as large as this stream's
      * buffer, however, then this method will flush the buffer and write the
      * bytes directly to the underlying output stream.  Thus redundant
-     * <code>BufferedOutputStream</code>s will not copy data unnecessarily.
+     * {@code BufferedOutputStream}s will not copy data unnecessarily.
      *
      * @param      b     the data.
      * @param      off   the start offset in the data.

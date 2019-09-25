@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -702,8 +702,10 @@ public class InvocationPlugins {
                 }
                 if (res != null) {
                     // A decorator plugin is trusted since it does not replace
-                    // the method it intrinsifies.
-                    if (res.isDecorator() || canBeIntrinsified(declaringClass)) {
+                    // the method it intrinsifies. A GeneratedInvocationPlugin
+                    // is trusted since it only exists for @NodeIntrinsics and
+                    // @Fold annotated methods (i.e., trusted Graal code).
+                    if (res.isDecorator() || res instanceof GeneratedInvocationPlugin || canBeIntrinsified(declaringClass)) {
                         return res;
                     }
                 }

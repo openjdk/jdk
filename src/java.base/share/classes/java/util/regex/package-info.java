@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2006, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -37,7 +37,7 @@
  * interface in order to support matching against characters from a
  * wide variety of input sources. </p>
  *
- * <p> Unless otherwise noted, passing a <code>null</code> argument to a
+ * <p> Unless otherwise noted, passing a {@code null} argument to a
  * method in any class or interface in this package will cause a
  * {@link java.lang.NullPointerException NullPointerException} to be
  * thrown.

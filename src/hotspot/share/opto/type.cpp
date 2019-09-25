@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -3004,15 +3004,13 @@ TypeOopPtr::TypeOopPtr(TYPES t, PTR ptr, ciKlass* k, bool xk, ciObject* o, int o
           ciField* field = k->get_field_by_offset(_offset, true);
           assert(field != NULL, "missing field");
           BasicType basic_elem_type = field->layout_type();
-          _is_ptr_to_narrowoop = UseCompressedOops && (basic_elem_type == T_OBJECT ||
-                                                       basic_elem_type == T_ARRAY);
+          _is_ptr_to_narrowoop = UseCompressedOops && is_reference_type(basic_elem_type);
         } else {
           // Instance fields which contains a compressed oop references.
           field = ik->get_field_by_offset(_offset, false);
           if (field != NULL) {
             BasicType basic_elem_type = field->layout_type();
-            _is_ptr_to_narrowoop = UseCompressedOops && (basic_elem_type == T_OBJECT ||
-                                                         basic_elem_type == T_ARRAY);
+            _is_ptr_to_narrowoop = UseCompressedOops && is_reference_type(basic_elem_type);
           } else if (klass()->equals(ciEnv::current()->Object_klass())) {
             // Compile::find_alias_type() cast exactness on all types to verify
             // that it does not affect alias type.

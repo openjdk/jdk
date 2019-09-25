@@ -46,13 +46,13 @@ public abstract class BreakIteratorProvider extends LocaleServiceProvider {
     }
 
     /**
-     * Returns a new <code>BreakIterator</code> instance
+     * Returns a new {@code BreakIterator} instance
      * for <a href="../BreakIterator.html#word">word breaks</a>
      * for the given locale.
      * @param locale the desired locale
      * @return A break iterator for word breaks
-     * @throws    NullPointerException if <code>locale</code> is null
-     * @throws    IllegalArgumentException if <code>locale</code> isn't
+     * @throws    NullPointerException if {@code locale} is null
+     * @throws    IllegalArgumentException if {@code locale} isn't
      *     one of the locales returned from
      *     {@link java.util.spi.LocaleServiceProvider#getAvailableLocales()
      *     getAvailableLocales()}.
@@ -61,13 +61,13 @@ public abstract class BreakIteratorProvider extends LocaleServiceProvider {
     public abstract BreakIterator getWordInstance(Locale locale);
 
     /**
-     * Returns a new <code>BreakIterator</code> instance
+     * Returns a new {@code BreakIterator} instance
      * for <a href="../BreakIterator.html#line">line breaks</a>
      * for the given locale.
      * @param locale the desired locale
      * @return A break iterator for line breaks
-     * @throws    NullPointerException if <code>locale</code> is null
-     * @throws    IllegalArgumentException if <code>locale</code> isn't
+     * @throws    NullPointerException if {@code locale} is null
+     * @throws    IllegalArgumentException if {@code locale} isn't
      *     one of the locales returned from
      *     {@link java.util.spi.LocaleServiceProvider#getAvailableLocales()
      *     getAvailableLocales()}.
@@ -76,13 +76,13 @@ public abstract class BreakIteratorProvider extends LocaleServiceProvider {
     public abstract BreakIterator getLineInstance(Locale locale);
 
     /**
-     * Returns a new <code>BreakIterator</code> instance
+     * Returns a new {@code BreakIterator} instance
      * for <a href="../BreakIterator.html#character">character breaks</a>
      * for the given locale.
      * @param locale the desired locale
      * @return A break iterator for character breaks
-     * @throws    NullPointerException if <code>locale</code> is null
-     * @throws    IllegalArgumentException if <code>locale</code> isn't
+     * @throws    NullPointerException if {@code locale} is null
+     * @throws    IllegalArgumentException if {@code locale} isn't
      *     one of the locales returned from
      *     {@link java.util.spi.LocaleServiceProvider#getAvailableLocales()
      *     getAvailableLocales()}.
@@ -91,13 +91,13 @@ public abstract class BreakIteratorProvider extends LocaleServiceProvider {
     public abstract BreakIterator getCharacterInstance(Locale locale);
 
     /**
-     * Returns a new <code>BreakIterator</code> instance
+     * Returns a new {@code BreakIterator} instance
      * for <a href="../BreakIterator.html#sentence">sentence breaks</a>
      * for the given locale.
      * @param locale the desired locale
      * @return A break iterator for sentence breaks
-     * @throws    NullPointerException if <code>locale</code> is null
-     * @throws    IllegalArgumentException if <code>locale</code> isn't
+     * @throws    NullPointerException if {@code locale} is null
+     * @throws    IllegalArgumentException if {@code locale} isn't
      *     one of the locales returned from
      *     {@link java.util.spi.LocaleServiceProvider#getAvailableLocales()
      *     getAvailableLocales()}.

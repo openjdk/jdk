@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,6 +26,7 @@ package org.graalvm.compiler.phases.common;
 
 import jdk.internal.vm.compiler.collections.EconomicMap;
 import jdk.internal.vm.compiler.collections.EconomicSet;
+import jdk.internal.vm.compiler.collections.Equivalence;
 import jdk.internal.vm.compiler.collections.MapCursor;
 import org.graalvm.compiler.graph.NodeStack;
 import org.graalvm.compiler.nodes.AbstractBeginNode;
@@ -52,7 +53,7 @@ public class PropagateDeoptimizeProbabilityPhase extends BasePhase<CoreProviders
         if (graph.hasNode(AbstractDeoptimizeNode.TYPE)) {
 
             NodeStack stack = new NodeStack();
-            EconomicMap<ControlSplitNode, EconomicSet<AbstractBeginNode>> reachableSplits = EconomicMap.create();
+            EconomicMap<ControlSplitNode, EconomicSet<AbstractBeginNode>> reachableSplits = EconomicMap.create(Equivalence.IDENTITY);
 
             // Mark all control flow nodes that are post-dominated by a deoptimization.
             for (AbstractDeoptimizeNode d : graph.getNodes(AbstractDeoptimizeNode.TYPE)) {

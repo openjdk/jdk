@@ -455,6 +455,7 @@ public class Event implements java.io.Serializable {
      * @serial
      * @see java.awt.AWTEvent#getSource()
      */
+    @SuppressWarnings("serial") // Not statically typed as Serializable
     public Object target;
 
     /**
@@ -537,6 +538,7 @@ public class Event implements java.io.Serializable {
      *
      * @serial
      */
+    @SuppressWarnings("serial") // Not statically typed as Serializable
     public Object arg;
 
     /**

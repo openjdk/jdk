@@ -57,8 +57,7 @@ class G1GCPhaseTimes : public CHeapObj<mtGC> {
     JVMTIRoots,
     AOT_ONLY(AOTCodeRoots COMMA)
     CMRefRoots,
-    WaitForStrongCLD,
-    WeakCLDRoots,
+    WaitForStrongRoots,
     MergeER,
     MergeRS,
     OptMergeRS,
@@ -84,7 +83,7 @@ class G1GCPhaseTimes : public CHeapObj<mtGC> {
   };
 
   static const GCParPhases ExtRootScanSubPhasesFirst = ThreadRoots;
-  static const GCParPhases ExtRootScanSubPhasesLast = WeakCLDRoots;
+  static const GCParPhases ExtRootScanSubPhasesLast = WaitForStrongRoots;
 
   enum GCMergeRSWorkTimes {
     MergeRSMergedSparse,
@@ -251,20 +250,20 @@ class G1GCPhaseTimes : public CHeapObj<mtGC> {
   static const char* phase_name(GCParPhases phase);
 
   // record the time a phase took in seconds
-  void record_time_secs(GCParPhases phase, uint worker_i, double secs);
+  void record_time_secs(GCParPhases phase, uint worker_id, double secs);
 
   // add a number of seconds to a phase
-  void add_time_secs(GCParPhases phase, uint worker_i, double secs);
+  void add_time_secs(GCParPhases phase, uint worker_id, double secs);
 
-  void record_or_add_time_secs(GCParPhases phase, uint worker_i, double secs);
+  void record_or_add_time_secs(GCParPhases phase, uint worker_id, double secs);
 
-  double get_time_secs(GCParPhases phase, uint worker_i);
+  double get_time_secs(GCParPhases phase, uint worker_id);
 
-  void record_thread_work_item(GCParPhases phase, uint worker_i, size_t count, uint index = 0);
+  void record_thread_work_item(GCParPhases phase, uint worker_id, size_t count, uint index = 0);
 
-  void record_or_add_thread_work_item(GCParPhases phase, uint worker_i, size_t count, uint index = 0);
+  void record_or_add_thread_work_item(GCParPhases phase, uint worker_id, size_t count, uint index = 0);
 
-  size_t get_thread_work_item(GCParPhases phase, uint worker_i, uint index = 0);
+  size_t get_thread_work_item(GCParPhases phase, uint worker_id, uint index = 0);
 
   // return the average time for a phase in milliseconds
   double average_time_ms(GCParPhases phase);

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -34,6 +34,7 @@ import java.util.Arrays;
 import java.util.Formatter;
 import java.util.List;
 import java.util.Map;
+import java.util.function.Predicate;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -102,6 +103,26 @@ public final class SubprocessUtil {
     }
 
     /**
+     * Gets the command line options to do the same package opening and exporting specified by the
+     * {@code --open-packages} option to the {@code mx unittest} command.
+     *
+     * Properties defined in {@code com.oracle.mxtool.junit.MxJUnitWrapper}.
+     */
+    public static List<String> getPackageOpeningOptions() {
+        List<String> result = new ArrayList<>();
+        String[] actions = {"opens", "exports"};
+        for (String action : actions) {
+            String opens = System.getProperty("com.oracle.mxtool.junit." + action);
+            if (opens != null && !opens.isEmpty()) {
+                for (String value : opens.split(System.lineSeparator())) {
+                    result.add("--add-" + action + "=" + value);
+                }
+            }
+        }
+        return result;
+    }
+
+    /**
      * Gets the command line used to start the current Java VM, including all VM arguments, but not
      * including the main class or any Java arguments. This can be used to spawn an identical VM,
      * but running different Java code.
@@ -117,10 +138,30 @@ public final class SubprocessUtil {
     }
 
     /**
-     * Detects whether a java agent is attached.
+     * Detects whether a Java agent matching {@code agentPredicate} is specified in the VM
+     * arguments.
+     *
+     * @param agentPredicate a predicate that is given the value of a {@code -javaagent} VM argument
+     */
+    public static boolean isJavaAgentAttached(Predicate<String> agentPredicate) {
+        return SubprocessUtil.getVMCommandLine().stream().//
+                        filter(args -> args.startsWith("-javaagent:")).//
+                        map(s -> s.substring("-javaagent:".length())).//
+                        anyMatch(agentPredicate);
+    }
+
+    /**
+     * Detects whether a Java agent is specified in the VM arguments.
      */
     public static boolean isJavaAgentAttached() {
-        return SubprocessUtil.getVMCommandLine().stream().anyMatch(args -> args.startsWith("-javaagent"));
+        return isJavaAgentAttached(javaAgentValue -> true);
+    }
+
+    /**
+     * Detects whether the JaCoCo Java agent is specified in the VM arguments.
+     */
+    public static boolean isJaCoCoAttached() {
+        return isJavaAgentAttached(s -> s.toLowerCase().contains("jacoco"));
     }
 
     /**
@@ -278,7 +319,11 @@ public final class SubprocessUtil {
         while (i < commandLine.size()) {
             String s = commandLine.get(i);
             if (s.charAt(0) != '-') {
-                return i;
+                // https://bugs.openjdk.java.net/browse/JDK-8027634
+                if (isJava8OrEarlier || s.charAt(0) != '@') {
+                    return i;
+                }
+                i++;
             } else if (hasArg(s)) {
                 i += 2;
             } else {

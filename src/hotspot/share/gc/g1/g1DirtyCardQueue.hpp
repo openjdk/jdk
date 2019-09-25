@@ -158,7 +158,7 @@ public:
   // Stops processing a buffer if SuspendibleThreadSet::should_yield(),
   // returning the incompletely processed buffer to the completed buffer
   // list, for later processing of the remainder.
-  bool refine_completed_buffer_concurrently(uint worker_i, size_t stop_at);
+  bool refine_completed_buffer_concurrently(uint worker_id, size_t stop_at);
 
   // If a full collection is happening, reset partial logs, and release
   // completed ones: the full collection will make them all irrelevant.

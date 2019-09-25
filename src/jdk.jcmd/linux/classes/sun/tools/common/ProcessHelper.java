@@ -23,29 +23,21 @@
  * questions.
  */
 
-package sun.tools;
+package sun.tools.common;
 
 import java.io.IOException;
 import java.io.UncheckedIOException;
 import java.nio.file.Files;
 import java.nio.file.Paths;
-import java.util.jar.Attributes;
-import java.util.jar.JarFile;
 import java.util.stream.Stream;
 
 /**
  * A helper class that retrieves the main class name for
  * a running Java process using the proc filesystem (procfs)
  */
-public class ProcessHelper implements sun.tools.common.ProcessHelper {
-
+final class ProcessHelper {
 
     private static final String CMD_PREFIX = "cmd:";
-    private static final ProcessHelper INSTANCE = new ProcessHelper();
-
-    public static ProcessHelper getInstance() {
-        return INSTANCE;
-    }
 
     /**
      * Gets the main class name for the given Java process by parsing the
@@ -57,8 +49,7 @@ public class ProcessHelper implements sun.tools.common.ProcessHelper {
      * @return the main class name or null if the process no longer exists or
      * was started with a native launcher (e.g. jcmd etc)
      */
-
-    public String getMainClass(String pid) {
+    static String getMainClass(String pid) {
         String cmdLine = getCommandLine(pid);
         if (cmdLine == null) {
             return null;
@@ -69,7 +60,7 @@ public class ProcessHelper implements sun.tools.common.ProcessHelper {
         String[] parts = cmdLine.split("\0");
         String mainClass = null;
 
-        if(parts.length == 0) {
+        if (parts.length == 0) {
             return null;
         }
 
@@ -120,7 +111,6 @@ public class ProcessHelper implements sun.tools.common.ProcessHelper {
             mainClass = parts[i];
         }
         return mainClass;
-
     }
 
     private static String getCommandLine(String pid) {
@@ -134,16 +124,13 @@ public class ProcessHelper implements sun.tools.common.ProcessHelper {
 
     private static boolean isModuleWhiteSpaceOption(String option) {
         return option.equals("-p") ||
-                option.equals("--module-path") ||
-                option.equals("--upgrade-module-path") ||
-                option.equals("--add-modules") ||
-                option.equals("--limit-modules") ||
-                option.equals("--add-exports") ||
-                option.equals("--add-opens") ||
-                option.equals("--add-reads") ||
-                option.equals("--patch-module");
+               option.equals("--module-path") ||
+               option.equals("--upgrade-module-path") ||
+               option.equals("--add-modules") ||
+               option.equals("--limit-modules") ||
+               option.equals("--add-exports") ||
+               option.equals("--add-opens") ||
+               option.equals("--add-reads") ||
+               option.equals("--patch-module");
     }
-
 }
-
-

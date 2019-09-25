@@ -106,7 +106,7 @@ public:
     return _value._double;
   }
   ciObject* as_object() const {
-    assert(basic_type() == T_OBJECT || basic_type() == T_ARRAY, "wrong type");
+    assert(is_reference_type(basic_type()), "wrong type");
     return _value._object;
   }
 

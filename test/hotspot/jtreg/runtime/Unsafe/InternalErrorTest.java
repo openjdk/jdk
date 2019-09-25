@@ -28,6 +28,7 @@
  * @summary Check that SIGBUS errors caused by memory accesses in Unsafe_CopyMemory()
  * and UnsafeCopySwapMemory() get converted to java.lang.InternalError exceptions.
  * @modules java.base/jdk.internal.misc
+ *          java.base/java.nio:+open
  *
  * @library /test/lib
  * @build sun.hotspot.WhiteBox

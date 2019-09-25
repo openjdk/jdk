@@ -419,7 +419,7 @@ void ObjectSynchronizer::jni_exit(oop obj, Thread* THREAD) {
 ObjectLocker::ObjectLocker(Handle obj, Thread* thread, bool do_lock) {
   _dolock = do_lock;
   _thread = thread;
-  _thread->check_for_valid_safepoint_state(false);
+  _thread->check_for_valid_safepoint_state();
   _obj = obj;
 
   if (_dolock) {

@@ -41,14 +41,14 @@ public class IllegalAccessError extends IncompatibleClassChangeError {
     private static final long serialVersionUID = -8988904074992417891L;
 
     /**
-     * Constructs an <code>IllegalAccessError</code> with no detail message.
+     * Constructs an {@code IllegalAccessError} with no detail message.
      */
     public IllegalAccessError() {
         super();
     }
 
     /**
-     * Constructs an <code>IllegalAccessError</code> with the specified
+     * Constructs an {@code IllegalAccessError} with the specified
      * detail message.
      *
      * @param   s   the detail message.

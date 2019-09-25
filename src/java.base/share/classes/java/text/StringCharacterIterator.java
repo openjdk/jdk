@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -41,10 +41,10 @@
 package java.text;
 
 /**
- * <code>StringCharacterIterator</code> implements the
- * <code>CharacterIterator</code> protocol for a <code>String</code>.
- * The <code>StringCharacterIterator</code> class iterates over the
- * entire <code>String</code>.
+ * {@code StringCharacterIterator} implements the
+ * {@code CharacterIterator} protocol for a {@code String}.
+ * The {@code StringCharacterIterator} class iterates over the
+ * entire {@code String}.
  *
  * @see CharacterIterator
  * @since 1.1

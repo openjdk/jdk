@@ -224,18 +224,12 @@ void os::init_system_properties_values() {
     }
 
     home_path = NEW_C_HEAP_ARRAY(char, strlen(home_dir) + 1, mtInternal);
-    if (home_path == NULL) {
-      return;
-    }
     strcpy(home_path, home_dir);
     Arguments::set_java_home(home_path);
     FREE_C_HEAP_ARRAY(char, home_path);
 
     dll_path = NEW_C_HEAP_ARRAY(char, strlen(home_dir) + strlen(bin) + 1,
                                 mtInternal);
-    if (dll_path == NULL) {
-      return;
-    }
     strcpy(dll_path, home_dir);
     strcat(dll_path, bin);
     Arguments::set_dll_dir(dll_path);

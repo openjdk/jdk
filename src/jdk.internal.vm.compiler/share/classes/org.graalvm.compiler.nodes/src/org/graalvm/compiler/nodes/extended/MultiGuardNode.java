@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,6 +32,8 @@ import org.graalvm.compiler.core.common.type.StampFactory;
 import org.graalvm.compiler.graph.Node;
 import org.graalvm.compiler.graph.NodeClass;
 import org.graalvm.compiler.graph.NodeInputList;
+import org.graalvm.compiler.graph.spi.Canonicalizable;
+import org.graalvm.compiler.graph.spi.CanonicalizerTool;
 import org.graalvm.compiler.graph.spi.Simplifiable;
 import org.graalvm.compiler.graph.spi.SimplifierTool;
 import org.graalvm.compiler.nodeinfo.NodeInfo;
@@ -43,7 +45,7 @@ import org.graalvm.compiler.nodes.spi.NodeLIRBuilderTool;
 import org.graalvm.compiler.nodes.util.GraphUtil;
 
 @NodeInfo(allowedUsageTypes = Guard, cycles = CYCLES_0, size = SIZE_0)
-public final class MultiGuardNode extends FloatingNode implements GuardingNode, LIRLowerable, Simplifiable, Node.ValueNumberable {
+public final class MultiGuardNode extends FloatingNode implements GuardingNode, LIRLowerable, Simplifiable, Canonicalizable, Node.ValueNumberable {
     public static final NodeClass<MultiGuardNode> TYPE = NodeClass.create(MultiGuardNode.class);
 
     @OptionalInput(Guard) NodeInputList<ValueNode> guards;
@@ -55,6 +57,20 @@ public final class MultiGuardNode extends FloatingNode implements GuardingNode, 
 
     @Override
     public void generate(NodeLIRBuilderTool generator) {
+    }
+
+    @Override
+    public Node canonical(CanonicalizerTool tool) {
+        // Make sure there are no nulls remaining in the set of guards references.
+        guards.trim();
+        if (guards.size() == 0) {
+            // No guards left => can delete the multi-guard.
+            return null;
+        } else if (guards.size() == 1) {
+            // Only a single guard left => replace multi-guard with that single guard.
+            return guards.get(0);
+        }
+        return this;
     }
 
     @Override

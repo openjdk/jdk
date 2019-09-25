@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,7 +25,6 @@
 package org.graalvm.compiler.nodes.memory;
 
 import org.graalvm.compiler.core.common.type.Stamp;
-import org.graalvm.compiler.graph.IterableNodeType;
 import org.graalvm.compiler.graph.NodeClass;
 import org.graalvm.compiler.nodeinfo.InputType;
 import org.graalvm.compiler.nodeinfo.NodeInfo;
@@ -40,7 +39,7 @@ import jdk.internal.vm.compiler.word.LocationIdentity;
  * does not include a null check on the object.
  */
 @NodeInfo
-public abstract class FixedAccessNode extends DeoptimizingFixedWithNextNode implements Access, IterableNodeType {
+public abstract class FixedAccessNode extends DeoptimizingFixedWithNextNode implements Access {
     public static final NodeClass<FixedAccessNode> TYPE = NodeClass.create(FixedAccessNode.class);
 
     @OptionalInput(InputType.Guard) protected GuardingNode guard;

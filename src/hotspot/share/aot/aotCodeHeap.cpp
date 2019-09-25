@@ -401,9 +401,6 @@ void AOTCodeHeap::register_stubs() {
     int len = Bytes::get_Java_u2((address)stub_name);
     stub_name += 2;
     char* full_name = NEW_C_HEAP_ARRAY(char, len+5, mtCode);
-    if (full_name == NULL) { // No memory?
-      break;
-    }
     memcpy(full_name, "AOT ", 4);
     memcpy(full_name+4, stub_name, len);
     full_name[len+4] = 0;

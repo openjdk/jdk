@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -45,6 +45,7 @@ import org.graalvm.compiler.nodes.EndNode;
 import org.graalvm.compiler.nodes.FixedNode;
 import org.graalvm.compiler.nodes.IfNode;
 import org.graalvm.compiler.nodes.LogicNode;
+import org.graalvm.compiler.nodes.LoopExitNode;
 import org.graalvm.compiler.nodes.StructuredGraph;
 import org.graalvm.compiler.nodes.ValueNode;
 import org.graalvm.compiler.nodes.ValuePhiNode;
@@ -165,7 +166,8 @@ public class UseTrappingNullChecksPhase extends BasePhase<LowTierContext> {
 
     private static void tryUseTrappingNullCheck(AbstractDeoptimizeNode deopt, Node predecessor, DeoptimizationReason deoptimizationReason, Speculation speculation, long implicitNullCheckLimit) {
         assert predecessor != null;
-        if (deoptimizationReason != DeoptimizationReason.NullCheckException && deoptimizationReason != DeoptimizationReason.UnreachedCode) {
+        if (deoptimizationReason != DeoptimizationReason.NullCheckException && deoptimizationReason != DeoptimizationReason.UnreachedCode &&
+                        deoptimizationReason != DeoptimizationReason.TypeCheckedInliningViolated) {
             deopt.getDebug().log(DebugContext.INFO_LEVEL, "Not a null check or unreached %s", predecessor);
             return;
         }
@@ -174,17 +176,23 @@ public class UseTrappingNullChecksPhase extends BasePhase<LowTierContext> {
             deopt.getDebug().log(DebugContext.INFO_LEVEL, "Has a speculation %s", predecessor);
             return;
         }
-        if (predecessor instanceof AbstractMergeNode) {
-            AbstractMergeNode merge = (AbstractMergeNode) predecessor;
+
+        // Skip over loop exit nodes.
+        Node pred = predecessor;
+        while (pred instanceof LoopExitNode) {
+            pred = pred.predecessor();
+        }
+        if (pred instanceof AbstractMergeNode) {
+            AbstractMergeNode merge = (AbstractMergeNode) pred;
             if (merge.phis().isEmpty()) {
                 for (AbstractEndNode end : merge.cfgPredecessors().snapshot()) {
                     checkPredecessor(deopt, end.predecessor(), deoptimizationReason, implicitNullCheckLimit);
                 }
             }
-        } else if (predecessor instanceof AbstractBeginNode) {
-            checkPredecessor(deopt, predecessor, deoptimizationReason, implicitNullCheckLimit);
+        } else if (pred instanceof AbstractBeginNode) {
+            checkPredecessor(deopt, pred, deoptimizationReason, implicitNullCheckLimit);
         } else {
-            deopt.getDebug().log(DebugContext.INFO_LEVEL, "Not a Begin or Merge %s", predecessor);
+            deopt.getDebug().log(DebugContext.INFO_LEVEL, "Not a Begin or Merge %s", pred);
         }
     }
 

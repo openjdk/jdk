@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -33,6 +33,10 @@ import org.graalvm.compiler.replacements.ConstantBindingParameterPlugin;
 import org.junit.Test;
 
 public class StringIndexOfConstantTest extends StringIndexOfTestBase {
+
+    public StringIndexOfConstantTest(String sourceString, String constantString) {
+        super(sourceString, constantString);
+    }
 
     /*
      * These test definitions could live in the superclass except that the mx junit individual test
@@ -87,6 +91,7 @@ public class StringIndexOfConstantTest extends StringIndexOfTestBase {
     @Override
     protected InstalledCode getCode(final ResolvedJavaMethod installedCodeOwner, StructuredGraph graph0, boolean ignoreForceCompile, boolean ignoreInstallAsDefault, OptionValues options) {
         // Force recompile if constant binding should be done
-        return super.getCode(installedCodeOwner, graph0, /* forceCompile */true, /* installAsDefault */false, options);
+        return super.getCode(installedCodeOwner, graph0,
+                        /* forceCompile */ true, /* installAsDefault */ false, options);
     }
 }

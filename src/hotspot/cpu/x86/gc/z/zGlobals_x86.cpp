@@ -135,26 +135,6 @@
 //  * 63-48 Fixed (16-bits, always zero)
 //
 
-uintptr_t ZPlatformAddressSpaceStart() {
-  const uintptr_t first_heap_view_address = (uintptr_t)1 << (ZPlatformAddressMetadataShift() + 0);
-  const size_t min_address_offset = 0;
-  return first_heap_view_address + min_address_offset;
-}
-
-uintptr_t ZPlatformAddressSpaceEnd() {
-  const uintptr_t last_heap_view_address = (uintptr_t)1 << (ZPlatformAddressMetadataShift() + 2);
-  const size_t max_address_offset = (size_t)1 << ZPlatformAddressOffsetBits();
-  return last_heap_view_address + max_address_offset;
-}
-
-uintptr_t ZPlatformAddressReservedStart() {
-  return ZPlatformAddressSpaceStart();
-}
-
-uintptr_t ZPlatformAddressReservedEnd() {
-  return ZPlatformAddressSpaceEnd();
-}
-
 uintptr_t ZPlatformAddressBase() {
   return 0;
 }

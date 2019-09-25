@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,12 +24,12 @@
 
 package org.graalvm.compiler.hotspot;
 
-import jdk.vm.ci.meta.InvokeTarget;
-
 import org.graalvm.compiler.core.common.spi.ForeignCallLinkage;
 import org.graalvm.compiler.core.target.Backend;
 import org.graalvm.compiler.hotspot.stubs.Stub;
 import jdk.internal.vm.compiler.word.LocationIdentity;
+
+import jdk.vm.ci.meta.InvokeTarget;
 
 /**
  * The details required to link a HotSpot runtime or stub call.
@@ -42,8 +42,8 @@ public interface HotSpotForeignCallLinkage extends ForeignCallLinkage, InvokeTar
      * {@linkplain ForeignCallLinkage#getTemporaries() temporary} registers.
      */
     enum RegisterEffect {
-        DESTROYS_REGISTERS,
-        PRESERVES_REGISTERS
+        DESTROYS_ALL_CALLER_SAVE_REGISTERS,
+        COMPUTES_REGISTERS_KILLED
     }
 
     /**
@@ -117,6 +117,8 @@ public interface HotSpotForeignCallLinkage extends ForeignCallLinkage, InvokeTar
     LocationIdentity[] getKilledLocations();
 
     void setCompiledStub(Stub stub);
+
+    RegisterEffect getEffect();
 
     /**
      * Determines if this is a call to a compiled {@linkplain Stub stub}.

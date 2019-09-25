@@ -32,14 +32,6 @@ void ZAddress::set_good_mask(uintptr_t mask) {
 }
 
 void ZAddress::initialize() {
-  ZAddressSpaceStart = ZPlatformAddressSpaceStart();
-  ZAddressSpaceEnd = ZPlatformAddressSpaceEnd();
-  ZAddressSpaceSize = ZAddressSpaceEnd - ZAddressSpaceStart;
-
-  ZAddressReservedStart = ZPlatformAddressReservedStart();
-  ZAddressReservedEnd = ZPlatformAddressReservedEnd();
-  ZAddressReservedSize = ZAddressReservedEnd - ZAddressReservedStart;
-
   ZAddressBase = ZPlatformAddressBase();
 
   ZAddressOffsetBits = ZPlatformAddressOffsetBits();

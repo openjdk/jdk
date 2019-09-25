@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,12 +26,14 @@ package org.graalvm.compiler.nodes.calc;
 
 import static org.graalvm.compiler.nodeinfo.NodeCycles.CYCLES_1;
 
+import org.graalvm.compiler.core.common.calc.CanonicalCondition;
 import org.graalvm.compiler.core.common.type.ArithmeticOpTable;
 import org.graalvm.compiler.core.common.type.ArithmeticOpTable.IntegerConvertOp;
 import org.graalvm.compiler.core.common.type.ArithmeticOpTable.IntegerConvertOp.Narrow;
 import org.graalvm.compiler.core.common.type.ArithmeticOpTable.IntegerConvertOp.SignExtend;
 import org.graalvm.compiler.core.common.type.IntegerStamp;
 import org.graalvm.compiler.core.common.type.PrimitiveStamp;
+import org.graalvm.compiler.core.common.type.Stamp;
 import org.graalvm.compiler.graph.NodeClass;
 import org.graalvm.compiler.graph.spi.CanonicalizerTool;
 import org.graalvm.compiler.lir.gen.ArithmeticLIRGeneratorTool;
@@ -75,7 +77,30 @@ public final class NarrowNode extends IntegerConvertNode<Narrow, SignExtend> {
 
     @Override
     public boolean isLossless() {
+        return checkLossless(this.getResultBits());
+    }
+
+    private boolean checkLossless(int bits) {
+        Stamp valueStamp = this.getValue().stamp(NodeView.DEFAULT);
+        if (bits > 0 && valueStamp instanceof IntegerStamp) {
+            IntegerStamp integerStamp = (IntegerStamp) valueStamp;
+            long valueUpMask = integerStamp.upMask();
+            if ((valueUpMask & CodeUtil.mask(bits)) == valueUpMask) {
+                return true;
+            }
+        }
         return false;
+    }
+
+    @Override
+    public boolean preservesOrder(CanonicalCondition cond) {
+        switch (cond) {
+            case LT:
+                // Must guarantee that also sign bit does not flip.
+                return checkLossless(this.getResultBits() - 1);
+            default:
+                return checkLossless(this.getResultBits());
+        }
     }
 
     @Override

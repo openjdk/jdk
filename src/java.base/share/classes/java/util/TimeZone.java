@@ -48,44 +48,44 @@ import sun.util.calendar.ZoneInfoFile;
 import sun.util.locale.provider.TimeZoneNameUtility;
 
 /**
- * <code>TimeZone</code> represents a time zone offset, and also figures out daylight
+ * {@code TimeZone} represents a time zone offset, and also figures out daylight
  * savings.
  *
  * <p>
- * Typically, you get a <code>TimeZone</code> using <code>getDefault</code>
- * which creates a <code>TimeZone</code> based on the time zone where the program
- * is running. For example, for a program running in Japan, <code>getDefault</code>
- * creates a <code>TimeZone</code> object based on Japanese Standard Time.
+ * Typically, you get a {@code TimeZone} using {@code getDefault}
+ * which creates a {@code TimeZone} based on the time zone where the program
+ * is running. For example, for a program running in Japan, {@code getDefault}
+ * creates a {@code TimeZone} object based on Japanese Standard Time.
  *
  * <p>
- * You can also get a <code>TimeZone</code> using <code>getTimeZone</code>
+ * You can also get a {@code TimeZone} using {@code getTimeZone}
  * along with a time zone ID. For instance, the time zone ID for the
  * U.S. Pacific Time zone is "America/Los_Angeles". So, you can get a
- * U.S. Pacific Time <code>TimeZone</code> object with:
+ * U.S. Pacific Time {@code TimeZone} object with:
  * <blockquote><pre>
  * TimeZone tz = TimeZone.getTimeZone("America/Los_Angeles");
  * </pre></blockquote>
- * You can use the <code>getAvailableIDs</code> method to iterate through
+ * You can use the {@code getAvailableIDs} method to iterate through
  * all the supported time zone IDs. You can then choose a
- * supported ID to get a <code>TimeZone</code>.
+ * supported ID to get a {@code TimeZone}.
  * If the time zone you want is not represented by one of the
  * supported IDs, then a custom time zone ID can be specified to
  * produce a TimeZone. The syntax of a custom time zone ID is:
  *
  * <blockquote><pre>
  * <a id="CustomID"><i>CustomID:</i></a>
- *         <code>GMT</code> <i>Sign</i> <i>Hours</i> <code>:</code> <i>Minutes</i>
- *         <code>GMT</code> <i>Sign</i> <i>Hours</i> <i>Minutes</i>
- *         <code>GMT</code> <i>Sign</i> <i>Hours</i>
+ *         {@code GMT} <i>Sign</i> <i>Hours</i> {@code :} <i>Minutes</i>
+ *         {@code GMT} <i>Sign</i> <i>Hours</i> <i>Minutes</i>
+ *         {@code GMT} <i>Sign</i> <i>Hours</i>
  * <i>Sign:</i> one of
- *         <code>+ -</code>
+ *         {@code + -}
  * <i>Hours:</i>
  *         <i>Digit</i>
  *         <i>Digit</i> <i>Digit</i>
  * <i>Minutes:</i>
  *         <i>Digit</i> <i>Digit</i>
  * <i>Digit:</i> one of
- *         <code>0 1 2 3 4 5 6 7 8 9</code>
+ *         {@code 0 1 2 3 4 5 6 7 8 9}
  * </pre></blockquote>
  *
  * <i>Hours</i> must be between 0 to 23 and <i>Minutes</i> must be
@@ -95,22 +95,22 @@ import sun.util.locale.provider.TimeZoneNameUtility;
  * The format is locale independent and digits must be taken from the
  * Basic Latin block of the Unicode standard. No daylight saving time
  * transition schedule can be specified with a custom time zone ID. If
- * the specified string doesn't match the syntax, <code>"GMT"</code>
+ * the specified string doesn't match the syntax, {@code "GMT"}
  * is used.
  * <p>
- * When creating a <code>TimeZone</code>, the specified custom time
+ * When creating a {@code TimeZone}, the specified custom time
  * zone ID is normalized in the following syntax:
  * <blockquote><pre>
  * <a id="NormalizedCustomID"><i>NormalizedCustomID:</i></a>
- *         <code>GMT</code> <i>Sign</i> <i>TwoDigitHours</i> <code>:</code> <i>Minutes</i>
+ *         {@code GMT} <i>Sign</i> <i>TwoDigitHours</i> {@code :} <i>Minutes</i>
  * <i>Sign:</i> one of
- *         <code>+ -</code>
+ *         {@code + -}
  * <i>TwoDigitHours:</i>
  *         <i>Digit</i> <i>Digit</i>
  * <i>Minutes:</i>
  *         <i>Digit</i> <i>Digit</i>
  * <i>Digit:</i> one of
- *         <code>0 1 2 3 4 5 6 7 8 9</code>
+ *         {@code 0 1 2 3 4 5 6 7 8 9}
  * </pre></blockquote>
  * For example, TimeZone.getTimeZone("GMT-8").getID() returns "GMT-08:00".
  *
@@ -139,7 +139,7 @@ public abstract class TimeZone implements Serializable, Cloneable {
     }
 
     /**
-     * A style specifier for <code>getDisplayName()</code> indicating
+     * A style specifier for {@code getDisplayName()} indicating
      * a short name, such as "PST."
      * @see #LONG
      * @since 1.2
@@ -147,7 +147,7 @@ public abstract class TimeZone implements Serializable, Cloneable {
     public static final int SHORT = 0;
 
     /**
-     * A style specifier for <code>getDisplayName()</code> indicating
+     * A style specifier for {@code getDisplayName()} indicating
      * a long name, such as "Pacific Standard Time."
      * @see #SHORT
      * @since 1.2
@@ -168,7 +168,7 @@ public abstract class TimeZone implements Serializable, Cloneable {
      * daylight savings. This is the offset to add to UTC to get local time.
      * <p>
      * This method returns a historically correct offset if an
-     * underlying <code>TimeZone</code> implementation subclass
+     * underlying {@code TimeZone} implementation subclass
      * supports historical Daylight Saving Time schedule and GMT
      * offset changes.
      *
@@ -246,7 +246,7 @@ public abstract class TimeZone implements Serializable, Cloneable {
      * Sets the base time zone offset to GMT.
      * This is the offset to add to UTC to get local time.
      * <p>
-     * If an underlying <code>TimeZone</code> implementation subclass
+     * If an underlying {@code TimeZone} implementation subclass
      * supports historical GMT offset changes, the specified GMT
      * offset is set as the latest GMT offset and the difference from
      * the known latest GMT offset value is used to adjust all
@@ -262,7 +262,7 @@ public abstract class TimeZone implements Serializable, Cloneable {
      * affected by daylight saving time, it is called <I>raw
      * offset</I>.
      * <p>
-     * If an underlying <code>TimeZone</code> implementation subclass
+     * If an underlying {@code TimeZone} implementation subclass
      * supports historical GMT offset changes, the method returns the
      * raw offset value of the current date. In Honolulu, for example,
      * its raw offset changed from GMT-10:30 to GMT-10:00 in 1947, and
@@ -376,10 +376,10 @@ public abstract class TimeZone implements Serializable, Cloneable {
      *
      * <p>When looking up a time zone name, the {@linkplain
      * ResourceBundle.Control#getCandidateLocales(String,Locale) default
-     * <code>Locale</code> search path of <code>ResourceBundle</code>} derived
+     * {@code Locale} search path of {@code ResourceBundle}} derived
      * from the specified {@code locale} is used. (No {@linkplain
      * ResourceBundle.Control#getFallbackLocale(String,Locale) fallback
-     * <code>Locale</code>} search is performed.) If a time zone name in any
+     * {@code Locale}} search is performed.) If a time zone name in any
      * {@code Locale} of the search path, including {@link Locale#ROOT}, is
      * found, the name is returned. Otherwise, a string in the
      * <a href="#NormalizedCustomID">normalized custom ID format</a> is returned.
@@ -504,14 +504,14 @@ public abstract class TimeZone implements Serializable, Cloneable {
     public abstract boolean inDaylightTime(Date date);
 
     /**
-     * Gets the <code>TimeZone</code> for the given ID.
+     * Gets the {@code TimeZone} for the given ID.
      *
-     * @param ID the ID for a <code>TimeZone</code>, either an abbreviation
+     * @param ID the ID for a {@code TimeZone}, either an abbreviation
      * such as "PST", a full name such as "America/Los_Angeles", or a custom
      * ID such as "GMT-8:00". Note that the support of abbreviations is
      * for JDK 1.1.x compatibility only and full names should be used.
      *
-     * @return the specified <code>TimeZone</code>, or the GMT zone if the given ID
+     * @return the specified {@code TimeZone}, or the GMT zone if the given ID
      * cannot be understood.
      */
     public static synchronized TimeZone getTimeZone(String ID) {
@@ -733,7 +733,7 @@ public abstract class TimeZone implements Serializable, Cloneable {
      * Returns true if this zone has the same rule and offset as another zone.
      * That is, if this zone differs only in ID, if at all.  Returns false
      * if the other zone is null.
-     * @param other the <code>TimeZone</code> object to be compared with
+     * @param other the {@code TimeZone} object to be compared with
      * @return true if the other zone is not null and is the same as this one,
      * with the possible exception of the ID
      * @since 1.2
@@ -744,9 +744,9 @@ public abstract class TimeZone implements Serializable, Cloneable {
     }
 
     /**
-     * Creates a copy of this <code>TimeZone</code>.
+     * Creates a copy of this {@code TimeZone}.
      *
-     * @return a clone of this <code>TimeZone</code>
+     * @return a clone of this {@code TimeZone}
      */
     public Object clone()
     {
@@ -765,10 +765,10 @@ public abstract class TimeZone implements Serializable, Cloneable {
     // =======================privates===============================
 
     /**
-     * The string identifier of this <code>TimeZone</code>.  This is a
-     * programmatic identifier used internally to look up <code>TimeZone</code>
+     * The string identifier of this {@code TimeZone}.  This is a
+     * programmatic identifier used internally to look up {@code TimeZone}
      * objects from the system table and also to map them to their localized
-     * display names.  <code>ID</code> values are unique in the system
+     * display names.  {@code ID} values are unique in the system
      * table but may not be for dynamically created zones.
      * @serial
      */

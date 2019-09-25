@@ -25,33 +25,12 @@
 
 package sun.tools.common;
 
-import java.lang.reflect.Method;
-
 /**
  * A helper class to retrieve the main class name for a running
- * Java process.
+ * Java process. Default implementation returns null. Platform specific
+ * implementation currently available for Linux only.
  */
-
-public interface ProcessHelper {
-
-    /**
-     * Returns an instance of the ProcessHelper class.
-     *
-     * @return ProcessHelper object or null if not supported on this platform.
-     */
-    public static ProcessHelper platformProcessHelper() {
-        try {
-            Class<?> c = Class.forName("sun.tools.ProcessHelper");
-            @SuppressWarnings("unchecked")
-            Method m = c.getMethod("getInstance");
-            return (ProcessHelper) m.invoke(null);
-        } catch (ClassNotFoundException e) {
-            return null;
-        } catch (ReflectiveOperationException e) {
-            throw new InternalError(e);
-        }
-    }
-
+final class ProcessHelper {
 
     /**
      * Returns the main class name for the given Java process
@@ -59,6 +38,7 @@ public interface ProcessHelper {
      * @param pid - process ID (pid)
      * @return main class name or null if the main class could not be retrieved
      */
-
-    String getMainClass(String pid);
+    static String getMainClass(String pid) {
+        return null;
+    }
 }

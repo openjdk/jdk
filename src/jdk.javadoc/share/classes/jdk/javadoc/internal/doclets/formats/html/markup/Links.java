@@ -312,7 +312,7 @@ public class Links {
      * @return a valid HTML name
      */
     public String getName(String name) {
-        return name.replaceAll(" +", "");
+        return name.replaceAll("\\s+", "");
     }
 
 }

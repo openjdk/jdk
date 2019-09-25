@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -73,6 +73,15 @@ public class Launcher {
         launch(className, null, null, socks[0].fd());
         socks[0].close();
         return socks[1];
+    }
+
+    /**
+     * Launch specified class with an AF_UNIX socket created externally, and one String arg to child VM
+     */
+    public static void launchWithUnixDomainSocket(String className, UnixDomainSocket socket, String arg) throws IOException {
+        String[] args = new String[1];
+        args[0] = arg;
+        launch(className, null, args, socket.fd());
     }
 
     /*

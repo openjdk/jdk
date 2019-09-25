@@ -60,7 +60,7 @@ public class ZeroMemoryNode extends FixedAccessNode implements LIRLowerable {
 
     @Override
     public void generate(NodeLIRBuilderTool gen) {
-        gen.getLIRGeneratorTool().getArithmetic().emitZeroMemory(gen.operand(getAddress()), gen.operand(length));
+        gen.getLIRGeneratorTool().emitZeroMemory(gen.operand(getAddress()), gen.operand(length));
     }
 
     @Override

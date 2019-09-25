@@ -35,7 +35,7 @@ public interface SparcLoweringProviderMixin extends LoweringProvider {
     }
 
     @Override
-    default boolean supportBulkZeroing() {
-        return false;
+    default int bulkZeroingStride() {
+        return 0;
     }
 }

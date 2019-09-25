@@ -729,7 +729,7 @@ void ciTypeFlow::StateVector::do_ldc(ciBytecodeStream* str) {
     outer()->record_failure("ldc did not link");
     return;
   }
-  if (basic_type == T_OBJECT || basic_type == T_ARRAY) {
+  if (is_reference_type(basic_type)) {
     ciObject* obj = con.as_object();
     if (obj->is_null_object()) {
       push_null();

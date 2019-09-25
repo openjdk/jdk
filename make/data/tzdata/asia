@@ -31,7 +31,7 @@
 # tz@iana.org for general use in the future).  For more, please see
 # the file CONTRIBUTING in the tz distribution.
 
-# From Paul Eggert (2018-06-19):
+# From Paul Eggert (2019-07-11):
 #
 # Unless otherwise specified, the source for data through 1990 is:
 # Thomas G. Shanks and Rique Pottenger, The International Atlas (6th edition),
@@ -70,13 +70,13 @@
 #	7:00 WIB	west Indonesia (Waktu Indonesia Barat)
 #	8:00 WITA	central Indonesia (Waktu Indonesia Tengah)
 #	8:00 CST	China
-#	8:00 PST  PDT*	Philippine Standard Time
+#	8:00 HKT  HKST	Hong Kong (HKWT* for Winter Time in late 1941)
+#	8:00 PST  PDT*	Philippines
 #	8:30 KST  KDT	Korea when at +0830
 #	9:00 WIT	east Indonesia (Waktu Indonesia Timur)
 #	9:00 JST  JDT	Japan
 #	9:00 KST  KDT	Korea when at +09
-#	9:30 ACST	Australian Central Standard Time
-# *I invented the abbreviation PDT; see "Philippines" below.
+# *I invented the abbreviations HKWT and PDT; see below.
 # Otherwise, these tables typically use numeric abbreviations like +03
 # and +0330 for integer hour and minute UT offsets.  Although earlier
 # editions invented alphabetic time zone abbreviations for every
@@ -676,6 +676,15 @@ Zone	Asia/Urumqi	5:50:20	-	LMT	1928
 # * 1941-09-30, Hong Kong Daily Press, Winter Time Warning.
 #   https://i.imgur.com/dge4kFJ.png
 
+# From Paul Eggert (2019-07-11):
+# "Hong Kong winter time" is considered to be daylight saving.
+# "Hong Kong had adopted daylight saving on June 15 as a wartime measure,
+# clocks moving forward one hour until October 1, when they would be put back
+# by just half an hour for 'Hong Kong Winter time', so that daylight saving
+# operated year round." -- Low Z. The longest day: when wartime Hong Kong
+# introduced daylight saving. South China Morning Post. 2019-06-28.
+# https://www.scmp.com/magazines/post-magazine/short-reads/article/3016281/longest-day-when-wartime-hong-kong-introduced
+
 # From P Chan (2018-12-31):
 # * According to the Hong Kong Daylight-Saving Regulations, 1941, the
 #   1941 spring-forward transition was at 03:00.
@@ -777,7 +786,7 @@ Rule	HK	1979	only	-	Oct	21	3:30	0	-
 Zone	Asia/Hong_Kong	7:36:42 -	LMT	1904 Oct 30  0:36:42
 			8:00	-	HKT	1941 Jun 15  3:00
 			8:00	1:00	HKST	1941 Oct  1  4:00
-			8:30	-	HKT	1941 Dec 25
+			8:00	0:30	HKWT	1941 Dec 25
 			9:00	-	JST	1945 Nov 18  2:00
 			8:00	HK	HK%sT
 
@@ -2442,7 +2451,7 @@ Rule	ROK	1987	1988	-	Oct	Sun>=8	 3:00	0	S
 Zone	Asia/Seoul	8:27:52	-	LMT	1908 Apr  1
 			8:30	-	KST	1912 Jan  1
 			9:00	-	JST	1945 Sep  8
-			9:00	-	KST	1954 Mar 21
+			9:00	ROK	K%sT	1954 Mar 21
 			8:30	ROK	K%sT	1961 Aug 10
 			9:00	ROK	K%sT
 Zone	Asia/Pyongyang	8:23:00 -	LMT	1908 Apr  1
@@ -3627,7 +3636,7 @@ Zone	Asia/Tashkent	4:37:11 -	LMT	1924 May  2
 # and in South Vietnam in particular (after 1954):
 # To 07:00 on 1911-05-01.
 # To 08:00 on 1942-12-31 at 23:00.
-# To 09:00 in 1945-03-14 at 23:00.
+# To 09:00 on 1945-03-14 at 23:00.
 # To 07:00 on 1945-09-02 in Vietnam.
 # To 08:00 on 1947-04-01 in French-controlled Indochina.
 # To 07:00 on 1955-07-01 in South Vietnam.

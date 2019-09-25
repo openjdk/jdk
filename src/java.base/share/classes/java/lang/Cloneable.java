@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1995, 2004, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1995, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,14 +26,14 @@
 package java.lang;
 
 /**
- * A class implements the <code>Cloneable</code> interface to
+ * A class implements the {@code Cloneable} interface to
  * indicate to the {@link java.lang.Object#clone()} method that it
  * is legal for that method to make a
  * field-for-field copy of instances of that class.
  * <p>
  * Invoking Object's clone method on an instance that does not implement the
- * <code>Cloneable</code> interface results in the exception
- * <code>CloneNotSupportedException</code> being thrown.
+ * {@code Cloneable} interface results in the exception
+ * {@code CloneNotSupportedException} being thrown.
  * <p>
  * By convention, classes that implement this interface should override
  * {@code Object.clone} (which is protected) with a public method.

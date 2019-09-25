@@ -322,9 +322,6 @@ class Arguments : AllStatic {
   // java launcher
   static const char* _sun_java_launcher;
 
-  // sun.java.launcher.pid, private property
-  static int    _sun_java_launcher_pid;
-
   // was this VM created via the -XXaltjvm=<path> option
   static bool   _sun_java_launcher_is_altjvm;
 
@@ -548,8 +545,6 @@ class Arguments : AllStatic {
   static bool created_by_java_launcher();
   // -Dsun.java.launcher.is_altjvm
   static bool sun_java_launcher_is_altjvm();
-  // -Dsun.java.launcher.pid
-  static int sun_java_launcher_pid()        { return _sun_java_launcher_pid; }
 
   // -Xrun
   static AgentLibrary* libraries()          { return _libraryList.first(); }

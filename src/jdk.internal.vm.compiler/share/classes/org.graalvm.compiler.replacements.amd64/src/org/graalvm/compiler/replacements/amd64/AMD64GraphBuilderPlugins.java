@@ -54,6 +54,7 @@ import org.graalvm.compiler.replacements.LongSubstitutions;
 import org.graalvm.compiler.replacements.StandardGraphBuilderPlugins.UnsafeAccessPlugin;
 import org.graalvm.compiler.replacements.StandardGraphBuilderPlugins.UnsafeGetPlugin;
 import org.graalvm.compiler.replacements.StandardGraphBuilderPlugins.UnsafePutPlugin;
+import org.graalvm.compiler.replacements.TargetGraphBuilderPlugins;
 import org.graalvm.compiler.replacements.nodes.BinaryMathIntrinsicNode;
 import org.graalvm.compiler.replacements.nodes.BinaryMathIntrinsicNode.BinaryOperation;
 import org.graalvm.compiler.replacements.nodes.BitCountNode;
@@ -64,11 +65,17 @@ import org.graalvm.compiler.serviceprovider.JavaVersionUtil;
 
 import jdk.vm.ci.amd64.AMD64;
 import jdk.vm.ci.amd64.AMD64.CPUFeature;
+import jdk.vm.ci.code.Architecture;
 import jdk.vm.ci.meta.JavaKind;
 import jdk.vm.ci.meta.ResolvedJavaMethod;
 import sun.misc.Unsafe;
 
-public class AMD64GraphBuilderPlugins {
+public class AMD64GraphBuilderPlugins implements TargetGraphBuilderPlugins {
+    @Override
+    public void register(Plugins plugins, BytecodeProvider replacementsBytecodeProvider, Architecture architecture, boolean explicitUnsafeNullChecks,
+                    boolean registerMathPlugins, boolean emitJDK9StringSubstitutions, boolean useFMAIntrinsics) {
+        register(plugins, replacementsBytecodeProvider, (AMD64) architecture, explicitUnsafeNullChecks, emitJDK9StringSubstitutions, useFMAIntrinsics);
+    }
 
     public static void register(Plugins plugins, BytecodeProvider replacementsBytecodeProvider, AMD64 arch, boolean explicitUnsafeNullChecks, boolean emitJDK9StringSubstitutions,
                     boolean useFMAIntrinsics) {

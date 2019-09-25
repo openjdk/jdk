@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2019, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2017, Red Hat Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -69,7 +69,7 @@ public class AddressLoweringByUsePhase extends Phase {
             AddressNode lowered;
             if (node instanceof ReadNode) {
                 ReadNode readNode = (ReadNode) node;
-                Stamp stamp = readNode.stamp(NodeView.DEFAULT);
+                Stamp stamp = readNode.getAccessStamp();
                 address = readNode.getAddress();
                 lowered = lowering.lower(readNode, stamp, address);
             } else if (node instanceof JavaReadNode) {
@@ -79,12 +79,12 @@ public class AddressLoweringByUsePhase extends Phase {
                 lowered = lowering.lower(javaReadNode, stamp, address);
             } else if (node instanceof FloatingReadNode) {
                 FloatingReadNode floatingReadNode = (FloatingReadNode) node;
-                Stamp stamp = floatingReadNode.stamp(NodeView.DEFAULT);
+                Stamp stamp = floatingReadNode.getAccessStamp();
                 address = floatingReadNode.getAddress();
                 lowered = lowering.lower(floatingReadNode, stamp, address);
             } else if (node instanceof AbstractWriteNode) {
                 AbstractWriteNode abstractWriteNode = (AbstractWriteNode) node;
-                Stamp stamp = abstractWriteNode.value().stamp(NodeView.DEFAULT);
+                Stamp stamp = abstractWriteNode.getAccessStamp();
                 address = abstractWriteNode.getAddress();
                 lowered = lowering.lower(abstractWriteNode, stamp, address);
             } else if (node instanceof PrefetchAllocateNode) {

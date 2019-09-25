@@ -1224,9 +1224,6 @@ char* os::format_boot_path(const char* format_string,
     }
 
     char* formatted_path = NEW_C_HEAP_ARRAY(char, formatted_path_len + 1, mtInternal);
-    if (formatted_path == NULL) {
-        return NULL;
-    }
 
     // Create boot classpath from format, substituting separator chars and
     // java home directory.
@@ -1330,9 +1327,6 @@ char** os::split_path(const char* path, size_t* elements, size_t file_name_lengt
   }
   const char psepchar = *os::path_separator();
   char* inpath = NEW_C_HEAP_ARRAY(char, strlen(path) + 1, mtInternal);
-  if (inpath == NULL) {
-    return NULL;
-  }
   strcpy(inpath, path);
   size_t count = 1;
   char* p = strchr(inpath, psepchar);
@@ -1357,13 +1351,7 @@ char** os::split_path(const char* path, size_t* elements, size_t file_name_lengt
                                     "sun.boot.library.path, to identify potential sources for this path.");
     }
     // allocate the string and add terminator storage
-    char* s  = NEW_C_HEAP_ARRAY_RETURN_NULL(char, len + 1, mtInternal);
-
-    if (s == NULL) {
-      // release allocated storage before returning null
-      free_array_of_char_arrays(opath, i++);
-      return NULL;
-    }
+    char* s = NEW_C_HEAP_ARRAY(char, len + 1, mtInternal);
     strncpy(s, p, len);
     s[len] = '\0';
     opath[i] = s;

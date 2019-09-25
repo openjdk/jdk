@@ -57,7 +57,7 @@ public abstract class TimeZoneNameProvider extends LocaleServiceProvider {
      * "tzdata", and the specification of the data format is part of the zic.8
      * man page, which is contained in a file whose name starts with "tzcode".
      * <p>
-     * If <code>daylight</code> is true, the method should return a name
+     * If {@code daylight} is true, the method should return a name
      * appropriate for daylight saving time even if the specified time zone
      * has not observed daylight saving time in the past.
      *
@@ -68,11 +68,11 @@ public abstract class TimeZoneNameProvider extends LocaleServiceProvider {
      * @param locale the desired locale
      * @return the human-readable name of the given time zone in the
      *     given locale, or null if it's not available.
-     * @throws    IllegalArgumentException if <code>style</code> is invalid,
-     *     or <code>locale</code> isn't one of the locales returned from
+     * @throws    IllegalArgumentException if {@code style} is invalid,
+     *     or {@code locale} isn't one of the locales returned from
      *     {@link java.util.spi.LocaleServiceProvider#getAvailableLocales()
      *     getAvailableLocales()}.
-     * @throws    NullPointerException if <code>ID</code> or <code>locale</code>
+     * @throws    NullPointerException if {@code ID} or {@code locale}
      *     is null
      * @see java.util.TimeZone#getDisplayName(boolean, int, java.util.Locale)
      */
@@ -96,11 +96,11 @@ public abstract class TimeZoneNameProvider extends LocaleServiceProvider {
      * @param locale the desired locale
      * @return the human-readable generic name of the given time zone in the
      *     given locale, or {@code null} if it's not available.
-     * @throws    IllegalArgumentException if <code>style</code> is invalid,
-     *     or <code>locale</code> isn't one of the locales returned from
+     * @throws    IllegalArgumentException if {@code style} is invalid,
+     *     or {@code locale} isn't one of the locales returned from
      *     {@link LocaleServiceProvider#getAvailableLocales()
      *     getAvailableLocales()}.
-     * @throws    NullPointerException if <code>ID</code> or <code>locale</code>
+     * @throws    NullPointerException if {@code ID} or {@code locale}
      *     is {@code null}
      * @since 1.8
      */

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -86,7 +86,7 @@ public class FrameStateAssignmentPhase extends Phase {
 
             if (node instanceof DeoptimizingNode.DeoptDuring) {
                 DeoptimizingNode.DeoptDuring deopt = (DeoptimizingNode.DeoptDuring) node;
-                if (deopt.canDeoptimize()) {
+                if (deopt.canDeoptimize() && deopt.stateDuring() == null) {
                     GraalError.guarantee(currentState != null, "no FrameState at DeoptimizingNode %s", deopt);
                     deopt.computeStateDuring(currentState);
                 }

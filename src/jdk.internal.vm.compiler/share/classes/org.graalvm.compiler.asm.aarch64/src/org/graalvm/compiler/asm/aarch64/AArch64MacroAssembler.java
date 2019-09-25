@@ -1706,6 +1706,9 @@ public class AArch64MacroAssembler extends AArch64Assembler {
                 Register reg = AArch64.cpuRegisters.get(regEncoding);
                 // 1 => 64; 0 => 32
                 int size = sizeEncoding * 32 + 32;
+                if (!NumUtil.isSignedNbit(21, branchOffset)) {
+                    throw new BranchTargetOutOfBoundsException(true, "Branch target %d out of bounds", branchOffset);
+                }
                 switch (type) {
                     case BRANCH_NONZERO:
                         super.cbnz(size, reg, branchOffset, branch);

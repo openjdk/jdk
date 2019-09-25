@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -868,7 +868,7 @@ void NullCheckEliminator::handle_AccessField(AccessField* x) {
       if (field->is_constant()) {
         ciConstant field_val = field->constant_value();
         BasicType field_type = field_val.basic_type();
-        if (field_type == T_OBJECT || field_type == T_ARRAY) {
+        if (is_reference_type(field_type)) {
           ciObject* obj_val = field_val.as_object();
           if (!obj_val->is_null_object()) {
             if (PrintNullCheckElimination) {

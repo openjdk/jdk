@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,21 +30,28 @@ import static jdk.vm.ci.common.InitTimer.timer;
 
 import java.util.Collections;
 
+import org.graalvm.compiler.core.common.CompilationIdentifier;
 import org.graalvm.compiler.core.common.NumUtil;
+import org.graalvm.compiler.core.common.alloc.RegisterAllocationConfig;
 import org.graalvm.compiler.core.common.spi.ForeignCallDescriptor;
+import org.graalvm.compiler.core.gen.LIRGenerationProvider;
 import org.graalvm.compiler.debug.DebugHandlersFactory;
 import org.graalvm.compiler.hotspot.meta.HotSpotHostForeignCallsProvider;
 import org.graalvm.compiler.hotspot.meta.HotSpotLoweringProvider;
 import org.graalvm.compiler.hotspot.meta.HotSpotProviders;
 import org.graalvm.compiler.hotspot.stubs.Stub;
+import org.graalvm.compiler.lir.LIR;
 import org.graalvm.compiler.lir.asm.CompilationResultBuilder;
+import org.graalvm.compiler.lir.framemap.FrameMapBuilder;
 import org.graalvm.compiler.lir.framemap.ReferenceMapBuilder;
+import org.graalvm.compiler.lir.gen.LIRGenerationResult;
 import org.graalvm.compiler.nodes.StructuredGraph;
 import org.graalvm.compiler.options.OptionValues;
 import org.graalvm.compiler.printer.GraalDebugHandlersFactory;
 import org.graalvm.compiler.word.Word;
 
 import jdk.vm.ci.code.CallingConvention;
+import jdk.vm.ci.code.RegisterConfig;
 import jdk.vm.ci.common.InitTimer;
 import jdk.vm.ci.hotspot.HotSpotCallingConventionType;
 import jdk.vm.ci.hotspot.HotSpotJVMCIRuntime;
@@ -55,7 +62,7 @@ import jdk.vm.ci.runtime.JVMCICompiler;
 /**
  * Common functionality of HotSpot host backends.
  */
-public abstract class HotSpotHostBackend extends HotSpotBackend {
+public abstract class HotSpotHostBackend extends HotSpotBackend implements LIRGenerationProvider {
 
     /**
      * Descriptor for {@code SharedRuntime::deopt_blob()->unpack()}.
@@ -155,4 +162,12 @@ public abstract class HotSpotHostBackend extends HotSpotBackend {
         return new HotSpotReferenceMapBuilder(totalFrameSize, config.maxOopMapStackOffset, uncompressedReferenceSize);
     }
 
+    @Override
+    public LIRGenerationResult newLIRGenerationResult(CompilationIdentifier compilationId, LIR lir, RegisterAllocationConfig registerAllocationConfig, StructuredGraph graph, Object stub) {
+        return new HotSpotLIRGenerationResult(compilationId, lir, newFrameMapBuilder(registerAllocationConfig.getRegisterConfig()), registerAllocationConfig, makeCallingConvention(graph, (Stub) stub),
+                        stub,
+                        config.requiresReservedStackCheck(graph.getMethods()));
+    }
+
+    protected abstract FrameMapBuilder newFrameMapBuilder(RegisterConfig registerConfig);
 }

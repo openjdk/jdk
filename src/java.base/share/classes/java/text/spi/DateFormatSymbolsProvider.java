@@ -46,16 +46,16 @@ public abstract class DateFormatSymbolsProvider extends LocaleServiceProvider {
     }
 
     /**
-     * Returns a new <code>DateFormatSymbols</code> instance for the
+     * Returns a new {@code DateFormatSymbols} instance for the
      * specified locale.
      *
      * @param locale the desired locale
-     * @throws    NullPointerException if <code>locale</code> is null
-     * @throws    IllegalArgumentException if <code>locale</code> isn't
+     * @throws    NullPointerException if {@code locale} is null
+     * @throws    IllegalArgumentException if {@code locale} isn't
      *     one of the locales returned from
      *     {@link java.util.spi.LocaleServiceProvider#getAvailableLocales()
      *     getAvailableLocales()}.
-     * @return a <code>DateFormatSymbols</code> instance.
+     * @return a {@code DateFormatSymbols} instance.
      * @see java.text.DateFormatSymbols#getInstance(java.util.Locale)
      */
     public abstract DateFormatSymbols getInstance(Locale locale);

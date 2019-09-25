@@ -54,10 +54,10 @@ import sun.security.util.SecurityConstants;
  *
  * <DL>
  *    <DT> read
- *    <DD> read permission. Allows <code>System.getProperty</code> to
+ *    <DD> read permission. Allows {@code System.getProperty} to
  *         be called.
  *    <DT> write
- *    <DD> write permission. Allows <code>System.setProperty</code> to
+ *    <DD> write permission. Allows {@code System.setProperty} to
  *         be called.
  * </DL>
  * <P>
@@ -149,9 +149,9 @@ public final class PropertyPermission extends BasicPermission {
      * @param name the name of the PropertyPermission.
      * @param actions the actions string.
      *
-     * @throws NullPointerException if <code>name</code> is <code>null</code>.
-     * @throws IllegalArgumentException if <code>name</code> is empty or if
-     * <code>actions</code> is invalid.
+     * @throws NullPointerException if {@code name} is {@code null}.
+     * @throws IllegalArgumentException if {@code name} is empty or if
+     * {@code actions} is invalid.
      */
     public PropertyPermission(String name, String actions) {
         super(name,actions);
@@ -223,7 +223,7 @@ public final class PropertyPermission extends BasicPermission {
     /**
      * Returns the hash code value for this object.
      * The hash code used is the hash code of this permissions name, that is,
-     * <code>getName().hashCode()</code>, where <code>getName</code> is
+     * {@code getName().hashCode()}, where {@code getName} is
      * from the Permission superclass.
      *
      * @return a hash code value for this object.
@@ -350,7 +350,7 @@ public final class PropertyPermission extends BasicPermission {
      * Returns the "canonical string representation" of the actions.
      * That is, this method always returns present actions in the following order:
      * read, write. For example, if this PropertyPermission object
-     * allows both write and read actions, a call to <code>getActions</code>
+     * allows both write and read actions, a call to {@code getActions}
      * will return the string "read,write".
      *
      * @return the canonical string representation of the actions.

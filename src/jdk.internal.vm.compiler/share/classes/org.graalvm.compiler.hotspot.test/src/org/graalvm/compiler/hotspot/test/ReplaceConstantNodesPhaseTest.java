@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,7 +26,7 @@ package org.graalvm.compiler.hotspot.test;
 
 import org.graalvm.compiler.core.common.GraalOptions;
 import org.graalvm.compiler.hotspot.GraalHotSpotVMConfig;
-import org.graalvm.compiler.hotspot.meta.HotSpotClassInitializationPlugin;
+import org.graalvm.compiler.hotspot.meta.HotSpotAOTClassInitializationPlugin;
 import org.graalvm.compiler.hotspot.nodes.aot.InitializeKlassNode;
 import org.graalvm.compiler.hotspot.nodes.aot.LoadConstantIndirectlyNode;
 import org.graalvm.compiler.hotspot.nodes.aot.ResolveConstantNode;
@@ -50,7 +50,7 @@ public class ReplaceConstantNodesPhaseTest extends HotSpotGraalCompilerTest {
     @Override
     protected Plugins getDefaultGraphBuilderPlugins() {
         Plugins plugins = super.getDefaultGraphBuilderPlugins();
-        plugins.setClassInitializationPlugin(new HotSpotClassInitializationPlugin());
+        plugins.setClassInitializationPlugin(new HotSpotAOTClassInitializationPlugin());
         return plugins;
     }
 

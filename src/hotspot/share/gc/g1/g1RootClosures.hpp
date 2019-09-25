@@ -49,13 +49,6 @@ public:
 
 class G1EvacuationRootClosures : public G1RootClosures {
 public:
-  // Applied to the weakly reachable CLDs when all strongly reachable
-  // CLDs are guaranteed to have been processed.
-  virtual CLDClosure* second_pass_weak_clds() = 0;
-
-  // Get a raw oop closure for processing oops, bypassing the flushing above.
-  virtual OopClosure* raw_strong_oops() = 0;
-
   // Applied to code blobs treated as weak roots.
   virtual CodeBlobClosure* weak_codeblobs() = 0;
 

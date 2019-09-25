@@ -669,7 +669,7 @@ void VMThread::execute(VM_Operation* op) {
     bool concurrent = op->evaluate_concurrently();
     // only blocking VM operations need to verify the caller's safepoint state:
     if (!concurrent) {
-      t->check_for_valid_safepoint_state(true);
+      t->check_for_valid_safepoint_state();
     }
 
     // New request from Java thread, evaluate prologue

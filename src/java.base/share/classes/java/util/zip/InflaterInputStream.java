@@ -124,18 +124,18 @@ class InflaterInputStream extends FilterInputStream {
     }
 
     /**
-     * Reads uncompressed data into an array of bytes. If <code>len</code> is not
+     * Reads uncompressed data into an array of bytes. If {@code len} is not
      * zero, the method will block until some input can be decompressed; otherwise,
-     * no bytes are read and <code>0</code> is returned.
+     * no bytes are read and {@code 0} is returned.
      * @param b the buffer into which the data is read
-     * @param off the start offset in the destination array <code>b</code>
+     * @param off the start offset in the destination array {@code b}
      * @param len the maximum number of bytes read
      * @return the actual number of bytes read, or -1 if the end of the
      *         compressed input is reached or a preset dictionary is needed
-     * @throws     NullPointerException If <code>b</code> is <code>null</code>.
-     * @throws     IndexOutOfBoundsException If <code>off</code> is negative,
-     * <code>len</code> is negative, or <code>len</code> is greater than
-     * <code>b.length - off</code>
+     * @throws     NullPointerException If {@code b} is {@code null}.
+     * @throws     IndexOutOfBoundsException If {@code off} is negative,
+     * {@code len} is negative, or {@code len} is greater than
+     * {@code b.length - off}
      * @throws    ZipException if a ZIP format error has occurred
      * @throws    IOException if an I/O error has occurred
      */
@@ -248,13 +248,13 @@ class InflaterInputStream extends FilterInputStream {
     }
 
     /**
-     * Tests if this input stream supports the <code>mark</code> and
-     * <code>reset</code> methods. The <code>markSupported</code>
-     * method of <code>InflaterInputStream</code> returns
-     * <code>false</code>.
+     * Tests if this input stream supports the {@code mark} and
+     * {@code reset} methods. The {@code markSupported}
+     * method of {@code InflaterInputStream} returns
+     * {@code false}.
      *
-     * @return  a <code>boolean</code> indicating if this stream type supports
-     *          the <code>mark</code> and <code>reset</code> methods.
+     * @return  a {@code boolean} indicating if this stream type supports
+     *          the {@code mark} and {@code reset} methods.
      * @see     java.io.InputStream#mark(int)
      * @see     java.io.InputStream#reset()
      */
@@ -265,7 +265,7 @@ class InflaterInputStream extends FilterInputStream {
     /**
      * Marks the current position in this input stream.
      *
-     * <p> The <code>mark</code> method of <code>InflaterInputStream</code>
+     * <p> The {@code mark} method of {@code InflaterInputStream}
      * does nothing.
      *
      * @param   readlimit   the maximum limit of bytes that can be read before
@@ -277,11 +277,11 @@ class InflaterInputStream extends FilterInputStream {
 
     /**
      * Repositions this stream to the position at the time the
-     * <code>mark</code> method was last called on this input stream.
+     * {@code mark} method was last called on this input stream.
      *
-     * <p> The method <code>reset</code> for class
-     * <code>InflaterInputStream</code> does nothing except throw an
-     * <code>IOException</code>.
+     * <p> The method {@code reset} for class
+     * {@code InflaterInputStream} does nothing except throw an
+     * {@code IOException}.
      *
      * @throws     IOException  if this method is invoked.
      * @see     java.io.InputStream#mark(int)

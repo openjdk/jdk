@@ -232,12 +232,7 @@ public final class ArrayEqualsNode extends FixedWithNextNode implements LIRLower
                 return;
             }
         }
-
-        int constantLength = -1;
-        if (length.isConstant()) {
-            constantLength = length.asJavaConstant().asInt();
-        }
-        Value result = gen.getLIRGeneratorTool().emitArrayEquals(kind, gen.operand(array1), gen.operand(array2), gen.operand(length), constantLength, false);
+        Value result = gen.getLIRGeneratorTool().emitArrayEquals(kind, gen.operand(array1), gen.operand(array2), gen.operand(length), false);
         gen.setResult(this, result);
     }
 

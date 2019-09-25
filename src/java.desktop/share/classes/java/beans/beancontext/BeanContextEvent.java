@@ -100,5 +100,6 @@ public abstract class BeanContextEvent extends EventObject {
     /**
      * The {@code BeanContext} from which this event was propagated
      */
+    @SuppressWarnings("serial") // Not statically typed as Serializable
     protected BeanContext propagatedFrom;
 }

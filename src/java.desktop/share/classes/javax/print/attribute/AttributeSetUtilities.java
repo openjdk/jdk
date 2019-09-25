@@ -86,6 +86,7 @@ public final class AttributeSetUtilities {
         /**
          * The attribute set.
          */
+        @SuppressWarnings("serial") // Not statically typed as Serializable
         private AttributeSet attrset;
 
         /**
@@ -346,6 +347,7 @@ public final class AttributeSetUtilities {
         /**
          * The attribute set.
          */
+        @SuppressWarnings("serial") // Not statically typed as Serializable
         private AttributeSet attrset;
 
         /**

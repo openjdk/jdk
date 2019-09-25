@@ -27,7 +27,7 @@ package java.util;
 
 /**
  * <p>
- * The <code> TooManyListenersException </code> Exception is used as part of
+ * The {@code  TooManyListenersException } Exception is used as part of
  * the Java Event model to annotate and implement a unicast special case of
  * a multicast Event Source.
  * </p>

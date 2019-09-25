@@ -138,6 +138,7 @@ public class ScrollPaneAdjustable implements Adjustable, Serializable {
      */
     private int blockIncrement = 1;
 
+    @SuppressWarnings("serial") // Not statically typed as Serializable
     private AdjustmentListener adjustmentListener;
 
     /**

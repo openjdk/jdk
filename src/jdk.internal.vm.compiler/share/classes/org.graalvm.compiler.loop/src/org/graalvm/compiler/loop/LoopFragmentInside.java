@@ -71,8 +71,7 @@ import org.graalvm.compiler.nodes.calc.SubNode;
 import org.graalvm.compiler.nodes.extended.OpaqueNode;
 import org.graalvm.compiler.nodes.memory.MemoryPhiNode;
 import org.graalvm.compiler.nodes.util.GraphUtil;
-
-import jdk.vm.ci.code.CodeUtil;
+import org.graalvm.compiler.nodes.util.IntegerHelper;
 
 public class LoopFragmentInside extends LoopFragment {
 
@@ -206,18 +205,19 @@ public class LoopFragmentInside extends LoopFragment {
                 ValueNode limit = counted.getLimit();
                 int bits = ((IntegerStamp) limit.stamp(NodeView.DEFAULT)).getBits();
                 ValueNode newLimit = SubNode.create(limit, opaque, NodeView.DEFAULT);
+                IntegerHelper helper = counted.getCounterIntegerHelper();
                 LogicNode overflowCheck;
                 ConstantNode extremum;
                 if (counted.getDirection() == InductionVariable.Direction.Up) {
                     // limit - counterStride could overflow negatively if limit - min <
                     // counterStride
-                    extremum = ConstantNode.forIntegerBits(bits, CodeUtil.minValue(bits));
+                    extremum = ConstantNode.forIntegerBits(bits, helper.minValue());
                     overflowCheck = IntegerBelowNode.create(SubNode.create(limit, extremum, NodeView.DEFAULT), opaque, NodeView.DEFAULT);
                 } else {
                     assert counted.getDirection() == InductionVariable.Direction.Down;
                     // limit - counterStride could overflow if max - limit < -counterStride
                     // i.e., counterStride < limit - max
-                    extremum = ConstantNode.forIntegerBits(bits, CodeUtil.maxValue(bits));
+                    extremum = ConstantNode.forIntegerBits(bits, helper.maxValue());
                     overflowCheck = IntegerBelowNode.create(opaque, SubNode.create(limit, extremum, NodeView.DEFAULT), NodeView.DEFAULT);
                 }
                 newLimit = ConditionalNode.create(overflowCheck, extremum, newLimit, NodeView.DEFAULT);

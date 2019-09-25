@@ -594,17 +594,15 @@ void ShenandoahTraversalGC::final_traversal_collection() {
   }
 
   if (!_heap->cancelled_gc()) {
-    fixup_roots();
-    _heap->parallel_cleaning(false);
-  }
-
-  if (!_heap->cancelled_gc()) {
     assert(_task_queues->is_empty(), "queues must be empty after traversal GC");
     TASKQUEUE_STATS_ONLY(_task_queues->print_taskqueue_stats());
     TASKQUEUE_STATS_ONLY(_task_queues->reset_taskqueue_stats());
 
     // No more marking expected
     _heap->mark_complete_marking_context();
+
+    fixup_roots();
+    _heap->parallel_cleaning(false);
 
     // Resize metaspace
     MetaspaceGC::compute_new_size();

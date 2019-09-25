@@ -372,6 +372,7 @@ public class Window extends Container implements Accessible {
      * @see #setShape(Shape)
      * @since 1.7
      */
+    @SuppressWarnings("serial") // Not statically typed as Serializable
     private Shape shape = null;
 
     private static final String base = "win";

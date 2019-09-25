@@ -65,18 +65,18 @@ class CheckedInputStream extends FilterInputStream {
     }
 
     /**
-     * Reads into an array of bytes. If <code>len</code> is not zero, the method
+     * Reads into an array of bytes. If {@code len} is not zero, the method
      * blocks until some input is available; otherwise, no
-     * bytes are read and <code>0</code> is returned.
+     * bytes are read and {@code 0} is returned.
      * @param buf the buffer into which the data is read
-     * @param off the start offset in the destination array <code>b</code>
+     * @param off the start offset in the destination array {@code b}
      * @param len the maximum number of bytes read
      * @return    the actual number of bytes read, or -1 if the end
      *            of the stream is reached.
-     * @throws     NullPointerException If <code>buf</code> is <code>null</code>.
-     * @throws     IndexOutOfBoundsException If <code>off</code> is negative,
-     * <code>len</code> is negative, or <code>len</code> is greater than
-     * <code>buf.length - off</code>
+     * @throws     NullPointerException If {@code buf} is {@code null}.
+     * @throws     IndexOutOfBoundsException If {@code off} is negative,
+     * {@code len} is negative, or {@code len} is greater than
+     * {@code buf.length - off}
      * @throws    IOException if an I/O error has occurred
      */
     public int read(byte[] buf, int off, int len) throws IOException {

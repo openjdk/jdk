@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,13 +24,14 @@
 
 package org.graalvm.compiler.lir.amd64;
 
-import jdk.vm.ci.amd64.AMD64;
-import jdk.vm.ci.amd64.AMD64.CPUFeature;
-import jdk.vm.ci.amd64.AMD64Kind;
-import jdk.vm.ci.code.Register;
-import jdk.vm.ci.code.TargetDescription;
-import jdk.vm.ci.meta.JavaKind;
-import jdk.vm.ci.meta.Value;
+import static jdk.vm.ci.code.ValueUtil.asRegister;
+import static org.graalvm.compiler.asm.amd64.AMD64Assembler.AMD64BinaryArithmetic.XOR;
+import static org.graalvm.compiler.lir.LIRInstruction.OperandFlag.CONST;
+import static org.graalvm.compiler.lir.LIRInstruction.OperandFlag.ILLEGAL;
+import static org.graalvm.compiler.lir.LIRInstruction.OperandFlag.REG;
+
+import java.util.Objects;
+
 import org.graalvm.compiler.asm.Label;
 import org.graalvm.compiler.asm.amd64.AMD64Address;
 import org.graalvm.compiler.asm.amd64.AMD64Address.Scale;
@@ -43,16 +44,18 @@ import org.graalvm.compiler.asm.amd64.AVXKind;
 import org.graalvm.compiler.core.common.LIRKind;
 import org.graalvm.compiler.debug.GraalError;
 import org.graalvm.compiler.lir.LIRInstructionClass;
+import org.graalvm.compiler.lir.LIRValueUtil;
 import org.graalvm.compiler.lir.Opcode;
 import org.graalvm.compiler.lir.asm.CompilationResultBuilder;
 import org.graalvm.compiler.lir.gen.LIRGeneratorTool;
 
-import static jdk.vm.ci.code.ValueUtil.asRegister;
-import static org.graalvm.compiler.asm.amd64.AMD64Assembler.AMD64BinaryArithmetic.XOR;
-import static org.graalvm.compiler.lir.LIRInstruction.OperandFlag.ILLEGAL;
-import static org.graalvm.compiler.lir.LIRInstruction.OperandFlag.REG;
-
-import java.util.Objects;
+import jdk.vm.ci.amd64.AMD64;
+import jdk.vm.ci.amd64.AMD64.CPUFeature;
+import jdk.vm.ci.amd64.AMD64Kind;
+import jdk.vm.ci.code.Register;
+import jdk.vm.ci.code.TargetDescription;
+import jdk.vm.ci.meta.JavaKind;
+import jdk.vm.ci.meta.Value;
 
 /**
  * Emits code which compares two arrays of the same length. If the CPU supports any vector
@@ -73,13 +76,12 @@ public final class AMD64ArrayEqualsOp extends AMD64LIRInstruction {
     private final Scale arrayIndexScale1;
     private final Scale arrayIndexScale2;
     private final AVXKind.AVXSize vectorSize;
-    private final int constantLength;
     private final boolean signExtend;
 
     @Def({REG}) private Value resultValue;
     @Alive({REG}) private Value array1Value;
     @Alive({REG}) private Value array2Value;
-    @Alive({REG}) private Value lengthValue;
+    @Alive({REG, CONST}) private Value lengthValue;
     @Temp({REG, ILLEGAL}) private Value temp1;
     @Temp({REG, ILLEGAL}) private Value temp2;
     @Temp({REG}) private Value temp3;
@@ -94,7 +96,7 @@ public final class AMD64ArrayEqualsOp extends AMD64LIRInstruction {
     @Temp({REG, ILLEGAL}) private Value vectorTemp4;
 
     public AMD64ArrayEqualsOp(LIRGeneratorTool tool, JavaKind kind1, JavaKind kind2, Value result, Value array1, Value array2, Value length,
-                    int constantLength, boolean directPointers, int maxVectorSize) {
+                    boolean directPointers, int maxVectorSize) {
         super(TYPE);
         this.kind1 = kind1;
         this.kind2 = kind2;
@@ -107,7 +109,6 @@ public final class AMD64ArrayEqualsOp extends AMD64LIRInstruction {
         this.arrayIndexScale1 = Objects.requireNonNull(Scale.fromInt(tool.getProviders().getMetaAccess().getArrayIndexScale(kind1)));
         this.arrayIndexScale2 = Objects.requireNonNull(Scale.fromInt(tool.getProviders().getMetaAccess().getArrayIndexScale(kind2)));
         this.vectorSize = ((AMD64) tool.target().arch).getFeatures().contains(CPUFeature.AVX2) && (maxVectorSize < 0 || maxVectorSize >= 32) ? AVXKind.AVXSize.YMM : AVXKind.AVXSize.XMM;
-        this.constantLength = constantLength;
 
         this.resultValue = result;
         this.array1Value = array1;
@@ -162,7 +163,11 @@ public final class AMD64ArrayEqualsOp extends AMD64LIRInstruction {
     }
 
     private boolean canGenerateConstantLengthCompare(TargetDescription target) {
-        return constantLength >= 0 && kind1.isNumericInteger() && (kind1 == kind2 || getElementsPerVector(AVXKind.AVXSize.XMM) <= constantLength) && supportsSSE41(target);
+        return LIRValueUtil.isJavaConstant(lengthValue) && kind1.isNumericInteger() && (kind1 == kind2 || getElementsPerVector(AVXKind.AVXSize.XMM) <= constantLength()) && supportsSSE41(target);
+    }
+
+    private int constantLength() {
+        return LIRValueUtil.asJavaConstant(lengthValue).asInt();
     }
 
     @Override
@@ -183,7 +188,11 @@ public final class AMD64ArrayEqualsOp extends AMD64LIRInstruction {
             masm.leaq(array2, new AMD64Address(asRegister(array2Value), arrayBaseOffset2));
             Register length = asRegister(temp3);
             // Get array length.
-            masm.movl(length, asRegister(lengthValue));
+            if (LIRValueUtil.isJavaConstant(lengthValue)) {
+                masm.movl(length, constantLength());
+            } else {
+                masm.movl(length, asRegister(lengthValue));
+            }
             // copy
             masm.movl(result, length);
             emitArrayCompare(crb, masm, result, array1, array2, length, trueLabel, falseLabel);
@@ -716,10 +725,10 @@ public final class AMD64ArrayEqualsOp extends AMD64LIRInstruction {
 
     private boolean constantLengthCompareNeedsTmpArrayPointers() {
         AVXKind.AVXSize vSize = vectorSize;
-        if (constantLength < getElementsPerVector(vectorSize)) {
+        if (constantLength() < getElementsPerVector(vectorSize)) {
             vSize = AVXKind.AVXSize.XMM;
         }
-        int vectorCount = constantLength & ~(2 * getElementsPerVector(vSize) - 1);
+        int vectorCount = constantLength() & ~(2 * getElementsPerVector(vSize) - 1);
         return vectorCount > 0;
     }
 
@@ -733,7 +742,7 @@ public final class AMD64ArrayEqualsOp extends AMD64LIRInstruction {
                     AMD64MacroAssembler asm,
                     Register[] tmpVectors,
                     Label noMatch) {
-        if (constantLength == 0) {
+        if (constantLength() == 0) {
             // do nothing
             return;
         }
@@ -741,13 +750,13 @@ public final class AMD64ArrayEqualsOp extends AMD64LIRInstruction {
         Register arrayPtr2 = asRegister(array2Value);
         Register tmp = asRegister(temp3);
         AVXKind.AVXSize vSize = vectorSize;
-        if (constantLength < getElementsPerVector(vectorSize)) {
+        if (constantLength() < getElementsPerVector(vectorSize)) {
             vSize = AVXKind.AVXSize.XMM;
         }
         int elementsPerVector = getElementsPerVector(vSize);
-        if (elementsPerVector > constantLength) {
+        if (elementsPerVector > constantLength()) {
             assert kind1 == kind2;
-            int byteLength = constantLength << arrayIndexScale1.log2;
+            int byteLength = constantLength() << arrayIndexScale1.log2;
             // array is shorter than any vector register, use regular XOR instructions
             int movSize = (byteLength < 2) ? 1 : ((byteLength < 4) ? 2 : ((byteLength < 8) ? 4 : 8));
             emitMovBytes(asm, tmp, new AMD64Address(arrayPtr1, arrayBaseOffset1), movSize);
@@ -760,8 +769,8 @@ public final class AMD64ArrayEqualsOp extends AMD64LIRInstruction {
             }
         } else {
             int elementsPerVectorLoop = 2 * elementsPerVector;
-            int tailCount = constantLength & (elementsPerVectorLoop - 1);
-            int vectorCount = constantLength & ~(elementsPerVectorLoop - 1);
+            int tailCount = constantLength() & (elementsPerVectorLoop - 1);
+            int vectorCount = constantLength() & ~(elementsPerVectorLoop - 1);
             int bytesPerVector = vSize.getBytes();
             if (vectorCount > 0) {
                 Label loopBegin = new Label();

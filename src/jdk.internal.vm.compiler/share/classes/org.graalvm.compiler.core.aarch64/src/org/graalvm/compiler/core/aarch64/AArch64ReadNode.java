@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2019, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2017, Red Hat Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -70,6 +70,11 @@ public class AArch64ReadNode extends ReadNode {
         AArch64Kind readKind = (AArch64Kind) lirgen.getLIRKind(accessStamp).getPlatformKind();
         int resultBits = ((IntegerStamp) stamp(NodeView.DEFAULT)).getBits();
         gen.setResult(this, arithgen.emitExtendMemory(isSigned, readKind, resultBits, (AArch64AddressValue) gen.operand(getAddress()), gen.state(this)));
+    }
+
+    @Override
+    public Stamp getAccessStamp() {
+        return accessStamp;
     }
 
     /**

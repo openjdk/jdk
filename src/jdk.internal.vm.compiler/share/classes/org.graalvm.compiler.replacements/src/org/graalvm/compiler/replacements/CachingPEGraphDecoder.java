@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -71,17 +71,17 @@ public class CachingPEGraphDecoder extends PEGraphDecoder {
     public CachingPEGraphDecoder(Architecture architecture, StructuredGraph graph, Providers providers, GraphBuilderConfiguration graphBuilderConfig, OptimisticOptimizations optimisticOpts,
                     AllowAssumptions allowAssumptions, LoopExplosionPlugin loopExplosionPlugin, InvocationPlugins invocationPlugins, InlineInvokePlugin[] inlineInvokePlugins,
                     ParameterPlugin parameterPlugin,
-                    NodePlugin[] nodePlugins, ResolvedJavaMethod callInlinedMethod, SourceLanguagePositionProvider sourceLanguagePositionProvider,
-                    BasePhase<? super CoreProviders> postParsingPhase) {
+                    NodePlugin[] nodePlugins, ResolvedJavaMethod callInlinedMethod, ResolvedJavaMethod callInlinedAgnosticMethod, SourceLanguagePositionProvider sourceLanguagePositionProvider,
+                    BasePhase<? super CoreProviders> postParsingPhase, EconomicMap<ResolvedJavaMethod, EncodedGraph> graphCache) {
         super(architecture, graph, providers, loopExplosionPlugin,
-                        invocationPlugins, inlineInvokePlugins, parameterPlugin, nodePlugins, callInlinedMethod, sourceLanguagePositionProvider);
+                        invocationPlugins, inlineInvokePlugins, parameterPlugin, nodePlugins, callInlinedMethod, callInlinedAgnosticMethod, sourceLanguagePositionProvider);
 
         this.providers = providers;
         this.graphBuilderConfig = graphBuilderConfig;
         this.optimisticOpts = optimisticOpts;
         this.allowAssumptions = allowAssumptions;
+        this.graphCache = graphCache;
         this.postParsingPhase = postParsingPhase;
-        this.graphCache = EconomicMap.create();
     }
 
     protected GraphBuilderPhase.Instance createGraphBuilderPhaseInstance(IntrinsicContext initialIntrinsicContext) {

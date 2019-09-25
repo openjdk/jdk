@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,10 +25,12 @@
 package org.graalvm.compiler.replacements.arraycopy;
 
 import static jdk.vm.ci.services.Services.IS_BUILDING_NATIVE_IMAGE;
+import static org.graalvm.compiler.core.common.GraalOptions.GeneratePIC;
 import static org.graalvm.compiler.nodes.extended.BranchProbabilityNode.FREQUENT_PROBABILITY;
 import static org.graalvm.compiler.nodes.extended.BranchProbabilityNode.LIKELY_PROBABILITY;
 import static org.graalvm.compiler.nodes.extended.BranchProbabilityNode.NOT_FREQUENT_PROBABILITY;
 import static org.graalvm.compiler.nodes.extended.BranchProbabilityNode.SLOW_PATH_PROBABILITY;
+import static org.graalvm.compiler.nodes.extended.BranchProbabilityNode.DEOPT_PROBABILITY;
 import static org.graalvm.compiler.nodes.extended.BranchProbabilityNode.probability;
 
 import java.util.EnumMap;
@@ -210,7 +212,7 @@ public abstract class ArrayCopySnippets implements Snippets {
             Object nonNullDest = PiNode.asNonNullObject(dest);
             Pointer srcKlass = loadHub(nonNullSrc);
             Pointer destKlass = loadHub(nonNullDest);
-            if (probability(LIKELY_PROBABILITY, srcKlass == destKlass)) {
+            if (probability(LIKELY_PROBABILITY, srcKlass == destKlass) || probability(LIKELY_PROBABILITY, nonNullDest.getClass() == Object[].class)) {
                 // no storecheck required.
                 counters.objectCheckcastSameTypeCounter.inc();
                 counters.objectCheckcastSameTypeCopiedCounter.add(length);
@@ -222,15 +224,7 @@ public abstract class ArrayCopySnippets implements Snippets {
                 counters.objectCheckcastDifferentTypeCounter.inc();
                 counters.objectCheckcastDifferentTypeCopiedCounter.add(length);
 
-                int copiedElements = CheckcastArrayCopyCallNode.checkcastArraycopy(nonNullSrc, srcPos, nonNullDest, destPos, length, superCheckOffset, destElemKlass, false);
-                if (probability(SLOW_PATH_PROBABILITY, copiedElements != 0)) {
-                    /*
-                     * the stub doesn't throw the ArrayStoreException, but returns the number of
-                     * copied elements (xor'd with -1).
-                     */
-                    copiedElements ^= -1;
-                    System.arraycopy(nonNullSrc, srcPos + copiedElements, nonNullDest, destPos + copiedElements, length - copiedElements);
-                }
+                System.arraycopy(nonNullSrc, srcPos, nonNullDest, destPos, length);
             }
         }
     }
@@ -261,12 +255,27 @@ public abstract class ArrayCopySnippets implements Snippets {
         }
     }
 
+    /**
+     * Writing this as individual if statements to avoid a merge without a frame state.
+     */
     private static void checkLimits(Object src, int srcPos, Object dest, int destPos, int length, Counters counters) {
-        if (probability(SLOW_PATH_PROBABILITY, srcPos < 0) ||
-                        probability(SLOW_PATH_PROBABILITY, destPos < 0) ||
-                        probability(SLOW_PATH_PROBABILITY, length < 0) ||
-                        probability(SLOW_PATH_PROBABILITY, srcPos > ArrayLengthNode.arrayLength(src) - length) ||
-                        probability(SLOW_PATH_PROBABILITY, destPos > ArrayLengthNode.arrayLength(dest) - length)) {
+        if (probability(DEOPT_PROBABILITY, srcPos < 0)) {
+            counters.checkAIOOBECounter.inc();
+            DeoptimizeNode.deopt(DeoptimizationAction.None, DeoptimizationReason.RuntimeConstraint);
+        }
+        if (probability(DEOPT_PROBABILITY, destPos < 0)) {
+            counters.checkAIOOBECounter.inc();
+            DeoptimizeNode.deopt(DeoptimizationAction.None, DeoptimizationReason.RuntimeConstraint);
+        }
+        if (probability(DEOPT_PROBABILITY, length < 0)) {
+            counters.checkAIOOBECounter.inc();
+            DeoptimizeNode.deopt(DeoptimizationAction.None, DeoptimizationReason.RuntimeConstraint);
+        }
+        if (probability(DEOPT_PROBABILITY, srcPos > ArrayLengthNode.arrayLength(src) - length)) {
+            counters.checkAIOOBECounter.inc();
+            DeoptimizeNode.deopt(DeoptimizationAction.None, DeoptimizationReason.RuntimeConstraint);
+        }
+        if (probability(DEOPT_PROBABILITY, destPos > ArrayLengthNode.arrayLength(dest) - length)) {
             counters.checkAIOOBECounter.inc();
             DeoptimizeNode.deopt(DeoptimizationAction.None, DeoptimizationReason.RuntimeConstraint);
         }
@@ -279,13 +288,13 @@ public abstract class ArrayCopySnippets implements Snippets {
         } else if (arrayTypeCheck == ArrayCopyTypeCheck.HUB_BASED_ARRAY_TYPE_CHECK) {
             Pointer srcHub = loadHub(nonNullSrc);
             Pointer destHub = loadHub(nonNullDest);
-            if (probability(SLOW_PATH_PROBABILITY, srcHub != destHub)) {
+            if (probability(DEOPT_PROBABILITY, srcHub != destHub)) {
                 DeoptimizeNode.deopt(DeoptimizationAction.None, DeoptimizationReason.RuntimeConstraint);
             }
         } else if (arrayTypeCheck == ArrayCopyTypeCheck.LAYOUT_HELPER_BASED_ARRAY_TYPE_CHECK) {
             Pointer srcHub = loadHub(nonNullSrc);
             Pointer destHub = loadHub(nonNullDest);
-            if (probability(SLOW_PATH_PROBABILITY, getReadLayoutHelper(srcHub) != getReadLayoutHelper(destHub))) {
+            if (probability(DEOPT_PROBABILITY, getReadLayoutHelper(srcHub) != getReadLayoutHelper(destHub))) {
                 DeoptimizeNode.deopt(DeoptimizationAction.None, DeoptimizationReason.RuntimeConstraint);
             }
         } else {
@@ -412,6 +421,10 @@ public abstract class ArrayCopySnippets implements Snippets {
                     // we don't know anything about the types - use the generic copying
                     snippetInfo = arraycopyGenericSnippet;
                     // no need for additional type check to avoid duplicated work
+                    arrayTypeCheck = ArrayCopyTypeCheck.NO_ARRAY_TYPE_CHECK;
+                } else if (GeneratePIC.getValue(options)) {
+                    // use generic copying for AOT compilation
+                    snippetInfo = arraycopyGenericSnippet;
                     arrayTypeCheck = ArrayCopyTypeCheck.NO_ARRAY_TYPE_CHECK;
                 } else if (srcComponentType != null && destComponentType != null) {
                     if (!srcComponentType.isPrimitive() && !destComponentType.isPrimitive()) {

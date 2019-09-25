@@ -74,7 +74,7 @@ import sun.reflect.misc.ReflectUtil;
  * <p>Only objects that support the java.io.Serializable or
  * java.io.Externalizable interface can be read from streams.
  *
- * <p>The method <code>readObject</code> is used to read an object from the
+ * <p>The method {@code readObject} is used to read an object from the
  * stream.  Java's safe casting should be used to get the desired type.  In
  * Java, strings and arrays are objects and are treated as objects during
  * serialization. When read they need to be cast to the expected type.
@@ -157,7 +157,7 @@ import sun.reflect.misc.ReflectUtil;
  * throw OptionalDataExceptions with eof set to true, bytewise reads will
  * return -1, and primitive reads will throw EOFExceptions.  Note that this
  * behavior does not hold for streams written with the old
- * <code>ObjectStreamConstants.PROTOCOL_VERSION_1</code> protocol, in which the
+ * {@code ObjectStreamConstants.PROTOCOL_VERSION_1} protocol, in which the
  * end of data written by writeExternal methods is not demarcated, and hence
  * cannot be detected.
  *
@@ -208,7 +208,7 @@ import sun.reflect.misc.ReflectUtil;
  * solely of its name; field values of the constant are not transmitted.  To
  * deserialize an enum constant, ObjectInputStream reads the constant name from
  * the stream; the deserialized constant is then obtained by calling the static
- * method <code>Enum.valueOf(Class, String)</code> with the enum constant's
+ * method {@code Enum.valueOf(Class, String)} with the enum constant's
  * base type and the received constant name as arguments.  Like other
  * serializable or externalizable objects, enum constants can function as the
  * targets of back references appearing subsequently in the serialization
@@ -335,7 +335,7 @@ public class ObjectInputStream
      * @throws  IOException if an I/O error occurs while reading stream header
      * @throws  SecurityException if untrusted subclass illegally overrides
      *          security-sensitive methods
-     * @throws  NullPointerException if <code>in</code> is <code>null</code>
+     * @throws  NullPointerException if {@code in} is {@code null}
      * @see     ObjectInputStream#ObjectInputStream()
      * @see     ObjectInputStream#readFields()
      * @see     ObjectOutputStream#ObjectOutputStream(OutputStream)
@@ -360,12 +360,12 @@ public class ObjectInputStream
      * {@linkplain ObjectInputFilter.Config#getSerialFilter() the system-wide filter}.
      *
      * <p>If there is a security manager installed, this method first calls the
-     * security manager's <code>checkPermission</code> method with the
-     * <code>SerializablePermission("enableSubclassImplementation")</code>
+     * security manager's {@code checkPermission} method with the
+     * {@code SerializablePermission("enableSubclassImplementation")}
      * permission to ensure it's ok to enable subclassing.
      *
      * @throws  SecurityException if a security manager exists and its
-     *          <code>checkPermission</code> method denies enabling
+     *          {@code checkPermission} method denies enabling
      *          subclassing.
      * @throws  IOException if an I/O error occurs while creating this stream
      * @see SecurityManager#checkPermission
@@ -587,7 +587,7 @@ public class ObjectInputStream
      * Reads the persistent fields from the stream and makes them available by
      * name.
      *
-     * @return  the <code>GetField</code> object representing the persistent
+     * @return  the {@code GetField} object representing the persistent
      *          fields of the object being deserialized
      * @throws  ClassNotFoundException if the class of a serialized object
      *          could not be found.
@@ -651,36 +651,36 @@ public class ObjectInputStream
      * description.  Subclasses may implement this method to allow classes to
      * be fetched from an alternate source.
      *
-     * <p>The corresponding method in <code>ObjectOutputStream</code> is
-     * <code>annotateClass</code>.  This method will be invoked only once for
+     * <p>The corresponding method in {@code ObjectOutputStream} is
+     * {@code annotateClass}.  This method will be invoked only once for
      * each unique class in the stream.  This method can be implemented by
      * subclasses to use an alternate loading mechanism but must return a
-     * <code>Class</code> object. Once returned, if the class is not an array
+     * {@code Class} object. Once returned, if the class is not an array
      * class, its serialVersionUID is compared to the serialVersionUID of the
      * serialized class, and if there is a mismatch, the deserialization fails
      * and an {@link InvalidClassException} is thrown.
      *
      * <p>The default implementation of this method in
-     * <code>ObjectInputStream</code> returns the result of calling
+     * {@code ObjectInputStream} returns the result of calling
      * <pre>
      *     Class.forName(desc.getName(), false, loader)
      * </pre>
-     * where <code>loader</code> is the first class loader on the current
+     * where {@code loader} is the first class loader on the current
      * thread's stack (starting from the currently executing method) that is
      * neither the {@linkplain ClassLoader#getPlatformClassLoader() platform
-     * class loader} nor its ancestor; otherwise, <code>loader</code> is the
+     * class loader} nor its ancestor; otherwise, {@code loader} is the
      * <em>platform class loader</em>. If this call results in a
-     * <code>ClassNotFoundException</code> and the name of the passed
-     * <code>ObjectStreamClass</code> instance is the Java language keyword
-     * for a primitive type or void, then the <code>Class</code> object
+     * {@code ClassNotFoundException} and the name of the passed
+     * {@code ObjectStreamClass} instance is the Java language keyword
+     * for a primitive type or void, then the {@code Class} object
      * representing that primitive type or void will be returned
-     * (e.g., an <code>ObjectStreamClass</code> with the name
-     * <code>"int"</code> will be resolved to <code>Integer.TYPE</code>).
-     * Otherwise, the <code>ClassNotFoundException</code> will be thrown to
+     * (e.g., an {@code ObjectStreamClass} with the name
+     * {@code "int"} will be resolved to {@code Integer.TYPE}).
+     * Otherwise, the {@code ClassNotFoundException} will be thrown to
      * the caller of this method.
      *
-     * @param   desc an instance of class <code>ObjectStreamClass</code>
-     * @return  a <code>Class</code> object corresponding to <code>desc</code>
+     * @param   desc an instance of class {@code ObjectStreamClass}
+     * @return  a {@code Class} object corresponding to {@code desc}
      * @throws  IOException any of the usual Input/Output exceptions.
      * @throws  ClassNotFoundException if class of a serialized object cannot
      *          be found.
@@ -711,43 +711,43 @@ public class ObjectInputStream
      * <p>This method is called exactly once for each unique proxy class
      * descriptor in the stream.
      *
-     * <p>The corresponding method in <code>ObjectOutputStream</code> is
-     * <code>annotateProxyClass</code>.  For a given subclass of
-     * <code>ObjectInputStream</code> that overrides this method, the
-     * <code>annotateProxyClass</code> method in the corresponding subclass of
-     * <code>ObjectOutputStream</code> must write any data or objects read by
+     * <p>The corresponding method in {@code ObjectOutputStream} is
+     * {@code annotateProxyClass}.  For a given subclass of
+     * {@code ObjectInputStream} that overrides this method, the
+     * {@code annotateProxyClass} method in the corresponding subclass of
+     * {@code ObjectOutputStream} must write any data or objects read by
      * this method.
      *
      * <p>The default implementation of this method in
-     * <code>ObjectInputStream</code> returns the result of calling
-     * <code>Proxy.getProxyClass</code> with the list of <code>Class</code>
-     * objects for the interfaces that are named in the <code>interfaces</code>
-     * parameter.  The <code>Class</code> object for each interface name
-     * <code>i</code> is the value returned by calling
+     * {@code ObjectInputStream} returns the result of calling
+     * {@code Proxy.getProxyClass} with the list of {@code Class}
+     * objects for the interfaces that are named in the {@code interfaces}
+     * parameter.  The {@code Class} object for each interface name
+     * {@code i} is the value returned by calling
      * <pre>
      *     Class.forName(i, false, loader)
      * </pre>
-     * where <code>loader</code> is the first class loader on the current
+     * where {@code loader} is the first class loader on the current
      * thread's stack (starting from the currently executing method) that is
      * neither the {@linkplain ClassLoader#getPlatformClassLoader() platform
-     * class loader} nor its ancestor; otherwise, <code>loader</code> is the
+     * class loader} nor its ancestor; otherwise, {@code loader} is the
      * <em>platform class loader</em>.
      * Unless any of the resolved interfaces are non-public, this same value
-     * of <code>loader</code> is also the class loader passed to
-     * <code>Proxy.getProxyClass</code>; if non-public interfaces are present,
+     * of {@code loader} is also the class loader passed to
+     * {@code Proxy.getProxyClass}; if non-public interfaces are present,
      * their class loader is passed instead (if more than one non-public
      * interface class loader is encountered, an
-     * <code>IllegalAccessError</code> is thrown).
-     * If <code>Proxy.getProxyClass</code> throws an
-     * <code>IllegalArgumentException</code>, <code>resolveProxyClass</code>
-     * will throw a <code>ClassNotFoundException</code> containing the
-     * <code>IllegalArgumentException</code>.
+     * {@code IllegalAccessError} is thrown).
+     * If {@code Proxy.getProxyClass} throws an
+     * {@code IllegalArgumentException}, {@code resolveProxyClass}
+     * will throw a {@code ClassNotFoundException} containing the
+     * {@code IllegalArgumentException}.
      *
      * @param interfaces the list of interface names that were
      *                deserialized in the proxy class descriptor
      * @return  a proxy class for the specified interfaces
      * @throws        IOException any exception thrown by the underlying
-     *                <code>InputStream</code>
+     *                {@code InputStream}
      * @throws        ClassNotFoundException if the proxy class or any of the
      *                named interfaces could not be found
      * @see ObjectOutputStream#annotateProxyClass(Class)
@@ -863,7 +863,7 @@ public class ObjectInputStream
      * and version number.
      *
      * @throws  IOException if there are I/O errors while reading from the
-     *          underlying <code>InputStream</code>
+     *          underlying {@code InputStream}
      * @throws  StreamCorruptedException if control information in the stream
      *          is inconsistent
      */
@@ -884,7 +884,7 @@ public class ObjectInputStream
      * item in the serialization stream.  Subclasses of ObjectInputStream may
      * override this method to read in class descriptors that have been written
      * in non-standard formats (by subclasses of ObjectOutputStream which have
-     * overridden the <code>writeClassDescriptor</code> method).  By default,
+     * overridden the {@code writeClassDescriptor} method).  By default,
      * this method reads class descriptors according to the format defined in
      * the Object Serialization specification.
      *
@@ -946,7 +946,7 @@ public class ObjectInputStream
      *
      * @return  the number of available bytes.
      * @throws  IOException if there are I/O errors while reading from the
-     *          underlying <code>InputStream</code>
+     *          underlying {@code InputStream}
      */
     public int available() throws IOException {
         return bin.available();
@@ -1129,7 +1129,7 @@ public class ObjectInputStream
      *
      * @return  a String copy of the line.
      * @throws  IOException if there are I/O errors while reading from the
-     *          underlying <code>InputStream</code>
+     *          underlying {@code InputStream}
      * @deprecated This method does not properly convert bytes to characters.
      *          see DataInputStream for the details and alternatives.
      */
@@ -1145,7 +1145,7 @@ public class ObjectInputStream
      *
      * @return  the String.
      * @throws  IOException if there are I/O errors while reading from the
-     *          underlying <code>InputStream</code>
+     *          underlying {@code InputStream}
      * @throws  UTFDataFormatException if read bytes do not represent a valid
      *          modified UTF-8 encoding of a string
      */
@@ -1340,8 +1340,8 @@ public class ObjectInputStream
          * @param  name the name of the field
          * @return true, if and only if the named field is defaulted
          * @throws IOException if there are I/O errors while reading from
-         *         the underlying <code>InputStream</code>
-         * @throws IllegalArgumentException if <code>name</code> does not
+         *         the underlying {@code InputStream}
+         * @throws IllegalArgumentException if {@code name} does not
          *         correspond to a serializable field
          */
         public abstract boolean defaulted(String name) throws IOException;
@@ -1350,12 +1350,12 @@ public class ObjectInputStream
          * Get the value of the named boolean field from the persistent field.
          *
          * @param  name the name of the field
-         * @param  val the default value to use if <code>name</code> does not
+         * @param  val the default value to use if {@code name} does not
          *         have a value
-         * @return the value of the named <code>boolean</code> field
+         * @return the value of the named {@code boolean} field
          * @throws IOException if there are I/O errors while reading from the
-         *         underlying <code>InputStream</code>
-         * @throws IllegalArgumentException if type of <code>name</code> is
+         *         underlying {@code InputStream}
+         * @throws IllegalArgumentException if type of {@code name} is
          *         not serializable or if the field type is incorrect
          */
         public abstract boolean get(String name, boolean val)
@@ -1365,12 +1365,12 @@ public class ObjectInputStream
          * Get the value of the named byte field from the persistent field.
          *
          * @param  name the name of the field
-         * @param  val the default value to use if <code>name</code> does not
+         * @param  val the default value to use if {@code name} does not
          *         have a value
-         * @return the value of the named <code>byte</code> field
+         * @return the value of the named {@code byte} field
          * @throws IOException if there are I/O errors while reading from the
-         *         underlying <code>InputStream</code>
-         * @throws IllegalArgumentException if type of <code>name</code> is
+         *         underlying {@code InputStream}
+         * @throws IllegalArgumentException if type of {@code name} is
          *         not serializable or if the field type is incorrect
          */
         public abstract byte get(String name, byte val) throws IOException;
@@ -1379,12 +1379,12 @@ public class ObjectInputStream
          * Get the value of the named char field from the persistent field.
          *
          * @param  name the name of the field
-         * @param  val the default value to use if <code>name</code> does not
+         * @param  val the default value to use if {@code name} does not
          *         have a value
-         * @return the value of the named <code>char</code> field
+         * @return the value of the named {@code char} field
          * @throws IOException if there are I/O errors while reading from the
-         *         underlying <code>InputStream</code>
-         * @throws IllegalArgumentException if type of <code>name</code> is
+         *         underlying {@code InputStream}
+         * @throws IllegalArgumentException if type of {@code name} is
          *         not serializable or if the field type is incorrect
          */
         public abstract char get(String name, char val) throws IOException;
@@ -1393,12 +1393,12 @@ public class ObjectInputStream
          * Get the value of the named short field from the persistent field.
          *
          * @param  name the name of the field
-         * @param  val the default value to use if <code>name</code> does not
+         * @param  val the default value to use if {@code name} does not
          *         have a value
-         * @return the value of the named <code>short</code> field
+         * @return the value of the named {@code short} field
          * @throws IOException if there are I/O errors while reading from the
-         *         underlying <code>InputStream</code>
-         * @throws IllegalArgumentException if type of <code>name</code> is
+         *         underlying {@code InputStream}
+         * @throws IllegalArgumentException if type of {@code name} is
          *         not serializable or if the field type is incorrect
          */
         public abstract short get(String name, short val) throws IOException;
@@ -1407,12 +1407,12 @@ public class ObjectInputStream
          * Get the value of the named int field from the persistent field.
          *
          * @param  name the name of the field
-         * @param  val the default value to use if <code>name</code> does not
+         * @param  val the default value to use if {@code name} does not
          *         have a value
-         * @return the value of the named <code>int</code> field
+         * @return the value of the named {@code int} field
          * @throws IOException if there are I/O errors while reading from the
-         *         underlying <code>InputStream</code>
-         * @throws IllegalArgumentException if type of <code>name</code> is
+         *         underlying {@code InputStream}
+         * @throws IllegalArgumentException if type of {@code name} is
          *         not serializable or if the field type is incorrect
          */
         public abstract int get(String name, int val) throws IOException;
@@ -1421,12 +1421,12 @@ public class ObjectInputStream
          * Get the value of the named long field from the persistent field.
          *
          * @param  name the name of the field
-         * @param  val the default value to use if <code>name</code> does not
+         * @param  val the default value to use if {@code name} does not
          *         have a value
-         * @return the value of the named <code>long</code> field
+         * @return the value of the named {@code long} field
          * @throws IOException if there are I/O errors while reading from the
-         *         underlying <code>InputStream</code>
-         * @throws IllegalArgumentException if type of <code>name</code> is
+         *         underlying {@code InputStream}
+         * @throws IllegalArgumentException if type of {@code name} is
          *         not serializable or if the field type is incorrect
          */
         public abstract long get(String name, long val) throws IOException;
@@ -1435,12 +1435,12 @@ public class ObjectInputStream
          * Get the value of the named float field from the persistent field.
          *
          * @param  name the name of the field
-         * @param  val the default value to use if <code>name</code> does not
+         * @param  val the default value to use if {@code name} does not
          *         have a value
-         * @return the value of the named <code>float</code> field
+         * @return the value of the named {@code float} field
          * @throws IOException if there are I/O errors while reading from the
-         *         underlying <code>InputStream</code>
-         * @throws IllegalArgumentException if type of <code>name</code> is
+         *         underlying {@code InputStream}
+         * @throws IllegalArgumentException if type of {@code name} is
          *         not serializable or if the field type is incorrect
          */
         public abstract float get(String name, float val) throws IOException;
@@ -1449,12 +1449,12 @@ public class ObjectInputStream
          * Get the value of the named double field from the persistent field.
          *
          * @param  name the name of the field
-         * @param  val the default value to use if <code>name</code> does not
+         * @param  val the default value to use if {@code name} does not
          *         have a value
-         * @return the value of the named <code>double</code> field
+         * @return the value of the named {@code double} field
          * @throws IOException if there are I/O errors while reading from the
-         *         underlying <code>InputStream</code>
-         * @throws IllegalArgumentException if type of <code>name</code> is
+         *         underlying {@code InputStream}
+         * @throws IllegalArgumentException if type of {@code name} is
          *         not serializable or if the field type is incorrect
          */
         public abstract double get(String name, double val) throws IOException;
@@ -1463,12 +1463,12 @@ public class ObjectInputStream
          * Get the value of the named Object field from the persistent field.
          *
          * @param  name the name of the field
-         * @param  val the default value to use if <code>name</code> does not
+         * @param  val the default value to use if {@code name} does not
          *         have a value
-         * @return the value of the named <code>Object</code> field
+         * @return the value of the named {@code Object} field
          * @throws IOException if there are I/O errors while reading from the
-         *         underlying <code>InputStream</code>
-         * @throws IllegalArgumentException if type of <code>name</code> is
+         *         underlying {@code InputStream}
+         * @throws IllegalArgumentException if type of {@code name} is
          *         not serializable or if the field type is incorrect
          */
         public abstract Object get(String name, Object val) throws IOException;

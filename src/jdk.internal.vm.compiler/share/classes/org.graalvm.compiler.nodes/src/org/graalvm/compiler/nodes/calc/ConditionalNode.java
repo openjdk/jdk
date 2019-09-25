@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2009, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -214,8 +214,7 @@ public final class ConditionalNode extends FloatingNode implements Canonicalizab
                     // (value & 1) == 0 ? 0 : 1
                     // (value & 1) == 1 ? 1 : 0
                     IntegerTestNode integerTestNode = (IntegerTestNode) condition;
-                    if (integerTestNode.getY().isConstant()) {
-                        assert integerTestNode.getX().stamp(view) instanceof IntegerStamp;
+                    if (integerTestNode.getY().isConstant() && integerTestNode.getX().stamp(view) instanceof IntegerStamp) {
                         long testY = integerTestNode.getY().asJavaConstant().asLong();
                         if (testY == 1 && constTrueValue == 0 && constFalseValue == 1) {
                             return IntegerConvertNode.convertUnsigned(AndNode.create(integerTestNode.getX(), integerTestNode.getY(), view), stamp, view);

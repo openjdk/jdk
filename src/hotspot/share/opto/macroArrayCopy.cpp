@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1149,8 +1149,8 @@ void PhaseMacroExpand::expand_arraycopy_node(ArrayCopyNode *ac) {
   if (top_src != NULL && top_src->klass() != NULL) {
     src_elem = top_src->klass()->as_array_klass()->element_type()->basic_type();
   }
-  if (src_elem  == T_ARRAY)  src_elem  = T_OBJECT;
-  if (dest_elem == T_ARRAY)  dest_elem = T_OBJECT;
+  if (is_reference_type(src_elem))  src_elem  = T_OBJECT;
+  if (is_reference_type(dest_elem)) dest_elem = T_OBJECT;
 
   if (ac->is_arraycopy_validated() &&
       dest_elem != T_CONFLICT &&

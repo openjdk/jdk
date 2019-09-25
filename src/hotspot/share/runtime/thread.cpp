@@ -973,6 +973,7 @@ void Thread::check_possible_safepoint() {
   if (!is_Java_thread()) return;
 
   if (_no_safepoint_count > 0) {
+    print_owned_locks();
     fatal("Possible safepoint reached by thread that does not allow it");
   }
 #ifdef CHECK_UNHANDLED_OOPS
@@ -981,35 +982,16 @@ void Thread::check_possible_safepoint() {
 #endif // CHECK_UNHANDLED_OOPS
 }
 
-// The flag: potential_vm_operation notifies if this particular safepoint state could potentially
-// invoke the vm-thread (e.g., an oop allocation). In that case, we also have to make sure that
-// no locks which allow_vm_block's are held
-void Thread::check_for_valid_safepoint_state(bool potential_vm_operation) {
+void Thread::check_for_valid_safepoint_state() {
   if (!is_Java_thread()) return;
 
+  // Check NoSafepointVerifier, which is implied by locks taken that can be
+  // shared with the VM thread.  This makes sure that no locks with allow_vm_block
+  // are held.
   check_possible_safepoint();
 
   if (((JavaThread*)this)->thread_state() != _thread_in_vm) {
     fatal("LEAF method calling lock?");
-  }
-
-  if (potential_vm_operation && !Universe::is_bootstrapping()) {
-    // Make sure we do not hold any locks that the VM thread also uses.
-    // This could potentially lead to deadlocks
-    for (Mutex* cur = _owned_locks; cur; cur = cur->next()) {
-      // Threads_lock is special, since the safepoint synchronization will not start before this is
-      // acquired. Hence, a JavaThread cannot be holding it at a safepoint. So is VMOperationRequest_lock,
-      // since it is used to transfer control between JavaThreads and the VMThread
-      // Do not *exclude* any locks unless you are absolutely sure it is correct. Ask someone else first!
-      if ((cur->allow_vm_block() &&
-           cur != Threads_lock &&
-           cur != Compile_lock &&               // Temporary: should not be necessary when we get separate compilation
-           cur != VMOperationRequest_lock &&
-           cur != VMOperationQueue_lock) ||
-           cur->rank() == Mutex::special) {
-        fatal("Thread holding lock at safepoint that vm can block on: %s", cur->name());
-      }
-    }
   }
 
   if (GCALotAtAllSafepoints) {
@@ -1553,9 +1535,6 @@ void JavaThread::collect_counters(jlong* array, int length) {
 // Attempt to enlarge the array for per thread counters.
 jlong* resize_counters_array(jlong* old_counters, int current_size, int new_size) {
   jlong* new_counters = NEW_C_HEAP_ARRAY(jlong, new_size, mtJVMCI);
-  if (new_counters == NULL) {
-    return NULL;
-  }
   if (old_counters == NULL) {
     old_counters = new_counters;
     memset(old_counters, 0, sizeof(jlong) * new_size);
@@ -1572,54 +1551,34 @@ jlong* resize_counters_array(jlong* old_counters, int current_size, int new_size
 }
 
 // Attempt to enlarge the array for per thread counters.
-bool JavaThread::resize_counters(int current_size, int new_size) {
-  jlong* new_counters = resize_counters_array(_jvmci_counters, current_size, new_size);
-  if (new_counters == NULL) {
-    return false;
-  } else {
-    _jvmci_counters = new_counters;
-    return true;
-  }
+void JavaThread::resize_counters(int current_size, int new_size) {
+  _jvmci_counters = resize_counters_array(_jvmci_counters, current_size, new_size);
 }
 
 class VM_JVMCIResizeCounters : public VM_Operation {
  private:
   int _new_size;
-  bool _failed;
 
  public:
-  VM_JVMCIResizeCounters(int new_size) : _new_size(new_size), _failed(false) { }
+  VM_JVMCIResizeCounters(int new_size) : _new_size(new_size) { }
   VMOp_Type type()                  const        { return VMOp_JVMCIResizeCounters; }
   bool allow_nested_vm_operations() const        { return true; }
   void doit() {
     // Resize the old thread counters array
     jlong* new_counters = resize_counters_array(JavaThread::_jvmci_old_thread_counters, JVMCICounterSize, _new_size);
-    if (new_counters == NULL) {
-      _failed = true;
-      return;
-    } else {
-      JavaThread::_jvmci_old_thread_counters = new_counters;
-    }
+    JavaThread::_jvmci_old_thread_counters = new_counters;
 
     // Now resize each threads array
     for (JavaThreadIteratorWithHandle jtiwh; JavaThread *tp = jtiwh.next(); ) {
-      if (!tp->resize_counters(JVMCICounterSize, _new_size)) {
-        _failed = true;
-        break;
-      }
+      tp->resize_counters(JVMCICounterSize, _new_size);
     }
-    if (!_failed) {
-      JVMCICounterSize = _new_size;
-    }
+    JVMCICounterSize = _new_size;
   }
-
-  bool failed() { return _failed; }
 };
 
-bool JavaThread::resize_all_jvmci_counters(int new_size) {
+void JavaThread::resize_all_jvmci_counters(int new_size) {
   VM_JVMCIResizeCounters op(new_size);
   VMThread::execute(&op);
-  return !op.failed();
 }
 
 #endif // INCLUDE_JVMCI
@@ -1803,7 +1762,10 @@ bool JavaThread::reguard_stack(void) {
 void JavaThread::block_if_vm_exited() {
   if (_terminated == _vm_exited) {
     // _vm_exited is set at safepoint, and Threads_lock is never released
-    // we will block here forever
+    // we will block here forever.
+    // Here we can be doing a jump from a safe state to an unsafe state without
+    // proper transition, but it happens after the final safepoint has begun.
+    set_thread_state(_thread_in_vm);
     Threads_lock->lock();
     ShouldNotReachHere();
   }

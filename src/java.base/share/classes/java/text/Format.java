@@ -41,64 +41,64 @@ package java.text;
 import java.io.Serializable;
 
 /**
- * <code>Format</code> is an abstract base class for formatting locale-sensitive
+ * {@code Format} is an abstract base class for formatting locale-sensitive
  * information such as dates, messages, and numbers.
  *
  * <p>
- * <code>Format</code> defines the programming interface for formatting
- * locale-sensitive objects into <code>String</code>s (the
- * <code>format</code> method) and for parsing <code>String</code>s back
- * into objects (the <code>parseObject</code> method).
+ * {@code Format} defines the programming interface for formatting
+ * locale-sensitive objects into {@code String}s (the
+ * {@code format} method) and for parsing {@code String}s back
+ * into objects (the {@code parseObject} method).
  *
  * <p>
- * Generally, a format's <code>parseObject</code> method must be able to parse
- * any string formatted by its <code>format</code> method. However, there may
+ * Generally, a format's {@code parseObject} method must be able to parse
+ * any string formatted by its {@code format} method. However, there may
  * be exceptional cases where this is not possible. For example, a
- * <code>format</code> method might create two adjacent integer numbers with
- * no separator in between, and in this case the <code>parseObject</code> could
+ * {@code format} method might create two adjacent integer numbers with
+ * no separator in between, and in this case the {@code parseObject} could
  * not tell which digits belong to which number.
  *
  * <h2>Subclassing</h2>
  *
  * <p>
- * The Java Platform provides three specialized subclasses of <code>Format</code>--
- * <code>DateFormat</code>, <code>MessageFormat</code>, and
- * <code>NumberFormat</code>--for formatting dates, messages, and numbers,
+ * The Java Platform provides three specialized subclasses of {@code Format}--
+ * {@code DateFormat}, {@code MessageFormat}, and
+ * {@code NumberFormat}--for formatting dates, messages, and numbers,
  * respectively.
  * <p>
  * Concrete subclasses must implement three methods:
  * <ol>
- * <li> <code>format(Object obj, StringBuffer toAppendTo, FieldPosition pos)</code>
- * <li> <code>formatToCharacterIterator(Object obj)</code>
- * <li> <code>parseObject(String source, ParsePosition pos)</code>
+ * <li> {@code format(Object obj, StringBuffer toAppendTo, FieldPosition pos)}
+ * <li> {@code formatToCharacterIterator(Object obj)}
+ * <li> {@code parseObject(String source, ParsePosition pos)}
  * </ol>
  * These general methods allow polymorphic parsing and formatting of objects
- * and are used, for example, by <code>MessageFormat</code>.
- * Subclasses often also provide additional <code>format</code> methods for
- * specific input types as well as <code>parse</code> methods for specific
- * result types. Any <code>parse</code> method that does not take a
- * <code>ParsePosition</code> argument should throw <code>ParseException</code>
+ * and are used, for example, by {@code MessageFormat}.
+ * Subclasses often also provide additional {@code format} methods for
+ * specific input types as well as {@code parse} methods for specific
+ * result types. Any {@code parse} method that does not take a
+ * {@code ParsePosition} argument should throw {@code ParseException}
  * when no text in the required format is at the beginning of the input text.
  *
  * <p>
  * Most subclasses will also implement the following factory methods:
  * <ol>
  * <li>
- * <code>getInstance</code> for getting a useful format object appropriate
+ * {@code getInstance} for getting a useful format object appropriate
  * for the current locale
  * <li>
- * <code>getInstance(Locale)</code> for getting a useful format
+ * {@code getInstance(Locale)} for getting a useful format
  * object appropriate for the specified locale
  * </ol>
  * In addition, some subclasses may also implement other
- * <code>getXxxxInstance</code> methods for more specialized control. For
- * example, the <code>NumberFormat</code> class provides
- * <code>getPercentInstance</code> and <code>getCurrencyInstance</code>
+ * {@code getXxxxInstance} methods for more specialized control. For
+ * example, the {@code NumberFormat} class provides
+ * {@code getPercentInstance} and {@code getCurrencyInstance}
  * methods for getting specialized number formatters.
  *
  * <p>
- * Subclasses of <code>Format</code> that allow programmers to create objects
- * for locales (with <code>getInstance(Locale)</code> for example)
+ * Subclasses of {@code Format} that allow programmers to create objects
+ * for locales (with {@code getInstance(Locale)} for example)
  * must also implement the following class method:
  * <blockquote>
  * <pre>
@@ -112,7 +112,7 @@ import java.io.Serializable;
  * object which identifies what information is contained in the field and its
  * position in the formatted result. These constants should be named
  * <code><em>item</em>_FIELD</code> where <code><em>item</em></code> identifies
- * the field. For examples of these constants, see <code>ERA_FIELD</code> and its
+ * the field. For examples of these constants, see {@code ERA_FIELD} and its
  * friends in {@link DateFormat}.
  *
  * <h3><a id="synchronization">Synchronization</a></h3>
@@ -162,18 +162,18 @@ public abstract class Format implements Serializable, Cloneable {
     /**
      * Formats an object and appends the resulting text to a given string
      * buffer.
-     * If the <code>pos</code> argument identifies a field used by the format,
+     * If the {@code pos} argument identifies a field used by the format,
      * then its indices are set to the beginning and end of the first such
      * field encountered.
      *
      * @param obj    The object to format
      * @param toAppendTo    where the text is to be appended
-     * @param pos    A <code>FieldPosition</code> identifying a field
+     * @param pos    A {@code FieldPosition} identifying a field
      *               in the formatted text
-     * @return       the string buffer passed in as <code>toAppendTo</code>,
+     * @return       the string buffer passed in as {@code toAppendTo},
      *               with formatted text appended
-     * @throws    NullPointerException if <code>toAppendTo</code> or
-     *            <code>pos</code> is null
+     * @throws    NullPointerException if {@code toAppendTo} or
+     *            {@code pos} is null
      * @throws    IllegalArgumentException if the Format cannot format the given
      *            object
      */
@@ -182,20 +182,20 @@ public abstract class Format implements Serializable, Cloneable {
                     FieldPosition pos);
 
     /**
-     * Formats an Object producing an <code>AttributedCharacterIterator</code>.
-     * You can use the returned <code>AttributedCharacterIterator</code>
+     * Formats an Object producing an {@code AttributedCharacterIterator}.
+     * You can use the returned {@code AttributedCharacterIterator}
      * to build the resulting String, as well as to determine information
      * about the resulting String.
      * <p>
      * Each attribute key of the AttributedCharacterIterator will be of type
-     * <code>Field</code>. It is up to each <code>Format</code> implementation
+     * {@code Field}. It is up to each {@code Format} implementation
      * to define what the legal values are for each attribute in the
-     * <code>AttributedCharacterIterator</code>, but typically the attribute
+     * {@code AttributedCharacterIterator}, but typically the attribute
      * key is also used as the attribute value.
      * <p>The default implementation creates an
-     * <code>AttributedCharacterIterator</code> with no attributes. Subclasses
+     * {@code AttributedCharacterIterator} with no attributes. Subclasses
      * that support fields should override this and create an
-     * <code>AttributedCharacterIterator</code> with meaningful attributes.
+     * {@code AttributedCharacterIterator} with meaningful attributes.
      *
      * @throws    NullPointerException if obj is null.
      * @throws    IllegalArgumentException when the Format cannot format the
@@ -212,20 +212,20 @@ public abstract class Format implements Serializable, Cloneable {
      * Parses text from a string to produce an object.
      * <p>
      * The method attempts to parse text starting at the index given by
-     * <code>pos</code>.
-     * If parsing succeeds, then the index of <code>pos</code> is updated
+     * {@code pos}.
+     * If parsing succeeds, then the index of {@code pos} is updated
      * to the index after the last character used (parsing does not necessarily
      * use all characters up to the end of the string), and the parsed
-     * object is returned. The updated <code>pos</code> can be used to
+     * object is returned. The updated {@code pos} can be used to
      * indicate the starting point for the next call to this method.
-     * If an error occurs, then the index of <code>pos</code> is not
-     * changed, the error index of <code>pos</code> is set to the index of
+     * If an error occurs, then the index of {@code pos} is not
+     * changed, the error index of {@code pos} is set to the index of
      * the character where the error occurred, and null is returned.
      *
-     * @param source A <code>String</code>, part of which should be parsed.
-     * @param pos A <code>ParsePosition</code> object with index and error
+     * @param source A {@code String}, part of which should be parsed.
+     * @param pos A {@code ParsePosition} object with index and error
      *            index information as described above.
-     * @return An <code>Object</code> parsed from the string. In case of
+     * @return An {@code Object} parsed from the string. In case of
      *         error, returns null.
      * @throws NullPointerException if {@code source} or {@code pos} is null.
      */
@@ -235,8 +235,8 @@ public abstract class Format implements Serializable, Cloneable {
      * Parses text from the beginning of the given string to produce an object.
      * The method may not use the entire text of the given string.
      *
-     * @param source A <code>String</code> whose beginning should be parsed.
-     * @return An <code>Object</code> parsed from the string.
+     * @param source A {@code String} whose beginning should be parsed.
+     * @return An {@code Object} parsed from the string.
      * @throws    ParseException if the beginning of the specified string
      *            cannot be parsed.
      * @throws NullPointerException if {@code source} is null.
@@ -271,8 +271,8 @@ public abstract class Format implements Serializable, Cloneable {
     //
 
     /**
-     * Creates an <code>AttributedCharacterIterator</code> for the String
-     * <code>s</code>.
+     * Creates an {@code AttributedCharacterIterator} for the String
+     * {@code s}.
      *
      * @param s String to create AttributedCharacterIterator from
      * @return AttributedCharacterIterator wrapping s
@@ -284,9 +284,9 @@ public abstract class Format implements Serializable, Cloneable {
     }
 
     /**
-     * Creates an <code>AttributedCharacterIterator</code> containing the
+     * Creates an {@code AttributedCharacterIterator} containing the
      * concatenated contents of the passed in
-     * <code>AttributedCharacterIterator</code>s.
+     * {@code AttributedCharacterIterator}s.
      *
      * @param iterators AttributedCharacterIterators used to create resulting
      *                  AttributedCharacterIterators
@@ -302,8 +302,8 @@ public abstract class Format implements Serializable, Cloneable {
 
     /**
      * Returns an AttributedCharacterIterator with the String
-     * <code>string</code> and additional key/value pair <code>key</code>,
-     * <code>value</code>.
+     * {@code string} and additional key/value pair {@code key},
+     * {@code value}.
      *
      * @param string String to create AttributedCharacterIterator from
      * @param key Key for AttributedCharacterIterator
@@ -321,8 +321,8 @@ public abstract class Format implements Serializable, Cloneable {
 
     /**
      * Creates an AttributedCharacterIterator with the contents of
-     * <code>iterator</code> and the additional attribute <code>key</code>
-     * <code>value</code>.
+     * {@code iterator} and the additional attribute {@code key}
+     * {@code value}.
      *
      * @param iterator Initial AttributedCharacterIterator to add arg to
      * @param key Key for AttributedCharacterIterator
@@ -341,9 +341,9 @@ public abstract class Format implements Serializable, Cloneable {
 
     /**
      * Defines constants that are used as attribute keys in the
-     * <code>AttributedCharacterIterator</code> returned
-     * from <code>Format.formatToCharacterIterator</code> and as
-     * field identifiers in <code>FieldPosition</code>.
+     * {@code AttributedCharacterIterator} returned
+     * from {@code Format.formatToCharacterIterator} and as
+     * field identifiers in {@code FieldPosition}.
      *
      * @since 1.4
      */
@@ -365,13 +365,13 @@ public abstract class Format implements Serializable, Cloneable {
 
 
     /**
-     * FieldDelegate is notified by the various <code>Format</code>
+     * FieldDelegate is notified by the various {@code Format}
      * implementations as they are formatting the Objects. This allows for
      * storage of the individual sections of the formatted String for
-     * later use, such as in a <code>FieldPosition</code> or for an
-     * <code>AttributedCharacterIterator</code>.
+     * later use, such as in a {@code FieldPosition} or for an
+     * {@code AttributedCharacterIterator}.
      * <p>
-     * Delegates should NOT assume that the <code>Format</code> will notify
+     * Delegates should NOT assume that the {@code Format} will notify
      * the delegate of fields in any particular order.
      *
      * @see FieldPosition#getFieldDelegate
@@ -381,7 +381,7 @@ public abstract class Format implements Serializable, Cloneable {
         /**
          * Notified when a particular region of the String is formatted. This
          * method will be invoked if there is no corresponding integer field id
-         * matching <code>attr</code>.
+         * matching {@code attr}.
          *
          * @param attr Identifies the field matched
          * @param value Value associated with the field

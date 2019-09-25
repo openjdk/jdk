@@ -51,6 +51,7 @@ public class invocationGraalTests {
                            ", class file version: " + classFileVersion);
         ProcessBuilder pb = ProcessTools.createJavaProcessBuilder(false, "-Xmx128M",
             "-XX:+UnlockExperimentalVMOptions", "-XX:+EnableJVMCI", "-XX:+UseJVMCICompiler",
+            "--add-exports", "java.base/jdk.internal.org.objectweb.asm=ALL-UNNAMED",
             whichTests, "--classfile_version=" + classFileVersion);
         OutputAnalyzer output = new OutputAnalyzer(pb.start());
         try {

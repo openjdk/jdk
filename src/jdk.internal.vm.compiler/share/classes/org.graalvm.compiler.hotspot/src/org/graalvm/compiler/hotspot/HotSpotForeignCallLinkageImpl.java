@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,7 +25,7 @@
 package org.graalvm.compiler.hotspot;
 
 import static jdk.vm.ci.hotspot.HotSpotJVMCIRuntime.runtime;
-import static org.graalvm.compiler.hotspot.HotSpotForeignCallLinkage.RegisterEffect.DESTROYS_REGISTERS;
+import static org.graalvm.compiler.hotspot.HotSpotForeignCallLinkage.RegisterEffect.DESTROYS_ALL_CALLER_SAVE_REGISTERS;
 
 import jdk.internal.vm.compiler.collections.EconomicSet;
 import org.graalvm.compiler.core.common.spi.ForeignCallDescriptor;
@@ -184,6 +184,11 @@ public class HotSpotForeignCallLinkageImpl extends HotSpotForeignCallTarget impl
     }
 
     @Override
+    public RegisterEffect getEffect() {
+        return effect;
+    }
+
+    @Override
     public LocationIdentity[] getKilledLocations() {
         return killedLocations;
     }
@@ -268,7 +273,7 @@ public class HotSpotForeignCallLinkageImpl extends HotSpotForeignCallTarget impl
 
     @Override
     public boolean destroysRegisters() {
-        return effect == DESTROYS_REGISTERS;
+        return effect == DESTROYS_ALL_CALLER_SAVE_REGISTERS;
     }
 
     @Override

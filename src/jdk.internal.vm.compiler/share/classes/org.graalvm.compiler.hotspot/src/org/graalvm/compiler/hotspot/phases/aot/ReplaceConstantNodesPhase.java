@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,6 +32,7 @@ import java.util.HashSet;
 import java.util.List;
 
 import jdk.internal.vm.compiler.collections.EconomicMap;
+import jdk.internal.vm.compiler.collections.Equivalence;
 import org.graalvm.compiler.core.common.cfg.BlockMap;
 import org.graalvm.compiler.core.common.type.ObjectStamp;
 import org.graalvm.compiler.core.common.type.Stamp;
@@ -318,7 +319,7 @@ public class ReplaceConstantNodesPhase extends BasePhase<CoreProviders> {
         NodeMap<Block> nodeToBlock = schedule.getNodeToBlockMap();
         BlockMap<List<Node>> blockToNodes = schedule.getBlockToNodesMap();
 
-        EconomicMap<Block, Node> blockToExisting = EconomicMap.create();
+        EconomicMap<Block, Node> blockToExisting = EconomicMap.create(Equivalence.IDENTITY);
         for (Node n : node.usages().filter(n -> isReplacementNode(n))) {
             blockToExisting.put(nodeToBlock.get(n), n);
         }

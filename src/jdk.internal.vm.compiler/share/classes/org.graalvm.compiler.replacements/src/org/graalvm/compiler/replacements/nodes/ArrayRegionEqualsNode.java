@@ -110,16 +110,11 @@ public final class ArrayRegionEqualsNode extends FixedWithNextNode implements LI
                 return;
             }
         }
-
-        int constantLength = -1;
-        if (length.isConstant()) {
-            constantLength = length.asJavaConstant().asInt();
-        }
         Value result;
         if (kind1 == kind2) {
-            result = gen.getLIRGeneratorTool().emitArrayEquals(kind1, gen.operand(array1), gen.operand(array2), gen.operand(length), constantLength, true);
+            result = gen.getLIRGeneratorTool().emitArrayEquals(kind1, gen.operand(array1), gen.operand(array2), gen.operand(length), true);
         } else {
-            result = gen.getLIRGeneratorTool().emitArrayEquals(kind1, kind2, gen.operand(array1), gen.operand(array2), gen.operand(length), constantLength, true);
+            result = gen.getLIRGeneratorTool().emitArrayEquals(kind1, kind2, gen.operand(array1), gen.operand(array2), gen.operand(length), true);
         }
         gen.setResult(this, result);
     }

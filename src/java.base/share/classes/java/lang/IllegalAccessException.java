@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1995, 2008, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1995, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -60,7 +60,7 @@ public class IllegalAccessException extends ReflectiveOperationException {
     private static final long serialVersionUID = 6616958222490762034L;
 
     /**
-     * Constructs an <code>IllegalAccessException</code> without a
+     * Constructs an {@code IllegalAccessException} without a
      * detail message.
      */
     public IllegalAccessException() {
@@ -68,7 +68,7 @@ public class IllegalAccessException extends ReflectiveOperationException {
     }
 
     /**
-     * Constructs an <code>IllegalAccessException</code> with a detail message.
+     * Constructs an {@code IllegalAccessException} with a detail message.
      *
      * @param   s   the detail message.
      */

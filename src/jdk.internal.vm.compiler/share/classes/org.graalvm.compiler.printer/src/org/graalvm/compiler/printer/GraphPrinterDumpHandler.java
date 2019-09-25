@@ -37,13 +37,14 @@ import java.util.List;
 import java.util.Map;
 import java.util.WeakHashMap;
 
+import org.graalvm.compiler.core.common.CompilationIdentifier;
 import org.graalvm.compiler.debug.DebugContext;
 import org.graalvm.compiler.debug.DebugDumpHandler;
 import org.graalvm.compiler.debug.DebugDumpScope;
 import org.graalvm.compiler.debug.DebugOptions;
+import org.graalvm.compiler.debug.DebugOptions.PrintGraphTarget;
 import org.graalvm.compiler.debug.GraalError;
 import org.graalvm.compiler.debug.TTY;
-import org.graalvm.compiler.debug.DebugOptions.PrintGraphTarget;
 import org.graalvm.compiler.graph.Graph;
 import org.graalvm.compiler.nodes.StructuredGraph;
 import org.graalvm.compiler.options.OptionValues;
@@ -66,6 +67,7 @@ public class GraphPrinterDumpHandler implements DebugDumpHandler {
     private final GraphPrinterSupplier printerSupplier;
     protected GraphPrinter printer;
     private List<String> previousInlineContext;
+    private CompilationIdentifier previousCompilationID = CompilationIdentifier.INVALID_COMPILATION_ID;
     private int[] dumpIds = {};
     private int failuresCount;
     private Map<Graph, List<String>> inlineContextMap;
@@ -135,6 +137,22 @@ public class GraphPrinterDumpHandler implements DebugDumpHandler {
 
             // Get all current JavaMethod instances in the context.
             List<String> inlineContext = getInlineContext(graph);
+
+            if (graph instanceof StructuredGraph) {
+                CompilationIdentifier compilationID = ((StructuredGraph) graph).compilationId();
+                // If the graph to be dumped is with an invalid compilation id, it is likely derived
+                // from inlining.
+                if (compilationID != CompilationIdentifier.INVALID_COMPILATION_ID) {
+                    if (previousCompilationID != CompilationIdentifier.INVALID_COMPILATION_ID && !compilationID.equals(previousCompilationID)) {
+                        // Compilation ID does not match, close existing scopes.
+                        for (int inlineDepth = previousInlineContext.size() - 1; inlineDepth >= 0; --inlineDepth) {
+                            closeScope(debug, inlineDepth);
+                        }
+                        previousInlineContext = new ArrayList<>();
+                    }
+                    previousCompilationID = compilationID;
+                }
+            }
 
             if (!inlineContext.equals(previousInlineContext)) {
                 Map<Object, Object> properties = new HashMap<>();

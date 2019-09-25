@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -70,21 +70,24 @@ public class CountedLoopTest extends GraalCompilerTest {
     /**
      * Get a property of an induction variable.
      */
-    private static int get(@SuppressWarnings("unused") IVProperty property, @SuppressWarnings("unused") StaticIVProperty staticProperty, @SuppressWarnings("unused") IVPredicate constantCheck,
-                    int iv) {
+    @SuppressWarnings("unused")
+    private static int get(IVProperty property, StaticIVProperty staticProperty, IVPredicate constantCheck, int iv) {
         return iv;
     }
 
-    private static int get(@SuppressWarnings("unused") IVProperty property, int iv) {
+    @SuppressWarnings("unused")
+    private static int get(IVProperty property, int iv) {
         return iv;
     }
 
-    private static long get(@SuppressWarnings("unused") IVProperty property, @SuppressWarnings("unused") StaticIVProperty staticProperty, @SuppressWarnings("unused") IVPredicate constantCheck,
+    @SuppressWarnings("unused")
+    private static long get(IVProperty property, StaticIVProperty staticProperty, IVPredicate constantCheck,
                     long iv) {
         return iv;
     }
 
-    private static long get(@SuppressWarnings("unused") IVProperty property, long iv) {
+    @SuppressWarnings("unused")
+    private static long get(IVProperty property, long iv) {
         return iv;
     }
 
@@ -150,12 +153,12 @@ public class CountedLoopTest extends GraalCompilerTest {
 
     @Test
     public void increment5() {
-        testCounted("incrementSnippet", 256, 256, 1);
+        testRemovableCounted("incrementSnippet", 256, 256, 1);
     }
 
     @Test
     public void increment6() {
-        testCounted("incrementSnippet", 257, 256, 1);
+        testRemovableCounted("incrementSnippet", 257, 256, 1);
     }
 
     @Test
@@ -207,7 +210,7 @@ public class CountedLoopTest extends GraalCompilerTest {
 
     @Test
     public void incrementEq6() {
-        testCounted("incrementEqSnippet", 257, 256, 1);
+        testRemovableCounted("incrementEqSnippet", 257, 256, 1);
     }
 
     @Test
@@ -218,6 +221,16 @@ public class CountedLoopTest extends GraalCompilerTest {
     @Test
     public void incrementEq8() {
         testCounted("incrementEqSnippet", -10, Integer.MAX_VALUE - 2, 2);
+    }
+
+    @Test
+    public void incrementEq9() {
+        testCounted("incrementEqSnippet", 0, 0, 1);
+    }
+
+    @Test
+    public void incrementEq10() {
+        testCounted("incrementEqSnippet", 0, 0, 3);
     }
 
     public static Result decrementSnippet(int start, int limit, int step) {
@@ -286,7 +299,7 @@ public class CountedLoopTest extends GraalCompilerTest {
 
     @Test
     public void decrementEq4() {
-        testCounted("decrementEqSnippet", -10, 0, Integer.MAX_VALUE);
+        testRemovableCounted("decrementEqSnippet", -10, 0, Integer.MAX_VALUE);
     }
 
     @Test
@@ -297,6 +310,16 @@ public class CountedLoopTest extends GraalCompilerTest {
     @Test
     public void decrementEq6() {
         testCounted("decrementEqSnippet", Integer.MAX_VALUE, -10, 2);
+    }
+
+    @Test
+    public void decrementEq7() {
+        testCounted("decrementEqSnippet", 10, 10, 1);
+    }
+
+    @Test
+    public void decrementEq8() {
+        testCounted("decrementEqSnippet", 10, 10, 3);
     }
 
     public static Result twoVariablesSnippet() {
@@ -384,45 +407,175 @@ public class CountedLoopTest extends GraalCompilerTest {
 
     @Test
     public void incrementLong5() {
-        testCounted("incrementLongSnippet", 256L, 256L, 1L);
+        testRemovableCounted("incrementLongSnippet", 256L, 256L, 1L);
     }
 
     @Test
     public void incrementLong6() {
-        testCounted("incrementLongSnippet", 257L, 256L, 1L);
+        testRemovableCounted("incrementLongSnippet", 257L, 256L, 1L);
+    }
+
+    public static Result incrementUnsignedSnippet(int start, int limit, int step) {
+        int i;
+        int inc = ((step - 1) & 0xFFFF) + 1; // make sure this value is always strictly positive
+        Result ret = new Result();
+        for (i = start; Integer.compareUnsigned(i, limit) < 0; i += inc) {
+            GraalDirectives.controlFlowAnchor();
+            ret.extremum = get(InductionVariable::extremumNode, InductionVariable::constantExtremum, InductionVariable::isConstantExtremum, i);
+        }
+        ret.exitValue = get(InductionVariable::exitValueNode, i);
+        return ret;
+    }
+
+    @Test
+    public void incrementUnsigned1() {
+        testCounted("incrementUnsignedSnippet", 0, 256, 1);
+    }
+
+    @Test
+    public void incrementUnsigned2() {
+        testCounted("incrementUnsignedSnippet", 0, 256, 2);
+    }
+
+    @Test
+    public void incrementUnsigned3() {
+        testCounted("incrementUnsignedSnippet", 0, 256, 3);
+    }
+
+    @Test
+    public void incrementUnsigned4() {
+        testCounted("incrementUnsignedSnippet", 1, Integer.MAX_VALUE + 10, Integer.MAX_VALUE);
+    }
+
+    @Test
+    public void incrementUnsigned5() {
+        testRemovableCounted("incrementUnsignedSnippet", 256, 256, 1);
+    }
+
+    @Test
+    public void incrementUnsigned6() {
+        testRemovableCounted("incrementUnsignedSnippet", 257, 256, 1);
+    }
+
+    @Test
+    public void incrementUnsigned7() {
+        testCounted("incrementUnsignedSnippet", 0, Integer.MAX_VALUE + 10, 1);
+    }
+
+    @Test
+    public void incrementUnsigned8a() {
+        testCounted("incrementUnsignedSnippet", 0, Integer.MAX_VALUE + 11, 2);
+    }
+
+    @Test
+    public void incrementUnsigned8b() {
+        testCounted("incrementUnsignedSnippet", 0, Integer.MAX_VALUE + 10, 2);
+    }
+
+    @Test
+    public void incrementUnsigned9() {
+        testCounted("incrementUnsignedSnippet", Integer.MAX_VALUE - 1, Integer.MAX_VALUE + 10, 1);
+    }
+
+    @Test
+    public void incrementUnsigned10() {
+        testCounted("incrementUnsignedSnippet", Integer.MAX_VALUE - 1, Integer.MAX_VALUE + 10, 2);
+    }
+
+    public static Result decrementUnsignedSnippet(int start, int limit, int step) {
+        int dec = ((step - 1) & 0xFFFF) + 1; // make sure this value is always strictly positive
+        Result ret = new Result();
+        int i;
+        for (i = start; Integer.compareUnsigned(i, limit) > 0; i -= dec) {
+            GraalDirectives.controlFlowAnchor();
+            ret.extremum = get(InductionVariable::extremumNode, InductionVariable::constantExtremum, InductionVariable::isConstantExtremum, i);
+        }
+        ret.exitValue = get(InductionVariable::exitValueNode, i);
+        return ret;
+    }
+
+    @Test
+    public void decrementUnsigned1() {
+        testCounted("decrementUnsignedSnippet", 256, 0, 1);
+    }
+
+    @Test
+    public void decrementUnsigned2() {
+        testCounted("decrementUnsignedSnippet", 256, 0, 2);
+    }
+
+    @Test
+    public void decrementUnsigned3() {
+        testCounted("decrementUnsignedSnippet", 256, 2, 3);
+    }
+
+    @Test
+    public void decrementUnsigned5() {
+        testRemovableCounted("decrementUnsignedSnippet", 256, 256, 1);
+    }
+
+    @Test
+    public void decrementUnsigned6() {
+        testRemovableCounted("decrementUnsignedSnippet", 256, 257, 1);
+    }
+
+    @Test
+    public void decrementUnsigned7() {
+        testCounted("decrementUnsignedSnippet", Integer.MAX_VALUE + 10, 0, 1);
+    }
+
+    @Test
+    public void decrementUnsigned8() {
+        testCounted("decrementUnsignedSnippet", Integer.MAX_VALUE + 11, 0, 2);
+    }
+
+    @Test
+    public void decrementUnsigned9() {
+        testCounted("decrementUnsignedSnippet", Integer.MAX_VALUE + 10, Integer.MAX_VALUE - 1, 1);
+    }
+
+    @Test
+    public void decrementUnsigned10() {
+        testCounted("decrementUnsignedSnippet", Integer.MAX_VALUE + 10, Integer.MAX_VALUE - 1, 2);
     }
 
     @NodeInfo(cycles = CYCLES_IGNORED, size = SIZE_IGNORED)
     private static class IVPropertyNode extends FloatingNode implements LIRLowerable {
-
         public static final NodeClass<IVPropertyNode> TYPE = NodeClass.create(IVPropertyNode.class);
 
         private final IVProperty property;
         private final StaticIVProperty staticProperty;
         private final IVPredicate staticCheck;
+        private final boolean loopCanBeRemoved;
         @Input private ValueNode iv;
 
-        protected IVPropertyNode(IVProperty property, StaticIVProperty staticProperty, IVPredicate staticCheck, ValueNode iv) {
+        protected IVPropertyNode(IVProperty property, StaticIVProperty staticProperty, IVPredicate staticCheck, ValueNode iv, boolean loopCanBeRemoved) {
             super(TYPE, iv.stamp(NodeView.DEFAULT).unrestricted());
             this.property = property;
             this.staticProperty = staticProperty;
             this.staticCheck = staticCheck;
             this.iv = iv;
+            this.loopCanBeRemoved = loopCanBeRemoved;
         }
 
         public void rewrite(LoopsData loops) {
             InductionVariable inductionVariable = loops.getInductionVariable(iv);
-            assert inductionVariable != null;
-            assertTrue(inductionVariable.getLoop().isCounted(), "must be counted");
             ValueNode node = null;
-            if (staticCheck != null) {
-                assert staticProperty != null;
-                if (staticCheck.test(inductionVariable)) {
-                    node = ConstantNode.forLong(staticProperty.get(inductionVariable), graph());
+            if (inductionVariable == null) {
+                assert loopCanBeRemoved;
+                assert loops.loops().isEmpty();
+                node = iv;
+            } else {
+                assertTrue(inductionVariable.getLoop().isCounted(), "must be counted");
+                if (staticCheck != null) {
+                    assert staticProperty != null;
+                    if (staticCheck.test(inductionVariable)) {
+                        node = ConstantNode.forLong(staticProperty.get(inductionVariable), graph());
+                    }
                 }
-            }
-            if (node == null) {
-                node = property.get(inductionVariable);
+                if (node == null) {
+                    node = property.get(inductionVariable);
+                }
             }
             replaceAtUsagesAndDelete(node);
         }
@@ -450,7 +603,7 @@ public class CountedLoopTest extends GraalCompilerTest {
                     property = getSnippetReflection().asObject(IVProperty.class, arg1.asJavaConstant());
                 }
                 if (property != null) {
-                    b.addPush(ivKind, new IVPropertyNode(property, null, null, arg2));
+                    b.addPush(ivKind, new IVPropertyNode(property, null, null, arg2, loopCanBeRemoved));
                     return true;
                 } else {
                     return false;
@@ -473,7 +626,7 @@ public class CountedLoopTest extends GraalCompilerTest {
                     staticCheck = getSnippetReflection().asObject(IVPredicate.class, arg3.asJavaConstant());
                 }
                 if (property != null && staticProperty != null && staticCheck != null) {
-                    b.addPush(ivKind, new IVPropertyNode(property, staticProperty, staticCheck, arg4));
+                    b.addPush(ivKind, new IVPropertyNode(property, staticProperty, staticCheck, arg4, loopCanBeRemoved));
                     return true;
                 } else {
                     return false;
@@ -499,6 +652,7 @@ public class CountedLoopTest extends GraalCompilerTest {
     }
 
     private Object[] argsToBind;
+    private boolean loopCanBeRemoved;
 
     @Override
     protected Object[] getArgumentToBind() {
@@ -506,9 +660,32 @@ public class CountedLoopTest extends GraalCompilerTest {
     }
 
     public void testCounted(String snippetName, Object... args) {
+        this.loopCanBeRemoved = false;
         test(snippetName, args);
-        argsToBind = args;
+        this.argsToBind = args;
         test(snippetName, args);
-        argsToBind = null;
+        this.argsToBind = null;
+    }
+
+    public void testCounted(String snippetName, Object start, Object limit, Object step) {
+        testCounted(false, snippetName, start, limit, step);
+    }
+
+    public void testRemovableCounted(String snippetName, Object start, Object limit, Object step) {
+        testCounted(true, snippetName, start, limit, step);
+    }
+
+    public void testCounted(boolean removable, String snippetName, Object start, Object limit, Object step) {
+        this.loopCanBeRemoved = removable;
+        Object[] args = {start, limit, step};
+        test(snippetName, args);
+        this.argsToBind = args;
+        test(snippetName, args);
+        this.argsToBind = new Object[]{NO_BIND, NO_BIND, step};
+        test(snippetName, args);
+        this.argsToBind = new Object[]{start, NO_BIND, step};
+        test(snippetName, args);
+        this.argsToBind = null;
+        this.loopCanBeRemoved = false;
     }
 }

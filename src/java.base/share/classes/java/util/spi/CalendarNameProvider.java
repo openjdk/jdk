@@ -190,9 +190,9 @@ public abstract class CalendarNameProvider extends LocaleServiceProvider {
 
     /**
      * Returns the string representation (display name) of the calendar
-     * <code>field value</code> in the given <code>style</code> and
-     * <code>locale</code>.  If no string representation is
-     * applicable, <code>null</code> is returned.
+     * {@code field value} in the given {@code style} and
+     * {@code locale}.  If no string representation is
+     * applicable, {@code null} is returned.
      *
      * <p>{@code field} is a {@code Calendar} field index, such as {@link
      * Calendar#MONTH}. The time zone fields, {@link Calendar#ZONE_OFFSET} and

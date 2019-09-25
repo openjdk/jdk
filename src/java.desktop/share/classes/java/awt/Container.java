@@ -3851,6 +3851,7 @@ public class Container extends Component {
          * The handler to fire {@code PropertyChange}
          * when children are added or removed
          */
+        @SuppressWarnings("serial") // Not statically typed as Serializable
         protected ContainerListener accessibleContainerHandler = null;
 
         /**

@@ -812,14 +812,13 @@ assert factories != null : "sanity";
     }
 
     /**
-     * Attempt to enlarge the number of per thread counters available. Requires a safepoint so
+     * Enlarge the number of per thread counters available. Requires a safepoint so
      * resizing should be rare to avoid performance effects.
      *
      * @param newSize
-     * @return false if the resizing failed
      */
-    public boolean setCountersSize(int newSize) {
-        return compilerToVm.setCountersSize(newSize);
+    public void setCountersSize(int newSize) {
+        compilerToVm.setCountersSize(newSize);
     }
 
     /**

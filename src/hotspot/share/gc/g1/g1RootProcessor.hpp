@@ -69,20 +69,21 @@ class G1RootProcessor : public StackObj {
     G1RP_PS_NumElements
   };
 
-  void worker_has_discovered_all_strong_classes();
-  void wait_until_all_strong_classes_discovered();
+  void worker_has_discovered_all_strong_nmethods();
+  void wait_until_all_strong_nmethods_discovered();
 
   void process_java_roots(G1RootClosures* closures,
                           G1GCPhaseTimes* phase_times,
-                          uint worker_i);
+                          uint worker_id,
+                          bool notify_claimed_nmethods_done = false);
 
   void process_vm_roots(G1RootClosures* closures,
                         G1GCPhaseTimes* phase_times,
-                        uint worker_i);
+                        uint worker_id);
 
   void process_code_cache_roots(CodeBlobClosure* code_closure,
                                 G1GCPhaseTimes* phase_times,
-                                uint worker_i);
+                                uint worker_id);
 
 public:
   G1RootProcessor(G1CollectedHeap* g1h, uint n_workers);

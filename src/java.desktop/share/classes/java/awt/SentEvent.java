@@ -47,6 +47,7 @@ class SentEvent extends AWTEvent implements ActiveEvent {
 
     boolean dispatched;
     private AWTEvent nested;
+    @SuppressWarnings("serial") // Not statically typed as Serializable
     private AppContext toNotify;
 
     SentEvent() {

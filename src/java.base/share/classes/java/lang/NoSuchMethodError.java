@@ -43,14 +43,14 @@ class NoSuchMethodError extends IncompatibleClassChangeError {
     private static final long serialVersionUID = -3765521442372831335L;
 
     /**
-     * Constructs a <code>NoSuchMethodError</code> with no detail message.
+     * Constructs a {@code NoSuchMethodError} with no detail message.
      */
     public NoSuchMethodError() {
         super();
     }
 
     /**
-     * Constructs a <code>NoSuchMethodError</code> with the
+     * Constructs a {@code NoSuchMethodError} with the
      * specified detail message.
      *
      * @param   s   the detail message.

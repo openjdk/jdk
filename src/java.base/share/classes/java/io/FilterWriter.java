@@ -28,9 +28,9 @@ package java.io;
 
 /**
  * Abstract class for writing filtered character streams.
- * The abstract class <code>FilterWriter</code> itself
+ * The abstract class {@code FilterWriter} itself
  * provides default methods that pass all requests to the
- * contained stream. Subclasses of <code>FilterWriter</code>
+ * contained stream. Subclasses of {@code FilterWriter}
  * should override some of these methods and may also
  * provide additional methods and fields.
  *
@@ -49,7 +49,7 @@ public abstract class FilterWriter extends Writer {
      * Create a new filtered writer.
      *
      * @param out  a Writer object to provide the underlying stream.
-     * @throws NullPointerException if <code>out</code> is <code>null</code>
+     * @throws NullPointerException if {@code out} is {@code null}
      */
     protected FilterWriter(Writer out) {
         super(out);
