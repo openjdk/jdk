@@ -185,6 +185,7 @@ public class MediaTracker implements java.io.Serializable {
      * @see #addImage(Image, int)
      * @see #removeImage(Image)
      */
+    @SuppressWarnings("serial") // Not statically typed as Serializable
     MediaEntry head;
 
     /*
@@ -922,8 +923,10 @@ abstract class MediaEntry {
     }
 }
 
+@SuppressWarnings("serial") // MediaEntry does not have a no-arg ctor
 class ImageMediaEntry extends MediaEntry implements ImageObserver,
 java.io.Serializable {
+    @SuppressWarnings("serial") // Not statically typed as Serializable
     Image image;
     int width;
     int height;

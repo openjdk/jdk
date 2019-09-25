@@ -125,6 +125,7 @@ public class FileDialog extends Dialog {
      * @see #setFilenameFilter()
      * @see FileNameFilter
      */
+    @SuppressWarnings("serial") // Not statically typed as Serializable
     FilenameFilter filter;
 
     private static final String base = "filedlg";

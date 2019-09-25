@@ -130,6 +130,7 @@ public class BeanContextMembershipEvent extends BeanContextEvent {
     * The list of children affected by this
     * event notification.
     */
-    @SuppressWarnings("rawtypes")
+    @SuppressWarnings({"rawtypes",
+                       "serial"}) // Not statically typed as Serializable
     protected Collection children;
 }

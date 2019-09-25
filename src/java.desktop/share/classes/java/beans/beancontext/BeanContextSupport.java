@@ -338,7 +338,9 @@ public class      BeanContextSupport extends BeanContextChildSupport
          */
 
 
+        @SuppressWarnings("serial") // Not statically typed as Serializable
         private           Object   child;
+        @SuppressWarnings("serial") // Not statically typed as Serializable
         private           Object   proxyPeer;
 
         private transient boolean  removePending;

@@ -47,6 +47,7 @@ public class FilesEvent extends AppEvent {
     /**
      * The list of files.
      */
+    @SuppressWarnings("serial") // Not statically typed as Serializable
     final List<File> files;
 
     /**

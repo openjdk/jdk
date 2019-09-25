@@ -44,6 +44,7 @@ public class PrintJobAttributeEvent extends PrintEvent {
     /**
      * The printing service attributes that changed.
      */
+    @SuppressWarnings("serial") // Not statically typed as Serializable
     private PrintJobAttributeSet attributes;
 
     /**

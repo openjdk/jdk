@@ -104,6 +104,7 @@ public class AdjustmentEvent extends AWTEvent {
      * @serial
      * @see #getAdjustable
      */
+    @SuppressWarnings("serial") // Not statically typed as Serializable
     Adjustable adjustable;
 
     /**

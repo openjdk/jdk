@@ -85,6 +85,7 @@ public class InvocationEvent extends AWTEvent implements ActiveEvent {
     /**
      * The Runnable whose run() method will be called.
      */
+    @SuppressWarnings("serial") // Not statically typed as Serializable
     protected Runnable runnable;
 
     /**
@@ -94,6 +95,7 @@ public class InvocationEvent extends AWTEvent implements ActiveEvent {
      *
      * @see #isDispatched
      */
+    @SuppressWarnings("serial") // Not statically typed as Serializable
     protected volatile Object notifier;
 
     /**
@@ -103,6 +105,7 @@ public class InvocationEvent extends AWTEvent implements ActiveEvent {
      * @see #isDispatched
      * @since 1.8
      */
+    @SuppressWarnings("serial") // Not statically typed as Serializable
     private final Runnable listener;
 
     /**

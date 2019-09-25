@@ -616,7 +616,7 @@ public class      BeanContextServicesSupport extends BeanContextSupport
             /**
              * The service provider.
              */
-
+            @SuppressWarnings("serial") // Not statically typed as Serializable
             protected BeanContextServiceProvider serviceProvider;
         }
 
