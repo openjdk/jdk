@@ -166,6 +166,10 @@ findWithTemplate(XVisualInfo *vinfo,
         int id = -1;
         VisualID defaultVisual = XVisualIDFromVisual(DefaultVisual(awt_display, vinfo->screen));
         defaultConfig = ZALLOC(_AwtGraphicsConfigData);
+        if (defaultConfig == NULL) {
+            XFree(visualList);
+            return NULL;
+        }
         for (i = 0; i < visualsMatched; i++) {
             memcpy(&defaultConfig->awt_visInfo, &visualList[i], sizeof(XVisualInfo));
             defaultConfig->awt_depth = visualList[i].depth;
@@ -447,8 +451,12 @@ getAllConfigs (JNIEnv *env, int screen, AwtScreenDataPtr screenDataPtr) {
         } else {
             ind = nConfig++;
         }
-        graphicsConfigs [ind] = ZALLOC (_AwtGraphicsConfigData);
-        graphicsConfigs [ind]->awt_depth = pVITrue [i].depth;
+        graphicsConfigs[ind] = ZALLOC (_AwtGraphicsConfigData);
+        if (graphicsConfigs[ind] == NULL) {
+            JNU_ThrowOutOfMemoryError(env, "allocation in getAllConfigs failed");
+            goto cleanup;
+        }
+        graphicsConfigs[ind]->awt_depth = pVITrue [i].depth;
         memcpy (&graphicsConfigs [ind]->awt_visInfo, &pVITrue [i],
                 sizeof (XVisualInfo));
         if (xrenderFindVisualFormat != NULL) {
@@ -482,8 +490,12 @@ getAllConfigs (JNIEnv *env, int screen, AwtScreenDataPtr screenDataPtr) {
         } else {
             ind = nConfig++;
         }
-        graphicsConfigs [ind] = ZALLOC (_AwtGraphicsConfigData);
-        graphicsConfigs [ind]->awt_depth = pVI8p [i].depth;
+        graphicsConfigs[ind] = ZALLOC (_AwtGraphicsConfigData);
+        if (graphicsConfigs[ind] == NULL) {
+            JNU_ThrowOutOfMemoryError(env, "allocation in getAllConfigs failed");
+            goto cleanup;
+        }
+        graphicsConfigs[ind]->awt_depth = pVI8p [i].depth;
         memcpy (&graphicsConfigs [ind]->awt_visInfo, &pVI8p [i],
                 sizeof (XVisualInfo));
     }
@@ -495,8 +507,12 @@ getAllConfigs (JNIEnv *env, int screen, AwtScreenDataPtr screenDataPtr) {
         } else {
             ind = nConfig++;
         }
-        graphicsConfigs [ind] = ZALLOC (_AwtGraphicsConfigData);
-        graphicsConfigs [ind]->awt_depth = pVI12p [i].depth;
+        graphicsConfigs[ind] = ZALLOC (_AwtGraphicsConfigData);
+        if (graphicsConfigs[ind] == NULL) {
+            JNU_ThrowOutOfMemoryError(env, "allocation in getAllConfigs failed");
+            goto cleanup;
+        }
+        graphicsConfigs[ind]->awt_depth = pVI12p [i].depth;
         memcpy (&graphicsConfigs [ind]->awt_visInfo, &pVI12p [i],
                 sizeof (XVisualInfo));
     }
@@ -508,8 +524,12 @@ getAllConfigs (JNIEnv *env, int screen, AwtScreenDataPtr screenDataPtr) {
         } else {
             ind = nConfig++;
         }
-        graphicsConfigs [ind] = ZALLOC (_AwtGraphicsConfigData);
-        graphicsConfigs [ind]->awt_depth = pVI8s [i].depth;
+        graphicsConfigs[ind] = ZALLOC (_AwtGraphicsConfigData);
+        if (graphicsConfigs[ind] == NULL) {
+            JNU_ThrowOutOfMemoryError(env, "allocation in getAllConfigs failed");
+            goto cleanup;
+        }
+        graphicsConfigs[ind]->awt_depth = pVI8s [i].depth;
         memcpy (&graphicsConfigs [ind]->awt_visInfo, &pVI8s [i],
                 sizeof (XVisualInfo));
     }
@@ -521,8 +541,12 @@ getAllConfigs (JNIEnv *env, int screen, AwtScreenDataPtr screenDataPtr) {
         } else {
             ind = nConfig++;
         }
-        graphicsConfigs [ind] = ZALLOC (_AwtGraphicsConfigData);
-        graphicsConfigs [ind]->awt_depth = pVI8gs [i].depth;
+        graphicsConfigs[ind] = ZALLOC (_AwtGraphicsConfigData);
+        if (graphicsConfigs[ind] == NULL) {
+            JNU_ThrowOutOfMemoryError(env, "allocation in getAllConfigs failed");
+            goto cleanup;
+        }
+        graphicsConfigs[ind]->awt_depth = pVI8gs [i].depth;
         memcpy (&graphicsConfigs [ind]->awt_visInfo, &pVI8gs [i],
                 sizeof (XVisualInfo));
     }
@@ -534,8 +558,12 @@ getAllConfigs (JNIEnv *env, int screen, AwtScreenDataPtr screenDataPtr) {
         } else {
             ind = nConfig++;
         }
-        graphicsConfigs [ind] = ZALLOC (_AwtGraphicsConfigData);
-        graphicsConfigs [ind]->awt_depth = pVI8sg [i].depth;
+        graphicsConfigs[ind] = ZALLOC (_AwtGraphicsConfigData);
+        if (graphicsConfigs[ind] == NULL) {
+            JNU_ThrowOutOfMemoryError(env, "allocation in getAllConfigs failed");
+            goto cleanup;
+        }
+        graphicsConfigs[ind]->awt_depth = pVI8sg [i].depth;
         memcpy (&graphicsConfigs [ind]->awt_visInfo, &pVI8sg [i],
                 sizeof (XVisualInfo));
     }
@@ -547,12 +575,20 @@ getAllConfigs (JNIEnv *env, int screen, AwtScreenDataPtr screenDataPtr) {
         } else {
             ind = nConfig++;
         }
-        graphicsConfigs [ind] = ZALLOC (_AwtGraphicsConfigData);
-        graphicsConfigs [ind]->awt_depth = pVI1sg [i].depth;
+        graphicsConfigs[ind] = ZALLOC (_AwtGraphicsConfigData);
+        if (graphicsConfigs[ind] == NULL) {
+            JNU_ThrowOutOfMemoryError(env, "allocation in getAllConfigs failed");
+            goto cleanup;
+        }
+        graphicsConfigs[ind]->awt_depth = pVI1sg [i].depth;
         memcpy (&graphicsConfigs [ind]->awt_visInfo, &pVI1sg [i],
                 sizeof (XVisualInfo));
     }
 
+    screenDataPtr->numConfigs = nConfig;
+    screenDataPtr->configs = graphicsConfigs;
+
+cleanup:
     if (n8p != 0)
        XFree (pVI8p);
     if (n12p != 0)
@@ -565,9 +601,6 @@ getAllConfigs (JNIEnv *env, int screen, AwtScreenDataPtr screenDataPtr) {
        XFree (pVI8sg);
     if (n1sg != 0)
        XFree (pVI1sg);
-
-    screenDataPtr->numConfigs = nConfig;
-    screenDataPtr->configs = graphicsConfigs;
 
     AWT_UNLOCK ();
 }
