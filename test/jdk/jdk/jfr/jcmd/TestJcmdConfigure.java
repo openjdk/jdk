@@ -25,6 +25,7 @@
 
 package jdk.jfr.jcmd;
 
+import java.io.File;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.ArrayList;
@@ -56,8 +57,8 @@ public class TestJcmdConfigure {
     private static final String SAMPLE_THREADS = "samplethreads";
     private static final String UNSUPPORTED_OPTION = "unsupportedoption";
 
-    private static final String REPOSITORYPATH_1 = "./repo1";
-    private static final String REPOSITORYPATH_2 = "./repo2";
+    private static final String REPOSITORYPATH_1 = "." + File.pathSeparator + "repo1";
+    private static final String REPOSITORYPATH_2 = "." + File.pathSeparator + "repo2";
 
     private static final String REPOSITORYPATH_SETTING_1 = "repositorypath="+REPOSITORYPATH_1;
     private static final String REPOSITORYPATH_SETTING_2 = "repositorypath="+REPOSITORYPATH_2;
