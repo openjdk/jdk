@@ -1255,9 +1255,9 @@ public abstract class Provider extends Properties {
         }
         synchronized (this) {
             ensureLegacyParsed();
-        }
-        if (legacyMap != null && !legacyMap.isEmpty()) {
-            return legacyMap.get(key);
+            if (legacyMap != null && !legacyMap.isEmpty()) {
+                return legacyMap.get(key);
+            }
         }
         return null;
     }
