@@ -242,7 +242,12 @@ public class TestCommon extends CDSTestUtils {
         if (opts.appJarDir != null) {
             pb.directory(new File(opts.appJarDir));
         }
-        return executeAndLog(pb, "dump");
+
+        OutputAnalyzer output = executeAndLog(pb, "dump");
+        if (DYNAMIC_DUMP && isUnableToMap(output)) {
+            throw new SkippedException(UnableToMapMsg);
+        }
+        return output;
     }
 
     // This allows you to run the AppCDS tests with JFR enabled at runtime (though not at
@@ -462,9 +467,6 @@ public class TestCommon extends CDSTestUtils {
                                           String... suffix) throws Exception {
         OutputAnalyzer output = dump(appJar, classList, suffix);
         if (DYNAMIC_DUMP) {
-            if (isUnableToMap(output)) {
-                throw new SkippedException(UnableToMapMsg);
-            }
             output.shouldContain("Written dynamic archive");
         } else {
             output.shouldContain("Loading classes to share");
@@ -477,9 +479,6 @@ public class TestCommon extends CDSTestUtils {
                                           String... suffix) throws Exception {
         OutputAnalyzer output = dump(appJarDir, appJar, classList, suffix);
         if (DYNAMIC_DUMP) {
-            if (isUnableToMap(output)) {
-                throw new SkippedException(UnableToMapMsg);
-            }
             output.shouldContain("Written dynamic archive");
         } else {
             output.shouldContain("Loading classes to share");
