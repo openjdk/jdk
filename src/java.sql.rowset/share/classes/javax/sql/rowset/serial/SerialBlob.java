@@ -73,6 +73,7 @@ public class SerialBlob implements Blob, Serializable, Cloneable {
      * The internal representation of the <code>Blob</code> object on which this
      * <code>SerialBlob</code> object is based.
      */
+    @SuppressWarnings("serial") // Not statically typed as Serializable; checked in writeObject
     private Blob blob;
 
     /**

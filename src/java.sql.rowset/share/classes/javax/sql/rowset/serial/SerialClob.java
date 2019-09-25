@@ -68,6 +68,7 @@ public class SerialClob implements Clob, Serializable, Cloneable {
      * Internal Clob representation if SerialClob is initialized with a
      * Clob. Null if SerialClob is initialized with a char[].
      */
+    @SuppressWarnings("serial")  // Not statically typed as Serializable; checked in writeObject
     private Clob clob;
 
     /**

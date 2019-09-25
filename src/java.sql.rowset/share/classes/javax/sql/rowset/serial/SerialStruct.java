@@ -80,6 +80,7 @@ public class SerialStruct implements Struct, Serializable, Cloneable {
      *
      * @serial
      */
+    @SuppressWarnings("serial") // Not statically typed as Serializable
     private Object attribs[];
 
     /**

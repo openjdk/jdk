@@ -66,6 +66,7 @@ public class SerialArray implements Array, Serializable, Cloneable {
      * in the SQL <code>ARRAY</code> value.
      * @serial
      */
+    @SuppressWarnings("serial") // Not statically typed as Serializable
     private Object[] elements;
 
     /**

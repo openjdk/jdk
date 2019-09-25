@@ -61,6 +61,7 @@ public class SerialJavaObject implements Serializable, Cloneable {
     /**
      * Placeholder for object to be serialized.
      */
+    @SuppressWarnings("serial") // Not statically typed as Serializable
     private Object obj;
 
 
