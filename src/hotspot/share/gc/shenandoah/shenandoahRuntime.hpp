@@ -44,7 +44,7 @@ public:
 
   static oopDesc* load_reference_barrier_native(oopDesc* src);
 
-  static void shenandoah_clone_barrier(oopDesc* s, oopDesc* d, size_t length);
+  static void shenandoah_clone_barrier(oopDesc* src, void* src_ptr, void* dst_ptr, size_t length);
 };
 
 #endif // SHARE_GC_SHENANDOAH_SHENANDOAHRUNTIME_HPP

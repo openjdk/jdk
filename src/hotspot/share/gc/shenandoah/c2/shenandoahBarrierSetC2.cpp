@@ -461,11 +461,12 @@ const TypeFunc* ShenandoahBarrierSetC2::write_ref_field_pre_entry_Type() {
 }
 
 const TypeFunc* ShenandoahBarrierSetC2::shenandoah_clone_barrier_Type() {
-  const Type **fields = TypeTuple::fields(3);
-  fields[TypeFunc::Parms+0] = TypeInstPtr::NOTNULL; // src
-  fields[TypeFunc::Parms+1] = TypeInstPtr::NOTNULL; // dst
-  fields[TypeFunc::Parms+2] = TypeInt::INT; // length
-  const TypeTuple *domain = TypeTuple::make(TypeFunc::Parms+3, fields);
+  const Type **fields = TypeTuple::fields(4);
+  fields[TypeFunc::Parms+0] = TypeInstPtr::NOTNULL; // src oop
+  fields[TypeFunc::Parms+1] = TypeRawPtr::NOTNULL;  // src
+  fields[TypeFunc::Parms+2] = TypeRawPtr::NOTNULL;  // dst
+  fields[TypeFunc::Parms+3] = TypeInt::INT;         // length
+  const TypeTuple *domain = TypeTuple::make(TypeFunc::Parms+4, fields);
 
   // create result type (range)
   fields = TypeTuple::fields(0);
@@ -807,13 +808,16 @@ void ShenandoahBarrierSetC2::clone_at_expansion(PhaseMacroExpand* phase, ArrayCo
   Node* dest_offset = ac->in(ArrayCopyNode::DestPos);
   Node* length = ac->in(ArrayCopyNode::Length);
   assert (src_offset == NULL && dest_offset == NULL, "for clone offsets should be null");
+  assert (src->is_AddP(), "for clone the src should be the interior ptr");
+  assert (dest->is_AddP(), "for clone the dst should be the interior ptr");
+
   if (ShenandoahCloneBarrier && clone_needs_barrier(src, phase->igvn())) {
     Node* call = phase->make_leaf_call(ctrl, mem,
                     ShenandoahBarrierSetC2::shenandoah_clone_barrier_Type(),
                     CAST_FROM_FN_PTR(address, ShenandoahRuntime::shenandoah_clone_barrier),
                     "shenandoah_clone",
                     TypeRawPtr::BOTTOM,
-                    src, dest, length);
+                    src->in(AddPNode::Base), src, dest, length);
     call = phase->transform_later(call);
     phase->igvn().replace_node(ac, call);
   } else {
