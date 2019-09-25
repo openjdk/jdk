@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -68,6 +68,7 @@ public class HostAddresses implements Cloneable {
     private HostAddress[] addresses = null;
     private volatile int hashCode = 0;
 
+    // Warning: called by nativeccache.c
     public HostAddresses(HostAddress[] new_addresses) throws IOException {
         if (new_addresses != null) {
            addresses = new HostAddress[new_addresses.length];

@@ -88,6 +88,7 @@ public class Credentials {
         this.authzData = authzData;
     }
 
+    // Warning: called by NativeCreds.c and nativeccache.c
     public Credentials(Ticket new_ticket,
                        PrincipalName new_client,
                        PrincipalName new_client_alias,

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -61,6 +61,7 @@ public class GSSCredElement implements GSSCredentialSpi {
     }
 
     // Construct delegation cred using the actual context mech and srcName
+    // Warning: called by NativeUtil.c
     GSSCredElement(long pCredentials, GSSNameElement srcName, Oid mech)
         throws GSSException {
         pCred = pCredentials;

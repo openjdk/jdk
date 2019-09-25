@@ -309,7 +309,7 @@ public class Krb5 {
         return errMsgList.get(i);
     }
 
-
+    // Warning: used by NativeCreds.c
     public static final boolean DEBUG = GetBooleanAction
             .privilegedGetProperty("sun.security.krb5.debug");
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -218,8 +218,8 @@ public class EncryptionKey
      * credential cache file.
      *
      */
-     // Used in JSSE (KerberosWrapper), Credentials,
-     // javax.security.auth.kerberos.KeyImpl
+    // Used in Credentials, and javax.security.auth.kerberos.KeyImpl
+    // Warning: called by NativeCreds.c and nativeccache.c
     public EncryptionKey(int keyType,
                          byte[] keyValue) {
         this(keyValue, keyType, null);

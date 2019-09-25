@@ -88,8 +88,7 @@ public class KerberosTime {
         this(time, 0);
     }
 
-    // This constructor is used in the native code
-    // src/windows/native/sun/security/krb5/NativeCreds.c
+    // Warning: called by NativeCreds.c and nativeccache.c
     public KerberosTime(String time) throws Asn1Exception {
         this(toKerberosTime(time), 0);
     }
