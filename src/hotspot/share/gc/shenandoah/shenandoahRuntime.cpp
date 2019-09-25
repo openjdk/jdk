@@ -23,6 +23,7 @@
 
 #include "precompiled.hpp"
 #include "gc/shenandoah/shenandoahBarrierSet.inline.hpp"
+#include "gc/shenandoah/shenandoahBarrierSetClone.inline.hpp"
 #include "gc/shenandoah/shenandoahRuntime.hpp"
 #include "gc/shenandoah/shenandoahThreadLocalData.hpp"
 #include "runtime/interfaceSupport.inline.hpp"

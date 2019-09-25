@@ -186,7 +186,7 @@ inline oop ShenandoahBarrierSet::AccessBarrier<decorators, BarrierSetT>::oop_ato
 template <DecoratorSet decorators, typename BarrierSetT>
 void ShenandoahBarrierSet::AccessBarrier<decorators, BarrierSetT>::clone_in_heap(oop src, oop dst, size_t size) {
   if (ShenandoahCloneBarrier) {
-    ShenandoahBarrierSet::barrier_set()->clone_barrier(src);
+    ShenandoahBarrierSet::barrier_set()->clone_barrier_runtime(src);
   }
   Raw::clone(src, dst, size);
 }
@@ -271,69 +271,6 @@ void ShenandoahBarrierSet::arraycopy_update(oop* src, size_t count) {
 
 void ShenandoahBarrierSet::arraycopy_update(narrowOop* src, size_t count) {
   arraycopy_update_impl(src, count);
-}
-
-template <bool EVAC, bool ENQUEUE>
-class ShenandoahUpdateRefsForOopClosure: public BasicOopIterateClosure {
-private:
-  ShenandoahHeap* const _heap;
-  ShenandoahBarrierSet* const _bs;
-  const ShenandoahCollectionSet* const _cset;
-  Thread* const _thread;
-
-  template <class T>
-  inline void do_oop_work(T* p) {
-    T o = RawAccess<>::oop_load(p);
-    if (!CompressedOops::is_null(o)) {
-      oop obj = CompressedOops::decode_not_null(o);
-      if (_cset->is_in((HeapWord *)obj)) {
-        oop fwd = _bs->resolve_forwarded_not_null(obj);
-        if (EVAC && obj == fwd) {
-          fwd = _heap->evacuate_object(obj, _thread);
-        }
-        if (ENQUEUE) {
-          _bs->enqueue(fwd);
-        }
-        assert(obj != fwd || _heap->cancelled_gc(), "must be forwarded");
-        ShenandoahHeap::cas_oop(fwd, p, o);
-      }
-
-    }
-  }
-public:
-  ShenandoahUpdateRefsForOopClosure() :
-          _heap(ShenandoahHeap::heap()),
-          _bs(ShenandoahBarrierSet::barrier_set()),
-          _cset(_heap->collection_set()),
-          _thread(Thread::current()) {
-  }
-
-  virtual void do_oop(oop* p)       { do_oop_work(p); }
-  virtual void do_oop(narrowOop* p) { do_oop_work(p); }
-};
-
-void ShenandoahBarrierSet::clone_barrier(oop obj) {
-  assert(ShenandoahCloneBarrier, "only get here with clone barriers enabled");
-  if (!_heap->has_forwarded_objects()) return;
-
-  // This is called for cloning an object (see jvm.cpp) after the clone
-  // has been made. We are not interested in any 'previous value' because
-  // it would be NULL in any case. But we *are* interested in any oop*
-  // that potentially need to be updated.
-
-  shenandoah_assert_correct(NULL, obj);
-  if (_heap->is_evacuation_in_progress()) {
-    ShenandoahEvacOOMScope evac_scope;
-    ShenandoahUpdateRefsForOopClosure</* evac = */ true, /* enqueue */ false> cl;
-    obj->oop_iterate(&cl);
-  } else if (_heap->is_concurrent_traversal_in_progress()) {
-    ShenandoahEvacOOMScope evac_scope;
-    ShenandoahUpdateRefsForOopClosure</* evac = */ true, /* enqueue */ true> cl;
-    obj->oop_iterate(&cl);
-  } else {
-    ShenandoahUpdateRefsForOopClosure</* evac = */ false, /* enqueue */ false> cl;
-    obj->oop_iterate(&cl);
-  }
 }
 
 #endif // SHARE_GC_SHENANDOAH_SHENANDOAHBARRIERSET_INLINE_HPP

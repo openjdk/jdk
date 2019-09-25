@@ -24,6 +24,7 @@
 #include "precompiled.hpp"
 #include "gc/shenandoah/shenandoahAsserts.hpp"
 #include "gc/shenandoah/shenandoahBarrierSet.hpp"
+#include "gc/shenandoah/shenandoahBarrierSetClone.inline.hpp"
 #include "gc/shenandoah/shenandoahBarrierSetAssembler.hpp"
 #include "gc/shenandoah/shenandoahCollectorPolicy.hpp"
 #include "gc/shenandoah/shenandoahHeap.inline.hpp"
@@ -283,3 +284,8 @@ oop ShenandoahBarrierSet::oop_load_from_native_barrier(oop obj) {
 
   return load_reference_barrier_not_null(obj);
 }
+
+void ShenandoahBarrierSet::clone_barrier_runtime(oop src) {
+  clone_barrier(src);
+}
+
