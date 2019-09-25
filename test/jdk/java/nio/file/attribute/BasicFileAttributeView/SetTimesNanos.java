@@ -22,9 +22,9 @@
  */
 
 /* @test
- * @bug 8181493
+ * @bug 8181493 8231174
  * @summary Verify that nanosecond precision is maintained for file timestamps
- * @requires (os.family == "linux") | (os.family == "mac") | (os.family == "solaris")
+ * @requires (os.family == "linux") | (os.family == "mac") | (os.family == "solaris") | (os.family == "windows")
  * @modules java.base/sun.nio.fs:+open
  */
 
@@ -40,14 +40,21 @@ import java.util.Set;
 import java.util.concurrent.TimeUnit;
 
 public class SetTimesNanos {
+    private static final boolean IS_WINDOWS =
+        System.getProperty("os.name").startsWith("Windows");
+
     public static void main(String[] args) throws Exception {
-        // Check whether futimens() system call is supported
-        Class unixNativeDispatcherClass = Class.forName("sun.nio.fs.UnixNativeDispatcher");
-        Method futimensSupported = unixNativeDispatcherClass.getDeclaredMethod("futimensSupported");
-        futimensSupported.setAccessible(true);
-        if (!(boolean)futimensSupported.invoke(null)) {
-            System.err.println("futimens() system call not supported; skipping test");
-            return;
+        if (!IS_WINDOWS) {
+            // Check whether futimens() system call is supported
+            Class unixNativeDispatcherClass =
+                Class.forName("sun.nio.fs.UnixNativeDispatcher");
+            Method futimensSupported =
+                unixNativeDispatcherClass.getDeclaredMethod("futimensSupported");
+            futimensSupported.setAccessible(true);
+            if (!(boolean)futimensSupported.invoke(null)) {
+                System.err.println("futimens() not supported; skipping test");
+                return;
+            }
         }
 
         Path dirPath = Path.of("test");
@@ -56,7 +63,8 @@ public class SetTimesNanos {
         System.out.format("FileStore: \"%s\" on %s (%s)%n",
             dir, store.name(), store.type());
 
-        Set<String> testedTypes = Set.of("apfs", "ext4", "xfs", "zfs");
+        Set<String> testedTypes = IS_WINDOWS ?
+            Set.of("NTFS") : Set.of("apfs", "ext4", "xfs", "zfs");
         if (!testedTypes.contains(store.type())) {
             System.err.format("%s not in %s; skipping test", store.type(), testedTypes);
             return;
@@ -76,6 +84,11 @@ public class SetTimesNanos {
         BasicFileAttributeView view =
             Files.getFileAttributeView(path, BasicFileAttributeView.class);
         view.setTimes(pathTime, pathTime, null);
+
+        // Windows file time resolution is 100ns so truncate
+        if (IS_WINDOWS) {
+            timeNanos = 100L*(timeNanos/100L);
+        }
 
         // Read attributes
         BasicFileAttributes attrs =

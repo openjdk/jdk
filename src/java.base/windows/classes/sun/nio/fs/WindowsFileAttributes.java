@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -108,8 +108,9 @@ class WindowsFileAttributes
     private static final short OFFSETOF_FIND_DATA_SIZELOW = 32;
     private static final short OFFSETOF_FIND_DATA_RESERVED0 = 36;
 
-    // used to adjust values between Windows and java epoch
-    private static final long WINDOWS_EPOCH_IN_MICROSECONDS = -11644473600000000L;
+    // used to adjust values between Windows and java epochs
+    private static final long WINDOWS_EPOCH_IN_MICROS = -11644473600000000L;
+    private static final long WINDOWS_EPOCH_IN_100NS  = -116444736000000000L;
 
     // indicates if accurate metadata is required (interesting on NTFS only)
     private static final boolean ensureAccurateMetadata;
@@ -137,24 +138,23 @@ class WindowsFileAttributes
      * since January 1, 1601 to a FileTime.
      */
     static FileTime toFileTime(long time) {
-        // 100ns -> us
-        time /= 10L;
-        // adjust to java epoch
-        time += WINDOWS_EPOCH_IN_MICROSECONDS;
-        return FileTime.from(time, TimeUnit.MICROSECONDS);
+        try {
+            long adjusted = Math.addExact(time, WINDOWS_EPOCH_IN_100NS);
+            long nanos = Math.multiplyExact(adjusted, 100L);
+            return FileTime.from(nanos, TimeUnit.NANOSECONDS);
+        } catch (ArithmeticException e) {
+            long micros = Math.addExact(time/10L, WINDOWS_EPOCH_IN_MICROS);
+            return FileTime.from(micros, TimeUnit.MICROSECONDS);
+        }
     }
 
     /**
-     * Convert FileTime to 64-bit value representing the number of 100-nanosecond
-     * intervals since January 1, 1601.
+     * Convert FileTime to 64-bit value representing the number of
+     * 100-nanosecond intervals since January 1, 1601.
      */
     static long toWindowsTime(FileTime time) {
-        long value = time.to(TimeUnit.MICROSECONDS);
-        // adjust to Windows epoch+= 11644473600000000L;
-        value -= WINDOWS_EPOCH_IN_MICROSECONDS;
-        // us -> 100ns
-        value *= 10L;
-        return value;
+        long adjusted = time.to(TimeUnit.NANOSECONDS)/100L;
+        return adjusted - WINDOWS_EPOCH_IN_100NS;
     }
 
     /**
