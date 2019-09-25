@@ -49,8 +49,9 @@ public class invocationC1Tests {
         System.out.println("\nC1 invocation tests, Tests: " + whichTests +
                            ", class file version: " + classFileVersion);
         ProcessBuilder pb = ProcessTools.createJavaProcessBuilder(false, "-Xmx128M",
-            "-Xcomp", "-XX:TieredStopAtLevel=1", whichTests,
-            "--classfile_version=" + classFileVersion);
+            "-Xcomp", "-XX:TieredStopAtLevel=1",
+            "--add-exports", "java.base/jdk.internal.org.objectweb.asm=ALL-UNNAMED",
+            whichTests, "--classfile_version=" + classFileVersion);
         OutputAnalyzer output = new OutputAnalyzer(pb.start());
         try {
             output.shouldContain("EXECUTION STATUS: PASSED");

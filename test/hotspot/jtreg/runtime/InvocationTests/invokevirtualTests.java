@@ -47,6 +47,7 @@ public class invokevirtualTests {
         System.out.println("\ninvokevirtual invocation tests, option: " + option +
                            ", class file version: " + classFileVersion);
         ProcessBuilder pb = ProcessTools.createJavaProcessBuilder(false, "-Xmx128M", option,
+            "--add-exports", "java.base/jdk.internal.org.objectweb.asm=ALL-UNNAMED",
             "invokevirtual.Generator", "--classfile_version=" + classFileVersion);
         OutputAnalyzer output = new OutputAnalyzer(pb.start());
         try {
