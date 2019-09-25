@@ -135,6 +135,7 @@ Mutex*   CodeHeapStateAnalytics_lock  = NULL;
 Mutex*   MetaspaceExpand_lock         = NULL;
 Mutex*   ClassLoaderDataGraph_lock    = NULL;
 Monitor* ThreadsSMRDelete_lock        = NULL;
+Mutex*   ThreadIdTableCreate_lock     = NULL;
 Mutex*   SharedDecoder_lock           = NULL;
 Mutex*   DCmdFactory_lock             = NULL;
 #if INCLUDE_NMT
@@ -317,6 +318,7 @@ void mutex_init() {
   def(CodeHeapStateAnalytics_lock  , PaddedMutex  , leaf,        true,  Monitor::_safepoint_check_never);
   def(NMethodSweeperStats_lock     , PaddedMutex  , special,     true,  Monitor::_safepoint_check_never);
   def(ThreadsSMRDelete_lock        , PaddedMonitor, special,     true,  Monitor::_safepoint_check_never);
+  def(ThreadIdTableCreate_lock     , PaddedMutex  , leaf,        false, Monitor::_safepoint_check_always);
   def(SharedDecoder_lock           , PaddedMutex  , native,      false, Monitor::_safepoint_check_never);
   def(DCmdFactory_lock             , PaddedMutex  , leaf,        true,  Monitor::_safepoint_check_never);
 #if INCLUDE_NMT
