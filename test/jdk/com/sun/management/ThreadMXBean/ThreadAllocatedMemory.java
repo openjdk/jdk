@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug     6173675
+ * @bug     6173675 8231209
  * @summary Basic test of ThreadMXBean.getThreadAllocatedBytes
  * @author  Paul Hohensee
  */
@@ -33,9 +33,8 @@ import java.lang.management.*;
 public class ThreadAllocatedMemory {
     private static com.sun.management.ThreadMXBean mbean =
         (com.sun.management.ThreadMXBean)ManagementFactory.getThreadMXBean();
-    private static boolean testFailed = false;
-    private static boolean done = false;
-    private static boolean done1 = false;
+    private static volatile boolean done = false;
+    private static volatile boolean done1 = false;
     private static Object obj = new Object();
     private static final int NUM_THREADS = 10;
     private static Thread[] threads = new Thread[NUM_THREADS];
@@ -44,6 +43,22 @@ public class ThreadAllocatedMemory {
     public static void main(String[] argv)
         throws Exception {
 
+        testSupportEnableDisable();
+
+        // Test current thread two ways
+        testGetCurrentThreadAllocatedBytes();
+        testCurrentThreadGetThreadAllocatedBytes();
+
+        // Test a single thread that is not this one
+        testGetThreadAllocatedBytes();
+
+        // Test many threads that are not this one
+        testGetThreadsAllocatedBytes();
+
+        System.out.println("Test passed");
+    }
+
+    private static void testSupportEnableDisable() {
         if (!mbean.isThreadAllocatedMemorySupported()) {
             return;
         }
@@ -58,10 +73,7 @@ public class ThreadAllocatedMemory {
                 "ThreadAllocatedMemory is expected to be disabled");
         }
 
-        Thread curThread = Thread.currentThread();
-        long id = curThread.getId();
-
-        long s = mbean.getThreadAllocatedBytes(id);
+        long s = mbean.getCurrentThreadAllocatedBytes();
         if (s != -1) {
             throw new RuntimeException(
                 "Invalid ThreadAllocatedBytes returned = " +
@@ -77,63 +89,106 @@ public class ThreadAllocatedMemory {
             throw new RuntimeException(
                 "ThreadAllocatedMemory is expected to be enabled");
         }
+    }
 
-        long size = mbean.getThreadAllocatedBytes(id);
-        // implementation could have started measurement when
-        // measurement was enabled, in which case size can be 0
-        if (size < 0) {
-            throw new RuntimeException(
-                "Invalid allocated bytes returned = " + size);
-        }
+    private static void testGetCurrentThreadAllocatedBytes() {
+        long size = mbean.getCurrentThreadAllocatedBytes();
+        ensureValidSize(size);
 
+        // do some more allocation
         doit();
 
-        // Expected to be size1 >= size
-        long size1 = mbean.getThreadAllocatedBytes(id);
-        if (size1 < size) {
-            throw new RuntimeException("Allocated bytes " + size1 +
-                " expected >= " + size);
-        }
-        System.out.println(curThread.getName() +
-            " Current thread allocated bytes = " + size +
-            " allocated bytes = " + size1);
+        checkResult(Thread.currentThread(), size,
+                    mbean.getCurrentThreadAllocatedBytes());
+    }
 
+    private static void testCurrentThreadGetThreadAllocatedBytes() {
+        Thread curThread = Thread.currentThread();
+        long id = curThread.getId();
 
-        // start threads, wait for them to block
-        for (int i = 0; i < NUM_THREADS; i++) {
-            threads[i] = new MyThread("MyThread-" + i);
-            threads[i].start();
-        }
+        long size = mbean.getThreadAllocatedBytes(id);
+        ensureValidSize(size);
 
-        // threads block after doing some allocation
-        waitUntilThreadBlocked();
+        // do some more allocation
+        doit();
 
-        for (int i = 0; i < NUM_THREADS; i++) {
-            sizes[i] = mbean.getThreadAllocatedBytes(threads[i].getId());
-        }
+        checkResult(curThread, size, mbean.getThreadAllocatedBytes(id));
+    }
 
-        // let threads go and do some more allocation
+    private static void testGetThreadAllocatedBytes()
+        throws Exception {
+
+        // start a thread
+        done = false; done1 = false;
+        Thread curThread = new MyThread("MyThread");
+        curThread.start();
+        long id = curThread.getId();
+
+        // wait for thread to block after doing some allocation
+        waitUntilThreadBlocked(curThread);
+
+        long size = mbean.getThreadAllocatedBytes(id);
+        ensureValidSize(size);
+
+        // let thread go to do some more allocation
         synchronized (obj) {
             done = true;
             obj.notifyAll();
         }
 
-        // wait for threads to get going again.  we don't care if we
+        // wait for thread to get going again. we don't care if we
+        // catch it in mid-execution or if it hasn't
+        // restarted after we're done sleeping.
+        goSleep(400);
+
+        checkResult(curThread, size, mbean.getThreadAllocatedBytes(id));
+
+        // let thread exit
+        synchronized (obj) {
+            done1 = true;
+            obj.notifyAll();
+        }
+
+        try {
+            curThread.join();
+        } catch (InterruptedException e) {
+            System.out.println("Unexpected exception is thrown.");
+            e.printStackTrace(System.out);
+        }
+    }
+
+    private static void testGetThreadsAllocatedBytes()
+        throws Exception {
+
+        // start threads
+        done = false; done1 = false;
+        for (int i = 0; i < NUM_THREADS; i++) {
+            threads[i] = new MyThread("MyThread-" + i);
+            threads[i].start();
+        }
+
+        // wait for threads to block after doing some allocation
+        waitUntilThreadsBlocked();
+
+        for (int i = 0; i < NUM_THREADS; i++) {
+            sizes[i] = mbean.getThreadAllocatedBytes(threads[i].getId());
+            ensureValidSize(sizes[i]);
+        }
+
+        // let threads go to do some more allocation
+        synchronized (obj) {
+            done = true;
+            obj.notifyAll();
+        }
+
+        // wait for threads to get going again. we don't care if we
         // catch them in mid-execution or if some of them haven't
         // restarted after we're done sleeping.
         goSleep(400);
 
         for (int i = 0; i < NUM_THREADS; i++) {
-            long newSize = mbean.getThreadAllocatedBytes(threads[i].getId());
-            if (sizes[i] > newSize) {
-                throw new RuntimeException("TEST FAILED: " +
-                    threads[i].getName() +
-                    " previous allocated bytes = " + sizes[i] +
-                    " > current allocated bytes = " + newSize);
-            }
-            System.out.println(threads[i].getName() +
-                " Previous allocated bytes = " + sizes[i] +
-                " Current allocated bytes = " + newSize);
+            checkResult(threads[i], sizes[i],
+                        mbean.getThreadAllocatedBytes(threads[i].getId()));
         }
 
         // let threads exit
@@ -148,17 +203,30 @@ public class ThreadAllocatedMemory {
             } catch (InterruptedException e) {
                 System.out.println("Unexpected exception is thrown.");
                 e.printStackTrace(System.out);
-                testFailed = true;
                 break;
             }
         }
-        if (testFailed) {
-            throw new RuntimeException("TEST FAILED");
-        }
-
-        System.out.println("Test passed");
     }
 
+    private static void ensureValidSize(long size) {
+        // implementation could have started measurement when
+        // measurement was enabled, in which case size can be 0
+        if (size < 0) {
+            throw new RuntimeException(
+                "Invalid allocated bytes returned = " + size);
+        }
+    }
+
+    private static void checkResult(Thread curThread,
+                                    long prev_size, long curr_size) {
+        if (curr_size < prev_size) {
+            throw new RuntimeException("Allocated bytes " + curr_size +
+                                       " expected >= " + prev_size);
+        }
+        System.out.println(curThread.getName() +
+                           " Previous allocated bytes = " + prev_size +
+                           " Current allocated bytes = " + curr_size);
+    }
 
     private static void goSleep(long ms) throws Exception {
         try {
@@ -169,7 +237,18 @@ public class ThreadAllocatedMemory {
         }
     }
 
-    private static void waitUntilThreadBlocked()
+    private static void waitUntilThreadBlocked(Thread thread)
+        throws Exception {
+        while (true) {
+            goSleep(100);
+            ThreadInfo info = mbean.getThreadInfo(thread.getId());
+            if (info.getThreadState() == Thread.State.WAITING) {
+                break;
+            }
+        }
+    }
+
+    private static void waitUntilThreadsBlocked()
         throws Exception {
         int count = 0;
         while (count != NUM_THREADS) {
@@ -210,7 +289,6 @@ public class ThreadAllocatedMemory {
                     } catch (InterruptedException e) {
                         System.out.println("Unexpected exception is thrown.");
                         e.printStackTrace(System.out);
-                        testFailed = true;
                         break;
                     }
                 }
@@ -225,7 +303,7 @@ public class ThreadAllocatedMemory {
                 " ThreadAllocatedBytes  = " + size2);
 
             if (size1 > size2) {
-                throw new RuntimeException("TEST FAILED: " + getName() +
+                throw new RuntimeException(getName() +
                     " ThreadAllocatedBytes = " + size1 +
                     " > ThreadAllocatedBytes = " + size2);
             }
@@ -237,7 +315,6 @@ public class ThreadAllocatedMemory {
                     } catch (InterruptedException e) {
                         System.out.println("Unexpected exception is thrown.");
                         e.printStackTrace(System.out);
-                        testFailed = true;
                         break;
                     }
                 }

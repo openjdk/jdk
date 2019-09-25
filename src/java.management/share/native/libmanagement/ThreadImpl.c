@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -92,6 +92,13 @@ Java_sun_management_ThreadImpl_getThreadUserCpuTime1
 {
     jmm_interface->GetThreadCpuTimesWithKind(env, ids, timeArray,
                                              JNI_FALSE /* user */);
+}
+
+JNIEXPORT jlong JNICALL
+Java_sun_management_ThreadImpl_getThreadAllocatedMemory0
+  (JNIEnv *env, jclass cls, jlong tid)
+{
+  return jmm_interface->GetOneThreadAllocatedMemory(env, tid);
 }
 
 JNIEXPORT void JNICALL
