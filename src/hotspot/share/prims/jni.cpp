@@ -1104,7 +1104,7 @@ static void jni_invoke_static(JNIEnv *env, JavaValue* result, jobject receiver, 
   JavaCalls::call(result, method, &java_args, CHECK);
 
   // Convert result
-  if (result->get_type() == T_OBJECT || result->get_type() == T_ARRAY) {
+  if (is_reference_type(result->get_type())) {
     result->set_jobject(JNIHandles::make_local(env, (oop) result->get_jobject()));
   }
 }
@@ -1167,7 +1167,7 @@ static void jni_invoke_nonstatic(JNIEnv *env, JavaValue* result, jobject receive
   JavaCalls::call(result, method, &java_args, CHECK);
 
   // Convert result
-  if (result->get_type() == T_OBJECT || result->get_type() == T_ARRAY) {
+  if (is_reference_type(result->get_type())) {
     result->set_jobject(JNIHandles::make_local(env, (oop) result->get_jobject()));
   }
 }

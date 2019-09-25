@@ -1443,6 +1443,20 @@ void PhaseIdealLoop::split_if_with_blocks_post(Node *n) {
               // Such nodes should only have ProjNodes as outs, e.g. IfNode
               // should only have IfTrueNode and IfFalseNode (4985384).
               x_ctrl = find_non_split_ctrl(x_ctrl);
+
+              IdealLoopTree* x_loop = get_loop(x_ctrl);
+              Node* x_head = x_loop->_head;
+              if (x_head->is_Loop() && (x_head->is_OuterStripMinedLoop() || x_head->as_Loop()->is_strip_mined()) && is_dominator(n_ctrl, x_head)) {
+                // Anti dependence analysis is sometimes too
+                // conservative: a store in the outer strip mined loop
+                // can prevent a load from floating out of the outer
+                // strip mined loop but the load may not be referenced
+                // from the safepoint: loop strip mining verification
+                // code reports a problem in that case. Make sure the
+                // load is not moved in the outer strip mined loop in
+                // that case.
+                x_ctrl = x_head->as_Loop()->skip_strip_mined()->in(LoopNode::EntryControl);
+              }
               assert(dom_depth(n_ctrl) <= dom_depth(x_ctrl), "n is later than its clone");
 
               x->set_req(0, x_ctrl);
@@ -1718,7 +1732,7 @@ void PhaseIdealLoop::clone_loop_handle_data_uses(Node* old, Node_List &old_new,
 #ifdef ASSERT
     if (loop->_head->as_Loop()->is_strip_mined() && outer_loop->is_member(use_loop) && !loop->is_member(use_loop) && old_new[use->_idx] == NULL) {
       Node* sfpt = loop->_head->as_CountedLoop()->outer_safepoint();
-      assert(mode == ControlAroundStripMined && use == sfpt, "missed a node");
+      assert(mode == ControlAroundStripMined && (use == sfpt || !use->is_reachable_from_root()), "missed a node");
     }
 #endif
     if (!loop->is_member(use_loop) && !outer_loop->is_member(use_loop) && (!old->is_CFG() || !use->is_CFG())) {

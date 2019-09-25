@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -69,16 +69,6 @@ public class ExceptionHandlerStub extends SnippetStub {
 
     public ExceptionHandlerStub(OptionValues options, HotSpotProviders providers, HotSpotForeignCallLinkage linkage) {
         super("exceptionHandler", options, providers, linkage);
-    }
-
-    /**
-     * This stub is called when returning to a method to handle an exception thrown by a callee. It
-     * is not used for routing implicit exceptions. Therefore, it does not need to save any
-     * registers as HotSpot uses a caller save convention.
-     */
-    @Override
-    public boolean preservesRegisters() {
-        return false;
     }
 
     @Override

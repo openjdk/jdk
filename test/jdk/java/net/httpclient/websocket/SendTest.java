@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,7 +29,6 @@
  *       SendTest
  */
 
-import org.testng.annotations.AfterTest;
 import org.testng.annotations.Test;
 
 import java.io.IOException;
@@ -46,40 +45,35 @@ public class SendTest {
 
     private static final Class<NullPointerException> NPE = NullPointerException.class;
 
-    private DummyWebSocketServer server;
-    private WebSocket webSocket;
-
-    @AfterTest
-    public void cleanup() {
-        server.close();
-        webSocket.abort();
-    }
-
     @Test
     public void sendMethodsThrowNPE() throws IOException {
-        server = new DummyWebSocketServer();
-        server.open();
-        webSocket = newBuilder().proxy(NO_PROXY).build().newWebSocketBuilder()
-                .buildAsync(server.getURI(), new WebSocket.Listener() { })
-                .join();
+        try (var server = new DummyWebSocketServer()) {
+            server.open();
+            var webSocket = newBuilder().proxy(NO_PROXY).build().newWebSocketBuilder()
+                    .buildAsync(server.getURI(), new WebSocket.Listener() { })
+                    .join();
+            try {
+                assertThrows(NPE, () -> webSocket.sendText(null, false));
+                assertThrows(NPE, () -> webSocket.sendText(null, true));
+                assertThrows(NPE, () -> webSocket.sendBinary(null, false));
+                assertThrows(NPE, () -> webSocket.sendBinary(null, true));
+                assertThrows(NPE, () -> webSocket.sendPing(null));
+                assertThrows(NPE, () -> webSocket.sendPong(null));
+                assertThrows(NPE, () -> webSocket.sendClose(NORMAL_CLOSURE, null));
 
-        assertThrows(NPE, () -> webSocket.sendText(null, false));
-        assertThrows(NPE, () -> webSocket.sendText(null, true));
-        assertThrows(NPE, () -> webSocket.sendBinary(null, false));
-        assertThrows(NPE, () -> webSocket.sendBinary(null, true));
-        assertThrows(NPE, () -> webSocket.sendPing(null));
-        assertThrows(NPE, () -> webSocket.sendPong(null));
-        assertThrows(NPE, () -> webSocket.sendClose(NORMAL_CLOSURE, null));
+                webSocket.abort();
 
-        webSocket.abort();
-
-        assertThrows(NPE, () -> webSocket.sendText(null, false));
-        assertThrows(NPE, () -> webSocket.sendText(null, true));
-        assertThrows(NPE, () -> webSocket.sendBinary(null, false));
-        assertThrows(NPE, () -> webSocket.sendBinary(null, true));
-        assertThrows(NPE, () -> webSocket.sendPing(null));
-        assertThrows(NPE, () -> webSocket.sendPong(null));
-        assertThrows(NPE, () -> webSocket.sendClose(NORMAL_CLOSURE, null));
+                assertThrows(NPE, () -> webSocket.sendText(null, false));
+                assertThrows(NPE, () -> webSocket.sendText(null, true));
+                assertThrows(NPE, () -> webSocket.sendBinary(null, false));
+                assertThrows(NPE, () -> webSocket.sendBinary(null, true));
+                assertThrows(NPE, () -> webSocket.sendPing(null));
+                assertThrows(NPE, () -> webSocket.sendPong(null));
+                assertThrows(NPE, () -> webSocket.sendClose(NORMAL_CLOSURE, null));
+            } finally {
+                webSocket.abort();
+            }
+        }
     }
 
     // TODO: request in onClose/onError
@@ -88,14 +82,20 @@ public class SendTest {
 
     @Test
     public void sendCloseCompleted() throws IOException {
-        server = new DummyWebSocketServer();
-        server.open();
-        webSocket = newBuilder().proxy(NO_PROXY).build().newWebSocketBuilder()
-                .buildAsync(server.getURI(), new WebSocket.Listener() { })
-                .join();
-        webSocket.sendClose(NORMAL_CLOSURE, "").join();
-        assertTrue(webSocket.isOutputClosed());
-        assertEquals(webSocket.getSubprotocol(), "");
-        webSocket.request(1); // No exceptions must be thrown
+        try (var server = new DummyWebSocketServer()) {
+            server.open();
+            var webSocket = newBuilder().proxy(NO_PROXY).build().newWebSocketBuilder()
+                    .buildAsync(server.getURI(), new WebSocket.Listener() { })
+                    .join();
+            try {
+                webSocket.sendClose(NORMAL_CLOSURE, "").join();
+                assertTrue(webSocket.isOutputClosed());
+                assertEquals(webSocket.getSubprotocol(), "");
+                webSocket.request(1); // No exceptions must be thrown
+            } finally {
+                webSocket.abort();
+            }
+        }
     }
 }
+

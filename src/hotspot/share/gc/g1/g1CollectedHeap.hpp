@@ -991,7 +991,7 @@ public:
   void scrub_rem_set();
 
   // Apply the given closure on all cards in the Hot Card Cache, emptying it.
-  void iterate_hcc_closure(G1CardTableEntryClosure* cl, uint worker_i);
+  void iterate_hcc_closure(G1CardTableEntryClosure* cl, uint worker_id);
 
   // The shared block offset table array.
   G1BlockOffsetTable* bot() const { return _bot; }

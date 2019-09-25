@@ -61,9 +61,6 @@ import org.graalvm.compiler.nodes.ValuePhiNode;
 import org.graalvm.compiler.nodes.calc.AddNode;
 import org.graalvm.compiler.nodes.calc.BinaryArithmeticNode;
 import org.graalvm.compiler.nodes.calc.CompareNode;
-import org.graalvm.compiler.nodes.calc.IntegerBelowNode;
-import org.graalvm.compiler.nodes.calc.IntegerEqualsNode;
-import org.graalvm.compiler.nodes.calc.IntegerLessThanNode;
 import org.graalvm.compiler.nodes.calc.LeftShiftNode;
 import org.graalvm.compiler.nodes.calc.MulNode;
 import org.graalvm.compiler.nodes.calc.NegateNode;
@@ -211,6 +208,7 @@ public class LoopEx {
         return count != 0;
     }
 
+    @SuppressWarnings("fallthrough")
     public boolean detectCounted() {
         if (countedLoopChecked) {
             return isCounted();
@@ -231,27 +229,24 @@ public class LoopEx {
                 negated = true;
             }
             LogicNode ifTest = ifNode.condition();
-            if (!(ifTest instanceof IntegerLessThanNode) && !(ifTest instanceof IntegerEqualsNode)) {
-                if (ifTest instanceof IntegerBelowNode) {
-                    ifTest.getDebug().log("Ignored potential Counted loop at %s with |<|", loopBegin);
-                }
+            if (!(ifTest instanceof CompareNode)) {
                 return false;
             }
-            CompareNode lessThan = (CompareNode) ifTest;
+            CompareNode compare = (CompareNode) ifTest;
             Condition condition = null;
             InductionVariable iv = null;
             ValueNode limit = null;
-            if (isOutsideLoop(lessThan.getX())) {
-                iv = getInductionVariables().get(lessThan.getY());
+            if (isOutsideLoop(compare.getX())) {
+                iv = getInductionVariables().get(compare.getY());
                 if (iv != null) {
-                    condition = lessThan.condition().asCondition().mirror();
-                    limit = lessThan.getX();
+                    condition = compare.condition().asCondition().mirror();
+                    limit = compare.getX();
                 }
-            } else if (isOutsideLoop(lessThan.getY())) {
-                iv = getInductionVariables().get(lessThan.getX());
+            } else if (isOutsideLoop(compare.getY())) {
+                iv = getInductionVariables().get(compare.getX());
                 if (iv != null) {
-                    condition = lessThan.condition().asCondition();
-                    limit = lessThan.getY();
+                    condition = compare.condition().asCondition();
+                    limit = compare.getY();
                 }
             }
             if (condition == null) {
@@ -261,21 +256,34 @@ public class LoopEx {
                 condition = condition.negate();
             }
             boolean oneOff = false;
+            boolean unsigned = false;
             switch (condition) {
                 case EQ:
-                    return false;
-                case NE: {
-                    if (!iv.isConstantStride() || Math.abs(iv.constantStride()) != 1) {
+                    if (iv.initNode() == limit) {
+                        // allow "single iteration" case
+                        oneOff = true;
+                    } else {
                         return false;
                     }
+                    break;
+                case NE: {
                     IntegerStamp initStamp = (IntegerStamp) iv.initNode().stamp(NodeView.DEFAULT);
                     IntegerStamp limitStamp = (IntegerStamp) limit.stamp(NodeView.DEFAULT);
+                    IntegerStamp counterStamp = (IntegerStamp) iv.valueNode().stamp(NodeView.DEFAULT);
                     if (iv.direction() == Direction.Up) {
-                        if (initStamp.upperBound() > limitStamp.lowerBound()) {
+                        if (limitStamp.asConstant() != null && limitStamp.asConstant().asLong() == counterStamp.upperBound()) {
+                            // signed: i < MAX_INT
+                        } else if (limitStamp.asConstant() != null && limitStamp.asConstant().asLong() == counterStamp.unsignedUpperBound()) {
+                            unsigned = true;
+                        } else if (!iv.isConstantStride() || Math.abs(iv.constantStride()) != 1 || initStamp.upperBound() > limitStamp.lowerBound()) {
                             return false;
                         }
                     } else if (iv.direction() == Direction.Down) {
-                        if (initStamp.lowerBound() < limitStamp.upperBound()) {
+                        if (limitStamp.asConstant() != null && limitStamp.asConstant().asLong() == counterStamp.lowerBound()) {
+                            // signed: MIN_INT > i
+                        } else if (limitStamp.asConstant() != null && limitStamp.asConstant().asLong() == counterStamp.unsignedLowerBound()) {
+                            unsigned = true;
+                        } else if (!iv.isConstantStride() || Math.abs(iv.constantStride()) != 1 || initStamp.lowerBound() < limitStamp.upperBound()) {
                             return false;
                         }
                     } else {
@@ -283,23 +291,31 @@ public class LoopEx {
                     }
                     break;
                 }
+                case BE:
+                    unsigned = true; // fall through
                 case LE:
                     oneOff = true;
                     if (iv.direction() != Direction.Up) {
                         return false;
                     }
                     break;
+                case BT:
+                    unsigned = true; // fall through
                 case LT:
                     if (iv.direction() != Direction.Up) {
                         return false;
                     }
                     break;
+                case AE:
+                    unsigned = true; // fall through
                 case GE:
                     oneOff = true;
                     if (iv.direction() != Direction.Down) {
                         return false;
                     }
                     break;
+                case AT:
+                    unsigned = true; // fall through
                 case GT:
                     if (iv.direction() != Direction.Down) {
                         return false;
@@ -308,7 +324,7 @@ public class LoopEx {
                 default:
                     throw GraalError.shouldNotReachHere(condition.toString());
             }
-            counted = new CountedLoopInfo(this, iv, ifNode, limit, oneOff, negated ? ifNode.falseSuccessor() : ifNode.trueSuccessor());
+            counted = new CountedLoopInfo(this, iv, ifNode, limit, oneOff, negated ? ifNode.falseSuccessor() : ifNode.trueSuccessor(), unsigned);
             return true;
         }
         return false;

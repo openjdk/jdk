@@ -79,15 +79,10 @@ public class ProcessArgumentMatcher {
 
     private static boolean check(VirtualMachineDescriptor vmd, String excludeClass, String partialMatch) {
 
-        String mainClass = null;
+        // Try to get the main class name using (platform specific) ProcessHelper
+        String mainClass = ProcessHelper.getMainClass(vmd.id());
 
-        // Get the main class name using platform specific helper
-        ProcessHelper helper = ProcessHelper.platformProcessHelper();
-        if (helper != null) {
-            mainClass = helper.getMainClass(vmd.id());
-        }
-
-        // If the main class name is still unset then retrieve it with the attach mechanism
+        // If the main class name could not be retrieved by ProcessHelper, get it with the attach mechanism
         if (mainClass == null) {
             try {
                 VmIdentifier vmId = new VmIdentifier(vmd.id());

@@ -59,7 +59,7 @@ import org.graalvm.compiler.lir.LabelRef;
 import org.graalvm.compiler.lir.StandardOp;
 import org.graalvm.compiler.lir.StandardOp.BlockEndOp;
 import org.graalvm.compiler.lir.StandardOp.LabelOp;
-import org.graalvm.compiler.lir.StandardOp.SaveRegistersOp;
+import org.graalvm.compiler.lir.StandardOp.ZapRegistersOp;
 import org.graalvm.compiler.lir.SwitchStrategy;
 import org.graalvm.compiler.lir.Variable;
 import org.graalvm.compiler.lir.hashing.Hasher;
@@ -604,11 +604,16 @@ public abstract class LIRGenerator implements LIRGeneratorTool {
     }
 
     @Override
-    public abstract SaveRegistersOp createZapRegisters(Register[] zappedRegisters, JavaConstant[] zapValues);
+    public abstract ZapRegistersOp createZapRegisters(Register[] zappedRegisters, JavaConstant[] zapValues);
 
     @Override
-    public SaveRegistersOp createZapRegisters() {
+    public ZapRegistersOp createZapRegisters() {
         Register[] zappedRegisters = getResult().getFrameMap().getRegisterConfig().getAllocatableRegisters().toArray();
+        return createZapRegisters(zappedRegisters);
+    }
+
+    @Override
+    public ZapRegistersOp createZapRegisters(Register[] zappedRegisters) {
         JavaConstant[] zapValues = new JavaConstant[zappedRegisters.length];
         for (int i = 0; i < zappedRegisters.length; i++) {
             PlatformKind kind = target().arch.getLargestStorableKind(zappedRegisters[i].getRegisterCategory());

@@ -89,13 +89,8 @@ public final class GraalServices {
             synchronized (servicesCache) {
                 ArrayList<S> providersList = new ArrayList<>();
                 for (S provider : providers) {
-                    /*
-                     * When building libgraal, we want providers that comes from the Graal community
-                     * and enterprise modules but not those available on the native-image class
-                     * path.
-                     */
                     Module module = provider.getClass().getModule();
-                    if (module.isNamed()) {
+                    if (isHotSpotGraalModule(module.getName())) {
                         providersList.add(provider);
                     }
                 }
@@ -108,8 +103,29 @@ public final class GraalServices {
         return providers;
     }
 
+    /**
+     * Determines if the module named by {@code name} is part of Graal when it is configured as a
+     * HotSpot JIT compiler.
+     */
+    private static boolean isHotSpotGraalModule(String name) {
+        if (name != null) {
+            return name.equals("jdk.internal.vm.compiler") ||
+                            name.equals("jdk.internal.vm.compiler.management") ||
+                            name.equals("com.oracle.graal.graal_enterprise");
+        }
+        return false;
+    }
+
     protected static <S> Iterable<S> load0(Class<S> service) {
-        Iterable<S> iterable = ServiceLoader.load(service);
+        Module module = GraalServices.class.getModule();
+        // Graal cannot know all the services used by another module
+        // (e.g. enterprise) so dynamically register the service use now.
+        if (!module.canUse(service)) {
+            module.addUses(service);
+        }
+
+        ModuleLayer layer = module.getLayer();
+        Iterable<S> iterable = ServiceLoader.load(layer, service);
         return new Iterable<>() {
             @Override
             public Iterator<S> iterator() {
@@ -220,6 +236,10 @@ public final class GraalServices {
      * trusted code.
      */
     public static boolean isToStringTrusted(Class<?> c) {
+        if (IS_IN_NATIVE_IMAGE) {
+            return true;
+        }
+
         Module module = c.getModule();
         Module jvmciModule = JVMCI_MODULE;
         assert jvmciModule.getPackages().contains("jdk.vm.ci.runtime");

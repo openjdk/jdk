@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -69,7 +69,7 @@ public abstract class IntegerConvertNode<OP, REV> extends UnaryNode implements A
         this.getReverseOp = getReverseOp;
         this.inputBits = inputBits;
         this.resultBits = resultBits;
-        assert ((PrimitiveStamp) input.stamp(NodeView.DEFAULT)).getBits() == inputBits;
+        assert PrimitiveStamp.getBits(input.stamp(NodeView.DEFAULT)) == 0 || PrimitiveStamp.getBits(input.stamp(NodeView.DEFAULT)) == inputBits;
     }
 
     public int getInputBits() {

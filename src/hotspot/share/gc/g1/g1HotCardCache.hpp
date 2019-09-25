@@ -113,7 +113,7 @@ private:
 
   // Refine the cards that have delayed as a result of
   // being in the cache.
-  void drain(G1CardTableEntryClosure* cl, uint worker_i);
+  void drain(G1CardTableEntryClosure* cl, uint worker_id);
 
   // Set up for parallel processing of the cards in the hot cache
   void reset_hot_cache_claimed_index() {

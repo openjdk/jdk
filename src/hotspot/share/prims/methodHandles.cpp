@@ -573,7 +573,7 @@ Symbol* MethodHandles::lookup_basic_type_signature(Symbol* sig, bool keep_last_a
     if (is_subword_type(bt)) {
       bsig = vmSymbols::int_signature();
     } else {
-      assert(bt == T_OBJECT || bt == T_ARRAY, "is_basic_type_signature was false");
+      assert(is_reference_type(bt), "is_basic_type_signature was false");
       bsig = vmSymbols::object_signature();
     }
   } else {
@@ -592,7 +592,7 @@ Symbol* MethodHandles::lookup_basic_type_signature(Symbol* sig, bool keep_last_a
       if (arg_pos == keep_arg_pos) {
         buffer.write((char*) ss.raw_bytes(),
                      (int)   ss.raw_length());
-      } else if (bt == T_OBJECT || bt == T_ARRAY) {
+      } else if (is_reference_type(bt)) {
         buffer.write(OBJ_SIG, OBJ_SIG_LEN);
       } else {
         if (is_subword_type(bt))

@@ -49,7 +49,7 @@ void ShenandoahBarrierSetAssembler::arraycopy_prologue(MacroAssembler* masm, Dec
 
   bool dest_uninitialized = (decorators & IS_DEST_UNINITIALIZED) != 0;
 
-  if (type == T_OBJECT || type == T_ARRAY) {
+  if (is_reference_type(type)) {
 
     if ((ShenandoahSATBBarrier && !dest_uninitialized) || ShenandoahLoadRefBarrier) {
 #ifdef _LP64
@@ -461,22 +461,18 @@ void ShenandoahBarrierSetAssembler::load_reference_barrier(MacroAssembler* masm,
 
 void ShenandoahBarrierSetAssembler::load_at(MacroAssembler* masm, DecoratorSet decorators, BasicType type,
              Register dst, Address src, Register tmp1, Register tmp_thread) {
-  bool on_oop = type == T_OBJECT || type == T_ARRAY;
+  bool on_oop = is_reference_type(type);
   bool on_weak = (decorators & ON_WEAK_OOP_REF) != 0;
   bool on_phantom = (decorators & ON_PHANTOM_OOP_REF) != 0;
   bool not_in_heap = (decorators & IN_NATIVE) != 0;
   bool on_reference = on_weak || on_phantom;
-  bool keep_alive = (decorators & AS_NO_KEEPALIVE) == 0;
+  bool is_traversal_mode = ShenandoahHeap::heap()->is_traversal_mode();
+  bool keep_alive = ((decorators & AS_NO_KEEPALIVE) == 0) || is_traversal_mode;
 
   BarrierSetAssembler::load_at(masm, decorators, type, dst, src, tmp1, tmp_thread);
   if (on_oop) {
-    if (not_in_heap) {
-      if (ShenandoahHeap::heap()->is_traversal_mode()) {
-        load_reference_barrier(masm, dst);
-        keep_alive = true;
-      } else {
-        load_reference_barrier_native(masm, dst);
-      }
+    if (not_in_heap && !is_traversal_mode) {
+      load_reference_barrier_native(masm, dst);
     } else {
       load_reference_barrier(masm, dst);
     }
@@ -501,7 +497,7 @@ void ShenandoahBarrierSetAssembler::load_at(MacroAssembler* masm, DecoratorSet d
 void ShenandoahBarrierSetAssembler::store_at(MacroAssembler* masm, DecoratorSet decorators, BasicType type,
               Address dst, Register val, Register tmp1, Register tmp2) {
 
-  bool on_oop = type == T_OBJECT || type == T_ARRAY;
+  bool on_oop = is_reference_type(type);
   bool in_heap = (decorators & IN_HEAP) != 0;
   bool as_normal = (decorators & AS_NORMAL) != 0;
   if (on_oop && in_heap) {

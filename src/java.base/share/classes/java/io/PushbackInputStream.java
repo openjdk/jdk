@@ -26,7 +26,7 @@
 package java.io;
 
 /**
- * A <code>PushbackInputStream</code> adds
+ * A {@code PushbackInputStream} adds
  * functionality to another input stream, namely
  * the  ability to "push back" or "unread" bytes,
  * by storing pushed-back bytes in an internal buffer.
@@ -59,8 +59,8 @@ class PushbackInputStream extends FilterInputStream {
 
     /**
      * The position within the pushback buffer from which the next byte will
-     * be read.  When the buffer is empty, <code>pos</code> is equal to
-     * <code>buf.length</code>; when the buffer is full, <code>pos</code> is
+     * be read.  When the buffer is empty, {@code pos} is equal to
+     * {@code buf.length}; when the buffer is full, {@code pos} is
      * equal to zero.
      *
      * @since   1.1
@@ -76,10 +76,10 @@ class PushbackInputStream extends FilterInputStream {
     }
 
     /**
-     * Creates a <code>PushbackInputStream</code>
-     * with a pushback buffer of the specified <code>size</code>,
+     * Creates a {@code PushbackInputStream}
+     * with a pushback buffer of the specified {@code size},
      * and saves its argument, the input stream
-     * <code>in</code>, for later use. Initially,
+     * {@code in}, for later use. Initially,
      * the pushback buffer is empty.
      *
      * @param  in    the input stream from which bytes will be read.
@@ -97,9 +97,9 @@ class PushbackInputStream extends FilterInputStream {
     }
 
     /**
-     * Creates a <code>PushbackInputStream</code>
+     * Creates a {@code PushbackInputStream}
      * with a 1-byte pushback buffer, and saves its argument, the input stream
-     * <code>in</code>, for later use. Initially,
+     * {@code in}, for later use. Initially,
      * the pushback buffer is empty.
      *
      * @param   in   the input stream from which bytes will be read.
@@ -110,18 +110,18 @@ class PushbackInputStream extends FilterInputStream {
 
     /**
      * Reads the next byte of data from this input stream. The value
-     * byte is returned as an <code>int</code> in the range
-     * <code>0</code> to <code>255</code>. If no byte is available
+     * byte is returned as an {@code int} in the range
+     * {@code 0} to {@code 255}. If no byte is available
      * because the end of the stream has been reached, the value
-     * <code>-1</code> is returned. This method blocks until input data
+     * {@code -1} is returned. This method blocks until input data
      * is available, the end of the stream is detected, or an exception
      * is thrown.
      *
      * <p> This method returns the most recently pushed-back byte, if there is
-     * one, and otherwise calls the <code>read</code> method of its underlying
+     * one, and otherwise calls the {@code read} method of its underlying
      * input stream and returns whatever value that method returns.
      *
-     * @return     the next byte of data, or <code>-1</code> if the end of the
+     * @return     the next byte of data, or {@code -1} if the end of the
      *             stream has been reached.
      * @throws     IOException  if this input stream has been closed by
      *             invoking its {@link #close()} method,
@@ -137,23 +137,23 @@ class PushbackInputStream extends FilterInputStream {
     }
 
     /**
-     * Reads up to <code>len</code> bytes of data from this input stream into
+     * Reads up to {@code len} bytes of data from this input stream into
      * an array of bytes.  This method first reads any pushed-back bytes; after
-     * that, if fewer than <code>len</code> bytes have been read then it
-     * reads from the underlying input stream. If <code>len</code> is not zero, the method
+     * that, if fewer than {@code len} bytes have been read then it
+     * reads from the underlying input stream. If {@code len} is not zero, the method
      * blocks until at least 1 byte of input is available; otherwise, no
-     * bytes are read and <code>0</code> is returned.
+     * bytes are read and {@code 0} is returned.
      *
      * @param      b     the buffer into which the data is read.
-     * @param      off   the start offset in the destination array <code>b</code>
+     * @param      off   the start offset in the destination array {@code b}
      * @param      len   the maximum number of bytes read.
      * @return     the total number of bytes read into the buffer, or
-     *             <code>-1</code> if there is no more data because the end of
+     *             {@code -1} if there is no more data because the end of
      *             the stream has been reached.
-     * @throws     NullPointerException If <code>b</code> is <code>null</code>.
-     * @throws     IndexOutOfBoundsException If <code>off</code> is negative,
-     *             <code>len</code> is negative, or <code>len</code> is greater than
-     *             <code>b.length - off</code>
+     * @throws     NullPointerException If {@code b} is {@code null}.
+     * @throws     IndexOutOfBoundsException If {@code off} is negative,
+     *             {@code len} is negative, or {@code len} is greater than
+     *             {@code b.length - off}
      * @throws     IOException  if this input stream has been closed by
      *             invoking its {@link #close()} method,
      *             or an I/O error occurs.
@@ -192,9 +192,9 @@ class PushbackInputStream extends FilterInputStream {
     /**
      * Pushes back a byte by copying it to the front of the pushback buffer.
      * After this method returns, the next byte to be read will have the value
-     * <code>(byte)b</code>.
+     * {@code (byte)b}.
      *
-     * @param      b   the <code>int</code> value whose low-order
+     * @param      b   the {@code int} value whose low-order
      *                  byte is to be pushed back.
      * @throws    IOException If there is not enough room in the pushback
      *            buffer for the byte, or this input stream has been closed by
@@ -211,13 +211,13 @@ class PushbackInputStream extends FilterInputStream {
     /**
      * Pushes back a portion of an array of bytes by copying it to the front
      * of the pushback buffer.  After this method returns, the next byte to be
-     * read will have the value <code>b[off]</code>, the byte after that will
-     * have the value <code>b[off+1]</code>, and so forth.
+     * read will have the value {@code b[off]}, the byte after that will
+     * have the value {@code b[off+1]}, and so forth.
      *
      * @param     b the byte array to push back.
      * @param     off the start offset of the data.
      * @param     len the number of bytes to push back.
-     * @throws    NullPointerException If <code>b</code> is <code>null</code>.
+     * @throws    NullPointerException If {@code b} is {@code null}.
      * @throws    IOException If there is not enough room in the pushback
      *            buffer for the specified number of bytes,
      *            or this input stream has been closed by
@@ -236,11 +236,11 @@ class PushbackInputStream extends FilterInputStream {
     /**
      * Pushes back an array of bytes by copying it to the front of the
      * pushback buffer.  After this method returns, the next byte to be read
-     * will have the value <code>b[0]</code>, the byte after that will have the
-     * value <code>b[1]</code>, and so forth.
+     * will have the value {@code b[0]}, the byte after that will have the
+     * value {@code b[1]}, and so forth.
      *
      * @param     b the byte array to push back
-     * @throws    NullPointerException If <code>b</code> is <code>null</code>.
+     * @throws    NullPointerException If {@code b} is {@code null}.
      * @throws    IOException If there is not enough room in the pushback
      *            buffer for the specified number of bytes,
      *            or this input stream has been closed by
@@ -280,14 +280,14 @@ class PushbackInputStream extends FilterInputStream {
     }
 
     /**
-     * Skips over and discards <code>n</code> bytes of data from this
-     * input stream. The <code>skip</code> method may, for a variety of
+     * Skips over and discards {@code n} bytes of data from this
+     * input stream. The {@code skip} method may, for a variety of
      * reasons, end up skipping over some smaller number of bytes,
-     * possibly zero.  If <code>n</code> is negative, no bytes are skipped.
+     * possibly zero.  If {@code n} is negative, no bytes are skipped.
      *
-     * <p> The <code>skip</code> method of <code>PushbackInputStream</code>
+     * <p> The {@code skip} method of {@code PushbackInputStream}
      * first skips over the bytes in the pushback buffer, if any.  It then
-     * calls the <code>skip</code> method of the underlying input stream if
+     * calls the {@code skip} method of the underlying input stream if
      * more bytes need to be skipped.  The actual number of bytes skipped
      * is returned.
      *
@@ -322,11 +322,11 @@ class PushbackInputStream extends FilterInputStream {
     }
 
     /**
-     * Tests if this input stream supports the <code>mark</code> and
-     * <code>reset</code> methods, which it does not.
+     * Tests if this input stream supports the {@code mark} and
+     * {@code reset} methods, which it does not.
      *
-     * @return   <code>false</code>, since this class does not support the
-     *           <code>mark</code> and <code>reset</code> methods.
+     * @return   {@code false}, since this class does not support the
+     *           {@code mark} and {@code reset} methods.
      * @see      java.io.InputStream#mark(int)
      * @see      java.io.InputStream#reset()
      */
@@ -337,7 +337,7 @@ class PushbackInputStream extends FilterInputStream {
     /**
      * Marks the current position in this input stream.
      *
-     * <p> The <code>mark</code> method of <code>PushbackInputStream</code>
+     * <p> The {@code mark} method of {@code PushbackInputStream}
      * does nothing.
      *
      * @param   readlimit   the maximum limit of bytes that can be read before
@@ -349,11 +349,11 @@ class PushbackInputStream extends FilterInputStream {
 
     /**
      * Repositions this stream to the position at the time the
-     * <code>mark</code> method was last called on this input stream.
+     * {@code mark} method was last called on this input stream.
      *
-     * <p> The method <code>reset</code> for class
-     * <code>PushbackInputStream</code> does nothing except throw an
-     * <code>IOException</code>.
+     * <p> The method {@code reset} for class
+     * {@code PushbackInputStream} does nothing except throw an
+     * {@code IOException}.
      *
      * @throws  IOException  if this method is invoked.
      * @see     java.io.InputStream#mark(int)

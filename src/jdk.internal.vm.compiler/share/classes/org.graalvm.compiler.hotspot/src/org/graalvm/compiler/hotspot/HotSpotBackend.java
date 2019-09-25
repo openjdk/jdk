@@ -61,6 +61,7 @@ import org.graalvm.compiler.lir.LIRInstruction;
 import org.graalvm.compiler.lir.LIRInstruction.OperandFlag;
 import org.graalvm.compiler.lir.LIRInstruction.OperandMode;
 import org.graalvm.compiler.lir.StandardOp.LabelOp;
+import org.graalvm.compiler.lir.StandardOp.RestoreRegistersOp;
 import org.graalvm.compiler.lir.StandardOp.SaveRegistersOp;
 import org.graalvm.compiler.lir.ValueConsumer;
 import org.graalvm.compiler.lir.asm.CompilationResultBuilder;
@@ -76,15 +77,16 @@ import org.graalvm.compiler.serviceprovider.JavaVersionUtil;
 import org.graalvm.compiler.word.Word;
 import jdk.internal.vm.compiler.word.Pointer;
 
+import jdk.vm.ci.code.CallingConvention;
 import jdk.vm.ci.code.CompilationRequest;
 import jdk.vm.ci.code.CompiledCode;
 import jdk.vm.ci.code.Register;
-import jdk.vm.ci.code.RegisterSaveLayout;
 import jdk.vm.ci.code.StackSlot;
 import jdk.vm.ci.code.ValueUtil;
 import jdk.vm.ci.hotspot.HotSpotCompilationRequest;
 import jdk.vm.ci.hotspot.HotSpotJVMCIRuntime;
 import jdk.vm.ci.hotspot.HotSpotResolvedJavaMethod;
+import jdk.vm.ci.meta.AllocatableValue;
 import jdk.vm.ci.meta.ResolvedJavaMethod;
 import jdk.vm.ci.meta.Value;
 import jdk.vm.ci.runtime.JVMCICompiler;
@@ -425,10 +427,12 @@ public abstract class HotSpotBackend extends Backend implements FrameMap.Referen
     /**
      * Finds all the registers that are defined by some given LIR.
      *
-     * @param lir the LIR to examine
+     * @param gen the result to examine
      * @return the registers that are defined by or used as temps for any instruction in {@code lir}
      */
-    protected final EconomicSet<Register> gatherDestroyedCallerRegisters(LIR lir) {
+    private EconomicSet<Register> gatherDestroyedCallerRegisters(HotSpotLIRGenerationResult gen) {
+        LIR lir = gen.getLIR();
+        final EconomicSet<Register> preservedRegisters = EconomicSet.create(Equivalence.IDENTITY);
         final EconomicSet<Register> destroyedRegisters = EconomicSet.create(Equivalence.IDENTITY);
         ValueConsumer defConsumer = new ValueConsumer() {
 
@@ -436,20 +440,44 @@ public abstract class HotSpotBackend extends Backend implements FrameMap.Referen
             public void visitValue(Value value, OperandMode mode, EnumSet<OperandFlag> flags) {
                 if (ValueUtil.isRegister(value)) {
                     final Register reg = ValueUtil.asRegister(value);
-                    destroyedRegisters.add(reg);
+                    if (!preservedRegisters.contains(reg)) {
+                        destroyedRegisters.add(reg);
+                    }
                 }
             }
         };
+        boolean sawSaveRegisters = false;
         for (AbstractBlockBase<?> block : lir.codeEmittingOrder()) {
             if (block == null) {
                 continue;
             }
+            // Ignore the effects of instructions bracketed by save/restore
+            SaveRegistersOp save = null;
             for (LIRInstruction op : lir.getLIRforBlock(block)) {
                 if (op instanceof LabelOp) {
                     // Don't consider this as a definition
+                } else if (op instanceof SaveRegistersOp) {
+                    save = (SaveRegistersOp) op;
+                    sawSaveRegisters = true;
+                    preservedRegisters.addAll(save.getSaveableRegisters());
+                } else if (op instanceof RestoreRegistersOp) {
+                    save = null;
+                    preservedRegisters.clear();
                 } else {
                     op.visitEachTemp(defConsumer);
                     op.visitEachOutput(defConsumer);
+                }
+            }
+            assert save == null : "missing RestoreRegistersOp";
+        }
+
+        if (sawSaveRegisters) {
+            // The return value must be killed so it can be propagated out
+            CallingConvention cc = gen.getCallingConvention();
+            AllocatableValue returnValue = cc.getReturn();
+            if (returnValue != null) {
+                if (ValueUtil.isRegister(returnValue)) {
+                    destroyedRegisters.add(ValueUtil.asRegister(returnValue));
                 }
             }
         }
@@ -464,30 +492,35 @@ public abstract class HotSpotBackend extends Backend implements FrameMap.Referen
     protected abstract EconomicSet<Register> translateToCallerRegisters(EconomicSet<Register> calleeRegisters);
 
     /**
-     * Updates a given stub with respect to the registers it destroys.
-     * <p>
-     * Any entry in {@code calleeSaveInfo} that {@linkplain SaveRegistersOp#supportsRemove()
-     * supports} pruning will have {@code destroyedRegisters}
-     * {@linkplain SaveRegistersOp#remove(EconomicSet) removed} as these registers are declared as
-     * temporaries in the stub's {@linkplain ForeignCallLinkage linkage} (and thus will be saved by
-     * the stub's caller).
+     * Updates a given stub with respect to the registers it destroys by
+     * {@link #gatherDestroyedCallerRegisters(HotSpotLIRGenerationResult) computing the destroyed
+     * registers} and removing those registers from the {@linkplain SaveRegistersOp SaveRegistersOp}
+     * as these registers are declared as temporaries in the stub's {@linkplain ForeignCallLinkage
+     * linkage} (and thus will be saved by the stub's caller).
      *
      * @param stub the stub to update
-     * @param destroyedRegisters the registers destroyed by the stub
-     * @param calleeSaveInfo a map from debug infos to the operations that provide their
-     *            {@linkplain RegisterSaveLayout callee-save information}
+     * @param gen the HotSpotLIRGenerationResult being emitted
      * @param frameMap used to {@linkplain FrameMap#offsetForStackSlot(StackSlot) convert} a virtual
-     *            slot to a frame slot index
      */
-    protected void updateStub(Stub stub, EconomicSet<Register> destroyedRegisters, EconomicMap<LIRFrameState, SaveRegistersOp> calleeSaveInfo, FrameMap frameMap) {
+    protected void updateStub(Stub stub, HotSpotLIRGenerationResult gen, FrameMap frameMap) {
+        EconomicSet<Register> destroyedRegisters = gatherDestroyedCallerRegisters(gen);
+        EconomicMap<LIRFrameState, SaveRegistersOp> calleeSaveInfo = gen.getCalleeSaveInfo();
+
+        if (stub.getLinkage().needsDebugInfo() && calleeSaveInfo.isEmpty()) {
+            // This call is a safepoint but no register saving was done so we must ensure that all
+            // registers appear to be killed. The Native ABI may allow caller save registers but
+            // for HotSpot they must be described in a RegisterMap so they are accessible.
+            for (Register r : frameMap.getRegisterConfig().getCallerSaveRegisters()) {
+                destroyedRegisters.add(r);
+            }
+        }
+
         stub.initDestroyedCallerRegisters(destroyedRegisters);
 
         MapCursor<LIRFrameState, SaveRegistersOp> cursor = calleeSaveInfo.getEntries();
         while (cursor.advance()) {
             SaveRegistersOp save = cursor.getValue();
-            if (save.supportsRemove()) {
-                save.remove(destroyedRegisters);
-            }
+            save.remove(destroyedRegisters);
             if (cursor.getKey() != LIRFrameState.NO_STATE) {
                 cursor.getKey().debugInfo().setCalleeSaveInfo(save.getMap(frameMap));
             }

@@ -46,8 +46,8 @@ import sun.security.action.GetPropertyAction;
  *
  * <ol>
  * <li> An optional system-dependent <em>prefix</em> string,
- *      such as a disk-drive specifier, <code>"/"</code>&nbsp;for the UNIX root
- *      directory, or <code>"\\\\"</code>&nbsp;for a Microsoft Windows UNC pathname, and
+ *      such as a disk-drive specifier, {@code "/"}&nbsp;for the UNIX root
+ *      directory, or {@code "\\\\"}&nbsp;for a Microsoft Windows UNC pathname, and
  * <li> A sequence of zero or more string <em>names</em>.
  * </ol>
  *
@@ -61,7 +61,7 @@ import sun.security.action.GetPropertyAction;
  * inherently system-dependent.  When an abstract pathname is converted into a
  * pathname string, each name is separated from the next by a single copy of
  * the default <em>separator character</em>.  The default name-separator
- * character is defined by the system property <code>file.separator</code>, and
+ * character is defined by the system property {@code file.separator}, and
  * is made available in the public static fields {@link
  * #separator} and {@link #separatorChar} of this class.
  * When a pathname string is converted into an abstract pathname, the names
@@ -73,9 +73,9 @@ import sun.security.action.GetPropertyAction;
  * that no other information is required in order to locate the file that it
  * denotes.  A relative pathname, in contrast, must be interpreted in terms of
  * information taken from some other pathname.  By default the classes in the
- * <code>java.io</code> package always resolve relative pathnames against the
+ * {@code java.io} package always resolve relative pathnames against the
  * current user directory.  This directory is named by the system property
- * <code>user.dir</code>, and is typically the directory in which the Java
+ * {@code user.dir}, and is typically the directory in which the Java
  * virtual machine was invoked.
  *
  * <p> The <em>parent</em> of an abstract pathname may be obtained by invoking
@@ -94,14 +94,14 @@ import sun.security.action.GetPropertyAction;
  * <ul>
  *
  * <li> For UNIX platforms, the prefix of an absolute pathname is always
- * <code>"/"</code>.  Relative pathnames have no prefix.  The abstract pathname
- * denoting the root directory has the prefix <code>"/"</code> and an empty
+ * {@code "/"}.  Relative pathnames have no prefix.  The abstract pathname
+ * denoting the root directory has the prefix {@code "/"} and an empty
  * name sequence.
  *
  * <li> For Microsoft Windows platforms, the prefix of a pathname that contains a drive
- * specifier consists of the drive letter followed by <code>":"</code> and
- * possibly followed by <code>"\\"</code> if the pathname is absolute.  The
- * prefix of a UNC pathname is <code>"\\\\"</code>; the hostname and the share
+ * specifier consists of the drive letter followed by {@code ":"} and
+ * possibly followed by {@code "\\"} if the pathname is absolute.  The
+ * prefix of a UNC pathname is {@code "\\\\"}; the hostname and the share
  * name are the first two names in the name sequence.  A relative pathname that
  * does not specify a drive has no prefix.
  *
@@ -124,8 +124,8 @@ import sun.security.action.GetPropertyAction;
  * may apply to all other users.  The access permissions on an object may
  * cause some methods in this class to fail.
  *
- * <p> Instances of the <code>File</code> class are immutable; that is, once
- * created, the abstract pathname represented by a <code>File</code> object
+ * <p> Instances of the {@code File} class are immutable; that is, once
+ * created, the abstract pathname represented by a {@code File} object
  * will never change.
  *
  * <h2>Interoperability with {@code java.nio.file} package</h2>
@@ -208,8 +208,8 @@ public class File
     /**
      * The system-dependent default name-separator character.  This field is
      * initialized to contain the first character of the value of the system
-     * property <code>file.separator</code>.  On UNIX systems the value of this
-     * field is <code>'/'</code>; on Microsoft Windows systems it is <code>'\\'</code>.
+     * property {@code file.separator}.  On UNIX systems the value of this
+     * field is {@code '/'}; on Microsoft Windows systems it is {@code '\\'}.
      *
      * @see     java.lang.System#getProperty(java.lang.String)
      */
@@ -225,10 +225,10 @@ public class File
     /**
      * The system-dependent path-separator character.  This field is
      * initialized to contain the first character of the value of the system
-     * property <code>path.separator</code>.  This character is used to
+     * property {@code path.separator}.  This character is used to
      * separate filenames in a sequence of files given as a <em>path list</em>.
-     * On UNIX systems, this character is <code>':'</code>; on Microsoft Windows systems it
-     * is <code>';'</code>.
+     * On UNIX systems, this character is {@code ':'}; on Microsoft Windows systems it
+     * is {@code ';'}.
      *
      * @see     java.lang.System#getProperty(java.lang.String)
      */
@@ -265,13 +265,13 @@ public class File
     }
 
     /**
-     * Creates a new <code>File</code> instance by converting the given
+     * Creates a new {@code File} instance by converting the given
      * pathname string into an abstract pathname.  If the given string is
      * the empty string, then the result is the empty abstract pathname.
      *
      * @param   pathname  A pathname string
      * @throws  NullPointerException
-     *          If the <code>pathname</code> argument is <code>null</code>
+     *          If the {@code pathname} argument is {@code null}
      */
     public File(String pathname) {
         if (pathname == null) {
@@ -289,21 +289,21 @@ public class File
        compatibility with the original behavior of this class. */
 
     /**
-     * Creates a new <code>File</code> instance from a parent pathname string
+     * Creates a new {@code File} instance from a parent pathname string
      * and a child pathname string.
      *
-     * <p> If <code>parent</code> is <code>null</code> then the new
-     * <code>File</code> instance is created as if by invoking the
-     * single-argument <code>File</code> constructor on the given
-     * <code>child</code> pathname string.
+     * <p> If {@code parent} is {@code null} then the new
+     * {@code File} instance is created as if by invoking the
+     * single-argument {@code File} constructor on the given
+     * {@code child} pathname string.
      *
-     * <p> Otherwise the <code>parent</code> pathname string is taken to denote
-     * a directory, and the <code>child</code> pathname string is taken to
-     * denote either a directory or a file.  If the <code>child</code> pathname
+     * <p> Otherwise the {@code parent} pathname string is taken to denote
+     * a directory, and the {@code child} pathname string is taken to
+     * denote either a directory or a file.  If the {@code child} pathname
      * string is absolute then it is converted into a relative pathname in a
-     * system-dependent way.  If <code>parent</code> is the empty string then
-     * the new <code>File</code> instance is created by converting
-     * <code>child</code> into an abstract pathname and resolving the result
+     * system-dependent way.  If {@code parent} is the empty string then
+     * the new {@code File} instance is created by converting
+     * {@code child} into an abstract pathname and resolving the result
      * against a system-dependent default directory.  Otherwise each pathname
      * string is converted into an abstract pathname and the child abstract
      * pathname is resolved against the parent.
@@ -311,7 +311,7 @@ public class File
      * @param   parent  The parent pathname string
      * @param   child   The child pathname string
      * @throws  NullPointerException
-     *          If <code>child</code> is <code>null</code>
+     *          If {@code child} is {@code null}
      */
     public File(String parent, String child) {
         if (child == null) {
@@ -332,21 +332,21 @@ public class File
     }
 
     /**
-     * Creates a new <code>File</code> instance from a parent abstract
+     * Creates a new {@code File} instance from a parent abstract
      * pathname and a child pathname string.
      *
-     * <p> If <code>parent</code> is <code>null</code> then the new
-     * <code>File</code> instance is created as if by invoking the
-     * single-argument <code>File</code> constructor on the given
-     * <code>child</code> pathname string.
+     * <p> If {@code parent} is {@code null} then the new
+     * {@code File} instance is created as if by invoking the
+     * single-argument {@code File} constructor on the given
+     * {@code child} pathname string.
      *
-     * <p> Otherwise the <code>parent</code> abstract pathname is taken to
-     * denote a directory, and the <code>child</code> pathname string is taken
-     * to denote either a directory or a file.  If the <code>child</code>
+     * <p> Otherwise the {@code parent} abstract pathname is taken to
+     * denote a directory, and the {@code child} pathname string is taken
+     * to denote either a directory or a file.  If the {@code child}
      * pathname string is absolute then it is converted into a relative
-     * pathname in a system-dependent way.  If <code>parent</code> is the empty
-     * abstract pathname then the new <code>File</code> instance is created by
-     * converting <code>child</code> into an abstract pathname and resolving
+     * pathname in a system-dependent way.  If {@code parent} is the empty
+     * abstract pathname then the new {@code File} instance is created by
+     * converting {@code child} into an abstract pathname and resolving
      * the result against a system-dependent default directory.  Otherwise each
      * pathname string is converted into an abstract pathname and the child
      * abstract pathname is resolved against the parent.
@@ -354,7 +354,7 @@ public class File
      * @param   parent  The parent abstract pathname
      * @param   child   The child pathname string
      * @throws  NullPointerException
-     *          If <code>child</code> is <code>null</code>
+     *          If {@code child} is {@code null}
      */
     public File(File parent, String child) {
         if (child == null) {
@@ -460,7 +460,7 @@ public class File
 
     /**
      * Returns the pathname string of this abstract pathname's parent, or
-     * <code>null</code> if this pathname does not name a parent directory.
+     * {@code null} if this pathname does not name a parent directory.
      *
      * <p> The <em>parent</em> of an abstract pathname consists of the
      * pathname's prefix, if any, and each name in the pathname's name
@@ -468,7 +468,7 @@ public class File
      * the pathname does not name a parent directory.
      *
      * @return  The pathname string of the parent directory named by this
-     *          abstract pathname, or <code>null</code> if this pathname
+     *          abstract pathname, or {@code null} if this pathname
      *          does not name a parent
      */
     public String getParent() {
@@ -483,7 +483,7 @@ public class File
 
     /**
      * Returns the abstract pathname of this abstract pathname's parent,
-     * or <code>null</code> if this pathname does not name a parent
+     * or {@code null} if this pathname does not name a parent
      * directory.
      *
      * <p> The <em>parent</em> of an abstract pathname consists of the
@@ -492,7 +492,7 @@ public class File
      * the pathname does not name a parent directory.
      *
      * @return  The abstract pathname of the parent directory named by this
-     *          abstract pathname, or <code>null</code> if this pathname
+     *          abstract pathname, or {@code null} if this pathname
      *          does not name a parent
      *
      * @since 1.2
@@ -520,12 +520,12 @@ public class File
     /**
      * Tests whether this abstract pathname is absolute.  The definition of
      * absolute pathname is system dependent.  On UNIX systems, a pathname is
-     * absolute if its prefix is <code>"/"</code>.  On Microsoft Windows systems, a
+     * absolute if its prefix is {@code "/"}.  On Microsoft Windows systems, a
      * pathname is absolute if its prefix is a drive specifier followed by
-     * <code>"\\"</code>, or if its prefix is <code>"\\\\"</code>.
+     * {@code "\\"}, or if its prefix is {@code "\\\\"}.
      *
-     * @return  <code>true</code> if this abstract pathname is absolute,
-     *          <code>false</code> otherwise
+     * @return  {@code true} if this abstract pathname is absolute,
+     *          {@code false} otherwise
      */
     public boolean isAbsolute() {
         return fs.isAbsolute(this);
@@ -538,7 +538,7 @@ public class File
      * string is simply returned as if by the {@link #getPath}
      * method.  If this abstract pathname is the empty abstract pathname then
      * the pathname string of the current user directory, which is named by the
-     * system property <code>user.dir</code>, is returned.  Otherwise this
+     * system property {@code user.dir}, is returned.  Otherwise this
      * pathname is resolved in a system-dependent way.  On UNIX systems, a
      * relative pathname is made absolute by resolving it against the current
      * user directory.  On Microsoft Windows systems, a relative pathname is made absolute
@@ -658,7 +658,7 @@ public class File
     }
 
     /**
-     * Converts this abstract pathname into a <code>file:</code> URL.  The
+     * Converts this abstract pathname into a {@code file:} URL.  The
      * exact form of the URL is system-dependent.  If it can be determined that
      * the file denoted by this abstract pathname is a directory, then the
      * resulting URL will end with a slash.
@@ -751,9 +751,9 @@ public class File
      * files that are marked as unreadable. Consequently this method may return
      * {@code true} even though the file does not have read permissions.
      *
-     * @return  <code>true</code> if and only if the file specified by this
+     * @return  {@code true} if and only if the file specified by this
      *          abstract pathname exists <em>and</em> can be read by the
-     *          application; <code>false</code> otherwise
+     *          application; {@code false} otherwise
      *
      * @throws  SecurityException
      *          If a security manager exists and its {@link
@@ -778,10 +778,10 @@ public class File
      * files that are marked read-only. Consequently this method may return
      * {@code true} even though the file is marked read-only.
      *
-     * @return  <code>true</code> if and only if the file system actually
+     * @return  {@code true} if and only if the file system actually
      *          contains a file denoted by this abstract pathname <em>and</em>
      *          the application is allowed to write to the file;
-     *          <code>false</code> otherwise.
+     *          {@code false} otherwise.
      *
      * @throws  SecurityException
      *          If a security manager exists and its {@link
@@ -803,8 +803,8 @@ public class File
      * Tests whether the file or directory denoted by this abstract pathname
      * exists.
      *
-     * @return  <code>true</code> if and only if the file or directory denoted
-     *          by this abstract pathname exists; <code>false</code> otherwise
+     * @return  {@code true} if and only if the file or directory denoted
+     *          by this abstract pathname exists; {@code false} otherwise
      *
      * @throws  SecurityException
      *          If a security manager exists and its {@link
@@ -832,9 +832,9 @@ public class File
      * java.nio.file.Files#readAttributes(Path,Class,LinkOption[])
      * Files.readAttributes} method may be used.
      *
-     * @return <code>true</code> if and only if the file denoted by this
+     * @return {@code true} if and only if the file denoted by this
      *          abstract pathname exists <em>and</em> is a directory;
-     *          <code>false</code> otherwise
+     *          {@code false} otherwise
      *
      * @throws  SecurityException
      *          If a security manager exists and its {@link
@@ -865,9 +865,9 @@ public class File
      * java.nio.file.Files#readAttributes(Path,Class,LinkOption[])
      * Files.readAttributes} method may be used.
      *
-     * @return  <code>true</code> if and only if the file denoted by this
+     * @return  {@code true} if and only if the file denoted by this
      *          abstract pathname exists <em>and</em> is a normal file;
-     *          <code>false</code> otherwise
+     *          {@code false} otherwise
      *
      * @throws  SecurityException
      *          If a security manager exists and its {@link
@@ -889,10 +889,10 @@ public class File
      * Tests whether the file named by this abstract pathname is a hidden
      * file.  The exact definition of <em>hidden</em> is system-dependent.  On
      * UNIX systems, a file is considered to be hidden if its name begins with
-     * a period character (<code>'.'</code>).  On Microsoft Windows systems, a file is
+     * a period character ({@code '.'}).  On Microsoft Windows systems, a file is
      * considered to be hidden if it has been marked as such in the filesystem.
      *
-     * @return  <code>true</code> if and only if the file denoted by this
+     * @return  {@code true} if and only if the file denoted by this
      *          abstract pathname is hidden according to the conventions of the
      *          underlying platform
      *
@@ -934,9 +934,9 @@ public class File
      * {@link java.nio.file.Files#getLastModifiedTime(Path,LinkOption[])
      * Files.getLastModifiedTime} method may be used instead.
      *
-     * @return  A <code>long</code> value representing the time the file was
+     * @return  A {@code long} value representing the time the file was
      *          last modified, measured in milliseconds since the epoch
-     *          (00:00:00 GMT, January 1, 1970), or <code>0L</code> if the
+     *          (00:00:00 GMT, January 1, 1970), or {@code 0L} if the
      *          file does not exist or if an I/O error occurs.  The value may
      *          be negative indicating the number of milliseconds before the
      *          epoch
@@ -968,8 +968,8 @@ public class File
      * Files.readAttributes} method may be used.
      *
      * @return  The length, in bytes, of the file denoted by this abstract
-     *          pathname, or <code>0L</code> if the file does not exist.  Some
-     *          operating systems may return <code>0L</code> for pathnames
+     *          pathname, or {@code 0L} if the file does not exist.  Some
+     *          operating systems may return {@code 0L} for pathnames
      *          denoting system-dependent entities such as devices or pipes.
      *
      * @throws  SecurityException
@@ -1003,8 +1003,8 @@ public class File
      * {@link java.nio.channels.FileLock FileLock}
      * facility should be used instead.
      *
-     * @return  <code>true</code> if the named file does not exist and was
-     *          successfully created; <code>false</code> if the named file
+     * @return  {@code true} if the named file does not exist and was
+     *          successfully created; {@code false} if the named file
      *          already exists
      *
      * @throws  IOException
@@ -1036,8 +1036,8 @@ public class File
      * when a file cannot be deleted. This is useful for error reporting and to
      * diagnose why a file cannot be deleted.
      *
-     * @return  <code>true</code> if and only if the file or directory is
-     *          successfully deleted; <code>false</code> otherwise
+     * @return  {@code true} if and only if the file or directory is
+     *          successfully deleted; {@code false} otherwise
      *
      * @throws  SecurityException
      *          If a security manager exists and its {@link
@@ -1311,8 +1311,8 @@ public class File
     /**
      * Creates the directory named by this abstract pathname.
      *
-     * @return  <code>true</code> if and only if the directory was
-     *          created; <code>false</code> otherwise
+     * @return  {@code true} if and only if the directory was
+     *          created; {@code false} otherwise
      *
      * @throws  SecurityException
      *          If a security manager exists and its {@link
@@ -1336,8 +1336,8 @@ public class File
      * operation fails it may have succeeded in creating some of the necessary
      * parent directories.
      *
-     * @return  <code>true</code> if and only if the directory was created,
-     *          along with all necessary parent directories; <code>false</code>
+     * @return  {@code true} if and only if the directory was created,
+     *          along with all necessary parent directories; {@code false}
      *          otherwise
      *
      * @throws  SecurityException
@@ -1385,8 +1385,8 @@ public class File
      *
      * @param  dest  The new abstract pathname for the named file
      *
-     * @return  <code>true</code> if and only if the renaming succeeded;
-     *          <code>false</code> otherwise
+     * @return  {@code true} if and only if the renaming succeeded;
+     *          {@code false} otherwise
      *
      * @throws  SecurityException
      *          If a security manager exists and its {@link
@@ -1394,7 +1394,7 @@ public class File
      *          method denies write access to either the old or new pathnames
      *
      * @throws  NullPointerException
-     *          If parameter <code>dest</code> is <code>null</code>
+     *          If parameter {@code dest} is {@code null}
      */
     public boolean renameTo(File dest) {
         if (dest == null) {
@@ -1420,13 +1420,13 @@ public class File
      * the supported precision.  If the operation succeeds and no intervening
      * operations on the file take place, then the next invocation of the
      * {@link #lastModified} method will return the (possibly
-     * truncated) <code>time</code> argument that was passed to this method.
+     * truncated) {@code time} argument that was passed to this method.
      *
      * @param  time  The new last-modified time, measured in milliseconds since
      *               the epoch (00:00:00 GMT, January 1, 1970)
      *
-     * @return <code>true</code> if and only if the operation succeeded;
-     *          <code>false</code> otherwise
+     * @return {@code true} if and only if the operation succeeded;
+     *          {@code false} otherwise
      *
      * @throws  IllegalArgumentException  If the argument is negative
      *
@@ -1458,8 +1458,8 @@ public class File
      * files that are marked read-only. Whether or not a read-only file or
      * directory may be deleted depends upon the underlying system.
      *
-     * @return <code>true</code> if and only if the operation succeeded;
-     *          <code>false</code> otherwise
+     * @return {@code true} if and only if the operation succeeded;
+     *          {@code false} otherwise
      *
      * @throws  SecurityException
      *          If a security manager exists and its {@link
@@ -1490,17 +1490,17 @@ public class File
      * manipulation of file permissions is required.
      *
      * @param   writable
-     *          If <code>true</code>, sets the access permission to allow write
-     *          operations; if <code>false</code> to disallow write operations
+     *          If {@code true}, sets the access permission to allow write
+     *          operations; if {@code false} to disallow write operations
      *
      * @param   ownerOnly
-     *          If <code>true</code>, the write permission applies only to the
+     *          If {@code true}, the write permission applies only to the
      *          owner's write permission; otherwise, it applies to everybody.  If
      *          the underlying file system can not distinguish the owner's write
      *          permission from that of others, then the permission will apply to
      *          everybody, regardless of this value.
      *
-     * @return  <code>true</code> if and only if the operation succeeded. The
+     * @return  {@code true} if and only if the operation succeeded. The
      *          operation will fail if the user does not have permission to change
      *          the access permissions of this abstract pathname.
      *
@@ -1536,10 +1536,10 @@ public class File
      * }</pre>
      *
      * @param   writable
-     *          If <code>true</code>, sets the access permission to allow write
-     *          operations; if <code>false</code> to disallow write operations
+     *          If {@code true}, sets the access permission to allow write
+     *          operations; if {@code false} to disallow write operations
      *
-     * @return  <code>true</code> if and only if the operation succeeded.  The
+     * @return  {@code true} if and only if the operation succeeded.  The
      *          operation will fail if the user does not have permission to
      *          change the access permissions of this abstract pathname.
      *
@@ -1565,20 +1565,20 @@ public class File
      * manipulation of file permissions is required.
      *
      * @param   readable
-     *          If <code>true</code>, sets the access permission to allow read
-     *          operations; if <code>false</code> to disallow read operations
+     *          If {@code true}, sets the access permission to allow read
+     *          operations; if {@code false} to disallow read operations
      *
      * @param   ownerOnly
-     *          If <code>true</code>, the read permission applies only to the
+     *          If {@code true}, the read permission applies only to the
      *          owner's read permission; otherwise, it applies to everybody.  If
      *          the underlying file system can not distinguish the owner's read
      *          permission from that of others, then the permission will apply to
      *          everybody, regardless of this value.
      *
-     * @return  <code>true</code> if and only if the operation succeeded.  The
+     * @return  {@code true} if and only if the operation succeeded.  The
      *          operation will fail if the user does not have permission to
      *          change the access permissions of this abstract pathname.  If
-     *          <code>readable</code> is <code>false</code> and the underlying
+     *          {@code readable} is {@code false} and the underlying
      *          file system does not implement a read permission, then the
      *          operation will fail.
      *
@@ -1614,13 +1614,13 @@ public class File
      * }</pre>
      *
      * @param  readable
-     *          If <code>true</code>, sets the access permission to allow read
-     *          operations; if <code>false</code> to disallow read operations
+     *          If {@code true}, sets the access permission to allow read
+     *          operations; if {@code false} to disallow read operations
      *
-     * @return  <code>true</code> if and only if the operation succeeded.  The
+     * @return  {@code true} if and only if the operation succeeded.  The
      *          operation will fail if the user does not have permission to
      *          change the access permissions of this abstract pathname.  If
-     *          <code>readable</code> is <code>false</code> and the underlying
+     *          {@code readable} is {@code false} and the underlying
      *          file system does not implement a read permission, then the
      *          operation will fail.
      *
@@ -1646,20 +1646,20 @@ public class File
      * manipulation of file permissions is required.
      *
      * @param   executable
-     *          If <code>true</code>, sets the access permission to allow execute
-     *          operations; if <code>false</code> to disallow execute operations
+     *          If {@code true}, sets the access permission to allow execute
+     *          operations; if {@code false} to disallow execute operations
      *
      * @param   ownerOnly
-     *          If <code>true</code>, the execute permission applies only to the
+     *          If {@code true}, the execute permission applies only to the
      *          owner's execute permission; otherwise, it applies to everybody.
      *          If the underlying file system can not distinguish the owner's
      *          execute permission from that of others, then the permission will
      *          apply to everybody, regardless of this value.
      *
-     * @return  <code>true</code> if and only if the operation succeeded.  The
+     * @return  {@code true} if and only if the operation succeeded.  The
      *          operation will fail if the user does not have permission to
      *          change the access permissions of this abstract pathname.  If
-     *          <code>executable</code> is <code>false</code> and the underlying
+     *          {@code executable} is {@code false} and the underlying
      *          file system does not implement an execute permission, then the
      *          operation will fail.
      *
@@ -1695,13 +1695,13 @@ public class File
      * }</pre>
      *
      * @param   executable
-     *          If <code>true</code>, sets the access permission to allow execute
-     *          operations; if <code>false</code> to disallow execute operations
+     *          If {@code true}, sets the access permission to allow execute
+     *          operations; if {@code false} to disallow execute operations
      *
-     * @return   <code>true</code> if and only if the operation succeeded.  The
+     * @return   {@code true} if and only if the operation succeeded.  The
      *           operation will fail if the user does not have permission to
      *           change the access permissions of this abstract pathname.  If
-     *           <code>executable</code> is <code>false</code> and the underlying
+     *           {@code executable} is {@code false} and the underlying
      *           file system does not implement an execute permission, then the
      *           operation will fail.
      *
@@ -1723,7 +1723,7 @@ public class File
      * files that are not marked executable. Consequently this method may return
      * {@code true} even though the file does not have execute permissions.
      *
-     * @return  <code>true</code> if and only if the abstract pathname exists
+     * @return  {@code true} if and only if the abstract pathname exists
      *          <em>and</em> the application is allowed to execute the file
      *
      * @throws  SecurityException
@@ -2007,28 +2007,28 @@ public class File
      * for a file created by this method to be deleted automatically, use the
      * {@link #deleteOnExit} method.
      *
-     * <p> The <code>prefix</code> argument must be at least three characters
+     * <p> The {@code prefix} argument must be at least three characters
      * long.  It is recommended that the prefix be a short, meaningful string
-     * such as <code>"hjb"</code> or <code>"mail"</code>.  The
-     * <code>suffix</code> argument may be <code>null</code>, in which case the
-     * suffix <code>".tmp"</code> will be used.
+     * such as {@code "hjb"} or {@code "mail"}.  The
+     * {@code suffix} argument may be {@code null}, in which case the
+     * suffix {@code ".tmp"} will be used.
      *
      * <p> To create the new file, the prefix and the suffix may first be
      * adjusted to fit the limitations of the underlying platform.  If the
      * prefix is too long then it will be truncated, but its first three
      * characters will always be preserved.  If the suffix is too long then it
      * too will be truncated, but if it begins with a period character
-     * (<code>'.'</code>) then the period and the first three characters
+     * ({@code '.'}) then the period and the first three characters
      * following it will always be preserved.  Once these adjustments have been
      * made the name of the new file will be generated by concatenating the
      * prefix, five or more internally-generated characters, and the suffix.
      *
-     * <p> If the <code>directory</code> argument is <code>null</code> then the
+     * <p> If the {@code directory} argument is {@code null} then the
      * system-dependent default temporary-file directory will be used.  The
      * default temporary-file directory is specified by the system property
-     * <code>java.io.tmpdir</code>.  On UNIX systems the default value of this
-     * property is typically <code>"/tmp"</code> or <code>"/var/tmp"</code>; on
-     * Microsoft Windows systems it is typically <code>"C:\\WINNT\\TEMP"</code>.  A different
+     * {@code java.io.tmpdir}.  On UNIX systems the default value of this
+     * property is typically {@code "/tmp"} or {@code "/var/tmp"}; on
+     * Microsoft Windows systems it is typically {@code "C:\\WINNT\\TEMP"}.  A different
      * value may be given to this system property when the Java virtual machine
      * is invoked, but programmatic changes to this property are not guaranteed
      * to have any effect upon the temporary directory used by this method.
@@ -2037,17 +2037,17 @@ public class File
      *                    name; must be at least three characters long
      *
      * @param  suffix     The suffix string to be used in generating the file's
-     *                    name; may be <code>null</code>, in which case the
-     *                    suffix <code>".tmp"</code> will be used
+     *                    name; may be {@code null}, in which case the
+     *                    suffix {@code ".tmp"} will be used
      *
      * @param  directory  The directory in which the file is to be created, or
-     *                    <code>null</code> if the default temporary-file
+     *                    {@code null} if the default temporary-file
      *                    directory is to be used
      *
      * @return  An abstract pathname denoting a newly-created empty file
      *
      * @throws  IllegalArgumentException
-     *          If the <code>prefix</code> argument contains fewer than three
+     *          If the {@code prefix} argument contains fewer than three
      *          characters
      *
      * @throws  IOException  If a file could not be created
@@ -2113,13 +2113,13 @@ public class File
      *                    name; must be at least three characters long
      *
      * @param  suffix     The suffix string to be used in generating the file's
-     *                    name; may be <code>null</code>, in which case the
-     *                    suffix <code>".tmp"</code> will be used
+     *                    name; may be {@code null}, in which case the
+     *                    suffix {@code ".tmp"} will be used
      *
      * @return  An abstract pathname denoting a newly-created empty file
      *
      * @throws  IllegalArgumentException
-     *          If the <code>prefix</code> argument contains fewer than three
+     *          If the {@code prefix} argument contains fewer than three
      *          characters
      *
      * @throws  IOException  If a file could not be created
@@ -2163,8 +2163,8 @@ public class File
 
     /**
      * Tests this abstract pathname for equality with the given object.
-     * Returns <code>true</code> if and only if the argument is not
-     * <code>null</code> and is an abstract pathname that denotes the same file
+     * Returns {@code true} if and only if the argument is not
+     * {@code null} and is an abstract pathname that denotes the same file
      * or directory as this abstract pathname.  Whether or not two abstract
      * pathnames are equal depends upon the underlying system.  On UNIX
      * systems, alphabetic case is significant in comparing pathnames; on Microsoft Windows
@@ -2172,8 +2172,8 @@ public class File
      *
      * @param   obj   The object to be compared with this abstract pathname
      *
-     * @return  <code>true</code> if and only if the objects are the same;
-     *          <code>false</code> otherwise
+     * @return  {@code true} if and only if the objects are the same;
+     *          {@code false} otherwise
      */
     public boolean equals(Object obj) {
         if ((obj != null) && (obj instanceof File)) {
@@ -2188,10 +2188,10 @@ public class File
      * of their hash codes.  On UNIX systems, the hash code of an abstract
      * pathname is equal to the exclusive <em>or</em> of the hash code
      * of its pathname string and the decimal value
-     * <code>1234321</code>.  On Microsoft Windows systems, the hash
+     * {@code 1234321}.  On Microsoft Windows systems, the hash
      * code is equal to the exclusive <em>or</em> of the hash code of
      * its pathname string converted to lower case and the decimal
-     * value <code>1234321</code>.  Locale is not taken into account on
+     * value {@code 1234321}.  Locale is not taken into account on
      * lowercasing the pathname string.
      *
      * @return  A hash code for this abstract pathname

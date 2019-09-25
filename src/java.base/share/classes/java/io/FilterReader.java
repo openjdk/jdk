@@ -28,9 +28,9 @@ package java.io;
 
 /**
  * Abstract class for reading filtered character streams.
- * The abstract class <code>FilterReader</code> itself
+ * The abstract class {@code FilterReader} itself
  * provides default methods that pass all requests to
- * the contained stream. Subclasses of <code>FilterReader</code>
+ * the contained stream. Subclasses of {@code FilterReader}
  * should override some of these methods and may also provide
  * additional methods and fields.
  *
@@ -49,7 +49,7 @@ public abstract class FilterReader extends Reader {
      * Creates a new filtered reader.
      *
      * @param in  a Reader object providing the underlying stream.
-     * @throws NullPointerException if <code>in</code> is <code>null</code>
+     * @throws NullPointerException if {@code in} is {@code null}
      */
     protected FilterReader(Reader in) {
         super(in);

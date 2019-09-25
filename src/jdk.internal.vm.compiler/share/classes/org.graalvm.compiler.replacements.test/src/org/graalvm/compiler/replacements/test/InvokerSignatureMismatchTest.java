@@ -27,69 +27,47 @@ package org.graalvm.compiler.replacements.test;
 import static org.graalvm.compiler.test.SubprocessUtil.getVMCommandLine;
 import static org.graalvm.compiler.test.SubprocessUtil.withoutDebuggerArguments;
 
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.util.List;
+
+import org.graalvm.compiler.core.test.CustomizedBytecodePatternTest;
+import org.graalvm.compiler.serviceprovider.JavaVersionUtil;
+import org.graalvm.compiler.test.SubprocessUtil;
+import org.graalvm.compiler.test.SubprocessUtil.Subprocess;
 import org.junit.Test;
 import org.objectweb.asm.ClassWriter;
 import org.objectweb.asm.MethodVisitor;
 import org.objectweb.asm.Type;
 
-import java.io.File;
-import java.lang.invoke.MethodHandles;
-import java.util.List;
+public class InvokerSignatureMismatchTest extends CustomizedBytecodePatternTest {
 
-import org.graalvm.compiler.core.test.CustomizedBytecodePatternTest;
-import org.graalvm.compiler.test.SubprocessUtil;
-import org.graalvm.compiler.test.SubprocessUtil.Subprocess;
-
-import jdk.vm.ci.meta.ResolvedJavaMethod;
-
-public class InvokerSignatureMismatchTest {
-
+    @SuppressWarnings("try")
     @Test
     public void test() throws Throwable {
         List<String> args = withoutDebuggerArguments(getVMCommandLine());
-        String classPath = System.getProperty("java.class.path");
-        classPath = classPath + File.pathSeparator + TestISMBL.class.getProtectionDomain().getCodeSource().getLocation().getPath();
-        args.add("-Xbootclasspath/a:" + classPath);
-        args.add("-XX:-TieredCompilation");
-        args.add("-XX:+EnableJVMCI");
-        args.add("-XX:+UseJVMCICompiler");
+        try (TemporaryDirectory temp = new TemporaryDirectory(null, getClass().getSimpleName())) {
+            if (JavaVersionUtil.JAVA_SPEC > 8) {
+                args.add("--class-path=" + temp);
+                args.add("--patch-module=java.base=" + temp);
+            } else {
+                args.add("-Xbootclasspath/a:" + temp);
+            }
+            args.add("-XX:-TieredCompilation");
+            args.add("-XX:+UnlockExperimentalVMOptions");
+            args.add("-XX:+EnableJVMCI");
+            args.add("-XX:+UseJVMCICompiler");
 
-        args.add(TestISMBL.class.getName());
-        Subprocess proc = SubprocessUtil.java(args);
-        if (proc.exitCode != 0) {
-            System.out.println(proc);
-        }
-    }
-}
+            Path invokeDir = Files.createDirectories(temp.path.resolve(Paths.get("java", "lang", "invoke")));
+            Files.write(temp.path.resolve("ISMTest.class"), generateClass("ISMTest"));
+            Files.write(invokeDir.resolve("MethodHandleHelper.class"), generateClass("java/lang/invoke/MethodHandleHelper"));
 
-class TestISMBL extends CustomizedBytecodePatternTest {
-
-    public static void main(String[] args) {
-        try {
-            new TestISMBL().test();
-        } catch (Throwable e) {
-            e.printStackTrace();
-            System.exit(1);
-        }
-        System.exit(0);
-    }
-
-    private void test() throws Throwable {
-        getClass("java/lang/invoke/MHHelper");
-        Class<?> testClass = getClass("ISMTest");
-
-        ResolvedJavaMethod mL = getResolvedJavaMethod(testClass, "mainLink");
-        ResolvedJavaMethod mI = getResolvedJavaMethod(testClass, "mainInvoke");
-        executeActual(mL, null, 100);
-        executeActual(mI, null, 100);
-    }
-
-    @Override
-    protected Class<?> getClass(String className) throws ClassNotFoundException {
-        if (className.equals("java/lang/invoke/MHHelper")) {
-            return super.getClassBL(className, MethodHandles.lookup());
-        } else {
-            return super.getClass(className);
+            args.add("ISMTest");
+            Subprocess proc = SubprocessUtil.java(args);
+            if (proc.exitCode != 0) {
+                throw new AssertionError(proc.toString());
+            }
         }
     }
 
@@ -99,7 +77,7 @@ class TestISMBL extends CustomizedBytecodePatternTest {
         ClassWriter cw = new ClassWriter(ClassWriter.COMPUTE_FRAMES);
         cw.visit(52, ACC_SUPER | ACC_PUBLIC, className, null, "java/lang/Object", null);
 
-        if (className.equals("java/lang/invoke/MHHelper")) {
+        if (className.equals("java/lang/invoke/MethodHandleHelper")) {
             MethodVisitor internalMemberName = cw.visitMethod(ACC_PUBLIC | ACC_STATIC, "internalMemberName", "(Ljava/lang/invoke/MethodHandle;)Ljava/lang/Object;", null, exceptions);
             internalMemberName.visitCode();
             internalMemberName.visitVarInsn(ALOAD, 0);
@@ -149,12 +127,12 @@ class TestISMBL extends CustomizedBytecodePatternTest {
             MethodVisitor mainLink = cw.visitMethod(ACC_PUBLIC | ACC_STATIC, "mainLink", "(I)I", null, exceptions);
             mainLink.visitCode();
             mainLink.visitFieldInsn(GETSTATIC, className, "INT_MH", "Ljava/lang/invoke/MethodHandle;");
-            mainLink.visitMethodInsn(INVOKESTATIC, "java/lang/invoke/MHHelper", "internalMemberName", "(Ljava/lang/invoke/MethodHandle;)Ljava/lang/Object;", false);
+            mainLink.visitMethodInsn(INVOKESTATIC, "java/lang/invoke/MethodHandleHelper", "internalMemberName", "(Ljava/lang/invoke/MethodHandle;)Ljava/lang/Object;", false);
             mainLink.visitVarInsn(ASTORE, 1);
             mainLink.visitVarInsn(ILOAD, 0);
             mainLink.visitInsn(I2F);
             mainLink.visitVarInsn(ALOAD, 1);
-            mainLink.visitMethodInsn(INVOKESTATIC, "java/lang/invoke/MHHelper", "linkToStatic", "(FLjava/lang/Object;)I", false);
+            mainLink.visitMethodInsn(INVOKESTATIC, "java/lang/invoke/MethodHandleHelper", "linkToStatic", "(FLjava/lang/Object;)I", false);
             mainLink.visitInsn(IRETURN);
             mainLink.visitMaxs(1, 1);
             mainLink.visitEnd();
@@ -164,7 +142,7 @@ class TestISMBL extends CustomizedBytecodePatternTest {
             mainInvoke.visitFieldInsn(GETSTATIC, className, "INT_MH", "Ljava/lang/invoke/MethodHandle;");
             mainInvoke.visitVarInsn(ILOAD, 0);
             mainInvoke.visitInsn(I2F);
-            mainInvoke.visitMethodInsn(INVOKESTATIC, "java/lang/invoke/MHHelper", "invokeBasicI", "(Ljava/lang/invoke/MethodHandle;F)I", false);
+            mainInvoke.visitMethodInsn(INVOKESTATIC, "java/lang/invoke/MethodHandleHelper", "invokeBasicI", "(Ljava/lang/invoke/MethodHandle;F)I", false);
             mainInvoke.visitInsn(IRETURN);
             mainInvoke.visitMaxs(1, 1);
             mainInvoke.visitEnd();
@@ -177,6 +155,19 @@ class TestISMBL extends CustomizedBytecodePatternTest {
             bodyI.visitInsn(IRETURN);
             bodyI.visitMaxs(1, 1);
             bodyI.visitEnd();
+
+            MethodVisitor main = cw.visitMethod(ACC_PUBLIC | ACC_STATIC, "main", "([Ljava/lang/String;)V", null, exceptions);
+            main.visitCode();
+            main.visitIntInsn(SIPUSH, 100);
+            main.visitMethodInsn(INVOKESTATIC, "ISMTest", "mainLink", "(I)I", false);
+            main.visitInsn(POP);
+            main.visitIntInsn(SIPUSH, 100);
+            main.visitMethodInsn(INVOKESTATIC, "ISMTest", "mainInvoke", "(I)I", false);
+            main.visitInsn(POP);
+            main.visitInsn(RETURN);
+            main.visitMaxs(1, 1);
+            main.visitEnd();
+
         }
         cw.visitEnd();
         return cw.toByteArray();

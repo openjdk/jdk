@@ -235,22 +235,22 @@ public class BufferedReader extends Reader {
      * <code>{@link Reader#read(char[], int, int) read}</code> method of the
      * <code>{@link Reader}</code> class.  As an additional convenience, it
      * attempts to read as many characters as possible by repeatedly invoking
-     * the <code>read</code> method of the underlying stream.  This iterated
-     * <code>read</code> continues until one of the following conditions becomes
+     * the {@code read} method of the underlying stream.  This iterated
+     * {@code read} continues until one of the following conditions becomes
      * true: <ul>
      *
      *   <li> The specified number of characters have been read,
      *
-     *   <li> The <code>read</code> method of the underlying stream returns
-     *   <code>-1</code>, indicating end-of-file, or
+     *   <li> The {@code read} method of the underlying stream returns
+     *   {@code -1}, indicating end-of-file, or
      *
-     *   <li> The <code>ready</code> method of the underlying stream
-     *   returns <code>false</code>, indicating that further input requests
+     *   <li> The {@code ready} method of the underlying stream
+     *   returns {@code false}, indicating that further input requests
      *   would block.
      *
-     * </ul> If the first <code>read</code> on the underlying stream returns
-     * <code>-1</code> to indicate end-of-file then this method returns
-     * <code>-1</code>.  Otherwise this method returns the number of characters
+     * </ul> If the first {@code read} on the underlying stream returns
+     * {@code -1} to indicate end-of-file then this method returns
+     * {@code -1}.  Otherwise this method returns the number of characters
      * actually read.
      *
      * <p> Subclasses of this class are encouraged, but not required, to
@@ -261,7 +261,7 @@ public class BufferedReader extends Reader {
      * however, the buffer is empty, the mark is not valid, and the requested
      * length is at least as large as the buffer, then this method will read
      * characters directly from the underlying stream into the given array.
-     * Thus redundant <code>BufferedReader</code>s will not copy data
+     * Thus redundant {@code BufferedReader}s will not copy data
      * unnecessarily.
      *
      * @param      cbuf  Destination buffer
@@ -403,7 +403,7 @@ public class BufferedReader extends Reader {
      *
      * @return    The number of characters actually skipped
      *
-     * @throws     IllegalArgumentException  If <code>n</code> is negative.
+     * @throws     IllegalArgumentException  If {@code n} is negative.
      * @throws     IOException  If an I/O error occurs
      */
     public long skip(long n) throws IOException {

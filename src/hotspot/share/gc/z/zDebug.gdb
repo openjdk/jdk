@@ -126,10 +126,6 @@ end
 
 # Print heap information
 define zph
-    printf "Address Space\n"
-    printf "     Start:             0x%llx\n", ZAddressSpaceStart
-    printf "     End:               0x%llx\n", ZAddressSpaceEnd
-    printf "     Size:              %-15llu (0x%llx)\n", ZAddressSpaceSize, ZAddressSpaceSize
     printf "Heap\n"
     printf "     GlobalPhase:       %u\n", ZGlobalPhase
     printf "     GlobalSeqNum:      %u\n", ZGlobalSeqNum

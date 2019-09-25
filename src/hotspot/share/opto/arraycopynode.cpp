@@ -268,8 +268,8 @@ bool ArrayCopyNode::prepare_array_copy(PhaseGVN *phase, bool can_reshape,
 
     BasicType src_elem  = ary_src->klass()->as_array_klass()->element_type()->basic_type();
     BasicType dest_elem = ary_dest->klass()->as_array_klass()->element_type()->basic_type();
-    if (src_elem  == T_ARRAY)  src_elem  = T_OBJECT;
-    if (dest_elem == T_ARRAY)  dest_elem = T_OBJECT;
+    if (is_reference_type(src_elem))   src_elem  = T_OBJECT;
+    if (is_reference_type(dest_elem))  dest_elem = T_OBJECT;
 
     if (src_elem != dest_elem || dest_elem == T_VOID) {
       // We don't know if arguments are arrays of the same type
@@ -328,7 +328,7 @@ bool ArrayCopyNode::prepare_array_copy(PhaseGVN *phase, bool can_reshape,
 
     assert(phase->type(src->in(AddPNode::Offset))->is_intptr_t()->get_con() == phase->type(dest->in(AddPNode::Offset))->is_intptr_t()->get_con(), "same start offset?");
     BasicType elem = ary_src->klass()->as_array_klass()->element_type()->basic_type();
-    if (elem == T_ARRAY)  elem = T_OBJECT;
+    if (is_reference_type(elem))  elem = T_OBJECT;
 
     BarrierSetC2* bs = BarrierSet::barrier_set()->barrier_set_c2();
     if (bs->array_copy_requires_gc_barriers(true, elem, true, BarrierSetC2::Optimization)) {

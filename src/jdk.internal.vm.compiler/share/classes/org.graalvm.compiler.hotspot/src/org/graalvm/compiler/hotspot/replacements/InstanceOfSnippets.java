@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,6 +30,7 @@ import static org.graalvm.compiler.core.common.GraalOptions.GeneratePIC;
 import static org.graalvm.compiler.hotspot.replacements.HotSpotReplacementsUtil.PRIMARY_SUPERS_LOCATION;
 import static org.graalvm.compiler.hotspot.replacements.HotSpotReplacementsUtil.SECONDARY_SUPER_CACHE_LOCATION;
 import static org.graalvm.compiler.hotspot.replacements.HotSpotReplacementsUtil.loadHubIntrinsic;
+import static org.graalvm.compiler.hotspot.replacements.HotSpotReplacementsUtil.loadHubOrNullIntrinsic;
 import static org.graalvm.compiler.hotspot.replacements.HotspotSnippetsOptions.TypeCheckMaxHints;
 import static org.graalvm.compiler.hotspot.replacements.HotspotSnippetsOptions.TypeCheckMinProfileHitProbability;
 import static org.graalvm.compiler.hotspot.replacements.TypeCheckSnippetUtils.checkSecondarySubType;
@@ -136,12 +137,7 @@ public class InstanceOfSnippets implements Snippets {
      */
     @Snippet
     public static Object instanceofExact(Object object, KlassPointer exactHub, Object trueValue, Object falseValue, @ConstantParameter Counters counters) {
-        if (probability(NOT_FREQUENT_PROBABILITY, object == null)) {
-            counters.isNull.inc();
-            return falseValue;
-        }
-        GuardingNode anchorNode = SnippetAnchorNode.anchor();
-        KlassPointer objectHub = loadHubIntrinsic(PiNode.piCastNonNull(object, anchorNode));
+        KlassPointer objectHub = loadHubOrNullIntrinsic(object);
         if (probability(LIKELY_PROBABILITY, objectHub.notEqual(exactHub))) {
             counters.exactMiss.inc();
             return falseValue;
@@ -224,7 +220,7 @@ public class InstanceOfSnippets implements Snippets {
 
     @Snippet
     public static Object isAssignableFrom(@NonNullParameter Class<?> thisClassNonNull, Class<?> otherClass, Object trueValue, Object falseValue, @ConstantParameter Counters counters) {
-        if (otherClass == null) {
+        if (BranchProbabilityNode.probability(BranchProbabilityNode.DEOPT_PROBABILITY, otherClass == null)) {
             DeoptimizeNode.deopt(DeoptimizationAction.InvalidateReprofile, DeoptimizationReason.NullCheckException);
             return false;
         }

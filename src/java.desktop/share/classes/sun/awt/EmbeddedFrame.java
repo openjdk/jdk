@@ -56,6 +56,7 @@ public abstract class EmbeddedFrame extends Frame
 
     private boolean isCursorAllowed = true;
     private boolean supportsXEmbed = false;
+    @SuppressWarnings("serial") // Not statically typed as Serializable
     private KeyboardFocusManager appletKFM;
     // JDK 1.1 compatibility
     private static final long serialVersionUID = 2967042741780317130L;

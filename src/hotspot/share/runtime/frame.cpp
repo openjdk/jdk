@@ -723,7 +723,7 @@ class InterpretedArgumentOopFinder: public SignatureInfo {
 
   void set(int size, BasicType type) {
     _offset -= size;
-    if (type == T_OBJECT || type == T_ARRAY) oop_offset_do();
+    if (is_reference_type(type)) oop_offset_do();
   }
 
   void oop_offset_do() {
@@ -776,7 +776,7 @@ class EntryFrameOopFinder: public SignatureInfo {
 
   void set(int size, BasicType type) {
     assert (_offset >= 0, "illegal offset");
-    if (type == T_OBJECT || type == T_ARRAY) oop_at_offset_do(_offset);
+    if (is_reference_type(type)) oop_at_offset_do(_offset);
     _offset -= size;
   }
 
@@ -927,7 +927,7 @@ class CompiledArgumentOopFinder: public SignatureInfo {
   VMRegPair*      _regs;        // VMReg list of arguments
 
   void set(int size, BasicType type) {
-    if (type == T_OBJECT || type == T_ARRAY) handle_oop_offset();
+    if (is_reference_type(type)) handle_oop_offset();
     _offset += size;
   }
 

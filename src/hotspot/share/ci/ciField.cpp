@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -90,7 +90,7 @@ ciField::ciField(ciInstanceKlass* klass, int index) :
 
   // If the field is a pointer type, get the klass of the
   // field.
-  if (field_type == T_OBJECT || field_type == T_ARRAY) {
+  if (is_reference_type(field_type)) {
     bool ignore;
     // This is not really a class reference; the index always refers to the
     // field's type signature, as a symbol.  Linkage checks do not apply.
@@ -199,7 +199,7 @@ ciField::ciField(fieldDescriptor *fd) :
 
   // If the field is a pointer type, get the klass of the
   // field.
-  if (field_type == T_OBJECT || field_type == T_ARRAY) {
+  if (is_reference_type(field_type)) {
     _type = NULL;  // must call compute_type on first access
   } else {
     _type = ciType::make(field_type);

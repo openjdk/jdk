@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,9 +24,9 @@
 
 package org.graalvm.compiler.lir.amd64;
 
-import static org.graalvm.compiler.lir.LIRInstruction.OperandFlag.STACK;
 import static jdk.vm.ci.code.ValueUtil.asStackSlot;
 import static jdk.vm.ci.code.ValueUtil.isStackSlot;
+import static org.graalvm.compiler.lir.LIRInstruction.OperandFlag.STACK;
 
 import java.util.Arrays;
 
@@ -34,6 +34,7 @@ import org.graalvm.compiler.asm.amd64.AMD64MacroAssembler;
 import org.graalvm.compiler.lir.LIRInstructionClass;
 import org.graalvm.compiler.lir.LIRValueUtil;
 import org.graalvm.compiler.lir.Opcode;
+import org.graalvm.compiler.lir.StandardOp;
 import org.graalvm.compiler.lir.asm.CompilationResultBuilder;
 
 import jdk.vm.ci.amd64.AMD64Kind;
@@ -45,7 +46,7 @@ import jdk.vm.ci.meta.AllocatableValue;
  * Restores registers from stack slots.
  */
 @Opcode("RESTORE_REGISTER")
-public class AMD64RestoreRegistersOp extends AMD64LIRInstruction {
+public class AMD64RestoreRegistersOp extends AMD64LIRInstruction implements StandardOp.RestoreRegistersOp {
     public static final LIRInstructionClass<AMD64RestoreRegistersOp> TYPE = LIRInstructionClass.create(AMD64RestoreRegistersOp.class);
 
     /**
@@ -70,7 +71,7 @@ public class AMD64RestoreRegistersOp extends AMD64LIRInstruction {
     }
 
     protected Register[] getSavedRegisters() {
-        return save.savedRegisters;
+        return save.getSavedRegisters();
     }
 
     protected void restoreRegister(CompilationResultBuilder crb, AMD64MacroAssembler masm, Register result, StackSlot input) {

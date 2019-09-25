@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -34,15 +34,15 @@ import sun.text.Normalizer;
 
 
 /**
- * This is a utility class for <code>String.toLowerCase()</code> and
- * <code>String.toUpperCase()</code>, that handles special casing with
+ * This is a utility class for {@code String.toLowerCase()} and
+ * {@code String.toUpperCase()}, that handles special casing with
  * conditions.  In other words, it handles the mappings with conditions
  * that are defined in
  * <a href="http://www.unicode.org/Public/UNIDATA/SpecialCasing.txt">Special
  * Casing Properties</a> file.
  * <p>
  * Note that the unconditional case mappings (including 1:M mappings)
- * are handled in <code>Character.toLower/UpperCase()</code>.
+ * are handled in {@code Character.toLower/UpperCase()}.
  */
 final class ConditionalSpecialCasing {
 
@@ -329,7 +329,7 @@ final class ConditionalSpecialCasing {
     /**
      * Implements the "Before_Dot" condition
      *
-     * Specification: C is followed by <code>U+0307 COMBINING DOT ABOVE</code>.
+     * Specification: C is followed by {@code U+0307 COMBINING DOT ABOVE}.
      * Any sequence of characters with a combining class that is
      * neither 0 nor 230 may intervene between the current character
      * and the combining dot above.

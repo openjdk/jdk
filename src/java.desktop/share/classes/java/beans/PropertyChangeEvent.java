@@ -130,12 +130,14 @@ public class PropertyChangeEvent extends EventObject {
      * New value for property.  May be null if not known.
      * @serial
      */
+    @SuppressWarnings("serial") // Not statically typed as Serializable
     private Object newValue;
 
     /**
      * Previous value for property.  May be null if not known.
      * @serial
      */
+    @SuppressWarnings("serial") // Not statically typed as Serializable
     private Object oldValue;
 
     /**
@@ -143,6 +145,7 @@ public class PropertyChangeEvent extends EventObject {
      * @serial
      * @see #getPropagationId
      */
+    @SuppressWarnings("serial") // Not statically typed as Serializable
     private Object propagationId;
 
     /**

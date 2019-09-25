@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -121,12 +121,8 @@ public abstract class Stub {
         return destroyedCallerRegisters;
     }
 
-    /**
-     * Determines if this stub preserves all registers apart from those it
-     * {@linkplain #getDestroyedCallerRegisters() destroys}.
-     */
-    public boolean preservesRegisters() {
-        return true;
+    public boolean shouldSaveRegistersAroundCalls() {
+        return linkage.getEffect() == HotSpotForeignCallLinkage.RegisterEffect.COMPUTES_REGISTERS_KILLED;
     }
 
     protected final OptionValues options;

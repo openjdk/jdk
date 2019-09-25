@@ -33,24 +33,46 @@
 #include "utilities/macros.hpp"
 
 #ifdef ASSERT
-void Mutex::check_safepoint_state(Thread* thread, bool do_safepoint_check) {
+void Mutex::check_block_state(Thread* thread) {
+  if (!_allow_vm_block && thread->is_VM_thread()) {
+    // JavaThreads are checked to make sure that they do not hold _allow_vm_block locks during operations
+    // that could safepoint.  Make sure the vm thread never uses locks with _allow_vm_block == false.
+    fatal("VM thread could block on lock that may be held by a JavaThread during safepoint: %s", name());
+  }
+
+  assert(!os::ThreadCrashProtection::is_crash_protected(thread),
+         "locking not allowed when crash protection is set");
+}
+
+void Mutex::check_safepoint_state(Thread* thread) {
+  check_block_state(thread);
+
   // If the JavaThread checks for safepoint, verify that the lock wasn't created with safepoint_check_never.
-  SafepointCheckRequired not_allowed = do_safepoint_check ?  Mutex::_safepoint_check_never :
-                                                             Mutex::_safepoint_check_always;
-  assert(!thread->is_active_Java_thread() || _safepoint_check_required != not_allowed,
+  if (thread->is_active_Java_thread()) {
+    assert(_safepoint_check_required != _safepoint_check_never,
+           "This lock should %s have a safepoint check for Java threads: %s",
+           _safepoint_check_required ? "always" : "never", name());
+
+    // Also check NoSafepointVerifier, and thread state is _thread_in_vm
+    thread->check_for_valid_safepoint_state();
+  } else {
+    // If initialized with safepoint_check_never, a NonJavaThread should never ask to safepoint check either.
+    assert(_safepoint_check_required != _safepoint_check_never,
+           "NonJavaThread should not check for safepoint");
+  }
+}
+
+void Mutex::check_no_safepoint_state(Thread* thread) {
+  check_block_state(thread);
+  assert(!thread->is_active_Java_thread() || _safepoint_check_required != _safepoint_check_always,
          "This lock should %s have a safepoint check for Java threads: %s",
          _safepoint_check_required ? "always" : "never", name());
-
-  // If defined with safepoint_check_never, a NonJavaThread should never ask to safepoint check either.
-  assert(thread->is_Java_thread() || !do_safepoint_check || _safepoint_check_required != Mutex::_safepoint_check_never,
-         "NonJavaThread should not check for safepoint");
 }
 #endif // ASSERT
 
-void Mutex::lock(Thread * self) {
-  check_safepoint_state(self, true);
+void Mutex::lock(Thread* self) {
+  check_safepoint_state(self);
 
-  DEBUG_ONLY(check_prelock_state(self, true));
   assert(_owner != self, "invariant");
 
   Mutex* in_flight_mutex = NULL;
@@ -60,7 +82,6 @@ void Mutex::lock(Thread * self) {
     // The lock is contended
 
   #ifdef ASSERT
-    check_block_state(self);
     if (retry_cnt++ > 3) {
       log_trace(vmmutex)("JavaThread " INTPTR_FORMAT " on %d attempt trying to acquire vmmutex %s", p2i(self), retry_cnt, _name);
     }
@@ -98,7 +119,7 @@ void Mutex::lock() {
 // in the wrong way this can lead to a deadlock with the safepoint code.
 
 void Mutex::lock_without_safepoint_check(Thread * self) {
-  check_safepoint_state(self, false);
+  check_no_safepoint_state(self);
   assert(_owner != self, "invariant");
   _lock.lock();
   assert_owner(NULL);
@@ -114,8 +135,9 @@ void Mutex::lock_without_safepoint_check() {
 
 bool Mutex::try_lock() {
   Thread * const self = Thread::current();
-  DEBUG_ONLY(check_prelock_state(self, false);)
-
+  // Some safepoint_check_always locks use try_lock, so cannot check
+  // safepoint state, but can check blocking state.
+  check_block_state(self);
   if (_lock.try_lock()) {
     assert_owner(NULL);
     set_owner(self);
@@ -160,7 +182,6 @@ void Monitor::assert_wait_lock_state(Thread* self) {
 
 bool Monitor::wait_without_safepoint_check(long timeout) {
   Thread* const self = Thread::current();
-  check_safepoint_state(self, false);
 
   // timeout is in milliseconds - with zero meaning never timeout
   assert(timeout >= 0, "negative timeout");
@@ -171,6 +192,9 @@ bool Monitor::wait_without_safepoint_check(long timeout) {
   // conceptually set the owner to NULL in anticipation of
   // abdicating the lock in wait
   set_owner(NULL);
+  // Check safepoint state after resetting owner and possible NSV.
+  check_no_safepoint_state(self);
+
   int wait_status = _lock.wait(timeout);
   set_owner(self);
   return wait_status != 0;          // return true IFF timeout
@@ -178,7 +202,6 @@ bool Monitor::wait_without_safepoint_check(long timeout) {
 
 bool Monitor::wait(long timeout, bool as_suspend_equivalent) {
   Thread* const self = Thread::current();
-  check_safepoint_state(self, true);
 
   // timeout is in milliseconds - with zero meaning never timeout
   assert(timeout >= 0, "negative timeout");
@@ -193,6 +216,8 @@ bool Monitor::wait(long timeout, bool as_suspend_equivalent) {
   // conceptually set the owner to NULL in anticipation of
   // abdicating the lock in wait
   set_owner(NULL);
+  // Check safepoint state after resetting owner and possible NSV.
+  check_safepoint_state(self);
   JavaThread *jt = (JavaThread *)self;
   Mutex* in_flight_mutex = NULL;
 
@@ -255,7 +280,7 @@ Mutex::Mutex(int Rank, const char * name, bool allow_vm_block,
   _rank            = Rank;
   _safepoint_check_required = safepoint_check_required;
 
-  assert(_safepoint_check_required != Mutex::_safepoint_check_sometimes || is_sometimes_ok(name),
+  assert(_safepoint_check_required != _safepoint_check_sometimes || is_sometimes_ok(name),
          "Lock has _safepoint_check_sometimes %s", name);
 #endif
 }
@@ -278,15 +303,27 @@ void Mutex::print_on_error(outputStream* st) const {
 // Non-product code
 
 #ifndef PRODUCT
+const char* print_safepoint_check(Mutex::SafepointCheckRequired safepoint_check) {
+  switch (safepoint_check) {
+  case Mutex::_safepoint_check_never:     return "safepoint_check_never";
+  case Mutex::_safepoint_check_sometimes: return "safepoint_check_sometimes";
+  case Mutex::_safepoint_check_always:    return "safepoint_check_always";
+  default: return "";
+  }
+}
+
 void Mutex::print_on(outputStream* st) const {
-  st->print_cr("Mutex: [" PTR_FORMAT "] %s - owner: " PTR_FORMAT,
-               p2i(this), _name, p2i(_owner));
+  st->print("Mutex: [" PTR_FORMAT "] %s - owner: " PTR_FORMAT,
+            p2i(this), _name, p2i(_owner));
+  if (_allow_vm_block) {
+    st->print("%s", " allow_vm_block");
+  }
+  st->print(" %s", print_safepoint_check(_safepoint_check_required));
+  st->cr();
 }
 #endif
 
-#ifndef PRODUCT
 #ifdef ASSERT
-
 void Mutex::assert_owner(Thread * expected) {
   const char* msg = "invalid owner";
   if (expected == NULL) {
@@ -340,7 +377,6 @@ Mutex* Mutex::get_least_ranked_lock_besides_this(Mutex* locks) {
   return res;
 }
 
-
 bool Mutex::contains(Mutex* locks, Mutex* lock) {
   for (; locks != NULL; locks = locks->next()) {
     if (locks == lock) {
@@ -349,7 +385,27 @@ bool Mutex::contains(Mutex* locks, Mutex* lock) {
   }
   return false;
 }
-#endif
+
+// NSV implied with locking allow_vm_block or !safepoint_check locks.
+void Mutex::no_safepoint_verifier(Thread* thread, bool enable) {
+  // Threads_lock is special, since the safepoint synchronization will not start before this is
+  // acquired. Hence, a JavaThread cannot be holding it at a safepoint. So is VMOperationRequest_lock,
+  // since it is used to transfer control between JavaThreads and the VMThread
+  // Do not *exclude* any locks unless you are absolutely sure it is correct. Ask someone else first!
+  if ((_allow_vm_block &&
+       this != Threads_lock &&
+       this != Compile_lock &&           // Temporary: should not be necessary when we get separate compilation
+       this != tty_lock &&               // The tty_lock is released for the safepoint.
+       this != VMOperationRequest_lock &&
+       this != VMOperationQueue_lock) ||
+       rank() == Mutex::special) {
+    if (enable) {
+      thread->_no_safepoint_count++;
+    } else {
+      thread->_no_safepoint_count--;
+    }
+  }
+}
 
 // Called immediately after lock acquisition or release as a diagnostic
 // to track the lock-set of the thread and test for rank violations that
@@ -376,7 +432,6 @@ void Mutex::set_owner_implementation(Thread *new_owner) {
 
     // link "this" into the owned locks list
 
-#ifdef ASSERT  // Thread::_owned_locks is under the same ifdef
     Mutex* locks = get_least_ranked_lock(new_owner->owned_locks());
     // Mutex::set_owner_implementation is a friend of Thread
 
@@ -401,20 +456,21 @@ void Mutex::set_owner_implementation(Thread *new_owner) {
 
     this->_next = new_owner->_owned_locks;
     new_owner->_owned_locks = this;
-#endif
+
+    // NSV implied with locking allow_vm_block flag.
+    no_safepoint_verifier(new_owner, true);
 
   } else {
     // the thread is releasing this lock
 
     Thread* old_owner = _owner;
-    DEBUG_ONLY(_last_owner = old_owner;)
+    _last_owner = old_owner;
 
     assert(old_owner != NULL, "removing the owner thread of an unowned mutex");
     assert(old_owner == Thread::current(), "removing the owner thread of an unowned mutex");
 
     _owner = NULL; // set the owner
 
-#ifdef ASSERT
     Mutex* locks = old_owner->owned_locks();
 
     // remove "this" from the owned locks list
@@ -434,33 +490,9 @@ void Mutex::set_owner_implementation(Thread *new_owner) {
       prev->_next = _next;
     }
     _next = NULL;
-#endif
+
+    // ~NSV implied with locking allow_vm_block flag.
+    no_safepoint_verifier(old_owner, false);
   }
 }
-
-
-// Factored out common sanity checks for locking mutex'es. Used by lock() and try_lock()
-void Mutex::check_prelock_state(Thread *thread, bool safepoint_check) {
-  if (safepoint_check) {
-    assert((!thread->is_active_Java_thread() || ((JavaThread *)thread)->thread_state() == _thread_in_vm)
-           || rank() == Mutex::special, "wrong thread state for using locks");
-    if (thread->is_VM_thread() && !allow_vm_block()) {
-      fatal("VM thread using lock %s (not allowed to block on)", name());
-    }
-    DEBUG_ONLY(if (rank() != Mutex::special) \
-               thread->check_for_valid_safepoint_state(false);)
-  }
-  assert(!os::ThreadCrashProtection::is_crash_protected(thread),
-         "locking not allowed when crash protection is set");
-}
-
-void Mutex::check_block_state(Thread *thread) {
-  if (!_allow_vm_block && thread->is_VM_thread()) {
-    warning("VM thread blocked on lock");
-    print();
-    BREAKPOINT;
-  }
-  assert(_owner != thread, "deadlock: blocking on mutex owned by current thread");
-}
-
-#endif // PRODUCT
+#endif // ASSERT

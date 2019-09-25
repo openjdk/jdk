@@ -39,14 +39,14 @@ class ClassFormatError extends LinkageError {
     private static final long serialVersionUID = -8420114879011949195L;
 
     /**
-     * Constructs a <code>ClassFormatError</code> with no detail message.
+     * Constructs a {@code ClassFormatError} with no detail message.
      */
     public ClassFormatError() {
         super();
     }
 
     /**
-     * Constructs a <code>ClassFormatError</code> with the specified
+     * Constructs a {@code ClassFormatError} with the specified
      * detail message.
      *
      * @param   s   the detail message.

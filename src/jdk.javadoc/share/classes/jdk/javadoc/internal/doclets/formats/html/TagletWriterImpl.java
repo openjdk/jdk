@@ -110,7 +110,8 @@ public class TagletWriterImpl extends TagletWriter {
 
         String tagText =  ch.getText(itt.getSearchTerm());
         if (tagText.charAt(0) == '"' && tagText.charAt(tagText.length() - 1) == '"') {
-            tagText = tagText.substring(1, tagText.length() - 1);
+            tagText = tagText.substring(1, tagText.length() - 1)
+                             .replaceAll("\\s+", " ");
         }
         String desc = ch.getText(itt.getDescription());
 

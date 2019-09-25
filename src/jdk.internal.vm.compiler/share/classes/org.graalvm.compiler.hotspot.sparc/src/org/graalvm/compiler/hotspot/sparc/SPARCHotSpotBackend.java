@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -48,7 +48,6 @@ import java.util.HashSet;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 
-import jdk.internal.vm.compiler.collections.EconomicMap;
 import jdk.internal.vm.compiler.collections.EconomicSet;
 import jdk.internal.vm.compiler.collections.Equivalence;
 import org.graalvm.compiler.asm.Assembler;
@@ -60,7 +59,6 @@ import org.graalvm.compiler.asm.sparc.SPARCMacroAssembler.ScratchRegister;
 import org.graalvm.compiler.code.CompilationResult;
 import org.graalvm.compiler.code.DataSection;
 import org.graalvm.compiler.code.DataSection.Data;
-import org.graalvm.compiler.core.common.CompilationIdentifier;
 import org.graalvm.compiler.core.common.alloc.RegisterAllocationConfig;
 import org.graalvm.compiler.core.common.cfg.AbstractBlockBase;
 import org.graalvm.compiler.core.gen.LIRGenerationProvider;
@@ -77,9 +75,7 @@ import org.graalvm.compiler.hotspot.meta.HotSpotProviders;
 import org.graalvm.compiler.hotspot.stubs.Stub;
 import org.graalvm.compiler.lir.InstructionValueConsumer;
 import org.graalvm.compiler.lir.LIR;
-import org.graalvm.compiler.lir.LIRFrameState;
 import org.graalvm.compiler.lir.LIRInstruction;
-import org.graalvm.compiler.lir.StandardOp.SaveRegistersOp;
 import org.graalvm.compiler.lir.asm.CompilationResultBuilder;
 import org.graalvm.compiler.lir.asm.CompilationResultBuilderFactory;
 import org.graalvm.compiler.lir.asm.DataBuilder;
@@ -135,7 +131,8 @@ public class SPARCHotSpotBackend extends HotSpotHostBackend implements LIRGenera
         }
     }
 
-    private FrameMapBuilder newFrameMapBuilder(RegisterConfig registerConfig) {
+    @Override
+    protected FrameMapBuilder newFrameMapBuilder(RegisterConfig registerConfig) {
         RegisterConfig registerConfigNonNull = registerConfig == null ? getCodeCache().getRegisterConfig() : registerConfig;
         FrameMap frameMap = new SPARCFrameMap(getCodeCache(), registerConfigNonNull, this);
         return new SPARCFrameMapBuilder(frameMap, getCodeCache(), registerConfigNonNull);
@@ -144,12 +141,6 @@ public class SPARCHotSpotBackend extends HotSpotHostBackend implements LIRGenera
     @Override
     public LIRGeneratorTool newLIRGenerator(LIRGenerationResult lirGenRes) {
         return new SPARCHotSpotLIRGenerator(getProviders(), getRuntime().getVMConfig(), lirGenRes);
-    }
-
-    @Override
-    public LIRGenerationResult newLIRGenerationResult(CompilationIdentifier compilationId, LIR lir, RegisterConfig registerConfig, StructuredGraph graph, Object stub) {
-        return new HotSpotLIRGenerationResult(compilationId, lir, newFrameMapBuilder(registerConfig), makeCallingConvention(graph, (Stub) stub), stub,
-                        config.requiresReservedStackCheck(graph.getMethods()));
     }
 
     @Override
@@ -246,10 +237,7 @@ public class SPARCHotSpotBackend extends HotSpotHostBackend implements LIRGenera
         }
 
         if (stub != null) {
-            // Even on sparc we need to save floating point registers
-            EconomicSet<Register> destroyedCallerRegisters = gatherDestroyedCallerRegisters(lir);
-            EconomicMap<LIRFrameState, SaveRegistersOp> calleeSaveInfo = gen.getCalleeSaveInfo();
-            updateStub(stub, destroyedCallerRegisters, calleeSaveInfo, frameMap);
+            updateStub(stub, gen, frameMap);
         }
         assert registerSizePredictionValidator(crb, debug);
         return crb;

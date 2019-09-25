@@ -1042,7 +1042,7 @@ public class MethodHandles {
      * <td style="text-align:center">IAE</td>
      * </tr>
      * <tr>
-     * <td>{@code ANY.in(X)}, for inaccessible <code>X</code></td>
+     * <td>{@code ANY.in(X)}, for inaccessible {@code X}</td>
      * <td></td>
      * <td></td>
      * <td></td>

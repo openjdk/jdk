@@ -47,7 +47,7 @@ public class IllformedLocaleException extends RuntimeException {
     private int _errIdx = -1;
 
     /**
-     * Constructs a new <code>IllformedLocaleException</code> with no
+     * Constructs a new {@code IllformedLocaleException} with no
      * detail message and -1 as the error index.
      */
     public IllformedLocaleException() {
@@ -55,7 +55,7 @@ public class IllformedLocaleException extends RuntimeException {
     }
 
     /**
-     * Constructs a new <code>IllformedLocaleException</code> with the
+     * Constructs a new {@code IllformedLocaleException} with the
      * given message and -1 as the error index.
      *
      * @param message the message
@@ -65,7 +65,7 @@ public class IllformedLocaleException extends RuntimeException {
     }
 
     /**
-     * Constructs a new <code>IllformedLocaleException</code> with the
+     * Constructs a new {@code IllformedLocaleException} with the
      * given message and the error index.  The error index is the approximate
      * offset from the start of the ill-formed value to the point where the
      * parse first detected an error.  A negative error index value indicates

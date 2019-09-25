@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2019, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2018, Arm Limited. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -67,14 +67,6 @@ public class AArch64CbzTest extends AArch64MatchRuleTest {
         }
     }
 
-    public static String objectEqualsNull(String s1, String s2) {
-        if (s1.equals(null)) {
-            return s1 + "abc";
-        } else {
-            return s2 + "abd";
-        }
-    }
-
     public static String objectEquals(String s1, String s2) {
         if (s1.equals(s2)) {
             return s1 + "abc";
@@ -109,13 +101,6 @@ public class AArch64CbzTest extends AArch64MatchRuleTest {
         test("isNotNull", new Object[]{null});
         test("isNotNull", "abc");
         checkLIR("isNotNull", predicate, 1);
-    }
-
-    @Test
-    public void testObjectEqualsNull() {
-        test("objectEqualsNull", "ab", "ac");
-        test("objectEqualsNull", "abc", "abc");
-        checkLIR("objectEqualsNull", predicate, 1);
     }
 
     @Test

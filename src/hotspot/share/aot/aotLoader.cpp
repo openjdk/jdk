@@ -151,17 +151,15 @@ void AOTLoader::initialize() {
     if (AOTLibrary != NULL) {
       const int len = (int)strlen(AOTLibrary);
       char* cp  = NEW_C_HEAP_ARRAY(char, len+1, mtCode);
-      if (cp != NULL) { // No memory?
-        memcpy(cp, AOTLibrary, len);
-        cp[len] = '\0';
-        char* end = cp + len;
-        while (cp < end) {
-          const char* name = cp;
-          while ((*cp) != '\0' && (*cp) != '\n' && (*cp) != ',' && (*cp) != pathSep) cp++;
-          cp[0] = '\0';  // Terminate name
-          cp++;
-          load_library(name, true);
-        }
+      memcpy(cp, AOTLibrary, len);
+      cp[len] = '\0';
+      char* end = cp + len;
+      while (cp < end) {
+        const char* name = cp;
+        while ((*cp) != '\0' && (*cp) != '\n' && (*cp) != ',' && (*cp) != pathSep) cp++;
+        cp[0] = '\0';  // Terminate name
+        cp++;
+        load_library(name, true);
       }
     }
 

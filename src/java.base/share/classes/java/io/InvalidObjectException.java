@@ -41,7 +41,7 @@ public class InvalidObjectException extends ObjectStreamException {
     private static final long serialVersionUID = 3233174318281839583L;
 
     /**
-     * Constructs an <code>InvalidObjectException</code>.
+     * Constructs an {@code InvalidObjectException}.
      * @param reason Detailed message explaining the reason for the failure.
      *
      * @see ObjectInputValidation

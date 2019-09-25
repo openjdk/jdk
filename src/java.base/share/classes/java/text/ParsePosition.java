@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -40,14 +40,14 @@ package java.text;
 
 
 /**
- * <code>ParsePosition</code> is a simple class used by <code>Format</code>
+ * {@code ParsePosition} is a simple class used by {@code Format}
  * and its subclasses to keep track of the current position during parsing.
- * The <code>parseObject</code> method in the various <code>Format</code>
- * classes requires a <code>ParsePosition</code> object as an argument.
+ * The {@code parseObject} method in the various {@code Format}
+ * classes requires a {@code ParsePosition} object as an argument.
  *
  * <p>
  * By design, as you parse through a string with different formats,
- * you can use the same <code>ParsePosition</code>, since the index parameter
+ * you can use the same {@code ParsePosition}, since the index parameter
  * records the current position.
  *
  * @author      Mark Davis

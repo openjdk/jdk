@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -261,7 +261,7 @@ public final class Bidi {
 
     /**
      * Return the level of the nth logical run in this line.
-     * @param run the index of the run, between 0 and <code>getRunCount()</code>
+     * @param run the index of the run, between 0 and {@code getRunCount()}
      * @return the level of the run
      */
     public int getRunLevel(int run) {
@@ -271,7 +271,7 @@ public final class Bidi {
     /**
      * Return the index of the character at the start of the nth logical run in this line, as
      * an offset from the start of the line.
-     * @param run the index of the run, between 0 and <code>getRunCount()</code>
+     * @param run the index of the run, between 0 and {@code getRunCount()}
      * @return the start of the run
      */
     public int getRunStart(int run) {
@@ -282,7 +282,7 @@ public final class Bidi {
      * Return the index of the character past the end of the nth logical run in this line, as
      * an offset from the start of the line.  For example, this will return the length
      * of the line for the last run on the line.
-     * @param run the index of the run, between 0 and <code>getRunCount()</code>
+     * @param run the index of the run, between 0 and {@code getRunCount()}
      * @return limit the limit of the run
      */
     public int getRunLimit(int run) {
@@ -308,11 +308,11 @@ public final class Bidi {
      * Reorder the objects in the array into visual order based on their levels.
      * This is a utility function to use when you have a collection of objects
      * representing runs of text in logical order, each run containing text
-     * at a single level.  The elements at <code>index</code> from
-     * <code>objectStart</code> up to <code>objectStart + count</code>
+     * at a single level.  The elements at {@code index} from
+     * {@code objectStart} up to {@code objectStart + count}
      * in the objects array will be reordered into visual order assuming
      * each run of text has the level indicated by the corresponding element
-     * in the levels array (at <code>index - objectStart + levelStart</code>).
+     * in the levels array (at {@code index - objectStart + levelStart}).
      *
      * @param levels an array representing the bidi level of each object
      * @param levelStart the start position in the levels array

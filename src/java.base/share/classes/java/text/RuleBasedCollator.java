@@ -43,14 +43,14 @@ import java.util.Vector;
 import java.util.Locale;
 
 /**
- * The <code>RuleBasedCollator</code> class is a concrete subclass of
- * <code>Collator</code> that provides a simple, data-driven, table
+ * The {@code RuleBasedCollator} class is a concrete subclass of
+ * {@code Collator} that provides a simple, data-driven, table
  * collator.  With this class you can create a customized table-based
- * <code>Collator</code>.  <code>RuleBasedCollator</code> maps
+ * {@code Collator}.  {@code RuleBasedCollator} maps
  * characters to sort keys.
  *
  * <p>
- * <code>RuleBasedCollator</code> has the following restrictions
+ * {@code RuleBasedCollator} has the following restrictions
  * for efficiency (other subclasses may be used for more complex languages) :
  * <ol>
  * <li>If a special collation rule controlled by a &lt;modifier&gt; is
@@ -75,7 +75,7 @@ import java.util.Locale;
  *        [0021-002F, 003A-0040, 005B-0060, 007B-007E]). If those
  *        characters are desired, you can put them in single quotes
  *        (e.g. ampersand =&gt; '&amp;'). Note that unquoted white space characters
- *        are ignored; e.g. <code>b c</code> is treated as <code>bc</code>.
+ *        are ignored; e.g. {@code b c} is treated as {@code bc}.
  *    <LI><strong>Modifier</strong>: There are currently two modifiers that
  *        turn on special collation rules.
  *        <UL>
@@ -146,7 +146,7 @@ import java.util.Locale;
  *
  * <p><strong>Normalization and Accents</strong>
  * <p>
- * <code>RuleBasedCollator</code> automatically processes its rule table to
+ * {@code RuleBasedCollator} automatically processes its rule table to
  * include both pre-composed and combining-character versions of
  * accented characters.  Even if the provided rule string contains only
  * base characters and separate combining accent characters, the pre-composed
@@ -175,8 +175,8 @@ import java.util.Locale;
  *         text-argument) is not already in the sequence.
  *         (e.g. "a &lt; b &amp; e &lt; f")
  * </UL>
- * If you produce one of these errors, a <code>RuleBasedCollator</code> throws
- * a <code>ParseException</code>.
+ * If you produce one of these errors, a {@code RuleBasedCollator} throws
+ * a {@code ParseException}.
  *
  * <p><strong>Examples</strong>
  * <p>Simple:     "&lt; a &lt; b &lt; c &lt; d"
@@ -191,9 +191,9 @@ import java.util.Locale;
  *                      aa, AA"
  *
  * <p>
- * To create a <code>RuleBasedCollator</code> object with specialized
- * rules tailored to your needs, you construct the <code>RuleBasedCollator</code>
- * with the rules contained in a <code>String</code> object. For example:
+ * To create a {@code RuleBasedCollator} object with specialized
+ * rules tailored to your needs, you construct the {@code RuleBasedCollator}
+ * with the rules contained in a {@code String} object. For example:
  * <blockquote>
  * <pre>
  * String simple = "&lt; a&lt; b&lt; c&lt; d";
@@ -218,7 +218,7 @@ import java.util.Locale;
  * <p>
  * A new collation rules string can be created by concatenating rules
  * strings. For example, the rules returned by {@link #getRules()} could
- * be concatenated to combine multiple <code>RuleBasedCollator</code>s.
+ * be concatenated to combine multiple {@code RuleBasedCollator}s.
  *
  * <p>
  * The following example demonstrates how to change the order of
@@ -350,7 +350,7 @@ public class RuleBasedCollator extends Collator{
      * than, greater than or equal to another string in a language.
      * This can be overridden in a subclass.
      *
-     * @throws    NullPointerException if <code>source</code> or <code>target</code> is null.
+     * @throws    NullPointerException if {@code source} or {@code target} is null.
      */
     public synchronized int compare(String source, String target)
     {

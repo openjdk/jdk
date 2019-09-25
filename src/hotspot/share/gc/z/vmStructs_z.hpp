@@ -104,8 +104,7 @@ typedef ZAttachedArray<ZForwarding, ZForwardingEntry> ZAttachedArrayForForwardin
   declare_constant(ZAddressOffsetShift)                                                              \
   declare_constant(ZAddressOffsetBits)                                                               \
   declare_constant(ZAddressOffsetMask)                                                               \
-  declare_constant(ZAddressOffsetMax)                                                                \
-  declare_constant(ZAddressSpaceStart)
+  declare_constant(ZAddressOffsetMax)
 
 #define VM_TYPES_ZGC(declare_type, declare_toplevel_type, declare_integer_type)                      \
   declare_toplevel_type(ZGlobalsForVMStructs)                                                        \

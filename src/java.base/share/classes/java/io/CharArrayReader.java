@@ -148,10 +148,10 @@ public class CharArrayReader extends Reader {
     /**
      * Skips characters.  Returns the number of characters that were skipped.
      *
-     * <p>The <code>n</code> parameter may be negative, even though the
-     * <code>skip</code> method of the {@link Reader} superclass throws
-     * an exception in this case. If <code>n</code> is negative, then
-     * this method does nothing and returns <code>0</code>.
+     * <p>The {@code n} parameter may be negative, even though the
+     * {@code skip} method of the {@link Reader} superclass throws
+     * an exception in this case. If {@code n} is negative, then
+     * this method does nothing and returns {@code 0}.
      *
      * @param      n The number of characters to skip
      * @return     The number of characters actually skipped

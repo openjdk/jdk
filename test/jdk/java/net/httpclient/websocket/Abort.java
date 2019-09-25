@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,7 +29,6 @@
  *       Abort
  */
 
-import org.testng.annotations.AfterTest;
 import org.testng.annotations.Test;
 
 import java.io.IOException;
@@ -56,38 +55,35 @@ public class Abort {
     private static final Class<IllegalArgumentException> IAE = IllegalArgumentException.class;
     private static final Class<IOException> IOE = IOException.class;
 
-    private DummyWebSocketServer server;
-    private WebSocket webSocket;
-
-    @AfterTest
-    public void cleanup() {
-        server.close();
-        webSocket.abort();
-    }
 
     @Test
     public void onOpenThenAbort() throws Exception {
         int[] bytes = new int[]{
                 0x88, 0x00, // opcode=close
         };
-        server = Support.serverWithCannedData(bytes);
-        server.open();
-        // messages are available
-        MockListener listener = new MockListener() {
-            @Override
-            protected void onOpen0(WebSocket webSocket) {
-                // unbounded request
-                webSocket.request(Long.MAX_VALUE);
+        try (var server = Support.serverWithCannedData(bytes)) {
+            server.open();
+            // messages are available
+            MockListener listener = new MockListener() {
+                @Override
+                protected void onOpen0(WebSocket webSocket) {
+                    // unbounded request
+                    webSocket.request(Long.MAX_VALUE);
+                    webSocket.abort();
+                }
+            };
+            var webSocket = newHttpClient().newWebSocketBuilder()
+                    .buildAsync(server.getURI(), listener)
+                    .join();
+            try {
+                TimeUnit.SECONDS.sleep(5);
+                List<MockListener.Invocation> inv = listener.invocationsSoFar();
+                // no more invocations after onOpen as WebSocket was aborted
+                assertEquals(inv, List.of(MockListener.Invocation.onOpen(webSocket)));
+            } finally {
                 webSocket.abort();
             }
-        };
-        webSocket = newHttpClient().newWebSocketBuilder()
-                .buildAsync(server.getURI(), listener)
-                .join();
-        TimeUnit.SECONDS.sleep(5);
-        List<MockListener.Invocation> inv = listener.invocationsSoFar();
-        // no more invocations after onOpen as WebSocket was aborted
-        assertEquals(inv, List.of(MockListener.Invocation.onOpen(webSocket)));
+        }
     }
 
     @Test
@@ -96,33 +92,38 @@ public class Abort {
                 0x81, 0x00, // opcode=text, fin=true
                 0x88, 0x00, // opcode=close
         };
-        server = Support.serverWithCannedData(bytes);
-        server.open();
-        MockListener listener = new MockListener() {
-            @Override
-            protected void onOpen0(WebSocket webSocket) {
-                // unbounded request
-                webSocket.request(Long.MAX_VALUE);
-            }
+        try (var server = Support.serverWithCannedData(bytes)) {
+            server.open();
+            MockListener listener = new MockListener() {
+                @Override
+                protected void onOpen0(WebSocket webSocket) {
+                    // unbounded request
+                    webSocket.request(Long.MAX_VALUE);
+                }
 
-            @Override
-            protected CompletionStage<?> onText0(WebSocket webSocket,
-                                                 CharSequence message,
-                                                 boolean last) {
+                @Override
+                protected CompletionStage<?> onText0(WebSocket webSocket,
+                                                     CharSequence message,
+                                                     boolean last) {
+                    webSocket.abort();
+                    return super.onText0(webSocket, message, last);
+                }
+            };
+            var webSocket = newHttpClient().newWebSocketBuilder()
+                    .buildAsync(server.getURI(), listener)
+                    .join();
+            try {
+                TimeUnit.SECONDS.sleep(5);
+                List<MockListener.Invocation> inv = listener.invocationsSoFar();
+                // no more invocations after onOpen, onBinary as WebSocket was aborted
+                List<MockListener.Invocation> expected = List.of(
+                        MockListener.Invocation.onOpen(webSocket),
+                        MockListener.Invocation.onText(webSocket, "", true));
+                assertEquals(inv, expected);
+            } finally {
                 webSocket.abort();
-                return super.onText0(webSocket, message, last);
             }
-        };
-        webSocket = newHttpClient().newWebSocketBuilder()
-                .buildAsync(server.getURI(), listener)
-                .join();
-        TimeUnit.SECONDS.sleep(5);
-        List<MockListener.Invocation> inv = listener.invocationsSoFar();
-        // no more invocations after onOpen, onBinary as WebSocket was aborted
-        List<MockListener.Invocation> expected = List.of(
-                MockListener.Invocation.onOpen(webSocket),
-                MockListener.Invocation.onText(webSocket, "", true));
-        assertEquals(inv, expected);
+        }
     }
 
     @Test
@@ -131,33 +132,38 @@ public class Abort {
                 0x82, 0x00, // opcode=binary, fin=true
                 0x88, 0x00, // opcode=close
         };
-        server = Support.serverWithCannedData(bytes);
-        server.open();
-        MockListener listener = new MockListener() {
-            @Override
-            protected void onOpen0(WebSocket webSocket) {
-                // unbounded request
-                webSocket.request(Long.MAX_VALUE);
-            }
+        try (var server = Support.serverWithCannedData(bytes)) {
+            server.open();
+            MockListener listener = new MockListener() {
+                @Override
+                protected void onOpen0(WebSocket webSocket) {
+                    // unbounded request
+                    webSocket.request(Long.MAX_VALUE);
+                }
 
-            @Override
-            protected CompletionStage<?> onBinary0(WebSocket webSocket,
-                                                   ByteBuffer message,
-                                                   boolean last) {
+                @Override
+                protected CompletionStage<?> onBinary0(WebSocket webSocket,
+                                                       ByteBuffer message,
+                                                       boolean last) {
+                    webSocket.abort();
+                    return super.onBinary0(webSocket, message, last);
+                }
+            };
+            var webSocket = newHttpClient().newWebSocketBuilder()
+                    .buildAsync(server.getURI(), listener)
+                    .join();
+            try {
+                TimeUnit.SECONDS.sleep(5);
+                List<MockListener.Invocation> inv = listener.invocationsSoFar();
+                // no more invocations after onOpen, onBinary as WebSocket was aborted
+                List<MockListener.Invocation> expected = List.of(
+                        MockListener.Invocation.onOpen(webSocket),
+                        MockListener.Invocation.onBinary(webSocket, ByteBuffer.allocate(0), true));
+                assertEquals(inv, expected);
+            } finally {
                 webSocket.abort();
-                return super.onBinary0(webSocket, message, last);
             }
-        };
-        webSocket = newHttpClient().newWebSocketBuilder()
-                .buildAsync(server.getURI(), listener)
-                .join();
-        TimeUnit.SECONDS.sleep(5);
-        List<MockListener.Invocation> inv = listener.invocationsSoFar();
-        // no more invocations after onOpen, onBinary as WebSocket was aborted
-        List<MockListener.Invocation> expected = List.of(
-                MockListener.Invocation.onOpen(webSocket),
-                MockListener.Invocation.onBinary(webSocket, ByteBuffer.allocate(0), true));
-        assertEquals(inv, expected);
+        }
     }
 
     @Test
@@ -166,32 +172,37 @@ public class Abort {
                 0x89, 0x00, // opcode=ping
                 0x88, 0x00, // opcode=close
         };
-        server = Support.serverWithCannedData(bytes);
-        server.open();
-        MockListener listener = new MockListener() {
-            @Override
-            protected void onOpen0(WebSocket webSocket) {
-                // unbounded request
-                webSocket.request(Long.MAX_VALUE);
-            }
+        try (var server = Support.serverWithCannedData(bytes)) {
+            server.open();
+            MockListener listener = new MockListener() {
+                @Override
+                protected void onOpen0(WebSocket webSocket) {
+                    // unbounded request
+                    webSocket.request(Long.MAX_VALUE);
+                }
 
-            @Override
-            protected CompletionStage<?> onPing0(WebSocket webSocket,
-                                                 ByteBuffer message) {
+                @Override
+                protected CompletionStage<?> onPing0(WebSocket webSocket,
+                                                     ByteBuffer message) {
+                    webSocket.abort();
+                    return super.onPing0(webSocket, message);
+                }
+            };
+            var webSocket = newHttpClient().newWebSocketBuilder()
+                    .buildAsync(server.getURI(), listener)
+                    .join();
+            try {
+                TimeUnit.SECONDS.sleep(5);
+                List<MockListener.Invocation> inv = listener.invocationsSoFar();
+                // no more invocations after onOpen, onPing as WebSocket was aborted
+                List<MockListener.Invocation> expected = List.of(
+                        MockListener.Invocation.onOpen(webSocket),
+                        MockListener.Invocation.onPing(webSocket, ByteBuffer.allocate(0)));
+                assertEquals(inv, expected);
+            } finally {
                 webSocket.abort();
-                return super.onPing0(webSocket, message);
             }
-        };
-        webSocket = newHttpClient().newWebSocketBuilder()
-                .buildAsync(server.getURI(), listener)
-                .join();
-        TimeUnit.SECONDS.sleep(5);
-        List<MockListener.Invocation> inv = listener.invocationsSoFar();
-        // no more invocations after onOpen, onPing as WebSocket was aborted
-        List<MockListener.Invocation> expected = List.of(
-                MockListener.Invocation.onOpen(webSocket),
-                MockListener.Invocation.onPing(webSocket, ByteBuffer.allocate(0)));
-        assertEquals(inv, expected);
+        }
     }
 
     @Test
@@ -200,32 +211,37 @@ public class Abort {
                 0x8a, 0x00, // opcode=pong
                 0x88, 0x00, // opcode=close
         };
-        server = Support.serverWithCannedData(bytes);
-        server.open();
-        MockListener listener = new MockListener() {
-            @Override
-            protected void onOpen0(WebSocket webSocket) {
-                // unbounded request
-                webSocket.request(Long.MAX_VALUE);
-            }
+        try (var server = Support.serverWithCannedData(bytes)) {
+            server.open();
+            MockListener listener = new MockListener() {
+                @Override
+                protected void onOpen0(WebSocket webSocket) {
+                    // unbounded request
+                    webSocket.request(Long.MAX_VALUE);
+                }
 
-            @Override
-            protected CompletionStage<?> onPong0(WebSocket webSocket,
-                                                 ByteBuffer message) {
+                @Override
+                protected CompletionStage<?> onPong0(WebSocket webSocket,
+                                                     ByteBuffer message) {
+                    webSocket.abort();
+                    return super.onPong0(webSocket, message);
+                }
+            };
+            var webSocket = newHttpClient().newWebSocketBuilder()
+                    .buildAsync(server.getURI(), listener)
+                    .join();
+            try {
+                TimeUnit.SECONDS.sleep(5);
+                List<MockListener.Invocation> inv = listener.invocationsSoFar();
+                // no more invocations after onOpen, onPong as WebSocket was aborted
+                List<MockListener.Invocation> expected = List.of(
+                        MockListener.Invocation.onOpen(webSocket),
+                        MockListener.Invocation.onPong(webSocket, ByteBuffer.allocate(0)));
+                assertEquals(inv, expected);
+            } finally {
                 webSocket.abort();
-                return super.onPong0(webSocket, message);
             }
-        };
-        webSocket = newHttpClient().newWebSocketBuilder()
-                .buildAsync(server.getURI(), listener)
-                .join();
-        TimeUnit.SECONDS.sleep(5);
-        List<MockListener.Invocation> inv = listener.invocationsSoFar();
-        // no more invocations after onOpen, onPong as WebSocket was aborted
-        List<MockListener.Invocation> expected = List.of(
-                MockListener.Invocation.onOpen(webSocket),
-                MockListener.Invocation.onPong(webSocket, ByteBuffer.allocate(0)));
-        assertEquals(inv, expected);
+        }
     }
 
     @Test
@@ -234,33 +250,38 @@ public class Abort {
                 0x88, 0x00, // opcode=close
                 0x8a, 0x00, // opcode=pong
         };
-        server = Support.serverWithCannedData(bytes);
-        server.open();
-        MockListener listener = new MockListener() {
-            @Override
-            protected void onOpen0(WebSocket webSocket) {
-                // unbounded request
-                webSocket.request(Long.MAX_VALUE);
-            }
+        try (var server = Support.serverWithCannedData(bytes)) {
+            server.open();
+            MockListener listener = new MockListener() {
+                @Override
+                protected void onOpen0(WebSocket webSocket) {
+                    // unbounded request
+                    webSocket.request(Long.MAX_VALUE);
+                }
 
-            @Override
-            protected CompletionStage<?> onClose0(WebSocket webSocket,
-                                                  int statusCode,
-                                                  String reason) {
+                @Override
+                protected CompletionStage<?> onClose0(WebSocket webSocket,
+                                                      int statusCode,
+                                                      String reason) {
+                    webSocket.abort();
+                    return super.onClose0(webSocket, statusCode, reason);
+                }
+            };
+            var webSocket = newHttpClient().newWebSocketBuilder()
+                    .buildAsync(server.getURI(), listener)
+                    .join();
+            try {
+                TimeUnit.SECONDS.sleep(5);
+                List<MockListener.Invocation> inv = listener.invocationsSoFar();
+                // no more invocations after onOpen, onClose
+                List<MockListener.Invocation> expected = List.of(
+                        MockListener.Invocation.onOpen(webSocket),
+                        MockListener.Invocation.onClose(webSocket, 1005, ""));
+                assertEquals(inv, expected);
+            } finally {
                 webSocket.abort();
-                return super.onClose0(webSocket, statusCode, reason);
             }
-        };
-        webSocket = newHttpClient().newWebSocketBuilder()
-                .buildAsync(server.getURI(), listener)
-                .join();
-        TimeUnit.SECONDS.sleep(5);
-        List<MockListener.Invocation> inv = listener.invocationsSoFar();
-        // no more invocations after onOpen, onClose
-        List<MockListener.Invocation> expected = List.of(
-                MockListener.Invocation.onOpen(webSocket),
-                MockListener.Invocation.onClose(webSocket, 1005, ""));
-        assertEquals(inv, expected);
+        }
     }
 
     @Test
@@ -271,32 +292,37 @@ public class Abort {
         int[] bytes = new int[badPingHeader.length + 128 + closeMessage.length];
         System.arraycopy(badPingHeader, 0, bytes, 0, badPingHeader.length);
         System.arraycopy(closeMessage, 0, bytes, badPingHeader.length + 128, closeMessage.length);
-        server = Support.serverWithCannedData(bytes);
-        server.open();
-        MockListener listener = new MockListener() {
-            @Override
-            protected void onOpen0(WebSocket webSocket) {
-                // unbounded request
-                webSocket.request(Long.MAX_VALUE);
-            }
+        try (var server = Support.serverWithCannedData(bytes)) {
+            server.open();
+            MockListener listener = new MockListener() {
+                @Override
+                protected void onOpen0(WebSocket webSocket) {
+                    // unbounded request
+                    webSocket.request(Long.MAX_VALUE);
+                }
 
-            @Override
-            protected void onError0(WebSocket webSocket, Throwable error) {
+                @Override
+                protected void onError0(WebSocket webSocket, Throwable error) {
+                    webSocket.abort();
+                    super.onError0(webSocket, error);
+                }
+            };
+            var webSocket = newHttpClient().newWebSocketBuilder()
+                    .buildAsync(server.getURI(), listener)
+                    .join();
+            try {
+                TimeUnit.SECONDS.sleep(5);
+                List<MockListener.Invocation> inv = listener.invocationsSoFar();
+                // no more invocations after onOpen, onError
+                List<MockListener.Invocation> expected = List.of(
+                        MockListener.Invocation.onOpen(webSocket),
+                        MockListener.Invocation.onError(webSocket, ProtocolException.class));
+                System.out.println("actual invocations:" + Arrays.toString(inv.toArray()));
+                assertEquals(inv, expected);
+            } finally {
                 webSocket.abort();
-                super.onError0(webSocket, error);
             }
-        };
-        webSocket = newHttpClient().newWebSocketBuilder()
-                .buildAsync(server.getURI(), listener)
-                .join();
-        TimeUnit.SECONDS.sleep(5);
-        List<MockListener.Invocation> inv = listener.invocationsSoFar();
-        // no more invocations after onOpen, onError
-        List<MockListener.Invocation> expected = List.of(
-                MockListener.Invocation.onOpen(webSocket),
-                MockListener.Invocation.onError(webSocket, ProtocolException.class));
-        System.out.println("actual invocations:" + Arrays.toString(inv.toArray()));
-        assertEquals(inv, expected);
+        }
     }
 
     @Test
@@ -352,65 +378,70 @@ public class Abort {
                 0x82, 0x00, // opcode=binary, fin=true
                 0x88, 0x00, // opcode=close
         };
-        server = Support.serverWithCannedData(bytes);
-        server.open();
+        try (var server = Support.serverWithCannedData(bytes)) {
+            server.open();
 
-        WebSocket ws = newHttpClient()
-                .newWebSocketBuilder()
-                .buildAsync(server.getURI(), listener)
-                .join();
-        for (int i = 0; i < 3; i++) {
-            System.out.printf("iteration #%s%n", i);
-            // after the first abort() each consecutive one must be a no-op,
-            // moreover, query methods should continue to return consistent
-            // values
-            for (int j = 0; j < 3; j++) {
-                System.out.printf("abort #%s%n", j);
+            WebSocket ws = newHttpClient()
+                    .newWebSocketBuilder()
+                    .buildAsync(server.getURI(), listener)
+                    .join();
+            try {
+                for (int i = 0; i < 3; i++) {
+                    System.out.printf("iteration #%s%n", i);
+                    // after the first abort() each consecutive one must be a no-op,
+                    // moreover, query methods should continue to return consistent
+                    // values
+                    for (int j = 0; j < 3; j++) {
+                        System.out.printf("abort #%s%n", j);
+                        ws.abort();
+                        assertTrue(ws.isInputClosed());
+                        assertTrue(ws.isOutputClosed());
+                        assertEquals(ws.getSubprotocol(), "");
+                    }
+                    // at this point valid requests MUST be a no-op:
+                    for (int j = 0; j < 3; j++) {
+                        System.out.printf("request #%s%n", j);
+                        ws.request(1);
+                        ws.request(2);
+                        ws.request(8);
+                        ws.request(Integer.MAX_VALUE);
+                        ws.request(Long.MAX_VALUE);
+                        // invalid requests MUST throw IAE:
+                        assertThrows(IAE, () -> ws.request(Integer.MIN_VALUE));
+                        assertThrows(IAE, () -> ws.request(Long.MIN_VALUE));
+                        assertThrows(IAE, () -> ws.request(-1));
+                        assertThrows(IAE, () -> ws.request(0));
+                    }
+                }
+                // even though there is a bunch of messages readily available on the
+                // wire we shouldn't have received any of them as we aborted before
+                // the first request
+                try {
+                    messageReceived.get(5, TimeUnit.SECONDS);
+                    fail();
+                } catch (TimeoutException expected) {
+                    System.out.println("Finished waiting");
+                }
+                for (int i = 0; i < 3; i++) {
+                    System.out.printf("send #%s%n", i);
+                    Support.assertFails(IOE, ws.sendText("text!", false));
+                    Support.assertFails(IOE, ws.sendText("text!", true));
+                    Support.assertFails(IOE, ws.sendBinary(ByteBuffer.allocate(16), false));
+                    Support.assertFails(IOE, ws.sendBinary(ByteBuffer.allocate(16), true));
+                    Support.assertFails(IOE, ws.sendPing(ByteBuffer.allocate(16)));
+                    Support.assertFails(IOE, ws.sendPong(ByteBuffer.allocate(16)));
+                    Support.assertFails(IOE, ws.sendClose(NORMAL_CLOSURE, "a reason"));
+                    assertThrows(NPE, () -> ws.sendText(null, false));
+                    assertThrows(NPE, () -> ws.sendText(null, true));
+                    assertThrows(NPE, () -> ws.sendBinary(null, false));
+                    assertThrows(NPE, () -> ws.sendBinary(null, true));
+                    assertThrows(NPE, () -> ws.sendPing(null));
+                    assertThrows(NPE, () -> ws.sendPong(null));
+                    assertThrows(NPE, () -> ws.sendClose(NORMAL_CLOSURE, null));
+                }
+            } finally {
                 ws.abort();
-                assertTrue(ws.isInputClosed());
-                assertTrue(ws.isOutputClosed());
-                assertEquals(ws.getSubprotocol(), "");
             }
-            // at this point valid requests MUST be a no-op:
-            for (int j = 0; j < 3; j++) {
-                System.out.printf("request #%s%n", j);
-                ws.request(1);
-                ws.request(2);
-                ws.request(8);
-                ws.request(Integer.MAX_VALUE);
-                ws.request(Long.MAX_VALUE);
-                // invalid requests MUST throw IAE:
-                assertThrows(IAE, () -> ws.request(Integer.MIN_VALUE));
-                assertThrows(IAE, () -> ws.request(Long.MIN_VALUE));
-                assertThrows(IAE, () -> ws.request(-1));
-                assertThrows(IAE, () -> ws.request(0));
-            }
-        }
-        // even though there is a bunch of messages readily available on the
-        // wire we shouldn't have received any of them as we aborted before
-        // the first request
-        try {
-            messageReceived.get(5, TimeUnit.SECONDS);
-            fail();
-        } catch (TimeoutException expected) {
-            System.out.println("Finished waiting");
-        }
-        for (int i = 0; i < 3; i++) {
-            System.out.printf("send #%s%n", i);
-            Support.assertFails(IOE, ws.sendText("text!", false));
-            Support.assertFails(IOE, ws.sendText("text!", true));
-            Support.assertFails(IOE, ws.sendBinary(ByteBuffer.allocate(16), false));
-            Support.assertFails(IOE, ws.sendBinary(ByteBuffer.allocate(16), true));
-            Support.assertFails(IOE, ws.sendPing(ByteBuffer.allocate(16)));
-            Support.assertFails(IOE, ws.sendPong(ByteBuffer.allocate(16)));
-            Support.assertFails(IOE, ws.sendClose(NORMAL_CLOSURE, "a reason"));
-            assertThrows(NPE, () -> ws.sendText(null, false));
-            assertThrows(NPE, () -> ws.sendText(null, true));
-            assertThrows(NPE, () -> ws.sendBinary(null, false));
-            assertThrows(NPE, () -> ws.sendBinary(null, true));
-            assertThrows(NPE, () -> ws.sendPing(null));
-            assertThrows(NPE, () -> ws.sendPong(null));
-            assertThrows(NPE, () -> ws.sendClose(NORMAL_CLOSURE, null));
         }
     }
 }

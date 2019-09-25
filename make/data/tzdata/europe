@@ -844,11 +844,16 @@ Zone	Europe/Andorra	0:06:04 -	LMT	1901
 # Shanks & Pottenger give 02:00, the BEV 00:00.  Go with the BEV,
 # and guess 02:00 for 1945-04-12.
 
+# From Alois Triendl (2019-07-22):
+# In 1946 the end of DST was on Monday, 7 October 1946, at 3:00 am.
+# Shanks had this right.  Source: Die Weltpresse, 5. Oktober 1946, page 5.
+
 # Rule	NAME	FROM	TO	TYPE	IN	ON	AT	SAVE	LETTER/S
 Rule	Austria	1920	only	-	Apr	 5	2:00s	1:00	S
 Rule	Austria	1920	only	-	Sep	13	2:00s	0	-
 Rule	Austria	1946	only	-	Apr	14	2:00s	1:00	S
-Rule	Austria	1946	1948	-	Oct	Sun>=1	2:00s	0	-
+Rule	Austria	1946	only	-	Oct	 7	2:00s	0	-
+Rule	Austria	1947	1948	-	Oct	Sun>=1	2:00s	0	-
 Rule	Austria	1947	only	-	Apr	 6	2:00s	1:00	S
 Rule	Austria	1948	only	-	Apr	18	2:00s	1:00	S
 Rule	Austria	1980	only	-	Apr	 6	0:00	1:00	S
@@ -898,15 +903,35 @@ Zone	Europe/Minsk	1:50:16 -	LMT	1880
 
 # Belgium
 #
-# From Paul Eggert (1997-07-02):
+# From Michael Deckers (2019-08-25):
+# The exposition in the web page
+# https://www.bestor.be/wiki/index.php/Voyager_dans_le_temps._L%E2%80%99introduction_de_la_norme_de_Greenwich_en_Belgique
+# gives several contemporary sources from which one can conclude that
+# the switch in Europe/Brussels on 1892-05-01 was from 00:17:30 to 00:00:00.
+#
+# From Paul Eggert (2019-08-28):
+# This quote helps explain the late-1914 situation:
+#   In early November 1914, the Germans imposed the time zone used in central
+#   Europe and forced the inhabitants to set their watches and public clocks
+#   sixty minutes ahead.  Many were reluctant to accept "German time" and
+#   continued to use "Belgian time" among themselves.  Reflecting the spirit of
+#   resistance that arose in the population, a song made fun of this change....
+# The song ended:
+#   Putting your clock forward
+#   Will but hasten the happy hour
+#   When we kick out the Boches!
+# See: Pluvinage G. Brussels on German time. Cahiers Bruxellois -
+# Brusselse Cahiers. 2014;XLVI(1E):15-38.
+# https://www.cairn.info/revue-cahiers-bruxellois-2014-1E-page-15.htm
+#
+# Entries from 1914 through 1917 are taken from "De tijd in België"
+# <https://www.astro.oma.be/GENERAL/INFO/nli001a.html>.
 # Entries from 1918 through 1991 are taken from:
 #	Annuaire de L'Observatoire Royal de Belgique,
 #	Avenue Circulaire, 3, B-1180 BRUXELLES, CLVIIe année, 1991
 #	(Imprimerie HAYEZ, s.p.r.l., Rue Fin, 4, 1080 BRUXELLES, MCMXC),
 #	pp 8-9.
-# LMT before 1892 was 0:17:30, according to the official journal of Belgium:
-#	Moniteur Belge, Samedi 30 Avril 1892, N.121.
-# Thanks to Pascal Delmoitie for these references.
+# Thanks to Pascal Delmoitie for the 1918/1991 references.
 # The 1918 rules are listed for completeness; they apply to unoccupied Belgium.
 # Assume Brussels switched to WET in 1918 when the armistice took effect.
 #
@@ -951,7 +976,7 @@ Rule	Belgium	1946	only	-	May	19	 2:00s	1:00	S
 Rule	Belgium	1946	only	-	Oct	 7	 2:00s	0	-
 # Zone	NAME		STDOFF	RULES	FORMAT	[UNTIL]
 Zone	Europe/Brussels	0:17:30 -	LMT	1880
-			0:17:30	-	BMT	1892 May  1 12:00  # Brussels MT
+			0:17:30	-	BMT	1892 May  1 00:17:30
 			0:00	-	WET	1914 Nov  8
 			1:00	-	CET	1916 May  1  0:00
 			1:00	C-Eur	CE%sT	1918 Nov 11 11:00u
@@ -1650,6 +1675,13 @@ Zone Atlantic/Reykjavik	-1:28	-	LMT	1908
 # advanced to sixty minutes later starting at hour two on 1944-04-02; ...
 # Starting at hour three on the date 1944-09-17 standard time will be resumed.
 #
+# From Alois Triendl (2019-07-02):
+# I spent 6 Euros to buy two archive copies of Il Messaggero, a Roman paper,
+# for 1 and 2 April 1944.  The edition of 2 April has this note: "Tonight at 2
+# am, put forward the clock by one hour.  Remember that in the night between
+# today and Monday the 'ora legale' will come in force again."  That makes it
+# clear that in Rome the change was on Monday, 3 April 1944 at 2 am.
+#
 # From Paul Eggert (2016-10-27):
 # Go with INRiM for DST rules, except as corrected by Inglis for 1944
 # for the Kingdom of Italy.  This is consistent with Renzo Baldini.
@@ -1797,15 +1829,10 @@ Zone	Europe/Riga	1:36:34	-	LMT	1880
 # From Paul Eggert (2013-09-09):
 # Shanks & Pottenger say Vaduz is like Zurich.
 
-# From Alois Treindl (2013-09-18):
-# http://www.eliechtensteinensia.li/LIJ/1978/1938-1978/1941.pdf
-# ... confirms on p. 6 that Liechtenstein followed Switzerland in 1941 and 1942.
-# I ... translate only the last two paragraphs:
-#    ... during second world war, in the years 1941 and 1942, Liechtenstein
-#    introduced daylight saving time, adapting to Switzerland.  From 1943 on
-#    central European time was in force throughout the year.
-#    From a report of the duke's government to the high council,
-#    regarding the introduction of a time law, of 31 May 1977.
+# From Alois Treindl (2019-07-04):
+# I was able to access the online archive of the Vaduz paper Vaterland ...
+# I could confirm from the paper that Liechtenstein did in fact follow
+# the same DST in 1941 and 1942 as Switzerland did.
 
 Link Europe/Zurich Europe/Vaduz
 
@@ -2513,6 +2540,12 @@ Zone Europe/Bucharest	1:44:24 -	LMT	1891 Oct
 # Europe/Kaliningrad covers...
 # 39	RU-KGD	Kaliningrad Oblast
 
+# From Paul Eggert (2019-07-25):
+# Although Shanks lists 1945-01-01 as the date for transition from
+# +01/+02 to +02/+03, more likely this is a placeholder.  Guess that
+# the transition occurred at 1945-04-10 00:00, which is about when
+# Königsberg surrendered to Soviet troops.  (Thanks to Alois Triendl.)
+
 # From Paul Eggert (2016-03-18):
 # The 1989 transition is from USSR act No. 227 (1989-03-14).
 
@@ -2529,8 +2562,8 @@ Zone Europe/Bucharest	1:44:24 -	LMT	1891 Oct
 # Moscow on 1991-11-03, switched to Moscow-1 on 1992-01-19.
 
 Zone Europe/Kaliningrad	 1:22:00 -	LMT	1893 Apr
-			 1:00	C-Eur	CE%sT	1945
-			 2:00	Poland	CE%sT	1946
+			 1:00	C-Eur	CE%sT	1945 Apr 10
+			 2:00	Poland	EE%sT	1946 Apr  7
 			 3:00	Russia	MSK/MSD	1989 Mar 26  2:00s
 			 2:00	Russia	EE%sT	2011 Mar 27  2:00s
 			 3:00	-	+03	2014 Oct 26  2:00s
@@ -3673,20 +3706,75 @@ Zone	Europe/Zurich	0:34:08 -	LMT	1853 Jul 16 # See above comment.
 
 # Turkey
 
+# From Alois Treindl (2019-08-12):
+# http://www.astrolojidergisi.com/yazsaati.htm has researched the time zone
+# history of Turkey, based on newspaper archives and official documents.
+# From Paul Eggert (2019-08-28):
+# That source (Oya Vulaş, "Türkiye'de Yaz Saati Uygulamaları")
+# is used for 1940/1972, where it seems more reliable than our other
+# sources.
+
+# From Kıvanç Yazan (2019-08-12):
+# http://www.resmigazete.gov.tr/arsiv/14539.pdf#page=24
+# 1973-06-03 01:00 -> 02:00, 1973-11-04 02:00 -> 01:00
+#
+# http://www.resmigazete.gov.tr/arsiv/14829.pdf#page=1
+# 1974-03-31 02:00 -> 03:00, 1974-11-03 02:00 -> 01:00
+#
+# http://www.resmigazete.gov.tr/arsiv/15161.pdf#page=1
+# 1975-03-22 02:00 -> 03:00, 1975-11-02 02:00 -> 01:00
+#
+# http://www.resmigazete.gov.tr/arsiv/15535_1.pdf#page=1
+# 1976-03-21 02:00 -> 03:00, 1976-10-31 02:00 -> 01:00
+#
+# http://www.resmigazete.gov.tr/arsiv/15778.pdf#page=5
+# 1977-04-03 02:00 -> 03:00, 1977-10-16 02:00 -> 01:00,
+# 1978-04-02 02:00 -> 03:00 (not applied, see below)
+# 1978-10-15 02:00 -> 01:00 (not applied, see below)
+# 1979-04-01 02:00 -> 03:00 (not applied, see below)
+# 1979-10-14 02:00 -> 01:00 (not applied, see below)
+#
+# http://www.resmigazete.gov.tr/arsiv/16245.pdf#page=17
+# This cancels the previous decision, and repeats it only for 1978.
+# 1978-04-02 02:00 -> 03:00, 1978-10-15 02:00 -> 01:00
+# (not applied due to standard TZ change below)
+#
+# http://www.resmigazete.gov.tr/arsiv/16331.pdf#page=3
+# This decision changes the default longitude for Turkish time zone from 30
+# degrees East to 45 degrees East.  This means a standard TZ change, from +2
+# to +3.  This is published & applied on 1978-06-29.  At that time, Turkey was
+# already on summer time (already on 45E).  Hence, this new law just meant an
+# "continuous summer time".  Note that this was reversed in a few years.
+#
+# http://www.resmigazete.gov.tr/arsiv/18119_1.pdf#page=1
+# 1983-07-31 02:00 -> 03:00 (note that this jumps TZ to +4)
+# 1983-10-02 02:00 -> 01:00 (back to +3)
+#
+# http://www.resmigazete.gov.tr/arsiv/18561.pdf (page 1 and 34)
+# At this time, Turkey is still on +3 with no spring-forward on early
+# 1984.  This decision is published on 10/31/1984.  Page 1 declares
+# the decision of reverting the "default longitude change".  So the
+# standard time should go back to +3 (30E).  And page 34 explains when
+# that will happen: 1984-11-01 02:00 -> 01:00.  You can think of this
+# as "end of continuous summer time, change of standard time zone".
+#
+# http://www.resmigazete.gov.tr/arsiv/18713.pdf#page=1
+# 1985-04-20 01:00 -> 02:00, 1985-09-28 02:00 -> 01:00
+
 # From Kıvanç Yazan (2016-09-25):
 # 1) For 1986-2006, DST started at 01:00 local and ended at 02:00 local, with
 #    no exceptions.
 # 2) 1994's lastSun was overridden with Mar 20 ...
 # Here are official papers:
-# http://www.resmigazete.gov.tr/arsiv/19032.pdf  - page 2 for 1986
-# http://www.resmigazete.gov.tr/arsiv/19400.pdf  - page 4 for 1987
-# http://www.resmigazete.gov.tr/arsiv/19752.pdf  - page 15 for 1988
-# http://www.resmigazete.gov.tr/arsiv/20102.pdf  - page 6 for 1989
-# http://www.resmigazete.gov.tr/arsiv/20464.pdf  - page 1 for 1990 - 1992
-# http://www.resmigazete.gov.tr/arsiv/21531.pdf  - page 15 for 1993 - 1995
-# http://www.resmigazete.gov.tr/arsiv/21879.pdf  - page 1 for overriding 1994
-# http://www.resmigazete.gov.tr/arsiv/22588.pdf  - page 1 for 1996, 1997
-# http://www.resmigazete.gov.tr/arsiv/23286.pdf  - page 10 for 1998 - 2000
+# http://www.resmigazete.gov.tr/arsiv/19032.pdf#page=2 for 1986
+# http://www.resmigazete.gov.tr/arsiv/19400.pdf#page=4 for 1987
+# http://www.resmigazete.gov.tr/arsiv/19752.pdf#page=15 for 1988
+# http://www.resmigazete.gov.tr/arsiv/20102.pdf#page=6 for 1989
+# http://www.resmigazete.gov.tr/arsiv/20464.pdf#page=1 for 1990 - 1992
+# http://www.resmigazete.gov.tr/arsiv/21531.pdf#page=15 for 1993 - 1995
+# http://www.resmigazete.gov.tr/arsiv/21879.pdf#page=1 for overriding 1994
+# http://www.resmigazete.gov.tr/arsiv/22588.pdf#page=1 for 1996, 1997
+# http://www.resmigazete.gov.tr/arsiv/23286.pdf#page=10 for 1998 - 2000
 # http://www.resmigazete.gov.tr/eskiler/2001/03/20010324.htm#2  - for 2001
 # http://www.resmigazete.gov.tr/eskiler/2002/03/20020316.htm#2  - for 2002-2006
 # From Paul Eggert (2016-09-25):
@@ -3770,46 +3858,36 @@ Rule	Turkey	1922	only	-	Oct	 8	0:00	0	-
 Rule	Turkey	1924	only	-	May	13	0:00	1:00	S
 Rule	Turkey	1924	1925	-	Oct	 1	0:00	0	-
 Rule	Turkey	1925	only	-	May	 1	0:00	1:00	S
-Rule	Turkey	1940	only	-	Jun	30	0:00	1:00	S
-Rule	Turkey	1940	only	-	Oct	 5	0:00	0	-
+Rule	Turkey	1940	only	-	Jul	 1	0:00	1:00	S
+Rule	Turkey	1940	only	-	Oct	 6	0:00	0	-
 Rule	Turkey	1940	only	-	Dec	 1	0:00	1:00	S
 Rule	Turkey	1941	only	-	Sep	21	0:00	0	-
 Rule	Turkey	1942	only	-	Apr	 1	0:00	1:00	S
-# Whitman omits the next two transition and gives 1945 Oct 1;
-# go with Shanks & Pottenger.
-Rule	Turkey	1942	only	-	Nov	 1	0:00	0	-
-Rule	Turkey	1945	only	-	Apr	 2	0:00	1:00	S
 Rule	Turkey	1945	only	-	Oct	 8	0:00	0	-
 Rule	Turkey	1946	only	-	Jun	 1	0:00	1:00	S
 Rule	Turkey	1946	only	-	Oct	 1	0:00	0	-
 Rule	Turkey	1947	1948	-	Apr	Sun>=16	0:00	1:00	S
-Rule	Turkey	1947	1950	-	Oct	Sun>=2	0:00	0	-
+Rule	Turkey	1947	1951	-	Oct	Sun>=2	0:00	0	-
 Rule	Turkey	1949	only	-	Apr	10	0:00	1:00	S
-Rule	Turkey	1950	only	-	Apr	19	0:00	1:00	S
+Rule	Turkey	1950	only	-	Apr	16	0:00	1:00	S
 Rule	Turkey	1951	only	-	Apr	22	0:00	1:00	S
-Rule	Turkey	1951	only	-	Oct	 8	0:00	0	-
+# DST for 15 months; unusual but we'll let it pass.
 Rule	Turkey	1962	only	-	Jul	15	0:00	1:00	S
-Rule	Turkey	1962	only	-	Oct	 8	0:00	0	-
+Rule	Turkey	1963	only	-	Oct	30	0:00	0	-
 Rule	Turkey	1964	only	-	May	15	0:00	1:00	S
 Rule	Turkey	1964	only	-	Oct	 1	0:00	0	-
-Rule	Turkey	1970	1972	-	May	Sun>=2	0:00	1:00	S
-Rule	Turkey	1970	1972	-	Oct	Sun>=2	0:00	0	-
 Rule	Turkey	1973	only	-	Jun	 3	1:00	1:00	S
-Rule	Turkey	1973	only	-	Nov	 4	3:00	0	-
+Rule	Turkey	1973	1976	-	Oct	Sun>=31	2:00	0	-
 Rule	Turkey	1974	only	-	Mar	31	2:00	1:00	S
-Rule	Turkey	1974	only	-	Nov	 3	5:00	0	-
-Rule	Turkey	1975	only	-	Mar	30	0:00	1:00	S
-Rule	Turkey	1975	1976	-	Oct	lastSun	0:00	0	-
-Rule	Turkey	1976	only	-	Jun	 1	0:00	1:00	S
-Rule	Turkey	1977	1978	-	Apr	Sun>=1	0:00	1:00	S
-Rule	Turkey	1977	only	-	Oct	16	0:00	0	-
-Rule	Turkey	1979	1980	-	Apr	Sun>=1	3:00	1:00	S
-Rule	Turkey	1979	1982	-	Oct	Mon>=11	0:00	0	-
-Rule	Turkey	1981	1982	-	Mar	lastSun	3:00	1:00	S
-Rule	Turkey	1983	only	-	Jul	31	0:00	1:00	S
-Rule	Turkey	1983	only	-	Oct	 2	0:00	0	-
-Rule	Turkey	1985	only	-	Apr	20	0:00	1:00	S
-Rule	Turkey	1985	only	-	Sep	28	0:00	0	-
+Rule	Turkey	1975	only	-	Mar	22	2:00	1:00	S
+Rule	Turkey	1976	only	-	Mar	21	2:00	1:00	S
+Rule	Turkey	1977	1978	-	Apr	Sun>=1	2:00	1:00	S
+Rule	Turkey	1977	1978	-	Oct	Sun>=15	2:00	0	-
+Rule	Turkey	1978	only	-	Jun	29	0:00	0	-
+Rule	Turkey	1983	only	-	Jul	31	2:00	1:00	S
+Rule	Turkey	1983	only	-	Oct	 2	2:00	0	-
+Rule	Turkey	1985	only	-	Apr	20	1:00s	1:00	S
+Rule	Turkey	1985	only	-	Sep	28	1:00s	0	-
 Rule	Turkey	1986	1993	-	Mar	lastSun	1:00s	1:00	S
 Rule	Turkey	1986	1995	-	Sep	lastSun	1:00s	0	-
 Rule	Turkey	1994	only	-	Mar	20	1:00s	1:00	S
@@ -3818,8 +3896,8 @@ Rule	Turkey	1996	2006	-	Oct	lastSun	1:00s	0	-
 # Zone	NAME		STDOFF	RULES	FORMAT	[UNTIL]
 Zone	Europe/Istanbul	1:55:52 -	LMT	1880
 			1:56:56	-	IMT	1910 Oct # Istanbul Mean Time?
-			2:00	Turkey	EE%sT	1978 Oct 15
-			3:00	Turkey	+03/+04	1985 Apr 20
+			2:00	Turkey	EE%sT	1978 Jun 29
+			3:00	Turkey	+03/+04	1984 Nov  1  2:00
 			2:00	Turkey	EE%sT	2007
 			2:00	EU	EE%sT	2011 Mar 27  1:00u
 			2:00	-	EET	2011 Mar 28  1:00u

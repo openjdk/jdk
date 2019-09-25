@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -278,7 +278,7 @@ public class CompilationTask {
     /**
      * Time spent in compilation.
      */
-    private static final TimerKey CompilationTime = DebugContext.timer("CompilationTime").doc("Time spent in compilation and code installation.");
+    public static final TimerKey CompilationTime = DebugContext.timer("CompilationTime").doc("Time spent in compilation and code installation.");
 
     /**
      * Counts the number of compiled {@linkplain CompilationResult#getBytecodeSize() bytecodes}.
@@ -289,7 +289,7 @@ public class CompilationTask {
      * Counts the number of compiled {@linkplain CompilationResult#getBytecodeSize() bytecodes} for
      * which {@linkplain CompilationResult#getTargetCode()} code was installed.
      */
-    private static final CounterKey CompiledAndInstalledBytecodes = DebugContext.counter("CompiledAndInstalledBytecodes");
+    public static final CounterKey CompiledAndInstalledBytecodes = DebugContext.counter("CompiledAndInstalledBytecodes");
 
     /**
      * Counts the number of installed {@linkplain CompilationResult#getTargetCodeSize()} bytes.
@@ -303,8 +303,8 @@ public class CompilationTask {
 
     public HotSpotCompilationRequestResult runCompilation(OptionValues initialOptions) {
         OptionValues options = filterOptions(initialOptions);
-        SnippetReflectionProvider snippetReflection = compiler.getGraalRuntime().getHostProviders().getSnippetReflection();
-        try (DebugContext debug = DebugContext.create(options, new GraalDebugHandlersFactory(snippetReflection))) {
+        HotSpotGraalRuntimeProvider graalRuntime = compiler.getGraalRuntime();
+        try (DebugContext debug = graalRuntime.openDebugContext(options, compilationId, getMethod(), compiler.getDebugHandlersFactories(), DebugContext.DEFAULT_LOG_STREAM)) {
             return runCompilation(debug);
         }
     }

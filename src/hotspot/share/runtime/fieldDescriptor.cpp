@@ -212,7 +212,7 @@ void fieldDescriptor::print_on_for(outputStream* st, oop obj) {
   // Print a hint as to the underlying integer representation. This can be wrong for
   // pointers on an LP64 machine
 #ifdef _LP64
-  if ((ft == T_OBJECT || ft == T_ARRAY) && UseCompressedOops) {
+  if (is_reference_type(ft) && UseCompressedOops) {
     st->print(" (%x)", obj->int_field(offset()));
   }
   else // <- intended

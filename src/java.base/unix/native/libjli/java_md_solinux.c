@@ -790,16 +790,6 @@ CallJavaMainInNewThread(jlong stack_size, void* args) {
 /* Coarse estimation of number of digits assuming the worst case is a 64-bit pid. */
 #define MAX_PID_STR_SZ   20
 
-void SetJavaLauncherPlatformProps() {
-   /* Linux only */
-#ifdef __linux__
-    const char *substr = "-Dsun.java.launcher.pid=";
-    char *pid_prop_str = (char *)JLI_MemAlloc(JLI_StrLen(substr) + MAX_PID_STR_SZ + 1);
-    sprintf(pid_prop_str, "%s%d", substr, getpid());
-    AddOption(pid_prop_str, NULL);
-#endif /* __linux__ */
-}
-
 int
 JVMInit(InvocationFunctions* ifn, jlong threadStackSize,
         int argc, char **argv,

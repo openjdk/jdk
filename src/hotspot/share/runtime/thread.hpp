@@ -753,7 +753,7 @@ protected:
 
   // These functions check conditions on a JavaThread before possibly going to a safepoint,
   // including NoSafepointVerifier.
-  void check_for_valid_safepoint_state(bool potential_vm_operation) NOT_DEBUG_RETURN;
+  void check_for_valid_safepoint_state() NOT_DEBUG_RETURN;
   void check_possible_safepoint() NOT_DEBUG_RETURN;
 
  private:
@@ -1143,10 +1143,8 @@ class JavaThread: public Thread {
  public:
   static jlong* _jvmci_old_thread_counters;
   static void collect_counters(jlong* array, int length);
-
-  bool resize_counters(int current_size, int new_size);
-
-  static bool resize_all_jvmci_counters(int new_size);
+  void resize_counters(int current_size, int new_size);
+  static void resize_all_jvmci_counters(int new_size);
 
  private:
 #endif // INCLUDE_JVMCI

@@ -757,10 +757,6 @@ CallJavaMainInNewThread(jlong stack_size, void* args) {
     return rslt;
 }
 
-void SetJavaLauncherPlatformProps() {
-   /* Linux only */
-}
-
 static JavaVM* jvmInstance = NULL;
 static jboolean sameThread = JNI_FALSE; /* start VM in current thread */
 

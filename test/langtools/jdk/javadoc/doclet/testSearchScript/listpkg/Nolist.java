@@ -27,9 +27,8 @@ import java.util.Collection;
 import java.util.Map;
 
 /**
- * Example class containing "list" but not matching at any word boundary.
- *
- * {@index "search tag"}.
+ * Example class containing "list" but not matching at any word boundary. {@index "other
+ * search tag"}.
  */
 public class Nolist {
 

@@ -266,9 +266,19 @@ oop ShenandoahBarrierSet::oop_load_from_native_barrier(oop obj) {
     return NULL;
   }
 
-  if (_heap->is_evacuation_in_progress() &&
-      !_heap->complete_marking_context()->is_marked(obj)) {
-    return NULL;
+  ShenandoahMarkingContext* const marking_context = _heap->marking_context();
+
+  if (_heap->is_evacuation_in_progress()) {
+    // Normal GC
+    if (!marking_context->is_marked(obj)) {
+      return NULL;
+    }
+  } else if (_heap->is_concurrent_traversal_in_progress()) {
+    // Traversal GC
+    if (marking_context->is_complete() &&
+        !marking_context->is_marked(resolve_forwarded_not_null(obj))) {
+      return NULL;
+    }
   }
 
   return load_reference_barrier_not_null(obj);

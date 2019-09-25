@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -43,6 +43,12 @@ class InheritedChannel {
     private static final int SOCK_STREAM        = 1;
     private static final int SOCK_DGRAM         = 2;
 
+    // socket address type
+    private static final int AF_UNKNOWN         = -1;
+    private static final int AF_INET            = 1;
+    private static final int AF_INET6           = 2;
+    private static final int AF_UNIX            = 3;
+
     // oflag values when opening a file
     private static final int O_RDONLY           = 0;
     private static final int O_WRONLY           = 1;
@@ -85,6 +91,20 @@ class InheritedChannel {
 
         protected void implCloseSelectableChannel() throws IOException {
             super.implCloseSelectableChannel();
+            detachIOStreams();
+        }
+    }
+
+    public static class InheritedUnixChannelImpl extends UnixDomainSocketChannelImpl {
+
+        InheritedUnixChannelImpl(FileDescriptor fd)
+            throws IOException
+        {
+            super(fd);
+        }
+
+        protected void implCloseSelectableChannel() throws IOException {
+            super.implCloseChannel();
             detachIOStreams();
         }
     }
@@ -160,7 +180,6 @@ class InheritedChannel {
             return null;
         }
 
-
         // Next we create a FileDescriptor for the dup'ed file descriptor
         // Have to use reflection and also make assumption on how FD
         // is implemented.
@@ -182,6 +201,17 @@ class InheritedChannel {
 
         Channel c;
         if (st == SOCK_STREAM) {
+            int family = addressFamily(fdVal);
+            if (family == AF_UNKNOWN)
+                return null;
+            if (family == AF_UNIX) {
+                if (isConnected(fdVal)) {
+                    return new InheritedUnixChannelImpl(fd);
+                } else {
+                    // listener. unsupported.
+                    return null;
+                }
+            }
             InetAddress ia = peerAddress0(fdVal);
             if (ia == null) {
                c = new InheritedServerSocketChannelImpl(provider, fd);
@@ -232,8 +262,12 @@ class InheritedChannel {
     private static native int open0(String path, int oflag) throws IOException;
     private static native void close0(int fd) throws IOException;
     private static native int soType0(int fd);
+    private static native int addressFamily(int fd);
     private static native InetAddress peerAddress0(int fd);
     private static native int peerPort0(int fd);
+
+    // return true if socket is connected to a peer
+    private static native boolean isConnected(int fd);
 
     static {
         IOUtil.load();

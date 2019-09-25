@@ -3168,7 +3168,7 @@ ValueStack* GraphBuilder::state_at_entry() {
     ciType* type = sig->type_at(i);
     BasicType basic_type = type->basic_type();
     // don't allow T_ARRAY to propagate into locals types
-    if (basic_type == T_ARRAY) basic_type = T_OBJECT;
+    if (is_reference_type(basic_type)) basic_type = T_OBJECT;
     ValueType* vt = as_ValueType(basic_type);
     state->store_local(idx, new Local(type, vt, idx, false));
     idx += type->size();

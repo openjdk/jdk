@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -107,8 +107,8 @@ bool LIR_Assembler::is_single_instruction(LIR_Op* op) {
       }
 
       if (UseCompressedOops) {
-        if (dst->is_address() && !dst->is_stack() && (dst->type() == T_OBJECT || dst->type() == T_ARRAY)) return false;
-        if (src->is_address() && !src->is_stack() && (src->type() == T_OBJECT || src->type() == T_ARRAY)) return false;
+        if (dst->is_address() && !dst->is_stack() && is_reference_type(dst->type())) return false;
+        if (src->is_address() && !src->is_stack() && is_reference_type(src->type())) return false;
       }
 
       if (UseCompressedClassPointers) {
@@ -728,7 +728,7 @@ int LIR_Assembler::store(LIR_Opr from_reg, Register base, int offset, BasicType 
     __ set(offset, O7);
     store_offset = store(from_reg, base, O7, type, wide);
   } else {
-    if (type == T_ARRAY || type == T_OBJECT) {
+    if (is_reference_type(type)) {
       __ verify_oop(from_reg->as_register());
     }
     store_offset = code_offset();
@@ -789,7 +789,7 @@ int LIR_Assembler::store(LIR_Opr from_reg, Register base, int offset, BasicType 
 
 
 int LIR_Assembler::store(LIR_Opr from_reg, Register base, Register disp, BasicType type, bool wide) {
-  if (type == T_ARRAY || type == T_OBJECT) {
+  if (is_reference_type(type)) {
     __ verify_oop(from_reg->as_register());
   }
   int store_offset = code_offset();
@@ -889,7 +889,7 @@ int LIR_Assembler::load(Register base, int offset, LIR_Opr to_reg, BasicType typ
         }
       default      : ShouldNotReachHere();
     }
-    if (type == T_ARRAY || type == T_OBJECT) {
+    if (is_reference_type(type)) {
       __ verify_oop(to_reg->as_register());
     }
   }
@@ -924,7 +924,7 @@ int LIR_Assembler::load(Register base, Register disp, LIR_Opr to_reg, BasicType 
       break;
     default      : ShouldNotReachHere();
   }
-  if (type == T_ARRAY || type == T_OBJECT) {
+  if (is_reference_type(type)) {
     __ verify_oop(to_reg->as_register());
   }
   return load_offset;
@@ -1359,7 +1359,7 @@ void LIR_Assembler::reg2reg(LIR_Opr from_reg, LIR_Opr to_reg) {
   } else {
     ShouldNotReachHere();
   }
-  if (to_reg->type() == T_OBJECT || to_reg->type() == T_ARRAY) {
+  if (is_reference_type(to_reg->type())) {
     __ verify_oop(to_reg->as_register());
   }
 }
@@ -2295,8 +2295,8 @@ void LIR_Assembler::emit_alloc_array(LIR_OpAllocArray* op) {
 
   __ signx(op->len()->as_register());
   if (UseSlowPath ||
-      (!UseFastNewObjectArray && (op->type() == T_OBJECT || op->type() == T_ARRAY)) ||
-      (!UseFastNewTypeArray   && (op->type() != T_OBJECT && op->type() != T_ARRAY))) {
+      (!UseFastNewObjectArray && is_reference_type(op->type())) ||
+      (!UseFastNewTypeArray   && !is_reference_type(op->type()))) {
     __ br(Assembler::always, false, Assembler::pt, *op->stub()->entry());
     __ delayed()->nop();
   } else {

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -728,7 +728,7 @@ public class InliningUtil extends ValueMergeUtil {
         FrameState stateAtReturn = invoke.stateAfter();
         FrameState outerFrameState = null;
         JavaKind invokeReturnKind = invoke.asNode().getStackKind();
-        EconomicMap<Node, Node> replacements = EconomicMap.create();
+        EconomicMap<Node, Node> replacements = EconomicMap.create(Equivalence.IDENTITY);
         for (FrameState original : inlineGraph.getNodes(FrameState.TYPE)) {
             FrameState frameState = (FrameState) duplicates.get(original);
             if (frameState != null && frameState.isAlive()) {

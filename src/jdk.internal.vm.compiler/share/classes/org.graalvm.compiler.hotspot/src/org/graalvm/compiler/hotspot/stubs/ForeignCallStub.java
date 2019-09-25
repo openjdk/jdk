@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,8 +28,8 @@ import static jdk.vm.ci.code.BytecodeFrame.UNKNOWN_BCI;
 import static jdk.vm.ci.hotspot.HotSpotCallingConventionType.JavaCall;
 import static jdk.vm.ci.hotspot.HotSpotCallingConventionType.JavaCallee;
 import static jdk.vm.ci.hotspot.HotSpotCallingConventionType.NativeCall;
-import static org.graalvm.compiler.hotspot.HotSpotForeignCallLinkage.RegisterEffect.DESTROYS_REGISTERS;
-import static org.graalvm.compiler.hotspot.HotSpotForeignCallLinkage.RegisterEffect.PRESERVES_REGISTERS;
+import static org.graalvm.compiler.hotspot.HotSpotForeignCallLinkage.RegisterEffect.COMPUTES_REGISTERS_KILLED;
+import static org.graalvm.compiler.hotspot.HotSpotForeignCallLinkage.RegisterEffect.DESTROYS_ALL_CALLER_SAVE_REGISTERS;
 import static org.graalvm.compiler.nodes.CallTargetNode.InvokeKind.Static;
 import static org.graalvm.compiler.nodes.ConstantNode.forBoolean;
 
@@ -112,14 +112,14 @@ public class ForeignCallStub extends Stub {
     public ForeignCallStub(OptionValues options, HotSpotJVMCIRuntime runtime, HotSpotProviders providers, long address, ForeignCallDescriptor descriptor, boolean prependThread,
                     Transition transition, Reexecutability reexecutability, LocationIdentity... killedLocations) {
         super(options, providers, HotSpotForeignCallLinkageImpl.create(providers.getMetaAccess(), providers.getCodeCache(), providers.getWordTypes(), providers.getForeignCalls(), descriptor, 0L,
-                        PRESERVES_REGISTERS, JavaCall, JavaCallee, transition, reexecutability, killedLocations));
+                        COMPUTES_REGISTERS_KILLED, JavaCall, JavaCallee, transition, reexecutability, killedLocations));
         this.jvmciRuntime = runtime;
         this.prependThread = prependThread;
         MetaAccessProvider metaAccess = providers.getMetaAccess();
         Class<?>[] targetParameterTypes = createTargetParameters(descriptor);
         ForeignCallDescriptor targetSig = new ForeignCallDescriptor(descriptor.getName() + ":C", descriptor.getResultType(), targetParameterTypes);
         target = HotSpotForeignCallLinkageImpl.create(metaAccess, providers.getCodeCache(), providers.getWordTypes(), providers.getForeignCalls(), targetSig, address,
-                        DESTROYS_REGISTERS, NativeCall, NativeCall, transition, reexecutability, killedLocations);
+                        DESTROYS_ALL_CALLER_SAVE_REGISTERS, NativeCall, NativeCall, transition, reexecutability, killedLocations);
     }
 
     /**

@@ -348,6 +348,7 @@ public class BeanContextChildSupport implements BeanContextChild, BeanContextSer
      * The {@code BeanContext} in which
      * this {@code BeanContextChild} is nested.
      */
+    @SuppressWarnings("serial") // Not statically typed as Serializable
     public    BeanContextChild      beanContextChildPeer;
 
    /**

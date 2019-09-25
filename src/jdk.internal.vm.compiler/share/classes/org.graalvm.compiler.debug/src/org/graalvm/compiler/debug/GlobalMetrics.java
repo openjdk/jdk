@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -86,7 +86,9 @@ public class GlobalMetrics {
             EconomicMap<MetricKey, Long> map = asKeyValueMap();
             String metricsFile = DebugOptions.AggregatedMetricsFile.getValue(options);
             boolean csv = metricsFile != null && (metricsFile.endsWith(".csv") || metricsFile.endsWith(".CSV"));
-            try (PrintStream p = metricsFile == null ? DebugContext.DEFAULT_LOG_STREAM : new PrintStream(Files.newOutputStream(Paths.get(metricsFile)))) {
+            PrintStream p = null;
+            try {
+                p = metricsFile == null ? DebugContext.DEFAULT_LOG_STREAM : new PrintStream(Files.newOutputStream(Paths.get(metricsFile)));
                 if (!csv) {
                     if (!map.isEmpty()) {
                         p.println("++ Aggregated Metrics ++");
@@ -110,6 +112,11 @@ public class GlobalMetrics {
                 }
             } catch (IOException e) {
                 e.printStackTrace();
+            } finally {
+                // Don't close DEFAULT_LOG_STREAM
+                if (metricsFile != null && p != null) {
+                    p.close();
+                }
             }
         }
 

@@ -63,7 +63,7 @@ public final class GraalOptions {
     public static final OptionKey<Integer> MaximumInliningSize = new OptionKey<>(300);
 
     @Option(help = "If the previous low-level graph size of the method exceeds the threshold, it is not inlined.", type = OptionType.Expert)
-    public static final OptionKey<Integer> SmallCompiledLowLevelGraphSize = new OptionKey<>(300);
+    public static final OptionKey<Integer> SmallCompiledLowLevelGraphSize = new OptionKey<>(330);
 
     @Option(help = "", type = OptionType.Expert)
     public static final OptionKey<Double> LimitInlinedInvokes = new OptionKey<>(5.0);

@@ -116,8 +116,8 @@ public final class SerializablePermission extends BasicPermission {
      *
      * @param name the name of the SerializablePermission.
      *
-     * @throws NullPointerException if <code>name</code> is <code>null</code>.
-     * @throws IllegalArgumentException if <code>name</code> is empty.
+     * @throws NullPointerException if {@code name} is {@code null}.
+     * @throws IllegalArgumentException if {@code name} is empty.
      */
     public SerializablePermission(String name)
     {
@@ -132,8 +132,8 @@ public final class SerializablePermission extends BasicPermission {
      * @param name the name of the SerializablePermission.
      * @param actions currently unused and must be set to null
      *
-     * @throws NullPointerException if <code>name</code> is <code>null</code>.
-     * @throws IllegalArgumentException if <code>name</code> is empty.
+     * @throws NullPointerException if {@code name} is {@code null}.
+     * @throws IllegalArgumentException if {@code name} is empty.
      */
 
     public SerializablePermission(String name, String actions)

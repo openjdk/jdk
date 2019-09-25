@@ -1589,7 +1589,7 @@ void JvmtiExport::post_method_exit(JavaThread *thread, Method* method, frame cur
     if (!exception_exit) {
       oop oop_result;
       BasicType type = current_frame.interpreter_frame_result(&oop_result, &value);
-      if (type == T_OBJECT || type == T_ARRAY) {
+      if (is_reference_type(type)) {
         result = Handle(thread, oop_result);
       }
     }

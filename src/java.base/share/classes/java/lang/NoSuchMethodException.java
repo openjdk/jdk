@@ -37,14 +37,14 @@ class NoSuchMethodException extends ReflectiveOperationException {
     private static final long serialVersionUID = 5034388446362600923L;
 
     /**
-     * Constructs a <code>NoSuchMethodException</code> without a detail message.
+     * Constructs a {@code NoSuchMethodException} without a detail message.
      */
     public NoSuchMethodException() {
         super();
     }
 
     /**
-     * Constructs a <code>NoSuchMethodException</code> with a detail message.
+     * Constructs a {@code NoSuchMethodException} with a detail message.
      *
      * @param      s   the detail message.
      */

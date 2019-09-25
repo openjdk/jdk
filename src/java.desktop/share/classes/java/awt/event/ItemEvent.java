@@ -95,6 +95,7 @@ public class ItemEvent extends AWTEvent {
      * @serial
      * @see #getItem()
      */
+    @SuppressWarnings("serial") // Not statically typed as Serializable
     Object item;
 
     /**

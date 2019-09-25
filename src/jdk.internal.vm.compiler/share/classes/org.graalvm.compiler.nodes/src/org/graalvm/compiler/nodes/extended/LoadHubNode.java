@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,6 +28,7 @@ import static org.graalvm.compiler.core.common.GraalOptions.GeneratePIC;
 import static org.graalvm.compiler.nodeinfo.NodeCycles.CYCLES_2;
 import static org.graalvm.compiler.nodeinfo.NodeSize.SIZE_1;
 
+import org.graalvm.compiler.core.common.type.AbstractPointerStamp;
 import org.graalvm.compiler.core.common.type.ObjectStamp;
 import org.graalvm.compiler.core.common.type.Stamp;
 import org.graalvm.compiler.core.common.type.TypeReference;
@@ -62,13 +63,17 @@ public final class LoadHubNode extends FloatingNode implements Lowerable, Canoni
         return value;
     }
 
-    private static Stamp hubStamp(StampProvider stampProvider, ValueNode value) {
+    private static AbstractPointerStamp hubStamp(StampProvider stampProvider, ValueNode value) {
         assert value.stamp(NodeView.DEFAULT) instanceof ObjectStamp;
         return stampProvider.createHubStamp(((ObjectStamp) value.stamp(NodeView.DEFAULT)));
     }
 
     public static ValueNode create(ValueNode value, StampProvider stampProvider, MetaAccessProvider metaAccess, ConstantReflectionProvider constantReflection) {
-        Stamp stamp = hubStamp(stampProvider, value);
+        final AbstractPointerStamp stamp = hubStamp(stampProvider, value);
+        return create(value, stamp, metaAccess, constantReflection);
+    }
+
+    public static ValueNode create(ValueNode value, AbstractPointerStamp stamp, MetaAccessProvider metaAccess, ConstantReflectionProvider constantReflection) {
         ValueNode synonym = findSynonym(value, stamp, metaAccess, constantReflection);
         if (synonym != null) {
             return synonym;

@@ -2382,7 +2382,7 @@ bool LibraryCallKit::inline_unsafe_access(bool is_store, const BasicType type, c
   guarantee( is_store || kind != Release, "Release accesses can be produced only for stores");
   assert(type != T_OBJECT || !unaligned, "unaligned access not supported with object type");
 
-  if (type == T_OBJECT || type == T_ARRAY) {
+  if (is_reference_type(type)) {
     decorators |= ON_UNKNOWN_OOP_REF;
   }
 
@@ -2730,7 +2730,7 @@ bool LibraryCallKit::inline_unsafe_load_store(const BasicType type, const LoadSt
   Compile::AliasType* alias_type = C->alias_type(adr_type);
   BasicType bt = alias_type->basic_type();
   if (bt != T_ILLEGAL &&
-      ((bt == T_OBJECT || bt == T_ARRAY) != (type == T_OBJECT))) {
+      (is_reference_type(bt) != (type == T_OBJECT))) {
     // Don't intrinsify mismatched object accesses.
     return false;
   }
@@ -2767,7 +2767,7 @@ bool LibraryCallKit::inline_unsafe_load_store(const BasicType type, const LoadSt
 
   int alias_idx = C->get_alias_index(adr_type);
 
-  if (type == T_OBJECT || type == T_ARRAY) {
+  if (is_reference_type(type)) {
     decorators |= IN_HEAP | ON_UNKNOWN_OOP_REF;
 
     // Transformation of a value which could be NULL pointer (CastPP #NULL)
@@ -4817,8 +4817,8 @@ bool LibraryCallKit::inline_arraycopy() {
   if (has_src && has_dest && can_emit_guards) {
     BasicType src_elem  = top_src->klass()->as_array_klass()->element_type()->basic_type();
     BasicType dest_elem = top_dest->klass()->as_array_klass()->element_type()->basic_type();
-    if (src_elem  == T_ARRAY)  src_elem  = T_OBJECT;
-    if (dest_elem == T_ARRAY)  dest_elem = T_OBJECT;
+    if (is_reference_type(src_elem))   src_elem  = T_OBJECT;
+    if (is_reference_type(dest_elem))  dest_elem = T_OBJECT;
 
     if (src_elem == dest_elem && src_elem == T_OBJECT) {
       // If both arrays are object arrays then having the exact types

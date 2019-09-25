@@ -44,8 +44,8 @@ import java.io.ObjectInputStream;
 import java.util.Arrays;
 
 /**
- * A <code>ChoiceFormat</code> allows you to attach a format to a range of numbers.
- * It is generally used in a <code>MessageFormat</code> for handling plurals.
+ * A {@code ChoiceFormat} allows you to attach a format to a range of numbers.
+ * It is generally used in a {@code MessageFormat} for handling plurals.
  * The choice is specified with an ascending list of doubles, where each item
  * specifies a half-open interval up to the next item:
  * <blockquote>
@@ -60,15 +60,15 @@ import java.util.Arrays;
  *
  * <p>
  * <strong>Note:</strong>
- * <code>ChoiceFormat</code> differs from the other <code>Format</code>
- * classes in that you create a <code>ChoiceFormat</code> object with a
- * constructor (not with a <code>getInstance</code> style factory
- * method). The factory methods aren't necessary because <code>ChoiceFormat</code>
+ * {@code ChoiceFormat} differs from the other {@code Format}
+ * classes in that you create a {@code ChoiceFormat} object with a
+ * constructor (not with a {@code getInstance} style factory
+ * method). The factory methods aren't necessary because {@code ChoiceFormat}
  * doesn't require any complex setup for a given locale. In fact,
- * <code>ChoiceFormat</code> doesn't implement any locale specific behavior.
+ * {@code ChoiceFormat} doesn't implement any locale specific behavior.
  *
  * <p>
- * When creating a <code>ChoiceFormat</code>, you must specify an array of formats
+ * When creating a {@code ChoiceFormat}, you must specify an array of formats
  * and an array of limits. The length of these arrays must be the same.
  * For example,
  * <ul>
@@ -78,7 +78,7 @@ import java.util.Arrays;
  * <li>
  *     <em>limits</em> = {0, 1, ChoiceFormat.nextDouble(1)}<br>
  *     <em>formats</em> = {"no files", "one file", "many files"}<br>
- *     (<code>nextDouble</code> can be used to get the next higher double, to
+ *     ({@code nextDouble} can be used to get the next higher double, to
  *     make the half-open interval.)
  * </ul>
  *
@@ -381,7 +381,7 @@ public class ChoiceFormat extends NumberFormat {
 
     /**
      * Specialization of format. This method really calls
-     * <code>format(double, StringBuffer, FieldPosition)</code>
+     * {@code format(double, StringBuffer, FieldPosition)}
      * thus the range of longs that are supported is only equal to
      * the range that can be stored by double. This will never be
      * a practical limitation.
@@ -542,16 +542,16 @@ public class ChoiceFormat extends NumberFormat {
 
     /**
      * A list of lower bounds for the choices.  The formatter will return
-     * <code>choiceFormats[i]</code> if the number being formatted is greater than or equal to
-     * <code>choiceLimits[i]</code> and less than <code>choiceLimits[i+1]</code>.
+     * {@code choiceFormats[i]} if the number being formatted is greater than or equal to
+     * {@code choiceLimits[i]} and less than {@code choiceLimits[i+1]}.
      * @serial
      */
     private double[] choiceLimits;
 
     /**
      * A list of choice strings.  The formatter will return
-     * <code>choiceFormats[i]</code> if the number being formatted is greater than or equal to
-     * <code>choiceLimits[i]</code> and less than <code>choiceLimits[i+1]</code>.
+     * {@code choiceFormats[i]} if the number being formatted is greater than or equal to
+     * {@code choiceLimits[i]} and less than {@code choiceLimits[i+1]}.
      * @serial
      */
     private String[] choiceFormats;

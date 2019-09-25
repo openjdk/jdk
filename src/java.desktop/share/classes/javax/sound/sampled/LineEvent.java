@@ -60,6 +60,7 @@ public class LineEvent extends EventObject {
      * @see #getType
      * @serial
      */
+    @SuppressWarnings("serial") // Not statically typed as Serializable
     private final Type type;
 
     /**

@@ -56,13 +56,13 @@ import sun.util.locale.provider.LocaleProviderAdapter;
 import sun.util.locale.provider.LocaleServiceProviderPool;
 
 /**
- * <code>NumberFormat</code> is the abstract base class for all number
+ * {@code NumberFormat} is the abstract base class for all number
  * formats. This class provides the interface for formatting and parsing
- * numbers. <code>NumberFormat</code> also provides methods for determining
+ * numbers. {@code NumberFormat} also provides methods for determining
  * which locales have number formats, and what their names are.
  *
  * <p>
- * <code>NumberFormat</code> helps you to format and parse numbers for any locale.
+ * {@code NumberFormat} helps you to format and parse numbers for any locale.
  * Your code can be completely independent of the locale conventions for
  * decimal points, thousands-separators, or even the particular decimal
  * digits used, or whether the number format is even decimal.
@@ -88,7 +88,7 @@ import sun.util.locale.provider.LocaleServiceProviderPool;
  * }</pre>
  * </blockquote>
  * To format a number for a different Locale, specify it in the
- * call to <code>getInstance</code>.
+ * call to {@code getInstance}.
  * <blockquote>
  * <pre>{@code
  * NumberFormat nf = NumberFormat.getInstance(Locale.FRENCH);
@@ -107,25 +107,25 @@ import sun.util.locale.provider.LocaleServiceProviderPool;
  * myNumber = nf.parse(myString);
  * }</pre>
  * </blockquote>
- * Use <code>getInstance</code> or <code>getNumberInstance</code> to get the
- * normal number format. Use <code>getIntegerInstance</code> to get an
- * integer number format. Use <code>getCurrencyInstance</code> to get the
+ * Use {@code getInstance} or {@code getNumberInstance} to get the
+ * normal number format. Use {@code getIntegerInstance} to get an
+ * integer number format. Use {@code getCurrencyInstance} to get the
  * currency number format. Use {@code getCompactNumberInstance} to get the
  * compact number format to format a number in shorter form. For example,
  * {@code 2000} can be formatted as {@code "2K"} in
- * {@link java.util.Locale#US US locale}. Use <code>getPercentInstance</code>
+ * {@link java.util.Locale#US US locale}. Use {@code getPercentInstance}
  * to get a format for displaying percentages. With this format, a fraction
  * like 0.53 is displayed as 53%.
  *
  * <p>
  * You can also control the display of numbers with such methods as
- * <code>setMinimumFractionDigits</code>.
+ * {@code setMinimumFractionDigits}.
  * If you want even more control over the format or parsing,
  * or want to give your users more control,
- * you can try casting the <code>NumberFormat</code> you get from the factory methods
+ * you can try casting the {@code NumberFormat} you get from the factory methods
  * to a {@code DecimalFormat} or {@code CompactNumberFormat} depending on
  * the factory method used. This will work for the vast majority of locales;
- * just remember to put it in a <code>try</code> block in case you encounter
+ * just remember to put it in a {@code try} block in case you encounter
  * an unusual one.
  *
  * <p>
@@ -149,8 +149,8 @@ import sun.util.locale.provider.LocaleServiceProviderPool;
  * point, use setParseIntegerOnly.
  *
  * <p>
- * You can also use forms of the <code>parse</code> and <code>format</code>
- * methods with <code>ParsePosition</code> and <code>FieldPosition</code> to
+ * You can also use forms of the {@code parse} and {@code format}
+ * methods with {@code ParsePosition} and {@code FieldPosition} to
  * allow you to:
  * <ul>
  * <li> progressively parse through pieces of a string
@@ -159,15 +159,15 @@ import sun.util.locale.provider.LocaleServiceProviderPool;
  * For example, you can align numbers in two ways:
  * <ol>
  * <li> If you are using a monospaced font with spacing for alignment,
- *      you can pass the <code>FieldPosition</code> in your format call, with
- *      <code>field</code> = <code>INTEGER_FIELD</code>. On output,
- *      <code>getEndIndex</code> will be set to the offset between the
+ *      you can pass the {@code FieldPosition} in your format call, with
+ *      {@code field} = {@code INTEGER_FIELD}. On output,
+ *      {@code getEndIndex} will be set to the offset between the
  *      last character of the integer and the decimal. Add
  *      (desiredSpaceCount - getEndIndex) spaces at the front of the string.
  *
  * <li> If you are using proportional fonts,
  *      instead of padding with spaces, measure the width
- *      of the string in pixels from the start to <code>getEndIndex</code>.
+ *      of the string in pixels from the start to {@code getEndIndex}.
  *      Then move the pen by
  *      (desiredPixelWidth - widthToAlignmentPoint) before drawing the text.
  *      It also works where there is no decimal, but possibly additional
@@ -238,17 +238,17 @@ public abstract class NumberFormat extends Format  {
      * <p>
      * This implementation extracts the number's value using
      * {@link java.lang.Number#longValue()} for all integral type values that
-     * can be converted to <code>long</code> without loss of information,
-     * including <code>BigInteger</code> values with a
+     * can be converted to {@code long} without loss of information,
+     * including {@code BigInteger} values with a
      * {@link java.math.BigInteger#bitLength() bit length} of less than 64,
      * and {@link java.lang.Number#doubleValue()} for all other types. It
      * then calls
      * {@link #format(long,java.lang.StringBuffer,java.text.FieldPosition)}
      * or {@link #format(double,java.lang.StringBuffer,java.text.FieldPosition)}.
      * This may result in loss of magnitude information and precision for
-     * <code>BigInteger</code> and <code>BigDecimal</code> values.
+     * {@code BigInteger} and {@code BigDecimal} values.
      * @param number     the number to format
-     * @param toAppendTo the <code>StringBuffer</code> to which the formatted
+     * @param toAppendTo the {@code StringBuffer} to which the formatted
      *                   text is to be appended
      * @param pos        keeps track on the position of the field within the
      *                   returned string. For example, for formatting a number
@@ -258,11 +258,11 @@ public abstract class NumberFormat extends Format  {
      *                   and end index of {@code fieldPosition} will be set
      *                   to 0 and 9, respectively for the output string
      *                   {@code 1,234,567.89}.
-     * @return           the value passed in as <code>toAppendTo</code>
-     * @throws           IllegalArgumentException if <code>number</code> is
-     *                   null or not an instance of <code>Number</code>.
-     * @throws           NullPointerException if <code>toAppendTo</code> or
-     *                   <code>pos</code> is null
+     * @return           the value passed in as {@code toAppendTo}
+     * @throws           IllegalArgumentException if {@code number} is
+     *                   null or not an instance of {@code Number}.
+     * @throws           NullPointerException if {@code toAppendTo} or
+     *                   {@code pos} is null
      * @throws           ArithmeticException if rounding is needed with rounding
      *                   mode being set to RoundingMode.UNNECESSARY
      * @see              java.text.FieldPosition
@@ -285,26 +285,26 @@ public abstract class NumberFormat extends Format  {
     }
 
     /**
-     * Parses text from a string to produce a <code>Number</code>.
+     * Parses text from a string to produce a {@code Number}.
      * <p>
      * The method attempts to parse text starting at the index given by
-     * <code>pos</code>.
-     * If parsing succeeds, then the index of <code>pos</code> is updated
+     * {@code pos}.
+     * If parsing succeeds, then the index of {@code pos} is updated
      * to the index after the last character used (parsing does not necessarily
      * use all characters up to the end of the string), and the parsed
-     * number is returned. The updated <code>pos</code> can be used to
+     * number is returned. The updated {@code pos} can be used to
      * indicate the starting point for the next call to this method.
-     * If an error occurs, then the index of <code>pos</code> is not
-     * changed, the error index of <code>pos</code> is set to the index of
+     * If an error occurs, then the index of {@code pos} is not
+     * changed, the error index of {@code pos} is set to the index of
      * the character where the error occurred, and null is returned.
      * <p>
      * See the {@link #parse(String, ParsePosition)} method for more information
      * on number parsing.
      *
-     * @param source A <code>String</code>, part of which should be parsed.
-     * @param pos A <code>ParsePosition</code> object with index and error
+     * @param source A {@code String}, part of which should be parsed.
+     * @param pos A {@code ParsePosition} object with index and error
      *            index information as described above.
-     * @return A <code>Number</code> parsed from the string. In case of
+     * @return A {@code Number} parsed from the string. In case of
      *         error, returns null.
      * @throws NullPointerException if {@code source} or {@code pos} is null.
      */
@@ -422,8 +422,8 @@ public abstract class NumberFormat extends Format  {
      * See the {@link #parse(String, ParsePosition)} method for more information
      * on number parsing.
      *
-     * @param source A <code>String</code> whose beginning should be parsed.
-     * @return A <code>Number</code> parsed from the string.
+     * @param source A {@code String} whose beginning should be parsed.
+     * @return A {@code Number} parsed from the string.
      * @throws    ParseException if the beginning of the specified string
      *            cannot be parsed.
      */
@@ -677,16 +677,16 @@ public abstract class NumberFormat extends Format  {
 
     /**
      * Returns an array of all locales for which the
-     * <code>get*Instance</code> methods of this class can return
+     * {@code get*Instance} methods of this class can return
      * localized instances.
      * The returned array represents the union of locales supported by the Java
      * runtime and by installed
      * {@link java.text.spi.NumberFormatProvider NumberFormatProvider} implementations.
-     * It must contain at least a <code>Locale</code> instance equal to
+     * It must contain at least a {@code Locale} instance equal to
      * {@link java.util.Locale#US Locale.US}.
      *
      * @return An array of locales for which localized
-     *         <code>NumberFormat</code> instances are available.
+     *         {@code NumberFormat} instances are available.
      */
     public static Locale[] getAvailableLocales() {
         LocaleServiceProviderPool pool =
@@ -888,9 +888,9 @@ public abstract class NumberFormat extends Format  {
      * {@link #setCurrency(java.util.Currency) setCurrency}.
      * <p>
      * The default implementation throws
-     * <code>UnsupportedOperationException</code>.
+     * {@code UnsupportedOperationException}.
      *
-     * @return the currency used by this number format, or <code>null</code>
+     * @return the currency used by this number format, or {@code null}
      * @throws    UnsupportedOperationException if the number format class
      * doesn't implement currency formatting
      * @since 1.4
@@ -905,12 +905,12 @@ public abstract class NumberFormat extends Format  {
      * number of fraction digits used by the number format.
      * <p>
      * The default implementation throws
-     * <code>UnsupportedOperationException</code>.
+     * {@code UnsupportedOperationException}.
      *
      * @param currency the new currency to be used by this number format
      * @throws    UnsupportedOperationException if the number format class
      * doesn't implement currency formatting
-     * @throws    NullPointerException if <code>currency</code> is null
+     * @throws    NullPointerException if {@code currency} is null
      * @since 1.4
      */
     public void setCurrency(Currency currency) {
@@ -926,7 +926,7 @@ public abstract class NumberFormat extends Format  {
      *
      * @throws    UnsupportedOperationException The default implementation
      *     always throws this exception
-     * @return The <code>RoundingMode</code> used for this NumberFormat.
+     * @return The {@code RoundingMode} used for this NumberFormat.
      * @see #setRoundingMode(RoundingMode)
      * @since 1.6
      */
@@ -943,8 +943,8 @@ public abstract class NumberFormat extends Format  {
      *
      * @throws    UnsupportedOperationException The default implementation
      *     always throws this exception
-     * @throws    NullPointerException if <code>roundingMode</code> is null
-     * @param roundingMode The <code>RoundingMode</code> to be used
+     * @throws    NullPointerException if {@code roundingMode} is null
+     * @param roundingMode The {@code RoundingMode} to be used
      * @see #getRoundingMode()
      * @since 1.6
      */
@@ -996,20 +996,20 @@ public abstract class NumberFormat extends Format  {
     /**
      * First, read in the default serializable data.
      *
-     * Then, if <code>serialVersionOnStream</code> is less than 1, indicating that
+     * Then, if {@code serialVersionOnStream} is less than 1, indicating that
      * the stream was written by JDK 1.1,
-     * set the <code>int</code> fields such as <code>maximumIntegerDigits</code>
-     * to be equal to the <code>byte</code> fields such as <code>maxIntegerDigits</code>,
-     * since the <code>int</code> fields were not present in JDK 1.1.
+     * set the {@code int} fields such as {@code maximumIntegerDigits}
+     * to be equal to the {@code byte} fields such as {@code maxIntegerDigits},
+     * since the {@code int} fields were not present in JDK 1.1.
      * Finally, set serialVersionOnStream back to the maximum allowed value so that
      * default serialization will work properly if this object is streamed out again.
      *
-     * <p>If <code>minimumIntegerDigits</code> is greater than
-     * <code>maximumIntegerDigits</code> or <code>minimumFractionDigits</code>
-     * is greater than <code>maximumFractionDigits</code>, then the stream data
-     * is invalid and this method throws an <code>InvalidObjectException</code>.
+     * <p>If {@code minimumIntegerDigits} is greater than
+     * {@code maximumIntegerDigits} or {@code minimumFractionDigits}
+     * is greater than {@code maximumFractionDigits}, then the stream data
+     * is invalid and this method throws an {@code InvalidObjectException}.
      * In addition, if any of these values is negative, then this method throws
-     * an <code>InvalidObjectException</code>.
+     * an {@code InvalidObjectException}.
      *
      * @since 1.2
      */
@@ -1035,9 +1035,9 @@ public abstract class NumberFormat extends Format  {
 
     /**
      * Write out the default serializable data, after first setting
-     * the <code>byte</code> fields such as <code>maxIntegerDigits</code> to be
-     * equal to the <code>int</code> fields such as <code>maximumIntegerDigits</code>
-     * (or to <code>Byte.MAX_VALUE</code>, whichever is smaller), for compatibility
+     * the {@code byte} fields such as {@code maxIntegerDigits} to be
+     * equal to the {@code int} fields such as {@code maximumIntegerDigits}
+     * (or to {@code Byte.MAX_VALUE}, whichever is smaller), for compatibility
      * with the JDK 1.1 version of the stream format.
      *
      * @since 1.2
@@ -1076,16 +1076,16 @@ public abstract class NumberFormat extends Format  {
 
     /**
      * The maximum number of digits allowed in the integer portion of a
-     * number.  <code>maxIntegerDigits</code> must be greater than or equal to
-     * <code>minIntegerDigits</code>.
+     * number.  {@code maxIntegerDigits} must be greater than or equal to
+     * {@code minIntegerDigits}.
      * <p>
      * <strong>Note:</strong> This field exists only for serialization
      * compatibility with JDK 1.1.  In Java platform 2 v1.2 and higher, the new
-     * <code>int</code> field <code>maximumIntegerDigits</code> is used instead.
-     * When writing to a stream, <code>maxIntegerDigits</code> is set to
-     * <code>maximumIntegerDigits</code> or <code>Byte.MAX_VALUE</code>,
+     * {@code int} field {@code maximumIntegerDigits} is used instead.
+     * When writing to a stream, {@code maxIntegerDigits} is set to
+     * {@code maximumIntegerDigits} or {@code Byte.MAX_VALUE},
      * whichever is smaller.  When reading from a stream, this field is used
-     * only if <code>serialVersionOnStream</code> is less than 1.
+     * only if {@code serialVersionOnStream} is less than 1.
      *
      * @serial
      * @see #getMaximumIntegerDigits
@@ -1094,16 +1094,16 @@ public abstract class NumberFormat extends Format  {
 
     /**
      * The minimum number of digits allowed in the integer portion of a
-     * number.  <code>minimumIntegerDigits</code> must be less than or equal to
-     * <code>maximumIntegerDigits</code>.
+     * number.  {@code minimumIntegerDigits} must be less than or equal to
+     * {@code maximumIntegerDigits}.
      * <p>
      * <strong>Note:</strong> This field exists only for serialization
      * compatibility with JDK 1.1.  In Java platform 2 v1.2 and higher, the new
-     * <code>int</code> field <code>minimumIntegerDigits</code> is used instead.
-     * When writing to a stream, <code>minIntegerDigits</code> is set to
-     * <code>minimumIntegerDigits</code> or <code>Byte.MAX_VALUE</code>,
+     * {@code int} field {@code minimumIntegerDigits} is used instead.
+     * When writing to a stream, {@code minIntegerDigits} is set to
+     * {@code minimumIntegerDigits} or {@code Byte.MAX_VALUE},
      * whichever is smaller.  When reading from a stream, this field is used
-     * only if <code>serialVersionOnStream</code> is less than 1.
+     * only if {@code serialVersionOnStream} is less than 1.
      *
      * @serial
      * @see #getMinimumIntegerDigits
@@ -1112,16 +1112,16 @@ public abstract class NumberFormat extends Format  {
 
     /**
      * The maximum number of digits allowed in the fractional portion of a
-     * number.  <code>maximumFractionDigits</code> must be greater than or equal to
-     * <code>minimumFractionDigits</code>.
+     * number.  {@code maximumFractionDigits} must be greater than or equal to
+     * {@code minimumFractionDigits}.
      * <p>
      * <strong>Note:</strong> This field exists only for serialization
      * compatibility with JDK 1.1.  In Java platform 2 v1.2 and higher, the new
-     * <code>int</code> field <code>maximumFractionDigits</code> is used instead.
-     * When writing to a stream, <code>maxFractionDigits</code> is set to
-     * <code>maximumFractionDigits</code> or <code>Byte.MAX_VALUE</code>,
+     * {@code int} field {@code maximumFractionDigits} is used instead.
+     * When writing to a stream, {@code maxFractionDigits} is set to
+     * {@code maximumFractionDigits} or {@code Byte.MAX_VALUE},
      * whichever is smaller.  When reading from a stream, this field is used
-     * only if <code>serialVersionOnStream</code> is less than 1.
+     * only if {@code serialVersionOnStream} is less than 1.
      *
      * @serial
      * @see #getMaximumFractionDigits
@@ -1130,16 +1130,16 @@ public abstract class NumberFormat extends Format  {
 
     /**
      * The minimum number of digits allowed in the fractional portion of a
-     * number.  <code>minimumFractionDigits</code> must be less than or equal to
-     * <code>maximumFractionDigits</code>.
+     * number.  {@code minimumFractionDigits} must be less than or equal to
+     * {@code maximumFractionDigits}.
      * <p>
      * <strong>Note:</strong> This field exists only for serialization
      * compatibility with JDK 1.1.  In Java platform 2 v1.2 and higher, the new
-     * <code>int</code> field <code>minimumFractionDigits</code> is used instead.
-     * When writing to a stream, <code>minFractionDigits</code> is set to
-     * <code>minimumFractionDigits</code> or <code>Byte.MAX_VALUE</code>,
+     * {@code int} field {@code minimumFractionDigits} is used instead.
+     * When writing to a stream, {@code minFractionDigits} is set to
+     * {@code minimumFractionDigits} or {@code Byte.MAX_VALUE},
      * whichever is smaller.  When reading from a stream, this field is used
-     * only if <code>serialVersionOnStream</code> is less than 1.
+     * only if {@code serialVersionOnStream} is less than 1.
      *
      * @serial
      * @see #getMinimumFractionDigits
@@ -1158,8 +1158,8 @@ public abstract class NumberFormat extends Format  {
 
     /**
      * The maximum number of digits allowed in the integer portion of a
-     * number.  <code>maximumIntegerDigits</code> must be greater than or equal to
-     * <code>minimumIntegerDigits</code>.
+     * number.  {@code maximumIntegerDigits} must be greater than or equal to
+     * {@code minimumIntegerDigits}.
      *
      * @serial
      * @since 1.2
@@ -1169,8 +1169,8 @@ public abstract class NumberFormat extends Format  {
 
     /**
      * The minimum number of digits allowed in the integer portion of a
-     * number.  <code>minimumIntegerDigits</code> must be less than or equal to
-     * <code>maximumIntegerDigits</code>.
+     * number.  {@code minimumIntegerDigits} must be less than or equal to
+     * {@code maximumIntegerDigits}.
      *
      * @serial
      * @since 1.2
@@ -1180,8 +1180,8 @@ public abstract class NumberFormat extends Format  {
 
     /**
      * The maximum number of digits allowed in the fractional portion of a
-     * number.  <code>maximumFractionDigits</code> must be greater than or equal to
-     * <code>minimumFractionDigits</code>.
+     * number.  {@code maximumFractionDigits} must be greater than or equal to
+     * {@code minimumFractionDigits}.
      *
      * @serial
      * @since 1.2
@@ -1191,8 +1191,8 @@ public abstract class NumberFormat extends Format  {
 
     /**
      * The minimum number of digits allowed in the fractional portion of a
-     * number.  <code>minimumFractionDigits</code> must be less than or equal to
-     * <code>maximumFractionDigits</code>.
+     * number.  {@code minimumFractionDigits} must be less than or equal to
+     * {@code maximumFractionDigits}.
      *
      * @serial
      * @since 1.2
@@ -1203,21 +1203,21 @@ public abstract class NumberFormat extends Format  {
     static final int currentSerialVersion = 1;
 
     /**
-     * Describes the version of <code>NumberFormat</code> present on the stream.
+     * Describes the version of {@code NumberFormat} present on the stream.
      * Possible values are:
      * <ul>
      * <li><b>0</b> (or uninitialized): the JDK 1.1 version of the stream format.
-     *     In this version, the <code>int</code> fields such as
-     *     <code>maximumIntegerDigits</code> were not present, and the <code>byte</code>
-     *     fields such as <code>maxIntegerDigits</code> are used instead.
+     *     In this version, the {@code int} fields such as
+     *     {@code maximumIntegerDigits} were not present, and the {@code byte}
+     *     fields such as {@code maxIntegerDigits} are used instead.
      *
      * <li><b>1</b>: the 1.2 version of the stream format.  The values of the
-     *     <code>byte</code> fields such as <code>maxIntegerDigits</code> are ignored,
-     *     and the <code>int</code> fields such as <code>maximumIntegerDigits</code>
+     *     {@code byte} fields such as {@code maxIntegerDigits} are ignored,
+     *     and the {@code int} fields such as {@code maximumIntegerDigits}
      *     are used instead.
      * </ul>
-     * When streaming out a <code>NumberFormat</code>, the most recent format
-     * (corresponding to the highest allowable <code>serialVersionOnStream</code>)
+     * When streaming out a {@code NumberFormat}, the most recent format
+     * (corresponding to the highest allowable {@code serialVersionOnStream})
      * is always written.
      *
      * @serial
@@ -1236,9 +1236,9 @@ public abstract class NumberFormat extends Format  {
     //
     /**
      * Defines constants that are used as attribute keys in the
-     * <code>AttributedCharacterIterator</code> returned
-     * from <code>NumberFormat.formatToCharacterIterator</code> and as
-     * field identifiers in <code>FieldPosition</code>.
+     * {@code AttributedCharacterIterator} returned
+     * from {@code NumberFormat.formatToCharacterIterator} and as
+     * field identifiers in {@code FieldPosition}.
      *
      * @since 1.4
      */

@@ -41,7 +41,7 @@ class ZipException extends IOException {
     private static final long serialVersionUID = 8000196834066748623L;
 
     /**
-     * Constructs a <code>ZipException</code> with <code>null</code>
+     * Constructs a {@code ZipException} with {@code null}
      * as its error detail message.
      */
     public ZipException() {
@@ -49,7 +49,7 @@ class ZipException extends IOException {
     }
 
     /**
-     * Constructs a <code>ZipException</code> with the specified detail
+     * Constructs a {@code ZipException} with the specified detail
      * message.
      *
      * @param   s   the detail message.

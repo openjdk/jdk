@@ -164,18 +164,18 @@ class ZipInputStream extends InflaterInputStream implements ZipConstants {
 
     /**
      * Reads from the current ZIP entry into an array of bytes.
-     * If <code>len</code> is not zero, the method
+     * If {@code len} is not zero, the method
      * blocks until some input is available; otherwise, no
-     * bytes are read and <code>0</code> is returned.
+     * bytes are read and {@code 0} is returned.
      * @param b the buffer into which the data is read
-     * @param off the start offset in the destination array <code>b</code>
+     * @param off the start offset in the destination array {@code b}
      * @param len the maximum number of bytes read
      * @return the actual number of bytes read, or -1 if the end of the
      *         entry is reached
-     * @throws     NullPointerException if <code>b</code> is <code>null</code>.
-     * @throws     IndexOutOfBoundsException if <code>off</code> is negative,
-     * <code>len</code> is negative, or <code>len</code> is greater than
-     * <code>b.length - off</code>
+     * @throws     NullPointerException if {@code b} is {@code null}.
+     * @throws     IndexOutOfBoundsException if {@code off} is negative,
+     * {@code len} is negative, or {@code len} is greater than
+     * {@code b.length - off}
      * @throws    ZipException if a ZIP file error has occurred
      * @throws    IOException if an I/O error has occurred
      */
@@ -327,7 +327,7 @@ class ZipInputStream extends InflaterInputStream implements ZipConstants {
     }
 
     /**
-     * Creates a new <code>ZipEntry</code> object for the specified
+     * Creates a new {@code ZipEntry} object for the specified
      * entry name.
      *
      * @param name the ZIP file entry name

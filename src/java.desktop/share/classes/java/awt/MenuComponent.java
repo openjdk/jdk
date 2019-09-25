@@ -470,7 +470,7 @@ public abstract class MenuComponent implements java.io.Serializable {
      *  though it won't actually implement the interface - that will be up
      *  to the individual objects which extend MenuComponent.
      */
-
+    @SuppressWarnings("serial") // Not statically typed as Serializable
     AccessibleContext accessibleContext = null;
 
     /**

@@ -338,9 +338,6 @@ JLI_Launch(int argc, char ** argv,              /* main argc, argv */
     /* Set the -Dsun.java.launcher pseudo property */
     SetJavaLauncherProp();
 
-    /* set the -Dsun.java.launcher.* platform properties */
-    SetJavaLauncherPlatformProps();
-
     return JVMInit(&ifn, threadStackSize, argc, argv, mode, what, ret);
 }
 /*

@@ -79,7 +79,7 @@ public class AssertionError extends Error {
 
     /**
      * Constructs an AssertionError with its detail message derived
-     * from the specified <code>boolean</code>, which is converted to
+     * from the specified {@code boolean}, which is converted to
      * a string as defined in section 15.18.1.1 of
      * <cite>The Java&trade; Language Specification</cite>.
      *
@@ -91,7 +91,7 @@ public class AssertionError extends Error {
 
     /**
      * Constructs an AssertionError with its detail message derived
-     * from the specified <code>char</code>, which is converted to a
+     * from the specified {@code char}, which is converted to a
      * string as defined in section 15.18.1.1 of
      * <cite>The Java&trade; Language Specification</cite>.
      *
@@ -103,7 +103,7 @@ public class AssertionError extends Error {
 
     /**
      * Constructs an AssertionError with its detail message derived
-     * from the specified <code>int</code>, which is converted to a
+     * from the specified {@code int}, which is converted to a
      * string as defined in section 15.18.1.1 of
      * <cite>The Java&trade; Language Specification</cite>.
      *
@@ -115,7 +115,7 @@ public class AssertionError extends Error {
 
     /**
      * Constructs an AssertionError with its detail message derived
-     * from the specified <code>long</code>, which is converted to a
+     * from the specified {@code long}, which is converted to a
      * string as defined in section 15.18.1.1 of
      * <cite>The Java&trade; Language Specification</cite>.
      *
@@ -127,7 +127,7 @@ public class AssertionError extends Error {
 
     /**
      * Constructs an AssertionError with its detail message derived
-     * from the specified <code>float</code>, which is converted to a
+     * from the specified {@code float}, which is converted to a
      * string as defined in section 15.18.1.1 of
      * <cite>The Java&trade; Language Specification</cite>.
      *
@@ -139,7 +139,7 @@ public class AssertionError extends Error {
 
     /**
      * Constructs an AssertionError with its detail message derived
-     * from the specified <code>double</code>, which is converted to a
+     * from the specified {@code double}, which is converted to a
      * string as defined in section 15.18.1.1 of
      * <cite>The Java&trade; Language Specification</cite>.
      *

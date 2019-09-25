@@ -46,6 +46,7 @@ import org.graalvm.compiler.core.common.type.StampFactory;
 import org.graalvm.compiler.core.common.type.TypeReference;
 import org.graalvm.compiler.debug.GraalError;
 import org.graalvm.compiler.hotspot.GraalHotSpotVMConfig;
+import org.graalvm.compiler.hotspot.HotSpotGraalRuntimeProvider;
 import org.graalvm.compiler.hotspot.nodes.CurrentJavaThreadNode;
 import org.graalvm.compiler.hotspot.replacements.AESCryptSubstitutions;
 import org.graalvm.compiler.hotspot.replacements.ArraysSupportSubstitutions;
@@ -128,10 +129,17 @@ public class HotSpotGraphBuilderPlugins {
      * @param foreignCalls
      * @param options
      */
-    public static Plugins create(CompilerConfiguration compilerConfiguration, GraalHotSpotVMConfig config, HotSpotWordTypes wordTypes, MetaAccessProvider metaAccess,
-                    ConstantReflectionProvider constantReflection, SnippetReflectionProvider snippetReflection, ForeignCallsProvider foreignCalls, ReplacementsImpl replacements,
+    public static Plugins create(HotSpotGraalRuntimeProvider graalRuntime,
+                    CompilerConfiguration compilerConfiguration,
+                    GraalHotSpotVMConfig config,
+                    HotSpotWordTypes wordTypes,
+                    MetaAccessProvider metaAccess,
+                    ConstantReflectionProvider constantReflection,
+                    SnippetReflectionProvider snippetReflection,
+                    ForeignCallsProvider foreignCalls,
+                    ReplacementsImpl replacements,
                     OptionValues options) {
-        InvocationPlugins invocationPlugins = new HotSpotInvocationPlugins(config, compilerConfiguration);
+        InvocationPlugins invocationPlugins = new HotSpotInvocationPlugins(graalRuntime, config, compilerConfiguration);
 
         Plugins plugins = new Plugins(invocationPlugins);
         NodeIntrinsificationProvider nodeIntrinsificationProvider = new NodeIntrinsificationProvider(metaAccess, snippetReflection, foreignCalls, wordTypes);
@@ -149,9 +157,13 @@ public class HotSpotGraphBuilderPlugins {
         }
 
         if (GeneratePIC.getValue(options)) {
-            plugins.setClassInitializationPlugin(new HotSpotClassInitializationPlugin());
+            plugins.setClassInitializationPlugin(new HotSpotAOTClassInitializationPlugin());
             if (TieredAOT.getValue(options)) {
                 plugins.setProfilingPlugin(new HotSpotAOTProfilingPlugin());
+            }
+        } else {
+            if (config.instanceKlassInitThreadOffset != -1) {
+                plugins.setClassInitializationPlugin(new HotSpotJITClassInitializationPlugin());
             }
         }
 

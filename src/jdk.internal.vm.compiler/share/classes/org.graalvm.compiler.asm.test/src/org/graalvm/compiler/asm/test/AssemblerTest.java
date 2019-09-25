@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,6 +32,7 @@ import org.graalvm.compiler.api.test.Graal;
 import org.graalvm.compiler.code.CompilationResult;
 import org.graalvm.compiler.code.DisassemblerProvider;
 import org.graalvm.compiler.core.common.CompilationIdentifier;
+import org.graalvm.compiler.core.common.alloc.RegisterAllocationConfig;
 import org.graalvm.compiler.core.gen.LIRGenerationProvider;
 import org.graalvm.compiler.core.target.Backend;
 import org.graalvm.compiler.debug.DebugContext;
@@ -91,7 +92,8 @@ public abstract class AssemblerTest extends GraalTest {
             RegisterConfig registerConfig = codeCache.getRegisterConfig();
             CompilationIdentifier compilationId = backend.getCompilationIdentifier(method);
             StructuredGraph graph = new StructuredGraph.Builder(options, debug).method(method).compilationId(compilationId).build();
-            CallingConvention cc = ((LIRGenerationProvider) backend).newLIRGenerationResult(compilationId, null, null, graph, null).getCallingConvention();
+            RegisterAllocationConfig registerAllocationConfig = backend.newRegisterAllocationConfig(null, null);
+            CallingConvention cc = ((LIRGenerationProvider) backend).newLIRGenerationResult(compilationId, null, registerAllocationConfig, graph, null).getCallingConvention();
 
             CompilationResult compResult = new CompilationResult(graph.compilationId());
             byte[] targetCode = test.generateCode(compResult, codeCache.getTarget(), registerConfig, cc);

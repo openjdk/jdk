@@ -1253,14 +1253,8 @@ Zone America/Rio_Branco	-4:31:12 -	LMT	1914
 # From Juan Correa (2016-12-04):
 # Magallanes region ... will keep DST (UTC -3) all year round....
 # http://www.soychile.cl/Santiago/Sociedad/2016/12/04/433428/Bachelet-firmo-el-decreto-para-establecer-un-horario-unico-para-la-Region-de-Magallanes.aspx
-#
 # From Deborah Goldsmith (2017-01-19):
 # http://www.diariooficial.interior.gob.cl/publicaciones/2017/01/17/41660/01/1169626.pdf
-# From Paul Eggert (2017-01-19):
-# The above says the Magallanes change expires 2019-05-11 at 24:00,
-# so in theory, they will revert to -04/-03 after that, which means
-# they will switch from -03 to -04 one hour after Santiago does that day.
-# For now, assume that they will not revert.
 
 # From Juan Correa (2018-08-13):
 # As of moments ago, the Ministry of Energy in Chile has announced the new
@@ -1281,6 +1275,11 @@ Zone America/Rio_Branco	-4:31:12 -	LMT	1914
 # So we extend the new rules on Saturdays at 24:00 mainland time indefinitely.
 # From Juan Correa (2019-02-04):
 # http://www.diariooficial.interior.gob.cl/publicaciones/2018/11/23/42212/01/1498738.pdf
+# From Paul Eggert (2019-09-01):
+# The above says the Magallanes exception expires 2022-04-02 at 24:00,
+# so in theory, they will revert to -04/-03 after that.
+# For now, assume that they will not revert,
+# since they have extended the expiration date once already.
 
 # Rule	NAME	FROM	TO	TYPE	IN	ON	AT	SAVE	LETTER/S
 Rule	Chile	1927	1931	-	Sep	 1	0:00	1:00	-

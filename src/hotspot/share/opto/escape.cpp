@@ -2113,7 +2113,8 @@ bool ConnectionGraph::is_oop_field(Node* n, int offset, bool* unsafe) {
       }
     }
   }
-  return (bt == T_OBJECT || bt == T_NARROWOOP || bt == T_ARRAY);
+  // Note: T_NARROWOOP is not classed as a real reference type
+  return (is_reference_type(bt) || bt == T_NARROWOOP);
 }
 
 // Returns unique pointed java object or NULL.

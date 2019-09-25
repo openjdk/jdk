@@ -1454,8 +1454,8 @@ void ciMethod::print_impl(outputStream* st) {
 // ------------------------------------------------------------------
 
 static BasicType erase_to_word_type(BasicType bt) {
-  if (is_subword_type(bt)) return T_INT;
-  if (bt == T_ARRAY)       return T_OBJECT;
+  if (is_subword_type(bt))   return T_INT;
+  if (is_reference_type(bt)) return T_OBJECT;
   return bt;
 }
 

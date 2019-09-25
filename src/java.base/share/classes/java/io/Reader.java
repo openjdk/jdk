@@ -262,7 +262,7 @@ public abstract class Reader implements Readable, Closeable {
      *
      * @return    The number of characters actually skipped
      *
-     * @throws     IllegalArgumentException  If <code>n</code> is negative.
+     * @throws     IllegalArgumentException  If {@code n} is negative.
      * @throws     IOException  If an I/O error occurs
      */
     public long skip(long n) throws IOException {

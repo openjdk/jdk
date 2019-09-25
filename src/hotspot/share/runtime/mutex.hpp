@@ -81,21 +81,22 @@ class Mutex : public CHeapObj<mtSynchronizer> {
   char _name[MUTEX_NAME_LEN];            // Name of mutex/monitor
 
   // Debugging fields for naming, deadlock detection, etc. (some only used in debug mode)
-#ifndef PRODUCT
-  bool      _allow_vm_block;
-  DEBUG_ONLY(int _rank;)                 // rank (to avoid/detect potential deadlocks)
-  DEBUG_ONLY(Mutex* _next;)              // Used by a Thread to link up owned locks
-  DEBUG_ONLY(Thread* _last_owner;)       // the last thread to own the lock
-  DEBUG_ONLY(static bool contains(Mutex* locks, Mutex* lock);)
-  DEBUG_ONLY(static Mutex* get_least_ranked_lock(Mutex* locks);)
-  DEBUG_ONLY(Mutex* get_least_ranked_lock_besides_this(Mutex* locks);)
-#endif
+#ifdef ASSERT
+  bool    _allow_vm_block;
+  int     _rank;                 // rank (to avoid/detect potential deadlocks)
+  Mutex*  _next;                 // Used by a Thread to link up owned locks
+  Thread* _last_owner;           // the last thread to own the lock
+  static bool contains(Mutex* locks, Mutex* lock);
+  static Mutex* get_least_ranked_lock(Mutex* locks);
+  Mutex* get_least_ranked_lock_besides_this(Mutex* locks);
+#endif  // ASSERT
 
-  void set_owner_implementation(Thread* owner)                        PRODUCT_RETURN;
-  void check_prelock_state     (Thread* thread, bool safepoint_check) PRODUCT_RETURN;
-  void check_block_state       (Thread* thread)                       PRODUCT_RETURN;
-  void check_safepoint_state   (Thread* thread, bool safepoint_check) NOT_DEBUG_RETURN;
+  void set_owner_implementation(Thread* owner)                        NOT_DEBUG({ _owner = owner;});
+  void check_block_state       (Thread* thread)                       NOT_DEBUG_RETURN;
+  void check_safepoint_state   (Thread* thread)                       NOT_DEBUG_RETURN;
+  void check_no_safepoint_state(Thread* thread)                       NOT_DEBUG_RETURN;
   void assert_owner            (Thread* expected)                     NOT_DEBUG_RETURN;
+  void no_safepoint_verifier   (Thread* thread, bool enable)          NOT_DEBUG_RETURN;
 
  public:
   enum {
@@ -171,21 +172,16 @@ class Mutex : public CHeapObj<mtSynchronizer> {
   #ifndef PRODUCT
     void print_on(outputStream* st) const;
     void print() const                      { print_on(::tty); }
-    DEBUG_ONLY(int    rank() const          { return _rank; })
-    bool   allow_vm_block()                 { return _allow_vm_block; }
-
-    DEBUG_ONLY(Mutex *next()  const         { return _next; })
-    DEBUG_ONLY(void   set_next(Mutex *next) { _next = next; })
   #endif
+  #ifdef ASSERT
+    int    rank() const          { return _rank; }
+    bool   allow_vm_block()      { return _allow_vm_block; }
 
-  void set_owner(Thread* owner) {
-  #ifndef PRODUCT
-    set_owner_implementation(owner);
-    DEBUG_ONLY(void verify_mutex(Thread* thr);)
-  #else
-    _owner = owner;
-  #endif
-  }
+    Mutex *next()  const         { return _next; }
+    void   set_next(Mutex *next) { _next = next; }
+  #endif // ASSERT
+
+  void set_owner(Thread* owner)             { set_owner_implementation(owner); }
 };
 
 class Monitor : public Mutex {

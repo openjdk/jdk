@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2019, Oracle and/or its affiliates. All rights reserved.
  */
 
 /* Copyright  (c) 2002 Graz University of Technology. All rights reserved.
@@ -117,8 +117,8 @@ JNIEXPORT jlong JNICALL Java_sun_security_pkcs11_wrapper_PKCS11_C_1OpenSession
 #endif /* NO_CALLBACKS */
 
     TRACE0("DEBUG: C_OpenSession");
-    TRACE1(", slotID=%u", ckSlotID);
-    TRACE1(", flags=%x", ckFlags);
+    TRACE1(", slotID=%lu", ckSlotID);
+    TRACE1(", flags=%lu", (unsigned long) ckFlags);
     TRACE0(" ... ");
 
     rv = (*ckpFunctions->C_OpenSession)(ckSlotID, ckFlags, ckpApplication, ckNotify, &ckSessionHandle);
@@ -136,7 +136,7 @@ JNIEXPORT jlong JNICALL Java_sun_security_pkcs11_wrapper_PKCS11_C_1OpenSession
     }
 
     TRACE0("got session");
-    TRACE1(", SessionHandle=%u", ckSessionHandle);
+    TRACE1(", SessionHandle=%lu", (unsigned long) ckSessionHandle);
     TRACE0(" ... ");
 
     jSessionHandle = ckULongToJLong(ckSessionHandle);

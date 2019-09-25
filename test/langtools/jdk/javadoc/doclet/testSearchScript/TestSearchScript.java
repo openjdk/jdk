@@ -149,11 +149,12 @@ public class TestSearchScript extends JavadocTester {
         checkSearch(inv, "operty", List.of());
 
         // search tag
-        checkSearch(inv, "search tag", List.of("search tag"));
-        checkSearch(inv, "search   tag", List.of("search tag"));
-        checkSearch(inv, "search ", List.of("search tag"));
-        checkSearch(inv, "tag", List.of("search tag"));
-        checkSearch(inv, "sea", List.of("search tag"));
+        checkSearch(inv, "search tag", List.of("multiline search tag", "search tag"));
+        checkSearch(inv, "search   tag", List.of("multiline search tag", "search tag"));
+        checkSearch(inv, "search ", List.of("multiline search tag", "search tag"));
+        checkSearch(inv, "tag", List.of("multiline search tag", "search tag"));
+        checkSearch(inv, "sea", List.of("multiline search tag", "search tag"));
+        checkSearch(inv, "multi", List.of("multiline search tag"));
         checkSearch(inv, "ear", List.of());
     }
 
@@ -244,7 +245,7 @@ public class TestSearchScript extends JavadocTester {
                 List.of("listpkg.List.of(E, E, E, E)", "listpkg.List.of(E, E, E, E, E)"));
         checkSearch(inv, "l . o (e,e,e,",
                 List.of("listpkg.List.of(E, E, E, E)", "listpkg.List.of(E, E, E, E, E)"));
-        checkSearch(inv, "search    \tt", List.of("search tag"));
+        checkSearch(inv, "search    \tt", List.of("other search tag"));
         checkSearch(inv, "sear ch", List.of());
         checkSearch(inv, "( e ..", List.of("listpkg.List.of(E...)"));
         checkSearch(inv, "( i [ ]", List.of("listpkg.Nolist.withArrayArg(int[])"));

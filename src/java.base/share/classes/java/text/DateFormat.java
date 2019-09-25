@@ -58,7 +58,7 @@ import sun.util.locale.provider.LocaleServiceProviderPool;
  * formats and parses dates or time in a language-independent manner.
  * The date/time formatting subclass, such as {@link SimpleDateFormat}, allows for
  * formatting (i.e., date &rarr; text), parsing (text &rarr; date), and
- * normalization.  The date is represented as a <code>Date</code> object or
+ * normalization.  The date is represented as a {@code Date} object or
  * as the milliseconds since January 1, 1970, 00:00:00 GMT.
  *
  * <p>{@code DateFormat} provides many class methods for obtaining default date/time
@@ -185,15 +185,15 @@ public abstract class DateFormat extends Format {
      *
      * <p>Subclasses should initialize this field to a {@link Calendar}
      * appropriate for the {@link Locale} associated with this
-     * <code>DateFormat</code>.
+     * {@code DateFormat}.
      * @serial
      */
     protected Calendar calendar;
 
     /**
-     * The number formatter that <code>DateFormat</code> uses to format numbers
+     * The number formatter that {@code DateFormat} uses to format numbers
      * in dates and times.  Subclasses should initialize this to a number format
-     * appropriate for the locale associated with this <code>DateFormat</code>.
+     * appropriate for the locale associated with this {@code DateFormat}.
      * @serial
      */
     protected NumberFormat numberFormat;
@@ -383,8 +383,8 @@ public abstract class DateFormat extends Format {
      * See the {@link #parse(String, ParsePosition)} method for more information
      * on date parsing.
      *
-     * @param source A <code>String</code> whose beginning should be parsed.
-     * @return A <code>Date</code> parsed from the string.
+     * @param source A {@code String} whose beginning should be parsed.
+     * @return A {@code Date} parsed from the string.
      * @throws    ParseException if the beginning of the specified string
      *            cannot be parsed.
      */
@@ -427,26 +427,26 @@ public abstract class DateFormat extends Format {
     public abstract Date parse(String source, ParsePosition pos);
 
     /**
-     * Parses text from a string to produce a <code>Date</code>.
+     * Parses text from a string to produce a {@code Date}.
      * <p>
      * The method attempts to parse text starting at the index given by
-     * <code>pos</code>.
-     * If parsing succeeds, then the index of <code>pos</code> is updated
+     * {@code pos}.
+     * If parsing succeeds, then the index of {@code pos} is updated
      * to the index after the last character used (parsing does not necessarily
      * use all characters up to the end of the string), and the parsed
-     * date is returned. The updated <code>pos</code> can be used to
+     * date is returned. The updated {@code pos} can be used to
      * indicate the starting point for the next call to this method.
-     * If an error occurs, then the index of <code>pos</code> is not
-     * changed, the error index of <code>pos</code> is set to the index of
+     * If an error occurs, then the index of {@code pos} is not
+     * changed, the error index of {@code pos} is set to the index of
      * the character where the error occurred, and null is returned.
      * <p>
      * See the {@link #parse(String, ParsePosition)} method for more information
      * on date parsing.
      *
-     * @param source A <code>String</code>, part of which should be parsed.
-     * @param pos A <code>ParsePosition</code> object with index and error
+     * @param source A {@code String}, part of which should be parsed.
+     * @param pos A {@code ParsePosition} object with index and error
      *            index information as described above.
-     * @return A <code>Date</code> parsed from the string. In case of
+     * @return A {@code Date} parsed from the string. In case of
      *         error, returns null.
      * @throws NullPointerException if {@code source} or {@code pos} is null.
      */
@@ -628,16 +628,16 @@ public abstract class DateFormat extends Format {
 
     /**
      * Returns an array of all locales for which the
-     * <code>get*Instance</code> methods of this class can return
+     * {@code get*Instance} methods of this class can return
      * localized instances.
      * The returned array represents the union of locales supported by the Java
      * runtime and by installed
      * {@link java.text.spi.DateFormatProvider DateFormatProvider} implementations.
-     * It must contain at least a <code>Locale</code> instance equal to
+     * It must contain at least a {@code Locale} instance equal to
      * {@link java.util.Locale#US Locale.US}.
      *
      * @return An array of locales for which localized
-     *         <code>DateFormat</code> instances are available.
+     *         {@code DateFormat} instances are available.
      */
     public static Locale[] getAvailableLocales()
     {
@@ -854,9 +854,9 @@ public abstract class DateFormat extends Format {
 
     /**
      * Defines constants that are used as attribute keys in the
-     * <code>AttributedCharacterIterator</code> returned
-     * from <code>DateFormat.formatToCharacterIterator</code> and as
-     * field identifiers in <code>FieldPosition</code>.
+     * {@code AttributedCharacterIterator} returned
+     * from {@code DateFormat.formatToCharacterIterator} and as
+     * field identifiers in {@code FieldPosition}.
      * <p>
      * The class also provides two methods to map
      * between its constants and the corresponding Calendar constants.
@@ -881,13 +881,13 @@ public abstract class DateFormat extends Format {
         private int calendarField;
 
         /**
-         * Returns the <code>Field</code> constant that corresponds to
-         * the <code>Calendar</code> constant <code>calendarField</code>.
-         * If there is no direct mapping between the <code>Calendar</code>
-         * constant and a <code>Field</code>, null is returned.
+         * Returns the {@code Field} constant that corresponds to
+         * the {@code Calendar} constant {@code calendarField}.
+         * If there is no direct mapping between the {@code Calendar}
+         * constant and a {@code Field}, null is returned.
          *
-         * @throws IllegalArgumentException if <code>calendarField</code> is
-         *         not the value of a <code>Calendar</code> field constant.
+         * @throws IllegalArgumentException if {@code calendarField} is
+         *         not the value of a {@code Calendar} field constant.
          * @param calendarField Calendar field constant
          * @return Field instance representing calendarField.
          * @see java.util.Calendar
@@ -902,14 +902,14 @@ public abstract class DateFormat extends Format {
         }
 
         /**
-         * Creates a <code>Field</code>.
+         * Creates a {@code Field}.
          *
-         * @param name the name of the <code>Field</code>
-         * @param calendarField the <code>Calendar</code> constant this
-         *        <code>Field</code> corresponds to; any value, even one
-         *        outside the range of legal <code>Calendar</code> values may
-         *        be used, but <code>-1</code> should be used for values
-         *        that don't correspond to legal <code>Calendar</code> values
+         * @param name the name of the {@code Field}
+         * @param calendarField the {@code Calendar} constant this
+         *        {@code Field} corresponds to; any value, even one
+         *        outside the range of legal {@code Calendar} values may
+         *        be used, but {@code -1} should be used for values
+         *        that don't correspond to legal {@code Calendar} values
          */
         protected Field(String name, int calendarField) {
             super(name);
@@ -924,11 +924,11 @@ public abstract class DateFormat extends Format {
         }
 
         /**
-         * Returns the <code>Calendar</code> field associated with this
+         * Returns the {@code Calendar} field associated with this
          * attribute. For example, if this represents the hours field of
-         * a <code>Calendar</code>, this would return
-         * <code>Calendar.HOUR</code>. If there is no corresponding
-         * <code>Calendar</code> constant, this will return -1.
+         * a {@code Calendar}, this would return
+         * {@code Calendar.HOUR}. If there is no corresponding
+         * {@code Calendar} constant, this will return -1.
          *
          * @return Calendar constant for this field
          * @see java.util.Calendar

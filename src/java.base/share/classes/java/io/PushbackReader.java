@@ -142,7 +142,7 @@ public class PushbackReader extends FilterReader {
     /**
      * Pushes back a single character by copying it to the front of the
      * pushback buffer. After this method returns, the next character to be read
-     * will have the value <code>(char)c</code>.
+     * will have the value {@code (char)c}.
      *
      * @param  c  The int value representing a character to be pushed back
      *
@@ -161,8 +161,8 @@ public class PushbackReader extends FilterReader {
     /**
      * Pushes back a portion of an array of characters by copying it to the
      * front of the pushback buffer.  After this method returns, the next
-     * character to be read will have the value <code>cbuf[off]</code>, the
-     * character after that will have the value <code>cbuf[off+1]</code>, and
+     * character to be read will have the value {@code cbuf[off]}, the
+     * character after that will have the value {@code cbuf[off+1]}, and
      * so forth.
      *
      * @param      cbuf  Character array
@@ -185,8 +185,8 @@ public class PushbackReader extends FilterReader {
     /**
      * Pushes back an array of characters by copying it to the front of the
      * pushback buffer.  After this method returns, the next character to be
-     * read will have the value <code>cbuf[0]</code>, the character after that
-     * will have the value <code>cbuf[1]</code>, and so forth.
+     * read will have the value {@code cbuf[0]}, the character after that
+     * will have the value {@code cbuf[1]}, and so forth.
      *
      * @param      cbuf  Character array to push back
      *
@@ -210,8 +210,8 @@ public class PushbackReader extends FilterReader {
     }
 
     /**
-     * Marks the present position in the stream. The <code>mark</code>
-     * for class <code>PushbackReader</code> always throws an exception.
+     * Marks the present position in the stream. The {@code mark}
+     * for class {@code PushbackReader} always throws an exception.
      *
      * @throws     IOException  Always, since mark is not supported
      */
@@ -220,8 +220,8 @@ public class PushbackReader extends FilterReader {
     }
 
     /**
-     * Resets the stream. The <code>reset</code> method of
-     * <code>PushbackReader</code> always throws an exception.
+     * Resets the stream. The {@code reset} method of
+     * {@code PushbackReader} always throws an exception.
      *
      * @throws     IOException  Always, since reset is not supported
      */
@@ -261,7 +261,7 @@ public class PushbackReader extends FilterReader {
      *
      * @return    The number of characters actually skipped
      *
-     * @throws    IllegalArgumentException  If <code>n</code> is negative.
+     * @throws    IllegalArgumentException  If {@code n} is negative.
      * @throws    IOException  If an I/O error occurs
      */
     public long skip(long n) throws IOException {

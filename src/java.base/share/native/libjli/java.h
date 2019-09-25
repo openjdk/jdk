@@ -161,7 +161,6 @@ void PrintMachineDependentOptions();
 int CallJavaMainInNewThread(jlong stack_size, void* args);
 
 /* sun.java.launcher.* platform properties. */
-void SetJavaLauncherPlatformProps(void);
 void SetJavaCommandLineProp(char* what, int argc, char** argv);
 void SetJavaLauncherProp(void);
 

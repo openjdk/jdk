@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -44,7 +44,7 @@ import jdk.vm.ci.meta.ConstantPool;
 import jdk.vm.ci.meta.ResolvedJavaMethod;
 import jdk.vm.ci.meta.ResolvedJavaType;
 
-public final class HotSpotClassInitializationPlugin implements ClassInitializationPlugin {
+public final class HotSpotAOTClassInitializationPlugin implements ClassInitializationPlugin {
     private static boolean shouldApply(GraphBuilderContext builder, ResolvedJavaType type) {
         if (!builder.parsingIntrinsic()) {
             if (!type.isArray()) {
@@ -86,18 +86,11 @@ public final class HotSpotClassInitializationPlugin implements ClassInitializati
 
     @Override
     public boolean supportsLazyInitialization(ConstantPool cp) {
-        // jdk.vm.ci.hotspot.HotSpotConstantPool is final, so we can
-        // directly compare Classes.
-        return (cp instanceof HotSpotConstantPool);
+        return true;
     }
 
     @Override
     public void loadReferencedType(GraphBuilderContext builder, ConstantPool cp, int cpi, int opcode) {
-        if (cp instanceof HotSpotConstantPool) {
-            ((HotSpotConstantPool) cp).loadReferencedType(cpi, opcode, false);
-        } else {
-            cp.loadReferencedType(cpi, opcode);
-        }
+        ((HotSpotConstantPool) cp).loadReferencedType(cpi, opcode, false);
     }
-
 }

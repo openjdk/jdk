@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2009, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,7 +25,6 @@
 package org.graalvm.compiler.nodes;
 
 import org.graalvm.compiler.core.common.type.Stamp;
-import org.graalvm.compiler.graph.IterableNodeType;
 import org.graalvm.compiler.graph.NodeClass;
 import org.graalvm.compiler.nodeinfo.NodeInfo;
 
@@ -34,7 +33,7 @@ import org.graalvm.compiler.nodeinfo.NodeInfo;
  * (ie. have more than one successor).
  */
 @NodeInfo
-public abstract class ControlSplitNode extends FixedNode implements IterableNodeType {
+public abstract class ControlSplitNode extends FixedNode {
     public static final NodeClass<ControlSplitNode> TYPE = NodeClass.create(ControlSplitNode.class);
 
     protected ControlSplitNode(NodeClass<? extends ControlSplitNode> c, Stamp stamp) {

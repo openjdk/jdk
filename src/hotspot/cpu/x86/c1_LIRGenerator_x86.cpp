@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -671,7 +671,7 @@ void LIRGenerator::do_CompareOp(CompareOp* x) {
 
 LIR_Opr LIRGenerator::atomic_cmpxchg(BasicType type, LIR_Opr addr, LIRItem& cmp_value, LIRItem& new_value) {
   LIR_Opr ill = LIR_OprFact::illegalOpr;  // for convenience
-  if (type == T_OBJECT || type == T_ARRAY) {
+  if (is_reference_type(type)) {
     cmp_value.load_item_force(FrameMap::rax_oop_opr);
     new_value.load_item();
     __ cas_obj(addr->as_address_ptr()->base(), cmp_value.result(), new_value.result(), ill, ill);
@@ -693,7 +693,7 @@ LIR_Opr LIRGenerator::atomic_cmpxchg(BasicType type, LIR_Opr addr, LIRItem& cmp_
 }
 
 LIR_Opr LIRGenerator::atomic_xchg(BasicType type, LIR_Opr addr, LIRItem& value) {
-  bool is_oop = type == T_OBJECT || type == T_ARRAY;
+  bool is_oop = is_reference_type(type);
   LIR_Opr result = new_register(type);
   value.load_item();
   // Because we want a 2-arg form of xchg and xadd

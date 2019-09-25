@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -113,6 +113,11 @@ public final class HotSpotGraalRuntime implements HotSpotGraalRuntimeProvider {
     private final String runtimeName;
     private final String compilerConfigurationName;
     private final HotSpotBackend hostBackend;
+
+    public GlobalMetrics getMetricValues() {
+        return metricValues;
+    }
+
     private final GlobalMetrics metricValues = new GlobalMetrics();
     private final List<SnippetCounter.Group> snippetCounterGroups;
     private final HotSpotGC garbageCollector;

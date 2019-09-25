@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -73,6 +73,8 @@ public final class BranchProbabilityNode extends FloatingNode implements Simplif
 
     public static final double VERY_FAST_PATH_PROBABILITY = 0.999;
     public static final double VERY_SLOW_PATH_PROBABILITY = 1 - VERY_FAST_PATH_PROBABILITY;
+
+    public static final double DEOPT_PROBABILITY = 0.0;
 
     /*
      * This probability may seem excessive, but it makes a difference in long running loops. Lets

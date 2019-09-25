@@ -171,9 +171,8 @@ void MemAllocator::Allocation::check_for_valid_allocation_state() const {
   // This is a VM policy failure, so how do we exhaustively test it?
   assert(!_thread->has_pending_exception(),
          "shouldn't be allocating with pending exception");
-  // Allocation of an oop can always invoke a safepoint,
-  // hence, the true argument.
-  _thread->check_for_valid_safepoint_state(true);
+  // Allocation of an oop can always invoke a safepoint.
+  _thread->check_for_valid_safepoint_state();
 }
 #endif
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -859,7 +859,7 @@ void BCEscapeAnalyzer::iterate_one_block(ciBlock *blk, StateInfo &state, Growabl
           if (s.cur_bc() != Bytecodes::_getstatic) {
             set_method_escape(state.apop());
           }
-          if (field_type == T_OBJECT || field_type == T_ARRAY) {
+          if (is_reference_type(field_type)) {
             state.apush(unknown_obj);
           } else if (type2size[field_type] == 1) {
             state.spush();
@@ -873,7 +873,7 @@ void BCEscapeAnalyzer::iterate_one_block(ciBlock *blk, StateInfo &state, Growabl
         { bool will_link;
           ciField* field = s.get_field(will_link);
           BasicType field_type = field->type()->basic_type();
-          if (field_type == T_OBJECT || field_type == T_ARRAY) {
+          if (is_reference_type(field_type)) {
             set_global_escape(state.apop());
           } else if (type2size[field_type] == 1) {
             state.spop();

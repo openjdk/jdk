@@ -25,6 +25,13 @@ package mappkg;
 
 import java.util.Iterator;
 
+/**
+ * Map interface.
+ *
+ * {@index "multiline
+ *          search
+ *          tag"}
+ */
 public interface Map {
     public void put(Object key, Object value);
     public boolean contains(Object key);

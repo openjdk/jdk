@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,8 +28,11 @@ import java.io.Closeable;
 import java.io.IOException;
 import java.lang.reflect.Array;
 import java.util.Arrays;
+import java.util.Collections;
+import java.util.IdentityHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 import org.graalvm.compiler.api.replacements.SnippetReflectionProvider;
 import org.graalvm.compiler.debug.DebugContext;
@@ -106,7 +109,7 @@ interface GraphPrinter extends Closeable, JavaConstantFormatter {
 
     /**
      * Use the real {@link Object#toString()} method for {@link JavaConstant JavaConstants} that are
-     * wrapping trusted types, other just return the results of {@link JavaConstant#toString()}.
+     * wrapping trusted types, otherwise just return the result of {@link JavaConstant#toString()}.
      */
     @Override
     default String format(JavaConstant constant) {
@@ -122,7 +125,8 @@ interface GraphPrinter extends Closeable, JavaConstantFormatter {
                 } catch (Throwable ex) {
                 }
                 if (obj != null) {
-                    return GraphPrinter.constantToString(obj);
+                    Set<Object> visited = Collections.newSetFromMap(new IdentityHashMap<>());
+                    return GraphPrinter.constantToString(obj, visited);
                 }
             }
         }
@@ -180,49 +184,61 @@ interface GraphPrinter extends Closeable, JavaConstantFormatter {
         return s;
     }
 
-    static String constantToString(Object value) {
-        Class<?> c = value.getClass();
-        String suffix = "";
-        if (c.isArray()) {
-            return constantArrayToString(value);
-        } else if (value instanceof Enum) {
-            return ((Enum<?>) value).name();
-        } else if (isToStringTrusted(c)) {
-            try {
-                return value.toString();
-            } catch (Throwable t) {
-                suffix = "[toString error: " + t.getClass().getName() + "]";
-                if (isToStringTrusted(t.getClass())) {
-                    try {
-                        suffix = "[toString error: " + t + "]";
-                    } catch (Throwable t2) {
-                        // No point in going further
+    static String constantToString(Object value, Set<Object> visited) {
+        if (!visited.contains(value)) {
+            Class<?> c = value.getClass();
+            String suffix = "";
+            if (c.isArray()) {
+                return constantArrayToString(value, visited);
+            }
+            visited.add(value);
+            if (value instanceof Enum) {
+                return ((Enum<?>) value).name();
+            } else if (isToStringTrusted(c)) {
+                try {
+                    return value.toString();
+                } catch (Throwable t) {
+                    suffix = "[toString error: " + t.getClass().getName() + "]";
+                    if (isToStringTrusted(t.getClass())) {
+                        try {
+                            suffix = "[toString error: " + t + "]";
+                        } catch (Throwable t2) {
+                            // No point in going further
+                        }
                     }
                 }
             }
+            return MetaUtil.getSimpleName(c, true) + "@" + Integer.toHexString(System.identityHashCode(value)) + suffix;
+        } else {
+            return "...";
         }
-        return MetaUtil.getSimpleName(c, true) + "@" + Integer.toHexString(System.identityHashCode(value)) + suffix;
+
     }
 
-    static String constantArrayToString(Object array) {
-        Class<?> componentType = array.getClass().getComponentType();
-        assert componentType != null;
-        int arrayLength = Array.getLength(array);
-        StringBuilder buf = new StringBuilder(MetaUtil.getSimpleName(componentType, true)).append('[').append(arrayLength).append("]{");
-        int length = arrayLength;
-        boolean primitive = componentType.isPrimitive();
-        for (int i = 0; i < length; i++) {
-            if (primitive) {
-                buf.append(Array.get(array, i));
-            } else {
-                Object o = ((Object[]) array)[i];
-                buf.append(o == null ? "null" : constantToString(o));
+    static String constantArrayToString(Object array, Set<Object> visited) {
+        if (!visited.contains(array)) {
+            visited.add(array);
+            Class<?> componentType = array.getClass().getComponentType();
+            assert componentType != null;
+            int arrayLength = Array.getLength(array);
+            StringBuilder buf = new StringBuilder(MetaUtil.getSimpleName(componentType, true)).append('[').append(arrayLength).append("]{");
+            int length = arrayLength;
+            boolean primitive = componentType.isPrimitive();
+            for (int i = 0; i < length; i++) {
+                if (primitive) {
+                    buf.append(Array.get(array, i));
+                } else {
+                    Object o = ((Object[]) array)[i];
+                    buf.append(o == null ? "null" : constantToString(o, visited));
+                }
+                if (i != length - 1) {
+                    buf.append(", ");
+                }
             }
-            if (i != length - 1) {
-                buf.append(", ");
-            }
+            return buf.append('}').toString();
+        } else {
+            return "...";
         }
-        return buf.append('}').toString();
     }
 
     @SuppressWarnings("try")

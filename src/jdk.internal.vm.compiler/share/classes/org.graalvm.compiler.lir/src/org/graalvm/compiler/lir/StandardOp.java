@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,6 +24,8 @@
 
 package org.graalvm.compiler.lir;
 
+import static jdk.vm.ci.code.ValueUtil.asStackSlot;
+import static jdk.vm.ci.code.ValueUtil.isStackSlot;
 import static org.graalvm.compiler.lir.LIRInstruction.OperandFlag.CONST;
 import static org.graalvm.compiler.lir.LIRInstruction.OperandFlag.HINT;
 import static org.graalvm.compiler.lir.LIRInstruction.OperandFlag.OUTGOING;
@@ -31,9 +33,11 @@ import static org.graalvm.compiler.lir.LIRInstruction.OperandFlag.REG;
 import static org.graalvm.compiler.lir.LIRInstruction.OperandFlag.STACK;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.EnumSet;
 
 import jdk.internal.vm.compiler.collections.EconomicSet;
+import jdk.internal.vm.compiler.collections.Equivalence;
 import org.graalvm.compiler.asm.Label;
 import org.graalvm.compiler.core.common.GraalOptions;
 import org.graalvm.compiler.core.common.cfg.AbstractBlockBase;
@@ -300,22 +304,41 @@ public class StandardOp {
      * {@linkplain #remove(EconomicSet) pruned} and a mapping from registers to the frame slots in
      * which they are saved can be {@linkplain #getMap(FrameMap) retrieved}.
      */
-    public interface SaveRegistersOp {
+    public abstract static class SaveRegistersOp extends LIRInstruction {
+        public static final LIRInstructionClass<SaveRegistersOp> TYPE = LIRInstructionClass.create(SaveRegistersOp.class);
 
         /**
-         * Determines if the {@link #remove(EconomicSet)} operation is supported for this object.
+         * The registers (potentially) saved by this operation.
          */
-        boolean supportsRemove();
+        protected final Register[] savedRegisters;
+
+        /**
+         * The slots to which the registers are saved.
+         */
+        @Def(STACK) protected final AllocatableValue[] slots;
+
+        /**
+         *
+         * @param savedRegisters the registers saved by this operation which may be subject to
+         *            {@linkplain #remove(EconomicSet) pruning}
+         * @param savedRegisterLocations the slots to which the registers are saved
+         */
+        protected SaveRegistersOp(LIRInstructionClass<? extends SaveRegistersOp> c, Register[] savedRegisters, AllocatableValue[] savedRegisterLocations) {
+            super(c);
+            assert Arrays.asList(savedRegisterLocations).stream().allMatch(LIRValueUtil::isVirtualStackSlot);
+            this.savedRegisters = savedRegisters;
+            this.slots = savedRegisterLocations;
+        }
 
         /**
          * Prunes {@code doNotSave} from the registers saved by this operation.
          *
          * @param doNotSave registers that should not be saved by this operation
          * @return the number of registers pruned
-         * @throws UnsupportedOperationException if removal is not {@linkplain #supportsRemove()
-         *             supported}
          */
-        int remove(EconomicSet<Register> doNotSave);
+        public int remove(EconomicSet<Register> doNotSave) {
+            return prune(doNotSave, savedRegisters);
+        }
 
         /**
          * Gets a map from the saved registers saved by this operation to the frame slots in which
@@ -324,8 +347,89 @@ public class StandardOp {
          * @param frameMap used to {@linkplain FrameMap#offsetForStackSlot(StackSlot) convert} a
          *            virtual slot to a frame slot index
          */
-        RegisterSaveLayout getMap(FrameMap frameMap);
 
+        public RegisterSaveLayout getMap(FrameMap frameMap) {
+            int total = 0;
+            for (int i = 0; i < savedRegisters.length; i++) {
+                if (savedRegisters[i] != null) {
+                    total++;
+                }
+            }
+            Register[] keys = new Register[total];
+            int[] values = new int[total];
+            if (total != 0) {
+                int mapIndex = 0;
+                for (int i = 0; i < savedRegisters.length; i++) {
+                    if (savedRegisters[i] != null) {
+                        keys[mapIndex] = savedRegisters[i];
+                        assert isStackSlot(slots[i]) : "not a StackSlot: " + slots[i];
+                        StackSlot slot = asStackSlot(slots[i]);
+                        values[mapIndex] = indexForStackSlot(frameMap, slot);
+                        mapIndex++;
+                    }
+                }
+                assert mapIndex == total;
+            }
+            return new RegisterSaveLayout(keys, values);
+        }
+
+        public Register[] getSavedRegisters() {
+            return savedRegisters;
+        }
+
+        public EconomicSet<Register> getSaveableRegisters() {
+            EconomicSet<Register> registers = EconomicSet.create(Equivalence.IDENTITY);
+            for (Register r : savedRegisters) {
+                registers.add(r);
+            }
+            return registers;
+        }
+
+        public AllocatableValue[] getSlots() {
+            return slots;
+        }
+
+        @Override
+        public abstract void emitCode(CompilationResultBuilder crb);
+
+        static int prune(EconomicSet<Register> toRemove, Register[] registers) {
+            int pruned = 0;
+            for (int i = 0; i < registers.length; i++) {
+                if (registers[i] != null) {
+                    if (toRemove.contains(registers[i])) {
+                        registers[i] = null;
+                        pruned++;
+                    }
+                }
+            }
+            return pruned;
+        }
+
+        /**
+         * Computes the index of a stack slot relative to slot 0. This is also the bit index of
+         * stack slots in the reference map.
+         *
+         * @param slot a stack slot
+         * @return the index of the stack slot
+         */
+        private static int indexForStackSlot(FrameMap frameMap, StackSlot slot) {
+            assert frameMap.offsetForStackSlot(slot) % frameMap.getTarget().wordSize == 0;
+            int value = frameMap.offsetForStackSlot(slot) / frameMap.getTarget().wordSize;
+            return value;
+        }
+    }
+
+    /**
+     * Marker interface for an operation that restores the registers saved by
+     * {@link SaveRegistersOp}.
+     */
+    public interface RestoreRegistersOp {
+    }
+
+    /**
+     * Marker interface for an operation that kills some set register and stack locations.
+     */
+    public interface ZapRegistersOp {
     }
 
     /**

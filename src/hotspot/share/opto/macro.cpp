@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -791,7 +791,7 @@ bool PhaseMacroExpand::scalar_replacement(AllocateNode *alloc, GrowableArray <Sa
 
       const Type *field_type;
       // The next code is taken from Parse::do_get_xxx().
-      if (basic_elem_type == T_OBJECT || basic_elem_type == T_ARRAY) {
+      if (is_reference_type(basic_elem_type)) {
         if (!elem_type->is_loaded()) {
           field_type = TypeInstPtr::BOTTOM;
         } else if (field != NULL && field->is_static_constant()) {

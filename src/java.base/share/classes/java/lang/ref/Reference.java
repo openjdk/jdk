@@ -323,10 +323,10 @@ public abstract class Reference<T> {
     /**
      * Returns this reference object's referent.  If this reference object has
      * been cleared, either by the program or by the garbage collector, then
-     * this method returns <code>null</code>.
+     * this method returns {@code null}.
      *
      * @return   The object to which this reference refers, or
-     *           <code>null</code> if this reference object has been cleared
+     *           {@code null} if this reference object has been cleared
      */
     @HotSpotIntrinsicCandidate
     public T get() {
@@ -350,9 +350,9 @@ public abstract class Reference<T> {
      * Tells whether or not this reference object has been enqueued, either by
      * the program or by the garbage collector.  If this reference object was
      * not registered with a queue when it was created, then this method will
-     * always return <code>false</code>.
+     * always return {@code false}.
      *
-     * @return   <code>true</code> if and only if this reference object has
+     * @return   {@code true} if and only if this reference object has
      *           been enqueued
      */
     public boolean isEnqueued() {
@@ -366,8 +366,8 @@ public abstract class Reference<T> {
      * <p> This method is invoked only by Java code; when the garbage collector
      * enqueues references it does so directly, without invoking this method.
      *
-     * @return   <code>true</code> if this reference object was successfully
-     *           enqueued; <code>false</code> if it was already enqueued or if
+     * @return   {@code true} if this reference object was successfully
+     *           enqueued; {@code false} if it was already enqueued or if
      *           it was not registered with a queue when it was created
      */
     public boolean enqueue() {

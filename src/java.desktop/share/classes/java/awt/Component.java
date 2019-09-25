@@ -469,6 +469,7 @@ public abstract class Component implements ImageObserver, MenuContainer,
      * @see #getFocusTraversalKeys
      * @since 1.4
      */
+    @SuppressWarnings("serial") // Not statically typed as Serializable
     Set<AWTKeyStroke>[] focusTraversalKeys;
 
     private static final String[] focusTraversalKeyPropertyNames = {
@@ -9293,6 +9294,7 @@ public abstract class Component implements ImageObserver, MenuContainer,
     /**
      * The {@code AccessibleContext} associated with this {@code Component}.
      */
+    @SuppressWarnings("serial") // Not statically typed as Serializable
     protected AccessibleContext accessibleContext = null;
 
     /**
@@ -9344,12 +9346,14 @@ public abstract class Component implements ImageObserver, MenuContainer,
          * A component listener to track show/hide/resize events
          * and convert them to PropertyChange events.
          */
+        @SuppressWarnings("serial") // Not statically typed as Serializable
         protected ComponentListener accessibleAWTComponentHandler = null;
 
         /**
          * A listener to track focus events
          * and convert them to PropertyChange events.
          */
+        @SuppressWarnings("serial") // Not statically typed as Serializable
         protected FocusListener accessibleAWTFocusHandler = null;
 
         /**

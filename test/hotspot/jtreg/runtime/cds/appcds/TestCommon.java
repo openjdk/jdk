@@ -218,7 +218,7 @@ public class TestCommon extends CDSTestUtils {
                 if (!mainModuleSpecified && !patchModuleSpecified) {
                     // If you have an empty classpath, you cannot specify a classlist!
                     if (opts.classList != null && opts.classList.length > 0) {
-                        throw new RuntimeException("test.dynamic.dump not supported empty classpath with non-empty classlist");
+                        throw new RuntimeException("test.dynamic.dump is not supported with an empty classpath while the classlist is not empty");
                     }
                     cmd.add("-version");
                 }
@@ -242,7 +242,12 @@ public class TestCommon extends CDSTestUtils {
         if (opts.appJarDir != null) {
             pb.directory(new File(opts.appJarDir));
         }
-        return executeAndLog(pb, "dump");
+
+        OutputAnalyzer output = executeAndLog(pb, "dump");
+        if (DYNAMIC_DUMP && isUnableToMap(output)) {
+            throw new SkippedException(UnableToMapMsg);
+        }
+        return output;
     }
 
     // This allows you to run the AppCDS tests with JFR enabled at runtime (though not at
@@ -462,9 +467,6 @@ public class TestCommon extends CDSTestUtils {
                                           String... suffix) throws Exception {
         OutputAnalyzer output = dump(appJar, classList, suffix);
         if (DYNAMIC_DUMP) {
-            if (isUnableToMap(output)) {
-                throw new SkippedException(UnableToMapMsg);
-            }
             output.shouldContain("Written dynamic archive");
         } else {
             output.shouldContain("Loading classes to share");
@@ -477,9 +479,6 @@ public class TestCommon extends CDSTestUtils {
                                           String... suffix) throws Exception {
         OutputAnalyzer output = dump(appJarDir, appJar, classList, suffix);
         if (DYNAMIC_DUMP) {
-            if (isUnableToMap(output)) {
-                throw new SkippedException(UnableToMapMsg);
-            }
             output.shouldContain("Written dynamic archive");
         } else {
             output.shouldContain("Loading classes to share");

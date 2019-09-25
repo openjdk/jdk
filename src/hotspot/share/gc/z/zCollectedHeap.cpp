@@ -23,13 +23,13 @@
 
 #include "precompiled.hpp"
 #include "gc/shared/gcHeapSummary.hpp"
-#include "gc/shared/locationPrinter.hpp"
 #include "gc/shared/suspendibleThreadSet.hpp"
 #include "gc/z/zCollectedHeap.hpp"
 #include "gc/z/zGlobals.hpp"
 #include "gc/z/zHeap.inline.hpp"
 #include "gc/z/zNMethod.hpp"
 #include "gc/z/zObjArrayAllocator.hpp"
+#include "gc/z/zOop.inline.hpp"
 #include "gc/z/zServiceability.hpp"
 #include "gc/z/zStat.hpp"
 #include "gc/z/zUtils.inline.hpp"
@@ -68,8 +68,7 @@ jint ZCollectedHeap::initialize() {
     return JNI_ENOMEM;
   }
 
-  Universe::calculate_verify_data((HeapWord*)ZAddressReservedStart,
-                                  (HeapWord*)ZAddressReservedEnd);
+  Universe::calculate_verify_data((HeapWord*)0, (HeapWord*)UINTPTR_MAX);
 
   return JNI_OK;
 }
@@ -116,7 +115,7 @@ bool ZCollectedHeap::is_in(const void* p) const {
 }
 
 uint32_t ZCollectedHeap::hash_oop(oop obj) const {
-  return _heap.hash_oop(obj);
+  return _heap.hash_oop(ZOop::to_address(obj));
 }
 
 HeapWord* ZCollectedHeap::allocate_new_tlab(size_t min_size, size_t requested_size, size_t* actual_size) {
@@ -285,12 +284,7 @@ void ZCollectedHeap::gc_threads_do(ThreadClosure* tc) const {
 }
 
 VirtualSpaceSummary ZCollectedHeap::create_heap_space_summary() {
-  const size_t capacity_in_words = capacity() / HeapWordSize;
-  const size_t max_capacity_in_words = max_capacity() / HeapWordSize;
-  HeapWord* const heap_start = (HeapWord*)ZAddressReservedStart;
-  return VirtualSpaceSummary(heap_start,
-                             heap_start + capacity_in_words,
-                             heap_start + max_capacity_in_words);
+  return VirtualSpaceSummary((HeapWord*)0, (HeapWord*)capacity(), (HeapWord*)max_capacity());
 }
 
 void ZCollectedHeap::safepoint_synchronize_begin() {
@@ -312,10 +306,6 @@ void ZCollectedHeap::print_on(outputStream* st) const {
 void ZCollectedHeap::print_on_error(outputStream* st) const {
   CollectedHeap::print_on_error(st);
 
-  st->print_cr("Address Space");
-  st->print_cr( "     Start:             " PTR_FORMAT, ZAddressSpaceStart);
-  st->print_cr( "     End:               " PTR_FORMAT, ZAddressSpaceEnd);
-  st->print_cr( "     Size:              " SIZE_FORMAT_W(-15) " (" PTR_FORMAT ")", ZAddressSpaceSize, ZAddressSpaceSize);
   st->print_cr( "Heap");
   st->print_cr( "     GlobalPhase:       %u", ZGlobalPhase);
   st->print_cr( "     GlobalSeqNum:      %u", ZGlobalSeqNum);
@@ -352,13 +342,7 @@ void ZCollectedHeap::print_tracing_info() const {
 }
 
 bool ZCollectedHeap::print_location(outputStream* st, void* addr) const {
-  if (LocationPrinter::is_valid_obj(addr)) {
-    st->print(INTPTR_FORMAT " is a %s oop: ", p2i(addr),
-              ZAddress::is_good(reinterpret_cast<uintptr_t>(addr)) ? "good" : "bad");
-    cast_to_oop(addr)->print_on(st);
-    return true;
-  }
-  return false;
+  return _heap.print_location(st, (uintptr_t)addr);
 }
 
 void ZCollectedHeap::verify(VerifyOption option /* ignored */) {
@@ -366,5 +350,5 @@ void ZCollectedHeap::verify(VerifyOption option /* ignored */) {
 }
 
 bool ZCollectedHeap::is_oop(oop object) const {
-  return CollectedHeap::is_oop(object) && _heap.is_oop(object);
+  return _heap.is_oop(ZOop::to_address(object));
 }

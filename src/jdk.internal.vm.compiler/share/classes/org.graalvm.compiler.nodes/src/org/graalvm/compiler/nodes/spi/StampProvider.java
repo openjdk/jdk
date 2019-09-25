@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,8 +24,8 @@
 
 package org.graalvm.compiler.nodes.spi;
 
+import org.graalvm.compiler.core.common.type.AbstractPointerStamp;
 import org.graalvm.compiler.core.common.type.ObjectStamp;
-import org.graalvm.compiler.core.common.type.Stamp;
 import org.graalvm.compiler.nodes.extended.LoadHubNode;
 
 /**
@@ -36,10 +36,10 @@ public interface StampProvider {
     /**
      * Create the stamp of the {@link LoadHubNode hub} of an object.
      */
-    Stamp createHubStamp(ObjectStamp object);
+    AbstractPointerStamp createHubStamp(ObjectStamp object);
 
     /**
      * Create the stamp of a pointer to a method.
      */
-    Stamp createMethodStamp();
+    AbstractPointerStamp createMethodStamp();
 }

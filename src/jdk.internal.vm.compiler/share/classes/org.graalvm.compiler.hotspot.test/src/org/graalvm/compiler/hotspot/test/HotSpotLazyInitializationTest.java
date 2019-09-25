@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,7 +25,7 @@
 package org.graalvm.compiler.hotspot.test;
 
 import org.graalvm.compiler.core.test.GraalCompilerTest;
-import org.graalvm.compiler.hotspot.meta.HotSpotClassInitializationPlugin;
+import org.graalvm.compiler.hotspot.meta.HotSpotAOTClassInitializationPlugin;
 import org.graalvm.compiler.nodes.StructuredGraph.AllowAssumptions;
 import org.graalvm.compiler.nodes.graphbuilderconf.GraphBuilderConfiguration.Plugins;
 import org.junit.Assert;
@@ -36,7 +36,7 @@ import jdk.vm.ci.meta.ResolvedJavaMethod;
 
 public class HotSpotLazyInitializationTest extends GraalCompilerTest {
 
-    HotSpotClassInitializationPlugin classInitPlugin = new HotSpotClassInitializationPlugin();
+    HotSpotAOTClassInitializationPlugin classInitPlugin = new HotSpotAOTClassInitializationPlugin();
 
     @Override
     protected Plugins getDefaultGraphBuilderPlugins() {
