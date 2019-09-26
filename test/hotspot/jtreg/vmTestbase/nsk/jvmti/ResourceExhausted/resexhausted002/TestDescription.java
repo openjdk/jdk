@@ -40,8 +40,8 @@
  * @run driver jdk.test.lib.FileInstaller . .
  * @run main/othervm/native
  *      -agentlib:resexhausted=-waittime=5
- *      -Xms8m
- *      -Xmx8m
+ *      -Xms128m
+ *      -Xmx128m
  *      -XX:-UseGCOverheadLimit
  *      nsk.jvmti.ResourceExhausted.resexhausted002
  */
