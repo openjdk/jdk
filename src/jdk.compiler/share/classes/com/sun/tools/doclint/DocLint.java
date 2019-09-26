@@ -112,7 +112,7 @@ public class DocLint implements Plugin {
         }
 
         final String code;
-        final Object[] args;
+        final transient Object[] args;
     }
 
     /**

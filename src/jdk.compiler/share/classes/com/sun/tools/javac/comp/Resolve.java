@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1387,7 +1387,7 @@ public class Resolve {
     public static class InapplicableMethodException extends RuntimeException {
         private static final long serialVersionUID = 0;
 
-        JCDiagnostic diagnostic;
+        transient JCDiagnostic diagnostic;
 
         InapplicableMethodException(JCDiagnostic diag) {
             this.diagnostic = diag;

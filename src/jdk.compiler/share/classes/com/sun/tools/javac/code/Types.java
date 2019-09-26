@@ -639,7 +639,7 @@ public class Types {
     public static class FunctionDescriptorLookupError extends RuntimeException {
         private static final long serialVersionUID = 0;
 
-        JCDiagnostic diagnostic;
+        transient JCDiagnostic diagnostic;
 
         FunctionDescriptorLookupError() {
             this.diagnostic = null;
@@ -5002,7 +5002,7 @@ public class Types {
         public static class InvalidSignatureException extends RuntimeException {
             private static final long serialVersionUID = 0;
 
-            private final Type type;
+            private final transient Type type;
 
             InvalidSignatureException(Type type) {
                 this.type = type;
