@@ -1272,6 +1272,18 @@ void ShenandoahBarrierC2Support::pin_and_expand(PhaseIdealLoop* phase) {
     }
     if ((ctrl->is_Proj() && ctrl->in(0)->is_CallJava()) || ctrl->is_CallJava()) {
       CallNode* call = ctrl->is_Proj() ? ctrl->in(0)->as_CallJava() : ctrl->as_CallJava();
+      if (call->entry_point() == OptoRuntime::rethrow_stub()) {
+        // The rethrow call may have too many projections to be
+        // properly handled here. Given there's no reason for a
+        // barrier to depend on the call, move it above the call
+        if (phase->get_ctrl(val) == ctrl) {
+          assert(val->Opcode() == Op_DecodeN, "unexpected node");
+          assert(phase->is_dominator(phase->get_ctrl(val->in(1)), call->in(0)), "Load is too low");
+          phase->set_ctrl(val, call->in(0));
+        }
+        phase->set_ctrl(lrb, call->in(0));
+        continue;
+      }
       CallProjections projs;
       call->extract_projections(&projs, false, false);
 
