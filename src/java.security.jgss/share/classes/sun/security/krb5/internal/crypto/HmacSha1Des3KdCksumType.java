@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2004, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2004, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,8 +28,6 @@ package sun.security.krb5.internal.crypto;
 import sun.security.krb5.Checksum;
 import sun.security.krb5.KrbCryptoException;
 import sun.security.krb5.internal.*;
-import javax.crypto.spec.DESKeySpec;
-import java.security.InvalidKeyException;
 import java.security.GeneralSecurityException;
 
 public class HmacSha1Des3KdCksumType extends CksumType {
@@ -45,7 +43,7 @@ public class HmacSha1Des3KdCksumType extends CksumType {
         return Checksum.CKSUMTYPE_HMAC_SHA1_DES3_KD;
     }
 
-    public boolean isSafe() {
+    public boolean isKeyed() {
         return true;
     }
 
@@ -61,10 +59,6 @@ public class HmacSha1Des3KdCksumType extends CksumType {
         return 24;   // bytes
     }
 
-    public byte[] calculateChecksum(byte[] data, int size) {
-        return null;
-    }
-
     /**
      * Calculates keyed checksum.
      * @param data the data used to generate the checksum.
@@ -72,7 +66,7 @@ public class HmacSha1Des3KdCksumType extends CksumType {
      * @param key the key used to encrypt the checksum.
      * @return keyed checksum.
      */
-    public byte[] calculateKeyedChecksum(byte[] data, int size, byte[] key,
+    public byte[] calculateChecksum(byte[] data, int size, byte[] key,
         int usage) throws KrbCryptoException {
 
          try {
@@ -92,7 +86,7 @@ public class HmacSha1Des3KdCksumType extends CksumType {
      * @param checksum the checksum.
      * @return true if verification is successful.
      */
-    public boolean verifyKeyedChecksum(byte[] data, int size,
+    public boolean verifyChecksum(byte[] data, int size,
         byte[] key, byte[] checksum, int usage) throws KrbCryptoException {
 
          try {

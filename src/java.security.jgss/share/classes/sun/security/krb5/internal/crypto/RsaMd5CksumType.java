@@ -33,8 +33,6 @@ import sun.security.krb5.Checksum;
 import sun.security.krb5.KrbCryptoException;
 import sun.security.krb5.internal.*;
 import java.security.MessageDigest;
-import java.security.Provider;
-import java.security.Security;
 
 public final class RsaMd5CksumType extends CksumType {
 
@@ -49,7 +47,7 @@ public final class RsaMd5CksumType extends CksumType {
         return Checksum.CKSUMTYPE_RSA_MD5;
     }
 
-    public boolean isSafe() {
+    public boolean isKeyed() {
         return false;
     }
 
@@ -74,7 +72,8 @@ public final class RsaMd5CksumType extends CksumType {
      * @modified by Yanni Zhang, 12/08/99.
      */
 
-    public byte[] calculateChecksum(byte[] data, int size) throws KrbCryptoException{
+    public byte[] calculateChecksum(byte[] data, int size,
+            byte[] key, int usage) throws KrbCryptoException{
         MessageDigest md5;
         byte[] result = null;
         try {
@@ -91,18 +90,9 @@ public final class RsaMd5CksumType extends CksumType {
         return result;
     }
 
-    public byte[] calculateKeyedChecksum(byte[] data, int size,
-        byte[] key, int usage) throws KrbCryptoException {
-                                             return null;
-                                         }
-
-    public boolean verifyKeyedChecksum(byte[] data, int size,
-        byte[] key, byte[] checksum, int usage) throws KrbCryptoException {
-        return false;
-    }
-
     @Override
-    public boolean verifyChecksum(byte[] data, byte[] checksum)
+    public boolean verifyChecksum(byte[] data, int size,
+            byte[] key, byte[] checksum, int usage)
             throws KrbCryptoException {
         try {
             byte[] calculated = MessageDigest.getInstance("MD5").digest(data);

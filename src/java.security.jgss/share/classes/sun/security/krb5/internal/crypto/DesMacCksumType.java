@@ -49,7 +49,7 @@ public class DesMacCksumType extends CksumType {
         return Checksum.CKSUMTYPE_DES_MAC;
     }
 
-    public boolean isSafe() {
+    public boolean isKeyed() {
         return true;
     }
 
@@ -65,10 +65,6 @@ public class DesMacCksumType extends CksumType {
         return 8;
     }
 
-    public byte[] calculateChecksum(byte[] data, int size) {
-        return null;
-    }
-
     /**
      * Calculates keyed checksum.
      * @param data the data used to generate the checksum.
@@ -78,7 +74,7 @@ public class DesMacCksumType extends CksumType {
      *
      * @modified by Yanni Zhang, 12/08/99.
      */
-    public byte[] calculateKeyedChecksum(byte[] data, int size, byte[] key,
+    public byte[] calculateChecksum(byte[] data, int size, byte[] key,
         int usage) throws KrbCryptoException {
         byte[] new_data = new byte[size + confounderSize()];
         byte[] conf = Confounder.bytes(confounderSize());
@@ -130,7 +126,7 @@ public class DesMacCksumType extends CksumType {
      *
      * @modified by Yanni Zhang, 12/08/99.
      */
-    public boolean verifyKeyedChecksum(byte[] data, int size,
+    public boolean verifyChecksum(byte[] data, int size,
         byte[] key, byte[] checksum, int usage) throws KrbCryptoException {
         byte[] cksum = decryptKeyedChecksum(checksum, key);
 

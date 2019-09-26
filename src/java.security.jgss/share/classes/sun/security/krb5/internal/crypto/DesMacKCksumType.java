@@ -48,7 +48,7 @@ public class DesMacKCksumType extends CksumType {
         return Checksum.CKSUMTYPE_DES_MAC_K;
     }
 
-    public boolean isSafe() {
+    public boolean isKeyed() {
         return true;
     }
 
@@ -64,10 +64,6 @@ public class DesMacKCksumType extends CksumType {
         return 8;
     }
 
-    public byte[] calculateChecksum(byte[] data, int size) {
-        return null;
-    }
-
     /**
      * Calculates keyed checksum.
      * @param data the data used to generate the checksum.
@@ -77,7 +73,7 @@ public class DesMacKCksumType extends CksumType {
      *
      * @modified by Yanni Zhang, 12/08/99.
      */
-    public byte[] calculateKeyedChecksum(byte[] data, int size, byte[] key,
+    public byte[] calculateChecksum(byte[] data, int size, byte[] key,
         int usage) throws KrbCryptoException {
         //check for weak keys
         try {
@@ -93,9 +89,9 @@ public class DesMacKCksumType extends CksumType {
         return cksum;
     }
 
-    public boolean verifyKeyedChecksum(byte[] data, int size,
+    public boolean verifyChecksum(byte[] data, int size,
         byte[] key, byte[] checksum, int usage) throws KrbCryptoException {
-        byte[] new_cksum = calculateKeyedChecksum(data, data.length, key, usage);
+        byte[] new_cksum = calculateChecksum(data, data.length, key, usage);
         return isChecksumEqual(checksum, new_cksum);
     }
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,10 +31,7 @@
 
 package sun.security.krb5.internal.crypto;
 
-import sun.security.krb5.Config;
 import sun.security.krb5.Checksum;
-import sun.security.krb5.EncryptedData;
-import sun.security.krb5.KrbException;
 import sun.security.krb5.KrbCryptoException;
 import sun.security.krb5.internal.*;
 
@@ -81,10 +78,23 @@ public abstract class CksumType {
             cksumTypeName =
                 "sun.security.krb5.internal.crypto.HmacSha1Aes128CksumType";
             break;
+
         case Checksum.CKSUMTYPE_HMAC_SHA1_96_AES256:
             cksumType = new HmacSha1Aes256CksumType();
             cksumTypeName =
                 "sun.security.krb5.internal.crypto.HmacSha1Aes256CksumType";
+            break;
+
+        case Checksum.CKSUMTYPE_HMAC_SHA256_128_AES128:
+            cksumType = new HmacSha2Aes128CksumType();
+            cksumTypeName =
+                    "sun.security.krb5.internal.crypto.HmacSha2Aes128CksumType";
+            break;
+
+        case Checksum.CKSUMTYPE_HMAC_SHA384_192_AES256:
+            cksumType = new HmacSha2Aes256CksumType();
+            cksumTypeName =
+                    "sun.security.krb5.internal.crypto.HmacSha2Aes256CksumType";
             break;
 
         case Checksum.CKSUMTYPE_HMAC_MD5_ARCFOUR:
@@ -117,32 +127,11 @@ public abstract class CksumType {
         return cksumType;
     }
 
-
-    /**
-     * Returns default checksum type.
-     */
-    public static CksumType getInstance() throws KdcErrException {
-        // this method provided for Kerberos applications.
-        int cksumType = Checksum.CKSUMTYPE_RSA_MD5; // default
-        try {
-            Config c = Config.getInstance();
-            if ((cksumType = (Config.getType(c.get("libdefaults",
-                    "ap_req_checksum_type")))) == - 1) {
-                if ((cksumType = Config.getType(c.get("libdefaults",
-                        "checksum_type"))) == -1) {
-                    cksumType = Checksum.CKSUMTYPE_RSA_MD5; // default
-                }
-            }
-        } catch (KrbException e) {
-        }
-        return getInstance(cksumType);
-    }
-
     public abstract int confounderSize();
 
     public abstract int cksumType();
 
-    public abstract boolean isSafe();
+    public abstract boolean isKeyed();
 
     public abstract int cksumSize();
 
@@ -150,18 +139,12 @@ public abstract class CksumType {
 
     public abstract int keySize();
 
-    public abstract byte[] calculateChecksum(byte[] data, int size)
-        throws KrbCryptoException;
-
-    public abstract byte[] calculateKeyedChecksum(byte[] data, int size,
+    // Note: key and usage will be ignored for an unkeyed checksum.
+    public abstract byte[] calculateChecksum(byte[] data, int size,
         byte[] key, int usage) throws KrbCryptoException;
 
-    public boolean verifyChecksum(byte[] data, byte[] checksum)
-            throws KrbCryptoException {
-        throw new UnsupportedOperationException("Not supported");
-    }
-
-    public abstract boolean verifyKeyedChecksum(byte[] data, int size,
+    // Note: key and usage will be ignored for an unkeyed checksum.
+    public abstract boolean verifyChecksum(byte[] data, int size,
         byte[] key, byte[] checksum, int usage) throws KrbCryptoException;
 
     public static boolean isChecksumEqual(byte[] cksum1, byte[] cksum2) {
