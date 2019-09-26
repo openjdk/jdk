@@ -1,6 +1,6 @@
 /*
- * Copyright (c) 2005, 2018, Oracle and/or its affiliates. All rights reserved.
- * Copyright (c) 2012, 2017, SAP SE. All rights reserved.
+ * Copyright (c) 2005, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2019, SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -648,7 +648,7 @@ LIR_Opr LIRGenerator::atomic_cmpxchg(BasicType type, LIR_Opr addr, LIRItem& cmp_
     __ membar_release();
   }
 
-  if (type == T_OBJECT || type == T_ARRAY) {
+  if (is_reference_type(type)) {
     if (UseCompressedOops) {
       t1 = new_register(T_OBJECT);
       t2 = new_register(T_OBJECT);

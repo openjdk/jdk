@@ -972,6 +972,7 @@ void LIR_Assembler::mem2reg(LIR_Opr src_opr, LIR_Opr dest, BasicType type, LIR_P
       } else {
         __ z_lg(dest->as_register(), disp_value, disp_reg, src);
       }
+      __ verify_oop(dest->as_register());
       break;
     }
     case T_FLOAT:
@@ -991,9 +992,6 @@ void LIR_Assembler::mem2reg(LIR_Opr src_opr, LIR_Opr dest, BasicType type, LIR_P
     case T_LONG  :  __ z_lg(dest->as_register_lo(), disp_value, disp_reg, src); break;
     default      : ShouldNotReachHere();
   }
-  if (type == T_ARRAY || type == T_OBJECT) {
-    __ verify_oop(dest->as_register());
-  }
 
   if (patch != NULL) {
     patching_epilog(patch, patch_code, src, info);
@@ -1006,7 +1004,7 @@ void LIR_Assembler::stack2reg(LIR_Opr src, LIR_Opr dest, BasicType type) {
   assert(dest->is_register(), "should not call otherwise");
 
   if (dest->is_single_cpu()) {
-    if (type == T_ARRAY || type == T_OBJECT) {
+    if (is_reference_type(type)) {
       __ mem2reg_opt(dest->as_register(), frame_map()->address_for_slot(src->single_stack_ix()), true);
       __ verify_oop(dest->as_register());
     } else if (type == T_METADATA) {
@@ -1034,7 +1032,7 @@ void LIR_Assembler::reg2stack(LIR_Opr src, LIR_Opr dest, BasicType type, bool po
 
   if (src->is_single_cpu()) {
     const Address dst = frame_map()->address_for_slot(dest->single_stack_ix());
-    if (type == T_OBJECT || type == T_ARRAY) {
+    if (is_reference_type(type)) {
       __ verify_oop(src->as_register());
       __ reg2mem_opt(src->as_register(), dst, true);
     } else if (type == T_METADATA) {
@@ -1080,7 +1078,7 @@ void LIR_Assembler::reg2reg(LIR_Opr from_reg, LIR_Opr to_reg) {
   } else {
     ShouldNotReachHere();
   }
-  if (to_reg->type() == T_OBJECT || to_reg->type() == T_ARRAY) {
+  if (is_reference_type(to_reg->type())) {
     __ verify_oop(to_reg->as_register());
   }
 }
@@ -1131,7 +1129,7 @@ void LIR_Assembler::reg2mem(LIR_Opr from, LIR_Opr dest_opr, BasicType type,
 
   assert(disp_reg != Z_R0 || Immediate::is_simm20(disp_value), "should have set this up");
 
-  if (type == T_ARRAY || type == T_OBJECT) {
+  if (is_reference_type(type)) {
     __ verify_oop(from->as_register());
   }
 
@@ -1294,10 +1292,10 @@ void LIR_Assembler::comp_op(LIR_Condition condition, LIR_Opr opr1, LIR_Opr opr2,
     Register reg1 = opr1->as_register();
     if (opr2->is_single_cpu()) {
       // cpu register - cpu register
-      if (opr1->type() == T_OBJECT || opr1->type() == T_ARRAY) {
+      if (is_reference_type(opr1->type())) {
         __ z_clgr(reg1, opr2->as_register());
       } else {
-        assert(opr2->type() != T_OBJECT && opr2->type() != T_ARRAY, "cmp int, oop?");
+        assert(!is_reference_type(opr2->type()), "cmp int, oop?");
         if (unsigned_comp) {
           __ z_clr(reg1, opr2->as_register());
         } else {
@@ -1306,7 +1304,7 @@ void LIR_Assembler::comp_op(LIR_Condition condition, LIR_Opr opr1, LIR_Opr opr2,
       }
     } else if (opr2->is_stack()) {
       // cpu register - stack
-      if (opr1->type() == T_OBJECT || opr1->type() == T_ARRAY) {
+      if (is_reference_type(opr1->type())) {
         __ z_cg(reg1, frame_map()->address_for_slot(opr2->single_stack_ix()));
       } else {
         if (unsigned_comp) {
@@ -1324,7 +1322,7 @@ void LIR_Assembler::comp_op(LIR_Condition condition, LIR_Opr opr1, LIR_Opr opr2,
         } else {
           __ z_cfi(reg1, c->as_jint());
         }
-      } else if (c->type() == T_OBJECT || c->type() == T_ARRAY) {
+      } else if (is_reference_type(c->type())) {
         // In 64bit oops are single register.
         jobject o = c->as_jobject();
         if (o == NULL) {
@@ -1767,7 +1765,7 @@ void LIR_Assembler::logic_op(LIR_Code code, LIR_Opr left, LIR_Opr right, LIR_Opr
       }
     } else {
       Register r_lo;
-      if (right->type() == T_OBJECT || right->type() == T_ARRAY) {
+      if (is_reference_type(right->type())) {
         r_lo = right->as_register();
       } else {
         r_lo = right->as_register_lo();
@@ -2413,8 +2411,8 @@ void LIR_Assembler::emit_alloc_array(LIR_OpAllocArray* op) {
   __ move_reg_if_needed(len, T_LONG, len, T_INT); // sign extend
 
   if (UseSlowPath ||
-      (!UseFastNewObjectArray && (op->type() == T_OBJECT || op->type() == T_ARRAY)) ||
-      (!UseFastNewTypeArray   && (op->type() != T_OBJECT && op->type() != T_ARRAY))) {
+      (!UseFastNewObjectArray && (is_reference_type(op->type()))) ||
+      (!UseFastNewTypeArray   && (!is_reference_type(op->type())))) {
     __ z_brul(*op->stub()->entry());
   } else {
     __ allocate_array(op->obj()->as_register(),

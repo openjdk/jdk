@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 1997, 2019, Oracle and/or its affiliates. All rights reserved.
- * Copyright (c) 2012, 2018 SAP SE. All rights reserved.
+ * Copyright (c) 2012, 2019 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1142,7 +1142,7 @@ void SharedRuntime::gen_i2c_adapter(MacroAssembler *masm,
       }
       if (!r_2->is_valid()) {
         // Not sure we need to do this but it shouldn't hurt.
-        if (sig_bt[i] == T_OBJECT || sig_bt[i] == T_ADDRESS || sig_bt[i] == T_ARRAY) {
+        if (is_reference_type(sig_bt[i]) || sig_bt[i] == T_ADDRESS) {
           __ ld(r, ld_offset, ld_ptr);
           ld_offset-=wordSize;
         } else {
@@ -1739,8 +1739,7 @@ static void verify_oop_args(MacroAssembler* masm,
   Register temp_reg = R19_method;  // not part of any compiled calling seq
   if (VerifyOops) {
     for (int i = 0; i < method->size_of_parameters(); i++) {
-      if (sig_bt[i] == T_OBJECT ||
-          sig_bt[i] == T_ARRAY) {
+      if (is_reference_type(sig_bt[i])) {
         VMReg r = regs[i].first();
         assert(r->is_valid(), "bad oop arg");
         if (r->is_stack()) {
@@ -2602,7 +2601,7 @@ nmethod *SharedRuntime::generate_native_wrapper(MacroAssembler *masm,
   // Unbox oop result, e.g. JNIHandles::resolve value.
   // --------------------------------------------------------------------------
 
-  if (ret_type == T_OBJECT || ret_type == T_ARRAY) {
+  if (is_reference_type(ret_type)) {
     __ resolve_jobject(R3_RET, r_temp_1, r_temp_2, /* needs_frame */ false);
   }
 
