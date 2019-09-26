@@ -653,7 +653,10 @@ Node *PhaseIdealLoop::conditional_move( Node *region ) {
     }
   }//for
   Node* bol = iff->in(1);
-  assert(bol->Opcode() == Op_Bool, "");
+  if (bol->Opcode() == Op_Opaque4) {
+    return NULL; // Ignore loop predicate checks (the Opaque4 ensures they will go away)
+  }
+  assert(bol->Opcode() == Op_Bool, "Unexpected node");
   int cmp_op = bol->in(1)->Opcode();
   // It is expensive to generate flags from a float compare.
   // Avoid duplicated float compare.
