@@ -731,7 +731,7 @@ public abstract class AbstractChronology implements Chronology {
      */
     @java.io.Serial
     Object writeReplace() {
-        return new Ser(Ser.CHRONO_TYPE, this);
+        return new Ser(Ser.CHRONO_TYPE, (Serializable)this);
     }
 
     /**

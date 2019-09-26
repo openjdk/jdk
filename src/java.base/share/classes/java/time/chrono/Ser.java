@@ -61,6 +61,7 @@ import java.io.IOException;
 import java.io.InvalidClassException;
 import java.io.ObjectInput;
 import java.io.ObjectOutput;
+import java.io.Serializable;
 import java.io.StreamCorruptedException;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
@@ -110,7 +111,7 @@ final class Ser implements Externalizable {
     /** The type being serialized. */
     private byte type;
     /** The object being serialized. */
-    private Object object;
+    private Serializable object;
 
     /**
      * Constructor for deserialization.
@@ -124,7 +125,7 @@ final class Ser implements Externalizable {
      * @param type  the type
      * @param object  the object
      */
-    Ser(byte type, Object object) {
+    Ser(byte type, Serializable object) {
         this.type = type;
         this.object = object;
     }
@@ -203,18 +204,30 @@ final class Ser implements Externalizable {
      * {@code Ser} object.
      *
      * <ul>
-     * <li><a href="{@docRoot}/serialized-form.html#java.time.chrono.HijrahChronology">HijrahChronology</a> - Chronology.of(id)
-     * <li><a href="{@docRoot}/serialized-form.html#java.time.chrono.IsoChronology">IsoChronology</a> - Chronology.of(id)
-     * <li><a href="{@docRoot}/serialized-form.html#java.time.chrono.JapaneseChronology">JapaneseChronology</a> - Chronology.of(id)
-     * <li><a href="{@docRoot}/serialized-form.html#java.time.chrono.MinguoChronology">MinguoChronology</a> - Chronology.of(id)
-     * <li><a href="{@docRoot}/serialized-form.html#java.time.chrono.ThaiBuddhistChronology">ThaiBuddhistChronology</a> - Chronology.of(id)
-     * <li><a href="{@docRoot}/serialized-form.html#java.time.chrono.ChronoLocalDateTimeImpl">ChronoLocalDateTime</a> - date.atTime(time)
-     * <li><a href="{@docRoot}/serialized-form.html#java.time.chrono.ChronoZonedDateTimeImpl">ChronoZonedDateTime</a> - dateTime.atZone(offset).withZoneSameLocal(zone)
-     * <li><a href="{@docRoot}/serialized-form.html#java.time.chrono.JapaneseDate">JapaneseDate</a> - JapaneseChronology.INSTANCE.date(year, month, dayOfMonth)
-     * <li><a href="{@docRoot}/serialized-form.html#java.time.chrono.JapaneseEra">JapaneseEra</a> - JapaneseEra.of(eraValue)
-     * <li><a href="{@docRoot}/serialized-form.html#java.time.chrono.HijrahDate">HijrahDate</a> - HijrahChronology chrono.date(year, month, dayOfMonth)
-     * <li><a href="{@docRoot}/serialized-form.html#java.time.chrono.MinguoDate">MinguoDate</a> - MinguoChronology.INSTANCE.date(year, month, dayOfMonth)
-     * <li><a href="{@docRoot}/serialized-form.html#java.time.chrono.ThaiBuddhistDate">ThaiBuddhistDate</a> - ThaiBuddhistChronology.INSTANCE.date(year, month, dayOfMonth)
+     * <li><a href="{@docRoot}/serialized-form.html#java.time.chrono.HijrahChronology">HijrahChronology</a> -
+     *          Chronology.of(id)
+     * <li><a href="{@docRoot}/serialized-form.html#java.time.chrono.IsoChronology">IsoChronology</a> -
+     *          Chronology.of(id)
+     * <li><a href="{@docRoot}/serialized-form.html#java.time.chrono.JapaneseChronology">JapaneseChronology</a> -
+     *          Chronology.of(id)
+     * <li><a href="{@docRoot}/serialized-form.html#java.time.chrono.MinguoChronology">MinguoChronology</a> -
+     *          Chronology.of(id)
+     * <li><a href="{@docRoot}/serialized-form.html#java.time.chrono.ThaiBuddhistChronology">ThaiBuddhistChronology</a> -
+     *          Chronology.of(id)
+     * <li><a href="{@docRoot}/serialized-form.html#java.time.chrono.ChronoLocalDateTimeImpl">ChronoLocalDateTime</a> -
+     *          date.atTime(time)
+     * <li><a href="{@docRoot}/serialized-form.html#java.time.chrono.ChronoZonedDateTimeImpl">ChronoZonedDateTime</a> -
+     *          dateTime.atZone(offset).withZoneSameLocal(zone)
+     * <li><a href="{@docRoot}/serialized-form.html#java.time.chrono.JapaneseDate">JapaneseDate</a> -
+     *          JapaneseChronology.INSTANCE.date(year, month, dayOfMonth)
+     * <li><a href="{@docRoot}/serialized-form.html#java.time.chrono.JapaneseEra">JapaneseEra</a> -
+     *          JapaneseEra.of(eraValue)
+     * <li><a href="{@docRoot}/serialized-form.html#java.time.chrono.HijrahDate">HijrahDate</a> -
+     *          HijrahChronology chrono.date(year, month, dayOfMonth)
+     * <li><a href="{@docRoot}/serialized-form.html#java.time.chrono.MinguoDate">MinguoDate</a> -
+     *          MinguoChronology.INSTANCE.date(year, month, dayOfMonth)
+     * <li><a href="{@docRoot}/serialized-form.html#java.time.chrono.ThaiBuddhistDate">ThaiBuddhistDate</a> -
+     *          ThaiBuddhistChronology.INSTANCE.date(year, month, dayOfMonth)
      * </ul>
      *
      * @param in  the data stream to read from, not null
@@ -225,16 +238,17 @@ final class Ser implements Externalizable {
         object = readInternal(type, in);
     }
 
-    static Object read(ObjectInput in) throws IOException, ClassNotFoundException {
+    static Serializable read(ObjectInput in) throws IOException, ClassNotFoundException {
         byte type = in.readByte();
         return readInternal(type, in);
     }
 
-    private static Object readInternal(byte type, ObjectInput in) throws IOException, ClassNotFoundException {
+    private static Serializable readInternal(byte type, ObjectInput in)
+            throws IOException, ClassNotFoundException {
         switch (type) {
-            case CHRONO_TYPE: return AbstractChronology.readExternal(in);
-            case CHRONO_LOCAL_DATE_TIME_TYPE: return ChronoLocalDateTimeImpl.readExternal(in);
-            case CHRONO_ZONE_DATE_TIME_TYPE: return ChronoZonedDateTimeImpl.readExternal(in);
+            case CHRONO_TYPE: return (Serializable)AbstractChronology.readExternal(in);
+            case CHRONO_LOCAL_DATE_TIME_TYPE: return (Serializable)ChronoLocalDateTimeImpl.readExternal(in);
+            case CHRONO_ZONE_DATE_TIME_TYPE: return (Serializable)ChronoZonedDateTimeImpl.readExternal(in);
             case JAPANESE_DATE_TYPE:  return JapaneseDate.readExternal(in);
             case JAPANESE_ERA_TYPE: return JapaneseEra.readExternal(in);
             case HIJRAH_DATE_TYPE: return HijrahDate.readExternal(in);
