@@ -30,12 +30,13 @@
  * @summary Known Answer Test for AES cipher with GCM mode support in
  * PKCS11 provider.
  */
-import java.security.*;
-import javax.crypto.*;
-import javax.crypto.spec.*;
-import java.math.*;
-
-import java.util.*;
+import java.security.GeneralSecurityException;
+import java.security.Provider;
+import java.util.Arrays;
+import javax.crypto.Cipher;
+import javax.crypto.SecretKey;
+import javax.crypto.spec.GCMParameterSpec;
+import javax.crypto.spec.SecretKeySpec;
 
 public class TestKATForGCM extends PKCS11Test {
 
@@ -319,15 +320,21 @@ public class TestKATForGCM extends PKCS11Test {
                 System.out.println("Test Passed!");
             }
         } catch (Exception e) {
-            double ver = getNSSInfo("nss");
-            if (ver < 3.251d && p.getName().contains("SunPKCS11-NSS") &&
-                System.getProperty("os.name").equals("SunOS")) {
-                // buggy behaviour from solaris on 11.2 OS (nss < 3.251)
-                System.out.println("Skipping: SunPKCS11-NSS: Old NSS: " + ver);
-                return; // OK
-            } else {
-                throw e;
+            System.out.println("Exception occured using " + p.getName() + " version " + p.getVersionStr());
+
+            if (isNSS(p)) {
+                double ver = getNSSInfo("nss");
+                String osName = System.getProperty("os.name");
+                if (ver < 3.251d && osName.equals("SunOS")) {
+                    // buggy behaviour from solaris on 11.2 OS (nss < 3.251)
+                    System.out.println("Skipping: SunPKCS11-NSS: Old NSS: " + ver);
+                    return; // OK
+                } else if (ver > 3.139 && ver < 3.15 && osName.equals("Linux")) {
+                    // warn about buggy behaviour on Linux with nss 3.14
+                    System.out.println("Warning: old NSS " + ver + " might be problematic, consider upgrading it");
+                }
             }
+            throw e;
         }
     }
 }
