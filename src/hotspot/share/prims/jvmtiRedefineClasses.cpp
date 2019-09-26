@@ -232,9 +232,9 @@ void VM_RedefineClasses::doit() {
     ResolvedMethodTable::adjust_method_entries(&trace_name_printed);
   }
 
-  // Set flag indicating that some invariants are no longer true.
+  // Increment flag indicating that some invariants are no longer true.
   // See jvmtiExport.hpp for detailed explanation.
-  JvmtiExport::set_has_redefined_a_class();
+  JvmtiExport::increment_redefinition_count();
 
   // check_class() is optionally called for product bits, but is
   // always called for non-product bits.

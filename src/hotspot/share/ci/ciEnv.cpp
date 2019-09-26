@@ -154,6 +154,7 @@ ciEnv::ciEnv(CompileTask* task)
   _the_null_string = NULL;
   _the_min_jint_string = NULL;
 
+  _jvmti_redefinition_count = 0;
   _jvmti_can_hotswap_or_post_breakpoint = false;
   _jvmti_can_access_local_variables = false;
   _jvmti_can_post_on_exceptions = false;
@@ -209,6 +210,7 @@ ciEnv::ciEnv(Arena* arena) : _ciEnv_arena(mtCompiler) {
   _the_null_string = NULL;
   _the_min_jint_string = NULL;
 
+  _jvmti_redefinition_count = 0;
   _jvmti_can_hotswap_or_post_breakpoint = false;
   _jvmti_can_access_local_variables = false;
   _jvmti_can_post_on_exceptions = false;
@@ -231,6 +233,7 @@ void ciEnv::cache_jvmti_state() {
   VM_ENTRY_MARK;
   // Get Jvmti capabilities under lock to get consistant values.
   MutexLocker mu(JvmtiThreadState_lock);
+  _jvmti_redefinition_count             = JvmtiExport::redefinition_count();
   _jvmti_can_hotswap_or_post_breakpoint = JvmtiExport::can_hotswap_or_post_breakpoint();
   _jvmti_can_access_local_variables     = JvmtiExport::can_access_local_variables();
   _jvmti_can_post_on_exceptions         = JvmtiExport::can_post_on_exceptions();
@@ -238,6 +241,11 @@ void ciEnv::cache_jvmti_state() {
 }
 
 bool ciEnv::jvmti_state_changed() const {
+  // Some classes were redefined
+  if (_jvmti_redefinition_count != JvmtiExport::redefinition_count()) {
+    return true;
+  }
+
   if (!_jvmti_can_access_local_variables &&
       JvmtiExport::can_access_local_variables()) {
     return true;
@@ -254,6 +262,7 @@ bool ciEnv::jvmti_state_changed() const {
       JvmtiExport::can_pop_frame()) {
     return true;
   }
+
   return false;
 }
 

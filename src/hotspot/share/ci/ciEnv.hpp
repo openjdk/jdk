@@ -68,6 +68,7 @@ private:
   int   _name_buffer_len;
 
   // Cache Jvmti state
+  uint64_t _jvmti_redefinition_count;
   bool  _jvmti_can_hotswap_or_post_breakpoint;
   bool  _jvmti_can_access_local_variables;
   bool  _jvmti_can_post_on_exceptions;

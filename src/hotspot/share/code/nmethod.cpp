@@ -2192,6 +2192,17 @@ public:
   virtual void do_oop(narrowOop* p) { ShouldNotReachHere(); }
 };
 
+class VerifyMetadataClosure: public MetadataClosure {
+ public:
+  void do_metadata(Metadata* md) {
+    if (md->is_method()) {
+      Method* method = (Method*)md;
+      assert(!method->is_old(), "Should not be installing old methods");
+    }
+  }
+};
+
+
 void nmethod::verify() {
 
   // Hmm. OSR methods can be deopted but not marked as zombie or not_entrant
@@ -2255,6 +2266,10 @@ void nmethod::verify() {
   Universe::heap()->verify_nmethod(this);
 
   verify_scopes();
+
+  CompiledICLocker nm_verify(this);
+  VerifyMetadataClosure vmc;
+  metadata_do(&vmc);
 }
 
 
