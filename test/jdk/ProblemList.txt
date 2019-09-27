@@ -564,8 +564,6 @@ java/lang/management/ThreadMXBean/AllThreadIds.java             8131745 generic-
 javax/management/monitor/DerivedGaugeMonitorTest.java         8042211 generic-all
 javax/management/remote/mandatory/connection/MultiThreadDeadLockTest.java 8042215 generic-all
 
-java/lang/management/ThreadMXBean/LockedSynchronizers.java 8231032 generic-all
-
 ############################################################################
 
 # jdk_io
