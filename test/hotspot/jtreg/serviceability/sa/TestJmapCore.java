@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,18 +29,19 @@
  * @run driver/timeout=240 TestJmapCore run heap
  */
 
+import java.io.File;
+
 import jdk.test.lib.Asserts;
 import jdk.test.lib.JDKToolFinder;
 import jdk.test.lib.JDKToolLauncher;
 import jdk.test.lib.Platform;
+import jdk.test.lib.Utils;
 import jdk.test.lib.classloader.GeneratingClassLoader;
 import jdk.test.lib.hprof.HprofParser;
 import jdk.test.lib.process.ProcessTools;
 import jdk.test.lib.process.OutputAnalyzer;
-import jdk.test.lib.Utils;
+import jdk.test.lib.SA.SATestUtils;
 import jtreg.SkippedException;
-
-import java.io.File;
 
 public class TestJmapCore {
     static final String pidSeparator = ":KILLED_PID";
@@ -97,9 +98,11 @@ public class TestJmapCore {
             ? ProcessTools.executeProcess(pb)
             : ProcessTools.executeProcess("sh", "-c", "ulimit -c unlimited && "
                     + ProcessTools.getCommandLine(pb));
+        File pwd = new File(".");
+        SATestUtils.unzipCores(pwd);
         File core;
         String pattern = Platform.isWindows() ? ".*\\.mdmp" : "core(\\.\\d+)?";
-        File[] cores = new File(".").listFiles((dir, name) -> name.matches(pattern));
+        File[] cores = pwd.listFiles((dir, name) -> name.matches(pattern));
         if (cores.length == 0) {
             // /cores/core.$pid might be generated on macosx by default
             String pid = output.firstMatch("^(\\d+)" + pidSeparator, 1);
@@ -110,7 +113,7 @@ public class TestJmapCore {
         } else {
             Asserts.assertTrue(cores.length == 1,
                     "There are unexpected files containing core "
-                    + ": " + String.join(",", new File(".").list()) + ".");
+                    + ": " + String.join(",", pwd.list()) + ".");
             core = cores[0];
         }
         System.out.println("Found corefile: " + core.getAbsolutePath());

@@ -22,12 +22,18 @@
  */
 package jdk.test.lib.SA;
 
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileOutputStream;
 import java.io.IOException;
-import java.util.List;
 import java.util.ArrayList;
+import java.util.List;
+import java.util.concurrent.TimeUnit;
+import java.util.zip.GZIPInputStream;
+
 import jdk.test.lib.Asserts;
 import jdk.test.lib.Platform;
-import java.util.concurrent.TimeUnit;
+import jtreg.SkippedException;
 
 public class SATestUtils {
 
@@ -76,5 +82,23 @@ public class SATestUtils {
         outStringList.add("-E");
         outStringList.addAll(cmdStringList);
         return outStringList;
+    }
+
+    public static void unzipCores(File dir) {
+        File[] gzCores = dir.listFiles((directory, name) -> name.matches("core(\\.\\d+)?\\.gz"));
+        for (File gzCore : gzCores) {
+            String coreFileName = gzCore.getName().replace(".gz", "");
+            System.out.println("Unzipping core into " + coreFileName);
+            try (GZIPInputStream gzis = new GZIPInputStream(new FileInputStream(gzCore));
+                 FileOutputStream fos = new FileOutputStream(coreFileName)) {
+                byte[] buffer = new byte[1024];
+                int length;
+                while ((length = gzis.read(buffer)) > 0) {
+                    fos.write(buffer, 0, length);
+                }
+            } catch (IOException e) {
+                throw new SkippedException("Not able to unzip file: " + gzCore.getAbsolutePath(), e);
+            }
+        }
     }
 }
