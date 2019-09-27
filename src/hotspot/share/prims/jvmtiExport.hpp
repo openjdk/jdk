@@ -193,7 +193,10 @@ class JvmtiExport : public AllStatic {
   }
 
   // Only set in safepoint, so no memory ordering needed.
-  inline static uint64_t redefinition_count() { return _redefinition_count; }
+  inline static uint64_t redefinition_count() {
+    JVMTI_ONLY(return _redefinition_count);
+    NOT_JVMTI(return 0);
+  }
 
   inline static bool all_dependencies_are_recorded() {
     return _all_dependencies_are_recorded;
