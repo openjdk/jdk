@@ -33,8 +33,7 @@ import java.net.*;
 import java.io.*;
 import java.util.*;
 import jdk.test.lib.net.URIBuilder;
-
-
+import static java.net.Proxy.NO_PROXY;
 
 public class DisconnectAfterEOF {
 
@@ -217,7 +216,7 @@ public class DisconnectAfterEOF {
     }
 
     static URLConnection doRequest(String uri) throws IOException {
-        URLConnection uc = (new URL(uri)).openConnection();
+        URLConnection uc = (new URL(uri)).openConnection(NO_PROXY);
         uc.setDoOutput(true);
         OutputStream out = uc.getOutputStream();
         out.write(new byte[16000]);

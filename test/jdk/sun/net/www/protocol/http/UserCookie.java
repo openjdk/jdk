@@ -33,6 +33,7 @@ import java.net.*;
 import com.sun.net.httpserver.*;
 import java.util.*;
 import java.io.*;
+import static java.net.Proxy.NO_PROXY;
 
 public class UserCookie
 {
@@ -59,7 +60,7 @@ public class UserCookie
             InetSocketAddress address = httpServer.getAddress();
 
             URL url = new URL("http://" + address.getHostName() + ":" + address.getPort() + "/test/");
-            HttpURLConnection uc = (HttpURLConnection)url.openConnection();
+            HttpURLConnection uc = (HttpURLConnection)url.openConnection(NO_PROXY);
             uc.setRequestProperty("Cookie", "value=ValueDoesNotMatter");
             int resp = uc.getResponseCode();
 

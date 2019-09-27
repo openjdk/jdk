@@ -35,6 +35,7 @@ import java.net.*;
 import java.util.*;
 import java.io.*;
 import jdk.test.lib.net.URIBuilder;
+import static java.net.Proxy.NO_PROXY;
 
 public class URLConnectionHeaders {
 
@@ -94,7 +95,7 @@ public class URLConnectionHeaders {
                       .port(port)
                       .path("/index.html")
                       .toURL();
-            URLConnection uc = url.openConnection();
+            URLConnection uc = url.openConnection(NO_PROXY);
 
             // add request properties
             uc.addRequestProperty("Cookie", "cookie1");

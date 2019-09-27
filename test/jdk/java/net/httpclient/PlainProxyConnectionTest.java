@@ -44,6 +44,7 @@ import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 import java.util.stream.Collectors;
+import static java.net.Proxy.NO_PROXY;
 
 /**
  * @test
@@ -139,7 +140,7 @@ public class PlainProxyConnectionTest {
         throws IOException {
         connections.clear();
         System.out.println("Verifying communication with server");
-        try (InputStream is = uri.toURL().openConnection().getInputStream()) {
+        try (InputStream is = uri.toURL().openConnection(NO_PROXY).getInputStream()) {
             String resp = new String(is.readAllBytes(), StandardCharsets.UTF_8);
             System.out.println(resp);
             if (!RESPONSE.equals(resp)) {

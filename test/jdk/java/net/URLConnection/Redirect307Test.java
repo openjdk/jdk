@@ -29,8 +29,8 @@
  */
 import java.io.*;
 import java.net.*;
-
 import jdk.test.lib.net.URIBuilder;
+import static java.net.Proxy.NO_PROXY;
 
 class RedirServer extends Thread {
 
@@ -113,7 +113,7 @@ public class Redirect307Test {
                 .loopback()
                 .port(port)
                 .toURL();
-        URLConnection conURL =  url.openConnection();
+        URLConnection conURL =  url.openConnection(NO_PROXY);
         conURL.setDoInput(true);
         conURL.setAllowUserInteraction(false);
         conURL.setUseCaches(false);

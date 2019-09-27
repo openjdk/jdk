@@ -29,6 +29,7 @@
  */
 import java.net.*;
 import java.io.*;
+import static java.net.Proxy.NO_PROXY;
 
 public class Responses {
 
@@ -149,7 +150,7 @@ public class Responses {
             System.out.println("Test with response: >" + tests[i][0] + "<");
 
             URL url = new URL("http://" + authority + "/" + i);
-            HttpURLConnection http = (HttpURLConnection)url.openConnection();
+            HttpURLConnection http = (HttpURLConnection)url.openConnection(NO_PROXY);
 
             try {
 

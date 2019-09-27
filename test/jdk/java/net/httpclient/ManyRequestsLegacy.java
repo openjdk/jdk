@@ -74,6 +74,7 @@ import java.util.Random;
 import java.util.logging.Logger;
 import java.util.logging.Level;
 import jdk.test.lib.net.SimpleSSLContext;
+import static java.net.Proxy.NO_PROXY;
 
 public class ManyRequestsLegacy {
 
@@ -159,7 +160,7 @@ public class ManyRequestsLegacy {
             long start = System.nanoTime();
             try {
                 CompletableFuture<LegacyHttpResponse> cf = new CompletableFuture<>();
-                URLConnection urlc = r.uri().toURL().openConnection();
+                URLConnection urlc = r.uri().toURL().openConnection(NO_PROXY);
                 HttpURLConnection httpc = (HttpURLConnection)urlc;
                 httpc.setRequestMethod(r.method());
                 for (String s : r.headers().map().keySet()) {

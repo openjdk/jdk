@@ -35,7 +35,7 @@ import java.util.*;
 import java.io.*;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ExecutorService;
-
+import static java.net.Proxy.NO_PROXY;
 
 public class UserAuth
 {
@@ -61,7 +61,7 @@ public class UserAuth
 
             // GET Request
             URL url = new URL("http://" + address.getHostName() + ":" + address.getPort() + "/redirect/");
-            HttpURLConnection uc = (HttpURLConnection)url.openConnection();
+            HttpURLConnection uc = (HttpURLConnection)url.openConnection(NO_PROXY);
             uc.setRequestProperty("Authorization", "testString:ValueDoesNotMatter");
             int resp = uc.getResponseCode();
 

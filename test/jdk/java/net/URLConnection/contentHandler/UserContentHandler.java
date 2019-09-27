@@ -40,6 +40,7 @@ import java.net.*;
 import java.io.*;
 import java.util.*;
 import jdk.test.lib.net.URIBuilder;
+import static java.net.Proxy.NO_PROXY;
 
 public class UserContentHandler implements Runnable {
 
@@ -98,7 +99,7 @@ public class UserContentHandler implements Runnable {
                 .path("/anything.txt")
                 .toURL();
 
-        if (!(u.openConnection().getContent() instanceof String)) {
+        if (!(u.openConnection(NO_PROXY).getContent() instanceof String)) {
             throw new RuntimeException("Load user defined content handler failed.");
         } else {
             System.err.println("Load user defined content handler succeed!");

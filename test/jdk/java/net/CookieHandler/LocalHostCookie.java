@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,7 +28,7 @@ import java.io.OutputStream;
 import java.net.*;
 import java.util.List;
 import java.util.Map;
-import java.util.concurrent.Executors;
+import static java.net.Proxy.NO_PROXY;
 
 /*
  * @test
@@ -52,7 +52,7 @@ public class LocalHostCookie {
             s = new Server();
             s.startServer();
             URL url = new URL("http","localhost", s.getPort(), "/");
-            HttpURLConnection urlConnection = (HttpURLConnection)url.openConnection();
+            HttpURLConnection urlConnection = (HttpURLConnection)url.openConnection(NO_PROXY);
             urlConnection.setRequestMethod("GET");
             urlConnection.setDoOutput(true);
             urlConnection.connect();
