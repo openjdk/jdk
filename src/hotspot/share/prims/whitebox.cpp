@@ -1735,12 +1735,12 @@ WB_ENTRY(jlong, WB_MetaspaceReserveAlignment(JNIEnv* env, jobject wb))
 WB_END
 
 WB_ENTRY(void, WB_AssertMatchingSafepointCalls(JNIEnv* env, jobject o, jboolean mutexSafepointValue, jboolean attemptedNoSafepointValue))
-  Monitor::SafepointCheckRequired sfpt_check_required = mutexSafepointValue ?
-                                           Monitor::_safepoint_check_always :
-                                           Monitor::_safepoint_check_never;
-  Monitor::SafepointCheckFlag sfpt_check_attempted = attemptedNoSafepointValue ?
-                                           Monitor::_no_safepoint_check_flag :
-                                           Monitor::_safepoint_check_flag;
+  Mutex::SafepointCheckRequired sfpt_check_required = mutexSafepointValue ?
+                                           Mutex::_safepoint_check_always :
+                                           Mutex::_safepoint_check_never;
+  Mutex::SafepointCheckFlag sfpt_check_attempted = attemptedNoSafepointValue ?
+                                           Mutex::_no_safepoint_check_flag :
+                                           Mutex::_safepoint_check_flag;
   MutexLocker ml(new Mutex(Mutex::leaf, "SFPT_Test_lock", true, sfpt_check_required),
                  sfpt_check_attempted);
 WB_END

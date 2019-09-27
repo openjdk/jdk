@@ -1212,7 +1212,7 @@ void MethodData::post_initialize(BytecodeStream* stream) {
 
 // Initialize the MethodData* corresponding to a given method.
 MethodData::MethodData(const methodHandle& method, int size, TRAPS)
-  : _extra_data_lock(Monitor::leaf, "MDO extra data lock"),
+  : _extra_data_lock(Mutex::leaf, "MDO extra data lock"),
     _parameters_type_data_di(parameters_uninitialized) {
   // Set the method back-pointer.
   _method = method();

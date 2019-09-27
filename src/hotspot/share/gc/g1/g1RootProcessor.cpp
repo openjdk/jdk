@@ -71,7 +71,7 @@ G1RootProcessor::G1RootProcessor(G1CollectedHeap* g1h, uint n_workers) :
     _g1h(g1h),
     _process_strong_tasks(G1RP_PS_NumElements),
     _srs(n_workers),
-    _lock(Mutex::leaf, "G1 Root Scan barrier lock", false, Monitor::_safepoint_check_never),
+    _lock(Mutex::leaf, "G1 Root Scan barrier lock", false, Mutex::_safepoint_check_never),
     _n_workers_discovered_strong_classes(0) {}
 
 void G1RootProcessor::evacuate_roots(G1ParScanThreadState* pss, uint worker_id) {
