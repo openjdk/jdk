@@ -243,7 +243,7 @@ public class SynchronizerLockingThreads implements ThreadMonitoringScenario, Log
                 protected boolean isStackTraceElementExpected(StackTraceElement element) {
                         return super.isStackTraceElementExpected(element) ||
                                 checkStackTraceElement(element, expectedMethodsThread2) ||
-                                element.getClassName().startsWith("java.util.concurrent.locks.") ||
+                                element.getClassName().startsWith("java.util.concurrent.") ||
                                 element.getClassName().startsWith("jdk.internal.misc.");
                 }
         }
