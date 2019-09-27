@@ -59,7 +59,7 @@ public class FileSupport {
         try {
             String name = path.toAbsolutePath().toString();
             name = name.replace('\\', '/');
-            return new URI("jar:file:///" + name + "!/");
+            return new URI("jar:file", null, "///" + name + "!/", null);
         } catch (URISyntaxException e) {
             throw new InternalError(e);
         }
