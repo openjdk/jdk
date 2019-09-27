@@ -36,7 +36,6 @@
 // interpreted).
 class CompileTask;
 class CompileQueue;
-class RFrame;
 
 class CompilationPolicy : public CHeapObj<mtCompiler> {
   static CompilationPolicy* _policy;
@@ -115,29 +114,5 @@ class SimpleCompPolicy : public NonTieredCompPolicy {
   virtual void method_invocation_event(const methodHandle& m, JavaThread* thread);
   virtual void method_back_branch_event(const methodHandle& m, int bci, JavaThread* thread);
 };
-
-// StackWalkCompPolicy - existing C2 policy
-
-#ifdef COMPILER2
-class StackWalkCompPolicy : public NonTieredCompPolicy {
- public:
-  virtual void method_invocation_event(const methodHandle& m, JavaThread* thread);
-  virtual void method_back_branch_event(const methodHandle& m, int bci, JavaThread* thread);
-
- private:
-  RFrame* findTopInlinableFrame(GrowableArray<RFrame*>* stack);
-  RFrame* senderOf(RFrame* rf, GrowableArray<RFrame*>* stack);
-
-  // the following variables hold values computed by the last inlining decision
-  // they are used for performance debugging only (print better messages)
-  static const char* _msg;            // reason for not inlining
-
-  static const char* shouldInline   (const methodHandle& callee, float frequency, int cnt);
-  // positive filter: should send be inlined?  returns NULL (--> yes) or rejection msg
-  static const char* shouldNotInline(const methodHandle& callee);
-  // negative filter: should send NOT be inlined?  returns NULL (--> inline) or rejection msg
-
-};
-#endif
 
 #endif // SHARE_RUNTIME_COMPILATIONPOLICY_HPP

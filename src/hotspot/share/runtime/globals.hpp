@@ -1017,10 +1017,6 @@ const size_t minimumSymbolTableSize = 1024;
           "Inject thread creation failures for "                            \
           "UseDynamicNumberOfCompilerThreads")                              \
                                                                             \
-  product(intx, CompilationPolicyChoice, 0,                                 \
-          "which compilation policy (0-2)")                                 \
-          range(0, 2)                                                       \
-                                                                            \
   develop(bool, UseStackBanging, true,                                      \
           "use stack banging for stack overflow checks (required for "      \
           "proper StackOverflow handling; disable only to measure cost "    \
@@ -2142,14 +2138,6 @@ const size_t minimumSymbolTableSize = 1024;
           "NON_TIERED number of method invocations/branches (expressed as " \
           "% of CompileThreshold) before profiling in the interpreter")     \
           range(0, 100)                                                     \
-                                                                            \
-  develop(intx, MaxRecompilationSearchLength,    10,                        \
-          "The maximum number of frames to inspect when searching for "     \
-          "recompilee")                                                     \
-                                                                            \
-  develop(intx, MaxInterpretedSearchLength,     3,                          \
-          "The maximum number of interpreted frames to skip when searching "\
-          "for recompilee")                                                 \
                                                                             \
   develop(intx, DesiredMethodLimit,  8000,                                  \
           "The desired maximum method size (in bytecodes) after inlining")  \

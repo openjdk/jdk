@@ -188,14 +188,6 @@ void select_compilation_mode_ergonomically() {
 #endif // TIERED
 
 void CompilerConfig::set_tiered_flags() {
-  // With tiered, set default policy to SimpleThresholdPolicy, which is 2.
-  if (FLAG_IS_DEFAULT(CompilationPolicyChoice)) {
-    FLAG_SET_DEFAULT(CompilationPolicyChoice, 2);
-  }
-  if (CompilationPolicyChoice < 2) {
-    vm_exit_during_initialization(
-      "Incompatible compilation policy selected", NULL);
-  }
   // Increase the code cache size - tiered compiles a lot more.
   if (FLAG_IS_DEFAULT(ReservedCodeCacheSize)) {
     FLAG_SET_ERGO(ReservedCodeCacheSize,
@@ -420,17 +412,6 @@ void CompilerConfig::ergo_initialize() {
   if (TieredCompilation) {
     set_tiered_flags();
   } else {
-    int max_compilation_policy_choice = 1;
-#ifdef COMPILER2
-    if (is_server_compilation_mode_vm()) {
-      max_compilation_policy_choice = 2;
-    }
-#endif
-    // Check if the policy is valid.
-    if (CompilationPolicyChoice >= max_compilation_policy_choice) {
-      vm_exit_during_initialization(
-        "Incompatible compilation policy selected", NULL);
-    }
     // Scale CompileThreshold
     // CompileThresholdScaling == 0.0 is equivalent to -Xint and leaves CompileThreshold unchanged.
     if (!FLAG_IS_DEFAULT(CompileThresholdScaling) && CompileThresholdScaling > 0.0) {
