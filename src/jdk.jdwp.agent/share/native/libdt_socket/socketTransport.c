@@ -511,7 +511,7 @@ parseAllowedPeers(const char *allowed_peers, size_t len) {
     if (buffer == NULL) {
         RETURN_ERROR(JDWPTRANSPORT_ERROR_OUT_OF_MEMORY, "out of memory");
     }
-    strncpy(buffer, allowed_peers, len);
+    memcpy(buffer, allowed_peers, len);
     buffer[len] = '\0';
 
     jdwpTransportError err = parseAllowedPeersInternal(buffer);
