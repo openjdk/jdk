@@ -73,7 +73,6 @@ public class JShellHeapDumpTest {
             System.out.println("jhsdb jmap stderr:");
             System.out.println(output.getStderr());
             System.out.println("###### End of all output:");
-            output.shouldNotContain("null");
             output.shouldHaveExitValue(0);
         } catch (Exception ex) {
             throw new RuntimeException("Test ERROR " + ex, ex);
