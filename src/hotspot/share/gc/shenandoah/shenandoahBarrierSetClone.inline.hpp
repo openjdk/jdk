@@ -73,7 +73,7 @@ public:
 
 void ShenandoahBarrierSet::clone_barrier(oop obj) {
   assert(ShenandoahCloneBarrier, "only get here with clone barriers enabled");
-  if (!_heap->has_forwarded_objects()) return;
+  assert(_heap->has_forwarded_objects(), "only when heap is unstable");
 
   // This is called for cloning an object (see jvm.cpp) after the clone
   // has been made. We are not interested in any 'previous value' because

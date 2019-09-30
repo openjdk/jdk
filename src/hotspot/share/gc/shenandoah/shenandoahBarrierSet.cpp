@@ -286,6 +286,8 @@ oop ShenandoahBarrierSet::oop_load_from_native_barrier(oop obj) {
 }
 
 void ShenandoahBarrierSet::clone_barrier_runtime(oop src) {
-  clone_barrier(src);
+  if (_heap->has_forwarded_objects()) {
+    clone_barrier(src);
+  }
 }
 
