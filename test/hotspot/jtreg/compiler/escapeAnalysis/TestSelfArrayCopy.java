@@ -26,7 +26,7 @@
  * @bug 8229016 8231055
  * @summary Test correct elimination of array allocation with arraycopy to itself.
  * @library /test/lib
- * @run main/othervm -Xbatch -XX:CompileCommand=compileonly,compiler.escapeAnalysis.TestSelfArrayCopy::test
+ * @run main/othervm -Xbatch -XX:CompileCommand=compileonly,compiler.escapeAnalysis.TestSelfArrayCopy::test*
  *                   compiler.escapeAnalysis.TestSelfArrayCopy
  */
 
