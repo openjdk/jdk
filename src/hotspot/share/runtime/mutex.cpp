@@ -282,6 +282,11 @@ Mutex::Mutex(int Rank, const char * name, bool allow_vm_block,
 
   assert(_safepoint_check_required != _safepoint_check_sometimes || is_sometimes_ok(name),
          "Lock has _safepoint_check_sometimes %s", name);
+
+  assert(_rank > special || _allow_vm_block,
+         "Special locks or below should allow the vm to block");
+  assert(_rank > special || _safepoint_check_required == _safepoint_check_never,
+         "Special locks or below should never safepoint");
 #endif
 }
 
@@ -388,17 +393,13 @@ bool Mutex::contains(Mutex* locks, Mutex* lock) {
 
 // NSV implied with locking allow_vm_block or !safepoint_check locks.
 void Mutex::no_safepoint_verifier(Thread* thread, bool enable) {
-  // Threads_lock is special, since the safepoint synchronization will not start before this is
-  // acquired. Hence, a JavaThread cannot be holding it at a safepoint. So is VMOperationRequest_lock,
-  // since it is used to transfer control between JavaThreads and the VMThread
-  // Do not *exclude* any locks unless you are absolutely sure it is correct. Ask someone else first!
-  if ((_allow_vm_block &&
-       this != Threads_lock &&
-       this != Compile_lock &&           // Temporary: should not be necessary when we get separate compilation
-       this != tty_lock &&               // The tty_lock is released for the safepoint.
-       this != VMOperationRequest_lock &&
-       this != VMOperationQueue_lock) ||
-       rank() == Mutex::special) {
+  // The tty_lock is special because it is released for the safepoint by
+  // the safepoint mechanism.
+  if (this == tty_lock) {
+    return;
+  }
+
+  if (_allow_vm_block) {
     if (enable) {
       thread->_no_safepoint_count++;
     } else {

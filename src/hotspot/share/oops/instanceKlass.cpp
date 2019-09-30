@@ -1101,7 +1101,7 @@ Klass* InstanceKlass::implementor() const {
 
 
 void InstanceKlass::set_implementor(Klass* k) {
-  assert_lock_strong(Compile_lock);
+  assert_locked_or_safepoint(Compile_lock);
   assert(is_interface(), "not interface");
   Klass* volatile* addr = adr_implementor();
   assert(addr != NULL, "null addr");
@@ -2333,8 +2333,8 @@ void InstanceKlass::remove_unshareable_info() {
   // being added to class hierarchy (see SystemDictionary:::add_to_hierarchy()).
   _init_state = allocated;
 
-  {
-    MutexLocker ml(Compile_lock);
+  { // Otherwise this needs to take out the Compile_lock.
+    assert(SafepointSynchronize::is_at_safepoint(), "only called at safepoint");
     init_implementor();
   }
 
