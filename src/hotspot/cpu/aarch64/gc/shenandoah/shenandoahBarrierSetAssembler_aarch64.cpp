@@ -211,8 +211,13 @@ void ShenandoahBarrierSetAssembler::resolve_forward_pointer_not_null(MacroAssemb
   if (borrow_reg) {
     // No free registers available. Make one useful.
     tmp = rscratch1;
+    if (tmp == dst) {
+      tmp = rscratch2;
+    }
     __ push(RegSet::of(tmp), sp);
   }
+
+  assert_different_registers(tmp, dst);
 
   Label done;
   __ ldr(tmp, Address(dst, oopDesc::mark_offset_in_bytes()));
