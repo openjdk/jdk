@@ -191,7 +191,7 @@ CompileTask* CompilationPolicy::select_task_helper(CompileQueue* compile_queue) 
 }
 
 #ifndef PRODUCT
-void NonTieredCompPolicy::trace_osr_completion(nmethod* osr_nm) {
+void SimpleCompPolicy::trace_osr_completion(nmethod* osr_nm) {
   if (TraceOnStackReplacement) {
     if (osr_nm == NULL) tty->print_cr("compilation failed");
     else tty->print_cr("nmethod " INTPTR_FORMAT, p2i(osr_nm));
@@ -199,7 +199,7 @@ void NonTieredCompPolicy::trace_osr_completion(nmethod* osr_nm) {
 }
 #endif // !PRODUCT
 
-void NonTieredCompPolicy::initialize() {
+void SimpleCompPolicy::initialize() {
   // Setup the compiler thread numbers
   if (CICompilerCountPerCPU) {
     // Example: if CICompilerCountPerCPU is true, then we get
@@ -233,7 +233,7 @@ void NonTieredCompPolicy::initialize() {
 // - with COMPILER2 not defined it should return zero for c2 compilation levels.
 // - with COMPILER1 not defined it should return zero for c1 compilation levels.
 // - if neither is defined - always return zero.
-int NonTieredCompPolicy::compiler_count(CompLevel comp_level) {
+int SimpleCompPolicy::compiler_count(CompLevel comp_level) {
   assert(!TieredCompilation, "This policy should not be used with TieredCompilation");
   if (COMPILER2_PRESENT(is_server_compilation_mode_vm() && is_c2_compile(comp_level) ||)
       is_client_compilation_mode_vm() && is_c1_compile(comp_level)) {
@@ -242,7 +242,7 @@ int NonTieredCompPolicy::compiler_count(CompLevel comp_level) {
   return 0;
 }
 
-void NonTieredCompPolicy::reset_counter_for_invocation_event(const methodHandle& m) {
+void SimpleCompPolicy::reset_counter_for_invocation_event(const methodHandle& m) {
   // Make sure invocation and backedge counter doesn't overflow again right away
   // as would be the case for native methods.
 
@@ -256,7 +256,7 @@ void NonTieredCompPolicy::reset_counter_for_invocation_event(const methodHandle&
   assert(!m->was_never_executed(), "don't reset to 0 -- could be mistaken for never-executed");
 }
 
-void NonTieredCompPolicy::reset_counter_for_back_branch_event(const methodHandle& m) {
+void SimpleCompPolicy::reset_counter_for_back_branch_event(const methodHandle& m) {
   // Delay next back-branch event but pump up invocation counter to trigger
   // whole method compilation.
   MethodCounters* mcs = m->method_counters();
@@ -314,13 +314,13 @@ void CounterDecay::decay() {
 }
 
 // Called at the end of the safepoint
-void NonTieredCompPolicy::do_safepoint_work() {
+void SimpleCompPolicy::do_safepoint_work() {
   if(UseCounterDecay && CounterDecay::is_decay_needed()) {
     CounterDecay::decay();
   }
 }
 
-void NonTieredCompPolicy::reprofile(ScopeDesc* trap_scope, bool is_osr) {
+void SimpleCompPolicy::reprofile(ScopeDesc* trap_scope, bool is_osr) {
   ScopeDesc* sd = trap_scope;
   MethodCounters* mcs;
   InvocationCounter* c;
@@ -346,7 +346,7 @@ void NonTieredCompPolicy::reprofile(ScopeDesc* trap_scope, bool is_osr) {
 
 // This method can be called by any component of the runtime to notify the policy
 // that it's recommended to delay the compilation of this method.
-void NonTieredCompPolicy::delay_compilation(Method* method) {
+void SimpleCompPolicy::delay_compilation(Method* method) {
   MethodCounters* mcs = method->method_counters();
   if (mcs != NULL) {
     mcs->invocation_counter()->decay();
@@ -354,7 +354,7 @@ void NonTieredCompPolicy::delay_compilation(Method* method) {
   }
 }
 
-void NonTieredCompPolicy::disable_compilation(Method* method) {
+void SimpleCompPolicy::disable_compilation(Method* method) {
   MethodCounters* mcs = method->method_counters();
   if (mcs != NULL) {
     mcs->invocation_counter()->set_state(InvocationCounter::wait_for_nothing);
@@ -362,11 +362,11 @@ void NonTieredCompPolicy::disable_compilation(Method* method) {
   }
 }
 
-CompileTask* NonTieredCompPolicy::select_task(CompileQueue* compile_queue) {
+CompileTask* SimpleCompPolicy::select_task(CompileQueue* compile_queue) {
   return select_task_helper(compile_queue);
 }
 
-bool NonTieredCompPolicy::is_mature(Method* method) {
+bool SimpleCompPolicy::is_mature(Method* method) {
   MethodData* mdo = method->method_data();
   assert(mdo != NULL, "Should be");
   uint current = mdo->mileage_of(method);
@@ -381,7 +381,7 @@ bool NonTieredCompPolicy::is_mature(Method* method) {
   return (current >= initial + target);
 }
 
-nmethod* NonTieredCompPolicy::event(const methodHandle& method, const methodHandle& inlinee, int branch_bci,
+nmethod* SimpleCompPolicy::event(const methodHandle& method, const methodHandle& inlinee, int branch_bci,
                                     int bci, CompLevel comp_level, CompiledMethod* nm, JavaThread* thread) {
   assert(comp_level == CompLevel_none, "This should be only called from the interpreter");
   NOT_PRODUCT(trace_frequency_counter_overflow(method, branch_bci, bci));
@@ -440,7 +440,7 @@ nmethod* NonTieredCompPolicy::event(const methodHandle& method, const methodHand
 }
 
 #ifndef PRODUCT
-void NonTieredCompPolicy::trace_frequency_counter_overflow(const methodHandle& m, int branch_bci, int bci) {
+void SimpleCompPolicy::trace_frequency_counter_overflow(const methodHandle& m, int branch_bci, int bci) {
   if (TraceInvocationCounterOverflow) {
     MethodCounters* mcs = m->method_counters();
     assert(mcs != NULL, "MethodCounters cannot be NULL for profiling");
@@ -472,7 +472,7 @@ void NonTieredCompPolicy::trace_frequency_counter_overflow(const methodHandle& m
   }
 }
 
-void NonTieredCompPolicy::trace_osr_request(const methodHandle& method, nmethod* osr, int bci) {
+void SimpleCompPolicy::trace_osr_request(const methodHandle& method, nmethod* osr, int bci) {
   if (TraceOnStackReplacement) {
     ResourceMark rm;
     tty->print(osr != NULL ? "Reused OSR entry for " : "Requesting OSR entry for ");
@@ -481,8 +481,6 @@ void NonTieredCompPolicy::trace_osr_request(const methodHandle& method, nmethod*
   }
 }
 #endif // !PRODUCT
-
-// SimpleCompPolicy - compile current method
 
 void SimpleCompPolicy::method_invocation_event(const methodHandle& m, JavaThread* thread) {
   const int comp_level = CompLevel_highest_tier;

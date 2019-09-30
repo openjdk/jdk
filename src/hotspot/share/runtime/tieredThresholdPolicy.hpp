@@ -215,7 +215,6 @@ class TieredThresholdPolicy : public CompilationPolicy {
 
   bool maybe_switch_to_aot(const methodHandle& mh, CompLevel cur_level, CompLevel next_level, JavaThread* thread);
 
-protected:
   int c1_count() const     { return _c1_count; }
   int c2_count() const     { return _c2_count; }
   void set_c1_count(int x) { _c1_count = x;    }
@@ -224,11 +223,11 @@ protected:
   enum EventType { CALL, LOOP, COMPILE, REMOVE_FROM_QUEUE, UPDATE_IN_QUEUE, REPROFILE, MAKE_NOT_ENTRANT };
   void print_event(EventType type, const methodHandle& mh, const methodHandle& imh, int bci, CompLevel level);
   // Print policy-specific information if necessary
-  virtual void print_specific(EventType type, const methodHandle& mh, const methodHandle& imh, int bci, CompLevel level);
+  void print_specific(EventType type, const methodHandle& mh, const methodHandle& imh, int bci, CompLevel level);
   // Check if the method can be compiled, change level if necessary
   void compile(const methodHandle& mh, int bci, CompLevel level, JavaThread* thread);
   // Submit a given method for compilation
-  virtual void submit_compile(const methodHandle& mh, int bci, CompLevel level, JavaThread* thread);
+  void submit_compile(const methodHandle& mh, int bci, CompLevel level, JavaThread* thread);
   // Simple methods are as good being compiled with C1 as C2.
   // This function tells if it's such a function.
   inline static bool is_trivial(Method* method);
@@ -242,10 +241,10 @@ protected:
 
   // Get a compilation level for a given method.
   static CompLevel comp_level(Method* method);
-  virtual void method_invocation_event(const methodHandle& method, const methodHandle& inlinee,
-                                       CompLevel level, CompiledMethod* nm, JavaThread* thread);
-  virtual void method_back_branch_event(const methodHandle& method, const methodHandle& inlinee,
-                                        int bci, CompLevel level, CompiledMethod* nm, JavaThread* thread);
+  void method_invocation_event(const methodHandle& method, const methodHandle& inlinee,
+                               CompLevel level, CompiledMethod* nm, JavaThread* thread);
+  void method_back_branch_event(const methodHandle& method, const methodHandle& inlinee,
+                                int bci, CompLevel level, CompiledMethod* nm, JavaThread* thread);
 
   void set_increase_threshold_at_ratio() { _increase_threshold_at_ratio = 100 / (100 - (double)IncreaseFirstTierCompileThresholdAt); }
   void set_start_time(jlong t) { _start_time = t;    }
