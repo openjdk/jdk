@@ -55,9 +55,6 @@ private:
                                     bool tosca_live,
                                     bool expand_call);
 
-  void resolve_forward_pointer(MacroAssembler* masm, Register dst, Register tmp = noreg);
-  void resolve_forward_pointer_not_null(MacroAssembler* masm, Register dst, Register tmp = noreg);
-
   void load_reference_barrier_not_null(MacroAssembler* masm, Register dst);
 
   void storeval_barrier_impl(MacroAssembler* masm, Register dst, Register tmp);
