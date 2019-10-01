@@ -327,14 +327,25 @@ private:
   ShenandoahHeapRegion* next_from_region(ShenandoahHeapRegionSet* slice) {
     ShenandoahHeapRegion* from_region = _heap_regions.next();
 
-    while (from_region != NULL && (!from_region->is_move_allowed() || from_region->is_humongous())) {
+    // Look for next candidate for this slice:
+    while (from_region != NULL) {
+      // Empty region: get it into the slice to defragment the slice itself.
+      // We could have skipped this without violating correctness, but we really
+      // want to compact all live regions to the start of the heap, which sometimes
+      // means moving them into the fully empty regions.
+      if (from_region->is_empty()) break;
+
+      // Can move the region, and this is not the humongous region. Humongous
+      // moves are special cased here, because their moves are handled separately.
+      if (from_region->is_move_allowed() && !from_region->is_humongous()) break;
+
       from_region = _heap_regions.next();
     }
 
     if (from_region != NULL) {
       assert(slice != NULL, "sanity");
       assert(!from_region->is_humongous(), "this path cannot handle humongous regions");
-      assert(from_region->is_move_allowed(), "only regions that can be moved in mark-compact");
+      assert(from_region->is_empty() || from_region->is_move_allowed(), "only regions that can be moved in mark-compact");
       slice->add_region(from_region);
     }
 
