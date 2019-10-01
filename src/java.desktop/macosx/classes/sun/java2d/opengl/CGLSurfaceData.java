@@ -25,7 +25,6 @@
 
 package sun.java2d.opengl;
 
-import java.awt.Graphics;
 import java.awt.GraphicsConfiguration;
 import java.awt.GraphicsDevice;
 import java.awt.GraphicsEnvironment;
@@ -33,9 +32,7 @@ import java.awt.Image;
 import java.awt.Rectangle;
 import java.awt.image.ColorModel;
 
-import sun.java2d.SunGraphics2D;
 import sun.java2d.SurfaceData;
-
 import sun.lwawt.macosx.CPlatformView;
 
 public abstract class CGLSurfaceData extends OGLSurfaceData {
@@ -340,45 +337,6 @@ public abstract class CGLSurfaceData extends OGLSurfaceData {
         @Override
         public Object getDestination() {
             return offscreenImage;
-        }
-    }
-
-    // Mac OS X specific APIs for JOGL/Java2D bridge...
-
-    // given a surface create and attach GL context, then return it
-    private static native long createCGLContextOnSurface(CGLSurfaceData sd,
-            long sharedContext);
-
-    public static long createOGLContextOnSurface(Graphics g, long sharedContext) {
-        SurfaceData sd = ((SunGraphics2D) g).surfaceData;
-        if ((sd instanceof CGLSurfaceData) == true) {
-            CGLSurfaceData cglsd = (CGLSurfaceData) sd;
-            return createCGLContextOnSurface(cglsd, sharedContext);
-        } else {
-            return 0L;
-        }
-    }
-
-    // returns whether or not the makeCurrent operation succeeded
-    static native boolean makeCGLContextCurrentOnSurface(CGLSurfaceData sd,
-            long ctx);
-
-    public static boolean makeOGLContextCurrentOnSurface(Graphics g, long ctx) {
-        SurfaceData sd = ((SunGraphics2D) g).surfaceData;
-        if ((ctx != 0L) && ((sd instanceof CGLSurfaceData) == true)) {
-            CGLSurfaceData cglsd = (CGLSurfaceData) sd;
-            return makeCGLContextCurrentOnSurface(cglsd, ctx);
-        } else {
-            return false;
-        }
-    }
-
-    // additional cleanup
-    private static native void destroyCGLContext(long ctx);
-
-    public static void destroyOGLContext(long ctx) {
-        if (ctx != 0L) {
-            destroyCGLContext(ctx);
         }
     }
 }
