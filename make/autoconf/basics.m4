@@ -213,8 +213,10 @@ AC_DEFUN([BASIC_ABSOLUTE_PATH],
   if test "x[$]$1" != x; then
     new_path="[$]$1"
 
-    if [ [[ "$new_path" = ~* ]] ]; then
-      # Use eval to expand a potential ~
+    # Use eval to expand a potential ~. This technique does not work if there
+    # are spaces in the path (which is valid at this point on Windows), so only
+    # try to apply it if there is an actual ~ first in the path.
+    if [ [[ "$new_path" = "~"* ]] ]; then
       eval new_path="$new_path"
       if test ! -f "$new_path" && test ! -d "$new_path"; then
         AC_MSG_ERROR([The new_path of $1, which resolves as "$new_path", is not found.])
