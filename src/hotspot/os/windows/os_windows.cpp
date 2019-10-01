@@ -4159,128 +4159,137 @@ static void file_attribute_data_to_stat(struct stat* sbuf, WIN32_FILE_ATTRIBUTE_
   }
 }
 
-// The following function is adapted from java.base/windows/native/libjava/canonicalize_md.c
-// Creates an UNC path from a single byte path. Return buffer is
-// allocated in C heap and needs to be freed by the caller.
-// Returns NULL on error.
-static wchar_t* create_unc_path(const char* path, errno_t &err) {
-  wchar_t* wpath = NULL;
-  size_t converted_chars = 0;
-  size_t path_len = strlen(path) + 1; // includes the terminating NULL
-  if (path[0] == '\\' && path[1] == '\\') {
-    if (path[2] == '?' && path[3] == '\\'){
-      // if it already has a \\?\ don't do the prefix
-      wpath = (wchar_t*)os::malloc(path_len * sizeof(wchar_t), mtInternal);
-      if (wpath != NULL) {
-        err = ::mbstowcs_s(&converted_chars, wpath, path_len, path, path_len);
-      } else {
-        err = ENOMEM;
-      }
-    } else {
-      // only UNC pathname includes double slashes here
-      wpath = (wchar_t*)os::malloc((path_len + 7) * sizeof(wchar_t), mtInternal);
-      if (wpath != NULL) {
-        ::wcscpy(wpath, L"\\\\?\\UNC\0");
-        err = ::mbstowcs_s(&converted_chars, &wpath[7], path_len, path, path_len);
-      } else {
-        err = ENOMEM;
-      }
-    }
+// Returns the given path as an absolute wide path in unc format. The returned path is NULL
+// on error (with err being set accordingly) and should be freed via os::free() otherwise.
+// additional_space is the number of additionally allocated wchars after the terminating L'\0'.
+// This is based on pathToNTPath() in io_util_md.cpp, but omits the optimizations for
+// short paths.
+static wchar_t* wide_abs_unc_path(char const* path, errno_t & err, int additional_space = 0) {
+  if ((path == NULL) || (path[0] == '\0')) {
+    err = ENOENT;
+    return NULL;
+  }
+
+  size_t path_len = strlen(path);
+  // Need to allocate at least room for 3 characters, since os::native_path transforms C: to C:.
+  char* buf = (char*) os::malloc(1 + MAX2((size_t) 3, path_len), mtInternal);
+  wchar_t* result = NULL;
+
+  if (buf == NULL) {
+    err = ENOMEM;
   } else {
-    wpath = (wchar_t*)os::malloc((path_len + 4) * sizeof(wchar_t), mtInternal);
-    if (wpath != NULL) {
-      ::wcscpy(wpath, L"\\\\?\\\0");
-      err = ::mbstowcs_s(&converted_chars, &wpath[4], path_len, path, path_len);
+    memcpy(buf, path, path_len + 1);
+    os::native_path(buf);
+
+    wchar_t* prefix;
+    int prefix_off = 0;
+    bool is_abs = true;
+    bool needs_fullpath = true;
+
+    if (::isalpha(buf[0]) && !::IsDBCSLeadByte(buf[0]) && buf[1] == ':' && buf[2] == '\\') {
+      prefix = L"\\\\?\\";
+    } else if (buf[0] == '\\' && buf[1] == '\\') {
+      assert(buf[2] != '\\');
+
+      if (buf[2] == '?' && buf[3] == '\\') {
+        prefix = L"";
+        needs_fullpath = false;
+      } else {
+        prefix = L"\\\\?\\UNC";
+        prefix_off = 1; // Overwrite the first char with the prefix, so \\share\path becomes \\?\UNC\share\path
+      }
     } else {
+      is_abs = false;
+      prefix = L"\\\\?\\";
+    }
+
+    size_t buf_len = strlen(buf);
+    size_t prefix_len = wcslen(prefix);
+    size_t full_path_size = is_abs ? 1 + buf_len : JVM_MAXPATHLEN;
+    size_t result_size = prefix_len + full_path_size - prefix_off;
+    result = (wchar_t*) os::malloc(sizeof(wchar_t) * (additional_space + result_size), mtInternal);
+
+    if (result == NULL) {
       err = ENOMEM;
+    } else {
+      size_t converted_chars;
+      wchar_t* path_start = result + prefix_len - prefix_off;
+      err = ::mbstowcs_s(&converted_chars, path_start, buf_len + 1, buf, buf_len);
+
+      if ((err == ERROR_SUCCESS) && needs_fullpath) {
+        wchar_t* tmp = (wchar_t*) os::malloc(sizeof(wchar_t) * full_path_size, mtInternal);
+
+        if (tmp == NULL) {
+          err = ENOMEM;
+        } else {
+          if (!_wfullpath(tmp, path_start, full_path_size)) {
+            err = ENOENT;
+          } else {
+            ::memcpy(path_start, tmp, (1 + wcslen(tmp)) * sizeof(wchar_t));
+          }
+
+          os::free(tmp);
+        }
+      }
+
+      memcpy(result, prefix, sizeof(wchar_t) * prefix_len);
+
+      // Remove trailing pathsep (not for \\?\<DRIVE>:\, since it would make it relative)
+      size_t result_len = wcslen(result);
+
+      if (result[result_len - 1] == L'\\') {
+        if (!(::iswalpha(result[4]) && result[5] == L':' && result_len == 7)) {
+          result[result_len - 1] = L'\0';
+        }
+      }
     }
   }
-  return wpath;
-}
 
-static void destroy_unc_path(wchar_t* wpath) {
-  os::free(wpath);
+  os::free(buf);
+
+  if (err != ERROR_SUCCESS) {
+    os::free(result);
+    result = NULL;
+  }
+
+  return result;
 }
 
 int os::stat(const char *path, struct stat *sbuf) {
-  char* pathbuf = (char*)os::strdup(path, mtInternal);
-  if (pathbuf == NULL) {
-    errno = ENOMEM;
+  errno_t err;
+  wchar_t* wide_path = wide_abs_unc_path(path, err);
+
+  if (wide_path == NULL) {
+    errno = err;
     return -1;
   }
-  os::native_path(pathbuf);
-  int ret;
-  WIN32_FILE_ATTRIBUTE_DATA file_data;
-  // Not using stat() to avoid the problem described in JDK-6539723
-  if (strlen(path) < MAX_PATH) {
-    BOOL bret = ::GetFileAttributesExA(pathbuf, GetFileExInfoStandard, &file_data);
-    if (!bret) {
-      errno = ::GetLastError();
-      ret = -1;
-    }
-    else {
-      file_attribute_data_to_stat(sbuf, file_data);
-      ret = 0;
-    }
-  } else {
-    errno_t err = ERROR_SUCCESS;
-    wchar_t* wpath = create_unc_path(pathbuf, err);
-    if (err != ERROR_SUCCESS) {
-      if (wpath != NULL) {
-        destroy_unc_path(wpath);
-      }
-      os::free(pathbuf);
-      errno = err;
-      return -1;
-    }
-    BOOL bret = ::GetFileAttributesExW(wpath, GetFileExInfoStandard, &file_data);
-    if (!bret) {
-      errno = ::GetLastError();
-      ret = -1;
-    } else {
-      file_attribute_data_to_stat(sbuf, file_data);
-      ret = 0;
-    }
-    destroy_unc_path(wpath);
+
+  WIN32_FILE_ATTRIBUTE_DATA file_data;;
+  BOOL bret = ::GetFileAttributesExW(wide_path, GetFileExInfoStandard, &file_data);
+  os::free(wide_path);
+
+  if (!bret) {
+    errno = ::GetLastError();
+    return -1;
   }
-  os::free(pathbuf);
-  return ret;
+
+  file_attribute_data_to_stat(sbuf, file_data);
+  return 0;
 }
 
 static HANDLE create_read_only_file_handle(const char* file) {
-  if (file == NULL) {
+  errno_t err;
+  wchar_t* wide_path = wide_abs_unc_path(file, err);
+
+  if (wide_path == NULL) {
+    errno = err;
     return INVALID_HANDLE_VALUE;
   }
 
-  char* nativepath = (char*)os::strdup(file, mtInternal);
-  if (nativepath == NULL) {
-    errno = ENOMEM;
-    return INVALID_HANDLE_VALUE;
-  }
-  os::native_path(nativepath);
+  HANDLE handle = ::CreateFileW(wide_path, 0, FILE_SHARE_READ,
+                                NULL, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, NULL);
+  os::free(wide_path);
 
-  size_t len = strlen(nativepath);
-  HANDLE handle = INVALID_HANDLE_VALUE;
-
-  if (len < MAX_PATH) {
-    handle = ::CreateFile(nativepath, 0, FILE_SHARE_READ,
-                          NULL, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, NULL);
-  } else {
-    errno_t err = ERROR_SUCCESS;
-    wchar_t* wfile = create_unc_path(nativepath, err);
-    if (err != ERROR_SUCCESS) {
-      if (wfile != NULL) {
-        destroy_unc_path(wfile);
-      }
-      os::free(nativepath);
-      return INVALID_HANDLE_VALUE;
-    }
-    handle = ::CreateFileW(wfile, 0, FILE_SHARE_READ,
-                           NULL, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, NULL);
-    destroy_unc_path(wfile);
-  }
-
-  os::free(nativepath);
   return handle;
 }
 
@@ -4328,7 +4337,6 @@ bool os::same_files(const char* file1, const char* file2) {
 
   return result;
 }
-
 
 #define FT2INT64(ft) \
   ((jlong)((jlong)(ft).dwHighDateTime << 32 | (julong)(ft).dwLowDateTime))
@@ -4434,38 +4442,22 @@ bool os::dont_yield() {
   return DontYieldALot;
 }
 
-// This method is a slightly reworked copy of JDK's sysOpen
-// from src/windows/hpi/src/sys_api_md.c
-
 int os::open(const char *path, int oflag, int mode) {
-  char* pathbuf = (char*)os::strdup(path, mtInternal);
-  if (pathbuf == NULL) {
-    errno = ENOMEM;
+  errno_t err;
+  wchar_t* wide_path = wide_abs_unc_path(path, err);
+
+  if (wide_path == NULL) {
+    errno = err;
     return -1;
   }
-  os::native_path(pathbuf);
-  int ret;
-  if (strlen(path) < MAX_PATH) {
-    ret = ::open(pathbuf, oflag | O_BINARY | O_NOINHERIT, mode);
-  } else {
-    errno_t err = ERROR_SUCCESS;
-    wchar_t* wpath = create_unc_path(pathbuf, err);
-    if (err != ERROR_SUCCESS) {
-      if (wpath != NULL) {
-        destroy_unc_path(wpath);
-      }
-      os::free(pathbuf);
-      errno = err;
-      return -1;
-    }
-    ret = ::_wopen(wpath, oflag | O_BINARY | O_NOINHERIT, mode);
-    if (ret == -1) {
-      errno = ::GetLastError();
-    }
-    destroy_unc_path(wpath);
+  int fd = ::_wopen(wide_path, oflag | O_BINARY | O_NOINHERIT, mode);
+  os::free(wide_path);
+
+  if (fd == -1) {
+    errno = ::GetLastError();
   }
-  os::free(pathbuf);
-  return ret;
+
+  return fd;
 }
 
 FILE* os::open(int fd, const char* mode) {
@@ -4474,37 +4466,26 @@ FILE* os::open(int fd, const char* mode) {
 
 // Is a (classpath) directory empty?
 bool os::dir_is_empty(const char* path) {
-  char* search_path = (char*)os::malloc(strlen(path) + 3, mtInternal);
-  if (search_path == NULL) {
-    errno = ENOMEM;
-    return false;
-  }
-  strcpy(search_path, path);
-  os::native_path(search_path);
-  // Append "*", or possibly "\\*", to path
-  if (search_path[1] == ':' &&
-       (search_path[2] == '\0' ||
-         (search_path[2] == '\\' && search_path[3] == '\0'))) {
-    // No '\\' needed for cases like "Z:" or "Z:\"
-    strcat(search_path, "*");
-  }
-  else {
-    strcat(search_path, "\\*");
-  }
-  errno_t err = ERROR_SUCCESS;
-  wchar_t* wpath = create_unc_path(search_path, err);
-  if (err != ERROR_SUCCESS) {
-    if (wpath != NULL) {
-      destroy_unc_path(wpath);
-    }
-    os::free(search_path);
+  errno_t err;
+  wchar_t* wide_path = wide_abs_unc_path(path, err, 2);
+
+  if (wide_path == NULL) {
     errno = err;
     return false;
   }
+
+  // Make sure we end with "\\*"
+  if (wide_path[wcslen(wide_path) - 1] == L'\\') {
+    wcscat(wide_path, L"*");
+  } else {
+    wcscat(wide_path, L"\\*");
+  }
+
   WIN32_FIND_DATAW fd;
-  HANDLE f = ::FindFirstFileW(wpath, &fd);
-  destroy_unc_path(wpath);
+  HANDLE f = ::FindFirstFileW(wide_path, &fd);
+  os::free(wide_path);
   bool is_empty = true;
+
   if (f != INVALID_HANDLE_VALUE) {
     while (is_empty && ::FindNextFileW(f, &fd)) {
       // An empty directory contains only the current directory file
@@ -4515,8 +4496,10 @@ bool os::dir_is_empty(const char* path) {
       }
     }
     FindClose(f);
+  } else {
+    errno = ::GetLastError();
   }
-  os::free(search_path);
+
   return is_empty;
 }
 
