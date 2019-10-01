@@ -462,6 +462,11 @@ bool C2Compiler::is_intrinsic_supported(const methodHandle& method, bool is_virt
   case vmIntrinsics::_writebackPostSync0:
     if (!Matcher::match_rule_supported(Op_CacheWBPostSync)) return false;
     break;
+  case vmIntrinsics::_rint:
+  case vmIntrinsics::_ceil:
+  case vmIntrinsics::_floor:
+    if (!Matcher::match_rule_supported(Op_RoundDoubleMode)) return false;
+    break;
   case vmIntrinsics::_hashCode:
   case vmIntrinsics::_identityHashCode:
   case vmIntrinsics::_getClass:

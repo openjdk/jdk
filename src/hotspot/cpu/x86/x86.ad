@@ -1485,6 +1485,10 @@ const bool Matcher::match_rule_supported(int opcode) {
         ret_value = false;
       }
       break;
+    case Op_RoundDoubleMode:
+      if (UseSSE < 4)
+         ret_value = false;
+      break;
   }
 
   return ret_value;  // Per default match rules are supported.
@@ -1535,6 +1539,10 @@ const bool Matcher::match_rule_supported_vector(int opcode, int vlen) {
       case Op_CMoveVD:
         if (vlen != 4)
           ret_value  = false;
+        break;
+      case Op_RoundDoubleModeV:
+        if (VM_Version::supports_avx() == false)
+          ret_value = false;
         break;
     }
   }
@@ -2852,6 +2860,108 @@ instruct sqrtD_imm(regD dst, immD con) %{
     __ sqrtsd($dst$$XMMRegister, $constantaddress($con));
   %}
   ins_pipe(pipe_slow);
+%}
+
+
+instruct roundD_reg(legRegD dst, legRegD src, immU8 rmode) %{
+  predicate(UseSSE>=4);
+  match(Set dst (RoundDoubleMode src rmode));
+  format %{ "roundsd  $dst, $src" %}
+  ins_cost(150);
+  ins_encode %{
+    __ roundsd($dst$$XMMRegister, $src$$XMMRegister, $rmode$$constant);
+  %}
+  ins_pipe(pipe_slow);
+%}
+
+instruct roundD_mem(legRegD dst, memory src, immU8 rmode) %{
+  predicate(UseSSE>=4);
+  match(Set dst (RoundDoubleMode (LoadD src) rmode));
+  format %{ "roundsd  $dst, $src" %}
+  ins_cost(150);
+  ins_encode %{
+    __ roundsd($dst$$XMMRegister, $src$$Address, $rmode$$constant);
+  %}
+  ins_pipe(pipe_slow);
+%}
+
+instruct roundD_imm(legRegD dst, immD con, immU8 rmode, rRegI scratch_reg) %{
+  predicate(UseSSE>=4);
+  match(Set dst (RoundDoubleMode con rmode));
+  effect(TEMP scratch_reg);
+  format %{ "roundsd $dst, [$constantaddress]\t# load from constant table: double=$con" %}
+  ins_cost(150);
+  ins_encode %{
+    __ roundsd($dst$$XMMRegister, $constantaddress($con), $rmode$$constant, $scratch_reg$$Register);
+  %}
+  ins_pipe(pipe_slow);
+%}
+
+instruct vround2D_reg(legVecX dst, legVecX src, immU8 rmode) %{
+  predicate(UseAVX > 0 && n->as_Vector()->length() == 2);
+  match(Set dst (RoundDoubleModeV src rmode));
+  format %{ "vroundpd  $dst, $src, $rmode\t! round packed2D" %}
+  ins_encode %{
+    int vector_len = 0;
+    __ vroundpd($dst$$XMMRegister, $src$$XMMRegister, $rmode$$constant, vector_len);
+  %}
+  ins_pipe( pipe_slow );
+%}
+
+instruct vround2D_mem(legVecX dst, memory mem, immU8 rmode) %{
+  predicate(UseAVX > 0 && n->as_Vector()->length() == 2);
+  match(Set dst (RoundDoubleModeV (LoadVector mem) rmode));
+  format %{ "vroundpd $dst, $mem, $rmode\t! round packed2D" %}
+  ins_encode %{
+    int vector_len = 0;
+    __ vroundpd($dst$$XMMRegister, $mem$$Address, $rmode$$constant, vector_len);
+  %}
+  ins_pipe( pipe_slow );
+%}
+
+instruct vround4D_reg(legVecY dst, legVecY src, legVecY rmode) %{
+  predicate(UseAVX > 0 && n->as_Vector()->length() == 4);
+  match(Set dst (RoundDoubleModeV src rmode));
+  format %{ "vroundpd  $dst, $src, $rmode\t! round packed4D" %}
+  ins_encode %{
+    int vector_len = 1;
+    __ vroundpd($dst$$XMMRegister, $src$$XMMRegister, $rmode$$constant, vector_len);
+  %}
+  ins_pipe( pipe_slow );
+%}
+
+instruct vround4D_mem(legVecY dst, memory mem, immU8 rmode) %{
+  predicate(UseAVX > 0 && n->as_Vector()->length() == 4);
+  match(Set dst (RoundDoubleModeV (LoadVector mem) rmode));
+  format %{ "vroundpd $dst, $mem, $rmode\t! round packed4D" %}
+  ins_encode %{
+    int vector_len = 1;
+    __ vroundpd($dst$$XMMRegister, $mem$$Address, $rmode$$constant, vector_len);
+  %}
+  ins_pipe( pipe_slow );
+%}
+
+
+instruct vround8D_reg(vecZ dst, vecZ src, immU8 rmode) %{
+  predicate(UseAVX > 2 && n->as_Vector()->length() == 8);
+  match(Set dst (RoundDoubleModeV src rmode));
+  format %{ "vrndscalepd $dst, $src, $rmode\t! round packed8D" %}
+  ins_encode %{
+    int vector_len = 2;
+    __ vrndscalepd($dst$$XMMRegister, $src$$XMMRegister, $rmode$$constant, vector_len);
+  %}
+  ins_pipe( pipe_slow );
+%}
+
+instruct vround8D_mem(vecZ dst, memory mem, immU8 rmode) %{
+  predicate(UseAVX > 2 && n->as_Vector()->length() == 8);
+  match(Set dst (RoundDoubleModeV (LoadVector mem) rmode));
+  format %{ "vrndscalepd $dst, $mem, $rmode\t! round packed8D" %}
+  ins_encode %{
+    int vector_len = 2;
+    __ vrndscalepd($dst$$XMMRegister, $mem$$Address, $rmode$$constant, vector_len);
+  %}
+  ins_pipe( pipe_slow );
 %}
 
 instruct onspinwait() %{

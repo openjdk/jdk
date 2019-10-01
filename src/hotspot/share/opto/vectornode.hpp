@@ -70,6 +70,7 @@ class VectorNode : public TypeNode {
   static bool is_type_transition_short_to_int(Node* n);
   static bool is_type_transition_to_int(Node* n);
   static bool is_muladds2i(Node* n);
+  static bool is_roundopD(Node * n);
   static bool is_invariant_vector(Node* n);
   // [Start, end) half-open range defining which operands are vectors
   static void vector_operands(Node* n, uint* start, uint* end);
@@ -445,6 +446,13 @@ class PopCountVINode : public VectorNode {
 class SqrtVFNode : public VectorNode {
  public:
   SqrtVFNode(Node* in, const TypeVect* vt) : VectorNode(in,vt) {}
+  virtual int Opcode() const;
+};
+//------------------------------RoundDoubleVNode--------------------------------
+// Vector round double
+class RoundDoubleModeVNode : public VectorNode {
+ public:
+  RoundDoubleModeVNode(Node* in1, Node* in2, const TypeVect* vt) : VectorNode(in1, in2, vt) {}
   virtual int Opcode() const;
 };
 

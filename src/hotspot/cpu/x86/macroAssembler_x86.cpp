@@ -3661,6 +3661,15 @@ void MacroAssembler::subsd(XMMRegister dst, AddressLiteral src) {
   }
 }
 
+void MacroAssembler::roundsd(XMMRegister dst, AddressLiteral src, int32_t rmode, Register scratch_reg) {
+  if (reachable(src)) {
+    Assembler::roundsd(dst, as_Address(src), rmode);
+  } else {
+    lea(scratch_reg, src);
+    Assembler::roundsd(dst, Address(scratch_reg, 0), rmode);
+  }
+}
+
 void MacroAssembler::subss(XMMRegister dst, AddressLiteral src) {
   if (reachable(src)) {
     Assembler::subss(dst, as_Address(src));
