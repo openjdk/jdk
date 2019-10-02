@@ -385,7 +385,7 @@ const size_t minimumSymbolTableSize = 1024;
   notproduct(ccstrlist, DeoptimizeOnlyAt, "",                               \
           "A comma separated list of bcis to deoptimize at")                \
                                                                             \
-  product(bool, DeoptimizeRandom, false,                                    \
+  develop(bool, DeoptimizeRandom, false,                                    \
           "Deoptimize random frames on random exit from the runtime system")\
                                                                             \
   notproduct(bool, ZombieALot, false,                                       \
