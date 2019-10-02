@@ -4049,28 +4049,32 @@ Node *PhaseIdealLoop::get_late_ctrl( Node *n, Node *early ) {
   // dominated by early is considered a potentially interfering store.
   // This can produce false positives.
   if (n->is_Load() && LCA != early) {
-    Node_List worklist;
+    int load_alias_idx = C->get_alias_index(n->adr_type());
+    if (C->alias_type(load_alias_idx)->is_rewritable()) {
 
-    Node *mem = n->in(MemNode::Memory);
-    for (DUIterator_Fast imax, i = mem->fast_outs(imax); i < imax; i++) {
-      Node* s = mem->fast_out(i);
-      worklist.push(s);
-    }
-    while(worklist.size() != 0 && LCA != early) {
-      Node* s = worklist.pop();
-      if (s->is_Load() || s->Opcode() == Op_SafePoint ||
-          (s->is_CallStaticJava() && s->as_CallStaticJava()->uncommon_trap_request() != 0)) {
-        continue;
-      } else if (s->is_MergeMem()) {
-        for (DUIterator_Fast imax, i = s->fast_outs(imax); i < imax; i++) {
-          Node* s1 = s->fast_out(i);
-          worklist.push(s1);
-        }
-      } else {
-        Node *sctrl = has_ctrl(s) ? get_ctrl(s) : s->in(0);
-        assert(sctrl != NULL || s->outcnt() == 0, "must have control");
-        if (sctrl != NULL && !sctrl->is_top() && is_dominator(early, sctrl)) {
-          LCA = dom_lca_for_get_late_ctrl(LCA, sctrl, n);
+      Node_List worklist;
+
+      Node *mem = n->in(MemNode::Memory);
+      for (DUIterator_Fast imax, i = mem->fast_outs(imax); i < imax; i++) {
+        Node* s = mem->fast_out(i);
+        worklist.push(s);
+      }
+      while(worklist.size() != 0 && LCA != early) {
+        Node* s = worklist.pop();
+        if (s->is_Load() || s->Opcode() == Op_SafePoint ||
+            (s->is_CallStaticJava() && s->as_CallStaticJava()->uncommon_trap_request() != 0)) {
+          continue;
+        } else if (s->is_MergeMem()) {
+          for (DUIterator_Fast imax, i = s->fast_outs(imax); i < imax; i++) {
+            Node* s1 = s->fast_out(i);
+            worklist.push(s1);
+          }
+        } else {
+          Node *sctrl = has_ctrl(s) ? get_ctrl(s) : s->in(0);
+          assert(sctrl != NULL || s->outcnt() == 0, "must have control");
+          if (sctrl != NULL && !sctrl->is_top() && C->can_alias(s->adr_type(), load_alias_idx) && is_dominator(early, sctrl)) {
+            LCA = dom_lca_for_get_late_ctrl(LCA, sctrl, n);
+          }
         }
       }
     }
