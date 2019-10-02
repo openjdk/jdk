@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -149,6 +149,7 @@ class ExpressionToTypeInfo {
     private static class Result extends Error {
 
         static final long serialVersionUID = -5942088234594905629L;
+        @SuppressWarnings("serial") // Not statically typed as Serializable
         final TreePath expressionPath;
 
         Result(TreePath path) {
