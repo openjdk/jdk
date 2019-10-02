@@ -94,7 +94,7 @@ bool VerificationType::is_reference_assignable_from(
       return true;
     }
 
-    if (DumpSharedSpaces || DynamicDumpSharedSpaces) {
+    if (Arguments::is_dumping_archive()) {
       if (SystemDictionaryShared::add_verification_constraint(klass,
               name(), from.name(), from_field_is_protected, from.is_array(),
               from.is_object())) {

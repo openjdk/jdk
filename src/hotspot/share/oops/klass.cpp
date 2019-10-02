@@ -525,7 +525,7 @@ void Klass::metaspace_pointers_do(MetaspaceClosure* it) {
 }
 
 void Klass::remove_unshareable_info() {
-  assert (DumpSharedSpaces || DynamicDumpSharedSpaces,
+  assert (Arguments::is_dumping_archive(),
           "only called during CDS dump time");
   JFR_ONLY(REMOVE_ID(this);)
   if (log_is_enabled(Trace, cds, unshareable)) {
@@ -543,7 +543,7 @@ void Klass::remove_unshareable_info() {
 }
 
 void Klass::remove_java_mirror() {
-  assert(DumpSharedSpaces || DynamicDumpSharedSpaces, "only called during CDS dump time");
+  Arguments::assert_is_dumping_archive();
   if (log_is_enabled(Trace, cds, unshareable)) {
     ResourceMark rm;
     log_trace(cds, unshareable)("remove java_mirror: %s", external_name());

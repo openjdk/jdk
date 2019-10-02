@@ -708,7 +708,7 @@ void ConstantPoolCache::remove_unshareable_info() {
 }
 
 void ConstantPoolCache::walk_entries_for_initialization(bool check_only) {
-  assert(DumpSharedSpaces || DynamicDumpSharedSpaces, "sanity");
+  Arguments::assert_is_dumping_archive();
   // When dumping the archive, we want to clean up the ConstantPoolCache
   // to remove any effect of linking due to the execution of Java code --
   // each ConstantPoolCacheEntry will have the same contents as if

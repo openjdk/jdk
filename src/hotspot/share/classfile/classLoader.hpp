@@ -26,6 +26,7 @@
 #define SHARE_CLASSFILE_CLASSLOADER_HPP
 
 #include "jimage.hpp"
+#include "runtime/arguments.hpp"
 #include "runtime/handles.hpp"
 #include "runtime/perfData.hpp"
 #include "utilities/exceptions.hpp"
@@ -395,8 +396,7 @@ class ClassLoader: AllStatic {
   // Helper function used by CDS code to get the number of module path
   // entries during shared classpath setup time.
   static int num_module_path_entries() {
-    assert(DumpSharedSpaces || DynamicDumpSharedSpaces,
-           "Should only be called at CDS dump time");
+    Arguments::assert_is_dumping_archive();
     int num_entries = 0;
     ClassPathEntry* e= ClassLoader::_module_path_entries;
     while (e != NULL) {

@@ -263,7 +263,7 @@ void SharedClassPathEntry::init_as_non_existent(const char* path, TRAPS) {
 
 void SharedClassPathEntry::init(bool is_modules_image,
                                 ClassPathEntry* cpe, TRAPS) {
-  assert(DumpSharedSpaces || DynamicDumpSharedSpaces, "dump time only");
+  Arguments::assert_is_dumping_archive();
   _timestamp = 0;
   _filesize  = 0;
   _from_class_path_attr = false;
@@ -397,7 +397,7 @@ void SharedPathTable::dumptime_init(ClassLoaderData* loader_data, Thread* THREAD
 }
 
 void FileMapInfo::allocate_shared_path_table() {
-  assert(DumpSharedSpaces || DynamicDumpSharedSpaces, "Sanity");
+  Arguments::assert_is_dumping_archive();
 
   EXCEPTION_MARK; // The following calls should never throw, but would exit VM on error.
   ClassLoaderData* loader_data = ClassLoaderData::the_null_class_loader_data();
@@ -444,7 +444,7 @@ int FileMapInfo::add_shared_classpaths(int i, const char* which, ClassPathEntry 
 }
 
 void FileMapInfo::check_nonempty_dir_in_shared_path_table() {
-  assert(DumpSharedSpaces || DynamicDumpSharedSpaces, "dump time only");
+  Arguments::assert_is_dumping_archive();
 
   bool has_nonempty_dir = false;
 
@@ -471,7 +471,7 @@ void FileMapInfo::check_nonempty_dir_in_shared_path_table() {
 }
 
 void FileMapInfo::record_non_existent_class_path_entry(const char* path) {
-  assert(DumpSharedSpaces || DynamicDumpSharedSpaces, "dump time only");
+  Arguments::assert_is_dumping_archive();
   log_info(class, path)("non-existent Class-Path entry %s", path);
   if (_non_existent_class_paths == NULL) {
     _non_existent_class_paths = new (ResourceObj::C_HEAP, mtInternal)GrowableArray<const char*>(10, true);
@@ -480,7 +480,7 @@ void FileMapInfo::record_non_existent_class_path_entry(const char* path) {
 }
 
 int FileMapInfo::num_non_existent_class_paths() {
-  assert(DumpSharedSpaces || DynamicDumpSharedSpaces, "dump time only");
+  Arguments::assert_is_dumping_archive();
   if (_non_existent_class_paths != NULL) {
     return _non_existent_class_paths->length();
   } else {
@@ -1150,7 +1150,7 @@ void FileMapRegion::init(bool is_heap_region, char* base, size_t size, bool read
 
 void FileMapInfo::write_region(int region, char* base, size_t size,
                                bool read_only, bool allow_exec) {
-  assert(DumpSharedSpaces || DynamicDumpSharedSpaces, "Dump time only");
+  Arguments::assert_is_dumping_archive();
 
   FileMapRegion* si = space_at(region);
   char* target_base = base;

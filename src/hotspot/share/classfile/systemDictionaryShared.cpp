@@ -1029,7 +1029,7 @@ DumpTimeSharedClassInfo* SystemDictionaryShared::find_or_allocate_info_for(Insta
 }
 
 void SystemDictionaryShared::set_shared_class_misc_info(InstanceKlass* k, ClassFileStream* cfs) {
-  assert(DumpSharedSpaces || DynamicDumpSharedSpaces, "only when dumping");
+  Arguments::assert_is_dumping_archive();
   assert(!is_builtin(k), "must be unregistered class");
   DumpTimeSharedClassInfo* info = find_or_allocate_info_for(k);
   info->_clsfile_size  = cfs->length();
@@ -1185,7 +1185,7 @@ void SystemDictionaryShared::check_excluded_classes() {
 
 bool SystemDictionaryShared::is_excluded_class(InstanceKlass* k) {
   assert(_no_class_loading_should_happen, "sanity");
-  assert(DumpSharedSpaces || DynamicDumpSharedSpaces, "only when dumping");
+  Arguments::assert_is_dumping_archive();
   return find_or_allocate_info_for(k)->is_excluded();
 }
 
@@ -1209,7 +1209,7 @@ void SystemDictionaryShared::dumptime_classes_do(class MetaspaceClosure* it) {
 
 bool SystemDictionaryShared::add_verification_constraint(InstanceKlass* k, Symbol* name,
          Symbol* from_name, bool from_field_is_protected, bool from_is_array, bool from_is_object) {
-  assert(DumpSharedSpaces || DynamicDumpSharedSpaces, "called at dump time only");
+  Arguments::assert_is_dumping_archive();
   DumpTimeSharedClassInfo* info = find_or_allocate_info_for(k);
   info->add_verification_constraint(k, name, from_name, from_field_is_protected,
                                     from_is_array, from_is_object);

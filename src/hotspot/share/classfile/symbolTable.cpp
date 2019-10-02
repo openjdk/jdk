@@ -220,7 +220,7 @@ Symbol* SymbolTable::allocate_symbol(const char* name, int len, bool c_heap) {
   assert (len <= Symbol::max_length(), "should be checked by caller");
 
   Symbol* sym;
-  if (DumpSharedSpaces || DynamicDumpSharedSpaces) {
+  if (Arguments::is_dumping_archive()) {
     c_heap = false;
   }
   if (c_heap) {
@@ -283,7 +283,7 @@ public:
 };
 
 void SymbolTable::metaspace_pointers_do(MetaspaceClosure* it) {
-  assert(DumpSharedSpaces || DynamicDumpSharedSpaces, "called only during dump time");
+  Arguments::assert_is_dumping_archive();
   MetaspacePointersDo mpd(it);
   _local_table->do_safepoint_scan(mpd);
 }
