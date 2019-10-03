@@ -2863,6 +2863,7 @@ instruct sqrtD_imm(regD dst, immD con) %{
 %}
 
 
+#ifdef _LP64
 instruct roundD_reg(legRegD dst, legRegD src, immU8 rmode) %{
   predicate(UseSSE>=4);
   match(Set dst (RoundDoubleMode src rmode));
@@ -2963,6 +2964,7 @@ instruct vround8D_mem(vecZ dst, memory mem, immU8 rmode) %{
   %}
   ins_pipe( pipe_slow );
 %}
+#endif // _LP64
 
 instruct onspinwait() %{
   match(OnSpinWait);
