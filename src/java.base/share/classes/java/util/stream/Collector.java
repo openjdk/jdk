@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,6 +32,10 @@ import java.util.function.BiConsumer;
 import java.util.function.BinaryOperator;
 import java.util.function.Function;
 import java.util.function.Supplier;
+
+// A compilation test for the code snippets in this class-level javadoc can be found at:
+// test/jdk/java/util/stream/test/org/openjdk/tests/java/util/stream/CollectorExample.java
+// The test needs to be updated if the examples in this javadoc change or new examples are added.
 
 /**
  * A <a href="package-summary.html#Reduction">mutable reduction operation</a> that
@@ -154,7 +158,7 @@ import java.util.function.Supplier;
  * Performing a reduction operation with a {@code Collector} should produce a
  * result equivalent to:
  * <pre>{@code
- *     R container = collector.supplier().get();
+ *     A container = collector.supplier().get();
  *     for (T t : data)
  *         collector.accumulator().accept(container, t);
  *     return collector.finisher().apply(container);
