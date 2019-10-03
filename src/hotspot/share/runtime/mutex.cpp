@@ -70,22 +70,16 @@ void Mutex::check_no_safepoint_state(Thread* thread) {
 }
 #endif // ASSERT
 
-void Mutex::lock(Thread* self) {
-  check_safepoint_state(self);
-
-  assert(_owner != self, "invariant");
-
-  Mutex* in_flight_mutex = NULL;
+void Mutex::lock_contended(Thread* self) {
+  Mutex *in_flight_mutex = NULL;
   DEBUG_ONLY(int retry_cnt = 0;)
   bool is_active_Java_thread = self->is_active_Java_thread();
-  while (!_lock.try_lock()) {
-    // The lock is contended
-
-  #ifdef ASSERT
+  do {
+    #ifdef ASSERT
     if (retry_cnt++ > 3) {
       log_trace(vmmutex)("JavaThread " INTPTR_FORMAT " on %d attempt trying to acquire vmmutex %s", p2i(self), retry_cnt, _name);
     }
-  #endif // ASSERT
+    #endif // ASSERT
 
     // Is it a JavaThread participating in the safepoint protocol.
     if (is_active_Java_thread) {
@@ -102,6 +96,17 @@ void Mutex::lock(Thread* self) {
       _lock.lock();
       break;
     }
+  } while (!_lock.try_lock());
+}
+
+void Mutex::lock(Thread* self) {
+  check_safepoint_state(self);
+
+  assert(_owner != self, "invariant");
+
+  if (!_lock.try_lock()) {
+    // The lock is contended, use contended slow-path function to lock
+    lock_contended(self);
   }
 
   assert_owner(NULL);
@@ -109,7 +114,7 @@ void Mutex::lock(Thread* self) {
 }
 
 void Mutex::lock() {
-  this->lock(Thread::current());
+  lock(Thread::current());
 }
 
 // Lock without safepoint check - a degenerate variant of lock() for use by
