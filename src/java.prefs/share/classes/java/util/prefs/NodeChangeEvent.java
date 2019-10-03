@@ -46,8 +46,6 @@ import java.io.NotSerializableException;
 public class NodeChangeEvent extends java.util.EventObject {
     /**
      * The node that was added or removed.
-     *
-     * @serial
      */
     private transient Preferences child;
 
