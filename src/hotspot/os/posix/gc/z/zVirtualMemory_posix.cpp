@@ -43,7 +43,7 @@ static bool map(uintptr_t start, size_t size) {
 
   if ((uintptr_t)res != start) {
     // Failed to reserve memory at the requested address
-    unmap(start, size);
+    unmap((uintptr_t)res, size);
     return false;
   }
 
