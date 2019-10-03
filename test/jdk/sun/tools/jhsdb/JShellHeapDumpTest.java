@@ -48,7 +48,8 @@ import jdk.jshell.JShell;
 
 public class JShellHeapDumpTest {
 
-    protected static Process jShellProcess;
+    static Process jShellProcess;
+    static boolean doSleep = true; // By default do a short sleep when app starts up
 
     public static void launch(String expectedMessage, List<String> toolArgs)
         throws IOException {
@@ -141,13 +142,23 @@ public class JShellHeapDumpTest {
 
         // Give jshell a chance to fully start up. This makes SA more stable for the jmap dump.
         try {
-            Thread.sleep(2000);
+            if (doSleep) {
+                Thread.sleep(2000);
+            }
         } catch (Exception e) {
         }
     }
 
     public static void main(String[] args) throws Exception {
-
+        if (args.length == 1) {
+            if (args[0].equals("nosleep")) {
+                doSleep = false;
+            } else {
+                throw new RuntimeException("Invalid arg: " + args[0]);
+            }
+        } else if (args.length != 0) {
+            throw new RuntimeException("Too many args: " + args.length);
+        }
         testHeapDump();
 
         // The test throws RuntimeException on error.
