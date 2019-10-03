@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -201,8 +201,6 @@ public class Binder extends DebugeeBinder {
                 debugee = localLaunchDebugee(vmm, classToExecute, classPath);
             } else if (argumentHandler.isAttachingConnector()) {
                 debugee = localLaunchAndAttachDebugee(vmm, classToExecute, classPath);
-            } else if (argumentHandler.isLaunchingConnector()) {
-                debugee = localLaunchDebugee(vmm, classToExecute, classPath);
             } else if (argumentHandler.isListeningConnector()) {
                 debugee = localLaunchAndListenDebugee(vmm, classToExecute, classPath);
             } else {
