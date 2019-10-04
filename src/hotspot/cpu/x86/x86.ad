@@ -3861,7 +3861,7 @@ instruct Repl16F_mem(legVecZ dst, memory mem) %{
 %}
 
 instruct Repl2F_zero(vecD dst, immF0 zero) %{
-  predicate(n->as_Vector()->length() == 2 && UseAVX < 3);
+  predicate(n->as_Vector()->length() == 2);
   match(Set dst (ReplicateF zero));
   format %{ "xorps   $dst,$dst\t! replicate2F zero" %}
   ins_encode %{
@@ -3871,7 +3871,7 @@ instruct Repl2F_zero(vecD dst, immF0 zero) %{
 %}
 
 instruct Repl4F_zero(vecX dst, immF0 zero) %{
-  predicate(n->as_Vector()->length() == 4 && UseAVX < 3);
+  predicate(n->as_Vector()->length() == 4);
   match(Set dst (ReplicateF zero));
   format %{ "xorps   $dst,$dst\t! replicate4F zero" %}
   ins_encode %{
@@ -3881,7 +3881,7 @@ instruct Repl4F_zero(vecX dst, immF0 zero) %{
 %}
 
 instruct Repl8F_zero(vecY dst, immF0 zero) %{
-  predicate(n->as_Vector()->length() == 8 && UseAVX < 3);
+  predicate(n->as_Vector()->length() == 8 && UseAVX > 0);
   match(Set dst (ReplicateF zero));
   format %{ "vxorps  $dst,$dst,$dst\t! replicate8F zero" %}
   ins_encode %{
@@ -3955,7 +3955,7 @@ instruct Repl8D_mem(legVecZ dst, memory mem) %{
 
 // Replicate double (8 byte) scalar zero to be vector
 instruct Repl2D_zero(vecX dst, immD0 zero) %{
-  predicate(n->as_Vector()->length() == 2 && UseAVX < 3);
+  predicate(n->as_Vector()->length() == 2);
   match(Set dst (ReplicateD zero));
   format %{ "xorpd   $dst,$dst\t! replicate2D zero" %}
   ins_encode %{
@@ -3965,7 +3965,7 @@ instruct Repl2D_zero(vecX dst, immD0 zero) %{
 %}
 
 instruct Repl4D_zero(vecY dst, immD0 zero) %{
-  predicate(n->as_Vector()->length() == 4 && UseAVX < 3);
+  predicate(n->as_Vector()->length() == 4 && UseAVX > 0);
   match(Set dst (ReplicateD zero));
   format %{ "vxorpd  $dst,$dst,$dst,vect256\t! replicate4D zero" %}
   ins_encode %{
@@ -4890,42 +4890,6 @@ instruct Repl16F_mem_evex(vecZ dst, memory mem) %{
   ins_pipe( pipe_slow );
 %}
 
-instruct Repl2F_zero_evex(vecD dst, immF0 zero) %{
-  predicate(n->as_Vector()->length() == 2 && UseAVX > 2);
-  match(Set dst (ReplicateF zero));
-  format %{ "vpxor  $dst k0,$dst,$dst\t! replicate2F zero" %}
-  ins_encode %{
-    // Use vpxor in place of vxorps since EVEX has a constriant on dq for vxorps: this is a 512-bit operation
-    int vector_len = 2;
-    __ vpxor($dst$$XMMRegister,$dst$$XMMRegister, $dst$$XMMRegister, vector_len);
-  %}
-  ins_pipe( fpu_reg_reg );
-%}
-
-instruct Repl4F_zero_evex(vecX dst, immF0 zero) %{
-  predicate(n->as_Vector()->length() == 4 && UseAVX > 2);
-  match(Set dst (ReplicateF zero));
-  format %{ "vpxor  $dst k0,$dst,$dst\t! replicate4F zero" %}
-  ins_encode %{
-    // Use vpxor in place of vxorps since EVEX has a constriant on dq for vxorps: this is a 512-bit operation
-    int vector_len = 2;
-    __ vpxor($dst$$XMMRegister,$dst$$XMMRegister, $dst$$XMMRegister, vector_len);
-  %}
-  ins_pipe( fpu_reg_reg );
-%}
-
-instruct Repl8F_zero_evex(vecY dst, immF0 zero) %{
-  predicate(n->as_Vector()->length() == 8 && UseAVX > 2);
-  match(Set dst (ReplicateF zero));
-  format %{ "vpxor  $dst k0,$dst,$dst\t! replicate8F zero" %}
-  ins_encode %{
-    // Use vpxor in place of vxorps since EVEX has a constriant on dq for vxorps: this is a 512-bit operation
-    int vector_len = 2;
-    __ vpxor($dst$$XMMRegister,$dst$$XMMRegister, $dst$$XMMRegister, vector_len);
-  %}
-  ins_pipe( fpu_reg_reg );
-%}
-
 instruct Repl16F_zero_evex(vecZ dst, immF0 zero) %{
   predicate(n->as_Vector()->length() == 16 && UseAVX > 2);
   match(Set dst (ReplicateF zero));
@@ -4980,30 +4944,6 @@ instruct Repl8D_mem_evex(vecZ dst, memory mem) %{
     __ vpbroadcastsd($dst$$XMMRegister, $mem$$Address, vector_len);
   %}
   ins_pipe( pipe_slow );
-%}
-
-instruct Repl2D_zero_evex(vecX dst, immD0 zero) %{
-  predicate(n->as_Vector()->length() == 2 && UseAVX > 2);
-  match(Set dst (ReplicateD zero));
-  format %{ "vpxor  $dst k0,$dst,$dst\t! replicate2D zero" %}
-  ins_encode %{
-    // Use vpxor in place of vxorpd since EVEX has a constriant on dq for vxorpd: this is a 512-bit operation
-    int vector_len = 2;
-    __ vpxor($dst$$XMMRegister,$dst$$XMMRegister, $dst$$XMMRegister, vector_len);
-  %}
-  ins_pipe( fpu_reg_reg );
-%}
-
-instruct Repl4D_zero_evex(vecY dst, immD0 zero) %{
-  predicate(n->as_Vector()->length() == 4 && UseAVX > 2);
-  match(Set dst (ReplicateD zero));
-  format %{ "vpxor  $dst k0,$dst,$dst\t! replicate4D zero" %}
-  ins_encode %{
-    // Use vpxor in place of vxorpd since EVEX has a constriant on dq for vxorpd: this is a 512-bit operation
-    int vector_len = 2;
-    __ vpxor($dst$$XMMRegister,$dst$$XMMRegister, $dst$$XMMRegister, vector_len);
-  %}
-  ins_pipe( fpu_reg_reg );
 %}
 
 instruct Repl8D_zero_evex(vecZ dst, immD0 zero) %{

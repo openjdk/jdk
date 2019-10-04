@@ -366,7 +366,7 @@ enum Extended_Family {
     CPU_MODEL_HASWELL_E3     = 0x3c,
     CPU_MODEL_HASWELL_E7     = 0x3f,
     CPU_MODEL_BROADWELL      = 0x3d,
-    CPU_MODEL_SKYLAKE        = CPU_MODEL_HASWELL_E3
+    CPU_MODEL_SKYLAKE        = 0x55
   };
 
   // cpuid information block.  All info derived from executing cpuid with
