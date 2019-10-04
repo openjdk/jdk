@@ -140,6 +140,7 @@ public class ClhsdbLauncher {
         for (String cmd : commands) {
             int index = commands.indexOf(cmd) + 1;
             OutputAnalyzer out = new OutputAnalyzer(parts[index]);
+            out.shouldNotMatch("Unrecognized command.");
 
             if (expectedStrMap != null) {
                 List<String> expectedStr = expectedStrMap.get(cmd);
