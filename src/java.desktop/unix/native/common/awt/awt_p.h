@@ -30,11 +30,6 @@
 #ifndef _AWT_P_H_
 #define _AWT_P_H_
 
-/* turn on to do event filtering */
-#define NEW_EVENT_MODEL
-/* turn on to only filter keyboard events */
-#define KEYBOARD_ONLY_EVENTS
-
 #include <stdarg.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -58,9 +53,6 @@
 #endif
 #endif /* !HEADLESS */
 
-#define RepaintPending_NONE     0
-#define RepaintPending_REPAINT  (1 << 0)
-#define RepaintPending_EXPOSE   (1 << 1)
 #define LOOKUPSIZE 32
 
 #ifndef HEADLESS
@@ -101,24 +93,6 @@ typedef struct _AwtScreenData {
 
 typedef AwtScreenData* AwtScreenDataPtr;
 
-#define W_GRAVITY_INITIALIZED 1
-#define W_IS_EMBEDDED 2
-
-typedef struct awtFontList {
-    char *xlfd;
-    int index_length;
-    int load;
-    char *charset_name;
-    XFontStruct *xfont;
-} awtFontList;
-
-struct FontData {
-    int charset_num;
-    awtFontList *flist;
-    XFontSet xfs;       /* for TextField & TextArea */
-    XFontStruct *xfont; /* Latin1 font */
-};
-
 extern AwtGraphicsConfigDataPtr getDefaultConfig(int screen);
 extern AwtScreenDataPtr getScreenData(int screen);
 #endif /* !HEADLESS */
@@ -127,13 +101,10 @@ extern AwtScreenDataPtr getScreenData(int screen);
 #define ZALLOC(T)       ((struct T *)calloc(1, sizeof(struct T)))
 
 #ifndef HEADLESS
-#define XDISPLAY awt_display;
 
 extern int awt_allocate_colors(AwtGraphicsConfigDataPtr);
-extern void awt_allocate_systemcolors(XColor *, int, AwtGraphicsConfigDataPtr);
 extern void awt_allocate_systemrgbcolors(jint *, int, AwtGraphicsConfigDataPtr);
 
-extern int awtJNI_GetColor(JNIEnv *, jobject);
 extern int awtJNI_GetColorForVis (JNIEnv *, jobject, AwtGraphicsConfigDataPtr);
 extern jobject awtJNI_GetColorModel(JNIEnv *, AwtGraphicsConfigDataPtr);
 extern void awtJNI_CreateColorData (JNIEnv *, AwtGraphicsConfigDataPtr, int lock);

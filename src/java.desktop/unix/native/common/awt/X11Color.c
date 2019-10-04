@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1995, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1995, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -335,19 +335,6 @@ alloc_col(Display *dpy, Colormap cm, int r, int g, int b, int pixel,
     }
 
     return awt_color_match(r, g, b, awt_data);
-}
-
-void
-awt_allocate_systemcolors(XColor *colorsPtr, int num_pixels, AwtGraphicsConfigDataPtr awtData) {
-    int i;
-    int r, g, b, pixel;
-
-    for (i=0; i < num_pixels; i++) {
-        r = colorsPtr[i].red   >> 8;
-        g = colorsPtr[i].green >> 8;
-        b = colorsPtr[i].blue  >> 8;
-        pixel = alloc_col(awt_display, awtData->awt_cmap, r, g, b, -1, awtData);
-    }
 }
 #endif /* !HEADLESS */
 
@@ -1276,12 +1263,6 @@ jobject awtJNI_GetColorModel(JNIEnv *env, AwtGraphicsConfigDataPtr aData)
 extern jfieldID colorValueID;
 
 #ifndef HEADLESS
-int awtJNI_GetColor(JNIEnv *env,jobject this)
-{
-    /* REMIND: should not be defaultConfig. */
-    return awtJNI_GetColorForVis (env, this, getDefaultConfig(DefaultScreen(awt_display)));
-}
-
 int awtJNI_GetColorForVis (JNIEnv *env,jobject this, AwtGraphicsConfigDataPtr awt_data)
 {
     int col;

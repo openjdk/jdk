@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -39,7 +39,6 @@
 #include "awt_p.h"
 #include "awt_Component.h"
 #include "awt_MenuComponent.h"
-#include "awt_Font.h"
 #include "awt_util.h"
 
 #include "sun_awt_X11_XToolkit.h"
