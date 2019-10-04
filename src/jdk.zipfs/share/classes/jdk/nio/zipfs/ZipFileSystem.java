@@ -138,7 +138,7 @@ class ZipFileSystem extends FileSystem {
                     new END().write(os, 0, forceEnd64);
                 }
             } else {
-                throw new FileSystemNotFoundException(zfpath.toString());
+                throw new NoSuchFileException(zfpath.toString());
             }
         }
         // sm and existence check
