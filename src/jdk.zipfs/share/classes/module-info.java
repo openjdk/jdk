@@ -147,7 +147,7 @@ import java.util.Set;
  * <tbody>
  * <tr>
  *   <th scope="row">create</th>
- *   <td>java.lang.String</td>
+ *   <td>{@link java.lang.String} or {@link java.lang.Boolean}</td>
  *   <td>false</td>
  *   <td>
  *       If the value is {@code true}, the Zip file system provider
@@ -156,7 +156,7 @@ import java.util.Set;
  * </tr>
  * <tr>
  *   <th scope="row">encoding</th>
- *   <td>java.lang.String</td>
+ *   <td>{@link java.lang.String}</td>
  *   <td>UTF-8</td>
  *   <td>
  *       The value indicates the encoding scheme for the
@@ -164,8 +164,8 @@ import java.util.Set;
  *   </td>
  * </tr>
  * <tr>
- *   <td scope="row">enablePosixFileAttributes</td>
- *   <td>java.lang.String</td>
+ *   <th scope="row">enablePosixFileAttributes</th>
+ *   <td>{@link java.lang.String} or {@link java.lang.Boolean}</td>
  *   <td>false</td>
  *   <td>
  *       If the value is {@code true}, the Zip file system will support
@@ -173,8 +173,9 @@ import java.util.Set;
  *   </td>
  * </tr>
  * <tr>
- *   <td scope="row">defaultOwner</td>
- *   <td>{@link java.nio.file.attribute.UserPrincipal UserPrincipal}<br> or java.lang.String</td>
+ *   <th scope="row">defaultOwner</th>
+ *   <td>{@link java.nio.file.attribute.UserPrincipal UserPrincipal}<br> or
+ *   {@link java.lang.String}</td>
  *   <td>null/unset</td>
  *   <td>
  *       Override the default owner for entries in the Zip file system.<br>
@@ -182,8 +183,9 @@ import java.util.Set;
  *   </td>
  * </tr>
  * <tr>
- *   <td scope="row">defaultGroup</td>
- *   <td>{@link java.nio.file.attribute.GroupPrincipal GroupPrincipal}<br> or java.lang.String</td>
+ *   <th scope="row">defaultGroup</th>
+ *   <td>{@link java.nio.file.attribute.GroupPrincipal GroupPrincipal}<br> or
+ *   {@link java.lang.String}</td>
  *   <td>null/unset</td>
  *   <td>
  *       Override the the default group for entries in the Zip file system.<br>
@@ -191,9 +193,9 @@ import java.util.Set;
  *   </td>
  * </tr>
  * <tr>
- *   <td scope="row">defaultPermissions</td>
+ *   <th scope="row">defaultPermissions</th>
  *   <td>{@link java.util.Set Set}&lt;{@link java.nio.file.attribute.PosixFilePermission PosixFilePermission}&gt;<br>
- *       or java.lang.String</td>
+ *       or {@link java.lang.String}</td>
  *   <td>null/unset</td>
  *   <td>
  *       Override the default Set of permissions for entries in the Zip file system.<br>
@@ -201,7 +203,66 @@ import java.util.Set;
  *       a String that is parsed by {@link java.nio.file.attribute.PosixFilePermissions#fromString PosixFilePermissions::fromString}
  *   </td>
  * </tr>
- * </tbody>
+ * <tr>
+ *   <th scope="row">compressionMethod</th>
+ *   <td>{@link java.lang.String}</td>
+ *   <td>"DEFLATED"</td>
+ *   <td>
+ *       The value representing the compression method to use when writing entries
+ *       to the Zip file system.
+ *       <ul>
+ *           <li>
+ *               If the value is {@code "STORED"}, the Zip file system provider will
+ *               not compress entries when writing to the Zip file system.
+ *           </li>
+ *           <li>
+ *               If the value is {@code "DEFLATED"} or the property is not set,
+ *               the Zip file system provider will use data compression when
+ *               writing entries to the Zip file system.
+ *           </li>
+ *           <li>
+ *               If the value is not {@code "STORED"} or {@code "DEFLATED"}, an
+ *               {@code IllegalArgumentException} will be thrown when the Zip
+ *               filesystem is created.
+ *           </li>
+ *       </ul>
+ *   </td>
+ * </tr>
+ * <tr>
+ *   <th scope="row">releaseVersion</th>
+ *   <td>{@link java.lang.String} or {@link java.lang.Integer}</td>
+ *   <td>null/unset</td>
+ *   <td>
+ *       A value representing the version entry to use when accessing a
+ *       <a href=="{@docRoot}/../specs/jar/jar.html#multi-release-jar-files">
+ *       multi-release JAR</a>. If the JAR is not a
+ *       <a href=="{@docRoot}/../specs/jar/jar.html#multi-release-jar-files">
+ *       multi-release JAR</a>, the value will be ignored and the JAR will be
+ *       considered un-versioned.
+ *       <p>
+ *       The value must be either the string "runtime" or represent a valid
+ *       {@linkplain Runtime.Version Java SE Platform version number},
+ *       such as {@code 9} or {@code 14}, in order to determine the version entry.
+ *
+ *       <ul>
+ *           <li>
+ *               If the value is {@code null} or the property is not set,
+ *               then the JAR will be treated as an un-versioned JAR.
+ *           </li>
+ *           <li>
+ *               If the value is {@code "runtime"}, the
+ *               version entry will be determined by invoking
+ *               {@linkplain Runtime.Version#feature() Runtime.Version.feature()}.
+ *           </li>
+ *           <li>
+ *               If the value does not represent a valid
+ *               {@linkplain Runtime.Version Java SE Platform version number},
+ *               an {@code IllegalArgumentException} will be thrown.
+ *           </li>
+ *       </ul>
+ *   </td>
+ * </tr>
+ *  </tbody>
  * </table>
  *
  * <h2>Examples:</h2>
@@ -223,7 +284,7 @@ import java.util.Set;
  * <pre>
  * {@code
  *
- *     FileSystem zipfs = FileSystems.newFileSystem(Path.of("helloworld.jar"), null);
+ *     FileSystem zipfs = FileSystems.newFileSystem(Path.of("helloworld.jar"));
  *     Path rootDir = zipfs.getPath("/");
  *     Files.walk(rootDir)
  *            .forEach(System.out::println);

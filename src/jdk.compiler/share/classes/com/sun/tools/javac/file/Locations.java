@@ -233,7 +233,7 @@ public class Locations {
     }
 
     public void setMultiReleaseValue(String multiReleaseValue) {
-        fsEnv = Collections.singletonMap("multi-release", multiReleaseValue);
+        fsEnv = Collections.singletonMap("releaseVersion", multiReleaseValue);
     }
 
     private boolean contains(Collection<Path> searchPath, Path file) throws IOException {

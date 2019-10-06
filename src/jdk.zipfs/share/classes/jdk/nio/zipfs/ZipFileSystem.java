@@ -81,13 +81,19 @@ class ZipFileSystem extends FileSystem {
         (PrivilegedAction<Boolean>)()->System.getProperty("os.name")
                                              .startsWith("Windows"));
     private static final byte[] ROOTPATH = new byte[] { '/' };
-    private static final String OPT_POSIX = "enablePosixFileAttributes";
-    private static final String OPT_DEFAULT_OWNER = "defaultOwner";
-    private static final String OPT_DEFAULT_GROUP = "defaultGroup";
-    private static final String OPT_DEFAULT_PERMISSIONS = "defaultPermissions";
+    private static final String PROPERTY_POSIX = "enablePosixFileAttributes";
+    private static final String PROPERTY_DEFAULT_OWNER = "defaultOwner";
+    private static final String PROPERTY_DEFAULT_GROUP = "defaultGroup";
+    private static final String PROPERTY_DEFAULT_PERMISSIONS = "defaultPermissions";
 
     private static final Set<PosixFilePermission> DEFAULT_PERMISSIONS =
         PosixFilePermissions.fromString("rwxrwxrwx");
+    // Property used to specify the compression mode to use
+    private static final String PROPERTY_COMPRESSION_METHOD = "compressionMethod";
+    // Value specified for compressionMethod property to compress Zip entries
+    private static final String COMPRESSION_METHOD_DEFLATED = "DEFLATED";
+    // Value specified for compressionMethod property to not compress Zip entries
+    private static final String COMPRESSION_METHOD_STORED = "STORED";
 
     private final ZipFileSystemProvider provider;
     private final Path zfpath;
@@ -124,8 +130,8 @@ class ZipFileSystem extends FileSystem {
         this.noExtt = "false".equals(env.get("zipinfo-time"));
         this.useTempFile  = isTrue(env, "useTempFile");
         this.forceEnd64 = isTrue(env, "forceZIP64End");
-        this.defaultCompressionMethod = isTrue(env, "noCompression") ? METHOD_STORED : METHOD_DEFLATED;
-        this.supportPosix = isTrue(env, OPT_POSIX);
+        this.defaultCompressionMethod = getDefaultCompressionMethod(env);
+        this.supportPosix = isTrue(env, PROPERTY_POSIX);
         this.defaultOwner = initOwner(zfpath, env);
         this.defaultGroup = initGroup(zfpath, env);
         this.defaultPermissions = initPermissions(env);
@@ -163,6 +169,50 @@ class ZipFileSystem extends FileSystem {
         this.zfpath = zfpath;
     }
 
+    /**
+     * Return the compression method to use (STORED or DEFLATED).  If the
+     * property {@code commpressionMethod} is set use its value to determine
+     * the compression method to use.  If the property is not set, then the
+     * default compression is DEFLATED unless the property {@code noCompression}
+     * is set which is supported for backwards compatibility.
+     * @param env Zip FS map of properties
+     * @return The Compression method to use
+     */
+    private int getDefaultCompressionMethod(Map<String, ?> env) {
+        int result =
+                isTrue(env, "noCompression") ? METHOD_STORED : METHOD_DEFLATED;
+        if (env.containsKey(PROPERTY_COMPRESSION_METHOD)) {
+            Object compressionMethod =  env.get(PROPERTY_COMPRESSION_METHOD);
+            if (compressionMethod != null) {
+                if (compressionMethod instanceof String) {
+                    switch (((String) compressionMethod).toUpperCase()) {
+                        case COMPRESSION_METHOD_STORED:
+                            result = METHOD_STORED;
+                            break;
+                        case COMPRESSION_METHOD_DEFLATED:
+                            result = METHOD_DEFLATED;
+                            break;
+                        default:
+                            throw new IllegalArgumentException(String.format(
+                                    "The value for the %s property must be %s or %s",
+                                    PROPERTY_COMPRESSION_METHOD, COMPRESSION_METHOD_STORED,
+                                    COMPRESSION_METHOD_DEFLATED));
+                    }
+                } else {
+                    throw new IllegalArgumentException(String.format(
+                            "The Object type for the %s property must be a String",
+                            PROPERTY_COMPRESSION_METHOD));
+                }
+            } else {
+                throw new IllegalArgumentException(String.format(
+                        "The value for the %s property must be %s or %s",
+                        PROPERTY_COMPRESSION_METHOD, COMPRESSION_METHOD_STORED,
+                        COMPRESSION_METHOD_DEFLATED));
+            }
+        }
+        return result;
+    }
+
     // returns true if there is a name=true/"true" setting in env
     private static boolean isTrue(Map<String, ?> env, String name) {
         return "true".equals(env.get(name)) || TRUE.equals(env.get(name));
@@ -173,7 +223,7 @@ class ZipFileSystem extends FileSystem {
     // be determined, we try to go with system property "user.name". If that's not
     // accessible, we return "<zipfs_default>".
     private UserPrincipal initOwner(Path zfpath, Map<String, ?> env) throws IOException {
-        Object o = env.get(OPT_DEFAULT_OWNER);
+        Object o = env.get(PROPERTY_DEFAULT_OWNER);
         if (o == null) {
             try {
                 PrivilegedExceptionAction<UserPrincipal> pa = ()->Files.getOwner(zfpath);
@@ -193,7 +243,7 @@ class ZipFileSystem extends FileSystem {
         if (o instanceof String) {
             if (((String)o).isEmpty()) {
                 throw new IllegalArgumentException("Value for property " +
-                    OPT_DEFAULT_OWNER + " must not be empty.");
+                        PROPERTY_DEFAULT_OWNER + " must not be empty.");
             }
             return ()->(String)o;
         }
@@ -201,7 +251,7 @@ class ZipFileSystem extends FileSystem {
             return (UserPrincipal)o;
         }
         throw new IllegalArgumentException("Value for property " +
-            OPT_DEFAULT_OWNER + " must be of type " + String.class +
+                PROPERTY_DEFAULT_OWNER + " must be of type " + String.class +
             " or " + UserPrincipal.class);
     }
 
@@ -210,7 +260,7 @@ class ZipFileSystem extends FileSystem {
     // If this is not possible/unsupported, we will return a group principal going by
     // the same name as the default owner.
     private GroupPrincipal initGroup(Path zfpath, Map<String, ?> env) throws IOException {
-        Object o = env.get(OPT_DEFAULT_GROUP);
+        Object o = env.get(PROPERTY_DEFAULT_GROUP);
         if (o == null) {
             try {
                 PosixFileAttributeView zfpv = Files.getFileAttributeView(zfpath, PosixFileAttributeView.class);
@@ -232,7 +282,7 @@ class ZipFileSystem extends FileSystem {
         if (o instanceof String) {
             if (((String)o).isEmpty()) {
                 throw new IllegalArgumentException("Value for property " +
-                    OPT_DEFAULT_GROUP + " must not be empty.");
+                        PROPERTY_DEFAULT_GROUP + " must not be empty.");
             }
             return ()->(String)o;
         }
@@ -240,14 +290,14 @@ class ZipFileSystem extends FileSystem {
             return (GroupPrincipal)o;
         }
         throw new IllegalArgumentException("Value for property " +
-            OPT_DEFAULT_GROUP + " must be of type " + String.class +
+                PROPERTY_DEFAULT_GROUP + " must be of type " + String.class +
             " or " + GroupPrincipal.class);
     }
 
     // Initialize the default permissions for files inside the zip archive.
     // If not specified in env, it will return 777.
     private Set<PosixFilePermission> initPermissions(Map<String, ?> env) {
-        Object o = env.get(OPT_DEFAULT_PERMISSIONS);
+        Object o = env.get(PROPERTY_DEFAULT_PERMISSIONS);
         if (o == null) {
             return DEFAULT_PERMISSIONS;
         }
@@ -256,7 +306,7 @@ class ZipFileSystem extends FileSystem {
         }
         if (!(o instanceof Set)) {
             throw new IllegalArgumentException("Value for property " +
-                OPT_DEFAULT_PERMISSIONS + " must be of type " + String.class +
+                PROPERTY_DEFAULT_PERMISSIONS + " must be of type " + String.class +
                 " or " + Set.class);
         }
         Set<PosixFilePermission> perms = new HashSet<>();
@@ -264,7 +314,7 @@ class ZipFileSystem extends FileSystem {
             if (o2 instanceof PosixFilePermission) {
                 perms.add((PosixFilePermission)o2);
             } else {
-                throw new IllegalArgumentException(OPT_DEFAULT_PERMISSIONS +
+                throw new IllegalArgumentException(PROPERTY_DEFAULT_PERMISSIONS +
                     " must only contain objects of type " + PosixFilePermission.class);
             }
         }

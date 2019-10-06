@@ -60,18 +60,20 @@ class JarFileSystem extends ZipFileSystem {
 
     JarFileSystem(ZipFileSystemProvider provider, Path zfpath, Map<String,?> env) throws IOException {
         super(provider, zfpath, env);
-        if (isMultiReleaseJar()) {
+        Object o = getRuntimeVersion(env);
+        if (isMultiReleaseJar() && (o != null)) {
             int version;
-            Object o = env.get("multi-release");
             if (o instanceof String) {
                 String s = (String)o;
                 if (s.equals("runtime")) {
                     version = Runtime.version().feature();
+                } else if (s.matches("^[1-9][0-9]*$")) {
+                    version = Version.parse(s).feature();
                 } else {
-                    version = Integer.parseInt(s);
+                    throw new IllegalArgumentException("Invalid runtime version");
                 }
             } else if (o instanceof Integer) {
-                version = (Integer)o;
+                version = Version.parse(((Integer)o).toString()).feature();
             } else if (o instanceof Version) {
                 version = ((Version)o).feature();
             } else {
@@ -81,6 +83,23 @@ class JarFileSystem extends ZipFileSystem {
             createVersionedLinks(version < 0 ? 0 : version);
             setReadOnly();
         }
+    }
+
+    /**
+     * Utility method to get the release version for a multi-release JAR.  It
+     * first checks the documented property {@code releaseVersion} and if not
+     * found checks the original property {@code multi-release}
+     * @param env  ZIP FS map
+     * @return  release version or null if it is not specified
+     */
+    private Object getRuntimeVersion(Map<String, ?> env) {
+        Object o = null;
+        if (env.containsKey(ZipFileSystemProvider.PROPERTY_RELEASE_VERSION)) {
+            o = env.get(ZipFileSystemProvider.PROPERTY_RELEASE_VERSION);
+        } else {
+            o = env.get(ZipFileSystemProvider.PROPERTY_MULTI_RELEASE);
+        }
+        return o;
     }
 
     private boolean isMultiReleaseJar() throws IOException {
