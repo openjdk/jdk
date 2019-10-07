@@ -66,7 +66,6 @@ Mutex*   TouchedMethodLog_lock        = NULL;
 Mutex*   RetData_lock                 = NULL;
 Monitor* VMOperationQueue_lock        = NULL;
 Monitor* VMOperationRequest_lock      = NULL;
-Monitor* SerializePage_lock           = NULL;
 Monitor* Threads_lock                 = NULL;
 Mutex*   NonJavaThreadsList_lock      = NULL;
 Mutex*   NonJavaThreadsListSync_lock  = NULL;
@@ -118,6 +117,7 @@ Mutex*   Management_lock              = NULL;
 Monitor* Service_lock                 = NULL;
 Monitor* PeriodicTask_lock            = NULL;
 Monitor* RedefineClasses_lock         = NULL;
+Mutex*   Verify_lock                  = NULL;
 
 #if INCLUDE_JFR
 Mutex*   JfrStacktrace_lock           = NULL;
@@ -298,6 +298,7 @@ void mutex_init() {
   def(CompileThread_lock           , PaddedMonitor, nonleaf+5,   false, _safepoint_check_always);
   def(PeriodicTask_lock            , PaddedMonitor, nonleaf+5,   true,  _safepoint_check_always);
   def(RedefineClasses_lock         , PaddedMonitor, nonleaf+5,   true,  _safepoint_check_always);
+  def(Verify_lock                  , PaddedMutex,   nonleaf+5,   true,  _safepoint_check_always);
 
   if (WhiteBoxAPI) {
     def(Compilation_lock           , PaddedMonitor, leaf,        false, _safepoint_check_never);

@@ -30,13 +30,10 @@
 #include "jni_util.h"
 #include "jlong.h"
 #include "jvm.h"
+#include "check_classname.h"
 #include "java_lang_ClassLoader.h"
 #include "java_lang_ClassLoader_NativeLibrary.h"
 #include <string.h>
-
-/* defined in libverify.so/verify.dll (src file common/check_format.c) */
-extern jboolean VerifyClassname(char *utf_name, jboolean arrayAllowed);
-extern jboolean VerifyFixClassname(char *utf_name);
 
 static JNINativeMethod methods[] = {
     {"retrieveDirectives",  "()Ljava/lang/AssertionStatusDirectives;", (void *)&JVM_AssertionStatusDirectives}
@@ -120,7 +117,7 @@ Java_java_lang_ClassLoader_defineClass1(JNIEnv *env,
         if (utfName == NULL) {
             goto free_body;
         }
-        VerifyFixClassname(utfName);
+        fixClassname(utfName);
     } else {
         utfName = NULL;
     }
@@ -185,7 +182,7 @@ Java_java_lang_ClassLoader_defineClass2(JNIEnv *env,
             JNU_ThrowOutOfMemoryError(env, NULL);
             return result;
         }
-        VerifyFixClassname(utfName);
+        fixClassname(utfName);
     } else {
         utfName = NULL;
     }
@@ -231,9 +228,9 @@ Java_java_lang_ClassLoader_findBootstrapClass(JNIEnv *env, jobject loader,
         JNU_ThrowOutOfMemoryError(env, NULL);
         return NULL;
     }
-    VerifyFixClassname(clname);
+    fixClassname(clname);
 
-    if (!VerifyClassname(clname, JNI_TRUE)) {  /* expects slashed name */
+    if (!verifyClassname(clname, JNI_TRUE)) {  /* expects slashed name */
         goto done;
     }
 

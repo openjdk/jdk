@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1994, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1994, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,9 +30,6 @@
 /*
    Exported function:
 
-   jboolean
-   VerifyClass(JNIEnv *env, jclass cb, char *message_buffer,
-               jint buffer_length)
    jboolean
    VerifyClassForMajorVersion(JNIEnv *env, jclass cb, char *message_buffer,
                               jint buffer_length, jint major_version)
@@ -908,20 +905,6 @@ VerifyClassForMajorVersion(JNIEnv *env, jclass cb, char *buffer, jint len,
 
     CCdestroy(context);         /* destroy heap */
     return result;
-}
-
-#define OLD_FORMAT_MAX_MAJOR_VERSION 48
-
-JNIEXPORT jboolean
-VerifyClass(JNIEnv *env, jclass cb, char *buffer, jint len)
-{
-    static int warned = 0;
-    if (!warned) {
-      jio_fprintf(stdout, "Warning! An old version of jvm is used. This is not supported.\n");
-      warned = 1;
-    }
-    return VerifyClassForMajorVersion(env, cb, buffer, len,
-                                      OLD_FORMAT_MAX_MAJOR_VERSION);
 }
 
 static void

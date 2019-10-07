@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2008, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,6 +31,7 @@
 
 #include "jni.h"
 #include "jvm.h"
+#include "check_classname.h"
 
 typedef unsigned short unicode;
 
@@ -223,16 +224,13 @@ skip_over_field_signature(char *name, jboolean void_okay,
     return 0;
 }
 
-
-/* Used in java/lang/Class.c */
 /* Determine if the specified name is legal
  * UTF name for a classname.
  *
  * Note that this routine expects the internal form of qualified classes:
  * the dots should have been replaced by slashes.
  */
-JNIEXPORT jboolean
-VerifyClassname(char *name, jboolean allowArrayClass)
+jboolean verifyClassname(char *name, jboolean allowArrayClass)
 {
     size_t s = strlen(name);
     assert(s <= UINT_MAX);
@@ -254,10 +252,9 @@ VerifyClassname(char *name, jboolean allowArrayClass)
 }
 
 /*
- * Translates '.' to '/'.  Returns JNI_TRUE is any / were present.
+ * Translates '.' to '/'.  Returns JNI_TRUE if any / were present.
  */
-JNIEXPORT jboolean
-VerifyFixClassname(char *name)
+jboolean verifyFixClassname(char *name)
 {
     char *p = name;
     jboolean slashesFound = JNI_FALSE;
@@ -275,4 +272,21 @@ VerifyFixClassname(char *name)
     }
 
     return slashesFound && valid != 0;
+}
+
+/*
+ * Translates '.' to '/'.
+ */
+void fixClassname(char *name)
+{
+    char *p = name;
+    int valid = 1;
+
+    while (valid != 0 && *p != '\0') {
+        if (*p == '.') {
+            *p++ = '/';
+        } else {
+            next_utf2unicode(&p, &valid);
+        }
+    }
 }

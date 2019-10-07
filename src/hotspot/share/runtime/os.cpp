@@ -536,14 +536,6 @@ void* os::native_java_library() {
     char buffer[JVM_MAXPATHLEN];
     char ebuf[1024];
 
-    // Try to load verify dll first. In 1.3 java dll depends on it and is not
-    // always able to find it when the loading executable is outside the JDK.
-    // In order to keep working with 1.2 we ignore any loading errors.
-    if (dll_locate_lib(buffer, sizeof(buffer), Arguments::get_dll_dir(),
-                       "verify")) {
-      dll_load(buffer, ebuf, sizeof(ebuf));
-    }
-
     // Load java dll
     if (dll_locate_lib(buffer, sizeof(buffer), Arguments::get_dll_dir(),
                        "java")) {

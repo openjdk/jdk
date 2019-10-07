@@ -103,7 +103,6 @@ extern Mutex*   Debug3_lock;
 extern Mutex*   RawMonitor_lock;
 extern Mutex*   PerfDataMemAlloc_lock;           // a lock on the allocator for PerfData memory for performance data
 extern Mutex*   PerfDataManager_lock;            // a long on access to PerfDataManager resources
-extern Mutex*   ParkerFreeList_lock;
 extern Mutex*   OopMapCacheAlloc_lock;           // protects allocation of oop_map caches
 
 extern Mutex*   FreeList_lock;                   // protects the free region list during safepoints
@@ -114,6 +113,7 @@ extern Mutex*   Management_lock;                 // a lock used to serialize JVM
 extern Monitor* Service_lock;                    // a lock used for service thread operation
 extern Monitor* PeriodicTask_lock;               // protects the periodic task structure
 extern Monitor* RedefineClasses_lock;            // locks classes from parallel redefinition
+extern Mutex*   Verify_lock;                     // synchronize initialization of verify library
 extern Monitor* ThreadsSMRDelete_lock;           // Used by ThreadsSMRSupport to take pressure off the Threads_lock
 extern Mutex*   ThreadIdTableCreate_lock;        // Used by ThreadIdTable to lazily create the thread id table
 extern Mutex*   SharedDecoder_lock;              // serializes access to the decoder during normal (not error reporting) use
