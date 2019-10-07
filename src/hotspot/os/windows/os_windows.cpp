@@ -4189,8 +4189,6 @@ static wchar_t* wide_abs_unc_path(char const* path, errno_t & err, int additiona
     if (::isalpha(buf[0]) && !::IsDBCSLeadByte(buf[0]) && buf[1] == ':' && buf[2] == '\\') {
       prefix = L"\\\\?\\";
     } else if (buf[0] == '\\' && buf[1] == '\\') {
-      assert(buf[2] != '\\');
-
       if (buf[2] == '?' && buf[3] == '\\') {
         prefix = L"";
         needs_fullpath = false;
