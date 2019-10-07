@@ -1432,6 +1432,11 @@ InstanceKlass* SystemDictionary::load_instance_class(Symbol* class_name, Handle 
         // a named package within the unnamed module.  In all cases,
         // limit visibility to search for the class only in the boot
         // loader's append path.
+        if (!ClassLoader::has_bootclasspath_append()) {
+           // If there is no bootclasspath append entry, no need to continue
+           // searching.
+           return NULL;
+        }
         search_only_bootloader_append = true;
       }
     }
