@@ -43,7 +43,6 @@ class ObjectMonitor;
 class ObjectWaiter : public StackObj {
  public:
   enum TStates { TS_UNDEF, TS_READY, TS_RUN, TS_WAIT, TS_ENTER, TS_CXQ };
-  enum Sorted  { PREPEND, APPEND, SORTED };
   ObjectWaiter* volatile _next;
   ObjectWaiter* volatile _prev;
   Thread*       _thread;
@@ -51,7 +50,6 @@ class ObjectWaiter : public StackObj {
   ParkEvent *   _event;
   volatile int  _notified;
   volatile TStates TState;
-  Sorted        _Sorted;           // List placement disposition
   bool          _active;           // Contention monitoring is enabled
  public:
   ObjectWaiter(Thread* thread);
@@ -67,10 +65,6 @@ class ObjectWaiter : public StackObj {
 //
 // WARNING: This is a very sensitive and fragile class. DO NOT make any
 // changes unless you are fully aware of the underlying semantics.
-//
-// Class JvmtiRawMonitor currently inherits from ObjectMonitor so
-// changes in this class must be careful to not break JvmtiRawMonitor.
-// These two subsystems should be separated.
 //
 // ObjectMonitor Layout Overview/Highlights/Restrictions:
 //
@@ -127,16 +121,6 @@ class ObjectWaiter : public StackObj {
 //     in a 64-bit JVM.
 
 class ObjectMonitor {
- public:
-  enum {
-    OM_OK,                    // no error
-    OM_SYSTEM_ERROR,          // operating system error
-    OM_ILLEGAL_MONITOR_STATE, // IllegalMonitorStateException
-    OM_INTERRUPTED,           // Thread.interrupt()
-    OM_TIMED_OUT              // Object.wait() timed out
-  };
-
- private:
   friend class ObjectSynchronizer;
   friend class ObjectWaiter;
   friend class VMStructs;
@@ -158,16 +142,13 @@ class ObjectMonitor {
   DEFINE_PAD_MINUS_SIZE(0, DEFAULT_CACHE_LINE_SIZE,
                         sizeof(volatile markWord) + sizeof(void* volatile) +
                         sizeof(ObjectMonitor *));
- protected:                         // protected for JvmtiRawMonitor
   void* volatile _owner;            // pointer to owning thread OR BasicLock
- private:
   volatile jlong _previous_owner_tid;  // thread id of the previous owner of the monitor
- protected:                         // protected for JvmtiRawMonitor
   volatile intptr_t _recursions;    // recursion count, 0 for first entry
   ObjectWaiter* volatile _EntryList;  // Threads blocked on entry or reentry.
                                       // The list is actually composed of WaitNodes,
                                       // acting as proxies for Threads.
- private:
+
   ObjectWaiter* volatile _cxq;      // LL of recently-arrived threads blocked on entry.
   Thread* volatile _succ;           // Heir presumptive thread - used for futile wakeup throttling
   Thread* volatile _Responsible;
