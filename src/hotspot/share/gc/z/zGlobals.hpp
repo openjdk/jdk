@@ -44,10 +44,6 @@ extern uint32_t   ZGlobalSeqNum;
 const size_t      ZGranuleSizeShift             = ZPlatformGranuleSizeShift;
 const size_t      ZGranuleSize                  = (size_t)1 << ZGranuleSizeShift;
 
-// Max heap size shift/size
-const size_t      ZMaxHeapSizeShift             = ZPlatformMaxHeapSizeShift;
-const size_t      ZMaxHeapSize                  = (size_t)1 << ZMaxHeapSizeShift;
-
 // Page types
 const uint8_t     ZPageTypeSmall                = 0;
 const uint8_t     ZPageTypeMedium               = 1;

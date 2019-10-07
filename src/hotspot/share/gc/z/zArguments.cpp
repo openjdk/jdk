@@ -37,11 +37,6 @@ void ZArguments::initialize_alignments() {
 void ZArguments::initialize() {
   GCArguments::initialize();
 
-  // Check max heap size
-  if (MaxHeapSize > ZMaxHeapSize) {
-    vm_exit_during_initialization("Java heap too large");
-  }
-
   // Enable NUMA by default
   if (FLAG_IS_DEFAULT(UseNUMA)) {
     FLAG_SET_DEFAULT(UseNUMA, true);

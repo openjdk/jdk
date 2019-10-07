@@ -31,6 +31,13 @@ ZVirtualMemoryManager::ZVirtualMemoryManager(size_t max_capacity) :
     _manager(),
     _initialized(false) {
 
+  // Check max supported heap size
+  if (max_capacity > ZAddressOffsetMax) {
+    log_error(gc)("Java heap too large (max supported heap size is " SIZE_FORMAT "G)",
+                  ZAddressOffsetMax / G);
+    return;
+  }
+
   log_info(gc, init)("Address Space: " SIZE_FORMAT "T", ZAddressOffsetMax / K / G);
 
   // Reserve address space
