@@ -22,48 +22,46 @@
  */
 
 /*
- * @test TestThreadCounts
- * @summary Test that Shenandoah GC thread counts are handled well
+ * @test TestThreadCountsOverride
+ * @summary Test that Shenandoah GC thread counts are overridable
  * @key gc
  * @requires vm.gc.Shenandoah & !vm.graal.enabled
  * @library /test/lib
  * @modules java.base/jdk.internal.misc
  *          java.management
- * @run driver TestThreadCounts
+ * @run driver TestThreadCountsOverride
  */
 
 import jdk.test.lib.process.ProcessTools;
 import jdk.test.lib.process.OutputAnalyzer;
 
-public class TestThreadCounts {
+public class TestThreadCountsOverride {
     public static void main(String[] args) throws Exception {
-        for (int conc = 0; conc < 16; conc++) {
-            for (int par = 0; par < 16; par++) {
-                testWith(conc, par);
-            }
-        }
-    }
-
-    private static void testWith(int conc, int par) throws Exception {
-        ProcessBuilder pb = ProcessTools.createJavaProcessBuilder("-XX:+UnlockDiagnosticVMOptions",
+        {
+            ProcessBuilder pb = ProcessTools.createJavaProcessBuilder(
+                "-XX:+UnlockDiagnosticVMOptions",
                 "-XX:+UnlockExperimentalVMOptions",
                 "-XX:+UseShenandoahGC",
-                "-XX:ConcGCThreads=" + conc,
-                "-XX:ParallelGCThreads=" + par,
+                "-XX:ParallelGCThreads=1",
+                "-XX:+PrintFlagsFinal",
                 "-version");
-        OutputAnalyzer output = new OutputAnalyzer(pb.start());
+            OutputAnalyzer output = new OutputAnalyzer(pb.start());
 
-        if (conc == 0) {
-            output.shouldContain("Shenandoah expects ConcGCThreads > 0");
-            output.shouldHaveExitValue(1);
-        } else if (par == 0) {
-            output.shouldContain("Shenandoah expects ParallelGCThreads > 0");
-            output.shouldHaveExitValue(1);
-        } else if (conc > par) {
-            output.shouldContain("Shenandoah expects ConcGCThreads <= ParallelGCThreads");
-            output.shouldHaveExitValue(1);
-        } else {
-            output.shouldNotContain("Shenandoah expects ConcGCThreads <= ParallelGCThreads");
+            output.shouldMatch("ParallelGCThreads(.*)= 1 ");
+            output.shouldHaveExitValue(0);
+        }
+
+        {
+            ProcessBuilder pb = ProcessTools.createJavaProcessBuilder(
+                "-XX:+UnlockDiagnosticVMOptions",
+                "-XX:+UnlockExperimentalVMOptions",
+                "-XX:+UseShenandoahGC",
+                "-XX:ConcGCThreads=1",
+                "-XX:+PrintFlagsFinal",
+                "-version");
+            OutputAnalyzer output = new OutputAnalyzer(pb.start());
+
+            output.shouldMatch("ConcGCThreads(.*)= 1 ");
             output.shouldHaveExitValue(0);
         }
     }
