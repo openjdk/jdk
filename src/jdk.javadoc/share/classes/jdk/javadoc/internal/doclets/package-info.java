@@ -25,7 +25,7 @@
 
 /**
  *  Doclets provide the user-selectable backends for processing the
- *  documentation comnments in Java source code.
+ *  documentation comments in Java source code.
  *
  *  <p>Doclets are implementations of the {@link jdk.javadoc.doclet Doclet API}.</p>
  *
