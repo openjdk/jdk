@@ -354,7 +354,7 @@ static void record_path(char const* name, char const* len_name, wchar_t* path) {
 
   if (convert_to_cstring(buf, JVM_MAXPATHLEN, path)) {
     ::testing::Test::RecordProperty(name, buf);
-    snprintf(buf, JVM_MAXPATHLEN, "%d", (int) wcslen(path));
+    os::snprintf(buf, JVM_MAXPATHLEN, "%d", (int) wcslen(path));
     ::testing::Test::RecordProperty(len_name, buf);
   }
 }
