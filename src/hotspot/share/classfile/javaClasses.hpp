@@ -202,7 +202,6 @@ class java_lang_String : AllStatic {
 
   // Conversion between '.' and '/' formats
   static Handle externalize_classname(Handle java_string, TRAPS) { return char_converter(java_string, '/', '.', THREAD); }
-  static Handle internalize_classname(Handle java_string, TRAPS) { return char_converter(java_string, '.', '/', THREAD); }
 
   // Conversion
   static Symbol* as_symbol(oop java_string);
