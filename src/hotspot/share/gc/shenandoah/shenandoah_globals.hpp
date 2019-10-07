@@ -314,9 +314,6 @@
   diagnostic(bool, ShenandoahTerminationTrace, false,                       \
           "Tracing task termination timings")                               \
                                                                             \
-  develop(bool, ShenandoahVerifyObjectEquals, false,                        \
-          "Verify that == and != are not used on oops. Only in fastdebug")  \
-                                                                            \
   diagnostic(bool, ShenandoahAlwaysPreTouch, false,                         \
           "Pre-touch heap memory, overrides global AlwaysPreTouch")         \
                                                                             \
