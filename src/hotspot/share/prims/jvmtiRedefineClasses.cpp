@@ -3528,15 +3528,6 @@ void VM_RedefineClasses::update_jmethod_ids() {
              "should be replaced");
     }
   }
-  // Update deleted jmethodID
-  for (int j = 0; j < _deleted_methods_length; ++j) {
-    Method* old_method = _deleted_methods[j];
-    jmethodID jmid = old_method->find_jmethod_id_or_null();
-    if (jmid != NULL) {
-      // Change the jmethodID to point to NSME.
-      Method::change_method_associated_with_jmethod_id(jmid, Universe::throw_no_such_method_error());
-    }
-  }
 }
 
 int VM_RedefineClasses::check_methods_and_mark_as_obsolete() {
