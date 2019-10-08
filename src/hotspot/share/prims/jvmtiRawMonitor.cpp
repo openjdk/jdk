@@ -32,20 +32,20 @@
 
 JvmtiRawMonitor::QNode::QNode(Thread* thread) : _next(NULL), _prev(NULL),
                                                 _event(thread->_ParkEvent),
-                                                _notified(0), TState(TS_RUN) {
+                                                _notified(0), _t_state(TS_RUN) {
 }
 
-GrowableArray<JvmtiRawMonitor*> *JvmtiPendingMonitors::_monitors =
+GrowableArray<JvmtiRawMonitor*>* JvmtiPendingMonitors::_monitors =
   new (ResourceObj::C_HEAP, mtInternal) GrowableArray<JvmtiRawMonitor*>(1, true);
 
 void JvmtiPendingMonitors::transition_raw_monitors() {
   assert((Threads::number_of_threads()==1),
-         "Java thread has not been created yet or more than one java thread \
-is running. Raw monitor transition will not work");
-  JavaThread *current_java_thread = JavaThread::current();
+         "Java thread has not been created yet or more than one java thread "
+         "is running. Raw monitor transition will not work");
+  JavaThread* current_java_thread = JavaThread::current();
   assert(current_java_thread->thread_state() == _thread_in_vm, "Must be in vm");
-  for(int i=0; i< count(); i++) {
-    JvmtiRawMonitor *rmonitor = monitors()->at(i);
+  for (int i = 0; i < count(); i++) {
+    JvmtiRawMonitor* rmonitor = monitors()->at(i);
     rmonitor->raw_enter(current_java_thread);
   }
   // pending monitors are converted to real monitor so delete them all.
@@ -56,10 +56,10 @@ is running. Raw monitor transition will not work");
 // class JvmtiRawMonitor
 //
 
-JvmtiRawMonitor::JvmtiRawMonitor(const char *name) : _owner(NULL),
+JvmtiRawMonitor::JvmtiRawMonitor(const char* name) : _owner(NULL),
                                                      _recursions(0),
-                                                     _EntryList(NULL),
-                                                     _WaitSet(NULL),
+                                                     _entry_list(NULL),
+                                                     _wait_set(NULL),
                                                      _waiters(0),
                                                      _magic(JVMTI_RM_MAGIC),
                                                      _name(NULL) {
@@ -119,155 +119,165 @@ JvmtiRawMonitor::is_valid() {
 //
 // -------------------------------------------------------------------------
 
-void JvmtiRawMonitor::SimpleEnter (Thread * Self) {
+void JvmtiRawMonitor::simple_enter(Thread* self) {
   for (;;) {
-    if (Atomic::replace_if_null(Self, &_owner)) {
-       return ;
+    if (Atomic::replace_if_null(self, &_owner)) {
+      return;
     }
 
-    QNode Node (Self) ;
-    Self->_ParkEvent->reset() ;     // strictly optional
-    Node.TState = QNode::TS_ENTER ;
+    QNode node(self);
+    self->_ParkEvent->reset();     // strictly optional
+    node._t_state = QNode::TS_ENTER;
 
-    RawMonitor_lock->lock_without_safepoint_check() ;
-    Node._next  = _EntryList ;
-    _EntryList  = &Node ;
-    OrderAccess::fence() ;
-    if (_owner == NULL && Atomic::replace_if_null(Self, &_owner)) {
-        _EntryList = Node._next ;
-        RawMonitor_lock->unlock() ;
-        return ;
+    RawMonitor_lock->lock_without_safepoint_check();
+    node._next = _entry_list;
+    _entry_list = &node;
+    OrderAccess::fence();
+    if (_owner == NULL && Atomic::replace_if_null(self, &_owner)) {
+      _entry_list = node._next;
+      RawMonitor_lock->unlock();
+      return;
     }
-    RawMonitor_lock->unlock() ;
-    while (Node.TState == QNode::TS_ENTER) {
-       Self->_ParkEvent->park() ;
+    RawMonitor_lock->unlock();
+    while (node._t_state == QNode::TS_ENTER) {
+      self->_ParkEvent->park();
     }
   }
 }
 
-void JvmtiRawMonitor::SimpleExit (Thread * Self) {
-  guarantee (_owner == Self, "invariant") ;
-  OrderAccess::release_store(&_owner, (Thread*)NULL) ;
-  OrderAccess::fence() ;
-  if (_EntryList == NULL) return ;
-  QNode * w ;
+void JvmtiRawMonitor::simple_exit(Thread* self) {
+  guarantee(_owner == self, "invariant");
+  OrderAccess::release_store(&_owner, (Thread*)NULL);
+  OrderAccess::fence();
+  if (_entry_list == NULL) {
+    return;
+  }
 
-  RawMonitor_lock->lock_without_safepoint_check() ;
-  w = _EntryList ;
+  RawMonitor_lock->lock_without_safepoint_check();
+  QNode* w = _entry_list;
   if (w != NULL) {
-      _EntryList = w->_next ;
+    _entry_list = w->_next;
   }
-  RawMonitor_lock->unlock() ;
+  RawMonitor_lock->unlock();
   if (w != NULL) {
-      guarantee (w ->TState == QNode::TS_ENTER, "invariant") ;
-      // Once we set TState to TS_RUN the waiting thread can complete
-      // SimpleEnter and 'w' is pointing into random stack space. So we have
-      // to ensure we extract the ParkEvent (which is in type-stable memory)
-      // before we set the state, and then don't access 'w'.
-      ParkEvent * ev = w->_event ;
-      OrderAccess::loadstore();
-      w->TState = QNode::TS_RUN ;
-      OrderAccess::fence() ;
-      ev->unpark() ;
+    guarantee(w ->_t_state == QNode::TS_ENTER, "invariant");
+    // Once we set _t_state to TS_RUN the waiting thread can complete
+    // simple_enter and 'w' is pointing into random stack space. So we have
+    // to ensure we extract the ParkEvent (which is in type-stable memory)
+    // before we set the state, and then don't access 'w'.
+    ParkEvent* ev = w->_event;
+    OrderAccess::loadstore();
+    w->_t_state = QNode::TS_RUN;
+    OrderAccess::fence();
+    ev->unpark();
   }
-  return ;
+  return;
 }
 
-int JvmtiRawMonitor::SimpleWait (Thread * Self, jlong millis) {
-  guarantee (_owner == Self  , "invariant") ;
-  guarantee (_recursions == 0, "invariant") ;
+int JvmtiRawMonitor::simple_wait(Thread* self, jlong millis) {
+  guarantee(_owner == self  , "invariant");
+  guarantee(_recursions == 0, "invariant");
 
-  QNode Node (Self) ;
-  Node._notified = 0 ;
-  Node.TState    = QNode::TS_WAIT ;
+  QNode node(self);
+  node._notified = 0;
+  node._t_state = QNode::TS_WAIT;
 
-  RawMonitor_lock->lock_without_safepoint_check() ;
-  Node._next     = _WaitSet ;
-  _WaitSet       = &Node ;
-  RawMonitor_lock->unlock() ;
+  RawMonitor_lock->lock_without_safepoint_check();
+  node._next = _wait_set;
+  _wait_set = &node;
+  RawMonitor_lock->unlock();
 
-  SimpleExit (Self) ;
-  guarantee (_owner != Self, "invariant") ;
+  simple_exit(self);
+  guarantee(_owner != self, "invariant");
 
-  int ret = OS_OK ;
+  int ret = OS_OK;
   if (millis <= 0) {
-    Self->_ParkEvent->park();
+    self->_ParkEvent->park();
   } else {
-    ret = Self->_ParkEvent->park(millis);
+    ret = self->_ParkEvent->park(millis);
   }
 
   // If thread still resides on the waitset then unlink it.
   // Double-checked locking -- the usage is safe in this context
-  // as TState is volatile and the lock-unlock operators are
+  // as _t_state is volatile and the lock-unlock operators are
   // serializing (barrier-equivalent).
 
-  if (Node.TState == QNode::TS_WAIT) {
-    RawMonitor_lock->lock_without_safepoint_check() ;
-    if (Node.TState == QNode::TS_WAIT) {
+  if (node._t_state == QNode::TS_WAIT) {
+    RawMonitor_lock->lock_without_safepoint_check();
+    if (node._t_state == QNode::TS_WAIT) {
       // Simple O(n) unlink, but performance isn't critical here.
-      QNode * p ;
-      QNode * q = NULL ;
-      for (p = _WaitSet ; p != &Node; p = p->_next) {
-         q = p ;
+      QNode* p;
+      QNode* q = NULL;
+      for (p = _wait_set; p != &node; p = p->_next) {
+        q = p;
       }
-      guarantee (p == &Node, "invariant") ;
+      guarantee(p == &node, "invariant");
       if (q == NULL) {
-        guarantee (p == _WaitSet, "invariant") ;
-        _WaitSet = p->_next ;
+        guarantee (p == _wait_set, "invariant");
+        _wait_set = p->_next;
       } else {
-        guarantee (p == q->_next, "invariant") ;
-        q->_next = p->_next ;
+        guarantee(p == q->_next, "invariant");
+        q->_next = p->_next;
       }
-      Node.TState = QNode::TS_RUN ;
+      node._t_state = QNode::TS_RUN;
     }
-    RawMonitor_lock->unlock() ;
+    RawMonitor_lock->unlock();
   }
 
-  guarantee (Node.TState == QNode::TS_RUN, "invariant") ;
-  SimpleEnter (Self) ;
+  guarantee(node._t_state == QNode::TS_RUN, "invariant");
+  simple_enter(self);
 
-  guarantee (_owner == Self, "invariant") ;
-  guarantee (_recursions == 0, "invariant") ;
-  return ret ;
+  guarantee(_owner == self, "invariant");
+  guarantee(_recursions == 0, "invariant");
+  return ret;
 }
 
-void JvmtiRawMonitor::SimpleNotify (Thread * Self, bool All) {
-  guarantee (_owner == Self, "invariant") ;
-  if (_WaitSet == NULL) return ;
+void JvmtiRawMonitor::simple_notify(Thread* self, bool all) {
+  guarantee(_owner == self, "invariant");
+  if (_wait_set == NULL) {
+    return;
+  }
 
   // We have two options:
-  // A. Transfer the threads from the WaitSet to the EntryList
-  // B. Remove the thread from the WaitSet and unpark() it.
+  // A. Transfer the threads from the _wait_set to the _entry_list
+  // B. Remove the thread from the _wait_set and unpark() it.
   //
   // We use (B), which is crude and results in lots of futile
   // context switching.  In particular (B) induces lots of contention.
 
-  ParkEvent * ev = NULL ;       // consider using a small auto array ...
-  RawMonitor_lock->lock_without_safepoint_check() ;
+  ParkEvent* ev = NULL;       // consider using a small auto array ...
+  RawMonitor_lock->lock_without_safepoint_check();
   for (;;) {
-      QNode * w = _WaitSet ;
-      if (w == NULL) break ;
-      _WaitSet = w->_next ;
-      if (ev != NULL) { ev->unpark(); ev = NULL; }
-      ev = w->_event ;
-      OrderAccess::loadstore() ;
-      w->TState = QNode::TS_RUN ;
-      OrderAccess::storeload();
-      if (!All) break ;
+    QNode* w = _wait_set;
+    if (w == NULL) break;
+    _wait_set = w->_next;
+    if (ev != NULL) {
+      ev->unpark();
+      ev = NULL;
+    }
+    ev = w->_event;
+    OrderAccess::loadstore();
+    w->_t_state = QNode::TS_RUN;
+    OrderAccess::storeload();
+    if (!all) {
+      break;
+    }
   }
-  RawMonitor_lock->unlock() ;
-  if (ev != NULL) ev->unpark();
-  return ;
+  RawMonitor_lock->unlock();
+  if (ev != NULL) {
+    ev->unpark();
+  }
+  return;
 }
 
 // Any JavaThread will enter here with state _thread_blocked
-void JvmtiRawMonitor::raw_enter(Thread * Self) {
-  void * Contended ;
-  JavaThread * jt = NULL;
+void JvmtiRawMonitor::raw_enter(Thread* self) {
+  void* contended;
+  JavaThread* jt = NULL;
   // don't enter raw monitor if thread is being externally suspended, it will
   // surprise the suspender if a "suspended" thread can still enter monitor
-  if (Self->is_Java_thread()) {
-    jt = (JavaThread*) Self;
+  if (self->is_Java_thread()) {
+    jt = (JavaThread*)self;
     jt->SR_lock()->lock_without_safepoint_check();
     while (jt->is_external_suspend()) {
       jt->SR_lock()->unlock();
@@ -275,37 +285,39 @@ void JvmtiRawMonitor::raw_enter(Thread * Self) {
       jt->SR_lock()->lock_without_safepoint_check();
     }
     // guarded by SR_lock to avoid racing with new external suspend requests.
-    Contended = Atomic::cmpxchg(jt, &_owner, (Thread*)NULL);
+    contended = Atomic::cmpxchg(jt, &_owner, (Thread*)NULL);
     jt->SR_lock()->unlock();
   } else {
-    Contended = Atomic::cmpxchg(Self, &_owner, (Thread*)NULL);
+    contended = Atomic::cmpxchg(self, &_owner, (Thread*)NULL);
   }
 
-  if (Contended == Self) {
-     _recursions ++ ;
-     return ;
+  if (contended == self) {
+    _recursions++;
+    return;
   }
 
-  if (Contended == NULL) {
-     guarantee (_owner == Self, "invariant") ;
-     guarantee (_recursions == 0, "invariant") ;
-     return ;
+  if (contended == NULL) {
+    guarantee(_owner == self, "invariant");
+    guarantee(_recursions == 0, "invariant");
+    return;
   }
 
-  Self->set_current_pending_raw_monitor(this);
+  self->set_current_pending_raw_monitor(this);
 
-  if (!Self->is_Java_thread()) {
-     SimpleEnter (Self) ;
+  if (!self->is_Java_thread()) {
+    simple_enter(self);
   } else {
-    guarantee (jt->thread_state() == _thread_blocked, "invariant") ;
+    guarantee(jt->thread_state() == _thread_blocked, "invariant");
     for (;;) {
       jt->set_suspend_equivalent();
       // cleared by handle_special_suspend_equivalent_condition() or
       // java_suspend_self()
-      SimpleEnter (jt) ;
+      simple_enter(jt);
 
       // were we externally suspended while we were waiting?
-      if (!jt->handle_special_suspend_equivalent_condition()) break ;
+      if (!jt->handle_special_suspend_equivalent_condition()) {
+        break;
+      }
 
       // This thread was externally suspended
       // We have reentered the contended monitor, but while we were
@@ -314,26 +326,26 @@ void JvmtiRawMonitor::raw_enter(Thread * Self) {
       // thread that suspended us.
       //
       // Drop the lock
-      SimpleExit (jt) ;
+      simple_exit(jt);
 
       jt->java_suspend_self();
     }
   }
 
-  Self->set_current_pending_raw_monitor(NULL);
+  self->set_current_pending_raw_monitor(NULL);
 
-  guarantee (_owner == Self, "invariant") ;
-  guarantee (_recursions == 0, "invariant") ;
+  guarantee(_owner == self, "invariant");
+  guarantee(_recursions == 0, "invariant");
 }
 
-int JvmtiRawMonitor::raw_exit(Thread * Self) {
-  if (Self != _owner) {
+int JvmtiRawMonitor::raw_exit(Thread* self) {
+  if (self != _owner) {
     return M_ILLEGAL_MONITOR_STATE;
   }
   if (_recursions > 0) {
-    --_recursions ;
+    _recursions--;
   } else {
-    SimpleExit (Self) ;
+    simple_exit(self);
   }
 
   return M_OK;
@@ -341,70 +353,72 @@ int JvmtiRawMonitor::raw_exit(Thread * Self) {
 
 // All JavaThreads will enter here with state _thread_blocked
 
-int JvmtiRawMonitor::raw_wait(jlong millis, bool interruptible, Thread * Self) {
-  if (Self != _owner) {
+int JvmtiRawMonitor::raw_wait(jlong millis, bool interruptible, Thread* self) {
+  if (self != _owner) {
     return M_ILLEGAL_MONITOR_STATE;
   }
 
-  // To avoid spurious wakeups we reset the parkevent -- This is strictly optional.
+  // To avoid spurious wakeups we reset the parkevent. This is strictly optional.
   // The caller must be able to tolerate spurious returns from raw_wait().
-  Self->_ParkEvent->reset() ;
-  OrderAccess::fence() ;
+  self->_ParkEvent->reset();
+  OrderAccess::fence();
 
-  JavaThread * jt = NULL;
+  JavaThread* jt = NULL;
   // check interrupt event
   if (interruptible) {
-    assert(Self->is_Java_thread(), "Only JavaThreads can be interruptible");
-    jt = (JavaThread*) Self;
+    assert(self->is_Java_thread(), "Only JavaThreads can be interruptible");
+    jt = (JavaThread*)self;
     if (jt->is_interrupted(true)) {
       return M_INTERRUPTED;
     }
   } else {
-    assert(!Self->is_Java_thread(), "JavaThreads must be interuptible");
+    assert(!self->is_Java_thread(), "JavaThreads must be interuptible");
   }
 
-  intptr_t save = _recursions ;
-  _recursions = 0 ;
-  _waiters ++ ;
-  if (Self->is_Java_thread()) {
-    guarantee (jt->thread_state() == _thread_blocked, "invariant") ;
+  intptr_t save = _recursions;
+  _recursions = 0;
+  _waiters++;
+  if (self->is_Java_thread()) {
+    guarantee(jt->thread_state() == _thread_blocked, "invariant");
     jt->set_suspend_equivalent();
   }
-  int rv = SimpleWait (Self, millis) ;
-  _recursions = save ;
-  _waiters -- ;
+  int rv = simple_wait(self, millis);
+  _recursions = save;
+  _waiters--;
 
-  guarantee (Self == _owner, "invariant") ;
-  if (Self->is_Java_thread()) {
-     for (;;) {
-        if (!jt->handle_special_suspend_equivalent_condition()) break ;
-        SimpleExit (jt) ;
-        jt->java_suspend_self();
-        SimpleEnter (jt) ;
-        jt->set_suspend_equivalent() ;
-     }
-     guarantee (jt == _owner, "invariant") ;
+  guarantee(self == _owner, "invariant");
+  if (self->is_Java_thread()) {
+    for (;;) {
+      if (!jt->handle_special_suspend_equivalent_condition()) {
+        break;
+      }
+      simple_exit(jt);
+      jt->java_suspend_self();
+      simple_enter(jt);
+      jt->set_suspend_equivalent();
+    }
+    guarantee(jt == _owner, "invariant");
   }
 
   if (interruptible && jt->is_interrupted(true)) {
     return M_INTERRUPTED;
   }
 
-  return M_OK ;
-}
-
-int JvmtiRawMonitor::raw_notify(Thread * Self) {
-  if (Self != _owner) {
-    return M_ILLEGAL_MONITOR_STATE;
-  }
-  SimpleNotify (Self, false) ;
   return M_OK;
 }
 
-int JvmtiRawMonitor::raw_notifyAll(Thread * Self) {
-  if (Self != _owner) {
+int JvmtiRawMonitor::raw_notify(Thread* self) {
+  if (self != _owner) {
     return M_ILLEGAL_MONITOR_STATE;
   }
-  SimpleNotify (Self, true) ;
+  simple_notify(self, false);
+  return M_OK;
+}
+
+int JvmtiRawMonitor::raw_notifyAll(Thread* self) {
+  if (self != _owner) {
+    return M_ILLEGAL_MONITOR_STATE;
+  }
+  simple_notify(self, true);
   return M_OK;
 }

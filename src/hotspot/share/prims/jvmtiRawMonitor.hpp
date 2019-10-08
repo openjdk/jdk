@@ -46,31 +46,31 @@ class JvmtiRawMonitor : public CHeapObj<mtSynchronizer>  {
     enum TStates { TS_READY, TS_RUN, TS_WAIT, TS_ENTER };
     QNode* volatile _next;
     QNode* volatile _prev;
-    ParkEvent *   _event;
-    volatile int  _notified;
-    volatile TStates TState;
+    ParkEvent* _event;
+    volatile int _notified;
+    volatile TStates _t_state;
 
     QNode(Thread* thread);
   };
 
-  Thread* volatile _owner;          // pointer to owning thread
-  volatile int _recursions;         // recursion count, 0 for first entry
-  QNode* volatile _EntryList;       // Threads blocked on entry or reentry.
-                                    // The list is actually composed of nodes,
-                                    // acting as proxies for Threads.
-  QNode* volatile _WaitSet;         // Threads wait()ing on the monitor
-  volatile jint  _waiters;          // number of waiting threads
-  int           _magic;
-  char *        _name;
+  Thread* volatile _owner;      // pointer to owning thread
+  volatile int _recursions;     // recursion count, 0 for first entry
+  QNode* volatile _entry_list;  // Threads blocked on entry or reentry.
+                                // The list is actually composed of nodes,
+                                // acting as proxies for Threads.
+  QNode* volatile _wait_set;    // Threads wait()ing on the monitor
+  volatile jint _waiters;       // number of waiting threads
+  int _magic;
+  char* _name;
   // JVMTI_RM_MAGIC is set in contructor and unset in destructor.
   enum { JVMTI_RM_MAGIC = (int)(('T' << 24) | ('I' << 16) | ('R' << 8) | 'M') };
 
-  void      SimpleEnter (Thread * Self) ;
-  void      SimpleExit  (Thread * Self) ;
-  int       SimpleWait  (Thread * Self, jlong millis) ;
-  void      SimpleNotify(Thread * Self, bool All) ;
+  void simple_enter(Thread* self);
+  void simple_exit(Thread* self);
+  int simple_wait(Thread* self, jlong millis);
+  void simple_notify(Thread* self, bool all);
 
-public:
+ public:
 
   // return codes
   enum {
@@ -84,20 +84,20 @@ public:
     return CHeapObj::operator new(size, std::nothrow);
   }
 
-  JvmtiRawMonitor(const char *name);
+  JvmtiRawMonitor(const char* name);
   ~JvmtiRawMonitor();
 
-  Thread *  owner() const { return _owner; }
-  void      set_owner(Thread * owner) { _owner = owner; }
-  int       recursions() const { return _recursions; }
-  void      raw_enter(Thread * Self);
-  int       raw_exit(Thread * Self);
-  int       raw_wait(jlong millis, bool interruptable, Thread * Self);
-  int       raw_notify(Thread * Self);
-  int       raw_notifyAll(Thread * Self);
-  int       magic() const { return _magic;  }
-  const char *get_name() const { return _name; }
-  bool        is_valid();
+  Thread* owner() const { return _owner; }
+  void set_owner(Thread* owner) { _owner = owner; }
+  int recursions() const { return _recursions; }
+  void raw_enter(Thread* self);
+  int raw_exit(Thread* self);
+  int raw_wait(jlong millis, bool interruptible, Thread* self);
+  int raw_notify(Thread* self);
+  int raw_notifyAll(Thread* self);
+  int magic() const { return _magic; }
+  const char* get_name() const { return _name; }
+  bool is_valid();
 };
 
 // Onload pending raw monitors
@@ -106,8 +106,8 @@ public:
 // VM is fully initialized.
 class JvmtiPendingMonitors : public AllStatic {
 
-private:
-  static GrowableArray<JvmtiRawMonitor*> *_monitors; // Cache raw monitor enter
+ private:
+  static GrowableArray<JvmtiRawMonitor*>* _monitors; // Cache raw monitor enter
 
   inline static GrowableArray<JvmtiRawMonitor*>* monitors() { return _monitors; }
 
@@ -115,8 +115,8 @@ private:
     delete monitors();
   }
 
-public:
-  static void enter(JvmtiRawMonitor *monitor) {
+ public:
+  static void enter(JvmtiRawMonitor* monitor) {
     monitors()->append(monitor);
   }
 
@@ -124,14 +124,14 @@ public:
     return monitors()->length();
   }
 
-  static void destroy(JvmtiRawMonitor *monitor) {
+  static void destroy(JvmtiRawMonitor* monitor) {
     while (monitors()->contains(monitor)) {
       monitors()->remove(monitor);
     }
   }
 
   // Return false if monitor is not found in the list.
-  static bool exit(JvmtiRawMonitor *monitor) {
+  static bool exit(JvmtiRawMonitor* monitor) {
     if (monitors()->contains(monitor)) {
       monitors()->remove(monitor);
       return true;
