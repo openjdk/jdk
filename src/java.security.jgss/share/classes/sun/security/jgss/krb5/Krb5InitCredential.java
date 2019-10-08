@@ -53,7 +53,9 @@ public class Krb5InitCredential
 
     private static final long serialVersionUID = 7723415700837898232L;
 
+    @SuppressWarnings("serial") // Not statically typed as Serializable
     private Krb5NameElement name;
+    @SuppressWarnings("serial") // Not statically typed as Serializable
     private Credentials krb5Credentials;
 
     private Krb5InitCredential(Krb5NameElement name,

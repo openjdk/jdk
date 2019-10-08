@@ -79,7 +79,9 @@ import sun.security.krb5.internal.util.KerberosString;
  * <a href="http://www.ietf.org/rfc/rfc4120.txt">
  * http://www.ietf.org/rfc/rfc4120.txt</a>.
  */
-
+// The instance fields not statically typed as Serializable are ASN.1
+// encoded and written by the writeObject method.
+@SuppressWarnings("serial")
 public class KRBError implements java.io.Serializable {
     static final long serialVersionUID = 3643809337475284503L;
 
