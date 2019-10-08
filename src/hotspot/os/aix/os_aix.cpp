@@ -1381,15 +1381,7 @@ void os::print_os_info_brief(outputStream* st) {
 void os::print_os_info(outputStream* st) {
   st->print("OS:");
 
-  st->print("uname:");
-  struct utsname name;
-  uname(&name);
-  st->print(name.sysname); st->print(" ");
-  st->print(name.nodename); st->print(" ");
-  st->print(name.release); st->print(" ");
-  st->print(name.version); st->print(" ");
-  st->print(name.machine);
-  st->cr();
+  os::Posix::print_uname_info(st);
 
   uint32_t ver = os::Aix::os_version();
   st->print_cr("AIX kernel version %u.%u.%u.%u",
@@ -1397,15 +1389,11 @@ void os::print_os_info(outputStream* st) {
 
   os::Posix::print_rlimit_info(st);
 
+  os::Posix::print_load_average(st);
+
   // _SC_THREAD_THREADS_MAX is the maximum number of threads within a process.
   long tmax = sysconf(_SC_THREAD_THREADS_MAX);
   st->print_cr("maximum #threads within a process:%ld", tmax);
-
-  // load average
-  st->print("load average:");
-  double loadavg[3] = {-1.L, -1.L, -1.L};
-  os::loadavg(loadavg, 3);
-  st->print_cr("%0.02f %0.02f %0.02f", loadavg[0], loadavg[1], loadavg[2]);
 
   // print wpar info
   libperfstat::wparinfo_t wi;
