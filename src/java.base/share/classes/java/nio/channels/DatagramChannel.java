@@ -265,7 +265,10 @@ public abstract class DatagramChannel
      * java.lang.SecurityManager#checkAccept checkAccept} and {@link
      * java.lang.SecurityManager#checkConnect checkConnect} methods permit
      * datagrams to be received from and sent to, respectively, the given
-     * remote address.
+     * remote address. Once connected, no further security checks are performed
+     * for datagrams received from, or sent to, the given remote address. Care
+     * should be taken to ensure that a connected datagram channel is not shared
+     * with untrusted code.
      *
      * <p> This method may be invoked at any time.  It will not have any effect
      * on read or write operations that are already in progress at the moment
@@ -369,9 +372,10 @@ public abstract class DatagramChannel
      * to a specific remote address and a security manager has been installed
      * then for each datagram received this method verifies that the source's
      * address and port number are permitted by the security manager's {@link
-     * java.lang.SecurityManager#checkAccept checkAccept} method.  The overhead
-     * of this security check can be avoided by first connecting the socket via
-     * the {@link #connect connect} method.
+     * java.lang.SecurityManager#checkAccept checkAccept} method. Datagrams
+     * that are not permitted by the security manager are silently discarded.
+     * The overhead of this security check can be avoided by first connecting
+     * the socket via the {@link #connect connect} method.
      *
      * <p> This method may be invoked at any time.  If another thread has
      * already initiated a read operation upon this channel, however, then an
@@ -400,11 +404,6 @@ public abstract class DatagramChannel
      *          while the read operation is in progress, thereby
      *          closing the channel and setting the current thread's
      *          interrupt status
-     *
-     * @throws  SecurityException
-     *          If a security manager has been installed
-     *          and it does not permit datagrams to be accepted
-     *          from the datagram's sender
      *
      * @throws  IOException
      *          If some other I/O error occurs
