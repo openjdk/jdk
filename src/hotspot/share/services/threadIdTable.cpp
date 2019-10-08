@@ -46,6 +46,7 @@ static volatile size_t _current_size = 0;
 static volatile size_t _items_count = 0;
 
 volatile bool ThreadIdTable::_is_initialized = false;
+volatile bool ThreadIdTable::_has_work = false;
 
 class ThreadIdTableEntry : public CHeapObj<mtInternal> {
 private:
@@ -141,6 +142,26 @@ size_t ThreadIdTable::table_size() {
   return (size_t)1 << _local_table->get_size_log2(Thread::current());
 }
 
+void ThreadIdTable::check_concurrent_work() {
+  if (_has_work) {
+    return;
+  }
+
+  double load_factor = get_load_factor();
+  // Resize if we have more items than preferred load factor
+  if ( load_factor > PREF_AVG_LIST_LEN && !_local_table->is_max_size_reached()) {
+    log_debug(thread, table)("Concurrent work triggered, load factor: %g",
+                             load_factor);
+    trigger_concurrent_work();
+  }
+}
+
+void ThreadIdTable::trigger_concurrent_work() {
+  MutexLocker ml(Service_lock, Mutex::_no_safepoint_check_flag);
+  _has_work = true;
+  Service_lock->notify_all();
+}
+
 void ThreadIdTable::grow(JavaThread* jt) {
   ThreadIdTableHash::GrowTask gt(_local_table);
   if (!gt.prepare(jt)) {
@@ -192,13 +213,13 @@ public:
   }
 };
 
-void ThreadIdTable::grow_if_required() {
-  assert(Thread::current()->is_Java_thread(),"Must be Java thread");
+void ThreadIdTable::do_concurrent_work(JavaThread* jt) {
   assert(_is_initialized, "Thread table is not initialized");
+  _has_work = false;
   double load_factor = get_load_factor();
   log_debug(thread, table)("Concurrent work, load factor: %g", load_factor);
   if (load_factor > PREF_AVG_LIST_LEN && !_local_table->is_max_size_reached()) {
-    grow(JavaThread::current());
+    grow(jt);
   }
 }
 
@@ -215,7 +236,7 @@ JavaThread* ThreadIdTable::add_thread(jlong tid, JavaThread* java_thread) {
     // The hash table takes ownership of the ThreadTableEntry,
     // even if it's not inserted.
     if (_local_table->insert(thread, lookup, entry)) {
-      grow_if_required();
+      check_concurrent_work();
       return java_thread;
     }
   }

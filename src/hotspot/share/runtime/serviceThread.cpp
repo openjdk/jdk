@@ -43,6 +43,7 @@
 #include "services/diagnosticFramework.hpp"
 #include "services/gcNotifier.hpp"
 #include "services/lowMemoryDetector.hpp"
+#include "services/threadIdTable.hpp"
 
 ServiceThread* ServiceThread::_instance = NULL;
 
@@ -101,6 +102,7 @@ void ServiceThread::service_thread_entry(JavaThread* jt, TRAPS) {
     bool stringtable_work = false;
     bool symboltable_work = false;
     bool resolved_method_table_work = false;
+    bool thread_id_table_work = false;
     bool protection_domain_table_work = false;
     bool oopstorage_work = false;
     JvmtiDeferredEvent jvmti_event;
@@ -127,6 +129,7 @@ void ServiceThread::service_thread_entry(JavaThread* jt, TRAPS) {
               (stringtable_work = StringTable::has_work()) |
               (symboltable_work = SymbolTable::has_work()) |
               (resolved_method_table_work = ResolvedMethodTable::has_work()) |
+              (thread_id_table_work = ThreadIdTable::has_work()) |
               (protection_domain_table_work = SystemDictionary::pd_cache_table()->has_work()) |
               (oopstorage_work = OopStorage::has_cleanup_work_and_reset())
              ) == 0) {
@@ -167,6 +170,10 @@ void ServiceThread::service_thread_entry(JavaThread* jt, TRAPS) {
 
     if (resolved_method_table_work) {
       ResolvedMethodTable::do_concurrent_work(jt);
+    }
+
+    if (thread_id_table_work) {
+      ThreadIdTable::do_concurrent_work(jt);
     }
 
     if (protection_domain_table_work) {

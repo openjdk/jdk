@@ -36,6 +36,7 @@ class ThreadIdTable : public AllStatic {
   friend class ThreadIdTableConfig;
 
   static volatile bool _is_initialized;
+  static volatile bool _has_work;
 
 public:
   // Initialization
@@ -47,12 +48,17 @@ public:
   static JavaThread* add_thread(jlong tid, JavaThread* thread);
   static bool remove_thread(jlong tid);
 
+  // Growing
+  static bool has_work() { return _has_work; }
+  static void do_concurrent_work(JavaThread* jt);
+
 private:
   static void create_table(size_t size);
 
   static size_t table_size();
   static double get_load_factor();
-  static void grow_if_required();
+  static void check_concurrent_work();
+  static void trigger_concurrent_work();
   static void grow(JavaThread* jt);
 
   static void item_added();
