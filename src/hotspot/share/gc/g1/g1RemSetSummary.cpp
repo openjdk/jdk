@@ -27,6 +27,7 @@
 #include "gc/g1/g1ConcurrentRefine.hpp"
 #include "gc/g1/g1ConcurrentRefineThread.hpp"
 #include "gc/g1/g1DirtyCardQueue.hpp"
+#include "gc/g1/g1Policy.hpp"
 #include "gc/g1/g1RemSet.hpp"
 #include "gc/g1/g1RemSetSummary.hpp"
 #include "gc/g1/g1YoungRemSetSamplingThread.hpp"
@@ -53,18 +54,17 @@ public:
 };
 
 void G1RemSetSummary::update() {
-  _num_conc_refined_cards = _rem_set->num_conc_refined_cards();
-  G1DirtyCardQueueSet& dcqs = G1BarrierSet::dirty_card_queue_set();
-  _num_processed_buf_mutator = dcqs.processed_buffers_mut();
-  _num_processed_buf_rs_threads = dcqs.processed_buffers_rs_thread();
+  G1CollectedHeap* g1h = G1CollectedHeap::heap();
+
+  const G1Policy* policy = g1h->policy();
+  _total_mutator_refined_cards = policy->total_mutator_refined_cards();
+  _total_concurrent_refined_cards = policy->total_concurrent_refined_cards();
 
   _num_coarsenings = HeapRegionRemSet::n_coarsenings();
 
-  G1CollectedHeap* g1h = G1CollectedHeap::heap();
-  G1ConcurrentRefine* cg1r = g1h->concurrent_refine();
   if (_rs_threads_vtimes != NULL) {
     GetRSThreadVTimeClosure p(this);
-    cg1r->threads_do(&p);
+    g1h->concurrent_refine()->threads_do(&p);
   }
   set_sampling_thread_vtime(g1h->sampling_thread()->vtime_accum());
 }
@@ -83,9 +83,8 @@ double G1RemSetSummary::rs_thread_vtime(uint thread) const {
 
 G1RemSetSummary::G1RemSetSummary() :
   _rem_set(NULL),
-  _num_conc_refined_cards(0),
-  _num_processed_buf_mutator(0),
-  _num_processed_buf_rs_threads(0),
+  _total_mutator_refined_cards(0),
+  _total_concurrent_refined_cards(0),
   _num_coarsenings(0),
   _num_vtimes(G1ConcurrentRefine::max_num_threads()),
   _rs_threads_vtimes(NEW_C_HEAP_ARRAY(double, _num_vtimes, mtGC)),
@@ -96,9 +95,8 @@ G1RemSetSummary::G1RemSetSummary() :
 
 G1RemSetSummary::G1RemSetSummary(G1RemSet* rem_set) :
   _rem_set(rem_set),
-  _num_conc_refined_cards(0),
-  _num_processed_buf_mutator(0),
-  _num_processed_buf_rs_threads(0),
+  _total_mutator_refined_cards(0),
+  _total_concurrent_refined_cards(0),
   _num_coarsenings(0),
   _num_vtimes(G1ConcurrentRefine::max_num_threads()),
   _rs_threads_vtimes(NEW_C_HEAP_ARRAY(double, _num_vtimes, mtGC)),
@@ -114,12 +112,10 @@ void G1RemSetSummary::set(G1RemSetSummary* other) {
   assert(other != NULL, "just checking");
   assert(_num_vtimes == other->_num_vtimes, "just checking");
 
-  _num_conc_refined_cards = other->num_conc_refined_cards();
+  _total_mutator_refined_cards = other->total_mutator_refined_cards();
+  _total_concurrent_refined_cards = other->total_concurrent_refined_cards();
 
-  _num_processed_buf_mutator = other->num_processed_buf_mutator();
-  _num_processed_buf_rs_threads = other->num_processed_buf_rs_threads();
-
-  _num_coarsenings = other->_num_coarsenings;
+  _num_coarsenings = other->num_coarsenings();
 
   memcpy(_rs_threads_vtimes, other->_rs_threads_vtimes, sizeof(double) * _num_vtimes);
 
@@ -130,10 +126,8 @@ void G1RemSetSummary::subtract_from(G1RemSetSummary* other) {
   assert(other != NULL, "just checking");
   assert(_num_vtimes == other->_num_vtimes, "just checking");
 
-  _num_conc_refined_cards = other->num_conc_refined_cards() - _num_conc_refined_cards;
-
-  _num_processed_buf_mutator = other->num_processed_buf_mutator() - _num_processed_buf_mutator;
-  _num_processed_buf_rs_threads = other->num_processed_buf_rs_threads() - _num_processed_buf_rs_threads;
+  _total_mutator_refined_cards = other->total_mutator_refined_cards() - _total_mutator_refined_cards;
+  _total_concurrent_refined_cards = other->total_concurrent_refined_cards() - _total_concurrent_refined_cards;
 
   _num_coarsenings = other->num_coarsenings() - _num_coarsenings;
 
@@ -356,16 +350,15 @@ public:
 
 void G1RemSetSummary::print_on(outputStream* out) {
   out->print_cr(" Recent concurrent refinement statistics");
-  out->print_cr("  Processed " SIZE_FORMAT " cards concurrently", num_conc_refined_cards());
-  out->print_cr("  Of " SIZE_FORMAT " completed buffers:", num_processed_buf_total());
-  out->print_cr("     " SIZE_FORMAT_W(8) " (%5.1f%%) by concurrent RS threads.",
-                num_processed_buf_total(),
-                percent_of(num_processed_buf_rs_threads(), num_processed_buf_total()));
+  out->print_cr("  Of " SIZE_FORMAT " refined cards:", total_refined_cards());
+  out->print_cr("     " SIZE_FORMAT_W(8) " (%5.1f%%) by concurrent refinement threads.",
+                total_concurrent_refined_cards(),
+                percent_of(total_concurrent_refined_cards(), total_refined_cards()));
   out->print_cr("     " SIZE_FORMAT_W(8) " (%5.1f%%) by mutator threads.",
-                num_processed_buf_mutator(),
-                percent_of(num_processed_buf_mutator(), num_processed_buf_total()));
+                total_mutator_refined_cards(),
+                percent_of(total_mutator_refined_cards(), total_refined_cards()));
   out->print_cr("  Did " SIZE_FORMAT " coarsenings.", num_coarsenings());
-  out->print_cr("  Concurrent RS threads times (s)");
+  out->print_cr("  Concurrent refinement threads times (s)");
   out->print("     ");
   for (uint i = 0; i < _num_vtimes; i++) {
     out->print("    %5.2f", rs_thread_vtime(i));
