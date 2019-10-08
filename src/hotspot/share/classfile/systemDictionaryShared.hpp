@@ -240,7 +240,6 @@ public:
   static bool is_sharing_possible(ClassLoaderData* loader_data);
   static bool is_shared_class_visible_for_classloader(InstanceKlass* ik,
                                                       Handle class_loader,
-                                                      const char* pkg_string,
                                                       Symbol* pkg_name,
                                                       PackageEntry* pkg_entry,
                                                       ModuleEntry* mod_entry,

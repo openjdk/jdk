@@ -657,7 +657,6 @@ bool SystemDictionaryShared::is_sharing_possible(ClassLoaderData* loader_data) {
 bool SystemDictionaryShared::is_shared_class_visible_for_classloader(
                                                      InstanceKlass* ik,
                                                      Handle class_loader,
-                                                     const char* pkg_string,
                                                      Symbol* pkg_name,
                                                      PackageEntry* pkg_entry,
                                                      ModuleEntry* mod_entry,
@@ -684,7 +683,7 @@ bool SystemDictionaryShared::is_shared_class_visible_for_classloader(
     }
   } else if (SystemDictionary::is_system_class_loader(class_loader())) {
     assert(ent != NULL, "shared class for system loader should have valid SharedClassPathEntry");
-    if (pkg_string == NULL) {
+    if (pkg_name == NULL) {
       // The archived class is in the unnamed package. Currently, the boot image
       // does not contain any class in the unnamed package.
       assert(!ent->is_modules_image(), "Class in the unnamed package must be from the classpath");
