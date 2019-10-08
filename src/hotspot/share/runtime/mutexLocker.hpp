@@ -111,6 +111,7 @@ extern Monitor* RootRegionScan_lock;             // used to notify that the CM t
 
 extern Mutex*   Management_lock;                 // a lock used to serialize JVM management
 extern Monitor* Service_lock;                    // a lock used for service thread operation
+extern Monitor* Notification_lock;               // a lock used for notification thread operation
 extern Monitor* PeriodicTask_lock;               // protects the periodic task structure
 extern Monitor* RedefineClasses_lock;            // locks classes from parallel redefinition
 extern Mutex*   Verify_lock;                     // synchronize initialization of verify library

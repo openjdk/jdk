@@ -115,6 +115,7 @@ Monitor* RootRegionScan_lock          = NULL;
 
 Mutex*   Management_lock              = NULL;
 Monitor* Service_lock                 = NULL;
+Monitor* Notification_lock            = NULL;
 Monitor* PeriodicTask_lock            = NULL;
 Monitor* RedefineClasses_lock         = NULL;
 Mutex*   Verify_lock                  = NULL;
@@ -236,6 +237,13 @@ void mutex_init() {
   def(Patching_lock                , PaddedMutex  , special,     true,  _safepoint_check_never);      // used for safepointing and code patching.
   def(CompiledMethod_lock          , PaddedMutex  , special-1,   true,  _safepoint_check_never);
   def(Service_lock                 , PaddedMonitor, special,     true,  _safepoint_check_never);      // used for service thread operations
+
+  if (UseNotificationThread) {
+    def(Notification_lock            , PaddedMonitor, special,     true,  _safepoint_check_never);  // used for notification thread operations
+  } else {
+    Notification_lock = Service_lock;
+  }
+
   def(JmethodIdCreation_lock       , PaddedMutex  , leaf,        true,  _safepoint_check_always); // used for creating jmethodIDs.
 
   def(SystemDictionary_lock        , PaddedMonitor, leaf,        true,  _safepoint_check_always);

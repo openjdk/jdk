@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,32 +22,28 @@
  *
  */
 
-#ifndef SHARE_RUNTIME_SERVICETHREAD_HPP
-#define SHARE_RUNTIME_SERVICETHREAD_HPP
+#ifndef SHARE_RUNTIME_NOTIFICATIONTHREAD_HPP
+#define SHARE_RUNTIME_NOTIFICATIONTHREAD_HPP
 
 #include "runtime/thread.hpp"
 
-// A hidden from external view JavaThread for JVMTI compiled-method-load
-// events, oop storage cleanup, and the maintainance of string, symbol,
-// protection domain, and resolved method tables.
+// A JavaThread for low memory detection support, GC and
+// diagnostic framework notifications. This thread is not hidden
+// from the external view to allow the debugger to stop at the
+// breakpoints inside registred MXBean notification listeners.
 
-class ServiceThread : public JavaThread {
+class NotificationThread : public JavaThread {
   friend class VMStructs;
  private:
 
-  static ServiceThread* _instance;
+  static NotificationThread* _instance;
 
-  static void service_thread_entry(JavaThread* thread, TRAPS);
-  ServiceThread(ThreadFunction entry_point) : JavaThread(entry_point) {};
+  static void notification_thread_entry(JavaThread* thread, TRAPS);
+  NotificationThread(ThreadFunction entry_point) : JavaThread(entry_point) {};
 
  public:
   static void initialize();
 
-  // Hide this thread from external view.
-  bool is_hidden_from_external_view() const      { return true; }
-
-  // Returns true if the passed thread is the service thread.
-  static bool is_service_thread(Thread* thread);
 };
 
-#endif // SHARE_RUNTIME_SERVICETHREAD_HPP
+#endif // SHARE_RUNTIME_NOTIFICATIONTHREAD_HPP

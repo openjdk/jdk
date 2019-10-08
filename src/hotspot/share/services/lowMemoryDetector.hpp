@@ -59,7 +59,8 @@
 //
 // May need to deal with hysteresis effect.
 //
-// Memory detection code runs in the Service thread (serviceThread.hpp).
+// Memory detection code runs in the Notification thread or
+// ServiceThread depending on UseNotificationThread flag.
 
 class OopClosure;
 class MemoryPool;
@@ -214,6 +215,7 @@ public:
 class LowMemoryDetector : public AllStatic {
   friend class LowMemoryDetectorDisabler;
   friend class ServiceThread;
+  friend class NotificationThread;
 private:
   // true if any collected heap has low memory detection enabled
   static volatile bool _enabled_for_collected_pools;
