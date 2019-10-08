@@ -188,6 +188,38 @@ import java.util.stream.StreamSupport;
  * or if the only reference to the backing collection is through an
  * unmodifiable view, the view can be considered effectively immutable.
  *
+ * <h2><a id="serializable">Serializability of Collections</a></h2>
+ *
+ * <p>Serializability of collections is optional. As such, none of the collections
+ * interfaces are declared to implement the {@link java.io.Serializable} interface.
+ * However, serializability is regarded as being generally useful, so most collection
+ * implementations are serializable.
+ *
+ * <p>The collection implementations that are public classes (such as {@code ArrayList}
+ * or {@code HashMap}) are declared to implement the {@code Serializable} interface if they
+ * are in fact serializable. Some collections implementations are not public classes,
+ * such as the <a href="#unmodifiable">unmodifiable collections.</a> In such cases, the
+ * serializability of such collections is described in the specification of the method
+ * that creates them, or in some other suitable place. In cases where the serializability
+ * of a collection is not specified, there is no guarantee about the serializability of such
+ * collections. In particular, many <a href="#view">view collections</a> are not serializable.
+ *
+ * <p>A collection implementation that implements the {@code Serializable} interface cannot
+ * be guaranteed to be serializable. The reason is that in general, collections
+ * contain elements of other types, and it is not possible to determine statically
+ * whether instances of some element type are actually serializable. For example, consider
+ * a serializable {@code Collection<E>}, where {@code E} does not implement the
+ * {@code Serializable} interface. The collection may be serializable, if it contains only
+ * elements of some serializable subtype of {@code E}, or if it is empty. Collections are
+ * thus said to be <i>conditionally serializable,</i> as the serializability of the collection
+ * as a whole depends on whether the collection itself is serializable and on whether all
+ * contained elements are also serializable.
+ *
+ * <p>An additional case occurs with instances of {@link SortedSet} and {@link SortedMap}.
+ * These collections can be created with a {@link Comparator} that imposes an ordering on
+ * the set elements or map keys. Such a collection is serializable only if the provided
+ * {@code Comparator} is also serializable.
+ *
  * <p>This interface is a member of the
  * <a href="{@docRoot}/java.base/java/util/package-summary.html#CollectionsFramework">
  * Java Collections Framework</a>.
