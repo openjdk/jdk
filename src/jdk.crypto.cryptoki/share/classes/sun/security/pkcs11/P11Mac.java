@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -91,9 +91,11 @@ final class P11Mac extends MacSpi {
             macLength = 20;
             break;
         case (int)CKM_SHA224_HMAC:
+        case (int)CKM_SHA512_224_HMAC:
             macLength = 28;
             break;
         case (int)CKM_SHA256_HMAC:
+        case (int)CKM_SHA512_256_HMAC:
             macLength = 32;
             break;
         case (int)CKM_SHA384_HMAC:

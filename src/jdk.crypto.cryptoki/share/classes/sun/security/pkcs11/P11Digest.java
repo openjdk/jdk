@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -103,9 +103,11 @@ final class P11Digest extends MessageDigestSpi implements Cloneable,
             digestLength = 20;
             break;
         case (int)CKM_SHA224:
+        case (int)CKM_SHA512_224:
             digestLength = 28;
             break;
         case (int)CKM_SHA256:
+        case (int)CKM_SHA512_256:
             digestLength = 32;
             break;
         case (int)CKM_SHA384:

@@ -721,7 +721,7 @@ jTlsMacParamsToCKTlsMacParamPtr(JNIEnv *env, jobject jParam, CK_ULONG *pLength)
     }
 
     // populate using java values
-    ckParamPtr->prfMechanism = jLongToCKULong(jPrfMechanism);
+    ckParamPtr->prfHashMechanism = jLongToCKULong(jPrfMechanism);
     ckParamPtr->ulMacLength = jLongToCKULong(jUlMacLength);
     ckParamPtr->ulServerOrClient = jLongToCKULong(jUlServerOrClient);
 
@@ -1014,17 +1014,18 @@ cleanup:
 }
 
 /*
- * converts the Java CK_GCM_PARAMS object to a CK_GCM_PARAMS pointer
+ * converts the Java CK_GCM_PARAMS object to a CK_GCM_PARAMS_NO_IVBITS pointer
+ * Note: Need to try NSS definition first to avoid SIGSEGV.
  *
  * @param env - used to call JNI funktions to get the Java classes and objects
  * @param jParam - the Java CK_GCM_PARAMS object to convert
  * @param pLength - length of the allocated memory of the returned pointer
- * @return pointer to the new CK_GCM_PARAMS structure
+ * @return pointer to the new CK_GCM_PARAMS_NO_IVBITS structure
  */
-CK_GCM_PARAMS_PTR
+CK_GCM_PARAMS_NO_IVBITS_PTR
 jGCMParamsToCKGCMParamPtr(JNIEnv *env, jobject jParam, CK_ULONG *pLength)
 {
-    CK_GCM_PARAMS_PTR ckParamPtr;
+    CK_GCM_PARAMS_NO_IVBITS_PTR ckParamPtr;
     jclass jGcmParamsClass;
     jfieldID fieldID;
     jobject jIv, jAad;
@@ -1052,8 +1053,8 @@ jGCMParamsToCKGCMParamPtr(JNIEnv *env, jobject jParam, CK_ULONG *pLength)
     if (fieldID == NULL) { return NULL; }
     jTagLen = (*env)->GetLongField(env, jParam, fieldID);
 
-    // allocate memory for CK_GCM_PARAMS pointer
-    ckParamPtr = calloc(1, sizeof(CK_GCM_PARAMS));
+    // allocate memory for CK_GCM_PARAMS_NO_IVBITS pointer
+    ckParamPtr = calloc(1, sizeof(CK_GCM_PARAMS_NO_IVBITS));
     if (ckParamPtr == NULL) {
         throwOutOfMemoryError(env, 0);
         return NULL;
@@ -1073,16 +1074,15 @@ jGCMParamsToCKGCMParamPtr(JNIEnv *env, jobject jParam, CK_ULONG *pLength)
     ckParamPtr->ulTagBits = jLongToCKULong(jTagLen);
 
     if (pLength != NULL) {
-        *pLength = sizeof(CK_GCM_PARAMS);
+        *pLength = sizeof(CK_GCM_PARAMS_NO_IVBITS);
     }
-    TRACE1("Created inner GCM_PARAMS PTR %lX\n", ptr_to_jlong(ckParamPtr));
+    TRACE1("Created inner GCM_PARAMS PTR w/o ulIvBits %p\n", ckParamPtr);
     return ckParamPtr;
 cleanup:
     free(ckParamPtr->pIv);
     free(ckParamPtr->pAAD);
     free(ckParamPtr);
     return NULL;
-
 }
 
 /*
@@ -1179,7 +1179,7 @@ CK_MECHANISM_PTR jMechanismToCKMechanismPtr(JNIEnv *env, jobject jMech)
         throwOutOfMemoryError(env, 0);
         return NULL;
     }
-    TRACE1("DEBUG jMechanismToCKMechanismPtr: allocated mech %p \n", ckpMech);
+    TRACE1("DEBUG jMechanismToCKMechanismPtr: allocated mech %p\n", ckpMech);
 
     ckpMech->mechanism = jLongToCKULong(jMechType);
 
