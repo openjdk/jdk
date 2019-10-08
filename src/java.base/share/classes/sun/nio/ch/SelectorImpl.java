@@ -208,7 +208,8 @@ public abstract class SelectorImpl
         if (!(ch instanceof SelChImpl))
             throw new IllegalSelectorException();
         SelectionKeyImpl k = new SelectionKeyImpl((SelChImpl)ch, this);
-        k.attach(attachment);
+        if (attachment != null)
+            k.attach(attachment);
 
         // register (if needed) before adding to key set
         implRegister(k);
