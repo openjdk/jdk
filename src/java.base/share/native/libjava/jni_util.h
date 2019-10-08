@@ -62,40 +62,13 @@ JNIEXPORT void JNICALL
 JNU_ThrowIllegalArgumentException(JNIEnv *env, const char *msg);
 
 JNIEXPORT void JNICALL
-JNU_ThrowIllegalAccessError(JNIEnv *env, const char *msg);
-
-JNIEXPORT void JNICALL
-JNU_ThrowIllegalAccessException(JNIEnv *env, const char *msg);
-
-JNIEXPORT void JNICALL
 JNU_ThrowInternalError(JNIEnv *env, const char *msg);
 
 JNIEXPORT void JNICALL
 JNU_ThrowIOException(JNIEnv *env, const char *msg);
 
 JNIEXPORT void JNICALL
-JNU_ThrowNoSuchFieldException(JNIEnv *env, const char *msg);
-
-JNIEXPORT void JNICALL
-JNU_ThrowNoSuchMethodException(JNIEnv *env, const char *msg);
-
-JNIEXPORT void JNICALL
 JNU_ThrowClassNotFoundException(JNIEnv *env, const char *msg);
-
-JNIEXPORT void JNICALL
-JNU_ThrowNumberFormatException(JNIEnv *env, const char *msg);
-
-JNIEXPORT void JNICALL
-JNU_ThrowNoSuchFieldError(JNIEnv *env, const char *msg);
-
-JNIEXPORT void JNICALL
-JNU_ThrowNoSuchMethodError(JNIEnv *env, const char *msg);
-
-JNIEXPORT void JNICALL
-JNU_ThrowStringIndexOutOfBoundsException(JNIEnv *env, const char *msg);
-
-JNIEXPORT void JNICALL
-JNU_ThrowInstantiationException(JNIEnv *env, const char *msg);
 
 /* Throw an exception by name, using the string returned by
  * getLastErrorString for the detail string. If the last-error
@@ -120,9 +93,6 @@ JNIEXPORT void JNICALL
 JNU_ThrowIOExceptionWithLastError(JNIEnv *env, const char *defaultDetail);
 
 /* Convert between Java strings and i18n C strings */
-JNIEXPORT jstring
-NewStringPlatform(JNIEnv *env, const char *str);
-
 JNIEXPORT const char *
 GetStringPlatformChars(JNIEnv *env, jstring jstr, jboolean *isCopy);
 
@@ -138,15 +108,6 @@ JNU_ReleaseStringPlatformChars(JNIEnv *env, jstring jstr, const char *str);
 /* Class constants */
 JNIEXPORT jclass JNICALL
 JNU_ClassString(JNIEnv *env);
-
-JNIEXPORT jclass JNICALL
-JNU_ClassClass(JNIEnv *env);
-
-JNIEXPORT jclass JNICALL
-JNU_ClassObject(JNIEnv *env);
-
-JNIEXPORT jclass JNICALL
-JNU_ClassThrowable(JNIEnv *env);
 
 /* Copy count number of arguments from src to dst. Array bounds
  * and ArrayStoreException are checked.
@@ -246,36 +207,6 @@ JNU_GetStaticFieldByName(JNIEnv *env,
                          const char *classname,
                          const char *name,
                          const char *sig);
-JNIEXPORT void JNICALL
-JNU_SetStaticFieldByName(JNIEnv *env,
-                         jboolean *hasException,
-                         const char *classname,
-                         const char *name,
-                         const char *sig,
-                         ...);
-
-
-/*
- * Calls the .equals method.
- */
-JNIEXPORT jboolean JNICALL
-JNU_Equals(JNIEnv *env, jobject object1, jobject object2);
-
-
-/************************************************************************
- * Thread calls
- *
- * Convenience thread-related calls on the java.lang.Object class.
- */
-
-JNIEXPORT void JNICALL
-JNU_MonitorWait(JNIEnv *env, jobject object, jlong timeout);
-
-JNIEXPORT void JNICALL
-JNU_Notify(JNIEnv *env, jobject object);
-
-JNIEXPORT void JNICALL
-JNU_NotifyAll(JNIEnv *env, jobject object);
 
 
 /************************************************************************
@@ -349,18 +280,14 @@ JNU_NotifyAll(JNIEnv *env, jobject object);
         }                                       \
     } while (0)
 #endif /* __cplusplus */
+
 /************************************************************************
  * Debugging utilities
  */
 
-JNIEXPORT void JNICALL
-JNU_PrintString(JNIEnv *env, char *hdr, jstring string);
-
-JNIEXPORT void JNICALL
-JNU_PrintClass(JNIEnv *env, char *hdr, jobject object);
-
 JNIEXPORT jstring JNICALL
 JNU_ToString(JNIEnv *env, jobject object);
+
 
 /*
  * Package shorthand for use by native libraries
@@ -401,8 +328,6 @@ enum {
     FAST_646_US,                /* US-ASCII : ISO646-US */
     FAST_UTF_8
 };
-
-int getFastEncoding();
 
 JNIEXPORT void InitializeEncoding(JNIEnv *env, const char *name);
 
