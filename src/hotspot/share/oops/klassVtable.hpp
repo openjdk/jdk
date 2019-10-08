@@ -48,13 +48,6 @@ class klassVtable {
   int          _verify_count;     // to make verify faster
 #endif
 
-  // Ordering important, so greater_than (>) can be used as an merge operator.
-  enum AccessType {
-    acc_private         = 0,
-    acc_package_private = 1,
-    acc_publicprotected = 2
-  };
-
  public:
   klassVtable(Klass* klass, void* base, int length) : _klass(klass) {
     _tableOffset = (address)base - (address)klass; _length = length;
@@ -66,21 +59,11 @@ class klassVtable {
   int length() const              { return _length; }
   inline Method* method_at(int i) const;
   inline Method* unchecked_method_at(int i) const;
-  inline Method** adr_method_at(int i) const;
 
   // searching; all methods return -1 if not found
-  int index_of(Method* m) const                         { return index_of(m, _length); }
   int index_of_miranda(Symbol* name, Symbol* signature);
 
   void initialize_vtable(bool checkconstraints, TRAPS);   // initialize vtable of a new klass
-
-  // CDS/RedefineClasses support - clear vtables so they can be reinitialized
-  // at dump time.  Clearing gives us an easy way to tell if the vtable has
-  // already been reinitialized at dump time (see dump.cpp).  Vtables can
-  // be initialized at run time by RedefineClasses so dumping the right order
-  // is necessary.
-  void clear_vtable();
-  bool is_initialized();
 
   // computes vtable length (in words) and the number of miranda methods
   static void compute_vtable_size_and_num_mirandas(int* vtable_length,
@@ -125,7 +108,6 @@ class klassVtable {
  private:
   void copy_vtable_to(vtableEntry* start);
   int  initialize_from_super(Klass* super);
-  int  index_of(Method* m, int len) const; // same as index_of, but search only up to len
   void put_method_at(Method* m, int index);
   static bool needs_new_vtable_entry(const methodHandle& m,
                                      const Klass* super,
@@ -221,12 +203,6 @@ inline Method* klassVtable::method_at(int i) const {
 inline Method* klassVtable::unchecked_method_at(int i) const {
   assert(i >= 0 && i < _length, "index out of bounds");
   return table()[i].method();
-}
-
-inline Method** klassVtable::adr_method_at(int i) const {
-  // Allow one past the last entry to be referenced; useful for loop bounds.
-  assert(i >= 0 && i <= _length, "index out of bounds");
-  return (Method**)(address(table() + i) + vtableEntry::method_offset_in_bytes());
 }
 
 // --------------------------------------------------------------------------------
@@ -332,9 +308,6 @@ class klassItable {
   static int method_count_for_interface(InstanceKlass* klass);
   static int compute_itable_size(Array<InstanceKlass*>* transitive_interfaces);
   static void setup_itable_offset_table(InstanceKlass* klass);
-
-  // Resolving of method to index
-  static Method* method_for_itable_index(InstanceKlass* klass, int itable_index);
 
   // Debugging/Statistics
   static void print_statistics() PRODUCT_RETURN;
