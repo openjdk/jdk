@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,32 +23,56 @@
 
 /**
  * @test
- * @bug 4163126
- * @summary  test to see if timeout hangs
- * @run main/timeout=15 DatagramTimeout
+ * @bug 4163126 8222829
+ * @summary Test to see if timeout hangs. Also checks that
+ * negative timeout value fails as expected.
+ * @run testng DatagramTimeout
  */
 import java.net.DatagramPacket;
 import java.net.DatagramSocket;
 import java.net.SocketTimeoutException;
+import java.nio.channels.DatagramChannel;
+
+import org.testng.annotations.Test;
+
+import static org.testng.Assert.expectThrows;
+
 
 public class DatagramTimeout {
-    public static void main(String[] args) throws Exception {
-        boolean success = false;
-        DatagramSocket sock = new DatagramSocket();
+    private static final Class<IllegalArgumentException> IAE = IllegalArgumentException.class;
+    private static final Class<SocketTimeoutException> STE = SocketTimeoutException.class;
 
-        try {
-            DatagramPacket p;
+    /**
+     * Test DatagramSocket setSoTimeout with a valid timeout value.
+     */
+    @Test
+    public void testSetTimeout() throws Exception {
+        try (DatagramSocket s = new DatagramSocket()) {
             byte[] buffer = new byte[50];
-            p = new DatagramPacket(buffer, buffer.length);
-            sock.setSoTimeout(2);
-            sock.receive(p);
-        } catch (SocketTimeoutException e) {
-            success = true;
-        } finally {
-            sock.close();
+            DatagramPacket p = new DatagramPacket(buffer, buffer.length);
+            s.setSoTimeout(2);
+            expectThrows(STE, () -> s.receive(p));
         }
-        if (!success)
-            throw new RuntimeException("Socket timeout failure.");
     }
 
+    /**
+     * Test DatagramSocket setSoTimeout with a negative timeout.
+     */
+    @Test
+    public void testSetNegativeTimeout() throws Exception {
+        try (DatagramSocket s = new DatagramSocket()) {
+            expectThrows(IAE, () -> s.setSoTimeout(-1));
+        }
+    }
+
+    /**
+     * Test DatagramSocketAdaptor setSoTimeout with a negative timeout.
+     */
+    @Test
+    public void testNegativeTimeout() throws Exception {
+        try (DatagramChannel dc = DatagramChannel.open()) {
+            var s = dc.socket();
+            expectThrows(IAE, () -> s.setSoTimeout(-1));
+        }
+    }
 }

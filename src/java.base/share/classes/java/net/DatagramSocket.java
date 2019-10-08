@@ -899,12 +899,15 @@ class DatagramSocket implements java.io.Closeable {
      *
      * @param timeout the specified timeout in milliseconds.
      * @throws SocketException if there is an error in the underlying protocol, such as an UDP error.
+     * @throws IllegalArgumentException if {@code timeout} is negative
      * @since   1.1
      * @see #getSoTimeout()
      */
     public synchronized void setSoTimeout(int timeout) throws SocketException {
         if (isClosed())
             throw new SocketException("Socket is closed");
+        if (timeout < 0)
+            throw new IllegalArgumentException("timeout < 0");
         getImpl().setOption(SocketOptions.SO_TIMEOUT, timeout);
     }
 
