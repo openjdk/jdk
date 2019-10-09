@@ -47,7 +47,6 @@ public class OopMapValue {
   static int REGISTER_MASK_IN_PLACE;
 
   // Types of OopValues
-  static int UNUSED_VALUE;
   static int OOP_VALUE;
   static int NARROWOOP_VALUE;
   static int CALLEE_SAVED_VALUE;
@@ -70,7 +69,6 @@ public class OopMapValue {
     TYPE_MASK_IN_PLACE     = db.lookupIntConstant("OopMapValue::type_mask_in_place").intValue();
     REGISTER_MASK          = db.lookupIntConstant("OopMapValue::register_mask").intValue();
     REGISTER_MASK_IN_PLACE = db.lookupIntConstant("OopMapValue::register_mask_in_place").intValue();
-    UNUSED_VALUE           = db.lookupIntConstant("OopMapValue::unused_value").intValue();
     OOP_VALUE              = db.lookupIntConstant("OopMapValue::oop_value").intValue();
     NARROWOOP_VALUE        = db.lookupIntConstant("OopMapValue::narrowoop_value").intValue();
     CALLEE_SAVED_VALUE     = db.lookupIntConstant("OopMapValue::callee_saved_value").intValue();
@@ -78,7 +76,6 @@ public class OopMapValue {
   }
 
   public static abstract class OopTypes {
-    public static final OopTypes UNUSED_VALUE       = new OopTypes() { int getValue() { return OopMapValue.UNUSED_VALUE;       }};
     public static final OopTypes OOP_VALUE          = new OopTypes() { int getValue() { return OopMapValue.OOP_VALUE;          }};
     public static final OopTypes NARROWOOP_VALUE    = new OopTypes() { int getValue() { return OopMapValue.NARROWOOP_VALUE;         }};
     public static final OopTypes CALLEE_SAVED_VALUE = new OopTypes() { int getValue() { return OopMapValue.CALLEE_SAVED_VALUE; }};
@@ -111,8 +108,7 @@ public class OopMapValue {
 
   public OopTypes getType() {
     int which = (getValue() & TYPE_MASK_IN_PLACE);
-         if (which == UNUSED_VALUE) return OopTypes.UNUSED_VALUE;
-    else if (which == OOP_VALUE)    return OopTypes.OOP_VALUE;
+         if (which == OOP_VALUE)    return OopTypes.OOP_VALUE;
     else if (which == NARROWOOP_VALUE)   return OopTypes.NARROWOOP_VALUE;
     else if (which == CALLEE_SAVED_VALUE) return OopTypes.CALLEE_SAVED_VALUE;
     else if (which == DERIVED_OOP_VALUE)  return OopTypes.DERIVED_OOP_VALUE;
