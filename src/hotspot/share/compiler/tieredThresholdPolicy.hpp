@@ -22,12 +22,12 @@
  *
  */
 
-#ifndef SHARE_RUNTIME_TIEREDTHRESHOLDPOLICY_HPP
-#define SHARE_RUNTIME_TIEREDTHRESHOLDPOLICY_HPP
+#ifndef SHARE_COMPILER_TIEREDTHRESHOLDPOLICY_HPP
+#define SHARE_COMPILER_TIEREDTHRESHOLDPOLICY_HPP
 
 #include "code/nmethod.hpp"
+#include "compiler/compilationPolicy.hpp"
 #include "oops/methodData.hpp"
-#include "runtime/compilationPolicy.hpp"
 #include "utilities/globalDefinitions.hpp"
 
 #ifdef TIERED
@@ -275,4 +275,4 @@ public:
 
 #endif // TIERED
 
-#endif // SHARE_RUNTIME_TIEREDTHRESHOLDPOLICY_HPP
+#endif // SHARE_COMPILER_TIEREDTHRESHOLDPOLICY_HPP

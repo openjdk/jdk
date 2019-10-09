@@ -22,8 +22,8 @@
  *
  */
 
-#ifndef SHARE_RUNTIME_COMPILATIONPOLICY_HPP
-#define SHARE_RUNTIME_COMPILATIONPOLICY_HPP
+#ifndef SHARE_COMPILER_COMPILATIONPOLICY_HPP
+#define SHARE_COMPILER_COMPILATIONPOLICY_HPP
 
 #include "code/nmethod.hpp"
 #include "compiler/compileBroker.hpp"
@@ -110,4 +110,4 @@ class SimpleCompPolicy : public CompilationPolicy {
 };
 
 
-#endif // SHARE_RUNTIME_COMPILATIONPOLICY_HPP
+#endif // SHARE_COMPILER_COMPILATIONPOLICY_HPP
