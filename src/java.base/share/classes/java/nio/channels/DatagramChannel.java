@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -327,6 +327,10 @@ public abstract class DatagramChannel
      *
      * <p> If this channel's socket is not connected, or if the channel is
      * closed, then invoking this method has no effect.  </p>
+     *
+     * @apiNote If this method throws an IOException, the channel's socket
+     * may be left in an unspecified state. It is strongly recommended that
+     * the channel be closed when disconnect fails.
      *
      * @return  This datagram channel
      *
