@@ -84,7 +84,7 @@ public class X509Key implements PublicKey {
     private int unusedBits = 0;
 
     /* BitArray form of key */
-    private BitArray bitStringKey = null;
+    private transient BitArray bitStringKey = null;
 
     /* The encoding for the key. */
     protected byte[] encodedKey;

@@ -55,6 +55,7 @@ class CryptoPermission extends java.security.Permission {
     private String alg;
     private int maxKeySize = Integer.MAX_VALUE; // no restriction on maxKeySize
     private String exemptionMechanism = null;
+    @SuppressWarnings("serial") // Not statically typed as Serializable
     private AlgorithmParameterSpec algParamSpec = null;
     private boolean checkParam = false; // no restriction on param
 

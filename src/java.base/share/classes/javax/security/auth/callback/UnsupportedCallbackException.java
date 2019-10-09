@@ -39,6 +39,7 @@ public class UnsupportedCallbackException extends Exception {
     /**
      * @serial
      */
+    @SuppressWarnings("serial") // Not statically typed as Serializable
     private Callback callback;
 
     /**

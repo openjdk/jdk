@@ -50,7 +50,11 @@ public class TlsKeyMaterialSpec implements KeySpec, SecretKey {
 
     private final SecretKey clientMacKey, serverMacKey;
     private final SecretKey clientCipherKey, serverCipherKey;
-    private final IvParameterSpec clientIv, serverIv;
+
+    @SuppressWarnings("serial") // Not statically typed as Serializable
+    private final IvParameterSpec clientIv;
+    @SuppressWarnings("serial") // Not statically typed as Serializable
+    private final IvParameterSpec serverIv;
 
     /**
      * Constructs a new TlsKeymaterialSpec from the client and server MAC

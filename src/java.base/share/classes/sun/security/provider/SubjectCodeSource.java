@@ -54,6 +54,7 @@ class SubjectCodeSource extends CodeSource implements java.io.Serializable {
     private static final Class<?>[] PARAMS = { String.class };
     private static final sun.security.util.Debug debug =
         sun.security.util.Debug.getInstance("auth", "\t[Auth Access]");
+    @SuppressWarnings("serial") // Not statically typed as Serializable
     private ClassLoader sysClassLoader;
 
     /**

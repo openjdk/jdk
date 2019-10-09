@@ -62,6 +62,7 @@ public class ValidatorException extends CertificateException {
     public static final Object T_UNTRUSTED_CERT =
         "Untrusted certificate";
 
+    @SuppressWarnings("serial") // Not statically typed as Serializable
     private Object type;
     private X509Certificate cert;
 

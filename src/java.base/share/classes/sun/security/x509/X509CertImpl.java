@@ -70,6 +70,7 @@ import sun.security.provider.X509Factory;
  * @author Hemma Prafullchandra
  * @see X509CertInfo
  */
+@SuppressWarnings("serial") // See writeReplace method in Certificate
 public class X509CertImpl extends X509Certificate implements DerEncoder {
 
     @java.io.Serial
