@@ -32,7 +32,7 @@
  * @run main/othervm/native
  *                  -agentlib:GetOwnedMonitorStackDepthInfoWithEATest
  *                  -XX:+UnlockDiagnosticVMOptions
- *                  -Xms32m -Xmx32m
+ *                  -Xms128m -Xmx128m
  *                  -XX:CompileCommand=dontinline,*::dontinline_*
  *                  -XX:+PrintCompilation
  *                  -XX:+PrintInlining
@@ -44,7 +44,7 @@
  * @run main/othervm/native
  *                  -agentlib:GetOwnedMonitorStackDepthInfoWithEATest
  *                  -XX:+UnlockDiagnosticVMOptions
- *                  -Xms32m -Xmx32m
+ *                  -Xms128m -Xmx128m
  *                  -XX:CompileCommand=dontinline,*::dontinline_*
  *                  -XX:+PrintCompilation
  *                  -XX:+PrintInlining
@@ -56,7 +56,7 @@
  * @run main/othervm/native
  *                  -agentlib:GetOwnedMonitorStackDepthInfoWithEATest
  *                  -XX:+UnlockDiagnosticVMOptions
- *                  -Xms32m -Xmx32m
+ *                  -Xms128m -Xmx128m
  *                  -XX:CompileCommand=dontinline,*::dontinline_*
  *                  -XX:+PrintCompilation
  *                  -XX:+PrintInlining
@@ -68,7 +68,7 @@
  * @run main/othervm/native
  *                  -agentlib:GetOwnedMonitorStackDepthInfoWithEATest
  *                  -XX:+UnlockDiagnosticVMOptions
- *                  -Xms32m -Xmx32m
+ *                  -Xms128m -Xmx128m
  *                  -XX:CompileCommand=dontinline,*::dontinline_*
  *                  -XX:+PrintCompilation
  *                  -XX:+PrintInlining
@@ -80,7 +80,7 @@
  * @run main/othervm/native
  *                  -agentlib:GetOwnedMonitorStackDepthInfoWithEATest
  *                  -XX:+UnlockDiagnosticVMOptions
- *                  -Xms32m -Xmx32m
+ *                  -Xms128m -Xmx128m
  *                  -XX:CompileCommand=dontinline,*::dontinline_*
  *                  -XX:+PrintCompilation
  *                  -XX:+PrintInlining
@@ -92,7 +92,7 @@
  * @run main/othervm/native
  *                  -agentlib:GetOwnedMonitorStackDepthInfoWithEATest
  *                  -XX:+UnlockDiagnosticVMOptions
- *                  -Xms32m -Xmx32m
+ *                  -Xms128m -Xmx128m
  *                  -XX:CompileCommand=dontinline,*::dontinline_*
  *                  -XX:+PrintCompilation
  *                  -XX:+PrintInlining
@@ -104,7 +104,7 @@
  * @run main/othervm/native
  *                  -agentlib:GetOwnedMonitorStackDepthInfoWithEATest
  *                  -XX:+UnlockDiagnosticVMOptions
- *                  -Xms32m -Xmx32m
+ *                  -Xms128m -Xmx128m
  *                  -XX:CompileCommand=dontinline,*::dontinline_*
  *                  -XX:+PrintCompilation
  *                  -XX:+PrintInlining
