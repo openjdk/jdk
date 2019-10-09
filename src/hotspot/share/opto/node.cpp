@@ -546,9 +546,6 @@ Node *Node::clone() const {
   if (n->is_SafePoint()) {
     n->as_SafePoint()->clone_replaced_nodes();
   }
-  if (n->is_Load()) {
-    n->as_Load()->copy_barrier_info(this);
-  }
   return n;                     // Return the clone
 }
 
@@ -1471,10 +1468,6 @@ bool Node::rematerialize() const {
 // Nodes which use memory without consuming it, hence need antidependences.
 bool Node::needs_anti_dependence_check() const {
   if (req() < 2 || (_flags & Flag_needs_anti_dependence_check) == 0) {
-    return false;
-  }
-  BarrierSetC2* bs = BarrierSet::barrier_set()->barrier_set_c2();
-  if (!bs->needs_anti_dependence_check(this)) {
     return false;
   }
   return in(1)->bottom_type()->has_memory();

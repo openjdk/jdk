@@ -773,11 +773,6 @@ bool InstructForm::captures_bottom_type(FormDict &globals) const {
        !strcmp(_matrule->_rChild->_opType,"CheckCastPP")  ||
        !strcmp(_matrule->_rChild->_opType,"GetAndSetP")   ||
        !strcmp(_matrule->_rChild->_opType,"GetAndSetN")   ||
-#if INCLUDE_ZGC
-       !strcmp(_matrule->_rChild->_opType,"ZGetAndSetP") ||
-       !strcmp(_matrule->_rChild->_opType,"ZCompareAndExchangeP") ||
-       !strcmp(_matrule->_rChild->_opType,"LoadBarrierSlowReg") ||
-#endif
 #if INCLUDE_SHENANDOAHGC
        !strcmp(_matrule->_rChild->_opType,"ShenandoahCompareAndExchangeP") ||
        !strcmp(_matrule->_rChild->_opType,"ShenandoahCompareAndExchangeN") ||
@@ -3510,9 +3505,6 @@ int MatchNode::needs_ideal_memory_edge(FormDict &globals) const {
     "StoreCM",
     "GetAndSetB", "GetAndSetS", "GetAndAddI", "GetAndSetI", "GetAndSetP",
     "GetAndAddB", "GetAndAddS", "GetAndAddL", "GetAndSetL", "GetAndSetN",
-#if INCLUDE_ZGC
-    "ZGetAndSetP", "ZCompareAndSwapP", "ZCompareAndExchangeP", "ZWeakCompareAndSwapP",
-#endif
     "ClearArray"
   };
   int cnt = sizeof(needs_ideal_memory_list)/sizeof(char*);

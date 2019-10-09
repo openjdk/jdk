@@ -23,20 +23,7 @@
 
 #include "precompiled.hpp"
 #include "gc/z/zArguments.hpp"
-#include "runtime/globals.hpp"
-#include "runtime/globals_extension.hpp"
-#include "utilities/debug.hpp"
 
 void ZArguments::initialize_platform() {
-#ifdef COMPILER2
-  // The C2 barrier slow path expects vector registers to be least
-  // 16 bytes wide, which is the minimum width available on all
-  // x86-64 systems. However, the user could have speficied a lower
-  // number on the command-line, in which case we print a warning
-  // and raise it to 16.
-  if (MaxVectorSize < 16) {
-    warning("ZGC requires MaxVectorSize to be at least 16");
-    FLAG_SET_DEFAULT(MaxVectorSize, 16);
-  }
-#endif
+  // Does nothing
 }

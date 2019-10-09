@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,10 +24,7 @@
 #ifndef SHARE_GC_Z_ZBARRIERSETASSEMBLER_HPP
 #define SHARE_GC_Z_ZBARRIERSETASSEMBLER_HPP
 
-#include "asm/macroAssembler.hpp"
 #include "gc/shared/barrierSetAssembler.hpp"
-#include "oops/accessDecorators.hpp"
-#include "utilities/globalDefinitions.hpp"
 #include "utilities/macros.hpp"
 
 class ZBarrierSetAssemblerBase : public BarrierSetAssembler {

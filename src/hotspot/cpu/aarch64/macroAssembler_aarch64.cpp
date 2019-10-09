@@ -2132,6 +2132,65 @@ int MacroAssembler::pop(unsigned int bitset, Register stack) {
 
   return count;
 }
+
+// Push lots of registers in the bit set supplied.  Don't push sp.
+// Return the number of words pushed
+int MacroAssembler::push_fp(unsigned int bitset, Register stack) {
+  int words_pushed = 0;
+
+  // Scan bitset to accumulate register pairs
+  unsigned char regs[32];
+  int count = 0;
+  for (int reg = 0; reg <= 31; reg++) {
+    if (1 & bitset)
+      regs[count++] = reg;
+    bitset >>= 1;
+  }
+  regs[count++] = zr->encoding_nocheck();
+  count &= ~1;  // Only push an even number of regs
+
+  // Always pushing full 128 bit registers.
+  if (count) {
+    stpq(as_FloatRegister(regs[0]), as_FloatRegister(regs[1]), Address(pre(stack, -count * wordSize * 2)));
+    words_pushed += 2;
+  }
+  for (int i = 2; i < count; i += 2) {
+    stpq(as_FloatRegister(regs[i]), as_FloatRegister(regs[i+1]), Address(stack, i * wordSize * 2));
+    words_pushed += 2;
+  }
+
+  assert(words_pushed == count, "oops, pushed != count");
+  return count;
+}
+
+int MacroAssembler::pop_fp(unsigned int bitset, Register stack) {
+  int words_pushed = 0;
+
+  // Scan bitset to accumulate register pairs
+  unsigned char regs[32];
+  int count = 0;
+  for (int reg = 0; reg <= 31; reg++) {
+    if (1 & bitset)
+      regs[count++] = reg;
+    bitset >>= 1;
+  }
+  regs[count++] = zr->encoding_nocheck();
+  count &= ~1;
+
+  for (int i = 2; i < count; i += 2) {
+    ldpq(as_FloatRegister(regs[i]), as_FloatRegister(regs[i+1]), Address(stack, i * wordSize * 2));
+    words_pushed += 2;
+  }
+  if (count) {
+    ldpq(as_FloatRegister(regs[0]), as_FloatRegister(regs[1]), Address(post(stack, count * wordSize * 2)));
+    words_pushed += 2;
+  }
+
+  assert(words_pushed == count, "oops, pushed != count");
+
+  return count;
+}
+
 #ifdef ASSERT
 void MacroAssembler::verify_heapbase(const char* msg) {
 #if 0

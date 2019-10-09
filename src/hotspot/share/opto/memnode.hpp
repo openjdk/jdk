@@ -43,6 +43,8 @@ private:
   bool _unaligned_access; // Unaligned access from unsafe
   bool _mismatched_access; // Mismatched access from unsafe: byte read in integer array for instance
   bool _unsafe_access;     // Access of unsafe origin.
+  uint8_t _barrier; // Bit field with barrier information
+
 protected:
 #ifdef ASSERT
   const TypePtr* _adr_type;     // What kind of memory is being addressed?
@@ -62,18 +64,30 @@ public:
                  unset          // The memory ordering is not set (used for testing)
   } MemOrd;
 protected:
-  MemNode( Node *c0, Node *c1, Node *c2, const TypePtr* at )
-    : Node(c0,c1,c2   ), _unaligned_access(false), _mismatched_access(false), _unsafe_access(false) {
+  MemNode( Node *c0, Node *c1, Node *c2, const TypePtr* at ) :
+      Node(c0,c1,c2),
+      _unaligned_access(false),
+      _mismatched_access(false),
+      _unsafe_access(false),
+      _barrier(0) {
     init_class_id(Class_Mem);
     debug_only(_adr_type=at; adr_type();)
   }
-  MemNode( Node *c0, Node *c1, Node *c2, const TypePtr* at, Node *c3 )
-    : Node(c0,c1,c2,c3), _unaligned_access(false), _mismatched_access(false), _unsafe_access(false) {
+  MemNode( Node *c0, Node *c1, Node *c2, const TypePtr* at, Node *c3 ) :
+      Node(c0,c1,c2,c3),
+      _unaligned_access(false),
+      _mismatched_access(false),
+      _unsafe_access(false),
+      _barrier(0) {
     init_class_id(Class_Mem);
     debug_only(_adr_type=at; adr_type();)
   }
-  MemNode( Node *c0, Node *c1, Node *c2, const TypePtr* at, Node *c3, Node *c4)
-    : Node(c0,c1,c2,c3,c4), _unaligned_access(false), _mismatched_access(false), _unsafe_access(false) {
+  MemNode( Node *c0, Node *c1, Node *c2, const TypePtr* at, Node *c3, Node *c4) :
+      Node(c0,c1,c2,c3,c4),
+      _unaligned_access(false),
+      _mismatched_access(false),
+      _unsafe_access(false),
+      _barrier(0) {
     init_class_id(Class_Mem);
     debug_only(_adr_type=at; adr_type();)
   }
@@ -124,6 +138,9 @@ public:
     return type2aelembytes(memory_type());
 #endif
   }
+
+  uint8_t barrier_data() { return _barrier; }
+  void set_barrier_data(uint8_t barrier_data) { _barrier = barrier_data; }
 
   // Search through memory states which precede this node (load or store).
   // Look for an exact match for the address, with no intervening
@@ -181,8 +198,6 @@ private:
   // this field.
   const MemOrd _mo;
 
-  uint _barrier; // Bit field with barrier information
-
   AllocateNode* is_new_object_mark_load(PhaseGVN *phase) const;
 
 protected:
@@ -196,7 +211,7 @@ protected:
 public:
 
   LoadNode(Node *c, Node *mem, Node *adr, const TypePtr* at, const Type *rt, MemOrd mo, ControlDependency control_dependency)
-    : MemNode(c,mem,adr,at), _control_dependency(control_dependency), _mo(mo), _barrier(0), _type(rt) {
+    : MemNode(c,mem,adr,at), _control_dependency(control_dependency), _mo(mo), _type(rt) {
     init_class_id(Class_Load);
   }
   inline bool is_unordered() const { return !is_acquire(); }
@@ -264,10 +279,6 @@ public:
 
   Node* convert_to_unsigned_load(PhaseGVN& gvn);
   Node* convert_to_signed_load(PhaseGVN& gvn);
-
-  void copy_barrier_info(const Node* src) { _barrier = src->as_Load()->_barrier; }
-  uint barrier_data() { return _barrier; }
-  void set_barrier_data(uint barrier_data) { _barrier |= barrier_data; }
 
   void pin() { _control_dependency = Pinned; }
   bool has_unknown_control_dependency() const { return _control_dependency == UnknownControl; }
@@ -820,7 +831,7 @@ class LoadStoreNode : public Node {
 private:
   const Type* const _type;      // What kind of value is loaded?
   const TypePtr* _adr_type;     // What kind of memory is being addressed?
-  bool _has_barrier;
+  uint8_t _barrier; // Bit field with barrier information
   virtual uint size_of() const; // Size is bigger
 public:
   LoadStoreNode( Node *c, Node *mem, Node *adr, Node *val, const TypePtr* at, const Type* rt, uint required );
@@ -833,8 +844,9 @@ public:
 
   bool result_not_used() const;
   MemBarNode* trailing_membar() const;
-  void set_has_barrier() { _has_barrier = true; };
-  bool has_barrier() const { return _has_barrier; };
+
+  uint8_t barrier_data() { return _barrier; }
+  void set_barrier_data(uint8_t barrier_data) { _barrier = barrier_data; }
 };
 
 class LoadStoreConditionalNode : public LoadStoreNode {
@@ -886,6 +898,7 @@ public:
   MemNode::MemOrd order() const {
     return _mem_ord;
   }
+  virtual uint size_of() const { return sizeof(*this); }
 };
 
 class CompareAndExchangeNode : public LoadStoreNode {
@@ -903,6 +916,7 @@ public:
   MemNode::MemOrd order() const {
     return _mem_ord;
   }
+  virtual uint size_of() const { return sizeof(*this); }
 };
 
 //------------------------------CompareAndSwapBNode---------------------------

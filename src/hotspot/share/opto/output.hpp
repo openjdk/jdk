@@ -40,7 +40,6 @@ class PhaseCFG;
 class PhaseChaitin;
 class Pipeline_Use_Element;
 class Pipeline_Use;
-
 #ifndef PRODUCT
 #define DEBUG_ARG(x) , x
 #else
@@ -49,10 +48,7 @@ class Pipeline_Use;
 
 // Define the initial sizes for allocation of the resizable code buffer
 enum {
-  initial_code_capacity  =  16 * 1024,
-  initial_stub_capacity  =   4 * 1024,
-  initial_const_capacity =   4 * 1024,
-  initial_locs_capacity  =   3 * 1024
+  initial_const_capacity =   4 * 1024
 };
 
 //------------------------------Scheduling----------------------------------

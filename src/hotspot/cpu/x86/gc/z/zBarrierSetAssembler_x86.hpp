@@ -24,6 +24,14 @@
 #ifndef CPU_X86_GC_Z_ZBARRIERSETASSEMBLER_X86_HPP
 #define CPU_X86_GC_Z_ZBARRIERSETASSEMBLER_X86_HPP
 
+#include "code/vmreg.hpp"
+#include "oops/accessDecorators.hpp"
+#ifdef COMPILER2
+#include "opto/optoreg.hpp"
+#endif // COMPILER2
+
+class MacroAssembler;
+
 #ifdef COMPILER1
 class LIR_Assembler;
 class LIR_OprDesc;
@@ -32,14 +40,13 @@ class StubAssembler;
 class ZLoadBarrierStubC1;
 #endif // COMPILER1
 
+#ifdef COMPILER2
+class Node;
+class ZLoadBarrierStubC2;
+#endif // COMPILER2
+
 class ZBarrierSetAssembler : public ZBarrierSetAssemblerBase {
-private:
-  address _load_barrier_slow_stub[RegisterImpl::number_of_registers];
-  address _load_barrier_weak_slow_stub[RegisterImpl::number_of_registers];
-
 public:
-  ZBarrierSetAssembler();
-
   virtual void load_at(MacroAssembler* masm,
                        DecoratorSet decorators,
                        BasicType type,
@@ -82,10 +89,13 @@ public:
                                              DecoratorSet decorators) const;
 #endif // COMPILER1
 
-  virtual void barrier_stubs_init();
+#ifdef COMPILER2
+  OptoReg::Name refine_register(const Node* node,
+                                OptoReg::Name opto_reg);
 
-  address load_barrier_slow_stub(Register reg);
-  address load_barrier_weak_slow_stub(Register reg);
+  void generate_c2_load_barrier_stub(MacroAssembler* masm,
+                                     ZLoadBarrierStubC2* stub) const;
+#endif // COMPILER2
 };
 
 #endif // CPU_X86_GC_Z_ZBARRIERSETASSEMBLER_X86_HPP

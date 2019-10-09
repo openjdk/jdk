@@ -66,8 +66,7 @@ NOT_PRODUCT(cflags(TraceOptoOutput,     bool, TraceOptoOutput, TraceOptoOutput))
     cflags(VectorizeDebug,          uintx, 0, VectorizeDebug) \
     cflags(CloneMapDebug,           bool, false, CloneMapDebug) \
     cflags(IGVPrintLevel,           intx, PrintIdealGraphLevel, IGVPrintLevel) \
-    cflags(MaxNodeLimit,            intx, MaxNodeLimit, MaxNodeLimit) \
-ZGC_ONLY(cflags(ZTraceLoadBarriers, bool, false, ZTraceLoadBarriers))
+    cflags(MaxNodeLimit,            intx, MaxNodeLimit, MaxNodeLimit)
 #else
   #define compilerdirectives_c2_flags(cflags)
 #endif

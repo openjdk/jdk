@@ -230,6 +230,11 @@ public:
     return *this;
   }
 
+  RegSet &operator-=(const RegSet aSet) {
+    *this = *this - aSet;
+    return *this;
+  }
+
   static RegSet of(Register r1) {
     return RegSet(r1);
   }
