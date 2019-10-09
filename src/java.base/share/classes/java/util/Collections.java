@@ -1024,6 +1024,7 @@ public class Collections {
         @java.io.Serial
         private static final long serialVersionUID = 1820017752578914078L;
 
+        @SuppressWarnings("serial") // Conditionally serializable
         final Collection<? extends E> c;
 
         UnmodifiableCollection(Collection<? extends E> c) {
@@ -1164,6 +1165,7 @@ public class Collections {
                              implements SortedSet<E>, Serializable {
         @java.io.Serial
         private static final long serialVersionUID = -4929149591599911165L;
+        @SuppressWarnings("serial") // Conditionally serializable
         private final SortedSet<E> ss;
 
         UnmodifiableSortedSet(SortedSet<E> s) {super(s); ss = s;}
@@ -1244,6 +1246,7 @@ public class Collections {
         /**
          * The instance we are protecting.
          */
+        @SuppressWarnings("serial") // Conditionally serializable
         private final NavigableSet<E> ns;
 
         UnmodifiableNavigableSet(NavigableSet<E> s)         {super(s); ns = s;}
@@ -1304,6 +1307,7 @@ public class Collections {
         @java.io.Serial
         private static final long serialVersionUID = -283967356065247728L;
 
+        @SuppressWarnings("serial") // Conditionally serializable
         final List<? extends E> list;
 
         UnmodifiableList(List<? extends E> list) {
@@ -1450,6 +1454,7 @@ public class Collections {
         @java.io.Serial
         private static final long serialVersionUID = -1034234728574286014L;
 
+        @SuppressWarnings("serial") // Conditionally serializable
         private final Map<? extends K, ? extends V> m;
 
         UnmodifiableMap(Map<? extends K, ? extends V> m) {
@@ -1809,6 +1814,7 @@ public class Collections {
         @java.io.Serial
         private static final long serialVersionUID = -8806743815996713206L;
 
+        @SuppressWarnings("serial") // Conditionally serializable
         private final SortedMap<K, ? extends V> sm;
 
         UnmodifiableSortedMap(SortedMap<K, ? extends V> m) {super(m); sm = m; }
@@ -1886,6 +1892,7 @@ public class Collections {
         /**
          * The instance we wrap and protect.
          */
+        @SuppressWarnings("serial") // Conditionally serializable
         private final NavigableMap<K, ? extends V> nm;
 
         UnmodifiableNavigableMap(NavigableMap<K, ? extends V> m)
@@ -2017,7 +2024,9 @@ public class Collections {
         @java.io.Serial
         private static final long serialVersionUID = 3053995032091335093L;
 
+        @SuppressWarnings("serial") // Conditionally serializable
         final Collection<E> c;  // Backing Collection
+        @SuppressWarnings("serial") // Conditionally serializable
         final Object mutex;     // Object on which to synchronize
 
         SynchronizedCollection(Collection<E> c) {
@@ -2219,6 +2228,7 @@ public class Collections {
         @java.io.Serial
         private static final long serialVersionUID = 8695801310862127406L;
 
+        @SuppressWarnings("serial") // Conditionally serializable
         private final SortedSet<E> ss;
 
         SynchronizedSortedSet(SortedSet<E> s) {
@@ -2314,6 +2324,7 @@ public class Collections {
         @java.io.Serial
         private static final long serialVersionUID = -5505529816273629798L;
 
+        @SuppressWarnings("serial") // Conditionally serializable
         private final NavigableSet<E> ns;
 
         SynchronizedNavigableSet(NavigableSet<E> s) {
@@ -2424,6 +2435,7 @@ public class Collections {
         @java.io.Serial
         private static final long serialVersionUID = -7754090372962971524L;
 
+        @SuppressWarnings("serial") // Conditionally serializable
         final List<E> list;
 
         SynchronizedList(List<E> list) {
@@ -2591,7 +2603,9 @@ public class Collections {
         @java.io.Serial
         private static final long serialVersionUID = 1978198479659022715L;
 
+        @SuppressWarnings("serial") // Conditionally serializable
         private final Map<K,V> m;     // Backing Map
+        @SuppressWarnings("serial") // Conditionally serializable
         final Object      mutex;        // Object on which to synchronize
 
         SynchronizedMap(Map<K,V> m) {
@@ -2788,6 +2802,7 @@ public class Collections {
         @java.io.Serial
         private static final long serialVersionUID = -8798146769416483793L;
 
+        @SuppressWarnings("serial") // Conditionally serializable
         private final SortedMap<K,V> sm;
 
         SynchronizedSortedMap(SortedMap<K,V> m) {
@@ -2891,6 +2906,7 @@ public class Collections {
         @java.io.Serial
         private static final long serialVersionUID = 699392247599746807L;
 
+        @SuppressWarnings("serial") // Conditionally serializable
         private final NavigableMap<K,V> nm;
 
         SynchronizedNavigableMap(NavigableMap<K,V> m) {
@@ -3070,7 +3086,9 @@ public class Collections {
         @java.io.Serial
         private static final long serialVersionUID = 1578914078182001775L;
 
+        @SuppressWarnings("serial") // Conditionally serializable
         final Collection<E> c;
+        @SuppressWarnings("serial") // Conditionally serializable
         final Class<E> type;
 
         @SuppressWarnings("unchecked")
@@ -3126,6 +3144,7 @@ public class Collections {
 
         public boolean add(E e)          { return c.add(typeCheck(e)); }
 
+        @SuppressWarnings("serial") // Conditionally serializable
         private E[] zeroLengthElementArray; // Lazily initialized
 
         private E[] zeroLengthElementArray() {
@@ -3219,6 +3238,7 @@ public class Collections {
     {
         @java.io.Serial
         private static final long serialVersionUID = 1433151992604707767L;
+        @SuppressWarnings("serial") // Conditionally serializable
         final Queue<E> queue;
 
         CheckedQueue(Queue<E> queue, Class<E> elementType) {
@@ -3323,6 +3343,7 @@ public class Collections {
         @java.io.Serial
         private static final long serialVersionUID = 1599911165492914959L;
 
+        @SuppressWarnings("serial") // Conditionally serializable
         private final SortedSet<E> ss;
 
         CheckedSortedSet(SortedSet<E> s, Class<E> type) {
@@ -3387,6 +3408,7 @@ public class Collections {
         @java.io.Serial
         private static final long serialVersionUID = -5429120189805438922L;
 
+        @SuppressWarnings("serial") // Conditionally serializable
         private final NavigableSet<E> ns;
 
         CheckedNavigableSet(NavigableSet<E> s, Class<E> type) {
@@ -3470,6 +3492,7 @@ public class Collections {
     {
         @java.io.Serial
         private static final long serialVersionUID = 65247728283967356L;
+        @SuppressWarnings("serial") // Conditionally serializable
         final List<E> list;
 
         CheckedList(List<E> list, Class<E> type) {
@@ -3619,8 +3642,11 @@ public class Collections {
         @java.io.Serial
         private static final long serialVersionUID = 5742860141034234728L;
 
+        @SuppressWarnings("serial") // Conditionally serializable
         private final Map<K, V> m;
+        @SuppressWarnings("serial") // Conditionally serializable
         final Class<K> keyType;
+        @SuppressWarnings("serial") // Conditionally serializable
         final Class<V> valueType;
 
         private void typeCheck(Object key, Object value) {
@@ -4019,6 +4045,7 @@ public class Collections {
         @java.io.Serial
         private static final long serialVersionUID = 1599671320688067438L;
 
+        @SuppressWarnings("serial") // Conditionally serializable
         private final SortedMap<K, V> sm;
 
         CheckedSortedMap(SortedMap<K, V> m,
@@ -4094,6 +4121,7 @@ public class Collections {
         @java.io.Serial
         private static final long serialVersionUID = -4852462692372534096L;
 
+        @SuppressWarnings("serial") // Conditionally serializable
         private final NavigableMap<K, V> nm;
 
         CheckedNavigableMap(NavigableMap<K, V> m,
@@ -4825,6 +4853,7 @@ public class Collections {
         @java.io.Serial
         private static final long serialVersionUID = 3193687207550431679L;
 
+        @SuppressWarnings("serial") // Conditionally serializable
         private final E element;
 
         SingletonSet(E e) {element = e;}
@@ -4879,6 +4908,7 @@ public class Collections {
         @java.io.Serial
         private static final long serialVersionUID = 3093736618740652951L;
 
+        @SuppressWarnings("serial") // Conditionally serializable
         private final E element;
 
         SingletonList(E obj)                {element = obj;}
@@ -4948,7 +4978,9 @@ public class Collections {
         @java.io.Serial
         private static final long serialVersionUID = -6979724477215052911L;
 
+        @SuppressWarnings("serial") // Conditionally serializable
         private final K k;
+        @SuppressWarnings("serial") // Conditionally serializable
         private final V v;
 
         SingletonMap(K key, V value) {
@@ -5087,6 +5119,7 @@ public class Collections {
         private static final long serialVersionUID = 2739099268398711800L;
 
         final int n;
+        @SuppressWarnings("serial") // Conditionally serializable
         final E element;
 
         CopiesList(int n, E e) {
@@ -5320,6 +5353,7 @@ public class Collections {
          *
          * @serial
          */
+        @SuppressWarnings("serial") // Conditionally serializable
         final Comparator<T> cmp;
 
         ReverseComparator2(Comparator<T> cmp) {
@@ -5601,6 +5635,7 @@ public class Collections {
     private static class SetFromMap<E> extends AbstractSet<E>
         implements Set<E>, Serializable
     {
+        @SuppressWarnings("serial") // Conditionally serializable
         private final Map<E, Boolean> m;  // The backing map
         private transient Set<E> s;       // Its keySet
 
@@ -5686,6 +5721,7 @@ public class Collections {
         implements Queue<E>, Serializable {
         @java.io.Serial
         private static final long serialVersionUID = 1802017725587941708L;
+        @SuppressWarnings("serial") // Conditionally serializable
         private final Deque<E> q;
         AsLIFOQueue(Deque<E> q)                     { this.q = q; }
         public boolean add(E e)                     { q.addFirst(e); return true; }

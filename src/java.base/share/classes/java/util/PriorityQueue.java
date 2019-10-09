@@ -111,6 +111,7 @@ public class PriorityQueue<E> extends AbstractQueue<E>
      * The comparator, or null if priority queue uses elements'
      * natural ordering.
      */
+    @SuppressWarnings("serial") // Conditionally serializable
     private final Comparator<? super E> comparator;
 
     /**

@@ -76,6 +76,7 @@ public final class SerializedLambda implements Serializable {
     private final String implMethodSignature;
     private final int implMethodKind;
     private final String instantiatedMethodType;
+    @SuppressWarnings("serial") // Not statically typed as Serializable
     private final Object[] capturedArgs;
 
     /**

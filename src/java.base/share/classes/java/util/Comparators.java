@@ -66,6 +66,7 @@ class Comparators {
         private static final long serialVersionUID = -7569533591570686392L;
         private final boolean nullFirst;
         // if null, non-null Ts are considered equal
+        @SuppressWarnings("serial") // Not statically typed as Serializable
         private final Comparator<T> real;
 
         @SuppressWarnings("unchecked")

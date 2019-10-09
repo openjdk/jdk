@@ -230,6 +230,7 @@ public class Throwable implements Serializable {
      * @serial
      * @since 1.7
      */
+    @SuppressWarnings("serial") // Not statically typed as Serializable
     private List<Throwable> suppressedExceptions = SUPPRESSED_SENTINEL;
 
     /** Message for trying to suppress a null exception. */

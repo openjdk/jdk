@@ -641,6 +641,7 @@ public abstract class Clock {
     static final class OffsetClock extends Clock implements Serializable {
         @java.io.Serial
         private static final long serialVersionUID = 2007484719125426256L;
+        @SuppressWarnings("serial") // Not statically typed as Serializable
         private final Clock baseClock;
         private final Duration offset;
 
@@ -692,6 +693,7 @@ public abstract class Clock {
     static final class TickClock extends Clock implements Serializable {
         @java.io.Serial
         private static final long serialVersionUID = 6504659149906368850L;
+        @SuppressWarnings("serial") // Not statically typed as Serializable
         private final Clock baseClock;
         private final long tickNanos;
 
