@@ -22,8 +22,8 @@
  */
 package com.oracle.mxtool.junit;
 
-import java.util.HashMap;
 import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 
 import org.junit.runner.Description;
 
@@ -40,8 +40,8 @@ class TimingDecorator extends MxRunListenerDecorator {
 
     TimingDecorator(MxRunListener l) {
         super(l);
-        this.classTimes = new HashMap<>();
-        this.testTimes = new HashMap<>();
+        this.classTimes = new ConcurrentHashMap<>();
+        this.testTimes = new ConcurrentHashMap<>();
     }
 
     @Override

@@ -73,7 +73,7 @@ public class FindClassesByAnnotatedMethods {
             System.out.print(jarFilePath);
             while (e.hasMoreElements()) {
                 JarEntry je = e.nextElement();
-                if (je.isDirectory() || !je.getName().endsWith(".class")) {
+                if (je.isDirectory() || !je.getName().endsWith(".class") || je.getName().equals("module-info.class")) {
                     continue;
                 }
                 Set<String> methodAnnotationTypes = new HashSet<>();
@@ -84,6 +84,8 @@ public class FindClassesByAnnotatedMethods {
                 } catch (UnsupportedClassVersionError ucve) {
                     isSupported = false;
                     unsupportedClasses++;
+                } catch (Throwable t) {
+                    throw new InternalError("Error while parsing class from " + je + " in " + jarFilePath, t);
                 }
                 String className = je.getName().substring(0, je.getName().length() - ".class".length()).replaceAll("/", ".");
                 if (!isSupported) {
@@ -129,7 +131,7 @@ public class FindClassesByAnnotatedMethods {
     /*
      * Small bytecode parser that extract annotations.
      */
-    private static final int MAJOR_VERSION_JAVA7 = 51;
+    private static final int MAJOR_VERSION_JAVA6 = 50;
     private static final int MAJOR_VERSION_OFFSET = 44;
     private static final byte CONSTANT_Utf8 = 1;
     private static final byte CONSTANT_Integer = 3;
@@ -146,6 +148,8 @@ public class FindClassesByAnnotatedMethods {
     private static final byte CONSTANT_MethodType = 16;
     private static final byte CONSTANT_Dynamic = 17;
     private static final byte CONSTANT_InvokeDynamic = 18;
+    private static final byte CONSTANT_Module = 19;
+    private static final byte CONSTANT_Package = 20;
 
     private static void readClassfile(DataInputStream stream, Collection<String> methodAnnotationTypes) throws IOException {
         // magic
@@ -154,7 +158,7 @@ public class FindClassesByAnnotatedMethods {
 
         int minor = stream.readUnsignedShort();
         int major = stream.readUnsignedShort();
-        if (major < MAJOR_VERSION_JAVA7) {
+        if (major < MAJOR_VERSION_JAVA6) {
             throw new UnsupportedClassVersionError("Unsupported class file version: " + major + "." + minor);
         }
         // Starting with JDK8, ignore a classfile that has a newer format than the current JDK.
@@ -210,7 +214,9 @@ public class FindClassesByAnnotatedMethods {
             switch (tag) {
                 case CONSTANT_Class:
                 case CONSTANT_String:
-                case CONSTANT_MethodType: {
+                case CONSTANT_MethodType:
+                case CONSTANT_Module:
+                case CONSTANT_Package: {
                     skipFully(stream, 2);
                     break;
                 }
