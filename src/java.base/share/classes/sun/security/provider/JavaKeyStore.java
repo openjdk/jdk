@@ -697,7 +697,7 @@ public abstract class JavaKeyStore extends KeyStoreSpi {
 
                     // Read the private key
                     entry.protectedPrivKey =
-                            IOUtils.readFully(dis, dis.readInt(), true);
+                            IOUtils.readExactlyNBytes(dis, dis.readInt());
 
                     // Read the certificate chain
                     int numOfCerts = dis.readInt();
@@ -722,7 +722,7 @@ public abstract class JavaKeyStore extends KeyStoreSpi {
                                 }
                             }
                             // instantiate the certificate
-                            encoded = IOUtils.readFully(dis, dis.readInt(), true);
+                            encoded = IOUtils.readExactlyNBytes(dis, dis.readInt());
                             bais = new ByteArrayInputStream(encoded);
                             certs.add(cf.generateCertificate(bais));
                             bais.close();
@@ -761,7 +761,7 @@ public abstract class JavaKeyStore extends KeyStoreSpi {
                             cfs.put(certType, cf);
                         }
                     }
-                    encoded = IOUtils.readFully(dis, dis.readInt(), true);
+                    encoded = IOUtils.readExactlyNBytes(dis, dis.readInt());
                     bais = new ByteArrayInputStream(encoded);
                     entry.cert = cf.generateCertificate(bais);
                     bais.close();
@@ -787,16 +787,13 @@ public abstract class JavaKeyStore extends KeyStoreSpi {
              */
             if (password != null) {
                 byte[] computed = md.digest();
-                byte[] actual = new byte[computed.length];
-                dis.readFully(actual);
-                for (int i = 0; i < computed.length; i++) {
-                    if (computed[i] != actual[i]) {
-                        Throwable t = new UnrecoverableKeyException
+                byte[] actual = IOUtils.readExactlyNBytes(dis, computed.length);
+                if (!MessageDigest.isEqual(computed, actual)) {
+                    Throwable t = new UnrecoverableKeyException
                             ("Password verification failed");
-                        throw (IOException)new IOException
+                    throw (IOException) new IOException
                             ("Keystore was tampered with, or "
-                            + "password was incorrect").initCause(t);
-                    }
+                                    + "password was incorrect").initCause(t);
                 }
             }
         }

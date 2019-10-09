@@ -594,7 +594,7 @@ implements java.io.Serializable
                 cfs.put(certType, cf);
             }
             // parse the certificate
-            byte[] encoded = IOUtils.readNBytes(ois, ois.readInt());
+            byte[] encoded = IOUtils.readExactlyNBytes(ois, ois.readInt());
             ByteArrayInputStream bais = new ByteArrayInputStream(encoded);
             try {
                 certList.add(cf.generateCertificate(bais));
