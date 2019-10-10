@@ -824,11 +824,13 @@ static void pass_arg3(MacroAssembler* masm, Register arg) {
 }
 
 void MacroAssembler::stop(const char* msg) {
-  address rip = pc();
-  pusha(); // get regs on stack
+  if (ShowMessageBoxOnError) {
+    address rip = pc();
+    pusha(); // get regs on stack
+    lea(c_rarg1, InternalAddress(rip));
+    movq(c_rarg2, rsp); // pass pointer to regs array
+  }
   lea(c_rarg0, ExternalAddress((address) msg));
-  lea(c_rarg1, InternalAddress(rip));
-  movq(c_rarg2, rsp); // pass pointer to regs array
   andq(rsp, -16); // align stack as required by ABI
   call(RuntimeAddress(CAST_FROM_FN_PTR(address, MacroAssembler::debug64)));
   hlt();
