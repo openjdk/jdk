@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,9 +24,10 @@
 
 package org.graalvm.compiler.jtt.reflect;
 
-import org.junit.Test;
-
+import org.graalvm.compiler.debug.DebugOptions;
 import org.graalvm.compiler.jtt.JTTTest;
+import org.graalvm.compiler.options.OptionValues;
+import org.junit.Test;
 
 /*
  */
@@ -76,7 +77,13 @@ public class Field_set02 extends JTTTest {
 
     @Test
     public void run0() throws Throwable {
-        runTest("test", 0);
+        try {
+            runTest("test", 0);
+        } catch (AssertionError e) {
+            System.err.println(e);
+            System.err.println("object.byteField == " + object.byteField);
+            runTest(new OptionValues(getInitialOptions(), DebugOptions.Dump, ":2"), "test", 0);
+        }
     }
 
     @Test

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -115,7 +115,7 @@ import jdk.vm.ci.sparc.SPARCKind;
 public class SPARCControlFlow {
     // This describes the maximum offset between the first emitted (load constant in to scratch,
     // if does not fit into simm5 of cbcond) instruction and the final branch instruction
-    private static final int maximumSelfOffsetInstructions = 2;
+    private static final int maximumSelfOffsetInstructions = 10;
 
     public static final class ReturnOp extends SPARCBlockEndOp {
         public static final LIRInstructionClass<ReturnOp> TYPE = LIRInstructionClass.create(ReturnOp.class);

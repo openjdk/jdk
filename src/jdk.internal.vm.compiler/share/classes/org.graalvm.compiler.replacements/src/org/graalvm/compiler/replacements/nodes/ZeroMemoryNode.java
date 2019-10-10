@@ -48,19 +48,21 @@ public class ZeroMemoryNode extends FixedAccessNode implements LIRLowerable {
     public static final NodeClass<ZeroMemoryNode> TYPE = NodeClass.create(ZeroMemoryNode.class);
 
     @Input ValueNode length;
+    private final boolean isAligned;
 
-    public ZeroMemoryNode(ValueNode address, ValueNode length, LocationIdentity locationIdentity) {
-        this(OffsetAddressNode.create(address), length, locationIdentity, BarrierType.NONE);
+    public ZeroMemoryNode(ValueNode address, ValueNode length, boolean isAligned, LocationIdentity locationIdentity) {
+        this(OffsetAddressNode.create(address), length, isAligned, locationIdentity, BarrierType.NONE);
     }
 
-    public ZeroMemoryNode(AddressNode address, ValueNode length, LocationIdentity locationIdentity, BarrierType type) {
+    public ZeroMemoryNode(AddressNode address, ValueNode length, boolean isAligned, LocationIdentity locationIdentity, BarrierType type) {
         super(TYPE, address, locationIdentity, StampFactory.forVoid(), type);
         this.length = length;
+        this.isAligned = isAligned;
     }
 
     @Override
     public void generate(NodeLIRBuilderTool gen) {
-        gen.getLIRGeneratorTool().emitZeroMemory(gen.operand(getAddress()), gen.operand(length));
+        gen.getLIRGeneratorTool().emitZeroMemory(gen.operand(getAddress()), gen.operand(length), isAligned);
     }
 
     @Override
@@ -69,5 +71,5 @@ public class ZeroMemoryNode extends FixedAccessNode implements LIRLowerable {
     }
 
     @NodeIntrinsic
-    public static native void zero(Word address, long length, @ConstantNodeParameter LocationIdentity locationIdentity);
+    public static native void zero(Word address, long length, @ConstantNodeParameter boolean isAligned, @ConstantNodeParameter LocationIdentity locationIdentity);
 }

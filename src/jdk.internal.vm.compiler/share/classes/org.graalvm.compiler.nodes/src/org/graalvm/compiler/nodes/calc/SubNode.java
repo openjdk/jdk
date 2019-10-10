@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -53,7 +53,7 @@ public class SubNode extends BinaryArithmeticNode<Sub> implements NarrowableArit
     }
 
     protected SubNode(NodeClass<? extends SubNode> c, ValueNode x, ValueNode y) {
-        super(c, ArithmeticOpTable::getSub, x, y);
+        super(c, getArithmeticOpTable(x).getSub(), x, y);
     }
 
     public static ValueNode create(ValueNode x, ValueNode y, NodeView view) {
@@ -64,6 +64,11 @@ public class SubNode extends BinaryArithmeticNode<Sub> implements NarrowableArit
             return tryConstantFold;
         }
         return canonical(null, op, stamp, x, y, view);
+    }
+
+    @Override
+    protected BinaryOp<Sub> getOp(ArithmeticOpTable table) {
+        return table.getSub();
     }
 
     private static ValueNode canonical(SubNode subNode, BinaryOp<Sub> op, Stamp stamp, ValueNode forX, ValueNode forY, NodeView view) {

@@ -43,7 +43,7 @@ import java.util.regex.Pattern;
  */
 public final class JVMCIVersionCheck {
 
-    private static final Version JVMCI8_MIN_VERSION = new Version3(19, 2, 1);
+    private static final Version JVMCI8_MIN_VERSION = new Version3(19, 3, 2);
 
     public interface Version {
         boolean isLessThan(Version other);
@@ -230,6 +230,17 @@ public final class JVMCIVersionCheck {
                     failVersionCheck(props, exitOnFailure, "Could not parse the JDK 11 early access build number from java.vm.version property: %s.%n", vmVersion);
                     return;
                 }
+            } else if (vmVersion.contains("-jvmci-")) {
+                // A "labsjdk"
+                Version v = Version.parse(vmVersion);
+                if (v != null) {
+                    if (v.isLessThan(minVersion)) {
+                        failVersionCheck(props, exitOnFailure, "The VM does not support the minimum JVMCI API version required by Graal: %s < %s.%n", v, minVersion);
+                    }
+                    return;
+                }
+                failVersionCheck(props, exitOnFailure, "The VM does not support the minimum JVMCI API version required by Graal.%n" +
+                                "Cannot read JVMCI version from java.vm.version property: %s.%n", vmVersion);
             } else {
                 // Graal is compatible with all JDK versions as of 11 GA.
             }

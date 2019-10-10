@@ -24,8 +24,7 @@
 
 package org.graalvm.compiler.nodes.calc;
 
-import java.io.Serializable;
-import java.util.function.Function;
+import static org.graalvm.compiler.nodes.calc.BinaryArithmeticNode.getArithmeticOpTable;
 
 import org.graalvm.compiler.core.common.type.ArithmeticOpTable;
 import org.graalvm.compiler.core.common.type.ArithmeticOpTable.IntegerConvertOp;
@@ -53,20 +52,11 @@ import jdk.vm.ci.meta.ConstantReflectionProvider;
 public abstract class IntegerConvertNode<OP, REV> extends UnaryNode implements ArithmeticOperation, ConvertNode, ArithmeticLIRLowerable, StampInverter {
     @SuppressWarnings("rawtypes") public static final NodeClass<IntegerConvertNode> TYPE = NodeClass.create(IntegerConvertNode.class);
 
-    protected final SerializableIntegerConvertFunction<OP> getOp;
-    protected final SerializableIntegerConvertFunction<REV> getReverseOp;
-
     protected final int inputBits;
     protected final int resultBits;
 
-    protected interface SerializableIntegerConvertFunction<T> extends Function<ArithmeticOpTable, IntegerConvertOp<T>>, Serializable {
-    }
-
-    protected IntegerConvertNode(NodeClass<? extends IntegerConvertNode<OP, REV>> c, SerializableIntegerConvertFunction<OP> getOp, SerializableIntegerConvertFunction<REV> getReverseOp, int inputBits,
-                    int resultBits, ValueNode input) {
-        super(c, getOp.apply(ArithmeticOpTable.forStamp(input.stamp(NodeView.DEFAULT))).foldStamp(inputBits, resultBits, input.stamp(NodeView.DEFAULT)), input);
-        this.getOp = getOp;
-        this.getReverseOp = getReverseOp;
+    protected IntegerConvertNode(NodeClass<? extends IntegerConvertNode<OP, REV>> c, IntegerConvertOp<OP> opForStampComputation, int inputBits, int resultBits, ValueNode input) {
+        super(c, opForStampComputation.foldStamp(inputBits, resultBits, input.stamp(NodeView.DEFAULT)), input);
         this.inputBits = inputBits;
         this.resultBits = resultBits;
         assert PrimitiveStamp.getBits(input.stamp(NodeView.DEFAULT)) == 0 || PrimitiveStamp.getBits(input.stamp(NodeView.DEFAULT)) == inputBits;
@@ -80,13 +70,13 @@ public abstract class IntegerConvertNode<OP, REV> extends UnaryNode implements A
         return resultBits;
     }
 
-    protected final IntegerConvertOp<OP> getOp(ValueNode forValue) {
-        return getOp.apply(ArithmeticOpTable.forStamp(forValue.stamp(NodeView.DEFAULT)));
-    }
+    protected abstract IntegerConvertOp<OP> getOp(ArithmeticOpTable table);
+
+    protected abstract IntegerConvertOp<REV> getReverseOp(ArithmeticOpTable table);
 
     @Override
     public final IntegerConvertOp<OP> getArithmeticOp() {
-        return getOp(getValue());
+        return getOp(getArithmeticOpTable(getValue()));
     }
 
     @Override
@@ -96,7 +86,7 @@ public abstract class IntegerConvertNode<OP, REV> extends UnaryNode implements A
 
     @Override
     public Constant reverse(Constant c, ConstantReflectionProvider constantReflection) {
-        IntegerConvertOp<REV> reverse = getReverseOp.apply(ArithmeticOpTable.forStamp(stamp(NodeView.DEFAULT)));
+        IntegerConvertOp<REV> reverse = getReverseOp(ArithmeticOpTable.forStamp(stamp(NodeView.DEFAULT)));
         return reverse.foldConstant(getResultBits(), getInputBits(), c);
     }
 
@@ -108,7 +98,7 @@ public abstract class IntegerConvertNode<OP, REV> extends UnaryNode implements A
 
     @Override
     public ValueNode canonical(CanonicalizerTool tool, ValueNode forValue) {
-        ValueNode synonym = findSynonym(getOp(forValue), forValue, inputBits, resultBits, stamp(NodeView.DEFAULT));
+        ValueNode synonym = findSynonym(getOp(getArithmeticOpTable(forValue)), forValue, inputBits, resultBits, stamp(NodeView.DEFAULT));
         if (synonym != null) {
             return synonym;
         }

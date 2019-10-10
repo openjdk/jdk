@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,11 +21,35 @@
  * questions.
  */
 
-/**
- * JDK 11 and later versioned overlay for the {@code jdk.internal.vm.compiler.management} module.
- * This cannot be used in JDK 10 where {@code jdk.internal.vm.compiler.management} is a
- * non-upgradeable module.
- */
 
+package org.graalvm.compiler.nodes.test;
 
-package org.graalvm.compiler.hotspot.management;
+import static org.graalvm.compiler.java.BytecodeParserOptions.InlineDuringParsing;
+
+import org.graalvm.compiler.core.phases.HighTier;
+import org.graalvm.compiler.core.test.GraalCompilerTest;
+import org.graalvm.compiler.options.OptionValues;
+import org.junit.Test;
+
+public class ExceptionLivenessTest extends GraalCompilerTest {
+    @Test
+    public void testNewarray() {
+        OptionValues options = new OptionValues(getInitialOptions(), HighTier.Options.Inline, false, InlineDuringParsing, false);
+        test(options, "newarraySnippet");
+    }
+
+    public static int[] newarraySnippet() {
+        int[] array = new int[4];
+
+        dummy();
+        try {
+            array = new int[-10];
+        } catch (NegativeArraySizeException exc3) {
+        }
+        return array;
+    }
+
+    @BytecodeParserNeverInline
+    static void dummy() {
+    }
+}

@@ -741,6 +741,7 @@ public final class NodeClass<T> extends FieldIntrospection<T> {
             } else {
                 Object objectA = data.getObject(a, i);
                 Object objectB = data.getObject(b, i);
+                assert !isLambda(objectA) || !isLambda(objectB) : "lambdas are not permitted in fields of " + this.toString();
                 if (objectA != objectB) {
                     if (objectA != null && objectB != null) {
                         if (!deepEquals0(objectA, objectB)) {
@@ -753,6 +754,11 @@ public final class NodeClass<T> extends FieldIntrospection<T> {
             }
         }
         return true;
+    }
+
+    private static boolean isLambda(Object obj) {
+        // This needs to be consistent with InnerClassLambdaMetafactory constructor.
+        return obj != null && obj.getClass().getSimpleName().contains("$$Lambda$");
     }
 
     public boolean isValid(Position pos, NodeClass<?> from, Edges fromEdges) {

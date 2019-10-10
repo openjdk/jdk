@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,6 +28,7 @@ import static org.graalvm.compiler.nodeinfo.NodeCycles.CYCLES_2;
 import static org.graalvm.compiler.nodeinfo.NodeSize.SIZE_2;
 
 import org.graalvm.compiler.core.common.type.ArithmeticOpTable;
+import org.graalvm.compiler.core.common.type.ArithmeticOpTable.BinaryOp;
 import org.graalvm.compiler.core.common.type.ArithmeticOpTable.BinaryOp.UMulHigh;
 import org.graalvm.compiler.graph.NodeClass;
 import org.graalvm.compiler.graph.spi.Canonicalizable;
@@ -49,7 +50,12 @@ public final class UnsignedMulHighNode extends BinaryArithmeticNode<UMulHigh> im
     public static final NodeClass<UnsignedMulHighNode> TYPE = NodeClass.create(UnsignedMulHighNode.class);
 
     public UnsignedMulHighNode(ValueNode x, ValueNode y) {
-        super(TYPE, ArithmeticOpTable::getUMulHigh, x, y);
+        super(TYPE, getArithmeticOpTable(x).getUMulHigh(), x, y);
+    }
+
+    @Override
+    protected BinaryOp<UMulHigh> getOp(ArithmeticOpTable table) {
+        return table.getUMulHigh();
     }
 
     @Override

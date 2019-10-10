@@ -687,7 +687,7 @@ public abstract class AMD64LIRGenerator extends LIRGenerator {
     }
 
     @Override
-    public void emitZeroMemory(Value address, Value length) {
+    public void emitZeroMemory(Value address, Value length, boolean isAligned) {
         RegisterValue lengthReg = AMD64.rcx.asValue(length.getValueKind());
         emitMove(lengthReg, length);
         append(new AMD64ZeroMemoryOp(asAddressValue(address), lengthReg));

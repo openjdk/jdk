@@ -64,6 +64,7 @@ import jdk.vm.ci.meta.MetaAccessProvider;
 import jdk.vm.ci.meta.MetaUtil;
 import jdk.vm.ci.meta.MethodHandleAccessProvider.IntrinsicMethod;
 import jdk.vm.ci.meta.ResolvedJavaMethod;
+import jdk.vm.ci.sparc.SPARC;
 
 /**
  * Checks the intrinsics implemented by Graal against the set of intrinsics declared by HotSpot. The
@@ -375,7 +376,7 @@ public class CheckGraalIntrinsics extends GraalTest {
                 add(ignore,
                                 "java/lang/Math.fma(DDD)D",
                                 "java/lang/Math.fma(FFF)F");
-            } else if (!(arch instanceof AMD64)) {
+            } else if (arch instanceof SPARC) {
                 add(toBeInvestigated,
                                 "java/lang/Math.fma(DDD)D",
                                 "java/lang/Math.fma(FFF)F");

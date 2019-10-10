@@ -122,10 +122,6 @@ public abstract class NodeList<T extends Node> extends AbstractList<T> implement
         size = newSize;
     }
 
-    public boolean isList() {
-        return true;
-    }
-
     protected abstract void update(T oldNode, T newNode);
 
     public abstract Edges.Type getEdgesType();

@@ -26,27 +26,108 @@ package org.graalvm.compiler.java;
 
 import static org.graalvm.compiler.bytecode.Bytecodes.AALOAD;
 import static org.graalvm.compiler.bytecode.Bytecodes.AASTORE;
+import static org.graalvm.compiler.bytecode.Bytecodes.ACONST_NULL;
+import static org.graalvm.compiler.bytecode.Bytecodes.ALOAD;
+import static org.graalvm.compiler.bytecode.Bytecodes.ALOAD_0;
+import static org.graalvm.compiler.bytecode.Bytecodes.ALOAD_1;
+import static org.graalvm.compiler.bytecode.Bytecodes.ALOAD_2;
+import static org.graalvm.compiler.bytecode.Bytecodes.ALOAD_3;
 import static org.graalvm.compiler.bytecode.Bytecodes.ANEWARRAY;
 import static org.graalvm.compiler.bytecode.Bytecodes.ARETURN;
 import static org.graalvm.compiler.bytecode.Bytecodes.ARRAYLENGTH;
+import static org.graalvm.compiler.bytecode.Bytecodes.ASTORE;
+import static org.graalvm.compiler.bytecode.Bytecodes.ASTORE_0;
+import static org.graalvm.compiler.bytecode.Bytecodes.ASTORE_1;
+import static org.graalvm.compiler.bytecode.Bytecodes.ASTORE_2;
+import static org.graalvm.compiler.bytecode.Bytecodes.ASTORE_3;
 import static org.graalvm.compiler.bytecode.Bytecodes.ATHROW;
 import static org.graalvm.compiler.bytecode.Bytecodes.BALOAD;
 import static org.graalvm.compiler.bytecode.Bytecodes.BASTORE;
+import static org.graalvm.compiler.bytecode.Bytecodes.BIPUSH;
+import static org.graalvm.compiler.bytecode.Bytecodes.BREAKPOINT;
 import static org.graalvm.compiler.bytecode.Bytecodes.CALOAD;
 import static org.graalvm.compiler.bytecode.Bytecodes.CASTORE;
 import static org.graalvm.compiler.bytecode.Bytecodes.CHECKCAST;
+import static org.graalvm.compiler.bytecode.Bytecodes.D2F;
+import static org.graalvm.compiler.bytecode.Bytecodes.D2I;
+import static org.graalvm.compiler.bytecode.Bytecodes.D2L;
+import static org.graalvm.compiler.bytecode.Bytecodes.DADD;
 import static org.graalvm.compiler.bytecode.Bytecodes.DALOAD;
 import static org.graalvm.compiler.bytecode.Bytecodes.DASTORE;
+import static org.graalvm.compiler.bytecode.Bytecodes.DCMPG;
+import static org.graalvm.compiler.bytecode.Bytecodes.DCMPL;
+import static org.graalvm.compiler.bytecode.Bytecodes.DCONST_0;
+import static org.graalvm.compiler.bytecode.Bytecodes.DCONST_1;
+import static org.graalvm.compiler.bytecode.Bytecodes.DDIV;
+import static org.graalvm.compiler.bytecode.Bytecodes.DLOAD;
+import static org.graalvm.compiler.bytecode.Bytecodes.DLOAD_0;
+import static org.graalvm.compiler.bytecode.Bytecodes.DLOAD_1;
+import static org.graalvm.compiler.bytecode.Bytecodes.DLOAD_2;
+import static org.graalvm.compiler.bytecode.Bytecodes.DLOAD_3;
+import static org.graalvm.compiler.bytecode.Bytecodes.DMUL;
+import static org.graalvm.compiler.bytecode.Bytecodes.DNEG;
+import static org.graalvm.compiler.bytecode.Bytecodes.DREM;
 import static org.graalvm.compiler.bytecode.Bytecodes.DRETURN;
+import static org.graalvm.compiler.bytecode.Bytecodes.DSTORE;
+import static org.graalvm.compiler.bytecode.Bytecodes.DSTORE_0;
+import static org.graalvm.compiler.bytecode.Bytecodes.DSTORE_1;
+import static org.graalvm.compiler.bytecode.Bytecodes.DSTORE_2;
+import static org.graalvm.compiler.bytecode.Bytecodes.DSTORE_3;
+import static org.graalvm.compiler.bytecode.Bytecodes.DSUB;
+import static org.graalvm.compiler.bytecode.Bytecodes.DUP;
+import static org.graalvm.compiler.bytecode.Bytecodes.DUP2;
+import static org.graalvm.compiler.bytecode.Bytecodes.DUP2_X1;
+import static org.graalvm.compiler.bytecode.Bytecodes.DUP2_X2;
+import static org.graalvm.compiler.bytecode.Bytecodes.DUP_X1;
+import static org.graalvm.compiler.bytecode.Bytecodes.DUP_X2;
+import static org.graalvm.compiler.bytecode.Bytecodes.F2D;
+import static org.graalvm.compiler.bytecode.Bytecodes.F2I;
+import static org.graalvm.compiler.bytecode.Bytecodes.F2L;
+import static org.graalvm.compiler.bytecode.Bytecodes.FADD;
 import static org.graalvm.compiler.bytecode.Bytecodes.FALOAD;
 import static org.graalvm.compiler.bytecode.Bytecodes.FASTORE;
+import static org.graalvm.compiler.bytecode.Bytecodes.FCMPG;
+import static org.graalvm.compiler.bytecode.Bytecodes.FCMPL;
+import static org.graalvm.compiler.bytecode.Bytecodes.FCONST_0;
+import static org.graalvm.compiler.bytecode.Bytecodes.FCONST_1;
+import static org.graalvm.compiler.bytecode.Bytecodes.FCONST_2;
+import static org.graalvm.compiler.bytecode.Bytecodes.FDIV;
+import static org.graalvm.compiler.bytecode.Bytecodes.FLOAD;
+import static org.graalvm.compiler.bytecode.Bytecodes.FLOAD_0;
+import static org.graalvm.compiler.bytecode.Bytecodes.FLOAD_1;
+import static org.graalvm.compiler.bytecode.Bytecodes.FLOAD_2;
+import static org.graalvm.compiler.bytecode.Bytecodes.FLOAD_3;
+import static org.graalvm.compiler.bytecode.Bytecodes.FMUL;
+import static org.graalvm.compiler.bytecode.Bytecodes.FNEG;
+import static org.graalvm.compiler.bytecode.Bytecodes.FREM;
 import static org.graalvm.compiler.bytecode.Bytecodes.FRETURN;
+import static org.graalvm.compiler.bytecode.Bytecodes.FSTORE;
+import static org.graalvm.compiler.bytecode.Bytecodes.FSTORE_0;
+import static org.graalvm.compiler.bytecode.Bytecodes.FSTORE_1;
+import static org.graalvm.compiler.bytecode.Bytecodes.FSTORE_2;
+import static org.graalvm.compiler.bytecode.Bytecodes.FSTORE_3;
+import static org.graalvm.compiler.bytecode.Bytecodes.FSUB;
 import static org.graalvm.compiler.bytecode.Bytecodes.GETFIELD;
 import static org.graalvm.compiler.bytecode.Bytecodes.GETSTATIC;
 import static org.graalvm.compiler.bytecode.Bytecodes.GOTO;
 import static org.graalvm.compiler.bytecode.Bytecodes.GOTO_W;
+import static org.graalvm.compiler.bytecode.Bytecodes.I2B;
+import static org.graalvm.compiler.bytecode.Bytecodes.I2C;
+import static org.graalvm.compiler.bytecode.Bytecodes.I2D;
+import static org.graalvm.compiler.bytecode.Bytecodes.I2F;
+import static org.graalvm.compiler.bytecode.Bytecodes.I2L;
+import static org.graalvm.compiler.bytecode.Bytecodes.I2S;
+import static org.graalvm.compiler.bytecode.Bytecodes.IADD;
 import static org.graalvm.compiler.bytecode.Bytecodes.IALOAD;
+import static org.graalvm.compiler.bytecode.Bytecodes.IAND;
 import static org.graalvm.compiler.bytecode.Bytecodes.IASTORE;
+import static org.graalvm.compiler.bytecode.Bytecodes.ICONST_0;
+import static org.graalvm.compiler.bytecode.Bytecodes.ICONST_1;
+import static org.graalvm.compiler.bytecode.Bytecodes.ICONST_2;
+import static org.graalvm.compiler.bytecode.Bytecodes.ICONST_3;
+import static org.graalvm.compiler.bytecode.Bytecodes.ICONST_4;
+import static org.graalvm.compiler.bytecode.Bytecodes.ICONST_5;
+import static org.graalvm.compiler.bytecode.Bytecodes.ICONST_M1;
 import static org.graalvm.compiler.bytecode.Bytecodes.IDIV;
 import static org.graalvm.compiler.bytecode.Bytecodes.IFEQ;
 import static org.graalvm.compiler.bytecode.Bytecodes.IFGE;
@@ -64,33 +145,88 @@ import static org.graalvm.compiler.bytecode.Bytecodes.IF_ICMPGT;
 import static org.graalvm.compiler.bytecode.Bytecodes.IF_ICMPLE;
 import static org.graalvm.compiler.bytecode.Bytecodes.IF_ICMPLT;
 import static org.graalvm.compiler.bytecode.Bytecodes.IF_ICMPNE;
+import static org.graalvm.compiler.bytecode.Bytecodes.IINC;
+import static org.graalvm.compiler.bytecode.Bytecodes.ILOAD;
+import static org.graalvm.compiler.bytecode.Bytecodes.ILOAD_0;
+import static org.graalvm.compiler.bytecode.Bytecodes.ILOAD_1;
+import static org.graalvm.compiler.bytecode.Bytecodes.ILOAD_2;
+import static org.graalvm.compiler.bytecode.Bytecodes.ILOAD_3;
+import static org.graalvm.compiler.bytecode.Bytecodes.IMUL;
+import static org.graalvm.compiler.bytecode.Bytecodes.INEG;
+import static org.graalvm.compiler.bytecode.Bytecodes.INSTANCEOF;
 import static org.graalvm.compiler.bytecode.Bytecodes.INVOKEDYNAMIC;
 import static org.graalvm.compiler.bytecode.Bytecodes.INVOKEINTERFACE;
 import static org.graalvm.compiler.bytecode.Bytecodes.INVOKESPECIAL;
 import static org.graalvm.compiler.bytecode.Bytecodes.INVOKESTATIC;
 import static org.graalvm.compiler.bytecode.Bytecodes.INVOKEVIRTUAL;
+import static org.graalvm.compiler.bytecode.Bytecodes.IOR;
 import static org.graalvm.compiler.bytecode.Bytecodes.IREM;
 import static org.graalvm.compiler.bytecode.Bytecodes.IRETURN;
+import static org.graalvm.compiler.bytecode.Bytecodes.ISHL;
+import static org.graalvm.compiler.bytecode.Bytecodes.ISHR;
+import static org.graalvm.compiler.bytecode.Bytecodes.ISTORE;
+import static org.graalvm.compiler.bytecode.Bytecodes.ISTORE_0;
+import static org.graalvm.compiler.bytecode.Bytecodes.ISTORE_1;
+import static org.graalvm.compiler.bytecode.Bytecodes.ISTORE_2;
+import static org.graalvm.compiler.bytecode.Bytecodes.ISTORE_3;
+import static org.graalvm.compiler.bytecode.Bytecodes.ISUB;
+import static org.graalvm.compiler.bytecode.Bytecodes.IUSHR;
+import static org.graalvm.compiler.bytecode.Bytecodes.IXOR;
 import static org.graalvm.compiler.bytecode.Bytecodes.JSR;
 import static org.graalvm.compiler.bytecode.Bytecodes.JSR_W;
+import static org.graalvm.compiler.bytecode.Bytecodes.L2D;
+import static org.graalvm.compiler.bytecode.Bytecodes.L2F;
+import static org.graalvm.compiler.bytecode.Bytecodes.L2I;
+import static org.graalvm.compiler.bytecode.Bytecodes.LADD;
 import static org.graalvm.compiler.bytecode.Bytecodes.LALOAD;
+import static org.graalvm.compiler.bytecode.Bytecodes.LAND;
 import static org.graalvm.compiler.bytecode.Bytecodes.LASTORE;
+import static org.graalvm.compiler.bytecode.Bytecodes.LCMP;
+import static org.graalvm.compiler.bytecode.Bytecodes.LCONST_0;
+import static org.graalvm.compiler.bytecode.Bytecodes.LCONST_1;
 import static org.graalvm.compiler.bytecode.Bytecodes.LDC;
 import static org.graalvm.compiler.bytecode.Bytecodes.LDC2_W;
 import static org.graalvm.compiler.bytecode.Bytecodes.LDC_W;
 import static org.graalvm.compiler.bytecode.Bytecodes.LDIV;
+import static org.graalvm.compiler.bytecode.Bytecodes.LLOAD;
+import static org.graalvm.compiler.bytecode.Bytecodes.LLOAD_0;
+import static org.graalvm.compiler.bytecode.Bytecodes.LLOAD_1;
+import static org.graalvm.compiler.bytecode.Bytecodes.LLOAD_2;
+import static org.graalvm.compiler.bytecode.Bytecodes.LLOAD_3;
+import static org.graalvm.compiler.bytecode.Bytecodes.LMUL;
+import static org.graalvm.compiler.bytecode.Bytecodes.LNEG;
 import static org.graalvm.compiler.bytecode.Bytecodes.LOOKUPSWITCH;
+import static org.graalvm.compiler.bytecode.Bytecodes.LOR;
 import static org.graalvm.compiler.bytecode.Bytecodes.LREM;
 import static org.graalvm.compiler.bytecode.Bytecodes.LRETURN;
+import static org.graalvm.compiler.bytecode.Bytecodes.LSHL;
+import static org.graalvm.compiler.bytecode.Bytecodes.LSHR;
+import static org.graalvm.compiler.bytecode.Bytecodes.LSTORE;
+import static org.graalvm.compiler.bytecode.Bytecodes.LSTORE_0;
+import static org.graalvm.compiler.bytecode.Bytecodes.LSTORE_1;
+import static org.graalvm.compiler.bytecode.Bytecodes.LSTORE_2;
+import static org.graalvm.compiler.bytecode.Bytecodes.LSTORE_3;
+import static org.graalvm.compiler.bytecode.Bytecodes.LSUB;
+import static org.graalvm.compiler.bytecode.Bytecodes.LUSHR;
+import static org.graalvm.compiler.bytecode.Bytecodes.LXOR;
+import static org.graalvm.compiler.bytecode.Bytecodes.MONITORENTER;
+import static org.graalvm.compiler.bytecode.Bytecodes.MONITOREXIT;
 import static org.graalvm.compiler.bytecode.Bytecodes.MULTIANEWARRAY;
 import static org.graalvm.compiler.bytecode.Bytecodes.NEW;
+import static org.graalvm.compiler.bytecode.Bytecodes.NEWARRAY;
+import static org.graalvm.compiler.bytecode.Bytecodes.NOP;
+import static org.graalvm.compiler.bytecode.Bytecodes.POP;
+import static org.graalvm.compiler.bytecode.Bytecodes.POP2;
 import static org.graalvm.compiler.bytecode.Bytecodes.PUTFIELD;
 import static org.graalvm.compiler.bytecode.Bytecodes.PUTSTATIC;
 import static org.graalvm.compiler.bytecode.Bytecodes.RET;
 import static org.graalvm.compiler.bytecode.Bytecodes.RETURN;
 import static org.graalvm.compiler.bytecode.Bytecodes.SALOAD;
 import static org.graalvm.compiler.bytecode.Bytecodes.SASTORE;
+import static org.graalvm.compiler.bytecode.Bytecodes.SIPUSH;
+import static org.graalvm.compiler.bytecode.Bytecodes.SWAP;
 import static org.graalvm.compiler.bytecode.Bytecodes.TABLESWITCH;
+import static org.graalvm.compiler.bytecode.Bytecodes.WIDE;
 import static org.graalvm.compiler.core.common.GraalOptions.SupportJsrBytecodes;
 
 import java.util.ArrayDeque;
@@ -111,6 +247,7 @@ import org.graalvm.compiler.bytecode.BytecodeTableSwitch;
 import org.graalvm.compiler.bytecode.Bytecodes;
 import org.graalvm.compiler.core.common.PermanentBailoutException;
 import org.graalvm.compiler.debug.DebugContext;
+import org.graalvm.compiler.debug.GraalError;
 import org.graalvm.compiler.options.OptionValues;
 
 import jdk.vm.ci.code.BytecodeFrame;
@@ -159,7 +296,7 @@ public final class BciBlockMapping {
 
         int id;
         final int startBci;
-        int endBci;
+        int endBci; // The bci of the last bytecode in the block
         private boolean isExceptionEntry;
         private boolean isLoopHeader;
         int loopId;
@@ -698,7 +835,9 @@ public final class BciBlockMapping {
                 case SALOAD:
                 case ARRAYLENGTH:
                 case CHECKCAST:
+                case INSTANCEOF:
                 case NEW:
+                case NEWARRAY:
                 case ANEWARRAY:
                 case MULTIANEWARRAY:
                 case PUTSTATIC:
@@ -707,7 +846,8 @@ public final class BciBlockMapping {
                 case GETFIELD:
                 case LDC:
                 case LDC_W:
-                case LDC2_W: {
+                case LDC2_W:
+                case MONITORENTER: {
                     /*
                      * All bytecodes that can trigger lazy class initialization via a
                      * ClassInitializationPlugin (allocations, static field access) must be listed
@@ -720,7 +860,150 @@ public final class BciBlockMapping {
                         addSuccessor(blockMap, bci, makeBlock(blockMap, stream.nextBCI()));
                         addSuccessor(blockMap, bci, handler);
                     }
+                    break;
                 }
+
+                case NOP:
+                case ACONST_NULL:
+                case ICONST_M1:
+                case ICONST_0:
+                case ICONST_1:
+                case ICONST_2:
+                case ICONST_3:
+                case ICONST_4:
+                case ICONST_5:
+                case LCONST_0:
+                case LCONST_1:
+                case FCONST_0:
+                case FCONST_1:
+                case FCONST_2:
+                case DCONST_0:
+                case DCONST_1:
+                case BIPUSH:
+                case SIPUSH:
+                case ILOAD:
+                case LLOAD:
+                case FLOAD:
+                case DLOAD:
+                case ALOAD:
+                case ILOAD_0:
+                case ILOAD_1:
+                case ILOAD_2:
+                case ILOAD_3:
+                case LLOAD_0:
+                case LLOAD_1:
+                case LLOAD_2:
+                case LLOAD_3:
+                case FLOAD_0:
+                case FLOAD_1:
+                case FLOAD_2:
+                case FLOAD_3:
+                case DLOAD_0:
+                case DLOAD_1:
+                case DLOAD_2:
+                case DLOAD_3:
+                case ALOAD_0:
+                case ALOAD_1:
+                case ALOAD_2:
+                case ALOAD_3:
+                case ISTORE:
+                case LSTORE:
+                case FSTORE:
+                case DSTORE:
+                case ASTORE:
+                case ISTORE_0:
+                case ISTORE_1:
+                case ISTORE_2:
+                case ISTORE_3:
+                case LSTORE_0:
+                case LSTORE_1:
+                case LSTORE_2:
+                case LSTORE_3:
+                case FSTORE_0:
+                case FSTORE_1:
+                case FSTORE_2:
+                case FSTORE_3:
+                case DSTORE_0:
+                case DSTORE_1:
+                case DSTORE_2:
+                case DSTORE_3:
+                case ASTORE_0:
+                case ASTORE_1:
+                case ASTORE_2:
+                case ASTORE_3:
+                case POP:
+                case POP2:
+                case DUP:
+                case DUP_X1:
+                case DUP_X2:
+                case DUP2:
+                case DUP2_X1:
+                case DUP2_X2:
+                case SWAP:
+                case IADD:
+                case LADD:
+                case FADD:
+                case DADD:
+                case ISUB:
+                case LSUB:
+                case FSUB:
+                case DSUB:
+                case IMUL:
+                case LMUL:
+                case FMUL:
+                case DMUL:
+                case FDIV:
+                case DDIV:
+                case FREM:
+                case DREM:
+                case INEG:
+                case LNEG:
+                case FNEG:
+                case DNEG:
+                case ISHL:
+                case LSHL:
+                case ISHR:
+                case LSHR:
+                case IUSHR:
+                case LUSHR:
+                case IAND:
+                case LAND:
+                case IOR:
+                case LOR:
+                case IXOR:
+                case LXOR:
+                case IINC:
+                case I2L:
+                case I2F:
+                case I2D:
+                case L2I:
+                case L2F:
+                case L2D:
+                case F2I:
+                case F2L:
+                case F2D:
+                case D2I:
+                case D2L:
+                case D2F:
+                case I2B:
+                case I2C:
+                case I2S:
+                case LCMP:
+                case FCMPL:
+                case FCMPG:
+                case DCMPL:
+                case DCMPG:
+                case MONITOREXIT:
+                    // All stack manipulation, comparison, conversion and arithmetic operators
+                    // except for idiv and irem can't throw exceptions so the don't need to connect
+                    // exception edges. MONITOREXIT can't throw exceptions in the context of
+                    // compiled code because of the structured locking requirement in the parser.
+                    break;
+
+                case WIDE:
+                case BREAKPOINT:
+                default:
+                    throw new GraalError("Unhandled bytecode");
             }
             stream.next();
         }

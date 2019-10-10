@@ -40,7 +40,10 @@ import java.util.Map;
 import java.util.Objects;
 import org.graalvm.graphio.GraphOutput;
 import org.graalvm.graphio.GraphStructure;
+import org.graalvm.graphio.GraphTypes;
+import static org.junit.Assert.assertSame;
 import org.junit.Test;
+import java.lang.reflect.Field;
 
 public final class GraphOutputTest {
 
@@ -114,6 +117,18 @@ public final class GraphOutputTest {
             embeddChannel.realClose();
         }
         assertArrayEquals(expected.toByteArray(), embedded.toByteArray());
+    }
+
+    @Test
+    @SuppressWarnings({"static-method", "unchecked"})
+    public void testClassOfEnumValueWithImplementation() throws ClassNotFoundException, ReflectiveOperationException {
+        Class<? extends GraphTypes> defaultTypesClass = (Class<? extends GraphTypes>) Class.forName("org.graalvm.graphio.DefaultGraphTypes");
+        Field f = defaultTypesClass.getDeclaredField("DEFAULT");
+        f.setAccessible(true);
+        GraphTypes types = (GraphTypes) f.get(null);
+
+        Object clazz = types.enumClass(CustomEnum.ONE);
+        assertSame(CustomEnum.class, clazz);
     }
 
     private static ByteBuffer generateData(int size) {
@@ -280,5 +295,21 @@ public final class GraphOutputTest {
     }
 
     private static final class MockGraph {
+    }
+
+    private enum CustomEnum {
+        ONE() {
+            @Override
+            public String toString() {
+                return "one";
+            }
+        },
+
+        TWO() {
+            @Override
+            public String toString() {
+                return "two";
+            }
+        }
     }
 }
