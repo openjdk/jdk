@@ -611,14 +611,14 @@ class JdepsTask {
     }
 
     private GenDotFile genDotFile(Path dir) throws BadArgs {
-        if (Files.exists(dir) && (!Files.isDirectory(dir) || !Files.isWritable(dir))) {
+        if (Files.exists(dir) && (!Files.isDirectory(dir) || !dir.toFile().canWrite())) {
             throw new BadArgs("err.invalid.path", dir.toString());
         }
         return new GenDotFile(dir);
     }
 
     private GenModuleInfo genModuleInfo(Path dir, boolean openModule) throws BadArgs {
-        if (Files.exists(dir) && (!Files.isDirectory(dir) || !Files.isWritable(dir))) {
+        if (Files.exists(dir) && (!Files.isDirectory(dir) || !dir.toFile().canWrite())) {
             throw new BadArgs("err.invalid.path", dir.toString());
         }
         return new GenModuleInfo(dir, openModule);
