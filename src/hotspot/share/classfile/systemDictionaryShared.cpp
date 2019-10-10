@@ -905,14 +905,9 @@ InstanceKlass* SystemDictionaryShared::lookup_from_stream(Symbol* class_name,
     return NULL;
   }
 
-  const RunTimeSharedClassInfo* record = find_record(&_unregistered_dictionary, class_name);
+  const RunTimeSharedClassInfo* record = find_record(&_unregistered_dictionary, &_dynamic_unregistered_dictionary, class_name);
   if (record == NULL) {
-    if (DynamicArchive::is_mapped()) {
-      record = find_record(&_dynamic_unregistered_dictionary, class_name);
-    }
-    if (record == NULL) {
-      return NULL;
-    }
+    return NULL;
   }
 
   int clsfile_size  = cfs->length();
@@ -1412,29 +1407,34 @@ void SystemDictionaryShared::serialize_dictionary_headers(SerializeClosure* soc,
 }
 
 const RunTimeSharedClassInfo*
-SystemDictionaryShared::find_record(RunTimeSharedDictionary* dict, Symbol* name) {
-  if (UseSharedSpaces) {
-    unsigned int hash = primitive_hash<Symbol*>(name);
-    return dict->lookup(name, hash, 0);
-  } else {
+SystemDictionaryShared::find_record(RunTimeSharedDictionary* static_dict, RunTimeSharedDictionary* dynamic_dict, Symbol* name) {
+  if (!UseSharedSpaces || !name->is_shared()) {
+    // The names of all shared classes must also be a shared Symbol.
     return NULL;
   }
+
+  unsigned int hash = primitive_hash<Symbol*>(name);
+  const RunTimeSharedClassInfo* record = NULL;
+  if (!MetaspaceShared::is_shared_dynamic(name)) {
+    // The names of all shared classes in the static dict must also be in the
+    // static archive
+    record = static_dict->lookup(name, hash, 0);
+  }
+
+  if (record == NULL && DynamicArchive::is_mapped()) {
+    record = dynamic_dict->lookup(name, hash, 0);
+  }
+
+  return record;
 }
 
 InstanceKlass* SystemDictionaryShared::find_builtin_class(Symbol* name) {
-  const RunTimeSharedClassInfo* record = find_record(&_builtin_dictionary, name);
-  if (record) {
+  const RunTimeSharedClassInfo* record = find_record(&_builtin_dictionary, &_dynamic_builtin_dictionary, name);
+  if (record != NULL) {
     return record->_klass;
+  } else {
+    return NULL;
   }
-
-  if (DynamicArchive::is_mapped()) {
-    record = find_record(&_dynamic_builtin_dictionary, name);
-    if (record) {
-      return record->_klass;
-    }
-  }
-
-  return NULL;
 }
 
 void SystemDictionaryShared::update_shared_entry(InstanceKlass* k, int id) {
