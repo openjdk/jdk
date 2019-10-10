@@ -37,6 +37,7 @@
 #include "memory/allocation.inline.hpp"
 #include "memory/universe.hpp"
 #include "oops/compressedOops.hpp"
+#include "oops/klass.inline.hpp"
 #include "oops/method.inline.hpp"
 #include "runtime/deoptimization.hpp"
 #include "runtime/handles.inline.hpp"

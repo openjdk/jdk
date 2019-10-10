@@ -25,13 +25,35 @@
 #ifndef SHARE_OOPS_KLASS_INLINE_HPP
 #define SHARE_OOPS_KLASS_INLINE_HPP
 
+#include "classfile/classLoaderData.inline.hpp"
 #include "oops/compressedOops.hpp"
 #include "oops/klass.hpp"
 #include "oops/markWord.hpp"
+#include "oops/oopHandle.inline.hpp"
 
 inline void Klass::set_prototype_header(markWord header) {
   assert(!header.has_bias_pattern() || is_instance_klass(), "biased locking currently only supported for Java instances");
   _prototype_header = header;
+}
+
+inline oop Klass::java_mirror() const {
+  return _java_mirror.resolve();
+}
+
+inline klassVtable Klass::vtable() const {
+  return klassVtable(const_cast<Klass*>(this), start_of_vtable(), vtable_length() / vtableEntry::size());
+}
+
+inline oop Klass::class_loader() const {
+  return class_loader_data()->class_loader();
+}
+
+inline vtableEntry* Klass::start_of_vtable() const {
+  return (vtableEntry*) ((address)this + in_bytes(vtable_start_offset()));
+}
+
+inline ByteSize Klass::vtable_start_offset() {
+  return in_ByteSize(InstanceKlass::header_size() * wordSize);
 }
 
 #endif // SHARE_OOPS_KLASS_INLINE_HPP
