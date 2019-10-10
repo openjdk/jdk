@@ -337,7 +337,7 @@ private:
 
       // Can move the region, and this is not the humongous region. Humongous
       // moves are special cased here, because their moves are handled separately.
-      if (from_region->is_move_allowed() && !from_region->is_humongous()) break;
+      if (from_region->is_stw_move_allowed() && !from_region->is_humongous()) break;
 
       from_region = _heap_regions.next();
     }
@@ -345,7 +345,7 @@ private:
     if (from_region != NULL) {
       assert(slice != NULL, "sanity");
       assert(!from_region->is_humongous(), "this path cannot handle humongous regions");
-      assert(from_region->is_empty() || from_region->is_move_allowed(), "only regions that can be moved in mark-compact");
+      assert(from_region->is_empty() || from_region->is_stw_move_allowed(), "only regions that can be moved in mark-compact");
       slice->add_region(from_region);
     }
 
@@ -419,7 +419,7 @@ void ShenandoahMarkCompact::calculate_target_humongous_objects() {
       continue;
     }
 
-    if (r->is_humongous_start() && r->is_move_allowed()) {
+    if (r->is_humongous_start() && r->is_stw_move_allowed()) {
       // From-region candidate: movable humongous region
       oop old_obj = oop(r->bottom());
       size_t words_size = old_obj->size();
@@ -761,7 +761,7 @@ void ShenandoahMarkCompact::compact_humongous_objects() {
       size_t new_start = heap->heap_region_index_containing(old_obj->forwardee());
       size_t new_end   = new_start + num_regions - 1;
       assert(old_start != new_start, "must be real move");
-      assert (r->is_move_allowed(), "should be movable");
+      assert(r->is_stw_move_allowed(), "Region " SIZE_FORMAT " should be movable", r->region_number());
 
       Copy::aligned_conjoint_words(heap->get_region(old_start)->bottom(),
                                    heap->get_region(new_start)->bottom(),
