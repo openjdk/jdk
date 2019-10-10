@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2000, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -122,6 +122,7 @@ public class NamingEvent extends java.util.EventObject {
      * Contains information about the change that generated this event.
      * @serial
      */
+    @SuppressWarnings("serial") // Not statically typed as Serializable
     protected Object changeInfo;
 
     /**
