@@ -51,6 +51,9 @@ COMMA:=,
 # What make to use for main processing, after bootstrapping top-level Makefile.
 MAKE := @MAKE@
 
+# Make sure all shell commands are executed with the C locale
+export LC_ALL := C
+
 # The default make arguments
 MAKE_ARGS = $(MAKE_LOG_FLAGS) -r -R -I $(TOPDIR)/make/common SPEC=$(SPEC) \
     MAKE_LOG_FLAGS="$(MAKE_LOG_FLAGS)" $(MAKE_LOG_VARS)

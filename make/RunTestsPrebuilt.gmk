@@ -230,7 +230,7 @@ else ifeq ($(OPENJDK_TARGET_OS), macosx)
   NUM_CORES := $(shell /usr/sbin/sysctl -n hw.ncpu)
   MEMORY_SIZE := $(shell $(EXPR) `/usr/sbin/sysctl -n hw.memsize` / 1024 / 1024)
 else ifeq ($(OPENJDK_TARGET_OS), solaris)
-  NUM_CORES := $(shell LC_MESSAGES=C /usr/sbin/psrinfo -v | $(GREP) -c on-line)
+  NUM_CORES := $(shell /usr/sbin/psrinfo -v | $(GREP) -c on-line)
   MEMORY_SIZE := $(shell \
       /usr/sbin/prtconf 2> /dev/null | $(GREP) "^Memory [Ss]ize" | $(AWK) '{print $$3}' \
   )

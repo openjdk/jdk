@@ -35,7 +35,7 @@ AC_DEFUN([BPERF_CHECK_CORES],
     FOUND_CORES=yes
   elif test -x /usr/sbin/psrinfo; then
     # Looks like a Solaris system
-    NUM_CORES=`LC_MESSAGES=C /usr/sbin/psrinfo -v | grep -c on-line`
+    NUM_CORES=`/usr/sbin/psrinfo -v | grep -c on-line`
     FOUND_CORES=yes
   elif test -x /usr/sbin/sysctl; then
     # Looks like a MacOSX system
