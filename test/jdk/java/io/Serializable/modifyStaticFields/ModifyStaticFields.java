@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,6 +30,8 @@
 import java.io.*;
 
 public class ModifyStaticFields implements Serializable {
+    private static final long serialVersionUID = 1L;
+
     private static final ObjectStreamField[] serialPersistentFields =
         new ObjectStreamField[] { new ObjectStreamField("str", String.class) };
 

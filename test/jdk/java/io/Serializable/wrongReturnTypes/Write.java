@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -43,12 +43,14 @@ class B implements Serializable {
     static boolean writeObjectCalled;
     static boolean writeReplaceCalled;
 
+    @SuppressWarnings("serial") /* Incorrect use is being tested */
     private Object writeObject(ObjectOutputStream out) throws IOException {
         writeObjectCalled = true;
         out.defaultWriteObject();
         return null;
     }
 
+    @SuppressWarnings("serial") /* Incorrect use is being tested */
     private B writeReplace() throws ObjectStreamException {
         writeReplaceCalled = true;
         return this;

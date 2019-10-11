@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -43,11 +43,13 @@ class A implements Serializable {
     // all three following fields not present on reading side
     B b = new B();
     C c = new C();
+    @SuppressWarnings("serial") /* Incorrect declarations are being tested */
     Object ca = new Object[] { new C() };
 }
 
 class B implements Serializable {
     private static final long serialVersionUID = 0L;
+    @SuppressWarnings("serial") /* Incorrect declarations are being tested */
     Object c = new C();
 }
 

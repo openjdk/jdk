@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -36,12 +36,13 @@ interface Bar { float bar(); }
 
 // dummy invocation handler
 class Handler implements InvocationHandler, Serializable {
+    private static final long serialVersionUID = 1L;
 
     static Method fooMethod, barMethod;
     static {
         try {
-            fooMethod = Foo.class.getDeclaredMethod("foo", new Class[0]);
-            barMethod = Bar.class.getDeclaredMethod("bar", new Class[0]);
+            fooMethod = Foo.class.getDeclaredMethod("foo", new Class<?>[0]);
+            barMethod = Bar.class.getDeclaredMethod("bar", new Class<?>[0]);
         } catch (NoSuchMethodException ex) {
             throw new Error();
         }
@@ -59,9 +60,9 @@ class Handler implements InvocationHandler, Serializable {
         throws Throwable
     {
         if (method.equals(fooMethod)) {
-            return new Integer(foo);
+            return foo;
         } else if (method.equals(barMethod)) {
-            return new Float(bar);
+            return bar;
         } else {
             throw new UnsupportedOperationException();
         }
@@ -73,7 +74,7 @@ class ProxyBlindInputStream extends ObjectInputStream {
 
     ProxyBlindInputStream(InputStream in) throws IOException { super(in); }
 
-    protected Class resolveProxyClass(String[] interfaces)
+    protected Class<?> resolveProxyClass(String[] interfaces)
         throws IOException, ClassNotFoundException
     {
         throw new ClassNotFoundException();
@@ -83,7 +84,7 @@ class ProxyBlindInputStream extends ObjectInputStream {
 public class Basic {
     public static void main(String[] args) throws Exception {
         ClassLoader loader = Basic.class.getClassLoader();
-        Class[] interfaces = new Class[] { Foo.class, Bar.class };
+        Class<?>[] interfaces = { Foo.class, Bar.class };
         Random rand = new Random();
         int foo = rand.nextInt();
         float bar = rand.nextFloat();

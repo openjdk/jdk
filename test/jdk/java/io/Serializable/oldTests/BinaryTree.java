@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -75,6 +75,8 @@ public class BinaryTree {
 }
 
 class BinaryTreeTest implements java.io.Serializable {
+    private static final long serialVersionUID = 1L;
+
     public BinaryTreeTest left;
     public BinaryTreeTest right;
     public int id;

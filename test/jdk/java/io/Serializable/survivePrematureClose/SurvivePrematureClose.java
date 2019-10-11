@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2002, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,6 +32,7 @@
 import java.io.*;
 
 class A implements Externalizable {
+    private static final long serialVersionUID = 1L;
 
     public A() {}
 
@@ -49,6 +50,7 @@ class A implements Externalizable {
 }
 
 class B implements Serializable {
+    private static final long serialVersionUID = 1L;
 
     private void writeObject(ObjectOutputStream out) throws IOException {
         out.defaultWriteObject();

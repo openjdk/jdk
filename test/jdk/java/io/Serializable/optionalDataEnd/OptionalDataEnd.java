@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,6 +31,8 @@
 import java.io.*;
 
 class Foo implements Serializable {
+    private static final long serialVersionUID = 1L;
+
     int reps;
 
     Foo(int reps) {
@@ -40,7 +42,7 @@ class Foo implements Serializable {
     private void writeObject(ObjectOutputStream out) throws IOException {
         out.defaultWriteObject();
         for (int i = 0; i < reps; i++) {
-            out.writeObject(new Integer(i));
+            out.writeObject(i);
         }
     }
 

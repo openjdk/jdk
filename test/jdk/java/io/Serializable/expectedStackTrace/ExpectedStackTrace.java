@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -42,9 +42,11 @@ class NotSerializableObject {
     }
 }
 
+@SuppressWarnings("serial") /* Incorrect declarations are being tested */
 class SerializableObject extends NotSerializableObject
     implements Serializable
 {
+    private static final long serialVersionUID = 1L;
 
     public SerializableObject(String m_str, Integer m_int) {
         super(m_str, m_int);
@@ -67,7 +69,7 @@ public class ExpectedStackTrace {
         ObjectStreamClass osc =
             ObjectStreamClass.lookup(SerializableObject.class);
         SerializableObject initObj =
-            (SerializableObject) osc.forClass().newInstance();
+            (SerializableObject) osc.forClass().getConstructor().newInstance();
         return initObj;
     }
 

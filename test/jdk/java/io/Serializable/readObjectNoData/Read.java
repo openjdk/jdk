@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -48,6 +48,7 @@ class A {
 class B extends A implements Serializable {
     private static final long serialVersionUID = 0L;
     boolean bCalled = false;
+    @SuppressWarnings("serial") /* Incorrect declarations are being tested */
     private void readObjectNoData(int wrong) throws ObjectStreamException {
         bCalled = true;
     }
@@ -82,6 +83,7 @@ class D extends C {
 class E extends D {
     private static final long serialVersionUID = 0L;
     boolean eCalled = false;
+    @SuppressWarnings("serial") /* Incorrect declarations are being tested */
     void readObjectNoData() throws ObjectStreamException {
         eCalled = true;
     }

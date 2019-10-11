@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2004, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -116,7 +116,7 @@ public class XObjectOutputStream extends AbstractObjectOutputStream {
             int mods = fields[i].getModifiers();
             if (Modifier.isStatic(mods) || Modifier.isTransient(mods))
                 continue;
-            Class FieldType = fields[i].getType();
+            Class<?> FieldType = fields[i].getType();
             if (FieldType.isPrimitive()) {
                 System.out.println("Field " + fields[i].getName() +
                                     " has primitive type " + FieldType.toString());
@@ -127,7 +127,7 @@ public class XObjectOutputStream extends AbstractObjectOutputStream {
                     writeObject(fields[i].get(obj));
                     if (FieldType.isArray()) {
                         Object[] array = ((Object[]) fields[i].get(obj));
-                        Class componentType = FieldType.getComponentType();
+                        Class<?> componentType = FieldType.getComponentType();
                         if (componentType.isPrimitive())
                             System.out.println("Output " + array.length + " primitive elements of" +
                                                componentType.toString());
@@ -227,6 +227,7 @@ public class XObjectOutputStream extends AbstractObjectOutputStream {
         /**
          * Write the data and fields to the specified ObjectOutput stream.
          */
+        @SuppressWarnings("deprecation")
         public void write(ObjectOutput out) throws IOException {
             for (int i = 0; i < next; i++)
                 System.out.println(fieldName[i] + "=" + intValue[i]);
@@ -300,15 +301,15 @@ public class XObjectOutputStream extends AbstractObjectOutputStream {
      * Set the accessible flag on it here.
      * Subclass of AbstractObjectOutputStream will call it as necessary.
      */
-    public static Method getWriteObjectMethod(final Class cl) {
+    public static Method getWriteObjectMethod(final Class<?> cl) {
 
-        Method writeObjectMethod = (Method)
+        Method writeObjectMethod =
             java.security.AccessController.doPrivileged
-            (new java.security.PrivilegedAction() {
-                public Object run() {
+            (new java.security.PrivilegedAction<Method>() {
+                public Method run() {
                     Method m = null;
                     try {
-                        Class[] args = {ObjectOutputStream.class};
+                        Class<?>[] args = {ObjectOutputStream.class};
                         m = cl.getDeclaredMethod("writeObject", args);
                         int mods = m.getModifiers();
                         // Method must be private and non-static
@@ -336,8 +337,8 @@ public class XObjectOutputStream extends AbstractObjectOutputStream {
     {
         try {
             java.security.AccessController.doPrivileged
-                (new java.security.PrivilegedExceptionAction() {
-                    public Object run() throws InvocationTargetException,
+                (new java.security.PrivilegedExceptionAction<Void>() {
+                    public Void run() throws InvocationTargetException,
                                         java.lang.IllegalAccessException {
                         m.invoke(obj, argList);
                         return null;

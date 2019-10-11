@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,6 +32,8 @@
 import java.io.*;
 
 class MismatchedRead implements Serializable {
+    private static final long serialVersionUID = 1L;
+
     int i;
     float f;
 
@@ -59,9 +61,15 @@ class MismatchedRead implements Serializable {
         MismatchedRead other = (MismatchedRead) obj;
         return (i == other.i && f == other.f);
     }
+
+    public int hashCode() {
+        return i;
+    }
 }
 
 class MismatchedReadExternal implements Externalizable {
+    private static final long serialVersionUID = 1L;
+
     int i;
     float f;
 
@@ -91,9 +99,15 @@ class MismatchedReadExternal implements Externalizable {
         MismatchedReadExternal other = (MismatchedReadExternal) obj;
         return (i == other.i && f == other.f);
     }
+
+    public int hashCode() {
+        return i;
+    }
 }
 
 class InnocentBystander implements Serializable {
+    private static final long serialVersionUID = 1L;
+
     String s;
 
     InnocentBystander(String s) {
@@ -107,6 +121,10 @@ class InnocentBystander implements Serializable {
         if (s != null)
             return s.equals(other.s);
         return (s == other.s);
+    }
+
+    public int hashCode() {
+        return s.hashCode();
     }
 }
 

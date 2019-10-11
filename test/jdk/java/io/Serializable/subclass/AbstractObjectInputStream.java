@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2004, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -253,7 +253,7 @@ public abstract class AbstractObjectInputStream extends ObjectInputStream
      * @exception InstantiationException  TBD.
      */
     protected final native Object
-        allocateNewObject(Class ofClass, Class ctorClass)
+        allocateNewObject(Class<?> ofClass, Class<?> ctorClass)
         throws InstantiationException, IllegalAccessException;
 
     /**
@@ -271,7 +271,7 @@ public abstract class AbstractObjectInputStream extends ObjectInputStream
      * @exception InstantiationException  TBD.
      */
     protected final native Object
-        allocateNewArray(Class componentClass, int length)
+        allocateNewArray(Class<?> componentClass, int length)
         throws InstantiationException, IllegalAccessException;
 
     /**
@@ -317,5 +317,6 @@ public abstract class AbstractObjectInputStream extends ObjectInputStream
     public abstract int skipBytes(int len) throws IOException;
 
     /* @deprecated */
+    @SuppressWarnings("deprecation")
     public abstract String readLine() throws IOException;
 };

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,6 +29,8 @@
 import java.io.*;
 
 class Foo implements Serializable {
+    private static final long serialVersionUID = 1L;
+
     final int i;
 
     Foo(int i) {
@@ -40,6 +42,10 @@ class Foo implements Serializable {
             return false;
         Foo f = (Foo) obj;
         return (i == f.i);
+    }
+
+    public int hashCode() {
+        return i;
     }
 }
 
@@ -68,4 +74,5 @@ public class FinalFields {
         if (! (f1.equals(f1copy) && f2.equals(f2copy)))
             throw new Error("copies don't match originals");
     }
+
 }
