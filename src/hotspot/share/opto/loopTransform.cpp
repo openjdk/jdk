@@ -3129,6 +3129,13 @@ bool IdealLoopTree::do_remove_empty_loop(PhaseIdealLoop *phase) {
     // We also need to replace the original limit to collapse loop exit.
     Node* cmp = cl->loopexit()->cmp_node();
     assert(cl->limit() == cmp->in(2), "sanity");
+    // Duplicate cmp node if it has other users
+    if (cmp->outcnt() > 1) {
+      cmp = cmp->clone();
+      cmp = phase->_igvn.register_new_node_with_optimizer(cmp);
+      BoolNode *bol = cl->loopexit()->in(CountedLoopEndNode::TestValue)->as_Bool();
+      phase->_igvn.replace_input_of(bol, 1, cmp); // put bol on worklist
+    }
     phase->_igvn._worklist.push(cmp->in(2)); // put limit on worklist
     phase->_igvn.replace_input_of(cmp, 2, exact_limit); // put cmp on worklist
   }
