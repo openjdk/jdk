@@ -61,6 +61,7 @@ import java.io.IOException;
 import java.io.InvalidClassException;
 import java.io.ObjectInput;
 import java.io.ObjectOutput;
+import java.io.Serializable;
 import java.io.StreamCorruptedException;
 
 /**
@@ -112,7 +113,7 @@ final class Ser implements Externalizable {
     /** The type being serialized. */
     private byte type;
     /** The object being serialized. */
-    private Object object;
+    private Serializable object;
 
     /**
      * Constructor for deserialization.
@@ -126,7 +127,7 @@ final class Ser implements Externalizable {
      * @param type  the type
      * @param object  the object
      */
-    Ser(byte type, Object object) {
+    Ser(byte type, Serializable object) {
         this.type = type;
         this.object = object;
     }
@@ -224,20 +225,35 @@ final class Ser implements Externalizable {
      * {@code Ser} object.
      *
      * <ul>
-     * <li><a href="{@docRoot}/serialized-form.html#java.time.Duration">Duration</a> - {@code Duration.ofSeconds(seconds, nanos);}
-     * <li><a href="{@docRoot}/serialized-form.html#java.time.Instant">Instant</a> - {@code Instant.ofEpochSecond(seconds, nanos);}
-     * <li><a href="{@docRoot}/serialized-form.html#java.time.LocalDate">LocalDate</a> - {@code LocalDate.of(year, month, day);}
-     * <li><a href="{@docRoot}/serialized-form.html#java.time.LocalDateTime">LocalDateTime</a> - {@code LocalDateTime.of(date, time);}
-     * <li><a href="{@docRoot}/serialized-form.html#java.time.LocalTime">LocalTime</a> - {@code LocalTime.of(hour, minute, second, nano);}
-     * <li><a href="{@docRoot}/serialized-form.html#java.time.MonthDay">MonthDay</a> - {@code MonthDay.of(month, day);}
-     * <li><a href="{@docRoot}/serialized-form.html#java.time.OffsetTime">OffsetTime</a> - {@code OffsetTime.of(time, offset);}
-     * <li><a href="{@docRoot}/serialized-form.html#java.time.OffsetDateTime">OffsetDateTime</a> - {@code OffsetDateTime.of(dateTime, offset);}
-     * <li><a href="{@docRoot}/serialized-form.html#java.time.Period">Period</a> - {@code Period.of(years, months, days);}
-     * <li><a href="{@docRoot}/serialized-form.html#java.time.Year">Year</a> - {@code Year.of(year);}
-     * <li><a href="{@docRoot}/serialized-form.html#java.time.YearMonth">YearMonth</a> - {@code YearMonth.of(year, month);}
-     * <li><a href="{@docRoot}/serialized-form.html#java.time.ZonedDateTime">ZonedDateTime</a> - {@code ZonedDateTime.ofLenient(dateTime, offset, zone);}
-     * <li><a href="{@docRoot}/serialized-form.html#java.time.ZoneId">ZoneId</a> - {@code ZoneId.of(id);}
-     * <li><a href="{@docRoot}/serialized-form.html#java.time.ZoneOffset">ZoneOffset</a> - {@code (offsetByte == 127 ? ZoneOffset.ofTotalSeconds(in.readInt()) : ZoneOffset.ofTotalSeconds(offsetByte * 900));}
+     * <li><a href="{@docRoot}/serialized-form.html#java.time.Duration">Duration</a> -
+     *          {@code Duration.ofSeconds(seconds, nanos);}
+     * <li><a href="{@docRoot}/serialized-form.html#java.time.Instant">Instant</a> -
+     *          {@code Instant.ofEpochSecond(seconds, nanos);}
+     * <li><a href="{@docRoot}/serialized-form.html#java.time.LocalDate">LocalDate</a> -
+     *          {@code LocalDate.of(year, month, day);}
+     * <li><a href="{@docRoot}/serialized-form.html#java.time.LocalDateTime">LocalDateTime</a> -
+     *          {@code LocalDateTime.of(date, time);}
+     * <li><a href="{@docRoot}/serialized-form.html#java.time.LocalTime">LocalTime</a> -
+     *          {@code LocalTime.of(hour, minute, second, nano);}
+     * <li><a href="{@docRoot}/serialized-form.html#java.time.MonthDay">MonthDay</a> -
+     *          {@code MonthDay.of(month, day);}
+     * <li><a href="{@docRoot}/serialized-form.html#java.time.OffsetTime">OffsetTime</a> -
+     *          {@code OffsetTime.of(time, offset);}
+     * <li><a href="{@docRoot}/serialized-form.html#java.time.OffsetDateTime">OffsetDateTime</a> -
+     *          {@code OffsetDateTime.of(dateTime, offset);}
+     * <li><a href="{@docRoot}/serialized-form.html#java.time.Period">Period</a> -
+     *          {@code Period.of(years, months, days);}
+     * <li><a href="{@docRoot}/serialized-form.html#java.time.Year">Year</a> -
+     *          {@code Year.of(year);}
+     * <li><a href="{@docRoot}/serialized-form.html#java.time.YearMonth">YearMonth</a> -
+     *          {@code YearMonth.of(year, month);}
+     * <li><a href="{@docRoot}/serialized-form.html#java.time.ZonedDateTime">ZonedDateTime</a> -
+     *          {@code ZonedDateTime.ofLenient(dateTime, offset, zone);}
+     * <li><a href="{@docRoot}/serialized-form.html#java.time.ZoneId">ZoneId</a> -
+     *          {@code ZoneId.of(id);}
+     * <li><a href="{@docRoot}/serialized-form.html#java.time.ZoneOffset">ZoneOffset</a> -
+     *          {@code (offsetByte == 127 ? ZoneOffset.ofTotalSeconds(in.readInt()) :
+     *          ZoneOffset.ofTotalSeconds(offsetByte * 900));}
      * </ul>
      *
      * @param in  the data to read, not null
@@ -247,12 +263,13 @@ final class Ser implements Externalizable {
         object = readInternal(type, in);
     }
 
-    static Object read(ObjectInput in) throws IOException, ClassNotFoundException {
+    static Serializable read(ObjectInput in) throws IOException, ClassNotFoundException {
         byte type = in.readByte();
         return readInternal(type, in);
     }
 
-    private static Object readInternal(byte type, ObjectInput in) throws IOException, ClassNotFoundException {
+    private static Serializable readInternal(byte type, ObjectInput in)
+            throws IOException, ClassNotFoundException {
         switch (type) {
             case DURATION_TYPE: return Duration.readExternal(in);
             case INSTANT_TYPE: return Instant.readExternal(in);

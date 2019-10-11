@@ -35,7 +35,7 @@ public interface AMD64LoweringProviderMixin extends LoweringProvider {
     }
 
     @Override
-    default int bulkZeroingStride() {
-        return 1;
+    default boolean supportsBulkZeroing() {
+        return true;
     }
 }

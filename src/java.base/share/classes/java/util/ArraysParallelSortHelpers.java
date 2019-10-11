@@ -115,8 +115,12 @@ import java.util.concurrent.CountedCompleter;
         static final class Sorter<T> extends CountedCompleter<Void> {
             @java.io.Serial
             static final long serialVersionUID = 2446542900576103244L;
-            final T[] a, w;
+            @SuppressWarnings("serial") // Not statically typed as Serializable
+            final T[] a;
+            @SuppressWarnings("serial") // Not statically typed as Serializable
+            final T[] w;
             final int base, size, wbase, gran;
+            @SuppressWarnings("serial") // Not statically typed as Serializable
             Comparator<? super T> comparator;
             Sorter(CountedCompleter<?> par, T[] a, T[] w, int base, int size,
                    int wbase, int gran,
@@ -153,8 +157,13 @@ import java.util.concurrent.CountedCompleter;
         static final class Merger<T> extends CountedCompleter<Void> {
             @java.io.Serial
             static final long serialVersionUID = 2446542900576103244L;
-            final T[] a, w; // main and workspace arrays
+             // main and workspace arrays
+            @SuppressWarnings("serial") // Not statically typed as Serializable
+            final T[] a;
+            @SuppressWarnings("serial") // Not statically typed as Serializable
+            final T[] w;
             final int lbase, lsize, rbase, rsize, wbase, gran;
+            @SuppressWarnings("serial") // Not statically typed as Serializable
             Comparator<? super T> comparator;
             Merger(CountedCompleter<?> par, T[] a, T[] w,
                    int lbase, int lsize, int rbase,

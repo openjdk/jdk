@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,7 +27,8 @@ import nsk.monitoring.share.*;
 import nsk.monitoring.ThreadMXBean.*;
 
 /**
- * Tests getThreadAllocatedBytes(long id) and  getThreadAllocatedBytes(long[] ids),
+ * Tests getCurrentThreadAllocatedBytes(), getThreadAllocatedBytes(long id).
+ * and getThreadAllocatedBytes(long[] ids),
  * functions of com.sun.management.ThreadMXBean
  * <p>
  * All methods should
@@ -49,11 +50,31 @@ public class BaseBehaviorTest extends ThreadMXBeanTestBase {
     public void run() {
         if (threadMXBean == null)
             return;
+
+        // Expect -1 if thread allocated memory is disabled
+        threadMXBean.setThreadAllocatedMemoryEnabled(false);
+        long result = threadMXBean.getCurrentThreadAllocatedBytes();
+        if (result != -1)
+            throw new TestFailure("Failure! getCurrentThreadAllocatedBytes() should "
+                    + "return -1 if ThreadAllocatedMemoryEnabled is set to false. "
+                    + "Received : " + result);
+        threadMXBean.setThreadAllocatedMemoryEnabled(true);
+        // Expect >= 0 value for current thread
+        result = threadMXBean.getCurrentThreadAllocatedBytes();
+        if (result < 0)
+            throw new TestFailure("Failure! getCurrentThreadAllocatedBytes() should "
+                    + "return >= 0 value for current thread. Received : " + result);
+        // Expect >= 0 value for current thread from getThreadAllocatedBytes(id)
+        result = threadMXBean.getThreadAllocatedBytes(Thread.currentThread().getId());
+        if (result < 0)
+            throw new TestFailure("Failure! getThreadAllocatedBytes(id) should "
+                    + "return >= 0 value for current thread. Received : " + result);
+
         MXBeanTestThread thread = new MXBeanTestThread();
         long id = thread.getId();
         long[] idArr = new long[] { id };
-        long result;
         long[] resultArr;
+
         // Expect -1 for not started threads
         result = threadMXBean.getThreadAllocatedBytes(id);
         if (result != -1)
@@ -80,7 +101,7 @@ public class BaseBehaviorTest extends ThreadMXBeanTestBase {
                     + "Recieved : " + resultArr[0]);
 
             threadMXBean.setThreadAllocatedMemoryEnabled(true);
-            // Expect > 0 value for running threads
+            // Expect >= 0 value for running threads
             result = threadMXBean.getThreadAllocatedBytes(id);
             if (result < 0)
             throw new TestFailure("Failure! getThreadAllocatedBytes(long id) should "

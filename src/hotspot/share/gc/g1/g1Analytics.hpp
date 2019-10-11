@@ -46,6 +46,8 @@ class G1Analytics: public CHeapObj<mtGC> {
   double        _prev_collection_pause_end_ms;
 
   TruncatedSeq* _rs_length_diff_seq;
+  TruncatedSeq* _concurrent_refine_rate_ms_seq;
+  TruncatedSeq* _logged_cards_rate_ms_seq;
   TruncatedSeq* _cost_per_logged_card_ms_seq;
   TruncatedSeq* _cost_scan_hcc_seq;
   TruncatedSeq* _young_cards_per_entry_ratio_seq;
@@ -99,6 +101,8 @@ public:
   void report_concurrent_mark_remark_times_ms(double ms);
   void report_concurrent_mark_cleanup_times_ms(double ms);
   void report_alloc_rate_ms(double alloc_rate);
+  void report_concurrent_refine_rate_ms(double cards_per_ms);
+  void report_logged_cards_rate_ms(double cards_per_ms);
   void report_cost_per_logged_card_ms(double cost_per_logged_card_ms);
   void report_cost_scan_hcc(double cost_scan_hcc);
   void report_cost_per_remset_card_ms(double cost_per_remset_card_ms, bool for_young_gc);
@@ -116,6 +120,8 @@ public:
   double predict_alloc_rate_ms() const;
   int num_alloc_rate_ms() const;
 
+  double predict_concurrent_refine_rate_ms() const;
+  double predict_logged_cards_rate_ms() const;
   double predict_cost_per_logged_card_ms() const;
 
   double predict_scan_hcc_ms() const;

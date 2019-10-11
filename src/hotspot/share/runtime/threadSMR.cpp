@@ -26,9 +26,11 @@
 #include "logging/logStream.hpp"
 #include "memory/allocation.inline.hpp"
 #include "runtime/jniHandles.inline.hpp"
+#include "runtime/sharedRuntime.hpp"
 #include "runtime/thread.inline.hpp"
 #include "runtime/threadSMR.inline.hpp"
 #include "runtime/vmOperations.hpp"
+#include "services/threadIdTable.hpp"
 #include "services/threadService.hpp"
 #include "utilities/copy.hpp"
 #include "utilities/globalDefinitions.hpp"
@@ -128,7 +130,6 @@ uint                  ThreadsSMRSupport::_to_delete_list_cnt = 0;
 // Max # of parallel ThreadsLists on the to-delete list.
 // Impl note: See _to_delete_list_cnt note.
 uint                  ThreadsSMRSupport::_to_delete_list_max = 0;
-
 
 // 'inline' functions first so the definitions are before first use:
 
@@ -608,16 +609,28 @@ int ThreadsList::find_index_of_JavaThread(JavaThread *target) {
 }
 
 JavaThread* ThreadsList::find_JavaThread_from_java_tid(jlong java_tid) const {
-  for (uint i = 0; i < length(); i++) {
-    JavaThread* thread = thread_at(i);
-    oop tobj = thread->threadObj();
-    // Ignore the thread if it hasn't run yet, has exited
-    // or is starting to exit.
-    if (tobj != NULL && !thread->is_exiting() &&
-        java_tid == java_lang_Thread::thread_id(tobj)) {
-      // found a match
-      return thread;
+  ThreadIdTable::lazy_initialize(this);
+  JavaThread* thread = ThreadIdTable::find_thread_by_tid(java_tid);
+  if (thread == NULL) {
+    // If the thread is not found in the table find it
+    // with a linear search and add to the table.
+    for (uint i = 0; i < length(); i++) {
+      thread = thread_at(i);
+      oop tobj = thread->threadObj();
+      // Ignore the thread if it hasn't run yet, has exited
+      // or is starting to exit.
+      if (tobj != NULL && java_tid == java_lang_Thread::thread_id(tobj)) {
+        MutexLocker ml(Threads_lock);
+        // Must be inside the lock to ensure that we don't add a thread to the table
+        // that has just passed the removal point in ThreadsSMRSupport::remove_thread()
+        if (!thread->is_exiting()) {
+          ThreadIdTable::add_thread(java_tid, thread);
+          return thread;
+        }
+      }
     }
+  } else if (!thread->is_exiting()) {
+    return thread;
   }
   return NULL;
 }
@@ -742,6 +755,10 @@ void ThreadsSMRSupport::add_thread(JavaThread *thread){
 
   ThreadsList *old_list = xchg_java_thread_list(new_list);
   free_list(old_list);
+  if (ThreadIdTable::is_initialized()) {
+    jlong tid = SharedRuntime::get_java_tid(thread);
+    ThreadIdTable::add_thread(tid, thread);
+  }
 }
 
 // set_delete_notify() and clear_delete_notify() are called
@@ -909,6 +926,10 @@ void ThreadsSMRSupport::release_stable_list_wake_up(bool is_nested) {
 }
 
 void ThreadsSMRSupport::remove_thread(JavaThread *thread) {
+  if (ThreadIdTable::is_initialized()) {
+    jlong tid = SharedRuntime::get_java_tid(thread);
+    ThreadIdTable::remove_thread(tid);
+  }
   ThreadsList *new_list = ThreadsList::remove_thread(ThreadsSMRSupport::get_java_thread_list(), thread);
   if (EnableThreadSMRStatistics) {
     ThreadsSMRSupport::inc_java_thread_list_alloc_cnt();

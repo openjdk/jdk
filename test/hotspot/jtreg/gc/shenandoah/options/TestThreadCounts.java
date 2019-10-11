@@ -61,7 +61,7 @@ public class TestThreadCounts {
             output.shouldHaveExitValue(1);
         } else if (conc > par) {
             output.shouldContain("Shenandoah expects ConcGCThreads <= ParallelGCThreads");
-            output.shouldHaveExitValue(0);
+            output.shouldHaveExitValue(1);
         } else {
             output.shouldNotContain("Shenandoah expects ConcGCThreads <= ParallelGCThreads");
             output.shouldHaveExitValue(0);

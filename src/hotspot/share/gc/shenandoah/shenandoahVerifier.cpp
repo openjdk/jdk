@@ -686,13 +686,17 @@ void ShenandoahVerifier::verify_at_safepoint(const char *label,
     _heap->heap_region_iterate(&cl);
     size_t heap_used = _heap->used();
     guarantee(cl.used() == heap_used,
-              "%s: heap used size must be consistent: heap-used = " SIZE_FORMAT "K, regions-used = " SIZE_FORMAT "K",
-              label, heap_used/K, cl.used()/K);
+              "%s: heap used size must be consistent: heap-used = " SIZE_FORMAT "%s, regions-used = " SIZE_FORMAT "%s",
+              label,
+              byte_size_in_proper_unit(heap_used), proper_unit_for_byte_size(heap_used),
+              byte_size_in_proper_unit(cl.used()), proper_unit_for_byte_size(cl.used()));
 
     size_t heap_committed = _heap->committed();
     guarantee(cl.committed() == heap_committed,
-              "%s: heap committed size must be consistent: heap-committed = " SIZE_FORMAT "K, regions-committed = " SIZE_FORMAT "K",
-              label, heap_committed/K, cl.committed()/K);
+              "%s: heap committed size must be consistent: heap-committed = " SIZE_FORMAT "%s, regions-committed = " SIZE_FORMAT "%s",
+              label,
+              byte_size_in_exact_unit(heap_committed), proper_unit_for_byte_size(heap_committed),
+              byte_size_in_exact_unit(cl.committed()), proper_unit_for_byte_size(cl.committed()));
   }
 
   // Internal heap region checks

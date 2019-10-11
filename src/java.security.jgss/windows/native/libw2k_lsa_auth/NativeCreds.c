@@ -54,7 +54,6 @@
  * Library-wide static references
  */
 
-jclass derValueClass = NULL;
 jclass ticketClass = NULL;
 jclass principalNameClass = NULL;
 jclass encryptionKeyClass = NULL;
@@ -62,7 +61,6 @@ jclass ticketFlagsClass = NULL;
 jclass kerberosTimeClass = NULL;
 jclass javaLangStringClass = NULL;
 
-jmethodID derValueConstructor = 0;
 jmethodID ticketConstructor = 0;
 jmethodID principalNameConstructor = 0;
 jmethodID encryptionKeyConstructor = 0;
@@ -172,24 +170,6 @@ JNIEXPORT jint JNICALL DEF_JNI_OnLoad(
         printf("LSA: Made NewWeakGlobalRef\n");
     }
 
-    cls = (*env)->FindClass(env,"sun/security/util/DerValue");
-
-    if (cls == NULL) {
-        printf("LSA: Couldn't find DerValue\n");
-        return JNI_ERR;
-    }
-    if (native_debug) {
-        printf("LSA: Found DerValue\n");
-    }
-
-    derValueClass = (*env)->NewWeakGlobalRef(env,cls);
-    if (derValueClass == NULL) {
-        return JNI_ERR;
-    }
-    if (native_debug) {
-        printf("LSA: Made NewWeakGlobalRef\n");
-    }
-
     cls = (*env)->FindClass(env,"sun/security/krb5/EncryptionKey");
 
     if (cls == NULL) {
@@ -262,18 +242,8 @@ JNIEXPORT jint JNICALL DEF_JNI_OnLoad(
         printf("LSA: Made NewWeakGlobalRef\n");
     }
 
-    derValueConstructor = (*env)->GetMethodID(env, derValueClass,
-                                            "<init>", "([B)V");
-    if (derValueConstructor == 0) {
-        printf("LSA: Couldn't find DerValue constructor\n");
-        return JNI_ERR;
-    }
-    if (native_debug) {
-        printf("LSA: Found DerValue constructor\n");
-    }
-
     ticketConstructor = (*env)->GetMethodID(env, ticketClass,
-                            "<init>", "(Lsun/security/util/DerValue;)V");
+                            "<init>", "([B)V");
     if (ticketConstructor == 0) {
         printf("LSA: Couldn't find Ticket constructor\n");
         return JNI_ERR;
@@ -346,9 +316,6 @@ JNIEXPORT void JNICALL DEF_JNI_OnUnload(
 
     if (ticketClass != NULL) {
         (*env)->DeleteWeakGlobalRef(env,ticketClass);
-    }
-    if (derValueClass != NULL) {
-        (*env)->DeleteWeakGlobalRef(env,derValueClass);
     }
     if (principalNameClass != NULL) {
         (*env)->DeleteWeakGlobalRef(env,principalNameClass);
@@ -897,11 +864,9 @@ InitUnicodeString(
 
 jobject BuildTicket(JNIEnv *env, PUCHAR encodedTicket, ULONG encodedTicketSize) {
 
-    /* To build a Ticket, we first need to build a DerValue out of the EncodedTicket.
-     * But before we can do that, we need to make a byte array out of the ET.
-     */
+    // To build a Ticket, we need to make a byte array out of the EncodedTicket.
 
-    jobject derValue, ticket;
+    jobject ticket;
     jbyteArray ary;
 
     ary = (*env)->NewByteArray(env,encodedTicketSize);
@@ -916,19 +881,12 @@ jobject BuildTicket(JNIEnv *env, PUCHAR encodedTicket, ULONG encodedTicketSize) 
         return (jobject) NULL;
     }
 
-    derValue = (*env)->NewObject(env, derValueClass, derValueConstructor, ary);
+    ticket = (*env)->NewObject(env, ticketClass, ticketConstructor, ary);
     if ((*env)->ExceptionOccurred(env)) {
         (*env)->DeleteLocalRef(env, ary);
         return (jobject) NULL;
     }
-
     (*env)->DeleteLocalRef(env, ary);
-    ticket = (*env)->NewObject(env, ticketClass, ticketConstructor, derValue);
-    if ((*env)->ExceptionOccurred(env)) {
-        (*env)->DeleteLocalRef(env, derValue);
-        return (jobject) NULL;
-    }
-    (*env)->DeleteLocalRef(env, derValue);
     return ticket;
 }
 

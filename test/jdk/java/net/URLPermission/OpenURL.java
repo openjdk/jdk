@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,6 +31,7 @@
 import java.net.*;
 import java.io.*;
 import jdk.test.lib.net.URIBuilder;
+import static java.net.Proxy.NO_PROXY;
 
 public class OpenURL {
 
@@ -46,7 +47,7 @@ public class OpenURL {
                 .path("/a/b")
                 .toURL();
             System.out.println("URL: " + url);
-            HttpURLConnection urlc = (HttpURLConnection)url.openConnection();
+            HttpURLConnection urlc = (HttpURLConnection)url.openConnection(NO_PROXY);
             InputStream is = urlc.getInputStream();
             // error will throw exception other than SecurityException
         } catch (SecurityException e) {

@@ -2513,17 +2513,8 @@ void Compile::reshape_address(AddPNode* addp) {
     __ INSN(REG, as_Register(BASE));                                    \
   }
 
-typedef void (MacroAssembler::* mem_insn)(Register Rt, const Address &adr);
-typedef void (MacroAssembler::* mem_float_insn)(FloatRegister Rt, const Address &adr);
-typedef void (MacroAssembler::* mem_vector_insn)(FloatRegister Rt,
-                                  MacroAssembler::SIMD_RegVariant T, const Address &adr);
 
-  // Used for all non-volatile memory accesses.  The use of
-  // $mem->opcode() to discover whether this pattern uses sign-extended
-  // offsets is something of a kludge.
-  static void loadStore(MacroAssembler masm, mem_insn insn,
-                         Register reg, int opcode,
-                         Register base, int index, int size, int disp)
+static Address mem2address(int opcode, Register base, int index, int size, int disp)
   {
     Address::extend scale;
 
@@ -2542,16 +2533,34 @@ typedef void (MacroAssembler::* mem_vector_insn)(FloatRegister Rt,
     }
 
     if (index == -1) {
-      (masm.*insn)(reg, Address(base, disp));
+      return Address(base, disp);
     } else {
       assert(disp == 0, "unsupported address mode: disp = %d", disp);
-      (masm.*insn)(reg, Address(base, as_Register(index), scale));
+      return Address(base, as_Register(index), scale);
     }
   }
 
+
+typedef void (MacroAssembler::* mem_insn)(Register Rt, const Address &adr);
+typedef void (MacroAssembler::* mem_insn2)(Register Rt, Register adr);
+typedef void (MacroAssembler::* mem_float_insn)(FloatRegister Rt, const Address &adr);
+typedef void (MacroAssembler::* mem_vector_insn)(FloatRegister Rt,
+                                  MacroAssembler::SIMD_RegVariant T, const Address &adr);
+
+  // Used for all non-volatile memory accesses.  The use of
+  // $mem->opcode() to discover whether this pattern uses sign-extended
+  // offsets is something of a kludge.
+  static void loadStore(MacroAssembler masm, mem_insn insn,
+                        Register reg, int opcode,
+                        Register base, int index, int size, int disp)
+  {
+    Address addr = mem2address(opcode, base, index, size, disp);
+    (masm.*insn)(reg, addr);
+  }
+
   static void loadStore(MacroAssembler masm, mem_float_insn insn,
-                         FloatRegister reg, int opcode,
-                         Register base, int index, int size, int disp)
+                        FloatRegister reg, int opcode,
+                        Register base, int index, int size, int disp)
   {
     Address::extend scale;
 
@@ -2573,8 +2582,8 @@ typedef void (MacroAssembler::* mem_vector_insn)(FloatRegister Rt,
   }
 
   static void loadStore(MacroAssembler masm, mem_vector_insn insn,
-                         FloatRegister reg, MacroAssembler::SIMD_RegVariant T,
-                         int opcode, Register base, int index, int size, int disp)
+                        FloatRegister reg, MacroAssembler::SIMD_RegVariant T,
+                        int opcode, Register base, int index, int size, int disp)
   {
     if (index == -1) {
       (masm.*insn)(reg, T, Address(base, disp));
@@ -3791,7 +3800,7 @@ frame %{
     static const int hi[Op_RegL + 1] = { // enum name
       0,                                 // Op_Node
       0,                                 // Op_Set
-      OptoReg::Bad,                       // Op_RegN
+      OptoReg::Bad,                      // Op_RegN
       OptoReg::Bad,                      // Op_RegI
       R0_H_num,                          // Op_RegP
       OptoReg::Bad,                      // Op_RegF
@@ -6923,7 +6932,7 @@ instruct loadRange(iRegINoSp dst, memory mem)
 instruct loadP(iRegPNoSp dst, memory mem)
 %{
   match(Set dst (LoadP mem));
-  predicate(!needs_acquiring_load(n));
+  predicate(!needs_acquiring_load(n) && (n->as_Load()->barrier_data() == 0));
 
   ins_cost(4 * INSN_COST);
   format %{ "ldr  $dst, $mem\t# ptr" %}
@@ -7616,6 +7625,7 @@ instruct loadL_volatile(iRegLNoSp dst, /* sync_memory*/indirect mem)
 instruct loadP_volatile(iRegPNoSp dst, /* sync_memory*/indirect mem)
 %{
   match(Set dst (LoadP mem));
+  predicate(n->as_Load()->barrier_data() == 0);
 
   ins_cost(VOLATILE_REF_COST);
   format %{ "ldar  $dst, $mem\t# ptr" %}
@@ -8552,6 +8562,7 @@ instruct compareAndSwapL(iRegINoSp res, indirect mem, iRegLNoSp oldval, iRegLNoS
 instruct compareAndSwapP(iRegINoSp res, indirect mem, iRegP oldval, iRegP newval, rFlagsReg cr) %{
 
   match(Set res (CompareAndSwapP mem (Binary oldval newval)));
+  predicate(n->as_LoadStore()->barrier_data() == 0);
   ins_cost(2 * VOLATILE_REF_COST);
 
   effect(KILL cr);
@@ -8665,7 +8676,7 @@ instruct compareAndSwapLAcq(iRegINoSp res, indirect mem, iRegLNoSp oldval, iRegL
 
 instruct compareAndSwapPAcq(iRegINoSp res, indirect mem, iRegP oldval, iRegP newval, rFlagsReg cr) %{
 
-  predicate(needs_acquiring_load_exclusive(n));
+  predicate(needs_acquiring_load_exclusive(n) && (n->as_LoadStore()->barrier_data() == 0));
   match(Set res (CompareAndSwapP mem (Binary oldval newval)));
   ins_cost(VOLATILE_REF_COST);
 
@@ -8796,6 +8807,7 @@ instruct compareAndExchangeN(iRegNNoSp res, indirect mem, iRegN oldval, iRegN ne
 %}
 
 instruct compareAndExchangeP(iRegPNoSp res, indirect mem, iRegP oldval, iRegP newval, rFlagsReg cr) %{
+  predicate(n->as_LoadStore()->barrier_data() == 0);
   match(Set res (CompareAndExchangeP mem (Binary oldval newval)));
   ins_cost(2 * VOLATILE_REF_COST);
   effect(TEMP_DEF res, KILL cr);
@@ -8895,7 +8907,7 @@ instruct compareAndExchangeNAcq(iRegNNoSp res, indirect mem, iRegN oldval, iRegN
 %}
 
 instruct compareAndExchangePAcq(iRegPNoSp res, indirect mem, iRegP oldval, iRegP newval, rFlagsReg cr) %{
-  predicate(needs_acquiring_load_exclusive(n));
+  predicate(needs_acquiring_load_exclusive(n) && (n->as_LoadStore()->barrier_data() == 0));
   match(Set res (CompareAndExchangeP mem (Binary oldval newval)));
   ins_cost(VOLATILE_REF_COST);
   effect(TEMP_DEF res, KILL cr);
@@ -8996,6 +9008,7 @@ instruct weakCompareAndSwapN(iRegINoSp res, indirect mem, iRegN oldval, iRegN ne
 %}
 
 instruct weakCompareAndSwapP(iRegINoSp res, indirect mem, iRegP oldval, iRegP newval, rFlagsReg cr) %{
+  predicate(n->as_LoadStore()->barrier_data() == 0);
   match(Set res (WeakCompareAndSwapP mem (Binary oldval newval)));
   ins_cost(2 * VOLATILE_REF_COST);
   effect(KILL cr);
@@ -9103,8 +9116,8 @@ instruct weakCompareAndSwapNAcq(iRegINoSp res, indirect mem, iRegN oldval, iRegN
 %}
 
 instruct weakCompareAndSwapPAcq(iRegINoSp res, indirect mem, iRegP oldval, iRegP newval, rFlagsReg cr) %{
-  predicate(needs_acquiring_load_exclusive(n));
   match(Set res (WeakCompareAndSwapP mem (Binary oldval newval)));
+  predicate(needs_acquiring_load_exclusive(n) && (n->as_LoadStore()->barrier_data() == 0));
   ins_cost(VOLATILE_REF_COST);
   effect(KILL cr);
   format %{
@@ -9154,6 +9167,7 @@ instruct get_and_setN(indirect mem, iRegN newv, iRegINoSp prev) %{
 %}
 
 instruct get_and_setP(indirect mem, iRegP newv, iRegPNoSp prev) %{
+  predicate(n->as_LoadStore()->barrier_data() == 0);
   match(Set prev (GetAndSetP mem newv));
   ins_cost(2 * VOLATILE_REF_COST);
   format %{ "atomic_xchg  $prev, $newv, [$mem]" %}
@@ -9197,7 +9211,7 @@ instruct get_and_setNAcq(indirect mem, iRegN newv, iRegINoSp prev) %{
 %}
 
 instruct get_and_setPAcq(indirect mem, iRegP newv, iRegPNoSp prev) %{
-  predicate(needs_acquiring_load_exclusive(n));
+  predicate(needs_acquiring_load_exclusive(n) && (n->as_LoadStore()->barrier_data() == 0));
   match(Set prev (GetAndSetP mem newv));
   ins_cost(VOLATILE_REF_COST);
   format %{ "atomic_xchg_acq  $prev, $newv, [$mem]" %}

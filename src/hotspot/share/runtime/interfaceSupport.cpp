@@ -55,12 +55,6 @@ VMEntryWrapper::~VMEntryWrapper() {
   if (WalkStackALot) {
     InterfaceSupport::walk_stack();
   }
-#ifdef COMPILER2
-  // This option is not used by Compiler 1
-  if (StressDerivedPointers) {
-    InterfaceSupport::stress_derived_pointers();
-  }
-#endif
   if (DeoptimizeALot || DeoptimizeRandom) {
     InterfaceSupport::deoptimizeAll();
   }
@@ -231,31 +225,6 @@ void InterfaceSupport::deoptimizeAll() {
     }
   }
   deoptimizeAllCounter++;
-}
-
-
-void InterfaceSupport::stress_derived_pointers() {
-#ifdef COMPILER2
-  JavaThread *thread = JavaThread::current();
-  if (!is_init_completed()) return;
-  ResourceMark rm(thread);
-  bool found = false;
-  for (StackFrameStream sfs(thread); !sfs.is_done() && !found; sfs.next()) {
-    CodeBlob* cb = sfs.current()->cb();
-    if (cb != NULL && cb->oop_maps() ) {
-      // Find oopmap for current method
-      const ImmutableOopMap* map = cb->oop_map_for_return_address(sfs.current()->pc());
-      assert(map != NULL, "no oopmap found for pc");
-      found = map->has_derived_pointer();
-    }
-  }
-  if (found) {
-    // $$$ Not sure what to do here.
-    /*
-    Scavenge::invoke(0);
-    */
-  }
-#endif
 }
 
 

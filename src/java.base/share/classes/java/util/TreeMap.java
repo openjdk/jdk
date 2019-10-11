@@ -118,6 +118,7 @@ public class TreeMap<K,V>
      *
      * @serial
      */
+    @SuppressWarnings("serial") // Conditionally serializable
     private final Comparator<? super K> comparator;
 
     private transient Entry<K,V> root;
@@ -1353,7 +1354,10 @@ public class TreeMap<K,V>
          * if loInclusive is true, lo is the inclusive bound, else lo
          * is the exclusive bound. Similarly for the upper bound.
          */
-        final K lo, hi;
+        @SuppressWarnings("serial") // Conditionally serializable
+        final K lo;
+        @SuppressWarnings("serial") // Conditionally serializable
+        final K hi;
         final boolean fromStart, toEnd;
         final boolean loInclusive, hiInclusive;
 
@@ -1936,6 +1940,7 @@ public class TreeMap<K,V>
             super(m, fromStart, lo, loInclusive, toEnd, hi, hiInclusive);
         }
 
+        @SuppressWarnings("serial") // Conditionally serializable
         private final Comparator<? super K> reverseComparator =
             Collections.reverseOrder(m.comparator);
 
@@ -2024,7 +2029,10 @@ public class TreeMap<K,V>
         @java.io.Serial
         private static final long serialVersionUID = -6520786458950516097L;
         private boolean fromStart = false, toEnd = false;
-        private K fromKey, toKey;
+        @SuppressWarnings("serial") // Conditionally serializable
+        private K fromKey;
+        @SuppressWarnings("serial") // Conditionally serializable
+        private K toKey;
         @java.io.Serial
         private Object readResolve() {
             return new AscendingSubMap<>(TreeMap.this,

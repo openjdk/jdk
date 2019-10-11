@@ -51,8 +51,7 @@ class jniCheck : public AllStatic {
   static Klass* validate_class(JavaThread* thr, jclass clazz, bool allow_primitive = false);
   static void validate_class_descriptor(JavaThread* thr, const char* name);
   static void validate_throwable_klass(JavaThread* thr, Klass* klass);
-  static void validate_call_object(JavaThread* thr, jobject obj, jmethodID method_id);
-  static void validate_call_class(JavaThread* thr, jclass clazz, jmethodID method_id);
+  static void validate_call(JavaThread* thr, jclass clazz, jmethodID method_id, jobject obj = NULL);
   static Method* validate_jmethod_id(JavaThread* thr, jmethodID method_id);
 };
 

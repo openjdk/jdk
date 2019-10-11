@@ -25,6 +25,8 @@
 
 package jdk.jfr.internal.management;
 
+import java.io.IOException;
+import java.nio.file.Paths;
 import java.time.Duration;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -97,5 +99,13 @@ public final class ManagementSupport {
         PlatformRecording pr = PrivateAccess.getInstance().getPlatformRecording(recording);
         WriteableUserPath wup = pr.getDestination();
         return wup == null ? null : wup.getOriginalText();
+    }
+
+    public static void checkSetDestination(Recording recording, String destination) throws IOException{
+        PlatformRecording pr = PrivateAccess.getInstance().getPlatformRecording(recording);
+        if(destination != null){
+            WriteableUserPath wup = new WriteableUserPath(Paths.get(destination));
+            pr.checkSetDestination(wup);
+        }
     }
 }

@@ -38,8 +38,8 @@ import java.net.ServerSocket;
 import java.net.Socket;
 import java.net.URL;
 import java.net.HttpURLConnection;
-
 import jdk.test.lib.net.URIBuilder;
+import static java.net.Proxy.NO_PROXY;
 
 public class HttpContinueStackOverflow {
 
@@ -93,7 +93,7 @@ public class HttpContinueStackOverflow {
                 .path("/anything.html")
                 .toURL();
 
-        HttpURLConnection conn = (HttpURLConnection)url.openConnection();
+        HttpURLConnection conn = (HttpURLConnection)url.openConnection(NO_PROXY);
         conn.getResponseCode();
         System.out.println("TEST PASSED");
     }

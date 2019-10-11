@@ -232,9 +232,9 @@ void VM_RedefineClasses::doit() {
     ResolvedMethodTable::adjust_method_entries(&trace_name_printed);
   }
 
-  // Set flag indicating that some invariants are no longer true.
+  // Increment flag indicating that some invariants are no longer true.
   // See jvmtiExport.hpp for detailed explanation.
-  JvmtiExport::set_has_redefined_a_class();
+  JvmtiExport::increment_redefinition_count();
 
   // check_class() is optionally called for product bits, but is
   // always called for non-product bits.
@@ -3526,15 +3526,6 @@ void VM_RedefineClasses::update_jmethod_ids() {
       Method::change_method_associated_with_jmethod_id(jmid, new_method_h());
       assert(Method::resolve_jmethod_id(jmid) == _matching_new_methods[j],
              "should be replaced");
-    }
-  }
-  // Update deleted jmethodID
-  for (int j = 0; j < _deleted_methods_length; ++j) {
-    Method* old_method = _deleted_methods[j];
-    jmethodID jmid = old_method->find_jmethod_id_or_null();
-    if (jmid != NULL) {
-      // Change the jmethodID to point to NSME.
-      Method::change_method_associated_with_jmethod_id(jmid, Universe::throw_no_such_method_error());
     }
   }
 }

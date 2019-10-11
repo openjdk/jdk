@@ -158,7 +158,7 @@ public class PrincipalName implements Cloneable {
         this.realmDeduced = false;
     }
 
-    // This method is called by Windows NativeCred.c
+    // Warning: called by NativeCreds.c
     public PrincipalName(String[] nameParts, String realm) throws RealmException {
         this(KRB_NT_UNKNOWN, nameParts, new Realm(realm));
     }
@@ -484,6 +484,7 @@ public class PrincipalName implements Cloneable {
         }
     }
 
+    // Warning: called by nativeccache.c
     public PrincipalName(String name, int type) throws RealmException {
         this(name, type, (String)null);
     }

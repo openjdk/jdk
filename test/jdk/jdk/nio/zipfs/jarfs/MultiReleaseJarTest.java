@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 8144355 8144062 8176709 8194070 8193802
+ * @bug 8144355 8144062 8176709 8194070 8193802 8231093
  * @summary Test aliasing additions to ZipFileSystem for multi-release jar files
  * @library /lib/testlibrary/java/util/jar
  * @modules jdk.compiler
@@ -40,6 +40,7 @@ import java.lang.invoke.MethodType;
 import java.lang.Runtime.Version;
 import java.net.URI;
 import java.nio.file.*;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -88,8 +89,7 @@ public class MultiReleaseJarTest {
     public Object[][] createStrings() {
         return new Object[][]{
                 {"runtime", MAJOR_VERSION},
-                {"-20", 8},
-                {"0", 8},
+                {null, 8},
                 {"8", 8},
                 {"9", 9},
                 {Integer.toString(MAJOR_VERSION), MAJOR_VERSION},
@@ -101,8 +101,7 @@ public class MultiReleaseJarTest {
     @DataProvider(name="integers")
     public Object[][] createIntegers() {
         return new Object[][] {
-                {Integer.valueOf(-5), 8},
-                {Integer.valueOf(0), 8},
+                {null, 8},
                 {Integer.valueOf(8), 8},
                 {Integer.valueOf(9), 9},
                 {Integer.valueOf(MAJOR_VERSION), MAJOR_VERSION},
@@ -114,11 +113,26 @@ public class MultiReleaseJarTest {
     @DataProvider(name="versions")
     public Object[][] createVersions() {
         return new Object[][] {
+                {null,    8},
                 {Version.parse("8"),    8},
                 {Version.parse("9"),    9},
                 {Version.parse(Integer.toString(MAJOR_VERSION)),  MAJOR_VERSION},
                 {Version.parse(Integer.toString(MAJOR_VERSION) + 1),  MAJOR_VERSION},
                 {Version.parse("100"), MAJOR_VERSION}
+        };
+    }
+
+    @DataProvider(name="invalidVersions")
+    public Object[][] invalidVersions() {
+        return new Object[][] {
+                {Map.of("releaseVersion", "")},
+                {Map.of("releaseVersion", "invalid")},
+                {Map.of("releaseVersion", "0")},
+                {Map.of("releaseVersion", "-1")},
+                {Map.of("releaseVersion", "11.0.1")},
+                {Map.of("releaseVersion", new ArrayList<Long>())},
+                {Map.of("releaseVersion", Integer.valueOf(0))},
+                {Map.of("releaseVersion", Integer.valueOf(-1))}
         };
     }
 
@@ -131,7 +145,7 @@ public class MultiReleaseJarTest {
         try (FileSystem fs = FileSystems.newFileSystem(mruri, env)) {
             Assert.assertTrue(readAndCompare(fs, 8));
         }
-        env.put("multi-release", "runtime");
+        env.put("releaseVersion", "runtime");
         // a configuration and jar file is multi-release
         try (FileSystem fs = FileSystems.newFileSystem(mruri, env)) {
             Assert.assertTrue(readAndCompare(fs, MAJOR_VERSION));
@@ -150,28 +164,65 @@ public class MultiReleaseJarTest {
 
     @Test(dataProvider="strings")
     public void testStrings(String value, int expected) throws Throwable {
-        stringEnv.put("multi-release", value);
+        stringEnv.put("releaseVersion", value);
         runTest(stringEnv, expected);
     }
 
     @Test(dataProvider="integers")
     public void testIntegers(Integer value, int expected) throws Throwable {
-        integerEnv.put("multi-release", value);
+        integerEnv.put("releaseVersion", value);
         runTest(integerEnv, expected);
     }
 
     @Test(dataProvider="versions")
     public void testVersions(Version value, int expected) throws Throwable {
-        versionEnv.put("multi-release", value);
+        versionEnv.put("releaseVersion", value);
         runTest(versionEnv, expected);
     }
 
     @Test
     public void testShortJar() throws Throwable {
-        integerEnv.put("multi-release", Integer.valueOf(MAJOR_VERSION));
+        integerEnv.put("releaseVersion", Integer.valueOf(MAJOR_VERSION));
         runTest(smruri, integerEnv, MAJOR_VERSION);
-        integerEnv.put("multi-release", Integer.valueOf(9));
+        integerEnv.put("releaseVersion", Integer.valueOf(9));
         runTest(smruri, integerEnv, 8);
+    }
+
+    /**
+     * Validate that an invalid value for the "releaseVersion" property throws
+     * an {@code IllegalArgumentException}
+     * @param env Zip FS map
+     * @throws Throwable  Exception thrown for anything other than the expected
+     * IllegalArgumentException
+     */
+    @Test(dataProvider="invalidVersions")
+    public void testInvalidVersions(Map<String,?> env) throws Throwable {
+        Assert.assertThrows(IllegalArgumentException.class, () ->
+                FileSystems.newFileSystem(Path.of(userdir,
+                        "multi-release.jar"), env));
+    }
+
+    // The following tests are for backwards compatibility to validate that
+    // the original property still works
+    @Test(dataProvider="strings")
+    public void testMRStrings(String value, int expected) throws Throwable {
+        stringEnv.clear();
+        stringEnv.put("multi-release", value);
+        runTest(stringEnv, expected);
+    }
+
+    @Test(dataProvider="integers")
+    public void testMRIntegers(Integer value, int expected) throws Throwable {
+        integerEnv.clear();
+        integerEnv.put("multi-release", value);
+        runTest(integerEnv, expected);
+    }
+
+    @Test(dataProvider="versions")
+    public void testMRVersions(Version value, int expected) throws Throwable {
+        versionEnv.clear();
+        versionEnv.put("multi-release", value);
+        runTest(versionEnv, expected);
     }
 
     private void runTest(Map<String,?> env, int expected) throws Throwable {
@@ -213,7 +264,7 @@ public class MultiReleaseJarTest {
         JarBuilder jb = new JarBuilder(jfname);
         jb.addAttribute("Multi-Release", "true");
         jb.build();
-        Map<String,String> env = Map.of("multi-release", "runtime");
+        Map<String,String> env = Map.of("releaseVersion", "runtime");
         try (FileSystem fs = FileSystems.newFileSystem(uri, env)) {
             Assert.assertTrue(true);
         }
@@ -228,7 +279,7 @@ public class MultiReleaseJarTest {
         creator.buildCustomMultiReleaseJar(fileName, value, Map.of(),
                 /*addEntries*/true);
 
-        Map<String,String> env = Map.of("multi-release", "runtime");
+        Map<String,String> env = Map.of("releaseVersion", "runtime");
         Path filePath = Paths.get(userdir, fileName);
         String ssp = filePath.toUri().toString();
         URI customJar = new URI("jar", ssp , null);

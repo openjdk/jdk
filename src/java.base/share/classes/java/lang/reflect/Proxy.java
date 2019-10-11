@@ -308,6 +308,7 @@ public class Proxy implements java.io.Serializable {
      * the invocation handler for this proxy instance.
      * @serial
      */
+    @SuppressWarnings("serial") // Not statically typed as Serializable
     protected InvocationHandler h;
 
     /**

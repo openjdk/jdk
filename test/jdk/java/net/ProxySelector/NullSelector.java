@@ -25,6 +25,7 @@
  * @bug 6215885
  * @library /test/lib
  * @summary URLConnection.openConnection NPE if ProxySelector.setDefault is set to null
+ * @run main/othervm NullSelector
  */
 
 import java.net.*;

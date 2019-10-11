@@ -51,7 +51,17 @@ class LinuxNativeDispatcher extends UnixNativeDispatcher {
     /**
      * int getmntent(FILE *fp, struct mnttab *mp, int len);
      */
-    static native int getmntent(long fp, UnixMountEntry entry)
+
+    static int getmntent(long fp, UnixMountEntry entry, int buflen) throws UnixException {
+        NativeBuffer buffer = NativeBuffers.getNativeBuffer(buflen);
+        try {
+            return getmntent0(fp, entry, buffer.address(), buflen);
+        } finally {
+            buffer.release();
+        }
+    }
+
+    static native int getmntent0(long fp, UnixMountEntry entry, long buffer, int bufLen)
         throws UnixException;
 
     /**

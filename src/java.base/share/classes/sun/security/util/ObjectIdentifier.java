@@ -98,6 +98,7 @@ class ObjectIdentifier implements Serializable
      * Changed to Object
      * @serial
      */
+    @SuppressWarnings("serial") // Not statically typed as Serializable
     private Object      components   = null;          // path from root
     /**
      * @serial

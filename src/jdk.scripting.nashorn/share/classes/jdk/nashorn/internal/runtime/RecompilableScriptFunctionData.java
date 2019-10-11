@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2010, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -118,11 +118,13 @@ public final class RecompilableScriptFunctionData extends ScriptFunctionData imp
      * Opaque object representing parser state at the end of the function. Used when reparsing outer function
      * to help with skipping parsing inner functions.
      */
+    @SuppressWarnings("serial") // Not statically typed as Serializable
     private final Object endParserState;
 
     /** Code installer used for all further recompilation/specialization of this ScriptFunction */
     private transient CodeInstaller installer;
 
+    @SuppressWarnings("serial") // Not statically typed as Serializable
     private final Map<Integer, RecompilableScriptFunctionData> nestedFunctions;
 
     /** Id to parent function if one exists */
@@ -135,8 +137,10 @@ public final class RecompilableScriptFunctionData extends ScriptFunctionData imp
 
     private transient DebugLogger log;
 
+    @SuppressWarnings("serial") // Not statically typed as Serializable
     private final Map<String, Integer> externalScopeDepths;
 
+    @SuppressWarnings("serial") // Not statically typed as Serializable
     private final Set<String> internalSymbols;
 
     private static final int GET_SET_PREFIX_LENGTH = "*et ".length();

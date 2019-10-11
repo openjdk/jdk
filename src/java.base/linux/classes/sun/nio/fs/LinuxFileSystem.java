@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -79,10 +79,26 @@ class LinuxFileSystem extends UnixFileSystem {
         ArrayList<UnixMountEntry> entries = new ArrayList<>();
         try {
             long fp = setmntent(Util.toBytes(fstab), Util.toBytes("r"));
+            int maxLineSize = 1024;
+            try {
+                for (;;) {
+                    int lineSize = getlinelen(fp);
+                    if (lineSize == -1)
+                        break;
+                    if (lineSize > maxLineSize)
+                        maxLineSize = lineSize;
+                }
+            } catch (UnixException x) {
+                // nothing we need to do
+            } finally {
+                rewind(fp);
+            }
+
             try {
                 for (;;) {
                     UnixMountEntry entry = new UnixMountEntry();
-                    int res = getmntent(fp, entry);
+                    // count in NUL character at the end
+                    int res = getmntent(fp, entry, maxLineSize + 1);
                     if (res < 0)
                         break;
                     entries.add(entry);

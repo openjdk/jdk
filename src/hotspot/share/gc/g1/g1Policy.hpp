@@ -100,7 +100,11 @@ class G1Policy: public CHeapObj<mtGC> {
 
   size_t _rs_length_prediction;
 
-  size_t _pending_cards;
+  size_t _pending_cards_at_gc_start;
+  size_t _pending_cards_at_prev_gc_end;
+  size_t _total_mutator_refined_cards;
+  size_t _total_concurrent_refined_cards;
+  Tickspan _total_concurrent_refinement_time;
 
   // The amount of allocated bytes in old gen during the last mutator and the following
   // young GC phase.
@@ -244,7 +248,15 @@ private:
                         uint base_free_regions, double target_pause_time_ms) const;
 
 public:
-  size_t pending_cards() const { return _pending_cards; }
+  size_t pending_cards_at_gc_start() const { return _pending_cards_at_gc_start; }
+
+  size_t total_concurrent_refined_cards() const {
+    return _total_concurrent_refined_cards;
+  }
+
+  size_t total_mutator_refined_cards() const {
+    return _total_mutator_refined_cards;
+  }
 
   // Calculate the minimum number of old regions we'll add to the CSet
   // during a mixed GC.
@@ -283,6 +295,9 @@ private:
   void record_pause(PauseKind kind, double start, double end);
   // Indicate that we aborted marking before doing any mixed GCs.
   void abort_time_to_mixed_tracking();
+
+  void record_concurrent_refinement_data(bool is_full_collection);
+
 public:
 
   G1Policy(STWGCTimer* gc_timer);

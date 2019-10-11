@@ -76,6 +76,7 @@ import java.io.ByteArrayOutputStream;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.lang.management.ManagementFactory;
+import java.lang.management.LockInfo;
 import java.lang.management.ThreadInfo;
 import java.lang.management.ThreadMXBean;
 import java.lang.reflect.Constructor;
@@ -269,6 +270,9 @@ public class JSR166TestCase extends TestCase {
                               name, floatString));
         }
     }
+
+    private static final ThreadMXBean THREAD_MXBEAN
+        = ManagementFactory.getThreadMXBean();
 
     /**
      * The scaling factor to apply to standard delays used in tests.
@@ -1157,9 +1161,8 @@ public class JSR166TestCase extends TestCase {
             }
         }
 
-        ThreadMXBean threadMXBean = ManagementFactory.getThreadMXBean();
         System.err.println("------ stacktrace dump start ------");
-        for (ThreadInfo info : threadMXBean.dumpAllThreads(true, true))
+        for (ThreadInfo info : THREAD_MXBEAN.dumpAllThreads(true, true))
             if (threadOfInterest(info))
                 System.err.print(info);
         System.err.println("------ stacktrace dump end ------");
@@ -1185,6 +1188,17 @@ public class JSR166TestCase extends TestCase {
                 fail("Unexpected thread termination");
         }
         fail("timed out waiting for thread to enter thread state " + expected);
+    }
+
+    /**
+     * Returns the thread's blocker's class name, if any, else null.
+     */
+    String blockerClassName(Thread thread) {
+        ThreadInfo threadInfo; LockInfo lockInfo;
+        if ((threadInfo = THREAD_MXBEAN.getThreadInfo(thread.getId(), 0)) != null
+            && (lockInfo = threadInfo.getLockInfo()) != null)
+            return lockInfo.getClassName();
+        return null;
     }
 
     /**
@@ -1486,6 +1500,14 @@ public class JSR166TestCase extends TestCase {
     }
 
     /**
+     * Returns a new started daemon Thread running the given action,
+     * wrapped in a CheckedRunnable.
+     */
+    Thread newStartedThread(Action action) {
+        return newStartedThread(checkedRunnable(action));
+    }
+
+    /**
      * Waits for the specified time (in milliseconds) for the thread
      * to terminate (using {@link Thread#join(long)}), else interrupts
      * the thread (in the hope that it may terminate later) and fails.
@@ -1530,6 +1552,13 @@ public class JSR166TestCase extends TestCase {
                 threadUnexpectedException(fail);
             }
         }
+    }
+
+    Runnable checkedRunnable(Action action) {
+        return new CheckedRunnable() {
+            public void realRun() throws Throwable {
+                action.run();
+            }};
     }
 
     public abstract class ThreadShouldThrow extends Thread {

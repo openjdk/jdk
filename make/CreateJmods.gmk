@@ -86,16 +86,18 @@ endif
 # from there. These files were explicitly filtered or modified in <module>-copy
 # targets. For the rest, just pick up everything from the source legal dirs.
 LEGAL_NOTICES := \
-    $(SUPPORT_OUTPUTDIR)/modules_legal/common \
+    $(wildcard $(SUPPORT_OUTPUTDIR)/modules_legal/common) \
     $(if $(wildcard $(SUPPORT_OUTPUTDIR)/modules_legal/$(MODULE)), \
       $(wildcard $(SUPPORT_OUTPUTDIR)/modules_legal/$(MODULE)), \
       $(call FindModuleLegalSrcDirs, $(MODULE)) \
     )
 
-LEGAL_NOTICES_PATH := $(call PathList, $(LEGAL_NOTICES))
-DEPS += $(call FindFiles, $(LEGAL_NOTICES))
+ifneq ($(strip $(LEGAL_NOTICES)), )
+  LEGAL_NOTICES_PATH := $(call PathList, $(LEGAL_NOTICES))
+  DEPS += $(call FindFiles, $(LEGAL_NOTICES))
 
-JMOD_FLAGS += --legal-notices $(LEGAL_NOTICES_PATH)
+  JMOD_FLAGS += --legal-notices $(LEGAL_NOTICES_PATH)
+endif
 
 ifeq ($(filter-out jdk.incubator.%, $(MODULE)), )
   JMOD_FLAGS += --do-not-resolve-by-default

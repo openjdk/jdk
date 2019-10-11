@@ -24,6 +24,7 @@
 
 #include "precompiled.hpp"
 #include "classfile/systemDictionary.hpp"
+#include "compiler/compilationPolicy.hpp"
 #include "compiler/compilerOracle.hpp"
 #include "interpreter/bytecode.hpp"
 #include "interpreter/bytecodeStream.hpp"
@@ -34,7 +35,6 @@
 #include "oops/methodData.inline.hpp"
 #include "prims/jvmtiRedefineClasses.hpp"
 #include "runtime/arguments.hpp"
-#include "runtime/compilationPolicy.hpp"
 #include "runtime/deoptimization.hpp"
 #include "runtime/handles.inline.hpp"
 #include "runtime/orderAccess.hpp"
@@ -1212,7 +1212,7 @@ void MethodData::post_initialize(BytecodeStream* stream) {
 
 // Initialize the MethodData* corresponding to a given method.
 MethodData::MethodData(const methodHandle& method, int size, TRAPS)
-  : _extra_data_lock(Monitor::leaf, "MDO extra data lock"),
+  : _extra_data_lock(Mutex::leaf, "MDO extra data lock"),
     _parameters_type_data_di(parameters_uninitialized) {
   // Set the method back-pointer.
   _method = method();

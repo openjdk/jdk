@@ -1237,7 +1237,7 @@ void LIR_Assembler::reg2reg(LIR_Opr from_reg, LIR_Opr to_reg) {
   } else {
     ShouldNotReachHere();
   }
-  if (to_reg->type() == T_OBJECT || to_reg->type() == T_ARRAY) {
+  if (is_reference_type(to_reg->type())) {
     __ verify_oop(to_reg->as_register());
   }
 }
@@ -1253,7 +1253,7 @@ void LIR_Assembler::reg2mem(LIR_Opr from_reg, LIR_Opr dest, BasicType type,
   Register disp_reg = noreg;
   int disp_value = addr->disp();
   bool needs_patching = (patch_code != lir_patch_none);
-  bool compress_oop = (type == T_ARRAY || type == T_OBJECT) && UseCompressedOops && !wide &&
+  bool compress_oop = (is_reference_type(type)) && UseCompressedOops && !wide &&
                       CompressedOops::mode() != CompressedOops::UnscaledNarrowOop;
   bool load_disp = addr->index()->is_illegal() && !Assembler::is_simm16(disp_value);
   bool use_R29 = compress_oop && load_disp; // Avoid register conflict, also do null check before killing R29.
@@ -1473,7 +1473,7 @@ void LIR_Assembler::comp_op(LIR_Condition condition, LIR_Opr opr1, LIR_Opr opr2,
       }
     } else {
       assert(opr1->type() != T_ADDRESS && opr2->type() != T_ADDRESS, "currently unsupported");
-      if (opr1->type() == T_OBJECT || opr1->type() == T_ARRAY) {
+      if (is_reference_type(opr1->type())) {
         // There are only equal/notequal comparisons on objects.
         assert(condition == lir_cond_equal || condition == lir_cond_notEqual, "oops");
         __ cmpd(BOOL_RESULT, opr1->as_register(), opr2->as_register());
@@ -2315,8 +2315,8 @@ void LIR_Assembler::emit_alloc_obj(LIR_OpAllocObj* op) {
 void LIR_Assembler::emit_alloc_array(LIR_OpAllocArray* op) {
   LP64_ONLY( __ extsw(op->len()->as_register(), op->len()->as_register()); )
   if (UseSlowPath ||
-      (!UseFastNewObjectArray && (op->type() == T_OBJECT || op->type() == T_ARRAY)) ||
-      (!UseFastNewTypeArray   && (op->type() != T_OBJECT && op->type() != T_ARRAY))) {
+      (!UseFastNewObjectArray && (is_reference_type(op->type()))) ||
+      (!UseFastNewTypeArray   && (!is_reference_type(op->type())))) {
     __ b(*op->stub()->entry());
   } else {
     __ allocate_array(op->obj()->as_register(),

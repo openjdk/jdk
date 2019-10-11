@@ -129,8 +129,8 @@ void ClassLoaderData::initialize_name(Handle class_loader) {
 
 ClassLoaderData::ClassLoaderData(Handle h_class_loader, bool is_unsafe_anonymous) :
   _metaspace(NULL),
-  _metaspace_lock(new Mutex(Monitor::leaf+1, "Metaspace allocation lock", true,
-                            Monitor::_safepoint_check_never)),
+  _metaspace_lock(new Mutex(Mutex::leaf+1, "Metaspace allocation lock", true,
+                            Mutex::_safepoint_check_never)),
   _unloading(false), _is_unsafe_anonymous(is_unsafe_anonymous),
   _modified_oops(true), _accumulated_modified_oops(false),
   // An unsafe anonymous class loader data doesn't have anything to keep

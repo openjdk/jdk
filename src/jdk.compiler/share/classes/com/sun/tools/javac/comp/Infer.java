@@ -137,7 +137,7 @@ public class Infer {
     public static class InferenceException extends InapplicableMethodException {
         private static final long serialVersionUID = 0;
 
-        List<JCDiagnostic> messages = List.nil();
+        transient List<JCDiagnostic> messages = List.nil();
 
         InferenceException() {
             super(null);
@@ -1321,7 +1321,7 @@ public class Infer {
         public static class NodeNotFoundException extends RuntimeException {
             private static final long serialVersionUID = 0;
 
-            InferenceGraph graph;
+            transient InferenceGraph graph;
 
             public NodeNotFoundException(InferenceGraph graph) {
                 this.graph = graph;

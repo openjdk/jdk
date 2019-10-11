@@ -48,29 +48,25 @@
 
 // OopMapStream
 
-OopMapStream::OopMapStream(OopMap* oop_map, int oop_types_mask) {
+OopMapStream::OopMapStream(OopMap* oop_map) {
   _stream = new CompressedReadStream(oop_map->write_stream()->buffer());
-  _mask = oop_types_mask;
   _size = oop_map->omv_count();
   _position = 0;
   _valid_omv = false;
 }
 
-OopMapStream::OopMapStream(const ImmutableOopMap* oop_map, int oop_types_mask) {
+OopMapStream::OopMapStream(const ImmutableOopMap* oop_map) {
   _stream = new CompressedReadStream(oop_map->data_addr());
-  _mask = oop_types_mask;
   _size = oop_map->count();
   _position = 0;
   _valid_omv = false;
 }
 
 void OopMapStream::find_next() {
-  while(_position++ < _size) {
+  if (_position++ < _size) {
     _omv.read_from(_stream);
-    if(((int)_omv.type() & _mask) > 0) {
-      _valid_omv = true;
-      return;
-    }
+    _valid_omv = true;
+    return;
   }
   _valid_omv = false;
 }
@@ -140,16 +136,7 @@ void OopMap::set_xxx(VMReg reg, OopMapValue::oop_types x, VMReg optional) {
   assert( _locs_used[reg->value()] == OopMapValue::unused_value, "cannot insert twice" );
   debug_only( _locs_used[reg->value()] = x; )
 
-  OopMapValue o(reg, x);
-
-  if(x == OopMapValue::callee_saved_value) {
-    // This can never be a stack location, so we don't need to transform it.
-    assert(optional->is_reg(), "Trying to callee save a stack location");
-    o.set_content_reg(optional);
-  } else if(x == OopMapValue::derived_oop_value) {
-    o.set_content_reg(optional);
-  }
-
+  OopMapValue o(reg, x, optional);
   o.write_on(write_stream());
   increment_count();
 }
@@ -157,11 +144,6 @@ void OopMap::set_xxx(VMReg reg, OopMapValue::oop_types x, VMReg optional) {
 
 void OopMap::set_oop(VMReg reg) {
   set_xxx(reg, OopMapValue::oop_value, VMRegImpl::Bad());
-}
-
-
-void OopMap::set_value(VMReg reg) {
-  // At this time, we don't need value entries in our OopMap.
 }
 
 
@@ -328,7 +310,7 @@ void OopMapSet::all_do(const frame *fr, const RegisterMap *reg_map,
   // changed before derived pointer offset has been collected)
   OopMapValue omv;
   {
-    OopMapStream oms(map,OopMapValue::derived_oop_value);
+    OopMapStream oms(map);
     if (!oms.is_done()) {
 #ifndef TIERED
       COMPILER1_PRESENT(ShouldNotReachHere();)
@@ -340,27 +322,28 @@ void OopMapSet::all_do(const frame *fr, const RegisterMap *reg_map,
 #endif // !TIERED
       do {
         omv = oms.current();
-        oop* loc = fr->oopmapreg_to_location(omv.reg(),reg_map);
-        guarantee(loc != NULL, "missing saved register");
-        oop *derived_loc = loc;
-        oop *base_loc    = fr->oopmapreg_to_location(omv.content_reg(), reg_map);
-        // Ignore NULL oops and decoded NULL narrow oops which
-        // equal to CompressedOops::base() when a narrow oop
-        // implicit null check is used in compiled code.
-        // The narrow_oop_base could be NULL or be the address
-        // of the page below heap depending on compressed oops mode.
-        if (base_loc != NULL && *base_loc != NULL && !CompressedOops::is_base(*base_loc)) {
-          derived_oop_fn(base_loc, derived_loc);
+        if (omv.type() == OopMapValue::derived_oop_value) {
+          oop* loc = fr->oopmapreg_to_location(omv.reg(),reg_map);
+          guarantee(loc != NULL, "missing saved register");
+          oop *derived_loc = loc;
+          oop *base_loc    = fr->oopmapreg_to_location(omv.content_reg(), reg_map);
+          // Ignore NULL oops and decoded NULL narrow oops which
+          // equal to CompressedOops::base() when a narrow oop
+          // implicit null check is used in compiled code.
+          // The narrow_oop_base could be NULL or be the address
+          // of the page below heap depending on compressed oops mode.
+          if (base_loc != NULL && *base_loc != NULL && !CompressedOops::is_base(*base_loc)) {
+            derived_oop_fn(base_loc, derived_loc);
+          }
         }
         oms.next();
       }  while (!oms.is_done());
     }
   }
 
-  // We want coop and oop oop_types
-  int mask = OopMapValue::oop_value | OopMapValue::narrowoop_value;
   {
-    for (OopMapStream oms(map,mask); !oms.is_done(); oms.next()) {
+    // We want coop and oop oop_types
+    for (OopMapStream oms(map); !oms.is_done(); oms.next()) {
       omv = oms.current();
       oop* loc = fr->oopmapreg_to_location(omv.reg(),reg_map);
       // It should be an error if no location can be found for a
@@ -436,12 +419,14 @@ void OopMapSet::update_register_map(const frame *fr, RegisterMap *reg_map) {
   assert(map != NULL, "no ptr map found");
   DEBUG_ONLY(int nof_callee = 0;)
 
-  for (OopMapStream oms(map, OopMapValue::callee_saved_value); !oms.is_done(); oms.next()) {
+  for (OopMapStream oms(map); !oms.is_done(); oms.next()) {
     OopMapValue omv = oms.current();
-    VMReg reg = omv.content_reg();
-    oop* loc = fr->oopmapreg_to_location(omv.reg(), reg_map);
-    reg_map->set_location(reg, (address) loc);
-    DEBUG_ONLY(nof_callee++;)
+    if (omv.type() == OopMapValue::callee_saved_value) {
+      VMReg reg = omv.content_reg();
+      oop* loc = fr->oopmapreg_to_location(omv.reg(), reg_map);
+      reg_map->set_location(reg, (address) loc);
+      DEBUG_ONLY(nof_callee++;)
+    }
   }
 
   // Check that runtime stubs save all callee-saved registers
@@ -451,25 +436,6 @@ void OopMapSet::update_register_map(const frame *fr, RegisterMap *reg_map) {
          "must save all");
 #endif // COMPILER2
 }
-
-//=============================================================================
-// Non-Product code
-
-#ifndef PRODUCT
-
-bool ImmutableOopMap::has_derived_pointer() const {
-#if !defined(TIERED) && !INCLUDE_JVMCI
-  COMPILER1_PRESENT(return false);
-#endif // !TIERED
-#if COMPILER2_OR_JVMCI
-  OopMapStream oms(this,OopMapValue::derived_oop_value);
-  return oms.is_done();
-#else
-  return false;
-#endif // COMPILER2_OR_JVMCI
-}
-
-#endif //PRODUCT
 
 // Printing code is present in product build for -XX:+PrintAssembly.
 

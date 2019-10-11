@@ -168,7 +168,7 @@ static void log_jdk_jfr_module_resolution_error(TRAPS) {
 
 static bool is_cds_dump_requested() {
   // we will not be able to launch recordings if a cds dump is being requested
-  if ((DumpSharedSpaces || DynamicDumpSharedSpaces) && (JfrOptionSet::startup_recording_options() != NULL)) {
+  if (Arguments::is_dumping_archive() && (JfrOptionSet::startup_recording_options() != NULL)) {
     warning("JFR will be disabled during CDS dumping");
     teardown_startup_support();
     return true;

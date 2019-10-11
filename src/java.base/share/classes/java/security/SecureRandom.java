@@ -1043,6 +1043,7 @@ public class SecureRandom extends java.util.Random {
     /**
      * @serial
      */
+    @SuppressWarnings("serial") // Not statically typed as Serializable
     private MessageDigest digest = null;
     /**
      * @serial

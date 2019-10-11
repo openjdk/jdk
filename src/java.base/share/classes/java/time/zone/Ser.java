@@ -68,6 +68,7 @@ import java.io.IOException;
 import java.io.InvalidClassException;
 import java.io.ObjectInput;
 import java.io.ObjectOutput;
+import java.io.Serializable;
 import java.io.StreamCorruptedException;
 import java.time.ZoneOffset;
 
@@ -97,7 +98,7 @@ final class Ser implements Externalizable {
     /** The type being serialized. */
     private byte type;
     /** The object being serialized. */
-    private Object object;
+    private Serializable object;
 
     /**
      * Constructor for deserialization.
@@ -111,7 +112,7 @@ final class Ser implements Externalizable {
      * @param type  the type
      * @param object  the object
      */
-    Ser(byte type, Object object) {
+    Ser(byte type, Serializable object) {
         this.type = type;
         this.object = object;
     }
@@ -183,12 +184,13 @@ final class Ser implements Externalizable {
         object = readInternal(type, in);
     }
 
-    static Object read(DataInput in) throws IOException, ClassNotFoundException {
+    static Serializable read(DataInput in) throws IOException, ClassNotFoundException {
         byte type = in.readByte();
         return readInternal(type, in);
     }
 
-    private static Object readInternal(byte type, DataInput in) throws IOException, ClassNotFoundException {
+    private static Serializable readInternal(byte type, DataInput in)
+            throws IOException, ClassNotFoundException {
         switch (type) {
             case ZRULES:
                 return ZoneRules.readExternal(in);

@@ -56,11 +56,13 @@ public class SerialRef implements Ref, Serializable, Cloneable {
     /**
      * This will store the type <code>Ref</code> as an <code>Object</code>.
      */
+    @SuppressWarnings("serial") // Not statically typed as Serializable
     private Object object;
 
     /**
      * Private copy of the Ref reference.
      */
+    @SuppressWarnings("serial") // Not statically typed as Serializable; checked in writeObject
     private Ref reference;
 
     /**

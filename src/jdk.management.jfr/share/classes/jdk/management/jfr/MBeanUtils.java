@@ -24,6 +24,7 @@
  */
 package jdk.management.jfr;
 
+import java.io.IOException;
 import java.lang.management.ManagementPermission;
 import java.security.Permission;
 import java.time.DateTimeException;
@@ -37,6 +38,7 @@ import java.util.stream.Collectors;
 import javax.management.MalformedObjectNameException;
 import javax.management.ObjectName;
 
+import jdk.jfr.Recording;
 import jdk.jfr.internal.management.ManagementSupport;
 
 final class MBeanUtils {
@@ -125,6 +127,17 @@ final class MBeanUtils {
             throw new IllegalArgumentException("Block size must be at least 1 byte");
         }
         return size;
+    }
+
+    public static String destination(Recording recording, String destination) throws IllegalArgumentException{
+        try {
+            ManagementSupport.checkSetDestination(recording, destination);
+            return destination;
+        }catch(IOException e){
+            IllegalArgumentException iae = new IllegalArgumentException("Not a valid destination " + destination);
+            iae.addSuppressed(e);
+            throw iae;
+        }
     }
 }
 

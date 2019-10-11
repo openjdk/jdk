@@ -87,6 +87,9 @@ public class TestDoubleVect {
       test_divv(a0, a1, -VALUE);
       test_diva(a0, a1, a3);
       test_negc(a0, a1);
+      test_rint(a0, a1);
+      test_ceil(a0, a1);
+      test_floor(a0, a1);
     }
     // Test and verify results
     System.out.println("Verification");
@@ -351,6 +354,56 @@ public class TestDoubleVect {
         errn += verify("test_negc: ", i, a0[i], (double)(-((double)(ADD_INIT+i))));
       }
 
+      // To test -ve and +ve Zero scenarios.
+      double [] other_corner_cases     = { -0.0, 0.0, 9.007199254740992E15 };
+      double [] other_corner_cases_res = new double[3];
+      test_floor(a0, a1);
+      errn += verify("test_floor: ", 0, a0[0], Double.NaN);
+      errn += verify("test_floor: ", 1, a0[1], Double.POSITIVE_INFINITY);
+      errn += verify("test_floor: ", 2, a0[2], Double.NEGATIVE_INFINITY);
+      errn += verify("test_floor: ", 3, a0[3], Double.MAX_VALUE);
+      errn += verify("test_floor: ", 4, a0[4], 0.0);
+      errn += verify("test_floor: ", 5, a0[5], 0.0);
+      for (int i=6; i<ARRLEN; i++) {
+        errn += verify("test_floor: ", i, a0[i], ((double)(ADD_INIT+i)));
+      }
+      test_floor_cc(other_corner_cases_res, other_corner_cases);
+      errn += verify("test_floor_cc: ", 0, other_corner_cases_res[0], -0.0);
+      errn += verify("test_floor_cc: ", 1, other_corner_cases_res[1], 0.0);
+      errn += verify("test_floor_cc: ", 2, other_corner_cases_res[2], 9.007199254740992E15);
+
+      test_ceil(a0, a1);
+      errn += verify("test_ceil: ", 0, a0[0], Double.NaN);
+      errn += verify("test_ceil: ", 1, a0[1], Double.POSITIVE_INFINITY);
+      errn += verify("test_ceil: ", 2, a0[2], Double.NEGATIVE_INFINITY);
+      errn += verify("test_ceil: ", 3, a0[3], Double.MAX_VALUE);
+      errn += verify("test_ceil: ", 4, a0[4], 1.0);
+      errn += verify("test_ceil: ", 5, a0[5], 1.0);
+      for (int i=6; i<ARRLEN; i++) {
+        errn += verify("test_ceil: ", i, a0[i], ((double)(ADD_INIT+i+1.0)));
+      }
+      test_ceil_cc(other_corner_cases_res, other_corner_cases);
+      errn += verify("test_ceil_cc: ", 0, other_corner_cases_res[0], -0.0);
+      errn += verify("test_ceil_cc: ", 1, other_corner_cases_res[1], 0.0);
+      errn += verify("test_ceil_cc: ", 2, other_corner_cases_res[2], 9.007199254740992E15);
+
+      test_rint(a0, a1);
+      errn += verify("test_rint: ", 0, a0[0], Double.NaN);
+      errn += verify("test_rint: ", 1, a0[1], Double.POSITIVE_INFINITY);
+      errn += verify("test_rint: ", 2, a0[2], Double.NEGATIVE_INFINITY);
+      errn += verify("test_rint: ", 3, a0[3], Double.MAX_VALUE);
+      errn += verify("test_rint: ", 4, a0[4], 0.0);
+      errn += verify("test_rint: ", 5, a0[5], 0.0);
+      for (int i=6; i<ARRLEN; i++) {
+        if ( i <= 500 )
+           errn += verify("test_rint: ", i, a0[i], ((double)(ADD_INIT+i)));
+        else
+           errn += verify("test_rint: ", i, a0[i], ((double)(ADD_INIT+i+1.0)));
+      }
+      test_rint_cc(other_corner_cases_res, other_corner_cases);
+      errn += verify("test_rint_cc: ", 0, other_corner_cases_res[0], -0.0);
+      errn += verify("test_rint_cc: ", 1, other_corner_cases_res[1], 0.0);
+      errn += verify("test_rint_cc: ", 2, other_corner_cases_res[2], 9.007199254740992E15);
     }
 
     if (errn > 0)
@@ -574,6 +627,37 @@ public class TestDoubleVect {
   static void test_negc(double[] a0, double[] a1) {
     for (int i = 0; i < a0.length; i+=1) {
       a0[i] = (double)(-((double)a1[i]));
+    }
+  }
+
+  static void test_rint(double[] a0, double[] a1) {
+    for (int i = 0; i < a0.length; i+=1) {
+      a0[i] = Math.rint(a1[i] + ((double)(i))/1000);
+    }
+  }
+  static void test_ceil(double[] a0, double[] a1) {
+    for (int i = 0; i < a0.length; i+=1) {
+      a0[i] = Math.ceil(a1[i] + ((double)(i))/1000);
+    }
+  }
+  static void test_floor(double[] a0, double[] a1) {
+    for (int i = 0; i < a0.length; i+=1) {
+      a0[i] = Math.floor(a1[i] + ((double)(i))/1000);
+    }
+  }
+  static void test_rint_cc(double[] a0, double[] a1) {
+    for (int i = 0; i < a0.length; i+=1) {
+      a0[i] = Math.rint(a1[i]);
+    }
+  }
+  static void test_ceil_cc(double[] a0, double[] a1) {
+    for (int i = 0; i < a0.length; i+=1) {
+      a0[i] = Math.ceil(a1[i]);
+    }
+  }
+  static void test_floor_cc(double[] a0, double[] a1) {
+    for (int i = 0; i < a0.length; i+=1) {
+      a0[i] = Math.floor(a1[i]);
     }
   }
 

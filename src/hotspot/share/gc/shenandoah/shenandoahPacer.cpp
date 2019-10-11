@@ -70,9 +70,12 @@ void ShenandoahPacer::setup_for_mark() {
 
   restart_with(non_taxable, tax);
 
-  log_info(gc, ergo)("Pacer for Mark. Expected Live: " SIZE_FORMAT "M, Free: " SIZE_FORMAT
-                     "M, Non-Taxable: " SIZE_FORMAT "M, Alloc Tax Rate: %.1fx",
-                     live / M, free / M, non_taxable / M, tax);
+  log_info(gc, ergo)("Pacer for Mark. Expected Live: " SIZE_FORMAT "%s, Free: " SIZE_FORMAT "%s, "
+                     "Non-Taxable: " SIZE_FORMAT "%s, Alloc Tax Rate: %.1fx",
+                     byte_size_in_proper_unit(live),        proper_unit_for_byte_size(live),
+                     byte_size_in_proper_unit(free),        proper_unit_for_byte_size(free),
+                     byte_size_in_proper_unit(non_taxable), proper_unit_for_byte_size(non_taxable),
+                     tax);
 }
 
 void ShenandoahPacer::setup_for_evac() {
@@ -91,9 +94,12 @@ void ShenandoahPacer::setup_for_evac() {
 
   restart_with(non_taxable, tax);
 
-  log_info(gc, ergo)("Pacer for Evacuation. Used CSet: " SIZE_FORMAT "M, Free: " SIZE_FORMAT
-                     "M, Non-Taxable: " SIZE_FORMAT "M, Alloc Tax Rate: %.1fx",
-                     used / M, free / M, non_taxable / M, tax);
+  log_info(gc, ergo)("Pacer for Evacuation. Used CSet: " SIZE_FORMAT "%s, Free: " SIZE_FORMAT "%s, "
+                     "Non-Taxable: " SIZE_FORMAT "%s, Alloc Tax Rate: %.1fx",
+                     byte_size_in_proper_unit(used),        proper_unit_for_byte_size(used),
+                     byte_size_in_proper_unit(free),        proper_unit_for_byte_size(free),
+                     byte_size_in_proper_unit(non_taxable), proper_unit_for_byte_size(non_taxable),
+                     tax);
 }
 
 void ShenandoahPacer::setup_for_updaterefs() {
@@ -112,9 +118,12 @@ void ShenandoahPacer::setup_for_updaterefs() {
 
   restart_with(non_taxable, tax);
 
-  log_info(gc, ergo)("Pacer for Update Refs. Used: " SIZE_FORMAT "M, Free: " SIZE_FORMAT
-                     "M, Non-Taxable: " SIZE_FORMAT "M, Alloc Tax Rate: %.1fx",
-                     used / M, free / M, non_taxable / M, tax);
+  log_info(gc, ergo)("Pacer for Update Refs. Used: " SIZE_FORMAT "%s, Free: " SIZE_FORMAT "%s, "
+                     "Non-Taxable: " SIZE_FORMAT "%s, Alloc Tax Rate: %.1fx",
+                     byte_size_in_proper_unit(used),        proper_unit_for_byte_size(used),
+                     byte_size_in_proper_unit(free),        proper_unit_for_byte_size(free),
+                     byte_size_in_proper_unit(non_taxable), proper_unit_for_byte_size(non_taxable),
+                     tax);
 }
 
 /*
@@ -136,9 +145,12 @@ void ShenandoahPacer::setup_for_traversal() {
 
   restart_with(non_taxable, tax);
 
-  log_info(gc, ergo)("Pacer for Traversal. Expected Live: " SIZE_FORMAT "M, Free: " SIZE_FORMAT
-                     "M, Non-Taxable: " SIZE_FORMAT "M, Alloc Tax Rate: %.1fx",
-                     live / M, free / M, non_taxable / M, tax);
+  log_info(gc, ergo)("Pacer for Traversal. Expected Live: " SIZE_FORMAT "%s, Free: " SIZE_FORMAT "%s, "
+                     "Non-Taxable: " SIZE_FORMAT "%s, Alloc Tax Rate: %.1fx",
+                     byte_size_in_proper_unit(live),        proper_unit_for_byte_size(live),
+                     byte_size_in_proper_unit(free),        proper_unit_for_byte_size(free),
+                     byte_size_in_proper_unit(non_taxable), proper_unit_for_byte_size(non_taxable),
+                     tax);
 }
 
 /*
@@ -158,8 +170,9 @@ void ShenandoahPacer::setup_for_idle() {
 
   restart_with(initial, tax);
 
-  log_info(gc, ergo)("Pacer for Idle. Initial: " SIZE_FORMAT "M, Alloc Tax Rate: %.1fx",
-                     initial / M, tax);
+  log_info(gc, ergo)("Pacer for Idle. Initial: " SIZE_FORMAT "%s, Alloc Tax Rate: %.1fx",
+                     byte_size_in_proper_unit(initial), proper_unit_for_byte_size(initial),
+                     tax);
 }
 
 size_t ShenandoahPacer::update_and_get_progress_history() {

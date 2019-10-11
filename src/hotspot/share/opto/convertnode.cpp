@@ -531,4 +531,16 @@ const Type* RoundDoubleNode::Value(PhaseGVN* phase) const {
   return phase->type( in(1) );
 }
 
-
+//=============================================================================
+//------------------------------Identity---------------------------------------
+// Remove redundant roundings.
+Node* RoundDoubleModeNode::Identity(PhaseGVN* phase) {
+  int op = in(1)->Opcode();
+  // Redundant rounding e.g. floor(ceil(n)) -> ceil(n)
+  if(op == Op_RoundDoubleMode) return in(1);
+  return this;
+}
+const Type* RoundDoubleModeNode::Value(PhaseGVN* phase) const {
+  return Type::DOUBLE;
+}
+//=============================================================================

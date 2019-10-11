@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,6 +30,7 @@
 import java.net.*;
 import java.util.*;
 import java.io.*;
+import static java.net.Proxy.NO_PROXY;
 
 
 /**
@@ -43,7 +44,7 @@ public class getResponseCode {
 
     getResponseCode() throws Exception {
         url = new URL("http://localhost/file1.cache");
-        HttpURLConnection http = (HttpURLConnection)url.openConnection();
+        HttpURLConnection http = (HttpURLConnection)url.openConnection(NO_PROXY);
         int respCode = http.getResponseCode();
         http.disconnect();
 

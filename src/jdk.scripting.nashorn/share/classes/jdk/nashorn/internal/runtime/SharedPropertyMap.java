@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -40,6 +40,7 @@ import java.lang.invoke.SwitchPoint;
  */
 public final class SharedPropertyMap extends PropertyMap {
 
+    @SuppressWarnings("serial") // Not statically typed as Serializable
     private SwitchPoint switchPoint;
 
     private static final long serialVersionUID = 2166297719721778876L;

@@ -233,7 +233,7 @@ public class Locations {
     }
 
     public void setMultiReleaseValue(String multiReleaseValue) {
-        fsEnv = Collections.singletonMap("multi-release", multiReleaseValue);
+        fsEnv = Collections.singletonMap("releaseVersion", multiReleaseValue);
     }
 
     private boolean contains(Collection<Path> searchPath, Path file) throws IOException {
@@ -280,7 +280,7 @@ public class Locations {
         private static final long serialVersionUID = 0;
 
         private boolean expandJarClassPaths = false;
-        private final Set<Path> canonicalValues = new HashSet<>();
+        private final transient Set<Path> canonicalValues = new HashSet<>();
 
         public SearchPath expandJarClassPaths(boolean x) {
             expandJarClassPaths = x;
@@ -290,7 +290,7 @@ public class Locations {
         /**
          * What to use when path element is the empty string
          */
-        private Path emptyPathDefault = null;
+        private transient Path emptyPathDefault = null;
 
         public SearchPath emptyPathDefault(Path x) {
             emptyPathDefault = x;

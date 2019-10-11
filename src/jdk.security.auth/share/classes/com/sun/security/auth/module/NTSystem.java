@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -35,12 +35,14 @@ public class NTSystem {
     private native void getCurrent(boolean debug);
     private native long getImpersonationToken0();
 
+    // Warning: the next 6 fields are used by nt.c
     private String userName;
     private String domain;
     private String domainSID;
     private String userSID;
     private String[] groupIDs;
     private String primaryGroupID;
+
     private long   impersonationToken;
 
     /**

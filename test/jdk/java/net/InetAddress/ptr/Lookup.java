@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -42,6 +42,8 @@ import java.io.IOException;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
 import java.util.List;
+import java.util.stream.Stream;
+import java.util.stream.Collectors;
 
 import jdk.test.lib.JDKToolFinder;
 import jdk.test.lib.process.OutputAnalyzer;
@@ -55,40 +57,80 @@ public class Lookup {
     public static void main(String args[]) throws IOException {
         String addr = null;
         String ipv4Name = null;
+        String ipv4Reversed = null;
+
         if (args.length == 0) {
-            // First check that host resolves to IPv4 address
+            // called from lookupWithIPv4Prefer
+            // obtain an IPv4 address from the hostname.
             try {
                 InetAddress ia = InetAddress.getByName(HOST);
                 addr = ia.getHostAddress();
+                ia = InetAddress.getByName(addr);
+                System.out.print(addr + ":" + ia.getHostName());
+                return;
             } catch (UnknownHostException e) {
                 System.out.print(SKIP);
                 return;
             }
-        } else {
-            String tmp = lookupWithIPv4Prefer();
-            System.out.println("IPv4 lookup results: [" + tmp + "]");
-            if (SKIP.equals(tmp)) {
-                System.out.println(HOST + " can't be resolved - test skipped.");
+        } else if (args.length == 2 && args[0].equals("reverse")) {
+            // called from reverseWithIPv4Prefer
+            // Check that IPv4 address can be resolved to host
+            // with -Djava.net.preferIPv4Stack=true
+            try {
+                InetAddress ia = InetAddress.getByName(args[1]);
+                addr = ia.getHostAddress();
+                ipv4Reversed = ia.getHostName();
+                System.out.print(addr + ":" + ipv4Reversed);
+                return;
+            } catch (UnknownHostException e) {
+                System.out.print(SKIP);
                 return;
             }
-
-            String[] strs = tmp.split(":");
-            addr = strs[0];
-            ipv4Name = strs[1];
+        } else if (args.length != 1 || !args[0].equals("root")) {
+            throw new IllegalArgumentException(Stream.of(args).collect(Collectors.joining(" ")));
         }
 
-        // reverse lookup
+        // spawn a subprocess to obtain the IPv4 address
+        String tmp = lookupWithIPv4Prefer();
+        System.out.println("IPv4 lookup results: [" + tmp + "]");
+        if (SKIP.equals(tmp)) {
+            System.out.println(HOST + " can't be resolved - test skipped.");
+            return;
+        }
+
+        String[] strs = tmp.split(":");
+        addr = strs[0];
+        ipv4Name = strs[1];
+
+        // check that the a reverse lookup of the IPv4 address
+        // will succeed with the IPv4 only stack
+        tmp = reverseWithIPv4Prefer(addr);
+        System.out.println("IPv4 reverse lookup results: [" + tmp + "]");
+        if (SKIP.equals(tmp)) {
+            System.out.println(addr + " can't be resolved with preferIPv4 - test skipped.");
+            return;
+        }
+
+        strs = tmp.split(":");
+        ipv4Reversed = strs[1];
+
+        // Now check that a reverse lookup will succeed with the dual stack.
         InetAddress ia = InetAddress.getByName(addr);
         String name = ia.getHostName();
-        if (args.length == 0) {
-            System.out.print(addr + ":" + name);
-            return;
-        } else {
-            System.out.println("(default) " + addr + "--> " + name);
-            if (!ipv4Name.equals(name)) {
-                throw new RuntimeException("Mismatch between default"
-                        + " and java.net.preferIPv4Stack=true results");
+
+        System.out.println("(default) " + addr + "--> " + name
+                               + " (reversed IPv4: " + ipv4Reversed + ")");
+        if (!ipv4Name.equals(name)) {
+            // adding some diagnosting
+            System.err.println("name=" + name + " doesn't match expected=" + ipv4Name);
+            System.err.println("Listing all adresses:");
+            for (InetAddress any : InetAddress.getAllByName(HOST)) {
+                System.err.println("\t[" + any + "] address=" + any.getHostAddress()
+                                   + ", host=" + any.getHostName());
             }
+            // make the test fail...
+            throw new RuntimeException("Mismatch between default"
+                    + " and java.net.preferIPv4Stack=true results");
         }
     }
 
@@ -100,5 +142,13 @@ public class Lookup {
         System.out.println("Executing: " + cmd);
         return new OutputAnalyzer(new ProcessBuilder(cmd).start()).getOutput();
     }
-}
 
+    static String reverseWithIPv4Prefer(String addr) throws IOException {
+        String java = JDKToolFinder.getTestJDKTool("java");
+        String testClz = Lookup.class.getName();
+        List<String> cmd = List.of(java, "-Djava.net.preferIPv4Stack=true",
+                                   "-cp", CLASS_PATH, testClz, "reverse", addr);
+        System.out.println("Executing: " + cmd);
+        return new OutputAnalyzer(new ProcessBuilder(cmd).start()).getOutput();
+    }
+}

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -59,20 +59,22 @@ class NativeGSSContext implements GSSContextSpi {
 
     private static final int NUM_OF_INQUIRE_VALUES = 6;
 
+    // Warning: The following 9 fields are used by NativeUtil.c
     private long pContext = 0; // Pointer to the gss_ctx_id_t structure
     private GSSNameElement srcName;
     private GSSNameElement targetName;
-    private GSSCredElement cred;
-    private GSSCredElement disposeCred;
     private boolean isInitiator;
     private boolean isEstablished;
-    private Oid actualMech; // Assigned during context establishment
-
-    private ChannelBinding cb;
     private GSSCredElement delegatedCred;
-    private GSSCredElement disposeDelegatedCred;
     private int flags;
     private int lifetime = GSSCredential.DEFAULT_LIFETIME;
+    private Oid actualMech; // Assigned during context establishment
+
+    private GSSCredElement cred;
+    private GSSCredElement disposeCred;
+
+    private ChannelBinding cb;
+    private GSSCredElement disposeDelegatedCred;
     private final GSSLibStub cStub;
 
     private boolean skipDelegPermCheck;
@@ -231,6 +233,7 @@ class NativeGSSContext implements GSSContextSpi {
     }
 
     // Constructor for imported context
+    // Warning: called by NativeUtil.c
     NativeGSSContext(long pCtxt, GSSLibStub stub) throws GSSException {
         assert(pContext != 0);
         pContext = pCtxt;

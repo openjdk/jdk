@@ -94,6 +94,7 @@ class JVMCICompileState : public ResourceObj {
   // Cache JVMTI state. Defined as bytes so that reading them from Java
   // via Unsafe is well defined (the C++ type for bool is implementation
   // defined and may not be the same as a Java boolean).
+  uint64_t _jvmti_redefinition_count;
   jbyte  _jvmti_can_hotswap_or_post_breakpoint;
   jbyte  _jvmti_can_access_local_variables;
   jbyte  _jvmti_can_post_on_exceptions;
@@ -113,6 +114,7 @@ class JVMCICompileState : public ResourceObj {
   CompileTask* task() { return _task; }
 
   bool  jvmti_state_changed() const;
+  uint64_t jvmti_redefinition_count() const          { return  _jvmti_redefinition_count; }
   bool  jvmti_can_hotswap_or_post_breakpoint() const { return  _jvmti_can_hotswap_or_post_breakpoint != 0; }
   bool  jvmti_can_access_local_variables() const     { return  _jvmti_can_access_local_variables != 0; }
   bool  jvmti_can_post_on_exceptions() const         { return  _jvmti_can_post_on_exceptions != 0; }

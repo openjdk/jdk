@@ -264,7 +264,9 @@ public class JavacProcessingEnvironment implements ProcessingEnvironment, Closea
                       module_prefix + "java.lang.annotation.Native",
                       module_prefix + "java.lang.annotation.Repeatable",
                       module_prefix + "java.lang.annotation.Retention",
-                      module_prefix + "java.lang.annotation.Target");
+                      module_prefix + "java.lang.annotation.Target",
+
+                      module_prefix + "java.io.Serial");
     }
 
     private void initProcessorLoader() {

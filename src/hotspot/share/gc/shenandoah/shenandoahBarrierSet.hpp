@@ -71,6 +71,7 @@ public:
   inline void arraycopy_update(oop* src, size_t count);
   inline void arraycopy_update(narrowOop* src, size_t count);
   inline void clone_barrier(oop src);
+  void clone_barrier_runtime(oop src);
 
   // We export this to make it available in cases where the static
   // type of the barrier set is known.  Note that it is non-virtual.

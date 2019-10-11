@@ -40,6 +40,7 @@ import javax.net.ssl.HttpsURLConnection;
 import javax.net.ssl.SSLContext;
 import javax.net.ssl.SSLSession;
 import jdk.test.lib.net.SimpleSSLContext;
+import static java.net.Proxy.NO_PROXY;
 
 /*
  * @test
@@ -296,7 +297,7 @@ public class HTTPTest {
         HttpURLConnection conn = (HttpURLConnection)
                 (authType == HttpAuthType.PROXY
                     ? url.openConnection(proxy)
-                    : url.openConnection());
+                    : url.openConnection(NO_PROXY));
         return conn;
     }
 }

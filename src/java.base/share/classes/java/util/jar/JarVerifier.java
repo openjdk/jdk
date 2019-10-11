@@ -590,6 +590,7 @@ class JarVerifier {
         URL vlocation;
         CodeSigner[] vsigners;
         java.security.cert.Certificate[] vcerts;
+        @SuppressWarnings("serial") // Not statically typed as Serializable
         Object csdomain;
 
         VerifierCodeSource(Object csdomain, URL location, CodeSigner[] signers) {

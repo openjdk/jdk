@@ -205,8 +205,11 @@ void ShenandoahStrDedupQueue::release_buffers(ShenandoahQueueBuffer* list) {
 void ShenandoahStrDedupQueue::print_statistics_impl() {
   Log(gc, stringdedup) log;
   log.debug("  Queue:");
-  log.debug("    Total buffers: " SIZE_FORMAT " (" SIZE_FORMAT " K). " SIZE_FORMAT " buffers are on free list",
-    _total_buffers, (_total_buffers * sizeof(ShenandoahQueueBuffer) / K), _num_free_buffer);
+  log.debug("    Total buffers: " SIZE_FORMAT " (" SIZE_FORMAT " %s). " SIZE_FORMAT " buffers are on free list",
+    _total_buffers,
+    byte_size_in_proper_unit(_total_buffers * sizeof(ShenandoahQueueBuffer)),
+    proper_unit_for_byte_size(_total_buffers * sizeof(ShenandoahQueueBuffer)),
+    _num_free_buffer);
 }
 
 class VerifyQueueClosure : public OopClosure {

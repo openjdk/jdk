@@ -63,29 +63,39 @@
 #define STATIC_METHOD_IN_INTERFACE_MAJOR_VERSION       52
 #define MAX_ARRAY_DIMENSIONS 255
 
-// Access to external entry for VerifyClassCodes - old byte code verifier
+// Access to external entry for VerifyClassForMajorVersion - old byte code verifier
 
 extern "C" {
-  typedef jboolean (*verify_byte_codes_fn_t)(JNIEnv *, jclass, char *, jint);
-  typedef jboolean (*verify_byte_codes_fn_new_t)(JNIEnv *, jclass, char *, jint, jint);
+  typedef jboolean (*verify_byte_codes_fn_t)(JNIEnv *, jclass, char *, jint, jint);
 }
 
-static void* volatile _verify_byte_codes_fn = NULL;
+static verify_byte_codes_fn_t volatile _verify_byte_codes_fn = NULL;
 
-static volatile jint _is_new_verify_byte_codes_fn = (jint) true;
+static verify_byte_codes_fn_t verify_byte_codes_fn() {
 
-static void* verify_byte_codes_fn() {
-  if (OrderAccess::load_acquire(&_verify_byte_codes_fn) == NULL) {
-    void *lib_handle = os::native_java_library();
-    void *func = os::dll_lookup(lib_handle, "VerifyClassCodesForMajorVersion");
-    OrderAccess::release_store(&_verify_byte_codes_fn, func);
-    if (func == NULL) {
-      _is_new_verify_byte_codes_fn = false;
-      func = os::dll_lookup(lib_handle, "VerifyClassCodes");
-      OrderAccess::release_store(&_verify_byte_codes_fn, func);
-    }
-  }
-  return (void*)_verify_byte_codes_fn;
+  if (_verify_byte_codes_fn != NULL)
+    return _verify_byte_codes_fn;
+
+  MutexLocker locker(Verify_lock);
+
+  if (_verify_byte_codes_fn != NULL)
+    return _verify_byte_codes_fn;
+
+  // Load verify dll
+  char buffer[JVM_MAXPATHLEN];
+  char ebuf[1024];
+  if (!os::dll_locate_lib(buffer, sizeof(buffer), Arguments::get_dll_dir(), "verify"))
+    return NULL; // Caller will throw VerifyError
+
+  void *lib_handle = os::dll_load(buffer, ebuf, sizeof(ebuf));
+  if (lib_handle == NULL)
+    return NULL; // Caller will throw VerifyError
+
+  void *fn = os::dll_lookup(lib_handle, "VerifyClassForMajorVersion");
+  if (fn == NULL)
+    return NULL; // Caller will throw VerifyError
+
+  return _verify_byte_codes_fn = CAST_TO_FN_PTR(verify_byte_codes_fn_t, fn);
 }
 
 
@@ -282,7 +292,7 @@ Symbol* Verifier::inference_verify(
   JavaThread* thread = (JavaThread*)THREAD;
   JNIEnv *env = thread->jni_environment();
 
-  void* verify_func = verify_byte_codes_fn();
+  verify_byte_codes_fn_t verify_func = verify_byte_codes_fn();
 
   if (verify_func == NULL) {
     jio_snprintf(message, message_len, "Could not link verifier");
@@ -301,16 +311,7 @@ Symbol* Verifier::inference_verify(
     // ThreadToNativeFromVM takes care of changing thread_state, so safepoint
     // code knows that we have left the VM
 
-    if (_is_new_verify_byte_codes_fn) {
-      verify_byte_codes_fn_new_t func =
-        CAST_TO_FN_PTR(verify_byte_codes_fn_new_t, verify_func);
-      result = (*func)(env, cls, message, (int)message_len,
-          klass->major_version());
-    } else {
-      verify_byte_codes_fn_t func =
-        CAST_TO_FN_PTR(verify_byte_codes_fn_t, verify_func);
-      result = (*func)(env, cls, message, (int)message_len);
-    }
+    result = (*verify_func)(env, cls, message, (int)message_len, klass->major_version());
   }
 
   JNIHandles::destroy_local(cls);

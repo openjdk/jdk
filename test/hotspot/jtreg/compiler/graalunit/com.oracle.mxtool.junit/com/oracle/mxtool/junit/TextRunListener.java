@@ -74,7 +74,8 @@ class TextRunListener implements MxRunListener {
     }
 
     public static RunListener createRunListener(MxRunListener l) {
-        return new TextListener(l.getWriter()) {
+        PrintStream theWriter = l.getWriter();
+        return new TextListener(theWriter) {
             private Class<?> lastClass;
             private int passedInLastClass;
             private int failedInLastClass;
@@ -142,6 +143,15 @@ class TextRunListener implements MxRunListener {
             @Override
             public void testAssumptionFailure(Failure failure) {
                 l.testAssumptionFailure(failure);
+            }
+
+            @Override
+            protected void printFailure(Failure each, String prefix) {
+                // Print out the test message in the same format used to run a single test:
+                // my.package.MyClass#methodName
+                String header = each.getDescription().getClassName() + "#" + each.getDescription().getMethodName();
+                theWriter.println(prefix + ") " + header);
+                theWriter.print(each.getTrace());
             }
         };
     }

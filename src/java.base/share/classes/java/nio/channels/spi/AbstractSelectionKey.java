@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,8 +25,13 @@
 
 package java.nio.channels.spi;
 
-import java.nio.channels.*;
+import java.lang.invoke.MethodHandles;
+import java.lang.invoke.VarHandle;
+import java.nio.channels.SelectionKey;
+import java.nio.channels.Selector;
 
+import sun.nio.ch.SelectionKeyImpl;
+import sun.nio.ch.SelectorImpl;
 
 /**
  * Base implementation class for selection keys.
@@ -41,20 +46,29 @@ import java.nio.channels.*;
 public abstract class AbstractSelectionKey
     extends SelectionKey
 {
+    private static final VarHandle INVALID;
+    static {
+        try {
+            MethodHandles.Lookup l = MethodHandles.lookup();
+            INVALID = l.findVarHandle(AbstractSelectionKey.class, "invalid", boolean.class);
+        } catch (Exception e) {
+            throw new InternalError(e);
+        }
+    }
 
     /**
      * Initializes a new instance of this class.
      */
     protected AbstractSelectionKey() { }
 
-    private volatile boolean valid = true;
+    private volatile boolean invalid;
 
     public final boolean isValid() {
-        return valid;
+        return !invalid;
     }
 
     void invalidate() {                                 // package-private
-        valid = false;
+        invalid = true;
     }
 
     /**
@@ -64,13 +78,14 @@ public abstract class AbstractSelectionKey
      * selector's cancelled-key set while synchronized on that set.  </p>
      */
     public final void cancel() {
-        // Synchronizing "this" to prevent this key from getting canceled
-        // multiple times by different threads, which might cause race
-        // condition between selector's select() and channel's close().
-        synchronized (this) {
-            if (valid) {
-                valid = false;
-                ((AbstractSelector)selector()).cancel(this);
+        boolean changed = (boolean) INVALID.compareAndSet(this, false, true);
+        if (changed) {
+            Selector sel = selector();
+            if (sel instanceof SelectorImpl) {
+                // queue cancelled key directly
+                ((SelectorImpl) sel).cancel((SelectionKeyImpl) this);
+            } else {
+                ((AbstractSelector) sel).cancel(this);
             }
         }
     }

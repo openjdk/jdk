@@ -741,4 +741,22 @@ void CompiledDirectStaticCall::print() {
   tty->cr();
 }
 
+void CompiledDirectStaticCall::verify_mt_safe(const methodHandle& callee, address entry,
+                                              NativeMovConstReg* method_holder,
+                                              NativeJump*        jump) {
+  // A generated lambda form might be deleted from the Lambdaform
+  // cache in MethodTypeForm.  If a jit compiled lambdaform method
+  // becomes not entrant and the cache access returns null, the new
+  // resolve will lead to a new generated LambdaForm.
+  Method* old_method = reinterpret_cast<Method*>(method_holder->data());
+  assert(old_method == NULL || old_method == callee() ||
+         callee->is_compiled_lambda_form() ||
+         !old_method->method_holder()->is_loader_alive() ||
+         old_method->is_old(),  // may be race patching deoptimized nmethod due to redefinition.
+         "a) MT-unsafe modification of inline cache");
+
+  address destination = jump->jump_destination();
+  assert(destination == (address)-1 || destination == entry,
+         "b) MT-unsafe modification of inline cache");
+}
 #endif // !PRODUCT

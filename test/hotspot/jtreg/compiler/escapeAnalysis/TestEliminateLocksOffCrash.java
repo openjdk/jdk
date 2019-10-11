@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, Red Hat, Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,11 +21,28 @@
  * questions.
  */
 
-/**
- * JDK 11 and later versioned overlay for the {@code jdk.internal.vm.compiler.management} module.
- * This cannot be used in JDK 10 where {@code jdk.internal.vm.compiler.management} is a
- * non-upgradeable module.
+/*
+ * @test
+ * @bug 8227384
+ * @summary C2 compilation fails with "graph should be schedulable" when running with -XX:-EliminateLocks
+ *
+ * @run main/othervm -XX:-EliminateLocks TestEliminateLocksOffCrash
  */
 
+public class TestEliminateLocksOffCrash {
+    public static void main(String[] args) {
+        for (int i = 0; i < 20_000; i++) {
+            try {
+                test();
+            } catch (Exception e) {
+            }
+        }
+    }
 
-package org.graalvm.compiler.hotspot.management;
+    private static void test() throws Exception {
+        Object obj = new Object();
+        synchronized (obj) {
+            throw new Exception();
+        }
+    }
+}

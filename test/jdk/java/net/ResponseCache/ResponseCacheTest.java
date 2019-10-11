@@ -33,6 +33,7 @@ import java.util.*;
 import java.io.*;
 import javax.net.ssl.*;
 import jdk.test.lib.net.URIBuilder;
+import static java.net.Proxy.NO_PROXY;
 
 /**
  * Request should get serviced by the cache handler. Response get
@@ -137,7 +138,7 @@ public class ResponseCacheTest implements Runnable {
                    .port(ss.getLocalPort())
                    .path("/file2.1")
                    .toURL();
-        http = (HttpURLConnection)url2.openConnection();
+        http = (HttpURLConnection)url2.openConnection(NO_PROXY);
         System.out.println("responsecode2 is :"+http.getResponseCode());
         Map<String,List<String>> headers2 = http.getHeaderFields();
 

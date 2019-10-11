@@ -28,6 +28,7 @@
 #include "classfile/verificationType.hpp"
 #include "classfile/verifier.hpp"
 #include "logging/log.hpp"
+#include "oops/klass.inline.hpp"
 #include "runtime/handles.inline.hpp"
 
 VerificationType VerificationType::from_tag(u1 tag) {
@@ -94,7 +95,7 @@ bool VerificationType::is_reference_assignable_from(
       return true;
     }
 
-    if (DumpSharedSpaces || DynamicDumpSharedSpaces) {
+    if (Arguments::is_dumping_archive()) {
       if (SystemDictionaryShared::add_verification_constraint(klass,
               name(), from.name(), from_field_is_protected, from.is_array(),
               from.is_object())) {

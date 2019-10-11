@@ -366,10 +366,16 @@ public final class PlatformRecording implements AutoCloseable {
 
     public void setDestination(WriteableUserPath userSuppliedPath) throws IOException {
         synchronized (recorder) {
+            checkSetDestination(userSuppliedPath);
+            this.destination = userSuppliedPath;
+        }
+    }
+
+    public void checkSetDestination(WriteableUserPath userSuppliedPath) throws IOException {
+        synchronized (recorder) {
             if (Utils.isState(getState(), RecordingState.STOPPED, RecordingState.CLOSED)) {
                 throw new IllegalStateException("Destination can't be set on a recording that has been stopped/closed");
             }
-            this.destination = userSuppliedPath;
         }
     }
 

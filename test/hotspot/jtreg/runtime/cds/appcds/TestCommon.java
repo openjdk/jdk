@@ -611,7 +611,7 @@ public class TestCommon extends CDSTestUtils {
 
     static Pattern pattern;
 
-    static void findAllClasses(ArrayList<String> list) throws Throwable {
+    static void findAllClasses(ArrayList<String> list) throws Exception {
         // Find all the classes in the jrt file system
         pattern = Pattern.compile("/modules/[a-z.]*[a-z]+/([^-]*)[.]class");
         FileSystem fs = FileSystems.getFileSystem(URI.create("jrt:/"));
@@ -619,7 +619,7 @@ public class TestCommon extends CDSTestUtils {
         findAllClassesAtPath(base, list);
     }
 
-    private static void findAllClassesAtPath(Path p, ArrayList<String> list) throws Throwable {
+    private static void findAllClassesAtPath(Path p, ArrayList<String> list) throws Exception {
         try (DirectoryStream<Path> stream = Files.newDirectoryStream(p)) {
             for (Path entry: stream) {
                 Matcher matcher = pattern.matcher(entry.toString());
@@ -629,7 +629,7 @@ public class TestCommon extends CDSTestUtils {
                 }
                 try {
                     findAllClassesAtPath(entry, list);
-                } catch (Throwable t) {}
+                } catch (Exception ex) {}
             }
         }
     }

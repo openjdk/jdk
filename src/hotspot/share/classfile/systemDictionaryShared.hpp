@@ -223,7 +223,9 @@ private:
 public:
   static InstanceKlass* find_builtin_class(Symbol* class_name);
 
-  static const RunTimeSharedClassInfo* find_record(RunTimeSharedDictionary* dict, Symbol* name);
+  static const RunTimeSharedClassInfo* find_record(RunTimeSharedDictionary* static_dict,
+                                                   RunTimeSharedDictionary* dynamic_dict,
+                                                   Symbol* name);
 
   static bool has_platform_or_app_classes();
 
@@ -240,7 +242,6 @@ public:
   static bool is_sharing_possible(ClassLoaderData* loader_data);
   static bool is_shared_class_visible_for_classloader(InstanceKlass* ik,
                                                       Handle class_loader,
-                                                      const char* pkg_string,
                                                       Symbol* pkg_name,
                                                       PackageEntry* pkg_entry,
                                                       ModuleEntry* mod_entry,

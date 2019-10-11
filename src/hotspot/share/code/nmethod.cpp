@@ -1293,7 +1293,6 @@ void nmethod::unlink_from_method() {
  */
 bool nmethod::make_not_entrant_or_zombie(int state) {
   assert(state == zombie || state == not_entrant, "must be zombie or not_entrant");
-  assert(!is_zombie(), "should not already be a zombie");
 
   if (Atomic::load(&_state) >= state) {
     // Avoid taking the lock if already in required state.
@@ -1316,19 +1315,17 @@ bool nmethod::make_not_entrant_or_zombie(int state) {
   // This flag is used to remember whether we need to later lock and unregister.
   bool nmethod_needs_unregister = false;
 
-  // invalidate osr nmethod before acquiring the patching lock since
-  // they both acquire leaf locks and we don't want a deadlock.
-  // This logic is equivalent to the logic below for patching the
-  // verified entry point of regular methods. We check that the
-  // nmethod is in use to ensure that it is invalidated only once.
-  if (is_osr_method() && is_in_use()) {
-    // this effectively makes the osr nmethod not entrant
-    invalidate_osr_method();
-  }
-
   {
     // Enter critical section.  Does not block for safepoint.
     MutexLocker ml(CompiledMethod_lock->owned_by_self() ? NULL : CompiledMethod_lock, Mutex::_no_safepoint_check_flag);
+
+    // This logic is equivalent to the logic below for patching the
+    // verified entry point of regular methods. We check that the
+    // nmethod is in use to ensure that it is invalidated only once.
+    if (is_osr_method() && is_in_use()) {
+      // this effectively makes the osr nmethod not entrant
+      invalidate_osr_method();
+    }
 
     if (Atomic::load(&_state) >= state) {
       // another thread already performed this transition so nothing
@@ -2192,6 +2189,17 @@ public:
   virtual void do_oop(narrowOop* p) { ShouldNotReachHere(); }
 };
 
+class VerifyMetadataClosure: public MetadataClosure {
+ public:
+  void do_metadata(Metadata* md) {
+    if (md->is_method()) {
+      Method* method = (Method*)md;
+      assert(!method->is_old(), "Should not be installing old methods");
+    }
+  }
+};
+
+
 void nmethod::verify() {
 
   // Hmm. OSR methods can be deopted but not marked as zombie or not_entrant
@@ -2255,6 +2263,10 @@ void nmethod::verify() {
   Universe::heap()->verify_nmethod(this);
 
   verify_scopes();
+
+  CompiledICLocker nm_verify(this);
+  VerifyMetadataClosure vmc;
+  metadata_do(&vmc);
 }
 
 

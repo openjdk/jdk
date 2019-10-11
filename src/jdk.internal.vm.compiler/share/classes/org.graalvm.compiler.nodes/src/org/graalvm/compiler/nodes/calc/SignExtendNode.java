@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,8 +25,8 @@
 package org.graalvm.compiler.nodes.calc;
 
 import static org.graalvm.compiler.nodeinfo.NodeCycles.CYCLES_1;
+import static org.graalvm.compiler.nodes.calc.BinaryArithmeticNode.getArithmeticOpTable;
 
-import jdk.vm.ci.code.CodeUtil;
 import org.graalvm.compiler.core.common.type.ArithmeticOpTable;
 import org.graalvm.compiler.core.common.type.ArithmeticOpTable.IntegerConvertOp;
 import org.graalvm.compiler.core.common.type.ArithmeticOpTable.IntegerConvertOp.Narrow;
@@ -42,6 +42,8 @@ import org.graalvm.compiler.nodes.NodeView;
 import org.graalvm.compiler.nodes.ValueNode;
 import org.graalvm.compiler.nodes.spi.NodeLIRBuilderTool;
 
+import jdk.vm.ci.code.CodeUtil;
+
 /**
  * The {@code SignExtendNode} converts an integer to a wider integer using sign extension.
  */
@@ -56,7 +58,7 @@ public final class SignExtendNode extends IntegerConvertNode<SignExtend, Narrow>
     }
 
     public SignExtendNode(ValueNode input, int inputBits, int resultBits) {
-        super(TYPE, ArithmeticOpTable::getSignExtend, ArithmeticOpTable::getNarrow, inputBits, resultBits, input);
+        super(TYPE, getArithmeticOpTable(input).getSignExtend(), inputBits, resultBits, input);
     }
 
     public static ValueNode create(ValueNode input, int resultBits, NodeView view) {
@@ -70,6 +72,16 @@ public final class SignExtendNode extends IntegerConvertNode<SignExtend, Narrow>
             return synonym;
         }
         return canonical(null, input, inputBits, resultBits, view);
+    }
+
+    @Override
+    protected IntegerConvertOp<SignExtend> getOp(ArithmeticOpTable table) {
+        return table.getSignExtend();
+    }
+
+    @Override
+    protected IntegerConvertOp<Narrow> getReverseOp(ArithmeticOpTable table) {
+        return table.getNarrow();
     }
 
     @Override

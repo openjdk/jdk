@@ -25,6 +25,7 @@
 
 package jdk.jfr.jmx;
 
+import java.io.File;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.Map;
@@ -49,7 +50,7 @@ public class TestRecordingOptions {
         options.put("dumpOnExit", "false");
         options.put("disk", "false");
         options.put("duration", "1 h"); // don't want recording to stop
-
+        options.put("destination", "." + File.separator + "dump.jfr");
         FlightRecorderMXBean bean = JmxHelper.getFlighteRecorderMXBean();
         long recId = bean.newRecording();
         Map<String, String> defaults = bean.getRecordingOptions(recId);
@@ -72,6 +73,7 @@ public class TestRecordingOptions {
         Asserts.assertEquals(outOptions.get("dumpOnExit"), "false", "Wrong dumpOnExit");
         Asserts.assertEquals(outOptions.get("disk"), "false", "Wrong disk");
         Asserts.assertEquals(outOptions.get("duration"), "1 h", "Wrong duration");
+        Asserts.assertEquals(outOptions.get("destination"), "." + File.separator + "dump.jfr", "Wrong destination");
 
         // try empty map
         bean.setRecordingOptions(recId, new HashMap<>());
@@ -116,6 +118,7 @@ public class TestRecordingOptions {
         nullMap.put("dumpOnExit", null);
         nullMap.put("disk", null);
         nullMap.put("duration", null);
+        nullMap.put("destination", null);
         bean.setRecordingOptions(recId, nullMap);
         Asserts.assertEquals(bean.getRecordingOptions(recId), defaults);
 

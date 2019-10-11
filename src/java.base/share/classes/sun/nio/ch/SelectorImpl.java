@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -33,7 +33,9 @@ import java.nio.channels.SelectionKey;
 import java.nio.channels.spi.AbstractSelectableChannel;
 import java.nio.channels.spi.AbstractSelector;
 import java.nio.channels.spi.SelectorProvider;
+import java.util.ArrayDeque;
 import java.util.Collections;
+import java.util.Deque;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.Objects;
@@ -46,7 +48,7 @@ import java.util.function.Consumer;
  * Base Selector implementation class.
  */
 
-abstract class SelectorImpl
+public abstract class SelectorImpl
     extends AbstractSelector
 {
     // The set of keys registered with this Selector
@@ -58,6 +60,9 @@ abstract class SelectorImpl
     // Public views of the key sets
     private final Set<SelectionKey> publicKeys;             // Immutable
     private final Set<SelectionKey> publicSelectedKeys;     // Removal allowed, but not addition
+
+    // pending cancelled keys for deregistration
+    private final Deque<SelectionKeyImpl> cancelledKeys = new ArrayDeque<>();
 
     // used to check for reentrancy
     private boolean inSelect;
@@ -203,7 +208,8 @@ abstract class SelectorImpl
         if (!(ch instanceof SelChImpl))
             throw new IllegalSelectorException();
         SelectionKeyImpl k = new SelectionKeyImpl((SelChImpl)ch, this);
-        k.attach(attachment);
+        if (attachment != null)
+            k.attach(attachment);
 
         // register (if needed) before adding to key set
         implRegister(k);
@@ -239,33 +245,36 @@ abstract class SelectorImpl
     protected abstract void implDereg(SelectionKeyImpl ski) throws IOException;
 
     /**
-     * Invoked by selection operations to process the cancelled-key set
+     * Queue a cancelled key for the next selection operation
+     */
+    public void cancel(SelectionKeyImpl ski) {
+        synchronized (cancelledKeys) {
+            cancelledKeys.addLast(ski);
+        }
+    }
+
+    /**
+     * Invoked by selection operations to process the cancelled keys
      */
     protected final void processDeregisterQueue() throws IOException {
         assert Thread.holdsLock(this);
         assert Thread.holdsLock(publicSelectedKeys);
 
-        Set<SelectionKey> cks = cancelledKeys();
-        synchronized (cks) {
-            if (!cks.isEmpty()) {
-                Iterator<SelectionKey> i = cks.iterator();
-                while (i.hasNext()) {
-                    SelectionKeyImpl ski = (SelectionKeyImpl)i.next();
-                    i.remove();
+        synchronized (cancelledKeys) {
+            SelectionKeyImpl ski;
+            while ((ski = cancelledKeys.pollFirst()) != null) {
+                // remove the key from the selector
+                implDereg(ski);
 
-                    // remove the key from the selector
-                    implDereg(ski);
+                selectedKeys.remove(ski);
+                keys.remove(ski);
 
-                    selectedKeys.remove(ski);
-                    keys.remove(ski);
+                // remove from channel's key set
+                deregister(ski);
 
-                    // remove from channel's key set
-                    deregister(ski);
-
-                    SelectableChannel ch = ski.channel();
-                    if (!ch.isOpen() && !ch.isRegistered())
-                        ((SelChImpl)ch).kill();
-                }
+                SelectableChannel ch = ski.channel();
+                if (!ch.isOpen() && !ch.isRegistered())
+                    ((SelChImpl)ch).kill();
             }
         }
     }

@@ -257,7 +257,7 @@ Java_java_util_zip_Deflater_deflateBufferBytes(JNIEnv *env, jobject this, jlong 
 
     res = doDeflate(env, addr, input, inputLen, output + outputOff, outputLen,
                     flush, params);
-    (*env)->ReleasePrimitiveArrayCritical(env, outputArray, input, 0);
+    (*env)->ReleasePrimitiveArrayCritical(env, outputArray, output, 0);
 
     retVal = checkDeflateStatus(env, addr, inputLen, outputLen, params, res);
     return retVal;

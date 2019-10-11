@@ -34,26 +34,30 @@
  * @run main/othervm/timeout=2400 -Xmx1g ClhsdbCDSCore
  */
 
-import java.util.List;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Map;
-import java.util.HashMap;
-import jdk.test.lib.process.ProcessTools;
-import jdk.test.lib.Platform;
-import jdk.test.lib.process.OutputAnalyzer;
-import jdk.test.lib.cds.CDSTestUtils;
-import jdk.test.lib.cds.CDSOptions;
-import java.io.IOException;
 import java.io.File;
+import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import jdk.test.lib.Asserts;
-import java.util.regex.Pattern;
-import java.util.regex.Matcher;
-import jdk.internal.misc.Unsafe;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 import java.util.Scanner;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
+
+import jdk.internal.misc.Unsafe;
+
+import jdk.test.lib.Asserts;
+import jdk.test.lib.Platform;
+import jdk.test.lib.cds.CDSOptions;
+import jdk.test.lib.cds.CDSTestUtils;
+import jdk.test.lib.process.OutputAnalyzer;
+import jdk.test.lib.process.ProcessTools;
+import jdk.test.lib.SA.SATestUtils;
+
 import jtreg.SkippedException;
 
 class CrashApp {
@@ -102,6 +106,7 @@ public class ClhsdbCDSCore {
 
             System.out.println(crashOut.getOutput());
             String crashOutputString = crashOut.getOutput();
+            SATestUtils.unzipCores(new File("."));
             String coreFileLocation = getCoreFileLocation(crashOutputString);
             if (coreFileLocation == null) {
                 if (Platform.isOSX()) {

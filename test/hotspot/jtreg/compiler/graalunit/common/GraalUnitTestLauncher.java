@@ -229,6 +229,8 @@ public class GraalUnitTestLauncher {
         javaFlags.add("jdk.internal.vm.compiler,jdk.internal.vm.ci");
         javaFlags.add("--add-exports");
         javaFlags.add("java.base/jdk.internal.module=ALL-UNNAMED");
+        javaFlags.add("--add-exports");
+        javaFlags.add("java.base/jdk.internal.misc=ALL-UNNAMED");
         javaFlags.addAll(getModuleExports("jdk.internal.vm.compiler", "ALL-UNNAMED"));
         javaFlags.addAll(getModuleExports("jdk.internal.vm.ci", "ALL-UNNAMED,jdk.internal.vm.compiler"));
 

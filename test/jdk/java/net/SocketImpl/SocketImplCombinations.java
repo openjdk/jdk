@@ -68,7 +68,7 @@ public class SocketImplCombinations {
      * Test creating a connected Socket, it should be created with a platform SocketImpl.
      */
     public void testNewSocket2() throws IOException {
-        try (ServerSocket ss = new ServerSocket(0)) {
+        try (ServerSocket ss = boundServerSocket()) {
             try (Socket s = new Socket(ss.getInetAddress(), ss.getLocalPort())) {
                 SocketImpl si = getSocketImpl(s);
                 assertTrue(isSocksSocketImpl(si));
@@ -127,7 +127,7 @@ public class SocketImplCombinations {
         Socket s = new Socket((SocketImpl) null) { };
         try (s) {
             assertTrue(getSocketImpl(s) == null);
-            s.bind(new InetSocketAddress(0));   // force SocketImpl to be created
+            s.bind(loopbackSocketAddress());   // force SocketImpl to be created
             SocketImpl si = getSocketImpl(s);
             assertTrue(isSocksSocketImpl(si));
             SocketImpl delegate = getDelegate(si);
@@ -218,7 +218,7 @@ public class SocketImplCombinations {
             Socket s = new Socket((SocketImpl) null) { };
             try (s) {
                 assertTrue(getSocketImpl(s) == null);
-                s.bind(new InetSocketAddress(0));   // force SocketImpl to be created
+                s.bind(loopbackSocketAddress());   // force SocketImpl to be created
                 assertTrue(getSocketImpl(s) instanceof CustomSocketImpl);
             }
         } finally {
@@ -378,7 +378,7 @@ public class SocketImplCombinations {
     public void testServerSocketAccept5a() throws IOException {
         SocketImpl serverImpl = new CustomSocketImpl(true);
         try (ServerSocket ss = new ServerSocket(serverImpl) { }) {
-            ss.bind(new InetSocketAddress(0));
+            ss.bind(loopbackSocketAddress());
             expectThrows(IOException.class, ss::accept);
         }
     }
@@ -566,16 +566,36 @@ public class SocketImplCombinations {
     }
 
     /**
+     * Returns a new InetSocketAddress with the loopback interface
+     * and port 0.
+     */
+    static InetSocketAddress loopbackSocketAddress() {
+        InetAddress loopback = InetAddress.getLoopbackAddress();
+        return new InetSocketAddress(loopback, 0);
+    }
+
+    /**
+     * Returns a ServerSocket bound to a port on the loopback address
+     */
+    static ServerSocket boundServerSocket() throws IOException {
+        ServerSocket ss = new ServerSocket();
+        ss.bind(loopbackSocketAddress());
+        return ss;
+    }
+
+    /**
      * Creates a ServerSocket that returns the given Socket from accept.
      */
     static ServerSocket serverSocketToAccept(Socket s) throws IOException {
-        return new ServerSocket(0) {
+        ServerSocket ss = new ServerSocket() {
             @Override
             public Socket accept() throws IOException {
                 implAccept(s);
                 return s;
             }
         };
+        ss.bind(loopbackSocketAddress());
+        return ss;
     }
 
     /**
@@ -590,7 +610,7 @@ public class SocketImplCombinations {
                 return s;
             }
         };
-        ss.bind(new InetSocketAddress(0));
+        ss.bind(loopbackSocketAddress());
         return ss;
     }
 

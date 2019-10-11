@@ -21,27 +21,11 @@
  * questions.
  */
 
-#include <jni.h>
-
-jmethodID mid;
-jclass cls;
-static int count = 0;
-
-JNIEXPORT jint JNICALL
-Java_RedefineDeleteJmethod_jniCallDeleteMe(JNIEnv* env, jobject obj) {
-
-    if (count == 0) {
-      count++;
-      cls = (*env)->FindClass(env, "B");
-      if (NULL == cls) {
-          (*env)->FatalError(env, "could not find class");
-      }
-
-      mid = (*env)->GetStaticMethodID(env, cls, "deleteMe", "()I");
-      if (NULL == mid) {
-          (*env)->FatalError(env, "could not find method");
-      }
-    }
-
-    return (*env)->CallStaticIntMethod(env, cls, mid);
-}
+/**
+ * @test
+ * @bug  8230731 8001227 8231635 8231634 8196969
+ * @requires vm.hasSAandCanAttach
+ * @library /test/lib
+ * @compile JShellHeapDumpTest.java
+ * @run main/timeout=240 JShellHeapDumpTest nosleep
+ */

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2010, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -103,6 +103,7 @@ public abstract class Property implements Serializable {
     public static final int IS_ACCESSOR_PROPERTY    = 1 << 12;
 
     /** Property key. */
+    @SuppressWarnings("serial") // Not statically typed as Serializable
     private final Object key;
 
     /** Property flags. */

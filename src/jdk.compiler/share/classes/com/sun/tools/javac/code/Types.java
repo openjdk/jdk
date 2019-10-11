@@ -639,7 +639,7 @@ public class Types {
     public static class FunctionDescriptorLookupError extends RuntimeException {
         private static final long serialVersionUID = 0;
 
-        JCDiagnostic diagnostic;
+        transient JCDiagnostic diagnostic;
 
         FunctionDescriptorLookupError() {
             this.diagnostic = null;
@@ -3745,12 +3745,9 @@ public class Types {
             return cl1;
         } else if (shouldSkip.test(cl1.head, cl2.head)) {
             return union(cl1.tail, cl2.tail, shouldSkip).prepend(cl1.head);
-        } else if (cl1.head.tsym.precedes(cl2.head.tsym, this)) {
-            return union(cl1.tail, cl2, shouldSkip).prepend(cl1.head);
         } else if (cl2.head.tsym.precedes(cl1.head.tsym, this)) {
             return union(cl1, cl2.tail, shouldSkip).prepend(cl2.head);
         } else {
-            // unrelated types
             return union(cl1.tail, cl2, shouldSkip).prepend(cl1.head);
         }
     }
@@ -5002,7 +4999,7 @@ public class Types {
         public static class InvalidSignatureException extends RuntimeException {
             private static final long serialVersionUID = 0;
 
-            private final Type type;
+            private final transient Type type;
 
             InvalidSignatureException(Type type) {
                 this.type = type;

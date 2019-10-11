@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2006, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -70,6 +70,7 @@ public class SyncProviderException extends java.sql.SQLException {
      * this <code>SyncProviderException</code> object will return when its
      * <code>getSyncResolver</code> method is called.
      */
+     @SuppressWarnings("serial") // Not statically typed as Serializable
      private SyncResolver syncResolver = null;
 
     /**

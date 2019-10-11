@@ -529,6 +529,10 @@ public class Utils {
         return true;
     }
 
+    public boolean isUndocumentedEnclosure(TypeElement enclosingTypeElement) {
+        return isPackagePrivate(enclosingTypeElement) && !isLinkable(enclosingTypeElement);
+    }
+
     public boolean isError(TypeElement te) {
         if (isEnum(te) || isInterface(te) || isAnnotationType(te)) {
             return false;
@@ -1064,8 +1068,7 @@ public class Utils {
 
         // Allow for the behavior that members of undocumented supertypes
         // may be included in documented types
-        TypeElement enclElem = getEnclosingTypeElement(elem);
-        if (typeElem != enclElem && isSubclassOf(typeElem, enclElem)) {
+        if (isUndocumentedEnclosure(getEnclosingTypeElement(elem))) {
             return true;
         }
 

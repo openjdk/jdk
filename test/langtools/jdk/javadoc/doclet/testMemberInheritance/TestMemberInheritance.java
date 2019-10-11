@@ -24,7 +24,7 @@
 /*
  * @test
  * @bug 4638588 4635809 6256068 6270645 8025633 8026567 8162363 8175200
- *      8192850 8182765
+ *      8192850 8182765 8220217
  * @summary Test to make sure that members are inherited properly in the Javadoc.
  *          Verify that inheritance labels are correct.
  * @author jamieh
@@ -47,7 +47,7 @@ public class TestMemberInheritance extends JavadocTester {
     public void test() {
         javadoc("-d", "out",
                 "-sourcepath", testSrc,
-                "pkg", "diamond", "inheritDist", "pkg1");
+                "pkg", "diamond", "inheritDist", "pkg1", "pkg2");
         checkExit(Exit.OK);
 
         checkOutput("pkg/SubClass.html", true,
@@ -104,5 +104,27 @@ public class TestMemberInheritance extends JavadocTester {
                 + "<code><a href=\"Interface.html#between(java.time.chrono.ChronoLocalDate"
                 + ",java.time.chrono.ChronoLocalDate)\">between</a></code>"
         );
+
+        checkOutput("pkg2/DocumentedNonGenericChild.html", true,
+                "<section class=\"description\">\n<hr>\n"
+                + "<pre>public abstract class <span class=\"typeNameLabel\">"
+                + "DocumentedNonGenericChild</span>\n"
+                + "extends java.lang.Object</pre>\n"
+                + "</section>");
+
+        checkOutput("pkg2/DocumentedNonGenericChild.html", true,
+                "<td class=\"colFirst\"><code>protected abstract java.lang.String</code></td>\n"
+                + "<th class=\"colSecond\" scope=\"row\"><code><span class=\"memberNameLink\">"
+                + "<a href=\"#parentMethod()\">parentMethod</a></span>()</code></th>\n"
+                + "<td class=\"colLast\">\n"
+                + "<div class=\"block\">Returns some value.</div>\n"
+                + "</td>\n");
+
+        checkOutput("pkg2/DocumentedNonGenericChild.html", true,
+                "<h3><a id=\"parentMethod()\">parentMethod</a></h3>\n"
+                + "<div class=\"memberSignature\"><span class=\"modifiers\">protected abstract</span>"
+                + "&nbsp;<span class=\"returnType\">java.lang.String</span>&nbsp;"
+                + "<span class=\"memberName\">parentMethod</span>()</div>");
+
     }
 }

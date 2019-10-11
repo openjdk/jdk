@@ -25,6 +25,7 @@
 #include "precompiled.hpp"
 #include "interpreter/interpreter.hpp"
 #include "oops/constMethod.hpp"
+#include "oops/klass.inline.hpp"
 #include "oops/method.hpp"
 #include "runtime/arguments.hpp"
 #include "runtime/frame.inline.hpp"

@@ -1,6 +1,6 @@
 /*
- * Copyright (c) 1999, 2015, Oracle and/or its affiliates. All rights reserved.
- * Copyright (c) 2012, 2015 SAP SE. All rights reserved.
+ * Copyright (c) 1999, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2019 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -52,7 +52,7 @@ LIR_Opr FrameMap::map_to_opr(BasicType type, VMRegPair* reg, bool outgoing) {
     //}
     if (r_2->is_Register() && (type == T_LONG || type == T_DOUBLE)) {
       opr = as_long_opr(reg);
-    } else if (type == T_OBJECT || type == T_ARRAY) {
+    } else if (is_reference_type(type)) {
       opr = as_oop_opr(reg);
     } else {
       opr = as_opr(reg);

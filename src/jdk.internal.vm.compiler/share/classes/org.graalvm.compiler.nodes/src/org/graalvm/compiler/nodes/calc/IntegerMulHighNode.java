@@ -28,6 +28,7 @@ import static org.graalvm.compiler.nodeinfo.NodeCycles.CYCLES_2;
 import static org.graalvm.compiler.nodeinfo.NodeSize.SIZE_2;
 
 import org.graalvm.compiler.core.common.type.ArithmeticOpTable;
+import org.graalvm.compiler.core.common.type.ArithmeticOpTable.BinaryOp;
 import org.graalvm.compiler.core.common.type.ArithmeticOpTable.BinaryOp.MulHigh;
 import org.graalvm.compiler.graph.NodeClass;
 import org.graalvm.compiler.graph.spi.Canonicalizable;
@@ -48,7 +49,12 @@ public final class IntegerMulHighNode extends BinaryArithmeticNode<MulHigh> impl
     public static final NodeClass<IntegerMulHighNode> TYPE = NodeClass.create(IntegerMulHighNode.class);
 
     public IntegerMulHighNode(ValueNode x, ValueNode y) {
-        super(TYPE, ArithmeticOpTable::getMulHigh, x, y);
+        super(TYPE, getArithmeticOpTable(x).getMulHigh(), x, y);
+    }
+
+    @Override
+    protected BinaryOp<MulHigh> getOp(ArithmeticOpTable table) {
+        return table.getMulHigh();
     }
 
     @Override

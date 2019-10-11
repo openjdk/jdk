@@ -548,7 +548,7 @@ public final class IfNode extends ControlSplitNode implements Simplifiable, LIRL
                 return false;
             }
 
-            if (trueSuccessor().anchored().isNotEmpty() || falseSuccessor().anchored().isNotEmpty()) {
+            if (trueSuccessor().hasAnchored() || falseSuccessor().hasAnchored()) {
                 return false;
             }
 
@@ -1216,6 +1216,10 @@ public final class IfNode extends ControlSplitNode implements Simplifiable, LIRL
             return false;
         }
 
+        if (trueSuccessor().isUsedAsGuardInput() || falseSuccessor().isUsedAsGuardInput()) {
+            return false;
+        }
+
         ValuePhiNode phi = (ValuePhiNode) generalPhi;
 
         EconomicMap<Node, NodeColor> coloredNodes = EconomicMap.create(Equivalence.IDENTITY, 8);
@@ -1642,6 +1646,10 @@ public final class IfNode extends ControlSplitNode implements Simplifiable, LIRL
         }
         Node singleUsage = mergeUsages.first();
         if (!(singleUsage instanceof ValuePhiNode) || (singleUsage != compare.getX() && singleUsage != compare.getY())) {
+            return false;
+        }
+
+        if (trueSuccessor().isUsedAsGuardInput() || falseSuccessor().isUsedAsGuardInput()) {
             return false;
         }
 

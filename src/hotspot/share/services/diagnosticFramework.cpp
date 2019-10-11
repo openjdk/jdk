@@ -437,9 +437,9 @@ GrowableArray<DCmdArgumentInfo*>* DCmdWithParser::argument_info_array() const {
 }
 
 void DCmdFactory::push_jmx_notification_request() {
-  MutexLocker ml(Service_lock, Mutex::_no_safepoint_check_flag);
+  MutexLocker ml(Notification_lock, Mutex::_no_safepoint_check_flag);
   _has_pending_jmx_notification = true;
-  Service_lock->notify_all();
+  Notification_lock->notify_all();
 }
 
 void DCmdFactory::send_notification(TRAPS) {
@@ -455,7 +455,7 @@ void DCmdFactory::send_notification_internal(TRAPS) {
   HandleMark hm(THREAD);
   bool notif = false;
   {
-    MutexLocker ml(Service_lock, Mutex::_no_safepoint_check_flag);
+    MutexLocker ml(Notification_lock, Mutex::_no_safepoint_check_flag);
     notif = _has_pending_jmx_notification;
     _has_pending_jmx_notification = false;
   }

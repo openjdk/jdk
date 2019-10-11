@@ -42,7 +42,7 @@
 //
 CompactHashtableWriter::CompactHashtableWriter(int num_entries,
                                                CompactHashtableStats* stats) {
-  assert(DumpSharedSpaces || DynamicDumpSharedSpaces, "dump-time only");
+  Arguments::assert_is_dumping_archive();
   assert(num_entries >= 0, "sanity");
   _num_buckets = calculate_num_buckets(num_entries);
   assert(_num_buckets > 0, "no buckets");

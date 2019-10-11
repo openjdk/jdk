@@ -12,4 +12,6 @@ grant {
     permission java.lang.RuntimePermission "accessDeclaredMembers";
     permission java.io.FilePermission "<<ALL FILES>>", "read";
     permission java.lang.reflect.ReflectPermission "suppressAccessChecks";
+    // Allows test methods to inspect test thread state
+    permission java.lang.management.ManagementPermission "monitor";
 };

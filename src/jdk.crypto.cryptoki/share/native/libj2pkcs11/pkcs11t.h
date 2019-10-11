@@ -1833,6 +1833,7 @@ typedef CK_AES_CTR_PARAMS CK_PTR CK_AES_CTR_PARAMS_PTR;
 typedef struct CK_GCM_PARAMS {
     CK_BYTE_PTR       pIv;
     CK_ULONG          ulIvLen;
+    CK_ULONG          ulIvBits;
     CK_BYTE_PTR       pAAD;
     CK_ULONG          ulAADLen;
     CK_ULONG          ulTagBits;
@@ -1962,7 +1963,7 @@ typedef struct CK_TLS_KDF_PARAMS {
 typedef CK_TLS_KDF_PARAMS CK_PTR CK_TLS_KDF_PARAMS_PTR;
 
 typedef struct CK_TLS_MAC_PARAMS {
-    CK_MECHANISM_TYPE         prfMechanism;
+    CK_MECHANISM_TYPE         prfHashMechanism;
     CK_ULONG                  ulMacLength;
     CK_ULONG                  ulServerOrClient;
 } CK_TLS_MAC_PARAMS;
@@ -1999,4 +2000,5 @@ typedef CK_SEED_CBC_ENCRYPT_DATA_PARAMS CK_PTR \
                                         CK_SEED_CBC_ENCRYPT_DATA_PARAMS_PTR;
 
 #endif /* _PKCS11T_H_ */
+
 

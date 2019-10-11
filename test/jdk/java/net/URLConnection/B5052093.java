@@ -33,6 +33,7 @@
 import java.net.*;
 import java.io.*;
 import sun.net.www.protocol.file.FileURLConnection;
+import static java.net.Proxy.NO_PROXY;
 
 public class B5052093 implements HttpCallback {
     private static TestHttpServer server;
@@ -68,7 +69,7 @@ public class B5052093 implements HttpCallback {
         server = new TestHttpServer(new B5052093(), 1, 10, loopback, 0);
         try {
             URL url = new URL("http://" + server.getAuthority() + "/foo");
-            URLConnection conn = url.openConnection();
+            URLConnection conn = url.openConnection(NO_PROXY);
             int i = conn.getContentLength();
             long l = conn.getContentLengthLong();
             if (i != -1 || l != testSize) {

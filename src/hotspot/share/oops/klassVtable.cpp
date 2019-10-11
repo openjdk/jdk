@@ -128,11 +128,6 @@ void klassVtable::compute_vtable_size_and_num_mirandas(
   *vtable_length_ret = vtable_length;
 }
 
-int klassVtable::index_of(Method* m, int len) const {
-  assert(m->has_vtable_index(), "do not ask this of non-vtable methods");
-  return m->vtable_index();
-}
-
 // Copy super class's vtable to the first part (prefix) of this class's vtable,
 // and return the number of entries copied.  Expects that 'super' is the Java
 // super class (arrays can have "array" super classes that must be skipped).
@@ -169,7 +164,6 @@ void klassVtable::initialize_vtable(bool checkconstraints, TRAPS) {
 
   // Note:  Arrays can have intermediate array supers.  Use java_super to skip them.
   InstanceKlass* super = _klass->java_super();
-  int nofNewEntries = 0;
 
   bool is_shared = _klass->is_shared();
 
@@ -1029,15 +1023,6 @@ void klassVtable::dump_vtable() {
 }
 #endif // INCLUDE_JVMTI
 
-// CDS/RedefineClasses support - clear vtables so they can be reinitialized
-void klassVtable::clear_vtable() {
-  for (int i = 0; i < _length; i++) table()[i].clear();
-}
-
-bool klassVtable::is_initialized() {
-  return _length == 0 || table()[0].method() != NULL;
-}
-
 //-----------------------------------------------------------------------------------------
 // Itable code
 
@@ -1466,31 +1451,6 @@ void klassItable::setup_itable_offset_table(InstanceKlass* klass) {
   oop* v = (oop*) klass->end_of_itable();
   assert( (oop*)(ime) == v, "wrong offset calculation (2)");
 #endif
-}
-
-
-// inverse to itable_index
-Method* klassItable::method_for_itable_index(InstanceKlass* intf, int itable_index) {
-  assert(intf->is_interface(), "sanity check");
-  assert(intf->verify_itable_index(itable_index), "");
-  Array<Method*>* methods = InstanceKlass::cast(intf)->methods();
-
-  if (itable_index < 0 || itable_index >= method_count_for_interface(intf))
-    return NULL;                // help caller defend against bad indices
-
-  int index = itable_index;
-  Method* m = methods->at(index);
-  int index2 = -1;
-  while (!m->has_itable_index() ||
-         (index2 = m->itable_index()) != itable_index) {
-    assert(index2 < itable_index, "monotonic");
-    if (++index == methods->length())
-      return NULL;
-    m = methods->at(index);
-  }
-  assert(m->itable_index() == itable_index, "correct inverse");
-
-  return m;
 }
 
 void klassVtable::verify(outputStream* st, bool forced) {

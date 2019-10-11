@@ -24,8 +24,10 @@
 
 package org.graalvm.compiler.nodes.calc;
 
-import jdk.vm.ci.code.CodeUtil;
+import static org.graalvm.compiler.nodes.calc.BinaryArithmeticNode.getArithmeticOpTable;
+
 import org.graalvm.compiler.core.common.type.ArithmeticOpTable;
+import org.graalvm.compiler.core.common.type.ArithmeticOpTable.ShiftOp;
 import org.graalvm.compiler.core.common.type.ArithmeticOpTable.ShiftOp.UShr;
 import org.graalvm.compiler.core.common.type.IntegerStamp;
 import org.graalvm.compiler.core.common.type.Stamp;
@@ -38,6 +40,7 @@ import org.graalvm.compiler.nodes.NodeView;
 import org.graalvm.compiler.nodes.ValueNode;
 import org.graalvm.compiler.nodes.spi.NodeLIRBuilderTool;
 
+import jdk.vm.ci.code.CodeUtil;
 import jdk.vm.ci.meta.JavaKind;
 
 @NodeInfo(shortName = ">>>")
@@ -46,7 +49,7 @@ public final class UnsignedRightShiftNode extends ShiftNode<UShr> {
     public static final NodeClass<UnsignedRightShiftNode> TYPE = NodeClass.create(UnsignedRightShiftNode.class);
 
     public UnsignedRightShiftNode(ValueNode x, ValueNode y) {
-        super(TYPE, ArithmeticOpTable::getUShr, x, y);
+        super(TYPE, getArithmeticOpTable(x).getUShr(), x, y);
     }
 
     public static ValueNode create(ValueNode x, ValueNode y, NodeView view) {
@@ -58,6 +61,11 @@ public final class UnsignedRightShiftNode extends ShiftNode<UShr> {
         }
 
         return canonical(null, op, stamp, x, y, view);
+    }
+
+    @Override
+    protected ShiftOp<UShr> getOp(ArithmeticOpTable table) {
+        return table.getUShr();
     }
 
     @Override

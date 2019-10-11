@@ -206,16 +206,4 @@ vmTestbase/vm/mlvm/indy/func/jvmti/mergeCP_indy2manySame_b/TestDescription.java 
 
 vmTestbase/nsk/jdwp/ThreadReference/ForceEarlyReturn/forceEarlyReturn001/forceEarlyReturn001.java 7199837 generic-all
 
-vmTestbase/nsk/monitoring/ThreadMXBean/ThreadInfo/SynchronizerLockingThreads/SynchronizerLockingThreads001/TestDescription.java 8231032 generic-all
-vmTestbase/nsk/monitoring/ThreadMXBean/ThreadInfo/SynchronizerLockingThreads/SynchronizerLockingThreads002/TestDescription.java 8231032 generic-all
-vmTestbase/nsk/monitoring/ThreadMXBean/ThreadInfo/SynchronizerLockingThreads/SynchronizerLockingThreads003/TestDescription.java 8231032 generic-all
-vmTestbase/nsk/monitoring/ThreadMXBean/ThreadInfo/SynchronizerLockingThreads/SynchronizerLockingThreads004/TestDescription.java 8231032 generic-all
-vmTestbase/nsk/monitoring/ThreadMXBean/ThreadInfo/SynchronizerLockingThreads/SynchronizerLockingThreads005/TestDescription.java 8231032 generic-all
-
-vmTestbase/nsk/monitoring/ThreadMXBean/ThreadInfo/Multi/Multi001/Multi001.java 8231032 generic-all
-vmTestbase/nsk/monitoring/ThreadMXBean/ThreadInfo/Multi/Multi002/TestDescription.java 8231032 generic-all
-vmTestbase/nsk/monitoring/ThreadMXBean/ThreadInfo/Multi/Multi003/TestDescription.java 8231032 generic-all
-vmTestbase/nsk/monitoring/ThreadMXBean/ThreadInfo/Multi/Multi004/TestDescription.java 8231032 generic-all
-vmTestbase/nsk/monitoring/ThreadMXBean/ThreadInfo/Multi/Multi005/TestDescription.java 8231032 generic-all
-
 #############################################################################

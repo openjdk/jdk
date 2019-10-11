@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -41,8 +41,6 @@ import vm.share.VMRuntimeEnvUtils;
  * Then it counts how many times GC has been induced.
  * Test verifies that MinMetaspaceFreeRatio/MaxMetaspaceFreeRatio settings
  * affect the frequency of GC. (High-water mark)
- *
- * Note: The test doesn't check the GC count if CMS is used.
  *
  * Quoting: Java SE 8 HotSpot[tm] Virtual Machine Garbage Collection Tuning
  * <pre>
@@ -173,11 +171,6 @@ public class HighWaterMarkTest extends FirstGCTest {
 
         if (attempts == maxAttempts) {
             throw new Fault("Committed amount hasn't achieved " + bytes2k(committedLevel));
-        }
-
-        if (VMRuntimeEnvUtils.isVMOptionEnabled("UseConcMarkSweepGC")) {
-            System.out.println("ConcMarkSweep is used, cannot count GC");
-            return;
         }
 
         int gcCount = getMetaspaceGCCount();

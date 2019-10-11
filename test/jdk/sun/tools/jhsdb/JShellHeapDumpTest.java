@@ -39,6 +39,7 @@ import java.util.Arrays;
 import java.util.Map;
 
 import jdk.test.lib.JDKToolLauncher;
+import jdk.test.lib.JDKToolFinder;
 import jdk.test.lib.process.OutputAnalyzer;
 import jdk.test.lib.process.ProcessTools;
 import jdk.test.lib.hprof.parser.HprofReader;
@@ -47,40 +48,43 @@ import jdk.jshell.JShell;
 
 public class JShellHeapDumpTest {
 
-    protected static Process process;
-
-    private static long pid;
+    static Process jShellProcess;
+    static boolean doSleep = true; // By default do a short sleep when app starts up
 
     public static void launch(String expectedMessage, List<String> toolArgs)
         throws IOException {
 
         try {
             launchJshell();
+            long jShellPID = jShellProcess.pid();
 
-            System.out.println("Starting " + toolArgs.get(0) + " against " + pid);
+            System.out.println("Starting " + toolArgs.get(0) + " against " + jShellPID);
             JDKToolLauncher launcher = JDKToolLauncher.createUsingTestJDK("jhsdb");
 
             for (String cmd : toolArgs) {
                 launcher.addToolArg(cmd);
             }
 
-            launcher.addToolArg("--pid=" + Long.toString(pid));
+            launcher.addToolArg("--pid=" + Long.toString(jShellPID));
 
             ProcessBuilder processBuilder = new ProcessBuilder(launcher.getCommand());
-            processBuilder.redirectError(ProcessBuilder.Redirect.INHERIT);
             OutputAnalyzer output = ProcessTools.executeProcess(processBuilder);
-            System.out.println("stdout:");
+            System.out.println("jhsdb jmap stdout:");
             System.out.println(output.getStdout());
-            System.out.println("stderr:");
+            System.out.println("jhsdb jmap stderr:");
             System.out.println(output.getStderr());
-            output.shouldNotContain("null");
+            System.out.println("###### End of all output:");
             output.shouldHaveExitValue(0);
         } catch (Exception ex) {
             throw new RuntimeException("Test ERROR " + ex, ex);
         } finally {
-           if (process.isAlive()) {
-             process.destroy();
-           }
+            if (jShellProcess.isAlive()) {
+                System.out.println("Destroying jshell");
+                jShellProcess.destroy();
+                System.out.println("Jshell destroyed");
+            } else {
+                System.out.println("Jshell not alive");
+            }
         }
     }
 
@@ -102,42 +106,59 @@ public class JShellHeapDumpTest {
     }
 
     public static void testHeapDump() throws IOException {
-        File dump = new File("jhsdb.jmap.heap." +
+        File hprofFile = new File("jhsdb.jmap.heap." +
                              System.currentTimeMillis() + ".hprof");
-        if (dump.exists()) {
-            dump.delete();
+        if (hprofFile.exists()) {
+            hprofFile.delete();
         }
 
         launch("heap written to", "jmap",
-               "--binaryheap", "--dumpfile=" + dump.getAbsolutePath());
+               "--binaryheap", "--dumpfile=" + hprofFile.getAbsolutePath());
 
-        assertTrue(dump.exists() && dump.isFile(),
-                   "Could not create dump file " + dump.getAbsolutePath());
+        assertTrue(hprofFile.exists() && hprofFile.isFile(),
+                   "Could not create dump file " + hprofFile.getAbsolutePath());
 
-        printStackTraces(dump.getAbsolutePath());
+        printStackTraces(hprofFile.getAbsolutePath());
 
-        dump.delete();
+        System.out.println("hprof file size: " + hprofFile.length());
+        hprofFile.delete();
     }
 
     public static void launchJshell() throws IOException {
         System.out.println("Starting Jshell");
-        String jdkPath = System.getProperty("test.jdk");
-        if (jdkPath == null) {
-          // we are not under jtreg, try env
-            Map<String, String> env = System.getenv();
-            jdkPath = env.get("TESTJAVA");
+        long startTime = System.currentTimeMillis();
+        try {
+            ProcessBuilder pb = new ProcessBuilder(JDKToolFinder.getTestJDKTool("jshell"));
+            jShellProcess = ProcessTools.startProcess("JShell", pb,
+                                                      s -> {  // warm-up predicate
+                                                          return s.contains("Welcome to JShell");
+                                                      });
+        } catch (Exception ex) {
+            throw new RuntimeException("Test ERROR " + ex, ex);
         }
-        if (jdkPath == null) {
-            throw new RuntimeException("Can't determine jdk path neither test.jdk property no TESTJAVA env are set");
+
+        long elapsedTime = System.currentTimeMillis() - startTime;
+        System.out.println("Jshell Started in " + elapsedTime + "ms");
+
+        // Give jshell a chance to fully start up. This makes SA more stable for the jmap dump.
+        try {
+            if (doSleep) {
+                Thread.sleep(2000);
+            }
+        } catch (Exception e) {
         }
-        String osname = System.getProperty("os.name");
-        String jshell = jdkPath + ((osname.startsWith("window")) ? "/bin/jshell.exe" : "/bin/jshell");
-        process = Runtime.getRuntime().exec(jshell);
-        pid = process.pid();
     }
 
     public static void main(String[] args) throws Exception {
-
+        if (args.length == 1) {
+            if (args[0].equals("nosleep")) {
+                doSleep = false;
+            } else {
+                throw new RuntimeException("Invalid arg: " + args[0]);
+            }
+        } else if (args.length != 0) {
+            throw new RuntimeException("Too many args: " + args.length);
+        }
         testHeapDump();
 
         // The test throws RuntimeException on error.

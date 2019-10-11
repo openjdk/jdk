@@ -24,22 +24,22 @@
 #include "precompiled.hpp"
 #include "asm/macroAssembler.inline.hpp"
 #include "code/codeBlob.hpp"
+#include "code/vmreg.inline.hpp"
 #include "gc/z/zBarrier.inline.hpp"
 #include "gc/z/zBarrierSet.hpp"
 #include "gc/z/zBarrierSetAssembler.hpp"
 #include "gc/z/zBarrierSetRuntime.hpp"
 #include "memory/resourceArea.hpp"
-#include "runtime/stubCodeGenerator.hpp"
+#include "runtime/sharedRuntime.hpp"
 #include "utilities/macros.hpp"
 #ifdef COMPILER1
 #include "c1/c1_LIRAssembler.hpp"
 #include "c1/c1_MacroAssembler.hpp"
 #include "gc/z/c1/zBarrierSetC1.hpp"
 #endif // COMPILER1
-
-ZBarrierSetAssembler::ZBarrierSetAssembler() :
-    _load_barrier_slow_stub(),
-    _load_barrier_weak_slow_stub() {}
+#ifdef COMPILER2
+#include "gc/z/c2/zBarrierSetC2.hpp"
+#endif // COMPILER2
 
 #ifdef PRODUCT
 #define BLOCK_COMMENT(str) /* nothing */
@@ -344,137 +344,327 @@ void ZBarrierSetAssembler::generate_c1_load_barrier_runtime_stub(StubAssembler* 
 
 #endif // COMPILER1
 
-#undef __
-#define __ cgen->assembler()->
+#ifdef COMPILER2
 
-// Generates a register specific stub for calling
-// ZBarrierSetRuntime::load_barrier_on_oop_field_preloaded() or
-// ZBarrierSetRuntime::load_barrier_on_weak_oop_field_preloaded().
-//
-// The raddr register serves as both input and output for this stub. When the stub is
-// called the raddr register contains the object field address (oop*) where the bad oop
-// was loaded from, which caused the slow path to be taken. On return from the stub the
-// raddr register contains the good/healed oop returned from
-// ZBarrierSetRuntime::load_barrier_on_oop_field_preloaded() or
-// ZBarrierSetRuntime::load_barrier_on_weak_oop_field_preloaded().
-static address generate_load_barrier_stub(StubCodeGenerator* cgen, Register raddr, DecoratorSet decorators) {
-  // Don't generate stub for invalid registers
-  if (raddr == rsp || raddr == r15) {
-    return NULL;
+OptoReg::Name ZBarrierSetAssembler::refine_register(const Node* node, OptoReg::Name opto_reg) {
+  if (!OptoReg::is_reg(opto_reg)) {
+    return OptoReg::Bad;
   }
 
-  // Create stub name
-  char name[64];
-  const bool weak = (decorators & ON_WEAK_OOP_REF) != 0;
-  os::snprintf(name, sizeof(name), "zgc_load_barrier%s_stub_%s", weak ? "_weak" : "", raddr->name());
-
-  __ align(CodeEntryAlignment);
-  StubCodeMark mark(cgen, "StubRoutines", os::strdup(name, mtCode));
-  address start = __ pc();
-
-  // Save live registers
-  if (raddr != rax) {
-    __ push(rax);
-  }
-  if (raddr != rcx) {
-    __ push(rcx);
-  }
-  if (raddr != rdx) {
-    __ push(rdx);
-  }
-  if (raddr != rsi) {
-    __ push(rsi);
-  }
-  if (raddr != rdi) {
-    __ push(rdi);
-  }
-  if (raddr != r8) {
-    __ push(r8);
-  }
-  if (raddr != r9) {
-    __ push(r9);
-  }
-  if (raddr != r10) {
-    __ push(r10);
-  }
-  if (raddr != r11) {
-    __ push(r11);
+  const VMReg vm_reg = OptoReg::as_VMReg(opto_reg);
+  if (vm_reg->is_XMMRegister()) {
+    opto_reg &= ~15;
+    switch (node->ideal_reg()) {
+      case Op_VecX:
+        opto_reg |= 2;
+        break;
+      case Op_VecY:
+        opto_reg |= 4;
+        break;
+      case Op_VecZ:
+        opto_reg |= 8;
+        break;
+      default:
+        opto_reg |= 1;
+        break;
+    }
   }
 
-  // Setup arguments
-  if (raddr != c_rarg1) {
-    __ movq(c_rarg1, raddr);
-  }
-  __ movq(c_rarg0, Address(raddr, 0));
-
-  // Call barrier function
-  __ call_VM_leaf(ZBarrierSetRuntime::load_barrier_on_oop_field_preloaded_addr(decorators), c_rarg0, c_rarg1);
-
-  // Move result returned in rax to raddr, if needed
-  if (raddr != rax) {
-    __ movq(raddr, rax);
-  }
-
-  // Restore saved registers
-  if (raddr != r11) {
-    __ pop(r11);
-  }
-  if (raddr != r10) {
-    __ pop(r10);
-  }
-  if (raddr != r9) {
-    __ pop(r9);
-  }
-  if (raddr != r8) {
-    __ pop(r8);
-  }
-  if (raddr != rdi) {
-    __ pop(rdi);
-  }
-  if (raddr != rsi) {
-    __ pop(rsi);
-  }
-  if (raddr != rdx) {
-    __ pop(rdx);
-  }
-  if (raddr != rcx) {
-    __ pop(rcx);
-  }
-  if (raddr != rax) {
-    __ pop(rax);
-  }
-
-  __ ret(0);
-
-  return start;
+  return opto_reg;
 }
+
+// We use the vec_spill_helper from the x86.ad file to avoid reinventing this wheel
+extern int vec_spill_helper(CodeBuffer *cbuf, bool do_size, bool is_load,
+                            int stack_offset, int reg, uint ireg, outputStream* st);
 
 #undef __
+#define __ _masm->
 
-static void barrier_stubs_init_inner(const char* label, const DecoratorSet decorators, address* stub) {
-  const int nregs = RegisterImpl::number_of_registers;
-  const int code_size = nregs * 128; // Rough estimate of code size
+class ZSaveLiveRegisters {
+private:
+  struct XMMRegisterData {
+    XMMRegister _reg;
+    int         _size;
 
-  ResourceMark rm;
+    // Used by GrowableArray::find()
+    bool operator == (const XMMRegisterData& other) {
+      return _reg == other._reg;
+    }
+  };
 
-  CodeBuffer buf(BufferBlob::create(label, code_size));
-  StubCodeGenerator cgen(&buf);
+  MacroAssembler* const          _masm;
+  GrowableArray<Register>        _gp_registers;
+  GrowableArray<XMMRegisterData> _xmm_registers;
+  int                            _spill_size;
+  int                            _spill_offset;
 
-  for (int i = 0; i < nregs; i++) {
-    const Register reg = as_Register(i);
-    stub[i] = generate_load_barrier_stub(&cgen, reg, decorators);
+  static int xmm_compare_register_size(XMMRegisterData* left, XMMRegisterData* right) {
+    if (left->_size == right->_size) {
+      return 0;
+    }
+
+    return (left->_size < right->_size) ? -1 : 1;
   }
+
+  static int xmm_slot_size(OptoReg::Name opto_reg) {
+    // The low order 4 bytes denote what size of the XMM register is live
+    return (opto_reg & 15) << 3;
+  }
+
+  static uint xmm_ideal_reg_for_size(int reg_size) {
+    switch (reg_size) {
+    case 8:
+      return Op_VecD;
+    case 16:
+      return Op_VecX;
+    case 32:
+      return Op_VecY;
+    case 64:
+      return Op_VecZ;
+    default:
+      fatal("Invalid register size %d", reg_size);
+      return 0;
+    }
+  }
+
+  bool xmm_needs_vzeroupper() const {
+    return _xmm_registers.is_nonempty() && _xmm_registers.at(0)._size > 16;
+  }
+
+  void xmm_register_save(const XMMRegisterData& reg_data) {
+    const OptoReg::Name opto_reg = OptoReg::as_OptoReg(reg_data._reg->as_VMReg());
+    const uint ideal_reg = xmm_ideal_reg_for_size(reg_data._size);
+    _spill_offset -= reg_data._size;
+    vec_spill_helper(__ code(), false /* do_size */, false /* is_load */, _spill_offset, opto_reg, ideal_reg, tty);
+  }
+
+  void xmm_register_restore(const XMMRegisterData& reg_data) {
+    const OptoReg::Name opto_reg = OptoReg::as_OptoReg(reg_data._reg->as_VMReg());
+    const uint ideal_reg = xmm_ideal_reg_for_size(reg_data._size);
+    vec_spill_helper(__ code(), false /* do_size */, true /* is_load */, _spill_offset, opto_reg, ideal_reg, tty);
+    _spill_offset += reg_data._size;
+  }
+
+  void gp_register_save(Register reg) {
+    _spill_offset -= 8;
+    __ movq(Address(rsp, _spill_offset), reg);
+  }
+
+  void gp_register_restore(Register reg) {
+    __ movq(reg, Address(rsp, _spill_offset));
+    _spill_offset += 8;
+  }
+
+  void initialize(ZLoadBarrierStubC2* stub) {
+    // Create mask of caller saved registers that need to
+    // be saved/restored if live
+    RegMask caller_saved;
+    caller_saved.Insert(OptoReg::as_OptoReg(rax->as_VMReg()));
+    caller_saved.Insert(OptoReg::as_OptoReg(rcx->as_VMReg()));
+    caller_saved.Insert(OptoReg::as_OptoReg(rdx->as_VMReg()));
+    caller_saved.Insert(OptoReg::as_OptoReg(rsi->as_VMReg()));
+    caller_saved.Insert(OptoReg::as_OptoReg(rdi->as_VMReg()));
+    caller_saved.Insert(OptoReg::as_OptoReg(r8->as_VMReg()));
+    caller_saved.Insert(OptoReg::as_OptoReg(r9->as_VMReg()));
+    caller_saved.Insert(OptoReg::as_OptoReg(r10->as_VMReg()));
+    caller_saved.Insert(OptoReg::as_OptoReg(r11->as_VMReg()));
+    caller_saved.Remove(OptoReg::as_OptoReg(stub->ref()->as_VMReg()));
+
+    // Create mask of live registers
+    RegMask live = stub->live();
+    if (stub->tmp() != noreg) {
+      live.Insert(OptoReg::as_OptoReg(stub->tmp()->as_VMReg()));
+    }
+
+    int gp_spill_size = 0;
+    int xmm_spill_size = 0;
+
+    // Record registers that needs to be saved/restored
+    while (live.is_NotEmpty()) {
+      const OptoReg::Name opto_reg = live.find_first_elem();
+      const VMReg vm_reg = OptoReg::as_VMReg(opto_reg);
+
+      live.Remove(opto_reg);
+
+      if (vm_reg->is_Register()) {
+        if (caller_saved.Member(opto_reg)) {
+          _gp_registers.append(vm_reg->as_Register());
+          gp_spill_size += 8;
+        }
+      } else if (vm_reg->is_XMMRegister()) {
+        // We encode in the low order 4 bits of the opto_reg, how large part of the register is live
+        const VMReg vm_reg_base = OptoReg::as_VMReg(opto_reg & ~15);
+        const int reg_size = xmm_slot_size(opto_reg);
+        const XMMRegisterData reg_data = { vm_reg_base->as_XMMRegister(), reg_size };
+        const int reg_index = _xmm_registers.find(reg_data);
+        if (reg_index == -1) {
+          // Not previously appended
+          _xmm_registers.append(reg_data);
+          xmm_spill_size += reg_size;
+        } else {
+          // Previously appended, update size
+          const int reg_size_prev = _xmm_registers.at(reg_index)._size;
+          if (reg_size > reg_size_prev) {
+            _xmm_registers.at_put(reg_index, reg_data);
+            xmm_spill_size += reg_size - reg_size_prev;
+          }
+        }
+      } else {
+        fatal("Unexpected register type");
+      }
+    }
+
+    // Sort by size, largest first
+    _xmm_registers.sort(xmm_compare_register_size);
+
+    // Stack pointer must be 16 bytes aligned for the call
+    _spill_offset = _spill_size = align_up(xmm_spill_size + gp_spill_size, 16);
+  }
+
+public:
+  ZSaveLiveRegisters(MacroAssembler* masm, ZLoadBarrierStubC2* stub) :
+      _masm(masm),
+      _gp_registers(),
+      _xmm_registers(),
+      _spill_size(0),
+      _spill_offset(0) {
+
+    //
+    // Stack layout after registers have been spilled:
+    //
+    // | ...            | original rsp, 16 bytes aligned
+    // ------------------
+    // | zmm0 high      |
+    // | ...            |
+    // | zmm0 low       | 16 bytes aligned
+    // | ...            |
+    // | ymm1 high      |
+    // | ...            |
+    // | ymm1 low       | 16 bytes aligned
+    // | ...            |
+    // | xmmN high      |
+    // | ...            |
+    // | xmmN low       | 8 bytes aligned
+    // | reg0           | 8 bytes aligned
+    // | reg1           |
+    // | ...            |
+    // | regN           | new rsp, if 16 bytes aligned
+    // | <padding>      | else new rsp, 16 bytes aligned
+    // ------------------
+    //
+
+    // Figure out what registers to save/restore
+    initialize(stub);
+
+    // Allocate stack space
+    if (_spill_size > 0) {
+      __ subptr(rsp, _spill_size);
+    }
+
+    // Save XMM/YMM/ZMM registers
+    for (int i = 0; i < _xmm_registers.length(); i++) {
+      xmm_register_save(_xmm_registers.at(i));
+    }
+
+    if (xmm_needs_vzeroupper()) {
+      __ vzeroupper();
+    }
+
+    // Save general purpose registers
+    for (int i = 0; i < _gp_registers.length(); i++) {
+      gp_register_save(_gp_registers.at(i));
+    }
+  }
+
+  ~ZSaveLiveRegisters() {
+    // Restore general purpose registers
+    for (int i = _gp_registers.length() - 1; i >= 0; i--) {
+      gp_register_restore(_gp_registers.at(i));
+    }
+
+    __ vzeroupper();
+
+    // Restore XMM/YMM/ZMM registers
+    for (int i = _xmm_registers.length() - 1; i >= 0; i--) {
+      xmm_register_restore(_xmm_registers.at(i));
+    }
+
+    // Free stack space
+    if (_spill_size > 0) {
+      __ addptr(rsp, _spill_size);
+    }
+  }
+};
+
+class ZSetupArguments {
+private:
+  MacroAssembler* const _masm;
+  const Register        _ref;
+  const Address         _ref_addr;
+
+public:
+  ZSetupArguments(MacroAssembler* masm, ZLoadBarrierStubC2* stub) :
+      _masm(masm),
+      _ref(stub->ref()),
+      _ref_addr(stub->ref_addr()) {
+
+    // Setup arguments
+    if (_ref_addr.base() == noreg) {
+      // No self healing
+      if (_ref != c_rarg0) {
+        __ movq(c_rarg0, _ref);
+      }
+      __ xorq(c_rarg1, c_rarg1);
+    } else {
+      // Self healing
+      if (_ref == c_rarg0) {
+        __ lea(c_rarg1, _ref_addr);
+      } else if (_ref != c_rarg1) {
+        __ lea(c_rarg1, _ref_addr);
+        __ movq(c_rarg0, _ref);
+      } else if (_ref_addr.base() != c_rarg0 && _ref_addr.index() != c_rarg0) {
+        __ movq(c_rarg0, _ref);
+        __ lea(c_rarg1, _ref_addr);
+      } else {
+        __ xchgq(c_rarg0, c_rarg1);
+        if (_ref_addr.base() == c_rarg0) {
+          __ lea(c_rarg1, Address(c_rarg1, _ref_addr.index(), _ref_addr.scale(), _ref_addr.disp()));
+        } else if (_ref_addr.index() == c_rarg0) {
+          __ lea(c_rarg1, Address(_ref_addr.base(), c_rarg1, _ref_addr.scale(), _ref_addr.disp()));
+        } else {
+          ShouldNotReachHere();
+        }
+      }
+    }
+  }
+
+  ~ZSetupArguments() {
+    // Transfer result
+    if (_ref != rax) {
+      __ movq(_ref, rax);
+    }
+  }
+};
+
+#undef __
+#define __ masm->
+
+void ZBarrierSetAssembler::generate_c2_load_barrier_stub(MacroAssembler* masm, ZLoadBarrierStubC2* stub) const {
+  BLOCK_COMMENT("ZLoadBarrierStubC2");
+
+  // Stub entry
+  __ bind(*stub->entry());
+
+  {
+    ZSaveLiveRegisters save_live_registers(masm, stub);
+    ZSetupArguments setup_arguments(masm, stub);
+    __ call(RuntimeAddress(stub->slow_path()));
+  }
+
+  // Stub exit
+  __ jmp(*stub->continuation());
 }
 
-void ZBarrierSetAssembler::barrier_stubs_init() {
-  barrier_stubs_init_inner("zgc_load_barrier_stubs", ON_STRONG_OOP_REF, _load_barrier_slow_stub);
-  barrier_stubs_init_inner("zgc_load_barrier_weak_stubs", ON_WEAK_OOP_REF, _load_barrier_weak_slow_stub);
-}
+#undef __
 
-address ZBarrierSetAssembler::load_barrier_slow_stub(Register reg) {
-  return _load_barrier_slow_stub[reg->encoding()];
-}
-
-address ZBarrierSetAssembler::load_barrier_weak_slow_stub(Register reg) {
-  return _load_barrier_weak_slow_stub[reg->encoding()];
-}
+#endif // COMPILER2

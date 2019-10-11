@@ -62,8 +62,7 @@ void ClassLoaderExt::append_boot_classpath(ClassPathEntry* new_entry) {
 }
 
 void ClassLoaderExt::setup_app_search_path() {
-  assert(DumpSharedSpaces || DynamicDumpSharedSpaces,
-         "this function is only used at CDS dump time");
+  Arguments::assert_is_dumping_archive();
   _app_class_paths_start_index = ClassLoader::num_boot_classpath_entries();
   char* app_class_path = os::strdup(Arguments::get_appclasspath());
 
@@ -92,8 +91,7 @@ void ClassLoaderExt::process_module_table(ModuleEntryTable* met, TRAPS) {
   }
 }
 void ClassLoaderExt::setup_module_paths(TRAPS) {
-  assert(DumpSharedSpaces || DynamicDumpSharedSpaces,
-         "this function is only used with CDS dump time");
+  Arguments::assert_is_dumping_archive();
   _app_module_paths_start_index = ClassLoader::num_boot_classpath_entries() +
                               ClassLoader::num_app_classpath_entries();
   Handle system_class_loader (THREAD, SystemDictionary::java_system_loader());
@@ -231,7 +229,7 @@ void ClassLoaderExt::setup_search_paths() {
 void ClassLoaderExt::record_result(const s2 classpath_index,
                                    InstanceKlass* result,
                                    TRAPS) {
-  assert(DumpSharedSpaces || DynamicDumpSharedSpaces, "Sanity");
+  Arguments::assert_is_dumping_archive();
 
   // We need to remember where the class comes from during dumping.
   oop loader = result->class_loader();

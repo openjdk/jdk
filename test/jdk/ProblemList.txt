@@ -250,7 +250,7 @@ java/awt/font/TextLayout/CombiningPerf.java 8192931 generic-all
 java/awt/font/TextLayout/TextLayoutBounds.java 8169188 generic-all
 java/awt/font/StyledMetrics/BoldSpace.java 8198422 linux-all
 java/awt/FontMetrics/FontCrash.java 8198336 windows-all
-java/awt/FontMetrics/MaxAdvanceIsMax.java 8221305 solaris-all,macosx-all
+java/awt/FontMetrics/MaxAdvanceIsMax.java 8221305,8231495 solaris-all,macosx-all,linux-all
 java/awt/image/DrawImage/IncorrectAlphaSurface2SW.java 8056077 generic-all
 java/awt/image/DrawImage/IncorrectClipXorModeSW2Surface.java 8196025 windows-all
 java/awt/image/DrawImage/IncorrectClipXorModeSurface2Surface.java 8196025 windows-all
@@ -564,8 +564,6 @@ java/lang/management/ThreadMXBean/AllThreadIds.java             8131745 generic-
 javax/management/monitor/DerivedGaugeMonitorTest.java         8042211 generic-all
 javax/management/remote/mandatory/connection/MultiThreadDeadLockTest.java 8042215 generic-all
 
-java/lang/management/ThreadMXBean/LockedSynchronizers.java 8231032 generic-all
-
 ############################################################################
 
 # jdk_io
@@ -863,6 +861,8 @@ com/sun/jdi/NashornPopFrameTest.java                            8187143 generic-
 sun/tools/jstat/jstatClassloadOutput1.sh                        8173942 generic-all
 sun/tools/jhsdb/BasicLauncherTest.java                          8193639,8211767 solaris-all,linux-ppc64,linux-ppc64le
 sun/tools/jhsdb/HeapDumpTest.java                               8193639 solaris-all
+sun/tools/jhsdb/HeapDumpTestWithActiveProcess.java              8230731,8001227 windows-all
+sun/tools/jhsdb/HeapDumpTestWithActiveProcess.java              8231635,8231634 generic-all
 
 
 ############################################################################
@@ -884,7 +884,6 @@ jdk/jfr/api/recording/event/TestPeriod.java                     8215890    gener
 jdk/jfr/event/io/EvilInstrument.java                            8221331    generic-all
 jdk/jfr/event/runtime/TestNetworkUtilizationEvent.java          8228990,8229370    generic-all
 jdk/jfr/event/compiler/TestCodeSweeper.java                     8225209    generic-all
-jdk/jfr/jcmd/TestJcmdConfigure.java                             8231317    windows-x64
 
 ############################################################################
 

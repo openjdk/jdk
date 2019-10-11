@@ -152,6 +152,9 @@ class Mutex : public CHeapObj<mtSynchronizer> {
   bool is_locked() const                     { return _owner != NULL; }
 
   bool try_lock(); // Like lock(), but unblocking. It returns false instead
+ private:
+  void lock_contended(Thread *thread); // contended slow-path
+ public:
 
   void release_for_safepoint();
 

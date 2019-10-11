@@ -1,6 +1,6 @@
 /*
- * Copyright (c) 2018, Oracle and/or its affiliates. All rights reserved.
- * Copyright (c) 2018, SAP SE. All rights reserved.
+ * Copyright (c) 2018, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2019, SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -36,14 +36,14 @@ void ModRefBarrierSetAssembler::gen_write_ref_array_post_barrier(MacroAssembler*
 
 void ModRefBarrierSetAssembler::arraycopy_prologue(MacroAssembler* masm, DecoratorSet decorators, BasicType type,
                                                    Register src, Register dst, Register count) {
-  if (type == T_OBJECT || type == T_ARRAY) {
+  if (is_reference_type(type)) {
     gen_write_ref_array_pre_barrier(masm, decorators, dst, count);
   }
 }
 
 void ModRefBarrierSetAssembler::arraycopy_epilogue(MacroAssembler* masm, DecoratorSet decorators, BasicType type,
                                                    Register dst, Register count, bool do_return) {
-  if (type == T_OBJECT || type == T_ARRAY) {
+  if (is_reference_type(type)) {
     gen_write_ref_array_post_barrier(masm, decorators, dst, count, do_return);
   } else {
     if (do_return) { __ z_br(Z_R14); }
@@ -52,7 +52,7 @@ void ModRefBarrierSetAssembler::arraycopy_epilogue(MacroAssembler* masm, Decorat
 
 void ModRefBarrierSetAssembler::store_at(MacroAssembler* masm, DecoratorSet decorators, BasicType type,
                                          const Address& dst, Register val, Register tmp1, Register tmp2, Register tmp3) {
-  if (type == T_OBJECT || type == T_ARRAY) {
+  if (is_reference_type(type)) {
     oop_store_at(masm, decorators, type, dst, val, tmp1, tmp2, tmp3);
   } else {
     BarrierSetAssembler::store_at(masm, decorators, type, dst, val, tmp1, tmp2, tmp3);

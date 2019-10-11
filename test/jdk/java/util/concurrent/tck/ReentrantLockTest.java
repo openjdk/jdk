@@ -39,10 +39,13 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.HashSet;
+import java.util.concurrent.Callable;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.CyclicBarrier;
 import java.util.concurrent.ThreadLocalRandom;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.locks.Condition;
+import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 
 import junit.framework.Test;
@@ -1221,5 +1224,66 @@ public class ReentrantLockTest extends JSR166TestCase {
             thread.join(LONG_DELAY_MS);
             assertFalse(thread.isAlive());
         }
+    }
+
+    /**
+     * ThreadMXBean reports the blockers that we expect.
+     */
+    public void testBlockers() {
+        if (!testImplementationDetails) return;
+        final boolean fair = randomBoolean();
+        final boolean timedAcquire = randomBoolean();
+        final boolean timedAwait = randomBoolean();
+        final String syncClassName = fair
+            ? "ReentrantLock$FairSync"
+            : "ReentrantLock$NonfairSync";
+        final String conditionClassName
+            = "AbstractQueuedSynchronizer$ConditionObject";
+        final Thread.State expectedAcquireState = timedAcquire
+            ? Thread.State.TIMED_WAITING
+            : Thread.State.WAITING;
+        final Thread.State expectedAwaitState = timedAwait
+            ? Thread.State.TIMED_WAITING
+            : Thread.State.WAITING;
+        final Lock lock = new ReentrantLock(fair);
+        final Condition condition = lock.newCondition();
+        final AtomicBoolean conditionSatisfied = new AtomicBoolean(false);
+        lock.lock();
+        final Thread thread = newStartedThread((Action) () -> {
+            if (timedAcquire)
+                lock.tryLock(LONGER_DELAY_MS, MILLISECONDS);
+            else
+                lock.lock();
+            while (!conditionSatisfied.get())
+                if (timedAwait)
+                    condition.await(LONGER_DELAY_MS, MILLISECONDS);
+                else
+                    condition.await();
+        });
+        Callable<Boolean> waitingForLock = () -> {
+            String className;
+            return thread.getState() == expectedAcquireState
+            && (className = blockerClassName(thread)) != null
+            && className.endsWith(syncClassName);
+        };
+        waitForThreadToEnterWaitState(thread, waitingForLock);
+
+        lock.unlock();
+        Callable<Boolean> waitingForCondition = () -> {
+            String className;
+            return thread.getState() == expectedAwaitState
+            && (className = blockerClassName(thread)) != null
+            && className.endsWith(conditionClassName);
+        };
+        waitForThreadToEnterWaitState(thread, waitingForCondition);
+
+        // politely release the waiter
+        conditionSatisfied.set(true);
+        lock.lock();
+        try {
+            condition.signal();
+        } finally { lock.unlock(); }
+
+        awaitTermination(thread);
     }
 }

@@ -27,6 +27,7 @@
 
 #include "memory/allocation.hpp"
 #include "utilities/globalDefinitions.hpp"
+#include "utilities/ticks.hpp"
 
 // Forward decl
 class G1ConcurrentRefine;
@@ -118,11 +119,22 @@ public:
   // Adjust refinement thresholds based on work done during the pause and the goal time.
   void adjust(double logged_cards_scan_time, size_t processed_logged_cards, double goal_ms);
 
+  struct RefinementStats {
+    Tickspan _time;
+    size_t _cards;
+    RefinementStats(Tickspan time, size_t cards) : _time(time), _cards(cards) {}
+  };
+
+  RefinementStats total_refinement_stats() const;
+
   // Cards in the dirty card queue set.
   size_t activation_threshold(uint worker_id) const;
   size_t deactivation_threshold(uint worker_id) const;
-  // Perform a single refinement step. Called by the refinement threads when woken up.
-  bool do_refinement_step(uint worker_id);
+
+  // Perform a single refinement step; called by the refinement
+  // threads.  Returns true if there was refinement work available.
+  // Increments *total_refined_cards.
+  bool do_refinement_step(uint worker_id, size_t* total_refined_cards);
 
   // Iterate over all concurrent refinement threads applying the given closure.
   void threads_do(ThreadClosure *tc);

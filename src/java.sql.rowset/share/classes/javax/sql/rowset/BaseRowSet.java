@@ -330,6 +330,7 @@ public abstract class BaseRowSet implements Serializable, Cloneable {
      * specified in the <code>ResultSet</code> interface.
      * @serial
      */
+    @SuppressWarnings("serial") // Not statically typed as Serializable
     protected java.io.InputStream binaryStream;
 
     /**
@@ -338,6 +339,7 @@ public abstract class BaseRowSet implements Serializable, Cloneable {
      * which is specified in the <code>ResultSet</code> interface.
      * @serial
      */
+    @SuppressWarnings("serial") // Not statically typed as Serializable
     protected java.io.InputStream unicodeStream;
 
     /**
@@ -346,6 +348,7 @@ public abstract class BaseRowSet implements Serializable, Cloneable {
      * which is specified in the <code>ResultSet</code> interface.
      * @serial
      */
+    @SuppressWarnings("serial") // Not statically typed as Serializable
     protected java.io.InputStream asciiStream;
 
     /**
@@ -354,6 +357,7 @@ public abstract class BaseRowSet implements Serializable, Cloneable {
      * which is specified in the <code>ResultSet</code> interface.
      * @serial
      */
+    @SuppressWarnings("serial") // Not statically typed as Serializable
     protected java.io.Reader charStream;
 
     /**
@@ -506,6 +510,7 @@ public abstract class BaseRowSet implements Serializable, Cloneable {
      * custom mapping of user-defined types.
      * @serial
      */
+    @SuppressWarnings("serial") // Not statically typed as Serializable
     private Map<String, Class<?>> map;
 
     /**

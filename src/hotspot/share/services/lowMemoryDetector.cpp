@@ -40,7 +40,7 @@ volatile bool LowMemoryDetector::_enabled_for_collected_pools = false;
 volatile jint LowMemoryDetector::_disabled_count = 0;
 
 bool LowMemoryDetector::has_pending_requests() {
-  assert(Service_lock->owned_by_self(), "Must own Service_lock");
+  assert(Notification_lock->owned_by_self(), "Must own Notification_lock");
   bool has_requests = false;
   int num_memory_pools = MemoryService::num_memory_pools();
   for (int i = 0; i < num_memory_pools; i++) {
@@ -62,7 +62,7 @@ void LowMemoryDetector::process_sensor_changes(TRAPS) {
   ResourceMark rm(THREAD);
   HandleMark hm(THREAD);
 
-  // No need to hold Service_lock to call out to Java
+  // No need to hold Notification_lock to call out to Java
   int num_memory_pools = MemoryService::num_memory_pools();
   for (int i = 0; i < num_memory_pools; i++) {
     MemoryPool* pool = MemoryService::get_memory_pool(i);
@@ -80,7 +80,7 @@ void LowMemoryDetector::process_sensor_changes(TRAPS) {
 // This method could be called from any Java threads
 // and also VMThread.
 void LowMemoryDetector::detect_low_memory() {
-  MutexLocker ml(Service_lock, Mutex::_no_safepoint_check_flag);
+  MutexLocker ml(Notification_lock, Mutex::_no_safepoint_check_flag);
 
   bool has_pending_requests = false;
   int num_memory_pools = MemoryService::num_memory_pools();
@@ -98,7 +98,7 @@ void LowMemoryDetector::detect_low_memory() {
   }
 
   if (has_pending_requests) {
-    Service_lock->notify_all();
+    Notification_lock->notify_all();
   }
 }
 
@@ -113,14 +113,14 @@ void LowMemoryDetector::detect_low_memory(MemoryPool* pool) {
   }
 
   {
-    MutexLocker ml(Service_lock, Mutex::_no_safepoint_check_flag);
+    MutexLocker ml(Notification_lock, Mutex::_no_safepoint_check_flag);
 
     MemoryUsage usage = pool->get_memory_usage();
     sensor->set_gauge_sensor_level(usage,
                                    pool->usage_threshold());
     if (sensor->has_pending_requests()) {
       // notify sensor state update
-      Service_lock->notify_all();
+      Notification_lock->notify_all();
     }
   }
 }
@@ -135,14 +135,14 @@ void LowMemoryDetector::detect_after_gc_memory(MemoryPool* pool) {
   }
 
   {
-    MutexLocker ml(Service_lock, Mutex::_no_safepoint_check_flag);
+    MutexLocker ml(Notification_lock, Mutex::_no_safepoint_check_flag);
 
     MemoryUsage usage = pool->get_last_collection_usage();
     sensor->set_counter_sensor_level(usage, pool->gc_usage_threshold());
 
     if (sensor->has_pending_requests()) {
       // notify sensor state update
-      Service_lock->notify_all();
+      Notification_lock->notify_all();
     }
   }
 }
@@ -205,7 +205,7 @@ SensorInfo::SensorInfo() {
 // If the current level is between high and low threshold, no change.
 //
 void SensorInfo::set_gauge_sensor_level(MemoryUsage usage, ThresholdSupport* high_low_threshold) {
-  assert(Service_lock->owned_by_self(), "Must own Service_lock");
+  assert(Notification_lock->owned_by_self(), "Must own Notification_lock");
   assert(high_low_threshold->is_high_threshold_supported(), "just checking");
 
   bool is_over_high = high_low_threshold->is_high_threshold_crossed(usage);
@@ -260,7 +260,7 @@ void SensorInfo::set_gauge_sensor_level(MemoryUsage usage, ThresholdSupport* hig
 //      the sensor will be on (i.e. sensor is currently off
 //      and has pending trigger requests).
 void SensorInfo::set_counter_sensor_level(MemoryUsage usage, ThresholdSupport* counter_threshold) {
-  assert(Service_lock->owned_by_self(), "Must own Service_lock");
+  assert(Notification_lock->owned_by_self(), "Must own Notification_lock");
   assert(counter_threshold->is_high_threshold_supported(), "just checking");
 
   bool is_over_high = counter_threshold->is_high_threshold_crossed(usage);
@@ -334,8 +334,8 @@ void SensorInfo::trigger(int count, TRAPS) {
   }
 
   {
-    // Holds Service_lock and update the sensor state
-    MutexLocker ml(Service_lock, Mutex::_no_safepoint_check_flag);
+    // Holds Notification_lock and update the sensor state
+    MutexLocker ml(Notification_lock, Mutex::_no_safepoint_check_flag);
     assert(_pending_trigger_count > 0, "Must have pending trigger");
     _sensor_on = true;
     _sensor_count += count;
@@ -345,8 +345,8 @@ void SensorInfo::trigger(int count, TRAPS) {
 
 void SensorInfo::clear(int count, TRAPS) {
   {
-    // Holds Service_lock and update the sensor state
-    MutexLocker ml(Service_lock, Mutex::_no_safepoint_check_flag);
+    // Holds Notification_lock and update the sensor state
+    MutexLocker ml(Notification_lock, Mutex::_no_safepoint_check_flag);
     if (_pending_clear_count == 0) {
       // Bail out if we lost a race to set_*_sensor_level() which may have
       // reactivated the sensor in the meantime because it was triggered again.

@@ -26,6 +26,8 @@ import com.sun.net.httpserver.HttpServer;
 import com.sun.net.httpserver.HttpsConfigurator;
 import com.sun.net.httpserver.HttpsParameters;
 import com.sun.net.httpserver.HttpsServer;
+
+import java.io.Closeable;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
@@ -1568,8 +1570,8 @@ public abstract class DigestEchoServer implements HttpServerAdapters {
                 @Override
                 public void run() {
                     try {
+                        int c = 0;
                         try {
-                            int c;
                             while ((c = is.read()) != -1) {
                                 os.write(c);
                                 os.flush();
@@ -1578,11 +1580,13 @@ public abstract class DigestEchoServer implements HttpServerAdapters {
                                 if (DEBUG) System.out.print(tag);
                             }
                             is.close();
+                        } catch (IOException ex) {
+                            if (DEBUG || !stopped && c >  -1)
+                                ex.printStackTrace(System.out);
+                            end.completeExceptionally(ex);
                         } finally {
-                            os.close();
+                            try {os.close();} catch (Throwable t) {}
                         }
-                    } catch (IOException ex) {
-                        if (DEBUG) ex.printStackTrace(System.out);
                     } finally {
                         end.complete(null);
                     }
@@ -1632,10 +1636,12 @@ public abstract class DigestEchoServer implements HttpServerAdapters {
         @Override
         public void run() {
             Socket clientConnection = null;
+            Socket targetConnection = null;
             try {
                 while (!stopped) {
                     System.out.println(now() + "Tunnel: Waiting for client");
                     Socket toClose;
+                    targetConnection = clientConnection = null;
                     try {
                         toClose = clientConnection = ss.accept();
                         if (NO_LINGER) {
@@ -1649,7 +1655,6 @@ public abstract class DigestEchoServer implements HttpServerAdapters {
                     }
                     System.out.println(now() + "Tunnel: Client accepted");
                     StringBuilder headers = new StringBuilder();
-                    Socket targetConnection = null;
                     InputStream  ccis = clientConnection.getInputStream();
                     OutputStream ccos = clientConnection.getOutputStream();
                     Writer w = new OutputStreamWriter(
@@ -1769,26 +1774,42 @@ public abstract class DigestEchoServer implements HttpServerAdapters {
                             end1 = new CompletableFuture<>());
                     Thread t2 = pipe(targetConnection.getInputStream(), ccos, '-',
                             end2 = new CompletableFuture<>());
-                    end = CompletableFuture.allOf(end1, end2);
+                    var end11 = end1.whenComplete((r, t) -> exceptionally(end2, t));
+                    var end22 = end2.whenComplete((r, t) ->  exceptionally(end1, t));
+                    end = CompletableFuture.allOf(end11, end22);
+                    Socket tc = targetConnection;
                     end.whenComplete(
                             (r,t) -> {
                                 try { toClose.close(); } catch (IOException x) { }
+                                try { tc.close(); } catch (IOException x) { }
                                 finally {connectionCFs.remove(end);}
                             });
                     connectionCFs.add(end);
+                    targetConnection = clientConnection = null;
                     t1.start();
                     t2.start();
                 }
             } catch (Throwable ex) {
-                try {
-                    ss.close();
-                } catch (IOException ex1) {
-                    ex.addSuppressed(ex1);
-                }
+                close(clientConnection, ex);
+                close(targetConnection, ex);
+                close(ss, ex);
                 ex.printStackTrace(System.err);
             } finally {
                 System.out.println(now() + "Tunnel: exiting (stopped=" + stopped + ")");
                 connectionCFs.forEach(cf -> cf.complete(null));
+            }
+        }
+
+        void exceptionally(CompletableFuture<?> cf, Throwable t) {
+            if (t != null) cf.completeExceptionally(t);
+        }
+
+        void close(Closeable c, Throwable e) {
+            if (c == null) return;
+            try {
+                c.close();
+            } catch (IOException x) {
+                e.addSuppressed(x);
             }
         }
     }

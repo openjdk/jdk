@@ -52,6 +52,9 @@ public class HelloDynamic extends DynamicArchiveTestBase {
         doTest(baseArchiveName, topArchiveName);
     }
 
+    private static final String JDWP_OPTION =
+        "-Xrunjdwp:transport=dt_socket,server=y,suspend=n";
+
     private static void doTest(String baseArchiveName, String topArchiveName) throws Exception {
         String appJar = ClassFileInstaller.getJarPath("hello.jar");
         String mainClass = "Hello";
@@ -71,5 +74,19 @@ public class HelloDynamic extends DynamicArchiveTestBase {
                     output.shouldContain("Hello source: shared objects file")
                           .shouldHaveExitValue(0);
                 });
+
+        // Sanity test with JDWP options.
+        // Test with the default base archive should be sufficient.
+        if (baseArchiveName == null) {
+            run2(baseArchiveName, topArchiveName,
+                JDWP_OPTION,
+                "-Xlog:class+load",
+                "-Xlog:cds+dynamic=debug,cds=debug",
+                "-cp", appJar, mainClass)
+                .assertNormalExit(output -> {
+                    output.shouldContain("Hello source: shared objects file")
+                          .shouldHaveExitValue(0);
+                    });
+        }
     }
 }

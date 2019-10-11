@@ -87,8 +87,8 @@ public class VerifySystemPropertyUsage extends VerifyPhase<CoreProviders> {
         } else if (holderQualified.equals("org.graalvm.compiler.hotspot.JVMCIVersionCheck") && caller.getName().equals("main")) {
             // The main method in JVMCIVersionCheck is only called from the shell
             return;
-        } else if (packageName.startsWith("com.oracle.truffle") || packageName.startsWith("org.graalvm.polyglot")) {
-            // Truffle and Polyglot do not depend on JVMCI so cannot use
+        } else if (packageName.startsWith("com.oracle.truffle") || packageName.startsWith("org.graalvm.polyglot") || packageName.startsWith("org.graalvm.home")) {
+            // Truffle and SDK do not depend on JVMCI so they cannot use
             // Services.getSavedProperties()
             return;
         } else if (packageName.startsWith("com.oracle.svm")) {

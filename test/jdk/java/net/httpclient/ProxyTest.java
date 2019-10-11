@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -57,6 +57,7 @@ import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 import jdk.test.lib.net.SimpleSSLContext;
+import static java.net.Proxy.NO_PROXY;
 
 /**
  * @test
@@ -167,7 +168,7 @@ public class ProxyTest {
         System.out.println("Verifying communication with server");
         URI uri = new URI("https://localhost:"
                           + server.getAddress().getPort() + PATH + "x");
-        try (InputStream is = uri.toURL().openConnection().getInputStream()) {
+        try (InputStream is = uri.toURL().openConnection(NO_PROXY).getInputStream()) {
             String resp = new String(is.readAllBytes(), StandardCharsets.UTF_8);
             System.out.println(resp);
             if (!RESPONSE.equals(resp)) {

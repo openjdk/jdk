@@ -83,6 +83,7 @@ public class Ticket implements Cloneable {
         encPart = new_encPart;
     }
 
+    // Warning: called by NativeCreds.c and nativeccache.c
     public Ticket(byte[] data) throws Asn1Exception,
     RealmException, KrbApErrException, IOException {
         init(new DerValue(data));

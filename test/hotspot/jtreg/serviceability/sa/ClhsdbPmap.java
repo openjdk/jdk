@@ -52,9 +52,8 @@ public class ClhsdbPmap {
             List<String> cmds = List.of("pmap");
 
             Map<String, List<String>> expStrMap = new HashMap<>();
-            expStrMap.put("pmap", List.of(
-                    "jvm", "java", "net", "nio",
-                    "jimage", "zip", "verify"));
+            expStrMap.put("pmap",
+                    List.of("jvm", "java", "net", "nio", "jimage", "zip"));
 
             test.run(theApp.getPid(), cmds, expStrMap, null);
         } catch (SkippedException se) {

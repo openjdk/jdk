@@ -49,6 +49,7 @@ class NegotiateAuthentication extends AuthenticationInfo {
     private static final long serialVersionUID = 100L;
     private static final PlatformLogger logger = HttpURLConnection.getHttpLogger();
 
+    @SuppressWarnings("serial") // Not statically typed as Serializable
     private final HttpCallerInfo hci;
 
     // These maps are used to manage the GSS availability for diffrent
@@ -67,6 +68,7 @@ class NegotiateAuthentication extends AuthenticationInfo {
     }
 
     // The HTTP Negotiate Helper
+    @SuppressWarnings("serial") // Not statically typed as Serializable
     private Negotiator negotiator = null;
 
    /**

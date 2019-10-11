@@ -299,11 +299,11 @@
           "Should internally-caused GCs invoke concurrent cycles, or go to" \
           "stop-the-world (degenerated/full)?")                             \
                                                                             \
-  experimental(bool, ShenandoahHumongousMoves, true,                        \
+  diagnostic(bool, ShenandoahHumongousMoves, true,                          \
           "Allow moving humongous regions. This makes GC more resistant "   \
           "to external fragmentation that may otherwise fail other "        \
           "humongous allocations, at the expense of higher GC copying "     \
-          "costs.")                                                         \
+          "costs. Currently affects stop-the-world (full) cycle only.")     \
                                                                             \
   diagnostic(bool, ShenandoahOOMDuringEvacALot, false,                      \
           "Simulate OOM during evacuation frequently.")                     \
@@ -313,9 +313,6 @@
                                                                             \
   diagnostic(bool, ShenandoahTerminationTrace, false,                       \
           "Tracing task termination timings")                               \
-                                                                            \
-  develop(bool, ShenandoahVerifyObjectEquals, false,                        \
-          "Verify that == and != are not used on oops. Only in fastdebug")  \
                                                                             \
   diagnostic(bool, ShenandoahAlwaysPreTouch, false,                         \
           "Pre-touch heap memory, overrides global AlwaysPreTouch")         \

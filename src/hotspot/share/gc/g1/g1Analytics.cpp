@@ -78,6 +78,8 @@ G1Analytics::G1Analytics(const G1Predictions* predictor) :
     _alloc_rate_ms_seq(new TruncatedSeq(TruncatedSeqLength)),
     _prev_collection_pause_end_ms(0.0),
     _rs_length_diff_seq(new TruncatedSeq(TruncatedSeqLength)),
+    _concurrent_refine_rate_ms_seq(new TruncatedSeq(TruncatedSeqLength)),
+    _logged_cards_rate_ms_seq(new TruncatedSeq(TruncatedSeqLength)),
     _cost_per_logged_card_ms_seq(new TruncatedSeq(TruncatedSeqLength)),
     _cost_scan_hcc_seq(new TruncatedSeq(TruncatedSeqLength)),
     _young_cards_per_entry_ratio_seq(new TruncatedSeq(TruncatedSeqLength)),
@@ -102,6 +104,10 @@ G1Analytics::G1Analytics(const G1Predictions* predictor) :
   int index = MIN2(ParallelGCThreads - 1, 7u);
 
   _rs_length_diff_seq->add(rs_length_diff_defaults[index]);
+  // Start with inverse of maximum STW cost.
+  _concurrent_refine_rate_ms_seq->add(1/cost_per_logged_card_ms_defaults[0]);
+  // Some applications have very low rates for logging cards.
+  _logged_cards_rate_ms_seq->add(0.0);
   _cost_per_logged_card_ms_seq->add(cost_per_logged_card_ms_defaults[index]);
   _cost_scan_hcc_seq->add(0.0);
   _young_cards_per_entry_ratio_seq->add(young_cards_per_entry_ratio_defaults[index]);
@@ -157,6 +163,14 @@ void G1Analytics::compute_pause_time_ratio(double interval_ms, double pause_time
   // This reduces the likelihood of a needless heap expansion being triggered.
   _last_pause_time_ratio =
     (pause_time_ms * _recent_prev_end_times_for_all_gcs_sec->num()) / interval_ms;
+}
+
+void G1Analytics::report_concurrent_refine_rate_ms(double cards_per_ms) {
+  _concurrent_refine_rate_ms_seq->add(cards_per_ms);
+}
+
+void G1Analytics::report_logged_cards_rate_ms(double cards_per_ms) {
+  _logged_cards_rate_ms_seq->add(cards_per_ms);
 }
 
 void G1Analytics::report_cost_per_logged_card_ms(double cost_per_logged_card_ms) {
@@ -221,6 +235,14 @@ size_t G1Analytics::predict_rs_length_diff() const {
 
 double G1Analytics::predict_alloc_rate_ms() const {
   return get_new_prediction(_alloc_rate_ms_seq);
+}
+
+double G1Analytics::predict_concurrent_refine_rate_ms() const {
+  return get_new_prediction(_concurrent_refine_rate_ms_seq);
+}
+
+double G1Analytics::predict_logged_cards_rate_ms() const {
+  return get_new_prediction(_logged_cards_rate_ms_seq);
 }
 
 double G1Analytics::predict_cost_per_logged_card_ms() const {

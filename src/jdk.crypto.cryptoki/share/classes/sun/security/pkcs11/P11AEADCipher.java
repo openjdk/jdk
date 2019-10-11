@@ -378,9 +378,6 @@ final class P11AEADCipher extends CipherSpi {
 
         long p11KeyID = p11Key.getKeyID();
         try {
-            if (session == null) {
-                session = token.getOpSession();
-            }
             CK_MECHANISM mechWithParams;
             switch (blockMode) {
                 case MODE_GCM:
@@ -390,6 +387,9 @@ final class P11AEADCipher extends CipherSpi {
                 default:
                     throw new ProviderException("Unsupported mode: " + blockMode);
             }
+            if (session == null) {
+                session = token.getOpSession();
+            }
             if (encrypt) {
                 token.p11.C_EncryptInit(session.id(), mechWithParams,
                     p11KeyID);
@@ -398,7 +398,6 @@ final class P11AEADCipher extends CipherSpi {
                     p11KeyID);
             }
         } catch (PKCS11Exception e) {
-            //e.printStackTrace();
             p11Key.releaseKeyID();
             session = token.releaseSession(session);
             throw e;
@@ -718,7 +717,9 @@ final class P11AEADCipher extends CipherSpi {
                    errorCode == CKR_ENCRYPTED_DATA_LEN_RANGE) {
             throw (IllegalBlockSizeException)
                     (new IllegalBlockSizeException(e.toString()).initCause(e));
-        } else if (errorCode == CKR_ENCRYPTED_DATA_INVALID) {
+        } else if (errorCode == CKR_ENCRYPTED_DATA_INVALID ||
+                // Solaris-specific
+                errorCode == CKR_GENERAL_ERROR) {
             throw (BadPaddingException)
                     (new BadPaddingException(e.toString()).initCause(e));
         }

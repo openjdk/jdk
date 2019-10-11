@@ -402,6 +402,9 @@ private:
 
   // Also used by CompiledIC
   void set_to_interpreted(const methodHandle& callee, address entry);
+  void verify_mt_safe(const methodHandle& callee, address entry,
+                      NativeMovConstReg* method_holder,
+                      NativeJump*        jump) PRODUCT_RETURN;
 #if INCLUDE_AOT
   void set_to_far(const methodHandle& callee, address entry);
 #endif

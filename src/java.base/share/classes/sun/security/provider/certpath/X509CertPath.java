@@ -69,6 +69,7 @@ public class X509CertPath extends CertPath {
     /**
      * List of certificates in this chain
      */
+    @SuppressWarnings("serial") // Not statically typed as Serializable
     private List<X509Certificate> certs;
 
     /**

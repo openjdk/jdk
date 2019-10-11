@@ -710,7 +710,7 @@ jint universe_init() {
   }
 
 #if INCLUDE_CDS
-  if (DumpSharedSpaces || DynamicDumpSharedSpaces) {
+  if (Arguments::is_dumping_archive()) {
     MetaspaceShared::prepare_for_dumping();
   }
 #endif

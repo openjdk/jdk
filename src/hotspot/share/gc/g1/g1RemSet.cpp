@@ -489,7 +489,6 @@ G1RemSet::G1RemSet(G1CollectedHeap* g1h,
   _scan_state(new G1RemSetScanState()),
   _prev_period_summary(),
   _g1h(g1h),
-  _num_conc_refined_cards(0),
   _ct(ct),
   _g1p(_g1h->policy()),
   _hot_card_cache(hot_card_cache) {
@@ -1377,7 +1376,6 @@ void G1RemSet::refine_card_concurrently(CardValue* card_ptr,
 
   G1ConcurrentRefineOopClosure conc_refine_cl(_g1h, worker_id);
   if (r->oops_on_memregion_seq_iterate_careful<false>(dirty_region, &conc_refine_cl) != NULL) {
-    _num_conc_refined_cards++; // Unsynchronized update, only used for logging.
     return;
   }
 

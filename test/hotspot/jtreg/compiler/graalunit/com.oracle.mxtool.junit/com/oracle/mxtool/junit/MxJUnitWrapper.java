@@ -29,18 +29,13 @@ import java.io.FileOutputStream;
 import java.io.FileReader;
 import java.io.IOException;
 import java.io.PrintStream;
-import java.lang.annotation.Annotation;
-import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.Collections;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
 import java.util.ServiceLoader;
 import java.util.Set;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
+import java.util.TreeSet;
 
 import org.junit.internal.JUnitSystem;
 import org.junit.internal.RealSystem;
@@ -58,6 +53,14 @@ import org.junit.runners.model.RunnerScheduler;
 import junit.runner.Version;
 
 public class MxJUnitWrapper {
+
+    // Unit tests that start a JVM subprocess can use these system properties to
+    // add --add-exports and --add-opens as necessary to the JVM command line.
+    //
+    // Known usages:
+    // org.graalvm.compiler.test.SubprocessUtil.getPackageOpeningOptions()
+    public static final String OPENED_PACKAGES_PROPERTY_NAME = "com.oracle.mxtool.junit.opens";
+    public static final String EXPORTED_PACKAGES_PROPERTY_NAME = "com.oracle.mxtool.junit.exports";
 
     public static class MxJUnitConfig {
 
@@ -136,14 +139,25 @@ public class MxJUnitWrapper {
 
         String[] expandedArgs = expandArgs(args);
         int i = 0;
+        List<String> testSpecs = new ArrayList<>();
+        List<String> openPackagesSpecs = new ArrayList<>();
         while (i < expandedArgs.length) {
             String each = expandedArgs[i];
             if (each.charAt(0) == '-') {
                 // command line arguments
                 if (each.contentEquals("-JUnitVerbose")) {
                     config.verbose = true;
+                    config.enableTiming = true;
+                } else if (each.contentEquals("-JUnitOpenPackages")) {
+                    if (i + 1 >= expandedArgs.length) {
+                        system.out().println("Must include argument for -JUnitAddExports");
+                        System.exit(1);
+                    }
+                    openPackagesSpecs.add(expandedArgs[++i]);
                 } else if (each.contentEquals("-JUnitVeryVerbose")) {
+                    config.verbose = true;
                     config.veryVerbose = true;
+                    config.enableTiming = true;
                 } else if (each.contentEquals("-JUnitFailFast")) {
                     config.failFast = true;
                 } else if (each.contentEquals("-JUnitEnableTiming")) {
@@ -172,21 +186,35 @@ public class MxJUnitWrapper {
                 }
 
             } else {
-
-                try {
-                    builder.addTestSpec(each);
-                } catch (MxJUnitRequest.BuilderException ex) {
-                    system.out().println(ex.getMessage());
-                    System.exit(1);
-                }
+                testSpecs.add(each);
             }
             i++;
         }
 
-        MxJUnitRequest request = builder.build();
+        ModuleSupport moduleSupport = new ModuleSupport(system.out());
+        Set<String> opened = new TreeSet<>();
+        Set<String> exported = new TreeSet<>();
+        for (String spec : openPackagesSpecs) {
+            moduleSupport.openPackages(spec, "-JUnitOpenPackages", opened, exported);
+        }
 
-        if (System.getProperty("java.specification.version").compareTo("1.9") >= 0) {
-            addExports(request.classes, system.out());
+        for (String spec : testSpecs) {
+            try {
+                builder.addTestSpec(spec);
+            } catch (MxJUnitRequest.BuilderException ex) {
+                system.out().println(ex.getMessage());
+                System.exit(1);
+            }
+        }
+
+        MxJUnitRequest request = builder.build();
+        moduleSupport.processAddExportsAnnotations(request.classes, opened, exported);
+
+        if (!opened.isEmpty()) {
+            System.setProperty(OPENED_PACKAGES_PROPERTY_NAME, String.join(System.lineSeparator(), opened));
+        }
+        if (!exported.isEmpty()) {
+            System.setProperty(EXPORTED_PACKAGES_PROPERTY_NAME, String.join(System.lineSeparator(), exported));
         }
 
         for (RunListener p : ServiceLoader.load(RunListener.class)) {
@@ -285,8 +313,6 @@ public class MxJUnitWrapper {
         return result;
     }
 
-    private static final Pattern MODULE_PACKAGE_RE = Pattern.compile("([^/]+)/(.+)");
-
     private static class Timing<T> implements Comparable<Timing<T>> {
         final T subject;
         final long value;
@@ -340,93 +366,6 @@ public class MxJUnitWrapper {
                 System.out.printf("Test %s not finished after %d ms%n", current[0], current[1]);
             }
 
-        }
-    }
-
-    /**
-     * Adds the super types of {@code cls} to {@code supertypes}.
-     */
-    private static void gatherSupertypes(Class<?> cls, Set<Class<?>> supertypes) {
-        if (!supertypes.contains(cls)) {
-            supertypes.add(cls);
-            Class<?> superclass = cls.getSuperclass();
-            if (superclass != null) {
-                gatherSupertypes(superclass, supertypes);
-            }
-            for (Class<?> iface : cls.getInterfaces()) {
-                gatherSupertypes(iface, supertypes);
-            }
-        }
-    }
-
-    /**
-     * Updates modules specified in {@code AddExport} annotations on {@code classes} to export
-     * concealed packages to the annotation classes' declaring modules.
-     */
-    private static void addExports(Set<Class<?>> classes, PrintStream out) {
-        Set<Class<?>> types = new HashSet<>();
-        for (Class<?> cls : classes) {
-            gatherSupertypes(cls, types);
-        }
-        for (Class<?> cls : types) {
-            Annotation[] annos = cls.getAnnotations();
-            for (Annotation a : annos) {
-                Class<? extends Annotation> annotationType = a.annotationType();
-                if (annotationType.getSimpleName().equals("AddExports")) {
-                    Optional<String[]> value = getElement("value", String[].class, a);
-                    if (value.isPresent()) {
-                        for (String export : value.get()) {
-                            Matcher m = MODULE_PACKAGE_RE.matcher(export);
-                            if (m.matches()) {
-                                String moduleName = m.group(1);
-                                String packageName = m.group(2);
-                                JLModule module = JLModule.find(moduleName);
-                                if (module == null) {
-                                    out.printf("%s: Cannot find module named %s specified in \"AddExports\" annotation: %s%n", cls.getName(), moduleName, a);
-                                } else {
-                                    if (packageName.equals("*")) {
-                                        module.exportAllPackagesTo(JLModule.fromClass(cls));
-                                    } else {
-                                        module.addExports(packageName, JLModule.fromClass(cls));
-                                        module.addOpens(packageName, JLModule.fromClass(cls));
-                                    }
-                                }
-                            } else {
-                                out.printf("%s: Ignoring \"AddExports\" annotation with value not matching <module>/<package> pattern: %s%n", cls.getName(), a);
-                            }
-                        }
-                    } else {
-                        out.printf("%s: Ignoring \"AddExports\" annotation without `String value` element: %s%n", cls.getName(), a);
-                    }
-                }
-            }
-        }
-    }
-
-    /**
-     * Gets the value of the element named {@code name} of type {@code type} from {@code annotation}
-     * if present.
-     *
-     * @return the requested element value wrapped in an {@link Optional} or
-     *         {@link Optional#empty()} if {@code annotation} has no element named {@code name}
-     * @throws AssertionError if {@code annotation} has an element of the given name but whose type
-     *             is not {@code type} or if there's some problem reading the value via reflection
-     */
-    private static <T> Optional<T> getElement(String name, Class<T> type, Annotation annotation) {
-        Class<? extends Annotation> annotationType = annotation.annotationType();
-        Method valueAccessor;
-        try {
-            valueAccessor = annotationType.getMethod(name);
-            if (!valueAccessor.getReturnType().equals(type)) {
-                throw new AssertionError(String.format("Element %s of %s is of type %s, not %s ", name, annotationType.getName(), valueAccessor.getReturnType().getName(), type.getName()));
-            }
-        } catch (NoSuchMethodException e) {
-            return Optional.empty();
-        }
-        try {
-            return Optional.of(type.cast(valueAccessor.invoke(annotation)));
-        } catch (Exception e) {
-            throw new AssertionError(String.format("Could not read %s element from %s", name, annotation), e);
         }
     }
 

@@ -33,6 +33,7 @@ import java.net.*;
 import java.util.*;
 import java.io.*;
 import jdk.test.lib.net.URIBuilder;
+import static java.net.Proxy.NO_PROXY;
 
 public class B6181108 implements Runnable {
     ServerSocket ss;
@@ -105,7 +106,7 @@ public class B6181108 implements Runnable {
                    .toString();
         urlWithSpace = base + "/space%20test/page1.html";
         URL url = new URL(urlWithSpace);
-        URLConnection urlc = url.openConnection();
+        URLConnection urlc = url.openConnection(NO_PROXY);
         int i = ((HttpURLConnection)(urlc)).getResponseCode();
         System.out.println("response code = " + i);
         ResponseCache.setDefault(null);

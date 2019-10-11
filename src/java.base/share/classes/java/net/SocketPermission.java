@@ -1433,7 +1433,7 @@ final class SocketPermissionCollection extends PermissionCollection
                 if ((effective & desired) == desired) {
                     return true;
                 }
-                needed = (desired ^ effective);
+                needed = (desired & ~effective);
             }
         }
         return false;

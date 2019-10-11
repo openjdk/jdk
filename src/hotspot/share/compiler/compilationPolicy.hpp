@@ -22,8 +22,8 @@
  *
  */
 
-#ifndef SHARE_RUNTIME_COMPILATIONPOLICY_HPP
-#define SHARE_RUNTIME_COMPILATIONPOLICY_HPP
+#ifndef SHARE_COMPILER_COMPILATIONPOLICY_HPP
+#define SHARE_COMPILER_COMPILATIONPOLICY_HPP
 
 #include "code/nmethod.hpp"
 #include "compiler/compileBroker.hpp"
@@ -36,7 +36,6 @@
 // interpreted).
 class CompileTask;
 class CompileQueue;
-class RFrame;
 
 class CompilationPolicy : public CHeapObj<mtCompiler> {
   static CompilationPolicy* _policy;
@@ -85,17 +84,19 @@ public:
   virtual bool should_not_inline(ciEnv* env, ciMethod* method) { return false; }
 };
 
-// A base class for baseline policies.
-class NonTieredCompPolicy : public CompilationPolicy {
+// A simple compilation policy.
+class SimpleCompPolicy : public CompilationPolicy {
   int _compiler_count;
-protected:
+ private:
   static void trace_frequency_counter_overflow(const methodHandle& m, int branch_bci, int bci);
   static void trace_osr_request(const methodHandle& method, nmethod* osr, int bci);
   static void trace_osr_completion(nmethod* osr_nm);
   void reset_counter_for_invocation_event(const methodHandle& method);
   void reset_counter_for_back_branch_event(const methodHandle& method);
-public:
-  NonTieredCompPolicy() : _compiler_count(0) { }
+  void method_invocation_event(const methodHandle& m, JavaThread* thread);
+  void method_back_branch_event(const methodHandle& m, int bci, JavaThread* thread);
+ public:
+  SimpleCompPolicy() : _compiler_count(0) { }
   virtual CompLevel initial_compile_level() { return CompLevel_highest_tier; }
   virtual int compiler_count(CompLevel comp_level);
   virtual void do_safepoint_work();
@@ -106,38 +107,7 @@ public:
   virtual void initialize();
   virtual CompileTask* select_task(CompileQueue* compile_queue);
   virtual nmethod* event(const methodHandle& method, const methodHandle& inlinee, int branch_bci, int bci, CompLevel comp_level, CompiledMethod* nm, JavaThread* thread);
-  virtual void method_invocation_event(const methodHandle& m, JavaThread* thread) = 0;
-  virtual void method_back_branch_event(const methodHandle& m, int bci, JavaThread* thread) = 0;
 };
 
-class SimpleCompPolicy : public NonTieredCompPolicy {
- public:
-  virtual void method_invocation_event(const methodHandle& m, JavaThread* thread);
-  virtual void method_back_branch_event(const methodHandle& m, int bci, JavaThread* thread);
-};
 
-// StackWalkCompPolicy - existing C2 policy
-
-#ifdef COMPILER2
-class StackWalkCompPolicy : public NonTieredCompPolicy {
- public:
-  virtual void method_invocation_event(const methodHandle& m, JavaThread* thread);
-  virtual void method_back_branch_event(const methodHandle& m, int bci, JavaThread* thread);
-
- private:
-  RFrame* findTopInlinableFrame(GrowableArray<RFrame*>* stack);
-  RFrame* senderOf(RFrame* rf, GrowableArray<RFrame*>* stack);
-
-  // the following variables hold values computed by the last inlining decision
-  // they are used for performance debugging only (print better messages)
-  static const char* _msg;            // reason for not inlining
-
-  static const char* shouldInline   (const methodHandle& callee, float frequency, int cnt);
-  // positive filter: should send be inlined?  returns NULL (--> yes) or rejection msg
-  static const char* shouldNotInline(const methodHandle& callee);
-  // negative filter: should send NOT be inlined?  returns NULL (--> inline) or rejection msg
-
-};
-#endif
-
-#endif // SHARE_RUNTIME_COMPILATIONPOLICY_HPP
+#endif // SHARE_COMPILER_COMPILATIONPOLICY_HPP

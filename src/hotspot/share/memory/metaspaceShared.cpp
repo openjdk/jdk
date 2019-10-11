@@ -425,7 +425,7 @@ void MetaspaceShared::read_extra_data(const char* filename, TRAPS) {
 }
 
 void MetaspaceShared::commit_shared_space_to(char* newtop) {
-  assert(DumpSharedSpaces || DynamicDumpSharedSpaces, "dump-time only");
+  Arguments::assert_is_dumping_archive();
   char* base = _shared_rs.base();
   size_t need_committed_size = newtop - base;
   size_t has_committed_size = _shared_vs.committed_size();
@@ -509,8 +509,7 @@ address MetaspaceShared::i2i_entry_code_buffers(size_t total_size) {
 }
 
 uintx MetaspaceShared::object_delta_uintx(void* obj) {
-  assert(DumpSharedSpaces || DynamicDumpSharedSpaces,
-         "supported only for dumping");
+  Arguments::assert_is_dumping_archive();
   if (DumpSharedSpaces) {
     assert(shared_rs()->contains(obj), "must be");
   } else {

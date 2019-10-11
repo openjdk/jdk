@@ -67,6 +67,7 @@ public class TicketFlags extends KerberosFlags {
         }
     }
 
+    // Warning: called by NativeCreds.c and nativeccache.c
     public TicketFlags(int size, byte[] data) throws Asn1Exception {
         super(size, data);
         if ((size > data.length * BITS_PER_UNIT) || (size > Krb5.TKT_OPTS_MAX + 1))

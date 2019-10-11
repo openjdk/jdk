@@ -33,6 +33,7 @@
 import java.net.*;
 import java.io.*;
 import jdk.test.lib.net.URIBuilder;
+import static java.net.Proxy.NO_PROXY;
 
 public class KeepAliveTimerThread {
     static class Fetcher implements Runnable {
@@ -44,7 +45,7 @@ public class KeepAliveTimerThread {
 
         public void run() {
             try {
-                InputStream in = url.openConnection().getInputStream();
+                InputStream in = url.openConnection(NO_PROXY).getInputStream();
                 byte b[] = new byte[128];
                 int n;
                 do {

@@ -294,12 +294,13 @@ public:
       return;
     }
 
-    ZLocker<ZReentrantLock> locker(ZNMethod::lock_for_nmethod(nm));
-
     if (nm->is_unloading()) {
+      ZLocker<ZReentrantLock> locker(ZNMethod::lock_for_nmethod(nm));
       unlink(nm);
       return;
     }
+
+    ZLocker<ZReentrantLock> locker(ZNMethod::lock_for_nmethod(nm));
 
     // Heal oops and disarm
     ZNMethodOopClosure cl;

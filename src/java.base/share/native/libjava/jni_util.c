@@ -77,33 +77,9 @@ JNU_ThrowIllegalArgumentException(JNIEnv *env, const char *msg)
 }
 
 JNIEXPORT void JNICALL
-JNU_ThrowIllegalAccessError(JNIEnv *env, const char *msg)
-{
-    JNU_ThrowByName(env, "java/lang/IllegalAccessError", msg);
-}
-
-JNIEXPORT void JNICALL
-JNU_ThrowIllegalAccessException(JNIEnv *env, const char *msg)
-{
-    JNU_ThrowByName(env, "java/lang/IllegalAccessException", msg);
-}
-
-JNIEXPORT void JNICALL
 JNU_ThrowInternalError(JNIEnv *env, const char *msg)
 {
     JNU_ThrowByName(env, "java/lang/InternalError", msg);
-}
-
-JNIEXPORT void JNICALL
-JNU_ThrowNoSuchFieldException(JNIEnv *env, const char *msg)
-{
-    JNU_ThrowByName(env, "java/lang/NoSuchFieldException", msg);
-}
-
-JNIEXPORT void JNICALL
-JNU_ThrowNoSuchMethodException(JNIEnv *env, const char *msg)
-{
-    JNU_ThrowByName(env, "java/lang/NoSuchMethodException", msg);
 }
 
 JNIEXPORT void JNICALL
@@ -113,39 +89,9 @@ JNU_ThrowClassNotFoundException(JNIEnv *env, const char *msg)
 }
 
 JNIEXPORT void JNICALL
-JNU_ThrowNumberFormatException(JNIEnv *env, const char *msg)
-{
-    JNU_ThrowByName(env, "java/lang/NumberFormatException", msg);
-}
-
-JNIEXPORT void JNICALL
 JNU_ThrowIOException(JNIEnv *env, const char *msg)
 {
     JNU_ThrowByName(env, "java/io/IOException", msg);
-}
-
-JNIEXPORT void JNICALL
-JNU_ThrowNoSuchFieldError(JNIEnv *env, const char *msg)
-{
-    JNU_ThrowByName(env, "java/lang/NoSuchFieldError", msg);
-}
-
-JNIEXPORT void JNICALL
-JNU_ThrowNoSuchMethodError(JNIEnv *env, const char *msg)
-{
-    JNU_ThrowByName(env, "java/lang/NoSuchMethodError", msg);
-}
-
-JNIEXPORT void JNICALL
-JNU_ThrowStringIndexOutOfBoundsException(JNIEnv *env, const char *msg)
-{
-    JNU_ThrowByName(env, "java/lang/StringIndexOutOfBoundsException", msg);
-}
-
-JNIEXPORT void JNICALL
-JNU_ThrowInstantiationException(JNIEnv *env, const char *msg)
-{
-    JNU_ThrowByName(env, "java/lang/InstantiationException", msg);
 }
 
 /*
@@ -845,12 +791,6 @@ InitializeEncoding(JNIEnv *env, const char *encname)
     CHECK_NULL(String_value_ID);
 }
 
-JNIEXPORT jstring
-NewStringPlatform(JNIEnv *env, const char *str)
-{
-    return JNU_NewStringPlatform(env, str);
-}
-
 JNIEXPORT jstring JNICALL
 JNU_NewStringPlatform(JNIEnv *env, const char *str)
 {
@@ -1024,54 +964,6 @@ JNU_ClassString(JNIEnv *env)
     return cls;
 }
 
-JNIEXPORT jclass JNICALL
-JNU_ClassClass(JNIEnv *env)
-{
-    static jclass cls = 0;
-    if (cls == 0) {
-        jclass c;
-        if ((*env)->EnsureLocalCapacity(env, 1) < 0)
-            return 0;
-        c = (*env)->FindClass(env, "java/lang/Class");
-        CHECK_NULL_RETURN(c, NULL);
-        cls = (*env)->NewGlobalRef(env, c);
-        (*env)->DeleteLocalRef(env, c);
-    }
-    return cls;
-}
-
-JNIEXPORT jclass JNICALL
-JNU_ClassObject(JNIEnv *env)
-{
-    static jclass cls = 0;
-    if (cls == 0) {
-        jclass c;
-        if ((*env)->EnsureLocalCapacity(env, 1) < 0)
-            return 0;
-        c = (*env)->FindClass(env, "java/lang/Object");
-        CHECK_NULL_RETURN(c, NULL);
-        cls = (*env)->NewGlobalRef(env, c);
-        (*env)->DeleteLocalRef(env, c);
-    }
-    return cls;
-}
-
-JNIEXPORT jclass JNICALL
-JNU_ClassThrowable(JNIEnv *env)
-{
-    static jclass cls = 0;
-    if (cls == 0) {
-        jclass c;
-        if ((*env)->EnsureLocalCapacity(env, 1) < 0)
-            return 0;
-        c = (*env)->FindClass(env, "java/lang/Throwable");
-        CHECK_NULL_RETURN(c, NULL);
-        cls = (*env)->NewGlobalRef(env, c);
-        (*env)->DeleteLocalRef(env, c);
-    }
-    return cls;
-}
-
 JNIEXPORT jint JNICALL
 JNU_CopyObjectArray(JNIEnv *env, jobjectArray dst, jobjectArray src,
                          jint count)
@@ -1110,124 +1002,9 @@ JNU_IsInstanceOfByName(JNIEnv *env, jobject object, const char* classname)
     return JNI_ERR;
 }
 
-JNIEXPORT jboolean JNICALL
-JNU_Equals(JNIEnv *env, jobject object1, jobject object2)
-{
-    static jmethodID mid = NULL;
-    if (mid == NULL) {
-        jclass objClazz = JNU_ClassObject(env);
-        CHECK_NULL_RETURN(objClazz, JNI_FALSE);
-        mid = (*env)->GetMethodID(env, objClazz, "equals",
-                                  "(Ljava/lang/Object;)Z");
-        CHECK_NULL_RETURN(mid, JNI_FALSE);
-    }
-    return (*env)->CallBooleanMethod(env, object1, mid, object2);
-}
-
-
-/************************************************************************
- * Thread calls
- */
-
-static jmethodID Object_waitMID;
-static jmethodID Object_notifyMID;
-static jmethodID Object_notifyAllMID;
-
-JNIEXPORT void JNICALL
-JNU_MonitorWait(JNIEnv *env, jobject object, jlong timeout)
-{
-    if (object == NULL) {
-        JNU_ThrowNullPointerException(env, "JNU_MonitorWait argument");
-        return;
-    }
-    if (Object_waitMID == NULL) {
-        jclass cls = JNU_ClassObject(env);
-        if (cls == NULL) {
-            return;
-        }
-        Object_waitMID = (*env)->GetMethodID(env, cls, "wait", "(J)V");
-        if (Object_waitMID == NULL) {
-            return;
-        }
-    }
-    (*env)->CallVoidMethod(env, object, Object_waitMID, timeout);
-}
-
-JNIEXPORT void JNICALL
-JNU_Notify(JNIEnv *env, jobject object)
-{
-    if (object == NULL) {
-        JNU_ThrowNullPointerException(env, "JNU_Notify argument");
-        return;
-    }
-    if (Object_notifyMID == NULL) {
-        jclass cls = JNU_ClassObject(env);
-        if (cls == NULL) {
-            return;
-        }
-        Object_notifyMID = (*env)->GetMethodID(env, cls, "notify", "()V");
-        if (Object_notifyMID == NULL) {
-            return;
-        }
-    }
-    (*env)->CallVoidMethod(env, object, Object_notifyMID);
-}
-
-JNIEXPORT void JNICALL
-JNU_NotifyAll(JNIEnv *env, jobject object)
-{
-    if (object == NULL) {
-        JNU_ThrowNullPointerException(env, "JNU_NotifyAll argument");
-        return;
-    }
-    if (Object_notifyAllMID == NULL) {
-        jclass cls = JNU_ClassObject(env);
-        if (cls == NULL) {
-            return;
-        }
-        Object_notifyAllMID = (*env)->GetMethodID(env, cls,"notifyAll", "()V");
-        if (Object_notifyAllMID == NULL) {
-            return;
-        }
-    }
-    (*env)->CallVoidMethod(env, object, Object_notifyAllMID);
-}
-
-
 /************************************************************************
  * Debugging utilities
  */
-
-JNIEXPORT void JNICALL
-JNU_PrintString(JNIEnv *env, char *hdr, jstring string)
-{
-    if (string == NULL) {
-        fprintf(stderr, "%s: is NULL\n", hdr);
-    } else {
-        const char *stringPtr = JNU_GetStringPlatformChars(env, string, 0);
-        if (stringPtr == 0)
-            return;
-        fprintf(stderr, "%s: %s\n", hdr, stringPtr);
-        JNU_ReleaseStringPlatformChars(env, string, stringPtr);
-    }
-}
-
-JNIEXPORT void JNICALL
-JNU_PrintClass(JNIEnv *env, char* hdr, jobject object)
-{
-    if (object == NULL) {
-        fprintf(stderr, "%s: object is NULL\n", hdr);
-        return;
-    } else {
-        jclass cls = (*env)->GetObjectClass(env, object);
-        jstring clsName = JNU_ToString(env, cls);
-        if (clsName == NULL) {
-            JNU_PrintString(env, hdr, clsName);
-        }
-        (*env)->DeleteLocalRef(env, cls);
-        (*env)->DeleteLocalRef(env, clsName);
-    }
-}
 
 JNIEXPORT jstring JNICALL
 JNU_ToString(JNIEnv *env, jobject object)
@@ -1436,71 +1213,4 @@ JNU_GetStaticFieldByName(JNIEnv *env,
         *hasException = (*env)->ExceptionCheck(env);
     }
     return result;
-}
-
-JNIEXPORT void JNICALL
-JNU_SetStaticFieldByName(JNIEnv *env,
-                         jboolean *hasException,
-                         const char *classname,
-                         const char *name,
-                         const char *signature,
-                         ...)
-{
-    jclass cls;
-    jfieldID fid;
-    va_list args;
-
-    if ((*env)->EnsureLocalCapacity(env, 3) < 0)
-        goto done2;
-
-    cls = (*env)->FindClass(env, classname);
-    if (cls == 0)
-        goto done2;
-
-    fid = (*env)->GetStaticFieldID(env, cls, name, signature);
-    if (fid == 0)
-        goto done1;
-
-    va_start(args, signature);
-    switch (*signature) {
-    case '[':
-    case 'L':
-        (*env)->SetStaticObjectField(env, cls, fid, va_arg(args, jobject));
-        break;
-    case 'Z':
-        (*env)->SetStaticBooleanField(env, cls, fid, (jboolean)va_arg(args, int));
-        break;
-    case 'B':
-        (*env)->SetStaticByteField(env, cls, fid, (jbyte)va_arg(args, int));
-        break;
-    case 'C':
-        (*env)->SetStaticCharField(env, cls, fid, (jchar)va_arg(args, int));
-        break;
-    case 'S':
-        (*env)->SetStaticShortField(env, cls, fid, (jshort)va_arg(args, int));
-        break;
-    case 'I':
-        (*env)->SetStaticIntField(env, cls, fid, va_arg(args, jint));
-        break;
-    case 'J':
-        (*env)->SetStaticLongField(env, cls, fid, va_arg(args, jlong));
-        break;
-    case 'F':
-        (*env)->SetStaticFloatField(env, cls, fid, (jfloat)va_arg(args, jdouble));
-        break;
-    case 'D':
-        (*env)->SetStaticDoubleField(env, cls, fid, va_arg(args, jdouble));
-        break;
-
-    default:
-        (*env)->FatalError(env, "JNU_SetStaticFieldByName: illegal signature");
-    }
-    va_end(args);
-
- done1:
-    (*env)->DeleteLocalRef(env, cls);
- done2:
-    if (hasException) {
-        *hasException = (*env)->ExceptionCheck(env);
-    }
 }

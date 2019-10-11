@@ -1058,8 +1058,8 @@ static enum RC rc_class(OptoReg::Name reg)
 static int vec_mov_helper(CodeBuffer *cbuf, bool do_size, int src_lo, int dst_lo,
                           int src_hi, int dst_hi, uint ireg, outputStream* st);
 
-static int vec_spill_helper(CodeBuffer *cbuf, bool do_size, bool is_load,
-                            int stack_offset, int reg, uint ireg, outputStream* st);
+int vec_spill_helper(CodeBuffer *cbuf, bool do_size, bool is_load,
+                     int stack_offset, int reg, uint ireg, outputStream* st);
 
 static void vec_stack_to_stack_helper(CodeBuffer *cbuf, int src_offset,
                                       int dst_offset, uint ireg, outputStream* st) {
@@ -4260,200 +4260,6 @@ operand cmpOpUCF2() %{
   %}
 %}
 
-// Operands for bound floating pointer register arguments
-operand rxmm0() %{
-  constraint(ALLOC_IN_RC(xmm0_reg));
-  match(VecX);
-  format%{%}
-  interface(REG_INTER);
-%}
-operand rxmm1() %{
-  constraint(ALLOC_IN_RC(xmm1_reg));
-  match(VecX);
-  format%{%}
-  interface(REG_INTER);
-%}
-operand rxmm2() %{
-  constraint(ALLOC_IN_RC(xmm2_reg));
-  match(VecX);
-  format%{%}
-  interface(REG_INTER);
-%}
-operand rxmm3() %{
-  constraint(ALLOC_IN_RC(xmm3_reg));
-  match(VecX);
-  format%{%}
-  interface(REG_INTER);
-%}
-operand rxmm4() %{
-  constraint(ALLOC_IN_RC(xmm4_reg));
-  match(VecX);
-  format%{%}
-  interface(REG_INTER);
-%}
-operand rxmm5() %{
-  constraint(ALLOC_IN_RC(xmm5_reg));
-  match(VecX);
-  format%{%}
-  interface(REG_INTER);
-%}
-operand rxmm6() %{
-  constraint(ALLOC_IN_RC(xmm6_reg));
-  match(VecX);
-  format%{%}
-  interface(REG_INTER);
-%}
-operand rxmm7() %{
-  constraint(ALLOC_IN_RC(xmm7_reg));
-  match(VecX);
-  format%{%}
-  interface(REG_INTER);
-%}
-operand rxmm8() %{
-  constraint(ALLOC_IN_RC(xmm8_reg));
-  match(VecX);
-  format%{%}
-  interface(REG_INTER);
-%}
-operand rxmm9() %{
-  constraint(ALLOC_IN_RC(xmm9_reg));
-  match(VecX);
-  format%{%}
-  interface(REG_INTER);
-%}
-operand rxmm10() %{
-  constraint(ALLOC_IN_RC(xmm10_reg));
-  match(VecX);
-  format%{%}
-  interface(REG_INTER);
-%}
-operand rxmm11() %{
-  constraint(ALLOC_IN_RC(xmm11_reg));
-  match(VecX);
-  format%{%}
-  interface(REG_INTER);
-%}
-operand rxmm12() %{
-  constraint(ALLOC_IN_RC(xmm12_reg));
-  match(VecX);
-  format%{%}
-  interface(REG_INTER);
-%}
-operand rxmm13() %{
-  constraint(ALLOC_IN_RC(xmm13_reg));
-  match(VecX);
-  format%{%}
-  interface(REG_INTER);
-%}
-operand rxmm14() %{
-  constraint(ALLOC_IN_RC(xmm14_reg));
-  match(VecX);
-  format%{%}
-  interface(REG_INTER);
-%}
-operand rxmm15() %{
-  constraint(ALLOC_IN_RC(xmm15_reg));
-  match(VecX);
-  format%{%}
-  interface(REG_INTER);
-%}
-operand rxmm16() %{
-  constraint(ALLOC_IN_RC(xmm16_reg));
-  match(VecX);
-  format%{%}
-  interface(REG_INTER);
-%}
-operand rxmm17() %{
-  constraint(ALLOC_IN_RC(xmm17_reg));
-  match(VecX);
-  format%{%}
-  interface(REG_INTER);
-%}
-operand rxmm18() %{
-  constraint(ALLOC_IN_RC(xmm18_reg));
-  match(VecX);
-  format%{%}
-  interface(REG_INTER);
-%}
-operand rxmm19() %{
-  constraint(ALLOC_IN_RC(xmm19_reg));
-  match(VecX);
-  format%{%}
-  interface(REG_INTER);
-%}
-operand rxmm20() %{
-  constraint(ALLOC_IN_RC(xmm20_reg));
-  match(VecX);
-  format%{%}
-  interface(REG_INTER);
-%}
-operand rxmm21() %{
-  constraint(ALLOC_IN_RC(xmm21_reg));
-  match(VecX);
-  format%{%}
-  interface(REG_INTER);
-%}
-operand rxmm22() %{
-  constraint(ALLOC_IN_RC(xmm22_reg));
-  match(VecX);
-  format%{%}
-  interface(REG_INTER);
-%}
-operand rxmm23() %{
-  constraint(ALLOC_IN_RC(xmm23_reg));
-  match(VecX);
-  format%{%}
-  interface(REG_INTER);
-%}
-operand rxmm24() %{
-  constraint(ALLOC_IN_RC(xmm24_reg));
-  match(VecX);
-  format%{%}
-  interface(REG_INTER);
-%}
-operand rxmm25() %{
-  constraint(ALLOC_IN_RC(xmm25_reg));
-  match(VecX);
-  format%{%}
-  interface(REG_INTER);
-%}
-operand rxmm26() %{
-  constraint(ALLOC_IN_RC(xmm26_reg));
-  match(VecX);
-  format%{%}
-  interface(REG_INTER);
-%}
-operand rxmm27() %{
-  constraint(ALLOC_IN_RC(xmm27_reg));
-  match(VecX);
-  format%{%}
-  interface(REG_INTER);
-%}
-operand rxmm28() %{
-  constraint(ALLOC_IN_RC(xmm28_reg));
-  match(VecX);
-  format%{%}
-  interface(REG_INTER);
-%}
-operand rxmm29() %{
-  constraint(ALLOC_IN_RC(xmm29_reg));
-  match(VecX);
-  format%{%}
-  interface(REG_INTER);
-%}
-operand rxmm30() %{
-  constraint(ALLOC_IN_RC(xmm30_reg));
-  match(VecX);
-  format%{%}
-  interface(REG_INTER);
-%}
-operand rxmm31() %{
-  constraint(ALLOC_IN_RC(xmm31_reg));
-  match(VecX);
-  format%{%}
-  interface(REG_INTER);
-%}
-
 //----------OPERAND CLASSES----------------------------------------------------
 // Operand Classes are groups of operands that are used as to simplify
 // instruction definitions by not requiring the AD writer to specify separate
@@ -5346,6 +5152,7 @@ instruct loadRange(rRegI dst, memory mem)
 instruct loadP(rRegP dst, memory mem)
 %{
   match(Set dst (LoadP mem));
+  predicate(n->as_Load()->barrier_data() == 0);
 
   ins_cost(125); // XXX
   format %{ "movq    $dst, $mem\t# ptr" %}
@@ -7794,6 +7601,7 @@ instruct storePConditional(memory heap_top_ptr,
                            rax_RegP oldval, rRegP newval,
                            rFlagsReg cr)
 %{
+  predicate(n->as_LoadStore()->barrier_data() == 0);
   match(Set cr (StorePConditional heap_top_ptr (Binary oldval newval)));
 
   format %{ "cmpxchgq $heap_top_ptr, $newval\t# (ptr) "
@@ -7845,7 +7653,7 @@ instruct compareAndSwapP(rRegI res,
                          rax_RegP oldval, rRegP newval,
                          rFlagsReg cr)
 %{
-  predicate(VM_Version::supports_cx8());
+  predicate(VM_Version::supports_cx8() && n->as_LoadStore()->barrier_data() == 0);
   match(Set res (CompareAndSwapP mem_ptr (Binary oldval newval)));
   match(Set res (WeakCompareAndSwapP mem_ptr (Binary oldval newval)));
   effect(KILL cr, KILL oldval);
@@ -8087,7 +7895,7 @@ instruct compareAndExchangeP(
                          rax_RegP oldval, rRegP newval,
                          rFlagsReg cr)
 %{
-  predicate(VM_Version::supports_cx8());
+  predicate(VM_Version::supports_cx8() && n->as_LoadStore()->barrier_data() == 0);
   match(Set oldval (CompareAndExchangeP mem_ptr (Binary oldval newval)));
   effect(KILL cr);
 
@@ -8232,6 +8040,7 @@ instruct xchgL( memory mem, rRegL newval) %{
 
 instruct xchgP( memory mem, rRegP newval) %{
   match(Set newval (GetAndSetP mem newval));
+  predicate(n->as_LoadStore()->barrier_data() == 0);
   format %{ "XCHGQ  $newval,[$mem]" %}
   ins_encode %{
     __ xchgq($newval$$Register, $mem$$Address);
@@ -11974,6 +11783,7 @@ instruct compP_rReg(rFlagsRegU cr, rRegP op1, rRegP op2)
 instruct compP_rReg_mem(rFlagsRegU cr, rRegP op1, memory op2)
 %{
   match(Set cr (CmpP op1 (LoadP op2)));
+  predicate(n->in(2)->as_Load()->barrier_data() == 0);
 
   ins_cost(500); // XXX
   format %{ "cmpq    $op1, $op2\t# ptr" %}
@@ -11999,7 +11809,8 @@ instruct compP_rReg_mem(rFlagsRegU cr, rRegP op1, memory op2)
 // and raw pointers have no anti-dependencies.
 instruct compP_mem_rReg(rFlagsRegU cr, rRegP op1, memory op2)
 %{
-  predicate(n->in(2)->in(2)->bottom_type()->reloc() == relocInfo::none);
+  predicate(n->in(2)->in(2)->bottom_type()->reloc() == relocInfo::none &&
+            n->in(2)->as_Load()->barrier_data() == 0);
   match(Set cr (CmpP op1 (LoadP op2)));
 
   format %{ "cmpq    $op1, $op2\t# raw ptr" %}
@@ -12024,7 +11835,8 @@ instruct testP_reg(rFlagsReg cr, rRegP src, immP0 zero)
 // any compare to a zero should be eq/neq.
 instruct testP_mem(rFlagsReg cr, memory op, immP0 zero)
 %{
-  predicate(!UseCompressedOops || (CompressedOops::base() != NULL));
+  predicate((!UseCompressedOops || (CompressedOops::base() != NULL)) &&
+            n->in(1)->as_Load()->barrier_data() == 0);
   match(Set cr (CmpP (LoadP op) zero));
 
   ins_cost(500); // XXX
@@ -12037,7 +11849,9 @@ instruct testP_mem(rFlagsReg cr, memory op, immP0 zero)
 
 instruct testP_mem_reg0(rFlagsReg cr, memory mem, immP0 zero)
 %{
-  predicate(UseCompressedOops && (CompressedOops::base() == NULL) && (CompressedKlassPointers::base() == NULL));
+  predicate(UseCompressedOops && (CompressedOops::base() == NULL) &&
+            (CompressedKlassPointers::base() == NULL) &&
+            n->in(1)->as_Load()->barrier_data() == 0);
   match(Set cr (CmpP (LoadP mem) zero));
 
   format %{ "cmpq    R12, $mem\t# ptr (R12_heapbase==0)" %}

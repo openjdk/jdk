@@ -61,6 +61,7 @@ public final class RSAPrivateKeyImpl extends PKCS8Key implements RSAPrivateKey {
     // optional parameters associated with this RSA key
     // specified in the encoding of its AlgorithmId.
     // must be null for "RSA" keys.
+    @SuppressWarnings("serial") // Not statically typed as Serializable
     private final AlgorithmParameterSpec keyParams;
 
     /**

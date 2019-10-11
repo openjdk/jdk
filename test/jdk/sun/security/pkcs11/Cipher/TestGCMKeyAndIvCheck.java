@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 8080462
+ * @bug 8080462 8229243
  * @library /test/lib ..
  * @modules jdk.crypto.cryptoki
  * @run main TestGCMKeyAndIvCheck
@@ -81,6 +81,7 @@ public class TestGCMKeyAndIvCheck extends PKCS11Test {
                     ", no support for " + mode);
             return;
         }
+        System.out.println("Testing against " + p.getName());
         SecretKey key = new SecretKeySpec(new byte[16], "AES");
         // First try parameter-less init.
         c.init(Cipher.ENCRYPT_MODE, key);
@@ -111,12 +112,11 @@ public class TestGCMKeyAndIvCheck extends PKCS11Test {
             throw new Exception("Parameters contains incorrect IV value");
         }
 
-        // Should be ok to use the same key+iv for decryption
         c.init(Cipher.DECRYPT_MODE, key, params);
         c.updateAAD(AAD);
         byte[] recovered = c.doFinal(ctPlusTag);
         if (!Arrays.equals(recovered, PT)) {
-            throw new Exception("decryption result mismatch");
+            throw new Exception("Decryption result mismatch");
         }
 
         // Now try to encrypt again using the same key+iv; should fail also
@@ -125,6 +125,7 @@ public class TestGCMKeyAndIvCheck extends PKCS11Test {
             throw new Exception("Should throw exception when same key+iv is used");
         } catch (InvalidAlgorithmParameterException iape) {
             // expected
+            System.out.println("Expected IAPE thrown");
         }
 
         // Now try to encrypt again using parameter-less init; should work
@@ -138,7 +139,8 @@ public class TestGCMKeyAndIvCheck extends PKCS11Test {
         }
 
         // Now try to encrypt again using a different parameter; should work
-        AlgorithmParameterSpec spec2 = new GCMParameterSpec(128, new byte[30]);
+        AlgorithmParameterSpec spec2 = new GCMParameterSpec(128,
+            "Solaris PKCS11 lib does not allow all-zero IV".getBytes());
         c.init(Cipher.ENCRYPT_MODE, key, spec2);
         c.updateAAD(AAD);
         c.doFinal(PT);
@@ -154,7 +156,7 @@ public class TestGCMKeyAndIvCheck extends PKCS11Test {
         c.updateAAD(AAD);
         recovered = c.doFinal(ctPlusTag);
         if (!Arrays.equals(recovered, PT)) {
-            throw new Exception("decryption result mismatch");
+            throw new Exception("Decryption result mismatch");
         }
 
         // Now try decryption again and re-init using the same parameters

@@ -385,7 +385,7 @@ const size_t minimumSymbolTableSize = 1024;
   notproduct(ccstrlist, DeoptimizeOnlyAt, "",                               \
           "A comma separated list of bcis to deoptimize at")                \
                                                                             \
-  product(bool, DeoptimizeRandom, false,                                    \
+  develop(bool, DeoptimizeRandom, false,                                    \
           "Deoptimize random frames on random exit from the runtime system")\
                                                                             \
   notproduct(bool, ZombieALot, false,                                       \
@@ -1017,10 +1017,6 @@ const size_t minimumSymbolTableSize = 1024;
           "Inject thread creation failures for "                            \
           "UseDynamicNumberOfCompilerThreads")                              \
                                                                             \
-  product(intx, CompilationPolicyChoice, 0,                                 \
-          "which compilation policy (0-2)")                                 \
-          range(0, 2)                                                       \
-                                                                            \
   develop(bool, UseStackBanging, true,                                      \
           "use stack banging for stack overflow checks (required for "      \
           "proper StackOverflow handling; disable only to measure cost "    \
@@ -1050,6 +1046,9 @@ const size_t minimumSymbolTableSize = 1024;
                                                                             \
   diagnostic(bool, EnableThreadSMRStatistics, trueInDebug,                  \
              "Enable Thread SMR Statistics")                                \
+                                                                            \
+  product(bool, UseNotificationThread, true,                                \
+          "Use Notification Thread")                                        \
                                                                             \
   product(bool, Inline, true,                                               \
           "Enable inlining")                                                \
@@ -2142,14 +2141,6 @@ const size_t minimumSymbolTableSize = 1024;
           "NON_TIERED number of method invocations/branches (expressed as " \
           "% of CompileThreshold) before profiling in the interpreter")     \
           range(0, 100)                                                     \
-                                                                            \
-  develop(intx, MaxRecompilationSearchLength,    10,                        \
-          "The maximum number of frames to inspect when searching for "     \
-          "recompilee")                                                     \
-                                                                            \
-  develop(intx, MaxInterpretedSearchLength,     3,                          \
-          "The maximum number of interpreted frames to skip when searching "\
-          "for recompilee")                                                 \
                                                                             \
   develop(intx, DesiredMethodLimit,  8000,                                  \
           "The desired maximum method size (in bytecodes) after inlining")  \

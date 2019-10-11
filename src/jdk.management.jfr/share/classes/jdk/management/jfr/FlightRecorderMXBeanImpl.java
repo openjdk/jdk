@@ -28,6 +28,7 @@ package jdk.management.jfr;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.StringReader;
+import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.security.AccessControlContext;
 import java.security.AccessController;
@@ -105,7 +106,8 @@ final class FlightRecorderMXBeanImpl extends StandardEmitterMBean implements Fli
     private static final String OPTION_DISK = "disk";
     private static final String OPTION_DUMP_ON_EXIT = "dumpOnExit";
     private static final String OPTION_DURATION = "duration";
-    private static final List<String> OPTIONS = Arrays.asList(new String[] { OPTION_DUMP_ON_EXIT, OPTION_DURATION, OPTION_NAME, OPTION_MAX_AGE, OPTION_MAX_SIZE, OPTION_DISK, });
+    private static final String OPTION_DESTINATION = "destination";
+    private static final List<String> OPTIONS = Arrays.asList(new String[] { OPTION_DUMP_ON_EXIT, OPTION_DURATION, OPTION_NAME, OPTION_MAX_AGE, OPTION_MAX_SIZE, OPTION_DISK, OPTION_DESTINATION, });
     private final StreamManager streamHandler = new StreamManager();
     private final Map<Long, Object> changes = new ConcurrentHashMap<>();
     private final AtomicLong sequenceNumber = new AtomicLong();
@@ -283,6 +285,7 @@ final class FlightRecorderMXBeanImpl extends StandardEmitterMBean implements Fli
         validateOption(ops, OPTION_MAX_AGE, MBeanUtils::duration);
         validateOption(ops, OPTION_MAX_SIZE, MBeanUtils::size);
         validateOption(ops, OPTION_DURATION, MBeanUtils::duration);
+        validateOption(ops, OPTION_DESTINATION, x -> MBeanUtils.destination(r, x));
 
         // All OK, now set them.atomically
         setOption(ops, OPTION_DUMP_ON_EXIT, "false", MBeanUtils::booleanValue, x -> r.setDumpOnExit(x));
@@ -291,6 +294,7 @@ final class FlightRecorderMXBeanImpl extends StandardEmitterMBean implements Fli
         setOption(ops, OPTION_MAX_AGE, null, MBeanUtils::duration, x -> r.setMaxAge(x));
         setOption(ops, OPTION_MAX_SIZE, "0", MBeanUtils::size, x -> r.setMaxSize(x));
         setOption(ops, OPTION_DURATION, null, MBeanUtils::duration, x -> r.setDuration(x));
+        setOption(ops, OPTION_DESTINATION, null, x -> MBeanUtils.destination(r, x), x -> setOptionDestination(r, x));
     }
 
     @Override
@@ -305,6 +309,7 @@ final class FlightRecorderMXBeanImpl extends StandardEmitterMBean implements Fli
         Long maxSize = r.getMaxSize();
         options.put(OPTION_MAX_SIZE, String.valueOf(maxSize == null ? "0" : maxSize.toString()));
         options.put(OPTION_DURATION, ManagementSupport.formatTimespan(r.getDuration(), " "));
+        options.put(OPTION_DESTINATION, ManagementSupport.getDestinationOriginalText(r));
         return options;
     }
 
@@ -346,6 +351,20 @@ final class FlightRecorderMXBeanImpl extends StandardEmitterMBean implements Fli
             setter.accept(converter.apply(v));
         } catch (IllegalArgumentException iae) {
             throw new IllegalArgumentException("Not a valid value for option '" + name + "'. " + iae.getMessage());
+        }
+    }
+
+    private static void setOptionDestination(Recording recording, String destination){
+        try {
+            Path pathDestination = null;
+            if(destination != null){
+                pathDestination = Paths.get(destination);
+            }
+            recording.setDestination(pathDestination);
+        } catch (IOException e) {
+            IllegalArgumentException iae = new IllegalArgumentException("Not a valid destination " + destination);
+            iae.addSuppressed(e);
+            throw iae;
         }
     }
 
