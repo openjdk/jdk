@@ -326,7 +326,7 @@ issues.
  Linux              gcc 8.3.0
  macOS              Apple Xcode 10.1 (using clang 10.0.0)
  Solaris            Oracle Solaris Studio 12.6 (with compiler version 5.15)
- Windows            Microsoft Visual Studio 2017 update 15.9.6
+ Windows            Microsoft Visual Studio 2017 update 15.9.16
 
 All compilers are expected to be able to compile to the C99 language standard,
 as some C99 features are used in the source code. Microsoft Visual Studio
