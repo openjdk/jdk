@@ -35,20 +35,13 @@ inline void HeapRegionRemSet::iterate_prts(Closure& cl) {
   _other_regions.iterate(cl);
 }
 
-inline void PerRegionTable::add_card_work(CardIdx_t from_card, bool par) {
-  if (!_bm.at(from_card)) {
-    if (par) {
-      if (_bm.par_set_bit(from_card)) {
-        Atomic::inc(&_occupied);
-      }
-    } else {
-      _bm.set_bit(from_card);
-      _occupied++;
-    }
+inline void PerRegionTable::add_card(CardIdx_t from_card_index) {
+  if (_bm.par_set_bit(from_card_index)) {
+    Atomic::inc(&_occupied);
   }
 }
 
-inline void PerRegionTable::add_reference_work(OopOrNarrowOopStar from, bool par) {
+inline void PerRegionTable::add_reference(OopOrNarrowOopStar from) {
   // Must make this robust in case "from" is not in "_hr", because of
   // concurrency.
 
@@ -58,24 +51,8 @@ inline void PerRegionTable::add_reference_work(OopOrNarrowOopStar from, bool par
   // and adding a bit to the new table is never incorrect.
   if (loc_hr->is_in_reserved(from)) {
     CardIdx_t from_card = OtherRegionsTable::card_within_region(from, loc_hr);
-    add_card_work(from_card, par);
+    add_card(from_card);
   }
-}
-
-inline void PerRegionTable::add_card(CardIdx_t from_card_index) {
-  add_card_work(from_card_index, /*parallel*/ true);
-}
-
-inline void PerRegionTable::seq_add_card(CardIdx_t from_card_index) {
-  add_card_work(from_card_index, /*parallel*/ false);
-}
-
-inline void PerRegionTable::add_reference(OopOrNarrowOopStar from) {
-  add_reference_work(from, /*parallel*/ true);
-}
-
-inline void PerRegionTable::seq_add_reference(OopOrNarrowOopStar from) {
-  add_reference_work(from, /*parallel*/ false);
 }
 
 inline void PerRegionTable::init(HeapRegion* hr, bool clear_links_to_all_list) {
