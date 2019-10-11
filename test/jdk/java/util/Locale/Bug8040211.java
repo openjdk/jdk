@@ -23,9 +23,9 @@
 
 /*
  * @test
- * @bug 8040211 8191404 8203872 8222980
+ * @bug 8040211 8191404 8203872 8222980 8225435
  * @summary Checks the IANA language subtag registry data update
- *          (LSR Revision: 2019-04-03) with Locale and Locale.LanguageRange
+ *          (LSR Revision: 2019-09-16) with Locale and Locale.LanguageRange
  *          class methods.
  * @run main Bug8040211
  */
@@ -41,6 +41,84 @@ import static java.util.Locale.FilteringMode.EXTENDED_FILTERING;
 public class Bug8040211 {
 
     static boolean err = false;
+
+    private static final String ACCEPT_LANGUAGE =
+        "Accept-Language: aam, adp, aog, aue, bcg, cey, cqu, dif, ema,"
+        + " en-gb-oed, gti, kdz, koj, kwq, kxe, lii, lmm, lsn, lsv, lvi, mtm,"
+        + " ngv, nns, oyb, phr, pnd, pub, snz, suj, szy,taj, tjj, tjp, tvx,"
+        + " uss, uth, wkr;q=0.9, ar-hyw;q=0.8, yug;q=0.5, gfx;q=0.4";
+    private static final List<LanguageRange> EXPECTED_RANGE_LIST = List.of(
+            new LanguageRange("aam", 1.0),
+            new LanguageRange("aas", 1.0),
+            new LanguageRange("adp", 1.0),
+            new LanguageRange("dz", 1.0),
+            new LanguageRange("aog", 1.0),
+            new LanguageRange("myd", 1.0),
+            new LanguageRange("aue", 1.0),
+            new LanguageRange("ktz", 1.0),
+            new LanguageRange("bcg", 1.0),
+            new LanguageRange("bgm", 1.0),
+            new LanguageRange("cey", 1.0),
+            new LanguageRange("cqu", 1.0),
+            new LanguageRange("quh", 1.0),
+            new LanguageRange("dif", 1.0),
+            new LanguageRange("dit", 1.0),
+            new LanguageRange("ema", 1.0),
+            new LanguageRange("uok", 1.0),
+            new LanguageRange("en-gb-oed", 1.0),
+            new LanguageRange("en-gb-oxendict", 1.0),
+            new LanguageRange("gti", 1.0),
+            new LanguageRange("nyc", 1.0),
+            new LanguageRange("kdz", 1.0),
+            new LanguageRange("ncp", 1.0),
+            new LanguageRange("koj", 1.0),
+            new LanguageRange("kwv", 1.0),
+            new LanguageRange("kwq", 1.0),
+            new LanguageRange("yam", 1.0),
+            new LanguageRange("kxe", 1.0),
+            new LanguageRange("tvd", 1.0),
+            new LanguageRange("lii", 1.0),
+            new LanguageRange("raq", 1.0),
+            new LanguageRange("lmm", 1.0),
+            new LanguageRange("rmx", 1.0),
+            new LanguageRange("lsn", 1.0),
+            new LanguageRange("lsv", 1.0),
+            new LanguageRange("lvi", 1.0),
+            new LanguageRange("mtm", 1.0),
+            new LanguageRange("ymt", 1.0),
+            new LanguageRange("ngv", 1.0),
+            new LanguageRange("nnx", 1.0),
+            new LanguageRange("nns", 1.0),
+            new LanguageRange("nbr", 1.0),
+            new LanguageRange("oyb", 1.0),
+            new LanguageRange("thx", 1.0),
+            new LanguageRange("skk", 1.0),
+            new LanguageRange("jeg", 1.0),
+            new LanguageRange("phr", 1.0),
+            new LanguageRange("pmu", 1.0),
+            new LanguageRange("pnd", 1.0),
+            new LanguageRange("pub", 1.0),
+            new LanguageRange("puz", 1.0),
+            new LanguageRange("snz", 1.0),
+            new LanguageRange("asd", 1.0),
+            new LanguageRange("suj", 1.0),
+            new LanguageRange("szy", 1.0),
+            new LanguageRange("taj", 1.0),
+            new LanguageRange("tsf", 1.0),
+            new LanguageRange("tjj", 1.0),
+            new LanguageRange("tjp", 1.0),
+            new LanguageRange("tvx", 1.0),
+            new LanguageRange("uss", 1.0),
+            new LanguageRange("uth", 1.0),
+            new LanguageRange("wkr", 0.9),
+            new LanguageRange("ar-hyw", 0.8),
+            new LanguageRange("yug", 0.5),
+            new LanguageRange("yuu", 0.5),
+            new LanguageRange("gfx", 0.4),
+            new LanguageRange("oun", 0.4),
+            new LanguageRange("mwj", 0.4),
+            new LanguageRange("vaj", 0.4)
+        );
 
     public static void main(String[] args) {
         testLanguageRange();
@@ -66,70 +144,15 @@ public class Bug8040211 {
 
     private static void test_parse() {
         boolean error = false;
-        String str = "Accept-Language: aam, adp, aue, bcg, cqu, ema,"
-                + " en-gb-oed, gti, kdz, koj, kwq, kxe, lii, lmm, mtm, ngv,"
-                + " oyb, phr, pub, suj, taj;q=0.9, ar-hyw;q=0.8, yug;q=0.5, gfx;q=0.4";
-        ArrayList<LanguageRange> expected = new ArrayList<>();
-        expected.add(new LanguageRange("aam", 1.0));
-        expected.add(new LanguageRange("aas", 1.0));
-        expected.add(new LanguageRange("adp", 1.0));
-        expected.add(new LanguageRange("dz", 1.0));
-        expected.add(new LanguageRange("aue", 1.0));
-        expected.add(new LanguageRange("ktz", 1.0));
-        expected.add(new LanguageRange("bcg", 1.0));
-        expected.add(new LanguageRange("bgm", 1.0));
-        expected.add(new LanguageRange("cqu", 1.0));
-        expected.add(new LanguageRange("quh", 1.0));
-        expected.add(new LanguageRange("ema", 1.0));
-        expected.add(new LanguageRange("uok", 1.0));
-        expected.add(new LanguageRange("en-gb-oed", 1.0));
-        expected.add(new LanguageRange("en-gb-oxendict", 1.0));
-        expected.add(new LanguageRange("gti", 1.0));
-        expected.add(new LanguageRange("nyc", 1.0));
-        expected.add(new LanguageRange("kdz", 1.0));
-        expected.add(new LanguageRange("ncp", 1.0));
-        expected.add(new LanguageRange("koj", 1.0));
-        expected.add(new LanguageRange("kwv", 1.0));
-        expected.add(new LanguageRange("kwq", 1.0));
-        expected.add(new LanguageRange("yam", 1.0));
-        expected.add(new LanguageRange("kxe", 1.0));
-        expected.add(new LanguageRange("tvd", 1.0));
-        expected.add(new LanguageRange("lii", 1.0));
-        expected.add(new LanguageRange("raq", 1.0));
-        expected.add(new LanguageRange("lmm", 1.0));
-        expected.add(new LanguageRange("rmx", 1.0));
-        expected.add(new LanguageRange("mtm", 1.0));
-        expected.add(new LanguageRange("ymt", 1.0));
-        expected.add(new LanguageRange("ngv", 1.0));
-        expected.add(new LanguageRange("nnx", 1.0));
-        expected.add(new LanguageRange("oyb", 1.0));
-        expected.add(new LanguageRange("thx", 1.0));
-        expected.add(new LanguageRange("skk", 1.0));
-        expected.add(new LanguageRange("jeg", 1.0));
-        expected.add(new LanguageRange("phr", 1.0));
-        expected.add(new LanguageRange("pmu", 1.0));
-        expected.add(new LanguageRange("pub", 1.0));
-        expected.add(new LanguageRange("puz", 1.0));
-        expected.add(new LanguageRange("suj", 1.0));
-        expected.add(new LanguageRange("xsj", 1.0));
-        expected.add(new LanguageRange("taj", 0.9));
-        expected.add(new LanguageRange("tsf", 0.9));
-        expected.add(new LanguageRange("ar-hyw", 0.8));
-        expected.add(new LanguageRange("yug", 0.5));
-        expected.add(new LanguageRange("yuu", 0.5));
-        expected.add(new LanguageRange("gfx", 0.4));
-        expected.add(new LanguageRange("oun", 0.4));
-        expected.add(new LanguageRange("mwj", 0.4));
-        expected.add(new LanguageRange("vaj", 0.4));
-        List<LanguageRange> got = LanguageRange.parse(str);
-        if (!areEqual(expected, got)) {
+        List<LanguageRange> got = LanguageRange.parse(ACCEPT_LANGUAGE);
+        if (!areEqual(EXPECTED_RANGE_LIST, got)) {
             error = true;
             System.err.println("    language parse() test failed.");
         }
 
         if (error) {
             err = true;
-            System.err.println("  test_parse() failed.");
+            System.out.println("  test_parse() failed.");
         } else {
             System.out.println("  test_parse() passed.");
         }
@@ -152,7 +175,7 @@ public class Bug8040211 {
                         + ", weight=" + lr.getWeight());
             }
 
-            System.out.println("  Actual size=" + actualSize);
+            System.err.println("  Actual size=" + actualSize);
             for (LanguageRange lr : got) {
                 System.err.println("    range=" + lr.getRange()
                         + ", weight=" + lr.getWeight());
@@ -351,11 +374,11 @@ public class Bug8040211 {
             String tags,
             String expectedTags,
             String actualTags) {
-        System.out.println("\nIncorrect " + methodName + " result.");
-        System.out.println("  Priority list  :  " + priorityList);
-        System.out.println("  Language tags  :  " + tags);
-        System.out.println("  Expected value : " + expectedTags);
-        System.out.println("  Actual value   : " + actualTags);
+        System.err.println("\nIncorrect " + methodName + " result.");
+        System.err.println("  Priority list  :  " + priorityList);
+        System.err.println("  Language tags  :  " + tags);
+        System.err.println("  Expected value : " + expectedTags);
+        System.err.println("  Actual value   : " + actualTags);
     }
 
 }
