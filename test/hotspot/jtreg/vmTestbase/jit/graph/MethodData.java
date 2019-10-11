@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -20,37 +20,33 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
+
 package jit.graph;
-import java.lang.reflect.*;
+
+import java.lang.reflect.Method;
+
 import nsk.share.TestFailure;
 
-public final class MethodData
-{
-  public String ClassName;
-  public String MethodName;
-  public Class  ClassObject;
-  public Method nextMethod;
-  public int id;
-  public Object instance = null;
+public final class MethodData {
+    public String ClassName;
+    public String MethodName;
+    public Class ClassObject;
+    public Method nextMethod;
+    public int id;
+    public Object instance;
 
-  MethodData(String ClassName, String MethodName, Class ClassObject,Method nextMethod, int id)
-  {
-    this.ClassName = ClassName;
-    this.MethodName = MethodName;
-    this.nextMethod = nextMethod;
-    this.id = id;
-    this.ClassObject = ClassObject;
-    try
-      {
-        this.instance = ClassObject.newInstance();
-      }
-    catch (InstantiationException ix)
-      {
-        throw new TestFailure("Class: " +ClassName+ " Instantiation Exception");
-      }
-    catch (IllegalAccessException iax)
-      {
-        throw new TestFailure("Class: " +ClassName+ " Illegal Access Exception");
-      }
-  }
+    MethodData(String ClassName, String MethodName, Class ClassObject, Method nextMethod, int id) {
+        this.ClassName = ClassName;
+        this.MethodName = MethodName;
+        this.nextMethod = nextMethod;
+        this.id = id;
+        this.ClassObject = ClassObject;
+        try {
+            this.instance = ClassObject.newInstance();
+        } catch (InstantiationException e) {
+            throw new TestFailure("Class: " + ClassName + " Instantiation Exception", e);
+        } catch (IllegalAccessException e) {
+            throw new TestFailure("Class: " + ClassName + " Illegal Access Exception", e);
+        }
+    }
 }

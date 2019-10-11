@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -20,114 +20,106 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
+
 package jit.graph;
 
-import java.util.*;
-import java.lang.reflect.*;
-import nsk.share.TestFailure;
+import java.lang.reflect.InvocationTargetException;
+import java.util.Vector;
 
+class test4 extends test2 {
+    private final int[] MethodID = {Globals.MethodID_Array[1], Globals.MethodID_Array[5], Globals.MethodID_Array[6]};
 
-class test4 extends test2
-{
-    private final int[] MethodID = {Globals.MethodID_Array[1],Globals.MethodID_Array[5], Globals.MethodID_Array[6]};
-
-    //this method verifies that a child can make a call to its parent
+    // this method verifies that a child can make a call to its parent
     public void CallCallMe(Vector summation, Vector ID, Long functionDepth, Integer staticFunctionDepth)
-        throws InvocationTargetException
-    {
-        Globals.appendSumToSumationVector(MethodID[1], summation);
+            throws InvocationTargetException {
+        Globals.appendSumToSummationVector(MethodID[1], summation);
 
-        if (CGT.shouldFinish())
+        if (CGT.shouldFinish()) {
             return;
+        }
 
-        if (Globals.VERBOSE)
+        if (Globals.VERBOSE) {
             System.out.println("test4.CallCallMe");
+        }
 
-        if ((functionDepth.longValue() <= 0) && (staticFunctionDepth.intValue() <=  0))
-            {
-                return;
-            }
+        if ((functionDepth.longValue() <= 0) && (staticFunctionDepth.intValue() <= 0)) {
+            return;
+        }
 
         MethodData methodCallStr;
         Long numFcalls;
         Integer staticFcalls;
-        if (staticFunctionDepth.intValue() > 0)
-            {
-                numFcalls = functionDepth;
-                staticFcalls = new Integer(staticFunctionDepth.intValue()-1);
-                //methodCallStr = Globals.nextStaticMethod(Globals.getIndexFromID(MethodID[1]));
-                methodCallStr = Globals.returnNextStaticMethod(MethodID[1]);
+        if (staticFunctionDepth.intValue() > 0) {
+            numFcalls = functionDepth;
+            staticFcalls = new Integer(staticFunctionDepth.intValue() - 1);
+            methodCallStr = Globals.returnNextStaticMethod(MethodID[1]);
 
-                Globals.addFunctionIDToVector(methodCallStr.id, ID);
-            }
-        else
-            {
-                numFcalls = new Long(functionDepth.longValue()-1);
-                staticFcalls = staticFunctionDepth;
-                Globals.addFunctionIDToVector(MethodID[0], ID);
-                super.callMe(summation, ID, numFcalls, staticFcalls);
-                return;
-            }
+            Globals.addFunctionIDToVector(methodCallStr.id, ID);
+        } else {
+            numFcalls = new Long(functionDepth.longValue() - 1);
+            staticFcalls = staticFunctionDepth;
+            Globals.addFunctionIDToVector(MethodID[0], ID);
+            super.callMe(summation, ID, numFcalls, staticFcalls);
+            return;
+        }
 
 
         Globals.callMethod(methodCallStr, summation, ID, numFcalls, staticFcalls);
     }
 
-    //this method makes a Y fork in the method call structure
+    // this method makes a Y fork in the method call structure
     public void callMe(Vector summation, Vector ID, Long functionDepth, Integer staticFunctionDepth)
-                throws InvocationTargetException
-    {
-        Globals.appendSumToSumationVector(MethodID[2], summation);
+            throws InvocationTargetException {
+        Globals.appendSumToSummationVector(MethodID[2], summation);
 
-        if (CGT.shouldFinish())
+        if (CGT.shouldFinish()) {
             return;
+        }
 
-        if (Globals.VERBOSE)
+        if (Globals.VERBOSE) {
             System.out.println("test4.callMe");
+        }
 
-        if ((functionDepth.longValue() <= 0) && (staticFunctionDepth.intValue() <=  0))
-            {
-                return;
-            }
+        if ((functionDepth.longValue() <= 0) && (staticFunctionDepth.intValue() <= 0)) {
+            return;
+        }
 
         MethodData methodCallStr;
         Long numFcalls;
         Integer staticFcalls;
-        if (staticFunctionDepth.intValue() > 0)
-            {
-                numFcalls = functionDepth;
-                staticFcalls = new Integer(staticFunctionDepth.intValue()-1);
-                //methodCallStr = Globals.nextStaticMethod(Globals.getIndexFromID(MethodID[2]));
-                methodCallStr = Globals.returnNextStaticMethod(MethodID[2]);
+        if (staticFunctionDepth.intValue() > 0) {
+            numFcalls = functionDepth;
+            staticFcalls = new Integer(staticFunctionDepth.intValue() - 1);
+            methodCallStr = Globals.returnNextStaticMethod(MethodID[2]);
+        } else {
+            long temp = functionDepth.longValue() - 2;
+            numFcalls = new Long(temp / 2);
+            staticFcalls = staticFunctionDepth;
 
+            if (Globals.VERBOSE) {
+                System.out.println(" test4.callMe - Starting Branch 1");
             }
-        else
-            {
-                long temp = functionDepth.longValue()-2;
-                numFcalls = new Long(temp/2);
-                staticFcalls = staticFunctionDepth;
+            methodCallStr = Globals.nextRandomMethod();
+            Globals.addFunctionIDToVector(methodCallStr.id, ID);
+            Globals.callMethod(methodCallStr, summation, ID, numFcalls, staticFcalls);
 
-                if (Globals.VERBOSE)
-                    System.out.println(" test4.callMe - Starting Branch 1");
-                methodCallStr = Globals.nextRandomMethod();
-                Globals.addFunctionIDToVector(methodCallStr.id, ID);
-                Globals.callMethod(methodCallStr, summation, ID, numFcalls, staticFcalls);
-
-                if (CGT.shouldFinish())
-                    return;
-
-                temp -= temp/2;
-                if (temp <0)
-                  {
-                    if (Globals.VERBOSE)
-                      System.out.println(" test4.callMe - Skipping Branch 2");
-                    return;
-                  }
-                if (Globals.VERBOSE)
-                    System.out.println(" test4.callMe - Starting Branch 2");
-                numFcalls = new Long(temp);
-                methodCallStr = Globals.nextRandomMethod();
+            if (CGT.shouldFinish()) {
+                return;
             }
+
+            temp -= temp / 2;
+            if (temp < 0) {
+                if (Globals.VERBOSE) {
+                    System.out.println(" test4.callMe - Skipping Branch 2");
+                }
+                return;
+            }
+            if (Globals.VERBOSE) {
+                System.out.println(" test4.callMe - Starting Branch 2");
+            }
+            numFcalls = new Long(temp);
+            methodCallStr = Globals.nextRandomMethod();
+        }
         Globals.addFunctionIDToVector(methodCallStr.id, ID);
         Globals.callMethod(methodCallStr, summation, ID, numFcalls, staticFcalls);
     }

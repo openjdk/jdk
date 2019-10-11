@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2018, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2018, 2019, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -1652,18 +1652,18 @@ vmTestbase_vm_compiler_quick = \
   vmTestbase/jit/escape/LockElision/MatMul/MatMul.java \
   vmTestbase/jit/escape/LockCoarsening/LockCoarsening002/TestDescription.java \
   vmTestbase/jit/exception/exception.java \
-  vmTestbase/jit/graph/cgt0/cgt0.java \
-  vmTestbase/jit/graph/cgt1/cgt1.java \
-  vmTestbase/jit/graph/cgt2/cgt2.java \
-  vmTestbase/jit/graph/cgt3/cgt3.java \
-  vmTestbase/jit/graph/cgt4/cgt4.java \
-  vmTestbase/jit/graph/cgt5/cgt5.java \
-  vmTestbase/jit/graph/cgt6/cgt6.java \
-  vmTestbase/jit/graph/cgt7/cgt7.java \
-  vmTestbase/jit/graph/cgt8/cgt8.java \
-  vmTestbase/jit/graph/cgt9/cgt9.java \
-  vmTestbase/jit/graph/cgt10/cgt10.java \
-  vmTestbase/jit/graph/cgt11/cgt11.java \
+  vmTestbase/jit/graph/cgt0.java \
+  vmTestbase/jit/graph/cgt1.java \
+  vmTestbase/jit/graph/cgt2.java \
+  vmTestbase/jit/graph/cgt3.java \
+  vmTestbase/jit/graph/cgt4.java \
+  vmTestbase/jit/graph/cgt5.java \
+  vmTestbase/jit/graph/cgt6.java \
+  vmTestbase/jit/graph/cgt7.java \
+  vmTestbase/jit/graph/cgt8.java \
+  vmTestbase/jit/graph/cgt9.java \
+  vmTestbase/jit/graph/cgt10.java \
+  vmTestbase/jit/graph/cgt11.java \
   vmTestbase/jit/init/init01/init01.java \
   vmTestbase/jit/init/init02/init02.java \
   vmTestbase/jit/inline/inline003/inline003.java \

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,19 +25,17 @@
 /*
  * @test
  *
- * @summary converted from VM Testbase jit/graph/cgt2.
+ * @summary converted from VM Testbase jit/graph/cgt0.
  * VM Testbase keywords: [jit, quick]
  *
  * @library /vmTestbase
  *          /test/lib
- * @run driver jdk.test.lib.FileInstaller . .
- * @run driver jdk.test.lib.FileInstaller ../data/main.data main.data
+ * @run driver jdk.test.lib.FileInstaller data/main.data main.data
  * @build jit.graph.*
- * @run driver ExecDriver --java
+ * @run main
  *      jit.graph.CGT
  *      -path main.data
- *      -numTestClass 3
- *      -thread 1
+ *      -numTestClass 1
  *      -randomLoop 40
  *      -staticLoop 40
  */
