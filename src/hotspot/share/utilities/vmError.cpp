@@ -1205,7 +1205,7 @@ void VMError::print_vm_info(outputStream* st) {
   st->print_cr("END.");
 }
 
-volatile intptr_t VMError::first_error_tid = -1;
+volatile intptr_t VMError::_first_error_tid = -1;
 
 /** Expand a pattern into a buffer starting at pos and open a file using constructed path */
 static int expand_and_open(const char* pattern, bool overwrite_existing, char* buf, size_t buflen, size_t pos) {
@@ -1355,8 +1355,8 @@ void VMError::report_and_die(int id, const char* message, const char* detail_fmt
       os::abort(CreateCoredumpOnCrash);
   }
   intptr_t mytid = os::current_thread_id();
-  if (first_error_tid == -1 &&
-      Atomic::cmpxchg(mytid, &first_error_tid, (intptr_t)-1) == -1) {
+  if (_first_error_tid == -1 &&
+      Atomic::cmpxchg(mytid, &_first_error_tid, (intptr_t)-1) == -1) {
 
     // Initialize time stamps to use the same base.
     out.time_stamp().update_to(1);
@@ -1416,7 +1416,7 @@ void VMError::report_and_die(int id, const char* message, const char* detail_fmt
 
     // This is not the first error, see if it happened in a different thread
     // or in the same thread during error reporting.
-    if (first_error_tid != mytid) {
+    if (_first_error_tid != mytid) {
       char msgbuf[64];
       jio_snprintf(msgbuf, sizeof(msgbuf),
                    "[thread " INTX_FORMAT " also had an error]",
