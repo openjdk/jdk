@@ -40,7 +40,6 @@
 #include "sys.h"
 
 /* How the options get to OnLoad: */
-#define XDEBUG "-Xdebug"
 #define XRUN "-Xrunjdwp"
 #define AGENTLIB "-agentlib:jdwp"
 
@@ -898,7 +897,7 @@ printUsage(void)
  "--------\n"
  "  - The older " XRUN " interface can still be used, but will be removed in\n"
  "    a future release, for example:\n"
- "        java " XDEBUG " " XRUN ":[help]|[<option>=<value>, ...]\n"
+ "        java " XRUN ":[help]|[<option>=<value>, ...]\n"
     ));
 
 #ifdef DEBUG
