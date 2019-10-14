@@ -42,31 +42,21 @@ ValueStack::ValueStack(IRScope* scope, ValueStack* caller_state)
   verify();
 }
 
-
 ValueStack::ValueStack(ValueStack* copy_from, Kind kind, int bci)
   : _scope(copy_from->scope())
   , _caller_state(copy_from->caller_state())
   , _bci(bci)
   , _kind(kind)
-  , _locals()
-  , _stack()
+  , _locals(copy_from->locals_size_for_copy(kind))
+  , _stack(copy_from->stack_size_for_copy(kind))
   , _locks(copy_from->locks_size() == 0 ? NULL : new Values(copy_from->locks_size()))
 {
   assert(kind != EmptyExceptionState || !Compilation::current()->env()->should_retain_local_variables(), "need locals");
   if (kind != EmptyExceptionState) {
-    // only allocate space if we need to copy the locals-array
-    _locals = Values(copy_from->locals_size());
     _locals.appendAll(&copy_from->_locals);
   }
 
   if (kind != ExceptionState && kind != EmptyExceptionState) {
-    if (kind == Parsing) {
-      // stack will be modified, so reserve enough space to avoid resizing
-      _stack = Values(scope()->method()->max_stack());
-    } else {
-      // stack will not be modified, so do not waste space
-      _stack = Values(copy_from->stack_size());
-    }
     _stack.appendAll(&copy_from->_stack);
   }
 
@@ -77,6 +67,25 @@ ValueStack::ValueStack(ValueStack* copy_from, Kind kind, int bci)
   verify();
 }
 
+int ValueStack::locals_size_for_copy(Kind kind) const {
+  if (kind != EmptyExceptionState) {
+    return locals_size();
+  }
+  return 0;
+}
+
+int ValueStack::stack_size_for_copy(Kind kind) const {
+  if (kind != ExceptionState && kind != EmptyExceptionState) {
+    if (kind == Parsing) {
+      // stack will be modified, so reserve enough space to avoid resizing
+      return scope()->method()->max_stack();
+    } else {
+      // stack will not be modified, so do not waste space
+      return stack_size();
+    }
+  }
+  return 0;
+}
 
 bool ValueStack::is_same(ValueStack* s) {
   if (scope() != s->scope()) return false;

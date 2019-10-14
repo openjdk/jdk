@@ -65,6 +65,8 @@ class ValueStack: public CompilationResourceObj {
   // for simplified copying
   ValueStack(ValueStack* copy_from, Kind kind, int bci);
 
+  int locals_size_for_copy(Kind kind) const;
+  int stack_size_for_copy(Kind kind) const;
  public:
   // creation
   ValueStack(IRScope* scope, ValueStack* caller_state);
