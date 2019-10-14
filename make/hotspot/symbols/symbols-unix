@@ -97,6 +97,7 @@ JVM_GetCPMethodSignatureUTF
 JVM_GetDeclaredClasses
 JVM_GetDeclaringClass
 JVM_GetEnclosingMethodInfo
+JVM_GetExtendedNPEMessage
 JVM_GetFieldIxModifiers
 JVM_GetFieldTypeAnnotations
 JVM_GetInheritedAccessControlContext

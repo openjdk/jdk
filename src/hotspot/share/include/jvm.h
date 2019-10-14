@@ -192,6 +192,13 @@ JNIEXPORT void JNICALL
 JVM_InitStackTraceElement(JNIEnv* env, jobject element, jobject stackFrameInfo);
 
 /*
+ * java.lang.NullPointerException
+ */
+
+JNIEXPORT jstring JNICALL
+JVM_GetExtendedNPEMessage(JNIEnv *env, jthrowable throwable);
+
+/*
  * java.lang.StackWalker
  */
 enum {
