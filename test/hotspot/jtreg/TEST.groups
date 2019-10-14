@@ -384,16 +384,18 @@ tier1 = \
 
 hotspot_tier2_runtime = \
   runtime/ \
-  serviceability/ \
  -runtime/CommandLine/OptionsValidation/TestOptionsWithRanges.java \
  -runtime/CompressedOops/UseCompressedOops.java \
  -runtime/InvocationTests \
  -runtime/Thread/TestThreadDumpMonitorContention.java \
  -:tier1_runtime \
- -:tier1_serviceability \
  -:hotspot_tier2_runtime_platform_agnostic \
  -runtime/signal \
  -runtime/NMT/MallocStressTest.java
+
+hotspot_tier2_serviceability = \
+  serviceability/ \
+ -:tier1_serviceability
 
 hotspot_tier2_runtime_platform_agnostic = \
   runtime/SelectionResolution \
@@ -401,9 +403,7 @@ hotspot_tier2_runtime_platform_agnostic = \
 
 hotspot_tier3_runtime = \
   runtime/ \
-  serviceability/ \
  -:tier1_runtime \
- -:tier1_serviceability \
  -:hotspot_tier2_runtime_platform_agnostic \
  -:hotspot_tier2_runtime
 
