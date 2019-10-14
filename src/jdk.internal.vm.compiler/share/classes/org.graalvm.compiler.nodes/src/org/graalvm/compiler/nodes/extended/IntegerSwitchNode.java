@@ -429,11 +429,14 @@ public final class IntegerSwitchNode extends SwitchNode implements LIRLowerable,
         }
 
         /*
-         * Collect dead successors. Successors have to be cleaned before adding the new node to the
-         * graph.
+         * Surviving successors have to be cleaned before adding the new node to the graph. Keep the
+         * dead ones attached to the old node for later cleanup.
          */
-        List<AbstractBeginNode> deadSuccessors = successors.filter(s -> !newSuccessors.contains(s)).snapshot();
-        successors.clear();
+        for (int i = 0; i < successors.size(); i++) {
+            if (newSuccessors.contains(successors.get(i))) {
+                successors.set(i, null);
+            }
+        }
 
         /*
          * Create the new switch node. This is done before removing dead successors as `killCFG`
@@ -443,14 +446,11 @@ public final class IntegerSwitchNode extends SwitchNode implements LIRLowerable,
         AbstractBeginNode[] successorsArray = newSuccessors.toArray(new AbstractBeginNode[newSuccessors.size()]);
         SwitchNode newSwitch = graph().add(new IntegerSwitchNode(newValue, successorsArray, newKeys, newKeyProbabilities, newKeySuccessors));
 
-        /* Remove dead successors. */
-        for (AbstractBeginNode successor : deadSuccessors) {
-            GraphUtil.killCFG(successor);
-        }
-
         /* Replace ourselves with the new switch */
         ((FixedWithNextNode) predecessor()).setNext(newSwitch);
-        GraphUtil.killWithUnusedFloatingInputs(this);
+
+        // Remove the old switch and the dead successors.
+        GraphUtil.killCFG(this);
     }
 
     @Override

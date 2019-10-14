@@ -59,21 +59,24 @@ bool ShenandoahCompactHeuristics::should_start_gc() const {
   size_t min_threshold = capacity / 100 * ShenandoahMinFreeThreshold;
 
   if (available < min_threshold) {
-    log_info(gc)("Trigger: Free (" SIZE_FORMAT "M) is below minimum threshold (" SIZE_FORMAT "M)",
-                 available / M, min_threshold / M);
+    log_info(gc)("Trigger: Free (" SIZE_FORMAT "%s) is below minimum threshold (" SIZE_FORMAT "%s)",
+                 byte_size_in_proper_unit(available),     proper_unit_for_byte_size(available),
+                 byte_size_in_proper_unit(min_threshold), proper_unit_for_byte_size(min_threshold));
     return true;
   }
 
   if (available < threshold_bytes_allocated) {
-    log_info(gc)("Trigger: Free (" SIZE_FORMAT "M) is lower than allocated recently (" SIZE_FORMAT "M)",
-                 available / M, threshold_bytes_allocated / M);
+    log_info(gc)("Trigger: Free (" SIZE_FORMAT "%s) is lower than allocated recently (" SIZE_FORMAT "%s)",
+                 byte_size_in_proper_unit(available),                 proper_unit_for_byte_size(available),
+                 byte_size_in_proper_unit(threshold_bytes_allocated), proper_unit_for_byte_size(threshold_bytes_allocated));
     return true;
   }
 
   size_t bytes_allocated = heap->bytes_allocated_since_gc_start();
   if (bytes_allocated > threshold_bytes_allocated) {
-    log_info(gc)("Trigger: Allocated since last cycle (" SIZE_FORMAT "M) is larger than allocation threshold (" SIZE_FORMAT "M)",
-                 bytes_allocated / M, threshold_bytes_allocated / M);
+    log_info(gc)("Trigger: Allocated since last cycle (" SIZE_FORMAT "%s) is larger than allocation threshold (" SIZE_FORMAT "%s)",
+                 byte_size_in_proper_unit(bytes_allocated),           proper_unit_for_byte_size(bytes_allocated),
+                 byte_size_in_proper_unit(threshold_bytes_allocated), proper_unit_for_byte_size(threshold_bytes_allocated));
     return true;
   }
 
@@ -86,8 +89,9 @@ void ShenandoahCompactHeuristics::choose_collection_set_from_regiondata(Shenando
   // Do not select too large CSet that would overflow the available free space
   size_t max_cset = actual_free * 3 / 4;
 
-  log_info(gc, ergo)("CSet Selection. Actual Free: " SIZE_FORMAT "M, Max CSet: " SIZE_FORMAT "M",
-                     actual_free / M, max_cset / M);
+  log_info(gc, ergo)("CSet Selection. Actual Free: " SIZE_FORMAT "%s, Max CSet: " SIZE_FORMAT "%s",
+                     byte_size_in_proper_unit(actual_free), proper_unit_for_byte_size(actual_free),
+                     byte_size_in_proper_unit(max_cset),    proper_unit_for_byte_size(max_cset));
 
   size_t threshold = ShenandoahHeapRegion::region_size_bytes() * ShenandoahGarbageThreshold / 100;
 

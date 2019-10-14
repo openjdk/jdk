@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -102,7 +102,7 @@ class TestOutputStream extends ObjectOutputStream {
     /* When any class is written, add a "magic" string
      * that must be verified by the TestInputStream.
      */
-    protected void annotateClass(Class cl) throws IOException {
+    protected void annotateClass(Class<?> cl) throws IOException {
         this.writeUTF("magic");
     }
 
@@ -112,7 +112,6 @@ class TestOutputStream extends ObjectOutputStream {
      * Other objects are written as themselves.
      */
     protected Object replaceObject(Object obj)
-        throws IOException
     {
         /* For PrintStreams, like stdout and stderr, encode */
         if (obj instanceof PrintStream) {
@@ -169,6 +168,7 @@ class TestInputStream extends ObjectInputStream {
  * and a small integer.
  */
 class StdStream implements java.io.Serializable {
+    private static final long serialVersionUID = 1L;
     private int stream = 0;
 
     public StdStream(PrintStream s) {

@@ -111,6 +111,7 @@ public final class Subject implements java.io.Serializable {
      *          {@code java.security.Principal}.
      *          The set is a {@code Subject.SecureSet}.
      */
+    @SuppressWarnings("serial") // Not statically typed as Serializable
     Set<Principal> principals;
 
     /**

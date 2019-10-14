@@ -54,18 +54,18 @@ void GCNotifier::pushNotification(GCMemoryManager *mgr, const char *action, cons
  }
 
 void GCNotifier::addRequest(GCNotificationRequest *request) {
-  MutexLocker ml(Service_lock, Mutex::_no_safepoint_check_flag);
+  MutexLocker ml(Notification_lock, Mutex::_no_safepoint_check_flag);
   if(first_request == NULL) {
     first_request = request;
   } else {
     last_request->next = request;
   }
   last_request = request;
-  Service_lock->notify_all();
+  Notification_lock->notify_all();
 }
 
 GCNotificationRequest *GCNotifier::getRequest() {
-  MutexLocker ml(Service_lock, Mutex::_no_safepoint_check_flag);
+  MutexLocker ml(Notification_lock, Mutex::_no_safepoint_check_flag);
   GCNotificationRequest *request = first_request;
   if(first_request != NULL) {
     first_request = first_request->next;

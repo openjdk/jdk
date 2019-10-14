@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2009, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,8 +26,10 @@ package org.graalvm.compiler.nodes.calc;
 
 import static org.graalvm.compiler.nodeinfo.NodeCycles.CYCLES_16;
 import static org.graalvm.compiler.nodeinfo.NodeSize.SIZE_1;
+import static org.graalvm.compiler.nodes.calc.BinaryArithmeticNode.getArithmeticOpTable;
 
 import org.graalvm.compiler.core.common.type.ArithmeticOpTable;
+import org.graalvm.compiler.core.common.type.ArithmeticOpTable.UnaryOp;
 import org.graalvm.compiler.core.common.type.ArithmeticOpTable.UnaryOp.Sqrt;
 import org.graalvm.compiler.graph.NodeClass;
 import org.graalvm.compiler.lir.gen.ArithmeticLIRGeneratorTool;
@@ -47,7 +49,7 @@ public final class SqrtNode extends UnaryArithmeticNode<Sqrt> implements Arithme
     public static final NodeClass<SqrtNode> TYPE = NodeClass.create(SqrtNode.class);
 
     protected SqrtNode(ValueNode x) {
-        super(TYPE, ArithmeticOpTable::getSqrt, x);
+        super(TYPE, getArithmeticOpTable(x).getSqrt(), x);
     }
 
     public static ValueNode create(ValueNode x, NodeView view) {
@@ -56,6 +58,11 @@ public final class SqrtNode extends UnaryArithmeticNode<Sqrt> implements Arithme
             return ConstantNode.forPrimitive(op.foldStamp(x.stamp(view)), op.foldConstant(x.asConstant()));
         }
         return new SqrtNode(x);
+    }
+
+    @Override
+    protected UnaryOp<Sqrt> getOp(ArithmeticOpTable table) {
+        return table.getSqrt();
     }
 
     @Override

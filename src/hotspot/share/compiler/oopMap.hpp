@@ -53,7 +53,7 @@ private:
 
 public:
   // Constants
-  enum { type_bits                = 4,
+  enum { type_bits                = 2,
          register_bits            = BitsPerShort - type_bits };
 
   enum { type_shift               = 0,
@@ -64,19 +64,41 @@ public:
          register_mask            = right_n_bits(register_bits),
          register_mask_in_place   = register_mask << register_shift };
 
-  enum oop_types {              // must fit in type_bits
-         unused_value =0,       // powers of 2, for masking OopMapStream
-         oop_value = 1,
-         narrowoop_value = 2,
-         callee_saved_value = 4,
-         derived_oop_value= 8 };
+  enum oop_types {
+         oop_value,
+         narrowoop_value,
+         callee_saved_value,
+         derived_oop_value,
+         unused_value = -1          // Only used as a sentinel value
+  };
 
   // Constructors
   OopMapValue () { set_value(0); set_content_reg(VMRegImpl::Bad()); }
-  OopMapValue (VMReg reg, oop_types t) { set_reg_type(reg, t); set_content_reg(VMRegImpl::Bad()); }
-  OopMapValue (VMReg reg, oop_types t, VMReg reg2) { set_reg_type(reg, t); set_content_reg(reg2); }
-  OopMapValue (CompressedReadStream* stream) { read_from(stream); }
+  OopMapValue (VMReg reg, oop_types t, VMReg reg2) {
+    set_reg_type(reg, t);
+    set_content_reg(reg2);
+  }
 
+ private:
+    void set_reg_type(VMReg p, oop_types t) {
+    set_value((p->value() << register_shift) | t);
+    assert(reg() == p, "sanity check" );
+    assert(type() == t, "sanity check" );
+  }
+
+  void set_content_reg(VMReg r) {
+    if (is_callee_saved()) {
+      // This can never be a stack location, so we don't need to transform it.
+      assert(r->is_reg(), "Trying to callee save a stack location");
+    } else if (is_derived_oop()) {
+      assert (r->is_valid(), "must have a valid VMReg");
+    } else {
+      assert (!r->is_valid(), "valid VMReg not allowed");
+    }
+    _content_reg = r->value();
+  }
+
+ public:
   // Archiving
   void write_on(CompressedWriteStream* stream) {
     stream->write_int(value());
@@ -94,14 +116,9 @@ public:
 
   // Querying
   bool is_oop()               { return mask_bits(value(), type_mask_in_place) == oop_value; }
-  bool is_narrowoop()           { return mask_bits(value(), type_mask_in_place) == narrowoop_value; }
+  bool is_narrowoop()         { return mask_bits(value(), type_mask_in_place) == narrowoop_value; }
   bool is_callee_saved()      { return mask_bits(value(), type_mask_in_place) == callee_saved_value; }
   bool is_derived_oop()       { return mask_bits(value(), type_mask_in_place) == derived_oop_value; }
-
-  void set_oop()              { set_value((value() & register_mask_in_place) | oop_value); }
-  void set_narrowoop()          { set_value((value() & register_mask_in_place) | narrowoop_value); }
-  void set_callee_saved()     { set_value((value() & register_mask_in_place) | callee_saved_value); }
-  void set_derived_oop()      { set_value((value() & register_mask_in_place) | derived_oop_value); }
 
   VMReg reg() const { return VMRegImpl::as_VMReg(mask_bits(value(), register_mask_in_place) >> register_shift); }
   oop_types type() const      { return (oop_types)mask_bits(value(), type_mask_in_place); }
@@ -110,15 +127,7 @@ public:
     return (p->value()  == (p->value() & register_mask));
   }
 
-  void set_reg_type(VMReg p, oop_types t) {
-    set_value((p->value() << register_shift) | t);
-    assert(reg() == p, "sanity check" );
-    assert(type() == t, "sanity check" );
-  }
-
-
   VMReg content_reg() const       { return VMRegImpl::as_VMReg(_content_reg, true); }
-  void set_content_reg(VMReg r)   { _content_reg = r->value(); }
 
   // Physical location queries
   bool is_register_loc()      { return reg()->is_reg(); }
@@ -156,6 +165,8 @@ class OopMap: public ResourceObj {
   enum DeepCopyToken { _deep_copy_token };
   OopMap(DeepCopyToken, OopMap* source);  // used only by deep_copy
 
+  void set_xxx(VMReg reg, OopMapValue::oop_types x, VMReg optional);
+
  public:
   OopMap(int frame_size, int arg_count);
 
@@ -173,18 +184,13 @@ class OopMap: public ResourceObj {
   // frame_size units are stack-slots (4 bytes) NOT intptr_t; we can name odd
   // slots to hold 4-byte values like ints and floats in the LP64 build.
   void set_oop  ( VMReg local);
-  void set_value( VMReg local);
   void set_narrowoop(VMReg local);
-  void set_dead ( VMReg local);
   void set_callee_saved( VMReg local, VMReg caller_machine_register );
   void set_derived_oop ( VMReg local, VMReg derived_from_local_register );
-  void set_xxx(VMReg reg, OopMapValue::oop_types x, VMReg optional);
 
   int heap_size() const;
   void copy_data_to(address addr) const;
   OopMap* deep_copy();
-
-  bool has_derived_pointer() const PRODUCT_RETURN0;
 
   bool legal_vm_reg_name(VMReg local) {
      return OopMapValue::legal_vm_reg_name(local);
@@ -269,7 +275,6 @@ private:
 public:
   ImmutableOopMap(const OopMap* oopmap);
 
-  bool has_derived_pointer() const PRODUCT_RETURN0;
   int count() const { return _count; }
 #ifdef ASSERT
   int nr_of_bytes() const; // this is an expensive operation, only used in debug builds
@@ -334,7 +339,6 @@ public:
 class OopMapStream : public StackObj {
  private:
   CompressedReadStream* _stream;
-  int _mask;
   int _size;
   int _position;
   bool _valid_omv;
@@ -342,8 +346,8 @@ class OopMapStream : public StackObj {
   void find_next();
 
  public:
-  OopMapStream(OopMap* oop_map, int oop_types_mask = OopMapValue::type_mask_in_place);
-  OopMapStream(const ImmutableOopMap* oop_map, int oop_types_mask = OopMapValue::type_mask_in_place);
+  OopMapStream(OopMap* oop_map);
+  OopMapStream(const ImmutableOopMap* oop_map);
   bool is_done()                        { if(!_valid_omv) { find_next(); } return !_valid_omv; }
   void next()                           { find_next(); }
   OopMapValue current()                 { return _omv; }

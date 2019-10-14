@@ -109,6 +109,7 @@ final class ChronoPeriodImpl
     /**
      * The chronology.
      */
+    @SuppressWarnings("serial") // Not statically typed as Serializable
     private final Chronology chrono;
     /**
      * The number of years.

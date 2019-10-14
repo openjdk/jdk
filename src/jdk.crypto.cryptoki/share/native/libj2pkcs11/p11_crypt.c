@@ -72,6 +72,7 @@ Java_sun_security_pkcs11_wrapper_PKCS11_C_1EncryptInit
 {
     CK_SESSION_HANDLE ckSessionHandle;
     CK_MECHANISM_PTR ckpMechanism = NULL;
+    CK_MECHANISM_PTR ckpTemp;
     CK_OBJECT_HANDLE ckKeyHandle;
     CK_RV rv;
 
@@ -81,15 +82,32 @@ Java_sun_security_pkcs11_wrapper_PKCS11_C_1EncryptInit
     ckSessionHandle = jLongToCKULong(jSessionHandle);
     ckKeyHandle = jLongToCKULong(jKeyHandle);
     ckpMechanism = jMechanismToCKMechanismPtr(env, jMechanism);
+    TRACE1("DEBUG C_EncryptInit: created pMech = %p\n",
+            ckpMechanism);
+
     if ((*env)->ExceptionCheck(env)) { return; }
 
     rv = (*ckpFunctions->C_EncryptInit)(ckSessionHandle, ckpMechanism,
                                         ckKeyHandle);
 
-    // if OAEP, then cannot free here
-    freeCKMechanismPtr(ckpMechanism);
+    if (ckpMechanism->mechanism == CKM_AES_GCM) {
+        if (rv == CKR_ARGUMENTS_BAD || rv == CKR_MECHANISM_PARAM_INVALID) {
+            // retry with CKM_GCM_PARAMS structure in pkcs11t.h
+            TRACE0("DEBUG C_EncryptInit: retry with CK_GCM_PARAMS\n");
+            ckpTemp = updateGCMParams(env, ckpMechanism);
+            if (ckpTemp != NULL) { // only re-call if conversion succeeds
+                ckpMechanism = ckpTemp;
+                rv = (*ckpFunctions->C_EncryptInit)(ckSessionHandle, ckpMechanism,
+                        ckKeyHandle);
+            }
+        }
+    }
 
+    TRACE1("DEBUG C_EncryptInit: freed pMech = %p\n", ckpMechanism);
+    freeCKMechanismPtr(ckpMechanism);
     if (ckAssertReturnValueOK(env, rv) != CK_ASSERT_OK) { return; }
+
+    TRACE0("FINISHED\n");
 }
 #endif
 
@@ -292,6 +310,7 @@ Java_sun_security_pkcs11_wrapper_PKCS11_C_1DecryptInit
 {
     CK_SESSION_HANDLE ckSessionHandle;
     CK_MECHANISM_PTR ckpMechanism = NULL;
+    CK_MECHANISM_PTR ckpTemp;
     CK_OBJECT_HANDLE ckKeyHandle;
     CK_RV rv;
 
@@ -301,15 +320,32 @@ Java_sun_security_pkcs11_wrapper_PKCS11_C_1DecryptInit
     ckSessionHandle = jLongToCKULong(jSessionHandle);
     ckKeyHandle = jLongToCKULong(jKeyHandle);
     ckpMechanism = jMechanismToCKMechanismPtr(env, jMechanism);
+    TRACE1("DEBUG C_DecryptInit: created pMech = %p\n",
+            ckpMechanism);
+
     if ((*env)->ExceptionCheck(env)) { return; }
 
     rv = (*ckpFunctions->C_DecryptInit)(ckSessionHandle, ckpMechanism,
                                         ckKeyHandle);
 
-    // if OAEP, then cannot free here
-    freeCKMechanismPtr(ckpMechanism);
+    if (ckpMechanism->mechanism == CKM_AES_GCM) {
+        if (rv == CKR_ARGUMENTS_BAD || rv == CKR_MECHANISM_PARAM_INVALID) {
+            // retry with CKM_GCM_PARAMS structure in pkcs11t.h
+            TRACE0("DEBUG C_DecryptInit: retry with CK_GCM_PARAMS\n");
+            ckpTemp = updateGCMParams(env, ckpMechanism);
+            if (ckpTemp != NULL) { // only re-call if conversion succeeds
+                ckpMechanism = ckpTemp;
+                rv = (*ckpFunctions->C_DecryptInit)(ckSessionHandle, ckpMechanism,
+                        ckKeyHandle);
+            }
+        }
+    }
 
+    TRACE1("DEBUG C_DecryptInit: freed pMech = %p\n", ckpMechanism);
+    freeCKMechanismPtr(ckpMechanism);
     if (ckAssertReturnValueOK(env, rv) != CK_ASSERT_OK) { return; }
+
+    TRACE0("FINISHED\n");
 }
 #endif
 

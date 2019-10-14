@@ -37,6 +37,8 @@ G1ConcurrentRefineThread::G1ConcurrentRefineThread(G1ConcurrentRefine* cr, uint 
   ConcurrentGCThread(),
   _vtime_start(0.0),
   _vtime_accum(0.0),
+  _total_refinement_time(),
+  _total_refined_cards(0),
   _worker_id(worker_id),
   _active(false),
   _monitor(NULL),
@@ -101,10 +103,11 @@ void G1ConcurrentRefineThread::run_service() {
       break;
     }
 
-    size_t buffers_processed = 0;
     log_debug(gc, refine)("Activated worker %d, on threshold: " SIZE_FORMAT ", current: " SIZE_FORMAT,
                           _worker_id, _cr->activation_threshold(_worker_id),
                           G1BarrierSet::dirty_card_queue_set().num_cards());
+
+    size_t start_total_refined_cards = _total_refined_cards; // For logging.
 
     {
       SuspendibleThreadSetJoiner sts_join;
@@ -115,20 +118,22 @@ void G1ConcurrentRefineThread::run_service() {
           continue;             // Re-check for termination after yield delay.
         }
 
-        if (!_cr->do_refinement_step(_worker_id)) {
-          break;
+        Ticks start_time = Ticks::now();
+        if (!_cr->do_refinement_step(_worker_id, &_total_refined_cards)) {
+          break;                // No cards to process.
         }
-        ++buffers_processed;
+        _total_refinement_time += (Ticks::now() - start_time);
       }
     }
 
     deactivate();
     log_debug(gc, refine)("Deactivated worker %d, off threshold: " SIZE_FORMAT
-                          ", current: " SIZE_FORMAT ", buffers processed: "
-                          SIZE_FORMAT,
+                          ", current: " SIZE_FORMAT ", refined cards: "
+                          SIZE_FORMAT ", total refined cards: " SIZE_FORMAT,
                           _worker_id, _cr->deactivation_threshold(_worker_id),
                           G1BarrierSet::dirty_card_queue_set().num_cards(),
-                          buffers_processed);
+                          _total_refined_cards - start_total_refined_cards,
+                          _total_refined_cards);
 
     if (os::supports_vtime()) {
       _vtime_accum = (os::elapsedVTime() - _vtime_start);

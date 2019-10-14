@@ -27,8 +27,10 @@
 
 #include "runtime/thread.hpp"
 
-// A JavaThread for low memory detection support and JVMTI
-// compiled-method-load events.
+// A hidden from external view JavaThread for JVMTI compiled-method-load
+// events, oop storage cleanup, and the maintainance of string, symbol,
+// protection domain, and resolved method tables.
+
 class ServiceThread : public JavaThread {
   friend class VMStructs;
  private:

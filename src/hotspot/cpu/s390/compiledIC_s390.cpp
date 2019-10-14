@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2019, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2016 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -104,19 +104,7 @@ void CompiledDirectStaticCall::set_to_interpreted(const methodHandle& callee, ad
   // Creation also verifies the object.
   NativeMovConstReg* method_holder = nativeMovConstReg_at(stub + NativeCall::get_IC_pos_in_java_to_interp_stub());
   NativeJump*        jump          = nativeJump_at(method_holder->next_instruction_address());
-
-#ifdef ASSERT
-  // A generated lambda form might be deleted from the Lambdaform
-  // cache in MethodTypeForm.  If a jit compiled lambdaform method
-  // becomes not entrant and the cache access returns null, the new
-  // resolve will lead to a new generated LambdaForm.
-  volatile intptr_t data = method_holder->data();
-  volatile address destination = jump->jump_destination();
-  assert(data == 0 || data == (intptr_t)callee() || callee->is_compiled_lambda_form(),
-         "a) MT-unsafe modification of inline cache");
-  assert(destination == (address)-1 || destination == entry,
-         "b) MT-unsafe modification of inline cache");
-#endif
+  verify_mt_safe(callee, entry, method_holder, jump);
 
   // Update stub.
   method_holder->set_data((intptr_t)callee(), relocInfo::metadata_type);

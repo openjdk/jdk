@@ -45,22 +45,16 @@ import java.util.ArrayList;
 
 public class DynamicLotsOfClasses extends DynamicArchiveTestBase {
 
-    public static void main(String[] args) throws Throwable {
+    public static void main(String[] args) throws Exception {
         runTest(DynamicLotsOfClasses::testDefaultBase);
     }
 
     static void testDefaultBase() throws Exception {
         String topArchiveName = getNewArchiveName("top");
-        try {
-            doTest(topArchiveName);
-         } catch (Throwable th) {
-             System.out.println(th.toString());
-             Exception ex = new Exception(th);
-             throw ex;
-         }
+        doTest(topArchiveName);
     }
 
-    private static void doTest(String topArchiveName) throws Throwable {
+    private static void doTest(String topArchiveName) throws Exception {
         ArrayList<String> list = new ArrayList<>();
         TestCommon.findAllClasses(list);
 

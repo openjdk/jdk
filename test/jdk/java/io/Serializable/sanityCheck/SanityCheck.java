@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,6 +31,7 @@ import java.io.*;
 import java.util.*;
 
 class Item implements Serializable {
+    private static final long serialVersionUID = 1L;
 
     static final int ARRAYLEN = 1000;
     static final int STRLEN = 1000;
@@ -55,6 +56,7 @@ class Item implements Serializable {
     double[] dary;
 
     String str;
+    @SuppressWarnings("serial")  /* Incorrect declarations are being tested */
     Object[] oary;
 
     Item() {
@@ -86,7 +88,7 @@ class Item implements Serializable {
             fary[i] = rand.nextFloat();
             jary[i] = rand.nextLong();
             dary[i] = rand.nextDouble();
-            oary[i] = new Integer(rand.nextInt());
+            oary[i] = rand.nextInt();
         }
 
         char[] strChars = new char[STRLEN];
@@ -125,6 +127,11 @@ class Item implements Serializable {
         }
 
         return true;
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(i, j);
     }
 }
 

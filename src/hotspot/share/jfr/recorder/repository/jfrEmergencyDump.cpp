@@ -393,6 +393,10 @@ static void prepare_for_emergency_dump(Thread* thread) {
     Service_lock->unlock();
   }
 
+  if (UseNotificationThread && Notification_lock->owned_by_self()) {
+    Notification_lock->unlock();
+  }
+
   if (CodeCache_lock->owned_by_self()) {
     CodeCache_lock->unlock();
   }

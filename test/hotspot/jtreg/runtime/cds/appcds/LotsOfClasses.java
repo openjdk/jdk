@@ -39,7 +39,7 @@ import jdk.test.lib.process.OutputAnalyzer;
 
 public class LotsOfClasses {
 
-    public static void main(String[] args) throws Throwable {
+    public static void main(String[] args) throws Exception {
         ArrayList<String> list = new ArrayList<>();
         TestCommon.findAllClasses(list);
 

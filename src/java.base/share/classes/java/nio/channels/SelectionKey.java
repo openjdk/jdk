@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,7 +25,8 @@
 
 package java.nio.channels;
 
-import java.util.concurrent.atomic.AtomicReferenceFieldUpdater;
+import java.lang.invoke.MethodHandles;
+import java.lang.invoke.VarHandle;
 
 /**
  * A token representing the registration of a {@link SelectableChannel} with a
@@ -428,12 +429,16 @@ public abstract class SelectionKey {
 
     // -- Attachments --
 
+    private static final VarHandle ATTACHMENT;
+    static {
+        try {
+            MethodHandles.Lookup l = MethodHandles.lookup();
+            ATTACHMENT = l.findVarHandle(SelectionKey.class, "attachment", Object.class);
+        } catch (Exception e) {
+            throw new InternalError(e);
+        }
+    }
     private volatile Object attachment;
-
-    private static final AtomicReferenceFieldUpdater<SelectionKey,Object>
-        attachmentUpdater = AtomicReferenceFieldUpdater.newUpdater(
-            SelectionKey.class, Object.class, "attachment"
-        );
 
     /**
      * Attaches the given object to this key.
@@ -450,7 +455,7 @@ public abstract class SelectionKey {
      *          otherwise {@code null}
      */
     public final Object attach(Object ob) {
-        return attachmentUpdater.getAndSet(this, ob);
+        return ATTACHMENT.getAndSet(this, ob);
     }
 
     /**

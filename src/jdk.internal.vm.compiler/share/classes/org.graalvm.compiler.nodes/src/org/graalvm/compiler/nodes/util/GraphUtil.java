@@ -742,19 +742,22 @@ public class GraphUtil {
 
     /**
      * Tries to find an original value of the given node by traversing through proxies and
-     * unambiguous phis. Note that this method will perform an exhaustive search through phis. It is
-     * intended to be used during graph building, when phi nodes aren't yet canonicalized.
+     * unambiguous phis. Note that this method will perform an exhaustive search through phis.
      *
-     * @param value The node whose original value should be determined.
-     * @return The original value (which might be the input value itself).
+     * @param value the node whose original value should be determined
+     * @param abortOnLoopPhi specifies if the traversal through phis should stop and return
+     *            {@code value} if it hits a {@linkplain PhiNode#isLoopPhi loop phi}. This argument
+     *            must be {@code true} if used during graph building as loop phi nodes may not yet
+     *            have all their inputs computed.
+     * @return the original value (which might be {@code value} itself)
      */
-    public static ValueNode originalValue(ValueNode value) {
-        ValueNode result = originalValueSimple(value);
+    public static ValueNode originalValue(ValueNode value, boolean abortOnLoopPhi) {
+        ValueNode result = originalValueSimple(value, abortOnLoopPhi);
         assert result != null;
         return result;
     }
 
-    private static ValueNode originalValueSimple(ValueNode value) {
+    private static ValueNode originalValueSimple(ValueNode value, boolean abortOnLoopPhi) {
         /* The very simple case: look through proxies. */
         ValueNode cur = originalValueForProxy(value);
 
@@ -764,6 +767,10 @@ public class GraphUtil {
              * structures.
              */
             PhiNode phi = (PhiNode) cur;
+
+            if (abortOnLoopPhi && phi.isLoopPhi()) {
+                return value;
+            }
 
             ValueNode phiSingleValue = null;
             int count = phi.valueCount();
@@ -783,7 +790,7 @@ public class GraphUtil {
                          * of the inputs is another phi function. We need to do a complicated
                          * exhaustive check.
                          */
-                        return originalValueForComplicatedPhi(phi, new NodeBitMap(value.graph()));
+                        return originalValueForComplicatedPhi(value, phi, new NodeBitMap(value.graph()), abortOnLoopPhi);
                     } else {
                         /*
                          * We have two different input values for the phi function, but none of them
@@ -819,8 +826,12 @@ public class GraphUtil {
     /**
      * Handling for complicated nestings of phi functions. We need to reduce phi functions
      * recursively, and need a temporary map of visited nodes to avoid endless recursion of cycles.
+     *
+     * @param value the node whose original value is being determined
+     * @param abortOnLoopPhi specifies if the traversal through phis should stop and return
+     *            {@code value} if it hits a {@linkplain PhiNode#isLoopPhi loop phi}
      */
-    private static ValueNode originalValueForComplicatedPhi(PhiNode phi, NodeBitMap visited) {
+    private static ValueNode originalValueForComplicatedPhi(ValueNode value, PhiNode phi, NodeBitMap visited, boolean abortOnLoopPhi) {
         if (visited.isMarked(phi)) {
             /*
              * Found a phi function that was already seen. Either a cycle, or just a second phi
@@ -836,7 +847,16 @@ public class GraphUtil {
             ValueNode phiCurValue = originalValueForProxy(phi.valueAt(i));
             if (phiCurValue instanceof PhiNode) {
                 /* Recursively process a phi function input. */
-                phiCurValue = originalValueForComplicatedPhi((PhiNode) phiCurValue, visited);
+                PhiNode curPhi = (PhiNode) phiCurValue;
+                if (abortOnLoopPhi && curPhi.isLoopPhi()) {
+                    return value;
+                }
+                phiCurValue = originalValueForComplicatedPhi(value, curPhi, visited, abortOnLoopPhi);
+                if (phiCurValue == value) {
+                    // Hit a loop phi
+                    assert abortOnLoopPhi;
+                    return value;
+                }
             }
 
             if (phiCurValue == null) {

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -50,7 +50,7 @@ public class RemNode extends BinaryArithmeticNode<Rem> implements Lowerable {
     }
 
     protected RemNode(NodeClass<? extends RemNode> c, ValueNode x, ValueNode y) {
-        super(c, ArithmeticOpTable::getRem, x, y);
+        super(c, getArithmeticOpTable(x).getRem(), x, y);
     }
 
     public static ValueNode create(ValueNode forX, ValueNode forY, NodeView view) {
@@ -61,6 +61,11 @@ public class RemNode extends BinaryArithmeticNode<Rem> implements Lowerable {
             return tryConstantFold;
         }
         return new RemNode(forX, forY);
+    }
+
+    @Override
+    protected BinaryOp<Rem> getOp(ArithmeticOpTable table) {
+        return table.getRem();
     }
 
     @Override

@@ -264,7 +264,7 @@ public:
   virtual void clone_at_expansion(PhaseMacroExpand* phase, ArrayCopyNode* ac) const;
 
   // Support for GC barriers emitted during parsing
-  virtual bool has_load_barriers() const { return false; }
+  virtual bool has_load_barrier_nodes() const { return false; }
   virtual bool is_gc_barrier_node(Node* node) const { return false; }
   virtual Node* step_over_gc_barrier(Node* c) const { return c; }
   virtual Node* step_over_gc_barrier_ctrl(Node* c) const { return c; }
@@ -287,13 +287,9 @@ public:
   virtual bool is_gc_specific_loop_opts_pass(LoopOptsMode mode) const { return false; }
 
   virtual bool has_special_unique_user(const Node* node) const { return false; }
-  virtual bool needs_anti_dependence_check(const Node* node) const { return true; }
-
-  virtual void barrier_insertion_phase(Compile* C, PhaseIterGVN &igvn) const { }
 
   enum CompilePhase {
     BeforeOptimize,
-    BeforeLateInsertion,
     BeforeMacroExpand,
     BeforeCodeGen
   };
@@ -320,6 +316,10 @@ public:
   virtual Node* split_if_pre(PhaseIdealLoop* phase, Node* n) const { return NULL; }
   virtual bool build_loop_late_post(PhaseIdealLoop* phase, Node* n) const { return false; }
   virtual bool sink_node(PhaseIdealLoop* phase, Node* n, Node* x, Node* x_ctrl, Node* n_ctrl) const { return false; }
+
+  virtual void late_barrier_analysis() const { }
+  virtual int estimate_stub_size() const { return 0; }
+  virtual void emit_stubs(CodeBuffer& cb) const { }
 };
 
 #endif // SHARE_GC_SHARED_C2_BARRIERSETC2_HPP

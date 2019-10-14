@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -41,10 +41,12 @@ import java.io.*;
 
 class Foo implements Serializable {
     private static final long serialVersionUID = 0L;
-    private Integer bar = new Integer(0);
+    private Integer bar = 0;
 }
 
-class Gub extends Foo {}
+class Gub extends Foo {
+    private static final long serialVersionUID = 1L;
+}
 
 public class Write {
     public static void main(String[] args) throws Exception {

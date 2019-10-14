@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -64,7 +64,7 @@ public class ValidateClass {
             Validator vc_u;
 
             vc_u = (Validator)q.readObject();
-            if (vc_u.validated != Integer.MIN_VALUE) {
+            if (Validator.validated != Integer.MIN_VALUE) {
                 System.err.println("\nTEST FAILED: Validation callbacks did " +
                     "not complete.");
                 throw new Error();
@@ -80,6 +80,7 @@ public class ValidateClass {
 }
 
 class MissingWriterClass implements java.io.Serializable {
+    private static final long serialVersionUID = 1L;
     int i = 77;
 
     private void writeObject(ObjectOutputStream pw) throws IOException {
@@ -88,6 +89,7 @@ class MissingWriterClass implements java.io.Serializable {
 }
 
 class MissingReaderClass implements java.io.Serializable {
+    private static final long serialVersionUID = 1L;
     int i = 77;
 
     private void readObject(ObjectInputStream pr) throws IOException {
@@ -97,6 +99,8 @@ class MissingReaderClass implements java.io.Serializable {
 
 
 class Validator implements ObjectInputValidation, java.io.Serializable  {
+    private static final long serialVersionUID = 1L;
+
     static int validated = Integer.MAX_VALUE; // Last value validated
     int priority;
     Validator next = null;

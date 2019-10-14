@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -50,8 +50,8 @@ import jdk.test.lib.util.JarUtils;
 
 public class PackageAccessTest {
 
-    static Class bcl;
-    static Class dcl;
+    static Class<?> bcl;
+    static Class<?> dcl;
 
     public static void main(String[] args) throws Exception {
         setup();
@@ -62,7 +62,7 @@ public class PackageAccessTest {
             bcl = Class.forName("B", true, ldr);
             dcl = Class.forName("D", true, ldr);
 
-            Object b = bcl.newInstance();
+            Object b = bcl.getConstructor().newInstance();
             try {
                 swizzle(b);
                 throw new Error("expected InvalidClassException for class B");
@@ -74,7 +74,7 @@ public class PackageAccessTest {
                 throw new Error("package private constructor of A invoked");
             }
 
-            Object d = dcl.newInstance();
+            Object d = dcl.getConstructor().newInstance();
             swizzle(d);
         }
     }
@@ -103,7 +103,7 @@ class TestObjectInputStream extends ObjectInputStream {
         super(in);
     }
 
-    protected Class resolveClass(ObjectStreamClass desc)
+    protected Class<?> resolveClass(ObjectStreamClass desc)
         throws IOException, ClassNotFoundException
     {
         String n = desc.getName();

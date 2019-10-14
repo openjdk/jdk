@@ -434,14 +434,15 @@ class DatagramSocket implements java.io.Closeable {
      * verify that datagrams are permitted to be sent and received
      * respectively.
      *
-     * <p> When a socket is connected, {@link #receive receive} and
-     * {@link #send send} <b>will not perform any security checks</b>
-     * on incoming and outgoing packets, other than matching the packet's
-     * and the socket's address and port. On a send operation, if the
-     * packet's address is set and the packet's address and the socket's
-     * address do not match, an {@code IllegalArgumentException} will be
-     * thrown. A socket connected to a multicast address may only be used
-     * to send packets.
+     * <p> Care should be taken to ensure that a connected datagram socket
+     * is not shared with untrusted code. When a socket is connected,
+     * {@link #receive receive} and {@link #send send} <b>will not perform
+     * any security checks</b> on incoming and outgoing packets, other than
+     * matching the packet's and the socket's address and port. On a send
+     * operation, if the packet's address is set and the packet's address
+     * and the socket's address do not match, an {@code IllegalArgumentException}
+     * will be thrown. A socket connected to a multicast address may only
+     * be used to send packets.
      *
      * @param address the remote address for the socket
      *
@@ -708,9 +709,11 @@ class DatagramSocket implements java.io.Closeable {
      * the length of the received message. If the message is longer than
      * the packet's length, the message is truncated.
      * <p>
-     * If there is a security manager, a packet cannot be received if the
-     * security manager's {@code checkAccept} method
-     * does not allow it.
+     * If there is a security manager, and the socket is not currently
+     * connected to a remote address, a packet cannot be received if the
+     * security manager's {@code checkAccept} method does not allow it.
+     * Datagrams that are not permitted by the security manager are silently
+     * discarded.
      *
      * @param      p   the {@code DatagramPacket} into which to place
      *                 the incoming data.
@@ -896,12 +899,15 @@ class DatagramSocket implements java.io.Closeable {
      *
      * @param timeout the specified timeout in milliseconds.
      * @throws SocketException if there is an error in the underlying protocol, such as an UDP error.
+     * @throws IllegalArgumentException if {@code timeout} is negative
      * @since   1.1
      * @see #getSoTimeout()
      */
     public synchronized void setSoTimeout(int timeout) throws SocketException {
         if (isClosed())
             throw new SocketException("Socket is closed");
+        if (timeout < 0)
+            throw new IllegalArgumentException("timeout < 0");
         getImpl().setOption(SocketOptions.SO_TIMEOUT, timeout);
     }
 

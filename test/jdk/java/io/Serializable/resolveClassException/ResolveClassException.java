@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -37,8 +37,8 @@ class BrokenObjectInputStream extends ObjectInputStream {
         super(in);
     }
 
-    protected Class resolveClass(ObjectStreamClass desc)
-        throws IOException, ClassNotFoundException
+    protected Class<?> resolveClass(ObjectStreamClass desc)
+        throws ClassNotFoundException
     {
         throw new ClassNotFoundException(message);
     }
@@ -53,7 +53,7 @@ public class ResolveClassException {
         Object obj;
 
         // write and read an object
-        obj = new Integer(5);
+        obj = 5;
         bout = new ByteArrayOutputStream();
         oout = new ObjectOutputStream(bout);
         oout.writeObject(obj);
@@ -67,7 +67,7 @@ public class ResolveClassException {
         }
 
         // write and read an array of objects
-        obj = new Integer[] { new Integer(5) };
+        obj = new Integer[] { 5 };
         bout = new ByteArrayOutputStream();
         oout = new ObjectOutputStream(bout);
         oout.writeObject(obj);

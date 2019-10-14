@@ -607,7 +607,9 @@ public abstract class AbstractMap<K,V> implements Map<K,V> {
         @java.io.Serial
         private static final long serialVersionUID = -8499721149061103585L;
 
+        @SuppressWarnings("serial") // Conditionally serializable
         private final K key;
+        @SuppressWarnings("serial") // Conditionally serializable
         private V value;
 
         /**
@@ -738,7 +740,9 @@ public abstract class AbstractMap<K,V> implements Map<K,V> {
         @java.io.Serial
         private static final long serialVersionUID = 7138329143949025153L;
 
+        @SuppressWarnings("serial") // Not statically typed as Serializable
         private final K key;
+        @SuppressWarnings("serial") // Not statically typed as Serializable
         private final V value;
 
         /**

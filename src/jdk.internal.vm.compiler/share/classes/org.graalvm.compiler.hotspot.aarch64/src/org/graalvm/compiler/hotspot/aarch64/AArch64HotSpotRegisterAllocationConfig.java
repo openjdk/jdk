@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -45,7 +45,10 @@ import static jdk.vm.ci.aarch64.AArch64.r24;
 import static jdk.vm.ci.aarch64.AArch64.r25;
 import static jdk.vm.ci.aarch64.AArch64.r26;
 import static jdk.vm.ci.aarch64.AArch64.r28;
+import static jdk.vm.ci.aarch64.AArch64.r29;
 import static jdk.vm.ci.aarch64.AArch64.r3;
+import static jdk.vm.ci.aarch64.AArch64.r30;
+import static jdk.vm.ci.aarch64.AArch64.r31;
 import static jdk.vm.ci.aarch64.AArch64.r4;
 import static jdk.vm.ci.aarch64.AArch64.r5;
 import static jdk.vm.ci.aarch64.AArch64.r6;
@@ -96,12 +99,22 @@ import jdk.vm.ci.code.RegisterConfig;
 
 public class AArch64HotSpotRegisterAllocationConfig extends RegisterAllocationConfig {
 
+    /**
+     * Excluding r27 is a temporary solution until we exclude r27 unconditionally at
+     * {@link jdk.vm.ci.hotspot.aarch64.AArch64HotSpotRegisterConfig}.
+     *
+     * The underlying reason is that HotSpot does not intend to support r27 as an allocatable
+     * register. This register is excluded from callee-saved register at
+     * cpu/aarch64/sharedRuntime_aarch64.cpp:RegisterSaver::save_live_registers, and may lead to
+     * dereferencing unknown value from the stack at
+     * share/runtime/stackValue.cpp:StackValue::create_stack_value during deoptimization.
+     */
     // @formatter:off
     static final Register[] registerAllocationOrder = {
         r0,  r1,  r2,  r3,  r4,  r5,  r6,  r7,
         r8,  r9,  r10, r11, r12, r13, r14, r15,
         r16, r17, r18, r19, r20, r21, r22, r23,
-        r24, r25, r26, /* r27, */ r28, /* r29, r30, r31 */
+        r24, r25, r26, /* r27, */ r28, r29, r30, r31,
 
         v0,  v1,  v2,  v3,  v4,  v5,  v6,  v7,
         v8,  v9,  v10, v11, v12, v13, v14, v15,

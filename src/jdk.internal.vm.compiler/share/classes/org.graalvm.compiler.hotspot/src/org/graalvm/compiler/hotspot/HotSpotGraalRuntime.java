@@ -35,6 +35,7 @@ import java.util.EnumMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicReference;
+import java.util.function.Supplier;
 
 import jdk.internal.vm.compiler.collections.EconomicMap;
 import jdk.internal.vm.compiler.collections.EconomicSet;
@@ -97,6 +98,10 @@ import jdk.vm.ci.services.Services;
 public final class HotSpotGraalRuntime implements HotSpotGraalRuntimeProvider {
 
     private static final boolean IS_AOT = Boolean.parseBoolean(Services.getSavedProperties().get("com.oracle.graalvm.isaot"));
+    /**
+     * A factory for {@link HotSpotGraalManagementRegistration} injected by {@code LibGraalFeature}.
+     */
+    private static final Supplier<HotSpotGraalManagementRegistration> AOT_INJECTED_MANAGEMENT = null;
 
     private static boolean checkArrayIndexScaleInvariants(MetaAccessProvider metaAccess) {
         assert metaAccess.getArrayIndexScale(JavaKind.Byte) == 1;
@@ -165,12 +170,12 @@ public final class HotSpotGraalRuntime implements HotSpotGraalRuntimeProvider {
         compilerConfigurationName = compilerConfigurationFactory.getName();
 
         if (IS_AOT) {
-            management = null;
+            management = AOT_INJECTED_MANAGEMENT == null ? null : AOT_INJECTED_MANAGEMENT.get();
         } else {
             management = GraalServices.loadSingle(HotSpotGraalManagementRegistration.class, false);
-            if (management != null) {
-                management.initialize(this);
-            }
+        }
+        if (management != null) {
+            management.initialize(this, config);
         }
 
         BackendMap backendMap = compilerConfigurationFactory.createBackendMap();
@@ -292,13 +297,15 @@ public final class HotSpotGraalRuntime implements HotSpotGraalRuntimeProvider {
                 HotSpotResolvedObjectType type = ((HotSpotResolvedJavaMethod) compilable).getDeclaringClass();
                 if (type instanceof HotSpotResolvedJavaType) {
                     Class<?> clazz = runtime().getMirror(type);
-                    try {
-                        ClassLoader cl = clazz.getClassLoader();
-                        if (cl != null) {
-                            loaders.add(cl);
+                    if (clazz != null) {
+                        try {
+                            ClassLoader cl = clazz.getClassLoader();
+                            if (cl != null) {
+                                loaders.add(cl);
+                            }
+                        } catch (SecurityException e) {
+                            // This loader can obviously not be used for resolving class names
                         }
-                    } catch (SecurityException e) {
-                        // This loader can obviously not be used for resolving class names
                     }
                 }
             }

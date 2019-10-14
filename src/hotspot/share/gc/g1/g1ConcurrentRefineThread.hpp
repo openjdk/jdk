@@ -26,6 +26,7 @@
 #define SHARE_GC_G1_G1CONCURRENTREFINETHREAD_HPP
 
 #include "gc/shared/concurrentGCThread.hpp"
+#include "utilities/ticks.hpp"
 
 // Forward Decl.
 class G1ConcurrentRefine;
@@ -38,6 +39,10 @@ class G1ConcurrentRefineThread: public ConcurrentGCThread {
 
   double _vtime_start;  // Initial virtual time.
   double _vtime_accum;  // Accumulated virtual time.
+
+  Tickspan _total_refinement_time;
+  size_t _total_refined_cards;
+
   uint _worker_id;
 
   bool _active;
@@ -60,6 +65,9 @@ public:
   bool is_active();
   // Activate this thread.
   void activate();
+
+  Tickspan total_refinement_time() const { return _total_refinement_time; }
+  size_t total_refined_cards() const { return _total_refined_cards; }
 
   // Total virtual time so far.
   double vtime_accum() { return _vtime_accum; }

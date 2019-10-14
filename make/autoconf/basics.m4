@@ -427,7 +427,7 @@ AC_DEFUN_ONCE([BASIC_INIT],
   # Save the path variable before it gets changed
   ORIGINAL_PATH="$PATH"
   AC_SUBST(ORIGINAL_PATH)
-  DATE_WHEN_CONFIGURED=`LANG=C date`
+  DATE_WHEN_CONFIGURED=`date`
   AC_SUBST(DATE_WHEN_CONFIGURED)
   AC_MSG_NOTICE([Configuration created at $DATE_WHEN_CONFIGURED.])
 ])

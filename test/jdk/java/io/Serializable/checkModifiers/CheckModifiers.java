@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -36,7 +36,10 @@
 
 import java.io.*;
 class TestClass1 implements Serializable {
+    private static final long serialVersionUID = 1L;
+
     // Missing the "final" modifier
+    @SuppressWarnings("serial") /* Incorrect declarations are being tested */
     private static ObjectStreamField[] serialPersistentFields = {
         new ObjectStreamField("field1", Integer.class),
         new ObjectStreamField("field2", Double.TYPE),
@@ -58,7 +61,7 @@ class TestClass1 implements Serializable {
         throws IOException, ClassNotFoundException {
         ObjectInputStream.GetField pfields = ois.readFields();
 
-        field1 = (Integer) pfields.get("field1", new Integer(100));
+        field1 = (Integer) pfields.get("field1", Integer.valueOf(100));
         field2 = pfields.get("field2", 99.99);
 
         /* These fields must be present in the stream */
@@ -79,7 +82,10 @@ class TestClass1 implements Serializable {
 
 
 class TestClass2 implements Serializable {
+    private static final long serialVersionUID = 1L;
+
     // public instead of private
+    @SuppressWarnings("serial") /* Incorrect declarations are being tested */
     public static final ObjectStreamField[] serialPersistentFields = {
         new ObjectStreamField("field1", Integer.class),
         new ObjectStreamField("field2", Double.TYPE),
@@ -101,7 +107,7 @@ class TestClass2 implements Serializable {
         throws IOException, ClassNotFoundException {
         ObjectInputStream.GetField pfields = ois.readFields();
 
-        field1 = (Integer) pfields.get("field1", new Integer(100));
+        field1 = (Integer) pfields.get("field1", Integer.valueOf(100));
         field2 = pfields.get("field2", 99.99);
 
         /* These fields must be present in the stream */
@@ -121,7 +127,10 @@ class TestClass2 implements Serializable {
 };
 
 class TestClass3 implements Serializable{
+    private static final long serialVersionUID = 1L;
+
     // Not of type ObjectStreamField
+    @SuppressWarnings("serial") /* Incorrect declarations are being tested */
     private final String[] serialPersistentFields =  {"Foo","Foobar"};;
     Integer field1;
     double field2;
@@ -139,7 +148,7 @@ class TestClass3 implements Serializable{
         throws IOException, ClassNotFoundException {
         ObjectInputStream.GetField pfields = ois.readFields();
 
-        field1 = (Integer) pfields.get("field1", new Integer(100));
+        field1 = (Integer) pfields.get("field1", Integer.valueOf(100));
         field2 = pfields.get("field2", 99.99);
         field3 = pfields.get("field3", 99);
         field4 = (String) pfields.get("field4", "Default string");
@@ -156,6 +165,8 @@ class TestClass3 implements Serializable{
 };
 
 class TestClass4 implements Serializable {
+    private static final long serialVersionUID = 1L;
+
     // Correct format
     private static final ObjectStreamField[] serialPersistentFields = {
         new ObjectStreamField("field1", Integer.class),
@@ -178,7 +189,7 @@ class TestClass4 implements Serializable {
         throws IOException, ClassNotFoundException {
         ObjectInputStream.GetField pfields = ois.readFields();
 
-        field1 = (Integer) pfields.get("field1", new Integer(100));
+        field1 = (Integer) pfields.get("field1", Integer.valueOf(100));
         field2 = pfields.get("field2", 99.99);
 
         try {
@@ -199,16 +210,16 @@ class TestClass4 implements Serializable {
 public class CheckModifiers {
     public static void main(String[] args)
         throws ClassNotFoundException, IOException{
-        TestClass1 tc1 = new TestClass1(new Integer(100), 25.56, 2000,
+        TestClass1 tc1 = new TestClass1(100, 25.56, 2000,
             new String("Test modifiers of serialPersistentFields"));
 
-        TestClass2 tc2 = new TestClass2(new Integer(100), 25.56, 2000,
+        TestClass2 tc2 = new TestClass2(100, 25.56, 2000,
             new String("Test modifiers of serialPersistentFields"));
 
-        TestClass3 tc3 = new TestClass3(new Integer(100), 25.56, 2000,
+        TestClass3 tc3 = new TestClass3(100, 25.56, 2000,
             new String("Test Type of serialPersistentFields"));
 
-        TestClass4 tc4 = new TestClass4(new Integer(100), 25.56, 2000,
+        TestClass4 tc4 = new TestClass4(100, 25.56, 2000,
             new String("Test modifiers of serialPersistentFields"));
 
 

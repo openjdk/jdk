@@ -1751,6 +1751,13 @@ MachNode *Matcher::ReduceInst( State *s, int rule, Node *&mem ) {
     _shared_nodes.map(leaf->_idx, ex);
   }
 
+  // Have mach nodes inherit GC barrier data
+  if (leaf->is_LoadStore()) {
+    mach->set_barrier_data(leaf->as_LoadStore()->barrier_data());
+  } else if (leaf->is_Mem()) {
+    mach->set_barrier_data(leaf->as_Mem()->barrier_data());
+  }
+
   return ex;
 }
 

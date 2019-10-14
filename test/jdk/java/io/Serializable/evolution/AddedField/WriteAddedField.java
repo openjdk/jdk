@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 1999, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -37,6 +37,8 @@
 import java.io.*;
 
 class NewFieldClass implements Serializable {
+    private static final long serialVersionUID = 1L;
+
     int k;
 
     NewFieldClass(int value) {
@@ -45,11 +47,14 @@ class NewFieldClass implements Serializable {
 };
 
 class IncompatibleFieldClass implements Serializable {
-    private static long serialVersionUID = 3L;
+    private static final long serialVersionUID = 3L;
     int x = 5;
 };
 
+@SuppressWarnings("serial") /* Incorrect use is being tested */
 class NewExternFieldClass implements Externalizable {
+    private static final long serialVersionUID = 1L;
+
     byte l;
 
     public NewExternFieldClass(int value) {

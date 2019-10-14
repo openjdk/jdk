@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -35,7 +35,7 @@ public class Test {
     public static void main(String[] args) throws Exception {
         ByteArrayOutputStream bout = new ByteArrayOutputStream();
         ObjectOutputStream oout = new ObjectOutputStream(bout);
-        Class[] classes = { Enum.class, Foo.foo.getClass(),
+        Class<?>[] classes = { Enum.class, Foo.foo.getClass(),
                             Foo.bar.getClass(), Foo.baz.getClass() };
         for (int i = 0; i < classes.length; i++) {
             oout.writeObject(classes[i]);

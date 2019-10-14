@@ -302,29 +302,30 @@ void freeCKMechanismPtr(CK_MECHANISM_PTR mechPtr) {
      CK_TLS12_KEY_MAT_PARAMS* tlsKmTmp;
 
      if (mechPtr != NULL) {
-         TRACE2("DEBUG: free mech %lX (mech id = 0x%lX)\n",
-                 ptr_to_jlong(mechPtr),  mechPtr->mechanism);
+         TRACE2("DEBUG freeCKMechanismPtr: free pMech %p (mech 0x%lX)\n",
+                 mechPtr,  mechPtr->mechanism);
          if (mechPtr->pParameter != NULL) {
+             tmp = mechPtr->pParameter;
              switch (mechPtr->mechanism) {
                  case CKM_AES_GCM:
-                     tmp = mechPtr->pParameter;
-                     TRACE1("\t=> free GCM_PARAMS %lX\n",
-                             ptr_to_jlong(tmp));
-                     free(((CK_GCM_PARAMS*)tmp)->pIv);
-                     free(((CK_GCM_PARAMS*)tmp)->pAAD);
+                     if (mechPtr->ulParameterLen == sizeof(CK_GCM_PARAMS_NO_IVBITS)) {
+                         TRACE0("[ GCM_PARAMS w/o ulIvBits ]\n");
+                         free(((CK_GCM_PARAMS_NO_IVBITS*)tmp)->pIv);
+                         free(((CK_GCM_PARAMS_NO_IVBITS*)tmp)->pAAD);
+                     } else if (mechPtr->ulParameterLen == sizeof(CK_GCM_PARAMS)) {
+                         TRACE0("[ GCM_PARAMS ]\n");
+                         free(((CK_GCM_PARAMS*)tmp)->pIv);
+                         free(((CK_GCM_PARAMS*)tmp)->pAAD);
+                     }
                      break;
                  case CKM_AES_CCM:
-                     tmp = mechPtr->pParameter;
-                     TRACE1("\t=> free CK_CCM_PARAMS %lX\n",
-                             ptr_to_jlong(tmp));
+                     TRACE0("[ CK_CCM_PARAMS ]\n");
                      free(((CK_CCM_PARAMS*)tmp)->pNonce);
                      free(((CK_CCM_PARAMS*)tmp)->pAAD);
                      break;
                  case CKM_TLS_PRF:
                  case CKM_NSS_TLS_PRF_GENERAL:
-                     tmp = mechPtr->pParameter;
-                     TRACE1("\t=> free CK_TLS_PRF_PARAMS %lX\n",
-                         ptr_to_jlong(tmp));
+                     TRACE0("[ CK_TLS_PRF_PARAMS ]\n");
                      free(((CK_TLS_PRF_PARAMS*)tmp)->pSeed);
                      free(((CK_TLS_PRF_PARAMS*)tmp)->pLabel);
                      free(((CK_TLS_PRF_PARAMS*)tmp)->pulOutputLen);
@@ -334,18 +335,16 @@ void freeCKMechanismPtr(CK_MECHANISM_PTR mechPtr) {
                  case CKM_TLS_MASTER_KEY_DERIVE:
                  case CKM_SSL3_MASTER_KEY_DERIVE_DH:
                  case CKM_TLS_MASTER_KEY_DERIVE_DH:
-                     sslMkdTmp = mechPtr->pParameter;
-                     TRACE1("\t=> free CK_SSL3_MASTER_KEY_DERIVE_PARAMS %lX\n",
-                         ptr_to_jlong(sslMkdTmp));
+                     sslMkdTmp = tmp;
+                     TRACE0("[ CK_SSL3_MASTER_KEY_DERIVE_PARAMS ]\n");
                      free(sslMkdTmp->RandomInfo.pClientRandom);
                      free(sslMkdTmp->RandomInfo.pServerRandom);
                      free(sslMkdTmp->pVersion);
                      break;
                  case CKM_SSL3_KEY_AND_MAC_DERIVE:
                  case CKM_TLS_KEY_AND_MAC_DERIVE:
-                     sslKmTmp = mechPtr->pParameter;
-                     TRACE1("\t=> free CK_SSL3_KEY_MAT_PARAMS %lX\n",
-                         ptr_to_jlong(sslKmTmp));
+                     sslKmTmp = tmp;
+                     TRACE0("[ CK_SSL3_KEY_MAT_PARAMS ]\n");
                      free(sslKmTmp->RandomInfo.pClientRandom);
                      free(sslKmTmp->RandomInfo.pServerRandom);
                      if (sslKmTmp->pReturnedKeyMaterial != NULL) {
@@ -356,17 +355,15 @@ void freeCKMechanismPtr(CK_MECHANISM_PTR mechPtr) {
                      break;
                  case CKM_TLS12_MASTER_KEY_DERIVE:
                  case CKM_TLS12_MASTER_KEY_DERIVE_DH:
-                     tlsMkdTmp = mechPtr->pParameter;
-                     TRACE1("\t=> CK_TLS12_MASTER_KEY_DERIVE_PARAMS %lX\n",
-                         ptr_to_jlong(tlsMkdTmp));
+                     tlsMkdTmp = tmp;
+                     TRACE0("[ CK_TLS12_MASTER_KEY_DERIVE_PARAMS ]\n");
                      free(tlsMkdTmp->RandomInfo.pClientRandom);
                      free(tlsMkdTmp->RandomInfo.pServerRandom);
                      free(tlsMkdTmp->pVersion);
                      break;
                  case CKM_TLS12_KEY_AND_MAC_DERIVE:
-                     tlsKmTmp = mechPtr->pParameter;
-                     TRACE1("\t=> free CK_TLS12_KEY_MAT_PARAMS %lX\n",
-                         ptr_to_jlong(tlsKmTmp));
+                     tlsKmTmp = tmp;
+                     TRACE0("[ CK_TLS12_KEY_MAT_PARAMS ]\n");
                      free(tlsKmTmp->RandomInfo.pClientRandom);
                      free(tlsKmTmp->RandomInfo.pServerRandom);
                      if (tlsKmTmp->pReturnedKeyMaterial != NULL) {
@@ -377,9 +374,7 @@ void freeCKMechanismPtr(CK_MECHANISM_PTR mechPtr) {
                      break;
                  case CKM_ECDH1_DERIVE:
                  case CKM_ECDH1_COFACTOR_DERIVE:
-                     tmp = mechPtr->pParameter;
-                     TRACE1("\t=> free CK_ECDH1_DERIVE_PARAMS %lX\n",
-                         ptr_to_jlong(tmp));
+                     TRACE0("[ CK_ECDH1_DERIVE_PARAMS ]\n");
                      free(((CK_ECDH1_DERIVE_PARAMS *)tmp)->pSharedData);
                      free(((CK_ECDH1_DERIVE_PARAMS *)tmp)->pPublicData);
                      break;
@@ -387,7 +382,6 @@ void freeCKMechanismPtr(CK_MECHANISM_PTR mechPtr) {
                  case CKM_AES_CTR:
                  case CKM_RSA_PKCS_PSS:
                  case CKM_CAMELLIA_CTR:
-                     TRACE0("\t=> NO OP\n");
                      // params do not contain pointers
                      break;
                  default:
@@ -399,15 +393,57 @@ void freeCKMechanismPtr(CK_MECHANISM_PTR mechPtr) {
                      // CKM_EXTRACT_KEY_FROM_KEY, CKM_OTP, CKM_KIP,
                      // CKM_DSA_PARAMETER_GEN?, CKM_GOSTR3410_*
                      // CK_any_CBC_ENCRYPT_DATA?
-                     TRACE0("\t=> ERROR UNSUPPORTED CK PARAMS\n");
+                     TRACE0("ERROR: UNSUPPORTED CK_MECHANISM\n");
                      break;
              }
-             free(mechPtr->pParameter);
+             TRACE1("\t=> freed param %p\n", tmp);
+             free(tmp);
          } else {
-             TRACE0("DEBUG => Parameter NULL\n");
+             TRACE0("\t=> param NULL\n");
          }
          free(mechPtr);
+         TRACE0("FINISHED\n");
      }
+}
+
+/* This function replaces the CK_GCM_PARAMS_NO_IVBITS structure associated
+ * with the specified CK_MECHANISM structure with CK_GCM_PARAMS
+ * structure.
+ *
+ * @param mechPtr pointer to the CK_MECHANISM structure containing
+ * the to-be-converted CK_GCM_PARAMS_NO_IVBITS structure.
+ * @return pointer to the CK_MECHANISM structure containing the
+ * converted CK_GCM_PARAMS structure or NULL if no conversion took place.
+ */
+CK_MECHANISM_PTR updateGCMParams(JNIEnv *env, CK_MECHANISM_PTR mechPtr) {
+    CK_GCM_PARAMS* pGcmParams2 = NULL;
+    CK_GCM_PARAMS_NO_IVBITS* pParams = NULL;
+    if ((mechPtr->mechanism == CKM_AES_GCM) &&
+            (mechPtr->pParameter != NULL_PTR) &&
+            (mechPtr->ulParameterLen == sizeof(CK_GCM_PARAMS_NO_IVBITS))) {
+        pGcmParams2 = calloc(1, sizeof(CK_GCM_PARAMS));
+        if (pGcmParams2 == NULL) {
+            throwOutOfMemoryError(env, 0);
+            return NULL;
+        }
+        pParams = (CK_GCM_PARAMS_NO_IVBITS*) mechPtr->pParameter;
+        pGcmParams2->pIv = pParams->pIv;
+        pGcmParams2->ulIvLen = pParams->ulIvLen;
+        pGcmParams2->ulIvBits = (pGcmParams2->ulIvLen << 3);
+        pGcmParams2->pAAD = pParams->pAAD;
+        pGcmParams2->ulAADLen = pParams->ulAADLen;
+        pGcmParams2->ulTagBits = pParams->ulTagBits;
+        TRACE1("DEBUG updateGCMParams: pMech %p\n", mechPtr);
+        TRACE2("\t=> GCM param w/o ulIvBits %p => GCM param %p\n", pParams,
+                pGcmParams2);
+        free(pParams);
+        mechPtr->pParameter = pGcmParams2;
+        mechPtr->ulParameterLen = sizeof(CK_GCM_PARAMS);
+        return mechPtr;
+    } else {
+        TRACE0("DEBUG updateGCMParams: no conversion done\n");
+    }
+    return NULL;
 }
 
 /*

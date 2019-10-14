@@ -27,6 +27,7 @@
 #include "interpreter/bytecode.hpp"
 #include "interpreter/interpreter.hpp"
 #include "oops/constMethod.hpp"
+#include "oops/klass.inline.hpp"
 #include "oops/method.hpp"
 #include "prims/methodHandles.hpp"
 #include "runtime/handles.inline.hpp"

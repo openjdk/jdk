@@ -389,7 +389,7 @@ public abstract class Scope {
                 Entry e = table[hash];
                 Assert.check(e == elems, elems.sym);
                 table[hash] = elems.shadowed;
-                elems = elems.sibling;
+                elems = elems.nextSibling;
             }
             Assert.check(next.shared > 0);
             next.shared--;
@@ -466,15 +466,15 @@ public abstract class Scope {
             }
 
             // remove e from elems and sibling list
-            te = elems;
-            if (te == e)
-                elems = e.sibling;
-            else while (true) {
-                if (te.sibling == e) {
-                    te.sibling = e.sibling;
-                    break;
-                }
-                te = te.sibling;
+            if (elems == e) {
+                elems = e.nextSibling;
+                if (elems != null)
+                    elems.prevSibling = null;
+            } else {
+                Assert.check(e.prevSibling != null, e.sym);
+                e.prevSibling.nextSibling = e.nextSibling;
+                if (e.nextSibling != null)
+                    e.nextSibling.prevSibling = e.prevSibling;
             }
 
             removeCount++;
@@ -597,7 +597,7 @@ public abstract class Scope {
                 private Symbol doNext() {
                     Symbol sym = (currEntry == null ? null : currEntry.sym);
                     if (currEntry != null) {
-                        currEntry = currEntry.sibling;
+                        currEntry = currEntry.nextSibling;
                     }
                     update();
                     return sym;
@@ -617,7 +617,7 @@ public abstract class Scope {
 
                 void skipToNextMatchingEntry() {
                     while (currEntry != null && sf != null && !sf.accepts(currEntry.sym)) {
-                        currEntry = currEntry.sibling;
+                        currEntry = currEntry.nextSibling;
                     }
                 }
             };
@@ -677,7 +677,7 @@ public abstract class Scope {
             result.append("Scope[");
             for (ScopeImpl s = this; s != null ; s = s.next) {
                 if (s != this) result.append(" | ");
-                for (Entry e = s.elems; e != null; e = e.sibling) {
+                for (Entry e = s.elems; e != null; e = e.nextSibling) {
                     if (e != s.elems) result.append(", ");
                     result.append(e.sym);
                 }
@@ -702,18 +702,24 @@ public abstract class Scope {
 
         /** Next entry in same scope.
          */
-        public Entry sibling;
+        public Entry nextSibling;
+
+        /** Prev entry in same scope.
+         */
+        public Entry prevSibling;
 
         /** The entry's scope.
          *  scope == null   iff   this == sentinel
          */
         public ScopeImpl scope;
 
-        public Entry(Symbol sym, Entry shadowed, Entry sibling, ScopeImpl scope) {
+        public Entry(Symbol sym, Entry shadowed, Entry nextSibling, ScopeImpl scope) {
             this.sym = sym;
             this.shadowed = shadowed;
-            this.sibling = sibling;
+            this.nextSibling = nextSibling;
             this.scope = scope;
+            if (nextSibling != null)
+                nextSibling.prevSibling = this;
         }
 
         /** Return next entry with the same name as this entry, proceeding

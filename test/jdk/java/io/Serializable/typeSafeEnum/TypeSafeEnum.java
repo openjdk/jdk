@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,6 +30,8 @@
 import java.io.*;
 
 public class TypeSafeEnum implements Serializable, ObjectInputValidation {
+    private static final long serialVersionUID = 1L;
+
     private static int numWriteObject = 0;
     private static int numReadObject = 0;
 
@@ -47,7 +49,7 @@ public class TypeSafeEnum implements Serializable, ObjectInputValidation {
     static boolean verbose = false;
 
 
-    private Object writeReplace() throws IOException {
+    private Object writeReplace() {
         numWriteReplace++;
         if (verbose) {
             System.out.println("TypeSafeEnum.writeReplace() " +
@@ -56,7 +58,7 @@ public class TypeSafeEnum implements Serializable, ObjectInputValidation {
         return this;
     }
 
-    private Object readResolve() throws IOException {
+    private Object readResolve() {
         numReadResolve++;
         if (verbose) {
             System.out.println("readResolve called on " + this.toString());

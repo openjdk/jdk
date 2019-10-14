@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2001, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -36,6 +36,8 @@
 import java.io.*;
 
 class NewExternFieldClass implements Externalizable {
+    private static final long serialVersionUID = 1L;
+
     byte l;
 
     public NewExternFieldClass() {
@@ -60,6 +62,8 @@ class NewExternFieldClass implements Externalizable {
 }
 
 class D implements Serializable {
+    private static final long serialVersionUID = 1L;
+
     public int x;
     D(int y) {
         x = y;

@@ -140,16 +140,12 @@ public class ProcessArgumentMatcher {
         return vids;
     }
 
-    public Collection<VirtualMachineDescriptor> getVirtualMachineDescriptors(Class<?> excludeClass) {
+    public Collection<VirtualMachineDescriptor> getVirtualMachineDescriptors() {
         if (singlePid != null) {
             return getSingleVMD(singlePid);
         } else {
-            return getVMDs(excludeClass, matchClass);
+            return getVMDs(null, matchClass);
         }
-    }
-
-    public Collection<VirtualMachineDescriptor> getVirtualMachineDescriptors() {
-        return this.getVirtualMachineDescriptors(null);
     }
 
     public Collection<String> getVirtualMachinePids(Class<?> excludeClass) {
@@ -162,7 +158,4 @@ public class ProcessArgumentMatcher {
         }
     }
 
-    public Collection<String> getVirtualMachinePids() {
-        return this.getVirtualMachinePids(null);
-    }
 }

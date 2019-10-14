@@ -437,7 +437,8 @@ public class DPrinter {
         Scope scope = (Scope) getField(e, e.getClass(), "scope");
         return "(" + sym.name + ":" + sym
                 + ",shdw:" + entryToString(callMethod(e, e.getClass(), "next"), table, true)
-                + ",sibl:" + entryToString(getField(e, e.getClass(), "sibling"), table, true)
+                + ",nextSibling:" + entryToString(getField(e, e.getClass(), "nextSibling"), table, true)
+                + ",prevSibling:" + entryToString(getField(e, e.getClass(), "prevSibling"), table, true)
                 + ((sym.owner != scope.owner)
                     ? (",BOGUS[" + sym.owner + "," + scope.owner + "]")
                     : "")

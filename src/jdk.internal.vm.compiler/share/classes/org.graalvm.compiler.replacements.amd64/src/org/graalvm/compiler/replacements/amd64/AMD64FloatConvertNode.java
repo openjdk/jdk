@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,10 +26,12 @@ package org.graalvm.compiler.replacements.amd64;
 
 import static org.graalvm.compiler.nodeinfo.NodeCycles.CYCLES_8;
 import static org.graalvm.compiler.nodeinfo.NodeSize.SIZE_1;
+import static org.graalvm.compiler.nodes.calc.BinaryArithmeticNode.getArithmeticOpTable;
 
-import jdk.vm.ci.meta.JavaConstant;
 import org.graalvm.compiler.core.common.calc.FloatConvert;
+import org.graalvm.compiler.core.common.type.ArithmeticOpTable;
 import org.graalvm.compiler.core.common.type.ArithmeticOpTable.FloatConvertOp;
+import org.graalvm.compiler.core.common.type.ArithmeticOpTable.UnaryOp;
 import org.graalvm.compiler.core.common.type.IntegerStamp;
 import org.graalvm.compiler.core.common.type.Stamp;
 import org.graalvm.compiler.core.common.type.StampFactory;
@@ -42,6 +44,8 @@ import org.graalvm.compiler.nodes.calc.FloatConvertNode;
 import org.graalvm.compiler.nodes.calc.UnaryArithmeticNode;
 import org.graalvm.compiler.nodes.spi.ArithmeticLIRLowerable;
 import org.graalvm.compiler.nodes.spi.NodeLIRBuilderTool;
+
+import jdk.vm.ci.meta.JavaConstant;
 
 /**
  * This node has the semantics of the AMD64 floating point conversions. It is used in the lowering
@@ -58,9 +62,14 @@ public final class AMD64FloatConvertNode extends UnaryArithmeticNode<FloatConver
     protected final FloatConvert op;
 
     public AMD64FloatConvertNode(FloatConvert op, ValueNode value) {
-        super(TYPE, table -> table.getFloatConvert(op), value);
+        super(TYPE, getArithmeticOpTable(value).getFloatConvert(op), value);
         this.op = op;
         this.stamp = this.stamp.meet(createInexactCaseStamp());
+    }
+
+    @Override
+    protected UnaryOp<FloatConvertOp> getOp(ArithmeticOpTable table) {
+        return table.getFloatConvert(op);
     }
 
     @Override

@@ -32,6 +32,7 @@
 #include "oops/objArrayKlass.hpp"
 #include "oops/objArrayOop.inline.hpp"
 #include "oops/oop.inline.hpp"
+#include "prims/jvmtiRawMonitor.hpp"
 #include "runtime/atomic.hpp"
 #include "runtime/handles.inline.hpp"
 #include "runtime/init.hpp"
@@ -217,10 +218,10 @@ Handle ThreadService::get_current_contended_monitor(JavaThread* thread) {
   } else {
     ObjectMonitor *enter_obj = thread->current_pending_monitor();
     if (enter_obj != NULL) {
-      // thread is trying to enter() or raw_enter() an ObjectMonitor.
+      // thread is trying to enter() an ObjectMonitor.
       obj = (oop) enter_obj->object();
+      assert(obj != NULL, "ObjectMonitor should have an associated object!");
     }
-    // If obj == NULL, then ObjectMonitor is raw which doesn't count.
   }
 
   Handle h(Thread::current(), obj);
@@ -354,13 +355,15 @@ void ThreadService::reset_contention_time_stat(JavaThread* thread) {
   }
 }
 
-// Find deadlocks involving object monitors and concurrent locks if concurrent_locks is true
+// Find deadlocks involving raw monitors, object monitors and concurrent locks
+// if concurrent_locks is true.
 DeadlockCycle* ThreadService::find_deadlocks_at_safepoint(ThreadsList * t_list, bool concurrent_locks) {
   assert(SafepointSynchronize::is_at_safepoint(), "must be at safepoint");
 
   // This code was modified from the original Threads::find_deadlocks code.
   int globalDfn = 0, thisDfn;
   ObjectMonitor* waitingToLockMonitor = NULL;
+  JvmtiRawMonitor* waitingToLockRawMonitor = NULL;
   oop waitingToLockBlocker = NULL;
   bool blocked_on_monitor = false;
   JavaThread *currentThread, *previousThread;
@@ -391,13 +394,30 @@ DeadlockCycle* ThreadService::find_deadlocks_at_safepoint(ThreadsList * t_list, 
     // When there is a deadlock, all the monitors involved in the dependency
     // cycle must be contended and heavyweight. So we only care about the
     // heavyweight monitor a thread is waiting to lock.
-    waitingToLockMonitor = (ObjectMonitor*)jt->current_pending_monitor();
+    waitingToLockMonitor = jt->current_pending_monitor();
+    // JVM TI raw monitors can also be involved in deadlocks, and we can be
+    // waiting to lock both a raw monitor and ObjectMonitor at the same time.
+    // It isn't clear how to make deadlock detection work correctly if that
+    // happens.
+    waitingToLockRawMonitor = jt->current_pending_raw_monitor();
+
     if (concurrent_locks) {
       waitingToLockBlocker = jt->current_park_blocker();
     }
-    while (waitingToLockMonitor != NULL || waitingToLockBlocker != NULL) {
+
+    while (waitingToLockMonitor != NULL ||
+           waitingToLockRawMonitor != NULL ||
+           waitingToLockBlocker != NULL) {
       cycle->add_thread(currentThread);
-      if (waitingToLockMonitor != NULL) {
+      // Give preference to the raw monitor
+      if (waitingToLockRawMonitor != NULL) {
+        Thread* owner = waitingToLockRawMonitor->owner();
+        if (owner != NULL && // the raw monitor could be released at any time
+            owner->is_Java_thread()) {
+          // only JavaThreads can be reported here
+          currentThread = (JavaThread*) owner;
+        }
+      } else if (waitingToLockMonitor != NULL) {
         address currentOwner = (address)waitingToLockMonitor->owner();
         if (currentOwner != NULL) {
           currentThread = Threads::owning_thread_from_monitor_owner(t_list,
@@ -948,28 +968,44 @@ void DeadlockCycle::print_on_with(ThreadsList * t_list, outputStream* st) const 
 
   JavaThread* currentThread;
   ObjectMonitor* waitingToLockMonitor;
+  JvmtiRawMonitor* waitingToLockRawMonitor;
   oop waitingToLockBlocker;
   int len = _threads->length();
   for (int i = 0; i < len; i++) {
     currentThread = _threads->at(i);
-    waitingToLockMonitor = (ObjectMonitor*)currentThread->current_pending_monitor();
+    waitingToLockMonitor = currentThread->current_pending_monitor();
+    waitingToLockRawMonitor = currentThread->current_pending_raw_monitor();
     waitingToLockBlocker = currentThread->current_park_blocker();
     st->cr();
     st->print_cr("\"%s\":", currentThread->get_thread_name());
     const char* owner_desc = ",\n  which is held by";
+
+    // Note: As the JVM TI "monitor contended enter" event callback is executed after ObjectMonitor
+    // sets the current pending monitor, it is possible to then see a pending raw monitor as well.
+    if (waitingToLockRawMonitor != NULL) {
+      st->print("  waiting to lock JVM TI raw monitor " INTPTR_FORMAT, p2i(waitingToLockRawMonitor));
+      Thread* owner = waitingToLockRawMonitor->owner();
+      // Could be NULL as the raw monitor could be released at any time if held by non-JavaThread
+      if (owner != NULL) {
+        if (owner->is_Java_thread()) {
+          currentThread = (JavaThread*) owner;
+          st->print_cr("%s \"%s\"", owner_desc, currentThread->get_thread_name());
+        } else {
+          st->print_cr(",\n  which has now been released");
+        }
+      } else {
+        st->print_cr("%s non-Java thread=" PTR_FORMAT, owner_desc, p2i(owner));
+      }
+    }
+
     if (waitingToLockMonitor != NULL) {
       st->print("  waiting to lock monitor " INTPTR_FORMAT, p2i(waitingToLockMonitor));
       oop obj = (oop)waitingToLockMonitor->object();
-      if (obj != NULL) {
-        st->print(" (object " INTPTR_FORMAT ", a %s)", p2i(obj),
-                   obj->klass()->external_name());
+      st->print(" (object " INTPTR_FORMAT ", a %s)", p2i(obj),
+                 obj->klass()->external_name());
 
-        if (!currentThread->current_pending_monitor_is_from_java()) {
-          owner_desc = "\n  in JNI, which is held by";
-        }
-      } else {
-        // No Java object associated - a JVMTI raw monitor
-        owner_desc = " (JVMTI raw monitor),\n  which is held by";
+      if (!currentThread->current_pending_monitor_is_from_java()) {
+        owner_desc = "\n  in JNI, which is held by";
       }
       currentThread = Threads::owning_thread_from_monitor_owner(t_list,
                                                                 (address)waitingToLockMonitor->owner());
@@ -978,7 +1014,7 @@ void DeadlockCycle::print_on_with(ThreadsList * t_list, outputStream* st) const 
         // that owns waitingToLockMonitor should be findable, but
         // if it is not findable, then the previous currentThread is
         // blocked permanently.
-        st->print("%s UNKNOWN_owner_addr=" PTR_FORMAT, owner_desc,
+        st->print_cr("%s UNKNOWN_owner_addr=" PTR_FORMAT, owner_desc,
                   p2i(waitingToLockMonitor->owner()));
         continue;
       }
@@ -992,10 +1028,9 @@ void DeadlockCycle::print_on_with(ThreadsList * t_list, outputStream* st) const 
       currentThread = java_lang_Thread::thread(ownerObj);
       assert(currentThread != NULL, "AbstractOwnableSynchronizer owning thread is unexpectedly NULL");
     }
-    st->print("%s \"%s\"", owner_desc, currentThread->get_thread_name());
+    st->print_cr("%s \"%s\"", owner_desc, currentThread->get_thread_name());
   }
 
-  st->cr();
   st->cr();
 
   // Print stack traces

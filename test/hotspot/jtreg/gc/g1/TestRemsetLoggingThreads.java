@@ -54,7 +54,7 @@ public class TestRemsetLoggingThreads {
 
     OutputAnalyzer output = new OutputAnalyzer(pb.start());
 
-    String pattern = "Concurrent RS threads times \\(s\\)$";
+    String pattern = "Concurrent refinement threads times \\(s\\)$";
     Matcher m = Pattern.compile(pattern, Pattern.MULTILINE).matcher(output.getStdout());
 
     if (!m.find()) {

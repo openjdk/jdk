@@ -91,6 +91,7 @@ class JvmtiExport : public AllStatic {
   JVMTI_SUPPORT_FLAG(can_force_early_return)
 
   JVMTI_SUPPORT_FLAG(early_vmstart_recorded)
+  JVMTI_SUPPORT_FLAG(can_get_owned_monitor_info) // includes can_get_owned_monitor_stack_depth_info
 
   friend class JvmtiEventControllerPrivate;  // should only modify these flags
   JVMTI_SUPPORT_FLAG(should_post_single_step)

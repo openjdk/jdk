@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,7 +31,9 @@ import java.util.HashSet;
 import java.util.Iterator;
 
 class A implements Serializable {
-    static HashSet writeObjectExtent = new HashSet();
+    private static final long serialVersionUID = 1L;
+
+    static HashSet<A> writeObjectExtent = new HashSet<>();
 
     private void writeObject(ObjectOutputStream out) throws IOException {
         if (writeObjectExtent.contains(this)) {
@@ -63,7 +65,7 @@ public class VerifyDynamicObjHandleTable {
         // allow writeObject to be called on any objects that
         // have already been serialized. These objects should be
         // written out by reference.
-        Iterator iter = A.writeObjectExtent.iterator();
+        Iterator<A> iter = A.writeObjectExtent.iterator();
         while (iter.hasNext()) {
             out.writeObject(iter.next());
         }

@@ -237,6 +237,8 @@ class ClassLoader: AllStatic {
   CDS_ONLY(static ClassPathEntry* app_classpath_entries() {return _app_classpath_entries;})
   CDS_ONLY(static ClassPathEntry* module_path_entries() {return _module_path_entries;})
 
+  static bool has_bootclasspath_append() { return _first_append_entry != NULL; }
+
  protected:
   // Initialization:
   //   - setup the boot loader's system class path

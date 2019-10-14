@@ -38,9 +38,8 @@ private:
 
   G1RemSet* _rem_set;
 
-  size_t _num_conc_refined_cards;
-  size_t _num_processed_buf_mutator;
-  size_t _num_processed_buf_rs_threads;
+  size_t _total_mutator_refined_cards;
+  size_t _total_concurrent_refined_cards;
 
   size_t _num_coarsenings;
 
@@ -76,20 +75,16 @@ public:
     return _sampling_thread_vtime;
   }
 
-  size_t num_conc_refined_cards() const {
-    return _num_conc_refined_cards;
+  size_t total_mutator_refined_cards() const {
+    return _total_mutator_refined_cards;
   }
 
-  size_t num_processed_buf_mutator() const {
-    return _num_processed_buf_mutator;
+  size_t total_concurrent_refined_cards() const {
+    return _total_concurrent_refined_cards;
   }
 
-  size_t num_processed_buf_rs_threads() const {
-    return _num_processed_buf_rs_threads;
-  }
-
-  size_t num_processed_buf_total() const {
-    return num_processed_buf_mutator() + num_processed_buf_rs_threads();
+  size_t total_refined_cards() const {
+    return total_mutator_refined_cards() + total_concurrent_refined_cards();
   }
 
   size_t num_coarsenings() const {

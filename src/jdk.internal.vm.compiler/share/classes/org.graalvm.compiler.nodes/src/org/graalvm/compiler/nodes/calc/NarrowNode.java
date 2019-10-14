@@ -25,6 +25,7 @@
 package org.graalvm.compiler.nodes.calc;
 
 import static org.graalvm.compiler.nodeinfo.NodeCycles.CYCLES_1;
+import static org.graalvm.compiler.nodes.calc.BinaryArithmeticNode.getArithmeticOpTable;
 
 import org.graalvm.compiler.core.common.calc.CanonicalCondition;
 import org.graalvm.compiler.core.common.type.ArithmeticOpTable;
@@ -58,7 +59,7 @@ public final class NarrowNode extends IntegerConvertNode<Narrow, SignExtend> {
     }
 
     public NarrowNode(ValueNode input, int inputBits, int resultBits) {
-        super(TYPE, ArithmeticOpTable::getNarrow, ArithmeticOpTable::getSignExtend, inputBits, resultBits, input);
+        super(TYPE, getArithmeticOpTable(input).getNarrow(), inputBits, resultBits, input);
     }
 
     public static ValueNode create(ValueNode input, int resultBits, NodeView view) {
@@ -73,6 +74,16 @@ public final class NarrowNode extends IntegerConvertNode<Narrow, SignExtend> {
         } else {
             return new NarrowNode(input, inputBits, resultBits);
         }
+    }
+
+    @Override
+    protected IntegerConvertOp<Narrow> getOp(ArithmeticOpTable table) {
+        return table.getNarrow();
+    }
+
+    @Override
+    protected IntegerConvertOp<SignExtend> getReverseOp(ArithmeticOpTable table) {
+        return table.getSignExtend();
     }
 
     @Override

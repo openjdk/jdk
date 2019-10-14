@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -40,7 +40,9 @@ public class NoClassDefFoundErrorTrap {
     private static NoClassDefFoundError ncdfe;
 
     public interface Bar {}
-    public static class Foo implements Bar, java.io.Serializable {}
+    public static class Foo implements Bar, java.io.Serializable {
+        private static final long serialVersionUID = 1L;
+    }
 
     /**
      * Test subclass of ObjectInputStream that overrides resolveClass
@@ -55,7 +57,7 @@ public class NoClassDefFoundErrorTrap {
             super(in);
         }
 
-        protected Class resolveClass(ObjectStreamClass desc)
+        protected Class<?> resolveClass(ObjectStreamClass desc)
             throws IOException, ClassNotFoundException
         {
             String name = desc.getName();

@@ -24,22 +24,23 @@
 #include "precompiled.hpp"
 #include "asm/macroAssembler.inline.hpp"
 #include "code/codeBlob.hpp"
+#include "code/vmreg.inline.hpp"
 #include "gc/z/zBarrier.inline.hpp"
 #include "gc/z/zBarrierSet.hpp"
 #include "gc/z/zBarrierSetAssembler.hpp"
 #include "gc/z/zBarrierSetRuntime.hpp"
+#include "gc/z/zThreadLocalData.hpp"
 #include "memory/resourceArea.hpp"
+#include "runtime/sharedRuntime.hpp"
+#include "utilities/macros.hpp"
 #ifdef COMPILER1
 #include "c1/c1_LIRAssembler.hpp"
 #include "c1/c1_MacroAssembler.hpp"
 #include "gc/z/c1/zBarrierSetC1.hpp"
 #endif // COMPILER1
-
-#include "gc/z/zThreadLocalData.hpp"
-
-ZBarrierSetAssembler::ZBarrierSetAssembler() :
-    _load_barrier_slow_stub(),
-    _load_barrier_weak_slow_stub() {}
+#ifdef COMPILER2
+#include "gc/z/c2/zBarrierSetC2.hpp"
+#endif // COMPILER2
 
 #ifdef PRODUCT
 #define BLOCK_COMMENT(str) /* nothing */
@@ -66,7 +67,7 @@ void ZBarrierSetAssembler::load_at(MacroAssembler* masm,
   assert_different_registers(rscratch1, rscratch2, src.base());
   assert_different_registers(rscratch1, rscratch2, dst);
 
-  RegSet savedRegs = RegSet::range(r0,r28) - RegSet::of(dst, rscratch1, rscratch2);
+  RegSet savedRegs = RegSet::range(r0, r28) - RegSet::of(dst, rscratch1, rscratch2);
 
   Label done;
 
@@ -206,7 +207,8 @@ void ZBarrierSetAssembler::try_resolve_jobject_in_native(MacroAssembler* masm,
 
   // The Address offset is too large to direct load - -784. Our range is +127, -128.
   __ mov(tmp, (long int)(in_bytes(ZThreadLocalData::address_bad_mask_offset()) -
-      in_bytes(JavaThread::jni_environment_offset())));
+              in_bytes(JavaThread::jni_environment_offset())));
+
   // Load address bad mask
   __ add(tmp, jni_env, tmp);
   __ ldr(tmp, Address(tmp));
@@ -294,12 +296,12 @@ void ZBarrierSetAssembler::generate_c1_load_barrier_runtime_stub(StubAssembler* 
   __ prologue("zgc_load_barrier stub", false);
 
   // We don't use push/pop_clobbered_registers() - we need to pull out the result from r0.
-  for (int i = 0; i < 32; i +=2) {
-    __ stpd(as_FloatRegister(i), as_FloatRegister(i+1), Address(__ pre(sp,-16)));
+  for (int i = 0; i < 32; i += 2) {
+    __ stpd(as_FloatRegister(i), as_FloatRegister(i + 1), Address(__ pre(sp,-16)));
   }
 
-  RegSet saveRegs = RegSet::range(r0,r28) - RegSet::of(r0);
-  __ push(saveRegs, sp);
+  const RegSet save_regs = RegSet::range(r1, r28);
+  __ push(save_regs, sp);
 
   // Setup arguments
   __ load_parameter(0, c_rarg0);
@@ -307,98 +309,161 @@ void ZBarrierSetAssembler::generate_c1_load_barrier_runtime_stub(StubAssembler* 
 
   __ call_VM_leaf(ZBarrierSetRuntime::load_barrier_on_oop_field_preloaded_addr(decorators), 2);
 
-  __ pop(saveRegs, sp);
+  __ pop(save_regs, sp);
 
-  for (int i = 30; i >0; i -=2) {
-      __ ldpd(as_FloatRegister(i), as_FloatRegister(i+1), Address(__ post(sp, 16)));
-    }
+  for (int i = 30; i >= 0; i -= 2) {
+    __ ldpd(as_FloatRegister(i), as_FloatRegister(i + 1), Address(__ post(sp, 16)));
+  }
 
   __ epilogue();
 }
 #endif // COMPILER1
 
-#undef __
-#define __ cgen->assembler()->
+#ifdef COMPILER2
 
-// Generates a register specific stub for calling
-// ZBarrierSetRuntime::load_barrier_on_oop_field_preloaded() or
-// ZBarrierSetRuntime::load_barrier_on_weak_oop_field_preloaded().
-//
-// The raddr register serves as both input and output for this stub. When the stub is
-// called the raddr register contains the object field address (oop*) where the bad oop
-// was loaded from, which caused the slow path to be taken. On return from the stub the
-// raddr register contains the good/healed oop returned from
-// ZBarrierSetRuntime::load_barrier_on_oop_field_preloaded() or
-// ZBarrierSetRuntime::load_barrier_on_weak_oop_field_preloaded().
-static address generate_load_barrier_stub(StubCodeGenerator* cgen, Register raddr, DecoratorSet decorators) {
-  // Don't generate stub for invalid registers
-  if (raddr == zr || raddr == r29 || raddr == r30) {
-    return NULL;
+OptoReg::Name ZBarrierSetAssembler::refine_register(const Node* node, OptoReg::Name opto_reg) {
+  if (!OptoReg::is_reg(opto_reg)) {
+    return OptoReg::Bad;
   }
 
-  // Create stub name
-  char name[64];
-  const bool weak = (decorators & ON_WEAK_OOP_REF) != 0;
-  os::snprintf(name, sizeof(name), "zgc_load_barrier%s_stub_%s", weak ? "_weak" : "", raddr->name());
-
-  __ align(CodeEntryAlignment);
-  StubCodeMark mark(cgen, "StubRoutines", os::strdup(name, mtCode));
-  address start = __ pc();
-
-  // Save live registers
-  RegSet savedRegs = RegSet::range(r0,r18) - RegSet::of(raddr);
-
-  __ enter();
-  __ push(savedRegs, sp);
-
-  // Setup arguments
-  if (raddr != c_rarg1) {
-    __ mov(c_rarg1, raddr);
+  const VMReg vm_reg = OptoReg::as_VMReg(opto_reg);
+  if (vm_reg->is_FloatRegister()) {
+    return opto_reg & ~1;
   }
 
-  __ ldr(c_rarg0, Address(raddr));
-
-  // Call barrier function
-  __ call_VM_leaf(ZBarrierSetRuntime::load_barrier_on_oop_field_preloaded_addr(decorators), c_rarg0, c_rarg1);
-
-  // Move result returned in r0 to raddr, if needed
-  if (raddr != r0) {
-    __ mov(raddr, r0);
-  }
-
-  __ pop(savedRegs, sp);
-  __ leave();
-  __ ret(lr);
-
-  return start;
+  return opto_reg;
 }
 
 #undef __
+#define __ _masm->
 
-static void barrier_stubs_init_inner(const char* label, const DecoratorSet decorators, address* stub) {
-  const int nregs = 28;              // Exclude FP, XZR, SP from calculation.
-  const int code_size = nregs * 254; // Rough estimate of code size
+class ZSaveLiveRegisters {
+private:
+  MacroAssembler* const _masm;
+  RegSet                _gp_regs;
+  RegSet                _fp_regs;
 
-  ResourceMark rm;
+public:
+  void initialize(ZLoadBarrierStubC2* stub) {
+    // Create mask of live registers
+    RegMask live = stub->live();
 
-  CodeBuffer buf(BufferBlob::create(label, code_size));
-  StubCodeGenerator cgen(&buf);
+    // Record registers that needs to be saved/restored
+    while (live.is_NotEmpty()) {
+      const OptoReg::Name opto_reg = live.find_first_elem();
+      live.Remove(opto_reg);
+      if (OptoReg::is_reg(opto_reg)) {
+        const VMReg vm_reg = OptoReg::as_VMReg(opto_reg);
+        if (vm_reg->is_Register()) {
+          _gp_regs += RegSet::of(vm_reg->as_Register());
+        } else if (vm_reg->is_FloatRegister()) {
+          _fp_regs += RegSet::of((Register)vm_reg->as_FloatRegister());
+        } else {
+          fatal("Unknown register type");
+        }
+      }
+    }
 
-  for (int i = 0; i < nregs; i++) {
-    const Register reg = as_Register(i);
-    stub[i] = generate_load_barrier_stub(&cgen, reg, decorators);
+    // Remove C-ABI SOE registers, scratch regs and _ref register that will be updated
+    _gp_regs -= RegSet::range(r19, r30) + RegSet::of(r8, r9, stub->ref());
   }
+
+  ZSaveLiveRegisters(MacroAssembler* masm, ZLoadBarrierStubC2* stub) :
+      _masm(masm),
+      _gp_regs(),
+      _fp_regs() {
+
+    // Figure out what registers to save/restore
+    initialize(stub);
+
+    // Save registers
+    __ push(_gp_regs, sp);
+    __ push_fp(_fp_regs, sp);
+  }
+
+  ~ZSaveLiveRegisters() {
+    // Restore registers
+    __ pop_fp(_fp_regs, sp);
+    __ pop(_gp_regs, sp);
+  }
+};
+
+#undef __
+#define __ _masm->
+
+class ZSetupArguments {
+private:
+  MacroAssembler* const _masm;
+  const Register        _ref;
+  const Address         _ref_addr;
+
+public:
+  ZSetupArguments(MacroAssembler* masm, ZLoadBarrierStubC2* stub) :
+      _masm(masm),
+      _ref(stub->ref()),
+      _ref_addr(stub->ref_addr()) {
+
+    // Setup arguments
+    if (_ref_addr.base() == noreg) {
+      // No self healing
+      if (_ref != c_rarg0) {
+        __ mov(c_rarg0, _ref);
+      }
+      __ mov(c_rarg1, 0);
+    } else {
+      // Self healing
+      if (_ref == c_rarg0) {
+        // _ref is already at correct place
+        __ lea(c_rarg1, _ref_addr);
+      } else if (_ref != c_rarg1) {
+        // _ref is in wrong place, but not in c_rarg1, so fix it first
+        __ lea(c_rarg1, _ref_addr);
+        __ mov(c_rarg0, _ref);
+      } else if (_ref_addr.base() != c_rarg0 && _ref_addr.index() != c_rarg0) {
+        assert(_ref == c_rarg1, "Mov ref first, vacating c_rarg0");
+        __ mov(c_rarg0, _ref);
+        __ lea(c_rarg1, _ref_addr);
+      } else {
+        assert(_ref == c_rarg1, "Need to vacate c_rarg1 and _ref_addr is using c_rarg0");
+        if (_ref_addr.base() == c_rarg0 || _ref_addr.index() == c_rarg0) {
+          __ mov(rscratch2, c_rarg1);
+          __ lea(c_rarg1, _ref_addr);
+          __ mov(c_rarg0, rscratch2);
+        } else {
+          ShouldNotReachHere();
+        }
+      }
+    }
+  }
+
+  ~ZSetupArguments() {
+    // Transfer result
+    if (_ref != r0) {
+      __ mov(_ref, r0);
+    }
+  }
+};
+
+#undef __
+#define __ masm->
+
+void ZBarrierSetAssembler::generate_c2_load_barrier_stub(MacroAssembler* masm, ZLoadBarrierStubC2* stub) const {
+  BLOCK_COMMENT("ZLoadBarrierStubC2");
+
+  // Stub entry
+  __ bind(*stub->entry());
+
+  {
+    ZSaveLiveRegisters save_live_registers(masm, stub);
+    ZSetupArguments setup_arguments(masm, stub);
+    __ mov(rscratch1, stub->slow_path());
+    __ blr(rscratch1);
+  }
+
+  // Stub exit
+  __ b(*stub->continuation());
 }
 
-void ZBarrierSetAssembler::barrier_stubs_init() {
-  barrier_stubs_init_inner("zgc_load_barrier_stubs", ON_STRONG_OOP_REF, _load_barrier_slow_stub);
-  barrier_stubs_init_inner("zgc_load_barrier_weak_stubs", ON_WEAK_OOP_REF, _load_barrier_weak_slow_stub);
-}
+#undef __
 
-address ZBarrierSetAssembler::load_barrier_slow_stub(Register reg) {
-  return _load_barrier_slow_stub[reg->encoding()];
-}
-
-address ZBarrierSetAssembler::load_barrier_weak_slow_stub(Register reg) {
-  return _load_barrier_weak_slow_stub[reg->encoding()];
-}
+#endif // COMPILER2

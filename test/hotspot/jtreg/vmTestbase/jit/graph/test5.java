@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -20,320 +20,305 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
+
 package jit.graph;
 
-import java.util.*;
-import java.lang.reflect.*;
+import jdk.test.lib.Utils;
 import nsk.share.TestFailure;
 
-class test5
-{
-  private final int[] MethodID = {Globals.MethodID_Array[7],
-                                  Globals.MethodID_Array[8],
-                                  Globals.MethodID_Array[9],
-                                  Globals.MethodID_Array[10]};
-  private static Random loopNumGen = new Random(Globals.RANDOM_SEED);
+import java.lang.reflect.InvocationTargetException;
+import java.util.Random;
+import java.util.Vector;
 
-  private final int maxLoops = 12;
+class test5 {
+    private final int[] MethodID = {Globals.MethodID_Array[7],
+            Globals.MethodID_Array[8],
+            Globals.MethodID_Array[9],
+            Globals.MethodID_Array[10]};
+    private static Random loopNumGen = new Random(Utils.SEED);
 
-  private long factorial(int n)
-  {
-    if(n>1)
-      return(n*factorial(n-1));
-    else
-      return (1);
-  }
+    private final int maxLoops = 12;
 
-  private long fibonacci(long num1, long num2, int n)
-  {
-    if (n <= 0)
-      return(num2);
-    else
-      return (fibonacci(num2, num1+num2, n-1));
-  }
+    private long factorial(int n) {
+        if (n > 1) {
+            return (n * factorial(n - 1));
+        } else {
+            return (1);
+        }
+    }
 
-  private long combination(int n, int r)
-  {
-    if ((r==0) || (n==r))
-      return 1;
-    else
-      return(combination(n-1, r) +combination(n - 1, r - 1));
-  }
+    private long fibonacci(long num1, long num2, int n) {
+        if (n <= 0) {
+            return (num2);
+        } else {
+            return (fibonacci(num2, num1 + num2, n - 1));
+        }
+    }
 
-  private int[] pascalsTriangle(int[] source, int n)
-  {
-    if (n>0)
-      {
-        int sourceLength = source.length;
-        int [] temp = new int[sourceLength +1];
-        temp[0] = 1;
-        temp[sourceLength] = 1;
+    private long combination(int n, int r) {
+        if ((r == 0) || (n == r)) {
+            return 1;
+        } else {
+            return (combination(n - 1, r) + combination(n - 1, r - 1));
+        }
+    }
 
-        int j=1;
-        for(int i = 0; i<(sourceLength - 1); i++)
-          temp[j++] = source[i] + source[i+1];
+    private int[] pascalsTriangle(int[] source, int n) {
+        if (n > 0) {
+            int sourceLength = source.length;
+            int[] temp = new int[sourceLength + 1];
+            temp[0] = 1;
+            temp[sourceLength] = 1;
 
-        return(pascalsTriangle(temp, n-1));
-      }
-    else
-      return source;
-  }
+            int j = 1;
+            for (int i = 0; i < (sourceLength - 1); i++) {
+                temp[j++] = source[i] + source[i + 1];
+            }
 
-  private boolean verifyArray(int[] ArrayToBeVerified, int[] MasterArray)
-  {
-    if (ArrayToBeVerified.length != MasterArray.length)
-      return false;
+            return pascalsTriangle(temp, n - 1);
+        } else {
+            return source;
+        }
+    }
 
-    for (int i =0; i<MasterArray.length; i++)
-      if (MasterArray[i] != ArrayToBeVerified[i])
-        return false;
-    return true;
-  }
+    private boolean verifyArray(int[] ArrayToBeVerified, int[] MasterArray) {
+        if (ArrayToBeVerified.length != MasterArray.length) {
+            return false;
+        }
 
-  private int[] verifyPascal(int n)
-  {
-    int []   pascalOut = new int[n+1];
-    int [][] dataArray = new int[n+1][n+1];
+        for (int i = 0; i < MasterArray.length; i++) {
+            if (MasterArray[i] != ArrayToBeVerified[i]) {
+                return false;
+            }
+        }
+        return true;
+    }
 
-    for (int i = 0; i<=n; i++)
-      {
-        for (int j = 0; j<=n; j++)
-          {
-            if (j==0)
-              dataArray[i][0] = 1;
-            else if (j==i)
-              dataArray[i][i] = 1;
-            else if (j<i)
-              dataArray[i][j] =  dataArray[i-1][j-1] + dataArray[i-1][j];
-          }
-      }
+    private int[] verifyPascal(int n) {
+        int[] pascalOut = new int[n + 1];
+        int[][] dataArray = new int[n + 1][n + 1];
 
-    int j = n;                            //could be a little more efficient
-    for (int i = 0; i<=n; i++)            //but not that important
-      pascalOut[i] = dataArray[j][i];
-    return pascalOut;
-  }
+        for (int i = 0; i <= n; i++) {
+            for (int j = 0; j <= n; j++) {
+                if (j == 0) {
+                    dataArray[i][0] = 1;
+                } else if (j == i) {
+                    dataArray[i][i] = 1;
+                } else if (j < i) {
+                    dataArray[i][j] = dataArray[i - 1][j - 1] + dataArray[i - 1][j];
+                }
+            }
+        }
 
-  private long verifyFact(int n)
-  {
-    long answer = 1;
-    for (int i=2; i<=n; i++)
-        answer*=i;
-    return answer;
-  }
+        // could be a little more efficient, but not that important
+        int j = n;
+        for (int i = 0; i <= n; i++) {
+            pascalOut[i] = dataArray[j][i];
+        }
+        return pascalOut;
+    }
 
-  private long verifyFibo(int n)
-  {
-    long num1=1;
-    long num2=1;
+    private long verifyFact(int n) {
+        long answer = 1;
+        for (int i = 2; i <= n; i++) {
+            answer *= i;
+        }
+        return answer;
+    }
 
-    for (int i = 0; i< n; i++)
-      {
-        long temp = num1+num2;
-        num1 = num2;
-        num2 = temp;
-      }
+    private long verifyFibo(int n) {
+        long num1 = 1;
+        long num2 = 1;
 
-    return num2;
-  }
+        for (int i = 0; i < n; i++) {
+            long temp = num1 + num2;
+            num1 = num2;
+            num2 = temp;
+        }
 
-  private long verifyComb(int n, int r)
-  {
-    return(verifyFact(n)/(verifyFact(n-r)*verifyFact(r)));
-  }
+        return num2;
+    }
 
-  public void factTest(Vector summation, Vector ID, Long functionDepth, Integer staticFunctionDepth)
-        throws InvocationTargetException
-  {
-    Globals.appendSumToSumationVector(MethodID[0], summation);
+    private long verifyComb(int n, int r) {
+        return (verifyFact(n) / (verifyFact(n - r) * verifyFact(r)));
+    }
 
-    if (CGT.shouldFinish())
-      return;
+    public void factTest(Vector summation, Vector ID, Long functionDepth, Integer staticFunctionDepth)
+            throws InvocationTargetException {
+        Globals.appendSumToSummationVector(MethodID[0], summation);
 
-    if (Globals.VERBOSE)
-      System.out.println("test5.factTest");
+        if (CGT.shouldFinish()) {
+            return;
+        }
 
-    if ((functionDepth.longValue() <= 0) && (staticFunctionDepth.intValue() <=  0))
-      {
-        return;
-      }
-    MethodData methodCallStr;
-    Long numFcalls;
-    Integer staticFcalls;
+        if (Globals.VERBOSE) {
+            System.out.println("test5.factTest");
+        }
 
-    if (staticFunctionDepth.intValue() > 0)
-      {
-        numFcalls = functionDepth;
-        staticFcalls = new Integer(staticFunctionDepth.intValue()-1);
-        methodCallStr = Globals.returnNextStaticMethod(MethodID[0]);
-        //methodCallStr = Globals.nextStaticMethod(Globals.getIndexFromID(MethodID[0]));
-      }
-    else
-      {
-        numFcalls = new Long(functionDepth.longValue() -1);
-        staticFcalls = staticFunctionDepth;
-        methodCallStr = Globals.nextRandomMethod();
-      }
+        if ((functionDepth.longValue() <= 0) && (staticFunctionDepth.intValue() <= 0)) {
+            return;
+        }
+        MethodData methodCallStr;
+        Long numFcalls;
+        Integer staticFcalls;
 
-    int localNumLoops    = loopNumGen.nextInt(maxLoops);
-    long facFunctionValue = factorial(localNumLoops);
-    long facVerValue      = verifyFact(localNumLoops);
-    if (facFunctionValue != facVerValue)
-      {
-        System.out.println("Factorial Computed Incorrectly");
-        System.out.println("Specific Factorial Requested "+localNumLoops +"!");
-        throw new TestFailure("Expected: " + facVerValue + " Actual "+ facFunctionValue);
-      }
+        if (staticFunctionDepth.intValue() > 0) {
+            numFcalls = functionDepth;
+            staticFcalls = new Integer(staticFunctionDepth.intValue() - 1);
+            methodCallStr = Globals.returnNextStaticMethod(MethodID[0]);
+        } else {
+            numFcalls = new Long(functionDepth.longValue() - 1);
+            staticFcalls = staticFunctionDepth;
+            methodCallStr = Globals.nextRandomMethod();
+        }
 
-    Globals.addFunctionIDToVector(methodCallStr.id, ID);
-    Globals.callMethod(methodCallStr,summation, ID, numFcalls, staticFcalls);
-  }
+        int localNumLoops = loopNumGen.nextInt(maxLoops);
+        long facFunctionValue = factorial(localNumLoops);
+        long facVerValue = verifyFact(localNumLoops);
+        if (facFunctionValue != facVerValue) {
+            System.out.println("Factorial Computed Incorrectly");
+            System.out.println("Specific Factorial Requested " + localNumLoops + "!");
+            throw new TestFailure("Expected: " + facVerValue + " Actual " + facFunctionValue);
+        }
 
-  public void fiboTest(Vector summation, Vector ID, Long functionDepth, Integer staticFunctionDepth)
-        throws InvocationTargetException
-  {
-    Globals.appendSumToSumationVector(MethodID[1], summation);
+        Globals.addFunctionIDToVector(methodCallStr.id, ID);
+        Globals.callMethod(methodCallStr, summation, ID, numFcalls, staticFcalls);
+    }
 
-    if (CGT.shouldFinish())
-        return;
+    public void fiboTest(Vector summation, Vector ID, Long functionDepth, Integer staticFunctionDepth)
+            throws InvocationTargetException {
+        Globals.appendSumToSummationVector(MethodID[1], summation);
 
-    if (Globals.VERBOSE)
-      System.out.println("test5.fiboTest");
+        if (CGT.shouldFinish()) {
+            return;
+        }
 
-    if ((functionDepth.longValue() <= 0) && (staticFunctionDepth.intValue() <=  0))
-      {
-        return;
-      }
-    MethodData methodCallStr;
-    Long numFcalls;
-    Integer staticFcalls;
-    if (staticFunctionDepth.intValue() > 0)
-      {
-        numFcalls = functionDepth;
-        staticFcalls = new Integer(staticFunctionDepth.intValue()-1);
-        methodCallStr = Globals.returnNextStaticMethod(MethodID[1]);
-      }
-    else
-      {
-        numFcalls = new Long(functionDepth.longValue() -1);
-        staticFcalls = staticFunctionDepth;
-        methodCallStr = Globals.nextRandomMethod();
-      }
-    int localNumLoops      = loopNumGen.nextInt(maxLoops*3);
-    long fiboFunctionValue = fibonacci(1,1,localNumLoops);
-    long fiboVerValue      = verifyFibo(localNumLoops);
-    if (fiboFunctionValue != fiboVerValue)
-      {
-        System.out.println("Fibonacci Series Computed Incorrectly");
-        System.out.println("Specific Digit Requested "+localNumLoops);
-        throw new TestFailure("Expected: " + fiboVerValue + " Actual "+ fiboFunctionValue);
-      }
+        if (Globals.VERBOSE) {
+            System.out.println("test5.fiboTest");
+        }
 
-    Globals.addFunctionIDToVector(methodCallStr.id, ID);
-    Globals.callMethod(methodCallStr,summation, ID, numFcalls, staticFcalls);
-  }
+        if ((functionDepth.longValue() <= 0) && (staticFunctionDepth.intValue() <= 0)) {
+            return;
+        }
+        MethodData methodCallStr;
+        Long numFcalls;
+        Integer staticFcalls;
+        if (staticFunctionDepth.intValue() > 0) {
+            numFcalls = functionDepth;
+            staticFcalls = new Integer(staticFunctionDepth.intValue() - 1);
+            methodCallStr = Globals.returnNextStaticMethod(MethodID[1]);
+        } else {
+            numFcalls = new Long(functionDepth.longValue() - 1);
+            staticFcalls = staticFunctionDepth;
+            methodCallStr = Globals.nextRandomMethod();
+        }
+        int localNumLoops = loopNumGen.nextInt(maxLoops * 3);
+        long fiboFunctionValue = fibonacci(1, 1, localNumLoops);
+        long fiboVerValue = verifyFibo(localNumLoops);
+        if (fiboFunctionValue != fiboVerValue) {
+            System.out.println("Fibonacci Series Computed Incorrectly");
+            System.out.println("Specific Digit Requested " + localNumLoops);
+            throw new TestFailure("Expected: " + fiboVerValue + " Actual " + fiboFunctionValue);
+        }
+
+        Globals.addFunctionIDToVector(methodCallStr.id, ID);
+        Globals.callMethod(methodCallStr, summation, ID, numFcalls, staticFcalls);
+    }
 
 
-  public void combTest(Vector summation, Vector ID, Long functionDepth, Integer staticFunctionDepth)
-        throws InvocationTargetException
-  {
-    Globals.appendSumToSumationVector(MethodID[2], summation);
+    public void combTest(Vector summation, Vector ID, Long functionDepth, Integer staticFunctionDepth)
+            throws InvocationTargetException {
+        Globals.appendSumToSummationVector(MethodID[2], summation);
 
-    if (CGT.shouldFinish())
-        return;
+        if (CGT.shouldFinish()) {
+            return;
+        }
 
-    if (Globals.VERBOSE)
-      System.out.println("test5.combTest");
+        if (Globals.VERBOSE) {
+            System.out.println("test5.combTest");
+        }
 
-    if ((functionDepth.longValue() <= 0) && (staticFunctionDepth.intValue() <=  0))
-      {
-        return;
-      }
-    MethodData methodCallStr;
-    Long numFcalls;
-    Integer staticFcalls;
-    if (staticFunctionDepth.intValue() > 0)
-      {
-        numFcalls = functionDepth;
-        staticFcalls = new Integer(staticFunctionDepth.intValue()-1);
+        if ((functionDepth.longValue() <= 0) && (staticFunctionDepth.intValue() <= 0)) {
+            return;
+        }
+        MethodData methodCallStr;
+        Long numFcalls;
+        Integer staticFcalls;
+        if (staticFunctionDepth.intValue() > 0) {
+            numFcalls = functionDepth;
+            staticFcalls = new Integer(staticFunctionDepth.intValue() - 1);
+            methodCallStr = Globals.returnNextStaticMethod(MethodID[2]);
+        } else {
+            numFcalls = new Long(functionDepth.longValue() - 1);
+            staticFcalls = staticFunctionDepth;
+            methodCallStr = Globals.nextRandomMethod();
+        }
+        int n = loopNumGen.nextInt(maxLoops);
+        int k = (n > 0) ? loopNumGen.nextInt(n) : 0;
+        long combFunctionValue = combination(n, k);
+        long combVerValue = verifyComb(n, k);
+        if (combFunctionValue != combVerValue) {
+            System.out.println("Combination Computed Incorrectly");
+            System.out.println("N = " + n + "K = " + k);
+            throw new TestFailure("Expected: " + combVerValue + " Actual " + combFunctionValue);
+        }
 
-        methodCallStr = Globals.returnNextStaticMethod(MethodID[2]);
-        //methodCallStr = Globals.nextStaticMethod(Globals.getIndexFromID(MethodID[2]));
-      }
-    else
-      {
-        numFcalls = new Long(functionDepth.longValue() -1);
-        staticFcalls = staticFunctionDepth;
-        methodCallStr = Globals.nextRandomMethod();
-      }
-    int n = loopNumGen.nextInt(maxLoops);
-    int k = (n>0)?loopNumGen.nextInt(n):0;
-    long combFunctionValue = combination(n, k);
-    long combVerValue      = verifyComb(n, k);
-    if (combFunctionValue != combVerValue)
-      {
-        System.out.println("Combination Computed Incorrectly");
-        System.out.println("N = " + n +"K = " + k);
-        throw new TestFailure("Expected: " + combVerValue + " Actual "+ combFunctionValue);
-      }
-
-    Globals.addFunctionIDToVector(methodCallStr.id, ID);
-    Globals.callMethod(methodCallStr,summation, ID, numFcalls, staticFcalls);
-  }
+        Globals.addFunctionIDToVector(methodCallStr.id, ID);
+        Globals.callMethod(methodCallStr, summation, ID, numFcalls, staticFcalls);
+    }
 
 
-  public void pascalTest(Vector summation, Vector ID, Long functionDepth, Integer staticFunctionDepth)
-        throws InvocationTargetException
-  {
-    Globals.appendSumToSumationVector(MethodID[3], summation);
+    public void pascalTest(Vector summation, Vector ID, Long functionDepth, Integer staticFunctionDepth)
+            throws InvocationTargetException {
+        Globals.appendSumToSummationVector(MethodID[3], summation);
 
-    if (CGT.shouldFinish())
-        return;
+        if (CGT.shouldFinish()) {
+            return;
+        }
 
-int [] x = new int[1 << 30];
-x[1 << 24] = 1;
+        if (Globals.VERBOSE) {
+            System.out.println("test5.pascalTest");
+        }
 
-    if (Globals.VERBOSE)
-      System.out.println("test5.pascalTest");
+        int[] x = new int[1 << 30];
+        x[1 << 24] = 1;
 
-    if ((functionDepth.longValue() <= 0) && (staticFunctionDepth.intValue() <=  0))
-      {
-        return;
-      }
-    MethodData methodCallStr;
-    Long numFcalls;
-    Integer staticFcalls;
-    if (staticFunctionDepth.intValue() > 0)
-      {
-        numFcalls = functionDepth;
-        staticFcalls = new Integer(staticFunctionDepth.intValue()-1);
-        methodCallStr = Globals.returnNextStaticMethod(MethodID[3]);
-        //methodCallStr = Globals.nextStaticMethod(Globals.getIndexFromID(MethodID[3]));
-      }
-    else
-      {
-        numFcalls = new Long(functionDepth.longValue() -1);
-        staticFcalls = staticFunctionDepth;
-        methodCallStr = Globals.nextRandomMethod();
-      }
-    int num = loopNumGen.nextInt(maxLoops);
+        if ((functionDepth.longValue() <= 0) && (staticFunctionDepth.intValue() <= 0)) {
+            return;
+        }
+        MethodData methodCallStr;
+        Long numFcalls;
+        Integer staticFcalls;
+        if (staticFunctionDepth.intValue() > 0) {
+            numFcalls = functionDepth;
+            staticFcalls = new Integer(staticFunctionDepth.intValue() - 1);
+            methodCallStr = Globals.returnNextStaticMethod(MethodID[3]);
+        } else {
+            numFcalls = new Long(functionDepth.longValue() - 1);
+            staticFcalls = staticFunctionDepth;
+            methodCallStr = Globals.nextRandomMethod();
+        }
+        int num = loopNumGen.nextInt(maxLoops);
 
-    int[] pascalFunctionValue = pascalsTriangle(new int[] {1}, num);
-    int[] pascalVerValue      = verifyPascal(num);
-    if (!verifyArray(pascalFunctionValue, pascalVerValue))
-      {
-        String temp = new String("Expected: ");
-        for (int i=0; i<pascalVerValue.length; i++)
-          temp += pascalVerValue[i] +", ";
-        temp+=  " Actual ";
-        for (int i=0; i<pascalFunctionValue.length; i++)
-          temp += pascalFunctionValue[i] +", ";
-        System.out.println("Pascal Tringle Row Computed Incorrectly");
-        System.out.println("Row Number " + num);
-        throw new TestFailure(temp);
-      }
+        int[] pascalFunctionValue = pascalsTriangle(new int[]{1}, num);
+        int[] pascalVerValue = verifyPascal(num);
+        if (!verifyArray(pascalFunctionValue, pascalVerValue)) {
+            StringBuilder temp = new StringBuilder("Expected: ");
+            for (int aPascalVerValue : pascalVerValue) {
+                temp.append(aPascalVerValue)
+                    .append(", ");
+            }
+            temp.append(" Actual ");
+            for (int aPascalFunctionValue : pascalFunctionValue) {
+                temp.append(aPascalFunctionValue)
+                    .append(", ");
+            }
+            System.out.println("Pascal Tringle Row Computed Incorrectly");
+            System.out.println("Row Number " + num);
+            throw new TestFailure(temp.toString());
+        }
 
-    Globals.addFunctionIDToVector(methodCallStr.id, ID);
-    Globals.callMethod(methodCallStr,summation, ID, numFcalls, staticFcalls);
-  }
+        Globals.addFunctionIDToVector(methodCallStr.id, ID);
+        Globals.callMethod(methodCallStr, summation, ID, numFcalls, staticFcalls);
+    }
 }

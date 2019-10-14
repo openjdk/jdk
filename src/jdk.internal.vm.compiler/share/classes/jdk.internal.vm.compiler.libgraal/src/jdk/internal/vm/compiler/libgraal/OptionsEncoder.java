@@ -29,7 +29,7 @@ import java.io.ByteArrayOutputStream;
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;
-import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.Map;
 
 /**
@@ -122,7 +122,7 @@ public final class OptionsEncoder {
      * @throws IllegalArgumentException if {@code input} cannot be decoded
      */
     public static Map<String, Object> decode(byte[] input) {
-        Map<String, Object> res = new HashMap<>();
+        Map<String, Object> res = new LinkedHashMap<>();
         try (DataInputStream in = new DataInputStream(new ByteArrayInputStream(input))) {
             final int size = in.readInt();
             for (int i = 0; i < size; i++) {

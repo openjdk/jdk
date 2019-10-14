@@ -1393,6 +1393,7 @@ class Krb5Context implements GSSContextSpi {
     static class KerberosSessionKey implements Key {
         private static final long serialVersionUID = 699307378954123869L;
 
+        @SuppressWarnings("serial") // Not statically typed as Serializable
         private final EncryptionKey key;
 
         KerberosSessionKey(EncryptionKey key) {

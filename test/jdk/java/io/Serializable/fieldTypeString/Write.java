@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -42,6 +42,7 @@ import java.io.*;
 
 class Foo implements Serializable {
     private static final long serialVersionUID = 0L;
+    @SuppressWarnings("serial") /* Incorrect declarations are being tested */
     Object obj;
 
     Foo(Object obj) {
@@ -59,7 +60,7 @@ public class Write {
         ObjectOutputStream oout =
             new ObjectOutputStream(new FileOutputStream("foo.ser"));
         oout.writeObject(new Foo("foo"));
-        oout.writeObject(new Foo(new Integer(0)));
+        oout.writeObject(new Foo(0));
         oout.close();
 
         oout = new ObjectOutputStream(new FileOutputStream("bar.ser"));

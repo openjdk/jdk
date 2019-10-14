@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -44,6 +44,8 @@ class Foo implements Serializable {
 }
 
 class Bar implements Serializable {
+    private static final long serialVersionUID = 1L;
+
     int a, b;
     private void writeObject(ObjectOutputStream out) throws IOException {
         out.defaultWriteObject();

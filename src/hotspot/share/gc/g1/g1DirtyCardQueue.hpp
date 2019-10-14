@@ -78,14 +78,15 @@ class G1DirtyCardQueueSet: public PtrQueueSet {
 
   void abandon_completed_buffers();
 
-  // Refine the cards in "node" from it's index to buffer_size.
+  // Refine the cards in "node" from its index to buffer_size.
   // Stops processing if SuspendibleThreadSet::should_yield() is true.
   // Returns true if the entire buffer was processed, false if there
   // is a pending yield request.  The node's index is updated to exclude
   // the processed elements, e.g. up to the element before processing
   // stopped, or one past the last element if the entire buffer was
-  // processed.
-  bool refine_buffer(BufferNode* node, uint worker_id);
+  // processed. Increments *total_refined_cards by the number of cards
+  // processed and removed from the buffer.
+  bool refine_buffer(BufferNode* node, uint worker_id, size_t* total_refined_cards);
 
   bool mut_process_buffer(BufferNode* node);
 
@@ -97,10 +98,9 @@ class G1DirtyCardQueueSet: public PtrQueueSet {
 
   G1FreeIdSet _free_ids;
 
-  // The number of completed buffers processed by mutator and rs thread,
-  // respectively.
-  jint _processed_buffers_mut;
-  jint _processed_buffers_rs_thread;
+  // Array of cumulative dirty cards refined by mutator threads.
+  // Array has an entry per id in _free_ids.
+  size_t* _mutator_refined_cards_counters;
 
 public:
   G1DirtyCardQueueSet(Monitor* cbl_mon, BufferNode::Allocator* allocator);
@@ -158,7 +158,12 @@ public:
   // Stops processing a buffer if SuspendibleThreadSet::should_yield(),
   // returning the incompletely processed buffer to the completed buffer
   // list, for later processing of the remainder.
-  bool refine_completed_buffer_concurrently(uint worker_id, size_t stop_at);
+  //
+  // Increments *total_refined_cards by the number of cards processed and
+  // removed from the buffer.
+  bool refine_completed_buffer_concurrently(uint worker_id,
+                                            size_t stop_at,
+                                            size_t* total_refined_cards);
 
   // If a full collection is happening, reset partial logs, and release
   // completed ones: the full collection will make them all irrelevant.
@@ -181,13 +186,8 @@ public:
     return _max_cards_padding;
   }
 
-  jint processed_buffers_mut() {
-    return _processed_buffers_mut;
-  }
-  jint processed_buffers_rs_thread() {
-    return _processed_buffers_rs_thread;
-  }
-
+  // Total dirty cards refined by mutator threads.
+  size_t total_mutator_refined_cards() const;
 };
 
 inline G1DirtyCardQueueSet* G1DirtyCardQueue::dirty_card_qset() const {

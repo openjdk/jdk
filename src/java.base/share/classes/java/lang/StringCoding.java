@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -191,6 +191,12 @@ class StringCoding {
                     return result.with(StringLatin1.inflate(ba, off, len), UTF16);
                 }
             }
+            // fastpath for always Latin1 decodable single byte
+            if (COMPACT_STRINGS && cd instanceof ArrayDecoder && ((ArrayDecoder)cd).isLatin1Decodable()) {
+                byte[] dst = new byte[len];
+                ((ArrayDecoder)cd).decodeToLatin1(ba, off, len, dst);
+                return result.with(dst, LATIN1);
+            }
             int en = scale(len, cd.maxCharsPerByte());
             char[] ca = new char[en];
             if (cd instanceof ArrayDecoder) {
@@ -278,6 +284,13 @@ class StringCoding {
             ((ArrayDecoder)cd).isASCIICompatible() && !hasNegatives(ba, off, len)) {
             return decodeLatin1(ba, off, len);
         }
+        // fastpath for always Latin1 decodable single byte
+        if (COMPACT_STRINGS && cd instanceof ArrayDecoder && ((ArrayDecoder)cd).isLatin1Decodable()) {
+            byte[] dst = new byte[len];
+            ((ArrayDecoder)cd).decodeToLatin1(ba, off, len, dst);
+            return new Result().with(dst, LATIN1);
+        }
+
         int en = scale(len, cd.maxCharsPerByte());
         if (len == 0) {
             return new Result().with();

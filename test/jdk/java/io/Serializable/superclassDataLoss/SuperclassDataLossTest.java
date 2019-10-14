@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -62,7 +62,7 @@ class MixedSuperclassStream extends ObjectInputStream {
         this.ldr12A = ldr12A;
     }
 
-    protected Class resolveClass(ObjectStreamClass desc)
+    protected Class<?> resolveClass(ObjectStreamClass desc)
         throws IOException, ClassNotFoundException
     {
         // resolve A's classdesc to class != B's superclass
@@ -91,7 +91,8 @@ public class SuperclassDataLossTest {
              URLClassLoader ldr2 = new URLClassLoader(new URL[] { new URL("file:cb2.jar") })) {
             setup();
 
-            Runnable a = (Runnable) Class.forName("B", true, ldr1).newInstance();
+            Runnable a = (Runnable) Class.forName("B", true, ldr1)
+                    .getConstructor().newInstance();
             a.run();
 
             ByteArrayOutputStream bout = new ByteArrayOutputStream();

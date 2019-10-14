@@ -1315,7 +1315,9 @@ public class PolicyParser {
         private static final long serialVersionUID = -4330692689482574072L;
 
         private String i18nMessage;
+        @SuppressWarnings("serial") // Not statically typed as Serializable
         private LocalizedMessage localizedMsg;
+        @SuppressWarnings("serial") // Not statically typed as Serializable
         private Object[] source;
 
         /**

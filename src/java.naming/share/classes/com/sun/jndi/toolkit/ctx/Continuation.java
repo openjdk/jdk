@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -51,6 +51,7 @@ public class Continuation extends ResolveResult {
     /**
      * Whether links were encountered.
      */
+    @SuppressWarnings("serial") // Not statically typed as Serializable
     protected Object followingLink = null;
 
     /**
@@ -71,6 +72,7 @@ public class Continuation extends ResolveResult {
      * The last resolved context. Used to set the "AltNameCtx" in a
      * CannotProceedException.
      */
+    @SuppressWarnings("serial") // Not statically typed as Serializable
     protected Context resolvedContext = null;
 
     /**

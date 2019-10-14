@@ -86,7 +86,7 @@ public class TestUniverse {
             break;
 
         case Shenandoah:
-            expStrings.add("Shenandoah Heap");
+            expStrings.add("Shenandoah heap");
             break;
         }
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -20,31 +20,30 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
+
 package jit.graph;
 
-
-
-import java.util.*;
-import java.lang.reflect.*;
 import nsk.share.TestFailure;
 
-class test1
-{
+import java.lang.reflect.InvocationTargetException;
+import java.util.Vector;
+
+class test1 {
     private final int classID = Globals.MethodID_Array[0];
 
     public void callMe(Vector summation, Vector ID, Long functionDepth, Integer staticFunctionDepth)
-        throws InvocationTargetException
-    {
-        Globals.appendSumToSumationVector(classID, summation);
+            throws InvocationTargetException {
+        Globals.appendSumToSummationVector(classID, summation);
 
-        if (CGT.shouldFinish())
+        if (CGT.shouldFinish()) {
             return;
+        }
 
-        if (Globals.VERBOSE)
+        if (Globals.VERBOSE) {
             System.out.println("test1.callMe");
+        }
 
-        if ((functionDepth.longValue() <= 0) && (staticFunctionDepth.intValue() <=  0))
-        {
+        if ((functionDepth.longValue() <= 0) && (staticFunctionDepth.intValue() <= 0)) {
             return;
         }
 
@@ -52,16 +51,12 @@ class test1
         Long numFcalls;
         Integer staticFcalls;
 
-        if (staticFunctionDepth.intValue() > 0)
-        {
+        if (staticFunctionDepth.intValue() > 0) {
             numFcalls = functionDepth;
-            staticFcalls = new Integer(staticFunctionDepth.intValue()-1);
-            //methodCallStr = Globals.nextStaticMethod(Globals.getIndexFromID(classID));
+            staticFcalls = new Integer(staticFunctionDepth.intValue() - 1);
             methodCallStr = Globals.returnNextStaticMethod(classID);
-        }
-        else
-        {
-            numFcalls = new Long(functionDepth.longValue() -1);
+        } else {
+            numFcalls = new Long(functionDepth.longValue() - 1);
             staticFcalls = staticFunctionDepth;
             methodCallStr = Globals.nextRandomMethod();
         }
@@ -69,10 +64,10 @@ class test1
         Globals.addFunctionIDToVector(methodCallStr.id, ID);
 
         try {
-                                methodCallStr.nextMethod.invoke(methodCallStr.instance,
-                                        new Object []{summation, ID, numFcalls, staticFcalls});
+            methodCallStr.nextMethod.invoke(methodCallStr.instance,
+                    new Object[]{summation, ID, numFcalls, staticFcalls});
         } catch (IllegalAccessException iax) {
-                                throw new TestFailure("Illegal Access Exception");
+            throw new TestFailure("Illegal Access Exception");
         }
     }
 }

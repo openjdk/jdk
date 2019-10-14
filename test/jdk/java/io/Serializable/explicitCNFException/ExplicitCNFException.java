@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,6 +31,8 @@
 import java.io.*;
 
 class A implements Serializable {
+    private static final long serialVersionUID = 1L;
+
     private void readObject(ObjectInputStream in)
         throws ClassNotFoundException, IOException
     {
@@ -39,6 +41,8 @@ class A implements Serializable {
 }
 
 class B implements Externalizable {
+    private static final long serialVersionUID = 1L;
+
     public B() {}
 
     public void writeExternal(ObjectOutput out) throws IOException {}

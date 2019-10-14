@@ -45,7 +45,7 @@ public class EventGeneratorLoop {
         }
         int howLong = Integer.parseInt(args[0]);
 
-        System.out.println(MAIN_METHOD_STARTED);
+        System.out.println(MAIN_METHOD_STARTED + ", argument is " + howLong);
 
         for (int i=0; i < howLong; i++) {
             SimpleEvent ev = new SimpleEvent();
@@ -56,6 +56,8 @@ public class EventGeneratorLoop {
             try { Thread.sleep(1000); } catch (InterruptedException e) {}
             System.out.print(".");
         }
+
+        System.out.println("EventGeneratorLoop is coming to an end");
     }
 
 }

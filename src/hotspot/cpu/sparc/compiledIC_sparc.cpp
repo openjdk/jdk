@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -104,16 +104,7 @@ void CompiledDirectStaticCall::set_to_interpreted(const methodHandle& callee, ad
   // Creation also verifies the object.
   NativeMovConstReg* method_holder = nativeMovConstReg_at(stub);
   NativeJump*        jump          = nativeJump_at(method_holder->next_instruction_address());
-
-#ifdef ASSERT
-  // read the value once
-  volatile intptr_t data = method_holder->data();
-  volatile address destination = jump->jump_destination();
-  assert(data == 0 || data == (intptr_t)callee(),
-         "a) MT-unsafe modification of inline cache");
-  assert(destination == (address)-1 || destination == entry,
-         "b) MT-unsafe modification of inline cache");
-#endif
+  verify_mt_safe(callee, entry, method_holder, jump);
 
   // Update stub.
   method_holder->set_data((intptr_t)callee());

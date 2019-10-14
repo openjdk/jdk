@@ -72,6 +72,7 @@ public class AlgorithmId implements Serializable, DerEncoder {
     private ObjectIdentifier algid;
 
     // The (parsed) parameters
+    @SuppressWarnings("serial") // Not statically typed as Serializable
     private AlgorithmParameters algParams;
     private boolean constructedFromDer = true;
 
@@ -80,6 +81,7 @@ public class AlgorithmId implements Serializable, DerEncoder {
      * DER-encoded form; subclasses can be made to automaticaly parse
      * them so there is fast access to these parameters.
      */
+    @SuppressWarnings("serial") // Not statically typed as Serializable
     protected DerValue          params;
 
 

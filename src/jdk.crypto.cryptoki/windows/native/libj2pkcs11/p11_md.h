@@ -1,4 +1,8 @@
 /*
+ * Copyright (c) 2019, Oracle and/or its affiliates. All rights reserved.
+ */
+
+/*
  * reserved comment block
  * DO NOT REMOVE OR ALTER!
  */
@@ -77,6 +81,7 @@
 #endif /* CreateMutex */
 
 #include "pkcs11.h"
+#include "pkcs11gcm2.h"
 
 /* statement according to PKCS11 docu */
 #pragma pack(pop, cryptoki)

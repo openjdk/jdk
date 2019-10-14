@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -33,14 +33,17 @@ enum Foo {
 
     foo,
     bar {
+        @SuppressWarnings("serial") /* Incorrect declarations are being tested */
         private void writeObject(ObjectOutputStream out) throws IOException {
             throw new Error("bar.writeObject invoked");
         }
+        @SuppressWarnings("serial") /* Incorrect declarations are being tested */
         private void readObject(ObjectInputStream in)
             throws IOException, ClassNotFoundException
         {
             throw new Error("bar.readObject invoked");
         }
+        @SuppressWarnings("serial") /* Incorrect declarations are being tested */
         Object writeReplace() throws ObjectStreamException {
             throw new Error("bar.writeReplace invoked");
         }
@@ -50,14 +53,17 @@ enum Foo {
         // }
     };
 
+    @SuppressWarnings("serial") /* Incorrect use is being tested */
     private void writeObject(ObjectOutputStream out) throws IOException {
         throw new Error("Foo.writeObject invoked");
     }
+    @SuppressWarnings("serial") /* Incorrect use is being tested */
     private void readObject(ObjectInputStream in)
         throws IOException, ClassNotFoundException
     {
         throw new Error("Foo.readObject invoked");
     }
+    @SuppressWarnings("serial") /* Incorrect use is being tested */
     Object writeReplace() throws ObjectStreamException {
         throw new Error("Foo.writeReplace invoked");
     }

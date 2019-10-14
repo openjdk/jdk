@@ -102,6 +102,7 @@ public class Vector<E>
      *
      * @serial
      */
+    @SuppressWarnings("serial") // Conditionally serializable
     protected Object[] elementData;
 
     /**

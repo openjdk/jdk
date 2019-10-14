@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -52,7 +52,7 @@ public class FloatDivNode extends BinaryArithmeticNode<Div> {
     }
 
     protected FloatDivNode(NodeClass<? extends FloatDivNode> c, ValueNode x, ValueNode y) {
-        super(c, ArithmeticOpTable::getDiv, x, y);
+        super(c, getArithmeticOpTable(x).getDiv(), x, y);
         assert stamp instanceof FloatStamp;
     }
 
@@ -64,6 +64,11 @@ public class FloatDivNode extends BinaryArithmeticNode<Div> {
             return tryConstantFold;
         }
         return canonical(null, op, x, y);
+    }
+
+    @Override
+    protected BinaryOp<Div> getOp(ArithmeticOpTable table) {
+        return table.getDiv();
     }
 
     @Override

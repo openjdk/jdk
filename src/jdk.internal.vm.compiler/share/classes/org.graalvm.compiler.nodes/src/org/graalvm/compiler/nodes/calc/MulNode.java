@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,9 +27,9 @@ package org.graalvm.compiler.nodes.calc;
 import static org.graalvm.compiler.nodeinfo.NodeCycles.CYCLES_2;
 
 import org.graalvm.compiler.core.common.type.ArithmeticOpTable;
-import org.graalvm.compiler.core.common.type.IntegerStamp;
 import org.graalvm.compiler.core.common.type.ArithmeticOpTable.BinaryOp;
 import org.graalvm.compiler.core.common.type.ArithmeticOpTable.BinaryOp.Mul;
+import org.graalvm.compiler.core.common.type.IntegerStamp;
 import org.graalvm.compiler.core.common.type.Stamp;
 import org.graalvm.compiler.graph.NodeClass;
 import org.graalvm.compiler.graph.spi.Canonicalizable.BinaryCommutative;
@@ -56,7 +56,7 @@ public class MulNode extends BinaryArithmeticNode<Mul> implements NarrowableArit
     }
 
     protected MulNode(NodeClass<? extends MulNode> c, ValueNode x, ValueNode y) {
-        super(c, ArithmeticOpTable::getMul, x, y);
+        super(c, getArithmeticOpTable(x).getMul(), x, y);
     }
 
     public static ValueNode create(ValueNode x, ValueNode y, NodeView view) {
@@ -67,6 +67,11 @@ public class MulNode extends BinaryArithmeticNode<Mul> implements NarrowableArit
             return tryConstantFold;
         }
         return canonical(null, op, stamp, x, y, view);
+    }
+
+    @Override
+    protected BinaryOp<Mul> getOp(ArithmeticOpTable table) {
+        return table.getMul();
     }
 
     @Override

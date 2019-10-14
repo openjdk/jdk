@@ -44,6 +44,7 @@
 #include "runtime/interfaceSupport.inline.hpp"
 #include "runtime/javaCalls.hpp"
 #include "runtime/jniHandles.inline.hpp"
+#include "runtime/notificationThread.hpp"
 #include "runtime/os.hpp"
 #include "runtime/serviceThread.hpp"
 #include "runtime/thread.inline.hpp"
@@ -148,7 +149,9 @@ void Management::init() {
 void Management::initialize(TRAPS) {
   // Start the service thread
   ServiceThread::initialize();
-
+  if (UseNotificationThread) {
+    NotificationThread::initialize();
+  }
   if (ManagementServer) {
     ResourceMark rm(THREAD);
     HandleMark hm(THREAD);

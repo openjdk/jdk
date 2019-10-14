@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2019, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2014, 2018, Red Hat Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -162,16 +162,12 @@ void CompiledDirectStaticCall::set_to_interpreted(const methodHandle& callee, ad
   // Creation also verifies the object.
   NativeMovConstReg* method_holder
     = nativeMovConstReg_at(stub + NativeInstruction::instruction_size);
-#ifndef PRODUCT
-  NativeGeneralJump* jump = nativeGeneralJump_at(method_holder->next_instruction_address());
 
-  // read the value once
-  volatile intptr_t data = method_holder->data();
-  assert(data == 0 || data == (intptr_t)callee(),
-         "a) MT-unsafe modification of inline cache");
-  assert(data == 0 || jump->jump_destination() == entry,
-         "b) MT-unsafe modification of inline cache");
+#ifdef ASSERT
+  NativeGeneralJump* jump = nativeGeneralJump_at(method_holder->next_instruction_address());
+  verify_mt_safe(callee, entry, method_holder, jump);
 #endif
+
   // Update stub.
   method_holder->set_data((intptr_t)callee());
   NativeGeneralJump::insert_unconditional(method_holder->next_instruction_address(), entry);
@@ -189,6 +185,10 @@ void CompiledDirectStaticCall::set_stub_to_clean(static_stub_Relocation* static_
   NativeMovConstReg* method_holder
     = nativeMovConstReg_at(stub + NativeInstruction::instruction_size);
   method_holder->set_data(0);
+  if (!static_stub->is_aot()) {
+    NativeJump* jump = nativeJump_at(method_holder->next_instruction_address());
+    jump->set_jump_destination((address)-1);
+  }
 }
 
 //-----------------------------------------------------------------------------

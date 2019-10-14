@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -34,6 +34,7 @@ class A implements Serializable {
 
     static boolean readObjectNoDataCalled;
 
+    @SuppressWarnings("serial") /* Incorrect use is being tested */
     private Object readObjectNoData() throws ObjectStreamException {
         readObjectNoDataCalled = true;
         return null;
@@ -46,6 +47,7 @@ class B extends A {
     static boolean readObjectCalled;
     static boolean readResolveCalled;
 
+    @SuppressWarnings("serial") /* Incorrect use is being tested */
     private Integer readObject(ObjectInputStream in)
         throws IOException, ClassNotFoundException
     {
@@ -54,6 +56,7 @@ class B extends A {
         return null;
     }
 
+    @SuppressWarnings("serial") /* Incorrect use is being tested */
     private B readResolve() throws ObjectStreamException {
         readResolveCalled = true;
         return this;

@@ -1047,6 +1047,9 @@ const size_t minimumSymbolTableSize = 1024;
   diagnostic(bool, EnableThreadSMRStatistics, trueInDebug,                  \
              "Enable Thread SMR Statistics")                                \
                                                                             \
+  product(bool, UseNotificationThread, true,                                \
+          "Use Notification Thread")                                        \
+                                                                            \
   product(bool, Inline, true,                                               \
           "Enable inlining")                                                \
                                                                             \
@@ -1193,9 +1196,6 @@ const size_t minimumSymbolTableSize = 1024;
                                                                             \
   develop(bool, TraceCreateZombies, false,                                  \
           "trace creation of zombie nmethods")                              \
-                                                                            \
-  notproduct(bool, IgnoreLockingAssertions, false,                          \
-          "disable locking assertions (for speed)")                         \
                                                                             \
   product(bool, RangeCheckElimination, true,                                \
           "Eliminate range checks")                                         \

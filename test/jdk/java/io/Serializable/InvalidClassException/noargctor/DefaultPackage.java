@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -56,24 +56,33 @@ class DefaultPackagePrivateConstructor {
 class DefaultPublicSerializable
 extends DefaultPackagePublicConstructor implements Serializable
 {
+    private static final long serialVersionUID = 1L;
+
     int field1 = 5;
 };
 
 class DefaultProtectedSerializable
 extends DefaultPackageProtectedConstructor implements Serializable
 {
+    private static final long serialVersionUID = 1L;
+
     int field1 = 5;
 };
 
 class DefaultAccessSerializable
 extends DefaultPackageDefaultAccessConstructor implements Serializable
 {
+    private static final long serialVersionUID = 1L;
+
     int field1 = 5;
 };
 
+@SuppressWarnings("serial") /* Incorrect declarations are being tested */
 class DefaultPrivateSerializable
 extends DefaultPackagePrivateConstructor implements Serializable
 {
+    private static final long serialVersionUID = 1L;
+
     int field1 = 5;
 
     DefaultPrivateSerializable() {
@@ -82,6 +91,8 @@ extends DefaultPackagePrivateConstructor implements Serializable
 };
 
 class ExternalizablePublicConstructor implements Externalizable {
+    private static final long serialVersionUID = 1L;
+
     public ExternalizablePublicConstructor() {
     }
     public void writeExternal(ObjectOutput out) throws IOException {
@@ -92,7 +103,10 @@ class ExternalizablePublicConstructor implements Externalizable {
         }
 };
 
+@SuppressWarnings("serial") /* Incorrect declarations are being tested */
 class ExternalizableProtectedConstructor implements Externalizable {
+    private static final long serialVersionUID = 1L;
+
     protected ExternalizableProtectedConstructor() {
     }
     public void writeExternal(ObjectOutput out) throws IOException {
@@ -103,7 +117,10 @@ class ExternalizableProtectedConstructor implements Externalizable {
         }
 };
 
+@SuppressWarnings("serial") /* Incorrect declarations are being tested */
 class ExternalizableAccessConstructor implements Externalizable {
+    private static final long serialVersionUID = 1L;
+
     ExternalizableAccessConstructor() {
     }
     public void writeExternal(ObjectOutput out) throws IOException {
@@ -114,7 +131,10 @@ class ExternalizableAccessConstructor implements Externalizable {
         }
 };
 
+@SuppressWarnings("serial") /* Incorrect declarations are being tested */
 class ExternalizablePrivateConstructor implements Externalizable {
+    private static final long serialVersionUID = 1L;
+
     private ExternalizablePrivateConstructor() {
     }
     public ExternalizablePrivateConstructor(int i) {

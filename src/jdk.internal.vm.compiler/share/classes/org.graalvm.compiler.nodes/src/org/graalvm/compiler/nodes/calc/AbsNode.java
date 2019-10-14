@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2009, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,8 +26,10 @@ package org.graalvm.compiler.nodes.calc;
 
 import static org.graalvm.compiler.nodeinfo.NodeCycles.CYCLES_2;
 import static org.graalvm.compiler.nodeinfo.NodeSize.SIZE_1;
+import static org.graalvm.compiler.nodes.calc.BinaryArithmeticNode.getArithmeticOpTable;
 
 import org.graalvm.compiler.core.common.type.ArithmeticOpTable;
+import org.graalvm.compiler.core.common.type.ArithmeticOpTable.UnaryOp;
 import org.graalvm.compiler.core.common.type.ArithmeticOpTable.UnaryOp.Abs;
 import org.graalvm.compiler.graph.NodeClass;
 import org.graalvm.compiler.graph.spi.CanonicalizerTool;
@@ -46,7 +48,7 @@ public final class AbsNode extends UnaryArithmeticNode<Abs> implements Arithmeti
     public static final NodeClass<AbsNode> TYPE = NodeClass.create(AbsNode.class);
 
     public AbsNode(ValueNode x) {
-        super(TYPE, ArithmeticOpTable::getAbs, x);
+        super(TYPE, getArithmeticOpTable(x).getAbs(), x);
     }
 
     public static ValueNode create(ValueNode value, NodeView view) {
@@ -64,6 +66,11 @@ public final class AbsNode extends UnaryArithmeticNode<Abs> implements Arithmeti
             return synonym;
         }
         return null;
+    }
+
+    @Override
+    protected UnaryOp<Abs> getOp(ArithmeticOpTable table) {
+        return table.getAbs();
     }
 
     @Override
