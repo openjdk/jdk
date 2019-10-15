@@ -170,9 +170,15 @@ public final class DOMKeyInfoFactory extends KeyInfoFactory {
                 "support DOM Level 2 and be namespace aware");
         }
         if ("KeyInfo".equals(tag) && XMLSignature.XMLNS.equals(namespace)) {
-            return new DOMKeyInfo(element, new UnmarshalContext(), getProvider());
+            try {
+                return new DOMKeyInfo(element, new UnmarshalContext(), getProvider());
+            } catch (MarshalException me) {
+                throw me;
+            } catch (Exception e) {
+                throw new MarshalException(e);
+            }
         } else {
-            throw new MarshalException("invalid KeyInfo tag: " + namespace + ":" + tag);
+            throw new MarshalException("Invalid KeyInfo tag: " + namespace + ":" + tag);
         }
     }
 
