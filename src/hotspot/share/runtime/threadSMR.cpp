@@ -528,6 +528,22 @@ void SafeThreadsListPtr::verify_hazard_ptr_scanned() {
     return;
   }
 
+  if ( _thread == VM_Exit::shutdown_thread()) {
+    // The shutdown thread has removed itself from the Threads
+    // list and is safe to have a waiver from this check because
+    // VM_Exit::_shutdown_thread is not set until after the VMThread
+    // has started the final safepoint which holds the Threads_lock
+    // for the remainder of the VM's life.
+    return;
+  }
+
+  if (VMError::is_error_reported() &&
+      VMError::get_first_error_tid() == os::current_thread_id()) {
+    // If there is an error reported by this thread it may use ThreadsList even
+    // if it's unsafe.
+    return;
+  }
+
   // The closure will attempt to verify that the calling thread can
   // be found by threads_do() on the specified ThreadsList. If it
   // is successful, then the specified ThreadsList was acquired as
@@ -540,12 +556,6 @@ void SafeThreadsListPtr::verify_hazard_ptr_scanned() {
   // ThreadsList is not a stable hazard ptr and can be freed by
   // another thread from the to-be-deleted list at any time.
   //
-  // Note: The shutdown thread has removed itself from the Threads
-  // list and is safe to have a waiver from this check because
-  // VM_Exit::_shutdown_thread is not set until after the VMThread
-  // has started the final safepoint which holds the Threads_lock
-  // for the remainder of the VM's life.
-  //
   VerifyHazardPtrThreadClosure cl(_thread);
   ThreadsSMRSupport::threads_do(&cl, _list);
 
@@ -555,7 +565,7 @@ void SafeThreadsListPtr::verify_hazard_ptr_scanned() {
   // In either case, we won't get past this point with a badly placed
   // ThreadsListHandle.
 
-  assert(cl.found() || _thread == VM_Exit::shutdown_thread(), "Acquired a ThreadsList snapshot from a thread not recognized by the Thread-SMR protocol.");
+  assert(cl.found(), "Acquired a ThreadsList snapshot from a thread not recognized by the Thread-SMR protocol.");
 #endif
 }
 

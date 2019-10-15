@@ -964,7 +964,6 @@ private:
     ShenandoahHeapRegion* r;
     while ((r =_cs->claim_next()) != NULL) {
       assert(r->has_live(), "Region " SIZE_FORMAT " should have been reclaimed early", r->region_number());
-      assert(r->is_conc_move_allowed(), "Region " SIZE_FORMAT " should be movable", r->region_number());
       _sh->marked_object_iterate(r, &cl);
 
       if (ShenandoahPacing) {

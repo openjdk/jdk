@@ -84,7 +84,7 @@ Mutex* Decoder::shared_decoder_lock() {
 }
 
 bool Decoder::decode(address addr, char* buf, int buflen, int* offset, const char* modulepath, bool demangle) {
-  bool error_handling_thread = os::current_thread_id() == VMError::first_error_tid;
+  bool error_handling_thread = os::current_thread_id() == VMError::get_first_error_tid();
   if (error_handling_thread) {
     return get_error_handler_instance()->decode(addr, buf, buflen, offset, modulepath, demangle);
   } else {
@@ -95,7 +95,7 @@ bool Decoder::decode(address addr, char* buf, int buflen, int* offset, const cha
 }
 
 bool Decoder::decode(address addr, char* buf, int buflen, int* offset, const void* base) {
-  bool error_handling_thread = os::current_thread_id() == VMError::first_error_tid;
+  bool error_handling_thread = os::current_thread_id() == VMError::get_first_error_tid();
   if (error_handling_thread) {
     return get_error_handler_instance()->decode(addr, buf, buflen, offset, base);
   } else {
@@ -106,7 +106,7 @@ bool Decoder::decode(address addr, char* buf, int buflen, int* offset, const voi
 
 
 bool Decoder::demangle(const char* symbol, char* buf, int buflen) {
-  bool error_handling_thread = os::current_thread_id() == VMError::first_error_tid;
+  bool error_handling_thread = os::current_thread_id() == VMError::get_first_error_tid();
   if (error_handling_thread) {
     return get_error_handler_instance()->demangle(symbol, buf, buflen);
   } else {

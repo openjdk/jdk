@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -830,4 +830,20 @@ Java_sun_awt_PlatformGraphicsInfo_isInAquaSession
         }
     }
     return JNI_FALSE;
+}
+
+/*
+ * Class:     sun_lwawt_macosx_LWCToolkit
+ * Method:    getMultiClickTime
+ * Signature: ()I
+ */
+JNIEXPORT jint JNICALL
+Java_sun_lwawt_macosx_LWCToolkit_getMultiClickTime(JNIEnv *env, jclass klass) {
+    __block jint multiClickTime = 0;
+    JNF_COCOA_ENTER(env);
+    [JNFRunLoop performOnMainThreadWaiting:YES withBlock:^(){
+        multiClickTime = (jint)([NSEvent doubleClickInterval] * 1000);
+    }];
+    JNF_COCOA_EXIT(env);
+    return multiClickTime;
 }

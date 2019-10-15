@@ -2756,7 +2756,10 @@ public class DecimalFormat extends NumberFormat {
     /**
      * Return the grouping size. Grouping size is the number of digits between
      * grouping separators in the integer portion of a number.  For example,
-     * in the number "123,456.78", the grouping size is 3.
+     * in the number "123,456.78", the grouping size is 3. Grouping size of
+     * zero designates that grouping is not used, which provides the same
+     * formatting as if calling {@link #setGroupingUsed(boolean)
+     * setGroupingUsed(false)}.
      *
      * @return the grouping size
      * @see #setGroupingSize
@@ -2770,16 +2773,28 @@ public class DecimalFormat extends NumberFormat {
     /**
      * Set the grouping size. Grouping size is the number of digits between
      * grouping separators in the integer portion of a number.  For example,
-     * in the number "123,456.78", the grouping size is 3.
-     * <br>
+     * in the number "123,456.78", the grouping size is 3. Grouping size of
+     * zero designates that grouping is not used, which provides the same
+     * formatting as if calling {@link #setGroupingUsed(boolean)
+     * setGroupingUsed(false)}.
+     * <p>
      * The value passed in is converted to a byte, which may lose information.
+     * Values that are negative or greater than
+     * {@link java.lang.Byte#MAX_VALUE Byte.MAX_VALUE}, will throw an
+     * {@code IllegalArgumentException}.
      *
      * @param newValue the new grouping size
      * @see #getGroupingSize
      * @see java.text.NumberFormat#setGroupingUsed
      * @see java.text.DecimalFormatSymbols#setGroupingSeparator
+     * @throws IllegalArgumentException if {@code newValue} is negative or
+     *          greater than {@link java.lang.Byte#MAX_VALUE Byte.MAX_VALUE}
      */
     public void setGroupingSize (int newValue) {
+        if (newValue < 0 || newValue > Byte.MAX_VALUE) {
+            throw new IllegalArgumentException(
+                "newValue is out of valid range. value: " + newValue);
+        }
         groupingSize = (byte)newValue;
         fastPathCheckNeeded = true;
     }
@@ -3906,6 +3921,12 @@ public class DecimalFormat extends NumberFormat {
             // Didn't have exponential fields
             useExponentialNotation = false;
         }
+
+        // Restore the invariant value if groupingSize is invalid.
+        if (groupingSize < 0) {
+            groupingSize = 3;
+        }
+
         serialVersionOnStream = currentSerialVersion;
     }
 
@@ -4009,14 +4030,15 @@ public class DecimalFormat extends NumberFormat {
 
     /**
      * The number of digits between grouping separators in the integer
-     * portion of a number.  Must be greater than 0 if
+     * portion of a number.  Must be non-negative and less than or equal to
+     * {@link java.lang.Byte#MAX_VALUE Byte.MAX_VALUE} if
      * {@code NumberFormat.groupingUsed} is true.
      *
      * @serial
      * @see #getGroupingSize
      * @see java.text.NumberFormat#isGroupingUsed
      */
-    private byte    groupingSize = 3;  // invariant, > 0 if useThousands
+    private byte    groupingSize = 3;  // invariant, 0 - 127, if groupingUsed
 
     /**
      * If true, forces the decimal separator to always appear in a formatted

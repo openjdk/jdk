@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,7 @@
 
 /*
   @test
-  @bug 4386025
+  @bug 4386025 8231243
   @summary fonts not in win32 font directory print incorrectly.
   @author prr: area=PrinterJob
   @run main/manual CustomFont
@@ -83,12 +83,13 @@ public class CustomFont implements Printable {
   Font customFont;
   public CustomFont() {
        try {
-             FileInputStream fin = new FileInputStream("A.ttf");
+             String dir = System.getProperty("test.src", ".");
+             String fileName = dir + File.separator + "A.ttf";
+             FileInputStream fin = new FileInputStream(fileName);
              Font cf = Font.createFont(Font.TRUETYPE_FONT, fin);
              customFont = cf.deriveFont(Font.PLAIN, 14);
         } catch (Exception ioe) {
-             System.err.println(ioe.getMessage());
-             customFont = new Font("serif", Font.PLAIN, 14);
+             throw new RuntimeException(ioe);
         }
   }
 
@@ -99,7 +100,7 @@ public class CustomFont implements Printable {
 
        g2D.setColor(Color.black);
        g2D.setFont(customFont);
-       String str = "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA";
+       String str = "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA";
        g.drawString(str, 100, 100);
 
        return Printable.PAGE_EXISTS;

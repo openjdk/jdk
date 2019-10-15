@@ -151,9 +151,13 @@ import static jdk.test.lib.Asserts.assertTrue;
    reference.
 */
 class Target {
+
+    static Class<?> topLevelHostA; // Prevent unloading of the class
+
     // We have to load all of the variants of the classes that we will
     // attempt to redefine. This requires some in-memory compilation
     // and use of additional classloaders.
+
     public static void main(String[] args) throws Throwable {
         String origin = args[0];
         System.out.println("Target: Testing original Host class from " + origin);
@@ -178,7 +182,7 @@ class Target {
             String hostA = "public class " + name + " {}";
             byte[] bytes = InMemoryJavaCompiler.compile(name, hostA);
             // And we have to load this into a new classloader
-            Class<?> topLevelHostA = ByteCodeLoader.load(name, bytes);
+            topLevelHostA = ByteCodeLoader.load(name, bytes);
             // The loaded class has not been linked (as per ClassLoader.resolveClass)
             // and so will be filtered out by VirtualMachine.allClasses(). There are
             // a number of ways to force linking - this is the simplest.

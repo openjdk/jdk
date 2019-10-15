@@ -152,7 +152,6 @@ Java_sun_java2d_opengl_CGLGraphicsConfig_getCGLConfigInfo
     AWT_ASSERT_APPKIT_THREAD;
 
     jint displayID = (jint)[(NSNumber *)[argValue objectAtIndex: 0] intValue];
-    jint pixfmt = (jint)[(NSNumber *)[argValue objectAtIndex: 1] intValue];
     jint swapInterval = (jint)[(NSNumber *)[argValue objectAtIndex: 2] intValue];
     JNIEnv *env = [ThreadUtilities getJNIEnvUncached];
     [argValue removeAllObjects];
@@ -161,11 +160,7 @@ Java_sun_java2d_opengl_CGLGraphicsConfig_getCGLConfigInfo
 
     NSAutoreleasePool* pool = [[NSAutoreleasePool alloc] init];
 
-    CGOpenGLDisplayMask glMask = (CGOpenGLDisplayMask)pixfmt;
     if (sharedContext == NULL) {
-        if (glMask == 0) {
-            glMask = CGDisplayIDToOpenGLDisplayMask(displayID);
-        }
 
         NSOpenGLPixelFormatAttribute attrs[] = {
             NSOpenGLPFAAllowOfflineRenderers,
@@ -176,16 +171,17 @@ Java_sun_java2d_opengl_CGLGraphicsConfig_getCGLConfigInfo
             NSOpenGLPFAColorSize, 32,
             NSOpenGLPFAAlphaSize, 8,
             NSOpenGLPFADepthSize, 16,
-            NSOpenGLPFAScreenMask, glMask,
             0
         };
 
         sharedPixelFormat =
             [[NSOpenGLPixelFormat alloc] initWithAttributes:attrs];
         if (sharedPixelFormat == nil) {
-            J2dRlsTraceLn(J2D_TRACE_ERROR, "CGLGraphicsConfig_getCGLConfigInfo: shared NSOpenGLPixelFormat is NULL");
-            [argValue addObject: [NSNumber numberWithLong: 0L]];
-            return;
+            J2dRlsTraceLn(J2D_TRACE_ERROR, 
+                          "CGLGraphicsConfig_getCGLConfigInfo: shared NSOpenGLPixelFormat is NULL");
+                
+           [argValue addObject: [NSNumber numberWithLong: 0L]];
+           return;
         }
 
         sharedContext =

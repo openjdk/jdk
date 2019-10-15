@@ -51,7 +51,6 @@ class ciMetadata: public ciBaseObject {
   virtual bool is_metadata() const          { return true; }
 
   virtual bool is_type() const              { return false; }
-  virtual bool is_cpcache() const           { return false; }
   virtual bool is_return_address() const    { return false; }
   virtual bool is_method() const            { return false; }
   virtual bool is_method_data() const       { return false; }
