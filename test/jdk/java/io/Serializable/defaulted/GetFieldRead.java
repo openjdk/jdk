@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,9 +30,9 @@
 
 import java.io.*;
 class TestClass implements Serializable {
-    public static final Integer DEFAULT_OBJECT_I = new Integer(99);
+    public static final Integer DEFAULT_OBJECT_I = 99;
     public static final Foo DEFAULT_OBJECT_F = new Foo();
-    private static final long serialVersionUID=5748652654655279289L;
+    private static final long serialVersionUID = 5748652654655279289L;
 
     // Fields to be serialized.
     private static final ObjectStreamField[] serialPersistentFields = {

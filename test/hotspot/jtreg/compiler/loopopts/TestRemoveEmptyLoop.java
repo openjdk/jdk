@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, Huawei Technologies Co. Ltd. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,24 +21,35 @@
  * questions.
  */
 
-
-/*
+/**
  * @test
+ * @bug 8231988
+ * @summary Unexpected test result caused by C2 IdealLoopTree::do_remove_empty_loop
  *
- * @summary converted from VM Testbase jit/graph/cgt6.
- * VM Testbase keywords: [jit, quick]
- *
- * @library /vmTestbase
- *          /test/lib
- * @run driver jdk.test.lib.FileInstaller . .
- * @run driver jdk.test.lib.FileInstaller ../data/main.data main.data
- * @build jit.graph.*
- * @run driver ExecDriver --java
- *      jit.graph.CGT
- *      -path main.data
- *      -numTestClass 7
- *      -thread 1
- *      -randomLoop 40
- *      -staticLoop 40
+ * @run main/othervm -XX:-TieredCompilation -XX:-BackgroundCompilation
+ *      compiler.loopopts.TestRemoveEmptyLoop
  */
 
+package compiler.loopopts;
+
+public class TestRemoveEmptyLoop {
+
+    public void test() {
+        int i = 34;
+        for (; i > 0; i -= 11);
+        if (i < 0) {
+            // do nothing
+        } else {
+            throw new RuntimeException("Test failed.");
+        }
+    }
+
+    public static void main(String[] args) {
+        TestRemoveEmptyLoop _instance = new TestRemoveEmptyLoop();
+        for (int i = 0; i < 50000; i++) {
+            _instance.test();
+        }
+        System.out.println("Test passed.");
+    }
+
+}

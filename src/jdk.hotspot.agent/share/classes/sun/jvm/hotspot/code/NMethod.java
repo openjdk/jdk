@@ -306,12 +306,17 @@ public class NMethod extends CompiledMethod {
   /** This is only for use by the debugging system, and is only
       intended for use in the topmost frame, where we are not
       guaranteed to be at a PC for which we have a PCDesc. It finds
-      the PCDesc with realPC closest to the current PC. */
+      the PCDesc with realPC closest to the current PC that has
+      a valid scope decode offset. */
   public PCDesc getPCDescNearDbg(Address pc) {
     PCDesc bestGuessPCDesc = null;
     long bestDistance = 0;
     for (Address p = scopesPCsBegin(); p.lessThan(scopesPCsEnd()); p = p.addOffsetTo(pcDescSize)) {
       PCDesc pcDesc = new PCDesc(p);
+      if (pcDesc.getScopeDecodeOffset() == DebugInformationRecorder.SERIALIZED_NULL) {
+        // We've observed a serialized null decode offset. Ignore this PcDesc.
+        continue;
+      }
       // In case pc is null
       long distance = -pcDesc.getRealPC(this).minus(pc);
       if ((bestGuessPCDesc == null) ||

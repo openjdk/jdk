@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, Azul Systems, Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,24 +21,9 @@
  * questions.
  */
 
-
-/*
- * @test
- *
- * @summary converted from VM Testbase jit/graph/cgt10.
- * VM Testbase keywords: [jit, quick]
- *
- * @library /vmTestbase
- *          /test/lib
- * @run driver jdk.test.lib.FileInstaller . .
- * @run driver jdk.test.lib.FileInstaller ../data/main.data main.data
- * @build jit.graph.*
- * @run driver ExecDriver --java
- *      jit.graph.CGT
- *      -path main.data
- *      -numTestClass 11
- *      -thread 1
- *      -randomLoop 40
- *      -staticLoop 40
- */
+class Target2 {
+    static {
+        System.loadLibrary("awt");
+    }
+}
 

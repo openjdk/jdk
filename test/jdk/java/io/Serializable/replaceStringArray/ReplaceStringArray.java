@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,6 +30,8 @@ import java.io.*;
 import java.lang.reflect.Array;
 
 class A implements Serializable {
+    private static final long serialVersionUID = 1L;
+
     String stringA;
     String stringB;
     String stringC;
@@ -74,7 +76,7 @@ class SubstituteObjectOutputStream extends ObjectOutputStream {
             Object[] array = (Object[]) obj;
             /* Double the array.
              * Initialize new array elements with original array. */
-            Class arrayComponentType = array.getClass().getComponentType();
+            Class<?> arrayComponentType = array.getClass().getComponentType();
             Object[] newarray =
                 (Object[])Array.newInstance(arrayComponentType,
                                             array.length * 2);
@@ -108,7 +110,7 @@ class SubstituteObjectInputStream extends ObjectInputStream {
 
             /* Double the array.
              * Initialize new array elements with original array. */
-            Class arrayComponentType = array.getClass().getComponentType();
+            Class<?> arrayComponentType = array.getClass().getComponentType();
             Object[] newarray =
                 (Object[])Array.newInstance(arrayComponentType,
                                             array.length * 2);

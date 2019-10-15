@@ -642,11 +642,9 @@ JVMCI::CodeInstallResult CodeInstaller::install(JVMCICompiler* compiler,
                                         failed_speculations, speculations, speculations_len);
     cb = nm->as_codeblob_or_null();
     if (nm != NULL && compile_state == NULL) {
+      // This compile didn't come through the CompileBroker so perform the printing here
       DirectiveSet* directive = DirectivesStack::getMatchingDirective(method, compiler);
-      bool printnmethods = directive->PrintAssemblyOption || directive->PrintNMethodsOption;
-      if (!printnmethods && (PrintDebugInfo || PrintRelocations || PrintDependencies || PrintExceptionHandlers)) {
-        nm->print_nmethod(printnmethods);
-      }
+      nm->maybe_print_nmethod(directive);
       DirectivesStack::release(directive);
     }
   }

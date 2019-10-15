@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -50,17 +50,27 @@ public class SingleByte
                                       implements ArrayDecoder {
         private final char[] b2c;
         private final boolean isASCIICompatible;
+        private final boolean isLatin1Decodable;
 
         public Decoder(Charset cs, char[] b2c) {
             super(cs, 1.0f, 1.0f);
             this.b2c = b2c;
             this.isASCIICompatible = false;
+            this.isLatin1Decodable = false;
         }
 
         public Decoder(Charset cs, char[] b2c, boolean isASCIICompatible) {
             super(cs, 1.0f, 1.0f);
             this.b2c = b2c;
             this.isASCIICompatible = isASCIICompatible;
+            this.isLatin1Decodable = false;
+        }
+
+        public Decoder(Charset cs, char[] b2c, boolean isASCIICompatible, boolean isLatin1Decodable) {
+            super(cs, 1.0f, 1.0f);
+            this.b2c = b2c;
+            this.isASCIICompatible = isASCIICompatible;
+            this.isLatin1Decodable = isLatin1Decodable;
         }
 
         private CoderResult decodeArrayLoop(ByteBuffer src, CharBuffer dst) {
@@ -125,6 +135,18 @@ public class SingleByte
         }
 
         @Override
+        public int decodeToLatin1(byte[] src, int sp, int len, byte[] dst) {
+            if (len > dst.length)
+                len = dst.length;
+
+            int dp = 0;
+            while (dp < len) {
+                dst[dp++] = (byte)decode(src[sp++]);
+            }
+            return dp;
+        }
+
+        @Override
         public int decode(byte[] src, int sp, int len, char[] dst) {
             if (len > dst.length)
                 len = dst.length;
@@ -142,6 +164,11 @@ public class SingleByte
         @Override
         public boolean isASCIICompatible() {
             return isASCIICompatible;
+        }
+
+        @Override
+        public boolean isLatin1Decodable() {
+            return isLatin1Decodable;
         }
     }
 

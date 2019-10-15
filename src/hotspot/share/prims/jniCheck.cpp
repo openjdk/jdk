@@ -534,10 +534,10 @@ void jniCheck::validate_call(JavaThread* thr, jclass clazz, jmethodID method_id,
   if (obj != NULL) {
     oop recv = jniCheck::validate_object(thr, obj);
     assert(recv != NULL, "validate_object checks that");
-    Klass* ik = recv->klass();
+    Klass* rk = recv->klass();
 
     // Check that the object is a subtype of method holder too.
-    if (!InstanceKlass::cast(ik)->is_subtype_of(holder)) {
+    if (!rk->is_subtype_of(holder)) {
       ReportJNIFatalError(thr, fatal_wrong_class_or_method);
     }
   }

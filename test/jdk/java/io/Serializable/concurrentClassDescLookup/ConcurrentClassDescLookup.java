@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,6 +30,8 @@
 import java.io.*;
 
 class Good implements Serializable {
+    private static final long serialVersionUID = 6319710844400051132L;
+
     static {
         try { Thread.sleep(1000); } catch (InterruptedException ex) {}
     }
@@ -47,12 +49,12 @@ class Bad implements Serializable {
 }
 
 class SuccessfulLookup extends Thread {
-    Class cl;
+    Class<?> cl;
     long suid;
     Object barrier;
     boolean ok;
 
-    SuccessfulLookup(Class cl, long suid, Object barrier) {
+    SuccessfulLookup(Class<?> cl, long suid, Object barrier) {
         this.cl = cl;
         this.suid = suid;
         this.barrier = barrier;
@@ -72,11 +74,11 @@ class SuccessfulLookup extends Thread {
 }
 
 class FailingLookup extends Thread {
-    Class cl;
-    Object barrier;
+    Class<?> cl;
+    final Object barrier;
     boolean ok;
 
-    FailingLookup(Class cl, Object barrier) {
+    FailingLookup(Class<?> cl, Object barrier) {
         this.cl = cl;
         this.barrier = barrier;
     }
@@ -99,7 +101,7 @@ class FailingLookup extends Thread {
 public class ConcurrentClassDescLookup {
     public static void main(String[] args) throws Exception {
         ClassLoader loader = ConcurrentClassDescLookup.class.getClassLoader();
-        Class cl = Class.forName("Good", false, loader);
+        Class<?> cl = Class.forName("Good", false, loader);
         Object barrier = new Object();
         SuccessfulLookup[] slookups = new SuccessfulLookup[50];
         for (int i = 0; i < slookups.length; i++) {

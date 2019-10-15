@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -45,7 +45,11 @@ import jdk.test.lib.JDKToolLauncher;
 import jdk.test.lib.process.ProcessTools;
 
 public class NestedTest implements Serializable {
+    private static final long serialVersionUID = 1L;
+
     public static class Test1 implements Serializable {
+        private static final long serialVersionUID = 1L;
+
         public static class Test2 implements Serializable{
             private static final long serialVersionUID = 100L;
         }

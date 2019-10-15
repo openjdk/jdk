@@ -185,6 +185,10 @@ void CompiledDirectStaticCall::set_stub_to_clean(static_stub_Relocation* static_
   NativeMovConstReg* method_holder
     = nativeMovConstReg_at(stub + NativeInstruction::instruction_size);
   method_holder->set_data(0);
+  if (!static_stub->is_aot()) {
+    NativeJump* jump = nativeJump_at(method_holder->next_instruction_address());
+    jump->set_jump_destination((address)-1);
+  }
 }
 
 //-----------------------------------------------------------------------------

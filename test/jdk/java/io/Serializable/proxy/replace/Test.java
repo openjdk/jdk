@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,6 +30,7 @@ import java.io.*;
 import java.lang.reflect.*;
 
 public class Test implements InvocationHandler, Serializable {
+    private static final long serialVersionUID = 1L;
 
     static ClassLoader loader = Test.class.getClassLoader();
 
@@ -39,10 +40,10 @@ public class Test implements InvocationHandler, Serializable {
         String methName = method.getName();
         if (methName.equals("writeReplace")) {
             return Proxy.newProxyInstance(
-                loader, new Class[] { ReadResolve.class }, this);
+                loader, new Class<?>[] { ReadResolve.class }, this);
         } else if (methName.equals("readResolve")) {
             return Proxy.newProxyInstance(
-                loader, new Class[] { Resolved.class }, this);
+                loader, new Class<?>[] { Resolved.class }, this);
         } else if (method.getDeclaringClass() == Object.class) {
             return method.invoke(this, args);
         } else {
@@ -54,7 +55,7 @@ public class Test implements InvocationHandler, Serializable {
         ByteArrayOutputStream bout = new ByteArrayOutputStream();
         ObjectOutputStream oout = new ObjectOutputStream(bout);
         oout.writeObject(Proxy.newProxyInstance(
-            loader, new Class[] { WriteReplace.class }, new Test()));
+            loader, new Class<?>[] { WriteReplace.class }, new Test()));
         oout.close();
         ObjectInputStream oin = new ObjectInputStream(
             new ByteArrayInputStream(bout.toByteArray()));

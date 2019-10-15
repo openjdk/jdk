@@ -2643,8 +2643,24 @@ int os::java_to_os_priority[CriticalPriority + 1] = {
   60              // 11 CriticalPriority
 };
 
+static int prio_init() {
+  if (ThreadPriorityPolicy == 1) {
+    if (geteuid() != 0) {
+      if (!FLAG_IS_DEFAULT(ThreadPriorityPolicy)) {
+        warning("-XX:ThreadPriorityPolicy=1 may require system level permission, " \
+                "e.g., being the root user. If the necessary permission is not " \
+                "possessed, changes to priority will be silently ignored.");
+      }
+    }
+  }
+  if (UseCriticalJavaThreadPriority) {
+    os::java_to_os_priority[MaxPriority] = os::java_to_os_priority[CriticalPriority];
+  }
+  return 0;
+}
+
 OSReturn os::set_native_priority(Thread* thread, int newpri) {
-  if (!UseThreadPriorities) return OS_OK;
+  if (!UseThreadPriorities || ThreadPriorityPolicy == 0) return OS_OK;
   pthread_t thr = thread->osthread()->pthread_id();
   int policy = SCHED_OTHER;
   struct sched_param param;
@@ -2659,7 +2675,7 @@ OSReturn os::set_native_priority(Thread* thread, int newpri) {
 }
 
 OSReturn os::get_native_priority(const Thread* const thread, int *priority_ptr) {
-  if (!UseThreadPriorities) {
+  if (!UseThreadPriorities || ThreadPriorityPolicy == 0) {
     *priority_ptr = java_to_os_priority[NormPriority];
     return OS_OK;
   }
@@ -2756,7 +2772,7 @@ static void SR_handler(int sig, siginfo_t* siginfo, ucontext_t* context) {
     os::SuspendResume::State state = osthread->sr.suspended();
     if (state == os::SuspendResume::SR_SUSPENDED) {
       sigset_t suspend_set;  // signals for sigsuspend()
-
+      sigemptyset(&suspend_set);
       // get current set of blocked signals and unblock resume signal
       pthread_sigmask(SIG_BLOCK, NULL, &suspend_set);
       sigdelset(&suspend_set, SR_signum);
@@ -3042,6 +3058,7 @@ static bool call_chained_handler(struct sigaction *actp, int sig,
 
     // try to honor the signal mask
     sigset_t oset;
+    sigemptyset(&oset);
     pthread_sigmask(SIG_SETMASK, &(actp->sa_mask), &oset);
 
     // call into the chained handler
@@ -3052,7 +3069,7 @@ static bool call_chained_handler(struct sigaction *actp, int sig,
     }
 
     // restore the signal mask
-    pthread_sigmask(SIG_SETMASK, &oset, 0);
+    pthread_sigmask(SIG_SETMASK, &oset, NULL);
   }
   // Tell jvm's signal handler the signal is taken care of.
   return true;
@@ -3568,6 +3585,9 @@ jint os::init_2(void) {
     }
   }
 
+  // initialize thread priority policy
+  prio_init();
+
   return JNI_OK;
 }
 
@@ -4009,7 +4029,7 @@ int os::loadavg(double values[], int nelem) {
 void os::pause() {
   char filename[MAX_PATH];
   if (PauseAtStartupFile && PauseAtStartupFile[0]) {
-    jio_snprintf(filename, MAX_PATH, PauseAtStartupFile);
+    jio_snprintf(filename, MAX_PATH, "%s", PauseAtStartupFile);
   } else {
     jio_snprintf(filename, MAX_PATH, "./vm.paused.%d", current_process_id());
   }

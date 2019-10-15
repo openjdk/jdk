@@ -323,10 +323,10 @@ issues.
 
  Operating system   Toolchain version
  ------------------ -------------------------------------------------------
- Linux              gcc 8.2.0
+ Linux              gcc 8.3.0
  macOS              Apple Xcode 10.1 (using clang 10.0.0)
  Solaris            Oracle Solaris Studio 12.6 (with compiler version 5.15)
- Windows            Microsoft Visual Studio 2017 update 15.9.6
+ Windows            Microsoft Visual Studio 2017 update 15.9.16
 
 All compilers are expected to be able to compile to the C99 language standard,
 as some C99 features are used in the source code. Microsoft Visual Studio
@@ -338,7 +338,7 @@ features that it does support.
 The minimum accepted version of gcc is 4.8. Older versions will generate a warning
 by `configure` and are unlikely to work.
 
-The JDK is currently known to be able to compile with at least version 7.4 of
+The JDK is currently known to be able to compile with at least version 8.3 of
 gcc.
 
 In general, any version between these two should be usable.

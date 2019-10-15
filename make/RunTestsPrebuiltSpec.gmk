@@ -27,6 +27,9 @@
 # Fake minimalistic spec file for RunTestsPrebuilt.gmk.
 ################################################################################
 
+# Make sure all shell commands are executed with the C locale
+export LC_ALL := C
+
 define VerifyVariable
   ifeq ($$($1), )
     $$(info Error: Variable $1 is missing, needed by RunTestPrebuiltSpec.gmk)

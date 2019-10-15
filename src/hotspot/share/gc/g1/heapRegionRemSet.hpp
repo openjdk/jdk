@@ -186,10 +186,6 @@ protected:
     _collision_list_next(NULL)
   {}
 
-  inline void add_card_work(CardIdx_t from_card, bool par);
-
-  inline void add_reference_work(OopOrNarrowOopStar from, bool par);
-
 public:
   // We need access in order to union things into the base table.
   BitMap* bm() { return &_bm; }
@@ -206,11 +202,7 @@ public:
 
   inline void add_reference(OopOrNarrowOopStar from);
 
-  inline void seq_add_reference(OopOrNarrowOopStar from);
-
   inline void add_card(CardIdx_t from_card_index);
-
-  void seq_add_card(CardIdx_t from_card_index);
 
   // (Destructively) union the bitmap of the current table into the given
   // bitmap (which is assumed to be of the same size.)
@@ -381,12 +373,6 @@ public:
     _state = Complete;
   }
 
-  // Used in the sequential case.
-  void add_reference(OopOrNarrowOopStar from) {
-    add_reference(from, 0);
-  }
-
-  // Used in the parallel case.
   void add_reference(OopOrNarrowOopStar from, uint tid) {
     RemSetState state = _state;
     if (state == Untracked) {

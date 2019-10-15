@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,9 +32,9 @@ import java.util.*;
 
 class Foo implements Serializable {
     private static final long serialVersionUID = 1L;
-    Short s = new Short((short) 1);
-    Integer i = new Integer(2);
-    Long l = new Long(3);
+    Short s = (short) 1;
+    Integer i = 2;
+    Long l = 3L;
 
     public boolean equals(Object obj) {
         if (obj instanceof Foo) {
@@ -42,6 +42,10 @@ class Foo implements Serializable {
             return s.equals(ofoo.s) && i.equals(ofoo.i) && l.equals(ofoo.l);
         }
         return false;
+    }
+
+    public int hashCode() {
+        return i;
     }
 }
 

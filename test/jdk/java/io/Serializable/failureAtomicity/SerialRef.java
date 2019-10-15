@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,9 +30,10 @@ import java.io.Serializable;
 // For verification purposes only.
 
 public class SerialRef implements Serializable {
-    static final long serialVersionUID = -0L;
+    private static final long serialVersionUID = -0L;
     public static Object obj;
 
+    @SuppressWarnings("serial") /* Incorrect declarations are being tested */
     private final Object ref;
 
     public SerialRef(Object ref) {

@@ -2045,6 +2045,8 @@ public final class System {
         // register shared secrets
         setJavaLangAccess();
 
+        ClassLoader.initLibraryPaths();
+
         // Subsystems that are invoked during initialization can invoke
         // VM.isBooted() in order to avoid doing things that should
         // wait until the VM is fully initialized. The initialization level

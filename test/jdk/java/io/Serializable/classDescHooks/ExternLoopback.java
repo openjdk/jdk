@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,9 +32,9 @@ import java.io.*;
 import java.util.*;
 
 class LoopbackOutputStream extends ObjectOutputStream {
-    LinkedList descs;
+    LinkedList<ObjectStreamClass> descs;
 
-    LoopbackOutputStream(OutputStream out, LinkedList descs)
+    LoopbackOutputStream(OutputStream out, LinkedList<ObjectStreamClass> descs)
         throws IOException
     {
         super(out);
@@ -49,9 +49,9 @@ class LoopbackOutputStream extends ObjectOutputStream {
 }
 
 class LoopbackInputStream extends ObjectInputStream {
-    LinkedList descs;
+    LinkedList<ObjectStreamClass> descs;
 
-    LoopbackInputStream(InputStream in, LinkedList descs) throws IOException {
+    LoopbackInputStream(InputStream in, LinkedList<ObjectStreamClass> descs) throws IOException {
         super(in);
         this.descs = descs;
     }
@@ -59,11 +59,12 @@ class LoopbackInputStream extends ObjectInputStream {
     protected ObjectStreamClass readClassDescriptor()
         throws IOException, ClassNotFoundException
     {
-        return (ObjectStreamClass) descs.removeFirst();
+        return descs.removeFirst();
     }
 }
 
 public class ExternLoopback implements Externalizable {
+    private static final long serialVersionUID = 1L;
 
     String a, b, c;
 
@@ -100,13 +101,17 @@ public class ExternLoopback implements Externalizable {
         return streq(a, other.a) && streq(b, other.b) && streq(c, other.c);
     }
 
+    public int hashCode() {
+        return a.hashCode();
+    }
+
     static boolean streq(String s1, String s2) {
         return (s1 != null) ? s1.equals(s2) : (s2 == null);
     }
 
     public static void main(String[] args) throws Exception {
         ExternLoopback lb = new ExternLoopback("foo", "bar", "baz");
-        LinkedList descs = new LinkedList();
+        LinkedList<ObjectStreamClass> descs = new LinkedList<>();
         ByteArrayOutputStream bout = new ByteArrayOutputStream();
         LoopbackOutputStream lout = new LoopbackOutputStream(bout, descs);
         lout.writeObject(lb);

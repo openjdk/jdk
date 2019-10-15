@@ -198,8 +198,7 @@ public:
 
   // Macro-properties:
   bool is_alloc_allowed()          const { return is_empty() || is_regular() || _state == _pinned; }
-  bool is_conc_move_allowed()      const { return is_regular() || _state == _cset; }
-  bool is_stw_move_allowed()       const { return is_conc_move_allowed() || (ShenandoahHumongousMoves && _state == _humongous_start); }
+  bool is_stw_move_allowed()       const { return is_regular() || _state == _cset || (ShenandoahHumongousMoves && _state == _humongous_start); }
 
   RegionState state()              const { return _state; }
   int  state_ordinal()             const { return region_state_to_ordinal(_state); }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -35,18 +35,23 @@
 import java.io.*;
 
 class A implements Serializable {
+    private static final long serialVersionUID = 1L;
+
     Object writeReplace() throws ObjectStreamException {
         return new B();
     }
 }
 
 class B implements Serializable {
+    private static final long serialVersionUID = 1L;
+
     Object writeReplace() throws ObjectStreamException {
         return new C();
     }
 }
 
 class C implements Serializable {
+    private static final long serialVersionUID = 1L;
 
     static int writeReplaceCalled = 0;
 
@@ -61,6 +66,8 @@ class C implements Serializable {
 }
 
 class D implements Serializable {
+    private static final long serialVersionUID = 1L;
+
     Object readResolve() throws ObjectStreamException {
         throw new Error("readResolve() called more than once");
     }

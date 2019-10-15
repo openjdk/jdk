@@ -43,6 +43,9 @@ fi
 export CONFIG_SHELL=$BASH
 export _as_can_reexec=no
 
+# Make sure all shell commands are executed with the C locale
+export LC_ALL=C
+
 if test "x$CUSTOM_CONFIG_DIR" != x; then
   custom_hook=$CUSTOM_CONFIG_DIR/custom-hook.m4
   if test ! -e $custom_hook; then

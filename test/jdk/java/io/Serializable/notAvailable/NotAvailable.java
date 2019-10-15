@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -76,6 +76,8 @@ public class NotAvailable {
 }
 
 class Class1 implements Serializable {
+    private static final long serialVersionUID = 1L;
+
     int a, b;
 
     public Class1(int aa, int bb) {

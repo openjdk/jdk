@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -42,6 +42,7 @@ interface I {}          // interface present only on writing side
 class A implements Serializable {
     private static final long serialVersionUID = 0L;
     String a = "a";
+    @SuppressWarnings("serial") /* Incorrect declarations are being tested */
     Object proxy;
     String z = "z";
 
@@ -65,7 +66,7 @@ public class Write {
     public static void main(String[] args) throws Exception {
         Object proxy = Proxy.newProxyInstance(
             Write.class.getClassLoader(),
-            new Class[] { I.class }, new Handler());
+            new Class<?>[] { I.class }, new Handler());
         ObjectOutputStream oout = new ObjectOutputStream(
             new FileOutputStream("tmp.ser"));
         oout.writeObject(new A(proxy));

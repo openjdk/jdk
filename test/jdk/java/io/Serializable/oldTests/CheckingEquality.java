@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -83,6 +83,8 @@ public class CheckingEquality {
 }
 
 class Firstpsio implements java.io.Serializable {
+    private static final long serialVersionUID = 1L;
+
     String one;
     int two;
     float three[];
@@ -125,6 +127,8 @@ class Firstpsio implements java.io.Serializable {
 }
 
 class Secondpsio extends Firstpsio  {
+    private static final long serialVersionUID = 1L;
+
     String quatre;
     int cinq;
 
@@ -173,6 +177,7 @@ class Secondpsio extends Firstpsio  {
 }
 
 class Thirdpsio extends Secondpsio {
+    private static final long serialVersionUID = 1L;
 
     static String ign = "ignored";
     transient Object oh;
@@ -184,7 +189,8 @@ class Thirdpsio extends Secondpsio {
     static final byte dcare = (byte) 128;
     private short nine = 8888;
     long ten;
-    java.util.Enumeration zero;
+    @SuppressWarnings("serial") /* Incorrect declarations are being tested */
+    java.util.Enumeration<?> zero;
 
 
     boolean equals(Thirdpsio other) {
@@ -227,7 +233,7 @@ class Thirdpsio extends Secondpsio {
         eight = (byte)8;
         nine = (short)9;
         ten = (long)100000;
-        java.util.Enumeration em = null; /* default */
+        java.util.Enumeration<?> em = null; /* default */
 
         super.init();
     }

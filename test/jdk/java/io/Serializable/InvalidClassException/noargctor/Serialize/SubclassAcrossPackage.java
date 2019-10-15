@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -34,18 +34,24 @@ import java.io.*;
 class PublicSerializable
 extends NonSerializable.PublicCtor implements Serializable
 {
+    private static final long serialVersionUID = 1L;
+
     int field1 = 5;
 };
 
 class ProtectedSerializable
 extends NonSerializable.ProtectedCtor implements Serializable
 {
+    private static final long serialVersionUID = 1L;
+
     int field1 = 5;
 };
 
 class DifferentPackageSerializable
 extends NonSerializable.PackageCtor implements Serializable
 {
+    private static final long serialVersionUID = 1L;
+
     int field1 = 5;
     DifferentPackageSerializable() {
         super(1);
@@ -55,11 +61,15 @@ extends NonSerializable.PackageCtor implements Serializable
 class SamePackageSerializable
 extends Serialize.SamePackageCtor implements Serializable
 {
+    private static final long serialVersionUID = 1L;
+
     SamePackageSerializable() {
     }
 };
 
 class SamePackageProtectedCtor {
+    private static final long serialVersionUID = 1L;
+
     protected SamePackageProtectedCtor() {
     }
 };
@@ -67,12 +77,16 @@ class SamePackageProtectedCtor {
 class SamePackageProtectedSerializable
 extends Serialize.SamePackageProtectedCtor implements Serializable
 {
+    private static final long serialVersionUID = 1L;
+
     SamePackageProtectedSerializable() {
     }
 };
 
 
 class SamePackagePrivateCtor {
+    private static final long serialVersionUID = 1L;
+
     private SamePackagePrivateCtor() {
     }
     public SamePackagePrivateCtor(int l) {
@@ -82,6 +96,8 @@ class SamePackagePrivateCtor {
 class SamePackagePrivateSerializable
 extends Serialize.SamePackagePrivateCtor implements Serializable
 {
+    private static final long serialVersionUID = 1L;
+
     SamePackagePrivateSerializable() {
         super(1);
     }
@@ -90,6 +106,8 @@ extends Serialize.SamePackagePrivateCtor implements Serializable
 class PrivateSerializable
 extends NonSerializable.PrivateCtor implements Serializable
 {
+    private static final long serialVersionUID = 1L;
+
     int field1 = 5;
 
     PrivateSerializable() {
@@ -98,6 +116,8 @@ extends NonSerializable.PrivateCtor implements Serializable
 };
 
 class ExternalizablePublicCtor implements Externalizable {
+    private static final long serialVersionUID = 1L;
+
     public ExternalizablePublicCtor() {
     }
     public void writeExternal(ObjectOutput out) throws IOException {
@@ -108,7 +128,10 @@ class ExternalizablePublicCtor implements Externalizable {
         }
 };
 
+@SuppressWarnings("serial") /* Incorrect declarations are being tested */
 class ExternalizableProtectedCtor implements Externalizable {
+    private static final long serialVersionUID = 1L;
+
     protected ExternalizableProtectedCtor() {
     }
     public void writeExternal(ObjectOutput out) throws IOException {
@@ -119,7 +142,10 @@ class ExternalizableProtectedCtor implements Externalizable {
         }
 };
 
+@SuppressWarnings("serial") /* Incorrect declarations are being tested */
 class ExternalizablePackageCtor implements Externalizable {
+    private static final long serialVersionUID = 1L;
+
     ExternalizablePackageCtor() {
     }
     public void writeExternal(ObjectOutput out) throws IOException {
@@ -130,7 +156,10 @@ class ExternalizablePackageCtor implements Externalizable {
         }
 };
 
+@SuppressWarnings("serial") /* Incorrect declarations are being tested */
 class ExternalizablePrivateCtor implements Externalizable {
+    private static final long serialVersionUID = 1L;
+
     private ExternalizablePrivateCtor() {
     }
     public ExternalizablePrivateCtor(int i) {

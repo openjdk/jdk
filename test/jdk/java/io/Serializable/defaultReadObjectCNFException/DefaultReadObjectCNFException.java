@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,6 +31,9 @@
 import java.io.*;
 
 class Foo implements Serializable {
+    private static final long serialVersionUID = 1L;
+
+    @SuppressWarnings("serial") /* Incorrect use is being tested */
     Object obj = new Bar();
 
     private void readObject(ObjectInputStream in)
@@ -44,12 +47,14 @@ class Foo implements Serializable {
     }
 }
 
-class Bar implements Serializable {}
+class Bar implements Serializable {
+    private static final long serialVersionUID = 1L;
+}
 
 class TestObjectInputStream extends ObjectInputStream {
     TestObjectInputStream(InputStream in) throws IOException { super(in); }
 
-    protected Class resolveClass(ObjectStreamClass desc)
+    protected Class<?> resolveClass(ObjectStreamClass desc)
         throws IOException, ClassNotFoundException
     {
         if (desc.getName().equals(Bar.class.getName())) {

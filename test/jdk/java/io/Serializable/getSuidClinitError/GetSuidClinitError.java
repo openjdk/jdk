@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,6 +30,7 @@
 
 import java.io.*;
 
+@SuppressWarnings("serial") /* Incorrect declarations are being tested. */
 class A implements Serializable {
     static {
         // compiler prohibits direct throw
@@ -41,30 +42,36 @@ class A implements Serializable {
     }
 }
 
+@SuppressWarnings("serial") /* Incorrect declarations are being tested. */
 class B implements Serializable {
 }
 
+@SuppressWarnings("serial") /* Incorrect declarations are being tested. */
 class C implements Serializable {
     static { System.out.println("C.<clinit>"); }
 }
 
+@SuppressWarnings("serial") /* Incorrect declarations are being tested. */
 class B1 extends B {
 }
 
+@SuppressWarnings("serial") /* Incorrect declarations are being tested. */
 class B2 extends B {
     static { System.out.println("B2.<clinit>"); }
 }
 
+@SuppressWarnings("serial") /* Incorrect declarations are being tested. */
 class C1 extends C {
 }
 
+@SuppressWarnings("serial") /* Incorrect declarations are being tested. */
 class C2 extends C {
     static { System.out.println("C2.<clinit>"); }
 }
 
 public class GetSuidClinitError {
     public static void main(String[] args) throws Exception {
-        Class cl = Class.forName(
+        Class<?> cl = Class.forName(
             "A", false, GetSuidClinitError.class.getClassLoader());
         for (int i = 0; i < 2; i++) {
             try {
@@ -83,7 +90,7 @@ public class GetSuidClinitError {
             }
         }
 
-        Class[] cls = new Class[] {
+        Class<?>[] cls = {
             B.class, B1.class, B2.class,
             C.class, C1.class, C2.class
         };

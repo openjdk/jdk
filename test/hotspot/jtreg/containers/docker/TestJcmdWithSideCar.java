@@ -56,7 +56,7 @@ import jdk.test.lib.process.ProcessTools;
 public class TestJcmdWithSideCar {
     private static final String IMAGE_NAME = Common.imageName("jfr-jcmd");
     private static final int TIME_TO_RUN_MAIN_PROCESS = (int) (30 * Utils.TIMEOUT_FACTOR); // seconds
-    private static final long TIME_TO_WAIT_FOR_MAIN_METHOD_START = 5 * 1000; // milliseconds
+    private static final long TIME_TO_WAIT_FOR_MAIN_METHOD_START = 50 * 1000; // milliseconds
     private static final String MAIN_CONTAINER_NAME = "test-container-main";
 
     public static void main(String[] args) throws Exception {
@@ -198,6 +198,8 @@ public class TestJcmdWithSideCar {
                 .addDockerOpts("--volume", Paths.get(".").toAbsolutePath() + ":/workdir/")
                 .addJavaOpts("-XX:+UsePerfData")
                 .addClassOptions("" + TIME_TO_RUN_MAIN_PROCESS);
+            // avoid large Xmx
+            opts.appendTestJavaOptions = false;
 
             List<String> cmd = DockerTestUtils.buildJavaCommand(opts);
             ProcessBuilder pb = new ProcessBuilder(cmd);
@@ -232,9 +234,21 @@ public class TestJcmdWithSideCar {
         }
 
         public void waitForAndCheck(long timeout) throws Exception {
-            waitFor(timeout);
-            if (p.exitValue() != 0) {
-                throw new RuntimeException("DockerThread stopped unexpectedly");
+            int exitValue = -1;
+            int retryCount = 3;
+
+            do {
+                waitFor(timeout);
+                try {
+                    exitValue = p.exitValue();
+                } catch(IllegalThreadStateException ex) {
+                    System.out.println("IllegalThreadStateException occured when calling exitValue()");
+                    retryCount--;
+                }
+            } while (exitValue == -1 && retryCount > 0);
+
+            if (exitValue != 0) {
+                throw new RuntimeException("DockerThread stopped unexpectedly, non-zero exit value is " + exitValue);
             }
         }
 

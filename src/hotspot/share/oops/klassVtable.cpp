@@ -1501,7 +1501,6 @@ void klassVtable::print() {
 #endif
 
 void vtableEntry::verify(klassVtable* vt, outputStream* st) {
-  NOT_PRODUCT(FlagSetting fs(IgnoreLockingAssertions, true));
   Klass* vtklass = vt->klass();
   if (vtklass->is_instance_klass() &&
      (InstanceKlass::cast(vtklass)->major_version() >= klassVtable::VTABLE_TRANSITIVE_OVERRIDE_VERSION)) {

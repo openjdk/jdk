@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -34,6 +34,7 @@ enum Foo {
 
     foo,
     bar {
+        @SuppressWarnings("serial") /* Incorrect declarations are being tested */
         private static final long serialVersionUID = 2L;
         // bar is implemented as an inner class instance, so the following
         // declaration would cause a compile-time error
@@ -42,7 +43,10 @@ enum Foo {
         // };
     };
 
+    @SuppressWarnings("serial") /* Incorrect declarations are being tested */
     private static final long serialVersionUID = 1L;
+
+    @SuppressWarnings("serial") /* Incorrect declarations are being tested */
     private static final ObjectStreamField[] serialPersistentFields = {
         new ObjectStreamField("blargh", Integer.TYPE)
     };
@@ -50,7 +54,7 @@ enum Foo {
 
 public class Test {
     public static void main(String[] args) throws Exception {
-        Class[] classes =
+        Class<?>[] classes =
             { Foo.class, Foo.foo.getClass(), Foo.bar.getClass() };
         for (int i = 0; i < classes.length; i++) {
             ObjectStreamClass desc = ObjectStreamClass.lookup(classes[i]);

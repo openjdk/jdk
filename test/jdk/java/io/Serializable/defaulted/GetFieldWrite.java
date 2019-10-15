@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2003, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -62,8 +62,7 @@ public class GetFieldWrite {
     {
         FileOutputStream fos = new FileOutputStream("data.ser");
         ObjectOutput out = new ObjectOutputStream(fos);
-        out.writeObject(new TestClass(new Foo(100, 200), new Integer(100),
-            200));
+        out.writeObject(new TestClass(new Foo(100, 200), 100, 200));
         out.close();
     }
 };
@@ -72,6 +71,8 @@ public class GetFieldWrite {
  * Test class to be used as data field
  */
 class Foo implements Serializable{
+    private static final long serialVersionUID = 1L;
+
     int a;
     int b;
     public Foo() {

@@ -86,9 +86,6 @@
           "Verify marking stacks")                                          \
                                                                             \
   diagnostic(bool, ZVerifyForwarding, false,                                \
-          "Verify forwarding tables")                                       \
-                                                                            \
-  develop(bool, ZVerifyLoadBarriers, false,                                 \
-          "Verify that reference loads are followed by barriers")
+          "Verify forwarding tables")
 
 #endif // SHARE_GC_Z_Z_GLOBALS_HPP

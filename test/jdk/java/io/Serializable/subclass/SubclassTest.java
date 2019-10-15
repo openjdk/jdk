@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -57,6 +57,8 @@ import java.io.Serializable;
  * Test if customized readObject and writeObject are called.
  */
 class B implements Serializable {
+    private static final long serialVersionUID = 1L;
+
     public int publicIntField;
     public static int numWriteObjectCalled = 0;
     B(int v) {
@@ -80,9 +82,11 @@ class B implements Serializable {
  */
 
 class C implements Serializable {
+    private static final long serialVersionUID = 1L;
+
     public int xx1;
     public int xx2;
-    static final ObjectStreamField[] serialPersistentFields = {
+    private static final ObjectStreamField[] serialPersistentFields = {
         new ObjectStreamField("x1", Integer.TYPE),
         new ObjectStreamField("x2", Integer.TYPE),
         new ObjectStreamField("x3", Integer.TYPE),
@@ -106,6 +110,8 @@ class C implements Serializable {
 
 
 class A implements Serializable {
+    private static final long serialVersionUID = 1L;
+
     public int  publicIntField;
     public long publicLongField;
     public B    publicBField;

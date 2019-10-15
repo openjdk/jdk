@@ -161,7 +161,6 @@ static int _num_mutex;
 #ifdef ASSERT
 void assert_locked_or_safepoint(const Mutex* lock) {
   // check if this thread owns the lock (common case)
-  if (IgnoreLockingAssertions) return;
   assert(lock != NULL, "Need non-NULL lock");
   if (lock->owned_by_self()) return;
   if (SafepointSynchronize::is_at_safepoint()) return;
@@ -174,7 +173,6 @@ void assert_locked_or_safepoint(const Mutex* lock) {
 
 // a weaker assertion than the above
 void assert_locked_or_safepoint_weak(const Mutex* lock) {
-  if (IgnoreLockingAssertions) return;
   assert(lock != NULL, "Need non-NULL lock");
   if (lock->is_locked()) return;
   if (SafepointSynchronize::is_at_safepoint()) return;
@@ -184,7 +182,6 @@ void assert_locked_or_safepoint_weak(const Mutex* lock) {
 
 // a stronger assertion than the above
 void assert_lock_strong(const Mutex* lock) {
-  if (IgnoreLockingAssertions) return;
   assert(lock != NULL, "Need non-NULL lock");
   if (lock->owned_by_self()) return;
   fatal("must own lock %s", lock->name());

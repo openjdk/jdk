@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -37,6 +37,8 @@ import java.lang.reflect.Proxy;
 public class NonPublicInterface {
 
     static class Handler implements InvocationHandler, Serializable {
+        private static final long serialVersionUID = 1L;
+
         public Object invoke(Object obj, Method meth, Object[] args) {
             return null;
         }

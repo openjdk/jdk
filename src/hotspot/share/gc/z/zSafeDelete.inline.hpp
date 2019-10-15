@@ -30,14 +30,14 @@
 #include "utilities/debug.hpp"
 
 template <typename T>
-ZSafeDelete<T>::ZSafeDelete() :
-    _lock(),
+ZSafeDeleteImpl<T>::ZSafeDeleteImpl(ZLock* lock) :
+    _lock(lock),
     _enabled(0),
     _deferred() {}
 
 template <typename T>
-bool ZSafeDelete<T>::deferred_delete(ItemT* item) {
-  ZLocker<ZLock> locker(&_lock);
+bool ZSafeDeleteImpl<T>::deferred_delete(ItemT* item) {
+  ZLocker<ZLock> locker(_lock);
   if (_enabled > 0) {
     _deferred.add(item);
     return true;
@@ -47,7 +47,7 @@ bool ZSafeDelete<T>::deferred_delete(ItemT* item) {
 }
 
 template <typename T>
-void ZSafeDelete<T>::immediate_delete(ItemT* item) {
+void ZSafeDeleteImpl<T>::immediate_delete(ItemT* item) {
   if (IsArray<T>::value) {
     delete [] item;
   } else {
@@ -56,17 +56,17 @@ void ZSafeDelete<T>::immediate_delete(ItemT* item) {
 }
 
 template <typename T>
-void ZSafeDelete<T>::enable_deferred_delete() {
-  ZLocker<ZLock> locker(&_lock);
+void ZSafeDeleteImpl<T>::enable_deferred_delete() {
+  ZLocker<ZLock> locker(_lock);
   _enabled++;
 }
 
 template <typename T>
-void ZSafeDelete<T>::disable_deferred_delete() {
+void ZSafeDeleteImpl<T>::disable_deferred_delete() {
   ZArray<ItemT*> deferred;
 
   {
-    ZLocker<ZLock> locker(&_lock);
+    ZLocker<ZLock> locker(_lock);
     assert(_enabled > 0, "Invalid state");
     if (--_enabled == 0) {
       deferred.transfer(&_deferred);
@@ -80,10 +80,19 @@ void ZSafeDelete<T>::disable_deferred_delete() {
 }
 
 template <typename T>
-void ZSafeDelete<T>::operator()(ItemT* item) {
+void ZSafeDeleteImpl<T>::operator()(ItemT* item) {
   if (!deferred_delete(item)) {
     immediate_delete(item);
   }
 }
+
+template <typename T>
+ZSafeDelete<T>::ZSafeDelete() :
+    ZSafeDeleteImpl<T>(&_lock),
+    _lock() {}
+
+template <typename T>
+ZSafeDeleteNoLock<T>::ZSafeDeleteNoLock() :
+    ZSafeDeleteImpl<T>(NULL) {}
 
 #endif // SHARE_GC_Z_ZSAFEDELETE_INLINE_HPP

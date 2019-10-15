@@ -1197,9 +1197,6 @@ const size_t minimumSymbolTableSize = 1024;
   develop(bool, TraceCreateZombies, false,                                  \
           "trace creation of zombie nmethods")                              \
                                                                             \
-  notproduct(bool, IgnoreLockingAssertions, false,                          \
-          "disable locking assertions (for speed)")                         \
-                                                                            \
   product(bool, RangeCheckElimination, true,                                \
           "Eliminate range checks")                                         \
                                                                             \

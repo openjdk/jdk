@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -47,7 +47,7 @@ class XObjectInputStream extends AbstractObjectInputStream {
 
         Object readResult = null;
         Object prevObject = currentObject;
-        Class  prevDesc   = currentClassDescriptor;
+        Class<?>  prevDesc   = currentClassDescriptor;
 
         boolean NotImplemented = true;
         if (NotImplemented)
@@ -243,7 +243,7 @@ class XObjectInputStream extends AbstractObjectInputStream {
      }
 
     private Object currentObject;
-    private Class currentClassDescriptor;
+    private Class<?> currentClassDescriptor;
 
 
 
@@ -256,15 +256,15 @@ class XObjectInputStream extends AbstractObjectInputStream {
      * Set the accessible flag on it here. ObjectOutputStream
      * will call it as necessary.
      */
-    public static Method getReadObjectMethod(final Class cl) {
+    public static Method getReadObjectMethod(final Class<?> cl) {
 
-        Method readObjectMethod = (Method)
+        Method readObjectMethod =
             java.security.AccessController.doPrivileged
-            (new java.security.PrivilegedAction() {
-                public Object run() {
+            (new java.security.PrivilegedAction<Method>() {
+                public Method run() {
                     Method m = null;
                     try {
-                        Class[] args = {ObjectInputStream.class};
+                        Class<?>[] args = {ObjectInputStream.class};
                         m = cl.getDeclaredMethod("readObject", args);
                         int mods = m.getModifiers();
                         // Method must be private and non-static
@@ -292,8 +292,8 @@ class XObjectInputStream extends AbstractObjectInputStream {
     {
         try {
             java.security.AccessController.doPrivileged
-                (new java.security.PrivilegedExceptionAction() {
-                    public Object run() throws InvocationTargetException,
+                (new java.security.PrivilegedExceptionAction<Void>() {
+                    public Void run() throws InvocationTargetException,
                                         java.lang.IllegalAccessException {
                         m.invoke(obj, argList);
                         return null;
