@@ -480,9 +480,9 @@ public final class FilePermission extends Permission implements Serializable {
      * @param path the pathname of the file/directory.
      * @param actions the action string.
      *
-     * @throws IllegalArgumentException
-     *          If actions is {@code null}, empty or contains an action
-     *          other than the specified possible actions.
+     * @throws IllegalArgumentException if actions is {@code null}, empty,
+     *         malformed or contains an action other than the specified
+     *         possible actions
      */
     public FilePermission(String path, String actions) {
         super(path);
@@ -935,17 +935,18 @@ public final class FilePermission extends Permission implements Serializable {
             }
 
             // make sure we didn't just match the tail of a word
-            // like "ackbarfaccept".  Also, skip to the comma.
+            // like "ackbarfdelete".  Also, skip to the comma.
             boolean seencomma = false;
             while (i >= matchlen && !seencomma) {
-                switch(a[i-matchlen]) {
-                case ',':
-                    seencomma = true;
-                    break;
+                switch (c = a[i-matchlen]) {
                 case ' ': case '\r': case '\n':
                 case '\f': case '\t':
                     break;
                 default:
+                    if (c == ',' && i > matchlen) {
+                        seencomma = true;
+                        break;
+                    }
                     throw new IllegalArgumentException(
                             "invalid permission: " + actions);
                 }
@@ -1141,10 +1142,10 @@ final class FilePermissionCollection extends PermissionCollection
      *
      * @param permission the Permission object to add.
      *
-     * @throws    IllegalArgumentException - if the permission is not a
+     * @throws    IllegalArgumentException   if the permission is not a
      *                                       FilePermission
      *
-     * @throws    SecurityException - if this FilePermissionCollection object
+     * @throws    SecurityException   if this FilePermissionCollection object
      *                                has been marked readonly
      */
     @Override
