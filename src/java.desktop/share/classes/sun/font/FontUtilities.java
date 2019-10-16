@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -264,6 +264,9 @@ public final class FontUtilities {
             return false;
         }
         else if (code <= 0x0fff) { // U+0F00 - U+0FFF Tibetan
+            return true;
+        }
+        else if (code < 0x10A0) {  // U+1000 - U+109F Myanmar
             return true;
         }
         else if (code < 0x1100) {
