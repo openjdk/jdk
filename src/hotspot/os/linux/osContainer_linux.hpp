@@ -36,6 +36,7 @@ class OSContainer: AllStatic {
  private:
   static bool   _is_initialized;
   static bool   _is_containerized;
+  static jlong read_memory_limit_in_bytes();
 
  public:
   static void init();
