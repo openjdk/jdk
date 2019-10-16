@@ -888,14 +888,14 @@ class DatagramSocket implements java.io.Closeable {
     }
 
     /** Enable/disable SO_TIMEOUT with the specified timeout, in
-     *  milliseconds. With this option set to a non-zero timeout,
+     *  milliseconds. With this option set to a positive timeout value,
      *  a call to receive() for this DatagramSocket
      *  will block for only this amount of time.  If the timeout expires,
      *  a <B>java.net.SocketTimeoutException</B> is raised, though the
-     *  DatagramSocket is still valid.  The option <B>must</B> be enabled
-     *  prior to entering the blocking operation to have effect.  The
-     *  timeout must be {@code > 0}.
-     *  A timeout of zero is interpreted as an infinite timeout.
+     *  DatagramSocket is still valid. A timeout of zero is interpreted
+     *  as an infinite timeout.
+     *  The option <B>must</B> be enabled prior to entering the blocking
+     *  operation to have effect.
      *
      * @param timeout the specified timeout in milliseconds.
      * @throws SocketException if there is an error in the underlying protocol, such as an UDP error.
