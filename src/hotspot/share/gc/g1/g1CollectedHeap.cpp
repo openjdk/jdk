@@ -1630,7 +1630,6 @@ jint G1CollectedHeap::initialize_young_gen_sampling_thread() {
 }
 
 jint G1CollectedHeap::initialize() {
-  os::enable_vtime();
 
   // Necessary to satisfy locking discipline assertions.
 

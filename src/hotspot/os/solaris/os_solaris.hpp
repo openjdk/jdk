@@ -271,10 +271,6 @@ class Solaris {
 
   static void correct_stack_boundaries_for_primordial_thread(Thread* thr);
 
-  // Stack overflow handling
-
-  static int max_register_window_saves_before_flushing();
-
   // Stack repair handling
 
   // none present
