@@ -4076,7 +4076,7 @@ private:
     Atomic::add(r->rem_set()->occupied_locked(), &_rs_length);
 
     if (!is_young) {
-      g1h->_hot_card_cache->reset_card_counts(r);
+      g1h->hot_card_cache()->reset_card_counts(r);
     }
 
     if (!evacuation_failed) {
