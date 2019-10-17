@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,15 +31,22 @@
  * @run compile -g MonitorEventTest.java
  * @run driver MonitorEventTest
  */
-import com.sun.jdi.*;
-import com.sun.jdi.event.*;
-import com.sun.jdi.request.*;
-
-import java.util.*;
+import com.sun.jdi.ReferenceType;
+import com.sun.jdi.ThreadReference;
+import com.sun.jdi.event.BreakpointEvent;
+import com.sun.jdi.event.MonitorContendedEnterEvent;
+import com.sun.jdi.event.MonitorContendedEnteredEvent;
+import com.sun.jdi.event.MonitorWaitEvent;
+import com.sun.jdi.event.MonitorWaitedEvent;
+import com.sun.jdi.request.EventRequest;
+import com.sun.jdi.request.MonitorContendedEnterRequest;
+import com.sun.jdi.request.MonitorContendedEnteredRequest;
+import com.sun.jdi.request.MonitorWaitRequest;
+import com.sun.jdi.request.MonitorWaitedRequest;
 
 /********** target program **********/
 
-class MonitorTestTarg {
+class MonitorEventTestTarg {
     public static Object endingMonitor;
     public static Object startingMonitor;
     public static final long timeout = 30 * 6000; // milliseconds
@@ -91,13 +98,13 @@ class MonitorTestTarg {
 
 class myThread extends Thread {
     public void run() {
-        synchronized(MonitorTestTarg.startingMonitor) {
-            MonitorTestTarg.startingMonitor.notify();
+        synchronized(MonitorEventTestTarg.startingMonitor) {
+            MonitorEventTestTarg.startingMonitor.notify();
         }
 
         // contended enter wait until main thread release monitor
-        MonitorTestTarg.aboutEnterLock = true;
-        synchronized (MonitorTestTarg.endingMonitor) {
+        MonitorEventTestTarg.aboutEnterLock = true;
+        synchronized (MonitorEventTestTarg.endingMonitor) {
         }
     }
 }
@@ -108,7 +115,6 @@ class myThread extends Thread {
 public class MonitorEventTest extends TestScaffold {
     ReferenceType targetClass;
     ThreadReference mainThread;
-    List monitors;
     MonitorContendedEnterRequest contendedEnterRequest;
     MonitorWaitedRequest monitorWaitedRequest;
     MonitorContendedEnteredRequest contendedEnteredRequest;
@@ -160,11 +166,10 @@ public class MonitorEventTest extends TestScaffold {
          * Get to the top of main()
          * to determine targetClass and mainThread
          */
-        BreakpointEvent bpe = startToMain("MonitorTestTarg");
+        BreakpointEvent bpe = startToMain("MonitorEventTestTarg");
         targetClass = bpe.location().declaringType();
         mainThread = bpe.thread();
 
-        int initialSize = mainThread.frames().size();
         if (vm().canRequestMonitorEvents()) {
             contendedEnterRequest = eventRequestManager().createMonitorContendedEnterRequest();
             contendedEnterRequest.setSuspendPolicy(EventRequest.SUSPEND_NONE);
@@ -183,7 +188,7 @@ public class MonitorEventTest extends TestScaffold {
         }
 
 
-        resumeTo("MonitorTestTarg", "foo", "()V");
+        resumeTo("MonitorEventTestTarg", "foo", "()V");
 
         /*
          * resume until end
