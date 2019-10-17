@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,11 +25,13 @@
 
 package sun.lwawt.macosx;
 
-import com.apple.eawt.Application;
 import java.awt.Image;
 import java.awt.PopupMenu;
 import java.awt.Taskbar.Feature;
 import java.awt.peer.TaskbarPeer;
+
+import apple.laf.JRSUIUtils;
+import com.apple.eawt.Application;
 
 final public class CTaskbarPeer implements TaskbarPeer {
 
@@ -40,6 +42,7 @@ final public class CTaskbarPeer implements TaskbarPeer {
         switch(feature) {
             case ICON_BADGE_TEXT:
             case ICON_BADGE_NUMBER:
+                return JRSUIUtils.TaskBar.isIconBadgeSupported();
             case ICON_IMAGE:
             case MENU:
             case PROGRESS_VALUE:
