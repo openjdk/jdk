@@ -1367,10 +1367,10 @@ final class SocketPermissionCollection extends PermissionCollection
      *
      * @param permission the Permission object to add.
      *
-     * @throws    IllegalArgumentException - if the permission is not a
+     * @throws    IllegalArgumentException   if the permission is not a
      *                                       SocketPermission
      *
-     * @throws    SecurityException - if this SocketPermissionCollection object
+     * @throws    SecurityException   if this SocketPermissionCollection object
      *                                has been marked readonly
      */
     @Override
