@@ -1902,7 +1902,7 @@ void ShenandoahHeap::set_concurrent_mark_in_progress(bool in_progress) {
 }
 
 void ShenandoahHeap::set_concurrent_traversal_in_progress(bool in_progress) {
-   set_gc_state_mask(TRAVERSAL | HAS_FORWARDED | UPDATEREFS, in_progress);
+   set_gc_state_mask(TRAVERSAL, in_progress);
    ShenandoahBarrierSet::satb_mark_queue_set().set_active_all_threads(in_progress, !in_progress);
 }
 
@@ -2060,7 +2060,12 @@ void ShenandoahHeap::parallel_cleaning(bool full_gc) {
 }
 
 void ShenandoahHeap::set_has_forwarded_objects(bool cond) {
-  set_gc_state_mask(HAS_FORWARDED, cond);
+  if (is_traversal_mode()) {
+    set_gc_state_mask(HAS_FORWARDED | UPDATEREFS, cond);
+  } else {
+    set_gc_state_mask(HAS_FORWARDED, cond);
+  }
+
 }
 
 void ShenandoahHeap::set_process_references(bool pr) {
