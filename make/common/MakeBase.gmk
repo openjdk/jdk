@@ -564,8 +564,8 @@ endif
 # Param 1 - The path to base the name of the log file / command line file on
 # Param 2 - The command to run
 ExecuteWithLog = \
-  $(call LogCmdlines, Exececuting: [$(strip $2)]) \
-  $(call MakeDir, $(dir $(strip $1))) \
+  $(call LogCmdlines, Executing: [$(strip $2)]) \
+  $(call MakeDir, $(dir $(strip $1)) $(MAKESUPPORT_OUTPUTDIR)/failure-logs) \
   $(call WriteFile, $2, $(strip $1).cmdline) \
   ( $(RM) $(strip $1).log && $(strip $2) > >($(TEE) -a $(strip $1).log) 2> >($(TEE) -a $(strip $1).log >&2) || \
       ( exitcode=$(DOLLAR)? && \
