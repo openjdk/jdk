@@ -536,9 +536,12 @@ Node* ShenandoahBarrierSetC2::load_at_resolved(C2Access& access, const Type* val
   bool mismatched = (decorators & C2_MISMATCHED) != 0;
   bool unknown = (decorators & ON_UNKNOWN_OOP_REF) != 0;
   bool on_heap = (decorators & IN_HEAP) != 0;
-  bool on_weak = (decorators & ON_WEAK_OOP_REF) != 0;
+  bool on_weak_ref = (decorators & (ON_WEAK_OOP_REF | ON_PHANTOM_OOP_REF)) != 0;
   bool is_unordered = (decorators & MO_UNORDERED) != 0;
   bool need_cpu_mem_bar = !is_unordered || mismatched || !on_heap;
+  bool is_traversal_mode = ShenandoahHeap::heap()->is_traversal_mode();
+  bool keep_alive = (decorators & AS_NO_KEEPALIVE) == 0 || is_traversal_mode;
+  bool in_native = (decorators & IN_NATIVE) != 0;
 
   Node* top = Compile::current()->top();
 
@@ -547,7 +550,7 @@ Node* ShenandoahBarrierSetC2::load_at_resolved(C2Access& access, const Type* val
 
   if (access.is_oop()) {
     if (ShenandoahLoadRefBarrier) {
-      load = new ShenandoahLoadReferenceBarrierNode(NULL, load, (decorators & IN_NATIVE) != 0);
+      load = new ShenandoahLoadReferenceBarrierNode(NULL, load, in_native && !is_traversal_mode);
       if (access.is_parse_access()) {
         load = static_cast<C2ParseAccess &>(access).kit()->gvn().transform(load);
       } else {
@@ -563,7 +566,7 @@ Node* ShenandoahBarrierSetC2::load_at_resolved(C2Access& access, const Type* val
   // Also we need to add memory barrier to prevent commoning reads
   // from this field across safepoint since GC can change its value.
   bool need_read_barrier = ShenandoahKeepAliveBarrier &&
-    (on_heap && (on_weak || (unknown && offset != top && obj != top)));
+    (on_weak_ref || (unknown && offset != top && obj != top));
 
   if (!access.is_oop() || !need_read_barrier) {
     return load;
@@ -573,7 +576,7 @@ Node* ShenandoahBarrierSetC2::load_at_resolved(C2Access& access, const Type* val
   C2ParseAccess& parse_access = static_cast<C2ParseAccess&>(access);
   GraphKit* kit = parse_access.kit();
 
-  if (on_weak) {
+  if (on_weak_ref && keep_alive) {
     // Use the pre-barrier to record the value in the referent field
     satb_write_barrier_pre(kit, false /* do_load */,
                            NULL /* obj */, NULL /* adr */, max_juint /* alias_idx */, NULL /* val */, NULL /* val_type */,
