@@ -673,10 +673,14 @@ Java_sun_font_FreetypeFontScaler_getGlyphMetricsNative(
                                  pScalerContext, pScaler, glyphCode);
      info = (GlyphInfo*) jlong_to_ptr(image);
 
-     (*env)->SetFloatField(env, metrics, sunFontIDs.xFID, info->advanceX);
-     (*env)->SetFloatField(env, metrics, sunFontIDs.yFID, info->advanceY);
-
-     free(info);
+     if (info != NULL) {
+         (*env)->SetFloatField(env, metrics, sunFontIDs.xFID, info->advanceX);
+         (*env)->SetFloatField(env, metrics, sunFontIDs.yFID, info->advanceY);
+         free(info);
+     } else {
+         (*env)->SetFloatField(env, metrics, sunFontIDs.xFID, 0.0f);
+         (*env)->SetFloatField(env, metrics, sunFontIDs.yFID, 0.0f);
+     }
 }
 
 
