@@ -215,9 +215,13 @@ void ShenandoahBarrierSetC1::load_at_resolved(LIRAccess& access, LIR_Opr result)
     assert(access.is_oop(), "IN_NATIVE access only for oop values");
     BarrierSetC1::load_at_resolved(access, result);
     LIR_OprList* args = new LIR_OprList();
+    LIR_Opr addr = access.resolved_addr();
+    addr = ensure_in_register(gen, addr);
     args->append(result);
+    args->append(addr);
     BasicTypeList signature;
     signature.append(T_OBJECT);
+    signature.append(T_ADDRESS);
     LIR_Opr call_result = gen->call_runtime(&signature, args,
                                             CAST_FROM_FN_PTR(address, ShenandoahRuntime::load_reference_barrier_native),
                                             objectType, NULL);

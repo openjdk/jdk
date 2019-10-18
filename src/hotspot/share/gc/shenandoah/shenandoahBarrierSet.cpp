@@ -262,7 +262,7 @@ void ShenandoahBarrierSet::on_thread_detach(Thread *thread) {
   }
 }
 
-oop ShenandoahBarrierSet::oop_load_from_native_barrier(oop obj) {
+oop ShenandoahBarrierSet::oop_load_from_native_barrier(oop obj, oop* load_addr) {
   if (CompressedOops::is_null(obj)) {
     return NULL;
   }
@@ -277,7 +277,13 @@ oop ShenandoahBarrierSet::oop_load_from_native_barrier(oop obj) {
     }
   }
 
-  return load_reference_barrier_not_null(obj);
+  oop fwd = load_reference_barrier_not_null(obj);
+  if (load_addr != NULL && fwd != obj) {
+    // Since we are here and we know the load address, update the reference.
+    ShenandoahHeap::cas_oop(fwd, load_addr, obj);
+  }
+
+  return fwd;
 }
 
 void ShenandoahBarrierSet::clone_barrier_runtime(oop src) {

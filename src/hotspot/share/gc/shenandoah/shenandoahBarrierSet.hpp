@@ -84,7 +84,9 @@ public:
 
   void write_ref_field_work(void* v, oop o, bool release = false);
 
-  oop oop_load_from_native_barrier(oop obj);
+  oop oop_load_from_native_barrier(oop obj, oop* load_addr);
+  oop oop_load_from_native_barrier(oop obj, narrowOop* load_addr);
+
 
   virtual void on_thread_create(Thread* thread);
   virtual void on_thread_destroy(Thread* thread);

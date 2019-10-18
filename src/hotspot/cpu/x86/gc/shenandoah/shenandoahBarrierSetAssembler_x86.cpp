@@ -333,7 +333,7 @@ void ShenandoahBarrierSetAssembler::load_reference_barrier_not_null(MacroAssembl
 #endif
 }
 
-void ShenandoahBarrierSetAssembler::load_reference_barrier_native(MacroAssembler* masm, Register dst) {
+void ShenandoahBarrierSetAssembler::load_reference_barrier_native(MacroAssembler* masm, Register dst, Address src) {
   if (!ShenandoahLoadRefBarrier) {
     return;
   }
@@ -341,6 +341,7 @@ void ShenandoahBarrierSetAssembler::load_reference_barrier_native(MacroAssembler
   Label done;
   Label not_null;
   Label slow_path;
+  __ block_comment("load_reference_barrier_native { ");
 
   // null check
   __ testptr(dst, dst);
@@ -371,7 +372,7 @@ void ShenandoahBarrierSetAssembler::load_reference_barrier_native(MacroAssembler
   __ bind(slow_path);
 
   if (dst != rax) {
-    __ xchgptr(dst, rax); // Move obj into rax and save rax into obj.
+    __ push(rax);
   }
   __ push(rcx);
   __ push(rdx);
@@ -388,8 +389,9 @@ void ShenandoahBarrierSetAssembler::load_reference_barrier_native(MacroAssembler
   __ push(r15);
 #endif
 
-  __ movptr(rdi, rax);
-  __ call_VM_leaf(CAST_FROM_FN_PTR(address, ShenandoahRuntime::load_reference_barrier_native), rdi);
+  assert_different_registers(dst, rsi);
+  __ lea(rsi, src);
+  __ call_VM_leaf(CAST_FROM_FN_PTR(address, ShenandoahRuntime::load_reference_barrier_native), dst, rsi);
 
 #ifdef _LP64
   __ pop(r15);
@@ -407,10 +409,12 @@ void ShenandoahBarrierSetAssembler::load_reference_barrier_native(MacroAssembler
   __ pop(rcx);
 
   if (dst != rax) {
-    __ xchgptr(rax, dst); // Swap back obj with rax.
+    __ movptr(dst, rax);
+    __ pop(rax);
   }
 
   __ bind(done);
+  __ block_comment("load_reference_barrier_native { ");
 }
 
 void ShenandoahBarrierSetAssembler::storeval_barrier(MacroAssembler* masm, Register dst, Register tmp) {
@@ -474,12 +478,41 @@ void ShenandoahBarrierSetAssembler::load_at(MacroAssembler* masm, DecoratorSet d
   bool is_traversal_mode = ShenandoahHeap::heap()->is_traversal_mode();
   bool keep_alive = ((decorators & AS_NO_KEEPALIVE) == 0) || is_traversal_mode;
 
+  Register result_dst = dst;
+  bool use_tmp1_for_dst = false;
+
+  if (on_oop) {
+    // We want to preserve src
+    if (dst == src.base() || dst == src.index()) {
+      // Use tmp1 for dst if possible, as it is not used in BarrierAssembler::load_at()
+      if (tmp1->is_valid() && tmp1 != src.base() && tmp1 != src.index()) {
+        dst = tmp1;
+        use_tmp1_for_dst = true;
+      } else {
+        dst = rdi;
+        __ push(dst);
+      }
+    }
+    assert_different_registers(dst, src.base(), src.index());
+  }
+
   BarrierSetAssembler::load_at(masm, decorators, type, dst, src, tmp1, tmp_thread);
+
   if (on_oop) {
     if (not_in_heap && !is_traversal_mode) {
-      load_reference_barrier_native(masm, dst);
+      load_reference_barrier_native(masm, dst, src);
     } else {
       load_reference_barrier(masm, dst);
+    }
+
+    if (dst != result_dst) {
+      __ movptr(result_dst, dst);
+
+      if (!use_tmp1_for_dst) {
+        __ pop(dst);
+      }
+
+      dst = result_dst;
     }
 
     if (ShenandoahKeepAliveBarrier && on_reference && keep_alive) {
