@@ -334,12 +334,12 @@ void mutex_init() {
 #if INCLUDE_JVMTI
   def(CDSClassFileStream_lock      , PaddedMutex  , max_nonleaf, false, _safepoint_check_always);
 #endif
+  def(DumpTimeTable_lock           , PaddedMutex  , leaf,        true,  _safepoint_check_never);
+#endif // INCLUDE_CDS
 
 #if INCLUDE_JVMCI
   def(JVMCI_lock                   , PaddedMonitor, nonleaf+2,   true,  _safepoint_check_always);
 #endif
-  def(DumpTimeTable_lock           , PaddedMutex  , leaf,        true,  _safepoint_check_never);
-#endif // INCLUDE_CDS
 }
 
 GCMutexLocker::GCMutexLocker(Mutex* mutex) {
