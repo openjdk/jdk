@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,6 +25,9 @@ import java.io.BufferedReader;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStreamReader;
+import java.io.OutputStream;
+import java.io.PrintStream;
+import java.io.UncheckedIOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -110,6 +113,7 @@ public class Proc {
     private List<String> args = new ArrayList<>();
     private Map<String,String> env = new HashMap<>();
     private Map<String,String> prop = new HashMap();
+    private Map<String,String> secprop = new HashMap();
     private boolean inheritIO = false;
     private boolean noDump = false;
 
@@ -174,6 +178,11 @@ public class Proc {
     // Specifies a Java system property. Can be called multiple times.
     public Proc prop(String a, String b) {
         prop.put(a, b);
+        return this;
+    }
+    // Specifies a security property. Can be called multiple times.
+    public Proc secprop(String a, String b) {
+        secprop.put(a, b);
         return this;
     }
     // Inherit the value of a system property
@@ -282,6 +291,17 @@ public class Proc {
             cmd.add(cp.stream().collect(Collectors.joining(File.pathSeparator)));
         }
 
+        if (!secprop.isEmpty()) {
+            Path p = Path.of(getId("security"));
+            try (OutputStream fos = Files.newOutputStream(p);
+                 PrintStream ps = new PrintStream(fos)) {
+                secprop.forEach((k,v) -> ps.println(k + "=" + v));
+            } catch (IOException e) {
+                throw new UncheckedIOException(e);
+            }
+            prop.put("java.security.properties", p.toString());
+        }
+
         for (Entry<String,String> e: prop.entrySet()) {
             cmd.add("-D" + e.getKey() + "=" + e.getValue());
         }
@@ -379,6 +399,12 @@ public class Proc {
             }
         }
         return p.waitFor();
+    }
+    // Wait for process end with expected exit code
+    public void waitFor(int expected) throws Exception {
+        if (p.waitFor() != expected) {
+            throw new RuntimeException("Exit code not " + expected);
+        }
     }
 
     // The following methods are used inside a proc

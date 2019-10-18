@@ -334,6 +334,7 @@ public class ConcurrentSkipListMap<K,V> extends AbstractMap<K,V>
      * nested classes.)
      * @serial
      */
+    @SuppressWarnings("serial") // Conditionally serializable
     final Comparator<? super K> comparator;
 
     /** Lazily initialized topmost index of the skiplist. */
@@ -2375,8 +2376,10 @@ public class ConcurrentSkipListMap<K,V> extends AbstractMap<K,V>
         /** Underlying map */
         final ConcurrentSkipListMap<K,V> m;
         /** lower bound key, or null if from start */
+        @SuppressWarnings("serial") // Conditionally serializable
         private final K lo;
         /** upper bound key, or null if to end */
+        @SuppressWarnings("serial") // Conditionally serializable
         private final K hi;
         /** inclusion flag for lo */
         private final boolean loInclusive;

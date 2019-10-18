@@ -70,4 +70,35 @@ class NullPointerException extends RuntimeException {
     public NullPointerException(String s) {
         super(s);
     }
+
+    /**
+     * Returns the detail message string of this throwable.
+     *
+     * <p> If a non-null message was supplied in a constructor it is
+     * returned. Otherwise, an implementation specific message or
+     * {@code null} is returned.
+     *
+     * @implNote
+     * If no explicit message was passed to the constructor, and as
+     * long as certain internal information is available, a verbose
+     * description of the null reference is returned.
+     * The internal information is not available in deserialized
+     * NullPointerExceptions.
+     *
+     * @return the detail message string, which may be {@code null}.
+     */
+    public String getMessage() {
+        String message = super.getMessage();
+        if (message == null) {
+            return getExtendedNPEMessage();
+        }
+        return message;
+    }
+
+    /**
+     * Get an extended exception message. This returns a string describing
+     * the location and cause of the exception. It returns null for
+     * exceptions where this is not applicable.
+     */
+    private native String getExtendedNPEMessage();
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -33,15 +33,17 @@
  * @run compile -g MonitorFrameInfo.java
  * @run driver MonitorFrameInfo
  */
-import com.sun.jdi.*;
-import com.sun.jdi.event.*;
-import com.sun.jdi.request.*;
+import java.util.List;
 
-import java.util.*;
+import com.sun.jdi.InvalidStackFrameException;
+import com.sun.jdi.MonitorInfo;
+import com.sun.jdi.ReferenceType;
+import com.sun.jdi.ThreadReference;
+import com.sun.jdi.event.BreakpointEvent;
 
     /********** target program **********/
 
-class MonitorTestTarg {
+class MonitorFrameInfoTarg {
     static void foo3() {
         System.out.println("executing foo3");
 
@@ -71,7 +73,7 @@ class MonitorTestTarg {
 public class MonitorFrameInfo extends TestScaffold {
     ReferenceType targetClass;
     ThreadReference mainThread;
-    List monitors;
+    List<MonitorInfo> monitors;
 
     static int expectedCount = 2;
     static int[] expectedDepth = { 1, 3 };
@@ -93,13 +95,13 @@ public class MonitorFrameInfo extends TestScaffold {
          * Get to the top of main()
          * to determine targetClass and mainThread
          */
-        BreakpointEvent bpe = startToMain("MonitorTestTarg");
+        BreakpointEvent bpe = startToMain("MonitorFrameInfoTarg");
         targetClass = bpe.location().declaringType();
         mainThread = bpe.thread();
 
         int initialSize = mainThread.frames().size();
 
-        resumeTo("MonitorTestTarg", "foo3", "()V");
+        resumeTo("MonitorFrameInfoTarg", "foo3", "()V");
 
         if (!mainThread.frame(0).location().method().name()
                         .equals("foo3")) {

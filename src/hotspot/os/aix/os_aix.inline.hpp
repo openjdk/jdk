@@ -64,8 +64,6 @@ inline void os::dll_unload(void *lib) {
   ::dlclose(lib);
 }
 
-inline const int os::default_file_open_flags() { return 0;}
-
 inline jlong os::lseek(int fd, jlong offset, int whence) {
   return (jlong) ::lseek64(fd, offset, whence);
 }

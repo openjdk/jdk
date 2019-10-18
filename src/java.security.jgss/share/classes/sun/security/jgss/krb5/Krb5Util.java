@@ -60,11 +60,8 @@ public class Krb5Util {
     /**
      * Retrieves the ticket corresponding to the client/server principal
      * pair from the Subject in the specified AccessControlContext.
-     * If the ticket can not be found in the Subject, and if
-     * useSubjectCredsOnly is false, then obtain ticket from
-     * a LoginContext.
      */
-    static KerberosTicket getTicket(GSSCaller caller,
+    static KerberosTicket getServiceTicket(GSSCaller caller,
         String clientPrincipal, String serverPrincipal,
         AccessControlContext acc) throws LoginException {
 
@@ -74,11 +71,31 @@ public class Krb5Util {
             SubjectComber.find(accSubj, serverPrincipal, clientPrincipal,
                   KerberosTicket.class);
 
+        return ticket;
+    }
+
+    /**
+     * Retrieves the initial TGT corresponding to the client principal
+     * from the Subject in the specified AccessControlContext.
+     * If the ticket can not be found in the Subject, and if
+     * useSubjectCredsOnly is false, then obtain ticket from
+     * a LoginContext.
+     */
+    static KerberosTicket getInitialTicket(GSSCaller caller,
+            String clientPrincipal,
+            AccessControlContext acc) throws LoginException {
+
+        // Try to get ticket from acc's Subject
+        Subject accSubj = Subject.getSubject(acc);
+        KerberosTicket ticket =
+                SubjectComber.find(accSubj, null, clientPrincipal,
+                        KerberosTicket.class);
+
         // Try to get ticket from Subject obtained from GSSUtil
         if (ticket == null && !GSSUtil.useSubjectCredsOnly(caller)) {
             Subject subject = GSSUtil.login(caller, GSSUtil.GSS_KRB5_MECH_OID);
             ticket = SubjectComber.find(subject,
-                serverPrincipal, clientPrincipal, KerberosTicket.class);
+                    null, clientPrincipal, KerberosTicket.class);
         }
         return ticket;
     }

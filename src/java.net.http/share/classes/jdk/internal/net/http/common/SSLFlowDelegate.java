@@ -318,14 +318,19 @@ public class SSLFlowDelegate {
 
         @Override
         protected long upstreamWindowUpdate(long currentWindow, long downstreamQsize) {
-            if (readBuf.remaining() > TARGET_BUFSIZE) {
-                if (debugr.on())
-                    debugr.log("readBuf has more than TARGET_BUFSIZE: %d",
-                            readBuf.remaining());
-                return 0;
-            } else {
-                return super.upstreamWindowUpdate(currentWindow, downstreamQsize);
+            if (needsMoreData()) {
+                // run the scheduler to see if more data should be requested
+                if (debugr.on()) {
+                    int remaining = readBuf.remaining();
+                    if (remaining > TARGET_BUFSIZE) {
+                        // just some logging to check how much we have in the read buffer
+                        debugr.log("readBuf has more than TARGET_BUFSIZE: %d",
+                                remaining);
+                    }
+                }
+                scheduler.runOrSchedule();
             }
+            return 0; // we will request more from the scheduler loop (processData).
         }
 
         // readBuf is kept ready for reading outside of this method
@@ -367,6 +372,32 @@ public class SSLFlowDelegate {
         // In this case we need to wait for more bytes than what
         // we had before calling unwrap() again.
         volatile int minBytesRequired;
+
+        // We might need to request more data if:
+        //  - we have a subscription from upstream
+        //  - and we don't have enough data to decrypt in the read buffer
+        //  - *and* - either we're handshaking, and more data is required (NEED_UNWRAP),
+        //          - or we have demand from downstream, but we have nothing decrypted
+        //            to forward downstream.
+        boolean needsMoreData() {
+            if (upstreamSubscription != null && readBuf.remaining() <= minBytesRequired &&
+                    (engine.getHandshakeStatus() == HandshakeStatus.NEED_UNWRAP
+                            || !downstreamSubscription.demand.isFulfilled() && hasNoOutputData())) {
+                return true;
+            }
+            return false;
+        }
+
+        // If the readBuf has not enough data, and we either need to
+        // unwrap (handshaking) or we have demand from downstream,
+        // then request more data
+        void requestMoreDataIfNeeded() {
+            if (needsMoreData()) {
+                // request more will only request more if our
+                // demand from upstream is fulfilled
+                requestMore();
+            }
+        }
 
         // work function where it all happens
         final void processData() {
@@ -434,6 +465,7 @@ public class SSLFlowDelegate {
                             outgoing(Utils.EMPTY_BB_LIST, true);
                             // complete ALPN if not yet completed
                             setALPN();
+                            requestMoreDataIfNeeded();
                             return;
                         }
                         if (result.handshaking()) {
@@ -451,8 +483,10 @@ public class SSLFlowDelegate {
                         handleError(ex);
                         return;
                     }
-                    if (handshaking && !complete)
+                    if (handshaking && !complete) {
+                        requestMoreDataIfNeeded();
                         return;
+                    }
                 }
                 if (!complete) {
                     synchronized (readBufferLock) {
@@ -466,6 +500,8 @@ public class SSLFlowDelegate {
                     // activity.
                     setALPN();
                     outgoing(Utils.EMPTY_BB_LIST, true);
+                } else {
+                    requestMoreDataIfNeeded();
                 }
             } catch (Throwable ex) {
                 errorCommon(ex);

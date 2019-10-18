@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2006, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2006, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -44,14 +44,14 @@ class RedefineImplementorTarg implements Runnable {
     }
 
     public static void main(String[] args) {
-        Runnable r = new B();
-        B.func(r);
-        B.func(r);  // @1 breakpoint
+        Runnable r = new RedefineImplementorB();
+        RedefineImplementorB.func(r);
+        RedefineImplementorB.func(r);  // @1 breakpoint
     }
 
 }
 
-class B extends RedefineImplementorTarg {
+class RedefineImplementorB extends RedefineImplementorTarg {
     static void func(Runnable r) {
         r.run();
     }

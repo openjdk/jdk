@@ -145,6 +145,15 @@ import java.util.StringTokenizer;
  *   </tr>
  *
  * <tr>
+ *   <th scope="row">setSocketImpl</th>
+ *   <td>The ability to create a sub-class of Socket or ServerSocket with a
+ *   user specified SocketImpl.</td>
+ *   <td>Malicious user-defined SocketImpls can change the behavior of
+ *   Socket and ServerSocket in surprising ways, by virtue of their
+ *   ability to access the protected fields of SocketImpl.</td>
+ *   </tr>
+ *
+ * <tr>
  *   <th scope="row">specifyStreamHandler</th>
  *   <td>The ability
  *   to specify a stream handler when constructing a URL</td>

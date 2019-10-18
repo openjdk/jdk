@@ -86,12 +86,6 @@ size_t os::Posix::_compiler_thread_min_stack_allowed = 104 * K;
 size_t os::Posix::_java_thread_min_stack_allowed = 86 * K;
 size_t os::Posix::_vm_internal_thread_min_stack_allowed = 128 * K;
 
-int os::Solaris::max_register_window_saves_before_flushing() {
-  // We should detect this at run time. For now, filling
-  // in with a constant.
-  return 8;
-}
-
 static void handle_unflushed_register_windows(gwindows_t *win) {
   int restore_count = win->wbcnt;
   int i;

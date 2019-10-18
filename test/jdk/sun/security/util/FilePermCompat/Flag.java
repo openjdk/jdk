@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,21 +23,83 @@
 
 /*
  * @test
- * @bug 8164705
+ * @bug 8164705 8209901
+ * @library /test/jdk/java/security/testlibrary
+ * @modules java.base/jdk.internal.misc
  * @summary check jdk.filepermission.canonicalize
- * @run main/othervm/policy=flag.policy
-  *     -Djdk.io.permissionsUseCanonicalPath=true Flag true true
- * @run main/othervm/policy=flag.policy
-  *     -Djdk.io.permissionsUseCanonicalPath=false Flag false true
- * @run main/othervm/policy=flag.policy Flag false true
  */
 
 import java.io.File;
 import java.io.FilePermission;
 import java.lang.*;
+import java.nio.file.Path;
 
 public class Flag {
     public static void main(String[] args) throws Exception {
+
+        if (args.length == 0) {
+            String policy = Path.of(
+                    System.getProperty("test.src"), "flag.policy").toString();
+
+            // effectively true
+            Proc.create("Flag")
+                    .prop("java.security.manager", "")
+                    .prop("java.security.policy", policy)
+                    .prop("jdk.io.permissionsUseCanonicalPath", "true")
+                    .args("run", "true", "true")
+                    .start()
+                    .waitFor(0);
+            Proc.create("Flag")
+                    .prop("java.security.manager", "")
+                    .prop("java.security.policy", policy)
+                    .secprop("jdk.io.permissionsUseCanonicalPath", "true")
+                    .args("run", "true", "true")
+                    .start()
+                    .waitFor(0);
+            Proc.create("Flag")
+                    .prop("java.security.manager", "")
+                    .prop("java.security.policy", policy)
+                    .secprop("jdk.io.permissionsUseCanonicalPath", "false")
+                    .prop("jdk.io.permissionsUseCanonicalPath", "true")
+                    .args("run", "true", "true")
+                    .start()
+                    .waitFor(0);
+
+            // effectively false
+            Proc.create("Flag")
+                    .prop("java.security.manager", "")
+                    .prop("java.security.policy", policy)
+                    .prop("jdk.io.permissionsUseCanonicalPath", "false")
+                    .args("run", "false", "true")
+                    .start()
+                    .waitFor(0);
+            Proc.create("Flag")
+                    .prop("java.security.manager", "")
+                    .prop("java.security.policy", policy)
+                    .secprop("jdk.io.permissionsUseCanonicalPath", "false")
+                    .args("run", "false", "true")
+                    .start()
+                    .waitFor(0);
+            Proc.create("Flag")
+                    .prop("java.security.manager", "")
+                    .prop("java.security.policy", policy)
+                    .secprop("jdk.io.permissionsUseCanonicalPath", "true")
+                    .prop("jdk.io.permissionsUseCanonicalPath", "false")
+                    .args("run", "false", "true")
+                    .start()
+                    .waitFor(0);
+            Proc.create("Flag")
+                    .prop("java.security.manager", "")
+                    .prop("java.security.policy", policy)
+                    .args("run", "false", "true")
+                    .start()
+                    .waitFor(0);
+        } else {
+            run(args);
+        }
+    }
+
+    static void run(String[] args) throws Exception {
 
         boolean test1;
         boolean test2;
@@ -55,8 +117,8 @@ public class Flag {
             test2 = false;
         }
 
-        if (test1 != Boolean.parseBoolean(args[0]) ||
-                test2 != Boolean.parseBoolean(args[1])) {
+        if (test1 != Boolean.parseBoolean(args[1]) ||
+                test2 != Boolean.parseBoolean(args[2])) {
             throw new Exception("Test failed: " + test1 + " " + test2);
         }
     }

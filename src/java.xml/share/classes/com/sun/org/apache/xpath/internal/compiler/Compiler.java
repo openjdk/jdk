@@ -1,6 +1,5 @@
 /*
- * reserved comment block
- * DO NOT REMOVE OR ALTER!
+ * Copyright (c) 2019, Oracle and/or its affiliates. All rights reserved.
  */
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
@@ -70,9 +69,12 @@ import com.sun.org.apache.xpath.internal.res.XPATHErrorResources;
  * of operation codes (op map) and then builds from that into an Expression
  * tree.
  * @xsl.usage advanced
+ * @LastModified: May 2019
  */
 public class Compiler extends OpMap
 {
+  // count the number of operations or calls to compileOperation
+  int countOp;
 
   /**
    * Construct a Compiler object with a specific ErrorListener and
@@ -106,15 +108,40 @@ public class Compiler extends OpMap
 
   /**
    * Execute the XPath object from a given opcode position.
+   *
+   * Note that this method is added so that when StackOverflowError is caught
+   * the address space can be freed to this point allowing further activities
+   * such as reporting the error.
+   *
    * @param opPos The current position in the xpath.m_opMap array.
    * @return The result of the XPath.
    *
    * @throws TransformerException if there is a syntax or other error.
    * @xsl.usage advanced
    */
-  public Expression compile(int opPos) throws TransformerException
-  {
+   public Expression compileExpression(int opPos) throws TransformerException
+   {
+       try {
+           countOp = 0;
+           return compile(opPos);
+       } catch (StackOverflowError sof) {
+           error(XPATHErrorResources.ER_COMPILATION_TOO_MANY_OPERATION, new Object[]{countOp});
+       }
+       return null;
+   }
 
+  /**
+   * This method handles the actual compilation process. It is called from the
+   * compileExpression method as well as the subsequent processes. See the note
+   * for compileExpression.
+   *
+   * @param opPos The current position in the xpath.m_opMap array.
+   * @return The result of the XPath.
+   *
+   * @throws TransformerException if there is a syntax or other error.
+   */
+  private Expression compile(int opPos) throws TransformerException
+  {
     int op = getOp(opPos);
 
     Expression expr = null;
@@ -210,6 +237,7 @@ public class Compiler extends OpMap
   private Expression compileOperation(Operation operation, int opPos)
           throws TransformerException
   {
+    ++countOp;
 
     int leftPos = getFirstChildPos(opPos);
     int rightPos = getNextOpPos(leftPos);

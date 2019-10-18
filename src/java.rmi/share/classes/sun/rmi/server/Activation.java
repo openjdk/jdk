@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -145,9 +145,11 @@ public class Activation implements Serializable {
     private static boolean debugExec;
 
     /** maps activation id to its respective group id */
+    @SuppressWarnings("serial") // Conditionally serializable
     private Map<ActivationID,ActivationGroupID> idTable =
         new ConcurrentHashMap<>();
     /** maps group id to its GroupEntry groups */
+    @SuppressWarnings("serial") // Conditionally serializable
     private Map<ActivationGroupID,GroupEntry> groupTable =
         new ConcurrentHashMap<>();
 
@@ -297,6 +299,7 @@ public class Activation implements Serializable {
 
         private static final String NAME = ActivationSystem.class.getName();
         private static final long serialVersionUID = 4877330021609408794L;
+        @SuppressWarnings("serial") // Not statically typed as Serializable
         private ActivationSystem systemStub = null;
 
         SystemRegistryImpl(int port,
@@ -498,6 +501,7 @@ public class Activation implements Serializable {
      * with RegistryImpl.checkAccess().
      * The kind of access is retained for an exception if one is thrown.
      */
+    @SuppressWarnings("serial") // Externalizable class w/o no-arg c'tor
     static class SameHostOnlyServerRef extends UnicastServerRef {
         private static final long serialVersionUID = 1234L;
         private String accessKind;      // an exception message
@@ -873,7 +877,9 @@ public class Activation implements Serializable {
         ActivationGroupDesc desc = null;
         ActivationGroupID groupID = null;
         long incarnation = 0;
+        @SuppressWarnings("serial") // Conditionally serializable
         Map<ActivationID,ObjectEntry> objects = new HashMap<>();
+        @SuppressWarnings("serial") // Conditionally serializable
         Set<ActivationID> restartSet = new HashSet<>();
 
         transient ActivationInstantiator group = null;

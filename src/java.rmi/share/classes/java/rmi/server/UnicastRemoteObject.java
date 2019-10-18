@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -189,12 +189,14 @@ public class UnicastRemoteObject extends RemoteServer {
     /**
      * @serial client-side socket factory (if any)
      */
+    @SuppressWarnings("serial") // Not statically typed as Serializable
     private RMIClientSocketFactory csf = null;
 
     /**
      * @serial server-side socket factory (if any) to use when
      * exporting object
      */
+    @SuppressWarnings("serial") // Not statically typed as Serializable
     private RMIServerSocketFactory ssf = null;
 
     /* indicate compatibility with JDK 1.1.x version of class */

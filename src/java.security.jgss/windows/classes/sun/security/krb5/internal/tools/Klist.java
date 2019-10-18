@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,6 +31,8 @@
 package sun.security.krb5.internal.tools;
 
 import java.net.InetAddress;
+import java.util.List;
+
 import sun.security.krb5.*;
 import sun.security.krb5.internal.*;
 import sun.security.krb5.internal.ccache.*;
@@ -249,6 +251,8 @@ public class Klist {
                     String endtime;
                     String renewTill;
                     String servicePrincipal;
+                    PrincipalName servicePrincipal2;
+                    String clientPrincipal;
                     if (creds[i].getStartTime() != null) {
                         starttime = format(creds[i].getStartTime());
                     } else {
@@ -260,6 +264,18 @@ public class Klist {
                     System.out.println("[" + (i + 1) + "] " +
                                        " Service Principal:  " +
                                        servicePrincipal);
+                    servicePrincipal2 =
+                            creds[i].getServicePrincipal2();
+                    if (servicePrincipal2 != null) {
+                        System.out.println("     Second Service:     "
+                                + servicePrincipal2);
+                    }
+                    clientPrincipal =
+                            creds[i].getClientPrincipal().toString();
+                    if (!clientPrincipal.equals(defaultPrincipal)) {
+                        System.out.println("     Client Principal:   " +
+                                clientPrincipal);
+                    }
                     System.out.println("     Valid starting:     " + starttime);
                     System.out.println("     Expires:            " + endtime);
                     if (creds[i].getRenewTill() != null) {
@@ -270,8 +286,15 @@ public class Klist {
                     if (options[0] == 'e') {
                         String eskey = EType.toString(creds[i].getEType());
                         String etkt = EType.toString(creds[i].getTktEType());
-                        System.out.println("     EType (skey, tkt):  "
-                                + eskey + ", " + etkt);
+                        if (creds[i].getTktEType2() == 0) {
+                            System.out.println("     EType (skey, tkt):  "
+                                    + eskey + ", " + etkt);
+                        } else {
+                            String etkt2 = EType.toString(creds[i].getTktEType2());
+                            System.out.println("     EType (skey, tkts): "
+                                    + eskey + ", " + etkt
+                                    + ", " + etkt2);
+                        }
                     }
                     if (options[1] == 'f') {
                         System.out.println("     Flags:              " +
@@ -309,6 +332,15 @@ public class Klist {
             }
         } else {
             System.out.println("\nNo entries found.");
+        }
+
+        List<CredentialsCache.ConfigEntry> configEntries
+                = cache.getConfigEntries();
+        if (configEntries != null && !configEntries.isEmpty()) {
+            System.out.println("\nConfig entries:");
+            for (CredentialsCache.ConfigEntry e : configEntries) {
+                System.out.println("     " + e);
+            }
         }
     }
 

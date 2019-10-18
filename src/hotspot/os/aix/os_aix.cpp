@@ -1034,8 +1034,6 @@ jlong os::elapsed_frequency() {
 }
 
 bool os::supports_vtime() { return true; }
-bool os::enable_vtime()   { return false; }
-bool os::vtime_enabled()  { return false; }
 
 double os::elapsedVTime() {
   struct rusage usage;
@@ -3623,11 +3621,6 @@ int os::active_processor_count() {
 void os::set_native_thread_name(const char *name) {
   // Not yet implemented.
   return;
-}
-
-bool os::distribute_processes(uint length, uint* distribution) {
-  // Not yet implemented.
-  return false;
 }
 
 bool os::bind_to_processor(uint processor_id) {

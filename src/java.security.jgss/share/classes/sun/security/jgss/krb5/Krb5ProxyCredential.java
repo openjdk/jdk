@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,9 +26,16 @@
 package sun.security.jgss.krb5;
 
 import org.ietf.jgss.*;
+import sun.security.jgss.GSSCaller;
 import sun.security.jgss.spi.*;
-import java.util.Date;
+
+import java.io.IOException;
+
+import sun.security.krb5.Credentials;
+import sun.security.krb5.KrbException;
 import sun.security.krb5.internal.Ticket;
+
+import javax.security.auth.kerberos.KerberosTicket;
 
 /**
  * Implements the krb5 proxy credential element used in constrained
@@ -111,5 +118,25 @@ public class Krb5ProxyCredential
         // Cannot impersonate multiple levels without the impersonatee's TGT.
         throw new GSSException(GSSException.FAILURE, -1,
                 "Only an initiate credentials can impersonate");
+    }
+
+    // Try to see if a default credential should act as an impersonator.
+    static Krb5CredElement tryImpersonation(GSSCaller caller,
+            Krb5InitCredential initiator) throws GSSException {
+
+        try {
+            KerberosTicket proxy = initiator.proxyTicket;
+            if (proxy != null) {
+                Credentials proxyCreds = Krb5Util.ticketToCreds(proxy);
+                return new Krb5ProxyCredential(initiator,
+                        Krb5NameElement.getInstance(proxyCreds.getClient()),
+                        proxyCreds.getTicket());
+            } else {
+                return initiator;
+            }
+        } catch (KrbException | IOException e) {
+            throw new GSSException(GSSException.DEFECTIVE_CREDENTIAL, -1,
+                    "Cannot create proxy credential");
+        }
     }
 }

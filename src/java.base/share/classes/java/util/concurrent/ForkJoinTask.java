@@ -1374,7 +1374,9 @@ public abstract class ForkJoinTask<V> implements Future<V>, Serializable {
      */
     static final class AdaptedRunnable<T> extends ForkJoinTask<T>
         implements RunnableFuture<T> {
+        @SuppressWarnings("serial") // Conditionally serializable
         final Runnable runnable;
+        @SuppressWarnings("serial") // Conditionally serializable
         T result;
         AdaptedRunnable(Runnable runnable, T result) {
             if (runnable == null) throw new NullPointerException();
@@ -1396,6 +1398,7 @@ public abstract class ForkJoinTask<V> implements Future<V>, Serializable {
      */
     static final class AdaptedRunnableAction extends ForkJoinTask<Void>
         implements RunnableFuture<Void> {
+        @SuppressWarnings("serial") // Conditionally serializable
         final Runnable runnable;
         AdaptedRunnableAction(Runnable runnable) {
             if (runnable == null) throw new NullPointerException();
@@ -1415,6 +1418,7 @@ public abstract class ForkJoinTask<V> implements Future<V>, Serializable {
      * Adapter for Runnables in which failure forces worker exception.
      */
     static final class RunnableExecuteAction extends ForkJoinTask<Void> {
+        @SuppressWarnings("serial") // Conditionally serializable
         final Runnable runnable;
         RunnableExecuteAction(Runnable runnable) {
             if (runnable == null) throw new NullPointerException();
@@ -1434,7 +1438,9 @@ public abstract class ForkJoinTask<V> implements Future<V>, Serializable {
      */
     static final class AdaptedCallable<T> extends ForkJoinTask<T>
         implements RunnableFuture<T> {
+        @SuppressWarnings("serial") // Conditionally serializable
         final Callable<? extends T> callable;
+        @SuppressWarnings("serial") // Conditionally serializable
         T result;
         AdaptedCallable(Callable<? extends T> callable) {
             if (callable == null) throw new NullPointerException();

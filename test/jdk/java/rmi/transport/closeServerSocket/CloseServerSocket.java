@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -63,8 +63,19 @@ public class CloseServerSocket implements Remote {
         verifyPortInUse(PORT);
         UnicastRemoteObject.unexportObject(registry, true);
         System.err.println("- unexported registry");
-        Thread.sleep(1000);        // work around BindException (bug?)
-        verifyPortFree(PORT);
+        int tries = (int)TestLibrary.getTimeoutFactor();
+        tries = Math.max(tries, 1);
+        while (tries-- > 0) {
+            Thread.sleep(1000);
+            try {
+                verifyPortFree(PORT);
+                break;
+            } catch (IOException ignore) { }
+        }
+        if (tries < 0) {
+            throw new RuntimeException("time out after tries: " + tries);
+        }
+
 
         /*
          * The follow portion of this test is disabled temporarily
@@ -101,6 +112,7 @@ public class CloseServerSocket implements Remote {
     private static void verifyPortInUse(int port) throws IOException {
         try {
             verifyPortFree(port);
+            throw new RuntimeException("port is not in use: " + port);
         } catch (BindException e) {
             System.err.println("- port " + port + " is in use");
             return;

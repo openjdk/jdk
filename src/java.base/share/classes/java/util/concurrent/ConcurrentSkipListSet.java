@@ -103,6 +103,7 @@ public class ConcurrentSkipListSet<E>
      * element.  This field is declared final for the sake of thread
      * safety, which entails some ugliness in clone().
      */
+    @SuppressWarnings("serial") // Conditionally serializable
     private final ConcurrentNavigableMap<E,Object> m;
 
     /**

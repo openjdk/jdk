@@ -30,8 +30,6 @@
 
 inline const char* os::dll_file_extension()            { return ".dll"; }
 
-inline const int os::default_file_open_flags() { return O_BINARY | O_NOINHERIT;}
-
 inline void  os::dll_unload(void *lib) {
   ::FreeLibrary((HMODULE)lib);
 }

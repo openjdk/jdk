@@ -100,6 +100,7 @@ public class ArrayBlockingQueue<E> extends AbstractQueue<E>
     private static final long serialVersionUID = -817911632652898426L;
 
     /** The queued items */
+    @SuppressWarnings("serial") // Conditionally serializable
     final Object[] items;
 
     /** items index for next take, poll, peek or remove */
@@ -120,9 +121,11 @@ public class ArrayBlockingQueue<E> extends AbstractQueue<E>
     final ReentrantLock lock;
 
     /** Condition for waiting takes */
+    @SuppressWarnings("serial")  // Classes implementing Condition may be serializable.
     private final Condition notEmpty;
 
     /** Condition for waiting puts */
+    @SuppressWarnings("serial")  // Classes implementing Condition may be serializable.
     private final Condition notFull;
 
     /**

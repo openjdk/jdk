@@ -88,6 +88,9 @@ public class XRTextRenderer extends GlyphListPipe {
             for (int i = 0; i < gl.getNumGlyphs(); i++) {
                 gl.setGlyphIndex(i);
                 XRGlyphCacheEntry cacheEntry = cachedGlyphs[i];
+                if (cacheEntry == null) {
+                    continue;
+                }
 
                 eltList.getGlyphs().addInt(cacheEntry.getGlyphID());
                 int glyphSet = cacheEntry.getGlyphSet();

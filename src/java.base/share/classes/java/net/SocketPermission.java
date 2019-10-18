@@ -287,6 +287,11 @@ public final class SocketPermission extends Permission
      * @param host the hostname or IP address of the computer, optionally
      * including a colon followed by a port or port range.
      * @param action the action string.
+     *
+     * @throws NullPointerException if any parameters are null
+     * @throws IllegalArgumentException if the format of {@code host} is
+     *         invalid, or if the {@code action} string is empty, malformed, or
+     *         contains an action other than the specified possible actions
      */
     public SocketPermission(String host, String action) {
         super(getHost(host));
@@ -589,14 +594,15 @@ public final class SocketPermission extends Permission
             // like "ackbarfaccept".  Also, skip to the comma.
             boolean seencomma = false;
             while (i >= matchlen && !seencomma) {
-                switch(a[i-matchlen]) {
-                case ',':
-                    seencomma = true;
-                    break;
+                switch (c = a[i-matchlen]) {
                 case ' ': case '\r': case '\n':
                 case '\f': case '\t':
                     break;
                 default:
+                    if (c == ',' && i > matchlen) {
+                        seencomma = true;
+                        break;
+                    }
                     throw new IllegalArgumentException(
                             "invalid permission: " + action);
                 }
@@ -1361,10 +1367,10 @@ final class SocketPermissionCollection extends PermissionCollection
      *
      * @param permission the Permission object to add.
      *
-     * @throws    IllegalArgumentException - if the permission is not a
+     * @throws    IllegalArgumentException   if the permission is not a
      *                                       SocketPermission
      *
-     * @throws    SecurityException - if this SocketPermissionCollection object
+     * @throws    SecurityException   if this SocketPermissionCollection object
      *                                has been marked readonly
      */
     @Override

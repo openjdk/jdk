@@ -81,8 +81,7 @@ double G1RemSetSummary::rs_thread_vtime(uint thread) const {
   return _rs_threads_vtimes[thread];
 }
 
-G1RemSetSummary::G1RemSetSummary() :
-  _rem_set(NULL),
+G1RemSetSummary::G1RemSetSummary(bool should_update) :
   _total_mutator_refined_cards(0),
   _total_concurrent_refined_cards(0),
   _num_coarsenings(0),
@@ -91,17 +90,10 @@ G1RemSetSummary::G1RemSetSummary() :
   _sampling_thread_vtime(0.0f) {
 
   memset(_rs_threads_vtimes, 0, sizeof(double) * _num_vtimes);
-}
 
-G1RemSetSummary::G1RemSetSummary(G1RemSet* rem_set) :
-  _rem_set(rem_set),
-  _total_mutator_refined_cards(0),
-  _total_concurrent_refined_cards(0),
-  _num_coarsenings(0),
-  _num_vtimes(G1ConcurrentRefine::max_num_threads()),
-  _rs_threads_vtimes(NEW_C_HEAP_ARRAY(double, _num_vtimes, mtGC)),
-  _sampling_thread_vtime(0.0f) {
-  update();
+  if (should_update) {
+    update();
+  }
 }
 
 G1RemSetSummary::~G1RemSetSummary() {

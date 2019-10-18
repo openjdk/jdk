@@ -247,6 +247,7 @@ JNIEXPORT jobject JNICALL Java_sun_security_krb5_Credentials_acquireDefaultNativ
 
     int netypes;
     jint *etypes = NULL;
+    int proxy_flag = 0;
 
     /* Initialize the Kerberos 5 context */
     err = krb5_init_context (&kcontext);
@@ -258,6 +259,48 @@ JNIEXPORT jobject JNICALL Java_sun_security_krb5_Credentials_acquireDefaultNativ
     if (!err) {
         err = krb5_cc_set_flags (kcontext, ccache, flags); /* turn off OPENCLOSE */
     }
+
+    // First round read. The proxy_impersonator config flag is not supported.
+    // This ccache will not be used if this flag exists.
+    if (!err) {
+        err = krb5_cc_start_seq_get (kcontext, ccache, &cursor);
+    }
+
+    if (!err) {
+        while ((err = krb5_cc_next_cred (kcontext, ccache, &cursor, &creds)) == 0) {
+            char *serverName = NULL;
+
+            if (!err) {
+                err = krb5_unparse_name (kcontext, creds.server, &serverName);
+                printiferr (err, "while unparsing server name");
+            }
+
+            if (!err) {
+                if (!strcmp(serverName, "krb5_ccache_conf_data/proxy_impersonator@X-CACHECONF:")) {
+                    proxy_flag = 1;
+                }
+            }
+
+            if (serverName != NULL) { krb5_free_unparsed_name (kcontext, serverName); }
+
+            krb5_free_cred_contents (kcontext, &creds);
+
+            if (proxy_flag) break;
+        }
+
+        if (err == KRB5_CC_END) { err = 0; }
+        printiferr (err, "while retrieving a ticket");
+    }
+
+    if (!err) {
+        err = krb5_cc_end_seq_get (kcontext, ccache, &cursor);
+        printiferr (err, "while finishing ticket retrieval");
+    }
+
+    if (proxy_flag) {
+        goto outer_cleanup;
+    }
+    // End of first round read
 
     if (!err) {
         err = krb5_cc_start_seq_get (kcontext, ccache, &cursor);
@@ -388,6 +431,7 @@ cleanup:
         printiferr (err, "while finishing ticket retrieval");
     }
 
+outer_cleanup:
     if (!err) {
         flags = KRB5_TC_OPENCLOSE; /* restore OPENCLOSE mode */
         err = krb5_cc_set_flags (kcontext, ccache, flags);

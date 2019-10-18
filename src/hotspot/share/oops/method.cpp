@@ -118,17 +118,22 @@ Method::Method(ConstMethod* xconst, AccessFlags access_flags) {
 void Method::deallocate_contents(ClassLoaderData* loader_data) {
   MetadataFactory::free_metadata(loader_data, constMethod());
   set_constMethod(NULL);
-#if INCLUDE_JVMCI
-  if (method_data()) {
-    FailedSpeculation::free_failed_speculations(method_data()->get_failed_speculations_address());
-  }
-#endif
   MetadataFactory::free_metadata(loader_data, method_data());
   set_method_data(NULL);
   MetadataFactory::free_metadata(loader_data, method_counters());
   clear_method_counters();
   // The nmethod will be gone when we get here.
   if (code() != NULL) _code = NULL;
+}
+
+void Method::release_C_heap_structures() {
+  if (method_data()) {
+#if INCLUDE_JVMCI
+    FailedSpeculation::free_failed_speculations(method_data()->get_failed_speculations_address());
+#endif
+    // Destroy MethodData
+    method_data()->~MethodData();
+  }
 }
 
 address Method::get_i2c_entry() {

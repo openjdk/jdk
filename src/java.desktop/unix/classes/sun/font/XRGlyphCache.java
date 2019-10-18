@@ -114,6 +114,9 @@ public class XRGlyphCache implements GlyphDisposedListener {
         for (int i = 0; i < glyphList.getNumGlyphs(); i++) {
             XRGlyphCacheEntry glyph;
 
+            if (imgPtrs[i] == 0L) {
+                continue;
+            }
             // Find uncached glyphs and queue them for upload
             if ((glyph = getEntryForPointer(imgPtrs[i])) == null) {
                 glyph = new XRGlyphCacheEntry(imgPtrs[i], glyphList);

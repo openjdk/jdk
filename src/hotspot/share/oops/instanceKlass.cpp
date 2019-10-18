@@ -2497,10 +2497,18 @@ void InstanceKlass::unload_class(InstanceKlass* ik) {
 #endif
 }
 
+static void method_release_C_heap_structures(Method* m) {
+  m->release_C_heap_structures();
+}
+
 void InstanceKlass::release_C_heap_structures(InstanceKlass* ik) {
   // Clean up C heap
   ik->release_C_heap_structures();
   ik->constants()->release_C_heap_structures();
+
+  // Deallocate and call destructors for MDO mutexes
+  ik->methods_do(method_release_C_heap_structures);
+
 }
 
 void InstanceKlass::release_C_heap_structures() {

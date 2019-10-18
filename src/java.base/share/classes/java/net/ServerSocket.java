@@ -32,6 +32,7 @@ import java.util.Objects;
 import java.util.Set;
 import java.util.Collections;
 
+import sun.security.util.SecurityConstants;
 import sun.net.PlatformSocketImpl;
 
 /**
@@ -73,11 +74,23 @@ class ServerSocket implements java.io.Closeable {
      *
      * @throws     NullPointerException if impl is {@code null}.
      *
+     * @throws     SecurityException if a security manager is set and
+     *             its {@code checkPermission} method doesn't allow
+     *             {@code NetPermission("setSocketImpl")}.
      * @since 12
      */
     protected ServerSocket(SocketImpl impl) {
         Objects.requireNonNull(impl);
+        checkPermission();
         this.impl = impl;
+    }
+
+    private static Void checkPermission() {
+        SecurityManager sm = System.getSecurityManager();
+        if (sm != null) {
+            sm.checkPermission(SecurityConstants.SET_SOCKETIMPL_PERMISSION);
+        }
+        return null;
     }
 
     /**

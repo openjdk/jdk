@@ -463,10 +463,10 @@ final class PropertyPermissionCollection extends PermissionCollection
      *
      * @param permission the Permission object to add.
      *
-     * @throws    IllegalArgumentException - if the permission is not a
+     * @throws    IllegalArgumentException   if the permission is not a
      *                                       PropertyPermission
      *
-     * @throws    SecurityException - if this PropertyPermissionCollection
+     * @throws    SecurityException   if this PropertyPermissionCollection
      *                                object has been marked readonly
      */
     @Override

@@ -55,6 +55,7 @@ public class AtomicReferenceArray<E> implements java.io.Serializable {
     private static final long serialVersionUID = -6209656149925076980L;
     private static final VarHandle AA
         = MethodHandles.arrayElementVarHandle(Object[].class);
+    @SuppressWarnings("serial") // Conditionally serializable
     private final Object[] array; // must have exact type Object[]
 
     /**

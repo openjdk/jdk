@@ -114,8 +114,9 @@ void G1FullGCPrepareTask::G1CalculatePointersClosure::reset_region_metadata(Heap
   hr->rem_set()->clear();
   hr->clear_cardtable();
 
-  if (_g1h->g1_hot_card_cache()->use_cache()) {
-    _g1h->g1_hot_card_cache()->reset_card_counts(hr);
+  G1HotCardCache* hcc = _g1h->hot_card_cache();
+  if (hcc->use_cache()) {
+    hcc->reset_card_counts(hr);
   }
 }
 

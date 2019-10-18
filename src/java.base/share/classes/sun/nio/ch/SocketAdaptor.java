@@ -36,6 +36,9 @@ import java.net.SocketException;
 import java.net.SocketOption;
 import java.net.StandardSocketOptions;
 import java.nio.channels.SocketChannel;
+import java.security.AccessController;
+import java.security.PrivilegedActionException;
+import java.security.PrivilegedExceptionAction;
 import java.util.Set;
 
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
@@ -61,10 +64,11 @@ class SocketAdaptor
     }
 
     static Socket create(SocketChannelImpl sc) {
+        PrivilegedExceptionAction<Socket> pa = () -> new SocketAdaptor(sc);
         try {
-            return new SocketAdaptor(sc);
-        } catch (SocketException e) {
-            throw new InternalError("Should not reach here");
+            return AccessController.doPrivileged(pa);
+        } catch (PrivilegedActionException pae) {
+            throw new InternalError("Should not reach here", pae);
         }
     }
 

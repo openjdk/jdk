@@ -131,14 +131,34 @@ class CgroupMemorySubsystem: CgroupSubsystem {
      * hierarchy. If set to true consider also memory.stat
      * file if everything else seems unlimited */
     bool _uses_mem_hierarchy;
+    volatile jlong _memory_limit_in_bytes;
+    volatile jlong _next_check_counter;
 
  public:
     CgroupMemorySubsystem(char *root, char *mountpoint) : CgroupSubsystem::CgroupSubsystem(root, mountpoint) {
       _uses_mem_hierarchy = false;
+      _memory_limit_in_bytes = -1;
+      _next_check_counter = min_jlong;
+
     }
 
     bool is_hierarchical() { return _uses_mem_hierarchy; }
     void set_hierarchical(bool value) { _uses_mem_hierarchy = value; }
+
+    bool should_check_memory_limit() {
+      return os::elapsed_counter() > _next_check_counter;
+    }
+    jlong memory_limit_in_bytes() { return _memory_limit_in_bytes; }
+    void set_memory_limit_in_bytes(jlong value) {
+      _memory_limit_in_bytes = value;
+      // max memory limit is unlikely to change, but we want to remain
+      // responsive to configuration changes. A very short (20ms) grace time
+      // between re-read avoids excessive overhead during startup without
+      // significantly reducing the VMs ability to promptly react to reduced
+      // memory availability
+      _next_check_counter = os::elapsed_counter() + (NANOSECS_PER_SEC/50);
+    }
+
 };
 
 CgroupMemorySubsystem* memory = NULL;
@@ -461,6 +481,16 @@ jlong OSContainer::uses_mem_hierarchy() {
  *    OSCONTAINER_ERROR for not supported
  */
 jlong OSContainer::memory_limit_in_bytes() {
+  if (!memory->should_check_memory_limit()) {
+    return memory->memory_limit_in_bytes();
+  }
+  jlong memory_limit = read_memory_limit_in_bytes();
+  // Update CgroupMemorySubsystem to avoid re-reading container settings too often
+  memory->set_memory_limit_in_bytes(memory_limit);
+  return memory_limit;
+}
+
+jlong OSContainer::read_memory_limit_in_bytes() {
   GET_CONTAINER_INFO(julong, memory, "/memory.limit_in_bytes",
                      "Memory Limit is: " JULONG_FORMAT, JULONG_FORMAT, memlimit);
 

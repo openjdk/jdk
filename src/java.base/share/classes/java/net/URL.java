@@ -484,6 +484,16 @@ public final class URL implements java.io.Serializable {
                 throw new MalformedURLException(s);
             }
         }
+        if ("jar".equalsIgnoreCase(protocol)) {
+            if (handler instanceof sun.net.www.protocol.jar.Handler) {
+                // URL.openConnection() would throw a confusing exception
+                // so generate a better exception here instead.
+                String s = ((sun.net.www.protocol.jar.Handler) handler).checkNestedProtocol(file);
+                if (s != null) {
+                    throw new MalformedURLException(s);
+                }
+            }
+        }
     }
 
     /**

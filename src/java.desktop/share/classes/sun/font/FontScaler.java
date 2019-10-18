@@ -173,6 +173,12 @@ public abstract class FontScaler implements DisposerRecord {
              scaler context objects! */
     public void dispose() {}
 
+    /**
+     * Used when the native resources held by the scaler need
+     * to be released before the 2D disposer runs.
+     */
+    public void disposeScaler() {}
+
     /* At the moment these 3 methods are needed for Type1 fonts only.
      * For Truetype fonts we extract required info outside of scaler
      * on java layer.

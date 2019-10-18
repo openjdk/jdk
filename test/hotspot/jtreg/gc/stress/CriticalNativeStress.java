@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, Red Hat, Inc. and/or its affiliates.
+ * Copyright (c) 2018, 2019, Red Hat, Inc. and/or its affiliates.
  *
  * This code is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License version 2 only, as
@@ -31,7 +31,7 @@ import gc.CriticalNative;
  * @key gc
  * @bug 8199868
  * @library /
- * @requires (os.arch =="x86_64" | os.arch == "amd64") & vm.gc.Epsilon & !vm.graal.enabled
+ * @requires (os.arch =="x86_64" | os.arch == "amd64" | os.arch=="x86" | os.arch=="i386") & vm.gc.Epsilon & !vm.graal.enabled
  * @summary test argument pinning by nmethod wrapper of critical native method
  * @run main/othervm/native -XX:+UnlockExperimentalVMOptions -XX:+UseEpsilonGC -Xcomp -Xmx1G -XX:+CriticalJNINatives gc.stress.CriticalNativeStress
  */
@@ -41,7 +41,7 @@ import gc.CriticalNative;
  * @key gc
  * @bug 8199868
  * @library /
- * @requires (os.arch =="x86_64" | os.arch == "amd64") & vm.gc.Shenandoah & !vm.graal.enabled
+ * @requires (os.arch =="x86_64" | os.arch == "amd64" | os.arch=="x86" | os.arch=="i386") & vm.gc.Shenandoah & !vm.graal.enabled
  * @summary test argument pinning by nmethod wrapper of critical native method
  * @run main/othervm/native -XX:+UnlockDiagnosticVMOptions -XX:+UnlockExperimentalVMOptions -XX:+UseShenandoahGC -XX:ShenandoahGCMode=passive    -XX:-ShenandoahDegeneratedGC -Xcomp -Xmx512M -XX:+CriticalJNINatives gc.stress.CriticalNativeStress
  * @run main/othervm/native -XX:+UnlockDiagnosticVMOptions -XX:+UnlockExperimentalVMOptions -XX:+UseShenandoahGC -XX:ShenandoahGCMode=passive    -XX:+ShenandoahDegeneratedGC -Xcomp -Xmx512M -XX:+CriticalJNINatives gc.stress.CriticalNativeStress

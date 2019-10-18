@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -126,11 +126,19 @@ public class AArch64HotSpotRegisterConfig implements RegisterConfig {
     public static final Register threadRegister = r28;
     public static final Register fp = r29;
 
-    private static final RegisterArray reservedRegisters = new RegisterArray(rscratch1, rscratch2, threadRegister, fp, lr, r31, zr, sp);
+    /**
+     * The heapBaseRegister, i.e. r27, is reserved unconditionally because HotSpot does not intend
+     * to support it as an allocatable register even when compressed oops is off. This register is
+     * excluded from callee-saved register at
+     * cpu/aarch64/sharedRuntime_aarch64.cpp:RegisterSaver::save_live_registers, which may lead to
+     * dereferencing unknown value from the stack at
+     * share/runtime/stackValue.cpp:StackValue::create_stack_value during deoptimization.
+     */
+    private static final RegisterArray reservedRegisters = new RegisterArray(rscratch1, rscratch2, heapBaseRegister, threadRegister, fp, lr, r31, zr, sp);
 
-    private static RegisterArray initAllocatable(Architecture arch, boolean reserveForHeapBase) {
+    private static RegisterArray initAllocatable(Architecture arch) {
         RegisterArray allRegisters = arch.getAvailableValueRegisters();
-        Register[] registers = new Register[allRegisters.size() - reservedRegisters.size() - (reserveForHeapBase ? 1 : 0)];
+        Register[] registers = new Register[allRegisters.size() - reservedRegisters.size()];
         List<Register> reservedRegistersList = reservedRegisters.asList();
 
         int idx = 0;
@@ -139,12 +147,7 @@ public class AArch64HotSpotRegisterConfig implements RegisterConfig {
                 // skip reserved registers
                 continue;
             }
-            assert !(reg.equals(threadRegister) || reg.equals(fp) || reg.equals(lr) || reg.equals(r31) || reg.equals(zr) || reg.equals(sp));
-            if (reserveForHeapBase && reg.equals(heapBaseRegister)) {
-                // skip heap base register
-                continue;
-            }
-
+            assert !(reg.equals(heapBaseRegister) || reg.equals(threadRegister) || reg.equals(fp) || reg.equals(lr) || reg.equals(r31) || reg.equals(zr) || reg.equals(sp)) : reg;
             registers[idx++] = reg;
         }
 
@@ -152,8 +155,8 @@ public class AArch64HotSpotRegisterConfig implements RegisterConfig {
         return new RegisterArray(registers);
     }
 
-    public AArch64HotSpotRegisterConfig(TargetDescription target, boolean useCompressedOops) {
-        this(target, initAllocatable(target.arch, useCompressedOops));
+    public AArch64HotSpotRegisterConfig(TargetDescription target) {
+        this(target, initAllocatable(target.arch));
         assert callerSaved.size() >= allocatable.size();
     }
 

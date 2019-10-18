@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,29 +27,51 @@ import java.awt.Graphics2D;
 import java.awt.GraphicsConfiguration;
 import java.awt.GraphicsEnvironment;
 import java.awt.Image;
+import java.awt.Transparency;
+import java.awt.color.ColorSpace;
 import java.awt.image.BufferedImage;
+import java.awt.image.ColorModel;
+import java.awt.image.ComponentColorModel;
 import java.awt.image.DataBuffer;
 import java.awt.image.DataBufferByte;
 import java.awt.image.DataBufferInt;
 import java.awt.image.DataBufferShort;
+import java.awt.image.Raster;
 import java.awt.image.VolatileImage;
+import java.awt.image.WritableRaster;
 import java.io.File;
 import java.io.IOException;
 
 import javax.imageio.ImageIO;
 
-import static java.awt.Transparency.*;
-import static java.awt.image.BufferedImage.*;
+import static java.awt.Transparency.BITMASK;
+import static java.awt.Transparency.OPAQUE;
+import static java.awt.Transparency.TRANSLUCENT;
+import static java.awt.image.BufferedImage.TYPE_3BYTE_BGR;
+import static java.awt.image.BufferedImage.TYPE_4BYTE_ABGR;
+import static java.awt.image.BufferedImage.TYPE_4BYTE_ABGR_PRE;
+import static java.awt.image.BufferedImage.TYPE_BYTE_BINARY;
+import static java.awt.image.BufferedImage.TYPE_BYTE_INDEXED;
+import static java.awt.image.BufferedImage.TYPE_CUSTOM;
+import static java.awt.image.BufferedImage.TYPE_INT_ARGB;
+import static java.awt.image.BufferedImage.TYPE_INT_ARGB_PRE;
+import static java.awt.image.BufferedImage.TYPE_INT_BGR;
+import static java.awt.image.BufferedImage.TYPE_INT_RGB;
 
 /**
  * @test
  * @key headful
- * @bug 8029253
+ * @bug 8029253 6207877
  * @summary Tests asymmetric source offsets when unmanaged image is drawn to VI.
  *          Results of the blit to compatibleImage are used for comparison.
  * @author Sergey Bylokhov
+ * @run main/othervm IncorrectUnmanagedImageSourceOffset
+ * @run main/othervm -Dsun.java2d.uiScale=1 IncorrectUnmanagedImageSourceOffset
+ * @run main/othervm -Dsun.java2d.uiScale=2 IncorrectUnmanagedImageSourceOffset
  */
 public final class IncorrectUnmanagedImageSourceOffset {
+
+    // See the same test for managed images: IncorrectManagedImageSourceOffset
 
     private static final int[] TYPES = {TYPE_INT_RGB, TYPE_INT_ARGB,
                                         TYPE_INT_ARGB_PRE, TYPE_INT_BGR,
@@ -58,7 +80,7 @@ public final class IncorrectUnmanagedImageSourceOffset {
                                         /*TYPE_USHORT_565_RGB,
                                         TYPE_USHORT_555_RGB, TYPE_BYTE_GRAY,
                                         TYPE_USHORT_GRAY,*/ TYPE_BYTE_BINARY,
-                                        TYPE_BYTE_INDEXED};
+                                        TYPE_BYTE_INDEXED, TYPE_CUSTOM};
     private static final int[] TRANSPARENCIES = {OPAQUE, BITMASK, TRANSLUCENT};
 
     public static void main(final String[] args) throws IOException {
@@ -122,7 +144,12 @@ public final class IncorrectUnmanagedImageSourceOffset {
     }
 
     private static BufferedImage makeUnmanagedBI(final int type) {
-        final BufferedImage bi = new BufferedImage(511, 255, type);
+        final BufferedImage bi;
+        if (type == TYPE_CUSTOM) {
+            bi = makeCustomUnmanagedBI();
+        } else {
+            bi = new BufferedImage(511, 255, type);
+        }
         final DataBuffer db = bi.getRaster().getDataBuffer();
         if (db instanceof DataBufferInt) {
             ((DataBufferInt) db).getData();
@@ -130,13 +157,28 @@ public final class IncorrectUnmanagedImageSourceOffset {
             ((DataBufferShort) db).getData();
         } else if (db instanceof DataBufferByte) {
             ((DataBufferByte) db).getData();
-        } else {
-            try {
-                bi.setAccelerationPriority(0.0f);
-            } catch (final Throwable ignored) {
-            }
         }
+        bi.setAccelerationPriority(0.0f);
         return bi;
+    }
+
+    /**
+     * Returns the custom buffered image, which mostly identical to
+     * BufferedImage.(w,h,TYPE_3BYTE_BGR), but uses the bigger scanlineStride.
+     * This means that the raster will have gaps, between the rows.
+     */
+    private static BufferedImage makeCustomUnmanagedBI() {
+        int w = 511, h = 255;
+        ColorSpace cs = ColorSpace.getInstance(ColorSpace.CS_sRGB);
+        int[] nBits = {8, 8, 8};
+        int[] bOffs = {2, 1, 0};
+        ColorModel colorModel = new ComponentColorModel(cs, nBits, false, false,
+                                                        Transparency.OPAQUE,
+                                                        DataBuffer.TYPE_BYTE);
+        WritableRaster raster =
+                Raster.createInterleavedRaster(DataBuffer.TYPE_BYTE, w, h,
+                                               w * 3 + 2, 3, bOffs, null);
+        return new BufferedImage(colorModel, raster, true, null);
     }
 
     private static void fill(final Image image) {

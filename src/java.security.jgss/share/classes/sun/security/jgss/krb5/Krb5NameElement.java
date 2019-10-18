@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -144,7 +144,7 @@ public class Krb5NameElement
         return new Krb5NameElement(principalName, gssNameStr, gssNameType);
     }
 
-    static Krb5NameElement getInstance(PrincipalName principalName) {
+    public static Krb5NameElement getInstance(PrincipalName principalName) {
         return new Krb5NameElement(principalName,
                                    principalName.getName(),
                                    Krb5MechFactory.NT_GSS_KRB5_PRINCIPAL);

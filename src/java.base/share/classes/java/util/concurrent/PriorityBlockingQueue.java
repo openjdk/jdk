@@ -173,6 +173,7 @@ public class PriorityBlockingQueue<E> extends AbstractQueue<E>
     /**
      * Condition for blocking when empty.
      */
+    @SuppressWarnings("serial") // Classes implementing Condition may be serializable.
     private final Condition notEmpty = lock.newCondition();
 
     /**

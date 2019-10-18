@@ -273,6 +273,7 @@ JNIEXPORT jlong JNICALL AWTFontGenerateImage(AWTFont pFont, AWTChar2b* xChar) {
     unsigned int imageSize;
     JNIEnv *env;
 
+
     FONT_AWT_LOCK();
 /*     XTextExtents16(xFont, xChar, 1, &direction, &ascent, &descent, &xcs); */
     XQueryTextExtents16(awt_display,xFont->fid, xChar, 1,
@@ -280,8 +281,11 @@ JNIEXPORT jlong JNICALL AWTFontGenerateImage(AWTFont pFont, AWTChar2b* xChar) {
     width = xcs.rbearing - xcs.lbearing;
     height = xcs.ascent+xcs.descent;
     imageSize = width*height;
-
     glyphInfo = (GlyphInfo*)malloc(sizeof(GlyphInfo)+imageSize);
+    if (glyphInfo == NULL) {
+        AWT_UNLOCK();
+        return (jlong)(uintptr_t)NULL;
+    }
     glyphInfo->cellInfo = NULL;
     glyphInfo->width = width;
     glyphInfo->height = height;

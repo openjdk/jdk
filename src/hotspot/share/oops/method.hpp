@@ -1006,6 +1006,8 @@ public:
   // Deallocation function for redefine classes or if an error occurs
   void deallocate_contents(ClassLoaderData* loader_data);
 
+  void release_C_heap_structures();
+
   Method* get_new_method() const {
     InstanceKlass* holder = method_holder();
     Method* new_method = holder->method_with_idnum(orig_method_idnum());

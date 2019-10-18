@@ -604,8 +604,10 @@ public class ThreadPoolExecutor extends AbstractExecutorService {
         private static final long serialVersionUID = 6138294804551838833L;
 
         /** Thread this worker is running in.  Null if factory fails. */
+        @SuppressWarnings("serial") // Unlikely to be serializable
         final Thread thread;
         /** Initial task to run.  Possibly null. */
+        @SuppressWarnings("serial") // Not statically typed as Serializable
         Runnable firstTask;
         /** Per-thread task counter */
         volatile long completedTasks;

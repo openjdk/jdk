@@ -61,34 +61,8 @@ public class JavaScriptScanner extends DocTreePathScanner<Void, Consumer<DocTree
     public Void visitAttribute(AttributeTree tree, Consumer<DocTreePath> f) {
         String name = tree.getName().toString().toLowerCase(Locale.ENGLISH);
         switch (name) {
-            // See https://www.w3.org/TR/html-markup/global-attributes.html#common.attrs.event-handler
-            case "onabort":  case "onblur":  case "oncanplay":  case "oncanplaythrough":
-            case "onchange":  case "onclick":  case "oncontextmenu":  case "ondblclick":
-            case "ondrag":  case "ondragend":  case "ondragenter":  case "ondragleave":
-            case "ondragover":  case "ondragstart":  case "ondrop":  case "ondurationchange":
-            case "onemptied":  case "onended":  case "onerror":  case "onfocus":  case "oninput":
-            case "oninvalid":  case "onkeydown":  case "onkeypress":  case "onkeyup":
-            case "onload":  case "onloadeddata":  case "onloadedmetadata":  case "onloadstart":
-            case "onmousedown":  case "onmousemove":  case "onmouseout":  case "onmouseover":
-            case "onmouseup":  case "onmousewheel":  case "onpause":  case "onplay":
-            case "onplaying":  case "onprogress":  case "onratechange":  case "onreadystatechange":
-            case "onreset":  case "onscroll":  case "onseeked":  case "onseeking":
-            case "onselect":  case "onshow":  case "onstalled":  case "onsubmit":  case "onsuspend":
-            case "ontimeupdate":  case "onvolumechange":  case "onwaiting":
-
             // See https://www.w3.org/TR/html4/sgml/dtd.html
-            // Most of the attributes that take a %Script are also defined as event handlers
-            // in HTML 5. The one exception is onunload.
-            // case "onchange":  case "onclick":   case "ondblclick":  case "onfocus":
-            // case "onkeydown":  case "onkeypress":  case "onkeyup":  case "onload":
-            // case "onmousedown":  case "onmousemove":  case "onmouseout":  case "onmouseover":
-            // case "onmouseup":  case "onreset":  case "onselect":  case "onsubmit":
-            case "onunload":
-                f.accept(getCurrentPath());
-                break;
-
-            // See https://www.w3.org/TR/html4/sgml/dtd.html
-            //     https://www.w3.org/TR/html5/
+            //     https://www.w3.org/TR/html52/fullindex.html#attributes-table
             // These are all the attributes that take a %URI or a valid URL potentially surrounded
             // by spaces
             case "action":  case "cite":  case "classid":  case "codebase":  case "data":
@@ -100,6 +74,14 @@ public class JavaScriptScanner extends DocTreePathScanner<Void, Consumer<DocTree
                     if (v.startsWith("javascript:")) {
                         f.accept(getCurrentPath());
                     }
+                }
+                break;
+            // See https://www.w3.org/TR/html52/webappapis.html#events-event-handlers
+            // An event handler has a name, which always starts with "on" and is followed by
+            // the name of the event for which it is intended.
+            default:
+                if (name.startsWith("on")) {
+                    f.accept(getCurrentPath());
                 }
                 break;
         }

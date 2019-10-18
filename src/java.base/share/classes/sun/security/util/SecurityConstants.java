@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -96,6 +96,10 @@ public final class SecurityConstants {
     // java.net.ResponseCache
     public static final NetPermission GET_RESPONSECACHE_PERMISSION =
        new NetPermission("getResponseCache");
+
+    // java.net.ServerSocket, java.net.Socket
+    public static final NetPermission SET_SOCKETIMPL_PERMISSION =
+        new NetPermission("setSocketImpl");
 
     // java.lang.SecurityManager, sun.applet.AppletPanel
     public static final RuntimePermission CREATE_CLASSLOADER_PERMISSION =

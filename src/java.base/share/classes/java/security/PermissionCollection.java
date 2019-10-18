@@ -107,9 +107,9 @@ public abstract class PermissionCollection implements java.io.Serializable {
      *
      * @param permission the Permission object to add.
      *
-     * @throws    SecurityException -  if this PermissionCollection object
+     * @throws    SecurityException    if this PermissionCollection object
      *                                 has been marked readonly
-     * @throws    IllegalArgumentException - if this PermissionCollection
+     * @throws    IllegalArgumentException   if this PermissionCollection
      *                object is a homogeneous collection and the permission
      *                is not of the correct type.
      */

@@ -41,6 +41,9 @@ public:
   ShenandoahLock() : _state(unlocked), _owner(NULL) {};
 
   void lock() {
+#ifdef ASSERT
+    assert(_owner != Thread::current(), "reentrant locking attempt, would deadlock");
+#endif
     Thread::SpinAcquire(&_state, "Shenandoah Heap Lock");
 #ifdef ASSERT
     assert(_state == locked, "must be locked");

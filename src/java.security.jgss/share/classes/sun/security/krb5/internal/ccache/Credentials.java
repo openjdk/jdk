@@ -169,6 +169,18 @@ public class Credentials {
         return sname;
     }
 
+    public Ticket getTicket() throws RealmException {
+        return ticket;
+    }
+
+    public PrincipalName getServicePrincipal2() throws RealmException {
+        return secondTicket == null ? null : secondTicket.sname;
+    }
+
+    public PrincipalName getClientPrincipal() throws RealmException {
+        return cname;
+    }
+
     public sun.security.krb5.Credentials setKrbCreds() {
         // Note: We will not pass authorizationData to s.s.k.Credentials. The
         // field in that class will be passed to Krb5Context as the return
@@ -209,7 +221,15 @@ public class Credentials {
         return key.getEType();
     }
 
+    public EncryptionKey getKey() {
+        return key;
+    }
+
     public int getTktEType() {
         return ticket.encPart.getEType();
+    }
+
+    public int getTktEType2() {
+        return (secondTicket == null) ? 0 : secondTicket.encPart.getEType();
     }
 }

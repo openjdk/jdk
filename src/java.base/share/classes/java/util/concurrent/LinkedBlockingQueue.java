@@ -156,12 +156,14 @@ public class LinkedBlockingQueue<E> extends AbstractQueue<E>
     private final ReentrantLock takeLock = new ReentrantLock();
 
     /** Wait queue for waiting takes */
+    @SuppressWarnings("serial") // Classes implementing Condition may be serializable.
     private final Condition notEmpty = takeLock.newCondition();
 
     /** Lock held by put, offer, etc */
     private final ReentrantLock putLock = new ReentrantLock();
 
     /** Wait queue for waiting puts */
+    @SuppressWarnings("serial") // Classes implementing Condition may be serializable.
     private final Condition notFull = putLock.newCondition();
 
     /**

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,19 +23,64 @@
 
 /*
  * @test
- * @bug 4391898
+ * @bug 4391898 8230407
  * @summary SocketPermission(":",...) throws ArrayIndexOutOfBoundsException
+ *          SocketPermission constructor argument checks
+ * @run testng Ctor
  */
 
-import java.net.*;
+import java.net.SocketPermission;
+import org.testng.annotations.Test;
+import static java.lang.System.out;
+import static org.testng.Assert.*;
 
 public class Ctor {
-    public static void main(String[] args) {
-        try {
-            SocketPermission sp = new java.net.SocketPermission(":", "connect");
-        } catch (java.lang.ArrayIndexOutOfBoundsException e) {
-            throw new RuntimeException(e);
-        }
-        System.out.println("Test passed!!!");
+
+    static final Class<NullPointerException> NPE = NullPointerException.class;
+    static final Class<IllegalArgumentException> IAE = IllegalArgumentException.class;
+
+    @Test
+    public void positive() {
+        // ArrayIndexOutOfBoundsException is the bug, 4391898, exists
+        SocketPermission sp1 =  new SocketPermission(":", "connect");
+    }
+
+    @Test
+    public void npe() {
+        NullPointerException e;
+        e = expectThrows(NPE, () -> new SocketPermission(null, null));
+        out.println("caught expected NPE: " + e);
+        e = expectThrows(NPE, () -> new SocketPermission("foo", null));
+        out.println("caught expected NPE: " + e);
+        e = expectThrows(NPE, () -> new SocketPermission(null, "connect"));
+        out.println("caught expected NPE: " + e);
+    }
+
+    @Test
+    public void iae() {
+        IllegalArgumentException e;
+        // host
+        e = expectThrows(IAE, () -> new SocketPermission("1:2:3:4", "connect"));
+        out.println("caught expected IAE: " + e);
+        e = expectThrows(IAE, () -> new SocketPermission("foo:5-4", "connect"));
+        out.println("caught expected IAE: " + e);
+
+        // actions
+        e = expectThrows(IAE, () -> new SocketPermission("foo", ""));
+        out.println("caught expected IAE: " + e);
+        e = expectThrows(IAE, () -> new SocketPermission("foo", "badAction"));
+        out.println("caught expected IAE: " + e);
+        e = expectThrows(IAE, () -> new SocketPermission("foo", "badAction,connect"));
+        out.println("caught expected IAE: " + e);
+        e = expectThrows(IAE, () -> new SocketPermission("foo", "badAction,,connect"));
+        out.println("caught expected IAE: " + e);
+        e = expectThrows(IAE, () -> new SocketPermission("foo", ",connect"));
+        out.println("caught expected IAE: " + e);
+        e = expectThrows(IAE, () -> new SocketPermission("foo", ",,connect"));
+        out.println("caught expected IAE: " + e);
+        e = expectThrows(IAE, () -> new SocketPermission("foo", "connect,"));
+        out.println("caught expected IAE: " + e);
+        e = expectThrows(IAE, () -> new SocketPermission("foo", "connect,,"));
+        out.println("caught expected IAE: " + e);
     }
 }

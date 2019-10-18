@@ -201,24 +201,13 @@ final class SupportedGroupsExtension {
                         // Primary XDH (RFC 7748) curves
                         NamedGroup.X25519,
 
-                        // Primary NIST curves (e.g. used in TLSv1.3)
+                        // Primary NIST Suite B curves
                         NamedGroup.SECP256_R1,
                         NamedGroup.SECP384_R1,
                         NamedGroup.SECP521_R1,
 
                         // Secondary XDH curves
                         NamedGroup.X448,
-
-                        // Secondary NIST curves
-                        NamedGroup.SECT283_K1,
-                        NamedGroup.SECT283_R1,
-                        NamedGroup.SECT409_K1,
-                        NamedGroup.SECT409_R1,
-                        NamedGroup.SECT571_K1,
-                        NamedGroup.SECT571_R1,
-
-                        // non-NIST curves
-                        NamedGroup.SECP256_K1,
 
                         // FFDHE (RFC 7919)
                         NamedGroup.FFDHE_2048,

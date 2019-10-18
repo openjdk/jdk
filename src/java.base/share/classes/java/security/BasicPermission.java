@@ -349,13 +349,13 @@ final class BasicPermissionCollection
      *
      * @param permission the Permission object to add.
      *
-     * @throws    IllegalArgumentException - if the permission is not a
+     * @throws    IllegalArgumentException   if the permission is not a
      *                                       BasicPermission, or if
      *                                       the permission is not of the
      *                                       same Class as the other
      *                                       permissions in this collection.
      *
-     * @throws    SecurityException - if this BasicPermissionCollection object
+     * @throws    SecurityException   if this BasicPermissionCollection object
      *                                has been marked readonly
      */
     @Override

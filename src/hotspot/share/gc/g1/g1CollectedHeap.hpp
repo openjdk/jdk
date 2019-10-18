@@ -129,7 +129,6 @@ class G1RegionMappingChangedListener : public G1MappingChangedListener {
 };
 
 class G1CollectedHeap : public CollectedHeap {
-  friend class G1FreeCollectionSetTask;
   friend class VM_CollectForMetadataAllocation;
   friend class VM_G1CollectForAllocation;
   friend class VM_G1CollectFull;
@@ -1138,7 +1137,7 @@ public:
     return _reserved.contains(addr);
   }
 
-  G1HotCardCache* g1_hot_card_cache() const { return _hot_card_cache; }
+  G1HotCardCache* hot_card_cache() const { return _hot_card_cache; }
 
   G1CardTable* card_table() const {
     return _card_table;

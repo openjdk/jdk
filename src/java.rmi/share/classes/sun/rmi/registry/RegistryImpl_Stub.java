@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,6 +24,11 @@
  */
 
 package sun.rmi.registry;
+
+import java.io.IOException;
+
+import sun.rmi.transport.StreamRemoteCall;
+
 /**
  * Stubs to invoke RegistryImpl remote methods.
  * Originally generated from RMIC but frozen to match RegistryImpl_Skel.
@@ -57,7 +62,7 @@ public final class RegistryImpl_Stub
     public void bind(java.lang.String $param_String_1, java.rmi.Remote $param_Remote_2)
             throws java.rmi.AccessException, java.rmi.AlreadyBoundException, java.rmi.RemoteException {
         try {
-            java.rmi.server.RemoteCall call = ref.newCall((java.rmi.server.RemoteObject) this, operations, 0, interfaceHash);
+            StreamRemoteCall call = (StreamRemoteCall)ref.newCall(this, operations, 0, interfaceHash);
             try {
                 java.io.ObjectOutput out = call.getOutputStream();
                 out.writeObject($param_String_1);
@@ -82,15 +87,14 @@ public final class RegistryImpl_Stub
     public java.lang.String[] list()
             throws java.rmi.AccessException, java.rmi.RemoteException {
         try {
-            java.rmi.server.RemoteCall call = ref.newCall((java.rmi.server.RemoteObject) this, operations, 1, interfaceHash);
+            StreamRemoteCall call = (StreamRemoteCall)ref.newCall(this, operations, 1, interfaceHash);
             ref.invoke(call);
             java.lang.String[] $result;
             try {
                 java.io.ObjectInput in = call.getInputStream();
                 $result = (java.lang.String[]) in.readObject();
-            } catch (java.io.IOException e) {
-                throw new java.rmi.UnmarshalException("error unmarshalling return", e);
-            } catch (java.lang.ClassNotFoundException e) {
+            } catch (ClassCastException | IOException | ClassNotFoundException e) {
+                call.discardPendingRefs();
                 throw new java.rmi.UnmarshalException("error unmarshalling return", e);
             } finally {
                 ref.done(call);
@@ -109,7 +113,7 @@ public final class RegistryImpl_Stub
     public java.rmi.Remote lookup(java.lang.String $param_String_1)
             throws java.rmi.AccessException, java.rmi.NotBoundException, java.rmi.RemoteException {
         try {
-            java.rmi.server.RemoteCall call = ref.newCall((java.rmi.server.RemoteObject) this, operations, 2, interfaceHash);
+            StreamRemoteCall call = (StreamRemoteCall)ref.newCall(this, operations, 2, interfaceHash);
             try {
                 java.io.ObjectOutput out = call.getOutputStream();
                 out.writeObject($param_String_1);
@@ -121,9 +125,8 @@ public final class RegistryImpl_Stub
             try {
                 java.io.ObjectInput in = call.getInputStream();
                 $result = (java.rmi.Remote) in.readObject();
-            } catch (java.io.IOException e) {
-                throw new java.rmi.UnmarshalException("error unmarshalling return", e);
-            } catch (java.lang.ClassNotFoundException e) {
+            } catch (ClassCastException | IOException | ClassNotFoundException e) {
+                call.discardPendingRefs();
                 throw new java.rmi.UnmarshalException("error unmarshalling return", e);
             } finally {
                 ref.done(call);
@@ -144,7 +147,7 @@ public final class RegistryImpl_Stub
     public void rebind(java.lang.String $param_String_1, java.rmi.Remote $param_Remote_2)
             throws java.rmi.AccessException, java.rmi.RemoteException {
         try {
-            java.rmi.server.RemoteCall call = ref.newCall((java.rmi.server.RemoteObject) this, operations, 3, interfaceHash);
+            StreamRemoteCall call = (StreamRemoteCall)ref.newCall(this, operations, 3, interfaceHash);
             try {
                 java.io.ObjectOutput out = call.getOutputStream();
                 out.writeObject($param_String_1);
@@ -167,7 +170,7 @@ public final class RegistryImpl_Stub
     public void unbind(java.lang.String $param_String_1)
             throws java.rmi.AccessException, java.rmi.NotBoundException, java.rmi.RemoteException {
         try {
-            java.rmi.server.RemoteCall call = ref.newCall((java.rmi.server.RemoteObject) this, operations, 4, interfaceHash);
+            StreamRemoteCall call = (StreamRemoteCall)ref.newCall(this, operations, 4, interfaceHash);
             try {
                 java.io.ObjectOutput out = call.getOutputStream();
                 out.writeObject($param_String_1);

@@ -47,8 +47,6 @@ class frame;
 // OS services (time, I/O) as well as other functionality with system-
 // dependent code.
 
-typedef void (*dll_func)(...);
-
 class Thread;
 class JavaThread;
 class NativeCallStack;
@@ -195,14 +193,9 @@ class os: AllStatic {
 
   // The "virtual time" of a thread is the amount of time a thread has
   // actually run.  The first function indicates whether the OS supports
-  // this functionality for the current thread, and if so:
-  //   * the second enables vtime tracking (if that is required).
-  //   * the third tells whether vtime is enabled.
-  //   * the fourth returns the elapsed virtual time for the current
-  //     thread.
+  // this functionality for the current thread, and if so the second
+  // returns the elapsed virtual time for the current thread.
   static bool supports_vtime();
-  static bool enable_vtime();
-  static bool vtime_enabled();
   static double elapsedVTime();
 
   // Return current local time in a string (YYYY-MM-DD HH:MM:SS).
@@ -254,14 +247,6 @@ class os: AllStatic {
     return _initial_active_processor_count;
   }
 
-  // Bind processes to processors.
-  //     This is a two step procedure:
-  //     first you generate a distribution of processes to processors,
-  //     then you bind processes according to that distribution.
-  // Compute a distribution for number of processes to processors.
-  //    Stores the processor id's into the distribution array argument.
-  //    Returns true if it worked, false if it didn't.
-  static bool distribute_processes(uint length, uint* distribution);
   // Binds the current process to a processor.
   //    Returns true if it worked, false if it didn't.
   static bool bind_to_processor(uint processor_id);
@@ -496,7 +481,6 @@ class os: AllStatic {
   static void verify_stack_alignment() PRODUCT_RETURN;
 
   static bool message_box(const char* title, const char* message);
-  static char* do_you_want_to_debug(const char* message);
 
   // run cmd in a separate process and return its exit code; or -1 on failures
   static int fork_and_exec(char *cmd, bool use_vfork_if_available = false);
@@ -520,7 +504,6 @@ class os: AllStatic {
   static void die();
 
   // File i/o operations
-  static const int default_file_open_flags();
   static int open(const char *path, int oflag, int mode);
   static FILE* open(int fd, const char* mode);
   static FILE* fopen(const char* path, const char* mode);
@@ -667,9 +650,6 @@ class os: AllStatic {
   // Will always return a valid string which is a static constant.
   // Will not change the value of errno.
   static const char* errno_name(int e);
-
-  // Determines whether the calling process is being debugged by a user-mode debugger.
-  static bool is_debugger_attached();
 
   // wait for a key press if PauseAtExit is set
   static void wait_for_keypress_at_exit(void);
@@ -964,10 +944,6 @@ class os: AllStatic {
 
     bool is_running() const {
       return _state == SR_RUNNING;
-    }
-
-    bool is_suspend_request() const {
-      return _state == SR_SUSPEND_REQUEST;
     }
 
     bool is_suspended() const {

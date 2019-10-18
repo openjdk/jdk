@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2019, Oracle and/or its affiliates. All rights reserved.
  */
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
@@ -34,6 +34,7 @@ import com.sun.org.apache.xpath.internal.res.XPATHErrorResources;
  * Tokenizes and parses XPath expressions. This should really be named
  * XPathParserImpl, and may be renamed in the future.
  * @xsl.usage general
+ * @LastModified: May 2019
  */
 public class XPathParser
 {
@@ -70,6 +71,9 @@ public class XPathParser
   protected final static int FILTER_MATCH_FAILED     = 0;
   protected final static int FILTER_MATCH_PRIMARY    = 1;
   protected final static int FILTER_MATCH_PREDICATES = 2;
+
+  // counts open predicates
+  private int countPredicate;
 
   /**
    * The parser constructor.
@@ -157,6 +161,9 @@ public class XPathParser
           }
           else
                 throw e;
+    } catch (StackOverflowError sof) {
+        error(XPATHErrorResources.ER_PREDICATE_TOO_MANY_OPEN,
+              new Object[]{m_token, m_queueMark, countPredicate});
     }
 
     compiler.shrink();
@@ -190,7 +197,12 @@ public class XPathParser
     m_ops.setOp(OpMap.MAPINDEX_LENGTH, 2);
 
     nextToken();
-    Pattern();
+    try {
+        Pattern();
+    } catch (StackOverflowError sof) {
+        error(XPATHErrorResources.ER_PREDICATE_TOO_MANY_OPEN,
+              new Object[]{m_token, m_queueMark, countPredicate});
+    }
 
     if (null != m_token)
     {
@@ -741,7 +753,7 @@ public class XPathParser
    */
   protected void Expr() throws javax.xml.transform.TransformerException
   {
-    OrExpr();
+       OrExpr();
   }
 
   /**
@@ -1883,11 +1895,12 @@ public class XPathParser
    */
   protected void Predicate() throws javax.xml.transform.TransformerException
   {
-
     if (tokenIs('['))
     {
+      countPredicate++;
       nextToken();
       PredicateExpr();
+      countPredicate--;
       consumeExpected(']');
     }
   }

@@ -4584,6 +4584,7 @@ public class ConcurrentHashMap<K,V> extends AbstractMap<K,V>
     public static class KeySetView<K,V> extends CollectionView<K,V,K>
         implements Set<K>, java.io.Serializable {
         private static final long serialVersionUID = 7249069246763182397L;
+        @SuppressWarnings("serial") // Conditionally serializable
         private final V value;
         KeySetView(ConcurrentHashMap<K,V> map, V value) {  // non-public
             super(map);
