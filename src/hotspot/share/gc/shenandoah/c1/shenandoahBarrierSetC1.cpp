@@ -211,7 +211,9 @@ void ShenandoahBarrierSetC1::load_at_resolved(LIRAccess& access, LIR_Opr result)
   LIRGenerator* gen = access.gen();
 
   DecoratorSet decorators = access.decorators();
-  if ((decorators & IN_NATIVE) != 0) {
+  bool is_traversal_mode = ShenandoahHeap::heap()->is_traversal_mode();
+
+  if ((decorators & IN_NATIVE) != 0 && !is_traversal_mode) {
     assert(access.is_oop(), "IN_NATIVE access only for oop values");
     BarrierSetC1::load_at_resolved(access, result);
     LIR_OprList* args = new LIR_OprList();
@@ -226,23 +228,24 @@ void ShenandoahBarrierSetC1::load_at_resolved(LIRAccess& access, LIR_Opr result)
                                             CAST_FROM_FN_PTR(address, ShenandoahRuntime::load_reference_barrier_native),
                                             objectType, NULL);
     __ move(call_result, result);
-    return;
-  }
-
-  if (ShenandoahLoadRefBarrier) {
-    LIR_Opr tmp = gen->new_register(T_OBJECT);
-    BarrierSetC1::load_at_resolved(access, tmp);
-    tmp = load_reference_barrier(access.gen(), tmp, access.resolved_addr());
-    __ move(tmp, result);
   } else {
-    BarrierSetC1::load_at_resolved(access, result);
+    if (ShenandoahLoadRefBarrier) {
+      LIR_Opr tmp = gen->new_register(T_OBJECT);
+      BarrierSetC1::load_at_resolved(access, tmp);
+      tmp = load_reference_barrier(access.gen(), tmp, access.resolved_addr());
+      __ move(tmp, result);
+    } else {
+      BarrierSetC1::load_at_resolved(access, result);
+    }
   }
 
   if (ShenandoahKeepAliveBarrier) {
     bool is_weak = (decorators & ON_WEAK_OOP_REF) != 0;
     bool is_phantom = (decorators & ON_PHANTOM_OOP_REF) != 0;
     bool is_anonymous = (decorators & ON_UNKNOWN_OOP_REF) != 0;
-    if (is_weak || is_phantom || is_anonymous) {
+    bool keep_alive = (decorators & AS_NO_KEEPALIVE) == 0 || is_traversal_mode;
+
+    if ((is_weak || is_phantom || is_anonymous) && keep_alive) {
       // Register the value in the referent field with the pre-barrier
       LabelObj *Lcont_anonymous;
       if (is_anonymous) {
