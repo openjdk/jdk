@@ -108,6 +108,7 @@ serviceability/sa/ClhsdbInspect.java 8193639 solaris-all
 serviceability/sa/ClhsdbJdis.java 8193639 solaris-all
 serviceability/sa/ClhsdbJhisto.java 8193639,8211767 solaris-all,linux-ppc64le,linux-ppc64
 serviceability/sa/ClhsdbJstack.java 8193639 solaris-all
+serviceability/sa/ClhsdbJstackXcompStress.java 8193639,8231635 solaris-all,windows-x64
 serviceability/sa/ClhsdbLongConstant.java 8193639 solaris-all
 serviceability/sa/ClhsdbPmap.java 8193639,8211767 solaris-all,linux-ppc64le,linux-ppc64
 serviceability/sa/ClhsdbPrintAll.java 8193639 solaris-all
