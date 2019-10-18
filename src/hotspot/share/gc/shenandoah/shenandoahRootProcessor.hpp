@@ -304,6 +304,8 @@ public:
 
   template<typename IsAlive, typename KeepAlive>
   void roots_do(uint worker_id, IsAlive* is_alive, KeepAlive* keep_alive);
+
+  void strong_roots_do(uint worker_id, OopClosure* oops_cl);
 };
 
 // Adjuster all roots at a safepoint during full gc

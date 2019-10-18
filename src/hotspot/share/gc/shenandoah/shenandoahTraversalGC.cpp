@@ -700,8 +700,7 @@ public:
   void work(uint worker_id) {
     ShenandoahParallelWorkerSession worker_session(worker_id);
     ShenandoahTraversalFixRootsClosure cl;
-    ShenandoahForwardedIsAliveClosure is_alive;
-    _rp->roots_do<ShenandoahForwardedIsAliveClosure, ShenandoahTraversalFixRootsClosure>(worker_id, &is_alive, &cl);
+    _rp->strong_roots_do(worker_id, &cl);
   }
 };
 

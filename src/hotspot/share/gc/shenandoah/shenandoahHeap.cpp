@@ -2042,11 +2042,19 @@ void ShenandoahHeap::stw_process_weak_roots(bool full_gc) {
   // Cleanup weak roots
   ShenandoahGCPhase phase(timing_phase);
   if (has_forwarded_objects()) {
-    ShenandoahForwardedIsAliveClosure is_alive;
-    ShenandoahUpdateRefsClosure keep_alive;
-    ShenandoahParallelWeakRootsCleaningTask<ShenandoahForwardedIsAliveClosure, ShenandoahUpdateRefsClosure>
-      cleaning_task(&is_alive, &keep_alive, num_workers);
-    _workers->run_task(&cleaning_task);
+    if (is_traversal_mode()) {
+      ShenandoahForwardedIsAliveClosure is_alive;
+      ShenandoahTraversalUpdateRefsClosure keep_alive;
+      ShenandoahParallelWeakRootsCleaningTask<ShenandoahForwardedIsAliveClosure, ShenandoahTraversalUpdateRefsClosure>
+        cleaning_task(&is_alive, &keep_alive, num_workers);
+      _workers->run_task(&cleaning_task);
+    } else {
+      ShenandoahForwardedIsAliveClosure is_alive;
+      ShenandoahUpdateRefsClosure keep_alive;
+      ShenandoahParallelWeakRootsCleaningTask<ShenandoahForwardedIsAliveClosure, ShenandoahUpdateRefsClosure>
+        cleaning_task(&is_alive, &keep_alive, num_workers);
+      _workers->run_task(&cleaning_task);
+    }
   } else {
     ShenandoahIsAliveClosure is_alive;
 #ifdef ASSERT

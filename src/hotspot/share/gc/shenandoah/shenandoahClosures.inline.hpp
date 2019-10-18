@@ -26,6 +26,7 @@
 #include "gc/shenandoah/shenandoahAsserts.hpp"
 #include "gc/shenandoah/shenandoahClosures.hpp"
 #include "gc/shenandoah/shenandoahHeap.inline.hpp"
+#include "gc/shenandoah/shenandoahTraversalGC.hpp"
 #include "oops/compressedOops.inline.hpp"
 #include "runtime/thread.hpp"
 
@@ -77,6 +78,29 @@ void ShenandoahUpdateRefsClosure::do_oop_work(T* p) {
 
 void ShenandoahUpdateRefsClosure::do_oop(oop* p)       { do_oop_work(p); }
 void ShenandoahUpdateRefsClosure::do_oop(narrowOop* p) { do_oop_work(p); }
+
+ShenandoahTraversalUpdateRefsClosure::ShenandoahTraversalUpdateRefsClosure() :
+  _heap(ShenandoahHeap::heap()),
+  _traversal_set(ShenandoahHeap::heap()->traversal_gc()->traversal_set()) {
+  assert(_heap->is_traversal_mode(), "Why we here?");
+}
+
+template <class T>
+void ShenandoahTraversalUpdateRefsClosure::do_oop_work(T* p) {
+  T o = RawAccess<>::oop_load(p);
+  if (!CompressedOops::is_null(o)) {
+    oop obj = CompressedOops::decode_not_null(o);
+    if (_heap->in_collection_set(obj) || _traversal_set->is_in((HeapWord*)obj)) {
+      obj = ShenandoahBarrierSet::resolve_forwarded_not_null(obj);
+      RawAccess<IS_NOT_NULL>::oop_store(p, obj);
+    } else {
+      shenandoah_assert_not_forwarded(p, obj);
+    }
+  }
+}
+
+void ShenandoahTraversalUpdateRefsClosure::do_oop(oop* p)       { do_oop_work(p); }
+void ShenandoahTraversalUpdateRefsClosure::do_oop(narrowOop* p) { do_oop_work(p); }
 
 ShenandoahEvacuateUpdateRootsClosure::ShenandoahEvacuateUpdateRootsClosure() :
   _heap(ShenandoahHeap::heap()), _thread(Thread::current()) {
