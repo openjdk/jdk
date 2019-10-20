@@ -30,17 +30,11 @@ import java.nio.BufferOverflowException;
 import java.nio.BufferUnderflowException;
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
-import java.util.LinkedHashMap;
-import java.util.Map;
 
 /**
  * A compact implementation of HandshakeContext for post-handshake messages
  */
 final class PostHandshakeContext extends HandshakeContext {
-    private final static Map<Byte, SSLConsumer> consumers = Map.of(
-        SSLHandshake.KEY_UPDATE.id, SSLHandshake.KEY_UPDATE,
-        SSLHandshake.NEW_SESSION_TICKET.id, SSLHandshake.NEW_SESSION_TICKET);
-
     PostHandshakeContext(TransportContext context) throws IOException {
         super(context);
 
@@ -49,10 +43,23 @@ final class PostHandshakeContext extends HandshakeContext {
                 "Post-handshake not supported in " + negotiatedProtocol.name);
         }
 
-        this.localSupportedSignAlgs = new ArrayList<SignatureScheme>(
+        this.localSupportedSignAlgs = new ArrayList<>(
             context.conSession.getLocalSupportedSignatureSchemes());
 
-        handshakeConsumers = new LinkedHashMap<>(consumers);
+        // Add the potential post-handshake consumers.
+        if (context.sslConfig.isClientMode) {
+            handshakeConsumers.putIfAbsent(
+                    SSLHandshake.KEY_UPDATE.id,
+                    SSLHandshake.KEY_UPDATE);
+            handshakeConsumers.putIfAbsent(
+                    SSLHandshake.NEW_SESSION_TICKET.id,
+                    SSLHandshake.NEW_SESSION_TICKET);
+        } else {
+            handshakeConsumers.putIfAbsent(
+                    SSLHandshake.KEY_UPDATE.id,
+                    SSLHandshake.KEY_UPDATE);
+        }
+
         handshakeFinished = true;
         handshakeSession = context.conSession;
     }
@@ -82,5 +89,22 @@ final class PostHandshakeContext extends HandshakeContext {
                     "Illegal handshake message: " +
                     SSLHandshake.nameOf(handshakeType), be);
         }
+    }
+
+    static boolean isConsumable(TransportContext context, byte handshakeType) {
+        if (handshakeType == SSLHandshake.KEY_UPDATE.id) {
+            // The KeyUpdate handshake message does not apply to TLS 1.2 and
+            // previous protocols.
+            return context.protocolVersion.useTLS13PlusSpec();
+        }
+
+        if (handshakeType == SSLHandshake.NEW_SESSION_TICKET.id) {
+            // The new session ticket handshake message could be consumer in
+            // client side only.
+            return context.sslConfig.isClientMode;
+        }
+
+        // No more post-handshake message supported currently.
+        return false;
     }
 }

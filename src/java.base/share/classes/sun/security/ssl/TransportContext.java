@@ -164,12 +164,13 @@ final class TransportContext implements ConnectionContext {
                                             " message: " +
                                             SSLHandshake.nameOf(type));
                         }
-                        if (type == SSLHandshake.KEY_UPDATE.id &&
-                                !protocolVersion.useTLS13PlusSpec()) {
+
+                        if (!PostHandshakeContext.isConsumable(this, type)) {
                             throw fatal(Alert.UNEXPECTED_MESSAGE,
                                     "Unexpected post-handshake message: " +
                                     SSLHandshake.nameOf(type));
                         }
+
                         handshakeContext = new PostHandshakeContext(this);
                     } else {
                         handshakeContext = sslConfig.isClientMode ?
