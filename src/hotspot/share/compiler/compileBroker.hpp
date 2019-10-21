@@ -395,6 +395,8 @@ public:
     return _compiler2_objects[idx];
   }
 
+  static bool can_remove(CompilerThread *ct, bool do_it);
+
   static CompileLog* get_log(CompilerThread* ct);
 
   static int get_total_compile_count() {            return _total_compile_count; }
