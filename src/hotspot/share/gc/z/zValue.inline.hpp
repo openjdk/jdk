@@ -24,7 +24,7 @@
 #ifndef SHARE_GC_Z_ZVALUE_INLINE_HPP
 #define SHARE_GC_Z_ZVALUE_INLINE_HPP
 
-#include "gc/z/zCPU.hpp"
+#include "gc/z/zCPU.inline.hpp"
 #include "gc/z/zGlobals.hpp"
 #include "gc/z/zNUMA.hpp"
 #include "gc/z/zThread.inline.hpp"

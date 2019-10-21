@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,32 +21,27 @@
  * questions.
  */
 
-#ifndef SHARE_GC_Z_ZCPU_HPP
-#define SHARE_GC_Z_ZCPU_HPP
+#ifndef SHARE_GC_Z_ZCPU_INLINE_HPP
+#define SHARE_GC_Z_ZCPU_INLINE_HPP
 
-#include "memory/allocation.hpp"
-#include "memory/padded.hpp"
-#include "utilities/globalDefinitions.hpp"
+#include "gc/z/zCPU.hpp"
+#include "runtime/os.hpp"
+#include "utilities/debug.hpp"
 
-class Thread;
+inline uint32_t ZCPU::count() {
+  return os::processor_count();
+}
 
-class ZCPU : public AllStatic {
-private:
-  struct ZCPUAffinity {
-    Thread* _thread;
-  };
+inline uint32_t ZCPU::id() {
+  assert(_affinity != NULL, "Not initialized");
 
-  static PaddedEnd<ZCPUAffinity>* _affinity;
-  static THREAD_LOCAL Thread*     _self;
-  static THREAD_LOCAL uint32_t    _cpu;
+  // Fast path
+  if (_affinity[_cpu]._thread == _self) {
+    return _cpu;
+  }
 
-  static uint32_t id_slow();
+  // Slow path
+  return id_slow();
+}
 
-public:
-  static void initialize();
-
-  static uint32_t count();
-  static uint32_t id();
-};
-
-#endif // SHARE_GC_Z_ZCPU_HPP
+#endif // SHARE_GC_Z_ZCPU_INLINE_HPP

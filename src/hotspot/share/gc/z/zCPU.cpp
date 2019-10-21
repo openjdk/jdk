@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,15 +22,15 @@
  */
 
 #include "precompiled.hpp"
-#include "gc/z/zCPU.hpp"
+#include "gc/z/zCPU.inline.hpp"
 #include "logging/log.hpp"
 #include "memory/padded.inline.hpp"
 #include "runtime/os.hpp"
 #include "runtime/thread.inline.hpp"
 #include "utilities/debug.hpp"
 
-#define ZCPU_UNKNOWN_AFFINITY (Thread*)-1;
-#define ZCPU_UNKNOWN_SELF     (Thread*)-2;
+#define ZCPU_UNKNOWN_AFFINITY ((Thread*)-1)
+#define ZCPU_UNKNOWN_SELF     ((Thread*)-2)
 
 PaddedEnd<ZCPU::ZCPUAffinity>* ZCPU::_affinity = NULL;
 THREAD_LOCAL Thread*           ZCPU::_self     = ZCPU_UNKNOWN_SELF;
@@ -51,20 +51,13 @@ void ZCPU::initialize() {
                      os::initial_active_processor_count());
 }
 
-uint32_t ZCPU::count() {
-  return os::processor_count();
-}
-
-uint32_t ZCPU::id() {
-  assert(_affinity != NULL, "Not initialized");
-
-  // Fast path
-  if (_affinity[_cpu]._thread == _self) {
-    return _cpu;
+uint32_t ZCPU::id_slow() {
+  // Set current thread
+  if (_self == ZCPU_UNKNOWN_SELF) {
+    _self = Thread::current();
   }
 
-  // Slow path
-  _self = Thread::current();
+  // Set current CPU
   _cpu = os::processor_id();
 
   // Update affinity table

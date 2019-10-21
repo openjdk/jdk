@@ -23,7 +23,7 @@
 
 #include "precompiled.hpp"
 #include "gc/z/zCollectedHeap.hpp"
-#include "gc/z/zCPU.hpp"
+#include "gc/z/zCPU.inline.hpp"
 #include "gc/z/zGlobals.hpp"
 #include "gc/z/zHeap.inline.hpp"
 #include "gc/z/zLargePages.inline.hpp"
