@@ -716,7 +716,7 @@ void ZStatSubPhase::register_start(const Ticks& start) const {
 }
 
 void ZStatSubPhase::register_end(const Ticks& start, const Ticks& end) const {
-  ZTracer::tracer()->report_thread_phase(*this, start, end);
+  ZTracer::tracer()->report_thread_phase(name(), start, end);
 
   const Tickspan duration = end - start;
   ZStatSample(_sampler, duration.value());
@@ -736,7 +736,7 @@ void ZStatCriticalPhase::register_start(const Ticks& start) const {
 }
 
 void ZStatCriticalPhase::register_end(const Ticks& start, const Ticks& end) const {
-  ZTracer::tracer()->report_thread_phase(*this, start, end);
+  ZTracer::tracer()->report_thread_phase(name(), start, end);
 
   const Tickspan duration = end - start;
   ZStatSample(_sampler, duration.value());
@@ -759,7 +759,7 @@ THREAD_LOCAL uint32_t ZStatTimerDisable::_active = 0;
 //
 // Stat sample/inc
 //
-void ZStatSample(const ZStatSampler& sampler, uint64_t value, bool trace) {
+void ZStatSample(const ZStatSampler& sampler, uint64_t value) {
   ZStatSamplerData* const cpu_data = sampler.get();
   Atomic::add(1u, &cpu_data->_nsamples);
   Atomic::add(value, &cpu_data->_sum);
@@ -782,18 +782,14 @@ void ZStatSample(const ZStatSampler& sampler, uint64_t value, bool trace) {
     max = prev_max;
   }
 
-  if (trace) {
-    ZTracer::tracer()->report_stat_sampler(sampler, value);
-  }
+  ZTracer::tracer()->report_stat_sampler(sampler, value);
 }
 
-void ZStatInc(const ZStatCounter& counter, uint64_t increment, bool trace) {
+void ZStatInc(const ZStatCounter& counter, uint64_t increment) {
   ZStatCounterData* const cpu_data = counter.get();
   const uint64_t value = Atomic::add(increment, &cpu_data->_counter);
 
-  if (trace) {
-    ZTracer::tracer()->report_stat_counter(counter, increment, value);
-  }
+  ZTracer::tracer()->report_stat_counter(counter, increment, value);
 }
 
 void ZStatInc(const ZStatUnsampledCounter& counter, uint64_t increment) {

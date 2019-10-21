@@ -315,8 +315,8 @@ public:
 //
 // Stat sample/increment
 //
-void ZStatSample(const ZStatSampler& sampler, uint64_t value, bool trace = ZStatisticsForceTrace);
-void ZStatInc(const ZStatCounter& counter, uint64_t increment = 1, bool trace = ZStatisticsForceTrace);
+void ZStatSample(const ZStatSampler& sampler, uint64_t value);
+void ZStatInc(const ZStatCounter& counter, uint64_t increment = 1);
 void ZStatInc(const ZStatUnsampledCounter& counter, uint64_t increment = 1);
 
 //
