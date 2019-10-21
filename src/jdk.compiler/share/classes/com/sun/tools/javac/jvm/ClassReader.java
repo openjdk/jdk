@@ -1395,20 +1395,27 @@ public class ClassReader {
                     repeatable = proxy;
                 } else if (proxy.type.tsym == syms.deprecatedType.tsym) {
                     sym.flags_field |= (DEPRECATED | DEPRECATED_ANNOTATION);
-                    for (Pair<Name, Attribute> v : proxy.values) {
-                        if (v.fst == names.forRemoval && v.snd instanceof Attribute.Constant) {
-                            Attribute.Constant c = (Attribute.Constant)v.snd;
-                            if (c.type == syms.booleanType && ((Integer)c.value) != 0) {
-                                sym.flags_field |= DEPRECATED_REMOVAL;
-                            }
-                        }
-                    }
+                    setFlagIfAttributeTrue(proxy, sym, names.forRemoval, DEPRECATED_REMOVAL);
+                }  else if (proxy.type.tsym == syms.previewFeatureType.tsym) {
+                    sym.flags_field |= PREVIEW_API;
+                    setFlagIfAttributeTrue(proxy, sym, names.essentialAPI, PREVIEW_ESSENTIAL_API);
                 }
                 proxies.append(proxy);
             }
         }
         annotate.normal(new AnnotationCompleter(sym, proxies.toList()));
     }
+    //where:
+        private void setFlagIfAttributeTrue(CompoundAnnotationProxy proxy, Symbol sym, Name attribute, long flag) {
+            for (Pair<Name, Attribute> v : proxy.values) {
+                if (v.fst == attribute && v.snd instanceof Attribute.Constant) {
+                    Attribute.Constant c = (Attribute.Constant)v.snd;
+                    if (c.type == syms.booleanType && ((Integer)c.value) != 0) {
+                        sym.flags_field |= flag;
+                    }
+                }
+            }
+        }
 
     /** Read parameter annotations.
      */

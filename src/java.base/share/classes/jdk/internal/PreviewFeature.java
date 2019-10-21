@@ -23,35 +23,38 @@
  * questions.
  */
 
-package com.sun.source.tree;
+package jdk.internal;
+
+import java.lang.annotation.*;
 
 /**
- * {@preview Associated with switch expressions, a preview feature of
- *           the Java language.
- *
- *           This method is associated with <i>switch expressions</i>, a preview
- *           feature of the Java language. Preview features
- *           may be removed in a future release, or upgraded to permanent
- *           features of the Java language.}
- *
- * A tree node for a {@code yield} statement.
- *
- * For example:
- * <pre>
- *   yield <em>expression</em> ;
- * </pre>
- *
- * @jls section TODO
- *
- * @since 13
+ * Indicates the API declaration in question is associated with a
+ * <em>preview feature</em>. See JEP 12: "Preview Language and VM
+ * Features" (http://openjdk.java.net/jeps/12).
+ * @since 14
  */
-@jdk.internal.PreviewFeature(feature=jdk.internal.PreviewFeature.Feature.SWITCH_EXPRESSIONS)
-public interface YieldTree extends StatementTree {
-
+// Match the meaningful targets of java.lang.Deprecated, omit local
+// variables and parameter declarations
+@Target({ElementType.METHOD,
+         ElementType.CONSTRUCTOR,
+         ElementType.FIELD,
+         ElementType.PACKAGE,
+         ElementType.MODULE,
+         ElementType.TYPE})
+ // CLASS retention will hopefully be sufficient for the purposes at hand
+@Retention(RetentionPolicy.CLASS)
+// *Not* @Documented
+public @interface PreviewFeature {
     /**
-     * Returns the expression for this {@code yield} statement.
-     *
-     * @return the expression
+     * Name of the preview feature the annotated API is associated
+     * with.
      */
-    ExpressionTree getValue();
+    public Feature feature();
+
+    public boolean essentialAPI() default false;
+
+    public enum Feature {
+        SWITCH_EXPRESSIONS,
+        TEXT_BLOCKS;
+    }
 }

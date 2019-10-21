@@ -378,6 +378,10 @@ public abstract class Symbol extends AnnoConstruct implements PoolConstant, Elem
         return (flags_field & DEPRECATED_REMOVAL) != 0;
     }
 
+    public boolean isPreviewApi() {
+        return (flags_field & PREVIEW_API) != 0;
+    }
+
     public boolean isDeprecatableViaAnnotation() {
         switch (getKind()) {
             case LOCAL_VARIABLE:

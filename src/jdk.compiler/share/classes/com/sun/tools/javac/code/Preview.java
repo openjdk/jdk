@@ -27,7 +27,6 @@ package com.sun.tools.javac.code;
 
 import com.sun.tools.javac.code.Lint.LintCategory;
 import com.sun.tools.javac.code.Source.Feature;
-import com.sun.tools.javac.comp.Infer;
 import com.sun.tools.javac.jvm.Target;
 import com.sun.tools.javac.resources.CompilerProperties.Errors;
 import com.sun.tools.javac.resources.CompilerProperties.Warnings;
@@ -36,17 +35,14 @@ import com.sun.tools.javac.util.Context;
 import com.sun.tools.javac.util.JCDiagnostic.DiagnosticPosition;
 import com.sun.tools.javac.util.JCDiagnostic.Error;
 import com.sun.tools.javac.util.JCDiagnostic.SimpleDiagnosticPosition;
+import com.sun.tools.javac.util.JCDiagnostic.Warning;
 import com.sun.tools.javac.util.Log;
 import com.sun.tools.javac.util.MandatoryWarningHandler;
-import com.sun.tools.javac.util.Name;
 import com.sun.tools.javac.util.Options;
 
 import javax.tools.JavaFileObject;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.Map;
-import java.util.Optional;
-import java.util.Set;
 
 import static com.sun.tools.javac.main.Option.PREVIEW;
 
@@ -62,7 +58,7 @@ import static com.sun.tools.javac.main.Option.PREVIEW;
  */
 public class Preview {
 
-    /** flag: are preview featutres enabled */
+    /** flag: are preview features enabled */
     private final boolean enabled;
 
     /** the diag handler to manage preview feature usage diagnostics */
@@ -151,6 +147,10 @@ public class Preview {
         }
     }
 
+    public void reportPreviewWarning(DiagnosticPosition pos, Warning warnKey) {
+        previewHandler.report(pos, warnKey);
+    }
+
     /**
      * Are preview features enabled?
      * @return true, if preview features are enabled.
@@ -206,4 +206,9 @@ public class Preview {
     public void reportDeferredDiagnostics() {
         previewHandler.reportDeferredDiagnostic();
     }
+
+    public void clear() {
+        previewHandler.clear();
+    }
+
 }

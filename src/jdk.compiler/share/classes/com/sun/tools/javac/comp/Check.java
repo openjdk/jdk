@@ -93,6 +93,7 @@ public class Check {
     private final Source source;
     private final Target target;
     private final Profile profile;
+    private final Preview preview;
     private final boolean warnOnAnyAccessToMembers;
 
     // The set of lint options currently in effect. It is initialized
@@ -139,6 +140,7 @@ public class Check {
         syntheticNameChar = target.syntheticNameChar();
 
         profile = Profile.instance(context);
+        preview = Preview.instance(context);
 
         boolean verboseDeprecated = lint.isEnabled(LintCategory.DEPRECATION);
         boolean verboseRemoval = lint.isEnabled(LintCategory.REMOVAL);
@@ -222,6 +224,23 @@ public class Check {
                 deprecationHandler.report(pos, Warnings.HasBeenDeprecated(sym, sym.location()));
             }
         }
+    }
+
+    /** Warn about deprecated symbol.
+     *  @param pos        Position to be used for error reporting.
+     *  @param sym        The deprecated symbol.
+     */
+    void warnPreview(DiagnosticPosition pos, Symbol sym) {
+        warnPreview(pos, Warnings.IsPreview(sym));
+    }
+
+    /** Log a preview warning.
+     *  @param pos        Position to be used for error reporting.
+     *  @param msg        A Warning describing the problem.
+     */
+    public void warnPreview(DiagnosticPosition pos, Warning warnKey) {
+        if (!lint.isSuppressed(LintCategory.PREVIEW))
+            preview.reportPreviewWarning(pos, warnKey);
     }
 
     /** Warn about unchecked operation.
@@ -432,6 +451,13 @@ public class Check {
     public void newRound() {
         compiled.clear();
         localClassNameIndexes.clear();
+    }
+
+    public void clear() {
+        deprecationHandler.clear();
+        removalHandler.clear();
+        uncheckedHandler.clear();
+        sunApiHandler.clear();
     }
 
     public void putCompiled(ClassSymbol csym) {
@@ -3287,6 +3313,16 @@ public class Check {
     void checkProfile(final DiagnosticPosition pos, final Symbol s) {
         if (profile != Profile.DEFAULT && (s.flags() & NOT_IN_PROFILE) != 0) {
             log.error(pos, Errors.NotInProfile(s, profile));
+        }
+    }
+
+    void checkPreview(DiagnosticPosition pos, Symbol s) {
+        if ((s.flags() & PREVIEW_API) != 0) {
+            if ((s.flags() & PREVIEW_ESSENTIAL_API) != 0 && !preview.isEnabled()) {
+                log.error(pos, Errors.IsPreview(s));
+            } else {
+                deferredLintHandler.report(() -> warnPreview(pos, s));
+            }
         }
     }
 

@@ -49,6 +49,13 @@ $(BUILDTOOLS_OUTPUTDIR)/gensrc/%.interim/module-info.java: \
 TARGETS += $(patsubst %, $(BUILDTOOLS_OUTPUTDIR)/gensrc/%/module-info.java, \
     $(INTERIM_LANGTOOLS_MODULES))
 
+$(eval $(call SetupCopyFiles, COPY_PREVIEW_FEATURES, \
+    FILES := $(TOPDIR)/src/java.base/share/classes/jdk/internal/PreviewFeature.java, \
+    DEST := $(BUILDTOOLS_OUTPUTDIR)/gensrc/java.base.interim/jdk/internal/, \
+))
+
+TARGETS += $(COPY_PREVIEW_FEATURES)
+
 ################################################################################
 # Setup the rules to build interim langtools, which is compiled by the boot
 # javac and can be run on the boot jdk. This will be used to compile the rest of
@@ -72,13 +79,15 @@ define SetupInterimModule
       BIN := $(BUILDTOOLS_OUTPUTDIR)/interim_langtools_modules/$1.interim, \
       ADD_JAVAC_FLAGS := --module-path $(BUILDTOOLS_OUTPUTDIR)/interim_langtools_modules \
           $$(INTERIM_LANGTOOLS_ADD_EXPORTS) \
+          --patch-module java.base=$(BUILDTOOLS_OUTPUTDIR)/gensrc/java.base.interim \
+          --add-exports java.base/jdk.internal=jdk.compiler.interim \
           -Xlint:-module, \
   ))
 
   $1_DEPS_INTERIM := $$(addsuffix .interim, $$(filter \
       $$(INTERIM_LANGTOOLS_BASE_MODULES), $$(call FindTransitiveDepsForModule, $1)))
 
-  $$(BUILD_$1.interim): $$(foreach d, $$($1_DEPS_INTERIM), $$(BUILD_$$d))
+  $$(BUILD_$1.interim): $$(foreach d, $$($1_DEPS_INTERIM), $$(BUILD_$$d)) $(COPY_PREVIEW_FEATURES)
 
   TARGETS += $$(BUILD_$1.interim)
 endef

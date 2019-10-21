@@ -364,12 +364,17 @@ public class Annotate {
                     && (toAnnotate.kind == MDL || toAnnotate.owner.kind != MTH)
                     && types.isSameType(c.type, syms.deprecatedType)) {
                 toAnnotate.flags_field |= (Flags.DEPRECATED | Flags.DEPRECATED_ANNOTATION);
-                Attribute fr = c.member(names.forRemoval);
-                if (fr instanceof Attribute.Constant) {
-                    Attribute.Constant v = (Attribute.Constant) fr;
-                    if (v.type == syms.booleanType && ((Integer) v.value) != 0) {
-                        toAnnotate.flags_field |= Flags.DEPRECATED_REMOVAL;
-                    }
+                if (isAttributeTrue(c.member(names.forRemoval))) {
+                    toAnnotate.flags_field |= Flags.DEPRECATED_REMOVAL;
+                }
+            }
+
+            // Note: @Deprecated has no effect on local variables and parameters
+            if (!c.type.isErroneous()
+                    && types.isSameType(c.type, syms.previewFeatureType)) {
+                toAnnotate.flags_field |= Flags.PREVIEW_API;
+                if (isAttributeTrue(c.member(names.essentialAPI))) {
+                    toAnnotate.flags_field |= Flags.PREVIEW_ESSENTIAL_API;
                 }
             }
         }
@@ -397,6 +402,16 @@ public class Annotate {
             toAnnotate.setDeclarationAttributes(attrs);
         }
     }
+    //where:
+        private boolean isAttributeTrue(Attribute attr) {
+            if (attr instanceof Attribute.Constant) {
+                Attribute.Constant v = (Attribute.Constant) attr;
+                if (v.type == syms.booleanType && ((Integer) v.value) != 0) {
+                    return true;
+                }
+            }
+            return false;
+        }
 
     /**
      * Attribute and store a semantic representation of the annotation tree {@code tree} into the
