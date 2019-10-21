@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -74,15 +74,13 @@ public:
 template <typename T>
 class ZArrayIterator : public ZArrayIteratorImpl<T, ZARRAY_SERIAL> {
 public:
-  ZArrayIterator(ZArray<T>* array) :
-      ZArrayIteratorImpl<T, ZARRAY_SERIAL>(array) {}
+  ZArrayIterator(ZArray<T>* array);
 };
 
 template <typename T>
 class ZArrayParallelIterator : public ZArrayIteratorImpl<T, ZARRAY_PARALLEL> {
 public:
-  ZArrayParallelIterator(ZArray<T>* array) :
-      ZArrayIteratorImpl<T, ZARRAY_PARALLEL>(array) {}
+  ZArrayParallelIterator(ZArray<T>* array);
 };
 
 #endif // SHARE_GC_Z_ZARRAY_HPP
