@@ -48,7 +48,7 @@ public:
   void concurrent_traversal_collection();
   void final_traversal_collection();
 
-  template <class T, bool STRING_DEDUP, bool DEGEN>
+  template <class T, bool STRING_DEDUP, bool DEGEN, bool ATOMIC_UPDATE>
   inline void process_oop(T* p, Thread* thread, ShenandoahObjToScanQueue* queue, ShenandoahMarkingContext* const mark_context);
 
   bool check_and_handle_cancelled_gc(ShenandoahTaskTerminator* terminator, bool sts_yield);

@@ -186,7 +186,7 @@ public:
 
     // Step 1: Process ordinary GC roots.
     {
-      ShenandoahTraversalClosure roots_cl(q, rp);
+      ShenandoahTraversalRootsClosure roots_cl(q, rp);
       ShenandoahMarkCLDClosure cld_cl(&roots_cl);
       MarkingCodeBlobClosure code_cl(&roots_cl, CodeBlobToOopClosure::FixRelocations);
       if (unload_classes) {
@@ -266,7 +266,7 @@ public:
     // in similar way during nmethod-register process. Therefore, we don't need to rescan code
     // roots here.
     if (!_heap->is_degenerated_gc_in_progress()) {
-      ShenandoahTraversalClosure roots_cl(q, rp);
+      ShenandoahTraversalRootsClosure roots_cl(q, rp);
       ShenandoahTraversalSATBThreadsClosure tc(&satb_cl);
       if (unload_classes) {
         ShenandoahRemarkCLDClosure remark_cld_cl(&roots_cl);
@@ -767,7 +767,7 @@ private:
 
   template <class T>
   inline void do_oop_work(T* p) {
-    _traversal_gc->process_oop<T, false /* string dedup */, false /* degen */>(p, _thread, _queue, _mark_context);
+    _traversal_gc->process_oop<T, false /* string dedup */, false /* degen */, true /* atomic update */>(p, _thread, _queue, _mark_context);
   }
 
 public:
@@ -789,7 +789,7 @@ private:
 
   template <class T>
   inline void do_oop_work(T* p) {
-    _traversal_gc->process_oop<T, false /* string dedup */, true /* degen */>(p, _thread, _queue, _mark_context);
+    _traversal_gc->process_oop<T, false /* string dedup */, true /* degen */, false /* atomic update */>(p, _thread, _queue, _mark_context);
   }
 
 public:
@@ -812,7 +812,7 @@ private:
   template <class T>
   inline void do_oop_work(T* p) {
     ShenandoahEvacOOMScope evac_scope;
-    _traversal_gc->process_oop<T, false /* string dedup */, false /* degen */>(p, _thread, _queue, _mark_context);
+    _traversal_gc->process_oop<T, false /* string dedup */, false /* degen */, true /* atomic update */>(p, _thread, _queue, _mark_context);
   }
 
 public:
@@ -835,7 +835,7 @@ private:
   template <class T>
   inline void do_oop_work(T* p) {
     ShenandoahEvacOOMScope evac_scope;
-    _traversal_gc->process_oop<T, false /* string dedup */, true /* degen */>(p, _thread, _queue, _mark_context);
+    _traversal_gc->process_oop<T, false /* string dedup */, true /* degen */, false /* atomic update */>(p, _thread, _queue, _mark_context);
   }
 
 public:

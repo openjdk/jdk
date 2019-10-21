@@ -35,12 +35,13 @@
 #include "oops/compressedOops.inline.hpp"
 #include "oops/oop.inline.hpp"
 
-template <class T, bool STRING_DEDUP, bool DEGEN>
+template <class T, bool STRING_DEDUP, bool DEGEN, bool ATOMIC_UPDATE>
 void ShenandoahTraversalGC::process_oop(T* p, Thread* thread, ShenandoahObjToScanQueue* queue, ShenandoahMarkingContext* const mark_context) {
   T o = RawAccess<>::oop_load(p);
   if (!CompressedOops::is_null(o)) {
     oop obj = CompressedOops::decode_not_null(o);
     if (DEGEN) {
+      assert(!ATOMIC_UPDATE, "Degen path assumes non-atomic updates");
       oop forw = ShenandoahBarrierSet::resolve_forwarded_not_null(obj);
       if (obj != forw) {
         // Update reference.
@@ -54,7 +55,11 @@ void ShenandoahTraversalGC::process_oop(T* p, Thread* thread, ShenandoahObjToSca
       }
       shenandoah_assert_forwarded_except(p, obj, _heap->cancelled_gc());
       // Update reference.
-      ShenandoahHeap::cas_oop(forw, p, obj);
+      if (ATOMIC_UPDATE) {
+        ShenandoahHeap::cas_oop(forw, p, obj);
+      } else {
+        RawAccess<IS_NOT_NULL>::oop_store(p, forw);
+      }
       obj = forw;
     }
 

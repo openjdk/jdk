@@ -214,15 +214,30 @@ protected:
     _mark_context(ShenandoahHeap::heap()->marking_context()) {
   }
 
-  template <class T, bool STRING_DEDUP, bool DEGEN>
+  template <class T, bool STRING_DEDUP, bool DEGEN, bool ATOMIC_UPDATE>
   void work(T* p);
 
+};
+
+class ShenandoahTraversalRootsClosure : public ShenandoahTraversalSuperClosure {
+private:
+  template <class T>
+  inline void do_oop_work(T* p)     { work<T, false, false, false>(p); }
+
+public:
+  ShenandoahTraversalRootsClosure(ShenandoahObjToScanQueue* q, ReferenceProcessor* rp) :
+    ShenandoahTraversalSuperClosure(q, rp) {}
+
+  virtual void do_oop(narrowOop* p) { do_oop_work(p); }
+  virtual void do_oop(oop* p)       { do_oop_work(p); }
+
+  virtual bool do_metadata()        { return false; }
 };
 
 class ShenandoahTraversalClosure : public ShenandoahTraversalSuperClosure {
 private:
   template <class T>
-  inline void do_oop_work(T* p)     { work<T, false, false>(p); }
+  inline void do_oop_work(T* p)     { work<T, false, false, true>(p); }
 
 public:
   ShenandoahTraversalClosure(ShenandoahObjToScanQueue* q, ReferenceProcessor* rp) :
@@ -237,7 +252,7 @@ public:
 class ShenandoahTraversalMetadataClosure : public ShenandoahTraversalSuperClosure {
 private:
   template <class T>
-  inline void do_oop_work(T* p)     { work<T, false, false>(p); }
+  inline void do_oop_work(T* p)     { work<T, false, false, true>(p); }
 
 public:
   ShenandoahTraversalMetadataClosure(ShenandoahObjToScanQueue* q, ReferenceProcessor* rp) :
@@ -252,7 +267,7 @@ public:
 class ShenandoahTraversalDedupClosure : public ShenandoahTraversalSuperClosure {
 private:
   template <class T>
-  inline void do_oop_work(T* p)     { work<T, true, false>(p); }
+  inline void do_oop_work(T* p)     { work<T, true, false, true>(p); }
 
 public:
   ShenandoahTraversalDedupClosure(ShenandoahObjToScanQueue* q, ReferenceProcessor* rp) :
@@ -267,7 +282,7 @@ public:
 class ShenandoahTraversalMetadataDedupClosure : public ShenandoahTraversalSuperClosure {
 private:
   template <class T>
-  inline void do_oop_work(T* p)     { work<T, true, false>(p); }
+  inline void do_oop_work(T* p)     { work<T, true, false, true>(p); }
 
 public:
   ShenandoahTraversalMetadataDedupClosure(ShenandoahObjToScanQueue* q, ReferenceProcessor* rp) :
@@ -282,7 +297,7 @@ public:
 class ShenandoahTraversalDegenClosure : public ShenandoahTraversalSuperClosure {
 private:
   template <class T>
-  inline void do_oop_work(T* p)     { work<T, false, true>(p); }
+  inline void do_oop_work(T* p)     { work<T, false, true, false>(p); }
 
 public:
   ShenandoahTraversalDegenClosure(ShenandoahObjToScanQueue* q, ReferenceProcessor* rp) :
@@ -297,7 +312,7 @@ public:
 class ShenandoahTraversalMetadataDegenClosure : public ShenandoahTraversalSuperClosure {
 private:
   template <class T>
-  inline void do_oop_work(T* p)     { work<T, false, true>(p); }
+  inline void do_oop_work(T* p)     { work<T, false, true, false>(p); }
 
 public:
   ShenandoahTraversalMetadataDegenClosure(ShenandoahObjToScanQueue* q, ReferenceProcessor* rp) :
@@ -312,7 +327,7 @@ public:
 class ShenandoahTraversalDedupDegenClosure : public ShenandoahTraversalSuperClosure {
 private:
   template <class T>
-  inline void do_oop_work(T* p)     { work<T, true, true>(p); }
+  inline void do_oop_work(T* p)     { work<T, true, true, false>(p); }
 
 public:
   ShenandoahTraversalDedupDegenClosure(ShenandoahObjToScanQueue* q, ReferenceProcessor* rp) :
@@ -327,7 +342,7 @@ public:
 class ShenandoahTraversalMetadataDedupDegenClosure : public ShenandoahTraversalSuperClosure {
 private:
   template <class T>
-  inline void do_oop_work(T* p)     { work<T, true, true>(p); }
+  inline void do_oop_work(T* p)     { work<T, true, true, false>(p); }
 
 public:
   ShenandoahTraversalMetadataDedupDegenClosure(ShenandoahObjToScanQueue* q, ReferenceProcessor* rp) :
