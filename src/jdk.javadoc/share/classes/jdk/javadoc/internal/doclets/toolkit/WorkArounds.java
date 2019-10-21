@@ -332,36 +332,26 @@ public class WorkArounds {
     }
 
     //------------------Start of Serializable Implementation---------------------//
-    private final static Map<TypeElement, NewSerializedForm> serializedForms = new HashMap<>();
+    private final Map<TypeElement, NewSerializedForm> serializedForms = new HashMap<>();
 
-    public SortedSet<VariableElement> getSerializableFields(Utils utils, TypeElement klass) {
-        NewSerializedForm sf = serializedForms.get(klass);
-        if (sf == null) {
-            sf = new NewSerializedForm(utils, configuration.docEnv.getElementUtils(), klass);
-            serializedForms.put(klass, sf);
-        }
-        return sf.fields;
+    private NewSerializedForm getSerializedForm(TypeElement typeElem) {
+        return serializedForms.computeIfAbsent(typeElem,
+                te -> new NewSerializedForm(utils, configuration.docEnv.getElementUtils(), te));
     }
 
-    public SortedSet<ExecutableElement>  getSerializationMethods(Utils utils, TypeElement klass) {
-        NewSerializedForm sf = serializedForms.get(klass);
-        if (sf == null) {
-            sf = new NewSerializedForm(utils, configuration.docEnv.getElementUtils(), klass);
-            serializedForms.put(klass, sf);
-        }
-        return sf.methods;
+    public SortedSet<VariableElement> getSerializableFields(TypeElement typeElem) {
+        return getSerializedForm(typeElem).fields;
     }
 
-    public boolean definesSerializableFields(Utils utils, TypeElement klass) {
-        if (!utils.isSerializable(klass) || utils.isExternalizable(klass)) {
+    public SortedSet<ExecutableElement>  getSerializationMethods(TypeElement typeElem) {
+        return getSerializedForm(typeElem).methods;
+    }
+
+    public boolean definesSerializableFields(TypeElement typeElem) {
+        if (!utils.isSerializable(typeElem) || utils.isExternalizable(typeElem)) {
             return false;
         } else {
-            NewSerializedForm sf = serializedForms.get(klass);
-            if (sf == null) {
-                sf = new NewSerializedForm(utils, configuration.docEnv.getElementUtils(), klass);
-                serializedForms.put(klass, sf);
-            }
-            return sf.definesSerializableFields;
+            return getSerializedForm(typeElem).definesSerializableFields;
         }
     }
 
