@@ -374,6 +374,8 @@ public:
   static void at_start();
   static void at_end(double boost_factor);
 
+  static bool is_first();
+  static bool is_warm();
   static uint64_t ncycles();
   static const AbsSeq& normalized_duration();
   static double time_since_last();

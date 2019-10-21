@@ -1049,6 +1049,14 @@ void ZStatCycle::at_end(double boost_factor) {
   _normalized_duration.add(normalized_duration);
 }
 
+bool ZStatCycle::is_first() {
+  return _ncycles == 0;
+}
+
+bool ZStatCycle::is_warm() {
+  return _ncycles >= 3;
+}
+
 uint64_t ZStatCycle::ncycles() {
   return _ncycles;
 }
