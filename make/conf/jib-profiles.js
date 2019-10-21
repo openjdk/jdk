@@ -839,13 +839,17 @@ var getJibProfilesProfiles = function (input, common, data) {
     if (testedProfile == null) {
         testedProfile = input.build_os + "-" + input.build_cpu;
     }
-    var testedProfileJDK = testedProfile + ".jdk";
-    var testedProfileTest = ""
-    if (testedProfile.endsWith("-jcov")) {
-        testedProfileTest = testedProfile.substring(0, testedProfile.length - "-jcov".length) + ".test";
+    var testedProfileJdk = testedProfile + ".jdk";
+    // Make it possible to use the test image from a different profile
+    var testImageProfile;
+    if (input.testImageProfile != null) {
+        testImageProfile = input.testImageProfile;
+    } else if (testedProfile.endsWith("-jcov")) {
+        testImageProfile = testedProfile.substring(0, testedProfile.length - "-jcov".length);
     } else {
-        testedProfileTest = testedProfile + ".test";
+        testImageProfile = testedProfile;
     }
+    var testedProfileTest = testImageProfile + ".test"
     var testOnlyMake = [ "run-test-prebuilt", "LOG_CMDLINES=true", "JTREG_VERBOSE=fail,error,time" ];
     if (testedProfile.endsWith("-gcov")) {
         testOnlyMake = concat(testOnlyMake, "GCOV_ENABLED=true")
@@ -855,14 +859,14 @@ var getJibProfilesProfiles = function (input, common, data) {
             target_os: input.build_os,
             target_cpu: input.build_cpu,
             dependencies: [
-                "jtreg", "gnumake", "boot_jdk", "devkit", "jib", "jcov", testedProfileJDK,
+                "jtreg", "gnumake", "boot_jdk", "devkit", "jib", "jcov", testedProfileJdk,
                 testedProfileTest
             ],
             src: "src.conf",
             make_args: testOnlyMake,
             environment: {
                 "BOOT_JDK": common.boot_jdk_home,
-                "JDK_IMAGE_DIR": input.get(testedProfileJDK, "home_path"),
+                "JDK_IMAGE_DIR": input.get(testedProfileJdk, "home_path"),
                 "TEST_IMAGE_DIR": input.get(testedProfileTest, "home_path")
             },
             labels: "test"
@@ -871,10 +875,10 @@ var getJibProfilesProfiles = function (input, common, data) {
 
     // If actually running the run-test-prebuilt profile, verify that the input
     // variable is valid and if so, add the appropriate target_* values from
-    // the tested profile.
+    // the tested profile. Use testImageProfile value as backup.
     if (input.profile == "run-test-prebuilt") {
-        if (profiles[testedProfile] == null) {
-            error("testedProfile is not defined: " + testedProfile);
+        if (profiles[testedProfile] == null && profiles[testImageProfile] == null) {
+            error("testedProfile is not defined: " + testedProfile + " " + testImageProfile);
         }
     }
     if (profiles[testedProfile] != null) {
@@ -882,6 +886,11 @@ var getJibProfilesProfiles = function (input, common, data) {
             = profiles[testedProfile]["target_os"];
         testOnlyProfilesPrebuilt["run-test-prebuilt"]["target_cpu"]
             = profiles[testedProfile]["target_cpu"];
+    } else if (profiles[testImageProfile] != null) {
+        testOnlyProfilesPrebuilt["run-test-prebuilt"]["target_os"]
+            = profiles[testImageProfile]["target_os"];
+        testOnlyProfilesPrebuilt["run-test-prebuilt"]["target_cpu"]
+            = profiles[testImageProfile]["target_cpu"];
     }
     profiles = concatObjects(profiles, testOnlyProfilesPrebuilt);
 
@@ -1346,3 +1355,8 @@ var isWsl = function (input) {
              || (input.build_os == "linux"
                  && java.lang.System.getProperty("os.version").contains("Microsoft")));
 }
+
+var error = function (s) {
+    java.lang.System.err.println("[ERROR] " + s);
+    exit(1);
+};
