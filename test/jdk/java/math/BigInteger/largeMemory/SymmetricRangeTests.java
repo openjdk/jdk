@@ -23,11 +23,11 @@
 
 /*
  * @test
- * @library /test/lib
- * @ignore This test has huge memory requirements
- * @run main/timeout=180/othervm -Xmx8g SymmetricRangeTests
  * @bug 6910473 8021204 8021203 9005933 8074460 8078672
  * @summary Test range of BigInteger values (use -Dseed=X to set PRNG seed)
+ * @library /test/lib
+ * @requires os.maxMemory > 8g
+ * @run main/timeout=180/othervm -Xmx8g SymmetricRangeTests
  * @author Dmitry Nadezhin
  * @key randomness
  */

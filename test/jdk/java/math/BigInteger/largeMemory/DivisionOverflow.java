@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,39 +23,33 @@
 
 /*
  * @test
- * @bug 8021204
- * @summary Test constructor BigInteger(String val, int radix) on very long string
- * @ignore This test has huge memory requirements
- * @run main/othervm -Xshare:off -Xmx8g StringConstructorOverflow
+ * @bug 8022780
+ * @summary Test division of large values
+ * @requires os.maxMemory > 8g
+ * @run main/othervm -Xshare:off -Xmx8g DivisionOverflow
  * @author Dmitry Nadezhin
  */
 import java.math.BigInteger;
 
-public class StringConstructorOverflow {
-
-    // String with hexadecimal value pow(2,pow(2,34))+1
-    private static String makeLongHexString() {
-        StringBuilder sb = new StringBuilder();
-        sb.append('1');
-        for (int i = 0; i < (1 << 30) - 1; i++) {
-            sb.append('0');
-        }
-        sb.append('1');
-        return sb.toString();
-    }
+public class DivisionOverflow {
 
     public static void main(String[] args) {
         try {
-            BigInteger bi = new BigInteger(makeLongHexString(), 16);
-            if (bi.compareTo(BigInteger.ONE) <= 0) {
-                throw new RuntimeException("Incorrect result " + bi.toString());
+            BigInteger a = BigInteger.ONE.shiftLeft(2147483646);
+            BigInteger b = BigInteger.ONE.shiftLeft(1568);
+            BigInteger[] qr = a.divideAndRemainder(b);
+            BigInteger q = qr[0];
+            BigInteger r = qr[1];
+            if (!r.equals(BigInteger.ZERO)) {
+                throw new RuntimeException("Incorrect signum() of remainder " + r.signum());
             }
-        } catch (ArithmeticException e) {
-            // expected
-            System.out.println("Overflow is reported by ArithmeticException, as expected");
+            if (q.bitLength() != 2147482079) {
+                throw new RuntimeException("Incorrect bitLength() of quotient " + q.bitLength());
+            }
+            System.out.println("Division of large values passed without overflow.");
         } catch (OutOfMemoryError e) {
             // possible
-            System.err.println("StringConstructorOverflow skipped: OutOfMemoryError");
+            System.err.println("DivisionOverflow skipped: OutOfMemoryError");
             System.err.println("Run jtreg with -javaoption:-Xmx8g");
         }
     }
