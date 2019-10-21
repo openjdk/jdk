@@ -262,7 +262,18 @@ void ShenandoahBarrierSet::on_thread_detach(Thread *thread) {
   }
 }
 
-oop ShenandoahBarrierSet::oop_load_from_native_barrier(oop obj, oop* load_addr) {
+oop ShenandoahBarrierSet::load_reference_barrier_native(oop obj, oop* load_addr) {
+  return load_reference_barrier_native_impl(obj, load_addr);
+}
+
+oop ShenandoahBarrierSet::load_reference_barrier_native(oop obj, narrowOop* load_addr) {
+  // Assumption: narrow oop version should not be used anywhere.
+  ShouldNotReachHere();
+  return NULL;
+}
+
+template <class T>
+oop ShenandoahBarrierSet::load_reference_barrier_native_impl(oop obj, T* load_addr) {
   if (CompressedOops::is_null(obj)) {
     return NULL;
   }

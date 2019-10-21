@@ -1033,7 +1033,7 @@ void ShenandoahBarrierC2Support::call_lrb_stub(Node*& ctrl, Node*& val, Node* lo
 
   address calladdr = is_native ? CAST_FROM_FN_PTR(address, ShenandoahRuntime::load_reference_barrier_native)
                                : target;
-  const char* name = is_native ? "oop_load_from_native_barrier" : "load_reference_barrier";
+  const char* name = is_native ? "load_reference_barrier_native" : "load_reference_barrier";
   Node* call = new CallLeafNode(ShenandoahBarrierSetC2::shenandoah_load_reference_barrier_Type(), calladdr, name, TypeRawPtr::BOTTOM);
 
   call->init_req(TypeFunc::Control, ctrl);

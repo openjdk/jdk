@@ -83,5 +83,5 @@ JRT_LEAF(void, ShenandoahRuntime::shenandoah_clone_barrier(oopDesc* src))
 JRT_END
 
 JRT_LEAF(oopDesc*, ShenandoahRuntime::load_reference_barrier_native(oopDesc * src, oop* load_addr))
-  return (oopDesc*) ShenandoahBarrierSet::barrier_set()->oop_load_from_native_barrier(oop(src), load_addr);
+  return (oopDesc*) ShenandoahBarrierSet::barrier_set()->load_reference_barrier_native(oop(src), load_addr);
 JRT_END

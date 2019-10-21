@@ -69,7 +69,7 @@ template <DecoratorSet decorators, typename BarrierSetT>
 template <typename T>
 inline oop ShenandoahBarrierSet::AccessBarrier<decorators, BarrierSetT>::oop_load_not_in_heap(T* addr) {
   oop value = Raw::oop_load_not_in_heap(addr);
-  value = ShenandoahBarrierSet::barrier_set()->oop_load_from_native_barrier(value, addr);
+  value = ShenandoahBarrierSet::barrier_set()->load_reference_barrier_native(value, addr);
   keep_alive_if_weak(decorators, value);
   return value;
 }
