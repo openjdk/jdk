@@ -24,6 +24,7 @@
 #include "precompiled.hpp"
 #include "gc/z/zAddress.inline.hpp"
 #include "gc/z/zThreadLocalAllocBuffer.hpp"
+#include "gc/z/zValue.inline.hpp"
 #include "runtime/globals.hpp"
 #include "runtime/thread.hpp"
 
