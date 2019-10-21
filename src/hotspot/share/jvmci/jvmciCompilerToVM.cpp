@@ -535,8 +535,8 @@ C2V_VMENTRY_NULL(jobject, lookupType, (JNIEnv* env, jobject, jstring jname, jcla
       JVMCI_THROW_MSG_NULL(ClassNotFoundException, str);
     }
   } else {
-    if (class_name->char_at(0) == 'L' &&
-      class_name->char_at(class_name->utf8_length()-1) == ';') {
+    if (class_name->char_at(0) == JVM_SIGNATURE_CLASS &&
+        class_name->char_at(class_name->utf8_length()-1) == JVM_SIGNATURE_ENDCLASS) {
       // This is a name from a signature.  Strip off the trimmings.
       // Call recursive to keep scope of strippedsym.
       TempNewSymbol strippedsym = SymbolTable::new_symbol(class_name->as_utf8()+1,

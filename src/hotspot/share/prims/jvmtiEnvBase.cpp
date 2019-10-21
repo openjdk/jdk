@@ -1361,7 +1361,7 @@ JvmtiEnvBase::check_top_frame(JavaThread* current_thread, JavaThread* java_threa
     NULL_CHECK(ob_k, JVMTI_ERROR_INVALID_OBJECT);
 
     // Method return type signature.
-    char* ty_sign = 1 + strchr(signature->as_C_string(), ')');
+    char* ty_sign = 1 + strchr(signature->as_C_string(), JVM_SIGNATURE_ENDFUNC);
 
     if (!VM_GetOrSetLocal::is_assignable(ty_sign, ob_k, current_thread)) {
       return JVMTI_ERROR_TYPE_MISMATCH;

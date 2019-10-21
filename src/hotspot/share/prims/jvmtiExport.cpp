@@ -1994,7 +1994,9 @@ void JvmtiExport::post_raw_field_modification(JavaThread *thread, Method* method
   address location, Klass* field_klass, Handle object, jfieldID field,
   char sig_type, jvalue *value) {
 
-  if (sig_type == 'I' || sig_type == 'Z' || sig_type == 'B' || sig_type == 'C' || sig_type == 'S') {
+  if (sig_type == JVM_SIGNATURE_INT || sig_type == JVM_SIGNATURE_BOOLEAN ||
+      sig_type == JVM_SIGNATURE_BYTE || sig_type == JVM_SIGNATURE_CHAR ||
+      sig_type == JVM_SIGNATURE_SHORT) {
     // 'I' instructions are used for byte, char, short and int.
     // determine which it really is, and convert
     fieldDescriptor fd;
@@ -2005,22 +2007,22 @@ void JvmtiExport::post_raw_field_modification(JavaThread *thread, Method* method
       // convert value from int to appropriate type
       switch (fd.field_type()) {
       case T_BOOLEAN:
-        sig_type = 'Z';
+        sig_type = JVM_SIGNATURE_BOOLEAN;
         value->i = 0; // clear it
         value->z = (jboolean)ival;
         break;
       case T_BYTE:
-        sig_type = 'B';
+        sig_type = JVM_SIGNATURE_BYTE;
         value->i = 0; // clear it
         value->b = (jbyte)ival;
         break;
       case T_CHAR:
-        sig_type = 'C';
+        sig_type = JVM_SIGNATURE_CHAR;
         value->i = 0; // clear it
         value->c = (jchar)ival;
         break;
       case T_SHORT:
-        sig_type = 'S';
+        sig_type = JVM_SIGNATURE_SHORT;
         value->i = 0; // clear it
         value->s = (jshort)ival;
         break;
@@ -2035,11 +2037,11 @@ void JvmtiExport::post_raw_field_modification(JavaThread *thread, Method* method
     }
   }
 
-  assert(sig_type != '[', "array should have sig_type == 'L'");
+  assert(sig_type != JVM_SIGNATURE_ARRAY, "array should have sig_type == 'L'");
   bool handle_created = false;
 
   // convert oop to JNI handle.
-  if (sig_type == 'L') {
+  if (sig_type == JVM_SIGNATURE_CLASS) {
     handle_created = true;
     value->l = (jobject)JNIHandles::make_local(thread, (oop)value->l);
   }

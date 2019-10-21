@@ -814,18 +814,18 @@ class CompileReplay : public StackObj {
     }
 
     oop java_mirror = k->java_mirror();
-    if (field_signature[0] == '[') {
+    if (field_signature[0] == JVM_SIGNATURE_ARRAY) {
       int length = parse_int("array length");
       oop value = NULL;
 
-      if (field_signature[1] == '[') {
+      if (field_signature[1] == JVM_SIGNATURE_ARRAY) {
         // multi dimensional array
         ArrayKlass* kelem = (ArrayKlass *)parse_klass(CHECK);
         if (kelem == NULL) {
           return;
         }
         int rank = 0;
-        while (field_signature[rank] == '[') {
+        while (field_signature[rank] == JVM_SIGNATURE_ARRAY) {
           rank++;
         }
         jint* dims = NEW_RESOURCE_ARRAY(jint, rank);
@@ -851,7 +851,8 @@ class CompileReplay : public StackObj {
           value = oopFactory::new_intArray(length, CHECK);
         } else if (strcmp(field_signature, "[J") == 0) {
           value = oopFactory::new_longArray(length, CHECK);
-        } else if (field_signature[0] == '[' && field_signature[1] == 'L') {
+        } else if (field_signature[0] == JVM_SIGNATURE_ARRAY &&
+                   field_signature[1] == JVM_SIGNATURE_CLASS) {
           Klass* kelem = resolve_klass(field_signature + 1, CHECK);
           value = oopFactory::new_objArray(kelem, length, CHECK);
         } else {
@@ -892,7 +893,7 @@ class CompileReplay : public StackObj {
       } else if (strcmp(field_signature, "Ljava/lang/String;") == 0) {
         Handle value = java_lang_String::create_from_str(string_value, CHECK);
         java_mirror->obj_field_put(fd.offset(), value());
-      } else if (field_signature[0] == 'L') {
+      } else if (field_signature[0] == JVM_SIGNATURE_CLASS) {
         Klass* k = resolve_klass(string_value, CHECK);
         oop value = InstanceKlass::cast(k)->allocate_instance(CHECK);
         java_mirror->obj_field_put(fd.offset(), value);

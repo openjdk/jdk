@@ -2151,7 +2151,7 @@ JNI_ENTRY_NO_PRESERVE(void, jni_SetObjectField(JNIEnv *env, jobject obj, jfieldI
   if (JvmtiExport::should_post_field_modification()) {
     jvalue field_value;
     field_value.l = value;
-    o = JvmtiExport::jni_SetField_probe_nh(thread, obj, o, k, fieldID, false, 'L', (jvalue *)&field_value);
+    o = JvmtiExport::jni_SetField_probe_nh(thread, obj, o, k, fieldID, false, JVM_SIGNATURE_CLASS, (jvalue *)&field_value);
   }
   HeapAccess<ON_UNKNOWN_OOP_REF>::oop_store_at(o, offset, JNIHandles::resolve(value));
   HOTSPOT_JNI_SETOBJECTFIELD_RETURN();
@@ -2177,34 +2177,34 @@ JNI_ENTRY_NO_PRESERVE(void, jni_Set##Result##Field(JNIEnv *env, jobject obj, jfi
     field_value.unionType = value; \
     o = JvmtiExport::jni_SetField_probe_nh(thread, obj, o, k, fieldID, false, SigType, (jvalue *)&field_value); \
   } \
-  if (SigType == 'Z') { value = ((jboolean)value) & 1; } \
+  if (SigType == JVM_SIGNATURE_BOOLEAN) { value = ((jboolean)value) & 1; } \
   o->Fieldname##_field_put(offset, value); \
   ReturnProbe; \
 JNI_END
 
-DEFINE_SETFIELD(jboolean, bool,   Boolean, 'Z', z
+DEFINE_SETFIELD(jboolean, bool,   Boolean, JVM_SIGNATURE_BOOLEAN, z
                 , HOTSPOT_JNI_SETBOOLEANFIELD_ENTRY(env, obj, (uintptr_t)fieldID, value),
                 HOTSPOT_JNI_SETBOOLEANFIELD_RETURN())
-DEFINE_SETFIELD(jbyte,    byte,   Byte,    'B', b
+DEFINE_SETFIELD(jbyte,    byte,   Byte,    JVM_SIGNATURE_BYTE, b
                 , HOTSPOT_JNI_SETBYTEFIELD_ENTRY(env, obj, (uintptr_t)fieldID, value),
                 HOTSPOT_JNI_SETBYTEFIELD_RETURN())
-DEFINE_SETFIELD(jchar,    char,   Char,    'C', c
+DEFINE_SETFIELD(jchar,    char,   Char,    JVM_SIGNATURE_CHAR, c
                 , HOTSPOT_JNI_SETCHARFIELD_ENTRY(env, obj, (uintptr_t)fieldID, value),
                 HOTSPOT_JNI_SETCHARFIELD_RETURN())
-DEFINE_SETFIELD(jshort,   short,  Short,   'S', s
+DEFINE_SETFIELD(jshort,   short,  Short,   JVM_SIGNATURE_SHORT, s
                 , HOTSPOT_JNI_SETSHORTFIELD_ENTRY(env, obj, (uintptr_t)fieldID, value),
                 HOTSPOT_JNI_SETSHORTFIELD_RETURN())
-DEFINE_SETFIELD(jint,     int,    Int,     'I', i
+DEFINE_SETFIELD(jint,     int,    Int,     JVM_SIGNATURE_INT, i
                 , HOTSPOT_JNI_SETINTFIELD_ENTRY(env, obj, (uintptr_t)fieldID, value),
                 HOTSPOT_JNI_SETINTFIELD_RETURN())
-DEFINE_SETFIELD(jlong,    long,   Long,    'J', j
+DEFINE_SETFIELD(jlong,    long,   Long,    JVM_SIGNATURE_LONG, j
                 , HOTSPOT_JNI_SETLONGFIELD_ENTRY(env, obj, (uintptr_t)fieldID, value),
                 HOTSPOT_JNI_SETLONGFIELD_RETURN())
 // Float and double probes don't return value because dtrace doesn't currently support it
-DEFINE_SETFIELD(jfloat,   float,  Float,   'F', f
+DEFINE_SETFIELD(jfloat,   float,  Float,   JVM_SIGNATURE_FLOAT, f
                 , HOTSPOT_JNI_SETFLOATFIELD_ENTRY(env, obj, (uintptr_t)fieldID),
                 HOTSPOT_JNI_SETFLOATFIELD_RETURN())
-DEFINE_SETFIELD(jdouble,  double, Double,  'D', d
+DEFINE_SETFIELD(jdouble,  double, Double,  JVM_SIGNATURE_DOUBLE, d
                 , HOTSPOT_JNI_SETDOUBLEFIELD_ENTRY(env, obj, (uintptr_t)fieldID),
                 HOTSPOT_JNI_SETDOUBLEFIELD_RETURN())
 
@@ -2352,7 +2352,7 @@ JNI_ENTRY(void, jni_SetStaticObjectField(JNIEnv *env, jclass clazz, jfieldID fie
   if (JvmtiExport::should_post_field_modification()) {
     jvalue field_value;
     field_value.l = value;
-    JvmtiExport::jni_SetField_probe(thread, NULL, NULL, id->holder(), fieldID, true, 'L', (jvalue *)&field_value);
+    JvmtiExport::jni_SetField_probe(thread, NULL, NULL, id->holder(), fieldID, true, JVM_SIGNATURE_CLASS, (jvalue *)&field_value);
   }
   id->holder()->java_mirror()->obj_field_put(id->offset(), JNIHandles::resolve(value));
   HOTSPOT_JNI_SETSTATICOBJECTFIELD_RETURN();
@@ -2376,34 +2376,34 @@ JNI_ENTRY(void, jni_SetStatic##Result##Field(JNIEnv *env, jclass clazz, jfieldID
     field_value.unionType = value; \
     JvmtiExport::jni_SetField_probe(thread, NULL, NULL, id->holder(), fieldID, true, SigType, (jvalue *)&field_value); \
   } \
-  if (SigType == 'Z') { value = ((jboolean)value) & 1; } \
+  if (SigType == JVM_SIGNATURE_BOOLEAN) { value = ((jboolean)value) & 1; } \
   id->holder()->java_mirror()-> Fieldname##_field_put (id->offset(), value); \
   ReturnProbe;\
 JNI_END
 
-DEFINE_SETSTATICFIELD(jboolean, bool,   Boolean, 'Z', z
+DEFINE_SETSTATICFIELD(jboolean, bool,   Boolean, JVM_SIGNATURE_BOOLEAN, z
                       , HOTSPOT_JNI_SETSTATICBOOLEANFIELD_ENTRY(env, clazz, (uintptr_t)fieldID, value),
                       HOTSPOT_JNI_SETSTATICBOOLEANFIELD_RETURN())
-DEFINE_SETSTATICFIELD(jbyte,    byte,   Byte,    'B', b
+DEFINE_SETSTATICFIELD(jbyte,    byte,   Byte,    JVM_SIGNATURE_BYTE, b
                       , HOTSPOT_JNI_SETSTATICBYTEFIELD_ENTRY(env, clazz, (uintptr_t) fieldID, value),
                       HOTSPOT_JNI_SETSTATICBYTEFIELD_RETURN())
-DEFINE_SETSTATICFIELD(jchar,    char,   Char,    'C', c
+DEFINE_SETSTATICFIELD(jchar,    char,   Char,    JVM_SIGNATURE_CHAR, c
                       , HOTSPOT_JNI_SETSTATICCHARFIELD_ENTRY(env, clazz, (uintptr_t) fieldID, value),
                       HOTSPOT_JNI_SETSTATICCHARFIELD_RETURN())
-DEFINE_SETSTATICFIELD(jshort,   short,  Short,   'S', s
+DEFINE_SETSTATICFIELD(jshort,   short,  Short,   JVM_SIGNATURE_SHORT, s
                       , HOTSPOT_JNI_SETSTATICSHORTFIELD_ENTRY(env, clazz, (uintptr_t) fieldID, value),
                       HOTSPOT_JNI_SETSTATICSHORTFIELD_RETURN())
-DEFINE_SETSTATICFIELD(jint,     int,    Int,     'I', i
+DEFINE_SETSTATICFIELD(jint,     int,    Int,     JVM_SIGNATURE_INT, i
                       , HOTSPOT_JNI_SETSTATICINTFIELD_ENTRY(env, clazz, (uintptr_t) fieldID, value),
                       HOTSPOT_JNI_SETSTATICINTFIELD_RETURN())
-DEFINE_SETSTATICFIELD(jlong,    long,   Long,    'J', j
+DEFINE_SETSTATICFIELD(jlong,    long,   Long,    JVM_SIGNATURE_LONG, j
                       , HOTSPOT_JNI_SETSTATICLONGFIELD_ENTRY(env, clazz, (uintptr_t) fieldID, value),
                       HOTSPOT_JNI_SETSTATICLONGFIELD_RETURN())
 // Float and double probes don't return value because dtrace doesn't currently support it
-DEFINE_SETSTATICFIELD(jfloat,   float,  Float,   'F', f
+DEFINE_SETSTATICFIELD(jfloat,   float,  Float,   JVM_SIGNATURE_FLOAT, f
                       , HOTSPOT_JNI_SETSTATICFLOATFIELD_ENTRY(env, clazz, (uintptr_t) fieldID),
                       HOTSPOT_JNI_SETSTATICFLOATFIELD_RETURN())
-DEFINE_SETSTATICFIELD(jdouble,  double, Double,  'D', d
+DEFINE_SETSTATICFIELD(jdouble,  double, Double,  JVM_SIGNATURE_DOUBLE, d
                       , HOTSPOT_JNI_SETSTATICDOUBLEFIELD_ENTRY(env, clazz, (uintptr_t) fieldID),
                       HOTSPOT_JNI_SETSTATICDOUBLEFIELD_RETURN())
 

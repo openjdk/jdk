@@ -122,19 +122,19 @@ VerificationType VerificationType::get_component(ClassVerifier *context, TRAPS) 
   assert(is_array() && name()->utf8_length() >= 2, "Must be a valid array");
   Symbol* component;
   switch (name()->char_at(1)) {
-    case 'Z': return VerificationType(Boolean);
-    case 'B': return VerificationType(Byte);
-    case 'C': return VerificationType(Char);
-    case 'S': return VerificationType(Short);
-    case 'I': return VerificationType(Integer);
-    case 'J': return VerificationType(Long);
-    case 'F': return VerificationType(Float);
-    case 'D': return VerificationType(Double);
-    case '[':
+    case JVM_SIGNATURE_BOOLEAN: return VerificationType(Boolean);
+    case JVM_SIGNATURE_BYTE:    return VerificationType(Byte);
+    case JVM_SIGNATURE_CHAR:    return VerificationType(Char);
+    case JVM_SIGNATURE_SHORT:   return VerificationType(Short);
+    case JVM_SIGNATURE_INT:     return VerificationType(Integer);
+    case JVM_SIGNATURE_LONG:    return VerificationType(Long);
+    case JVM_SIGNATURE_FLOAT:   return VerificationType(Float);
+    case JVM_SIGNATURE_DOUBLE:  return VerificationType(Double);
+    case JVM_SIGNATURE_ARRAY:
       component = context->create_temporary_symbol(
         name(), 1, name()->utf8_length());
       return VerificationType::reference_type(component);
-    case 'L':
+    case JVM_SIGNATURE_CLASS:
       component = context->create_temporary_symbol(
         name(), 2, name()->utf8_length() - 1);
       return VerificationType::reference_type(component);

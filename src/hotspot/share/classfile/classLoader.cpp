@@ -187,7 +187,7 @@ const char* ClassLoader::package_from_name(const char* const class_name, bool* b
     *bad_class_name = false;
   }
 
-  const char* const last_slash = strrchr(class_name, '/');
+  const char* const last_slash = strrchr(class_name, JVM_SIGNATURE_SLASH);
   if (last_slash == NULL) {
     // No package name
     return NULL;
@@ -195,16 +195,16 @@ const char* ClassLoader::package_from_name(const char* const class_name, bool* b
 
   char* class_name_ptr = (char*) class_name;
   // Skip over '['s
-  if (*class_name_ptr == '[') {
+  if (*class_name_ptr == JVM_SIGNATURE_ARRAY) {
     do {
       class_name_ptr++;
-    } while (*class_name_ptr == '[');
+    } while (*class_name_ptr == JVM_SIGNATURE_ARRAY);
 
     // Fully qualified class names should not contain a 'L'.
     // Set bad_class_name to true to indicate that the package name
     // could not be obtained due to an error condition.
     // In this situation, is_same_class_package returns false.
-    if (*class_name_ptr == 'L') {
+    if (*class_name_ptr == JVM_SIGNATURE_CLASS) {
       if (bad_class_name != NULL) {
         *bad_class_name = true;
       }

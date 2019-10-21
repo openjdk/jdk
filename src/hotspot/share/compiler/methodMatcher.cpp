@@ -264,11 +264,13 @@ void MethodMatcher::parse_method_pattern(char*& line, const char*& error_msg, Me
     c_match = check_mode(class_name, error_msg);
     m_match = check_mode(method_name, error_msg);
 
-    if ((strchr(class_name, '<') != NULL) || (strchr(class_name, '>') != NULL)) {
+    if ((strchr(class_name, JVM_SIGNATURE_SPECIAL) != NULL) ||
+        (strchr(class_name, JVM_SIGNATURE_ENDSPECIAL) != NULL)) {
       error_msg = "Chars '<' and '>' not allowed in class name";
       return;
     }
-    if ((strchr(method_name, '<') != NULL) || (strchr(method_name, '>') != NULL)) {
+    if ((strchr(method_name, JVM_SIGNATURE_SPECIAL) != NULL) ||
+        (strchr(method_name, JVM_SIGNATURE_ENDSPECIAL) != NULL)) {
       if ((strncmp("<init>", method_name, 255) != 0) && (strncmp("<clinit>", method_name, 255) != 0)) {
         error_msg = "Chars '<' and '>' only allowed in <init> and <clinit>";
         return;

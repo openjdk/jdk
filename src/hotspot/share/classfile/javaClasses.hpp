@@ -201,7 +201,9 @@ class java_lang_String : AllStatic {
   static inline bool value_equals(typeArrayOop str_value1, typeArrayOop str_value2);
 
   // Conversion between '.' and '/' formats
-  static Handle externalize_classname(Handle java_string, TRAPS) { return char_converter(java_string, '/', '.', THREAD); }
+  static Handle externalize_classname(Handle java_string, TRAPS) {
+    return char_converter(java_string, JVM_SIGNATURE_SLASH, JVM_SIGNATURE_DOT, THREAD);
+  }
 
   // Conversion
   static Symbol* as_symbol(oop java_string);

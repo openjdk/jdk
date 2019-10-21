@@ -106,7 +106,7 @@ char* NativeLookup::long_jni_name(const methodHandle& method) {
   st.print("__");
   // find ')'
   int end;
-  for (end = 0; end < signature->utf8_length() && signature->char_at(end) != ')'; end++);
+  for (end = 0; end < signature->utf8_length() && signature->char_at(end) != JVM_SIGNATURE_ENDFUNC; end++);
   // skip first '('
   mangle_name_on(&st, signature, 1, end);
   return st.as_string();

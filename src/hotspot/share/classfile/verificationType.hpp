@@ -209,24 +209,24 @@ class VerificationType {
   bool is_x_array(char sig) const {
     return is_null() || (is_array() && (name()->char_at(1) == sig));
   }
-  bool is_int_array() const { return is_x_array('I'); }
-  bool is_byte_array() const { return is_x_array('B'); }
-  bool is_bool_array() const { return is_x_array('Z'); }
-  bool is_char_array() const { return is_x_array('C'); }
-  bool is_short_array() const { return is_x_array('S'); }
-  bool is_long_array() const { return is_x_array('J'); }
-  bool is_float_array() const { return is_x_array('F'); }
-  bool is_double_array() const { return is_x_array('D'); }
-  bool is_object_array() const { return is_x_array('L'); }
-  bool is_array_array() const { return is_x_array('['); }
+  bool is_int_array() const { return is_x_array(JVM_SIGNATURE_INT); }
+  bool is_byte_array() const { return is_x_array(JVM_SIGNATURE_BYTE); }
+  bool is_bool_array() const { return is_x_array(JVM_SIGNATURE_BOOLEAN); }
+  bool is_char_array() const { return is_x_array(JVM_SIGNATURE_CHAR); }
+  bool is_short_array() const { return is_x_array(JVM_SIGNATURE_SHORT); }
+  bool is_long_array() const { return is_x_array(JVM_SIGNATURE_LONG); }
+  bool is_float_array() const { return is_x_array(JVM_SIGNATURE_FLOAT); }
+  bool is_double_array() const { return is_x_array(JVM_SIGNATURE_DOUBLE); }
+  bool is_object_array() const { return is_x_array(JVM_SIGNATURE_CLASS); }
+  bool is_array_array() const { return is_x_array(JVM_SIGNATURE_ARRAY); }
   bool is_reference_array() const
     { return is_object_array() || is_array_array(); }
   bool is_object() const
     { return (is_reference() && !is_null() && name()->utf8_length() >= 1 &&
-              name()->char_at(0) != '['); }
+              name()->char_at(0) != JVM_SIGNATURE_ARRAY); }
   bool is_array() const
     { return (is_reference() && !is_null() && name()->utf8_length() >= 2 &&
-              name()->char_at(0) == '['); }
+              name()->char_at(0) == JVM_SIGNATURE_ARRAY); }
   bool is_uninitialized() const
     { return ((_u._data & Uninitialized) == Uninitialized); }
   bool is_uninitialized_this() const
@@ -322,7 +322,7 @@ class VerificationType {
   int dimensions() const {
     assert(is_array(), "Must be an array");
     int index = 0;
-    while (name()->char_at(index) == '[') index++;
+    while (name()->char_at(index) == JVM_SIGNATURE_ARRAY) index++;
     return index;
   }
 

@@ -93,7 +93,7 @@ Klass* AOTCodeHeap::lookup_klass(const char* name, int len, const Method* method
   Handle protection_domain(thread, caller->method_holder()->protection_domain());
 
   // Ignore wrapping L and ;
-  if (name[0] == 'L') {
+  if (name[0] == JVM_SIGNATURE_CLASS) {
     assert(len > 2, "small name %s", name);
     name++;
     len -= 2;

@@ -2166,14 +2166,14 @@ bool VM_RedefineClasses::rewrite_cp_refs_in_element_value(
 
   switch (tag) {
     // These BaseType tag values are from Table 4.2 in VM spec:
-    case 'B':  // byte
-    case 'C':  // char
-    case 'D':  // double
-    case 'F':  // float
-    case 'I':  // int
-    case 'J':  // long
-    case 'S':  // short
-    case 'Z':  // boolean
+    case JVM_SIGNATURE_BYTE:
+    case JVM_SIGNATURE_CHAR:
+    case JVM_SIGNATURE_DOUBLE:
+    case JVM_SIGNATURE_FLOAT:
+    case JVM_SIGNATURE_INT:
+    case JVM_SIGNATURE_LONG:
+    case JVM_SIGNATURE_SHORT:
+    case JVM_SIGNATURE_BOOLEAN:
 
     // The remaining tag values are from Table 4.8 in the 2nd-edition of
     // the VM spec:
@@ -2244,7 +2244,7 @@ bool VM_RedefineClasses::rewrite_cp_refs_in_element_value(
       }
       break;
 
-    case '[':
+    case JVM_SIGNATURE_ARRAY:
     {
       if ((byte_i_ref + 2) > annotations_typeArray->length()) {
         // not enough room for a num_values field

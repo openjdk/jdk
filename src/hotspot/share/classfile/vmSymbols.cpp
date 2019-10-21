@@ -970,7 +970,7 @@ const char* vmIntrinsics::short_name_as_C_string(vmIntrinsics::ID id, char* buf,
   case F_RNY:fname = "native synchronized "; break;
   default:   break;
   }
-  const char* kptr = strrchr(kname, '/');
+  const char* kptr = strrchr(kname, JVM_SIGNATURE_SLASH);
   if (kptr != NULL)  kname = kptr + 1;
   int len = jio_snprintf(buf, buflen, "%s: %s%s.%s%s",
                          str, fname, kname, mname, sname);

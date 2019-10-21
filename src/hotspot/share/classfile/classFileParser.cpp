@@ -731,7 +731,7 @@ void ClassFileParser::parse_constant_pool(const ClassFileStream* const stream,
           const unsigned int name_len = name->utf8_length();
           if (tag == JVM_CONSTANT_Methodref &&
               name_len != 0 &&
-              name->char_at(0) == '<' &&
+              name->char_at(0) == JVM_SIGNATURE_SPECIAL &&
               name != vmSymbols::object_initializer_name()) {
             classfile_parse_error(
               "Bad method name at constant pool index %u in class file %s",
@@ -4961,24 +4961,25 @@ bool ClassFileParser::verify_unqualified_name(const char* name,
   if (length == 0) return false;  // Must have at least one char.
   for (const char* p = name; p != name + length; p++) {
     switch(*p) {
-      case '.':
-      case ';':
-      case '[':
+      case JVM_SIGNATURE_DOT:
+      case JVM_SIGNATURE_ENDCLASS:
+      case JVM_SIGNATURE_ARRAY:
         // do not permit '.', ';', or '['
         return false;
-      case '/':
+      case JVM_SIGNATURE_SLASH:
         // check for '//' or leading or trailing '/' which are not legal
         // unqualified name must not be empty
         if (type == ClassFileParser::LegalClass) {
-          if (p == name || p+1 >= name+length || *(p+1) == '/') {
+          if (p == name || p+1 >= name+length ||
+              *(p+1) == JVM_SIGNATURE_SLASH) {
             return false;
           }
         } else {
           return false;   // do not permit '/' unless it's class name
         }
         break;
-      case '<':
-      case '>':
+      case JVM_SIGNATURE_SPECIAL:
+      case JVM_SIGNATURE_ENDSPECIAL:
         // do not permit '<' or '>' in method names
         if (type == ClassFileParser::LegalMethod) {
           return false;
@@ -5015,7 +5016,7 @@ static const char* skip_over_field_name(const char* const name,
         last_is_slash = false;
         continue;
       }
-      if (slash_ok && ch == '/') {
+      if (slash_ok && ch == JVM_SIGNATURE_SLASH) {
         if (last_is_slash) {
           return NULL;  // Don't permit consecutive slashes
         }
@@ -5095,14 +5096,14 @@ const char* ClassFileParser::skip_over_field_signature(const char* signature,
         const char* const p = skip_over_field_name(signature + 1, true, --length);
 
         // The next character better be a semicolon
-        if (p && (p - signature) > 1 && p[0] == ';') {
+        if (p && (p - signature) > 1 && p[0] == JVM_SIGNATURE_ENDCLASS) {
           return p + 1;
         }
       }
       else {
         // Skip leading 'L' and ignore first appearance of ';'
         signature++;
-        const char* c = (const char*) memchr(signature, ';', length - 1);
+        const char* c = (const char*) memchr(signature, JVM_SIGNATURE_ENDCLASS, length - 1);
         // Format check signature
         if (c != NULL) {
           int newlen = c - (char*) signature;
@@ -5151,7 +5152,7 @@ void ClassFileParser::verify_legal_class_name(const Symbol* name, TRAPS) const {
       p = skip_over_field_signature(bytes, false, length, CHECK);
       legal = (p != NULL) && ((p - bytes) == (int)length);
     } else if (_major_version < JAVA_1_5_VERSION) {
-      if (bytes[0] != '<') {
+      if (bytes[0] != JVM_SIGNATURE_SPECIAL) {
         p = skip_over_field_name(bytes, true, length);
         legal = (p != NULL) && ((p - bytes) == (int)length);
       }
@@ -5186,7 +5187,7 @@ void ClassFileParser::verify_legal_field_name(const Symbol* name, TRAPS) const {
 
   if (length > 0) {
     if (_major_version < JAVA_1_5_VERSION) {
-      if (bytes[0] != '<') {
+      if (bytes[0] != JVM_SIGNATURE_SPECIAL) {
         const char* p = skip_over_field_name(bytes, false, length);
         legal = (p != NULL) && ((p - bytes) == (int)length);
       }
@@ -5219,7 +5220,7 @@ void ClassFileParser::verify_legal_method_name(const Symbol* name, TRAPS) const 
   bool legal = false;
 
   if (length > 0) {
-    if (bytes[0] == '<') {
+    if (bytes[0] == JVM_SIGNATURE_SPECIAL) {
       if (name == vmSymbols::object_initializer_name() || name == vmSymbols::class_initializer_name()) {
         legal = true;
       }
@@ -5303,7 +5304,7 @@ int ClassFileParser::verify_legal_method_signature(const Symbol* name,
     // The first non-signature thing better be a ')'
     if ((length > 0) && (*p++ == JVM_SIGNATURE_ENDFUNC)) {
       length--;
-      if (name->utf8_length() > 0 && name->char_at(0) == '<') {
+      if (name->utf8_length() > 0 && name->char_at(0) == JVM_SIGNATURE_SPECIAL) {
         // All internal methods must return void
         if ((length == 1) && (p[0] == JVM_SIGNATURE_VOID)) {
           return args_size;
@@ -5705,7 +5706,7 @@ void ClassFileParser::update_class_name(Symbol* new_class_name) {
 // its _class_name field.
 void ClassFileParser::prepend_host_package_name(const InstanceKlass* unsafe_anonymous_host, TRAPS) {
   ResourceMark rm(THREAD);
-  assert(strrchr(_class_name->as_C_string(), '/') == NULL,
+  assert(strrchr(_class_name->as_C_string(), JVM_SIGNATURE_SLASH) == NULL,
          "Unsafe anonymous class should not be in a package");
   const char* host_pkg_name =
     ClassLoader::package_from_name(unsafe_anonymous_host->name()->as_C_string(), NULL);
@@ -5738,7 +5739,7 @@ void ClassFileParser::fix_unsafe_anonymous_class_name(TRAPS) {
   assert(_unsafe_anonymous_host != NULL, "Expected an unsafe anonymous class");
 
   const jbyte* anon_last_slash = UTF8::strrchr((const jbyte*)_class_name->base(),
-                                               _class_name->utf8_length(), '/');
+                                               _class_name->utf8_length(), JVM_SIGNATURE_SLASH);
   if (anon_last_slash == NULL) {  // Unnamed package
     prepend_host_package_name(_unsafe_anonymous_host, CHECK);
   } else {
@@ -6343,7 +6344,7 @@ bool ClassFileParser::is_internal_format(Symbol* class_name) {
   if (class_name != NULL) {
     ResourceMark rm;
     char* name = class_name->as_C_string();
-    return strchr(name, '.') == NULL;
+    return strchr(name, JVM_SIGNATURE_DOT) == NULL;
   } else {
     return true;
   }

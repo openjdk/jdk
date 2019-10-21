@@ -486,7 +486,7 @@ ciKlass* ciObjectFactory::get_unloaded_klass(ciKlass* accessing_klass,
 
   // Two cases: this is an unloaded ObjArrayKlass or an
   // unloaded InstanceKlass.  Deal with both.
-  if (name->char_at(0) == '[') {
+  if (name->char_at(0) == JVM_SIGNATURE_ARRAY) {
     // Decompose the name.'
     FieldArrayInfo fd;
     BasicType element_type = FieldType::get_array_info(name->get_symbol(),

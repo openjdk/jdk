@@ -79,7 +79,7 @@ void JavaAssertions::addOption(const char* name, bool enable) {
   // JVM_DesiredAssertionStatus pass the external_name() to
   // JavaAssertion::enabled(), but that is done once per loaded class.
   for (int i = 0; i < len; ++i) {
-    if (name_copy[i] == '.') name_copy[i] = '/';
+    if (name_copy[i] == JVM_SIGNATURE_DOT) name_copy[i] = JVM_SIGNATURE_SLASH;
   }
 
   if (TraceJavaAssertions) {
@@ -135,7 +135,7 @@ objArrayHandle names, typeArrayHandle enabled, TRAPS) {
   for (index = len - 1; p != 0; p = p->next(), --index) {
     assert(index >= 0, "length does not match list");
     Handle s = java_lang_String::create_from_str(p->name(), CHECK);
-    s = java_lang_String::char_converter(s, '/', '.', CHECK);
+    s = java_lang_String::char_converter(s, JVM_SIGNATURE_SLASH, JVM_SIGNATURE_DOT, CHECK);
     names->obj_at_put(index, s());
     enabled->bool_at_put(index, p->enabled());
   }
@@ -163,10 +163,10 @@ JavaAssertions::match_package(const char* classname) {
   // does not include a package, length will be 0 which will match items for the
   // default package (from options "-ea:..."  or "-da:...").
   size_t len = strlen(classname);
-  for (/* empty */; len > 0 && classname[len] != '/'; --len) /* empty */;
+  for (/* empty */; len > 0 && classname[len] != JVM_SIGNATURE_SLASH; --len) /* empty */;
 
   do {
-    assert(len == 0 || classname[len] == '/', "not a package name");
+    assert(len == 0 || classname[len] == JVM_SIGNATURE_SLASH, "not a package name");
     for (OptionList* p = _packages; p != 0; p = p->next()) {
       if (strncmp(p->name(), classname, len) == 0 && p->name()[len] == '\0') {
         return p;
@@ -175,7 +175,7 @@ JavaAssertions::match_package(const char* classname) {
 
     // Find the length of the next package, taking care to avoid decrementing
     // past 0 (len is unsigned).
-    while (len > 0 && classname[--len] != '/') /* empty */;
+    while (len > 0 && classname[--len] != JVM_SIGNATURE_SLASH) /* empty */;
   } while (len > 0);
 
   return 0;

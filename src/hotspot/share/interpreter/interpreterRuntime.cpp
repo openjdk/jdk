@@ -1249,15 +1249,15 @@ JRT_ENTRY(void, InterpreterRuntime::post_field_modification(JavaThread *thread,
   char sig_type = '\0';
 
   switch(cp_entry->flag_state()) {
-    case btos: sig_type = 'B'; break;
-    case ztos: sig_type = 'Z'; break;
-    case ctos: sig_type = 'C'; break;
-    case stos: sig_type = 'S'; break;
-    case itos: sig_type = 'I'; break;
-    case ftos: sig_type = 'F'; break;
-    case atos: sig_type = 'L'; break;
-    case ltos: sig_type = 'J'; break;
-    case dtos: sig_type = 'D'; break;
+    case btos: sig_type = JVM_SIGNATURE_BYTE;    break;
+    case ztos: sig_type = JVM_SIGNATURE_BOOLEAN; break;
+    case ctos: sig_type = JVM_SIGNATURE_CHAR;    break;
+    case stos: sig_type = JVM_SIGNATURE_SHORT;   break;
+    case itos: sig_type = JVM_SIGNATURE_INT;     break;
+    case ftos: sig_type = JVM_SIGNATURE_FLOAT;   break;
+    case atos: sig_type = JVM_SIGNATURE_CLASS;   break;
+    case ltos: sig_type = JVM_SIGNATURE_LONG;    break;
+    case dtos: sig_type = JVM_SIGNATURE_DOUBLE;  break;
     default:  ShouldNotReachHere(); return;
   }
   bool is_static = (obj == NULL);
