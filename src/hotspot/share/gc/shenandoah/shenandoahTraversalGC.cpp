@@ -340,9 +340,6 @@ void ShenandoahTraversalGC::prepare_regions() {
 }
 
 void ShenandoahTraversalGC::prepare() {
-  _heap->collection_set()->clear();
-  assert(_heap->collection_set()->count() == 0, "collection set not clear");
-
   {
     ShenandoahGCPhase phase(ShenandoahPhaseTimings::traversal_gc_make_parsable);
     _heap->make_parsable(true);
@@ -356,15 +353,26 @@ void ShenandoahTraversalGC::prepare() {
   assert(_heap->marking_context()->is_bitmap_clear(), "need clean mark bitmap");
   assert(!_heap->marking_context()->is_complete(), "should not be complete");
 
-  ShenandoahFreeSet* free_set = _heap->free_set();
+  // About to choose the collection set, make sure we know which regions are pinned.
+  {
+    ShenandoahGCPhase phase_cleanup(ShenandoahPhaseTimings::traversal_gc_prepare_sync_pinned);
+    _heap->sync_pinned_region_status();
+  }
+
   ShenandoahCollectionSet* collection_set = _heap->collection_set();
+  {
+    ShenandoahHeapLocker lock(_heap->lock());
 
-  // Find collection set
-  _heap->heuristics()->choose_collection_set(collection_set);
-  prepare_regions();
+    collection_set->clear();
+    assert(collection_set->count() == 0, "collection set not clear");
 
-  // Rebuild free set
-  free_set->rebuild();
+    // Find collection set
+    _heap->heuristics()->choose_collection_set(collection_set);
+    prepare_regions();
+
+    // Rebuild free set
+    _heap->free_set()->rebuild();
+  }
 
   log_info(gc, ergo)("Collectable Garbage: " SIZE_FORMAT "%s, " SIZE_FORMAT "%s CSet, " SIZE_FORMAT " CSet regions",
                      byte_size_in_proper_unit(collection_set->garbage()),   proper_unit_for_byte_size(collection_set->garbage()),
@@ -385,7 +393,6 @@ void ShenandoahTraversalGC::init_traversal_collection() {
 
   {
     ShenandoahGCPhase phase_prepare(ShenandoahPhaseTimings::traversal_gc_prepare);
-    ShenandoahHeapLocker lock(_heap->lock());
     prepare();
   }
 
@@ -612,6 +619,13 @@ void ShenandoahTraversalGC::final_traversal_collection() {
 
     // Resize metaspace
     MetaspaceGC::compute_new_size();
+
+    // Need to see that pinned region status is updated: newly pinned regions must not
+    // be trashed. New unpinned regions should be trashed.
+    {
+      ShenandoahGCPhase phase_cleanup(ShenandoahPhaseTimings::traversal_gc_sync_pinned);
+      _heap->sync_pinned_region_status();
+    }
 
     // Still good? We can now trash the cset, and make final verification
     {

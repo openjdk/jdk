@@ -128,6 +128,9 @@ void ShenandoahMarkCompact::do_it(GCCause::Cause gc_cause) {
     // e. Set back forwarded objects bit back, in case some steps above dropped it.
     heap->set_has_forwarded_objects(has_forwarded_objects);
 
+    // f. Sync pinned region status from the CP marks
+    heap->sync_pinned_region_status();
+
     // The rest of prologue:
     BiasedLocking::preserve_marks();
     _preserved_marks->init(heap->workers()->active_workers());
@@ -504,6 +507,10 @@ void ShenandoahMarkCompact::phase2_calculate_target_addresses(ShenandoahHeapRegi
   ShenandoahGCPhase calculate_address_phase(ShenandoahPhaseTimings::full_gc_calculate_addresses);
 
   ShenandoahHeap* heap = ShenandoahHeap::heap();
+
+  // About to figure out which regions can be compacted, make sure pinning status
+  // had been updated in GC prologue.
+  heap->assert_pinned_region_status();
 
   {
     // Trash the immediately collectible regions before computing addresses

@@ -120,6 +120,9 @@ void ShenandoahHeuristics::choose_collection_set(ShenandoahCollectionSet* collec
 
   ShenandoahHeap* heap = ShenandoahHeap::heap();
 
+  // Check all pinned regions have updated status before choosing the collection set.
+  heap->assert_pinned_region_status();
+
   // Step 1. Build up the region candidates we care about, rejecting losers and accepting winners right away.
 
   size_t num_regions = heap->num_regions();

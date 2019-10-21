@@ -101,6 +101,7 @@ class outputStream;
   f(purge_cldg,                                     "    CLDG")                         \
   f(complete_liveness,                              "  Complete Liveness")              \
   f(retire_tlabs,                                   "  Retire TLABs")                   \
+  f(sync_pinned,                                    "  Sync Pinned")                    \
   f(trash_cset,                                     "  Trash CSet")                     \
   f(prepare_evac,                                   "  Prepare Evacuation")             \
                                                                                         \
@@ -161,6 +162,7 @@ class outputStream;
   f(final_update_refs_string_dedup_queue_roots,      "    UR: Dedup Queue Roots")       \
   f(final_update_refs_finish_queues,                 "    UR: Finish Queues")           \
                                                                                         \
+  f(final_update_refs_sync_pinned,                   "  Sync Pinned")                   \
   f(final_update_refs_trash_cset,                    "  Trash CSet")                    \
                                                                                         \
   f(degen_gc_gross,                                  "Pause Degenerated GC (G)")        \
@@ -193,6 +195,7 @@ class outputStream;
   f(traversal_gc_prepare,                            "  Prepare")                       \
   f(traversal_gc_make_parsable,                      "    Make Parsable")               \
   f(traversal_gc_resize_tlabs,                       "    Resize TLABs")                \
+  f(traversal_gc_prepare_sync_pinned,                "    Sync Pinned")                 \
                                                                                         \
   /* Per-thread timer block, should have "roots" counters in consistent order */        \
   f(init_traversal_gc_work,                          "  Work")                          \
@@ -264,6 +267,7 @@ class outputStream;
   f(final_traversal_update_string_dedup_queue_roots,    "    TU: Dedup Queue Roots")    \
   f(final_traversal_update_finish_queues,               "    TU: Finish Queues")        \
                                                                                         \
+  f(traversal_gc_sync_pinned,                        "  Sync Pinned")                   \
   f(traversal_gc_cleanup,                            "  Cleanup")                       \
                                                                                         \
   f(full_gc_gross,                                   "Pause Full GC (G)")               \
