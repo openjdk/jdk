@@ -64,7 +64,7 @@ public class ModuleGraph implements Taglet {
         }
 
         String moduleName = ((ModuleElement) element).getQualifiedName().toString();
-        String imageFile = "module-graph.png";
+        String imageFile = "module-graph.svg";
         int thumbnailHeight = -1;
         String hoverImage = "";
         if (!moduleName.equals("java.base")) {
