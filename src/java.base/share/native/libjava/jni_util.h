@@ -93,6 +93,9 @@ JNIEXPORT void JNICALL
 JNU_ThrowIOExceptionWithLastError(JNIEnv *env, const char *defaultDetail);
 
 /* Convert between Java strings and i18n C strings */
+JNIEXPORT jstring
+NewStringPlatform(JNIEnv *env, const char *str);
+
 JNIEXPORT const char *
 GetStringPlatformChars(JNIEnv *env, jstring jstr, jboolean *isCopy);
 

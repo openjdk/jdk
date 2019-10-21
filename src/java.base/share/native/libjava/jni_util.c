@@ -791,6 +791,13 @@ InitializeEncoding(JNIEnv *env, const char *encname)
     CHECK_NULL(String_value_ID);
 }
 
+// This alias is used for compatibility with 32 bit Windows
+JNIEXPORT jstring
+NewStringPlatform(JNIEnv *env, const char *str)
+{
+    return JNU_NewStringPlatform(env, str);
+}
+
 JNIEXPORT jstring JNICALL
 JNU_NewStringPlatform(JNIEnv *env, const char *str)
 {
