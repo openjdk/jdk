@@ -130,15 +130,18 @@ inline oop ShenandoahHeap::evac_update_with_forwarded(T* p) {
 }
 
 inline oop ShenandoahHeap::cas_oop(oop n, oop* addr, oop c) {
+  assert(is_aligned(addr, HeapWordSize), "Address should be aligned: " PTR_FORMAT, p2i(addr));
   return (oop) Atomic::cmpxchg(n, addr, c);
 }
 
 inline oop ShenandoahHeap::cas_oop(oop n, narrowOop* addr, narrowOop c) {
+  assert(is_aligned(addr, sizeof(narrowOop)), "Address should be aligned: " PTR_FORMAT, p2i(addr));
   narrowOop val = CompressedOops::encode(n);
   return CompressedOops::decode((narrowOop) Atomic::cmpxchg(val, addr, c));
 }
 
 inline oop ShenandoahHeap::cas_oop(oop n, narrowOop* addr, oop c) {
+  assert(is_aligned(addr, sizeof(narrowOop)), "Address should be aligned: " PTR_FORMAT, p2i(addr));
   narrowOop cmp = CompressedOops::encode(c);
   narrowOop val = CompressedOops::encode(n);
   return CompressedOops::decode((narrowOop) Atomic::cmpxchg(val, addr, cmp));
