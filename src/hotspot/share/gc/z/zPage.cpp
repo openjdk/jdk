@@ -22,6 +22,7 @@
  */
 
 #include "precompiled.hpp"
+#include "gc/z/zList.inline.hpp"
 #include "gc/z/zPage.inline.hpp"
 #include "gc/z/zPhysicalMemory.inline.hpp"
 #include "gc/z/zVirtualMemory.inline.hpp"
@@ -51,6 +52,8 @@ ZPage::ZPage(uint8_t type, const ZVirtualMemory& vmem, const ZPhysicalMemory& pm
     _physical(pmem) {
   assert_initialized();
 }
+
+ZPage::~ZPage() {}
 
 void ZPage::assert_initialized() const {
   assert(!_virtual.is_null(), "Should not be null");
