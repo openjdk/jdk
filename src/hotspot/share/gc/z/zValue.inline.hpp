@@ -27,7 +27,7 @@
 #include "gc/z/zCPU.hpp"
 #include "gc/z/zGlobals.hpp"
 #include "gc/z/zNUMA.hpp"
-#include "gc/z/zThread.hpp"
+#include "gc/z/zThread.inline.hpp"
 #include "gc/z/zUtils.hpp"
 #include "gc/z/zValue.hpp"
 #include "runtime/globals.hpp"
