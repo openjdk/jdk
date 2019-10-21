@@ -521,6 +521,8 @@ private:
     size_t free_low;
   } _at_relocate_end;
 
+  static size_t capacity_high();
+  static size_t capacity_low();
   static size_t available(size_t used);
   static size_t reserve(size_t used);
   static size_t free(size_t used);

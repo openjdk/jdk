@@ -1223,6 +1223,20 @@ ZStatHeap::ZAtMarkEnd ZStatHeap::_at_mark_end;
 ZStatHeap::ZAtRelocateStart ZStatHeap::_at_relocate_start;
 ZStatHeap::ZAtRelocateEnd ZStatHeap::_at_relocate_end;
 
+size_t ZStatHeap::capacity_high() {
+  return MAX4(_at_mark_start.capacity,
+              _at_mark_end.capacity,
+              _at_relocate_start.capacity,
+              _at_relocate_end.capacity);
+}
+
+size_t ZStatHeap::capacity_low() {
+  return MIN4(_at_mark_start.capacity,
+              _at_mark_end.capacity,
+              _at_relocate_start.capacity,
+              _at_relocate_end.capacity);
+}
+
 size_t ZStatHeap::available(size_t used) {
   return _at_initialize.max_capacity - used;
 }
@@ -1290,8 +1304,8 @@ void ZStatHeap::set_at_relocate_end(size_t capacity,
                                     size_t used_high,
                                     size_t used_low) {
   _at_relocate_end.capacity = capacity;
-  _at_relocate_end.capacity_high = capacity;
-  _at_relocate_end.capacity_low = _at_mark_start.capacity;
+  _at_relocate_end.capacity_high = capacity_high();
+  _at_relocate_end.capacity_low = capacity_low();
   _at_relocate_end.reserve = reserve(used);
   _at_relocate_end.reserve_high = reserve(used_low);
   _at_relocate_end.reserve_low = reserve(used_high);
