@@ -110,7 +110,7 @@ void ShenandoahMarkCompact::do_it(GCCause::Cause gc_cause) {
     // b. Cancel concurrent mark, if in progress
     if (heap->is_concurrent_mark_in_progress()) {
       heap->concurrent_mark()->cancel();
-      heap->stop_concurrent_marking();
+      heap->set_concurrent_mark_in_progress(false);
     }
     assert(!heap->is_concurrent_mark_in_progress(), "sanity");
 
@@ -243,8 +243,8 @@ void ShenandoahMarkCompact::phase1_mark_heap() {
   cm->update_roots(ShenandoahPhaseTimings::full_gc_roots);
   cm->mark_roots(ShenandoahPhaseTimings::full_gc_roots);
   cm->finish_mark_from_roots(/* full_gc = */ true);
-
   heap->mark_complete_marking_context();
+  heap->parallel_cleaning(true /* full_gc */);
 }
 
 class ShenandoahPrepareForCompactionObjectClosure : public ObjectClosure {

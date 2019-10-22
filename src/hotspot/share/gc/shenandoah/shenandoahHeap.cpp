@@ -1478,6 +1478,12 @@ void ShenandoahHeap::op_final_mark() {
   if (!cancelled_gc()) {
     concurrent_mark()->finish_mark_from_roots(/* full_gc = */ false);
 
+    // Marking is completed, deactivate SATB barrier
+    set_concurrent_mark_in_progress(false);
+    mark_complete_marking_context();
+
+    parallel_cleaning(false /* full gc*/);
+
     if (has_forwarded_objects()) {
       // Degen may be caused by failed evacuation of roots
       if (is_degenerated_gc_in_progress()) {
@@ -1485,14 +1491,12 @@ void ShenandoahHeap::op_final_mark() {
       } else {
         concurrent_mark()->update_thread_roots(ShenandoahPhaseTimings::update_roots);
       }
+      set_has_forwarded_objects(false);
    }
 
     if (ShenandoahVerify) {
       verifier()->verify_roots_no_forwarded();
     }
-
-    stop_concurrent_marking();
-
     // All allocations past TAMS are implicitly live, adjust the region data.
     // Bitmaps/TAMS are swapped at this point, so we need to poll complete bitmap.
     {
@@ -1575,8 +1579,10 @@ void ShenandoahHeap::op_final_mark() {
     }
 
   } else {
+    // If this cycle was updating references, we need to keep the has_forwarded_objects
+    // flag on, for subsequent phases to deal with it.
     concurrent_mark()->cancel();
-    stop_concurrent_marking();
+    set_concurrent_mark_in_progress(false);
 
     if (process_references()) {
       // Abandon reference processing right away: pre-cleaning must have failed.
@@ -1870,17 +1876,6 @@ void ShenandoahHeap::op_degenerated_fail() {
 void ShenandoahHeap::op_degenerated_futile() {
   shenandoah_policy()->record_degenerated_upgrade_to_full();
   op_full(GCCause::_shenandoah_upgrade_to_full_gc);
-}
-
-void ShenandoahHeap::stop_concurrent_marking() {
-  assert(is_concurrent_mark_in_progress(), "How else could we get here?");
-  set_concurrent_mark_in_progress(false);
-  if (!cancelled_gc()) {
-    // If we needed to update refs, and concurrent marking has been cancelled,
-    // we need to finish updating references.
-    set_has_forwarded_objects(false);
-    mark_complete_marking_context();
-  }
 }
 
 void ShenandoahHeap::force_satb_flush_all_threads() {

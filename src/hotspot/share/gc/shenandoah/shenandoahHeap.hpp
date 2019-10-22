@@ -717,8 +717,6 @@ public:
 
   void deduplicate_string(oop str);
 
-  void stop_concurrent_marking();
-
 private:
   void trash_cset_regions();
   void update_heap_references(bool concurrent);
