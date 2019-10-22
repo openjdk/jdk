@@ -3968,6 +3968,11 @@ jint Arguments::parse(const JavaVMInitArgs* initial_cmd_args) {
       "Shared spaces are not supported in this VM\n");
     return JNI_ERR;
   }
+  if (DumpLoadedClassList != NULL) {
+    jio_fprintf(defaultStream::error_stream(),
+      "DumpLoadedClassList is not supported in this VM\n");
+    return JNI_ERR;
+  }
   if ((UseSharedSpaces && FLAG_IS_CMDLINE(UseSharedSpaces)) ||
       log_is_enabled(Info, cds)) {
     warning("Shared spaces are not supported in this VM");
