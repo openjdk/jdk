@@ -32,6 +32,7 @@ import java.security.cert.*;
 
 import javax.security.auth.x500.X500Principal;
 import sun.security.action.GetBooleanAction;
+import sun.security.action.GetPropertyAction;
 import sun.security.provider.certpath.AlgorithmChecker;
 import sun.security.provider.certpath.PKIXExtendedParameters;
 
@@ -59,6 +60,18 @@ public final class PKIXValidator extends Validator {
      */
     private static final boolean checkTLSRevocation = GetBooleanAction
             .privilegedGetProperty("com.sun.net.ssl.checkRevocation");
+
+    /**
+     * System property that if set (or set to "true"), allows trust anchor
+     * certificates to be used if they do not have the proper CA extensions.
+     * Set to false if prop is not set, or set to any other value.
+     */
+    private static final boolean ALLOW_NON_CA_ANCHOR = allowNonCaAnchor();
+    private static boolean allowNonCaAnchor() {
+        String prop = GetPropertyAction
+            .privilegedGetProperty("jdk.security.allowNonCaAnchor");
+        return prop != null && (prop.isEmpty() || prop.equalsIgnoreCase("true"));
+    }
 
     private final Set<X509Certificate> trustedCerts;
     private final PKIXBuilderParameters parameterTemplate;
@@ -311,15 +324,18 @@ public final class PKIXValidator extends Validator {
 
     private static X509Certificate[] toArray(CertPath path, TrustAnchor anchor)
             throws CertificateException {
-        List<? extends java.security.cert.Certificate> list =
-                                                path.getCertificates();
-        X509Certificate[] chain = new X509Certificate[list.size() + 1];
-        list.toArray(chain);
         X509Certificate trustedCert = anchor.getTrustedCert();
         if (trustedCert == null) {
             throw new ValidatorException
                 ("TrustAnchor must be specified as certificate");
         }
+
+        verifyTrustAnchor(trustedCert);
+
+        List<? extends java.security.cert.Certificate> list =
+                                                path.getCertificates();
+        X509Certificate[] chain = new X509Certificate[list.size() + 1];
+        list.toArray(chain);
         chain[chain.length - 1] = trustedCert;
         return chain;
     }
@@ -351,6 +367,41 @@ public final class PKIXValidator extends Validator {
         } catch (GeneralSecurityException e) {
             throw new ValidatorException
                 ("PKIX path validation failed: " + e.toString(), e);
+        }
+    }
+
+    /**
+     * Verify that a trust anchor certificate is a CA certificate.
+     */
+    private static void verifyTrustAnchor(X509Certificate trustedCert)
+        throws ValidatorException {
+
+        // skip check if jdk.security.allowNonCAAnchor system property is set
+        if (ALLOW_NON_CA_ANCHOR) {
+            return;
+        }
+
+        // allow v1 trust anchor certificates
+        if (trustedCert.getVersion() < 3) {
+            return;
+        }
+
+        // check that the BasicConstraints cA field is not set to false
+        if (trustedCert.getBasicConstraints() == -1) {
+            throw new ValidatorException
+                ("TrustAnchor with subject \"" +
+                 trustedCert.getSubjectX500Principal() +
+                 "\" is not a CA certificate");
+        }
+
+        // check that the KeyUsage extension, if included, asserts the
+        // keyCertSign bit
+        boolean[] keyUsageBits = trustedCert.getKeyUsage();
+        if (keyUsageBits != null && !keyUsageBits[5]) {
+            throw new ValidatorException
+                ("TrustAnchor with subject \"" +
+                 trustedCert.getSubjectX500Principal() +
+                 "\" does not have keyCertSign bit set in KeyUsage extension");
         }
     }
 

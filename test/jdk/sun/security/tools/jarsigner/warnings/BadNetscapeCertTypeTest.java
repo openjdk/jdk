@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -54,7 +54,7 @@ public class BadNetscapeCertTypeTest extends Test {
         // create a certificate whose signer certificate's
         // NetscapeCertType extension doesn't allow code signing
         // create key pair for jar signing
-        createAlias(CA_KEY_ALIAS);
+        createAlias(CA_KEY_ALIAS, "-ext", "bc:c");
         createAlias(KEY_ALIAS);
 
         issueCert(

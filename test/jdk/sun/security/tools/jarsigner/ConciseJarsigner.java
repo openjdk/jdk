@@ -244,8 +244,8 @@ public class ConciseJarsigner {
         // ==========================================================
 
         kt("-genkeypair -alias ee -dname CN=ee");
-        kt("-genkeypair -alias caone -dname CN=caone");
-        kt("-genkeypair -alias catwo -dname CN=catwo");
+        kt("-genkeypair -alias caone -dname CN=caone -ext bc:c");
+        kt("-genkeypair -alias catwo -dname CN=catwo -ext bc:c");
 
         kt("-certreq -alias ee -file ee.req");
         kt("-certreq -alias catwo -file catwo.req");

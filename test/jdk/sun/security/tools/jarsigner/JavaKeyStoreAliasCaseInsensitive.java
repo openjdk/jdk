@@ -90,7 +90,7 @@ public class JavaKeyStoreAliasCaseInsensitive {
                 + " test-alias-storeHash-case.jks -storepass changeit";
         SecurityTools.keytool(KEYSTORE_OPTIONS + " -genkeypair -keyalg DSA"
                 + " -keypass changeit -alias " + ALIAS + "1 -dname CN=" +
-                ALIAS + "1").shouldHaveExitValue(0);
+                ALIAS + "1" + " -ext bc:c").shouldHaveExitValue(0);
         SecurityTools.keytool(KEYSTORE_OPTIONS + " -genkeypair -keyalg DSA"
                 + " -keypass changeit -alias " + ALIAS + "2 -dname CN="
                 + ALIAS + "2").shouldHaveExitValue(0);

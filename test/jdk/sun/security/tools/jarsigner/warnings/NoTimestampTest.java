@@ -72,7 +72,7 @@ public class NoTimestampTest extends Test {
         JarUtils.createJar(UNSIGNED_JARFILE, FIRST_FILE);
 
         // create key pair
-        createAlias(CA_KEY_ALIAS);
+        createAlias(CA_KEY_ALIAS, "-ext", "bc:c");
         createAlias(KEY_ALIAS);
         issueCert(KEY_ALIAS,
                 "-validity", Integer.toString(VALIDITY));
