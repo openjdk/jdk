@@ -29,6 +29,11 @@
 #include "logging/log.hpp"
 #include "logging/logTag.hpp"
 
+ShenandoahPassiveHeuristics::ShenandoahPassiveHeuristics() : ShenandoahHeuristics() {
+  // Passive runs with max speed for allocation, because GC is always STW
+  SHENANDOAH_ERGO_DISABLE_FLAG(ShenandoahPacing);
+}
+
 bool ShenandoahPassiveHeuristics::should_start_gc() const {
   // Never do concurrent GCs.
   return false;
