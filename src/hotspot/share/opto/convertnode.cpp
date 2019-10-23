@@ -532,6 +532,11 @@ const Type* RoundDoubleNode::Value(PhaseGVN* phase) const {
 }
 
 //=============================================================================
+RoundDoubleModeNode* RoundDoubleModeNode::make(PhaseGVN& gvn, Node* arg, RoundDoubleModeNode::RoundingMode rmode) {
+  ConINode* rm = gvn.intcon(rmode);
+  return new RoundDoubleModeNode(arg, (Node *)rm);
+}
+
 //------------------------------Identity---------------------------------------
 // Remove redundant roundings.
 Node* RoundDoubleModeNode::Identity(PhaseGVN* phase) {

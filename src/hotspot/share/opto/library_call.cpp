@@ -1822,9 +1822,9 @@ bool LibraryCallKit::inline_double_math(vmIntrinsics::ID id) {
   switch (id) {
   case vmIntrinsics::_dabs:   n = new AbsDNode(                arg);  break;
   case vmIntrinsics::_dsqrt:  n = new SqrtDNode(C, control(),  arg);  break;
-  case vmIntrinsics::_ceil:   n = new RoundDoubleModeNode(arg, makecon(TypeInt::make(2))); break;
-  case vmIntrinsics::_floor:  n = new RoundDoubleModeNode(arg, makecon(TypeInt::make(1))); break;
-  case vmIntrinsics::_rint:   n = new RoundDoubleModeNode(arg, makecon(TypeInt::make(0))); break;
+  case vmIntrinsics::_ceil:   n = RoundDoubleModeNode::make(_gvn, arg, RoundDoubleModeNode::rmode_ceil); break;
+  case vmIntrinsics::_floor:  n = RoundDoubleModeNode::make(_gvn, arg, RoundDoubleModeNode::rmode_floor); break;
+  case vmIntrinsics::_rint:   n = RoundDoubleModeNode::make(_gvn, arg, RoundDoubleModeNode::rmode_rint); break;
   default:  fatal_unexpected_iid(id);  break;
   }
   set_result(_gvn.transform(n));
