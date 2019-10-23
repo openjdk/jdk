@@ -1023,6 +1023,7 @@ void PSParallelCompact::pre_compact()
 void PSParallelCompact::post_compact()
 {
   GCTraceTime(Info, gc, phases) tm("Post Compact", &_gc_timer);
+  ParCompactionManager::remove_all_shadow_regions();
 
   for (unsigned int id = old_space_id; id < last_space_id; ++id) {
     // Clear the marking bitmap, summary data and split info.
@@ -2417,6 +2418,8 @@ void PSParallelCompact::prepare_region_draining_tasks(uint parallel_gc_threads)
     for (size_t cur = end_region - 1; cur + 1 > beg_region; --cur) {
       if (sd.region(cur)->claim_unsafe()) {
         ParCompactionManager* cm = ParCompactionManager::manager_array(worker_id);
+        bool result = sd.region(cur)->mark_normal();
+        assert(result, "Must succeed at this point.");
         cm->region_stack()->push(cur);
         region_logger.handle(cur);
         // Assign regions to tasks in round-robin fashion.
@@ -2602,6 +2605,10 @@ static void compaction_with_stealing_work(ParallelTaskTerminator* terminator, ui
     if (ParCompactionManager::steal(worker_id, region_index)) {
       PSParallelCompact::fill_and_update_region(cm, region_index);
       cm->drain_region_stacks();
+    } else if (PSParallelCompact::steal_unavailable_region(cm, region_index)) {
+      // Fill and update an unavailable region with the help of a shadow region
+      PSParallelCompact::fill_and_update_shadow_region(cm, region_index);
+      cm->drain_region_stacks();
     } else {
       if (terminator->offer_termination()) {
         break;
@@ -2656,6 +2663,7 @@ void PSParallelCompact::compact() {
   //
   // max push count is thus: last_space_id * (active_gc_threads * PAR_OLD_DENSE_PREFIX_OVER_PARTITIONING + 1)
   TaskQueue task_queue(last_space_id * (active_gc_threads * PAR_OLD_DENSE_PREFIX_OVER_PARTITIONING + 1));
+  initialize_shadow_regions(active_gc_threads);
   prepare_region_draining_tasks(active_gc_threads);
   enqueue_dense_prefix_tasks(task_queue, active_gc_threads);
 
@@ -2962,7 +2970,17 @@ void PSParallelCompact::decrement_destination_counts(ParCompactionManager* cm,
     assert(cur->data_size() > 0, "region must have live data");
     cur->decrement_destination_count();
     if (cur < enqueue_end && cur->available() && cur->claim()) {
-      cm->push_region(sd.region(cur));
+      if (cur->mark_normal()) {
+        cm->push_region(sd.region(cur));
+      } else if (cur->mark_copied()) {
+        // Try to copy the content of the shadow region back to its corresponding
+        // heap region if the shadow region is filled. Otherwise, the GC thread
+        // fills the shadow region will copy the data back (see
+        // MoveAndUpdateShadowClosure::complete_region).
+        copy_back(sd.region_to_addr(cur->shadow_region()), sd.region_to_addr(cur));
+        ParCompactionManager::push_shadow_region_mt_safe(cur->shadow_region());
+        cur->set_completed();
+      }
     }
   }
 }
@@ -3040,28 +3058,19 @@ size_t PSParallelCompact::next_src_region(MoveAndUpdateClosure& closure,
   return 0;
 }
 
-void PSParallelCompact::fill_region(ParCompactionManager* cm, size_t region_idx)
+void PSParallelCompact::fill_region(ParCompactionManager* cm, MoveAndUpdateClosure& closure, size_t region_idx)
 {
   typedef ParMarkBitMap::IterationStatus IterationStatus;
-  const size_t RegionSize = ParallelCompactData::RegionSize;
   ParMarkBitMap* const bitmap = mark_bitmap();
   ParallelCompactData& sd = summary_data();
   RegionData* const region_ptr = sd.region(region_idx);
-
-  // Get the items needed to construct the closure.
-  HeapWord* dest_addr = sd.region_to_addr(region_idx);
-  SpaceId dest_space_id = space_id(dest_addr);
-  ObjectStartArray* start_array = _space_info[dest_space_id].start_array();
-  HeapWord* new_top = _space_info[dest_space_id].new_top();
-  assert(dest_addr < new_top, "sanity");
-  const size_t words = MIN2(pointer_delta(new_top, dest_addr), RegionSize);
 
   // Get the source region and related info.
   size_t src_region_idx = region_ptr->source_region();
   SpaceId src_space_id = space_id(sd.region_to_addr(src_region_idx));
   HeapWord* src_space_top = _space_info[src_space_id].space()->top();
+  HeapWord* dest_addr = sd.region_to_addr(region_idx);
 
-  MoveAndUpdateClosure closure(bitmap, cm, start_array, dest_addr, words);
   closure.set_source(first_src_addr(dest_addr, src_space_id, src_region_idx));
 
   // Adjust src_region_idx to prepare for decrementing destination counts (the
@@ -3080,7 +3089,7 @@ void PSParallelCompact::fill_region(ParCompactionManager* cm, size_t region_idx)
       decrement_destination_counts(cm, src_space_id, src_region_idx,
                                    closure.source());
       region_ptr->set_deferred_obj_addr(NULL);
-      region_ptr->set_completed();
+      closure.complete_region(cm, dest_addr, region_ptr);
       return;
     }
 
@@ -3129,7 +3138,7 @@ void PSParallelCompact::fill_region(ParCompactionManager* cm, size_t region_idx)
 
       decrement_destination_counts(cm, src_space_id, src_region_idx,
                                    closure.source());
-      region_ptr->set_completed();
+      closure.complete_region(cm, dest_addr, region_ptr);
       return;
     }
 
@@ -3137,7 +3146,7 @@ void PSParallelCompact::fill_region(ParCompactionManager* cm, size_t region_idx)
       decrement_destination_counts(cm, src_space_id, src_region_idx,
                                    closure.source());
       region_ptr->set_deferred_obj_addr(NULL);
-      region_ptr->set_completed();
+      closure.complete_region(cm, dest_addr, region_ptr);
       return;
     }
 
@@ -3148,6 +3157,96 @@ void PSParallelCompact::fill_region(ParCompactionManager* cm, size_t region_idx)
     src_region_idx = next_src_region(closure, src_space_id, src_space_top,
                                      end_addr);
   } while (true);
+}
+
+void PSParallelCompact::fill_and_update_region(ParCompactionManager* cm, size_t region_idx)
+{
+  MoveAndUpdateClosure cl(mark_bitmap(), cm, region_idx);
+  fill_region(cm, cl, region_idx);
+}
+
+void PSParallelCompact::fill_and_update_shadow_region(ParCompactionManager* cm, size_t region_idx)
+{
+  // Get a shadow region first
+  ParallelCompactData& sd = summary_data();
+  RegionData* const region_ptr = sd.region(region_idx);
+  size_t shadow_region = ParCompactionManager::pop_shadow_region_mt_safe(region_ptr);
+  // The InvalidShadow return value indicates the corresponding heap region is available,
+  // so use MoveAndUpdateClosure to fill the normal region. Otherwise, use
+  // MoveAndUpdateShadowClosure to fill the acquired shadow region.
+  if (shadow_region == ParCompactionManager::InvalidShadow) {
+    MoveAndUpdateClosure cl(mark_bitmap(), cm, region_idx);
+    region_ptr->shadow_to_normal();
+    return fill_region(cm, cl, region_idx);
+  } else {
+    MoveAndUpdateShadowClosure cl(mark_bitmap(), cm, region_idx, shadow_region);
+    return fill_region(cm, cl, region_idx);
+  }
+}
+
+void PSParallelCompact::copy_back(HeapWord *shadow_addr, HeapWord *region_addr)
+{
+  Copy::aligned_conjoint_words(shadow_addr, region_addr, _summary_data.RegionSize);
+}
+
+bool PSParallelCompact::steal_unavailable_region(ParCompactionManager* cm, size_t &region_idx)
+{
+  size_t next = cm->next_shadow_region();
+  ParallelCompactData& sd = summary_data();
+  size_t old_new_top = sd.addr_to_region_idx(_space_info[old_space_id].new_top());
+  uint active_gc_threads = ParallelScavengeHeap::heap()->workers().active_workers();
+
+  while (next < old_new_top) {
+    if (sd.region(next)->mark_shadow()) {
+      region_idx = next;
+      return true;
+    }
+    next = cm->move_next_shadow_region_by(active_gc_threads);
+  }
+
+  return false;
+}
+
+// The shadow region is an optimization to address region dependencies in full GC. The basic
+// idea is making more regions available by temporally storing their live objects in empty
+// shadow regions to resolve dependencies between them and the destination regions. Therefore,
+// GC threads need not wait destination regions to be available before processing sources.
+//
+// A typical workflow would be:
+// After draining its own stack and failing to steal from others, a GC worker would pick an
+// unavailable region (destination count > 0) and get a shadow region. Then the worker fills
+// the shadow region by copying live objects from source regions of the unavailable one. Once
+// the unavailable region becomes available, the data in the shadow region will be copied back.
+// Shadow regions are empty regions in the to-space and regions between top and end of other spaces.
+//
+// For more details, please refer to §4.2 of the VEE'19 paper:
+// Haoyu Li, Mingyu Wu, Binyu Zang, and Haibo Chen. 2019. ScissorGC: scalable and efficient
+// compaction for Java full garbage collection. In Proceedings of the 15th ACM SIGPLAN/SIGOPS
+// International Conference on Virtual Execution Environments (VEE 2019). ACM, New York, NY, USA,
+// 108-121. DOI: https://doi.org/10.1145/3313808.3313820
+void PSParallelCompact::initialize_shadow_regions(uint parallel_gc_threads)
+{
+  const ParallelCompactData& sd = PSParallelCompact::summary_data();
+
+  for (unsigned int id = old_space_id; id < last_space_id; ++id) {
+    SpaceInfo* const space_info = _space_info + id;
+    MutableSpace* const space = space_info->space();
+
+    const size_t beg_region =
+      sd.addr_to_region_idx(sd.region_align_up(MAX2(space_info->new_top(), space->top())));
+    const size_t end_region =
+      sd.addr_to_region_idx(sd.region_align_down(space->end()));
+
+    for (size_t cur = beg_region; cur < end_region; ++cur) {
+      ParCompactionManager::push_shadow_region(cur);
+    }
+  }
+
+  size_t beg_region = sd.addr_to_region_idx(_space_info[old_space_id].dense_prefix());
+  for (uint i = 0; i < parallel_gc_threads; i++) {
+    ParCompactionManager *cm = ParCompactionManager::manager_array(i);
+    cm->set_next_shadow_region(beg_region + i);
+  }
 }
 
 void PSParallelCompact::fill_blocks(size_t region_idx)
@@ -3222,9 +3321,9 @@ void PSParallelCompact::reset_millis_since_last_gc() {
 
 ParMarkBitMap::IterationStatus MoveAndUpdateClosure::copy_until_full()
 {
-  if (source() != destination()) {
+  if (source() != copy_destination()) {
     DEBUG_ONLY(PSParallelCompact::check_new_location(source(), destination());)
-    Copy::aligned_conjoint_words(source(), destination(), words_remaining());
+    Copy::aligned_conjoint_words(source(), copy_destination(), words_remaining());
   }
   update_state(words_remaining());
   assert(is_full(), "sanity");
@@ -3243,11 +3342,17 @@ void MoveAndUpdateClosure::copy_partial_obj()
 
   // This test is necessary; if omitted, the pointer updates to a partial object
   // that crosses the dense prefix boundary could be overwritten.
-  if (source() != destination()) {
+  if (source() != copy_destination()) {
     DEBUG_ONLY(PSParallelCompact::check_new_location(source(), destination());)
-    Copy::aligned_conjoint_words(source(), destination(), words);
+    Copy::aligned_conjoint_words(source(), copy_destination(), words);
   }
   update_state(words);
+}
+
+void MoveAndUpdateClosure::complete_region(ParCompactionManager *cm, HeapWord *dest_addr,
+                                           PSParallelCompact::RegionData *region_ptr) {
+  assert(region_ptr->shadow_state() == ParallelCompactData::RegionData::NormalRegion, "Region should be finished");
+  region_ptr->set_completed();
 }
 
 ParMarkBitMapClosure::IterationStatus
@@ -3268,18 +3373,37 @@ MoveAndUpdateClosure::do_addr(HeapWord* addr, size_t words) {
     _start_array->allocate_block(destination());
   }
 
-  if (destination() != source()) {
+  if (copy_destination() != source()) {
     DEBUG_ONLY(PSParallelCompact::check_new_location(source(), destination());)
-    Copy::aligned_conjoint_words(source(), destination(), words);
+    Copy::aligned_conjoint_words(source(), copy_destination(), words);
   }
 
-  oop moved_oop = (oop) destination();
+  oop moved_oop = (oop) copy_destination();
   compaction_manager()->update_contents(moved_oop);
   assert(oopDesc::is_oop_or_null(moved_oop), "Expected an oop or NULL at " PTR_FORMAT, p2i(moved_oop));
 
   update_state(words);
-  assert(destination() == (HeapWord*)moved_oop + moved_oop->size(), "sanity");
+  assert(copy_destination() == (HeapWord*)moved_oop + moved_oop->size(), "sanity");
   return is_full() ? ParMarkBitMap::full : ParMarkBitMap::incomplete;
+}
+
+void MoveAndUpdateShadowClosure::complete_region(ParCompactionManager *cm, HeapWord *dest_addr,
+                                                 PSParallelCompact::RegionData *region_ptr) {
+  assert(region_ptr->shadow_state() == ParallelCompactData::RegionData::ShadowRegion, "Region should be shadow");
+  // Record the shadow region index
+  region_ptr->set_shadow_region(_shadow);
+  // Mark the shadow region as filled to indicate the data is ready to be
+  // copied back
+  region_ptr->mark_filled();
+  // Try to copy the content of the shadow region back to its corresponding
+  // heap region if available; the GC thread that decreases the destination
+  // count to zero will do the copying otherwise (see
+  // PSParallelCompact::decrement_destination_counts).
+  if (((region_ptr->available() && region_ptr->claim()) || region_ptr->claimed()) && region_ptr->mark_copied()) {
+    region_ptr->set_completed();
+    PSParallelCompact::copy_back(PSParallelCompact::summary_data().region_to_addr(_shadow), dest_addr);
+    ParCompactionManager::push_shadow_region_mt_safe(_shadow);
+  }
 }
 
 UpdateOnlyClosure::UpdateOnlyClosure(ParMarkBitMap* mbm,
