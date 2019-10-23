@@ -685,6 +685,9 @@ static const struct {
 #endif
   {  SIGHUP,      "SIGHUP" },
   {  SIGILL,      "SIGILL" },
+#ifdef SIGINFO
+  {  SIGINFO,     "SIGINFO" },
+#endif
   {  SIGINT,      "SIGINT" },
 #ifdef SIGIO
   {  SIGIO,       "SIGIO" },
