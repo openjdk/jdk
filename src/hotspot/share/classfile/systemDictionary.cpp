@@ -109,8 +109,6 @@ InstanceKlass*      SystemDictionary::_box_klasses[T_VOID+1]      =  { NULL /*, 
 oop         SystemDictionary::_java_system_loader         =  NULL;
 oop         SystemDictionary::_java_platform_loader       =  NULL;
 
-bool        SystemDictionary::_has_checkPackageAccess     =  false;
-
 // Default ProtectionDomainCacheSize value
 
 const int defaultProtectionDomainCacheSize = 1009;
@@ -447,8 +445,6 @@ void SystemDictionary::validate_protection_domain(InstanceKlass* klass,
                                                   Handle class_loader,
                                                   Handle protection_domain,
                                                   TRAPS) {
-  if(!has_checkPackageAccess()) return;
-
   // Now we have to call back to java to check if the initating class has access
   JavaValue result(T_VOID);
   LogTarget(Debug, protectiondomain) lt;
@@ -2020,11 +2016,6 @@ void SystemDictionary::resolve_well_known_classes(TRAPS) {
   _box_klasses[T_LONG]    = WK_KLASS(Long_klass);
   //_box_klasses[T_OBJECT]  = WK_KLASS(object_klass);
   //_box_klasses[T_ARRAY]   = WK_KLASS(object_klass);
-
-  { // Compute whether we should use checkPackageAccess or NOT
-    Method* method = InstanceKlass::cast(ClassLoader_klass())->find_method(vmSymbols::checkPackageAccess_name(), vmSymbols::class_protectiondomain_signature());
-    _has_checkPackageAccess = (method != NULL);
-  }
 
 #ifdef ASSERT
   if (UseSharedSpaces) {

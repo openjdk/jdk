@@ -430,9 +430,6 @@ protected:
   }
 
 public:
-  // Tells whether ClassLoader.checkPackageAccess is present
-  static bool has_checkPackageAccess()      { return _has_checkPackageAccess; }
-
   static bool Parameter_klass_loaded()      { return WK_KLASS(reflect_Parameter_klass) != NULL; }
   static bool Class_klass_loaded()          { return WK_KLASS(Class_klass) != NULL; }
   static bool Cloneable_klass_loaded()      { return WK_KLASS(Cloneable_klass) != NULL; }
@@ -666,8 +663,6 @@ protected:
 private:
   static oop  _java_system_loader;
   static oop  _java_platform_loader;
-
-  static bool _has_checkPackageAccess;
 
 public:
   static TableStatistics placeholders_statistics();
