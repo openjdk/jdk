@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -42,17 +42,21 @@ public class Http2RedirectHandler implements Http2Handler {
             is.readAllBytes();
             String location = supplier.get();
             System.err.printf("RedirectHandler request to %s from %s\n",
-                t.getRequestURI().toString(), t.getRemoteAddress().toString());
+                    t.getRequestURI().toString(), t.getRemoteAddress().toString());
             System.err.println("Redirecting to: " + location);
             HttpHeadersBuilder headersBuilder = t.getResponseHeaders();
             headersBuilder.addHeader("Location", location);
-            t.sendResponseHeaders(301, 1024);
+            t.sendResponseHeaders(redirectCode(), 1024);
             byte[] bb = new byte[1024];
             OutputStream os = t.getResponseBody();
             os.write(bb);
             os.close();
             t.close();
         }
+    }
+
+    protected int redirectCode() {
+        return 301;
     }
 
     // override in sub-class to examine the exchange, but don't
