@@ -78,14 +78,14 @@ CFLAGS_VM_VERSION := \
 ################################################################################
 # Disabled warnings
 
-DISABLED_WARNINGS_gcc := extra parentheses comment unknown-pragmas address \
+DISABLED_WARNINGS_gcc := parentheses comment unknown-pragmas address \
     delete-non-virtual-dtor char-subscripts array-bounds int-in-bool-context \
     ignored-qualifiers  missing-field-initializers implicit-fallthrough \
     empty-body strict-overflow sequence-point maybe-uninitialized \
-    misleading-indentation
+    misleading-indentation cast-function-type
 
 ifeq ($(call check-jvm-feature, zero), true)
-  DISABLED_WARNINGS_gcc += return-type switch
+  DISABLED_WARNINGS_gcc += return-type switch clobbered
 endif
 
 DISABLED_WARNINGS_clang := tautological-compare \
