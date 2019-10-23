@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -58,27 +58,32 @@ public class OpenMBeanParameterInfoSupport
     /**
      * @serial The open mbean parameter's <i>open type</i>
      */
+    @SuppressWarnings("serial") // Not statically typed as Serializable
     private OpenType<?>    openType;
 
     /**
      * @serial The open mbean parameter's default value
      */
+    @SuppressWarnings("serial") // Not statically typed as Serializable
     private Object      defaultValue    = null;
 
     /**
      * @serial The open mbean parameter's legal values. This {@link
      * Set} is unmodifiable
      */
+    @SuppressWarnings("serial") // Conditionally serializable
     private Set<?> legalValues     = null;  // to be constructed unmodifiable
 
     /**
      * @serial The open mbean parameter's min value
      */
+    @SuppressWarnings("serial") // Conditionally serializable
     private Comparable<?> minValue        = null;
 
     /**
      * @serial The open mbean parameter's max value
      */
+    @SuppressWarnings("serial") // Conditionally serializable
     private Comparable<?> maxValue        = null;
 
 
