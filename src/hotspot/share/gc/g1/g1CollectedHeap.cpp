@@ -3613,6 +3613,7 @@ protected:
       p->record_or_add_time_secs(termination_phase, worker_id, cl.term_time());
       p->record_or_add_thread_work_item(termination_phase, worker_id, cl.term_attempts());
     }
+    assert(pss->trim_ticks().seconds() == 0.0, "Unexpected partial trimming during evacuation");
   }
 
   virtual void start_work(uint worker_id) { }
@@ -3654,22 +3655,14 @@ public:
 class G1EvacuateRegionsTask : public G1EvacuateRegionsBaseTask {
   G1RootProcessor* _root_processor;
 
-  void verify_trim_ticks(G1ParScanThreadState* pss, const char* location) {
-    assert(pss->trim_ticks().seconds() == 0.0, "Unexpected partial trimming during evacuation at %s %.3lf " JLONG_FORMAT, location, pss->trim_ticks().seconds(), pss->trim_ticks().value());
-  }
-
   void scan_roots(G1ParScanThreadState* pss, uint worker_id) {
     _root_processor->evacuate_roots(pss, worker_id);
-    verify_trim_ticks(pss, "roots");
     _g1h->rem_set()->scan_heap_roots(pss, worker_id, G1GCPhaseTimes::ScanHR, G1GCPhaseTimes::ObjCopy);
-    verify_trim_ticks(pss, "heap roots");
     _g1h->rem_set()->scan_collection_set_regions(pss, worker_id, G1GCPhaseTimes::ScanHR, G1GCPhaseTimes::CodeRoots, G1GCPhaseTimes::ObjCopy);
-    verify_trim_ticks(pss, "scan cset");
   }
 
   void evacuate_live_objects(G1ParScanThreadState* pss, uint worker_id) {
     G1EvacuateRegionsBaseTask::evacuate_live_objects(pss, worker_id, G1GCPhaseTimes::ObjCopy, G1GCPhaseTimes::Termination);
-    verify_trim_ticks(pss, "evac live");
   }
 
   void start_work(uint worker_id) {
