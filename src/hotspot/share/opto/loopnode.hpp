@@ -1378,7 +1378,7 @@ private:
   bool exceeding_node_budget(uint required = 0) {
     assert(C->live_nodes() < C->max_node_limit(), "sanity");
     uint available = C->max_node_limit() - C->live_nodes();
-    return available < required + _nodes_required;
+    return available < required + _nodes_required + REQUIRE_MIN;
   }
 
   uint require_nodes(uint require, uint minreq = REQUIRE_MIN) {
