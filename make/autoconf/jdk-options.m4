@@ -599,7 +599,14 @@ AC_DEFUN_ONCE([JDKOPT_ENABLE_DISABLE_GENERATE_CLASSLIST],
     AC_MSG_RESULT([yes, forced])
     ENABLE_GENERATE_CLASSLIST="true"
     if test "x$ENABLE_GENERATE_CLASSLIST_POSSIBLE" = "xfalse"; then
-      AC_MSG_WARN([Generation of classlist might not be possible with JVM Variants $JVM_VARIANTS and enable-cds=$ENABLE_CDS])
+      if test "x$ENABLE_CDS" = "xfalse"; then
+        # In GenerateLinkOptData.gmk, DumpLoadedClassList is used to generate the
+        # classlist file. It never will work in this case since the VM will report
+        # an error for DumpLoadedClassList when CDS is disabled.
+        AC_MSG_ERROR([Generation of classlist is not possible with enable-cds=false])
+      else
+        AC_MSG_WARN([Generation of classlist might not be possible with JVM Variants $JVM_VARIANTS and enable-cds=$ENABLE_CDS])
+      fi
     fi
   elif test "x$enable_generate_classlist" = "xno"; then
     AC_MSG_RESULT([no, forced])
