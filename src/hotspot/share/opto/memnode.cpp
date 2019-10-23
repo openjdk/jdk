@@ -736,9 +736,7 @@ Node* MemNode::find_previous_store(PhaseTransform* phase) {
 // Also, asserts a cross-check of the type against the expected address type.
 const TypePtr* MemNode::calculate_adr_type(const Type* t, const TypePtr* cross_check) {
   if (t == Type::TOP)  return NULL; // does not touch memory any more?
-  #ifdef PRODUCT
-  cross_check = NULL;
-  #else
+  #ifdef ASSERT
   if (!VerifyAliases || VMError::is_error_reported() || Node::in_dump())  cross_check = NULL;
   #endif
   const TypePtr* tp = t->isa_ptr();
