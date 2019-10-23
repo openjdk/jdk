@@ -266,7 +266,7 @@ checkStaticFieldID(JavaThread* thr, jfieldID fid, jclass cls, int ftype)
   /* check for proper subclass hierarchy */
   JNIid* id = jfieldIDWorkaround::from_static_jfieldID(fid);
   Klass* f_oop = id->holder();
-  if (!InstanceKlass::cast(k_oop)->is_subtype_of(f_oop))
+  if (!k_oop->is_subtype_of(f_oop))
     ReportJNIFatalError(thr, fatal_wrong_static_field);
 
   /* check for proper field type */
@@ -513,7 +513,7 @@ void jniCheck::validate_throwable_klass(JavaThread* thr, Klass* klass) {
   assert(klass != NULL, "klass argument must have a value");
 
   if (!klass->is_instance_klass() ||
-      !InstanceKlass::cast(klass)->is_subclass_of(SystemDictionary::Throwable_klass())) {
+      !klass->is_subclass_of(SystemDictionary::Throwable_klass())) {
     ReportJNIFatalError(thr, fatal_class_not_a_throwable_class);
   }
 }

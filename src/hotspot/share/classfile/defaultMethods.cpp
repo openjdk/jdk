@@ -146,7 +146,7 @@ class HierarchyVisitor : StackObj {
       return interface_index() >= number_of_interfaces();
     }
     InstanceKlass* interface_at(int index) {
-      return InstanceKlass::cast(_class->local_interfaces()->at(index));
+      return _class->local_interfaces()->at(index);
     }
     InstanceKlass* next_super() { return _class->java_super(); }
     InstanceKlass* next_interface() {

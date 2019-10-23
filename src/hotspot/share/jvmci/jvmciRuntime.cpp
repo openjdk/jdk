@@ -1271,7 +1271,7 @@ InstanceKlass* JVMCIRuntime::get_instance_klass_for_declared_method_holder(Klass
   if (method_holder->is_instance_klass()) {
     return InstanceKlass::cast(method_holder);
   } else if (method_holder->is_array_klass()) {
-    return InstanceKlass::cast(SystemDictionary::Object_klass());
+    return SystemDictionary::Object_klass();
   } else {
     ShouldNotReachHere();
   }

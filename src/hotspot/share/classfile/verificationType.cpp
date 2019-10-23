@@ -71,7 +71,7 @@ bool VerificationType::resolve_and_check_assignability(InstanceKlass* klass, Sym
     if (log_is_enabled(Debug, class, resolve)) {
       Verifier::trace_class_resolution(from_class, klass);
     }
-    return InstanceKlass::cast(from_class)->is_subclass_of(this_class);
+    return from_class->is_subclass_of(this_class);
   }
 
   return false;
