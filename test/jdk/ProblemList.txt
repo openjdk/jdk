@@ -890,6 +890,4 @@ jdk/jfr/event/oldobject/TestLargeRootSet.java                   8205651    gener
 
 # jdk_internal
 
-jdk/internal/platform/docker/TestDockerMemoryMetrics.java       8227317    linux-x64
-
 ############################################################################
