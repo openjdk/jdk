@@ -592,10 +592,10 @@ address TemplateInterpreterGenerator::generate_exception_handler_common(const ch
   __ load_const_optimized(R4_ARG2, (address) name, R11_scratch1);
   if (pass_oop) {
     __ mr(R5_ARG3, Rexception);
-    __ call_VM(Rexception, CAST_FROM_FN_PTR(address, InterpreterRuntime::create_klass_exception), false);
+    __ call_VM(Rexception, CAST_FROM_FN_PTR(address, InterpreterRuntime::create_klass_exception));
   } else {
     __ load_const_optimized(R5_ARG3, (address) message, R11_scratch1);
-    __ call_VM(Rexception, CAST_FROM_FN_PTR(address, InterpreterRuntime::create_exception), false);
+    __ call_VM(Rexception, CAST_FROM_FN_PTR(address, InterpreterRuntime::create_exception));
   }
 
   // Throw exception.
@@ -2105,7 +2105,7 @@ void TemplateInterpreterGenerator::generate_throw_exception() {
     // The member name argument must be restored if _invokestatic is re-executed after a PopFrame call.
     // Detect such a case in the InterpreterRuntime function and return the member name argument, or NULL.
     __ ld(R4_ARG2, 0, R18_locals);
-    __ MacroAssembler::call_VM(R4_ARG2, CAST_FROM_FN_PTR(address, InterpreterRuntime::member_name_arg_or_null), R4_ARG2, R19_method, R14_bcp, false);
+    __ call_VM(R4_ARG2, CAST_FROM_FN_PTR(address, InterpreterRuntime::member_name_arg_or_null), R4_ARG2, R19_method, R14_bcp);
     __ restore_interpreter_state(R11_scratch1, /*bcp_and_mdx_only*/ true);
     __ cmpdi(CCR0, R4_ARG2, 0);
     __ beq(CCR0, L_done);
