@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,16 +21,15 @@
  * questions.
  */
 
-#ifndef CPU_AARCH64_GC_Z_ZGLOBALS_AARCH64_HPP
-#define CPU_AARCH64_GC_Z_ZGLOBALS_AARCH64_HPP
+#ifndef SHARE_GC_Z_ZADDRESSSPACELIMIT_HPP
+#define SHARE_GC_Z_ZADDRESSSPACELIMIT_HPP
 
-const size_t ZPlatformGranuleSizeShift      = 21; // 2MB
-const size_t ZPlatformHeapViews             = 3;
-const size_t ZPlatformNMethodDisarmedOffset = 4;
-const size_t ZPlatformCacheLineSize         = 64;
+#include "memory/allocation.hpp"
 
-uintptr_t ZPlatformAddressBase();
-size_t ZPlatformAddressOffsetBits();
-size_t ZPlatformAddressMetadataShift();
+class ZAddressSpaceLimit : public AllStatic {
+public:
+  static size_t mark_stack();
+  static size_t heap_view();
+};
 
-#endif // CPU_AARCH64_GC_Z_ZGLOBALS_AARCH64_HPP
+#endif // SHARE_GC_Z_ZADDRESSSPACELIMIT_HPP

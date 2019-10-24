@@ -142,8 +142,7 @@ uintptr_t ZPlatformAddressBase() {
 size_t ZPlatformAddressOffsetBits() {
   const size_t min_address_offset_bits = 42; // 4TB
   const size_t max_address_offset_bits = 44; // 16TB
-  const size_t virtual_to_physical_ratio = 7; // 7:1
-  const size_t address_offset = ZUtils::round_up_power_of_2(MaxHeapSize * virtual_to_physical_ratio);
+  const size_t address_offset = ZUtils::round_up_power_of_2(MaxHeapSize * ZVirtualToPhysicalRatio);
   const size_t address_offset_bits = log2_intptr(address_offset);
   return MIN2(MAX2(address_offset_bits, min_address_offset_bits), max_address_offset_bits);
 }

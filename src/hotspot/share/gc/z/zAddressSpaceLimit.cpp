@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,16 +21,31 @@
  * questions.
  */
 
-#ifndef CPU_AARCH64_GC_Z_ZGLOBALS_AARCH64_HPP
-#define CPU_AARCH64_GC_Z_ZGLOBALS_AARCH64_HPP
+#include "precompiled.hpp"
+#include "gc/z/zAddressSpaceLimit.hpp"
+#include "gc/z/zGlobals.hpp"
+#include "runtime/os.hpp"
+#include "utilities/align.hpp"
 
-const size_t ZPlatformGranuleSizeShift      = 21; // 2MB
-const size_t ZPlatformHeapViews             = 3;
-const size_t ZPlatformNMethodDisarmedOffset = 4;
-const size_t ZPlatformCacheLineSize         = 64;
+static size_t address_space_limit() {
+  julong limit = 0;
 
-uintptr_t ZPlatformAddressBase();
-size_t ZPlatformAddressOffsetBits();
-size_t ZPlatformAddressMetadataShift();
+  if (os::has_allocatable_memory_limit(&limit)) {
+    return (size_t)limit;
+  }
 
-#endif // CPU_AARCH64_GC_Z_ZGLOBALS_AARCH64_HPP
+  // No limit
+  return SIZE_MAX;
+}
+
+size_t ZAddressSpaceLimit::mark_stack() {
+  // Allow mark stacks to occupy 10% of the address space
+  const size_t limit = address_space_limit() / 10;
+  return align_up(limit, ZMarkStackSpaceExpandSize);
+}
+
+size_t ZAddressSpaceLimit::heap_view() {
+  // Allow all heap views to occupy 50% of the address space
+  const size_t limit = address_space_limit() / 2 / ZHeapViews;
+  return align_up(limit, ZGranuleSize);
+}
