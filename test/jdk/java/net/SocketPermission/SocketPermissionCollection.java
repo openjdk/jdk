@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 8056179
+ * @bug 8056179 8231785
  * @summary Unit test for PermissionCollection subclasses
  */
 
@@ -126,8 +126,10 @@ public class SocketPermissionCollection {
             testFail++;
         }
 
-        // test 13
-        System.out.println("test 13: elements returns correct number of perms");
+
+        // test 10
+        System.out.println("test 10: elements returns correct number of perms");
+        perms.add(new SocketPermission("www.example.us", "resolve"));
         int numPerms = 0;
         Enumeration<Permission> e = perms.elements();
         while (e.hasMoreElements()) {
