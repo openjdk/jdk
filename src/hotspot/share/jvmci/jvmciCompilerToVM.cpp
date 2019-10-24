@@ -2330,6 +2330,16 @@ C2V_VMENTRY_PREFIX(jboolean, isCurrentThreadAttached, (JNIEnv* env, jobject c2vm
   return true;
 C2V_END
 
+C2V_VMENTRY_PREFIX(jlong, getCurrentJavaThread, (JNIEnv* env, jobject c2vm))
+  if (base_thread == NULL) {
+    // Called from unattached JVMCI shared library thread
+    return 0L;
+  }
+  JVMCITraceMark jtm("getCurrentJavaThread");
+  assert(base_thread->is_Java_thread(), "just checking");
+  return (jlong) p2i(base_thread);
+C2V_END
+
 C2V_VMENTRY_PREFIX(jboolean, attachCurrentThread, (JNIEnv* env, jobject c2vm, jboolean as_daemon))
   if (base_thread == NULL) {
     // Called from unattached JVMCI shared library thread
@@ -2743,6 +2753,7 @@ JNINativeMethod CompilerToVM::methods[] = {
   {CC "deleteGlobalHandle",                           CC "(J)V",                                                                            FN_PTR(deleteGlobalHandle)},
   {CC "registerNativeMethods",                        CC "(" CLASS ")[J",                                                                   FN_PTR(registerNativeMethods)},
   {CC "isCurrentThreadAttached",                      CC "()Z",                                                                             FN_PTR(isCurrentThreadAttached)},
+  {CC "getCurrentJavaThread",                         CC "()J",                                                                             FN_PTR(getCurrentJavaThread)},
   {CC "attachCurrentThread",                          CC "(Z)Z",                                                                            FN_PTR(attachCurrentThread)},
   {CC "detachCurrentThread",                          CC "()V",                                                                             FN_PTR(detachCurrentThread)},
   {CC "translate",                                    CC "(" OBJECT ")J",                                                                   FN_PTR(translate)},

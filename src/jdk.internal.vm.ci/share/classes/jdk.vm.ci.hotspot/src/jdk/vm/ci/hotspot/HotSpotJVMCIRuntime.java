@@ -999,6 +999,14 @@ assert factories != null : "sanity";
     }
 
     /**
+     * Gets the address of the HotSpot {@code JavaThread} C++ object for the current thread. This
+     * will return {@code 0} if called from an unattached JVMCI shared library thread.
+     */
+    public long getCurrentJavaThread() {
+        return compilerToVm.getCurrentJavaThread();
+    }
+
+    /**
      * Ensures the current thread is attached to the peer runtime.
      *
      * @param asDaemon if the thread is not yet attached, should it be attached as a daemon

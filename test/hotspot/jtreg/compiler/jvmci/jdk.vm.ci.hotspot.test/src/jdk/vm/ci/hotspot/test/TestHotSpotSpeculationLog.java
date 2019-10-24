@@ -78,7 +78,8 @@ public class TestHotSpotSpeculationLog {
     public synchronized void testFailedSpeculations() {
         HotSpotSpeculationLog log = new HotSpotSpeculationLog();
         DummyReason reason1 = new DummyReason("dummy1");
-        DummyReason reason2 = new DummyReason("dummy2");
+        String longName = new String(new char[2000]).replace('\0', 'X');
+        DummyReason reason2 = new DummyReason(longName);
         Assert.assertTrue(log.maySpeculate(reason1));
         Assert.assertTrue(log.maySpeculate(reason2));
 
