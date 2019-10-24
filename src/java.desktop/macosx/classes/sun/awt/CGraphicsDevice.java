@@ -33,10 +33,13 @@ import java.awt.Insets;
 import java.awt.Rectangle;
 import java.awt.Window;
 import java.awt.geom.Rectangle2D;
+import java.awt.peer.WindowPeer;
 import java.util.Objects;
 
 import sun.java2d.SunGraphicsEnvironment;
 import sun.java2d.opengl.CGLGraphicsConfig;
+
+import static java.awt.peer.ComponentPeer.SET_BOUNDS;
 
 public final class CGraphicsDevice extends GraphicsDevice
         implements DisplayChangedListener {
@@ -129,6 +132,7 @@ public final class CGraphicsDevice extends GraphicsDevice
     }
 
     public void invalidate(final int defaultDisplayID) {
+        //TODO do we need to restore the full-screen window/modes on old device?
         displayID = defaultDisplayID;
     }
 
@@ -138,7 +142,8 @@ public final class CGraphicsDevice extends GraphicsDevice
         yResolution = nativeGetYResolution(displayID);
         bounds = nativeGetBounds(displayID).getBounds(); //does integer rounding
         initScaleFactor();
-        //TODO configs/fullscreenWindow/modes?
+        resizeFSWindow(getFullScreenWindow(), bounds);
+        //TODO configs?
     }
 
     @Override
@@ -217,6 +222,18 @@ public final class CGraphicsDevice extends GraphicsDevice
         }
     }
 
+    /**
+     * Reapplies the size of this device to the full-screen window.
+     */
+    private static void resizeFSWindow(final Window w, final Rectangle b) {
+        if (w != null) {
+            WindowPeer peer = AWTAccessor.getComponentAccessor().getPeer(w);
+            if (peer != null) {
+                peer.setBounds(b.x, b.y, b.width, b.height, SET_BOUNDS);
+            }
+        }
+    }
+
     @Override
     public boolean isDisplayChangeSupported() {
         return true;
@@ -229,10 +246,7 @@ public final class CGraphicsDevice extends GraphicsDevice
         }
         if (!Objects.equals(dm, getDisplayMode())) {
             nativeSetDisplayMode(displayID, dm.getWidth(), dm.getHeight(),
-                    dm.getBitDepth(), dm.getRefreshRate());
-            if (isFullScreenSupported() && getFullScreenWindow() != null) {
-                getFullScreenWindow().setSize(dm.getWidth(), dm.getHeight());
-            }
+                                 dm.getBitDepth(), dm.getRefreshRate());
         }
     }
 

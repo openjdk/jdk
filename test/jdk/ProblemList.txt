@@ -530,6 +530,8 @@ java/awt/FullScreen/NoResizeEventOnDMChangeTest/NoResizeEventOnDMChangeTest.java
 java/awt/TextArea/AutoScrollOnSelectAndAppend/AutoScrollOnSelectAndAppend.java 8213120 macosx-all
 java/awt/Window/MainKeyWindowTest/TestMainKeyWindow.java 8213126 macosx-all
 
+java/awt/GraphicsDevice/DisplayModes/CycleDMImage.java 7099223 linux-all,solaris-all,windows-all
+
 ############################################################################
 
 # jdk_beans
