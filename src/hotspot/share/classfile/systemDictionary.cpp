@@ -1972,6 +1972,10 @@ void SystemDictionary::resolve_well_known_classes(TRAPS) {
     resolve_wk_klasses_through(WK_KLASS_ENUM_NAME(Class_klass), scan, CHECK);
   }
 
+  assert(WK_KLASS(Object_klass) != NULL, "well-known classes should now be initialized");
+
+  java_lang_Object::register_natives(CHECK);
+
   // Calculate offsets for String and Class classes since they are loaded and
   // can be used after this point.
   java_lang_String::compute_offsets();

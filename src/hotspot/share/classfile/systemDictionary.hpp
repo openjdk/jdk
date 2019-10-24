@@ -219,7 +219,6 @@ class GCTimer;
                                                                                                                 \
   /*end*/
 
-
 class SystemDictionary : AllStatic {
   friend class BootstrapInfo;
   friend class VMStructs;
@@ -383,7 +382,6 @@ public:
     int limit = (int)end_id + 1;
     resolve_wk_klasses_until((WKID) limit, start_id, THREAD);
   }
-
 public:
   #define WK_KLASS_DECLARE(name, symbol) \
     static InstanceKlass* name() { return check_klass(_well_known_klasses[WK_KLASS_ENUM_NAME(name)]); } \
@@ -627,21 +625,6 @@ protected:
 
   // Basic find on classes in the midst of being loaded
   static Symbol* find_placeholder(Symbol* name, ClassLoaderData* loader_data);
-
-  // Add a placeholder for a class being loaded
-  static void add_placeholder(int index,
-                              Symbol* class_name,
-                              ClassLoaderData* loader_data);
-  static void remove_placeholder(int index,
-                                 Symbol* class_name,
-                                 ClassLoaderData* loader_data);
-
-  // Performs cleanups after resolve_super_or_fail. This typically needs
-  // to be called on failure.
-  // Won't throw, but can block.
-  static void resolution_cleanups(Symbol* class_name,
-                                  ClassLoaderData* loader_data,
-                                  TRAPS);
 
   // Resolve well-known classes so they can be used like SystemDictionary::String_klass()
   static void resolve_well_known_classes(TRAPS);

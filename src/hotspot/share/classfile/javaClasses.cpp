@@ -87,6 +87,21 @@ InjectedField JavaClasses::_injected_fields[] = {
   ALL_INJECTED_FIELDS(DECLARE_INJECTED_FIELD)
 };
 
+// Register native methods of Object
+void java_lang_Object::register_natives(TRAPS) {
+  InstanceKlass* obj = SystemDictionary::Object_klass();
+  Method::register_native(obj, vmSymbols::hashCode_name(),
+                          vmSymbols::void_int_signature(), (address) &JVM_IHashCode, CHECK);
+  Method::register_native(obj, vmSymbols::wait_name(),
+                          vmSymbols::long_void_signature(), (address) &JVM_MonitorWait, CHECK);
+  Method::register_native(obj, vmSymbols::notify_name(),
+                          vmSymbols::void_method_signature(), (address) &JVM_MonitorNotify, CHECK);
+  Method::register_native(obj, vmSymbols::notifyAll_name(),
+                          vmSymbols::void_method_signature(), (address) &JVM_MonitorNotifyAll, CHECK);
+  Method::register_native(obj, vmSymbols::clone_name(),
+                          vmSymbols::void_object_signature(), (address) &JVM_Clone, THREAD);
+}
+
 int JavaClasses::compute_injected_offset(InjectedFieldID id) {
   return _injected_fields[id].compute_offset();
 }

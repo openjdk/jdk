@@ -34,11 +34,6 @@ public class Object {
     @HotSpotIntrinsicCandidate
     public Object() {}
 
-    private static native void registerNatives();
-    static {
-        registerNatives();
-    }
-
     @HotSpotIntrinsicCandidate
     public final native Class<?> getClass();
 

@@ -88,6 +88,13 @@
         BASIC_JAVA_CLASSES_DO_PART1(f) \
         BASIC_JAVA_CLASSES_DO_PART2(f)
 
+// Interface to java.lang.Object objects
+
+class java_lang_Object : AllStatic {
+ public:
+  static void register_natives(TRAPS);
+};
+
 // Interface to java.lang.String objects
 
 class java_lang_String : AllStatic {

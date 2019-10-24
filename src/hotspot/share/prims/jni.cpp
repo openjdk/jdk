@@ -2909,89 +2909,6 @@ DEFINE_SETSCALARARRAYREGION(T_DOUBLE,  jdouble,  Double,  double
                             HOTSPOT_JNI_SETDOUBLEARRAYREGION_RETURN())
 
 
-//
-// Interception of natives
-//
-
-// The RegisterNatives call being attempted tried to register with a method that
-// is not native.  Ask JVM TI what prefixes have been specified.  Then check
-// to see if the native method is now wrapped with the prefixes.  See the
-// SetNativeMethodPrefix(es) functions in the JVM TI Spec for details.
-static Method* find_prefixed_native(Klass* k, Symbol* name, Symbol* signature, TRAPS) {
-#if INCLUDE_JVMTI
-  ResourceMark rm(THREAD);
-  Method* method;
-  int name_len = name->utf8_length();
-  char* name_str = name->as_utf8();
-  int prefix_count;
-  char** prefixes = JvmtiExport::get_all_native_method_prefixes(&prefix_count);
-  for (int i = 0; i < prefix_count; i++) {
-    char* prefix = prefixes[i];
-    int prefix_len = (int)strlen(prefix);
-
-    // try adding this prefix to the method name and see if it matches another method name
-    int trial_len = name_len + prefix_len;
-    char* trial_name_str = NEW_RESOURCE_ARRAY(char, trial_len + 1);
-    strcpy(trial_name_str, prefix);
-    strcat(trial_name_str, name_str);
-    TempNewSymbol trial_name = SymbolTable::probe(trial_name_str, trial_len);
-    if (trial_name == NULL) {
-      continue; // no such symbol, so this prefix wasn't used, try the next prefix
-    }
-    method = k->lookup_method(trial_name, signature);
-    if (method == NULL) {
-      continue; // signature doesn't match, try the next prefix
-    }
-    if (method->is_native()) {
-      method->set_is_prefixed_native();
-      return method; // wahoo, we found a prefixed version of the method, return it
-    }
-    // found as non-native, so prefix is good, add it, probably just need more prefixes
-    name_len = trial_len;
-    name_str = trial_name_str;
-  }
-#endif // INCLUDE_JVMTI
-  return NULL; // not found
-}
-
-static bool register_native(Klass* k, Symbol* name, Symbol* signature, address entry, TRAPS) {
-  Method* method = k->lookup_method(name, signature);
-  if (method == NULL) {
-    ResourceMark rm;
-    stringStream st;
-    st.print("Method '");
-    Method::print_external_name(&st, k, name, signature);
-    st.print("' name or signature does not match");
-    THROW_MSG_(vmSymbols::java_lang_NoSuchMethodError(), st.as_string(), false);
-  }
-  if (!method->is_native()) {
-    // trying to register to a non-native method, see if a JVM TI agent has added prefix(es)
-    method = find_prefixed_native(k, name, signature, THREAD);
-    if (method == NULL) {
-      ResourceMark rm;
-      stringStream st;
-      st.print("Method '");
-      Method::print_external_name(&st, k, name, signature);
-      st.print("' is not declared as native");
-      THROW_MSG_(vmSymbols::java_lang_NoSuchMethodError(), st.as_string(), false);
-    }
-  }
-
-  if (entry != NULL) {
-    method->set_native_function(entry,
-      Method::native_bind_event_is_interesting);
-  } else {
-    method->clear_native_function();
-  }
-  if (PrintJNIResolving) {
-    ResourceMark rm(THREAD);
-    tty->print_cr("[Registering JNI native method %s.%s]",
-      method->method_holder()->external_name(),
-      method->name()->as_C_string());
-  }
-  return true;
-}
-
 DT_RETURN_MARK_DECL(RegisterNatives, jint
                     , HOTSPOT_JNI_REGISTERNATIVES_RETURN(_ret_ref));
 
@@ -3024,8 +2941,8 @@ JNI_ENTRY(jint, jni_RegisterNatives(JNIEnv *env, jclass clazz,
       THROW_MSG_(vmSymbols::java_lang_NoSuchMethodError(), st.as_string(), -1);
     }
 
-    bool res = register_native(k, name, signature,
-                               (address) methods[index].fnPtr, THREAD);
+    bool res = Method::register_native(k, name, signature,
+                                       (address) methods[index].fnPtr, THREAD);
     if (!res) {
       ret = -1;
       break;

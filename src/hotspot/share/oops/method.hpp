@@ -346,6 +346,12 @@ class Method : public Metadata {
   // InterpreterRuntime::exception_handler_for_exception.
   static int fast_exception_handler_bci_for(const methodHandle& mh, Klass* ex_klass, int throw_bci, TRAPS);
 
+  static bool register_native(Klass* k,
+                              Symbol* name,
+                              Symbol* signature,
+                              address entry,
+                              TRAPS);
+
   // method data access
   MethodData* method_data() const              {
     return _method_data;
