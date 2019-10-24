@@ -774,7 +774,7 @@ LIR_Opr LIRGenerator::atomic_xchg(BasicType type, LIR_Opr addr, LIRItem& value) 
   bool is_oop = type == T_OBJECT || type == T_ARRAY;
   LIR_Opr result = new_register(type);
   value.load_item();
-  assert(type == T_INT || is_oop LP64_ONLY( || type == T_LONG ), "unexpected type");
+  assert(type == T_INT || is_oop || (type == T_LONG && VM_Version::supports_ldrexd()), "unexpected type");
   LIR_Opr tmp = (UseCompressedOops && is_oop) ? new_pointer_register() : LIR_OprFact::illegalOpr;
   __ xchg(addr, value.result(), result, tmp);
   return result;
@@ -783,7 +783,7 @@ LIR_Opr LIRGenerator::atomic_xchg(BasicType type, LIR_Opr addr, LIRItem& value) 
 LIR_Opr LIRGenerator::atomic_add(BasicType type, LIR_Opr addr, LIRItem& value) {
   LIR_Opr result = new_register(type);
   value.load_item();
-  assert(type == T_INT LP64_ONLY( || type == T_LONG), "unexpected type");
+  assert(type == T_INT || (type == T_LONG && VM_Version::supports_ldrexd ()), "unexpected type");
   LIR_Opr tmp = new_register(type);
   __ xadd(addr, value.result(), result, tmp);
   return result;
