@@ -527,7 +527,6 @@ java/awt/font/FontNames/LocaleFamilyNames.java 8213129 windows-all
 
 java/awt/Frame/DisposeParentGC/DisposeParentGC.java 8079786 macosx-all
 java/awt/FullScreen/NoResizeEventOnDMChangeTest/NoResizeEventOnDMChangeTest.java 8169468 macosx-all
-java/awt/GraphicsDevice/CheckDisplayModes.java 8213119 macosx-all
 java/awt/TextArea/AutoScrollOnSelectAndAppend/AutoScrollOnSelectAndAppend.java 8213120 macosx-all
 java/awt/Window/MainKeyWindowTest/TestMainKeyWindow.java 8213126 macosx-all
 

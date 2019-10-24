@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -108,16 +108,18 @@ static CFMutableArrayRef getAllValidDisplayModes(jint displayID){
 static CGDisplayModeRef getBestModeForParameters(CFArrayRef allModes, int w, int h, int bpp, int refrate) {
     CGDisplayModeRef bestGuess = NULL;
     CFIndex numModes = allModes ? CFArrayGetCount(allModes) : 0, n;
-    int thisBpp = 0;
+
     for(n = 0; n < numModes; n++ ) {
         CGDisplayModeRef cRef = (CGDisplayModeRef) CFArrayGetValueAtIndex(allModes, n);
         if(cRef == NULL) {
             continue;
         }
         CFStringRef modeString = CGDisplayModeCopyPixelEncoding(cRef);
-        thisBpp = getBPPFromModeString(modeString);
+        int thisBpp = getBPPFromModeString(modeString);
         CFRelease(modeString);
-        if (thisBpp != bpp || (int)CGDisplayModeGetHeight(cRef) != h || (int)CGDisplayModeGetWidth(cRef) != w) {
+        int thisH = (int)CGDisplayModeGetHeight(cRef);
+        int thisW = (int)CGDisplayModeGetWidth(cRef);
+        if (thisBpp != bpp || thisH != h || thisW != w) {
             // One of the key parameters does not match
             continue;
         }
@@ -128,11 +130,12 @@ static CGDisplayModeRef getBestModeForParameters(CFArrayRef allModes, int w, int
 
         // Refresh rate might be 0 in display mode and we ask for specific display rate
         // but if we do not find exact match then 0 refresh rate might be just Ok
-        if (CGDisplayModeGetRefreshRate(cRef) == refrate) {
+        int thisRefrate = (int)CGDisplayModeGetRefreshRate(cRef);
+        if (thisRefrate == refrate) {
             // Exact match
             return cRef;
         }
-        if (CGDisplayModeGetRefreshRate(cRef) == 0) {
+        if (thisRefrate == 0) {
             // Not exactly what was asked for, but may fit our needs if we don't find an exact match
             bestGuess = cRef;
         }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,10 +24,8 @@
 /*
  * @test
  * @key headful
- * @bug 8007146
+ * @bug 8007146 8213119
  * @summary [macosx] Setting a display mode crashes JDK under VNC
- * @author Alexander Scherbatiy
- * @run main CheckDisplayModes
  */
 import java.awt.DisplayMode;
 import java.awt.GraphicsDevice;
@@ -37,27 +35,28 @@ public class CheckDisplayModes {
 
     public static void main(String[] args) {
         GraphicsEnvironment ge = GraphicsEnvironment.getLocalGraphicsEnvironment();
-        GraphicsDevice graphicDevice = ge.getDefaultScreenDevice();
-        if (!graphicDevice.isDisplayChangeSupported()) {
-            System.err.println("Display mode change is not supported on this host. Test is considered passed.");
-            return;
-        }
-        DisplayMode defaultDisplayMode = graphicDevice.getDisplayMode();
-        checkDisplayMode(defaultDisplayMode);
-        graphicDevice.setDisplayMode(defaultDisplayMode);
-
-        DisplayMode[] displayModes = graphicDevice.getDisplayModes();
-        boolean isDefaultDisplayModeIncluded = false;
-        for (DisplayMode displayMode : displayModes) {
-            checkDisplayMode(displayMode);
-            graphicDevice.setDisplayMode(displayMode);
-            if (defaultDisplayMode.equals(displayMode)) {
-                isDefaultDisplayModeIncluded = true;
+        for (GraphicsDevice graphicDevice : ge.getScreenDevices()) {
+            if (!graphicDevice.isDisplayChangeSupported()) {
+                System.err.println("Display mode change is not supported on this host. Test is considered passed.");
+                continue;
             }
-        }
+            DisplayMode defaultDisplayMode = graphicDevice.getDisplayMode();
+            checkDisplayMode(defaultDisplayMode);
+            graphicDevice.setDisplayMode(defaultDisplayMode);
 
-        if (!isDefaultDisplayModeIncluded) {
-            throw new RuntimeException("Default display mode is not included");
+            DisplayMode[] displayModes = graphicDevice.getDisplayModes();
+            boolean isDefaultDisplayModeIncluded = false;
+            for (DisplayMode displayMode : displayModes) {
+                checkDisplayMode(displayMode);
+                graphicDevice.setDisplayMode(displayMode);
+                if (defaultDisplayMode.equals(displayMode)) {
+                    isDefaultDisplayModeIncluded = true;
+                }
+            }
+
+            if (!isDefaultDisplayModeIncluded) {
+                throw new RuntimeException("Default display mode is not included");
+            }
         }
     }
 
