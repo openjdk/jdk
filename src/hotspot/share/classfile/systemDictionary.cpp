@@ -2132,26 +2132,6 @@ void SystemDictionary::update_dictionary(unsigned int d_hash,
   {
     MutexLocker mu1(SystemDictionary_lock, THREAD);
 
-    // See whether biased locking is enabled and if so set it for this
-    // klass.
-    // Note that this must be done past the last potential blocking
-    // point / safepoint. We might enable biased locking lazily using a
-    // VM_Operation to iterate the SystemDictionary and installing the
-    // biasable mark word into each InstanceKlass's prototype header.
-    // To avoid race conditions where we accidentally miss enabling the
-    // optimization for one class in the process of being added to the
-    // dictionary, we must not safepoint after the test of
-    // BiasedLocking::enabled().
-    if (UseBiasedLocking && BiasedLocking::enabled()) {
-      // Set biased locking bit for all loaded classes; it will be
-      // cleared if revocation occurs too often for this type
-      // NOTE that we must only do this when the class is initally
-      // defined, not each time it is referenced from a new class loader
-      if (k->class_loader() == class_loader()) {
-        k->set_prototype_header(markWord::biased_locking_prototype());
-      }
-    }
-
     // Make a new dictionary entry.
     Dictionary* dictionary = loader_data->dictionary();
     InstanceKlass* sd_check = find_class(d_hash, name, dictionary);

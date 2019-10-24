@@ -27,6 +27,7 @@
 #include "memory/universe.hpp"
 #include "oops/oop.inline.hpp"
 #include "runtime/atomic.hpp"
+#include "runtime/biasedLocking.hpp"
 #include "runtime/interfaceSupport.inline.hpp"
 #include "runtime/orderAccess.hpp"
 #include "runtime/os.hpp"
@@ -84,10 +85,14 @@ TEST_VM(markWord, printing) {
   ThreadInVMfromNative invm(THREAD);
   ResourceMark rm(THREAD);
 
+  if (!UseBiasedLocking || !BiasedLocking::enabled()) {
+    // Can't test this with biased locking disabled.
+    return;
+  }
+
   oop obj = SystemDictionary::Byte_klass()->allocate_instance(THREAD);
 
   FlagSetting fs(WizardMode, true);
-  FlagSetting bf(UseBiasedLocking, true);
 
   HandleMark hm(THREAD);
   Handle h_obj(THREAD, obj);
