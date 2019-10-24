@@ -31,6 +31,7 @@ class JfrCheckpointWriter;
 
 class JfrTypeSet : AllStatic {
  public:
+  static void clear();
   static size_t serialize(JfrCheckpointWriter* writer, JfrCheckpointWriter* leakp_writer, bool class_unload);
 };
 

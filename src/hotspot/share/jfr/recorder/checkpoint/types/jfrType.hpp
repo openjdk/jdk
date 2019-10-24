@@ -37,11 +37,6 @@ class JfrThreadGroupConstant : public JfrSerializer {
   void serialize(JfrCheckpointWriter& writer);
 };
 
-class ClassUnloadTypeSet : public JfrSerializer {
- public:
-  void serialize(JfrCheckpointWriter& writer);
-};
-
 class FlagValueOriginConstant : public JfrSerializer {
  public:
   void serialize(JfrCheckpointWriter& writer);
@@ -104,14 +99,6 @@ class CodeBlobTypeConstant : public JfrSerializer {
 
 class VMOperationTypeConstant : public JfrSerializer {
  public:
-  void serialize(JfrCheckpointWriter& writer);
-};
-
-class TypeSet : public JfrSerializer {
- private:
-  JfrCheckpointWriter* _leakp_writer;
- public:
-  explicit TypeSet(JfrCheckpointWriter* leakp_writer = NULL);
   void serialize(JfrCheckpointWriter& writer);
 };
 

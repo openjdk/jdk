@@ -23,9 +23,6 @@
  */
 
 #include "precompiled.hpp"
-#include "jfr/jfr.hpp"
-#include "jfr/leakprofiler/leakProfiler.hpp"
-#include "jfr/leakprofiler/checkpoint/objectSampleCheckpoint.hpp"
 #include "jfr/metadata/jfrSerializer.hpp"
 #include "jfr/recorder/checkpoint/jfrCheckpointWriter.hpp"
 #include "jfr/recorder/checkpoint/types/jfrType.hpp"
@@ -35,9 +32,9 @@
 #include "memory/resourceArea.hpp"
 #include "runtime/handles.inline.hpp"
 #include "runtime/safepoint.hpp"
+#include "runtime/semaphore.hpp"
 #include "runtime/thread.inline.hpp"
 #include "utilities/exceptions.hpp"
-#include "runtime/semaphore.hpp"
 
 class JfrSerializerRegistration : public JfrCHeapObj {
  private:
@@ -120,7 +117,7 @@ typedef StopOnNullIterator<const List> Iterator;
 static List types;
 static List safepoint_types;
 
-void JfrTypeManager::clear() {
+void JfrTypeManager::destroy() {
   SerializerRegistrationGuard guard;
   Iterator iter(types);
   JfrSerializerRegistration* registration;
@@ -149,39 +146,6 @@ void JfrTypeManager::write_safepoint_types(JfrCheckpointWriter& writer) {
   const Iterator iter(safepoint_types);
   while (iter.has_next()) {
     iter.next()->invoke(writer);
-  }
-}
-
-void JfrTypeManager::write_type_set() {
-  assert(!SafepointSynchronize::is_at_safepoint(), "invariant");
-  // can safepoint here
-  MutexLocker cld_lock(ClassLoaderDataGraph_lock);
-  MutexLocker module_lock(Module_lock);
-  if (!LeakProfiler::is_running()) {
-    JfrCheckpointWriter writer(true, true, Thread::current());
-    TypeSet set;
-    set.serialize(writer);
-    return;
-  }
-  JfrCheckpointWriter leakp_writer(false, true, Thread::current());
-  JfrCheckpointWriter writer(false, true, Thread::current());
-  TypeSet set(&leakp_writer);
-  set.serialize(writer);
-  ObjectSampleCheckpoint::on_type_set(leakp_writer);
-}
-
-void JfrTypeManager::write_type_set_for_unloaded_classes() {
-  assert_locked_or_safepoint(ClassLoaderDataGraph_lock);
-  JfrCheckpointWriter writer(false, true, Thread::current());
-  const JfrCheckpointContext ctx = writer.context();
-  ClassUnloadTypeSet class_unload_set;
-  class_unload_set.serialize(writer);
-  if (LeakProfiler::is_running()) {
-    ObjectSampleCheckpoint::on_type_set_unload(writer);
-  }
-  if (!Jfr::is_recording()) {
-    // discard anything written
-    writer.set_context(ctx);
   }
 }
 

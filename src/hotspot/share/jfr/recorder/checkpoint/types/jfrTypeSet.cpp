@@ -204,9 +204,14 @@ int write__klass__leakp(JfrCheckpointWriter* writer, const void* k) {
   return write_klass(writer, klass, true);
 }
 
+static bool is_implied(const Klass* klass) {
+  assert(klass != NULL, "invariant");
+  return klass->is_subclass_of(SystemDictionary::ClassLoader_klass()) || klass == SystemDictionary::Object_klass();
+}
+
 static void do_implied(Klass* klass) {
   assert(klass != NULL, "invariant");
-  if (klass->is_subclass_of(SystemDictionary::ClassLoader_klass()) || klass == SystemDictionary::Object_klass()) {
+  if (is_implied(klass)) {
     if (_leakp_writer != NULL) {
       SET_LEAKP(klass);
     }
@@ -258,6 +263,16 @@ typedef JfrPredicatedTypeWriterImplHost<KlassPtr, KlassPredicate, write__klass> 
 typedef JfrTypeWriterHost<KlassWriterImpl, TYPE_CLASS> KlassWriter;
 typedef CompositeFunctor<KlassPtr, KlassWriter, KlassArtifactRegistrator> KlassWriterRegistration;
 typedef JfrArtifactCallbackHost<KlassPtr, KlassWriterRegistration> KlassCallback;
+
+template <>
+class LeakPredicate<const Klass*> {
+public:
+  LeakPredicate(bool class_unload) {}
+  bool operator()(const Klass* klass) {
+    assert(klass != NULL, "invariant");
+    return IS_LEAKP(klass) || is_implied(klass);
+  }
+};
 
 typedef LeakPredicate<KlassPtr> LeakKlassPredicate;
 typedef JfrPredicatedTypeWriterImplHost<KlassPtr, LeakKlassPredicate, write__klass__leakp> LeakKlassWriterImpl;
@@ -809,6 +824,12 @@ static void write_symbols() {
   _artifacts->tally(sw);
 }
 
+static bool clear_artifacts = false;
+
+void JfrTypeSet::clear() {
+  clear_artifacts = true;
+}
+
 typedef Wrapper<KlassPtr, ClearArtifact> ClearKlassBits;
 typedef Wrapper<MethodPtr, ClearArtifact> ClearMethodFlag;
 typedef MethodIteratorHost<ClearMethodFlag, ClearKlassBits, false> ClearKlassAndMethods;
@@ -820,7 +841,7 @@ static size_t teardown() {
     assert(_writer != NULL, "invariant");
     ClearKlassAndMethods clear(_writer);
     _artifacts->iterate_klasses(clear);
-    _artifacts->clear();
+    JfrTypeSet::clear();
     ++checkpoint_id;
   }
   return total_count;
@@ -833,8 +854,9 @@ static void setup(JfrCheckpointWriter* writer, JfrCheckpointWriter* leakp_writer
   if (_artifacts == NULL) {
     _artifacts = new JfrArtifactSet(class_unload);
   } else {
-    _artifacts->initialize(class_unload);
+    _artifacts->initialize(class_unload, clear_artifacts);
   }
+  clear_artifacts = false;
   assert(_artifacts != NULL, "invariant");
   assert(!_artifacts->has_klass_entries(), "invariant");
 }

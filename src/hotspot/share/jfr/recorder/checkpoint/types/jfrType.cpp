@@ -36,7 +36,6 @@
 #include "jfr/recorder/jfrRecorder.hpp"
 #include "jfr/recorder/checkpoint/types/jfrThreadGroup.hpp"
 #include "jfr/recorder/checkpoint/types/jfrThreadState.hpp"
-#include "jfr/recorder/checkpoint/types/jfrTypeSet.hpp"
 #include "jfr/support/jfrThreadLocal.hpp"
 #include "jfr/writers/jfrJavaEventWriter.hpp"
 #include "memory/metaspaceGCThresholdUpdater.hpp"
@@ -270,30 +269,6 @@ void VMOperationTypeConstant::serialize(JfrCheckpointWriter& writer) {
     writer.write(VM_Operation::name(VM_Operation::VMOp_Type(i)));
   }
 }
-
-class TypeSetSerialization {
- private:
-  JfrCheckpointWriter* _leakp_writer;
-  bool _class_unload;
- public:
-  TypeSetSerialization(bool class_unload, JfrCheckpointWriter* leakp_writer = NULL) :
-    _leakp_writer(leakp_writer), _class_unload(class_unload) {}
-  void write(JfrCheckpointWriter& writer) {
-    JfrTypeSet::serialize(&writer, _leakp_writer, _class_unload);
-  }
-};
-
-void ClassUnloadTypeSet::serialize(JfrCheckpointWriter& writer) {
-  TypeSetSerialization type_set(true);
-  type_set.write(writer);
-};
-
-TypeSet::TypeSet(JfrCheckpointWriter* leakp_writer) : _leakp_writer(leakp_writer) {}
-
-void TypeSet::serialize(JfrCheckpointWriter& writer) {
-  TypeSetSerialization type_set(false, _leakp_writer);
-  type_set.write(writer);
-};
 
 void ThreadStateConstant::serialize(JfrCheckpointWriter& writer) {
   JfrThreadState::serialize(writer);
