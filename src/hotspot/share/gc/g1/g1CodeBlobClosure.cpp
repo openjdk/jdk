@@ -26,6 +26,7 @@
 #include "code/nmethod.hpp"
 #include "gc/g1/g1CodeBlobClosure.hpp"
 #include "gc/g1/g1CollectedHeap.inline.hpp"
+#include "gc/g1/g1ConcurrentMark.inline.hpp"
 #include "gc/g1/heapRegion.hpp"
 #include "gc/g1/heapRegionRemSet.hpp"
 #include "oops/access.inline.hpp"
@@ -52,14 +53,62 @@ void G1CodeBlobClosure::HeapRegionGatheringOopClosure::do_oop(narrowOop* o) {
   do_oop_work(o);
 }
 
-void G1CodeBlobClosure::do_code_blob(CodeBlob* cb) {
-  nmethod* nm = cb->as_nmethod_or_null();
-  if (nm != NULL) {
-    if (!nm->test_set_oops_do_mark()) {
-      _oc.set_nm(nm);
-      nm->oops_do(&_oc);
-      nm->fix_oop_relocations();
-    }
+template<typename T>
+void G1CodeBlobClosure::MarkingOopClosure::do_oop_work(T* p) {
+  T oop_or_narrowoop = RawAccess<>::oop_load(p);
+  if (!CompressedOops::is_null(oop_or_narrowoop)) {
+    oop o = CompressedOops::decode_not_null(oop_or_narrowoop);
+    _cm->mark_in_next_bitmap(_worker_id, o);
   }
 }
 
+G1CodeBlobClosure::MarkingOopClosure::MarkingOopClosure(uint worker_id) :
+  _cm(G1CollectedHeap::heap()->concurrent_mark()), _worker_id(worker_id) { }
+
+void G1CodeBlobClosure::MarkingOopClosure::do_oop(oop* o) {
+  do_oop_work(o);
+}
+
+void G1CodeBlobClosure::MarkingOopClosure::do_oop(narrowOop* o) {
+  do_oop_work(o);
+}
+
+void G1CodeBlobClosure::do_evacuation_and_fixup(nmethod* nm) {
+  _oc.set_nm(nm);
+  nm->oops_do(&_oc);
+  nm->fix_oop_relocations();
+}
+
+void G1CodeBlobClosure::do_marking(nmethod* nm) {
+  nm->oops_do(&_marking_oc);
+}
+
+class G1NmethodProcessor : public nmethod::OopsDoProcessor {
+  G1CodeBlobClosure* _cl;
+
+public:
+  G1NmethodProcessor(G1CodeBlobClosure* cl) : _cl(cl) { }
+
+  void do_regular_processing(nmethod* nm) {
+    _cl->do_evacuation_and_fixup(nm);
+  }
+
+  void do_remaining_strong_processing(nmethod* nm) {
+    _cl->do_marking(nm);
+  }
+};
+
+void G1CodeBlobClosure::do_code_blob(CodeBlob* cb) {
+  nmethod* nm = cb->as_nmethod_or_null();
+  if (nm == NULL) {
+    return;
+  }
+
+  G1NmethodProcessor cl(this);
+
+  if (_strong) {
+    nm->oops_do_process_strong(&cl);
+  } else {
+    nm->oops_do_process_weak(&cl);
+  }
+}

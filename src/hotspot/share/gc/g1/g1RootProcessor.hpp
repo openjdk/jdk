@@ -50,10 +50,6 @@ class G1RootProcessor : public StackObj {
   SubTasksDone _process_strong_tasks;
   StrongRootsScope _srs;
 
-  // Used to implement the Thread work barrier.
-  Monitor _lock;
-  volatile jint _n_workers_discovered_strong_classes;
-
   enum G1H_process_roots_tasks {
     G1RP_PS_Universe_oops_do,
     G1RP_PS_JNIHandles_oops_do,
@@ -69,13 +65,9 @@ class G1RootProcessor : public StackObj {
     G1RP_PS_NumElements
   };
 
-  void worker_has_discovered_all_strong_nmethods();
-  void wait_until_all_strong_nmethods_discovered();
-
   void process_java_roots(G1RootClosures* closures,
                           G1GCPhaseTimes* phase_times,
-                          uint worker_id,
-                          bool notify_claimed_nmethods_done = false);
+                          uint worker_id);
 
   void process_vm_roots(G1RootClosures* closures,
                         G1GCPhaseTimes* phase_times,

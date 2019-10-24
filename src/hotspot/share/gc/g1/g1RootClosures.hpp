@@ -52,9 +52,6 @@ public:
   // Applied to code blobs treated as weak roots.
   virtual CodeBlobClosure* weak_codeblobs() = 0;
 
-  // Is this closure used for tracing metadata?
-  virtual bool trace_metadata() = 0;
-
   static G1EvacuationRootClosures* create_root_closures(G1ParScanThreadState* pss, G1CollectedHeap* g1h);
 };
 

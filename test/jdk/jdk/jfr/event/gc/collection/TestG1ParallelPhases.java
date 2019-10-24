@@ -98,7 +98,6 @@ public class TestG1ParallelPhases {
             "CLDGRoots",
             "JVMTIRoots",
             "CMRefRoots",
-            "WaitForStrongRoots",
             "MergeER",
             "MergeHCC",
             "MergeRS",

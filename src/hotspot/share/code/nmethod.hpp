@@ -67,8 +67,8 @@ class nmethod : public CompiledMethod {
   friend class NMethodSweeper;
   friend class CodeCache;  // scavengable oops
   friend class JVMCINMethodData;
- private:
 
+ private:
   // Shared fields for all nmethod's
   int       _entry_bci;        // != InvocationEntryBci if this nmethod is an on-stack replacement method
   jmethodID _jmethod_id;       // Cache of method()->jmethod_id()
@@ -76,8 +76,119 @@ class nmethod : public CompiledMethod {
   // To support simple linked-list chaining of nmethods:
   nmethod*  _osr_link;         // from InstanceKlass::osr_nmethods_head
 
+  // STW two-phase nmethod root processing helpers.
+  //
+  // When determining liveness of a given nmethod to do code cache unloading,
+  // some collectors need to to different things depending on whether the nmethods
+  // need to absolutely be kept alive during root processing; "strong"ly reachable
+  // nmethods are known to be kept alive at root processing, but the liveness of
+  // "weak"ly reachable ones is to be determined later.
+  //
+  // We want to allow strong and weak processing of nmethods by different threads
+  // at the same time without heavy synchronization. Additional constraints are
+  // to make sure that every nmethod is processed a minimal amount of time, and
+  // nmethods themselves are always iterated at most once at a particular time.
+  //
+  // Note that strong processing work must be a superset of weak processing work
+  // for this code to work.
+  //
+  // We store state and claim information in the _oops_do_mark_link member, using
+  // the two LSBs for the state and the remaining upper bits for linking together
+  // nmethods that were already visited.
+  // The last element is self-looped, i.e. points to itself to avoid some special
+  // "end-of-list" sentinel value.
+  //
+  // _oops_do_mark_link special values:
+  //
+  //   _oops_do_mark_link == NULL: the nmethod has not been visited at all yet, i.e.
+  //      is Unclaimed.
+  //
+  // For other values, its lowest two bits indicate the following states of the nmethod:
+  //
+  //   weak_request (WR): the nmethod has been claimed by a thread for weak processing
+  //   weak_done (WD): weak processing has been completed for this nmethod.
+  //   strong_request (SR): the nmethod has been found to need strong processing while
+  //       being weak processed.
+  //   strong_done (SD): strong processing has been completed for this nmethod .
+  //
+  // The following shows the _only_ possible progressions of the _oops_do_mark_link
+  // pointer.
+  //
+  // Given
+  //   N as the nmethod
+  //   X the current next value of _oops_do_mark_link
+  //
+  // Unclaimed (C)-> N|WR (C)-> X|WD: the nmethod has been processed weakly by
+  //   a single thread.
+  // Unclaimed (C)-> N|WR (C)-> X|WD (O)-> X|SD: after weak processing has been
+  //   completed (as above) another thread found that the nmethod needs strong
+  //   processing after all.
+  // Unclaimed (C)-> N|WR (O)-> N|SR (C)-> X|SD: during weak processing another
+  //   thread finds that the nmethod needs strong processing, marks it as such and
+  //   terminates. The original thread completes strong processing.
+  // Unclaimed (C)-> N|SD (C)-> X|SD: the nmethod has been processed strongly from
+  //   the beginning by a single thread.
+  //
+  // "|" describes the concatentation of bits in _oops_do_mark_link.
+  //
+  // The diagram also describes the threads responsible for changing the nmethod to
+  // the next state by marking the _transition_ with (C) and (O), which mean "current"
+  // and "other" thread respectively.
+  //
+  struct oops_do_mark_link; // Opaque data type.
+
+  // States used for claiming nmethods during root processing.
+  static const uint claim_weak_request_tag = 0;
+  static const uint claim_weak_done_tag = 1;
+  static const uint claim_strong_request_tag = 2;
+  static const uint claim_strong_done_tag = 3;
+
+  static oops_do_mark_link* mark_link(nmethod* nm, uint tag) {
+    assert(tag <= claim_strong_done_tag, "invalid tag %u", tag);
+    assert(is_aligned(nm, 4), "nmethod pointer must have zero lower two LSB");
+    return (oops_do_mark_link*)(((uintptr_t)nm & ~0x3) | tag);
+  }
+
+  static uint extract_state(oops_do_mark_link* link) {
+    return (uint)((uintptr_t)link & 0x3);
+  }
+
+  static nmethod* extract_nmethod(oops_do_mark_link* link) {
+    return (nmethod*)((uintptr_t)link & ~0x3);
+  }
+
+  void oops_do_log_change(const char* state);
+
+  static bool oops_do_has_weak_request(oops_do_mark_link* next) {
+    return extract_state(next) == claim_weak_request_tag;
+  }
+
+  static bool oops_do_has_any_strong_state(oops_do_mark_link* next) {
+    return extract_state(next) >= claim_strong_request_tag;
+  }
+
+  // Attempt Unclaimed -> N|WR transition. Returns true if successful.
+  bool oops_do_try_claim_weak_request();
+
+  // Attempt Unclaimed -> N|SD transition. Returns the current link.
+  oops_do_mark_link* oops_do_try_claim_strong_done();
+  // Attempt N|WR -> X|WD transition. Returns NULL if successful, X otherwise.
+  nmethod* oops_do_try_add_to_list_as_weak_done();
+
+  // Attempt X|WD -> N|SR transition. Returns the current link.
+  oops_do_mark_link* oops_do_try_add_strong_request(oops_do_mark_link* next);
+  // Attempt X|WD -> X|SD transition. Returns true if successful.
+  bool oops_do_try_claim_weak_done_as_strong_done(oops_do_mark_link* next);
+
+  // Do the N|SD -> X|SD transition.
+  void oops_do_add_to_list_as_strong_done();
+
+  // Sets this nmethod as strongly claimed (as part of N|SD -> X|SD and N|SR -> X|SD
+  // transitions).
+  void oops_do_set_strong_done(nmethod* old_head);
+
   static nmethod* volatile _oops_do_mark_nmethods;
-  nmethod*        volatile _oops_do_mark_link;
+  oops_do_mark_link* volatile _oops_do_mark_link;
 
   // offsets for entry points
   address _entry_point;                      // entry point with class check
@@ -480,11 +591,30 @@ public:
   void oops_do(OopClosure* f) { oops_do(f, false); }
   void oops_do(OopClosure* f, bool allow_dead);
 
-  bool test_set_oops_do_mark();
+  // All-in-one claiming of nmethods: returns true if the caller successfully claimed that
+  // nmethod.
+  bool oops_do_try_claim();
+
+  // Class containing callbacks for the oops_do_process_weak/strong() methods
+  // below.
+  class OopsDoProcessor {
+  public:
+    // Process the oops of the given nmethod based on whether it has been called
+    // in a weak or strong processing context, i.e. apply either weak or strong
+    // work on it.
+    virtual void do_regular_processing(nmethod* nm) = 0;
+    // Assuming that the oops of the given nmethod has already been its weak
+    // processing applied, apply the remaining strong processing part.
+    virtual void do_remaining_strong_processing(nmethod* nm) = 0;
+  };
+
+  // The following two methods do the work corresponding to weak/strong nmethod
+  // processing.
+  void oops_do_process_weak(OopsDoProcessor* p);
+  void oops_do_process_strong(OopsDoProcessor* p);
+
   static void oops_do_marking_prologue();
   static void oops_do_marking_epilogue();
-  static bool oops_do_marking_is_active() { return _oops_do_mark_nmethods != NULL; }
-  bool test_oops_do_mark() { return _oops_do_mark_link != NULL; }
 
  private:
   ScopeDesc* scope_desc_in(address begin, address end);

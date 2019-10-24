@@ -149,7 +149,7 @@ public:
 
   virtual void do_code_blob(CodeBlob* cb) {
     nmethod* const nm = cb->as_nmethod_or_null();
-    if (nm != NULL && !nm->test_set_oops_do_mark()) {
+    if (nm != NULL && nm->oops_do_try_claim()) {
       CodeBlobToOopClosure::do_code_blob(cb);
       _bs->disarm(nm);
     }

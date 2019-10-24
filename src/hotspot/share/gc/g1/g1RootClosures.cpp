@@ -45,8 +45,6 @@ public:
 
   CodeBlobClosure* strong_codeblobs()      { return &_closures._codeblobs; }
   CodeBlobClosure* weak_codeblobs()        { return &_closures._codeblobs; }
-
-  bool trace_metadata()         { return false; }
 };
 
 // Closures used during initial mark.
@@ -71,10 +69,6 @@ public:
 
   CodeBlobClosure* strong_codeblobs()      { return &_strong._codeblobs; }
   CodeBlobClosure* weak_codeblobs()        { return &_weak._codeblobs; }
-
-  // If we are not marking all weak roots then we are tracing
-  // which metadata is alive.
-  bool trace_metadata()         { return MarkWeak == G1MarkPromotedFromRoot; }
 };
 
 G1EvacuationRootClosures* G1EvacuationRootClosures::create_root_closures(G1ParScanThreadState* pss, G1CollectedHeap* g1h) {

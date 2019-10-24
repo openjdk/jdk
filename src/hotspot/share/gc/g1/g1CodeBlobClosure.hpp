@@ -28,9 +28,11 @@
 #include "gc/g1/g1CollectedHeap.hpp"
 #include "memory/iterator.hpp"
 
+class G1ConcurrentMark;
 class nmethod;
 
 class G1CodeBlobClosure : public CodeBlobClosure {
+  // Gather nmethod remembered set entries.
   class HeapRegionGatheringOopClosure : public OopClosure {
     G1CollectedHeap* _g1h;
     OopClosure* _work;
@@ -50,9 +52,35 @@ class G1CodeBlobClosure : public CodeBlobClosure {
     }
   };
 
+  // Mark all oops below TAMS.
+  class MarkingOopClosure : public OopClosure {
+    G1ConcurrentMark* _cm;
+    uint _worker_id;
+
+    template <typename T>
+    void do_oop_work(T* p);
+
+  public:
+    MarkingOopClosure(uint worker_id);
+
+    void do_oop(oop* o);
+    void do_oop(narrowOop* o);
+  };
+
   HeapRegionGatheringOopClosure _oc;
+  MarkingOopClosure _marking_oc;
+
+  bool _strong;
+
+  void do_code_blob_weak(CodeBlob* cb);
+  void do_code_blob_strong(CodeBlob* cb);
+
 public:
-  G1CodeBlobClosure(OopClosure* oc) : _oc(oc) {}
+  G1CodeBlobClosure(uint worker_id, OopClosure* oc, bool strong) :
+    _oc(oc), _marking_oc(worker_id), _strong(strong) { }
+
+  void do_evacuation_and_fixup(nmethod* nm);
+  void do_marking(nmethod* nm);
 
   void do_code_blob(CodeBlob* cb);
 };
