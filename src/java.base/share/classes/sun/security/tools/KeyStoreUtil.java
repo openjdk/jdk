@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -304,13 +304,16 @@ public class KeyStoreUtil {
     public static void loadProviderByClass(
             String provClass, String arg, ClassLoader cl) {
 
-        // For compatibility, SunPKCS11 and OracleUcrypto can still be
-        // loadable with -providerClass.
+        // For compatibility, SunPKCS11, OracleUcrypto, and SunMSCAPI
+        // can still be loadable with -providerClass.
         if (provClass.equals("sun.security.pkcs11.SunPKCS11")) {
             loadProviderByName("SunPKCS11", arg);
             return;
         } else if (provClass.equals("com.oracle.security.crypto.UcryptoProvider")) {
             loadProviderByName("OracleUcrypto", arg);
+            return;
+        } else if (provClass.equals("sun.security.mscapi.SunMSCAPI")) {
+            loadProviderByName("SunMSCAPI", arg);
             return;
         }
 
