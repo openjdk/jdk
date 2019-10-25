@@ -156,7 +156,7 @@ class G1GCPhaseTimes : public CHeapObj<mtGC> {
   WorkerDataArray<size_t>* _redirtied_cards;
 
   double _cur_collection_initial_evac_time_ms;
-  double _cur_optional_evac_ms;
+  double _cur_optional_evac_time_ms;
   double _cur_collection_code_root_fixup_time_ms;
   double _cur_strong_code_root_purge_time_ms;
 
@@ -296,7 +296,7 @@ class G1GCPhaseTimes : public CHeapObj<mtGC> {
   }
 
   void record_or_add_optional_evac_time(double ms) {
-    _cur_optional_evac_ms += ms;
+    _cur_optional_evac_time_ms += ms;
   }
 
   void record_or_add_code_root_fixup_time(double ms) {
@@ -415,7 +415,7 @@ class G1GCPhaseTimes : public CHeapObj<mtGC> {
   }
 
   double cur_collection_par_time_ms() {
-    return _cur_collection_initial_evac_time_ms;
+    return _cur_collection_initial_evac_time_ms + _cur_optional_evac_time_ms;
   }
 
   double cur_clear_ct_time_ms() {

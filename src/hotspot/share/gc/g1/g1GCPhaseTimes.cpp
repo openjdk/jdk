@@ -164,7 +164,7 @@ G1GCPhaseTimes::G1GCPhaseTimes(STWGCTimer* gc_timer, uint max_gc_threads) :
 
 void G1GCPhaseTimes::reset() {
   _cur_collection_initial_evac_time_ms = 0.0;
-  _cur_optional_evac_ms = 0.0;
+  _cur_optional_evac_time_ms = 0.0;
   _cur_collection_code_root_fixup_time_ms = 0.0;
   _cur_strong_code_root_purge_time_ms = 0.0;
   _cur_merge_heap_roots_time_ms = 0.0;
@@ -416,14 +416,14 @@ double G1GCPhaseTimes::print_pre_evacuate_collection_set() const {
 }
 
 double G1GCPhaseTimes::print_evacuate_optional_collection_set() const {
-  const double sum_ms = _cur_optional_evac_ms + _cur_optional_merge_heap_roots_time_ms;
+  const double sum_ms = _cur_optional_evac_time_ms + _cur_optional_merge_heap_roots_time_ms;
   if (sum_ms > 0) {
     info_time("Merge Optional Heap Roots", _cur_optional_merge_heap_roots_time_ms);
 
     debug_time("Prepare Optional Merge Heap Roots", _cur_optional_prepare_merge_heap_roots_time_ms);
     debug_phase(_gc_par_phases[OptMergeRS]);
 
-    info_time("Evacuate Optional Collection Set", _cur_optional_evac_ms);
+    info_time("Evacuate Optional Collection Set", _cur_optional_evac_time_ms);
     debug_phase(_gc_par_phases[OptScanHR]);
     debug_phase(_gc_par_phases[OptObjCopy]);
     debug_phase(_gc_par_phases[OptCodeRoots]);
