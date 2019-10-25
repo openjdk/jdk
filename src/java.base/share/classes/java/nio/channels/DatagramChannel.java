@@ -305,8 +305,10 @@ public abstract class DatagramChannel
      *          If the type of the given remote address is not supported
      *
      * @throws  SecurityException
-     *          If a security manager has been installed
-     *          and it does not permit access to the given remote address
+     *          If a security manager has been installed and it does not
+     *          permit access to the given remote address, or if unbound,
+     *          the security manager {@link SecurityManager#checkListen checkListen}
+     *          method denies the operation
      *
      * @throws  IOException
      *          If some other I/O error occurs
@@ -409,6 +411,11 @@ public abstract class DatagramChannel
      *          closing the channel and setting the current thread's
      *          interrupt status
      *
+     * @throws  SecurityException
+     *          If unbound, and a security manager has been installed and
+     *          its {@link SecurityManager#checkListen checkListen} method
+     *          denies the operation
+     *
      * @throws  IOException
      *          If some other I/O error occurs
      */
@@ -480,9 +487,10 @@ public abstract class DatagramChannel
      *          If the type of the given remote address is not supported
      *
      * @throws  SecurityException
-     *          If a security manager has been installed
-     *          and it does not permit datagrams to be sent
-     *          to the given address
+     *          If a security manager has been installed and it does not permit
+     *          datagrams to be sent to the given address, or if unbound, and
+     *          the security manager's {@link SecurityManager#checkListen checkListen}
+     *          method denies the operation
      *
      * @throws  IOException
      *          If some other I/O error occurs
