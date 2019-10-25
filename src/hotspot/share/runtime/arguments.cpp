@@ -548,6 +548,7 @@ static SpecialFlag const special_jvm_flags[] = {
   { "SharedMiscDataSize",            JDK_Version::undefined(), JDK_Version::jdk(10), JDK_Version::undefined() },
   { "SharedMiscCodeSize",            JDK_Version::undefined(), JDK_Version::jdk(10), JDK_Version::undefined() },
   { "CompilationPolicyChoice",       JDK_Version::jdk(13),     JDK_Version::jdk(14), JDK_Version::jdk(15) },
+  { "TraceNMethodInstalls",          JDK_Version::jdk(13),     JDK_Version::jdk(14), JDK_Version::jdk(15) },
   { "FailOverToOldVerifier",         JDK_Version::undefined(), JDK_Version::jdk(14), JDK_Version::jdk(15) },
   { "BindGCTaskThreadsToCPUs",       JDK_Version::undefined(), JDK_Version::jdk(14), JDK_Version::jdk(16) },
   { "UseGCTaskAffinity",             JDK_Version::undefined(), JDK_Version::jdk(14), JDK_Version::jdk(16) },
@@ -593,7 +594,6 @@ static AliasedLoggingFlag const aliased_logging_flags[] = {
   { "TraceSafepointCleanupTime", LogLevel::Info,  true,  LOG_TAGS(safepoint, cleanup) },
   { "TraceJVMTIObjectTagging",   LogLevel::Debug, true,  LOG_TAGS(jvmti, objecttagging) },
   { "TraceRedefineClasses",      LogLevel::Info,  false, LOG_TAGS(redefine, class) },
-  { "TraceNMethodInstalls",      LogLevel::Info,  true,  LOG_TAGS(nmethod, install) },
   { NULL,                        LogLevel::Off,   false, LOG_TAGS(_NO_TAG) }
 };
 

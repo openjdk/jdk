@@ -563,9 +563,6 @@ const size_t minimumSymbolTableSize = 1024;
   product(bool, PrintExtendedThreadInfo, false,                             \
           "Print more information in thread dump")                          \
                                                                             \
-  diagnostic(bool, TraceNMethodInstalls, false,                             \
-          "Trace nmethod installation")                                     \
-                                                                            \
   diagnostic(intx, ScavengeRootsInCode, 2,                                  \
           "0: do not allow scavengable oops in the code cache; "            \
           "1: allow scavenging from the code cache; "                       \
