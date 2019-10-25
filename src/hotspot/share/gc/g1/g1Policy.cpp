@@ -68,7 +68,7 @@ G1Policy::G1Policy(STWGCTimer* gc_timer) :
   _reserve_regions(0),
   _young_gen_sizer(G1YoungGenSizer::create_gen_sizer()),
   _free_regions_at_end_of_collection(0),
-  _max_rs_length(0),
+  _rs_length(0),
   _rs_length_prediction(0),
   _pending_cards_at_gc_start(0),
   _pending_cards_at_prev_gc_end(0),
@@ -753,13 +753,13 @@ void G1Policy::record_collection_pause_end(double pause_time_ms, size_t heap_use
       _analytics->report_cost_per_remset_card_ms(cost_per_remset_card_ms, this_pause_was_young_only);
     }
 
-    if (_max_rs_length > 0) {
+    if (_rs_length > 0) {
       double cards_per_entry_ratio =
-        (double) remset_cards_scanned / (double) _max_rs_length;
+        (double) remset_cards_scanned / (double) _rs_length;
       _analytics->report_cards_per_entry_ratio(cards_per_entry_ratio, this_pause_was_young_only);
     }
 
-    // This is defensive. For a while _max_rs_length could get
+    // This is defensive. For a while _rs_length could get
     // smaller than _recorded_rs_length which was causing
     // rs_length_diff to get very large and mess up the RSet length
     // predictions. The reason was unsafe concurrent updates to the
@@ -774,8 +774,8 @@ void G1Policy::record_collection_pause_end(double pause_time_ms, size_t heap_use
     // conditional below just in case.
     size_t rs_length_diff = 0;
     size_t recorded_rs_length = _collection_set->recorded_rs_length();
-    if (_max_rs_length > recorded_rs_length) {
-      rs_length_diff = _max_rs_length - recorded_rs_length;
+    if (_rs_length > recorded_rs_length) {
+      rs_length_diff = _rs_length - recorded_rs_length;
     }
     _analytics->report_rs_length_diff((double) rs_length_diff);
 
@@ -806,7 +806,7 @@ void G1Policy::record_collection_pause_end(double pause_time_ms, size_t heap_use
     // During mixed gc we do not use them for young gen sizing.
     if (this_pause_was_young_only) {
       _analytics->report_pending_cards((double) _pending_cards_at_gc_start);
-      _analytics->report_rs_length((double) _max_rs_length);
+      _analytics->report_rs_length((double) _rs_length);
     }
   }
 

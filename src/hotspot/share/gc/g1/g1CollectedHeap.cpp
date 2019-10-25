@@ -4098,7 +4098,7 @@ private:
     _cl.complete_work();
 
     G1Policy* policy = G1CollectedHeap::heap()->policy();
-    policy->record_max_rs_length(_rs_length);
+    policy->record_rs_length(_rs_length);
     policy->cset_regions_freed();
   }
 public:
