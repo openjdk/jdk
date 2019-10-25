@@ -24,6 +24,7 @@
 
 /*
  * @test
+ * @key stress
  *
  * @summary converted from VM Testbase vm/mlvm/meth/stress/compiler/deoptimize.
  * VM Testbase keywords: [feature_mlvm, nonconcurrent, quarantine]
@@ -54,6 +55,7 @@
 
 /*
  * @test
+ * @key stress
  *
  * @library /vmTestbase
  *          /test/lib
