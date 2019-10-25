@@ -115,8 +115,6 @@ public:
   void report_pending_cards(double pending_cards);
   void report_rs_length(double rs_length);
 
-  size_t predict_rs_length_diff() const;
-
   double predict_alloc_rate_ms() const;
   int num_alloc_rate_ms() const;
 

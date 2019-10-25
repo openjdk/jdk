@@ -330,8 +330,7 @@ G1Policy::calculate_young_list_target_length(size_t rs_length,
   const double target_pause_time_ms = _mmu_tracker->max_gc_time() * 1000.0;
   const double survivor_regions_evac_time = predict_survivor_regions_evac_time();
   const size_t pending_cards = _analytics->predict_pending_cards();
-  const size_t adj_rs_length = rs_length + _analytics->predict_rs_length_diff();
-  const size_t scanned_cards = _analytics->predict_card_num(adj_rs_length, true /* for_young_gc */);
+  const size_t scanned_cards = _analytics->predict_card_num(rs_length, true /* for_young_gc */);
   const double base_time_ms =
     predict_base_elapsed_time_ms(pending_cards, scanned_cards) +
     survivor_regions_evac_time;
@@ -951,7 +950,7 @@ double G1Policy::predict_base_elapsed_time_ms(size_t pending_cards,
 }
 
 double G1Policy::predict_base_elapsed_time_ms(size_t pending_cards) const {
-  size_t rs_length = _analytics->predict_rs_length() + _analytics->predict_rs_length_diff();
+  size_t rs_length = _analytics->predict_rs_length();
   size_t card_num = _analytics->predict_card_num(rs_length, collector_state()->in_young_only_phase());
   return predict_base_elapsed_time_ms(pending_cards, card_num);
 }

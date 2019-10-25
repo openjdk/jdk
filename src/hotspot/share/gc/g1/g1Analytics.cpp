@@ -229,10 +229,6 @@ void G1Analytics::report_rs_length(double rs_length) {
   _rs_length_seq->add(rs_length);
 }
 
-size_t G1Analytics::predict_rs_length_diff() const {
-  return get_new_size_prediction(_rs_length_diff_seq);
-}
-
 double G1Analytics::predict_alloc_rate_ms() const {
   return get_new_prediction(_alloc_rate_ms_seq);
 }
@@ -334,7 +330,7 @@ double G1Analytics::predict_cleanup_time_ms() const {
 }
 
 size_t G1Analytics::predict_rs_length() const {
-  return get_new_size_prediction(_rs_length_seq);
+  return get_new_size_prediction(_rs_length_seq) + get_new_prediction(_rs_length_diff_seq);
 }
 
 size_t G1Analytics::predict_pending_cards() const {
