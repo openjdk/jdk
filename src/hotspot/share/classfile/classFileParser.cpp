@@ -2448,17 +2448,10 @@ Method* ClassFileParser::parse_method(const ClassFileStream* const cfs,
       parsed_code_attribute = true;
 
       // Stack size, locals size, and code size
-      if (_major_version == 45 && _minor_version <= 2) {
-        cfs->guarantee_more(4, CHECK_NULL);
-        max_stack = cfs->get_u1_fast();
-        max_locals = cfs->get_u1_fast();
-        code_length = cfs->get_u2_fast();
-      } else {
-        cfs->guarantee_more(8, CHECK_NULL);
-        max_stack = cfs->get_u2_fast();
-        max_locals = cfs->get_u2_fast();
-        code_length = cfs->get_u4_fast();
-      }
+      cfs->guarantee_more(8, CHECK_NULL);
+      max_stack = cfs->get_u2_fast();
+      max_locals = cfs->get_u2_fast();
+      code_length = cfs->get_u4_fast();
       if (_need_verify) {
         guarantee_property(args_size <= max_locals,
                            "Arguments can't fit into locals in class file %s",
@@ -2489,13 +2482,8 @@ Method* ClassFileParser::parse_method(const ClassFileStream* const cfs,
 
       unsigned int calculated_attribute_length = 0;
 
-      if (_major_version > 45 || (_major_version == 45 && _minor_version > 2)) {
-        calculated_attribute_length =
-            sizeof(max_stack) + sizeof(max_locals) + sizeof(code_length);
-      } else {
-        // max_stack, locals and length are smaller in pre-version 45.2 classes
-        calculated_attribute_length = sizeof(u1) + sizeof(u1) + sizeof(u2);
-      }
+      calculated_attribute_length =
+          sizeof(max_stack) + sizeof(max_locals) + sizeof(code_length);
       calculated_attribute_length +=
         code_length +
         sizeof(exception_table_length) +
