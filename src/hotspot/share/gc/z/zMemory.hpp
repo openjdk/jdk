@@ -49,14 +49,42 @@ public:
 };
 
 class ZMemoryManager {
+public:
+  typedef void (*CreateDestroyCallback)(const ZMemory* area);
+  typedef void (*ResizeCallback)(const ZMemory* area, size_t size);
+
+  struct Callbacks {
+    CreateDestroyCallback _create;
+    CreateDestroyCallback _destroy;
+    ResizeCallback        _shrink_from_front;
+    ResizeCallback        _shrink_from_back;
+    ResizeCallback        _grow_from_front;
+    ResizeCallback        _grow_from_back;
+
+    Callbacks();
+  };
+
 private:
   ZList<ZMemory> _freelist;
+  Callbacks      _callbacks;
+
+  ZMemory* create(uintptr_t start, size_t size);
+  void destroy(ZMemory* area);
+  void shrink_from_front(ZMemory* area, size_t size);
+  void shrink_from_back(ZMemory* area, size_t size);
+  void grow_from_front(ZMemory* area, size_t size);
+  void grow_from_back(ZMemory* area, size_t size);
 
 public:
+  ZMemoryManager();
+
+  void register_callbacks(const Callbacks& callbacks);
+
   uintptr_t alloc_from_front(size_t size);
   uintptr_t alloc_from_front_at_most(size_t size, size_t* allocated);
   uintptr_t alloc_from_back(size_t size);
   uintptr_t alloc_from_back_at_most(size_t size, size_t* allocated);
+
   void free(uintptr_t start, size_t size);
 };
 
