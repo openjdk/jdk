@@ -25,6 +25,8 @@
 #ifndef SHARE_JVMCI_JVMCI_GLOBALS_HPP
 #define SHARE_JVMCI_JVMCI_GLOBALS_HPP
 
+#include "runtime/flags/jvmFlag.hpp"
+
 class fileStream;
 
 //
@@ -45,6 +47,9 @@ class fileStream;
                                                                             \
   experimental(bool, EnableJVMCI, false,                                    \
           "Enable JVMCI")                                                   \
+                                                                            \
+  experimental(bool, EnableJVMCIProduct, false,                             \
+          "Allow JVMCI to be used in product mode")                         \
                                                                             \
   experimental(bool, UseJVMCICompiler, false,                               \
           "Use JVMCI as the default compiler")                              \
@@ -141,6 +146,9 @@ class JVMCIGlobals {
   // an error message describing the inconsistency is printed before
   // returning false.
   static bool check_jvmci_flags_are_consistent();
+
+  // Convert JVMCI experimental flags to product
+  static bool enable_jvmci_product_mode(JVMFlag::Flags);
 
   // Check and exit VM with error if selected GC is not supported by JVMCI.
   static void check_jvmci_supported_gc();

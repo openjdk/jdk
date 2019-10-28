@@ -207,6 +207,8 @@ public:
   bool is_external() const;
 
   void clear_diagnostic();
+  void clear_experimental();
+  void set_product();
 
   JVMFlag::MsgType get_locked_message(char*, int) const;
   JVMFlag::MsgType get_locked_message_ext(char*, int) const;

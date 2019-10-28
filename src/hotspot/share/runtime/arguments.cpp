@@ -2959,6 +2959,22 @@ jint Arguments::parse_each_vm_init_arg(const JavaVMInitArgs* args, bool* patch_m
           "ManagementServer is not supported in this VM.\n");
         return JNI_ERR;
 #endif // INCLUDE_MANAGEMENT
+#if INCLUDE_JVMCI
+    } else if (match_option(option, "-XX:+EnableJVMCIProduct")) {
+      JVMFlag *jvmciFlag = JVMFlag::find_flag("EnableJVMCIProduct");
+      // Allow this flag if it has been unlocked.
+      if (jvmciFlag != NULL && jvmciFlag->is_unlocked()) {
+        if (!JVMCIGlobals::enable_jvmci_product_mode(origin)) {
+          jio_fprintf(defaultStream::error_stream(),
+            "Unable to enable JVMCI in product mode");
+          return JNI_ERR;
+        }
+      }
+      // The flag was locked so process normally to report that error
+      else if (!process_argument("EnableJVMCIProduct", args->ignoreUnrecognized, origin)) {
+        return JNI_EINVAL;
+      }
+#endif // INCLUDE_JVMCI
 #if INCLUDE_JFR
     } else if (match_jfr_option(&option)) {
       return JNI_EINVAL;
