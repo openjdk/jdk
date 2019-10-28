@@ -164,8 +164,10 @@ abstract class HandshakeContext implements ConnectionContext {
         this.conContext = conContext;
         this.sslConfig = (SSLConfiguration)conContext.sslConfig.clone();
 
+        this.algorithmConstraints = new SSLAlgorithmConstraints(
+                sslConfig.userSpecifiedAlgorithmConstraints);
         this.activeProtocols = getActiveProtocols(sslConfig.enabledProtocols,
-                sslConfig.enabledCipherSuites, sslConfig.algorithmConstraints);
+                sslConfig.enabledCipherSuites, algorithmConstraints);
         if (activeProtocols.isEmpty()) {
             throw new SSLHandshakeException(
                 "No appropriate protocol (protocol is disabled or " +
@@ -181,12 +183,10 @@ abstract class HandshakeContext implements ConnectionContext {
         }
         this.maximumActiveProtocol = maximumVersion;
         this.activeCipherSuites = getActiveCipherSuites(this.activeProtocols,
-                sslConfig.enabledCipherSuites, sslConfig.algorithmConstraints);
+                sslConfig.enabledCipherSuites, algorithmConstraints);
         if (activeCipherSuites.isEmpty()) {
             throw new SSLHandshakeException("No appropriate cipher suite");
         }
-        this.algorithmConstraints =
-                new SSLAlgorithmConstraints(sslConfig.algorithmConstraints);
 
         this.handshakeConsumers = new LinkedHashMap<>();
         this.handshakeProducers = new HashMap<>();

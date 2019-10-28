@@ -51,7 +51,7 @@ import sun.security.ssl.SSLExtension.ServerExtensions;
  */
 final class SSLConfiguration implements Cloneable {
     // configurations with SSLParameters
-    AlgorithmConstraints        algorithmConstraints;
+    AlgorithmConstraints        userSpecifiedAlgorithmConstraints;
     List<ProtocolVersion>       enabledProtocols;
     List<CipherSuite>           enabledCipherSuites;
     ClientAuthType              clientAuthType;
@@ -116,7 +116,8 @@ final class SSLConfiguration implements Cloneable {
     SSLConfiguration(SSLContextImpl sslContext, boolean isClientMode) {
 
         // Configurations with SSLParameters, default values.
-        this.algorithmConstraints = SSLAlgorithmConstraints.DEFAULT;
+        this.userSpecifiedAlgorithmConstraints =
+                SSLAlgorithmConstraints.DEFAULT;
         this.enabledProtocols =
                 sslContext.getDefaultProtocolVersions(!isClientMode);
         this.enabledCipherSuites =
@@ -153,7 +154,7 @@ final class SSLConfiguration implements Cloneable {
     SSLParameters getSSLParameters() {
         SSLParameters params = new SSLParameters();
 
-        params.setAlgorithmConstraints(this.algorithmConstraints);
+        params.setAlgorithmConstraints(this.userSpecifiedAlgorithmConstraints);
         params.setProtocols(ProtocolVersion.toStringArray(enabledProtocols));
         params.setCipherSuites(CipherSuite.namesOf(enabledCipherSuites));
         switch (this.clientAuthType) {
@@ -193,7 +194,7 @@ final class SSLConfiguration implements Cloneable {
     void setSSLParameters(SSLParameters params) {
         AlgorithmConstraints ac = params.getAlgorithmConstraints();
         if (ac != null) {
-            this.algorithmConstraints = ac;
+            this.userSpecifiedAlgorithmConstraints = ac;
         }   // otherwise, use the default value
 
         String[] sa = params.getCipherSuites();
