@@ -50,6 +50,8 @@ private:
   ZMemoryManager _manager;
   bool           _initialized;
 
+  void initialize_os();
+
   bool reserve_contiguous_platform(uintptr_t start, size_t size);
   bool reserve_contiguous(size_t size);
   size_t reserve_discontiguous(uintptr_t start, size_t size, size_t min_range);

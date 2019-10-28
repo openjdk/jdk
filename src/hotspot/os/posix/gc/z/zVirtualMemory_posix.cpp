@@ -29,6 +29,10 @@
 #include <sys/mman.h>
 #include <sys/types.h>
 
+void ZVirtualMemoryManager::initialize_os() {
+  // Does nothing
+}
+
 static void unmap(uintptr_t start, size_t size) {
   const int res = munmap((void*)start, size);
   assert(res == 0, "Failed to unmap memory");

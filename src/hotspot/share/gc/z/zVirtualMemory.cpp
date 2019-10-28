@@ -47,6 +47,9 @@ ZVirtualMemoryManager::ZVirtualMemoryManager(size_t max_capacity) :
     return;
   }
 
+  // Initialize OS specific parts
+  initialize_os();
+
   // Successfully initialized
   _initialized = true;
 }

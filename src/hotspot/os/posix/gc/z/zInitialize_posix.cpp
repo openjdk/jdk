@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,19 +21,9 @@
  * questions.
  */
 
-#ifndef SHARE_GC_Z_ZINITIALIZE_HPP
-#define SHARE_GC_Z_ZINITIALIZE_HPP
+#include "precompiled.hpp"
+#include "gc/z/zInitialize.hpp"
 
-#include "memory/allocation.hpp"
-
-class ZBarrierSet;
-
-class ZInitialize {
-private:
-  void initialize_os();
-
-public:
-  ZInitialize(ZBarrierSet* barrier_set);
-};
-
-#endif // SHARE_GC_Z_ZINITIALIZE_HPP
+void ZInitialize::initialize_os() {
+  // Does nothing
+}
