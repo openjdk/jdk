@@ -29,7 +29,8 @@
 #include "gc/z/zPageTable.hpp"
 
 inline ZPage* ZPageTable::get(uintptr_t addr) const {
-  return _map.get(addr);
+  assert(!ZAddress::is_null(addr), "Invalid address");
+  return _map.get(ZAddress::offset(addr));
 }
 
 inline ZPageTableIterator::ZPageTableIterator(const ZPageTable* page_table) :

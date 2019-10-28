@@ -22,7 +22,6 @@
  */
 
 #include "precompiled.hpp"
-#include "gc/z/zAddress.inline.hpp"
 #include "gc/z/zForwarding.inline.hpp"
 #include "gc/z/zForwardingTable.inline.hpp"
 #include "gc/z/zGlobals.hpp"
@@ -33,17 +32,17 @@ ZForwardingTable::ZForwardingTable() :
     _map(ZAddressOffsetMax) {}
 
 void ZForwardingTable::insert(ZForwarding* forwarding) {
-  const uintptr_t addr = ZAddress::good(forwarding->start());
+  const uintptr_t offset = forwarding->start();
   const size_t size = forwarding->size();
 
-  assert(get(addr) == NULL, "Invalid entry");
-  _map.put(addr, size, forwarding);
+  assert(_map.get(offset) == NULL, "Invalid entry");
+  _map.put(offset, size, forwarding);
 }
 
 void ZForwardingTable::remove(ZForwarding* forwarding) {
-  const uintptr_t addr = ZAddress::good(forwarding->start());
+  const uintptr_t offset = forwarding->start();
   const size_t size = forwarding->size();
 
-  assert(get(addr) == forwarding, "Invalid entry");
-  _map.put(addr, size, NULL);
+  assert(_map.get(offset) == forwarding, "Invalid entry");
+  _map.put(offset, size, NULL);
 }

@@ -24,11 +24,13 @@
 #ifndef SHARE_GC_Z_ZFORWARDINGTABLE_INLINE_HPP
 #define SHARE_GC_Z_ZFORWARDINGTABLE_INLINE_HPP
 
+#include "gc/z/zAddress.inline.hpp"
 #include "gc/z/zForwardingTable.hpp"
 #include "gc/z/zGranuleMap.inline.hpp"
 
 inline ZForwarding* ZForwardingTable::get(uintptr_t addr) const {
-  return _map.get(addr);
+  assert(!ZAddress::is_null(addr), "Invalid address");
+  return _map.get(ZAddress::offset(addr));
 }
 
 #endif // SHARE_GC_Z_ZFORWARDINGTABLE_INLINE_HPP

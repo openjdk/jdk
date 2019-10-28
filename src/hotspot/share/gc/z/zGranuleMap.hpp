@@ -38,15 +38,15 @@ private:
   const size_t _size;
   T* const     _map;
 
-  size_t index_for_addr(uintptr_t addr) const;
+  size_t index_for_offset(uintptr_t offset) const;
 
 public:
   ZGranuleMap(size_t max_offset);
   ~ZGranuleMap();
 
-  T get(uintptr_t addr) const;
-  void put(uintptr_t addr, T value);
-  void put(uintptr_t addr, size_t size, T value);
+  T get(uintptr_t offset) const;
+  void put(uintptr_t offset, T value);
+  void put(uintptr_t offset, size_t size, T value);
 };
 
 template <typename T>
