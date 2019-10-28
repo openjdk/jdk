@@ -56,8 +56,8 @@ private:
 
   void resolve_forward_pointer(MacroAssembler* masm, Register dst, Register tmp = noreg);
   void resolve_forward_pointer_not_null(MacroAssembler* masm, Register dst, Register tmp = noreg);
-  void load_reference_barrier(MacroAssembler* masm, Register dst, Register tmp);
-  void load_reference_barrier_not_null(MacroAssembler* masm, Register dst, Register tmp);
+  void load_reference_barrier(MacroAssembler* masm, Register dst, Address load_addr);
+  void load_reference_barrier_not_null(MacroAssembler* masm, Register dst, Address load_addr);
   void load_reference_barrier_native(MacroAssembler* masm, Register dst, Address load_addr);
 
   address generate_shenandoah_lrb(StubCodeGenerator* cgen);

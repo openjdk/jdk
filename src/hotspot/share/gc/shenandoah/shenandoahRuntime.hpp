@@ -38,9 +38,8 @@ public:
   static void write_ref_array_pre_duinit_narrow_oop_entry(narrowOop* src, narrowOop* dst, size_t length);
   static void write_ref_field_pre_entry(oopDesc* orig, JavaThread* thread);
 
-  static oopDesc* load_reference_barrier(oopDesc* src);
-  static oopDesc* load_reference_barrier_fixup(oopDesc* src, oop* load_addr);
-  static oopDesc* load_reference_barrier_fixup_narrow(oopDesc* src, narrowOop* load_addr);
+  static oopDesc* load_reference_barrier(oopDesc* src, oop* load_addr);
+  static oopDesc* load_reference_barrier_narrow(oopDesc* src, narrowOop* load_addr);
 
   static oopDesc* load_reference_barrier_native(oopDesc* src, oop* load_addr);
 
