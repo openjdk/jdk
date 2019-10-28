@@ -23,7 +23,7 @@
 
 /**
  * @test
- * @bug 8190918 8202537 8221432
+ * @bug 8190918 8202537 8221432 8231273
  * @summary Tests for region dependent calendar data, i.e.,
  *      firstDayOfWeek and minimalDaysInFirstWeek.
  * @modules jdk.localedata
@@ -40,14 +40,14 @@ public class CalendarDataTest {
 
     // golden data from CLDR
     private static final List<List<String>> FIRSTDAYDATA = List.of(
-        List.of("1", "AG AR AS AU BD BR BS BT BW BZ CA CN CO DM DO ET GT " +
+        List.of("1", "AG AS AU BD BR BS BT BW BZ CA CN CO DM DO ET GT " +
             "GU HK HN ID IL IN JM JP KE KH KR LA MH MM MO MT MX MZ " +
             "NI NP PA PE PH PK PR PT PY SA SG SV TH TT TW UM US VE " +
             "VI WS YE ZA ZW"),
-        List.of("2",   "001 AD AI AL AM AN AT AX AZ BA BE BG BM BN BY " +
+        List.of("2",   "001 AD AI AL AM AN AR AT AX AZ BA BE BG BM BN BY " +
             "CH CL CM CR CY CZ DE DK EC EE ES FI FJ FO FR GB GE GF GP " +
-            "GR HR HU IE IS IT KG KZ LB LI LK LT LU LV MA MC MD ME MK MN MQ " +
-            "MY NL NO NZ PL RE RO RU RS SE SI SK SM TJ TM TN TR UA UY UZ " +
+            "GR HR HU IE IS IT KG KZ LB LI LK LT LU LV MC MD ME MK MN MQ " +
+            "MY NL NO NZ PL RE RO RS RU SE SI SK SM TJ TM TR UA UY UZ " +
             "VA VN XK"),
         List.of("6", "MV"),
         List.of("7", "AE AF BH DJ DZ EG IQ IR JO KW LY OM QA SD SY"));

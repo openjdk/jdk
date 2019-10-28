@@ -6,7 +6,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 For terms of use, see http://www.unicode.org/copyright.html
 -->
 <supplementalData>
-	<version number="$Revision: 14982 $"/>
+	<version number="$Revision$"/>
 
 	<metaZones>
 		<metazoneInfo>
@@ -1243,8 +1243,8 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<usesMetazone mzone="GMT" from="1971-10-31 02:00"/>
 			</timezone>
 			<timezone type="Europe/Istanbul">
-				<usesMetazone to="1978-10-14 21:00" mzone="Europe_Eastern"/>
-				<usesMetazone to="1985-04-19 21:00" from="1978-10-14 21:00" mzone="Turkey"/>
+				<usesMetazone to="1978-06-28 21:00" mzone="Europe_Eastern"/>
+				<usesMetazone to="1985-04-19 21:00" from="1978-06-28 21:00" mzone="Turkey"/>
 				<usesMetazone to="2016-09-06 21:00" from="1985-04-19 21:00" mzone="Europe_Eastern"/>
 				<usesMetazone from="2016-09-06 21:00" mzone="Turkey"/>
 			</timezone>

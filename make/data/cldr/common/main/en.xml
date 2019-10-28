@@ -12,7 +12,7 @@ annotations.
 -->
 <ldml>
 	<identity>
-		<version number="$Revision: 14865 $"/>
+		<version number="$Revision$"/>
 		<language type="en"/>
 	</identity>
 	<localeDisplayNames>
@@ -124,6 +124,7 @@ annotations.
 			<language type="chp">Chipewyan</language>
 			<language type="chr">Cherokee</language>
 			<language type="chy">Cheyenne</language>
+			<language type="cic">Chickasaw</language>
 			<language type="ckb">Central Kurdish</language>
 			<language type="co">Corsican</language>
 			<language type="cop">Coptic</language>
@@ -395,7 +396,7 @@ annotations.
 			<language type="mt">Maltese</language>
 			<language type="mua">Mundang</language>
 			<language type="mul">Multiple languages</language>
-			<language type="mus">Creek</language>
+			<language type="mus">Muscogee</language>
 			<language type="mwl">Mirandese</language>
 			<language type="mwr">Marwari</language>
 			<language type="mwv">Mentawai</language>
@@ -635,6 +636,7 @@ annotations.
 			<language type="yo">Yoruba</language>
 			<language type="yrl">Nheengatu</language>
 			<language type="yue">Cantonese</language>
+			<language type="yue" alt="menu">Chinese, Cantonese</language>
 			<language type="za">Zhuang</language>
 			<language type="zap">Zapotec</language>
 			<language type="zbl">Blissymbols</language>
@@ -643,8 +645,11 @@ annotations.
 			<language type="zgh">Standard Moroccan Tamazight</language>
 			<language type="zh">Chinese</language>
 			<language type="zh" alt="long">Mandarin Chinese</language>
+			<language type="zh" alt="menu">Chinese, Mandarin</language>
 			<language type="zh_Hans">Simplified Chinese</language>
+			<language type="zh_Hans" alt="long">Simplified Mandarin Chinese</language>
 			<language type="zh_Hant">Traditional Chinese</language>
+			<language type="zh_Hant" alt="long">Traditional Mandarin Chinese</language>
 			<language type="zu">Zulu</language>
 			<language type="zun">Zuni</language>
 			<language type="zxx">No linguistic content</language>
@@ -788,6 +793,7 @@ annotations.
 			<script type="Phnx">Phoenician</script>
 			<script type="Plrd">Pollard Phonetic</script>
 			<script type="Prti">Inscriptional Parthian</script>
+			<script type="Qaag">Zawgyi</script>
 			<script type="Rjng">Rejang</script>
 			<script type="Rohg">Hanifi Rohingya</script>
 			<script type="Roro">Rongorongo</script>
@@ -848,7 +854,6 @@ annotations.
 		</scripts>
 		<territories>
 			<territory type="001">World</territory>
-			<!-- UN codes -->
 			<territory type="002">Africa</territory>
 			<territory type="003">North America</territory>
 			<territory type="005">South America</territory>
@@ -1554,8 +1559,8 @@ annotations.
 		<exemplarCharacters>[a b c d e f g h i j k l m n o p q r s t u v w x y z]</exemplarCharacters>
 		<exemplarCharacters type="auxiliary">[á à ă â å ä ã ā æ ç é è ĕ ê ë ē í ì ĭ î ï ī ñ ó ò ŏ ô ö ø ō œ ú ù ŭ û ü ū ÿ]</exemplarCharacters>
 		<exemplarCharacters type="index">[A B C D E F G H I J K L M N O P Q R S T U V W X Y Z]</exemplarCharacters>
-		<exemplarCharacters type="numbers">[\- , . % ‰ + 0 1 2 3 4 5 6 7 8 9]</exemplarCharacters>
-		<exemplarCharacters type="punctuation">[\- ‐ – — , ; \: ! ? . … ' ‘ ’ &quot; “ ” ( ) \[ \] § @ * / \&amp; # † ‡ ′ ″]</exemplarCharacters>
+		<exemplarCharacters type="numbers">[\- ‑ , . % ‰ + 0 1 2 3 4 5 6 7 8 9]</exemplarCharacters>
+		<exemplarCharacters type="punctuation">[\- ‐ ‑ – — , ; \: ! ? . … ' ‘ ’ &quot; “ ” ( ) \[ \] § @ * / \&amp; # † ‡ ′ ″]</exemplarCharacters>
 	</characters>
 	<delimiters>
 		<quotationStart>“</quotationStart>
@@ -2652,9 +2657,6 @@ annotations.
 				</eras>
 			</calendar>
 			<calendar type="japanese">
-				<!-- need some non-empty element here to make inheritance work,
-					 this copy of generic dateFormats above is smaller than root japanese eras
-				-->
 				<dateFormats>
 					<dateFormatLength type="full">
 						<dateFormat>
@@ -2791,7 +2793,7 @@ annotations.
 					<relativeTimePattern count="one">{0} week ago</relativeTimePattern>
 					<relativeTimePattern count="other">{0} weeks ago</relativeTimePattern>
 				</relativeTime>
-				<relativePeriod>the week of {0}</relativePeriod> <!-- for example, “the week of April 1” -->
+				<relativePeriod>the week of {0}</relativePeriod>
 			</field>
 			<field type="week-short">
 				<displayName>wk.</displayName>
@@ -6156,6 +6158,11 @@ annotations.
 				<unitPattern count="one">{0} century</unitPattern>
 				<unitPattern count="other">{0} centuries</unitPattern>
 			</unit>
+			<unit type="duration-decade">
+				<displayName>decades</displayName>
+				<unitPattern count="one">{0} decade</unitPattern>
+				<unitPattern count="other">{0} decades</unitPattern>
+			</unit>
 			<unit type="duration-year">
 				<displayName>years</displayName>
 				<unitPattern count="one">{0} year</unitPattern>
@@ -6273,6 +6280,11 @@ annotations.
 				<unitPattern count="one">{0} British thermal unit</unitPattern>
 				<unitPattern count="other">{0} British thermal units</unitPattern>
 			</unit>
+			<unit type="energy-therm-us">
+				<displayName>US therms</displayName>
+				<unitPattern count="one">{0} US therm</unitPattern>
+				<unitPattern count="other">{0} US therms</unitPattern>
+			</unit>
 			<unit type="force-pound-force">
 				<displayName>pounds of force</displayName>
 				<unitPattern count="one">{0} pound of force</unitPattern>
@@ -6302,6 +6314,41 @@ annotations.
 				<displayName>hertz</displayName>
 				<unitPattern count="one">{0} hertz</unitPattern>
 				<unitPattern count="other">{0} hertz</unitPattern>
+			</unit>
+			<unit type="graphics-em">
+				<displayName>typographic em</displayName>
+				<unitPattern count="one">{0} em</unitPattern>
+				<unitPattern count="other">{0} ems</unitPattern>
+			</unit>
+			<unit type="graphics-pixel">
+				<displayName>pixels</displayName>
+				<unitPattern count="one">{0} pixel</unitPattern>
+				<unitPattern count="other">{0} pixels</unitPattern>
+			</unit>
+			<unit type="graphics-megapixel">
+				<displayName>megapixels</displayName>
+				<unitPattern count="one">{0} megapixel</unitPattern>
+				<unitPattern count="other">{0} megapixels</unitPattern>
+			</unit>
+			<unit type="graphics-pixel-per-centimeter">
+				<displayName>pixels per centimeter</displayName>
+				<unitPattern count="one">{0} pixel per centimeter</unitPattern>
+				<unitPattern count="other">{0} pixels per centimeter</unitPattern>
+			</unit>
+			<unit type="graphics-pixel-per-inch">
+				<displayName>pixels per inch</displayName>
+				<unitPattern count="one">{0} pixel per inch</unitPattern>
+				<unitPattern count="other">{0} pixels per inch</unitPattern>
+			</unit>
+			<unit type="graphics-dot-per-centimeter">
+				<displayName>dots per centimeter</displayName>
+				<unitPattern count="one">{0} dot per centimeter</unitPattern>
+				<unitPattern count="other">{0} dots per centimeter</unitPattern>
+			</unit>
+			<unit type="graphics-dot-per-inch">
+				<displayName>dots per inch</displayName>
+				<unitPattern count="one">{0} dot per inch</unitPattern>
+				<unitPattern count="other">{0} dots per inch</unitPattern>
 			</unit>
 			<unit type="length-kilometer">
 				<displayName>kilometers</displayName>
@@ -6527,11 +6574,6 @@ annotations.
 				<unitPattern count="one">{0} horsepower</unitPattern>
 				<unitPattern count="other">{0} horsepower</unitPattern>
 			</unit>
-			<unit type="pressure-hectopascal">
-				<displayName>hectopascals</displayName>
-				<unitPattern count="one">{0} hectopascal</unitPattern>
-				<unitPattern count="other">{0} hectopascals</unitPattern>
-			</unit>
 			<unit type="pressure-millimeter-of-mercury">
 				<displayName>millimeters of mercury</displayName>
 				<unitPattern count="one">{0} millimeter of mercury</unitPattern>
@@ -6547,6 +6589,11 @@ annotations.
 				<unitPattern count="one">{0} inch of mercury</unitPattern>
 				<unitPattern count="other">{0} inches of mercury</unitPattern>
 			</unit>
+			<unit type="pressure-bar">
+				<displayName>bars</displayName>
+				<unitPattern count="one">{0} bar</unitPattern>
+				<unitPattern count="other">{0} bars</unitPattern>
+			</unit>
 			<unit type="pressure-millibar">
 				<displayName>millibars</displayName>
 				<unitPattern count="one">{0} millibar</unitPattern>
@@ -6556,6 +6603,16 @@ annotations.
 				<displayName>atmospheres</displayName>
 				<unitPattern count="one">{0} atmosphere</unitPattern>
 				<unitPattern count="other">{0} atmospheres</unitPattern>
+			</unit>
+			<unit type="pressure-pascal">
+				<displayName>pascals</displayName>
+				<unitPattern count="one">{0} pascal</unitPattern>
+				<unitPattern count="other">{0} pascals</unitPattern>
+			</unit>
+			<unit type="pressure-hectopascal">
+				<displayName>hectopascals</displayName>
+				<unitPattern count="one">{0} hectopascal</unitPattern>
+				<unitPattern count="other">{0} hectopascals</unitPattern>
 			</unit>
 			<unit type="pressure-kilopascal">
 				<displayName>kilopascals</displayName>
@@ -6974,6 +7031,11 @@ annotations.
 				<unitPattern count="one">{0} c</unitPattern>
 				<unitPattern count="other">{0} c</unitPattern>
 			</unit>
+			<unit type="duration-decade">
+				<displayName>dec</displayName>
+				<unitPattern count="one">{0} dec</unitPattern>
+				<unitPattern count="other">{0} dec</unitPattern>
+			</unit>
 			<unit type="duration-year">
 				<displayName>years</displayName>
 				<unitPattern count="one">{0} yr</unitPattern>
@@ -7091,6 +7153,11 @@ annotations.
 				<unitPattern count="one">{0} Btu</unitPattern>
 				<unitPattern count="other">{0} Btu</unitPattern>
 			</unit>
+			<unit type="energy-therm-us">
+				<displayName>US therm</displayName>
+				<unitPattern count="one">{0} US therm</unitPattern>
+				<unitPattern count="other">{0} US therms</unitPattern>
+			</unit>
 			<unit type="force-pound-force">
 				<displayName>pound-force</displayName>
 				<unitPattern count="one">{0} lbf</unitPattern>
@@ -7120,6 +7187,41 @@ annotations.
 				<displayName>Hz</displayName>
 				<unitPattern count="one">{0} Hz</unitPattern>
 				<unitPattern count="other">{0} Hz</unitPattern>
+			</unit>
+			<unit type="graphics-em">
+				<displayName>em</displayName>
+				<unitPattern count="one">{0} em</unitPattern>
+				<unitPattern count="other">{0} em</unitPattern>
+			</unit>
+			<unit type="graphics-pixel">
+				<displayName>pixels</displayName>
+				<unitPattern count="one">{0} px</unitPattern>
+				<unitPattern count="other">{0} px</unitPattern>
+			</unit>
+			<unit type="graphics-megapixel">
+				<displayName>megapixels</displayName>
+				<unitPattern count="one">{0} MP</unitPattern>
+				<unitPattern count="other">{0} MP</unitPattern>
+			</unit>
+			<unit type="graphics-pixel-per-centimeter">
+				<displayName>ppcm</displayName>
+				<unitPattern count="one">{0} ppcm</unitPattern>
+				<unitPattern count="other">{0} ppcm</unitPattern>
+			</unit>
+			<unit type="graphics-pixel-per-inch">
+				<displayName>ppi</displayName>
+				<unitPattern count="one">{0} ppi</unitPattern>
+				<unitPattern count="other">{0} ppi</unitPattern>
+			</unit>
+			<unit type="graphics-dot-per-centimeter">
+				<displayName>dpcm</displayName>
+				<unitPattern count="one">{0} dpcm</unitPattern>
+				<unitPattern count="other">{0} dpcm</unitPattern>
+			</unit>
+			<unit type="graphics-dot-per-inch">
+				<displayName>dpi</displayName>
+				<unitPattern count="one">{0} dpi</unitPattern>
+				<unitPattern count="other">{0} dpi</unitPattern>
 			</unit>
 			<unit type="length-kilometer">
 				<displayName>km</displayName>
@@ -7345,11 +7447,6 @@ annotations.
 				<unitPattern count="one">{0} hp</unitPattern>
 				<unitPattern count="other">{0} hp</unitPattern>
 			</unit>
-			<unit type="pressure-hectopascal">
-				<displayName>hPa</displayName>
-				<unitPattern count="one">{0} hPa</unitPattern>
-				<unitPattern count="other">{0} hPa</unitPattern>
-			</unit>
 			<unit type="pressure-millimeter-of-mercury">
 				<displayName>mmHg</displayName>
 				<unitPattern count="one">{0} mmHg</unitPattern>
@@ -7365,6 +7462,11 @@ annotations.
 				<unitPattern count="one">{0} inHg</unitPattern>
 				<unitPattern count="other">{0} inHg</unitPattern>
 			</unit>
+			<unit type="pressure-bar">
+				<displayName>bar</displayName>
+				<unitPattern count="one">{0} bar</unitPattern>
+				<unitPattern count="other">{0} bars</unitPattern>
+			</unit>
 			<unit type="pressure-millibar">
 				<displayName>mbar</displayName>
 				<unitPattern count="one">{0} mbar</unitPattern>
@@ -7374,6 +7476,16 @@ annotations.
 				<displayName>atm</displayName>
 				<unitPattern count="one">{0} atm</unitPattern>
 				<unitPattern count="other">{0} atm</unitPattern>
+			</unit>
+			<unit type="pressure-pascal">
+				<displayName>Pa</displayName>
+				<unitPattern count="one">{0} Pa</unitPattern>
+				<unitPattern count="other">{0} Pa</unitPattern>
+			</unit>
+			<unit type="pressure-hectopascal">
+				<displayName>hPa</displayName>
+				<unitPattern count="one">{0} hPa</unitPattern>
+				<unitPattern count="other">{0} hPa</unitPattern>
 			</unit>
 			<unit type="pressure-kilopascal">
 				<displayName>kPa</displayName>
@@ -7766,6 +7878,11 @@ annotations.
 				<unitPattern count="one">{0}bit</unitPattern>
 				<unitPattern count="other">{0}bit</unitPattern>
 			</unit>
+			<unit type="duration-decade">
+				<displayName>dec</displayName>
+				<unitPattern count="one">{0}dec</unitPattern>
+				<unitPattern count="other">{0}dec</unitPattern>
+			</unit>
 			<unit type="duration-year">
 				<displayName>yr</displayName>
 				<unitPattern count="one">{0}y</unitPattern>
@@ -7876,6 +7993,11 @@ annotations.
 				<unitPattern count="one">{0}Btu</unitPattern>
 				<unitPattern count="other">{0}Btu</unitPattern>
 			</unit>
+			<unit type="energy-therm-us">
+				<displayName>US therm</displayName>
+				<unitPattern count="one">{0}US therm</unitPattern>
+				<unitPattern count="other">{0}US therms</unitPattern>
+			</unit>
 			<unit type="force-pound-force">
 				<displayName>lbf</displayName>
 				<unitPattern count="one">{0}lbf</unitPattern>
@@ -7905,6 +8027,41 @@ annotations.
 				<displayName>Hz</displayName>
 				<unitPattern count="one">{0}Hz</unitPattern>
 				<unitPattern count="other">{0}Hz</unitPattern>
+			</unit>
+			<unit type="graphics-em">
+				<displayName>em</displayName>
+				<unitPattern count="one">{0}em</unitPattern>
+				<unitPattern count="other">{0}em</unitPattern>
+			</unit>
+			<unit type="graphics-pixel">
+				<displayName>px</displayName>
+				<unitPattern count="one">{0}px</unitPattern>
+				<unitPattern count="other">{0}px</unitPattern>
+			</unit>
+			<unit type="graphics-megapixel">
+				<displayName>MP</displayName>
+				<unitPattern count="one">{0}MP</unitPattern>
+				<unitPattern count="other">{0}MP</unitPattern>
+			</unit>
+			<unit type="graphics-pixel-per-centimeter">
+				<displayName>ppcm</displayName>
+				<unitPattern count="one">{0}ppcm</unitPattern>
+				<unitPattern count="other">{0}ppcm</unitPattern>
+			</unit>
+			<unit type="graphics-pixel-per-inch">
+				<displayName>ppi</displayName>
+				<unitPattern count="one">{0}ppi</unitPattern>
+				<unitPattern count="other">{0}ppi</unitPattern>
+			</unit>
+			<unit type="graphics-dot-per-centimeter">
+				<displayName>dpcm</displayName>
+				<unitPattern count="one">{0}dpcm</unitPattern>
+				<unitPattern count="other">{0}dpcm</unitPattern>
+			</unit>
+			<unit type="graphics-dot-per-inch">
+				<displayName>dpi</displayName>
+				<unitPattern count="one">{0}dpi</unitPattern>
+				<unitPattern count="other">{0}dpi</unitPattern>
 			</unit>
 			<unit type="length-kilometer">
 				<displayName>km</displayName>
@@ -8121,11 +8278,6 @@ annotations.
 				<unitPattern count="one">{0}hp</unitPattern>
 				<unitPattern count="other">{0}hp</unitPattern>
 			</unit>
-			<unit type="pressure-hectopascal">
-				<displayName>hPa</displayName>
-				<unitPattern count="one">{0}hPa</unitPattern>
-				<unitPattern count="other">{0}hPa</unitPattern>
-			</unit>
 			<unit type="pressure-millimeter-of-mercury">
 				<displayName>mmHg</displayName>
 				<unitPattern count="one">{0}mmHg</unitPattern>
@@ -8141,6 +8293,11 @@ annotations.
 				<unitPattern count="one">{0}″ Hg</unitPattern>
 				<unitPattern count="other">{0}″ Hg</unitPattern>
 			</unit>
+			<unit type="pressure-bar">
+				<displayName>bar</displayName>
+				<unitPattern count="one">{0}bar</unitPattern>
+				<unitPattern count="other">{0}bars</unitPattern>
+			</unit>
 			<unit type="pressure-millibar">
 				<displayName>mbar</displayName>
 				<unitPattern count="one">{0}mb</unitPattern>
@@ -8150,6 +8307,16 @@ annotations.
 				<displayName>atm</displayName>
 				<unitPattern count="one">{0}atm</unitPattern>
 				<unitPattern count="other">{0}atm</unitPattern>
+			</unit>
+			<unit type="pressure-pascal">
+				<displayName>Pa</displayName>
+				<unitPattern count="one">{0}Pa</unitPattern>
+				<unitPattern count="other">{0}Pa</unitPattern>
+			</unit>
+			<unit type="pressure-hectopascal">
+				<displayName>hPa</displayName>
+				<unitPattern count="one">{0}hPa</unitPattern>
+				<unitPattern count="other">{0}hPa</unitPattern>
 			</unit>
 			<unit type="pressure-kilopascal">
 				<displayName>kPa</displayName>
@@ -8416,7 +8583,6 @@ annotations.
 		<characterLabelPattern type="scripts">scripts — {0}</characterLabelPattern>
 		<characterLabelPattern type="strokes" count="one">{0} stroke</characterLabelPattern>
 		<characterLabelPattern type="strokes" count="other">{0} strokes</characterLabelPattern>
-		<!-- regular -->
 		<characterLabel type="activities">activity</characterLabel>
 		<characterLabel type="african_scripts">African script</characterLabel>
 		<characterLabel type="american_scripts">American script</characterLabel>
@@ -8575,79 +8741,3 @@ annotations.
 		<featureName type="zero">slashed zero</featureName>
 	</typographicNames>
 </ldml>
-<!-- Comments without bases
-1F9C8	 - was on: //ldml/annotations/annotation[@cp="🧈"]
-1F9C6	 - was on: //ldml/annotations/annotation[@cp="🧆"]
-1F7EB	 - was on: //ldml/annotations/annotation[@cp="🟫"]
-1F9C4	 - was on: //ldml/annotations/annotation[@cp="🧄"]
-1FA91	 - was on: //ldml/annotations/annotation[@cp="🪑"]
-1F9CD 200D 2642	 - was on: //ldml/annotations/annotation[@cp="🧍‍♂"]
-1F7E9	 - was on: //ldml/annotations/annotation[@cp="🟩"]
-1F9CD 200D 2640	 - was on: //ldml/annotations/annotation[@cp="🧍‍♀"]
-1FA95	 - was on: //ldml/annotations/annotation[@cp="🪕"]
-1F9BE	 - was on: //ldml/annotations/annotation[@cp="🦾"]
-1FA93	 - was on: //ldml/annotations/annotation[@cp="🪓"]
-1F469 200D 1F9BC	 - was on: //ldml/annotations/annotation[@cp="👩‍🦼"]
-1F9BC	 - was on: //ldml/annotations/annotation[@cp="🦼"]
-1F97B	 - was on: //ldml/annotations/annotation[@cp="🥻"]
-1F9BA	 - was on: //ldml/annotations/annotation[@cp="🦺"]
-1F468 200D 1F9BC	 - was on: //ldml/annotations/annotation[@cp="👨‍🦼"]
-1F9CE 200D 2642	 - was on: //ldml/annotations/annotation[@cp="🧎‍♂"]
-1FA81	 - was on: //ldml/annotations/annotation[@cp="🪁"]
-1F90F	 - was on: //ldml/annotations/annotation[@cp="🤏"]
-1F7E7	 - was on: //ldml/annotations/annotation[@cp="🟧"]
-1F7E5	 - was on: //ldml/annotations/annotation[@cp="🟥"]
-1F9CE	 - was on: //ldml/annotations/annotation[@cp="🧎"]
-1F9CE 200D 2640	 - was on: //ldml/annotations/annotation[@cp="🧎‍♀"]
-1F7E3	 - was on: //ldml/annotations/annotation[@cp="🟣"]
-1F90D	 - was on: //ldml/annotations/annotation[@cp="🤍"]
-1F7E1	 - was on: //ldml/annotations/annotation[@cp="🟡"]
-1F9CA	 - was on: //ldml/annotations/annotation[@cp="🧊"]
-1F9A9	 - was on: //ldml/annotations/annotation[@cp="🦩"]
-1F9A7	 - was on: //ldml/annotations/annotation[@cp="🦧"]
-1F9A5	 - was on: //ldml/annotations/annotation[@cp="🦥"]
-1FA70	 - was on: //ldml/annotations/annotation[@cp="🩰"]
-1F415 200D 1F9BA	 - was on: //ldml/annotations/annotation[@cp="🐕‍🦺"]
-1FA72	 - was on: //ldml/annotations/annotation[@cp="🩲"]
-1FA78	 - was on: //ldml/annotations/annotation[@cp="🩸"]
-1F9AF	 - was on: //ldml/annotations/annotation[@cp="🦯"]
-1F9C9	 - was on: //ldml/annotations/annotation[@cp="🧉"]
-1F468 200D 1F9AF	 - was on: //ldml/annotations/annotation[@cp="👨‍🦯"]
-1F9C7	 - was on: //ldml/annotations/annotation[@cp="🧇"]
-1F9C5	 - was on: //ldml/annotations/annotation[@cp="🧅"]
-1FA90	 - was on: //ldml/annotations/annotation[@cp="🪐"]
-1F7EA	 - was on: //ldml/annotations/annotation[@cp="🟪"]
-1F9C3	 - was on: //ldml/annotations/annotation[@cp="🧃"]
-1F93F	 - was on: //ldml/annotations/annotation[@cp="🤿"]
-1FA94	 - was on: //ldml/annotations/annotation[@cp="🪔"]
-1F9BF	 - was on: //ldml/annotations/annotation[@cp="🦿"]
-1FA92	 - was on: //ldml/annotations/annotation[@cp="🪒"]
-1F9BD	 - was on: //ldml/annotations/annotation[@cp="🦽"]
-1F469 200D 1F9BD	 - was on: //ldml/annotations/annotation[@cp="👩‍🦽"]
-1F9BB	 - was on: //ldml/annotations/annotation[@cp="🦻"]
-1F7E0	 - was on: //ldml/annotations/annotation[@cp="🟠"]
-1FA7A	 - was on: //ldml/annotations/annotation[@cp="🩺"]
-1F468 200D 1F9BD	 - was on: //ldml/annotations/annotation[@cp="👨‍🦽"]
-1FA80	 - was on: //ldml/annotations/annotation[@cp="🪀"]
-1F469 200D 1F9AF	 - was on: //ldml/annotations/annotation[@cp="👩‍🦯"]
-1F7E8	 - was on: //ldml/annotations/annotation[@cp="🟨"]
-1F90E	 - was on: //ldml/annotations/annotation[@cp="🤎"]
-1F7E6	 - was on: //ldml/annotations/annotation[@cp="🟦"]
-1F9CF	 - was on: //ldml/annotations/annotation[@cp="🧏"]
-1FA82	 - was on: //ldml/annotations/annotation[@cp="🪂"]
-1F7E4	 - was on: //ldml/annotations/annotation[@cp="🟤"]
-1F9CD	 - was on: //ldml/annotations/annotation[@cp="🧍"]
-1F7E2	 - was on: //ldml/annotations/annotation[@cp="🟢"]
-1F9CF 200D 2642	 - was on: //ldml/annotations/annotation[@cp="🧏‍♂"]
-1F9A8	 - was on: //ldml/annotations/annotation[@cp="🦨"]
-1F9CF 200D 2640	 - was on: //ldml/annotations/annotation[@cp="🧏‍♀"]
-1F9A6	 - was on: //ldml/annotations/annotation[@cp="🦦"]
-1FA71	 - was on: //ldml/annotations/annotation[@cp="🩱"]
-1FA73	 - was on: //ldml/annotations/annotation[@cp="🩳"]
-1FA79	 - was on: //ldml/annotations/annotation[@cp="🩹"]
-1F6D5	 - was on: //ldml/annotations/annotation[@cp="🛕"]
-1F6FA	 - was on: //ldml/annotations/annotation[@cp="🛺"]
-1F971	 - was on: //ldml/annotations/annotation[@cp="🥱"]
-1F9AE	 - was on: //ldml/annotations/annotation[@cp="🦮"]
-1F9AA	 - was on: //ldml/annotations/annotation[@cp="🦪"]
--->

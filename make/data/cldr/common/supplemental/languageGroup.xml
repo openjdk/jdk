@@ -6,7 +6,7 @@ Unicode and the Unicode Logo are registered trademarks of Unicode, Inc. in the U
 CLDR data files are interpreted according to the LDML specification (http://unicode.org/reports/tr35/)
 -->
 <supplementalData>
-	<version number="$Revision: 13868 $"/>
+	<version number="$Revision$"/>
 	<languageGroups>
 		<languageGroup parent="aav">irr kdt mkh mun nyl sss tth</languageGroup>
 		<languageGroup parent="afa">ber bxe cdc cop cus egy omv sem zwa</languageGroup>

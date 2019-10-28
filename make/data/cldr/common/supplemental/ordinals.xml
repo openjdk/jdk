@@ -6,13 +6,13 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 For terms of use, see http://www.unicode.org/copyright.html
 -->
 <supplementalData>
-    <version number="$Revision: 14855 $"/>
+    <version number="$Revision$"/>
     <plurals type="ordinal">
         <!-- For a canonicalized list, use GeneratedPluralSamples -->
 
         <!-- 1: other -->
 
-        <pluralRules locales="af am ar bg bs ce cs da de dsb el es et eu fa fi fy gl gsw he hr hsb ia id in is iw ja km kn ko ky lt lv ml mn my nb nl pa pl prg ps pt root ru sd sh si sk sl sr sw ta te th tr ur uz yue zh zu">
+        <pluralRules locales="af am an ar bg bs ce cs da de dsb el es et eu fa fi fy gl gsw he hr hsb ia id in is iw ja km kn ko ky lt lv ml mn my nb nl pa pl prg ps pt root ru sd sh si sk sl sr sw ta te th tr ur uz yue zh zu">
             <pluralRule count="other"> @integer 0~15, 100, 1000, 10000, 100000, 1000000, …</pluralRule>
         </pluralRules>
 

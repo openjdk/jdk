@@ -7,7 +7,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 -->
 <ldml>
 	<identity>
-		<version number="$Revision: 14782 $"/>
+		<version number="$Revision$"/>
 		<language type="jgo"/>
 	</identity>
 	<localeDisplayNames>
@@ -123,8 +123,8 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 		<exemplarCharacters>[a á â ǎ b c d ɛ {ɛ\u0301} {ɛ\u0300} {ɛ\u0302} {ɛ\u030C} {ɛ\u0304} f g h i í î ǐ j k l m ḿ {m\u0300} {m\u0304} n ń ǹ {n\u0304} ŋ {ŋ\u0301} {ŋ\u0300} {ŋ\u0304} ɔ {ɔ\u0301} {ɔ\u0302} {ɔ\u030C} p {pf} s {sh} t {ts} u ú û ǔ ʉ {ʉ\u0301} {ʉ\u0302} {ʉ\u030C} {ʉ\u0308} v w ẅ y z ꞌ]</exemplarCharacters>
 		<exemplarCharacters type="auxiliary">[e o q r x]</exemplarCharacters>
 		<exemplarCharacters type="index">[A B C D Ɛ F G H I J K L M N Ŋ Ɔ P {Pf} S {Sh} T {Ts} U Ʉ {Ʉ\u0308} V W Ẅ Y Z Ꞌ]</exemplarCharacters>
-		<exemplarCharacters type="numbers">[\- , . % ‰ + 0 1 2 3 4 5 6 7 8 9]</exemplarCharacters>
-		<exemplarCharacters type="punctuation">[\- , ; \: ! ? . ‹ › « »]</exemplarCharacters>
+		<exemplarCharacters type="numbers">[\- ‑ , . % ‰ + 0 1 2 3 4 5 6 7 8 9]</exemplarCharacters>
+		<exemplarCharacters type="punctuation">[\- ‑ , ; \: ! ? . ‹ › « »]</exemplarCharacters>
 		<moreInformation>?</moreInformation>
 	</characters>
 	<delimiters>

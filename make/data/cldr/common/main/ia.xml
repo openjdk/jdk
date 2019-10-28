@@ -7,7 +7,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 -->
 <ldml>
 	<identity>
-		<version number="$Revision: 14836 $"/>
+		<version number="$Revision$"/>
 		<language type="ia"/>
 	</identity>
 	<localeDisplayNames>
@@ -103,9 +103,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<language type="en_AU">anglese australian</language>
 			<language type="en_CA">anglese canadian</language>
 			<language type="en_GB">anglese britannic</language>
-			<language type="en_GB" alt="short">anglese (GB)</language>
 			<language type="en_US">anglese american</language>
-			<language type="en_US" alt="short">anglese (SUA)</language>
 			<language type="eo">esperanto</language>
 			<language type="es">espaniol</language>
 			<language type="es_419">espaniol latinoamerican</language>
@@ -615,7 +613,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<territory type="MG">Madagascar</territory>
 			<territory type="MH">Insulas Marshall</territory>
 			<territory type="MK">Macedonia</territory>
-			<territory type="MK" alt="variant">Macedonia (ARYM)</territory>
 			<territory type="ML">Mali</territory>
 			<territory type="MM" draft="unconfirmed">Birmania/Myanmar</territory>
 			<territory type="MN">Mongolia</territory>
@@ -2888,10 +2885,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 		</timeZoneNames>
 	</dates>
 	<numbers>
-		<defaultNumberingSystem draft="contributed">latn</defaultNumberingSystem>
-		<otherNumberingSystems>
-			<native draft="contributed">latn</native>
-		</otherNumberingSystems>
 		<minimumGroupingDigits draft="contributed">2</minimumGroupingDigits>
 		<symbols numberSystem="latn">
 			<decimal>,</decimal>
@@ -3459,7 +3452,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<displayName count="one" draft="contributed">rublos russe</displayName>
 				<displayName count="other" draft="contributed">rublos russe</displayName>
 				<symbol draft="contributed">₽</symbol>
-				<symbol alt="narrow" draft="contributed">₽</symbol>
 			</currency>
 			<currency type="RWF">
 				<displayName>franco ruandese</displayName>
@@ -4133,11 +4125,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<unitPattern count="one" draft="contributed">{0} cv</unitPattern>
 				<unitPattern count="other" draft="contributed">{0} cavallos-vapor</unitPattern>
 			</unit>
-			<unit type="pressure-hectopascal">
-				<displayName>hectopascales</displayName>
-				<unitPattern count="one" draft="contributed">{0} hPa</unitPattern>
-				<unitPattern count="other" draft="contributed">{0} hectopascales</unitPattern>
-			</unit>
 			<unit type="pressure-millimeter-of-mercury">
 				<displayName>milimetros de mercurio</displayName>
 				<unitPattern count="one" draft="contributed">{0} mm Hg</unitPattern>
@@ -4162,6 +4149,11 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<displayName>atmospheras</displayName>
 				<unitPattern count="one" draft="contributed">{0} atm</unitPattern>
 				<unitPattern count="other" draft="contributed">{0} atmospheras</unitPattern>
+			</unit>
+			<unit type="pressure-hectopascal">
+				<displayName>hectopascales</displayName>
+				<unitPattern count="one" draft="contributed">{0} hPa</unitPattern>
+				<unitPattern count="other" draft="contributed">{0} hectopascales</unitPattern>
 			</unit>
 			<unit type="speed-kilometer-per-hour">
 				<displayName>kilometros per hora</displayName>
@@ -4846,11 +4838,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<unitPattern count="one" draft="contributed">{0} cv</unitPattern>
 				<unitPattern count="other" draft="contributed">{0} cv</unitPattern>
 			</unit>
-			<unit type="pressure-hectopascal">
-				<displayName>hPa</displayName>
-				<unitPattern count="one" draft="contributed">{0} hPa</unitPattern>
-				<unitPattern count="other" draft="contributed">{0} hPa</unitPattern>
-			</unit>
 			<unit type="pressure-millimeter-of-mercury">
 				<displayName>mm Hg</displayName>
 				<unitPattern count="one" draft="contributed">{0} mm Hg</unitPattern>
@@ -4875,6 +4862,11 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<displayName>atm</displayName>
 				<unitPattern count="one" draft="contributed">{0} atm</unitPattern>
 				<unitPattern count="other" draft="contributed">{0} atm</unitPattern>
+			</unit>
+			<unit type="pressure-hectopascal">
+				<displayName>hPa</displayName>
+				<unitPattern count="one" draft="contributed">{0} hPa</unitPattern>
+				<unitPattern count="other" draft="contributed">{0} hPa</unitPattern>
 			</unit>
 			<unit type="speed-kilometer-per-hour">
 				<displayName>km/h</displayName>

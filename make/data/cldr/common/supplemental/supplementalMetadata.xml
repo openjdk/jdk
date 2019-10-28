@@ -7,7 +7,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 -->
 
 <supplementalData>
-    <version number="$Revision: 14929 $"/>
+    <version number="$Revision$"/>
     <metadata>
         <serialElements>
             attributeValues attributes base comment context exception extend i ic languageMatch last_non_ignorable last_secondary_ignorable last_tertiary_ignorable optimize p pc pluralRule rbnfrule reset rules ruleset s sc settings substitute suppress_contractions suppression t tRule tc variable x
@@ -132,7 +132,14 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<languageAlias type="ymt" replacement="mtm" reason="deprecated"/> <!-- Mator-Taygi-Karagas -->
 			<languageAlias type="yos" replacement="zom" reason="deprecated"/> <!-- Yos -->
 			<languageAlias type="yuu" replacement="yug" reason="deprecated"/> <!-- Yugh -->
-            <!-- miscellaneous deprecated -->
+			
+			<languageAlias type="asd" replacement="snz" reason="deprecated"/> <!-- Asas ⇒ Kou -->
+			<languageAlias type="dit" replacement="dif" reason="deprecated"/> <!-- Diyari ⇒ Dieri -->
+			<languageAlias type="llo" replacement="ngt" reason="deprecated"/> <!-- Khlor ⇒ Kriang -->
+			<languageAlias type="myd" replacement="aog" reason="deprecated"/> <!-- Maramba ⇒ Angoram -->
+			<languageAlias type="nns" replacement="nbr" reason="deprecated"/> <!-- Ningye ⇒ Numana -->            <!-- miscellaneous deprecated -->
+
+			<!-- miscellaneous deprecated -->
             <languageAlias type="no_BOKMAL" replacement="nb" reason="deprecated"/>
             <languageAlias type="no_NYNORSK" replacement="nn" reason="deprecated"/>
             <languageAlias type="aa_SAAHO" replacement="ssy" reason="deprecated"/>
@@ -1133,6 +1140,8 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<subdivisionAlias type="cn91" replacement="HK" reason="overlong"/> <!-- Hong Kong SAR China => Hong Kong SAR China -->
 			<subdivisionAlias type="cn92" replacement="MO" reason="overlong"/> <!-- Macao SAR China => Macao SAR China -->
 
+			<subdivisionAlias type="no23" replacement="no50" reason="deprecated"/> <!-- Trøndelag => ?? -->
+
 			<!-- <subdivisionAlias type="albr" replacement="al?" reason="deprecated"/> <!- - Berat => ?? -->
 			<!-- <subdivisionAlias type="albu" replacement="al?" reason="deprecated"/> <!- - Bulqizë => ?? -->
 			<!-- <subdivisionAlias type="aldi" replacement="al?" reason="deprecated"/> <!- - Dibër => ?? -->
@@ -1490,12 +1499,12 @@ For terms of use, see http://www.unicode.org/copyright.html
             <zoneAlias type="Asia/Kashgar" replacement="Asia/Urumqi" reason="deprecated"/>
         </alias>
 		<defaultContent locales="
-			aa_ET af_ZA agq_CM ak_GH am_ET ar_001 arn_CL as_IN asa_TZ ast_ES az_Arab_IR
-			az_Cyrl_AZ az_Latn az_Latn_AZ
+			aa_ET af_ZA agq_CM ak_GH am_ET an_ES ar_001 arn_CL as_IN asa_TZ ast_ES
+			az_Arab_IR az_Cyrl_AZ az_Latn az_Latn_AZ
 			ba_RU bas_CM be_BY bem_ZM bez_TZ bg_BG bgn_PK blt_VN bm_ML bm_Nkoo_ML bn_BD
 			bo_CN br_FR brx_IN bs_Cyrl_BA bs_Latn bs_Latn_BA bss_CM byn_ER
-			ca_ES cch_NG ccp_BD ce_RU ceb_PH cgg_UG chr_US ckb_IQ co_FR cs_CZ cu_RU cv_RU
-			cy_GB
+			ca_ES cch_NG ccp_BD ce_RU ceb_PH cgg_UG chr_US cic_US ckb_IQ co_FR cs_CZ cu_RU
+			cv_RU cy_GB
 			da_DK dav_KE de_DE dje_NE dsb_DE dua_CM dv_MV dyo_SN dz_BT
 			ebu_KE ee_GH el_GR en_Dsrt_US en_US eo_001 es_ES et_EE eu_ES ewo_CM
 			fa_IR ff_Adlm_GN ff_Latn ff_Latn_SN fi_FI fil_PH fo_FO fr_FR fur_IT fy_NL
@@ -1508,17 +1517,17 @@ For terms of use, see http://www.unicode.org/copyright.html
 			ku_TR kw_GB ky_KG
 			lag_TZ lb_LU lg_UG lkt_US ln_CD lo_LA lrc_IR lt_LT lu_CD luo_KE luy_KE lv_LV
 			mas_KE mer_KE mfe_MU mg_MG mgh_MZ mgo_CM mi_NZ mk_MK ml_IN mn_MN mn_Mong_CN
-			mni_IN moh_CA mr_IN ms_Arab_MY ms_MY mt_MT mua_CM my_MM myv_RU mzn_IR
+			mni_IN moh_CA mr_IN ms_Arab_MY ms_MY mt_MT mua_CM mus_US my_MM myv_RU mzn_IR
 			naq_NA nb_NO nd_ZW nds_DE ne_NP nl_NL nmg_CM nn_NO nnh_CM nqo_GN nr_ZA nso_ZA
 			nus_SS ny_MW nyn_UG
-			oc_FR om_ET or_IN os_GE
+			oc_FR om_ET or_IN os_GE osa_US
 			pa_Arab_PK pa_Guru pa_Guru_IN pl_PL prg_001 ps_AF pt_BR
 			qu_PE quc_GT
 			rm_CH rn_BI ro_RO rof_TZ ru_RU rw_RW rwk_TZ
 			sa_IN sah_RU saq_KE sbp_TZ sc_IT scn_IT sd_PK sdh_IR se_NO seh_MZ ses_ML sg_CF
 			shi_Latn_MA shi_Tfng shi_Tfng_MA si_LK sid_ET sk_SK sl_SI sma_SE smj_SE smn_FI
-			sms_FI sn_ZW so_SO sq_AL sr_Cyrl sr_Cyrl_RS sr_Latn_RS ss_ZA ssy_ER st_ZA sv_SE
-			sw_TZ syr_IQ
+			sms_FI sn_ZW so_SO sq_AL sr_Cyrl sr_Cyrl_RS sr_Latn_RS ss_ZA ssy_ER st_ZA
+			su_Latn su_Latn_ID sv_SE sw_TZ syr_IQ szl_PL
 			ta_IN te_IN teo_UG tg_TJ th_TH ti_ET tig_ER tk_TM tn_ZA to_TO tr_TR trv_TW
 			ts_ZA tt_RU twq_NE tzm_MA
 			ug_CN uk_UA ur_PK uz_Arab_AF uz_Cyrl_UZ uz_Latn uz_Latn_UZ

@@ -7,7 +7,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 -->
 <ldml>
 	<identity>
-		<version number="$Revision: 14782 $"/>
+		<version number="$Revision$"/>
 		<language type="smn"/>
 	</identity>
 	<localeDisplayNames>
@@ -102,9 +102,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<language type="en_AU">Australia eŋgâlâskielâ</language>
 			<language type="en_CA">Kanada eŋgâlâskielâ</language>
 			<language type="en_GB">Britannia eŋgâlâskielâ</language>
-			<language type="en_GB" alt="short">eŋgâlâskielâ (OK)</language>
 			<language type="en_US">Amerika eŋgâlâskielâ</language>
-			<language type="en_US" alt="short">eŋgâlâskielâ (USA)</language>
 			<language type="eo">esperantokielâ</language>
 			<language type="es">espanjakielâ</language>
 			<language type="es_419">Läättin-Amerika espanjakielâ</language>
@@ -564,7 +562,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<territory type="MF">St. Martin</territory>
 			<territory type="MG">Madagaskar</territory>
 			<territory type="MH">Marshallsuolluuh</territory>
-			<territory type="MK" alt="variant">OJT Makedonia</territory>
 			<territory type="ML">Mali</territory>
 			<territory type="MM">Myanmar (Burma)</territory>
 			<territory type="MN">Mongolia</territory>
@@ -695,7 +692,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 		<exemplarCharacters>[a â b c č d đ e f g h i j k l m n ŋ o p r s š t u v y z ž ä á]</exemplarCharacters>
 		<exemplarCharacters type="auxiliary">[à ç é è í ñ ń ó ò q ú ü w x æ ø å ã ö]</exemplarCharacters>
 		<exemplarCharacters type="index">[A Â B C Č D Đ E F G H I J K L M N Ŋ O P R S Š T U V Y Z Ž Ä Á]</exemplarCharacters>
-		<exemplarCharacters type="numbers">[  \- , % ‰ + 0 1 2 3 4 5 6 7 8 9]</exemplarCharacters>
+		<exemplarCharacters type="numbers">[  \- ‑ , % ‰ + 0 1 2 3 4 5 6 7 8 9]</exemplarCharacters>
 	</characters>
 	<dates>
 		<calendars>

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,7 @@
 
  /*
  * @test
- * @bug 8179071 8202537
+ * @bug 8179071 8202537 8231273
  * @summary Test that language aliases of CLDR supplemental metadata are handled correctly.
  * @modules jdk.localedata
  * @run main/othervm -Djava.locale.providers=CLDR Bug8179071
@@ -54,7 +54,7 @@ public class Bug8179071 {
     // expected month format data for  locales after language aliases replacement.
     private static Map<String, String> shortJanuaryNames = Map.of( "pa-PK", "\u062c\u0646\u0648\u0631\u06cc",
                                                           "uz-AF" , "\u062c\u0646\u0648",
-                                                          "sr-ME", "jan.",
+                                                          "sr-ME", "jan",
                                                           "scc", "\u0458\u0430\u043d",
                                                           "sh", "jan",
                                                           "ha-Latn-NE", "Jan",

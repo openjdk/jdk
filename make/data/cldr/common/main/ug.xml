@@ -9,7 +9,7 @@ Reviewed by Waris Abdukerim Janbaz <oyghan@gmail.com> of the Uyghur Computer Sci
 -->
 <ldml>
 	<identity>
-		<version number="$Revision: 14982 $"/>
+		<version number="$Revision$"/>
 		<language type="ug"/>
 	</identity>
 	<localeDisplayNames>
@@ -1157,7 +1157,7 @@ Reviewed by Waris Abdukerim Janbaz <oyghan@gmail.com> of the Uyghur Computer Sci
 		<exemplarCharacters draft="contributed">[{ئا} {ئه} {ئو} {ئۇ} {ئۆ} {ئۈ} {ئې} {ئى} ا ە ب پ ت ج چ خ د ر ز ژ س ش غ ف ق ك گ ڭ ل م ن ھ و ۇ ۆ ۈ ۋ ې ى ي]</exemplarCharacters>
 		<exemplarCharacters type="auxiliary">[\u200E\u200F ئ]</exemplarCharacters>
 		<exemplarCharacters type="index" draft="contributed">[{ئا} {ئه} {ئو} {ئۇ} {ئۆ} {ئۈ} {ئې} {ئى} ا ە ب پ ت ج چ خ د ر ز ژ س ش غ ف ق ك گ ڭ ل م ن ھ و ۇ ۆ ۈ ۋ ې ى ي]</exemplarCharacters>
-		<exemplarCharacters type="numbers">[\- , . % ‰ + 0 1 2 3 4 5 6 7 8 9]</exemplarCharacters>
+		<exemplarCharacters type="numbers">[\- ‑ , . % ‰ + 0 1 2 3 4 5 6 7 8 9]</exemplarCharacters>
 	</characters>
 	<delimiters>
 		<quotationStart draft="contributed">»</quotationStart>
@@ -4903,11 +4903,6 @@ Reviewed by Waris Abdukerim Janbaz <oyghan@gmail.com> of the Uyghur Computer Sci
 				<unitPattern count="one" draft="contributed">{0} ئات كۈچى</unitPattern>
 				<unitPattern count="other" draft="contributed">{0} ئات كۈچى</unitPattern>
 			</unit>
-			<unit type="pressure-hectopascal">
-				<displayName draft="provisional">يۈز پاسكال</displayName>
-				<unitPattern count="one" draft="contributed">{0} يۈز پاسكال</unitPattern>
-				<unitPattern count="other" draft="contributed">{0} يۈز پاسكال</unitPattern>
-			</unit>
 			<unit type="pressure-inch-hg">
 				<displayName draft="provisional">ديۇيم سىماب تۈۋرۇكى</displayName>
 				<unitPattern count="one" draft="contributed">{0} ديۇيم سىماب تۈۋرۇكى</unitPattern>
@@ -4917,6 +4912,11 @@ Reviewed by Waris Abdukerim Janbaz <oyghan@gmail.com> of the Uyghur Computer Sci
 				<displayName draft="provisional">مىللىبار</displayName>
 				<unitPattern count="one" draft="contributed">{0} مىللىبار</unitPattern>
 				<unitPattern count="other" draft="contributed">{0} مىللىبار</unitPattern>
+			</unit>
+			<unit type="pressure-hectopascal">
+				<displayName draft="provisional">يۈز پاسكال</displayName>
+				<unitPattern count="one" draft="contributed">{0} يۈز پاسكال</unitPattern>
+				<unitPattern count="other" draft="contributed">{0} يۈز پاسكال</unitPattern>
 			</unit>
 			<unit type="speed-kilometer-per-hour">
 				<displayName draft="provisional">كىلومېتىر ھەر سائەت</displayName>
@@ -5128,11 +5128,6 @@ Reviewed by Waris Abdukerim Janbaz <oyghan@gmail.com> of the Uyghur Computer Sci
 				<unitPattern count="one" draft="contributed">{0} ئات كۈچى</unitPattern>
 				<unitPattern count="other" draft="contributed">{0} ئات كۈچى</unitPattern>
 			</unit>
-			<unit type="pressure-hectopascal">
-				<displayName draft="provisional">يۈز پاسكال</displayName>
-				<unitPattern count="one" draft="contributed">{0} ھېكتوپاسكال</unitPattern>
-				<unitPattern count="other" draft="contributed">{0} ھېكتوپاسكال</unitPattern>
-			</unit>
 			<unit type="pressure-inch-hg">
 				<displayName draft="provisional">ديۇيم سىماب تۈۋرۇكى</displayName>
 				<unitPattern count="one" draft="contributed">{0} inHg</unitPattern>
@@ -5142,6 +5137,11 @@ Reviewed by Waris Abdukerim Janbaz <oyghan@gmail.com> of the Uyghur Computer Sci
 				<displayName draft="provisional">مىللىبار</displayName>
 				<unitPattern count="one" draft="contributed">{0} mbar</unitPattern>
 				<unitPattern count="other" draft="contributed">{0} mbar</unitPattern>
+			</unit>
+			<unit type="pressure-hectopascal">
+				<displayName draft="provisional">يۈز پاسكال</displayName>
+				<unitPattern count="one" draft="contributed">{0} ھېكتوپاسكال</unitPattern>
+				<unitPattern count="other" draft="contributed">{0} ھېكتوپاسكال</unitPattern>
 			</unit>
 			<unit type="speed-kilometer-per-hour">
 				<displayName draft="provisional">كىلومېتىر ھەر سائەت</displayName>
@@ -5309,10 +5309,6 @@ Reviewed by Waris Abdukerim Janbaz <oyghan@gmail.com> of the Uyghur Computer Sci
 				<unitPattern count="one" draft="contributed">{0}hp</unitPattern>
 				<unitPattern count="other" draft="contributed">{0}hp</unitPattern>
 			</unit>
-			<unit type="pressure-hectopascal">
-				<unitPattern count="one" draft="contributed">{0}hPa</unitPattern>
-				<unitPattern count="other" draft="contributed">{0}hPa</unitPattern>
-			</unit>
 			<unit type="pressure-inch-hg">
 				<unitPattern count="one" draft="contributed">{0}&quot; Hg</unitPattern>
 				<unitPattern count="other" draft="contributed">{0}&quot; Hg</unitPattern>
@@ -5320,6 +5316,10 @@ Reviewed by Waris Abdukerim Janbaz <oyghan@gmail.com> of the Uyghur Computer Sci
 			<unit type="pressure-millibar">
 				<unitPattern count="one" draft="contributed">{0}mb</unitPattern>
 				<unitPattern count="other" draft="contributed">{0}mb</unitPattern>
+			</unit>
+			<unit type="pressure-hectopascal">
+				<unitPattern count="one" draft="contributed">{0}hPa</unitPattern>
+				<unitPattern count="other" draft="contributed">{0}hPa</unitPattern>
 			</unit>
 			<unit type="speed-kilometer-per-hour">
 				<unitPattern count="one" draft="contributed">{0}kph</unitPattern>

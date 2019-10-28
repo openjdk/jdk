@@ -7,7 +7,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 -->
 <ldml>
 	<identity>
-		<version number="$Revision: 14782 $"/>
+		<version number="$Revision$"/>
 		<language type="mgo"/>
 	</identity>
 	<localeDisplayNames>
@@ -38,7 +38,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 		<exemplarCharacters>[a à b {ch} d e è ə {ə\u0300} f g {gh} i ì j k m n ŋ o ò ɔ {ɔ\u0300} p r s t u ù w y z ʼ]</exemplarCharacters>
 		<exemplarCharacters type="auxiliary">[c h l q v x]</exemplarCharacters>
 		<exemplarCharacters type="index">[A B {CH} D E Ə F G {GH} I J K M N Ŋ O Ɔ P R S T U W Y Z ʼ]</exemplarCharacters>
-		<exemplarCharacters type="numbers">[\- , . % ‰ + 0 1 2 3 4 5 6 7 8 9]</exemplarCharacters>
+		<exemplarCharacters type="numbers">[\- ‑ , . % ‰ + 0 1 2 3 4 5 6 7 8 9]</exemplarCharacters>
 		<exemplarCharacters type="punctuation">[, ; \: ! ? . ' ‘ ’ &quot; “ ”]</exemplarCharacters>
 		<ellipsis type="final">{0}…</ellipsis>
 		<ellipsis type="initial">…{0}</ellipsis>

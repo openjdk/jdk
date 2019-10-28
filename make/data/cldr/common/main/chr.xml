@@ -7,7 +7,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 -->
 <ldml>
 	<identity>
-		<version number="$Revision: 14982 $"/>
+		<version number="$Revision$"/>
 		<language type="chr"/>
 	</identity>
 	<localeDisplayNames>
@@ -300,7 +300,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<language type="ps">ᏆᏍᏙ</language>
 			<language type="pt">ᏉᏧᎩᏍ</language>
 			<language type="pt_BR">ᏆᏏᎵᎢ ᏉᏧᎩᏍ</language>
-			<language type="pt_PT">ᏉᏥᎦᎳ ᏉᏧᎩᏍ</language>
+			<language type="pt_PT">ᏳᎳᏈ ᏉᏧᎩᏍ</language>
 			<language type="qu">ᎨᏧᏩ</language>
 			<language type="quc">ᎩᏤ</language>
 			<language type="rap">ᎳᏆᏄᏫ</language>
@@ -406,10 +406,14 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<language type="yi">ᏱᏗᏍ</language>
 			<language type="yo">ᏲᏄᏆ</language>
 			<language type="yue">ᎨᎾᏙᏂᏏ</language>
+			<language type="yue" alt="menu">ᏓᎶᏂᎨ, ᎨᎾᏙᏂᏏ</language>
 			<language type="zgh">ᎠᏟᎶᏍᏗ ᎼᎶᎪ ᏔᎹᏏᏘ</language>
 			<language type="zh">ᏓᎶᏂᎨ</language>
+			<language type="zh" alt="menu">ᏓᎶᏂᎨ, ᎹᏓᏈᏂ</language>
 			<language type="zh_Hans">ᎠᎯᏗᎨ ᏓᎶᏂᎨ</language>
+			<language type="zh_Hans" alt="long">ᎠᎯᏗᎨ ᎹᏓᏈᏂ ᏓᎶᏂᎨ</language>
 			<language type="zh_Hant">ᎤᏦᏍᏗ ᏓᎶᏂᎨ</language>
+			<language type="zh_Hant" alt="long">ᎤᏦᏍᏗ ᎹᏓᏈᏂ ᏓᎶᏂᎨ</language>
 			<language type="zu">ᏑᎷ</language>
 			<language type="zun">ᏑᏂ</language>
 			<language type="zxx">Ꮭ ᎦᏬᏂᎯᏍᏗ ᎦᎸᏛᎢ ᏱᎩ</language>
@@ -513,7 +517,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<territory type="AW">ᎠᎷᏆ</territory>
 			<territory type="AX">ᎣᎴᏅᏓ ᏚᎦᏚᏛᎢ</territory>
 			<territory type="AZ">ᎠᏎᏆᏣᏂ</territory>
-			<territory type="BA">ᏉᏏᏂᎠ &amp; ᎲᏤᎪᏫ</territory>
+			<territory type="BA">ᏉᏏᏂᎠ &amp; ᎲᏤᎪᏫᎾ</territory>
 			<territory type="BB">ᏆᏇᏙᏍ</territory>
 			<territory type="BD">ᏆᏂᎦᎵᏕᏍ</territory>
 			<territory type="BE">ᏇᎵᏥᎥᎻ</territory>
@@ -860,8 +864,8 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 		<exemplarCharacters>[ꭰ ꭱ ꭲ ꭳ ꭴ ꭵ ꭶ ꭷ ꭸ ꭹ ꭺ ꭻ ꭼ ꭽ ꭾ ꭿ ꮀ ꮁ ꮂ ꮃ ꮄ ꮅ ꮆ ꮇ ꮈ ꮉ ꮊ ꮋ ꮌ ꮍ ꮎ ꮏ ꮐ ꮑ ꮒ ꮓ ꮔ ꮕ ꮖ ꮗ ꮘ ꮙ ꮚ ꮛ ꮜ ꮝ ꮞ ꮟ ꮠ ꮡ ꮢ ꮣ ꮤ ꮥ ꮦ ꮧ ꮨ ꮩ ꮪ ꮫ ꮬ ꮭ ꮮ ꮯ ꮰ ꮱ ꮲ ꮳ ꮴ ꮵ ꮶ ꮷ ꮸ ꮹ ꮺ ꮻ ꮼ ꮽ ꮾ ꮿ ᏸ ᏹ ᏺ ᏻ ᏼ]</exemplarCharacters>
 		<exemplarCharacters type="auxiliary">[]</exemplarCharacters>
 		<exemplarCharacters type="index">[Ꭰ Ꭶ Ꭽ Ꮃ Ꮉ Ꮎ Ꮖ Ꮜ Ꮣ Ꮬ Ꮳ Ꮹ Ꮿ]</exemplarCharacters>
-		<exemplarCharacters type="numbers">[\- , . % ‰ + 0 1 2 3 4 5 6 7 8 9]</exemplarCharacters>
-		<exemplarCharacters type="punctuation" draft="contributed">[\- ‐ – — , ; \: ! ? . … ' ‘ ’ &quot; “ ” ( ) \[ \] § @ * / \&amp; # † ‡ ′ ″]</exemplarCharacters>
+		<exemplarCharacters type="numbers">[\- ‑ , . % ‰ + 0 1 2 3 4 5 6 7 8 9]</exemplarCharacters>
+		<exemplarCharacters type="punctuation" draft="contributed">[\- ‐ ‑ – — , ; \: ! ? . … ' ‘ ’ &quot; “ ” ( ) \[ \] § @ * / \&amp; # † ‡ ′ ″]</exemplarCharacters>
 		<ellipsis type="final">{0}…</ellipsis>
 		<ellipsis type="initial">…{0}</ellipsis>
 		<ellipsis type="medial">{0}…{1}</ellipsis>
@@ -870,19 +874,23 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 		<ellipsis type="word-medial">{0} … {1}</ellipsis>
 		<moreInformation>?</moreInformation>
 		<parseLenients scope="date" level="lenient">
+			<parseLenient sample="-" draft="contributed">[\--/]</parseLenient>
 			<parseLenient sample=":" draft="contributed">[\:∶]</parseLenient>
 		</parseLenients>
 		<parseLenients scope="general" level="lenient">
-			<parseLenient sample="’" draft="contributed">['ʼ՚᾽᾿’＇]</parseLenient>
-			<parseLenient sample="%" draft="contributed">[%٪﹪％]</parseLenient>
-			<parseLenient sample="‰" draft="contributed">[؉‰]</parseLenient>
+			<parseLenient sample="." draft="contributed">[.․。︒﹒．｡]</parseLenient>
 			<parseLenient sample="$" draft="contributed">[\$﹩＄$]</parseLenient>
 			<parseLenient sample="£" draft="contributed">[£₤]</parseLenient>
-			<parseLenient sample="¥" draft="contributed">[¥￥]</parseLenient>
-			<parseLenient sample="₩" draft="contributed">[₩￦]</parseLenient>
+			<parseLenient sample="₹" draft="contributed">[₨₹{Rp}{Rs}]</parseLenient>
 		</parseLenients>
 		<parseLenients scope="number" level="lenient">
 			<parseLenient sample="-" draft="contributed">[\-‒⁻₋−➖﹣－]</parseLenient>
+			<parseLenient sample="," draft="contributed">[,،٫、︐︑﹐﹑，､]</parseLenient>
+			<parseLenient sample="+" draft="contributed">[+⁺₊➕﬩﹢＋]</parseLenient>
+		</parseLenients>
+		<parseLenients scope="number" level="stricter">
+			<parseLenient sample="," draft="contributed">[,٫︐﹐，]</parseLenient>
+			<parseLenient sample="." draft="contributed">[.․﹒．｡]</parseLenient>
 		</parseLenients>
 	</characters>
 	<delimiters>
@@ -1654,6 +1662,9 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			</field>
 			<field type="year-short">
 				<displayName>ᎤᏕ.</displayName>
+				<relative type="-1">ᎡᏘ. ᏥᎨᏒ</relative>
+				<relative type="0">ᎯᎠ ᏧᏕᏘᏴᏒᏘ.</relative>
+				<relative type="1">ᎡᏘᏴᎢ.</relative>
 				<relativeTime type="future">
 					<relativeTimePattern count="one">ᎾᎿ {0} ᎤᏕ.</relativeTimePattern>
 					<relativeTimePattern count="other">ᎾᎿ {0} ᎤᏕ.</relativeTimePattern>
@@ -1665,6 +1676,9 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			</field>
 			<field type="year-narrow">
 				<displayName>ᎤᏕ.</displayName>
+				<relative type="-1">ᎡᏘ. ᏥᎨᏒ</relative>
+				<relative type="0">ᎯᎠ ᏧᏕᏘᏴᏒᏘ.</relative>
+				<relative type="1">ᎡᏘᏴᎢ.</relative>
 				<relativeTime type="future">
 					<relativeTimePattern count="one">ᎾᎿ {0} ᎤᏕ.</relativeTimePattern>
 					<relativeTimePattern count="other">ᎾᎿ {0} ᎤᏕ.</relativeTimePattern>
@@ -1726,6 +1740,9 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			</field>
 			<field type="month-short">
 				<displayName>ᎧᎸ.</displayName>
+				<relative type="-1">ᎧᎸ. ᏥᎨᏒ</relative>
+				<relative type="0">ᎯᎠ ᎧᎸ.</relative>
+				<relative type="1">ᎯᎠ ᎧᎸ.</relative>
 				<relativeTime type="future">
 					<relativeTimePattern count="one">ᎾᎿ {0} ᎧᎸ.</relativeTimePattern>
 					<relativeTimePattern count="other">ᎾᎿ {0} ᎧᎸ.</relativeTimePattern>
@@ -1737,6 +1754,9 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			</field>
 			<field type="month-narrow">
 				<displayName>ᎧᎸ.</displayName>
+				<relative type="-1">ᎧᎸ. ᏥᎨᏒ</relative>
+				<relative type="0">ᎯᎠ ᎧᎸ.</relative>
+				<relative type="1">ᏔᎵᏁ ᎧᎸ.</relative>
 				<relativeTime type="future">
 					<relativeTimePattern count="one">ᎾᎿ {0} ᎧᎸ.</relativeTimePattern>
 					<relativeTimePattern count="other">ᎾᎿ {0} ᎧᎸ.</relativeTimePattern>
@@ -1763,6 +1783,9 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			</field>
 			<field type="week-short">
 				<displayName>ᏒᎾ.</displayName>
+				<relative type="-1">ᏥᏛᎵᏱᎵᏒᎢ.</relative>
+				<relative type="0">ᎯᎠ ᎠᎵᎵᏌ.</relative>
+				<relative type="1">ᏐᏆᎴᏅᎲ.</relative>
 				<relativeTime type="future">
 					<relativeTimePattern count="one">ᎾᎿ {0} ᏒᎾ.</relativeTimePattern>
 					<relativeTimePattern count="other">ᎾᎿ {0} ᏒᎾ.</relativeTimePattern>
@@ -1775,6 +1798,9 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			</field>
 			<field type="week-narrow">
 				<displayName>ᏒᎾ.</displayName>
+				<relative type="-1">ᏥᏛᎵᏱᎵᏒᎢ.</relative>
+				<relative type="0">ᎯᎠ ᎠᎵᎵᏌ.</relative>
+				<relative type="1">ᏐᏆᎴᏅᎲ.</relative>
 				<relativeTime type="future">
 					<relativeTimePattern count="one">ᎾᎿ {0} ᏒᎾ.</relativeTimePattern>
 					<relativeTimePattern count="other">ᎾᎿ {0} ᏒᎾ.</relativeTimePattern>
@@ -2937,6 +2963,9 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			</zone>
 			<zone type="Asia/Aqtobe">
 				<exemplarCity>ᎠᎦᏙᏇ</exemplarCity>
+			</zone>
+			<zone type="Asia/Qostanay">
+				<exemplarCity>ᎧᏍᏔᏁ</exemplarCity>
 			</zone>
 			<zone type="Asia/Qyzylorda">
 				<exemplarCity>ᎩᏏᎶᎳᏓ</exemplarCity>
@@ -4470,6 +4499,11 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 		</timeZoneNames>
 	</dates>
 	<numbers>
+		<defaultNumberingSystem draft="contributed">latn</defaultNumberingSystem>
+		<otherNumberingSystems>
+			<native draft="contributed">latn</native>
+		</otherNumberingSystems>
+		<minimumGroupingDigits draft="contributed">1</minimumGroupingDigits>
 		<symbols numberSystem="latn">
 			<decimal>.</decimal>
 			<group>,</group>
@@ -4482,6 +4516,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<perMille>‰</perMille>
 			<infinity>∞</infinity>
 			<nan>NaN</nan>
+			<timeSeparator draft="contributed">:</timeSeparator>
 		</symbols>
 		<decimalFormats numberSystem="latn">
 			<decimalFormatLength>
@@ -4605,782 +4640,1030 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<displayName>ᏌᏊ ᎢᏳᎾᎵᏍᏔᏅ ᎡᎳᏈ ᎢᎹᎵᏘᏏ ᎠᏕᎳ</displayName>
 				<displayName count="one">UAE ᎠᏕᎳ</displayName>
 				<displayName count="other">UAE ᎠᏕᎳ</displayName>
+				<symbol draft="contributed">AED</symbol>
 			</currency>
 			<currency type="AFN">
 				<displayName>ᎠᏫᎨᏂᏍᏖᏂ ᎠᏕᎳ</displayName>
 				<displayName count="one">ᎠᏫᎨᏂᏍᏖᏂ ᎠᏕᎳ</displayName>
 				<displayName count="other">ᎠᏫᎨᏂᏍᏖᏂ ᎠᏕᎳ</displayName>
+				<symbol draft="contributed">AFN</symbol>
 			</currency>
 			<currency type="ALL">
 				<displayName>ᎠᎵᏇᏂᏯ ᎠᏕᎳ</displayName>
 				<displayName count="one">ᎠᎵᏇᏂᏯ ᎠᏕᎳ</displayName>
 				<displayName count="other">ᎠᎵᏇᏂᏯ ᎠᏕᎳ</displayName>
+				<symbol draft="contributed">ALL</symbol>
 			</currency>
 			<currency type="AMD">
 				<displayName>ᎠᎵᎻᏂᎠ ᎠᏕᎳ</displayName>
 				<displayName count="one">ᎠᎵᎻᏂᎠ ᎠᏕᎳ</displayName>
 				<displayName count="other">ᎠᎵᎻᏂᎠ ᎠᏕᎳ</displayName>
+				<symbol draft="contributed">AMD</symbol>
 			</currency>
 			<currency type="ANG">
 				<displayName>ᎾᏍᎩᏁᏛᎳᏂ ᎠᏂᏘᎵᏏ ᎠᏕᎳ</displayName>
 				<displayName count="one">ᎾᏍᎩᏁᏛᎳᏂ ᎠᏂᏘᎵᏏ ᎠᏕᎳ</displayName>
 				<displayName count="other">ᎾᏍᎩᏁᏛᎳᏂ ᎠᏂᏘᎵᏏ ᎠᏕᎳ</displayName>
+				<symbol draft="contributed">ANG</symbol>
 			</currency>
 			<currency type="AOA">
 				<displayName>ᎠᏂᎪᎳ ᎠᏕᎳ</displayName>
 				<displayName count="one">ᎠᏂᎪᎳ ᎠᏕᎳ</displayName>
 				<displayName count="other">ᎠᏂᎪᎳ ᎠᏕᎳ</displayName>
+				<symbol draft="contributed">AOA</symbol>
+				<symbol alt="narrow" draft="contributed">Kz</symbol>
 			</currency>
 			<currency type="ARS">
 				<displayName>ᎠᏥᏂᏘᏂᎠ ᎠᏕᎳ</displayName>
 				<displayName count="one">ᎠᏥᏂᏘᏂᎠ ᎠᏕᎳ</displayName>
 				<displayName count="other">ᎠᏥᏂᏘᏂᎠ ᎠᏕᎳ</displayName>
+				<symbol draft="contributed">ARS</symbol>
+				<symbol alt="narrow" draft="contributed">$</symbol>
 			</currency>
 			<currency type="AUD">
 				<displayName>ᎡᎳᏗᏜ ᎠᏕᎳ</displayName>
 				<displayName count="one">ᎡᎳᏗᏜ ᎠᏕᎳ</displayName>
 				<displayName count="other">ᎡᎳᏗᏜ ᎠᏕᎳ</displayName>
+				<symbol draft="contributed">A$</symbol>
+				<symbol alt="narrow" draft="contributed">$</symbol>
 			</currency>
 			<currency type="AWG">
 				<displayName>ᎠᎷᏆ ᎠᏕᎳ</displayName>
 				<displayName count="one">ᎠᎷᏆ ᎠᏕᎳ</displayName>
 				<displayName count="other">ᎠᎷᏆ ᎠᏕᎳ</displayName>
+				<symbol draft="contributed">AWG</symbol>
 			</currency>
 			<currency type="AZN">
 				<displayName>ᎠᏏᎵᏆᏌᏂ ᎠᏕᎳ</displayName>
 				<displayName count="one">ᎠᏏᎵᏆᏌᏂ ᎠᏕᎳ</displayName>
 				<displayName count="other">ᎠᏏᎵᏆᏌᏂ ᎠᏕᎳ</displayName>
+				<symbol draft="contributed">AZN</symbol>
 			</currency>
 			<currency type="BAM">
 				<displayName>ᏉᏏᏂᎠ-ᎲᏤᎪᏫ ᎦᏁᏟᏴᏍᏔᏅ ᎠᏕᎳ</displayName>
 				<displayName count="one">ᏉᏏᏂᎠ-ᎲᏤᎪᏫ ᎦᏁᏟᏴᏍᏔᏅ ᎠᏕᎳ</displayName>
 				<displayName count="other">ᏉᏏᏂᎠ-ᎲᏤᎪᏫ ᎦᏁᏟᏴᏍᏔᏅ ᎠᏕᎳ</displayName>
+				<symbol draft="contributed">BAM</symbol>
+				<symbol alt="narrow" draft="contributed">KM</symbol>
 			</currency>
 			<currency type="BBD">
 				<displayName>ᏆᏇᏙᏍ ᎠᏕᎳ</displayName>
 				<displayName count="one">ᏆᏇᏙᏍ ᎠᏕᎳ</displayName>
 				<displayName count="other">ᏆᏇᏙᏍ ᎠᏕᎳ</displayName>
+				<symbol draft="contributed">BBD</symbol>
+				<symbol alt="narrow" draft="contributed">$</symbol>
 			</currency>
 			<currency type="BDT">
 				<displayName>ᏆᏂᎦᎵᏕᏍ ᎠᏕᎳ</displayName>
 				<displayName count="one">ᏆᏂᎦᎵᏕᏍ ᎠᏕᎳ</displayName>
 				<displayName count="other">ᏆᏂᎦᎵᏕᏍ ᎠᏕᎳ</displayName>
+				<symbol draft="contributed">BDT</symbol>
+				<symbol alt="narrow" draft="contributed">৳</symbol>
 			</currency>
 			<currency type="BGN">
 				<displayName>ᏊᎵᎨᎵᎠ ᎠᏕᎳ</displayName>
 				<displayName count="one">ᏊᎵᎨᎵᎠ ᎠᏕᎳ</displayName>
 				<displayName count="other">ᏊᎵᎨᎵᎠ ᎠᏕᎳ</displayName>
+				<symbol draft="contributed">BGN</symbol>
 			</currency>
 			<currency type="BHD">
 				<displayName>ᏆᎭᎴᎢᏂ ᎠᏕᎳ</displayName>
 				<displayName count="one">ᏆᎭᎴᎢᏂ ᎠᏕᎳ</displayName>
 				<displayName count="other">ᏆᎭᎴᎢᏂ ᎠᏕᎳ</displayName>
+				<symbol draft="contributed">BHD</symbol>
 			</currency>
 			<currency type="BIF">
 				<displayName>ᏋᎷᏂᏗ ᎠᏕᎳ</displayName>
 				<displayName count="one">ᏋᎷᏂᏗ ᎠᏕᎳ</displayName>
 				<displayName count="other">ᏋᎷᏂᏗ ᎠᏕᎳ</displayName>
+				<symbol draft="contributed">BIF</symbol>
 			</currency>
 			<currency type="BMD">
 				<displayName>ᏆᏊᏓ ᎠᏕᎳ</displayName>
 				<displayName count="one">ᏆᏊᏓ ᎠᏕᎳ</displayName>
 				<displayName count="other">ᏆᏊᏓ ᎠᏕᎳ</displayName>
+				<symbol draft="contributed">BMD</symbol>
+				<symbol alt="narrow" draft="contributed">$</symbol>
 			</currency>
 			<currency type="BND">
 				<displayName>ᏊᎾᎢ ᎠᏕᎳ</displayName>
 				<displayName count="one">ᏊᎾᎢ ᎠᏕᎳ</displayName>
 				<displayName count="other">ᏊᎾᎢ ᎠᏕᎳ</displayName>
+				<symbol draft="contributed">BND</symbol>
+				<symbol alt="narrow" draft="contributed">$</symbol>
 			</currency>
 			<currency type="BOB">
 				<displayName>ᏉᎵᏫᎠ ᎠᏕᎳ</displayName>
 				<displayName count="one">ᏉᎵᏫᎠ ᎠᏕᎳ</displayName>
 				<displayName count="other">ᏉᎵᏫᎠ ᎠᏕᎳ</displayName>
+				<symbol draft="contributed">BOB</symbol>
+				<symbol alt="narrow" draft="contributed">Bs</symbol>
 			</currency>
 			<currency type="BRL">
 				<displayName>ᏆᏏᎵᎢ ᎠᏕᎳ</displayName>
 				<displayName count="one">ᏆᏏᎵᎢ ᎠᏕᎳ</displayName>
 				<displayName count="other">ᏆᏏᎵᎢ ᎠᏕᎳ</displayName>
+				<symbol draft="contributed">R$</symbol>
+				<symbol alt="narrow" draft="contributed">R$</symbol>
 			</currency>
 			<currency type="BSD">
 				<displayName>ᏆᎭᎹ ᎠᏕᎳ</displayName>
 				<displayName count="one">ᏆᎭᎹ ᎠᏕᎳ</displayName>
 				<displayName count="other">ᏆᎭᎹ ᎠᏕᎳ</displayName>
+				<symbol draft="contributed">BSD</symbol>
+				<symbol alt="narrow" draft="contributed">$</symbol>
 			</currency>
 			<currency type="BTN">
 				<displayName>ᏊᏔᏂ ᎠᏕᎳ</displayName>
 				<displayName count="one">ᏊᏔᏂ ᎠᏕᎳ</displayName>
 				<displayName count="other">ᏊᏔᏂ ᎠᏕᎳ</displayName>
+				<symbol draft="contributed">BTN</symbol>
 			</currency>
 			<currency type="BWP">
 				<displayName>ᏆᏣᏩᎾ ᎠᏕᎳ</displayName>
 				<displayName count="one">ᏆᏣᏩᎾ ᎠᏕᎳ</displayName>
 				<displayName count="other">ᏆᏣᏩᎾ ᎠᏕᎳ</displayName>
+				<symbol draft="contributed">BWP</symbol>
+				<symbol alt="narrow" draft="contributed">P</symbol>
 			</currency>
 			<currency type="BYN">
 				<displayName>ᏇᎳᎷᏍ ᎠᏕᎳ</displayName>
 				<displayName count="one">ᏇᎳᎷᏍ ᎠᏕᎳ</displayName>
 				<displayName count="other">ᏇᎳᎷᏍ ᎠᏕᎳ</displayName>
+				<symbol draft="contributed">BYN</symbol>
+				<symbol alt="narrow" draft="contributed">р.</symbol>
 			</currency>
 			<currency type="BYR">
 				<displayName>ᏇᎳᎷᏍ ᎠᏕᎳ (2000–2016)</displayName>
 				<displayName count="one">ᏇᎳᎷᏍ ᎠᏕᎳ (2000–2016)</displayName>
 				<displayName count="other">ᏇᎳᎷᏍ ᎠᏕᎳ (2000–2016)</displayName>
+				<symbol draft="contributed">BYR</symbol>
 			</currency>
 			<currency type="BZD">
 				<displayName>ᏇᎵᏍ ᎠᏕᎳ</displayName>
 				<displayName count="one">ᏇᎵᏍ ᎠᏕᎳ</displayName>
 				<displayName count="other">ᏇᎵᏍ ᎠᏕᎳ</displayName>
+				<symbol draft="contributed">BZD</symbol>
+				<symbol alt="narrow" draft="contributed">$</symbol>
 			</currency>
 			<currency type="CAD">
 				<displayName>ᎨᎾᏓ ᎠᏕᎳ</displayName>
 				<displayName count="one">ᎨᎾᏓ ᎠᏕᎳ</displayName>
 				<displayName count="other">ᎨᎾᏓ ᎠᏕᎳ</displayName>
+				<symbol draft="contributed">CA$</symbol>
+				<symbol alt="narrow" draft="contributed">$</symbol>
 			</currency>
 			<currency type="CDF">
 				<displayName>ᎧᏂᎪ ᎠᏕᎳ</displayName>
 				<displayName count="one">ᎧᏂᎪ ᎠᏕᎳ</displayName>
 				<displayName count="other">ᎧᏂᎪ ᎠᏕᎳ</displayName>
+				<symbol draft="contributed">CDF</symbol>
 			</currency>
 			<currency type="CHF">
 				<displayName>ᏍᏫᏏ ᎠᏕᎳ</displayName>
 				<displayName count="one">ᏍᏫᏏ ᎠᏕᎳ</displayName>
 				<displayName count="other">ᏍᏫᏏ ᎠᏕᎳ</displayName>
+				<symbol draft="contributed">CHF</symbol>
 			</currency>
 			<currency type="CLP">
 				<displayName>ᏥᎵ ᎠᏕᎳ</displayName>
 				<displayName count="one">ᏥᎵ ᎠᏕᎳ</displayName>
 				<displayName count="other">ᏥᎵ ᎠᏕᎳ</displayName>
+				<symbol draft="contributed">CLP</symbol>
+				<symbol alt="narrow" draft="contributed">$</symbol>
 			</currency>
 			<currency type="CNH">
 				<displayName>ᏣᏂᏏ ᎠᏕᎳ (ᏓᎹᏳᏟᏗ)</displayName>
 				<displayName count="one">ᏣᏂᏏ ᎠᏕᎳ (ᏓᎹᏳᏟᏗ)</displayName>
 				<displayName count="other">ᏣᏂᏏ ᎠᏕᎳ (ᏓᎹᏳᏟᏗ)</displayName>
+				<symbol draft="contributed">CNH</symbol>
 			</currency>
 			<currency type="CNY">
 				<displayName>ᏓᎶᏂᎨ ᎠᏕᎳ</displayName>
 				<displayName count="one">ᏓᎶᏂᎨ ᎠᏕᎳ</displayName>
 				<displayName count="other">ᏓᎶᏂᎨ ᎠᏕᎳ</displayName>
+				<symbol draft="contributed">CN¥</symbol>
+				<symbol alt="narrow" draft="contributed">¥</symbol>
 			</currency>
 			<currency type="COP">
 				<displayName>ᎪᎸᎻᏈᎢᎠ ᎠᏕᎳ</displayName>
 				<displayName count="one">ᎪᎸᎻᏈᎢᎠ ᎠᏕᎳ</displayName>
 				<displayName count="other">ᎪᎸᎻᏈᎢᎠ ᎠᏕᎳ</displayName>
+				<symbol draft="contributed">COP</symbol>
+				<symbol alt="narrow" draft="contributed">$</symbol>
 			</currency>
 			<currency type="CRC">
 				<displayName>ᎪᏍᏓᎵᎧ ᎠᏕᎳ</displayName>
 				<displayName count="one">ᎪᏍᏓᎵᎧ ᎠᏕᎳ</displayName>
 				<displayName count="other">ᎪᏍᏓᎵᎧ ᎠᏕᎳ</displayName>
+				<symbol draft="contributed">CRC</symbol>
+				<symbol alt="narrow" draft="contributed">₡</symbol>
 			</currency>
 			<currency type="CUC">
 				<displayName>ᎫᏆ ᎦᏁᏟᏴᏍᏔᏅ ᎠᏕᎳ</displayName>
 				<displayName count="one">ᎫᏆ ᎦᏁᏟᏴᏍᏔᏅ ᎠᏕᎳ</displayName>
 				<displayName count="other">ᎫᏆ ᎦᏁᏟᏴᏍᏔᏅ ᎠᏕᎳ</displayName>
+				<symbol draft="contributed">CUC</symbol>
+				<symbol alt="narrow" draft="contributed">$</symbol>
 			</currency>
 			<currency type="CUP">
 				<displayName>ᎫᏆ ᎠᏕᎳ</displayName>
 				<displayName count="one">ᎫᏆ ᎠᏕᎳ</displayName>
 				<displayName count="other">ᎫᏆ ᎠᏕᎳ</displayName>
+				<symbol draft="contributed">CUP</symbol>
+				<symbol alt="narrow" draft="contributed">$</symbol>
 			</currency>
 			<currency type="CVE">
 				<displayName>ᎢᎬᎾᏕᎾ ᎢᏤᏳᏍᏗ ᎠᏕᎳ</displayName>
 				<displayName count="one">ᎢᎬᎾᏕᎾ ᎢᏤᏳᏍᏗ ᎠᏕᎳ</displayName>
 				<displayName count="other">ᎢᎬᎾᏕᎾ ᎢᏤᏳᏍᏗ ᎠᏕᎳ</displayName>
+				<symbol draft="contributed">CVE</symbol>
 			</currency>
 			<currency type="CZK">
 				<displayName>ᏤᎩ ᎠᏕᎳ</displayName>
 				<displayName count="one">ᏤᎩ ᎠᏕᎳ</displayName>
 				<displayName count="other">ᏤᎩ ᎠᏕᎳ</displayName>
+				<symbol draft="contributed">CZK</symbol>
+				<symbol alt="narrow" draft="contributed">Kč</symbol>
 			</currency>
 			<currency type="DJF">
 				<displayName>ᏥᏊᏗ ᎠᏕᎳ</displayName>
 				<displayName count="one">ᏥᏊᏗ ᎠᏕᎳ</displayName>
 				<displayName count="other">ᏥᏊᏗ ᎠᏕᎳ</displayName>
+				<symbol draft="contributed">DJF</symbol>
 			</currency>
 			<currency type="DKK">
 				<displayName>ᏕᏂᏍ ᎠᏕᎳ</displayName>
 				<displayName count="one">ᏕᏂᏍ ᎠᏕᎳ</displayName>
 				<displayName count="other">ᏕᏂᏍ ᎠᏕᎳ</displayName>
+				<symbol draft="contributed">DKK</symbol>
+				<symbol alt="narrow" draft="contributed">kr</symbol>
 			</currency>
 			<currency type="DOP">
 				<displayName>ᏙᎻᏂᎧᏂ ᎠᏕᎳ</displayName>
 				<displayName count="one">ᏙᎻᏂᎧᏂ ᎠᏕᎳ</displayName>
 				<displayName count="other">ᏙᎻᏂᎧᏂ ᎠᏕᎳ</displayName>
+				<symbol draft="contributed">DOP</symbol>
+				<symbol alt="narrow" draft="contributed">$</symbol>
 			</currency>
 			<currency type="DZD">
 				<displayName>ᎠᎵᏥᎵᏯ ᎠᏕᎳ</displayName>
 				<displayName count="one">ᎠᎵᏥᎵᏯ ᎠᏕᎳ</displayName>
 				<displayName count="other">ᎠᎵᏥᎵᏯ ᎠᏕᎳ</displayName>
+				<symbol draft="contributed">DZD</symbol>
 			</currency>
 			<currency type="EGP">
 				<displayName>ᎢᏥᏈᎢ ᎠᏕᎳ</displayName>
 				<displayName count="one">ᎢᏥᏈᎢ ᎠᏕᎳ</displayName>
 				<displayName count="other">ᎢᏥᏈᎢ ᎠᏕᎳ</displayName>
+				<symbol draft="contributed">EGP</symbol>
+				<symbol alt="narrow" draft="contributed">E£</symbol>
 			</currency>
 			<currency type="ERN">
 				<displayName>ᎡᎵᏟᏯ ᎠᏕᎳ</displayName>
 				<displayName count="one">ᎡᎵᏟᏯ ᎠᏕᎳ</displayName>
 				<displayName count="other">ᎡᎵᏟᏯ ᎠᏕᎳ</displayName>
+				<symbol draft="contributed">ERN</symbol>
 			</currency>
 			<currency type="ETB">
 				<displayName>ᎢᏗᎣᏈᎠ ᎠᏕᎳ</displayName>
 				<displayName count="one">ᎢᏗᎣᏈᎠ ᎠᏕᎳ</displayName>
 				<displayName count="other">ᎢᏗᎣᏈᎠ ᎠᏕᎳ</displayName>
+				<symbol draft="contributed">ETB</symbol>
 			</currency>
 			<currency type="EUR">
 				<displayName>ᏳᎳᏛ ᎠᏕᎳ</displayName>
 				<displayName count="one">ᏳᎳᏛ ᎠᏕᎳ</displayName>
 				<displayName count="other">ᏳᎳᏛ ᎠᏕᎳ</displayName>
+				<symbol draft="contributed">€</symbol>
+				<symbol alt="narrow" draft="contributed">€</symbol>
 			</currency>
 			<currency type="FJD">
 				<displayName>ᏫᎩ ᎠᏕᎳ</displayName>
 				<displayName count="one">ᏫᎩ ᎠᏕᎳ</displayName>
 				<displayName count="other">ᏫᎩ ᎠᏕᎳ</displayName>
+				<symbol draft="contributed">FJD</symbol>
+				<symbol alt="narrow" draft="contributed">$</symbol>
 			</currency>
 			<currency type="FKP">
 				<displayName>ᏩᎩᎤ ᏚᎦᏚᏛᎢ ᎠᏕᎳ</displayName>
 				<displayName count="one">ᏩᎩᎤ ᏚᎦᏚᏛᎢ ᎠᏕᎳ</displayName>
 				<displayName count="other">ᏩᎩᎤ ᏚᎦᏚᏛᎢ ᎠᏕᎳ</displayName>
+				<symbol draft="contributed">FKP</symbol>
+				<symbol alt="narrow" draft="contributed">£</symbol>
 			</currency>
 			<currency type="GBP">
 				<displayName>ᎩᎵᏏᏲ ᎠᏕᎳ</displayName>
 				<displayName count="one">ᎩᎵᏏᏲ ᎠᏕᎳ</displayName>
 				<displayName count="other">ᎩᎵᏏᏲ ᎠᏕᎳ</displayName>
+				<symbol draft="contributed">£</symbol>
+				<symbol alt="narrow" draft="contributed">£</symbol>
 			</currency>
 			<currency type="GEL">
 				<displayName>ᏣᎠᏥᎢ ᎠᏕᎳ</displayName>
 				<displayName count="one">ᏣᎠᏥᎢ ᎠᏕᎳ</displayName>
 				<displayName count="other">ᏣᎠᏥᎢ ᎠᏕᎳ</displayName>
+				<symbol draft="contributed">GEL</symbol>
+				<symbol alt="narrow" draft="contributed">₾</symbol>
 			</currency>
 			<currency type="GHS">
 				<displayName>ᎦᎠᎾ ᎠᏕᎳ</displayName>
 				<displayName count="one">ᎦᎠᎾ ᎠᏕᎳ</displayName>
 				<displayName count="other">ᎦᎠᎾ ᎠᏕᎳ</displayName>
+				<symbol draft="contributed">GHS</symbol>
 			</currency>
 			<currency type="GIP">
 				<displayName>ᏥᏆᎵᏓ ᎠᏕᎳ</displayName>
 				<displayName count="one">ᏥᏆᎵᏓ ᎠᏕᎳ</displayName>
 				<displayName count="other">ᏥᏆᎵᏓ ᎠᏕᎳ</displayName>
+				<symbol draft="contributed">GIP</symbol>
+				<symbol alt="narrow" draft="contributed">£</symbol>
 			</currency>
 			<currency type="GMD">
 				<displayName>ᎦᎹᏈᎢᎠ ᎠᏕᎳ</displayName>
 				<displayName count="one">ᎦᎹᏈᎢᎠ ᎠᏕᎳ</displayName>
 				<displayName count="other">ᎦᎹᏈᎢᎠ ᎠᏕᎳ</displayName>
+				<symbol draft="contributed">GMD</symbol>
 			</currency>
 			<currency type="GNF">
 				<displayName>ᎩᎢᏂ ᎠᏕᎳ</displayName>
 				<displayName count="one">ᎩᎢᏂ ᎠᏕᎳ</displayName>
 				<displayName count="other">ᎩᎢᏂ ᎠᏕᎳ</displayName>
+				<symbol draft="contributed">GNF</symbol>
+				<symbol alt="narrow" draft="contributed">FG</symbol>
 			</currency>
 			<currency type="GTQ">
 				<displayName>ᏆᏖᎹᎳ ᎠᏕᎳ</displayName>
 				<displayName count="one">ᏆᏖᎹᎳ ᎠᏕᎳ</displayName>
 				<displayName count="other">ᏆᏖᎹᎳ ᎠᏕᎳ</displayName>
+				<symbol draft="contributed">GTQ</symbol>
+				<symbol alt="narrow" draft="contributed">Q</symbol>
 			</currency>
 			<currency type="GYD">
 				<displayName>ᎦᏯᎾ ᎠᏕᎳ</displayName>
 				<displayName count="one">ᎦᏯᎾ ᎠᏕᎳ</displayName>
 				<displayName count="other">ᎦᏯᎾ ᎠᏕᎳ</displayName>
+				<symbol draft="contributed">GYD</symbol>
+				<symbol alt="narrow" draft="contributed">$</symbol>
 			</currency>
 			<currency type="HKD">
 				<displayName>ᎰᏂᎩ ᎪᏂᎩ ᎠᏕᎳ</displayName>
 				<displayName count="one">ᎰᏂᎩ ᎪᏂᎩ ᎠᏕᎳ</displayName>
 				<displayName count="other">ᎰᏂᎩ ᎪᏂᎩ ᎠᏕᎳ</displayName>
+				<symbol draft="contributed">HK$</symbol>
+				<symbol alt="narrow" draft="contributed">$</symbol>
 			</currency>
 			<currency type="HNL">
 				<displayName>ᎭᏂᏚᎳᏍ ᎠᏕᎳ</displayName>
 				<displayName count="one">ᎭᏂᏚᎳᏍ ᎠᏕᎳ</displayName>
 				<displayName count="other">ᎭᏂᏚᎳᏍ ᎠᏕᎳ</displayName>
+				<symbol draft="contributed">HNL</symbol>
+				<symbol alt="narrow" draft="contributed">L</symbol>
 			</currency>
 			<currency type="HRK">
 				<displayName>ᎧᎶᎡᏏᎠ ᎠᏕᎳ</displayName>
 				<displayName count="one">ᎧᎶᎡᏏᎠ ᎠᏕᎳ</displayName>
 				<displayName count="other">ᎧᎶᎡᏏᎠ ᎠᏕᎳ</displayName>
+				<symbol draft="contributed">HRK</symbol>
+				<symbol alt="narrow" draft="contributed">kn</symbol>
 			</currency>
 			<currency type="HTG">
 				<displayName>ᎮᏘ ᎠᏕᎳ</displayName>
 				<displayName count="one">ᎮᏘ ᎠᏕᎳ</displayName>
 				<displayName count="other">ᎮᏘ ᎠᏕᎳ</displayName>
+				<symbol draft="contributed">HTG</symbol>
 			</currency>
 			<currency type="HUF">
 				<displayName>ᎲᏂᎦᎵ ᎠᏕᎳ</displayName>
 				<displayName count="one">ᎲᏂᎦᎵ ᎠᏕᎳ</displayName>
 				<displayName count="other">ᎲᏂᎦᎵ ᎠᏕᎳ</displayName>
+				<symbol draft="contributed">HUF</symbol>
+				<symbol alt="narrow" draft="contributed">Ft</symbol>
 			</currency>
 			<currency type="IDR">
 				<displayName>ᎢᏂᏙᏂᏍᏯ ᎠᏕᎳ</displayName>
 				<displayName count="one">ᎢᏂᏙᏂᏍᏯ ᎠᏕᎳ</displayName>
 				<displayName count="other">ᎢᏂᏙᏂᏍᏯ ᎠᏕᎳ</displayName>
+				<symbol draft="contributed">IDR</symbol>
+				<symbol alt="narrow" draft="contributed">Rp</symbol>
 			</currency>
 			<currency type="ILS">
 				<displayName>ᎢᏏᎵᏱ ᎢᏤ ᎠᏕᎳ</displayName>
 				<displayName count="one">ᎢᏏᎵᏱ ᎢᏤ ᎠᏕᎳ</displayName>
 				<displayName count="other">ᎢᏏᎵᏱ ᎢᏤ ᎠᏕᎳ</displayName>
+				<symbol draft="contributed">₪</symbol>
+				<symbol alt="narrow" draft="contributed">₪</symbol>
 			</currency>
 			<currency type="INR">
 				<displayName>ᎢᏂᏗᎢᎠ ᎠᏕᎳ</displayName>
 				<displayName count="one">ᎢᏂᏗᎢᎠ ᎠᏕᎳ</displayName>
 				<displayName count="other">ᎢᏂᏗᎢᎠ ᎠᏕᎳ</displayName>
+				<symbol draft="contributed">₹</symbol>
+				<symbol alt="narrow" draft="contributed">₹</symbol>
 			</currency>
 			<currency type="IQD">
 				<displayName>ᎢᎳᎩ ᎠᏕᎳ</displayName>
 				<displayName count="one">ᎢᎳᎩ ᎠᏕᎳ</displayName>
 				<displayName count="other">ᎢᎳᎩ ᎠᏕᎳ</displayName>
+				<symbol draft="contributed">IQD</symbol>
 			</currency>
 			<currency type="IRR">
 				<displayName>ᎢᎴᏂ ᎠᏕᎳ</displayName>
 				<displayName count="one">ᎢᎴᏂ ᎠᏕᎳ</displayName>
 				<displayName count="other">ᎢᎴᏂ ᎠᏕᎳ</displayName>
+				<symbol draft="contributed">IRR</symbol>
 			</currency>
 			<currency type="ISK">
 				<displayName>ᏧᏁᏍᏓᎸᎯ ᎠᏕᎳ</displayName>
 				<displayName count="one">ᏧᏁᏍᏓᎸᎯ ᎠᏕᎳ</displayName>
 				<displayName count="other">ᏧᏁᏍᏓᎸᎯ ᎠᏕᎳ</displayName>
+				<symbol draft="contributed">ISK</symbol>
+				<symbol alt="narrow" draft="contributed">kr</symbol>
 			</currency>
 			<currency type="JMD">
 				<displayName>ᏣᎺᎢᎧ ᎠᏕᎳ</displayName>
 				<displayName count="one">ᏣᎺᎢᎧ ᎠᏕᎳ</displayName>
 				<displayName count="other">ᏣᎺᎢᎧ ᎠᏕᎳ</displayName>
+				<symbol draft="contributed">JMD</symbol>
+				<symbol alt="narrow" draft="contributed">$</symbol>
 			</currency>
 			<currency type="JOD">
 				<displayName>ᏦᏓᏂ ᎠᏕᎳ</displayName>
 				<displayName count="one">ᏦᏓᏂ ᎠᏕᎳ</displayName>
 				<displayName count="other">ᏦᏓᏂ ᎠᏕᎳ</displayName>
+				<symbol draft="contributed">JOD</symbol>
 			</currency>
 			<currency type="JPY">
 				<displayName>ᏣᏩᏂᏏ ᎠᏕᎳ</displayName>
 				<displayName count="one">ᏣᏩᏂᏏ ᎠᏕᎳ</displayName>
 				<displayName count="other">ᏣᏩᏂᏏ ᎠᏕᎳ</displayName>
+				<symbol draft="contributed">JP¥</symbol>
+				<symbol alt="narrow" draft="contributed">¥</symbol>
 			</currency>
 			<currency type="KES">
 				<displayName>ᎨᏂᏯ ᎠᏕᎳ</displayName>
 				<displayName count="one">ᎨᏂᏯ ᎠᏕᎳ</displayName>
 				<displayName count="other">ᎨᏂᏯ ᎠᏕᎳ</displayName>
+				<symbol draft="contributed">KES</symbol>
 			</currency>
 			<currency type="KGS">
 				<displayName>ᎩᎵᏣᎢᏍ ᎠᏕᎳ</displayName>
 				<displayName count="one">ᎩᎵᏣᎢᏍ ᎠᏕᎳ</displayName>
 				<displayName count="other">ᎩᎵᏣᎢᏍ ᎠᏕᎳ</displayName>
+				<symbol draft="contributed">KGS</symbol>
 			</currency>
 			<currency type="KHR">
 				<displayName>ᎧᎹᏉᏗᎠᏂ ᎠᏕᎳ</displayName>
 				<displayName count="one">ᎧᎹᏉᏗᎠᏂ ᎠᏕᎳ</displayName>
 				<displayName count="other">ᎧᎹᏉᏗᎠᏂ ᎠᏕᎳ</displayName>
+				<symbol draft="contributed">KHR</symbol>
+				<symbol alt="narrow" draft="contributed">៛</symbol>
 			</currency>
 			<currency type="KMF">
 				<displayName>ᎪᎼᎳᏍ ᎠᏕᎳ</displayName>
 				<displayName count="one">ᎪᎼᎳᏍ ᎠᏕᎳ</displayName>
 				<displayName count="other">ᎪᎼᎳᏍ ᎠᏕᎳ</displayName>
+				<symbol draft="contributed">KMF</symbol>
+				<symbol alt="narrow" draft="contributed">CF</symbol>
 			</currency>
 			<currency type="KPW">
 				<displayName>ᏧᏴᏢ ᎪᎵᎠ ᎠᏕᎳ</displayName>
 				<displayName count="one">ᏧᏴᏢ ᎪᎵᎠ ᎠᏕᎳ</displayName>
 				<displayName count="other">ᏧᏴᏢ ᎪᎵᎠ ᎠᏕᎳ</displayName>
+				<symbol draft="contributed">KPW</symbol>
+				<symbol alt="narrow" draft="contributed">₩</symbol>
 			</currency>
 			<currency type="KRW">
 				<displayName>ᏧᎦᎾᏮ ᎪᎵᎠ ᎠᏕᎳ</displayName>
 				<displayName count="one">ᏧᎦᎾᏮ ᎪᎵᎠ ᎠᏕᎳ</displayName>
 				<displayName count="other">ᏧᎦᎾᏮ ᎪᎵᎠ ᎠᏕᎳ</displayName>
+				<symbol draft="contributed">₩</symbol>
+				<symbol alt="narrow" draft="contributed">₩</symbol>
 			</currency>
 			<currency type="KWD">
 				<displayName>ᎫᏪᎢᏘ ᎠᏕᎳ</displayName>
 				<displayName count="one">ᎫᏪᎢᏘ ᎠᏕᎳ</displayName>
 				<displayName count="other">ᎫᏪᎢᏘ ᎠᏕᎳ</displayName>
+				<symbol draft="contributed">KWD</symbol>
 			</currency>
 			<currency type="KYD">
 				<displayName>ᎨᎢᎹᏂ ᏚᎦᏚᏛᎢ ᎠᏕᎳ</displayName>
 				<displayName count="one">ᎨᎢᎹᏂ ᏚᎦᏚᏛᎢ ᎠᏕᎳ</displayName>
 				<displayName count="other">ᎨᎢᎹᏂ ᏚᎦᏚᏛᎢ ᎠᏕᎳ</displayName>
+				<symbol draft="contributed">KYD</symbol>
+				<symbol alt="narrow" draft="contributed">$</symbol>
 			</currency>
 			<currency type="KZT">
 				<displayName>ᎧᏎᎧᏍᏕᏂ ᎠᏕᎳ</displayName>
 				<displayName count="one">ᎧᏎᎧᏍᏕᏂ ᎠᏕᎳ</displayName>
 				<displayName count="other">ᎧᏎᎧᏍᏕᏂ ᎠᏕᎳ</displayName>
+				<symbol draft="contributed">KZT</symbol>
+				<symbol alt="narrow" draft="contributed">₸</symbol>
 			</currency>
 			<currency type="LAK">
 				<displayName>ᎳᎣ ᎠᏕᎳ</displayName>
 				<displayName count="one">ᎳᎣ ᎠᏕᎳ</displayName>
 				<displayName count="other">ᎳᎣ ᎠᏕᎳ</displayName>
+				<symbol draft="contributed">LAK</symbol>
+				<symbol alt="narrow" draft="contributed">₭</symbol>
 			</currency>
 			<currency type="LBP">
 				<displayName>ᎴᏆᎾᏂ ᎠᏕᎳ</displayName>
 				<displayName count="one">ᎴᏆᎾᏂ ᎠᏕᎳ</displayName>
 				<displayName count="other">ᎴᏆᎾᏂ ᎠᏕᎳ</displayName>
+				<symbol draft="contributed">LBP</symbol>
+				<symbol alt="narrow" draft="contributed">L£</symbol>
 			</currency>
 			<currency type="LKR">
 				<displayName>ᏍᎵ ᎳᏂᎧ ᎠᏕᎳ</displayName>
 				<displayName count="one">ᏍᎵ ᎳᏂᎧ ᎠᏕᎳ</displayName>
 				<displayName count="other">ᏍᎵ ᎳᏂᎧ ᎠᏕᎳ</displayName>
+				<symbol draft="contributed">LKR</symbol>
+				<symbol alt="narrow" draft="contributed">Rs</symbol>
 			</currency>
 			<currency type="LRD">
 				<displayName>ᎳᏈᎵᏯ ᎠᏕᎳ</displayName>
 				<displayName count="one">ᎳᏈᎵᏯ ᎠᏕᎳ</displayName>
 				<displayName count="other">ᎳᏈᎵᏯ ᎠᏕᎳ</displayName>
+				<symbol draft="contributed">LRD</symbol>
+				<symbol alt="narrow" draft="contributed">$</symbol>
 			</currency>
 			<currency type="LYD">
 				<displayName>ᎵᏈᏯ ᎠᏕᎳ</displayName>
 				<displayName count="one">ᎵᏈᏯ ᎠᏕᎳ</displayName>
 				<displayName count="other">ᎵᏈᏯ ᎠᏕᎳ</displayName>
+				<symbol draft="contributed">LYD</symbol>
 			</currency>
 			<currency type="MAD">
 				<displayName>ᎼᎶᎪ ᎠᏕᎳ</displayName>
 				<displayName count="one">ᎼᎶᎪ ᎠᏕᎳ</displayName>
 				<displayName count="other">ᎼᎶᎪ ᎠᏕᎳ</displayName>
+				<symbol draft="contributed">MAD</symbol>
 			</currency>
 			<currency type="MDL">
 				<displayName>ᎹᎵᏙᏫᎠ ᎠᏕᎳ</displayName>
 				<displayName count="one">ᎹᎵᏙᏫᎠ ᎠᏕᎳ</displayName>
 				<displayName count="other">ᎹᎵᏙᏫᎠ ᎠᏕᎳ</displayName>
+				<symbol draft="contributed">MDL</symbol>
 			</currency>
 			<currency type="MGA">
 				<displayName>ᎹᎳᎦᏏ ᎠᏕᎳ</displayName>
 				<displayName count="one">ᎹᎳᎦᏏ ᎠᏕᎳ</displayName>
 				<displayName count="other">ᎹᎳᎦᏏ ᎠᏕᎳ</displayName>
+				<symbol draft="contributed">MGA</symbol>
+				<symbol alt="narrow" draft="contributed">Ar</symbol>
 			</currency>
 			<currency type="MKD">
 				<displayName>ᎹᏎᏙᏂᎠ ᎠᏕᎳ</displayName>
 				<displayName count="one">ᎹᏎᏙᏂᎠ ᎠᏕᎳ</displayName>
 				<displayName count="other">ᎹᏎᏙᏂᎠ ᎠᏕᎳ</displayName>
+				<symbol draft="contributed">MKD</symbol>
 			</currency>
 			<currency type="MMK">
 				<displayName>ᎹᏯᎹᎵ ᎠᏕᎳ</displayName>
 				<displayName count="one">ᎹᏯᎹᎵ ᎠᏕᎳ</displayName>
 				<displayName count="other">ᎹᏯᎹᎵ ᎠᏕᎳ</displayName>
+				<symbol draft="contributed">MMK</symbol>
+				<symbol alt="narrow" draft="contributed">K</symbol>
 			</currency>
 			<currency type="MNT">
 				<displayName>ᎹᏂᎪᎵᎠ ᎠᏕᎳ</displayName>
 				<displayName count="one">ᎹᏂᎪᎵᎠ ᎠᏕᎳ</displayName>
 				<displayName count="other">ᎹᏂᎪᎵᎠ ᎠᏕᎳ</displayName>
+				<symbol draft="contributed">MNT</symbol>
+				<symbol alt="narrow" draft="contributed">₮</symbol>
 			</currency>
 			<currency type="MOP">
 				<displayName>ᎹᎧᎣ ᎠᏕᎳ</displayName>
 				<displayName count="one">ᎹᎧᎣ ᎠᏕᎳ</displayName>
 				<displayName count="other">ᎹᎧᎣ ᎠᏕᎳ</displayName>
+				<symbol draft="contributed">MOP</symbol>
 			</currency>
 			<currency type="MRO">
 				<displayName>ᎹᏈᏔᏂᎠ ᎠᏕᎳ (1973–2017)</displayName>
 				<displayName count="one">ᎹᏈᏔᏂᎠ ᎠᏕᎳ (1973–2017)</displayName>
 				<displayName count="other">ᎹᏈᏔᏂᎠ ᎠᏕᎳ (1973–2017)</displayName>
+				<symbol draft="contributed">MRO</symbol>
 			</currency>
 			<currency type="MRU">
 				<displayName>ᎹᏈᏔᏂᎠ ᎠᏕᎳ</displayName>
 				<displayName count="one">ᎹᏈᏔᏂᎠ ᎠᏕᎳ</displayName>
 				<displayName count="other">ᎹᏈᏔᏂᎠ ᎠᏕᎳ</displayName>
+				<symbol draft="contributed">MRU</symbol>
 			</currency>
 			<currency type="MUR">
 				<displayName>ᎹᏘᎢᏯ ᎠᏕᎳ</displayName>
 				<displayName count="one">ᎹᏘᎢᏯ ᎠᏕᎳ</displayName>
 				<displayName count="other">ᎹᏘᎢᏯ ᎠᏕᎳ</displayName>
+				<symbol draft="contributed">MUR</symbol>
+				<symbol alt="narrow" draft="contributed">Rs</symbol>
 			</currency>
 			<currency type="MVR">
 				<displayName>ᎹᎵᏗᏫᏍ ᎠᏕᎳ</displayName>
 				<displayName count="one">ᎹᎵᏗᏫᏍ ᎠᏕᎳ</displayName>
 				<displayName count="other">ᎹᎵᏗᏫᏍ ᎠᏕᎳ</displayName>
+				<symbol draft="contributed">MVR</symbol>
 			</currency>
 			<currency type="MWK">
 				<displayName>ᎹᎳᏫ ᎠᏕᎳ</displayName>
 				<displayName count="one">ᎹᎳᏫ ᎠᏕᎳ</displayName>
 				<displayName count="other">ᎹᎳᏫ ᎠᏕᎳ</displayName>
+				<symbol draft="contributed">MWK</symbol>
 			</currency>
 			<currency type="MXN">
 				<displayName>ᏍᏆᏂ ᎠᏕᎳ</displayName>
 				<displayName count="one">ᏍᏆᏂ ᎠᏕᎳ</displayName>
 				<displayName count="other">ᏍᏆᏂ ᎠᏕᎳ</displayName>
+				<symbol draft="contributed">MX$</symbol>
+				<symbol alt="narrow" draft="contributed">$</symbol>
 			</currency>
 			<currency type="MYR">
 				<displayName>ᎹᎴᏏᎢᎠ ᎠᏕᎳ</displayName>
 				<displayName count="one">ᎹᎴᏏᎢᎠ ᎠᏕᎳ</displayName>
 				<displayName count="other">ᎹᎴᏏᎢᎠ ᎠᏕᎳ</displayName>
+				<symbol draft="contributed">MYR</symbol>
+				<symbol alt="narrow" draft="contributed">RM</symbol>
 			</currency>
 			<currency type="MZN">
 				<displayName>ᎼᏎᎻᏇᎩ ᎠᏕᎳ</displayName>
 				<displayName count="one">ᎼᏎᎻᏇᎩ ᎠᏕᎳ</displayName>
 				<displayName count="other">ᎼᏎᎻᏇᎩ ᎠᏕᎳ</displayName>
+				<symbol draft="contributed">MZN</symbol>
 			</currency>
 			<currency type="NAD">
 				<displayName>ᎾᎻᏈᎢᏯ ᎠᏕᎳ</displayName>
 				<displayName count="one">ᎾᎻᏈᎢᏯ ᎠᏕᎳ</displayName>
 				<displayName count="other">ᎾᎻᏈᎢᏯ ᎠᏕᎳ</displayName>
+				<symbol draft="contributed">NAD</symbol>
+				<symbol alt="narrow" draft="contributed">$</symbol>
 			</currency>
 			<currency type="NGN">
 				<displayName>ᏂᏥᎵᏯ ᎠᏕᎳ</displayName>
 				<displayName count="one">ᏂᏥᎵᏯ ᎠᏕᎳ</displayName>
 				<displayName count="other">ᏂᏥᎵᏯ ᎠᏕᎳ</displayName>
+				<symbol draft="contributed">NGN</symbol>
+				<symbol alt="narrow" draft="contributed">₦</symbol>
 			</currency>
 			<currency type="NIO">
 				<displayName>ᏂᎧᎳᏆ ᎠᏕᎳ</displayName>
 				<displayName count="one">ᏂᎧᎳᏆ ᎠᏕᎳ</displayName>
 				<displayName count="other">ᏂᎧᎳᏆ ᎠᏕᎳ</displayName>
+				<symbol draft="contributed">NIO</symbol>
+				<symbol alt="narrow" draft="contributed">C$</symbol>
 			</currency>
 			<currency type="NOK">
 				<displayName>ᏃᏪ ᎠᏕᎳ</displayName>
 				<displayName count="one">ᏃᏪ ᎠᏕᎳ</displayName>
 				<displayName count="other">ᏃᏪ ᎠᏕᎳ</displayName>
+				<symbol draft="contributed">NOK</symbol>
+				<symbol alt="narrow" draft="contributed">kr</symbol>
 			</currency>
 			<currency type="NPR">
 				<displayName>ᏁᏆᎵ ᎠᏕᎳ</displayName>
 				<displayName count="one">ᏁᏆᎵ ᎠᏕᎳ</displayName>
 				<displayName count="other">ᏁᏆᎵ ᎠᏕᎳ</displayName>
+				<symbol draft="contributed">NPR</symbol>
+				<symbol alt="narrow" draft="contributed">Rs</symbol>
 			</currency>
 			<currency type="NZD">
 				<displayName>ᎢᏤ ᏏᎢᎴᏂᏗ ᎠᏕᎳ</displayName>
 				<displayName count="one">ᎢᏤ ᏏᎢᎴᏂᏗ ᎠᏕᎳ</displayName>
 				<displayName count="other">ᎢᏤ ᏏᎢᎴᏂᏗ ᎠᏕᎳ</displayName>
+				<symbol draft="contributed">NZ$</symbol>
+				<symbol alt="narrow" draft="contributed">$</symbol>
 			</currency>
 			<currency type="OMR">
 				<displayName>ᎣᎺᏂ ᎠᏕᎳ</displayName>
 				<displayName count="one">ᎣᎺᏂ ᎠᏕᎳ</displayName>
 				<displayName count="other">ᎣᎺᏂ ᎠᏕᎳ</displayName>
+				<symbol draft="contributed">OMR</symbol>
 			</currency>
 			<currency type="PAB">
 				<displayName>ᏆᎾᎹ ᎠᏕᎳ</displayName>
 				<displayName count="one">ᏆᎾᎹ ᎠᏕᎳ</displayName>
 				<displayName count="other">ᏆᎾᎹ ᎠᏕᎳ</displayName>
+				<symbol draft="contributed">PAB</symbol>
 			</currency>
 			<currency type="PEN">
 				<displayName>ᏇᎷ ᎠᏕᎳ</displayName>
 				<displayName count="one">ᏇᎷ ᎠᏕᎳ</displayName>
 				<displayName count="other">ᏇᎷ ᎠᏕᎳ</displayName>
+				<symbol draft="contributed">PEN</symbol>
 			</currency>
 			<currency type="PGK">
 				<displayName>ᏆᏇ ᎢᏤ ᎩᎢᏂ ᎠᏕᎳ</displayName>
 				<displayName count="one">ᏆᏇ ᎢᏤ ᎩᎢᏂ ᎠᏕᎳ</displayName>
 				<displayName count="other">ᏆᏇ ᎢᏤ ᎩᎢᏂ ᎠᏕᎳ</displayName>
+				<symbol draft="contributed">PGK</symbol>
 			</currency>
 			<currency type="PHP">
 				<displayName>ᎠᏂᏈᎵᎩᏃ ᎠᏕᎳ</displayName>
 				<displayName count="one">ᎠᏂᏈᎵᎩᏃ ᎠᏕᎳ</displayName>
 				<displayName count="other">ᎠᏂᏈᎵᎩᏃ ᎠᏕᎳ</displayName>
+				<symbol draft="contributed">PHP</symbol>
+				<symbol alt="narrow" draft="contributed">₱</symbol>
 			</currency>
 			<currency type="PKR">
 				<displayName>ᏆᎩᏍᏖᏂ ᎠᏕᎳ</displayName>
 				<displayName count="one">ᏆᎩᏍᏖᏂ ᎠᏕᎳ</displayName>
 				<displayName count="other">ᏆᎩᏍᏖᏂ ᎠᏕᎳ</displayName>
+				<symbol draft="contributed">PKR</symbol>
+				<symbol alt="narrow" draft="contributed">Rs</symbol>
 			</currency>
 			<currency type="PLN">
 				<displayName>ᏉᎳᏂ ᎠᏕᎳ</displayName>
 				<displayName count="one">ᏉᎳᏂ ᎠᏕᎳ</displayName>
 				<displayName count="other">ᏉᎳᏂ ᎠᏕᎳ</displayName>
+				<symbol draft="contributed">PLN</symbol>
+				<symbol alt="narrow" draft="contributed">zł</symbol>
 			</currency>
 			<currency type="PYG">
 				<displayName>ᏆᎳᏇᎢᏯ ᎠᏕᎳ</displayName>
 				<displayName count="one">ᏆᎳᏇᎢᏯ ᎠᏕᎳ</displayName>
 				<displayName count="other">ᏆᎳᏇᎢᏯ ᎠᏕᎳ</displayName>
+				<symbol draft="contributed">PYG</symbol>
+				<symbol alt="narrow" draft="contributed">₲</symbol>
 			</currency>
 			<currency type="QAR">
 				<displayName>ᎧᏔᎵ ᎠᏕᎳ</displayName>
 				<displayName count="one">ᎧᏔᎵ ᎠᏕᎳ</displayName>
 				<displayName count="other">ᎧᏔᎵ ᎠᏕᎳ</displayName>
+				<symbol draft="contributed">QAR</symbol>
 			</currency>
 			<currency type="RON">
 				<displayName>ᎶᎹᏂᏯ ᎠᏕᎳ</displayName>
 				<displayName count="one">ᎶᎹᏂᏯ ᎠᏕᎳ</displayName>
 				<displayName count="other">ᎶᎹᏂᏯ ᎠᏕᎳ</displayName>
+				<symbol draft="contributed">RON</symbol>
+				<symbol alt="narrow" draft="contributed">lei</symbol>
 			</currency>
 			<currency type="RSD">
 				<displayName>ᏒᏈᏯ ᎠᏕᎳ</displayName>
 				<displayName count="one">ᏒᏈᏯ ᎠᏕᎳ</displayName>
 				<displayName count="other">ᏒᏈᏯ ᎠᏕᎳ</displayName>
+				<symbol draft="contributed">RSD</symbol>
 			</currency>
 			<currency type="RUB">
 				<displayName>ᏲᏂᎢ ᎠᏕᎳ</displayName>
 				<displayName count="one">ᏲᏂᎢ ᎠᏕᎳ</displayName>
 				<displayName count="other">ᏲᏂᎢ ᎠᏕᎳ</displayName>
+				<symbol draft="contributed">RUB</symbol>
+				<symbol alt="narrow" draft="contributed">₽</symbol>
 			</currency>
 			<currency type="RWF">
 				<displayName>ᎶᏩᏂᏓ ᎠᏕᎳ</displayName>
 				<displayName count="one">ᎶᏩᏂᏓ ᎠᏕᎳ</displayName>
 				<displayName count="other">ᎶᏩᏂᏓ ᎠᏕᎳ</displayName>
+				<symbol draft="contributed">RWF</symbol>
+				<symbol alt="narrow" draft="contributed">RF</symbol>
 			</currency>
 			<currency type="SAR">
 				<displayName>ᏌᎤᏗ ᎠᏕᎳ</displayName>
 				<displayName count="one">ᏌᎤᏗ ᎠᏕᎳ</displayName>
 				<displayName count="other">ᏌᎤᏗ ᎠᏕᎳ</displayName>
+				<symbol draft="contributed">SAR</symbol>
 			</currency>
 			<currency type="SBD">
 				<displayName>ᏐᎶᎹᏂ ᏚᎦᏚᏛᎢ ᎠᏕᎳ</displayName>
 				<displayName count="one">ᏐᎶᎹᏂ ᏚᎦᏚᏛᎢ ᎠᏕᎳ</displayName>
 				<displayName count="other">ᏐᎶᎹᏂ ᏚᎦᏚᏛᎢ ᎠᏕᎳ</displayName>
+				<symbol draft="contributed">SBD</symbol>
+				<symbol alt="narrow" draft="contributed">$</symbol>
 			</currency>
 			<currency type="SCR">
 				<displayName>ᏏᎡᏥᎵᏍ ᎠᏕᎳ</displayName>
 				<displayName count="one">ᏏᎡᏥᎵᏍ ᎠᏕᎳ</displayName>
 				<displayName count="other">ᏏᎡᏥᎵᏍ ᎠᏕᎳ</displayName>
+				<symbol draft="contributed">SCR</symbol>
 			</currency>
 			<currency type="SDG">
 				<displayName>ᏑᏕᏂ ᎠᏕᎳ</displayName>
 				<displayName count="one">ᏑᏕᏂ ᎠᏕᎳ</displayName>
 				<displayName count="other">ᏑᏕᏂ ᎠᏕᎳ</displayName>
+				<symbol draft="contributed">SDG</symbol>
 			</currency>
 			<currency type="SEK">
 				<displayName>ᏍᏫᏕᏂ ᎠᏕᎳ</displayName>
 				<displayName count="one">ᏍᏫᏕᏂ ᎠᏕᎳ</displayName>
 				<displayName count="other">ᏍᏫᏕᏂ ᎠᏕᎳ</displayName>
+				<symbol draft="contributed">SEK</symbol>
+				<symbol alt="narrow" draft="contributed">kr</symbol>
 			</currency>
 			<currency type="SGD">
 				<displayName>ᏏᏂᎦᏉᎵ ᎠᏕᎳ</displayName>
 				<displayName count="one">ᏏᏂᎦᏉᎵ ᎠᏕᎳ</displayName>
 				<displayName count="other">ᏏᏂᎦᏉᎵ ᎠᏕᎳ</displayName>
+				<symbol draft="contributed">SGD</symbol>
+				<symbol alt="narrow" draft="contributed">$</symbol>
 			</currency>
 			<currency type="SHP">
 				<displayName>ᎤᏓᏅᏘ ᎮᎵᎾ ᎠᏕᎳ</displayName>
 				<displayName count="one">ᎤᏓᏅᏘ ᎮᎵᎾ ᎠᏕᎳ</displayName>
 				<displayName count="other">ᎤᏓᏅᏘ ᎮᎵᎾ ᎠᏕᎳ</displayName>
+				<symbol draft="contributed">SHP</symbol>
+				<symbol alt="narrow" draft="contributed">£</symbol>
 			</currency>
 			<currency type="SLL">
 				<displayName>ᏏᎡᎳᎴᎣᏂ ᎠᏕᎳ</displayName>
 				<displayName count="one">ᏏᎡᎳᎴᎣᏂ ᎠᏕᎳ</displayName>
 				<displayName count="other">ᏏᎡᎳᎴᎣᏂ ᎠᏕᎳ</displayName>
+				<symbol draft="contributed">SLL</symbol>
 			</currency>
 			<currency type="SOS">
 				<displayName>ᏐᎹᎵ ᎠᏕᎳ</displayName>
 				<displayName count="one">ᏐᎹᎵ ᎠᏕᎳ</displayName>
 				<displayName count="other">ᏐᎹᎵ ᎠᏕᎳ</displayName>
+				<symbol draft="contributed">SOS</symbol>
 			</currency>
 			<currency type="SRD">
 				<displayName>ᏒᎵᎾᎻ ᎠᏕᎳ</displayName>
 				<displayName count="one">ᏒᎵᎾᎻ ᎠᏕᎳ</displayName>
 				<displayName count="other">ᏒᎵᎾᎻ ᎠᏕᎳ</displayName>
+				<symbol draft="contributed">SRD</symbol>
+				<symbol alt="narrow" draft="contributed">$</symbol>
 			</currency>
 			<currency type="SSP">
 				<displayName>ᏧᎦᎾᏮ ᏑᏕᏂ ᎠᏕᎳ</displayName>
 				<displayName count="one">ᏧᎦᎾᏮ ᏑᏕᏂ ᎠᏕᎳ</displayName>
 				<displayName count="other">ᏧᎦᎾᏮ ᏑᏕᏂ ᎠᏕᎳ</displayName>
+				<symbol draft="contributed">SSP</symbol>
+				<symbol alt="narrow" draft="contributed">£</symbol>
 			</currency>
 			<currency type="STD">
 				<displayName>ᏌᎣᏙᎺ ᎠᎴ ᏈᏂᏏᏇ ᎠᏕᎳ (1977–2017)</displayName>
 				<displayName count="one">ᏌᎣᏙᎺ ᎠᎴ ᏈᏂᏏᏇ ᎠᏕᎳ (1977–2017)</displayName>
 				<displayName count="other">ᏌᎣᏙᎺ ᎠᎴ ᏈᏂᏏᏇ ᎠᏕᎳ (1977–2017)</displayName>
+				<symbol draft="contributed">STD</symbol>
 			</currency>
 			<currency type="STN">
 				<displayName>ᏌᎣᏙᎺ &amp; ᏈᏂᏏᏇ ᎠᏕᎳ</displayName>
 				<displayName count="one">ᏌᎣᏙᎺ &amp; ᏈᏂᏏᏇ ᎠᏕᎳ</displayName>
 				<displayName count="other">ᏌᎣᏙᎺ &amp; ᏈᏂᏏᏇ ᎠᏕᎳ</displayName>
+				<symbol draft="contributed">STN</symbol>
+				<symbol alt="narrow" draft="contributed">Db</symbol>
 			</currency>
 			<currency type="SYP">
 				<displayName>ᏏᎵᎠ ᎠᏕᎳ</displayName>
 				<displayName count="one">ᏏᎵᎠ ᎠᏕᎳ</displayName>
 				<displayName count="other">ᏏᎵᎠ ᎠᏕᎳ</displayName>
+				<symbol draft="contributed">SYP</symbol>
+				<symbol alt="narrow" draft="contributed">£</symbol>
 			</currency>
 			<currency type="SZL">
 				<displayName>ᏍᏩᏏ ᎠᏕᎳ</displayName>
 				<displayName count="one">ᏍᏩᏏ ᎠᏕᎳ</displayName>
 				<displayName count="other">ᏍᏩᏏ ᎠᏕᎳ</displayName>
+				<symbol draft="contributed">SZL</symbol>
 			</currency>
 			<currency type="THB">
 				<displayName>ᏔᏯᎴᏂ ᎠᏕᎳ</displayName>
 				<displayName count="one">ᏔᏯᎴᏂ ᎠᏕᎳ</displayName>
 				<displayName count="other">ᏔᏯᎴᏂ ᎠᏕᎳ</displayName>
+				<symbol draft="contributed">THB</symbol>
+				<symbol alt="narrow" draft="contributed">฿</symbol>
 			</currency>
 			<currency type="TJS">
 				<displayName>ᏔᏥᎩᏍᏕᏂ ᎠᏕᎳ</displayName>
 				<displayName count="one">ᏔᏥᎩᏍᏕᏂ ᎠᏕᎳ</displayName>
 				<displayName count="other">ᏔᏥᎩᏍᏕᏂ ᎠᏕᎳ</displayName>
+				<symbol draft="contributed">TJS</symbol>
 			</currency>
 			<currency type="TMT">
 				<displayName>ᏛᎵᎩᎺᏂᏍᏔᏂ ᎠᏕᎳ</displayName>
 				<displayName count="one">ᏛᎵᎩᎺᏂᏍᏔᏂ ᎠᏕᎳ</displayName>
 				<displayName count="other">ᏛᎵᎩᎺᏂᏍᏔᏂ ᎠᏕᎳ</displayName>
+				<symbol draft="contributed">TMT</symbol>
 			</currency>
 			<currency type="TND">
 				<displayName>ᏚᏂᏏᏍᎠ ᎠᏕᎳ</displayName>
 				<displayName count="one">ᏚᏂᏏᏍᎠ ᎠᏕᎳ</displayName>
 				<displayName count="other">ᏚᏂᏏᏍᎠ ᎠᏕᎳ</displayName>
+				<symbol draft="contributed">TND</symbol>
 			</currency>
 			<currency type="TOP">
 				<displayName>ᏔᏂᎪ ᎠᏕᎳ</displayName>
 				<displayName count="one">ᏔᏂᎪ ᎠᏕᎳ</displayName>
 				<displayName count="other">ᏔᏂᎪ ᎠᏕᎳ</displayName>
+				<symbol draft="contributed">TOP</symbol>
+				<symbol alt="narrow" draft="contributed">T$</symbol>
 			</currency>
 			<currency type="TRY">
 				<displayName>ᎬᏃ ᎠᏕᎳ</displayName>
 				<displayName count="one">ᎬᏃ ᎠᏕᎳ</displayName>
 				<displayName count="other">ᎬᏃ ᎠᏕᎳ</displayName>
+				<symbol draft="contributed">TRY</symbol>
+				<symbol alt="narrow" draft="contributed">₺</symbol>
+				<symbol alt="variant" draft="contributed">TL</symbol>
 			</currency>
 			<currency type="TTD">
 				<displayName>ᏟᏂᏕᏗ &amp; ᏙᏆᎪ ᎠᏕᎳ</displayName>
 				<displayName count="one">ᏟᏂᏕᏗ &amp; ᏙᏆᎪ ᎠᏕᎳ</displayName>
 				<displayName count="other">ᏟᏂᏕᏗ &amp; ᏙᏆᎪ ᎠᏕᎳ</displayName>
+				<symbol draft="contributed">TTD</symbol>
+				<symbol alt="narrow" draft="contributed">$</symbol>
 			</currency>
 			<currency type="TWD">
 				<displayName>ᎢᏤ ᏔᎢᏩᏂ ᎠᏕᎳ</displayName>
 				<displayName count="one">ᎢᏤ ᏔᎢᏩᏂ ᎠᏕᎳ</displayName>
 				<displayName count="other">ᎢᏤ ᏔᎢᏩᏂ ᎠᏕᎳ</displayName>
+				<symbol draft="contributed">NT$</symbol>
+				<symbol alt="narrow" draft="contributed">$</symbol>
 			</currency>
 			<currency type="TZS">
 				<displayName>ᏖᏂᏏᏂᏯ ᎠᏕᎳ</displayName>
 				<displayName count="one">ᏖᏂᏏᏂᏯ ᎠᏕᎳ</displayName>
 				<displayName count="other">ᏖᏂᏏᏂᏯ ᎠᏕᎳ</displayName>
+				<symbol draft="contributed">TZS</symbol>
 			</currency>
 			<currency type="UAH">
 				<displayName>ᏳᎧᎴᏂ ᎠᏕᎳ</displayName>
 				<displayName count="one">ᏳᎧᎴᏂ ᎠᏕᎳ</displayName>
 				<displayName count="other">ᏳᎧᎴᏂ ᎠᏕᎳ</displayName>
+				<symbol draft="contributed">UAH</symbol>
+				<symbol alt="narrow" draft="contributed">₴</symbol>
 			</currency>
 			<currency type="UGX">
 				<displayName>ᏳᎦᏂᏓ ᎠᏕᎳ</displayName>
 				<displayName count="one">ᏳᎦᏂᏓ ᎠᏕᎳ</displayName>
 				<displayName count="other">ᏳᎦᏂᏓ ᎠᏕᎳ</displayName>
+				<symbol draft="contributed">UGX</symbol>
 			</currency>
 			<currency type="USD">
 				<displayName>US ᎠᏕᎳ</displayName>
 				<displayName count="one">US ᎠᏕᎳ</displayName>
 				<displayName count="other">US ᎠᏕᎳ</displayName>
 				<symbol>$</symbol>
+				<symbol alt="narrow" draft="contributed">$</symbol>
 			</currency>
 			<currency type="UYU">
 				<displayName>ᏳᎷᏇ ᎠᏕᎳ</displayName>
 				<displayName count="one">ᏳᎷᏇ ᎠᏕᎳ</displayName>
 				<displayName count="other">ᏳᎷᏇ ᎠᏕᎳ</displayName>
+				<symbol draft="contributed">UYU</symbol>
+				<symbol alt="narrow" draft="contributed">$</symbol>
 			</currency>
 			<currency type="UZS">
 				<displayName>ᎤᏍᏇᎩᏍᏖᏂ ᎠᏕᎳ</displayName>
 				<displayName count="one">ᎤᏍᏇᎩᏍᏖᏂ ᎠᏕᎳ</displayName>
 				<displayName count="other">ᎤᏍᏇᎩᏍᏖᏂ ᎠᏕᎳ</displayName>
+				<symbol draft="contributed">UZS</symbol>
 			</currency>
 			<currency type="VEF">
 				<displayName>ᏪᏁᏑᏪ ᎠᏕᎳ (2008–2018)</displayName>
 				<displayName count="one">ᏪᏁᏑᏪᎳ ᎠᏕᎳ</displayName>
 				<displayName count="other">ᏪᏁᏑᏪᎳ ᎠᏕᎳ</displayName>
+				<symbol draft="contributed">VEF</symbol>
+				<symbol alt="narrow" draft="contributed">Bs</symbol>
 			</currency>
 			<currency type="VES">
 				<displayName>ᏪᏁᏑᏪ ᎠᏕᎳ</displayName>
 				<displayName count="one">ᏪᏁᏑᏪ ᎠᏕᎳ</displayName>
 				<displayName count="other">ᏪᏁᏑᏪ ᎠᏕᎳ</displayName>
+				<symbol draft="contributed">VES</symbol>
 			</currency>
 			<currency type="VND">
 				<displayName>ᏫᎡᏘᎾᎻᏍ ᎠᏕᎳ</displayName>
 				<displayName count="one">ᏫᎡᏘᎾᎻᏍ ᎠᏕᎳ</displayName>
 				<displayName count="other">ᏫᎡᏘᎾᎻᏍ ᎠᏕᎳ</displayName>
+				<symbol draft="contributed">₫</symbol>
+				<symbol alt="narrow" draft="contributed">₫</symbol>
 			</currency>
 			<currency type="VUV">
 				<displayName>ᏩᏂᎤᏩᏚ ᎠᏕᎳ</displayName>
 				<displayName count="one">ᏩᏂᎤᏩᏚ ᎠᏕᎳ</displayName>
 				<displayName count="other">ᏩᏂᎤᏩᏚ ᎠᏕᎳ</displayName>
+				<symbol draft="contributed">VUV</symbol>
 			</currency>
 			<currency type="WST">
 				<displayName>ᏌᎼᎠ ᎠᏕᎳ</displayName>
 				<displayName count="one">ᏌᎼᎠ ᎠᏕᎳ</displayName>
 				<displayName count="other">ᏌᎼᎠ ᎠᏕᎳ</displayName>
+				<symbol draft="contributed">WST</symbol>
 			</currency>
 			<currency type="XAF">
 				<displayName>ᎠᏰᏟ ᎬᎿᎨᏍᏛ CFA ᎠᏕᎳ</displayName>
 				<displayName count="one">ᎠᏰᏟ ᎬᎿᎨᏍᏛ CFA ᎠᏕᎳ</displayName>
 				<displayName count="other">ᎠᏰᏟ ᎬᎿᎨᏍᏛ CFA ᎠᏕᎳ</displayName>
+				<symbol draft="contributed">FCFA</symbol>
 			</currency>
 			<currency type="XCD">
 				<displayName>ᏗᎧᎸᎬ ᎨᏆᏙᏯ ᎠᏕᎳ</displayName>
 				<displayName count="one">ᏗᎧᎸᎬ ᎨᏆᏙᏯ ᎠᏕᎳ</displayName>
 				<displayName count="other">ᏗᎧᎸᎬ ᎨᏆᏙᏯ ᎠᏕᎳ</displayName>
+				<symbol draft="contributed">EC$</symbol>
+				<symbol alt="narrow" draft="contributed">$</symbol>
 			</currency>
 			<currency type="XOF">
 				<displayName>ᏭᏕᎵᎬ ᎬᎿᎨᏍᏛ CFA ᎠᏕᎳ</displayName>
 				<displayName count="one">ᏭᏕᎵᎬ ᎬᎿᎨᏍᏛ CFA ᎠᏕᎳ</displayName>
 				<displayName count="other">ᏭᏕᎵᎬ ᎬᎿᎨᏍᏛ CFA ᎠᏕᎳ</displayName>
+				<symbol draft="contributed">CFA</symbol>
 			</currency>
 			<currency type="XPF">
 				<displayName>CFP ᎠᏕᎳ</displayName>
 				<displayName count="one">CFP ᎠᏕᎳ</displayName>
 				<displayName count="other">CFP ᎠᏕᎳ</displayName>
+				<symbol draft="contributed">CFPF</symbol>
 			</currency>
 			<currency type="XXX">
 				<displayName>ᏄᏬᎵᏍᏛᎾ ᎠᏕᎳ</displayName>
@@ -5391,16 +5674,21 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<displayName>ᏰᎺᏂ ᎠᏕᎳ</displayName>
 				<displayName count="one">ᏰᎺᏂ ᎠᏕᎳ</displayName>
 				<displayName count="other">ᏰᎺᏂ ᎠᏕᎳ</displayName>
+				<symbol draft="contributed">YER</symbol>
 			</currency>
 			<currency type="ZAR">
 				<displayName>ᏧᎦᎾᏮ ᎬᎿᎨᏍᏛ ᎠᏕᎳ</displayName>
 				<displayName count="one">ᏧᎦᎾᏮ ᎬᎿᎨᏍᏛ ᎠᏕᎳ</displayName>
 				<displayName count="other">ᏧᎦᎾᏮ ᎬᎿᎨᏍᏛ ᎠᏕᎳ</displayName>
+				<symbol draft="contributed">ZAR</symbol>
+				<symbol alt="narrow" draft="contributed">R</symbol>
 			</currency>
 			<currency type="ZMW">
 				<displayName>ᏏᎻᏆᏇ ᎠᏕᎳ</displayName>
 				<displayName count="one">ᏏᎻᏆᏇ ᎠᏕᎳ</displayName>
 				<displayName count="other">ᏏᎻᏆᏇ ᎠᏕᎳ</displayName>
+				<symbol draft="contributed">ZMW</symbol>
+				<symbol alt="narrow" draft="contributed">ZK</symbol>
 			</currency>
 		</currencies>
 		<miscPatterns numberSystem="latn">
@@ -5630,6 +5918,11 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<unitPattern count="one">{0} ᏍᎪᎯᏧᏈ ᏧᏕᏘᏴᏓ</unitPattern>
 				<unitPattern count="other">{0} ᏍᎪᎯᏧᏈ ᏧᏕᏘᏴᏓ</unitPattern>
 			</unit>
+			<unit type="duration-decade">
+				<displayName>ᏍᎪᎯ ᏧᏕᏘᏴᏓ</displayName>
+				<unitPattern count="one">{0} ᏍᎪᎯ ᏧᏕᏘᏴᏓ</unitPattern>
+				<unitPattern count="other">{0} ᏍᎪᎯ ᏧᏕᏘᏴᏓ</unitPattern>
+			</unit>
 			<unit type="duration-year">
 				<displayName>ᏧᏕᏘᏴᏌᏗᏒᎢ</displayName>
 				<unitPattern count="one">{0} ᎤᏕᏘᏴᏌᏗᏒᎢ</unitPattern>
@@ -5747,6 +6040,11 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<unitPattern count="one">{0} ᏈᏗᏏ ᏗᎬᏍᎦᏢᏗ ᏂᎨᏒᎾ ᏓᎪᎵᏰᎥ ᏭᏍᏗᎬ ᎧᎵᎨᏒ</unitPattern>
 				<unitPattern count="other">{0} ᏈᏗᏏ ᏗᎬᏍᎦᏢᏗ ᏂᎨᏒᎾ ᏓᎪᎵᏰᎥ ᏭᏍᏗᎬ ᎧᎵᎨᏒ</unitPattern>
 			</unit>
+			<unit type="energy-therm-us">
+				<displayName>US ᎤᏗᏞᎬᎢ</displayName>
+				<unitPattern count="one">{0} US ᎤᏗᏞᎬᎢ</unitPattern>
+				<unitPattern count="other">{0} US ᎤᏗᏞᎬᎢ</unitPattern>
+			</unit>
 			<unit type="force-pound-force">
 				<displayName>ᏑᏓᎨᏓ ᎾᎿ ᎦᏌᏙᏯᏍᏗ</displayName>
 				<unitPattern count="one">{0} ᏑᏓᎨᏓ ᎾᎿ ᎦᏌᏙᏯᏍᏗ</unitPattern>
@@ -5776,6 +6074,39 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<displayName>ᎭᏥ</displayName>
 				<unitPattern count="one">{0} ᎭᏥ</unitPattern>
 				<unitPattern count="other">{0} ᎭᏥ</unitPattern>
+			</unit>
+			<unit type="graphics-em">
+				<displayName>ᎪᏪᎸ em</displayName>
+			</unit>
+			<unit type="graphics-pixel">
+				<displayName>ᏗᏇᎦᏎᎵ</displayName>
+				<unitPattern count="one">{0} ᏇᎦᏎᎵ</unitPattern>
+				<unitPattern count="other">{0} ᏗᏇᎦᏎᎵ</unitPattern>
+			</unit>
+			<unit type="graphics-megapixel">
+				<displayName>ᏧᏔᎾ ᏗᏇᎦᏎᎵ</displayName>
+				<unitPattern count="one">{0} ᎤᏔᎾ ᏇᎦᏎᎵ</unitPattern>
+				<unitPattern count="other">{0} ᏧᏔᎾ ᏗᏇᎦᏎᎵ</unitPattern>
+			</unit>
+			<unit type="graphics-pixel-per-centimeter">
+				<displayName>ᏗᏇᎦᏎᎵ ᎤᏍᏗ ᎠᏟᎶᏗ ᎢᏳᏓᎵ</displayName>
+				<unitPattern count="one">{0} ᏇᎦᏎᎵ ᎤᏍᏗ ᎠᏟᎶᏗ ᎢᏳᏓᎵ</unitPattern>
+				<unitPattern count="other">{0} ᏗᏇᎦᏎᎵ ᎤᏍᏗ ᎠᏟᎶᏗ ᎢᏳᏓᎵ</unitPattern>
+			</unit>
+			<unit type="graphics-pixel-per-inch">
+				<displayName>ᏗᏇᎦᏎᎵ ᎢᏏᎳᏗᏍᏗ ᎢᏳᏓᎵ</displayName>
+				<unitPattern count="one">{0} ᏇᎦᏎᎵ ᎢᏏᎳᏗᏍᏗ ᎢᏳᏓᎵ</unitPattern>
+				<unitPattern count="other">{0} ᏗᏇᎦᏎᎵ ᎢᏏᎳᏗᏍᏗ ᎢᏳᏓᎵ</unitPattern>
+			</unit>
+			<unit type="graphics-dot-per-centimeter">
+				<displayName>ᏧᏓᏓᎸ ᎤᏍᏗ ᎠᏟᎶᏗ ᎢᏳᏓᎵ</displayName>
+				<unitPattern count="one">{0} ᎤᏓᏓᎸ ᎤᏍᏗ ᎠᏟᎶᏗ ᎢᏳᏓᎵ</unitPattern>
+				<unitPattern count="other">{0} ᏧᏓᏓᎸ ᎤᏍᏗ ᎠᏟᎶᏗ ᎢᏳᏓᎵ</unitPattern>
+			</unit>
+			<unit type="graphics-dot-per-inch">
+				<displayName>ᏧᏓᏓᎸ ᎢᏏᎳᏗᏍᏗ ᎢᏳᏓᎵ</displayName>
+				<unitPattern count="one">{0} ᎤᏓᏓᎸ ᎢᏏᎳᏗᏍᏗ ᎢᏳᏓᎵ</unitPattern>
+				<unitPattern count="other">{0} ᏧᏓᏓᎸ ᎢᏏᎳᏗᏍᏗ ᎢᏳᏓᎵ</unitPattern>
 			</unit>
 			<unit type="length-kilometer">
 				<displayName>ᎠᎦᏴᎵ ᏗᏟᎶᏍᏗ</displayName>
@@ -5986,11 +6317,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<unitPattern count="one">{0} ᏐᏈᎵ ᎢᏳᎳᏂᎩᏛ</unitPattern>
 				<unitPattern count="other">{0} ᏐᏈᎵ ᎢᏳᎳᏂᎩᏛ</unitPattern>
 			</unit>
-			<unit type="pressure-hectopascal">
-				<displayName>ᎮᏔ ᏗᏆᏌᎵ</displayName>
-				<unitPattern count="one">{0} ᎮᏔ ᏆᏌᎵ</unitPattern>
-				<unitPattern count="other">{0} ᎮᏔ ᏗᏆᏌᎵ</unitPattern>
-			</unit>
 			<unit type="pressure-millimeter-of-mercury">
 				<displayName>ᏌᏉ ᎢᏯᎦᎨᎵᏁᎢ ᏗᏟᎶᏗ ᎾᎿ ᎹᎫᎢ</displayName>
 				<unitPattern count="one">{0} ᏌᏉ ᎢᏯᎦᎨᎵᏁᎢ ᎠᏟᎶᏗ ᎾᎿ ᎹᎫᎢ</unitPattern>
@@ -6006,15 +6332,30 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<unitPattern count="one">{0} ᎢᏗᎳᏏᏗ ᎾᎿ ᎹᎫᎢ</unitPattern>
 				<unitPattern count="other">{0} ᎢᏏᏔᏗᏍᏗ ᎾᎿ ᎹᎫᎢ</unitPattern>
 			</unit>
+			<unit type="pressure-bar">
+				<displayName>ᏕᎦᎾᎸᎢ</displayName>
+				<unitPattern count="one">{0} ᎦᎾᎸᎢ</unitPattern>
+				<unitPattern count="other">{0} ᏕᎦᎾᎸᎢ</unitPattern>
+			</unit>
 			<unit type="pressure-millibar">
 				<displayName>ᎢᏯᎦᏴᎵ ᏕᎦᎾᎸᎢ</displayName>
-				<unitPattern count="one">{0} ᎢᎦᎦᏴᎵ</unitPattern>
+				<unitPattern count="one">{0} ᎢᎦᎦᏴᎵ ᎦᎾᎸᎢ</unitPattern>
 				<unitPattern count="other">{0} ᎢᏯᎦᏴᎵ ᏕᎦᎾᎸᎢ</unitPattern>
 			</unit>
 			<unit type="pressure-atmosphere">
 				<displayName>ᏗᎦᏃᎴᏍᎬ</displayName>
 				<unitPattern count="one">{0} ᎦᏃᎴᏍᎬ</unitPattern>
 				<unitPattern count="other">{0} ᏗᎦᏃᎴᏍᎬ</unitPattern>
+			</unit>
+			<unit type="pressure-pascal">
+				<displayName>ᏗᏆᏌᎵ</displayName>
+				<unitPattern count="one">{0} ᏆᏌᎵ</unitPattern>
+				<unitPattern count="other">{0} ᏗᏆᏌᎵ</unitPattern>
+			</unit>
+			<unit type="pressure-hectopascal">
+				<displayName>ᎮᏔ ᏗᏆᏌᎵ</displayName>
+				<unitPattern count="one">{0} ᎮᏔ ᏆᏌᎵ</unitPattern>
+				<unitPattern count="other">{0} ᎮᏔ ᏗᏆᏌᎵ</unitPattern>
 			</unit>
 			<unit type="pressure-kilopascal">
 				<displayName>ᎩᎶᏆᏍᎧᎵᏍ</displayName>
@@ -6433,6 +6774,11 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<unitPattern count="one">{0} ᏍᏧ</unitPattern>
 				<unitPattern count="other">{0} ᏍᏧ</unitPattern>
 			</unit>
+			<unit type="duration-decade">
+				<displayName>ᏍᎪᎯ</displayName>
+				<unitPattern count="one">{0} ᏍᎪᎯ</unitPattern>
+				<unitPattern count="other">{0} ᏍᎪᎯ</unitPattern>
+			</unit>
 			<unit type="duration-year">
 				<displayName>ᏧᏕᏘᏴᏌᏗᏒᎢ</displayName>
 				<unitPattern count="one">{0} ᎤᏕ</unitPattern>
@@ -6550,6 +6896,11 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<unitPattern count="one">{0} Btu</unitPattern>
 				<unitPattern count="other">{0} Btu</unitPattern>
 			</unit>
+			<unit type="energy-therm-us">
+				<displayName>US ᎤᏗᏞᎬᎢ</displayName>
+				<unitPattern count="one">{0} US ᎤᏗᏞᎬ</unitPattern>
+				<unitPattern count="other">{0} US ᎤᏗᏞᎬ</unitPattern>
+			</unit>
 			<unit type="force-pound-force">
 				<displayName>ᏑᏓᎨᏓ-ᎦᏌᏙᏯᏍᏗ</displayName>
 				<unitPattern count="one">{0} lbf</unitPattern>
@@ -6579,6 +6930,12 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<displayName>Hz</displayName>
 				<unitPattern count="one">{0} Hz</unitPattern>
 				<unitPattern count="other">{0} Hz</unitPattern>
+			</unit>
+			<unit type="graphics-pixel">
+				<displayName>ᏗᏇᎦᏎᎵ</displayName>
+			</unit>
+			<unit type="graphics-megapixel">
+				<displayName>ᏧᏔᎾ ᏗᏇᎦᏎᎵ</displayName>
 			</unit>
 			<unit type="length-kilometer">
 				<displayName>ᎠᏗ</displayName>
@@ -6789,11 +7146,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<unitPattern count="one">{0} hp</unitPattern>
 				<unitPattern count="other">{0} hp</unitPattern>
 			</unit>
-			<unit type="pressure-hectopascal">
-				<displayName>hPa</displayName>
-				<unitPattern count="one">{0} hPa</unitPattern>
-				<unitPattern count="other">{0} hPa</unitPattern>
-			</unit>
 			<unit type="pressure-millimeter-of-mercury">
 				<displayName>mmHg</displayName>
 				<unitPattern count="one">{0} mmHg</unitPattern>
@@ -6818,6 +7170,11 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<displayName>atm</displayName>
 				<unitPattern count="one">{0} atm</unitPattern>
 				<unitPattern count="other">{0} atm</unitPattern>
+			</unit>
+			<unit type="pressure-hectopascal">
+				<displayName>hPa</displayName>
+				<unitPattern count="one">{0} hPa</unitPattern>
+				<unitPattern count="other">{0} hPa</unitPattern>
 			</unit>
 			<unit type="pressure-kilopascal">
 				<displayName>kPa</displayName>
@@ -7157,14 +7514,9 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<listPatternPart type="2">{0} ᎠᎴᏱᎩ {1}</listPatternPart>
 		</listPattern>
 		<listPattern type="standard-narrow">
-			<listPatternPart type="start">{0}, {1}</listPatternPart>
-			<listPatternPart type="middle">{0}, {1}</listPatternPart>
-			<listPatternPart type="end">{0}, &amp; {1}</listPatternPart>
 			<listPatternPart type="2">{0}, {1}</listPatternPart>
 		</listPattern>
 		<listPattern type="standard-short">
-			<listPatternPart type="start">{0}, {1}</listPatternPart>
-			<listPatternPart type="middle">{0}, {1}</listPatternPart>
 			<listPatternPart type="end">{0}, &amp; {1}</listPatternPart>
 			<listPatternPart type="2">{0} &amp; {1}</listPatternPart>
 		</listPattern>
@@ -7199,7 +7551,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 		<characterLabelPattern type="compatibility">{0} — ᎤᏠᏯᏉᏗᏙᎵᎩ</characterLabelPattern>
 		<characterLabelPattern type="enclosed">{0} — ᎠᏠᏯᏍᏔᏅ</characterLabelPattern>
 		<characterLabelPattern type="extended">{0} — ᎦᏅᎯᏓ</characterLabelPattern>
-		<characterLabelPattern type="historic">{0} — ᎤᎵᏍᎨᏗ ᏂᏧᎵᏍᏔᏅᏍᏔᏅ</characterLabelPattern>
 		<characterLabelPattern type="miscellaneous">{0} — ᏧᏓᎴᏅᏛ</characterLabelPattern>
 		<characterLabelPattern type="other">{0} — ᏐᎢ</characterLabelPattern>
 		<characterLabelPattern type="scripts">ᏗᎧᏁᎢᏍᏗ — {0}</characterLabelPattern>

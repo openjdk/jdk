@@ -6,7 +6,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 For terms of use, see http://www.unicode.org/copyright.html
 -->
 <supplementalData>
-    <version number="$Revision: 14872 $"/>
+    <version number="$Revision$"/>
     <numberingSystems>
         <numberingSystem id="adlm" type="numeric" digits="&#x1E950;&#x1E951;&#x1E952;&#x1E953;&#x1E954;&#x1E955;&#x1E956;&#x1E957;&#x1E958;&#x1E959;"/>
         <numberingSystem id="ahom" type="numeric" digits="&#x11730;&#x11731;&#x11732;&#x11733;&#x11734;&#x11735;&#x11736;&#x11737;&#x11738;&#x11739;"/>

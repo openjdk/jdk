@@ -7,7 +7,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 -->
 
 <supplementalData>
-	<version number="$Revision: 11914 $"/>
+	<version number="$Revision$"/>
 	<characters>
 		<character-fallback>
 			<character value = "©">

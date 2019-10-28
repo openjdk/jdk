@@ -7,7 +7,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 -->
 <ldml>
 	<identity>
-		<version number="$Revision: 14782 $"/>
+		<version number="$Revision$"/>
 		<language type="ast"/>
 	</identity>
 	<localeDisplayNames>
@@ -472,7 +472,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<language type="ro_MD">moldavu</language>
 			<language type="rof">rombo</language>
 			<language type="rom">romaní</language>
-			<language type="root">root</language>
 			<language type="rtm">rotumanu</language>
 			<language type="ru">rusu</language>
 			<language type="rue">rusyn</language>
@@ -1002,8 +1001,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<territory type="MF">Saint Martin</territory>
 			<territory type="MG">Madagascar</territory>
 			<territory type="MH">Islles Marshall</territory>
-			<territory type="MK">Macedonia</territory>
-			<territory type="MK" alt="variant">Macedonia (ARYDM)</territory>
 			<territory type="ML">Malí</territory>
 			<territory type="MM">Myanmar (Birmania)</territory>
 			<territory type="MN">Mongolia</territory>
@@ -1135,68 +1132,45 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<variant type="BAKU1926">alfabetu turcu llatino unificáu</variant>
 			<variant type="BALANKA">dialectu balanka del anii</variant>
 			<variant type="BARLA">grupu dialectal barlavento del cabuverdianu</variant>
-			<variant type="BASICENG">BASICENG</variant>
-			<variant type="BAUDDHA">BAUDDHA</variant>
-			<variant type="BISCAYAN">BISCAYAN</variant>
 			<variant type="BISKE">dialectu San Giorgio/Bila</variant>
 			<variant type="BOHORIC">alfabetu bohorič</variant>
 			<variant type="BOONT">boontling</variant>
 			<variant type="COLB1945">convención ortográfica brasilanu-portuguesa de 1945</variant>
-			<variant type="CORNU">CORNU</variant>
 			<variant type="DAJNKO">alfabetu dajnko</variant>
 			<variant type="EKAVSK">serbiu con pronunciación ekaviana</variant>
 			<variant type="EMODENG">inglés modernu primitivu</variant>
 			<variant type="FONIPA">fonética IPA</variant>
 			<variant type="FONUPA">fonética UPA</variant>
-			<variant type="FONXSAMP">FONXSAMP</variant>
 			<variant type="HEPBURN">romanización de Hepburn</variant>
-			<variant type="HOGNORSK">HOGNORSK</variant>
 			<variant type="IJEKAVSK">serbiu con pronunciación Ijekaviana</variant>
-			<variant type="ITIHASA">ITIHASA</variant>
-			<variant type="JAUER">JAUER</variant>
-			<variant type="JYUTPING">JYUTPING</variant>
 			<variant type="KKCOR">ortografía común</variant>
-			<variant type="KOCIEWIE">KOCIEWIE</variant>
 			<variant type="KSCOR">ortografía estándar</variant>
-			<variant type="LAUKIKA">LAUKIKA</variant>
 			<variant type="LIPAW">el dialectu lipovaz del resianu</variant>
-			<variant type="LUNA1918">LUNA1918</variant>
 			<variant type="METELKO">alfabetu metelko</variant>
 			<variant type="MONOTON">monotónicu</variant>
 			<variant type="NDYUKA">dialectu ndyuka</variant>
 			<variant type="NEDIS">dialectu natisone</variant>
-			<variant type="NEWFOUND">NEWFOUND</variant>
 			<variant type="NJIVA">dialectu gniva/njiva</variant>
 			<variant type="NULIK">volapük modernu</variant>
 			<variant type="OSOJS">dialectu oseacco/osojane</variant>
 			<variant type="OXENDICT">ortografía del diccionariu d’inglés d’Oxford</variant>
 			<variant type="PAMAKA">dialectu pamaka</variant>
-			<variant type="PETR1708">PETR1708</variant>
 			<variant type="PINYIN">romanización pinyin</variant>
 			<variant type="POLYTON">politónicu</variant>
 			<variant type="POSIX">ordenador</variant>
-			<variant type="PUTER">PUTER</variant>
 			<variant type="REVISED">ortografía revisada</variant>
 			<variant type="RIGIK">volapük clásicu</variant>
 			<variant type="ROZAJ">resianu</variant>
-			<variant type="RUMGR">RUMGR</variant>
 			<variant type="SAAHO">saho</variant>
 			<variant type="SCOTLAND">inglés estándar escocés</variant>
 			<variant type="SCOUSE">scouse</variant>
-			<variant type="SIMPLE">SIMPLE</variant>
 			<variant type="SOLBA">dialectu stolvizza/solbica</variant>
 			<variant type="SOTAV">grupu dialectal sotavento del cabuverdianu</variant>
-			<variant type="SURMIRAN">SURMIRAN</variant>
-			<variant type="SURSILV">SURSILV</variant>
-			<variant type="SUTSILV">SUTSILV</variant>
 			<variant type="TARASK">ortografía taraskievica</variant>
 			<variant type="UCCOR">ortografía unificada</variant>
 			<variant type="UCRCOR">ortografía unificada revisada</variant>
-			<variant type="ULSTER">ULSTER</variant>
 			<variant type="UNIFON">alfabetu fonéticu Unifon</variant>
-			<variant type="VAIDIKA">VAIDIKA</variant>
 			<variant type="VALENCIA">valencianu</variant>
-			<variant type="VALLADER">VALLADER</variant>
 			<variant type="WADEGILE">romanización de Wade-Giles</variant>
 		</variants>
 		<keys>
@@ -1346,8 +1320,8 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 		<exemplarCharacters>[a á b c d e é f g h ḥ i í l ḷ m n ñ o ó p q r s t u ú ü v x y z]</exemplarCharacters>
 		<exemplarCharacters type="auxiliary">[ª à ă â å ä ã ā æ ç è ĕ ê ë ē ì ĭ î ï ī j k º ò ŏ ô ö ø ō œ ù ŭ û ū w ÿ]</exemplarCharacters>
 		<exemplarCharacters type="index">[A B C D E F G H I L M N Ñ O P Q R S T U V X Y Z]</exemplarCharacters>
-		<exemplarCharacters type="numbers">[\- , . % ‰ + 0 1 2 3 4 5 6 7 8 9]</exemplarCharacters>
-		<exemplarCharacters type="punctuation">[\- ‐ – — , ; \: ! ¡ ? ¿ . … ' ‘ ’ &quot; “ ” « » ( ) \[ \] § @ * / \\ \&amp; # † ‡ ′ ″]</exemplarCharacters>
+		<exemplarCharacters type="numbers">[\- ‑ , . % ‰ + 0 1 2 3 4 5 6 7 8 9]</exemplarCharacters>
+		<exemplarCharacters type="punctuation">[\- ‐ ‑ – — , ; \: ! ¡ ? ¿ . … ' ‘ ’ &quot; “ ” « » ( ) \[ \] § @ * / \\ \&amp; # † ‡ ′ ″]</exemplarCharacters>
 		<ellipsis type="final">{0}…</ellipsis>
 		<ellipsis type="initial">…{0}</ellipsis>
 		<ellipsis type="medial">{0}… {1}</ellipsis>
@@ -9658,11 +9632,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<unitPattern count="one">{0} caballu de fuerza</unitPattern>
 				<unitPattern count="other">{0} caballos de fuerza</unitPattern>
 			</unit>
-			<unit type="pressure-hectopascal">
-				<displayName>hectopascales</displayName>
-				<unitPattern count="one">{0} hectopascal</unitPattern>
-				<unitPattern count="other">{0} hectopascales</unitPattern>
-			</unit>
 			<unit type="pressure-millimeter-of-mercury">
 				<displayName>milímetros de mercuriu</displayName>
 				<unitPattern count="one">{0} milímetru de mercuriu</unitPattern>
@@ -9682,6 +9651,11 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<displayName>milibares</displayName>
 				<unitPattern count="one">{0} milibar</unitPattern>
 				<unitPattern count="other">{0} milibares</unitPattern>
+			</unit>
+			<unit type="pressure-hectopascal">
+				<displayName>hectopascales</displayName>
+				<unitPattern count="one">{0} hectopascal</unitPattern>
+				<unitPattern count="other">{0} hectopascales</unitPattern>
 			</unit>
 			<unit type="speed-kilometer-per-hour">
 				<displayName>quilómetros per hora</displayName>
@@ -10370,11 +10344,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<unitPattern count="one">{0} hp</unitPattern>
 				<unitPattern count="other">{0} hp</unitPattern>
 			</unit>
-			<unit type="pressure-hectopascal">
-				<displayName>hPa</displayName>
-				<unitPattern count="one">{0} hPa</unitPattern>
-				<unitPattern count="other">{0} hPa</unitPattern>
-			</unit>
 			<unit type="pressure-millimeter-of-mercury">
 				<displayName>mm Hg</displayName>
 				<unitPattern count="one">{0} mm Hg</unitPattern>
@@ -10394,6 +10363,11 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<displayName>mbar</displayName>
 				<unitPattern count="one">{0} mbar</unitPattern>
 				<unitPattern count="other">{0} mbar</unitPattern>
+			</unit>
+			<unit type="pressure-hectopascal">
+				<displayName>hPa</displayName>
+				<unitPattern count="one">{0} hPa</unitPattern>
+				<unitPattern count="other">{0} hPa</unitPattern>
 			</unit>
 			<unit type="speed-kilometer-per-hour">
 				<displayName>km/h</displayName>
@@ -11077,11 +11051,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<unitPattern count="one">{0}hp</unitPattern>
 				<unitPattern count="other">{0}hp</unitPattern>
 			</unit>
-			<unit type="pressure-hectopascal">
-				<displayName>hPa</displayName>
-				<unitPattern count="one">{0}hPa</unitPattern>
-				<unitPattern count="other">{0}hPa</unitPattern>
-			</unit>
 			<unit type="pressure-millimeter-of-mercury">
 				<displayName>mm Hg</displayName>
 				<unitPattern count="one">{0}mm Hg</unitPattern>
@@ -11101,6 +11070,11 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<displayName>mbar</displayName>
 				<unitPattern count="one">{0}mb</unitPattern>
 				<unitPattern count="other">{0}mb</unitPattern>
+			</unit>
+			<unit type="pressure-hectopascal">
+				<displayName>hPa</displayName>
+				<unitPattern count="one">{0}hPa</unitPattern>
+				<unitPattern count="other">{0}hPa</unitPattern>
 			</unit>
 			<unit type="speed-kilometer-per-hour">
 				<displayName>km/h</displayName>

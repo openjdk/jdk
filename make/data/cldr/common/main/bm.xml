@@ -7,7 +7,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 -->
 <ldml>
 	<identity>
-		<version number="$Revision: 14782 $"/>
+		<version number="$Revision$"/>
 		<language type="bm"/>
 	</identity>
 	<localeDisplayNames>
@@ -184,7 +184,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<territory type="MD">Molidavi</territory>
 			<territory type="MG">Madagasikari</territory>
 			<territory type="MH">Marisali Gun</territory>
-			<territory type="MK">Macedɔni</territory>
 			<territory type="ML">Mali</territory>
 			<territory type="MM">Myanimari</territory>
 			<territory type="MN">Moŋoli</territory>

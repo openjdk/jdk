@@ -7,22 +7,46 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 -->
 <ldml>
 	<identity>
-		<version number="$Revision: 14843 $"/>
+		<version number="$Revision$"/>
 		<language type="en"/>
 		<territory type="AU"/>
 	</identity>
 	<localeDisplayNames>
 		<languages>
+			<language type="ar_001">Modern Standard Arabic</language>
 			<language type="bn">Bengali</language>
+			<language type="de_AT">Austrian German</language>
+			<language type="de_CH">Swiss High German</language>
+			<language type="en_AU">Australian English</language>
+			<language type="en_CA">Canadian English</language>
+			<language type="en_GB">British English</language>
+			<language type="en_GB" alt="short">UK English</language>
 			<language type="en_US">United States English</language>
+			<language type="en_US" alt="short">US English</language>
+			<language type="es_419">Latin American Spanish</language>
+			<language type="es_ES">European Spanish</language>
+			<language type="es_MX">Mexican Spanish</language>
+			<language type="fr_CA">Canadian French</language>
+			<language type="fr_CH">Swiss French</language>
 			<language type="frc" draft="contributed">frc</language>
 			<language type="lou" draft="contributed">lou</language>
+			<language type="pt_BR">Brazilian Portuguese</language>
+			<language type="pt_PT">European Portuguese</language>
 			<language type="ro_MD">Moldovan</language>
+			<language type="sr_ME" draft="contributed">Montenegrin</language>
+			<language type="zh_Hans">Simplified Chinese</language>
+			<language type="zh_Hant">Traditional Chinese</language>
 		</languages>
 		<scripts>
 			<script type="Beng">Bengali</script>
-			<script type="Thai">Thai</script>
 		</scripts>
+		<territories>
+			<territory type="BL">St. Barthélemy</territory>
+			<territory type="KN">St. Kitts &amp; Nevis</territory>
+			<territory type="LC">St. Lucia</territory>
+			<territory type="MF">St. Martin</territory>
+			<territory type="VC">St. Vincent &amp; Grenadines</territory>
+		</territories>
 		<types>
 			<type key="calendar" type="dangi">Korean Calendar</type>
 			<type key="calendar" type="ethiopic">Ethiopian Calendar</type>
@@ -37,6 +61,10 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<months>
 					<monthContext type="format">
 						<monthWidth type="narrow">
+							<month type="1">1</month>
+							<month type="2">2</month>
+							<month type="3">3</month>
+							<month type="4">4</month>
 							<month type="5">5</month>
 							<month type="6">6</month>
 							<month type="7">7</month>
@@ -57,8 +85,28 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 							<month type="6">Mo6</month>
 							<month type="7">Mo7</month>
 							<month type="8">Mo8</month>
+							<month type="9">Mo9</month>
+							<month type="10">Mo10</month>
+							<month type="11">Mo11</month>
+							<month type="12">Mo12</month>
+						</monthWidth>
+						<monthWidth type="narrow">
+							<month type="1" draft="contributed">1</month>
+							<month type="2" draft="contributed">2</month>
+							<month type="3" draft="contributed">3</month>
+							<month type="4" draft="contributed">4</month>
+							<month type="5" draft="contributed">5</month>
+							<month type="6" draft="contributed">6</month>
+							<month type="7" draft="contributed">7</month>
+							<month type="8" draft="contributed">8</month>
+							<month type="9" draft="contributed">9</month>
+							<month type="10" draft="contributed">10</month>
+							<month type="11" draft="contributed">11</month>
+							<month type="12" draft="contributed">12</month>
 						</monthWidth>
 						<monthWidth type="wide">
+							<month type="1">First Month</month>
+							<month type="2">Second Month</month>
 							<month type="3">Third Month</month>
 							<month type="4">Fourth Month</month>
 							<month type="5">Fifth Month</month>
@@ -96,9 +144,50 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			</calendar>
 			<calendar type="gregorian">
 				<months>
+					<monthContext type="format">
+						<monthWidth type="narrow">
+							<month type="1">J</month>
+							<month type="2">F</month>
+							<month type="3">M</month>
+							<month type="4">A</month>
+							<month type="5">M</month>
+							<month type="6">J</month>
+							<month type="7">J</month>
+							<month type="8">A</month>
+							<month type="9">S</month>
+							<month type="10">O</month>
+							<month type="11">N</month>
+							<month type="12">D</month>
+						</monthWidth>
+					</monthContext>
 					<monthContext type="stand-alone">
 						<monthWidth type="abbreviated">
+							<month type="1">Jan</month>
+							<month type="2">Feb</month>
+							<month type="3">Mar</month>
+							<month type="4">Apr</month>
 							<month type="5">May</month>
+							<month type="6">Jun</month>
+							<month type="7">Jul</month>
+							<month type="8">Aug</month>
+							<month type="9">Sep</month>
+							<month type="10">Oct</month>
+							<month type="11">Nov</month>
+							<month type="12">Dec</month>
+						</monthWidth>
+						<monthWidth type="wide">
+							<month type="1">January</month>
+							<month type="2">February</month>
+							<month type="3">March</month>
+							<month type="4">April</month>
+							<month type="5">May</month>
+							<month type="6">June</month>
+							<month type="7">July</month>
+							<month type="8">August</month>
+							<month type="9">September</month>
+							<month type="10">October</month>
+							<month type="11">November</month>
+							<month type="12">December</month>
 						</monthWidth>
 					</monthContext>
 				</months>
@@ -124,6 +213,15 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 						</dayWidth>
 					</dayContext>
 					<dayContext type="stand-alone">
+						<dayWidth type="abbreviated">
+							<day type="sun">Sun</day>
+							<day type="mon">Mon</day>
+							<day type="tue">Tue</day>
+							<day type="wed">Wed</day>
+							<day type="thu">Thu</day>
+							<day type="fri">Fri</day>
+							<day type="sat">Sat</day>
+						</dayWidth>
 						<dayWidth type="narrow">
 							<day type="sun">Su.</day>
 							<day type="mon">M.</day>
@@ -134,13 +232,49 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 							<day type="sat">Sa.</day>
 						</dayWidth>
 						<dayWidth type="short">
+							<day type="sun">Su</day>
 							<day type="mon">Mon</day>
+							<day type="tue">Tu</day>
 							<day type="wed">Wed</day>
+							<day type="thu">Th</day>
 							<day type="fri">Fri</day>
 							<day type="sat">Sat</day>
 						</dayWidth>
+						<dayWidth type="wide">
+							<day type="sun">Sunday</day>
+							<day type="mon">Monday</day>
+							<day type="tue">Tuesday</day>
+							<day type="wed">Wednesday</day>
+							<day type="thu">Thursday</day>
+							<day type="fri">Friday</day>
+							<day type="sat">Saturday</day>
+						</dayWidth>
 					</dayContext>
 				</days>
+				<quarters>
+					<quarterContext type="format">
+						<quarterWidth type="narrow">
+							<quarter type="1">1</quarter>
+							<quarter type="2">2</quarter>
+							<quarter type="3">3</quarter>
+							<quarter type="4">4</quarter>
+						</quarterWidth>
+					</quarterContext>
+					<quarterContext type="stand-alone">
+						<quarterWidth type="abbreviated">
+							<quarter type="1">Q1</quarter>
+							<quarter type="2">Q2</quarter>
+							<quarter type="3">Q3</quarter>
+							<quarter type="4">Q4</quarter>
+						</quarterWidth>
+						<quarterWidth type="wide">
+							<quarter type="1">1st quarter</quarter>
+							<quarter type="2">2nd quarter</quarter>
+							<quarter type="3">3rd quarter</quarter>
+							<quarter type="4">4th quarter</quarter>
+						</quarterWidth>
+					</quarterContext>
+				</quarters>
 				<dayPeriods>
 					<dayPeriodContext type="format">
 						<dayPeriodWidth type="abbreviated">
@@ -175,7 +309,14 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 							<dayPeriod type="noon">midday</dayPeriod>
 						</dayPeriodWidth>
 						<dayPeriodWidth type="narrow">
+							<dayPeriod type="midnight">midnight</dayPeriod>
+							<dayPeriod type="am">am</dayPeriod>
 							<dayPeriod type="noon">midday</dayPeriod>
+							<dayPeriod type="pm">pm</dayPeriod>
+							<dayPeriod type="morning1">morning</dayPeriod>
+							<dayPeriod type="afternoon1">afternoon</dayPeriod>
+							<dayPeriod type="evening1">evening</dayPeriod>
+							<dayPeriod type="night1">night</dayPeriod>
 						</dayPeriodWidth>
 						<dayPeriodWidth type="wide">
 							<dayPeriod type="noon">midday</dayPeriod>
@@ -183,24 +324,338 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 					</dayPeriodContext>
 				</dayPeriods>
 				<dateFormats>
+					<dateFormatLength type="full">
+						<dateFormat>
+							<pattern>EEEE, d MMMM y</pattern>
+						</dateFormat>
+					</dateFormatLength>
+					<dateFormatLength type="long">
+						<dateFormat>
+							<pattern>d MMMM y</pattern>
+						</dateFormat>
+					</dateFormatLength>
+					<dateFormatLength type="medium">
+						<dateFormat>
+							<pattern>d MMM y</pattern>
+						</dateFormat>
+					</dateFormatLength>
 					<dateFormatLength type="short">
 						<dateFormat>
 							<pattern>d/M/yy</pattern>
 						</dateFormat>
 					</dateFormatLength>
 				</dateFormats>
+				<timeFormats>
+					<timeFormatLength type="full">
+						<timeFormat>
+							<pattern>h:mm:ss a zzzz</pattern>
+						</timeFormat>
+					</timeFormatLength>
+					<timeFormatLength type="long">
+						<timeFormat>
+							<pattern>h:mm:ss a z</pattern>
+						</timeFormat>
+					</timeFormatLength>
+					<timeFormatLength type="medium">
+						<timeFormat>
+							<pattern>h:mm:ss a</pattern>
+						</timeFormat>
+					</timeFormatLength>
+					<timeFormatLength type="short">
+						<timeFormat>
+							<pattern>h:mm a</pattern>
+						</timeFormat>
+					</timeFormatLength>
+				</timeFormats>
 				<dateTimeFormats>
+					<dateTimeFormatLength type="full">
+						<dateTimeFormat>
+							<pattern>{1} 'at' {0}</pattern>
+						</dateTimeFormat>
+					</dateTimeFormatLength>
+					<dateTimeFormatLength type="long">
+						<dateTimeFormat>
+							<pattern>{1} 'at' {0}</pattern>
+						</dateTimeFormat>
+					</dateTimeFormatLength>
+					<dateTimeFormatLength type="medium">
+						<dateTimeFormat>
+							<pattern>{1}, {0}</pattern>
+						</dateTimeFormat>
+					</dateTimeFormatLength>
+					<dateTimeFormatLength type="short">
+						<dateTimeFormat>
+							<pattern>{1}, {0}</pattern>
+						</dateTimeFormat>
+					</dateTimeFormatLength>
 					<availableFormats>
 						<dateFormatItem id="Md">d/M</dateFormatItem>
 						<dateFormatItem id="MEd">E, d/M</dateFormatItem>
 					</availableFormats>
+					<intervalFormats>
+						<intervalFormatItem id="GyMd">
+							<greatestDifference id="d" draft="contributed">d/M/y – d/M/y GGGGG</greatestDifference>
+							<greatestDifference id="G" draft="contributed">d/M/y GGGGG – d/M/y GGGGG</greatestDifference>
+							<greatestDifference id="M" draft="contributed">d/M/y – d/M/y GGGGG</greatestDifference>
+							<greatestDifference id="y" draft="contributed">d/M/y – d/M/y GGGGG</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="GyMEd">
+							<greatestDifference id="d" draft="contributed">E, d/M/y – E, d/M/y GGGGG</greatestDifference>
+							<greatestDifference id="G" draft="contributed">E, d/M/y GGGGG – E, d/M/y GGGGG</greatestDifference>
+							<greatestDifference id="M" draft="contributed">E, d/M/y – E, d/M/y GGGGG</greatestDifference>
+							<greatestDifference id="y" draft="contributed">E, d/M/y – E, d/M/y GGGGG</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="GyMMMd">
+							<greatestDifference id="d" draft="contributed">d – d MMM, y G</greatestDifference>
+							<greatestDifference id="G" draft="contributed">d MMM, y G – d MMM, y G</greatestDifference>
+							<greatestDifference id="M" draft="contributed">d MMM – d MMM, y G</greatestDifference>
+							<greatestDifference id="y" draft="contributed">d MMM, y – d MMM, y G</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="GyMMMEd">
+							<greatestDifference id="d" draft="contributed">E, d MMM – E, d MMM, y G</greatestDifference>
+							<greatestDifference id="G" draft="contributed">E, d MMM, y G – E, d MMM, y G</greatestDifference>
+							<greatestDifference id="M" draft="contributed">E, d MMM – E, d MMM, y G</greatestDifference>
+							<greatestDifference id="y" draft="contributed">E, d MMM, y – E, d MMM, y G</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="MMMd">
+							<greatestDifference id="d">d – d MMM</greatestDifference>
+						</intervalFormatItem>
+					</intervalFormats>
 				</dateTimeFormats>
 			</calendar>
+			<calendar type="indian">
+				<months>
+					<monthContext type="format">
+						<monthWidth type="abbreviated">
+							<month type="1" draft="contributed">Chaitra</month>
+							<month type="2" draft="contributed">Vaisakha</month>
+							<month type="3" draft="contributed">Jyaistha</month>
+							<month type="4" draft="contributed">Asadha</month>
+							<month type="5" draft="contributed">Sravana</month>
+							<month type="6" draft="contributed">Bhadra</month>
+							<month type="7" draft="contributed">Asvina</month>
+							<month type="8" draft="contributed">Kartika</month>
+							<month type="9" draft="contributed">Agrahayana</month>
+							<month type="10" draft="contributed">Pausa</month>
+							<month type="11" draft="contributed">Magha</month>
+							<month type="12" draft="contributed">Phalguna</month>
+						</monthWidth>
+						<monthWidth type="narrow">
+							<month type="1" draft="contributed">1</month>
+							<month type="2" draft="contributed">2</month>
+							<month type="3" draft="contributed">3</month>
+							<month type="4" draft="contributed">4</month>
+							<month type="5" draft="contributed">5</month>
+							<month type="6" draft="contributed">6</month>
+							<month type="7" draft="contributed">7</month>
+							<month type="8" draft="contributed">8</month>
+							<month type="9" draft="contributed">9</month>
+							<month type="10" draft="contributed">10</month>
+							<month type="11" draft="contributed">11</month>
+							<month type="12" draft="contributed">12</month>
+						</monthWidth>
+						<monthWidth type="wide">
+							<month type="1" draft="contributed">Chaitra</month>
+							<month type="2" draft="contributed">Vaisakha</month>
+							<month type="3" draft="contributed">Jyaistha</month>
+							<month type="4" draft="contributed">Asadha</month>
+							<month type="5" draft="contributed">Sravana</month>
+							<month type="6" draft="contributed">Bhadra</month>
+							<month type="7" draft="contributed">Asvina</month>
+							<month type="8" draft="contributed">Kartika</month>
+							<month type="9" draft="contributed">Agrahayana</month>
+							<month type="10" draft="contributed">Pausa</month>
+							<month type="11" draft="contributed">Magha</month>
+							<month type="12" draft="contributed">Phalguna</month>
+						</monthWidth>
+					</monthContext>
+					<monthContext type="stand-alone">
+						<monthWidth type="abbreviated">
+							<month type="1" draft="contributed">Chaitra</month>
+							<month type="2" draft="contributed">Vaisakha</month>
+							<month type="3" draft="contributed">Jyaistha</month>
+							<month type="4" draft="contributed">Asadha</month>
+							<month type="5" draft="contributed">Sravana</month>
+							<month type="6" draft="contributed">Bhadra</month>
+							<month type="7" draft="contributed">Asvina</month>
+							<month type="8" draft="contributed">Kartika</month>
+							<month type="9" draft="contributed">Agrahayana</month>
+							<month type="10" draft="contributed">Pausa</month>
+							<month type="11" draft="contributed">Magha</month>
+							<month type="12" draft="contributed">Phalguna</month>
+						</monthWidth>
+						<monthWidth type="narrow">
+							<month type="1" draft="contributed">1</month>
+							<month type="2" draft="contributed">2</month>
+							<month type="3" draft="contributed">3</month>
+							<month type="4" draft="contributed">4</month>
+							<month type="5" draft="contributed">5</month>
+							<month type="6" draft="contributed">6</month>
+							<month type="7" draft="contributed">7</month>
+							<month type="8" draft="contributed">8</month>
+							<month type="9" draft="contributed">9</month>
+							<month type="10" draft="contributed">10</month>
+							<month type="11" draft="contributed">11</month>
+							<month type="12" draft="contributed">12</month>
+						</monthWidth>
+						<monthWidth type="wide">
+							<month type="1" draft="contributed">Chaitra</month>
+							<month type="2" draft="contributed">Vaisakha</month>
+							<month type="3" draft="contributed">Jyaistha</month>
+							<month type="4" draft="contributed">Asadha</month>
+							<month type="5" draft="contributed">Sravana</month>
+							<month type="6" draft="contributed">Bhadra</month>
+							<month type="7" draft="contributed">Asvina</month>
+							<month type="8" draft="contributed">Kartika</month>
+							<month type="9" draft="contributed">Agrahayana</month>
+							<month type="10" draft="contributed">Pausa</month>
+							<month type="11" draft="contributed">Magha</month>
+							<month type="12" draft="contributed">Phalguna</month>
+						</monthWidth>
+					</monthContext>
+				</months>
+			</calendar>
 			<calendar type="islamic">
+				<months>
+					<monthContext type="format">
+						<monthWidth type="abbreviated">
+							<month type="1" draft="contributed">Muh.</month>
+							<month type="2" draft="contributed">Saf.</month>
+							<month type="3" draft="contributed">Rab. I</month>
+							<month type="4" draft="contributed">Rab. II</month>
+							<month type="5" draft="contributed">Jum. I</month>
+							<month type="6" draft="contributed">Jum. II</month>
+							<month type="7" draft="contributed">Raj.</month>
+							<month type="8" draft="contributed">Sha.</month>
+							<month type="9" draft="contributed">Ram.</month>
+							<month type="10" draft="contributed">Shaw.</month>
+							<month type="11" draft="contributed">Dhuʻl-Q.</month>
+							<month type="12" draft="contributed">Dhuʻl-H.</month>
+						</monthWidth>
+						<monthWidth type="narrow">
+							<month type="1" draft="contributed">1</month>
+							<month type="2" draft="contributed">2</month>
+							<month type="3" draft="contributed">3</month>
+							<month type="4" draft="contributed">4</month>
+							<month type="5" draft="contributed">5</month>
+							<month type="6" draft="contributed">6</month>
+							<month type="7" draft="contributed">7</month>
+							<month type="8" draft="contributed">8</month>
+							<month type="9" draft="contributed">9</month>
+							<month type="10" draft="contributed">10</month>
+							<month type="11" draft="contributed">11</month>
+							<month type="12" draft="contributed">12</month>
+						</monthWidth>
+						<monthWidth type="wide">
+							<month type="1" draft="contributed">Muharram</month>
+							<month type="2" draft="contributed">Safar</month>
+							<month type="3" draft="contributed">Rabiʻ I</month>
+							<month type="4" draft="contributed">Rabiʻ II</month>
+							<month type="5" draft="contributed">Jumada I</month>
+							<month type="6" draft="contributed">Jumada II</month>
+							<month type="7" draft="contributed">Rajab</month>
+							<month type="8" draft="contributed">Shaʻban</month>
+							<month type="9" draft="contributed">Ramadan</month>
+							<month type="10" draft="contributed">Shawwal</month>
+							<month type="11" draft="contributed">Dhuʻl-Qiʻdah</month>
+							<month type="12" draft="contributed">Dhuʻl-Hijjah</month>
+						</monthWidth>
+					</monthContext>
+					<monthContext type="stand-alone">
+						<monthWidth type="abbreviated">
+							<month type="1" draft="contributed">Muh.</month>
+							<month type="2" draft="contributed">Saf.</month>
+							<month type="3" draft="contributed">Rab. I</month>
+							<month type="4" draft="contributed">Rab. II</month>
+							<month type="5" draft="contributed">Jum. I</month>
+							<month type="6" draft="contributed">Jum. II</month>
+							<month type="7" draft="contributed">Raj.</month>
+							<month type="8" draft="contributed">Sha.</month>
+							<month type="9" draft="contributed">Ram.</month>
+							<month type="10" draft="contributed">Shaw.</month>
+							<month type="11" draft="contributed">Dhuʻl-Q.</month>
+							<month type="12" draft="contributed">Dhuʻl-H.</month>
+						</monthWidth>
+						<monthWidth type="narrow">
+							<month type="1" draft="contributed">1</month>
+							<month type="2" draft="contributed">2</month>
+							<month type="3" draft="contributed">3</month>
+							<month type="4" draft="contributed">4</month>
+							<month type="5" draft="contributed">5</month>
+							<month type="6" draft="contributed">6</month>
+							<month type="7" draft="contributed">7</month>
+							<month type="8" draft="contributed">8</month>
+							<month type="9" draft="contributed">9</month>
+							<month type="10" draft="contributed">10</month>
+							<month type="11" draft="contributed">11</month>
+							<month type="12" draft="contributed">12</month>
+						</monthWidth>
+						<monthWidth type="wide">
+							<month type="1" draft="contributed">Muharram</month>
+							<month type="2" draft="contributed">Safar</month>
+							<month type="3" draft="contributed">Rabiʻ I</month>
+							<month type="4" draft="contributed">Rabiʻ II</month>
+							<month type="5" draft="contributed">Jumada I</month>
+							<month type="6" draft="contributed">Jumada II</month>
+							<month type="7" draft="contributed">Rajab</month>
+							<month type="8" draft="contributed">Shaʻban</month>
+							<month type="9" draft="contributed">Ramadan</month>
+							<month type="10" draft="contributed">Shawwal</month>
+							<month type="11" draft="contributed">Dhuʻl-Qiʻdah</month>
+							<month type="12" draft="contributed">Dhuʻl-Hijjah</month>
+						</monthWidth>
+					</monthContext>
+				</months>
+				<dateFormats>
+					<dateFormatLength type="full">
+						<dateFormat>
+							<pattern draft="contributed">EEEE, d MMMM y G</pattern>
+						</dateFormat>
+					</dateFormatLength>
+					<dateFormatLength type="long">
+						<dateFormat>
+							<pattern draft="contributed">d MMMM y G</pattern>
+						</dateFormat>
+					</dateFormatLength>
+					<dateFormatLength type="medium">
+						<dateFormat>
+							<pattern draft="contributed">d MMM y G</pattern>
+						</dateFormat>
+					</dateFormatLength>
+					<dateFormatLength type="short">
+						<dateFormat>
+							<pattern draft="contributed">dd/MM/y GGGGG</pattern>
+						</dateFormat>
+					</dateFormatLength>
+				</dateFormats>
 				<dateTimeFormats>
 					<availableFormats>
+						<dateFormatItem id="d" draft="contributed">d</dateFormatItem>
+						<dateFormatItem id="E" draft="contributed">ccc</dateFormatItem>
+						<dateFormatItem id="Ed" draft="contributed">E d</dateFormatItem>
+						<dateFormatItem id="Gy" draft="contributed">y G</dateFormatItem>
+						<dateFormatItem id="GyMMM" draft="contributed">MMM y G</dateFormatItem>
+						<dateFormatItem id="GyMMMd" draft="contributed">d MMM y G</dateFormatItem>
+						<dateFormatItem id="GyMMMEd" draft="contributed">E, d MMM y G</dateFormatItem>
+						<dateFormatItem id="M" draft="contributed">LL</dateFormatItem>
+						<dateFormatItem id="Md" draft="contributed">dd/MM</dateFormatItem>
+						<dateFormatItem id="MMM" draft="contributed">LLL</dateFormatItem>
+						<dateFormatItem id="MMMd" draft="contributed">d MMM</dateFormatItem>
+						<dateFormatItem id="MMMEd" draft="contributed">E, d MMM</dateFormatItem>
+						<dateFormatItem id="MMMMd" draft="contributed">d MMMM</dateFormatItem>
+						<dateFormatItem id="y" draft="contributed">y G</dateFormatItem>
 						<dateFormatItem id="yMd">dd/MM/y</dateFormatItem>
 						<dateFormatItem id="yMEd">E, dd/MM/y</dateFormatItem>
+						<dateFormatItem id="yyyy" draft="contributed">y G</dateFormatItem>
+						<dateFormatItem id="yyyyM" draft="contributed">MM/y GGGGG</dateFormatItem>
+						<dateFormatItem id="yyyyMd" draft="contributed">dd/MM/y GGGGG</dateFormatItem>
+						<dateFormatItem id="yyyyMEd" draft="contributed">E, dd/MM/y GGGGG</dateFormatItem>
+						<dateFormatItem id="yyyyMMM" draft="contributed">MMM y G</dateFormatItem>
+						<dateFormatItem id="yyyyMMMd" draft="contributed">d MMM y G</dateFormatItem>
+						<dateFormatItem id="yyyyMMMEd" draft="contributed">E, d MMM y G</dateFormatItem>
+						<dateFormatItem id="yyyyMMMM" draft="contributed">MMMM y G</dateFormatItem>
+						<dateFormatItem id="yyyyQQQ" draft="contributed">QQQ y G</dateFormatItem>
+						<dateFormatItem id="yyyyQQQQ" draft="contributed">QQQQ y G</dateFormatItem>
 					</availableFormats>
 				</dateTimeFormats>
 			</calendar>
@@ -208,22 +663,27 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 		<fields>
 			<field type="year-short">
 				<relativeTime type="future">
+					<relativeTimePattern count="one">in {0} yr</relativeTimePattern>
 					<relativeTimePattern count="other">in {0} yrs</relativeTimePattern>
 				</relativeTime>
 				<relativeTime type="past">
+					<relativeTimePattern count="one">{0} yr ago</relativeTimePattern>
 					<relativeTimePattern count="other">{0} yrs ago</relativeTimePattern>
 				</relativeTime>
 			</field>
 			<field type="year-narrow">
 				<relativeTime type="future">
+					<relativeTimePattern count="one">in {0} yr</relativeTimePattern>
 					<relativeTimePattern count="other">in {0} yrs</relativeTimePattern>
 				</relativeTime>
 				<relativeTime type="past">
+					<relativeTimePattern count="one">{0} yr ago</relativeTimePattern>
 					<relativeTimePattern count="other">{0} yrs ago</relativeTimePattern>
 				</relativeTime>
 			</field>
 			<field type="quarter-short">
 				<relativeTime type="future">
+					<relativeTimePattern count="one">in {0} qtr</relativeTimePattern>
 					<relativeTimePattern count="other">in {0} qtrs</relativeTimePattern>
 				</relativeTime>
 				<relativeTime type="past">
@@ -233,6 +693,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			</field>
 			<field type="quarter-narrow">
 				<relativeTime type="future">
+					<relativeTimePattern count="one">in {0} qtr</relativeTimePattern>
 					<relativeTimePattern count="other">in {0} qtrs</relativeTimePattern>
 				</relativeTime>
 				<relativeTime type="past">
@@ -264,31 +725,35 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			</field>
 			<field type="week-short">
 				<relativeTime type="future">
+					<relativeTimePattern count="one">in {0} wk</relativeTimePattern>
 					<relativeTimePattern count="other">in {0} wks</relativeTimePattern>
 				</relativeTime>
 				<relativeTime type="past">
+					<relativeTimePattern count="one">{0} wk ago</relativeTimePattern>
 					<relativeTimePattern count="other">{0} wks ago</relativeTimePattern>
 				</relativeTime>
 			</field>
 			<field type="week-narrow">
 				<relativeTime type="future">
+					<relativeTimePattern count="one">in {0} wk</relativeTimePattern>
 					<relativeTimePattern count="other">in {0} wks</relativeTimePattern>
 				</relativeTime>
 				<relativeTime type="past">
+					<relativeTimePattern count="one">{0} wk ago</relativeTimePattern>
 					<relativeTimePattern count="other">{0} wks ago</relativeTimePattern>
 				</relativeTime>
 			</field>
 			<field type="weekOfMonth-short">
 				<displayName>wk of mo.</displayName>
 			</field>
-			<field type="day">
-				<relative type="-1">yesterday</relative>
-				<relative type="0">today</relative>
-				<relative type="1">tomorrow</relative>
-			</field>
 			<field type="day-narrow">
 				<relativeTime type="future">
+					<relativeTimePattern count="one">in {0} day</relativeTimePattern>
 					<relativeTimePattern count="other">in {0} days</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="one">{0} day ago</relativeTimePattern>
+					<relativeTimePattern count="other">{0} days ago</relativeTimePattern>
 				</relativeTime>
 			</field>
 			<field type="weekdayOfMonth-short">
@@ -334,11 +799,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 					<relativeTimePattern count="other">{0} Wed. ago</relativeTimePattern>
 				</relativeTime>
 			</field>
-			<field type="wed-narrow">
-				<relativeTime type="past">
-					<relativeTimePattern count="one">{0} W ago</relativeTimePattern>
-				</relativeTime>
-			</field>
 			<field type="thu-short">
 				<relativeTime type="future">
 					<relativeTimePattern count="one">in {0} Thu.</relativeTimePattern>
@@ -372,18 +832,22 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<field type="hour-short">
 				<displayName>h</displayName>
 				<relativeTime type="future">
+					<relativeTimePattern count="one">in {0} hr</relativeTimePattern>
 					<relativeTimePattern count="other">in {0} hrs</relativeTimePattern>
 				</relativeTime>
 				<relativeTime type="past">
+					<relativeTimePattern count="one">{0} hr ago</relativeTimePattern>
 					<relativeTimePattern count="other">{0} hrs ago</relativeTimePattern>
 				</relativeTime>
 			</field>
 			<field type="hour-narrow">
 				<displayName>h</displayName>
 				<relativeTime type="future">
+					<relativeTimePattern count="one">in {0} hr</relativeTimePattern>
 					<relativeTimePattern count="other">in {0} hrs</relativeTimePattern>
 				</relativeTime>
 				<relativeTime type="past">
+					<relativeTimePattern count="one">{0} hr ago</relativeTimePattern>
 					<relativeTimePattern count="other">{0} hrs ago</relativeTimePattern>
 				</relativeTime>
 			</field>
@@ -433,21 +897,16 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			</field>
 		</fields>
 		<timeZoneNames>
-			<zone type="America/St_Barthelemy">
-				<exemplarCity>St Barthélemy</exemplarCity>
-			</zone>
+			<gmtZeroFormat>GMT</gmtZeroFormat>
 			<zone type="Asia/Rangoon">
 				<exemplarCity>Rangoon</exemplarCity>
+			</zone>
+			<zone type="Pacific/Johnston">
+				<exemplarCity draft="contributed">Johnston</exemplarCity>
 			</zone>
 			<metazone type="Africa_Eastern">
 				<long>
 					<standard>Eastern Africa Time</standard>
-				</long>
-			</metazone>
-			<metazone type="Amazon">
-				<long>
-					<standard>Amazon Standard Time</standard>
-					<daylight>Amazon Summer Time</daylight>
 				</long>
 			</metazone>
 			<metazone type="Arabian">
@@ -502,6 +961,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			</metazone>
 			<metazone type="China">
 				<long>
+					<generic>China Time</generic>
 					<standard>China Standard Time</standard>
 					<daylight>China Summer Time</daylight>
 				</long>
@@ -511,24 +971,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 					<generic>Cook Island Time</generic>
 					<standard>Cook Island Standard Time</standard>
 					<daylight>Cook Island Summer Time</daylight>
-				</long>
-			</metazone>
-			<metazone type="Europe_Eastern">
-				<long>
-					<standard>Eastern European Standard Time</standard>
-					<daylight>Eastern European Summer Time</daylight>
-				</long>
-			</metazone>
-			<metazone type="Iran">
-				<long>
-					<generic>Iran Time</generic>
-					<standard>Iran Standard Time</standard>
-				</long>
-			</metazone>
-			<metazone type="Israel">
-				<long>
-					<generic>Israel Time</generic>
-					<standard>Israel Standard Time</standard>
 				</long>
 			</metazone>
 			<metazone type="Japan">
@@ -587,13 +1029,37 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<exponential>e</exponential>
 		</symbols>
 		<currencies>
+			<currency type="AED">
+				<symbol draft="contributed">AED</symbol>
+			</currency>
+			<currency type="AFN">
+				<symbol draft="contributed">AFN</symbol>
+			</currency>
+			<currency type="ALL">
+				<symbol draft="contributed">ALL</symbol>
+			</currency>
+			<currency type="AMD">
+				<symbol draft="contributed">AMD</symbol>
+			</currency>
+			<currency type="AOA">
+				<symbol draft="contributed">AOA</symbol>
+			</currency>
+			<currency type="ARS">
+				<symbol draft="contributed">ARS</symbol>
+				<symbol alt="narrow" draft="contributed">$</symbol>
+			</currency>
 			<currency type="AUD">
 				<symbol>$</symbol>
+				<symbol alt="narrow" draft="contributed">$</symbol>
+			</currency>
+			<currency type="AZN">
+				<symbol draft="contributed">AZN</symbol>
 			</currency>
 			<currency type="BAM">
 				<displayName>Bosnia-Herzegovina Convertible Marka</displayName>
 				<displayName count="one">Bosnia-Herzegovina convertible marka</displayName>
 				<displayName count="other">Bosnia-Herzegovina convertible marka</displayName>
+				<symbol draft="contributed">BAM</symbol>
 			</currency>
 			<currency type="BBD">
 				<displayName>Barbados Dollar</displayName>
@@ -601,24 +1067,56 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<displayName count="other">Barbados dollars</displayName>
 			</currency>
 			<currency type="BDT">
+				<symbol draft="contributed">BDT</symbol>
 				<symbol alt="narrow" draft="contributed">Tk</symbol>
+			</currency>
+			<currency type="BGN">
+				<symbol draft="contributed">BGN</symbol>
+			</currency>
+			<currency type="BHD">
+				<symbol draft="contributed">BHD</symbol>
+			</currency>
+			<currency type="BIF">
+				<symbol draft="contributed">BIF</symbol>
 			</currency>
 			<currency type="BMD">
 				<displayName>Bermuda Dollar</displayName>
 				<displayName count="one">Bermuda dollar</displayName>
 				<displayName count="other">Bermuda dollars</displayName>
 			</currency>
+			<currency type="BND">
+				<symbol draft="contributed">BND</symbol>
+				<symbol alt="narrow" draft="contributed">$</symbol>
+			</currency>
 			<currency type="BOB">
 				<displayName>Boliviano</displayName>
 				<displayName count="one">boliviano</displayName>
 				<displayName count="other">bolivianos</displayName>
+				<symbol draft="contributed">BOB</symbol>
 				<symbol alt="narrow" draft="contributed">$b</symbol>
 			</currency>
 			<currency type="BRL">
 				<symbol draft="contributed">BRL</symbol>
+				<symbol alt="narrow" draft="contributed">R$</symbol>
+			</currency>
+			<currency type="BTN">
+				<symbol draft="contributed">BTN</symbol>
+			</currency>
+			<currency type="BWP">
+				<symbol draft="contributed">BWP</symbol>
 			</currency>
 			<currency type="CAD">
 				<symbol draft="contributed">CAD</symbol>
+			</currency>
+			<currency type="CDF">
+				<symbol draft="contributed">CDF</symbol>
+			</currency>
+			<currency type="CHF">
+				<symbol draft="contributed">CHF</symbol>
+			</currency>
+			<currency type="CLP">
+				<symbol draft="contributed">CLP</symbol>
+				<symbol alt="narrow" draft="contributed">$</symbol>
 			</currency>
 			<currency type="CNH">
 				<displayName>CNH</displayName>
@@ -627,17 +1125,49 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			</currency>
 			<currency type="CNY">
 				<symbol draft="contributed">CNY</symbol>
+				<symbol alt="narrow" draft="contributed">¥</symbol>
+			</currency>
+			<currency type="COP">
+				<symbol draft="contributed">COP</symbol>
+				<symbol alt="narrow" draft="contributed">$</symbol>
 			</currency>
 			<currency type="CUP">
 				<symbol alt="narrow" draft="contributed">₱</symbol>
 			</currency>
+			<currency type="CVE">
+				<symbol draft="contributed">CVE</symbol>
+			</currency>
+			<currency type="CZK">
+				<symbol draft="contributed">CZK</symbol>
+			</currency>
+			<currency type="DJF">
+				<symbol draft="contributed">DJF</symbol>
+			</currency>
+			<currency type="DZD">
+				<symbol draft="contributed">DZD</symbol>
+			</currency>
 			<currency type="EGP">
+				<symbol draft="contributed">EGP</symbol>
 				<symbol alt="narrow" draft="contributed">£</symbol>
+			</currency>
+			<currency type="ERN">
+				<symbol draft="contributed">ERN</symbol>
+			</currency>
+			<currency type="ETB">
+				<symbol draft="contributed">ETB</symbol>
 			</currency>
 			<currency type="EUR">
 				<displayName count="one">euro</displayName>
 				<displayName count="other">euro</displayName>
 				<symbol draft="contributed">EUR</symbol>
+				<symbol alt="narrow" draft="contributed">€</symbol>
+			</currency>
+			<currency type="FJD">
+				<symbol draft="contributed">FJD</symbol>
+				<symbol alt="narrow" draft="contributed">$</symbol>
+			</currency>
+			<currency type="FKP">
+				<symbol draft="contributed">FKP</symbol>
 			</currency>
 			<currency type="GBP">
 				<symbol draft="contributed">GBP</symbol>
@@ -645,9 +1175,37 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<currency type="GEL">
 				<displayName count="one">Georgian lari</displayName>
 				<displayName count="other">Georgian lari</displayName>
+				<symbol draft="contributed">GEL</symbol>
+			</currency>
+			<currency type="GHS">
+				<symbol draft="contributed">GHS</symbol>
+			</currency>
+			<currency type="GIP">
+				<symbol draft="contributed">GIP</symbol>
+				<symbol alt="narrow" draft="contributed">£</symbol>
+			</currency>
+			<currency type="GMD">
+				<symbol draft="contributed">GMD</symbol>
+			</currency>
+			<currency type="GNF">
+				<symbol draft="contributed">GNF</symbol>
+			</currency>
+			<currency type="GYD">
+				<symbol draft="contributed">GYD</symbol>
+				<symbol alt="narrow" draft="contributed">$</symbol>
 			</currency>
 			<currency type="HKD">
 				<symbol draft="contributed">HKD</symbol>
+				<symbol alt="narrow" draft="contributed">$</symbol>
+			</currency>
+			<currency type="HRK">
+				<symbol draft="contributed">HRK</symbol>
+			</currency>
+			<currency type="HUF">
+				<symbol draft="contributed">HUF</symbol>
+			</currency>
+			<currency type="IDR">
+				<symbol draft="contributed">IDR</symbol>
 			</currency>
 			<currency type="ILS">
 				<displayName>Israeli Shekel</displayName>
@@ -657,81 +1215,274 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			</currency>
 			<currency type="INR">
 				<symbol draft="contributed">INR</symbol>
+				<symbol alt="narrow" draft="contributed">₹</symbol>
+			</currency>
+			<currency type="IQD">
+				<symbol draft="contributed">IQD</symbol>
+			</currency>
+			<currency type="IRR">
+				<symbol draft="contributed">IRR</symbol>
 			</currency>
 			<currency type="ISK">
+				<symbol draft="contributed">ISK</symbol>
 				<symbol alt="narrow" draft="contributed">Kr</symbol>
+			</currency>
+			<currency type="JOD">
+				<symbol draft="contributed">JOD</symbol>
 			</currency>
 			<currency type="JPY">
 				<symbol draft="contributed">JPY</symbol>
+				<symbol alt="narrow" draft="contributed">¥</symbol>
+			</currency>
+			<currency type="KES">
+				<symbol draft="contributed">KES</symbol>
+			</currency>
+			<currency type="KGS">
+				<symbol draft="contributed">KGS</symbol>
+			</currency>
+			<currency type="KHR">
+				<symbol draft="contributed">KHR</symbol>
+				<symbol alt="narrow" draft="contributed">៛</symbol>
+			</currency>
+			<currency type="KMF">
+				<symbol draft="contributed">KMF</symbol>
+			</currency>
+			<currency type="KPW">
+				<symbol draft="contributed">KPW</symbol>
 			</currency>
 			<currency type="KRW">
 				<symbol draft="contributed">KRW</symbol>
+				<symbol alt="narrow" draft="contributed">₩</symbol>
+			</currency>
+			<currency type="KWD">
+				<symbol draft="contributed">KWD</symbol>
 			</currency>
 			<currency type="KZT">
 				<displayName count="one">Kazakhstani tenge</displayName>
 				<displayName count="other">Kazakhstani tenge</displayName>
+				<symbol draft="contributed">KZT</symbol>
 			</currency>
 			<currency type="LAK">
 				<displayName count="one">Laotian kip</displayName>
 				<displayName count="other">Laotian kip</displayName>
+				<symbol draft="contributed">LAK</symbol>
+				<symbol alt="narrow" draft="contributed">₭</symbol>
+			</currency>
+			<currency type="LBP">
+				<symbol draft="contributed">LBP</symbol>
+			</currency>
+			<currency type="LKR">
+				<symbol draft="contributed">LKR</symbol>
+			</currency>
+			<currency type="LRD">
+				<symbol draft="contributed">LRD</symbol>
+				<symbol alt="narrow" draft="contributed">$</symbol>
+			</currency>
+			<currency type="LSL">
+				<symbol draft="contributed">LSL</symbol>
+			</currency>
+			<currency type="LYD">
+				<symbol draft="contributed">LYD</symbol>
+			</currency>
+			<currency type="MAD">
+				<symbol draft="contributed">MAD</symbol>
+			</currency>
+			<currency type="MDL">
+				<symbol draft="contributed">MDL</symbol>
 			</currency>
 			<currency type="MGA">
-				<displayName count="one">Malagasy ariary</displayName>
+				<symbol draft="contributed">MGA</symbol>
 			</currency>
 			<currency type="MKD">
 				<displayName count="one">Macedonian denar</displayName>
 				<displayName count="other">Macedonian denar</displayName>
+				<symbol draft="contributed">MKD</symbol>
+			</currency>
+			<currency type="MMK">
+				<symbol draft="contributed">MMK</symbol>
+			</currency>
+			<currency type="MNT">
+				<symbol draft="contributed">MNT</symbol>
+				<symbol alt="narrow" draft="contributed">₮</symbol>
+			</currency>
+			<currency type="MOP">
+				<symbol draft="contributed">MOP</symbol>
+			</currency>
+			<currency type="MRO">
+				<symbol draft="contributed">MRO</symbol>
+			</currency>
+			<currency type="MUR">
+				<symbol draft="contributed">MUR</symbol>
+			</currency>
+			<currency type="MVR">
+				<symbol draft="contributed">MVR</symbol>
+			</currency>
+			<currency type="MWK">
+				<symbol draft="contributed">MWK</symbol>
 			</currency>
 			<currency type="MXN">
 				<symbol draft="contributed">MXN</symbol>
 			</currency>
+			<currency type="MYR">
+				<symbol draft="contributed">MYR</symbol>
+			</currency>
+			<currency type="MZN">
+				<symbol draft="contributed">MZN</symbol>
+			</currency>
+			<currency type="NAD">
+				<symbol draft="contributed">NAD</symbol>
+			</currency>
+			<currency type="NGN">
+				<symbol draft="contributed">NGN</symbol>
+				<symbol alt="narrow" draft="contributed">₦</symbol>
+			</currency>
+			<currency type="NOK">
+				<symbol draft="contributed">NOK</symbol>
+			</currency>
+			<currency type="NPR">
+				<symbol draft="contributed">NPR</symbol>
+			</currency>
 			<currency type="NZD">
 				<symbol draft="contributed">NZD</symbol>
+				<symbol alt="narrow" draft="contributed">$</symbol>
+			</currency>
+			<currency type="OMR">
+				<symbol draft="contributed">OMR</symbol>
+			</currency>
+			<currency type="PEN">
+				<symbol draft="contributed">PEN</symbol>
 			</currency>
 			<currency type="PGK">
 				<displayName count="one">Papua New Guinean kina</displayName>
 				<displayName count="other">Papua New Guinean kinas</displayName>
+				<symbol draft="contributed">PGK</symbol>
+			</currency>
+			<currency type="PHP">
+				<symbol draft="contributed">PHP</symbol>
+				<symbol alt="narrow" draft="contributed">₱</symbol>
+			</currency>
+			<currency type="PLN">
+				<symbol draft="contributed">PLN</symbol>
 			</currency>
 			<currency type="PYG">
+				<symbol draft="contributed">PYG</symbol>
 				<symbol alt="narrow" draft="contributed">Gs</symbol>
 			</currency>
 			<currency type="QAR">
 				<displayName>Qatari Riyal</displayName>
 				<displayName count="one">Qatari riyal</displayName>
 				<displayName count="other">Quatari riyals</displayName>
+				<symbol draft="contributed">QAR</symbol>
+			</currency>
+			<currency type="RON">
+				<symbol draft="contributed">RON</symbol>
+			</currency>
+			<currency type="RSD">
+				<symbol draft="contributed">RSD</symbol>
+			</currency>
+			<currency type="RUB">
+				<symbol draft="contributed">RUB</symbol>
+			</currency>
+			<currency type="RWF">
+				<symbol draft="contributed">RWF</symbol>
+			</currency>
+			<currency type="SAR">
+				<symbol draft="contributed">SAR</symbol>
+			</currency>
+			<currency type="SBD">
+				<symbol draft="contributed">SBD</symbol>
+				<symbol alt="narrow" draft="contributed">$</symbol>
 			</currency>
 			<currency type="SCR">
 				<symbol draft="contributed">Rs</symbol>
 			</currency>
+			<currency type="SDG">
+				<symbol draft="contributed">SDG</symbol>
+			</currency>
 			<currency type="SEK">
+				<symbol draft="contributed">SEK</symbol>
 				<symbol alt="narrow" draft="contributed">Kr</symbol>
+			</currency>
+			<currency type="SGD">
+				<symbol draft="contributed">SGD</symbol>
+				<symbol alt="narrow" draft="contributed">$</symbol>
+			</currency>
+			<currency type="SHP">
+				<symbol draft="contributed">SHP</symbol>
+			</currency>
+			<currency type="SLL">
+				<symbol draft="contributed">SLL</symbol>
+			</currency>
+			<currency type="SOS">
+				<symbol draft="contributed">SOS</symbol>
 			</currency>
 			<currency type="SRD">
 				<displayName>Suriname Dollar</displayName>
 				<displayName count="one">Suriname dollar</displayName>
 				<displayName count="other">Suriname dollars</displayName>
+				<symbol draft="contributed">SRD</symbol>
+				<symbol alt="narrow" draft="contributed">$</symbol>
+			</currency>
+			<currency type="SSP">
+				<symbol draft="contributed">SSP</symbol>
+				<symbol alt="narrow" draft="contributed">£</symbol>
+			</currency>
+			<currency type="SYP">
+				<symbol draft="contributed">SYP</symbol>
+			</currency>
+			<currency type="SZL">
+				<symbol draft="contributed">SZL</symbol>
+			</currency>
+			<currency type="THB">
+				<symbol alt="narrow" draft="contributed">฿</symbol>
+			</currency>
+			<currency type="TJS">
+				<symbol draft="contributed">TJS</symbol>
+			</currency>
+			<currency type="TMT">
+				<symbol draft="contributed">TMT</symbol>
+			</currency>
+			<currency type="TND">
+				<symbol draft="contributed">TND</symbol>
+			</currency>
+			<currency type="TOP">
+				<symbol draft="contributed">TOP</symbol>
 			</currency>
 			<currency type="TRY">
 				<displayName count="one">Turkish lira</displayName>
 				<displayName count="other">Turkish lire</displayName>
+				<symbol draft="contributed">TRY</symbol>
 			</currency>
 			<currency type="TWD">
 				<symbol draft="contributed">TWD</symbol>
+			</currency>
+			<currency type="TZS">
+				<symbol draft="contributed">TZS</symbol>
+			</currency>
+			<currency type="UAH">
+				<symbol draft="contributed">UAH</symbol>
+				<symbol alt="narrow" draft="contributed">₴</symbol>
+			</currency>
+			<currency type="UGX">
+				<symbol draft="contributed">UGX</symbol>
 			</currency>
 			<currency type="USD">
 				<symbol draft="contributed">USD</symbol>
 			</currency>
 			<currency type="UYU">
 				<displayName>Peso Uruguayo</displayName>
+				<symbol draft="contributed">UYU</symbol>
 				<symbol alt="narrow" draft="contributed">$U</symbol>
 			</currency>
 			<currency type="UZS">
 				<displayName count="one">Uzbekistani som</displayName>
 				<displayName count="other">Uzbekistani soms</displayName>
+				<symbol draft="contributed">UZS</symbol>
 			</currency>
 			<currency type="VEF">
 				<displayName count="one">Venezuelan bolívar</displayName>
 				<displayName count="other">Venezuelan bolívars</displayName>
+				<symbol draft="contributed">VEF</symbol>
 			</currency>
 			<currency type="VES">
 				<displayName draft="contributed">VES</displayName>
@@ -742,10 +1493,15 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<displayName count="one">Vietnamese dong</displayName>
 				<displayName count="other">Vietnamese dongs</displayName>
 				<symbol draft="contributed">VND</symbol>
+				<symbol alt="narrow" draft="contributed">₫</symbol>
+			</currency>
+			<currency type="VUV">
+				<symbol draft="contributed">VUV</symbol>
 			</currency>
 			<currency type="WST">
 				<displayName count="one">Samoan tala</displayName>
 				<displayName count="other">Samoan talas</displayName>
+				<symbol draft="contributed">WST</symbol>
 			</currency>
 			<currency type="XAF">
 				<symbol draft="contributed">XAF</symbol>
@@ -759,18 +1515,22 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<currency type="XPF">
 				<symbol draft="contributed">CFP</symbol>
 			</currency>
-			<currency type="XXX">
-				<displayName count="other">(unknown currency)</displayName>
+			<currency type="YER">
+				<symbol draft="contributed">YER</symbol>
+			</currency>
+			<currency type="ZAR">
+				<symbol draft="contributed">ZAR</symbol>
+			</currency>
+			<currency type="ZMW">
+				<symbol draft="contributed">ZMW</symbol>
 			</currency>
 		</currencies>
+		<miscPatterns numberSystem="latn">
+			<pattern type="range">{0}–{1}</pattern>
+		</miscPatterns>
 	</numbers>
 	<units>
 		<unitLength type="long">
-			<unit type="concentr-percent">
-				<displayName>per cent</displayName>
-				<unitPattern count="one">{0} per cent</unitPattern>
-				<unitPattern count="other">{0} per cent</unitPattern>
-			</unit>
 			<unit type="concentr-permille">
 				<displayName>per mill</displayName>
 				<unitPattern count="one">{0} per mill</unitPattern>
@@ -788,17 +1548,18 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<displayName>micrometres</displayName>
 			</unit>
 			<unit type="mass-metric-ton">
-				<displayName>tonnes</displayName>
 				<unitPattern count="one">tonne</unitPattern>
 				<unitPattern count="other">{0} tonnes</unitPattern>
-			</unit>
-			<unit type="mass-stone">
-				<unitPattern count="one">{0} stone</unitPattern>
 			</unit>
 			<unit type="temperature-generic">
 				<displayName>degrees</displayName>
 				<unitPattern count="one">{0} degree</unitPattern>
 				<unitPattern count="other">{0} degrees</unitPattern>
+			</unit>
+			<unit type="volume-fluid-ounce">
+				<displayName draft="contributed">fluid ounces</displayName>
+				<unitPattern count="one" draft="contributed">{0} fluid ounce</unitPattern>
+				<unitPattern count="other" draft="contributed">{0} fluid ounces</unitPattern>
 			</unit>
 		</unitLength>
 		<unitLength type="short">
@@ -816,9 +1577,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<unitPattern count="one">{0} arcsec.</unitPattern>
 				<unitPattern count="other">{0} arcsec.</unitPattern>
 			</unit>
-			<unit type="area-square-meter">
-				<unitPattern count="other">{0} m²</unitPattern>
-			</unit>
 			<unit type="concentr-milligram-per-deciliter">
 				<displayName>mg/dL</displayName>
 				<unitPattern count="one">{0} mg/dL</unitPattern>
@@ -827,9 +1585,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<unit type="concentr-millimole-per-liter">
 				<unitPattern count="one">{0} mmol/L</unitPattern>
 				<unitPattern count="other">{0} mmol/L</unitPattern>
-			</unit>
-			<unit type="concentr-percent">
-				<displayName>per cent</displayName>
 			</unit>
 			<unit type="concentr-permille">
 				<displayName>per mill</displayName>
@@ -907,6 +1662,14 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<unitPattern count="one">{0} CM</unitPattern>
 				<unitPattern count="other">{0} CM</unitPattern>
 			</unit>
+			<unit type="pressure-millimeter-of-mercury">
+				<displayName draft="contributed">mm Hg</displayName>
+				<unitPattern count="one" draft="contributed">{0} mm Hg</unitPattern>
+				<unitPattern count="other" draft="contributed">{0} mm Hg</unitPattern>
+			</unit>
+			<unit type="pressure-inch-hg">
+				<displayName draft="contributed">in Hg</displayName>
+			</unit>
 			<unit type="pressure-millibar">
 				<displayName>mb</displayName>
 				<unitPattern count="one">{0} mb</unitPattern>
@@ -923,12 +1686,8 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			</unit>
 			<unit type="temperature-generic">
 				<displayName>deg.</displayName>
-			</unit>
-			<unit type="volume-cubic-centimeter">
-				<unitPattern count="one">{0} cm³</unitPattern>
-			</unit>
-			<unit type="volume-cubic-mile">
-				<unitPattern count="one">{0} mi³</unitPattern>
+				<unitPattern count="one" draft="contributed">{0}°</unitPattern>
+				<unitPattern count="other" draft="contributed">{0}°</unitPattern>
 			</unit>
 			<unit type="volume-megaliter">
 				<displayName>ML</displayName>
@@ -976,8 +1735,16 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<unitPattern count="other">{0} gal.</unitPattern>
 				<perUnitPattern>{0}/gal.</perUnitPattern>
 			</unit>
+			<unit type="volume-fluid-ounce">
+				<displayName draft="contributed">fl oz</displayName>
+				<unitPattern count="one" draft="contributed">{0} fl oz</unitPattern>
+				<unitPattern count="other" draft="contributed">{0} fl oz</unitPattern>
+			</unit>
 		</unitLength>
 		<unitLength type="narrow">
+			<compoundUnit type="per">
+				<compoundUnitPattern draft="contributed">{0}/{1}</compoundUnitPattern>
+			</compoundUnit>
 			<unit type="concentr-milligram-per-deciliter">
 				<displayName>mg/dL</displayName>
 				<unitPattern count="one">{0}mg/dL</unitPattern>
@@ -998,9 +1765,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<unitPattern count="one">{0}L/100km</unitPattern>
 				<unitPattern count="other">{0}L/100km</unitPattern>
 			</unit>
-			<unit type="duration-year">
-				<unitPattern count="one">{0}y</unitPattern>
-			</unit>
 			<unit type="duration-minute">
 				<displayName>min.</displayName>
 				<unitPattern count="one">{0}min.</unitPattern>
@@ -1013,8 +1777,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			</unit>
 			<unit type="duration-millisecond">
 				<displayName>msec.</displayName>
-				<unitPattern count="one">{0}ms</unitPattern>
-				<unitPattern count="other">{0}ms</unitPattern>
 			</unit>
 			<unit type="speed-kilometer-per-hour">
 				<unitPattern count="one">{0} km/h</unitPattern>
@@ -1064,19 +1826,16 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<unitPattern count="other">{0} bus.</unitPattern>
 			</unit>
 		</unitLength>
+		<durationUnit type="hm">
+			<durationUnitPattern>h:mm</durationUnitPattern>
+		</durationUnit>
+		<durationUnit type="hms">
+			<durationUnitPattern>h:mm:ss</durationUnitPattern>
+		</durationUnit>
+		<durationUnit type="ms">
+			<durationUnitPattern>m:ss</durationUnitPattern>
+		</durationUnit>
 	</units>
-	<listPatterns>
-		<listPattern>
-			<listPatternPart type="end">{0} and {1}</listPatternPart>
-		</listPattern>
-		<listPattern type="or">
-			<listPatternPart type="end">{0} or {1}</listPatternPart>
-		</listPattern>
-		<listPattern type="standard-short">
-			<listPatternPart type="end">{0} and {1}</listPatternPart>
-			<listPatternPart type="2" draft="provisional">{0} and {1}</listPatternPart>
-		</listPattern>
-	</listPatterns>
 	<characterLabels>
 		<characterLabel type="downwards_arrows">downward arrow</characterLabel>
 		<characterLabel type="downwards_upwards_arrows">downward upward arrow</characterLabel>

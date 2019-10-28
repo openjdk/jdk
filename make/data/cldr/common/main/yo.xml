@@ -7,7 +7,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 -->
 <ldml>
 	<identity>
-		<version number="$Revision: 14817 $"/>
+		<version number="$Revision$"/>
 		<language type="yo"/>
 	</identity>
 	<localeDisplayNames>
@@ -20,7 +20,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<language type="af">Èdè Afrikani</language>
 			<language type="ak">Èdè Akani</language>
 			<language type="am">Èdè Amariki</language>
-			<language type="ar">Èdè Arabiki</language>
+			<language type="ar">Èdè Árábìkì</language>
 			<language type="as">Ti Assam</language>
 			<language type="az">Èdè Azerbaijani</language>
 			<language type="be">Èdè Belarusi</language>
@@ -32,30 +32,29 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<language type="cs">Èdè seeki</language>
 			<language type="cy">Èdè Welshi</language>
 			<language type="da">Èdè Ilẹ̀ Denmark</language>
-			<language type="de">Èdè Ilẹ̀ Jámánì</language>
-			<language type="de_AT">Èdè Ilẹ̀ Jámánì orílẹ̀-èdè Ọ́síríà )</language>
+			<language type="de">Èdè Jámánì</language>
+			<language type="de_AT">Èdè Jámánì (Ọ́síríà )</language>
 			<language type="de_CH">Èdè Ilẹ̀ Jámánì (Orílẹ́ède swítsàlandì)</language>
 			<language type="el">Èdè Giriki</language>
 			<language type="en">Èdè Gẹ̀ẹ́sì</language>
 			<language type="en_AU">Èdè Gẹ̀ẹ́sì (órílẹ̀-èdè Ọsirélíà)</language>
 			<language type="en_CA">Èdè Gẹ̀ẹ́sì (Orílẹ̀-èdè Kánádà)</language>
 			<language type="en_GB">Èdè òyìnbó Gẹ̀ẹ́sì</language>
-			<language type="en_GB" alt="short">Èdè Gẹ̀ẹ́sì (GB)</language>
-			<language type="en_US" alt="short">Èdè Gẹ̀ẹ́sì (US)</language>
 			<language type="eo">Èdè Esperanto</language>
 			<language type="es">Èdè Sípáníìṣì</language>
-			<language type="es_419">Èdè Sípáníìṣì (orílẹ̀-èdè Látìn-Amẹ́ríkà)</language>
+			<language type="es_419">Èdè Sípáníìṣì (orílẹ̀-èdè Látìn-Amẹ́ríkà) ( Èdè Sípáníìshì (Látìn-Amẹ́ríkà)</language>
 			<language type="es_ES">Èdè Sípáníìṣì (orílẹ̀-èdè Yúróòpù)</language>
 			<language type="es_MX">Èdè Sípáníìṣì (orílẹ̀-èdè Mẹ́síkò)</language>
 			<language type="et">Èdè Estonia</language>
 			<language type="eu">Èdè Baski</language>
 			<language type="fa">Èdè Pasia</language>
+			<language type="ff">Èdè Fúlàní</language>
 			<language type="fi">Èdè Finisi</language>
 			<language type="fil">Èdè Filipino</language>
 			<language type="fo">Èdè Faroesi</language>
 			<language type="fr">Èdè Faransé</language>
 			<language type="fr_CA">Èdè Faransé (orílẹ̀-èdè Kánádà)</language>
-			<language type="fr_CH">Èdè Faransé (orílẹ̀-èdè swítsàlandì)</language>
+			<language type="fr_CH">Èdè Faranṣé (Súwísàlaǹdì)</language>
 			<language type="fy">Èdè Frisia</language>
 			<language type="ga">Èdè Ireland</language>
 			<language type="gd">Èdè Gaelik ti Ilu Scotland</language>
@@ -64,22 +63,22 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<language type="gu">Èdè Gujarati</language>
 			<language type="ha">Èdè Hausa</language>
 			<language type="he">Èdè Heberu</language>
-			<language type="hi">Èdè Hindi</language>
+			<language type="hi">Èdè Híńdì</language>
 			<language type="hr">Èdè Kroatia</language>
 			<language type="hu">Èdè Hungaria</language>
 			<language type="hy">Èdè Ile Armenia</language>
 			<language type="ia">Èdè pipo</language>
-			<language type="id">Èdè Indonasia</language>
+			<language type="id">Èdè Indonéṣíà</language>
 			<language type="ie">Iru Èdè</language>
-			<language type="ig">Èdè Ibo</language>
+			<language type="ig">Èdè Yíbò</language>
 			<language type="is">Èdè Icelandic</language>
-			<language type="it">Èdè ilẹ̀ Ítálì</language>
-			<language type="ja">Èdè ilẹ̀ Japan</language>
+			<language type="it">Èdè Ítálì</language>
+			<language type="ja">Èdè Jàpáànù</language>
 			<language type="jv">Èdè Javanasi</language>
 			<language type="ka">Èdè Georgia</language>
 			<language type="km">Èdè kameri</language>
 			<language type="kn">Èdè Kannada</language>
-			<language type="ko">Èdè Koria</language>
+			<language type="ko">Èdè Kòríà</language>
 			<language type="la">Èdè Latini</language>
 			<language type="lt">Èdè Lithuania</language>
 			<language type="lv">Èdè Latvianu</language>
@@ -89,16 +88,16 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<language type="mt">Èdè Malta</language>
 			<language type="my">Èdè Bumiisi</language>
 			<language type="ne">Èdè Nepali</language>
-			<language type="nl">Èdè Duki</language>
+			<language type="nl">Èdè Dọ́ọ̀ṣì</language>
 			<language type="no">Èdè Norway</language>
 			<language type="oc">Èdè Occitani</language>
 			<language type="pa">Èdè Punjabi</language>
-			<language type="pl">Èdè Ilẹ̀ Polandi</language>
+			<language type="pl">Èdè Póláǹdì</language>
 			<language type="pt">Èdè Pọtogí</language>
 			<language type="pt_BR">Èdè Pọtogí (Orilẹ̀-èdè Bràsíl)</language>
 			<language type="pt_PT">Èdè Pọtogí (orílẹ̀-èdè Yúróòpù)</language>
 			<language type="ro">Èdè Romania</language>
-			<language type="ru">Èdè Rọsià</language>
+			<language type="ru">Èdè Rọ́ṣíà</language>
 			<language type="rw">Èdè Ruwanda</language>
 			<language type="sa">Èdè awon ara Indo</language>
 			<language type="sd">Èdè Sindhi</language>
@@ -129,6 +128,8 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<language type="yi">Èdè Yiddishi</language>
 			<language type="yo">Èdè Yorùbá</language>
 			<language type="zh">Èdè Mandarin tí wọ́n ń sọ lórílẹ̀-èdè Ṣáínà</language>
+			<language type="zh" alt="menu">Ṣáídà, Mandrínì</language>
+			<language type="zh_Hant" draft="provisional">Èdè Ìbílẹ̀ Ṣáínà</language>
 			<language type="zu">Èdè Ṣulu</language>
 		</languages>
 		<scripts>
@@ -138,11 +139,36 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<script type="Hans" alt="stand-alone">Hans tí wọ́n mú rọrùn.</script>
 			<script type="Hant">Hans àtọwọ́dọ́wọ́</script>
 			<script type="Hant" alt="stand-alone">Hans àtọwọ́dọ́wọ́</script>
+			<script type="Jpan">èdè jàpáànù</script>
+			<script type="Kore">Kóríà</script>
 			<script type="Latn">Èdè Látìn</script>
 			<script type="Zxxx">Aikọsilẹ</script>
-			<script type="Zzzz">ọ̀nà ìgbàkọ̀wé àìmọ̀</script>
+			<script type="Zzzz">Ìṣọwọ́kọ̀wé àìmọ̀</script>
 		</scripts>
 		<territories>
+			<territory type="003">Àríwá Amẹ́ríkà</territory>
+			<territory type="005">Gúúṣù Amẹ́ríkà</territory>
+			<territory type="011">Ìwọ̀ oorùn Afíríkà</territory>
+			<territory type="013">Ààrin Gbùgbùn Àmẹ́ríkà</territory>
+			<territory type="014">Ìlà Oorùn Áfíríkà</territory>
+			<territory type="017">Ààrín gbùngbùn Afíríkà</territory>
+			<territory type="018">Apágúúsù Áfíríkà</territory>
+			<territory type="021">Apáàríwá Amẹ́ríkà</territory>
+			<territory type="029">Káríbíànù</territory>
+			<territory type="030">Ìlà Òòrùn Eṣíà</territory>
+			<territory type="034">Gúúṣù Eṣíà</territory>
+			<territory type="035">Gúúṣù ìlà òòrùn Éṣíà</territory>
+			<territory type="039">Gúúṣù Yúróòpù</territory>
+			<territory type="053">Ọṣirélaṣíà</territory>
+			<territory type="054">Mẹlanéṣíà</territory>
+			<territory type="057">Agbègbè Maikironéṣíà</territory>
+			<territory type="061">Polineṣíà</territory>
+			<territory type="143">Ààrin Gbùngbùn Éṣíà</territory>
+			<territory type="145">Ìwọ̀ Òòrùn Eṣíà</territory>
+			<territory type="151">Ìlà Òrùn Yúrópù</territory>
+			<territory type="154">Northern Europe</territory>
+			<territory type="155">Ìwọ̀ Òòrùn Yúrópù</territory>
+			<territory type="419">Látín Amẹ́ríkà</territory>
 			<territory type="AD">Orílẹ́ède Ààndórà</territory>
 			<territory type="AE">Orílẹ́ède Ẹmirate ti Awọn Arabu</territory>
 			<territory type="AF">Orílẹ́ède Àfùgànístánì</territory>
@@ -200,9 +226,11 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<territory type="EC">Orílẹ́ède Ekuádò</territory>
 			<territory type="EE">Orílẹ́ède Esitonia</territory>
 			<territory type="EG">Orílẹ́ède Égípítì</territory>
+			<territory type="EH">Ìwọ̀òòrùn Sàhárà</territory>
 			<territory type="ER">Orílẹ́ède Eritira</territory>
 			<territory type="ES">Orílẹ́ède Sipani</territory>
 			<territory type="ET">Orílẹ́ède Etopia</territory>
+			<territory type="EU">Ìṣọ̀kan Yúròpù</territory>
 			<territory type="FI">Orílẹ́ède Filandi</territory>
 			<territory type="FJ">Orílẹ́ède Fiji</territory>
 			<territory type="FK">Orílẹ́ède Etikun Fakalandi</territory>
@@ -268,10 +296,11 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<territory type="MD">Orílẹ́ède Modofia</territory>
 			<territory type="MG">Orílẹ́ède Madasika</territory>
 			<territory type="MH">Orílẹ́ède Etikun Máṣali</territory>
-			<territory type="MK">Orílẹ́ède Masidonia</territory>
+			<territory type="MK">Àríwá Macedonia</territory>
 			<territory type="ML">Orílẹ́ède Mali</territory>
 			<territory type="MM">Orílẹ́ède Manamari</territory>
 			<territory type="MN">Orílẹ́ède Mogolia</territory>
+			<territory type="MO" alt="short">Màkáò</territory>
 			<territory type="MP">Orílẹ́ède Etikun Guusu Mariana</territory>
 			<territory type="MQ">Orílẹ́ède Matinikuwi</territory>
 			<territory type="MR">Orílẹ́ède Maritania</territory>
@@ -306,8 +335,9 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<territory type="PM">Orílẹ́ède Pẹẹri ati mikuloni</territory>
 			<territory type="PN">Orílẹ́ède Pikarini</territory>
 			<territory type="PR">Orílẹ́ède Pọto Riko</territory>
-			<territory type="PS">Orílẹ́ède Iwọorun Pakisitian ati Gaṣa</territory>
-			<territory type="PT">Orílẹ́ède Pọtugi</territory>
+			<territory type="PS">Agbègbè Palẹsítíànù</territory>
+			<territory type="PS" alt="short">Palẹsitín</territory>
+			<territory type="PT">Orílẹ́ède Pọ́túgà</territory>
 			<territory type="PW">Orílẹ́ède Paalu</territory>
 			<territory type="PY">Orílẹ́ède Paraguye</territory>
 			<territory type="QA">Orílẹ́ède Kota</territory>
@@ -329,18 +359,21 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<territory type="SN">Orílẹ́ède Sẹnẹga</territory>
 			<territory type="SO">Orílẹ́ède Somalia</territory>
 			<territory type="SR">Orílẹ́ède Surinami</territory>
-			<territory type="SS" draft="provisional">Gúúsù Sudan</territory>
+			<territory type="SS">Gúúsù Sudan</territory>
 			<territory type="ST">Orílẹ́ède Sao tomi ati piriiṣipi</territory>
 			<territory type="SV">Orílẹ́ède Ẹẹsáfádò</territory>
 			<territory type="SY">Orílẹ́ède Siria</territory>
 			<territory type="SZ">Orílẹ́ède Saṣiland</territory>
+			<territory type="SZ" alt="variant">Síwásìlandì</territory>
 			<territory type="TC">Orílẹ́ède Tọọki ati Etikun Kakọsi</territory>
 			<territory type="TD">Orílẹ́ède ṣààdì</territory>
+			<territory type="TF">Agbègbè Gúúsù Faranṣé</territory>
 			<territory type="TG">Orílẹ́ède Togo</territory>
 			<territory type="TH">Orílẹ́ède Tailandi</territory>
 			<territory type="TJ">Orílẹ́ède Takisitani</territory>
 			<territory type="TK">Orílẹ́ède Tokelau</territory>
 			<territory type="TL">Orílẹ́ède ÌlàOòrùn Tímọ̀</territory>
+			<territory type="TL" alt="variant">Ìlà Òòrùn Tímọ̀</territory>
 			<territory type="TM">Orílẹ́ède Tọọkimenisita</territory>
 			<territory type="TN">Orílẹ́ède Tuniṣia</territory>
 			<territory type="TO">Orílẹ́ède Tonga</territory>
@@ -348,9 +381,10 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<territory type="TT">Orílẹ́ède Tirinida ati Tobaga</territory>
 			<territory type="TV">Orílẹ́ède Tufalu</territory>
 			<territory type="TW">Orílẹ́ède Taiwani</territory>
-			<territory type="TZ">Orílẹ́ède Tanṣania</territory>
+			<territory type="TZ">Orílẹ́ède Tàǹsáníà</territory>
 			<territory type="UA">Orílẹ́ède Ukarini</territory>
 			<territory type="UG">Orílẹ́ède Uganda</territory>
+			<territory type="UN">Ìṣọ̀kan àgbáyé</territory>
 			<territory type="US">Orílẹ̀-èdè Amẹrikà</territory>
 			<territory type="UY">Orílẹ́ède Nruguayi</territory>
 			<territory type="UZ">Orílẹ́ède Nṣibẹkisitani</territory>
@@ -363,15 +397,17 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<territory type="VU">Orílẹ́ède Faniatu</territory>
 			<territory type="WF">Orílẹ́ède Wali ati futuna</territory>
 			<territory type="WS">Orílẹ́ède Samọ</territory>
+			<territory type="XK">Kòsófò</territory>
 			<territory type="YE">Orílẹ́ède yemeni</territory>
 			<territory type="YT">Orílẹ́ède Mayote</territory>
-			<territory type="ZA">Orílẹ́ède Ariwa Afirika</territory>
+			<territory type="ZA">Gúúṣù Áfíríkà</territory>
 			<territory type="ZM">Orílẹ́ède ṣamibia</territory>
 			<territory type="ZW">Orílẹ́ède ṣimibabe</territory>
 			<territory type="ZZ">Àgbègbè àìmọ̀</territory>
 		</territories>
 		<types>
 			<type key="calendar" type="gregorian">Kàlẹ́ńdà Gregory</type>
+			<type key="calendar" type="iso8601">Kàlẹ́ńdà ISO-8601</type>
 			<type key="collation" type="standard">Ìlànà Onírúurú Ètò</type>
 			<type key="numbers" type="latn">Díjíítì Ìwọ̀ Oòrùn</type>
 		</types>
@@ -382,7 +418,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 		</measurementSystemNames>
 		<codePatterns>
 			<codePattern type="language">Èdè: {0}</codePattern>
-			<codePattern type="script">ọ̀nà ìgbàkọ̀wé: {0}</codePattern>
+			<codePattern type="script">Ìṣọwọ́kọ̀wé: {0}</codePattern>
 			<codePattern type="territory">Àgbègbè: {0}</codePattern>
 		</codePatterns>
 	</localeDisplayNames>
@@ -390,8 +426,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 		<exemplarCharacters>[a á à b d e é è ẹ {ẹ\u0301} {ẹ\u0300} f g {gb} h i í ì j k l m n o ó ò ọ {ọ\u0301} {ọ\u0300} p r s ṣ t u ú ù w y]</exemplarCharacters>
 		<exemplarCharacters type="auxiliary">[c q v x z]</exemplarCharacters>
 		<exemplarCharacters type="index">[A B D E F G H I J K L M N O P R S T U W Y]</exemplarCharacters>
-		<exemplarCharacters type="numbers" draft="contributed">[\- , . % ‰ + 0 1 2 3 4 5 6 7 8 9]</exemplarCharacters>
-		<exemplarCharacters type="punctuation" draft="contributed">[\- ‐ – — , ; \: ! ? . … ' ‘ ’ &quot; “ ” ( ) @ * / \&amp; # † ‡ ′ ″]</exemplarCharacters>
+		<exemplarCharacters type="punctuation" draft="contributed">[\- ‐ ‑ – — , ; \: ! ? . … ' ‘ ’ &quot; “ ” ( ) @ * / \&amp; # † ‡ ′ ″]</exemplarCharacters>
 	</characters>
 	<delimiters>
 		<quotationStart>“</quotationStart>
@@ -427,12 +462,12 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<dateTimeFormats>
 					<dateTimeFormatLength type="full">
 						<dateTimeFormat>
-							<pattern>{1} {0}</pattern>
+							<pattern>{1} 'ní' {0}</pattern>
 						</dateTimeFormat>
 					</dateTimeFormatLength>
 					<dateTimeFormatLength type="long">
 						<dateTimeFormat>
-							<pattern>{1} {0}</pattern>
+							<pattern>{1} 'ní' {0}</pattern>
 						</dateTimeFormat>
 					</dateTimeFormatLength>
 					<dateTimeFormatLength type="medium">
@@ -604,15 +639,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 						</dayWidth>
 					</dayContext>
 					<dayContext type="stand-alone">
-						<dayWidth type="abbreviated">
-							<day type="sun">Àìk</day>
-							<day type="mon">Aj</day>
-							<day type="tue">Ìsẹ́g</day>
-							<day type="wed">Ọjọ́r</day>
-							<day type="thu">Ọjọ́b</day>
-							<day type="fri">Ẹt</day>
-							<day type="sat">Àbám</day>
-						</dayWidth>
 						<dayWidth type="narrow">
 							<day type="sun">À</day>
 							<day type="mon">A</day>
@@ -644,12 +670,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				</days>
 				<quarters>
 					<quarterContext type="format">
-						<quarterWidth type="abbreviated">
-							<quarter type="1">Ìdámẹ́rin kíní</quarter>
-							<quarter type="2">Ìdámẹ́rin Kejì</quarter>
-							<quarter type="3">Ìdámẹ́rin Kẹta</quarter>
-							<quarter type="4">Ìdámẹ́rin Kẹrin</quarter>
-						</quarterWidth>
 						<quarterWidth type="narrow">
 							<quarter type="1">kíní</quarter>
 							<quarter type="2">Kejì</quarter>
@@ -664,12 +684,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 						</quarterWidth>
 					</quarterContext>
 					<quarterContext type="stand-alone">
-						<quarterWidth type="abbreviated">
-							<quarter type="1">Ìdámẹ́rin kíní</quarter>
-							<quarter type="2">Ìdámẹ́rin Kejì</quarter>
-							<quarter type="3">Ìdámẹ́rin Kẹta</quarter>
-							<quarter type="4">Ìdámẹ́rin Kẹrin</quarter>
-						</quarterWidth>
 						<quarterWidth type="narrow">
 							<quarter type="1">kí</quarter>
 							<quarter type="2">Ke</quarter>
@@ -723,7 +737,9 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 					</eraNames>
 					<eraAbbr>
 						<era type="0">BCE</era>
-						<era type="1">CE</era>
+						<era type="0" alt="variant">BCE</era>
+						<era type="1">AD</era>
+						<era type="1" alt="variant">CE</era>
 					</eraAbbr>
 				</eras>
 				<dateFormats>
@@ -792,13 +808,8 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 						</dateTimeFormat>
 					</dateTimeFormatLength>
 					<availableFormats>
-						<dateFormatItem id="Bh">h B</dateFormatItem>
-						<dateFormatItem id="Bhm">h:mm B</dateFormatItem>
-						<dateFormatItem id="Bhms">h:mm:ss B</dateFormatItem>
 						<dateFormatItem id="d">d</dateFormatItem>
 						<dateFormatItem id="E">ccc</dateFormatItem>
-						<dateFormatItem id="EBhm">E h:mm B</dateFormatItem>
-						<dateFormatItem id="EBhms">E h:mm:ss B</dateFormatItem>
 						<dateFormatItem id="Ed">E, d</dateFormatItem>
 						<dateFormatItem id="Ehm">E h:mm a</dateFormatItem>
 						<dateFormatItem id="EHm">E HH:mm</dateFormatItem>
@@ -945,20 +956,11 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			</field>
 			<field type="year">
 				<displayName>Ọdún</displayName>
-				<relative type="-1">ọ́dún tó kọjá</relative>
-				<relative type="0">ọ́dún yìí</relative>
-				<relative type="1">ọ́dún tó ń bọ̀</relative>
-			</field>
-			<field type="year-short">
-				<displayName>Ọdún</displayName>
-			</field>
-			<field type="year-narrow">
-				<displayName>Ọdún</displayName>
+				<relative type="-1">Èṣín</relative>
+				<relative type="0">Ọdúnǹí</relative>
+				<relative type="1">Àmọ́dún</relative>
 			</field>
 			<field type="quarter">
-				<displayName>Ìdá mẹ́rin</displayName>
-			</field>
-			<field type="quarter-short">
 				<displayName>Ìdá mẹ́rin</displayName>
 			</field>
 			<field type="quarter-narrow">
@@ -970,11 +972,8 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<relative type="0">oṣù yìí</relative>
 				<relative type="1">óṣù tó ń bọ̀,</relative>
 			</field>
-			<field type="month-short">
-				<displayName>Osù</displayName>
-			</field>
 			<field type="month-narrow">
-				<displayName>Osù</displayName>
+				<displayName>Oṣù</displayName>
 			</field>
 			<field type="week">
 				<displayName>Ọ̀sẹ̀</displayName>
@@ -983,10 +982,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<relative type="1">ọ́sẹ̀ tó ń bọ̀</relative>
 			</field>
 			<field type="week-short">
-				<displayName>Ọ̀sẹ̀</displayName>
-			</field>
-			<field type="week-narrow">
-				<displayName>Ọ̀sẹ̀</displayName>
+				<relativePeriod>ọ̀ṣẹ̀ {0}</relativePeriod>
 			</field>
 			<field type="day">
 				<displayName>Ọjọ́</displayName>
@@ -995,18 +991,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<relative type="0">Òní</relative>
 				<relative type="1">Ọ̀la</relative>
 				<relative type="2">òtúùnla</relative>
-			</field>
-			<field type="day-short">
-				<displayName>Ọjọ́</displayName>
-				<relative type="-1">Àná</relative>
-				<relative type="0">Òní</relative>
-				<relative type="1">Ọ̀la</relative>
-			</field>
-			<field type="day-narrow">
-				<displayName>Ọjọ́</displayName>
-				<relative type="-1">Àná</relative>
-				<relative type="0">Òní</relative>
-				<relative type="1">Ọ̀la</relative>
 			</field>
 			<field type="weekday">
 				<displayName>Ọjọ́ tó wà láàárín ọ̀sẹ̀</displayName>
@@ -1022,19 +1006,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<field type="hour">
 				<displayName>Wákàtí</displayName>
 			</field>
-			<field type="hour-short">
-				<displayName>Wákàtí</displayName>
-			</field>
-			<field type="hour-narrow">
-				<displayName>Wákàtí</displayName>
-			</field>
 			<field type="minute">
-				<displayName>Ìsẹ́jú</displayName>
-			</field>
-			<field type="minute-short">
-				<displayName>Ìsẹ́jú</displayName>
-			</field>
-			<field type="minute-narrow">
 				<displayName>Ìsẹ́jú</displayName>
 			</field>
 			<field type="second">
@@ -1054,7 +1026,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<hourFormat>+HH:mm;-HH:mm</hourFormat>
 			<gmtFormat>WAT{0}</gmtFormat>
 			<gmtZeroFormat>WAT</gmtZeroFormat>
-			<regionFormat>{0} Ìgbà</regionFormat>
+			<regionFormat>Ìgbà {0}</regionFormat>
 			<regionFormat type="daylight">{0} Àkókò ojúmọmọ</regionFormat>
 			<regionFormat type="standard">{0} Ìlànà Àkókò</regionFormat>
 			<fallbackFormat>{1} ({0})</fallbackFormat>
@@ -1066,9 +1038,57 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<zone type="Etc/Unknown">
 				<exemplarCity>Ìlú Àìmọ̀</exemplarCity>
 			</zone>
-			<zone type="Africa/Lagos">
-				<exemplarCity>Lagos</exemplarCity>
+			<zone type="Europe/London">
+				<long>
+					<daylight>British Summer Time</daylight>
+				</long>
 			</zone>
+			<zone type="Europe/Dublin">
+				<long>
+					<daylight>Irish Standard Time</daylight>
+				</long>
+			</zone>
+			<metazone type="Afghanistan">
+				<long>
+					<standard>Afghanistan Time</standard>
+				</long>
+			</metazone>
+			<metazone type="Africa_Central">
+				<long>
+					<standard>Central Africa Time</standard>
+				</long>
+			</metazone>
+			<metazone type="Africa_Eastern">
+				<long>
+					<standard>East Africa Time</standard>
+				</long>
+			</metazone>
+			<metazone type="Africa_Southern">
+				<long>
+					<standard>South Africa Standard Time</standard>
+				</long>
+			</metazone>
+			<metazone type="Africa_Western">
+				<long>
+					<generic>West Africa Time</generic>
+					<standard>West Africa Standard Time</standard>
+					<daylight>West Africa Summer Time</daylight>
+				</long>
+			</metazone>
+			<metazone type="Alaska">
+				<long>
+					<generic>Alaska Time</generic>
+					<standard>Alaska Standard Time</standard>
+					<daylight>Alaska Daylight Time</daylight>
+				</long>
+			</metazone>
+			<metazone type="Amazon">
+				<long>
+					<generic>Amazon Time</generic>
+					<standard>Amazon Standard Time</standard>
+					<daylight>Amazon Summer Time</daylight>
+				</long>
+			</metazone>
 			<metazone type="America_Central">
 				<long>
 					<generic>àkókò àárín gbùngbùn</generic>
@@ -1097,11 +1117,196 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 					<daylight>Àkókò Ìyálẹta Pàsífíìkì</daylight>
 				</long>
 			</metazone>
+			<metazone type="Apia">
+				<long>
+					<generic>Apia Time</generic>
+					<standard>Apia Standard Time</standard>
+					<daylight>Apia Daylight Time</daylight>
+				</long>
+			</metazone>
+			<metazone type="Arabian">
+				<long>
+					<generic>Arabian Time</generic>
+					<standard>Arabian Standard Time</standard>
+					<daylight>Arabian Daylight Time</daylight>
+				</long>
+			</metazone>
+			<metazone type="Argentina">
+				<long>
+					<generic>Argentina Time</generic>
+					<standard>Argentina Standard Time</standard>
+					<daylight>Argentina Summer Time</daylight>
+				</long>
+			</metazone>
+			<metazone type="Argentina_Western">
+				<long>
+					<generic>Western Argentina Time</generic>
+					<standard>Western Argentina Standard Time</standard>
+					<daylight>Western Argentina Summer Time</daylight>
+				</long>
+			</metazone>
+			<metazone type="Armenia">
+				<long>
+					<generic>Armenia Time</generic>
+					<standard>Armenia Standard Time</standard>
+					<daylight>Armenia Summer Time</daylight>
+				</long>
+			</metazone>
 			<metazone type="Atlantic">
 				<long>
 					<generic>Àkókò Àtìláńtíìkì</generic>
 					<standard>Àkókò àsikò Àtìláńtíìkì</standard>
 					<daylight>Àkókò Ìyálẹta Àtìláńtíìkì</daylight>
+				</long>
+			</metazone>
+			<metazone type="Australia_Central">
+				<long>
+					<generic>Central Australia Time</generic>
+					<standard>Australian Central Standard Time</standard>
+					<daylight>Australian Central Daylight Time</daylight>
+				</long>
+			</metazone>
+			<metazone type="Australia_CentralWestern">
+				<long>
+					<generic>Australian Central Western Time</generic>
+					<standard>Australian Central Western Standard Time</standard>
+					<daylight>Australian Central Western Daylight Time</daylight>
+				</long>
+			</metazone>
+			<metazone type="Australia_Eastern">
+				<long>
+					<generic>Eastern Australia Time</generic>
+					<standard>Australian Eastern Standard Time</standard>
+					<daylight>Australian Eastern Daylight Time</daylight>
+				</long>
+			</metazone>
+			<metazone type="Australia_Western">
+				<long>
+					<generic>Western Australia Time</generic>
+					<standard>Australian Western Standard Time</standard>
+					<daylight>Australian Western Daylight Time</daylight>
+				</long>
+			</metazone>
+			<metazone type="Azerbaijan">
+				<long>
+					<generic>Azerbaijan Time</generic>
+					<standard>Azerbaijan Standard Time</standard>
+					<daylight>Azerbaijan Summer Time</daylight>
+				</long>
+			</metazone>
+			<metazone type="Azores">
+				<long>
+					<generic>Azores Time</generic>
+					<standard>Azores Standard Time</standard>
+					<daylight>Azores Summer Time</daylight>
+				</long>
+			</metazone>
+			<metazone type="Bangladesh">
+				<long>
+					<generic>Bangladesh Time</generic>
+					<standard>Bangladesh Standard Time</standard>
+					<daylight>Bangladesh Summer Time</daylight>
+				</long>
+			</metazone>
+			<metazone type="Bhutan">
+				<long>
+					<standard>Bhutan Time</standard>
+				</long>
+			</metazone>
+			<metazone type="Bolivia">
+				<long>
+					<standard>Bolivia Time</standard>
+				</long>
+			</metazone>
+			<metazone type="Brasilia">
+				<long>
+					<generic>Brasilia Time</generic>
+					<standard>Brasilia Standard Time</standard>
+					<daylight>Brasilia Summer Time</daylight>
+				</long>
+			</metazone>
+			<metazone type="Brunei">
+				<long>
+					<standard>Brunei Darussalam Time</standard>
+				</long>
+			</metazone>
+			<metazone type="Cape_Verde">
+				<long>
+					<generic>Cape Verde Time</generic>
+					<standard>Cape Verde Standard Time</standard>
+					<daylight>Cape Verde Summer Time</daylight>
+				</long>
+			</metazone>
+			<metazone type="Chamorro">
+				<long>
+					<standard>Chamorro Standard Time</standard>
+				</long>
+			</metazone>
+			<metazone type="Chatham">
+				<long>
+					<generic>Chatham Time</generic>
+					<standard>Chatham Standard Time</standard>
+					<daylight>Chatham Daylight Time</daylight>
+				</long>
+			</metazone>
+			<metazone type="Chile">
+				<long>
+					<generic>Chile Time</generic>
+					<standard>Chile Standard Time</standard>
+					<daylight>Chile Summer Time</daylight>
+				</long>
+			</metazone>
+			<metazone type="Choibalsan">
+				<long>
+					<generic>Choibalsan Time</generic>
+					<standard>Choibalsan Standard Time</standard>
+					<daylight>Choibalsan Summer Time</daylight>
+				</long>
+			</metazone>
+			<metazone type="Christmas">
+				<long>
+					<standard>Christmas Island Time</standard>
+				</long>
+			</metazone>
+			<metazone type="Cocos">
+				<long>
+					<standard>Cocos Islands Time</standard>
+				</long>
+			</metazone>
+			<metazone type="Colombia">
+				<long>
+					<generic>Colombia Time</generic>
+					<standard>Colombia Standard Time</standard>
+					<daylight>Colombia Summer Time</daylight>
+				</long>
+			</metazone>
+			<metazone type="Cook">
+				<long>
+					<generic>Cook Islands Time</generic>
+					<standard>Cook Islands Standard Time</standard>
+					<daylight>Cook Islands Half Summer Time</daylight>
+				</long>
+			</metazone>
+			<metazone type="Davis">
+				<long>
+					<standard>Davis Time</standard>
+				</long>
+			</metazone>
+			<metazone type="DumontDUrville">
+				<long>
+					<standard>Dumont-d’Urville Time</standard>
+				</long>
+			</metazone>
+			<metazone type="Easter">
+				<long>
+					<generic>Easter Island Time</generic>
+					<standard>Easter Island Standard Time</standard>
+					<daylight>Easter Island Summer Time</daylight>
+				</long>
+			</metazone>
+			<metazone type="Ecuador">
+				<long>
+					<standard>Ecuador Time</standard>
 				</long>
 			</metazone>
 			<metazone type="Europe_Central">
@@ -1118,6 +1323,11 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 					<daylight>Àkókò Sọmà Ìha Ìlà Oòrùn Europe</daylight>
 				</long>
 			</metazone>
+			<metazone type="Europe_Further_Eastern">
+				<long>
+					<standard>Further-eastern European Time</standard>
+				</long>
+			</metazone>
 			<metazone type="Europe_Western">
 				<long>
 					<generic>Àkókò Ìwọ Oòrùn Europe</generic>
@@ -1125,18 +1335,518 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 					<daylight>Àkókò Sọmà Ìhà Ìwọ Oòrùn Europe</daylight>
 				</long>
 			</metazone>
+			<metazone type="Falkland">
+				<long>
+					<generic>Falkland Islands Time</generic>
+					<standard>Falkland Islands Standard Time</standard>
+					<daylight>Falkland Islands Summer Time</daylight>
+				</long>
+			</metazone>
+			<metazone type="Fiji">
+				<long>
+					<generic>Fiji Time</generic>
+					<standard>Fiji Standard Time</standard>
+					<daylight>Fiji Summer Time</daylight>
+				</long>
+			</metazone>
+			<metazone type="French_Guiana">
+				<long>
+					<standard>French Guiana Time</standard>
+				</long>
+			</metazone>
+			<metazone type="French_Southern">
+				<long>
+					<standard>French Southern &amp; Antarctic Time</standard>
+				</long>
+			</metazone>
+			<metazone type="Galapagos">
+				<long>
+					<standard>Galapagos Time</standard>
+				</long>
+			</metazone>
+			<metazone type="Gambier">
+				<long>
+					<standard>Gambier Time</standard>
+				</long>
+			</metazone>
+			<metazone type="Georgia">
+				<long>
+					<generic>Georgia Time</generic>
+					<standard>Georgia Standard Time</standard>
+					<daylight>Georgia Summer Time</daylight>
+				</long>
+			</metazone>
+			<metazone type="Gilbert_Islands">
+				<long>
+					<standard>Gilbert Islands Time</standard>
+				</long>
+			</metazone>
 			<metazone type="GMT">
 				<long>
 					<standard>Greenwich Mean Time</standard>
 				</long>
 			</metazone>
+			<metazone type="Gulf">
+				<long>
+					<standard>Gulf Standard Time [translation hint: translate as just &quot;Gulf Time&quot;]</standard>
+				</long>
+			</metazone>
+			<metazone type="Guyana">
+				<long>
+					<standard>Guyana Time</standard>
+				</long>
+			</metazone>
+			<metazone type="Hong_Kong">
+				<long>
+					<generic>Hong Kong Time</generic>
+					<standard>Hong Kong Standard Time</standard>
+					<daylight>Hong Kong Summer Time</daylight>
+				</long>
+			</metazone>
+			<metazone type="Hovd">
+				<long>
+					<generic>Hovd Time</generic>
+					<standard>Hovd Standard Time</standard>
+					<daylight>Hovd Summer Time</daylight>
+				</long>
+			</metazone>
+			<metazone type="India">
+				<long>
+					<standard>India Standard Time</standard>
+				</long>
+			</metazone>
+			<metazone type="Indian_Ocean">
+				<long>
+					<standard>Indian Ocean Time</standard>
+				</long>
+			</metazone>
+			<metazone type="Indonesia_Eastern">
+				<long>
+					<standard>Eastern Indonesia Time</standard>
+				</long>
+			</metazone>
+			<metazone type="Iran">
+				<long>
+					<generic>Iran Time</generic>
+					<standard>Iran Standard Time</standard>
+					<daylight>Iran Daylight Time</daylight>
+				</long>
+			</metazone>
+			<metazone type="Irkutsk">
+				<long>
+					<generic>Irkutsk Time</generic>
+					<standard>Irkutsk Standard Time</standard>
+					<daylight>Irkutsk Summer Time</daylight>
+				</long>
+			</metazone>
+			<metazone type="Israel">
+				<long>
+					<generic>Israel Time</generic>
+					<standard>Israel Standard Time</standard>
+					<daylight>Israel Daylight Time</daylight>
+				</long>
+			</metazone>
+			<metazone type="Japan">
+				<long>
+					<generic>Japan Time</generic>
+					<standard>Japan Standard Time</standard>
+					<daylight>Japan Daylight Time</daylight>
+				</long>
+			</metazone>
+			<metazone type="Kazakhstan_Eastern">
+				<long>
+					<standard>East Kazakhstan Time</standard>
+				</long>
+			</metazone>
+			<metazone type="Kazakhstan_Western">
+				<long>
+					<standard>West Kazakhstan Time</standard>
+				</long>
+			</metazone>
+			<metazone type="Korea">
+				<long>
+					<generic>Korean Time</generic>
+					<standard>Korean Standard Time</standard>
+					<daylight>Korean Daylight Time</daylight>
+				</long>
+			</metazone>
+			<metazone type="Kosrae">
+				<long>
+					<standard>Kosrae Time</standard>
+				</long>
+			</metazone>
+			<metazone type="Krasnoyarsk">
+				<long>
+					<generic>Krasnoyarsk Time</generic>
+					<standard>Krasnoyarsk Standard Time</standard>
+					<daylight>Krasnoyarsk Summer Time</daylight>
+				</long>
+			</metazone>
+			<metazone type="Kyrgystan">
+				<long>
+					<standard>Kyrgyzstan Time</standard>
+				</long>
+			</metazone>
+			<metazone type="Line_Islands">
+				<long>
+					<standard>Line Islands Time</standard>
+				</long>
+			</metazone>
+			<metazone type="Lord_Howe">
+				<long>
+					<generic>Lord Howe Time</generic>
+					<standard>Lord Howe Standard Time</standard>
+					<daylight>Lord Howe Daylight Time</daylight>
+				</long>
+			</metazone>
+			<metazone type="Macquarie">
+				<long>
+					<standard>Macquarie Island Time</standard>
+				</long>
+			</metazone>
+			<metazone type="Magadan">
+				<long>
+					<generic>Magadan Time</generic>
+					<standard>Magadan Standard Time</standard>
+					<daylight>Magadan Summer Time</daylight>
+				</long>
+			</metazone>
+			<metazone type="Malaysia">
+				<long>
+					<standard>Malaysia Time</standard>
+				</long>
+			</metazone>
+			<metazone type="Maldives">
+				<long>
+					<standard>Maldives Time</standard>
+				</long>
+			</metazone>
+			<metazone type="Marquesas">
+				<long>
+					<standard>Marquesas Time</standard>
+				</long>
+			</metazone>
+			<metazone type="Marshall_Islands">
+				<long>
+					<standard>Marshall Islands Time</standard>
+				</long>
+			</metazone>
+			<metazone type="Mauritius">
+				<long>
+					<generic>Mauritius Time</generic>
+					<standard>Mauritius Standard Time</standard>
+					<daylight>Mauritius Summer Time</daylight>
+				</long>
+			</metazone>
+			<metazone type="Mawson">
+				<long>
+					<standard>Mawson Time</standard>
+				</long>
+			</metazone>
+			<metazone type="Mongolia">
+				<long>
+					<generic>Ulaanbaatar Time</generic>
+					<standard>Ulaanbaatar Standard Time</standard>
+					<daylight>Ulaanbaatar Summer Time</daylight>
+				</long>
+			</metazone>
+			<metazone type="Moscow">
+				<long>
+					<generic>Moscow Time</generic>
+					<standard>Moscow Standard Time</standard>
+					<daylight>Moscow Summer Time</daylight>
+				</long>
+			</metazone>
+			<metazone type="Myanmar">
+				<long>
+					<standard>Myanmar Time</standard>
+				</long>
+			</metazone>
+			<metazone type="Nauru">
+				<long>
+					<standard>Nauru Time</standard>
+				</long>
+			</metazone>
+			<metazone type="Nepal">
+				<long>
+					<standard>Nepal Time</standard>
+				</long>
+			</metazone>
+			<metazone type="New_Caledonia">
+				<long>
+					<generic>New Caledonia Time</generic>
+					<standard>New Caledonia Standard Time</standard>
+					<daylight>New Caledonia Summer Time</daylight>
+				</long>
+			</metazone>
+			<metazone type="New_Zealand">
+				<long>
+					<generic>New Zealand Time</generic>
+					<standard>New Zealand Standard Time</standard>
+					<daylight>New Zealand Daylight Time</daylight>
+				</long>
+			</metazone>
+			<metazone type="Niue">
+				<long>
+					<standard>Niue Time</standard>
+				</long>
+			</metazone>
+			<metazone type="Norfolk">
+				<long>
+					<standard>Norfolk Island Time</standard>
+				</long>
+			</metazone>
+			<metazone type="Noronha">
+				<long>
+					<generic>Fernando de Noronha Time</generic>
+					<standard>Fernando de Noronha Standard Time</standard>
+					<daylight>Fernando de Noronha Summer Time</daylight>
+				</long>
+			</metazone>
+			<metazone type="Novosibirsk">
+				<long>
+					<generic>Novosibirsk Time</generic>
+					<standard>Novosibirsk Standard Time</standard>
+					<daylight>Novosibirsk Summer Time</daylight>
+				</long>
+			</metazone>
+			<metazone type="Omsk">
+				<long>
+					<generic>Omsk Time</generic>
+					<standard>Omsk Standard Time</standard>
+					<daylight>Omsk Summer Time</daylight>
+				</long>
+			</metazone>
+			<metazone type="Pakistan">
+				<long>
+					<generic>Pakistan Time</generic>
+					<standard>Pakistan Standard Time</standard>
+					<daylight>Pakistan Summer Time</daylight>
+				</long>
+			</metazone>
+			<metazone type="Palau">
+				<long>
+					<standard>Palau Time</standard>
+				</long>
+			</metazone>
+			<metazone type="Papua_New_Guinea">
+				<long>
+					<standard>Papua New Guinea Time</standard>
+				</long>
+			</metazone>
+			<metazone type="Paraguay">
+				<long>
+					<generic>Paraguay Time</generic>
+					<standard>Paraguay Standard Time</standard>
+					<daylight>Paraguay Summer Time</daylight>
+				</long>
+			</metazone>
+			<metazone type="Peru">
+				<long>
+					<generic>Peru Time</generic>
+					<standard>Peru Standard Time</standard>
+					<daylight>Peru Summer Time</daylight>
+				</long>
+			</metazone>
+			<metazone type="Philippines">
+				<long>
+					<generic>Philippine Time</generic>
+					<standard>Philippine Standard Time</standard>
+					<daylight>Philippine Summer Time</daylight>
+				</long>
+			</metazone>
+			<metazone type="Phoenix_Islands">
+				<long>
+					<standard>Phoenix Islands Time</standard>
+				</long>
+			</metazone>
+			<metazone type="Pitcairn">
+				<long>
+					<standard>Pitcairn Time</standard>
+				</long>
+			</metazone>
+			<metazone type="Ponape">
+				<long>
+					<standard>Ponape Time</standard>
+				</long>
+			</metazone>
+			<metazone type="Pyongyang">
+				<long>
+					<standard>Pyongyang Time</standard>
+				</long>
+			</metazone>
+			<metazone type="Reunion">
+				<long>
+					<standard>Réunion Time</standard>
+				</long>
+			</metazone>
+			<metazone type="Rothera">
+				<long>
+					<standard>Rothera Time</standard>
+				</long>
+			</metazone>
+			<metazone type="Sakhalin">
+				<long>
+					<generic>Sakhalin Time</generic>
+					<standard>Sakhalin Standard Time</standard>
+					<daylight>Sakhalin Summer Time</daylight>
+				</long>
+			</metazone>
+			<metazone type="Samoa">
+				<long>
+					<generic>Samoa Time</generic>
+					<standard>Samoa Standard Time</standard>
+					<daylight>Samoa Daylight Time</daylight>
+				</long>
+			</metazone>
+			<metazone type="Seychelles">
+				<long>
+					<standard>Seychelles Time</standard>
+				</long>
+			</metazone>
+			<metazone type="Singapore">
+				<long>
+					<standard>Singapore Standard Time</standard>
+				</long>
+			</metazone>
+			<metazone type="Solomon">
+				<long>
+					<standard>Solomon Islands Time</standard>
+				</long>
+			</metazone>
+			<metazone type="South_Georgia">
+				<long>
+					<standard>South Georgia Time</standard>
+				</long>
+			</metazone>
+			<metazone type="Suriname">
+				<long>
+					<standard>Suriname Time</standard>
+				</long>
+			</metazone>
+			<metazone type="Syowa">
+				<long>
+					<standard>Syowa Time</standard>
+				</long>
+			</metazone>
+			<metazone type="Tahiti">
+				<long>
+					<standard>Tahiti Time</standard>
+				</long>
+			</metazone>
+			<metazone type="Taipei">
+				<long>
+					<generic>Taipei Time</generic>
+					<standard>Taipei Standard Time</standard>
+					<daylight>Taipei Daylight Time</daylight>
+				</long>
+			</metazone>
+			<metazone type="Tajikistan">
+				<long>
+					<standard>Tajikistan Time</standard>
+				</long>
+			</metazone>
+			<metazone type="Tokelau">
+				<long>
+					<standard>Tokelau Time</standard>
+				</long>
+			</metazone>
+			<metazone type="Tonga">
+				<long>
+					<generic>Tonga Time</generic>
+					<standard>Tonga Standard Time</standard>
+					<daylight>Tonga Summer Time</daylight>
+				</long>
+			</metazone>
+			<metazone type="Truk">
+				<long>
+					<standard>Chuuk Time</standard>
+				</long>
+			</metazone>
+			<metazone type="Turkmenistan">
+				<long>
+					<generic>Turkmenistan Time</generic>
+					<standard>Turkmenistan Standard Time</standard>
+					<daylight>Turkmenistan Summer Time</daylight>
+				</long>
+			</metazone>
+			<metazone type="Tuvalu">
+				<long>
+					<standard>Tuvalu Time</standard>
+				</long>
+			</metazone>
+			<metazone type="Uruguay">
+				<long>
+					<generic>Uruguay Time</generic>
+					<standard>Uruguay Standard Time</standard>
+					<daylight>Uruguay Summer Time</daylight>
+				</long>
+			</metazone>
+			<metazone type="Uzbekistan">
+				<long>
+					<generic>Uzbekistan Time</generic>
+					<standard>Uzbekistan Standard Time</standard>
+					<daylight>Uzbekistan Summer Time</daylight>
+				</long>
+			</metazone>
+			<metazone type="Vanuatu">
+				<long>
+					<generic>Vanuatu Time</generic>
+					<standard>Vanuatu Standard Time</standard>
+					<daylight>Vanuatu Summer Time</daylight>
+				</long>
+			</metazone>
+			<metazone type="Venezuela">
+				<long>
+					<standard>Venezuela Time</standard>
+				</long>
+			</metazone>
+			<metazone type="Vladivostok">
+				<long>
+					<generic>Vladivostok Time</generic>
+					<standard>Vladivostok Standard Time</standard>
+					<daylight>Vladivostok Summer Time</daylight>
+				</long>
+			</metazone>
+			<metazone type="Volgograd">
+				<long>
+					<generic>Volgograd Time</generic>
+					<standard>Volgograd Standard Time</standard>
+					<daylight>Volgograd Summer Time</daylight>
+				</long>
+			</metazone>
+			<metazone type="Vostok">
+				<long>
+					<standard>Vostok Time</standard>
+				</long>
+			</metazone>
+			<metazone type="Wake">
+				<long>
+					<standard>Wake Island Time</standard>
+				</long>
+			</metazone>
+			<metazone type="Wallis">
+				<long>
+					<standard>Wallis &amp; Futuna Time</standard>
+				</long>
+			</metazone>
+			<metazone type="Yakutsk">
+				<long>
+					<generic>Yakutsk Time</generic>
+					<standard>Yakutsk Standard Time</standard>
+					<daylight>Yakutsk Summer Time</daylight>
+				</long>
+			</metazone>
+			<metazone type="Yekaterinburg">
+				<long>
+					<generic>Yekaterinburg Time</generic>
+					<standard>Yekaterinburg Standard Time</standard>
+					<daylight>Yekaterinburg Summer Time</daylight>
+				</long>
+			</metazone>
 		</timeZoneNames>
 	</dates>
 	<numbers>
-		<defaultNumberingSystem draft="contributed">latn</defaultNumberingSystem>
-		<otherNumberingSystems>
-			<native draft="contributed">latn</native>
-		</otherNumberingSystems>
 		<minimumGroupingDigits draft="contributed">1</minimumGroupingDigits>
 		<symbols numberSystem="latn">
 			<decimal>.</decimal>
@@ -1217,8 +1927,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<currency type="BRL">
 				<displayName>Owó ti Orílẹ̀-èdè Brazil</displayName>
 				<displayName count="other">Awon owó ti Orílẹ̀-èdè Brazil</displayName>
-				<symbol draft="contributed">R$</symbol>
-				<symbol alt="narrow" draft="contributed">R$</symbol>
 			</currency>
 			<currency type="BWP">
 				<displayName>Pula ti Orílẹ́ède Bọ̀tìsúwánà</displayName>
@@ -1234,8 +1942,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			</currency>
 			<currency type="CNY">
 				<displayName>Reminibi ti Orílẹ́ède ṣáínà</displayName>
-				<symbol draft="contributed">CN¥</symbol>
-				<symbol alt="narrow" draft="contributed">¥</symbol>
 			</currency>
 			<currency type="CVE">
 				<displayName>Kabofediano ti Orílẹ́ède Esuodo</displayName>
@@ -1248,6 +1954,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			</currency>
 			<currency type="EGP">
 				<displayName>pọọn ti Orílẹ́ède Egipiti</displayName>
+				<displayName count="other">pọ́nùn</displayName>
 			</currency>
 			<currency type="ERN">
 				<displayName>Nakifa ti Orílẹ́ède Eriteriani</displayName>
@@ -1258,13 +1965,9 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<currency type="EUR">
 				<displayName>owó Yúrò</displayName>
 				<displayName count="other">Awon owó Yúrò</displayName>
-				<symbol draft="contributed">€</symbol>
-				<symbol alt="narrow" draft="contributed">€</symbol>
 			</currency>
 			<currency type="GBP">
 				<displayName>Pọ́n-ùn ti Orilẹ̀-èdè Gẹ̀ẹ́sì</displayName>
-				<symbol draft="contributed">£</symbol>
-				<symbol alt="narrow" draft="contributed">£</symbol>
 			</currency>
 			<currency type="GHC">
 				<displayName>ṣidi ti Orílẹ́ède Gana</displayName>
@@ -1277,19 +1980,18 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			</currency>
 			<currency type="INR">
 				<displayName>Rupi ti Orílẹ́ède Indina</displayName>
-				<symbol draft="contributed">₹</symbol>
-				<symbol alt="narrow" draft="contributed">₹</symbol>
 			</currency>
 			<currency type="JPY">
 				<displayName>Yeni ti Orílẹ́ède Japani</displayName>
-				<symbol draft="contributed">JP¥</symbol>
-				<symbol alt="narrow" draft="contributed">¥</symbol>
 			</currency>
 			<currency type="KES">
 				<displayName>ṣiili ti Orílẹ́ède Kenya</displayName>
 			</currency>
 			<currency type="KMF">
 				<displayName>Faransi ti Orílẹ́ède ṣomoriani</displayName>
+			</currency>
+			<currency type="KRW">
+				<symbol alt="narrow" draft="contributed">₩</symbol>
 			</currency>
 			<currency type="LRD">
 				<displayName>Dọla ti Orílẹ́ède Liberia</displayName>
@@ -1326,13 +2028,13 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			</currency>
 			<currency type="NGN">
 				<displayName>Náìrà ti Orílẹ̀-èdè Nàìjíríà</displayName>
+				<displayName count="other">Náírà Nàìjíríà</displayName>
 				<symbol>₦</symbol>
 			</currency>
 			<currency type="RUB">
 				<displayName>Owó ruble ti ilẹ̀ Rọ́ṣíà</displayName>
 				<displayName count="other">Owó ruble ti ilẹ̀ Rọ́ṣíà</displayName>
 				<symbol draft="contributed">₽</symbol>
-				<symbol alt="narrow" draft="contributed">₽</symbol>
 			</currency>
 			<currency type="RWF">
 				<displayName>Faransi ti Orílẹ́ède Ruwanda</displayName>
@@ -1380,7 +2082,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<displayName>Dọ́là</displayName>
 				<displayName count="other">Dọ́là ti Orílẹ̀-Èdè Amẹ́ríkà</displayName>
 				<symbol draft="contributed">$</symbol>
-				<symbol alt="narrow" draft="contributed">$</symbol>
 			</currency>
 			<currency type="XAF">
 				<displayName>Faransi ti Orílẹ́ède BEKA</displayName>
@@ -1409,8 +2110,128 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<pattern type="atLeast">≥{0}</pattern>
 			<pattern type="range">{0}–{1}</pattern>
 		</miscPatterns>
+		<minimalPairs>
+			<pluralMinimalPairs count="other" draft="contributed">Àwọn ọjọ́ {0}</pluralMinimalPairs>
+			<ordinalMinimalPairs ordinal="other" draft="contributed">Mú {0} apá ọ̀tún</ordinalMinimalPairs>
+		</minimalPairs>
 	</numbers>
 	<units>
+		<unitLength type="long">
+			<unit type="duration-century">
+				<displayName>ọ̀rúndún</displayName>
+				<unitPattern count="other">ọ̀rúndún {0}</unitPattern>
+			</unit>
+			<unit type="duration-decade">
+				<displayName>ẹ̀wádùn</displayName>
+				<unitPattern count="other">ẹ̀wádùn {0}</unitPattern>
+			</unit>
+			<unit type="duration-year">
+				<displayName>ọ̀dún</displayName>
+				<unitPattern count="other">{0} ọd</unitPattern>
+				<perUnitPattern>{0} ọd</perUnitPattern>
+			</unit>
+			<unit type="duration-month">
+				<displayName>oṣù</displayName>
+				<unitPattern count="other">{0} oṣù</unitPattern>
+				<perUnitPattern>{0}/oṣù</perUnitPattern>
+			</unit>
+			<unit type="duration-week">
+				<displayName>ọṣ</displayName>
+				<unitPattern count="other">{0} ọṣ</unitPattern>
+				<perUnitPattern>{0}/ọṣ</perUnitPattern>
+			</unit>
+			<unit type="duration-day">
+				<displayName>ọjọ́</displayName>
+				<unitPattern count="other">ọj {0}</unitPattern>
+				<perUnitPattern>{0}/ọj</perUnitPattern>
+			</unit>
+			<unit type="duration-hour">
+				<displayName>wkt</displayName>
+				<unitPattern count="other">{0} wkt</unitPattern>
+				<perUnitPattern>{0}/wkt</perUnitPattern>
+			</unit>
+			<unit type="duration-minute">
+				<displayName>ìṣ</displayName>
+				<unitPattern count="other">{0} ìṣ</unitPattern>
+				<perUnitPattern>{0}/ìṣ</perUnitPattern>
+			</unit>
+			<unit type="duration-second">
+				<displayName>ìṣ àáy</displayName>
+				<unitPattern count="other">{0}ìṣ àáy</unitPattern>
+				<perUnitPattern>{0}/ìṣ àáy</perUnitPattern>
+			</unit>
+		</unitLength>
+		<unitLength type="short">
+			<unit type="duration-decade">
+				<displayName>ẹ̀wádùn</displayName>
+				<unitPattern count="other">ẹ̀wádún {0}</unitPattern>
+			</unit>
+			<unit type="duration-year">
+				<displayName>ọd</displayName>
+				<unitPattern count="other">{0} ọd</unitPattern>
+				<perUnitPattern>{0}/ọd</perUnitPattern>
+			</unit>
+			<unit type="duration-month">
+				<displayName>oṣù</displayName>
+				<unitPattern count="other">{0} oṣù</unitPattern>
+				<perUnitPattern>{0}/oṣù</perUnitPattern>
+			</unit>
+			<unit type="duration-week">
+				<displayName>ọṣ</displayName>
+				<unitPattern count="other">{0} ọṣ</unitPattern>
+				<perUnitPattern>{0}/ọṣẹ̀</perUnitPattern>
+			</unit>
+			<unit type="duration-day">
+				<displayName>ọjọ́</displayName>
+				<unitPattern count="other">{0} ọj</unitPattern>
+				<perUnitPattern>{0}/ọj</perUnitPattern>
+			</unit>
+			<unit type="duration-hour">
+				<displayName>wkt</displayName>
+				<unitPattern count="other">{0} wkt</unitPattern>
+				<perUnitPattern>{0}/wkt</perUnitPattern>
+			</unit>
+			<unit type="duration-minute">
+				<displayName>ìṣ</displayName>
+				<unitPattern count="other">{0} ìṣ</unitPattern>
+				<perUnitPattern>{0}/ìṣ</perUnitPattern>
+			</unit>
+			<unit type="duration-second">
+				<displayName>ìṣ àáy</displayName>
+				<unitPattern count="other">{0} ìṣ àáy</unitPattern>
+				<perUnitPattern>{0} ìṣ àáy</perUnitPattern>
+			</unit>
+		</unitLength>
+		<unitLength type="narrow">
+			<unit type="duration-year">
+				<displayName>ọd</displayName>
+				<unitPattern count="other">{0} ọd</unitPattern>
+			</unit>
+			<unit type="duration-month">
+				<displayName>oṣù</displayName>
+				<unitPattern count="other">{0} oṣù</unitPattern>
+			</unit>
+			<unit type="duration-week">
+				<displayName>ọṣẹ́</displayName>
+				<unitPattern count="other">{0} ọṣ</unitPattern>
+			</unit>
+			<unit type="duration-day">
+				<displayName>ọjọ́</displayName>
+				<unitPattern count="other">ọj {0}</unitPattern>
+			</unit>
+			<unit type="duration-hour">
+				<displayName>wkt</displayName>
+				<unitPattern count="other">{0} wkt</unitPattern>
+			</unit>
+			<unit type="duration-minute">
+				<displayName>ìṣ</displayName>
+				<unitPattern count="other">{0}/ìṣ</unitPattern>
+			</unit>
+			<unit type="duration-second">
+				<displayName>ìṣ àáy</displayName>
+				<unitPattern count="other">{0} ìṣ àáy</unitPattern>
+			</unit>
+		</unitLength>
 		<durationUnit type="hm">
 			<durationUnitPattern>h:mm</durationUnitPattern>
 		</durationUnit>

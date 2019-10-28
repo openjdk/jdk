@@ -7,7 +7,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 -->
 <ldml>
 	<identity>
-		<version number="$Revision: 14786 $"/>
+		<version number="$Revision$"/>
 		<language type="sr"/>
 		<script type="Cyrl"/>
 		<territory type="BA"/>
@@ -25,9 +25,12 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<language type="nqo" draft="contributed">н’ко</language>
 			<language type="shi" draft="contributed">јужни шилха</language>
 			<language type="si" draft="contributed">синхалски</language>
+			<language type="sw_CD" draft="contributed">кисвахили</language>
 			<language type="tzm" draft="contributed">централноатласки тамашек</language>
 			<language type="xh" draft="contributed">исикоса</language>
 			<language type="zgh" draft="contributed">стандардни марокански тамашек</language>
+			<language type="zh_Hans" draft="contributed">поједностављени кинески</language>
+			<language type="zh_Hant" draft="contributed">традиционални кинески</language>
 			<language type="zu" draft="contributed">исизулу</language>
 		</languages>
 		<territories>
@@ -37,7 +40,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<territory type="CZ" draft="contributed">Чешка Република</territory>
 			<territory type="DE" draft="contributed">Њемачка</territory>
 			<territory type="KN" draft="contributed">Свети Китс и Невис</territory>
-			<territory type="MK" alt="variant" draft="contributed">БЈР Македонија</territory>
 			<territory type="MO" draft="contributed">САР Макао</territory>
 			<territory type="PM" draft="contributed">Свети Пјер и Микелон</territory>
 			<territory type="RE" draft="contributed">Реунион</territory>
@@ -63,45 +65,63 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				</dateTimeFormats>
 			</calendar>
 			<calendar type="gregorian">
-				<months>
-					<monthContext type="stand-alone">
-						<monthWidth type="abbreviated">
-							<month type="3">март</month>
-							<month type="9">септ</month>
-						</monthWidth>
-					</monthContext>
-				</months>
 				<days>
 					<dayContext type="format">
 						<dayWidth type="abbreviated">
+							<day type="sun" draft="contributed">нед</day>
+							<day type="mon" draft="contributed">пон</day>
 							<day type="tue">ут</day>
 							<day type="wed">ср</day>
+							<day type="thu" draft="contributed">чет</day>
+							<day type="fri" draft="contributed">пет</day>
+							<day type="sat" draft="contributed">суб</day>
 						</dayWidth>
 						<dayWidth type="wide">
 							<day type="sun" draft="contributed">недјеља</day>
+							<day type="mon" draft="contributed">понедељак</day>
+							<day type="tue" draft="contributed">уторак</day>
 							<day type="wed" draft="contributed">сриједа</day>
+							<day type="thu" draft="contributed">четвртак</day>
+							<day type="fri" draft="contributed">петак</day>
+							<day type="sat" draft="contributed">субота</day>
 						</dayWidth>
 					</dayContext>
 					<dayContext type="stand-alone">
 						<dayWidth type="abbreviated">
+							<day type="sun" draft="contributed">нед</day>
+							<day type="mon" draft="contributed">пон</day>
 							<day type="tue">ут</day>
 							<day type="wed">ср</day>
+							<day type="thu" draft="contributed">чет</day>
+							<day type="fri" draft="contributed">пет</day>
+							<day type="sat" draft="contributed">суб</day>
 						</dayWidth>
 						<dayWidth type="wide">
 							<day type="sun" draft="contributed">недјеља</day>
+							<day type="mon" draft="contributed">понедељак</day>
+							<day type="tue" draft="contributed">уторак</day>
 							<day type="wed" draft="contributed">сриједа</day>
+							<day type="thu" draft="contributed">четвртак</day>
+							<day type="fri" draft="contributed">петак</day>
+							<day type="sat" draft="contributed">субота</day>
 						</dayWidth>
 					</dayContext>
 				</days>
 				<dayPeriods>
 					<dayPeriodContext type="format">
 						<dayPeriodWidth type="abbreviated">
+							<dayPeriod type="midnight" draft="contributed">поноћ</dayPeriod>
 							<dayPeriod type="am" draft="contributed">прије подне</dayPeriod>
+							<dayPeriod type="noon" draft="contributed">подне</dayPeriod>
+							<dayPeriod type="pm" draft="contributed">по подне</dayPeriod>
 							<dayPeriod type="morning1" draft="contributed">јутро</dayPeriod>
 							<dayPeriod type="afternoon1" draft="contributed">по под.</dayPeriod>
 							<dayPeriod type="evening1" draft="contributed">вече</dayPeriod>
+							<dayPeriod type="night1">ноћу</dayPeriod>
 						</dayPeriodWidth>
 						<dayPeriodWidth type="narrow">
+							<dayPeriod type="midnight" draft="contributed">поноћ</dayPeriod>
+							<dayPeriod type="noon" draft="contributed">подне</dayPeriod>
 							<dayPeriod type="morning1" draft="contributed">јутро</dayPeriod>
 							<dayPeriod type="afternoon1" draft="contributed">по под.</dayPeriod>
 							<dayPeriod type="evening1" draft="contributed">вече</dayPeriod>
@@ -109,11 +129,13 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 						</dayPeriodWidth>
 						<dayPeriodWidth type="wide">
 							<dayPeriod type="am" draft="contributed">прије подне</dayPeriod>
+							<dayPeriod type="pm" draft="contributed">по подне</dayPeriod>
 						</dayPeriodWidth>
 					</dayPeriodContext>
 					<dayPeriodContext type="stand-alone">
 						<dayPeriodWidth type="abbreviated">
 							<dayPeriod type="am" draft="contributed">прије подне</dayPeriod>
+							<dayPeriod type="pm" draft="contributed">по подне</dayPeriod>
 						</dayPeriodWidth>
 						<dayPeriodWidth type="narrow">
 							<dayPeriod type="am" draft="contributed">а</dayPeriod>
@@ -121,6 +143,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 						</dayPeriodWidth>
 						<dayPeriodWidth type="wide">
 							<dayPeriod type="am" draft="contributed">прије подне</dayPeriod>
+							<dayPeriod type="pm" draft="contributed">по подне</dayPeriod>
 						</dayPeriodWidth>
 					</dayPeriodContext>
 				</dayPeriods>

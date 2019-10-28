@@ -7,7 +7,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 -->
 <ldml>
 	<identity>
-		<version number="$Revision: 14769 $"/>
+		<version number="$Revision$"/>
 		<language type="ca"/>
 		<territory type="ES"/>
 		<variant type="VALENCIA"/>
@@ -25,7 +25,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<language type="dum" draft="unconfirmed">neerlandés mitjà</language>
 			<language type="en" draft="unconfirmed">anglés</language>
 			<language type="en_GB" alt="short" draft="unconfirmed">anglés (GB)</language>
-			<language type="en_US" alt="short" draft="unconfirmed">anglés (EUA)</language>
 			<language type="enm" draft="unconfirmed">anglés mitjà</language>
 			<language type="fi" draft="unconfirmed">finés</language>
 			<language type="fo" draft="unconfirmed">feroés</language>

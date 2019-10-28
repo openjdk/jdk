@@ -6,7 +6,7 @@
 	CLDR data files are interpreted according to the LDML specification (http://unicode.org/reports/tr35/)
  -->
 <supplementalData>
-	<version number="$Revision: 14794 $"/>
+	<version number="$Revision$"/>
 	<dayPeriodRuleSet>
 		<dayPeriodRules locales="root">
 			<dayPeriodRule type="am" from="00:00" before="12:00"/>	<!-- AM -->

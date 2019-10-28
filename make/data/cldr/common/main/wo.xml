@@ -7,7 +7,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 -->
 <ldml>
 	<identity>
-		<version number="$Revision: 14982 $"/>
+		<version number="$Revision$"/>
 		<language type="wo"/>
 	</identity>
 	<localeDisplayNames>
@@ -224,7 +224,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<territory type="CF">Repiblik Sàntar Afrik</territory>
 			<territory type="CG" alt="variant">Réewum Kongo</territory>
 			<territory type="CH">Siwis</territory>
-			<territory type="CI">Kodiwaar (Côte d’Ivoire)</territory>
+			<territory type="CI">Kodiwaar</territory>
 			<territory type="CK">Duni Kuuk</territory>
 			<territory type="CL">Sili</territory>
 			<territory type="CM">Kamerun</territory>

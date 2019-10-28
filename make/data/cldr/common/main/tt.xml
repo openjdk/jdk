@@ -7,7 +7,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 -->
 <ldml>
 	<identity>
-		<version number="$Revision: 14982 $"/>
+		<version number="$Revision$"/>
 		<language type="tt"/>
 	</identity>
 	<localeDisplayNames>
@@ -42,14 +42,20 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<language type="cy">уэльс</language>
 			<language type="da">дания</language>
 			<language type="de">алман</language>
+			<language type="de_CH">югары алман (Швейцария)</language>
 			<language type="dsb">түбән сорб</language>
 			<language type="dv">мальдив</language>
 			<language type="dz">дзонг-кха</language>
 			<language type="el">грек</language>
 			<language type="en">инглиз</language>
+			<language type="en_GB">Британия инглизчәсе</language>
+			<language type="en_GB" alt="short">инглиз (Берләшкән Корольлек)</language>
+			<language type="en_US">Америка инглизчәсе</language>
+			<language type="en_US" alt="short">инглиз (АКШ)</language>
 			<language type="eo">эсперанто</language>
 			<language type="es">испан</language>
 			<language type="es_419">испан (Латин Америкасы)</language>
+			<language type="es_ES">испан (Европа)</language>
 			<language type="et">эстон</language>
 			<language type="eu">баск</language>
 			<language type="fa">фарсы</language>
@@ -121,6 +127,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<language type="pl">поляк</language>
 			<language type="ps">пушту</language>
 			<language type="pt">португал</language>
+			<language type="pt_PT">португал (Европа)</language>
 			<language type="qu">кечуа</language>
 			<language type="quc">киче</language>
 			<language type="rm">ретороман</language>
@@ -165,8 +172,11 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<language type="yi">идиш</language>
 			<language type="yo">йоруба</language>
 			<language type="zh">кытай (тәрҗемә киңәше: аерым алганда, мандарин кытайчасы)</language>
+			<language type="zh" alt="menu">мандарин кытайчасы</language>
 			<language type="zh_Hans">гадиләштерелгән кытай</language>
+			<language type="zh_Hans" alt="long">гадиләштерелгән мандарин кытайчасы</language>
 			<language type="zh_Hant">традицион кытай</language>
+			<language type="zh_Hant" alt="long">традицион мандарин кытайчасы</language>
 		</languages>
 		<scripts>
 			<script type="Arab">гарәп</script>
@@ -253,7 +263,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<territory type="FO">Фарер утраулары</territory>
 			<territory type="FR">Франция</territory>
 			<territory type="GA">Габон</territory>
-			<territory type="GB">Бөекбритания</territory>
+			<territory type="GB">Берләшкән Корольлек</territory>
 			<territory type="GD">Гренада</territory>
 			<territory type="GE">Грузия</territory>
 			<territory type="GF">Француз Гвианасы</territory>
@@ -443,8 +453,10 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 		</codePatterns>
 	</localeDisplayNames>
 	<characters>
-		<exemplarCharacters>[а ә б в г д е ё ж җ з и й к л м н о ө п р с т у ү ф х һ ц ч ш щ ъ ы ь э ю я]</exemplarCharacters>
-		<exemplarCharacters type="index" draft="unconfirmed">[А Ә Б В Г Д Е Ж Җ З И Й К Л М Н О Ө П Р С Т У Ү Ф Х Һ Ц Ч Ш Щ Ъ Ы Ь Э Ю Я]</exemplarCharacters>
+		<exemplarCharacters>[а ә б в г д е ё ж җ з и й к л м н ң о ө п р с т у ү ф х һ ц ч ш щ ъ ы ь э ю я]</exemplarCharacters>
+		<exemplarCharacters type="auxiliary" draft="contributed">[ғ қ]</exemplarCharacters>
+		<exemplarCharacters type="index" draft="contributed">[А Ә Б В Г Д Е Ё Ж Җ З И Й К Л М Н Ң О Ө П Р С Т У Ү Ф Х Һ Ц Ч Ш Щ Ъ Ы Ь Э Ю Я]</exemplarCharacters>
+		<exemplarCharacters type="punctuation" draft="contributed">[\- ‐ ‑ – — , ; \: ! ? . … ' ‘ ’ &quot; “ ” ( ) \[ \] § @ * / \&amp; # ′ ″]</exemplarCharacters>
 	</characters>
 	<delimiters>
 		<quotationStart>“</quotationStart>
@@ -751,7 +763,9 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 					</eraNames>
 					<eraAbbr>
 						<era type="0">б.э.к.</era>
-						<era type="1">б.э.</era>
+						<era type="0" alt="variant">б.э.к.</era>
+						<era type="1">милади</era>
+						<era type="1" alt="variant">б.э.</era>
 					</eraAbbr>
 				</eras>
 				<dateFormats>

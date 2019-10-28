@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -158,7 +158,7 @@ class ResourceBundleGenerator implements BundleGenerator {
                         }
 
                         if (Objects.isNull(metaVal)) {
-                            metaVal = META_VALUE_PREFIX + key.replaceAll("\\.", "_");
+                            metaVal = META_VALUE_PREFIX + key.replaceAll("[\\.-]", "_");
 
                             if (val instanceof String[]) {
                                 fmt.format("        final String[] %s = new String[] {\n", metaVal);

@@ -7,7 +7,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 -->
 <ldml>
 	<identity>
-		<version number="$Revision: 14786 $"/>
+		<version number="$Revision$"/>
 		<language type="es"/>
 		<territory type="US"/>
 	</identity>
@@ -22,7 +22,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<language type="bla">siksika</language>
 			<language type="bua" draft="contributed">buriat</language>
 			<language type="dum" draft="contributed">neerlandés medieval</language>
-			<language type="en_GB" alt="short">inglés (RU)</language>
 			<language type="enm" draft="contributed">inglés medieval</language>
 			<language type="eu">euskera</language>
 			<language type="frm" draft="contributed">francés medieval</language>
@@ -31,14 +30,17 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<language type="grc" draft="contributed">griego antiguo</language>
 			<language type="gu">gurayatí</language>
 			<language type="hak" draft="contributed">hak</language>
+			<language type="hil" draft="contributed">hiligainón</language>
 			<language type="hsn" draft="contributed">xiang (China)</language>
 			<language type="ht" draft="contributed">criollo haitiano</language>
+			<language type="inh" draft="contributed">ingusetio</language>
 			<language type="kbd" draft="contributed">kabardiano</language>
 			<language type="krc" draft="contributed">karachay-balkar</language>
 			<language type="lo">lao</language>
 			<language type="lus" draft="contributed">lushai</language>
 			<language type="mga" draft="contributed">irlandés medieval</language>
 			<language type="nan" draft="contributed">nan</language>
+			<language type="nl_BE" draft="contributed">flamenco</language>
 			<language type="nr">ndebele meridional</language>
 			<language type="nso" draft="contributed">sotho septentrional</language>
 			<language type="pcm" draft="contributed">pcm</language>
@@ -53,14 +55,16 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<language type="tet" draft="contributed">tetún</language>
 			<language type="tn" draft="contributed">setchwana</language>
 			<language type="tyv">tuviniano</language>
-			<language type="tzm" draft="contributed">tamazight del Atlas Central</language>
 			<language type="wo" draft="contributed">wolof</language>
 			<language type="wuu" draft="contributed">wuu</language>
 			<language type="xal" draft="contributed">kalmyk</language>
+			<language type="zh_Hans" draft="contributed">chino simplificado</language>
+			<language type="zh_Hant" draft="contributed">chino tradicional</language>
 		</languages>
 		<scripts>
 			<script type="Hanb" draft="contributed">hanb</script>
 			<script type="Mlym" draft="contributed">malayálam</script>
+			<script type="Telu" draft="contributed">telegu</script>
 		</scripts>
 		<territories>
 			<territory type="011">África occidental</territory>
@@ -71,7 +75,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<territory type="034">Asia meridional</territory>
 			<territory type="035">Sudeste asiático</territory>
 			<territory type="039">Europa meridional</territory>
-			<territory type="057">Región de Micronesia</territory>
 			<territory type="145">Asia occidental</territory>
 			<territory type="151">Europa oriental</territory>
 			<territory type="154">Europa septentrional</territory>
@@ -84,21 +87,21 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<territory type="GB" alt="short">RU</territory>
 			<territory type="GG">Guernsey</territory>
 			<territory type="QO">Territorios alejados de Oceanía</territory>
-			<territory type="TL">Timor-Leste</territory>
+			<territory type="TA" draft="contributed">Tristán de Acuña</territory>
 			<territory type="TL" alt="variant" draft="contributed">TL</territory>
 			<territory type="UM">Islas menores alejadas de EE. UU.</territory>
-			<territory type="VI">Islas Vírgenes de EE. UU.</territory>
+			<territory type="UN" draft="contributed">UN</territory>
 		</territories>
 		<types>
+			<type key="calendar" type="roc" draft="contributed">calendario minguo</type>
 			<type key="collation" type="ducet" draft="contributed">orden de clasificación de Unicode predeterminado</type>
 			<type key="lb" type="normal" draft="contributed">salto de línea normal</type>
-			<type key="ms" type="uksystem" draft="contributed">sistema imperial</type>
 			<type key="numbers" type="gujr" draft="contributed">dígitos en gujarati</type>
 			<type key="numbers" type="knda" draft="contributed">números en kannada</type>
 			<type key="numbers" type="laoo" draft="contributed">números en lao</type>
 		</types>
 		<measurementSystemNames>
-			<measurementSystemName type="US">estadounidense</measurementSystemName>
+			<measurementSystemName type="UK" draft="contributed">imperial</measurementSystemName>
 		</measurementSystemNames>
 	</localeDisplayNames>
 	<characters>
@@ -114,20 +117,62 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 		<calendars>
 			<calendar type="generic">
 				<dateFormats>
+					<dateFormatLength type="full">
+						<dateFormat>
+							<pattern>EEEE, d 'de' MMMM 'de' y G</pattern>
+						</dateFormat>
+					</dateFormatLength>
+					<dateFormatLength type="long">
+						<dateFormat>
+							<pattern>d 'de' MMMM 'de' y G</pattern>
+						</dateFormat>
+					</dateFormatLength>
 					<dateFormatLength type="medium">
 						<dateFormat>
 							<pattern draft="contributed">d MMM, y G</pattern>
 						</dateFormat>
 					</dateFormatLength>
+					<dateFormatLength type="short">
+						<dateFormat>
+							<pattern>dd/MM/yy GGGGG</pattern>
+						</dateFormat>
+					</dateFormatLength>
 				</dateFormats>
 				<dateTimeFormats>
+					<dateTimeFormatLength type="full">
+						<dateTimeFormat>
+							<pattern>{1}, {0}</pattern>
+						</dateTimeFormat>
+					</dateTimeFormatLength>
+					<dateTimeFormatLength type="long">
+						<dateTimeFormat>
+							<pattern>{1}, {0}</pattern>
+						</dateTimeFormat>
+					</dateTimeFormatLength>
+					<dateTimeFormatLength type="medium">
+						<dateTimeFormat>
+							<pattern>{1} {0}</pattern>
+						</dateTimeFormat>
+					</dateTimeFormatLength>
+					<dateTimeFormatLength type="short">
+						<dateTimeFormat>
+							<pattern>{1} {0}</pattern>
+						</dateTimeFormat>
+					</dateTimeFormatLength>
 					<availableFormats>
 						<dateFormatItem id="GyMMM" draft="contributed">MMM y G</dateFormatItem>
 						<dateFormatItem id="GyMMMd" draft="contributed">d MMM y G</dateFormatItem>
+						<dateFormatItem id="GyMMMEd" draft="contributed">E, d MMM y G</dateFormatItem>
+						<dateFormatItem id="h" draft="contributed">hh a</dateFormatItem>
+						<dateFormatItem id="hm" draft="contributed">hh:mm a</dateFormatItem>
+						<dateFormatItem id="hms" draft="contributed">hh:mm:ss a</dateFormatItem>
 						<dateFormatItem id="MMMd" draft="contributed">d MMM</dateFormatItem>
 						<dateFormatItem id="MMMEd" draft="contributed">E d MMM</dateFormatItem>
 						<dateFormatItem id="yyyyMEd" draft="contributed">E, d/M/y GGGGG</dateFormatItem>
 						<dateFormatItem id="yyyyMMM" draft="contributed">MMM y G</dateFormatItem>
+						<dateFormatItem id="yyyyMMMd" draft="contributed">d MMM y G</dateFormatItem>
+						<dateFormatItem id="yyyyMMMEd" draft="contributed">EEE, d MMM y G</dateFormatItem>
+						<dateFormatItem id="yyyyQQQ" draft="contributed">QQQ y G</dateFormatItem>
 					</availableFormats>
 					<intervalFormats>
 						<intervalFormatFallback draft="contributed">{0} – {1}</intervalFormatFallback>
@@ -153,22 +198,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				</dateTimeFormats>
 			</calendar>
 			<calendar type="gregorian">
-				<months>
-					<monthContext type="format">
-						<monthWidth type="abbreviated">
-							<month type="1" draft="contributed">ene.</month>
-							<month type="2" draft="contributed">feb.</month>
-							<month type="3" draft="contributed">mar.</month>
-							<month type="4" draft="contributed">abr.</month>
-							<month type="5" draft="contributed">may.</month>
-							<month type="6" draft="contributed">jun.</month>
-							<month type="7" draft="contributed">jul.</month>
-							<month type="8" draft="contributed">ago.</month>
-							<month type="9" draft="contributed">sep.</month>
-							<month type="10" draft="contributed">oct.</month>
-						</monthWidth>
-					</monthContext>
-				</months>
 				<days>
 					<dayContext type="format">
 						<dayWidth type="narrow">
@@ -184,15 +213,43 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				</days>
 				<quarters>
 					<quarterContext type="format">
+						<quarterWidth type="abbreviated">
+							<quarter type="1" draft="contributed">1er. trim.</quarter>
+							<quarter type="2" draft="contributed">2º. trim.</quarter>
+							<quarter type="3" draft="contributed">3er. trim.</quarter>
+							<quarter type="4" draft="contributed">4º trim.</quarter>
+						</quarterWidth>
+						<quarterWidth type="narrow">
+							<quarter type="1" draft="contributed">1T</quarter>
+							<quarter type="2" draft="contributed">2T</quarter>
+							<quarter type="3" draft="contributed">3T</quarter>
+							<quarter type="4" draft="contributed">4T</quarter>
+						</quarterWidth>
 						<quarterWidth type="wide">
 							<quarter type="1">1.er trimestre</quarter>
+							<quarter type="2" draft="contributed">2º. trimestre</quarter>
 							<quarter type="3">3.er trimestre</quarter>
+							<quarter type="4" draft="contributed">4o. trimestre</quarter>
 						</quarterWidth>
 					</quarterContext>
 					<quarterContext type="stand-alone">
+						<quarterWidth type="abbreviated">
+							<quarter type="1" draft="contributed">1er. trim.</quarter>
+							<quarter type="2" draft="contributed">2º. trim.</quarter>
+							<quarter type="3" draft="contributed">3er. trim.</quarter>
+							<quarter type="4" draft="contributed">4º trim.</quarter>
+						</quarterWidth>
+						<quarterWidth type="narrow">
+							<quarter type="1" draft="contributed">1T</quarter>
+							<quarter type="2" draft="contributed">2T</quarter>
+							<quarter type="3" draft="contributed">3T</quarter>
+							<quarter type="4" draft="contributed">4T</quarter>
+						</quarterWidth>
 						<quarterWidth type="wide">
 							<quarter type="1">1.er trimestre</quarter>
+							<quarter type="2" draft="contributed">2º. trimestre</quarter>
 							<quarter type="3">3.er trimestre</quarter>
+							<quarter type="4" draft="contributed">4º trimestre</quarter>
 						</quarterWidth>
 					</quarterContext>
 				</quarters>
@@ -203,7 +260,11 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 							<dayPeriod type="pm">p. m.</dayPeriod>
 						</dayPeriodWidth>
 						<dayPeriodWidth type="narrow">
+							<dayPeriod type="noon" draft="contributed">del mediodía</dayPeriod>
+							<dayPeriod type="morning1" draft="contributed">de la madrugada</dayPeriod>
 							<dayPeriod type="morning2">mañana</dayPeriod>
+							<dayPeriod type="evening1" draft="contributed">de la tarde</dayPeriod>
+							<dayPeriod type="night1" draft="contributed">de la noche</dayPeriod>
 						</dayPeriodWidth>
 						<dayPeriodWidth type="wide">
 							<dayPeriod type="am">a. m.</dayPeriod>
@@ -215,10 +276,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 							<dayPeriod type="am">a. m.</dayPeriod>
 							<dayPeriod type="pm">p. m.</dayPeriod>
 						</dayPeriodWidth>
-						<dayPeriodWidth type="narrow">
-							<dayPeriod type="am">a. m.</dayPeriod>
-							<dayPeriod type="pm">p. m.</dayPeriod>
-						</dayPeriodWidth>
 						<dayPeriodWidth type="wide">
 							<dayPeriod type="am">a. m.</dayPeriod>
 							<dayPeriod type="pm">p. m.</dayPeriod>
@@ -226,6 +283,21 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 					</dayPeriodContext>
 				</dayPeriods>
 				<dateFormats>
+					<dateFormatLength type="full">
+						<dateFormat>
+							<pattern>EEEE, d 'de' MMMM 'de' y</pattern>
+						</dateFormat>
+					</dateFormatLength>
+					<dateFormatLength type="long">
+						<dateFormat>
+							<pattern>d 'de' MMMM 'de' y</pattern>
+						</dateFormat>
+					</dateFormatLength>
+					<dateFormatLength type="medium">
+						<dateFormat>
+							<pattern draft="contributed">d MMM y</pattern>
+						</dateFormat>
+					</dateFormatLength>
 					<dateFormatLength type="short">
 						<dateFormat>
 							<pattern draft="contributed">d/M/y</pattern>
@@ -255,6 +327,26 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 					</timeFormatLength>
 				</timeFormats>
 				<dateTimeFormats>
+					<dateTimeFormatLength type="full">
+						<dateTimeFormat>
+							<pattern>{1} 'a' 'las' {0}</pattern>
+						</dateTimeFormat>
+					</dateTimeFormatLength>
+					<dateTimeFormatLength type="long">
+						<dateTimeFormat>
+							<pattern>{1} 'a' 'las' {0}</pattern>
+						</dateTimeFormat>
+					</dateTimeFormatLength>
+					<dateTimeFormatLength type="medium">
+						<dateTimeFormat>
+							<pattern>{1} {0}</pattern>
+						</dateTimeFormat>
+					</dateTimeFormatLength>
+					<dateTimeFormatLength type="short">
+						<dateTimeFormat>
+							<pattern>{1} {0}</pattern>
+						</dateTimeFormat>
+					</dateTimeFormatLength>
 					<availableFormats>
 						<dateFormatItem id="Ehm">E h:mm a</dateFormatItem>
 						<dateFormatItem id="EHm">E HH:mm</dateFormatItem>
@@ -273,6 +365,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 						<dateFormatItem id="yQQQ">QQQ y</dateFormatItem>
 					</availableFormats>
 					<intervalFormats>
+						<intervalFormatFallback draft="contributed">{0} – {1}</intervalFormatFallback>
 						<intervalFormatItem id="h">
 							<greatestDifference id="a">h a – h a</greatestDifference>
 						</intervalFormatItem>
@@ -332,12 +425,24 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 		</calendars>
 		<fields>
 			<field type="year">
+				<relative type="-1" draft="contributed">el año pasado</relative>
+				<relative type="0" draft="contributed">este año</relative>
 				<relative type="1">el año próximo</relative>
 			</field>
+			<field type="quarter">
+				<relativeTime type="future">
+					<relativeTimePattern count="one" draft="contributed">dentro de {0} trimetre</relativeTimePattern>
+					<relativeTimePattern count="other" draft="contributed">dentro de {0} trimetres</relativeTimePattern>
+				</relativeTime>
+			</field>
 			<field type="month">
+				<relative type="-1" draft="contributed">el mes pasado</relative>
+				<relative type="0" draft="contributed">este mes</relative>
 				<relative type="1">el mes próximo</relative>
 			</field>
 			<field type="week">
+				<relative type="-1" draft="contributed">la semana pasada</relative>
+				<relative type="0" draft="contributed">esta semana</relative>
 				<relative type="1">la semana próxima</relative>
 			</field>
 			<field type="weekOfMonth-short">
@@ -362,95 +467,52 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<displayName>día de sem. de mes</displayName>
 			</field>
 			<field type="sun">
+				<relative type="-1" draft="contributed">el domingo pasado</relative>
+				<relative type="0" draft="contributed">este domingo</relative>
+				<relative type="1" draft="contributed">el domingo próximo</relative>
 				<relativeTime type="future">
 					<relativeTimePattern count="one" draft="contributed">dentro de {0} domingo</relativeTimePattern>
 					<relativeTimePattern count="other" draft="contributed">dentro de {0} domingos</relativeTimePattern>
 				</relativeTime>
 			</field>
-			<field type="sun-narrow">
-				<relativeTime type="future">
-					<relativeTimePattern count="other">dentro de {0} DO</relativeTimePattern>
-				</relativeTime>
-				<relativeTime type="past">
-					<relativeTimePattern count="one" draft="contributed">hace {0} DO</relativeTimePattern>
-					<relativeTimePattern count="other" draft="contributed">hace {0} DO</relativeTimePattern>
-				</relativeTime>
-			</field>
 			<field type="mon">
-				<relativeTime type="future">
-					<relativeTimePattern count="one">dentro de {0} lunes</relativeTimePattern>
-					<relativeTimePattern count="other">dentro de {0} lunes</relativeTimePattern>
-				</relativeTime>
-			</field>
-			<field type="mon-short">
-				<relativeTime type="future">
-					<relativeTimePattern count="one">dentro de {0} lun.</relativeTimePattern>
-				</relativeTime>
-				<relativeTime type="past">
-					<relativeTimePattern count="one" draft="contributed">hace {0} lun.</relativeTimePattern>
-					<relativeTimePattern count="other" draft="contributed">hace {0} lun.</relativeTimePattern>
-				</relativeTime>
-			</field>
-			<field type="mon-narrow">
-				<relativeTime type="future">
-					<relativeTimePattern count="one" draft="contributed">dentro de {0} LU</relativeTimePattern>
-					<relativeTimePattern count="other" draft="contributed">dentro de {0} LU</relativeTimePattern>
-				</relativeTime>
-				<relativeTime type="past">
-					<relativeTimePattern count="one" draft="contributed">hace {0} LU</relativeTimePattern>
-					<relativeTimePattern count="other" draft="contributed">hace {0} LU</relativeTimePattern>
-				</relativeTime>
+				<relative type="-1" draft="contributed">el lunes pasado</relative>
+				<relative type="0" draft="contributed">este lunes</relative>
+				<relative type="1" draft="contributed">el lunes próximo</relative>
 			</field>
 			<field type="tue">
+				<relative type="-1" draft="contributed">el martes pasado</relative>
+				<relative type="0" draft="contributed">este martes</relative>
+				<relative type="1" draft="contributed">el martes próximo</relative>
 				<relativeTime type="future">
+					<relativeTimePattern count="one">dentro de {0} martes</relativeTimePattern>
 					<relativeTimePattern count="other">dentro de {0} martes</relativeTimePattern>
 				</relativeTime>
 			</field>
 			<field type="wed">
-				<relativeTime type="future">
-					<relativeTimePattern count="one">dentro de {0} miércoles</relativeTimePattern>
-				</relativeTime>
+				<relative type="-1" draft="contributed">el miércoles pasado</relative>
+				<relative type="0" draft="contributed">este miércoles</relative>
+				<relative type="1" draft="contributed">el miércoles próximo</relative>
 			</field>
 			<field type="wed-short">
 				<relative type="-1">el mie. pasado</relative>
-				<relativeTime type="future">
-					<relativeTimePattern count="one">dentro de {0} mié.</relativeTimePattern>
-					<relativeTimePattern count="other">dentro de {0} mié.</relativeTimePattern>
-				</relativeTime>
-				<relativeTime type="past">
-					<relativeTimePattern count="one" draft="contributed">hace {0} mié.</relativeTimePattern>
-					<relativeTimePattern count="other" draft="contributed">hace {0} mié.</relativeTimePattern>
-				</relativeTime>
-			</field>
-			<field type="wed-narrow">
-				<relativeTime type="future">
-					<relativeTimePattern count="one">dentro de {0} MI</relativeTimePattern>
-					<relativeTimePattern count="other">dentro de {0} MI</relativeTimePattern>
-				</relativeTime>
-				<relativeTime type="past">
-					<relativeTimePattern count="one" draft="contributed">hace {0} MI</relativeTimePattern>
-					<relativeTimePattern count="other" draft="contributed">hace {0} MI</relativeTimePattern>
-				</relativeTime>
+				<relative type="0" draft="contributed">este miér.</relative>
+				<relative type="1" draft="contributed">el próximo miér.</relative>
 			</field>
 			<field type="thu">
-				<relativeTime type="future">
-					<relativeTimePattern count="one">dentro de {0} jueves</relativeTimePattern>
-				</relativeTime>
-			</field>
-			<field type="thu-narrow">
-				<relativeTime type="future">
-					<relativeTimePattern count="other">dentro de {0} JU</relativeTimePattern>
-				</relativeTime>
+				<relative type="-1" draft="contributed">el jueves pasado</relative>
+				<relative type="0" draft="contributed">este jueves</relative>
+				<relative type="1" draft="contributed">el jueves próximo</relative>
 			</field>
 			<field type="fri">
-				<relativeTime type="future">
-					<relativeTimePattern count="other">dentro de {0} viernes</relativeTimePattern>
-				</relativeTime>
+				<relative type="-1" draft="contributed">el viernes pasado</relative>
+				<relative type="0" draft="contributed">este viernes</relative>
+				<relative type="1" draft="contributed">el viernes próximo</relative>
 			</field>
 			<field type="fri-short">
-				<relativeTime type="future">
-					<relativeTimePattern count="other">dentro de {0} vie.</relativeTimePattern>
-				</relativeTime>
+				<relative type="-1" draft="contributed">el vier. pasado</relative>
+				<relative type="0" draft="contributed">este vier.</relative>
+				<relative type="1" draft="contributed">el próximo vier.</relative>
 			</field>
 			<field type="fri-narrow">
 				<relativeTime type="past">
@@ -459,15 +521,11 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				</relativeTime>
 			</field>
 			<field type="sat">
-				<relativeTime type="future">
-					<relativeTimePattern count="one">dentro de {0} sábado</relativeTimePattern>
-					<relativeTimePattern count="other">dentro de {0} sábados</relativeTimePattern>
-				</relativeTime>
+				<relative type="-1" draft="contributed">el sábado pasado</relative>
+				<relative type="0" draft="contributed">este sábado</relative>
+				<relative type="1" draft="contributed">el sábado próximo</relative>
 			</field>
 			<field type="sat-narrow">
-				<relativeTime type="future">
-					<relativeTimePattern count="one">dentro de {0} SA</relativeTimePattern>
-				</relativeTime>
 				<relativeTime type="past">
 					<relativeTimePattern count="one" draft="contributed">hace {0} SA</relativeTimePattern>
 					<relativeTimePattern count="other" draft="contributed">hace {0} SA</relativeTimePattern>
@@ -490,14 +548,15 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 					<standard>HST</standard>
 					<daylight>HDT</daylight>
 				</short>
+				<exemplarCity draft="contributed">Honolulu</exemplarCity>
 			</zone>
 			<zone type="Etc/UTC">
 				<long>
 					<standard>hora universal coordinada</standard>
 				</long>
 			</zone>
-			<zone type="America/Sao_Paulo">
-				<exemplarCity>São Paulo</exemplarCity>
+			<zone type="America/Rio_Branco">
+				<exemplarCity draft="contributed">Rio Branco</exemplarCity>
 			</zone>
 			<zone type="America/Nassau">
 				<exemplarCity>Nassau</exemplarCity>
@@ -505,8 +564,11 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<zone type="America/Fort_Nelson">
 				<exemplarCity>Fort Nelson</exemplarCity>
 			</zone>
-			<zone type="Africa/Accra">
-				<exemplarCity>Acra</exemplarCity>
+			<zone type="Asia/Pyongyang">
+				<exemplarCity draft="contributed">Piongyang</exemplarCity>
+			</zone>
+			<zone type="Asia/Almaty">
+				<exemplarCity draft="contributed">Almatý</exemplarCity>
 			</zone>
 			<zone type="Europe/Astrakhan">
 				<exemplarCity draft="contributed">Astrakhan</exemplarCity>
@@ -520,8 +582,8 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<zone type="Asia/Barnaul">
 				<exemplarCity draft="contributed">Barnaul</exemplarCity>
 			</zone>
-			<zone type="Asia/Dushanbe">
-				<exemplarCity>Dusambé</exemplarCity>
+			<zone type="Pacific/Wake">
+				<exemplarCity draft="contributed">Wake</exemplarCity>
 			</zone>
 			<zone type="America/St_Thomas">
 				<exemplarCity>St. Thomas</exemplarCity>
@@ -568,6 +630,8 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			</metazone>
 			<metazone type="Apia">
 				<long>
+					<generic draft="contributed">hora de Apia</generic>
+					<standard draft="contributed">hora estándar de Apia</standard>
 					<daylight>hora de verano de Apia</daylight>
 				</long>
 			</metazone>
@@ -583,9 +647,21 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 					<standard>hora de Chamorro</standard>
 				</long>
 			</metazone>
+			<metazone type="Christmas">
+				<long>
+					<standard draft="contributed">hora de la isla de Navidad</standard>
+				</long>
+			</metazone>
 			<metazone type="Cocos">
 				<long>
 					<standard>hora de las Islas Cocos</standard>
+				</long>
+			</metazone>
+			<metazone type="Cook">
+				<long>
+					<generic draft="contributed">hora de las Islas Cook</generic>
+					<standard draft="contributed">hora estándar de las Islas Cook</standard>
+					<daylight draft="contributed">hora de verano media de las Islas Cook</daylight>
 				</long>
 			</metazone>
 			<metazone type="Easter">
@@ -636,6 +712,13 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<metazone type="Indian_Ocean">
 				<long>
 					<standard>hora del Océano Índico</standard>
+				</long>
+			</metazone>
+			<metazone type="Irkutsk">
+				<long>
+					<generic draft="contributed">hora de Irkutsk</generic>
+					<standard draft="contributed">hora estándar de Irkutsh</standard>
+					<daylight draft="contributed">hora de verano de Irkutsh</daylight>
 				</long>
 			</metazone>
 			<metazone type="Macquarie">
@@ -700,6 +783,8 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			</decimalFormatLength>
 			<decimalFormatLength type="short">
 				<decimalFormat>
+					<pattern type="1000" count="one">0 K</pattern>
+					<pattern type="1000" count="other">0 K</pattern>
 					<pattern type="10000" count="one">00 K</pattern>
 					<pattern type="10000" count="other">00 K</pattern>
 					<pattern type="100000" count="one">000 K</pattern>
@@ -751,7 +836,21 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 		</currencyFormats>
 		<currencies>
 			<currency type="AMD">
-				<displayName draft="contributed">dram</displayName>
+				<displayName count="one" draft="contributed">dram armenio</displayName>
+				<displayName count="other" draft="contributed">drams armenios</displayName>
+			</currency>
+			<currency type="BDT">
+				<displayName draft="contributed">taka bangladesí</displayName>
+				<displayName count="one" draft="contributed">taka bangladesí</displayName>
+				<displayName count="other" draft="contributed">takas bangladesíes</displayName>
+			</currency>
+			<currency type="BTN">
+				<displayName draft="contributed">ngultrum butanés</displayName>
+				<displayName count="one" draft="contributed">ngultrum butanés</displayName>
+				<displayName count="other" draft="contributed">gultrums bultaneses</displayName>
+			</currency>
+			<currency type="BYN">
+				<symbol alt="narrow" draft="contributed">p.</symbol>
 			</currency>
 			<currency type="FKP">
 				<symbol alt="narrow" draft="contributed">£</symbol>
@@ -759,16 +858,19 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<currency type="JPY">
 				<symbol>¥</symbol>
 			</currency>
-			<currency type="MWK">
-				<displayName count="one" draft="contributed">kwacha malauí</displayName>
+			<currency type="KGS">
+				<displayName draft="contributed">som kirguís</displayName>
 			</currency>
-			<currency type="MYR">
-				<displayName>ringit</displayName>
-				<displayName count="one">ringit</displayName>
-				<displayName count="other">ringits</displayName>
+			<currency type="KHR">
+				<displayName count="one" draft="contributed">riel camboyano</displayName>
+				<displayName count="other" draft="contributed">rieles camboyanos</displayName>
+			</currency>
+			<currency type="LAK">
+				<displayName draft="contributed">kip laosiano</displayName>
+				<displayName count="one" draft="contributed">kip laosiano</displayName>
+				<displayName count="other" draft="contributed">kips laosianos</displayName>
 			</currency>
 			<currency type="RON">
-				<displayName count="one" draft="contributed">leu rumano</displayName>
 				<symbol alt="narrow" draft="contributed">lei</symbol>
 			</currency>
 			<currency type="SSP">
@@ -798,26 +900,48 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<currency type="VEF">
 				<symbol alt="narrow" draft="contributed">Bs</symbol>
 			</currency>
+			<currency type="VES">
+				<displayName count="one" draft="contributed">bolívar venezolano</displayName>
+				<displayName count="other" draft="contributed">bolivares venezolanos</displayName>
+			</currency>
+			<currency type="VND">
+				<displayName draft="contributed">dong vietnamita</displayName>
+				<displayName count="one" draft="contributed">dong vietnamita</displayName>
+				<displayName count="other" draft="contributed">dongs vietnamitas</displayName>
+			</currency>
 			<currency type="XAF">
 				<displayName>franco CFA de África central</displayName>
 				<displayName count="one">franco CFA de África central</displayName>
 				<displayName count="other">francos CFA de África central</displayName>
 			</currency>
-			<currency type="XOF">
-				<displayName>franco CFA de África Occidental</displayName>
-				<displayName count="one">franco CFA de África Occidental</displayName>
-				<displayName count="other">francos CFA de África Occidental</displayName>
+			<currency type="ZMW">
+				<displayName draft="contributed">kwacha zambiano</displayName>
+				<displayName count="one" draft="contributed">kwacha zambiano</displayName>
+				<displayName count="other" draft="contributed">kwachas zambianos</displayName>
 			</currency>
 		</currencies>
 	</numbers>
 	<units>
 		<unitLength type="long">
-			<unit type="angle-revolution">
-				<displayName draft="contributed">revoluciones</displayName>
+			<unit type="angle-arc-minute">
+				<displayName draft="contributed">arcominutos</displayName>
+				<unitPattern count="one" draft="contributed">{0} minuto</unitPattern>
+				<unitPattern count="other" draft="contributed">{0} minutos</unitPattern>
+			</unit>
+			<unit type="angle-arc-second">
+				<displayName draft="contributed">arcosegundos</displayName>
+				<unitPattern count="one" draft="contributed">{0} segundo</unitPattern>
+				<unitPattern count="other" draft="contributed">{0} segundos</unitPattern>
 			</unit>
 			<unit type="concentr-milligram-per-deciliter">
 				<unitPattern count="one" draft="contributed">{0} mg/dL</unitPattern>
 				<unitPattern count="other" draft="contributed">{0} mg/dL</unitPattern>
+			</unit>
+			<unit type="concentr-millimole-per-liter">
+				<displayName draft="contributed">mmol/L</displayName>
+			</unit>
+			<unit type="concentr-part-per-million">
+				<displayName draft="contributed">ppm</displayName>
 			</unit>
 			<unit type="consumption-mile-per-gallon-imperial">
 				<displayName draft="contributed">mpg Imp.</displayName>
@@ -829,34 +953,15 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<unitPattern count="one" draft="contributed">{0} ohmio</unitPattern>
 				<unitPattern count="other" draft="contributed">{0} ohmios</unitPattern>
 			</unit>
-			<unit type="electric-volt">
-				<displayName draft="contributed">voltios</displayName>
-				<unitPattern count="one" draft="contributed">{0} voltio</unitPattern>
-				<unitPattern count="other" draft="contributed">{0} voltios</unitPattern>
-			</unit>
 			<unit type="energy-kilowatt-hour">
 				<displayName draft="contributed">kilovatios hora</displayName>
 				<unitPattern count="one" draft="contributed">{0} kilovatio hora</unitPattern>
 				<unitPattern count="other" draft="contributed">{0} kilovatios hora</unitPattern>
 			</unit>
-			<unit type="frequency-gigahertz">
-				<unitPattern count="one" draft="contributed">{0} gigahercio</unitPattern>
-				<unitPattern count="other" draft="contributed">{0} gigahercios</unitPattern>
-			</unit>
-			<unit type="frequency-megahertz">
-				<displayName draft="contributed">megahercios</displayName>
-				<unitPattern count="one" draft="contributed">{0} megahercio</unitPattern>
-				<unitPattern count="other" draft="contributed">{0} megahercios</unitPattern>
-			</unit>
-			<unit type="frequency-kilohertz">
-				<displayName draft="contributed">kilohercios</displayName>
-				<unitPattern count="one" draft="contributed">{0} kilohercio</unitPattern>
-				<unitPattern count="other" draft="contributed">{0} kilohercios</unitPattern>
-			</unit>
-			<unit type="frequency-hertz">
-				<displayName draft="contributed">hercios</displayName>
-				<unitPattern count="one" draft="contributed">{0} hercio</unitPattern>
-				<unitPattern count="other" draft="contributed">{0} hercios</unitPattern>
+			<unit type="length-nautical-mile">
+				<displayName draft="contributed">millas naúticas</displayName>
+				<unitPattern count="one" draft="contributed">{0} milla naútica</unitPattern>
+				<unitPattern count="other" draft="contributed">{0} millas naúticas</unitPattern>
 			</unit>
 			<unit type="length-mile-scandinavian">
 				<displayName draft="contributed">millas escandinavas</displayName>
@@ -866,33 +971,8 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<unitPattern count="one" draft="contributed">{0} pt</unitPattern>
 				<unitPattern count="other" draft="contributed">{0} pt</unitPattern>
 			</unit>
-			<unit type="mass-microgram">
-				<unitPattern count="other" draft="contributed">{0} microgramos</unitPattern>
-			</unit>
-			<unit type="power-gigawatt">
-				<displayName draft="contributed">gigavatios</displayName>
-				<unitPattern count="one" draft="contributed">{0} gigavatio</unitPattern>
-				<unitPattern count="other" draft="contributed">{0} gigavatios</unitPattern>
-			</unit>
-			<unit type="power-megawatt">
-				<displayName draft="contributed">megavatios</displayName>
-				<unitPattern count="one" draft="contributed">{0} megavatio</unitPattern>
-				<unitPattern count="other" draft="contributed">{0} megavatios</unitPattern>
-			</unit>
-			<unit type="power-kilowatt">
-				<displayName draft="contributed">kilovatios</displayName>
-				<unitPattern count="one" draft="contributed">{0} kilovatio</unitPattern>
-				<unitPattern count="other" draft="contributed">{0} kilovatios</unitPattern>
-			</unit>
-			<unit type="power-watt">
-				<displayName draft="contributed">vatios</displayName>
-				<unitPattern count="one" draft="contributed">{0} vatio</unitPattern>
-				<unitPattern count="other" draft="contributed">{0} vatios</unitPattern>
-			</unit>
-			<unit type="power-milliwatt">
-				<displayName draft="contributed">milivatios</displayName>
-				<unitPattern count="one" draft="contributed">{0} milivatio</unitPattern>
-				<unitPattern count="other" draft="contributed">{0} milivatios</unitPattern>
+			<unit type="light-lux">
+				<displayName draft="contributed">lux</displayName>
 			</unit>
 			<unit type="power-horsepower">
 				<unitPattern count="one" draft="contributed">{0} caballo de vapor</unitPattern>
@@ -900,16 +980,24 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			</unit>
 			<unit type="temperature-kelvin">
 				<displayName draft="contributed">kelvin</displayName>
+				<unitPattern count="one" draft="contributed">kelvin</unitPattern>
 				<unitPattern count="other" draft="contributed">{0} kelvin</unitPattern>
 			</unit>
 			<unit type="volume-acre-foot">
 				<displayName draft="contributed">acres-pies</displayName>
+				<unitPattern count="one" draft="contributed">{0} acre-pie</unitPattern>
+				<unitPattern count="other" draft="contributed">{0} acre-pies</unitPattern>
 			</unit>
 			<unit type="volume-gallon-imperial">
 				<displayName draft="contributed">Imp. gal</displayName>
 				<unitPattern count="one" draft="contributed">{0} gal Imp.</unitPattern>
 				<unitPattern count="other" draft="contributed">{0} gal Imp.</unitPattern>
 				<perUnitPattern draft="contributed">{0}/gal Imp.</perUnitPattern>
+			</unit>
+			<unit type="volume-fluid-ounce">
+				<displayName draft="contributed">onzas líquidas</displayName>
+				<unitPattern count="one" draft="contributed">{0} onza líquida</unitPattern>
+				<unitPattern count="other" draft="contributed">{0} onzas líquidas</unitPattern>
 			</unit>
 		</unitLength>
 		<unitLength type="short">
@@ -921,24 +1009,68 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<unit type="angle-degree">
 				<displayName draft="contributed">grad.</displayName>
 			</unit>
+			<unit type="angle-arc-minute">
+				<unitPattern count="one" draft="contributed">{0} min</unitPattern>
+				<unitPattern count="other" draft="contributed">{0} min</unitPattern>
+			</unit>
+			<unit type="angle-arc-second">
+				<displayName draft="contributed">arcseg</displayName>
+				<unitPattern count="one" draft="contributed">{0} s</unitPattern>
+				<unitPattern count="other" draft="contributed">{0} s</unitPattern>
+			</unit>
+			<unit type="concentr-percent">
+				<displayName draft="contributed">%</displayName>
+			</unit>
+			<unit type="concentr-permille">
+				<displayName draft="contributed">‰</displayName>
+			</unit>
 			<unit type="consumption-mile-per-gallon-imperial">
 				<displayName draft="contributed">mpg Imp.</displayName>
 				<unitPattern count="one" draft="contributed">{0} mpg Imp.</unitPattern>
 				<unitPattern count="other" draft="contributed">{0} mpg Imp.</unitPattern>
 			</unit>
+			<unit type="digital-byte">
+				<displayName draft="contributed">byte</displayName>
+			</unit>
+			<unit type="digital-bit">
+				<displayName draft="contributed">bit</displayName>
+			</unit>
 			<unit type="duration-year">
+				<displayName draft="contributed">a</displayName>
+				<unitPattern count="one" draft="contributed">{0} a</unitPattern>
+				<unitPattern count="other" draft="contributed">{0} a</unitPattern>
 				<perUnitPattern draft="contributed">{0}/a</perUnitPattern>
 			</unit>
+			<unit type="duration-month">
+				<unitPattern count="one" draft="contributed">{0} m</unitPattern>
+				<unitPattern count="other" draft="contributed">{0} m</unitPattern>
+			</unit>
+			<unit type="duration-week">
+				<unitPattern count="one" draft="contributed">{0} sem</unitPattern>
+				<unitPattern count="other" draft="contributed">{0} sem</unitPattern>
+			</unit>
 			<unit type="duration-day">
+				<displayName draft="contributed">días</displayName>
+				<unitPattern count="one" draft="contributed">{0} día</unitPattern>
+				<unitPattern count="other" draft="contributed">{0} días</unitPattern>
 				<perUnitPattern draft="contributed">{0}/d</perUnitPattern>
 			</unit>
+			<unit type="length-yard">
+				<displayName draft="contributed">yd</displayName>
+			</unit>
 			<unit type="length-light-year">
+				<unitPattern count="one" draft="contributed">{0} a. l.</unitPattern>
 				<unitPattern count="other" draft="contributed">{0} a. l.</unitPattern>
 			</unit>
 			<unit type="length-astronomical-unit">
 				<displayName draft="contributed">au</displayName>
 				<unitPattern count="one" draft="contributed">{0} au</unitPattern>
 				<unitPattern count="other" draft="contributed">{0} au</unitPattern>
+			</unit>
+			<unit type="length-nautical-mile">
+				<displayName draft="contributed">M</displayName>
+				<unitPattern count="one" draft="contributed">{0} M</unitPattern>
+				<unitPattern count="other" draft="contributed">{0} M</unitPattern>
 			</unit>
 			<unit type="length-point">
 				<displayName draft="contributed">pt</displayName>
@@ -960,16 +1092,38 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<unitPattern count="one" draft="contributed">{0} CV</unitPattern>
 				<unitPattern count="other" draft="contributed">{0} CV</unitPattern>
 			</unit>
-			<unit type="temperature-celsius">
-				<unitPattern count="one" draft="contributed">{0} °C</unitPattern>
-			</unit>
 			<unit type="volume-gallon-imperial">
 				<displayName draft="contributed">Imp. gal</displayName>
 				<unitPattern count="one" draft="contributed">{0} gal Imp.</unitPattern>
 				<unitPattern count="other" draft="contributed">{0} gal Imp.</unitPattern>
 			</unit>
+			<unit type="volume-cup">
+				<displayName draft="contributed">tza.</displayName>
+				<unitPattern count="one" draft="contributed">{0} tza.</unitPattern>
+				<unitPattern count="other" draft="contributed">{0} tzas.</unitPattern>
+			</unit>
 		</unitLength>
 		<unitLength type="narrow">
+			<unit type="duration-year">
+				<displayName draft="contributed">a</displayName>
+				<unitPattern count="one" draft="contributed">{0}a</unitPattern>
+				<unitPattern count="other" draft="contributed">{0}a</unitPattern>
+			</unit>
+			<unit type="duration-month">
+				<displayName draft="contributed">m</displayName>
+				<unitPattern count="one" draft="contributed">{0}m</unitPattern>
+				<unitPattern count="other" draft="contributed">{0}m</unitPattern>
+			</unit>
+			<unit type="duration-week">
+				<displayName draft="contributed">sem</displayName>
+				<unitPattern count="one" draft="contributed">{0}sem</unitPattern>
+				<unitPattern count="other" draft="contributed">{0}sem</unitPattern>
+			</unit>
+			<unit type="duration-day">
+				<displayName draft="contributed">días</displayName>
+				<unitPattern count="one" draft="contributed">{0}d</unitPattern>
+				<unitPattern count="other" draft="contributed">{0}d</unitPattern>
+			</unit>
 			<unit type="temperature-fahrenheit">
 				<unitPattern count="one">{0}°</unitPattern>
 				<unitPattern count="other">{0}°</unitPattern>
@@ -1007,6 +1161,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 		<styleName type="opsz" subtype="12" draft="contributed">text</styleName>
 		<styleName type="wght" subtype="200" draft="contributed">extraligera</styleName>
 		<styleName type="wght" subtype="350" draft="contributed">semiligera</styleName>
+		<styleName type="wght" subtype="500" draft="contributed">mediana</styleName>
 		<styleName type="wght" subtype="600" alt="demi" draft="contributed">demibold</styleName>
 		<styleName type="wght" subtype="800" alt="ultra" draft="contributed">ultranegrita</styleName>
 	</typographicNames>

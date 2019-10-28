@@ -10,7 +10,7 @@ UAE English locale, based on US English orthography, formats from en_001
 -->
 <ldml>
 	<identity>
-		<version number="$Revision: 14867 $"/>
+		<version number="$Revision$"/>
 		<language type="en"/>
 		<territory type="AE"/>
 	</identity>
@@ -348,7 +348,6 @@ UAE English locale, based on US English orthography, formats from en_001
 	<numbers>
 		<currencies>
 			<currency type="AED">
-				<!-- Official (Latn) symbol given as 'Dh', 'AED' is symbol in common use. -->
 				<symbol>AED</symbol>
 			</currency>
 		</currencies>

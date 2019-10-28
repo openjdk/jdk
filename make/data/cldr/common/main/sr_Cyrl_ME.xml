@@ -7,7 +7,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 -->
 <ldml>
 	<identity>
-		<version number="$Revision: 14771 $"/>
+		<version number="$Revision$"/>
 		<language type="sr"/>
 		<script type="Cyrl"/>
 		<territory type="ME"/>
@@ -35,7 +35,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<territory type="CZ" draft="contributed">Чешка Република</territory>
 			<territory type="DE" draft="contributed">Њемачка</territory>
 			<territory type="KN" draft="contributed">Свети Китс и Невис</territory>
-			<territory type="MK" alt="variant" draft="contributed">БЈР Македонија</territory>
 			<territory type="PM" draft="contributed">Свети Пјер и Микелон</territory>
 			<territory type="RE" draft="contributed">Реунион</territory>
 			<territory type="UM" draft="contributed">Мања удаљена острва САД</territory>
@@ -60,20 +59,34 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<months>
 					<monthContext type="format">
 						<monthWidth type="abbreviated">
+							<month type="1">јан</month>
+							<month type="2">феб</month>
 							<month type="3" draft="contributed">март</month>
+							<month type="4">апр</month>
 							<month type="5" draft="contributed">мај</month>
 							<month type="6" draft="contributed">јун</month>
 							<month type="7" draft="contributed">јул</month>
+							<month type="8">авг</month>
 							<month type="9">септ</month>
+							<month type="10">окт</month>
+							<month type="11">нов</month>
+							<month type="12">дец</month>
 						</monthWidth>
 					</monthContext>
 					<monthContext type="stand-alone">
 						<monthWidth type="abbreviated">
+							<month type="1">јан</month>
+							<month type="2">феб</month>
 							<month type="3" draft="contributed">март</month>
+							<month type="4">апр</month>
 							<month type="5" draft="contributed">мај</month>
 							<month type="6" draft="contributed">јун</month>
 							<month type="7" draft="contributed">јул</month>
+							<month type="8">авг</month>
 							<month type="9">септ</month>
+							<month type="10">окт</month>
+							<month type="11">нов</month>
+							<month type="12">дец</month>
 						</monthWidth>
 					</monthContext>
 				</months>

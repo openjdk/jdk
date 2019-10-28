@@ -7,7 +7,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 -->
 <ldml>
 	<identity>
-		<version number="$Revision: 14782 $"/>
+		<version number="$Revision$"/>
 		<language type="sah"/>
 	</identity>
 	<localeDisplayNames>
@@ -145,7 +145,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 		<exemplarCharacters>[а б г ҕ д {дь} и й к л м н {нь} ҥ о ө п р с т у ү х һ ч ы э]</exemplarCharacters>
 		<exemplarCharacters type="auxiliary">[в е ё ж з ф ц ш щ ъ ь ю я]</exemplarCharacters>
 		<exemplarCharacters type="index">[А Б Г Ҕ Д {Дь} И Й К Л М Н {Нь} Ҥ О Ө П Р С Т У Ү Х Һ Ч Ы Э]</exemplarCharacters>
-		<exemplarCharacters type="numbers">[  \- , % ‰ + 0 1 2 3 4 5 6 7 8 9]</exemplarCharacters>
+		<exemplarCharacters type="numbers">[  \- ‑ , % ‰ + 0 1 2 3 4 5 6 7 8 9]</exemplarCharacters>
 		<exemplarCharacters type="punctuation" draft="contributed">[\:]</exemplarCharacters>
 		<ellipsis type="final">{0}…</ellipsis>
 		<ellipsis type="initial">…{0}</ellipsis>
@@ -1514,6 +1514,10 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<displayName>гектаар</displayName>
 				<unitPattern count="other">{0} гектаар</unitPattern>
 			</unit>
+			<unit type="area-square-centimeter">
+				<displayName draft="unconfirmed">кыбатыраатынай сэнтимиэтир</displayName>
+				<unitPattern count="other" draft="unconfirmed">{0} кыбатыраатынай сэнтимиэтир</unitPattern>
+			</unit>
 			<unit type="concentr-karat">
 				<displayName>караат</displayName>
 				<unitPattern count="other">{0} караат</unitPattern>
@@ -1652,7 +1656,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<unit type="length-meter">
 				<displayName>миэтэрэ</displayName>
 				<unitPattern count="other">{0} миэтэрэ</unitPattern>
-				<perUnitPattern draft="unconfirmed">миэтэргэ {0}</perUnitPattern>
+				<perUnitPattern draft="unconfirmed">миэтиргэ {0}</perUnitPattern>
 			</unit>
 			<unit type="length-mile">
 				<displayName>миилэ</displayName>

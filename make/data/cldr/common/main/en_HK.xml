@@ -7,7 +7,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 -->
 <ldml>
 	<identity>
-		<version number="$Revision: 14786 $"/>
+		<version number="$Revision$"/>
 		<language type="en"/>
 		<territory type="HK"/>
 	</identity>
@@ -128,11 +128,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				</dateTimeFormats>
 			</calendar>
 		</calendars>
-		<fields>
-			<field type="week">
-				<relative type="1" draft="contributed">next week</relative>
-			</field>
-		</fields>
 		<timeZoneNames>
 			<metazone type="Hong_Kong">
 				<short>

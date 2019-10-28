@@ -7,7 +7,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 -->
 <ldml>
 	<identity>
-		<version number="$Revision: 14782 $"/>
+		<version number="$Revision$"/>
 		<language type="yi"/>
 	</identity>
 	<localeDisplayNames>
@@ -48,7 +48,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<language type="dyo">זשאלא־פֿאני</language>
 			<language type="el">גריכיש</language>
 			<language type="en">ענגליש</language>
-			<language type="en_GB" alt="short">ענגליש (GB)</language>
 			<language type="en_US" alt="short">ענגליש (US)</language>
 			<language type="enm">מיטל ענגליש</language>
 			<language type="eo">עספּעראַנטא</language>
@@ -314,7 +313,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<territory type="ME">מאנטענעגרא</territory>
 			<territory type="MG">מאַדאַגאַסקאַר</territory>
 			<territory type="MH">מאַרשאַל אינזלען</territory>
-			<territory type="MK">מאַקעדאניע</territory>
 			<territory type="ML">מאַלי</territory>
 			<territory type="MM">מיאַנמאַר</territory>
 			<territory type="MN">מאנגאליי</territory>
@@ -426,8 +424,8 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 		<exemplarCharacters>[א {א\u05B7} {א\u05B8} ב {ב\u05BF} ג ד {דזש} ה ו {ו\u05BC} {וו} {וי} ז {זש} ח ט {טש} י {י\u05B4} {יי} {ײ\u05B7} {כ\u05BC} כ ך ל מ ם נ ן ס ע {פ\u05BC} {פ\u05BF} ף צ ץ ק ר ש {ש\u05C2} {ת\u05BC} ת]</exemplarCharacters>
 		<exemplarCharacters type="auxiliary" draft="contributed">[\u200E\u200F]</exemplarCharacters>
 		<exemplarCharacters type="index">[\u05C2 \u05BC \u05BF א ב ג ד ה ו ז ח ט י כ ל מ נ ס ע פ צ ק ר ש ת]</exemplarCharacters>
-		<exemplarCharacters type="numbers">[\- , . % ‰ + 0 1 2 3 4 5 6 7 8 9]</exemplarCharacters>
-		<exemplarCharacters type="punctuation" draft="contributed">[\- ‐ – — , ; \: ! ? . ׳ ' &quot; ( ) \[ \] / ״ ־]</exemplarCharacters>
+		<exemplarCharacters type="numbers">[\- ‑ , . % ‰ + 0 1 2 3 4 5 6 7 8 9]</exemplarCharacters>
+		<exemplarCharacters type="punctuation" draft="contributed">[\- ‐ ‑ – — , ; \: ! ? . ׳ ' &quot; ( ) \[ \] / ״ ־]</exemplarCharacters>
 	</characters>
 	<delimiters>
 		<quotationStart draft="contributed">”</quotationStart>

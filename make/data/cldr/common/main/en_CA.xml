@@ -7,17 +7,44 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 -->
 <ldml>
 	<identity>
-		<version number="$Revision: 14786 $"/>
+		<version number="$Revision$"/>
 		<language type="en"/>
 		<territory type="CA"/>
 	</identity>
 	<localeDisplayNames>
 		<languages>
+			<language type="ar_001">Modern Standard Arabic</language>
 			<language type="bn">Bengali</language>
+			<language type="de_AT">Austrian German</language>
+			<language type="de_CH">Swiss High German</language>
+			<language type="en_AU">Australian English</language>
+			<language type="en_CA">Canadian English</language>
+			<language type="en_GB">British English</language>
+			<language type="en_GB" alt="short">UK English</language>
+			<language type="en_US">American English</language>
+			<language type="en_US" alt="short">US English</language>
+			<language type="es_419">Latin American Spanish</language>
+			<language type="es_ES">European Spanish</language>
+			<language type="es_MX">Mexican Spanish</language>
+			<language type="fa_AF">Dari</language>
+			<language type="fr_CA">Canadian French</language>
+			<language type="fr_CH">Swiss French</language>
 			<language type="mfe">Mauritian</language>
+			<language type="nl_BE">Flemish</language>
+			<language type="pt_BR">Brazilian Portuguese</language>
+			<language type="pt_PT">European Portuguese</language>
 			<language type="ro_MD">Moldovan</language>
+			<language type="sr_ME">Montenegrin</language>
+			<language type="sw_CD">Congo Swahili</language>
 			<language type="tvl">Tuvaluan</language>
+			<language type="zh_Hans">Simplified Chinese</language>
+			<language type="zh_Hans" alt="long" draft="contributed">Simplified Mandarin Chinese</language>
+			<language type="zh_Hant">Traditional Chinese</language>
+			<language type="zh_Hant" alt="long" draft="contributed">Traditional Mandarin Chinese</language>
 		</languages>
+		<keys>
+			<key type="colNormalization" draft="contributed">Normalized Sorting</key>
+		</keys>
 		<types>
 			<type key="calendar" type="dangi">Korean Calendar</type>
 			<type key="calendar" type="ethiopic">Ethiopian Calendar</type>
@@ -161,6 +188,26 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 					</dateFormatLength>
 				</dateFormats>
 				<dateTimeFormats>
+					<dateTimeFormatLength type="full">
+						<dateTimeFormat>
+							<pattern>{1} 'at' {0}</pattern>
+						</dateTimeFormat>
+					</dateTimeFormatLength>
+					<dateTimeFormatLength type="long">
+						<dateTimeFormat>
+							<pattern>{1} 'at' {0}</pattern>
+						</dateTimeFormat>
+					</dateTimeFormatLength>
+					<dateTimeFormatLength type="medium">
+						<dateTimeFormat>
+							<pattern>{1}, {0}</pattern>
+						</dateTimeFormat>
+					</dateTimeFormatLength>
+					<dateTimeFormatLength type="short">
+						<dateTimeFormat>
+							<pattern>{1}, {0}</pattern>
+						</dateTimeFormat>
+					</dateTimeFormatLength>
 					<availableFormats>
 						<dateFormatItem id="Ed">d E</dateFormatItem>
 						<dateFormatItem id="GyMMMd">MMM d, y G</dateFormatItem>
@@ -244,6 +291,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 							<month type="2">Feb.</month>
 							<month type="3">Mar.</month>
 							<month type="4">Apr.</month>
+							<month type="5">May</month>
 							<month type="6">Jun.</month>
 							<month type="7">Jul.</month>
 							<month type="8">Aug.</month>
@@ -276,6 +324,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 						<dayPeriodWidth type="narrow">
 							<dayPeriod type="midnight">mid</dayPeriod>
 							<dayPeriod type="am">am</dayPeriod>
+							<dayPeriod type="noon">n</dayPeriod>
 							<dayPeriod type="pm">pm</dayPeriod>
 							<dayPeriod type="morning1">mor</dayPeriod>
 							<dayPeriod type="afternoon1">aft</dayPeriod>
@@ -294,11 +343,12 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 						</dayPeriodWidth>
 						<dayPeriodWidth type="narrow">
 							<dayPeriod type="midnight">mid</dayPeriod>
-							<dayPeriod type="am" draft="contributed">a.m.</dayPeriod>
-							<dayPeriod type="pm" draft="contributed">pm</dayPeriod>
+							<dayPeriod type="am">a.m.</dayPeriod>
+							<dayPeriod type="pm">pm</dayPeriod>
 							<dayPeriod type="morning1">mor</dayPeriod>
 							<dayPeriod type="afternoon1">aft</dayPeriod>
 							<dayPeriod type="evening1">eve</dayPeriod>
+							<dayPeriod type="night1">night</dayPeriod>
 						</dayPeriodWidth>
 						<dayPeriodWidth type="wide">
 							<dayPeriod type="am">a.m.</dayPeriod>
@@ -329,7 +379,49 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 						</dateFormat>
 					</dateFormatLength>
 				</dateFormats>
+				<timeFormats>
+					<timeFormatLength type="full">
+						<timeFormat>
+							<pattern>h:mm:ss a zzzz</pattern>
+						</timeFormat>
+					</timeFormatLength>
+					<timeFormatLength type="long">
+						<timeFormat>
+							<pattern>h:mm:ss a z</pattern>
+						</timeFormat>
+					</timeFormatLength>
+					<timeFormatLength type="medium">
+						<timeFormat>
+							<pattern>h:mm:ss a</pattern>
+						</timeFormat>
+					</timeFormatLength>
+					<timeFormatLength type="short">
+						<timeFormat>
+							<pattern>h:mm a</pattern>
+						</timeFormat>
+					</timeFormatLength>
+				</timeFormats>
 				<dateTimeFormats>
+					<dateTimeFormatLength type="full">
+						<dateTimeFormat>
+							<pattern>{1} 'at' {0}</pattern>
+						</dateTimeFormat>
+					</dateTimeFormatLength>
+					<dateTimeFormatLength type="long">
+						<dateTimeFormat>
+							<pattern>{1} 'at' {0}</pattern>
+						</dateTimeFormat>
+					</dateTimeFormatLength>
+					<dateTimeFormatLength type="medium">
+						<dateTimeFormat>
+							<pattern>{1}, {0}</pattern>
+						</dateTimeFormat>
+					</dateTimeFormatLength>
+					<dateTimeFormatLength type="short">
+						<dateTimeFormat>
+							<pattern>{1}, {0}</pattern>
+						</dateTimeFormat>
+					</dateTimeFormatLength>
 					<availableFormats>
 						<dateFormatItem id="GyMMMd">MMM d, y G</dateFormatItem>
 						<dateFormatItem id="GyMMMEd">E, MMM d, y G</dateFormatItem>
@@ -409,6 +501,11 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			</calendar>
 			<calendar type="islamic">
 				<dateFormats>
+					<dateFormatLength type="full">
+						<dateFormat>
+							<pattern>EEEE, MMMM d, y G</pattern>
+						</dateFormat>
+					</dateFormatLength>
 					<dateFormatLength type="long">
 						<dateFormat>
 							<pattern>MMMM d, y G</pattern>
@@ -417,6 +514,11 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 					<dateFormatLength type="medium">
 						<dateFormat>
 							<pattern>MMM d, y G</pattern>
+						</dateFormat>
+					</dateFormatLength>
+					<dateFormatLength type="short">
+						<dateFormat>
+							<pattern>GGGGG y-MM-dd</pattern>
 						</dateFormat>
 					</dateFormatLength>
 				</dateFormats>
@@ -537,9 +639,11 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			</field>
 			<field type="sun-narrow">
 				<relativeTime type="future">
+					<relativeTimePattern count="one">in {0} Su</relativeTimePattern>
 					<relativeTimePattern count="other">in {0} Su’s</relativeTimePattern>
 				</relativeTime>
 				<relativeTime type="past">
+					<relativeTimePattern count="one">{0} Su ago</relativeTimePattern>
 					<relativeTimePattern count="other">{0} Su’s ago</relativeTimePattern>
 				</relativeTime>
 			</field>
@@ -565,9 +669,11 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			</field>
 			<field type="tue-narrow">
 				<relativeTime type="future">
+					<relativeTimePattern count="one">in {0} Tu</relativeTimePattern>
 					<relativeTimePattern count="other">in {0} Tu’s</relativeTimePattern>
 				</relativeTime>
 				<relativeTime type="past">
+					<relativeTimePattern count="one">{0} Tu ago</relativeTimePattern>
 					<relativeTimePattern count="other">{0} Tu’s ago</relativeTimePattern>
 				</relativeTime>
 			</field>
@@ -606,9 +712,11 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			</field>
 			<field type="thu-narrow">
 				<relativeTime type="future">
+					<relativeTimePattern count="one">in {0} Th</relativeTimePattern>
 					<relativeTimePattern count="other">in {0} Th’s</relativeTimePattern>
 				</relativeTime>
 				<relativeTime type="past">
+					<relativeTimePattern count="one">{0} Th ago</relativeTimePattern>
 					<relativeTimePattern count="other">{0} Th’s ago</relativeTimePattern>
 				</relativeTime>
 			</field>
@@ -647,9 +755,11 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			</field>
 			<field type="sat-narrow">
 				<relativeTime type="future">
+					<relativeTimePattern count="one">in {0} Sa</relativeTimePattern>
 					<relativeTimePattern count="other">in {0} Sa’s</relativeTimePattern>
 				</relativeTime>
 				<relativeTime type="past">
+					<relativeTimePattern count="one">{0} Sa ago</relativeTimePattern>
 					<relativeTimePattern count="other">{0} Sa’s ago</relativeTimePattern>
 				</relativeTime>
 			</field>
@@ -730,6 +840,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			</field>
 		</fields>
 		<timeZoneNames>
+			<gmtZeroFormat>GMT</gmtZeroFormat>
 			<regionFormat type="daylight">{0} Daylight Saving Time</regionFormat>
 			<zone type="Pacific/Honolulu">
 				<short>
@@ -811,6 +922,9 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<displayName count="one" draft="contributed">Israeli new sheqel</displayName>
 				<displayName count="other" draft="contributed">Israeli new sheqels</displayName>
 			</currency>
+			<currency type="VES">
+				<symbol draft="contributed">VES</symbol>
+			</currency>
 		</currencies>
 	</numbers>
 	<units>
@@ -822,6 +936,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			</unit>
 			<unit type="energy-kilowatt-hour">
 				<unitPattern count="one">{0} kilowatt-hour</unitPattern>
+				<unitPattern count="other">{0} kilowatt-hours</unitPattern>
 			</unit>
 			<unit type="torque-newton-meter">
 				<displayName draft="contributed">newton-metres</displayName>
@@ -915,6 +1030,11 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<displayName>c.</displayName>
 				<unitPattern count="one">{0} c.</unitPattern>
 				<unitPattern count="other">{0} c.</unitPattern>
+			</unit>
+			<unit type="duration-decade">
+				<displayName draft="contributed">dec.</displayName>
+				<unitPattern count="one" draft="contributed">{0} dec.</unitPattern>
+				<unitPattern count="other" draft="contributed">{0} dec.</unitPattern>
 			</unit>
 			<unit type="duration-year">
 				<displayName>yrs.</displayName>
@@ -1298,7 +1418,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 		</listPattern>
 		<listPattern type="standard-short">
 			<listPatternPart type="end" draft="contributed">{0}, and {1}</listPatternPart>
-			<listPatternPart type="2" draft="contributed">{0} and {1}</listPatternPart>
 		</listPattern>
 	</listPatterns>
 	<characterLabels>
@@ -1308,6 +1427,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 		<characterLabel type="leftwards_rightwards_arrows" draft="contributed">leftward rightward arrow</characterLabel>
 		<characterLabel type="letterlike_symbols" draft="contributed">letter-like symbol</characterLabel>
 		<characterLabel type="limited_use" draft="contributed">limited use</characterLabel>
+		<characterLabel type="math_symbols" draft="contributed">math symbol</characterLabel>
 		<characterLabel type="nonspacing" draft="contributed">non-spacing</characterLabel>
 		<characterLabel type="rightwards_arrows" draft="contributed">rightward arrow</characterLabel>
 		<characterLabel type="upwards_arrows" draft="contributed">upward arrows</characterLabel>
