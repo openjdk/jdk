@@ -54,11 +54,12 @@ private:
   size_t                     _allocated;
   ssize_t                    _reclaimed;
   ZList<ZPageAllocRequest>   _queue;
+  ZList<ZPageAllocRequest>   _satisfied;
   mutable ZSafeDelete<ZPage> _safe_delete;
   bool                       _uncommit;
   bool                       _initialized;
 
-  static ZPage* const      gc_marker;
+  static ZPage* const gc_marker;
 
   void prime_cache(size_t size);
 
@@ -117,11 +118,12 @@ public:
   void map_page(const ZPage* page) const;
 
   void debug_map_page(const ZPage* page) const;
-  void debug_map_cached_pages() const;
-  void debug_unmap_all_pages() const;
+  void debug_unmap_page(const ZPage* page) const;
 
   bool is_alloc_stalled() const;
   void check_out_of_memory();
+
+  void pages_do(ZPageClosure* cl) const;
 };
 
 #endif // SHARE_GC_Z_ZPAGEALLOCATOR_HPP

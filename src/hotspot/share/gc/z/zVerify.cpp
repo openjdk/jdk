@@ -26,6 +26,7 @@
 #include "gc/z/zAddress.hpp"
 #include "gc/z/zHeap.inline.hpp"
 #include "gc/z/zOop.hpp"
+#include "gc/z/zPageAllocator.hpp"
 #include "gc/z/zResurrection.hpp"
 #include "gc/z/zRootsIterator.hpp"
 #include "gc/z/zStat.hpp"
@@ -169,4 +170,39 @@ void ZVerify::after_weak_processing() {
   // Verify all roots and all references
   ZStatTimerDisable disable;
   roots_and_objects(true /* verify_weaks */);
+}
+
+template <bool Map>
+class ZPageDebugMapOrUnmapClosure : public ZPageClosure {
+private:
+  const ZPageAllocator* const _allocator;
+
+public:
+  ZPageDebugMapOrUnmapClosure(const ZPageAllocator* allocator) :
+      _allocator(allocator) {}
+
+  void do_page(const ZPage* page) {
+    if (Map) {
+      _allocator->debug_map_page(page);
+    } else {
+      _allocator->debug_unmap_page(page);
+    }
+  }
+};
+
+ZVerifyViewsFlip::ZVerifyViewsFlip(const ZPageAllocator* allocator) :
+    _allocator(allocator) {
+  if (ZVerifyViews) {
+    // Unmap all pages
+    ZPageDebugMapOrUnmapClosure<false /* Map */> cl(_allocator);
+    ZHeap::heap()->pages_do(&cl);
+  }
+}
+
+ZVerifyViewsFlip::~ZVerifyViewsFlip() {
+  if (ZVerifyViews) {
+    // Map all pages
+    ZPageDebugMapOrUnmapClosure<true /* Map */> cl(_allocator);
+    ZHeap::heap()->pages_do(&cl);
+  }
 }

@@ -244,34 +244,14 @@ uint64_t ZHeap::uncommit(uint64_t delay) {
   return _page_allocator.uncommit(delay);
 }
 
-void ZHeap::before_flip() {
-  if (ZVerifyViews) {
-    // Unmap all pages
-    _page_allocator.debug_unmap_all_pages();
-  }
-}
-
-void ZHeap::after_flip() {
-  if (ZVerifyViews) {
-    // Map all pages
-    ZPageTableIterator iter(&_page_table);
-    for (ZPage* page; iter.next(&page);) {
-      _page_allocator.debug_map_page(page);
-    }
-    _page_allocator.debug_map_cached_pages();
-  }
-}
-
 void ZHeap::flip_to_marked() {
-  before_flip();
+  ZVerifyViewsFlip flip(&_page_allocator);
   ZAddress::flip_to_marked();
-  after_flip();
 }
 
 void ZHeap::flip_to_remapped() {
-  before_flip();
+  ZVerifyViewsFlip flip(&_page_allocator);
   ZAddress::flip_to_remapped();
-  after_flip();
 }
 
 void ZHeap::mark_start() {
@@ -458,6 +438,14 @@ void ZHeap::object_iterate(ObjectClosure* cl, bool visit_weaks) {
 
   ZHeapIterator iter;
   iter.objects_do(cl, visit_weaks);
+}
+
+void ZHeap::pages_do(ZPageClosure* cl) {
+  ZPageTableIterator iter(&_page_table);
+  for (ZPage* page; iter.next(&page);) {
+    cl->do_page(page);
+  }
+  _page_allocator.pages_do(cl);
 }
 
 void ZHeap::serviceability_initialize() {

@@ -71,7 +71,7 @@ public:
 
   void flush(ZPageCacheFlushClosure* cl, ZList<ZPage>* to);
 
-  template <typename Closure> void pages_do(Closure* cl) const;
+  void pages_do(ZPageClosure* cl) const;
 };
 
 #endif // SHARE_GC_Z_ZPAGECACHE_HPP

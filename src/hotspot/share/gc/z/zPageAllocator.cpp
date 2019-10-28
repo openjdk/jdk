@@ -60,7 +60,9 @@ public:
       _type(type),
       _size(size),
       _flags(flags),
-      _total_collections(total_collections) {}
+      _total_collections(total_collections),
+      _node(),
+      _result() {}
 
   uint8_t type() const {
     return _type;
@@ -76,6 +78,10 @@ public:
 
   unsigned int total_collections() const {
     return _total_collections;
+  }
+
+  ZPage* peek() {
+    return _result.peek();
   }
 
   ZPage* wait() {
@@ -108,6 +114,7 @@ ZPageAllocator::ZPageAllocator(size_t min_capacity,
     _allocated(0),
     _reclaimed(0),
     _queue(),
+    _satisfied(),
     _safe_delete(),
     _uncommit(false),
     _initialized(false) {
@@ -289,11 +296,7 @@ void ZPageAllocator::destroy_page(ZPage* page) {
 
 void ZPageAllocator::map_page(const ZPage* page) const {
   // Map physical memory
-  if (!page->is_mapped()) {
-    _physical.map(page->physical_memory(), page->start());
-  } else if (ZVerifyViews) {
-    _physical.debug_map(page->physical_memory(), page->start());
-  }
+  _physical.map(page->physical_memory(), page->start());
 }
 
 size_t ZPageAllocator::max_available(bool no_reserve) const {
@@ -433,14 +436,21 @@ ZPage* ZPageAllocator::alloc_page_blocking(uint8_t type, size_t size, ZAllocatio
     } while (page == gc_marker);
 
     {
-      // Guard deletion of underlying semaphore. This is a workaround for a
-      // bug in sem_post() in glibc < 2.21, where it's not safe to destroy
+      //
+      // We grab the lock here for two different reasons:
+      //
+      // 1) Guard deletion of underlying semaphore. This is a workaround for
+      // a bug in sem_post() in glibc < 2.21, where it's not safe to destroy
       // the semaphore immediately after returning from sem_wait(). The
       // reason is that sem_post() can touch the semaphore after a waiting
       // thread have returned from sem_wait(). To avoid this race we are
       // forcing the waiting thread to acquire/release the lock held by the
       // posting thread. https://sourceware.org/bugzilla/show_bug.cgi?id=12674
+      //
+      // 2) Guard the list of satisfied pages.
+      //
       ZLocker<ZLock> locker(&_lock);
+      _satisfied.remove(&request);
     }
   }
 
@@ -462,7 +472,9 @@ ZPage* ZPageAllocator::alloc_page(uint8_t type, size_t size, ZAllocationFlags fl
   }
 
   // Map page if needed
-  map_page(page);
+  if (!page->is_mapped()) {
+    map_page(page);
+  }
 
   // Reset page. This updates the page's sequence number and must
   // be done after page allocation, which potentially blocked in
@@ -500,6 +512,7 @@ void ZPageAllocator::satisfy_alloc_queue() {
     // the dequeue operation must happen first, since the request
     // will immediately be deallocated once it has been satisfied.
     _queue.remove(request);
+    _satisfied.insert_first(request);
     request->satisfy(page);
   }
 }
@@ -686,28 +699,21 @@ void ZPageAllocator::debug_map_page(const ZPage* page) const {
   _physical.debug_map(page->physical_memory(), page->start());
 }
 
-class ZPageCacheDebugMapClosure : public StackObj {
-private:
-  const ZPageAllocator* const _allocator;
-
-public:
-  ZPageCacheDebugMapClosure(const ZPageAllocator* allocator) :
-      _allocator(allocator) {}
-
-  virtual void do_page(const ZPage* page) {
-    _allocator->debug_map_page(page);
-  }
-};
-
-void ZPageAllocator::debug_map_cached_pages() const {
+void ZPageAllocator::debug_unmap_page(const ZPage* page) const {
   assert(SafepointSynchronize::is_at_safepoint(), "Should be at safepoint");
-  ZPageCacheDebugMapClosure cl(this);
-  _cache.pages_do(&cl);
+  _physical.debug_unmap(page->physical_memory(), page->start());
 }
 
-void ZPageAllocator::debug_unmap_all_pages() const {
-  assert(SafepointSynchronize::is_at_safepoint(), "Should be at safepoint");
-  _physical.debug_unmap(ZPhysicalMemorySegment(0 /* start */, ZAddressOffsetMax), 0 /* offset */);
+void ZPageAllocator::pages_do(ZPageClosure* cl) const {
+  ZListIterator<ZPageAllocRequest> iter(&_satisfied);
+  for (ZPageAllocRequest* request; iter.next(&request);) {
+    const ZPage* const page = request->peek();
+    if (page != NULL) {
+      cl->do_page(page);
+    }
+  }
+
+  _cache.pages_do(cl);
 }
 
 bool ZPageAllocator::is_alloc_stalled() const {
@@ -728,7 +734,8 @@ void ZPageAllocator::check_out_of_memory() {
     }
 
     // Out of memory, fail allocation request
-    _queue.remove_first();
+    _queue.remove(request);
+    _satisfied.insert_first(request);
     request->satisfy(NULL);
   }
 }

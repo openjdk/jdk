@@ -112,4 +112,9 @@ public:
   void print() const;
 };
 
+class ZPageClosure {
+public:
+  virtual void do_page(const ZPage* page) = 0;
+};
+
 #endif // SHARE_GC_Z_ZPAGE_HPP

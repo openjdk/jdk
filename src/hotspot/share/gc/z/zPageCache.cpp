@@ -240,3 +240,26 @@ void ZPageCache::flush(ZPageCacheFlushClosure* cl, ZList<ZPage>* to) {
   flush_list(cl, &_medium, to);
   flush_per_numa_lists(cl, &_small, to);
 }
+
+void ZPageCache::pages_do(ZPageClosure* cl) const {
+  // Small
+  ZPerNUMAConstIterator<ZList<ZPage> > iter_numa(&_small);
+  for (const ZList<ZPage>* list; iter_numa.next(&list);) {
+    ZListIterator<ZPage> iter_small(list);
+    for (ZPage* page; iter_small.next(&page);) {
+      cl->do_page(page);
+    }
+  }
+
+  // Medium
+  ZListIterator<ZPage> iter_medium(&_medium);
+  for (ZPage* page; iter_medium.next(&page);) {
+    cl->do_page(page);
+  }
+
+  // Large
+  ZListIterator<ZPage> iter_large(&_large);
+  for (ZPage* page; iter_large.next(&page);) {
+    cl->do_page(page);
+  }
+}
