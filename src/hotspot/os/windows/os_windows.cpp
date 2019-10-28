@@ -795,6 +795,10 @@ int os::active_processor_count() {
   }
 }
 
+uint os::processor_id() {
+  return (uint)GetCurrentProcessorNumber();
+}
+
 void os::set_native_thread_name(const char *name) {
 
   // See: http://msdn.microsoft.com/en-us/library/xcb2z8hs.aspx
