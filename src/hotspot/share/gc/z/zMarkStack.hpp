@@ -73,8 +73,8 @@ typedef ZStackList<ZMarkStackMagazine>               ZMarkStackMagazineList;
 
 class ZMarkStripe {
 private:
-  ZMarkStackList _published  ATTRIBUTE_ALIGNED(ZCacheLineSize);
-  ZMarkStackList _overflowed ATTRIBUTE_ALIGNED(ZCacheLineSize);
+  ZCACHE_ALIGNED ZMarkStackList _published;
+  ZCACHE_ALIGNED ZMarkStackList _overflowed;
 
 public:
   ZMarkStripe();

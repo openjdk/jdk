@@ -30,9 +30,9 @@
 
 class ZMarkTerminate {
 private:
-  uint          _nworkers;
-  volatile uint _nworking_stage0 ATTRIBUTE_ALIGNED(ZCacheLineSize);
-  volatile uint _nworking_stage1;
+  uint                         _nworkers;
+  ZCACHE_ALIGNED volatile uint _nworking_stage0;
+  volatile uint                _nworking_stage1;
 
   bool enter_stage(volatile uint* nworking_stage);
   void exit_stage(volatile uint* nworking_stage);

@@ -130,6 +130,7 @@ const size_t      ZNMethodDisarmedOffset        = ZPlatformNMethodDisarmedOffset
 
 // Cache line size
 const size_t      ZCacheLineSize                = ZPlatformCacheLineSize;
+#define           ZCACHE_ALIGNED                ATTRIBUTE_ALIGNED(ZCacheLineSize)
 
 // Mark stack space
 extern uintptr_t  ZMarkStackSpaceStart;
