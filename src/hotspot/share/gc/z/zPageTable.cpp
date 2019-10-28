@@ -23,6 +23,7 @@
 
 #include "precompiled.hpp"
 #include "gc/z/zAddress.inline.hpp"
+#include "gc/z/zGlobals.hpp"
 #include "gc/z/zGranuleMap.inline.hpp"
 #include "gc/z/zPage.inline.hpp"
 #include "gc/z/zPageTable.inline.hpp"
@@ -30,7 +31,7 @@
 #include "utilities/debug.hpp"
 
 ZPageTable::ZPageTable() :
-    _map() {}
+    _map(ZAddressOffsetMax) {}
 
 void ZPageTable::insert(ZPage* page) {
   const uintptr_t addr = ZAddress::good(page->start());

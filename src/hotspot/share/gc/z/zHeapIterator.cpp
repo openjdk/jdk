@@ -126,7 +126,7 @@ public:
 
 ZHeapIterator::ZHeapIterator() :
     _visit_stack(),
-    _visit_map() {}
+    _visit_map(ZAddressOffsetMax) {}
 
 ZHeapIterator::~ZHeapIterator() {
   ZVisitMapIterator iter(&_visit_map);

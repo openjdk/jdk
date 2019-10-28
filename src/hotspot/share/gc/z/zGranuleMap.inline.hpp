@@ -28,11 +28,15 @@
 #include "gc/z/zGlobals.hpp"
 #include "gc/z/zGranuleMap.hpp"
 #include "memory/allocation.inline.hpp"
+#include "utilities/align.hpp"
+#include "utilities/debug.hpp"
 
 template <typename T>
-inline ZGranuleMap<T>::ZGranuleMap() :
-    _size(ZAddressOffsetMax >> ZGranuleSizeShift),
-    _map(MmapArrayAllocator<T>::allocate(_size, mtGC)) {}
+inline ZGranuleMap<T>::ZGranuleMap(size_t max_offset) :
+    _size(max_offset >> ZGranuleSizeShift),
+    _map(MmapArrayAllocator<T>::allocate(_size, mtGC)) {
+  assert(is_aligned(max_offset, ZGranuleSize), "Misaligned");
+}
 
 template <typename T>
 inline ZGranuleMap<T>::~ZGranuleMap() {

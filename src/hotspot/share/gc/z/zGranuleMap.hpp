@@ -41,7 +41,7 @@ private:
   size_t index_for_addr(uintptr_t addr) const;
 
 public:
-  ZGranuleMap();
+  ZGranuleMap(size_t max_offset);
   ~ZGranuleMap();
 
   T get(uintptr_t addr) const;

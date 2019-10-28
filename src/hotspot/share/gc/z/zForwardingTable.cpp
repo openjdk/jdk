@@ -25,11 +25,12 @@
 #include "gc/z/zAddress.inline.hpp"
 #include "gc/z/zForwarding.inline.hpp"
 #include "gc/z/zForwardingTable.inline.hpp"
+#include "gc/z/zGlobals.hpp"
 #include "gc/z/zGranuleMap.inline.hpp"
 #include "utilities/debug.hpp"
 
 ZForwardingTable::ZForwardingTable() :
-    _map() {}
+    _map(ZAddressOffsetMax) {}
 
 void ZForwardingTable::insert(ZForwarding* forwarding) {
   const uintptr_t addr = ZAddress::good(forwarding->start());
