@@ -50,8 +50,8 @@ compiler/jvmci/compilerToVM/GetResolvedJavaTypeTest.java 8158860 generic-all
 compiler/jvmci/compilerToVM/InvalidateInstalledCodeTest.java 8163894 generic-all
 compiler/tiered/LevelTransitionTest.java 8067651 generic-all
 
-compiler/types/correctness/CorrectnessTest.java 8230019,8225620 generic-all,solaris-sparcv9
-compiler/types/correctness/OffTest.java         8230019,8225620 generic-all,solaris-sparcv9
+compiler/types/correctness/CorrectnessTest.java 8225620 solaris-sparcv9
+compiler/types/correctness/OffTest.java         8225620 solaris-sparcv9
 
 compiler/c2/Test6852078.java 8194310 generic-all
 compiler/c2/Test8004741.java 8214904 generic-all
