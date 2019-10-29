@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2020, Oracle and/or its affiliates. All rights reserved.
  * Use is subject to license terms.
  *
  * This library is free software; you can redistribute it and/or
@@ -34,7 +34,7 @@
  *   Netscape Communications Corporation
  *   Douglas Stebila <douglas@stebila.ca> of Sun Laboratories.
  *
- * Last Modified Date from the Original Code: Nov 2016
+ * Last Modified Date from the Original Code: Nov 2019
  *********************************************************************** */
 
 /*  Arbitrary precision integer arithmetic library */
@@ -2136,7 +2136,10 @@ mp_err s_mp_almost_inverse(const mp_int *a, const mp_int *p, mp_int *c)
     }
   }
   if (res >= 0) {
-    while (MP_SIGN(c) != MP_ZPOS) {
+    if (s_mp_cmp(c, p) >= 0) {
+      MP_CHECKOK( mp_div(c, p, NULL, c));
+    }
+    if (MP_SIGN(c) != MP_ZPOS) {
       MP_CHECKOK( mp_add(c, p, c) );
     }
     res = k;
