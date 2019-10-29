@@ -558,8 +558,8 @@ TRACE_REQUEST_FUNC(CompilerStatistics) {
   event.set_standardCompileCount(CompileBroker::get_total_standard_compile_count());
   event.set_osrBytesCompiled(CompileBroker::get_sum_osr_bytes_compiled());
   event.set_standardBytesCompiled(CompileBroker::get_sum_standard_bytes_compiled());
-  event.set_nmetodsSize(CompileBroker::get_sum_nmethod_size());
-  event.set_nmetodCodeSize(CompileBroker::get_sum_nmethod_code_size());
+  event.set_nmethodsSize(CompileBroker::get_sum_nmethod_size());
+  event.set_nmethodCodeSize(CompileBroker::get_sum_nmethod_code_size());
   event.set_peakTimeSpent(CompileBroker::get_peak_compilation_time());
   event.set_totalTimeSpent(CompileBroker::get_total_compilation_time());
   event.commit();
