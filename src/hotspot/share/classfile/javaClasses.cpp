@@ -1962,6 +1962,8 @@ static inline bool version_matches(Method* method, int version) {
 // This class provides a simple wrapper over the internal structure of
 // exception backtrace to insulate users of the backtrace from needing
 // to know what it looks like.
+// The code of this class is not GC safe. Allocations can only happen
+// in expand().
 class BacktraceBuilder: public StackObj {
  friend class BacktraceIterator;
  private:
@@ -2110,10 +2112,14 @@ class BacktraceBuilder: public StackObj {
 
   void set_has_hidden_top_frame(TRAPS) {
     if (_has_hidden_top_frame == NULL) {
-      jvalue prim;
-      prim.z = 1;
-      PauseNoSafepointVerifier pnsv(&_nsv);
-      _has_hidden_top_frame = java_lang_boxing_object::create(T_BOOLEAN, &prim, CHECK);
+      // It would be nice to add java/lang/Boolean::TRUE here
+      // to indicate that this backtrace has a hidden top frame.
+      // But this code is used before TRUE is allocated.
+      // Therefor let's just use an arbitrary legal oop
+      // available right here. We only test for != null
+      // anyways. _methods is a short[].
+      assert(_methods != NULL, "we need a legal oop");
+      _has_hidden_top_frame = _methods;
       _head->obj_at_put(trace_hidden_offset, _has_hidden_top_frame);
     }
   }
