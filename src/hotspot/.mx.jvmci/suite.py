@@ -171,7 +171,9 @@ suite = {
       "subDir" : "../../test/hotspot/jtreg/compiler/jvmci",
       "sourceDirs" : ["src"],
       "dependencies" : [
+        "mx:JUNIT",
         "TESTNG",
+        "jdk.vm.ci.code.test",
         "jdk.vm.ci.hotspot",
       ],
       "checkstyle" : "jdk.vm.ci.services",

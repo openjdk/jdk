@@ -33,7 +33,6 @@ import java.util.Formatter;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Properties;
 import java.util.ServiceLoader;
 import java.util.Set;
 
@@ -44,9 +43,6 @@ import jdk.internal.reflect.Reflection;
  * Provides utilities needed by JVMCI clients.
  */
 public final class Services {
-
-    // This class must be compilable and executable on JDK 8 since it's used in annotation
-    // processors while building JDK 9 so use of API added in JDK 9 is made via reflection.
 
     /**
      * Guards code that should be run when building an JVMCI shared library but should be excluded
@@ -73,8 +69,12 @@ public final class Services {
     private Services() {
     }
 
-    private static volatile Map<String, String> savedProperties = VM.getSavedProperties();
-    static final boolean JVMCI_ENABLED = Boolean.parseBoolean(savedProperties.get("jdk.internal.vm.ci.enabled"));
+    /**
+     * In a native image, this field is initialized by {@link #initializeSavedProperties(byte[])}.
+     */
+    private static volatile Map<String, String> savedProperties;
+
+    static final boolean JVMCI_ENABLED = Boolean.parseBoolean(VM.getSavedProperties().get("jdk.internal.vm.ci.enabled"));
 
     /**
      * Checks that JVMCI is enabled in the VM and throws an error if it isn't.
@@ -90,9 +90,22 @@ public final class Services {
      */
     public static Map<String, String> getSavedProperties() {
         checkJVMCIEnabled();
-        SecurityManager sm = System.getSecurityManager();
-        if (sm != null) {
-            sm.checkPermission(new JVMCIPermission());
+        if (IS_IN_NATIVE_IMAGE) {
+            if (savedProperties == null) {
+                throw new InternalError("Saved properties not initialized");
+            }
+        } else {
+            if (savedProperties == null) {
+                synchronized (Services.class) {
+                    if (savedProperties == null) {
+                        SecurityManager sm = System.getSecurityManager();
+                        if (sm != null) {
+                            sm.checkPermission(new JVMCIPermission());
+                        }
+                        savedProperties = VM.getSavedProperties();
+                    }
+                }
+            }
         }
         return savedProperties;
     }

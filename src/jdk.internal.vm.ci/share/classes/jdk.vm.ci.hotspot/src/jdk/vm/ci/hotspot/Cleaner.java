@@ -32,7 +32,7 @@ import jdk.vm.ci.meta.ResolvedJavaType;
  * A cleaner tracks a referent object and includes some {@linkplain #doCleanup() cleanup code} that
  * is run some time after the referent object has become weakly-reachable.
  *
- * This is like {@link sun.misc.Cleaner} but with weak semantics instead of phantom. Objects
+ * This is like {@link java.lang.ref.Cleaner} but with weak semantics instead of phantom. Objects
  * referenced by this might be referenced by {@link ResolvedJavaType} which is kept alive by a
  * {@link WeakReference} so we need equivalent reference strength.
  */

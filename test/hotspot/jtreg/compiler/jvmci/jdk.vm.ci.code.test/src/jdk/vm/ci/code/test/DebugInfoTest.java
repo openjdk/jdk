@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -62,32 +62,32 @@ public class DebugInfoTest extends CodeInstallationTest {
             /*
              * Ensure that any objects mentioned in the VirtualObjects are also in the OopMap.
              */
-            List<Location> newLocations = new ArrayList<Location>(Arrays.asList(objects));
-            List<Location> newDerived = new ArrayList<Location>(Arrays.asList(derivedBase));
+            List<Location> newLocations = new ArrayList<>(Arrays.asList(objects));
+            List<Location> newDerived = new ArrayList<>(Arrays.asList(derivedBase));
             int[] newSizeInBytes = sizeInBytes;
             VirtualObject[] vobjs = compiler.compile(asm, values);
             if (vobjs != null) {
                 for (VirtualObject obj : vobjs) {
                     JavaValue[] objValues = obj.getValues();
                     for (int i = 0; i < objValues.length; i++) {
-                            if (obj.getSlotKind(i) == JavaKind.Object) {
-                                    Location oopLocation = null;
-                                    int bytes = -1;
-                                    if (objValues[i] instanceof RegisterValue) {
-                                            RegisterValue reg = (RegisterValue) objValues[i];
-                                            oopLocation = Location.register(reg.getRegister());
-                                            bytes = reg.getValueKind().getPlatformKind().getSizeInBytes();
-                                    } else if (objValues[i] instanceof StackSlot) {
-                                            StackSlot slot = (StackSlot) objValues[i];
-                                            oopLocation = Location.stack(asm.getOffset(slot));
-                                            bytes = slot.getValueKind().getPlatformKind().getSizeInBytes();
-                                    }
-                                    if (oopLocation != null && !newLocations.contains(oopLocation)) {
-                                            newLocations.add(oopLocation);
-                                            newDerived.add(null);
-                                            newSizeInBytes = Arrays.copyOf(newSizeInBytes, newSizeInBytes.length + 1);
-                                        newSizeInBytes[newSizeInBytes.length - 1] = bytes;
-                                }
+                        if (obj.getSlotKind(i) == JavaKind.Object) {
+                            Location oopLocation = null;
+                            int bytes = -1;
+                            if (objValues[i] instanceof RegisterValue) {
+                                RegisterValue reg = (RegisterValue) objValues[i];
+                                oopLocation = Location.register(reg.getRegister());
+                                bytes = reg.getValueKind().getPlatformKind().getSizeInBytes();
+                            } else if (objValues[i] instanceof StackSlot) {
+                                StackSlot slot = (StackSlot) objValues[i];
+                                oopLocation = Location.stack(asm.getOffset(slot));
+                                bytes = slot.getValueKind().getPlatformKind().getSizeInBytes();
+                            }
+                            if (oopLocation != null && !newLocations.contains(oopLocation)) {
+                                newLocations.add(oopLocation);
+                                newDerived.add(null);
+                                newSizeInBytes = Arrays.copyOf(newSizeInBytes, newSizeInBytes.length + 1);
+                                newSizeInBytes[newSizeInBytes.length - 1] = bytes;
+                            }
                         }
                     }
                 }

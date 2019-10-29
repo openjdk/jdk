@@ -22,6 +22,7 @@
  */
 
 #include "precompiled.hpp"
+#include "classfile/classLoaderData.inline.hpp"
 #include "classfile/javaClasses.inline.hpp"
 #include "classfile/stringTable.hpp"
 #include "classfile/symbolTable.hpp"
@@ -2032,7 +2033,7 @@ C2V_VMENTRY_0(jboolean, isTrustedForIntrinsics, (JNIEnv* env, jobject, jobject h
     JVMCI_THROW_0(NullPointerException);
   }
   InstanceKlass* ik = InstanceKlass::cast(JVMCIENV->asKlass(JVMCIENV->wrap(holder)));
-  if (ik->class_loader_data()->is_builtin_class_loader_data()) {
+  if (ik->class_loader_data()->is_boot_class_loader_data() || ik->class_loader_data()->is_platform_class_loader_data()) {
     return true;
   }
   return false;

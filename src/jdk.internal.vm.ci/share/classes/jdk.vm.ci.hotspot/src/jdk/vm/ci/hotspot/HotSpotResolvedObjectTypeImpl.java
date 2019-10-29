@@ -563,6 +563,10 @@ final class HotSpotResolvedObjectTypeImpl extends HotSpotResolvedJavaType implem
          * a deopt instead since they can't really be used if they aren't linked yet.
          */
         if (!declaredHolder.isAssignableFrom(this) || this.isArray() || this.equals(declaredHolder) || !isLinked() || isInterface()) {
+            if (hmethod.canBeStaticallyBound()) {
+                // No assumptions are required.
+                return new AssumptionResult<>(hmethod);
+            }
             ResolvedJavaMethod result = hmethod.uniqueConcreteMethod(declaredHolder);
             if (result != null) {
                 return new AssumptionResult<>(result, new ConcreteMethod(method, declaredHolder, result));

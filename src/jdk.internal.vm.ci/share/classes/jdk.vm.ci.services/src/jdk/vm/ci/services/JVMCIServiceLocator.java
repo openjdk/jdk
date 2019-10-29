@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,6 @@
 package jdk.vm.ci.services;
 
 import static jdk.vm.ci.services.Services.IS_BUILDING_NATIVE_IMAGE;
-import static jdk.vm.ci.services.Services.IS_IN_NATIVE_IMAGE;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -81,7 +80,7 @@ public abstract class JVMCIServiceLocator {
         result = ServiceLoader.load(JVMCIServiceLocator.class, ClassLoader.getSystemClassLoader());
         if (IS_BUILDING_NATIVE_IMAGE) {
             ArrayList<JVMCIServiceLocator> l = new ArrayList<>();
-            for (JVMCIServiceLocator locator: result) {
+            for (JVMCIServiceLocator locator : result) {
                 l.add(locator);
             }
             l.trimToSize();

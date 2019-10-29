@@ -20,21 +20,29 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
-package jdk.vm.ci.services;
+package jdk.vm.ci.code.test;
 
-/**
- * Used to suppress <a href="http://findbugs.sourceforge.net">FindBugs</a> warnings.
- */
-@interface SuppressFBWarnings {
-    /**
-     * The set of FindBugs
-     * <a href="http://findbugs.sourceforge.net/bugDescriptions.html">warnings</a> that are to be
-     * suppressed in annotated element. The value can be a bug category, kind or pattern.
-     */
-    String[] value();
+import org.junit.Assert;
+import org.junit.Test;
 
-    /**
-     * Reason why the warning is suppressed.
-     */
-    String justification();
+import jdk.vm.ci.code.VirtualObject;
+import jdk.vm.ci.meta.JavaKind;
+import jdk.vm.ci.meta.JavaValue;
+import jdk.vm.ci.meta.ResolvedJavaType;
+
+public class VirtualObjectFormattingTest extends VirtualObjectTestBase {
+
+    @Test
+    public void testFormat() {
+        testBase();
+    }
+
+    @Override
+    protected void test(ResolvedJavaType klass, JavaValue[] kinds, JavaKind[] values, boolean malformed) {
+        // Verify that VirtualObject.toString will produce output without throwing exceptions or
+        // asserting.
+        VirtualObject virtual = VirtualObject.get(klass, 0);
+        virtual.setValues(kinds, values);
+        Assert.assertTrue(!virtual.toString().equals(""));
+    }
 }
