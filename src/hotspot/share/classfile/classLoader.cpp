@@ -1529,9 +1529,41 @@ void ClassLoader::initialize() {
 
   // lookup zip library entry points
   load_zip_library();
-  // lookup jimage library entry points
-  load_jimage_library();
+  // jimage library entry points are loaded below, in lookup_vm_options
   setup_bootstrap_search_path();
+}
+
+char* lookup_vm_resource(JImageFile *jimage, const char *jimage_version, const char *path) {
+  jlong size;
+  JImageLocationRef location = (*JImageFindResource)(jimage, "java.base", jimage_version, path, &size);
+  if (location == 0)
+    return NULL;
+  char *val = NEW_C_HEAP_ARRAY(char, size+1, mtClass);
+  (*JImageGetResource)(jimage, location, val, size);
+  val[size] = '\0';
+  return val;
+}
+
+// Lookup VM options embedded in the modules jimage file
+char* ClassLoader::lookup_vm_options() {
+  jint error;
+  char modules_path[JVM_MAXPATHLEN];
+  const char* fileSep = os::file_separator();
+
+  // Initialize jimage library entry points
+  load_jimage_library();
+
+  jio_snprintf(modules_path, JVM_MAXPATHLEN, "%s%slib%smodules", Arguments::get_java_home(), fileSep, fileSep);
+  JImageFile* jimage =(*JImageOpen)(modules_path, &error);
+  if (jimage == NULL) {
+    return NULL;
+  }
+
+  const char *jimage_version = get_jimage_version_string();
+  char *options = lookup_vm_resource(jimage, jimage_version, "jdk/internal/vm/options");
+
+  (*JImageClose)(jimage);
+  return options;
 }
 
 #if INCLUDE_CDS

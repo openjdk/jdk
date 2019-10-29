@@ -427,7 +427,8 @@ class Arguments : AllStatic {
 
   static void handle_extra_cms_flags(const char* msg);
 
-  static jint parse_vm_init_args(const JavaVMInitArgs *java_tool_options_args,
+  static jint parse_vm_init_args(const JavaVMInitArgs *vm_options_args,
+                                 const JavaVMInitArgs *java_tool_options_args,
                                  const JavaVMInitArgs *java_options_args,
                                  const JavaVMInitArgs *cmd_line_args);
   static jint parse_each_vm_init_arg(const JavaVMInitArgs* args, bool* patch_mod_javabase, JVMFlag::Flags origin);

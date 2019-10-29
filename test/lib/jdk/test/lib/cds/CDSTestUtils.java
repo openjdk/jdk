@@ -309,7 +309,7 @@ public class CDSTestUtils {
     // exceptions match. Pass null if you wish not to re-throw any exception.
     public static void checkCommonExecExceptions(OutputAnalyzer output, Exception e)
         throws Exception {
-        if (output.getStdout().contains("http://bugreport.java.com/bugreport/crash.jsp")) {
+        if (output.getStdout().contains("https://bugreport.java.com/bugreport/crash.jsp")) {
             throw new RuntimeException("Hotspot crashed");
         }
         if (output.getStdout().contains("TEST FAILED")) {

@@ -114,6 +114,7 @@ public class VM {
   public static int    Flags_ERGONOMIC;
   public static int    Flags_ATTACH_ON_DEMAND;
   public static int    Flags_INTERNAL;
+  public static int    Flags_JIMAGE_RESOURCE;
   private static int   Flags_VALUE_ORIGIN_MASK;
   private static int   Flags_ORIG_COMMAND_LINE;
   /** This is only present in a non-core build */
@@ -200,6 +201,8 @@ public class VM {
             return "attach";
         } else if (origin == Flags_INTERNAL) {
             return "internal";
+        } else if (origin == Flags_JIMAGE_RESOURCE) {
+            return "jimage";
         } else {
             throw new IllegalStateException(
                 "Unknown flag origin " + origin + " is detected in " + name);
@@ -484,6 +487,7 @@ public class VM {
     Flags_ERGONOMIC = db.lookupIntConstant("JVMFlag::ERGONOMIC").intValue();
     Flags_ATTACH_ON_DEMAND = db.lookupIntConstant("JVMFlag::ATTACH_ON_DEMAND").intValue();
     Flags_INTERNAL = db.lookupIntConstant("JVMFlag::INTERNAL").intValue();
+    Flags_JIMAGE_RESOURCE = db.lookupIntConstant("JVMFlag::JIMAGE_RESOURCE").intValue();
     Flags_VALUE_ORIGIN_MASK = db.lookupIntConstant("JVMFlag::VALUE_ORIGIN_MASK").intValue();
     Flags_ORIG_COMMAND_LINE = db.lookupIntConstant("JVMFlag::ORIG_COMMAND_LINE").intValue();
     oopSize  = db.lookupIntConstant("oopSize").intValue();

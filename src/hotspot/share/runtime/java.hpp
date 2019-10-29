@@ -67,6 +67,8 @@ class JDK_Version {
   static JDK_Version _current;
   static const char* _runtime_name;
   static const char* _runtime_version;
+  static const char* _runtime_vendor_version;
+  static const char* _runtime_vendor_vm_bug_url;
 
   uint8_t _major;
   uint8_t _minor;
@@ -140,6 +142,20 @@ class JDK_Version {
   }
   static void set_runtime_version(const char* version) {
     _runtime_version = version;
+  }
+
+  static const char* runtime_vendor_version() {
+    return _runtime_vendor_version;
+  }
+  static void set_runtime_vendor_version(const char* vendor_version) {
+    _runtime_vendor_version = vendor_version;
+  }
+
+  static const char* runtime_vendor_vm_bug_url() {
+    return _runtime_vendor_vm_bug_url;
+  }
+  static void set_runtime_vendor_vm_bug_url(const char* vendor_vm_bug_url) {
+    _runtime_vendor_vm_bug_url = vendor_vm_bug_url;
   }
 
 };

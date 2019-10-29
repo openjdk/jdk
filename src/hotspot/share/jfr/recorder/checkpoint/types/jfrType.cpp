@@ -133,6 +133,7 @@ static const char* flag_value_origin_to_string(JVMFlag::Flags origin) {
     case JVMFlag::ERGONOMIC: return "Ergonomic";
     case JVMFlag::ATTACH_ON_DEMAND: return "Attach on demand";
     case JVMFlag::INTERNAL: return "Internal";
+    case JVMFlag::JIMAGE_RESOURCE: return "JImage resource";
     default: ShouldNotReachHere(); return "";
   }
 }

@@ -135,6 +135,8 @@
   template(java_lang_VersionProps,                    "java/lang/VersionProps")                   \
   template(java_runtime_name_name,                    "java_runtime_name")                        \
   template(java_runtime_version_name,                 "java_runtime_version")                     \
+  template(java_runtime_vendor_version_name,          "VENDOR_VERSION")                           \
+  template(java_runtime_vendor_vm_bug_url_name,       "VENDOR_URL_VM_BUG")                        \
                                                                                                   \
   /* system initialization */                                                                     \
   template(initPhase1_name,                           "initPhase1")                               \

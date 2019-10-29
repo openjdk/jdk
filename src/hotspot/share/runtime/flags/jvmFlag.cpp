@@ -709,6 +709,8 @@ void JVMFlag::print_origin(outputStream* st, unsigned int width) {
       st->print("attach"); break;
     case INTERNAL:
       st->print("internal"); break;
+    case JIMAGE_RESOURCE:
+      st->print("jimage"); break;
   }
   st->print("}");
 }

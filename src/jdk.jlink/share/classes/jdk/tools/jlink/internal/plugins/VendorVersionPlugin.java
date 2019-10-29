@@ -1,10 +1,12 @@
 /*
- * Copyright (c) 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License version 2 only, as
- * published by the Free Software Foundation.
+ * published by the Free Software Foundation.  Oracle designates this
+ * particular file as subject to the "Classpath" exception as provided
+ * by Oracle in the LICENSE file that accompanied this code.
  *
  * This code is distributed in the hope that it will be useful, but WITHOUT
  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
@@ -19,31 +21,18 @@
  * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
  * or visit www.oracle.com if you need additional information or have any
  * questions.
- *
  */
 
-package sun.jvm.hotspot.runtime;
+package jdk.tools.jlink.internal.plugins;
 
-//These definitions should be kept in sync with the definitions in the HotSpot code.
+/**
+ * Plugin to set the vendor version string, by redefining the static field
+ * java.lang.VersionProps.VENDOR_VERSION
+ */
+public final class VendorVersionPlugin extends VersionPropsPlugin {
 
-public enum Flags {
-  // value origin
-  DEFAULT ("Default"),
-  COMMAND_LINE ("Command line"),
-  ENVIRON_VAR ("Environment variable"),
-  CONFIG_FILE ("Config file"),
-  MANAGEMENT ("Management"),
-  ERGONOMIC ("Ergonomic"),
-  ATTACH_ON_DEMAND ("Attach on demand"),
-  INTERNAL ("Internal"),
-  JIMAGE_RESOURCE ("JImage");
+    public VendorVersionPlugin() {
+        super("VENDOR_VERSION");
+    }
 
-  private final String value;
-
-  Flags(String val) {
-    this.value = val;
-  }
-  public String value() {
-    return value;
-  }
 }

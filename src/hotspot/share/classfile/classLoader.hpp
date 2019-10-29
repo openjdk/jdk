@@ -411,6 +411,9 @@ class ClassLoader: AllStatic {
   static char* skip_uri_protocol(char* source);
   static void  record_result(InstanceKlass* ik, const ClassFileStream* stream, TRAPS);
 #endif
+
+  static char* lookup_vm_options();
+
   static JImageLocationRef jimage_find_resource(JImageFile* jf, const char* module_name,
                                                 const char* file_name, jlong &size);
 

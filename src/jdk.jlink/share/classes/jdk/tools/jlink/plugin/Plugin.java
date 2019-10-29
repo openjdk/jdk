@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -39,6 +39,7 @@ public interface Plugin {
      * Order of categories matches the plugin sort order.
      * <ol>
      * <li>FILTER: Filter in/out resources or files.</li>
+     * <li>ADDER: Add resources or files.</li>
      * <li>TRANSFORMER: Transform resources or files(eg: refactoring, bytecode
      * manipulation).</li>
      * <li>MODULEINFO_TRANSFORMER: Transform only module-info.class</li>
@@ -52,6 +53,7 @@ public interface Plugin {
      */
     public enum Category {
         FILTER("FILTER"),
+        ADDER("ADDER"),
         TRANSFORMER("TRANSFORMER"),
         MODULEINFO_TRANSFORMER("MODULEINFO_TRANSFORMER"),
         SORTER("SORTER"),
@@ -149,6 +151,10 @@ public interface Plugin {
      * @return true if arguments are needed.
      */
     public default boolean hasArguments() {
+        return false;
+    }
+
+    public default boolean hasRawArgument() {
         return false;
     }
 
