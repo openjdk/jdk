@@ -247,7 +247,7 @@ var getJibProfilesCommon = function (input, data) {
     // These are the base setttings for all the main build profiles.
     common.main_profile_base = {
         dependencies: ["boot_jdk", "gnumake", "jtreg", "jib", "autoconf", "jmh", "jcov"],
-        default_make_targets: ["product-bundles", "test-bundles"],
+        default_make_targets: ["product-bundles", "test-bundles", "static-libs-bundles"],
         configure_args: concat(["--enable-jtreg-failure-handler"],
             "--with-exclude-translations=de,es,fr,it,ko,pt_BR,sv,ca,tr,cs,sk,ja_JP_A,ja_JP_HA,ja_JP_HI,ja_JP_I,zh_TW,zh_HK",
             "--disable-manpages",
@@ -320,6 +320,14 @@ var getJibProfilesCommon = function (input, data) {
                     subdir: jdk_subdir,
                     exploded: "images/jdk"
                 },
+                static_libs: {
+                    local: "bundles/\\(jdk.*bin-static-libs.tar.gz\\)",
+                    remote: [
+                        "bundles/" + pf + "/jdk-" + data.version + "_" + pf + "_bin-static-libs.tar.gz",
+                        "bundles/" + pf + "/\\1"
+                    ],
+                    subdir: jdk_subdir,
+                },
             }
         };
     };
@@ -360,6 +368,14 @@ var getJibProfilesCommon = function (input, data) {
                     ],
                     subdir: jdk_subdir,
                     exploded: "images/jdk"
+                },
+                static_libs: {
+                    local: "bundles/\\(jdk.*bin-static-libs-debug.tar.gz\\)",
+                    remote: [
+                        "bundles/" + pf + "/jdk-" + data.version + "_" + pf + "_bin-static-libs-debug.tar.gz",
+                        "bundles/" + pf + "/\\1"
+                    ],
+                    subdir: jdk_subdir,
                 },
             }
         };
