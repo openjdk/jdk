@@ -203,7 +203,7 @@ public class MethodHandles {
      * @param targetClass the target class
      * @param caller the caller lookup object
      * @return a lookup object for the target class, with private access
-     * @throws IllegalArgumentException if {@code targetClass} is a primitive type or array class
+     * @throws IllegalArgumentException if {@code targetClass} is a primitive type or void or array class
      * @throws NullPointerException if {@code targetClass} or {@code caller} is {@code null}
      * @throws SecurityException if denied by the security manager
      * @throws IllegalAccessException if any of the other access checks specified above fails
@@ -1385,7 +1385,7 @@ public class MethodHandles {
         private Lookup(Class<?> lookupClass, Class<?> prevLookupClass, int allowedModes) {
             assert prevLookupClass == null || ((allowedModes & MODULE) == 0
                     && prevLookupClass.getModule() != lookupClass.getModule());
-
+            assert !lookupClass.isArray() && !lookupClass.isPrimitive();
             this.lookupClass = lookupClass;
             this.prevLookupClass = prevLookupClass;
             this.allowedModes = allowedModes;
@@ -1443,6 +1443,7 @@ public class MethodHandles {
          * @param requestedLookupClass the desired lookup class for the new lookup object
          * @return a lookup object which reports the desired lookup class, or the same object
          * if there is no change
+         * @throws IllegalArgumentException if {@code requestedLookupClass} is a primitive type or void or array class
          * @throws NullPointerException if the argument is null
          *
          * @revised 9
@@ -1452,6 +1453,11 @@ public class MethodHandles {
          */
         public Lookup in(Class<?> requestedLookupClass) {
             Objects.requireNonNull(requestedLookupClass);
+            if (requestedLookupClass.isPrimitive())
+                throw new IllegalArgumentException(requestedLookupClass + " is a primitive class");
+            if (requestedLookupClass.isArray())
+                throw new IllegalArgumentException(requestedLookupClass + " is an array class");
+
             if (allowedModes == TRUSTED)  // IMPL_LOOKUP can make any lookup at all
                 return new Lookup(requestedLookupClass, null, FULL_POWER_MODES);
             if (requestedLookupClass == this.lookupClass)
