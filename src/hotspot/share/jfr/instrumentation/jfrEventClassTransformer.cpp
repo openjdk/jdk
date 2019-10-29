@@ -1497,35 +1497,6 @@ static void rewrite_klass_pointer(InstanceKlass*& ik, InstanceKlass* new_ik, Cla
   ik = new_ik;
 }
 
-// During retransform/redefine, copy the Method specific trace flags
-// from the previous ik ("the original klass") to the new ik ("the scratch_klass").
-// The open code for retransform/redefine does not know about these.
-// In doing this migration here, we ensure the new Methods (defined in scratch klass)
-// will carry over trace tags from the old Methods being replaced,
-// ensuring flag/tag continuity while being transparent to open code.
-static void copy_method_trace_flags(const InstanceKlass* the_original_klass, const InstanceKlass* the_scratch_klass) {
-  assert(the_original_klass != NULL, "invariant");
-  assert(the_scratch_klass != NULL, "invariant");
-  assert(the_original_klass->name() == the_scratch_klass->name(), "invariant");
-  const Array<Method*>* old_methods = the_original_klass->methods();
-  const Array<Method*>* new_methods = the_scratch_klass->methods();
-  const bool equal_array_length = old_methods->length() == new_methods->length();
-  // The Method array has the property of being sorted.
-  // If they are the same length, there is a one-to-one mapping.
-  // If they are unequal, there was a method added (currently only
-  // private static methods allowed to be added), use lookup.
-  for (int i = 0; i < old_methods->length(); ++i) {
-    const Method* const old_method = old_methods->at(i);
-    Method* const new_method = equal_array_length ? new_methods->at(i) :
-      the_scratch_klass->find_method(old_method->name(), old_method->signature());
-    assert(new_method != NULL, "invariant");
-    assert(new_method->name() == old_method->name(), "invariant");
-    assert(new_method->signature() == old_method->signature(), "invariant");
-    new_method->set_trace_flags(old_method->trace_flags());
-    assert(new_method->trace_flags() == old_method->trace_flags(), "invariant");
-  }
-}
-
 static bool is_retransforming(const InstanceKlass* ik, TRAPS) {
   assert(ik != NULL, "invariant");
   assert(JdkJfrEvent::is_a(ik), "invariant");
@@ -1533,16 +1504,7 @@ static bool is_retransforming(const InstanceKlass* ik, TRAPS) {
   assert(name != NULL, "invariant");
   Handle class_loader(THREAD, ik->class_loader());
   Handle protection_domain(THREAD, ik->protection_domain());
-  // nota bene: use lock-free dictionary lookup
-  const InstanceKlass* prev_ik = (const InstanceKlass*)SystemDictionary::find(name, class_loader, protection_domain, THREAD);
-  if (prev_ik == NULL) {
-    return false;
-  }
-  // an existing ik implies a retransform/redefine
-  assert(prev_ik != NULL, "invariant");
-  assert(JdkJfrEvent::is_a(prev_ik), "invariant");
-  copy_method_trace_flags(prev_ik, ik);
-  return true;
+  return SystemDictionary::find(name, class_loader, protection_domain, THREAD) != NULL;
 }
 
 // target for JFR_ON_KLASS_CREATION hook
@@ -1571,12 +1533,8 @@ void JfrEventClassTransformer::on_klass_creation(InstanceKlass*& ik, ClassFilePa
     return;
   }
   assert(JdkJfrEvent::is_subklass(ik), "invariant");
-  if (is_retransforming(ik, THREAD)) {
-    // not the initial klass load
-    return;
-  }
-  if (ik->is_abstract()) {
-    // abstract classes are not instrumented
+  if (ik->is_abstract() || is_retransforming(ik, THREAD)) {
+    // abstract and scratch classes are not instrumented
     return;
   }
   ResourceMark rm(THREAD);

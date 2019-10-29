@@ -99,12 +99,6 @@ class ClearArtifact<const Method*> {
 };
 
 template <typename T>
-class Stub {
- public:
-  bool operator()(T const& value) { return true; }
-};
-
-template <typename T>
 class SerializePredicate {
   bool _class_unload;
  public:

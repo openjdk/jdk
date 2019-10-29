@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -255,19 +255,21 @@ public final class MetadataRepository {
         staleMetadata = true;
     }
 
-    // Lock around setOutput ensures that other threads dosn't
-    // emit event after setOutput and unregister the event class, before a call
+    // Lock around setOutput ensures that other threads don't
+    // emit events after setOutput and unregister the event class, before a call
     // to storeDescriptorInJVM
     synchronized void setOutput(String filename) {
+        if (staleMetadata) {
+            storeDescriptorInJVM();
+        }
         jvm.setOutput(filename);
 
         unregisterUnloaded();
         if (unregistered) {
-            staleMetadata = typeLibrary.clearUnregistered();
+            if (typeLibrary.clearUnregistered()) {
+                storeDescriptorInJVM();
+            }
             unregistered = false;
-        }
-        if (staleMetadata) {
-            storeDescriptorInJVM();
         }
     }
 

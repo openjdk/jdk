@@ -364,13 +364,13 @@ void JfrCheckpointManager::write_type_set() {
   if (!LeakProfiler::is_running()) {
     JfrCheckpointWriter writer(true, true, Thread::current());
     JfrTypeSet::serialize(&writer, NULL, false);
-    return;
+  } else {
+    Thread* const t = Thread::current();
+    JfrCheckpointWriter leakp_writer(false, true, t);
+    JfrCheckpointWriter writer(false, true, t);
+    JfrTypeSet::serialize(&writer, &leakp_writer, false);
+    ObjectSampleCheckpoint::on_type_set(leakp_writer);
   }
-  Thread* const t = Thread::current();
-  JfrCheckpointWriter leakp_writer(false, true, t);
-  JfrCheckpointWriter writer(false, true, t);
-  JfrTypeSet::serialize(&writer, &leakp_writer, false);
-  ObjectSampleCheckpoint::on_type_set(leakp_writer);
 }
 
 void JfrCheckpointManager::write_type_set_for_unloaded_classes() {
