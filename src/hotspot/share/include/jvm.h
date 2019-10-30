@@ -1073,13 +1073,6 @@ typedef struct {
     method_size_info main;     /* used everywhere else */
 } class_size_info;
 
-/*
- * Functions defined in libjava.so to perform string conversions.
- *
- */
-
-typedef jstring (*to_java_string_fn_t)(JNIEnv *env, char *str);
-
 #define JVM_RECOGNIZED_CLASS_MODIFIERS (JVM_ACC_PUBLIC | \
                                         JVM_ACC_FINAL | \
                                         JVM_ACC_SUPER | \

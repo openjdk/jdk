@@ -387,14 +387,20 @@ Handle java_lang_String::create_from_symbol(Symbol* symbol, TRAPS) {
 Handle java_lang_String::create_from_platform_dependent_str(const char* str, TRAPS) {
   assert(str != NULL, "bad arguments");
 
-  typedef jstring (*to_java_string_fn_t)(JNIEnv*, const char *);
+  typedef jstring (JNICALL *to_java_string_fn_t)(JNIEnv*, const char *);
   static to_java_string_fn_t _to_java_string_fn = NULL;
 
   if (_to_java_string_fn == NULL) {
     void *lib_handle = os::native_java_library();
-    _to_java_string_fn = CAST_TO_FN_PTR(to_java_string_fn_t, os::dll_lookup(lib_handle, "NewStringPlatform"));
+    _to_java_string_fn = CAST_TO_FN_PTR(to_java_string_fn_t, os::dll_lookup(lib_handle, "JNU_NewStringPlatform"));
+#if defined(_WIN32) && !defined(_WIN64)
     if (_to_java_string_fn == NULL) {
-      fatal("NewStringPlatform missing");
+      // On 32 bit Windows, also try __stdcall decorated name
+      _to_java_string_fn = CAST_TO_FN_PTR(to_java_string_fn_t, os::dll_lookup(lib_handle, "_JNU_NewStringPlatform@8"));
+    }
+#endif
+    if (_to_java_string_fn == NULL) {
+      fatal("JNU_NewStringPlatform missing");
     }
   }
 

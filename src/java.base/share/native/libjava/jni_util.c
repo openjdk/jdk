@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -789,13 +789,6 @@ InitializeEncoding(JNIEnv *env, const char *encname)
     CHECK_NULL(String_coder_ID);
     String_value_ID = (*env)->GetFieldID(env, strClazz, "value", "[B");
     CHECK_NULL(String_value_ID);
-}
-
-// This alias is used for compatibility with 32 bit Windows
-JNIEXPORT jstring
-NewStringPlatform(JNIEnv *env, const char *str)
-{
-    return JNU_NewStringPlatform(env, str);
 }
 
 JNIEXPORT jstring JNICALL
