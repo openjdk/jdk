@@ -572,23 +572,15 @@ int Method::extra_stack_words() {
   return extra_stack_entries() * Interpreter::stackElementSize;
 }
 
-
 void Method::compute_size_of_parameters(Thread *thread) {
   ArgumentSizeComputer asc(signature());
   set_size_of_parameters(asc.size() + (is_static() ? 0 : 1));
 }
 
-BasicType Method::result_type() const {
-  ResultTypeFinder rtf(signature());
-  return rtf.type();
-}
-
-
 bool Method::is_empty_method() const {
   return  code_size() == 1
       && *code_base() == Bytecodes::_return;
 }
-
 
 bool Method::is_vanilla_constructor() const {
   // Returns true if this method is a vanilla constructor, i.e. an "<init>" "()V" method
