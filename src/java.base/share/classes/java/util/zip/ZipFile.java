@@ -867,6 +867,7 @@ class ZipFile implements ZipConstants, Closeable {
     private class ZipFileInputStream extends InputStream {
         private volatile boolean closeRequested;
         private   long pos;     // current position within entry data
+        private   long startingPos; // Start position for the entry data
         protected long rem;     // number of remaining bytes within entry
         protected long size;    // uncompressed size of this entry
 
@@ -938,6 +939,7 @@ class ZipFile implements ZipConstants, Closeable {
                     throw new ZipException("ZipFile invalid LOC header (bad signature)");
                 }
                 pos += LOCHDR + LOCNAM(loc) + LOCEXT(loc);
+                startingPos = pos; // Save starting position for the entry
             }
             return pos;
         }
@@ -979,8 +981,19 @@ class ZipFile implements ZipConstants, Closeable {
         public long skip(long n) throws IOException {
             synchronized (ZipFile.this) {
                 initDataOffset();
-                if (n > rem) {
-                    n = rem;
+                long newPos = pos + n;
+                if (n > 0) {
+                    // If we overflowed adding the skip value or are moving
+                    // past EOF, set the skip value to number of bytes remaining
+                    // to reach EOF
+                    if (newPos < 0 || n > rem) {
+                        n = rem;
+                    }
+                } else if (newPos < startingPos) {
+                    // Tried to position before BOF so set position to the
+                    // BOF and return the number of bytes we moved backwards
+                    // to reach BOF
+                    n = startingPos - pos;
                 }
                 pos += n;
                 rem -= n;
