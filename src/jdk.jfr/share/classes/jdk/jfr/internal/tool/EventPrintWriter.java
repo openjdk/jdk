@@ -30,6 +30,7 @@ import java.io.IOException;
 import java.io.PrintWriter;
 import java.nio.file.Path;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -42,7 +43,7 @@ import jdk.jfr.ValueDescriptor;
 import jdk.jfr.consumer.RecordedEvent;
 import jdk.jfr.consumer.RecordedObject;
 import jdk.jfr.consumer.RecordingFile;
-import jdk.jfr.internal.consumer.RecordingInternals;
+import jdk.jfr.internal.consumer.JdkJfrConsumer;
 
 abstract class EventPrintWriter extends StructuredWriter {
 
@@ -52,6 +53,7 @@ abstract class EventPrintWriter extends StructuredWriter {
 
     protected static final String STACK_TRACE_FIELD = "stackTrace";
     protected static final String EVENT_THREAD_FIELD = "eventThread";
+    private static final JdkJfrConsumer PRIVATE_ACCESS = JdkJfrConsumer.instance();
 
     private Predicate<EventType> eventFilter = x -> true;
     private int stackDepth;
@@ -74,8 +76,8 @@ abstract class EventPrintWriter extends StructuredWriter {
                 if (acceptEvent(event)) {
                     events.add(event);
                 }
-                if (RecordingInternals.INSTANCE.isLastEventInChunk(file)) {
-                    RecordingInternals.INSTANCE.sort(events);
+                if (PRIVATE_ACCESS.isLastEventInChunk(file)) {
+                    Collections.sort(events, PRIVATE_ACCESS.eventComparator());
                     print(events);
                     events.clear();
                 }
@@ -121,7 +123,7 @@ abstract class EventPrintWriter extends StructuredWriter {
         case TIMESPAN:
             return object.getDuration(v.getName());
         case TIMESTAMP:
-            return RecordingInternals.INSTANCE.getOffsetDataTime(object, v.getName());
+            return PRIVATE_ACCESS.getOffsetDataTime(object, v.getName());
         default:
             return object.getValue(v.getName());
         }

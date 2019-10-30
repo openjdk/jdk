@@ -113,6 +113,7 @@ jobject JNICALL jfr_new_event_writer(JNIEnv* env, jclass cls);
 
 jboolean JNICALL jfr_event_writer_flush(JNIEnv* env, jclass cls, jobject writer, jint used_size, jint requested_size);
 
+void JNICALL jfr_flush(JNIEnv* env, jobject jvm);
 void JNICALL jfr_abort(JNIEnv* env, jobject jvm, jstring errorMsg);
 
 jlong JNICALL jfr_get_epoch_address(JNIEnv* env, jobject jvm);
@@ -131,6 +132,13 @@ void JNICALL jfr_emit_old_object_samples(JNIEnv* env, jobject jvm, jlong cutoff_
 
 jboolean JNICALL jfr_should_rotate_disk(JNIEnv* env, jobject jvm);
 
+void JNICALL jfr_exclude_thread(JNIEnv* env, jobject jvm, jobject t);
+
+void JNICALL jfr_include_thread(JNIEnv* env, jobject jvm, jobject t);
+
+jboolean JNICALL jfr_is_thread_excluded(JNIEnv* env, jobject jvm, jobject t);
+
+jlong JNICALL jfr_chunk_start_nanos(JNIEnv* env, jobject jvm);
 
 #ifdef __cplusplus
 }

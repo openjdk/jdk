@@ -68,18 +68,29 @@ class JfrCheckpointManager : public JfrCHeapObj {
   void unlock();
   DEBUG_ONLY(bool is_locked() const;)
 
+  JfrCheckpointMspace* lookup(Buffer* old) const;
+  bool use_epoch_transition_mspace(const Thread* t) const;
+  size_t write_epoch_transition_mspace();
+
   static Buffer* lease_buffer(Thread* t, size_t size = 0);
+  static Buffer* lease_buffer(Buffer* old, Thread* t, size_t size = 0);
   static Buffer* flush(Buffer* old, size_t used, size_t requested, Thread* t);
 
   size_t clear();
   size_t write();
-  size_t write_epoch_transition_mspace();
-  size_t write_types();
-  size_t write_safepoint_types();
+  size_t flush();
+
+  bool is_static_type_set_required();
+  size_t write_static_type_set();
+  size_t write_threads();
+  size_t write_static_type_set_and_threads();
+  bool is_type_set_required();
   void write_type_set();
+  static void write_type_set_for_unloaded_classes();
+
   void shift_epoch();
   void synchronize_epoch();
-  bool use_epoch_transition_mspace(const Thread* t) const;
+  void notify_threads();
 
   JfrCheckpointManager(JfrChunkWriter& cw);
   ~JfrCheckpointManager();
@@ -87,14 +98,17 @@ class JfrCheckpointManager : public JfrCHeapObj {
   static JfrCheckpointManager& instance();
   static JfrCheckpointManager* create(JfrChunkWriter& cw);
   bool initialize();
+  void on_rotation();
   static void destroy();
 
  public:
+  size_t flush_type_set();
+  void flush_static_type_set();
+  static void create_thread_blob(Thread* t);
+  static void write_thread_checkpoint(Thread* t);
   void register_service_thread(const Thread* t);
-  static void write_type_set_for_unloaded_classes();
-  static void create_thread_blob(JavaThread* jt);
-  static void write_thread_checkpoint(JavaThread* jt);
 
+  friend class Jfr;
   friend class JfrRecorder;
   friend class JfrRecorderService;
   friend class JfrCheckpointFlush;

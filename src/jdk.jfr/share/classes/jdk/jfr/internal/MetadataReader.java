@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -49,6 +49,8 @@ import jdk.jfr.AnnotationElement;
 import jdk.jfr.SettingDescriptor;
 import jdk.jfr.ValueDescriptor;
 import jdk.jfr.internal.MetadataDescriptor.Element;
+import jdk.jfr.internal.consumer.RecordingInput;
+import jdk.jfr.internal.consumer.StringParser;
 
 /**
  * Parses metadata.
@@ -61,12 +63,13 @@ final class MetadataReader {
     private final MetadataDescriptor descriptor;
     private final Map<Long, Type> types = new HashMap<>();
 
-    public MetadataReader(DataInput input) throws IOException {
+    public MetadataReader(RecordingInput input) throws IOException {
         this.input = input;
         int size = input.readInt();
         this.pool = new ArrayList<>(size);
+        StringParser p = new StringParser(null, false);
         for (int i = 0; i < size; i++) {
-            this.pool.add(input.readUTF());
+            this.pool.add((String) p.parse(input));
         }
         descriptor = new MetadataDescriptor();
         Element root = createElement();

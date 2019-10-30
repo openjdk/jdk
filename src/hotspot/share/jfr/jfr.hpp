@@ -53,6 +53,9 @@ class Jfr : AllStatic {
   static bool on_flight_recorder_option(const JavaVMOption** option, char* delimiter);
   static bool on_start_flight_recording_option(const JavaVMOption** option, char* delimiter);
   static void weak_oops_do(BoolObjectClosure* is_alive, OopClosure* f);
+  static void exclude_thread(Thread* thread);
+  static bool is_excluded(Thread* thread);
+  static void include_thread(Thread* thread);
 };
 
 #endif // SHARE_JFR_JFR_HPP

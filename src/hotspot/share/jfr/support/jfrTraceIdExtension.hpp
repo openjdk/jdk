@@ -69,7 +69,7 @@ class JfrTraceFlag {
 
   jbyte* meta_addr() const {
 #ifdef VM_LITTLE_ENDIAN
-    return (jbyte*)(&_flags) + 1;
+    return ((jbyte*)&_flags) + 1;
 #else
     return (jbyte*)&_flags;
 #endif

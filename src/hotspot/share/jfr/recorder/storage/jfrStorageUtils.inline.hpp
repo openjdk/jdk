@@ -31,13 +31,15 @@
 template <typename T>
 inline bool UnBufferedWriteToChunk<T>::write(T* t, const u1* data, size_t size) {
   _writer.write_unbuffered(data, size);
-  _processed += size;
+  ++_elements;
+  _size += size;
   return true;
 }
 
 template <typename T>
 inline bool DefaultDiscarder<T>::discard(T* t, const u1* data, size_t size) {
-  _processed += size;
+  ++_elements;
+  _size += size;
   return true;
 }
 
@@ -52,15 +54,6 @@ inline bool ConcurrentWriteOp<Operation>::process(typename Operation::Type* t) {
   const bool result = _operation.write(t, current_top, unflushed_size);
   t->set_concurrent_top(current_top + unflushed_size);
   return result;
-}
-
-template <typename Operation>
-inline bool ConcurrentWriteOpExcludeRetired<Operation>::process(typename Operation::Type* t) {
-  if (t->retired()) {
-    assert(t->empty(), "invariant");
-    return true;
-  }
-  return ConcurrentWriteOp<Operation>::process(t);
 }
 
 template <typename Operation>

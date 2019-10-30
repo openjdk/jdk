@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,7 @@
  * questions.
  */
 
-package jdk.jfr.consumer;
+package jdk.jfr.internal.consumer;
 
 import java.time.DateTimeException;
 import java.time.ZoneOffset;
@@ -49,15 +49,6 @@ final class TimeConverter {
         this.zoneOffet = zoneOfSet(rawOffset);
     }
 
-    private ZoneOffset zoneOfSet(int rawOffset) {
-        try {
-            return ZoneOffset.ofTotalSeconds(rawOffset / 1000);
-        } catch (DateTimeException dte) {
-            Logger.log(LogTag.JFR_SYSTEM_PARSER, LogLevel.INFO, "Could not create ZoneOffset from raw offset " + rawOffset);
-        }
-        return ZoneOffset.UTC;
-    }
-
     public long convertTimestamp(long ticks) {
         return startNanos + (long) ((ticks - startTicks) / divisor);
     }
@@ -68,5 +59,14 @@ final class TimeConverter {
 
     public ZoneOffset getZoneOffset() {
         return zoneOffet;
+    }
+
+    private ZoneOffset zoneOfSet(int rawOffset) {
+        try {
+            return ZoneOffset.ofTotalSeconds(rawOffset / 1000);
+        } catch (DateTimeException dte) {
+            Logger.log(LogTag.JFR_SYSTEM_PARSER, LogLevel.INFO, "Could not create ZoneOffset from raw offset " + rawOffset);
+        }
+        return ZoneOffset.UTC;
     }
 }

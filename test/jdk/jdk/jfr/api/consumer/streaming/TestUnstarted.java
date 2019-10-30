@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,26 +22,27 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
-package jdk.jfr.internal.consumer;
 
-import java.io.IOException;
-import java.util.List;
+package jdk.jfr.api.consumer.streaming;
 
-import jdk.jfr.consumer.RecordedEvent;
-import jdk.jfr.consumer.RecordedObject;
-import jdk.jfr.consumer.RecordingFile;
-import jdk.jfr.internal.Type;
+import jdk.jfr.consumer.EventStream;
 
-public abstract class RecordingInternals {
-
-    public static RecordingInternals INSTANCE;
-
-    public abstract boolean isLastEventInChunk(RecordingFile file);
-
-    public abstract Object getOffsetDataTime(RecordedObject event, String name);
-
-    public abstract List<Type> readTypes(RecordingFile file) throws IOException;
-
-    public abstract void sort(List<RecordedEvent> events);
-
+/**
+ * @test
+ * @summary Verifies that it is possible to open a stream when a repository doesn't
+ *          exists
+ * @key jfr
+ * @requires vm.hasJFR
+ * @library /test/lib
+ * @run main/othervm jdk.jfr.api.consumer.streaming.TestUnstarted
+ */
+public class TestUnstarted {
+    public static void main(String... args) throws Exception {
+        try (EventStream es = EventStream.openRepository()) {
+            es.onEvent(e -> {
+                // ignore
+            });
+            es.startAsync();
+        }
+    }
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -53,7 +53,7 @@ import jdk.jfr.SettingDescriptor;
 import jdk.jfr.ValueDescriptor;
 import jdk.jfr.internal.MetadataDescriptor.Attribute;
 import jdk.jfr.internal.MetadataDescriptor.Element;
-import jdk.jfr.internal.consumer.RecordingInput;
+import jdk.jfr.internal.consumer.StringParser;
 
 /**
  * Class responsible for converting a list of types into a format that can be
@@ -94,10 +94,10 @@ final class MetadataWriter {
 
     private void writeString(DataOutput out, String s) throws IOException {
         if (s == null ) {
-            out.writeByte(RecordingInput.STRING_ENCODING_NULL);
+            out.writeByte(StringParser.Encoding.NULL.byteValue());
             return;
         }
-        out.writeByte(RecordingInput.STRING_ENCODING_CHAR_ARRAY); // encoding UTF-16
+        out.writeByte(StringParser.Encoding.CHAR_ARRAY.byteValue()); // encoding UTF-16
         int length = s.length();
         writeInt(out, length);
             for (int i = 0; i < length; i++) {

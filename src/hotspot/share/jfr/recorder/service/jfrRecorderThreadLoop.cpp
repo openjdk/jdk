@@ -40,6 +40,7 @@ void recorderthread_entry(JavaThread* thread, Thread* unused) {
   #define START (msgs & (MSGBIT(MSG_START)))
   #define SHUTDOWN (msgs & MSGBIT(MSG_SHUTDOWN))
   #define ROTATE (msgs & (MSGBIT(MSG_ROTATE)|MSGBIT(MSG_STOP)))
+  #define FLUSHPOINT (msgs & (MSGBIT(MSG_FLUSHPOINT)))
   #define PROCESS_FULL_BUFFERS (msgs & (MSGBIT(MSG_ROTATE)|MSGBIT(MSG_STOP)|MSGBIT(MSG_FULLBUFFER)))
   #define SCAVENGE (msgs & (MSGBIT(MSG_DEADBUFFER)))
 
@@ -72,6 +73,8 @@ void recorderthread_entry(JavaThread* thread, Thread* unused) {
         service.start();
       } else if (ROTATE) {
         service.rotate(msgs);
+      } else if (FLUSHPOINT) {
+        service.flushpoint();
       }
       JfrMsg_lock->lock();
       post_box.notify_waiters();
@@ -90,6 +93,7 @@ void recorderthread_entry(JavaThread* thread, Thread* unused) {
   #undef START
   #undef SHUTDOWN
   #undef ROTATE
+  #undef FLUSHPOINT
   #undef PROCESS_FULL_BUFFERS
   #undef SCAVENGE
 }

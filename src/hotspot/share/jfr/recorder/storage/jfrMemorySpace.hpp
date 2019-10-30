@@ -99,8 +99,8 @@ class JfrMemorySpace : public JfrCHeapObj {
   template <typename IteratorCallback, typename IteratorType>
   void iterate(IteratorCallback& callback, bool full = true, jfr_iter_direction direction = forward);
 
-  debug_only(bool in_full_list(const Type* t) const { return _full.in_list(t); })
-  debug_only(bool in_free_list(const Type* t) const { return _free.in_list(t); })
+  bool in_full_list(const Type* t) const { return _full.in_list(t); }
+  bool in_free_list(const Type* t) const { return _free.in_list(t); }
 };
 
 #endif // SHARE_JFR_RECORDER_STORAGE_JFRMEMORYSPACE_HPP

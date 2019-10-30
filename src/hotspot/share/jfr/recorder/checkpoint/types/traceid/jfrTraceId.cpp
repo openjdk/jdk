@@ -33,7 +33,6 @@
 #include "oops/method.hpp"
 #include "oops/oop.inline.hpp"
 #include "runtime/atomic.hpp"
-#include "runtime/orderAccess.hpp"
 #include "runtime/vm_version.hpp"
 #include "runtime/jniHandles.inline.hpp"
 #include "runtime/thread.inline.hpp"
@@ -45,7 +44,7 @@ static traceid atomic_inc(traceid volatile* const dest) {
   traceid compare_value;
   traceid exchange_value;
   do {
-    compare_value = OrderAccess::load_acquire(dest);
+    compare_value = *dest;
     exchange_value = compare_value + 1;
   } while (Atomic::cmpxchg(exchange_value, dest, compare_value) != compare_value);
   return exchange_value;

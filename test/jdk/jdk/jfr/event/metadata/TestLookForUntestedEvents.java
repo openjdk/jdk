@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -81,6 +81,13 @@ public class TestLookForUntestedEvents {
         Arrays.asList("DumpReason")
     );
 
+    // Experimental events
+    private static final Set<String> experimentalEvents = new HashSet<>(
+      Arrays.asList(
+                    "Flush", "FlushStorage", "FlushStacktrace",
+                    "FlushStringPool", "FlushMetadata", "FlushTypeSet")
+    );
+
 
     public static void main(String[] args) throws Exception {
         for (EventType type : FlightRecorder.getFlightRecorder().getEventTypes()) {
@@ -137,6 +144,10 @@ public class TestLookForUntestedEvents {
                 eventsFromEventNamesClass.add(eventName);
             }
         }
+
+        // remove experimental events from eventsFromEventNamesClass since jfrEventTypes
+        // excludes experimental events
+        eventsFromEventNamesClass.removeAll(experimentalEvents);
 
         if (!jfrEventTypes.equals(eventsFromEventNamesClass)) {
             String exceptionMsg = "Events declared in jdk.test.lib.jfr.EventNames differ " +

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -284,6 +284,10 @@ JVM_ENTRY_NO_ENV(jboolean, jfr_event_writer_flush(JNIEnv* env, jclass cls, jobje
   return JfrJavaEventWriter::flush(writer, used_size, requested_size, thread);
 JVM_END
 
+JVM_ENTRY_NO_ENV(void, jfr_flush(JNIEnv* env, jobject jvm))
+  JfrRepository::flush(thread);
+JVM_END
+
 JVM_ENTRY_NO_ENV(void, jfr_set_repository_location(JNIEnv* env, jobject repo, jstring location))
   return JfrRepository::set_path(location, thread);
 JVM_END
@@ -311,3 +315,20 @@ JVM_END
 JVM_ENTRY_NO_ENV(void, jfr_emit_old_object_samples(JNIEnv* env, jobject jvm, jlong cutoff_ticks, jboolean emit_all))
   LeakProfiler::emit_events(cutoff_ticks, emit_all == JNI_TRUE);
 JVM_END
+
+JVM_ENTRY_NO_ENV(void, jfr_exclude_thread(JNIEnv* env, jobject jvm, jobject t))
+  JfrJavaSupport::exclude(t);
+JVM_END
+
+JVM_ENTRY_NO_ENV(void, jfr_include_thread(JNIEnv* env, jobject jvm, jobject t))
+  JfrJavaSupport::include(t);
+JVM_END
+
+JVM_ENTRY_NO_ENV(jboolean, jfr_is_thread_excluded(JNIEnv* env, jobject jvm, jobject t))
+  return JfrJavaSupport::is_excluded(t);
+JVM_END
+
+JVM_ENTRY_NO_ENV(jlong, jfr_chunk_start_nanos(JNIEnv* env, jobject jvm))
+  return JfrRepository::current_chunk_start_nanos();
+JVM_END
+

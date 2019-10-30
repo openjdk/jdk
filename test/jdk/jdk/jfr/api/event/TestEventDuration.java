@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,24 +22,46 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
+package jdk.jfr.api.event;
 
-package jdk.jfr.consumer;
+import java.util.List;
 
-import java.io.IOException;
-
-import jdk.jfr.internal.consumer.RecordingInput;
+import jdk.jfr.Recording;
+import jdk.jfr.consumer.RecordedEvent;
+import jdk.test.lib.jfr.Events;
+import jdk.test.lib.jfr.SimpleEvent;
 
 /**
- * Base class for parsing data from a {@link RecordingInput}.
+ * @test
+ * @summary Tests that a duration is recorded.
+ * @key jfr
+ * @requires vm.hasJFR
+ * @library /test/lib
+ * @run main/othervm jdk.jfr.api.event.TestEventDuration
  */
-abstract class Parser {
-    /**
-     * Parses data from a {@link RecordingInput} and return an object.
-     *
-     * @param input input to read from
-     * @return an object
-     * @throws IOException if operation couldn't be completed due to I/O
-     *         problems
-     */
-    abstract Object parse(RecordingInput input) throws IOException;
+public class TestEventDuration {
+
+    public static int counter;
+
+    public static void main(String[] args) throws Exception {
+
+        try(Recording r = new Recording()) {
+            r.start();
+            SimpleEvent e = new SimpleEvent();
+            e.begin();
+            for (int i = 0; i < 10_000;i++) {
+                counter+=i;
+            }
+            e.end();
+            e.commit();
+
+            r.stop();
+            List<RecordedEvent> events = Events.fromRecording(r);
+            if (events.get(0).getDuration().toNanos() < 1) {
+                throw new AssertionError("Expected a duration");
+            }
+        }
+
+    }
+
 }

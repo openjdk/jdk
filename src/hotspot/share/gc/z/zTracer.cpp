@@ -59,11 +59,9 @@ public:
 
 static void register_jfr_type_serializers() {
   JfrSerializer::register_serializer(TYPE_ZSTATISTICSCOUNTERTYPE,
-                                     false /* require_safepoint */,
                                      true /* permit_cache */,
                                      new ZStatisticsCounterTypeConstant());
   JfrSerializer::register_serializer(TYPE_ZSTATISTICSSAMPLERTYPE,
-                                     false /* require_safepoint */,
                                      true /* permit_cache */,
                                      new ZStatisticsSamplerTypeConstant());
 }

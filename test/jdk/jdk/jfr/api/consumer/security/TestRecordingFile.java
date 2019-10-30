@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,39 +23,33 @@
  * questions.
  */
 
-package jdk.jfr.consumer;
+package jdk.jfr.api.consumer.security;
 
-import java.util.HashMap;
-import java.util.Iterator;
+import java.nio.file.Paths;
+
+import jdk.jfr.consumer.RecordingFile;
 
 /**
- * Commonly used data structure for looking up objects given an id (long value)
+ * @test
+ * @summary Test that a recording file can't be opened without permissions
+ * @key jfr
+ * @requires vm.hasJFR
+ * @library /test/lib
  *
- * TODO: Implement without using Map and Long objects, to minimize allocation
- *
- * @param <T>
+ * @run driver jdk.jfr.api.consumer.security.DriverRecordingDumper
+ *      test-recording-file.jfr
+ * @run main/othervm/secure=java.lang.SecurityManager/java.security.policy=no-permission.policy
+ *      jdk.jfr.api.consumer.security.TestRecordingFile
+ *      test-recording-file.jfr
  */
-final class LongMap<T> implements Iterable<T> {
-    private final HashMap<Long, T> map;
-
-    LongMap() {
-        map = new HashMap<>(101);
-    }
-
-    void put(long id, T object) {
-        map.put(id, object);
-    }
-
-    T get(long id) {
-        return map.get(id);
-    }
-
-    @Override
-    public Iterator<T> iterator() {
-        return map.values().iterator();
-    }
-
-    Iterator<Long> keys() {
-        return map.keySet().iterator();
+public class TestRecordingFile {
+    public static void main(String... args) throws Exception {
+        try {
+            RecordingFile.readAllEvents(Paths.get(args[0]));
+            throw new AssertionError("Expected SecurityException");
+        } catch (SecurityException se) {
+            // OK, as expected
+            return;
+        }
     }
 }

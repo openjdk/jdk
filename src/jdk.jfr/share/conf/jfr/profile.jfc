@@ -406,7 +406,7 @@
       <setting name="enabled" control="gc-enabled-normal">true</setting>
       <setting name="threshold">0 ms</setting>
     </event>
-    
+
     <event name="jdk.G1BasicIHOP">
       <setting name="enabled" control="gc-enabled-normal">true</setting>
     </event>
@@ -668,6 +668,36 @@
 
     <event name="jdk.ActiveSetting">
       <setting name="enabled">true</setting>
+    </event>
+
+    <event name="jdk.Flush">
+      <setting name="enabled">true</setting>
+      <setting name="threshold">0 ns</setting>
+    </event>
+
+    <event name="jdk.FlushStorage">
+      <setting name="enabled">true</setting>
+      <setting name="threshold">0 ns</setting>
+    </event>
+
+    <event name="jdk.FlushStacktrace">
+      <setting name="enabled">true</setting>
+      <setting name="threshold">0 ns</setting>
+    </event>
+
+    <event name="jdk.FlushStringPool">
+      <setting name="enabled">true</setting>
+      <setting name="threshold">0 ns</setting>
+    </event>
+
+    <event name="jdk.FlushMetadata">
+      <setting name="enabled">true</setting>
+      <setting name="threshold">0 ns</setting>
+    </event>
+
+    <event name="jdk.FlushTypeSet">
+      <setting name="enabled">true</setting>
+      <setting name="threshold">0 ns</setting>
     </event>
 
     <event name="jdk.DataLoss">

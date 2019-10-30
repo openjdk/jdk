@@ -28,7 +28,6 @@
 #include "logging/log.hpp"
 #include "memory/allocation.inline.hpp"
 #include "runtime/atomic.hpp"
-#include "runtime/orderAccess.hpp"
 #include "runtime/vm_version.hpp"
 #include "utilities/debug.hpp"
 #include "utilities/macros.hpp"
@@ -40,7 +39,7 @@ static jlong atomic_add_jlong(jlong value, jlong volatile* const dest) {
   jlong compare_value;
   jlong exchange_value;
   do {
-    compare_value = OrderAccess::load_acquire(dest);
+    compare_value = *dest;
     exchange_value = compare_value + value;
   } while (Atomic::cmpxchg(exchange_value, dest, compare_value) != compare_value);
   return exchange_value;

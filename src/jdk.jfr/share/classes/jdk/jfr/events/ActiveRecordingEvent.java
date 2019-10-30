@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -40,6 +40,13 @@ import jdk.jfr.internal.Type;
 @StackTrace(false)
 public final class ActiveRecordingEvent extends AbstractJDKEvent {
 
+    public static final ThreadLocal<ActiveRecordingEvent> EVENT = new ThreadLocal<ActiveRecordingEvent>() {
+        @Override
+        protected ActiveRecordingEvent initialValue() {
+            return new ActiveRecordingEvent();
+        }
+    };
+
     @Label("Id")
     public long id;
 
@@ -52,6 +59,10 @@ public final class ActiveRecordingEvent extends AbstractJDKEvent {
     @Label("Max Age")
     @Timespan(Timespan.MILLISECONDS)
     public long maxAge;
+
+    @Label("Flush Interval")
+    @Timespan(Timespan.MILLISECONDS)
+    public long flushInterval;
 
     @Label("Max Size")
     @DataAmount

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -38,6 +38,7 @@ import java.lang.reflect.Method;
 import java.lang.reflect.ReflectPermission;
 import java.nio.channels.FileChannel;
 import java.nio.channels.ReadableByteChannel;
+import java.nio.file.DirectoryStream;
 import java.nio.file.FileVisitResult;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -65,6 +66,7 @@ import jdk.jfr.FlightRecorder;
 import jdk.jfr.FlightRecorderListener;
 import jdk.jfr.FlightRecorderPermission;
 import jdk.jfr.Recording;
+import jdk.jfr.internal.consumer.FileAccess;
 
 /**
  * Contains JFR code that does
@@ -75,7 +77,7 @@ public final class SecuritySupport {
     private final static MethodHandles.Lookup LOOKUP = MethodHandles.lookup();
     private final static Module JFR_MODULE = Event.class.getModule();
     public  final static SafePath JFC_DIRECTORY = getPathInProperty("java.home", "lib/jfr");
-
+    public final static FileAccess PRIVILIGED = new Privileged();
     static final SafePath USER_HOME = getPathInProperty("user.home", null);
     static final SafePath JAVA_IO_TMPDIR = getPathInProperty("java.io.tmpdir", null);
 
@@ -150,7 +152,7 @@ public final class SecuritySupport {
      * a malicious provider.
      *
      */
-    public static final class SafePath {
+    public static final class SafePath implements Comparable<SafePath> {
         private final Path path;
         private final String text;
 
@@ -168,8 +170,17 @@ public final class SecuritySupport {
             return path;
         }
 
+        public File toFile() {
+            return path.toFile();
+        }
+
         public String toString() {
             return text;
+        }
+
+        @Override
+        public int compareTo(SafePath that) {
+            return that.text.compareTo(this.text);
         }
 
         @Override
@@ -303,6 +314,10 @@ public final class SecuritySupport {
         doPrivileged(() ->  MetadataRepository.getInstance().registerMirror(eventClass), new FlightRecorderPermission(Utils.REGISTER_EVENT));
     }
 
+    public static void setProperty(String propertyName, String value) {
+        doPrivileged(() -> System.setProperty(propertyName, value), new PropertyPermission(propertyName, "write"));
+    }
+
     static boolean getBooleanProperty(String propertyName) {
         return doPrivilegedWithReturn(() -> Boolean.getBoolean(propertyName), new PropertyPermission(propertyName, "read"));
     }
@@ -343,7 +358,7 @@ public final class SecuritySupport {
         doPriviligedIO(() -> Files.walkFileTree(safePath.toPath(), new DirectoryCleaner()));
     }
 
-    static SafePath toRealPath(SafePath safePath) throws Exception {
+    static SafePath toRealPath(SafePath safePath) throws IOException {
         return new SafePath(doPrivilegedIOWithReturn(() -> safePath.toPath().toRealPath()));
     }
 
@@ -369,7 +384,8 @@ public final class SecuritySupport {
     }
 
     public static boolean exists(SafePath safePath) throws IOException {
-        return doPrivilegedIOWithReturn(() -> Files.exists(safePath.toPath()));
+        // Files.exist(path) is allocation intensive
+        return doPrivilegedIOWithReturn(() -> safePath.toPath().toFile().exists());
     }
 
     public static boolean isDirectory(SafePath safePath) throws IOException {
@@ -421,7 +437,7 @@ public final class SecuritySupport {
     }
 
     static Class<?> defineClass(Class<?> lookupClass, byte[] bytes) {
-        return AccessController.doPrivileged(new PrivilegedAction<>() {
+        return AccessController.doPrivileged(new PrivilegedAction<Class<?>>() {
             @Override
             public Class<?> run() {
                 try {
@@ -433,7 +449,7 @@ public final class SecuritySupport {
         });
     }
 
-    static Thread createThreadWitNoPermissions(String threadName, Runnable runnable) {
+    public static Thread createThreadWitNoPermissions(String threadName, Runnable runnable) {
         return doPrivilegedWithReturn(() -> new Thread(runnable, threadName), new Permission[0]);
     }
 
@@ -444,4 +460,32 @@ public final class SecuritySupport {
     public static SafePath getAbsolutePath(SafePath path) throws IOException {
         return new SafePath(doPrivilegedIOWithReturn((()-> path.toPath().toAbsolutePath())));
     }
+
+    private final static class Privileged extends FileAccess {
+        @Override
+        public RandomAccessFile openRAF(File f, String mode) throws IOException {
+            return doPrivilegedIOWithReturn( () -> new RandomAccessFile(f, mode));
+        }
+
+        @Override
+        public  DirectoryStream<Path> newDirectoryStream(Path directory)  throws IOException  {
+            return doPrivilegedIOWithReturn( () -> Files.newDirectoryStream(directory));
+        }
+
+        @Override
+        public  String getAbsolutePath(File f) throws IOException {
+            return doPrivilegedIOWithReturn( () -> f.getAbsolutePath());
+        }
+        @Override
+        public long length(File f) throws IOException {
+            return doPrivilegedIOWithReturn( () -> f.length());
+        }
+
+        @Override
+        public  long fileSize(Path p) throws IOException {
+            return doPrivilegedIOWithReturn( () -> Files.size(p));
+        }
+    }
+
+
 }

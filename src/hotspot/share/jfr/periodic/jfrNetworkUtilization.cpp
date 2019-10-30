@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -39,7 +39,7 @@ struct InterfaceEntry {
   traceid id;
   uint64_t bytes_in;
   uint64_t bytes_out;
-  bool in_use;
+  mutable bool written;
 };
 
 static GrowableArray<InterfaceEntry>* _interfaces = NULL;
@@ -71,7 +71,7 @@ static InterfaceEntry& new_entry(const NetworkInterface* iface, GrowableArray<In
   entry.id = ++interface_id;
   entry.bytes_in = iface->get_bytes_in();
   entry.bytes_out = iface->get_bytes_out();
-  entry.in_use = false;
+  entry.written = false;
   return _interfaces->at(_interfaces->append(entry));
 }
 
@@ -108,6 +108,39 @@ static uint64_t rate_per_second(uint64_t current, uint64_t old, const JfrTickspa
   return ((current - old) * NANOSECS_PER_SEC) / interval.nanoseconds();
 }
 
+class JfrNetworkInterfaceName : public JfrSerializer {
+ public:
+   void serialize(JfrCheckpointWriter& writer) {} // we write each constant lazily
+
+   void on_rotation() {
+     for (int i = 0; i < _interfaces->length(); ++i) {
+       const InterfaceEntry& entry = _interfaces->at(i);
+       if (entry.written) {
+         entry.written = false;
+       }
+     }
+   }
+};
+
+static bool register_network_interface_name_serializer() {
+  assert(_interfaces != NULL, "invariant");
+  return JfrSerializer::register_serializer(TYPE_NETWORKINTERFACENAME,
+    false, // disallow caching; we want a callback every rotation
+    new JfrNetworkInterfaceName());
+}
+
+static void write_interface_constant(const InterfaceEntry& entry) {
+  if (entry.written) {
+    return;
+  }
+  JfrCheckpointWriter writer;
+  writer.write_type(TYPE_NETWORKINTERFACENAME);
+  writer.write_count(1);
+  writer.write_key(entry.id);
+  writer.write(entry.name);
+  entry.written = true;
+}
+
 static bool get_interfaces(NetworkInterface** network_interfaces) {
   const int ret_val = JfrOSInterface::network_utilization(network_interfaces);
   if (ret_val == OS_ERR) {
@@ -115,39 +148,6 @@ static bool get_interfaces(NetworkInterface** network_interfaces) {
     return false;
   }
   return ret_val != FUNCTIONALITY_NOT_IMPLEMENTED;
-}
-
-class JfrNetworkInterfaceName : public JfrSerializer {
- public:
-  void serialize(JfrCheckpointWriter& writer) {
-    assert(_interfaces != NULL, "invariant");
-    const JfrCheckpointContext ctx = writer.context();
-    const intptr_t count_offset = writer.reserve(sizeof(u4)); // Don't know how many yet
-    int active_interfaces = 0;
-    for (int i = 0; i < _interfaces->length(); ++i) {
-      InterfaceEntry& entry = _interfaces->at(i);
-      if (entry.in_use) {
-        entry.in_use = false;
-        writer.write_key(entry.id);
-        writer.write(entry.name);
-        ++active_interfaces;
-      }
-    }
-    if (active_interfaces == 0) {
-      // nothing to write, restore context
-      writer.set_context(ctx);
-      return;
-    }
-    writer.write_count(active_interfaces, count_offset);
-  }
-};
-
-static bool register_network_interface_name_serializer() {
-  assert(_interfaces != NULL, "invariant");
-  return JfrSerializer::register_serializer(TYPE_NETWORKINTERFACENAME,
-                                            false, // require safepoint
-                                            false, // disallow caching; we want a callback every rotation
-                                            new JfrNetworkInterfaceName());
 }
 
 void JfrNetworkUtilization::send_events() {
@@ -169,7 +169,7 @@ void JfrNetworkUtilization::send_events() {
       const uint64_t read_rate = rate_per_second(current_bytes_in, entry.bytes_in, interval);
       const uint64_t write_rate = rate_per_second(current_bytes_out, entry.bytes_out, interval);
       if (read_rate > 0 || write_rate > 0) {
-        entry.in_use = true;
+        write_interface_constant(entry);
         EventNetworkUtilization event(UNTIMED);
         event.set_starttime(cur_time);
         event.set_endtime(cur_time);

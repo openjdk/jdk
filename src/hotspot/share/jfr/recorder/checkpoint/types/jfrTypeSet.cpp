@@ -73,7 +73,7 @@ static traceid create_symbol_id(traceid artifact_id) {
 }
 
 static bool current_epoch() {
-  return _class_unload;
+  return _class_unload || _flushpoint;
 }
 
 static bool previous_epoch() {
@@ -246,7 +246,7 @@ static void do_unloaded_klass(Klass* klass) {
 static void do_klass(Klass* klass) {
   assert(klass != NULL, "invariant");
   assert(_subsystem_callback != NULL, "invariant");
-  if (current_epoch()) {
+  if (_flushpoint) {
     if (USED_THIS_EPOCH(klass)) {
       _subsystem_callback->do_artifact(klass);
       return;
@@ -911,10 +911,11 @@ static size_t teardown() {
   return total_count;
 }
 
-static void setup(JfrCheckpointWriter* writer, JfrCheckpointWriter* leakp_writer, bool class_unload) {
+static void setup(JfrCheckpointWriter* writer, JfrCheckpointWriter* leakp_writer, bool class_unload, bool flushpoint) {
   _writer = writer;
   _leakp_writer = leakp_writer;
   _class_unload = class_unload;
+  _flushpoint = flushpoint;
   if (_artifacts == NULL) {
     _artifacts = new JfrArtifactSet(class_unload);
   } else {
@@ -928,10 +929,10 @@ static void setup(JfrCheckpointWriter* writer, JfrCheckpointWriter* leakp_writer
 /**
  * Write all "tagged" (in-use) constant artifacts and their dependencies.
  */
-size_t JfrTypeSet::serialize(JfrCheckpointWriter* writer, JfrCheckpointWriter* leakp_writer, bool class_unload) {
+size_t JfrTypeSet::serialize(JfrCheckpointWriter* writer, JfrCheckpointWriter* leakp_writer, bool class_unload, bool flushpoint) {
   assert(writer != NULL, "invariant");
   ResourceMark rm;
-  setup(writer, leakp_writer, class_unload);
+  setup(writer, leakp_writer, class_unload, flushpoint);
   // write order is important because an individual write step
   // might tag an artifact to be written in a subsequent step
   if (!write_klasses()) {

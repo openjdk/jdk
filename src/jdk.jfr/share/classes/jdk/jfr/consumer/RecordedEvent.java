@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,6 +32,7 @@ import java.util.List;
 import jdk.jfr.EventType;
 import jdk.jfr.ValueDescriptor;
 import jdk.jfr.internal.EventInstrumentation;
+import jdk.jfr.internal.consumer.ObjectContext;
 
 /**
  * A recorded event.
@@ -39,17 +40,14 @@ import jdk.jfr.internal.EventInstrumentation;
  * @since 9
  */
 public final class RecordedEvent extends RecordedObject {
-    private final EventType eventType;
-    private final long startTime;
-    // package private needed for efficient sorting
-    final long endTime;
+    long startTimeTicks;
+    long endTimeTicks;
 
     // package private
-    RecordedEvent(EventType type, List<ValueDescriptor> vds, Object[] values, long startTime, long endTime, TimeConverter timeConverter) {
-        super(vds, values, timeConverter);
-        this.eventType = type;
-        this.startTime = startTime;
-        this.endTime = endTime;
+    RecordedEvent(ObjectContext objectContext, Object[] values, long startTimeTicks, long endTimeTicks) {
+        super(objectContext, values);
+        this.startTimeTicks = startTimeTicks;
+        this.endTimeTicks = endTimeTicks;
     }
 
     /**
@@ -78,7 +76,7 @@ public final class RecordedEvent extends RecordedObject {
      * @return the event type, not {@code null}
      */
     public EventType getEventType() {
-        return eventType;
+        return objectContext.eventType;
     }
 
     /**
@@ -89,7 +87,7 @@ public final class RecordedEvent extends RecordedObject {
      * @return the start time, not {@code null}
      */
     public Instant getStartTime() {
-        return Instant.ofEpochSecond(0, startTime);
+        return Instant.ofEpochSecond(0, getStartTimeNanos());
     }
 
     /**
@@ -100,7 +98,7 @@ public final class RecordedEvent extends RecordedObject {
      * @return the end time, not {@code null}
      */
     public Instant getEndTime() {
-        return Instant.ofEpochSecond(0, endTime);
+        return Instant.ofEpochSecond(0, getEndTimeNanos());
     }
 
     /**
@@ -109,7 +107,7 @@ public final class RecordedEvent extends RecordedObject {
      * @return the duration in nanoseconds, not {@code null}
      */
     public Duration getDuration() {
-        return Duration.ofNanos(endTime - startTime);
+        return Duration.ofNanos(getEndTimeNanos() - getStartTimeNanos());
     }
 
     /**
@@ -119,6 +117,31 @@ public final class RecordedEvent extends RecordedObject {
      */
     @Override
     public List<ValueDescriptor> getFields() {
-        return getEventType().getFields();
+        return objectContext.fields;
+    }
+
+    protected final Object objectAt(int index) {
+        if (index == 0) {
+            return startTimeTicks;
+        }
+        if (hasDuration()) {
+            if (index == 1) {
+                return endTimeTicks - startTimeTicks;
+            }
+            return objects[index - 2];
+        }
+        return objects[index - 1];
+    }
+
+    private boolean hasDuration() {
+        return objects.length + 2 == objectContext.fields.size();
+    }
+
+    private long getStartTimeNanos() {
+        return objectContext.convertTimestamp(startTimeTicks);
+    }
+
+    private long getEndTimeNanos() {
+        return objectContext.convertTimestamp(endTimeTicks);
     }
 }

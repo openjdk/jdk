@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,7 +31,6 @@ import static jdk.jfr.internal.LogLevel.WARN;
 import static jdk.jfr.internal.LogTag.JFR;
 import static jdk.jfr.internal.LogTag.JFR_SYSTEM;
 
-import java.io.IOException;
 import java.security.AccessControlContext;
 import java.security.AccessController;
 import java.time.Duration;
@@ -58,6 +57,7 @@ import jdk.jfr.internal.SecuritySupport.SecureRecorderListener;
 import jdk.jfr.internal.instrument.JDKEvents;
 
 public final class PlatformRecorder {
+
 
     private final List<PlatformRecording> recordings = new ArrayList<>();
     private final static List<SecureRecorderListener> changeListeners = new ArrayList<>();
@@ -96,6 +96,7 @@ public final class PlatformRecorder {
             Thread t = SecuritySupport.createThreadWitNoPermissions("Permissionless thread", ()-> {
                 result.add(new Timer("JFR Recording Scheduler", true));
             });
+            jvm.exclude(t);
             t.start();
             t.join();
             return result.get(0);
@@ -204,7 +205,7 @@ public final class PlatformRecorder {
         repository.clear();
     }
 
-    synchronized void start(PlatformRecording recording) {
+    synchronized long start(PlatformRecording recording) {
         // State can only be NEW or DELAYED because of previous checks
         Instant now = Instant.now();
         recording.setStartTime(now);
@@ -215,14 +216,17 @@ public final class PlatformRecorder {
         }
         boolean toDisk = recording.isToDisk();
         boolean beginPhysical = true;
+        long streamInterval = recording.getStreamIntervalMillis();
         for (PlatformRecording s : getRecordings()) {
             if (s.getState() == RecordingState.RUNNING) {
                 beginPhysical = false;
                 if (s.isToDisk()) {
                     toDisk = true;
                 }
+                streamInterval = Math.min(streamInterval, s.getStreamIntervalMillis());
             }
         }
+        long startNanos = -1;
         if (beginPhysical) {
             RepositoryChunk newChunk = null;
             if (toDisk) {
@@ -233,6 +237,7 @@ public final class PlatformRecorder {
             }
             currentChunk = newChunk;
             jvm.beginRecording_();
+            startNanos = jvm.getChunkStartNanos();
             recording.setState(RecordingState.RUNNING);
             updateSettings();
             writeMetaEvents();
@@ -242,6 +247,7 @@ public final class PlatformRecorder {
                 newChunk = repository.newChunk(now);
                 RequestEngine.doChunkEnd();
                 MetadataRepository.getInstance().setOutput(newChunk.getUnfishedFile().toString());
+                startNanos = jvm.getChunkStartNanos();
             }
             recording.setState(RecordingState.RUNNING);
             updateSettings();
@@ -251,8 +257,12 @@ public final class PlatformRecorder {
             }
             currentChunk = newChunk;
         }
-
+        if (toDisk) {
+            RequestEngine.setFlushInterval(streamInterval);
+        }
         RequestEngine.doChunkBegin();
+
+        return startNanos;
     }
 
     synchronized void stop(PlatformRecording recording) {
@@ -267,6 +277,7 @@ public final class PlatformRecorder {
         Instant now = Instant.now();
         boolean toDisk = false;
         boolean endPhysical = true;
+        long streamInterval = Long.MAX_VALUE;
         for (PlatformRecording s : getRecordings()) {
             RecordingState rs = s.getState();
             if (s != recording && RecordingState.RUNNING == rs) {
@@ -274,6 +285,7 @@ public final class PlatformRecorder {
                 if (s.isToDisk()) {
                     toDisk = true;
                 }
+                streamInterval = Math.min(streamInterval, s.getStreamIntervalMillis());
             }
         }
         OldObjectSample.emit(recording);
@@ -309,6 +321,13 @@ public final class PlatformRecorder {
             currentChunk = newChunk;
             RequestEngine.doChunkBegin();
         }
+
+        if (toDisk) {
+            RequestEngine.setFlushInterval(streamInterval);
+        } else {
+            RequestEngine.setFlushInterval(Long.MAX_VALUE);
+        }
+
         recording.setState(RecordingState.STOPPED);
     }
 
@@ -336,6 +355,18 @@ public final class PlatformRecorder {
             }
         }
         MetadataRepository.getInstance().setSettings(list);
+    }
+
+    public synchronized void rotateIfRecordingToDisk() {
+        boolean disk = false;
+        for (PlatformRecording s : getRecordings()) {
+            if (RecordingState.RUNNING == s.getState() && s.isToDisk()) {
+                disk = true;
+            }
+        }
+        if (disk) {
+            rotateDisk();
+        }
     }
 
     synchronized void rotateDisk() {
@@ -395,14 +426,14 @@ public final class PlatformRecorder {
                 r.appendChunk(chunk);
             }
         }
+        FilePurger.purge();
     }
 
     private void writeMetaEvents() {
-
         if (activeRecordingEvent.isEnabled()) {
+            ActiveRecordingEvent event = ActiveRecordingEvent.EVENT.get();
             for (PlatformRecording r : getRecordings()) {
                 if (r.getState() == RecordingState.RUNNING && r.shouldWriteMetadataEvent()) {
-                    ActiveRecordingEvent event = new ActiveRecordingEvent();
                     event.id = r.getId();
                     event.name = r.getName();
                     WriteableUserPath p = r.getDestination();
@@ -415,6 +446,8 @@ public final class PlatformRecorder {
                     event.maxSize = size == null ? Long.MAX_VALUE : size;
                     Instant start = r.getStartTime();
                     event.recordingStart = start == null ? Long.MAX_VALUE : start.toEpochMilli();
+                    Duration fi = r.getFlushInterval();
+                    event.flushInterval = fi == null ? Long.MAX_VALUE : fi.toMillis();
                     event.commit();
                 }
             }
@@ -448,7 +481,7 @@ public final class PlatformRecorder {
                 JVM.FILE_DELTA_CHANGE.wait(duration < 10 ? 10 : duration);
             }
         } catch (InterruptedException e) {
-            e.printStackTrace();
+            // Ignore
         }
     }
 
@@ -550,4 +583,7 @@ public final class PlatformRecorder {
         target.setStopTime(endTime);
         target.setInternalDuration(Duration.between(startTime, endTime));
     }
+
+
+
 }

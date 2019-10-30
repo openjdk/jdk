@@ -90,6 +90,7 @@ class JfrStartFlightRecordingDCmd : public DCmdWithParser {
   DCmdArgument<char*> _filename;
   DCmdArgument<NanoTimeArgument> _maxage;
   DCmdArgument<MemorySizeArgument> _maxsize;
+  DCmdArgument<NanoTimeArgument> _flush_interval;
   DCmdArgument<bool> _dump_on_exit;
   DCmdArgument<bool> _path_to_gc_roots;
 

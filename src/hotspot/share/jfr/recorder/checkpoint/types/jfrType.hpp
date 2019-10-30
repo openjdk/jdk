@@ -27,16 +27,6 @@
 
 #include "jfr/metadata/jfrSerializer.hpp"
 
-class JfrThreadConstantSet : public JfrSerializer {
- public:
-  void serialize(JfrCheckpointWriter& writer);
-};
-
-class JfrThreadGroupConstant : public JfrSerializer {
- public:
-  void serialize(JfrCheckpointWriter& writer);
-};
-
 class FlagValueOriginConstant : public JfrSerializer {
  public:
   void serialize(JfrCheckpointWriter& writer);
@@ -102,6 +92,16 @@ class VMOperationTypeConstant : public JfrSerializer {
   void serialize(JfrCheckpointWriter& writer);
 };
 
+class JfrThreadConstantSet : public JfrSerializer {
+ public:
+  void serialize(JfrCheckpointWriter& writer);
+};
+
+class JfrThreadGroupConstant : public JfrSerializer {
+ public:
+  void serialize(JfrCheckpointWriter& writer);
+};
+
 class ThreadStateConstant : public JfrSerializer {
  public:
   void serialize(JfrCheckpointWriter& writer);
@@ -109,9 +109,9 @@ class ThreadStateConstant : public JfrSerializer {
 
 class JfrThreadConstant : public JfrSerializer {
  private:
-  JavaThread* _thread;
+  Thread* _thread;
  public:
-  JfrThreadConstant(JavaThread* jt) : _thread(jt) {}
+  JfrThreadConstant(Thread* t) : _thread(t) {}
   void serialize(JfrCheckpointWriter& writer);
 };
 

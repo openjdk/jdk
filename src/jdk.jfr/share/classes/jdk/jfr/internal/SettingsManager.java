@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -33,10 +33,10 @@ import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Map.Entry;
 import java.util.Set;
 import java.util.StringJoiner;
 
+import jdk.jfr.internal.EventControl.NamedControl;
 import jdk.jfr.internal.handlers.EventHandler;
 
 final class SettingsManager {
@@ -213,18 +213,21 @@ final class SettingsManager {
 
     void setEventControl(EventControl ec) {
         InternalSetting is = getInternalSetting(ec);
-        Logger.log(LogTag.JFR_SETTING, LogLevel.INFO, "Applied settings for " + ec.getEventType().getLogName() + " {");
-        for (Entry<String, Control> entry : ec.getEntries()) {
+        boolean shouldLog = Logger.shouldLog(LogTag.JFR_SETTING, LogLevel.INFO);
+        if (shouldLog) {
+            Logger.log(LogTag.JFR_SETTING, LogLevel.INFO, "Applied settings for " + ec.getEventType().getLogName() + " {");
+        }
+        for (NamedControl nc: ec.getNamedControls()) {
             Set<String> values = null;
-            String settingName = entry.getKey();
+            String settingName = nc.name;
             if (is != null) {
                 values = is.getValues(settingName);
             }
-            Control control = entry.getValue();
+            Control control = nc.control;
             if (values != null) {
                 control.apply(values);
                 String after = control.getLastValue();
-                if (Logger.shouldLog(LogTag.JFR_SETTING, LogLevel.INFO)) {
+                if (shouldLog) {
                     if (Utils.isSettingVisible(control, ec.getEventType().hasEventHook())) {
                         if (values.size() > 1) {
                             StringJoiner sj = new StringJoiner(", ", "{", "}");
@@ -241,14 +244,16 @@ final class SettingsManager {
                 }
             } else {
                 control.setDefault();
-                if (Logger.shouldLog(LogTag.JFR_SETTING, LogLevel.INFO)) {
+                if (shouldLog) {
                     String message = "  " + settingName + "=\"" + control.getLastValue() + "\"";
                     Logger.log(LogTag.JFR_SETTING, LogLevel.INFO, message);
                 }
             }
         }
         ec.writeActiveSettingEvent();
-        Logger.log(LogTag.JFR_SETTING, LogLevel.INFO, "}");
+        if (shouldLog) {
+            Logger.log(LogTag.JFR_SETTING, LogLevel.INFO, "}");
+        }
     }
 
     private InternalSetting getInternalSetting(EventControl ec) {

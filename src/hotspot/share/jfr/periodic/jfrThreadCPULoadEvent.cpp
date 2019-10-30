@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,11 +28,10 @@
 #include "jfr/periodic/jfrThreadCPULoadEvent.hpp"
 #include "jfr/support/jfrThreadId.hpp"
 #include "jfr/support/jfrThreadLocal.hpp"
+#include "jfr/utilities/jfrThreadIterator.hpp"
 #include "jfr/utilities/jfrTime.hpp"
 #include "utilities/globalDefinitions.hpp"
 #include "runtime/os.hpp"
-#include "runtime/thread.inline.hpp"
-#include "runtime/threadSMR.inline.hpp"
 
 jlong JfrThreadCPULoadEvent::get_wallclock_time() {
   return os::javaTimeNanos();
@@ -115,8 +114,12 @@ void JfrThreadCPULoadEvent::send_events() {
   JfrTicks event_time = JfrTicks::now();
   jlong cur_wallclock_time = JfrThreadCPULoadEvent::get_wallclock_time();
 
-  JavaThreadIteratorWithHandle jtiwh;
-  while (JavaThread* jt = jtiwh.next()) {
+  JfrJavaThreadIterator iter;
+  int number_of_threads = 0;
+  while (iter.has_next()) {
+    JavaThread* const jt = iter.next();
+    assert(jt != NULL, "invariant");
+    ++number_of_threads;
     EventThreadCPULoad event(UNTIMED);
     if (JfrThreadCPULoadEvent::update_event(event, jt, cur_wallclock_time, processor_count)) {
       event.set_starttime(event_time);
@@ -129,7 +132,7 @@ void JfrThreadCPULoadEvent::send_events() {
       event.commit();
     }
   }
-  log_trace(jfr)("Measured CPU usage for %d threads in %.3f milliseconds", jtiwh.length(),
+  log_trace(jfr)("Measured CPU usage for %d threads in %.3f milliseconds", number_of_threads,
     (double)(JfrTicks::now() - event_time).milliseconds());
   // Restore this thread's thread id
   periodic_thread_tl->set_thread_id(periodic_thread_id);

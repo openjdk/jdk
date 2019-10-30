@@ -68,7 +68,6 @@ class JfrStorage : public JfrCHeapObj {
 
   size_t clear();
   size_t clear_full();
-  size_t write();
   size_t write_full();
   size_t write_at_safepoint();
   size_t scavenge();
@@ -88,6 +87,8 @@ class JfrStorage : public JfrCHeapObj {
   static Buffer* flush(Buffer* cur, size_t used, size_t req, bool native, Thread* t);
   void discard_oldest(Thread* t);
   static JfrStorageControl& control();
+
+  size_t write();
 
   friend class JfrRecorder;
   friend class JfrRecorderService;

@@ -259,6 +259,7 @@ void EdgeStore::put_chain(const Edge* chain, size_t length) {
   assert(leak_context_edge->parent() == NULL, "invariant");
 
   if (1 == length) {
+    store_gc_root_id_in_leak_context_edge(leak_context_edge, leak_context_edge);
     return;
   }
 
