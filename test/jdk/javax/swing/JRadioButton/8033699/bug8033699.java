@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,12 +26,13 @@
  * @key headful
  * @library ../../regtesthelpers
  * @build Util
- * @bug 8033699 8154043 8167160 8208640
+ * @bug 8033699 8154043 8167160 8208640 8226892
  * @summary  Incorrect radio button behavior when pressing tab key
  * @run main bug8033699
  */
 import java.awt.KeyboardFocusManager;
 import java.awt.Robot;
+import java.awt.event.ActionListener;
 import java.awt.event.KeyEvent;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -92,6 +93,9 @@ public class bug8033699 {
 
         // down key circle back to first button in grouped radio button
         runTest8();
+
+        // Verify that ActionListener is called when a RadioButton is selected using arrow key.
+        runTest9();
 
         SwingUtilities.invokeAndWait(() -> mainFrame.dispose());
     }
@@ -243,6 +247,45 @@ public class bug8033699 {
                 throw new RuntimeException("Focus is not on Radio Button Single as Expected");
             }
         });
+    }
+
+    private static Boolean actRB1 = false;
+    private static Boolean actRB2 = false;
+    private static Boolean actRB3 = false;
+
+    // JDK-8226892: Verify that ActionListener is called when a RadioButton is selected using arrow key.
+    private static void runTest9() throws Exception {
+        SwingUtilities.invokeAndWait(() -> {
+            radioBtn1.setSelected(true);
+            radioBtn1.requestFocusInWindow();
+        });
+
+        ActionListener actLrRB1 = e -> actRB1 = true;
+        ActionListener actLrRB2 = e -> actRB2 = true;
+        ActionListener actLrRB3 = e -> actRB3 = true;
+
+        radioBtn1.addActionListener(actLrRB1);
+        radioBtn2.addActionListener(actLrRB2);
+        radioBtn3.addActionListener(actLrRB3);
+
+        hitKey(robot, KeyEvent.VK_DOWN);
+        hitKey(robot, KeyEvent.VK_DOWN);
+        hitKey(robot, KeyEvent.VK_DOWN);
+
+        String failMessage = "ActionListener not invoked when selected using arrow key.";
+        if (!actRB2) {
+            throw new RuntimeException("RadioButton 2: " + failMessage);
+        }
+        if (!actRB3) {
+            throw new RuntimeException("RadioButton 3: " + failMessage);
+        }
+        if (!actRB1) {
+            throw new RuntimeException("RadioButton 1: " + failMessage);
+        }
+
+        radioBtn1.removeActionListener(actLrRB1);
+        radioBtn2.removeActionListener(actLrRB2);
+        radioBtn3.removeActionListener(actLrRB3);
     }
 
     private static void hitKey(Robot robot, int keycode) {
