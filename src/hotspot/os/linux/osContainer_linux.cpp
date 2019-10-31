@@ -54,12 +54,16 @@
 
 bool  OSContainer::_is_initialized   = false;
 bool  OSContainer::_is_containerized = false;
+int   OSContainer::_active_processor_count = 1;
 julong _unlimited_memory;
 
 class CgroupSubsystem: CHeapObj<mtInternal> {
  friend class OSContainer;
 
+
  private:
+    volatile jlong _next_check_counter;
+
     /* mountinfo contents */
     char *_root;
     char *_mount_point;
@@ -72,6 +76,7 @@ class CgroupSubsystem: CHeapObj<mtInternal> {
       _root = os::strdup(root);
       _mount_point = os::strdup(mountpoint);
       _path = NULL;
+      _next_check_counter = min_jlong;
     }
 
     /*
@@ -121,6 +126,14 @@ class CgroupSubsystem: CHeapObj<mtInternal> {
     }
 
     char *subsystem_path() { return _path; }
+
+    bool cache_has_expired() {
+      return os::elapsed_counter() > _next_check_counter;
+    }
+
+    void set_cache_expiry_time(jlong timeout) {
+      _next_check_counter = os::elapsed_counter() + timeout;
+    }
 };
 
 class CgroupMemorySubsystem: CgroupSubsystem {
@@ -132,31 +145,26 @@ class CgroupMemorySubsystem: CgroupSubsystem {
      * file if everything else seems unlimited */
     bool _uses_mem_hierarchy;
     volatile jlong _memory_limit_in_bytes;
-    volatile jlong _next_check_counter;
 
  public:
     CgroupMemorySubsystem(char *root, char *mountpoint) : CgroupSubsystem::CgroupSubsystem(root, mountpoint) {
       _uses_mem_hierarchy = false;
       _memory_limit_in_bytes = -1;
-      _next_check_counter = min_jlong;
 
     }
 
     bool is_hierarchical() { return _uses_mem_hierarchy; }
     void set_hierarchical(bool value) { _uses_mem_hierarchy = value; }
 
-    bool should_check_memory_limit() {
-      return os::elapsed_counter() > _next_check_counter;
-    }
     jlong memory_limit_in_bytes() { return _memory_limit_in_bytes; }
     void set_memory_limit_in_bytes(jlong value) {
       _memory_limit_in_bytes = value;
       // max memory limit is unlikely to change, but we want to remain
-      // responsive to configuration changes. A very short (20ms) grace time
+      // responsive to configuration changes. A very short grace time
       // between re-read avoids excessive overhead during startup without
       // significantly reducing the VMs ability to promptly react to reduced
       // memory availability
-      _next_check_counter = os::elapsed_counter() + (NANOSECS_PER_SEC/50);
+      set_cache_expiry_time(OSCONTAINER_CACHE_TIMEOUT);
     }
 
 };
@@ -481,7 +489,7 @@ jlong OSContainer::uses_mem_hierarchy() {
  *    OSCONTAINER_ERROR for not supported
  */
 jlong OSContainer::memory_limit_in_bytes() {
-  if (!memory->should_check_memory_limit()) {
+  if (!memory->cache_has_expired()) {
     return memory->memory_limit_in_bytes();
   }
   jlong memory_limit = read_memory_limit_in_bytes();
@@ -617,6 +625,14 @@ int OSContainer::active_processor_count() {
   int cpu_count, limit_count;
   int result;
 
+  // We use a cache with a timeout to avoid performing expensive
+  // computations in the event this function is called frequently.
+  // [See 8227006].
+  if (!cpu->cache_has_expired()) {
+    log_trace(os, container)("OSContainer::active_processor_count (cached): %d", OSContainer::_active_processor_count);
+    return OSContainer::_active_processor_count;
+  }
+
   cpu_count = limit_count = os::Linux::active_processor_count();
   int quota  = cpu_quota();
   int period = cpu_period();
@@ -649,6 +665,11 @@ int OSContainer::active_processor_count() {
 
   result = MIN2(cpu_count, limit_count);
   log_trace(os, container)("OSContainer::active_processor_count: %d", result);
+
+  // Update the value and reset the cache timeout
+  OSContainer::_active_processor_count = result;
+  cpu->set_cache_expiry_time(OSCONTAINER_CACHE_TIMEOUT);
+
   return result;
 }
 
