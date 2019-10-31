@@ -46,7 +46,6 @@ JVM_ConstantPoolGetSize
 JVM_ConstantPoolGetStringAt
 JVM_ConstantPoolGetTagAt
 JVM_ConstantPoolGetUTF8At
-JVM_CountStackFrames
 JVM_CurrentThread
 JVM_CurrentTimeMillis
 JVM_DefineClass

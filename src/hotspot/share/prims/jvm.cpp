@@ -3052,50 +3052,6 @@ JVM_ENTRY(jobject, JVM_CurrentThread(JNIEnv* env, jclass threadClass))
   return JNIHandles::make_local(env, jthread);
 JVM_END
 
-class CountStackFramesTC : public ThreadClosure {
-  int _count;
-  bool _suspended;
- public:
-  CountStackFramesTC() : _count(0), _suspended(false) {}
-  virtual void do_thread(Thread* thread) {
-    JavaThread* jt = (JavaThread*)thread;
-    if (!jt->is_external_suspend()) {
-      // To keep same behavior we fail this operation,
-      // even if it would work perfectly.
-      return;
-    }
-    _suspended = true;
-     // Count all java activation, i.e., number of vframes.
-    for (vframeStream vfst(jt); !vfst.at_end(); vfst.next()) {
-      // Native frames are not counted.
-      if (!vfst.method()->is_native()) _count++;
-    }
-  }
-  int count() { return _count; }
-  int suspended() { return _suspended; }
-};
-
-JVM_ENTRY(jint, JVM_CountStackFrames(JNIEnv* env, jobject jthread))
-  JVMWrapper("JVM_CountStackFrames");
-
-  ThreadsListHandle tlh(thread);
-  JavaThread* receiver = NULL;
-  bool is_alive = tlh.cv_internal_thread_to_JavaThread(jthread, &receiver, NULL);
-  if (is_alive) {
-    // jthread refers to a live JavaThread.
-    CountStackFramesTC csf;
-    Handshake::execute(&csf, receiver);
-    if (!csf.suspended()) {
-      THROW_MSG_0(vmSymbols::java_lang_IllegalThreadStateException(),
-                  "this thread is not suspended");
-    }
-    return csf.count();
-  }
-  // Implied else: if JavaThread is not alive simply return a count of 0.
-  return 0;
-JVM_END
-
-
 JVM_ENTRY(void, JVM_Interrupt(JNIEnv* env, jobject jthread))
   JVMWrapper("JVM_Interrupt");
 

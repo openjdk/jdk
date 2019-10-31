@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1994, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1994, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -50,7 +50,6 @@ static JNINativeMethod methods[] = {
     {"yield",            "()V",        (void *)&JVM_Yield},
     {"sleep",            "(J)V",       (void *)&JVM_Sleep},
     {"currentThread",    "()" THD,     (void *)&JVM_CurrentThread},
-    {"countStackFrames", "()I",        (void *)&JVM_CountStackFrames},
     {"interrupt0",       "()V",        (void *)&JVM_Interrupt},
     {"isInterrupted",    "(Z)Z",       (void *)&JVM_IsInterrupted},
     {"holdsLock",        "(" OBJ ")Z", (void *)&JVM_HoldsLock},

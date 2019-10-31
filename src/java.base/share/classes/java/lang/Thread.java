@@ -1251,20 +1251,20 @@ class Thread implements Runnable {
     }
 
     /**
-     * Counts the number of stack frames in this thread. The thread must
-     * be suspended.
+     * Throws {@code UnsupportedOperationException}.
      *
-     * @return     the number of stack frames in this thread.
-     * @throws     IllegalThreadStateException  if this thread is not
-     *             suspended.
-     * @deprecated The definition of this call depends on {@link #suspend},
-     *             which is deprecated.  Further, the results of this call
-     *             were never well-defined.
+     * @return     nothing
+     *
+     * @deprecated This method was originally designed to count the number of
+     *             stack frames but the results were never well-defined and it
+     *             depended on thread-suspension.
      *             This method is subject to removal in a future version of Java SE.
      * @see        StackWalker
      */
     @Deprecated(since="1.2", forRemoval=true)
-    public native int countStackFrames();
+    public int countStackFrames() {
+        throw new UnsupportedOperationException();
+    }
 
     /**
      * Waits at most {@code millis} milliseconds for this thread to
