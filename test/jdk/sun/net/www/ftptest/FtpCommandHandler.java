@@ -466,6 +466,10 @@ public class FtpCommandHandler extends Thread {
             try {
                 str = in.readLine();
                 System.out.println("line: " + str);
+                if (str == null) {
+                    System.out.println("EOF read from input");
+                    break;
+                }
                 buf = new StringBuffer(str);
                 res = parseCmd(buf);
                 switch (res) {
