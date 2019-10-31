@@ -564,12 +564,6 @@ void Klass::restore_unshareable_info(ClassLoaderData* loader_data, Handle protec
     // Restore class_loader_data to the null class loader data
     set_class_loader_data(loader_data);
 
-    // Workaround for suspected bug.  Make sure other threads see this assignment.
-    // This shouldn't be necessary but the compiler thread seems to be behind
-    // the times, even though this thread takes MethodCompileQueue_lock and the thread
-    // that doesn't see this value also takes that lock.
-    OrderAccess::fence();
-
     // Add to null class loader list first before creating the mirror
     // (same order as class file parsing)
     loader_data->add_class(this);
