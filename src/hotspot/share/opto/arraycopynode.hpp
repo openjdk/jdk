@@ -38,7 +38,7 @@ private:
     None,            // not set yet
     ArrayCopy,       // System.arraycopy()
     CloneBasic,      // A clone that can be copied by 64 bit chunks
-    CloneOop,        // An oop array clone
+    CloneOopArray,   // An oop array clone
     CopyOf,          // Arrays.copyOf()
     CopyOfRange      // Arrays.copyOfRange()
   } _kind;
@@ -147,7 +147,7 @@ public:
   bool is_arraycopy()             const  { assert(_kind != None, "should bet set"); return _kind == ArrayCopy; }
   bool is_arraycopy_validated()   const  { assert(_kind != None, "should bet set"); return _kind == ArrayCopy && _arguments_validated; }
   bool is_clonebasic()            const  { assert(_kind != None, "should bet set"); return _kind == CloneBasic; }
-  bool is_cloneoop()              const  { assert(_kind != None, "should bet set"); return _kind == CloneOop; }
+  bool is_clone_oop_array()       const  { assert(_kind != None, "should bet set"); return _kind == CloneOopArray; }
   bool is_copyof()                const  { assert(_kind != None, "should bet set"); return _kind == CopyOf; }
   bool is_copyof_validated()      const  { assert(_kind != None, "should bet set"); return _kind == CopyOf && _arguments_validated; }
   bool is_copyofrange()           const  { assert(_kind != None, "should bet set"); return _kind == CopyOfRange; }
@@ -155,7 +155,7 @@ public:
 
   void set_arraycopy(bool validated)   { assert(_kind == None, "shouldn't bet set yet"); _kind = ArrayCopy; _arguments_validated = validated; }
   void set_clonebasic()                { assert(_kind == None, "shouldn't bet set yet"); _kind = CloneBasic; }
-  void set_cloneoop()                  { assert(_kind == None, "shouldn't bet set yet"); _kind = CloneOop; }
+  void set_clone_oop_array()           { assert(_kind == None, "shouldn't bet set yet"); _kind = CloneOopArray; }
   void set_copyof(bool validated)      { assert(_kind == None, "shouldn't bet set yet"); _kind = CopyOf; _arguments_validated = validated; }
   void set_copyofrange(bool validated) { assert(_kind == None, "shouldn't bet set yet"); _kind = CopyOfRange; _arguments_validated = validated; }
 

@@ -86,6 +86,7 @@ public:
   virtual void late_barrier_analysis() const;
   virtual int estimate_stub_size() const;
   virtual void emit_stubs(CodeBuffer& cb) const;
+  virtual void clone_at_expansion(PhaseMacroExpand* phase, ArrayCopyNode* ac) const;
 };
 
 #endif // SHARE_GC_Z_C2_ZBARRIERSETC2_HPP

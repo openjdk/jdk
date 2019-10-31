@@ -505,7 +505,7 @@ Node* PhaseMacroExpand::generate_arraycopy(ArrayCopyNode *ac, AllocateArrayNode*
 
     // We don't need a subtype check for validated copies and Object[].clone()
     bool skip_subtype_check = ac->is_arraycopy_validated() || ac->is_copyof_validated() ||
-                              ac->is_copyofrange_validated() || ac->is_cloneoop();
+                              ac->is_copyofrange_validated() || ac->is_clone_oop_array();
     if (!skip_subtype_check) {
       // Get the klass* for both src and dest
       Node* src_klass  = ac->in(ArrayCopyNode::SrcKlass);
@@ -1096,7 +1096,7 @@ void PhaseMacroExpand::expand_arraycopy_node(ArrayCopyNode *ac) {
     BarrierSetC2* bs = BarrierSet::barrier_set()->barrier_set_c2();
     bs->clone_at_expansion(this, ac);
     return;
-  } else if (ac->is_copyof() || ac->is_copyofrange() || ac->is_cloneoop()) {
+  } else if (ac->is_copyof() || ac->is_copyofrange() || ac->is_clone_oop_array()) {
     Node* mem = ac->in(TypeFunc::Memory);
     merge_mem = MergeMemNode::make(mem);
     transform_later(merge_mem);

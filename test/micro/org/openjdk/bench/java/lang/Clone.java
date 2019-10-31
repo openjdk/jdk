@@ -43,12 +43,17 @@ public class Clone {
     private BitSet testObj1;
     private Date testObj2;
     private char[] testObj3;
+    private char[] testObj4;
+    private String[] testObj5;
 
     @Setup
     public void setup() {
         testObj1 = new BitSet(10);
         testObj2 = new Date();
         testObj3 = new char[5];
+        testObj4 = new char[311];
+        String str = "Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut";
+        testObj5 = str.split(" ", -1);
     }
 
     /** Calls clone on three different types. The types are java.util.BitSet, java.util.Date and char[]. */
@@ -57,6 +62,12 @@ public class Clone {
         bh.consume(testObj1.clone());
         bh.consume(testObj2.clone());
         bh.consume(testObj3.clone());
+    }
+
+    @Benchmark
+    public void cloneLarge(Blackhole bh) {
+        bh.consume(testObj4.clone());
+        bh.consume(testObj5.clone());
     }
 
 }

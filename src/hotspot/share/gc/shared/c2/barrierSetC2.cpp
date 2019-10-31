@@ -96,7 +96,6 @@ Node* BarrierSetC2::store_at_resolved(C2Access& access, C2AccessValue& val) cons
 
     store = kit->store_to_memory(kit->control(), access.addr().node(), val.node(), access.type(),
                                      access.addr().type(), mo, requires_atomic_access, unaligned, mismatched, unsafe);
-    access.set_raw_access(store);
   } else {
     assert(!requires_atomic_access, "not yet supported");
     assert(access.is_opt_access(), "either parse or opt access");
@@ -120,6 +119,8 @@ Node* BarrierSetC2::store_at_resolved(C2Access& access, C2AccessValue& val) cons
       mm->set_memory_at(alias, st);
     }
   }
+  access.set_raw_access(store);
+
   return store;
 }
 
@@ -153,7 +154,6 @@ Node* BarrierSetC2::load_at_resolved(C2Access& access, const Type* val_type) con
       load = kit->make_load(control, adr, val_type, access.type(), adr_type, mo,
                             dep, requires_atomic_access, unaligned, mismatched, unsafe);
     }
-    access.set_raw_access(load);
   } else {
     assert(!requires_atomic_access, "not yet supported");
     assert(access.is_opt_access(), "either parse or opt access");
@@ -165,6 +165,7 @@ Node* BarrierSetC2::load_at_resolved(C2Access& access, const Type* val_type) con
     load = LoadNode::make(gvn, control, mem, adr, adr_type, val_type, access.type(), mo, dep, unaligned, mismatched);
     load = gvn.transform(load);
   }
+  access.set_raw_access(load);
 
   return load;
 }
@@ -806,7 +807,8 @@ void BarrierSetC2::clone_at_expansion(PhaseMacroExpand* phase, ArrayCopyNode* ac
   Node* dest_offset = ac->in(ArrayCopyNode::DestPos);
   Node* length = ac->in(ArrayCopyNode::Length);
 
-  assert (src_offset == NULL && dest_offset == NULL, "for clone offsets should be null");
+  assert (src_offset == NULL,  "for clone offsets should be null");
+  assert (dest_offset == NULL, "for clone offsets should be null");
 
   const char* copyfunc_name = "arraycopy";
   address     copyfunc_addr =

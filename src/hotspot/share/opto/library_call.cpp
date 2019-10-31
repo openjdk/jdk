@@ -4234,10 +4234,7 @@ void LibraryCallKit::copy_to_clone(Node* obj, Node* alloc_obj, Node* obj_size, b
     alloc->initialization()->set_complete_with_arraycopy();
   }
 
-  // Copy the fastest available way.
-  // TODO: generate fields copies for small objects instead.
   Node* size = _gvn.transform(obj_size);
-
   access_clone(obj, alloc_obj, size, is_array);
 
   // Do not let reads from the cloned object float above the arraycopy.
@@ -4304,12 +4301,6 @@ bool LibraryCallKit::inline_native_clone(bool is_virtual) {
       }
     }
 
-    Node* obj_klass = load_object_klass(obj);
-    const TypeKlassPtr* tklass = _gvn.type(obj_klass)->isa_klassptr();
-    const TypeOopPtr*   toop   = ((tklass != NULL)
-                                ? tklass->as_instance_type()
-                                : TypeInstPtr::NOTNULL);
-
     // Conservatively insert a memory barrier on all memory slices.
     // Do not let writes into the original float below the clone.
     insert_mem_bar(Op_MemBarCPUOrder);
@@ -4328,6 +4319,7 @@ bool LibraryCallKit::inline_native_clone(bool is_virtual) {
     PhiNode*    result_mem = new PhiNode(result_reg, Type::MEMORY, TypePtr::BOTTOM);
     record_for_igvn(result_reg);
 
+    Node* obj_klass = load_object_klass(obj);
     Node* array_ctl = generate_array_guard(obj_klass, (RegionNode*)NULL);
     if (array_ctl != NULL) {
       // It's an array.
@@ -4349,7 +4341,7 @@ bool LibraryCallKit::inline_native_clone(bool is_virtual) {
           // Generate a direct call to the right arraycopy function(s).
           Node* alloc = tightly_coupled_allocation(alloc_obj, NULL);
           ArrayCopyNode* ac = ArrayCopyNode::make(this, true, obj, intcon(0), alloc_obj, intcon(0), obj_length, alloc != NULL, false);
-          ac->set_cloneoop();
+          ac->set_clone_oop_array();
           Node* n = _gvn.transform(ac);
           assert(n == ac, "cannot disappear");
           ac->connect_outputs(this);

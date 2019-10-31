@@ -175,6 +175,10 @@ inline void ZBarrier::load_barrier_on_oop_array(volatile oop* p, size_t length) 
   }
 }
 
+inline void ZBarrier::clone_oop(volatile oop src, oop dst, size_t length) {
+  HeapAccess<>::clone(src, dst, length);
+}
+
 // ON_WEAK barriers should only ever be applied to j.l.r.Reference.referents.
 inline void verify_on_weak(volatile oop* referent_addr) {
 #ifdef ASSERT

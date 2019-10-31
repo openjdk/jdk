@@ -27,14 +27,17 @@
 #include "gc/z/zBarrierSet.hpp"
 #include "gc/z/zBarrierSetAssembler.hpp"
 #include "gc/z/zBarrierSetRuntime.hpp"
+#include "opto/arraycopynode.hpp"
 #include "opto/block.hpp"
 #include "opto/compile.hpp"
 #include "opto/graphKit.hpp"
 #include "opto/machnode.hpp"
+#include "opto/macro.hpp"
 #include "opto/memnode.hpp"
 #include "opto/node.hpp"
 #include "opto/regalloc.hpp"
 #include "opto/rootnode.hpp"
+#include "opto/runtime.hpp"
 #include "utilities/growableArray.hpp"
 #include "utilities/macros.hpp"
 
@@ -427,5 +430,52 @@ void ZBarrierSetC2::compute_liveness_at_stubs() const {
         worklist.push(pred);
       }
     }
+  }
+}
+
+const TypeFunc *oop_clone_Type() {
+  // create input type (domain)
+  const Type **fields = TypeTuple::fields(3);
+  fields[TypeFunc::Parms+0] = TypeInstPtr::NOTNULL;  // src Object
+  fields[TypeFunc::Parms+1] = TypeInstPtr::NOTNULL;  // dst Object
+  fields[TypeFunc::Parms+2] = TypeInt::INT;          // Object size
+  const TypeTuple *domain = TypeTuple::make(TypeFunc::Parms+3, fields);
+
+  // create result type (range)
+  fields = TypeTuple::fields(0);
+
+  const TypeTuple *range = TypeTuple::make(TypeFunc::Parms+0, fields);
+
+  return TypeFunc::make(domain, range);
+}
+
+void ZBarrierSetC2::clone_at_expansion(PhaseMacroExpand* phase, ArrayCopyNode* ac) const {
+  Node *ctrl = ac->in(TypeFunc::Control);
+  Node *mem = ac->in(TypeFunc::Memory);
+  Node *src = ac->in(ArrayCopyNode::Src);
+  Node *src_offset = ac->in(ArrayCopyNode::SrcPos);
+  Node *dest = ac->in(ArrayCopyNode::Dest);
+  Node *dest_offset = ac->in(ArrayCopyNode::DestPos);
+  Node *length = ac->in(ArrayCopyNode::Length);
+
+  assert (src_offset == NULL,  "for clone offsets should be null");
+  assert (dest_offset == NULL, "for clone offsets should be null");
+
+  if (src->bottom_type()->isa_instptr()) {
+    // Instances must have all oop fiels healed before cloning - call runtime leaf
+    const char *clonefunc_name = "clone_oop";
+    address clonefunc_addr = ZBarrierSetRuntime::clone_oop_addr();
+    const TypePtr *raw_adr_type = TypeRawPtr::BOTTOM;
+    const TypeFunc *call_type = oop_clone_Type();
+
+    Node *call = phase->make_leaf_call(ctrl, mem, call_type, clonefunc_addr, clonefunc_name, raw_adr_type, src, dest,
+                                       length);
+    phase->transform_later(call);
+    phase->igvn().replace_node(ac, call);
+  } else {
+    assert(src->bottom_type()->isa_aryptr() != NULL, "Only arrays");
+
+    // Clones of primitive arrays go here
+    BarrierSetC2::clone_at_expansion(phase, ac);
   }
 }
