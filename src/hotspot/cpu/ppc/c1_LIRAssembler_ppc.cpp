@@ -1467,6 +1467,19 @@ void LIR_Assembler::comp_op(LIR_Condition condition, LIR_Opr opr1, LIR_Opr opr2,
           }
           break;
 
+        case T_METADATA:
+          // We only need, for now, comparison with NULL for metadata.
+          {
+            assert(condition == lir_cond_equal || condition == lir_cond_notEqual, "oops");
+            Metadata* p = opr2->as_constant_ptr()->as_metadata();
+            if (p == NULL) {
+              __ cmpdi(BOOL_RESULT, opr1->as_register(), 0);
+            } else {
+              ShouldNotReachHere();
+            }
+          }
+          break;
+
         default:
           ShouldNotReachHere();
           break;
