@@ -29,7 +29,6 @@ import org.graalvm.compiler.core.test.GraalCompilerTest;
 import org.graalvm.compiler.nodes.ConstantNode;
 import org.graalvm.compiler.nodes.StructuredGraph;
 import org.graalvm.compiler.nodes.StructuredGraph.AllowAssumptions;
-import org.graalvm.compiler.phases.common.CanonicalizerPhase;
 import org.graalvm.compiler.phases.common.DeadCodeEliminationPhase;
 import org.junit.Assert;
 import org.junit.Test;
@@ -62,7 +61,7 @@ public class CompiledMethodTest extends GraalCompilerTest {
     public void test1() {
         final ResolvedJavaMethod javaMethod = getResolvedJavaMethod("testMethod");
         final StructuredGraph graph = parseEager(javaMethod, AllowAssumptions.NO);
-        new CanonicalizerPhase().apply(graph, getProviders());
+        createCanonicalizerPhase().apply(graph, getProviders());
         new DeadCodeEliminationPhase().apply(graph);
 
         for (ConstantNode node : ConstantNode.getConstantNodes(graph)) {

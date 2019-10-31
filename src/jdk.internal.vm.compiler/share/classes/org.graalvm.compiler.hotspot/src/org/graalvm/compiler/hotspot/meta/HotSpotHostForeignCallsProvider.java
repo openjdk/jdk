@@ -339,8 +339,8 @@ public abstract class HotSpotHostForeignCallsProvider extends HotSpotForeignCall
         linkForeignCall(options, providers, REGISTER_FINALIZER, c.registerFinalizerAddress, PREPEND_THREAD, SAFEPOINT, NOT_REEXECUTABLE, any());
         linkForeignCall(options, providers, MONITORENTER, c.monitorenterAddress, PREPEND_THREAD, SAFEPOINT, NOT_REEXECUTABLE, any());
         linkForeignCall(options, providers, MONITOREXIT, c.monitorexitAddress, PREPEND_THREAD, STACK_INSPECTABLE_LEAF, NOT_REEXECUTABLE, any());
-        linkForeignCall(options, providers, NOTIFY, c.notifyAddress, PREPEND_THREAD, SAFEPOINT, NOT_REEXECUTABLE, any());
-        linkForeignCall(options, providers, NOTIFY_ALL, c.notifyAllAddress, PREPEND_THREAD, SAFEPOINT, NOT_REEXECUTABLE, any());
+        linkForeignCall(options, providers, NOTIFY, c.notifyAddress, PREPEND_THREAD, LEAF_NO_VZERO, NOT_REEXECUTABLE, any());
+        linkForeignCall(options, providers, NOTIFY_ALL, c.notifyAllAddress, PREPEND_THREAD, LEAF_NO_VZERO, NOT_REEXECUTABLE, any());
         linkForeignCall(options, providers, LOG_PRINTF, c.logPrintfAddress, PREPEND_THREAD, LEAF, REEXECUTABLE, NO_LOCATIONS);
         linkForeignCall(options, providers, LOG_OBJECT, c.logObjectAddress, PREPEND_THREAD, LEAF, REEXECUTABLE, NO_LOCATIONS);
         linkForeignCall(options, providers, LOG_PRIMITIVE, c.logPrimitiveAddress, PREPEND_THREAD, LEAF, REEXECUTABLE, NO_LOCATIONS);

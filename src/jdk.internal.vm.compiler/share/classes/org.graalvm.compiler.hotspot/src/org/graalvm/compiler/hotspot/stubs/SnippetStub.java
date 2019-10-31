@@ -41,7 +41,6 @@ import org.graalvm.compiler.nodes.spi.LoweringTool;
 import org.graalvm.compiler.options.OptionValues;
 import org.graalvm.compiler.phases.common.CanonicalizerPhase;
 import org.graalvm.compiler.phases.common.LoweringPhase;
-import org.graalvm.compiler.phases.common.RemoveValueProxyPhase;
 import org.graalvm.compiler.replacements.SnippetTemplate;
 import org.graalvm.compiler.replacements.Snippets;
 
@@ -100,9 +99,8 @@ public abstract class SnippetStub extends Stub implements Snippets {
                 }
             }
 
-            new RemoveValueProxyPhase().apply(graph);
             graph.setGuardsStage(GuardsStage.FLOATING_GUARDS);
-            CanonicalizerPhase canonicalizer = new CanonicalizerPhase();
+            CanonicalizerPhase canonicalizer = CanonicalizerPhase.create();
             canonicalizer.apply(graph, providers);
             new LoweringPhase(canonicalizer, LoweringTool.StandardLoweringStage.HIGH_TIER).apply(graph, providers);
         } catch (Throwable e) {

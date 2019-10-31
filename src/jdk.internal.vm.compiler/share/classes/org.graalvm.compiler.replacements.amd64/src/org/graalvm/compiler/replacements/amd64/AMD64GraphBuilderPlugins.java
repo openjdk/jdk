@@ -35,7 +35,6 @@ import static org.graalvm.compiler.replacements.nodes.UnaryMathIntrinsicNode.Una
 
 import java.util.Arrays;
 
-import org.graalvm.compiler.bytecode.BytecodeProvider;
 import org.graalvm.compiler.lir.amd64.AMD64ArithmeticLIRGeneratorTool.RoundingMode;
 import org.graalvm.compiler.nodes.PauseNode;
 import org.graalvm.compiler.nodes.ValueNode;
@@ -48,9 +47,8 @@ import org.graalvm.compiler.nodes.graphbuilderconf.InvocationPlugins.Registratio
 import org.graalvm.compiler.nodes.java.AtomicReadAndAddNode;
 import org.graalvm.compiler.nodes.java.AtomicReadAndWriteNode;
 import org.graalvm.compiler.nodes.memory.address.OffsetAddressNode;
+import org.graalvm.compiler.nodes.spi.Replacements;
 import org.graalvm.compiler.replacements.ArraysSubstitutions;
-import org.graalvm.compiler.replacements.IntegerSubstitutions;
-import org.graalvm.compiler.replacements.LongSubstitutions;
 import org.graalvm.compiler.replacements.StandardGraphBuilderPlugins.UnsafeAccessPlugin;
 import org.graalvm.compiler.replacements.StandardGraphBuilderPlugins.UnsafeGetPlugin;
 import org.graalvm.compiler.replacements.StandardGraphBuilderPlugins.UnsafePutPlugin;
@@ -72,30 +70,31 @@ import sun.misc.Unsafe;
 
 public class AMD64GraphBuilderPlugins implements TargetGraphBuilderPlugins {
     @Override
-    public void register(Plugins plugins, BytecodeProvider replacementsBytecodeProvider, Architecture architecture, boolean explicitUnsafeNullChecks,
+    public void register(Plugins plugins, Replacements replacements, Architecture architecture, boolean explicitUnsafeNullChecks,
                     boolean registerMathPlugins, boolean emitJDK9StringSubstitutions, boolean useFMAIntrinsics) {
-        register(plugins, replacementsBytecodeProvider, (AMD64) architecture, explicitUnsafeNullChecks, emitJDK9StringSubstitutions, useFMAIntrinsics);
+        register(plugins, replacements, (AMD64) architecture, explicitUnsafeNullChecks, emitJDK9StringSubstitutions, useFMAIntrinsics);
     }
 
-    public static void register(Plugins plugins, BytecodeProvider replacementsBytecodeProvider, AMD64 arch, boolean explicitUnsafeNullChecks, boolean emitJDK9StringSubstitutions,
+    public static void register(Plugins plugins, Replacements replacements, AMD64 arch, boolean explicitUnsafeNullChecks,
+                    boolean emitJDK9StringSubstitutions,
                     boolean useFMAIntrinsics) {
         InvocationPlugins invocationPlugins = plugins.getInvocationPlugins();
         invocationPlugins.defer(new Runnable() {
             @Override
             public void run() {
                 registerThreadPlugins(invocationPlugins, arch);
-                registerIntegerLongPlugins(invocationPlugins, IntegerSubstitutions.class, JavaKind.Int, arch, replacementsBytecodeProvider);
-                registerIntegerLongPlugins(invocationPlugins, LongSubstitutions.class, JavaKind.Long, arch, replacementsBytecodeProvider);
-                registerPlatformSpecificUnsafePlugins(invocationPlugins, replacementsBytecodeProvider, explicitUnsafeNullChecks,
+                registerIntegerLongPlugins(invocationPlugins, AMD64IntegerSubstitutions.class, JavaKind.Int, arch, replacements);
+                registerIntegerLongPlugins(invocationPlugins, AMD64LongSubstitutions.class, JavaKind.Long, arch, replacements);
+                registerPlatformSpecificUnsafePlugins(invocationPlugins, replacements, explicitUnsafeNullChecks,
                                 new JavaKind[]{JavaKind.Int, JavaKind.Long, JavaKind.Object, JavaKind.Boolean, JavaKind.Byte, JavaKind.Short, JavaKind.Char, JavaKind.Float, JavaKind.Double});
-                registerUnsafePlugins(invocationPlugins, replacementsBytecodeProvider, explicitUnsafeNullChecks);
-                registerStringPlugins(invocationPlugins, replacementsBytecodeProvider);
+                registerUnsafePlugins(invocationPlugins, replacements, explicitUnsafeNullChecks);
+                registerStringPlugins(invocationPlugins, replacements);
                 if (emitJDK9StringSubstitutions) {
-                    registerStringLatin1Plugins(invocationPlugins, replacementsBytecodeProvider);
-                    registerStringUTF16Plugins(invocationPlugins, replacementsBytecodeProvider);
+                    registerStringLatin1Plugins(invocationPlugins, replacements);
+                    registerStringUTF16Plugins(invocationPlugins, replacements);
                 }
-                registerMathPlugins(invocationPlugins, useFMAIntrinsics, arch, replacementsBytecodeProvider);
-                registerArraysEqualsPlugins(invocationPlugins, replacementsBytecodeProvider);
+                registerMathPlugins(invocationPlugins, useFMAIntrinsics, arch, replacements);
+                registerArraysEqualsPlugins(invocationPlugins, replacements);
             }
         });
     }
@@ -103,72 +102,37 @@ public class AMD64GraphBuilderPlugins implements TargetGraphBuilderPlugins {
     private static void registerThreadPlugins(InvocationPlugins plugins, AMD64 arch) {
         if (JavaVersionUtil.JAVA_SPEC > 8) {
             // Pause instruction introduced with SSE2
-            if (arch.getFeatures().contains(AMD64.CPUFeature.SSE2)) {
-                Registration r = new Registration(plugins, Thread.class);
-                r.register0("onSpinWait", new InvocationPlugin() {
-                    @Override
-                    public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod, Receiver receiver) {
-                        b.append(new PauseNode());
-                        return true;
-                    }
-                });
-            }
+            assert (arch.getFeatures().contains(AMD64.CPUFeature.SSE2));
+            Registration r = new Registration(plugins, Thread.class);
+            r.register0("onSpinWait", new InvocationPlugin() {
+                @Override
+                public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod, Receiver receiver) {
+                    b.append(new PauseNode());
+                    return true;
+                }
+            });
         }
     }
 
-    private static void registerIntegerLongPlugins(InvocationPlugins plugins, Class<?> substituteDeclaringClass, JavaKind kind, AMD64 arch, BytecodeProvider bytecodeProvider) {
+    private static void registerIntegerLongPlugins(InvocationPlugins plugins, Class<?> substituteDeclaringClass, JavaKind kind, AMD64 arch, Replacements replacements) {
         Class<?> declaringClass = kind.toBoxedJavaClass();
         Class<?> type = kind.toJavaClass();
-        Registration r = new Registration(plugins, declaringClass, bytecodeProvider);
+        Registration r = new Registration(plugins, declaringClass, replacements);
         r.registerMethodSubstitution(substituteDeclaringClass, "numberOfLeadingZeros", type);
-        if (arch.getFeatures().contains(AMD64.CPUFeature.LZCNT) && arch.getFlags().contains(AMD64.Flag.UseCountLeadingZerosInstruction)) {
-            r.setAllowOverwrite(true);
-            r.register1("numberOfLeadingZeros", type, new InvocationPlugin() {
-                @Override
-                public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod, Receiver receiver, ValueNode value) {
-                    ValueNode folded = AMD64CountLeadingZerosNode.tryFold(value);
-                    if (folded != null) {
-                        b.addPush(JavaKind.Int, folded);
-                    } else {
-                        b.addPush(JavaKind.Int, new AMD64CountLeadingZerosNode(value));
-                    }
-                    return true;
-                }
-            });
-        }
-
         r.registerMethodSubstitution(substituteDeclaringClass, "numberOfTrailingZeros", type);
-        if (arch.getFeatures().contains(AMD64.CPUFeature.BMI1) && arch.getFlags().contains(AMD64.Flag.UseCountTrailingZerosInstruction)) {
-            r.setAllowOverwrite(true);
-            r.register1("numberOfTrailingZeros", type, new InvocationPlugin() {
 
-                @Override
-                public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod, Receiver receiver, ValueNode value) {
-                    ValueNode folded = AMD64CountTrailingZerosNode.tryFold(value);
-                    if (folded != null) {
-                        b.addPush(JavaKind.Int, folded);
-                    } else {
-                        b.addPush(JavaKind.Int, new AMD64CountTrailingZerosNode(value));
-                    }
-                    return true;
-                }
-            });
-        }
-
-        if (arch.getFeatures().contains(AMD64.CPUFeature.POPCNT)) {
-            r.register1("bitCount", type, new InvocationPlugin() {
-                @Override
-                public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod, Receiver receiver, ValueNode value) {
-                    b.push(JavaKind.Int, b.append(new BitCountNode(value).canonical(null)));
-                    return true;
-                }
-            });
-        }
-
+        r.registerConditional1(arch.getFeatures().contains(AMD64.CPUFeature.POPCNT),
+                        "bitCount", type, new InvocationPlugin() {
+                            @Override
+                            public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod, Receiver receiver, ValueNode value) {
+                                b.push(JavaKind.Int, b.append(new BitCountNode(value).canonical(null)));
+                                return true;
+                            }
+                        });
     }
 
-    private static void registerMathPlugins(InvocationPlugins plugins, boolean useFMAIntrinsics, AMD64 arch, BytecodeProvider bytecodeProvider) {
-        Registration r = new Registration(plugins, Math.class, bytecodeProvider);
+    private static void registerMathPlugins(InvocationPlugins plugins, boolean useFMAIntrinsics, AMD64 arch, Replacements replacements) {
+        Registration r = new Registration(plugins, Math.class, replacements);
         registerUnaryMath(r, "log", LOG);
         registerUnaryMath(r, "log10", LOG10);
         registerUnaryMath(r, "exp", EXP);
@@ -177,19 +141,18 @@ public class AMD64GraphBuilderPlugins implements TargetGraphBuilderPlugins {
         registerUnaryMath(r, "cos", COS);
         registerUnaryMath(r, "tan", TAN);
 
-        if (arch.getFeatures().contains(CPUFeature.SSE4_1)) {
-            registerRound(r, "rint", RoundingMode.NEAREST);
-            registerRound(r, "ceil", RoundingMode.UP);
-            registerRound(r, "floor", RoundingMode.DOWN);
-        }
+        boolean roundEnabled = arch.getFeatures().contains(CPUFeature.SSE4_1);
+        registerRound(roundEnabled, r, "rint", RoundingMode.NEAREST);
+        registerRound(roundEnabled, r, "ceil", RoundingMode.UP);
+        registerRound(roundEnabled, r, "floor", RoundingMode.DOWN);
 
-        if (useFMAIntrinsics && JavaVersionUtil.JAVA_SPEC > 8 && arch.getFeatures().contains(CPUFeature.FMA)) {
-            registerFMA(r);
+        if (JavaVersionUtil.JAVA_SPEC > 8) {
+            registerFMA(r, useFMAIntrinsics && arch.getFeatures().contains(CPUFeature.FMA));
         }
     }
 
-    private static void registerFMA(Registration r) {
-        r.register3("fma",
+    private static void registerFMA(Registration r, boolean isEnabled) {
+        r.registerConditional3(isEnabled, "fma",
                         Double.TYPE,
                         Double.TYPE,
                         Double.TYPE,
@@ -205,7 +168,7 @@ public class AMD64GraphBuilderPlugins implements TargetGraphBuilderPlugins {
                                 return true;
                             }
                         });
-        r.register3("fma",
+        r.registerConditional3(isEnabled, "fma",
                         Float.TYPE,
                         Float.TYPE,
                         Float.TYPE,
@@ -243,8 +206,8 @@ public class AMD64GraphBuilderPlugins implements TargetGraphBuilderPlugins {
         });
     }
 
-    private static void registerRound(Registration r, String name, RoundingMode mode) {
-        r.register1(name, Double.TYPE, new InvocationPlugin() {
+    private static void registerRound(boolean isEnabled, Registration r, String name, RoundingMode mode) {
+        r.registerConditional1(isEnabled, name, Double.TYPE, new InvocationPlugin() {
             @Override
             public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod, Receiver receiver, ValueNode arg) {
                 b.push(JavaKind.Double, b.append(new AMD64RoundNode(arg, mode)));
@@ -253,10 +216,10 @@ public class AMD64GraphBuilderPlugins implements TargetGraphBuilderPlugins {
         });
     }
 
-    private static void registerStringPlugins(InvocationPlugins plugins, BytecodeProvider replacementsBytecodeProvider) {
+    private static void registerStringPlugins(InvocationPlugins plugins, Replacements replacements) {
         if (JavaVersionUtil.JAVA_SPEC <= 8) {
             Registration r;
-            r = new Registration(plugins, String.class, replacementsBytecodeProvider);
+            r = new Registration(plugins, String.class, replacements);
             r.setAllowOverwrite(true);
             r.registerMethodSubstitution(AMD64StringSubstitutions.class, "indexOf", char[].class, int.class,
                             int.class, char[].class, int.class, int.class, int.class);
@@ -265,8 +228,8 @@ public class AMD64GraphBuilderPlugins implements TargetGraphBuilderPlugins {
         }
     }
 
-    private static void registerStringLatin1Plugins(InvocationPlugins plugins, BytecodeProvider replacementsBytecodeProvider) {
-        Registration r = new Registration(plugins, "java.lang.StringLatin1", replacementsBytecodeProvider);
+    private static void registerStringLatin1Plugins(InvocationPlugins plugins, Replacements replacements) {
+        Registration r = new Registration(plugins, "java.lang.StringLatin1", replacements);
         r.setAllowOverwrite(true);
         r.registerMethodSubstitution(AMD64StringLatin1Substitutions.class, "compareTo", byte[].class, byte[].class);
         r.registerMethodSubstitution(AMD64StringLatin1Substitutions.class, "compareToUTF16", byte[].class, byte[].class);
@@ -276,8 +239,8 @@ public class AMD64GraphBuilderPlugins implements TargetGraphBuilderPlugins {
         r.registerMethodSubstitution(AMD64StringLatin1Substitutions.class, "indexOf", byte[].class, int.class, byte[].class, int.class, int.class);
     }
 
-    private static void registerStringUTF16Plugins(InvocationPlugins plugins, BytecodeProvider replacementsBytecodeProvider) {
-        Registration r = new Registration(plugins, "java.lang.StringUTF16", replacementsBytecodeProvider);
+    private static void registerStringUTF16Plugins(InvocationPlugins plugins, Replacements replacements) {
+        Registration r = new Registration(plugins, "java.lang.StringUTF16", replacements);
         r.setAllowOverwrite(true);
         r.registerMethodSubstitution(AMD64StringUTF16Substitutions.class, "compareTo", byte[].class, byte[].class);
         r.registerMethodSubstitution(AMD64StringUTF16Substitutions.class, "compareToLatin1", byte[].class, byte[].class);
@@ -288,10 +251,10 @@ public class AMD64GraphBuilderPlugins implements TargetGraphBuilderPlugins {
         r.registerMethodSubstitution(AMD64StringUTF16Substitutions.class, "indexOfLatin1Unsafe", byte[].class, int.class, byte[].class, int.class, int.class);
     }
 
-    private static void registerUnsafePlugins(InvocationPlugins plugins, BytecodeProvider replacementsBytecodeProvider, boolean explicitUnsafeNullChecks) {
+    private static void registerUnsafePlugins(InvocationPlugins plugins, Replacements replacements, boolean explicitUnsafeNullChecks) {
         registerUnsafePlugins(new Registration(plugins, Unsafe.class), explicitUnsafeNullChecks, new JavaKind[]{JavaKind.Int, JavaKind.Long, JavaKind.Object}, true);
         if (JavaVersionUtil.JAVA_SPEC > 8) {
-            registerUnsafePlugins(new Registration(plugins, "jdk.internal.misc.Unsafe", replacementsBytecodeProvider), explicitUnsafeNullChecks,
+            registerUnsafePlugins(new Registration(plugins, "jdk.internal.misc.Unsafe", replacements), explicitUnsafeNullChecks,
                             new JavaKind[]{JavaKind.Boolean, JavaKind.Byte, JavaKind.Char, JavaKind.Short, JavaKind.Int, JavaKind.Long, JavaKind.Object},
                             JavaVersionUtil.JAVA_SPEC <= 11);
         }
@@ -330,8 +293,8 @@ public class AMD64GraphBuilderPlugins implements TargetGraphBuilderPlugins {
         }
     }
 
-    private static void registerArraysEqualsPlugins(InvocationPlugins plugins, BytecodeProvider bytecodeProvider) {
-        Registration r = new Registration(plugins, Arrays.class, bytecodeProvider);
+    private static void registerArraysEqualsPlugins(InvocationPlugins plugins, Replacements replacements) {
+        Registration r = new Registration(plugins, Arrays.class, replacements);
         r.registerMethodSubstitution(ArraysSubstitutions.class, "equals", float[].class, float[].class);
         r.registerMethodSubstitution(ArraysSubstitutions.class, "equals", double[].class, double[].class);
     }

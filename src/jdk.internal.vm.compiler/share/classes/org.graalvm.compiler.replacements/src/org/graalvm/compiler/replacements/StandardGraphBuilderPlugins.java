@@ -40,7 +40,6 @@ import java.util.Arrays;
 
 import org.graalvm.compiler.api.directives.GraalDirectives;
 import org.graalvm.compiler.api.replacements.SnippetReflectionProvider;
-import org.graalvm.compiler.bytecode.BytecodeProvider;
 import org.graalvm.compiler.core.common.calc.Condition;
 import org.graalvm.compiler.core.common.calc.Condition.CanonicalizedCondition;
 import org.graalvm.compiler.core.common.calc.UnsignedMath;
@@ -115,6 +114,7 @@ import org.graalvm.compiler.nodes.java.UnsafeCompareAndExchangeNode;
 import org.graalvm.compiler.nodes.java.UnsafeCompareAndSwapNode;
 import org.graalvm.compiler.nodes.memory.HeapAccess;
 import org.graalvm.compiler.nodes.memory.address.IndexAddressNode;
+import org.graalvm.compiler.nodes.spi.Replacements;
 import org.graalvm.compiler.nodes.type.StampTool;
 import org.graalvm.compiler.nodes.util.GraphUtil;
 import org.graalvm.compiler.nodes.virtual.EnsureVirtualizedNode;
@@ -154,30 +154,30 @@ import sun.misc.Unsafe;
  */
 public class StandardGraphBuilderPlugins {
 
-    public static void registerInvocationPlugins(MetaAccessProvider metaAccess, SnippetReflectionProvider snippetReflection, InvocationPlugins plugins, BytecodeProvider bytecodeProvider,
+    public static void registerInvocationPlugins(MetaAccessProvider metaAccess, SnippetReflectionProvider snippetReflection, InvocationPlugins plugins, Replacements replacements,
                     boolean allowDeoptimization, boolean explicitUnsafeNullChecks) {
         registerObjectPlugins(plugins);
         registerClassPlugins(plugins);
         registerMathPlugins(plugins, allowDeoptimization);
         registerStrictMathPlugins(plugins);
         registerUnsignedMathPlugins(plugins);
-        registerStringPlugins(plugins, bytecodeProvider, snippetReflection);
+        registerStringPlugins(plugins, replacements, snippetReflection);
         registerCharacterPlugins(plugins);
         registerShortPlugins(plugins);
         registerIntegerLongPlugins(plugins, JavaKind.Int);
         registerIntegerLongPlugins(plugins, JavaKind.Long);
         registerFloatPlugins(plugins);
         registerDoublePlugins(plugins);
-        registerArraysPlugins(plugins, bytecodeProvider);
-        registerArrayPlugins(plugins, bytecodeProvider);
-        registerUnsafePlugins(plugins, bytecodeProvider, explicitUnsafeNullChecks);
+        registerArraysPlugins(plugins, replacements);
+        registerArrayPlugins(plugins, replacements);
+        registerUnsafePlugins(plugins, replacements, explicitUnsafeNullChecks);
         registerEdgesPlugins(metaAccess, plugins);
         registerGraalDirectivesPlugins(plugins);
         registerBoxingPlugins(plugins);
-        registerJMHBlackholePlugins(plugins, bytecodeProvider);
-        registerJFRThrowablePlugins(plugins, bytecodeProvider);
-        registerMethodHandleImplPlugins(plugins, snippetReflection, bytecodeProvider);
-        registerJcovCollectPlugins(plugins, bytecodeProvider);
+        registerJMHBlackholePlugins(plugins, replacements);
+        registerJFRThrowablePlugins(plugins, replacements);
+        registerMethodHandleImplPlugins(plugins, snippetReflection, replacements);
+        registerJcovCollectPlugins(plugins, replacements);
     }
 
     private static final Field STRING_VALUE_FIELD;
@@ -196,8 +196,8 @@ public class StandardGraphBuilderPlugins {
         STRING_CODER_FIELD = coder;
     }
 
-    private static void registerStringPlugins(InvocationPlugins plugins, BytecodeProvider bytecodeProvider, SnippetReflectionProvider snippetReflection) {
-        final Registration r = new Registration(plugins, String.class, bytecodeProvider);
+    private static void registerStringPlugins(InvocationPlugins plugins, Replacements replacements, SnippetReflectionProvider snippetReflection) {
+        final Registration r = new Registration(plugins, String.class, replacements);
         r.register1("hashCode", Receiver.class, new InvocationPlugin() {
             @Override
             public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod, Receiver receiver) {
@@ -243,7 +243,7 @@ public class StandardGraphBuilderPlugins {
             });
         } else {
             r.registerMethodSubstitution(JDK9StringSubstitutions.class, "equals", Receiver.class, Object.class);
-            Registration utf16sub = new Registration(plugins, StringUTF16Substitutions.class, bytecodeProvider);
+            Registration utf16sub = new Registration(plugins, StringUTF16Substitutions.class, replacements);
             utf16sub.register2("getCharDirect", byte[].class, int.class, new InvocationPlugin() {
                 @Override
                 public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod, Receiver receiver, ValueNode arg1, ValueNode arg2) {
@@ -261,10 +261,10 @@ public class StandardGraphBuilderPlugins {
                 }
             });
 
-            final Registration latin1r = new Registration(plugins, "java.lang.StringLatin1", bytecodeProvider);
+            final Registration latin1r = new Registration(plugins, "java.lang.StringLatin1", replacements);
             latin1r.register5("indexOf", byte[].class, int.class, byte[].class, int.class, int.class, new StringLatin1IndexOfConstantPlugin());
 
-            final Registration utf16r = new Registration(plugins, "java.lang.StringUTF16", bytecodeProvider);
+            final Registration utf16r = new Registration(plugins, "java.lang.StringUTF16", replacements);
             utf16r.register5("indexOfUnsafe", byte[].class, int.class, byte[].class, int.class, int.class, new StringUTF16IndexOfConstantPlugin());
             utf16r.setAllowOverwrite(true);
             utf16r.registerMethodSubstitution(StringUTF16Substitutions.class, "getChar", byte[].class, int.class);
@@ -292,8 +292,8 @@ public class StandardGraphBuilderPlugins {
         }
     }
 
-    private static void registerArraysPlugins(InvocationPlugins plugins, BytecodeProvider bytecodeProvider) {
-        Registration r = new Registration(plugins, Arrays.class, bytecodeProvider);
+    private static void registerArraysPlugins(InvocationPlugins plugins, Replacements replacements) {
+        Registration r = new Registration(plugins, Arrays.class, replacements);
         r.registerMethodSubstitution(ArraysSubstitutions.class, "equals", boolean[].class, boolean[].class);
         r.registerMethodSubstitution(ArraysSubstitutions.class, "equals", byte[].class, byte[].class);
         r.registerMethodSubstitution(ArraysSubstitutions.class, "equals", short[].class, short[].class);
@@ -302,8 +302,8 @@ public class StandardGraphBuilderPlugins {
         r.registerMethodSubstitution(ArraysSubstitutions.class, "equals", long[].class, long[].class);
     }
 
-    private static void registerArrayPlugins(InvocationPlugins plugins, BytecodeProvider bytecodeProvider) {
-        Registration r = new Registration(plugins, Array.class, bytecodeProvider);
+    private static void registerArrayPlugins(InvocationPlugins plugins, Replacements replacements) {
+        Registration r = new Registration(plugins, Array.class, replacements);
         r.register2("newInstance", Class.class, int.class, new InvocationPlugin() {
             @Override
             public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod, Receiver unused, ValueNode componentType, ValueNode length) {
@@ -381,10 +381,10 @@ public class StandardGraphBuilderPlugins {
 
     private static UnsafeCompareAndExchangePluginsRegistrar unsafeCompareAndExchangePluginsRegistrar = new UnsafeCompareAndExchangePluginsRegistrar();
 
-    public static void registerPlatformSpecificUnsafePlugins(InvocationPlugins plugins, BytecodeProvider bytecodeProvider, boolean explicitUnsafeNullChecks, JavaKind[] supportedCasKinds) {
+    public static void registerPlatformSpecificUnsafePlugins(InvocationPlugins plugins, Replacements replacements, boolean explicitUnsafeNullChecks, JavaKind[] supportedCasKinds) {
         registerPlatformSpecificUnsafePlugins(supportedCasKinds, new Registration(plugins, Unsafe.class), true, explicitUnsafeNullChecks);
         if (JavaVersionUtil.JAVA_SPEC > 8) {
-            registerPlatformSpecificUnsafePlugins(supportedCasKinds, new Registration(plugins, "jdk.internal.misc.Unsafe", bytecodeProvider), false, explicitUnsafeNullChecks);
+            registerPlatformSpecificUnsafePlugins(supportedCasKinds, new Registration(plugins, "jdk.internal.misc.Unsafe", replacements), false, explicitUnsafeNullChecks);
         }
 
     }
@@ -398,10 +398,10 @@ public class StandardGraphBuilderPlugins {
         }
     }
 
-    private static void registerUnsafePlugins(InvocationPlugins plugins, BytecodeProvider bytecodeProvider, boolean explicitUnsafeNullChecks) {
+    private static void registerUnsafePlugins(InvocationPlugins plugins, Replacements replacements, boolean explicitUnsafeNullChecks) {
         registerUnsafePlugins(new Registration(plugins, Unsafe.class), true, explicitUnsafeNullChecks);
         if (JavaVersionUtil.JAVA_SPEC > 8) {
-            registerUnsafePlugins(new Registration(plugins, "jdk.internal.misc.Unsafe", bytecodeProvider), false, explicitUnsafeNullChecks);
+            registerUnsafePlugins(new Registration(plugins, "jdk.internal.misc.Unsafe", replacements), false, explicitUnsafeNullChecks);
         }
     }
 
@@ -1300,7 +1300,7 @@ public class StandardGraphBuilderPlugins {
         });
     }
 
-    private static void registerJMHBlackholePlugins(InvocationPlugins plugins, BytecodeProvider bytecodeProvider) {
+    private static void registerJMHBlackholePlugins(InvocationPlugins plugins, Replacements replacements) {
         InvocationPlugin blackholePlugin = new InvocationPlugin() {
             @Override
             public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod, Receiver blackhole, ValueNode value) {
@@ -1316,7 +1316,7 @@ public class StandardGraphBuilderPlugins {
         };
         String[] names = {"org.openjdk.jmh.infra.Blackhole", "org.openjdk.jmh.logic.BlackHole"};
         for (String name : names) {
-            Registration r = new Registration(plugins, name, bytecodeProvider);
+            Registration r = new Registration(plugins, name, replacements);
             for (JavaKind kind : JavaKind.values()) {
                 if ((kind.isPrimitive() && kind != JavaKind.Void) || kind == JavaKind.Object) {
                     Class<?> javaClass = kind == JavaKind.Object ? Object.class : kind.toJavaClass();
@@ -1327,8 +1327,8 @@ public class StandardGraphBuilderPlugins {
         }
     }
 
-    private static void registerJFRThrowablePlugins(InvocationPlugins plugins, BytecodeProvider bytecodeProvider) {
-        Registration r = new Registration(plugins, "oracle.jrockit.jfr.jdkevents.ThrowableTracer", bytecodeProvider);
+    private static void registerJFRThrowablePlugins(InvocationPlugins plugins, Replacements replacements) {
+        Registration r = new Registration(plugins, "oracle.jrockit.jfr.jdkevents.ThrowableTracer", replacements);
         r.register2("traceThrowable", Throwable.class, String.class, new InvocationPlugin() {
             @Override
             public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod, Receiver receiver, ValueNode throwable, ValueNode message) {
@@ -1343,8 +1343,8 @@ public class StandardGraphBuilderPlugins {
         });
     }
 
-    private static void registerMethodHandleImplPlugins(InvocationPlugins plugins, SnippetReflectionProvider snippetReflection, BytecodeProvider bytecodeProvider) {
-        Registration r = new Registration(plugins, "java.lang.invoke.MethodHandleImpl", bytecodeProvider);
+    private static void registerMethodHandleImplPlugins(InvocationPlugins plugins, SnippetReflectionProvider snippetReflection, Replacements replacements) {
+        Registration r = new Registration(plugins, "java.lang.invoke.MethodHandleImpl", replacements);
         // In later JDKs this no longer exists and the usage is replace by Class.cast which is
         // already an intrinsic
         r.registerOptional2("castReference", Class.class, Object.class, new InvocationPlugin() {
@@ -1408,8 +1408,8 @@ public class StandardGraphBuilderPlugins {
      * Registers a plugin to ignore {@code com.sun.tdk.jcov.runtime.Collect.hit} within an
      * intrinsic.
      */
-    private static void registerJcovCollectPlugins(InvocationPlugins plugins, BytecodeProvider bytecodeProvider) {
-        Registration r = new Registration(plugins, "com.sun.tdk.jcov.runtime.Collect", bytecodeProvider);
+    private static void registerJcovCollectPlugins(InvocationPlugins plugins, Replacements replacements) {
+        Registration r = new Registration(plugins, "com.sun.tdk.jcov.runtime.Collect", replacements);
         r.register1("hit", int.class, new InvocationPlugin() {
             @Override
             public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod, Receiver receiver, ValueNode object) {

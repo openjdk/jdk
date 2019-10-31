@@ -74,7 +74,7 @@ public class AMD64VectorMove {
     public static final class MoveToRegOp extends AMD64LIRInstruction implements ValueMoveOp {
         public static final LIRInstructionClass<MoveToRegOp> TYPE = LIRInstructionClass.create(MoveToRegOp.class);
 
-        @Def({REG, HINT}) protected AllocatableValue result;
+        @Def({REG, STACK, HINT}) protected AllocatableValue result;
         @Use({REG, STACK}) protected AllocatableValue input;
 
         public MoveToRegOp(AllocatableValue result, AllocatableValue input) {

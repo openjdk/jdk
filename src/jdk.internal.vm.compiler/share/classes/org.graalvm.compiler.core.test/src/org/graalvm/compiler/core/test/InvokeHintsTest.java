@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,7 +30,6 @@ import java.util.Map;
 import org.graalvm.compiler.nodes.Invoke;
 import org.graalvm.compiler.nodes.StructuredGraph;
 import org.graalvm.compiler.nodes.StructuredGraph.AllowAssumptions;
-import org.graalvm.compiler.phases.common.CanonicalizerPhase;
 import org.graalvm.compiler.phases.common.DeadCodeEliminationPhase;
 import org.graalvm.compiler.phases.tiers.HighTierContext;
 import org.junit.Test;
@@ -80,8 +79,8 @@ public class InvokeHintsTest extends GraalCompilerTest {
         }
 
         HighTierContext context = getDefaultHighTierContext();
-        createInliningPhase(hints, new CanonicalizerPhase()).apply(graph, context);
-        new CanonicalizerPhase().apply(graph, context);
+        createInliningPhase(hints, createCanonicalizerPhase()).apply(graph, context);
+        createCanonicalizerPhase().apply(graph, context);
         new DeadCodeEliminationPhase().apply(graph);
         StructuredGraph referenceGraph = parseEager(REFERENCE_SNIPPET, AllowAssumptions.NO);
         assertEquals(referenceGraph, graph);

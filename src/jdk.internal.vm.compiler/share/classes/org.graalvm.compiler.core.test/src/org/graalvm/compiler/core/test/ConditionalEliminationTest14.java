@@ -70,7 +70,7 @@ public class ConditionalEliminationTest14 extends ConditionalEliminationTestBase
     @Test
     public void test1() {
         StructuredGraph graph = parseEager("test1Snippet", AllowAssumptions.YES);
-        CanonicalizerPhase canonicalizer = new CanonicalizerPhase();
+        CanonicalizerPhase canonicalizer = createCanonicalizerPhase();
         CoreProviders context = getProviders();
 
         /* Convert the LoadIndexNode to ReadNode with floating guards. */

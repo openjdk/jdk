@@ -173,7 +173,7 @@ public abstract class MacroNode extends FixedWithNextNode implements Lowerable, 
         }
         DebugContext debug = replacementGraph.getDebug();
         try (DebugContext.Scope s = debug.scope("LoweringSnippetTemplate", replacementGraph)) {
-            new LoweringPhase(new CanonicalizerPhase(), tool.getLoweringStage()).apply(replacementGraph, c);
+            new LoweringPhase(CanonicalizerPhase.create(), tool.getLoweringStage()).apply(replacementGraph, c);
         } catch (Throwable e) {
             throw debug.handle(e);
         }

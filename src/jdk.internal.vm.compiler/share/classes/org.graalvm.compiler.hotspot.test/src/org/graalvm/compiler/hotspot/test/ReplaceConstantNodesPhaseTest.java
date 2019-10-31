@@ -117,7 +117,7 @@ public class ReplaceConstantNodesPhaseTest extends HotSpotGraalCompilerTest {
     private void test(String name, int expectedInits, int expectedResolves, int expectedLoads) {
         StructuredGraph graph = parseEager(name, AllowAssumptions.NO, new OptionValues(getInitialOptions(), GraalOptions.GeneratePIC, true));
         HighTierContext highTierContext = getDefaultHighTierContext();
-        CanonicalizerPhase canonicalizer = new CanonicalizerPhase();
+        CanonicalizerPhase canonicalizer = createCanonicalizerPhase();
         new EliminateRedundantInitializationPhase().apply(graph, highTierContext);
         new LoweringPhase(canonicalizer, LoweringTool.StandardLoweringStage.HIGH_TIER).apply(graph, highTierContext);
         new LoadJavaMirrorWithKlassPhase(config).apply(graph, highTierContext);

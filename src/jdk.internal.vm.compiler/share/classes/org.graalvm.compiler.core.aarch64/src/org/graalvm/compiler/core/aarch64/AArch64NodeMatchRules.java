@@ -57,6 +57,7 @@ import org.graalvm.compiler.nodes.calc.AndNode;
 import org.graalvm.compiler.nodes.calc.BinaryNode;
 import org.graalvm.compiler.nodes.calc.IntegerLessThanNode;
 import org.graalvm.compiler.nodes.calc.LeftShiftNode;
+import org.graalvm.compiler.nodes.calc.MulNode;
 import org.graalvm.compiler.nodes.calc.NotNode;
 import org.graalvm.compiler.nodes.calc.OrNode;
 import org.graalvm.compiler.nodes.calc.RightShiftNode;
@@ -224,6 +225,33 @@ public class AArch64NodeMatchRules extends NodeMatchRules {
         return emitBinaryShift(op, a, shift, isShiftNot);
     }
 
+    @MatchRule("(Add=binary (Mul (SignExtend a) (SignExtend b)) c)")
+    @MatchRule("(Sub=binary c (Mul (SignExtend a) (SignExtend b)))")
+    public ComplexMatchResult signedMultiplyAddSubLong(BinaryNode binary, ValueNode a, ValueNode b, ValueNode c) {
+        assert a.getStackKind() == JavaKind.Int && b.getStackKind() == JavaKind.Int && c.getStackKind() == JavaKind.Long;
+        if (binary instanceof AddNode) {
+            return builder -> getArithmeticLIRGenerator().emitIntegerMAdd(operand(a), operand(b), operand(c), true);
+        }
+        return builder -> getArithmeticLIRGenerator().emitIntegerMSub(operand(a), operand(b), operand(c), true);
+    }
+
+    @MatchRule("(Negate (Mul=mul (SignExtend a) (SignExtend b)))")
+    @MatchRule("(Mul=mul (Negate (SignExtend a)) (SignExtend b))")
+    public ComplexMatchResult signedMultiplyNegLong(MulNode mul, ValueNode a, ValueNode b) {
+        assert a.getStackKind() == JavaKind.Int && b.getStackKind() == JavaKind.Int;
+        LIRKind resultKind = LIRKind.fromJavaKind(gen.target().arch, mul.getStackKind());
+        return builder -> getArithmeticLIRGenerator().emitBinary(
+                        resultKind, AArch64ArithmeticOp.SMNEGL, true, operand(a), operand(b));
+    }
+
+    @MatchRule("(Mul=mul (SignExtend a) (SignExtend b))")
+    public ComplexMatchResult signedMultiplyLong(MulNode mul, ValueNode a, ValueNode b) {
+        assert a.getStackKind() == JavaKind.Int && b.getStackKind() == JavaKind.Int;
+        LIRKind resultKind = LIRKind.fromJavaKind(gen.target().arch, mul.getStackKind());
+        return builder -> getArithmeticLIRGenerator().emitBinary(
+                        resultKind, AArch64ArithmeticOp.SMULL, true, operand(a), operand(b));
+    }
+
     @MatchRule("(Mul (Negate a) b)")
     @MatchRule("(Negate (Mul a b))")
     public ComplexMatchResult multiplyNegate(ValueNode a, ValueNode b) {
@@ -244,9 +272,9 @@ public class AArch64NodeMatchRules extends NodeMatchRules {
         }
 
         if (binary instanceof AddNode) {
-            return builder -> getArithmeticLIRGenerator().emitMAdd(operand(a), operand(b), operand(c));
+            return builder -> getArithmeticLIRGenerator().emitIntegerMAdd(operand(a), operand(b), operand(c), false);
         }
-        return builder -> getArithmeticLIRGenerator().emitMSub(operand(a), operand(b), operand(c));
+        return builder -> getArithmeticLIRGenerator().emitIntegerMSub(operand(a), operand(b), operand(c), false);
     }
 
     /**

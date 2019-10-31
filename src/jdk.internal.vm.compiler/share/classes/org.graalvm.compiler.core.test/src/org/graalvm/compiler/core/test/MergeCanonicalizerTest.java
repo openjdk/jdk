@@ -30,7 +30,6 @@ import org.graalvm.compiler.nodes.StructuredGraph;
 import org.graalvm.compiler.nodes.StructuredGraph.AllowAssumptions;
 import org.graalvm.compiler.phases.OptimisticOptimizations;
 import org.graalvm.compiler.phases.OptimisticOptimizations.Optimization;
-import org.graalvm.compiler.phases.common.CanonicalizerPhase;
 import org.graalvm.compiler.phases.tiers.HighTierContext;
 import org.junit.Test;
 
@@ -70,8 +69,8 @@ public class MergeCanonicalizerTest extends GraalCompilerTest {
 
     private void testReturnCount(String snippet, int returnCount) {
         StructuredGraph graph = parseEager(snippet, AllowAssumptions.YES);
-        new CanonicalizerPhase().apply(graph, getProviders());
-        new CanonicalizerPhase().apply(graph, getProviders());
+        createCanonicalizerPhase().apply(graph, getProviders());
+        createCanonicalizerPhase().apply(graph, getProviders());
         graph.getDebug().dump(DebugContext.BASIC_LEVEL, graph, "Graph");
         assertDeepEquals(returnCount, graph.getNodes(ReturnNode.TYPE).count());
     }

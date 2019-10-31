@@ -37,7 +37,6 @@ import org.graalvm.compiler.nodes.PiNode;
 import org.graalvm.compiler.nodes.extended.RawLoadNode;
 import org.graalvm.compiler.nodes.graphbuilderconf.IntrinsicContext;
 import org.graalvm.compiler.replacements.ReplacementsUtil;
-import org.graalvm.compiler.serviceprovider.JavaVersionUtil;
 import org.graalvm.compiler.word.Word;
 import jdk.internal.vm.compiler.word.LocationIdentity;
 import jdk.internal.vm.compiler.word.WordFactory;
@@ -46,8 +45,6 @@ import jdk.vm.ci.meta.JavaKind;
 
 @ClassSubstitution(className = "sun.security.provider.SHA", optional = true)
 public class SHASubstitutions {
-
-    public static final String implCompressName = JavaVersionUtil.JAVA_SPEC <= 8 ? "implCompress" : "implCompress0";
 
     @MethodSubstitution(isStatic = false)
     static void implCompress0(Object receiver, byte[] buf, int ofs) {

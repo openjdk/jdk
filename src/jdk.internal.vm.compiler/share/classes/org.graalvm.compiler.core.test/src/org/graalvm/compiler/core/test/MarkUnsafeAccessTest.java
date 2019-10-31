@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -37,7 +37,6 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 
 import org.graalvm.compiler.nodes.StructuredGraph;
-import org.graalvm.compiler.phases.common.CanonicalizerPhase;
 import org.graalvm.compiler.phases.common.inlining.InliningPhase;
 import org.graalvm.compiler.phases.common.inlining.policy.InlineEverythingPolicy;
 import org.graalvm.compiler.phases.tiers.HighTierContext;
@@ -125,8 +124,8 @@ public class MarkUnsafeAccessTest extends GraalCompilerTest {
         Assert.assertNotNull(getMethodImpl);
         StructuredGraph graph = parseForCompile(getMethodImpl);
         HighTierContext highContext = getDefaultHighTierContext();
-        new CanonicalizerPhase().apply(graph, highContext);
-        new InliningPhase(new InlineEverythingPolicy(), new CanonicalizerPhase()).apply(graph, highContext);
+        createCanonicalizerPhase().apply(graph, highContext);
+        new InliningPhase(new InlineEverythingPolicy(), createCanonicalizerPhase()).apply(graph, highContext);
         InstalledCode compiledCode = getCode(getMethodImpl, graph);
         testMappedByteBuffer(mbb -> {
             try {

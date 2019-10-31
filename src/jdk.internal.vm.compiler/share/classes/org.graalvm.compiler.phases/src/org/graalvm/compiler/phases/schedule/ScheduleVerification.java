@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,10 +32,16 @@ import org.graalvm.compiler.core.common.cfg.BlockMap;
 import org.graalvm.compiler.core.common.cfg.Loop;
 import org.graalvm.compiler.debug.DebugContext;
 import org.graalvm.compiler.graph.Node;
+import org.graalvm.compiler.graph.NodeMap;
 import org.graalvm.compiler.nodes.AbstractBeginNode;
 import org.graalvm.compiler.nodes.AbstractMergeNode;
 import org.graalvm.compiler.nodes.LoopBeginNode;
+import org.graalvm.compiler.nodes.LoopExitNode;
+import org.graalvm.compiler.nodes.MemoryProxyNode;
 import org.graalvm.compiler.nodes.PhiNode;
+import org.graalvm.compiler.nodes.ProxyNode;
+import org.graalvm.compiler.nodes.StructuredGraph;
+import org.graalvm.compiler.nodes.VirtualState;
 import org.graalvm.compiler.nodes.cfg.Block;
 import org.graalvm.compiler.nodes.cfg.HIRLoop;
 import org.graalvm.compiler.nodes.memory.FloatingReadNode;
@@ -46,17 +52,26 @@ import org.graalvm.compiler.phases.graph.ReentrantBlockIterator;
 import org.graalvm.compiler.phases.graph.ReentrantBlockIterator.BlockIteratorClosure;
 import jdk.internal.vm.compiler.word.LocationIdentity;
 
-public final class MemoryScheduleVerification extends BlockIteratorClosure<EconomicSet<FloatingReadNode>> {
+/**
+ * Verifies that the schedule of the graph is correct. Checks that floating reads are not killed
+ * between definition and usage. Also checks that there are no usages spanning loop exits without a
+ * proper proxy node.
+ */
+public final class ScheduleVerification extends BlockIteratorClosure<EconomicSet<FloatingReadNode>> {
 
     private final BlockMap<List<Node>> blockToNodesMap;
+    private final NodeMap<Block> nodeMap;
+    private final StructuredGraph graph;
 
-    public static boolean check(Block startBlock, BlockMap<List<Node>> blockToNodesMap) {
-        ReentrantBlockIterator.apply(new MemoryScheduleVerification(blockToNodesMap), startBlock);
+    public static boolean check(Block startBlock, BlockMap<List<Node>> blockToNodesMap, NodeMap<Block> nodeMap) {
+        ReentrantBlockIterator.apply(new ScheduleVerification(blockToNodesMap, nodeMap, startBlock.getBeginNode().graph()), startBlock);
         return true;
     }
 
-    private MemoryScheduleVerification(BlockMap<List<Node>> blockToNodesMap) {
+    private ScheduleVerification(BlockMap<List<Node>> blockToNodesMap, NodeMap<Block> nodeMap, StructuredGraph graph) {
         this.blockToNodesMap = blockToNodesMap;
+        this.nodeMap = nodeMap;
+        this.graph = graph;
     }
 
     @Override
@@ -76,14 +91,23 @@ public final class MemoryScheduleVerification extends BlockIteratorClosure<Econo
                 }
             }
         }
+        if (beginNode instanceof LoopExitNode) {
+            LoopExitNode loopExitNode = (LoopExitNode) beginNode;
+            for (ProxyNode proxy : loopExitNode.proxies()) {
+                if (proxy instanceof MemoryProxyNode) {
+                    MemoryProxyNode memoryProxyNode = (MemoryProxyNode) proxy;
+                    addFloatingReadUsages(currentState, memoryProxyNode);
+                }
+            }
+        }
         for (Node n : blockToNodesMap.get(block)) {
             if (n instanceof MemoryCheckpoint) {
                 if (n instanceof MemoryCheckpoint.Single) {
                     MemoryCheckpoint.Single single = (MemoryCheckpoint.Single) n;
-                    processLocation(n, single.getLocationIdentity(), currentState);
+                    processLocation(n, single.getKilledLocationIdentity(), currentState);
                 } else if (n instanceof MemoryCheckpoint.Multi) {
                     MemoryCheckpoint.Multi multi = (MemoryCheckpoint.Multi) n;
-                    for (LocationIdentity location : multi.getLocationIdentities()) {
+                    for (LocationIdentity location : multi.getKilledLocationIdentities()) {
                         processLocation(n, location, currentState);
                     }
                 }
@@ -102,7 +126,48 @@ public final class MemoryScheduleVerification extends BlockIteratorClosure<Econo
                                         block + ", block begin: " + block.getBeginNode() + " block loop: " + block.getLoop() + ", " + blockToNodesMap.get(block).get(0));
                     }
                 }
+            }
+            assert nodeMap.get(n) == block;
+            if (graph.hasValueProxies() && block.getLoop() != null && !(n instanceof VirtualState)) {
+                for (Node usage : n.usages()) {
+                    Node usageNode = usage;
 
+                    if (usageNode instanceof PhiNode) {
+                        PhiNode phiNode = (PhiNode) usage;
+                        usageNode = phiNode.merge();
+                    }
+
+                    if (usageNode instanceof LoopExitNode) {
+                        LoopExitNode loopExitNode = (LoopExitNode) usageNode;
+                        if (loopExitNode.loopBegin() == n || loopExitNode.stateAfter() == n) {
+                            continue;
+                        }
+                    }
+                    Block usageBlock = nodeMap.get(usageNode);
+
+                    Loop<Block> usageLoop = null;
+                    if (usageNode instanceof ProxyNode) {
+                        ProxyNode proxyNode = (ProxyNode) usageNode;
+                        usageLoop = nodeMap.get(proxyNode.proxyPoint().loopBegin()).getLoop();
+                    } else {
+                        if (usageBlock.getBeginNode() instanceof LoopExitNode) {
+                            // For nodes in the loop exit node block, we don't know for sure
+                            // whether they are "in the loop" or not. It depends on whether
+                            // one of their transient usages is a loop proxy node.
+                            // For now, let's just assume those nodes are OK, i.e., "in the loop".
+                            LoopExitNode loopExitNode = (LoopExitNode) usageBlock.getBeginNode();
+                            usageLoop = nodeMap.get(loopExitNode.loopBegin()).getLoop();
+                        } else {
+                            usageLoop = usageBlock.getLoop();
+                        }
+                    }
+
+                    assert usageLoop != null : n + ", " + nodeMap.get(n) + " / " + usageNode + ", " + nodeMap.get(usageNode);
+                    while (usageLoop != block.getLoop() && usageLoop != null) {
+                        usageLoop = usageLoop.getParent();
+                    }
+                    assert usageLoop != null : n + ", " + usageNode + ", " + usageBlock + ", " + usageBlock.getLoop() + ", " + block + ", " + block.getLoop();
+                }
             }
         }
         return currentState;

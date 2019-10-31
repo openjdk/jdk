@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -34,9 +34,7 @@ import org.junit.internal.AssumptionViolatedException;
 import org.graalvm.compiler.api.test.Graal;
 import org.graalvm.compiler.hotspot.GraalHotSpotVMConfig;
 import org.graalvm.compiler.hotspot.HotSpotGraalRuntimeProvider;
-import org.graalvm.compiler.hotspot.replacements.SHA2Substitutions;
-import org.graalvm.compiler.hotspot.replacements.SHA5Substitutions;
-import org.graalvm.compiler.hotspot.replacements.SHASubstitutions;
+import org.graalvm.compiler.hotspot.meta.HotSpotGraphBuilderPlugins;
 import org.graalvm.compiler.runtime.RuntimeProvider;
 
 import jdk.vm.ci.code.InstalledCode;
@@ -74,7 +72,8 @@ public class TestSHASubstitutions extends HotSpotGraalCompilerTest {
     @Test
     public void testSha1() {
         if (getConfig().useSHA1Intrinsics()) {
-            testWithInstalledIntrinsic("sun.security.provider.SHA", SHASubstitutions.implCompressName, "testDigest", "SHA-1", getData());
+            String implCompressName = HotSpotGraphBuilderPlugins.lookupIntrinsicName(getConfig(), "sun/security/provider/SHA", "implCompress0", "implCompress");
+            testWithInstalledIntrinsic("sun.security.provider.SHA", implCompressName, "testDigest", "SHA-1", getData());
         }
     }
 
@@ -107,14 +106,16 @@ public class TestSHASubstitutions extends HotSpotGraalCompilerTest {
     @Test
     public void testSha256() {
         if (getConfig().useSHA256Intrinsics()) {
-            testWithInstalledIntrinsic("sun.security.provider.SHA2", SHA2Substitutions.implCompressName, "testDigest", "SHA-256", getData());
+            String implCompressName = HotSpotGraphBuilderPlugins.lookupIntrinsicName(getConfig(), "sun/security/provider/SHA", "implCompress0", "implCompress");
+            testWithInstalledIntrinsic("sun.security.provider.SHA2", implCompressName, "testDigest", "SHA-256", getData());
         }
     }
 
     @Test
     public void testSha512() {
         if (getConfig().useSHA512Intrinsics()) {
-            testWithInstalledIntrinsic("sun.security.provider.SHA5", SHA5Substitutions.implCompressName, "testDigest", "SHA-512", getData());
+            String implCompressName = HotSpotGraphBuilderPlugins.lookupIntrinsicName(getConfig(), "sun/security/provider/SHA", "implCompress0", "implCompress");
+            testWithInstalledIntrinsic("sun.security.provider.SHA5", implCompressName, "testDigest", "SHA-512", getData());
         }
     }
 

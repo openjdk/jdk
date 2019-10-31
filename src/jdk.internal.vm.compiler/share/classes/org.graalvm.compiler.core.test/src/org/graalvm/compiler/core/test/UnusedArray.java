@@ -30,7 +30,6 @@ import static org.junit.Assert.assertThat;
 import org.graalvm.compiler.graph.iterators.NodeIterable;
 import org.graalvm.compiler.nodes.StructuredGraph;
 import org.graalvm.compiler.nodes.java.NewArrayNode;
-import org.graalvm.compiler.phases.common.CanonicalizerPhase;
 import org.junit.Test;
 
 public class UnusedArray extends GraalCompilerTest {
@@ -66,7 +65,7 @@ public class UnusedArray extends GraalCompilerTest {
 
     public void test(String method) {
         StructuredGraph graph = parseEager(method, StructuredGraph.AllowAssumptions.YES);
-        new CanonicalizerPhase().apply(graph, getProviders());
+        createCanonicalizerPhase().apply(graph, getProviders());
         NodeIterable<NewArrayNode> newArrayNodes = graph.getNodes().filter(NewArrayNode.class);
         assertThat(newArrayNodes, isEmpty());
     }

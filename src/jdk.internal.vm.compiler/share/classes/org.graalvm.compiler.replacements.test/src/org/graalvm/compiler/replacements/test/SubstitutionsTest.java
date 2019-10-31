@@ -120,7 +120,7 @@ public class SubstitutionsTest extends ReplacementsTest {
     protected void registerInvocationPlugins(InvocationPlugins invocationPlugins) {
         new PluginFactory_SubstitutionsTest().registerPlugins(invocationPlugins, null);
         ClassfileBytecodeProvider bytecodeProvider = getSystemClassLoaderBytecodeProvider();
-        Registration r = new Registration(invocationPlugins, TestMethod.class, bytecodeProvider);
+        Registration r = new Registration(invocationPlugins, TestMethod.class, getReplacements(), bytecodeProvider);
         r.registerMethodSubstitution(TestMethodSubstitution.class, "test");
         super.registerInvocationPlugins(invocationPlugins);
     }

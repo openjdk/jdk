@@ -47,10 +47,10 @@ public class ConditionalEliminationTest15 extends ConditionalEliminationTestBase
     private void checkNodeCount(String methodName, Class<? extends Node> nodeClass, int count) {
         StructuredGraph graph = parseEager(methodName, AllowAssumptions.YES);
 
-        CanonicalizerPhase canonicalizer = new CanonicalizerPhase();
+        CanonicalizerPhase canonicalizer = this.createCanonicalizerPhase();
         CoreProviders context = getProviders();
 
-        new LoweringPhase(new CanonicalizerPhase(), LoweringTool.StandardLoweringStage.HIGH_TIER).apply(graph, context);
+        new LoweringPhase(this.createCanonicalizerPhase(), LoweringTool.StandardLoweringStage.HIGH_TIER).apply(graph, context);
         canonicalizer.apply(graph, context);
 
         // Merge arr.length reads.

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2009, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -60,7 +60,7 @@ public final class ExceptionObjectNode extends BeginStateSplitNode implements Lo
     }
 
     @Override
-    public LocationIdentity getLocationIdentity() {
+    public LocationIdentity getKilledLocationIdentity() {
         return LocationIdentity.any();
     }
 
@@ -80,7 +80,7 @@ public final class ExceptionObjectNode extends BeginStateSplitNode implements Lo
              * Now the lowering to BeginNode+LoadExceptionNode can be performed, since no more
              * deopts can float in between the begin node and the load exception node.
              */
-            LocationIdentity locationsKilledByInvoke = ((InvokeWithExceptionNode) predecessor()).getLocationIdentity();
+            LocationIdentity locationsKilledByInvoke = ((InvokeWithExceptionNode) predecessor()).getKilledLocationIdentity();
             AbstractBeginNode entry = graph().add(KillingBeginNode.create(locationsKilledByInvoke));
             LoadExceptionObjectNode loadException = graph().add(new LoadExceptionObjectNode(stamp(NodeView.DEFAULT)));
 

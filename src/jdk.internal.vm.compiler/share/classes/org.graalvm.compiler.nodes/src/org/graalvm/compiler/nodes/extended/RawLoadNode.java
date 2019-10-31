@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -161,7 +161,7 @@ public class RawLoadNode extends UnsafeAccessNode implements Lowerable, Virtuali
 
     @Override
     protected ValueNode cloneAsFieldAccess(Assumptions assumptions, ResolvedJavaField field, boolean volatileAccess) {
-        return LoadFieldNode.create(assumptions, object(), field, volatileAccess);
+        return LoadFieldNode.create(assumptions, field.isStatic() ? null : object(), field, volatileAccess);
     }
 
     @Override

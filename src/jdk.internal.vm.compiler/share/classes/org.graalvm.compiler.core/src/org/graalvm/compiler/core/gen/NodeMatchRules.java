@@ -63,6 +63,7 @@ import org.graalvm.compiler.nodes.java.LogicCompareAndSwapNode;
 import org.graalvm.compiler.nodes.java.ValueCompareAndSwapNode;
 import org.graalvm.compiler.nodes.memory.FloatingReadNode;
 import org.graalvm.compiler.nodes.memory.ReadNode;
+import org.graalvm.compiler.nodes.memory.VolatileReadNode;
 import org.graalvm.compiler.nodes.memory.WriteNode;
 
 import jdk.vm.ci.meta.Value;
@@ -75,6 +76,7 @@ import jdk.vm.ci.meta.Value;
 @MatchableNode(nodeClass = LeftShiftNode.class, inputs = {"x", "y"}, ignoresSideEffects = true)
 @MatchableNode(nodeClass = NarrowNode.class, inputs = {"value"}, ignoresSideEffects = true)
 @MatchableNode(nodeClass = ReadNode.class, inputs = {"address"})
+@MatchableNode(nodeClass = VolatileReadNode.class, inputs = {"address"})
 @MatchableNode(nodeClass = ReinterpretNode.class, inputs = {"value"}, ignoresSideEffects = true)
 @MatchableNode(nodeClass = SignExtendNode.class, inputs = {"value"}, ignoresSideEffects = true)
 @MatchableNode(nodeClass = UnsignedRightShiftNode.class, inputs = {"x", "y"}, ignoresSideEffects = true)

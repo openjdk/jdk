@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -135,9 +135,9 @@ public final class ReadEliminationClosure extends EffectsClosure<ReadElimination
             }
         } else if (node instanceof WriteNode) {
             WriteNode write = (WriteNode) node;
-            if (write.getLocationIdentity().isSingle()) {
+            if (write.getKilledLocationIdentity().isSingle()) {
                 ValueNode object = GraphUtil.unproxify(write.getAddress());
-                LoadCacheEntry identifier = new LoadCacheEntry(object, write.getLocationIdentity());
+                LoadCacheEntry identifier = new LoadCacheEntry(object, write.getKilledLocationIdentity());
                 ValueNode cachedValue = state.getCacheEntry(identifier);
 
                 ValueNode value = getScalarAlias(write.value());
@@ -145,10 +145,10 @@ public final class ReadEliminationClosure extends EffectsClosure<ReadElimination
                     effects.deleteNode(write);
                     deleted = true;
                 }
-                processIdentity(state, write.getLocationIdentity());
+                processIdentity(state, write.getKilledLocationIdentity());
                 state.addCacheEntry(identifier, value);
             } else {
-                processIdentity(state, write.getLocationIdentity());
+                processIdentity(state, write.getKilledLocationIdentity());
             }
         } else if (node instanceof UnsafeAccessNode) {
             ResolvedJavaType type = StampTool.typeOrNull(((UnsafeAccessNode) node).object());
@@ -170,9 +170,9 @@ public final class ReadEliminationClosure extends EffectsClosure<ReadElimination
                 } else {
                     assert node instanceof RawStoreNode;
                     RawStoreNode write = (RawStoreNode) node;
-                    if (write.getLocationIdentity().isSingle()) {
+                    if (write.getKilledLocationIdentity().isSingle()) {
                         ValueNode object = GraphUtil.unproxify(write.object());
-                        UnsafeLoadCacheEntry identifier = new UnsafeLoadCacheEntry(object, write.offset(), write.getLocationIdentity());
+                        UnsafeLoadCacheEntry identifier = new UnsafeLoadCacheEntry(object, write.offset(), write.getKilledLocationIdentity());
                         ValueNode cachedValue = state.getCacheEntry(identifier);
 
                         ValueNode value = getScalarAlias(write.value());
@@ -180,18 +180,18 @@ public final class ReadEliminationClosure extends EffectsClosure<ReadElimination
                             effects.deleteNode(write);
                             deleted = true;
                         }
-                        processIdentity(state, write.getLocationIdentity());
+                        processIdentity(state, write.getKilledLocationIdentity());
                         state.addCacheEntry(identifier, value);
                     } else {
-                        processIdentity(state, write.getLocationIdentity());
+                        processIdentity(state, write.getKilledLocationIdentity());
                     }
                 }
             }
         } else if (node instanceof MemoryCheckpoint.Single) {
-            LocationIdentity identity = ((MemoryCheckpoint.Single) node).getLocationIdentity();
+            LocationIdentity identity = ((MemoryCheckpoint.Single) node).getKilledLocationIdentity();
             processIdentity(state, identity);
         } else if (node instanceof MemoryCheckpoint.Multi) {
-            for (LocationIdentity identity : ((MemoryCheckpoint.Multi) node).getLocationIdentities()) {
+            for (LocationIdentity identity : ((MemoryCheckpoint.Multi) node).getKilledLocationIdentities()) {
                 processIdentity(state, identity);
             }
         }

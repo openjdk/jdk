@@ -891,7 +891,7 @@ public class SnippetTemplate {
             }
             snippetCopy.setGuardsStage(guardsStage);
             try (DebugContext.Scope s = debug.scope("LoweringSnippetTemplate", snippetCopy)) {
-                new LoweringPhase(new CanonicalizerPhase(), args.cacheKey.loweringStage).apply(snippetCopy, providers);
+                new LoweringPhase(CanonicalizerPhase.create(), args.cacheKey.loweringStage).apply(snippetCopy, providers);
             } catch (Throwable e) {
                 throw debug.handle(e);
             }
@@ -930,7 +930,10 @@ public class SnippetTemplate {
             assert checkAllVarargPlaceholdersAreDeleted(parameterCount, placeholders);
 
             new FloatingReadPhase(true, true).apply(snippetCopy);
-            new RemoveValueProxyPhase().apply(snippetCopy);
+
+            if (!guardsStage.requiresValueProxies()) {
+                new RemoveValueProxyPhase().apply(snippetCopy);
+            }
 
             MemoryAnchorNode anchor = snippetCopy.add(new MemoryAnchorNode());
             snippetCopy.start().replaceAtUsages(InputType.Memory, anchor);
@@ -1059,8 +1062,14 @@ public class SnippetTemplate {
                 if (loopBegin != null) {
                     LoopEx loop = new LoopsData(snippetCopy).loop(loopBegin);
                     Mark mark = snippetCopy.getMark();
-                    LoopTransformations.fullUnroll(loop, providers, new CanonicalizerPhase());
-                    new CanonicalizerPhase().applyIncremental(snippetCopy, providers, mark, false);
+                    CanonicalizerPhase canonicalizer = null;
+                    if (GraalOptions.ImmutableCode.getValue(snippetCopy.getOptions())) {
+                        canonicalizer = CanonicalizerPhase.createWithoutReadCanonicalization();
+                    } else {
+                        canonicalizer = CanonicalizerPhase.create();
+                    }
+                    LoopTransformations.fullUnroll(loop, providers, canonicalizer);
+                    CanonicalizerPhase.create().applyIncremental(snippetCopy, providers, mark, false);
                     loop.deleteUnusedNodes();
                 }
                 GraphUtil.removeFixedWithUnusedInputs(explodeLoop);
@@ -1278,7 +1287,7 @@ public class SnippetTemplate {
 
         if (replacee instanceof MemoryCheckpoint.Single) {
             // check if some node in snippet graph also kills the same location
-            LocationIdentity locationIdentity = ((MemoryCheckpoint.Single) replacee).getLocationIdentity();
+            LocationIdentity locationIdentity = ((MemoryCheckpoint.Single) replacee).getKilledLocationIdentity();
             if (locationIdentity.isAny()) {
                 assert !(memoryMap.getLastLocationAccess(any()) instanceof MemoryAnchorNode) : replacee + " kills ANY_LOCATION, but snippet does not";
                 // if the replacee kills ANY_LOCATION, the snippet can kill arbitrary locations

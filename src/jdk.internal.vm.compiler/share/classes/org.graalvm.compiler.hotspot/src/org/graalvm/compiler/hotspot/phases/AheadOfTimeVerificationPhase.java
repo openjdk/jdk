@@ -70,10 +70,22 @@ public class AheadOfTimeVerificationPhase extends VerifyPhase<CoreProviders> {
     }
 
     private static boolean isDirectMethodHandle(ConstantNode node) {
+        String typeName = StampTool.typeOrNull(node).getName();
         if (!isObject(node)) {
             return false;
         }
-        return "Ljava/lang/invoke/DirectMethodHandle;".equals(StampTool.typeOrNull(node).getName());
+
+        switch (typeName) {
+            case "Ljava/lang/invoke/DirectMethodHandle;":
+            case "Ljava/lang/invoke/DirectMethodHandle$StaticAccessor;":
+            case "Ljava/lang/invoke/DirectMethodHandle$Accessor;":
+            case "Ljava/lang/invoke/DirectMethodHandle$Constructor;":
+            case "Ljava/lang/invoke/DirectMethodHandle$Special;":
+            case "Ljava/lang/invoke/DirectMethodHandle$Interface;":
+                return true;
+            default:
+                return false;
+        }
     }
 
     private static boolean isBoundMethodHandle(ConstantNode node) {

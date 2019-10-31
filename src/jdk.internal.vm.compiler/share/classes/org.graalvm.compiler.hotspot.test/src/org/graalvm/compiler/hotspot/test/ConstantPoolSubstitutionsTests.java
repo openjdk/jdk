@@ -34,7 +34,7 @@ import org.graalvm.compiler.nodes.Invoke;
 import org.graalvm.compiler.nodes.StructuredGraph;
 import org.graalvm.compiler.nodes.StructuredGraph.AllowAssumptions;
 import org.graalvm.compiler.serviceprovider.JavaVersionUtil;
-import org.graalvm.compiler.test.ModuleSupport;
+import org.graalvm.compiler.api.test.ModuleSupport;
 import org.junit.BeforeClass;
 import org.junit.Test;
 import org.objectweb.asm.ClassWriter;

@@ -35,7 +35,7 @@ import org.graalvm.compiler.nodes.graphbuilderconf.InlineInvokePlugin;
 import org.graalvm.compiler.options.OptionValues;
 import org.graalvm.compiler.phases.common.AbstractInliningPhase;
 import org.graalvm.compiler.serviceprovider.JavaVersionUtil;
-import org.graalvm.compiler.test.ExportingClassLoader;
+import org.graalvm.compiler.api.test.ExportingClassLoader;
 import org.junit.Assert;
 import org.junit.Assume;
 import org.junit.Test;

@@ -22,7 +22,7 @@
  */
 
 
-package org.graalvm.compiler.test;
+package org.graalvm.compiler.api.test;
 
 import java.io.IOException;
 import java.lang.module.ModuleDescriptor.Requires;

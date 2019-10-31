@@ -188,6 +188,11 @@ public final class ArrayCopyCallNode extends AbstractMemoryCheckpoint implements
         return locationIdentity;
     }
 
+    @Override
+    public LocationIdentity getKilledLocationIdentity() {
+        return getLocationIdentity();
+    }
+
     @NodeIntrinsic(hasSideEffect = true)
     private static native void arraycopy(Object src, int srcPos, Object dest, int destPos, int length, @ConstantNodeParameter JavaKind elementKind, @ConstantNodeParameter boolean aligned,
                     @ConstantNodeParameter boolean disjoint, @ConstantNodeParameter boolean uninitialized, @ConstantNodeParameter int heapWordSize);

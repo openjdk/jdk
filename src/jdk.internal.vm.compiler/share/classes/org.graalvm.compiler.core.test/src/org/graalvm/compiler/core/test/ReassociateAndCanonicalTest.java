@@ -28,7 +28,6 @@ import org.graalvm.compiler.graph.IterableNodeType;
 import org.graalvm.compiler.graph.Node;
 import org.graalvm.compiler.nodes.StructuredGraph;
 import org.graalvm.compiler.nodes.StructuredGraph.AllowAssumptions;
-import org.graalvm.compiler.phases.common.CanonicalizerPhase;
 import org.junit.Test;
 
 public class ReassociateAndCanonicalTest extends GraalCompilerTest {
@@ -245,9 +244,9 @@ public class ReassociateAndCanonicalTest extends GraalCompilerTest {
 
     private <T extends Node & IterableNodeType> void test(String test, String ref) {
         StructuredGraph testGraph = parseEager(test, AllowAssumptions.NO);
-        new CanonicalizerPhase().apply(testGraph, getProviders());
+        createCanonicalizerPhase().apply(testGraph, getProviders());
         StructuredGraph refGraph = parseEager(ref, AllowAssumptions.NO);
-        new CanonicalizerPhase().apply(refGraph, getProviders());
+        createCanonicalizerPhase().apply(refGraph, getProviders());
         assertEquals(testGraph, refGraph);
     }
 }

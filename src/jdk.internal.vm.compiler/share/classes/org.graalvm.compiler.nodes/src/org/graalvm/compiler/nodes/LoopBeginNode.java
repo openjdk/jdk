@@ -141,7 +141,7 @@ public final class LoopBeginNode extends AbstractMergeNode implements IterableNo
     }
 
     public void setLoopFrequency(double loopFrequency) {
-        assert loopFrequency >= 0;
+        assert loopFrequency >= 1.0;
         this.loopFrequency = loopFrequency;
     }
 

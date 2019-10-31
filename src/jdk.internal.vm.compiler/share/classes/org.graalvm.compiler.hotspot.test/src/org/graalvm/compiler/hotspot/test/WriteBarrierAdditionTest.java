@@ -44,7 +44,6 @@ import org.graalvm.compiler.nodes.memory.WriteNode;
 import org.graalvm.compiler.nodes.memory.address.OffsetAddressNode;
 import org.graalvm.compiler.nodes.spi.LoweringTool;
 import org.graalvm.compiler.phases.OptimisticOptimizations;
-import org.graalvm.compiler.phases.common.CanonicalizerPhase;
 import org.graalvm.compiler.phases.common.GuardLoweringPhase;
 import org.graalvm.compiler.phases.common.LoweringPhase;
 import org.graalvm.compiler.phases.common.WriteBarrierAdditionPhase;
@@ -263,11 +262,11 @@ public class WriteBarrierAdditionTest extends HotSpotGraalCompilerTest {
             StructuredGraph graph = parseEager(snippet, AllowAssumptions.NO, debug);
             HighTierContext highContext = getDefaultHighTierContext();
             MidTierContext midContext = new MidTierContext(getProviders(), getTargetProvider(), OptimisticOptimizations.ALL, graph.getProfilingInfo());
-            new InliningPhase(new InlineEverythingPolicy(), new CanonicalizerPhase()).apply(graph, highContext);
-            new CanonicalizerPhase().apply(graph, highContext);
-            new LoweringPhase(new CanonicalizerPhase(), LoweringTool.StandardLoweringStage.HIGH_TIER).apply(graph, highContext);
+            new InliningPhase(new InlineEverythingPolicy(), createCanonicalizerPhase()).apply(graph, highContext);
+            this.createCanonicalizerPhase().apply(graph, highContext);
+            new LoweringPhase(this.createCanonicalizerPhase(), LoweringTool.StandardLoweringStage.HIGH_TIER).apply(graph, highContext);
             new GuardLoweringPhase().apply(graph, midContext);
-            new LoweringPhase(new CanonicalizerPhase(), LoweringTool.StandardLoweringStage.MID_TIER).apply(graph, midContext);
+            new LoweringPhase(this.createCanonicalizerPhase(), LoweringTool.StandardLoweringStage.MID_TIER).apply(graph, midContext);
             new WriteBarrierAdditionPhase().apply(graph, midContext);
             debug.dump(DebugContext.BASIC_LEVEL, graph, "After Write Barrier Addition");
 

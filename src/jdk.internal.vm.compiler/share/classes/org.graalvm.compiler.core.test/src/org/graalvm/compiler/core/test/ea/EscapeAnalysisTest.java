@@ -38,7 +38,6 @@ import org.graalvm.compiler.nodes.extended.ValueAnchorNode;
 import org.graalvm.compiler.nodes.java.LoadFieldNode;
 import org.graalvm.compiler.nodes.virtual.AllocatedObjectNode;
 import org.graalvm.compiler.nodes.virtual.CommitAllocationNode;
-import org.graalvm.compiler.phases.common.CanonicalizerPhase;
 import org.graalvm.compiler.phases.schedule.SchedulePhase;
 import org.graalvm.compiler.test.SubprocessUtil;
 import org.graalvm.compiler.virtual.phases.ea.PartialEscapePhase;
@@ -327,7 +326,7 @@ public class EscapeAnalysisTest extends EATestBase {
         Assert.assertEquals(1, graph.getNodes().filter(BoxNode.class).count());
         List<Node> nodes = graph.getNodes().snapshot();
         // verify that an additional run doesn't add or remove nodes
-        new PartialEscapePhase(false, false, new CanonicalizerPhase(), null, graph.getOptions()).apply(graph, context);
+        new PartialEscapePhase(false, false, createCanonicalizerPhase(), null, graph.getOptions()).apply(graph, context);
         Assert.assertEquals(nodes.size(), graph.getNodeCount());
         for (Node node : nodes) {
             Assert.assertTrue(node.isAlive());
@@ -362,9 +361,9 @@ public class EscapeAnalysisTest extends EATestBase {
         Assert.assertEquals(2, graph.getNodes().filter(CommitAllocationNode.class).count());
         // create the situation by removing the if
         graph.replaceFixedWithFloating(graph.getNodes().filter(LoadFieldNode.class).first(), graph.unique(ConstantNode.forInt(0)));
-        new CanonicalizerPhase().apply(graph, context);
+        createCanonicalizerPhase().apply(graph, context);
         // verify that an additional run removes all allocations
-        new PartialEscapePhase(false, false, new CanonicalizerPhase(), null, graph.getOptions()).apply(graph, context);
+        new PartialEscapePhase(false, false, createCanonicalizerPhase(), null, graph.getOptions()).apply(graph, context);
         Assert.assertEquals(0, graph.getNodes().filter(CommitAllocationNode.class).count());
     }
 
@@ -440,8 +439,8 @@ public class EscapeAnalysisTest extends EATestBase {
     @Test
     public void testFullyUnrolledLoop() {
         prepareGraph("testFullyUnrolledLoopSnippet", false);
-        new LoopFullUnrollPhase(new CanonicalizerPhase(), new DefaultLoopPolicies()).apply(graph, context);
-        new PartialEscapePhase(false, new CanonicalizerPhase(), graph.getOptions()).apply(graph, context);
+        new LoopFullUnrollPhase(createCanonicalizerPhase(), new DefaultLoopPolicies()).apply(graph, context);
+        new PartialEscapePhase(false, createCanonicalizerPhase(), graph.getOptions()).apply(graph, context);
         Assert.assertEquals(1, returnNodes.size());
         Assert.assertTrue(returnNodes.get(0).result() instanceof AllocatedObjectNode);
         CommitAllocationNode commit = ((AllocatedObjectNode) returnNodes.get(0).result()).getCommit();

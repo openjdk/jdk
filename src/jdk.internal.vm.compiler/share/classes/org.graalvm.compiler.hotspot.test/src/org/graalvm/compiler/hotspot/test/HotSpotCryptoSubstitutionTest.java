@@ -80,7 +80,9 @@ public class HotSpotCryptoSubstitutionTest extends HotSpotGraalCompilerTest {
 
     @Test
     public void testAESCryptIntrinsics() throws Exception {
-        if (compileAndInstall("com.sun.crypto.provider.AESCrypt", HotSpotGraphBuilderPlugins.aesEncryptName, HotSpotGraphBuilderPlugins.aesDecryptName)) {
+        String aesEncryptName = HotSpotGraphBuilderPlugins.lookupIntrinsicName(runtime().getVMConfig(), "com/sun/crypto/provider/AESCrypt", "implEncryptBlock", "encryptBlock");
+        String aesDecryptName = HotSpotGraphBuilderPlugins.lookupIntrinsicName(runtime().getVMConfig(), "com/sun/crypto/provider/AESCrypt", "implDecryptBlock", "decryptBlock");
+        if (compileAndInstall("com.sun.crypto.provider.AESCrypt", aesEncryptName, aesDecryptName)) {
             ByteArrayOutputStream actual = new ByteArrayOutputStream();
             actual.write(runEncryptDecrypt(aesKey, "AES/CBC/NoPadding"));
             actual.write(runEncryptDecrypt(aesKey, "AES/CBC/PKCS5Padding"));
@@ -90,9 +92,8 @@ public class HotSpotCryptoSubstitutionTest extends HotSpotGraalCompilerTest {
 
     @Test
     public void testCipherBlockChainingIntrinsics() throws Exception {
-        boolean implNames = HotSpotGraphBuilderPlugins.cbcUsesImplNames(runtime().getVMConfig());
-        String cbcEncryptName = implNames ? "implEncrypt" : "encrypt";
-        String cbcDecryptName = implNames ? "implDecrypt" : "decrypt";
+        String cbcEncryptName = HotSpotGraphBuilderPlugins.lookupIntrinsicName(runtime().getVMConfig(), "com/sun/crypto/provider/CipherBlockChaining", "implEncrypt", "encrypt");
+        String cbcDecryptName = HotSpotGraphBuilderPlugins.lookupIntrinsicName(runtime().getVMConfig(), "com/sun/crypto/provider/CipherBlockChaining", "implDecrypt", "decrypt");
         if (compileAndInstall("com.sun.crypto.provider.CipherBlockChaining", cbcEncryptName, cbcDecryptName)) {
             ByteArrayOutputStream actual = new ByteArrayOutputStream();
             actual.write(runEncryptDecrypt(aesKey, "AES/CBC/NoPadding"));

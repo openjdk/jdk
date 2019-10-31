@@ -59,6 +59,10 @@ public abstract class BinaryArithmeticNode<OP> extends BinaryNode implements Ari
         super(c, opForStampComputation.foldStamp(x.stamp(NodeView.DEFAULT), y.stamp(NodeView.DEFAULT)), x, y);
     }
 
+    protected BinaryArithmeticNode(NodeClass<? extends BinaryArithmeticNode<OP>> c, Stamp stamp, ValueNode x, ValueNode y) {
+        super(c, stamp, x, y);
+    }
+
     public static ArithmeticOpTable getArithmeticOpTable(ValueNode forValue) {
         return ArithmeticOpTable.forStamp(forValue.stamp(NodeView.DEFAULT));
     }

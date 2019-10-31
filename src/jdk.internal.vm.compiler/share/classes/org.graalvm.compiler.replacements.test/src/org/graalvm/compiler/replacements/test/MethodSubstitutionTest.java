@@ -25,6 +25,7 @@
 package org.graalvm.compiler.replacements.test;
 
 import java.lang.reflect.InvocationTargetException;
+import java.util.Arrays;
 
 import org.graalvm.compiler.api.replacements.MethodSubstitution;
 import org.graalvm.compiler.core.test.GraalCompilerTest;
@@ -35,7 +36,6 @@ import org.graalvm.compiler.nodes.StructuredGraph;
 import org.graalvm.compiler.nodes.StructuredGraph.AllowAssumptions;
 import org.graalvm.compiler.nodes.java.MethodCallTargetNode;
 import org.graalvm.compiler.nodes.spi.LoweringTool;
-import org.graalvm.compiler.phases.common.CanonicalizerPhase;
 import org.graalvm.compiler.phases.common.DeadCodeEliminationPhase;
 import org.graalvm.compiler.phases.common.LoweringPhase;
 import org.graalvm.compiler.phases.tiers.HighTierContext;
@@ -78,14 +78,14 @@ public abstract class MethodSubstitutionTest extends GraalCompilerTest {
             debug.dump(DebugContext.BASIC_LEVEL, graph, "Graph");
             createInliningPhase().apply(graph, context);
             debug.dump(DebugContext.BASIC_LEVEL, graph, "Graph");
-            new CanonicalizerPhase().apply(graph, context);
+            createCanonicalizerPhase().apply(graph, context);
             new DeadCodeEliminationPhase().apply(graph);
             // Try to ensure any macro nodes are lowered to expose any resulting invokes
             if (graph.getNodes().filter(MacroNode.class).isNotEmpty()) {
-                new LoweringPhase(new CanonicalizerPhase(), LoweringTool.StandardLoweringStage.HIGH_TIER).apply(graph, context);
+                new LoweringPhase(this.createCanonicalizerPhase(), LoweringTool.StandardLoweringStage.HIGH_TIER).apply(graph, context);
             }
             if (graph.getNodes().filter(MacroNode.class).isNotEmpty()) {
-                new LoweringPhase(new CanonicalizerPhase(), LoweringTool.StandardLoweringStage.MID_TIER).apply(graph, context);
+                new LoweringPhase(this.createCanonicalizerPhase(), LoweringTool.StandardLoweringStage.MID_TIER).apply(graph, context);
             }
             assertNotInGraph(graph, MacroNode.class);
             if (name != null) {
@@ -153,13 +153,20 @@ public abstract class MethodSubstitutionTest extends GraalCompilerTest {
         }
     }
 
-    protected static StructuredGraph assertInGraph(StructuredGraph graph, Class<?> clazz) {
+    protected static StructuredGraph assertInGraph(StructuredGraph graph, Class<?>... clazzes) {
         for (Node node : graph.getNodes()) {
-            if (clazz.isInstance(node)) {
-                return graph;
+            for (Class<?> clazz : clazzes) {
+                if (clazz.isInstance(node)) {
+                    return graph;
+                }
             }
         }
-        fail("Graph does not contain a node of class " + clazz.getName());
+        if (clazzes.length == 1) {
+            fail("Graph does not contain a node of class " + clazzes[0].getName());
+        } else {
+            fail("Graph does not contain a node of one these classes class " + Arrays.toString(clazzes));
+
+        }
         return graph;
     }
 

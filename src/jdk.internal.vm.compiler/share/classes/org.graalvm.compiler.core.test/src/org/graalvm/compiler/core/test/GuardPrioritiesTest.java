@@ -86,7 +86,7 @@ public class GuardPrioritiesTest extends GraphScheduleTest {
     private StructuredGraph prepareGraph(String method) {
         StructuredGraph graph = parseEager(method, StructuredGraph.AllowAssumptions.YES);
         HighTierContext highTierContext = getDefaultHighTierContext();
-        CanonicalizerPhase canonicalizer = new CanonicalizerPhase();
+        CanonicalizerPhase canonicalizer = createCanonicalizerPhase();
         new ConvertDeoptimizeToGuardPhase().apply(graph, highTierContext);
         new LoweringPhase(canonicalizer, LoweringTool.StandardLoweringStage.HIGH_TIER).apply(graph, highTierContext);
         new FloatingReadPhase().apply(graph);

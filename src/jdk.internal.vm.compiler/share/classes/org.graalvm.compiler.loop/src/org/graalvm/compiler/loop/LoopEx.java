@@ -81,6 +81,7 @@ public class LoopEx {
     private LoopsData data;
     private EconomicMap<Node, InductionVariable> ivs;
     private boolean countedLoopChecked;
+    private int size = -1;
 
     LoopEx(Loop<Block> loop, LoopsData data) {
         this.loop = loop;
@@ -156,7 +157,10 @@ public class LoopEx {
     }
 
     public int size() {
-        return whole().nodes().count();
+        if (size == -1) {
+            size = whole().nodes().count();
+        }
+        return size;
     }
 
     @Override

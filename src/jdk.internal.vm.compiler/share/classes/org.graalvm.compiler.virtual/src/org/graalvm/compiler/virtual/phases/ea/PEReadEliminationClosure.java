@@ -121,11 +121,11 @@ public final class PEReadEliminationClosure extends PartialEscapeClosure<PEReadE
             return processUnsafeStore((RawStoreNode) node, state, effects);
         } else if (node instanceof MemoryCheckpoint.Single) {
             COUNTER_MEMORYCHECKPOINT.increment(node.getDebug());
-            LocationIdentity identity = ((MemoryCheckpoint.Single) node).getLocationIdentity();
+            LocationIdentity identity = ((MemoryCheckpoint.Single) node).getKilledLocationIdentity();
             processIdentity(state, identity);
         } else if (node instanceof MemoryCheckpoint.Multi) {
             COUNTER_MEMORYCHECKPOINT.increment(node.getDebug());
-            for (LocationIdentity identity : ((MemoryCheckpoint.Multi) node).getLocationIdentities()) {
+            for (LocationIdentity identity : ((MemoryCheckpoint.Multi) node).getKilledLocationIdentities()) {
                 processIdentity(state, identity);
             }
         }

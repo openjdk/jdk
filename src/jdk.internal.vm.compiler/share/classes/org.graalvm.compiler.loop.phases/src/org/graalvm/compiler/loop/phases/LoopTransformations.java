@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -35,9 +35,13 @@ import org.graalvm.compiler.core.common.RetryableBailoutException;
 import org.graalvm.compiler.core.common.calc.CanonicalCondition;
 import org.graalvm.compiler.debug.DebugContext;
 import org.graalvm.compiler.graph.Graph.Mark;
+import org.graalvm.compiler.graph.Graph.NodeEventScope;
 import org.graalvm.compiler.graph.Node;
 import org.graalvm.compiler.graph.Position;
+import org.graalvm.compiler.graph.spi.Simplifiable;
+import org.graalvm.compiler.graph.spi.SimplifierTool;
 import org.graalvm.compiler.loop.CountedLoopInfo;
+import org.graalvm.compiler.loop.DefaultLoopPolicies;
 import org.graalvm.compiler.loop.InductionVariable.Direction;
 import org.graalvm.compiler.loop.LoopEx;
 import org.graalvm.compiler.loop.LoopFragmentInside;
@@ -49,6 +53,7 @@ import org.graalvm.compiler.nodes.AbstractMergeNode;
 import org.graalvm.compiler.nodes.BeginNode;
 import org.graalvm.compiler.nodes.ControlSplitNode;
 import org.graalvm.compiler.nodes.EndNode;
+import org.graalvm.compiler.nodes.FixedGuardNode;
 import org.graalvm.compiler.nodes.FixedNode;
 import org.graalvm.compiler.nodes.FixedWithNextNode;
 import org.graalvm.compiler.nodes.IfNode;
@@ -65,8 +70,10 @@ import org.graalvm.compiler.nodes.calc.ConditionalNode;
 import org.graalvm.compiler.nodes.extended.OpaqueNode;
 import org.graalvm.compiler.nodes.extended.SwitchNode;
 import org.graalvm.compiler.nodes.spi.CoreProviders;
+import org.graalvm.compiler.nodes.util.GraphUtil;
 import org.graalvm.compiler.nodes.util.IntegerHelper;
 import org.graalvm.compiler.phases.common.CanonicalizerPhase;
+import org.graalvm.compiler.phases.common.util.EconomicSetNodeEventListener;
 
 public abstract class LoopTransformations {
 
@@ -75,24 +82,63 @@ public abstract class LoopTransformations {
     }
 
     public static void peel(LoopEx loop) {
+        loop.detectCounted();
         loop.inside().duplicate().insertBefore(loop);
-        loop.loopBegin().setLoopFrequency(Math.max(0.0, loop.loopBegin().loopFrequency() - 1));
+        if (loop.isCounted()) {
+            // For counted loops we assume that we have an effect on the loop frequency.
+            loop.loopBegin().setLoopFrequency(Math.max(1.0, loop.loopBegin().loopFrequency() - 1));
+        }
     }
 
+    @SuppressWarnings("try")
     public static void fullUnroll(LoopEx loop, CoreProviders context, CanonicalizerPhase canonicalizer) {
         // assert loop.isCounted(); //TODO (gd) strengthen : counted with known trip count
         LoopBeginNode loopBegin = loop.loopBegin();
         StructuredGraph graph = loopBegin.graph();
         int initialNodeCount = graph.getNodeCount();
-        while (!loopBegin.isDeleted()) {
-            Mark mark = graph.getMark();
-            peel(loop);
-            canonicalizer.applyIncremental(graph, context, mark);
-            loop.invalidateFragments();
-            if (graph.getNodeCount() > initialNodeCount + MaximumDesiredSize.getValue(graph.getOptions()) * 2) {
-                throw new RetryableBailoutException("FullUnroll : Graph seems to grow out of proportion");
+        SimplifierTool defaultSimplifier = GraphUtil.getDefaultSimplifier(context.getMetaAccess(), context.getConstantReflection(), context.getConstantFieldProvider(),
+                        canonicalizer.getCanonicalizeReads(), graph.getAssumptions(), graph.getOptions());
+        /*
+         * IMPORTANT: Canonicalizations inside the body of the remaining loop can introduce new
+         * control flow that is not automatically picked up by the control flow graph computation of
+         * the original LoopEx data structure, thus we disable simplification and manually simplify
+         * conditions in the peeled iteration to simplify the exit path.
+         */
+        CanonicalizerPhase c = canonicalizer.copyWithoutSimplification();
+        EconomicSetNodeEventListener l = new EconomicSetNodeEventListener();
+        int peelings = 0;
+        try (NodeEventScope ev = graph.trackNodeEvents(l)) {
+            while (!loopBegin.isDeleted()) {
+                Mark newNodes = graph.getMark();
+                /*
+                 * Mark is not enough for the canonicalization of the floating nodes in the unrolled
+                 * code since pre-existing constants are not new nodes. Therefore, we canonicalize
+                 * (without simplification) all floating nodes changed during peeling but only
+                 * simplify new (in the peeled iteration) ones.
+                 */
+                EconomicSetNodeEventListener peeledListener = new EconomicSetNodeEventListener();
+                try (NodeEventScope peeledScope = graph.trackNodeEvents(peeledListener)) {
+                    LoopTransformations.peel(loop);
+                }
+                graph.getDebug().dump(DebugContext.VERY_DETAILED_LEVEL, graph, "After peeling loop %s", loop);
+                c.applyIncremental(graph, context, peeledListener.getNodes());
+                loop.invalidateFragments();
+                for (Node n : graph.getNewNodes(newNodes)) {
+                    if (n.isAlive() && (n instanceof IfNode || n instanceof SwitchNode || n instanceof FixedGuardNode || n instanceof BeginNode)) {
+                        Simplifiable s = (Simplifiable) n;
+                        s.simplify(defaultSimplifier);
+                        graph.getDebug().dump(DebugContext.VERY_DETAILED_LEVEL, graph, "After simplifying if %s", s);
+                    }
+                }
+                if (graph.getNodeCount() > initialNodeCount + MaximumDesiredSize.getValue(graph.getOptions()) * 2 ||
+                                peelings > DefaultLoopPolicies.Options.FullUnrollMaxIterations.getValue(graph.getOptions())) {
+                    throw new RetryableBailoutException("FullUnroll : Graph seems to grow out of proportion");
+                }
+                peelings++;
             }
         }
+        // Canonicalize with the original canonicalizer to capture all simplifications
+        canonicalizer.applyIncremental(graph, context, l.getNodes());
     }
 
     public static void unswitch(LoopEx loop, List<ControlSplitNode> controlSplitNodeSet) {
@@ -280,9 +326,9 @@ public abstract class LoopTransformations {
 
         // Change the preLoop to execute one iteration for now
         updatePreLoopLimit(preCounted);
-        preLoopBegin.setLoopFrequency(1);
-        mainLoopBegin.setLoopFrequency(Math.max(0.0, mainLoopBegin.loopFrequency() - 2));
-        postLoopBegin.setLoopFrequency(Math.max(0.0, postLoopBegin.loopFrequency() - 1));
+        preLoopBegin.setLoopFrequency(1.0);
+        mainLoopBegin.setLoopFrequency(Math.max(1.0, mainLoopBegin.loopFrequency() - 2));
+        postLoopBegin.setLoopFrequency(Math.max(1.0, postLoopBegin.loopFrequency() - 1));
 
         // The pre and post loops don't require safepoints at all
         for (SafepointNode safepoint : preLoop.nodes().filter(SafepointNode.class)) {

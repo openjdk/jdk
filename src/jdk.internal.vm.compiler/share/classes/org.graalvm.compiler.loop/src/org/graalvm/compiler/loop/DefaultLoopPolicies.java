@@ -26,7 +26,7 @@ package org.graalvm.compiler.loop;
 
 import static org.graalvm.compiler.core.common.GraalOptions.LoopMaxUnswitch;
 import static org.graalvm.compiler.core.common.GraalOptions.MaximumDesiredSize;
-import static org.graalvm.compiler.core.common.GraalOptions.MinimumPeelProbability;
+import static org.graalvm.compiler.core.common.GraalOptions.MinimumPeelFrequency;
 
 import java.util.List;
 
@@ -38,9 +38,6 @@ import org.graalvm.compiler.graph.Node;
 import org.graalvm.compiler.graph.NodeBitMap;
 import org.graalvm.compiler.nodes.AbstractBeginNode;
 import org.graalvm.compiler.nodes.ControlSplitNode;
-import org.graalvm.compiler.nodes.DeoptimizeNode;
-import org.graalvm.compiler.nodes.FixedNode;
-import org.graalvm.compiler.nodes.FixedWithNextNode;
 import org.graalvm.compiler.nodes.InvokeNode;
 import org.graalvm.compiler.nodes.LoopBeginNode;
 import org.graalvm.compiler.nodes.MergeNode;
@@ -51,7 +48,6 @@ import org.graalvm.compiler.nodes.calc.CompareNode;
 import org.graalvm.compiler.nodes.cfg.Block;
 import org.graalvm.compiler.nodes.cfg.ControlFlowGraph;
 import org.graalvm.compiler.nodes.debug.ControlFlowAnchorNode;
-import org.graalvm.compiler.nodes.java.TypeSwitchNode;
 import org.graalvm.compiler.options.Option;
 import org.graalvm.compiler.options.OptionKey;
 import org.graalvm.compiler.options.OptionType;
@@ -79,13 +75,32 @@ public class DefaultLoopPolicies implements LoopPolicies {
     public boolean shouldPeel(LoopEx loop, ControlFlowGraph cfg, MetaAccessProvider metaAccess) {
         LoopBeginNode loopBegin = loop.loopBegin();
         double entryProbability = cfg.blockFor(loopBegin.forwardEnd()).getRelativeFrequency();
-        OptionValues options = cfg.graph.getOptions();
-        if (entryProbability > MinimumPeelProbability.getValue(options) && loop.size() + loopBegin.graph().getNodeCount() < MaximumDesiredSize.getValue(options)) {
-            // check whether we're allowed to peel this loop
-            return loop.canDuplicateLoop();
-        } else {
+        StructuredGraph graph = cfg.graph;
+        OptionValues options = graph.getOptions();
+
+        if (entryProbability < MinimumPeelFrequency.getValue(options)) {
             return false;
         }
+
+        if (loop.parent() != null) {
+            if (loop.size() > loop.parent().size() >> 1) {
+                // This loops make up more than half of the parent loop in terms of number of nodes.
+                // There is a risk that this loop unproportionally increases parent loop body size.
+                return false;
+            }
+        }
+
+        if (loop.loop().getChildren().size() > 0) {
+            // This loop has child loops. Loop peeling could explode graph size.
+            return false;
+        }
+
+        if (loop.size() + graph.getNodeCount() > MaximumDesiredSize.getValue(options)) {
+            // We are out of budget for peeling.
+            return false;
+        }
+
+        return true;
     }
 
     @Override
@@ -189,7 +204,7 @@ public class DefaultLoopPolicies implements LoopPolicies {
             return false;
         }
         OptionValues options = loop.entryPoint().getOptions();
-        return loopBegin.unswitches() <= LoopMaxUnswitch.getValue(options);
+        return loopBegin.unswitches() < LoopMaxUnswitch.getValue(options);
     }
 
     private static final class CountingClosure implements VirtualClosure {
@@ -238,19 +253,9 @@ public class DefaultLoopPolicies implements LoopPolicies {
         int loopTotal = loop.size() - loop.loopBegin().phis().count() - stateNodesCount.count - 1;
         int actualDiff = (loopTotal - inBranchTotal);
         ControlSplitNode firstSplit = controlSplits.get(0);
-        if (firstSplit instanceof TypeSwitchNode) {
-            int copies = firstSplit.successors().count() - 1;
-            for (Node succ : firstSplit.successors()) {
-                FixedNode current = (FixedNode) succ;
-                while (current instanceof FixedWithNextNode) {
-                    current = ((FixedWithNextNode) current).next();
-                }
-                if (current instanceof DeoptimizeNode) {
-                    copies--;
-                }
-            }
-            actualDiff = actualDiff * copies;
-        }
+
+        int copies = firstSplit.successors().count() - 1;
+        actualDiff = actualDiff * copies;
 
         debug.log("shouldUnswitch(%s, %s) : delta=%d (%.2f%% inside of branches), max=%d, f=%.2f, phis=%d -> %b", loop, controlSplits, actualDiff, (double) (inBranchTotal) / loopTotal * 100, maxDiff,
                         loopFrequency, phis, actualDiff <= maxDiff);

@@ -220,23 +220,34 @@ public class AArch64ArithmeticLIRGenerator extends ArithmeticLIRGenerator implem
         return result;
     }
 
-    public Value emitMAdd(Value a, Value b, Value c) {
-        return emitMultiplyAddSub(AArch64ArithmeticOp.ADD, a, b, c);
+    Value emitIntegerMAdd(Value a, Value b, Value c, boolean isI2L) {
+        return emitMultiplyAddSub(isI2L ? AArch64ArithmeticOp.SMADDL : AArch64ArithmeticOp.MADD, a, b, c);
     }
 
-    public Value emitMSub(Value a, Value b, Value c) {
-        return emitMultiplyAddSub(AArch64ArithmeticOp.SUB, a, b, c);
+    Value emitIntegerMSub(Value a, Value b, Value c, boolean isI2L) {
+        return emitMultiplyAddSub(isI2L ? AArch64ArithmeticOp.SMSUBL : AArch64ArithmeticOp.MSUB, a, b, c);
     }
 
     private Value emitMultiplyAddSub(AArch64ArithmeticOp op, Value a, Value b, Value c) {
-        assert a.getPlatformKind() == b.getPlatformKind() && b.getPlatformKind() == c.getPlatformKind();
-        if (op == AArch64ArithmeticOp.ADD || op == AArch64ArithmeticOp.SUB) {
-            assert isNumericInteger(a.getPlatformKind());
-        } else if (op == AArch64ArithmeticOp.FADD) {
-            assert a.getPlatformKind() == AArch64Kind.SINGLE || a.getPlatformKind() == AArch64Kind.DOUBLE;
+        assert a.getPlatformKind() == b.getPlatformKind();
+        Variable result;
+        if (op == AArch64ArithmeticOp.SMADDL || op == AArch64ArithmeticOp.SMSUBL) {
+            // For signed multiply int and then add/sub long.
+            assert a.getPlatformKind() != c.getPlatformKind();
+            result = getLIRGen().newVariable(LIRKind.combine(c));
+        } else {
+            assert a.getPlatformKind() == c.getPlatformKind();
+            if (op == AArch64ArithmeticOp.FADD) {
+                // For floating-point Math.fma intrinsic.
+                assert a.getPlatformKind() == AArch64Kind.SINGLE || a.getPlatformKind() == AArch64Kind.DOUBLE;
+            } else {
+                // For int/long multiply add or sub.
+                assert op == AArch64ArithmeticOp.MADD || op == AArch64ArithmeticOp.MSUB;
+                assert isNumericInteger(a.getPlatformKind());
+            }
+            result = getLIRGen().newVariable(LIRKind.combine(a, b, c));
         }
 
-        Variable result = getLIRGen().newVariable(LIRKind.combine(a, b, c));
         AllocatableValue x = moveSp(asAllocatable(a));
         AllocatableValue y = moveSp(asAllocatable(b));
         AllocatableValue z = moveSp(asAllocatable(c));
@@ -451,7 +462,7 @@ public class AArch64ArithmeticLIRGenerator extends ArithmeticLIRGenerator implem
 
     @Override
     public Value emitFusedMultiplyAdd(Value a, Value b, Value c) {
-        return emitMultiplyAddSub(AArch64ArithmeticOp.FADD, a, b, c);
+        return emitMultiplyAddSub(AArch64ArithmeticOp.FMADD, a, b, c);
     }
 
     @Override

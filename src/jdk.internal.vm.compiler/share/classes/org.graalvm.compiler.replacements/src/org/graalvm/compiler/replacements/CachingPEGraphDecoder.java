@@ -132,7 +132,7 @@ public class CachingPEGraphDecoder extends PEGraphDecoder {
                             : null;
             GraphBuilderPhase.Instance graphBuilderPhaseInstance = createGraphBuilderPhaseInstance(initialIntrinsicContext);
             graphBuilderPhaseInstance.apply(graphToEncode);
-            new CanonicalizerPhase().apply(graphToEncode, providers);
+            CanonicalizerPhase.create().apply(graphToEncode, providers);
             if (postParsingPhase != null) {
                 postParsingPhase.apply(graphToEncode, providers);
             }

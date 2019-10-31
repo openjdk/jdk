@@ -101,10 +101,10 @@ import org.graalvm.compiler.options.OptionValues;
 import org.graalvm.compiler.options.OptionsParser;
 import org.graalvm.compiler.serviceprovider.GraalUnsafeAccess;
 import org.graalvm.compiler.serviceprovider.JavaVersionUtil;
-import org.graalvm.compiler.test.ModuleSupport;
+import org.graalvm.compiler.api.test.ModuleSupport;
 import jdk.internal.vm.compiler.libgraal.LibGraal;
 import jdk.internal.vm.compiler.libgraal.LibGraalScope;
-import jdk.internal.vm.compiler.libgraal.OptionsEncoder;
+import org.graalvm.util.OptionsEncoder;
 
 import jdk.vm.ci.hotspot.HotSpotCodeCacheProvider;
 import jdk.vm.ci.hotspot.HotSpotCompilationRequest;

@@ -44,7 +44,7 @@ public class NestedLoop_EA extends JTTTest {
     protected Suites createSuites(OptionValues options) {
         Suites suites = super.createSuites(options);
         ListIterator<BasePhase<? super HighTierContext>> position = suites.getHighTier().findPhase(PartialEscapePhase.class);
-        CanonicalizerPhase canonicalizer = new CanonicalizerPhase();
+        CanonicalizerPhase canonicalizer = this.createCanonicalizerPhase();
         // incremental canonicalizer of PEA is missing some important canonicalization (TODO?)
         position.add(canonicalizer);
         position.add(new PartialEscapePhase(true, canonicalizer, options));

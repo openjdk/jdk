@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -44,8 +44,7 @@ public interface MemoryCheckpoint extends MemoryNode, FixedNodeInterface {
          *
          * @return the identity of the location killed by this node.
          */
-        LocationIdentity getLocationIdentity();
-
+        LocationIdentity getKilledLocationIdentity();
     }
 
     interface Multi extends MemoryCheckpoint {
@@ -57,7 +56,7 @@ public interface MemoryCheckpoint extends MemoryNode, FixedNodeInterface {
          *
          * @return the identities of all locations killed by this node.
          */
-        LocationIdentity[] getLocationIdentities();
+        LocationIdentity[] getKilledLocationIdentities();
 
     }
 

@@ -128,6 +128,11 @@ public class BasicArrayCopyNode extends AbstractMemoryCheckpoint implements Virt
     }
 
     @Override
+    public LocationIdentity getKilledLocationIdentity() {
+        return getLocationIdentity();
+    }
+
+    @Override
     public MemoryNode getLastLocationAccess() {
         return lastLocationAccess;
     }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -313,7 +313,7 @@ public class BoxingEliminationTest extends GraalCompilerTest {
         graph = parseEager(snippet, AllowAssumptions.NO);
         HighTierContext context = getDefaultHighTierContext();
         createInliningPhase().apply(graph, context);
-        new PartialEscapePhase(false, new CanonicalizerPhase(), graph.getOptions()).apply(graph, context);
+        new PartialEscapePhase(false, createCanonicalizerPhase(), graph.getOptions()).apply(graph, context);
     }
 
     private void compareGraphs(final String snippet, final String referenceSnippet) {
@@ -323,7 +323,7 @@ public class BoxingEliminationTest extends GraalCompilerTest {
     private void compareGraphs(final String snippet, final String referenceSnippet, final boolean loopPeeling, final boolean excludeVirtual) {
         graph = parseEager(snippet, AllowAssumptions.NO);
         HighTierContext context = getDefaultHighTierContext();
-        CanonicalizerPhase canonicalizer = new CanonicalizerPhase();
+        CanonicalizerPhase canonicalizer = this.createCanonicalizerPhase();
         canonicalizer.apply(graph, context);
         createInliningPhase().apply(graph, context);
         if (loopPeeling) {
@@ -339,7 +339,7 @@ public class BoxingEliminationTest extends GraalCompilerTest {
         StructuredGraph referenceGraph = parseEager(referenceSnippet, AllowAssumptions.YES);
         createInliningPhase().apply(referenceGraph, context);
         new DeadCodeEliminationPhase().apply(referenceGraph);
-        new CanonicalizerPhase().apply(referenceGraph, context);
+        this.createCanonicalizerPhase().apply(referenceGraph, context);
 
         assertEquals(referenceGraph, graph, excludeVirtual, true);
     }

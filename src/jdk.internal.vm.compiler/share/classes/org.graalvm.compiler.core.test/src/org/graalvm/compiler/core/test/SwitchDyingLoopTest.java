@@ -70,7 +70,7 @@ public class SwitchDyingLoopTest extends GraalCompilerTest {
 
     @Test
     public void test() {
-        CanonicalizerPhase canonicalizerPhase = new CanonicalizerPhase();
+        CanonicalizerPhase canonicalizerPhase = createCanonicalizerPhase();
         HighTierContext highTierContext = getDefaultHighTierContext();
         StructuredGraph graph = parseEager("snippet", StructuredGraph.AllowAssumptions.YES);
         // there should be 1 loop and 1 switch

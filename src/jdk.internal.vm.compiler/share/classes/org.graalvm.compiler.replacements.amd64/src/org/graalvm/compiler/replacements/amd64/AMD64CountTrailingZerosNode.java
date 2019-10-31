@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -90,4 +90,10 @@ public final class AMD64CountTrailingZerosNode extends UnaryNode implements Arit
     public void generate(NodeLIRBuilderTool builder, ArithmeticLIRGeneratorTool gen) {
         builder.setResult(this, ((AMD64ArithmeticLIRGeneratorTool) gen).emitCountTrailingZeros(builder.operand(getValue())));
     }
+
+    @NodeIntrinsic
+    public static native int countTrailingZeros(int i);
+
+    @NodeIntrinsic
+    public static native int countTrailingZeros(long i);
 }

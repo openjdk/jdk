@@ -31,7 +31,6 @@ import org.graalvm.compiler.core.common.type.TypeReference;
 import org.graalvm.compiler.nodes.ParameterNode;
 import org.graalvm.compiler.nodes.PiNode;
 import org.graalvm.compiler.nodes.StructuredGraph;
-import org.graalvm.compiler.phases.common.CanonicalizerPhase;
 import org.junit.Before;
 import org.junit.Test;
 
@@ -69,7 +68,7 @@ public class ConditionalEliminationTest16 extends ConditionalEliminationTestBase
                     break;
                 }
             }
-            new CanonicalizerPhase().apply(graph, getDefaultHighTierContext());
+            this.createCanonicalizerPhase().apply(graph, getDefaultHighTierContext());
         }
         super.checkHighTierGraph(graph);
     }

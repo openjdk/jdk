@@ -27,7 +27,6 @@ package org.graalvm.compiler.core.test;
 import org.graalvm.compiler.core.common.type.IntegerStamp;
 import org.graalvm.compiler.nodes.StructuredGraph;
 import org.graalvm.compiler.nodes.StructuredGraph.AllowAssumptions;
-import org.graalvm.compiler.phases.common.CanonicalizerPhase;
 import org.graalvm.compiler.phases.common.DeadCodeEliminationPhase;
 import org.junit.Test;
 
@@ -111,7 +110,7 @@ public class StampCanonicalizerTest extends GraalCompilerTest {
 
     private void testZeroReturn(String methodName) {
         StructuredGraph graph = parseEager(methodName, AllowAssumptions.YES);
-        new CanonicalizerPhase().apply(graph, getProviders());
+        createCanonicalizerPhase().apply(graph, getProviders());
         new DeadCodeEliminationPhase().apply(graph);
         assertConstantReturn(graph, 0);
     }

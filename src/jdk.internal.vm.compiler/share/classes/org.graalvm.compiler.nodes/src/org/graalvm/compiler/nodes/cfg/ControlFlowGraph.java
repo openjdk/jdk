@@ -38,6 +38,7 @@ import org.graalvm.compiler.debug.DebugContext;
 import org.graalvm.compiler.debug.GraalError;
 import org.graalvm.compiler.graph.Node;
 import org.graalvm.compiler.graph.NodeMap;
+import org.graalvm.compiler.graph.iterators.NodeIterable;
 import org.graalvm.compiler.nodes.AbstractBeginNode;
 import org.graalvm.compiler.nodes.AbstractEndNode;
 import org.graalvm.compiler.nodes.ControlSinkNode;
@@ -414,6 +415,15 @@ public final class ControlFlowGraph implements AbstractControlFlowGraph<Block> {
 
     public Block blockFor(Node node) {
         return nodeToBlock.get(node);
+    }
+
+    public Block commonDominatorFor(NodeIterable<? extends Node> nodes) {
+        Block commonDom = null;
+        for (Node n : nodes) {
+            Block b = blockFor(n);
+            commonDom = (Block) AbstractControlFlowGraph.commonDominator(commonDom, b);
+        }
+        return commonDom;
     }
 
     @Override

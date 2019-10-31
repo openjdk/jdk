@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,7 +25,7 @@
 package org.graalvm.compiler.jtt.except;
 
 import org.graalvm.compiler.jtt.JTTTest;
-import org.graalvm.compiler.test.ExportingClassLoader;
+import org.graalvm.compiler.api.test.ExportingClassLoader;
 import org.junit.BeforeClass;
 import org.junit.Test;
 import org.objectweb.asm.ClassWriter;

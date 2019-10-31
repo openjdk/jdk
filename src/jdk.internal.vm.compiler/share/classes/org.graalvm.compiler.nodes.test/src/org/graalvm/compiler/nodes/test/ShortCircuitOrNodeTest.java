@@ -378,7 +378,7 @@ public class ShortCircuitOrNodeTest extends GraalCompilerTest {
             String snippet = "testCascadeSnippet" + i;
             StructuredGraph graph = parseEager(snippet, AllowAssumptions.YES);
             CoreProviders context = getProviders();
-            CanonicalizerPhase canonicalizer = new CanonicalizerPhase();
+            CanonicalizerPhase canonicalizer = createCanonicalizerPhase();
             canonicalizer.apply(graph, context);
             new LoweringPhase(canonicalizer, LoweringTool.StandardLoweringStage.HIGH_TIER).apply(graph, context);
             new IncrementalCanonicalizerPhase<>(canonicalizer, new FloatingReadPhase()).apply(graph, context);

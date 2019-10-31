@@ -54,11 +54,13 @@ import org.graalvm.compiler.nodes.AbstractBeginNode;
 import org.graalvm.compiler.nodes.AbstractEndNode;
 import org.graalvm.compiler.nodes.AbstractMergeNode;
 import org.graalvm.compiler.nodes.ConstantNode;
+import org.graalvm.compiler.nodes.ControlSinkNode;
 import org.graalvm.compiler.nodes.ControlSplitNode;
 import org.graalvm.compiler.nodes.FixedNode;
 import org.graalvm.compiler.nodes.FixedWithNextNode;
 import org.graalvm.compiler.nodes.FrameState;
 import org.graalvm.compiler.nodes.GuardNode;
+import org.graalvm.compiler.nodes.IfNode;
 import org.graalvm.compiler.nodes.LoopBeginNode;
 import org.graalvm.compiler.nodes.LoopEndNode;
 import org.graalvm.compiler.nodes.LoopExitNode;
@@ -104,6 +106,8 @@ public class GraphUtil {
         @Option(help = "Verify that there are no new unused nodes when performing killCFG", type = OptionType.Debug)//
         public static final OptionKey<Boolean> VerifyKillCFGUnusedNodes = new OptionKey<>(false);
     }
+
+    public static final int MAX_FRAMESTATE_SEARCH_DEPTH = 4;
 
     private static void killCFGInner(FixedNode node) {
         EconomicSet<Node> markedNodes = EconomicSet.create();
@@ -1109,5 +1113,56 @@ public class GraphUtil {
         VirtualArrayNode newVirtualArray = virtualArrayProvider.apply(newComponentType, newLengthInt);
         tool.createVirtualObject(newVirtualArray, newEntryState, Collections.<MonitorIdNode> emptyList(), false);
         tool.replaceWithVirtual(newVirtualArray);
+    }
+
+    /**
+     * Snippet lowerings may produce patterns without a frame state on the merge. We need to take
+     * extra care when optimizing these patterns.
+     */
+    public static boolean checkFrameState(FixedNode start, int maxDepth) {
+        if (maxDepth == 0) {
+            return false;
+        }
+        FixedNode node = start;
+        while (true) {
+            if (node instanceof AbstractMergeNode) {
+                AbstractMergeNode mergeNode = (AbstractMergeNode) node;
+                if (mergeNode.stateAfter() == null) {
+                    return false;
+                } else {
+                    return true;
+                }
+            } else if (node instanceof StateSplit) {
+                StateSplit stateSplitNode = (StateSplit) node;
+                if (stateSplitNode.stateAfter() != null) {
+                    return true;
+                }
+            }
+
+            if (node instanceof ControlSplitNode) {
+                ControlSplitNode controlSplitNode = (ControlSplitNode) node;
+                for (Node succ : controlSplitNode.cfgSuccessors()) {
+                    if (checkFrameState((FixedNode) succ, maxDepth - 1)) {
+                        return true;
+                    }
+                }
+                return false;
+            } else if (node instanceof FixedWithNextNode) {
+                FixedWithNextNode fixedWithNextNode = (FixedWithNextNode) node;
+                node = fixedWithNextNode.next();
+            } else if (node instanceof AbstractEndNode) {
+                AbstractEndNode endNode = (AbstractEndNode) node;
+                node = endNode.merge();
+            } else if (node instanceof ControlSinkNode) {
+                return true;
+            } else {
+                assert false : "unexpected node";
+                return false;
+            }
+        }
+    }
+
+    public static boolean mayRemoveSplit(IfNode ifNode) {
+        return GraphUtil.checkFrameState(ifNode.trueSuccessor(), MAX_FRAMESTATE_SEARCH_DEPTH) && GraphUtil.checkFrameState(ifNode.falseSuccessor(), MAX_FRAMESTATE_SEARCH_DEPTH);
     }
 }

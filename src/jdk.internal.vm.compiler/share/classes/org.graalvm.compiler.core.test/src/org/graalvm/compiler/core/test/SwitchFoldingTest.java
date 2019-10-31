@@ -27,7 +27,6 @@ package org.graalvm.compiler.core.test;
 
 import org.graalvm.compiler.debug.DebugContext;
 import org.graalvm.compiler.nodes.StructuredGraph;
-import org.graalvm.compiler.phases.common.CanonicalizerPhase;
 import org.junit.Test;
 
 public class SwitchFoldingTest extends GraalCompilerTest {
@@ -484,7 +483,7 @@ public class SwitchFoldingTest extends GraalCompilerTest {
         StructuredGraph graph = parseEager(snippet, StructuredGraph.AllowAssumptions.YES);
         DebugContext debug = graph.getDebug();
         debug.dump(DebugContext.BASIC_LEVEL, graph, "Graph");
-        new CanonicalizerPhase().apply(graph, getProviders());
+        createCanonicalizerPhase().apply(graph, getProviders());
         StructuredGraph referenceGraph = parseEager(ref, StructuredGraph.AllowAssumptions.YES);
         assertEquals(referenceGraph, graph);
     }

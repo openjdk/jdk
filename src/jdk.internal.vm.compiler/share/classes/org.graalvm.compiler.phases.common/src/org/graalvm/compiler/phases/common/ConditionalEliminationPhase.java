@@ -186,6 +186,8 @@ public class ConditionalEliminationPhase extends BasePhase<CoreProviders> {
 
                 // Check if we can move guards upwards.
                 AbstractBeginNode trueSuccessor = node.trueSuccessor();
+                AbstractBeginNode falseSuccessor = node.falseSuccessor();
+
                 EconomicMap<LogicNode, GuardNode> trueGuards = EconomicMap.create(Equivalence.IDENTITY);
                 for (GuardNode guard : trueSuccessor.guards()) {
                     LogicNode condition = guard.getCondition();
@@ -195,7 +197,7 @@ public class ConditionalEliminationPhase extends BasePhase<CoreProviders> {
                 }
 
                 if (!trueGuards.isEmpty()) {
-                    for (GuardNode guard : node.falseSuccessor().guards().snapshot()) {
+                    for (GuardNode guard : falseSuccessor.guards().snapshot()) {
                         GuardNode otherGuard = trueGuards.get(guard.getCondition());
                         if (otherGuard != null && guard.isNegated() == otherGuard.isNegated()) {
                             Speculation speculation = otherGuard.getSpeculation();
@@ -210,9 +212,17 @@ public class ConditionalEliminationPhase extends BasePhase<CoreProviders> {
                                                 guard.getNoDeoptSuccessorPosition());
                                 GuardNode newGuard = node.graph().unique(newlyCreatedGuard);
                                 if (otherGuard.isAlive()) {
-                                    otherGuard.replaceAndDelete(newGuard);
+                                    if (trueSuccessor instanceof LoopExitNode && beginNode.graph().hasValueProxies()) {
+                                        otherGuard.replaceAndDelete(ProxyNode.forGuard(newGuard, (LoopExitNode) trueSuccessor));
+                                    } else {
+                                        otherGuard.replaceAndDelete(newGuard);
+                                    }
                                 }
-                                guard.replaceAndDelete(newGuard);
+                                if (falseSuccessor instanceof LoopExitNode && beginNode.graph().hasValueProxies()) {
+                                    guard.replaceAndDelete(ProxyNode.forGuard(newGuard, (LoopExitNode) falseSuccessor));
+                                } else {
+                                    guard.replaceAndDelete(newGuard);
+                                }
                             }
                         }
                     }

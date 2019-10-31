@@ -104,7 +104,7 @@ import org.graalvm.compiler.replacements.classfile.ClassfileBytecode;
 import org.graalvm.compiler.replacements.classfile.ClassfileBytecodeProvider;
 import org.graalvm.compiler.runtime.RuntimeProvider;
 import org.graalvm.compiler.serviceprovider.JavaVersionUtil;
-import org.graalvm.compiler.test.ModuleSupport;
+import org.graalvm.compiler.api.test.ModuleSupport;
 import org.graalvm.compiler.test.SubprocessUtil;
 import org.junit.Assert;
 import org.junit.Assume;

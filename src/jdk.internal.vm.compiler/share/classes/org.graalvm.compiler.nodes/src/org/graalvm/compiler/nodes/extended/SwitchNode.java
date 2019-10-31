@@ -290,4 +290,7 @@ public abstract class SwitchNode extends ControlSplitNode {
         }
     }
 
+    public int[] getKeySuccessors() {
+        return keySuccessors.clone();
+    }
 }

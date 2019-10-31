@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,7 +30,7 @@ import java.lang.invoke.MethodType;
 
 import org.graalvm.compiler.code.CompilationResult;
 import org.graalvm.compiler.debug.DebugContext;
-import org.graalvm.compiler.test.ExportingClassLoader;
+import org.graalvm.compiler.api.test.ExportingClassLoader;
 import org.junit.Test;
 import org.objectweb.asm.ClassWriter;
 import org.objectweb.asm.Label;

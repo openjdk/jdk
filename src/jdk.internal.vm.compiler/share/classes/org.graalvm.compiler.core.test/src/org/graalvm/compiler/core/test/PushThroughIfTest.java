@@ -29,7 +29,6 @@ import org.graalvm.compiler.nodes.FrameState;
 import org.graalvm.compiler.nodes.StructuredGraph;
 import org.graalvm.compiler.nodes.StructuredGraph.AllowAssumptions;
 import org.graalvm.compiler.nodes.util.GraphUtil;
-import org.graalvm.compiler.phases.common.CanonicalizerPhase;
 import org.junit.Test;
 
 public class PushThroughIfTest extends GraalCompilerTest {
@@ -65,15 +64,15 @@ public class PushThroughIfTest extends GraalCompilerTest {
             fs.replaceAtUsages(null);
             GraphUtil.killWithUnusedFloatingInputs(fs);
         }
-        new CanonicalizerPhase().apply(graph, getProviders());
-        new CanonicalizerPhase().apply(graph, getProviders());
+        createCanonicalizerPhase().apply(graph, getProviders());
+        createCanonicalizerPhase().apply(graph, getProviders());
 
         StructuredGraph referenceGraph = parseEager(reference, AllowAssumptions.YES);
         for (FrameState fs : referenceGraph.getNodes(FrameState.TYPE).snapshot()) {
             fs.replaceAtUsages(null);
             GraphUtil.killWithUnusedFloatingInputs(fs);
         }
-        new CanonicalizerPhase().apply(referenceGraph, getProviders());
+        createCanonicalizerPhase().apply(referenceGraph, getProviders());
         assertEquals(referenceGraph, graph);
     }
 }

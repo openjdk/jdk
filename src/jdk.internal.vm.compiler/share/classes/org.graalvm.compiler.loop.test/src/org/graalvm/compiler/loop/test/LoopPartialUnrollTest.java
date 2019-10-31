@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -302,7 +302,7 @@ public class LoopPartialUnrollTest extends GraalCompilerTest {
         try (DebugContext.Scope buildScope = graph.getDebug().scope(name, method, graph)) {
             MidTierContext context = new MidTierContext(getProviders(), getTargetProvider(), OptimisticOptimizations.ALL, null);
 
-            CanonicalizerPhase canonicalizer = new CanonicalizerPhase();
+            CanonicalizerPhase canonicalizer = this.createCanonicalizerPhase();
             canonicalizer.apply(graph, context);
             new RemoveValueProxyPhase().apply(graph);
             new LoweringPhase(canonicalizer, LoweringTool.StandardLoweringStage.HIGH_TIER).apply(graph, context);
@@ -338,7 +338,7 @@ public class LoopPartialUnrollTest extends GraalCompilerTest {
 
         StructuredGraph referenceGraph = buildGraph(reference, false);
         StructuredGraph testGraph = buildGraph(test, true);
-        CanonicalizerPhase canonicalizer = new CanonicalizerPhase();
+        CanonicalizerPhase canonicalizer = createCanonicalizerPhase();
         canonicalizer.apply(testGraph, getDefaultMidTierContext());
         canonicalizer.apply(referenceGraph, getDefaultMidTierContext());
         assertEquals(referenceGraph, testGraph);

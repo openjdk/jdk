@@ -239,7 +239,7 @@ public class CompareCanonicalizerTest3 extends GraalCompilerTest {
     protected void assertCanonicallyEqual(String snippet, String reference) {
         StructuredGraph graph = parseEager(snippet, AllowAssumptions.YES);
         CoreProviders context = getProviders();
-        CanonicalizerPhase canonicalizer = new CanonicalizerPhase();
+        CanonicalizerPhase canonicalizer = this.createCanonicalizerPhase();
 
         canonicalizer.apply(graph, context);
         new GuardLoweringPhase().apply(graph, new MidTierContext(getProviders(), getTargetProvider(), OptimisticOptimizations.ALL, graph.getProfilingInfo()));

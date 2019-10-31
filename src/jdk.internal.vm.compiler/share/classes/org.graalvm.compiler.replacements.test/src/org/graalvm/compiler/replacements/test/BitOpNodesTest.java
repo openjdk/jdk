@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -303,7 +303,7 @@ public class BitOpNodesTest extends GraalCompilerTest {
     private ValueNode parseAndInline(String name, Class<? extends ValueNode> expectedClass) {
         StructuredGraph graph = parseEager(name, AllowAssumptions.YES);
         HighTierContext context = getDefaultHighTierContext();
-        CanonicalizerPhase canonicalizer = new CanonicalizerPhase();
+        CanonicalizerPhase canonicalizer = createCanonicalizerPhase();
         canonicalizer.apply(graph, context);
         createInliningPhase(canonicalizer).apply(graph, context);
         canonicalizer.apply(graph, context);
