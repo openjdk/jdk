@@ -54,9 +54,8 @@ public class ConcurrentSkipListMapTest extends JSR166TestCase {
         class Implementation implements MapImplementation {
             public Class<?> klazz() { return ConcurrentSkipListMap.class; }
             public Map emptyMap() { return new ConcurrentSkipListMap(); }
-            public Object makeKey(int i) { return i; }
-            public Object makeValue(int i) { return i; }
             public boolean isConcurrent() { return true; }
+            public boolean remappingFunctionCalledAtMostOnce() { return false; };
             public boolean permitsNullKeys() { return false; }
             public boolean permitsNullValues() { return false; }
             public boolean supportsSetValue() { return false; }

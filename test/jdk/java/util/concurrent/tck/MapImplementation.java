@@ -40,9 +40,15 @@ public interface MapImplementation {
     public Class<?> klazz();
     /** Returns an empty map. */
     public Map emptyMap();
-    public Object makeKey(int i);
-    public Object makeValue(int i);
+
+    // General purpose implementations can use Integers for key and value
+    default Object makeKey(int i) { return i; }
+    default Object makeValue(int i) { return i; }
+    default int keyToInt(Object key) { return (Integer) key; }
+    default int valueToInt(Object value) { return (Integer) value; }
+
     public boolean isConcurrent();
+    default boolean remappingFunctionCalledAtMostOnce() { return true; };
     public boolean permitsNullKeys();
     public boolean permitsNullValues();
     public boolean supportsSetValue();

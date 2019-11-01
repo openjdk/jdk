@@ -731,6 +731,13 @@ public class JSR166TestCase extends TestCase {
     /**
      * Returns a random element from given choices.
      */
+    <T> T chooseRandomly(List<T> choices) {
+        return choices.get(ThreadLocalRandom.current().nextInt(choices.size()));
+    }
+
+    /**
+     * Returns a random element from given choices.
+     */
     <T> T chooseRandomly(T... choices) {
         return choices[ThreadLocalRandom.current().nextInt(choices.length)];
     }
@@ -1799,7 +1806,7 @@ public class JSR166TestCase extends TestCase {
 
         public int await() {
             try {
-                return super.await(2 * LONG_DELAY_MS, MILLISECONDS);
+                return super.await(LONGER_DELAY_MS, MILLISECONDS);
             } catch (TimeoutException timedOut) {
                 throw new AssertionError("timed out");
             } catch (Exception fail) {

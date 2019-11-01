@@ -46,8 +46,6 @@ public class HashMapTest extends JSR166TestCase {
         class Implementation implements MapImplementation {
             public Class<?> klazz() { return HashMap.class; }
             public Map emptyMap() { return new HashMap(); }
-            public Object makeKey(int i) { return i; }
-            public Object makeValue(int i) { return i; }
             public boolean isConcurrent() { return false; }
             public boolean permitsNullKeys() { return true; }
             public boolean permitsNullValues() { return true; }
