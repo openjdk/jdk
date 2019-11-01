@@ -34,7 +34,7 @@ import org.testng.annotations.Test;
  *          java.compiler
  *          java.management
  *          jdk.internal.jvmstat/sun.jvmstat.monitor
- * @run testng/othervm -Xmx129m -XX:+UnlockDiagnosticVMOptions -XX:+IgnoreUnrecognizedVMOptions -XX:+ThereShouldNotBeAnyVMOptionNamedLikeThis_Right -XX:-TieredCompilation FlagsTest
+ * @run testng/othervm -Xmx129m -XX:+UnlockDiagnosticVMOptions -XX:+IgnoreUnrecognizedVMOptions -XX:+ThereShouldNotBeAnyVMOptionNamedLikeThis_Right FlagsTest
  */
 public class FlagsTest {
     public void run(CommandExecutor executor) {
@@ -43,7 +43,6 @@ public class FlagsTest {
         /* The following are interpreted by the JVM as actual "flags" */
         output.shouldContain("-XX:+UnlockDiagnosticVMOptions");
         output.shouldContain("-XX:+IgnoreUnrecognizedVMOptions");
-        output.shouldContain("-XX:-TieredCompilation");
 
         /* The following are not */
         output.shouldNotContain("-Xmx129m");

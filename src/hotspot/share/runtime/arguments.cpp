@@ -3147,7 +3147,13 @@ jint Arguments::finalize_vm_init_args(bool patch_mod_javabase) {
   NOT_PRODUCT(UNSUPPORTED_OPTION(TraceProfileInterpreter));
 #endif
 
-#ifndef TIERED
+
+#ifdef TIERED
+  // Parse the CompilationMode flag
+  if (!CompilationModeFlag::initialize()) {
+    return JNI_ERR;
+  }
+#else
   // Tiered compilation is undefined.
   UNSUPPORTED_OPTION(TieredCompilation);
 #endif
