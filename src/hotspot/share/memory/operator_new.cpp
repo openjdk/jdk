@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -87,6 +87,14 @@ void operator delete(void* p) throw() {
 
 void operator delete [](void* p) throw() {
   fatal("Should not call global delete []");
+}
+
+void operator delete(void* p, size_t size) throw() {
+  fatal("Should not call global sized delete");
+}
+
+void operator delete [](void* p, size_t size) throw() {
+  fatal("Should not call global sized delete []");
 }
 
 #endif // Non-product
