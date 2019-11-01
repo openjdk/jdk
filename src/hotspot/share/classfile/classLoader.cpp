@@ -73,14 +73,17 @@
 #include "utilities/hashtable.inline.hpp"
 #include "utilities/macros.hpp"
 
+// Entry point in java.dll for path canonicalization
+
+static canonicalize_fn_t CanonicalizeEntry  = NULL;
+
 // Entry points in zip.dll for loading zip/jar file entries
 
 typedef void * * (*ZipOpen_t)(const char *name, char **pmsg);
-typedef void (*ZipClose_t)(jzfile *zip);
+typedef void     (*ZipClose_t)(jzfile *zip);
 typedef jzentry* (*FindEntry_t)(jzfile *zip, const char *name, jint *sizeP, jint *nameLen);
 typedef jboolean (*ReadEntry_t)(jzfile *zip, jzentry *entry, unsigned char *buf, char *namebuf);
 typedef jzentry* (*GetNextEntry_t)(jzfile *zip, jint n);
-typedef jboolean (*ZipInflateFully_t)(void *inBuf, jlong inLen, void *outBuf, jlong outLen, char **pmsg);
 typedef jint     (*Crc32_t)(jint crc, const jbyte *buf, jint len);
 
 static ZipOpen_t         ZipOpen            = NULL;
@@ -88,8 +91,6 @@ static ZipClose_t        ZipClose           = NULL;
 static FindEntry_t       FindEntry          = NULL;
 static ReadEntry_t       ReadEntry          = NULL;
 static GetNextEntry_t    GetNextEntry       = NULL;
-static canonicalize_fn_t CanonicalizeEntry  = NULL;
-static ZipInflateFully_t ZipInflateFully    = NULL;
 static Crc32_t           Crc32              = NULL;
 
 // Entry points for jimage.dll for loading jimage file entries
@@ -295,9 +296,7 @@ ClassPathZipEntry::ClassPathZipEntry(jzfile* zip, const char* zip_name,
 }
 
 ClassPathZipEntry::~ClassPathZipEntry() {
-  if (ZipClose != NULL) {
-    (*ZipClose)(_zip);
-  }
+  (*ZipClose)(_zip);
   FREE_C_HEAP_ARRAY(char, _zip_name);
 }
 
@@ -964,11 +963,28 @@ void ClassLoader::print_bootclasspath() {
   tty->print_cr("]");
 }
 
+void* ClassLoader::dll_lookup(void* lib, const char* name, const char* path) {
+  void* func = os::dll_lookup(lib, name);
+  if (func == NULL) {
+    char msg[256] = "";
+    jio_snprintf(msg, sizeof(msg), "Could not resolve \"%s\"", name);
+    vm_exit_during_initialization(msg, path);
+  }
+  return func;
+}
+
+void ClassLoader::load_java_library() {
+  assert(CanonicalizeEntry == NULL, "should not load java library twice");
+  void *javalib_handle = os::native_java_library();
+  if (javalib_handle == NULL) {
+    vm_exit_during_initialization("Unable to load java library", NULL);
+  }
+
+  CanonicalizeEntry = CAST_TO_FN_PTR(canonicalize_fn_t, dll_lookup(javalib_handle, "Canonicalize", NULL));
+}
+
 void ClassLoader::load_zip_library() {
   assert(ZipOpen == NULL, "should not load zip library twice");
-  // First make sure native library is loaded
-  os::native_java_library();
-  // Load zip library
   char path[JVM_MAXPATHLEN];
   char ebuf[1024];
   void* handle = NULL;
@@ -976,37 +992,19 @@ void ClassLoader::load_zip_library() {
     handle = os::dll_load(path, ebuf, sizeof ebuf);
   }
   if (handle == NULL) {
-    vm_exit_during_initialization("Unable to load ZIP library", path);
-  }
-  // Lookup zip entry points
-  ZipOpen      = CAST_TO_FN_PTR(ZipOpen_t, os::dll_lookup(handle, "ZIP_Open"));
-  ZipClose     = CAST_TO_FN_PTR(ZipClose_t, os::dll_lookup(handle, "ZIP_Close"));
-  FindEntry    = CAST_TO_FN_PTR(FindEntry_t, os::dll_lookup(handle, "ZIP_FindEntry"));
-  ReadEntry    = CAST_TO_FN_PTR(ReadEntry_t, os::dll_lookup(handle, "ZIP_ReadEntry"));
-  GetNextEntry = CAST_TO_FN_PTR(GetNextEntry_t, os::dll_lookup(handle, "ZIP_GetNextEntry"));
-  ZipInflateFully = CAST_TO_FN_PTR(ZipInflateFully_t, os::dll_lookup(handle, "ZIP_InflateFully"));
-  Crc32        = CAST_TO_FN_PTR(Crc32_t, os::dll_lookup(handle, "ZIP_CRC32"));
-
-  // ZIP_Close is not exported on Windows in JDK5.0 so don't abort if ZIP_Close is NULL
-  if (ZipOpen == NULL || FindEntry == NULL || ReadEntry == NULL ||
-      GetNextEntry == NULL || Crc32 == NULL) {
-    vm_exit_during_initialization("Corrupted ZIP library", path);
+    vm_exit_during_initialization("Unable to load zip library", path);
   }
 
-  if (ZipInflateFully == NULL) {
-    vm_exit_during_initialization("Corrupted ZIP library ZIP_InflateFully missing", path);
-  }
-
-  // Lookup canonicalize entry in libjava.dll
-  void *javalib_handle = os::native_java_library();
-  CanonicalizeEntry = CAST_TO_FN_PTR(canonicalize_fn_t, os::dll_lookup(javalib_handle, "Canonicalize"));
-  // This lookup only works on 1.3. Do not check for non-null here
+  ZipOpen = CAST_TO_FN_PTR(ZipOpen_t, dll_lookup(handle, "ZIP_Open", path));
+  ZipClose = CAST_TO_FN_PTR(ZipClose_t, dll_lookup(handle, "ZIP_Close", path));
+  FindEntry = CAST_TO_FN_PTR(FindEntry_t, dll_lookup(handle, "ZIP_FindEntry", path));
+  ReadEntry = CAST_TO_FN_PTR(ReadEntry_t, dll_lookup(handle, "ZIP_ReadEntry", path));
+  GetNextEntry = CAST_TO_FN_PTR(GetNextEntry_t, dll_lookup(handle, "ZIP_GetNextEntry", path));
+  Crc32 = CAST_TO_FN_PTR(Crc32_t, dll_lookup(handle, "ZIP_CRC32", path));
 }
 
 void ClassLoader::load_jimage_library() {
-  // First make sure native library is loaded
-  os::native_java_library();
-  // Load jimage library
+  assert(JImageOpen == NULL, "should not load jimage library twice");
   char path[JVM_MAXPATHLEN];
   char ebuf[1024];
   void* handle = NULL;
@@ -1017,27 +1015,15 @@ void ClassLoader::load_jimage_library() {
     vm_exit_during_initialization("Unable to load jimage library", path);
   }
 
-  // Lookup jimage entry points
-  JImageOpen = CAST_TO_FN_PTR(JImageOpen_t, os::dll_lookup(handle, "JIMAGE_Open"));
-  guarantee(JImageOpen != NULL, "function JIMAGE_Open not found");
-  JImageClose = CAST_TO_FN_PTR(JImageClose_t, os::dll_lookup(handle, "JIMAGE_Close"));
-  guarantee(JImageClose != NULL, "function JIMAGE_Close not found");
-  JImagePackageToModule = CAST_TO_FN_PTR(JImagePackageToModule_t, os::dll_lookup(handle, "JIMAGE_PackageToModule"));
-  guarantee(JImagePackageToModule != NULL, "function JIMAGE_PackageToModule not found");
-  JImageFindResource = CAST_TO_FN_PTR(JImageFindResource_t, os::dll_lookup(handle, "JIMAGE_FindResource"));
-  guarantee(JImageFindResource != NULL, "function JIMAGE_FindResource not found");
-  JImageGetResource = CAST_TO_FN_PTR(JImageGetResource_t, os::dll_lookup(handle, "JIMAGE_GetResource"));
-  guarantee(JImageGetResource != NULL, "function JIMAGE_GetResource not found");
-  JImageResourceIterator = CAST_TO_FN_PTR(JImageResourceIterator_t, os::dll_lookup(handle, "JIMAGE_ResourceIterator"));
-  guarantee(JImageResourceIterator != NULL, "function JIMAGE_ResourceIterator not found");
-}
-
-jboolean ClassLoader::decompress(void *in, u8 inSize, void *out, u8 outSize, char **pmsg) {
-  return (*ZipInflateFully)(in, inSize, out, outSize, pmsg);
+  JImageOpen = CAST_TO_FN_PTR(JImageOpen_t, dll_lookup(handle, "JIMAGE_Open", path));
+  JImageClose = CAST_TO_FN_PTR(JImageClose_t, dll_lookup(handle, "JIMAGE_Close", path));
+  JImagePackageToModule = CAST_TO_FN_PTR(JImagePackageToModule_t, dll_lookup(handle, "JIMAGE_PackageToModule", path));
+  JImageFindResource = CAST_TO_FN_PTR(JImageFindResource_t, dll_lookup(handle, "JIMAGE_FindResource", path));
+  JImageGetResource = CAST_TO_FN_PTR(JImageGetResource_t, dll_lookup(handle, "JIMAGE_GetResource", path));
+  JImageResourceIterator = CAST_TO_FN_PTR(JImageResourceIterator_t, dll_lookup(handle, "JIMAGE_ResourceIterator", path));
 }
 
 int ClassLoader::crc32(int crc, const char* buf, int len) {
-  assert(Crc32 != NULL, "ZIP_CRC32 is not found");
   return (*Crc32)(crc, (const jbyte*)buf, len);
 }
 
@@ -1527,6 +1513,8 @@ void ClassLoader::initialize() {
                         "unsafeDefineClassCalls");
   }
 
+  // lookup java library entry points
+  load_java_library();
   // lookup zip library entry points
   load_zip_library();
   // jimage library entry points are loaded below, in lookup_vm_options
@@ -1652,24 +1640,17 @@ void ClassLoader::classLoader_init2(TRAPS) {
   }
 }
 
-
 bool ClassLoader::get_canonical_path(const char* orig, char* out, int len) {
   assert(orig != NULL && out != NULL && len > 0, "bad arguments");
-  if (CanonicalizeEntry != NULL) {
-    JavaThread* THREAD = JavaThread::current();
-    JNIEnv* env = THREAD->jni_environment();
-    ResourceMark rm(THREAD);
+  JavaThread* THREAD = JavaThread::current();
+  JNIEnv* env = THREAD->jni_environment();
+  ResourceMark rm(THREAD);
 
-    // os::native_path writes into orig_copy
-    char* orig_copy = NEW_RESOURCE_ARRAY_IN_THREAD(THREAD, char, strlen(orig)+1);
-    strcpy(orig_copy, orig);
-    if ((CanonicalizeEntry)(env, os::native_path(orig_copy), out, len) < 0) {
-      return false;
-    }
-  } else {
-    // On JDK 1.2.2 the Canonicalize does not exist, so just do nothing
-    strncpy(out, orig, len);
-    out[len - 1] = '\0';
+  // os::native_path writes into orig_copy
+  char* orig_copy = NEW_RESOURCE_ARRAY_IN_THREAD(THREAD, char, strlen(orig)+1);
+  strcpy(orig_copy, orig);
+  if ((CanonicalizeEntry)(env, os::native_path(orig_copy), out, len) < 0) {
+    return false;
   }
   return true;
 }

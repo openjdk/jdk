@@ -249,6 +249,8 @@ class ClassLoader: AllStatic {
   static void setup_patch_mod_entries();
   static void create_javabase();
 
+  static void* dll_lookup(void* lib, const char* name, const char* path);
+  static void load_java_library();
   static void load_zip_library();
   static void load_jimage_library();
 
@@ -275,7 +277,6 @@ class ClassLoader: AllStatic {
   static PackageEntry* get_package_entry(const char* class_name, ClassLoaderData* loader_data, TRAPS);
 
  public:
-  static jboolean decompress(void *in, u8 inSize, void *out, u8 outSize, char **pmsg);
   static int crc32(int crc, const char* buf, int len);
   static bool update_class_path_entry_list(const char *path,
                                            bool check_for_duplicates,
