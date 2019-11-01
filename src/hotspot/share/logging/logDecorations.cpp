@@ -65,6 +65,8 @@ void LogDecorations::create_decorations(const LogDecorators &decorators) {
   if (decorators.is_decorator(LogDecorators::full_name##_decorator)) { \
     _decoration_offset[LogDecorators::full_name##_decorator] = position; \
     position = create_##full_name##_decoration(position) + 1; \
+  } else { \
+    _decoration_offset[LogDecorators::full_name##_decorator] = NULL; \
   }
   DECORATOR_LIST
 #undef DECORATOR
