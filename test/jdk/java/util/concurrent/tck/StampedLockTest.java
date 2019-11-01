@@ -42,12 +42,17 @@ import static java.util.concurrent.locks.StampedLock.isWriteLockStamp;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.Callable;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.Future;
+import java.util.concurrent.ThreadLocalRandom;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.StampedLock;
 import java.util.function.BiConsumer;
+import java.util.function.Consumer;
 import java.util.function.Function;
 
 import junit.framework.Test;
@@ -102,56 +107,51 @@ public class StampedLockTest extends JSR166TestCase {
     }
 
     List<Action> lockLockers(Lock lock) {
-        List<Action> lockers = new ArrayList<>();
-        lockers.add(() -> lock.lock());
-        lockers.add(() -> lock.lockInterruptibly());
-        lockers.add(() -> lock.tryLock());
-        lockers.add(() -> lock.tryLock(Long.MIN_VALUE, DAYS));
-        lockers.add(() -> lock.tryLock(0L, DAYS));
-        lockers.add(() -> lock.tryLock(Long.MAX_VALUE, DAYS));
-        return lockers;
+        return List.of(
+            () -> lock.lock(),
+            () -> lock.lockInterruptibly(),
+            () -> lock.tryLock(),
+            () -> lock.tryLock(Long.MIN_VALUE, DAYS),
+            () -> lock.tryLock(0L, DAYS),
+            () -> lock.tryLock(Long.MAX_VALUE, DAYS));
     }
 
     List<Function<StampedLock, Long>> readLockers() {
-        List<Function<StampedLock, Long>> readLockers = new ArrayList<>();
-        readLockers.add(sl -> sl.readLock());
-        readLockers.add(sl -> sl.tryReadLock());
-        readLockers.add(sl -> readLockInterruptiblyUninterrupted(sl));
-        readLockers.add(sl -> tryReadLockUninterrupted(sl, Long.MIN_VALUE, DAYS));
-        readLockers.add(sl -> tryReadLockUninterrupted(sl, 0L, DAYS));
-        readLockers.add(sl -> sl.tryConvertToReadLock(sl.tryOptimisticRead()));
-        return readLockers;
+        return List.of(
+            sl -> sl.readLock(),
+            sl -> sl.tryReadLock(),
+            sl -> readLockInterruptiblyUninterrupted(sl),
+            sl -> tryReadLockUninterrupted(sl, Long.MIN_VALUE, DAYS),
+            sl -> tryReadLockUninterrupted(sl, 0L, DAYS),
+            sl -> sl.tryConvertToReadLock(sl.tryOptimisticRead()));
     }
 
     List<BiConsumer<StampedLock, Long>> readUnlockers() {
-        List<BiConsumer<StampedLock, Long>> readUnlockers = new ArrayList<>();
-        readUnlockers.add((sl, stamp) -> sl.unlockRead(stamp));
-        readUnlockers.add((sl, stamp) -> assertTrue(sl.tryUnlockRead()));
-        readUnlockers.add((sl, stamp) -> sl.asReadLock().unlock());
-        readUnlockers.add((sl, stamp) -> sl.unlock(stamp));
-        readUnlockers.add((sl, stamp) -> assertValid(sl, sl.tryConvertToOptimisticRead(stamp)));
-        return readUnlockers;
+        return List.of(
+            (sl, stamp) -> sl.unlockRead(stamp),
+            (sl, stamp) -> assertTrue(sl.tryUnlockRead()),
+            (sl, stamp) -> sl.asReadLock().unlock(),
+            (sl, stamp) -> sl.unlock(stamp),
+            (sl, stamp) -> assertValid(sl, sl.tryConvertToOptimisticRead(stamp)));
     }
 
     List<Function<StampedLock, Long>> writeLockers() {
-        List<Function<StampedLock, Long>> writeLockers = new ArrayList<>();
-        writeLockers.add(sl -> sl.writeLock());
-        writeLockers.add(sl -> sl.tryWriteLock());
-        writeLockers.add(sl -> writeLockInterruptiblyUninterrupted(sl));
-        writeLockers.add(sl -> tryWriteLockUninterrupted(sl, Long.MIN_VALUE, DAYS));
-        writeLockers.add(sl -> tryWriteLockUninterrupted(sl, 0L, DAYS));
-        writeLockers.add(sl -> sl.tryConvertToWriteLock(sl.tryOptimisticRead()));
-        return writeLockers;
+        return List.of(
+            sl -> sl.writeLock(),
+            sl -> sl.tryWriteLock(),
+            sl -> writeLockInterruptiblyUninterrupted(sl),
+            sl -> tryWriteLockUninterrupted(sl, Long.MIN_VALUE, DAYS),
+            sl -> tryWriteLockUninterrupted(sl, 0L, DAYS),
+            sl -> sl.tryConvertToWriteLock(sl.tryOptimisticRead()));
     }
 
     List<BiConsumer<StampedLock, Long>> writeUnlockers() {
-        List<BiConsumer<StampedLock, Long>> writeUnlockers = new ArrayList<>();
-        writeUnlockers.add((sl, stamp) -> sl.unlockWrite(stamp));
-        writeUnlockers.add((sl, stamp) -> assertTrue(sl.tryUnlockWrite()));
-        writeUnlockers.add((sl, stamp) -> sl.asWriteLock().unlock());
-        writeUnlockers.add((sl, stamp) -> sl.unlock(stamp));
-        writeUnlockers.add((sl, stamp) -> assertValid(sl, sl.tryConvertToOptimisticRead(stamp)));
-        return writeUnlockers;
+        return List.of(
+            (sl, stamp) -> sl.unlockWrite(stamp),
+            (sl, stamp) -> assertTrue(sl.tryUnlockWrite()),
+            (sl, stamp) -> sl.asWriteLock().unlock(),
+            (sl, stamp) -> sl.unlock(stamp),
+            (sl, stamp) -> assertValid(sl, sl.tryConvertToOptimisticRead(stamp)));
     }
 
     /**
@@ -1411,6 +1411,115 @@ public class StampedLockTest extends JSR166TestCase {
                     lock.unlockWrite(writeStamp);
             }
         }
+    }
+
+    /**
+     * Multiple threads repeatedly contend for the same lock.
+     */
+    public void testConcurrentAccess() throws Exception {
+        final StampedLock sl = new StampedLock();
+        final Lock wl = sl.asWriteLock();
+        final Lock rl = sl.asReadLock();
+        final long testDurationMillis = expensiveTests ? 1000 : 2;
+        final int nTasks = ThreadLocalRandom.current().nextInt(1, 10);
+        final AtomicBoolean done = new AtomicBoolean(false);
+        final List<CompletableFuture> futures = new ArrayList<>();
+        final List<Callable<Long>> stampedWriteLockers = List.of(
+            () -> sl.writeLock(),
+            () -> writeLockInterruptiblyUninterrupted(sl),
+            () -> tryWriteLockUninterrupted(sl, LONG_DELAY_MS, MILLISECONDS),
+            () -> {
+                long stamp;
+                do { stamp = sl.tryConvertToWriteLock(sl.tryOptimisticRead()); }
+                while (stamp == 0L);
+                return stamp;
+            },
+            () -> {
+              long stamp;
+              do { stamp = sl.tryWriteLock(); } while (stamp == 0L);
+              return stamp;
+            },
+            () -> {
+              long stamp;
+              do { stamp = sl.tryWriteLock(0L, DAYS); } while (stamp == 0L);
+              return stamp;
+            });
+        final List<Callable<Long>> stampedReadLockers = List.of(
+            () -> sl.readLock(),
+            () -> readLockInterruptiblyUninterrupted(sl),
+            () -> tryReadLockUninterrupted(sl, LONG_DELAY_MS, MILLISECONDS),
+            () -> {
+                long stamp;
+                do { stamp = sl.tryConvertToReadLock(sl.tryOptimisticRead()); }
+                while (stamp == 0L);
+                return stamp;
+            },
+            () -> {
+              long stamp;
+              do { stamp = sl.tryReadLock(); } while (stamp == 0L);
+              return stamp;
+            },
+            () -> {
+              long stamp;
+              do { stamp = sl.tryReadLock(0L, DAYS); } while (stamp == 0L);
+              return stamp;
+            });
+        final List<Consumer<Long>> stampedWriteUnlockers = List.of(
+            stamp -> sl.unlockWrite(stamp),
+            stamp -> sl.unlock(stamp),
+            stamp -> assertTrue(sl.tryUnlockWrite()),
+            stamp -> wl.unlock(),
+            stamp -> sl.tryConvertToOptimisticRead(stamp));
+        final List<Consumer<Long>> stampedReadUnlockers = List.of(
+            stamp -> sl.unlockRead(stamp),
+            stamp -> sl.unlock(stamp),
+            stamp -> assertTrue(sl.tryUnlockRead()),
+            stamp -> rl.unlock(),
+            stamp -> sl.tryConvertToOptimisticRead(stamp));
+        final Action writer = () -> {
+            // repeatedly acquires write lock
+            var locker = chooseRandomly(stampedWriteLockers);
+            var unlocker = chooseRandomly(stampedWriteUnlockers);
+            while (!done.getAcquire()) {
+                long stamp = locker.call();
+                try {
+                    assertTrue(isWriteLockStamp(stamp));
+                    assertTrue(sl.isWriteLocked());
+                    assertFalse(isReadLockStamp(stamp));
+                    assertFalse(sl.isReadLocked());
+                    assertEquals(0, sl.getReadLockCount());
+                    assertTrue(sl.validate(stamp));
+                } finally {
+                    unlocker.accept(stamp);
+                }
+            }
+        };
+        final Action reader = () -> {
+            // repeatedly acquires read lock
+            var locker = chooseRandomly(stampedReadLockers);
+            var unlocker = chooseRandomly(stampedReadUnlockers);
+            while (!done.getAcquire()) {
+                long stamp = locker.call();
+                try {
+                    assertFalse(isWriteLockStamp(stamp));
+                    assertFalse(sl.isWriteLocked());
+                    assertTrue(isReadLockStamp(stamp));
+                    assertTrue(sl.isReadLocked());
+                    assertTrue(sl.getReadLockCount() > 0);
+                    assertTrue(sl.validate(stamp));
+                } finally {
+                    unlocker.accept(stamp);
+                }
+            }
+        };
+        for (int i = nTasks; i--> 0; ) {
+            Action task = chooseRandomly(writer, reader);
+            futures.add(CompletableFuture.runAsync(checkedRunnable(task)));
+        }
+        Thread.sleep(testDurationMillis);
+        done.setRelease(true);
+        for (var future : futures)
+            checkTimedGet(future, null);
     }
 
 }
