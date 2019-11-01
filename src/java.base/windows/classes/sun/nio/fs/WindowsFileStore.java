@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -145,21 +145,25 @@ class WindowsFileStore
 
     @Override
     public long getTotalSpace() throws IOException {
-        return readDiskFreeSpaceEx().totalNumberOfBytes();
+        long space = readDiskFreeSpaceEx().totalNumberOfBytes();
+        return space >= 0 ? space : Long.MAX_VALUE;
     }
 
     @Override
     public long getUsableSpace() throws IOException {
-        return readDiskFreeSpaceEx().freeBytesAvailable();
-    }
-
-    public long getBlockSize() throws IOException {
-        return readDiskFreeSpace().bytesPerSector();
+        long space = readDiskFreeSpaceEx().freeBytesAvailable();
+        return space >= 0 ? space : Long.MAX_VALUE;
     }
 
     @Override
     public long getUnallocatedSpace() throws IOException {
-        return readDiskFreeSpaceEx().freeBytesAvailable();
+        long space = readDiskFreeSpaceEx().freeBytesAvailable();
+        return space >= 0 ? space : Long.MAX_VALUE;
+    }
+
+    @Override
+    public long getBlockSize() throws IOException {
+        return readDiskFreeSpace().bytesPerSector();
     }
 
     @Override
