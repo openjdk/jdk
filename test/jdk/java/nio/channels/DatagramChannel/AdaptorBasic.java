@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,20 +22,22 @@
  */
 
 /* @test
- * @bug 4313882 4981129 8143610
+ * @bug 4313882 4981129 8143610 8232673
  * @summary Unit test for datagram-socket-channel adaptors
+ * @modules java.base/java.net:+open
  * @library .. /test/lib
  * @build jdk.test.lib.Utils TestServers
- * @run main AdaptDatagramSocket
+ * @run main AdaptorBasic
  * @key randomness
  */
 
 import java.net.*;
 import java.nio.channels.*;
 import java.util.*;
+import java.lang.reflect.Field;
 
 
-public class AdaptDatagramSocket {
+public class AdaptorBasic {
 
     static java.io.PrintStream out = System.out;
     static Random rand = new Random();
@@ -46,13 +48,19 @@ public class AdaptDatagramSocket {
                 + "]");
     }
 
-    static void test(DatagramSocket ds, InetSocketAddress dst,
-                     boolean shouldTimeout)
+    static int getBufLength(DatagramPacket p) throws Exception {
+        Field f = DatagramPacket.class.getDeclaredField("bufLength");
+        f.setAccessible(true);
+        return (int) f.get(p);
+    }
+
+    static void test(DatagramSocket ds, InetSocketAddress dst, boolean shouldTimeout)
         throws Exception
     {
         DatagramPacket op = new DatagramPacket(new byte[100], 13, 42, dst);
         rand.nextBytes(op.getData());
-        DatagramPacket ip = new DatagramPacket(new byte[100], 19, 100 - 19);
+        int bufLength = 100 - 19;
+        DatagramPacket ip = new DatagramPacket(new byte[100], 19, bufLength);
         out.println("pre  op: " + toString(op) + "  ip: " + toString(ip));
 
         long start = System.currentTimeMillis();
@@ -61,10 +69,6 @@ public class AdaptDatagramSocket {
         for (;;) {
             try {
                 ds.receive(ip);
-                if (ip.getLength() == 0) { // ## Not sure why this happens
-                    ip.setLength(100 - 19);
-                    continue;
-                }
             } catch (SocketTimeoutException x) {
                 if (shouldTimeout) {
                     out.println("Receive timed out, as expected");
@@ -87,6 +91,10 @@ public class AdaptDatagramSocket {
         if (!(ip.getSocketAddress().equals(dst))) {
             throw new Exception("Incorrect sender address, expected: " + dst
                 + " actual: " + ip.getSocketAddress());
+        }
+
+        if (getBufLength(ip) != bufLength) {
+            throw new Exception("DatagramPacket bufLength changed by receive!!!");
         }
     }
 

@@ -22,7 +22,7 @@
  */
 
 /* @test
- * @bug 7184932
+ * @bug 7184932 8232673
  * @summary Test asynchronous close and interrupt of timed socket adapter methods
  * @key randomness intermittent
  */
@@ -78,8 +78,10 @@ public class AdaptorCloseAndInterrupt {
 
             try (DatagramChannel peer = DatagramChannel.open()) {
                 peer.socket().bind(null);
-                new AdaptorCloseAndInterrupt(peer).dcReceiveAsyncClose();
-                new AdaptorCloseAndInterrupt(peer).dcReceiveAsyncInterrupt();
+                new AdaptorCloseAndInterrupt(peer).dcReceiveAsyncClose(0);
+                new AdaptorCloseAndInterrupt(peer).dcReceiveAsyncClose(30_000);
+                new AdaptorCloseAndInterrupt(peer).dcReceiveAsyncInterrupt(0);
+                new AdaptorCloseAndInterrupt(peer).dcReceiveAsyncInterrupt(30_000);
             }
 
             new AdaptorCloseAndInterrupt().ssAcceptAsyncClose();
@@ -138,11 +140,10 @@ public class AdaptorCloseAndInterrupt {
         }
     }
 
-    void dcReceiveAsyncClose() throws IOException {
+    void dcReceiveAsyncClose(int timeout) throws IOException {
         DatagramChannel dc = DatagramChannel.open();
-        dc.connect(new InetSocketAddress(
-            InetAddress.getLoopbackAddress(), port));
-        dc.socket().setSoTimeout(30*1000);
+        dc.connect(new InetSocketAddress(InetAddress.getLoopbackAddress(), port));
+        dc.socket().setSoTimeout(timeout);
 
         doAsyncClose(dc);
 
@@ -150,24 +151,23 @@ public class AdaptorCloseAndInterrupt {
             dc.socket().receive(new DatagramPacket(new byte[100], 100));
             System.err.format("close() was invoked: %s%n", isClosed.get());
             throw new RuntimeException("receive should not have completed");
-        } catch (ClosedChannelException expected) {}
+        } catch (SocketException expected) { }
 
         if (!dc.socket().isClosed())
             throw new RuntimeException("socket is not closed");
     }
 
-    void dcReceiveAsyncInterrupt() throws IOException {
+    void dcReceiveAsyncInterrupt(int timeout) throws IOException {
         DatagramChannel dc = DatagramChannel.open();
-        dc.connect(new InetSocketAddress(
-            InetAddress.getLoopbackAddress(), port));
-        dc.socket().setSoTimeout(30*1000);
+        dc.connect(new InetSocketAddress(InetAddress.getLoopbackAddress(), port));
+        dc.socket().setSoTimeout(timeout);
 
         doAsyncInterrupt();
 
         try {
             dc.socket().receive(new DatagramPacket(new byte[100], 100));
             throw new RuntimeException("receive should not have completed");
-        } catch (ClosedByInterruptException expected) {
+        } catch (SocketException expected) {
             System.out.format("interrupt() was invoked: %s%n",
                 isInterrupted.get());
             System.out.format("dcReceiveAsyncInterrupt was interrupted: %s%n",
